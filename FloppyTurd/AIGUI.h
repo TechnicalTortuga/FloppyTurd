@@ -1,0 +1,275 @@
+#ifndef AIGUI_H
+#define AIGUI_H
+
+#include "raylib.h" 
+
+#ifdef AIGUI_STATIC
+#define AIGUI_DEF static
+#elif defined(AIGUI_INLINE)
+#define AIGUI_DEF inline
+#else
+#define AIGUI_DEF extern
+#endif
+
+// Standard font sizes for consistency
+const int AIGUI_FONT_SIZE_SMALL = 8;
+const int AIGUI_FONT_SIZE_MEDIUM = 12;
+const int AIGUI_FONT_SIZE_LARGE = 16;
+
+AIGUI_DEF void AIGUI_Init();
+AIGUI_DEF void AIGUI_Shutdown();
+AIGUI_DEF void AIGUI_BeginFrame();
+AIGUI_DEF void AIGUI_EndFrame();
+AIGUI_DEF void AIGUI_SetFont(Font font);
+AIGUI_DEF void AIGUI_SliderFloat(const char* label, float x, float y, float width, float min, float max, float* value);
+AIGUI_DEF bool AIGUI_Button(const char* label, float x, float y, float width, float height);
+AIGUI_DEF bool AIGUI_ButtonRounded(const char* label, float x, float y, float width, float height, float radius = 0.2f, int fontSize = 18, Color textColor = WHITE);
+AIGUI_DEF void AIGUI_LabelRounded(const char* text, float x, float y, float width, float height, float radius = 0.2f, int fontSize = 18, Color textColor = WHITE);
+AIGUI_DEF bool AIGUI_ImageButton(
+    Texture2D textureDefault,
+    Texture2D textureHover,
+    float x, float y,
+    float width, float height,
+    const char* text = nullptr,
+    int fontSize = 20,
+    Color textColor = WHITE,
+    Vector2* customMousePos = nullptr
+);
+AIGUI_DEF bool AIGUI_StateButton(
+    Texture2D textureNormal,
+    Texture2D textureHover,
+    Texture2D textureClicked,
+    float x, float y,
+    float width, float height,
+    const char* text = nullptr,
+    int fontSize = 20,
+    Color textColor = WHITE,
+    Vector2* customMousePos = nullptr
+);
+AIGUI_DEF Vector2 _GetScaledMousePosition();
+
+struct AIGUI_Context {
+    Vector2 mousePos;
+    bool mouseLeftDown;
+    Font defaultFont = GetFontDefault();
+};
+extern AIGUI_Context g_AIGUI;
+
+template <typename RenderFunc>
+void AIGUI_Container(Rectangle container, Vector2* scrollOffset, RenderFunc childRender) {
+    BeginScissorMode(container.x, container.y, container.width, container.height);
+    if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
+        Vector2 delta = GetMouseDelta();
+        scrollOffset->x -= delta.x;
+        scrollOffset->y -= delta.y;
+    }
+    childRender(*scrollOffset);
+    EndScissorMode();
+}
+
+#ifdef AIGUI_IMPLEMENTATION
+
+#include "raylib.h"
+#include "raymath.h"
+#include <string.h>
+#include <stdbool.h>
+#include <stdio.h>
+
+AIGUI_DEF void AIGUI_Init() {
+    memset(&g_AIGUI, 0, sizeof(g_AIGUI));
+    g_AIGUI.defaultFont = GetFontDefault();
+}
+
+AIGUI_DEF void AIGUI_SetFont(Font font) {
+    g_AIGUI.defaultFont = font;
+}
+
+AIGUI_DEF void AIGUI_Shutdown() {}
+
+AIGUI_DEF void AIGUI_BeginFrame() {
+    g_AIGUI.mousePos = _GetScaledMousePosition();
+    g_AIGUI.mouseLeftDown = IsMouseButtonDown(MOUSE_LEFT_BUTTON);
+}
+
+AIGUI_DEF void AIGUI_SliderFloat(const char* label, float x, float y, float width, float min, float max, float* value) {
+    Rectangle slider = { x, y, width, 20 };
+    DrawRectangleRec(slider, GRAY);
+    float normalized = (*value - min) / (max - min);
+    float handleX = x + normalized * width;
+    if (CheckCollisionPointRec(GetMousePosition(), slider) && IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
+        float mouseX = GetMousePosition().x;
+        normalized = (mouseX - x) / width;
+        normalized = Clamp(normalized, 0.0f, 1.0f);
+        *value = min + normalized * (max - min);
+    }
+    DrawRectangle(handleX - 5, y, 10, 20, WHITE);
+}
+
+AIGUI_DEF Vector2 _GetScaledMousePosition() {
+    Vector2 mouse = GetMousePosition();
+    float scaleX = (float)GetScreenWidth() / 320.0f;
+    float scaleY = (float)GetScreenHeight() / 180.0f;
+    // Invert scaling: map screen coordinates to 320x180 space
+    return { mouse.x / scaleX, mouse.y / scaleY };
+}
+
+AIGUI_DEF bool AIGUI_Button(const char* label, float x, float y, float width, float height) {
+    Rectangle rect = { x, y, width, height };
+    bool hovered = CheckCollisionPointRec(g_AIGUI.mousePos, rect);
+    bool clicked = hovered && IsMouseButtonReleased(MOUSE_LEFT_BUTTON);
+    Color hoverColor = Color(200, 200, 200, 255);
+    Color normalColor = Color(255, 128, 0, 255);
+    DrawRectangleRec(rect, hovered ? hoverColor : normalColor);
+    Vector2 size = MeasureTextEx(g_AIGUI.defaultFont, label, 20.0f, 1.0f);
+    float textX = x + (width - size.x) / 2.0f;
+    float textY = y + (height - size.y) / 2.0f;
+    DrawTextEx(g_AIGUI.defaultFont, label, { textX, textY }, 20.0f, 1.0f, BLACK);
+    return clicked;
+}
+
+AIGUI_DEF bool AIGUI_ButtonRounded(const char* label, float x, float y, float width, float height, float radius, int fontSize, Color textColor) {
+    Rectangle rect = { x, y, width, height };
+    bool hovered = CheckCollisionPointRec(g_AIGUI.mousePos, rect);
+    bool clicked = hovered && IsMouseButtonReleased(MOUSE_LEFT_BUTTON);
+
+    Color topColor = hovered ? Color{ 255, 200, 70, 255 } : Color{ 255, 180, 50, 255 };
+    Color bottomColor = hovered ? Color{ 230, 120, 40, 255 } : Color{ 210, 110, 30, 255 };
+
+    rect.x = (float)(int)rect.x;
+    rect.y = (float)(int)rect.y;
+    rect.width = (float)(int)rect.width;
+    rect.height = (float)(int)rect.height;
+
+    // Scale effect on hover
+    float hoverScale = hovered ? 1.05f : 1.0f;
+    float scaledW = rect.width * hoverScale;
+    float scaledH = rect.height * hoverScale;
+    float scaledX = rect.x - (scaledW - rect.width) / 2.0f;
+    float scaledY = rect.y - (scaledH - rect.height) / 2.0f;
+    Rectangle scaledRect = { scaledX, scaledY, scaledW, scaledH };
+
+    // Step 1: Draw the base rounded rectangle with the top color
+    DrawRectangleRounded(scaledRect, radius, 12, topColor);
+
+    // Step 2: Draw the gradient inside the scaled rectangle
+    float gradientRadius = radius;
+    for (int i = 0; i < (int)height; ++i) {
+        float t = (float)i / (height - 1);
+        if (height <= 1) t = 0.0f;
+        Color c = {
+            (unsigned char)Lerp((float)topColor.r, (float)bottomColor.r, t),
+            (unsigned char)Lerp((float)topColor.g, (float)bottomColor.g, t),
+            (unsigned char)Lerp((float)topColor.b, (float)bottomColor.b, t),
+            255
+        };
+        Rectangle fullGradientRect = { scaledX, scaledY - 1, scaledW + 2, scaledH + 1 };
+        BeginScissorMode((int)scaledX, (int)(scaledY + i), (int)scaledW + 1, 1);
+        DrawRectangleRounded(fullGradientRect, gradientRadius, 12, c);
+        EndScissorMode();
+    }
+
+    // Step 3: Draw the outline slightly offset
+    Rectangle outlineRect = scaledRect;
+    outlineRect.x += 1;
+    outlineRect.width -= 1;
+    outlineRect.height -= 1;
+    DrawRectangleRoundedLinesEx(outlineRect, radius, 12, 1, BLACK);
+
+    // Step 4: Draw the text
+    if (label && label[0] != '\0') {
+        if (g_AIGUI.defaultFont.baseSize > 0 && g_AIGUI.defaultFont.glyphCount > 0 && g_AIGUI.defaultFont.texture.id != 0) {
+            Vector2 size = MeasureTextEx(g_AIGUI.defaultFont, label, (float)fontSize, 1.0f);
+            float textX = scaledX + (scaledW - size.x) / 2.0f;
+            float textY = scaledY + (scaledH - size.y) / 2.0f;
+            textX = (float)(int)textX;
+            textY = (float)(int)textY;
+            DrawTextEx(g_AIGUI.defaultFont, label, { textX, textY }, (float)fontSize, 1.0f, textColor);
+        }
+        else {
+            DrawRectangle((int)scaledX, (int)scaledY, (int)scaledW, (int)scaledH, RED);
+            printf("Error: Invalid font in AIGUI_ButtonRounded\n");
+        }
+    }
+
+    return clicked;
+}
+
+AIGUI_DEF void AIGUI_LabelRounded(const char* text, float x, float y, float width, float height, float radius, int fontSize, Color textColor) {
+    Rectangle rect = { x, y, width, height };
+
+    Color topColor = Color{ 120, 135, 155, 255 };   // light steel-blue gray
+    Color bottomColor = Color{ 75, 85, 105, 255 };  // darker muted base
+
+    rect.x = (float)(int)rect.x;
+    rect.y = (float)(int)rect.y;
+    rect.width = (float)(int)rect.width;
+    rect.height = (float)(int)rect.height;
+
+    DrawRectangleRounded(rect, radius, 12, topColor);
+
+    for (int i = 0; i < (int)height; ++i) {
+        float t = (float)i / (height - 1);
+        Color c = {
+            (unsigned char)Lerp((float)topColor.r, (float)bottomColor.r, t),
+            (unsigned char)Lerp((float)topColor.g, (float)bottomColor.g, t),
+            (unsigned char)Lerp((float)topColor.b, (float)bottomColor.b, t),
+            255
+        };
+        BeginScissorMode((int)x, (int)(y + i), (int)width + 1, 1);
+        DrawRectangleRounded(rect, radius, 12, c);
+        EndScissorMode();
+    }
+
+    Rectangle outlineRect = rect;
+    outlineRect.x += 1;
+    outlineRect.width -= 1;
+    outlineRect.height -= 1;
+    DrawRectangleRoundedLinesEx(outlineRect, radius, 12, 1, BLACK);
+
+    if (text && text[0] != '\0') {
+        Vector2 size = MeasureTextEx(g_AIGUI.defaultFont, text, (float)fontSize, 1.0f);
+        float textX = x + (width - size.x) / 2.0f;
+        float textY = y + (height - size.y) / 2.0f;
+        DrawTextEx(g_AIGUI.defaultFont, text, { textX, textY }, (float)fontSize, 1.0f, textColor);
+    }
+}
+
+
+
+AIGUI_DEF bool AIGUI_ImageButton(Texture2D textureDefault, Texture2D textureHover, float x, float y, float width, float height, const char* text, int fontSize, Color textColor, Vector2* customMousePos) {
+    Rectangle rect = { x, y, width, height };
+    Vector2 mousePos = customMousePos ? *customMousePos : g_AIGUI.mousePos;
+    bool hovered = CheckCollisionPointRec(mousePos, rect);
+    bool clicked = hovered && IsMouseButtonReleased(MOUSE_LEFT_BUTTON);
+    DrawTexturePro(hovered ? textureHover : textureDefault, { 0, 0, (float)textureDefault.width, (float)textureDefault.height }, { x, y, width, height }, { 0, 0 }, 0, WHITE);
+    if (text) {
+        Vector2 size = MeasureTextEx(g_AIGUI.defaultFont, text, (float)fontSize, 1.0f);
+        float textX = x + (width - size.x) / 2.0f;
+        float textY = y + (height - size.y) / 2.0f;
+        DrawTextEx(g_AIGUI.defaultFont, text, { textX, textY }, (float)fontSize, 1.0f, textColor);
+    }
+    return clicked;
+}
+
+AIGUI_DEF bool AIGUI_StateButton(Texture2D textureNormal, Texture2D textureHover, Texture2D textureClicked, float x, float y, float width, float height, const char* text, int fontSize, Color textColor, Vector2* customMousePos) {
+    Rectangle rect = { x, y, width, height };
+    Vector2 mousePos = (customMousePos) ? *customMousePos : g_AIGUI.mousePos;
+    bool hovered = CheckCollisionPointRec(mousePos, rect);
+    bool pressed = (hovered && IsMouseButtonDown(MOUSE_LEFT_BUTTON));
+    bool released = (hovered && IsMouseButtonReleased(MOUSE_LEFT_BUTTON));
+    Texture2D tex = pressed ? textureClicked : hovered ? textureHover : textureNormal;
+    DrawTexturePro(tex, { 0, 0, (float)tex.width, (float)tex.height }, rect, { 0, 0 }, 0.0f, WHITE);
+    if (text) {
+        Vector2 size = MeasureTextEx(g_AIGUI.defaultFont, text, (float)fontSize, 1.0f);
+        float textX = x + (width - size.x) / 2.0f;
+        float textY = y + (height - size.y) / 2.0f;
+        DrawTextEx(g_AIGUI.defaultFont, text, { textX, textY }, (float)fontSize, 1.0f, textColor);
+    }
+    return released;
+}
+
+AIGUI_DEF void AIGUI_EndFrame() {}
+
+#endif // AIGUI_IMPLEMENTATION
+
+#endif // AIGUI_H
