@@ -38,8 +38,11 @@ Playing::Playing(Game* game)
     SetTextureWrap(_TurdPointMenu, TEXTURE_WRAP_CLAMP);
     Scoreboard = LoadTexture(ScoreBoard);
     _TurdHeart = LoadTexture(TurdHeart);
+    _CoinBag = LoadTexture(coinbagtexture); // Load coin bag texture
     ScoreSound = LoadSound(GotScore);
     SCORE = 0;
+    TOTALSCORE = 0;
+    TOTALCOINS = 0;
 
     gameOverMusic = new AudioClip(GameOverMusic);
     PreLoadLevels();
@@ -129,6 +132,7 @@ Playing::~Playing()
 {
     UnloadTexture(Scoreboard);
     UnloadTexture(_TurdHeart);
+    UnloadTexture(_CoinBag); // Unload coin bag texture
     UnloadSound(ScoreSound);
     UnloadTexture(floppyButtonBlue);
     UnloadTexture(floppyButtonBlueHover);
@@ -139,6 +143,7 @@ Playing::~Playing()
     UnloadTexture(pauseMenuBackground);
 
     delete gameOverMusic;
+    delete bossHealthBar;
 
     for (int i = 0; i < 4; ++i) {
         UnloadTexture(skillNodeTextures[i]);
@@ -483,15 +488,29 @@ void Playing::DrawGameOverScreen()
         if (gameOverMusic) gameOverMusic->Stop();
 
         switch (lastLevelType) {
-        case LastLevelType::PARK:   levelManager->SetLevel(std::make_unique<ParkLevel>()); break;
-        case LastLevelType::SEWER:  levelManager->SetLevel(std::make_unique<SewerLevel>()); break;
-        case LastLevelType::SNOW:   levelManager->SetLevel(std::make_unique<SnowLevel>()); break;
-        case LastLevelType::CASTLE: levelManager->SetLevel(std::make_unique<CastleLevel>()); break;
-        case LastLevelType::BOSS:   levelManager->SetLevel(std::make_unique<BossLevel>()); break;
-        case LastLevelType::DESERT: levelManager->SetLevel(std::make_unique<DesertLevel>()); break;
-        default:                    levelManager->SetLevel(std::make_unique<ParkLevel>()); break;
+        case LastLevelType::PARK:   levelManager->SetLevel(std::make_shared<ParkLevel>()); break;
+        case LastLevelType::SEWER:  levelManager->SetLevel(std::make_shared<SewerLevel>()); break;
+        case LastLevelType::SNOW:   levelManager->SetLevel(std::make_shared<SnowLevel>()); break;
+        case LastLevelType::CASTLE: levelManager->SetLevel(std::make_shared<CastleLevel>()); break;
+        case LastLevelType::BOSS:
+            levelManager->SetLevel(std::make_shared<BossLevel>());
+            // Recreate BossHealthBar for new RatKing
+            delete bossHealthBar;
+            if (BossLevel* bossLevel = dynamic_cast<BossLevel*>(levelManager->GetCurrentLevel().get())) {
+                bossHealthBar = new BossHealthBar(bossLevel->GetBoss(), "King of Rats");
+                TraceLog(LOG_INFO, "[Playing] Recreated BossHealthBar for new RatKing");
+            }
+            break;
+        case LastLevelType::DESERT: levelManager->SetLevel(std::make_shared<DesertLevel>()); break;
+        default:                    levelManager->SetLevel(std::make_shared<ParkLevel>()); break;
         }
         player->Revive();
+        SCORE = 0; // Reset session pipes
+        TOTALCOINS += player->GetSessionCoins(); // Add session coins to total
+        player->ResetSessionCoins(); // Reset session coins
+
+        // Reapply Quickplay settings after resetting the level
+        levelManager->SetQuickplaySettings(quickplaySettings);
 
         GAMEOVER = false;
         gameOverTriggered = false;
@@ -502,6 +521,9 @@ void Playing::DrawGameOverScreen()
         AudioManager::GetInstance().StopMusic();
         if (gameOverMusic) gameOverMusic->Stop();
         player->Revive();
+        SCORE = 0; // Reset session pipes
+        TOTALCOINS += player->GetSessionCoins(); // Add session coins to total
+        player->ResetSessionCoins(); // Reset session coins
 
         GAMEOVER = false;
         gameOverTriggered = false;
@@ -524,11 +546,11 @@ void Playing::DrawGameOverScreen()
 
     std::string scoreStr = std::to_string(SCORE);
     int scoreW = MeasureText(scoreStr.c_str(), 20);
-    DrawText(scoreStr.c_str(), (int)(sbX + (sbW - scoreW) / 2), (int)(sbY + sbH / 2 - 24), 20, BLACK);
+    DrawTextEx(g_AIGUI.defaultFont, scoreStr.c_str(), { (float)(sbX + (sbW - scoreW) / 2), (float)(sbY + sbH / 2 - 24) }, 20, 1.0f, WHITE); // Use Whacky Joe
 
-    std::string coinStr = std::to_string(COINS);
+    std::string coinStr = std::to_string(player->GetSessionCoins());
     int coinW = MeasureText(coinStr.c_str(), 20);
-    DrawText(coinStr.c_str(), (int)(sbX + (sbW - coinW) / 2), (int)(sbY + sbH / 2 + 8), 20, BLACK);
+    DrawTextEx(g_AIGUI.defaultFont, coinStr.c_str(), { (float)(sbX + (sbW - coinW) / 2), (float)(sbY + sbH / 2 + 8) }, 20, 1.0f, WHITE); // Use Whacky Joe
 }
 
 void Playing::Update()
@@ -582,6 +604,7 @@ void Playing::Update()
                 }
                 else if (currentLevel->checkForPointGain(player->GetCircleCenter(), player->GetCircleRadius())) {
                     SCORE++;
+                    TOTALSCORE++; // Increment lifetime pipes
                     PlaySound(ScoreSound);
                 }
 
@@ -621,7 +644,8 @@ void Playing::Update()
                             }
                         }
                         else if (auto coin = dynamic_cast<Coin*>((*it).get())) {
-                            COINS += coin->GetValue();
+                            int coinValue = coin->GetValue();
+                            player->AddCoins(coinValue); // Add to session coins
                         }
                         it = pickups.erase(it);
                     }
@@ -705,26 +729,30 @@ void Playing::Update()
                 std::shared_ptr<Boss> boss = bossLevel->GetBoss();
                 if (boss && boss->isActive)
                 {
-                    for (auto& projectile : projectiles)
+                    for (auto projIt = projectiles.begin(); projIt != projectiles.end(); )
                     {
+                        Projectile* projectile = *projIt;
                         Rectangle projHitbox = projectile->GetHitbox();
+                        bool hitBoss = false;
                         for (const auto& bossHitbox : boss->GetHitboxes())
                         {
                             if (CheckCollisionRecs(projHitbox, bossHitbox))
                             {
                                 boss->TakeDamage(10);
                                 delete projectile;
-                                projectiles.erase(std::find(projectiles.begin(), projectiles.end(), projectile));
+                                projIt = projectiles.erase(projIt);
+                                hitBoss = true;
                                 break;
                             }
                         }
+                        if (!hitBoss) ++projIt;
                     }
                     // Check boss projectiles vs player
                     if (std::shared_ptr<RatKing> rk = std::dynamic_pointer_cast<RatKing>(boss))
                     {
                         for (auto* tp : rk->GetProjectiles())
                         {
-                            if (!player->isInvisible && CheckCollisionCircleRec(player->GetCircleCenter(),player->GetCircleRadius(), tp->GetHitbox()))
+                            if (!player->isInvisible && CheckCollisionCircleRec(player->GetCircleCenter(), player->GetCircleRadius(), tp->GetHitbox()))
                             {
                                 player->PutTheHurtOn(1);
                                 //tp->MarkForRemoval();
@@ -859,7 +887,7 @@ void Playing::SetCurrentLevel(int levelIndex) {
         }
 
         levelManager = std::make_unique<LevelManager>(newLevel);
-        levelManager->SetQuickplaySettings(quickplaySettings); // New method to apply settings
+        levelManager->SetQuickplaySettings(quickplaySettings);
 
         if (BossLevel* bossLevel = dynamic_cast<BossLevel*>(newLevel.get()))
         {
@@ -867,7 +895,8 @@ void Playing::SetCurrentLevel(int levelIndex) {
             if (boss)
             {
                 delete bossHealthBar;
-                bossHealthBar = new BossHealthBar(boss.get(), "King of Rats");
+                bossHealthBar = new BossHealthBar(boss, "King of Rats");
+                TraceLog(LOG_INFO, "[Playing] Created BossHealthBar for initial RatKing");
             }
             player->SetMaxHearts(9);
             int initialHearts = 2; // Default to REGULAR
@@ -875,6 +904,9 @@ void Playing::SetCurrentLevel(int levelIndex) {
         }
         PlayMusic(newLevel->GetAudioClip());
         isPaused = false;
+        SCORE = 0; // Reset session pipes
+        TOTALCOINS += player->GetSessionCoins(); // Add session coins to total
+        player->ResetSessionCoins(); // Reset session coins
     }
     else {
         std::cerr << "Try Again Error: Invalid level index " << levelIndex << std::endl;
@@ -893,7 +925,7 @@ void Playing::DrawUI()
             { 320.f - Scoreboard.width - 10, 180.f - Scoreboard.height - 10,
              (float)Scoreboard.width,(float)Scoreboard.height },
             { 0,0 }, 0.f, WHITE);
-        DrawText(TextFormat("%i", SCORE), 320 - 50, 180 - 35, 20, WHITE);
+        DrawTextEx(g_AIGUI.defaultFont, TextFormat("%i", SCORE), { 320 - 50, 180 - 35 }, 20, 1.0f, WHITE); // Use Whacky Joe
     }
 
     const int hearts = player->GetTotalHearts();
@@ -936,6 +968,19 @@ void Playing::DrawUI()
             { 4.f + h * 32.f, 4.f, (float)tex.width,(float)tex.height },
             { 0,0 }, 0.f, WHITE);
     }
+
+    // Draw coin bag and session coins under hearts
+    float coinBagX = 4.f;
+    float coinBagY = 4.f + _TurdHeart.height + 4.f; // Position below hearts
+    DrawTexturePro(_CoinBag,
+        { 0,0,(float)_CoinBag.width,(float)_CoinBag.height },
+        { coinBagX, coinBagY, (float)_CoinBag.width,(float)_CoinBag.height },
+        { 0,0 }, 0.f, WHITE);
+    std::string coinStr = TextFormat("%i", player->GetSessionCoins());
+    Vector2 coinTextSize = MeasureTextEx(g_AIGUI.defaultFont, coinStr.c_str(), 20, 1.0f);
+    float coinTextX = coinBagX + _CoinBag.width + 4; // Right of coin bag
+    float coinTextY = coinBagY + (_CoinBag.height - coinTextSize.y) / 2; // Center vertically
+    DrawTextEx(g_AIGUI.defaultFont, coinStr.c_str(), { coinTextX, coinTextY }, 20, 1.0f, WHITE); // Use Whacky Joe
 }
 
 void Playing::UpdatePlayerPositionInLevel()

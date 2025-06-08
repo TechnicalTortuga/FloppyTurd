@@ -17,19 +17,16 @@ public:
     ~ParkLevel();
 
     void Draw() const override;
-
     void Update(float deltaTime) override;
-
     void InitObstacles();
 
     bool checkForCollisions(Vector2 circleCenter, float circleRadius) override;
     bool checkForPointGain(Vector2 circleCenter, float circleRadius) override;
 
-    // Inherited via Level
     const std::vector<std::shared_ptr<Obstacle>>& getObjLoc() override;
     std::vector<std::shared_ptr<PickUp>>& GetPickUps() override { return pickups; }
 
-    void SetSwingingPipes(bool enable) { swingingPipes = enable; }
+    void SetSwingingPipes(bool enable) override;
 
     std::vector<std::shared_ptr<ToiletPair>> toilets{};
     std::vector<std::shared_ptr<Obstacle>> obstacles;
@@ -37,12 +34,12 @@ public:
 private:
     CameraSystem* cameraSystem;
 
-    float backParallax  {0.25f};
-    float midParallax   {0.50f};
-    float frontParallax {0.75f};
+    float backParallax{ 0.25f };
+    float midParallax{ 0.50f };
+    float frontParallax{ 0.75f };
 
-    float gameScale{ 4.0f }; // Added GameScale variable
-    float screenScale{ 1.5f }; // Additional scaling to fit screen
+    float gameScale{ 4.0f };
+    float screenScale{ 1.5f };
 
     float xDistBackgroundBack{ 0 };
     float xDistBackgroundMid{ 0 };
@@ -56,9 +53,5 @@ private:
 
     std::vector<std::shared_ptr<PickUp>> pickups;
 
-    int spacing{200};
-
-    // Swinging pipes support
-    bool swingingPipes = false;
-    float swingTimer = 0.0f;
+    int spacing{ 100 };
 };

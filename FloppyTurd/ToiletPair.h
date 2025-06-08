@@ -17,8 +17,10 @@ public:
     Rectangle GetBottomHitbox();
     std::vector<Rectangle> GetHitboxes();
     void yOffsetRandomizer();
+    void SetCollisionEnabled(bool enabled) override;
+    // New method to toggle oscillation for swinging pipes
+    void SetOscillationEnabled(bool enabled);
 
-    Vector2 pos;
     float toiletScale;
     bool hasScored = false;
 
@@ -35,13 +37,13 @@ private:
     Rectangle hitboxBottom;
 
     float gapBetweenToilets{};
-    float maxYOffset{60.0f};    // <--- how high or low we allow offset to go
+    float maxYOffset{ 60.0f };    // How high or low we allow offset to go
 
     float oscillationTimer = 0.0f;
-    bool isOscillating = false;  // Enable this in snowy pipes only
+    bool isOscillating = false;  // Controlled by SetOscillationEnabled
+    bool defaultOscillating = false; // Stores default state (true for snowy)
 
     float oscillationPhase = 0.0f;
     float oscillationDirection = 1.0f;
-
     float phaseOffset;
 };

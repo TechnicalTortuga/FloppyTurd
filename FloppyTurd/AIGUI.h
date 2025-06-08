@@ -11,10 +11,10 @@
 #define AIGUI_DEF extern
 #endif
 
-// Standard font sizes for consistency
-const int AIGUI_FONT_SIZE_SMALL = 8;
-const int AIGUI_FONT_SIZE_MEDIUM = 12;
-const int AIGUI_FONT_SIZE_LARGE = 16;
+// Standard font sizes for consistency - Adjusted for better readability
+const int AIGUI_FONT_SIZE_SMALL = 10;  // Increased from 8
+const int AIGUI_FONT_SIZE_MEDIUM = 14; // Increased from 12
+const int AIGUI_FONT_SIZE_LARGE = 18;  // Increased from 16
 
 AIGUI_DEF void AIGUI_Init();
 AIGUI_DEF void AIGUI_Shutdown();
@@ -233,8 +233,6 @@ AIGUI_DEF void AIGUI_LabelRounded(const char* text, float x, float y, float widt
         DrawTextEx(g_AIGUI.defaultFont, text, { textX, textY }, (float)fontSize, 1.0f, textColor);
     }
 }
-
-
 
 AIGUI_DEF bool AIGUI_ImageButton(Texture2D textureDefault, Texture2D textureHover, float x, float y, float width, float height, const char* text, int fontSize, Color textColor, Vector2* customMousePos) {
     Rectangle rect = { x, y, width, height };

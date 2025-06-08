@@ -3,11 +3,11 @@
 
 Outhouse::Outhouse(int xPos, int yPos)
 {
-	using namespace GameSettings;
-	using namespace Resources;
+    using namespace GameSettings;
+    using namespace Resources;
 
-	_Outhouse = LoadTexture(OuthouseSolo);
-	_OuthouseToilet = LoadTexture(OuthouseToilet);
+    _Outhouse = LoadTexture(OuthouseSolo);
+    _OuthouseToilet = LoadTexture(OuthouseToilet);
 
     pos.x = xPos;
     pos.y = yPos;
@@ -18,8 +18,8 @@ Outhouse::Outhouse(int xPos, int yPos)
 
 Outhouse::~Outhouse()
 {
-	UnloadTexture(_Outhouse);
-	UnloadTexture(_OuthouseToilet);
+    UnloadTexture(_Outhouse);
+    UnloadTexture(_OuthouseToilet);
 }
 
 void Outhouse::Draw()
@@ -29,8 +29,8 @@ void Outhouse::Draw()
     // Draw the Outhouse Toilet
     DrawTexturePro(
         _OuthouseToilet,
-        { 0, 0, (float) (_OuthouseToilet.width), (float) (_OuthouseToilet.height) },
-        { pos.x,(float) 180 - _OuthouseToilet.height,(float) _OuthouseToilet.width, (float) _OuthouseToilet.height },
+        { 0, 0, (float)(_OuthouseToilet.width), (float)(_OuthouseToilet.height) },
+        { pos.x, (float)180 - _OuthouseToilet.height, (float)_OuthouseToilet.width, (float)_OuthouseToilet.height },
         { 0, 0 }, // Origin of image
         0.0f, // Rotation
         WHITE
@@ -38,9 +38,9 @@ void Outhouse::Draw()
 
     // Draw the Outhouse
     DrawTexturePro(
-        _Outhouse, 
-        { 0, 0, (float) (_Outhouse.width), (float) (_Outhouse.height) }, // How much of the image we want, x,y, width, height
-        { pos.x,(float) 180 - _Outhouse.height,(float)_Outhouse.width,(float)_Outhouse.height }, // Where the image is going, x, y, width, height
+        _Outhouse,
+        { 0, 0, (float)(_Outhouse.width), (float)(_Outhouse.height) },
+        { pos.x, (float)180 - _Outhouse.height, (float)_Outhouse.width, (float)_Outhouse.height },
         { 0, 0 }, // Origin of image
         0.0f, // Rotation
         WHITE
@@ -63,16 +63,21 @@ void Outhouse::Update(float deltaTime)
 
 Rectangle Outhouse::GetOuthouseHitbox()
 {
-	return _outhouseHitbox;
+    return _outhouseHitbox;
 }
 
 Rectangle Outhouse::GetOuthouseToiletHitbox()
 {
-	return _outhouseToiletHitbox;
+    return _outhouseToiletHitbox;
 }
 
 std::vector<Rectangle> Outhouse::GetHitboxes()
 {
+    // If collisions are disabled, return an empty vector
+    if (!collisionEnabled) {
+        return std::vector<Rectangle>();
+    }
+
     std::vector<Rectangle>* hitboxes = new std::vector<Rectangle>();
 
     hitboxes->push_back(_outhouseHitbox);
@@ -81,13 +86,18 @@ std::vector<Rectangle> Outhouse::GetHitboxes()
     return *hitboxes;
 }
 
+void Outhouse::SetCollisionEnabled(bool enabled)
+{
+    collisionEnabled = enabled;
+}
+
 void Outhouse::UpdateHitbox()
 {
     using namespace GameSettings;
 
     // Toilet hitbox
     _outhouseToiletHitbox.x = pos.x + (_OuthouseToilet.width / 4) + 4;
-    _outhouseToiletHitbox.y = 180 - ( 3 * _OuthouseToilet.height / 4) - 12;
+    _outhouseToiletHitbox.y = 180 - (3 * _OuthouseToilet.height / 4) - 12;
     _outhouseToiletHitbox.width = (_OuthouseToilet.width / 2) - 8;
     _outhouseToiletHitbox.height = _OuthouseToilet.height;
 
@@ -97,4 +107,3 @@ void Outhouse::UpdateHitbox()
     _outhouseHitbox.width = _Outhouse.width - 16;
     _outhouseHitbox.height = _Outhouse.height;
 }
-

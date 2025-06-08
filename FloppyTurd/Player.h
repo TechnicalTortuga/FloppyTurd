@@ -21,13 +21,13 @@ public:
     int GetTotalHearts()      const { return hearts; }
     int GetSlicesPerHeart()   const { return (int)heartMode; }
     int GetSlicesLeft()       const { return liveSlices; }      // living slices
-    int GetGhostSlicesLeft()  const { return ghostSlices; }     // “borrowed” by hollow‑turds
+    int GetGhostSlicesLeft()  const { return ghostSlices; }     // “borrowed” by hollow-turds
     void EnableHollowTurds(bool enabled) { hollowTurds = enabled; }
 
     void Draw();
     void Update(float deltaTime);
     void PutTheHurtOn(int DAMAGE);
-    bool SpendSliceForShoot();
+    bool SpendCoinsForShoot(); // New method to handle coin-based shooting
     float GetCircleRadius() const;
     Vector2 GetCircleCenter() const;
     int GetTurdPoints() const;
@@ -69,6 +69,11 @@ public:
     bool isAlive{ true };
     bool isInvisible = false;
 
+    // Coin management
+    void AddCoins(int amount) { sessionCoins += amount; } // Add coins to session
+    int GetSessionCoins() const { return sessionCoins; } // Get current session coins
+    void ResetSessionCoins() { sessionCoins = 0; } // Reset session coins
+
 private:
     PLAYERSTATE playerstate{ JUMPING };
     int health{ 99 };
@@ -92,12 +97,12 @@ private:
     Sprite* jumpSpriteTurdlet;
     Sprite* shootSpriteTurdlet;
 
-    // Form 1: Teenage Turd sprites (assumes you add these assets in Resources.h)
+    // Form 1: Teenage Turd sprites
     Sprite* idleSpriteTeen;
     Sprite* jumpSpriteTeen;
     Sprite* shootSpriteTeen;
 
-    // Form 2: Big Turd sprites (assumes you add these assets in Resources.h)
+    // Form 2: Big Turd sprites
     Sprite* idleSpriteBig;
     Sprite* jumpSpriteBig;
     Sprite* shootSpriteBig;
@@ -118,12 +123,15 @@ private:
 
     Sound hurtSound;
 
-    /* new health bookkeeping */
+    /* health bookkeeping */
     int        hearts{ 2 };         // total heart icons shown
-    HeartMode  heartMode{ WHOLE };     // 1 = full hearts, 2 = halves, 3 = thirds
+    HeartMode  heartMode{ WHOLE };     // 1 = full hearts, 2 = halves, 3 = thirds
     int        liveSlices{ hearts * (int)heartMode };   // keep in sync
-    int        ghostSlices{ 0 };         // slices temporarily “spent” by hollow‑turds
-    bool       hollowTurds{ false };     // set by Skill 4
+    int        ghostSlices{ 0 };         // slices temporarily “spent” by hollow-turds
+    bool       hollowTurds{ false };     // set by Skill 4
 
     float invisibilityTimer = 0.0f;
+
+    // Session coins
+    int sessionCoins{ 0 }; // Coins collected in the current session
 };

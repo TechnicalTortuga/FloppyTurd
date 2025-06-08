@@ -26,6 +26,7 @@ public:
     void Draw() const override;
     void Update(float deltaTime) override;
 
+    void SetSwingingPipes(bool enable) override {};
     bool IsBrickBetween(float leftX, float rightX) const;
     void SpawnPickupsBetween(float xStart, float xEnd);
     std::shared_ptr<PickUp> GenerateRandomPickup(Vector2 pos);

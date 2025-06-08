@@ -1,4 +1,3 @@
-// BrickWall.h
 #pragma once
 #include "Obstacle.h"
 #include "raylib.h"
@@ -11,6 +10,7 @@ public:
     void Draw() override;
     void Update(float deltaTime) override;
     std::vector<Rectangle> GetHitboxes() override;
+    void SetCollisionEnabled(bool enabled) override; // Implement the new method from Obstacle
 
     float GetWidth() const;
     Vector2 GetPosition() const;

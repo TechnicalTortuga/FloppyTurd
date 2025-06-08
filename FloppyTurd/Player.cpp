@@ -158,16 +158,13 @@ void Player::PutTheHurtOn(int DAMAGE)
     SoundManager::GetInstance().PlaySoundClip(hurtSound);
 }
 
-bool Player::SpendSliceForShoot()
+bool Player::SpendCoinsForShoot()
 {
-    if (hollowTurds)
-    {
-        if (ghostSlices > 0) { --ghostSlices; return true; }
-        if (liveSlices > 0) { --liveSlices; return true; }
-        return false;
+    const int shootCost = 1; // 1 coin per shot
+    if (sessionCoins >= shootCost) {
+        sessionCoins -= shootCost;
+        return true;
     }
-
-    if (liveSlices > 0) { --liveSlices; return true; }
     return false;
 }
 
@@ -254,7 +251,7 @@ void Player::Shoot()
     if (!shootingUnlocked) return;
     using namespace Resources;
     if (!isAlive || shootTimer > 0.0f || hurtBuffer > 0.0f) return;
-    if (!SpendSliceForShoot()) return;
+    if (!SpendCoinsForShoot()) return;
 
     isShooting = true;
     playerstate = SHOOTING;
@@ -288,6 +285,7 @@ void Player::Revive() {
     circleCenter = { pos.x + 32, pos.y + 34 };
 
     currentSprite->ResetAnimation();
+    ResetSessionCoins(); // Reset session coins on revive
 }
 
 void Player::SetHealth(int hp) {

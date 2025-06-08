@@ -14,6 +14,7 @@ public:
     void Update(float dt) override;
     void Draw() override;
     std::vector<Rectangle> GetHitboxes() override;
+    void SetCollisionEnabled(bool enabled) override; // Implement the new method from Obstacle
     Rectangle GetHitbox() const;
 
     // Handy helpers

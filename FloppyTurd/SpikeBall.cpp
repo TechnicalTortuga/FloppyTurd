@@ -96,6 +96,10 @@ void SpikeBall::Draw()
 
 std::vector<Rectangle> SpikeBall::GetHitboxes()
 {
+    // If collisions are disabled, return an empty vector
+    if (!collisionEnabled) {
+        return std::vector<Rectangle>();
+    }
     return { ballHit };
 }
 
@@ -108,4 +112,9 @@ void SpikeBall::SetPosition(Vector2 newPos)
 {
     basePos = newPos;
     UpdateHitbox();
+}
+
+void SpikeBall::SetCollisionEnabled(bool enabled)
+{
+    collisionEnabled = enabled;
 }

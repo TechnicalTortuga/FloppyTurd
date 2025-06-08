@@ -22,6 +22,8 @@ public:
     void resetScore();
     Rectangle GetHitbox() const { return hitbox; }
     std::vector<Rectangle> GetHitboxes() override;
+    // Implement the new method from Obstacle
+    void SetCollisionEnabled(bool enabled) override;
 
     float GetX() const { return pos.x; }
     float GetWidth() const { return static_cast<float>(chosenPipe.width); }
@@ -32,9 +34,8 @@ public:
 
     void yOffsetRandomizer();
 
-    void SetPipeType(PipeType newType); // Already declared, but ensure it's here
+    void SetPipeType(PipeType newType);
 
-    Vector2 pos;
     bool hasScored = false;
 
     bool HasSpawnedPickups() const { return hasSpawnedPickups; }

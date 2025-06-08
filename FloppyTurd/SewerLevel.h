@@ -21,6 +21,7 @@ public:
 
     void Update(float deltaTime) override;
 
+    void SetSwingingPipes(bool enable) override {};
     void SpawnPickupsBetween(float xStart, float xEnd);
 
     float GetCurrentPipePairX() const;

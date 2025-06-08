@@ -10,10 +10,11 @@ public:
     ~ToiletPaperProjectile();
 
     void Draw() override;
-    void Update(float deltaTime) override;  // Updated to accept deltaTime
+    void Update(float deltaTime) override;
     std::vector<Rectangle> GetHitboxes() override;
+    void SetCollisionEnabled(bool enabled) override; // Implement the new method from Obstacle
     bool IsOffScreen() const { return position.x < -32.0f; };
-	Rectangle GetHitbox() const { return hitbox; }
+    Rectangle GetHitbox() const { return hitbox; }
 
 private:
     Vector2 position;

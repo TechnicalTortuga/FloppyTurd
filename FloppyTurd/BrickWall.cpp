@@ -18,11 +18,15 @@ void BrickWall::Draw() {
 }
 
 void BrickWall::Update(float deltaTime) {
-    pos.x -= 80 * deltaTime;
+    // Movement is now handled by DesertLevel::Update()
     UpdateHitbox();
 }
 
 std::vector<Rectangle> BrickWall::GetHitboxes() {
+    // If collisions are disabled, return an empty vector
+    if (!collisionEnabled) {
+        return std::vector<Rectangle>();
+    }
     return { hitbox };
 }
 
@@ -41,4 +45,9 @@ Vector2 BrickWall::GetPosition() const {
 void BrickWall::SetPosition(Vector2 newPos) {
     pos = newPos;
     UpdateHitbox();
+}
+
+void BrickWall::SetCollisionEnabled(bool enabled)
+{
+    collisionEnabled = enabled;
 }

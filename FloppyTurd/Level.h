@@ -28,12 +28,13 @@ public:
     virtual bool checkForCollisions(Vector2 circleCenter, float circleRadius) = 0;
     virtual bool checkForPointGain(Vector2 circleCenter, float circleRadius) = 0;
     virtual const std::vector<std::shared_ptr<Obstacle>>& getObjLoc() = 0;
+    virtual void SetSwingingPipes(bool enable) = 0; // Added pure virtual method
 
     virtual void AddPickUp(std::shared_ptr<PickUp> pickup);
     virtual std::vector<std::shared_ptr<PickUp>>& GetPickUps();
 
     // Music-related functions
-    virtual AudioClip* GetAudioClip() const { return levelMusic; } // Return the associated music
+    virtual AudioClip* GetAudioClip() const { return levelMusic; }
 
     virtual void PlayMusic() {
         if (levelMusic) levelMusic->Play();

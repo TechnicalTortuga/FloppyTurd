@@ -107,9 +107,19 @@ void SewerPipe::resetScore() {
 }
 
 std::vector<Rectangle> SewerPipe::GetHitboxes() {
+    // If collisions are disabled, return an empty vector
+    if (!collisionEnabled) {
+        return std::vector<Rectangle>();
+    }
+
     std::vector<Rectangle> boxes;
     boxes.push_back(hitbox);
     return boxes;
+}
+
+void SewerPipe::SetCollisionEnabled(bool enabled)
+{
+    collisionEnabled = enabled;
 }
 
 void SewerPipe::yOffsetRandomizer() {

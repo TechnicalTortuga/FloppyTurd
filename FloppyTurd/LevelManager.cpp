@@ -7,6 +7,7 @@
 #include <raymath.h>
 #include "SnowLevel.h"
 #include "DesertLevel.h"
+#include "ParkLevel.h"
 
 LevelManager* LevelManager::instance = nullptr;
 
@@ -17,6 +18,7 @@ LevelManager::LevelManager(std::shared_ptr<Level> level)
 
     if (BossLevel* bossLevel = dynamic_cast<BossLevel*>(currentLevel.get())) {
         boss = bossLevel->GetBoss();
+        TraceLog(LOG_INFO, "[LevelManager] Initialized boss from BossLevel, ref count: %d", boss.use_count());
     }
     else {
         if (SewerLevel* sewer = dynamic_cast<SewerLevel*>(currentLevel.get())) {
@@ -110,7 +112,10 @@ LevelManager::LevelManager(std::shared_ptr<Level> level)
     }
 }
 
-LevelManager::~LevelManager() {}
+LevelManager::~LevelManager() {
+    TraceLog(LOG_INFO, "[LevelManager] Destroying LevelManager, boss ref count: %d", boss.use_count());
+    boss.reset();
+}
 
 LevelManager* LevelManager::GetInstance() {
     return instance;
@@ -152,6 +157,17 @@ void LevelManager::Update(float deltaTime) {
             }
         }
     }
+    // Add support for SewerLevel
+    else if (SewerLevel* sewer = dynamic_cast<SewerLevel*>(currentLevel.get())) {
+        const auto& pipes = sewer->GetPipes();
+        if (!hasPassedFirstToilet && pipes.size() > 0) {
+            float firstPipeRightEdge = pipes[0]->GetHitbox().x + pipes[0]->GetHitbox().width;
+            if (lastPlayerPosition.x > firstPipeRightEdge) {
+                hasPassedFirstToilet = true;
+                std::cout << "[LevelManager] ✅ hasPassedFirstToilet set for SewerLevel\n";
+            }
+        }
+    }
 
     if (!boss) {
         for (auto it = enemies.begin(); it != enemies.end(); ) {
@@ -166,10 +182,13 @@ void LevelManager::Update(float deltaTime) {
             else ++it;
         }
 
-        enemySpawnTimer += deltaTime;
-        if (enemySpawnTimer >= enemySpawnInterval && hasPassedFirstToilet) {
-            SpawnEnemy();
-            enemySpawnTimer = 0.0f;
+        // Only spawn enemies if enabled and past first toilet
+        if (quickplaySettings.enableEnemies && hasPassedFirstToilet) {
+            enemySpawnTimer += deltaTime;
+            if (enemySpawnTimer >= enemySpawnInterval) {
+                SpawnEnemy();
+                enemySpawnTimer = 0.0f;
+            }
         }
     }
     else {
@@ -177,7 +196,10 @@ void LevelManager::Update(float deltaTime) {
             boss->SetPlayerPosition(GetPlayerPosition());
             boss->Update(deltaTime);
         }
-        else boss.reset();
+        else {
+            boss.reset();
+            TraceLog(LOG_INFO, "[LevelManager] Cleared inactive boss");
+        }
 
         for (auto it = enemies.begin(); it != enemies.end(); ) {
             if ((*it)->ShouldBeRemoved()) it = enemies.erase(it);
@@ -227,6 +249,12 @@ std::shared_ptr<Boss> LevelManager::GetBoss() {
 void LevelManager::SpawnEnemy() {
     if (!enemyFactory) {
         std::cout << "[SpawnEnemy] ⚠️ No enemyFactory defined\n";
+        return;
+    }
+
+    // Park Level: No enemies regardless of settings
+    if (dynamic_cast<ParkLevel*>(currentLevel.get())) {
+        std::cout << "[SpawnEnemy] ⚠️ Enemies not supported in Park Level\n";
         return;
     }
 
@@ -368,11 +396,21 @@ void LevelManager::SetPipePanSpeedMultiplier(float multiplier, float duration) {
 
 void LevelManager::SetLevel(std::shared_ptr<Level> newLevel)
 {
-    // Reset all state as needed (enemies, boss, pickups, etc.)
+    TraceLog(LOG_INFO, "[LevelManager] Setting new level, clearing old state. Old boss ref count: %d", boss.use_count());
+    // Reset all state
+    boss.reset(); // Clear old boss
+    enemies.clear(); // Clear enemies to prevent old boss lingering
     currentLevel = std::move(newLevel);
     hasPassedFirstToilet = false;
-    enemies.clear();
     enemySpawnTimer = 0.0f;
+
+    // Initialize new boss for BossLevel
+    if (BossLevel* bossLevel = dynamic_cast<BossLevel*>(currentLevel.get())) {
+        bossLevel->Reset(); // Reset boss and pickups
+        boss = bossLevel->GetBoss();
+        TraceLog(LOG_INFO, "[LevelManager] Initialized new boss for BossLevel, ref count: %d", boss.use_count());
+    }
+
     // Reset DesertLevel-specific state
     if (dynamic_cast<DesertLevel*>(currentLevel.get())) {
         std::cout << "[SetLevel] ✅ Resetting DesertLevel Bird spawn state\n";
@@ -440,4 +478,50 @@ void LevelManager::SetLevel(std::shared_ptr<Level> newLevel)
 
 void LevelManager::SetQuickplaySettings(const QuickplaySettings& settings)
 {
+    quickplaySettings = settings;
+
+    // Apply obstacle settings to the current level
+    if (currentLevel) {
+
+
+
+        // Sewer Level: Toggle pipe collisions
+        if (SewerLevel* sewer = dynamic_cast<SewerLevel*>(currentLevel.get())) {
+            auto& pipes = sewer->GetPipes();
+            for (auto& pipe : pipes) {
+                pipe->SetCollisionEnabled(quickplaySettings.enableObstacles);
+            }
+        }
+        // Other levels with toilets or outhouses
+        else if (ParkLevel* park = dynamic_cast<ParkLevel*>(currentLevel.get())) {
+            auto& toilets = park->getObjLoc();
+            for (auto& toilet : toilets) {
+                toilet->collisionEnabled = quickplaySettings.enableObstacles;
+            }
+        }
+        else if (DesertLevel* desert = dynamic_cast<DesertLevel*>(currentLevel.get())) {
+            for (auto& outhouse : desert->outhouses) {
+                outhouse->SetCollisionEnabled(quickplaySettings.enableObstacles);
+            }
+        }
+        else if (SnowLevel* snow = dynamic_cast<SnowLevel*>(currentLevel.get())) {
+            auto& toilets = snow->getObjLoc();
+            for (auto& toilet : toilets) {
+                toilet->collisionEnabled = quickplaySettings.enableObstacles;
+            }
+        }
+        else if (CastleLevel* castle = dynamic_cast<CastleLevel*>(currentLevel.get())) {
+            auto& toilets = castle->getObjLoc();
+            for (auto& toilet : toilets) {
+                toilet->collisionEnabled = quickplaySettings.enableObstacles;
+            }
+        }
+    }
+
+    // Apply swinging pipes setting (for levels that support it in the future)
+    // Currently, SewerLevel pipes don't swing, but SnowLevel or CastleLevel might in the future
+    if (quickplaySettings.swingingPipes) {
+        // Placeholder for future implementation
+        std::cout << "[LevelManager] Swinging pipes enabled (not yet implemented for this level)\n";
+    }
 }

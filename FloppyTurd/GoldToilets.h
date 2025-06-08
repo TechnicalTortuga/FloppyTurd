@@ -17,8 +17,10 @@ public:
     Rectangle GetBottomHitbox();
     std::vector<Rectangle> GetHitboxes();
     void yOffsetRandomizer();
+    void SetCollisionEnabled(bool enabled) override;
+    // New method to toggle oscillation for swinging pipes
+    void SetOscillationEnabled(bool enabled);
 
-    Vector2 pos;
     bool hasScored = false;
 
 private:
@@ -34,11 +36,12 @@ private:
     Rectangle hitboxBottom;
 
     float gapBetweenToilets{};
-    float maxYOffset{ 60.0f };    // <--- how high or low we allow offset to go
+    float maxYOffset{ 60.0f };    // How high or low we allow offset to go
 
     float oscillationTimer = 0.0f;
+    bool isOscillating = true;   // Controlled by SetOscillationEnabled
+    bool defaultOscillating = true; // GoldToilets oscillate by default
     float oscillationPhase = 0.0f;
     float oscillationDirection = 1.0f;
     float phaseOffset = 0.0f;
-    bool isOscillating = true;
 };

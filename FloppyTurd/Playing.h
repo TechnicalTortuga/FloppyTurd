@@ -15,8 +15,8 @@
 #include "Hat.h"
 #include "BossHealthBar.h"
 #include "SnowOverlay.h"
-#include "QuickplaySettings.h" // Add new header for QuickplaySettings
-#include "MainMenu.h" // Revert to original position at the bottom
+#include "QuickplaySettings.h"
+#include "MainMenu.h"
 
 class MainMenu;
 class Player;
@@ -75,13 +75,15 @@ private:
     float gameOverHoverTimer = 0.0f;
     bool GAMEOVER = false;
 
-    QuickplaySettings quickplaySettings; // Now recognized after moving MainMenu.h include
+    QuickplaySettings quickplaySettings;
 
-    int SCORE = 0;
-    int COINS = 0;
-    int TOTALCOINS = 0;
+    int SCORE = 0; // Session pipes passed
+    int COINS = 0; // Session coins (unused, kept for compatibility)
+    int TOTALCOINS = 0; // Lifetime coins
+    int TOTALSCORE = 0; // Lifetime pipes passed
     Texture2D Scoreboard;
     Texture2D _TurdHeart;
+    Texture2D _CoinBag; // New coin bag texture
     Texture2D floppyButtonBlue;
     Texture2D floppyButtonBlueHover;
     Sound ScoreSound;
@@ -109,9 +111,9 @@ private:
     const char* skillDescs[totalSkillNodes]{
        "Unlocks the ability to fire poop projectiles (F key).",
        "Each heart is split into two slices; one hit removes only half.",
-       "Unlocks the teenage‑turd player form (cosmetic & future buffs).",
+       "Unlocks the teenage-turd player form (cosmetic & future buffs).",
        "Projectiles consume ghost slices first – real HP is safe!",
-       "Unlocks the big‑turd player form (cosmetic & future buffs).",
+       "Unlocks the big-turd player form (cosmetic & future buffs).",
        "Further divides hearts into three slices each."
     };
     bool skillUnlocked[totalSkillNodes]{ false };

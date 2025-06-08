@@ -7,14 +7,19 @@
 class Obstacle
 {
 public:
-	virtual ~Obstacle() = default;
+    virtual ~Obstacle() = default;
 
-	virtual void Draw() = 0;
-	virtual void Update(float deltaTime) = 0;
+    virtual void Draw() = 0;
+    virtual void Update(float deltaTime) = 0;
+    virtual std::vector<Rectangle> GetHitboxes() = 0;
+    // Add method to toggle collision
+    virtual void SetCollisionEnabled(bool enabled) = 0;
 
-	virtual std::vector<Rectangle> GetHitboxes() = 0;
-	Vector2 pos;
+    Vector2 pos;
+    bool collisionEnabled = true; // Default to enabled
+
+protected:
+
 };
 
 #endif // OBSTACLE_H
-

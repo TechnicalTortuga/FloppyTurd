@@ -2,7 +2,7 @@
 #include "Resources.h"
 #include "Coin.h"
 #include "PoopHeart.h"
-#include <raymath.h>  // for Vector2, GetRandomValue
+#include <raymath.h>
 
 SnowLevel::SnowLevel()
 {
@@ -10,38 +10,37 @@ SnowLevel::SnowLevel()
     using namespace GameSettings;
     cameraSystem = new CameraSystem();
 
-    // Create parallax layers for a snowy environment
     cameraSystem->AddLayer(new ParallaxLayer(
-        { SnowBackground }, // Far background (slowest)
-        1.0f, // Speed (slow)
-        1.0f // Scale
+        { SnowBackground },
+        1.0f,
+        1.0f
     ));
 
     cameraSystem->AddLayer(new ParallaxLayer(
-        { SnowMountains }, // Midground (moderate speed)
+        { SnowMountains },
         10.0f,
         1.0f
     ));
 
     cameraSystem->AddLayer(new ParallaxLayer(
-        { SnowBackTrees }, // Foreground (fastest)
+        { SnowBackTrees },
         60.0f,
         1.0f
     ));
 
     cameraSystem->AddLayer(new ParallaxLayer(
-        { SnowTundra }, // Foreground (fastest)
+        { SnowTundra },
         60.0f,
         1.0f
     ));
 
     cameraSystem->AddLayer(new ParallaxLayer(
-        { SnowFrontTrees }, // Foreground (fastest)
+        { SnowFrontTrees },
         60.0f,
         1.0f
     ));
 
-    levelMusic = new AudioClip(SnowLevelMusic); // Use SnowLevel.mp3 as Level 4 music
+    levelMusic = new AudioClip(SnowLevelMusic);
     InitObstacles();
 }
 
@@ -54,7 +53,6 @@ void SnowLevel::Draw() const
 {
     cameraSystem->Draw();
 
-    // Draw all obstacles (e.g., snow-covered trees or drifts)
     for (const auto& obstacle : obstacles) {
         obstacle->Draw();
     }
@@ -75,20 +73,18 @@ void SnowLevel::Update(float deltaTime)
         if (!pickup->IsCollected())
             pickup->Update(deltaTime);
     }
-    // Update all obstacles
+
     for (int i = 0; i < (int)toilets.size(); ++i)
     {
         auto& oh = toilets[i];
         oh->pos.x -= PickupPanSpeed * deltaTime;
 
-        if (oh->pos.x + 80 < 0)  // off‐screen
+        if (oh->pos.x + 80 < 0)
         {
             int lastIndex = (i - 1 < 0) ? (toilets.size() - 1) : (i - 1);
-            float oldX = oh->pos.x;
             oh->pos.x = toilets[lastIndex]->pos.x + spacing;
             oh->resetScore();
 
-            // spawn pickups between the RIGHT edge of the last pipe and new position
             float xStart = toilets[lastIndex]->pos.x + 80.0f;
             float xEnd = oh->pos.x;
             SpawnPickupsBetween(xStart, xEnd);
@@ -100,17 +96,12 @@ void SnowLevel::Update(float deltaTime)
 void SnowLevel::SpawnPickupsBetween(float xStart, float xEnd)
 {
     const int count = 5;
-
-    // Randomly select one of five pickup patterns
-    int pattern = GetRandomValue(0, 4); // 0 = straight, 1 = diagonal up, 2 = diagonal down, 3 = V, 4 = U
-
-    // Raise all patterns upward more
-    const float yOffset = -40.0f; // more negative = higher on screen
+    const float yOffset = -40.0f;
     float yLow = 60.0f + yOffset;
     float yHigh = 120.0f + yOffset;
-
-    // Shift pattern slightly left to better center between pipes
     float xShift = -10.0f;
+
+    int pattern = GetRandomValue(0, 4);
 
     for (int i = 0; i < count; ++i)
     {
@@ -120,35 +111,23 @@ void SnowLevel::SpawnPickupsBetween(float xStart, float xEnd)
         float y;
         switch (pattern)
         {
-        case 0: // straight
-            y = (yLow + yHigh) * 0.5f;
-            break;
-        case 1: // diagonal up
-            y = yLow + t * (yHigh - yLow);
-            break;
-        case 2: // diagonal down
-            y = yHigh + t * (yLow - yHigh);
-            break;
-        case 3: // V shape
-            y = yHigh - fabsf(t - 0.5f) * (yHigh - yLow) * 2.0f;
-            break;
-        case 4: // U shape
-            y = yLow + fabsf(t - 0.5f) * (yHigh - yLow) * 2.0f;
-            break;
-        default:
-            y = (yLow + yHigh) * 0.5f;
-            break;
+        case 0: y = (yLow + yHigh) * 0.5f; break;
+        case 1: y = yLow + t * (yHigh - yLow); break;
+        case 2: y = yHigh + t * (yLow - yHigh); break;
+        case 3: y = yHigh - fabsf(t - 0.5f) * (yHigh - yLow) * 2.0f; break;
+        case 4: y = yLow + fabsf(t - 0.5f) * (yHigh - yLow) * 2.0f; break;
+        default: y = (yLow + yHigh) * 0.5f; break;
         }
 
         Vector2 pos{ x, y };
 
         int roll = GetRandomValue(1, 1000);
-        if (roll <= 5) { // 0.5% chance for big heart
+        if (roll <= 5) {
             auto heart = std::make_shared<PoopHeart>(pos, PoopHeartType::BIG);
             heart->SetPanSpeed(PickupPanSpeed);
             pickups.push_back(heart);
         }
-        else if (roll <= 30) { // 2.5% chance for small heart
+        else if (roll <= 30) {
             auto heart = std::make_shared<PoopHeart>(pos, PoopHeartType::SMALL);
             heart->SetPanSpeed(PickupPanSpeed);
             pickups.push_back(heart);
@@ -161,15 +140,13 @@ void SnowLevel::SpawnPickupsBetween(float xStart, float xEnd)
     }
 }
 
-
-
 void SnowLevel::InitObstacles()
 {
     float currentX = static_cast<float>(320);
 
     for (int i = 0; i < 5; i++)
     {
-        auto oh = std::make_shared<ToiletPair>(currentX, 0, true);  // <-- true for snowy
+        auto oh = std::make_shared<ToiletPair>(currentX, 0, true);
         toilets.push_back(oh);
         obstacles.push_back(std::static_pointer_cast<Obstacle>(oh));
         currentX += spacing;
@@ -189,32 +166,33 @@ bool SnowLevel::checkForCollisions(Vector2 circleCenter, float circleRadius)
         if (CheckCollisionCircleRec(circleCenter, circleRadius, t->GetTopHitbox()) || CheckCollisionCircleRec(circleCenter, circleRadius, t->GetBottomHitbox()))
             return true;
     }
-
     return false;
 }
 
 bool SnowLevel::checkForPointGain(Vector2 circleCenter, float circleRadius)
 {
-    // Grab the player's center X
     float playerCenterX = circleCenter.x;
 
     for (auto& t : toilets)
     {
-        // Let’s say t->GetX() returns the left x-position of the toilet pair (or the gap’s center).
-        float toiletX = t->GetTopHitbox().x; // Or whatever logic obtains the relevant x
-
-        // If the player has passed the toilet's center, and we haven't scored yet:
+        float toiletX = t->GetTopHitbox().x;
         if (playerCenterX > toiletX && !t->hasScored)
         {
-            t->hasScored = true;          // Mark that we’ve scored
-            return true;                  // Indicate to the caller that we got a point
+            t->hasScored = true;
+            return true;
         }
     }
-
     return false;
 }
 
 const std::vector<std::shared_ptr<Obstacle>>& SnowLevel::getObjLoc()
 {
-	return obstacles;
+    return obstacles;
+}
+
+void SnowLevel::SetSwingingPipes(bool enable)
+{
+    for (auto& toilet : toilets) {
+        toilet->SetOscillationEnabled(enable);
+    }
 }

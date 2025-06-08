@@ -6,88 +6,107 @@ Cactus::Cactus(Vector2 spawnPos, CactusVariant variant)
     using namespace Resources;
 
     const char* texturePath = nullptr;
-    int frames = 1;
-    float animSpeed = 0.1f;
+    int   frames = 1;
+    float animSpeed = 0.10f;
     float scale = 1.0f;
+    moveSpeed = 80.0f;          // default level scroll
+    collisionEnabled = true;           // default: solid
 
-    switch (type) {
-    case CactusVariant::A:
-        texturePath = CactiA;
+    switch (type)
+    {
+        /* ?? regular static cacti ??????????????????????????????? */
+    case CactusVariant::A:   texturePath = CactiA; break;
+    case CactusVariant::B:   texturePath = CactiB; break;
+    case CactusVariant::C:   texturePath = CactiC; break;
+    case CactusVariant::D:   texturePath = CactiD; break;
+    case CactusVariant::E:   texturePath = CactiE; break;
+    case CactusVariant::BUSH:texturePath = CactiBush; break;
+
+        /* ?? dancing variants (animated, no collision) ?????????? */
+    case CactusVariant::DANCING_SMALL:
+        texturePath = DancingCactiSmall;
+        frames = 8;
+        animSpeed = 0.08f;
+        moveSpeed = 100.0f;      // a bit faster than level
+        collisionEnabled = false;
         break;
-    case CactusVariant::B:
-        texturePath = CactiB;
+
+    case CactusVariant::DANCING_BIG:
+        texturePath = DancingCacti;
+        frames = 8;
+        animSpeed = 0.08f;
+        moveSpeed = 100.0f;
+        collisionEnabled = false;
         break;
-    case CactusVariant::C:
-        texturePath = CactiC;
-        break;
-    case CactusVariant::D:
-        texturePath = CactiD;
-        break;
-    case CactusVariant::E:
-        texturePath = CactiE;
-        break;
-    case CactusVariant::BUSH:
-        texturePath = CactiBush;
+
+    case CactusVariant::DANCING_COWBOY:
+        texturePath = DancingCactiCowboy;
+        frames = 8;
+        animSpeed = 0.08f;
+        moveSpeed = 100.0f;
+        collisionEnabled = false;
         break;
     }
 
     sprite = new Sprite(texturePath, frames, animSpeed, scale, spawnPos);
 
-    // Grounding: move sprite to sit flush with y = 180
+    /* Ground them at y = 180 – sprite-height so feet touch “ground” */
     float groundedY = 180.0f - sprite->GetHeight();
-    pos = { spawnPos.x, groundedY };
+    sprite->SetPosition({ spawnPos.x, groundedY });
+    this->pos = sprite->GetPosition();
+
+    if (collisionEnabled)
+        UpdateHitbox();                // static cacti need a hitbox
+}
+
+Cactus::~Cactus() { delete sprite; }
+
+/* ????????????????????????????????????????????????????????????? */
+
+void Cactus::Update(float dt)
+{
+    pos.x -= moveSpeed * dt;          // 80 or 100 px / s
     sprite->SetPosition(pos);
+    sprite->Update(dt);
 
-    UpdateHitbox();
+    if (collisionEnabled)
+        UpdateHitbox();
 }
 
-Cactus::~Cactus() {
-    delete sprite;
-}
+void Cactus::Draw() { sprite->Draw(pos.x, pos.y); }
 
-void Cactus::Update(float deltaTime) {
-    pos.x -= 80.0f * deltaTime;
-    sprite->SetPosition(pos);
-    sprite->Update(deltaTime);
-    UpdateHitbox();
-}
+/* ????????????????????????????????????????????????????????????? */
 
-void Cactus::Draw() {
-    sprite->Draw(pos.x, pos.y);
-    // Debug:
-    //DrawRectangleLines(static_cast<int>(hitbox.x), static_cast<int>(hitbox.y), static_cast<int>(hitbox.width), static_cast<int>(hitbox.height), GREEN);
-}
+void Cactus::UpdateHitbox()
+{
+    /* dancing variants don’t collide */
+    if (!collisionEnabled) return;
 
-void Cactus::UpdateHitbox() {
-    float centerX = pos.x + sprite->GetWidth() / 2.0f;
+    float centerX = pos.x + sprite->GetWidth() * 0.5f;
     float bottomY = pos.y + sprite->GetHeight();
 
-    switch (type) {
-    case CactusVariant::A:
-        hitbox = { centerX - 16.0f, bottomY - 45.0f, 32.0f, 45.0f };
-        break;
-    case CactusVariant::B:
-        hitbox = { pos.x, pos.y, 32.0f, 32.0f };
-        break;
-    case CactusVariant::C:
-        hitbox = { centerX - 26.0f, bottomY - 66.0f, 52.0f, 66.0f };
-        break;
-    case CactusVariant::D:
-        hitbox = { centerX - 21.0f, bottomY - 64.0f, 42.0f, 64.0f };
-        break;
-    case CactusVariant::E:
-        hitbox = { centerX - 26.0f, bottomY - 60.0f, 52.0f, 60.0f };
-        break;
-    case CactusVariant::BUSH:
-        hitbox = { centerX - 7.0f, bottomY - 10.0f, 14.0f, 10.0f };
-        break;
+    switch (type)
+    {
+    case CactusVariant::A:   hitbox = { centerX - 16, bottomY - 45, 32, 45 }; break;
+    case CactusVariant::B:   hitbox = { pos.x, pos.y, 32, 32 };           break;
+    case CactusVariant::C:   hitbox = { centerX - 26, bottomY - 66, 52, 66 }; break;
+    case CactusVariant::D:   hitbox = { centerX - 21, bottomY - 64, 42, 64 }; break;
+    case CactusVariant::E:   hitbox = { centerX - 26, bottomY - 60, 52, 60 }; break;
+    case CactusVariant::BUSH:hitbox = { centerX - 7 , bottomY - 10, 14, 10 }; break;
+    default: break; // dancing: unreachable
     }
 }
 
-std::vector<Rectangle> Cactus::GetHitboxes() {
-    return { hitbox };
+std::vector<Rectangle> Cactus::GetHitboxes()
+{
+    return collisionEnabled ? std::vector<Rectangle>{hitbox}
+    : std::vector<Rectangle>();          // empty
 }
 
-float Cactus::GetWidth() const {
-    return static_cast<float>(sprite->GetWidth());
+float Cactus::GetWidth() const { return static_cast<float>(sprite->GetWidth()); }
+
+void Cactus::SetCollisionEnabled(bool enabled)
+{
+    collisionEnabled = enabled;
+    if (!enabled) hitbox = { 0,0,0,0 };
 }

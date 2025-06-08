@@ -132,7 +132,7 @@ void RatKing::Update(float deltaTime)
         if (health >= 50)
             SpawnMinionWave(4);
         else
-            SpawnMinionWave(6); 
+            SpawnMinionWave(6);
         nextMinionHealthThreshold -= 30;
     }
 
@@ -293,9 +293,10 @@ void RatKing::SpawnProjectile(float angleOverride)
     Vector2 spawn = Vector2Add(handLoc, Vector2Scale(dir, 20.0f));
 
     auto* tp = new ToiletPaperProjectile(spawn, dir, 100.0f, 1.0f);
+    // Ensure the projectile's collision state matches the boss's
+    tp->SetCollisionEnabled(collisionEnabled);
     projectiles.push_back(tp);
 }
-
 
 void RatKing::HandleHurt(float dt)
 {
@@ -341,12 +342,30 @@ void RatKing::SetPlayerPosition(Vector2 playerPos)
     playerPosition = playerPos;
 }
 
-bool RatKing::IsInLowHealthMode() 
+bool RatKing::IsInLowHealthMode()
 {
     return hasTriggeredLowHealthMusic;
 }
 
+double RatKing::GetLowHealthTriggerTime() const
+{
+    return lowHealthTriggeredAt;
+}
+
 std::vector<Rectangle> RatKing::GetHitboxes()
 {
+    // If collisions are disabled, return an empty vector
+    if (!collisionEnabled) {
+        return std::vector<Rectangle>();
+    }
     return { { position.x + 32, position.y + 32, currentSprite->GetScaledWidth(), currentSprite->GetScaledHeight() } };
+}
+
+void RatKing::SetCollisionEnabled(bool enabled)
+{
+    collisionEnabled = enabled;
+    // Propagate the collision state to all active projectiles
+    for (auto& tp : projectiles) {
+        tp->SetCollisionEnabled(enabled);
+    }
 }

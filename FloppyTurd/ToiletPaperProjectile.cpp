@@ -14,6 +14,9 @@ ToiletPaperProjectile::ToiletPaperProjectile(Vector2 position, Vector2 direction
     hitbox.height = sprite->GetScaledHeight();  // 32 * scale
     hitbox.x = position.x;
     hitbox.y = position.y;
+
+    // Ensure collision is enabled by default (inherited from Obstacle)
+    collisionEnabled = true;
 }
 
 ToiletPaperProjectile::~ToiletPaperProjectile()
@@ -44,5 +47,15 @@ void ToiletPaperProjectile::Update(float deltaTime)
 
 std::vector<Rectangle> ToiletPaperProjectile::GetHitboxes()
 {
+    // If collisions are disabled, return an empty vector
+    if (!collisionEnabled) {
+        return std::vector<Rectangle>();
+    }
+
     return { hitbox };
+}
+
+void ToiletPaperProjectile::SetCollisionEnabled(bool enabled)
+{
+    collisionEnabled = enabled;
 }

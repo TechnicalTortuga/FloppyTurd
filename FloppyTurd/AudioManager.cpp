@@ -166,15 +166,17 @@ void AudioManager::DrawAudioOptions(float posX, float posY)
 {
     float buttonSize = 16.0f;
     float meterWidth = 60.0f;
-    float rowHeight = 20.0f;
+    float rowHeight = 30.0f; // Increased for more section separation
     float labelOffsetX = 0.0f;
     float meterOffsetX = 50.0f;
     float spacing = 5.0f;
+    float labelBarSpacing = 12.0f; // Increased from 8 to 12 for more padding
 
     // Music Row
     float currentY = posY;
     DrawTextEx(g_AIGUI.defaultFont, "Music:", Vector2{ (float)(posX + labelOffsetX), currentY }, AIGUI_FONT_SIZE_MEDIUM, 1.0f, WHITE);
 
+    currentY += labelBarSpacing;
     float meterX = posX + meterOffsetX;
     float meterY = currentY;
     DrawTexture(volumemeterEmpty, static_cast<int>(meterX), static_cast<int>(meterY), WHITE);
@@ -211,6 +213,7 @@ void AudioManager::DrawAudioOptions(float posX, float posY)
     currentY += rowHeight + spacing;
     DrawTextEx(g_AIGUI.defaultFont, "Sound:", Vector2{ (float)(posX + labelOffsetX), currentY }, AIGUI_FONT_SIZE_MEDIUM, 1.0f, WHITE);
 
+    currentY += labelBarSpacing;
     meterX = posX + meterOffsetX;
     meterY = currentY;
     DrawTexture(volumemeterEmpty, static_cast<int>(meterX), static_cast<int>(meterY), WHITE);

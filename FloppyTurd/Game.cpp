@@ -57,10 +57,10 @@ void Game::InitClasses()
 
 void Game::RunGame()
 {
-    // Create a render texture for 320×180 “virtual resolution”
+    // Create a render texture for 320 180 virtual resolution
     RenderTexture2D target = LoadRenderTexture(320, 180);
 
-    // Optionally clamp wrapping on any textures that might “tile” if scrolled too far
+    // Optionally clamp wrapping on any textures that might tile if scrolled too far
     // e.g. if you have a skills texture: SetTextureWrap(_TurdPointMenu, TEXTURE_WRAP_CLAMP);
 
     while (!WindowShouldClose())
@@ -72,22 +72,22 @@ void Game::RunGame()
         }
 
         // -------------------------------------------------------------------------
-        // 1) Scale the *raw* mouse (1280×720) down into a 320×180 coordinate system.
+        // 1) Scale the *raw* mouse (1280 720) down into a 320 180 coordinate system.
         // -------------------------------------------------------------------------
         float scaleX = (float)GetScreenWidth() / 320.0f;
         float scaleY = (float)GetScreenHeight() / 180.0f;
 
-        Vector2 rawMouse = GetMousePosition(); // e.g. in 1280×720
+        Vector2 rawMouse = GetMousePosition(); // e.g. in 1280 720
         g_AIGUI.mousePos.x = rawMouse.x / scaleX; // now in 0..320
         g_AIGUI.mousePos.y = rawMouse.y / scaleY; // now in 0..180
 
-        // If you use GetMouseDelta(), remember to scale that similarly, or you’ll
-        // see scrolling/dragging “jumps.” For example:
+        // If you use GetMouseDelta(), remember to scale that similarly, or you ll
+        // see scrolling/dragging jumps. For example:
         // Vector2 rawDelta = GetMouseDelta();
         // Vector2 scaledDelta = { rawDelta.x / scaleX, rawDelta.y / scaleY };
         // (Use scaledDelta whenever you do drag-based scroll.)
 
-        AIGUI_BeginFrame(); // any custom UI “BeginFrame” logic you have
+        AIGUI_BeginFrame(); // any custom UI BeginFrame logic you have
 
         // -------------------------
         // 2) Update game logic
@@ -95,7 +95,7 @@ void Game::RunGame()
         Update();
 
         // ------------------------------------------------------
-        // 3) Render to the 320×180 "virtual" RenderTexture
+        // 3) Render to the 320 180 "virtual" RenderTexture
         // ------------------------------------------------------
         BeginTextureMode(target);
         ClearBackground(BLACK);
@@ -103,7 +103,7 @@ void Game::RunGame()
         switch (gamestate)
         {
         case MAINMENU:
-            mainMenu->Draw();  // all drawing in 320×180 coords
+            mainMenu->Draw();  // all drawing in 320 180 coords
             break;
         case PLAYING:
             playing->Draw();   // includes your pause logic if needed
@@ -111,24 +111,24 @@ void Game::RunGame()
         case PAUSEMENU:
             // If you have a separate pauseMenu->Draw(), do it here.
             // Or if your PAUSEMENU UI is inside playing->Draw() behind an if() check,
-            // that’s fine too.
+            // thats fine too.
             break;
         }
 
-        EndTextureMode(); // Done rendering the 320×180 scene
+        EndTextureMode(); // Done rendering the 320 180 scene
 
         // ---------------------------------------------------------------------
-        // 4) Draw the 320×180 result to the *actual window* (e.g. 1280×720)
+        // 4) Draw the 320180 result to the *actual window* (e.g. 1280 720)
         // ---------------------------------------------------------------------
         BeginDrawing();
         ClearBackground(BLACK);
 
-        // Fill the window with the scaled 320×180 result
+        // Fill the window with the scaled 320 180 result
         DrawTexturePro(
             target.texture,
-            // Source rect: note -height if your textures appear upside-down:
+            // Source rect note -height if your textures appear upside-down:
             Rectangle{ 0, 0, (float)target.texture.width, (float)-target.texture.height },
-            // Dest rect: entire window
+            // Dest rect entire window
             Rectangle{ 0, 0, (float)GetScreenWidth(), (float)GetScreenHeight() },
             Vector2{ 0, 0 },
             0.0f,
@@ -138,15 +138,15 @@ void Game::RunGame()
         EndDrawing();
 
         HandleInput();
-        // If you do input reading here, remember it’s in the *raw* 1280×720 coords
-        // unless you re-scale.
+        // If you do input reading here, remember its in the raw 1280 720 coords
+        // unless you re-scale
 
         AIGUI_EndFrame(); // your custom UI end logic
     }
 
     // Clean up
     UnloadRenderTexture(target);
-    delete window; // whatever else you’re cleaning
+    delete window; // whatever else youre cleaning
 }
 
 void Game::Update()

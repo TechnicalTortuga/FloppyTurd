@@ -195,6 +195,8 @@ namespace Resources
 	inline const char* PauseMenuBackground = "resources/ui/PauseMenuBackground.png";
 	inline const char* blueButton = "resources/ui/FloppyButtonBlue.png";
 	inline const char* blueButtonHover = "resources/ui/FloppyButtonBlueHover.png";
+	inline const char* coinbagtexture = "resources/ui/CoinBag.png";
+
 
 	// Upgrade Menu
 	inline const char* TurdPointMenu = "resources/ui/TurdPointMenu.png";

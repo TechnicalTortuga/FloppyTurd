@@ -79,95 +79,104 @@ void DesertLevel::Draw() const
 
 void DesertLevel::Update(float deltaTime)
 {
-	cameraSystem->Update(deltaTime);
+    /* 0 ─ Camera & music ─────────────────────────────────────────── */
+    cameraSystem->Update(deltaTime);
     if (!levelMusic->IsPlaying()) levelMusic->Play();
     levelMusic->Update();
 
-    for (auto& oh : outhouses)
+    /* 1 ─ Scroll & recycle outhouses ───────────────────────────── */
+    for (size_t i = 0; i < outhouses.size(); ++i)
     {
-        oh->pos.x -= 80 * deltaTime;
-        if (oh->pos.x + 80 < 0)
+        auto& oh = outhouses[i];
+        oh->pos.x -= 80.0f * deltaTime;
+
+        if (oh->pos.x + 80 < 0)                // wrapped off the left
         {
-            int lastIndex = (oh == outhouses.front()) ? outhouses.size() - 1 : (&oh - &outhouses[0]) - 1;
-            oh->pos.x = outhouses[lastIndex]->pos.x + spacing;
+            size_t prev = (i == 0) ? outhouses.size() - 1 : i - 1;
+            oh->pos.x = outhouses[prev]->pos.x + spacing;
+            oh->hasScored = false;
+
+            /* ←── bring these two lines back: they free the two gaps     */
+            spawnedPickupsIndices.erase(prev);  // gap (prev , i)
+            spawnedPickupsIndices.erase(i);     // gap (i    , i+1)
         }
         oh->Update(deltaTime);
     }
 
-    // Cactus scrolling logic
-    for (auto& o : obstacles)
+    /* 2 ─ Spawn pick-ups only while the gap is still off the 320-px view ─ */
+    const float VirtualScreenW = 320.0f;
+
+    for (size_t i = 0; i < outhouses.size(); ++i)            // 🔄 0 .. 11
     {
+        size_t j = (i + 1) % outhouses.size();      // next outhouse (wraps to 0)
+        Rectangle leftHit = outhouses[i]->GetOuthouseHitbox();
+        Rectangle rightHit = outhouses[j]->GetOuthouseHitbox();
+
+        if (leftHit.x <= VirtualScreenW)  continue;          // still visible? skip
+        if (spawnedPickupsIndices.count(i)) continue;        // gap already filled
+
+        float leftEdge = leftHit.x + leftHit.width + 10.0f;
+        float rightEdge = rightHit.x - 10.0f;
+
+        SpawnPickupsBetween(leftEdge, rightEdge);
+        spawnedPickupsIndices.insert(i);                     // mark this gap
+    }
+
+    // ─── 3. Update & cull pick-ups ───────────────────────────────
+    for (auto it = pickups.begin(); it != pickups.end(); )
+    {
+        (*it)->Update(deltaTime);               // advance animation / pan
+
+        if ((*it)->ShouldBeRemoved())           // collected or off-screen?
+            it = pickups.erase(it);             // erase and get next iterator
+        else
+            ++it;                               // just advance
+    }
+
+    /* 4 ─ Cactus scroll / recycle ───────────────────────────────── */
+    for (auto& o : obstacles)
         if (auto cactus = dynamic_cast<Cactus*>(o.get()))
         {
-            cactus->pos.x -= 80.0f * deltaTime;
             if (cactus->pos.x + cactus->GetWidth() < 0)
             {
                 float maxX = 0.0f;
                 for (const auto& ob : obstacles)
-                {
                     if (auto c = dynamic_cast<Cactus*>(ob.get()))
                         maxX = std::max(maxX, c->pos.x);
-                }
+
                 cactus->pos.x = maxX + GetRandomValue(48, 96);
             }
+            cactus->Update(deltaTime);
         }
-    }
 
-    // Pickups (coins, hearts) — prevent double spawns and keep spacing consistent
-    for (size_t i = 0; i + 1 < outhouses.size(); ++i)
-    {
-        Rectangle leftHit = outhouses[i]->GetOuthouseHitbox();
-        Rectangle rightHit = outhouses[i + 1]->GetOuthouseHitbox();
-
-        if (leftHit.x < 200) continue;
-
-        float leftEdge = leftHit.x + leftHit.width + 10.0f;
-        float rightEdge = rightHit.x - 10.0f;
-        float centerX = (leftEdge + rightEdge) * 0.5f;
-
-        static float lastCoinSpawnX = -1000.0f;
-        if (fabsf(centerX - lastCoinSpawnX) < coinGapSpacing)
-            continue;
-
-        if (spawnedPickupsIndices.count(i))
-            continue;
-
-        lastCoinSpawnX = centerX;
-        spawnedPickupsIndices.insert(i);
-
-        SpawnPickupsBetween(leftEdge, rightEdge);
-    }
-
-    // Update pickups
-    for (auto it = pickups.begin(); it != pickups.end(); )
-    {
-        (*it)->Update(deltaTime);
-        if ((*it)->ShouldBeRemoved())
-            it = pickups.erase(it);
-        else
-            ++it;
-    }
-
+    /* 5 ─ Brick-wall scroll / recycle (unchanged) ──────────────── */
     for (auto& o : obstacles)
-    {
         if (auto brick = dynamic_cast<BrickWall*>(o.get()))
         {
+            brick->pos.x -= 80.0f * deltaTime;
             if (brick->pos.x + brick->GetWidth() < 0)
             {
-                float maxX = 0.0f;
-                for (const auto& ob : obstacles)
-                {
-                    if (auto b = dynamic_cast<BrickWall*>(ob.get()))
-                        maxX = std::max(maxX, b->pos.x);
-                }
+                static size_t currentPair = 0;
+                currentPair = (currentPair + 1) % outhouses.size();
 
-                brick->pos.x = maxX + GetRandomValue(96, 160);
+                Vector2 left = outhouses[currentPair]->pos;
+                Vector2 right = outhouses[(currentPair + 1) % outhouses.size()]->pos;
+
+                Texture2D tex = LoadTexture(Resources::OuthouseSolo);
+                float outhouseW = tex.width;  UnloadTexture(tex);
+
+                Texture2D wallTex = LoadTexture(Resources::BrickWallTexture);
+                float wallW = wallTex.width;  UnloadTexture(wallTex);
+
+                float gapCentre = (left.x + outhouseW * 0.5f +
+                    right.x + outhouseW * 0.5f) * 0.5f;
+                brick->pos.x = gapCentre - wallW * 0.5f;
+                brick->pos.y = 0.0f;
             }
-
             brick->Update(deltaTime);
         }
-    }
 }
+
 
 bool DesertLevel::IsBrickBetween(float leftX, float rightX) const
 {
@@ -279,37 +288,45 @@ void DesertLevel::InitObstacles()
         float x = 320 + i * cactusSpacing + GetRandomValue(-10, 10);
         float y = 0;
 
-        CactusVariant variant = static_cast<CactusVariant>(GetRandomValue(0, static_cast<int>(CactusVariant::BUSH)));
+        int roll = GetRandomValue(0, 99);
+
+        CactusVariant variant;
+        if (roll < 2) variant = CactusVariant::DANCING_COWBOY;   // 2 
+        else if (roll < 10) variant = CactusVariant::DANCING_BIG;      // 8 
+        else if (roll < 20) variant = CactusVariant::DANCING_SMALL;    // 10 
+        else                 variant = static_cast<CactusVariant>(GetRandomValue(0, 5));
         obstacles.push_back(std::make_shared<Cactus>(Vector2{ x, y }, variant));
     }
 
-    // 2) Insert brick walls between every other pair of outhouses
-    Texture2D tex = LoadTexture(Resources::OuthouseSolo);
-    float outhouseWidth = tex.width;
-    UnloadTexture(tex);
-
-    for (int i = 0; i + 1 < (int)outhouses.size(); i += 2)
+    // 2) Insert a single brick wall between the first pair of outhouses (0 and 1)
+    if (outhouses.size() >= 2) // Ensure we have at least two outhouses
     {
-        Vector2 left = outhouses[i]->pos;
-        Vector2 right = outhouses[i + 1]->pos;
+        Vector2 left = outhouses[0]->pos;
+        Vector2 right = outhouses[1]->pos;
 
+        // Load the outhouse texture to get its width
+        Texture2D tex = LoadTexture(Resources::OuthouseSolo);
+        float outhouseWidth = tex.width;
+        UnloadTexture(tex);
+
+        // Calculate the center between the two outhouses
         float leftCenter = left.x + outhouseWidth / 2.0f;
         float rightCenter = right.x + outhouseWidth / 2.0f;
         float gapCenter = (leftCenter + rightCenter) / 2.0f;
 
+        // Load the brick wall texture to get its width
         Texture2D wallTex = LoadTexture(Resources::BrickWallTexture);
-        float wallX = gapCenter - wallTex.width / 2.0f;
+        float wallX = gapCenter - wallTex.width / 2.0f; // Center the brick wall
         float wallY = 0.0f;
         UnloadTexture(wallTex);
 
+        // Add the single brick wall to obstacles
         auto brick = std::make_shared<BrickWall>(Vector2{ wallX, wallY });
         obstacles.push_back(brick);
 
-        std::cout << "Brick wall between outhouses " << i << " and " << (i + 1)
-            << " at {" << wallX << ", " << wallY << "}\n";
+        std::cout << "Initial brick wall between outhouses 0 and 1 at {" << wallX << ", " << wallY << "}\n";
     }
 }
-
 
 void DesertLevel::InitDecoration()
 {
