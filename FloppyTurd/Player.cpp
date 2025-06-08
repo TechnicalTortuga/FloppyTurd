@@ -1,7 +1,7 @@
 ﻿#include "Player.h"
 #include "SoundManager.h"
 
-Player::Player() {
+Player::Player(Game* g) : game(g) {
     InitSprites();
     SetHeartMode(WHOLE);
 }
@@ -39,7 +39,7 @@ void Player::Draw() {
     for (auto& projectile : projectiles) {
         projectile->Draw();
     }
-    currentSelectedHat->Draw(formLevel, isShooting, hurtBuffer > 0.0f, pos);
+    if (currentSelectedHat) currentSelectedHat->Draw(formLevel, isShooting, hurtBuffer > 0.0f, pos);
 }
 
 void Player::Update(float deltaTime) {
@@ -107,9 +107,9 @@ void Player::Update(float deltaTime) {
         }
     }
 
-    currentSelectedHat->Update(deltaTime, formLevel, isShooting, hurtBuffer > 0.0f, pos);
+    if (currentSelectedHat) currentSelectedHat->Update(deltaTime, formLevel, isShooting, hurtBuffer > 0.0f, pos);
     int currentFrame = currentSprite->GetFrameIndex();
-    currentSelectedHat->GetSprite(formLevel, isShooting, hurtBuffer > 0.0f)->SetFrameIndex(currentFrame);
+    if (currentSelectedHat) currentSelectedHat->GetSprite(formLevel, isShooting, hurtBuffer > 0.0f)->SetFrameIndex(currentFrame);
 
     if (isInvisible) {
         invisibilityTimer -= deltaTime;
@@ -163,6 +163,9 @@ bool Player::SpendCoinsForShoot()
     const int shootCost = 1; // 1 coin per shot
     if (sessionCoins >= shootCost) {
         sessionCoins -= shootCost;
+        if (game && game->playing) {
+            game->playing->TOTALCOINS -= shootCost; // Update total coins when spent
+        }
         return true;
     }
     return false;
@@ -237,7 +240,7 @@ void Player::ChangeForm(int newForm) {
     }
     currentSprite->ResetAnimation();
 
-    if (currentSelectedHat != nullptr)
+    if (currentSelectedHat)
         currentSelectedHat->GetSprite(formLevel, isShooting, hurtBuffer > 0.0f)->ResetAnimation();
 }
 
@@ -318,4 +321,14 @@ void Player::SetMaxHearts(int max) {
 void Player::ActivateInvisibility(float duration) {
     isInvisible = true;
     invisibilityTimer = duration;
+}
+
+void Player::AddCoins(int amount) {
+    if (!game || !game->playing) return; // Safety check
+    sessionCoins += amount;
+    game->playing->TOTALCOINS += amount; // Update total coins in real-time
+}
+
+void Player::ResetSessionCoins() {
+    sessionCoins = 0;
 }

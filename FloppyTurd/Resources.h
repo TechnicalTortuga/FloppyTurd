@@ -29,7 +29,7 @@ namespace Resources
 	inline const char* LevelFour = "resources/music/Level4.mp3";
 	inline const char* LevelFive = "resources/music/Level5.ogg";
 	inline const char* BossLowHealth = "resources/music/BossThemeLowHealth.ogg";
-	inline const char* BossBeat = "resources/music/BossBeatTheme.mp3";
+	inline const char* BossBeat = "resources/music/BossKill.ogg";
 	inline const char* SnowLevelMusic = "resources/music/SnowLevel.mp3";
 
 	// Level One Assets

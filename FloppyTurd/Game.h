@@ -15,32 +15,35 @@ class Playing;
 class Game
 {
 public:
-	Game();
-	~Game();
+    Game();
+    ~Game();
 
-	enum GAMESTATE
-	{
-		MAINMENU,
-		PLAYING,
-		PAUSEMENU,
-		SHUTDOWN
-	};
+    enum GAMESTATE
+    {
+        MAINMENU,
+        PLAYING,
+        PAUSEMENU,
+        SHUTDOWN
+    };
 
-	void SetGameState(GAMESTATE newState);
-	Playing* playing;
-	MainMenu* mainMenu;
+    void SetGameState(GAMESTATE newState);
+    Playing* playing;
+    MainMenu* mainMenu;
+
+    // Add method to get a scaled font instance
+    Font GetScaledFont(float scaleFactor);
+
 private:
-	Window* window;
-	GAMESTATE gamestate;
-	//PauseMenu* pauseMenu;
+    Window* window;
+    GAMESTATE gamestate;
+    //PauseMenu* pauseMenu;
 
-	void InitClasses();
-	void RunGame();
+    void InitClasses();
+    void RunGame();
 
-	void Update();
-	void Draw();
-	void HandleInput();
+    void Update();
+    void Draw();
+    void HandleInput();
 
-	Font whackyJoe;
+    Font whackyJoe;
 };
-

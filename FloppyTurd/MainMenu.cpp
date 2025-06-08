@@ -19,12 +19,12 @@ static const char* levelNames[] = {
 
 static AspectRatioOption aspectRatios[] = {
     {"Auto", 0, 0},
-    {"320x180 (16:9)", 320, 180},
-    {"640x360 (16:9)", 640, 360},
-    {"1280x720 (720p)", 1280, 720},
-    {"1920x1080 (1080p)", 1920, 1080},
-    {"2560x1440 (1440p)", 2560, 1440},
-    {"320x240 (4:3)", 320, 240}
+    {"320x180", 320, 180},
+    {"640x360", 640, 360},
+    {"1280x720", 1280, 720},
+    {"1920x1080", 1920, 1080},
+    {"2560x1440", 2560, 1440},
+    {"320x240", 320, 240}
 };
 
 static Sound fartSoundsLoaded[11];
@@ -102,11 +102,11 @@ void MainMenu::Update()
         float sw = baseW * fHoverScale;
         float sh = baseH * fHoverScale;
 
-        int logoX = (320 - _FloppyLogo.width) / 2;
+        int logoX = (int)((320 - _FloppyLogo.width) / 2.0f);
         int logoY = 10;
 
-        float scaledX = logoX + 3;
-        float scaledY = logoY + 5;
+        float scaledX = (float)(logoX + 3);
+        float scaledY = (float)(logoY + 5);
 
         Rectangle fRect = { scaledX, scaledY, sw, sh };
         bool fHovered = CheckCollisionPointRec(g_AIGUI.mousePos, fRect);
@@ -153,6 +153,25 @@ void MainMenu::UpdateMusic()
     currentMusic->Update();
 }
 
+void MainMenu::UpdateLevelUnlocks(int totalCoins, const int sessionRecords[6])
+{
+    // Park (0) and Sewer (1) are always unlocked
+    levelsUnlocked[0] = true;
+    levelsUnlocked[1] = true;
+
+    // Desert (2): 100 coins, 50 Sewer pipes
+    levelsUnlocked[2] = totalCoins >= 100 && sessionRecords[1] >= 50;
+
+    // Snow (3): 250 coins, 50 Desert pipes
+    levelsUnlocked[3] = totalCoins >= 250 && sessionRecords[2] >= 50;
+
+    // Castle (4): 500 coins, 50 Snow pipes
+    levelsUnlocked[4] = totalCoins >= 500 && sessionRecords[3] >= 50;
+
+    // Rat King (5): 1000 coins, 50 Castle pipes
+    levelsUnlocked[5] = totalCoins >= 1000 && sessionRecords[4] >= 50;
+}
+
 void MainMenu::Draw()
 {
     using namespace GameSettings;
@@ -162,9 +181,13 @@ void MainMenu::Draw()
         Rectangle{ 0, 0, 320, 180 },
         Vector2{ 0, 0 }, 0.0f, WHITE);
 
+    // Enable high-definition font for all menu text
+    UseHighDefFont(true);
+    Font hdFont = game->GetScaledFont(1.2f);
+
     if (currentMenu == MAIN_MENU)
     {
-        int logoX = (320 - _FloppyLogo.width) / 2;
+        int logoX = (int)((320 - _FloppyLogo.width) / 2.0f);
         int logoY = 10;
         DrawTexture(_FloppyLogo, logoX, logoY, WHITE);
 
@@ -172,8 +195,8 @@ void MainMenu::Draw()
         float baseH = 40.0f;
         float sw = baseW * fHoverScale;
         float sh = baseH * fHoverScale;
-        float scaledX = logoX + 3;
-        float scaledY = logoY + 5;
+        float scaledX = (float)(logoX + 3);
+        float scaledY = (float)(logoY + 5);
 
         DrawTexturePro(
             finLogo,
@@ -183,34 +206,34 @@ void MainMenu::Draw()
             0.0f,
             WHITE);
 
-        float buttonW = 120, buttonH = 16;
-        float buttonX = (320 - buttonW) / 2.0f;
-        float buttonY = logoY + _FloppyLogo.height + 8;
-        float spacingY = 4;
+        float buttonW = 120.0f, buttonH = 18.0f;
+        float buttonX = (320.0f - buttonW) / 2.0f;
+        float buttonY = (float)(logoY + _FloppyLogo.height + 4);
+        float spacingY = 3.0f;
         float cornerRadius = 0.01f;
 
-        if (AIGUI_ButtonRounded("Play", buttonX, buttonY, buttonW, buttonH, cornerRadius, AIGUI_FONT_SIZE_LARGE, BLACK))
+        if (AIGUI_ButtonRounded("Play", buttonX, buttonY, buttonW, buttonH, cornerRadius, 24, BLACK))
             currentMenu = LEVEL_SELECT;
         buttonY += buttonH + spacingY;
 
-        if (AIGUI_ButtonRounded("Options", buttonX, buttonY, buttonW, buttonH, cornerRadius, AIGUI_FONT_SIZE_LARGE, BLACK))
+        if (AIGUI_ButtonRounded("Options", buttonX, buttonY, buttonW, buttonH, cornerRadius, 24, BLACK))
             currentMenu = OPTIONS_MENU;
         buttonY += buttonH + spacingY;
 
-        if (AIGUI_ButtonRounded("Quickplay", buttonX, buttonY, buttonW, buttonH, cornerRadius, AIGUI_FONT_SIZE_LARGE, BLACK)) {
+        if (AIGUI_ButtonRounded("Quickplay", buttonX, buttonY, buttonW, buttonH, cornerRadius, 24, BLACK)) {
             game->SetGameState(Game::PLAYING);
             game->playing->SetCurrentLevel(quickplaySettings.levelIndex);
         }
         buttonY += buttonH + spacingY;
 
-        if (AIGUI_ButtonRounded("Exit", buttonX, buttonY, buttonW, buttonH, cornerRadius, AIGUI_FONT_SIZE_LARGE, BLACK))
+        if (AIGUI_ButtonRounded("Exit", buttonX, buttonY, buttonW, buttonH, cornerRadius, 24, BLACK))
             game->SetGameState(game->SHUTDOWN);
     }
     else if (currentMenu == LEVEL_SELECT)
     {
         Texture2D& painting = levelPaintings[currentLevelIndex];
-        float paintingX = (320 - painting.width) / 2.0f;
-        float paintingY = (180 - painting.height) / 2.0f;
+        float paintingX = (320.0f - painting.width) / 2.0f;
+        float paintingY = (180.0f - painting.height) / 2.0f;
         Rectangle paintingRect = { paintingX, paintingY, (float)painting.width, (float)painting.height };
 
         bool hovered = CheckCollisionPointRec(g_AIGUI.mousePos, paintingRect);
@@ -239,7 +262,36 @@ void MainMenu::Draw()
         }
 
         const char* title = levelNames[currentLevelIndex];
-        AIGUI_LabelRounded(title, 10, 10, 300, 20, 0.2f, AIGUI_FONT_SIZE_LARGE, BLACK);
+        AIGUI_LabelRounded(title, 10.0f, 10.0f, 300.0f, 18.0f, 0.2f, 16, BLACK);
+
+        // Display unlock requirements and progress
+        float infoY = 40;
+        int totalCoins = game->playing ? game->playing->TOTALCOINS : 0;
+        int sessionRecords[6] = { 0 };
+        if (game->playing) {
+            for (int i = 0; i < 6; ++i) {
+                sessionRecords[i] = game->playing->GetSessionRecord(i);
+            }
+        }
+
+        if (!levelsUnlocked[currentLevelIndex] && currentLevelIndex >= 2) {
+            int requiredCoins = 0;
+            int requiredPipes = 50;
+            int previousLevelIndex = currentLevelIndex - 1;
+
+            switch (currentLevelIndex) {
+            case 2: requiredCoins = 100; break; // Desert
+            case 3: requiredCoins = 250; break; // Snow
+            case 4: requiredCoins = 500; break; // Castle
+            case 5: requiredCoins = 1000; break; // Rat King
+            }
+
+            std::string coinStatus = TextFormat("Coins: %d/%d", totalCoins, requiredCoins);
+            std::string pipeStatus = TextFormat("Previous Pipes: %d/%d", sessionRecords[previousLevelIndex], requiredPipes);
+
+            AIGUI_LabelRounded(coinStatus.c_str(), 80.0f, infoY + 20, 160.0f, 16.0f, 0.2f, 14, totalCoins >= requiredCoins ? GREEN : BLACK);
+            AIGUI_LabelRounded(pipeStatus.c_str(), 60.0f, infoY, 200.0f, 16.0f, 0.2f, 14, sessionRecords[previousLevelIndex] >= requiredPipes ? GREEN : BLACK);
+        }
 
         if (levelsUnlocked[currentLevelIndex] && CheckCollisionPointRec(g_AIGUI.mousePos, scaledRect))
         {
@@ -250,83 +302,88 @@ void MainMenu::Draw()
             }
         }
 
-        if (currentLevelIndex > 0 && AIGUI_ButtonRounded("Previous", 40, 150, 100, 16, 0.01f, AIGUI_FONT_SIZE_MEDIUM, BLACK))
+        if (currentLevelIndex > 0 && AIGUI_ButtonRounded("Previous", 40.0f, 150.0f, 100.0f, 24.0f, 0.01f, 24, BLACK))
             currentLevelIndex--;
 
-        if (currentLevelIndex < 5 && AIGUI_ButtonRounded("Next", 150, 150, 60, 16, 0.01f, AIGUI_FONT_SIZE_MEDIUM, BLACK))
+        if (currentLevelIndex < 5 && AIGUI_ButtonRounded("Next", 150.0f, 150.0f, 60.0f, 24.0f, 0.01f, 24, BLACK))
             currentLevelIndex++;
 
-        if (AIGUI_ButtonRounded("Back", 220, 150, 80, 16, 0.01f, AIGUI_FONT_SIZE_MEDIUM, BLACK))
+        if (AIGUI_ButtonRounded("Back", 220.0f, 150.0f, 80.0f, 24.0f, 0.01f, 24, BLACK))
             currentMenu = MAIN_MENU;
     }
     else if (currentMenu == OPTIONS_MENU)
     {
-        float rightX = 185; // Right column X position
-        float startY = 20;  // Top-right, parallel with Music:
+        float rightX = 185.0f;
+        float startY = 20.0f;
 
-        AudioManager::GetInstance().DrawAudioOptions(20, 20);
+        AudioManager::GetInstance().DrawAudioOptions(20.0f, 20.0f);
 
-        // Aspect Ratio (top-right, parallel with Music:)
-        AIGUI_LabelRounded("Aspect Ratio:", rightX, startY, 110, 16, 0.2f, AIGUI_FONT_SIZE_LARGE, BLACK);
-        if (AIGUI_ButtonRounded("<", rightX, startY + 16, 16, 16, 0.01f, AIGUI_FONT_SIZE_LARGE, BLACK)) {
+        // Aspect Ratio
+        startY = 20.0f;
+        AIGUI_LabelRounded("Resolution:", rightX, startY, 120.0f, 20.0f, 0.2f, 20, BLACK);
+        if (AIGUI_ButtonRounded("<", rightX, startY + 24.0f, 20.0f, 20.0f, 0.01f, 20, BLACK)) {
             currentAspectIndex = (currentAspectIndex - 1 + 7) % 7;
-            const auto& option = aspectRatios[currentAspectIndex];
+            const auto& option = aspectRatios[currentLevelIndex];
             if (option.width > 0 && option.height > 0)
                 SetWindowSize(option.width, option.height);
         }
-        AIGUI_LabelRounded(aspectRatios[currentAspectIndex].name, rightX + 16, startY + 16, 78, 16, 0.2f, AIGUI_FONT_SIZE_MEDIUM, BLACK);
-        if (AIGUI_ButtonRounded(">", rightX + 110, startY + 16, 16, 16, 0.01f, AIGUI_FONT_SIZE_LARGE, BLACK)) {
+        AIGUI_LabelRounded(aspectRatios[currentAspectIndex].name, rightX + 23.0f, startY + 24.0f, 80.0f, 20.0f, 0.2f, 20, BLACK);
+        if (AIGUI_ButtonRounded(">", rightX + 106.0f, startY + 24.0f, 20.0f, 20.0f, 0.01f, 20, BLACK)) {
             currentAspectIndex = (currentAspectIndex + 1) % 7;
             const auto& option = aspectRatios[currentAspectIndex];
             if (option.width > 0 && option.height > 0)
                 SetWindowSize(option.width, option.height);
         }
 
-        // Difficulty (aligned with Sound:)
-        startY = 52; // Align with Sound: at y=52
-        AIGUI_LabelRounded("Difficulty:", rightX, startY, 80, 16, 0.2f, AIGUI_FONT_SIZE_LARGE, BLACK);
-        if (AIGUI_ButtonRounded("<", rightX, startY + 16, 16, 16, 0.01f, AIGUI_FONT_SIZE_LARGE, BLACK)) {
+        // Difficulty
+        startY = 68.0f;
+        AIGUI_LabelRounded("Difficulty:", rightX, startY, 120.0f, 20.0f, 0.2f, 20, BLACK);
+        if (AIGUI_ButtonRounded("<", rightX, startY + 24.0f, 20.0f, 20.0f, 0.01f, 20, BLACK)) {
             difficultyIndex = (difficultyIndex - 1 + 3) % 3;
         }
-        AIGUI_LabelRounded(difficultyLevels[difficultyIndex], rightX + 16, startY + 16, 48, 16, 0.2f, AIGUI_FONT_SIZE_MEDIUM, BLACK);
-        if (AIGUI_ButtonRounded(">", rightX + 80, startY + 16, 16, 16, 0.01f, AIGUI_FONT_SIZE_LARGE, BLACK)) {
+        AIGUI_LabelRounded(difficultyLevels[difficultyIndex], rightX + 23.0f, startY + 24.0f, 80.0f, 20.0f, 0.2f, 20, BLACK);
+        if (AIGUI_ButtonRounded(">", rightX + 106.0f, startY + 24.0f, 20.0f, 20.0f, 0.01f, 20, BLACK)) {
             difficultyIndex = (difficultyIndex + 1) % 3;
         }
 
-        // Quickplay Settings (same position, larger font)
-        if (AIGUI_ButtonRounded("Quickplay Settings", 20, 148, 120, 16, 0.01f, AIGUI_FONT_SIZE_LARGE, BLACK)) {
+        // Fullscreen Toggle
+        startY = 89.0f;
+        if (AIGUI_ButtonRounded(fullscreenEnabled ? "[x] Fullscreen" : "[ ] Fullscreen", rightX - 25, startY + 28.0f, 150.0f, 20.0f, 0.01f, 20, BLACK)) {
+            fullscreenEnabled = !fullscreenEnabled;
+            ToggleFullscreen();
+        }
+
+        // Quickplay Settings
+        if (AIGUI_ButtonRounded("Quickplay Settings", 20.0f, 148.0f, 184.0f, 20.0f, 0.01f, 20, BLACK)) {
             currentMenu = QUICKPLAY_SETTINGS;
         }
 
-        // Back (aligned with Quickplay Settings, bottom-right)
-        if (AIGUI_ButtonRounded("Back", 220, 148, 80, 16, 0.01f, AIGUI_FONT_SIZE_LARGE, BLACK))
+        // Back
+        if (AIGUI_ButtonRounded("Back", 220.0f, 148.0f, 80.0f, 20.0f, 0.01f, 20, BLACK))
             currentMenu = MAIN_MENU;
     }
     else if (currentMenu == QUICKPLAY_SETTINGS)
     {
-        float startX = 20;
-        float startY = 10; // Moved up since we removed the header
-        float labelWidth = 120;
-        float labelHeight = 16;
-        float spacingY = 12; // Increased spacing for better readability
+        float startX = 20.0f;
+        float startY = 10.0f;
+        float labelWidth = 120.0f;
+        float labelHeight = 20.0f;
+        float spacingY = 6.0f;
 
-        // Level name at the top, full width
-        AIGUI_LabelRounded(levelNames[quickplaySettings.levelIndex], 10, startY, 300, 20, 0.2f, AIGUI_FONT_SIZE_LARGE, BLACK);
+        AIGUI_LabelRounded(levelNames[quickplaySettings.levelIndex], 10.0f, startY, 300.0f, 20.0f, 0.2f, 20, BLACK);
         startY += labelHeight + spacingY;
 
-        // Level selection
-        AIGUI_LabelRounded("Level:", startX, startY, 40, 16, 0.2f, AIGUI_FONT_SIZE_MEDIUM, BLACK);
-        if (AIGUI_ButtonRounded("<", startX + 50, startY, 12, 12, 0.01f, AIGUI_FONT_SIZE_SMALL, BLACK)) {
+        AIGUI_LabelRounded("Level:", startX, startY, 40.0f, 20.0f, 0.2f, 20, BLACK);
+        if (AIGUI_ButtonRounded("<", startX + 50.0f, startY, 20.0f, 20.0f, 0.01f, 20, BLACK)) {
             quickplaySettings.levelIndex = (quickplaySettings.levelIndex - 1 + 6) % 6;
         }
-        AIGUI_LabelRounded(levelNames[quickplaySettings.levelIndex], startX + 70, startY, 120, 16, 0.2f, AIGUI_FONT_SIZE_MEDIUM, BLACK);
-        if (AIGUI_ButtonRounded(">", startX + 190, startY, 12, 12, 0.01f, AIGUI_FONT_SIZE_SMALL, BLACK)) {
+        AIGUI_LabelRounded(levelNames[quickplaySettings.levelIndex], startX + 70.0f, startY, 124.0f, 20.0f, 0.2f, 20, BLACK);
+        if (AIGUI_ButtonRounded(">", startX + 194.0f, startY, 20.0f, 20.0f, 0.01f, 20, BLACK)) {
             quickplaySettings.levelIndex = (quickplaySettings.levelIndex + 1) % 6;
         }
         startY += labelHeight + spacingY;
 
-        // Chill Mode
-        if (AIGUI_ButtonRounded(quickplaySettings.chillMode ? "[x] Chill Mode" : "[ ] Chill Mode", startX, startY, 120, 16, 0.01f, AIGUI_FONT_SIZE_MEDIUM, BLACK)) {
+        if (AIGUI_ButtonRounded(quickplaySettings.chillMode ? "[x] Chill Mode" : "[ ] Chill Mode", startX, startY, 120.0f, 20.0f, 0.01f, 20, BLACK)) {
             quickplaySettings.chillMode = !quickplaySettings.chillMode;
             if (quickplaySettings.chillMode) {
                 quickplaySettings.enableEnemies = false;
@@ -335,41 +392,39 @@ void MainMenu::Draw()
         }
         startY += labelHeight + spacingY;
 
-        // Enemies - Gray out for Park Level (levelIndex 0)
         bool isParkLevel = (quickplaySettings.levelIndex == 0);
-        if (AIGUI_ButtonRounded(quickplaySettings.enableEnemies ? "[x] Enemies" : "[ ] Enemies", startX, startY, 120, 16, 0.01f, AIGUI_FONT_SIZE_MEDIUM, (quickplaySettings.chillMode || isParkLevel) ? GRAY : BLACK)) {
+        if (AIGUI_ButtonRounded(quickplaySettings.enableEnemies ? "[x] Enemies" : "[ ] Enemies", startX, startY, 120.0f, 20.0f, 0.01f, 20, (quickplaySettings.chillMode || isParkLevel) ? GRAY : BLACK)) {
             if (!quickplaySettings.chillMode && !isParkLevel) {
                 quickplaySettings.enableEnemies = !quickplaySettings.enableEnemies;
             }
         }
         startY += labelHeight + spacingY;
 
-        // Obstacles
-        if (AIGUI_ButtonRounded(quickplaySettings.enableObstacles ? "[x] Obstacles" : "[ ] Obstacles", startX, startY, 120, 16, 0.01f, AIGUI_FONT_SIZE_MEDIUM, quickplaySettings.chillMode ? GRAY : BLACK)) {
+        if (AIGUI_ButtonRounded(quickplaySettings.enableObstacles ? "[x] Obstacles" : "[ ] Obstacles", startX, startY, 120.0f, 20.0f, 0.01f, 20, quickplaySettings.chillMode ? GRAY : BLACK)) {
             if (!quickplaySettings.chillMode) {
                 quickplaySettings.enableObstacles = !quickplaySettings.enableObstacles;
             }
         }
         startY += labelHeight + spacingY;
 
-        // Swinging Pipes - Gray out for Park Level (0) and Desert Level (2), in addition to Sewer Level (1)
         bool isUnsupportedLevel = (quickplaySettings.levelIndex == 0 || quickplaySettings.levelIndex == 1 || quickplaySettings.levelIndex == 2);
-        if (AIGUI_ButtonRounded(quickplaySettings.swingingPipes ? "[x] Swinging Pipes" : "[ ] Swinging Pipes", startX, startY, 120, 16, 0.01f, AIGUI_FONT_SIZE_MEDIUM, isUnsupportedLevel ? GRAY : BLACK)) {
+        if (AIGUI_ButtonRounded(quickplaySettings.swingingPipes ? "[x] Swinging Pipes" : "[ ] Swinging Pipes", startX, startY, 120.0f, 20.0f, 0.01f, 20, isUnsupportedLevel ? GRAY : BLACK)) {
             if (!isUnsupportedLevel) {
                 quickplaySettings.swingingPipes = !quickplaySettings.swingingPipes;
             }
         }
         startY += labelHeight + spacingY;
 
-        // Back button
-        if (AIGUI_ButtonRounded("Back", 220, 150, 80, 16, 0.01f, AIGUI_FONT_SIZE_MEDIUM, BLACK)) {
+        if (AIGUI_ButtonRounded("Back", 220.0f, 150.0f, 80.0f, 20.0f, 0.01f, 20, BLACK))
             currentMenu = OPTIONS_MENU;
-        }
     }
     else
     {
-        AIGUI_LabelRounded("ERROR: Unhandled menu state!", 10, 10, 200, 16, 0.2f, AIGUI_FONT_SIZE_SMALL, RED);
+        AIGUI_LabelRounded("ERROR: Unhandled menu state!", 10.0f, 10.0f, 200.0f, 20.0f, 0.2f, 20, RED);
     }
+
+    // Disable high-definition font after drawing
+    UseHighDefFont(false);
 }
 
 void MainMenu::ResetMusic()

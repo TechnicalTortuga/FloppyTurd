@@ -6,12 +6,16 @@
 #include <iostream>
 #include <vector>
 #include "Hat.h"
+#include "Game.h"  
+
+// Forward declaration of Game
+class Game;
 
 enum HeartMode { WHOLE = 1, HALVES = 2, THIRDS = 3 };
 
 class Player {
 public:
-    Player();
+    Player(Game* game = nullptr);
     ~Player();
 
     enum HeartMode { WHOLE = 1, HALVES = 2, THIRDS = 3 };
@@ -70,9 +74,12 @@ public:
     bool isInvisible = false;
 
     // Coin management
-    void AddCoins(int amount) { sessionCoins += amount; } // Add coins to session
+    void AddCoins(int amount); // Add coins to session and notify Playing
     int GetSessionCoins() const { return sessionCoins; } // Get current session coins
-    void ResetSessionCoins() { sessionCoins = 0; } // Reset session coins
+    void ResetSessionCoins(); // Reset session coins
+
+    // Set the game reference
+    void SetGame(Game* g) { game = g; }
 
 private:
     PLAYERSTATE playerstate{ JUMPING };
@@ -134,4 +141,6 @@ private:
 
     // Session coins
     int sessionCoins{ 0 }; // Coins collected in the current session
+
+    Game* game; // Reference to Game for accessing Playing
 };

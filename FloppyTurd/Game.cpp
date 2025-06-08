@@ -4,10 +4,10 @@
 
 Game::Game()
 {
-	SetTargetFPS(60);
-	InitAudioDevice();
+    SetTargetFPS(60);
+    InitAudioDevice();
 
-	InitClasses();
+    InitClasses();
     // Load the font and validate it
     whackyJoe = LoadFont("resources/fonts/Whacky_Joe.fnt");
 
@@ -20,12 +20,14 @@ Game::Game()
     else {
         printf("Font 'whackyJoe' loaded successfully: baseSize=%d, glyphCount=%d, textureID=%u\n",
             whackyJoe.baseSize, whackyJoe.glyphCount, whackyJoe.texture.id);
+        // Use bilinear filtering instead of trilinear to avoid mipmap warnings
+        SetTextureFilter(whackyJoe.texture, TEXTURE_FILTER_BILINEAR);
     }
 
     AIGUI_Init();
     AIGUI_SetFont(whackyJoe);
-    SetTextureFilter(whackyJoe.texture, TEXTURE_FILTER_POINT);
-	RunGame();
+    SetTextureFilter(whackyJoe.texture, TEXTURE_FILTER_POINT); // Default for UI, override for HD
+    RunGame();
 }
 
 Game::~Game()
@@ -46,18 +48,18 @@ Game::~Game()
 
 void Game::InitClasses()
 {
-	using namespace GameSettings;
-	window = new Window(GameWidth, GameHeight);
+    using namespace GameSettings;
+    window = new Window(GameWidth, GameHeight);
 
-	mainMenu = new MainMenu(this);
-	playing = new Playing(this);
+    mainMenu = new MainMenu(this);
+    playing = new Playing(this);
 
-	gamestate = MAINMENU;
+    gamestate = MAINMENU;
 }
 
 void Game::RunGame()
 {
-    // Create a render texture for 320 180 virtual resolution
+    // Create a render texture for 320x180 virtual resolution
     RenderTexture2D target = LoadRenderTexture(320, 180);
 
     // Optionally clamp wrapping on any textures that might tile if scrolled too far
@@ -72,16 +74,16 @@ void Game::RunGame()
         }
 
         // -------------------------------------------------------------------------
-        // 1) Scale the *raw* mouse (1280 720) down into a 320 180 coordinate system.
+        // 1) Scale the *raw* mouse (1280x720) down into a 320x180 coordinate system.
         // -------------------------------------------------------------------------
         float scaleX = (float)GetScreenWidth() / 320.0f;
         float scaleY = (float)GetScreenHeight() / 180.0f;
 
-        Vector2 rawMouse = GetMousePosition(); // e.g. in 1280 720
+        Vector2 rawMouse = GetMousePosition(); // e.g. in 1280x720
         g_AIGUI.mousePos.x = rawMouse.x / scaleX; // now in 0..320
         g_AIGUI.mousePos.y = rawMouse.y / scaleY; // now in 0..180
 
-        // If you use GetMouseDelta(), remember to scale that similarly, or you ll
+        // If you use GetMouseDelta(), remember to scale that similarly, or you'll
         // see scrolling/dragging jumps. For example:
         // Vector2 rawDelta = GetMouseDelta();
         // Vector2 scaledDelta = { rawDelta.x / scaleX, rawDelta.y / scaleY };
@@ -95,7 +97,7 @@ void Game::RunGame()
         Update();
 
         // ------------------------------------------------------
-        // 3) Render to the 320 180 "virtual" RenderTexture
+        // 3) Render to the 320x180 "virtual" RenderTexture
         // ------------------------------------------------------
         BeginTextureMode(target);
         ClearBackground(BLACK);
@@ -103,7 +105,7 @@ void Game::RunGame()
         switch (gamestate)
         {
         case MAINMENU:
-            mainMenu->Draw();  // all drawing in 320 180 coords
+            mainMenu->Draw();  // all drawing in 320x180 coords
             break;
         case PLAYING:
             playing->Draw();   // includes your pause logic if needed
@@ -111,19 +113,19 @@ void Game::RunGame()
         case PAUSEMENU:
             // If you have a separate pauseMenu->Draw(), do it here.
             // Or if your PAUSEMENU UI is inside playing->Draw() behind an if() check,
-            // thats fine too.
+            // that's fine too.
             break;
         }
 
-        EndTextureMode(); // Done rendering the 320 180 scene
+        EndTextureMode(); // Done rendering the 320x180 scene
 
         // ---------------------------------------------------------------------
-        // 4) Draw the 320180 result to the *actual window* (e.g. 1280 720)
+        // 4) Draw the 320x180 result to the *actual window* (e.g. 1280x720)
         // ---------------------------------------------------------------------
         BeginDrawing();
         ClearBackground(BLACK);
 
-        // Fill the window with the scaled 320 180 result
+        // Fill the window with the scaled 320x180 result
         DrawTexturePro(
             target.texture,
             // Source rect note -height if your textures appear upside-down:
@@ -138,7 +140,7 @@ void Game::RunGame()
         EndDrawing();
 
         HandleInput();
-        // If you do input reading here, remember its in the raw 1280 720 coords
+        // If you do input reading here, remember it's in the raw 1280x720 coords
         // unless you re-scale
 
         AIGUI_EndFrame(); // your custom UI end logic
@@ -146,67 +148,75 @@ void Game::RunGame()
 
     // Clean up
     UnloadRenderTexture(target);
-    delete window; // whatever else youre cleaning
+    delete window; // whatever else you're cleaning
 }
 
 void Game::Update()
 {
-	switch (gamestate)
-	{
-	case MAINMENU:
-		mainMenu->Update();
-		break;
+    switch (gamestate)
+    {
+    case MAINMENU:
+        mainMenu->Update();
+        break;
 
-	case PLAYING:
-		playing->Update();
-		break;
-	case SHUTDOWN:
-		CloseWindow();
-		break;
-		//std::cout << "Default Gamestate Update" << std::endl;
-	}
+    case PLAYING:
+        playing->Update();
+        break;
+    case SHUTDOWN:
+        CloseWindow();
+        break;
+        //std::cout << "Default Gamestate Update" << std::endl;
+    }
 }
 
 void Game::Draw()
 {
-	BeginDrawing();
-	ClearBackground(BLACK);
+    BeginDrawing();
+    ClearBackground(BLACK);
 
-	switch (gamestate)
-	{
-	case MAINMENU:
-		mainMenu->Draw();
-		break;
-
-	case PLAYING:
-		playing->Draw();
+    switch (gamestate)
+    {
+    case MAINMENU:
+        mainMenu->Draw();
         break;
-		//std::cout << "Default Gamestate Draw" << std::endl;
-	}
 
-	EndDrawing();
+    case PLAYING:
+        playing->Draw();
+        break;
+        //std::cout << "Default Gamestate Draw" << std::endl;
+    }
+
+    EndDrawing();
 }
 
 void Game::HandleInput()
 {
-	switch (gamestate)
-	{
-	case MAINMENU:
-		mainMenu->HandleInput();
-		break;
+    switch (gamestate)
+    {
+    case MAINMENU:
+        mainMenu->HandleInput();
+        break;
 
-	case PLAYING:
-		playing->HandleInput();
-		break;
+    case PLAYING:
+        playing->HandleInput();
+        break;
 
-	case PAUSEMENU:
-		//pauseMenu->HandleInput();
-		break;
-	}
+    case PAUSEMENU:
+        //pauseMenu->HandleInput();
+        break;
+    }
 }
 
 void Game::SetGameState(GAMESTATE newState)
 {
-	std::cout << "Switching to " << newState << std::endl;
-	gamestate = newState;
+    std::cout << "Switching to " << newState << std::endl;
+    gamestate = newState;
+}
+
+// Implement GetScaledFont method
+Font Game::GetScaledFont(float scaleFactor) {
+    Font scaledFont = whackyJoe;
+    scaledFont.baseSize = (int)(whackyJoe.baseSize * scaleFactor);
+    SetTextureFilter(scaledFont.texture, TEXTURE_FILTER_BILINEAR); // Use bilinear for compatibility
+    return scaledFont;
 }

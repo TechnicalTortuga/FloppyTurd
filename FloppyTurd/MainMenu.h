@@ -1,10 +1,9 @@
-// MainMenu.h
 #pragma once
 #include <raylib.h>
 #include <iostream>
 #include "Game.h"
 #include "AudioClip.h"
-#include "QuickplaySettings.h" // Include new header
+#include "QuickplaySettings.h"
 
 class Game;
 
@@ -32,6 +31,14 @@ public:
     AudioClip* GetAudioClip() const { return currentMusic; }
     const QuickplaySettings& GetQuickplaySettings() const { return quickplaySettings; }
 
+    // Feedback system for high-definition font
+    void UseHighDefFont(bool enable) { useHighDefFont = enable; }
+    bool IsHighDefFont() const { return useHighDefFont; }
+
+    // Level unlock management
+    bool IsLevelUnlocked(int levelIndex) const { return levelsUnlocked[levelIndex]; }
+    void UpdateLevelUnlocks(int totalCoins, const int sessionRecords[6]);
+
 private:
     void PlayRandomFartSound();
     void ToggleFartMusic();
@@ -43,7 +50,7 @@ private:
     Texture2D emptyPainting;
     int currentLevelIndex{ 0 };
     bool levelSelectMode = false;
-    bool levelsUnlocked[6] = { true, true, true, true, true, true };
+    bool levelsUnlocked[6] = { true, true, false, false, false, false }; // Park, Sewer unlocked; others depend on progress
 
     Texture2D levelPaintings[6];
     Texture2D lockedPainting;
@@ -58,4 +65,6 @@ private:
     AudioClip* currentMusic = nullptr;
 
     QuickplaySettings quickplaySettings;
+
+    bool useHighDefFont = false; // Flag for high-definition font
 };

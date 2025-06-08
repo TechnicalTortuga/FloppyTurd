@@ -54,6 +54,19 @@ public:
     void OutputHatMenu();
     Vector2 scrollOffset;
 
+    // Feedback system for high-definition font
+    void UseHighDefFont(bool enable) { useHighDefFont = enable; }
+    bool IsHighDefFont() const { return useHighDefFont; }
+
+    // Session records for level unlocks
+    void UpdateSessionRecord(int levelIndex, int pipesPassed);
+    int GetSessionRecord(int levelIndex) const { return sessionRecords[levelIndex]; }
+
+    int SCORE = 0; // Session pipes passed
+    int COINS = 0; // Session coins (unused, kept for compatibility)
+    int TOTALCOINS = 0; // Lifetime coins
+    int TOTALSCORE = 0; // Lifetime pipes passed
+
 private:
     Game* game;
     Player* player{};
@@ -77,13 +90,9 @@ private:
 
     QuickplaySettings quickplaySettings;
 
-    int SCORE = 0; // Session pipes passed
-    int COINS = 0; // Session coins (unused, kept for compatibility)
-    int TOTALCOINS = 0; // Lifetime coins
-    int TOTALSCORE = 0; // Lifetime pipes passed
     Texture2D Scoreboard;
     Texture2D _TurdHeart;
-    Texture2D _CoinBag; // New coin bag texture
+    Texture2D _CoinBag;
     Texture2D floppyButtonBlue;
     Texture2D floppyButtonBlueHover;
     Sound ScoreSound;
@@ -138,4 +147,9 @@ private:
     int savedLevelIndex = 0;
     enum class LastLevelType { NONE, PARK, DESERT, SEWER, SNOW, CASTLE, BOSS };
     LastLevelType lastLevelType = LastLevelType::NONE;
+
+    bool useHighDefFont = false;
+
+    // Session records for each level (pipes passed in a single session)
+    int sessionRecords[6] = { 0, 0, 0, 0, 0, 0 }; // Park, Sewer, Desert, Snow, Castle, Rat King
 };

@@ -30,7 +30,7 @@ Playing::Playing(Game* game)
 {
     using namespace Resources;
     this->game = game;
-    player = new Player();
+    player = new Player(game); // Pass game reference to Player
     pauseMenuBackground = LoadTexture(PauseMenuBackground);
     _TurdPointMenu = LoadTexture(TurdPointMenu);
     _TurdPointMenuBorder = LoadTexture(TurdPointMenuBorder);
@@ -38,7 +38,7 @@ Playing::Playing(Game* game)
     SetTextureWrap(_TurdPointMenu, TEXTURE_WRAP_CLAMP);
     Scoreboard = LoadTexture(ScoreBoard);
     _TurdHeart = LoadTexture(TurdHeart);
-    _CoinBag = LoadTexture(coinbagtexture); // Load coin bag texture
+    _CoinBag = LoadTexture(coinbagtexture);
     ScoreSound = LoadSound(GotScore);
     SCORE = 0;
     TOTALSCORE = 0;
@@ -132,7 +132,7 @@ Playing::~Playing()
 {
     UnloadTexture(Scoreboard);
     UnloadTexture(_TurdHeart);
-    UnloadTexture(_CoinBag); // Unload coin bag texture
+    UnloadTexture(_CoinBag);
     UnloadSound(ScoreSound);
     UnloadTexture(floppyButtonBlue);
     UnloadTexture(floppyButtonBlueHover);
@@ -148,6 +148,7 @@ Playing::~Playing()
     for (int i = 0; i < 4; ++i) {
         UnloadTexture(skillNodeTextures[i]);
     }
+    delete player; // Ensure player is deleted
 }
 
 void Playing::InitializeSkillNodes() {
@@ -446,8 +447,8 @@ void Playing::DrawGameOverScreen()
 {
     const float scale = 2.0f;
 
-    float panelW = tryAgainBackground.width * scale;
-    float panelH = tryAgainBackground.height * scale;
+    float panelW = (float)(tryAgainBackground.width * scale);
+    float panelH = (float)(tryAgainBackground.height * scale);
     float panelX = (320.0f - panelW) / 2.0f;
     float panelY = 180.0f - panelH - 12.0f;
 
@@ -456,34 +457,34 @@ void Playing::DrawGameOverScreen()
         { panelX, panelY, panelW, panelH },
         { 0, 0 }, 0.0f, WHITE);
 
-    int goBkgX = (320 - gameOverBackground.width) / 2;
-    int goBkgY = (int)(panelY - gameOverBackground.height + 28);
+    int goBkgX = (int)((320 - gameOverBackground.width) / 2.0f);
+    int goBkgY = (int)(panelY - gameOverBackground.height + 32);
     DrawTexture(gameOverBackground, goBkgX, goBkgY, WHITE);
 
-    float bob = std::sinf(gameOverHoverTimer * 2.0f) * 2.0f;
-    int baseY = int(panelY) - (deadFloppy.height / 2) + 20;
-    int floppyY = std::max(int(baseY + bob), 0);
-    int floppyX = (320 - deadFloppy.width) / 2;
+    float bob = sinf(gameOverHoverTimer * 2.0f) * 2.0f;
+    int baseY = (int)(panelY - (deadFloppy.height / 2) + 20);
+    int floppyY = std::max(baseY + (int)bob, 0);
+    int floppyX = (int)((320 - deadFloppy.width) / 2.0f);
     DrawTexture(deadFloppy, floppyX, floppyY, WHITE);
 
     static const char* poopMessages[] = {
         "Ahh poop.", "You pooped.", "Oh crap!", "Poop happens.",
         "Down the drain!", "That stinks.", "Toilet Trouble!", "You flushed!"
     };
-    static int poopMsgIndex = GetRandomValue(0, sizeof(poopMessages) / sizeof(char*) - 1);
+    static int poopMsgIndex = GetRandomValue(0, (int)(sizeof(poopMessages) / sizeof(char*) - 1));
     const char* msg = poopMessages[poopMsgIndex];
     int msgWidth = MeasureText(msg, 18);
-    float labelW = msgWidth + 24;
-    float labelH = 26;
-    float labelX = (320 - labelW) / 2;
-    float labelY = 6;
+    float labelW = (float)(msgWidth + 24);
+    float labelH = 26.0f;
+    float labelX = (320.0f - labelW) / 2.0f;
+    float labelY = 6.0f;
     AIGUI_LabelRounded(msg, labelX, labelY, labelW, labelH, 0.3f, 18, BLACK);
 
-    int btnW = 96, btnH = 22, spacing = 12;
-    int btnY = int(panelY + panelH) - btnH - 64;
-    int btnX = int(panelX + (panelW - 2 * btnW - spacing) / 2);
+    int btnW = 128, btnH = 22, spacing = 12;
+    int btnY = (int)(panelY + panelH) - btnH - 64;
+    int btnX = (int)(panelX + (panelW - 2 * btnW - spacing) / 2.0f);
 
-    if (AIGUI_ButtonRounded("Try Again", (float)btnX, (float)btnY, (float)btnW, (float)btnH, 0.3f, 20, BLACK)) {
+    if (AIGUI_ButtonRounded("Try Again", (float)btnX, (float)btnY, (float)btnW, (float)btnH, 0.3f, 24, BLACK)) {
         AudioManager::GetInstance().StopMusic();
         if (gameOverMusic) gameOverMusic->Stop();
 
@@ -505,9 +506,7 @@ void Playing::DrawGameOverScreen()
         default:                    levelManager->SetLevel(std::make_shared<ParkLevel>()); break;
         }
         player->Revive();
-        SCORE = 0; // Reset session pipes
-        TOTALCOINS += player->GetSessionCoins(); // Add session coins to total
-        player->ResetSessionCoins(); // Reset session coins
+        SCORE = 0;
 
         // Reapply Quickplay settings after resetting the level
         levelManager->SetQuickplaySettings(quickplaySettings);
@@ -517,13 +516,11 @@ void Playing::DrawGameOverScreen()
         turdHasFallenOffScreen = false;
     }
 
-    if (AIGUI_ButtonRounded("Quit", (float)(btnX + btnW + spacing), (float)btnY, (float)btnW, (float)btnH, 0.3f, 20, BLACK)) {
+    if (AIGUI_ButtonRounded("Quit", (float)(btnX + btnW + spacing), (float)btnY, (float)btnW, (float)btnH, 0.3f, 24, BLACK)) {
         AudioManager::GetInstance().StopMusic();
         if (gameOverMusic) gameOverMusic->Stop();
         player->Revive();
-        SCORE = 0; // Reset session pipes
-        TOTALCOINS += player->GetSessionCoins(); // Add session coins to total
-        player->ResetSessionCoins(); // Reset session coins
+        SCORE = 0;
 
         GAMEOVER = false;
         gameOverTriggered = false;
@@ -534,8 +531,8 @@ void Playing::DrawGameOverScreen()
     }
 
     float sbScale = 2.0f;
-    float sbW = gameOverScore.width * sbScale;
-    float sbH = gameOverScore.height * sbScale;
+    float sbW = (float)(gameOverScore.width * sbScale);
+    float sbH = (float)(gameOverScore.height * sbScale);
     float sbX = (320.0f - sbW) / 2.0f;
     float sbY = panelY + panelH - sbH + 14.0f;
 
@@ -546,11 +543,12 @@ void Playing::DrawGameOverScreen()
 
     std::string scoreStr = std::to_string(SCORE);
     int scoreW = MeasureText(scoreStr.c_str(), 20);
-    DrawTextEx(g_AIGUI.defaultFont, scoreStr.c_str(), { (float)(sbX + (sbW - scoreW) / 2), (float)(sbY + sbH / 2 - 24) }, 20, 1.0f, WHITE); // Use Whacky Joe
+    Font hdFont = game->GetScaledFont(1.2f);
+    DrawTextEx(hdFont, scoreStr.c_str(), { sbX + (sbW - (float)scoreW) / 2.0f + 20, sbY + (sbH / 2.0f - 12.0f) - 12 }, 24.0f, 1.0f, BLACK);
 
     std::string coinStr = std::to_string(player->GetSessionCoins());
     int coinW = MeasureText(coinStr.c_str(), 20);
-    DrawTextEx(g_AIGUI.defaultFont, coinStr.c_str(), { (float)(sbX + (sbW - coinW) / 2), (float)(sbY + sbH / 2 + 8) }, 20, 1.0f, WHITE); // Use Whacky Joe
+    DrawTextEx(hdFont, coinStr.c_str(), { sbX + (sbW - (float)coinW) / 2.0f + 20, sbY + (sbH / 2.0f + 4.0f) }, 24.0f, 1.0f, BLACK);
 }
 
 void Playing::Update()
@@ -563,12 +561,41 @@ void Playing::Update()
         GAMEOVER = false;
 
         auto current = levelManager->GetCurrentLevel();
-        if (dynamic_cast<ParkLevel*>(current.get()))         lastLevelType = LastLevelType::PARK;
-        else if (dynamic_cast<SewerLevel*>(current.get()))   lastLevelType = LastLevelType::SEWER;
-        else if (dynamic_cast<SnowLevel*>(current.get()))    lastLevelType = LastLevelType::SNOW;
-        else if (dynamic_cast<CastleLevel*>(current.get()))  lastLevelType = LastLevelType::CASTLE;
-        else if (dynamic_cast<BossLevel*>(current.get()))    lastLevelType = LastLevelType::BOSS;
-        else if (dynamic_cast<DesertLevel*>(current.get()))  lastLevelType = LastLevelType::DESERT;
+        int levelIndex = -1;
+        if (dynamic_cast<ParkLevel*>(current.get())) {
+            lastLevelType = LastLevelType::PARK;
+            levelIndex = 0;
+        }
+        else if (dynamic_cast<SewerLevel*>(current.get())) {
+            lastLevelType = LastLevelType::SEWER;
+            levelIndex = 1;
+        }
+        else if (dynamic_cast<SnowLevel*>(current.get())) {
+            lastLevelType = LastLevelType::SNOW;
+            levelIndex = 3;
+        }
+        else if (dynamic_cast<CastleLevel*>(current.get())) {
+            lastLevelType = LastLevelType::CASTLE;
+            levelIndex = 4;
+        }
+        else if (dynamic_cast<BossLevel*>(current.get())) {
+            lastLevelType = LastLevelType::BOSS;
+            levelIndex = 5;
+        }
+        else if (dynamic_cast<DesertLevel*>(current.get())) {
+            lastLevelType = LastLevelType::DESERT;
+            levelIndex = 2;
+        }
+
+        // Update session record for the current level
+        if (levelIndex >= 0) {
+            UpdateSessionRecord(levelIndex, SCORE);
+        }
+
+        // Update level unlocks in MainMenu
+        if (game->mainMenu) {
+            game->mainMenu->UpdateLevelUnlocks(TOTALCOINS, sessionRecords);
+        }
 
         if (current) current->StopMusic();
         AudioManager::GetInstance().StopMusic();
@@ -604,7 +631,7 @@ void Playing::Update()
                 }
                 else if (currentLevel->checkForPointGain(player->GetCircleCenter(), player->GetCircleRadius())) {
                     SCORE++;
-                    TOTALSCORE++; // Increment lifetime pipes
+                    TOTALSCORE++;
                     PlaySound(ScoreSound);
                 }
 
@@ -639,13 +666,13 @@ void Playing::Update()
                         if (auto heart = dynamic_cast<PoopHeart*>((*it).get())) {
                             int healAmount = heart->GetHealAmount();
                             player->AddHeartSlice(healAmount);
-                            if (healAmount == 9) { // Invisible Heart
+                            if (healAmount == 9) {
                                 player->ActivateInvisibility(10.0f);
                             }
                         }
                         else if (auto coin = dynamic_cast<Coin*>((*it).get())) {
                             int coinValue = coin->GetValue();
-                            player->AddCoins(coinValue); // Add to session coins
+                            player->AddCoins(coinValue); // This updates TOTALCOINS via Player
                         }
                         it = pickups.erase(it);
                     }
@@ -669,7 +696,6 @@ void Playing::Update()
                 if (!player->isInvisible && CheckCollisionCircleRec(player->GetCircleCenter(), player->GetCircleRadius(), tp->GetHitbox()))
                 {
                     player->PutTheHurtOn(1);
-                    // Optional: tp->TakeDamage();
                 }
             }
             else if (auto bird = dynamic_cast<Bird*>(enemy.get()))
@@ -747,7 +773,6 @@ void Playing::Update()
                         }
                         if (!hitBoss) ++projIt;
                     }
-                    // Check boss projectiles vs player
                     if (std::shared_ptr<RatKing> rk = std::dynamic_pointer_cast<RatKing>(boss))
                     {
                         for (auto* tp : rk->GetProjectiles())
@@ -755,7 +780,6 @@ void Playing::Update()
                             if (!player->isInvisible && CheckCollisionCircleRec(player->GetCircleCenter(), player->GetCircleRadius(), tp->GetHitbox()))
                             {
                                 player->PutTheHurtOn(1);
-                                //tp->MarkForRemoval();
                             }
                         }
                     }
@@ -788,7 +812,10 @@ void Playing::Draw()
         return;
     }
 
+    // Enable high-definition font for key UI elements
+    UseHighDefFont(true);
     DrawUI();
+    UseHighDefFont(false);
 
     if (isPaused)
     {
@@ -899,14 +926,13 @@ void Playing::SetCurrentLevel(int levelIndex) {
                 TraceLog(LOG_INFO, "[Playing] Created BossHealthBar for initial RatKing");
             }
             player->SetMaxHearts(9);
-            int initialHearts = 2; // Default to REGULAR
+            int initialHearts = 2;
             player->AddHeartSlice(initialHearts * (int)player->GetHeartMode());
         }
         PlayMusic(newLevel->GetAudioClip());
         isPaused = false;
-        SCORE = 0; // Reset session pipes
-        TOTALCOINS += player->GetSessionCoins(); // Add session coins to total
-        player->ResetSessionCoins(); // Reset session coins
+        SCORE = 0;
+        player->ResetSessionCoins();
     }
     else {
         std::cerr << "Try Again Error: Invalid level index " << levelIndex << std::endl;
@@ -925,7 +951,12 @@ void Playing::DrawUI()
             { 320.f - Scoreboard.width - 10, 180.f - Scoreboard.height - 10,
              (float)Scoreboard.width,(float)Scoreboard.height },
             { 0,0 }, 0.f, WHITE);
-        DrawTextEx(g_AIGUI.defaultFont, TextFormat("%i", SCORE), { 320 - 50, 180 - 35 }, 20, 1.0f, WHITE); // Use Whacky Joe
+        std::string scoreStr = TextFormat("%i", SCORE);
+        Vector2 scoreTextSize = MeasureTextEx(g_AIGUI.defaultFont, scoreStr.c_str(), 20.0f, 1.0f);
+        float scoreTextX = 320.0f - 42.5f - scoreTextSize.x / 2.0f;
+        float scoreTextY = 180.0f - 35.0f;
+        Font fontToUse = IsHighDefFont() ? game->GetScaledFont(1.2f) : g_AIGUI.defaultFont;
+        DrawTextEx(fontToUse, scoreStr.c_str(), { scoreTextX, scoreTextY }, 24.0f, 1.0f, WHITE);
     }
 
     const int hearts = player->GetTotalHearts();
@@ -965,26 +996,34 @@ void Playing::DrawUI()
         Texture2D tex = TextureCache::Get(texPath);
         DrawTexturePro(tex,
             { 0,0,(float)tex.width,(float)tex.height },
-            { 4.f + h * 32.f, 4.f, (float)tex.width,(float)tex.height },
-            { 0,0 }, 0.f, WHITE);
+            { 4.0f + h * 32.0f, 4.0f, (float)tex.width,(float)tex.height },
+            { 0,0 }, 0.0f, WHITE);
     }
 
     // Draw coin bag and session coins under hearts
-    float coinBagX = 4.f;
-    float coinBagY = 4.f + _TurdHeart.height + 4.f; // Position below hearts
+    float coinBagX = 4.0f;
+    float coinBagY = 4.0f + _TurdHeart.height + 4.0f;
     DrawTexturePro(_CoinBag,
         { 0,0,(float)_CoinBag.width,(float)_CoinBag.height },
         { coinBagX, coinBagY, (float)_CoinBag.width,(float)_CoinBag.height },
-        { 0,0 }, 0.f, WHITE);
+        { 0,0 }, 0.0f, WHITE);
     std::string coinStr = TextFormat("%i", player->GetSessionCoins());
-    Vector2 coinTextSize = MeasureTextEx(g_AIGUI.defaultFont, coinStr.c_str(), 20, 1.0f);
-    float coinTextX = coinBagX + _CoinBag.width + 4; // Right of coin bag
-    float coinTextY = coinBagY + (_CoinBag.height - coinTextSize.y) / 2; // Center vertically
-    DrawTextEx(g_AIGUI.defaultFont, coinStr.c_str(), { coinTextX, coinTextY }, 20, 1.0f, WHITE); // Use Whacky Joe
+    Vector2 coinTextSize = MeasureTextEx(g_AIGUI.defaultFont, coinStr.c_str(), 20.0f, 1.0f);
+    float coinTextX = coinBagX + _CoinBag.width + 4.0f;
+    float coinTextY = coinBagY + (_CoinBag.height - coinTextSize.y) / 2.0f;
+    Font fontToUse = IsHighDefFont() ? game->GetScaledFont(1.2f) : g_AIGUI.defaultFont;
+    DrawTextEx(fontToUse, coinStr.c_str(), { coinTextX, coinTextY }, 24.0f, 1.0f, WHITE);
 }
 
 void Playing::UpdatePlayerPositionInLevel()
 {
     if (levelManager)
         levelManager->SetPlayerPosition(player->GetCircleCenter());
+}
+
+void Playing::UpdateSessionRecord(int levelIndex, int pipesPassed)
+{
+    if (levelIndex >= 0 && levelIndex < 6) {
+        sessionRecords[levelIndex] = std::max(sessionRecords[levelIndex], pipesPassed);
+    }
 }

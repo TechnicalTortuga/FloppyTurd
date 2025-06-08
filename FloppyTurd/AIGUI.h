@@ -24,7 +24,7 @@ AIGUI_DEF void AIGUI_SetFont(Font font);
 AIGUI_DEF void AIGUI_SliderFloat(const char* label, float x, float y, float width, float min, float max, float* value);
 AIGUI_DEF bool AIGUI_Button(const char* label, float x, float y, float width, float height);
 AIGUI_DEF bool AIGUI_ButtonRounded(const char* label, float x, float y, float width, float height, float radius = 0.2f, int fontSize = 18, Color textColor = WHITE);
-AIGUI_DEF void AIGUI_LabelRounded(const char* text, float x, float y, float width, float height, float radius = 0.2f, int fontSize = 18, Color textColor = WHITE);
+AIGUI_DEF void AIGUI_LabelRounded(const char* text, float x, float y, float width, float height, float radius = 0.2f, int fontSize = 18, Color textColor = WHITE, Color bgColor = { 0, 0, 0, 0 }); // Added bgColor with default transparent
 AIGUI_DEF bool AIGUI_ImageButton(
     Texture2D textureDefault,
     Texture2D textureHover,
@@ -194,30 +194,36 @@ AIGUI_DEF bool AIGUI_ButtonRounded(const char* label, float x, float y, float wi
     return clicked;
 }
 
-AIGUI_DEF void AIGUI_LabelRounded(const char* text, float x, float y, float width, float height, float radius, int fontSize, Color textColor) {
+AIGUI_DEF void AIGUI_LabelRounded(const char* text, float x, float y, float width, float height, float radius, int fontSize, Color textColor, Color bgColor) {
     Rectangle rect = { x, y, width, height };
 
-    Color topColor = Color{ 120, 135, 155, 255 };   // light steel-blue gray
-    Color bottomColor = Color{ 75, 85, 105, 255 };  // darker muted base
+    // Use provided bgColor if not transparent, otherwise use the default gradient
+    if (bgColor.a > 0) {
+        DrawRectangleRounded(rect, radius, 12, bgColor);
+    }
+    else {
+        Color topColor = Color{ 120, 135, 155, 255 };   // light steel-blue gray
+        Color bottomColor = Color{ 75, 85, 105, 255 };  // darker muted base
 
-    rect.x = (float)(int)rect.x;
-    rect.y = (float)(int)rect.y;
-    rect.width = (float)(int)rect.width;
-    rect.height = (float)(int)rect.height;
+        rect.x = (float)(int)rect.x;
+        rect.y = (float)(int)rect.y;
+        rect.width = (float)(int)rect.width;
+        rect.height = (float)(int)rect.height;
 
-    DrawRectangleRounded(rect, radius, 12, topColor);
+        DrawRectangleRounded(rect, radius, 12, topColor);
 
-    for (int i = 0; i < (int)height; ++i) {
-        float t = (float)i / (height - 1);
-        Color c = {
-            (unsigned char)Lerp((float)topColor.r, (float)bottomColor.r, t),
-            (unsigned char)Lerp((float)topColor.g, (float)bottomColor.g, t),
-            (unsigned char)Lerp((float)topColor.b, (float)bottomColor.b, t),
-            255
-        };
-        BeginScissorMode((int)x, (int)(y + i), (int)width + 1, 1);
-        DrawRectangleRounded(rect, radius, 12, c);
-        EndScissorMode();
+        for (int i = 0; i < (int)height; ++i) {
+            float t = (float)i / (height - 1);
+            Color c = {
+                (unsigned char)Lerp((float)topColor.r, (float)bottomColor.r, t),
+                (unsigned char)Lerp((float)topColor.g, (float)bottomColor.g, t),
+                (unsigned char)Lerp((float)topColor.b, (float)bottomColor.b, t),
+                255
+            };
+            BeginScissorMode((int)x, (int)(y + i), (int)width + 1, 1);
+            DrawRectangleRounded(rect, radius, 12, c);
+            EndScissorMode();
+        }
     }
 
     Rectangle outlineRect = rect;
