@@ -61,6 +61,13 @@ MainMenu::MainMenu(Game* game)
 
 	currentMusic = new AudioClip(MainMenuMusic);
 	PlayMusic(currentMusic);
+
+	if (game && game->playing) {
+		for (int i = 0; i < 6; ++i) {
+			levelsUnlocked[i] = game->playing->GetStats().levelUnlocked[i];
+			if (i == 0) levelsUnlocked[i] = true; // Ensure Park is always unlocked
+		}
+	}
 }
 
 MainMenu::~MainMenu()
@@ -208,6 +215,8 @@ bool MainMenu::PurchaseLevel(int levelIndex) {
 		game->playing->player->AddCoins(-cost); // Update session coins
 	}
 	levelsUnlocked[levelIndex] = true; // Unlock immediately
+	game->playing->GetStats().levelUnlocked[levelIndex] = true; // Sync with stats
+	game->playing->GetStats().Save();
 	TraceLog(LOG_INFO, "Level %d unlocked, deducted %d coins", levelIndex, cost);
 	return true;
 }
@@ -309,7 +318,7 @@ void MainMenu::Draw()
 		}
 
 		const char* title = levelNames[currentLevelIndex];
-		AIGUI_LabelRounded(title, 10.0f, 10.0f, 300.0f, 18.0f, 0.2f, 16, BLACK);
+		AIGUI_LabelRounded(title, 10.0f, 10.0f, 300.0f, 24.0f, 0.2f, 20, BLACK); // Increased font to 20
 
 		float infoY = 40.0f;
 		int totalCoins = 0;
@@ -339,15 +348,15 @@ void MainMenu::Draw()
 			std::string coinStatus = TextFormat("Coins: %d/%d", totalCoins, requiredCoins);
 			std::string pipeStatus = (requiredPipes > 0 && previousLevelIndex >= 0) ? TextFormat("Previous Pipes: %d/%d", sessionRecords[previousLevelIndex], requiredPipes) : "";
 
-			AIGUI_LabelRounded(coinStatus.c_str(), 80.0f, infoY + 20.0f, 160.0f, 16.0f, 0.2f, 14, totalCoins >= requiredCoins ? GREEN : BLACK);
+			AIGUI_LabelRounded(coinStatus.c_str(), 80.0f, infoY + 20.0f, 160.0f, 24.0f, 0.2f, 20, totalCoins >= requiredCoins ? GREEN : BLACK); // Increased font to 20
 			if (!pipeStatus.empty()) {
-				AIGUI_LabelRounded(pipeStatus.c_str(), 60.0f, infoY, 200.0f, 16.0f, 0.2f, 14, sessionRecords[previousLevelIndex] >= requiredPipes ? GREEN : BLACK);
+				AIGUI_LabelRounded(pipeStatus.c_str(), 60.0f, infoY, 200.0f, 24.0f, 0.2f, 20, sessionRecords[previousLevelIndex] >= requiredPipes ? GREEN : BLACK); // Increased font to 20
 			}
 
 			if (CanPurchaseLevel(currentLevelIndex, totalCoins, sessionRecords)) {
 				std::string costStr = std::to_string(requiredCoins);
 				Vector2 unlockPos = { paintingX + painting.width + 10.0f, paintingY + painting.height / 2.0f - 9.0f };
-				Rectangle buttonRect = { unlockPos.x, unlockPos.y + 18.0f, 70.0f, 18.0f };
+				Rectangle buttonRect = { unlockPos.x, unlockPos.y + 18.0f, 70.0f, 24.0f }; // Increased button height
 
 				// Draw coin icon and cost
 				DrawTexturePro(
@@ -356,29 +365,18 @@ void MainMenu::Draw()
 					{ unlockPos.x, unlockPos.y, 16.0f, 16.0f },
 					{ 0, 0 }, 0.0f, WHITE
 				);
-				DrawTextEx(hdFont, costStr.c_str(), { unlockPos.x + 18.0f, unlockPos.y - 2.0f }, 16.0f, 1.0f, WHITE);
+				DrawTextEx(hdFont, costStr.c_str(), { unlockPos.x + 18.0f, unlockPos.y - 2.0f }, 20.0f, 1.0f, WHITE); // Increased font to 20
 
 				bool isButtonHovered = CheckCollisionPointRec(g_AIGUI.mousePos, buttonRect);
 				if (isButtonHovered) {
 					TraceLog(LOG_INFO, "Unlock button hovered at (%f, %f)", g_AIGUI.mousePos.x, g_AIGUI.mousePos.y);
 				}
 
-				if (AIGUI_ButtonRounded("Unlock", unlockPos.x, unlockPos.y + 18.0f, 70.0f, 18.0f, 0.3f, 16, WHITE)) {
+				if (AIGUI_ButtonRounded("Unlock", unlockPos.x, unlockPos.y + 18.0f, 70.0f, 24.0f, 0.3f, 20, WHITE)) { // Increased font to 20
 					TraceLog(LOG_INFO, "Unlock button clicked for level %d", currentLevelIndex);
 					if (PurchaseLevel(currentLevelIndex)) {
 						TraceLog(LOG_INFO, "Level %d unlocked successfully!", currentLevelIndex);
 						PlayRandomFartSound(); // Celebrate with a fart!
-						// Simple unlock animation (brown poof)
-						float animRadius = 0.0f;
-						float animAlpha = 1.0f;
-						while (animAlpha > 0.0f) {
-							animRadius += 50.0f * GetFrameTime();
-							animAlpha -= 1.0f * GetFrameTime();
-							DrawCircle((int)(paintingX + painting.width / 2), (int)(paintingY + painting.height / 2), animRadius, Fade(BROWN, animAlpha));
-							// Force redraw to see animation
-							EndDrawing();
-							BeginDrawing();
-						}
 					}
 					else {
 						TraceLog(LOG_WARNING, "Failed to unlock level %d", currentLevelIndex);
@@ -386,7 +384,7 @@ void MainMenu::Draw()
 				}
 			}
 			else {
-				DrawTextEx(hdFont, "Not enough!", { paintingX + painting.width + 10.0f, paintingY + painting.height / 2.0f + 10.0f }, 12.0f, 1.0f, RED);
+				AIGUI_LabelRounded("Locked", paintingX + 10.0f, paintingY + painting.height / 2.0f, 80.0f, 16.0f, 0.2f, 20, RED, Fade(RED, 0.3f)); // New styled label
 			}
 		}
 
@@ -401,11 +399,11 @@ void MainMenu::Draw()
 		}
 
 		// Reverted button positions from MainMenuold.cpp
-		if (currentLevelIndex > 0 && AIGUI_ButtonRounded("Previous", 40.0f, 150.0f, 100.0f, 24.0f, 0.1f, 24, BLACK))
+		if (currentLevelIndex > 0 && AIGUI_ButtonRounded("Previous", 40.0f, 150.0f, 100.0f, 24.0f, 0.1f, 20, BLACK)) // Increased font to 20
 			currentLevelIndex--;
-		if (currentLevelIndex < 5 && AIGUI_ButtonRounded("Next", 150.0f, 150.0f, 60.0f, 24.0f, 0.1f, 24, BLACK))
+		if (currentLevelIndex < 5 && AIGUI_ButtonRounded("Next", 150.0f, 150.0f, 60.0f, 24.0f, 0.1f, 20, BLACK)) // Increased font to 20
 			currentLevelIndex++;
-		if (AIGUI_ButtonRounded("Back", 220.0f, 150.0f, 80.0f, 24.0f, 0.1f, 24, BLACK))
+		if (AIGUI_ButtonRounded("Back", 220.0f, 150.0f, 80.0f, 24.0f, 0.1f, 20, BLACK)) // Increased font to 20
 			currentMenu = MAIN_MENU;
 	}
 	else if (currentMenu == OPTIONS_MENU)

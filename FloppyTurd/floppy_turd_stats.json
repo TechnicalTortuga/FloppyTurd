@@ -1,0 +1,51 @@
+{
+  "totalPipes": 4,
+  "totalCoins": 0,
+  "totalEnemiesKilled": 0,
+  "totalJumps": 27,
+  "totalFlops": 1,
+  "totalLevelTries": 0,
+  "levelHighScores": [
+    4,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "hatUnlocked": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+  ],
+  "skillUnlocked": [
+    false,
+    false,
+    false,
+    false,
+    false
+  ],
+  "levelUnlocked": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+  ]
+}

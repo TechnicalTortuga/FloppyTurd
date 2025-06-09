@@ -2,7 +2,7 @@
 #include <raylib.h>
 #include <iostream>
 #include "Resources.h"
-#include "Player.h" // Added to provide Player definition
+#include "Player.h"
 #include "Game.h"
 #include <vector>
 #include "Level.h"
@@ -17,9 +17,10 @@
 #include "SnowOverlay.h"
 #include "QuickplaySettings.h"
 #include "MainMenu.h"
+#include "GameStats.h" // Added for stats tracking
 
 class MainMenu;
-class Player; // Forward declaration (optional if included above)
+class Player;
 class Game;
 
 enum class Difficulty { RUNNY, REGULAR, ROUGH };
@@ -63,14 +64,21 @@ public:
 	int GetTotalCoins();
 	const Texture2D& GetCoinBagTexture() const { return _CoinBag; }
 
+	// Stats access
+	GameStats& GetStats() { return stats; }
+	void IncrementEnemiesKilled() { stats.totalEnemiesKilled++; }
+	void IncrementLevelTries() { stats.totalLevelTries++; }
+
 	int SCORE = 0;
 	int COINS = 0;
 	int TOTALCOINS = 0;
 	int TOTALSCORE = 0;
-	Player* player{}; // Pointer requires Player.h for dereferencing
+	Player* player{};
+	void TriggerSaveIfPending();
+	bool savePending = false; // Flag to debounce saves
 
 private:
-	bool PurchaseItem(int cost); // Deduct coins for purchases
+	bool PurchaseItem(int cost);
 	Game* game;
 
 	AudioClip* currentMusic = nullptr;
@@ -154,4 +162,6 @@ private:
 		150, // Big Turd Form
 		100  // Heart Thirds
 	};
+
+	GameStats stats; // Persistent game statistics
 };

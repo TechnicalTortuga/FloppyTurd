@@ -41,6 +41,7 @@ public:
 	bool IsLevelUnlocked(int levelIndex) const { return levelsUnlocked[levelIndex]; }
 	bool PurchaseLevel(int levelIndex);
 	void UpdateLevelUnlocks(int totalCoins, const int sessionRecords[6]);
+	bool levelsUnlocked[6] = { true, false, false, false, false, false }; // Park unlocked, Sewer requires 50 pipes, others depend on progress
 
 private:
 	void PlayRandomFartSound();
@@ -53,7 +54,6 @@ private:
 	Texture2D emptyPainting;
 	int currentLevelIndex{ 0 };
 	bool levelSelectMode = false;
-	bool levelsUnlocked[6] = { true, false, false, false, false, false }; // Park unlocked, Sewer requires 50 pipes, others depend on progress
 
 	Texture2D levelPaintings[6];
 	Texture2D lockedPainting;

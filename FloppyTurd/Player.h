@@ -7,12 +7,8 @@
 #include <vector>
 #include "Hat.h"
 #include "Game.h"
-#include "Player.h"
 
-// Forward declaration of Game
 class Game;
-
-enum HeartMode { WHOLE = 1, HALVES = 2, THIRDS = 3 };
 
 class Player {
 public:
@@ -21,43 +17,40 @@ public:
 
 	enum HeartMode { WHOLE = 1, HALVES = 2, THIRDS = 3 };
 
-	void SetHeartMode(HeartMode mode);   // Called by the skill tree
+	void SetHeartMode(HeartMode mode);
 	HeartMode GetHeartMode() const { return heartMode; }
 	int GetTotalHearts() const { return hearts; }
 	int GetSlicesPerHeart() const { return (int)heartMode; }
-	int GetSlicesLeft() const { return liveSlices; }      // Living slices
-	int GetGhostSlicesLeft() const { return ghostSlices; } // “Borrowed” by hollow-turds
+	int GetSlicesLeft() const { return liveSlices; }
+	int GetGhostSlicesLeft() const { return ghostSlices; }
 	void EnableHollowTurds(bool enabled) { hollowTurds = enabled; }
-	void SetInitialHearts(int difficultyIndex); // Difficulty-based hearts
-	void EnableCoinMagnet(bool enable) { coinMagnet = enable; } // Enable/disable coin magnet
-	void ActivateBigTurdBuff(float duration); // Activate Big Turd buff
-	bool IsBigTurdActive() const { return bigTurdBuffActive; } // Check if Big Turd buff is active
-	float GetBigTurdTimer() const { return bigTurdBuffTimer; } // Get remaining buff time
+	void SetInitialHearts(int difficultyIndex);
+	void EnableCoinMagnet(bool enable) { coinMagnet = enable; }
+	void ActivateBigTurdBuff(float duration);
+	bool IsBigTurdActive() const { return bigTurdBuffActive; }
+	float GetBigTurdTimer() const { return bigTurdBuffTimer; }
 
 	void Draw();
 	void Update(float deltaTime);
 	void PutTheHurtOn(int DAMAGE);
-	bool SpendCoinsForShoot(); // Handle coin-based shooting
+	bool SpendCoinsForShoot();
 	float GetCircleRadius() const;
 	Vector2 GetCircleCenter() const;
 	int GetTurdPoints() const;
 	void SetHat(Hat* hat);
 	void InitSprites();
 	void Jump();
-	void Shoot(); // Method to shoot projectiles
+	void Shoot();
 	void Revive();
 	void SetHealth(int hp);
 	void ResetPosition();
 
 	int GetHealth();
 
-	// Get player position
 	Vector2 GetPosition() const { return pos; }
 
-	// Change the player form (0: Turdlet, 1: Teenage Turd, 2: Big Turd)
 	void ChangeForm(int newForm);
 
-	// Accessor for projectiles
 	const std::vector<Projectile*>& GetProjectiles() const;
 	std::vector<Projectile*>& GetProjectilesNonConst();
 
@@ -80,15 +73,12 @@ public:
 	bool isAlive{ true };
 	bool isInvisible = false;
 
-	// Coin management
-	void AddCoins(int amount); // Add coins to session and notify Playing
-	int GetSessionCoins() const { return sessionCoins; } // Get current session coins
-	void ResetSessionCoins(); // Reset session coins
+	void AddCoins(int amount);
+	int GetSessionCoins() const { return sessionCoins; }
+	void ResetSessionCoins();
 
-	// Set the game reference
 	void SetGame(Game* g) { game = g; }
-	// Coin magnet
-	bool coinMagnet{ false }; // Coin magnet skill status
+	bool coinMagnet{ false };
 	Vector2 circleCenter{ 77.0f, 100.0f };
 
 private:
@@ -108,17 +98,14 @@ private:
 
 	Sprite* currentSprite;
 
-	// Form 0: Turdlet sprites
 	Sprite* idleSpriteTurdlet;
 	Sprite* jumpSpriteTurdlet;
 	Sprite* shootSpriteTurdlet;
 
-	// Form 1: Teenage Turd sprites
 	Sprite* idleSpriteTeen;
 	Sprite* jumpSpriteTeen;
 	Sprite* shootSpriteTeen;
 
-	// Form 2: Big Turd sprites
 	Sprite* idleSpriteBig;
 	Sprite* jumpSpriteBig;
 	Sprite* shootSpriteBig;
@@ -129,31 +116,26 @@ private:
 
 	float hurtBuffer{ 1.0f };
 
-	// Projectiles
 	std::vector<Projectile*> projectiles;
-	float shootCooldown{ 0.5f }; // Time between shots
+	float shootCooldown{ 0.5f };
 	float shootTimer{ 0.0f };
 
-	// Hat
 	Hat* currentSelectedHat;
 
 	Sound hurtSound;
 
-	/* Health bookkeeping */
-	int hearts{ 2 };         // Total heart icons shown
-	HeartMode heartMode{ WHOLE }; // 1 = full hearts, 2 = halves, 3 = thirds
-	int liveSlices{ hearts * (int)heartMode }; // Keep in sync
-	int ghostSlices{ 0 };         // Slices temporarily “spent” by hollow-turds
-	bool hollowTurds{ false };     // Set by Skill 4
+	int hearts{ 2 };
+	HeartMode heartMode{ WHOLE };
+	int liveSlices{ hearts * (int)heartMode };
+	int ghostSlices{ 0 };
+	bool hollowTurds{ false };
 
 	float invisibilityTimer = 0.0f;
 
-	// Big Turd buff
-	bool bigTurdBuffActive{ false }; // Big Turd buff status
-	float bigTurdBuffTimer{ 0.0f }; // Timer for Big Turd buff duration
+	bool bigTurdBuffActive{ false };
+	float bigTurdBuffTimer{ 0.0f };
 
-	// Session coins
-	int sessionCoins{ 0 }; // Coins collected in the current session
+	int sessionCoins{ 0 };
 
-	Game* game; // Reference to Game for accessing Playing
+	Game* game;
 };

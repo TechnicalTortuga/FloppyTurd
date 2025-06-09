@@ -21,6 +21,9 @@ Playing::Playing(Game* game) {
 	this->game = game;
 	player = new Player(game);
 
+	stats.Load(); // Load persistent stats
+	TOTALCOINS = stats.totalCoins; // Initialize TOTALCOINS from stats
+
 	if (game->mainMenu) {
 		difficultyIndex = game->mainMenu->GetDifficultyIndex();
 		player->SetInitialHearts(difficultyIndex);
@@ -31,13 +34,12 @@ Playing::Playing(Game* game) {
 	_TurdHeart = LoadTexture(TurdHeart);
 	_CoinBag = LoadTexture(coinbagtexture);
 	ScoreSound = LoadSound(GotScore);
-	arrowLeft = LoadTexture(ArrowLeft); // Assume resources exist
+	arrowLeft = LoadTexture(ArrowLeft);
 	arrowRight = LoadTexture(ArrowRight);
 	arrowLeftHover = LoadTexture(ArrowLeftHover);
 	arrowRightHover = LoadTexture(ArrowRightHover);
 	SCORE = 0;
 	TOTALSCORE = 0;
-	TOTALCOINS = 0;
 
 	gameOverMusic = new AudioClip(GameOverMusic);
 	PreLoadLevels();
@@ -51,6 +53,32 @@ Playing::Playing(Game* game) {
 	InitializeSkillNodes();
 	InitializeHats();
 
+	// Sync loaded states with game objects
+	for (int i = 0; i < 5; ++i) {
+		skillUnlocked[i] = stats.skillUnlocked[i];
+		if (skillUnlocked[i]) {
+			switch (i) {
+			case 0: player->EnableShooting(true); break;
+			case 1: player->SetHeartMode(Player::HALVES); break;
+			case 2: player->EnableCoinMagnet(true); break;
+			case 3: player->ActivateBigTurdBuff(15.0f); break;
+			case 4: player->SetHeartMode(Player::THIRDS); break;
+			}
+		}
+	}
+	for (int i = 0; i < 18; ++i) {
+		if (i < hats.size() && stats.hatUnlocked[i]) {
+			hats[i]->status = UNLOCKED;
+			if (i == 0) currentSelectedHat = hats[i]; // Default to first unlocked hat
+		}
+	}
+	if (game->mainMenu) {
+		for (int i = 0; i < 6; ++i) {
+			game->mainMenu->levelsUnlocked[i] = stats.levelUnlocked[i];
+			if (i == 0) game->mainMenu->levelsUnlocked[i] = true; // Ensure Park is always unlocked
+		}
+	}
+
 	floppyButtonBlue = LoadTexture(blueButton);
 	floppyButtonBlueHover = LoadTexture(blueButtonHover);
 
@@ -61,6 +89,8 @@ Playing::Playing(Game* game) {
 	Texture2D rawSnowTexture = LoadTexture(Snowfall);
 	snowOverlay = std::make_unique<SnowOverlay>(rawSnowTexture, 16, 0.15f);
 	SetTextureWrap(rawSnowTexture, TEXTURE_WRAP_CLAMP);
+
+	savePending = false; // Ensure savePending starts false
 }
 
 void Playing::InitializeHats() {
@@ -106,8 +136,8 @@ void Playing::PreLoadLevels() {
 	levels.emplace_back(std::make_shared<BossLevel>());
 
 	for (int i = 0; i < 6; ++i) {
-		levels[i]->SetDifficulty(1); // Default to Regular
-		levels[i]->SetPanSpeed(80.0f); // Default pan speed
+		levels[i]->SetDifficulty(1);
+		levels[i]->SetPanSpeed(80.0f);
 	}
 }
 
@@ -141,7 +171,7 @@ void Playing::InitializeSkillNodes() {
 	for (int i = 0; i < totalSkillNodes; ++i) {
 		skillUnlocked[i] = false;
 	}
-	selectedNode = 0; // Start at first skill
+	selectedNode = 0;
 }
 
 bool Playing::PurchaseItem(int cost) {
@@ -151,13 +181,29 @@ bool Playing::PurchaseItem(int cost) {
 	int sessionDeduction = std::min(sessionCoins, cost);
 	player->AddCoins(-sessionDeduction);
 	TOTALCOINS -= (cost - sessionDeduction);
+	stats.totalCoins = TOTALCOINS; // Sync persistent coins
+	savePending = true; // Flag for save on next death or pause
 	return true;
+}
+
+
+void Playing::TriggerSaveIfPending() {
+	if (savePending && isPaused) {
+		stats.Save();
+		savePending = false;
+	}
+	// Add a check for game over save
+	if (savePending && gameOverTriggered && turdHasFallenOffScreen) {
+		stats.Save();
+		savePending = false;
+	}
 }
 
 void Playing::UnlockSkill(int idx) {
 	if (idx < 0 || idx >= totalSkillNodes || skillUnlocked[idx]) return;
 	if (PurchaseItem(skillCosts[idx])) {
 		skillUnlocked[idx] = true;
+		stats.skillUnlocked[idx] = true; // Sync with stats
 		switch (idx) {
 		case 0: player->EnableShooting(true); break;
 		case 1: player->SetHeartMode(Player::HALVES); break;
@@ -175,7 +221,7 @@ void Playing::OutputHatMenu() {
 	const int slotHeight = 32;
 	const int spacingX = 4;
 	const int spacingY = 4;
-	const int hatCosts = 50; // Cost for locked hats
+	const int hatCosts = 50;
 
 	for (int row = 0; row < 3; row++) {
 		for (int col = 0; col < 6; col++) {
@@ -214,7 +260,6 @@ void Playing::OutputHatMenu() {
 				player->SetHat(currentSelectedHat);
 			}
 			else if (clicked && hats[index]->status == LOCKED) {
-				// Show cost and buy option
 				Font font = game->GetScaledFont(1.2f);
 				std::string costStr = std::to_string(hatCosts);
 				float costX = static_cast<float>(x + slotWidth + 5);
@@ -229,6 +274,7 @@ void Playing::OutputHatMenu() {
 				if (AIGUI_ButtonRounded("Buy", static_cast<float>(x + slotWidth + 5), static_cast<float>(y + 20), 40.0f, 12.0f, 0.3f, 12, WHITE)) {
 					if (PurchaseItem(hatCosts)) {
 						hats[index]->status = UNLOCKED;
+						stats.hatUnlocked[index] = true; // Sync with stats
 						currentSelectedHat = hats[index];
 						player->SetHat(currentSelectedHat);
 					}
@@ -325,11 +371,9 @@ void Playing::DrawPauseMenu() {
 
 	switch (currentTab) {
 	case SKILLS: {
-		// Skill display area
 		Rectangle skillArea = { 24, 40, 272, 100 };
 		DrawRectangleRec(skillArea, Fade(BLACK, 0.7f));
 
-		// Draw arrows
 		int arrowSize = 24;
 		int arrowY = skillArea.y + (skillArea.height - arrowSize) / 2;
 		int leftArrowX = skillArea.x + 10;
@@ -359,19 +403,15 @@ void Playing::DrawPauseMenu() {
 			selectedNode++;
 		}
 
-		// Draw skill info
-		Font font = game->GetScaledFont(1.2f); // Use Whacky Joe or similar large pixel font
+		Font font = game->GetScaledFont(1.2f);
 		float y = skillArea.y + 10;
 
-		// Skill name
 		DrawTextEx(font, skillNames[selectedNode], { skillArea.x + 10, y }, 20, 1.0f, YELLOW);
-		y += 20; // Adjusted up to fix overlap
+		y += 20;
 
-		// Description
 		DrawTextEx(font, skillDescs[selectedNode], { skillArea.x + 10, y }, 16, 1.0f, WHITE);
-		y += 36; // Adjusted to fit better
+		y += 36;
 
-		// Status or unlock button
 		if (skillUnlocked[selectedNode]) {
 			DrawTextEx(font, "Unlocked", { skillArea.x + 10, y }, 16, 1.0f, GREEN);
 		}
@@ -399,8 +439,37 @@ void Playing::DrawPauseMenu() {
 	case HATS:
 		OutputHatMenu();
 		break;
-	case STATS:
+	case STATS: {
+		// Increased height to 120 to cover all text
+		Rectangle statsArea = { 24, 40, 272, 120 };
+		DrawRectangleRec(statsArea, Fade(BLACK, 0.7f));
+
+		Font font = game->GetScaledFont(1.2f);
+		float y = statsArea.y + 10;
+		float x = statsArea.x + 10;
+
+		// General stats
+		DrawTextEx(font, TextFormat("Total Pipes: %d", stats.totalPipes), { x, y }, 18, 1.0f, WHITE);
+		y += 16;
+		DrawTextEx(font, TextFormat("Total Coins: %d", stats.totalCoins), { x, y }, 18, 1.0f, WHITE);
+		y += 16;
+		DrawTextEx(font, TextFormat("Enemies Killed: %d", stats.totalEnemiesKilled), { x, y }, 18, 1.0f, WHITE);
+		y += 16;
+		DrawTextEx(font, TextFormat("Times Jumped: %d", stats.totalJumps), { x, y }, 18, 1.0f, WHITE);
+		y += 16;
+		DrawTextEx(font, TextFormat("Times Flopped: %d", stats.totalFlops), { x, y }, 18, 1.0f, WHITE);
+		y += 16;
+		DrawTextEx(font, TextFormat("Level Tries: %d", stats.totalLevelTries), { x, y }, 18, 1.0f, WHITE);
+
+		// Per-level high scores (excluding Level 6)
+		y = statsArea.y + 10;
+		x = statsArea.x + 150;
+		for (int i = 0; i < 5; ++i) { // Changed from 6 to 5 to exclude Level 6
+			DrawTextEx(font, TextFormat("Level %d High: %d", i + 1, stats.levelHighScores[i]), { x, y }, 16, 1.0f, WHITE);
+			y += 14;
+		}
 		break;
+	}
 	case SYSTEM: {
 		if (AIGUI_ImageButton(
 			floppyButtonBlue, floppyButtonBlueHover,
@@ -436,6 +505,8 @@ void Playing::DrawPauseMenu() {
 			}
 
 			TOTALCOINS += player->GetSessionCoins();
+			stats.totalCoins = TOTALCOINS;
+			savePending = true; // Flag save on pause
 			if (game->mainMenu) {
 				game->mainMenu->UpdateLevelUnlocks(TOTALCOINS, sessionRecords);
 				game->mainMenu->ResetMusic();
@@ -450,9 +521,15 @@ void Playing::DrawPauseMenu() {
 			game->SetGameState(Game::MAINMENU);
 		}
 
-		AudioManager::GetInstance().DrawAudioOptions(10, 50);
+		AudioManager::GetInstance().DrawAudioOptions(35, 40);
 		break;
 	}
+	}
+
+	// Perform save if pending and paused
+	if (savePending && isPaused) {
+		stats.Save();
+		savePending = false;
 	}
 }
 
@@ -518,6 +595,7 @@ void Playing::DrawGameOverScreen() {
 		GAMEOVER = false;
 		gameOverTriggered = false;
 		turdHasFallenOffScreen = false;
+		stats.totalLevelTries++; // Increment tries
 	}
 
 	if (AIGUI_ButtonRounded("Quit", (float)(btnX + btnW + spacing), (float)btnY, (float)btnW, (float)btnH, 0.3f, 24, BLACK)) {
@@ -592,9 +670,14 @@ void Playing::Update() {
 
 		if (levelIndex >= 0) {
 			UpdateSessionRecord(levelIndex, SCORE);
+			stats.totalPipes = std::max(stats.totalPipes, stats.totalPipes + SCORE);
+			stats.levelHighScores[levelIndex] = std::max(stats.levelHighScores[levelIndex], SCORE);
 		}
 
 		TOTALCOINS += player->GetSessionCoins();
+		stats.totalCoins = TOTALCOINS;
+		savePending = true; // Set flag on death
+
 		if (game->mainMenu) {
 			game->mainMenu->UpdateLevelUnlocks(TOTALCOINS, sessionRecords);
 		}
@@ -618,6 +701,9 @@ void Playing::Update() {
 		if (turdHasFallenOffScreen && !GAMEOVER) {
 			GAMEOVER = true;
 		}
+
+		// Trigger save here when game over is fully processed
+		TriggerSaveIfPending();
 		return;
 	}
 
@@ -681,7 +767,6 @@ void Playing::Update() {
 					}
 				}
 
-				// Update coins with player position for magnet effect
 				if (player->coinMagnet) {
 					for (auto& pickup : pickups) {
 						if (auto coin = dynamic_cast<Coin*>(pickup.get())) {
@@ -732,6 +817,9 @@ void Playing::Update() {
 				if (CheckCollisionRecs(projHitbox, (*enemyIt)->GetHitbox())) {
 					projectileHit = true;
 					(*enemyIt)->TakeDamage();
+					if ((*enemyIt)->ShouldBeRemoved()) {
+						IncrementEnemiesKilled();
+					}
 					break;
 				}
 			}
@@ -768,6 +856,9 @@ void Playing::Update() {
 								delete projectile;
 								projIt = projectiles.erase(projIt);
 								hitBoss = true;
+								if (!boss->isActive) {
+									IncrementEnemiesKilled();
+								}
 								break;
 							}
 						}
@@ -908,10 +999,10 @@ void Playing::SetCurrentLevel(int levelIndex) {
 	levelManager->SetQuickplaySettings(quickplaySettings);
 
 	newLevel->SetDifficulty(difficultyIndex);
-	float panSpeed = 80.0f; // Default Regular
+	float panSpeed = 80.0f;
 	switch (difficultyIndex) {
-	case 0: panSpeed = 60.0f; break; // Runny
-	case 2: panSpeed = 120.0f; break; // Rough
+	case 0: panSpeed = 60.0f; break;
+	case 2: panSpeed = 120.0f; break;
 	}
 	newLevel->SetPanSpeed(panSpeed);
 

@@ -4,7 +4,7 @@
 Player::Player(Game* g) : game(g) {
 	InitSprites();
 	SetHeartMode(WHOLE);
-	SetInitialHearts(1); // Default to Regular difficulty (index 1)
+	SetInitialHearts(1);
 }
 
 Player::~Player() {
@@ -27,24 +27,15 @@ Player::~Player() {
 }
 
 void Player::SetInitialHearts(int difficultyIndex) {
-	// Set initial hearts based on difficulty: 0=Runny, 1=Regular, 2=Rough
 	switch (difficultyIndex) {
-	case 0: // Runny
-		hearts = 3;
-		break;
-	case 1: // Regular
-		hearts = 2;
-		break;
-	case 2: // Rough
-		hearts = 1;
-		break;
-	default:
-		hearts = 2; // Fallback to Regular
-		break;
+	case 0: hearts = 3; break;
+	case 1: hearts = 2; break;
+	case 2: hearts = 1; break;
+	default: hearts = 2; break;
 	}
 	liveSlices = hearts * (int)heartMode;
 	ghostSlices = 0;
-	SetMaxHearts(9); // Ensure max hearts is 9 for all difficulties
+	SetMaxHearts(9);
 }
 
 void Player::SetHeartMode(HeartMode mode) {
@@ -58,9 +49,9 @@ void Player::SetHeartMode(HeartMode mode) {
 void Player::ActivateBigTurdBuff(float duration) {
 	bigTurdBuffActive = true;
 	bigTurdBuffTimer = duration;
-	ChangeForm(2); // Switch to Big Turd form
-	shootCooldown = 0.3f; // Faster shooting
-	JUMPVELOCITY = 25.0f; // Higher jump
+	ChangeForm(2);
+	shootCooldown = 0.3f;
+	JUMPVELOCITY = 25.0f;
 }
 
 void Player::Draw() {
@@ -140,9 +131,9 @@ void Player::Update(float deltaTime) {
 		bigTurdBuffTimer -= deltaTime;
 		if (bigTurdBuffTimer <= 0.0f) {
 			bigTurdBuffActive = false;
-			ChangeForm(formLevel); // Revert to original form
-			shootCooldown = 0.5f; // Reset shooting speed
-			JUMPVELOCITY = 20.0f; // Reset jump velocity
+			ChangeForm(formLevel);
+			shootCooldown = 0.5f;
+			JUMPVELOCITY = 20.0f;
 		}
 	}
 
@@ -175,7 +166,7 @@ void Player::SetHat(Hat* hat) {
 }
 
 void Player::PutTheHurtOn(int DAMAGE) {
-	if (hurtBuffer > 0.0f || isInvisible) return; // No damage during invincibility
+	if (hurtBuffer > 0.0f || isInvisible) return;
 
 	const int slicesToLose = 1;
 	liveSlices = std::max(0, liveSlices - slicesToLose);
@@ -183,6 +174,10 @@ void Player::PutTheHurtOn(int DAMAGE) {
 	if (liveSlices == 0) {
 		isAlive = false;
 		playerstate = DEAD;
+		if (game && game->playing) {
+			game->playing->GetStats().totalFlops++; // Increment flops
+			game->playing->GetStats().Save();
+		}
 	}
 
 	hurtBuffer = 1.0f;
@@ -192,11 +187,11 @@ void Player::PutTheHurtOn(int DAMAGE) {
 }
 
 bool Player::SpendCoinsForShoot() {
-	const int shootCost = 1; // 1 coin per shot
+	const int shootCost = 1;
 	if (sessionCoins >= shootCost) {
 		sessionCoins -= shootCost;
 		if (game && game->playing) {
-			game->playing->TOTALCOINS -= shootCost; // Update total coins when spent
+			game->playing->TOTALCOINS -= shootCost;
 		}
 		return true;
 	}
@@ -276,8 +271,13 @@ void Player::ChangeForm(int newForm) {
 }
 
 void Player::Jump() {
-	if (isAlive)
+	if (isAlive) {
 		velocity.y -= JUMPVELOCITY;
+		if (game && game->playing) {
+			game->playing->GetStats().totalJumps++; // Just increment, no save
+			game->playing->savePending = true; // Flag for later save
+		}
+	}
 }
 
 void Player::Shoot() {
@@ -290,8 +290,8 @@ void Player::Shoot() {
 	playerstate = SHOOTING;
 	ChangeForm(bigTurdBuffActive ? 2 : formLevel);
 
-	float projectileScale = bigTurdBuffActive ? 1.2f : 1.0f; // Larger projectiles during buff
-	float projectileSpeed = bigTurdBuffActive ? 400.0f : 300.0f; // Faster projectiles
+	float projectileScale = bigTurdBuffActive ? 1.2f : 1.0f;
+	float projectileSpeed = bigTurdBuffActive ? 400.0f : 300.0f;
 	const char* spritePath = PoopSmall;
 	if (formLevel == 1) spritePath = PoopMid;
 	else if (formLevel == 2 || bigTurdBuffActive) spritePath = PoopLarge;
@@ -309,12 +309,11 @@ void Player::Revive() {
 	isAlive = true;
 	isShooting = false;
 
-	// Reinitialize hearts based on difficulty
 	if (game && game->mainMenu) {
 		SetInitialHearts(game->mainMenu->GetDifficultyIndex());
 	}
 	else {
-		SetInitialHearts(1); // Default to Regular
+		SetInitialHearts(1);
 	}
 
 	pos = { 77.0f, 100.0f };
@@ -322,10 +321,10 @@ void Player::Revive() {
 	circleCenter = { pos.x + 32, pos.y + 34 };
 
 	currentSprite->ResetAnimation();
-	ResetSessionCoins(); // Reset session coins on revive
-	bigTurdBuffActive = false; // Reset Big Turd buff
-	shootCooldown = 0.5f; // Reset shooting speed
-	JUMPVELOCITY = 20.0f; // Reset jump velocity
+	ResetSessionCoins();
+	bigTurdBuffActive = false;
+	shootCooldown = 0.5f;
+	JUMPVELOCITY = 20.0f;
 }
 
 void Player::SetHealth(int hp) {
@@ -333,7 +332,7 @@ void Player::SetHealth(int hp) {
 }
 
 void Player::ResetPosition() {
-	pos = { 50.0f, 90.0f }; // Safe starting position (center of 320x180 screen vertically)
+	pos = { 50.0f, 90.0f };
 }
 
 int Player::GetHealth() {
@@ -364,9 +363,11 @@ void Player::ActivateInvisibility(float duration) {
 }
 
 void Player::AddCoins(int amount) {
-	if (!game || !game->playing) return; // Safety check
+	if (!game || !game->playing) return;
 	sessionCoins += amount;
-	game->playing->TOTALCOINS += amount; // Update total coins in real-time
+	game->playing->GetStats().totalCoins += amount; // Update persistent coins
+	game->playing->TOTALCOINS += amount;
+	game->playing->GetStats().Save();
 }
 
 void Player::ResetSessionCoins() {
