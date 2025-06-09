@@ -9,7 +9,6 @@
 
 SnowmanEnemy::SnowmanEnemy(Vector2 spawnPos, SnowmanType type)
     : pos(spawnPos), type(type), isHurt(false), hurtTimer(0.0f), throwTimer(0.0f), hasThrown(false), isThrowing(false), speed(80.0f) {
-
     using namespace Resources;
 
     switch (type) {
@@ -35,6 +34,15 @@ SnowmanEnemy::SnowmanEnemy(Vector2 spawnPos, SnowmanType type)
         break;
     }
     UpdateHitbox();
+    // Default throwTimer (will be overridden by constructor with difficulty)
+    throwTimer = 1.2f; // Base value, adjusted by parameterized constructor
+}
+
+SnowmanEnemy::SnowmanEnemy(Vector2 spawnPos, SnowmanType type, float speed, int difficulty)
+    : SnowmanEnemy(spawnPos, type) { // Delegate to base constructor
+    SetSpeed(speed); // Set the provided speed
+    // Adjust throwTimer based on difficulty
+    throwTimer = 1.2f + (difficulty == 0 ? 3.0f : (difficulty == 1 ? 2.0f : 0.0f)); // Base 1.2s + 3s for Runny, 2s for Regular
 }
 
 SnowmanEnemy::~SnowmanEnemy() {
@@ -45,7 +53,10 @@ SnowmanEnemy::~SnowmanEnemy() {
 void SnowmanEnemy::TryThrowSnowball()
 {
     // — no fire while cooling down —
-    if (throwTimer > 0.0f) return;
+    if (throwTimer > 0.0f) {
+        throwTimer -= GetFrameTime(); // Decrease timer over time
+        return;
+    }
 
     // — only once per animation cycle, at frame 4 —
     if (!hasThrown
@@ -69,7 +80,7 @@ void SnowmanEnemy::TryThrowSnowball()
         sb->Activate(start, vel);
 
         hasThrown = true;
-        throwTimer = 1.2f;   // tweak for your desired delay
+        throwTimer = 1.2f; // Reset to base cooldown after throw
     }
 
     // — once the throw animation loops, reset for the next cycle —
@@ -107,10 +118,10 @@ void SnowmanEnemy::Update(float deltaTime) {
             throwSprite->ResetAnimation();
             isThrowing = true;
             hasThrown = false;
-            throwTimer = 0.0f;
+            throwTimer = 0.0f; // Reset timer to trigger immediate throw attempt
         }
 
-        // Flip around if to the left of player and hasn�t already flipped
+        // Flip around if to the left of player and hasn’t already flipped
         if (!hasFlipped && !queuedSecondThrow && pos.x + hitbox.width < LevelManager::GetInstance()->GetPlayerPosition().x)
         {
             isFlipped = true;
@@ -187,7 +198,7 @@ bool SnowmanEnemy::ShouldBeRemoved() const {
 }
 
 void SnowmanEnemy::UpdateHitbox() {
-    hitbox = { pos.x + 8, pos.y + 8,48, 48 };
+    hitbox = { pos.x + 8, pos.y + 8, 48, 48 };
 }
 
 std::vector<SnowballProjectile*> SnowmanEnemy::GetSnowballs() const {
@@ -215,4 +226,9 @@ void SnowmanEnemy::ResetSnowballs()
     for (auto& sb : snowballPool) {
         sb->Deactivate();
     }
+}
+
+void SnowmanEnemy::SetSpeed(float speed)
+{
+    this->speed = speed; // Update movement speed
 }

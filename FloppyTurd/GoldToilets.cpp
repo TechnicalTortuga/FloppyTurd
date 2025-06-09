@@ -1,21 +1,20 @@
 #include "GoldToilets.h"
 #include <iostream>
 #include <random>
+#include "Resources.h"
+#include "GameSettings.h"
 
 GoldToilets::GoldToilets(int xPos, int yPos)
 {
     using namespace GameSettings;
     using namespace Resources;
 
-    // Load textures
     _TopToilet = LoadTexture(TopToiletGold);
     _BottomToilet = LoadTexture(BottomToiletGold);
 
-    // Initialize oscillation state
     defaultOscillating = true;
     isOscillating = defaultOscillating;
 
-    // Randomize oscillation parameters
     std::default_random_engine engine{ std::random_device{}() };
     std::uniform_real_distribution<float> phaseDist(0.0f, 2 * PI);
     std::uniform_int_distribution<int> dirDist(0, 1);
@@ -24,21 +23,17 @@ GoldToilets::GoldToilets(int xPos, int yPos)
     oscillationDirection = dirDist(engine) == 0 ? 1.0f : -1.0f;
     phaseOffset = GetRandomValue(0, 628) / 100.0f;
 
-    // Initialize position
     pos.x = xPos;
     pos.y = yPos;
 
-    // Initialize pan speed
-    panSpeed = 320 * 0.002f;
+    panSpeed = 80.0f; // Default to Regular speed (adjusted by SetPanSpeed)
 
-    // The gap between toilets
-    gapBetweenToilets = GameHeight / 5.0f;
+    gapBetweenToilets = 180.0f / 5.0f; // Use virtual resolution (180) from Playing.cpp
 
-    // Assign random offset
     yOffsetRandomizer();
-
-    // Reset scoring
     hasScored = false;
+
+    UpdateHitbox();
 }
 
 GoldToilets::~GoldToilets()
@@ -49,6 +44,8 @@ GoldToilets::~GoldToilets()
 
 void GoldToilets::Update(float deltaTime)
 {
+    pos.x -= panSpeed * deltaTime;
+
     if (isOscillating)
     {
         oscillationTimer += deltaTime;
@@ -72,13 +69,11 @@ void GoldToilets::UpdateHitbox()
     float bottomWidthScaled = _BottomToilet.width;
     float bottomHeightScaled = _BottomToilet.height;
 
-    // Top toilet hitbox
     hitboxTop.x = pos.x + 18;
     hitboxTop.y = (2 * -topHeightScaled / 3) + yOffset;
     hitboxTop.width = 30;
     hitboxTop.height = (6 * topHeightScaled / 7);
 
-    // Bottom toilet hitbox
     hitboxBottom.x = pos.x + 18;
     hitboxBottom.y = (bottomHeightScaled / 3) + yOffset + (2 * bottomHeightScaled / 7);
     hitboxBottom.width = 30;
@@ -90,7 +85,7 @@ void GoldToilets::Draw()
     DrawTexturePro(
         _TopToilet,
         { 0, 0, (float)(_TopToilet.width), (float)(_TopToilet.height) },
-        { pos.x,  (2 * -_TopToilet.height / 3) + yOffset, (float)(_TopToilet.width), (float)(_TopToilet.height) },
+        { pos.x, (2 * -_TopToilet.height / 3) + yOffset, (float)(_TopToilet.width), (float)(_TopToilet.height) },
         { 0, 0 },
         0.0f,
         WHITE
@@ -136,6 +131,11 @@ void GoldToilets::SetCollisionEnabled(bool enabled)
 void GoldToilets::SetOscillationEnabled(bool enabled)
 {
     isOscillating = enabled;
+}
+
+void GoldToilets::SetPanSpeed(float speed)
+{
+    panSpeed = speed;
 }
 
 void GoldToilets::yOffsetRandomizer()

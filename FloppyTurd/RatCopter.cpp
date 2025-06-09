@@ -8,7 +8,7 @@ RatCopter::RatCopter(Vector2 spawnPos, float panspeed) {
     using namespace Resources;
     pos.x = spawnPos.x;
     pos.y = spawnPos.y;
-    speed = panspeed; // Set enemy speed to match level pan speed initially
+    speed = panspeed;
 
     ratSpriteIdle = new Sprite(RatCopterIdle, 6, 0.1f, 1.0f, Vector2(pos.x, pos.y));
     ratSpriteHurt = new Sprite(RatCopterHurt, 6, 0.1f, 1.0f, Vector2(pos.x, pos.y));
@@ -19,7 +19,7 @@ RatCopter::RatCopter(Vector2 spawnPos, float panspeed) {
 
     currentMode = Mode::FLY_IN;
     hoverTimer = 0.0f;
-    direction = { -1.0f, 0.0f }; // Default left for FLY_IN
+    direction = { -1.0f, 0.0f };
     hasLockedDirection = false;
     pullbackVector = { 0.0f, 0.0f };
     pullbackTimer = 0.25f;
@@ -44,7 +44,7 @@ void RatCopter::Update(float deltaTime)
     {
     case Mode::FLY_IN:
         pos.x -= speed * deltaTime;
-        if (pos.x <= 240.0f)  // Once mostly on screen
+        if (pos.x <= 240.0f)
         {
             currentMode = Mode::HOVER;
             hoverTimer = 0.75f + GetRandomValue(0, 25) / 100.0f;
@@ -57,48 +57,35 @@ void RatCopter::Update(float deltaTime)
         {
             currentMode = Mode::PULLBACK;
             pullbackTimer = 0.25f;
-            // Capture player's position at this moment and lock direction
             Vector2 liveTarget = LevelManager::GetInstance()->GetPlayerPosition();
             direction = Vector2Normalize(Vector2Subtract(liveTarget, pos));
-            pullbackVector = Vector2Scale(direction, -20.0f);  // Pull back opposite direction
-            hasLockedDirection = true; // Lock direction for BEELINE
-            std::cout << "[RatCopter] PULLBACK - Locked Direction: (" << direction.x << ", " << direction.y
-                << "), Target was at: (" << liveTarget.x << ", " << liveTarget.y << ")\n";
+            pullbackVector = Vector2Scale(direction, -20.0f);
+            hasLockedDirection = true;
         }
         break;
 
     case Mode::PULLBACK:
-        pos = Vector2Add(pos, Vector2Scale(pullbackVector, deltaTime * 4.0f)); // Quick pullback
+        pos = Vector2Add(pos, Vector2Scale(pullbackVector, deltaTime * 4.0f));
         pullbackTimer -= deltaTime;
         if (pullbackTimer <= 0.0f)
         {
             currentMode = Mode::BEELINE;
-            // Boost speed for intimidating charge
-            speed = 150.0f; // Fast, scary beeline toward locked target
-            std::cout << "[RatCopter] BEELINE - Speed: " << speed
-                << ", Locked Direction: (" << direction.x << ", " << direction.y << ")\n";
+            // Use a fixed speed for BEELINE, scaled by difficulty
+            float baseBeelineSpeed = 150.0f;
+            speed = baseBeelineSpeed * (speed / 80.0f); // Scale based on difficulty speed
         }
         break;
 
     case Mode::BEELINE:
-        // Move in locked direction, passing through where player was
         pos = Vector2Add(pos, Vector2Scale(direction, speed * deltaTime));
-        std::cout << "[RatCopter] BEELINE - Pos: (" << pos.x << ", " << pos.y
-            << "), Heading in direction: (" << direction.x << ", " << direction.y
-            << "), Speed: " << speed * deltaTime << "\n";
-        // Remove if off-screen after passing target
         if (pos.x < -32.0f || pos.x > 320.0f + 32.0f || pos.y < -32.0f || pos.y > 180.0f + 32.0f)
         {
-            isHurt = true; // Mark for removal
-            hurtTimer = 0.0f; // Immediate removal
+            isHurt = true;
+            hurtTimer = 0.0f;
         }
         break;
     }
 
-    // Update sprite animation
-    currentSprite->Update(deltaTime);
-
-    // Handle hurt state
     if (isHurt) {
         if (currentSprite != ratSpriteHurt)
             currentSprite = ratSpriteHurt;
@@ -142,4 +129,9 @@ bool RatCopter::ShouldBeRemoved() const {
 void RatCopter::SetTarget(Vector2 target)
 {
     targetPos = target;
+}
+
+void RatCopter::SetSpeed(float spd)
+{
+    speed = spd;
 }

@@ -27,9 +27,8 @@ public:
     std::vector<std::shared_ptr<PickUp>>& GetPickUps() override { return pickups; }
 
     void SetSwingingPipes(bool enable) override;
-
-    std::vector<std::shared_ptr<ToiletPair>> toilets{};
-    std::vector<std::shared_ptr<Obstacle>> obstacles;
+    void SetDifficulty(int difficultyIndex) override; // New: Set music based on difficulty
+    void SetPanSpeed(float speed) override; // New: Set pan speed for obstacles
 
 private:
     CameraSystem* cameraSystem;
@@ -50,6 +49,9 @@ private:
 
     float xDist;
     float xDistBackground;
+
+    std::vector<std::shared_ptr<ToiletPair>> toilets{};
+    std::vector<std::shared_ptr<Obstacle>> obstacles;
 
     std::vector<std::shared_ptr<PickUp>> pickups;
 

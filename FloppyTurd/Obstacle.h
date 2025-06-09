@@ -12,14 +12,13 @@ public:
     virtual void Draw() = 0;
     virtual void Update(float deltaTime) = 0;
     virtual std::vector<Rectangle> GetHitboxes() = 0;
-    // Add method to toggle collision
     virtual void SetCollisionEnabled(bool enabled) = 0;
+    virtual void SetPanSpeed(float speed) = 0; // New: Virtual method for pan speed
 
     Vector2 pos;
-    bool collisionEnabled = true; // Default to enabled
+    bool collisionEnabled = true;
 
 protected:
-
 };
 
 #endif // OBSTACLE_H

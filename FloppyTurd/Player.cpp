@@ -4,6 +4,7 @@
 Player::Player(Game* g) : game(g) {
     InitSprites();
     SetHeartMode(WHOLE);
+    SetInitialHearts(1); // Default to Regular difficulty (index 1)
 }
 
 Player::~Player() {
@@ -23,6 +24,27 @@ Player::~Player() {
     delete hurtSpriteTeen;
     delete hurtSpriteBig;
     SoundManager::GetInstance().UnloadSoundClip(hurtSound);
+}
+
+void Player::SetInitialHearts(int difficultyIndex) {
+    // Set initial hearts based on difficulty: 0=Runny, 1=Regular, 2=Rough
+    switch (difficultyIndex) {
+    case 0: // Runny
+        hearts = 3;
+        break;
+    case 1: // Regular
+        hearts = 2;
+        break;
+    case 2: // Rough
+        hearts = 1;
+        break;
+    default:
+        hearts = 2; // Fallback to Regular
+        break;
+    }
+    liveSlices = hearts * (int)heartMode;
+    ghostSlices = 0;
+    SetMaxHearts(9); // Ensure max hearts is 9 for all difficulties
 }
 
 void Player::SetHeartMode(HeartMode mode)
@@ -280,8 +302,13 @@ void Player::Revive() {
     isAlive = true;
     isShooting = false;
 
-    liveSlices = hearts * (int)heartMode;
-    ghostSlices = 0;
+    // Reinitialize hearts based on difficulty
+    if (game && game->mainMenu) {
+        SetInitialHearts(game->mainMenu->GetDifficultyIndex());
+    }
+    else {
+        SetInitialHearts(1); // Default to Regular if no MainMenu
+    }
 
     pos = { 77.0f, 100.0f };
     velocity = { 0.0f, 0.0f };
@@ -293,6 +320,11 @@ void Player::Revive() {
 
 void Player::SetHealth(int hp) {
     health = hp;
+}
+
+void Player::ResetPosition()
+{
+    pos = { 50.0f, 90.0f }; // Safe starting position (center of 320x180 screen vertically)
 }
 
 int Player::GetHealth() {

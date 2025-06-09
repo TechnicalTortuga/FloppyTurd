@@ -17,11 +17,13 @@ public:
     void Draw() const override;
 
     void SpawnCoins();
-    void SpawnPickups(std::shared_ptr<SewerPipe> pipe); // Updated to take a single pipe
+    void SpawnPickups(std::shared_ptr<SewerPipe> pipe);
 
     void Update(float deltaTime) override;
 
     void SetSwingingPipes(bool enable) override {};
+    void SetDifficulty(int difficultyIndex) override; // New: Set music based on difficulty
+    void SetPanSpeed(float speed) override; // New: Set pan speed for obstacles, enemies, pickups
     void SpawnPickupsBetween(float xStart, float xEnd);
 
     float GetCurrentPipePairX() const;
@@ -58,14 +60,13 @@ private:
     std::vector<std::shared_ptr<PickUp>> pickups;
 
     float spacing = 200.0f;
+    float pickupPanSpeed = 80.0f; // New: Dynamic pickup speed
 
     float panSpeedMultiplier = 1.0f;
     float panSpeedTimer = 0.0f;
 
-    // Helper to estimate the opposite edge for a single pipe
     float EstimateOppositeEdge(std::shared_ptr<SewerPipe> pipe) const;
 
-    // Janitor helper
     Sprite* janitorIdle = nullptr;
     Sprite* janitorSweep = nullptr;
     Sprite* janitorShock = nullptr;

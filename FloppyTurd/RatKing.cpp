@@ -369,3 +369,11 @@ void RatKing::SetCollisionEnabled(bool enabled)
         tp->SetCollisionEnabled(enabled);
     }
 }
+
+void RatKing::SetPanSpeed(float speed)
+{
+    // RatKing itself doesn't move with pan speed, but we can adjust projectile speed
+    for (auto& tp : projectiles) {
+        tp->SetPanSpeed(speed); // Propagate to projectiles
+    }
+}

@@ -32,8 +32,6 @@ static Sound fartSoundsLoaded[11];
 static int currentAspectIndex = 0;
 static bool borderlessEnabled = false;
 static bool fullscreenEnabled = false;
-static int difficultyIndex = 1;
-const char* difficultyLevels[] = { "Runny", "Regular", "Rough" };
 
 MainMenu::MainMenu(Game* game)
     : game(game), currentMenu(MAIN_MENU), fClickCount(0), fClickCooldown(0.0f), fHoverScale(1.0f), paintingHoverScale(1.0f), fartModeEnabled(false)

@@ -17,8 +17,8 @@ public:
     Rectangle GetOuthouseHitbox();
     Rectangle GetOuthouseToiletHitbox();
     std::vector<Rectangle> GetHitboxes();
-    // Implement the new method from Obstacle
     void SetCollisionEnabled(bool enabled) override;
+    void SetPanSpeed(float speed); // New: Set pan speed
 
     bool hasScored = false;
 

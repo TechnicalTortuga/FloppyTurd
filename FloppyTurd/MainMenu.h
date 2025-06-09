@@ -30,6 +30,7 @@ public:
     void ResetMusic();
     AudioClip* GetAudioClip() const { return currentMusic; }
     const QuickplaySettings& GetQuickplaySettings() const { return quickplaySettings; }
+    int GetDifficultyIndex() const { return difficultyIndex; } // New getter for difficulty
 
     // Feedback system for high-definition font
     void UseHighDefFont(bool enable) { useHighDefFont = enable; }
@@ -50,7 +51,7 @@ private:
     Texture2D emptyPainting;
     int currentLevelIndex{ 0 };
     bool levelSelectMode = false;
-    bool levelsUnlocked[6] = { true, true, false, false, false, false }; // Park, Sewer unlocked; others depend on progress
+    bool levelsUnlocked[6] = { true, true, true, true, true, true }; // Park, Sewer unlocked; others depend on progress
 
     Texture2D levelPaintings[6];
     Texture2D lockedPainting;
@@ -67,4 +68,7 @@ private:
     QuickplaySettings quickplaySettings;
 
     bool useHighDefFont = false; // Flag for high-definition font
+
+    int difficultyIndex = 1; // Moved from .cpp to ensure accessibility
+    const char* difficultyLevels[3] = { "Runny", "Regular", "Rough" }; // Moved for clarity
 };

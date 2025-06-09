@@ -11,6 +11,7 @@ public:
     void TakeDamage() override;
     Rectangle GetHitbox() const override;
     bool ShouldBeRemoved() const override;
+    void SetSpeed(float speed) override; // New: Set movement speed
 
 private:
     void UpdateHitbox();

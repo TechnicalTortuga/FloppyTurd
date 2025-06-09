@@ -14,15 +14,15 @@ public:
     void Update(float deltaTime) override;
     std::vector<Rectangle> GetHitboxes() override;
     void SetCollisionEnabled(bool enabled) override; // Implement the new method from Boss
+    void SetPanSpeed(float speed) override;
     void TakeDamage(int damage) override;
     bool ShouldBeRemoved() override;
     void SetPlayerPosition(Vector2 playerPos);
     std::vector<ToiletPaperProjectile*>& GetProjectiles() { return projectiles; }
     bool IsInLowHealthMode() override;
     double GetLowHealthTriggerTime() const override;
-
-private:
     void ChangeState(State newState);
+private:
     void HandleIdle(float deltaTime);
     void HandleWalking(float deltaTime);
     void HandlePreparingAttack(float deltaTime);

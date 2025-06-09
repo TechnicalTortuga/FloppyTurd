@@ -21,16 +21,28 @@ namespace Resources
 	inline const char* fart10 = "resources/sounds/fart10.ogg";
 	inline const char* fart11 = "resources/sounds/fart11.ogg";
 
-
 	// Music
 	inline const char* LevelOne = "resources/music/Level1.mp3";
 	inline const char* LevelTwo = "resources/music/Level2.mp3";
 	inline const char* LevelThree = "resources/music/Level3.mp3";
 	inline const char* LevelFour = "resources/music/Level4.mp3";
-	inline const char* LevelFive = "resources/music/Level5.ogg";
+	inline const char* LevelFive = "resources/music/Level5.ogg"; // Boss Level I know its confusing
 	inline const char* BossLowHealth = "resources/music/BossThemeLowHealth.ogg";
 	inline const char* BossBeat = "resources/music/BossKill.ogg";
 	inline const char* SnowLevelMusic = "resources/music/SnowLevel.mp3";
+	inline const char* LevelOneFast = "resources/music/Level1Fast.ogg";
+	inline const char* LevelTwoFast = "resources/music/Level2Fast.ogg";
+	inline const char* LevelThreeFast = "resources/music/Level3Fast.ogg";
+	inline const char* LevelFourFast = "resources/music/Level4SnowFast.ogg";
+	inline const char* LevelFiveFast = "resources/music/Level4Fast.ogg";
+	inline const char* BossLevelFast = "resources/music/BossThemeFast.ogg";
+	inline const char* LevelOneSlow = "resources/music/Level1Slow.ogg"; // Park
+	inline const char* LevelTwoSlow = "resources/music/Level2Slow.ogg"; // Sewer
+	inline const char* LevelThreeSlow = "resources/music/Level3Slow.ogg"; // Desert
+	inline const char* LevelFourSlow = "resources/music/Level4SnowSlow.ogg"; // Snow
+	inline const char* LevelFiveSlow = "resources/music/Level4Slow.ogg"; // Castle
+	inline const char* BossLevelSlow = "resources/music/BossThemeSlowFartless.ogg"; // Ratking
+	inline const char* CreditsMusic = "resources/music/EndTheme.ogg";
 
 	// Level One Assets
 	inline const char* BackgroundBackLayer = "resources/environment/Level1BackLayerBackground.png";
@@ -132,6 +144,9 @@ namespace Resources
 	inline const char* BossBarHealth = "resources/ui/BossBarHealth.png";
 	inline const char* BossBarHurt = "resources/ui/BossBarHurt.png";
 
+	inline const char* BlastSmall = "resources/vfx/blast_small.png";
+	inline const char* BlastBig = "resources/vfx/blast_big.png";
+
 	// Main Menu
 	inline const char* MainMenuBackground = "resources/mainmenu/MainMenu.png";
 	inline const char* MainMenuMusic = "resources/mainmenu/FloppyTurdMenu.mp3";
@@ -155,8 +170,6 @@ namespace Resources
 	inline const char* SnowLevelPainting = "resources/mainmenu/SnowLevelPainting.png";
 	inline const char* CastleLevelPainting = "resources/mainmenu/CastleLevelPainting.png";
 	inline const char* RatKingPainting = "resources/mainmenu/RatKingPainting.png";
-
-
 
 	// Poopy Player
 	inline const char* TurdletIdle = "resources/turd/TurdletIdle.png";
@@ -266,4 +279,7 @@ namespace Resources
 	inline const char* GameOverScore = "resources/ui/GameOverScore.png";
 	inline const char* TryAgainBackground = "resources/ui/TryAgainBackground.png";
 	inline const char* DeadFloppy = "resources/ui/FloppyTurdMorte.png";
+
+	// Credits
+	inline const char* CreditsBackgroundTexture = "resources/ui/FloppyTurdCreditsBackground.png";
 };

@@ -16,6 +16,8 @@ public:
     void TakeDamage();
     bool ShouldBeRemoved() const;
     void SetInverted(bool val) { inverted = val; }
+    void SetSpeed(float speed) override; // New: Set movement speed
+
 private:
     Vector2 pos;
     float speed;

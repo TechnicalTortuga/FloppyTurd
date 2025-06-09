@@ -54,18 +54,17 @@ public:
     void OutputHatMenu();
     Vector2 scrollOffset;
 
-    // Feedback system for high-definition font
     void UseHighDefFont(bool enable) { useHighDefFont = enable; }
     bool IsHighDefFont() const { return useHighDefFont; }
 
-    // Session records for level unlocks
     void UpdateSessionRecord(int levelIndex, int pipesPassed);
     int GetSessionRecord(int levelIndex) const { return sessionRecords[levelIndex]; }
+    int GetDifficultyIndex() const { return difficultyIndex; }
 
-    int SCORE = 0; // Session pipes passed
-    int COINS = 0; // Session coins (unused, kept for compatibility)
-    int TOTALCOINS = 0; // Lifetime coins
-    int TOTALSCORE = 0; // Lifetime pipes passed
+    int SCORE = 0;
+    int COINS = 0;
+    int TOTALCOINS = 0;
+    int TOTALSCORE = 0;
 
 private:
     Game* game;
@@ -75,7 +74,7 @@ private:
     BossHealthBar* bossHealthBar = nullptr;
 
     void DrawUI();
-    void UpdatePlayerPositionInLevel();
+    void UpdatePlayerPosition(); // Corrected from UpdatePlayerPositionInLevel
 
     float deltaTime{};
     std::unique_ptr<LevelManager> levelManager;
@@ -150,6 +149,6 @@ private:
 
     bool useHighDefFont = false;
 
-    // Session records for each level (pipes passed in a single session)
-    int sessionRecords[6] = { 0, 0, 0, 0, 0, 0 }; // Park, Sewer, Desert, Snow, Castle, Rat King
+    int sessionRecords[6] = { 0, 0, 0, 0, 0, 0 };
+    int difficultyIndex = 1;
 };

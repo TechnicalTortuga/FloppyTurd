@@ -12,9 +12,10 @@ public:
     void Draw() override;
     void Update(float deltaTime) override;
     std::vector<Rectangle> GetHitboxes() override;
-    void SetCollisionEnabled(bool enabled) override; // Implement the new method from Obstacle
+    void SetCollisionEnabled(bool enabled) override;
     bool IsOffScreen() const { return position.x < -32.0f; };
     Rectangle GetHitbox() const { return hitbox; }
+    void SetPanSpeed(float speed) override; // New implementation
 
 private:
     Vector2 position;

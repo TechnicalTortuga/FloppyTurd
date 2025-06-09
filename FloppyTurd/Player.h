@@ -27,6 +27,7 @@ public:
     int GetSlicesLeft()       const { return liveSlices; }      // living slices
     int GetGhostSlicesLeft()  const { return ghostSlices; }     // “borrowed” by hollow-turds
     void EnableHollowTurds(bool enabled) { hollowTurds = enabled; }
+    void SetInitialHearts(int difficultyIndex); // New method for difficulty-based hearts
 
     void Draw();
     void Update(float deltaTime);
@@ -41,6 +42,7 @@ public:
     void Shoot(); // Method to shoot projectiles
     void Revive();
     void SetHealth(int hp);
+    void ResetPosition();
 
     int GetHealth();
 
@@ -93,7 +95,7 @@ private:
     float MAXVELOCITY{ 4.0f };
     float GRAVITY{ 0.4f };
     float JUMPVELOCITY{ 20.0f };
-    Vector2 pos{ 77.0f, 100.0f };
+    Vector2 pos{ 77.0f, 50.0f };
     Vector2 size{ 64.0f, 64.0f };
     Vector2 velocity{ 0.0f, 0.0f };
 

@@ -144,8 +144,10 @@
     <ClCompile Include="CastleLevel.cpp" />
     <ClCompile Include="Coin.cpp" />
     <ClCompile Include="CoinType.cpp" />
+    <ClCompile Include="Credits.cpp" />
     <ClCompile Include="DesertLevel.cpp" />
     <ClCompile Include="Enemy.cpp" />
+    <ClCompile Include="Explosion.cpp" />
     <ClCompile Include="Game.cpp" />
     <ClCompile Include="GameSettings.h" />
     <ClCompile Include="GoldToilets.cpp" />
@@ -200,8 +202,10 @@
     <ClInclude Include="CastleLevel.h" />
     <ClInclude Include="Coin.h" />
     <ClInclude Include="CoinType.h" />
+    <ClInclude Include="Credits.h" />
     <ClInclude Include="DesertLevel.h" />
     <ClInclude Include="Enemy.h" />
+    <ClInclude Include="Explosion.h" />
     <ClInclude Include="Game.h" />
     <ClInclude Include="GoldToilets.h" />
     <ClInclude Include="Hat.h" />

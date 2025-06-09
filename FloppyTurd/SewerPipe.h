@@ -22,8 +22,8 @@ public:
     void resetScore();
     Rectangle GetHitbox() const { return hitbox; }
     std::vector<Rectangle> GetHitboxes() override;
-    // Implement the new method from Obstacle
     void SetCollisionEnabled(bool enabled) override;
+    void SetPanSpeed(float speed); // New: Set pan speed
 
     float GetX() const { return pos.x; }
     float GetWidth() const { return static_cast<float>(chosenPipe.width); }

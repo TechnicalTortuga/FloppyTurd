@@ -6,6 +6,7 @@
 #include "CameraSystem.h"
 #include "ParallaxLayer.h"
 #include "ToiletPair.h"
+#include "SnowmanEnemy.h"
 
 class SnowLevel : public Level
 {
@@ -24,6 +25,9 @@ public:
     std::vector<std::shared_ptr<PickUp>>& GetPickUps() override { return pickups; }
 
     void SetSwingingPipes(bool enable) override;
+    void SetDifficulty(int difficultyIndex) override;
+    void SetPanSpeed(float speed) override;
+    float pickupPanSpeed = 80.0f; // New: Dynamic pickup speed
 
 private:
     CameraSystem* cameraSystem;
@@ -33,12 +37,12 @@ private:
 
     std::vector<std::shared_ptr<ToiletPair>> toilets;
     std::vector<std::shared_ptr<Obstacle>> obstacles;
+    std::vector<std::shared_ptr<SnowmanEnemy>> enemies;
 
     std::vector<std::shared_ptr<PickUp>> pickups;
 
     float spacing = 200.0f;
 
-    void SpawnPickupsBetween(float xStart, float xEnd);
 
-    static constexpr float PickupPanSpeed = 80.0f;
+    void SpawnPickupsBetween(float xStart, float xEnd);
 };

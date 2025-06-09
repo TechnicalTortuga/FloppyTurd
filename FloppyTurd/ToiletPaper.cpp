@@ -13,11 +13,11 @@ ToiletPaper::ToiletPaper(Vector2 spawnPos, float panspeed)
     currentSprite = tpSpriteIdle;
 
     startY = 70.0f + GetRandomValue(-10, 10);
-    phaseOffset = GetRandomValue(0, 628) / 100.0f; // random phase 0 to ~2pi
+    phaseOffset = GetRandomValue(0, 628) / 100.0f;
 
     idleTimer = 0.0f;
     idleDelay = GetRandomValue(4, 8);
-    active = GetRandomValue(0, 100) < 75; // 75% chance to be active
+    active = GetRandomValue(0, 100) < 75;
 
     UpdateHitbox();
 }
@@ -82,5 +82,10 @@ bool ToiletPaper::ShouldBeRemoved() const
 
 void ToiletPaper::UpdateHitbox()
 {
-    hitbox = { pos.x + 8, pos.y + 24, (float)currentSprite->GetWidth() - 24, (float)currentSprite->GetHeight() - 36};
+    hitbox = { pos.x + 8, pos.y + 24, (float)currentSprite->GetWidth() - 24, (float)currentSprite->GetHeight() - 36 };
+}
+
+void ToiletPaper::SetSpeed(float spd)
+{
+    speed = spd;
 }

@@ -11,7 +11,7 @@
 #include "SewerPipe.h"
 #include "SnowmanEnemy.h"
 #include "Bird.h"
-#include "QuickplaySettings.h" // Replace MainMenu.h with new header
+#include "QuickplaySettings.h"
 
 class LevelManager {
 public:
@@ -29,14 +29,15 @@ public:
     void SetPlayerPosition(Vector2 pos) { lastPlayerPosition = pos; }
     static LevelManager* GetInstance();
     void SetPipePanSpeedMultiplier(float multiplier, float duration);
-    void SetLevel(std::shared_ptr<Level> newLevel);
-
-    // New method to apply Quickplay settings
+    void SetLevel(std::shared_ptr<Level> newLevel, int difficulty); // Updated to accept difficulty
     void SetQuickplaySettings(const QuickplaySettings& settings);
+    float GetPickupPanSpeed() const; // Get pan speed for enemies and pickups
+    int GetDifficultyIndex() const;  // Method to get difficulty index
 
 private:
     void SpawnEnemy();
     bool IsSpawnPositionValid(const Rectangle& enemyHitbox) const;
+    void UpdateEnemyFactory(); // Added to match .cpp usage
     std::shared_ptr<Level> currentLevel;
     std::vector<std::shared_ptr<Enemy>> enemies;
     std::shared_ptr<Boss> boss;
@@ -46,7 +47,7 @@ private:
     Vector2 lastPlayerPosition = { 150, 90 };
     bool hasPassedFirstToilet = false;
     static LevelManager* instance;
+    int difficultyIndex; // Member to store difficulty
 
-    // Quickplay settings
     QuickplaySettings quickplaySettings;
 };

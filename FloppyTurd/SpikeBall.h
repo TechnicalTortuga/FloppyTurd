@@ -7,39 +7,37 @@
 class SpikeBall : public Obstacle
 {
 public:
-    // `start` is the *centre-bottom* of the square anchor that the chain hangs from
     explicit SpikeBall(Vector2 start);
     ~SpikeBall();
 
     void Update(float dt) override;
     void Draw() override;
     std::vector<Rectangle> GetHitboxes() override;
-    void SetCollisionEnabled(bool enabled) override; // Implement the new method from Obstacle
+    void SetCollisionEnabled(bool enabled) override;
+    void SetPanSpeed(float speed) override; // New: Set pan speed
     Rectangle GetHitbox() const;
 
-    // Handy helpers
     Vector2 GetPosition() const { return basePos; }
     void SetPosition(Vector2 newPos);
 
 private:
     void UpdateHitbox();
 
-    Texture2D baseTex{};          // Little square “bracket” (10x10)
-    Texture2D swingTex{};         // Chain + ball in one image (64x90)
+    Texture2D baseTex;
+    Texture2D swingTex;
 
-    Vector2 basePos{};            // Centre-bottom of the anchor
-    Vector2 pivotPos{};           // World-space position of the chain's pivot (center of anchor)
-    Vector2 drawPos{};            // Top-left for DrawTexturePro()
-    Vector2 origin{ 32.f, 0.f };    // Pivot: top-centre of swingTex
+    Vector2 basePos;
+    Vector2 pivotPos;
+    Vector2 drawPos;
+    Vector2 origin{ 32.f, 0.f };
 
-    Rectangle ballHit{};          // 24 × 24 AABB for the ball
+    Rectangle ballHit;
 
-    float angle = 0.f;            // Current rotation (rad)
-    float angSpeed = 1.5f;        // Angular speed (rad/s)
-    float linkLength = 70.f;      // Pivot → ball-centre
-    float panSpeed = 80.f;        // World scroll speed (px/s)
+    float angle = 0.f;
+    float angSpeed = 1.5f;
+    float linkLength = 70.f;
+    float panSpeed = 80.f;
 
-    // Constants
-    static constexpr float PIVOT_LEN = 70.f;  // Distance from pivot to ball center
-    static constexpr float BASE_CENTER_Y_OFFSET = 5.f; // Center of the 10x10 anchor is 5px up from bottom
+    static constexpr float PIVOT_LEN = 70.f;
+    static constexpr float BASE_CENTER_Y_OFFSET = 5.f;
 };

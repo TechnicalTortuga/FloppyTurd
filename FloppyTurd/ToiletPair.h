@@ -1,3 +1,6 @@
+// ToiletPair.h: Header for the ToiletPair obstacle class in Floppy Turd, defining toilet pair behavior and properties.
+// Updated to add gapSize constant for consistent pipe spacing.
+
 #pragma once
 #include "raylib.h"
 #include "GameSettings.h"
@@ -8,6 +11,7 @@
 class ToiletPair : public Obstacle {
 public:
     ToiletPair(int xPos, int yPos, bool isSnowy = false);
+    ToiletPair(int xPos, int yPos, bool isSnowy, bool creditsMode);
     ~ToiletPair();
 
     void Draw();
@@ -18,15 +22,16 @@ public:
     std::vector<Rectangle> GetHitboxes();
     void yOffsetRandomizer();
     void SetCollisionEnabled(bool enabled) override;
-    // New method to toggle oscillation for swinging pipes
     void SetOscillationEnabled(bool enabled);
+    void SetPanSpeed(float speed);
+    float GetPanSpeed() const { return panSpeed; }
 
     float toiletScale;
     bool hasScored = false;
 
 private:
     void UpdateHitbox();
-    bool isSnowyVariant = false;  // Store flag for possible future behavior tweaks
+    bool isSnowyVariant = false;
     Texture2D _TopToilet;
     Texture2D _BottomToilet;
 
@@ -37,11 +42,12 @@ private:
     Rectangle hitboxBottom;
 
     float gapBetweenToilets{};
-    float maxYOffset{ 60.0f };    // How high or low we allow offset to go
+    float maxYOffset{ 60.0f };
+    const float gapSize{ 120.0f }; // Consistent horizontal gap between pipes
 
     float oscillationTimer = 0.0f;
-    bool isOscillating = false;  // Controlled by SetOscillationEnabled
-    bool defaultOscillating = false; // Stores default state (true for snowy)
+    bool isOscillating = false;
+    bool defaultOscillating = false;
 
     float oscillationPhase = 0.0f;
     float oscillationDirection = 1.0f;

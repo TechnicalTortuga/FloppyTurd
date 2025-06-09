@@ -10,7 +10,8 @@ public:
     void Draw() override;
     void Update(float deltaTime) override;
     std::vector<Rectangle> GetHitboxes() override;
-    void SetCollisionEnabled(bool enabled) override; // Implement the new method from Obstacle
+    void SetCollisionEnabled(bool enabled) override;
+    void SetPanSpeed(float speed) override; // New: Set pan speed
 
     float GetWidth() const;
     Vector2 GetPosition() const;
@@ -19,5 +20,6 @@ public:
 private:
     Texture2D texture;
     Rectangle hitbox;
+    float panSpeed = 80.0f; // New: Store pan speed
     void UpdateHitbox();
 };

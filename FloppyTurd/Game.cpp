@@ -44,6 +44,7 @@ Game::~Game()
             UnloadFont(g_AIGUI.defaultFont);
         }
     }
+    delete credits; // Clean up Credits instance
 }
 
 void Game::InitClasses()
@@ -53,6 +54,7 @@ void Game::InitClasses()
 
     mainMenu = new MainMenu(this);
     playing = new Playing(this);
+    credits = new Credits(this); // Pass Game pointer directly
 
     gamestate = MAINMENU;
 }
@@ -110,6 +112,9 @@ void Game::RunGame()
         case PLAYING:
             playing->Draw();   // includes your pause logic if needed
             break;
+        case CREDITS:
+            credits->Draw();   // Draw credits screen
+            break;
         case PAUSEMENU:
             // If you have a separate pauseMenu->Draw(), do it here.
             // Or if your PAUSEMENU UI is inside playing->Draw() behind an if() check,
@@ -153,6 +158,16 @@ void Game::RunGame()
 
 void Game::Update()
 {
+    static GAMESTATE prevState = SHUTDOWN; // Track previous state for reset
+    if (prevState != gamestate)
+    {
+        if (gamestate == CREDITS && credits)
+        {
+            credits->Reset(); // Reset Credits when entering CREDITS state
+        }
+        prevState = gamestate;
+    }
+
     switch (gamestate)
     {
     case MAINMENU:
@@ -162,6 +177,17 @@ void Game::Update()
     case PLAYING:
         playing->Update();
         break;
+
+    case CREDITS:
+        credits->Update(GetFrameTime());
+        if (credits->IsComplete()) // Check if credits have finished scrolling
+        {
+            AudioManager::GetInstance().StopMusic();
+            if (credits->GetMusic()) credits->GetMusic()->Stop();
+            SetGameState(MAINMENU);
+        }
+        break;
+
     case SHUTDOWN:
         CloseWindow();
         break;
@@ -183,6 +209,11 @@ void Game::Draw()
     case PLAYING:
         playing->Draw();
         break;
+
+    case CREDITS:
+        credits->Draw(); // Additional draw pass if needed (optional)
+        break;
+
         //std::cout << "Default Gamestate Draw" << std::endl;
     }
 
@@ -199,6 +230,10 @@ void Game::HandleInput()
 
     case PLAYING:
         playing->HandleInput();
+        break;
+
+    case CREDITS:
+        credits->HandleInput();
         break;
 
     case PAUSEMENU:

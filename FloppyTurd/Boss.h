@@ -25,9 +25,12 @@ public:
     virtual bool IsInLowHealthMode() = 0;
     virtual double GetLowHealthTriggerTime() const = 0;
 
-protected:  // Changed from public to protected for inheritance
-    Vector2 position;
-    Sprite* currentSprite;  // Current animation state
+    // Add method to access current state
     enum State { IDLE, WALKING, PREPARING_ATTACK, ATTACKING, HURT, DEATH };
+    State GetCurrentState() const { return currentState; }
+    Vector2 position;
+
+protected:  // Changed from public to protected for inheritance
+    Sprite* currentSprite;  // Current animation state
     State currentState;
 };

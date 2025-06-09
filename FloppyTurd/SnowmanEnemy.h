@@ -3,16 +3,17 @@
 #include "Enemy.h"
 #include "Sprite.h"
 #include <vector>
-#include <memory>       // <— added
+#include <memory>
 #include "raylib.h"
 
-class SnowballProjectile;  // forward
+class SnowballProjectile;
 
 enum class SnowmanType { sRed, sGREEN, sBLUE, sCHAD };
 
 class SnowmanEnemy : public Enemy {
 public:
     SnowmanEnemy(Vector2 spawnPos, SnowmanType type);
+    SnowmanEnemy(Vector2 spawnPos, SnowmanType type, float speed, int difficulty); // Updated constructor
     ~SnowmanEnemy();
 
     void TryThrowSnowball();
@@ -22,14 +23,14 @@ public:
     Rectangle GetHitbox() const override;
     void TakeDamage() override;
     bool ShouldBeRemoved() const override;
+    void SetSpeed(float speed) override; // Inherited from Enemy
 
-    // Expose active projectiles
     std::vector<SnowballProjectile*> GetSnowballs() const;
 
 private:
     void UpdateHitbox();
-    void ResetSnowballs();                             // implemented below
-    SnowballProjectile* GetInactiveSnowball();         // implemented below
+    void ResetSnowballs();
+    SnowballProjectile* GetInactiveSnowball();
 
     Vector2 pos;
     Rectangle hitbox;
@@ -48,10 +49,8 @@ private:
 
     float speed;
 
-    // Our pool
     std::vector<std::unique_ptr<SnowballProjectile>> snowballPool;
 
-    // Flip state
     bool hasFlipped;
     bool isFlipped;
     bool queuedSecondThrow;

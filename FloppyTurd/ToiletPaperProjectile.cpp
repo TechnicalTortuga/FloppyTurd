@@ -59,3 +59,8 @@ void ToiletPaperProjectile::SetCollisionEnabled(bool enabled)
 {
     collisionEnabled = enabled;
 }
+
+void ToiletPaperProjectile::SetPanSpeed(float speed)
+{
+    this->speed = speed; // Update the projectile's speed with the new pan speed
+}

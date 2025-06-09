@@ -3,6 +3,7 @@
 #include "Coin.h"
 #include "PoopHeart.h"
 #include <raymath.h>
+#include "GameSettings.h"
 
 SnowLevel::SnowLevel()
 {
@@ -10,37 +11,17 @@ SnowLevel::SnowLevel()
     using namespace GameSettings;
     cameraSystem = new CameraSystem();
 
-    cameraSystem->AddLayer(new ParallaxLayer(
-        { SnowBackground },
-        1.0f,
-        1.0f
-    ));
+    cameraSystem->AddLayer(new ParallaxLayer({ SnowBackground }, 1.0f, 1.0f));
+    cameraSystem->AddLayer(new ParallaxLayer({ SnowMountains }, 10.0f, 1.0f));
+    cameraSystem->AddLayer(new ParallaxLayer({ SnowBackTrees }, 60.0f, 1.0f));
+    cameraSystem->AddLayer(new ParallaxLayer({ SnowTundra }, 60.0f, 1.0f));
+    cameraSystem->AddLayer(new ParallaxLayer({ SnowFrontTrees }, 60.0f, 1.0f));
 
-    cameraSystem->AddLayer(new ParallaxLayer(
-        { SnowMountains },
-        10.0f,
-        1.0f
-    ));
+    levelMusicSlow = new AudioClip(LevelFourSlow);
+    levelMusicRegular = new AudioClip(SnowLevelMusic);
+    levelMusicFast = new AudioClip(LevelFourFast);
+    currentMusic = levelMusicRegular;
 
-    cameraSystem->AddLayer(new ParallaxLayer(
-        { SnowBackTrees },
-        60.0f,
-        1.0f
-    ));
-
-    cameraSystem->AddLayer(new ParallaxLayer(
-        { SnowTundra },
-        60.0f,
-        1.0f
-    ));
-
-    cameraSystem->AddLayer(new ParallaxLayer(
-        { SnowFrontTrees },
-        60.0f,
-        1.0f
-    ));
-
-    levelMusic = new AudioClip(SnowLevelMusic);
     InitObstacles();
 }
 
@@ -66,19 +47,14 @@ void SnowLevel::Draw() const
 void SnowLevel::Update(float deltaTime)
 {
     cameraSystem->Update(deltaTime);
-    if (!levelMusic->IsPlaying()) levelMusic->Play();
-    levelMusic->Update();
+    if (!currentMusic->IsPlaying()) currentMusic->Play();
+    currentMusic->Update();
 
-    for (auto& pickup : pickups) {
-        if (!pickup->IsCollected())
-            pickup->Update(deltaTime);
-    }
-
+    // Update obstacles (toilets)
     for (int i = 0; i < (int)toilets.size(); ++i)
     {
         auto& oh = toilets[i];
-        oh->pos.x -= PickupPanSpeed * deltaTime;
-
+        oh->Update(deltaTime);
         if (oh->pos.x + 80 < 0)
         {
             int lastIndex = (i - 1 < 0) ? (toilets.size() - 1) : (i - 1);
@@ -89,7 +65,13 @@ void SnowLevel::Update(float deltaTime)
             float xEnd = oh->pos.x;
             SpawnPickupsBetween(xStart, xEnd);
         }
-        oh->Update(deltaTime);
+    }
+
+    // Move and update pickups every frame
+    for (auto& pickup : pickups) {
+        if (!pickup->IsCollected()) {
+            pickup->Update(deltaTime);
+        }
     }
 }
 
@@ -122,26 +104,31 @@ void SnowLevel::SpawnPickupsBetween(float xStart, float xEnd)
         Vector2 pos{ x, y };
 
         int roll = GetRandomValue(1, 1000);
-        if (roll <= 5) {
-            auto heart = std::make_shared<PoopHeart>(pos, PoopHeartType::BIG);
-            heart->SetPanSpeed(PickupPanSpeed);
-            pickups.push_back(heart);
+        std::shared_ptr<PickUp> pickup;
+
+        if (roll <= 10) {
+            pickup = std::make_shared<PoopHeart>(pos, PoopHeartType::BIG); // 1%
         }
-        else if (roll <= 30) {
-            auto heart = std::make_shared<PoopHeart>(pos, PoopHeartType::SMALL);
-            heart->SetPanSpeed(PickupPanSpeed);
-            pickups.push_back(heart);
+        else if (roll <= 110) {
+            pickup = std::make_shared<PoopHeart>(pos, PoopHeartType::SMALL); // 10%
+        }
+        else if (roll <= 360) {
+            pickup = std::make_shared<Coin>(pos, CoinType::BLUECOIN); // 25%
         }
         else {
-            auto coin = std::make_shared<Coin>(pos, CoinType::BLUECOIN);
-            coin->SetPanSpeed(PickupPanSpeed);
-            pickups.push_back(coin);
+            pickup = std::make_shared<Coin>(pos, CoinType::GOLDCOIN); // 64%
         }
+
+        pickup->SetPanSpeed(pickupPanSpeed);
+        pickups.push_back(pickup);
     }
 }
 
 void SnowLevel::InitObstacles()
 {
+    toilets.clear();
+    obstacles.clear();
+
     float currentX = static_cast<float>(320);
 
     for (int i = 0; i < 5; i++)
@@ -163,8 +150,10 @@ bool SnowLevel::checkForCollisions(Vector2 circleCenter, float circleRadius)
 {
     for (auto& t : toilets)
     {
-        if (CheckCollisionCircleRec(circleCenter, circleRadius, t->GetTopHitbox()) || CheckCollisionCircleRec(circleCenter, circleRadius, t->GetBottomHitbox()))
-            return true;
+        for (auto& hitbox : t->GetHitboxes()) {
+            if (CheckCollisionCircleRec(circleCenter, circleRadius, hitbox))
+                return true;
+        }
     }
     return false;
 }
@@ -172,17 +161,19 @@ bool SnowLevel::checkForCollisions(Vector2 circleCenter, float circleRadius)
 bool SnowLevel::checkForPointGain(Vector2 circleCenter, float circleRadius)
 {
     float playerCenterX = circleCenter.x;
+    bool scored = false;
 
     for (auto& t : toilets)
     {
-        float toiletX = t->GetTopHitbox().x;
-        if (playerCenterX > toiletX && !t->hasScored)
+        float passLine = t->GetTopHitbox().x + t->GetTopHitbox().width;
+        if (!t->hasScored && playerCenterX > passLine && playerCenterX < passLine + 2.0f)
         {
             t->hasScored = true;
-            return true;
+            scored = true;
         }
     }
-    return false;
+
+    return scored;
 }
 
 const std::vector<std::shared_ptr<Obstacle>>& SnowLevel::getObjLoc()
@@ -194,5 +185,30 @@ void SnowLevel::SetSwingingPipes(bool enable)
 {
     for (auto& toilet : toilets) {
         toilet->SetOscillationEnabled(enable);
+    }
+}
+
+void SnowLevel::SetDifficulty(int difficultyIndex)
+{
+    switch (difficultyIndex) {
+    case 0: currentMusic = levelMusicSlow; break;
+    case 1: currentMusic = levelMusicRegular; break;
+    case 2: currentMusic = levelMusicFast; break;
+    default: currentMusic = levelMusicRegular; break;
+    }
+    if (currentMusic) {
+        currentMusic->Stop();
+        currentMusic->Play();
+    }
+}
+
+void SnowLevel::SetPanSpeed(float speed)
+{
+    pickupPanSpeed = speed;
+    for (auto& toilet : toilets) {
+        toilet->SetPanSpeed(speed);
+    }
+    for (auto& pickup : pickups) {
+        pickup->SetPanSpeed(speed);
     }
 }

@@ -26,6 +26,8 @@ public:
     std::vector<std::shared_ptr<PickUp>>& GetPickUps() override;
 
     void SetSwingingPipes(bool enable) override;
+    void SetDifficulty(int difficultyIndex) override; // New: Set music based on difficulty
+    void SetPanSpeed(float speed) override; // New: Set pan speed for obstacles, enemies, pickups
 
 private:
     void InitDecoration();
@@ -38,10 +40,10 @@ private:
     void ScrollSpriteVec(std::vector<std::shared_ptr<Sprite>>& v, float dt) const;
 
     CameraSystem* camera = nullptr;
-    AudioClip* music = nullptr;
 
     static constexpr int GAP_COUNT = 5;
     const float spacing = 300.f;
+    float pickupPanSpeed = 80.0f; // New: Dynamic pickup speed
 
     std::vector<std::shared_ptr<GoldToilets>> toilets;
     std::vector<std::shared_ptr<SpikeBall>> spikes;

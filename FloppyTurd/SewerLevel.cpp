@@ -3,6 +3,8 @@
 #include "PoopHeart.h"
 #include <raymath.h>
 #include "LevelManager.h"
+#include "Resources.h"
+#include "GameSettings.h"
 
 SewerLevel::SewerLevel()
 {
@@ -16,7 +18,10 @@ SewerLevel::SewerLevel()
         1.0f
     ));
 
-    levelMusic = new AudioClip(LevelTwo);
+    levelMusicSlow = new AudioClip(LevelTwoSlow);
+    levelMusicRegular = new AudioClip(LevelTwo);
+    levelMusicFast = new AudioClip(LevelTwoFast);
+    currentMusic = levelMusicRegular;
 
     InitObstacles();
     SpawnCoins();
@@ -57,7 +62,7 @@ void SewerLevel::ResetJanitor()
 void SewerLevel::DrawJanitor() const
 {
     if (!janitorVisible) return;
-    janitorCurrent->Draw(janitorX, 100.0f); // 180 - 64 - 16 = 100
+    janitorCurrent->Draw(janitorX, 100.0f);
 }
 
 void SewerLevel::UpdateJanitor(float deltaTime)
@@ -77,7 +82,7 @@ void SewerLevel::UpdateJanitor(float deltaTime)
 
     if (janitorVisible)
     {
-        janitorX -= 80.0f * deltaTime;
+        janitorX -= pickupPanSpeed * deltaTime; // Use pickupPanSpeed for janitor
 
         if (!janitorIsShocked && janitorCurrent == janitorSweep)
         {
@@ -160,12 +165,14 @@ void SewerLevel::SpawnPickups(std::shared_ptr<SewerPipe> pipe)
         Vector2 pos{ x, y };
 
         int roll = GetRandomValue(1, 100);
+        std::shared_ptr<PickUp> pickup;
         if (roll <= 10)
-            pickups.push_back(std::make_shared<PoopHeart>(pos, PoopHeartType::SMALL));
+            pickup = std::make_shared<PoopHeart>(pos, PoopHeartType::SMALL);
         else
-            pickups.push_back(std::make_shared<Coin>(pos, CoinType::GOLDCOIN));
+            pickup = std::make_shared<Coin>(pos, CoinType::GOLDCOIN);
 
-        pickups.back()->SetPanSpeed(GetPipePanSpeed());
+        pickup->SetPanSpeed(pickupPanSpeed);
+        pickups.push_back(pickup);
     }
 }
 
@@ -175,14 +182,14 @@ void SewerLevel::SetPanSpeedMultiplier(float multiplier, float duration) {
 }
 
 float SewerLevel::GetPipePanSpeed() const {
-    return 80.0f * panSpeedMultiplier;
+    return pickupPanSpeed * panSpeedMultiplier;
 }
 
 void SewerLevel::Update(float deltaTime)
 {
     cameraSystem->Update(deltaTime);
-    if (!levelMusic->IsPlaying()) levelMusic->Play();
-    levelMusic->Update();
+    if (!currentMusic->IsPlaying()) currentMusic->Play();
+    currentMusic->Update();
 
     if (panSpeedTimer > 0.0f) {
         panSpeedTimer -= deltaTime;
@@ -190,8 +197,9 @@ void SewerLevel::Update(float deltaTime)
             panSpeedMultiplier = 1.0f;
     }
 
+    //  Let pickups handle their own movement via PickUp::Update()
     for (auto it = pickups.begin(); it != pickups.end(); ) {
-        (*it)->Update(deltaTime);
+        (*it)->Update(deltaTime);  // This already applies panSpeed internally
         if ((*it)->ShouldBeRemoved())
             it = pickups.erase(it);
         else
@@ -200,8 +208,7 @@ void SewerLevel::Update(float deltaTime)
 
     for (int i = 0; i < pipes.size(); i++) {
         auto& pipe = pipes[i];
-        pipe->pos.x -= 80 * deltaTime;
-
+        pipe->Update(deltaTime);
         if (pipe->pos.x + 200 < 0) {
             int lastIndex = (i - 1 < 0) ? (pipes.size() - 1) : (i - 1);
             pipe->pos.x = pipes[lastIndex]->pos.x + spacing;
@@ -209,8 +216,6 @@ void SewerLevel::Update(float deltaTime)
             pipe->resetScore();
             SpawnPickups(pipe);
         }
-
-        pipe->Update(deltaTime);
     }
 
     UpdateJanitor(deltaTime);
@@ -272,4 +277,30 @@ bool SewerLevel::checkForPointGain(Vector2 circleCenter, float circleRadius)
         }
     }
     return false;
+}
+
+void SewerLevel::SetDifficulty(int difficultyIndex)
+{
+    switch (difficultyIndex) {
+    case 0: currentMusic = levelMusicSlow; break;
+    case 1: currentMusic = levelMusicRegular; break;
+    case 2: currentMusic = levelMusicFast; break;
+    default: currentMusic = levelMusicRegular; break;
+    }
+    if (currentMusic) {
+        currentMusic->Stop();
+        currentMusic->Play();
+    }
+}
+
+void SewerLevel::SetPanSpeed(float speed)
+{
+    pickupPanSpeed = speed;
+    for (auto& pipe : pipes) {
+        pipe->SetPanSpeed(speed);
+    }
+    for (auto& pickup : pickups) {
+        pickup->SetPanSpeed(speed);
+    }
+    // Enemies are updated via LevelManager
 }

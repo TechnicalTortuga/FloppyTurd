@@ -4,7 +4,7 @@
 SewerPipe::SewerPipe(int xPos, int yPos) {
     using namespace Resources;
 
-    // Randomly pick which type of pipe to use:
+    // Randomly pick which type of pipe to use
     static std::default_random_engine engine{ std::random_device{}() };
     std::uniform_int_distribution<int> dist(0, 3);
     int variant = dist(engine);
@@ -37,7 +37,7 @@ SewerPipe::SewerPipe(int xPos, int yPos) {
         pos.y = 180 - chosenPipe.height;
     }
 
-    panSpeed = 320 * 0.002f; // Matches 80.0f used elsewhere
+    panSpeed = 80.0f; // Default to Regular speed
     UpdateHitbox();
 }
 
@@ -99,6 +99,7 @@ void SewerPipe::Draw() {
 }
 
 void SewerPipe::Update(float deltaTime) {
+    pos.x -= panSpeed * deltaTime; // Move left based on panSpeed
     UpdateHitbox();
 }
 
@@ -107,7 +108,6 @@ void SewerPipe::resetScore() {
 }
 
 std::vector<Rectangle> SewerPipe::GetHitboxes() {
-    // If collisions are disabled, return an empty vector
     if (!collisionEnabled) {
         return std::vector<Rectangle>();
     }
@@ -120,6 +120,11 @@ std::vector<Rectangle> SewerPipe::GetHitboxes() {
 void SewerPipe::SetCollisionEnabled(bool enabled)
 {
     collisionEnabled = enabled;
+}
+
+void SewerPipe::SetPanSpeed(float speed)
+{
+    panSpeed = speed;
 }
 
 void SewerPipe::yOffsetRandomizer() {

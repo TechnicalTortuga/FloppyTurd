@@ -14,6 +14,7 @@
 #include "Coin.h"
 #include "PoopHeart.h"
 #include "SnowballProjectile.h"
+#include <cmath> // For Clamp
 
 struct SkillData {
     std::string name;
@@ -30,7 +31,13 @@ Playing::Playing(Game* game)
 {
     using namespace Resources;
     this->game = game;
-    player = new Player(game); // Pass game reference to Player
+    player = new Player(game);
+
+    if (game->mainMenu) {
+        difficultyIndex = game->mainMenu->GetDifficultyIndex();
+        player->SetInitialHearts(difficultyIndex);
+    }
+
     pauseMenuBackground = LoadTexture(PauseMenuBackground);
     _TurdPointMenu = LoadTexture(TurdPointMenu);
     _TurdPointMenuBorder = LoadTexture(TurdPointMenuBorder);
@@ -120,12 +127,19 @@ void Playing::InitializeHats()
 
 void Playing::PreLoadLevels()
 {
+    // Preload level instances to ensure initial construction
     levels.emplace_back(std::make_shared<ParkLevel>());
     levels.emplace_back(std::make_shared<SewerLevel>());
     levels.emplace_back(std::make_shared<DesertLevel>());
     levels.emplace_back(std::make_shared<SnowLevel>());
     levels.emplace_back(std::make_shared<CastleLevel>());
     levels.emplace_back(std::make_shared<BossLevel>());
+
+    // Initialize with default settings
+    for (int i = 0; i < 6; ++i) {
+        levels[i]->SetDifficulty(1); // Default to Regular
+        levels[i]->SetPanSpeed(80.0f); // Default pan speed
+    }
 }
 
 Playing::~Playing()
@@ -148,10 +162,11 @@ Playing::~Playing()
     for (int i = 0; i < 4; ++i) {
         UnloadTexture(skillNodeTextures[i]);
     }
-    delete player; // Ensure player is deleted
+    delete player;
 }
 
-void Playing::InitializeSkillNodes() {
+void Playing::InitializeSkillNodes()
+{
     skillNodePositions[0] = { 172, 28 };
     skillNodePositions[1] = { 79, 130 };
     skillNodePositions[2] = { 28, 128 };
@@ -163,8 +178,8 @@ void Playing::InitializeSkillNodes() {
 void Playing::UnlockSkill(int idx)
 {
     if (idx < 0 || idx >= totalSkillNodes) return;
-    if (skillUnlocked[idx])                return;
-    if (turdPoints <= 0)                   return;
+    if (skillUnlocked[idx]) return;
+    if (turdPoints <= 0) return;
 
     if (idx == 1 && !skillUnlocked[0]) return;
     if (idx == 3 && !skillUnlocked[1]) return;
@@ -175,12 +190,12 @@ void Playing::UnlockSkill(int idx)
 
     switch (idx)
     {
-    case 0: player->EnableShooting(true);                 break;
-    case 1: player->SetHeartMode(Player::HALVES);         break;
-    case 2: player->ChangeForm(1);                        break;
-    case 3: player->EnableHollowTurds(true);              break;
-    case 4: player->ChangeForm(2);                        break;
-    case 5: player->SetHeartMode(Player::THIRDS);         break;
+    case 0: player->EnableShooting(true); break;
+    case 1: player->SetHeartMode(Player::HALVES); break;
+    case 2: player->ChangeForm(1); break;
+    case 3: player->EnableHollowTurds(true); break;
+    case 4: player->ChangeForm(2); break;
+    case 5: player->SetHeartMode(Player::THIRDS); break;
     }
 }
 
@@ -297,7 +312,8 @@ void Playing::DrawPauseMenu()
     }
     topRowX += buttonWidth + buttonSpacing;
 
-    if (AIGUI_ImageButton(floppyButtonBlue, floppyButtonBlueHover,
+    if (AIGUI_ImageButton(
+        floppyButtonBlue, floppyButtonBlueHover,
         topRowX, topRowY,
         buttonWidth, buttonHeight,
         "Hats", 16,
@@ -308,7 +324,8 @@ void Playing::DrawPauseMenu()
     }
     topRowX += buttonWidth + buttonSpacing;
 
-    if (AIGUI_ImageButton(floppyButtonBlue, floppyButtonBlueHover,
+    if (AIGUI_ImageButton(
+        floppyButtonBlue, floppyButtonBlueHover,
         topRowX, topRowY,
         buttonWidth, buttonHeight,
         "Stats", 16,
@@ -319,7 +336,8 @@ void Playing::DrawPauseMenu()
     }
     topRowX += buttonWidth + buttonSpacing;
 
-    if (AIGUI_ImageButton(floppyButtonBlue, floppyButtonBlueHover,
+    if (AIGUI_ImageButton(
+        floppyButtonBlue, floppyButtonBlueHover,
         topRowX, topRowY,
         buttonWidth, buttonHeight,
         "System", 16,
@@ -355,7 +373,7 @@ void Playing::DrawPauseMenu()
 
         DrawTexturePro(
             _TurdPointMenu,
-            Rectangle{ scrollOffset.x, scrollOffset.y, container.width, container.height },
+            Rectangle{ scrollOffset.x, scrollOffset.y, (float)container.width, (float)container.height },
             Rectangle{ container.x, container.y, container.width, container.height },
             Vector2{ 0, 0 },
             0.0f,
@@ -371,7 +389,7 @@ void Playing::DrawPauseMenu()
             Texture2D def = unlocked ? skillNodeTextures[2] : skillNodeTextures[0];
             Texture2D hov = unlocked ? skillNodeTextures[3] : skillNodeTextures[1];
 
-            bool clicked = AIGUI_ImageButton(def, hov, sx, sy, 32, 32);
+            bool clicked = AIGUI_ImageButton(def, hov, sx, sy, 32, 32, nullptr, 0, WHITE, nullptr);
             if (clicked) selectedNode = i;
         }
 
@@ -379,8 +397,8 @@ void Playing::DrawPauseMenu()
 
         const Rectangle info = { 200, 40, (float)_TurdPointInfo.width, (float)_TurdPointInfo.height };
         DrawTexturePro(_TurdPointInfo,
-            { 0,0,info.width,info.height }, info,
-            { 0,0 }, 0.f, WHITE);
+            { 0, 0, info.width, info.height }, info,
+            { 0, 0 }, 0.0f, WHITE);
 
         DrawText(TextFormat("Points: %d", turdPoints),
             info.x + 10, info.y + 10, 14, WHITE);
@@ -431,9 +449,45 @@ void Playing::DrawPauseMenu()
             WHITE,
             nullptr
         )) {
+            // Update session records, coins, and level unlocks before exiting
+            auto current = levelManager->GetCurrentLevel();
+            int levelIndex = -1;
+            if (dynamic_cast<ParkLevel*>(current.get())) {
+                levelIndex = 0;
+            }
+            else if (dynamic_cast<SewerLevel*>(current.get())) {
+                levelIndex = 1;
+            }
+            else if (dynamic_cast<DesertLevel*>(current.get())) {
+                levelIndex = 2;
+            }
+            else if (dynamic_cast<SnowLevel*>(current.get())) {
+                levelIndex = 3;
+            }
+            else if (dynamic_cast<CastleLevel*>(current.get())) {
+                levelIndex = 4;
+            }
+            else if (dynamic_cast<BossLevel*>(current.get())) {
+                levelIndex = 5;
+            }
+
+            if (levelIndex >= 0) {
+                UpdateSessionRecord(levelIndex, SCORE);
+            }
+
+            TOTALCOINS += player->GetSessionCoins();
             if (game->mainMenu) {
+                game->mainMenu->UpdateLevelUnlocks(TOTALCOINS, sessionRecords);
                 game->mainMenu->ResetMusic();
             }
+
+            // Reset game state
+            AudioManager::GetInstance().StopMusic();
+            if (currentMusic) currentMusic->Stop();
+            player->Revive();
+            SCORE = 0;
+            player->ResetSessionCoins();
+            isPaused = false;
             game->SetGameState(Game::MAINMENU);
         }
 
@@ -471,7 +525,7 @@ void Playing::DrawGameOverScreen()
         "Ahh poop.", "You pooped.", "Oh crap!", "Poop happens.",
         "Down the drain!", "That stinks.", "Toilet Trouble!", "You flushed!"
     };
-    static int poopMsgIndex = GetRandomValue(0, (int)(sizeof(poopMessages) / sizeof(char*) - 1));
+    static int poopMsgIndex = GetRandomValue(0, (int)(sizeof(poopMessages) / sizeof(char*)) - 1);
     const char* msg = poopMessages[poopMsgIndex];
     int msgWidth = MeasureText(msg, 18);
     float labelW = (float)(msgWidth + 24);
@@ -488,28 +542,20 @@ void Playing::DrawGameOverScreen()
         AudioManager::GetInstance().StopMusic();
         if (gameOverMusic) gameOverMusic->Stop();
 
+        int levelIndex = 0;
         switch (lastLevelType) {
-        case LastLevelType::PARK:   levelManager->SetLevel(std::make_shared<ParkLevel>()); break;
-        case LastLevelType::SEWER:  levelManager->SetLevel(std::make_shared<SewerLevel>()); break;
-        case LastLevelType::SNOW:   levelManager->SetLevel(std::make_shared<SnowLevel>()); break;
-        case LastLevelType::CASTLE: levelManager->SetLevel(std::make_shared<CastleLevel>()); break;
-        case LastLevelType::BOSS:
-            levelManager->SetLevel(std::make_shared<BossLevel>());
-            // Recreate BossHealthBar for new RatKing
-            delete bossHealthBar;
-            if (BossLevel* bossLevel = dynamic_cast<BossLevel*>(levelManager->GetCurrentLevel().get())) {
-                bossHealthBar = new BossHealthBar(bossLevel->GetBoss(), "King of Rats");
-                TraceLog(LOG_INFO, "[Playing] Recreated BossHealthBar for new RatKing");
-            }
-            break;
-        case LastLevelType::DESERT: levelManager->SetLevel(std::make_shared<DesertLevel>()); break;
-        default:                    levelManager->SetLevel(std::make_shared<ParkLevel>()); break;
+        case LastLevelType::PARK:   levelIndex = 0; break;
+        case LastLevelType::SEWER:  levelIndex = 1; break;
+        case LastLevelType::DESERT: levelIndex = 2; break;
+        case LastLevelType::SNOW:   levelIndex = 3; break;
+        case LastLevelType::CASTLE: levelIndex = 4; break;
+        case LastLevelType::BOSS:   levelIndex = 5; break;
+        default:                    levelIndex = 0; break;
         }
+
+        SetCurrentLevel(levelIndex);
         player->Revive();
         SCORE = 0;
-
-        // Reapply Quickplay settings after resetting the level
-        levelManager->SetQuickplaySettings(quickplaySettings);
 
         GAMEOVER = false;
         gameOverTriggered = false;
@@ -587,12 +633,11 @@ void Playing::Update()
             levelIndex = 2;
         }
 
-        // Update session record for the current level
         if (levelIndex >= 0) {
             UpdateSessionRecord(levelIndex, SCORE);
         }
 
-        // Update level unlocks in MainMenu
+        TOTALCOINS += player->GetSessionCoins();
         if (game->mainMenu) {
             game->mainMenu->UpdateLevelUnlocks(TOTALCOINS, sessionRecords);
         }
@@ -609,7 +654,7 @@ void Playing::Update()
         if (snowOverlay) snowOverlay->Update(deltaTime);
         gameOverMusic->Update();
 
-        if (!turdHasFallenOffScreen && player->GetPosition().y > 180) {
+        if (!turdHasFallenOffScreen && player->GetPosition().y >= 180) {
             turdHasFallenOffScreen = true;
         }
 
@@ -621,7 +666,7 @@ void Playing::Update()
 
     if (!isPaused && !GAMEOVER) {
         if (levelManager) {
-            UpdatePlayerPositionInLevel();
+            UpdatePlayerPosition();
             levelManager->Update(deltaTime);
 
             std::shared_ptr<Level> currentLevel = levelManager->GetCurrentLevel();
@@ -655,7 +700,7 @@ void Playing::Update()
                     }
                 }
 
-                auto& pickups = levelManager->GetCurrentLevel()->GetPickUps();
+                auto& pickups = currentLevel->GetPickUps();
                 for (auto it = pickups.begin(); it != pickups.end(); ) {
                     if (CheckCollisionCircleRec(
                         player->GetCircleCenter(),
@@ -672,7 +717,7 @@ void Playing::Update()
                         }
                         else if (auto coin = dynamic_cast<Coin*>((*it).get())) {
                             int coinValue = coin->GetValue();
-                            player->AddCoins(coinValue); // This updates TOTALCOINS via Player
+                            player->AddCoins(coinValue);
                         }
                         it = pickups.erase(it);
                     }
@@ -680,6 +725,9 @@ void Playing::Update()
                         ++it;
                     }
                 }
+            }
+            else {
+                std::cerr << "Warning: currentLevel is null in Update!" << std::endl;
             }
         }
         else {
@@ -752,6 +800,14 @@ void Playing::Update()
             BossLevel* bossLevel = dynamic_cast<BossLevel*>(levelManager->GetCurrentLevel().get());
             if (bossLevel)
             {
+                if (bossLevel->IsComplete())
+                {
+                    // Transition to Credits state
+                    AudioManager::GetInstance().StopMusic();
+                    if (currentMusic) currentMusic->Stop();
+                    game->SetGameState(Game::CREDITS);
+                }
+
                 std::shared_ptr<Boss> boss = bossLevel->GetBoss();
                 if (boss && boss->isActive)
                 {
@@ -812,7 +868,6 @@ void Playing::Draw()
         return;
     }
 
-    // Enable high-definition font for key UI elements
     UseHighDefFont(true);
     DrawUI();
     UseHighDefFont(false);
@@ -838,7 +893,8 @@ void Playing::Draw()
     }
 }
 
-void Playing::PlayMusic(AudioClip* clip) {
+void Playing::PlayMusic(AudioClip* clip)
+{
     if (currentMusic == clip) {
         UpdateMusic();
         return;
@@ -853,12 +909,15 @@ void Playing::PlayMusic(AudioClip* clip) {
     if (currentMusic) {
         currentMusic->Play();
     }
+    else {
+        TraceLog(LOG_WARNING, "Attempted to play null music clip");
+    }
 }
 
-void Playing::UpdateMusic() {
+void Playing::UpdateMusic()
+{
     if (currentMusic && !GAMEOVER) {
-        float vol = AudioManager::GetInstance().IsMusicMuted() ? 0.0f :
-            (float)AudioManager::GetInstance().GetMusicVolume() / 10.0f;
+        float vol = AudioManager::GetInstance().IsMusicMuted() ? 0.0f : (float)AudioManager::GetInstance().GetMusicVolume() / 10.0f;
         currentMusic->SetVolume(vol);
         currentMusic->Update();
     }
@@ -886,57 +945,74 @@ void Playing::FadeOutMusic(float deltaTime)
 {
 }
 
-void Playing::SetCurrentLevel(int levelIndex) {
-    if (levelIndex >= 0 && levelIndex < levels.size()) {
-        if (levelManager && levelManager->GetCurrentLevel()) {
-            levelManager->GetCurrentLevel()->StopMusic();
-        }
+void Playing::SetCurrentLevel(int levelIndex)
+{
+    if (levelIndex < 0 || levelIndex >= levels.size()) {
+        std::cerr << "Try Again Error: Invalid level index " << levelIndex << std::endl;
+        return;
+    }
 
-        std::shared_ptr<Level> newLevel = levels[levelIndex];
-        std::function<std::shared_ptr<Enemy>(Vector2)> enemyFactory;
-        if (dynamic_cast<SewerLevel*>(newLevel.get()) != nullptr) {
-            enemyFactory = [newLevel](Vector2 spawnPos) -> std::shared_ptr<Enemy> {
-                SewerLevel* sewer = dynamic_cast<SewerLevel*>(newLevel.get());
-                float pipeSpeed = sewer->GetPipePanSpeed();
-                return std::make_shared<ToiletPaper>(spawnPos, pipeSpeed);
-                };
-        }
-        else {
-            enemyFactory = [](Vector2 spawnPos) -> std::shared_ptr<Enemy> {
-                float defaultSpeed = 80.0f;
-                return std::make_shared<ToiletPaper>(spawnPos, defaultSpeed);
-                };
-        }
+    // Stop current level music
+    if (currentMusic)          // still valid at this point
+    {
+        currentMusic->Stop();  // safe – level not destroyed yet
+        currentMusic = nullptr; // <<< break the alias to avoid a dangling ptr
+    }
 
-        // Fetch Quickplay settings from MainMenu if available
-        if (game->mainMenu) {
-            quickplaySettings = game->mainMenu->GetQuickplaySettings();
-        }
+    // Create a new instance based on the preloaded level type
+    std::shared_ptr<Level> newLevel;
+    switch (levelIndex) {
+    case 0: newLevel = std::make_shared<ParkLevel>(); break;
+    case 1: newLevel = std::make_shared<SewerLevel>(); break;
+    case 2: newLevel = std::make_shared<DesertLevel>(); break;
+    case 3: newLevel = std::make_shared<SnowLevel>(); break;
+    case 4: newLevel = std::make_shared<CastleLevel>(); break;
+    case 5: newLevel = std::make_shared<BossLevel>(); break;
+    default: newLevel = std::make_shared<ParkLevel>(); break;
+    }
 
-        levelManager = std::make_unique<LevelManager>(newLevel);
-        levelManager->SetQuickplaySettings(quickplaySettings);
+    // Apply current settings to ensure proper initialization
+    if (game->mainMenu) {
+        quickplaySettings = game->mainMenu->GetQuickplaySettings();
+        difficultyIndex = game->mainMenu->GetDifficultyIndex();
+        player->SetInitialHearts(difficultyIndex);
+    }
 
-        if (BossLevel* bossLevel = dynamic_cast<BossLevel*>(newLevel.get()))
+    levelManager = std::make_unique<LevelManager>(newLevel);
+    levelManager->SetQuickplaySettings(quickplaySettings);
+
+    newLevel->SetDifficulty(difficultyIndex); // Ensure currentMusic is set
+    float panSpeed = 80.0f; // Default Regular
+    switch (difficultyIndex) {
+    case 0: panSpeed = 60.0f; break; // Runny
+    case 2: panSpeed = 120.0f; break; // Rough
+    }
+    newLevel->SetPanSpeed(panSpeed);
+
+    // Handle BossLevel specifics
+    if (BossLevel* bossLevel = dynamic_cast<BossLevel*>(newLevel.get()))
+    {
+        std::shared_ptr<Boss> boss = bossLevel->GetBoss();
+        if (boss)
         {
-            std::shared_ptr<Boss> boss = bossLevel->GetBoss();
-            if (boss)
-            {
-                delete bossHealthBar;
-                bossHealthBar = new BossHealthBar(boss, "King of Rats");
-                TraceLog(LOG_INFO, "[Playing] Created BossHealthBar for initial RatKing");
-            }
-            player->SetMaxHearts(9);
-            int initialHearts = 2;
-            player->AddHeartSlice(initialHearts * (int)player->GetHeartMode());
+            delete bossHealthBar;
+            bossHealthBar = new BossHealthBar(boss, "King of Rats");
+            TraceLog(LOG_INFO, "[Playing] Created BossHealthBar for initial RatKing");
         }
+        player->SetMaxHearts(9);
+    }
+
+    // Reset player position and game state
+    player->ResetPosition();
+    if (newLevel->GetAudioClip()) {
         PlayMusic(newLevel->GetAudioClip());
-        isPaused = false;
-        SCORE = 0;
-        player->ResetSessionCoins();
     }
     else {
-        std::cerr << "Try Again Error: Invalid level index " << levelIndex << std::endl;
+        TraceLog(LOG_ERROR, "Failed to set music for level index %d", levelIndex);
     }
+    isPaused = false;
+    SCORE = 0;
+    player->ResetSessionCoins();
 }
 
 void Playing::DrawUI()
@@ -947,10 +1023,10 @@ void Playing::DrawUI()
     if (!(levelManager && dynamic_cast<BossLevel*>(levelManager->GetCurrentLevel().get())))
     {
         DrawTexturePro(Scoreboard,
-            { 0,0,(float)Scoreboard.width,(float)Scoreboard.height },
+            { 0, 0, (float)Scoreboard.width, (float)Scoreboard.height },
             { 320.f - Scoreboard.width - 10, 180.f - Scoreboard.height - 10,
-             (float)Scoreboard.width,(float)Scoreboard.height },
-            { 0,0 }, 0.f, WHITE);
+             (float)Scoreboard.width, (float)Scoreboard.height },
+            { 0, 0 }, 0.f, WHITE);
         std::string scoreStr = TextFormat("%i", SCORE);
         Vector2 scoreTextSize = MeasureTextEx(g_AIGUI.defaultFont, scoreStr.c_str(), 20.0f, 1.0f);
         float scoreTextX = 320.0f - 42.5f - scoreTextSize.x / 2.0f;
@@ -968,45 +1044,43 @@ void Playing::DrawUI()
     {
         int sliceStart = h * slicesPH;
         int liveHere = std::max(0, std::min(slicesPH, live - sliceStart));
-        int ghostHere = std::max(0, std::min(slicesPH - liveHere,
-            ghost - sliceStart));
+        int ghostHere = std::max(0, std::min(slicesPH - liveHere, ghost - sliceStart));
 
         const char* texPath = nullptr;
         if (slicesPH == 1)
         {
-            if (liveHere == 1)        texPath = TurdHeartSmall;
-            else                      texPath = TurdHeart0Half;
+            if (liveHere == 1) texPath = TurdHeartSmall;
+            else texPath = TurdHeart0Half;
         }
         else if (slicesPH == 2)
         {
-            if (liveHere == 2)   texPath = TurdHeartSmall;
-            else if (liveHere == 1)   texPath = TurdHeart1Half;
-            else if (ghostHere >= 1)  texPath = TurdHeart0HalfHollow;
-            else                      texPath = TurdHeart0Half;
+            if (liveHere == 2) texPath = TurdHeartSmall;
+            else if (liveHere == 1) texPath = TurdHeart1Half;
+            else if (ghostHere >= 1) texPath = TurdHeart0HalfHollow;
+            else texPath = TurdHeart0Half;
         }
         else
         {
-            if (liveHere == 3)   texPath = TurdHeartSmall;
-            else if (liveHere == 2)   texPath = TurdHeart2Thirds;
-            else if (liveHere == 1)   texPath = TurdHeart1Third;
-            else if (ghostHere >= 1)  texPath = TurdHeart0ThirdHollow;
-            else                      texPath = TurdHeart0ThirdHollow;
+            if (liveHere == 3) texPath = TurdHeartSmall;
+            else if (liveHere == 2) texPath = TurdHeart2Thirds;
+            else if (liveHere == 1) texPath = TurdHeart1Third;
+            else if (ghostHere >= 1) texPath = TurdHeart0ThirdHollow;
+            else texPath = TurdHeart0ThirdHollow;
         }
 
         Texture2D tex = TextureCache::Get(texPath);
         DrawTexturePro(tex,
-            { 0,0,(float)tex.width,(float)tex.height },
-            { 4.0f + h * 32.0f, 4.0f, (float)tex.width,(float)tex.height },
-            { 0,0 }, 0.0f, WHITE);
+            { 0, 0, (float)tex.width, (float)tex.height },
+            { 4.0f + h * 32.0f, 4.0f, (float)tex.width, (float)tex.height },
+            { 0, 0 }, 0.f, WHITE);
     }
 
-    // Draw coin bag and session coins under hearts
     float coinBagX = 4.0f;
     float coinBagY = 4.0f + _TurdHeart.height + 4.0f;
     DrawTexturePro(_CoinBag,
-        { 0,0,(float)_CoinBag.width,(float)_CoinBag.height },
-        { coinBagX, coinBagY, (float)_CoinBag.width,(float)_CoinBag.height },
-        { 0,0 }, 0.0f, WHITE);
+        { 0, 0, (float)_CoinBag.width, (float)_CoinBag.height },
+        { coinBagX, coinBagY, (float)_CoinBag.width, (float)_CoinBag.height },
+        { 0, 0 }, 0.f, WHITE);
     std::string coinStr = TextFormat("%i", player->GetSessionCoins());
     Vector2 coinTextSize = MeasureTextEx(g_AIGUI.defaultFont, coinStr.c_str(), 20.0f, 1.0f);
     float coinTextX = coinBagX + _CoinBag.width + 4.0f;
@@ -1015,7 +1089,7 @@ void Playing::DrawUI()
     DrawTextEx(fontToUse, coinStr.c_str(), { coinTextX, coinTextY }, 24.0f, 1.0f, WHITE);
 }
 
-void Playing::UpdatePlayerPositionInLevel()
+void Playing::UpdatePlayerPosition()
 {
     if (levelManager)
         levelManager->SetPlayerPosition(player->GetCircleCenter());

@@ -3,6 +3,7 @@
 #include "raylib.h"
 #include "CameraSystem.h"
 #include "Boss.h"
+#include "Explosion.h"
 #include <memory>
 #include <vector>
 #include <random>
@@ -17,25 +18,28 @@ public:
     void Update(float deltaTime) override;
 
     void InitCamera();
-    void InitLayers();  // Renamed from InitDecoration to reflect camera integration
+    void InitLayers();
 
-    void SetSwingingPipes(bool enable) override {};
+    void SetSwingingPipes(bool enable) override;
+    void SetDifficulty(int difficultyIndex) override; // Set music based on difficulty
+    void SetPanSpeed(float speed) override; // Set pan speed for pickups
+
     bool checkForCollisions(Vector2 circleCenter, float circleRadius) override;
     bool checkForPointGain(Vector2 circleCenter, float circleRadius) override;
 
-    // Inherited via Level
     const std::vector<std::shared_ptr<Obstacle>>& getObjLoc() override;
     std::vector<std::shared_ptr<PickUp>>& GetPickUps() override { return pickups; }
 
-    // New method to access the boss
     std::shared_ptr<Boss> GetBoss() { return boss; }
 
-    // New method to reset boss and pickups
     void Reset();
+
+    // Check if level is complete (for Playing to trigger credits)
+    bool IsComplete() const { return isComplete; }
 
 private:
     CameraSystem* cameraSystem;
-    std::shared_ptr<Boss> boss;  // RatKing or future bosses
+    std::shared_ptr<Boss> boss;
     AudioClip* lowHealthMusic;
 
     double lowHealthTriggerTime = 0.0;
@@ -43,19 +47,22 @@ private:
     bool hasRecordedLowHealthPlay = false;
     std::vector<std::shared_ptr<PickUp>> pickups;
 
-    // Pickup wave spawning
-    float pickupSpawnTimer = 0.0f; // Timer for next wave
-    float pickupSpawnInterval = 5.0f; // Initial interval (will be randomized)
-    std::mt19937 engine; // Random number generator
-    std::uniform_int_distribution<int> pickupTypeDist; // For pickup type (0-99)
-    std::uniform_int_distribution<int> pickupCountDist; // For number of pickups (3-5)
-    std::uniform_real_distribution<float> spawnIntervalDist; // For wave interval (5-8s)
-    std::uniform_real_distribution<float> phaseDist; // For random phase (0-2π)
+    float pickupSpawnTimer = 0.0f;
+    float pickupSpawnInterval = 5.0f;
+    std::mt19937 engine;
+    std::uniform_int_distribution<int> pickupTypeDist;
+    std::uniform_int_distribution<int> pickupCountDist;
+    std::uniform_real_distribution<float> spawnIntervalDist;
+    std::uniform_real_distribution<float> phaseDist;
 
-    // Standing wave parameters
-    float waveAmplitude = 40.0f; // Wave height (±40 pixels from y=90)
-    float waveFrequency = 6.2832f; // 2π radians/second (1 cycle/second)
+    float waveAmplitude = 40.0f;
+    float waveFrequency = 6.2832f;
 
-    void SpawnPickupWave(); // Spawn a wave of pickups
-    std::shared_ptr<PickUp> GenerateRandomPickup(Vector2 pos); // Generate a single pickup
+    void SpawnPickupWave();
+    std::shared_ptr<PickUp> GenerateRandomPickup(Vector2 pos);
+
+    bool deathSequenceActive = false; // Flag for death sequence
+    float deathSequenceTimer = 0.0f; // Timer for death sequence
+    std::vector<std::shared_ptr<Explosion>> explosions; // Explosion effects
+    bool isComplete = false; // Flag to signal level completion
 };

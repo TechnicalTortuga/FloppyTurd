@@ -6,11 +6,13 @@
 #include "MainMenu.h"
 #include "Playing.h"
 #include "GameSettings.h"
+#include "Credits.h" // Include Credits header
 
 class Window;
 class MainMenu;
 class PauseMenu;
 class Playing;
+class Credits;
 
 class Game
 {
@@ -23,7 +25,8 @@ public:
         MAINMENU,
         PLAYING,
         PAUSEMENU,
-        SHUTDOWN
+        SHUTDOWN,
+        CREDITS
     };
 
     void SetGameState(GAMESTATE newState);
@@ -37,6 +40,7 @@ private:
     Window* window;
     GAMESTATE gamestate;
     //PauseMenu* pauseMenu;
+    Credits* credits; // Add Credits instance
 
     void InitClasses();
     void RunGame();

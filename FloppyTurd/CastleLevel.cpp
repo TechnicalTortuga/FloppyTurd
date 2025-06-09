@@ -12,10 +12,14 @@ using namespace GameSettings;
 CastleLevel::CastleLevel()
 {
     camera = new CameraSystem();
-    music = new AudioClip(LevelFour);
 
     camera->AddLayer(new ParallaxLayer({ CastleBackgroundWall }, 80.f, 1.f));
     camera->AddLayer(new ParallaxLayer({ CastleBackgroundBars }, 80.f, 1.f));
+
+    levelMusicSlow = new AudioClip(LevelFiveSlow);
+    levelMusicRegular = new AudioClip(LevelFour);
+    levelMusicFast = new AudioClip(LevelFiveFast);
+    currentMusic = levelMusicRegular;
 
     InitDecoration();
     InitObstacles();
@@ -27,7 +31,6 @@ CastleLevel::CastleLevel()
 
 CastleLevel::~CastleLevel()
 {
-    delete music;
     delete camera;
 }
 
@@ -148,38 +151,33 @@ void CastleLevel::SpawnPickupsBetween(float xStart, float xEnd)
 void CastleLevel::SpawnPickup(Vector2 pos)
 {
     int roll = GetRandomValue(1, 1000);
-    if (roll <= 10) {
-        auto heart = std::make_shared<PoopHeart>(pos, PoopHeartType::BIG);
-        heart->SetPanSpeed(80.0f);
-        pickups.push_back(heart);
+    std::shared_ptr<PickUp> pickup;
+
+    if (roll <= 20) {
+        pickup = std::make_shared<Coin>(pos, CoinType::REDCOIN); // 2%
     }
-    else if (roll <= 40) {
-        auto heart = std::make_shared<PoopHeart>(pos, PoopHeartType::SMALL);
-        heart->SetPanSpeed(80.0f);
-        pickups.push_back(heart);
+    else if (roll <= 50) {
+        pickup = std::make_shared<PoopHeart>(pos, PoopHeartType::BIG); // 3%
     }
-    else if (roll <= 100) {
-        auto coin = std::make_shared<Coin>(pos, CoinType::REDCOIN);
-        coin->SetPanSpeed(80.0f);
-        pickups.push_back(coin);
+    else if (roll <= 150) {
+        pickup = std::make_shared<PoopHeart>(pos, PoopHeartType::SMALL); // 10%
     }
-    else if (roll <= 250) {
-        auto coin = std::make_shared<Coin>(pos, CoinType::BLUECOIN);
-        coin->SetPanSpeed(80.0f);
-        pickups.push_back(coin);
+    else if (roll <= 400) {
+        pickup = std::make_shared<Coin>(pos, CoinType::BLUECOIN); // 25%
     }
     else {
-        auto coin = std::make_shared<Coin>(pos, CoinType::GOLDCOIN);
-        coin->SetPanSpeed(80.0f);
-        pickups.push_back(coin);
+        pickup = std::make_shared<Coin>(pos, CoinType::GOLDCOIN); // 60%
     }
+
+    pickup->SetPanSpeed(pickupPanSpeed);
+    pickups.push_back(pickup);
 }
 
 void CastleLevel::ScrollSprite(std::shared_ptr<Sprite>& s, float dt) const
 {
     if (!s) return;
     Vector2 pos = s->GetPosition();
-    pos.x -= 80.f * dt;
+    pos.x -= pickupPanSpeed * dt;
     s->SetPosition(pos);
     s->Update(dt);
 }
@@ -202,8 +200,8 @@ void CastleLevel::Update(float dt)
 
     swingTimer += dt * swingFrequency;
 
-    if (!music->IsPlaying()) music->Play();
-    music->Update();
+    if (!currentMusic->IsPlaying()) currentMusic->Play();
+    currentMusic->Update();
     camera->Update(dt);
 
     if (!hasPassedFirstToilet && lastPlayerPosition.x > toilets[0]->pos.x + toiletWidth) {
@@ -220,7 +218,7 @@ void CastleLevel::Update(float dt)
     for (size_t i = 0; i < toilets.size(); ++i)
     {
         auto& loo = toilets[i];
-        loo->pos.x -= 80.f * dt;
+        loo->Update(dt);
 
         if (i % 2 == 0) {
             curtains[i]->SetPosition({ loo->pos.x - 32.f, 21.f });
@@ -259,7 +257,6 @@ void CastleLevel::Update(float dt)
             SpawnPickupsBetween(xStart, xEnd);
         }
 
-        loo->Update(dt);
         curtains[i]->Update(dt);
         paintings[i]->Update(dt);
         floorTorches[i * 2]->Update(dt);
@@ -319,14 +316,19 @@ bool CastleLevel::checkForCollisions(Vector2 c, float r)
 bool CastleLevel::checkForPointGain(Vector2 c, float /*r*/)
 {
     float px = c.x;
+
     for (auto& loo : toilets)
     {
         float tx = loo->GetTopHitbox().x;
-        if (px > tx && !loo->hasScored)
+        float txRight = tx + loo->GetTopHitbox().width;
+
+        if (!loo->hasScored && px > txRight && px < txRight + 2.0f)
         {
-            loo->hasScored = true; return true;
+            loo->hasScored = true;
+            return true;
         }
     }
+
     return false;
 }
 
@@ -345,4 +347,35 @@ void CastleLevel::SetSwingingPipes(bool enable)
     for (auto& toilet : toilets) {
         toilet->SetOscillationEnabled(enable);
     }
+}
+
+void CastleLevel::SetDifficulty(int difficultyIndex)
+{
+    switch (difficultyIndex) {
+    case 0: currentMusic = levelMusicSlow; break;
+    case 1: currentMusic = levelMusicRegular; break;
+    case 2: currentMusic = levelMusicFast; break;
+    default: currentMusic = levelMusicRegular; break;
+    }
+    if (currentMusic) {
+        currentMusic->Stop();
+        currentMusic->Play();
+    }
+}
+
+void CastleLevel::SetPanSpeed(float speed)
+{
+    pickupPanSpeed = speed;
+    for (auto& toilet : toilets) {
+        toilet->SetPanSpeed(speed);
+    }
+    for (auto& spike : spikes) {
+        if (spike) {
+            spike->SetPanSpeed(speed);
+        }
+    }
+    for (auto& pickup : pickups) {
+        pickup->SetPanSpeed(speed);
+    }
+    // Enemies are updated via LevelManager
 }
