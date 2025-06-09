@@ -120,8 +120,6 @@ namespace Resources
 	inline const char* PaintingC = "resources/objects/RatBeachPainting.png";
 	inline const char* PaintingD = "resources/objects/RiverWalkPainting.png";
 
-
-
 	// Level Six Assets (Boss Level)
 	inline const char* BossBackground = "resources/environment/ratkingbackground.png";
 	inline const char* BossDarkClouds = "resources/environment/darkclouds.png";
@@ -209,6 +207,11 @@ namespace Resources
 	inline const char* blueButton = "resources/ui/FloppyButtonBlue.png";
 	inline const char* blueButtonHover = "resources/ui/FloppyButtonBlueHover.png";
 	inline const char* coinbagtexture = "resources/ui/CoinBag.png";
+	inline const char* ArrowRight = "resources/ui/RightArrow.png";
+	inline const char* ArrowRightHover = "resources/ui/RightArrowHover.png";
+	inline const char* ArrowLeft= "resources/ui/LeftArrow.png";
+	inline const char* ArrowLeftHover = "resources/ui/LeftArrowHover.png";
+
 
 
 	// Upgrade Menu

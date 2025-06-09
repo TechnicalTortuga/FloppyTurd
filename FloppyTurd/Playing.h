@@ -2,7 +2,7 @@
 #include <raylib.h>
 #include <iostream>
 #include "Resources.h"
-#include "Player.h"
+#include "Player.h" // Added to provide Player definition
 #include "Game.h"
 #include <vector>
 #include "Level.h"
@@ -19,136 +19,139 @@
 #include "MainMenu.h"
 
 class MainMenu;
-class Player;
+class Player; // Forward declaration (optional if included above)
 class Game;
 
 enum class Difficulty { RUNNY, REGULAR, ROUGH };
 
 enum PauseMenuTab {
-    SYSTEM,
-    STATS,
-    HATS,
-    SKILLS
+	SYSTEM,
+	STATS,
+	HATS,
+	SKILLS
 };
 
-class Playing
-{
+class Playing {
 public:
-    Playing(Game* game);
-    ~Playing();
+	Playing(Game* game);
+	~Playing();
 
-    void InitializeSkillNodes();
-    void InitializeHats();
+	void InitializeSkillNodes();
+	void InitializeHats();
 
-    void DrawPauseMenu();
-    void DrawGameOverScreen();
-    void Update();
-    void Draw();
-    void PlayMusic(AudioClip* clip);
-    void UpdateMusic();
-    void HandleInput();
-    void FadeOutMusic(float deltaTime);
-    void SetCurrentLevel(int levelIndex);
-    void PreLoadLevels();
-    void UnlockSkill(int nodeIndex);
-    void OutputHatMenu();
-    Vector2 scrollOffset;
+	void DrawPauseMenu();
+	void DrawGameOverScreen();
+	void Update();
+	void Draw();
+	void PlayMusic(AudioClip* clip);
+	void UpdateMusic();
+	void HandleInput();
+	void FadeOutMusic(float deltaTime);
+	void SetCurrentLevel(int levelIndex);
+	void PreLoadLevels();
+	void UnlockSkill(int nodeIndex);
+	void OutputHatMenu();
 
-    void UseHighDefFont(bool enable) { useHighDefFont = enable; }
-    bool IsHighDefFont() const { return useHighDefFont; }
+	void UseHighDefFont(bool enable) { useHighDefFont = enable; }
+	bool IsHighDefFont() const { return useHighDefFont; }
 
-    void UpdateSessionRecord(int levelIndex, int pipesPassed);
-    int GetSessionRecord(int levelIndex) const { return sessionRecords[levelIndex]; }
-    int GetDifficultyIndex() const { return difficultyIndex; }
+	void UpdateSessionRecord(int levelIndex, int pipesPassed);
+	int GetSessionRecord(int levelIndex) const { return sessionRecords[levelIndex]; }
+	int GetDifficultyIndex() const { return difficultyIndex; }
 
-    int SCORE = 0;
-    int COINS = 0;
-    int TOTALCOINS = 0;
-    int TOTALSCORE = 0;
+	// New public methods to access private data safely
+	int GetTotalCoins();
+	const Texture2D& GetCoinBagTexture() const { return _CoinBag; }
+
+	int SCORE = 0;
+	int COINS = 0;
+	int TOTALCOINS = 0;
+	int TOTALSCORE = 0;
+	Player* player{}; // Pointer requires Player.h for dereferencing
 
 private:
-    Game* game;
-    Player* player{};
-    AudioClip* currentMusic = nullptr;
-    AudioClip* gameOverMusic = nullptr;
-    BossHealthBar* bossHealthBar = nullptr;
+	bool PurchaseItem(int cost); // Deduct coins for purchases
+	Game* game;
 
-    void DrawUI();
-    void UpdatePlayerPosition(); // Corrected from UpdatePlayerPositionInLevel
+	AudioClip* currentMusic = nullptr;
+	AudioClip* gameOverMusic = nullptr;
+	BossHealthBar* bossHealthBar = nullptr;
 
-    float deltaTime{};
-    std::unique_ptr<LevelManager> levelManager;
-    std::vector<std::shared_ptr<Level>> levels;
+	void DrawUI();
+	void UpdatePlayerPosition();
 
-    Texture2D gameOverBackground;
-    Texture2D tryAgainBackground;
-    Texture2D deadFloppy;
-    Texture2D gameOverScore;
-    float gameOverHoverTimer = 0.0f;
-    bool GAMEOVER = false;
+	float deltaTime{};
+	std::unique_ptr<LevelManager> levelManager;
+	std::vector<std::shared_ptr<Level>> levels;
 
-    QuickplaySettings quickplaySettings;
+	Texture2D gameOverBackground;
+	Texture2D tryAgainBackground;
+	Texture2D deadFloppy;
+	Texture2D gameOverScore;
+	float gameOverHoverTimer = 0.0f;
+	bool GAMEOVER = false;
 
-    Texture2D Scoreboard;
-    Texture2D _TurdHeart;
-    Texture2D _CoinBag;
-    Texture2D floppyButtonBlue;
-    Texture2D floppyButtonBlueHover;
-    Sound ScoreSound;
+	QuickplaySettings quickplaySettings;
 
-    bool isPaused = false;
-    PauseMenuTab currentTab{ SYSTEM };
-    Texture2D pauseMenuBackground;
-    Texture2D _TurdPointMenu;
-    Texture2D _TurdPointMenuBorder;
-    Texture2D _TurdPointInfo;
-    Texture2D hatIcons[15];
+	Texture2D Scoreboard;
+	Texture2D _TurdHeart;
+	Texture2D _CoinBag;
+	Texture2D floppyButtonBlue;
+	Texture2D floppyButtonBlueHover;
+	Sound ScoreSound;
 
-    Vector2 skillMenuScrollOffset = { 0, 0 };
-    Texture2D skillNodeTextures[4];
-    static constexpr int totalSkillNodes = 6;
-    Vector2 skillNodePositions[totalSkillNodes];
-    const char* skillNames[totalSkillNodes]{
-       "Shoot",
-       "Heart Halves",
-       "Teenage Turd",
-       "Hollow Turds",
-       "Big Turd",
-       "Heart Thirds"
-    };
-    const char* skillDescs[totalSkillNodes]{
-       "Unlocks the ability to fire poop projectiles (F key).",
-       "Each heart is split into two slices; one hit removes only half.",
-       "Unlocks the teenage-turd player form (cosmetic & future buffs).",
-       "Projectiles consume ghost slices first – real HP is safe!",
-       "Unlocks the big-turd player form (cosmetic & future buffs).",
-       "Further divides hearts into three slices each."
-    };
-    bool skillUnlocked[totalSkillNodes]{ false };
-    int selectedNode = -1;
-    int turdPoints = 3;
+	bool isPaused = false;
+	PauseMenuTab currentTab{ SYSTEM };
+	Texture2D pauseMenuBackground;
+	Texture2D arrowLeft;
+	Texture2D arrowRight;
+	Texture2D arrowLeftHover;
+	Texture2D arrowRightHover;
 
-    Vector2 transformedMousePos;
+	Texture2D hatFrameNormal;
+	Texture2D hatFrameHover;
+	Texture2D hatFrameSelected;
+	Texture2D hatFrameLocked;
+	Texture2D hatFrameDenied;
 
-    Texture2D hatFrameNormal;
-    Texture2D hatFrameHover;
-    Texture2D hatFrameSelected;
-    Texture2D hatFrameLocked;
-    Texture2D hatFrameDenied;
+	std::vector<Hat*> hats;
+	Hat* currentSelectedHat;
 
-    std::vector<Hat*> hats;
-    Hat* currentSelectedHat;
+	std::unique_ptr<SnowOverlay> snowOverlay;
+	bool gameOverTriggered = false;
+	bool turdHasFallenOffScreen = false;
 
-    std::unique_ptr<SnowOverlay> snowOverlay;
-    bool gameOverTriggered = false;
-    bool turdHasFallenOffScreen = false;
+	int savedLevelIndex = 0;
+	enum class LastLevelType { NONE, PARK, DESERT, SEWER, SNOW, CASTLE, BOSS };
+	LastLevelType lastLevelType = LastLevelType::NONE;
 
-    int savedLevelIndex = 0;
-    enum class LastLevelType { NONE, PARK, DESERT, SEWER, SNOW, CASTLE, BOSS };
-    LastLevelType lastLevelType = LastLevelType::NONE;
+	bool useHighDefFont = false;
 
-    bool useHighDefFont = false;
+	int sessionRecords[6] = { 0, 0, 0, 0, 0, 0 };
+	int difficultyIndex = 1;
 
-    int sessionRecords[6] = { 0, 0, 0, 0, 0, 0 };
-    int difficultyIndex = 1;
+	static constexpr int totalSkillNodes = 5;
+	int selectedNode = 0;
+	bool skillUnlocked[totalSkillNodes]{ false };
+	const char* skillNames[totalSkillNodes]{
+		"Turd Shot",
+		"Heart Halves",
+		"Coin Magnet",
+		"Big Turd Form",
+		"Heart Thirds"
+	};
+	const char* skillDescs[totalSkillNodes]{
+		"Shoot poop with F (1 coin).",
+		"Hearts break into halves.",
+		"Coins pull toward you.",
+		"Powerful form for 15s.",
+		"Hearts break into thirds."
+	};
+	const int skillCosts[totalSkillNodes]{
+		0,   // Turd Shot
+		100, // Heart Halves
+		100, // Coin Magnet
+		150, // Big Turd Form
+		100  // Heart Thirds
+	};
 };

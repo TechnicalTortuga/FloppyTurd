@@ -39,7 +39,7 @@ Credits::Credits(Game* game)
 
     // Initialize Turdlet sprite
     turdletSprite = std::make_shared<Sprite>(TurdletIdle, 1, 0.1f, 1.0f);
-    turdletPos = { 150.0f, 90.0f };
+    turdletPos = { 150.0f, 50.0f };
 
     // Load FinLogo textures
     finLogoNormal = TextureCache::Get(FinLogo);
@@ -120,7 +120,7 @@ void Credits::Update(float deltaTime)
 
     // Update bouncing Turdlet
     turdletBounce += deltaTime * 2.0f;
-    turdletPos.y = 70.0f + sinf(turdletBounce) * 10.0f;
+    turdletPos.y = 50.0f + sinf(turdletBounce) * 10.0f;
 
     // Update pipes and maintain consistent gap
     float rightmostX = -FLT_MAX;

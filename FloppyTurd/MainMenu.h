@@ -9,66 +9,68 @@ class Game;
 
 enum MenuState
 {
-    MAIN_MENU,
-    LEVEL_SELECT,
-    OPTIONS_MENU,
-    QUICKPLAY_SETTINGS
+	MAIN_MENU,
+	LEVEL_SELECT,
+	OPTIONS_MENU,
+	QUICKPLAY_SETTINGS
 };
 
 class MainMenu
 {
 public:
-    MainMenu(Game* game);
-    ~MainMenu();
+	MainMenu(Game* game);
+	~MainMenu();
 
-    void Update();
-    void PlayMusic(AudioClip* clip);
-    void UpdateMusic();
-    void Draw();
-    void HandleInput();
+	void Update();
+	void PlayMusic(AudioClip* clip);
+	void UpdateMusic();
+	bool CanPurchaseLevel(int levelIndex, int totalCoins, const int sessionRecords[6]);
+	void Draw();
+	void HandleInput();
 
-    void ResetMusic();
-    AudioClip* GetAudioClip() const { return currentMusic; }
-    const QuickplaySettings& GetQuickplaySettings() const { return quickplaySettings; }
-    int GetDifficultyIndex() const { return difficultyIndex; } // New getter for difficulty
+	void ResetMusic();
+	AudioClip* GetAudioClip() const { return currentMusic; }
+	const QuickplaySettings& GetQuickplaySettings() const { return quickplaySettings; }
+	int GetDifficultyIndex() const { return difficultyIndex; } // New getter for difficulty
 
-    // Feedback system for high-definition font
-    void UseHighDefFont(bool enable) { useHighDefFont = enable; }
-    bool IsHighDefFont() const { return useHighDefFont; }
+	// Feedback system for high-definition font
+	void UseHighDefFont(bool enable) { useHighDefFont = enable; }
+	bool IsHighDefFont() const { return useHighDefFont; }
 
-    // Level unlock management
-    bool IsLevelUnlocked(int levelIndex) const { return levelsUnlocked[levelIndex]; }
-    void UpdateLevelUnlocks(int totalCoins, const int sessionRecords[6]);
+	// Level unlock management
+	bool IsLevelUnlocked(int levelIndex) const { return levelsUnlocked[levelIndex]; }
+	bool PurchaseLevel(int levelIndex);
+	void UpdateLevelUnlocks(int totalCoins, const int sessionRecords[6]);
 
 private:
-    void PlayRandomFartSound();
-    void ToggleFartMusic();
+	void PlayRandomFartSound();
+	void ToggleFartMusic();
 
-    Game* game;
-    MenuState currentMenu{ MAIN_MENU };
-    Texture2D _MenuBackground;
-    Texture2D _FloppyLogo;
-    Texture2D emptyPainting;
-    int currentLevelIndex{ 0 };
-    bool levelSelectMode = false;
-    bool levelsUnlocked[6] = { true, true, true, true, true, true }; // Park, Sewer unlocked; others depend on progress
+	Game* game;
+	MenuState currentMenu{ MAIN_MENU };
+	Texture2D _MenuBackground;
+	Texture2D _FloppyLogo;
+	Texture2D emptyPainting;
+	int currentLevelIndex{ 0 };
+	bool levelSelectMode = false;
+	bool levelsUnlocked[6] = { true, false, false, false, false, false }; // Park unlocked, Sewer requires 50 pipes, others depend on progress
 
-    Texture2D levelPaintings[6];
-    Texture2D lockedPainting;
+	Texture2D levelPaintings[6];
+	Texture2D lockedPainting;
 
-    float paintingHoverScale = 1.0f;
-    Texture2D finLogo;
-    float fHoverScale = 1.0f;
-    int fClickCount = 0;
-    float fClickCooldown = 0.0f;
-    bool fartModeEnabled = false;
+	float paintingHoverScale = 1.0f;
+	Texture2D finLogo;
+	float fHoverScale = 1.0f;
+	int fClickCount = 0;
+	float fClickCooldown = 0.0f;
+	bool fartModeEnabled = false;
 
-    AudioClip* currentMusic = nullptr;
+	AudioClip* currentMusic = nullptr;
 
-    QuickplaySettings quickplaySettings;
+	QuickplaySettings quickplaySettings;
 
-    bool useHighDefFont = false; // Flag for high-definition font
+	bool useHighDefFont = false; // Flag for high-definition font
 
-    int difficultyIndex = 1; // Moved from .cpp to ensure accessibility
-    const char* difficultyLevels[3] = { "Runny", "Regular", "Rough" }; // Moved for clarity
+	int difficultyIndex = 1; // Moved from .cpp to ensure accessibility
+	const char* difficultyLevels[3] = { "Runny", "Regular", "Rough" }; // Moved for clarity
 };

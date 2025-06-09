@@ -4,61 +4,72 @@
 
 static AudioClip* s_GotCoin = nullptr;
 
-Coin::Coin(Vector2 pos, CoinType type) : type(type) {
-    position = pos;
-    Init();
+Coin::Coin(Vector2 pos, CoinType type, Vector2* playerPos) : type(type), playerPos(playerPos) {
+	position = pos;
+	Init();
 }
 
 Coin::~Coin() {
-    delete sprite;
+	delete sprite;
 }
 
 void Coin::Init() {
-    using namespace Resources;
+	using namespace Resources;
 
-    switch (type) {
-    case CoinType::GOLDCOIN:
-        sprite = new Sprite(GoldCoin, 10, 0.2f, 1.0f, position);
-        value = 1;
-        break;
-    case CoinType::BLUECOIN:
-        sprite = new Sprite(BlueCoin, 10, 0.2f, 1.0f, position);
-        value = 2;
-        break;
-    case CoinType::REDCOIN:
-        sprite = new Sprite(RedCoin, 10, 0.2f, 1.0f, position);
-        value = 5;
-        break;
-    }
+	switch (type) {
+	case CoinType::GOLDCOIN:
+		sprite = new Sprite(GoldCoin, 10, 0.2f, 1.0f, position);
+		value = 1;
+		break;
+	case CoinType::BLUECOIN:
+		sprite = new Sprite(BlueCoin, 10, 0.2f, 1.0f, position);
+		value = 2;
+		break;
+	case CoinType::REDCOIN:
+		sprite = new Sprite(RedCoin, 10, 0.2f, 1.0f, position);
+		value = 5;
+		break;
+	}
 
-    // Generic 16x16 hitbox, adjust as needed
-    hitbox = { position.x, position.y, 16, 16 };
+	hitbox = { position.x, position.y, 16, 16 };
 }
 
 void Coin::SetPanSpeed(float speed) {
-    panSpeed = speed;
+	panSpeed = speed;
 }
 
 void Coin::Update(float deltaTime) {
-    position.x -= panSpeed * deltaTime;
-    if (sprite) sprite->SetPosition(position);  // update sprite position
-    sprite->Update(deltaTime);
+	// Default panning
+	position.x -= panSpeed * deltaTime;
 
-    // Update hitbox to match new position
-    hitbox.x = position.x;
-    hitbox.y = position.y;
+	// Coin magnet effect: move toward player if within 48px and magnet is active
+	if (playerPos) {
+		float distance = Vector2Distance(position, *playerPos);
+		if (distance <= 48.0f) {
+			Vector2 direction = Vector2Subtract(*playerPos, position);
+			direction = Vector2Normalize(direction);
+			position = Vector2Add(position, Vector2Scale(direction, 100.0f * deltaTime)); // Move at 100px/s
+		}
+	}
+
+	if (sprite) sprite->SetPosition(position);
+	sprite->Update(deltaTime);
+
+	// Update hitbox
+	hitbox.x = position.x;
+	hitbox.y = position.y;
 }
 
 void Coin::Draw() const {
-    if (sprite)
-        sprite->Draw(position.x, position.y);
+	if (sprite)
+		sprite->Draw(position.x, position.y);
 }
 
 Rectangle Coin::GetHitbox() const {
-    return hitbox;
+	return hitbox;
 }
 
 void Coin::OnPickup() {
-    collected = true;
-    AudioManager::GetInstance().PlaySoundEffect("GotCoin");
+	collected = true;
+	AudioManager::GetInstance().PlaySoundEffect("GotCoin");
 }
