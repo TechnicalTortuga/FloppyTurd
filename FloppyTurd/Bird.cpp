@@ -19,27 +19,25 @@ Bird::~Bird() {
 }
 
 void Bird::Update(float deltaTime) {
-    pos.x -= speed * deltaTime;
-    hoverTimer += deltaTime;
-    pos.y = baseY + std::sinf(hoverTimer * 2.0f) * 4.0f;
+	pos.x -= speed * deltaTime;
+	hoverTimer += deltaTime;
+	pos.y = baseY + std::sinf(hoverTimer * 2.0f) * 4.0f;
 
-    currentSprite->SetPosition(pos);
+	currentSprite->SetPosition(pos);
 
-    if (isHurt) {
-        hurtTimer -= deltaTime;
-        if (!hurtAnimFinished) {
-            currentSprite->Update(deltaTime);
-            if (hurtTimer <= 0.0f && currentSprite->GetFrameIndex() >= 3) {
-                hurtAnimFinished = true;
-                currentSprite->SetFrameFrozen(3);
-            }
-        }
-    }
-    else {
-        currentSprite->Update(deltaTime);
-    }
+	if (isHurt) {
+		hurtTimer -= deltaTime;
+		currentSprite->Update(deltaTime);
+		if (currentSprite->hasLoopedOnce() && !currentSprite->IsFrozen()) {
+			currentSprite->SetFrameFrozen(3); // Freeze on last frame
+			hurtAnimFinished = true;
+		}
+	}
+	else {
+		currentSprite->Update(deltaTime);
+	}
 
-    UpdateHitbox();
+	UpdateHitbox();
 }
 
 void Bird::Draw() const {
@@ -51,18 +49,17 @@ Rectangle Bird::GetHitbox() const {
 }
 
 void Bird::TakeDamage() {
-    if (!isHurt) {
-        isHurt = true;
-        hitbox = { 0, 0, 0, 0 };
-        currentSprite = hurtSprite;
-        hurtSprite->ResetAnimation();
-        hurtSprite->SetFrameIndex(0);
-        hurtTimer = 0.4f;
-    }
+	if (!isHurt) {
+		isHurt = true;
+		currentSprite = hurtSprite;
+		hurtSprite->ResetAnimation();
+		hurtTimer = 0.4f; // Duration of hurt animation
+		hurtAnimFinished = false;
+	}
 }
 
 bool Bird::ShouldBeRemoved() const {
-    return hurtAnimFinished;
+	return isHurt && hurtAnimFinished;
 }
 
 void Bird::UpdateHitbox() {

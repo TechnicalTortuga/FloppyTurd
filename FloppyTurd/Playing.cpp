@@ -1086,71 +1086,77 @@ void Playing::SetCurrentLevel(int levelIndex) {
 }
 
 void Playing::DrawUI() {
-    using namespace Resources;
-    using namespace GameSettings;
+	using namespace Resources;
+	using namespace GameSettings;
 
-    if (!(levelManager && dynamic_cast<BossLevel*>(levelManager->GetCurrentLevel().get()))) {
-        DrawTexturePro(Scoreboard,
-            { 0, 0, (float)Scoreboard.width, (float)Scoreboard.height },
-            { 320.0f - Scoreboard.width - 10, 180.0f - Scoreboard.height - 10,
-             (float)Scoreboard.width, (float)Scoreboard.height },
-            { 0, 0 }, 0.0f, WHITE);
-        std::string scoreStr = TextFormat("%i", SCORE);
-        Vector2 scoreTextSize = MeasureTextEx(g_AIGUI.defaultFont, scoreStr.c_str(), 20.0f, 1.0f);
-        float scoreTextX = 320.0f - 42.5f - scoreTextSize.x / 2.0f;
-        float scoreTextY = 180.0f - 35.0f;
-        Font fontToUse = IsHighDefFont() ? game->GetScaledFont(1.2f) : g_AIGUI.defaultFont;
-        DrawTextEx(fontToUse, scoreStr.c_str(), { scoreTextX, scoreTextY }, 24.0f, 1.0f, WHITE);
-    }
+	if (!(levelManager && dynamic_cast<BossLevel*>(levelManager->GetCurrentLevel().get()))) {
+		DrawTexturePro(Scoreboard,
+			{ 0, 0, (float)Scoreboard.width, (float)Scoreboard.height },
+			{ 320.0f - Scoreboard.width - 10, 180.0f - Scoreboard.height - 10,
+			 (float)Scoreboard.width, (float)Scoreboard.height },
+			{ 0, 0 }, 0.0f, WHITE);
+		std::string scoreStr = TextFormat("%i", SCORE);
+		Vector2 scoreTextSize = MeasureTextEx(g_AIGUI.defaultFont, scoreStr.c_str(), 20.0f, 1.0f);
+		float scoreTextX = 320.0f - 42.5f - scoreTextSize.x / 2.0f;
+		float scoreTextY = 180.0f - 35.0f;
+		Font fontToUse = IsHighDefFont() ? game->GetScaledFont(1.2f) : g_AIGUI.defaultFont;
+		DrawTextEx(fontToUse, scoreStr.c_str(), { scoreTextX, scoreTextY }, 24.0f, 1.0f, WHITE);
+	}
 
-    const int hearts = player->GetTotalHearts();
-    const int slicesPH = player->GetSlicesPerHeart();
-    int live = player->GetSlicesLeft();
-    int ghost = player->GetGhostSlicesLeft();
+	const int hearts = player->GetTotalHearts();
+	const int slicesPH = player->GetSlicesPerHeart();
+	int live = player->GetSlicesLeft();
+	int ghost = player->GetGhostSlicesLeft();
 
-    for (int h = 0; h < hearts; ++h) {
-        int sliceStart = h * slicesPH;
-        int liveHere = std::max(0, std::min(slicesPH, live - sliceStart));
-        int ghostHere = std::max(0, std::min(slicesPH - liveHere, ghost - sliceStart));
+	// Draw hearts only if there are live or ghost slices
+	for (int h = 0; h < hearts; ++h) {
+		int sliceStart = h * slicesPH;
+		int liveHere = std::max(0, std::min(slicesPH, live - sliceStart));
+		int ghostHere = std::max(0, std::min(slicesPH - liveHere, ghost - sliceStart));
 
-        const char* texPath = nullptr;
-        if (slicesPH == 1) {
-            if (liveHere == 1) texPath = TurdHeartSmall;
-            else texPath = TurdHeart0Half;
-        }
-        else if (slicesPH == 2) {
-            if (liveHere == 2) texPath = TurdHeartSmall;
-            else if (liveHere == 1) texPath = TurdHeart1Half;
-            else if (ghostHere >= 1) texPath = TurdHeart0HalfHollow;
-            else texPath = TurdHeart0Half;
-        }
-        else {
-            if (liveHere == 3) texPath = TurdHeartSmall;
-            else if (liveHere == 2) texPath = TurdHeart2Thirds;
-            else if (liveHere == 1) texPath = TurdHeart1Third;
-            else if (ghostHere >= 1) texPath = TurdHeart0ThirdHollow;
-            else texPath = TurdHeart0ThirdHollow;
-        }
+		// Skip drawing if no live or ghost slices remain for this heart
+		if (liveHere == 0 && ghostHere == 0) {
+			continue;
+		}
 
-        Texture2D tex = TextureCache::Get(texPath);
-        DrawTexturePro(tex,
-            { 0, 0, (float)tex.width, (float)tex.height },
-            { 4.0f + h * 32.0f, 4.0f, (float)tex.width, (float)tex.height },
-            { 0, 0 }, 0.0f, WHITE);
-    }
+		const char* texPath = nullptr;
+		if (slicesPH == 1) {
+			if (liveHere == 1) texPath = TurdHeartSmall;
+			else texPath = TurdHeart0Half;
+		}
+		else if (slicesPH == 2) {
+			if (liveHere == 2) texPath = TurdHeartSmall;
+			else if (liveHere == 1) texPath = TurdHeart1Half;
+			else if (ghostHere >= 1) texPath = TurdHeart0HalfHollow;
+			else texPath = TurdHeart0Half;
+		}
+		else {
+			if (liveHere == 3) texPath = TurdHeartSmall;
+			else if (liveHere == 2) texPath = TurdHeart2Thirds;
+			else if (liveHere == 1) texPath = TurdHeart1Third;
+			else if (ghostHere >= 1) texPath = TurdHeart0ThirdHollow;
+			else texPath = TurdHeart0ThirdHollow;
+		}
 
-    float coinBagX = 4.0f;
-    float coinBagY = 4.0f + _TurdHeart.height + 4.0f;
-    DrawTexturePro(_CoinBag,
-        { 0, 0, (float)_CoinBag.width, (float)_CoinBag.height },
-        { coinBagX, coinBagY, (float)_CoinBag.width, (float)_CoinBag.height },
-        { 0, 0 }, 0.0f, WHITE);
-    std::string coinStr = TextFormat("%i", player->GetSessionCoins());
-    Vector2 coinTextSize = MeasureTextEx(g_AIGUI.defaultFont, coinStr.c_str(), 20.0f, 1.0f);
-    float coinTextX = coinBagX + _CoinBag.width + 4.0f;
-    float coinTextY = coinBagY + (_CoinBag.height - coinTextSize.y) / 2.0f;
-    Font fontToUse = IsHighDefFont() ? game->GetScaledFont(1.2f) : g_AIGUI.defaultFont;
-    DrawTextEx(fontToUse, coinStr.c_str(), { coinTextX, coinTextY }, 24.0f, 1.0f, WHITE);
+		Texture2D tex = TextureCache::Get(texPath);
+		DrawTexturePro(tex,
+			{ 0, 0, (float)tex.width, (float)tex.height },
+			{ 4.0f + h * 32.0f, 4.0f, (float)tex.width, (float)tex.height },
+			{ 0, 0 }, 0.0f, WHITE);
+	}
+
+	float coinBagX = 4.0f;
+	float coinBagY = 4.0f + _TurdHeart.height + 4.0f;
+	DrawTexturePro(_CoinBag,
+		{ 0, 0, (float)_CoinBag.width, (float)_CoinBag.height },
+		{ coinBagX, coinBagY, (float)_CoinBag.width, (float)_CoinBag.height },
+		{ 0, 0 }, 0.0f, WHITE);
+	std::string coinStr = TextFormat("%i", player->GetSessionCoins());
+	Vector2 coinTextSize = MeasureTextEx(g_AIGUI.defaultFont, coinStr.c_str(), 20.0f, 1.0f);
+	float coinTextX = coinBagX + _CoinBag.width + 4.0f;
+	float coinTextY = coinBagY + (_CoinBag.height - coinTextSize.y) / 2.0f;
+	Font fontToUse = IsHighDefFont() ? game->GetScaledFont(1.2f) : g_AIGUI.defaultFont;
+	DrawTextEx(fontToUse, coinStr.c_str(), { coinTextX, coinTextY }, 24.0f, 1.0f, WHITE);
 }
 
 void Playing::UpdatePlayerPosition() {

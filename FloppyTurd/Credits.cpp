@@ -51,9 +51,9 @@ Credits::Credits(Game* game)
     std::uniform_real_distribution<float> offsetDist(-20.0f, 20.0f);
     creditEntries = {
         CreditEntry{"Game Developer:", "Alexandru Istrate", offsetDist(engine)},
-        CreditEntry{"Programmer:", "Alexandru Istrate", offsetDist(engine)},
-        CreditEntry{"Music Director:", "Alexandru Istrate", offsetDist(engine)},
-        CreditEntry{"Pixel Artist:", "Alexandru Istrate", offsetDist(engine)},
+        CreditEntry{"Programmer:", "Alex Istrate", offsetDist(engine)},
+        CreditEntry{"Music Director:", "Al Istrate", offsetDist(engine)},
+        CreditEntry{"Pixel Artist:", "A. Istrate", offsetDist(engine)},
         CreditEntry{"Assist. Pixel Artist:", "William Henson", offsetDist(engine)},
         CreditEntry{"Fartist:", "Kevin Hooks", offsetDist(engine)},
         CreditEntry{"Marketing Director:", "Kevin Hooks", offsetDist(engine)}, // Empty line
@@ -61,7 +61,6 @@ Credits::Credits(Game* game)
         CreditEntry{"", "Aseprite", offsetDist(engine)},
         CreditEntry{"", "Raylib Framework for C++", offsetDist(engine)},
         CreditEntry{"", "FL Studios", offsetDist(engine)},
-        CreditEntry{"", "", offsetDist(engine)}, // Empty line
         CreditEntry{"Special Thanks to:", "", offsetDist(engine)},
         CreditEntry{"", "Betty Henson-Istrate", offsetDist(engine)},
         CreditEntry{"", "", offsetDist(engine)}, // Empty line

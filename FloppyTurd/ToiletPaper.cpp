@@ -86,9 +86,13 @@ bool ToiletPaper::ShouldBeRemoved() const
     return isHurt && hurtTimer <= 0.0f;
 }
 
-void ToiletPaper::UpdateHitbox()
-{
-    hitbox = { pos.x + 8, pos.y + 24, (float)currentSprite->GetWidth() - 24, (float)currentSprite->GetHeight() - 36 };
+void ToiletPaper::UpdateHitbox() {
+	if (isHurt) {
+		hitbox = { 0, 0, 0, 0 }; // Disable hitbox when hurt
+	}
+	else {
+		hitbox = { pos.x + 8, pos.y + 24, (float)currentSprite->GetWidth() - 24, (float)currentSprite->GetHeight() - 36 };
+	}
 }
 
 void ToiletPaper::SetSpeed(float spd)
