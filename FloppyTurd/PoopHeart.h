@@ -12,6 +12,7 @@ public:
     void Draw() const override;
     Rectangle GetHitbox() const override;
     void OnPickup() override;
+    void SetPlayerPosition(Vector2* pos) { playerPos = pos; } // Set player position for magnet
 
     int GetHealAmount() const;
     bool IsInvisible() const;
@@ -20,6 +21,7 @@ public:
     PoopHeartType GetType() const;
 
 private:
+    Vector2* playerPos = nullptr; // Pointer to player's position for magnet effect
     PoopHeartType type;
     Sprite* sprite = nullptr;
     Rectangle hitbox;

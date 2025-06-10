@@ -20,6 +20,7 @@ PoopHeart::PoopHeart(Vector2 pos, PoopHeartType type) : type(type) {
     hitbox = { position.x, position.y, 32, 32 };
 }
 
+
 PoopHeart::~PoopHeart() {
     delete sprite;
 }

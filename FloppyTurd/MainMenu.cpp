@@ -376,7 +376,7 @@ void MainMenu::Draw()
 					TraceLog(LOG_INFO, "Unlock button hovered at (%f, %f)", g_AIGUI.mousePos.x, g_AIGUI.mousePos.y);
 				}
 
-				if (AIGUI_ButtonRounded("Unlock", unlockPos.x, unlockPos.y + 18.0f, 70.0f, 24.0f, 0.3f, 20, WHITE)) { // Increased font to 20
+				if (AIGUI_ButtonRounded("Unlock", unlockPos.x, unlockPos.y + 2, 70.0f, 24.0f, 0.3f, 18, WHITE)) { // Increased font to 20
 					TraceLog(LOG_INFO, "Unlock button clicked for level %d", currentLevelIndex);
 					if (PurchaseLevel(currentLevelIndex)) {
 						TraceLog(LOG_INFO, "Level %d unlocked successfully!", currentLevelIndex);

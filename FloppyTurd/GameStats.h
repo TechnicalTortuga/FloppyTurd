@@ -15,8 +15,8 @@ struct GameStats {
     int levelHighScores[6] = { 0, 0, 0, 0, 0, 0 };
 
     // Unlocked states
-    bool hatUnlocked[18] = { false };  // 18 hats
-    bool skillUnlocked[5] = { false }; // 5 skills
+    bool hatUnlocked[15] = { false }; // 15 hats
+    bool skillUnlocked[6] = { false }; // 6 skills
     bool levelUnlocked[6] = { false }; // 6 levels (Park always true)
 
     void Load();

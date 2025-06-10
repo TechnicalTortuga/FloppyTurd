@@ -44,6 +44,7 @@ private:
     float hurtTimer;
 
     float throwTimer = 0.0f;
+    float throwCooldown;      // New: Stores the cooldown duration
     bool hasThrown;
     bool isThrowing;
 

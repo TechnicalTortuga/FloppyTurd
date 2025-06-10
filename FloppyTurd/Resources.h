@@ -231,18 +231,88 @@ namespace Resources
 	inline const char* HatFrameDenied = "resources/ui/HatFrameDenied.png";
 
 	// Hats
-	inline const char* CowboyHat = "resources/hats/cowboyhat.png";
-	inline const char* CowboyHatTurdlet = "resources/hats/cowboyhatturdlet.png";
-	inline const char* CowboyHatTurdletShoot = "resources/hats/cowboyhatturdletshoot.png";
 	inline const char* CowboyHatTeenage = "resources/hats/cowboyhatteenage.png";
 	inline const char* CowboyHatTeenageShoot = "resources/hats/cowboyhatteenageshoot.png";
-	inline const char* CowboyHatBigTurd = "resources/hats/cowboyhatbigturd.png";
-	inline const char* CowboyHatBigTurdShoot = "resources/hats/cowboyhatbigturdshoot.png";
 
-	inline const char* Doorag = "resources/hats/dooraghat.png";
-	inline const char* Ballcap = "resources/hats/ballcap.png";
-	inline const char* Shell = "resources/hats/shellhat.png";
-	inline const char* Flower = "resources/hats/flowerhat.png";
+	inline const char* BallCapBigTurd = "resources/hats/ballcapbigturdjump.png";
+	inline const char* BallCapBigTurdShoot = "resources/hats/ballcapbigturdshoot.png";
+	inline const char* BeretBigTurd = "resources/hats/berethatbigturdjump.png";
+	inline const char* BeretBigTurdShoot = "resources/hats/berethatbigturdshoot.png";
+	inline const char* CowboyHatBigTurd = "resources/hats/cowboyhatbigturdjump.png";
+	inline const char* CowboyHatBigTurdShoot = "resources/hats/cowboyhatbigturdshoot.png";
+	inline const char* CrownHatBigTurd = "resources/hats/crownhatbigturdjump.png";
+	inline const char* CrownHatBigTurdShoot = "resources/hats/crownhatbigturdshoot.png";
+	inline const char* DooragBigTurd = "resources/hats/dooragbigturdjump.png";
+	inline const char* DooragBigTurdShoot = "resources/hats/dooragbigturdshoot.png";
+	inline const char* FlowerHatBigTurd = "resources/hats/flowerhatbigturdjump.png";
+	inline const char* FlowerHatBigTurdShoot = "resources/hats/flowerhatbigturdjump.png";
+	inline const char* PinwheelBigTurd = "resources/hats/pinwheelbigturdjump.png";
+	inline const char* PinwheelBigTurdShoot = "resources/hats/pinwheelbigturdshoot.png";
+	inline const char* PoophatBigTurd = "resources/hats/poophatbigturdjump.png";
+	inline const char* PoophatBigTurdShoot = "resources/hats/poophatbigturdshoot.png";
+	inline const char* RamsesHatBigTurd = "resources/hats/ramsesbigturdjump.png";
+	inline const char* RamsesHatBigTurdShoot = "resources/hats/ramsesbigturdshoot.png";
+	inline const char* SamuraiHatBigTurd = "resources/hats/samuraibigturdjump.png";
+	inline const char* SamuraiHatBigTurdShoot = "resources/hats/samuraibigturdshoot.png";
+	inline const char* ShellHatBigTurd = "resources/hats/shellhatbigturdjump.png";
+	inline const char* ShellHatBigTurdShoot = "resources/hats/shellhatbigturdshoot.png";
+	inline const char* SpartanHatBigTurd = "resources/hats/spartanhatbigturdjump.png";
+	inline const char* SpartanHatBigTurdShoot = "resources/hats/spartanhatbigturdshoot.png";
+	inline const char* StrawHatBigTurd = "resources/hats/strawhatbigturdjump.png";
+	inline const char* StrawHatBigTurdShoot = "resources/hats/strawhatbigturdshoot.png";
+	inline const char* TopHatBigTurd = "resources/hats/tophatbigturdjump.png";
+	inline const char* TopHatBigTurdShoot = "resources/hats/tophatbigturdshoot.png";
+	inline const char* UshankaBigTurd = "resources/hats/ushankabigturdjump.png";
+	inline const char* UshankaBigTurdShoot = "resources/hats/ushankabigturdshoot.png";
+
+	inline const char* BallCapTurdlet = "resources/hats/ballcapturdletjump.png";
+	inline const char* BallCapTurdletShoot = "resources/hats/ballcapturdletshoot.png";
+	inline const char* BeretTurdlet = "resources/hats/berethatturdletjump.png";
+	inline const char* BeretTurdletShoot = "resources/hats/berethatturdletshoot.png";
+	inline const char* CowboyHatTurdlet = "resources/hats/cowboyhatturdletjump.png";
+	inline const char* CowboyHatTurdletShoot = "resources/hats/cowboyhatturdletshoot.png";
+	inline const char* CrownHatTurdlet = "resources/hats/crownhatturdletjump.png";
+	inline const char* CrownHatTurdletShoot = "resources/hats/crownhatturdletshoot.png";
+	inline const char* DooragTurdlet = "resources/hats/dooragturdletjump.png";
+	inline const char* DooragTurdletShoot = "resources/hats/dooragturdletshoot.png";
+	inline const char* FlowerHatTurdlet = "resources/hats/flowerhatturdletjump.png";
+	inline const char* FlowerHatTurdletShoot = "resources/hats/flowerhatturdletjump.png";
+	inline const char* PinwheelTurdlet = "resources/hats/pinwheelturdletjump.png";
+	inline const char* PinwheelTurdletShoot = "resources/hats/pinwheelturdletshoot.png";
+	inline const char* PoophatTurdlet = "resources/hats/poophatturdletjump.png";
+	inline const char* PoophatTurdletShoot = "resources/hats/poophatturdletshoot.png";
+	inline const char* RamsesHatTurdlet = "resources/hats/ramsesturdletjump.png";
+	inline const char* RamsesHatTurdletShoot = "resources/hats/ramsesturdletshoot.png";
+	inline const char* SamuraiHatTurdlet = "resources/hats/samuraiturdletjump.png";
+	inline const char* SamuraiHatTurdletShoot = "resources/hats/samuraiturdletshoot.png";
+	inline const char* ShellHatTurdlet = "resources/hats/shellhatturdletjump.png";
+	inline const char* ShellHatTurdletShoot = "resources/hats/shellhatturdletshoot.png";
+	inline const char* SpartanHatTurdlet = "resources/hats/spartanhatturdletjump.png";
+	inline const char* SpartanHatTurdletShoot = "resources/hats/spartanhatturdletshoot.png";
+	inline const char* StrawHatTurdlet = "resources/hats/strawhatturdletjump.png";
+	inline const char* StrawHatTurdletShoot = "resources/hats/strawhatturdletshoot.png";
+	inline const char* TopHatTurdlet = "resources/hats/tophatturdletjump.png";
+	inline const char* TopHatTurdletShoot = "resources/hats/tophatturdletshoot.png";
+	inline const char* UshankaTurdlet = "resources/hats/ushankaturdletjump.png";
+	inline const char* UshankaTurdletShoot = "resources/hats/ushankaturdletshoot.png";
+
+	inline const char* Ballcap = "resources/hats/ballcap.png"; // 100 coins
+	inline const char* PinwheelHat = "resources/hats/PinwheelHat.png"; // 100
+	inline const char* CowboyHat = "resources/hats/cowboyhat.png"; // 100
+	inline const char* Shell = "resources/hats/shellhat.png"; // 100
+	inline const char* StrawHat = "resources/hats/strawhat.png"; // 100
+
+	inline const char* Doorag = "resources/hats/dooraghat.png"; // 200
+	inline const char* Flower = "resources/hats/flowerhat.png"; // 200
+	inline const char* SamuraiHat = "resources/hats/SamuraiHelmet.png"; // 200
+	inline const char* TopHat = "resources/hats/tophat.png"; // 200
+	inline const char* Ushanka = "resources/hats/ushanka.png"; // 200
+
+	inline const char* Beret = "resources/hats/Beret.png"; // 300 coins
+	inline const char* Crown = "resources/hats/Crown.png"; // 300
+	inline const char* PoopHat = "resources/hats/poophat.png"; // 300
+	inline const char* RamsesHat = "resources/hats/RamsesHat.png"; // 300
+	inline const char* SpartanHelmet = "resources/hats/SpartanHelmet.png"; // 300
 
 	// Enemies
 	inline const char* RatCopterIdle = "resources/enemies/RatCopterIdle.png";

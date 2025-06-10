@@ -56,6 +56,7 @@ Credits::Credits(Game* game)
         CreditEntry{"Pixel Artist:", "Alexandru Istrate", offsetDist(engine)},
         CreditEntry{"Assist. Pixel Artist:", "William Henson", offsetDist(engine)},
         CreditEntry{"Fartist:", "Kevin Hooks", offsetDist(engine)},
+        CreditEntry{"Marketing Director:", "Kevin Hooks", offsetDist(engine)}, // Empty line
         CreditEntry{"Tools Used:", "", offsetDist(engine)},
         CreditEntry{"", "Aseprite", offsetDist(engine)},
         CreditEntry{"", "Raylib Framework for C++", offsetDist(engine)},

@@ -8,41 +8,43 @@
 #include "LevelManager.h"
 
 SnowmanEnemy::SnowmanEnemy(Vector2 spawnPos, SnowmanType type)
-    : pos(spawnPos), type(type), isHurt(false), hurtTimer(0.0f), throwTimer(0.0f), hasThrown(false), isThrowing(false), speed(80.0f) {
+    : pos(spawnPos), type(type), isHurt(false), hurtTimer(0.0f), hasThrown(false), isThrowing(false), speed(80.0f) {
     using namespace Resources;
 
     switch (type) {
     case SnowmanType::sRed:
-        idleSprite = new Sprite(SnowManRed, 1, 0.1f, 1.0f, pos);
-        throwSprite = new Sprite(SnowManRedThrow, 6, 0.12f, 1.0f, pos);
+        idleSprite = new Sprite(Resources::SnowManRed, 1, 0.1f, 1.0f, pos);
+        throwSprite = new Sprite(Resources::SnowManRedThrow, 6, 0.12f, 1.0f, pos);
         currentSprite = idleSprite;
         break;
     case SnowmanType::sGREEN:
-        idleSprite = new Sprite(SnowManGreen, 1, 0.1f, 1.0f, pos);
-        throwSprite = new Sprite(SnowManRedThrow, 6, 0.12f, 1.0f, pos);
+        idleSprite = new Sprite(Resources::SnowManGreen, 1, 0.1f, 1.0f, pos);
+        throwSprite = new Sprite(Resources::SnowManRedThrow, 6, 0.12f, 1.0f, pos);
         currentSprite = idleSprite;
         break;
     case SnowmanType::sBLUE:
-        idleSprite = new Sprite(SnowManBlue, 1, 0.1f, 1.0f, pos);
-        throwSprite = new Sprite(SnowManRedThrow, 6, 0.12f, 1.0f, pos);
+        idleSprite = new Sprite(Resources::SnowManBlue, 1, 0.1f, 1.0f, pos);
+        throwSprite = new Sprite(Resources::SnowManRedThrow, 6, 0.12f, 1.0f, pos);
         currentSprite = idleSprite;
         break;
     case SnowmanType::sCHAD:
-        idleSprite = new Sprite(SnowManChad, 1, 0.1f, 1.0f, pos);
-        throwSprite = new Sprite(SnowManRedThrow, 6, 0.12f, 1.0f, pos);
+        idleSprite = new Sprite(Resources::SnowManChad, 1, 0.1f, 1.0f, pos);
+        throwSprite = new Sprite(Resources::SnowManRedThrow, 6, 0.12f, 1.0f, pos);
         currentSprite = idleSprite;
         break;
     }
     UpdateHitbox();
-    // Default throwTimer (will be overridden by constructor with difficulty)
-    throwTimer = 1.2f; // Base value, adjusted by parameterized constructor
+    // Default cooldown for the hardest difficulty
+    throwCooldown = 3.2f;
+    // Initial delay before the first throw
+    throwTimer = 1.5f;
 }
 
 SnowmanEnemy::SnowmanEnemy(Vector2 spawnPos, SnowmanType type, float speed, int difficulty)
     : SnowmanEnemy(spawnPos, type) { // Delegate to base constructor
-    SetSpeed(speed); // Set the provided speed
-    // Adjust throwTimer based on difficulty
-    throwTimer = 1.2f + (difficulty == 0 ? 3.0f : (difficulty == 1 ? 2.0f : 0.0f)); // Base 1.2s + 3s for Runny, 2s for Regular
+    SetSpeed(speed);
+    // Adjust throwCooldown based on difficulty using the original formula
+    throwCooldown = 1.0f + (difficulty == 0 ? 1.0f : (difficulty == 1 ? 0.5f : 0.0f));
 }
 
 SnowmanEnemy::~SnowmanEnemy() {
@@ -52,13 +54,7 @@ SnowmanEnemy::~SnowmanEnemy() {
 
 void SnowmanEnemy::TryThrowSnowball()
 {
-    // — no fire while cooling down —
-    if (throwTimer > 0.0f) {
-        throwTimer -= GetFrameTime(); // Decrease timer over time
-        return;
-    }
-
-    // — only once per animation cycle, at frame 4 —
+    // — only throw once per animation cycle, at frame 4 —
     if (!hasThrown
         && currentSprite == throwSprite
         && throwSprite->GetFrameIndex() == 4)
@@ -80,22 +76,6 @@ void SnowmanEnemy::TryThrowSnowball()
         sb->Activate(start, vel);
 
         hasThrown = true;
-        throwTimer = 1.2f; // Reset to base cooldown after throw
-    }
-
-    // — once the throw animation loops, reset for the next cycle —
-    if (hasThrown
-        && currentSprite == throwSprite
-        && throwSprite->hasLoopedOnce())
-    {
-        // swap back to idle
-        currentSprite = idleSprite;
-
-        // reset for next throw
-        hasThrown = false;
-
-        // clear the loopedOnce flag & rewind the throw anim
-        throwSprite->ResetAnimation();
     }
 }
 
@@ -113,12 +93,11 @@ void SnowmanEnemy::Update(float deltaTime) {
         idleSprite->SetPosition(pos);
         throwSprite->SetPosition(pos);
 
-        // Begin throw when fully on screen (left side fully passed edge)
-        if (!isThrowing && pos.x + 48 <= 320) {
+        // Begin throw when on-screen AND the cooldown is over
+        if (!isThrowing && throwTimer <= 0.0f && pos.x + 48 <= 320) {
             throwSprite->ResetAnimation();
             isThrowing = true;
             hasThrown = false;
-            throwTimer = 0.0f; // Reset timer to trigger immediate throw attempt
         }
 
         // Flip around if to the left of player and hasn’t already flipped
@@ -134,10 +113,12 @@ void SnowmanEnemy::Update(float deltaTime) {
             currentSprite = throwSprite;
             TryThrowSnowball();
 
+            // When the animation completes, reset state and start the cooldown
             if (throwSprite->hasLoopedOnce()) {
                 isThrowing = false;
                 throwSprite->ResetAnimation();
                 currentSprite = idleSprite;
+                throwTimer = throwCooldown; // Reset timer for the next throw
             }
         }
         else {
