@@ -1,6 +1,7 @@
 #include "PoopHeart.h"
 #include "Resources.h"
 #include "AudioManager.h"
+#include <raymath.h>
 
 PoopHeart::PoopHeart(Vector2 pos, PoopHeartType type) : type(type) {
     position = pos;
@@ -29,6 +30,16 @@ void PoopHeart::Update(float deltaTime) {
     position.x -= panSpeed * deltaTime;
 
     if (sprite) {
+		// Coin magnet effect: move toward player if within 48px and magnet is active
+		if (playerPos) {
+			float distance = Vector2Distance(position, *playerPos);
+			if (distance <= 48.0f) {
+				Vector2 direction = Vector2Subtract(*playerPos, position);
+				direction = Vector2Normalize(direction);
+				position = Vector2Add(position, Vector2Scale(direction, 100.0f * deltaTime)); // Move at 100px/s
+			}
+		}
+
         if (type == PoopHeartType::SMALL) {
             float bobOffset = 4.0f * sinf(GetTime() * 2.5f + position.x * 0.05f);
             sprite->SetPosition({ position.x, position.y + bobOffset });
@@ -43,6 +54,8 @@ void PoopHeart::Update(float deltaTime) {
 
         sprite->Update(deltaTime);
     }
+
+
 }
 
 void PoopHeart::Draw() const {

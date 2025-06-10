@@ -352,9 +352,9 @@ void MainMenu::Draw()
 			std::string coinStatus = TextFormat("Coins: %d/%d", totalCoins, requiredCoins);
 			std::string pipeStatus = (requiredPipes > 0 && previousLevelIndex >= 0) ? TextFormat("Previous Pipes: %d/%d", sessionRecords[previousLevelIndex], requiredPipes) : "";
 
-			AIGUI_LabelRounded(coinStatus.c_str(), 80.0f, infoY + 56.0f, 160.0f, 24.0f, 0.2f, 20, totalCoins >= requiredCoins ? GREEN : BLACK); // Increased font to 20
+			AIGUI_LabelRounded(coinStatus.c_str(), 80.0f, infoY + 54.0f, 160.0f, 24.0f, 0.2f, 18, totalCoins >= requiredCoins ? GREEN : BLACK); // Increased font to 20
 			if (!pipeStatus.empty()) {
-				AIGUI_LabelRounded(pipeStatus.c_str(), 60.0f, infoY, 200.0f, 24.0f, 0.2f, 20, sessionRecords[previousLevelIndex] >= requiredPipes ? GREEN : BLACK); // Increased font to 20
+				AIGUI_LabelRounded(pipeStatus.c_str(), 60.0f, infoY, 200.0f, 24.0f, 0.2f, 18, sessionRecords[previousLevelIndex] >= requiredPipes ? GREEN : BLACK); // Increased font to 20
 			}
 
 			if (CanPurchaseLevel(currentLevelIndex, totalCoins, sessionRecords)) {
@@ -388,7 +388,7 @@ void MainMenu::Draw()
 				}
 			}
 			else {
-				AIGUI_LabelRounded("Locked", paintingX + 10.0f, paintingY + painting.height / 2.0f, 80.0f, 16.0f, 0.2f, 20, RED, Fade(RED, 0.3f)); // New styled label
+				AIGUI_LabelRounded("Locked", paintingX + 8.0f, paintingY + painting.height / 2.0f - 2, 80.0f, 16.0f, 0.2f, 20, RED, Fade(RED, 0.3f)); // New styled label
 			}
 		}
 
@@ -449,9 +449,10 @@ void MainMenu::Draw()
 			ToggleFullscreen();
 		}
 
-		if (AIGUI_ButtonRounded("Quickplay Settings", 20.0f, 148.0f, 184.0f, 20.0f, 0.1f, 20, BLACK)) {
-			currentMenu = QUICKPLAY_SETTINGS;
-		}
+		// No Quickplay Settings for Now
+		//if (AIGUI_ButtonRounded("Quickplay Settings", 20.0f, 148.0f, 184.0f, 20.0f, 0.1f, 20, BLACK)) {
+			//currentMenu = QUICKPLAY_SETTINGS;
+		//}
 
 		if (AIGUI_ButtonRounded("Back", 220.0f, 148.0f, 80.0f, 20.0f, 0.1f, 20, BLACK))
 			currentMenu = MAIN_MENU;
