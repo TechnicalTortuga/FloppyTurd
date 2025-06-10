@@ -192,6 +192,9 @@
     <ClCompile Include="GameStats.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Loading.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Game.h">
@@ -363,6 +366,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GameStats.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Loading.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

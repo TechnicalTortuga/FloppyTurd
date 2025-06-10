@@ -686,58 +686,57 @@ void Playing::DrawGameOverScreen() {
 void Playing::Update() {
     deltaTime = GetFrameTime();
 
-    if (!player->isAlive && !gameOverTriggered) {
-        gameOverTriggered = true;
-        turdHasFallenOffScreen = false;
-        GAMEOVER = false;
+	if (!player->isAlive && !gameOverTriggered) {
+		gameOverTriggered = true;
+		turdHasFallenOffScreen = false;
+		GAMEOVER = false;
 
-        auto current = levelManager->GetCurrentLevel();
-        int levelIndex = -1;
-        if (dynamic_cast<ParkLevel*>(current.get())) {
-            lastLevelType = LastLevelType::PARK;
-            levelIndex = 0;
-        }
-        else if (dynamic_cast<SewerLevel*>(current.get())) {
-            lastLevelType = LastLevelType::SEWER;
-            levelIndex = 1;
-        }
-        else if (dynamic_cast<SnowLevel*>(current.get())) {
-            lastLevelType = LastLevelType::SNOW;
-            levelIndex = 3;
-        }
-        else if (dynamic_cast<CastleLevel*>(current.get())) {
-            lastLevelType = LastLevelType::CASTLE;
-            levelIndex = 4;
-        }
-        else if (dynamic_cast<BossLevel*>(current.get())) {
-            lastLevelType = LastLevelType::BOSS;
-            levelIndex = 5;
-        }
-        else if (dynamic_cast<DesertLevel*>(current.get())) {
-            lastLevelType = LastLevelType::DESERT;
-            levelIndex = 2;
-        }
+		auto current = levelManager->GetCurrentLevel();
+		int levelIndex = -1;
+		if (dynamic_cast<ParkLevel*>(current.get())) {
+			lastLevelType = LastLevelType::PARK;
+			levelIndex = 0;
+		}
+		else if (dynamic_cast<SewerLevel*>(current.get())) {
+			lastLevelType = LastLevelType::SEWER;
+			levelIndex = 1;
+		}
+		else if (dynamic_cast<SnowLevel*>(current.get())) {
+			lastLevelType = LastLevelType::SNOW;
+			levelIndex = 3;
+		}
+		else if (dynamic_cast<CastleLevel*>(current.get())) {
+			lastLevelType = LastLevelType::CASTLE;
+			levelIndex = 4;
+		}
+		else if (dynamic_cast<BossLevel*>(current.get())) {
+			lastLevelType = LastLevelType::BOSS;
+			levelIndex = 5;
+		}
+		else if (dynamic_cast<DesertLevel*>(current.get())) {
+			lastLevelType = LastLevelType::DESERT;
+			levelIndex = 2;
+		}
 
-        if (levelIndex >= 0) {
-            UpdateSessionRecord(levelIndex, SCORE);
-            stats.totalPipes = std::max(stats.totalPipes, stats.totalPipes + SCORE);
-            savePending = true;
-        }
+		if (levelIndex >= 0) {
+			UpdateSessionRecord(levelIndex, SCORE); // This now updates totalPipes
+			savePending = true;
+		}
 
-        TOTALCOINS += player->GetSessionCoins();
-        stats.totalCoins = TOTALCOINS;
-        savePending = true;
+		TOTALCOINS += player->GetSessionCoins();
+		stats.totalCoins = TOTALCOINS;
+		savePending = true;
 
-        if (game->mainMenu) {
-            game->mainMenu->UpdateLevelUnlocks(TOTALCOINS, sessionRecords);
-        }
+		if (game->mainMenu) {
+			game->mainMenu->UpdateLevelUnlocks(TOTALCOINS, sessionRecords);
+		}
 
-        if (current) current->StopMusic();
-        AudioManager::GetInstance().StopMusic();
-        gameOverMusic->Stop();
-        gameOverMusic->SetLooping(false);
-        gameOverMusic->Play();
-    }
+		if (current) current->StopMusic();
+		AudioManager::GetInstance().StopMusic();
+		gameOverMusic->Stop();
+		gameOverMusic->SetLooping(false);
+		gameOverMusic->Play();
+	}
 
     if (gameOverTriggered) {
         player->Update(deltaTime);
@@ -1165,12 +1164,13 @@ void Playing::UpdatePlayerPosition() {
 }
 
 void Playing::UpdateSessionRecord(int levelIndex, int pipesPassed) {
-    if (levelIndex >= 0 && levelIndex < 6) {
-        sessionRecords[levelIndex] = std::max(sessionRecords[levelIndex], pipesPassed);
-        stats.levelHighScores[levelIndex] = std::max(stats.levelHighScores[levelIndex], pipesPassed);
-        savePending = true;
-        TraceLog(LOG_INFO, "Updated record for level %d: pipes=%d", levelIndex, pipesPassed);
-    }
+	if (levelIndex >= 0 && levelIndex < 6) {
+		stats.totalPipes += pipesPassed; // Add all pipes passed
+		sessionRecords[levelIndex] = std::max(sessionRecords[levelIndex], pipesPassed);
+		stats.levelHighScores[levelIndex] = std::max(stats.levelHighScores[levelIndex], pipesPassed);
+		savePending = true;
+		TraceLog(LOG_INFO, "Updated record for level %d: pipes=%d, totalPipes=%d", levelIndex, pipesPassed, stats.totalPipes);
+	}
 }
 
 int Playing::GetTotalCoins() {

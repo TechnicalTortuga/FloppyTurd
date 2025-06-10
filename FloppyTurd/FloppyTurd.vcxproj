@@ -155,6 +155,7 @@
     <ClCompile Include="Hat.cpp" />
     <ClCompile Include="Level.cpp" />
     <ClCompile Include="LevelManager.cpp" />
+    <ClCompile Include="Loading.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MainMenu.cpp" />
     <ClCompile Include="MenuButton.cpp" />
@@ -214,6 +215,7 @@
     <ClInclude Include="Layer.h" />
     <ClInclude Include="Level.h" />
     <ClInclude Include="LevelManager.h" />
+    <ClInclude Include="Loading.h" />
     <ClInclude Include="MainMenu.h" />
     <ClInclude Include="MenuButton.h" />
     <ClInclude Include="Obstacle.h" />
