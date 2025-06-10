@@ -5,6 +5,8 @@
 #include "PoopHeart.h"
 #include "Resources.h"
 #include "GameSettings.h"
+#include <stdio.h> // For debug logging
+#include "LevelManager.h"
 
 DesertLevel::DesertLevel()
     : engine(std::random_device{}())
@@ -64,38 +66,37 @@ void DesertLevel::Update(float deltaTime)
     if (!currentMusic->IsPlaying()) currentMusic->Play();
     currentMusic->Update();
 
+    bool hasPassedFirstToilet = LevelManager::GetInstance()->hasPassedFirstToilet;
+
+    // Update outhouses and handle repositioning
     for (size_t i = 0; i < outhouses.size(); ++i)
     {
         auto& oh = outhouses[i];
         oh->Update(deltaTime);
+
+        // When an outhouse moves off-screen...
         if (oh->pos.x + 80 < 0)
         {
-            size_t prev = (i == 0) ? outhouses.size() - 1 : i - 1;
-            oh->pos.x = outhouses[prev]->pos.x + spacing;
+            // Find the previous outhouse to calculate the new position
+            size_t prev_idx = (i == 0) ? outhouses.size() - 1 : i - 1;
+            auto& prev_oh = outhouses[prev_idx];
+
+            // Reposition the outhouse to the end of the line
+            oh->pos.x = prev_oh->pos.x + spacing;
             oh->hasScored = false;
-            spawnedPickupsIndices.erase(prev);
-            spawnedPickupsIndices.erase(i);
+
+            // If the player has started the level, spawn pickups in the new gap
+            if (hasPassedFirstToilet)
+            {
+                float xStart = prev_oh->pos.x + 80.0f; // End of the previous outhouse
+                float xEnd = oh->pos.x;                // Start of the newly placed one
+                printf("Spawning pickups (reposition): xStart=%.2f, xEnd=%.2f\n", xStart, xEnd);
+                SpawnPickupsBetween(xStart, xEnd);
+            }
         }
     }
 
-    const float VirtualScreenW = 320.0f;
-
-    for (size_t i = 0; i < outhouses.size(); ++i)
-    {
-        size_t j = (i + 1) % outhouses.size();
-        Rectangle leftHit = outhouses[i]->GetOuthouseHitbox();
-        Rectangle rightHit = outhouses[j]->GetOuthouseHitbox();
-
-        if (leftHit.x <= VirtualScreenW) continue;
-        if (spawnedPickupsIndices.count(i)) continue;
-
-        float leftEdge = leftHit.x + leftHit.width + 10.0f;
-        float rightEdge = rightHit.x - 10.0f;
-
-        SpawnPickupsBetween(leftEdge, rightEdge);
-        spawnedPickupsIndices.insert(i);
-    }
-
+    // Update and remove pickups
     for (auto it = pickups.begin(); it != pickups.end(); )
     {
         (*it)->Update(deltaTime);
@@ -105,7 +106,9 @@ void DesertLevel::Update(float deltaTime)
             ++it;
     }
 
+    // Update cacti and brick walls
     for (auto& o : obstacles)
+    {
         if (auto cactus = dynamic_cast<Cactus*>(o.get()))
         {
             if (cactus->pos.x + cactus->GetWidth() < 0)
@@ -114,35 +117,36 @@ void DesertLevel::Update(float deltaTime)
                 for (const auto& ob : obstacles)
                     if (auto c = dynamic_cast<Cactus*>(ob.get()))
                         maxX = std::max(maxX, c->pos.x);
-
                 cactus->pos.x = maxX + GetRandomValue(48, 96);
             }
             cactus->Update(deltaTime);
         }
-
-    for (auto& o : obstacles)
-        if (auto brick = dynamic_cast<BrickWall*>(o.get()))
+        else if (auto brick = dynamic_cast<BrickWall*>(o.get()))
         {
+            brick->SetPanSpeed(pickupPanSpeed);
             brick->Update(deltaTime);
             if (brick->pos.x + brick->GetWidth() < 0)
             {
-                static size_t currentPair = 0;
-                currentPair = (currentPair + 1) % outhouses.size();
-
-                Vector2 left = outhouses[currentPair]->pos;
-                Vector2 right = outhouses[(currentPair + 1) % outhouses.size()]->pos;
-
+                size_t lastOnScreenIndex = 0;
+                for (size_t i = 0; i < outhouses.size(); ++i)
+                {
+                    if (outhouses[i]->pos.x + 80 > 0)
+                        lastOnScreenIndex = i;
+                }
+                size_t nextIndex = (lastOnScreenIndex + 1) % outhouses.size();
+                Vector2 left = outhouses[lastOnScreenIndex]->pos;
+                Vector2 right = outhouses[nextIndex]->pos;
                 Texture2D tex = LoadTexture(Resources::OuthouseSolo);
-                float outhouseW = tex.width; UnloadTexture(tex);
-
+                float outhouseW = tex.width;
+                UnloadTexture(tex);
                 Texture2D wallTex = LoadTexture(Resources::BrickWallTexture);
-                float wallW = wallTex.width; UnloadTexture(wallTex);
-
+                float wallW = wallTex.width;
+                UnloadTexture(wallTex);
                 float gapCentre = (left.x + outhouseW * 0.5f + right.x + outhouseW * 0.5f) * 0.5f;
-                brick->pos.x = gapCentre - wallW * 0.5f;
-                brick->pos.y = 0.0f;
+                brick->SetPosition(Vector2{ gapCentre - wallW * 0.5f, 0.0f });
             }
         }
+    }
 }
 
 bool DesertLevel::IsBrickBetween(float leftX, float rightX) const
@@ -165,15 +169,19 @@ void DesertLevel::SpawnPickupsBetween(float xStart, float xEnd)
     float paddedEnd = xEnd - SpawnPadding;
 
     if (paddedEnd <= paddedStart)
+    {
+        printf("No valid gap for spawning: paddedStart=%.2f, paddedEnd=%.2f\n", paddedStart, paddedEnd);
         return;
+    }
 
     const int count = 5;
     bool hasBrickWall = IsBrickBetween(paddedStart, paddedEnd);
 
-    int pattern;
-    do {
-        pattern = GetRandomValue(0, 4);
-    } while (hasBrickWall && (pattern == 3 || pattern == 4));
+    int pattern = GetRandomValue(0, 4);
+    if (hasBrickWall && (pattern == 3 || pattern == 4))
+    {
+        pattern = GetRandomValue(0, 2); // Fallback to horizontal or diagonal patterns
+    }
 
     const float yOffset = -20.0f;
     float yLow = 60.0f + yOffset;
@@ -183,6 +191,7 @@ void DesertLevel::SpawnPickupsBetween(float xStart, float xEnd)
     {
         float t = (count == 1 ? 0.0f : (float)i / (count - 1));
         float x = paddedStart + t * (paddedEnd - paddedStart);
+        printf("Pickup spawned at x=%.2f\n", x);
 
         float y;
         switch (pattern)
@@ -204,10 +213,10 @@ void DesertLevel::SpawnPickupsBetween(float xStart, float xEnd)
 
 std::shared_ptr<PickUp> DesertLevel::GenerateRandomPickup(Vector2 pos)
 {
-    int roll = GetRandomValue(0, 9);
-    if (roll <= 7)
+    int roll = GetRandomValue(0, 100);
+    if (roll >= 15)
         return std::make_shared<Coin>(pos, CoinType::GOLDCOIN);
-    else if (roll == 8)
+    else if (roll >= 5)
         return std::make_shared<PoopHeart>(pos, PoopHeartType::SMALL);
     else
         return std::make_shared<PoopHeart>(pos, PoopHeartType::BIG);
@@ -217,7 +226,6 @@ void DesertLevel::InitObstacles()
 {
     outhouses.clear();
     obstacles.clear();
-    spawnedPickupsIndices.clear();
 
     float x = 320;
     for (int i = 0; i < 12; ++i)
@@ -229,12 +237,19 @@ void DesertLevel::InitObstacles()
         x += spacing;
     }
 
+    // Pre-populate the level with pickups between the initial outhouses
+    for (size_t i = 0; i + 1 < outhouses.size(); ++i)
+    {
+        float xStart = outhouses[i]->pos.x + 80.0f;
+        float xEnd = outhouses[i + 1]->pos.x;
+        SpawnPickupsBetween(xStart, xEnd);
+    }
+
     float cactusSpacing = 100.0f;
     for (int i = 0; i < 6; ++i)
     {
         float x = 320 + i * cactusSpacing + GetRandomValue(-10, 10);
         float y = 0;
-
         int roll = GetRandomValue(0, 99);
         CactusVariant variant;
         if (roll < 2) variant = CactusVariant::DANCING_COWBOY;
@@ -248,17 +263,19 @@ void DesertLevel::InitObstacles()
     {
         Vector2 left = outhouses[0]->pos;
         Vector2 right = outhouses[1]->pos;
-
         Texture2D tex = LoadTexture(Resources::OuthouseSolo);
-        float outhouseW = tex.width; UnloadTexture(tex);
-
+        float outhouseW = tex.width;
+        UnloadTexture(tex);
         Texture2D wallTex = LoadTexture(Resources::BrickWallTexture);
-        float wallX = (left.x + outhouseW * 0.5f + right.x + outhouseW * 0.5f) * 0.5f - wallTex.width * 0.5f;
-        float wallY = 0.0f;
+        float wallW = wallTex.width;
         UnloadTexture(wallTex);
-
+        float gapCentre = (left.x + outhouseW * 0.5f + right.x + outhouseW * 0.5f) * 0.5f;
+        float wallX = gapCentre - wallW * 0.5f;
+        float wallY = 0.0f;
         auto brick = std::make_shared<BrickWall>(Vector2{ wallX, wallY });
+        brick->SetPanSpeed(pickupPanSpeed);
         obstacles.push_back(brick);
+        printf("BrickWall initialized at: x=%.2f, y=%.2f\n", wallX, wallY);
     }
 }
 
@@ -349,13 +366,14 @@ bool DesertLevel::checkForCollisions(Vector2 circleCenter, float circleRadius)
     return false;
 }
 
-bool DesertLevel::checkForPointGain(Vector2 circleCenter, float circleRadius)
+bool DesertLevel::checkForPointGain(Vector2 circleCenter, float /*circleRadius*/)
 {
     float playerCenterX = circleCenter.x;
     for (auto& t : outhouses)
     {
-        float toiletX = t->GetOuthouseHitbox().x;
-        if (playerCenterX > toiletX && !t->hasScored)
+        Rectangle outhouseHitbox = t->GetOuthouseHitbox();
+        float toiletRightX = outhouseHitbox.x + outhouseHitbox.width;
+        if (!t->hasScored && playerCenterX > toiletRightX && playerCenterX < toiletRightX + 2.0f)
         {
             t->hasScored = true;
             return true;

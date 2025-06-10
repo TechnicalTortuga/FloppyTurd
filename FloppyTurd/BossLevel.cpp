@@ -298,10 +298,11 @@ void BossLevel::SpawnPickupWave()
 std::shared_ptr<PickUp> BossLevel::GenerateRandomPickup(Vector2 pos)
 {
     int roll = pickupTypeDist(engine);
-    if (roll < 40) return std::make_shared<Coin>(pos, CoinType::BLUECOIN);
+    if (roll < 40) return std::make_shared<Coin>(pos, CoinType::GOLDCOIN);
+    else if (roll < 60) return std::make_shared<Coin>(pos, CoinType::BLUECOIN);
     else if (roll < 70) return std::make_shared<Coin>(pos, CoinType::REDCOIN);
-    else if (roll < 90) return std::make_shared<PoopHeart>(pos, PoopHeartType::SMALL);
-    else if (roll < 98) return std::make_shared<PoopHeart>(pos, PoopHeartType::BIG);
+    else if (roll < 95) return std::make_shared<PoopHeart>(pos, PoopHeartType::SMALL);
+    else if (roll < 99) return std::make_shared<PoopHeart>(pos, PoopHeartType::BIG);
     else return std::make_shared<PoopHeart>(pos, PoopHeartType::INVISIBLE);
 }
 

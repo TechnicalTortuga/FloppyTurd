@@ -27,8 +27,8 @@ public:
     void Update(float deltaTime) override;
 
     void SetSwingingPipes(bool enable) override {};
-    void SetDifficulty(int difficultyIndex) override; // New: Set music based on difficulty
-    void SetPanSpeed(float speed) override; // New: Set pan speed for obstacles, enemies, pickups
+    void SetDifficulty(int difficultyIndex) override; // Set music based on difficulty
+    void SetPanSpeed(float speed) override; // Set pan speed for obstacles, enemies, pickups
     bool IsBrickBetween(float leftX, float rightX) const;
     void SpawnPickupsBetween(float xStart, float xEnd);
     std::shared_ptr<PickUp> GenerateRandomPickup(Vector2 pos);
@@ -72,7 +72,7 @@ private:
 
     std::vector<std::shared_ptr<PickUp>> pickups;
 
-    float pickupPanSpeed = 80.0f; // New: Dynamic pickup speed
+    float pickupPanSpeed = 80.0f; // Dynamic pickup speed
 
     struct CactusInfo {
         const char* spriteId;

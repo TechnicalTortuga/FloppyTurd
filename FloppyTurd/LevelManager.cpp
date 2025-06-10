@@ -29,8 +29,10 @@ LevelManager::LevelManager(std::shared_ptr<Level> level)
 void LevelManager::UpdateEnemyFactory()
 {
     if (SewerLevel* sewer = dynamic_cast<SewerLevel*>(currentLevel.get())) {
-        enemyFactory = [sewer, this](Vector2 spawnPos) -> std::shared_ptr<Enemy> {
-            return std::make_shared<ToiletPaper>(spawnPos, sewer->GetPipePanSpeed());
+        enemyFactory = [sewer](Vector2 spawnPos) -> std::shared_ptr<Enemy> {
+            float pipeSpeed = sewer->GetPipePanSpeed();
+            float extra = GetRandomValue(15, 35); // optional range
+            return std::make_shared<ToiletPaper>(spawnPos, pipeSpeed, extra);
             };
     }
     else if (CastleLevel* castle = dynamic_cast<CastleLevel*>(currentLevel.get())) {

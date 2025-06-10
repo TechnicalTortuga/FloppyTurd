@@ -1,42 +1,71 @@
 #include "GameStats.h"
 #include <raylib.h>
 #include <fstream>
+#include <cstring>
 
 void GameStats::Load() {
-	const char* filename = "floppy_turd_stats.bin";
-	std::ifstream file(filename, std::ios::binary);
-	if (!file.is_open()) {
-		// File doesn't exist, create default on first run
-		Save();
-		return;
-	}
+    const char* filename = "floppy_turd_stats.bin";
+    std::ifstream file(filename, std::ios::binary | std::ios::ate);
+    if (!file.is_open()) {
+        TraceLog(LOG_INFO, "No stats file found, creating default: %s", filename);
+        levelUnlocked[0] = true; // Park is always open for business!
+        Save();
+        return;
+    }
 
-	// Read the entire struct in one go
-	file.read(reinterpret_cast<char*>(this), sizeof(GameStats));
-	file.close();
+    // Check file size to avoid reading garbage
+    std::streamsize fileSize = file.tellg();
+    file.seekg(0, std::ios::beg);
+    if (fileSize < sizeof(int)) {
+        TraceLog(LOG_WARNING, "Stats file too small: %lld bytes, expected at least %zu", fileSize, sizeof(int));
+        file.close();
+        Save(); // Create fresh file
+        return;
+    }
 
-	// Ensure Park level is always unlocked
-	levelUnlocked[0] = true;
+    // Read version
+    int fileVersion;
+    file.read(reinterpret_cast<char*>(&fileVersion), sizeof(int));
+    if (fileVersion != 1) {
+        TraceLog(LOG_WARNING, "Unknown stats file version: %d, resetting file", fileVersion);
+        file.close();
+        Save();
+        return;
+    }
+
+    // Validate file size for full struct
+    if (fileSize != sizeof(GameStats)) {
+        TraceLog(LOG_WARNING, "Stats file size mismatch: %lld bytes, expected %zu", fileSize, sizeof(GameStats));
+        file.close();
+        Save();
+        return;
+    }
+
+    // Read the struct (excluding version, already read)
+    file.read(reinterpret_cast<char*>(this) + sizeof(int), sizeof(GameStats) - sizeof(int));
+    file.close();
+
+    levelUnlocked[0] = true; // Ensure Park is always unlocked
+    TraceLog(LOG_INFO, "Loaded stats: version=%d, pipes=%d, coins=%d, highScore[3]=%d, levelUnlocked[3]=%d",
+        version, totalPipes, totalCoins, levelHighScores[3], levelUnlocked[3]);
 }
 
 void GameStats::Save() const {
-	const char* filename = "floppy_turd_stats.bin";
-	std::ofstream file(filename, std::ios::binary);
-	if (file.is_open()) {
-		// Write the entire struct in one go
-		file.write(reinterpret_cast<const char*>(this), sizeof(GameStats));
-		file.close();
-	}
-	else {
-		TraceLog(LOG_WARNING, "Failed to save file: %s", filename);
-	}
+    const char* filename = "floppy_turd_stats.bin";
+    std::ofstream file(filename, std::ios::binary);
+    if (!file.is_open()) {
+        TraceLog(LOG_ERROR, "Failed to open stats file for writing: %s", filename);
+        return;
+    }
 
-	// Ensure Park level is always unlocked after save
-	GameStats temp = *this;
-	temp.levelUnlocked[0] = true;
-	std::ofstream fixFile(filename, std::ios::binary);
-	if (fixFile.is_open()) {
-		fixFile.write(reinterpret_cast<const char*>(&temp), sizeof(GameStats));
-		fixFile.close();
-	}
+    // Write the entire struct
+    file.write(reinterpret_cast<const char*>(this), sizeof(GameStats));
+    if (!file.good()) {
+        TraceLog(LOG_ERROR, "Failed to write stats file: %s", filename);
+        file.close();
+        return;
+    }
+    file.close();
+    TraceLog(LOG_INFO, "Saved stats: version=%d, pipes=%d, coins=%d, highScore[3]=%d, levelUnlocked[3]=%d",
+        version, totalPipes, totalCoins, levelHighScores[3], levelUnlocked[3]);
 }

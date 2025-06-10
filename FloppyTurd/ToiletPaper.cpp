@@ -1,15 +1,14 @@
-#include "ToiletPaper.h"
+﻿#include "ToiletPaper.h"
 #include <raymath.h>
 #include "Resources.h"
 #include <iostream>
 
-ToiletPaper::ToiletPaper(Vector2 spawnPos, float panspeed)
-    : pos(spawnPos), speed(panspeed), isHurt(false), hurtTimer(0.0f)
+ToiletPaper::ToiletPaper(Vector2 spawnPos, float panspeed, float extra)
+    : pos(spawnPos), speed(panspeed), extraSpeed(extra), isHurt(false), hurtTimer(0.0f)
 {
     using namespace Resources;
-
     tpSpriteIdle = new Sprite(ToiletPaperIdle, 8, 0.2f);
-    tpSpriteHurt = new Sprite(ToiletPaperHurt, 2, 0.08f);
+    tpSpriteHurt = new Sprite(ToiletPaperHurt, 4, 0.1f);
     currentSprite = tpSpriteIdle;
 
     startY = 70.0f + GetRandomValue(-10, 10);
@@ -40,44 +39,51 @@ void ToiletPaper::Update(float deltaTime)
         return;
     }
 
-    pos.x -= speed * deltaTime;
+    pos.x -= (speed + extraSpeed) * deltaTime;
     float wave = sinf(pos.x * 0.015f + phaseOffset);
     pos.y = startY + 50.0f * (inverted ? -wave : wave);
 
-    if (isHurt)
-    {
+    if (isHurt) {
         hurtTimer -= deltaTime;
-        if (hurtTimer <= 0.0f)
-        {
-            isHurt = false;
-            currentSprite = tpSpriteIdle;
+        if (hurtTimer > 0.0f && !tpSpriteHurt->hasLoopedOnce()) {
+            tpSpriteHurt->Update(deltaTime);
+        }
+        if (tpSpriteHurt->hasLoopedOnce() && !tpSpriteHurt->IsFrozen()) {
+            tpSpriteHurt->SetFrameFrozen(3); // Freeze on last frame (index 3 for 4 frames)
         }
     }
+    else {
+        tpSpriteIdle->Update(deltaTime);
+    }
 
-    currentSprite->Update(deltaTime);
     UpdateHitbox();
 }
 
 void ToiletPaper::Draw() const
 {
-    currentSprite->Draw(pos.x, pos.y);
+    if (isHurt)
+        tpSpriteHurt->Draw(pos.x, pos.y);
+    else
+        tpSpriteIdle->Draw(pos.x, pos.y);
 }
 
 Rectangle ToiletPaper::GetHitbox() const
 {
-    return hitbox;
+    return hitbox; // Always return valid hitbox
 }
 
 void ToiletPaper::TakeDamage()
 {
-    isHurt = true;
-    hurtTimer = 0.3f;
-    currentSprite = tpSpriteHurt;
+    if (!isHurt) {
+        isHurt = true;
+        hurtTimer = 0.5f;
+        tpSpriteHurt->ResetAnimation();
+    }
 }
 
 bool ToiletPaper::ShouldBeRemoved() const
 {
-    return pos.x + currentSprite->GetWidth() < 0;
+    return isHurt && hurtTimer <= 0.0f;
 }
 
 void ToiletPaper::UpdateHitbox()

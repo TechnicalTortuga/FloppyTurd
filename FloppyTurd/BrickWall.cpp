@@ -23,7 +23,8 @@ void BrickWall::Draw()
 
 void BrickWall::Update(float deltaTime)
 {
-    // Movement handled by DesertLevel::Update(), but update hitbox
+    // Move left based on panSpeed and deltaTime
+    pos.x -= panSpeed * deltaTime;
     UpdateHitbox();
 }
 

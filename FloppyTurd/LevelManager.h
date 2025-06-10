@@ -33,6 +33,7 @@ public:
     void SetQuickplaySettings(const QuickplaySettings& settings);
     float GetPickupPanSpeed() const; // Get pan speed for enemies and pickups
     int GetDifficultyIndex() const;  // Method to get difficulty index
+    bool hasPassedFirstToilet = false;
 
 private:
     void SpawnEnemy();
@@ -45,7 +46,6 @@ private:
     float enemySpawnTimer;
     std::function<std::shared_ptr<Enemy>(Vector2 spawnPos)> enemyFactory;
     Vector2 lastPlayerPosition = { 150, 90 };
-    bool hasPassedFirstToilet = false;
     static LevelManager* instance;
     int difficultyIndex; // Member to store difficulty
 

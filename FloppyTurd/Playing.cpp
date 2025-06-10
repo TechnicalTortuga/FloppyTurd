@@ -29,6 +29,8 @@ Playing::Playing(Game* game) {
 		player->SetInitialHearts(difficultyIndex);
 	}
 
+	LoadSessionRecords(); // Initialize sessionRecords
+
 	pauseMenuBackground = LoadTexture(PauseMenuBackground);
 	Scoreboard = LoadTexture(ScoreBoard);
 	_TurdHeart = LoadTexture(TurdHeart);
@@ -91,6 +93,12 @@ Playing::Playing(Game* game) {
 	SetTextureWrap(rawSnowTexture, TEXTURE_WRAP_CLAMP);
 
 	savePending = false; // Ensure savePending starts false
+}
+
+void Playing::LoadSessionRecords() {
+	for (int i = 0; i < 6; ++i) {
+		sessionRecords[i] = stats.levelHighScores[i];
+	}
 }
 
 void Playing::InitializeHats() {
@@ -186,16 +194,11 @@ bool Playing::PurchaseItem(int cost) {
 	return true;
 }
 
-
 void Playing::TriggerSaveIfPending() {
-	if (savePending && isPaused) {
+	if (savePending) {
 		stats.Save();
 		savePending = false;
-	}
-	// Add a check for game over save
-	if (savePending && gameOverTriggered && turdHasFallenOffScreen) {
-		stats.Save();
-		savePending = false;
+		TraceLog(LOG_INFO, "Saved stats due to pending flag");
 	}
 }
 
@@ -375,7 +378,7 @@ void Playing::DrawPauseMenu() {
 		DrawRectangleRec(skillArea, Fade(BLACK, 0.7f));
 
 		int arrowSize = 24;
-		int arrowY = skillArea.y + (skillArea.height - arrowSize) / 2;
+		int arrowY = skillArea.y + (skillArea.height - arrowSize) / 2 + 8;
 		int leftArrowX = skillArea.x + 10;
 		int rightArrowX = skillArea.x + skillArea.width - arrowSize - 10;
 
@@ -409,29 +412,29 @@ void Playing::DrawPauseMenu() {
 		DrawTextEx(font, skillNames[selectedNode], { skillArea.x + 10, y }, 20, 1.0f, YELLOW);
 		y += 20;
 
-		DrawTextEx(font, skillDescs[selectedNode], { skillArea.x + 10, y }, 16, 1.0f, WHITE);
+		DrawTextEx(font, skillDescs[selectedNode], { skillArea.x + 10, y }, 18, 1.0f, WHITE);
 		y += 36;
 
 		if (skillUnlocked[selectedNode]) {
-			DrawTextEx(font, "Unlocked", { skillArea.x + 10, y }, 16, 1.0f, GREEN);
+			DrawTextEx(font, "Unlocked", { skillArea.x + 10, y + 5 }, 18, 1.0f, GREEN); // Lowered by 5 pixels
 		}
 		else {
 			std::string costStr = std::to_string(skillCosts[selectedNode]);
-			float costWidth = MeasureTextEx(font, costStr.c_str(), 16, 1.0f).x;
+			float costWidth = MeasureTextEx(font, costStr.c_str(), 18, 1.0f).x;
 			float coinX = skillArea.x + 10;
-			float coinY = y;
+			float coinY = y + 5; // Lowered by 5 pixels
 			DrawTexturePro(
 				_CoinBag,
 				{ 0, 0, (float)_CoinBag.width, (float)_CoinBag.height },
 				{ coinX, coinY, 16, 16 },
 				{ 0, 0 }, 0.0f, WHITE
 			);
-			DrawTextEx(font, costStr.c_str(), { coinX + 20, coinY }, 16, 1.0f, WHITE);
-			if (AIGUI_ButtonRounded("Buy", skillArea.x + 10 + costWidth + 30, y, 80, 18, 0.3f, 16, WHITE)) {
+			DrawTextEx(font, costStr.c_str(), { coinX + 20, coinY }, 18, 1.0f, WHITE);
+			if (AIGUI_ButtonRounded("Buy", skillArea.x + 10 + costWidth + 30, y + 5, 80, 18, 0.3f, 18, WHITE)) { // Font size increased to 18
 				UnlockSkill(selectedNode);
 			}
 			if (player->GetSessionCoins() + TOTALCOINS < skillCosts[selectedNode]) {
-				DrawTextEx(font, "Not enough coins!", { skillArea.x + 10, y + 20 }, 14, 1.0f, RED);
+				DrawTextEx(font, "Not enough coins!", { skillArea.x + 10, y + 25 }, 16, 1.0f, RED);
 			}
 		}
 		break;
@@ -441,12 +444,12 @@ void Playing::DrawPauseMenu() {
 		break;
 	case STATS: {
 		// Increased height to 120 to cover all text
-		Rectangle statsArea = { 24, 40, 272, 120 };
+		Rectangle statsArea = { 19, 40, 283, 120 };
 		DrawRectangleRec(statsArea, Fade(BLACK, 0.7f));
 
 		Font font = game->GetScaledFont(1.2f);
 		float y = statsArea.y + 10;
-		float x = statsArea.x + 10;
+		float x = statsArea.x + 2; // Widened left column start
 
 		// General stats
 		DrawTextEx(font, TextFormat("Total Pipes: %d", stats.totalPipes), { x, y }, 18, 1.0f, WHITE);
@@ -463,7 +466,7 @@ void Playing::DrawPauseMenu() {
 
 		// Per-level high scores (excluding Level 6)
 		y = statsArea.y + 10;
-		x = statsArea.x + 150;
+		x = statsArea.x + 160; // Widened right column start to 180
 		for (int i = 0; i < 5; ++i) { // Changed from 6 to 5 to exclude Level 6
 			DrawTextEx(font, TextFormat("Level %d High: %d", i + 1, stats.levelHighScores[i]), { x, y }, 16, 1.0f, WHITE);
 			y += 14;
@@ -521,7 +524,7 @@ void Playing::DrawPauseMenu() {
 			game->SetGameState(Game::MAINMENU);
 		}
 
-		AudioManager::GetInstance().DrawAudioOptions(35, 40);
+		AudioManager::GetInstance().DrawAudioOptions(160 - 80, 40); // Centered at 160 (screen width 320 / 2 - 50 for offset)
 		break;
 	}
 	}
@@ -671,7 +674,7 @@ void Playing::Update() {
 		if (levelIndex >= 0) {
 			UpdateSessionRecord(levelIndex, SCORE);
 			stats.totalPipes = std::max(stats.totalPipes, stats.totalPipes + SCORE);
-			stats.levelHighScores[levelIndex] = std::max(stats.levelHighScores[levelIndex], SCORE);
+			savePending = true; // Ensure save
 		}
 
 		TOTALCOINS += player->GetSessionCoins();
@@ -817,9 +820,7 @@ void Playing::Update() {
 				if (CheckCollisionRecs(projHitbox, (*enemyIt)->GetHitbox())) {
 					projectileHit = true;
 					(*enemyIt)->TakeDamage();
-					if ((*enemyIt)->ShouldBeRemoved()) {
 						IncrementEnemiesKilled();
-					}
 					break;
 				}
 			}
@@ -1104,6 +1105,9 @@ void Playing::UpdatePlayerPosition() {
 void Playing::UpdateSessionRecord(int levelIndex, int pipesPassed) {
 	if (levelIndex >= 0 && levelIndex < 6) {
 		sessionRecords[levelIndex] = std::max(sessionRecords[levelIndex], pipesPassed);
+		stats.levelHighScores[levelIndex] = std::max(stats.levelHighScores[levelIndex], pipesPassed);
+		savePending = true; // Flag save
+		TraceLog(LOG_INFO, "Updated record for level %d: pipes=%d", levelIndex, pipesPassed);
 	}
 }
 

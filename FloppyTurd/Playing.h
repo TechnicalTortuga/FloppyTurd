@@ -52,7 +52,7 @@ public:
 	void PreLoadLevels();
 	void UnlockSkill(int nodeIndex);
 	void OutputHatMenu();
-
+	void LoadSessionRecords();
 	void UseHighDefFont(bool enable) { useHighDefFont = enable; }
 	bool IsHighDefFont() const { return useHighDefFont; }
 

@@ -160,19 +160,23 @@ void MainMenu::UpdateMusic()
 
 bool MainMenu::CanPurchaseLevel(int levelIndex, int totalCoins, const int sessionRecords[6]) {
 	if (levelIndex < 0 || levelIndex >= 6) return false;
+	if (!game || !game->playing) return false;
+
+	int previousPipes = (levelIndex > 0) ? game->playing->GetStats().levelHighScores[levelIndex - 1] : 0;
 
 	switch (levelIndex) {
 	case 0: // Park
+		return true;
 	case 1: // Sewer
-		return sessionRecords[0] >= 50; // Requires 50 pipes from Park
+		return previousPipes >= 50;
 	case 2: // Desert
-		return totalCoins >= 100 && sessionRecords[1] >= 50; // 100 coins, 50 Sewer pipes
+		return totalCoins >= 100 && previousPipes >= 50;
 	case 3: // Snow
-		return totalCoins >= 250 && sessionRecords[2] >= 50; // 250 coins, 50 Desert pipes
+		return totalCoins >= 250 && previousPipes >= 50;
 	case 4: // Castle
-		return totalCoins >= 500 && sessionRecords[3] >= 50; // 500 coins, 50 Snow pipes
+		return totalCoins >= 500 && previousPipes >= 50;
 	case 5: // Rat King
-		return totalCoins >= 1000 && sessionRecords[4] >= 50; // 1000 coins, 50 Castle pipes
+		return totalCoins >= 1000 && previousPipes >= 50;
 	default:
 		return false;
 	}
@@ -318,9 +322,9 @@ void MainMenu::Draw()
 		}
 
 		const char* title = levelNames[currentLevelIndex];
-		AIGUI_LabelRounded(title, 10.0f, 10.0f, 300.0f, 24.0f, 0.2f, 20, BLACK); // Increased font to 20
+		AIGUI_LabelRounded(title, 10.0f, 10.0f, 300.0f, 24.0f, 0.2f, 18, BLACK); // Increased font to 20
 
-		float infoY = 40.0f;
+		float infoY = 55.0f;
 		int totalCoins = 0;
 		int sessionRecords[6] = { 0 };
 		if (game && game->playing) {
@@ -348,7 +352,7 @@ void MainMenu::Draw()
 			std::string coinStatus = TextFormat("Coins: %d/%d", totalCoins, requiredCoins);
 			std::string pipeStatus = (requiredPipes > 0 && previousLevelIndex >= 0) ? TextFormat("Previous Pipes: %d/%d", sessionRecords[previousLevelIndex], requiredPipes) : "";
 
-			AIGUI_LabelRounded(coinStatus.c_str(), 80.0f, infoY + 20.0f, 160.0f, 24.0f, 0.2f, 20, totalCoins >= requiredCoins ? GREEN : BLACK); // Increased font to 20
+			AIGUI_LabelRounded(coinStatus.c_str(), 80.0f, infoY + 56.0f, 160.0f, 24.0f, 0.2f, 20, totalCoins >= requiredCoins ? GREEN : BLACK); // Increased font to 20
 			if (!pipeStatus.empty()) {
 				AIGUI_LabelRounded(pipeStatus.c_str(), 60.0f, infoY, 200.0f, 24.0f, 0.2f, 20, sessionRecords[previousLevelIndex] >= requiredPipes ? GREEN : BLACK); // Increased font to 20
 			}
