@@ -11,6 +11,9 @@ void PlatformLayer::Initialize() {
     // Platform-specific initialization
 #ifdef PLATFORM_MOBILE
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+#else
+    // Removed FLAG_WINDOW_HIGHDPI to fix mouse coordinate issues on macOS
+    // Let the game handle scaling manually for better control
 #endif
 }
 

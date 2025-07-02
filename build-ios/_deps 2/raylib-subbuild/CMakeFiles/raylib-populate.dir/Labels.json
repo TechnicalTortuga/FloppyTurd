@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/raylib-subbuild/CMakeFiles/raylib-populate"
+		},
+		{
+			"file" : "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/raylib-subbuild/CMakeFiles/raylib-populate.rule"
+		},
+		{
+			"file" : "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/raylib-subbuild/CMakeFiles/CMakeFiles/raylib-populate-complete.rule"
+		},
+		{
+			"file" : "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/CMakeFiles/raylib-populate-build.rule"
+		},
+		{
+			"file" : "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/CMakeFiles/raylib-populate-configure.rule"
+		},
+		{
+			"file" : "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/CMakeFiles/raylib-populate-download.rule"
+		},
+		{
+			"file" : "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/CMakeFiles/raylib-populate-install.rule"
+		},
+		{
+			"file" : "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/CMakeFiles/raylib-populate-mkdir.rule"
+		},
+		{
+			"file" : "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/CMakeFiles/raylib-populate-patch.rule"
+		},
+		{
+			"file" : "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/CMakeFiles/raylib-populate-test.rule"
+		},
+		{
+			"file" : "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/CMakeFiles/raylib-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"raylib-populate"
+		],
+		"name" : "raylib-populate"
+	}
+}

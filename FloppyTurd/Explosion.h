@@ -8,7 +8,8 @@ class Explosion
 {
 public:
     // Constructor: Initialize with texture path, position, and scale
-    Explosion(const char* texturePath, Vector2 position, float scale = 1.0f);
+    Explosion(const char* texturePath, Vector2 position, float scale = 1.0f)
+        : sprite(std::make_shared<Sprite>(texturePath, 8, 0.3f, scale, position, AtlasCategory::PARTICLES)), position(position), scale(scale) {}
     ~Explosion();
 
     // Update explosion animation

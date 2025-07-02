@@ -460,8 +460,8 @@ void ResourceManager::RegisterAllResources() {
     RegisterResource("plus_button", "ui/plusbutton.png", ResourceType::TEXTURE);
     RegisterResource("plus_button_hover", "ui/plusbuttonhover.png", ResourceType::TEXTURE);
     RegisterResource("plus_button_clicked", "ui/plusbuttonclicked.png", ResourceType::TEXTURE);
-    RegisterResource("volume_meter_full", "ui/volumemeterfull.png", ResourceType::TEXTURE);
-    RegisterResource("volume_meter_empty", "ui/volumemeterempty.png", ResourceType::TEXTURE);
+    RegisterResource("volume_full", "ui/volumemeterfull.png", ResourceType::TEXTURE);
+    RegisterResource("volume_empty", "ui/volumemeterempty.png", ResourceType::TEXTURE);
     
     // Main Menu Buttons
     RegisterResource("play_button", "mainmenu/PlayButton.png", ResourceType::TEXTURE);

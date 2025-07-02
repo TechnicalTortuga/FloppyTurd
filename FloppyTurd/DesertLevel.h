@@ -16,6 +16,7 @@
 #include "ParallaxLayer.h"
 #include "AnimatedParallaxLayer.h"
 #include <unordered_set>
+#include <cfloat>
 
 class DesertLevel : public Level
 {

@@ -8,7 +8,7 @@ Projectile::Projectile(Vector2 position, Vector2 direction, float speed, float s
     float frameHeight = 16.0f;  // Height of each frame in the sprite sheet
 
     // Initialize the sprite with scaling
-    sprite = new Sprite(spriteFilePath, position.x, position.y, 16.0f, 16.0f, 0.1f, scale);
+    sprite = new Sprite(spriteFilePath, 5, 0.1f, scale, position, AtlasCategory::PARTICLES);
 
     // Initialize the hitbox based on the scaled sprite dimensions
     hitbox.width = sprite->GetScaledWidth();

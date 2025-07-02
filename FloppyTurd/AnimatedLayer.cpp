@@ -9,7 +9,8 @@ AnimatedLayer::AnimatedLayer(const std::string& spriteSheetPath,
         frameCount,    // how many frames in one row
         frameTime,
         scale,
-        startPosition) // let the sprite hold the position
+        startPosition,
+        AtlasCategory::ENVIRONMENT) // let the sprite hold the position
 {
     // Nothing else needed here, because the sprite now "knows" its position & scale
 }

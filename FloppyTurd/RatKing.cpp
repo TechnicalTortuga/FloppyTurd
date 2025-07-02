@@ -22,13 +22,13 @@ RatKing::RatKing(Vector2 startPosition)
     currentState = IDLE;
 
     using namespace Resources;
-    idleSprite = new Sprite(RatKingIdle, 1, 1.0f, scale, position);
-    walkSprite = new Sprite(RatKingWalk, 8, 0.15f, scale, position);
-    hurtSprite = new Sprite(RatKingHurt, 6, 0.2f, scale, position);
-    deathSprite = new Sprite(RatKingDeath, 6, 0.3f, scale, position);
-    torsoSprite = new Sprite(RatKingAimTorso, 7, 0.2f, scale, position);
-    frontArmSprite = new Sprite(RatKingAimFrontArm, 7, 0.2f, scale, position);
-    backArmSprite = new Sprite(RatKingAimBackArm, 7, 0.2f, scale, position);
+    idleSprite = new Sprite(RatKingIdle, 1, 1.0f, scale, position, AtlasCategory::ENEMY_SPRITES);
+    walkSprite = new Sprite(RatKingWalk, 8, 0.15f, scale, position, AtlasCategory::ENEMY_SPRITES);
+    hurtSprite = new Sprite(RatKingHurt, 6, 0.2f, scale, position, AtlasCategory::ENEMY_SPRITES);
+    deathSprite = new Sprite(RatKingDeath, 6, 0.3f, scale, position, AtlasCategory::ENEMY_SPRITES);
+    torsoSprite = new Sprite(RatKingAimTorso, 7, 0.2f, scale, position, AtlasCategory::ENEMY_SPRITES);
+    frontArmSprite = new Sprite(RatKingAimFrontArm, 7, 0.2f, scale, position, AtlasCategory::ENEMY_SPRITES);
+    backArmSprite = new Sprite(RatKingAimBackArm, 7, 0.2f, scale, position, AtlasCategory::ENEMY_SPRITES);
 
     SetTextureFilter(idleSprite->GetTexture(), TEXTURE_FILTER_POINT);
     SetTextureFilter(walkSprite->GetTexture(), TEXTURE_FILTER_POINT);

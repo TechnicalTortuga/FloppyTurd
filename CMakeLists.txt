@@ -10,19 +10,27 @@ option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 option(SUPPORT_HIGHDPI "Support high DPI displays" ON)
 
 # Platform detection
-if(${CMAKE_SYSTEM_NAME} MATCHES "Android")
-    set(PLATFORM "Android")
-elseif(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
-    set(PLATFORM "iOS")
-elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-    set(PLATFORM "Desktop")
-elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    set(PLATFORM "macOS")
-else()
-    set(PLATFORM "Desktop")
+if(NOT DEFINED PLATFORM)
+    if(${CMAKE_SYSTEM_NAME} MATCHES "Android")
+        set(PLATFORM "Android")
+    elseif(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
+        # Do not set PLATFORM to 'iOS'; let the toolchain handle it or set to OS64 if needed
+        set(PLATFORM "OS64")
+    elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+        set(PLATFORM "Desktop")
+    elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+        set(PLATFORM "Desktop")  # macOS uses Desktop platform for raylib
+        set(IS_MACOS TRUE)
+    else()
+        set(PLATFORM "Desktop")
+    endif()
 endif()
 
 message(STATUS "Building for platform: ${PLATFORM}")
+message(STATUS "System name: ${CMAKE_SYSTEM_NAME}")
+if(IS_MACOS)
+    message(STATUS "macOS detected - using Desktop platform with macOS-specific settings")
+endif()
 
 # Find or fetch Raylib
 include(FetchContent)
@@ -90,6 +98,30 @@ if(${PLATFORM} STREQUAL "Windows")
     # Set Visual Studio debugger working directory
     set_property(TARGET ${PROJECT_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
     
+elseif(IS_MACOS)
+    # macOS specific settings
+    message(STATUS "Applying macOS-specific build settings")
+    
+    # Copy resources to output directory for macOS as well
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/resources
+        $<TARGET_FILE_DIR:${PROJECT_NAME}>/resources
+    )
+    
+    # Ensure proper app bundle creation if needed
+    # set_target_properties(${PROJECT_NAME} PROPERTIES
+    #     MACOSX_BUNDLE TRUE
+    #     MACOSX_BUNDLE_BUNDLE_NAME "Floppy Turd"
+    #     MACOSX_BUNDLE_BUNDLE_VERSION "1.0"
+    #     MACOSX_BUNDLE_SHORT_VERSION_STRING "1.0"
+    # )
+    
+    # macOS-specific compiler flags for better compatibility
+    target_compile_options(${PROJECT_NAME} PRIVATE
+        -Wno-deprecated-declarations  # Silence deprecation warnings on macOS
+    )
+    
 elseif(${PLATFORM} STREQUAL "Android")
     # Android specific settings
     target_compile_definitions(${PROJECT_NAME} PRIVATE PLATFORM_ANDROID)
@@ -116,13 +148,14 @@ elseif(${PLATFORM} STREQUAL "iOS")
     set_target_properties(${PROJECT_NAME} PROPERTIES
         RESOURCE "${RESOURCES}"
     )
-endif()
-
-# Copy resources for desktop builds
-if(NOT ${PLATFORM} STREQUAL "Android" AND NOT ${PLATFORM} STREQUAL "iOS")
-    # Create resources directory in build folder
-    file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/resources 
-         DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+else()
+    # Default/Linux settings
+    # Copy resources to output directory for other platforms too
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/resources
+        $<TARGET_FILE_DIR:${PROJECT_NAME}>/resources
+    )
 endif()
 
 # Compiler warnings

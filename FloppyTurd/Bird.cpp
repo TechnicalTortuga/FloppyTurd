@@ -6,8 +6,8 @@ Bird::Bird(Vector2 startPos, float spd)
     : pos(startPos), speed(spd), baseY(startPos.y), hoverTimer(0.0f)
 {
     using namespace Resources;
-    flySprite = new Sprite(BirdIdle, 4, 0.1f, 1.0f, pos);
-    hurtSprite = new Sprite(BirdHurt, 4, 0.1f, 1.0f, pos);
+    flySprite = new Sprite(BirdIdle, 4, 0.1f, 1.0f, pos, AtlasCategory::ENEMY_SPRITES);
+    hurtSprite = new Sprite(BirdHurt, 4, 0.1f, 1.0f, pos, AtlasCategory::ENEMY_SPRITES);
 
     currentSprite = flySprite;
     hitbox = { pos.x + 4, pos.y + 4, 24, 24 };

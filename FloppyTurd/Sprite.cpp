@@ -1,28 +1,45 @@
 #include "Sprite.h"
 #include <raylib.h>
 #include "ResourceCompat.h"
+#include "TextureAtlas.h"
+
+// Enable draw call tracking
+// #define ENABLE_DRAW_CALL_TRACKING
+#include "PerformanceProfiler.h"
 
 // Modern constructor: Initialize with texture, animation settings, and position
-Sprite::Sprite(const std::string& imagePath, int frameCount, float frameTime, float scale, Vector2 startPosition)
+Sprite::Sprite(const std::string& imagePath, int frameCount, float frameTime, float scale, Vector2 startPosition, AtlasCategory atlasCategory)
 	: frameCount(frameCount), frameIndex(0), frameTime(frameTime), elapsedTime(0.0f),
-	  scale(scale), position(startPosition), loopedOnce(false)
+	  scale(scale), position(startPosition), loopedOnce(false), atlasCategory(atlasCategory)
 {
 	printf("DEBUG: Sprite() constructor called with imagePath: %s, frameCount: %d\n", imagePath.c_str(), frameCount);
 	
 	// Use ResourceCompat for texture loading (this will handle the path mapping)
 	image = Resources::GetTextureByPath(imagePath);
 	
-	printf("DEBUG: Sprite() - texture loaded, ID: %d, width: %d, height: %d\n", image.id, image.width, image.height);
-	
-	if (image.id == 0) {
-		printf("DEBUG: Sprite() - ERROR: Failed to load texture for path: %s\n", imagePath.c_str());
+	// --- TextureAtlas integration ---
+	isAtlased = TextureAtlas::GetInstance().IsTextureAtlased(imagePath);
+	if (isAtlased) {
+		// Get the atlas texture and region
+		atlasRegion = TextureAtlas::GetInstance().GetTextureRegion(imagePath);
+		atlasTexture = TextureAtlas::GetInstance().GetAtlasTexture(atlasCategory);
+		// Use atlas region width for frameRec if animated
+		frameRec.width = atlasRegion.width / frameCount;
+		frameRec.height = atlasRegion.height;
+		frameRec.x = 0;
+		frameRec.y = 0;
+		printf("DEBUG: Sprite() - using atlas, region: x=%f y=%f w=%f h=%f\n", atlasRegion.x, atlasRegion.y, atlasRegion.width, atlasRegion.height);
+	} else {
+		printf("DEBUG: Sprite() - not atlased\n");
+		if (image.id == 0) {
+			printf("DEBUG: Sprite() - ERROR: Failed to load texture for path: %s\n", imagePath.c_str());
+		}
+		// Setup frame rectangle
+		frameRec.width = (float)image.width / frameCount;
+		frameRec.height = (float)image.height;
+		frameRec.x = 0;
+		frameRec.y = 0;
 	}
-	
-	// Setup frame rectangle
-	frameRec.width = (float)image.width / frameCount;
-	frameRec.height = (float)image.height;
-	frameRec.x = 0;
-	frameRec.y = 0;
 	
 	printf("DEBUG: Sprite() - frameWidth: %f, frameHeight: %f\n", frameRec.width, frameRec.height);
 	
@@ -75,7 +92,13 @@ void Sprite::Update(float deltaTime)
 // Draw: Render the current frame at the stored position
 void Sprite::Draw()
 {
-	if (image.id > 0) {
+	if (isAtlased && atlasTexture.id > 0) {
+		Rectangle source = GetSourceRect();
+		source.x += atlasRegion.x;
+		source.y += atlasRegion.y;
+		Rectangle dest = { position.x, position.y, frameRec.width * scale, frameRec.height * scale };
+		DrawTexturePro(atlasTexture, source, dest, { 0, 0 }, 0.f, WHITE);
+	} else if (image.id > 0) {
 		Rectangle source = GetSourceRect();
 		Rectangle dest = { position.x, position.y, frameRec.width * scale, frameRec.height * scale };
 		DrawTexturePro(image, source, dest, { 0, 0 }, 0.f, WHITE);
@@ -85,7 +108,13 @@ void Sprite::Draw()
 // Draw (legacy): Render the current frame at the specified position
 void Sprite::Draw(float x, float y)
 {
-	if (image.id > 0) {
+	if (isAtlased && atlasTexture.id > 0) {
+		Rectangle source = GetSourceRect();
+		source.x += atlasRegion.x;
+		source.y += atlasRegion.y;
+		Rectangle dest = { x, y, frameRec.width * scale, frameRec.height * scale };
+		DrawTexturePro(atlasTexture, source, dest, { 0, 0 }, 0.f, WHITE);
+	} else if (image.id > 0) {
 		Rectangle source = GetSourceRect();
 		Rectangle dest = { x, y, frameRec.width * scale, frameRec.height * scale };
 		DrawTexturePro(image, source, dest, { 0, 0 }, 0.f, WHITE);

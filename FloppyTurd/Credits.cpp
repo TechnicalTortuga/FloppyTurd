@@ -7,6 +7,7 @@
 #include "AudioManager.h"
 #include <raymath.h>
 #include <random>
+#include <cfloat>
 
 Credits::Credits(Game* game)
     : textScrollOffset(320.0f + 50.0f), turdletBounce(0.0f), finLogoHovered(false), finLogoScale(1.0f), elapsedTime(0.0f), game(game)

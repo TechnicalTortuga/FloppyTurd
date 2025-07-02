@@ -94,6 +94,7 @@ public:
     bool IsResourceLoaded(const std::string& id) const;
     void ReloadResource(const std::string& id);  // Force reload (useful for hot-reloading)
     std::vector<std::string> GetLoadedResources() const;
+    const std::unordered_map<std::string, ResourceInfo>& GetResourceRegistry() const { return resourceRegistry; }
 
 private:
     ResourceManager() = default;

@@ -4,1131 +4,520 @@ events:
   -
     kind: "message-v1"
     backtrace:
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineSystem.cmake:205 (message)"
+      - "/opt/homebrew/share/cmake/Modules/CMakeDetermineSystem.cmake:205 (message)"
       - "CMakeLists.txt:2 (project)"
     message: |
-      The system is: Windows - 10.0.26100 - AMD64
+      The system is: Darwin - 24.5.0 - arm64
   -
     kind: "message-v1"
     backtrace:
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "/opt/homebrew/share/cmake/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/opt/homebrew/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/opt/homebrew/share/cmake/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
       - "CMakeLists.txt:2 (project)"
     message: |
       Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
-      Compiler:  
+      Compiler: /usr/bin/c++ 
       Build flags: 
       Id flags:  
       
       The output was:
       0
-      MSBuild version 17.11.9+a69bbaaf5 for .NET Framework
-      Build started 7/1/2025 9:17:51 PM.
-      
-      Project "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\3.31.6\\CompilerIdCXX\\CompilerIdCXX.vcxproj" on node 1 (default targets).
-      PrepareForBuild:
-        Creating directory "Debug\\".
-        Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-        Creating directory "Debug\\CompilerIdCXX.tlog\\".
-      InitializeBuildStatus:
-        Creating "Debug\\CompilerIdCXX.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-        Touching "Debug\\CompilerIdCXX.tlog\\unsuccessfulbuild".
-      VcpkgTripletSelection:
-        Using triplet "x64-windows" from "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\"
-        Using normalized configuration "Release"
-      ClCompile:
-        C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\CL.exe /c /I"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\include" /nologo /W0 /WX- /diagnostics:column /Od /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"Debug\\\\" /Fd"Debug\\vc143.pdb" /external:W0 /Gd /TP /FC /errorReport:queue CMakeCXXCompilerId.cpp
-        CMakeCXXCompilerId.cpp
-      Link:
-        C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:".\\CompilerIdCXX.exe" /INCREMENTAL:NO /NOLOGO /LIBPATH:"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\lib" /LIBPATH:"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\lib\\manual-link" kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\lib\\*.lib" /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /PDB:".\\CompilerIdCXX.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:".\\CompilerIdCXX.lib" /MACHINE:X64 Debug\\CMakeCXXCompilerId.obj
-        CompilerIdCXX.vcxproj -> C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\3.31.6\\CompilerIdCXX\\CompilerIdCXX.exe
-      AppLocalFromInstalled:
-        pwsh.exe -ExecutionPolicy Bypass -noprofile -File "C:\\Users\\aeist\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\3.31.6\\CompilerIdCXX\\CompilerIdCXX.exe" "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\bin" "Debug\\CompilerIdCXX.tlog\\CompilerIdCXX.write.1u.tlog" "Debug\\vcpkg.applocal.log"
-        'pwsh.exe' is not recognized as an internal or external command,
-        operable program or batch file.
-        The command "pwsh.exe -ExecutionPolicy Bypass -noprofile -File "C:\\Users\\aeist\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\3.31.6\\CompilerIdCXX\\CompilerIdCXX.exe" "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\bin" "Debug\\CompilerIdCXX.tlog\\CompilerIdCXX.write.1u.tlog" "Debug\\vcpkg.applocal.log"" exited with code 9009.
-        "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -ExecutionPolicy Bypass -noprofile -File "C:\\Users\\aeist\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\3.31.6\\CompilerIdCXX\\CompilerIdCXX.exe" "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\bin" "Debug\\CompilerIdCXX.tlog\\CompilerIdCXX.write.1u.tlog" "Debug\\vcpkg.applocal.log"
-      PostBuildEvent:
-        for %%i in (cl.exe) do @echo CMAKE_CXX_COMPILER=%%~$PATH:i
-        :VCEnd
-        CMAKE_CXX_COMPILER=C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\bin\\Hostx64\\x64\\cl.exe
-      FinalizeBuildStatus:
-        Deleting file "Debug\\CompilerIdCXX.tlog\\unsuccessfulbuild".
-        Touching "Debug\\CompilerIdCXX.tlog\\CompilerIdCXX.lastbuildstate".
-      Done Building Project "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\3.31.6\\CompilerIdCXX\\CompilerIdCXX.vcxproj" (default targets).
-      
-      Build succeeded.
-          0 Warning(s)
-          0 Error(s)
-      
-      Time Elapsed 00:00:00.65
       
       
-      Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX.exe"
+      Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "a.out"
       
-      Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX.vcxproj"
-      
-      The CXX compiler identification is MSVC, found in:
-        C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/3.31.6/CompilerIdCXX/CompilerIdCXX.exe
+      The CXX compiler identification is AppleClang, found in:
+        /Users/aimac/Documents/GitHub/FloppyTurd/build/CMakeFiles/4.0.0/CompilerIdCXX/a.out
       
   -
     kind: "try_compile-v1"
     backtrace:
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:74 (try_compile)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "/opt/homebrew/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:83 (try_compile)"
+      - "/opt/homebrew/share/cmake/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
       - "CMakeLists.txt:2 (project)"
     checks:
       - "Detecting CXX compiler ABI info"
     directories:
-      source: "C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-8ngtss"
-      binary: "C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-8ngtss"
+      source: "/Users/aimac/Documents/GitHub/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-CClFix"
+      binary: "/Users/aimac/Documents/GitHub/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-CClFix"
     cmakeVariables:
-      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /EHsc"
-      CMAKE_CXX_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
+      CMAKE_CXX_FLAGS: ""
+      CMAKE_CXX_FLAGS_DEBUG: "-g"
       CMAKE_CXX_SCAN_FOR_MODULES: "OFF"
-      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: ""
+      CMAKE_OSX_SYSROOT: ""
     buildResult:
       variable: "CMAKE_CXX_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: 'C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-8ngtss'
+        Change Dir: '/Users/aimac/Documents/GitHub/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-CClFix'
         
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_997ab.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
-        MSBuild version 17.11.9+a69bbaaf5 for .NET Framework
-        Build started 7/1/2025 9:17:52 PM.
-        
-        Project "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-8ngtss\\cmTC_997ab.vcxproj" on node 1 (default targets).
-        PrepareForBuild:
-          Creating directory "cmTC_997ab.dir\\Debug\\".
-          Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-          Creating directory "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-8ngtss\\Debug\\".
-          Creating directory "cmTC_997ab.dir\\Debug\\cmTC_997ab.tlog\\".
-        InitializeBuildStatus:
-          Creating "cmTC_997ab.dir\\Debug\\cmTC_997ab.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-          Touching "cmTC_997ab.dir\\Debug\\cmTC_997ab.tlog\\unsuccessfulbuild".
-        VcpkgTripletSelection:
-          Using triplet "x64-windows" from "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\"
-          Using normalized configuration "Debug"
-        ClCompile:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\CL.exe /c /I"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_997ab.dir\\Debug\\\\" /Fd"cmTC_997ab.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.31\\Modules\\CMakeCXXCompilerABI.cpp"
-          Microsoft (R) C/C++ Optimizing Compiler Version 19.41.34120 for x64
-          Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /I"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_997ab.dir\\Debug\\\\" /Fd"cmTC_997ab.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.31\\Modules\\CMakeCXXCompilerABI.cpp"
-          CMakeCXXCompilerABI.cpp
-        Link:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-8ngtss\\Debug\\cmTC_997ab.exe" /INCREMENTAL /ILK:"cmTC_997ab.dir\\Debug\\cmTC_997ab.ilk" /NOLOGO /LIBPATH:"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\debug\\lib" /LIBPATH:"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\debug\\lib\\manual-link" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\debug\\lib\\*.lib" /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-8ngtss/Debug/cmTC_997ab.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-8ngtss/Debug/cmTC_997ab.lib" /MACHINE:X64  /machine:x64 cmTC_997ab.dir\\Debug\\CMakeCXXCompilerABI.obj
-          cmTC_997ab.vcxproj -> C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-8ngtss\\Debug\\cmTC_997ab.exe
-        AppLocalFromInstalled:
-          pwsh.exe -ExecutionPolicy Bypass -noprofile -File "C:\\Users\\aeist\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-8ngtss\\Debug\\cmTC_997ab.exe" "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\debug\\bin" "cmTC_997ab.dir\\Debug\\cmTC_997ab.tlog\\cmTC_997ab.write.1u.tlog" "cmTC_997ab.dir\\Debug\\vcpkg.applocal.log"
-          'pwsh.exe' is not recognized as an internal or external command,
-          operable program or batch file.
-          The command "pwsh.exe -ExecutionPolicy Bypass -noprofile -File "C:\\Users\\aeist\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-8ngtss\\Debug\\cmTC_997ab.exe" "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\debug\\bin" "cmTC_997ab.dir\\Debug\\cmTC_997ab.tlog\\cmTC_997ab.write.1u.tlog" "cmTC_997ab.dir\\Debug\\vcpkg.applocal.log"" exited with code 9009.
-          "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -ExecutionPolicy Bypass -noprofile -File "C:\\Users\\aeist\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-8ngtss\\Debug\\cmTC_997ab.exe" "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\debug\\bin" "cmTC_997ab.dir\\Debug\\cmTC_997ab.tlog\\cmTC_997ab.write.1u.tlog" "cmTC_997ab.dir\\Debug\\vcpkg.applocal.log"
-        FinalizeBuildStatus:
-          Deleting file "cmTC_997ab.dir\\Debug\\cmTC_997ab.tlog\\unsuccessfulbuild".
-          Touching "cmTC_997ab.dir\\Debug\\cmTC_997ab.tlog\\cmTC_997ab.lastbuildstate".
-        Done Building Project "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-8ngtss\\cmTC_997ab.vcxproj" (default targets).
-        
-        Build succeeded.
-            0 Warning(s)
-            0 Error(s)
-        
-        Time Elapsed 00:00:00.62
+        Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_f90d1/fast
+        /Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_f90d1.dir/build.make CMakeFiles/cmTC_f90d1.dir/build
+        Building CXX object CMakeFiles/cmTC_f90d1.dir/CMakeCXXCompilerABI.cpp.o
+        /usr/bin/c++   -arch arm64   -v -Wl,-v -MD -MT CMakeFiles/cmTC_f90d1.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_f90d1.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_f90d1.dir/CMakeCXXCompilerABI.cpp.o -c /opt/homebrew/share/cmake/Modules/CMakeCXXCompilerABI.cpp
+        Apple clang version 17.0.0 (clang-1700.0.13.3)
+        Target: arm64-apple-darwin24.5.0
+        Thread model: posix
+        InstalledDir: /Library/Developer/CommandLineTools/usr/bin
+        clang++: warning: -Wl,-v: 'linker' input unused [-Wunused-command-line-argument]
+        ignoring nonexistent directory "/Library/Developer/CommandLineTools/usr/bin/../include/c++/v1"
+         "/Library/Developer/CommandLineTools/usr/bin/clang" -cc1 -triple arm64-apple-macosx15.0.0 -Wundef-prefix=TARGET_OS_ -Wdeprecated-objc-isa-usage -Werror=deprecated-objc-isa-usage -Werror=implicit-function-declaration -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -mframe-pointer=non-leaf -fno-strict-return -ffp-contract=on -fno-rounding-math -funwind-tables=1 -fobjc-msgsend-selector-stubs -target-sdk-version=15.4 -fvisibility-inlines-hidden-static-local-var -fdefine-target-os-macros -fno-assume-unique-vtables -fno-modulemap-allow-subdirectory-search -target-cpu apple-m1 -target-feature +zcm -target-feature +zcz -target-feature +v8.5a -target-feature +aes -target-feature +altnzcv -target-feature +ccdp -target-feature +complxnum -target-feature +crc -target-feature +dotprod -target-feature +fp-armv8 -target-feature +fp16fml -target-feature +fptoint -target-feature +fullfp16 -target-feature +jsconv -target-feature +lse -target-feature +neon -target-feature +pauth -target-feature +perfmon -target-feature +predres -target-feature +ras -target-feature +rcpc -target-feature +rdm -target-feature +sb -target-feature +sha2 -target-feature +sha3 -target-feature +specrestrict -target-feature +ssbs -target-abi darwinpcs -debugger-tuning=lldb -fdebug-compilation-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-CClFix -target-linker-version 1167.4.1 -v -fcoverage-compilation-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-CClFix -resource-dir /Library/Developer/CommandLineTools/usr/lib/clang/17 -dependency-file CMakeFiles/cmTC_f90d1.dir/CMakeCXXCompilerABI.cpp.o.d -skip-unused-modulemap-deps -MT CMakeFiles/cmTC_f90d1.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -I/usr/local/include -internal-isystem /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1 -internal-isystem /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/local/include -internal-isystem /Library/Developer/CommandLineTools/usr/lib/clang/17/include -internal-externc-isystem /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include -internal-externc-isystem /Library/Developer/CommandLineTools/usr/include -Wno-reorder-init-list -Wno-implicit-int-float-conversion -Wno-c99-designator -Wno-final-dtor-non-final-class -Wno-extra-semi-stmt -Wno-misleading-indentation -Wno-quoted-include-in-framework-header -Wno-implicit-fallthrough -Wno-enum-enum-conversion -Wno-enum-float-conversion -Wno-elaborated-enum-base -Wno-reserved-identifier -Wno-gnu-folding-constant -fdeprecated-macro -ferror-limit 19 -stack-protector 1 -fstack-check -mdarwin-stkchk-strong-link -fblocks -fencode-extended-block-signature -fregister-global-dtors-with-atexit -fgnuc-version=4.2.1 -fno-cxx-modules -fskip-odr-check-in-gmf -fcxx-exceptions -fexceptions -fmax-type-align=16 -fcommon -clang-vendor-feature=+disableNonDependentMemberExprInCurrentInstantiation -fno-odr-hash-protocols -clang-vendor-feature=+enableAggressiveVLAFolding -clang-vendor-feature=+revert09abecef7bbf -clang-vendor-feature=+thisNoAlignAttr -clang-vendor-feature=+thisNoNullAttr -clang-vendor-feature=+disableAtImportPrivateFrameworkInImplementationError -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_f90d1.dir/CMakeCXXCompilerABI.cpp.o -x c++ /opt/homebrew/share/cmake/Modules/CMakeCXXCompilerABI.cpp
+        clang -cc1 version 17.0.0 (clang-1700.0.13.3) default target arm64-apple-darwin24.5.0
+        ignoring nonexistent directory "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/local/include"
+        ignoring nonexistent directory "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/SubFrameworks"
+        ignoring nonexistent directory "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Library/Frameworks"
+        #include "..." search starts here:
+        #include <...> search starts here:
+         /usr/local/include
+         /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1
+         /Library/Developer/CommandLineTools/usr/lib/clang/17/include
+         /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include
+         /Library/Developer/CommandLineTools/usr/include
+         /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks (framework directory)
+        End of search list.
+        Linking CXX executable cmTC_f90d1
+        /opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_f90d1.dir/link.txt --verbose=1
+        Apple clang version 17.0.0 (clang-1700.0.13.3)
+        Target: arm64-apple-darwin24.5.0
+        Thread model: posix
+        InstalledDir: /Library/Developer/CommandLineTools/usr/bin
+         "/Library/Developer/CommandLineTools/usr/bin/ld" -demangle -lto_library /Library/Developer/CommandLineTools/usr/lib/libLTO.dylib -dynamic -arch arm64 -platform_version macos 15.0.0 15.4 -syslibroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mllvm -enable-linkonceodr-outlining -o cmTC_f90d1 -L/usr/local/lib -search_paths_first -headerpad_max_install_names -v CMakeFiles/cmTC_f90d1.dir/CMakeCXXCompilerABI.cpp.o -lc++ -lSystem /Library/Developer/CommandLineTools/usr/lib/clang/17/lib/darwin/libclang_rt.osx.a
+        @(#)PROGRAM:ld PROJECT:ld-1167.4.1
+        BUILD 20:00:10 Mar 12 2025
+        configured to support archs: armv6 armv7 armv7s arm64 arm64e arm64_32 i386 x86_64 x86_64h armv6m armv7k armv7m armv7em
+        will use ld-classic for: armv6 armv7 armv7s i386 armv6m armv7k armv7m armv7em
+        LTO support using: LLVM version 17.0.0 (static support for 29, runtime is 29)
+        TAPI support using: Apple TAPI version 17.0.0 (tapi-1700.0.3.4)
+        Library search paths:
+        	/usr/local/lib
+        	/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib
+        	/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/swift
+        Framework search paths:
+        	/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks
+        /usr/bin/c++  -arch arm64 -Wl,-search_paths_first -Wl,-headerpad_max_install_names  -v -Wl,-v CMakeFiles/cmTC_f90d1.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_f90d1
         
       exitCode: 0
   -
     kind: "message-v1"
     backtrace:
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:218 (message)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "/opt/homebrew/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:122 (message)"
+      - "/opt/homebrew/share/cmake/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:2 (project)"
+    message: |
+      Effective list of requested architectures (possibly empty)  : ""
+      Effective list of architectures found in the ABI info binary: "arm64"
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/opt/homebrew/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:191 (message)"
+      - "/opt/homebrew/share/cmake/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:2 (project)"
+    message: |
+      Parsed CXX implicit include dir info: rv=done
+        found start of include info
+        found start of implicit include info
+          add: [/usr/local/include]
+          add: [/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1]
+          add: [/Library/Developer/CommandLineTools/usr/lib/clang/17/include]
+          add: [/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include]
+          add: [/Library/Developer/CommandLineTools/usr/include]
+        end of search list found
+        collapse include dir [/usr/local/include] ==> [/usr/local/include]
+        collapse include dir [/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1] ==> [/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1]
+        collapse include dir [/Library/Developer/CommandLineTools/usr/lib/clang/17/include] ==> [/Library/Developer/CommandLineTools/usr/lib/clang/17/include]
+        collapse include dir [/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include] ==> [/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include]
+        collapse include dir [/Library/Developer/CommandLineTools/usr/include] ==> [/Library/Developer/CommandLineTools/usr/include]
+        implicit include dirs: [/usr/local/include;/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1;/Library/Developer/CommandLineTools/usr/lib/clang/17/include;/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include;/Library/Developer/CommandLineTools/usr/include]
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/opt/homebrew/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:227 (message)"
+      - "/opt/homebrew/share/cmake/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
       - "CMakeLists.txt:2 (project)"
     message: |
       Parsed CXX implicit link information:
-        link line regex: [^( *|.*[/\\])(ld[0-9]*(\\.[a-z]+)?|link\\.exe|lld-link(\\.exe)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
-        linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(\\.[a-z]+)?|link\\.exe|lld-link(\\.exe)?))("|,| |$)]
-        linker tool for 'CXX': C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.41.34120/bin/HostX64/x64/link.exe
-        implicit libs: []
+        link line regex: [^( *|.*[/\\])(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)))("|,| |$)]
+        ignore line: [Change Dir: '/Users/aimac/Documents/GitHub/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-CClFix']
+        ignore line: []
+        ignore line: [Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_f90d1/fast]
+        ignore line: [/Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_f90d1.dir/build.make CMakeFiles/cmTC_f90d1.dir/build]
+        ignore line: [Building CXX object CMakeFiles/cmTC_f90d1.dir/CMakeCXXCompilerABI.cpp.o]
+        ignore line: [/usr/bin/c++   -arch arm64   -v -Wl -v -MD -MT CMakeFiles/cmTC_f90d1.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_f90d1.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_f90d1.dir/CMakeCXXCompilerABI.cpp.o -c /opt/homebrew/share/cmake/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [Apple clang version 17.0.0 (clang-1700.0.13.3)]
+        ignore line: [Target: arm64-apple-darwin24.5.0]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: /Library/Developer/CommandLineTools/usr/bin]
+        ignore line: [clang++: warning: -Wl -v: 'linker' input unused [-Wunused-command-line-argument]]
+        ignore line: [ignoring nonexistent directory "/Library/Developer/CommandLineTools/usr/bin/../include/c++/v1"]
+        ignore line: [ "/Library/Developer/CommandLineTools/usr/bin/clang" -cc1 -triple arm64-apple-macosx15.0.0 -Wundef-prefix=TARGET_OS_ -Wdeprecated-objc-isa-usage -Werror=deprecated-objc-isa-usage -Werror=implicit-function-declaration -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCXXCompilerABI.cpp -mrelocation-model pic -pic-level 2 -mframe-pointer=non-leaf -fno-strict-return -ffp-contract=on -fno-rounding-math -funwind-tables=1 -fobjc-msgsend-selector-stubs -target-sdk-version=15.4 -fvisibility-inlines-hidden-static-local-var -fdefine-target-os-macros -fno-assume-unique-vtables -fno-modulemap-allow-subdirectory-search -target-cpu apple-m1 -target-feature +zcm -target-feature +zcz -target-feature +v8.5a -target-feature +aes -target-feature +altnzcv -target-feature +ccdp -target-feature +complxnum -target-feature +crc -target-feature +dotprod -target-feature +fp-armv8 -target-feature +fp16fml -target-feature +fptoint -target-feature +fullfp16 -target-feature +jsconv -target-feature +lse -target-feature +neon -target-feature +pauth -target-feature +perfmon -target-feature +predres -target-feature +ras -target-feature +rcpc -target-feature +rdm -target-feature +sb -target-feature +sha2 -target-feature +sha3 -target-feature +specrestrict -target-feature +ssbs -target-abi darwinpcs -debugger-tuning=lldb -fdebug-compilation-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-CClFix -target-linker-version 1167.4.1 -v -fcoverage-compilation-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-CClFix -resource-dir /Library/Developer/CommandLineTools/usr/lib/clang/17 -dependency-file CMakeFiles/cmTC_f90d1.dir/CMakeCXXCompilerABI.cpp.o.d -skip-unused-modulemap-deps -MT CMakeFiles/cmTC_f90d1.dir/CMakeCXXCompilerABI.cpp.o -sys-header-deps -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -I/usr/local/include -internal-isystem /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1 -internal-isystem /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/local/include -internal-isystem /Library/Developer/CommandLineTools/usr/lib/clang/17/include -internal-externc-isystem /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include -internal-externc-isystem /Library/Developer/CommandLineTools/usr/include -Wno-reorder-init-list -Wno-implicit-int-float-conversion -Wno-c99-designator -Wno-final-dtor-non-final-class -Wno-extra-semi-stmt -Wno-misleading-indentation -Wno-quoted-include-in-framework-header -Wno-implicit-fallthrough -Wno-enum-enum-conversion -Wno-enum-float-conversion -Wno-elaborated-enum-base -Wno-reserved-identifier -Wno-gnu-folding-constant -fdeprecated-macro -ferror-limit 19 -stack-protector 1 -fstack-check -mdarwin-stkchk-strong-link -fblocks -fencode-extended-block-signature -fregister-global-dtors-with-atexit -fgnuc-version=4.2.1 -fno-cxx-modules -fskip-odr-check-in-gmf -fcxx-exceptions -fexceptions -fmax-type-align=16 -fcommon -clang-vendor-feature=+disableNonDependentMemberExprInCurrentInstantiation -fno-odr-hash-protocols -clang-vendor-feature=+enableAggressiveVLAFolding -clang-vendor-feature=+revert09abecef7bbf -clang-vendor-feature=+thisNoAlignAttr -clang-vendor-feature=+thisNoNullAttr -clang-vendor-feature=+disableAtImportPrivateFrameworkInImplementationError -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_f90d1.dir/CMakeCXXCompilerABI.cpp.o -x c++ /opt/homebrew/share/cmake/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [clang -cc1 version 17.0.0 (clang-1700.0.13.3) default target arm64-apple-darwin24.5.0]
+        ignore line: [ignoring nonexistent directory "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/local/include"]
+        ignore line: [ignoring nonexistent directory "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/SubFrameworks"]
+        ignore line: [ignoring nonexistent directory "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Library/Frameworks"]
+        ignore line: [#include "..." search starts here:]
+        ignore line: [#include <...> search starts here:]
+        ignore line: [ /usr/local/include]
+        ignore line: [ /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/c++/v1]
+        ignore line: [ /Library/Developer/CommandLineTools/usr/lib/clang/17/include]
+        ignore line: [ /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include]
+        ignore line: [ /Library/Developer/CommandLineTools/usr/include]
+        ignore line: [ /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks (framework directory)]
+        ignore line: [End of search list.]
+        ignore line: [Linking CXX executable cmTC_f90d1]
+        ignore line: [/opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_f90d1.dir/link.txt --verbose=1]
+        ignore line: [Apple clang version 17.0.0 (clang-1700.0.13.3)]
+        ignore line: [Target: arm64-apple-darwin24.5.0]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: /Library/Developer/CommandLineTools/usr/bin]
+        link line: [ "/Library/Developer/CommandLineTools/usr/bin/ld" -demangle -lto_library /Library/Developer/CommandLineTools/usr/lib/libLTO.dylib -dynamic -arch arm64 -platform_version macos 15.0.0 15.4 -syslibroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mllvm -enable-linkonceodr-outlining -o cmTC_f90d1 -L/usr/local/lib -search_paths_first -headerpad_max_install_names -v CMakeFiles/cmTC_f90d1.dir/CMakeCXXCompilerABI.cpp.o -lc++ -lSystem /Library/Developer/CommandLineTools/usr/lib/clang/17/lib/darwin/libclang_rt.osx.a]
+          arg [/Library/Developer/CommandLineTools/usr/bin/ld] ==> ignore
+          arg [-demangle] ==> ignore
+          arg [-lto_library] ==> ignore, skip following value
+          arg [/Library/Developer/CommandLineTools/usr/lib/libLTO.dylib] ==> skip value of -lto_library
+          arg [-dynamic] ==> ignore
+          arg [-arch] ==> ignore
+          arg [arm64] ==> ignore
+          arg [-platform_version] ==> ignore
+          arg [macos] ==> ignore
+          arg [15.0.0] ==> ignore
+          arg [15.4] ==> ignore
+          arg [-syslibroot] ==> ignore
+          arg [/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk] ==> ignore
+          arg [-mllvm] ==> ignore
+          arg [-enable-linkonceodr-outlining] ==> ignore
+          arg [-o] ==> ignore
+          arg [cmTC_f90d1] ==> ignore
+          arg [-L/usr/local/lib] ==> dir [/usr/local/lib]
+          arg [-search_paths_first] ==> ignore
+          arg [-headerpad_max_install_names] ==> ignore
+          arg [-v] ==> ignore
+          arg [CMakeFiles/cmTC_f90d1.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
+          arg [-lc++] ==> lib [c++]
+          arg [-lSystem] ==> lib [System]
+          arg [/Library/Developer/CommandLineTools/usr/lib/clang/17/lib/darwin/libclang_rt.osx.a] ==> lib [/Library/Developer/CommandLineTools/usr/lib/clang/17/lib/darwin/libclang_rt.osx.a]
+        linker tool for 'CXX': /Library/Developer/CommandLineTools/usr/bin/ld
+        Library search paths: [;/usr/local/lib;/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib;/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/swift]
+        Framework search paths: [;/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks]
+        remove lib [System]
+        remove lib [/Library/Developer/CommandLineTools/usr/lib/clang/17/lib/darwin/libclang_rt.osx.a]
+        collapse library dir [/usr/local/lib] ==> [/usr/local/lib]
+        collapse library dir [/usr/local/lib] ==> [/usr/local/lib]
+        collapse library dir [/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib] ==> [/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib]
+        collapse library dir [/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/swift] ==> [/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/swift]
+        collapse framework dir [/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks] ==> [/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks]
+        implicit libs: [c++]
         implicit objs: []
-        implicit dirs: []
-        implicit fwks: []
+        implicit dirs: [/usr/local/lib;/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib;/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/swift]
+        implicit fwks: [/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks]
       
       
   -
     kind: "message-v1"
     backtrace:
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/Internal/CMakeDetermineLinkerId.cmake:40 (message)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:255 (cmake_determine_linker_id)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "/opt/homebrew/share/cmake/Modules/Internal/CMakeDetermineLinkerId.cmake:36 (message)"
+      - "/opt/homebrew/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:264 (cmake_determine_linker_id)"
+      - "/opt/homebrew/share/cmake/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
       - "CMakeLists.txt:2 (project)"
     message: |
-      Running the CXX compiler's linker: "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.41.34120/bin/HostX64/x64/link.exe" "-v"
-      Microsoft (R) Incremental Linker Version 14.41.34120.0
-      Copyright (C) Microsoft Corporation.  All rights reserved.
+      Running the CXX compiler's linker: "/Library/Developer/CommandLineTools/usr/bin/ld" "-v"
+      @(#)PROGRAM:ld PROJECT:ld-1167.4.1
+      BUILD 20:00:10 Mar 12 2025
+      configured to support archs: armv6 armv7 armv7s arm64 arm64e arm64_32 i386 x86_64 x86_64h armv6m armv7k armv7m armv7em
+      will use ld-classic for: armv6 armv7 armv7s i386 armv6m armv7k armv7m armv7em
+      LTO support using: LLVM version 17.0.0 (static support for 29, runtime is 29)
+      TAPI support using: Apple TAPI version 17.0.0 (tapi-1700.0.3.4)
   -
     kind: "message-v1"
     backtrace:
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "/opt/homebrew/share/cmake/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/opt/homebrew/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/opt/homebrew/share/cmake/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
       - "build/_deps/raylib-src/CMakeLists.txt:2 (project)"
     message: |
       Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
-      Compiler:  
+      Compiler: /usr/bin/cc 
       Build flags: 
       Id flags:  
       
       The output was:
       0
-      MSBuild version 17.11.9+a69bbaaf5 for .NET Framework
-      Build started 7/1/2025 9:18:06 PM.
-      
-      Project "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\3.31.6\\CompilerIdC\\CompilerIdC.vcxproj" on node 1 (default targets).
-      PrepareForBuild:
-        Creating directory "Debug\\".
-        Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-        Creating directory "Debug\\CompilerIdC.tlog\\".
-      InitializeBuildStatus:
-        Creating "Debug\\CompilerIdC.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-        Touching "Debug\\CompilerIdC.tlog\\unsuccessfulbuild".
-      VcpkgTripletSelection:
-        Using triplet "x64-windows" from "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\"
-        Using normalized configuration "Release"
-      ClCompile:
-        C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\CL.exe /c /I"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\include" /nologo /W0 /WX- /diagnostics:column /Od /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"Debug\\\\" /Fd"Debug\\vc143.pdb" /external:W0 /Gd /TC /FC /errorReport:queue CMakeCCompilerId.c
-        CMakeCCompilerId.c
-      Link:
-        C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:".\\CompilerIdC.exe" /INCREMENTAL:NO /NOLOGO /LIBPATH:"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\lib" /LIBPATH:"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\lib\\manual-link" kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\lib\\*.lib" /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /PDB:".\\CompilerIdC.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:".\\CompilerIdC.lib" /MACHINE:X64 Debug\\CMakeCCompilerId.obj
-        CompilerIdC.vcxproj -> C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\3.31.6\\CompilerIdC\\CompilerIdC.exe
-      AppLocalFromInstalled:
-        pwsh.exe -ExecutionPolicy Bypass -noprofile -File "C:\\Users\\aeist\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\3.31.6\\CompilerIdC\\CompilerIdC.exe" "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\bin" "Debug\\CompilerIdC.tlog\\CompilerIdC.write.1u.tlog" "Debug\\vcpkg.applocal.log"
-        'pwsh.exe' is not recognized as an internal or external command,
-        operable program or batch file.
-        The command "pwsh.exe -ExecutionPolicy Bypass -noprofile -File "C:\\Users\\aeist\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\3.31.6\\CompilerIdC\\CompilerIdC.exe" "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\bin" "Debug\\CompilerIdC.tlog\\CompilerIdC.write.1u.tlog" "Debug\\vcpkg.applocal.log"" exited with code 9009.
-        "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -ExecutionPolicy Bypass -noprofile -File "C:\\Users\\aeist\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\3.31.6\\CompilerIdC\\CompilerIdC.exe" "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\bin" "Debug\\CompilerIdC.tlog\\CompilerIdC.write.1u.tlog" "Debug\\vcpkg.applocal.log"
-      PostBuildEvent:
-        for %%i in (cl.exe) do @echo CMAKE_C_COMPILER=%%~$PATH:i
-        :VCEnd
-        CMAKE_C_COMPILER=C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\bin\\Hostx64\\x64\\cl.exe
-      FinalizeBuildStatus:
-        Deleting file "Debug\\CompilerIdC.tlog\\unsuccessfulbuild".
-        Touching "Debug\\CompilerIdC.tlog\\CompilerIdC.lastbuildstate".
-      Done Building Project "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\3.31.6\\CompilerIdC\\CompilerIdC.vcxproj" (default targets).
-      
-      Build succeeded.
-          0 Warning(s)
-          0 Error(s)
-      
-      Time Elapsed 00:00:00.61
       
       
-      Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CompilerIdC.exe"
+      Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "a.out"
       
-      Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CompilerIdC.vcxproj"
-      
-      The C compiler identification is MSVC, found in:
-        C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/3.31.6/CompilerIdC/CompilerIdC.exe
+      The C compiler identification is AppleClang, found in:
+        /Users/aimac/Documents/GitHub/FloppyTurd/build/CMakeFiles/4.0.0/CompilerIdC/a.out
       
   -
     kind: "try_compile-v1"
     backtrace:
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:74 (try_compile)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "/opt/homebrew/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:83 (try_compile)"
+      - "/opt/homebrew/share/cmake/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
       - "build/_deps/raylib-src/CMakeLists.txt:2 (project)"
     checks:
       - "Detecting C compiler ABI info"
     directories:
-      source: "C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-utz48u"
-      binary: "C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-utz48u"
+      source: "/Users/aimac/Documents/GitHub/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-uogtI6"
+      binary: "/Users/aimac/Documents/GitHub/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-uogtI6"
     cmakeVariables:
-      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
-      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_C_FLAGS: ""
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: ""
+      CMAKE_OSX_SYSROOT: ""
     buildResult:
       variable: "CMAKE_C_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: 'C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-utz48u'
+        Change Dir: '/Users/aimac/Documents/GitHub/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-uogtI6'
         
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_1d8c8.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
-        MSBuild version 17.11.9+a69bbaaf5 for .NET Framework
-        Build started 7/1/2025 9:18:07 PM.
-        
-        Project "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-utz48u\\cmTC_1d8c8.vcxproj" on node 1 (default targets).
-        PrepareForBuild:
-          Creating directory "cmTC_1d8c8.dir\\Debug\\".
-          Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-          Creating directory "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-utz48u\\Debug\\".
-          Creating directory "cmTC_1d8c8.dir\\Debug\\cmTC_1d8c8.tlog\\".
-        InitializeBuildStatus:
-          Creating "cmTC_1d8c8.dir\\Debug\\cmTC_1d8c8.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-          Touching "cmTC_1d8c8.dir\\Debug\\cmTC_1d8c8.tlog\\unsuccessfulbuild".
-        VcpkgTripletSelection:
-          Using triplet "x64-windows" from "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\"
-          Using normalized configuration "Debug"
-        ClCompile:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\CL.exe /c /I"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_1d8c8.dir\\Debug\\\\" /Fd"cmTC_1d8c8.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TC /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.31\\Modules\\CMakeCCompilerABI.c"
-          Microsoft (R) C/C++ Optimizing Compiler Version 19.41.34120 for x64
-          Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /I"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_1d8c8.dir\\Debug\\\\" /Fd"cmTC_1d8c8.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TC /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.31\\Modules\\CMakeCCompilerABI.c"
-          CMakeCCompilerABI.c
-        Link:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-utz48u\\Debug\\cmTC_1d8c8.exe" /INCREMENTAL /ILK:"cmTC_1d8c8.dir\\Debug\\cmTC_1d8c8.ilk" /NOLOGO /LIBPATH:"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\debug\\lib" /LIBPATH:"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\debug\\lib\\manual-link" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\debug\\lib\\*.lib" /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-utz48u/Debug/cmTC_1d8c8.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-utz48u/Debug/cmTC_1d8c8.lib" /MACHINE:X64  /machine:x64 cmTC_1d8c8.dir\\Debug\\CMakeCCompilerABI.obj
-          cmTC_1d8c8.vcxproj -> C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-utz48u\\Debug\\cmTC_1d8c8.exe
-        AppLocalFromInstalled:
-          pwsh.exe -ExecutionPolicy Bypass -noprofile -File "C:\\Users\\aeist\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-utz48u\\Debug\\cmTC_1d8c8.exe" "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\debug\\bin" "cmTC_1d8c8.dir\\Debug\\cmTC_1d8c8.tlog\\cmTC_1d8c8.write.1u.tlog" "cmTC_1d8c8.dir\\Debug\\vcpkg.applocal.log"
-          'pwsh.exe' is not recognized as an internal or external command,
-          operable program or batch file.
-          The command "pwsh.exe -ExecutionPolicy Bypass -noprofile -File "C:\\Users\\aeist\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-utz48u\\Debug\\cmTC_1d8c8.exe" "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\debug\\bin" "cmTC_1d8c8.dir\\Debug\\cmTC_1d8c8.tlog\\cmTC_1d8c8.write.1u.tlog" "cmTC_1d8c8.dir\\Debug\\vcpkg.applocal.log"" exited with code 9009.
-          "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -ExecutionPolicy Bypass -noprofile -File "C:\\Users\\aeist\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-utz48u\\Debug\\cmTC_1d8c8.exe" "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\debug\\bin" "cmTC_1d8c8.dir\\Debug\\cmTC_1d8c8.tlog\\cmTC_1d8c8.write.1u.tlog" "cmTC_1d8c8.dir\\Debug\\vcpkg.applocal.log"
-        FinalizeBuildStatus:
-          Deleting file "cmTC_1d8c8.dir\\Debug\\cmTC_1d8c8.tlog\\unsuccessfulbuild".
-          Touching "cmTC_1d8c8.dir\\Debug\\cmTC_1d8c8.tlog\\cmTC_1d8c8.lastbuildstate".
-        Done Building Project "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-utz48u\\cmTC_1d8c8.vcxproj" (default targets).
-        
-        Build succeeded.
-            0 Warning(s)
-            0 Error(s)
-        
-        Time Elapsed 00:00:00.62
+        Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_7ef5b/fast
+        /Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_7ef5b.dir/build.make CMakeFiles/cmTC_7ef5b.dir/build
+        Building C object CMakeFiles/cmTC_7ef5b.dir/CMakeCCompilerABI.c.o
+        /usr/bin/cc   -arch arm64   -v -Wl,-v -MD -MT CMakeFiles/cmTC_7ef5b.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_7ef5b.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_7ef5b.dir/CMakeCCompilerABI.c.o -c /opt/homebrew/share/cmake/Modules/CMakeCCompilerABI.c
+        Apple clang version 17.0.0 (clang-1700.0.13.3)
+        Target: arm64-apple-darwin24.5.0
+        Thread model: posix
+        InstalledDir: /Library/Developer/CommandLineTools/usr/bin
+        clang: warning: -Wl,-v: 'linker' input unused [-Wunused-command-line-argument]
+         "/Library/Developer/CommandLineTools/usr/bin/clang" -cc1 -triple arm64-apple-macosx15.0.0 -Wundef-prefix=TARGET_OS_ -Wdeprecated-objc-isa-usage -Werror=deprecated-objc-isa-usage -Werror=implicit-function-declaration -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -mframe-pointer=non-leaf -fno-strict-return -ffp-contract=on -fno-rounding-math -funwind-tables=1 -fobjc-msgsend-selector-stubs -target-sdk-version=15.4 -fvisibility-inlines-hidden-static-local-var -fdefine-target-os-macros -fno-assume-unique-vtables -fno-modulemap-allow-subdirectory-search -target-cpu apple-m1 -target-feature +zcm -target-feature +zcz -target-feature +v8.5a -target-feature +aes -target-feature +altnzcv -target-feature +ccdp -target-feature +complxnum -target-feature +crc -target-feature +dotprod -target-feature +fp-armv8 -target-feature +fp16fml -target-feature +fptoint -target-feature +fullfp16 -target-feature +jsconv -target-feature +lse -target-feature +neon -target-feature +pauth -target-feature +perfmon -target-feature +predres -target-feature +ras -target-feature +rcpc -target-feature +rdm -target-feature +sb -target-feature +sha2 -target-feature +sha3 -target-feature +specrestrict -target-feature +ssbs -target-abi darwinpcs -debugger-tuning=lldb -fdebug-compilation-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-uogtI6 -target-linker-version 1167.4.1 -v -fcoverage-compilation-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-uogtI6 -resource-dir /Library/Developer/CommandLineTools/usr/lib/clang/17 -dependency-file CMakeFiles/cmTC_7ef5b.dir/CMakeCCompilerABI.c.o.d -skip-unused-modulemap-deps -MT CMakeFiles/cmTC_7ef5b.dir/CMakeCCompilerABI.c.o -sys-header-deps -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -I/usr/local/include -internal-isystem /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/local/include -internal-isystem /Library/Developer/CommandLineTools/usr/lib/clang/17/include -internal-externc-isystem /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include -internal-externc-isystem /Library/Developer/CommandLineTools/usr/include -Wno-reorder-init-list -Wno-implicit-int-float-conversion -Wno-c99-designator -Wno-final-dtor-non-final-class -Wno-extra-semi-stmt -Wno-misleading-indentation -Wno-quoted-include-in-framework-header -Wno-implicit-fallthrough -Wno-enum-enum-conversion -Wno-enum-float-conversion -Wno-elaborated-enum-base -Wno-reserved-identifier -Wno-gnu-folding-constant -ferror-limit 19 -stack-protector 1 -fstack-check -mdarwin-stkchk-strong-link -fblocks -fencode-extended-block-signature -fregister-global-dtors-with-atexit -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fmax-type-align=16 -fcommon -clang-vendor-feature=+disableNonDependentMemberExprInCurrentInstantiation -fno-odr-hash-protocols -clang-vendor-feature=+enableAggressiveVLAFolding -clang-vendor-feature=+revert09abecef7bbf -clang-vendor-feature=+thisNoAlignAttr -clang-vendor-feature=+thisNoNullAttr -clang-vendor-feature=+disableAtImportPrivateFrameworkInImplementationError -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_7ef5b.dir/CMakeCCompilerABI.c.o -x c /opt/homebrew/share/cmake/Modules/CMakeCCompilerABI.c
+        clang -cc1 version 17.0.0 (clang-1700.0.13.3) default target arm64-apple-darwin24.5.0
+        ignoring nonexistent directory "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/local/include"
+        ignoring nonexistent directory "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/SubFrameworks"
+        ignoring nonexistent directory "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Library/Frameworks"
+        #include "..." search starts here:
+        #include <...> search starts here:
+         /usr/local/include
+         /Library/Developer/CommandLineTools/usr/lib/clang/17/include
+         /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include
+         /Library/Developer/CommandLineTools/usr/include
+         /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks (framework directory)
+        End of search list.
+        Linking C executable cmTC_7ef5b
+        /opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_7ef5b.dir/link.txt --verbose=1
+        Apple clang version 17.0.0 (clang-1700.0.13.3)
+        Target: arm64-apple-darwin24.5.0
+        Thread model: posix
+        InstalledDir: /Library/Developer/CommandLineTools/usr/bin
+         "/Library/Developer/CommandLineTools/usr/bin/ld" -demangle -lto_library /Library/Developer/CommandLineTools/usr/lib/libLTO.dylib -dynamic -arch arm64 -platform_version macos 15.0.0 15.4 -syslibroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mllvm -enable-linkonceodr-outlining -o cmTC_7ef5b -L/usr/local/lib -search_paths_first -headerpad_max_install_names -v CMakeFiles/cmTC_7ef5b.dir/CMakeCCompilerABI.c.o -lSystem /Library/Developer/CommandLineTools/usr/lib/clang/17/lib/darwin/libclang_rt.osx.a
+        @(#)PROGRAM:ld PROJECT:ld-1167.4.1
+        BUILD 20:00:10 Mar 12 2025
+        configured to support archs: armv6 armv7 armv7s arm64 arm64e arm64_32 i386 x86_64 x86_64h armv6m armv7k armv7m armv7em
+        will use ld-classic for: armv6 armv7 armv7s i386 armv6m armv7k armv7m armv7em
+        LTO support using: LLVM version 17.0.0 (static support for 29, runtime is 29)
+        TAPI support using: Apple TAPI version 17.0.0 (tapi-1700.0.3.4)
+        Library search paths:
+        	/usr/local/lib
+        	/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib
+        	/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/swift
+        Framework search paths:
+        	/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks
+        /usr/bin/cc  -arch arm64 -Wl,-search_paths_first -Wl,-headerpad_max_install_names  -v -Wl,-v CMakeFiles/cmTC_7ef5b.dir/CMakeCCompilerABI.c.o -o cmTC_7ef5b
         
       exitCode: 0
   -
     kind: "message-v1"
     backtrace:
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:218 (message)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "/opt/homebrew/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:122 (message)"
+      - "/opt/homebrew/share/cmake/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
       - "build/_deps/raylib-src/CMakeLists.txt:2 (project)"
     message: |
-      Parsed C implicit link information:
-        link line regex: [^( *|.*[/\\])(ld[0-9]*(\\.[a-z]+)?|link\\.exe|lld-link(\\.exe)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
-        linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(\\.[a-z]+)?|link\\.exe|lld-link(\\.exe)?))("|,| |$)]
-        linker tool for 'C': C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.41.34120/bin/HostX64/x64/link.exe
-        implicit libs: []
-        implicit objs: []
-        implicit dirs: []
-        implicit fwks: []
+      Effective list of requested architectures (possibly empty)  : ""
+      Effective list of architectures found in the ABI info binary: "arm64"
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/opt/homebrew/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:191 (message)"
+      - "/opt/homebrew/share/cmake/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "build/_deps/raylib-src/CMakeLists.txt:2 (project)"
+    message: |
+      Parsed C implicit include dir info: rv=done
+        found start of include info
+        found start of implicit include info
+          add: [/usr/local/include]
+          add: [/Library/Developer/CommandLineTools/usr/lib/clang/17/include]
+          add: [/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include]
+          add: [/Library/Developer/CommandLineTools/usr/include]
+        end of search list found
+        collapse include dir [/usr/local/include] ==> [/usr/local/include]
+        collapse include dir [/Library/Developer/CommandLineTools/usr/lib/clang/17/include] ==> [/Library/Developer/CommandLineTools/usr/lib/clang/17/include]
+        collapse include dir [/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include] ==> [/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include]
+        collapse include dir [/Library/Developer/CommandLineTools/usr/include] ==> [/Library/Developer/CommandLineTools/usr/include]
+        implicit include dirs: [/usr/local/include;/Library/Developer/CommandLineTools/usr/lib/clang/17/include;/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include;/Library/Developer/CommandLineTools/usr/include]
       
       
   -
     kind: "message-v1"
     backtrace:
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/Internal/CMakeDetermineLinkerId.cmake:40 (message)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:255 (cmake_determine_linker_id)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "/opt/homebrew/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:227 (message)"
+      - "/opt/homebrew/share/cmake/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
       - "build/_deps/raylib-src/CMakeLists.txt:2 (project)"
     message: |
-      Running the C compiler's linker: "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.41.34120/bin/HostX64/x64/link.exe" "-v"
-      Microsoft (R) Incremental Linker Version 14.41.34120.0
-      Copyright (C) Microsoft Corporation.  All rights reserved.
+      Parsed C implicit link information:
+        link line regex: [^( *|.*[/\\])(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)))("|,| |$)]
+        ignore line: [Change Dir: '/Users/aimac/Documents/GitHub/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-uogtI6']
+        ignore line: []
+        ignore line: [Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_7ef5b/fast]
+        ignore line: [/Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_7ef5b.dir/build.make CMakeFiles/cmTC_7ef5b.dir/build]
+        ignore line: [Building C object CMakeFiles/cmTC_7ef5b.dir/CMakeCCompilerABI.c.o]
+        ignore line: [/usr/bin/cc   -arch arm64   -v -Wl -v -MD -MT CMakeFiles/cmTC_7ef5b.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_7ef5b.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_7ef5b.dir/CMakeCCompilerABI.c.o -c /opt/homebrew/share/cmake/Modules/CMakeCCompilerABI.c]
+        ignore line: [Apple clang version 17.0.0 (clang-1700.0.13.3)]
+        ignore line: [Target: arm64-apple-darwin24.5.0]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: /Library/Developer/CommandLineTools/usr/bin]
+        ignore line: [clang: warning: -Wl -v: 'linker' input unused [-Wunused-command-line-argument]]
+        ignore line: [ "/Library/Developer/CommandLineTools/usr/bin/clang" -cc1 -triple arm64-apple-macosx15.0.0 -Wundef-prefix=TARGET_OS_ -Wdeprecated-objc-isa-usage -Werror=deprecated-objc-isa-usage -Werror=implicit-function-declaration -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeCCompilerABI.c -mrelocation-model pic -pic-level 2 -mframe-pointer=non-leaf -fno-strict-return -ffp-contract=on -fno-rounding-math -funwind-tables=1 -fobjc-msgsend-selector-stubs -target-sdk-version=15.4 -fvisibility-inlines-hidden-static-local-var -fdefine-target-os-macros -fno-assume-unique-vtables -fno-modulemap-allow-subdirectory-search -target-cpu apple-m1 -target-feature +zcm -target-feature +zcz -target-feature +v8.5a -target-feature +aes -target-feature +altnzcv -target-feature +ccdp -target-feature +complxnum -target-feature +crc -target-feature +dotprod -target-feature +fp-armv8 -target-feature +fp16fml -target-feature +fptoint -target-feature +fullfp16 -target-feature +jsconv -target-feature +lse -target-feature +neon -target-feature +pauth -target-feature +perfmon -target-feature +predres -target-feature +ras -target-feature +rcpc -target-feature +rdm -target-feature +sb -target-feature +sha2 -target-feature +sha3 -target-feature +specrestrict -target-feature +ssbs -target-abi darwinpcs -debugger-tuning=lldb -fdebug-compilation-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-uogtI6 -target-linker-version 1167.4.1 -v -fcoverage-compilation-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-uogtI6 -resource-dir /Library/Developer/CommandLineTools/usr/lib/clang/17 -dependency-file CMakeFiles/cmTC_7ef5b.dir/CMakeCCompilerABI.c.o.d -skip-unused-modulemap-deps -MT CMakeFiles/cmTC_7ef5b.dir/CMakeCCompilerABI.c.o -sys-header-deps -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -I/usr/local/include -internal-isystem /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/local/include -internal-isystem /Library/Developer/CommandLineTools/usr/lib/clang/17/include -internal-externc-isystem /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include -internal-externc-isystem /Library/Developer/CommandLineTools/usr/include -Wno-reorder-init-list -Wno-implicit-int-float-conversion -Wno-c99-designator -Wno-final-dtor-non-final-class -Wno-extra-semi-stmt -Wno-misleading-indentation -Wno-quoted-include-in-framework-header -Wno-implicit-fallthrough -Wno-enum-enum-conversion -Wno-enum-float-conversion -Wno-elaborated-enum-base -Wno-reserved-identifier -Wno-gnu-folding-constant -ferror-limit 19 -stack-protector 1 -fstack-check -mdarwin-stkchk-strong-link -fblocks -fencode-extended-block-signature -fregister-global-dtors-with-atexit -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -fmax-type-align=16 -fcommon -clang-vendor-feature=+disableNonDependentMemberExprInCurrentInstantiation -fno-odr-hash-protocols -clang-vendor-feature=+enableAggressiveVLAFolding -clang-vendor-feature=+revert09abecef7bbf -clang-vendor-feature=+thisNoAlignAttr -clang-vendor-feature=+thisNoNullAttr -clang-vendor-feature=+disableAtImportPrivateFrameworkInImplementationError -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_7ef5b.dir/CMakeCCompilerABI.c.o -x c /opt/homebrew/share/cmake/Modules/CMakeCCompilerABI.c]
+        ignore line: [clang -cc1 version 17.0.0 (clang-1700.0.13.3) default target arm64-apple-darwin24.5.0]
+        ignore line: [ignoring nonexistent directory "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/local/include"]
+        ignore line: [ignoring nonexistent directory "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/SubFrameworks"]
+        ignore line: [ignoring nonexistent directory "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/Library/Frameworks"]
+        ignore line: [#include "..." search starts here:]
+        ignore line: [#include <...> search starts here:]
+        ignore line: [ /usr/local/include]
+        ignore line: [ /Library/Developer/CommandLineTools/usr/lib/clang/17/include]
+        ignore line: [ /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include]
+        ignore line: [ /Library/Developer/CommandLineTools/usr/include]
+        ignore line: [ /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks (framework directory)]
+        ignore line: [End of search list.]
+        ignore line: [Linking C executable cmTC_7ef5b]
+        ignore line: [/opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_7ef5b.dir/link.txt --verbose=1]
+        ignore line: [Apple clang version 17.0.0 (clang-1700.0.13.3)]
+        ignore line: [Target: arm64-apple-darwin24.5.0]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: /Library/Developer/CommandLineTools/usr/bin]
+        link line: [ "/Library/Developer/CommandLineTools/usr/bin/ld" -demangle -lto_library /Library/Developer/CommandLineTools/usr/lib/libLTO.dylib -dynamic -arch arm64 -platform_version macos 15.0.0 15.4 -syslibroot /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk -mllvm -enable-linkonceodr-outlining -o cmTC_7ef5b -L/usr/local/lib -search_paths_first -headerpad_max_install_names -v CMakeFiles/cmTC_7ef5b.dir/CMakeCCompilerABI.c.o -lSystem /Library/Developer/CommandLineTools/usr/lib/clang/17/lib/darwin/libclang_rt.osx.a]
+          arg [/Library/Developer/CommandLineTools/usr/bin/ld] ==> ignore
+          arg [-demangle] ==> ignore
+          arg [-lto_library] ==> ignore, skip following value
+          arg [/Library/Developer/CommandLineTools/usr/lib/libLTO.dylib] ==> skip value of -lto_library
+          arg [-dynamic] ==> ignore
+          arg [-arch] ==> ignore
+          arg [arm64] ==> ignore
+          arg [-platform_version] ==> ignore
+          arg [macos] ==> ignore
+          arg [15.0.0] ==> ignore
+          arg [15.4] ==> ignore
+          arg [-syslibroot] ==> ignore
+          arg [/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk] ==> ignore
+          arg [-mllvm] ==> ignore
+          arg [-enable-linkonceodr-outlining] ==> ignore
+          arg [-o] ==> ignore
+          arg [cmTC_7ef5b] ==> ignore
+          arg [-L/usr/local/lib] ==> dir [/usr/local/lib]
+          arg [-search_paths_first] ==> ignore
+          arg [-headerpad_max_install_names] ==> ignore
+          arg [-v] ==> ignore
+          arg [CMakeFiles/cmTC_7ef5b.dir/CMakeCCompilerABI.c.o] ==> ignore
+          arg [-lSystem] ==> lib [System]
+          arg [/Library/Developer/CommandLineTools/usr/lib/clang/17/lib/darwin/libclang_rt.osx.a] ==> lib [/Library/Developer/CommandLineTools/usr/lib/clang/17/lib/darwin/libclang_rt.osx.a]
+        linker tool for 'C': /Library/Developer/CommandLineTools/usr/bin/ld
+        Library search paths: [;/usr/local/lib;/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib;/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/swift]
+        Framework search paths: [;/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks]
+        remove lib [System]
+        remove lib [/Library/Developer/CommandLineTools/usr/lib/clang/17/lib/darwin/libclang_rt.osx.a]
+        collapse library dir [/usr/local/lib] ==> [/usr/local/lib]
+        collapse library dir [/usr/local/lib] ==> [/usr/local/lib]
+        collapse library dir [/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib] ==> [/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib]
+        collapse library dir [/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/swift] ==> [/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/swift]
+        collapse framework dir [/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks] ==> [/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks]
+        implicit libs: []
+        implicit objs: []
+        implicit dirs: [/usr/local/lib;/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib;/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib/swift]
+        implicit fwks: [/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/System/Library/Frameworks]
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/opt/homebrew/share/cmake/Modules/Internal/CMakeDetermineLinkerId.cmake:36 (message)"
+      - "/opt/homebrew/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:264 (cmake_determine_linker_id)"
+      - "/opt/homebrew/share/cmake/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "build/_deps/raylib-src/CMakeLists.txt:2 (project)"
+    message: |
+      Running the C compiler's linker: "/Library/Developer/CommandLineTools/usr/bin/ld" "-v"
+      @(#)PROGRAM:ld PROJECT:ld-1167.4.1
+      BUILD 20:00:10 Mar 12 2025
+      configured to support archs: armv6 armv7 armv7s arm64 arm64e arm64_32 i386 x86_64 x86_64h armv6m armv7k armv7m armv7em
+      will use ld-classic for: armv6 armv7 armv7s i386 armv6m armv7k armv7m armv7em
+      LTO support using: LLVM version 17.0.0 (static support for 29, runtime is 29)
+      TAPI support using: Apple TAPI version 17.0.0 (tapi-1700.0.3.4)
   -
     kind: "try_compile-v1"
     backtrace:
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/Internal/CheckSourceCompiles.cmake:108 (try_compile)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CheckCCompilerFlag.cmake:56 (cmake_check_compiler_flag)"
+      - "/opt/homebrew/share/cmake/Modules/Internal/CheckSourceCompiles.cmake:104 (try_compile)"
+      - "/opt/homebrew/share/cmake/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
+      - "/opt/homebrew/share/cmake/Modules/CheckCCompilerFlag.cmake:56 (cmake_check_compiler_flag)"
       - "build/_deps/raylib-src/cmake/AddIfFlagCompiles.cmake:3 (CHECK_C_COMPILER_FLAG)"
       - "build/_deps/raylib-src/cmake/CompilerFlags.cmake:5 (add_if_flag_compiles)"
       - "build/_deps/raylib-src/CMakeLists.txt:34 (include)"
     checks:
       - "Performing Test COMPILER_HAS_THOSE_TOGGLES"
     directories:
-      source: "C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-p0ex8p"
-      binary: "C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-p0ex8p"
+      source: "/Users/aimac/Documents/GitHub/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-b5z3ES"
+      binary: "/Users/aimac/Documents/GitHub/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-b5z3ES"
     cmakeVariables:
-      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
-      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
-      CMAKE_MODULE_PATH: "C:/Users/aeist/source/repos/FloppyTurd/build/_deps/raylib-src/cmake"
+      CMAKE_C_FLAGS: ""
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/Users/aimac/Documents/GitHub/FloppyTurd/build/_deps/raylib-src/cmake"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: ""
+      CMAKE_OSX_SYSROOT: ""
     buildResult:
       variable: "COMPILER_HAS_THOSE_TOGGLES"
       cached: true
       stdout: |
-        Change Dir: 'C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-p0ex8p'
+        Change Dir: '/Users/aimac/Documents/GitHub/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-b5z3ES'
         
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_71fa8.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
-        MSBuild version 17.11.9+a69bbaaf5 for .NET Framework
-        Build started 7/1/2025 9:18:08 PM.
+        Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_585b9/fast
+        /Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_585b9.dir/build.make CMakeFiles/cmTC_585b9.dir/build
+        Building C object CMakeFiles/cmTC_585b9.dir/src.c.o
+        /usr/bin/cc -DCOMPILER_HAS_THOSE_TOGGLES  -arch arm64   -Werror=pointer-arith -MD -MT CMakeFiles/cmTC_585b9.dir/src.c.o -MF CMakeFiles/cmTC_585b9.dir/src.c.o.d -o CMakeFiles/cmTC_585b9.dir/src.c.o -c /Users/aimac/Documents/GitHub/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-b5z3ES/src.c
+        Linking C executable cmTC_585b9
+        /opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_585b9.dir/link.txt --verbose=1
+        /usr/bin/cc  -arch arm64 -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/cmTC_585b9.dir/src.c.o -o cmTC_585b9
         
-        Project "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-p0ex8p\\cmTC_71fa8.vcxproj" on node 1 (default targets).
-        PrepareForBuild:
-          Creating directory "cmTC_71fa8.dir\\Debug\\".
-          Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-          Creating directory "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-p0ex8p\\Debug\\".
-          Creating directory "cmTC_71fa8.dir\\Debug\\cmTC_71fa8.tlog\\".
-        InitializeBuildStatus:
-          Creating "cmTC_71fa8.dir\\Debug\\cmTC_71fa8.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-          Touching "cmTC_71fa8.dir\\Debug\\cmTC_71fa8.tlog\\unsuccessfulbuild".
-        VcpkgTripletSelection:
-          Using triplet "x64-windows" from "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\"
-          Using normalized configuration "Debug"
-        ClCompile:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\CL.exe /c /I"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D COMPILER_HAS_THOSE_TOGGLES /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_71fa8.dir\\Debug\\\\" /Fd"cmTC_71fa8.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TC /errorReport:queue  -Werror=pointer-arith "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-p0ex8p\\src.c"
-          Microsoft (R) C/C++ Optimizing Compiler Version 19.41.34120 for x64
-          Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /I"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D COMPILER_HAS_THOSE_TOGGLES /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_71fa8.dir\\Debug\\\\" /Fd"cmTC_71fa8.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TC /errorReport:queue  -Werror=pointer-arith "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-p0ex8p\\src.c"
-        cl : command line  error D8021: invalid numeric argument '/Werror=pointer-arith' [C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-p0ex8p\\cmTC_71fa8.vcxproj]
-        Done Building Project "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-p0ex8p\\cmTC_71fa8.vcxproj" (default targets) -- FAILED.
-        
-        Build FAILED.
-        
-        "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-p0ex8p\\cmTC_71fa8.vcxproj" (default target) (1) ->
-        (ClCompile target) -> 
-          cl : command line  error D8021: invalid numeric argument '/Werror=pointer-arith' [C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-p0ex8p\\cmTC_71fa8.vcxproj]
-        
-            0 Warning(s)
-            1 Error(s)
-        
-        Time Elapsed 00:00:00.19
-        
-      exitCode: 1
+      exitCode: 0
   -
     kind: "try_compile-v1"
     backtrace:
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/Internal/CheckSourceCompiles.cmake:108 (try_compile)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CheckCSourceCompiles.cmake:58 (cmake_check_source_compiles)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/FindThreads.cmake:97 (CHECK_C_SOURCE_COMPILES)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/FindThreads.cmake:163 (_threads_check_libc)"
+      - "/opt/homebrew/share/cmake/Modules/Internal/CheckSourceCompiles.cmake:104 (try_compile)"
+      - "/opt/homebrew/share/cmake/Modules/CheckCSourceCompiles.cmake:58 (cmake_check_source_compiles)"
+      - "/opt/homebrew/share/cmake/Modules/FindThreads.cmake:97 (check_c_source_compiles)"
+      - "/opt/homebrew/share/cmake/Modules/FindThreads.cmake:163 (_threads_check_libc)"
       - "build/_deps/raylib-src/src/external/glfw/CMakeLists.txt:60 (find_package)"
     checks:
       - "Performing Test CMAKE_HAVE_LIBC_PTHREAD"
     directories:
-      source: "C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-9at7j2"
-      binary: "C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-9at7j2"
+      source: "/Users/aimac/Documents/GitHub/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-SB7Dak"
+      binary: "/Users/aimac/Documents/GitHub/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-SB7Dak"
     cmakeVariables:
-      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
-      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
-      CMAKE_MODULE_PATH: "C:/Users/aeist/source/repos/FloppyTurd/build/_deps/raylib-src/cmake;C:/Users/aeist/source/repos/FloppyTurd/build/_deps/raylib-src/src/external/glfw/CMake/modules"
+      CMAKE_C_FLAGS: "-fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith "
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/Users/aimac/Documents/GitHub/FloppyTurd/build/_deps/raylib-src/cmake;/Users/aimac/Documents/GitHub/FloppyTurd/build/_deps/raylib-src/src/external/glfw/CMake/modules"
+      CMAKE_OSX_ARCHITECTURES: ""
+      CMAKE_OSX_DEPLOYMENT_TARGET: ""
+      CMAKE_OSX_SYSROOT: ""
     buildResult:
       variable: "CMAKE_HAVE_LIBC_PTHREAD"
       cached: true
       stdout: |
-        Change Dir: 'C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-9at7j2'
+        Change Dir: '/Users/aimac/Documents/GitHub/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-SB7Dak'
         
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_a6e76.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
-        MSBuild version 17.11.9+a69bbaaf5 for .NET Framework
-        Build started 7/1/2025 9:18:08 PM.
-        
-        Project "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-9at7j2\\cmTC_a6e76.vcxproj" on node 1 (default targets).
-        PrepareForBuild:
-          Creating directory "cmTC_a6e76.dir\\Debug\\".
-          Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-          Creating directory "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-9at7j2\\Debug\\".
-          Creating directory "cmTC_a6e76.dir\\Debug\\cmTC_a6e76.tlog\\".
-        InitializeBuildStatus:
-          Creating "cmTC_a6e76.dir\\Debug\\cmTC_a6e76.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-          Touching "cmTC_a6e76.dir\\Debug\\cmTC_a6e76.tlog\\unsuccessfulbuild".
-        VcpkgTripletSelection:
-          Using triplet "x64-windows" from "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\"
-          Using normalized configuration "Debug"
-        ClCompile:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\CL.exe /c /I"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CMAKE_HAVE_LIBC_PTHREAD /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_a6e76.dir\\Debug\\\\" /Fd"cmTC_a6e76.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TC /errorReport:queue "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-9at7j2\\src.c"
-          Microsoft (R) C/C++ Optimizing Compiler Version 19.41.34120 for x64
-          Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /I"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CMAKE_HAVE_LIBC_PTHREAD /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_a6e76.dir\\Debug\\\\" /Fd"cmTC_a6e76.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TC /errorReport:queue "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-9at7j2\\src.c"
-          src.c
-        C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-9at7j2\\src.c(1,10): error C1083: Cannot open include file: 'pthread.h': No such file or directory [C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-9at7j2\\cmTC_a6e76.vcxproj]
-        Done Building Project "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-9at7j2\\cmTC_a6e76.vcxproj" (default targets) -- FAILED.
-        
-        Build FAILED.
-        
-        "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-9at7j2\\cmTC_a6e76.vcxproj" (default target) (1) ->
-        (ClCompile target) -> 
-          C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-9at7j2\\src.c(1,10): error C1083: Cannot open include file: 'pthread.h': No such file or directory [C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-9at7j2\\cmTC_a6e76.vcxproj]
-        
-            0 Warning(s)
-            1 Error(s)
-        
-        Time Elapsed 00:00:00.20
-        
-      exitCode: 1
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CheckLibraryExists.cmake:78 (try_compile)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/FindThreads.cmake:112 (CHECK_LIBRARY_EXISTS)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/FindThreads.cmake:175 (_threads_check_lib)"
-      - "build/_deps/raylib-src/src/external/glfw/CMakeLists.txt:60 (find_package)"
-    checks:
-      - "Looking for pthread_create in pthreads"
-    directories:
-      source: "C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-v1oqtf"
-      binary: "C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-v1oqtf"
-    cmakeVariables:
-      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
-      CMAKE_C_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
-      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
-      CMAKE_MODULE_PATH: "C:/Users/aeist/source/repos/FloppyTurd/build/_deps/raylib-src/cmake;C:/Users/aeist/source/repos/FloppyTurd/build/_deps/raylib-src/src/external/glfw/CMake/modules"
-    buildResult:
-      variable: "CMAKE_HAVE_PTHREADS_CREATE"
-      cached: true
-      stdout: |
-        Change Dir: 'C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-v1oqtf'
-        
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_c15f3.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
-        MSBuild version 17.11.9+a69bbaaf5 for .NET Framework
-        Build started 7/1/2025 9:18:09 PM.
-        
-        Project "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-v1oqtf\\cmTC_c15f3.vcxproj" on node 1 (default targets).
-        PrepareForBuild:
-          Creating directory "cmTC_c15f3.dir\\Debug\\".
-          Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-          Creating directory "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-v1oqtf\\Debug\\".
-          Creating directory "cmTC_c15f3.dir\\Debug\\cmTC_c15f3.tlog\\".
-        InitializeBuildStatus:
-          Creating "cmTC_c15f3.dir\\Debug\\cmTC_c15f3.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-          Touching "cmTC_c15f3.dir\\Debug\\cmTC_c15f3.tlog\\unsuccessfulbuild".
-        VcpkgTripletSelection:
-          Using triplet "x64-windows" from "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\"
-          Using normalized configuration "Debug"
-        ClCompile:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\CL.exe /c /I"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_c15f3.dir\\Debug\\\\" /Fd"cmTC_c15f3.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TC /errorReport:queue "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-v1oqtf\\CheckFunctionExists.c"
-          Microsoft (R) C/C++ Optimizing Compiler Version 19.41.34120 for x64
-          Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /I"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_c15f3.dir\\Debug\\\\" /Fd"cmTC_c15f3.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TC /errorReport:queue "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-v1oqtf\\CheckFunctionExists.c"
-          CheckFunctionExists.c
-        Link:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-v1oqtf\\Debug\\cmTC_c15f3.exe" /INCREMENTAL /ILK:"cmTC_c15f3.dir\\Debug\\cmTC_c15f3.ilk" /NOLOGO /LIBPATH:"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\debug\\lib" /LIBPATH:"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\debug\\lib\\manual-link" pthreads.lib kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\debug\\lib\\*.lib" /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-v1oqtf/Debug/cmTC_c15f3.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-v1oqtf/Debug/cmTC_c15f3.lib" /MACHINE:X64  /machine:x64 cmTC_c15f3.dir\\Debug\\CheckFunctionExists.obj
-        LINK : fatal error LNK1104: cannot open file 'pthreads.lib' [C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-v1oqtf\\cmTC_c15f3.vcxproj]
-        Done Building Project "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-v1oqtf\\cmTC_c15f3.vcxproj" (default targets) -- FAILED.
-        
-        Build FAILED.
-        
-        "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-v1oqtf\\cmTC_c15f3.vcxproj" (default target) (1) ->
-        (Link target) -> 
-          LINK : fatal error LNK1104: cannot open file 'pthreads.lib' [C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-v1oqtf\\cmTC_c15f3.vcxproj]
-        
-            0 Warning(s)
-            1 Error(s)
-        
-        Time Elapsed 00:00:00.26
-        
-      exitCode: 1
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CheckLibraryExists.cmake:78 (try_compile)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/FindThreads.cmake:112 (CHECK_LIBRARY_EXISTS)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/FindThreads.cmake:176 (_threads_check_lib)"
-      - "build/_deps/raylib-src/src/external/glfw/CMakeLists.txt:60 (find_package)"
-    checks:
-      - "Looking for pthread_create in pthread"
-    directories:
-      source: "C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-mmenlf"
-      binary: "C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-mmenlf"
-    cmakeVariables:
-      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
-      CMAKE_C_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
-      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
-      CMAKE_MODULE_PATH: "C:/Users/aeist/source/repos/FloppyTurd/build/_deps/raylib-src/cmake;C:/Users/aeist/source/repos/FloppyTurd/build/_deps/raylib-src/src/external/glfw/CMake/modules"
-    buildResult:
-      variable: "CMAKE_HAVE_PTHREAD_CREATE"
-      cached: true
-      stdout: |
-        Change Dir: 'C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-mmenlf'
-        
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_c9d6c.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
-        MSBuild version 17.11.9+a69bbaaf5 for .NET Framework
-        Build started 7/1/2025 9:18:09 PM.
-        
-        Project "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-mmenlf\\cmTC_c9d6c.vcxproj" on node 1 (default targets).
-        PrepareForBuild:
-          Creating directory "cmTC_c9d6c.dir\\Debug\\".
-          Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-          Creating directory "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-mmenlf\\Debug\\".
-          Creating directory "cmTC_c9d6c.dir\\Debug\\cmTC_c9d6c.tlog\\".
-        InitializeBuildStatus:
-          Creating "cmTC_c9d6c.dir\\Debug\\cmTC_c9d6c.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-          Touching "cmTC_c9d6c.dir\\Debug\\cmTC_c9d6c.tlog\\unsuccessfulbuild".
-        VcpkgTripletSelection:
-          Using triplet "x64-windows" from "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\"
-          Using normalized configuration "Debug"
-        ClCompile:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\CL.exe /c /I"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_c9d6c.dir\\Debug\\\\" /Fd"cmTC_c9d6c.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TC /errorReport:queue "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-mmenlf\\CheckFunctionExists.c"
-          Microsoft (R) C/C++ Optimizing Compiler Version 19.41.34120 for x64
-          Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /I"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_c9d6c.dir\\Debug\\\\" /Fd"cmTC_c9d6c.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TC /errorReport:queue "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-mmenlf\\CheckFunctionExists.c"
-          CheckFunctionExists.c
-        Link:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-mmenlf\\Debug\\cmTC_c9d6c.exe" /INCREMENTAL /ILK:"cmTC_c9d6c.dir\\Debug\\cmTC_c9d6c.ilk" /NOLOGO /LIBPATH:"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\debug\\lib" /LIBPATH:"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\debug\\lib\\manual-link" pthread.lib kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\debug\\lib\\*.lib" /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-mmenlf/Debug/cmTC_c9d6c.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-mmenlf/Debug/cmTC_c9d6c.lib" /MACHINE:X64  /machine:x64 cmTC_c9d6c.dir\\Debug\\CheckFunctionExists.obj
-        LINK : fatal error LNK1104: cannot open file 'pthread.lib' [C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-mmenlf\\cmTC_c9d6c.vcxproj]
-        Done Building Project "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-mmenlf\\cmTC_c9d6c.vcxproj" (default targets) -- FAILED.
-        
-        Build FAILED.
-        
-        "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-mmenlf\\cmTC_c9d6c.vcxproj" (default target) (1) ->
-        (Link target) -> 
-          LINK : fatal error LNK1104: cannot open file 'pthread.lib' [C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-mmenlf\\cmTC_c9d6c.vcxproj]
-        
-            0 Warning(s)
-            1 Error(s)
-        
-        Time Elapsed 00:00:00.26
-        
-      exitCode: 1
-...
-
----
-events:
-  -
-    kind: "message-v1"
-    backtrace:
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineSystem.cmake:205 (message)"
-      - "CMakeLists.txt:2 (project)"
-    message: |
-      The system is: Windows - 10.0.26100 - AMD64
-  -
-    kind: "message-v1"
-    backtrace:
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
-      - "CMakeLists.txt:2 (project)"
-    message: |
-      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
-      Compiler:  
-      Build flags: 
-      Id flags:  
-      
-      The output was:
-      0
-      MSBuild version 17.11.9+a69bbaaf5 for .NET Framework
-      Build started 7/2/2025 12:29:18 AM.
-      
-      Project "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\3.31.6\\CompilerIdCXX\\CompilerIdCXX.vcxproj" on node 1 (default targets).
-      PrepareForBuild:
-        Creating directory "Debug\\".
-        Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-        Creating directory "Debug\\CompilerIdCXX.tlog\\".
-      InitializeBuildStatus:
-        Creating "Debug\\CompilerIdCXX.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-        Touching "Debug\\CompilerIdCXX.tlog\\unsuccessfulbuild".
-      VcpkgTripletSelection:
-        Using triplet "x64-windows" from "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\"
-        Using normalized configuration "Release"
-      ClCompile:
-        C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\CL.exe /c /I"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\include" /nologo /W0 /WX- /diagnostics:column /Od /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"Debug\\\\" /Fd"Debug\\vc143.pdb" /external:W0 /Gd /TP /FC /errorReport:queue CMakeCXXCompilerId.cpp
-        CMakeCXXCompilerId.cpp
-      Link:
-        C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:".\\CompilerIdCXX.exe" /INCREMENTAL:NO /NOLOGO /LIBPATH:"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\lib" /LIBPATH:"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\lib\\manual-link" kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\lib\\*.lib" /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /PDB:".\\CompilerIdCXX.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:".\\CompilerIdCXX.lib" /MACHINE:X64 Debug\\CMakeCXXCompilerId.obj
-        CompilerIdCXX.vcxproj -> C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\3.31.6\\CompilerIdCXX\\CompilerIdCXX.exe
-      AppLocalFromInstalled:
-        pwsh.exe -ExecutionPolicy Bypass -noprofile -File "C:\\Users\\aeist\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\3.31.6\\CompilerIdCXX\\CompilerIdCXX.exe" "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\bin" "Debug\\CompilerIdCXX.tlog\\CompilerIdCXX.write.1u.tlog" "Debug\\vcpkg.applocal.log"
-        'pwsh.exe' is not recognized as an internal or external command,
-        operable program or batch file.
-        The command "pwsh.exe -ExecutionPolicy Bypass -noprofile -File "C:\\Users\\aeist\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\3.31.6\\CompilerIdCXX\\CompilerIdCXX.exe" "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\bin" "Debug\\CompilerIdCXX.tlog\\CompilerIdCXX.write.1u.tlog" "Debug\\vcpkg.applocal.log"" exited with code 9009.
-        "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -ExecutionPolicy Bypass -noprofile -File "C:\\Users\\aeist\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\3.31.6\\CompilerIdCXX\\CompilerIdCXX.exe" "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\bin" "Debug\\CompilerIdCXX.tlog\\CompilerIdCXX.write.1u.tlog" "Debug\\vcpkg.applocal.log"
-      PostBuildEvent:
-        for %%i in (cl.exe) do @echo CMAKE_CXX_COMPILER=%%~$PATH:i
-        :VCEnd
-        CMAKE_CXX_COMPILER=C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\bin\\Hostx64\\x64\\cl.exe
-      FinalizeBuildStatus:
-        Deleting file "Debug\\CompilerIdCXX.tlog\\unsuccessfulbuild".
-        Touching "Debug\\CompilerIdCXX.tlog\\CompilerIdCXX.lastbuildstate".
-      Done Building Project "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\3.31.6\\CompilerIdCXX\\CompilerIdCXX.vcxproj" (default targets).
-      
-      Build succeeded.
-          0 Warning(s)
-          0 Error(s)
-      
-      Time Elapsed 00:00:00.64
-      
-      
-      Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX.exe"
-      
-      Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX.vcxproj"
-      
-      The CXX compiler identification is MSVC, found in:
-        C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/3.31.6/CompilerIdCXX/CompilerIdCXX.exe
-      
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:74 (try_compile)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
-      - "CMakeLists.txt:2 (project)"
-    checks:
-      - "Detecting CXX compiler ABI info"
-    directories:
-      source: "C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-ubj08x"
-      binary: "C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-ubj08x"
-    cmakeVariables:
-      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /EHsc"
-      CMAKE_CXX_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
-      CMAKE_CXX_SCAN_FOR_MODULES: "OFF"
-      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
-    buildResult:
-      variable: "CMAKE_CXX_ABI_COMPILED"
-      cached: true
-      stdout: |
-        Change Dir: 'C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-ubj08x'
-        
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_e37b6.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
-        MSBuild version 17.11.9+a69bbaaf5 for .NET Framework
-        Build started 7/2/2025 12:29:19 AM.
-        
-        Project "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-ubj08x\\cmTC_e37b6.vcxproj" on node 1 (default targets).
-        PrepareForBuild:
-          Creating directory "cmTC_e37b6.dir\\Debug\\".
-          Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-          Creating directory "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-ubj08x\\Debug\\".
-          Creating directory "cmTC_e37b6.dir\\Debug\\cmTC_e37b6.tlog\\".
-        InitializeBuildStatus:
-          Creating "cmTC_e37b6.dir\\Debug\\cmTC_e37b6.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-          Touching "cmTC_e37b6.dir\\Debug\\cmTC_e37b6.tlog\\unsuccessfulbuild".
-        VcpkgTripletSelection:
-          Using triplet "x64-windows" from "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\"
-          Using normalized configuration "Debug"
-        ClCompile:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\CL.exe /c /I"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_e37b6.dir\\Debug\\\\" /Fd"cmTC_e37b6.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.31\\Modules\\CMakeCXXCompilerABI.cpp"
-          Microsoft (R) C/C++ Optimizing Compiler Version 19.41.34120 for x64
-          Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /I"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_e37b6.dir\\Debug\\\\" /Fd"cmTC_e37b6.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.31\\Modules\\CMakeCXXCompilerABI.cpp"
-          CMakeCXXCompilerABI.cpp
-        Link:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-ubj08x\\Debug\\cmTC_e37b6.exe" /INCREMENTAL /ILK:"cmTC_e37b6.dir\\Debug\\cmTC_e37b6.ilk" /NOLOGO /LIBPATH:"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\debug\\lib" /LIBPATH:"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\debug\\lib\\manual-link" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\debug\\lib\\*.lib" /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-ubj08x/Debug/cmTC_e37b6.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-ubj08x/Debug/cmTC_e37b6.lib" /MACHINE:X64  /machine:x64 cmTC_e37b6.dir\\Debug\\CMakeCXXCompilerABI.obj
-          cmTC_e37b6.vcxproj -> C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-ubj08x\\Debug\\cmTC_e37b6.exe
-        AppLocalFromInstalled:
-          pwsh.exe -ExecutionPolicy Bypass -noprofile -File "C:\\Users\\aeist\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-ubj08x\\Debug\\cmTC_e37b6.exe" "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\debug\\bin" "cmTC_e37b6.dir\\Debug\\cmTC_e37b6.tlog\\cmTC_e37b6.write.1u.tlog" "cmTC_e37b6.dir\\Debug\\vcpkg.applocal.log"
-          'pwsh.exe' is not recognized as an internal or external command,
-          operable program or batch file.
-          The command "pwsh.exe -ExecutionPolicy Bypass -noprofile -File "C:\\Users\\aeist\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-ubj08x\\Debug\\cmTC_e37b6.exe" "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\debug\\bin" "cmTC_e37b6.dir\\Debug\\cmTC_e37b6.tlog\\cmTC_e37b6.write.1u.tlog" "cmTC_e37b6.dir\\Debug\\vcpkg.applocal.log"" exited with code 9009.
-          "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -ExecutionPolicy Bypass -noprofile -File "C:\\Users\\aeist\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-ubj08x\\Debug\\cmTC_e37b6.exe" "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\debug\\bin" "cmTC_e37b6.dir\\Debug\\cmTC_e37b6.tlog\\cmTC_e37b6.write.1u.tlog" "cmTC_e37b6.dir\\Debug\\vcpkg.applocal.log"
-        FinalizeBuildStatus:
-          Deleting file "cmTC_e37b6.dir\\Debug\\cmTC_e37b6.tlog\\unsuccessfulbuild".
-          Touching "cmTC_e37b6.dir\\Debug\\cmTC_e37b6.tlog\\cmTC_e37b6.lastbuildstate".
-        Done Building Project "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-ubj08x\\cmTC_e37b6.vcxproj" (default targets).
-        
-        Build succeeded.
-            0 Warning(s)
-            0 Error(s)
-        
-        Time Elapsed 00:00:00.64
+        Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_b8809/fast
+        /Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_b8809.dir/build.make CMakeFiles/cmTC_b8809.dir/build
+        Building C object CMakeFiles/cmTC_b8809.dir/src.c.o
+        /usr/bin/cc -DCMAKE_HAVE_LIBC_PTHREAD  -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith   -arch arm64 -MD -MT CMakeFiles/cmTC_b8809.dir/src.c.o -MF CMakeFiles/cmTC_b8809.dir/src.c.o.d -o CMakeFiles/cmTC_b8809.dir/src.c.o -c /Users/aimac/Documents/GitHub/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-SB7Dak/src.c
+        Linking C executable cmTC_b8809
+        /opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_b8809.dir/link.txt --verbose=1
+        /usr/bin/cc -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith   -arch arm64 -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/cmTC_b8809.dir/src.c.o -o cmTC_b8809
         
       exitCode: 0
-  -
-    kind: "message-v1"
-    backtrace:
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:218 (message)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
-      - "CMakeLists.txt:2 (project)"
-    message: |
-      Parsed CXX implicit link information:
-        link line regex: [^( *|.*[/\\])(ld[0-9]*(\\.[a-z]+)?|link\\.exe|lld-link(\\.exe)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
-        linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(\\.[a-z]+)?|link\\.exe|lld-link(\\.exe)?))("|,| |$)]
-        linker tool for 'CXX': C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.41.34120/bin/HostX64/x64/link.exe
-        implicit libs: []
-        implicit objs: []
-        implicit dirs: []
-        implicit fwks: []
-      
-      
-  -
-    kind: "message-v1"
-    backtrace:
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/Internal/CMakeDetermineLinkerId.cmake:40 (message)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:255 (cmake_determine_linker_id)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
-      - "CMakeLists.txt:2 (project)"
-    message: |
-      Running the CXX compiler's linker: "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.41.34120/bin/HostX64/x64/link.exe" "-v"
-      Microsoft (R) Incremental Linker Version 14.41.34120.0
-      Copyright (C) Microsoft Corporation.  All rights reserved.
-  -
-    kind: "message-v1"
-    backtrace:
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
-      - "build/_deps/raylib-src/CMakeLists.txt:2 (project)"
-    message: |
-      Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
-      Compiler:  
-      Build flags: 
-      Id flags:  
-      
-      The output was:
-      0
-      MSBuild version 17.11.9+a69bbaaf5 for .NET Framework
-      Build started 7/2/2025 12:29:20 AM.
-      
-      Project "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\3.31.6\\CompilerIdC\\CompilerIdC.vcxproj" on node 1 (default targets).
-      PrepareForBuild:
-        Creating directory "Debug\\".
-        Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-        Creating directory "Debug\\CompilerIdC.tlog\\".
-      InitializeBuildStatus:
-        Creating "Debug\\CompilerIdC.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-        Touching "Debug\\CompilerIdC.tlog\\unsuccessfulbuild".
-      VcpkgTripletSelection:
-        Using triplet "x64-windows" from "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\"
-        Using normalized configuration "Release"
-      ClCompile:
-        C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\CL.exe /c /I"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\include" /nologo /W0 /WX- /diagnostics:column /Od /D _MBCS /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"Debug\\\\" /Fd"Debug\\vc143.pdb" /external:W0 /Gd /TC /FC /errorReport:queue CMakeCCompilerId.c
-        CMakeCCompilerId.c
-      Link:
-        C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:".\\CompilerIdC.exe" /INCREMENTAL:NO /NOLOGO /LIBPATH:"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\lib" /LIBPATH:"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\lib\\manual-link" kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\lib\\*.lib" /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /PDB:".\\CompilerIdC.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:".\\CompilerIdC.lib" /MACHINE:X64 Debug\\CMakeCCompilerId.obj
-        CompilerIdC.vcxproj -> C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\3.31.6\\CompilerIdC\\CompilerIdC.exe
-      AppLocalFromInstalled:
-        pwsh.exe -ExecutionPolicy Bypass -noprofile -File "C:\\Users\\aeist\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\3.31.6\\CompilerIdC\\CompilerIdC.exe" "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\bin" "Debug\\CompilerIdC.tlog\\CompilerIdC.write.1u.tlog" "Debug\\vcpkg.applocal.log"
-        'pwsh.exe' is not recognized as an internal or external command,
-        operable program or batch file.
-        The command "pwsh.exe -ExecutionPolicy Bypass -noprofile -File "C:\\Users\\aeist\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\3.31.6\\CompilerIdC\\CompilerIdC.exe" "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\bin" "Debug\\CompilerIdC.tlog\\CompilerIdC.write.1u.tlog" "Debug\\vcpkg.applocal.log"" exited with code 9009.
-        "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -ExecutionPolicy Bypass -noprofile -File "C:\\Users\\aeist\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\3.31.6\\CompilerIdC\\CompilerIdC.exe" "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\bin" "Debug\\CompilerIdC.tlog\\CompilerIdC.write.1u.tlog" "Debug\\vcpkg.applocal.log"
-      PostBuildEvent:
-        for %%i in (cl.exe) do @echo CMAKE_C_COMPILER=%%~$PATH:i
-        :VCEnd
-        CMAKE_C_COMPILER=C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\bin\\Hostx64\\x64\\cl.exe
-      FinalizeBuildStatus:
-        Deleting file "Debug\\CompilerIdC.tlog\\unsuccessfulbuild".
-        Touching "Debug\\CompilerIdC.tlog\\CompilerIdC.lastbuildstate".
-      Done Building Project "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\3.31.6\\CompilerIdC\\CompilerIdC.vcxproj" (default targets).
-      
-      Build succeeded.
-          0 Warning(s)
-          0 Error(s)
-      
-      Time Elapsed 00:00:00.60
-      
-      
-      Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CompilerIdC.exe"
-      
-      Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CompilerIdC.vcxproj"
-      
-      The C compiler identification is MSVC, found in:
-        C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/3.31.6/CompilerIdC/CompilerIdC.exe
-      
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:74 (try_compile)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
-      - "build/_deps/raylib-src/CMakeLists.txt:2 (project)"
-    checks:
-      - "Detecting C compiler ABI info"
-    directories:
-      source: "C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-r43y68"
-      binary: "C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-r43y68"
-    cmakeVariables:
-      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
-      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
-    buildResult:
-      variable: "CMAKE_C_ABI_COMPILED"
-      cached: true
-      stdout: |
-        Change Dir: 'C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-r43y68'
-        
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_20c96.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
-        MSBuild version 17.11.9+a69bbaaf5 for .NET Framework
-        Build started 7/2/2025 12:29:21 AM.
-        
-        Project "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-r43y68\\cmTC_20c96.vcxproj" on node 1 (default targets).
-        PrepareForBuild:
-          Creating directory "cmTC_20c96.dir\\Debug\\".
-          Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-          Creating directory "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-r43y68\\Debug\\".
-          Creating directory "cmTC_20c96.dir\\Debug\\cmTC_20c96.tlog\\".
-        InitializeBuildStatus:
-          Creating "cmTC_20c96.dir\\Debug\\cmTC_20c96.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-          Touching "cmTC_20c96.dir\\Debug\\cmTC_20c96.tlog\\unsuccessfulbuild".
-        VcpkgTripletSelection:
-          Using triplet "x64-windows" from "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\"
-          Using normalized configuration "Debug"
-        ClCompile:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\CL.exe /c /I"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_20c96.dir\\Debug\\\\" /Fd"cmTC_20c96.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TC /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.31\\Modules\\CMakeCCompilerABI.c"
-          Microsoft (R) C/C++ Optimizing Compiler Version 19.41.34120 for x64
-          Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /I"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_20c96.dir\\Debug\\\\" /Fd"cmTC_20c96.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TC /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.31\\Modules\\CMakeCCompilerABI.c"
-          CMakeCCompilerABI.c
-        Link:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-r43y68\\Debug\\cmTC_20c96.exe" /INCREMENTAL /ILK:"cmTC_20c96.dir\\Debug\\cmTC_20c96.ilk" /NOLOGO /LIBPATH:"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\debug\\lib" /LIBPATH:"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\debug\\lib\\manual-link" kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\debug\\lib\\*.lib" /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-r43y68/Debug/cmTC_20c96.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-r43y68/Debug/cmTC_20c96.lib" /MACHINE:X64  /machine:x64 cmTC_20c96.dir\\Debug\\CMakeCCompilerABI.obj
-          cmTC_20c96.vcxproj -> C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-r43y68\\Debug\\cmTC_20c96.exe
-        AppLocalFromInstalled:
-          pwsh.exe -ExecutionPolicy Bypass -noprofile -File "C:\\Users\\aeist\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-r43y68\\Debug\\cmTC_20c96.exe" "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\debug\\bin" "cmTC_20c96.dir\\Debug\\cmTC_20c96.tlog\\cmTC_20c96.write.1u.tlog" "cmTC_20c96.dir\\Debug\\vcpkg.applocal.log"
-          'pwsh.exe' is not recognized as an internal or external command,
-          operable program or batch file.
-          The command "pwsh.exe -ExecutionPolicy Bypass -noprofile -File "C:\\Users\\aeist\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-r43y68\\Debug\\cmTC_20c96.exe" "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\debug\\bin" "cmTC_20c96.dir\\Debug\\cmTC_20c96.tlog\\cmTC_20c96.write.1u.tlog" "cmTC_20c96.dir\\Debug\\vcpkg.applocal.log"" exited with code 9009.
-          "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe" -ExecutionPolicy Bypass -noprofile -File "C:\\Users\\aeist\\vcpkg\\scripts\\buildsystems\\msbuild\\applocal.ps1" "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-r43y68\\Debug\\cmTC_20c96.exe" "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\debug\\bin" "cmTC_20c96.dir\\Debug\\cmTC_20c96.tlog\\cmTC_20c96.write.1u.tlog" "cmTC_20c96.dir\\Debug\\vcpkg.applocal.log"
-        FinalizeBuildStatus:
-          Deleting file "cmTC_20c96.dir\\Debug\\cmTC_20c96.tlog\\unsuccessfulbuild".
-          Touching "cmTC_20c96.dir\\Debug\\cmTC_20c96.tlog\\cmTC_20c96.lastbuildstate".
-        Done Building Project "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-r43y68\\cmTC_20c96.vcxproj" (default targets).
-        
-        Build succeeded.
-            0 Warning(s)
-            0 Error(s)
-        
-        Time Elapsed 00:00:00.61
-        
-      exitCode: 0
-  -
-    kind: "message-v1"
-    backtrace:
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:218 (message)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
-      - "build/_deps/raylib-src/CMakeLists.txt:2 (project)"
-    message: |
-      Parsed C implicit link information:
-        link line regex: [^( *|.*[/\\])(ld[0-9]*(\\.[a-z]+)?|link\\.exe|lld-link(\\.exe)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
-        linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(\\.[a-z]+)?|link\\.exe|lld-link(\\.exe)?))("|,| |$)]
-        linker tool for 'C': C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.41.34120/bin/HostX64/x64/link.exe
-        implicit libs: []
-        implicit objs: []
-        implicit dirs: []
-        implicit fwks: []
-      
-      
-  -
-    kind: "message-v1"
-    backtrace:
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/Internal/CMakeDetermineLinkerId.cmake:40 (message)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:255 (cmake_determine_linker_id)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
-      - "build/_deps/raylib-src/CMakeLists.txt:2 (project)"
-    message: |
-      Running the C compiler's linker: "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.41.34120/bin/HostX64/x64/link.exe" "-v"
-      Microsoft (R) Incremental Linker Version 14.41.34120.0
-      Copyright (C) Microsoft Corporation.  All rights reserved.
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/Internal/CheckSourceCompiles.cmake:108 (try_compile)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CheckCCompilerFlag.cmake:56 (cmake_check_compiler_flag)"
-      - "build/_deps/raylib-src/cmake/AddIfFlagCompiles.cmake:3 (CHECK_C_COMPILER_FLAG)"
-      - "build/_deps/raylib-src/cmake/CompilerFlags.cmake:5 (add_if_flag_compiles)"
-      - "build/_deps/raylib-src/CMakeLists.txt:34 (include)"
-    checks:
-      - "Performing Test COMPILER_HAS_THOSE_TOGGLES"
-    directories:
-      source: "C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-3p4i8c"
-      binary: "C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-3p4i8c"
-    cmakeVariables:
-      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
-      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
-      CMAKE_MODULE_PATH: "C:/Users/aeist/source/repos/FloppyTurd/build/_deps/raylib-src/cmake"
-    buildResult:
-      variable: "COMPILER_HAS_THOSE_TOGGLES"
-      cached: true
-      stdout: |
-        Change Dir: 'C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-3p4i8c'
-        
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_3cff1.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
-        MSBuild version 17.11.9+a69bbaaf5 for .NET Framework
-        Build started 7/2/2025 12:29:22 AM.
-        
-        Project "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-3p4i8c\\cmTC_3cff1.vcxproj" on node 1 (default targets).
-        PrepareForBuild:
-          Creating directory "cmTC_3cff1.dir\\Debug\\".
-          Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-          Creating directory "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-3p4i8c\\Debug\\".
-          Creating directory "cmTC_3cff1.dir\\Debug\\cmTC_3cff1.tlog\\".
-        InitializeBuildStatus:
-          Creating "cmTC_3cff1.dir\\Debug\\cmTC_3cff1.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-          Touching "cmTC_3cff1.dir\\Debug\\cmTC_3cff1.tlog\\unsuccessfulbuild".
-        VcpkgTripletSelection:
-          Using triplet "x64-windows" from "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\"
-          Using normalized configuration "Debug"
-        ClCompile:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\CL.exe /c /I"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D COMPILER_HAS_THOSE_TOGGLES /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_3cff1.dir\\Debug\\\\" /Fd"cmTC_3cff1.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TC /errorReport:queue  -Werror=pointer-arith "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-3p4i8c\\src.c"
-          Microsoft (R) C/C++ Optimizing Compiler Version 19.41.34120 for x64
-          Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /I"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D COMPILER_HAS_THOSE_TOGGLES /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_3cff1.dir\\Debug\\\\" /Fd"cmTC_3cff1.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TC /errorReport:queue  -Werror=pointer-arith "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-3p4i8c\\src.c"
-        cl : command line  error D8021: invalid numeric argument '/Werror=pointer-arith' [C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-3p4i8c\\cmTC_3cff1.vcxproj]
-        Done Building Project "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-3p4i8c\\cmTC_3cff1.vcxproj" (default targets) -- FAILED.
-        
-        Build FAILED.
-        
-        "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-3p4i8c\\cmTC_3cff1.vcxproj" (default target) (1) ->
-        (ClCompile target) -> 
-          cl : command line  error D8021: invalid numeric argument '/Werror=pointer-arith' [C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-3p4i8c\\cmTC_3cff1.vcxproj]
-        
-            0 Warning(s)
-            1 Error(s)
-        
-        Time Elapsed 00:00:00.19
-        
-      exitCode: 1
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/Internal/CheckSourceCompiles.cmake:108 (try_compile)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CheckCSourceCompiles.cmake:58 (cmake_check_source_compiles)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/FindThreads.cmake:97 (CHECK_C_SOURCE_COMPILES)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/FindThreads.cmake:163 (_threads_check_libc)"
-      - "build/_deps/raylib-src/src/external/glfw/CMakeLists.txt:60 (find_package)"
-    checks:
-      - "Performing Test CMAKE_HAVE_LIBC_PTHREAD"
-    directories:
-      source: "C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-gw24je"
-      binary: "C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-gw24je"
-    cmakeVariables:
-      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
-      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
-      CMAKE_MODULE_PATH: "C:/Users/aeist/source/repos/FloppyTurd/build/_deps/raylib-src/cmake;C:/Users/aeist/source/repos/FloppyTurd/build/_deps/raylib-src/src/external/glfw/CMake/modules"
-    buildResult:
-      variable: "CMAKE_HAVE_LIBC_PTHREAD"
-      cached: true
-      stdout: |
-        Change Dir: 'C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-gw24je'
-        
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_204bf.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
-        MSBuild version 17.11.9+a69bbaaf5 for .NET Framework
-        Build started 7/2/2025 12:29:22 AM.
-        
-        Project "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-gw24je\\cmTC_204bf.vcxproj" on node 1 (default targets).
-        PrepareForBuild:
-          Creating directory "cmTC_204bf.dir\\Debug\\".
-          Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-          Creating directory "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-gw24je\\Debug\\".
-          Creating directory "cmTC_204bf.dir\\Debug\\cmTC_204bf.tlog\\".
-        InitializeBuildStatus:
-          Creating "cmTC_204bf.dir\\Debug\\cmTC_204bf.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-          Touching "cmTC_204bf.dir\\Debug\\cmTC_204bf.tlog\\unsuccessfulbuild".
-        VcpkgTripletSelection:
-          Using triplet "x64-windows" from "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\"
-          Using normalized configuration "Debug"
-        ClCompile:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\CL.exe /c /I"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CMAKE_HAVE_LIBC_PTHREAD /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_204bf.dir\\Debug\\\\" /Fd"cmTC_204bf.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TC /errorReport:queue "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-gw24je\\src.c"
-          Microsoft (R) C/C++ Optimizing Compiler Version 19.41.34120 for x64
-          Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /I"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CMAKE_HAVE_LIBC_PTHREAD /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_204bf.dir\\Debug\\\\" /Fd"cmTC_204bf.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TC /errorReport:queue "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-gw24je\\src.c"
-          src.c
-        C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-gw24je\\src.c(1,10): error C1083: Cannot open include file: 'pthread.h': No such file or directory [C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-gw24je\\cmTC_204bf.vcxproj]
-        Done Building Project "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-gw24je\\cmTC_204bf.vcxproj" (default targets) -- FAILED.
-        
-        Build FAILED.
-        
-        "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-gw24je\\cmTC_204bf.vcxproj" (default target) (1) ->
-        (ClCompile target) -> 
-          C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-gw24je\\src.c(1,10): error C1083: Cannot open include file: 'pthread.h': No such file or directory [C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-gw24je\\cmTC_204bf.vcxproj]
-        
-            0 Warning(s)
-            1 Error(s)
-        
-        Time Elapsed 00:00:00.20
-        
-      exitCode: 1
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CheckLibraryExists.cmake:78 (try_compile)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/FindThreads.cmake:112 (CHECK_LIBRARY_EXISTS)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/FindThreads.cmake:175 (_threads_check_lib)"
-      - "build/_deps/raylib-src/src/external/glfw/CMakeLists.txt:60 (find_package)"
-    checks:
-      - "Looking for pthread_create in pthreads"
-    directories:
-      source: "C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-fqf099"
-      binary: "C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-fqf099"
-    cmakeVariables:
-      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
-      CMAKE_C_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
-      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
-      CMAKE_MODULE_PATH: "C:/Users/aeist/source/repos/FloppyTurd/build/_deps/raylib-src/cmake;C:/Users/aeist/source/repos/FloppyTurd/build/_deps/raylib-src/src/external/glfw/CMake/modules"
-    buildResult:
-      variable: "CMAKE_HAVE_PTHREADS_CREATE"
-      cached: true
-      stdout: |
-        Change Dir: 'C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-fqf099'
-        
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_76565.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
-        MSBuild version 17.11.9+a69bbaaf5 for .NET Framework
-        Build started 7/2/2025 12:29:22 AM.
-        
-        Project "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-fqf099\\cmTC_76565.vcxproj" on node 1 (default targets).
-        PrepareForBuild:
-          Creating directory "cmTC_76565.dir\\Debug\\".
-          Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-          Creating directory "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-fqf099\\Debug\\".
-          Creating directory "cmTC_76565.dir\\Debug\\cmTC_76565.tlog\\".
-        InitializeBuildStatus:
-          Creating "cmTC_76565.dir\\Debug\\cmTC_76565.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-          Touching "cmTC_76565.dir\\Debug\\cmTC_76565.tlog\\unsuccessfulbuild".
-        VcpkgTripletSelection:
-          Using triplet "x64-windows" from "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\"
-          Using normalized configuration "Debug"
-        ClCompile:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\CL.exe /c /I"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_76565.dir\\Debug\\\\" /Fd"cmTC_76565.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TC /errorReport:queue "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-fqf099\\CheckFunctionExists.c"
-          Microsoft (R) C/C++ Optimizing Compiler Version 19.41.34120 for x64
-          Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /I"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_76565.dir\\Debug\\\\" /Fd"cmTC_76565.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TC /errorReport:queue "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-fqf099\\CheckFunctionExists.c"
-          CheckFunctionExists.c
-        Link:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-fqf099\\Debug\\cmTC_76565.exe" /INCREMENTAL /ILK:"cmTC_76565.dir\\Debug\\cmTC_76565.ilk" /NOLOGO /LIBPATH:"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\debug\\lib" /LIBPATH:"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\debug\\lib\\manual-link" pthreads.lib kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\debug\\lib\\*.lib" /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-fqf099/Debug/cmTC_76565.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-fqf099/Debug/cmTC_76565.lib" /MACHINE:X64  /machine:x64 cmTC_76565.dir\\Debug\\CheckFunctionExists.obj
-        LINK : fatal error LNK1104: cannot open file 'pthreads.lib' [C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-fqf099\\cmTC_76565.vcxproj]
-        Done Building Project "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-fqf099\\cmTC_76565.vcxproj" (default targets) -- FAILED.
-        
-        Build FAILED.
-        
-        "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-fqf099\\cmTC_76565.vcxproj" (default target) (1) ->
-        (Link target) -> 
-          LINK : fatal error LNK1104: cannot open file 'pthreads.lib' [C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-fqf099\\cmTC_76565.vcxproj]
-        
-            0 Warning(s)
-            1 Error(s)
-        
-        Time Elapsed 00:00:00.26
-        
-      exitCode: 1
-  -
-    kind: "try_compile-v1"
-    backtrace:
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/CheckLibraryExists.cmake:78 (try_compile)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/FindThreads.cmake:112 (CHECK_LIBRARY_EXISTS)"
-      - "C:/Program Files/CMake/share/cmake-3.31/Modules/FindThreads.cmake:176 (_threads_check_lib)"
-      - "build/_deps/raylib-src/src/external/glfw/CMakeLists.txt:60 (find_package)"
-    checks:
-      - "Looking for pthread_create in pthread"
-    directories:
-      source: "C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-hhv3de"
-      binary: "C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-hhv3de"
-    cmakeVariables:
-      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
-      CMAKE_C_FLAGS_DEBUG: "/Zi /Ob0 /Od /RTC1"
-      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
-      CMAKE_MODULE_PATH: "C:/Users/aeist/source/repos/FloppyTurd/build/_deps/raylib-src/cmake;C:/Users/aeist/source/repos/FloppyTurd/build/_deps/raylib-src/src/external/glfw/CMake/modules"
-    buildResult:
-      variable: "CMAKE_HAVE_PTHREAD_CREATE"
-      cached: true
-      stdout: |
-        Change Dir: 'C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-hhv3de'
-        
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_8d4dd.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
-        MSBuild version 17.11.9+a69bbaaf5 for .NET Framework
-        Build started 7/2/2025 12:29:23 AM.
-        
-        Project "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-hhv3de\\cmTC_8d4dd.vcxproj" on node 1 (default targets).
-        PrepareForBuild:
-          Creating directory "cmTC_8d4dd.dir\\Debug\\".
-          Structured output is enabled. The formatting of compiler diagnostics will reflect the error hierarchy. See https://aka.ms/cpp/structured-output for more details.
-          Creating directory "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-hhv3de\\Debug\\".
-          Creating directory "cmTC_8d4dd.dir\\Debug\\cmTC_8d4dd.tlog\\".
-        InitializeBuildStatus:
-          Creating "cmTC_8d4dd.dir\\Debug\\cmTC_8d4dd.tlog\\unsuccessfulbuild" because "AlwaysCreate" was specified.
-          Touching "cmTC_8d4dd.dir\\Debug\\cmTC_8d4dd.tlog\\unsuccessfulbuild".
-        VcpkgTripletSelection:
-          Using triplet "x64-windows" from "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\"
-          Using normalized configuration "Debug"
-        ClCompile:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\CL.exe /c /I"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_8d4dd.dir\\Debug\\\\" /Fd"cmTC_8d4dd.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TC /errorReport:queue "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-hhv3de\\CheckFunctionExists.c"
-          Microsoft (R) C/C++ Optimizing Compiler Version 19.41.34120 for x64
-          Copyright (C) Microsoft Corporation.  All rights reserved.
-          cl /c /I"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\include" /Zi /W1 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D CHECK_FUNCTION_EXISTS=pthread_create /D "CMAKE_INTDIR=\\"Debug\\"" /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_8d4dd.dir\\Debug\\\\" /Fd"cmTC_8d4dd.dir\\Debug\\vc143.pdb" /external:W1 /Gd /TC /errorReport:queue "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-hhv3de\\CheckFunctionExists.c"
-          CheckFunctionExists.c
-        Link:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.41.34120\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-hhv3de\\Debug\\cmTC_8d4dd.exe" /INCREMENTAL /ILK:"cmTC_8d4dd.dir\\Debug\\cmTC_8d4dd.ilk" /NOLOGO /LIBPATH:"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\debug\\lib" /LIBPATH:"C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\debug\\lib\\manual-link" pthread.lib kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib "C:\\Users\\aeist\\vcpkg\\installed\\x64-windows\\debug\\lib\\*.lib" /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-hhv3de/Debug/cmTC_8d4dd.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Users/aeist/source/repos/FloppyTurd/build/CMakeFiles/CMakeScratch/TryCompile-hhv3de/Debug/cmTC_8d4dd.lib" /MACHINE:X64  /machine:x64 cmTC_8d4dd.dir\\Debug\\CheckFunctionExists.obj
-        LINK : fatal error LNK1104: cannot open file 'pthread.lib' [C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-hhv3de\\cmTC_8d4dd.vcxproj]
-        Done Building Project "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-hhv3de\\cmTC_8d4dd.vcxproj" (default targets) -- FAILED.
-        
-        Build FAILED.
-        
-        "C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-hhv3de\\cmTC_8d4dd.vcxproj" (default target) (1) ->
-        (Link target) -> 
-          LINK : fatal error LNK1104: cannot open file 'pthread.lib' [C:\\Users\\aeist\\source\\repos\\FloppyTurd\\build\\CMakeFiles\\CMakeScratch\\TryCompile-hhv3de\\cmTC_8d4dd.vcxproj]
-        
-            0 Warning(s)
-            1 Error(s)
-        
-        Time Elapsed 00:00:00.26
-        
-      exitCode: 1
 ...

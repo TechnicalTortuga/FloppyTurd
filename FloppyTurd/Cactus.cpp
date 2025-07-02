@@ -44,7 +44,7 @@ Cactus::Cactus(Vector2 spawnPos, CactusVariant variant)
         break;
     }
 
-    sprite = new Sprite(texturePath, frames, animSpeed, scale, spawnPos);
+    sprite = new Sprite(texturePath, frames, animSpeed, scale, spawnPos, AtlasCategory::ENVIRONMENT);
 
     float groundedY = 180.0f - sprite->GetHeight();
     sprite->SetPosition({ spawnPos.x, groundedY });

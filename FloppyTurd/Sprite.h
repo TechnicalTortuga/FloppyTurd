@@ -1,6 +1,7 @@
 #pragma once
 #include <raylib.h>
 #include <string>
+#include "TextureAtlas.h"
 
 class Sprite {
 public:
@@ -9,7 +10,8 @@ public:
 		int frameCount,
 		float frameTime = 0.1f,
 		float scale = 1.0f,
-		Vector2 startPosition = { 0,0 });
+		Vector2 startPosition = { 0,0 },
+		AtlasCategory atlasCategory = AtlasCategory::PLAYER_SPRITES);
 
 	// Legacy constructor
 	Sprite(const std::string& filePath,
@@ -86,4 +88,10 @@ private:
 	// For drawing
 	float scale = 1.0f;
 	Rectangle frameRec = { 0,0,0,0 };
+
+	// --- TextureAtlas support ---
+	bool isAtlased = false;
+	Texture2D atlasTexture = { 0 };
+	Rectangle atlasRegion = { 0,0,0,0 }; // The region in the atlas for this sprite
+	AtlasCategory atlasCategory = AtlasCategory::PLAYER_SPRITES;
 };

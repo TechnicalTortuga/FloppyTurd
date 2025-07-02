@@ -4,6 +4,10 @@
 #include "PlatformLayer.h"
 #include "ResourceCompat.h"
 
+// Enable draw call tracking
+#define ENABLE_DRAW_CALL_TRACKING
+#include "PerformanceProfiler.h"
+
 struct AspectRatioOption {
 	const char* name;
 	int width;
@@ -33,7 +37,7 @@ static Sound fartSoundsLoaded[11];
 
 static int currentAspectIndex = 0;
 static bool borderlessEnabled = false;
-static bool fullscreenEnabled = false;
+static bool fullscreenEnabled = true; // Game starts in fullscreen mode
 
 MainMenu::MainMenu(Game* game)
 	: game(game), currentMenu(MAIN_MENU), fClickCount(0), fClickCooldown(0.0f), fHoverScale(1.0f), paintingHoverScale(1.0f), fartModeEnabled(false)
@@ -242,7 +246,7 @@ void MainMenu::Draw()
 {
 	using namespace GameSettings;
 
-	DrawTexturePro(_MenuBackground,
+	DrawCallTracker::TrackDrawTexturePro(_MenuBackground,
 		Rectangle{ 0, 0, (float)_MenuBackground.width, (float)_MenuBackground.height },
 		Rectangle{ 0, 0, 320, 180 },
 		Vector2{ 0, 0 }, 0.0f, WHITE);
@@ -263,7 +267,7 @@ void MainMenu::Draw()
 		float scaledX = (float)(logoX + 3);
 		float scaledY = (float)(logoY + 5);
 
-		DrawTexturePro(
+		DrawCallTracker::TrackDrawTexturePro(
 			finLogo,
 			Rectangle{ 0, 0, (float)finLogo.width, (float)finLogo.height },
 			Rectangle{ scaledX, scaledY, sw, sh },

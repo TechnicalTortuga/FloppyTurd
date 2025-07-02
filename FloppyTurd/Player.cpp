@@ -269,21 +269,21 @@ void Player::InitSprites() {
 	int jumpFrames = 6;
 	int shootFrames = 5;
 
-	idleSpriteTurdlet = new Sprite("resources/turd/TurdletIdle.png", idleFrames, 0.1f, playerScale, pos);
-	jumpSpriteTurdlet = new Sprite("resources/turd/TurdletJump.png", jumpFrames, 0.1f, playerScale, pos);
-	shootSpriteTurdlet = new Sprite("resources/turd/TurdletShoot.png", shootFrames, 0.1f, playerScale, pos);
+	idleSpriteTurdlet = new Sprite("resources/turd/TurdletIdle.png", idleFrames, 0.1f, playerScale, pos, AtlasCategory::PLAYER_SPRITES);
+	jumpSpriteTurdlet = new Sprite("resources/turd/TurdletJump.png", jumpFrames, 0.1f, playerScale, pos, AtlasCategory::PLAYER_SPRITES);
+	shootSpriteTurdlet = new Sprite("resources/turd/TurdletShoot.png", shootFrames, 0.1f, playerScale, pos, AtlasCategory::PLAYER_SPRITES);
 
-	idleSpriteTeen = new Sprite("resources/turd/TeenageTurdIdle.png", idleFrames, 0.1f, playerScale, pos);
-	jumpSpriteTeen = new Sprite("resources/turd/TeenageTurdJump.png", jumpFrames, 0.1f, playerScale, pos);
-	shootSpriteTeen = new Sprite("resources/turd/TeenageTurdShoot.png", shootFrames, 0.1f, playerScale, pos);
+	idleSpriteTeen = new Sprite("resources/turd/TeenageTurdIdle.png", idleFrames, 0.1f, playerScale, pos, AtlasCategory::PLAYER_SPRITES);
+	jumpSpriteTeen = new Sprite("resources/turd/TeenageTurdJump.png", jumpFrames, 0.1f, playerScale, pos, AtlasCategory::PLAYER_SPRITES);
+	shootSpriteTeen = new Sprite("resources/turd/TeenageTurdShoot.png", shootFrames, 0.1f, playerScale, pos, AtlasCategory::PLAYER_SPRITES);
 
-	idleSpriteBig = new Sprite("resources/turd/BigTurdIdle.png", idleFrames, 0.1f, playerScale, pos);
-	jumpSpriteBig = new Sprite("resources/turd/BigTurdJump.png", jumpFrames, 0.1f, playerScale, pos);
-	shootSpriteBig = new Sprite("resources/turd/BigTurdShoot.png", shootFrames, 0.1f, playerScale, pos);
+	idleSpriteBig = new Sprite("resources/turd/BigTurdIdle.png", idleFrames, 0.1f, playerScale, pos, AtlasCategory::PLAYER_SPRITES);
+	jumpSpriteBig = new Sprite("resources/turd/BigTurdJump.png", jumpFrames, 0.1f, playerScale, pos, AtlasCategory::PLAYER_SPRITES);
+	shootSpriteBig = new Sprite("resources/turd/BigTurdShoot.png", shootFrames, 0.1f, playerScale, pos, AtlasCategory::PLAYER_SPRITES);
 
-	hurtSpriteTurdlet = new Sprite("resources/turd/TurdletHurt.png", jumpFrames, 0.1f, playerScale, pos);
-	hurtSpriteTeen = new Sprite("resources/turd/TeenageTurdHurt.png", jumpFrames, 0.1f, playerScale, pos);
-	hurtSpriteBig = new Sprite("resources/turd/BigTurdHurt.png", jumpFrames, 0.1f, playerScale, pos);
+	hurtSpriteTurdlet = new Sprite("resources/turd/TurdletHurt.png", jumpFrames, 0.1f, playerScale, pos, AtlasCategory::PLAYER_SPRITES);
+	hurtSpriteTeen = new Sprite("resources/turd/TeenageTurdHurt.png", jumpFrames, 0.1f, playerScale, pos, AtlasCategory::PLAYER_SPRITES);
+	hurtSpriteBig = new Sprite("resources/turd/BigTurdHurt.png", jumpFrames, 0.1f, playerScale, pos, AtlasCategory::PLAYER_SPRITES);
 
 	formLevel = 0;
 	ChangeForm(formLevel);

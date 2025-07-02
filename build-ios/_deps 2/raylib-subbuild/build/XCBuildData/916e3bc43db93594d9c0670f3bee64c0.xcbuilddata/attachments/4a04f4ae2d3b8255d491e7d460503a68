@@ -1,0 +1,8 @@
+#!/bin/sh
+set -e
+if test "$CONFIGURATION" = "Debug"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/raylib-build
+  /opt/homebrew/bin/cmake -E echo_append
+  /opt/homebrew/bin/cmake -E touch /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/$CONFIGURATION$EFFECTIVE_PLATFORM_NAME/raylib-populate-test
+fi
+

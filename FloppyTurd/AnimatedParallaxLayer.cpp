@@ -6,11 +6,11 @@ AnimatedParallaxLayer::AnimatedParallaxLayer(const std::string& spriteSheetPath,
     float frameTime,
     float speed,
     float scale)
-    : sprite(spriteSheetPath, frameCount, frameTime, scale)
+    : sprite(spriteSheetPath, frameCount, frameTime, scale, {0,0}, AtlasCategory::ENVIRONMENT)
     , speed(speed)
     , scale(scale)
 {
-    // We loaded the sprite’s texture in the constructor above
+    // We loaded the sprite's texture in the constructor above
     spriteWidth = sprite.GetScaledWidth();
     spriteHeight = sprite.GetScaledHeight();
 
@@ -44,7 +44,7 @@ void AnimatedParallaxLayer::Update(float deltaTime) {
 void AnimatedParallaxLayer::Draw() {
     // Draw each horizontal segment
     for (int i = 0; i < numSegments; i++) {
-        // Move the sprite to that segment’s X position
+        // Move the sprite to that segment's X position
         sprite.SetPosition(positionsX[i], 0.0f);
 
         // Then draw it
