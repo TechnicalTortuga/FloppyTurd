@@ -2,6 +2,7 @@
 #define AIGUI_H
 
 #include "raylib.h" 
+#include "PlatformLayer.h"  // Add platform layer for input abstraction
 
 #ifdef AIGUI_STATIC
 #define AIGUI_DEF static
@@ -46,6 +47,7 @@ AIGUI_DEF bool AIGUI_StateButton(
     Color textColor = WHITE,
     Vector2* customMousePos = nullptr
 );
+AIGUI_DEF Vector2 _GetScaledInputPosition();
 AIGUI_DEF Vector2 _GetScaledMousePosition();
 
 struct AIGUI_Context {
@@ -75,6 +77,9 @@ void AIGUI_Container(Rectangle container, Vector2* scrollOffset, RenderFunc chil
 #include <stdbool.h>
 #include <stdio.h>
 
+// Define the global AIGUI context
+AIGUI_Context g_AIGUI;
+
 AIGUI_DEF void AIGUI_Init() {
     memset(&g_AIGUI, 0, sizeof(g_AIGUI));
     g_AIGUI.defaultFont = GetFontDefault();
@@ -87,36 +92,60 @@ AIGUI_DEF void AIGUI_SetFont(Font font) {
 AIGUI_DEF void AIGUI_Shutdown() {}
 
 AIGUI_DEF void AIGUI_BeginFrame() {
-    g_AIGUI.mousePos = _GetScaledMousePosition();
-    g_AIGUI.mouseLeftDown = IsMouseButtonDown(MOUSE_LEFT_BUTTON);
+    // Use PlatformLayer for unified input handling
+    auto& platform = PlatformLayer::GetInstance();
+    g_AIGUI.mousePos = _GetScaledInputPosition();
+    g_AIGUI.mouseLeftDown = platform.IsPrimaryInputDown();
 }
 
 AIGUI_DEF void AIGUI_SliderFloat(const char* label, float x, float y, float width, float min, float max, float* value) {
-    Rectangle slider = { x, y, width, 20 };
+    auto& platform = PlatformLayer::GetInstance();
+    // Draw label above the slider
+    DrawTextEx(g_AIGUI.defaultFont, label, Vector2{x, y - 14}, 14, 1.0f, WHITE);
+    // Optionally, draw the value to the right
+    char valStr[32];
+    snprintf(valStr, sizeof(valStr), "%.2f", *value);
+    DrawTextEx(g_AIGUI.defaultFont, valStr, Vector2{x + width - 40, y - 14}, 14, 1.0f, YELLOW);
+    // Draw the slider bar
+    Rectangle slider = { x, y, width, 18 };
     DrawRectangleRec(slider, GRAY);
-    float normalized = (*value - min) / (max - min);
-    float handleX = x + normalized * width;
-    if (CheckCollisionPointRec(GetMousePosition(), slider) && IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
-        float mouseX = GetMousePosition().x;
-        normalized = (mouseX - x) / width;
-        normalized = Clamp(normalized, 0.0f, 1.0f);
-        *value = min + normalized * (max - min);
+    float norm = (*value - min) / (max - min);
+    float handleX = x + norm * width;
+    Rectangle handle = { handleX - 8, y, 16, 18 };
+    DrawRectangleRec(handle, WHITE);
+    if (CheckCollisionPointRec(g_AIGUI.mousePos, slider) && platform.IsPrimaryInputDown()) {
+        float inputX = g_AIGUI.mousePos.x;
+        float newNorm = (inputX - x) / width;
+        if (newNorm < 0) newNorm = 0;
+        if (newNorm > 1) newNorm = 1;
+        *value = min + newNorm * (max - min);
     }
-    DrawRectangle(handleX - 5, y, 10, 20, WHITE);
 }
 
-AIGUI_DEF Vector2 _GetScaledMousePosition() {
-    Vector2 mouse = GetMousePosition();
+AIGUI_DEF Vector2 _GetScaledInputPosition() {
+    // Get input position from platform layer instead of direct mouse
+    auto& platform = PlatformLayer::GetInstance();
+    Vector2 input = platform.GetPrimaryInputPosition();
+    
     float scaleX = (float)GetScreenWidth() / 320.0f;
     float scaleY = (float)GetScreenHeight() / 180.0f;
     // Invert scaling: map screen coordinates to 320x180 space
-    return { mouse.x / scaleX, mouse.y / scaleY };
+    return { input.x / scaleX, input.y / scaleY };
+}
+
+// Keep the old function name for compatibility but redirect to new implementation
+AIGUI_DEF Vector2 _GetScaledMousePosition() {
+    return _GetScaledInputPosition();
 }
 
 AIGUI_DEF bool AIGUI_Button(const char* label, float x, float y, float width, float height) {
     Rectangle rect = { x, y, width, height };
     bool hovered = CheckCollisionPointRec(g_AIGUI.mousePos, rect);
-    bool clicked = hovered && IsMouseButtonReleased(MOUSE_LEFT_BUTTON);
+    
+    // Use platform-agnostic input
+    auto& platform = PlatformLayer::GetInstance();
+    bool clicked = hovered && platform.IsPrimaryInputReleased();
+    
     Color hoverColor = Color(200, 200, 200, 255);
     Color normalColor = Color(255, 128, 0, 255);
     DrawRectangleRec(rect, hovered ? hoverColor : normalColor);
@@ -130,7 +159,10 @@ AIGUI_DEF bool AIGUI_Button(const char* label, float x, float y, float width, fl
 AIGUI_DEF bool AIGUI_ButtonRounded(const char* label, float x, float y, float width, float height, float radius, int fontSize, Color textColor) {
     Rectangle rect = { x, y, width, height };
     bool hovered = CheckCollisionPointRec(g_AIGUI.mousePos, rect);
-    bool clicked = hovered && IsMouseButtonReleased(MOUSE_LEFT_BUTTON);
+    
+    // Use platform-agnostic input
+    auto& platform = PlatformLayer::GetInstance();
+    bool clicked = hovered && platform.IsPrimaryInputReleased();
 
     Color topColor = hovered ? Color{ 255, 200, 70, 255 } : Color{ 255, 180, 50, 255 };
     Color bottomColor = hovered ? Color{ 230, 120, 40, 255 } : Color{ 210, 110, 30, 255 };
@@ -242,9 +274,13 @@ AIGUI_DEF void AIGUI_LabelRounded(const char* text, float x, float y, float widt
 
 AIGUI_DEF bool AIGUI_ImageButton(Texture2D textureDefault, Texture2D textureHover, float x, float y, float width, float height, const char* text, int fontSize, Color textColor, Vector2* customMousePos) {
     Rectangle rect = { x, y, width, height };
-    Vector2 mousePos = customMousePos ? *customMousePos : g_AIGUI.mousePos;
-    bool hovered = CheckCollisionPointRec(mousePos, rect);
-    bool clicked = hovered && IsMouseButtonReleased(MOUSE_LEFT_BUTTON);
+    Vector2 inputPos = customMousePos ? *customMousePos : g_AIGUI.mousePos;
+    bool hovered = CheckCollisionPointRec(inputPos, rect);
+    
+    // Use platform-agnostic input
+    auto& platform = PlatformLayer::GetInstance();
+    bool clicked = hovered && platform.IsPrimaryInputReleased();
+    
     DrawTexturePro(hovered ? textureHover : textureDefault, { 0, 0, (float)textureDefault.width, (float)textureDefault.height }, { x, y, width, height }, { 0, 0 }, 0, WHITE);
     if (text) {
         Vector2 size = MeasureTextEx(g_AIGUI.defaultFont, text, (float)fontSize, 1.0f);
@@ -257,10 +293,14 @@ AIGUI_DEF bool AIGUI_ImageButton(Texture2D textureDefault, Texture2D textureHove
 
 AIGUI_DEF bool AIGUI_StateButton(Texture2D textureNormal, Texture2D textureHover, Texture2D textureClicked, float x, float y, float width, float height, const char* text, int fontSize, Color textColor, Vector2* customMousePos) {
     Rectangle rect = { x, y, width, height };
-    Vector2 mousePos = (customMousePos) ? *customMousePos : g_AIGUI.mousePos;
-    bool hovered = CheckCollisionPointRec(mousePos, rect);
-    bool pressed = (hovered && IsMouseButtonDown(MOUSE_LEFT_BUTTON));
-    bool released = (hovered && IsMouseButtonReleased(MOUSE_LEFT_BUTTON));
+    Vector2 inputPos = (customMousePos) ? *customMousePos : g_AIGUI.mousePos;
+    bool hovered = CheckCollisionPointRec(inputPos, rect);
+    
+    // Use platform-agnostic input
+    auto& platform = PlatformLayer::GetInstance();
+    bool pressed = (hovered && platform.IsPrimaryInputDown());
+    bool released = (hovered && platform.IsPrimaryInputReleased());
+    
     Texture2D tex = pressed ? textureClicked : hovered ? textureHover : textureNormal;
     DrawTexturePro(tex, { 0, 0, (float)tex.width, (float)tex.height }, rect, { 0, 0 }, 0.0f, WHITE);
     if (text) {

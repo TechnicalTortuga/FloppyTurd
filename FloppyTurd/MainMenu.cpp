@@ -1,6 +1,8 @@
 #include "MainMenu.h"
 #include "AIGUI.h"
 #include "AudioManager.h"
+#include "PlatformLayer.h"
+#include "ResourceCompat.h"
 
 struct AspectRatioOption {
 	const char* name;
@@ -52,14 +54,14 @@ MainMenu::MainMenu(Game* game)
 	levelPaintings[5] = LoadTexture(RatKingPainting);
 
 	const char* fartPaths[] = {
-		Resources::fart1, Resources::fart2, Resources::fart3, Resources::fart4, Resources::fart5,
-		Resources::fart6, Resources::fart7, Resources::fart8, Resources::fart9, Resources::fart10, Resources::fart11
+		"resources/sounds/fart1.ogg", "resources/sounds/fart2.ogg", "resources/sounds/fart3.ogg", "resources/sounds/fart4.ogg", "resources/sounds/fart5.ogg",
+		"resources/sounds/fart6.ogg", "resources/sounds/fart7.ogg", "resources/sounds/fart8.ogg", "resources/sounds/fart9.ogg", "resources/sounds/fart10.ogg", "resources/sounds/fart11.ogg"
 	};
 
 	for (int i = 0; i < 11; ++i)
 		fartSoundsLoaded[i] = LoadSound(fartPaths[i]);
 
-	currentMusic = new AudioClip(MainMenuMusic);
+	currentMusic = new AudioClip("resources/mainmenu/FloppyTurdMenu.mp3");
 	PlayMusic(currentMusic);
 
 	if (game && game->playing) {
@@ -68,6 +70,8 @@ MainMenu::MainMenu(Game* game)
 			if (i == 0) levelsUnlocked[i] = true; // Ensure Park is always unlocked
 		}
 	}
+
+
 }
 
 MainMenu::~MainMenu()
@@ -122,7 +126,9 @@ void MainMenu::Update()
 		if (fClickCooldown > 0.0f)
 			fClickCooldown -= GetFrameTime();
 
-		if (fHovered && IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && fClickCooldown <= 0.0f)
+		// Use platform-agnostic input
+		auto& platform = PlatformLayer::GetInstance();
+		if (fHovered && platform.IsPrimaryInputPressed() && fClickCooldown <= 0.0f)
 		{
 			fClickCooldown = 0.3f;
 			fClickCount++;
@@ -287,6 +293,23 @@ void MainMenu::Draw()
 
 		if (AIGUI_ButtonRounded("Exit", buttonX, buttonY, buttonW, buttonH, cornerRadius, 24, BLACK))
 			game->SetGameState(game->SHUTDOWN);
+
+		float creditsBtnX = 6.0f;          // a little padding from the left edge
+		float creditsBtnY = 180.0f - 22.0f; // 2 px above bottom edge
+		float creditsBtnW = 70.0f;
+		float creditsBtnH = 18.0f;
+		cornerRadius = 0.15f;        // small rounded corners
+
+		if (AIGUI_ButtonRounded("Credits", creditsBtnX, creditsBtnY,
+			creditsBtnW, creditsBtnH,
+			cornerRadius, 18, BLACK))
+		{
+			// Stop main-menu music so it doesn't overlap the credits track
+			AudioManager::GetInstance().StopMusic();
+
+			// Jump straight into the scrolling-credits scene
+			game->SetGameState(Game::CREDITS);
+		}
 	}
 	else if (currentMenu == LEVEL_SELECT)
 	{
@@ -395,7 +418,9 @@ void MainMenu::Draw()
 		// Always allow click if unlocked, no need for separate hover check here
 		if (levelsUnlocked[currentLevelIndex] && CheckCollisionPointRec(g_AIGUI.mousePos, scaledRect))
 		{
-			if (IsMouseButtonReleased(MOUSE_LEFT_BUTTON))
+			// Use platform-agnostic input
+			auto& platform = PlatformLayer::GetInstance();
+			if (platform.IsPrimaryInputReleased())
 			{
 				game->SetGameState(Game::PLAYING);
 				if (game && game->playing) game->playing->SetCurrentLevel(currentLevelIndex);
@@ -534,9 +559,9 @@ void MainMenu::ToggleFartMusic()
 	using namespace Resources;
 
 	if (fartModeEnabled)
-		PlayMusic(new AudioClip(MainMenuMusic));
+		PlayMusic(new AudioClip("resources/mainmenu/FloppyTurdMenu.mp3"));
 	else
-		PlayMusic(new AudioClip(MainMenuMusicAlt));
+		PlayMusic(new AudioClip("resources/mainmenu/FloppyTurdMenu Fart Variant.mp3"));
 
 	fartModeEnabled = !fartModeEnabled;
 }

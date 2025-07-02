@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <raylib.h>
 #include <iostream>
-#include "Resources.h"
+#include "ResourceCompat.h"
 #include "Player.h"
 #include "Game.h"
 #include <vector>
@@ -18,6 +18,8 @@
 #include "QuickplaySettings.h"
 #include "MainMenu.h"
 #include "GameStats.h"
+#include "MenuButton.h"
+#include "TouchControls.h"
 
 class MainMenu;
 class Player;
@@ -121,7 +123,7 @@ private:
     Texture2D hatFrameDenied;
 
     std::vector<Hat*> hats;
-    Hat* currentSelectedHat;
+    Hat* currentSelectedHat{ nullptr };
 
     std::unique_ptr<SnowOverlay> snowOverlay;
     bool gameOverTriggered = false;
@@ -141,10 +143,10 @@ private:
     bool skillUnlocked[totalSkills]{ false };
     const char* skillNames[totalSkills]{
         "Turd Shot",
-        "Heart Halves",
+        "Half a Heart",
         "Coin Magnet",
         "Heart Magnet",
-        "Heart Thirds",
+        "Split my heart in 3 Pieces",
         "Coin Shield"
     };
     const char* skillDescs[totalSkills]{
@@ -152,17 +154,23 @@ private:
         "Hearts break into halves.",
         "Coins pull toward you.",
         "Hearts pull toward you.",
-        "Hearts break into thirds.",
-        "Survive lethal hit by dropping coins."
+        "Upgrade half hearts to thirds.",
+        "Survive last hit by dropping coins."
     };
     const int skillCosts[totalSkills]{
         50,   // Turd Shot
         150,  // Heart Halves
         150,  // Coin Magnet
         150,  // Heart Magnet
-        200,  // Heart Thirds
+        750,  // Heart Thirds (upgraded cost)
         500   // Coin Shield
     };
 
     GameStats stats;
+
+    MenuButton* tryAgainYes;
+    MenuButton* tryAgainNo;
+    
+    // Touch controls for mobile
+    TouchControls* touchControls;
 };

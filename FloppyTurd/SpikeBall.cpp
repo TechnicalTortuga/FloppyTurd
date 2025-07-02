@@ -1,7 +1,7 @@
 ﻿#include "SpikeBall.h"
 #include <raymath.h>
 #include "GameSettings.h"
-#include "Resources.h"
+#include "ResourceCompat.h"
 #include "TextureCache.h"
 
 #define SPIKEBALL_DEBUG 1

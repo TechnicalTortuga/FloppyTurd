@@ -1,6 +1,6 @@
 ﻿#include <algorithm>
 #include "SnowmanEnemy.h"
-#include "Resources.h"
+#include "ResourceCompat.h"
 #include "SnowballProjectile.h"
 #include <iostream>
 #include <iomanip>
@@ -13,23 +13,23 @@ SnowmanEnemy::SnowmanEnemy(Vector2 spawnPos, SnowmanType type)
 
     switch (type) {
     case SnowmanType::sRed:
-        idleSprite = new Sprite(Resources::SnowManRed, 1, 0.1f, 1.0f, pos);
-        throwSprite = new Sprite(Resources::SnowManRedThrow, 6, 0.12f, 1.0f, pos);
+        idleSprite = new Sprite("resources/enemies/SnowManIdle.png", 1, 0.1f, 1.0f, pos);
+        throwSprite = new Sprite("resources/enemies/SnowManThrow.png", 6, 0.12f, 1.0f, pos);
         currentSprite = idleSprite;
         break;
     case SnowmanType::sGREEN:
-        idleSprite = new Sprite(Resources::SnowManGreen, 1, 0.1f, 1.0f, pos);
-        throwSprite = new Sprite(Resources::SnowManRedThrow, 6, 0.12f, 1.0f, pos);
+        idleSprite = new Sprite("resources/enemies/SnowManGreen.png", 1, 0.1f, 1.0f, pos);
+        throwSprite = new Sprite("resources/enemies/SnowManThrow.png", 6, 0.12f, 1.0f, pos);
         currentSprite = idleSprite;
         break;
     case SnowmanType::sBLUE:
-        idleSprite = new Sprite(Resources::SnowManBlue, 1, 0.1f, 1.0f, pos);
-        throwSprite = new Sprite(Resources::SnowManRedThrow, 6, 0.12f, 1.0f, pos);
+        idleSprite = new Sprite("resources/enemies/SnowManChill.png", 1, 0.1f, 1.0f, pos);
+        throwSprite = new Sprite("resources/enemies/SnowManThrow.png", 6, 0.12f, 1.0f, pos);
         currentSprite = idleSprite;
         break;
     case SnowmanType::sCHAD:
-        idleSprite = new Sprite(Resources::SnowManChad, 1, 0.1f, 1.0f, pos);
-        throwSprite = new Sprite(Resources::SnowManRedThrow, 6, 0.12f, 1.0f, pos);
+        idleSprite = new Sprite("resources/enemies/SnowManChad.png", 1, 0.1f, 1.0f, pos);
+        throwSprite = new Sprite("resources/enemies/SnowManThrow.png", 6, 0.12f, 1.0f, pos);
         currentSprite = idleSprite;
         break;
     }
@@ -66,8 +66,8 @@ void SnowmanEnemy::TryThrowSnowball()
         float   dist = Vector2Length(delta);
         if (dist < 0.01f) return;
 
-        // skip overly-vertical throws
-        if (fabsf(delta.x) < fabsf(delta.y) * 0.3f)
+        // skip overly-vertical throws (made more permissive)
+        if (fabsf(delta.x) < fabsf(delta.y) * 0.1f)
             return;
 
         // normalize and fire
@@ -76,6 +76,7 @@ void SnowmanEnemy::TryThrowSnowball()
         sb->Activate(start, vel);
 
         hasThrown = true;
+        //TraceLog(LOG_INFO, "[Snowman] Threw snowball from (%.1f, %.1f) toward player at (%.1f, %.1f)", start.x, start.y, playerPos.x, playerPos.y);
     }
 }
 
@@ -100,7 +101,7 @@ void SnowmanEnemy::Update(float deltaTime) {
             hasThrown = false;
         }
 
-        // Flip around if to the left of player and hasn’t already flipped
+        // Flip around if to the left of player and hasn't already flipped
         if (!hasFlipped && !queuedSecondThrow && pos.x + hitbox.width < LevelManager::GetInstance()->GetPlayerPosition().x)
         {
             isFlipped = true;

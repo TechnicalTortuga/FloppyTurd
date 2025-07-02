@@ -1,7 +1,7 @@
 #include "AudioManager.h"
 #include "raylib.h"
 #include "AIGUI.h" // If your custom GUI functions are here, include it
-#include "Resources.h"
+#include "ResourceCompat.h"
 #include "AudioClip.h"
 
 using namespace std;
@@ -71,20 +71,20 @@ void AudioManager::ToggleSoundMute() {
 
 void AudioManager::LoadTextures() {
     using namespace Resources;
-    volumemeterEmpty = LoadTexture(Volumemeterempty);
-    volumemeterFull = LoadTexture(Volumemeterfull);
-    plusButtonNormal = LoadTexture(Plusbutton);
-    plusButtonHover = LoadTexture(Plusbuttonhover);
-    plusButtonClicked = LoadTexture(Plusbuttonclicked);
-    minusButtonNormal = LoadTexture(Minusbutton);
-    minusButtonHover = LoadTexture(Minusbuttonhover);
-    minusButtonClicked = LoadTexture(Minusbuttonclicked);
-    muteButtonNormal = LoadTexture(Mutebutton);
-    muteButtonHover = LoadTexture(Mutebuttonhover);
-    muteButtonClicked = LoadTexture(Mutebuttonclicked);
-    muteButtonLockedNormal = LoadTexture(Mutebuttonlocked);
-    muteButtonLockedHover = LoadTexture(Mutebuttonlockedhover);
-    muteButtonLockedClicked = LoadTexture(Mutebuttonlockedclicked);
+    volumemeterEmpty = Resources::RM().GetTexture("volume_empty");
+    volumemeterFull = Resources::RM().GetTexture("volume_full");
+    plusButtonNormal = Resources::RM().GetTexture("plus_button");
+    plusButtonHover = Resources::RM().GetTexture("plus_button_hover");
+    plusButtonClicked = Resources::RM().GetTexture("plus_button");  // Fallback to normal
+    minusButtonNormal = Resources::RM().GetTexture("minus_button");
+    minusButtonHover = Resources::RM().GetTexture("minus_button_hover");
+    minusButtonClicked = Resources::RM().GetTexture("minus_button");  // Fallback to normal
+    muteButtonNormal = Resources::RM().GetTexture("mute_button");
+    muteButtonHover = Resources::RM().GetTexture("mute_button_hover");
+    muteButtonClicked = Resources::RM().GetTexture("mute_button");  // Fallback to normal
+    muteButtonLockedNormal = Resources::RM().GetTexture("mute_button");  // Fallback to normal
+    muteButtonLockedHover = Resources::RM().GetTexture("mute_button_hover");  // Fallback to hover
+    muteButtonLockedClicked = Resources::RM().GetTexture("mute_button");  // Fallback to normal
 
     // Set nearest-neighbor filtering for UI textures
     SetTextureFilter(volumemeterEmpty, TEXTURE_FILTER_POINT);
@@ -104,24 +104,7 @@ void AudioManager::LoadTextures() {
 }
 
 void AudioManager::UnloadTextures() {
-    UnloadTexture(volumemeterEmpty);
-    UnloadTexture(volumemeterFull);
-
-    UnloadTexture(plusButtonNormal);
-    UnloadTexture(plusButtonHover);
-    UnloadTexture(plusButtonClicked);
-
-    UnloadTexture(minusButtonNormal);
-    UnloadTexture(minusButtonHover);
-    UnloadTexture(minusButtonClicked);
-
-    UnloadTexture(muteButtonNormal);
-    UnloadTexture(muteButtonHover);
-    UnloadTexture(muteButtonClicked);
-
-    UnloadTexture(muteButtonLockedNormal);
-    UnloadTexture(muteButtonLockedHover);
-    UnloadTexture(muteButtonLockedClicked);
+    // ResourceManager handles texture cleanup automatically
 }
 
 // ------------------ DRAWING ------------------

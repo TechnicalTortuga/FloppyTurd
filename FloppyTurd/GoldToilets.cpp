@@ -1,7 +1,7 @@
 #include "GoldToilets.h"
 #include <iostream>
 #include <random>
-#include "Resources.h"
+#include "ResourceCompat.h"
 #include "GameSettings.h"
 #include "TextureCache.h"
 

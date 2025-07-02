@@ -1,7 +1,7 @@
 #pragma once
 #include "Obstacle.h"
 #include "GameSettings.h"
-#include "Resources.h"
+#include "ResourceCompat.h"
 #include <vector>
 #include "raylib.h"
 

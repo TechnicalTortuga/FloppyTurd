@@ -3,7 +3,7 @@
 #include "Level.h"
 #include "raylib.h"
 #include "GameSettings.h"
-#include "Resources.h"
+#include "ResourceCompat.h"
 #include <iostream>
 #include <vector>
 #include <memory>

@@ -1,5 +1,5 @@
 #include "BossHealthBar.h"
-#include "Resources.h"
+#include "ResourceCompat.h"
 #include "GameSettings.h"
 #include <raymath.h>
 
@@ -9,17 +9,15 @@ BossHealthBar::BossHealthBar(std::shared_ptr<Boss> boss, const char* bossName)
     currentHealthPercent(1.0f), shadowHealthPercent(1.0f), hurtFadeTimer(0.0f), _bossName(bossName)
 {
     using namespace Resources;
-    frameTexture = LoadTexture(BossBarFrame);
-    healthTexture = LoadTexture(BossBarHealth);
-    hurtTexture = LoadTexture(BossBarHurt);
+    frameTexture = RM().GetTexture("boss_bar_frame");
+    healthTexture = RM().GetTexture("boss_bar_health");
+    hurtTexture = RM().GetTexture("boss_bar_hurt");
     TraceLog(LOG_INFO, "[BossHealthBar] Created for %s, boss ref count: %d", _bossName, boss.use_count());
 }
 
 BossHealthBar::~BossHealthBar()
 {
-    UnloadTexture(frameTexture);
-    UnloadTexture(healthTexture);
-    UnloadTexture(hurtTexture);
+    // ResourceManager handles texture cleanup automatically
     TraceLog(LOG_INFO, "[BossHealthBar] Destroyed");
 }
 

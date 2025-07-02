@@ -1,5 +1,5 @@
 ﻿#include "Bird.h"
-#include "Resources.h"
+#include "ResourceCompat.h"
 #include <cmath>
 
 Bird::Bird(Vector2 startPos, float spd)

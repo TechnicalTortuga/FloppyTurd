@@ -1,5 +1,5 @@
 #include "Coin.h"
-#include "Resources.h"
+#include "ResourceCompat.h"
 #include <raymath.h>
 
 static AudioClip* s_GotCoin = nullptr;

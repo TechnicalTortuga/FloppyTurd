@@ -76,7 +76,7 @@ void Player::ActivateBigTurdBuff(float duration) {
 	bigTurdFromMaxHearts = true; // Assume max hearts activation unless specified otherwise
 	ChangeForm(2);
 	shootCooldown = 0.3f;
-	JUMPVELOCITY = 25.0f;
+	JUMPVELOCITY = 750.0f; // 25% boost: 600 * 1.25 = 750
 }
 
 void Player::Draw() {
@@ -91,27 +91,47 @@ void Player::Update(float deltaTime) {
 	switch (playerstate) {
 	case IDLE:
 	case JUMPING:
-		currentSprite->Update(deltaTime);
+		if (currentSprite) {
+			currentSprite->Update(deltaTime);
+		}
 		break;
 	case SHOOTING:
-		currentSprite->Update(deltaTime);
-		if (currentSprite->hasLoopedOnce()) {
-			currentSprite->loopedOnce = false;
-			playerstate = JUMPING;
-			isShooting = false;
-			ChangeForm(bigTurdBuffActive ? 2 : formLevel);
+		if (currentSprite) {
+			currentSprite->Update(deltaTime);
+			if (currentSprite->hasLoopedOnce()) {
+				currentSprite->loopedOnce = false;
+				playerstate = JUMPING;
+				isShooting = false;
+				ChangeForm(bigTurdBuffActive ? 2 : formLevel);
+			}
 		}
 		break;
 	case DEAD:
 	case HURT:
-		currentSprite->Update(deltaTime);
+		if (currentSprite) {
+			currentSprite->Update(deltaTime);
+		}
 		break;
 	}
 
-	velocity.y += GRAVITY;
-	if (velocity.y > MAXVELOCITY) velocity.y = MAXVELOCITY;
-	if (velocity.y < -MAXVELOCITY) velocity.y = -MAXVELOCITY;
-	pos.y += velocity.y;
+	// DeltaTime-based physics (classic platformer style)
+	// Fast fall logic: use higher gravity after apex
+	if (velocity.y > 0) {
+		if (!isFastFalling) isFastFalling = true;
+	} else {
+		if (isFastFalling) isFastFalling = false;
+	}
+	float gravityToApply = isFastFalling ? FAST_FALL_GRAVITY : GRAVITY;
+	velocity.y += gravityToApply * deltaTime;
+	if (velocity.y > MAX_FALL_SPEED) velocity.y = MAX_FALL_SPEED;
+	if (velocity.y < MAX_JUMP_SPEED) velocity.y = MAX_JUMP_SPEED;
+	pos.y += velocity.y * deltaTime;
+
+	// Clamp at ceiling: if player hits the top, stop upward movement
+	if (pos.y <= -size.y / 2 && velocity.y < 0) {
+		pos.y = -size.y / 2;
+		velocity.y = 0;
+	}
 
 	circleRadius = 11;
 	circleCenter = { pos.x + 32, pos.y + 34 };
@@ -127,7 +147,9 @@ void Player::Update(float deltaTime) {
 		velocity.y = 0;
 	}
 
-	currentSprite->SetPosition(pos.x, pos.y);
+	if (currentSprite) {
+		currentSprite->SetPosition(pos.x, pos.y);
+	}
 
 	for (size_t i = 0; i < projectiles.size(); ) {
 		projectiles[i]->Update(deltaTime);
@@ -157,16 +179,17 @@ void Player::Update(float deltaTime) {
 		if (bigTurdBuffTimer <= 0.0f) {
 			bigTurdBuffActive = false;
 			shootCooldown = 0.5f;
-			JUMPVELOCITY = 20.0f;
-			// Revert to Turdlet if activated by max hearts, otherwise keep formLevel
+			JUMPVELOCITY = 600.0f; // Back to normal jump height
 			ChangeForm(bigTurdFromMaxHearts ? 0 : formLevel);
-			bigTurdFromMaxHearts = false; // Reset flag
+			bigTurdFromMaxHearts = false;
 		}
 	}
 
-	if (currentSelectedHat) currentSelectedHat->Update(deltaTime, formLevel, isShooting, hurtBuffer > 0.0f, pos);
-	int currentFrame = currentSprite->GetFrameIndex();
-	if (currentSelectedHat) currentSelectedHat->GetSprite(formLevel, isShooting, hurtBuffer > 0.0f)->SetFrameIndex(currentFrame);
+	if (currentSelectedHat) {
+		currentSelectedHat->Update(deltaTime, formLevel, isShooting, hurtBuffer > 0.0f, pos);
+		int currentFrame = currentSprite->GetFrameIndex();
+		currentSelectedHat->GetSprite(formLevel, isShooting, hurtBuffer > 0.0f)->SetFrameIndex(currentFrame);
+	}
 
 	if (isInvisible) {
 		invisibilityTimer -= deltaTime;
@@ -192,7 +215,10 @@ void Player::SetHat(Hat* hat) {
 	currentSelectedHat = hat;
 }
 
+bool Player::godMode = false;
+
 void Player::PutTheHurtOn(int DAMAGE) {
+	if (godMode) return;
 	if (hurtBuffer > 0.0f || isInvisible) return;
 
 	const int slicesToLose = 1;
@@ -243,74 +269,84 @@ void Player::InitSprites() {
 	int jumpFrames = 6;
 	int shootFrames = 5;
 
-	idleSpriteTurdlet = new Sprite(TurdletIdle, idleFrames, 0.1f, playerScale, pos);
-	jumpSpriteTurdlet = new Sprite(TurdletJump, jumpFrames, 0.1f, playerScale, pos);
-	shootSpriteTurdlet = new Sprite(TurdletShoot, shootFrames, 0.1f, playerScale, pos);
+	idleSpriteTurdlet = new Sprite("resources/turd/TurdletIdle.png", idleFrames, 0.1f, playerScale, pos);
+	jumpSpriteTurdlet = new Sprite("resources/turd/TurdletJump.png", jumpFrames, 0.1f, playerScale, pos);
+	shootSpriteTurdlet = new Sprite("resources/turd/TurdletShoot.png", shootFrames, 0.1f, playerScale, pos);
 
-	idleSpriteTeen = new Sprite(TeenageTurdIdle, idleFrames, 0.1f, playerScale, pos);
-	jumpSpriteTeen = new Sprite(TeenageTurdJump, jumpFrames, 0.1f, playerScale, pos);
-	shootSpriteTeen = new Sprite(TeenageTurdShoot, shootFrames, 0.1f, playerScale, pos);
+	idleSpriteTeen = new Sprite("resources/turd/TeenageTurdIdle.png", idleFrames, 0.1f, playerScale, pos);
+	jumpSpriteTeen = new Sprite("resources/turd/TeenageTurdJump.png", jumpFrames, 0.1f, playerScale, pos);
+	shootSpriteTeen = new Sprite("resources/turd/TeenageTurdShoot.png", shootFrames, 0.1f, playerScale, pos);
 
-	idleSpriteBig = new Sprite(BigTurdIdle, idleFrames, 0.1f, playerScale, pos);
-	jumpSpriteBig = new Sprite(BigTurdJump, jumpFrames, 0.1f, playerScale, pos);
-	shootSpriteBig = new Sprite(BigTurdShoot, shootFrames, 0.1f, playerScale, pos);
+	idleSpriteBig = new Sprite("resources/turd/BigTurdIdle.png", idleFrames, 0.1f, playerScale, pos);
+	jumpSpriteBig = new Sprite("resources/turd/BigTurdJump.png", jumpFrames, 0.1f, playerScale, pos);
+	shootSpriteBig = new Sprite("resources/turd/BigTurdShoot.png", shootFrames, 0.1f, playerScale, pos);
 
-	hurtSpriteTurdlet = new Sprite(TurdletHurt, jumpFrames, 0.1f, playerScale, pos);
-	hurtSpriteTeen = new Sprite(TeenageTurdHurt, jumpFrames, 0.1f, playerScale, pos);
-	hurtSpriteBig = new Sprite(BigTurdHurt, jumpFrames, 0.1f, playerScale, pos);
+	hurtSpriteTurdlet = new Sprite("resources/turd/TurdletHurt.png", jumpFrames, 0.1f, playerScale, pos);
+	hurtSpriteTeen = new Sprite("resources/turd/TeenageTurdHurt.png", jumpFrames, 0.1f, playerScale, pos);
+	hurtSpriteBig = new Sprite("resources/turd/BigTurdHurt.png", jumpFrames, 0.1f, playerScale, pos);
 
 	formLevel = 0;
 	ChangeForm(formLevel);
 
-	hurtSound = LoadSound(Hurt);
+	hurtSound = LoadSound("resources/sounds/hurt.mp3");
 }
 
 void Player::ChangeForm(int newForm) {
-	if (newForm < 0 || newForm > 2) return;
+	if (newForm < 0 || newForm > 2) {
+		return;
+	}
 
 	formLevel = newForm;
 
 	switch (formLevel) {
 	case 0:
-		if (playerstate == IDLE)
+		if (playerstate == IDLE) {
 			currentSprite = idleSpriteTurdlet;
-		else if (playerstate == JUMPING)
+		} else if (playerstate == JUMPING) {
 			currentSprite = jumpSpriteTurdlet;
-		else if (playerstate == SHOOTING)
+		} else if (playerstate == SHOOTING) {
 			currentSprite = shootSpriteTurdlet;
-		else if (playerstate == HURT)
+		} else if (playerstate == HURT) {
 			currentSprite = hurtSpriteTurdlet;
+		}
 		break;
 	case 1:
-		if (playerstate == IDLE)
+		if (playerstate == IDLE) {
 			currentSprite = idleSpriteTeen;
-		else if (playerstate == JUMPING)
+		} else if (playerstate == JUMPING) {
 			currentSprite = jumpSpriteTeen;
-		else if (playerstate == SHOOTING)
+		} else if (playerstate == SHOOTING) {
 			currentSprite = shootSpriteTeen;
-		else if (playerstate == HURT)
+		} else if (playerstate == HURT) {
 			currentSprite = hurtSpriteTeen;
+		}
 		break;
 	case 2:
-		if (playerstate == IDLE)
+		if (playerstate == IDLE) {
 			currentSprite = idleSpriteBig;
-		else if (playerstate == JUMPING)
+		} else if (playerstate == JUMPING) {
 			currentSprite = jumpSpriteBig;
-		else if (playerstate == SHOOTING)
+		} else if (playerstate == SHOOTING) {
 			currentSprite = shootSpriteBig;
-		else if (playerstate == HURT)
+		} else if (playerstate == HURT) {
 			currentSprite = hurtSpriteBig;
+		}
 		break;
 	}
-	currentSprite->ResetAnimation();
+	
+	if (currentSprite) {
+		currentSprite->ResetAnimation();
+	}
 
-	if (currentSelectedHat)
+	if (currentSelectedHat) {
 		currentSelectedHat->GetSprite(formLevel, isShooting, hurtBuffer > 0.0f)->ResetAnimation();
+	}
 }
 
 void Player::Jump() {
 	if (isAlive) {
 		velocity.y -= JUMPVELOCITY;
+		isFastFalling = false; // Reset fast fall on jump
 		if (game && game->playing) {
 			game->playing->GetStats().totalJumps++;
 			game->playing->savePending = true;
@@ -320,7 +356,6 @@ void Player::Jump() {
 
 void Player::Shoot() {
 	if (!shootingUnlocked) return;
-	using namespace Resources;
 	if (!isAlive || shootTimer > 0.0f || hurtBuffer > 0.0f) return;
 	if (!SpendCoinsForShoot()) return;
 
@@ -330,9 +365,9 @@ void Player::Shoot() {
 
 	float projectileScale = bigTurdBuffActive ? 1.2f : 1.0f;
 	float projectileSpeed = bigTurdBuffActive ? 400.0f : 300.0f;
-	const char* spritePath = PoopSmall;
-	if (formLevel == 1) spritePath = PoopMid;
-	else if (formLevel == 2 || bigTurdBuffActive) spritePath = PoopLarge;
+	const char* spritePath = "resources/turd/Floppy Poop.png";
+	if (formLevel == 1) spritePath = "resources/turd/Floppy Poop Mid.png";
+	else if (formLevel == 2 || bigTurdBuffActive) spritePath = "resources/turd/Floppy Poop Large.png";
 
 	Vector2 spawnPos = { pos.x + size.x / 2.f, pos.y + size.y / 2.f - 8 };
 	Projectile* p = new Projectile(spawnPos, { 1, 0 }, projectileSpeed, projectileScale, spritePath);
@@ -346,24 +381,26 @@ void Player::Revive() {
 	health = 100;
 	isAlive = true;
 	isShooting = false;
-
 	if (game && game->mainMenu) {
 		SetInitialHearts(game->mainMenu->GetDifficultyIndex());
 	}
 	else {
 		SetInitialHearts(1);
 	}
-
 	pos = { 77.0f, 100.0f };
 	velocity = { 0.0f, 0.0f };
 	circleCenter = { pos.x + 32, pos.y + 34 };
-
 	currentSprite->ResetAnimation();
 	ResetSessionCoins();
 	bigTurdBuffActive = false;
 	shootCooldown = 0.5f;
-	JUMPVELOCITY = 20.0f;
+	JUMPVELOCITY = 800.0f;
+	GRAVITY = 800.0f;
+	FAST_FALL_GRAVITY = 1200.0f;
+	MAX_FALL_SPEED = 400.0f;
+	MAX_JUMP_SPEED = -180.0f;
 	coinShieldActive = coinShieldEnabled;
+	isFastFalling = false; // Reset fast fall on revive
 }
 
 void Player::SetHealth(int hp) {

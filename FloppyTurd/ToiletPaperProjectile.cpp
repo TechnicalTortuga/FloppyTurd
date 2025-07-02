@@ -1,5 +1,5 @@
 #include "ToiletPaperProjectile.h"
-#include "Resources.h"
+#include "ResourceCompat.h"
 #include "GameSettings.h"
 
 ToiletPaperProjectile::ToiletPaperProjectile(Vector2 position, Vector2 direction, float speed, float scale)

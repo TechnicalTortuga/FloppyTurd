@@ -3,7 +3,7 @@
 #include "Cactus.h"
 #include "Coin.h"
 #include "PoopHeart.h"
-#include "Resources.h"
+#include "ResourceCompat.h"
 #include "GameSettings.h"
 #include <stdio.h> // For debug logging
 #include "LevelManager.h"
@@ -136,12 +136,10 @@ void DesertLevel::Update(float deltaTime)
                 size_t nextIndex = (lastOnScreenIndex + 1) % outhouses.size();
                 Vector2 left = outhouses[lastOnScreenIndex]->pos;
                 Vector2 right = outhouses[nextIndex]->pos;
-                Texture2D tex = LoadTexture(Resources::OuthouseSolo);
+                Texture2D tex = Resources::GetOuthouseSolo();
                 float outhouseW = tex.width;
-                UnloadTexture(tex);
-                Texture2D wallTex = LoadTexture(Resources::BrickWallTexture);
+                Texture2D wallTex = Resources::GetBrickWallTexture();
                 float wallW = wallTex.width;
-                UnloadTexture(wallTex);
                 float gapCentre = (left.x + outhouseW * 0.5f + right.x + outhouseW * 0.5f) * 0.5f;
                 brick->SetPosition(Vector2{ gapCentre - wallW * 0.5f, 0.0f });
             }
@@ -263,12 +261,10 @@ void DesertLevel::InitObstacles()
     {
         Vector2 left = outhouses[0]->pos;
         Vector2 right = outhouses[1]->pos;
-        Texture2D tex = LoadTexture(Resources::OuthouseSolo);
+        Texture2D tex = Resources::GetOuthouseSolo();
         float outhouseW = tex.width;
-        UnloadTexture(tex);
-        Texture2D wallTex = LoadTexture(Resources::BrickWallTexture);
+        Texture2D wallTex = Resources::GetBrickWallTexture();
         float wallW = wallTex.width;
-        UnloadTexture(wallTex);
         float gapCentre = (left.x + outhouseW * 0.5f + right.x + outhouseW * 0.5f) * 0.5f;
         float wallX = gapCentre - wallW * 0.5f;
         float wallY = 0.0f;

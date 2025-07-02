@@ -14,6 +14,7 @@
 #include "Coin.h"
 #include "PoopHeart.h"
 #include "SnowballProjectile.h"
+#include "PlatformLayer.h"
 #include <cmath>
 
 Playing::Playing(Game* game) {
@@ -31,26 +32,26 @@ Playing::Playing(Game* game) {
 
     LoadSessionRecords();
 
-    pauseMenuBackground = LoadTexture(PauseMenuBackground);
-    Scoreboard = LoadTexture(ScoreBoard);
-    _TurdHeart = LoadTexture(TurdHeart);
-    _CoinBag = LoadTexture(coinbagtexture);
-    ScoreSound = LoadSound(GotScore);
-    arrowLeft = LoadTexture(ArrowLeft);
-    arrowRight = LoadTexture(ArrowRight);
-    arrowLeftHover = LoadTexture(ArrowLeftHover);
-    arrowRightHover = LoadTexture(ArrowRightHover);
+    pauseMenuBackground = Resources::RM().GetTexture("pause_menu_bg");
+    Scoreboard = Resources::GetScoreBoard();
+    _TurdHeart = Resources::GetTurdHeart();
+    _CoinBag = Resources::RM().GetTexture("coin_bag");
+    ScoreSound = Resources::GetGotScore();
+    arrowLeft = Resources::GetArrowLeft();
+    arrowRight = Resources::GetArrowRight();
+    arrowLeftHover = Resources::GetArrowLeftHover();
+    arrowRightHover = Resources::GetArrowRightHover();
     SCORE = 0;
     TOTALSCORE = 0;
 
-    gameOverMusic = new AudioClip(GameOverMusic);
+    gameOverMusic = new AudioClip("resources/music/gameover.mp3");
     PreLoadLevels();
     SetCurrentLevel(0);
 
-    gameOverBackground = LoadTexture(GameOverBackground);
-    tryAgainBackground = LoadTexture(TryAgainBackground);
-    deadFloppy = LoadTexture(DeadFloppy);
-    gameOverScore = LoadTexture(GameOverScore);
+    gameOverBackground = Resources::RM().GetTexture("game_over_bg");
+    tryAgainBackground = Resources::RM().GetTexture("try_again_bg");
+    deadFloppy = Resources::RM().GetTexture("dead_floppy");
+    gameOverScore = Resources::RM().GetTexture("game_over_score");
 
     InitializeSkillNodes();
     InitializeHats();
@@ -60,7 +61,10 @@ Playing::Playing(Game* game) {
         skillUnlocked[i] = stats.skillUnlocked[i];
         if (skillUnlocked[i]) {
             switch (i) {
-            case 0: player->EnableShooting(true); break;
+            case 0: 
+                player->EnableShooting(true); 
+                if (touchControls) touchControls->SetShootingEnabled(true);
+                break;
             case 1: player->SetHeartMode(Player::HALVES); break;
             case 2: player->EnableCoinMagnet(true); break;
             case 3: player->EnableHeartMagnet(true); break;
@@ -82,16 +86,24 @@ Playing::Playing(Game* game) {
         }
     }
 
-    floppyButtonBlue = LoadTexture(blueButton);
-    floppyButtonBlueHover = LoadTexture(blueButtonHover);
+    floppyButtonBlue = Resources::GetBlueButton();
+    floppyButtonBlueHover = Resources::GetBlueButtonHover();
 
-    AudioManager::GetInstance().LoadSoundEffect("GotCoin", Resources::GotCoin);
-    AudioManager::GetInstance().LoadSoundEffect("GotHealth", Resources::GotHealth);
-    AudioManager::GetInstance().LoadSoundEffect("GotHealthBig", Resources::GotHealthBig);
+    AudioManager::GetInstance().LoadSoundEffect("GotCoin", "resources/sounds/pickup.ogg");
+    AudioManager::GetInstance().LoadSoundEffect("GotHealth", "resources/sounds/SmallHealthPickup.wav");
+    AudioManager::GetInstance().LoadSoundEffect("GotHealthBig", "resources/sounds/BigHealthPickup.wav");
 
-    Texture2D rawSnowTexture = LoadTexture(Snowfall);
+    Texture2D rawSnowTexture = Resources::RM().GetTexture("snowfall");
     snowOverlay = std::make_unique<SnowOverlay>(rawSnowTexture, 16, 0.15f);
     SetTextureWrap(rawSnowTexture, TEXTURE_WRAP_CLAMP);
+
+    // Initialize touch controls for mobile
+    touchControls = new TouchControls();
+    touchControls->Initialize(320, 180);  // Virtual resolution
+    
+    // Enable touch controls only on mobile platforms
+    auto& platform = PlatformLayer::GetInstance();
+    touchControls->SetEnabled(platform.IsTouchSupported());
 
     savePending = false;
 }
@@ -105,11 +117,11 @@ void Playing::LoadSessionRecords() {
 void Playing::InitializeHats() {
     using namespace Resources;
 
-    hatFrameNormal = LoadTexture(HatFrameNormal);
-    hatFrameHover = LoadTexture(HatFrameHover);
-    hatFrameSelected = LoadTexture(HatFrameSelected);
-    hatFrameLocked = LoadTexture(HatFrameLocked);
-    hatFrameDenied = LoadTexture(HatFrameDenied);
+    hatFrameNormal = Resources::RM().GetTexture("hat_frame_normal");
+    hatFrameHover = Resources::RM().GetTexture("hat_frame_hover");
+    hatFrameSelected = Resources::RM().GetTexture("hat_frame_selected");
+    hatFrameLocked = Resources::RM().GetTexture("hat_frame_locked");
+    hatFrameDenied = Resources::RM().GetTexture("hat_frame_denied");
 
     // Clear existing hats
     for (auto hat : hats) {
@@ -118,22 +130,22 @@ void Playing::InitializeHats() {
     hats.clear();
 
     // Define all 15 hats with their icon paths, sprite paths, and initial status
-    // All hats now start as LOCKED by default.
-    Hat* cowboyHat = new Hat("Cowboy Hat", CowboyHat, CowboyHatTurdlet, 6, CowboyHatTurdletShoot, 5, CowboyHatBigTurd, 6, CowboyHatBigTurdShoot, 5, LOCKED);
-    Hat* flowerHat = new Hat("Flower", Flower, FlowerHatTurdlet, 6, FlowerHatTurdletShoot, 5, FlowerHatBigTurd, 6, FlowerHatBigTurdShoot, 5, LOCKED);
-    Hat* doorag = new Hat("Doorag", Doorag, DooragTurdlet, 6, DooragTurdletShoot, 5, DooragBigTurd, 6, DooragBigTurdShoot, 5, LOCKED);
-    Hat* ballcap = new Hat("Ballcap", Ballcap, BallCapTurdlet, 6, BallCapTurdletShoot, 5, BallCapBigTurd, 6, BallCapBigTurdShoot, 5, LOCKED);
-    Hat* pinwheelHat = new Hat("Pinwheel Hat", PinwheelHat, PinwheelTurdlet, 6, PinwheelTurdletShoot, 5, PinwheelBigTurd, 6, PinwheelBigTurdShoot, 5, LOCKED);
-    Hat* strawHat = new Hat("Straw Hat", StrawHat, StrawHatTurdlet, 6, StrawHatTurdletShoot, 5, StrawHatBigTurd, 6, StrawHatBigTurdShoot, 5, LOCKED);
-    Hat* samuraiHat = new Hat("Samurai Hat", SamuraiHat, SamuraiHatTurdlet, 6, SamuraiHatTurdletShoot, 5, SamuraiHatBigTurd, 6, SamuraiHatBigTurdShoot, 5, LOCKED);
-    Hat* topHat = new Hat("Top Hat", TopHat, TopHatTurdlet, 6, TopHatTurdletShoot, 5, TopHatBigTurd, 6, TopHatBigTurdShoot, 5, LOCKED);
-    Hat* ushanka = new Hat("Ushanka", Ushanka, UshankaTurdlet, 6, UshankaTurdletShoot, 5, UshankaBigTurd, 6, UshankaBigTurdShoot, 5, LOCKED);
-    Hat* beret = new Hat("Beret", Beret, BeretTurdlet, 6, BeretTurdletShoot, 5, BeretBigTurd, 6, BeretBigTurdShoot, 5, LOCKED);
-    Hat* crown = new Hat("Crown", Crown, CrownHatTurdlet, 6, CrownHatTurdletShoot, 5, CrownHatBigTurd, 6, CrownHatBigTurdShoot, 5, LOCKED);
-    Hat* poopHat = new Hat("Poop Hat", PoopHat, PoophatTurdlet, 6, PoophatTurdletShoot, 5, PoophatBigTurd, 6, PoophatBigTurdShoot, 5, LOCKED);
-    Hat* ramsesHat = new Hat("Ramses Hat", RamsesHat, RamsesHatTurdlet, 6, RamsesHatTurdletShoot, 5, RamsesHatBigTurd, 6, RamsesHatBigTurdShoot, 5, LOCKED);
-    Hat* spartanHelmet = new Hat("Spartan Helmet", SpartanHelmet, SpartanHatTurdlet, 6, SpartanHatTurdletShoot, 5, SpartanHatBigTurd, 6, SpartanHatBigTurdShoot, 5, LOCKED);
-    Hat* shellHat = new Hat("Shell Hat", Shell, ShellHatTurdlet, 6, ShellHatTurdletShoot, 5, ShellHatBigTurd, 6, ShellHatBigTurdShoot, 5, LOCKED);
+    // All hats now start as LOCKED by default. Using actual file paths instead of constants.
+    Hat* cowboyHat = new Hat("Cowboy Hat", "resources/hats/cowboyhat.png", "resources/hats/cowboyhatturdletjump.png", 6, "resources/hats/cowboyhatturdletshoot.png", 5, "resources/hats/cowboyhatbigturdjump.png", 6, "resources/hats/cowboyhatbigturdshoot.png", 5, LOCKED);
+    Hat* flowerHat = new Hat("Flower", "resources/hats/flowerhat.png", "resources/hats/flowerhatturdletjump.png", 6, "resources/hats/flowerhatturdletshoot.png", 5, "resources/hats/flowerhatbigturdjump.png", 6, "resources/hats/flowerhatbigturdshoot.png", 5, LOCKED);
+    Hat* doorag = new Hat("Doorag", "resources/hats/dooraghat.png", "resources/hats/dooragturdletjump.png", 6, "resources/hats/dooragturdletshoot.png", 5, "resources/hats/dooragbigturdjump.png", 6, "resources/hats/dooragbigturdshoot.png", 5, LOCKED);
+    Hat* ballcap = new Hat("Ballcap", "resources/hats/ballcap.png", "resources/hats/ballcapturdletjump.png", 6, "resources/hats/ballcapturdletshoot.png", 5, "resources/hats/ballcapbigturdjump.png", 6, "resources/hats/ballcapbigturdshoot.png", 5, LOCKED);
+    Hat* pinwheelHat = new Hat("Pinwheel Hat", "resources/hats/PinwheelHat.png", "resources/hats/pinwheelturdletjump.png", 6, "resources/hats/pinwheelturdletshoot.png", 5, "resources/hats/pinwheelbigturdjump.png", 6, "resources/hats/pinwheelbigturdshoot.png", 5, LOCKED);
+    Hat* strawHat = new Hat("Straw Hat", "resources/hats/strawhat.png", "resources/hats/strawhatturdletjump.png", 6, "resources/hats/strawhatturdletshoot.png", 5, "resources/hats/strawhatbigturdjump.png", 6, "resources/hats/strawhatbigturdshoot.png", 5, LOCKED);
+    Hat* samuraiHat = new Hat("Samurai Hat", "resources/hats/SamuraiHelmet.png", "resources/hats/samuraiturdletjump.png", 6, "resources/hats/samuraiturdletshoot.png", 5, "resources/hats/samuraibigturdjump.png", 6, "resources/hats/samuraibigturdshoot.png", 5, LOCKED);
+    Hat* topHat = new Hat("Top Hat", "resources/hats/tophat.png", "resources/hats/tophatturdletjump.png", 6, "resources/hats/tophatturdletshoot.png", 5, "resources/hats/tophatbigturdjump.png", 6, "resources/hats/tophatbigturdshoot.png", 5, LOCKED);
+    Hat* ushanka = new Hat("Ushanka", "resources/hats/ushanka.png", "resources/hats/ushankaturdletjump.png", 6, "resources/hats/ushankaturdletshoot.png", 5, "resources/hats/ushankabigturdjump.png", 6, "resources/hats/ushankabigturdshoot.png", 5, LOCKED);
+    Hat* beret = new Hat("Beret", "resources/hats/Beret.png", "resources/hats/berethatturdletjump.png", 6, "resources/hats/berethatturdletshoot.png", 5, "resources/hats/berethatbigturdjump.png", 6, "resources/hats/berethatbigturdshoot.png", 5, LOCKED);
+    Hat* crown = new Hat("Crown", "resources/hats/Crown.png", "resources/hats/crownhatturdletjump.png", 6, "resources/hats/crownhatturdletshoot.png", 5, "resources/hats/crownhatbigturdjump.png", 6, "resources/hats/crownhatbigturdshoot.png", 5, LOCKED);
+    Hat* poopHat = new Hat("Poop Hat", "resources/hats/poophat.png", "resources/hats/poophatturdletjump.png", 6, "resources/hats/poophatturdletshoot.png", 5, "resources/hats/poophatbigturdjump.png", 6, "resources/hats/poophatbigturdshoot.png", 5, LOCKED);
+    Hat* ramsesHat = new Hat("Ramses Hat", "resources/hats/RamsesHat.png", "resources/hats/ramsesturdletjump.png", 6, "resources/hats/ramsesturdletshoot.png", 5, "resources/hats/ramsesbigturdjump.png", 6, "resources/hats/ramsesbigturdshoot.png", 5, LOCKED);
+    Hat* spartanHelmet = new Hat("Spartan Helmet", "resources/hats/SpartanHelmet.png", "resources/hats/spartanhatturdletjump.png", 6, "resources/hats/spartanhatturdletshoot.png", 5, "resources/hats/spartanhatbigturdjump.png", 6, "resources/hats/spartanhatbigturdshoot.png", 5, LOCKED);
+    Hat* shellHat = new Hat("Shell Hat", "resources/hats/shellhat.png", "resources/hats/shellhatturdletjump.png", 6, "resources/hats/shellhatturdletshoot.png", 5, "resources/hats/shellhatbigturdjump.png", 6, "resources/hats/shellhatbigturdshoot.png", 5, LOCKED);
 
     hats.push_back(cowboyHat);
     hats.push_back(flowerHat);
@@ -177,21 +189,8 @@ void Playing::PreLoadLevels() {
 }
 
 Playing::~Playing() {
-    UnloadTexture(Scoreboard);
-    UnloadTexture(_TurdHeart);
-    UnloadTexture(_CoinBag);
-    UnloadTexture(arrowLeft);
-    UnloadTexture(arrowRight);
-    UnloadTexture(arrowLeftHover);
-    UnloadTexture(arrowRightHover);
+    // ResourceManager handles texture cleanup automatically
     UnloadSound(ScoreSound);
-    UnloadTexture(floppyButtonBlue);
-    UnloadTexture(floppyButtonBlueHover);
-    UnloadTexture(gameOverBackground);
-    UnloadTexture(tryAgainBackground);
-    UnloadTexture(deadFloppy);
-    UnloadTexture(gameOverScore);
-    UnloadTexture(pauseMenuBackground);
 
     delete gameOverMusic;
     delete bossHealthBar;
@@ -200,6 +199,7 @@ Playing::~Playing() {
         delete hat;
     }
     delete player;
+    delete touchControls;
 }
 
 void Playing::InitializeSkillNodes() {
@@ -231,11 +231,16 @@ void Playing::TriggerSaveIfPending() {
 
 void Playing::UnlockSkill(int idx) {
     if (idx < 0 || idx >= totalSkills || skillUnlocked[idx]) return;
+    // Enforce dependency: Heart Thirds (index 4) requires Heart Halves (index 1)
+    if (idx == 4 && !skillUnlocked[1]) return;
     if (PurchaseItem(skillCosts[idx])) {
         skillUnlocked[idx] = true;
         stats.skillUnlocked[idx] = true;
         switch (idx) {
-        case 0: player->EnableShooting(true); break;
+        case 0: 
+            player->EnableShooting(true); 
+            if (touchControls) touchControls->SetShootingEnabled(true);
+            break;
         case 1: player->SetHeartMode(Player::HALVES); break;
         case 2: player->EnableCoinMagnet(true); break;
         case 3: player->EnableHeartMagnet(true); break;
@@ -333,7 +338,7 @@ void Playing::OutputHatMenu() {
                 }
             }
             if (player->GetSessionCoins() + TOTALCOINS < hatCost) {
-                DrawTextEx(font, "Not enough coins!", { detailsPanelX, detailsPanelY + 85 }, 14.0f, 1.0f, RED);
+                DrawTextEx(font, "Not enough coins!", { detailsPanelX, detailsPanelY + 85 }, 18.0f, 1.0f, WHITE);
             }
         }
         else {
@@ -380,7 +385,7 @@ void Playing::DrawPauseMenu() {
         floppyButtonBlue, floppyButtonBlueHover,
         topRowX, topRowY,
         buttonWidth, buttonHeight,
-        "Skills", 16,
+        "Skills", 18,
         WHITE,
         nullptr
     )) {
@@ -392,7 +397,7 @@ void Playing::DrawPauseMenu() {
         floppyButtonBlue, floppyButtonBlueHover,
         topRowX, topRowY,
         buttonWidth, buttonHeight,
-        "Hats", 16,
+        "Hats", 18,
         WHITE,
         nullptr
     )) {
@@ -404,7 +409,7 @@ void Playing::DrawPauseMenu() {
         floppyButtonBlue, floppyButtonBlueHover,
         topRowX, topRowY,
         buttonWidth, buttonHeight,
-        "Stats", 16,
+        "Stats", 18,
         WHITE,
         nullptr
     )) {
@@ -416,7 +421,7 @@ void Playing::DrawPauseMenu() {
         floppyButtonBlue, floppyButtonBlueHover,
         topRowX, topRowY,
         buttonWidth, buttonHeight,
-        "System", 16,
+        "System", 18,
         WHITE,
         nullptr
     )) {
@@ -470,22 +475,30 @@ void Playing::DrawPauseMenu() {
             DrawTextEx(font, "Unlocked", { skillArea.x + 10, y + 5 }, 18, 1.0f, GREEN);
         }
         else {
-            std::string costStr = std::to_string(skillCosts[selectedSkill]);
-            float costWidth = MeasureTextEx(font, costStr.c_str(), 18, 1.0f).x;
-            float coinX = skillArea.x + 10;
-            float coinY = y + 5;
-            DrawTexturePro(
-                _CoinBag,
-                { 0, 0, (float)_CoinBag.width, (float)_CoinBag.height },
-                { coinX, coinY, 16, 16 },
-                { 0, 0 }, 0.0f, WHITE
-            );
-            DrawTextEx(font, costStr.c_str(), { coinX + 20, coinY }, 18, 1.0f, WHITE);
-            if (AIGUI_ButtonRounded("Buy", skillArea.x + 10 + costWidth + 30, y + 5, 80, 18, 0.3f, 18, WHITE)) {
-                UnlockSkill(selectedSkill);
+            // Check if Heart Thirds (index 4) is selected and Heart Halves (index 1) is not unlocked
+            bool canPurchase = (selectedSkill != 4 || skillUnlocked[1]);
+            if (canPurchase) {
+                std::string costStr = std::to_string(skillCosts[selectedSkill]);
+                float costWidth = MeasureTextEx(font, costStr.c_str(), 18, 1.0f).x;
+                float coinX = skillArea.x + 10;
+                float coinY = y + 5;
+                DrawTexturePro(
+                    _CoinBag,
+                    { 0, 0, (float)_CoinBag.width, (float)_CoinBag.height },
+                    { coinX, coinY, 16, 16 },
+                    { 0, 0 }, 0.0f, WHITE
+                );
+                DrawTextEx(font, costStr.c_str(), { coinX + 20, coinY }, 18, 1.0f, WHITE);
+                const char* buttonText = (selectedSkill == 4) ? "Upgrade" : "Buy";
+                if (AIGUI_ButtonRounded(buttonText, skillArea.x + 10 + costWidth + 30, y + 5, 80, 18, 0.3f, 18, WHITE)) {
+                    UnlockSkill(selectedSkill);
+                }
+                if (player->GetSessionCoins() + TOTALCOINS < skillCosts[selectedSkill]) {
+                    DrawTextEx(font, "Not enough coins!", { skillArea.x + 10, y + 25 }, 18, 1.0f, WHITE);
+                }
             }
-            if (player->GetSessionCoins() + TOTALCOINS < skillCosts[selectedSkill]) {
-                DrawTextEx(font, "Not enough coins!", { skillArea.x + 10, y + 25 }, 16, 1.0f, RED);
+            else {
+                DrawTextEx(font, "Requires Heart Halves!", { skillArea.x + 10, y + 5 }, 18, 1.0f, RED);
             }
         }
         break;
@@ -524,9 +537,9 @@ void Playing::DrawPauseMenu() {
     case SYSTEM: {
         if (AIGUI_ImageButton(
             floppyButtonBlue, floppyButtonBlueHover,
-            128, 140,
-            64, 16,
-            "Main Menu", 12,
+            122, 140,
+            82, 20,
+            "Main Menu", 16,
             WHITE,
             nullptr
         )) {
@@ -686,80 +699,80 @@ void Playing::DrawGameOverScreen() {
 void Playing::Update() {
     deltaTime = GetFrameTime();
 
-	if (!player->isAlive && !gameOverTriggered) {
-		gameOverTriggered = true;
-		turdHasFallenOffScreen = false;
-		GAMEOVER = false;
+    if (isPaused) {
+        return;
+    }
 
-		auto current = levelManager->GetCurrentLevel();
-		int levelIndex = -1;
-		if (dynamic_cast<ParkLevel*>(current.get())) {
-			lastLevelType = LastLevelType::PARK;
-			levelIndex = 0;
-		}
-		else if (dynamic_cast<SewerLevel*>(current.get())) {
-			lastLevelType = LastLevelType::SEWER;
-			levelIndex = 1;
-		}
-		else if (dynamic_cast<SnowLevel*>(current.get())) {
-			lastLevelType = LastLevelType::SNOW;
-			levelIndex = 3;
-		}
-		else if (dynamic_cast<CastleLevel*>(current.get())) {
-			lastLevelType = LastLevelType::CASTLE;
-			levelIndex = 4;
-		}
-		else if (dynamic_cast<BossLevel*>(current.get())) {
-			lastLevelType = LastLevelType::BOSS;
-			levelIndex = 5;
-		}
-		else if (dynamic_cast<DesertLevel*>(current.get())) {
-			lastLevelType = LastLevelType::DESERT;
-			levelIndex = 2;
-		}
+    if (!player->isAlive && !gameOverTriggered) {
+        gameOverTriggered = true;
+        turdHasFallenOffScreen = false;
+        GAMEOVER = false;
 
-		if (levelIndex >= 0) {
-			UpdateSessionRecord(levelIndex, SCORE); // This now updates totalPipes
-			savePending = true;
-		}
+        auto current = levelManager->GetCurrentLevel();
+        int levelIndex = -1;
+        if (dynamic_cast<ParkLevel*>(current.get())) {
+            lastLevelType = LastLevelType::PARK;
+            levelIndex = 0;
+        }
+        else if (dynamic_cast<SewerLevel*>(current.get())) {
+            lastLevelType = LastLevelType::SEWER;
+            levelIndex = 1;
+        }
+        else if (dynamic_cast<SnowLevel*>(current.get())) {
+            lastLevelType = LastLevelType::SNOW;
+            levelIndex = 3;
+        }
+        else if (dynamic_cast<CastleLevel*>(current.get())) {
+            lastLevelType = LastLevelType::CASTLE;
+            levelIndex = 4;
+        }
+        else if (dynamic_cast<BossLevel*>(current.get())) {
+            lastLevelType = LastLevelType::BOSS;
+            levelIndex = 5;
+        }
+        else if (dynamic_cast<DesertLevel*>(current.get())) {
+            lastLevelType = LastLevelType::DESERT;
+            levelIndex = 2;
+        }
 
-		TOTALCOINS += player->GetSessionCoins();
-		stats.totalCoins = TOTALCOINS;
-		savePending = true;
+        if (levelIndex >= 0) {
+            UpdateSessionRecord(levelIndex, SCORE);
+            savePending = true;
+        }
 
-		if (game->mainMenu) {
-			game->mainMenu->UpdateLevelUnlocks(TOTALCOINS, sessionRecords);
-		}
+        TOTALCOINS += player->GetSessionCoins();
+        stats.totalCoins = TOTALCOINS;
+        savePending = true;
 
-		if (current) current->StopMusic();
-		AudioManager::GetInstance().StopMusic();
-		gameOverMusic->Stop();
-		gameOverMusic->SetLooping(false);
-		gameOverMusic->Play();
-	}
+        if (game->mainMenu) {
+            game->mainMenu->UpdateLevelUnlocks(TOTALCOINS, sessionRecords);
+        }
+
+        if (current) current->StopMusic();
+        AudioManager::GetInstance().StopMusic();
+        gameOverMusic->Stop();
+        gameOverMusic->SetLooping(false);
+        gameOverMusic->Play();
+    }
 
     if (gameOverTriggered) {
         player->Update(deltaTime);
         if (snowOverlay) snowOverlay->Update(deltaTime);
         gameOverMusic->Update();
-
         if (!turdHasFallenOffScreen && player->GetPosition().y >= 180) {
             turdHasFallenOffScreen = true;
         }
-
         if (turdHasFallenOffScreen && !GAMEOVER) {
             GAMEOVER = true;
         }
-
         TriggerSaveIfPending();
         return;
     }
 
-    if (!isPaused && !GAMEOVER) {
+    if (!GAMEOVER) {
         if (levelManager) {
             UpdatePlayerPosition();
             levelManager->Update(deltaTime);
-
             std::shared_ptr<Level> currentLevel = levelManager->GetCurrentLevel();
             if (currentLevel) {
                 if (!player->isInvisible && currentLevel->checkForCollisions(player->GetCircleCenter(), player->GetCircleRadius())) {
@@ -840,9 +853,9 @@ void Playing::Update() {
         else {
             std::cerr << "Warning: levelManager is null in Update!" << std::endl;
         }
-
-        if (!turdHasFallenOffScreen)
+        if (!turdHasFallenOffScreen) {
             player->Update(deltaTime);
+        }
 
         for (const auto& enemy : levelManager->GetEnemies()) {
             if (auto tp = dynamic_cast<ToiletPaper*>(enemy.get())) {
@@ -958,6 +971,11 @@ void Playing::Draw() {
     DrawUI();
     UseHighDefFont(false);
 
+    // Draw touch controls for mobile
+    if (touchControls && touchControls->IsEnabled() && !isPaused) {
+        touchControls->Draw();
+    }
+
     if (isPaused) {
         DrawPauseMenu();
         return;
@@ -972,6 +990,31 @@ void Playing::Draw() {
                 bossHealthBar->Draw();
             }
         }
+    }
+
+    // --- Debug Overlay for Physics Tuning ---
+    static bool showDebug = false;
+    if (IsKeyPressed(KEY_F1)) showDebug = !showDebug;
+    if (IsKeyPressed(KEY_F2)) Player::godMode = !Player::godMode;
+    if (showDebug) {
+        // Use the default AIGUI font for debug overlay
+        float x = 10.0f, y = 10.0f, width = 120.0f;
+        DrawRectangleRec({x-6, y-6, width+12, 170}, Fade(BLACK, 0.85f));
+        float v;
+        v = player->GetJumpVelocity();
+        AIGUI_SliderFloat("Jump Velocity", x, y, width, 0.0f, 800.0f, &v); player->SetJumpVelocity(v); y += 22;
+        v = player->GetGravity();
+        AIGUI_SliderFloat("Gravity", x, y, width, 0.0f, 800.0f, &v); player->SetGravity(v); y += 22;
+        v = player->GetFastFallGravity();
+        AIGUI_SliderFloat("Fast Fall Grav.", x, y, width, 0.0f, 1200.0f, &v); player->SetFastFallGravity(v); y += 22;
+        v = player->GetMaxJumpSpeed();
+        AIGUI_SliderFloat("Max Jump Speed", x, y, width, -800.0f, 0.0f, &v); player->SetMaxJumpSpeed(v); y += 22;
+        v = player->GetMaxFallSpeed();
+        AIGUI_SliderFloat("Max Fall Speed", x, y, width, 0.0f, 1200.0f, &v); player->SetMaxFallSpeed(v); y += 22;
+        // God mode toggle
+        const char* godText = Player::godMode ? "God Mode: ON" : "God Mode: OFF";
+        AIGUI_LabelRounded(godText, x, y, width, 18, 0.2f, 14, YELLOW, Fade(BLACK, 0.7f)); y += 22;
+        AIGUI_LabelRounded("[F1] hide  [F2] god", x, y, width, 18, 0.2f, 14, WHITE, Fade(BLACK, 0.5f));
     }
 }
 
@@ -1004,18 +1047,66 @@ void Playing::UpdateMusic() {
 }
 
 void Playing::HandleInput() {
+    // Update touch controls
+    if (touchControls) {
+        touchControls->Update();
+    }
+    
+    auto& platform = PlatformLayer::GetInstance();
+    
+    // Handle pause - ESC on desktop or could add a pause button for mobile later
     if (IsKeyPressed(KEY_ESCAPE)) {
         isPaused = !isPaused;
         currentTab = SYSTEM;
     }
+    
     if (isPaused) {
+        // Keep keyboard shortcuts for pause menu navigation (desktop-specific)
         if (IsKeyPressed(KEY_P)) currentTab = STATS;
         if (IsKeyPressed(KEY_H)) currentTab = HATS;
         if (IsKeyPressed(KEY_K)) currentTab = SKILLS;
     }
     else {
-        if (IsKeyPressed(KEY_SPACE)) player->Jump();
-        if (IsKeyDown(KEY_F)) player->Shoot();
+        // Jump input - unified across platforms
+        bool jumpInput = false;
+        
+        // Keyboard input (desktop)
+        jumpInput |= IsKeyPressed(KEY_SPACE);
+        
+        // Touch input (mobile)
+        if (touchControls && touchControls->IsEnabled()) {
+            jumpInput |= touchControls->IsJumpPressed();
+        }
+        
+        // Platform-agnostic primary input (tap/click)
+        if (platform.IsPrimaryInputPressed()) {
+            // On mobile with touch controls, primary input is handled by touch zones
+            // On desktop, primary input (mouse click) can also trigger jump
+            if (!touchControls || !touchControls->IsEnabled()) {
+                jumpInput = true;
+            }
+        }
+        
+        if (jumpInput) {
+            player->Jump();
+        }
+        
+        // Shoot input - unified across platforms (hold for continuous shooting)
+        bool shootInput = false;
+        
+        // Keyboard input (desktop)
+        shootInput |= IsKeyDown(KEY_F);
+        
+        // Touch input (mobile)
+        if (touchControls && touchControls->IsEnabled()) {
+            shootInput |= touchControls->IsShootHeld();
+        }
+        
+        if (shootInput) {
+            player->Shoot();
+        }
+        
+        // Debug revive - keyboard only (development feature)
         if (IsKeyPressed(KEY_R)) player->Revive();
     }
 }

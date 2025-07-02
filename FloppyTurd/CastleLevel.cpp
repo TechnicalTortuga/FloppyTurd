@@ -1,5 +1,5 @@
 ﻿#include "CastleLevel.h"
-#include "Resources.h"
+#include "ResourceCompat.h"
 #include "GameSettings.h"
 #include "Coin.h"
 #include "PoopHeart.h"

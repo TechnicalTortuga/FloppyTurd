@@ -1,5 +1,5 @@
 #include "RatCopter.h"
-#include "Resources.h"
+#include "ResourceCompat.h"
 #include <iostream>
 #include <raymath.h>
 #include "LevelManager.h"

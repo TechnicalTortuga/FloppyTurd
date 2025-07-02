@@ -1,5 +1,5 @@
 ﻿#include "RatKing.h"
-#include "Resources.h"
+#include "ResourceCompat.h"
 #include <raymath.h>
 #include "AudioClip.h"
 #include "LevelManager.h"

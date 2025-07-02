@@ -3,7 +3,7 @@
 #include "GameSettings.h"
 #include <vector>
 #include "Obstacle.h"
-#include "Resources.h"
+#include "ResourceCompat.h"
 
 enum class PipeType {
 	TopOrange,

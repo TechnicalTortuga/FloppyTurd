@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "Obstacle.h"
 #include "raylib.h"
-#include "Resources.h"
+#include "ResourceCompat.h"
 #include <vector>
 
 class SpikeBall : public Obstacle

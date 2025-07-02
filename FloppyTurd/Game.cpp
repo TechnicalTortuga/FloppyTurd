@@ -1,11 +1,16 @@
 #include "Game.h"
 #include "AIGUI.h"
 #include "AudioManager.h"
+#include "ResourceManager.h"
+#include "ResourceCompat.h"
 
 Game::Game()
 {
 	SetTargetFPS(60);
 	InitAudioDevice();
+
+	// Initialize ResourceManager early for efficient asset management
+	ResourceManager::GetInstance().Initialize(ResourceQuality::AUTO);
 
 	InitClasses();
 	// Load the font and validate it
@@ -33,6 +38,9 @@ Game::Game()
 
 Game::~Game()
 {
+	// Shutdown ResourceManager before closing audio
+	ResourceManager::GetInstance().Shutdown();
+	
 	CloseAudioDevice();
 	AIGUI_Shutdown();
 
@@ -52,7 +60,19 @@ Game::~Game()
 void Game::InitClasses()
 {
 	using namespace GameSettings;
-	window = new Window(GameWidth, GameHeight);
+	window = new Window(true);
+
+	// Load and set the window icon
+	Image icon = LoadImage("resources/poophat.ico");
+	if (icon.data) {
+		SetWindowIcon(icon);
+		UnloadImage(icon);
+		printf("Poophat icon set successfully from %s\n", "resources/poophat.ico");
+	}
+	else {
+		printf("Error: Failed to load poophat icon from %s\n", "resources/poophat.ico");
+	}
+	SetWindowFocused();
 
 	mainMenu = nullptr; // Initialized in Loading state
 	playing = new Playing(this);
@@ -69,6 +89,7 @@ void Game::RunGame()
 
 	while (!WindowShouldClose())
 	{
+		
 		if (gamestate == SHUTDOWN)
 		{
 			CloseWindow();
@@ -220,6 +241,8 @@ void Game::Draw()
 
 void Game::HandleInput()
 {
+	if (IsKeyPressed(KEY_F11)) window->ToggleMode();
+
 	switch (gamestate)
 	{
 	case MAINMENU:

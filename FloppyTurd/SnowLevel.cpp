@@ -1,5 +1,5 @@
 ﻿#include "SnowLevel.h"
-#include "Resources.h"
+#include "ResourceCompat.h"
 #include "Coin.h"
 #include "PoopHeart.h"
 #include <raymath.h>

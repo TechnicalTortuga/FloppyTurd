@@ -1,5 +1,5 @@
 ﻿#include "BossLevel.h"
-#include "Resources.h"
+#include "ResourceCompat.h"
 #include "RatKing.h"
 #include "GameSettings.h"
 #include "ParallaxLayer.h"
@@ -152,19 +152,19 @@ void BossLevel::Update(float deltaTime)
             float r = radiusDist(engine);
             float a = angleDist(engine);
             Vector2 pos1 = { bossCenter.x + r * cosf(a), bossCenter.y + r * sinf(a) };
-            explosions.push_back(std::make_shared<Explosion>(Resources::BlastSmall, pos1, 1.0f));
+            explosions.push_back(std::make_shared<Explosion>("resources/vfx/blast_small.png", pos1, 1.0f));
 
             // Explosion 2: BlastSmall at 0.29s (second beat)
             r = radiusDist(engine);
             a = angleDist(engine);
             Vector2 pos2 = { bossCenter.x + r * cosf(a), bossCenter.y + r * sinf(a) };
-            explosions.push_back(std::make_shared<Explosion>(Resources::BlastSmall, pos2, 1.0f));
+            explosions.push_back(std::make_shared<Explosion>("resources/vfx/blast_small.png", pos2, 1.0f));
 
             // Explosion 3: BlastBig at 0.58s (third beat)
             r = radiusDist(engine);
             a = angleDist(engine);
             Vector2 pos3 = { bossCenter.x + r * cosf(a), bossCenter.y + r * sinf(a) };
-            explosions.push_back(std::make_shared<Explosion>(Resources::BlastBig, pos3, 1.0f));
+            explosions.push_back(std::make_shared<Explosion>("resources/vfx/blast_big.png", pos3, 1.0f));
         }
 
         // Handle low health music logic

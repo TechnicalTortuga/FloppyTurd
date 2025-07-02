@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "C:/Users/aeist/source/repos/FloppyTurd/build/_deps/raylib-subbuild/CMakeFiles/raylib-populate"
+		},
+		{
+			"file" : "C:/Users/aeist/source/repos/FloppyTurd/build/_deps/raylib-subbuild/CMakeFiles/aa52044c5c461af65f0fb1e55001bab1/raylib-populate.rule"
+		},
+		{
+			"file" : "C:/Users/aeist/source/repos/FloppyTurd/build/_deps/raylib-subbuild/CMakeFiles/edcfa16ae3a8f801a1a6543a439d32cf/raylib-populate-complete.rule"
+		},
+		{
+			"file" : "C:/Users/aeist/source/repos/FloppyTurd/build/_deps/raylib-subbuild/CMakeFiles/91cac9b912152358dce44e70de359e0c/raylib-populate-build.rule"
+		},
+		{
+			"file" : "C:/Users/aeist/source/repos/FloppyTurd/build/_deps/raylib-subbuild/CMakeFiles/91cac9b912152358dce44e70de359e0c/raylib-populate-configure.rule"
+		},
+		{
+			"file" : "C:/Users/aeist/source/repos/FloppyTurd/build/_deps/raylib-subbuild/CMakeFiles/91cac9b912152358dce44e70de359e0c/raylib-populate-download.rule"
+		},
+		{
+			"file" : "C:/Users/aeist/source/repos/FloppyTurd/build/_deps/raylib-subbuild/CMakeFiles/91cac9b912152358dce44e70de359e0c/raylib-populate-install.rule"
+		},
+		{
+			"file" : "C:/Users/aeist/source/repos/FloppyTurd/build/_deps/raylib-subbuild/CMakeFiles/91cac9b912152358dce44e70de359e0c/raylib-populate-mkdir.rule"
+		},
+		{
+			"file" : "C:/Users/aeist/source/repos/FloppyTurd/build/_deps/raylib-subbuild/CMakeFiles/91cac9b912152358dce44e70de359e0c/raylib-populate-patch.rule"
+		},
+		{
+			"file" : "C:/Users/aeist/source/repos/FloppyTurd/build/_deps/raylib-subbuild/CMakeFiles/91cac9b912152358dce44e70de359e0c/raylib-populate-test.rule"
+		},
+		{
+			"file" : "C:/Users/aeist/source/repos/FloppyTurd/build/_deps/raylib-subbuild/CMakeFiles/91cac9b912152358dce44e70de359e0c/raylib-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"raylib-populate"
+		],
+		"name" : "raylib-populate"
+	}
+}

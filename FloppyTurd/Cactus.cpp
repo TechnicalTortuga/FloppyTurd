@@ -1,5 +1,5 @@
 #include "Cactus.h"
-#include "Resources.h"
+#include "ResourceCompat.h"
 
 Cactus::Cactus(Vector2 spawnPos, CactusVariant variant)
     : type(variant)

@@ -1,7 +1,7 @@
 #pragma once
 #include "Level.h"
 #include "GameSettings.h"
-#include "Resources.h"
+#include "ResourceCompat.h"
 #include "ToiletPair.h"
 #include <iostream>
 #include <vector>

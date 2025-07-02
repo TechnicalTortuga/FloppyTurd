@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "Sprite.h"
-#include "Resources.h"
+#include "ResourceCompat.h"
 #include "GameSettings.h"
 #include "Projectile.h"
 #include <vector>
@@ -83,6 +83,19 @@ public:
 	bool heartMagnet{ false };
 	Vector2 circleCenter{ 77.0f, 100.0f };
 
+	float GetJumpVelocity() const { return JUMPVELOCITY; }
+	void SetJumpVelocity(float v) { JUMPVELOCITY = v; }
+	float GetGravity() const { return GRAVITY; }
+	void SetGravity(float v) { GRAVITY = v; }
+	float GetFastFallGravity() const { return FAST_FALL_GRAVITY; }
+	void SetFastFallGravity(float v) { FAST_FALL_GRAVITY = v; }
+	float GetMaxJumpSpeed() const { return MAX_JUMP_SPEED; }
+	void SetMaxJumpSpeed(float v) { MAX_JUMP_SPEED = v; }
+	float GetMaxFallSpeed() const { return MAX_FALL_SPEED; }
+	void SetMaxFallSpeed(float v) { MAX_FALL_SPEED = v; }
+
+	static bool godMode;
+
 private:
 	PLAYERSTATE playerstate{ JUMPING };
 	int health{ 100 };
@@ -91,9 +104,11 @@ private:
 
 	float circleRadius{ 11.0f };
 	float playerScale{ 1.0f };
-	float MAXVELOCITY{ 4.0f };
-	float GRAVITY{ 0.4f };
-	float JUMPVELOCITY{ 20.0f };
+	float MAX_FALL_SPEED{ 400.0f }; // Terminal downward velocity (pixels/sec)
+	float MAX_JUMP_SPEED{ -180.0f }; // Terminal upward velocity (pixels/sec, negative)
+	float GRAVITY{ 800.0f };       // Normal gravity (pixels/sec^2)
+	float FAST_FALL_GRAVITY{ 1200.0f }; // Gravity after apex (pixels/sec^2)
+	float JUMPVELOCITY{ 800.0f }; // Jump impulse (pixels/sec)
 	Vector2 pos{ 77.0f, 50.0f };
 	Vector2 size{ 64.0f, 64.0f };
 	Vector2 velocity{ 0.0f, 0.0f };
@@ -144,4 +159,6 @@ private:
 	int sessionCoins{ 0 };
 
 	Game* game{ nullptr };
+
+	bool isFastFalling{ false }; // True if player is in fast fall mode
 };

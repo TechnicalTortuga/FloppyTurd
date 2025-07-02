@@ -1,29 +1,42 @@
 #include "Sprite.h"
 #include <raylib.h>
-#include "TextureCache.h"
+#include "ResourceCompat.h"
 
 // Modern constructor: Initialize with texture, animation settings, and position
-Sprite::Sprite(const std::string& filePath, int frameCount, float frameTime, float scale, Vector2 startPosition)
-	: frameCount(frameCount), frameTime(frameTime), scale(scale), position(startPosition)
+Sprite::Sprite(const std::string& imagePath, int frameCount, float frameTime, float scale, Vector2 startPosition)
+	: frameCount(frameCount), frameIndex(0), frameTime(frameTime), elapsedTime(0.0f),
+	  scale(scale), position(startPosition), loopedOnce(false)
 {
-	image = TextureCache::Get(filePath.c_str());
+	printf("DEBUG: Sprite() constructor called with imagePath: %s, frameCount: %d\n", imagePath.c_str(), frameCount);
+	
+	// Use ResourceCompat for texture loading (this will handle the path mapping)
+	image = Resources::GetTextureByPath(imagePath);
+	
+	printf("DEBUG: Sprite() - texture loaded, ID: %d, width: %d, height: %d\n", image.id, image.width, image.height);
+	
 	if (image.id == 0) {
-		TraceLog(LOG_WARNING, "Sprite: Failed to load texture from cache at path %s. Visuals will be missing.", filePath.c_str());
-		frameRec = { 0, 0, 32, 32 }; // Fallback dimensions if texture fails to load
+		printf("DEBUG: Sprite() - ERROR: Failed to load texture for path: %s\n", imagePath.c_str());
 	}
-	else {
-		frameRec = { 0, 0, (float)image.width / frameCount, (float)image.height };
-	}
+	
+	// Setup frame rectangle
+	frameRec.width = (float)image.width / frameCount;
+	frameRec.height = (float)image.height;
+	frameRec.x = 0;
+	frameRec.y = 0;
+	
+	printf("DEBUG: Sprite() - frameWidth: %f, frameHeight: %f\n", frameRec.width, frameRec.height);
+	
+	printf("DEBUG: Sprite() - constructor completed successfully\n");
 }
 
 // Legacy constructor: Initialize with specific dimensions and position
 Sprite::Sprite(const std::string& filePath, float x, float y, float width, float height, float frameTime, float scale)
 	: frameTime(frameTime), scale(scale)
 {
-	image = TextureCache::Get(filePath.c_str());
+	image = Resources::GetTextureByPath(filePath);
 	position = { x, y };
 	if (image.id == 0) {
-		TraceLog(LOG_WARNING, "Sprite: Failed to load texture from cache at path %s. Visuals will be missing.", filePath.c_str());
+		TraceLog(LOG_WARNING, "Sprite: Failed to load texture from ResourceManager at path %s. Visuals will be missing.", filePath.c_str());
 		frameRec = { 0, 0, width, height }; // Use provided dimensions as fallback
 	}
 	else {

@@ -137,8 +137,10 @@ LevelManager* LevelManager::GetInstance()
 
 void LevelManager::Update(float deltaTime)
 {
-    if (currentLevel) currentLevel->Update(deltaTime);
-
+    if (currentLevel) {
+        currentLevel->Update(deltaTime);
+    }
+    
     if (CastleLevel* castle = dynamic_cast<CastleLevel*>(currentLevel.get())) {
         const auto& toilets = castle->getObjLoc();
         if (!hasPassedFirstToilet && toilets.size() > 0) {

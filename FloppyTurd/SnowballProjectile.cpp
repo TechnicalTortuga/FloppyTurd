@@ -1,5 +1,5 @@
 #include "SnowballProjectile.h"
-#include "Resources.h"
+#include "ResourceCompat.h"
 
 SnowballProjectile::SnowballProjectile(Vector2 pos, Vector2 vel)
     : position(pos), velocity(vel) {}

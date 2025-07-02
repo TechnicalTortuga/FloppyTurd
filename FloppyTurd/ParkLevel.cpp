@@ -1,5 +1,5 @@
 #include "ParkLevel.h"
-#include "Resources.h"
+#include "ResourceCompat.h"
 #include "GameSettings.h"
 
 ParkLevel::ParkLevel()

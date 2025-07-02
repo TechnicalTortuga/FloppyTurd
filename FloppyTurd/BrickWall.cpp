@@ -1,5 +1,5 @@
 #include "BrickWall.h"
-#include "Resources.h"
+#include "ResourceCompat.h"
 #include "TextureCache.h"
 
 BrickWall::BrickWall(Vector2 pos)

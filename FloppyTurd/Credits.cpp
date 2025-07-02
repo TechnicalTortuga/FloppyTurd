@@ -2,7 +2,7 @@
 // Updated to use black font, add colons to position titles, integrate background scrolling with ParallaxLayer, and adjust pipe Y-position down by 20 pixels.
 
 #include "Credits.h"
-#include "Resources.h"
+#include "ResourceCompat.h"
 #include "TextureCache.h"
 #include "AudioManager.h"
 #include <raymath.h>
@@ -15,7 +15,7 @@ Credits::Credits(Game* game)
 
     // Initialize CameraSystem for background scrolling
     cameraSystem = new CameraSystem();
-    cameraSystem->AddLayer(new ParallaxLayer({ CreditsBackgroundTexture }, 20.0f, 1.0f)); // Slower scroll for credits
+    cameraSystem->AddLayer(new ParallaxLayer({ "resources/ui/FloppyTurdCreditsBackground.png" }, 20.0f, 1.0f)); // Slower scroll for credits
 
     // Load music
     music = new AudioClip(CreditsMusic);
@@ -38,7 +38,7 @@ Credits::Credits(Game* game)
     }
 
     // Initialize Turdlet sprite
-    turdletSprite = std::make_shared<Sprite>(TurdletIdle, 1, 0.1f, 1.0f);
+    turdletSprite = std::make_shared<Sprite>("resources/turd/TurdletIdle.png", 1, 0.1f, 1.0f);
     turdletPos = { 150.0f, 50.0f };
 
     // Load FinLogo textures
@@ -49,22 +49,30 @@ Credits::Credits(Game* game)
     // Initialize credit entries with random Y-offsets and colons
     std::default_random_engine engine{ std::random_device{}() };
     std::uniform_real_distribution<float> offsetDist(-20.0f, 20.0f);
+
     creditEntries = {
-        CreditEntry{"Game Developer:", "Alexandru Istrate", offsetDist(engine)},
-        CreditEntry{"Programmer:", "Alex Istrate", offsetDist(engine)},
-        CreditEntry{"Music Director:", "Al Istrate", offsetDist(engine)},
-        CreditEntry{"Pixel Artist:", "A. Istrate", offsetDist(engine)},
-        CreditEntry{"Assist. Pixel Artist:", "William Henson", offsetDist(engine)},
-        CreditEntry{"Fartist:", "Kevin Hooks", offsetDist(engine)},
-        CreditEntry{"Marketing Director:", "Kevin Hooks", offsetDist(engine)}, // Empty line
-        CreditEntry{"Tools Used:", "", offsetDist(engine)},
-        CreditEntry{"", "Aseprite", offsetDist(engine)},
-        CreditEntry{"", "Raylib Framework for C++", offsetDist(engine)},
-        CreditEntry{"", "FL Studios", offsetDist(engine)},
-        CreditEntry{"Special Thanks to:", "", offsetDist(engine)},
-        CreditEntry{"", "Betty Henson-Istrate", offsetDist(engine)},
-        CreditEntry{"", "", offsetDist(engine)}, // Empty line
-        CreditEntry{"Thank you for playing!", "", offsetDist(engine)}
+        // Core team
+        { "Game Developer:",  "Alexandru Istrate",               offsetDist(engine) },
+        { "Pixel Artist:",    "William Henson",            offsetDist(engine) },
+        { "Fartist:",         "Kevin Hooks",                     offsetDist(engine) },
+
+        { "", "", offsetDist(engine) },  // visual spacer
+        // Third-party goodies
+        { "Tools and Assets:", "",            offsetDist(engine) },
+        { "Font (Whacky Joe):", "VEXED  � CC BY 4.0",            offsetDist(engine) },
+        { "SFX Pack:",          "JD Sherbert  � Pixel UI SFX",   offsetDist(engine) },
+        { "Framework:",         "Raylib 5.5 for C++", offsetDist(engine) },
+        { "Music:",         "Fl Studio", offsetDist(engine) },
+        { "Artwork:",         "Aseprite", offsetDist(engine) },
+
+        { "", "", offsetDist(engine) },  // spacer
+        // Special thanks
+        { "Special Thanks:",   "",                                offsetDist(engine) },
+        { "Betty Henson-Istrate", "Dantes - Willow",              offsetDist(engine) },
+
+        { "", "", offsetDist(engine) },  // spacer
+        // Farewell line
+        { "Thank you for playing!", "",                           offsetDist(engine) }
     };
 
     // Load Whacky Joe font
@@ -218,7 +226,7 @@ void Credits::Reset()
     // Reset camera system
     delete cameraSystem;
     cameraSystem = new CameraSystem();
-    cameraSystem->AddLayer(new ParallaxLayer({ Resources::CreditsBackgroundTexture }, 20.0f, 1.0f));
+    cameraSystem->AddLayer(new ParallaxLayer({ "resources/ui/FloppyTurdCreditsBackground.png" }, 20.0f, 1.0f));
 }
 
 void Credits::UpdateMusic()

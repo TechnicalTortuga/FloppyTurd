@@ -1,6 +1,6 @@
 ﻿#include "ToiletPaper.h"
 #include <raymath.h>
-#include "Resources.h"
+#include "ResourceCompat.h"
 #include <iostream>
 
 ToiletPaper::ToiletPaper(Vector2 spawnPos, float panspeed, float extra)

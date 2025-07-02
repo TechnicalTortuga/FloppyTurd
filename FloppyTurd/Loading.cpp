@@ -1,12 +1,12 @@
 #include "Loading.h"
-#include "Resources.h"
+#include "ResourceCompat.h"
 #include "TextureCache.h"
 
 Loading::Loading(Game* game)
 	: game(game), rotationAngle(0.0f), rotationTimer(0.0f), rotationComplete(false)
 {
 	// Load the poophat texture via TextureCache
-	poophat = TextureCache::Get(Resources::PoopHat);
+	poophat = Resources::RM().GetTexture("poop_hat");
 	if (poophat.id == 0) {
 		TraceLog(LOG_WARNING, "Failed to load PoopHat texture from cache, using fallback path");
 		poophat = TextureCache::Get("resources/hats/poophat.png"); // Fallback path
@@ -32,7 +32,7 @@ void Loading::Update()
 		game->mainMenu = new MainMenu(game);
 	}
 	if (game->mainMenu && !game->mainMenu->GetAudioClip()) {
-		game->mainMenu->PlayMusic(new AudioClip(Resources::MainMenuMusic));
+		game->mainMenu->PlayMusic(new AudioClip("resources/mainmenu/FloppyTurdMenu.mp3"));
 	}
 }
 
