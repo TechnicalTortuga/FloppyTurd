@@ -19,7 +19,7 @@ set(CMAKE_IMPORT_FILE_VERSION 1)
 set(_cmake_targets_defined "")
 set(_cmake_targets_not_defined "")
 set(_cmake_expected_targets "")
-foreach(_cmake_expected_target IN ITEMS SDL2_ttf::SDL2_ttf-static)
+foreach(_cmake_expected_target IN ITEMS SDL2_ttf::SDL2_ttf-static SDL2_ttf::freetype)
   list(APPEND _cmake_expected_targets "${_cmake_expected_target}")
   if(TARGET "${_cmake_expected_target}")
     list(APPEND _cmake_targets_defined "${_cmake_expected_target}")
@@ -60,7 +60,14 @@ add_library(SDL2_ttf::SDL2_ttf-static STATIC IMPORTED)
 
 set_target_properties(SDL2_ttf::SDL2_ttf-static PROPERTIES
   INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/include/SDL2"
-  INTERFACE_LINK_LIBRARIES "\$<LINK_ONLY:>;\$<LINK_ONLY:Freetype::Freetype>"
+  INTERFACE_LINK_LIBRARIES "\$<LINK_ONLY:>;\$<LINK_ONLY:SDL2_ttf::freetype>"
+)
+
+# Create imported target SDL2_ttf::freetype
+add_library(SDL2_ttf::freetype STATIC IMPORTED)
+
+set_target_properties(SDL2_ttf::freetype PROPERTIES
+  INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/include/freetype2"
 )
 
 # Load information for each installed configuration.

@@ -37,6 +37,26 @@ if(NOT DEFINED CMAKE_OBJDUMP)
   set(CMAKE_OBJDUMP "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/objdump")
 endif()
 
+set(CMAKE_BINARY_DIR "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios")
+
+if(NOT PLATFORM_NAME)
+  if(NOT "$ENV{PLATFORM_NAME}" STREQUAL "")
+    set(PLATFORM_NAME "$ENV{PLATFORM_NAME}")
+  endif()
+  if(NOT PLATFORM_NAME)
+    set(PLATFORM_NAME iphoneos)
+  endif()
+endif()
+
+if(NOT EFFECTIVE_PLATFORM_NAME)
+  if(NOT "$ENV{EFFECTIVE_PLATFORM_NAME}" STREQUAL "")
+    set(EFFECTIVE_PLATFORM_NAME "$ENV{EFFECTIVE_PLATFORM_NAME}")
+  endif()
+  if(NOT EFFECTIVE_PLATFORM_NAME)
+    set(EFFECTIVE_PLATFORM_NAME -iphoneos)
+  endif()
+endif()
+
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
 if(CMAKE_INSTALL_LOCAL_ONLY)

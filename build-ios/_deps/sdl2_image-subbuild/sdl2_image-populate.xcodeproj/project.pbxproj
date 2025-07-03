@@ -1,0 +1,639 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXAggregateTarget section */
+		1561BF98D926C1431236E587 /* ALL_BUILD */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 522035CE74414DD08D0D1853 /* Build configuration list for PBXAggregateTarget "ALL_BUILD" */;
+			buildPhases = (
+				9E75B943231B0E6BF02CFC80 /* Generate CMakeFiles/ALL_BUILD */,
+			);
+			dependencies = (
+				0EB58B0EAFE04A8993DD292F /* PBXTargetDependency */,
+				2F2A6D8569434D0B93F31C06 /* PBXTargetDependency */,
+			);
+			name = ALL_BUILD;
+			productName = ALL_BUILD;
+		};
+		69731C701A732BAFF0FF5BD5 /* sdl2_image-populate */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 188AFD790B20427DA7050499 /* Build configuration list for PBXAggregateTarget "sdl2_image-populate" */;
+			buildPhases = (
+				F4E018356061E3225E0C041E /* Generate sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-mkdir */,
+				E20394BA89A9DC31FD0B8E16 /* Generate sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-download */,
+				AD35C5987FF9702D0CBE0BA3 /* Generate sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-update */,
+				392029838D240D19489F8672 /* Generate sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-patch */,
+				0EDD13A85FCD2F24A27BBC54 /* Generate sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-configure */,
+				AA61B66E01659BB48471FD7A /* Generate sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-build */,
+				FFD4D950A03F57F5DF2AA16B /* Generate sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-install */,
+				2DE70EE4FE4D99BE6AFEEE6F /* Generate sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-test */,
+				BF928711C06DFC4A0D406E6B /* Generate CMakeFiles/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-complete */,
+				1705283DA6FA870A8F725D46 /* Generate CMakeFiles/sdl2_image-populate */,
+			);
+			dependencies = (
+				1109FB42A494485F95EB30F3 /* PBXTargetDependency */,
+			);
+			name = "sdl2_image-populate";
+			productName = "sdl2_image-populate";
+		};
+		DEE77BF53BCB72FC908B45BD /* ZERO_CHECK */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 7205E31EB2C647C48E9E340C /* Build configuration list for PBXAggregateTarget "ZERO_CHECK" */;
+			buildPhases = (
+				AD8E64599D3FC1AED29BF22D /* Generate CMakeFiles/ZERO_CHECK */,
+			);
+			dependencies = (
+			);
+			name = ZERO_CHECK;
+			productName = ZERO_CHECK;
+		};
+/* End PBXAggregateTarget section */
+
+/* Begin PBXBuildStyle section */
+		30E99863F9264B4B99D93786 /* Debug */ = {
+			isa = PBXBuildStyle;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+			};
+			name = Debug;
+		};
+/* End PBXBuildStyle section */
+
+/* Begin PBXContainerItemProxy section */
+		0144F70FDFAB40B199CCB0F5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8B4E06DD3DC24A49B2E53BDB /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 69731C701A732BAFF0FF5BD5;
+			remoteInfo = "sdl2_image-populate";
+		};
+		4D38500CE4ED4DB3B3BD01E5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8B4E06DD3DC24A49B2E53BDB /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DEE77BF53BCB72FC908B45BD;
+			remoteInfo = ZERO_CHECK;
+		};
+		CBF3912B4CC548659FB00DE3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 8B4E06DD3DC24A49B2E53BDB /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DEE77BF53BCB72FC908B45BD;
+			remoteInfo = ZERO_CHECK;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		51E540C10D6643B1B529ED6B /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = CMakeLists.txt; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
+		E61F0DD8DBBF46AE9B75EF36 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = CMakeLists.txt; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		39A3F343B650468EA3964011 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		423F4292EF7F4D538A42C549 /* ExternalProjectTargets */ = {
+			isa = PBXGroup;
+			children = (
+				7BF952B9515B4D00AFEA2A64 /* sdl2_image-populate */,
+			);
+			name = ExternalProjectTargets;
+			sourceTree = "<group>";
+		};
+		49B60D9613DF4FC5B8B72A6B /* sdl2_image-populate */ = {
+			isa = PBXGroup;
+			children = (
+				6118DAFEA1EA4BD38F33AE26 /* CMake Rules */,
+				51E540C10D6643B1B529ED6B /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/CMakeLists.txt */,
+			);
+			name = "sdl2_image-populate";
+			sourceTree = "<group>";
+		};
+		6118DAFEA1EA4BD38F33AE26 /* CMake Rules */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = "CMake Rules";
+			sourceTree = "<group>";
+		};
+		61D7C6FE490944A18450B7EB /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
+		7BF952B9515B4D00AFEA2A64 /* sdl2_image-populate */ = {
+			isa = PBXGroup;
+			children = (
+				49B60D9613DF4FC5B8B72A6B /* sdl2_image-populate */,
+			);
+			name = "sdl2_image-populate";
+			sourceTree = "<group>";
+		};
+		84CC72F9C63941E29129BC0E /* CMake Rules */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = "CMake Rules";
+			sourceTree = "<group>";
+		};
+		937DFF43209A44059F38BB1A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		B8A76A08D6DF4168B05AC5CA /* ALL_BUILD */ = {
+			isa = PBXGroup;
+			children = (
+				84CC72F9C63941E29129BC0E /* CMake Rules */,
+				E61F0DD8DBBF46AE9B75EF36 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/CMakeLists.txt */,
+			);
+			name = ALL_BUILD;
+			sourceTree = "<group>";
+		};
+		EB93DCCFEE314FADA5AD0DF8 = {
+			isa = PBXGroup;
+			children = (
+				423F4292EF7F4D538A42C549 /* ExternalProjectTargets */,
+				B8A76A08D6DF4168B05AC5CA /* ALL_BUILD */,
+				937DFF43209A44059F38BB1A /* Products */,
+				39A3F343B650468EA3964011 /* Frameworks */,
+				61D7C6FE490944A18450B7EB /* Resources */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXProject section */
+		8B4E06DD3DC24A49B2E53BDB /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1620;
+			};
+			buildConfigurationList = 9D5B47D8E4B340BA97D23BCC /* Build configuration list for PBXProject "sdl2_image-populate" */;
+			buildSettings = {
+			};
+			buildStyles = (
+				30E99863F9264B4B99D93786 /* Debug */,
+			);
+			compatibilityVersion = "Xcode 3.2";
+			hasScannedForEncodings = 0;
+			mainGroup = EB93DCCFEE314FADA5AD0DF8;
+			projectDirPath = .;
+			projectRoot = "";
+			targets = (
+				1561BF98D926C1431236E587 /* ALL_BUILD */,
+				69731C701A732BAFF0FF5BD5 /* sdl2_image-populate */,
+				DEE77BF53BCB72FC908B45BD /* ZERO_CHECK */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		0EDD13A85FCD2F24A27BBC54 /* Generate sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-configure */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-patch","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/tmp/sdl2_image-populate-cfgcmd.txt"			);
+			name = "Generate sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-configure";
+			outputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-configure"			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e
+if test \"$CONFIGURATION\" = \"Debug\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-build
+  /opt/homebrew/bin/cmake -E echo_append
+  /opt/homebrew/bin/cmake -E touch /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$CONFIGURATION$EFFECTIVE_PLATFORM_NAME/sdl2_image-populate-configure
+fi
+";
+			showEnvVarsInLog = 0;
+		};
+		1705283DA6FA870A8F725D46 /* Generate CMakeFiles/sdl2_image-populate */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/CMakeFiles/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-complete"			);
+			name = "Generate CMakeFiles/sdl2_image-populate";
+			outputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/CMakeFiles/sdl2_image-populate"			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e
+if test \"$CONFIGURATION\" = \"Debug\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild
+fi
+";
+			showEnvVarsInLog = 0;
+		};
+		2DE70EE4FE4D99BE6AFEEE6F /* Generate sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-test */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-install"			);
+			name = "Generate sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-test";
+			outputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-test"			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e
+if test \"$CONFIGURATION\" = \"Debug\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-build
+  /opt/homebrew/bin/cmake -E echo_append
+  /opt/homebrew/bin/cmake -E touch /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$CONFIGURATION$EFFECTIVE_PLATFORM_NAME/sdl2_image-populate-test
+fi
+";
+			showEnvVarsInLog = 0;
+		};
+		392029838D240D19489F8672 /* Generate sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-patch */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-update","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/sdl2_image-populate-patch-info.txt"			);
+			name = "Generate sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-patch";
+			outputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-patch"			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e
+if test \"$CONFIGURATION\" = \"Debug\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild
+  /opt/homebrew/bin/cmake -E echo_append
+  /opt/homebrew/bin/cmake -E touch /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$CONFIGURATION$EFFECTIVE_PLATFORM_NAME/sdl2_image-populate-patch
+fi
+";
+			showEnvVarsInLog = 0;
+		};
+		3C0110FC8322DE7E50886E21 = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# shell script goes here
+exit 0";
+			showEnvVarsInLog = 0;
+		};
+		9B50530E35CC49C82C2FACCF = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# shell script goes here
+exit 0";
+			showEnvVarsInLog = 0;
+		};
+		9E75B943231B0E6BF02CFC80 /* Generate CMakeFiles/ALL_BUILD */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Generate CMakeFiles/ALL_BUILD";
+			outputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/CMakeFiles/ALL_BUILD"			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e
+if test \"$CONFIGURATION\" = \"Debug\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild
+  echo Build\\ all\\ projects
+fi
+";
+			showEnvVarsInLog = 0;
+		};
+		AA61B66E01659BB48471FD7A /* Generate sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-build */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-configure"			);
+			name = "Generate sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-build";
+			outputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-build"			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e
+if test \"$CONFIGURATION\" = \"Debug\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-build
+  /opt/homebrew/bin/cmake -E echo_append
+  /opt/homebrew/bin/cmake -E touch /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$CONFIGURATION$EFFECTIVE_PLATFORM_NAME/sdl2_image-populate-build
+fi
+";
+			showEnvVarsInLog = 0;
+		};
+		AD35C5987FF9702D0CBE0BA3 /* Generate sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-update */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-download","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/sdl2_image-populate-update-info.txt","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/tmp/sdl2_image-populate-gitupdate.cmake"			);
+			name = "Generate sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-update";
+			outputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-update"			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e
+if test \"$CONFIGURATION\" = \"Debug\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src
+  /opt/homebrew/bin/cmake -Dcan_fetch=YES -DCMAKE_MESSAGE_LOG_LEVEL=VERBOSE -P /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/tmp/sdl2_image-populate-gitupdate.cmake
+fi
+";
+			showEnvVarsInLog = 0;
+		};
+		AD8E64599D3FC1AED29BF22D /* Generate CMakeFiles/ZERO_CHECK */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Generate CMakeFiles/ZERO_CHECK";
+			outputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/CMakeFiles/ZERO_CHECK"			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e
+if test \"$CONFIGURATION\" = \"Debug\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild
+  make -f /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/CMakeScripts/ReRunCMake.make
+fi
+";
+			showEnvVarsInLog = 0;
+		};
+		BF928711C06DFC4A0D406E6B /* Generate CMakeFiles/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-complete */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-build","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-configure","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-download","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-install","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-mkdir","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-patch","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-test","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-update"			);
+			name = "Generate CMakeFiles/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-complete";
+			outputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/CMakeFiles/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-complete"			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e
+if test \"$CONFIGURATION\" = \"Debug\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild
+  /opt/homebrew/bin/cmake -E make_directory /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/CMakeFiles/$CONFIGURATION$EFFECTIVE_PLATFORM_NAME
+  /opt/homebrew/bin/cmake -E touch /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/CMakeFiles/$CONFIGURATION$EFFECTIVE_PLATFORM_NAME/sdl2_image-populate-complete
+  /opt/homebrew/bin/cmake -E touch /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$CONFIGURATION$EFFECTIVE_PLATFORM_NAME/sdl2_image-populate-done
+fi
+";
+			showEnvVarsInLog = 0;
+		};
+		D9A869162A13488513ADE05D = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# shell script goes here
+exit 0";
+			showEnvVarsInLog = 0;
+		};
+		E20394BA89A9DC31FD0B8E16 /* Generate sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-download */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-mkdir","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/sdl2_image-populate-gitinfo.txt"			);
+			name = "Generate sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-download";
+			outputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-download"			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e
+if test \"$CONFIGURATION\" = \"Debug\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps
+  /opt/homebrew/bin/cmake -DCMAKE_MESSAGE_LOG_LEVEL=VERBOSE -P /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/tmp/sdl2_image-populate-gitclone.cmake
+  /opt/homebrew/bin/cmake -E touch /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$CONFIGURATION$EFFECTIVE_PLATFORM_NAME/sdl2_image-populate-download
+fi
+";
+			showEnvVarsInLog = 0;
+		};
+		F4E018356061E3225E0C041E /* Generate sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-mkdir */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Generate sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-mkdir";
+			outputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-mkdir"			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e
+if test \"$CONFIGURATION\" = \"Debug\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild
+  /opt/homebrew/bin/cmake -Dcfgdir=/$CONFIGURATION$EFFECTIVE_PLATFORM_NAME -P /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/tmp/sdl2_image-populate-mkdirs.cmake
+  /opt/homebrew/bin/cmake -E touch /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$CONFIGURATION$EFFECTIVE_PLATFORM_NAME/sdl2_image-populate-mkdir
+fi
+";
+			showEnvVarsInLog = 0;
+		};
+		FFD4D950A03F57F5DF2AA16B /* Generate sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-install */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-build"			);
+			name = "Generate sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-install";
+			outputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_image-populate-install"			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e
+if test \"$CONFIGURATION\" = \"Debug\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-build
+  /opt/homebrew/bin/cmake -E echo_append
+  /opt/homebrew/bin/cmake -E touch /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/sdl2_image-populate-prefix/src/sdl2_image-populate-stamp/$CONFIGURATION$EFFECTIVE_PLATFORM_NAME/sdl2_image-populate-install
+fi
+";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		0EB58B0EAFE04A8993DD292F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 69731C701A732BAFF0FF5BD5 /* sdl2_image-populate */;
+			targetProxy = 0144F70FDFAB40B199CCB0F5 /* PBXContainerItemProxy */;
+		};
+		1109FB42A494485F95EB30F3 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DEE77BF53BCB72FC908B45BD /* ZERO_CHECK */;
+			targetProxy = CBF3912B4CC548659FB00DE3 /* PBXContainerItemProxy */;
+		};
+		2F2A6D8569434D0B93F31C06 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DEE77BF53BCB72FC908B45BD /* ZERO_CHECK */;
+			targetProxy = 4D38500CE4ED4DB3B3BD01E5 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		1A45AA8923204CC7AC977A1C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ZERO_CHECK;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Debug;
+		};
+		782DC6B3EDA34D149A939525 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				SDKROOT = "";
+				SYMROOT = "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-subbuild/build";
+			};
+			name = Debug;
+		};
+		D1AF76DE20C84FA0A405E619 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ALL_BUILD;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Debug;
+		};
+		EAB4339B31CC4AACAF80D7E2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = "sdl2_image-populate";
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		188AFD790B20427DA7050499 /* Build configuration list for PBXAggregateTarget "sdl2_image-populate" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EAB4339B31CC4AACAF80D7E2 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		522035CE74414DD08D0D1853 /* Build configuration list for PBXAggregateTarget "ALL_BUILD" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D1AF76DE20C84FA0A405E619 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		7205E31EB2C647C48E9E340C /* Build configuration list for PBXAggregateTarget "ZERO_CHECK" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1A45AA8923204CC7AC977A1C /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		9D5B47D8E4B340BA97D23BCC /* Build configuration list for PBXProject "sdl2_image-populate" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				782DC6B3EDA34D149A939525 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 8B4E06DD3DC24A49B2E53BDB /* Project object */;
+}

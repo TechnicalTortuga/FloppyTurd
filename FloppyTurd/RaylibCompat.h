@@ -342,13 +342,13 @@ Image LoadImageFromTexture(Texture2D texture);
 // iOS/SDL implementations
 
 // Utility functions
-float Clamp(float value, float min, float max) {
+inline float Clamp(float value, float min, float max) {
     if (value < min) return min;
     if (value > max) return max;
     return value;
 }
 
-Color ColorLerp(Color a, Color b, float t) {
+inline Color ColorLerp(Color a, Color b, float t) {
     Color result;
     result.r = (unsigned char)(a.r + (b.r - a.r) * t);
     result.g = (unsigned char)(a.g + (b.g - a.g) * t);
@@ -358,17 +358,17 @@ Color ColorLerp(Color a, Color b, float t) {
 }
 
 // Stub functions for iOS/SDL
-float GetMusicTimeLength(Music music) {
+inline float GetMusicTimeLength(Music music) {
     // TODO: Implement for SDL/iOS if needed
     return 0.0f;
 }
 
-bool IsKeyPressed(int key) {
+inline bool IsKeyPressed(int key) {
     // On iOS, physical keys are not used; always return false
     return false;
 }
 
-bool IsKeyDown(int key) {
+inline bool IsKeyDown(int key) {
     // On iOS, physical keys are not used; always return false
     return false;
 }

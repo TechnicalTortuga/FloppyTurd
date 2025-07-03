@@ -49,6 +49,9 @@ else()
     # iOS uses SDL2 instead of Raylib
     include(FetchContent)
     
+    # Disable SDL2's main handling before fetching SDL2
+    set(SDL2_DISABLE_SDL2MAIN ON CACHE BOOL "Disable SDL2 main function" FORCE)
+    
     # Fetch SDL2
     FetchContent_Declare(
         sdl2
@@ -151,6 +154,27 @@ else()
         GIT_SHALLOW TRUE
     )
     
+    # Disable SDL2_ttf example/test apps - comprehensive options
+    set(SDL2TTF_INSTALL_TESTS OFF CACHE BOOL "" FORCE)
+    set(SDL2_TTF_INSTALL_TESTS OFF CACHE BOOL "" FORCE)
+    set(SDL2TTF_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+    set(SDL2_TTF_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+    set(INSTALL_TESTS OFF CACHE BOOL "" FORCE)
+    set(BUILD_TESTS OFF CACHE BOOL "" FORCE)
+    set(SDL2TTF_BUILD_SAMPLES OFF CACHE BOOL "" FORCE)
+    set(SDL2_TTF_BUILD_SAMPLES OFF CACHE BOOL "" FORCE)
+    set(BUILD_SAMPLES OFF CACHE BOOL "" FORCE)
+    set(SDL2TTF_INSTALL_SAMPLES OFF CACHE BOOL "" FORCE)
+    set(SDL2_TTF_INSTALL_SAMPLES OFF CACHE BOOL "" FORCE)
+    set(INSTALL_SAMPLES OFF CACHE BOOL "" FORCE)
+    set(SDL2TTF_SAMPLES OFF CACHE BOOL "" FORCE)
+    
+    # Disable SDL2_image example programs
+    set(SDL2IMAGE_SAMPLES OFF CACHE BOOL "" FORCE)
+    
+    # Disable SDL2_mixer example programs
+    set(SDL2MIXER_SAMPLES OFF CACHE BOOL "" FORCE)
+    
     # Force SDL2_ttf to use vendored freetype for iOS to avoid linking macOS libraries
     set(SDL2TTF_VENDORED ON CACHE BOOL "" FORCE)
     set(SDL2_TTF_VENDORED ON CACHE BOOL "" FORCE)
@@ -178,6 +202,11 @@ list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/PlayerOLD.cpp)
 # Add RaylibCompat for all platforms (conditional compilation inside)
 list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/RaylibCompat.cpp)
 
+# Explicitly add main.cpp to ensure it's included
+list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/main.cpp)
+
+# iOS builds now use SDL2's entry point in main.cpp
+
 file(GLOB_RECURSE HEADERS 
     ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/*.h
 )
@@ -196,6 +225,14 @@ list(APPEND SOURCES
 # Create executable
 if(${PLATFORM} STREQUAL "Android")
     add_library(${PROJECT_NAME} SHARED ${SOURCES})
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
+    # iOS: Create as app bundle
+    add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES})
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Debug-iphoneos"
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Debug-iphoneos"
+        ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Debug-iphoneos"
+    )
 else()
     add_executable(${PROJECT_NAME} ${SOURCES})
 endif()
@@ -224,6 +261,8 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
         "-framework AVFoundation"
         "-framework GameController"
         "-framework OpenGLES"
+        "-framework ImageIO"
+        "-framework MobileCoreServices"
     )
     
     target_compile_definitions(${PROJECT_NAME} PRIVATE 
@@ -231,6 +270,26 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
         __APPLE__
         TARGET_OS_IOS=1
         PRODUCT_BUNDLE_IDENTIFIER="com.floppyturd.game"
+        SDL_MAIN_HANDLED=1
+    )
+    
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        MACOSX_BUNDLE TRUE
+        XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.floppyturd.game"
+        XCODE_ATTRIBUTE_DEVELOPMENT_TEAM ""
+        XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
+        XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET "13.0"
+        XCODE_ATTRIBUTE_PRODUCT_NAME "FloppyTurd"
+        XCODE_ATTRIBUTE_BUNDLE_VERSION "1.0.0"
+        XCODE_ATTRIBUTE_SHORT_VERSION_STRING "1.0.0"
+        XCODE_ATTRIBUTE_UI_REQUIRED_DEVICE_CAPABILITIES "arm64"
+        XCODE_ATTRIBUTE_UI_SUPPORTED_INTERFACE_ORIENTATIONS "UIInterfaceOrientationPortrait;UIInterfaceOrientationLandscapeLeft;UIInterfaceOrientationLandscapeRight"
+    )
+    set_property(TARGET ${PROJECT_NAME} PROPERTY
+        MACOSX_BUNDLE TRUE
+        XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.floppyturd.game"
+        XCODE_ATTRIBUTE_BUNDLE_VERSION "1.0.0"
+        XCODE_ATTRIBUTE_SHORT_VERSION_STRING "1.0.0"
     )
 else()
     # All other platforms use Raylib
@@ -297,8 +356,12 @@ elseif(${PLATFORM} STREQUAL "iOS")
         XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.floppyturd.game"
         XCODE_ATTRIBUTE_DEVELOPMENT_TEAM ""
         XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
-        XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET "12.0"
+        XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET "13.0"
         XCODE_ATTRIBUTE_PRODUCT_NAME "FloppyTurd"
+        XCODE_ATTRIBUTE_BUNDLE_VERSION "1.0.0"
+        XCODE_ATTRIBUTE_SHORT_VERSION_STRING "1.0.0"
+        XCODE_ATTRIBUTE_UI_REQUIRED_DEVICE_CAPABILITIES "arm64"
+        XCODE_ATTRIBUTE_UI_SUPPORTED_INTERFACE_ORIENTATIONS "UIInterfaceOrientationPortrait;UIInterfaceOrientationLandscapeLeft;UIInterfaceOrientationLandscapeRight"
     )
     
     # Bundle resources
@@ -324,4 +387,6 @@ else()
 endif()
 
 # Export compile commands for better IDE support
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON) 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# SDL2 main handling is now disabled at the top of the iOS section 

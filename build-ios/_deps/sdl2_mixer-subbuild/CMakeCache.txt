@@ -14,11 +14,8 @@
 # EXTERNAL cache entries
 ########################
 
-//Enable/Disable color output during build.
-CMAKE_COLOR_MAKEFILE:BOOL=ON
-
-//Enable/Disable output of compile commands during generation.
-CMAKE_EXPORT_COMPILE_COMMANDS:BOOL=
+//No help, variable specified on the command line.
+CMAKE_CONFIGURATION_TYPES:STRING=Debug
 
 //Value Computed by CMake.
 CMAKE_FIND_PACKAGE_REDIRECTS_DIR:STATIC=/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_mixer-subbuild/CMakeFiles/pkgRedirects
@@ -30,7 +27,7 @@ CMAKE_INSTALL_NAME_TOOL:FILEPATH=/usr/bin/install_name_tool
 CMAKE_INSTALL_PREFIX:PATH=/usr/local
 
 //No help, variable specified on the command line.
-CMAKE_MAKE_PROGRAM:FILEPATH=/usr/bin/make
+CMAKE_MAKE_PROGRAM:FILEPATH=/Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild
 
 //Build architectures for OSX
 CMAKE_OSX_ARCHITECTURES:STRING=
@@ -79,6 +76,8 @@ sdl2_mixer-populate_SOURCE_DIR:STATIC=/Users/aimac/Documents/GitHub/FloppyTurd/b
 # INTERNAL cache entries
 ########################
 
+//Stored Xcode object GUID
+ALL_BUILD_GUID_CMAKE:INTERNAL=65BC7854183A72C072FF47F1
 //This is the directory where this CMakeCache.txt was created
 CMAKE_CACHEFILE_DIR:INTERNAL=/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_mixer-subbuild
 //Major version of cmake used to create the current loaded cache
@@ -87,22 +86,16 @@ CMAKE_CACHE_MAJOR_VERSION:INTERNAL=4
 CMAKE_CACHE_MINOR_VERSION:INTERNAL=0
 //Patch version of cmake used to create the current loaded cache
 CMAKE_CACHE_PATCH_VERSION:INTERNAL=0
-//ADVANCED property for variable: CMAKE_COLOR_MAKEFILE
-CMAKE_COLOR_MAKEFILE-ADVANCED:INTERNAL=1
 //Path to CMake executable.
 CMAKE_COMMAND:INTERNAL=/opt/homebrew/bin/cmake
 //Path to cpack program executable.
 CMAKE_CPACK_COMMAND:INTERNAL=/opt/homebrew/bin/cpack
 //Path to ctest program executable.
 CMAKE_CTEST_COMMAND:INTERNAL=/opt/homebrew/bin/ctest
-//Path to cache edit program executable.
-CMAKE_EDIT_COMMAND:INTERNAL=/opt/homebrew/bin/ccmake
-//ADVANCED property for variable: CMAKE_EXPORT_COMPILE_COMMANDS
-CMAKE_EXPORT_COMPILE_COMMANDS-ADVANCED:INTERNAL=1
 //Name of external makefile project generator.
 CMAKE_EXTRA_GENERATOR:INTERNAL=
 //Name of generator.
-CMAKE_GENERATOR:INTERNAL=Unix Makefiles
+CMAKE_GENERATOR:INTERNAL=Xcode
 //Generator instance identifier.
 CMAKE_GENERATOR_INSTANCE:INTERNAL=
 //Name of generator platform.
@@ -130,4 +123,10 @@ CMAKE_SKIP_RPATH-ADVANCED:INTERNAL=1
 CMAKE_UNAME:INTERNAL=/usr/bin/uname
 //ADVANCED property for variable: CMAKE_VERBOSE_MAKEFILE
 CMAKE_VERBOSE_MAKEFILE-ADVANCED:INTERNAL=1
+//Stored Xcode object GUID
+PROJECT_sdl2_mixer-populate_GUID_CMAKE:INTERNAL=A94B3714645149BC828CCF3A
+//Stored Xcode object GUID
+ZERO_CHECK_GUID_CMAKE:INTERNAL=A120CF324E79D530358284C7
+//Stored Xcode object GUID
+sdl2_mixer-populate_GUID_CMAKE:INTERNAL=773FADB44D8A002B57D375DA
 

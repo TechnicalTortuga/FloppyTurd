@@ -1,0 +1,1517 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXAggregateTarget section */
+		2EBEBDE0AAC4E74DFA200781 /* ALL_BUILD */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 5FAA113F6BAE4F03ACC115BA /* Build configuration list for PBXAggregateTarget "ALL_BUILD" */;
+			buildPhases = (
+				912475EE436E78464B7079A7 /* Generate CMakeFiles/ALL_BUILD */,
+			);
+			dependencies = (
+				3025CF7BE1CB4210A12499D2 /* PBXTargetDependency */,
+				AB7DC34D1A1E437C9F98CA18 /* PBXTargetDependency */,
+			);
+			name = ALL_BUILD;
+			productName = ALL_BUILD;
+		};
+		651D2269F43D50C7D2B15EA7 /* install */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 70C4BF3BA9774B19B7077592 /* Build configuration list for PBXAggregateTarget "install" */;
+			buildPhases = (
+				93426DA6A4AC2C2AC9CE883C /* CMake PostBuild Rules */,
+			);
+			dependencies = (
+				4E12CC42D5BB444CB0CA2CA0 /* PBXTargetDependency */,
+			);
+			name = install;
+			productName = install;
+		};
+		D24353A079AE57BA8522B04C /* ZERO_CHECK */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 4DC16022D42445FFB5830357 /* Build configuration list for PBXAggregateTarget "ZERO_CHECK" */;
+			buildPhases = (
+				0D5AC516137AE9C71F1272B5 /* Generate CMakeFiles/ZERO_CHECK */,
+			);
+			dependencies = (
+			);
+			name = ZERO_CHECK;
+			productName = ZERO_CHECK;
+		};
+		F8A85156645ADB1B089B3817 /* package */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 531E75D66F86466486A18CCF /* Build configuration list for PBXAggregateTarget "package" */;
+			buildPhases = (
+				571234464C2A5D0D43F1AB42 /* CMake PostBuild Rules */,
+			);
+			dependencies = (
+				107C03F901BD42E0A71AE77E /* PBXTargetDependency */,
+			);
+			name = package;
+			productName = package;
+		};
+/* End PBXAggregateTarget section */
+
+/* Begin PBXBuildFile section */
+		0089A281BCF14371A5122AD4 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftsnames.h */ = {isa = PBXBuildFile; fileRef = 85D984E958A640E4B165A060 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftsnames.h */; };
+		032D7CBA758B4DCFB6A43A8C /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/fttrace.h */ = {isa = PBXBuildFile; fileRef = 94141D5BA3614ECF9C09DCDF /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/fttrace.h */; };
+		0679713F5499425DB8A072F9 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/config/public-macros.h */ = {isa = PBXBuildFile; fileRef = 61C3184190AA4D7DBC9EFE7C /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/config/public-macros.h */; };
+		0AF0C6ADBE1443F0B4096E1D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftwinfnt.h */ = {isa = PBXBuildFile; fileRef = 2B8A9D8B5E41474693368568 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftwinfnt.h */; };
+		113D588D5A094AD2BE7E27D3 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/cffotypes.h */ = {isa = PBXBuildFile; fileRef = B7FF05858B2F40649B9594B2 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/cffotypes.h */; };
+		11F6BAC1C2DB42108DB1CD32 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftinit.c */ = {isa = PBXBuildFile; fileRef = C2CB7DFF6DD14C57AF35AB6D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftinit.c */; };
+		14204D5E3A41428F8C92A065 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/type42/type42.c */ = {isa = PBXBuildFile; fileRef = 9D59EC86404C4BCEB4A835B9 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/type42/type42.c */; };
+		1588D0FEE6574D579B97E5B4 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/winfonts/winfnt.c */ = {isa = PBXBuildFile; fileRef = E5E47CCD628442F1A10FDF14 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/winfonts/winfnt.c */; };
+		160463D3B7CB4740BEE9BB6F /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/config/ftconfig.h */ = {isa = PBXBuildFile; fileRef = 8EDEDA6C387346BFA4B922E0 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/config/ftconfig.h */; };
+		16F25852D80642D291843F95 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/psaux.h */ = {isa = PBXBuildFile; fileRef = CB848F5A3D994EB78AA18D05 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/psaux.h */; };
+		1A64CFAF31414DEBB0FBF0D0 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftrfork.h */ = {isa = PBXBuildFile; fileRef = C9270C466A984E54B6B33E99 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftrfork.h */; };
+		1D0BCA1506A147FA8543341B /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftcolor.h */ = {isa = PBXBuildFile; fileRef = CE26E80290BB4350800E1D1D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftcolor.h */; };
+		1EBA45762F7847B792F5142A /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftmodapi.h */ = {isa = PBXBuildFile; fileRef = 9A1C9A59FBE24E7C8E805A03 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftmodapi.h */; };
+		1F4A8D9EC66F4577A492D566 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/gzip/ftgzip.c */ = {isa = PBXBuildFile; fileRef = 49B4DB9CE8B843F8BB43E799 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/gzip/ftgzip.c */; };
+		23596485CA3849AE85A1595B /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftbase.c */ = {isa = PBXBuildFile; fileRef = 95E81782706844A7AF764E3D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftbase.c */; };
+		24A32AEA861D4E119B122AB4 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/type1/type1.c */ = {isa = PBXBuildFile; fileRef = B3BC83AF75BF4A9EB0828FC5 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/type1/type1.c */; };
+		2539DAF1F93B4220A8077C84 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/psnames/psnames.c */ = {isa = PBXBuildFile; fileRef = 83A1F0287C0F4881ADB324AE /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/psnames/psnames.c */; };
+		26549C8E91054F36892A0EB9 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/raster/raster.c */ = {isa = PBXBuildFile; fileRef = 94A51BA1C64C4975AB8878B5 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/raster/raster.c */; };
+		269FC9BB4CC94A5E8BC4AA7D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/fttrigon.h */ = {isa = PBXBuildFile; fileRef = 41015731A22C4888B602EDE7 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/fttrigon.h */; };
+		291A82A6046E48B387B5A484 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/truetype/truetype.c */ = {isa = PBXBuildFile; fileRef = 3EC544EA36724AD9BF9ECF46 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/truetype/truetype.c */; };
+		295BDF8CF7AC4EC7B54CCDE1 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/fttypes.h */ = {isa = PBXBuildFile; fileRef = 6F7624FCE9574A1EB5B4B5E0 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/fttypes.h */; };
+		33CF10CC006F48B6A285619B /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/svginterface.h */ = {isa = PBXBuildFile; fileRef = 1065CE09E9744EE78014D1CF /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/svginterface.h */; };
+		392DAF21ACE345A99611A521 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftgasp.h */ = {isa = PBXBuildFile; fileRef = 9015EF07B6224992AF20C4A1 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftgasp.h */; };
+		39D968B9470843AD9CFAA450 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/pshinter/pshinter.c */ = {isa = PBXBuildFile; fileRef = C7192511A840406C82D56BF6 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/pshinter/pshinter.c */; };
+		3A1DE080DD954999818936BF /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftstroke.h */ = {isa = PBXBuildFile; fileRef = 366BA892DE9B4E46842B2A8D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftstroke.h */; };
+		3DC6FCB0704D47A887F629EC /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftpatent.c */ = {isa = PBXBuildFile; fileRef = 3D7F06859B3448EC9B17A98D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftpatent.c */; };
+		3E2CCF8A6B1C4E8592DE3EBE /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/config/ftoption.h */ = {isa = PBXBuildFile; fileRef = 62E500CE18A24D0094A2DDDC /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/config/ftoption.h */; };
+		3E900726880A49BCB449A8EB /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftsizes.h */ = {isa = PBXBuildFile; fileRef = F669505EE47942AE876BAD19 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftsizes.h */; };
+		406D2280AD284AC7B4F2C85C /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftpfr.c */ = {isa = PBXBuildFile; fileRef = F3BB9C0CA6DE4C4397E5BBCC /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftpfr.c */; };
+		42248999C32E4C67B13C2E82 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftrender.h */ = {isa = PBXBuildFile; fileRef = D86DEA80BE434755B8ADE5C6 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftrender.h */; };
+		444BD604A3F04CCBB6BFDF00 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftparams.h */ = {isa = PBXBuildFile; fileRef = AA5768FF02A746DBA1807C79 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftparams.h */; };
+		44B4274DF287401D8A98B863 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftcache.h */ = {isa = PBXBuildFile; fileRef = A7E09C0912B746228809B7EE /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftcache.h */; };
+		48D32E7594F24D2D8DDFEBB6 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftpfr.h */ = {isa = PBXBuildFile; fileRef = 9BC051BB2DE64B839822695D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftpfr.h */; };
+		4E87E34A53B74099A6528872 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/psaux/psaux.c */ = {isa = PBXBuildFile; fileRef = 5B638C7F009146E093221040 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/psaux/psaux.c */; };
+		500629ADA109435084829DB6 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftadvanc.h */ = {isa = PBXBuildFile; fileRef = C0232A6A41F84C1F96ADB60D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftadvanc.h */; };
+		5293987CE92F4F209AF8A506 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/fthash.h */ = {isa = PBXBuildFile; fileRef = 84D2B60A7A4C4A809145A9A0 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/fthash.h */; };
+		52A8E7F6862E403CADC79404 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftobjs.h */ = {isa = PBXBuildFile; fileRef = BB8D9A7821B340189CCC7FFF /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftobjs.h */; };
+		54828C7576D845D8A1952EF5 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftglyph.h */ = {isa = PBXBuildFile; fileRef = 40CD8E631B754A2B9C4198AD /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftglyph.h */; };
+		55EB27D5CEE044B58DC876E5 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build/external/freetype/CMakeFiles/freetype.dir/Info.plist */ = {isa = PBXBuildFile; fileRef = 734780836ACC4E4E96CD1993 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build/external/freetype/CMakeFiles/freetype.dir/Info.plist */; };
+		5676761EA9F74CB39BB1CE5D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/autohint.h */ = {isa = PBXBuildFile; fileRef = 0285EDE6BD344E409687E642 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/autohint.h */; };
+		57369E44FF064076894FB178 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftfntfmt.h */ = {isa = PBXBuildFile; fileRef = 6125E695340940B28B24058A /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftfntfmt.h */; };
+		5815B44BEA5042AFAC0BC824 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftbbox.c */ = {isa = PBXBuildFile; fileRef = FC1F18323CF54951B749753C /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftbbox.c */; };
+		58777C3441234B3AA36898A6 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/pshints.h */ = {isa = PBXBuildFile; fileRef = CDB13CD930E541B789D2FCCE /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/pshints.h */; };
+		58992C0A5B16475EA3B7985B /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftgzip.h */ = {isa = PBXBuildFile; fileRef = 392CD44302E54EADA5A195CB /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftgzip.h */; };
+		5A5FAF666E4F41C89EB5AC61 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftglyph.c */ = {isa = PBXBuildFile; fileRef = CFD42397E93D4C138CA04CC0 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftglyph.c */; };
+		5ABDA6C388C348899F1BBBD9 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/config/integer-types.h */ = {isa = PBXBuildFile; fileRef = 39229DFE2AC04C0E9E269BD7 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/config/integer-types.h */; };
+		5D6715AA29E54092955FF117 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftotval.h */ = {isa = PBXBuildFile; fileRef = AA72E2A40AE347669182C1EA /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftotval.h */; };
+		5D9F7228C7614C1997D50830 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftgloadr.h */ = {isa = PBXBuildFile; fileRef = B49729A4B56240C8A730BFE6 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftgloadr.h */; };
+		5F7A90403FA84C3AAFAF6CCC /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/pfr/pfr.c */ = {isa = PBXBuildFile; fileRef = 8DB7F900517B4A0D8949FE7A /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/pfr/pfr.c */; };
+		5F8F41DEFBDC46C6A62A81F7 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftoutln.h */ = {isa = PBXBuildFile; fileRef = 91CFDDE7A78944E28CDED65C /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftoutln.h */; };
+		601BF4AA6DA84D67A4DD3127 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/config/ftstdlib.h */ = {isa = PBXBuildFile; fileRef = D58FE4B88343491BA01EE186 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/config/ftstdlib.h */; };
+		6346256280FD4840947E501A /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/cache/ftcache.c */ = {isa = PBXBuildFile; fileRef = B3528E6744E1455EB73E4C1A /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/cache/ftcache.c */; };
+		6398F82EA1224CF287ED2589 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftotval.c */ = {isa = PBXBuildFile; fileRef = 36ADD125B6204017BE34AD89 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftotval.c */; };
+		63DFA525F3E046D997427653 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftsynth.h */ = {isa = PBXBuildFile; fileRef = CBD3454FDCB746DC871E3F7D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftsynth.h */; };
+		658FE37C4C554D9FA21FAF40 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftvalid.h */ = {isa = PBXBuildFile; fileRef = 22AA570E6A8B426DBE64A48E /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftvalid.h */; };
+		68CA4D4C3F5847589439C79F /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftlogging.h */ = {isa = PBXBuildFile; fileRef = C42E1B18742B4D58A4E70771 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftlogging.h */; };
+		6A67AAA5EFE84ED49142F070 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/bdf/bdf.c */ = {isa = PBXBuildFile; fileRef = 48F3851ED5184D8AABCE9DF6 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/bdf/bdf.c */; };
+		6D7E64D0CC4E4A939B69E620 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/tttags.h */ = {isa = PBXBuildFile; fileRef = DD4F1D4E42EC43608AC77752 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/tttags.h */; };
+		7051CE0A8F1F44F5880020FA /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftdrv.h */ = {isa = PBXBuildFile; fileRef = 0028756098F44DF5A81F136B /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftdrv.h */; };
+		736C6B4E7D1C4387BC0F10B8 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftcid.c */ = {isa = PBXBuildFile; fileRef = 83720555FA5E4621B942F188 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftcid.c */; };
+		7438D56D05D04647B1036046 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/lzw/ftlzw.c */ = {isa = PBXBuildFile; fileRef = CB27A91363DE4ED98CA8E681 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/lzw/ftlzw.c */; };
+		75CE318655BF4E9AB92D3EC9 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftlist.h */ = {isa = PBXBuildFile; fileRef = 0B5EF5878A9F4AABB3E56E97 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftlist.h */; };
+		75E0DB67EA81440EB0CA70AC /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/sdf/sdf.c */ = {isa = PBXBuildFile; fileRef = E85ADFF6A23B444FA6460540 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/sdf/sdf.c */; };
+		7A726FDFA58C4D33A4D34F11 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftstream.h */ = {isa = PBXBuildFile; fileRef = 50FB2F97CC1642F0A792EF2D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftstream.h */; };
+		7BFFB92AB84D4EE381E876FD /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftbitmap.c */ = {isa = PBXBuildFile; fileRef = E6432B0371304683A10AF9BF /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftbitmap.c */; };
+		7C11AE8B1D1F4C7DB893E0C5 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/ft2build.h */ = {isa = PBXBuildFile; fileRef = 755BEE43135D45DB85733346 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/ft2build.h */; };
+		7EB2C6885CEC447EAC787700 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/otsvg.h */ = {isa = PBXBuildFile; fileRef = 9D9A4C6E14CD4218A01AD2CC /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/otsvg.h */; };
+		7ED36896473844719533AC15 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/config/ftheader.h */ = {isa = PBXBuildFile; fileRef = 50E9DA9D55E54171B4860CC2 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/config/ftheader.h */; };
+		7F9EC04A29834057B5F0A606 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftgxval.h */ = {isa = PBXBuildFile; fileRef = C2909F5785FC46F799D04B34 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftgxval.h */; };
+		7FAC418F69784B5AAA1A3538 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftgxval.c */ = {isa = PBXBuildFile; fileRef = 09101F67885F470998CB78D9 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftgxval.c */; };
+		81E643ECF5C7414C9A28B5A9 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftincrem.h */ = {isa = PBXBuildFile; fileRef = 6C00DE03C9D440158A69EE45 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftincrem.h */; };
+		877A3C5CFC944F08A69B003B /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftgasp.c */ = {isa = PBXBuildFile; fileRef = 57A8CB4C33C84092AD6C8354 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftgasp.c */; };
+		88FFB3BA8B1842D799BA1506 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/cff/cff.c */ = {isa = PBXBuildFile; fileRef = BBF8A64A890D4FC7B88382CF /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/cff/cff.c */; };
+		912A753959D8458C836DDB13 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/pcf/pcf.c */ = {isa = PBXBuildFile; fileRef = 95C5F818F2FB478AA7AA044C /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/pcf/pcf.c */; };
+		93086AFE1D31484EA6C269F3 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ttnameid.h */ = {isa = PBXBuildFile; fileRef = 5E25655AD358411B98E503F8 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ttnameid.h */; };
+		9379669535B442088807865B /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/tttables.h */ = {isa = PBXBuildFile; fileRef = D871C0BCD6F346AA8F844C40 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/tttables.h */; };
+		97364737A3E44663A23CF36C /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftpsprop.h */ = {isa = PBXBuildFile; fileRef = 4AD8631B75C540F49D70F7F9 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftpsprop.h */; };
+		98566D894B4B42FA8CC83867 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/sfnt.h */ = {isa = PBXBuildFile; fileRef = 5A274C6342F64A07ADE7895E /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/sfnt.h */; };
+		9D66CEBACA4842AC955FF84A /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftbzip2.h */ = {isa = PBXBuildFile; fileRef = D24E6D4CA52E425AB4F1BA9D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftbzip2.h */; };
+		9EC0137B56BC4A24A76CF9E2 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftfstype.c */ = {isa = PBXBuildFile; fileRef = 480BDEA3FC0D4A0097595B53 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftfstype.c */; };
+		9F1CAED96EBA43ED9EDAB9C9 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/autofit/autofit.c */ = {isa = PBXBuildFile; fileRef = F4DA64348D39465EAC7D51FF /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/autofit/autofit.c */; };
+		9F5FF72729894F398279DDE5 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/freetype.h */ = {isa = PBXBuildFile; fileRef = 04CBA4CABB0A4CBE96145E37 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/freetype.h */; };
+		A40F35DBFB974AD6852C5275 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/smooth/smooth.c */ = {isa = PBXBuildFile; fileRef = 41D1731335F447CD9A1C1B65 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/smooth/smooth.c */; };
+		AAA400DE25E94F2A816D2F7F /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/svg/svg.c */ = {isa = PBXBuildFile; fileRef = 1BE0223642DA425CBBBCA732 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/svg/svg.c */; };
+		ACF4CBD7B36F44DE84282B22 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftmemory.h */ = {isa = PBXBuildFile; fileRef = 030BD14B486E45BD99FD9C3D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftmemory.h */; };
+		AF376354D03D49608684A849 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftmoderr.h */ = {isa = PBXBuildFile; fileRef = 93561C7B70134800ADFBCEC2 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftmoderr.h */; };
+		B0F69260E6454D65A7B5DF55 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/sfnt/sfnt.c */ = {isa = PBXBuildFile; fileRef = AEE9E67066274F00B06ECEBA /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/sfnt/sfnt.c */; };
+		B427865D3345489A8F2BBC87 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftchapters.h */ = {isa = PBXBuildFile; fileRef = EEECFF82B4D74045B66BBC4D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftchapters.h */; };
+		B5326972BA204A9D8E1D1CDD /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/builds/unix/ftsystem.c */ = {isa = PBXBuildFile; fileRef = FC52003E33284B5B939FEE5F /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/builds/unix/ftsystem.c */; };
+		B5EBD47F69A249099770FA64 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftlzw.h */ = {isa = PBXBuildFile; fileRef = 7A012FC659DA41B79CD6FCDE /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftlzw.h */; };
+		B70020B22B134902AA8575E9 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftmm.h */ = {isa = PBXBuildFile; fileRef = F2A003DC571F42F1832E8C55 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftmm.h */; };
+		BB8A6CA7F74744749A8FE452 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/compiler-macros.h */ = {isa = PBXBuildFile; fileRef = B69FE99B0774443697104AD5 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/compiler-macros.h */; };
+		BDBBEC236CB5481697005B69 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/tttypes.h */ = {isa = PBXBuildFile; fileRef = 5FA0F54AFE564D55BB5C3A58 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/tttypes.h */; };
+		C12B27425A4C4D379AFE0BC0 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftbdf.h */ = {isa = PBXBuildFile; fileRef = 0BA2BB5DDB274AA1B447ED8D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftbdf.h */; };
+		C2D6ABA26C0E4E03A1142583 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftbbox.h */ = {isa = PBXBuildFile; fileRef = 230FBCFDEBF6491D9E9399CB /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftbbox.h */; };
+		C3C27DEA69C9453CA5711D49 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/cfftypes.h */ = {isa = PBXBuildFile; fileRef = C944FD05C1AB47BF8D43CC1D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/cfftypes.h */; };
+		C57918852457452DA699AD2B /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftimage.h */ = {isa = PBXBuildFile; fileRef = 8A983E29621B471D85B32EBC /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftimage.h */; };
+		C5D2AF3E333A4003885F881F /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftdriver.h */ = {isa = PBXBuildFile; fileRef = D4E42332736041379DABE30C /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftdriver.h */; };
+		CC738BE0333440D7BCE58BDE /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/CMakeLists.txt */ = {isa = PBXBuildFile; fileRef = 5FDF8DC6671F4E56887561E2 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/CMakeLists.txt */; };
+		D161545B95AC4F30B2F63396 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/wofftypes.h */ = {isa = PBXBuildFile; fileRef = 209678E7783C4B6480017317 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/wofftypes.h */; };
+		D27095F3F98F4CD8A8E79B63 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftmm.c */ = {isa = PBXBuildFile; fileRef = 6C11D39F9FFA4FCA9E074074 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftmm.c */; };
+		D2C4090F0CB748B591013A8C /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftserv.h */ = {isa = PBXBuildFile; fileRef = 1C185CC7E43E46DE9E7E5C2B /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftserv.h */; };
+		D5D00D759F4E4EAA9CE26414 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftsynth.c */ = {isa = PBXBuildFile; fileRef = E77D4763AEEA4F35ADFBBF7E /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftsynth.c */; };
+		D64E7AEC385D42D2AE6A9644 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftdebug.h */ = {isa = PBXBuildFile; fileRef = 22107AFF43EC424B832234A5 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftdebug.h */; };
+		D75087D4CF18417BA1930542 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/bzip2/ftbzip2.c */ = {isa = PBXBuildFile; fileRef = 21CCA582CB4C4F29958480A6 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/bzip2/ftbzip2.c */; };
+		DB949DB5E10C41A6BD45AA5D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/fttype1.c */ = {isa = PBXBuildFile; fileRef = 0FE1BC44BB5F4DBF80327CDB /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/fttype1.c */; };
+		E65BCCC6D32B458BA43E255F /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/config/mac-support.h */ = {isa = PBXBuildFile; fileRef = 0086BFB9B0814BBE9E3B3A14 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/config/mac-support.h */; };
+		E7573C92224E47B283DA0092 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftbdf.c */ = {isa = PBXBuildFile; fileRef = DCAE971486484B0CB61111EF /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftbdf.c */; };
+		E85EDB6345A440C4895F8386 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftbitmap.h */ = {isa = PBXBuildFile; fileRef = 6B2CD4247B09472E9D144E52 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftbitmap.h */; };
+		EF520D93C6A94713859FD55D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/config/ftmodule.h */ = {isa = PBXBuildFile; fileRef = 07FE6BD2B7014D4D848D3DAF /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/config/ftmodule.h */; };
+		EF7E7AE74D394E51A7D6845D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftdebug.c */ = {isa = PBXBuildFile; fileRef = 0742C10B772D48DDB2062650 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftdebug.c */; };
+		F0597EE812D9420EA69492B6 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftlcdfil.h */ = {isa = PBXBuildFile; fileRef = AF81CEDF80734C92A82E8472 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftlcdfil.h */; };
+		F0D57C301D6649B98C0A1BF4 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/cid/type1cid.c */ = {isa = PBXBuildFile; fileRef = AC23ACE9EEAB4B8BABE4BC3E /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/cid/type1cid.c */; };
+		F2041B10D65B4F4D9BD7712B /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftsystem.h */ = {isa = PBXBuildFile; fileRef = 34A6A432A6024124B2C1B632 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftsystem.h */; };
+		F235ED4E6920418DBF3173E7 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/fterrors.h */ = {isa = PBXBuildFile; fileRef = 6053033836A047F5A513D947 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/fterrors.h */; };
+		F3B741F97C8A40D2982C98D6 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftmac.h */ = {isa = PBXBuildFile; fileRef = 6B0C1B1E7D614C3CBC89356E /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftmac.h */; };
+		F674C9E56382494D8A1AB472 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftcid.h */ = {isa = PBXBuildFile; fileRef = 31E43CAD6D43471F930F1F24 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftcid.h */; };
+		FAA07FC827374A0A8ED6CE3D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/fterrdef.h */ = {isa = PBXBuildFile; fileRef = 626CD5354E284470A3EF839F /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/fterrdef.h */; };
+		FC61729E0F9047B098D38425 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftcalc.h */ = {isa = PBXBuildFile; fileRef = DA19791C933345399F1F823B /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftcalc.h */; };
+		FD1F34099031403D83BE0831 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftwinfnt.c */ = {isa = PBXBuildFile; fileRef = A552EC3295DE40C99901B7FE /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftwinfnt.c */; };
+		FD880226F77E41BC8204C53A /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/t1tables.h */ = {isa = PBXBuildFile; fileRef = 1FCDA12B372A4BF5AE8D018F /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/t1tables.h */; };
+		FEB9865ED57D4D1FB4FD7E0D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/t1types.h */ = {isa = PBXBuildFile; fileRef = 4FDA5714FEB5441D81C7BF69 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/t1types.h */; };
+		FF2623B8D1E84BF2A29E73EC /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftstroke.c */ = {isa = PBXBuildFile; fileRef = A7563306075448ECBEA9D230 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftstroke.c */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXBuildStyle section */
+		281A96CD51474E408956DFC4 /* Debug */ = {
+			isa = PBXBuildStyle;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+			};
+			name = Debug;
+		};
+		62FD6D4903E24C3A9DFF1934 /* MinSizeRel */ = {
+			isa = PBXBuildStyle;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+			};
+			name = MinSizeRel;
+		};
+		B244A5A5F0E14C838051D52E /* Release */ = {
+			isa = PBXBuildStyle;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+			};
+			name = Release;
+		};
+		B74645EF1E4C440EB9DA377F /* RelWithDebInfo */ = {
+			isa = PBXBuildStyle;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+			};
+			name = RelWithDebInfo;
+		};
+/* End PBXBuildStyle section */
+
+/* Begin PBXContainerItemProxy section */
+		3E41CAD1A891472390C7E057 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1DE96370C75E46E09D533FC6 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D24353A079AE57BA8522B04C;
+			remoteInfo = ZERO_CHECK;
+		};
+		7E222971AF85455CA7223692 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1DE96370C75E46E09D533FC6 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D24353A079AE57BA8522B04C;
+			remoteInfo = ZERO_CHECK;
+		};
+		DFA53E947E2A47E29B1AE245 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1DE96370C75E46E09D533FC6 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0E2BE0B3D7723923F464271B;
+			remoteInfo = freetype;
+		};
+		ECA0EE5A1B364EE7B45A7319 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1DE96370C75E46E09D533FC6 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2EBEBDE0AAC4E74DFA200781;
+			remoteInfo = ALL_BUILD;
+		};
+		FF40A76C17BA4D46A5BF6DB2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1DE96370C75E46E09D533FC6 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2EBEBDE0AAC4E74DFA200781;
+			remoteInfo = ALL_BUILD;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		0028756098F44DF5A81F136B /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftdrv.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftdrv.h; path = include/freetype/internal/ftdrv.h; sourceTree = SOURCE_ROOT; };
+		0086BFB9B0814BBE9E3B3A14 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/config/mac-support.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = "mac-support.h"; path = "include/freetype/config/mac-support.h"; sourceTree = SOURCE_ROOT; };
+		0285EDE6BD344E409687E642 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/autohint.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = autohint.h; path = include/freetype/internal/autohint.h; sourceTree = SOURCE_ROOT; };
+		030BD14B486E45BD99FD9C3D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftmemory.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftmemory.h; path = include/freetype/internal/ftmemory.h; sourceTree = SOURCE_ROOT; };
+		04CBA4CABB0A4CBE96145E37 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/freetype.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = freetype.h; path = include/freetype/freetype.h; sourceTree = SOURCE_ROOT; };
+		0742C10B772D48DDB2062650 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftdebug.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = ftdebug.c; path = src/base/ftdebug.c; sourceTree = SOURCE_ROOT; };
+		07FE6BD2B7014D4D848D3DAF /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/config/ftmodule.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftmodule.h; path = include/freetype/config/ftmodule.h; sourceTree = SOURCE_ROOT; };
+		09101F67885F470998CB78D9 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftgxval.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = ftgxval.c; path = src/base/ftgxval.c; sourceTree = SOURCE_ROOT; };
+		0B5EF5878A9F4AABB3E56E97 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftlist.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftlist.h; path = include/freetype/ftlist.h; sourceTree = SOURCE_ROOT; };
+		0BA2BB5DDB274AA1B447ED8D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftbdf.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftbdf.h; path = include/freetype/ftbdf.h; sourceTree = SOURCE_ROOT; };
+		0FE1BC44BB5F4DBF80327CDB /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/fttype1.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = fttype1.c; path = src/base/fttype1.c; sourceTree = SOURCE_ROOT; };
+		1065CE09E9744EE78014D1CF /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/svginterface.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = svginterface.h; path = include/freetype/internal/svginterface.h; sourceTree = SOURCE_ROOT; };
+		1BE0223642DA425CBBBCA732 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/svg/svg.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = svg.c; path = src/svg/svg.c; sourceTree = SOURCE_ROOT; };
+		1C185CC7E43E46DE9E7E5C2B /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftserv.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftserv.h; path = include/freetype/internal/ftserv.h; sourceTree = SOURCE_ROOT; };
+		1FCDA12B372A4BF5AE8D018F /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/t1tables.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = t1tables.h; path = include/freetype/t1tables.h; sourceTree = SOURCE_ROOT; };
+		209678E7783C4B6480017317 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/wofftypes.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = wofftypes.h; path = include/freetype/internal/wofftypes.h; sourceTree = SOURCE_ROOT; };
+		21CCA582CB4C4F29958480A6 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/bzip2/ftbzip2.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = ftbzip2.c; path = src/bzip2/ftbzip2.c; sourceTree = SOURCE_ROOT; };
+		22107AFF43EC424B832234A5 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftdebug.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftdebug.h; path = include/freetype/internal/ftdebug.h; sourceTree = SOURCE_ROOT; };
+		22AA570E6A8B426DBE64A48E /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftvalid.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftvalid.h; path = include/freetype/internal/ftvalid.h; sourceTree = SOURCE_ROOT; };
+		230FBCFDEBF6491D9E9399CB /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftbbox.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftbbox.h; path = include/freetype/ftbbox.h; sourceTree = SOURCE_ROOT; };
+		2B8A9D8B5E41474693368568 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftwinfnt.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftwinfnt.h; path = include/freetype/ftwinfnt.h; sourceTree = SOURCE_ROOT; };
+		31E43CAD6D43471F930F1F24 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftcid.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftcid.h; path = include/freetype/ftcid.h; sourceTree = SOURCE_ROOT; };
+		34A6A432A6024124B2C1B632 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftsystem.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftsystem.h; path = include/freetype/ftsystem.h; sourceTree = SOURCE_ROOT; };
+		366BA892DE9B4E46842B2A8D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftstroke.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftstroke.h; path = include/freetype/ftstroke.h; sourceTree = SOURCE_ROOT; };
+		36ADD125B6204017BE34AD89 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftotval.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = ftotval.c; path = src/base/ftotval.c; sourceTree = SOURCE_ROOT; };
+		39229DFE2AC04C0E9E269BD7 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/config/integer-types.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = "integer-types.h"; path = "include/freetype/config/integer-types.h"; sourceTree = SOURCE_ROOT; };
+		392CD44302E54EADA5A195CB /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftgzip.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftgzip.h; path = include/freetype/ftgzip.h; sourceTree = SOURCE_ROOT; };
+		3D7F06859B3448EC9B17A98D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftpatent.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = ftpatent.c; path = src/base/ftpatent.c; sourceTree = SOURCE_ROOT; };
+		3EC544EA36724AD9BF9ECF46 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/truetype/truetype.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = truetype.c; path = src/truetype/truetype.c; sourceTree = SOURCE_ROOT; };
+		40CD8E631B754A2B9C4198AD /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftglyph.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftglyph.h; path = include/freetype/ftglyph.h; sourceTree = SOURCE_ROOT; };
+		41015731A22C4888B602EDE7 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/fttrigon.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = fttrigon.h; path = include/freetype/fttrigon.h; sourceTree = SOURCE_ROOT; };
+		41D1731335F447CD9A1C1B65 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/smooth/smooth.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = smooth.c; path = src/smooth/smooth.c; sourceTree = SOURCE_ROOT; };
+		4270A5C4970D400FA681A797 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = CMakeLists.txt; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
+		480BDEA3FC0D4A0097595B53 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftfstype.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = ftfstype.c; path = src/base/ftfstype.c; sourceTree = SOURCE_ROOT; };
+		48F3851ED5184D8AABCE9DF6 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/bdf/bdf.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = bdf.c; path = src/bdf/bdf.c; sourceTree = SOURCE_ROOT; };
+		49B4DB9CE8B843F8BB43E799 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/gzip/ftgzip.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = ftgzip.c; path = src/gzip/ftgzip.c; sourceTree = SOURCE_ROOT; };
+		4AD8631B75C540F49D70F7F9 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftpsprop.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftpsprop.h; path = include/freetype/internal/ftpsprop.h; sourceTree = SOURCE_ROOT; };
+		4FDA5714FEB5441D81C7BF69 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/t1types.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = t1types.h; path = include/freetype/internal/t1types.h; sourceTree = SOURCE_ROOT; };
+		50E9DA9D55E54171B4860CC2 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/config/ftheader.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftheader.h; path = include/freetype/config/ftheader.h; sourceTree = SOURCE_ROOT; };
+		50FB2F97CC1642F0A792EF2D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftstream.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftstream.h; path = include/freetype/internal/ftstream.h; sourceTree = SOURCE_ROOT; };
+		57A8CB4C33C84092AD6C8354 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftgasp.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = ftgasp.c; path = src/base/ftgasp.c; sourceTree = SOURCE_ROOT; };
+		5A274C6342F64A07ADE7895E /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/sfnt.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = sfnt.h; path = include/freetype/internal/sfnt.h; sourceTree = SOURCE_ROOT; };
+		5B638C7F009146E093221040 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/psaux/psaux.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = psaux.c; path = src/psaux/psaux.c; sourceTree = SOURCE_ROOT; };
+		5E25655AD358411B98E503F8 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ttnameid.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ttnameid.h; path = include/freetype/ttnameid.h; sourceTree = SOURCE_ROOT; };
+		5FA0F54AFE564D55BB5C3A58 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/tttypes.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = tttypes.h; path = include/freetype/internal/tttypes.h; sourceTree = SOURCE_ROOT; };
+		5FDF8DC6671F4E56887561E2 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = CMakeLists.txt; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
+		6053033836A047F5A513D947 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/fterrors.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = fterrors.h; path = include/freetype/fterrors.h; sourceTree = SOURCE_ROOT; };
+		6125E695340940B28B24058A /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftfntfmt.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftfntfmt.h; path = include/freetype/ftfntfmt.h; sourceTree = SOURCE_ROOT; };
+		61C3184190AA4D7DBC9EFE7C /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/config/public-macros.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = "public-macros.h"; path = "include/freetype/config/public-macros.h"; sourceTree = SOURCE_ROOT; };
+		626CD5354E284470A3EF839F /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/fterrdef.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = fterrdef.h; path = include/freetype/fterrdef.h; sourceTree = SOURCE_ROOT; };
+		62E500CE18A24D0094A2DDDC /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/config/ftoption.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftoption.h; path = include/freetype/config/ftoption.h; sourceTree = SOURCE_ROOT; };
+		6B0C1B1E7D614C3CBC89356E /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftmac.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftmac.h; path = include/freetype/ftmac.h; sourceTree = SOURCE_ROOT; };
+		6B2CD4247B09472E9D144E52 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftbitmap.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftbitmap.h; path = include/freetype/ftbitmap.h; sourceTree = SOURCE_ROOT; };
+		6C00DE03C9D440158A69EE45 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftincrem.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftincrem.h; path = include/freetype/ftincrem.h; sourceTree = SOURCE_ROOT; };
+		6C11D39F9FFA4FCA9E074074 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftmm.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = ftmm.c; path = src/base/ftmm.c; sourceTree = SOURCE_ROOT; };
+		6F7624FCE9574A1EB5B4B5E0 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/fttypes.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = fttypes.h; path = include/freetype/fttypes.h; sourceTree = SOURCE_ROOT; };
+		734780836ACC4E4E96CD1993 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build/external/freetype/CMakeFiles/freetype.dir/Info.plist */ = {isa = PBXFileReference; explicitFileType = sourcecode.text.plist; fileEncoding = 4; name = Info.plist; path = "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build/external/freetype/CMakeFiles/freetype.dir/Info.plist"; sourceTree = "<absolute>"; };
+		755BEE43135D45DB85733346 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/ft2build.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ft2build.h; path = include/ft2build.h; sourceTree = SOURCE_ROOT; };
+		7A012FC659DA41B79CD6FCDE /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftlzw.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftlzw.h; path = include/freetype/ftlzw.h; sourceTree = SOURCE_ROOT; };
+		83720555FA5E4621B942F188 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftcid.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = ftcid.c; path = src/base/ftcid.c; sourceTree = SOURCE_ROOT; };
+		83A1F0287C0F4881ADB324AE /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/psnames/psnames.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = psnames.c; path = src/psnames/psnames.c; sourceTree = SOURCE_ROOT; };
+		84D2B60A7A4C4A809145A9A0 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/fthash.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = fthash.h; path = include/freetype/internal/fthash.h; sourceTree = SOURCE_ROOT; };
+		85D984E958A640E4B165A060 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftsnames.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftsnames.h; path = include/freetype/ftsnames.h; sourceTree = SOURCE_ROOT; };
+		8A983E29621B471D85B32EBC /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftimage.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftimage.h; path = include/freetype/ftimage.h; sourceTree = SOURCE_ROOT; };
+		8DB7F900517B4A0D8949FE7A /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/pfr/pfr.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = pfr.c; path = src/pfr/pfr.c; sourceTree = SOURCE_ROOT; };
+		8EDEDA6C387346BFA4B922E0 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/config/ftconfig.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftconfig.h; path = include/freetype/config/ftconfig.h; sourceTree = SOURCE_ROOT; };
+		9015EF07B6224992AF20C4A1 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftgasp.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftgasp.h; path = include/freetype/ftgasp.h; sourceTree = SOURCE_ROOT; };
+		91CFDDE7A78944E28CDED65C /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftoutln.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftoutln.h; path = include/freetype/ftoutln.h; sourceTree = SOURCE_ROOT; };
+		93561C7B70134800ADFBCEC2 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftmoderr.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftmoderr.h; path = include/freetype/ftmoderr.h; sourceTree = SOURCE_ROOT; };
+		94141D5BA3614ECF9C09DCDF /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/fttrace.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = fttrace.h; path = include/freetype/internal/fttrace.h; sourceTree = SOURCE_ROOT; };
+		94A51BA1C64C4975AB8878B5 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/raster/raster.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = raster.c; path = src/raster/raster.c; sourceTree = SOURCE_ROOT; };
+		95C5F818F2FB478AA7AA044C /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/pcf/pcf.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = pcf.c; path = src/pcf/pcf.c; sourceTree = SOURCE_ROOT; };
+		95E81782706844A7AF764E3D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftbase.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = ftbase.c; path = src/base/ftbase.c; sourceTree = SOURCE_ROOT; };
+		9A1C9A59FBE24E7C8E805A03 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftmodapi.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftmodapi.h; path = include/freetype/ftmodapi.h; sourceTree = SOURCE_ROOT; };
+		9BC051BB2DE64B839822695D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftpfr.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftpfr.h; path = include/freetype/ftpfr.h; sourceTree = SOURCE_ROOT; };
+		9D59EC86404C4BCEB4A835B9 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/type42/type42.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = type42.c; path = src/type42/type42.c; sourceTree = SOURCE_ROOT; };
+		9D9A4C6E14CD4218A01AD2CC /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/otsvg.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = otsvg.h; path = include/freetype/otsvg.h; sourceTree = SOURCE_ROOT; };
+		A552EC3295DE40C99901B7FE /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftwinfnt.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = ftwinfnt.c; path = src/base/ftwinfnt.c; sourceTree = SOURCE_ROOT; };
+		A7563306075448ECBEA9D230 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftstroke.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = ftstroke.c; path = src/base/ftstroke.c; sourceTree = SOURCE_ROOT; };
+		A7E09C0912B746228809B7EE /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftcache.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftcache.h; path = include/freetype/ftcache.h; sourceTree = SOURCE_ROOT; };
+		AA5768FF02A746DBA1807C79 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftparams.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftparams.h; path = include/freetype/ftparams.h; sourceTree = SOURCE_ROOT; };
+		AA72E2A40AE347669182C1EA /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftotval.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftotval.h; path = include/freetype/ftotval.h; sourceTree = SOURCE_ROOT; };
+		AC23ACE9EEAB4B8BABE4BC3E /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/cid/type1cid.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = type1cid.c; path = src/cid/type1cid.c; sourceTree = SOURCE_ROOT; };
+		AEE9E67066274F00B06ECEBA /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/sfnt/sfnt.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = sfnt.c; path = src/sfnt/sfnt.c; sourceTree = SOURCE_ROOT; };
+		AF81CEDF80734C92A82E8472 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftlcdfil.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftlcdfil.h; path = include/freetype/ftlcdfil.h; sourceTree = SOURCE_ROOT; };
+		B3528E6744E1455EB73E4C1A /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/cache/ftcache.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = ftcache.c; path = src/cache/ftcache.c; sourceTree = SOURCE_ROOT; };
+		B3BC83AF75BF4A9EB0828FC5 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/type1/type1.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = type1.c; path = src/type1/type1.c; sourceTree = SOURCE_ROOT; };
+		B49729A4B56240C8A730BFE6 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftgloadr.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftgloadr.h; path = include/freetype/internal/ftgloadr.h; sourceTree = SOURCE_ROOT; };
+		B69FE99B0774443697104AD5 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/compiler-macros.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = "compiler-macros.h"; path = "include/freetype/internal/compiler-macros.h"; sourceTree = SOURCE_ROOT; };
+		B7FF05858B2F40649B9594B2 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/cffotypes.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = cffotypes.h; path = include/freetype/internal/cffotypes.h; sourceTree = SOURCE_ROOT; };
+		BB8D9A7821B340189CCC7FFF /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftobjs.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftobjs.h; path = include/freetype/internal/ftobjs.h; sourceTree = SOURCE_ROOT; };
+		BBF8A64A890D4FC7B88382CF /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/cff/cff.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = cff.c; path = src/cff/cff.c; sourceTree = SOURCE_ROOT; };
+		BF14B16B45CD41A193CD3004 /* freetype */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libfreetyped.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		C0232A6A41F84C1F96ADB60D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftadvanc.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftadvanc.h; path = include/freetype/ftadvanc.h; sourceTree = SOURCE_ROOT; };
+		C2909F5785FC46F799D04B34 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftgxval.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftgxval.h; path = include/freetype/ftgxval.h; sourceTree = SOURCE_ROOT; };
+		C2CB7DFF6DD14C57AF35AB6D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftinit.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = ftinit.c; path = src/base/ftinit.c; sourceTree = SOURCE_ROOT; };
+		C42E1B18742B4D58A4E70771 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftlogging.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftlogging.h; path = include/freetype/ftlogging.h; sourceTree = SOURCE_ROOT; };
+		C7192511A840406C82D56BF6 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/pshinter/pshinter.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = pshinter.c; path = src/pshinter/pshinter.c; sourceTree = SOURCE_ROOT; };
+		C9270C466A984E54B6B33E99 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftrfork.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftrfork.h; path = include/freetype/internal/ftrfork.h; sourceTree = SOURCE_ROOT; };
+		C944FD05C1AB47BF8D43CC1D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/cfftypes.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = cfftypes.h; path = include/freetype/internal/cfftypes.h; sourceTree = SOURCE_ROOT; };
+		CB27A91363DE4ED98CA8E681 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/lzw/ftlzw.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = ftlzw.c; path = src/lzw/ftlzw.c; sourceTree = SOURCE_ROOT; };
+		CB848F5A3D994EB78AA18D05 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/psaux.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = psaux.h; path = include/freetype/internal/psaux.h; sourceTree = SOURCE_ROOT; };
+		CBD3454FDCB746DC871E3F7D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftsynth.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftsynth.h; path = include/freetype/ftsynth.h; sourceTree = SOURCE_ROOT; };
+		CDB13CD930E541B789D2FCCE /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/pshints.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = pshints.h; path = include/freetype/internal/pshints.h; sourceTree = SOURCE_ROOT; };
+		CE26E80290BB4350800E1D1D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftcolor.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftcolor.h; path = include/freetype/ftcolor.h; sourceTree = SOURCE_ROOT; };
+		CFD42397E93D4C138CA04CC0 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftglyph.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = ftglyph.c; path = src/base/ftglyph.c; sourceTree = SOURCE_ROOT; };
+		D24E6D4CA52E425AB4F1BA9D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftbzip2.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftbzip2.h; path = include/freetype/ftbzip2.h; sourceTree = SOURCE_ROOT; };
+		D4E42332736041379DABE30C /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftdriver.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftdriver.h; path = include/freetype/ftdriver.h; sourceTree = SOURCE_ROOT; };
+		D58FE4B88343491BA01EE186 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/config/ftstdlib.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftstdlib.h; path = include/freetype/config/ftstdlib.h; sourceTree = SOURCE_ROOT; };
+		D86DEA80BE434755B8ADE5C6 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftrender.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftrender.h; path = include/freetype/ftrender.h; sourceTree = SOURCE_ROOT; };
+		D871C0BCD6F346AA8F844C40 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/tttables.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = tttables.h; path = include/freetype/tttables.h; sourceTree = SOURCE_ROOT; };
+		DA19791C933345399F1F823B /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftcalc.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftcalc.h; path = include/freetype/internal/ftcalc.h; sourceTree = SOURCE_ROOT; };
+		DCAE971486484B0CB61111EF /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftbdf.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = ftbdf.c; path = src/base/ftbdf.c; sourceTree = SOURCE_ROOT; };
+		DD4F1D4E42EC43608AC77752 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/tttags.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = tttags.h; path = include/freetype/tttags.h; sourceTree = SOURCE_ROOT; };
+		E5E47CCD628442F1A10FDF14 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/winfonts/winfnt.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = winfnt.c; path = src/winfonts/winfnt.c; sourceTree = SOURCE_ROOT; };
+		E6432B0371304683A10AF9BF /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftbitmap.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = ftbitmap.c; path = src/base/ftbitmap.c; sourceTree = SOURCE_ROOT; };
+		E77D4763AEEA4F35ADFBBF7E /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftsynth.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = ftsynth.c; path = src/base/ftsynth.c; sourceTree = SOURCE_ROOT; };
+		E85ADFF6A23B444FA6460540 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/sdf/sdf.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = sdf.c; path = src/sdf/sdf.c; sourceTree = SOURCE_ROOT; };
+		EEECFF82B4D74045B66BBC4D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftchapters.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftchapters.h; path = include/freetype/ftchapters.h; sourceTree = SOURCE_ROOT; };
+		F2A003DC571F42F1832E8C55 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftmm.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftmm.h; path = include/freetype/ftmm.h; sourceTree = SOURCE_ROOT; };
+		F3BB9C0CA6DE4C4397E5BBCC /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftpfr.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = ftpfr.c; path = src/base/ftpfr.c; sourceTree = SOURCE_ROOT; };
+		F4DA64348D39465EAC7D51FF /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/autofit/autofit.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = autofit.c; path = src/autofit/autofit.c; sourceTree = SOURCE_ROOT; };
+		F669505EE47942AE876BAD19 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftsizes.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ftsizes.h; path = include/freetype/ftsizes.h; sourceTree = SOURCE_ROOT; };
+		FC1F18323CF54951B749753C /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftbbox.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = ftbbox.c; path = src/base/ftbbox.c; sourceTree = SOURCE_ROOT; };
+		FC52003E33284B5B939FEE5F /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/builds/unix/ftsystem.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = ftsystem.c; path = builds/unix/ftsystem.c; sourceTree = SOURCE_ROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		97E362AC0FCB45EA843C00B9 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		06FC60DEBE724E4EAD6AD041 = {
+			isa = PBXGroup;
+			children = (
+				6A66E2DF68C94C4EBE1515A2 /* freetype */,
+				2B0569EBD1DC4D9BB689D7EF /* ALL_BUILD */,
+				8C78E101F875453C8F95BF82 /* Products */,
+				B96BAE60FE104E6286D93E1D /* Frameworks */,
+				208D79F73FE24726BB6C870C /* Resources */,
+			);
+			sourceTree = "<group>";
+		};
+		208D79F73FE24726BB6C870C /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
+		2B0569EBD1DC4D9BB689D7EF /* ALL_BUILD */ = {
+			isa = PBXGroup;
+			children = (
+				DC85730BAE7F4DF692151339 /* CMake Rules */,
+				4270A5C4970D400FA681A797 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/CMakeLists.txt */,
+			);
+			name = ALL_BUILD;
+			sourceTree = "<group>";
+		};
+		360ADDFE68D24493897B0AC6 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				734780836ACC4E4E96CD1993 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build/external/freetype/CMakeFiles/freetype.dir/Info.plist */,
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
+		6A66E2DF68C94C4EBE1515A2 /* freetype */ = {
+			isa = PBXGroup;
+			children = (
+				8D9903120B1442FF8EC13911 /* Header Files */,
+				AEFE74F71A7D4B0796F7A05A /* Source Files */,
+				360ADDFE68D24493897B0AC6 /* Resources */,
+				5FDF8DC6671F4E56887561E2 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/CMakeLists.txt */,
+			);
+			name = freetype;
+			sourceTree = "<group>";
+		};
+		8C78E101F875453C8F95BF82 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				BF14B16B45CD41A193CD3004 /* freetype */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		8D9903120B1442FF8EC13911 /* Header Files */ = {
+			isa = PBXGroup;
+			children = (
+				8EDEDA6C387346BFA4B922E0 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/config/ftconfig.h */,
+				50E9DA9D55E54171B4860CC2 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/config/ftheader.h */,
+				07FE6BD2B7014D4D848D3DAF /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/config/ftmodule.h */,
+				62E500CE18A24D0094A2DDDC /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/config/ftoption.h */,
+				D58FE4B88343491BA01EE186 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/config/ftstdlib.h */,
+				39229DFE2AC04C0E9E269BD7 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/config/integer-types.h */,
+				0086BFB9B0814BBE9E3B3A14 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/config/mac-support.h */,
+				61C3184190AA4D7DBC9EFE7C /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/config/public-macros.h */,
+				04CBA4CABB0A4CBE96145E37 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/freetype.h */,
+				C0232A6A41F84C1F96ADB60D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftadvanc.h */,
+				230FBCFDEBF6491D9E9399CB /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftbbox.h */,
+				0BA2BB5DDB274AA1B447ED8D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftbdf.h */,
+				6B2CD4247B09472E9D144E52 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftbitmap.h */,
+				D24E6D4CA52E425AB4F1BA9D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftbzip2.h */,
+				A7E09C0912B746228809B7EE /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftcache.h */,
+				EEECFF82B4D74045B66BBC4D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftchapters.h */,
+				31E43CAD6D43471F930F1F24 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftcid.h */,
+				CE26E80290BB4350800E1D1D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftcolor.h */,
+				D4E42332736041379DABE30C /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftdriver.h */,
+				626CD5354E284470A3EF839F /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/fterrdef.h */,
+				6053033836A047F5A513D947 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/fterrors.h */,
+				6125E695340940B28B24058A /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftfntfmt.h */,
+				9015EF07B6224992AF20C4A1 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftgasp.h */,
+				40CD8E631B754A2B9C4198AD /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftglyph.h */,
+				C2909F5785FC46F799D04B34 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftgxval.h */,
+				392CD44302E54EADA5A195CB /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftgzip.h */,
+				8A983E29621B471D85B32EBC /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftimage.h */,
+				6C00DE03C9D440158A69EE45 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftincrem.h */,
+				AF81CEDF80734C92A82E8472 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftlcdfil.h */,
+				0B5EF5878A9F4AABB3E56E97 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftlist.h */,
+				C42E1B18742B4D58A4E70771 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftlogging.h */,
+				7A012FC659DA41B79CD6FCDE /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftlzw.h */,
+				6B0C1B1E7D614C3CBC89356E /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftmac.h */,
+				F2A003DC571F42F1832E8C55 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftmm.h */,
+				9A1C9A59FBE24E7C8E805A03 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftmodapi.h */,
+				93561C7B70134800ADFBCEC2 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftmoderr.h */,
+				AA72E2A40AE347669182C1EA /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftotval.h */,
+				91CFDDE7A78944E28CDED65C /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftoutln.h */,
+				AA5768FF02A746DBA1807C79 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftparams.h */,
+				9BC051BB2DE64B839822695D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftpfr.h */,
+				D86DEA80BE434755B8ADE5C6 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftrender.h */,
+				F669505EE47942AE876BAD19 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftsizes.h */,
+				85D984E958A640E4B165A060 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftsnames.h */,
+				366BA892DE9B4E46842B2A8D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftstroke.h */,
+				CBD3454FDCB746DC871E3F7D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftsynth.h */,
+				34A6A432A6024124B2C1B632 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftsystem.h */,
+				41015731A22C4888B602EDE7 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/fttrigon.h */,
+				6F7624FCE9574A1EB5B4B5E0 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/fttypes.h */,
+				2B8A9D8B5E41474693368568 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ftwinfnt.h */,
+				0285EDE6BD344E409687E642 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/autohint.h */,
+				B7FF05858B2F40649B9594B2 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/cffotypes.h */,
+				C944FD05C1AB47BF8D43CC1D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/cfftypes.h */,
+				B69FE99B0774443697104AD5 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/compiler-macros.h */,
+				DA19791C933345399F1F823B /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftcalc.h */,
+				22107AFF43EC424B832234A5 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftdebug.h */,
+				0028756098F44DF5A81F136B /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftdrv.h */,
+				B49729A4B56240C8A730BFE6 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftgloadr.h */,
+				84D2B60A7A4C4A809145A9A0 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/fthash.h */,
+				030BD14B486E45BD99FD9C3D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftmemory.h */,
+				BB8D9A7821B340189CCC7FFF /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftobjs.h */,
+				4AD8631B75C540F49D70F7F9 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftpsprop.h */,
+				C9270C466A984E54B6B33E99 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftrfork.h */,
+				1C185CC7E43E46DE9E7E5C2B /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftserv.h */,
+				50FB2F97CC1642F0A792EF2D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftstream.h */,
+				94141D5BA3614ECF9C09DCDF /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/fttrace.h */,
+				22AA570E6A8B426DBE64A48E /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/ftvalid.h */,
+				CB848F5A3D994EB78AA18D05 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/psaux.h */,
+				CDB13CD930E541B789D2FCCE /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/pshints.h */,
+				5A274C6342F64A07ADE7895E /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/sfnt.h */,
+				1065CE09E9744EE78014D1CF /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/svginterface.h */,
+				4FDA5714FEB5441D81C7BF69 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/t1types.h */,
+				5FA0F54AFE564D55BB5C3A58 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/tttypes.h */,
+				209678E7783C4B6480017317 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/internal/wofftypes.h */,
+				9D9A4C6E14CD4218A01AD2CC /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/otsvg.h */,
+				1FCDA12B372A4BF5AE8D018F /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/t1tables.h */,
+				5E25655AD358411B98E503F8 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/ttnameid.h */,
+				D871C0BCD6F346AA8F844C40 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/tttables.h */,
+				DD4F1D4E42EC43608AC77752 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/freetype/tttags.h */,
+				755BEE43135D45DB85733346 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include/ft2build.h */,
+			);
+			name = "Header Files";
+			sourceTree = "<group>";
+		};
+		AEFE74F71A7D4B0796F7A05A /* Source Files */ = {
+			isa = PBXGroup;
+			children = (
+				FC52003E33284B5B939FEE5F /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/builds/unix/ftsystem.c */,
+				F4DA64348D39465EAC7D51FF /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/autofit/autofit.c */,
+				95E81782706844A7AF764E3D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftbase.c */,
+				FC1F18323CF54951B749753C /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftbbox.c */,
+				DCAE971486484B0CB61111EF /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftbdf.c */,
+				E6432B0371304683A10AF9BF /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftbitmap.c */,
+				83720555FA5E4621B942F188 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftcid.c */,
+				0742C10B772D48DDB2062650 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftdebug.c */,
+				480BDEA3FC0D4A0097595B53 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftfstype.c */,
+				57A8CB4C33C84092AD6C8354 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftgasp.c */,
+				CFD42397E93D4C138CA04CC0 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftglyph.c */,
+				09101F67885F470998CB78D9 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftgxval.c */,
+				C2CB7DFF6DD14C57AF35AB6D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftinit.c */,
+				6C11D39F9FFA4FCA9E074074 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftmm.c */,
+				36ADD125B6204017BE34AD89 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftotval.c */,
+				3D7F06859B3448EC9B17A98D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftpatent.c */,
+				F3BB9C0CA6DE4C4397E5BBCC /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftpfr.c */,
+				A7563306075448ECBEA9D230 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftstroke.c */,
+				E77D4763AEEA4F35ADFBBF7E /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftsynth.c */,
+				0FE1BC44BB5F4DBF80327CDB /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/fttype1.c */,
+				A552EC3295DE40C99901B7FE /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftwinfnt.c */,
+				48F3851ED5184D8AABCE9DF6 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/bdf/bdf.c */,
+				21CCA582CB4C4F29958480A6 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/bzip2/ftbzip2.c */,
+				B3528E6744E1455EB73E4C1A /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/cache/ftcache.c */,
+				BBF8A64A890D4FC7B88382CF /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/cff/cff.c */,
+				AC23ACE9EEAB4B8BABE4BC3E /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/cid/type1cid.c */,
+				49B4DB9CE8B843F8BB43E799 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/gzip/ftgzip.c */,
+				CB27A91363DE4ED98CA8E681 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/lzw/ftlzw.c */,
+				95C5F818F2FB478AA7AA044C /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/pcf/pcf.c */,
+				8DB7F900517B4A0D8949FE7A /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/pfr/pfr.c */,
+				5B638C7F009146E093221040 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/psaux/psaux.c */,
+				C7192511A840406C82D56BF6 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/pshinter/pshinter.c */,
+				83A1F0287C0F4881ADB324AE /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/psnames/psnames.c */,
+				94A51BA1C64C4975AB8878B5 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/raster/raster.c */,
+				E85ADFF6A23B444FA6460540 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/sdf/sdf.c */,
+				AEE9E67066274F00B06ECEBA /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/sfnt/sfnt.c */,
+				41D1731335F447CD9A1C1B65 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/smooth/smooth.c */,
+				1BE0223642DA425CBBBCA732 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/svg/svg.c */,
+				3EC544EA36724AD9BF9ECF46 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/truetype/truetype.c */,
+				B3BC83AF75BF4A9EB0828FC5 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/type1/type1.c */,
+				9D59EC86404C4BCEB4A835B9 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/type42/type42.c */,
+				E5E47CCD628442F1A10FDF14 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/winfonts/winfnt.c */,
+			);
+			name = "Source Files";
+			sourceTree = "<group>";
+		};
+		B96BAE60FE104E6286D93E1D /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		DC85730BAE7F4DF692151339 /* CMake Rules */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = "CMake Rules";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		0E2BE0B3D7723923F464271B /* freetype */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 74B5AE861E714DBC9B9105C8 /* Build configuration list for PBXNativeTarget "freetype" */;
+			buildPhases = (
+				B1B6E4276A4641349F58C718 /* Sources */,
+				97E362AC0FCB45EA843C00B9 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				CF7D51C192394671AFC2C1A1 /* PBXTargetDependency */,
+			);
+			name = freetype;
+			productName = freetype;
+			productReference = BF14B16B45CD41A193CD3004 /* freetype */;
+			productType = "com.apple.product-type.library.static";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		1DE96370C75E46E09D533FC6 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1620;
+			};
+			buildConfigurationList = 86434F5995934D40B5C1655F /* Build configuration list for PBXProject "freetype" */;
+			buildSettings = {
+			};
+			buildStyles = (
+				281A96CD51474E408956DFC4 /* Debug */,
+				B244A5A5F0E14C838051D52E /* Release */,
+				62FD6D4903E24C3A9DFF1934 /* MinSizeRel */,
+				B74645EF1E4C440EB9DA377F /* RelWithDebInfo */,
+			);
+			compatibilityVersion = "Xcode 3.2";
+			hasScannedForEncodings = 0;
+			mainGroup = 06FC60DEBE724E4EAD6AD041;
+			projectDirPath = "../../../sdl2_ttf-src/external/freetype";
+			projectRoot = "";
+			targets = (
+				2EBEBDE0AAC4E74DFA200781 /* ALL_BUILD */,
+				0E2BE0B3D7723923F464271B /* freetype */,
+				651D2269F43D50C7D2B15EA7 /* install */,
+				F8A85156645ADB1B089B3817 /* package */,
+				D24353A079AE57BA8522B04C /* ZERO_CHECK */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		0D5AC516137AE9C71F1272B5 /* Generate CMakeFiles/ZERO_CHECK */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Generate CMakeFiles/ZERO_CHECK";
+			outputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build/external/freetype/CMakeFiles/ZERO_CHECK"			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e
+if test \"$CONFIGURATION\" = \"Debug\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build/external/freetype
+  make -f /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build/external/freetype/CMakeScripts/ReRunCMake.make
+fi
+if test \"$CONFIGURATION\" = \"Release\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build/external/freetype
+  make -f /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build/external/freetype/CMakeScripts/ReRunCMake.make
+fi
+if test \"$CONFIGURATION\" = \"MinSizeRel\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build/external/freetype
+  make -f /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build/external/freetype/CMakeScripts/ReRunCMake.make
+fi
+if test \"$CONFIGURATION\" = \"RelWithDebInfo\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build/external/freetype
+  make -f /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build/external/freetype/CMakeScripts/ReRunCMake.make
+fi
+";
+			showEnvVarsInLog = 0;
+		};
+		3C0110FC8322DE7E50886E21 = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# shell script goes here
+exit 0";
+			showEnvVarsInLog = 0;
+		};
+		571234464C2A5D0D43F1AB42 /* CMake PostBuild Rules */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			name = "CMake PostBuild Rules";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e
+if test \"$CONFIGURATION\" = \"Debug\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios
+  /opt/homebrew/bin/cpack -C $CONFIGURATION$EFFECTIVE_PLATFORM_NAME --config ./CPackConfig.cmake
+fi
+if test \"$CONFIGURATION\" = \"Release\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios
+  /opt/homebrew/bin/cpack -C $CONFIGURATION$EFFECTIVE_PLATFORM_NAME --config ./CPackConfig.cmake
+fi
+if test \"$CONFIGURATION\" = \"MinSizeRel\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios
+  /opt/homebrew/bin/cpack -C $CONFIGURATION$EFFECTIVE_PLATFORM_NAME --config ./CPackConfig.cmake
+fi
+if test \"$CONFIGURATION\" = \"RelWithDebInfo\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios
+  /opt/homebrew/bin/cpack -C $CONFIGURATION$EFFECTIVE_PLATFORM_NAME --config ./CPackConfig.cmake
+fi
+";
+			showEnvVarsInLog = 0;
+		};
+		661D9C604B3B91332E7543CC = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# shell script goes here
+exit 0";
+			showEnvVarsInLog = 0;
+		};
+		87AF4882E018677E2624B544 = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# shell script goes here
+exit 0";
+			showEnvVarsInLog = 0;
+		};
+		912475EE436E78464B7079A7 /* Generate CMakeFiles/ALL_BUILD */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Generate CMakeFiles/ALL_BUILD";
+			outputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build/external/freetype/CMakeFiles/ALL_BUILD"			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e
+if test \"$CONFIGURATION\" = \"Debug\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build/external/freetype
+  echo Build\\ all\\ projects
+fi
+if test \"$CONFIGURATION\" = \"Release\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build/external/freetype
+  echo Build\\ all\\ projects
+fi
+if test \"$CONFIGURATION\" = \"MinSizeRel\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build/external/freetype
+  echo Build\\ all\\ projects
+fi
+if test \"$CONFIGURATION\" = \"RelWithDebInfo\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build/external/freetype
+  echo Build\\ all\\ projects
+fi
+";
+			showEnvVarsInLog = 0;
+		};
+		93426DA6A4AC2C2AC9CE883C /* CMake PostBuild Rules */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			name = "CMake PostBuild Rules";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e
+if test \"$CONFIGURATION\" = \"Debug\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build/external/freetype
+  /opt/homebrew/bin/cmake -DBUILD_TYPE=$CONFIGURATION -DEFFECTIVE_PLATFORM_NAME=$EFFECTIVE_PLATFORM_NAME -P cmake_install.cmake
+fi
+if test \"$CONFIGURATION\" = \"Release\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build/external/freetype
+  /opt/homebrew/bin/cmake -DBUILD_TYPE=$CONFIGURATION -DEFFECTIVE_PLATFORM_NAME=$EFFECTIVE_PLATFORM_NAME -P cmake_install.cmake
+fi
+if test \"$CONFIGURATION\" = \"MinSizeRel\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build/external/freetype
+  /opt/homebrew/bin/cmake -DBUILD_TYPE=$CONFIGURATION -DEFFECTIVE_PLATFORM_NAME=$EFFECTIVE_PLATFORM_NAME -P cmake_install.cmake
+fi
+if test \"$CONFIGURATION\" = \"RelWithDebInfo\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build/external/freetype
+  /opt/homebrew/bin/cmake -DBUILD_TYPE=$CONFIGURATION -DEFFECTIVE_PLATFORM_NAME=$EFFECTIVE_PLATFORM_NAME -P cmake_install.cmake
+fi
+";
+			showEnvVarsInLog = 0;
+		};
+		9B50530E35CC49C82C2FACCF = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# shell script goes here
+exit 0";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		B1B6E4276A4641349F58C718 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B5326972BA204A9D8E1D1CDD /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/builds/unix/ftsystem.c */,
+				9F1CAED96EBA43ED9EDAB9C9 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/autofit/autofit.c */,
+				23596485CA3849AE85A1595B /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftbase.c */,
+				5815B44BEA5042AFAC0BC824 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftbbox.c */,
+				E7573C92224E47B283DA0092 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftbdf.c */,
+				7BFFB92AB84D4EE381E876FD /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftbitmap.c */,
+				736C6B4E7D1C4387BC0F10B8 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftcid.c */,
+				EF7E7AE74D394E51A7D6845D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftdebug.c */,
+				9EC0137B56BC4A24A76CF9E2 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftfstype.c */,
+				877A3C5CFC944F08A69B003B /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftgasp.c */,
+				5A5FAF666E4F41C89EB5AC61 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftglyph.c */,
+				7FAC418F69784B5AAA1A3538 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftgxval.c */,
+				11F6BAC1C2DB42108DB1CD32 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftinit.c */,
+				D27095F3F98F4CD8A8E79B63 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftmm.c */,
+				6398F82EA1224CF287ED2589 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftotval.c */,
+				3DC6FCB0704D47A887F629EC /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftpatent.c */,
+				406D2280AD284AC7B4F2C85C /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftpfr.c */,
+				FF2623B8D1E84BF2A29E73EC /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftstroke.c */,
+				D5D00D759F4E4EAA9CE26414 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftsynth.c */,
+				DB949DB5E10C41A6BD45AA5D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/fttype1.c */,
+				FD1F34099031403D83BE0831 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/base/ftwinfnt.c */,
+				6A67AAA5EFE84ED49142F070 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/bdf/bdf.c */,
+				D75087D4CF18417BA1930542 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/bzip2/ftbzip2.c */,
+				6346256280FD4840947E501A /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/cache/ftcache.c */,
+				88FFB3BA8B1842D799BA1506 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/cff/cff.c */,
+				F0D57C301D6649B98C0A1BF4 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/cid/type1cid.c */,
+				1F4A8D9EC66F4577A492D566 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/gzip/ftgzip.c */,
+				7438D56D05D04647B1036046 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/lzw/ftlzw.c */,
+				912A753959D8458C836DDB13 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/pcf/pcf.c */,
+				5F7A90403FA84C3AAFAF6CCC /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/pfr/pfr.c */,
+				4E87E34A53B74099A6528872 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/psaux/psaux.c */,
+				39D968B9470843AD9CFAA450 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/pshinter/pshinter.c */,
+				2539DAF1F93B4220A8077C84 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/psnames/psnames.c */,
+				26549C8E91054F36892A0EB9 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/raster/raster.c */,
+				75E0DB67EA81440EB0CA70AC /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/sdf/sdf.c */,
+				B0F69260E6454D65A7B5DF55 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/sfnt/sfnt.c */,
+				A40F35DBFB974AD6852C5275 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/smooth/smooth.c */,
+				AAA400DE25E94F2A816D2F7F /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/svg/svg.c */,
+				291A82A6046E48B387B5A484 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/truetype/truetype.c */,
+				24A32AEA861D4E119B122AB4 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/type1/type1.c */,
+				14204D5E3A41428F8C92A065 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/type42/type42.c */,
+				1588D0FEE6574D579B97E5B4 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/src/winfonts/winfnt.c */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		107C03F901BD42E0A71AE77E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 2EBEBDE0AAC4E74DFA200781 /* ALL_BUILD */;
+			targetProxy = ECA0EE5A1B364EE7B45A7319 /* PBXContainerItemProxy */;
+		};
+		3025CF7BE1CB4210A12499D2 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0E2BE0B3D7723923F464271B /* freetype */;
+			targetProxy = DFA53E947E2A47E29B1AE245 /* PBXContainerItemProxy */;
+		};
+		4E12CC42D5BB444CB0CA2CA0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 2EBEBDE0AAC4E74DFA200781 /* ALL_BUILD */;
+			targetProxy = FF40A76C17BA4D46A5BF6DB2 /* PBXContainerItemProxy */;
+		};
+		AB7DC34D1A1E437C9F98CA18 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D24353A079AE57BA8522B04C /* ZERO_CHECK */;
+			targetProxy = 3E41CAD1A891472390C7E057 /* PBXContainerItemProxy */;
+		};
+		CF7D51C192394671AFC2C1A1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D24353A079AE57BA8522B04C /* ZERO_CHECK */;
+			targetProxy = 7E222971AF85455CA7223692 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		075CC87FA7D34E639B2415A2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = package;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Release;
+		};
+		07D350BBC5EE44A4925E9DAC /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ALL_BUILD;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = RelWithDebInfo;
+		};
+		1079CE368E0C454BB1252768 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = install;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Release;
+		};
+		1E8272830DCE4E88BFFA34CD /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = install;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = MinSizeRel;
+		};
+		274E76C1A2144D1BB82C5A05 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = (arm64,x86_64);
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build/external/freetype/Debug${EFFECTIVE_PLATFORM_NAME}";
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",FT2_BUILD_LIBRARY,"$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = ("/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build/external/freetype/include","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build/external/freetype/include/freetype/config","$(inherited)");
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CFLAGS = ("   -fPIC -fvisibility=hidden ","$(inherited)");
+				OTHER_LIBTOOLFLAGS = ("");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = freetyped;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/freetype.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Debug;
+		};
+		2877F4A480B043EBB5E36F60 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = install;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Debug;
+		};
+		38C24CC13CE1417F874063B9 /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ZERO_CHECK;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = RelWithDebInfo;
+		};
+		3A15A6F455A443A8AD74B340 /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = (arm64,x86_64);
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build/external/freetype/RelWithDebInfo${EFFECTIVE_PLATFORM_NAME}";
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",FT2_BUILD_LIBRARY,"$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = ("/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build/external/freetype/include","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build/external/freetype/include/freetype/config","$(inherited)");
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CFLAGS = ("       -DNDEBUG -fPIC -fvisibility=hidden ","$(inherited)");
+				OTHER_LIBTOOLFLAGS = ("");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = freetype;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/freetype.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = RelWithDebInfo;
+		};
+		3BEDDBEFDC8D454FBBA2731E /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "arm64 x86_64";
+				"ARCHS[sdk=iphoneos*]" = arm64;
+				"ARCHS[sdk=iphonesimulator*]" = "x86_64 arm64";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				ENABLE_BITCODE = NO;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				ONLY_ACTIVE_ARCH = NO;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SYMROOT = "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build";
+				"VALID_ARCHS[sdk=iphoneos*]" = arm64;
+				"VALID_ARCHS[sdk=iphonesimulator*]" = "x86_64 arm64";
+			};
+			name = RelWithDebInfo;
+		};
+		4BE08F41B6ED43D68138D556 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ZERO_CHECK;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = MinSizeRel;
+		};
+		5DDFC50C60DD44BBBC4BF19E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = (arm64,x86_64);
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build/external/freetype/Release${EFFECTIVE_PLATFORM_NAME}";
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",FT2_BUILD_LIBRARY,"$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = ("/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build/external/freetype/include","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build/external/freetype/include/freetype/config","$(inherited)");
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CFLAGS = ("    -DNDEBUG -fPIC -fvisibility=hidden ","$(inherited)");
+				OTHER_LIBTOOLFLAGS = ("");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = freetype;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/freetype.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Release;
+		};
+		5E0F8FE1048E4EE39586FCE9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ZERO_CHECK;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Debug;
+		};
+		8E18CEFD220B4D93A320A482 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "arm64 x86_64";
+				"ARCHS[sdk=iphoneos*]" = arm64;
+				"ARCHS[sdk=iphonesimulator*]" = "x86_64 arm64";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				ENABLE_BITCODE = NO;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				ONLY_ACTIVE_ARCH = NO;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SYMROOT = "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build";
+				"VALID_ARCHS[sdk=iphoneos*]" = arm64;
+				"VALID_ARCHS[sdk=iphonesimulator*]" = "x86_64 arm64";
+			};
+			name = Release;
+		};
+		94B4538CCF524CF48708E3CD /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ALL_BUILD;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = MinSizeRel;
+		};
+		9B3F4E4773C845B3A4ACC27C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "arm64 x86_64";
+				"ARCHS[sdk=iphoneos*]" = arm64;
+				"ARCHS[sdk=iphonesimulator*]" = "x86_64 arm64";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				ENABLE_BITCODE = NO;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				ONLY_ACTIVE_ARCH = NO;
+				SDKROOT = iphoneos;
+				SYMROOT = "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build";
+				"VALID_ARCHS[sdk=iphoneos*]" = arm64;
+				"VALID_ARCHS[sdk=iphonesimulator*]" = "x86_64 arm64";
+			};
+			name = Debug;
+		};
+		A1EFB79CA8CE439D86D35042 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ALL_BUILD;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Debug;
+		};
+		A29D1438A5024BE2A4FB8037 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = package;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Debug;
+		};
+		BE016ADD9D2540F98A3B1993 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ALL_BUILD;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Release;
+		};
+		C39A8E7A87A94F2EBB5C8248 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ZERO_CHECK;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Release;
+		};
+		CF13DD948A524BB89064DAD7 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "arm64 x86_64";
+				"ARCHS[sdk=iphoneos*]" = arm64;
+				"ARCHS[sdk=iphonesimulator*]" = "x86_64 arm64";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				ENABLE_BITCODE = NO;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				ONLY_ACTIVE_ARCH = NO;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SYMROOT = "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build";
+				"VALID_ARCHS[sdk=iphoneos*]" = arm64;
+				"VALID_ARCHS[sdk=iphonesimulator*]" = "x86_64 arm64";
+			};
+			name = MinSizeRel;
+		};
+		D6C45AF1934B400982C74A6D /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = package;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = RelWithDebInfo;
+		};
+		E10B5CB299A24215A2A5F6C0 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = (arm64,x86_64);
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build/external/freetype/MinSizeRel${EFFECTIVE_PLATFORM_NAME}";
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",FT2_BUILD_LIBRARY,"$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = ("/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build/external/freetype/include","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src/external/freetype/include","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build/external/freetype/include/freetype/config","$(inherited)");
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CFLAGS = ("    -DNDEBUG -fPIC -fvisibility=hidden ","$(inherited)");
+				OTHER_LIBTOOLFLAGS = ("");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = freetype;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/freetype.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = MinSizeRel;
+		};
+		E9C96094E0944DE1AB7E1820 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = package;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = MinSizeRel;
+		};
+		EC72912E44C44FE3A58CD27C /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = install;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = RelWithDebInfo;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		4DC16022D42445FFB5830357 /* Build configuration list for PBXAggregateTarget "ZERO_CHECK" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5E0F8FE1048E4EE39586FCE9 /* Debug */,
+				C39A8E7A87A94F2EBB5C8248 /* Release */,
+				4BE08F41B6ED43D68138D556 /* MinSizeRel */,
+				38C24CC13CE1417F874063B9 /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		531E75D66F86466486A18CCF /* Build configuration list for PBXAggregateTarget "package" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A29D1438A5024BE2A4FB8037 /* Debug */,
+				075CC87FA7D34E639B2415A2 /* Release */,
+				E9C96094E0944DE1AB7E1820 /* MinSizeRel */,
+				D6C45AF1934B400982C74A6D /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		5FAA113F6BAE4F03ACC115BA /* Build configuration list for PBXAggregateTarget "ALL_BUILD" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1EFB79CA8CE439D86D35042 /* Debug */,
+				BE016ADD9D2540F98A3B1993 /* Release */,
+				94B4538CCF524CF48708E3CD /* MinSizeRel */,
+				07D350BBC5EE44A4925E9DAC /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		70C4BF3BA9774B19B7077592 /* Build configuration list for PBXAggregateTarget "install" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2877F4A480B043EBB5E36F60 /* Debug */,
+				1079CE368E0C454BB1252768 /* Release */,
+				1E8272830DCE4E88BFFA34CD /* MinSizeRel */,
+				EC72912E44C44FE3A58CD27C /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		74B5AE861E714DBC9B9105C8 /* Build configuration list for PBXNativeTarget "freetype" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				274E76C1A2144D1BB82C5A05 /* Debug */,
+				5DDFC50C60DD44BBBC4BF19E /* Release */,
+				E10B5CB299A24215A2A5F6C0 /* MinSizeRel */,
+				3A15A6F455A443A8AD74B340 /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		86434F5995934D40B5C1655F /* Build configuration list for PBXProject "freetype" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9B3F4E4773C845B3A4ACC27C /* Debug */,
+				8E18CEFD220B4D93A320A482 /* Release */,
+				CF13DD948A524BB89064DAD7 /* MinSizeRel */,
+				3BEDDBEFDC8D454FBBA2731E /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 1DE96370C75E46E09D533FC6 /* Project object */;
+}

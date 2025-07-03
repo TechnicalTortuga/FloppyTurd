@@ -19,7 +19,7 @@ set(CMAKE_OBJC_SIMULATE_ID "")
 set(CMAKE_OBJC_COMPILER_FRONTEND_VARIANT "GNU")
 set(CMAKE_OBJC_SIMULATE_VERSION "")
 
-
+set(CMAKE_XCODE_ARCHS "arm64")
 set(CMAKE_AR "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar")
 set(CMAKE_OBJC_COMPILER_AR "")
 set(CMAKE_RANLIB "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib")

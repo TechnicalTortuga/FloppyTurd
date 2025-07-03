@@ -18,7 +18,7 @@ file(MAKE_DIRECTORY
   "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_mixer-subbuild/sdl2_mixer-populate-prefix/src/sdl2_mixer-populate-stamp"
 )
 
-set(configSubDirs )
+set(configSubDirs Debug)
 foreach(subDir IN LISTS configSubDirs)
     file(MAKE_DIRECTORY "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_mixer-subbuild/sdl2_mixer-populate-prefix/src/sdl2_mixer-populate-stamp/${subDir}")
 endforeach()

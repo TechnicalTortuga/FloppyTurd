@@ -18,7 +18,7 @@ file(MAKE_DIRECTORY
   "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp"
 )
 
-set(configSubDirs )
+set(configSubDirs Debug)
 foreach(subDir IN LISTS configSubDirs)
     file(MAKE_DIRECTORY "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/${subDir}")
 endforeach()

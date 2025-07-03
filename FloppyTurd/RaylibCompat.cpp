@@ -2,6 +2,8 @@
 #include <SDL_image.h>
 #include <SDL_mixer.h>
 #include <SDL_ttf.h>
+#include <cstdarg>
+#include <cstdlib>
 #include "RaylibCompat.h"
 
 #ifdef __APPLE__
@@ -630,17 +632,212 @@ void EnsureDefaultFontLoaded() {
     if (!g_defaultFont.fontData) {
         g_defaultFont.fontData = TTF_OpenFont("/System/Library/Fonts/Arial.ttf", 16);
         if (!g_defaultFont.fontData) {
-            TraceLog(LOG_WARNING, "Failed to load default font");
+            printf("Warning: Failed to load default font\n");
         }
     }
 #else
     if (!g_defaultFont.font) {
         g_defaultFont.font = TTF_OpenFont("/System/Library/Fonts/Arial.ttf", 16);
         if (!g_defaultFont.font) {
-            TraceLog(LOG_WARNING, "Failed to load default font");
+            printf("Warning: Failed to load default font\n");
         }
     }
 #endif
+}
+
+Font GetFontDefault() {
+    EnsureDefaultFontLoaded();
+    return g_defaultFont;
+}
+
+// ========== MISSING FUNCTIONS ==========
+
+void SetExitKey(int key) {
+    // Not implemented for iOS - exit is handled by the system
+}
+
+void DrawCircleV(Vector2 center, float radius, Color color) {
+    DrawCircle((int)center.x, (int)center.y, radius, color);
+}
+
+void ImageResize(Image* image, int newWidth, int newHeight) {
+    if (!image || !image->surface) return;
+    SDL_Surface* resized = SDL_CreateRGBSurface(0, newWidth, newHeight, 32, 0, 0, 0, 0);
+    if (!resized) return;
+    SDL_BlitScaled(image->surface, nullptr, resized, nullptr);
+    SDL_FreeSurface(image->surface);
+    image->surface = resized;
+    image->width = newWidth;
+    image->height = newHeight;
+}
+
+int MeasureText(const char* text, int fontSize) {
+    EnsureDefaultFontLoaded();
+    if (!g_defaultFont.fontData) return 0;
+    
+    TTF_Font* font = FONT_PTR(g_defaultFont);
+    int w, h;
+    if (TTF_SizeText(font, text, &w, &h) == 0) {
+        return w;
+    }
+    return 0;
+}
+
+void SetWindowSize(int width, int height) {
+    if (g_window) {
+        SDL_SetWindowSize(g_window, width, height);
+    }
+}
+
+void EndScissorMode() {
+    // Reset scissor to full screen
+    SDL_RenderSetClipRect(g_renderer, nullptr);
+}
+
+int GetRandomValue(int min, int max) {
+    return min + (rand() % (max - min + 1));
+}
+
+void SetConfigFlags(unsigned int flags) {
+    // Not implemented for iOS - flags are set during initialization
+}
+
+void SetMusicVolume(Music music, float volume) {
+    if (music.music) {
+        Mix_VolumeMusic((int)(volume * MIX_MAX_VOLUME));
+    }
+}
+
+void SetTextureWrap(Texture2D texture, int wrap) {
+    // Not implemented for SDL2 - texture wrapping is handled differently
+}
+
+int GetMonitorWidth(int monitor) {
+    // For iOS, return the screen width
+    return GetScreenWidth();
+}
+
+Music LoadMusicStream(const char* fileName) {
+    Music music = {nullptr};
+    music.music = Mix_LoadMUS(fileName);
+    if (!music.music) {
+        SDL_Log("Failed to load music: %s", Mix_GetError());
+    }
+    return music;
+}
+
+void PlayMusicStream(Music music) {
+    if (music.music) {
+        Mix_PlayMusic(music.music, -1);
+    }
+}
+
+void StopMusicStream(Music music) {
+    Mix_HaltMusic();
+}
+
+void UpdateMusicStream(Music music) {
+    // SDL_mixer handles this automatically
+}
+
+bool IsWindowFullscreen() {
+    if (g_window) {
+        Uint32 flags = SDL_GetWindowFlags(g_window);
+        return (flags & SDL_WINDOW_FULLSCREEN) != 0;
+    }
+    return false;
+}
+
+bool IsMusicStreamPlaying(Music music) {
+    return Mix_PlayingMusic() != 0;
+}
+
+Image LoadImageFromTexture(Texture2D texture) {
+    // This is a complex operation that would require reading back from GPU
+    // For now, return an empty image
+    return {nullptr, texture.width, texture.height};
+}
+
+bool CheckCollisionCircleRec(Vector2 center, float radius, Rectangle rec) {
+    // Find the closest point to the circle within the rectangle
+    float closestX = (center.x < rec.x) ? rec.x : (center.x > rec.x + rec.width) ? rec.x + rec.width : center.x;
+    float closestY = (center.y < rec.y) ? rec.y : (center.y > rec.y + rec.height) ? rec.y + rec.height : center.y;
+    
+    // Calculate the distance between the circle's center and this closest point
+    float distanceX = center.x - closestX;
+    float distanceY = center.y - closestY;
+    
+    // If the distance is less than the circle's radius, an intersection occurs
+    float distanceSquared = (distanceX * distanceX) + (distanceY * distanceY);
+    return distanceSquared < (radius * radius);
+}
+
+Color Fade(Color color, float alpha) {
+    Color fadeColor = {color.r, color.g, color.b, (unsigned char)(alpha * 255)};
+    return fadeColor;
+}
+
+void DrawLine(int startPosX, int startPosY, int endPosX, int endPosY, Color color) {
+    SDL_SetRenderDrawColor(g_renderer, color.r, color.g, color.b, color.a);
+    SDL_RenderDrawLine(g_renderer, startPosX, startPosY, endPosX, endPosY);
+}
+
+void TraceLog(int logLevel, const char* text, ...) {
+    va_list args;
+    va_start(args, text);
+    SDL_LogMessageV(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_INFO, text, args);
+    va_end(args);
+}
+
+void ImageDraw(Image* dst, Image src, Rectangle srcRec, Rectangle dstRec, Color tint) {
+    if (!dst || !dst->surface || !src.surface) return;
+    
+    SDL_Rect srcRect = {(int)srcRec.x, (int)srcRec.y, (int)srcRec.width, (int)srcRec.height};
+    SDL_Rect dstRect = {(int)dstRec.x, (int)dstRec.y, (int)dstRec.width, (int)dstRec.height};
+    
+    SDL_BlitSurface(src.surface, &srcRect, dst->surface, &dstRect);
+}
+
+void BeginScissorMode(int x, int y, int width, int height) {
+    SDL_Rect scissorRect = {x, y, width, height};
+    SDL_RenderSetClipRect(g_renderer, &scissorRect);
+}
+
+int GetMonitorHeight(int monitor) {
+    // For iOS, return the screen height
+    return GetScreenHeight();
+}
+
+int GetCurrentMonitor() {
+    // iOS only has one monitor
+    return 0;
+}
+
+void UnloadMusicStream(Music music) {
+    if (music.music) {
+        Mix_FreeMusic(music.music);
+        music.music = nullptr;
+    }
+}
+
+void ToggleFullscreen() {
+    if (g_window) {
+        Uint32 flags = SDL_GetWindowFlags(g_window);
+        if (flags & SDL_WINDOW_FULLSCREEN) {
+            SDL_SetWindowFullscreen(g_window, 0);
+        } else {
+            SDL_SetWindowFullscreen(g_window, SDL_WINDOW_FULLSCREEN);
+        }
+    }
+}
+
+void SetTextureFilter(Texture2D texture, int filter) {
+    // SDL2 texture filtering is set when creating the texture
+    // This is a simplified implementation
+}
+
+void SetWindowPosition(int x, int y) {
+    // No-op on iOS
 }
 
 #endif // TARGET_OS_IOS

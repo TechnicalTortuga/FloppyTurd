@@ -1,0 +1,639 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXAggregateTarget section */
+		17A8A6A022046ECF75A1550D /* sdl2_ttf-populate */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 5AAB9716C2AC4A37AE86F81C /* Build configuration list for PBXAggregateTarget "sdl2_ttf-populate" */;
+			buildPhases = (
+				25048C80858651344DEE2318 /* Generate sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-mkdir */,
+				DB7AEC8D69175BE89BBB1F22 /* Generate sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-download */,
+				C2892B2512A728647E1F3168 /* Generate sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-update */,
+				7577E213772AFF11FFF9476C /* Generate sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-patch */,
+				CB7A7D4BA6BD9388E481E6FF /* Generate sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-configure */,
+				C408873EDBB99CF70E473BED /* Generate sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-build */,
+				003DF78CB3BD502C4DCEDD41 /* Generate sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-install */,
+				1B15213D592DC61F184EA1D5 /* Generate sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-test */,
+				32652FEB59A428F0753902DA /* Generate CMakeFiles/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-complete */,
+				F60CF39960E6446558DB6711 /* Generate CMakeFiles/sdl2_ttf-populate */,
+			);
+			dependencies = (
+				F8C02CCE0AD84C07B3396D09 /* PBXTargetDependency */,
+			);
+			name = "sdl2_ttf-populate";
+			productName = "sdl2_ttf-populate";
+		};
+		B54DD347C00A8A90F68D4FA3 /* ZERO_CHECK */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 07F04A72BE85401D8610A9D1 /* Build configuration list for PBXAggregateTarget "ZERO_CHECK" */;
+			buildPhases = (
+				1A5D1CFE417AE7ED5BFA708B /* Generate CMakeFiles/ZERO_CHECK */,
+			);
+			dependencies = (
+			);
+			name = ZERO_CHECK;
+			productName = ZERO_CHECK;
+		};
+		D208822E1B156D9C11452E3F /* ALL_BUILD */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 83169BAB48E14BCFBD116423 /* Build configuration list for PBXAggregateTarget "ALL_BUILD" */;
+			buildPhases = (
+				B953BCDB9DFFC1D5A545CB67 /* Generate CMakeFiles/ALL_BUILD */,
+			);
+			dependencies = (
+				06E3E9B9F8FE422AAB8DBE9A /* PBXTargetDependency */,
+				7CC4090D0FD14842B042146F /* PBXTargetDependency */,
+			);
+			name = ALL_BUILD;
+			productName = ALL_BUILD;
+		};
+/* End PBXAggregateTarget section */
+
+/* Begin PBXBuildStyle section */
+		9A0947F4D33E4B4FB7D1F74F /* Debug */ = {
+			isa = PBXBuildStyle;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+			};
+			name = Debug;
+		};
+/* End PBXBuildStyle section */
+
+/* Begin PBXContainerItemProxy section */
+		35E7F6DFA8DB4AA89A154557 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 79F7094997764DA0915AE265 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B54DD347C00A8A90F68D4FA3;
+			remoteInfo = ZERO_CHECK;
+		};
+		8FDC8669D7B3451BA7AD15B3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 79F7094997764DA0915AE265 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B54DD347C00A8A90F68D4FA3;
+			remoteInfo = ZERO_CHECK;
+		};
+		CF9F07993F044583A2E24DA5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 79F7094997764DA0915AE265 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 17A8A6A022046ECF75A1550D;
+			remoteInfo = "sdl2_ttf-populate";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		67428E1A9D7D400EBC9F1DB8 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = CMakeLists.txt; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
+		FA193F2538234978A76E8EC4 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = CMakeLists.txt; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		0C558C3BBD604730B5D47CEE /* sdl2_ttf-populate */ = {
+			isa = PBXGroup;
+			children = (
+				78FFF523CC064FD49F5A470D /* CMake Rules */,
+				67428E1A9D7D400EBC9F1DB8 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/CMakeLists.txt */,
+			);
+			name = "sdl2_ttf-populate";
+			sourceTree = "<group>";
+		};
+		3556710789B048C89403B8E2 /* ExternalProjectTargets */ = {
+			isa = PBXGroup;
+			children = (
+				8C0211511D29438BA690EF97 /* sdl2_ttf-populate */,
+			);
+			name = ExternalProjectTargets;
+			sourceTree = "<group>";
+		};
+		38B1BE9876144887AF1CCB54 = {
+			isa = PBXGroup;
+			children = (
+				3556710789B048C89403B8E2 /* ExternalProjectTargets */,
+				8A17B99D07E64D258A8472CA /* ALL_BUILD */,
+				3ADC506F6BD4422585B045C0 /* Products */,
+				74512C50B7F4459E98199AA0 /* Frameworks */,
+				E415F850016E4AF08778B2C5 /* Resources */,
+			);
+			sourceTree = "<group>";
+		};
+		3ADC506F6BD4422585B045C0 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		74512C50B7F4459E98199AA0 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		78FFF523CC064FD49F5A470D /* CMake Rules */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = "CMake Rules";
+			sourceTree = "<group>";
+		};
+		8110DB9A4EB7432D90F0D374 /* CMake Rules */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = "CMake Rules";
+			sourceTree = "<group>";
+		};
+		8A17B99D07E64D258A8472CA /* ALL_BUILD */ = {
+			isa = PBXGroup;
+			children = (
+				8110DB9A4EB7432D90F0D374 /* CMake Rules */,
+				FA193F2538234978A76E8EC4 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/CMakeLists.txt */,
+			);
+			name = ALL_BUILD;
+			sourceTree = "<group>";
+		};
+		8C0211511D29438BA690EF97 /* sdl2_ttf-populate */ = {
+			isa = PBXGroup;
+			children = (
+				0C558C3BBD604730B5D47CEE /* sdl2_ttf-populate */,
+			);
+			name = "sdl2_ttf-populate";
+			sourceTree = "<group>";
+		};
+		E415F850016E4AF08778B2C5 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXProject section */
+		79F7094997764DA0915AE265 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1620;
+			};
+			buildConfigurationList = F8FE1BF4FB3E4E5E923A5AF1 /* Build configuration list for PBXProject "sdl2_ttf-populate" */;
+			buildSettings = {
+			};
+			buildStyles = (
+				9A0947F4D33E4B4FB7D1F74F /* Debug */,
+			);
+			compatibilityVersion = "Xcode 3.2";
+			hasScannedForEncodings = 0;
+			mainGroup = 38B1BE9876144887AF1CCB54;
+			projectDirPath = .;
+			projectRoot = "";
+			targets = (
+				D208822E1B156D9C11452E3F /* ALL_BUILD */,
+				17A8A6A022046ECF75A1550D /* sdl2_ttf-populate */,
+				B54DD347C00A8A90F68D4FA3 /* ZERO_CHECK */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		003DF78CB3BD502C4DCEDD41 /* Generate sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-install */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-build"			);
+			name = "Generate sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-install";
+			outputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-install"			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e
+if test \"$CONFIGURATION\" = \"Debug\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build
+  /opt/homebrew/bin/cmake -E echo_append
+  /opt/homebrew/bin/cmake -E touch /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$CONFIGURATION$EFFECTIVE_PLATFORM_NAME/sdl2_ttf-populate-install
+fi
+";
+			showEnvVarsInLog = 0;
+		};
+		1A5D1CFE417AE7ED5BFA708B /* Generate CMakeFiles/ZERO_CHECK */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Generate CMakeFiles/ZERO_CHECK";
+			outputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/CMakeFiles/ZERO_CHECK"			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e
+if test \"$CONFIGURATION\" = \"Debug\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild
+  make -f /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/CMakeScripts/ReRunCMake.make
+fi
+";
+			showEnvVarsInLog = 0;
+		};
+		1B15213D592DC61F184EA1D5 /* Generate sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-test */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-install"			);
+			name = "Generate sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-test";
+			outputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-test"			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e
+if test \"$CONFIGURATION\" = \"Debug\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build
+  /opt/homebrew/bin/cmake -E echo_append
+  /opt/homebrew/bin/cmake -E touch /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$CONFIGURATION$EFFECTIVE_PLATFORM_NAME/sdl2_ttf-populate-test
+fi
+";
+			showEnvVarsInLog = 0;
+		};
+		25048C80858651344DEE2318 /* Generate sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-mkdir */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Generate sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-mkdir";
+			outputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-mkdir"			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e
+if test \"$CONFIGURATION\" = \"Debug\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild
+  /opt/homebrew/bin/cmake -Dcfgdir=/$CONFIGURATION$EFFECTIVE_PLATFORM_NAME -P /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/tmp/sdl2_ttf-populate-mkdirs.cmake
+  /opt/homebrew/bin/cmake -E touch /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$CONFIGURATION$EFFECTIVE_PLATFORM_NAME/sdl2_ttf-populate-mkdir
+fi
+";
+			showEnvVarsInLog = 0;
+		};
+		32652FEB59A428F0753902DA /* Generate CMakeFiles/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-complete */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-build","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-configure","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-download","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-install","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-mkdir","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-patch","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-test","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-update"			);
+			name = "Generate CMakeFiles/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-complete";
+			outputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/CMakeFiles/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-complete"			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e
+if test \"$CONFIGURATION\" = \"Debug\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild
+  /opt/homebrew/bin/cmake -E make_directory /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/CMakeFiles/$CONFIGURATION$EFFECTIVE_PLATFORM_NAME
+  /opt/homebrew/bin/cmake -E touch /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/CMakeFiles/$CONFIGURATION$EFFECTIVE_PLATFORM_NAME/sdl2_ttf-populate-complete
+  /opt/homebrew/bin/cmake -E touch /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$CONFIGURATION$EFFECTIVE_PLATFORM_NAME/sdl2_ttf-populate-done
+fi
+";
+			showEnvVarsInLog = 0;
+		};
+		3C0110FC8322DE7E50886E21 = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# shell script goes here
+exit 0";
+			showEnvVarsInLog = 0;
+		};
+		7577E213772AFF11FFF9476C /* Generate sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-patch */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-update","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/sdl2_ttf-populate-patch-info.txt"			);
+			name = "Generate sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-patch";
+			outputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-patch"			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e
+if test \"$CONFIGURATION\" = \"Debug\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild
+  /opt/homebrew/bin/cmake -E echo_append
+  /opt/homebrew/bin/cmake -E touch /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$CONFIGURATION$EFFECTIVE_PLATFORM_NAME/sdl2_ttf-populate-patch
+fi
+";
+			showEnvVarsInLog = 0;
+		};
+		9B50530E35CC49C82C2FACCF = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# shell script goes here
+exit 0";
+			showEnvVarsInLog = 0;
+		};
+		A74C09B7832DBFB171889E03 = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# shell script goes here
+exit 0";
+			showEnvVarsInLog = 0;
+		};
+		B953BCDB9DFFC1D5A545CB67 /* Generate CMakeFiles/ALL_BUILD */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Generate CMakeFiles/ALL_BUILD";
+			outputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/CMakeFiles/ALL_BUILD"			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e
+if test \"$CONFIGURATION\" = \"Debug\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild
+  echo Build\\ all\\ projects
+fi
+";
+			showEnvVarsInLog = 0;
+		};
+		C2892B2512A728647E1F3168 /* Generate sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-update */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-download","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/sdl2_ttf-populate-update-info.txt","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/tmp/sdl2_ttf-populate-gitupdate.cmake"			);
+			name = "Generate sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-update";
+			outputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-update"			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e
+if test \"$CONFIGURATION\" = \"Debug\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src
+  /opt/homebrew/bin/cmake -Dcan_fetch=YES -DCMAKE_MESSAGE_LOG_LEVEL=VERBOSE -P /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/tmp/sdl2_ttf-populate-gitupdate.cmake
+fi
+";
+			showEnvVarsInLog = 0;
+		};
+		C408873EDBB99CF70E473BED /* Generate sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-build */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-configure"			);
+			name = "Generate sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-build";
+			outputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-build"			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e
+if test \"$CONFIGURATION\" = \"Debug\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build
+  /opt/homebrew/bin/cmake -E echo_append
+  /opt/homebrew/bin/cmake -E touch /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$CONFIGURATION$EFFECTIVE_PLATFORM_NAME/sdl2_ttf-populate-build
+fi
+";
+			showEnvVarsInLog = 0;
+		};
+		CB7A7D4BA6BD9388E481E6FF /* Generate sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-configure */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-patch","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/tmp/sdl2_ttf-populate-cfgcmd.txt"			);
+			name = "Generate sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-configure";
+			outputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-configure"			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e
+if test \"$CONFIGURATION\" = \"Debug\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-build
+  /opt/homebrew/bin/cmake -E echo_append
+  /opt/homebrew/bin/cmake -E touch /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$CONFIGURATION$EFFECTIVE_PLATFORM_NAME/sdl2_ttf-populate-configure
+fi
+";
+			showEnvVarsInLog = 0;
+		};
+		DB7AEC8D69175BE89BBB1F22 /* Generate sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-download */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-mkdir","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/sdl2_ttf-populate-gitinfo.txt"			);
+			name = "Generate sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-download";
+			outputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-download"			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e
+if test \"$CONFIGURATION\" = \"Debug\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps
+  /opt/homebrew/bin/cmake -DCMAKE_MESSAGE_LOG_LEVEL=VERBOSE -P /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/tmp/sdl2_ttf-populate-gitclone.cmake
+  /opt/homebrew/bin/cmake -E touch /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$CONFIGURATION$EFFECTIVE_PLATFORM_NAME/sdl2_ttf-populate-download
+fi
+";
+			showEnvVarsInLog = 0;
+		};
+		F60CF39960E6446558DB6711 /* Generate CMakeFiles/sdl2_ttf-populate */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/CMakeFiles/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2_ttf-populate-complete"			);
+			name = "Generate CMakeFiles/sdl2_ttf-populate";
+			outputPaths = (
+"/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/CMakeFiles/sdl2_ttf-populate"			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e
+if test \"$CONFIGURATION\" = \"Debug\"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild
+fi
+";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		06E3E9B9F8FE422AAB8DBE9A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 17A8A6A022046ECF75A1550D /* sdl2_ttf-populate */;
+			targetProxy = CF9F07993F044583A2E24DA5 /* PBXContainerItemProxy */;
+		};
+		7CC4090D0FD14842B042146F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B54DD347C00A8A90F68D4FA3 /* ZERO_CHECK */;
+			targetProxy = 8FDC8669D7B3451BA7AD15B3 /* PBXContainerItemProxy */;
+		};
+		F8C02CCE0AD84C07B3396D09 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B54DD347C00A8A90F68D4FA3 /* ZERO_CHECK */;
+			targetProxy = 35E7F6DFA8DB4AA89A154557 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		0AD33E78FF2A4D349FC2C841 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				SDKROOT = "";
+				SYMROOT = "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/build";
+			};
+			name = Debug;
+		};
+		2E195FE835A84662B23F6C82 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = "sdl2_ttf-populate";
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Debug;
+		};
+		4FD95D4639BF4D32BFA1C183 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ZERO_CHECK;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Debug;
+		};
+		DA6DDDA000AE436E9389CB2F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ALL_BUILD;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		07F04A72BE85401D8610A9D1 /* Build configuration list for PBXAggregateTarget "ZERO_CHECK" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4FD95D4639BF4D32BFA1C183 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		5AAB9716C2AC4A37AE86F81C /* Build configuration list for PBXAggregateTarget "sdl2_ttf-populate" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2E195FE835A84662B23F6C82 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		83169BAB48E14BCFBD116423 /* Build configuration list for PBXAggregateTarget "ALL_BUILD" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DA6DDDA000AE436E9389CB2F /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		F8FE1BF4FB3E4E5E923A5AF1 /* Build configuration list for PBXProject "sdl2_ttf-populate" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0AD33E78FF2A4D349FC2C841 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 79F7094997764DA0915AE265 /* Project object */;
+}

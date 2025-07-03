@@ -1,4 +1,6 @@
+#define SDL_MAIN_HANDLED
 #include <iostream>
+#include <SDL2/SDL.h>
 #include "RaylibCompat.h"
 #include "Game.h"
 #include "PlatformLayer.h"
@@ -34,13 +36,13 @@ void SetupWorkingDirectory() {
 #endif
 }
 
-int main()
+int game_main(int argc, char *argv[])
 {
 	// Setup working directory first
 	SetupWorkingDirectory();
 	
 	// Seed the random number generator
-	srand(time(NULL));
+	srand(static_cast<unsigned int>(time(NULL)));
 
 	// Initialize platform layer
 	PlatformLayer::GetInstance().Initialize();
@@ -54,3 +56,29 @@ int main()
 	
 	return 0;
 }
+
+// Regular main function for non-iOS platforms
+#if !defined(PLATFORM_IOS)
+int main()
+{
+	return game_main(0, nullptr);
+}
+#endif
+
+// SDL2 entry point for iOS
+#if defined(PLATFORM_IOS)
+extern "C" int main(int argc, char *argv[]) {
+    // Initialize SDL2
+    if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
+        printf("SDL_Init failed: %s\n", SDL_GetError());
+        return 1;
+    }
+
+    // Call our game logic
+    int result = game_main(argc, argv);
+
+    // Clean up SDL
+    SDL_Quit();
+    return result;
+}
+#endif
