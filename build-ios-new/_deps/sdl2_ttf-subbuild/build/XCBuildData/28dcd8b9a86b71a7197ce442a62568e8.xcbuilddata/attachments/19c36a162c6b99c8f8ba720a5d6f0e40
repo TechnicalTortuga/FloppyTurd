@@ -1,0 +1,7 @@
+#!/bin/sh
+set -e
+if test "$CONFIGURATION" = "Debug"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios-new/_deps/sdl2_ttf-subbuild
+  echo Build\ all\ projects
+fi
+

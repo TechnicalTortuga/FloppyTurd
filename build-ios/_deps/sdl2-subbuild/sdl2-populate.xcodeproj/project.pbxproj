@@ -9,7 +9,7 @@
 /* Begin PBXAggregateTarget section */
 		974E5D518A9614E1AD685883 /* ZERO_CHECK */ = {
 			isa = PBXAggregateTarget;
-			buildConfigurationList = 3441F0D3BCB44741B89E0DA2 /* Build configuration list for PBXAggregateTarget "ZERO_CHECK" */;
+			buildConfigurationList = 38584F8CA3A841699842C2BB /* Build configuration list for PBXAggregateTarget "ZERO_CHECK" */;
 			buildPhases = (
 				A5F27FCCD45CFB388FAF9B40 /* Generate CMakeFiles/ZERO_CHECK */,
 			);
@@ -20,20 +20,20 @@
 		};
 		BE7B41626B64E5F696F654C0 /* ALL_BUILD */ = {
 			isa = PBXAggregateTarget;
-			buildConfigurationList = 6F6839249A064CABB10C1C3A /* Build configuration list for PBXAggregateTarget "ALL_BUILD" */;
+			buildConfigurationList = 87A9DA7D61984A02A44A3212 /* Build configuration list for PBXAggregateTarget "ALL_BUILD" */;
 			buildPhases = (
 				90D352F65189FEAAC01C36AA /* Generate CMakeFiles/ALL_BUILD */,
 			);
 			dependencies = (
-				92B902B7809E487C8BDC8983 /* PBXTargetDependency */,
-				7A840C8D28B44828AFB85AEE /* PBXTargetDependency */,
+				6DE5A6126B844A33B7167F4B /* PBXTargetDependency */,
+				BE4E77AF83F04CF29F43C25E /* PBXTargetDependency */,
 			);
 			name = ALL_BUILD;
 			productName = ALL_BUILD;
 		};
 		E9720F32F77D7E40472F6A8A /* sdl2-populate */ = {
 			isa = PBXAggregateTarget;
-			buildConfigurationList = 31C32AD87FE14420AF9C035B /* Build configuration list for PBXAggregateTarget "sdl2-populate" */;
+			buildConfigurationList = 3001EDF727F6496EBA5E5DB2 /* Build configuration list for PBXAggregateTarget "sdl2-populate" */;
 			buildPhases = (
 				DAE7FDA8D7094DC776903B61 /* Generate sdl2-populate-prefix/src/sdl2-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2-populate-mkdir */,
 				DD85FDF996919532A3F8DB99 /* Generate sdl2-populate-prefix/src/sdl2-populate-stamp/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)/sdl2-populate-download */,
@@ -47,7 +47,7 @@
 				D1DCF40CDE4A653E58D89DAC /* Generate CMakeFiles/sdl2-populate */,
 			);
 			dependencies = (
-				33EA3E955DC74CBEA9ABFA56 /* PBXTargetDependency */,
+				F9E9BE8C9B83485A97511567 /* PBXTargetDependency */,
 			);
 			name = "sdl2-populate";
 			productName = "sdl2-populate";
@@ -55,7 +55,7 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildStyle section */
-		BFC66960449F4D008B414CC9 /* Debug */ = {
+		4E6353BE322742CF9BB11911 /* Debug */ = {
 			isa = PBXBuildStyle;
 			buildSettings = {
 				COPY_PHASE_STRIP = NO;
@@ -65,21 +65,21 @@
 /* End PBXBuildStyle section */
 
 /* Begin PBXContainerItemProxy section */
-		2624FA8B3E4F4DC3B5B4A83F /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 48EEFD651333435F8698FE28 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 974E5D518A9614E1AD685883;
-			remoteInfo = ZERO_CHECK;
-		};
-		A250125724514959A0AC19CC /* PBXContainerItemProxy */ = {
+		4547A7083EFB4004BC69BFD5 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 48EEFD651333435F8698FE28 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = E9720F32F77D7E40472F6A8A;
 			remoteInfo = "sdl2-populate";
 		};
-		C0AC4CEF76A14D639A198ED5 /* PBXContainerItemProxy */ = {
+		66188AB4B5464627BF1DE15D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 48EEFD651333435F8698FE28 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 974E5D518A9614E1AD685883;
+			remoteInfo = ZERO_CHECK;
+		};
+		AF45903B58754327964C9B44 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 48EEFD651333435F8698FE28 /* Project object */;
 			proxyType = 1;
@@ -89,89 +89,89 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		114CDF1DECAF480BA21E72B6 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2-subbuild/CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = CMakeLists.txt; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
-		A0CF97320B404319ABA76569 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2-subbuild/CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = CMakeLists.txt; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
+		013B91B7CD2543B589DEA211 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2-subbuild/CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = CMakeLists.txt; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
+		6A535AA41CEB4CB18461BCAE /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2-subbuild/CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = CMakeLists.txt; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
-		0C570ABFE99140D3859CCB9C /* CMake Rules */ = {
+		06A8A7E2E3364143AD1647FB /* CMake Rules */ = {
 			isa = PBXGroup;
 			children = (
 			);
 			name = "CMake Rules";
 			sourceTree = "<group>";
 		};
-		1F9B8FB6B905471F95F81B46 = {
-			isa = PBXGroup;
-			children = (
-				6E4C44B655E94492AE2C01C1 /* ExternalProjectTargets */,
-				872175599CFC4C93B6523F01 /* ALL_BUILD */,
-				C6C30820E5F14B26A412EB0C /* Products */,
-				890AA40024FE49D58BA322C1 /* Frameworks */,
-				25D116EF34B147EBB5674C88 /* Resources */,
-			);
-			sourceTree = "<group>";
-		};
-		25D116EF34B147EBB5674C88 /* Resources */ = {
+		2711F69BC81C4362A3F4DD3A /* Products */ = {
 			isa = PBXGroup;
 			children = (
 			);
-			name = Resources;
+			name = Products;
 			sourceTree = "<group>";
 		};
-		6E4C44B655E94492AE2C01C1 /* ExternalProjectTargets */ = {
+		3147D2E3EDFF4D3DAEB51CE8 /* sdl2-populate */ = {
 			isa = PBXGroup;
 			children = (
-				A04DC78454634F8BAF3E4BD0 /* sdl2-populate */,
+				63DAE513A22047E9B0806B6D /* sdl2-populate */,
+			);
+			name = "sdl2-populate";
+			sourceTree = "<group>";
+		};
+		63DAE513A22047E9B0806B6D /* sdl2-populate */ = {
+			isa = PBXGroup;
+			children = (
+				06A8A7E2E3364143AD1647FB /* CMake Rules */,
+				013B91B7CD2543B589DEA211 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2-subbuild/CMakeLists.txt */,
+			);
+			name = "sdl2-populate";
+			sourceTree = "<group>";
+		};
+		68CCD94508664521A2F0DB18 /* ExternalProjectTargets */ = {
+			isa = PBXGroup;
+			children = (
+				3147D2E3EDFF4D3DAEB51CE8 /* sdl2-populate */,
 			);
 			name = ExternalProjectTargets;
 			sourceTree = "<group>";
 		};
-		872175599CFC4C93B6523F01 /* ALL_BUILD */ = {
-			isa = PBXGroup;
-			children = (
-				0C570ABFE99140D3859CCB9C /* CMake Rules */,
-				114CDF1DECAF480BA21E72B6 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2-subbuild/CMakeLists.txt */,
-			);
-			name = ALL_BUILD;
-			sourceTree = "<group>";
-		};
-		890AA40024FE49D58BA322C1 /* Frameworks */ = {
+		9A0104768B2749F78D7C53D1 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		A04DC78454634F8BAF3E4BD0 /* sdl2-populate */ = {
+		9EE1EB931A5D4E0A994CBE39 /* ALL_BUILD */ = {
 			isa = PBXGroup;
 			children = (
-				B735E60CA79B42329C85929F /* sdl2-populate */,
+				E2F98DA8D90D4296BECB4E82 /* CMake Rules */,
+				6A535AA41CEB4CB18461BCAE /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2-subbuild/CMakeLists.txt */,
 			);
-			name = "sdl2-populate";
+			name = ALL_BUILD;
 			sourceTree = "<group>";
 		};
-		B164F62D25D94DD5992A9B34 /* CMake Rules */ = {
+		D31F8258EB0847BEAAC2826C = {
+			isa = PBXGroup;
+			children = (
+				68CCD94508664521A2F0DB18 /* ExternalProjectTargets */,
+				9EE1EB931A5D4E0A994CBE39 /* ALL_BUILD */,
+				2711F69BC81C4362A3F4DD3A /* Products */,
+				9A0104768B2749F78D7C53D1 /* Frameworks */,
+				F20A1FC8BF79406792E647C4 /* Resources */,
+			);
+			sourceTree = "<group>";
+		};
+		E2F98DA8D90D4296BECB4E82 /* CMake Rules */ = {
 			isa = PBXGroup;
 			children = (
 			);
 			name = "CMake Rules";
 			sourceTree = "<group>";
 		};
-		B735E60CA79B42329C85929F /* sdl2-populate */ = {
-			isa = PBXGroup;
-			children = (
-				B164F62D25D94DD5992A9B34 /* CMake Rules */,
-				A0CF97320B404319ABA76569 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2-subbuild/CMakeLists.txt */,
-			);
-			name = "sdl2-populate";
-			sourceTree = "<group>";
-		};
-		C6C30820E5F14B26A412EB0C /* Products */ = {
+		F20A1FC8BF79406792E647C4 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
 			);
-			name = Products;
+			name = Resources;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -183,15 +183,15 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1620;
 			};
-			buildConfigurationList = FAA4439E4D0A4F7989168343 /* Build configuration list for PBXProject "sdl2-populate" */;
+			buildConfigurationList = 9640449A7CA8412B92B28E16 /* Build configuration list for PBXProject "sdl2-populate" */;
 			buildSettings = {
 			};
 			buildStyles = (
-				BFC66960449F4D008B414CC9 /* Debug */,
+				4E6353BE322742CF9BB11911 /* Debug */,
 			);
 			compatibilityVersion = "Xcode 3.2";
 			hasScannedForEncodings = 0;
-			mainGroup = 1F9B8FB6B905471F95F81B46;
+			mainGroup = D31F8258EB0847BEAAC2826C;
 			projectDirPath = .;
 			projectRoot = "";
 			targets = (
@@ -505,25 +505,25 @@ exit 0";
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		33EA3E955DC74CBEA9ABFA56 /* PBXTargetDependency */ = {
+		6DE5A6126B844A33B7167F4B /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 974E5D518A9614E1AD685883 /* ZERO_CHECK */;
-			targetProxy = 2624FA8B3E4F4DC3B5B4A83F /* PBXContainerItemProxy */;
+			targetProxy = 66188AB4B5464627BF1DE15D /* PBXContainerItemProxy */;
 		};
-		7A840C8D28B44828AFB85AEE /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 974E5D518A9614E1AD685883 /* ZERO_CHECK */;
-			targetProxy = C0AC4CEF76A14D639A198ED5 /* PBXContainerItemProxy */;
-		};
-		92B902B7809E487C8BDC8983 /* PBXTargetDependency */ = {
+		BE4E77AF83F04CF29F43C25E /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = E9720F32F77D7E40472F6A8A /* sdl2-populate */;
-			targetProxy = A250125724514959A0AC19CC /* PBXContainerItemProxy */;
+			targetProxy = 4547A7083EFB4004BC69BFD5 /* PBXContainerItemProxy */;
+		};
+		F9E9BE8C9B83485A97511567 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 974E5D518A9614E1AD685883 /* ZERO_CHECK */;
+			targetProxy = AF45903B58754327964C9B44 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		42409EEE6E8A45868D926F55 /* Debug */ = {
+		6007402181754C208CA6651D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -545,38 +545,7 @@ exit 0";
 			};
 			name = Debug;
 		};
-		891276102B574B17A6AC3202 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ARCHS = arm64;
-				SDKROOT = "";
-				SYMROOT = "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2-subbuild/build";
-			};
-			name = Debug;
-		};
-		93C950868B1A4668B0AB51D3 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = arm64;
-				COMBINE_HIDPI_IMAGES = YES;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
-				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				INSTALL_PATH = "";
-				ONLY_ACTIVE_ARCH = NO;
-				OTHER_LDFLAGS = ("","$(inherited)");
-				OTHER_REZFLAGS = "";
-				PRODUCT_NAME = ZERO_CHECK;
-				SECTORDER_FLAGS = "";
-				USE_HEADERMAP = NO;
-				WARNING_CFLAGS = ("$(inherited)");
-			};
-			name = Debug;
-		};
-		E18646923F36418A9C591157 /* Debug */ = {
+		7141ED87DE554C96BAEEB39A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -598,37 +567,68 @@ exit 0";
 			};
 			name = Debug;
 		};
+		744C916F04B342719D80E955 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ZERO_CHECK;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Debug;
+		};
+		C5FC7D5AC9A94280932112F1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				SDKROOT = "";
+				SYMROOT = "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2-subbuild/build";
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		31C32AD87FE14420AF9C035B /* Build configuration list for PBXAggregateTarget "sdl2-populate" */ = {
+		3001EDF727F6496EBA5E5DB2 /* Build configuration list for PBXAggregateTarget "sdl2-populate" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				E18646923F36418A9C591157 /* Debug */,
+				7141ED87DE554C96BAEEB39A /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		3441F0D3BCB44741B89E0DA2 /* Build configuration list for PBXAggregateTarget "ZERO_CHECK" */ = {
+		38584F8CA3A841699842C2BB /* Build configuration list for PBXAggregateTarget "ZERO_CHECK" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				93C950868B1A4668B0AB51D3 /* Debug */,
+				744C916F04B342719D80E955 /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		6F6839249A064CABB10C1C3A /* Build configuration list for PBXAggregateTarget "ALL_BUILD" */ = {
+		87A9DA7D61984A02A44A3212 /* Build configuration list for PBXAggregateTarget "ALL_BUILD" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				42409EEE6E8A45868D926F55 /* Debug */,
+				6007402181754C208CA6651D /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		FAA4439E4D0A4F7989168343 /* Build configuration list for PBXProject "sdl2-populate" */ = {
+		9640449A7CA8412B92B28E16 /* Build configuration list for PBXProject "sdl2-populate" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				891276102B574B17A6AC3202 /* Debug */,
+				C5FC7D5AC9A94280932112F1 /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

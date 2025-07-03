@@ -1,0 +1,38 @@
+{
+  "" : {
+    "diagnostics" : "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Floppy Turd.build/Objects-normal/arm64/Floppy Turd-master.dia",
+    "emit-module-dependencies" : "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Floppy Turd.build/Objects-normal/arm64/Floppy Turd-master-emit-module.d",
+    "emit-module-diagnostics" : "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Floppy Turd.build/Objects-normal/arm64/Floppy Turd-master-emit-module.dia",
+    "swift-dependencies" : "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Floppy Turd.build/Objects-normal/arm64/Floppy Turd-master.swiftdeps"
+  },
+  "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/Floppy Turd/ContentView.swift" : {
+    "const-values" : "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Floppy Turd.build/Objects-normal/arm64/ContentView.swiftconstvalues",
+    "dependencies" : "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Floppy Turd.build/Objects-normal/arm64/ContentView.d",
+    "diagnostics" : "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Floppy Turd.build/Objects-normal/arm64/ContentView.dia",
+    "index-unit-output-path" : "/FloppyTurd.build/Debug-iphoneos/Floppy Turd.build/Objects-normal/arm64/ContentView.o",
+    "llvm-bc" : "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Floppy Turd.build/Objects-normal/arm64/ContentView.bc",
+    "object" : "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Floppy Turd.build/Objects-normal/arm64/ContentView.o",
+    "swift-dependencies" : "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Floppy Turd.build/Objects-normal/arm64/ContentView.swiftdeps",
+    "swiftmodule" : "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Floppy Turd.build/Objects-normal/arm64/ContentView~partial.swiftmodule"
+  },
+  "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/Floppy Turd/Floppy_TurdApp.swift" : {
+    "const-values" : "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Floppy Turd.build/Objects-normal/arm64/Floppy_TurdApp.swiftconstvalues",
+    "dependencies" : "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Floppy Turd.build/Objects-normal/arm64/Floppy_TurdApp.d",
+    "diagnostics" : "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Floppy Turd.build/Objects-normal/arm64/Floppy_TurdApp.dia",
+    "index-unit-output-path" : "/FloppyTurd.build/Debug-iphoneos/Floppy Turd.build/Objects-normal/arm64/Floppy_TurdApp.o",
+    "llvm-bc" : "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Floppy Turd.build/Objects-normal/arm64/Floppy_TurdApp.bc",
+    "object" : "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Floppy Turd.build/Objects-normal/arm64/Floppy_TurdApp.o",
+    "swift-dependencies" : "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Floppy Turd.build/Objects-normal/arm64/Floppy_TurdApp.swiftdeps",
+    "swiftmodule" : "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Floppy Turd.build/Objects-normal/arm64/Floppy_TurdApp~partial.swiftmodule"
+  },
+  "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Floppy Turd.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "const-values" : "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Floppy Turd.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftconstvalues",
+    "dependencies" : "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Floppy Turd.build/Objects-normal/arm64/GeneratedAssetSymbols.d",
+    "diagnostics" : "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Floppy Turd.build/Objects-normal/arm64/GeneratedAssetSymbols.dia",
+    "index-unit-output-path" : "/FloppyTurd.build/Debug-iphoneos/Floppy Turd.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Floppy Turd.build/Objects-normal/arm64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Floppy Turd.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "swift-dependencies" : "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Floppy Turd.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftdeps",
+    "swiftmodule" : "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Floppy Turd.build/Objects-normal/arm64/GeneratedAssetSymbols~partial.swiftmodule"
+  }
+}

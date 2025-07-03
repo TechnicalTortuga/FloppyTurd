@@ -9,32 +9,32 @@
 /* Begin PBXAggregateTarget section */
 		2EBEBDE0AAC4E74DFA200781 /* ALL_BUILD */ = {
 			isa = PBXAggregateTarget;
-			buildConfigurationList = 6487C4DE400B49C58188967E /* Build configuration list for PBXAggregateTarget "ALL_BUILD" */;
+			buildConfigurationList = 7636813C7F6C4C2FBA5C4074 /* Build configuration list for PBXAggregateTarget "ALL_BUILD" */;
 			buildPhases = (
 				2A7D2E35A0A2F9B1C956B9C9 /* Generate CMakeFiles/ALL_BUILD */,
 			);
 			dependencies = (
-				1CA4921FEBB14D7A97A75A62 /* PBXTargetDependency */,
-				055712023E3D493CA8462130 /* PBXTargetDependency */,
+				9C2A4993F8D04D458FFEBF5C /* PBXTargetDependency */,
+				6B98E2FD4EDE48C6824150A2 /* PBXTargetDependency */,
 			);
 			name = ALL_BUILD;
 			productName = ALL_BUILD;
 		};
 		651D2269F43D50C7D2B15EA7 /* install */ = {
 			isa = PBXAggregateTarget;
-			buildConfigurationList = C5631369E7A14326976B62E8 /* Build configuration list for PBXAggregateTarget "install" */;
+			buildConfigurationList = 03F09517C9C94655A2A51679 /* Build configuration list for PBXAggregateTarget "install" */;
 			buildPhases = (
 				93426DA6A4AC2C2AC9CE883C /* CMake PostBuild Rules */,
 			);
 			dependencies = (
-				560CABDFDF424573AD07158F /* PBXTargetDependency */,
+				F0C6C55F6A3743D3A395195F /* PBXTargetDependency */,
 			);
 			name = install;
 			productName = install;
 		};
 		D24353A079AE57BA8522B04C /* ZERO_CHECK */ = {
 			isa = PBXAggregateTarget;
-			buildConfigurationList = D28B212B18FC47709D7ED365 /* Build configuration list for PBXAggregateTarget "ZERO_CHECK" */;
+			buildConfigurationList = 1131F2E773A04911A3A6A905 /* Build configuration list for PBXAggregateTarget "ZERO_CHECK" */;
 			buildPhases = (
 				B64741BD0B600D81AA81407D /* Generate CMakeFiles/ZERO_CHECK */,
 			);
@@ -45,12 +45,12 @@
 		};
 		F8A85156645ADB1B089B3817 /* package */ = {
 			isa = PBXAggregateTarget;
-			buildConfigurationList = 866CDE5E48544F958A93C5AC /* Build configuration list for PBXAggregateTarget "package" */;
+			buildConfigurationList = EC393E2DF4B04E1893E6B098 /* Build configuration list for PBXAggregateTarget "package" */;
 			buildPhases = (
 				571234464C2A5D0D43F1AB42 /* CMake PostBuild Rules */,
 			);
 			dependencies = (
-				128A80C46B1C4C448AE55603 /* PBXTargetDependency */,
+				664D2D31FDFF4911BFF529BA /* PBXTargetDependency */,
 			);
 			name = package;
 			productName = package;
@@ -58,93 +58,93 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
-		08C2FB288142401C9588B033 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_pcx.c */ = {isa = PBXBuildFile; fileRef = 219F9CA398804471A51E84A8 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_pcx.c */; };
-		14299ABB068046AA81917A36 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_gif.c */ = {isa = PBXBuildFile; fileRef = A1ABAA14153340E986CB775A /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_gif.c */; };
-		296C0468B1214AA19821B068 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_lbm.c */ = {isa = PBXBuildFile; fileRef = 85C7C3414F5D427B87041B8A /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_lbm.c */; };
-		32D2900214194AE697240291 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_svg.c */ = {isa = PBXBuildFile; fileRef = A87E0C7FA0E04F619810DE40 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_svg.c */; };
-		4543AE0F1F654EFDBBCF9774 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_qoi.c */ = {isa = PBXBuildFile; fileRef = 61AD9CED86004B188E454D62 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_qoi.c */; };
-		52D457F49E6749088CE72AE3 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_stb.c */ = {isa = PBXBuildFile; fileRef = 6BDBD779E2B44D958810B3E6 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_stb.c */; };
-		55AC1AFB7839464F971619F4 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_jpg.c */ = {isa = PBXBuildFile; fileRef = CBDF766902FA4C50AD82EE71 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_jpg.c */; };
-		70E4687909034D19890CBBB6 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_ImageIO.m */ = {isa = PBXBuildFile; fileRef = B101375CC791424697599E24 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_ImageIO.m */; };
-		745EA4EB60FB49FC9B7DB437 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xpm.c */ = {isa = PBXBuildFile; fileRef = F673A96276B5400592861BB9 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xpm.c */; };
-		7DB77C7E885A476C880F63EE /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xv.c */ = {isa = PBXBuildFile; fileRef = D5D60EE7ABE344D8937D96CC /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xv.c */; };
-		89F8CBD5EC154F62B9EF7482 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_png.c */ = {isa = PBXBuildFile; fileRef = B8F05CCD51F54EA1A1647AEF /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_png.c */; };
-		91989EBF92DD4247B87E6C46 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG.c */ = {isa = PBXBuildFile; fileRef = 58F00B2E320C4FE5AB36CA3B /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG.c */; };
-		97D8CBE885B14907814A1B86 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-build/CMakeFiles/SDL2_image.dir/Info.plist */ = {isa = PBXBuildFile; fileRef = D9D14B29F68C44A8A8762B13 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-build/CMakeFiles/SDL2_image.dir/Info.plist */; };
-		9867A1F511484578A05BF6A5 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_webp.c */ = {isa = PBXBuildFile; fileRef = 8D81C6B2A260403FA14DCBD3 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_webp.c */; };
-		998D65B733CE419981A9C8C9 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/CMakeLists.txt */ = {isa = PBXBuildFile; fileRef = 671AFFB1D04F4A4E8187CD0C /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/CMakeLists.txt */; };
-		A40E1E62C0444DF8BCDBA521 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_jxl.c */ = {isa = PBXBuildFile; fileRef = CFB4B34469504893B38B456C /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_jxl.c */; };
-		A4654F14519D40B5A1E53269 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_tga.c */ = {isa = PBXBuildFile; fileRef = EC21375BED9A4E04B122D1A5 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_tga.c */; };
-		AB4C467CEB6C47D7BF2DC470 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xxx.c */ = {isa = PBXBuildFile; fileRef = 45CF70C244874149B50FAB76 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xxx.c */; };
-		AFE424EEE8C14532AEC1EEEA /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_tif.c */ = {isa = PBXBuildFile; fileRef = D80E7BB606604178B7A37D6E /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_tif.c */; };
-		B67F51B53B754CA6A342E952 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_bmp.c */ = {isa = PBXBuildFile; fileRef = 73AA1D0BCAB6459CBFD942D3 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_bmp.c */; };
-		CD1415B4B69149BC86C951F2 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_avif.c */ = {isa = PBXBuildFile; fileRef = 72F81499307D4FAFB21B6234 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_avif.c */; };
-		D80796C2C6EF474FA778F8AF /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_WIC.c */ = {isa = PBXBuildFile; fileRef = C2BC53C7FA2E48218F35ADA9 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_WIC.c */; };
-		E30CE7003007438FB5574A6D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xcf.c */ = {isa = PBXBuildFile; fileRef = 4F316ACEE9E44EB2A1DA5F2C /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xcf.c */; };
-		F15545047BF3467B84EC024E /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_pnm.c */ = {isa = PBXBuildFile; fileRef = 22CEE7E1A224493980ED402E /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_pnm.c */; };
+		116DA949816F4848AD327945 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG.c */ = {isa = PBXBuildFile; fileRef = 30F5A053E46741C394C88082 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG.c */; };
+		132FC4A0388B497FA2325E70 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_ImageIO.m */ = {isa = PBXBuildFile; fileRef = CDF5961AAD2A4C809B0F5486 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_ImageIO.m */; };
+		164F3CCBFA654166842522B7 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_tga.c */ = {isa = PBXBuildFile; fileRef = 224B163A04054A51B76067F2 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_tga.c */; };
+		28CC5E26098C4F358F005E4B /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_qoi.c */ = {isa = PBXBuildFile; fileRef = 16FFF9B9A9404D7E97868AE9 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_qoi.c */; };
+		302AB5DE52984BA4A20B2EC1 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_WIC.c */ = {isa = PBXBuildFile; fileRef = 3D8C8B9CF93A44B097D6ECBC /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_WIC.c */; };
+		34B8857DDC0D412490B4B021 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xpm.c */ = {isa = PBXBuildFile; fileRef = 2C4D59ED92B94F3385307956 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xpm.c */; };
+		496DAE3D24664816A2624737 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_pcx.c */ = {isa = PBXBuildFile; fileRef = 9988A89836B54E73B8C7444D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_pcx.c */; };
+		4FF04907923346E9A048211C /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_bmp.c */ = {isa = PBXBuildFile; fileRef = 08B3CBB4F5F14D1D9AB0E0D5 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_bmp.c */; };
+		51455FC2F8FB425E953D1F73 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_jpg.c */ = {isa = PBXBuildFile; fileRef = C8E8497F85814B95BB72926C /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_jpg.c */; };
+		538C2D88906142338EF3C0D9 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_tif.c */ = {isa = PBXBuildFile; fileRef = F4B1AE813AB04588A897CA0A /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_tif.c */; };
+		55B071D0BD1740208D639C69 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xcf.c */ = {isa = PBXBuildFile; fileRef = 2D403B785D384D3693B370D3 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xcf.c */; };
+		5969D720A3FA4EFC87E1B0FB /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_gif.c */ = {isa = PBXBuildFile; fileRef = 4A3583040DEA48289AB3E293 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_gif.c */; };
+		63F72B1CB65F4F0FBE225818 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xv.c */ = {isa = PBXBuildFile; fileRef = 4695C2842B9A46D8A9EDC2CC /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xv.c */; };
+		6C601A3C2EF34A2991CBAE56 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_pnm.c */ = {isa = PBXBuildFile; fileRef = 0B9E50523858474C88E19641 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_pnm.c */; };
+		73772261BEC14BFFAF957725 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_stb.c */ = {isa = PBXBuildFile; fileRef = E5A5660E7E3C491E90BBAA9E /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_stb.c */; };
+		81818AC0AD2541BBA85E192A /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xxx.c */ = {isa = PBXBuildFile; fileRef = DD3FCDE2CF4548A4ACBC910B /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xxx.c */; };
+		91E91C1362784CF294032B55 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-build/CMakeFiles/SDL2_image.dir/Info.plist */ = {isa = PBXBuildFile; fileRef = F27A471267A44DAC944F5BFE /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-build/CMakeFiles/SDL2_image.dir/Info.plist */; };
+		92D58EA8E1DE478EBA625EF3 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_jxl.c */ = {isa = PBXBuildFile; fileRef = 8454FC8DAEB54E14B2903F1D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_jxl.c */; };
+		9DC6C8B51D914DA2AE8965BF /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_avif.c */ = {isa = PBXBuildFile; fileRef = 8CAC0132C94C41ADACBB75B8 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_avif.c */; };
+		9F85F2A1A3FB405683C216B4 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_lbm.c */ = {isa = PBXBuildFile; fileRef = CD46C52454904526A5D3ED38 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_lbm.c */; };
+		A179EE1214EC4BF98BEA10F6 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/CMakeLists.txt */ = {isa = PBXBuildFile; fileRef = 9F8D7A19FBCF469F888A5B1F /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/CMakeLists.txt */; };
+		ADBB0F97116141BF830354A6 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_png.c */ = {isa = PBXBuildFile; fileRef = 009A239A8C2A473E9906B9D3 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_png.c */; };
+		CD9EE890F1E74516A4240183 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_svg.c */ = {isa = PBXBuildFile; fileRef = A199FD8607EB4189B350D72E /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_svg.c */; };
+		F47E726DB1F5423F8B82816E /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_webp.c */ = {isa = PBXBuildFile; fileRef = 0140B99CF51241AEAA11B5C0 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_webp.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXBuildStyle section */
-		1AD7E367B2B34E019AC9A4F8 /* Release */ = {
-			isa = PBXBuildStyle;
-			buildSettings = {
-				COPY_PHASE_STRIP = NO;
-			};
-			name = Release;
-		};
-		4A09D9882288491B8A278AD0 /* RelWithDebInfo */ = {
-			isa = PBXBuildStyle;
-			buildSettings = {
-				COPY_PHASE_STRIP = NO;
-			};
-			name = RelWithDebInfo;
-		};
-		5A55C677BEA448A1A61A1DEB /* Debug */ = {
+		330959B73D014F0EB7364E1E /* Debug */ = {
 			isa = PBXBuildStyle;
 			buildSettings = {
 				COPY_PHASE_STRIP = NO;
 			};
 			name = Debug;
 		};
-		BC12AE2B1A8C4130A5E7440E /* MinSizeRel */ = {
+		6327FD0C159F418EBBB94FC6 /* Release */ = {
+			isa = PBXBuildStyle;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+			};
+			name = Release;
+		};
+		6FEA151F1D0F4613BCCDFDE8 /* MinSizeRel */ = {
 			isa = PBXBuildStyle;
 			buildSettings = {
 				COPY_PHASE_STRIP = NO;
 			};
 			name = MinSizeRel;
 		};
+		F7C67D2CB195467E9A1D0B5B /* RelWithDebInfo */ = {
+			isa = PBXBuildStyle;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+			};
+			name = RelWithDebInfo;
+		};
 /* End PBXBuildStyle section */
 
 /* Begin PBXContainerItemProxy section */
-		6F8E62C977E34F7397A068A9 /* PBXContainerItemProxy */ = {
+		19679FC3A1C54338A209634E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 7CF7963E20624912A9C1FFB8 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 2EBEBDE0AAC4E74DFA200781;
 			remoteInfo = ALL_BUILD;
 		};
-		8EF6CAC65DEF4787B3ABFACF /* PBXContainerItemProxy */ = {
+		5306CB398DA8482EB733ABDD /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 7CF7963E20624912A9C1FFB8 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = D24353A079AE57BA8522B04C;
 			remoteInfo = ZERO_CHECK;
 		};
-		A38C5A5891434B9AAEEE4A2F /* PBXContainerItemProxy */ = {
+		608E1A480D9C42A7A7B10911 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 7CF7963E20624912A9C1FFB8 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = BF0E78445B8294B27D4B6E57;
 			remoteInfo = SDL2_image;
 		};
-		E963083CFD754EFD90B1F007 /* PBXContainerItemProxy */ = {
+		A40CAC44DE32487081393CA2 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 7CF7963E20624912A9C1FFB8 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 2EBEBDE0AAC4E74DFA200781;
 			remoteInfo = ALL_BUILD;
 		};
-		F58724EE46044215A715FEF5 /* PBXContainerItemProxy */ = {
+		E9D5B6A1AA6E4B6BB71FCAFE /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 7CF7963E20624912A9C1FFB8 /* Project object */;
 			proxyType = 1;
@@ -154,36 +154,36 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		219F9CA398804471A51E84A8 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_pcx.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_pcx.c; path = IMG_pcx.c; sourceTree = SOURCE_ROOT; };
-		22CEE7E1A224493980ED402E /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_pnm.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_pnm.c; path = IMG_pnm.c; sourceTree = SOURCE_ROOT; };
-		24A5E37338EE4CDBAE042A8E /* SDL2_image */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libSDL2_imaged.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		45CF70C244874149B50FAB76 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xxx.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_xxx.c; path = IMG_xxx.c; sourceTree = SOURCE_ROOT; };
-		4F316ACEE9E44EB2A1DA5F2C /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xcf.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_xcf.c; path = IMG_xcf.c; sourceTree = SOURCE_ROOT; };
-		58F00B2E320C4FE5AB36CA3B /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG.c; path = IMG.c; sourceTree = SOURCE_ROOT; };
-		61AD9CED86004B188E454D62 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_qoi.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_qoi.c; path = IMG_qoi.c; sourceTree = SOURCE_ROOT; };
-		671AFFB1D04F4A4E8187CD0C /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = CMakeLists.txt; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
-		6BDBD779E2B44D958810B3E6 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_stb.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_stb.c; path = IMG_stb.c; sourceTree = SOURCE_ROOT; };
-		72F81499307D4FAFB21B6234 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_avif.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_avif.c; path = IMG_avif.c; sourceTree = SOURCE_ROOT; };
-		73AA1D0BCAB6459CBFD942D3 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_bmp.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_bmp.c; path = IMG_bmp.c; sourceTree = SOURCE_ROOT; };
-		85C7C3414F5D427B87041B8A /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_lbm.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_lbm.c; path = IMG_lbm.c; sourceTree = SOURCE_ROOT; };
-		8D81C6B2A260403FA14DCBD3 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_webp.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_webp.c; path = IMG_webp.c; sourceTree = SOURCE_ROOT; };
-		A1ABAA14153340E986CB775A /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_gif.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_gif.c; path = IMG_gif.c; sourceTree = SOURCE_ROOT; };
-		A87E0C7FA0E04F619810DE40 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_svg.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_svg.c; path = IMG_svg.c; sourceTree = SOURCE_ROOT; };
-		B101375CC791424697599E24 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_ImageIO.m */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.objc; fileEncoding = 4; name = IMG_ImageIO.m; path = IMG_ImageIO.m; sourceTree = SOURCE_ROOT; };
-		B8F05CCD51F54EA1A1647AEF /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_png.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_png.c; path = IMG_png.c; sourceTree = SOURCE_ROOT; };
-		C2BC53C7FA2E48218F35ADA9 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_WIC.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_WIC.c; path = IMG_WIC.c; sourceTree = SOURCE_ROOT; };
-		C902430ABEAC4763BA20F6FB /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = CMakeLists.txt; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
-		CBDF766902FA4C50AD82EE71 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_jpg.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_jpg.c; path = IMG_jpg.c; sourceTree = SOURCE_ROOT; };
-		CFB4B34469504893B38B456C /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_jxl.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_jxl.c; path = IMG_jxl.c; sourceTree = SOURCE_ROOT; };
-		D5D60EE7ABE344D8937D96CC /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xv.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_xv.c; path = IMG_xv.c; sourceTree = SOURCE_ROOT; };
-		D80E7BB606604178B7A37D6E /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_tif.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_tif.c; path = IMG_tif.c; sourceTree = SOURCE_ROOT; };
-		D9D14B29F68C44A8A8762B13 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-build/CMakeFiles/SDL2_image.dir/Info.plist */ = {isa = PBXFileReference; explicitFileType = sourcecode.text.plist; fileEncoding = 4; name = Info.plist; path = "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-build/CMakeFiles/SDL2_image.dir/Info.plist"; sourceTree = "<absolute>"; };
-		EC21375BED9A4E04B122D1A5 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_tga.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_tga.c; path = IMG_tga.c; sourceTree = SOURCE_ROOT; };
-		F673A96276B5400592861BB9 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xpm.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_xpm.c; path = IMG_xpm.c; sourceTree = SOURCE_ROOT; };
+		009A239A8C2A473E9906B9D3 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_png.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_png.c; path = IMG_png.c; sourceTree = SOURCE_ROOT; };
+		0140B99CF51241AEAA11B5C0 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_webp.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_webp.c; path = IMG_webp.c; sourceTree = SOURCE_ROOT; };
+		08B3CBB4F5F14D1D9AB0E0D5 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_bmp.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_bmp.c; path = IMG_bmp.c; sourceTree = SOURCE_ROOT; };
+		0B9E50523858474C88E19641 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_pnm.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_pnm.c; path = IMG_pnm.c; sourceTree = SOURCE_ROOT; };
+		16FFF9B9A9404D7E97868AE9 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_qoi.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_qoi.c; path = IMG_qoi.c; sourceTree = SOURCE_ROOT; };
+		224B163A04054A51B76067F2 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_tga.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_tga.c; path = IMG_tga.c; sourceTree = SOURCE_ROOT; };
+		2C4D59ED92B94F3385307956 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xpm.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_xpm.c; path = IMG_xpm.c; sourceTree = SOURCE_ROOT; };
+		2D403B785D384D3693B370D3 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xcf.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_xcf.c; path = IMG_xcf.c; sourceTree = SOURCE_ROOT; };
+		30F5A053E46741C394C88082 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG.c; path = IMG.c; sourceTree = SOURCE_ROOT; };
+		3D8C8B9CF93A44B097D6ECBC /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_WIC.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_WIC.c; path = IMG_WIC.c; sourceTree = SOURCE_ROOT; };
+		4695C2842B9A46D8A9EDC2CC /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xv.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_xv.c; path = IMG_xv.c; sourceTree = SOURCE_ROOT; };
+		4A3583040DEA48289AB3E293 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_gif.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_gif.c; path = IMG_gif.c; sourceTree = SOURCE_ROOT; };
+		6B73B56F915E408FBE4FEAAF /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = CMakeLists.txt; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
+		76E322CA0C384E5A903F750C /* SDL2_image */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libSDL2_imaged.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		8454FC8DAEB54E14B2903F1D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_jxl.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_jxl.c; path = IMG_jxl.c; sourceTree = SOURCE_ROOT; };
+		8CAC0132C94C41ADACBB75B8 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_avif.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_avif.c; path = IMG_avif.c; sourceTree = SOURCE_ROOT; };
+		9988A89836B54E73B8C7444D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_pcx.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_pcx.c; path = IMG_pcx.c; sourceTree = SOURCE_ROOT; };
+		9F8D7A19FBCF469F888A5B1F /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = CMakeLists.txt; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
+		A199FD8607EB4189B350D72E /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_svg.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_svg.c; path = IMG_svg.c; sourceTree = SOURCE_ROOT; };
+		C8E8497F85814B95BB72926C /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_jpg.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_jpg.c; path = IMG_jpg.c; sourceTree = SOURCE_ROOT; };
+		CD46C52454904526A5D3ED38 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_lbm.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_lbm.c; path = IMG_lbm.c; sourceTree = SOURCE_ROOT; };
+		CDF5961AAD2A4C809B0F5486 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_ImageIO.m */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.objc; fileEncoding = 4; name = IMG_ImageIO.m; path = IMG_ImageIO.m; sourceTree = SOURCE_ROOT; };
+		DD3FCDE2CF4548A4ACBC910B /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xxx.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_xxx.c; path = IMG_xxx.c; sourceTree = SOURCE_ROOT; };
+		E5A5660E7E3C491E90BBAA9E /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_stb.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_stb.c; path = IMG_stb.c; sourceTree = SOURCE_ROOT; };
+		F27A471267A44DAC944F5BFE /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-build/CMakeFiles/SDL2_image.dir/Info.plist */ = {isa = PBXFileReference; explicitFileType = sourcecode.text.plist; fileEncoding = 4; name = Info.plist; path = "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-build/CMakeFiles/SDL2_image.dir/Info.plist"; sourceTree = "<absolute>"; };
+		F4B1AE813AB04588A897CA0A /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_tif.c */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.c; fileEncoding = 4; name = IMG_tif.c; path = IMG_tif.c; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		6143473C9489426EADE6332E /* Frameworks */ = {
+		69C04169F0A7400784EBF238 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -193,100 +193,100 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		04725A5C27114836A878B975 /* Resources */ = {
+		0A5EB5A9A50C401086D02632 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				D9D14B29F68C44A8A8762B13 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-build/CMakeFiles/SDL2_image.dir/Info.plist */,
+				76E322CA0C384E5A903F750C /* SDL2_image */,
 			);
-			name = Resources;
+			name = Products;
 			sourceTree = "<group>";
 		};
-		1A93C710579D4E988CEF3297 /* ALL_BUILD */ = {
-			isa = PBXGroup;
-			children = (
-				5077E6DCC5204F988C7EF462 /* CMake Rules */,
-				C902430ABEAC4763BA20F6FB /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/CMakeLists.txt */,
-			);
-			name = ALL_BUILD;
-			sourceTree = "<group>";
-		};
-		1FBCC25F7F594FD49B6720E2 /* SDL2_image */ = {
-			isa = PBXGroup;
-			children = (
-				D4A20B504FA9405AAE077E8F /* Source Files */,
-				04725A5C27114836A878B975 /* Resources */,
-				671AFFB1D04F4A4E8187CD0C /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/CMakeLists.txt */,
-			);
-			name = SDL2_image;
-			sourceTree = "<group>";
-		};
-		424C6CEF5D4F4B238960B126 /* Resources */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Resources;
-			sourceTree = "<group>";
-		};
-		5077E6DCC5204F988C7EF462 /* CMake Rules */ = {
+		22C9F4A298F840B5849F023A /* CMake Rules */ = {
 			isa = PBXGroup;
 			children = (
 			);
 			name = "CMake Rules";
 			sourceTree = "<group>";
 		};
-		6A9CC82A851C4477834FEC93 /* Frameworks */ = {
+		4B98EC901A75435C8C8E63BE /* ALL_BUILD */ = {
+			isa = PBXGroup;
+			children = (
+				22C9F4A298F840B5849F023A /* CMake Rules */,
+				6B73B56F915E408FBE4FEAAF /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/CMakeLists.txt */,
+			);
+			name = ALL_BUILD;
+			sourceTree = "<group>";
+		};
+		9D3A1740C7E047F99C97B9C4 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		846782A19BF64D7B91B60E49 = {
+		AD4369FA114C4BBE88A32B3B /* SDL2_image */ = {
 			isa = PBXGroup;
 			children = (
-				1FBCC25F7F594FD49B6720E2 /* SDL2_image */,
-				1A93C710579D4E988CEF3297 /* ALL_BUILD */,
-				FBF19F79D33C4B24BD5F59E4 /* Products */,
-				6A9CC82A851C4477834FEC93 /* Frameworks */,
-				424C6CEF5D4F4B238960B126 /* Resources */,
+				EF05907F12BC477180B7EBDB /* Source Files */,
+				B537B4D7498E44B38411FD31 /* Resources */,
+				9F8D7A19FBCF469F888A5B1F /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/CMakeLists.txt */,
+			);
+			name = SDL2_image;
+			sourceTree = "<group>";
+		};
+		B537B4D7498E44B38411FD31 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				F27A471267A44DAC944F5BFE /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-build/CMakeFiles/SDL2_image.dir/Info.plist */,
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
+		D3B3BB9ED99E420895606D33 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
+		E8C27D3A69954653B62A38FA = {
+			isa = PBXGroup;
+			children = (
+				AD4369FA114C4BBE88A32B3B /* SDL2_image */,
+				4B98EC901A75435C8C8E63BE /* ALL_BUILD */,
+				0A5EB5A9A50C401086D02632 /* Products */,
+				9D3A1740C7E047F99C97B9C4 /* Frameworks */,
+				D3B3BB9ED99E420895606D33 /* Resources */,
 			);
 			sourceTree = "<group>";
 		};
-		D4A20B504FA9405AAE077E8F /* Source Files */ = {
+		EF05907F12BC477180B7EBDB /* Source Files */ = {
 			isa = PBXGroup;
 			children = (
-				58F00B2E320C4FE5AB36CA3B /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG.c */,
-				B101375CC791424697599E24 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_ImageIO.m */,
-				C2BC53C7FA2E48218F35ADA9 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_WIC.c */,
-				72F81499307D4FAFB21B6234 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_avif.c */,
-				73AA1D0BCAB6459CBFD942D3 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_bmp.c */,
-				A1ABAA14153340E986CB775A /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_gif.c */,
-				CBDF766902FA4C50AD82EE71 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_jpg.c */,
-				CFB4B34469504893B38B456C /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_jxl.c */,
-				85C7C3414F5D427B87041B8A /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_lbm.c */,
-				219F9CA398804471A51E84A8 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_pcx.c */,
-				B8F05CCD51F54EA1A1647AEF /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_png.c */,
-				22CEE7E1A224493980ED402E /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_pnm.c */,
-				61AD9CED86004B188E454D62 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_qoi.c */,
-				6BDBD779E2B44D958810B3E6 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_stb.c */,
-				A87E0C7FA0E04F619810DE40 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_svg.c */,
-				EC21375BED9A4E04B122D1A5 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_tga.c */,
-				D80E7BB606604178B7A37D6E /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_tif.c */,
-				8D81C6B2A260403FA14DCBD3 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_webp.c */,
-				4F316ACEE9E44EB2A1DA5F2C /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xcf.c */,
-				F673A96276B5400592861BB9 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xpm.c */,
-				D5D60EE7ABE344D8937D96CC /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xv.c */,
-				45CF70C244874149B50FAB76 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xxx.c */,
+				30F5A053E46741C394C88082 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG.c */,
+				CDF5961AAD2A4C809B0F5486 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_ImageIO.m */,
+				3D8C8B9CF93A44B097D6ECBC /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_WIC.c */,
+				8CAC0132C94C41ADACBB75B8 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_avif.c */,
+				08B3CBB4F5F14D1D9AB0E0D5 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_bmp.c */,
+				4A3583040DEA48289AB3E293 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_gif.c */,
+				C8E8497F85814B95BB72926C /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_jpg.c */,
+				8454FC8DAEB54E14B2903F1D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_jxl.c */,
+				CD46C52454904526A5D3ED38 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_lbm.c */,
+				9988A89836B54E73B8C7444D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_pcx.c */,
+				009A239A8C2A473E9906B9D3 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_png.c */,
+				0B9E50523858474C88E19641 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_pnm.c */,
+				16FFF9B9A9404D7E97868AE9 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_qoi.c */,
+				E5A5660E7E3C491E90BBAA9E /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_stb.c */,
+				A199FD8607EB4189B350D72E /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_svg.c */,
+				224B163A04054A51B76067F2 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_tga.c */,
+				F4B1AE813AB04588A897CA0A /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_tif.c */,
+				0140B99CF51241AEAA11B5C0 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_webp.c */,
+				2D403B785D384D3693B370D3 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xcf.c */,
+				2C4D59ED92B94F3385307956 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xpm.c */,
+				4695C2842B9A46D8A9EDC2CC /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xv.c */,
+				DD3FCDE2CF4548A4ACBC910B /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xxx.c */,
 			);
 			name = "Source Files";
-			sourceTree = "<group>";
-		};
-		FBF19F79D33C4B24BD5F59E4 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				24A5E37338EE4CDBAE042A8E /* SDL2_image */,
-			);
-			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -294,19 +294,19 @@
 /* Begin PBXNativeTarget section */
 		BF0E78445B8294B27D4B6E57 /* SDL2_image */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = C3ED1029D3FA4979848D3766 /* Build configuration list for PBXNativeTarget "SDL2_image" */;
+			buildConfigurationList = 4B98F05742084F0B9223C9E4 /* Build configuration list for PBXNativeTarget "SDL2_image" */;
 			buildPhases = (
-				0E5920A67C2648A5984A21DD /* Sources */,
-				6143473C9489426EADE6332E /* Frameworks */,
+				C8A7C796B712447FB3371A6C /* Sources */,
+				69C04169F0A7400784EBF238 /* Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				78000DA166244AE9B996A90A /* PBXTargetDependency */,
+				0984A10AC73D49B1AC542963 /* PBXTargetDependency */,
 			);
 			name = SDL2_image;
 			productName = SDL2_image;
-			productReference = 24A5E37338EE4CDBAE042A8E /* SDL2_image */;
+			productReference = 76E322CA0C384E5A903F750C /* SDL2_image */;
 			productType = "com.apple.product-type.library.static";
 		};
 /* End PBXNativeTarget section */
@@ -318,18 +318,18 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1620;
 			};
-			buildConfigurationList = 41390DEA613C41D085FC90EC /* Build configuration list for PBXProject "SDL2_image" */;
+			buildConfigurationList = 96B9D876CC1F41559EACC2C5 /* Build configuration list for PBXProject "SDL2_image" */;
 			buildSettings = {
 			};
 			buildStyles = (
-				5A55C677BEA448A1A61A1DEB /* Debug */,
-				1AD7E367B2B34E019AC9A4F8 /* Release */,
-				BC12AE2B1A8C4130A5E7440E /* MinSizeRel */,
-				4A09D9882288491B8A278AD0 /* RelWithDebInfo */,
+				330959B73D014F0EB7364E1E /* Debug */,
+				6327FD0C159F418EBBB94FC6 /* Release */,
+				6FEA151F1D0F4613BCCDFDE8 /* MinSizeRel */,
+				F7C67D2CB195467E9A1D0B5B /* RelWithDebInfo */,
 			);
 			compatibilityVersion = "Xcode 3.2";
 			hasScannedForEncodings = 0;
-			mainGroup = 846782A19BF64D7B91B60E49;
+			mainGroup = E8C27D3A69954653B62A38FA;
 			projectDirPath = "../sdl2_image-src";
 			projectRoot = "";
 			targets = (
@@ -534,67 +534,67 @@ fi
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		0E5920A67C2648A5984A21DD /* Sources */ = {
+		C8A7C796B712447FB3371A6C /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				91989EBF92DD4247B87E6C46 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG.c */,
-				70E4687909034D19890CBBB6 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_ImageIO.m */,
-				D80796C2C6EF474FA778F8AF /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_WIC.c */,
-				CD1415B4B69149BC86C951F2 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_avif.c */,
-				B67F51B53B754CA6A342E952 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_bmp.c */,
-				14299ABB068046AA81917A36 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_gif.c */,
-				55AC1AFB7839464F971619F4 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_jpg.c */,
-				A40E1E62C0444DF8BCDBA521 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_jxl.c */,
-				296C0468B1214AA19821B068 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_lbm.c */,
-				08C2FB288142401C9588B033 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_pcx.c */,
-				89F8CBD5EC154F62B9EF7482 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_png.c */,
-				F15545047BF3467B84EC024E /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_pnm.c */,
-				4543AE0F1F654EFDBBCF9774 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_qoi.c */,
-				52D457F49E6749088CE72AE3 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_stb.c */,
-				32D2900214194AE697240291 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_svg.c */,
-				A4654F14519D40B5A1E53269 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_tga.c */,
-				AFE424EEE8C14532AEC1EEEA /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_tif.c */,
-				9867A1F511484578A05BF6A5 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_webp.c */,
-				E30CE7003007438FB5574A6D /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xcf.c */,
-				745EA4EB60FB49FC9B7DB437 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xpm.c */,
-				7DB77C7E885A476C880F63EE /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xv.c */,
-				AB4C467CEB6C47D7BF2DC470 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xxx.c */,
+				116DA949816F4848AD327945 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG.c */,
+				132FC4A0388B497FA2325E70 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_ImageIO.m */,
+				302AB5DE52984BA4A20B2EC1 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_WIC.c */,
+				9DC6C8B51D914DA2AE8965BF /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_avif.c */,
+				4FF04907923346E9A048211C /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_bmp.c */,
+				5969D720A3FA4EFC87E1B0FB /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_gif.c */,
+				51455FC2F8FB425E953D1F73 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_jpg.c */,
+				92D58EA8E1DE478EBA625EF3 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_jxl.c */,
+				9F85F2A1A3FB405683C216B4 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_lbm.c */,
+				496DAE3D24664816A2624737 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_pcx.c */,
+				ADBB0F97116141BF830354A6 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_png.c */,
+				6C601A3C2EF34A2991CBAE56 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_pnm.c */,
+				28CC5E26098C4F358F005E4B /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_qoi.c */,
+				73772261BEC14BFFAF957725 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_stb.c */,
+				CD9EE890F1E74516A4240183 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_svg.c */,
+				164F3CCBFA654166842522B7 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_tga.c */,
+				538C2D88906142338EF3C0D9 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_tif.c */,
+				F47E726DB1F5423F8B82816E /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_webp.c */,
+				55B071D0BD1740208D639C69 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xcf.c */,
+				34B8857DDC0D412490B4B021 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xpm.c */,
+				63F72B1CB65F4F0FBE225818 /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xv.c */,
+				81818AC0AD2541BBA85E192A /* /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src/IMG_xxx.c */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		055712023E3D493CA8462130 /* PBXTargetDependency */ = {
+		0984A10AC73D49B1AC542963 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = D24353A079AE57BA8522B04C /* ZERO_CHECK */;
-			targetProxy = F58724EE46044215A715FEF5 /* PBXContainerItemProxy */;
+			targetProxy = 5306CB398DA8482EB733ABDD /* PBXContainerItemProxy */;
 		};
-		128A80C46B1C4C448AE55603 /* PBXTargetDependency */ = {
+		664D2D31FDFF4911BFF529BA /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 2EBEBDE0AAC4E74DFA200781 /* ALL_BUILD */;
-			targetProxy = E963083CFD754EFD90B1F007 /* PBXContainerItemProxy */;
+			targetProxy = 19679FC3A1C54338A209634E /* PBXContainerItemProxy */;
 		};
-		1CA4921FEBB14D7A97A75A62 /* PBXTargetDependency */ = {
+		6B98E2FD4EDE48C6824150A2 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D24353A079AE57BA8522B04C /* ZERO_CHECK */;
+			targetProxy = E9D5B6A1AA6E4B6BB71FCAFE /* PBXContainerItemProxy */;
+		};
+		9C2A4993F8D04D458FFEBF5C /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = BF0E78445B8294B27D4B6E57 /* SDL2_image */;
-			targetProxy = A38C5A5891434B9AAEEE4A2F /* PBXContainerItemProxy */;
+			targetProxy = 608E1A480D9C42A7A7B10911 /* PBXContainerItemProxy */;
 		};
-		560CABDFDF424573AD07158F /* PBXTargetDependency */ = {
+		F0C6C55F6A3743D3A395195F /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 2EBEBDE0AAC4E74DFA200781 /* ALL_BUILD */;
-			targetProxy = 6F8E62C977E34F7397A068A9 /* PBXContainerItemProxy */;
-		};
-		78000DA166244AE9B996A90A /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = D24353A079AE57BA8522B04C /* ZERO_CHECK */;
-			targetProxy = 8EF6CAC65DEF4787B3ABFACF /* PBXContainerItemProxy */;
+			targetProxy = A40CAC44DE32487081393CA2 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		0D4F9F7D426E43A1BDA31E79 /* Release */ = {
+		063CC38A94124AFBAEE1CADE /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -612,9 +612,9 @@ fi
 				USE_HEADERMAP = NO;
 				WARNING_CFLAGS = ("$(inherited)");
 			};
-			name = Release;
+			name = Debug;
 		};
-		154F47A28E4D4B43BEA2AFD3 /* Debug */ = {
+		08563B6548C54710A0D69CC0 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -627,14 +627,36 @@ fi
 				INSTALL_PATH = "";
 				OTHER_LDFLAGS = ("","$(inherited)");
 				OTHER_REZFLAGS = "";
-				PRODUCT_NAME = ZERO_CHECK;
+				PRODUCT_NAME = install;
 				SECTORDER_FLAGS = "";
 				USE_HEADERMAP = NO;
 				WARNING_CFLAGS = ("$(inherited)");
 			};
-			name = Debug;
+			name = Release;
 		};
-		2F3076849D7949FCB6E9B8CC /* MinSizeRel */ = {
+		1874B79006FA46AFBB6DDED1 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "arm64 x86_64";
+				"ARCHS[sdk=iphoneos*]" = arm64;
+				"ARCHS[sdk=iphonesimulator*]" = "x86_64 arm64";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				ENABLE_BITCODE = NO;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				ONLY_ACTIVE_ARCH = NO;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SYMROOT = "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build";
+				"VALID_ARCHS[sdk=iphoneos*]" = arm64;
+				"VALID_ARCHS[sdk=iphonesimulator*]" = "x86_64 arm64";
+			};
+			name = MinSizeRel;
+		};
+		22EDEA58B67E4E0E93DC6DB0 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -652,9 +674,69 @@ fi
 				USE_HEADERMAP = NO;
 				WARNING_CFLAGS = ("$(inherited)");
 			};
+			name = Debug;
+		};
+		2D8F21A6A54F44D5912E0C80 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = package;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
 			name = MinSizeRel;
 		};
-		2FD1427A6E664A9A915F1046 /* Debug */ = {
+		2E30D1B3F33F4F90B48A61A2 /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ALL_BUILD;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = RelWithDebInfo;
+		};
+		35D9B6D5398F49E688438F5C /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = package;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = RelWithDebInfo;
+		};
+		371908FDFC20479186C0B47C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -674,117 +756,7 @@ fi
 			};
 			name = Debug;
 		};
-		32D467AEE74E4302BFC3FFC1 /* MinSizeRel */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				COMBINE_HIDPI_IMAGES = YES;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
-				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				INSTALL_PATH = "";
-				OTHER_LDFLAGS = ("","$(inherited)");
-				OTHER_REZFLAGS = "";
-				PRODUCT_NAME = ZERO_CHECK;
-				SECTORDER_FLAGS = "";
-				USE_HEADERMAP = NO;
-				WARNING_CFLAGS = ("$(inherited)");
-			};
-			name = MinSizeRel;
-		};
-		40014112AA4040C8B2F158C8 /* RelWithDebInfo */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = (arm64,x86_64);
-				COMBINE_HIDPI_IMAGES = YES;
-				CONFIGURATION_BUILD_DIR = "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-build/RelWithDebInfo${EFFECTIVE_PLATFORM_NAME}";
-				EXECUTABLE_PREFIX = lib;
-				EXECUTABLE_SUFFIX = .a;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
-				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
-				GCC_OPTIMIZATION_LEVEL = 2;
-				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",BUILD_SDL,"'SDL_BUILD_MAJOR_VERSION=2'","'SDL_BUILD_MINOR_VERSION=6'","'SDL_BUILD_MICRO_VERSION=3'",USE_STBIMAGE,LOAD_BMP,LOAD_GIF,LOAD_JPG,"'SDL_IMAGE_SAVE_JPG=1'",LOAD_LBM,LOAD_PCX,LOAD_PNG,"'SDL_IMAGE_SAVE_PNG=1'",LOAD_PNM,LOAD_QOI,LOAD_SVG,LOAD_TGA,LOAD_XCF,LOAD_XPM,LOAD_XV,"$(inherited)");
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				HEADER_SEARCH_PATHS = ("/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2-build/include","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2-build/include/SDL2","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2-build/include-config-relwithdebinfo/SDL2","$(inherited)");
-				INSTALL_PATH = "";
-				LIBRARY_STYLE = STATIC;
-				ONLY_ACTIVE_ARCH = NO;
-				OTHER_CFLAGS = ("       -DNDEBUG -fPIC -fvisibility=hidden ","$(inherited)");
-				OTHER_LIBTOOLFLAGS = ("");
-				OTHER_REZFLAGS = "";
-				PRODUCT_NAME = SDL2_image;
-				SECTORDER_FLAGS = "";
-				TARGET_TEMP_DIR = "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/SDL2_image.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
-				USE_HEADERMAP = NO;
-				WARNING_CFLAGS = ("$(inherited)");
-			};
-			name = RelWithDebInfo;
-		};
-		40D2B1AE3B1541A0BBE56B71 /* RelWithDebInfo */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				COMBINE_HIDPI_IMAGES = YES;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
-				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				INSTALL_PATH = "";
-				OTHER_LDFLAGS = ("","$(inherited)");
-				OTHER_REZFLAGS = "";
-				PRODUCT_NAME = ZERO_CHECK;
-				SECTORDER_FLAGS = "";
-				USE_HEADERMAP = NO;
-				WARNING_CFLAGS = ("$(inherited)");
-			};
-			name = RelWithDebInfo;
-		};
-		46BB43E209954958BC751B93 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				COMBINE_HIDPI_IMAGES = YES;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
-				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				INSTALL_PATH = "";
-				OTHER_LDFLAGS = ("","$(inherited)");
-				OTHER_REZFLAGS = "";
-				PRODUCT_NAME = ZERO_CHECK;
-				SECTORDER_FLAGS = "";
-				USE_HEADERMAP = NO;
-				WARNING_CFLAGS = ("$(inherited)");
-			};
-			name = Release;
-		};
-		5DE3A92C9634442B909C0909 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ARCHS = "arm64 x86_64";
-				"ARCHS[sdk=iphoneos*]" = arm64;
-				"ARCHS[sdk=iphonesimulator*]" = "x86_64 arm64";
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_ENABLE_OBJC_ARC = YES;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				ENABLE_BITCODE = NO;
-				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
-				ONLY_ACTIVE_ARCH = NO;
-				SDKROOT = iphoneos;
-				SYMROOT = "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build";
-				"VALID_ARCHS[sdk=iphoneos*]" = arm64;
-				"VALID_ARCHS[sdk=iphonesimulator*]" = "x86_64 arm64";
-			};
-			name = Debug;
-		};
-		75BF606719C5462290E826F0 /* RelWithDebInfo */ = {
+		3ACE0BB92E7B492192540C33 /* RelWithDebInfo */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "arm64 x86_64";
@@ -806,7 +778,7 @@ fi
 			};
 			name = RelWithDebInfo;
 		};
-		892B6D2EA4A84E4CBB44A0DA /* RelWithDebInfo */ = {
+		3E22DE8E7CB447A788084B0F /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -819,14 +791,34 @@ fi
 				INSTALL_PATH = "";
 				OTHER_LDFLAGS = ("","$(inherited)");
 				OTHER_REZFLAGS = "";
-				PRODUCT_NAME = install;
+				PRODUCT_NAME = ZERO_CHECK;
 				SECTORDER_FLAGS = "";
 				USE_HEADERMAP = NO;
 				WARNING_CFLAGS = ("$(inherited)");
 			};
-			name = RelWithDebInfo;
+			name = Release;
 		};
-		8BB909FCC9EE4EC2BBF4C967 /* MinSizeRel */ = {
+		44085B8603B1499A9A00C8DF /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ALL_BUILD;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = MinSizeRel;
+		};
+		4DF2B4D331F243D6B0475DB5 /* MinSizeRel */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -846,7 +838,27 @@ fi
 			};
 			name = MinSizeRel;
 		};
-		8C720A3326064241BB8AB4D4 /* RelWithDebInfo */ = {
+		4FA9CDD9FDF7488E8E6B0DCF /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ZERO_CHECK;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = RelWithDebInfo;
+		};
+		54EA9446966B465783D09A7C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -864,9 +876,50 @@ fi
 				USE_HEADERMAP = NO;
 				WARNING_CFLAGS = ("$(inherited)");
 			};
-			name = RelWithDebInfo;
+			name = Release;
 		};
-		903BF6DD199E4DE888388EB6 /* MinSizeRel */ = {
+		693B3C59A8CA4B0EA76A7F2F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "arm64 x86_64";
+				"ARCHS[sdk=iphoneos*]" = arm64;
+				"ARCHS[sdk=iphonesimulator*]" = "x86_64 arm64";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				ENABLE_BITCODE = NO;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				ONLY_ACTIVE_ARCH = NO;
+				SDKROOT = iphoneos;
+				SYMROOT = "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build";
+				"VALID_ARCHS[sdk=iphoneos*]" = arm64;
+				"VALID_ARCHS[sdk=iphonesimulator*]" = "x86_64 arm64";
+			};
+			name = Debug;
+		};
+		6F0EA20EE1D4489FA90D9BA6 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ZERO_CHECK;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = MinSizeRel;
+		};
+		7713E69609784DB09DCAD550 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -884,58 +937,9 @@ fi
 				USE_HEADERMAP = NO;
 				WARNING_CFLAGS = ("$(inherited)");
 			};
-			name = MinSizeRel;
+			name = Release;
 		};
-		9745E77EB9574C2D9C7805E9 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = (arm64,x86_64);
-				COMBINE_HIDPI_IMAGES = YES;
-				CONFIGURATION_BUILD_DIR = "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-build/Debug${EFFECTIVE_PLATFORM_NAME}";
-				EXECUTABLE_PREFIX = lib;
-				EXECUTABLE_SUFFIX = .a;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
-				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",BUILD_SDL,"'SDL_BUILD_MAJOR_VERSION=2'","'SDL_BUILD_MINOR_VERSION=6'","'SDL_BUILD_MICRO_VERSION=3'",USE_STBIMAGE,LOAD_BMP,LOAD_GIF,LOAD_JPG,"'SDL_IMAGE_SAVE_JPG=1'",LOAD_LBM,LOAD_PCX,LOAD_PNG,"'SDL_IMAGE_SAVE_PNG=1'",LOAD_PNM,LOAD_QOI,LOAD_SVG,LOAD_TGA,LOAD_XCF,LOAD_XPM,LOAD_XV,"$(inherited)");
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				HEADER_SEARCH_PATHS = ("/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2-build/include","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2-build/include/SDL2","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2-build/include-config-debug/SDL2","$(inherited)");
-				INSTALL_PATH = "";
-				LIBRARY_STYLE = STATIC;
-				ONLY_ACTIVE_ARCH = NO;
-				OTHER_CFLAGS = ("   -fPIC -fvisibility=hidden ","$(inherited)");
-				OTHER_LIBTOOLFLAGS = ("");
-				OTHER_REZFLAGS = "";
-				PRODUCT_NAME = SDL2_imaged;
-				SECTORDER_FLAGS = "";
-				TARGET_TEMP_DIR = "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/SDL2_image.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
-				USE_HEADERMAP = NO;
-				WARNING_CFLAGS = ("$(inherited)");
-			};
-			name = Debug;
-		};
-		9A27AB2A0D634B1AB9EDA314 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				COMBINE_HIDPI_IMAGES = YES;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
-				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				INSTALL_PATH = "";
-				OTHER_LDFLAGS = ("","$(inherited)");
-				OTHER_REZFLAGS = "";
-				PRODUCT_NAME = ALL_BUILD;
-				SECTORDER_FLAGS = "";
-				USE_HEADERMAP = NO;
-				WARNING_CFLAGS = ("$(inherited)");
-			};
-			name = Debug;
-		};
-		A5A08053CEDB421E84A3C4B0 /* Release */ = {
+		896C660D6662409DB9F0654C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "arm64 x86_64";
@@ -957,7 +961,7 @@ fi
 			};
 			name = Release;
 		};
-		A85437BD04A8425FAF0A04BE /* Debug */ = {
+		8D328FB4B3624C1D9C6C35A8 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -970,14 +974,14 @@ fi
 				INSTALL_PATH = "";
 				OTHER_LDFLAGS = ("","$(inherited)");
 				OTHER_REZFLAGS = "";
-				PRODUCT_NAME = package;
+				PRODUCT_NAME = ZERO_CHECK;
 				SECTORDER_FLAGS = "";
 				USE_HEADERMAP = NO;
 				WARNING_CFLAGS = ("$(inherited)");
 			};
 			name = Debug;
 		};
-		D35896FEE99F457982D15BF1 /* Release */ = {
+		AF32E8E2D96A4C4587D8D8C7 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -1006,7 +1010,36 @@ fi
 			};
 			name = Release;
 		};
-		D380EF5315504A529F26E5DF /* MinSizeRel */ = {
+		BD9E23770A9842D2A2BE8C38 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = (arm64,x86_64);
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-build/Debug${EFFECTIVE_PLATFORM_NAME}";
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",BUILD_SDL,"'SDL_BUILD_MAJOR_VERSION=2'","'SDL_BUILD_MINOR_VERSION=6'","'SDL_BUILD_MICRO_VERSION=3'",USE_STBIMAGE,LOAD_BMP,LOAD_GIF,LOAD_JPG,"'SDL_IMAGE_SAVE_JPG=1'",LOAD_LBM,LOAD_PCX,LOAD_PNG,"'SDL_IMAGE_SAVE_PNG=1'",LOAD_PNM,LOAD_QOI,LOAD_SVG,LOAD_TGA,LOAD_XCF,LOAD_XPM,LOAD_XV,"$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = ("/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2-build/include","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2-build/include/SDL2","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2-build/include-config-debug/SDL2","$(inherited)");
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CFLAGS = ("   -fPIC -fvisibility=hidden ","$(inherited)");
+				OTHER_LIBTOOLFLAGS = ("");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = SDL2_imaged;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/SDL2_image.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Debug;
+		};
+		DCBAA93091FF46A3A0FD6224 /* MinSizeRel */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -1035,7 +1068,7 @@ fi
 			};
 			name = MinSizeRel;
 		};
-		D58C8743BBE043B790791DF3 /* Release */ = {
+		F3B35B82B35941F7B4FED56D /* RelWithDebInfo */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -1053,65 +1086,32 @@ fi
 				USE_HEADERMAP = NO;
 				WARNING_CFLAGS = ("$(inherited)");
 			};
-			name = Release;
+			name = RelWithDebInfo;
 		};
-		E6B00E92B48E4CB29F34DA0A /* MinSizeRel */ = {
+		F93EFD8B696B41118E9F242A /* RelWithDebInfo */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "arm64 x86_64";
-				"ARCHS[sdk=iphoneos*]" = arm64;
-				"ARCHS[sdk=iphonesimulator*]" = "x86_64 arm64";
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_ENABLE_OBJC_ARC = YES;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				ENABLE_BITCODE = NO;
-				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = (arm64,x86_64);
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-build/RelWithDebInfo${EFFECTIVE_PLATFORM_NAME}";
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",BUILD_SDL,"'SDL_BUILD_MAJOR_VERSION=2'","'SDL_BUILD_MINOR_VERSION=6'","'SDL_BUILD_MICRO_VERSION=3'",USE_STBIMAGE,LOAD_BMP,LOAD_GIF,LOAD_JPG,"'SDL_IMAGE_SAVE_JPG=1'",LOAD_LBM,LOAD_PCX,LOAD_PNG,"'SDL_IMAGE_SAVE_PNG=1'",LOAD_PNM,LOAD_QOI,LOAD_SVG,LOAD_TGA,LOAD_XCF,LOAD_XPM,LOAD_XV,"$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = ("/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_image-src","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2-build/include","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2-build/include/SDL2","/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2-build/include-config-relwithdebinfo/SDL2","$(inherited)");
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
 				ONLY_ACTIVE_ARCH = NO;
-				SDKROOT = iphoneos;
-				SWIFT_COMPILATION_MODE = wholemodule;
-				SYMROOT = "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build";
-				"VALID_ARCHS[sdk=iphoneos*]" = arm64;
-				"VALID_ARCHS[sdk=iphonesimulator*]" = "x86_64 arm64";
-			};
-			name = MinSizeRel;
-		};
-		F9B338E7B9694D9CBC90D8E4 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				COMBINE_HIDPI_IMAGES = YES;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
-				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				INSTALL_PATH = "";
-				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_CFLAGS = ("       -DNDEBUG -fPIC -fvisibility=hidden ","$(inherited)");
+				OTHER_LIBTOOLFLAGS = ("");
 				OTHER_REZFLAGS = "";
-				PRODUCT_NAME = ALL_BUILD;
+				PRODUCT_NAME = SDL2_image;
 				SECTORDER_FLAGS = "";
-				USE_HEADERMAP = NO;
-				WARNING_CFLAGS = ("$(inherited)");
-			};
-			name = Release;
-		};
-		FB5739683DFC4FE3B40F5285 /* RelWithDebInfo */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				COMBINE_HIDPI_IMAGES = YES;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
-				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				INSTALL_PATH = "";
-				OTHER_LDFLAGS = ("","$(inherited)");
-				OTHER_REZFLAGS = "";
-				PRODUCT_NAME = package;
-				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/SDL2_image.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
 				USE_HEADERMAP = NO;
 				WARNING_CFLAGS = ("$(inherited)");
 			};
@@ -1120,68 +1120,68 @@ fi
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		41390DEA613C41D085FC90EC /* Build configuration list for PBXProject "SDL2_image" */ = {
+		03F09517C9C94655A2A51679 /* Build configuration list for PBXAggregateTarget "install" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				5DE3A92C9634442B909C0909 /* Debug */,
-				A5A08053CEDB421E84A3C4B0 /* Release */,
-				E6B00E92B48E4CB29F34DA0A /* MinSizeRel */,
-				75BF606719C5462290E826F0 /* RelWithDebInfo */,
+				371908FDFC20479186C0B47C /* Debug */,
+				08563B6548C54710A0D69CC0 /* Release */,
+				4DF2B4D331F243D6B0475DB5 /* MinSizeRel */,
+				F3B35B82B35941F7B4FED56D /* RelWithDebInfo */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		6487C4DE400B49C58188967E /* Build configuration list for PBXAggregateTarget "ALL_BUILD" */ = {
+		1131F2E773A04911A3A6A905 /* Build configuration list for PBXAggregateTarget "ZERO_CHECK" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				9A27AB2A0D634B1AB9EDA314 /* Debug */,
-				F9B338E7B9694D9CBC90D8E4 /* Release */,
-				2F3076849D7949FCB6E9B8CC /* MinSizeRel */,
-				8C720A3326064241BB8AB4D4 /* RelWithDebInfo */,
+				8D328FB4B3624C1D9C6C35A8 /* Debug */,
+				3E22DE8E7CB447A788084B0F /* Release */,
+				6F0EA20EE1D4489FA90D9BA6 /* MinSizeRel */,
+				4FA9CDD9FDF7488E8E6B0DCF /* RelWithDebInfo */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		866CDE5E48544F958A93C5AC /* Build configuration list for PBXAggregateTarget "package" */ = {
+		4B98F05742084F0B9223C9E4 /* Build configuration list for PBXNativeTarget "SDL2_image" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				A85437BD04A8425FAF0A04BE /* Debug */,
-				0D4F9F7D426E43A1BDA31E79 /* Release */,
-				903BF6DD199E4DE888388EB6 /* MinSizeRel */,
-				FB5739683DFC4FE3B40F5285 /* RelWithDebInfo */,
+				BD9E23770A9842D2A2BE8C38 /* Debug */,
+				AF32E8E2D96A4C4587D8D8C7 /* Release */,
+				DCBAA93091FF46A3A0FD6224 /* MinSizeRel */,
+				F93EFD8B696B41118E9F242A /* RelWithDebInfo */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		C3ED1029D3FA4979848D3766 /* Build configuration list for PBXNativeTarget "SDL2_image" */ = {
+		7636813C7F6C4C2FBA5C4074 /* Build configuration list for PBXAggregateTarget "ALL_BUILD" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				9745E77EB9574C2D9C7805E9 /* Debug */,
-				D35896FEE99F457982D15BF1 /* Release */,
-				D380EF5315504A529F26E5DF /* MinSizeRel */,
-				40014112AA4040C8B2F158C8 /* RelWithDebInfo */,
+				22EDEA58B67E4E0E93DC6DB0 /* Debug */,
+				54EA9446966B465783D09A7C /* Release */,
+				44085B8603B1499A9A00C8DF /* MinSizeRel */,
+				2E30D1B3F33F4F90B48A61A2 /* RelWithDebInfo */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		C5631369E7A14326976B62E8 /* Build configuration list for PBXAggregateTarget "install" */ = {
+		96B9D876CC1F41559EACC2C5 /* Build configuration list for PBXProject "SDL2_image" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				2FD1427A6E664A9A915F1046 /* Debug */,
-				D58C8743BBE043B790791DF3 /* Release */,
-				8BB909FCC9EE4EC2BBF4C967 /* MinSizeRel */,
-				892B6D2EA4A84E4CBB44A0DA /* RelWithDebInfo */,
+				693B3C59A8CA4B0EA76A7F2F /* Debug */,
+				896C660D6662409DB9F0654C /* Release */,
+				1874B79006FA46AFBB6DDED1 /* MinSizeRel */,
+				3ACE0BB92E7B492192540C33 /* RelWithDebInfo */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		D28B212B18FC47709D7ED365 /* Build configuration list for PBXAggregateTarget "ZERO_CHECK" */ = {
+		EC393E2DF4B04E1893E6B098 /* Build configuration list for PBXAggregateTarget "package" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				154F47A28E4D4B43BEA2AFD3 /* Debug */,
-				46BB43E209954958BC751B93 /* Release */,
-				32D467AEE74E4302BFC3FFC1 /* MinSizeRel */,
-				40D2B1AE3B1541A0BBE56B71 /* RelWithDebInfo */,
+				063CC38A94124AFBAEE1CADE /* Debug */,
+				7713E69609784DB09DCAD550 /* Release */,
+				2D8F21A6A54F44D5912E0C80 /* MinSizeRel */,
+				35D9B6D5398F49E688438F5C /* RelWithDebInfo */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

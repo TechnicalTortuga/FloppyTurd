@@ -1,0 +1,8 @@
+#!/bin/sh
+set -e
+if test "$CONFIGURATION" = "Debug"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios-new/_deps/sdl2-build
+  /opt/homebrew/bin/cmake -E echo_append
+  /opt/homebrew/bin/cmake -E touch /Users/aimac/Documents/GitHub/FloppyTurd/build-ios-new/_deps/sdl2-subbuild/sdl2-populate-prefix/src/sdl2-populate-stamp/$CONFIGURATION$EFFECTIVE_PLATFORM_NAME/sdl2-populate-configure
+fi
+

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.5)
 project(FloppyTurd VERSION 1.0.0 LANGUAGES CXX)
 
 # Set C++ standard
@@ -14,7 +14,7 @@ if(NOT DEFINED PLATFORM)
     if(${CMAKE_SYSTEM_NAME} MATCHES "Android")
         set(PLATFORM "Android")
     elseif(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
-        # Do not set PLATFORM to 'iOS'; let the toolchain handle it or set to OS64 if needed
+        # Let the toolchain handle iOS specifics, default to OS64 for consistency
         set(PLATFORM "OS64")
     elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
         set(PLATFORM "Desktop")
@@ -73,69 +73,37 @@ else()
     
     # Disable all optional codecs to avoid dependency issues
     set(SDL2MIXER_OPUS OFF CACHE BOOL "" FORCE)
-    set(SDL2_MIXER_OPUS OFF CACHE BOOL "" FORCE)
     set(SDL2MIXER_VENDORED_OPUS OFF CACHE BOOL "" FORCE)
-    set(SDL2_MIXER_VENDORED_OPUS OFF CACHE BOOL "" FORCE)
     set(SDL2MIXER_MOD OFF CACHE BOOL "" FORCE)
-    set(SDL2_MIXER_MOD OFF CACHE BOOL "" FORCE)
     set(SDL2MIXER_VENDORED_MOD OFF CACHE BOOL "" FORCE)
-    set(SDL2_MIXER_VENDORED_MOD OFF CACHE BOOL "" FORCE)
     set(SDL2MIXER_FLAC OFF CACHE BOOL "" FORCE)
-    set(SDL2_MIXER_FLAC OFF CACHE BOOL "" FORCE)
     set(SDL2MIXER_VENDORED_FLAC OFF CACHE BOOL "" FORCE)
-    set(SDL2_MIXER_VENDORED_FLAC OFF CACHE BOOL "" FORCE)
     set(SDL2MIXER_MIDI OFF CACHE BOOL "" FORCE)
-    set(SDL2_MIXER_MIDI OFF CACHE BOOL "" FORCE)
     set(SDL2MIXER_VENDORED_MIDI OFF CACHE BOOL "" FORCE)
-    set(SDL2_MIXER_VENDORED_MIDI OFF CACHE BOOL "" FORCE)
     set(SDL2MIXER_GME OFF CACHE BOOL "" FORCE)
-    set(SDL2_MIXER_GME OFF CACHE BOOL "" FORCE)
     set(SDL2MIXER_VENDORED_GME OFF CACHE BOOL "" FORCE)
-    set(SDL2_MIXER_VENDORED_GME OFF CACHE BOOL "" FORCE)
     set(SDL2MIXER_MP3 OFF CACHE BOOL "" FORCE)
-    set(SDL2_MIXER_MP3 OFF CACHE BOOL "" FORCE)
     set(SDL2MIXER_VENDORED_MP3 OFF CACHE BOOL "" FORCE)
-    set(SDL2_MIXER_VENDORED_MP3 OFF CACHE BOOL "" FORCE)
     set(SDL2MIXER_MPG123 OFF CACHE BOOL "" FORCE)
-    set(SDL2_MIXER_MPG123 OFF CACHE BOOL "" FORCE)
     set(SDL2MIXER_VENDORED_MPG123 OFF CACHE BOOL "" FORCE)
-    set(SDL2_MIXER_VENDORED_MPG123 OFF CACHE BOOL "" FORCE)
     set(SDL2MIXER_MIKMOD OFF CACHE BOOL "" FORCE)
-    set(SDL2_MIXER_MIKMOD OFF CACHE BOOL "" FORCE)
     set(SDL2MIXER_VENDORED_MIKMOD OFF CACHE BOOL "" FORCE)
-    set(SDL2_MIXER_VENDORED_MIKMOD OFF CACHE BOOL "" FORCE)
     set(SDL2MIXER_SMPEG OFF CACHE BOOL "" FORCE)
-    set(SDL2_MIXER_SMPEG OFF CACHE BOOL "" FORCE)
     set(SDL2MIXER_VENDORED_SMPEG OFF CACHE BOOL "" FORCE)
-    set(SDL2_MIXER_VENDORED_SMPEG OFF CACHE BOOL "" FORCE)
     set(SDL2MIXER_MAD OFF CACHE BOOL "" FORCE)
-    set(SDL2_MIXER_MAD OFF CACHE BOOL "" FORCE)
     set(SDL2MIXER_VENDORED_MAD OFF CACHE BOOL "" FORCE)
-    set(SDL2_MIXER_VENDORED_MAD OFF CACHE BOOL "" FORCE)
     set(SDL2MIXER_ID3TAG OFF CACHE BOOL "" FORCE)
-    set(SDL2_MIXER_ID3TAG OFF CACHE BOOL "" FORCE)
     set(SDL2MIXER_VENDORED_ID3TAG OFF CACHE BOOL "" FORCE)
-    set(SDL2_MIXER_VENDORED_ID3TAG OFF CACHE BOOL "" FORCE)
     set(SDL2MIXER_FLUIDSYNTH OFF CACHE BOOL "" FORCE)
-    set(SDL2_MIXER_FLUIDSYNTH OFF CACHE BOOL "" FORCE)
     set(SDL2MIXER_VENDORED_FLUIDSYNTH OFF CACHE BOOL "" FORCE)
-    set(SDL2_MIXER_VENDORED_FLUIDSYNTH OFF CACHE BOOL "" FORCE)
     set(SDL2MIXER_ADLMIDI OFF CACHE BOOL "" FORCE)
-    set(SDL2_MIXER_ADLMIDI OFF CACHE BOOL "" FORCE)
     set(SDL2MIXER_VENDORED_ADLMIDI OFF CACHE BOOL "" FORCE)
-    set(SDL2_MIXER_VENDORED_ADLMIDI OFF CACHE BOOL "" FORCE)
     set(SDL2MIXER_OPNMIDI OFF CACHE BOOL "" FORCE)
-    set(SDL2_MIXER_OPNMIDI OFF CACHE BOOL "" FORCE)
     set(SDL2MIXER_VENDORED_OPNMIDI OFF CACHE BOOL "" FORCE)
-    set(SDL2_MIXER_VENDORED_OPNMIDI OFF CACHE BOOL "" FORCE)
     set(SDL2MIXER_TIMIDITY OFF CACHE BOOL "" FORCE)
-    set(SDL2_MIXER_TIMIDITY OFF CACHE BOOL "" FORCE)
     set(SDL2MIXER_VENDORED_TIMIDITY OFF CACHE BOOL "" FORCE)
-    set(SDL2_MIXER_VENDORED_TIMIDITY OFF CACHE BOOL "" FORCE)
     set(SDL2MIXER_MOD_MODPLUG OFF CACHE BOOL "" FORCE)
-    set(SDL2_MIXER_MOD_MODPLUG OFF CACHE BOOL "" FORCE)
     set(SDL2MIXER_VENDORED_MOD_MODPLUG OFF CACHE BOOL "" FORCE)
-    set(SDL2_MIXER_VENDORED_MOD_MODPLUG OFF CACHE BOOL "" FORCE)
 
     # Fetch SDL2_mixer
     FetchContent_Declare(
@@ -154,19 +122,11 @@ else()
         GIT_SHALLOW TRUE
     )
     
-    # Disable SDL2_ttf example/test apps - comprehensive options
+    # Disable SDL2_ttf example/test apps
     set(SDL2TTF_INSTALL_TESTS OFF CACHE BOOL "" FORCE)
-    set(SDL2_TTF_INSTALL_TESTS OFF CACHE BOOL "" FORCE)
     set(SDL2TTF_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-    set(SDL2_TTF_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-    set(INSTALL_TESTS OFF CACHE BOOL "" FORCE)
-    set(BUILD_TESTS OFF CACHE BOOL "" FORCE)
     set(SDL2TTF_BUILD_SAMPLES OFF CACHE BOOL "" FORCE)
-    set(SDL2_TTF_BUILD_SAMPLES OFF CACHE BOOL "" FORCE)
-    set(BUILD_SAMPLES OFF CACHE BOOL "" FORCE)
     set(SDL2TTF_INSTALL_SAMPLES OFF CACHE BOOL "" FORCE)
-    set(SDL2_TTF_INSTALL_SAMPLES OFF CACHE BOOL "" FORCE)
-    set(INSTALL_SAMPLES OFF CACHE BOOL "" FORCE)
     set(SDL2TTF_SAMPLES OFF CACHE BOOL "" FORCE)
     
     # Disable SDL2_image example programs
@@ -175,13 +135,10 @@ else()
     # Disable SDL2_mixer example programs
     set(SDL2MIXER_SAMPLES OFF CACHE BOOL "" FORCE)
     
-    # Force SDL2_ttf to use vendored freetype for iOS to avoid linking macOS libraries
+    # Force SDL2_ttf to use vendored freetype for iOS
     set(SDL2TTF_VENDORED ON CACHE BOOL "" FORCE)
-    set(SDL2_TTF_VENDORED ON CACHE BOOL "" FORCE)
     set(SDL2TTF_FREETYPE ON CACHE BOOL "" FORCE)
-    set(SDL2_TTF_FREETYPE ON CACHE BOOL "" FORCE)
     set(SDL2TTF_VENDORED_FREETYPE ON CACHE BOOL "" FORCE)
-    set(SDL2_TTF_VENDORED_FREETYPE ON CACHE BOOL "" FORCE)
     
     # Disable system freetype to prevent linking macOS libraries
     set(FREETYPE_FOUND OFF CACHE BOOL "" FORCE)
@@ -205,13 +162,11 @@ list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/RaylibCompat.cpp)
 # Explicitly add main.cpp to ensure it's included
 list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/main.cpp)
 
-# iOS builds now use SDL2's entry point in main.cpp
-
 file(GLOB_RECURSE HEADERS 
     ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/*.h
 )
 
-# Remove the GameSettings.h from sources (it's header only)
+# Remove the GameSettings.h and Resources.h from sources (header only)
 list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/GameSettings.h)
 list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/Resources.h)
 
@@ -225,8 +180,8 @@ list(APPEND SOURCES
 # Create executable
 if(${PLATFORM} STREQUAL "Android")
     add_library(${PROJECT_NAME} SHARED ${SOURCES})
-elseif(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
-    # iOS: Create as app bundle
+elif(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
+    # iOS: Create as app bundle with automatic signing
     add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES})
     set_target_properties(${PROJECT_NAME} PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Debug-iphoneos"
@@ -269,14 +224,13 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
         PLATFORM_IOS
         __APPLE__
         TARGET_OS_IOS=1
-        PRODUCT_BUNDLE_IDENTIFIER="com.floppyturd.game"
         SDL_MAIN_HANDLED=1
     )
     
     set_target_properties(${PROJECT_NAME} PROPERTIES
         MACOSX_BUNDLE TRUE
+        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info.plist"
         XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.floppyturd.game"
-        XCODE_ATTRIBUTE_DEVELOPMENT_TEAM ""
         XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
         XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET "13.0"
         XCODE_ATTRIBUTE_PRODUCT_NAME "FloppyTurd"
@@ -285,12 +239,12 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
         XCODE_ATTRIBUTE_UI_REQUIRED_DEVICE_CAPABILITIES "arm64"
         XCODE_ATTRIBUTE_UI_SUPPORTED_INTERFACE_ORIENTATIONS "UIInterfaceOrientationPortrait;UIInterfaceOrientationLandscapeLeft;UIInterfaceOrientationLandscapeRight"
     )
-    set_property(TARGET ${PROJECT_NAME} PROPERTY
-        MACOSX_BUNDLE TRUE
-        XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.floppyturd.game"
-        XCODE_ATTRIBUTE_BUNDLE_VERSION "1.0.0"
-        XCODE_ATTRIBUTE_SHORT_VERSION_STRING "1.0.0"
-    )
+    
+    # Bundle resources
+    file(GLOB_RECURSE RESOURCES "${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/resources/*")
+    foreach(RESOURCE ${RESOURCES})
+        set_source_files_properties(${RESOURCE} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+    endforeach()
 else()
     # All other platforms use Raylib
     target_link_libraries(${PROJECT_NAME} PRIVATE raylib)
@@ -299,7 +253,7 @@ endif()
 # Platform-specific settings
 if(${PLATFORM} STREQUAL "Windows")
     # Windows specific settings
-    # Removed WIN32_EXECUTABLE to use console entry point (main() instead of WinMain())
+    # Use console entry point (main() instead of WinMain())
     
     # Copy resources to output directory
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
@@ -311,31 +265,23 @@ if(${PLATFORM} STREQUAL "Windows")
     # Set Visual Studio debugger working directory
     set_property(TARGET ${PROJECT_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
     
-elseif(IS_MACOS)
+elif(IS_MACOS)
     # macOS specific settings
     message(STATUS "Applying macOS-specific build settings")
     
-    # Copy resources to output directory for macOS as well
+    # Copy resources to output directory for macOS
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/resources
         $<TARGET_FILE_DIR:${PROJECT_NAME}>/resources
     )
     
-    # Ensure proper app bundle creation if needed
-    # set_target_properties(${PROJECT_NAME} PROPERTIES
-    #     MACOSX_BUNDLE TRUE
-    #     MACOSX_BUNDLE_BUNDLE_NAME "Floppy Turd"
-    #     MACOSX_BUNDLE_BUNDLE_VERSION "1.0"
-    #     MACOSX_BUNDLE_SHORT_VERSION_STRING "1.0"
-    # )
-    
     # macOS-specific compiler flags for better compatibility
     target_compile_options(${PROJECT_NAME} PRIVATE
         -Wno-deprecated-declarations  # Silence deprecation warnings on macOS
     )
     
-elseif(${PLATFORM} STREQUAL "Android")
+elif(${PLATFORM} STREQUAL "Android")
     # Android specific settings
     target_compile_definitions(${PROJECT_NAME} PRIVATE PLATFORM_ANDROID)
     
@@ -349,29 +295,9 @@ elseif(${PLATFORM} STREQUAL "Android")
         m
     )
     
-elseif(${PLATFORM} STREQUAL "iOS")
-    # iOS specific settings
-    set_target_properties(${PROJECT_NAME} PROPERTIES
-        MACOSX_BUNDLE TRUE
-        XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.floppyturd.game"
-        XCODE_ATTRIBUTE_DEVELOPMENT_TEAM ""
-        XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
-        XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET "13.0"
-        XCODE_ATTRIBUTE_PRODUCT_NAME "FloppyTurd"
-        XCODE_ATTRIBUTE_BUNDLE_VERSION "1.0.0"
-        XCODE_ATTRIBUTE_SHORT_VERSION_STRING "1.0.0"
-        XCODE_ATTRIBUTE_UI_REQUIRED_DEVICE_CAPABILITIES "arm64"
-        XCODE_ATTRIBUTE_UI_SUPPORTED_INTERFACE_ORIENTATIONS "UIInterfaceOrientationPortrait;UIInterfaceOrientationLandscapeLeft;UIInterfaceOrientationLandscapeRight"
-    )
-    
-    # Bundle resources
-    file(GLOB_RECURSE RESOURCES "${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/resources/*")
-    set_target_properties(${PROJECT_NAME} PROPERTIES
-        RESOURCE "${RESOURCES}"
-    )
 else()
     # Default/Linux settings
-    # Copy resources to output directory for other platforms too
+    # Copy resources to output directory for other platforms
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/resources
@@ -387,6 +313,4 @@ else()
 endif()
 
 # Export compile commands for better IDE support
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-# SDL2 main handling is now disabled at the top of the iOS section 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON) 

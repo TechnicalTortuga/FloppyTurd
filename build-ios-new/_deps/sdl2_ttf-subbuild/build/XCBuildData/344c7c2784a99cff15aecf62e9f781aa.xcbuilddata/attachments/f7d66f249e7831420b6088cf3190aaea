@@ -1,0 +1,8 @@
+#!/bin/sh
+set -e
+if test "$CONFIGURATION" = "Debug"; then :
+  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios-new/_deps/sdl2_ttf-build
+  /opt/homebrew/bin/cmake -E echo_append
+  /opt/homebrew/bin/cmake -E touch /Users/aimac/Documents/GitHub/FloppyTurd/build-ios-new/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/src/sdl2_ttf-populate-stamp/$CONFIGURATION$EFFECTIVE_PLATFORM_NAME/sdl2_ttf-populate-install
+fi
+

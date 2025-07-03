@@ -1,0 +1,3 @@
+/Users/aimac/Documents/GitHub/FloppyTurd/build-ios-new/_deps/sdl2-subbuild/CMakeFiles/sdl2-populate.dir
+/Users/aimac/Documents/GitHub/FloppyTurd/build-ios-new/_deps/sdl2-subbuild/CMakeFiles/ALL_BUILD.dir
+/Users/aimac/Documents/GitHub/FloppyTurd/build-ios-new/_deps/sdl2-subbuild/CMakeFiles/ZERO_CHECK.dir
