@@ -816,4 +816,7 @@ CMakeFiles/FloppyTurd.dir/FloppyTurd/TextureCache.cpp.o: \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__type_traits/noexcept_move_assign_container.h \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/string_view \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__fwd/string_view.h \
-  /Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/_deps/raylib-src/src/raylib.h
+  /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/TargetConditionals.h \
+  /Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/_deps/raylib-src/src/raylib.h \
+  /Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/_deps/raylib-src/src/raymath.h

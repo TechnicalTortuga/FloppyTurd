@@ -4,7 +4,7 @@
 #include "Sprite.h"
 #include <vector>
 #include <memory>
-#include "raylib.h"
+#include "RaylibCompat.h"
 
 class SnowballProjectile;
 

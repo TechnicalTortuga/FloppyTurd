@@ -2,7 +2,7 @@
 #include "ResourceCompat.h"
 #include "Coin.h"
 #include "PoopHeart.h"
-#include <raymath.h>
+
 #include "GameSettings.h"
 
 SnowLevel::SnowLevel()

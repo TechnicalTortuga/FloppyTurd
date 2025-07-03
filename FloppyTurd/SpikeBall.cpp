@@ -1,5 +1,5 @@
 ﻿#include "SpikeBall.h"
-#include <raymath.h>
+
 #include "GameSettings.h"
 #include "ResourceCompat.h"
 #include "TextureCache.h"
@@ -14,7 +14,11 @@ SpikeBall::SpikeBall(Vector2 start)
 	baseTex = TextureCache::Get(SpikeBallBase);
 	swingTex = TextureCache::Get(SpikeBallTexture);
 
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+	if (swingTex.texture == nullptr || baseTex.texture == nullptr) {
+#else
 	if (swingTex.id == 0 || baseTex.id == 0) {
+#endif
 		TraceLog(LOG_WARNING, "SpikeBall: Failed to load textures from cache. Visuals may be missing.");
 	}
 
@@ -52,7 +56,11 @@ void SpikeBall::UpdateHitbox()
 
 void SpikeBall::Draw()
 {
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+	if (swingTex.texture != nullptr) {
+#else
 	if (swingTex.id > 0) {
+#endif
 		DrawTexturePro(
 			swingTex,
 			{ 0, 0, (float)swingTex.width, (float)swingTex.height },
@@ -63,7 +71,11 @@ void SpikeBall::Draw()
 		);
 	}
 
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+	if (baseTex.texture != nullptr) {
+#else
 	if (baseTex.id > 0) {
+#endif
 		DrawTexturePro(
 			baseTex,
 			{ 0, 0, (float)baseTex.width, (float)baseTex.height },

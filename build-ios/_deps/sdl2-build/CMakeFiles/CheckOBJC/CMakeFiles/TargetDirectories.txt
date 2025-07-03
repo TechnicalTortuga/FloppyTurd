@@ -1,0 +1,2 @@
+/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2-build/CMakeFiles/CheckOBJC/CMakeFiles/edit_cache.dir
+/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2-build/CMakeFiles/CheckOBJC/CMakeFiles/rebuild_cache.dir

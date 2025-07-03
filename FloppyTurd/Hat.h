@@ -1,5 +1,5 @@
 #pragma once
-#include "raylib.h"
+#include "RaylibCompat.h"
 #include "Sprite.h"
 #include <string>
 

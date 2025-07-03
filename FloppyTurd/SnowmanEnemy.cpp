@@ -4,7 +4,7 @@
 #include "SnowballProjectile.h"
 #include <iostream>
 #include <iomanip>
-#include <raymath.h>
+
 #include "LevelManager.h"
 
 SnowmanEnemy::SnowmanEnemy(Vector2 spawnPos, SnowmanType type)

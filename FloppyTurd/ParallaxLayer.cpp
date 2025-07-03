@@ -10,7 +10,13 @@ ParallaxLayer::ParallaxLayer(const std::vector<std::string>& texturePaths, float
 	// Load all textures via TextureCache
 	for (const auto& path : texturePaths) {
 		Texture2D tex = TextureCache::Get(path.c_str());
-		if (tex.id == 0) {
+		if (
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+			tex.texture == nullptr
+#else
+			tex.id == 0
+#endif
+		) {
 			TraceLog(LOG_WARNING, "ParallaxLayer: Failed to load texture from cache at path %s.", path.c_str());
 		}
 		textures.push_back(tex);

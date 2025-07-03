@@ -1,6 +1,6 @@
 #pragma once
 #include "ResourceManager.h"
-#include <raylib.h>
+#include "RaylibCompat.h"
 
 // Compatibility layer to transition from old Resources.h to ResourceManager
 // This allows us to gradually update the codebase without breaking everything at once

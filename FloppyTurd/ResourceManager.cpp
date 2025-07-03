@@ -52,7 +52,11 @@ Texture2D ResourceManager::GetTexture(const std::string& id) {
     // Return a placeholder texture on failure
     TraceLog(LOG_WARNING, "Failed to load texture: %s", id.c_str());
     static Texture2D placeholder = { 0 };
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+    if (placeholder.texture == nullptr) {
+#else
     if (placeholder.id == 0) {
+#endif
         // Create a 2x2 magenta placeholder texture
         Image img = GenImageColor(2, 2, MAGENTA);
         placeholder = LoadTextureFromImage(img);
@@ -126,7 +130,11 @@ bool ResourceManager::LoadTextureInternal(const std::string& id) {
     }
 
     Texture2D texture = LoadTexture(fullPath.c_str());
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+    if (texture.texture == nullptr) {
+#else
     if (texture.id == 0) {
+#endif
         return false;
     }
 
@@ -179,7 +187,12 @@ bool ResourceManager::LoadSoundInternal(const std::string& id) {
     }
 
     Sound sound = LoadSound(fullPath.c_str());
-    if (sound.stream.buffer == nullptr) {
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+    if (sound.chunk == nullptr) {
+#else
+    if (sound.music == nullptr) {
+#endif
+        TraceLog(LOG_ERROR, "Failed to load sound: %s", fullPath.c_str());
         return false;
     }
 
@@ -207,7 +220,12 @@ bool ResourceManager::LoadMusicInternal(const std::string& id) {
     }
 
     Music music = LoadMusicStream(fullPath.c_str());
-    if (music.stream.buffer == nullptr) {
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+    if (music.music == nullptr) {
+#else
+    if (music.audioData == nullptr) {
+#endif
+        TraceLog(LOG_ERROR, "Failed to load music: %s", fullPath.c_str());
         return false;
     }
 
@@ -235,7 +253,11 @@ bool ResourceManager::LoadFontInternal(const std::string& id) {
     }
 
     Font font = LoadFont(fullPath.c_str());
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+    if (font.texture.texture == nullptr) {
+#else
     if (font.texture.id == 0) {
+#endif
         return false;
     }
 

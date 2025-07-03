@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include <raylib.h>
+#include "RaylibCompat.h"
 
 struct GameStats {
     int version = 1;             // File format version

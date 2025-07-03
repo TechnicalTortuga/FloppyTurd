@@ -1,5 +1,5 @@
 #pragma once
-#include <raylib.h>
+#include "RaylibCompat.h"
 #ifndef LEVEL_H
 #define LEVEL_H
 #include "Obstacle.h"

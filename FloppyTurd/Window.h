@@ -1,5 +1,5 @@
 ﻿#pragma once
-#include <raylib.h>
+#include "RaylibCompat.h"
 #include "PlatformLayer.h"
 
 // Creates the window either in true-fullscreen or windowed mode using the monitor's native resolution.

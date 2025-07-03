@@ -1,5 +1,5 @@
 #include "GameStats.h"
-#include <raylib.h>
+#include "RaylibCompat.h"
 #include <fstream>
 #include <cstring>
 

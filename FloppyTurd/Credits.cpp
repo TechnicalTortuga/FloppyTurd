@@ -5,7 +5,7 @@
 #include "ResourceCompat.h"
 #include "TextureCache.h"
 #include "AudioManager.h"
-#include <raymath.h>
+
 #include <random>
 #include <cfloat>
 
@@ -78,16 +78,28 @@ Credits::Credits(Game* game)
 
     // Load Whacky Joe font
     font = LoadFont("resources/fonts/Whacky_Joe.fnt");
-    if (font.baseSize <= 0 || font.glyphCount <= 0 || font.texture.id == 0)
+    if (font.baseSize <= 0 || font.glyphCount <= 0 || 
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+        font.texture.texture == nullptr
+#else
+        font.texture.id == 0
+#endif
+    )
     {
-        TraceLog(LOG_ERROR, "Failed to load Whacky Joe font (baseSize=%d, glyphCount=%d, textureID=%u), falling back to default",
-            font.baseSize, font.glyphCount, font.texture.id);
+        TraceLog(LOG_ERROR, "Failed to load Whacky Joe font (baseSize=%d, glyphCount=%d, textureID=%p), falling back to default",
+            font.baseSize, font.glyphCount, (void*)font.texture.texture);
         font = GetFontDefault();
     }
     else
     {
-        TraceLog(LOG_INFO, "Whacky Joe font loaded (baseSize=%d, glyphCount=%d, textureID=%u)",
-            font.baseSize, font.glyphCount, font.texture.id);
+        TraceLog(LOG_INFO, "Whacky Joe font loaded (baseSize=%d, glyphCount=%d, textureID=%p)",
+            font.baseSize, font.glyphCount, 
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+            (void*)font.texture.texture
+#else
+            (void*)font.texture.id
+#endif
+        );
         SetTextureFilter(font.texture, TEXTURE_FILTER_BILINEAR);
     }
 
@@ -106,7 +118,7 @@ Credits::Credits(Game* game)
 Credits::~Credits()
 {
     if (music) delete music;
-    if (font.texture.id != GetFontDefault().texture.id) UnloadFont(font);
+    if (font.texture.texture != GetFontDefault().texture.texture) UnloadFont(font);
     delete cameraSystem; // Clean up CameraSystem and its layers
 }
 

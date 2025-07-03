@@ -1,6 +1,6 @@
 #pragma once
 #include "Level.h"
-#include "raylib.h"
+#include "RaylibCompat.h"
 #include <vector>
 #include <iostream>
 #include "CameraSystem.h"

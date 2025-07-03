@@ -1,6 +1,6 @@
 #pragma once
 #include "Obstacle.h"  // Now inherits from Obstacle
-#include "raylib.h"
+#include "RaylibCompat.h"
 #include <vector>
 #include "Sprite.h"
 

@@ -646,10 +646,24 @@ CMakeFiles/FloppyTurd.dir/FloppyTurd/RatKing.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/FloppyTurd.dir/FloppyTurd/RatKing.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RatKing.cpp -o CMakeFiles/FloppyTurd.dir/FloppyTurd/RatKing.cpp.s
 
+CMakeFiles/FloppyTurd.dir/FloppyTurd/RaylibCompat.cpp.o: CMakeFiles/FloppyTurd.dir/flags.make
+CMakeFiles/FloppyTurd.dir/FloppyTurd/RaylibCompat.cpp.o: /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp
+CMakeFiles/FloppyTurd.dir/FloppyTurd/RaylibCompat.cpp.o: CMakeFiles/FloppyTurd.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_42) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/RaylibCompat.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/FloppyTurd.dir/FloppyTurd/RaylibCompat.cpp.o -MF CMakeFiles/FloppyTurd.dir/FloppyTurd/RaylibCompat.cpp.o.d -o CMakeFiles/FloppyTurd.dir/FloppyTurd/RaylibCompat.cpp.o -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp
+
+CMakeFiles/FloppyTurd.dir/FloppyTurd/RaylibCompat.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/FloppyTurd.dir/FloppyTurd/RaylibCompat.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp > CMakeFiles/FloppyTurd.dir/FloppyTurd/RaylibCompat.cpp.i
+
+CMakeFiles/FloppyTurd.dir/FloppyTurd/RaylibCompat.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/FloppyTurd.dir/FloppyTurd/RaylibCompat.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp -o CMakeFiles/FloppyTurd.dir/FloppyTurd/RaylibCompat.cpp.s
+
 CMakeFiles/FloppyTurd.dir/FloppyTurd/ResourceManager.cpp.o: CMakeFiles/FloppyTurd.dir/flags.make
 CMakeFiles/FloppyTurd.dir/FloppyTurd/ResourceManager.cpp.o: /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ResourceManager.cpp
 CMakeFiles/FloppyTurd.dir/FloppyTurd/ResourceManager.cpp.o: CMakeFiles/FloppyTurd.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_42) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/ResourceManager.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_43) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/ResourceManager.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/FloppyTurd.dir/FloppyTurd/ResourceManager.cpp.o -MF CMakeFiles/FloppyTurd.dir/FloppyTurd/ResourceManager.cpp.o.d -o CMakeFiles/FloppyTurd.dir/FloppyTurd/ResourceManager.cpp.o -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ResourceManager.cpp
 
 CMakeFiles/FloppyTurd.dir/FloppyTurd/ResourceManager.cpp.i: cmake_force
@@ -663,7 +677,7 @@ CMakeFiles/FloppyTurd.dir/FloppyTurd/ResourceManager.cpp.s: cmake_force
 CMakeFiles/FloppyTurd.dir/FloppyTurd/SewerLevel.cpp.o: CMakeFiles/FloppyTurd.dir/flags.make
 CMakeFiles/FloppyTurd.dir/FloppyTurd/SewerLevel.cpp.o: /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SewerLevel.cpp
 CMakeFiles/FloppyTurd.dir/FloppyTurd/SewerLevel.cpp.o: CMakeFiles/FloppyTurd.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_43) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/SewerLevel.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_44) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/SewerLevel.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/FloppyTurd.dir/FloppyTurd/SewerLevel.cpp.o -MF CMakeFiles/FloppyTurd.dir/FloppyTurd/SewerLevel.cpp.o.d -o CMakeFiles/FloppyTurd.dir/FloppyTurd/SewerLevel.cpp.o -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SewerLevel.cpp
 
 CMakeFiles/FloppyTurd.dir/FloppyTurd/SewerLevel.cpp.i: cmake_force
@@ -677,7 +691,7 @@ CMakeFiles/FloppyTurd.dir/FloppyTurd/SewerLevel.cpp.s: cmake_force
 CMakeFiles/FloppyTurd.dir/FloppyTurd/SewerPipe.cpp.o: CMakeFiles/FloppyTurd.dir/flags.make
 CMakeFiles/FloppyTurd.dir/FloppyTurd/SewerPipe.cpp.o: /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SewerPipe.cpp
 CMakeFiles/FloppyTurd.dir/FloppyTurd/SewerPipe.cpp.o: CMakeFiles/FloppyTurd.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_44) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/SewerPipe.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_45) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/SewerPipe.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/FloppyTurd.dir/FloppyTurd/SewerPipe.cpp.o -MF CMakeFiles/FloppyTurd.dir/FloppyTurd/SewerPipe.cpp.o.d -o CMakeFiles/FloppyTurd.dir/FloppyTurd/SewerPipe.cpp.o -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SewerPipe.cpp
 
 CMakeFiles/FloppyTurd.dir/FloppyTurd/SewerPipe.cpp.i: cmake_force
@@ -691,7 +705,7 @@ CMakeFiles/FloppyTurd.dir/FloppyTurd/SewerPipe.cpp.s: cmake_force
 CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowLevel.cpp.o: CMakeFiles/FloppyTurd.dir/flags.make
 CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowLevel.cpp.o: /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowLevel.cpp
 CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowLevel.cpp.o: CMakeFiles/FloppyTurd.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_45) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowLevel.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_46) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowLevel.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowLevel.cpp.o -MF CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowLevel.cpp.o.d -o CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowLevel.cpp.o -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowLevel.cpp
 
 CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowLevel.cpp.i: cmake_force
@@ -705,7 +719,7 @@ CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowLevel.cpp.s: cmake_force
 CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowOverlay.cpp.o: CMakeFiles/FloppyTurd.dir/flags.make
 CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowOverlay.cpp.o: /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowOverlay.cpp
 CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowOverlay.cpp.o: CMakeFiles/FloppyTurd.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_46) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowOverlay.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_47) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowOverlay.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowOverlay.cpp.o -MF CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowOverlay.cpp.o.d -o CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowOverlay.cpp.o -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowOverlay.cpp
 
 CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowOverlay.cpp.i: cmake_force
@@ -719,7 +733,7 @@ CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowOverlay.cpp.s: cmake_force
 CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowballProjectile.cpp.o: CMakeFiles/FloppyTurd.dir/flags.make
 CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowballProjectile.cpp.o: /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowballProjectile.cpp
 CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowballProjectile.cpp.o: CMakeFiles/FloppyTurd.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_47) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowballProjectile.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_48) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowballProjectile.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowballProjectile.cpp.o -MF CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowballProjectile.cpp.o.d -o CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowballProjectile.cpp.o -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowballProjectile.cpp
 
 CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowballProjectile.cpp.i: cmake_force
@@ -733,7 +747,7 @@ CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowballProjectile.cpp.s: cmake_force
 CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowmanEnemy.cpp.o: CMakeFiles/FloppyTurd.dir/flags.make
 CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowmanEnemy.cpp.o: /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowmanEnemy.cpp
 CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowmanEnemy.cpp.o: CMakeFiles/FloppyTurd.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_48) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowmanEnemy.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_49) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowmanEnemy.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowmanEnemy.cpp.o -MF CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowmanEnemy.cpp.o.d -o CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowmanEnemy.cpp.o -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowmanEnemy.cpp
 
 CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowmanEnemy.cpp.i: cmake_force
@@ -747,7 +761,7 @@ CMakeFiles/FloppyTurd.dir/FloppyTurd/SnowmanEnemy.cpp.s: cmake_force
 CMakeFiles/FloppyTurd.dir/FloppyTurd/SoundEffect.cpp.o: CMakeFiles/FloppyTurd.dir/flags.make
 CMakeFiles/FloppyTurd.dir/FloppyTurd/SoundEffect.cpp.o: /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SoundEffect.cpp
 CMakeFiles/FloppyTurd.dir/FloppyTurd/SoundEffect.cpp.o: CMakeFiles/FloppyTurd.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_49) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/SoundEffect.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_50) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/SoundEffect.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/FloppyTurd.dir/FloppyTurd/SoundEffect.cpp.o -MF CMakeFiles/FloppyTurd.dir/FloppyTurd/SoundEffect.cpp.o.d -o CMakeFiles/FloppyTurd.dir/FloppyTurd/SoundEffect.cpp.o -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SoundEffect.cpp
 
 CMakeFiles/FloppyTurd.dir/FloppyTurd/SoundEffect.cpp.i: cmake_force
@@ -761,7 +775,7 @@ CMakeFiles/FloppyTurd.dir/FloppyTurd/SoundEffect.cpp.s: cmake_force
 CMakeFiles/FloppyTurd.dir/FloppyTurd/SoundManager.cpp.o: CMakeFiles/FloppyTurd.dir/flags.make
 CMakeFiles/FloppyTurd.dir/FloppyTurd/SoundManager.cpp.o: /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SoundManager.cpp
 CMakeFiles/FloppyTurd.dir/FloppyTurd/SoundManager.cpp.o: CMakeFiles/FloppyTurd.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_50) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/SoundManager.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_51) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/SoundManager.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/FloppyTurd.dir/FloppyTurd/SoundManager.cpp.o -MF CMakeFiles/FloppyTurd.dir/FloppyTurd/SoundManager.cpp.o.d -o CMakeFiles/FloppyTurd.dir/FloppyTurd/SoundManager.cpp.o -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SoundManager.cpp
 
 CMakeFiles/FloppyTurd.dir/FloppyTurd/SoundManager.cpp.i: cmake_force
@@ -775,7 +789,7 @@ CMakeFiles/FloppyTurd.dir/FloppyTurd/SoundManager.cpp.s: cmake_force
 CMakeFiles/FloppyTurd.dir/FloppyTurd/SpikeBall.cpp.o: CMakeFiles/FloppyTurd.dir/flags.make
 CMakeFiles/FloppyTurd.dir/FloppyTurd/SpikeBall.cpp.o: /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SpikeBall.cpp
 CMakeFiles/FloppyTurd.dir/FloppyTurd/SpikeBall.cpp.o: CMakeFiles/FloppyTurd.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_51) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/SpikeBall.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_52) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/SpikeBall.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/FloppyTurd.dir/FloppyTurd/SpikeBall.cpp.o -MF CMakeFiles/FloppyTurd.dir/FloppyTurd/SpikeBall.cpp.o.d -o CMakeFiles/FloppyTurd.dir/FloppyTurd/SpikeBall.cpp.o -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SpikeBall.cpp
 
 CMakeFiles/FloppyTurd.dir/FloppyTurd/SpikeBall.cpp.i: cmake_force
@@ -789,7 +803,7 @@ CMakeFiles/FloppyTurd.dir/FloppyTurd/SpikeBall.cpp.s: cmake_force
 CMakeFiles/FloppyTurd.dir/FloppyTurd/Sprite.cpp.o: CMakeFiles/FloppyTurd.dir/flags.make
 CMakeFiles/FloppyTurd.dir/FloppyTurd/Sprite.cpp.o: /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Sprite.cpp
 CMakeFiles/FloppyTurd.dir/FloppyTurd/Sprite.cpp.o: CMakeFiles/FloppyTurd.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_52) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/Sprite.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_53) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/Sprite.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/FloppyTurd.dir/FloppyTurd/Sprite.cpp.o -MF CMakeFiles/FloppyTurd.dir/FloppyTurd/Sprite.cpp.o.d -o CMakeFiles/FloppyTurd.dir/FloppyTurd/Sprite.cpp.o -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Sprite.cpp
 
 CMakeFiles/FloppyTurd.dir/FloppyTurd/Sprite.cpp.i: cmake_force
@@ -803,7 +817,7 @@ CMakeFiles/FloppyTurd.dir/FloppyTurd/Sprite.cpp.s: cmake_force
 CMakeFiles/FloppyTurd.dir/FloppyTurd/StaticLayer.cpp.o: CMakeFiles/FloppyTurd.dir/flags.make
 CMakeFiles/FloppyTurd.dir/FloppyTurd/StaticLayer.cpp.o: /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/StaticLayer.cpp
 CMakeFiles/FloppyTurd.dir/FloppyTurd/StaticLayer.cpp.o: CMakeFiles/FloppyTurd.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_53) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/StaticLayer.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_54) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/StaticLayer.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/FloppyTurd.dir/FloppyTurd/StaticLayer.cpp.o -MF CMakeFiles/FloppyTurd.dir/FloppyTurd/StaticLayer.cpp.o.d -o CMakeFiles/FloppyTurd.dir/FloppyTurd/StaticLayer.cpp.o -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/StaticLayer.cpp
 
 CMakeFiles/FloppyTurd.dir/FloppyTurd/StaticLayer.cpp.i: cmake_force
@@ -817,7 +831,7 @@ CMakeFiles/FloppyTurd.dir/FloppyTurd/StaticLayer.cpp.s: cmake_force
 CMakeFiles/FloppyTurd.dir/FloppyTurd/TextureAtlas.cpp.o: CMakeFiles/FloppyTurd.dir/flags.make
 CMakeFiles/FloppyTurd.dir/FloppyTurd/TextureAtlas.cpp.o: /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/TextureAtlas.cpp
 CMakeFiles/FloppyTurd.dir/FloppyTurd/TextureAtlas.cpp.o: CMakeFiles/FloppyTurd.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_54) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/TextureAtlas.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_55) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/TextureAtlas.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/FloppyTurd.dir/FloppyTurd/TextureAtlas.cpp.o -MF CMakeFiles/FloppyTurd.dir/FloppyTurd/TextureAtlas.cpp.o.d -o CMakeFiles/FloppyTurd.dir/FloppyTurd/TextureAtlas.cpp.o -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/TextureAtlas.cpp
 
 CMakeFiles/FloppyTurd.dir/FloppyTurd/TextureAtlas.cpp.i: cmake_force
@@ -831,7 +845,7 @@ CMakeFiles/FloppyTurd.dir/FloppyTurd/TextureAtlas.cpp.s: cmake_force
 CMakeFiles/FloppyTurd.dir/FloppyTurd/TextureCache.cpp.o: CMakeFiles/FloppyTurd.dir/flags.make
 CMakeFiles/FloppyTurd.dir/FloppyTurd/TextureCache.cpp.o: /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/TextureCache.cpp
 CMakeFiles/FloppyTurd.dir/FloppyTurd/TextureCache.cpp.o: CMakeFiles/FloppyTurd.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_55) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/TextureCache.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_56) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/TextureCache.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/FloppyTurd.dir/FloppyTurd/TextureCache.cpp.o -MF CMakeFiles/FloppyTurd.dir/FloppyTurd/TextureCache.cpp.o.d -o CMakeFiles/FloppyTurd.dir/FloppyTurd/TextureCache.cpp.o -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/TextureCache.cpp
 
 CMakeFiles/FloppyTurd.dir/FloppyTurd/TextureCache.cpp.i: cmake_force
@@ -845,7 +859,7 @@ CMakeFiles/FloppyTurd.dir/FloppyTurd/TextureCache.cpp.s: cmake_force
 CMakeFiles/FloppyTurd.dir/FloppyTurd/ToiletPair.cpp.o: CMakeFiles/FloppyTurd.dir/flags.make
 CMakeFiles/FloppyTurd.dir/FloppyTurd/ToiletPair.cpp.o: /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPair.cpp
 CMakeFiles/FloppyTurd.dir/FloppyTurd/ToiletPair.cpp.o: CMakeFiles/FloppyTurd.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_56) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/ToiletPair.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_57) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/ToiletPair.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/FloppyTurd.dir/FloppyTurd/ToiletPair.cpp.o -MF CMakeFiles/FloppyTurd.dir/FloppyTurd/ToiletPair.cpp.o.d -o CMakeFiles/FloppyTurd.dir/FloppyTurd/ToiletPair.cpp.o -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPair.cpp
 
 CMakeFiles/FloppyTurd.dir/FloppyTurd/ToiletPair.cpp.i: cmake_force
@@ -859,7 +873,7 @@ CMakeFiles/FloppyTurd.dir/FloppyTurd/ToiletPair.cpp.s: cmake_force
 CMakeFiles/FloppyTurd.dir/FloppyTurd/ToiletPaper.cpp.o: CMakeFiles/FloppyTurd.dir/flags.make
 CMakeFiles/FloppyTurd.dir/FloppyTurd/ToiletPaper.cpp.o: /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPaper.cpp
 CMakeFiles/FloppyTurd.dir/FloppyTurd/ToiletPaper.cpp.o: CMakeFiles/FloppyTurd.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_57) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/ToiletPaper.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_58) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/ToiletPaper.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/FloppyTurd.dir/FloppyTurd/ToiletPaper.cpp.o -MF CMakeFiles/FloppyTurd.dir/FloppyTurd/ToiletPaper.cpp.o.d -o CMakeFiles/FloppyTurd.dir/FloppyTurd/ToiletPaper.cpp.o -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPaper.cpp
 
 CMakeFiles/FloppyTurd.dir/FloppyTurd/ToiletPaper.cpp.i: cmake_force
@@ -873,7 +887,7 @@ CMakeFiles/FloppyTurd.dir/FloppyTurd/ToiletPaper.cpp.s: cmake_force
 CMakeFiles/FloppyTurd.dir/FloppyTurd/ToiletPaperProjectile.cpp.o: CMakeFiles/FloppyTurd.dir/flags.make
 CMakeFiles/FloppyTurd.dir/FloppyTurd/ToiletPaperProjectile.cpp.o: /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPaperProjectile.cpp
 CMakeFiles/FloppyTurd.dir/FloppyTurd/ToiletPaperProjectile.cpp.o: CMakeFiles/FloppyTurd.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_58) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/ToiletPaperProjectile.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_59) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/ToiletPaperProjectile.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/FloppyTurd.dir/FloppyTurd/ToiletPaperProjectile.cpp.o -MF CMakeFiles/FloppyTurd.dir/FloppyTurd/ToiletPaperProjectile.cpp.o.d -o CMakeFiles/FloppyTurd.dir/FloppyTurd/ToiletPaperProjectile.cpp.o -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPaperProjectile.cpp
 
 CMakeFiles/FloppyTurd.dir/FloppyTurd/ToiletPaperProjectile.cpp.i: cmake_force
@@ -887,7 +901,7 @@ CMakeFiles/FloppyTurd.dir/FloppyTurd/ToiletPaperProjectile.cpp.s: cmake_force
 CMakeFiles/FloppyTurd.dir/FloppyTurd/TouchControls.cpp.o: CMakeFiles/FloppyTurd.dir/flags.make
 CMakeFiles/FloppyTurd.dir/FloppyTurd/TouchControls.cpp.o: /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/TouchControls.cpp
 CMakeFiles/FloppyTurd.dir/FloppyTurd/TouchControls.cpp.o: CMakeFiles/FloppyTurd.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_59) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/TouchControls.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_60) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/TouchControls.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/FloppyTurd.dir/FloppyTurd/TouchControls.cpp.o -MF CMakeFiles/FloppyTurd.dir/FloppyTurd/TouchControls.cpp.o.d -o CMakeFiles/FloppyTurd.dir/FloppyTurd/TouchControls.cpp.o -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/TouchControls.cpp
 
 CMakeFiles/FloppyTurd.dir/FloppyTurd/TouchControls.cpp.i: cmake_force
@@ -901,7 +915,7 @@ CMakeFiles/FloppyTurd.dir/FloppyTurd/TouchControls.cpp.s: cmake_force
 CMakeFiles/FloppyTurd.dir/FloppyTurd/Window.cpp.o: CMakeFiles/FloppyTurd.dir/flags.make
 CMakeFiles/FloppyTurd.dir/FloppyTurd/Window.cpp.o: /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Window.cpp
 CMakeFiles/FloppyTurd.dir/FloppyTurd/Window.cpp.o: CMakeFiles/FloppyTurd.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_60) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/Window.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_61) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/Window.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/FloppyTurd.dir/FloppyTurd/Window.cpp.o -MF CMakeFiles/FloppyTurd.dir/FloppyTurd/Window.cpp.o.d -o CMakeFiles/FloppyTurd.dir/FloppyTurd/Window.cpp.o -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Window.cpp
 
 CMakeFiles/FloppyTurd.dir/FloppyTurd/Window.cpp.i: cmake_force
@@ -915,7 +929,7 @@ CMakeFiles/FloppyTurd.dir/FloppyTurd/Window.cpp.s: cmake_force
 CMakeFiles/FloppyTurd.dir/FloppyTurd/main.cpp.o: CMakeFiles/FloppyTurd.dir/flags.make
 CMakeFiles/FloppyTurd.dir/FloppyTurd/main.cpp.o: /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp
 CMakeFiles/FloppyTurd.dir/FloppyTurd/main.cpp.o: CMakeFiles/FloppyTurd.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_61) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/main.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_62) "Building CXX object CMakeFiles/FloppyTurd.dir/FloppyTurd/main.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/FloppyTurd.dir/FloppyTurd/main.cpp.o -MF CMakeFiles/FloppyTurd.dir/FloppyTurd/main.cpp.o.d -o CMakeFiles/FloppyTurd.dir/FloppyTurd/main.cpp.o -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp
 
 CMakeFiles/FloppyTurd.dir/FloppyTurd/main.cpp.i: cmake_force
@@ -969,6 +983,7 @@ FloppyTurd_OBJECTS = \
 "CMakeFiles/FloppyTurd.dir/FloppyTurd/Projectile.cpp.o" \
 "CMakeFiles/FloppyTurd.dir/FloppyTurd/RatCopter.cpp.o" \
 "CMakeFiles/FloppyTurd.dir/FloppyTurd/RatKing.cpp.o" \
+"CMakeFiles/FloppyTurd.dir/FloppyTurd/RaylibCompat.cpp.o" \
 "CMakeFiles/FloppyTurd.dir/FloppyTurd/ResourceManager.cpp.o" \
 "CMakeFiles/FloppyTurd.dir/FloppyTurd/SewerLevel.cpp.o" \
 "CMakeFiles/FloppyTurd.dir/FloppyTurd/SewerPipe.cpp.o" \
@@ -1034,6 +1049,7 @@ FloppyTurd: CMakeFiles/FloppyTurd.dir/FloppyTurd/PoopHeart.cpp.o
 FloppyTurd: CMakeFiles/FloppyTurd.dir/FloppyTurd/Projectile.cpp.o
 FloppyTurd: CMakeFiles/FloppyTurd.dir/FloppyTurd/RatCopter.cpp.o
 FloppyTurd: CMakeFiles/FloppyTurd.dir/FloppyTurd/RatKing.cpp.o
+FloppyTurd: CMakeFiles/FloppyTurd.dir/FloppyTurd/RaylibCompat.cpp.o
 FloppyTurd: CMakeFiles/FloppyTurd.dir/FloppyTurd/ResourceManager.cpp.o
 FloppyTurd: CMakeFiles/FloppyTurd.dir/FloppyTurd/SewerLevel.cpp.o
 FloppyTurd: CMakeFiles/FloppyTurd.dir/FloppyTurd/SewerPipe.cpp.o
@@ -1057,7 +1073,7 @@ FloppyTurd: CMakeFiles/FloppyTurd.dir/FloppyTurd/main.cpp.o
 FloppyTurd: CMakeFiles/FloppyTurd.dir/build.make
 FloppyTurd: _deps/raylib-build/raylib/libraylib.a
 FloppyTurd: CMakeFiles/FloppyTurd.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_62) "Linking CXX executable FloppyTurd"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/CMakeFiles --progress-num=$(CMAKE_PROGRESS_63) "Linking CXX executable FloppyTurd"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/FloppyTurd.dir/link.txt --verbose=$(VERBOSE)
 	/opt/homebrew/bin/cmake -E copy_directory /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/resources /Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/resources
 

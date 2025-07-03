@@ -1,6 +1,6 @@
 // AudioClip.h
 #pragma once
-#include "raylib.h"
+#include "RaylibCompat.h"
 #include <string>
 #include "AudioManager.h"
 
@@ -9,26 +9,53 @@ class AudioClip
 public:
     AudioClip(const std::string& filePath) {
         music = LoadMusicStream(filePath.c_str());
-        if (!music.stream.buffer) {
-            TraceLog(LOG_WARNING, "Failed to load music stream: %s", filePath.c_str());
-            music.stream.buffer = nullptr; // Explicitly set to nullptr for safety
+        if (!music
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+            .music
+#else
+            .audioData
+#endif
+        ) {
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+            music.music = nullptr; // Explicitly set to nullptr for safety
+#else
+            music.audioData = nullptr; // Explicitly set to nullptr for safety
+#endif
         }
         AudioManager::GetInstance().RegisterClip(this);
     }
 
     virtual ~AudioClip() {
         AudioManager::GetInstance().UnregisterClip(this);
-        if (music.stream.buffer) { // Only unload if valid
+        if (music
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+            .music
+#else
+            .audioData
+#endif
+        ) { // Only unload if valid
             UnloadMusicStream(music);
         }
     }
 
     void Play() {
-        if (music.stream.buffer) PlayMusicStream(music);
+        if (music
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+            .music
+#else
+            .audioData
+#endif
+        ) PlayMusicStream(music);
     }
 
     void Stop() {
-        if (music.stream.buffer && IsMusicStreamPlaying(music)) { // Add playing check
+        if (music
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+            .music
+#else
+            .audioData
+#endif
+        && IsMusicStreamPlaying(music)) { // Add playing check
             TraceLog(LOG_INFO, "Stopping music stream");
             StopMusicStream(music); // Line 31
         }
@@ -38,21 +65,45 @@ public:
     }
 
     void Update() {
-        if (music.stream.buffer) UpdateMusicStream(music);
+        if (music
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+            .music
+#else
+            .audioData
+#endif
+        ) UpdateMusicStream(music);
     }
 
     bool IsPlaying() const {
-        return music.stream.buffer && IsMusicStreamPlaying(music);
+        return music
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+            .music
+#else
+            .audioData
+#endif
+        && IsMusicStreamPlaying(music);
     }
 
     // NEW: Set the music volume (expected range 0.0 to 1.0)
     void SetVolume(float vol) {
-        if (music.stream.buffer) SetMusicVolume(music, vol);
+        if (music
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+            .music
+#else
+            .audioData
+#endif
+        ) SetMusicVolume(music, vol);
     }
 
     // Corrected: Set looping state
     void SetLooping(bool loop) {
-        if (music.stream.buffer) music.looping = loop;
+        if (music
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+            .music
+#else
+            .audioData
+#endif
+        ) music.looping = loop;
     }
 
     Music music;

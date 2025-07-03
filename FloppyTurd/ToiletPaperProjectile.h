@@ -1,6 +1,6 @@
 #pragma once
 #include "Obstacle.h"
-#include "raylib.h"
+#include "RaylibCompat.h"
 #include "Sprite.h"
 
 class ToiletPaperProjectile : public Obstacle

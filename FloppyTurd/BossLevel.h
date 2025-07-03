@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "Level.h"
-#include "raylib.h"
+#include "RaylibCompat.h"
 #include "CameraSystem.h"
 #include "Boss.h"
 #include "Explosion.h"

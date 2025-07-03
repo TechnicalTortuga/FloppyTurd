@@ -23,7 +23,7 @@ void TextureAtlas::Initialize() {
 void TextureAtlas::Shutdown() {
     // Unload all atlas textures
     for (auto& [category, texture] : atlasTextures) {
-        if (texture.id > 0) {
+        if (texture.texture != nullptr) {
             UnloadTexture(texture);
         }
     }
@@ -50,7 +50,7 @@ bool TextureAtlas::BuildAtlas(AtlasCategory category, const std::vector<std::str
         std::string fullPath = PlatformLayer::GetInstance().GetResourcePath(path);
         Image img = LoadImage(fullPath.c_str());
         
-        if (img.data != nullptr) {
+        if (img.surface != nullptr) {
             images.push_back(img);
             validPaths.push_back(path);
         } else {
@@ -101,7 +101,7 @@ bool TextureAtlas::BuildAtlas(AtlasCategory category, const std::vector<std::str
         UnloadImage(img);
     }
     
-    if (atlasTexture.id == 0) {
+    if (atlasTexture.texture == nullptr) {
         TraceLog(LOG_ERROR, "TextureAtlas: Failed to create texture for category %s", 
                  categoryNames[category].c_str());
         return false;

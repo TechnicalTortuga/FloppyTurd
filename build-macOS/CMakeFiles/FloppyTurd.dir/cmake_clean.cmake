@@ -81,6 +81,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/FloppyTurd.dir/FloppyTurd/RatCopter.cpp.o.d"
   "CMakeFiles/FloppyTurd.dir/FloppyTurd/RatKing.cpp.o"
   "CMakeFiles/FloppyTurd.dir/FloppyTurd/RatKing.cpp.o.d"
+  "CMakeFiles/FloppyTurd.dir/FloppyTurd/RaylibCompat.cpp.o"
+  "CMakeFiles/FloppyTurd.dir/FloppyTurd/RaylibCompat.cpp.o.d"
   "CMakeFiles/FloppyTurd.dir/FloppyTurd/ResourceManager.cpp.o"
   "CMakeFiles/FloppyTurd.dir/FloppyTurd/ResourceManager.cpp.o.d"
   "CMakeFiles/FloppyTurd.dir/FloppyTurd/SewerLevel.cpp.o"

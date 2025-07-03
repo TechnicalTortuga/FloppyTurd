@@ -1,7 +1,7 @@
 #ifndef AIGUI_H
 #define AIGUI_H
 
-#include "raylib.h" 
+#include "RaylibCompat.h" 
 #include "PlatformLayer.h"  // Add platform layer for input abstraction
 
 #ifdef AIGUI_STATIC
@@ -72,8 +72,7 @@ void AIGUI_Container(Rectangle container, Vector2* scrollOffset, RenderFunc chil
 
 #ifdef AIGUI_IMPLEMENTATION
 
-#include "raylib.h"
-#include "raymath.h"
+#include "RaylibCompat.h"
 #include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -239,7 +238,13 @@ AIGUI_DEF bool AIGUI_ButtonRounded(const char* label, float x, float y, float wi
 
     // Step 4: Draw the text
     if (label && label[0] != '\0') {
-        if (g_AIGUI.defaultFont.baseSize > 0 && g_AIGUI.defaultFont.glyphCount > 0 && g_AIGUI.defaultFont.texture.id != 0) {
+        if (g_AIGUI.defaultFont.baseSize > 0 && g_AIGUI.defaultFont.glyphCount > 0 && 
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+            g_AIGUI.defaultFont.texture.texture != nullptr
+#else
+            g_AIGUI.defaultFont.texture.id != 0
+#endif
+        ) {
             Vector2 size = MeasureTextEx(g_AIGUI.defaultFont, label, (float)fontSize, 1.0f);
             float textX = scaledX + (scaledW - size.x) / 2.0f;
             float textY = scaledY + (scaledH - size.y) / 2.0f;

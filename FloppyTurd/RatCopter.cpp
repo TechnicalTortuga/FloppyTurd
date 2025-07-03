@@ -1,7 +1,7 @@
 #include "RatCopter.h"
 #include "ResourceCompat.h"
 #include <iostream>
-#include <raymath.h>
+
 #include "LevelManager.h"
 
 RatCopter::RatCopter(Vector2 spawnPos, float panspeed) {

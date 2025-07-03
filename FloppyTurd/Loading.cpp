@@ -7,7 +7,13 @@ Loading::Loading(Game* game)
 {
 	// Load the poophat texture via TextureCache
 	poophat = Resources::RM().GetTexture("poop_hat");
-	if (poophat.id == 0) {
+	if (
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+		poophat.texture == nullptr
+#else
+		poophat.id == 0
+#endif
+	) {
 		TraceLog(LOG_WARNING, "Failed to load PoopHat texture from cache, using fallback path");
 		poophat = TextureCache::Get("resources/hats/poophat.png"); // Fallback path
 	}

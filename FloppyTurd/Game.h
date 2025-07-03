@@ -1,6 +1,6 @@
 #pragma once
 #include <iostream>
-#include <raylib.h>
+#include "RaylibCompat.h"
 #include <iostream>
 
 #include "Window.h"

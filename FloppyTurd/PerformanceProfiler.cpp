@@ -3,7 +3,8 @@
 #include <algorithm>
 #include <numeric>
 #include <unordered_set>
-#include "raylib.h"
+#include "RaylibCompat.h"
+#include <cstdint>
 
 // DrawCallTracker implementation
 namespace DrawCallTracker {
@@ -13,7 +14,11 @@ namespace DrawCallTracker {
     
     void TrackDrawTexture(Texture2D texture, int posX, int posY, Color tint) {
         frameDrawCalls++;
-        activeTextureIDs.insert(texture.id);
+        #if defined(__APPLE__) && TARGET_OS_IPHONE
+            activeTextureIDs.insert(reinterpret_cast<uintptr_t>(texture.texture));
+        #else
+            activeTextureIDs.insert(texture.id);
+        #endif
         
         // Call the actual Raylib function
         ::DrawTexture(texture, posX, posY, tint);
@@ -21,7 +26,11 @@ namespace DrawCallTracker {
     
     void TrackDrawTexturePro(Texture2D texture, Rectangle source, Rectangle dest, Vector2 origin, float rotation, Color tint) {
         frameDrawCalls++;
-        activeTextureIDs.insert(texture.id);
+        #if defined(__APPLE__) && TARGET_OS_IPHONE
+            activeTextureIDs.insert(reinterpret_cast<uintptr_t>(texture.texture));
+        #else
+            activeTextureIDs.insert(texture.id);
+        #endif
         
         // Call the actual Raylib function
         ::DrawTexturePro(texture, source, dest, origin, rotation, tint);
@@ -29,7 +38,11 @@ namespace DrawCallTracker {
     
     void TrackDrawTextureRec(Texture2D texture, Rectangle source, Vector2 position, Color tint) {
         frameDrawCalls++;
-        activeTextureIDs.insert(texture.id);
+        #if defined(__APPLE__) && TARGET_OS_IPHONE
+            activeTextureIDs.insert(reinterpret_cast<uintptr_t>(texture.texture));
+        #else
+            activeTextureIDs.insert(texture.id);
+        #endif
         
         // Call the actual Raylib function
         ::DrawTextureRec(texture, source, position, tint);
@@ -37,7 +50,11 @@ namespace DrawCallTracker {
     
     void TrackDrawTextureV(Texture2D texture, Vector2 position, Color tint) {
         frameDrawCalls++;
-        activeTextureIDs.insert(texture.id);
+        #if defined(__APPLE__) && TARGET_OS_IPHONE
+            activeTextureIDs.insert(reinterpret_cast<uintptr_t>(texture.texture));
+        #else
+            activeTextureIDs.insert(texture.id);
+        #endif
         
         // Call the actual Raylib function
         ::DrawTextureV(texture, position, tint);
@@ -45,7 +62,11 @@ namespace DrawCallTracker {
     
     void TrackDrawTextureEx(Texture2D texture, Vector2 position, float rotation, float scale, Color tint) {
         frameDrawCalls++;
-        activeTextureIDs.insert(texture.id);
+        #if defined(__APPLE__) && TARGET_OS_IPHONE
+            activeTextureIDs.insert(reinterpret_cast<uintptr_t>(texture.texture));
+        #else
+            activeTextureIDs.insert(texture.id);
+        #endif
         
         // Call the actual Raylib function
         ::DrawTextureEx(texture, position, rotation, scale, tint);

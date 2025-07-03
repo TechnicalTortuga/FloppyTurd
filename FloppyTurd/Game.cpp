@@ -35,20 +35,24 @@ Game::Game()
 	whackyJoe = LoadFont(fontPath.c_str());
 
 	// Validate the font
-	if (whackyJoe.baseSize <= 0 || whackyJoe.glyphCount <= 0 || whackyJoe.texture.id == 0) {
-		printf("Error: Failed to load font '%s'\n", fontPath.c_str());
-		printf("Falling back to default font.\n");
-		whackyJoe = GetFontDefault(); // Fallback to default font
-	}
-	else {
-		printf("Font 'whackyJoe' loaded successfully: baseSize=%d, glyphCount=%d, textureID=%u\n",
-			whackyJoe.baseSize, whackyJoe.glyphCount, whackyJoe.texture.id);
-		// Use appropriate filtering for platform
-#ifdef PLATFORM_MOBILE
-		SetTextureFilter(whackyJoe.texture, TEXTURE_FILTER_BILINEAR);  // Better on mobile
+	if (whackyJoe.baseSize <= 0 || whackyJoe.glyphCount <= 0 || 
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+		whackyJoe.texture.texture == nullptr
 #else
-		SetTextureFilter(whackyJoe.texture, TEXTURE_FILTER_POINT);      // Pixel-perfect on desktop
+		whackyJoe.texture.id == 0
 #endif
+	) {
+		printf("Failed to load Whacky Joe font, falling back to default\n");
+		whackyJoe = GetFontDefault();
+	} else {
+		printf("Whacky Joe font loaded successfully: baseSize=%d, glyphCount=%d, texture=%p\n",
+			whackyJoe.baseSize, whackyJoe.glyphCount, 
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+			(void*)whackyJoe.texture.texture
+#else
+			(void*)whackyJoe.texture.id
+#endif
+		);
 	}
 
 	// Initialize AIGUI with mobile awareness
@@ -120,11 +124,29 @@ Game::~Game()
 	AIGUI_Shutdown();
 
 	// Unload the custom font if it was loaded (not the default font)
-	if (g_AIGUI.defaultFont.baseSize > 0 && g_AIGUI.defaultFont.glyphCount > 0 && g_AIGUI.defaultFont.texture.id != 0) {
-		// Check if it's not the default font (default font is managed by raylib)
+	if (g_AIGUI.defaultFont.baseSize > 0 && g_AIGUI.defaultFont.glyphCount > 0 && 
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+		g_AIGUI.defaultFont.texture.texture != nullptr
+#else
+		g_AIGUI.defaultFont.texture.id != 0
+#endif
+	) {
+		printf("AIGUI default font is valid, checking if it's different from system default\n");
 		Font defaultFont = GetFontDefault();
-		if (g_AIGUI.defaultFont.texture.id != defaultFont.texture.id) {
-			printf("Unloading custom font (textureID=%u)\n", g_AIGUI.defaultFont.texture.id);
+		if (
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+			g_AIGUI.defaultFont.texture.texture != defaultFont.texture.texture
+#else
+			g_AIGUI.defaultFont.texture.id != defaultFont.texture.id
+#endif
+		) {
+			printf("Unloading custom font (textureID=%p)\n", 
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+				g_AIGUI.defaultFont.texture.texture
+#else
+				(void*)g_AIGUI.defaultFont.texture.id
+#endif
+			);
 			UnloadFont(g_AIGUI.defaultFont);
 		}
 	}
@@ -154,7 +176,13 @@ void Game::InitClasses()
 	// Load and set the window icon with platform-aware path
 	std::string iconPath = PlatformLayer::GetInstance().GetResourcePath("poophat.ico");
 	Image icon = LoadImage(iconPath.c_str());
-	if (icon.data) {
+	if (
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+		icon.surface
+#else
+		icon.data
+#endif
+	) {
 		SetWindowIcon(icon);
 		UnloadImage(icon);
 		printf("Poophat icon set successfully from %s\n", iconPath.c_str());

@@ -1,0 +1,196 @@
+
+---
+events:
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/opt/homebrew/share/cmake/Modules/CMakeDetermineSystem.cmake:200 (message)"
+      - "CMakeLists.txt:3 (project)"
+    message: |
+      The target system is: iOS - 18.2 - aarch64
+      The host system is: Darwin - 24.5.0 - arm64
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/opt/homebrew/share/cmake/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/opt/homebrew/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/opt/homebrew/share/cmake/Modules/CMakeDetermineOBJCCompiler.cmake:119 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:3 (project)"
+    message: |
+      Compiling the OBJC compiler identification source file "CMakeOBJCCompilerId.m" failed.
+      Compiler: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang 
+      Build flags: -target;arm64-apple-ios13.0;-fvisibility=hidden;-fvisibility-inlines-hidden;-fobjc-arc;-fobjc-abi-version=2;-DOBJC_OLD_DISPATCH_PROTOTYPES=0;-target;arm64-apple-ios13.0;-fvisibility=hidden;-fvisibility-inlines-hidden;-fobjc-arc;-fobjc-abi-version=2;-DOBJC_OLD_DISPATCH_PROTOTYPES=0
+      Id flags:  
+      
+      The output was:
+      1
+      ld: library 'objc' not found
+      clang: error: linker command failed with exit code 1 (use -v to see invocation)
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/opt/homebrew/share/cmake/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/opt/homebrew/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/opt/homebrew/share/cmake/Modules/CMakeDetermineOBJCCompiler.cmake:119 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:3 (project)"
+    message: |
+      Compiling the OBJC compiler identification source file "CMakeOBJCCompilerId.m" succeeded.
+      Compiler: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang 
+      Build flags: -target;arm64-apple-ios13.0;-fvisibility=hidden;-fvisibility-inlines-hidden;-fobjc-arc;-fobjc-abi-version=2;-DOBJC_OLD_DISPATCH_PROTOTYPES=0;-target;arm64-apple-ios13.0;-fvisibility=hidden;-fvisibility-inlines-hidden;-fobjc-arc;-fobjc-abi-version=2;-DOBJC_OLD_DISPATCH_PROTOTYPES=0
+      Id flags: -c 
+      
+      The output was:
+      0
+      
+      
+      Compilation of the OBJC compiler identification source "CMakeOBJCCompilerId.m" produced "CMakeOBJCCompilerId.o"
+      
+      The OBJC compiler identification is AppleClang, found in:
+        /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2-build/CMakeFiles/CheckOBJC/CMakeFiles/4.0.0/CompilerIdOBJC/CMakeOBJCCompilerId.o
+      
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/opt/homebrew/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:83 (try_compile)"
+      - "/opt/homebrew/share/cmake/Modules/CMakeTestOBJCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:3 (project)"
+    checks:
+      - "Detecting OBJC compiler ABI info"
+    directories:
+      source: "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2-build/CMakeFiles/CheckOBJC/CMakeFiles/CMakeScratch/TryCompile-2OU1tB"
+      binary: "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2-build/CMakeFiles/CheckOBJC/CMakeFiles/CMakeScratch/TryCompile-2OU1tB"
+    cmakeVariables:
+      BUILD_LIBTOOL: "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/libtool"
+      CMAKE_ASM_COMPILER: "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang"
+      CMAKE_ASM_FLAGS: " -target arm64-apple-ios13.0    -fvisibility=hidden -fvisibility-inlines-hidden  -target arm64-apple-ios13.0    -fvisibility=hidden -fvisibility-inlines-hidden  -x assembler-with-cpp -arch arm64 -target arm64-apple-ios13.0"
+      CMAKE_CXX_COMPILER: "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang++"
+      CMAKE_CXX_COMPILER_TARGET: "arm64-apple-ios13.0"
+      CMAKE_CXX_FLAGS: " -target arm64-apple-ios13.0    -fvisibility=hidden -fvisibility-inlines-hidden  -target arm64-apple-ios13.0    -fvisibility=hidden -fvisibility-inlines-hidden "
+      CMAKE_CXX_FLAGS_DEBUG: "-O0 -g -O0 -g "
+      CMAKE_CXX_FLAGS_MINSIZEREL: "-DNDEBUG -Os -DNDEBUG -Os "
+      CMAKE_CXX_FLAGS_RELEASE: "-DNDEBUG -O3 -DNDEBUG -O3 "
+      CMAKE_CXX_FLAGS_RELWITHDEBINFO: "-DNDEBUG -O2 -g -DNDEBUG -O2 -g "
+      CMAKE_CXX_LINK_FLAGS: "-Wl,-search_paths_first -Wl,-headerpad_max_install_names"
+      CMAKE_C_COMPILER: "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang"
+      CMAKE_C_COMPILER_TARGET: "arm64-apple-ios13.0"
+      CMAKE_C_FLAGS: " -target arm64-apple-ios13.0    -fvisibility=hidden -fvisibility-inlines-hidden  -target arm64-apple-ios13.0    -fvisibility=hidden -fvisibility-inlines-hidden "
+      CMAKE_C_LINK_FLAGS: "-Wl,-search_paths_first -Wl,-headerpad_max_install_names"
+      CMAKE_DEVELOPER_ROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_INSTALL_NAME_TOOL: "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/install_name_tool"
+      CMAKE_MODULE_PATH: "/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2-src/cmake"
+      CMAKE_OBJCXX_FLAGS: " -target arm64-apple-ios13.0   -fvisibility=hidden -fvisibility-inlines-hidden -fobjc-arc -fobjc-abi-version=2 -DOBJC_OLD_DISPATCH_PROTOTYPES=0  -target arm64-apple-ios13.0   -fvisibility=hidden -fvisibility-inlines-hidden -fobjc-arc -fobjc-abi-version=2 -DOBJC_OLD_DISPATCH_PROTOTYPES=0 "
+      CMAKE_OBJCXX_LINK_FLAGS: "-Wl,-search_paths_first -Wl,-headerpad_max_install_names"
+      CMAKE_OBJC_FLAGS: " -target arm64-apple-ios13.0   -fvisibility=hidden -fvisibility-inlines-hidden -fobjc-arc -fobjc-abi-version=2 -DOBJC_OLD_DISPATCH_PROTOTYPES=0  -target arm64-apple-ios13.0   -fvisibility=hidden -fvisibility-inlines-hidden -fobjc-arc -fobjc-abi-version=2 -DOBJC_OLD_DISPATCH_PROTOTYPES=0 "
+      CMAKE_OBJC_FLAGS_DEBUG: "-O0 -g -O0 -g "
+      CMAKE_OBJC_LINK_FLAGS: "-Wl,-search_paths_first -Wl,-headerpad_max_install_names"
+      CMAKE_OSX_ARCHITECTURES: "arm64"
+      CMAKE_OSX_DEPLOYMENT_TARGET: "13.0"
+      CMAKE_OSX_SYSROOT: "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.2.sdk"
+      CMAKE_OSX_SYSROOT_INT: "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.2.sdk"
+      DEPLOYMENT_TARGET: "13.0"
+      ENABLE_ARC: "ON"
+      ENABLE_BITCODE: "OFF"
+      NAMED_LANGUAGE_SUPPORT: "ON"
+      PLATFORM: "OS64"
+      SDK_VERSION: "18.2"
+      XCODE_VERSION_INT: "16.2"
+    buildResult:
+      variable: "CMAKE_OBJC_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: '/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2-build/CMakeFiles/CheckOBJC/CMakeFiles/CMakeScratch/TryCompile-2OU1tB'
+        
+        Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_f60c2/fast
+        /Applications/Xcode.app/Contents/Developer/usr/bin/make  -f CMakeFiles/cmTC_f60c2.dir/build.make CMakeFiles/cmTC_f60c2.dir/build
+        Building OBJC object CMakeFiles/cmTC_f60c2.dir/CMakeOBJCCompilerABI.m.o
+        /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang   -x objective-c -target arm64-apple-ios13.0   -fvisibility=hidden -fvisibility-inlines-hidden -fobjc-arc -fobjc-abi-version=2 -DOBJC_OLD_DISPATCH_PROTOTYPES=0  -target arm64-apple-ios13.0   -fvisibility=hidden -fvisibility-inlines-hidden -fobjc-arc -fobjc-abi-version=2 -DOBJC_OLD_DISPATCH_PROTOTYPES=0   -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.2.sdk -miphoneos-version-min=13.0 -fvisibility=hidden   -v -Wl,-v -MD -MT CMakeFiles/cmTC_f60c2.dir/CMakeOBJCCompilerABI.m.o -MF CMakeFiles/cmTC_f60c2.dir/CMakeOBJCCompilerABI.m.o.d -o CMakeFiles/cmTC_f60c2.dir/CMakeOBJCCompilerABI.m.o -c /opt/homebrew/share/cmake/Modules/CMakeOBJCCompilerABI.m
+        Apple clang version 16.0.0 (clang-1600.0.26.6)
+        Target: arm64-apple-ios13.0
+        Thread model: posix
+        InstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin
+        clang: warning: -Wl,-v: 'linker' input unused [-Wunused-command-line-argument]
+         "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang" -cc1 -triple arm64-apple-ios13.0.0 -Wundef-prefix=TARGET_OS_ -Wdeprecated-objc-isa-usage -Werror=deprecated-objc-isa-usage -Werror=implicit-function-declaration -emit-obj -mrelax-all -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeOBJCCompilerABI.m -mrelocation-model pic -pic-level 2 -mframe-pointer=non-leaf -fno-strict-return -ffp-contract=on -fno-rounding-math -funwind-tables=1 -fobjc-msgsend-selector-stubs -target-sdk-version=18.2 -fvisibility-inlines-hidden-static-local-var -fno-modulemap-allow-subdirectory-search -target-cpu apple-a7 -target-feature +v8a -target-feature +aes -target-feature +fp-armv8 -target-feature +sha2 -target-feature +neon -target-feature +zcm -target-feature +zcz -target-abi darwinpcs -debugger-tuning=lldb -target-linker-version 1115.7.3 -v -fcoverage-compilation-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2-build/CMakeFiles/CheckOBJC/CMakeFiles/CMakeScratch/TryCompile-2OU1tB -resource-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16 -dependency-file CMakeFiles/cmTC_f60c2.dir/CMakeOBJCCompilerABI.m.o.d -skip-unused-modulemap-deps -MT CMakeFiles/cmTC_f60c2.dir/CMakeOBJCCompilerABI.m.o -sys-header-deps -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.2.sdk -D OBJC_OLD_DISPATCH_PROTOTYPES=0 -D OBJC_OLD_DISPATCH_PROTOTYPES=0 -internal-isystem /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.2.sdk/usr/local/include -internal-isystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/include -internal-externc-isystem /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.2.sdk/usr/include -internal-externc-isystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include -Wno-reorder-init-list -Wno-implicit-int-float-conversion -Wno-c99-designator -Wno-final-dtor-non-final-class -Wno-extra-semi-stmt -Wno-misleading-indentation -Wno-quoted-include-in-framework-header -Wno-implicit-fallthrough -Wno-enum-enum-conversion -Wno-enum-float-conversion -Wno-elaborated-enum-base -Wno-reserved-identifier -Wno-gnu-folding-constant -fdebug-compilation-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2-build/CMakeFiles/CheckOBJC/CMakeFiles/CMakeScratch/TryCompile-2OU1tB -ferror-limit 19 -fvisibility=hidden -fvisibility-inlines-hidden -stack-protector 1 -fstack-check -mdarwin-stkchk-strong-link -fblocks -fencode-extended-block-signature -fregister-global-dtors-with-atexit -fgnuc-version=4.2.1 -fobjc-runtime=ios-13.0.0 -fobjc-arc -fobjc-exceptions -fexceptions -fmax-type-align=16 -fcommon -clang-vendor-feature=+disableNonDependentMemberExprInCurrentInstantiation -fno-odr-hash-protocols -clang-vendor-feature=+enableAggressiveVLAFolding -clang-vendor-feature=+revert09abecef7bbf -clang-vendor-feature=+thisNoAlignAttr -clang-vendor-feature=+thisNoNullAttr -clang-vendor-feature=+disableAtImportPrivateFrameworkInImplementationError -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_f60c2.dir/CMakeOBJCCompilerABI.m.o -x objective-c /opt/homebrew/share/cmake/Modules/CMakeOBJCCompilerABI.m
+        clang -cc1 version 16.0.0 (clang-1600.0.26.6) default target arm64-apple-darwin24.5.0
+        ignoring nonexistent directory "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.2.sdk/usr/local/include"
+        ignoring nonexistent directory "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.2.sdk/Library/Frameworks"
+        #include "..." search starts here:
+        #include <...> search starts here:
+         /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/include
+         /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.2.sdk/usr/include
+         /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include
+         /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.2.sdk/System/Library/Frameworks (framework directory)
+        End of search list.
+        Linking OBJC static library libcmTC_f60c2.a
+        /opt/homebrew/bin/cmake -P CMakeFiles/cmTC_f60c2.dir/cmake_clean_target.cmake
+        /opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_f60c2.dir/link.txt --verbose=1
+        /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/libtool -static -o libcmTC_f60c2.a CMakeFiles/cmTC_f60c2.dir/CMakeOBJCCompilerABI.m.o
+        
+      exitCode: 0
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/opt/homebrew/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:191 (message)"
+      - "/opt/homebrew/share/cmake/Modules/CMakeTestOBJCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:3 (project)"
+    message: |
+      Parsed OBJC implicit include dir info: rv=done
+        found start of include info
+        found start of implicit include info
+          add: [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/include]
+          add: [/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.2.sdk/usr/include]
+          add: [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include]
+        end of search list found
+        collapse include dir [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/include] ==> [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/include]
+        collapse include dir [/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.2.sdk/usr/include] ==> [/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.2.sdk/usr/include]
+        collapse include dir [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include] ==> [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include]
+        implicit include dirs: [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/include;/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.2.sdk/usr/include;/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include]
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/opt/homebrew/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:227 (message)"
+      - "/opt/homebrew/share/cmake/Modules/CMakeTestOBJCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:3 (project)"
+    message: |
+      Parsed OBJC implicit link information:
+        link line regex: [^( *|.*[/\\])(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)))("|,| |$)]
+        ignore line: [Change Dir: '/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2-build/CMakeFiles/CheckOBJC/CMakeFiles/CMakeScratch/TryCompile-2OU1tB']
+        ignore line: []
+        ignore line: [Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_f60c2/fast]
+        ignore line: [/Applications/Xcode.app/Contents/Developer/usr/bin/make  -f CMakeFiles/cmTC_f60c2.dir/build.make CMakeFiles/cmTC_f60c2.dir/build]
+        ignore line: [Building OBJC object CMakeFiles/cmTC_f60c2.dir/CMakeOBJCCompilerABI.m.o]
+        ignore line: [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang   -x objective-c -target arm64-apple-ios13.0   -fvisibility=hidden -fvisibility-inlines-hidden -fobjc-arc -fobjc-abi-version=2 -DOBJC_OLD_DISPATCH_PROTOTYPES=0  -target arm64-apple-ios13.0   -fvisibility=hidden -fvisibility-inlines-hidden -fobjc-arc -fobjc-abi-version=2 -DOBJC_OLD_DISPATCH_PROTOTYPES=0   -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.2.sdk -miphoneos-version-min=13.0 -fvisibility=hidden   -v -Wl -v -MD -MT CMakeFiles/cmTC_f60c2.dir/CMakeOBJCCompilerABI.m.o -MF CMakeFiles/cmTC_f60c2.dir/CMakeOBJCCompilerABI.m.o.d -o CMakeFiles/cmTC_f60c2.dir/CMakeOBJCCompilerABI.m.o -c /opt/homebrew/share/cmake/Modules/CMakeOBJCCompilerABI.m]
+        ignore line: [Apple clang version 16.0.0 (clang-1600.0.26.6)]
+        ignore line: [Target: arm64-apple-ios13.0]
+        ignore line: [Thread model: posix]
+        ignore line: [InstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin]
+        ignore line: [clang: warning: -Wl -v: 'linker' input unused [-Wunused-command-line-argument]]
+        ignore line: [ "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang" -cc1 -triple arm64-apple-ios13.0.0 -Wundef-prefix=TARGET_OS_ -Wdeprecated-objc-isa-usage -Werror=deprecated-objc-isa-usage -Werror=implicit-function-declaration -emit-obj -mrelax-all -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name CMakeOBJCCompilerABI.m -mrelocation-model pic -pic-level 2 -mframe-pointer=non-leaf -fno-strict-return -ffp-contract=on -fno-rounding-math -funwind-tables=1 -fobjc-msgsend-selector-stubs -target-sdk-version=18.2 -fvisibility-inlines-hidden-static-local-var -fno-modulemap-allow-subdirectory-search -target-cpu apple-a7 -target-feature +v8a -target-feature +aes -target-feature +fp-armv8 -target-feature +sha2 -target-feature +neon -target-feature +zcm -target-feature +zcz -target-abi darwinpcs -debugger-tuning=lldb -target-linker-version 1115.7.3 -v -fcoverage-compilation-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2-build/CMakeFiles/CheckOBJC/CMakeFiles/CMakeScratch/TryCompile-2OU1tB -resource-dir /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16 -dependency-file CMakeFiles/cmTC_f60c2.dir/CMakeOBJCCompilerABI.m.o.d -skip-unused-modulemap-deps -MT CMakeFiles/cmTC_f60c2.dir/CMakeOBJCCompilerABI.m.o -sys-header-deps -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.2.sdk -D OBJC_OLD_DISPATCH_PROTOTYPES=0 -D OBJC_OLD_DISPATCH_PROTOTYPES=0 -internal-isystem /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.2.sdk/usr/local/include -internal-isystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/include -internal-externc-isystem /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.2.sdk/usr/include -internal-externc-isystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include -Wno-reorder-init-list -Wno-implicit-int-float-conversion -Wno-c99-designator -Wno-final-dtor-non-final-class -Wno-extra-semi-stmt -Wno-misleading-indentation -Wno-quoted-include-in-framework-header -Wno-implicit-fallthrough -Wno-enum-enum-conversion -Wno-enum-float-conversion -Wno-elaborated-enum-base -Wno-reserved-identifier -Wno-gnu-folding-constant -fdebug-compilation-dir=/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2-build/CMakeFiles/CheckOBJC/CMakeFiles/CMakeScratch/TryCompile-2OU1tB -ferror-limit 19 -fvisibility=hidden -fvisibility-inlines-hidden -stack-protector 1 -fstack-check -mdarwin-stkchk-strong-link -fblocks -fencode-extended-block-signature -fregister-global-dtors-with-atexit -fgnuc-version=4.2.1 -fobjc-runtime=ios-13.0.0 -fobjc-arc -fobjc-exceptions -fexceptions -fmax-type-align=16 -fcommon -clang-vendor-feature=+disableNonDependentMemberExprInCurrentInstantiation -fno-odr-hash-protocols -clang-vendor-feature=+enableAggressiveVLAFolding -clang-vendor-feature=+revert09abecef7bbf -clang-vendor-feature=+thisNoAlignAttr -clang-vendor-feature=+thisNoNullAttr -clang-vendor-feature=+disableAtImportPrivateFrameworkInImplementationError -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o CMakeFiles/cmTC_f60c2.dir/CMakeOBJCCompilerABI.m.o -x objective-c /opt/homebrew/share/cmake/Modules/CMakeOBJCCompilerABI.m]
+        ignore line: [clang -cc1 version 16.0.0 (clang-1600.0.26.6) default target arm64-apple-darwin24.5.0]
+        ignore line: [ignoring nonexistent directory "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.2.sdk/usr/local/include"]
+        ignore line: [ignoring nonexistent directory "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.2.sdk/Library/Frameworks"]
+        ignore line: [#include "..." search starts here:]
+        ignore line: [#include <...> search starts here:]
+        ignore line: [ /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/16/include]
+        ignore line: [ /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.2.sdk/usr/include]
+        ignore line: [ /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include]
+        ignore line: [ /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.2.sdk/System/Library/Frameworks (framework directory)]
+        ignore line: [End of search list.]
+        ignore line: [Linking OBJC static library libcmTC_f60c2.a]
+        ignore line: [/opt/homebrew/bin/cmake -P CMakeFiles/cmTC_f60c2.dir/cmake_clean_target.cmake]
+        ignore line: [/opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_f60c2.dir/link.txt --verbose=1]
+        ignore line: [/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/libtool -static -o libcmTC_f60c2.a CMakeFiles/cmTC_f60c2.dir/CMakeOBJCCompilerABI.m.o]
+        ignore line: []
+        ignore line: []
+        implicit libs: []
+        implicit objs: []
+        implicit dirs: []
+        implicit fwks: []
+      
+      
+...

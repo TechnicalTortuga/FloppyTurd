@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "Level.h"
-#include "raylib.h"
+#include "RaylibCompat.h"
 #include "GameSettings.h"
 #include "ResourceCompat.h"
 #include <iostream>

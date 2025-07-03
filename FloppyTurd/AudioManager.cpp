@@ -1,5 +1,5 @@
 #include "AudioManager.h"
-#include "raylib.h"
+#include "RaylibCompat.h"
 #include "AIGUI.h" // If your custom GUI functions are here, include it
 #include "ResourceCompat.h"
 #include "AudioClip.h"

@@ -1,6 +1,6 @@
 #pragma once
 #include <vector>
-#include "raylib.h"
+#include "RaylibCompat.h"
 #ifndef OBSTACLE_H
 #define OBSTACLE_H
 

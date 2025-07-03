@@ -1,5 +1,5 @@
 #pragma once
-#include <raylib.h>
+#include "RaylibCompat.h"
 
 // Simplified touch controls for mobile gameplay
 class TouchControls {

@@ -957,7 +957,10 @@ CMakeFiles/FloppyTurd.dir/FloppyTurd/LevelManager.cpp.o: \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__format/formatter_tuple.h \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/print \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/unistd.h \
+  /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/TargetConditionals.h \
   /Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/_deps/raylib-src/src/raylib.h \
+  /Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/_deps/raylib-src/src/raymath.h \
   /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Level.h \
   /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Obstacle.h \
   /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/AudioClip.h \
@@ -989,7 +992,6 @@ CMakeFiles/FloppyTurd.dir/FloppyTurd/LevelManager.cpp.o: \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/sstream \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__thread/this_thread.h \
   /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/PlatformLayer.h \
-  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/TargetConditionals.h \
   /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowmanEnemy.h \
   /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Bird.h \
   /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/QuickplaySettings.h \
@@ -1056,7 +1058,6 @@ CMakeFiles/FloppyTurd.dir/FloppyTurd/LevelManager.cpp.o: \
   /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/PoopHeartType.h \
   /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPaper.h \
   /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RatCopter.h \
-  /Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/_deps/raylib-src/src/raymath.h \
   /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowLevel.h \
   /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPair.h \
   /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/DesertLevel.h \

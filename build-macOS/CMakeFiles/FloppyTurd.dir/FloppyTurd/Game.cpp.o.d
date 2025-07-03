@@ -957,10 +957,12 @@ CMakeFiles/FloppyTurd.dir/FloppyTurd/Game.cpp.o: \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__format/formatter_tuple.h \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/print \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/unistd.h \
+  /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/TargetConditionals.h \
   /Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/_deps/raylib-src/src/raylib.h \
+  /Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/_deps/raylib-src/src/raymath.h \
   /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Window.h \
   /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/PlatformLayer.h \
-  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/TargetConditionals.h \
   /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/MainMenu.h \
   /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/AudioClip.h \
   /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/AudioManager.h \

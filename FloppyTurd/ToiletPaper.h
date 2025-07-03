@@ -1,6 +1,6 @@
 #pragma once
 #include "Sprite.h"
-#include <raylib.h>
+#include "RaylibCompat.h"
 #include "Enemy.h"
 
 class ToiletPaper : public Enemy

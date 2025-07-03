@@ -1,5 +1,5 @@
 #pragma once
-#include "raylib.h"
+#include "RaylibCompat.h"
 #include "GameSettings.h"
 #include <vector>
 #include "Obstacle.h"

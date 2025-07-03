@@ -3,7 +3,7 @@
 #include <vector>
 #include <functional>
 #include <iostream>
-#include "raylib.h"
+#include "RaylibCompat.h"
 #include "Level.h"
 #include "Enemy.h"
 #include "Boss.h"

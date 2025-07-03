@@ -4,7 +4,7 @@
 #include "Layer.h"
 #include "Sprite.h"
 #include <string>
-#include "raylib.h"
+#include "RaylibCompat.h"
 
 class StaticLayer : public Layer {
 public:

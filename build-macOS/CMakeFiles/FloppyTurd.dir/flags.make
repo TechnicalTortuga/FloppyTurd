@@ -6,7 +6,7 @@ CXX_DEFINES = -DGRAPHICS_API_OPENGL_33 -DPLATFORM_DESKTOP
 
 CXX_INCLUDES = -I/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd -I/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/_deps/raylib-src/src -I/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/_deps/raylib-src/src/external/glfw/include
 
-CXX_FLAGSarm64 = -std=gnu++20 -arch arm64 -Wno-deprecated-declarations -Wall -Wextra -pedantic
+CXX_FLAGSarm64 = -O3 -DNDEBUG -std=gnu++20 -arch arm64 -Wall -Wextra -pedantic
 
-CXX_FLAGS = -std=gnu++20 -arch arm64 -Wno-deprecated-declarations -Wall -Wextra -pedantic
+CXX_FLAGS = -O3 -DNDEBUG -std=gnu++20 -arch arm64 -Wall -Wextra -pedantic
 

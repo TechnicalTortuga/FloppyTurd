@@ -6,7 +6,7 @@ C_DEFINES = -D_GLFW_COCOA
 
 C_INCLUDES = -I/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/_deps/raylib-src/src/external/glfw/include -I/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/_deps/raylib-src/src/external/glfw/src -I/Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/_deps/raylib-build/raylib/external/glfw/src
 
-C_FLAGSarm64 = -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -std=c99 -arch arm64 -fPIC -Wall
+C_FLAGSarm64 = -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O3 -DNDEBUG -std=c99 -arch arm64 -fPIC -Wall
 
-C_FLAGS = -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -std=c99 -arch arm64 -fPIC -Wall
+C_FLAGS = -fno-strict-aliasing -Werror=implicit-function-declaration -Werror=pointer-arith  -O3 -DNDEBUG -std=c99 -arch arm64 -fPIC -Wall
 

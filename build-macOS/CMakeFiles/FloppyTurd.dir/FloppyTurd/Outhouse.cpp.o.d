@@ -904,7 +904,10 @@ CMakeFiles/FloppyTurd.dir/FloppyTurd/Outhouse.cpp.o: \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/cstdarg \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__memory/temp_value.h \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__split_buffer \
+  /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.h \
+  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/TargetConditionals.h \
   /Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/_deps/raylib-src/src/raylib.h \
+  /Users/aimac/Documents/GitHub/FloppyTurd/build-macOS/_deps/raylib-src/src/raymath.h \
   /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/GameSettings.h \
   /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ResourceCompat.h \
   /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ResourceManager.h \
@@ -975,5 +978,4 @@ CMakeFiles/FloppyTurd.dir/FloppyTurd/Outhouse.cpp.o: \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/unistd.h \
   /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__thread/this_thread.h \
   /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/PlatformLayer.h \
-  /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/TargetConditionals.h \
   /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPair.h

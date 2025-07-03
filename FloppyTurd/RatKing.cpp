@@ -1,6 +1,6 @@
 ﻿#include "RatKing.h"
 #include "ResourceCompat.h"
-#include <raymath.h>
+
 #include "AudioClip.h"
 #include "LevelManager.h"
 #include "RatCopter.h"

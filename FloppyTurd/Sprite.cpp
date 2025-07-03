@@ -1,5 +1,5 @@
 #include "Sprite.h"
-#include <raylib.h>
+#include "RaylibCompat.h"
 #include "ResourceCompat.h"
 #include "TextureAtlas.h"
 
@@ -31,7 +31,7 @@ Sprite::Sprite(const std::string& imagePath, int frameCount, float frameTime, fl
 		printf("DEBUG: Sprite() - using atlas, region: x=%f y=%f w=%f h=%f\n", atlasRegion.x, atlasRegion.y, atlasRegion.width, atlasRegion.height);
 	} else {
 		printf("DEBUG: Sprite() - not atlased\n");
-		if (image.id == 0) {
+		if (image.texture == nullptr) {
 			printf("DEBUG: Sprite() - ERROR: Failed to load texture for path: %s\n", imagePath.c_str());
 		}
 		// Setup frame rectangle
@@ -52,7 +52,7 @@ Sprite::Sprite(const std::string& filePath, float x, float y, float width, float
 {
 	image = Resources::GetTextureByPath(filePath);
 	position = { x, y };
-	if (image.id == 0) {
+	if (image.texture == nullptr) {
 		TraceLog(LOG_WARNING, "Sprite: Failed to load texture from ResourceManager at path %s. Visuals will be missing.", filePath.c_str());
 		frameRec = { 0, 0, width, height }; // Use provided dimensions as fallback
 	}
@@ -92,13 +92,13 @@ void Sprite::Update(float deltaTime)
 // Draw: Render the current frame at the stored position
 void Sprite::Draw()
 {
-	if (isAtlased && atlasTexture.id > 0) {
+	if (isAtlased && atlasTexture.texture != nullptr) {
 		Rectangle source = GetSourceRect();
 		source.x += atlasRegion.x;
 		source.y += atlasRegion.y;
 		Rectangle dest = { position.x, position.y, frameRec.width * scale, frameRec.height * scale };
 		DrawTexturePro(atlasTexture, source, dest, { 0, 0 }, 0.f, WHITE);
-	} else if (image.id > 0) {
+	} else if (image.texture != nullptr) {
 		Rectangle source = GetSourceRect();
 		Rectangle dest = { position.x, position.y, frameRec.width * scale, frameRec.height * scale };
 		DrawTexturePro(image, source, dest, { 0, 0 }, 0.f, WHITE);
@@ -108,13 +108,13 @@ void Sprite::Draw()
 // Draw (legacy): Render the current frame at the specified position
 void Sprite::Draw(float x, float y)
 {
-	if (isAtlased && atlasTexture.id > 0) {
+	if (isAtlased && atlasTexture.texture != nullptr) {
 		Rectangle source = GetSourceRect();
 		source.x += atlasRegion.x;
 		source.y += atlasRegion.y;
 		Rectangle dest = { x, y, frameRec.width * scale, frameRec.height * scale };
 		DrawTexturePro(atlasTexture, source, dest, { 0, 0 }, 0.f, WHITE);
-	} else if (image.id > 0) {
+	} else if (image.texture != nullptr) {
 		Rectangle source = GetSourceRect();
 		Rectangle dest = { x, y, frameRec.width * scale, frameRec.height * scale };
 		DrawTexturePro(image, source, dest, { 0, 0 }, 0.f, WHITE);

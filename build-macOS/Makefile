@@ -1230,6 +1230,30 @@ FloppyTurd/RatKing.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/FloppyTurd.dir/build.make CMakeFiles/FloppyTurd.dir/FloppyTurd/RatKing.cpp.s
 .PHONY : FloppyTurd/RatKing.cpp.s
 
+FloppyTurd/RaylibCompat.o: FloppyTurd/RaylibCompat.cpp.o
+.PHONY : FloppyTurd/RaylibCompat.o
+
+# target to build an object file
+FloppyTurd/RaylibCompat.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/FloppyTurd.dir/build.make CMakeFiles/FloppyTurd.dir/FloppyTurd/RaylibCompat.cpp.o
+.PHONY : FloppyTurd/RaylibCompat.cpp.o
+
+FloppyTurd/RaylibCompat.i: FloppyTurd/RaylibCompat.cpp.i
+.PHONY : FloppyTurd/RaylibCompat.i
+
+# target to preprocess a source file
+FloppyTurd/RaylibCompat.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/FloppyTurd.dir/build.make CMakeFiles/FloppyTurd.dir/FloppyTurd/RaylibCompat.cpp.i
+.PHONY : FloppyTurd/RaylibCompat.cpp.i
+
+FloppyTurd/RaylibCompat.s: FloppyTurd/RaylibCompat.cpp.s
+.PHONY : FloppyTurd/RaylibCompat.s
+
+# target to generate assembly for a file
+FloppyTurd/RaylibCompat.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/FloppyTurd.dir/build.make CMakeFiles/FloppyTurd.dir/FloppyTurd/RaylibCompat.cpp.s
+.PHONY : FloppyTurd/RaylibCompat.cpp.s
+
 FloppyTurd/ResourceManager.o: FloppyTurd/ResourceManager.cpp.o
 .PHONY : FloppyTurd/ResourceManager.o
 
@@ -1852,6 +1876,9 @@ help:
 	@echo "... FloppyTurd/RatKing.o"
 	@echo "... FloppyTurd/RatKing.i"
 	@echo "... FloppyTurd/RatKing.s"
+	@echo "... FloppyTurd/RaylibCompat.o"
+	@echo "... FloppyTurd/RaylibCompat.i"
+	@echo "... FloppyTurd/RaylibCompat.s"
 	@echo "... FloppyTurd/ResourceManager.o"
 	@echo "... FloppyTurd/ResourceManager.i"
 	@echo "... FloppyTurd/ResourceManager.s"

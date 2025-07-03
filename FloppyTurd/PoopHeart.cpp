@@ -1,7 +1,7 @@
 #include "PoopHeart.h"
 #include "ResourceCompat.h"
 #include "AudioManager.h"
-#include <raymath.h>
+
 
 PoopHeart::PoopHeart(Vector2 pos, PoopHeartType type) : type(type) {
     position = pos;

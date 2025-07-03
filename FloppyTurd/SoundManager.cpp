@@ -1,5 +1,5 @@
 #include "SoundManager.h"
-#include "raylib.h"
+#include "RaylibCompat.h"
 
 void SoundManager::PlaySoundClip(Sound soundClip) {
     // Set volume for this sound before playing.

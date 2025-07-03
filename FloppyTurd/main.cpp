@@ -1,5 +1,5 @@
 #include <iostream>
-#include <raylib.h>
+#include "RaylibCompat.h"
 #include "Game.h"
 #include "PlatformLayer.h"
 #include "AIGUI.h"

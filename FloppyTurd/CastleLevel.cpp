@@ -3,7 +3,7 @@
 #include "GameSettings.h"
 #include "Coin.h"
 #include "PoopHeart.h"
-#include <raymath.h>
+
 #include <algorithm>
 
 using namespace Resources;

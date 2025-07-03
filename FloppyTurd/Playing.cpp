@@ -1,6 +1,6 @@
 ﻿#include "Playing.h"
 #include "AIGUI.h"
-#include "raymath.h"
+#include "RaylibCompat.h"
 #include <string>
 #include <functional>
 #include "RatCopter.h"
@@ -294,7 +294,13 @@ void Playing::OutputHatMenu() {
             // 3. THEN, draw the content (the icon or the lock) on TOP of the background.
             //    This ensures the icon/lock is always visible.
             if (currentHat->status == UNLOCKED) {
-                if (currentHat->icon.id != 0) {
+                if (
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+                    currentHat->icon.texture != nullptr
+#else
+                    currentHat->icon.id != 0
+#endif
+                ) {
                     int iconX = x + (slotWidth - currentHat->icon.width) / 2;
                     int iconY = y + (slotHeight - currentHat->icon.height) / 2;
                     DrawTexture(currentHat->icon, iconX, iconY, WHITE);
