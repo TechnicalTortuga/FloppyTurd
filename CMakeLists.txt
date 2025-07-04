@@ -97,7 +97,7 @@ list(APPEND SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/PlatformLayer.mm
     ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/TouchControls.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/ResourceManager.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/AIGUI.mm
+    ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/AIGUI.cpp
 )
 
 # Create executable

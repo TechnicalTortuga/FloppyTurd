@@ -50,7 +50,7 @@ bool TextureAtlas::BuildAtlas(AtlasCategory category, const std::vector<std::str
         std::string fullPath = PlatformLayer::GetInstance().GetResourcePath(path);
         Image img = LoadImage(fullPath.c_str());
         
-        if (img.surface != nullptr) {
+        if (img.data != nullptr) {
             images.push_back(img);
             validPaths.push_back(path);
         } else {
@@ -277,4 +277,4 @@ void TextureAtlas::EnableMobileOptimizations(bool enable) {
 
 void TextureAtlas::SetCompressionQuality(float quality) {
     compressionQuality = std::clamp(quality, 0.1f, 1.0f);
-} 
+}

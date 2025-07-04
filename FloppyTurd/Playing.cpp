@@ -1,4 +1,4 @@
-﻿#include "Playing.h"
+#include "Playing.h"
 #include "AIGUI.h"
 #include "RaylibCompat.h"
 #include <string>
@@ -104,6 +104,10 @@ Playing::Playing(Game* game) {
     // Enable touch controls only on mobile platforms
     auto& platform = PlatformLayer::GetInstance();
     touchControls->SetEnabled(platform.IsTouchSupported());
+
+    // Initialize AIGUI with touch controls for gesture support
+    AIGUI_Init();
+    AIGUI_SetTouchControls(touchControls);
 
     savePending = false;
 }
@@ -370,10 +374,15 @@ void Playing::OutputHatMenu() {
 }
 
 void Playing::DrawPauseMenu() {
+    // Adjust position based on safe area insets for iOS
+    Rectangle safeArea = AIGUI_GetSafeAreaInsets();
+    float offsetX = safeArea.x;
+    float offsetY = safeArea.y;
+
     DrawTexturePro(
         pauseMenuBackground,
         Rectangle{ 0, 0, (float)pauseMenuBackground.width, (float)pauseMenuBackground.height },
-        Rectangle{ 10, 10, (float)pauseMenuBackground.width, (float)pauseMenuBackground.height },
+        Rectangle{ 10 + offsetX, 10 + offsetY, (float)pauseMenuBackground.width, (float)pauseMenuBackground.height },
         Vector2{ 0, 0 },
         0.0f,
         WHITE
@@ -382,10 +391,10 @@ void Playing::DrawPauseMenu() {
     const int buttonWidth = 64;
     const int buttonHeight = 16;
     const int buttonSpacing = 4;
-    const int topRowY = 20;
+    const int topRowY = 20 + offsetY;
     const int totalButtons = 4;
     int totalWidth = totalButtons * buttonWidth + (totalButtons - 1) * buttonSpacing;
-    int topRowX = (320 - totalWidth) / 2;
+    int topRowX = (320 - totalWidth) / 2 + offsetX;
 
     if (AIGUI_ImageButton(
         floppyButtonBlue, floppyButtonBlueHover,
@@ -632,11 +641,8 @@ void Playing::DrawGameOverScreen() {
     static int poopMsgIndex = GetRandomValue(0, (int)(sizeof(poopMessages) / sizeof(char*)) - 1);
     const char* msg = poopMessages[poopMsgIndex];
     int msgWidth = MeasureText(msg, 18);
-    float labelW = (float)(msgWidth + 24);
-    float labelH = 26.0f;
-    float labelX = (320.0f - labelW) / 2.0f;
-    float labelY = 6.0f;
-    AIGUI_LabelRounded(msg, labelX, labelY, labelW, labelH, 0.3f, 18, BLACK);
+    Font hdFont = game->GetScaledFont(1.2f);
+    DrawTextEx(hdFont, msg, { 320.0f - msgWidth / 2.0f, 6.0f }, 18.0f, 1.0f, BLACK);
 
     int btnW = 128, btnH = 22, spacing = 12;
     int btnY = (int)(panelY + panelH) - btnH - 64;
@@ -694,12 +700,12 @@ void Playing::DrawGameOverScreen() {
 
     std::string scoreStr = std::to_string(SCORE);
     int scoreW = MeasureText(scoreStr.c_str(), 20);
-    Font hdFont = game->GetScaledFont(1.2f);
-    DrawTextEx(hdFont, scoreStr.c_str(), { sbX + (sbW - (float)scoreW) / 2.0f + 20, sbY + (sbH / 2.0f - 12.0f) - 12 }, 24.0f, 1.0f, BLACK);
+    Font font = game->GetScaledFont(1.2f);
+    DrawTextEx(font, scoreStr.c_str(), { sbX + (sbW - (float)scoreW) / 2.0f + 20, sbY + (sbH / 2.0f - 12.0f) - 12 }, 24.0f, 1.0f, BLACK);
 
     std::string coinStr = std::to_string(player->GetSessionCoins());
     int coinW = MeasureText(coinStr.c_str(), 20);
-    DrawTextEx(hdFont, coinStr.c_str(), { sbX + (sbW - (float)coinW) / 2.0f + 20, sbY + (sbH / 2.0f + 4.0f) }, 24.0f, 1.0f, BLACK);
+    DrawTextEx(font, coinStr.c_str(), { sbX + (sbW - (float)coinW) / 2.0f + 20, sbY + (sbH / 2.0f + 4.0f) }, 24.0f, 1.0f, BLACK);
 }
 
 void Playing::Update() {
@@ -1053,67 +1059,62 @@ void Playing::UpdateMusic() {
 }
 
 void Playing::HandleInput() {
-    // Update touch controls
-    if (touchControls) {
-        touchControls->Update();
+    if (gameOverState != NONE || paused) {
+        return;
     }
-    
+
+    // Handle input based on platform
     auto& platform = PlatformLayer::GetInstance();
-    
-    // Handle pause - ESC on desktop or could add a pause button for mobile later
-    if (IsKeyPressed(KEY_ESCAPE)) {
-        isPaused = !isPaused;
-        currentTab = SYSTEM;
-    }
-    
-    if (isPaused) {
-        // Keep keyboard shortcuts for pause menu navigation (desktop-specific)
-        if (IsKeyPressed(KEY_P)) currentTab = STATS;
-        if (IsKeyPressed(KEY_H)) currentTab = HATS;
-        if (IsKeyPressed(KEY_K)) currentTab = SKILLS;
-    }
-    else {
-        // Jump input - unified across platforms
-        bool jumpInput = false;
-        
-        // Keyboard input (desktop)
-        jumpInput |= IsKeyPressed(KEY_SPACE);
-        
-        // Touch input (mobile)
-        if (touchControls && touchControls->IsEnabled()) {
-            jumpInput |= touchControls->IsJumpPressed();
-        }
-        
-        // Platform-agnostic primary input (tap/click)
-        if (platform.IsPrimaryInputPressed()) {
-            // On mobile with touch controls, primary input is handled by touch zones
-            // On desktop, primary input (mouse click) can also trigger jump
-            if (!touchControls || !touchControls->IsEnabled()) {
-                jumpInput = true;
-            }
-        }
-        
-        if (jumpInput) {
+    if (platform.IsTouchSupported() && touchControls && touchControls->IsEnabled()) {
+        // Handle touch input
+        if (touchControls->IsJumpPressed()) {
             player->Jump();
         }
-        
-        // Shoot input - unified across platforms (hold for continuous shooting)
-        bool shootInput = false;
-        
-        // Keyboard input (desktop)
-        shootInput |= IsKeyDown(KEY_F);
-        
-        // Touch input (mobile)
-        if (touchControls && touchControls->IsEnabled()) {
-            shootInput |= touchControls->IsShootHeld();
-        }
-        
-        if (shootInput) {
+        if (touchControls->IsShootPressed()) {
             player->Shoot();
         }
-        
-        // Debug revive - keyboard only (development feature)
-        if (IsKeyPressed(KEY_R)) player->Revive();
+        if (touchControls->IsShootHeld()) {
+            player->Shoot();
+        }
+        // Integrate gesture recognition for additional controls
+        if (touchControls->IsGestureDetected(GESTURE_SWIPE_UP)) {
+            player->Jump(); // Swipe up can trigger a jump as an alternative input
+        }
+        if (touchControls->IsGestureDetected(GESTURE_SWIPE_DOWN)) {
+            // Swipe down could trigger a special action if implemented
+            // For now, just log for debugging
+            TraceLog(LOG_INFO, "Swipe down detected");
+        }
+        if (touchControls->IsGestureDetected(GESTURE_SWIPE_LEFT) || touchControls->IsGestureDetected(GESTURE_SWIPE_RIGHT)) {
+            // Swipe left/right could be used for dodging or quick menu navigation if needed
+            TraceLog(LOG_INFO, "Swipe left/right detected");
+        }
+        if (touchControls->IsGestureDetected(GESTURE_PINCH_IN)) {
+            // Pinch in could zoom out or trigger a defensive action
+            TraceLog(LOG_INFO, "Pinch in detected");
+        }
+        if (touchControls->IsGestureDetected(GESTURE_PINCH_OUT)) {
+            // Pinch out could zoom in or trigger an offensive action
+            TraceLog(LOG_INFO, "Pinch out detected");
+        }
+    } else {
+        // Handle keyboard/gamepad input
+        if (IsKeyPressed(KEY_SPACE)) {
+            player->Jump();
+        }
+        if (IsKeyDown(KEY_SPACE)) {
+            player->Jump();
+        }
+        if (IsKeyPressed(KEY_ENTER)) {
+            player->Shoot();
+        }
+        if (IsKeyDown(KEY_ENTER)) {
+            player->Shoot();
+        }
+    }
+
+    if (IsKeyPressed(KEY_ESCAPE)) {
+        paused = !paused;
     }
 }
 

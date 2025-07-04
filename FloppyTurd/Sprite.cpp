@@ -97,11 +97,11 @@ void Sprite::Draw()
 		source.x += atlasRegion.x;
 		source.y += atlasRegion.y;
 		Rectangle dest = { position.x, position.y, frameRec.width * scale, frameRec.height * scale };
-		DrawTexturePro(atlasTexture, source, dest, { 0, 0 }, 0.f, WHITE);
+		DrawTexturePro(atlasTexture, source, dest, { 0, 0 }, 0.f, Color{ 255, 255, 255, 255 });
 	} else if (image.texture != nullptr) {
 		Rectangle source = GetSourceRect();
 		Rectangle dest = { position.x, position.y, frameRec.width * scale, frameRec.height * scale };
-		DrawTexturePro(image, source, dest, { 0, 0 }, 0.f, WHITE);
+		DrawTexturePro(image, source, dest, { 0, 0 }, 0.f, Color{ 255, 255, 255, 255 });
 	}
 }
 
@@ -113,11 +113,11 @@ void Sprite::Draw(float x, float y)
 		source.x += atlasRegion.x;
 		source.y += atlasRegion.y;
 		Rectangle dest = { x, y, frameRec.width * scale, frameRec.height * scale };
-		DrawTexturePro(atlasTexture, source, dest, { 0, 0 }, 0.f, WHITE);
+		DrawTexturePro(atlasTexture, source, dest, { 0, 0 }, 0.f, Color{ 255, 255, 255, 255 });
 	} else if (image.texture != nullptr) {
 		Rectangle source = GetSourceRect();
 		Rectangle dest = { x, y, frameRec.width * scale, frameRec.height * scale };
-		DrawTexturePro(image, source, dest, { 0, 0 }, 0.f, WHITE);
+		DrawTexturePro(image, source, dest, { 0, 0 }, 0.f, Color{ 255, 255, 255, 255 });
 	}
 }
 

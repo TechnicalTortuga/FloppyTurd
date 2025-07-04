@@ -1,4 +1,4 @@
-﻿#include "SpikeBall.h"
+#include "SpikeBall.h"
 
 #include "GameSettings.h"
 #include "ResourceCompat.h"
@@ -15,7 +15,7 @@ SpikeBall::SpikeBall(Vector2 start)
 	swingTex = TextureCache::Get(SpikeBallTexture);
 
 #if defined(__APPLE__) && TARGET_OS_IPHONE
-	if (swingTex.texture == nullptr || baseTex.texture == nullptr) {
+	if (swingTex.id == 0 || baseTex.id == 0) {
 #else
 	if (swingTex.id == 0 || baseTex.id == 0) {
 #endif
@@ -57,7 +57,7 @@ void SpikeBall::UpdateHitbox()
 void SpikeBall::Draw()
 {
 #if defined(__APPLE__) && TARGET_OS_IPHONE
-	if (swingTex.texture != nullptr) {
+	if (swingTex.id > 0) {
 #else
 	if (swingTex.id > 0) {
 #endif
@@ -67,12 +67,12 @@ void SpikeBall::Draw()
 			{ drawPos.x, drawPos.y, (float)swingTex.width, (float)swingTex.height },
 			origin,
 			RAD2DEG * angle,
-			WHITE
+			Color{ 255, 255, 255, 255 }
 		);
 	}
 
 #if defined(__APPLE__) && TARGET_OS_IPHONE
-	if (baseTex.texture != nullptr) {
+	if (baseTex.id > 0) {
 #else
 	if (baseTex.id > 0) {
 #endif
@@ -82,7 +82,7 @@ void SpikeBall::Draw()
 			{ basePos.x - baseTex.width / 2.f, basePos.y - baseTex.height, (float)baseTex.width, (float)baseTex.height },
 			{ 0, 0 },
 			0.f,
-			WHITE
+			Color{ 255, 255, 255, 255 }
 		);
 	}
 }

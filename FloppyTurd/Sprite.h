@@ -91,7 +91,7 @@ private:
 
 	// --- TextureAtlas support ---
 	bool isAtlased = false;
-	Texture2D atlasTexture = { 0 };
+	Texture2D atlasTexture = { 0, 0, 0, 0, 0, 0 }; // Added extra 0 to cover all fields including 'texture' if applicable
 	Rectangle atlasRegion = { 0,0,0,0 }; // The region in the atlas for this sprite
 	AtlasCategory atlasCategory = AtlasCategory::PLAYER_SPRITES;
 };

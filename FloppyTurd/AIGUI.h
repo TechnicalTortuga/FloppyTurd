@@ -1,8 +1,19 @@
 #ifndef AIGUI_H
 #define AIGUI_H
 
+#include "RaylibCompat.h"
+#include "PlatformLayer.h"
+
+#ifdef __APPLE__
+#include <TargetConditionals.h>
+#endif
+
+#if defined(__APPLE__) && TARGET_OS_IOS && defined(USE_METAL_RENDERER)
+// For iOS with Metal, we'll include the compatibility layer in the .cpp file
+// to avoid including Objective-C headers in C++ compilation
+#else
 #include "raylib.h"
-#include "PlatformLayer.h" 
+#endif
 
 #ifdef AIGUI_STATIC
 #define AIGUI_DEF static
@@ -41,6 +52,9 @@ AIGUI_DEF bool AIGUI_IsPointInSafeArea(Vector2 point);
 AIGUI_DEF float AIGUI_GetMinTouchSize();
 AIGUI_DEF int AIGUI_GetScaledFontSize(int baseFontSize);
 AIGUI_DEF void AIGUI_DrawResponsiveText(const char* text, Vector2 position, int baseFontSize, Color color);
+// Gesture support for UI interactions
+AIGUI_DEF bool AIGUI_IsGestureDetected(int gestureType);
+AIGUI_DEF void AIGUI_SetTouchControls(class TouchControls* controls);
 
 struct AIGUI_Context {
     Vector2 mousePos;

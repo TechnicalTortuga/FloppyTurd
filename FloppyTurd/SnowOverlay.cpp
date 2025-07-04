@@ -16,6 +16,8 @@ void SnowOverlay::Draw() const {
     const int screenWidth = 320;
     const int screenHeight = 180;
 
+    Texture2D snowflakeTexture = { 0, 0, 0, 0, 0 };
+
     Rectangle source = {
         static_cast<float>(currentFrame * tileSize),
         0,

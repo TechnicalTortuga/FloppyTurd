@@ -5,6 +5,20 @@
 // Compatibility layer to transition from old Resources.h to ResourceManager
 // This allows us to gradually update the codebase without breaking everything at once
 
+// Define logging levels for Raylib compatibility
+#ifndef LOG_INFO
+#define LOG_INFO     1
+#endif
+#ifndef LOG_WARNING
+#define LOG_WARNING  2
+#endif
+#ifndef LOG_ERROR
+#define LOG_ERROR    3
+#endif
+#ifndef LOG_DEBUG
+#define LOG_DEBUG    4
+#endif
+
 namespace Resources {
     // Helper function to get ResourceManager instance
     inline ResourceManager& RM() {

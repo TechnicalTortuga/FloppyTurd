@@ -3,7 +3,11 @@
 
 #include <string>
 #include <vector>
-#include "raylib.h"
+#include "RaylibCompat.h"
+
+#ifdef __APPLE__
+#include <TargetConditionals.h>
+#endif
 
 // Platform detection macros
 #if defined(__ANDROID__)
@@ -13,7 +17,7 @@
     #include <TargetConditionals.h>
     #if TARGET_OS_IPHONE
         #define PLATFORM_MOBILE
-        #define PLATFORM_IOS
+        // #define PLATFORM_IOS  // Commented out to avoid redefinition warning
     #endif
 #endif
 
@@ -43,6 +47,9 @@ public:
     bool IsPrimaryInputPressed() const;
     bool IsPrimaryInputDown() const;
     bool IsPrimaryInputReleased() const;
+    bool IsSecondaryInputPressed() const;
+    bool IsSecondaryInputDown() const;
+    bool IsSecondaryInputReleased() const;
 
     // Get all active touch points (for multi-touch support)
     std::vector<Vector2> GetTouchPoints() const;
@@ -51,6 +58,58 @@ public:
     float GetScreenDensity() const;
     void SetOrientation(bool landscape);
     bool SupportsFullscreen() const;
+    int GetScreenWidth() const;
+    int GetScreenHeight() const;
+    double GetCurrentTime() const;
+
+#ifdef PLATFORM_IOS
+    // Metal rendering interface
+    class MetalRenderer;
+    class MetalTextRenderer;
+    typedef void* id_MTLTexture; // Placeholder for id<MTLTexture>
+    MetalRenderer* GetMetalRenderer() const;
+
+    // Texture and image handling
+    void* LoadTexture(const char* fileName, int* width, int* height);
+    void UnloadTexture(void* texture);
+    void* CreateTextureFromImage(void* image, int* width, int* height);
+
+    // Image handling
+    void* LoadImage(const char* fileName, int* width, int* height);
+    void UnloadImage(void* image);
+    void* CreateSolidColorImage(int width, int height, Color color);
+
+    // Audio management
+    void InitializeAudio();
+    void ShutdownAudio();
+    void* LoadSound(const char* fileName);
+    void UnloadSound(void* sound);
+    void PlaySound(void* sound);
+    void SetSoundVolume(void* sound, float volume);
+
+    // Music streaming
+    void* LoadMusic(const char* fileName);
+    void UnloadMusic(void* music);
+    void PlayMusic(void* music);
+    void StopMusic(void* music);
+    void UpdateMusic(void* music);
+    bool IsMusicPlaying(void* music);
+    void SetMusicVolume(void* music, float volume);
+
+    // Text rendering via MetalTextRenderer
+    void* LoadFont(const char* fileName, int size);
+    void UnloadFont(void* font);
+    Vector2 MeasureText(const char* text, void* font, float fontSize, float spacing);
+
+    // Rendering integration
+    void* LoadRenderTexture(int width, int height);
+    void UnloadRenderTexture(void* texture);
+    void BeginDrawing(void* renderTexture);
+    void EndDrawing(void* renderTexture);
+    void DrawRectangle(int posX, int posY, int width, int height, unsigned int color);
+    void* LoadTextureFromImage(void* imageData, int width, int height, int format);
+    void EnqueueDrawCommand(void* vertexBuffer, void* texture, size_t vertexCount);
+#endif
 
     // Platform-specific features
     void ShowVirtualKeyboard(bool show);
@@ -85,4 +144,4 @@ private:
 #endif
 };
 
-#endif // PLATFORM_LAYER_H 
+#endif // PLATFORM_LAYER_H

@@ -6,6 +6,8 @@
 
 #if defined(__APPLE__) && TARGET_OS_IOS
 
+// IMPORTANT: This header contains Objective-C++ code and should ONLY be included in .mm files.
+// Do NOT include this in any header files that might be included by .cpp files to prevent build errors.
 #import <Metal/Metal.h>
 #import <CoreText/CoreText.h>
 #import <UIKit/UIKit.h>

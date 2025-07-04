@@ -1,7 +1,7 @@
 #include "Window.h"
 #include <cstdio>  // For printf
 
-Window::Window(bool fullScreen, int fallbackW, int fallbackH)
+Window::Window(bool fullScreen, int /*fallbackW*/, int /*fallbackH*/)
 {
 #ifdef PLATFORM_MOBILE
     // Mobile platform initialization
@@ -40,12 +40,8 @@ Window::Window(bool fullScreen, int fallbackW, int fallbackH)
     printf("Detected monitor resolution: %dx%d\n", monitorWidth, monitorHeight);
     
     // Use monitor resolution as default, but respect fallback if specified and smaller (to avoid overflow)
-    int windowWidth = (fallbackW > 0 && fallbackW < monitorWidth) ? fallbackW : monitorWidth;
-    int windowHeight = (fallbackH > 0 && fallbackH < monitorHeight) ? fallbackH : monitorHeight;
-    
-    // If fallback values are 0, use native monitor resolution
-    if (fallbackW == 0) windowWidth = monitorWidth;
-    if (fallbackH == 0) windowHeight = monitorHeight;
+    int windowWidth = monitorWidth;
+    int windowHeight = monitorHeight;
     
     // Close the temporary window and recreate with proper size
     CloseWindow();

@@ -1,0 +1,933 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project build-ios/FloppyTurd.xcodeproj -scheme FloppyTurd -destination id=00008140-001E39CC3A47001C -configuration Debug -derivedDataPath build-ios/build build
+
+User defaults from command line:
+    IDEDerivedDataPathOverride = /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build
+    IDEPackageSupportUseBuiltinSCM = YES
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (2 targets)
+    Target 'FloppyTurd' in project 'FloppyTurd'
+        ➜ Explicit dependency on target 'ZERO_CHECK' in project 'FloppyTurd'
+    Target 'ZERO_CHECK' in project 'FloppyTurd' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ClangStatCache /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.2.sdk /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/SDKStatCaches.noindex/iphoneos18.2-22C146-d5b9239ec3bf5b3adbecdf21472871e3.sdkstatcache
+    cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/FloppyTurd.xcodeproj
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.2.sdk -o /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/SDKStatCaches.noindex/iphoneos18.2-22C146-d5b9239ec3bf5b3adbecdf21472871e3.sdkstatcache
+
+PhaseScriptExecution Generate\ CMakeFiles/ZERO_CHECK /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/ZERO_CHECK.build/Script-E12B335D09D51A951FDFACFB.sh (in target 'ZERO_CHECK' from project 'FloppyTurd')
+    cd /Users/aimac/Documents/GitHub/FloppyTurd
+    /bin/sh -c /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/ZERO_CHECK.build/Script-E12B335D09D51A951FDFACFB.sh
+make: `/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/CMakeFiles/cmake.check_cache' is up to date.
+
+note: Run script build phase 'CMake PostBuild Rules' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'FloppyTurd' from project 'FloppyTurd')
+CompileC /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/ToiletPaper.o /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPaper.cpp normal arm64 c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'FloppyTurd' from project 'FloppyTurd')
+    cd /Users/aimac/Documents/GitHub/FloppyTurd
+    
+    Using response file: /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp
+    
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -ivfsstatcache /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/SDKStatCaches.noindex/iphoneos18.2-22C146-d5b9239ec3bf5b3adbecdf21472871e3.sdkstatcache -fmessage-length\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\=0 -fno-color-diagnostics -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wshorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wno-implicit-fallthrough -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -index-store-path /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/Index.noindex/DataStore -Wall -Wextra @/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp -MMD -MT dependencies -MF /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/ToiletPaper.d --serialize-diagnostics /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/ToiletPaper.dia -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPaper.cpp -o /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/ToiletPaper.o -index-unit-output-path /FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/ToiletPaper.o
+
+CompileC /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/TextureAtlas.o /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/TextureAtlas.cpp normal arm64 c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'FloppyTurd' from project 'FloppyTurd')
+    cd /Users/aimac/Documents/GitHub/FloppyTurd
+    
+    Using response file: /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp
+    
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -ivfsstatcache /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/SDKStatCaches.noindex/iphoneos18.2-22C146-d5b9239ec3bf5b3adbecdf21472871e3.sdkstatcache -fmessage-length\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\=0 -fno-color-diagnostics -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wshorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wno-implicit-fallthrough -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -index-store-path /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/Index.noindex/DataStore -Wall -Wextra @/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp -MMD -MT dependencies -MF /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/TextureAtlas.d --serialize-diagnostics /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/TextureAtlas.dia -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/TextureAtlas.cpp -o /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/TextureAtlas.o -index-unit-output-path /FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/TextureAtlas.o
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/TextureAtlas.cpp:237:25: warning: missing field 'width' initializer [-Wmissing-field-initializers]
+  237 |     return Texture2D{ 0 };
+      |                         ^
+1 warning generated.
+
+CompileC /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/ToiletPaperProjectile.o /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPaperProjectile.cpp normal arm64 c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'FloppyTurd' from project 'FloppyTurd')
+    cd /Users/aimac/Documents/GitHub/FloppyTurd
+    
+    Using response file: /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp
+    
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -ivfsstatcache /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/SDKStatCaches.noindex/iphoneos18.2-22C146-d5b9239ec3bf5b3adbecdf21472871e3.sdkstatcache -fmessage-length\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\=0 -fno-color-diagnostics -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wshorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wno-implicit-fallthrough -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -index-store-path /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/Index.noindex/DataStore -Wall -Wextra @/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp -MMD -MT dependencies -MF /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/ToiletPaperProjectile.d --serialize-diagnostics /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/ToiletPaperProjectile.dia -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPaperProjectile.cpp -o /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/ToiletPaperProjectile.o -index-unit-output-path /FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/ToiletPaperProjectile.o
+
+CompileC /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/ToiletPair.o /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPair.cpp normal arm64 c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'FloppyTurd' from project 'FloppyTurd')
+    cd /Users/aimac/Documents/GitHub/FloppyTurd
+    
+    Using response file: /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp
+    
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -ivfsstatcache /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/SDKStatCaches.noindex/iphoneos18.2-22C146-d5b9239ec3bf5b3adbecdf21472871e3.sdkstatcache -fmessage-length\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\=0 -fno-color-diagnostics -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wshorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wno-implicit-fallthrough -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -index-store-path /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/Index.noindex/DataStore -Wall -Wextra @/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp -MMD -MT dependencies -MF /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/ToiletPair.d --serialize-diagnostics /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/ToiletPair.dia -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPair.cpp -o /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/ToiletPair.o -index-unit-output-path /FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/ToiletPair.o
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPair.cpp:1:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPair.h:14:7: warning: 'Draw' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   14 |         void Draw();
+      |              ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPair.cpp:1:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPair.h:5:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Obstacle.h:12:18: note: overridden virtual function is here
+   12 |     virtual void Draw() = 0;
+      |                  ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPair.cpp:1:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPair.h:15:7: warning: 'Update' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   15 |         void Update(float deltaTime);
+      |              ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPair.cpp:1:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPair.h:5:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Obstacle.h:13:18: note: overridden virtual function is here
+   13 |     virtual void Update(float deltaTime) = 0;
+      |                  ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPair.cpp:1:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPair.h:19:25: warning: 'GetHitboxes' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   19 |         std::vector<Rectangle> GetHitboxes();
+      |                                ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPair.cpp:1:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPair.h:5:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Obstacle.h:14:36: note: overridden virtual function is here
+   14 |     virtual std::vector<Rectangle> GetHitboxes() = 0;
+      |                                    ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPair.cpp:1:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPair.h:23:7: warning: 'SetPanSpeed' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   23 |         void SetPanSpeed(float speed);
+      |              ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPair.cpp:1:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPair.h:5:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Obstacle.h:16:18: note: overridden virtual function is here
+   16 |     virtual void SetPanSpeed(float speed) = 0; // New: Virtual method for pan speed
+      |                  ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPair.cpp:79:8: warning: unused variable 'topWidthScaled' [-Wunused-variable]
+   79 |         float topWidthScaled = _TopToilet.width;
+      |               ^~~~~~~~~~~~~~
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPair.cpp:81:8: warning: unused variable 'bottomWidthScaled' [-Wunused-variable]
+   81 |         float bottomWidthScaled = _BottomToilet.width;
+      |               ^~~~~~~~~~~~~~~~~
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPair.cpp:1:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPair.h:43:14: warning: private field 'gapSize' is not used [-Wunused-private-field]
+   43 |         const float gapSize{ 120.0f }; // Consistent horizontal gap between pipes
+      |                     ^
+7 warnings generated.
+
+CompileC /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/main.o /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp normal arm64 c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'FloppyTurd' from project 'FloppyTurd')
+    cd /Users/aimac/Documents/GitHub/FloppyTurd
+    
+    Using response file: /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp
+    
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -ivfsstatcache /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/SDKStatCaches.noindex/iphoneos18.2-22C146-d5b9239ec3bf5b3adbecdf21472871e3.sdkstatcache -fmessage-length\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\=0 -fno-color-diagnostics -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wshorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wno-implicit-fallthrough -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -index-store-path /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/Index.noindex/DataStore -Wall -Wextra @/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp -MMD -MT dependencies -MF /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/main.d --serialize-diagnostics /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/main.dia -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp -o /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/main.o -index-unit-output-path /FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/main.o
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp:4:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Game.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Playing.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Level.h:9:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/PickUp.h:7:16: warning: field 'timeAlive' will be initialized after field 'wavePhase' [-Wreorder-ctor]
+    7 |     PickUp() : timeAlive(0.0f), wavePhase(0.0f) {}
+      |                ^~~~~~~~~~~~~~~  ~~~~~~~~~~~~~~~
+      |                wavePhase(0.0f)  timeAlive(0.0f)
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp:4:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Game.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Playing.h:9:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ParkLevel.h:5:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPair.h:14:7: warning: 'Draw' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   14 |         void Draw();
+      |              ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp:4:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Game.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Playing.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Level.h:5:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Obstacle.h:12:18: note: overridden virtual function is here
+   12 |     virtual void Draw() = 0;
+      |                  ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp:4:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Game.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Playing.h:9:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ParkLevel.h:5:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPair.h:15:7: warning: 'Update' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   15 |         void Update(float deltaTime);
+      |              ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp:4:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Game.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Playing.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Level.h:5:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Obstacle.h:13:18: note: overridden virtual function is here
+   13 |     virtual void Update(float deltaTime) = 0;
+      |                  ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp:4:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Game.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Playing.h:9:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ParkLevel.h:5:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPair.h:19:25: warning: 'GetHitboxes' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   19 |         std::vector<Rectangle> GetHitboxes();
+      |                                ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp:4:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Game.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Playing.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Level.h:5:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Obstacle.h:14:36: note: overridden virtual function is here
+   14 |     virtual std::vector<Rectangle> GetHitboxes() = 0;
+      |                                    ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp:4:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Game.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Playing.h:9:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ParkLevel.h:5:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPair.h:23:7: warning: 'SetPanSpeed' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   23 |         void SetPanSpeed(float speed);
+      |              ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp:4:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Game.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Playing.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Level.h:5:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Obstacle.h:16:18: note: overridden virtual function is here
+   16 |     virtual void SetPanSpeed(float speed) = 0; // New: Virtual method for pan speed
+      |                  ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp:4:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Game.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Playing.h:10:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/DesertLevel.h:12:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Outhouse.h:14:10: warning: 'Draw' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   14 |     void Draw();
+      |          ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp:4:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Game.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Playing.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Level.h:5:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Obstacle.h:12:18: note: overridden virtual function is here
+   12 |     virtual void Draw() = 0;
+      |                  ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp:4:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Game.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Playing.h:10:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/DesertLevel.h:12:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Outhouse.h:16:10: warning: 'Update' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   16 |     void Update(float deltaTime);
+      |          ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp:4:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Game.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Playing.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Level.h:5:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Obstacle.h:13:18: note: overridden virtual function is here
+   13 |     virtual void Update(float deltaTime) = 0;
+      |                  ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp:4:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Game.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Playing.h:10:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/DesertLevel.h:12:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Outhouse.h:19:28: warning: 'GetHitboxes' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   19 |     std::vector<Rectangle> GetHitboxes();
+      |                            ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp:4:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Game.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Playing.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Level.h:5:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Obstacle.h:14:36: note: overridden virtual function is here
+   14 |     virtual std::vector<Rectangle> GetHitboxes() = 0;
+      |                                    ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp:4:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Game.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Playing.h:10:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/DesertLevel.h:12:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Outhouse.h:21:10: warning: 'SetPanSpeed' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   21 |     void SetPanSpeed(float speed); // New: Set pan speed
+      |          ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp:4:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Game.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Playing.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Level.h:5:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Obstacle.h:16:18: note: overridden virtual function is here
+   16 |     virtual void SetPanSpeed(float speed) = 0; // New: Virtual method for pan speed
+      |                  ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp:4:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Game.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Playing.h:10:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/DesertLevel.h:30:32: warning: unused parameter 'enable' [-Wunused-parameter]
+   30 |     void SetSwingingPipes(bool enable) override {};
+      |                                ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp:4:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Game.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Playing.h:11:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SewerLevel.h:8:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SewerPipe.h:26:7: warning: 'SetPanSpeed' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   26 |         void SetPanSpeed(float speed); // New: Set pan speed
+      |              ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp:4:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Game.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Playing.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Level.h:5:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Obstacle.h:16:18: note: overridden virtual function is here
+   16 |     virtual void SetPanSpeed(float speed) = 0; // New: Virtual method for pan speed
+      |                  ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp:4:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Game.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Playing.h:11:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SewerLevel.h:24:32: warning: unused parameter 'enable' [-Wunused-parameter]
+   24 |     void SetSwingingPipes(bool enable) override {};
+      |                                ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp:4:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Game.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Playing.h:12:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/CastleLevel.h:5:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/GoldToilets.h:13:10: warning: 'Draw' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   13 |     void Draw();
+      |          ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp:4:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Game.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Playing.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Level.h:5:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Obstacle.h:12:18: note: overridden virtual function is here
+   12 |     virtual void Draw() = 0;
+      |                  ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp:4:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Game.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Playing.h:12:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/CastleLevel.h:5:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/GoldToilets.h:14:10: warning: 'Update' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   14 |     void Update(float deltaTime);
+      |          ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp:4:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Game.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Playing.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Level.h:5:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Obstacle.h:13:18: note: overridden virtual function is here
+   13 |     virtual void Update(float deltaTime) = 0;
+      |                  ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp:4:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Game.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Playing.h:12:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/CastleLevel.h:5:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/GoldToilets.h:18:28: warning: 'GetHitboxes' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   18 |     std::vector<Rectangle> GetHitboxes();
+      |                            ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp:4:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Game.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Playing.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Level.h:5:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Obstacle.h:14:36: note: overridden virtual function is here
+   14 |     virtual std::vector<Rectangle> GetHitboxes() = 0;
+      |                                    ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp:4:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Game.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Playing.h:12:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/CastleLevel.h:5:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/GoldToilets.h:22:10: warning: 'SetPanSpeed' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   22 |     void SetPanSpeed(float speed); // New: Set pan speed
+      |          ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp:4:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Game.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Playing.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Level.h:5:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Obstacle.h:16:18: note: overridden virtual function is here
+   16 |     virtual void SetPanSpeed(float speed) = 0; // New: Virtual method for pan speed
+      |                  ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp:4:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Game.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Playing.h:12:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/CastleLevel.h:9:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/PoopHeart.h:20:7: warning: 'SetPanSpeed' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   20 |         void SetPanSpeed(float speed) { panSpeed = speed; }
+      |              ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp:4:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Game.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Playing.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Level.h:9:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/PickUp.h:18:15: note: overridden virtual function is here
+   18 |         virtual void SetPanSpeed(float speed) { panSpeed = speed; }
+      |                      ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp:4:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Game.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Playing.h:14:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/LevelManager.h:9:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Boss.h:24:44: warning: unused parameter 'playerPos' [-Wunused-parameter]
+   24 |     virtual void SetPlayerPosition(Vector2 playerPos) { }
+      |                                            ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp:38:19: warning: unused parameter 'argc' [-Wunused-parameter]
+   38 | int game_main(int argc, char *argv[])
+      |                   ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp:38:31: warning: unused parameter 'argv' [-Wunused-parameter]
+   38 | int game_main(int argc, char *argv[])
+      |                               ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/main.cpp:4:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Game.h:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Playing.h:21:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/MenuButton.h:12:12: warning: private field 'hitbox' is not used [-Wunused-private-field]
+   12 |         Rectangle hitbox;
+      |                   ^
+21 warnings generated.
+
+CompileC /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/Window.o /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Window.cpp normal arm64 c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'FloppyTurd' from project 'FloppyTurd')
+    cd /Users/aimac/Documents/GitHub/FloppyTurd
+    
+    Using response file: /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp
+    
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -ivfsstatcache /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/SDKStatCaches.noindex/iphoneos18.2-22C146-d5b9239ec3bf5b3adbecdf21472871e3.sdkstatcache -fmessage-length\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\=0 -fno-color-diagnostics -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wshorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wno-implicit-fallthrough -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -index-store-path /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/Index.noindex/DataStore -Wall -Wextra @/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp -MMD -MT dependencies -MF /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/Window.d --serialize-diagnostics /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/Window.dia -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Window.cpp -o /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/Window.o -index-unit-output-path /FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/Window.o
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Window.cpp:4:21: warning: unused parameter 'fullScreen' [-Wunused-parameter]
+    4 | Window::Window(bool fullScreen, int /*fallbackW*/, int /*fallbackH*/)
+      |                     ^
+1 warning generated.
+
+CompileC /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/StaticLayer.o /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/StaticLayer.cpp normal arm64 c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'FloppyTurd' from project 'FloppyTurd')
+    cd /Users/aimac/Documents/GitHub/FloppyTurd
+    
+    Using response file: /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp
+    
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -ivfsstatcache /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/SDKStatCaches.noindex/iphoneos18.2-22C146-d5b9239ec3bf5b3adbecdf21472871e3.sdkstatcache -fmessage-length\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\=0 -fno-color-diagnostics -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wshorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wno-implicit-fallthrough -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -index-store-path /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/Index.noindex/DataStore -Wall -Wextra @/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp -MMD -MT dependencies -MF /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/StaticLayer.d --serialize-diagnostics /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/StaticLayer.dia -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/StaticLayer.cpp -o /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/StaticLayer.o -index-unit-output-path /FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/StaticLayer.o
+
+CompileC /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/TouchControls.o /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/TouchControls.cpp normal arm64 c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'FloppyTurd' from project 'FloppyTurd')
+    cd /Users/aimac/Documents/GitHub/FloppyTurd
+    
+    Using response file: /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp
+    
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -ivfsstatcache /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/SDKStatCaches.noindex/iphoneos18.2-22C146-d5b9239ec3bf5b3adbecdf21472871e3.sdkstatcache -fmessage-length\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\=0 -fno-color-diagnostics -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wshorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wno-implicit-fallthrough -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -index-store-path /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/Index.noindex/DataStore -Wall -Wextra @/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp -MMD -MT dependencies -MF /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/TouchControls.d --serialize-diagnostics /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/TouchControls.dia -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/TouchControls.cpp -o /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/TouchControls.o -index-unit-output-path /FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/TouchControls.o
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/TouchControls.cpp:187:32: warning: unused parameter 'alpha' [-Wunused-parameter]
+  187 | void TouchControls::Draw(float alpha) {
+      |                                ^
+1 warning generated.
+
+CompileC /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/TextureCache.o /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/TextureCache.cpp normal arm64 c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'FloppyTurd' from project 'FloppyTurd')
+    cd /Users/aimac/Documents/GitHub/FloppyTurd
+    
+    Using response file: /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp
+    
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -ivfsstatcache /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/SDKStatCaches.noindex/iphoneos18.2-22C146-d5b9239ec3bf5b3adbecdf21472871e3.sdkstatcache -fmessage-length\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\=0 -fno-color-diagnostics -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wshorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wno-implicit-fallthrough -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -index-store-path /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/Index.noindex/DataStore -Wall -Wextra @/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp -MMD -MT dependencies -MF /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/TextureCache.d --serialize-diagnostics /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/TextureCache.dia -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/TextureCache.cpp -o /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/TextureCache.o -index-unit-output-path /FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/TextureCache.o
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/TextureCache.cpp:9:48: warning: missing field 'texture' initializer [-Wmissing-field-initializers]
+    9 |     Texture2D defaultTexture = { 0, 0, 0, 0, 0 };
+      |                                                ^
+1 warning generated.
+
+CompileC /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/Sprite.o /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Sprite.cpp normal arm64 c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'FloppyTurd' from project 'FloppyTurd')
+    cd /Users/aimac/Documents/GitHub/FloppyTurd
+    
+    Using response file: /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp
+    
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -ivfsstatcache /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/SDKStatCaches.noindex/iphoneos18.2-22C146-d5b9239ec3bf5b3adbecdf21472871e3.sdkstatcache -fmessage-length\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\=0 -fno-color-diagnostics -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wshorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wno-implicit-fallthrough -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -index-store-path /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/Index.noindex/DataStore -Wall -Wextra @/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp -MMD -MT dependencies -MF /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/Sprite.d --serialize-diagnostics /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/Sprite.dia -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Sprite.cpp -o /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/Sprite.o -index-unit-output-path /FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/Sprite.o
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Sprite.cpp:13:4: warning: field 'scale' will be initialized after field 'position' [-Wreorder-ctor]
+   12 |         : frameCount(frameCount), frameIndex(0), frameTime(frameTime), elapsedTime(0.0f),
+      |           ~~~~~~~~~~~~~~~~~~~~~~  ~~~~~~~~~~~~~  ~~~~~~~~~~~~~~~~~~~~  ~~~~~~~~~~~~~~~~~
+      |           position(startPosition) loopedOnce(false) frameCount(frameCount) frameIndex(0)
+   13 |           scale(scale), position(startPosition), loopedOnce(false), atlasCategory(atlasCategory)
+      |           ^~~~~~~~~~~~  ~~~~~~~~~~~~~~~~~~~~~~~  ~~~~~~~~~~~~~~~~~
+      |           frameTime(frameTime) elapsedTime(0.0f) scale(scale)
+1 warning generated.
+
+CompileC /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SpikeBall.o /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SpikeBall.cpp normal arm64 c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'FloppyTurd' from project 'FloppyTurd')
+    cd /Users/aimac/Documents/GitHub/FloppyTurd
+    
+    Using response file: /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp
+    
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -ivfsstatcache /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/SDKStatCaches.noindex/iphoneos18.2-22C146-d5b9239ec3bf5b3adbecdf21472871e3.sdkstatcache -fmessage-length\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\=0 -fno-color-diagnostics -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wshorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wno-implicit-fallthrough -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -index-store-path /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/Index.noindex/DataStore -Wall -Wextra @/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp -MMD -MT dependencies -MF /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SpikeBall.d --serialize-diagnostics /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SpikeBall.dia -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SpikeBall.cpp -o /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SpikeBall.o -index-unit-output-path /FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SpikeBall.o
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SpikeBall.cpp:1:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SpikeBall.h:38:8: warning: private field 'linkLength' is not used [-Wunused-private-field]
+   38 |         float linkLength = 70.f;
+      |               ^
+1 warning generated.
+
+CompileC /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SoundManager.o /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SoundManager.cpp normal arm64 c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'FloppyTurd' from project 'FloppyTurd')
+    cd /Users/aimac/Documents/GitHub/FloppyTurd
+    
+    Using response file: /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp
+    
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -ivfsstatcache /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/SDKStatCaches.noindex/iphoneos18.2-22C146-d5b9239ec3bf5b3adbecdf21472871e3.sdkstatcache -fmessage-length\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\=0 -fno-color-diagnostics -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wshorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wno-implicit-fallthrough -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -index-store-path /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/Index.noindex/DataStore -Wall -Wextra @/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp -MMD -MT dependencies -MF /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SoundManager.d --serialize-diagnostics /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SoundManager.dia -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SoundManager.cpp -o /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SoundManager.o -index-unit-output-path /FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SoundManager.o
+
+CompileC /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SoundEffect.o /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SoundEffect.cpp normal arm64 c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'FloppyTurd' from project 'FloppyTurd')
+    cd /Users/aimac/Documents/GitHub/FloppyTurd
+    
+    Using response file: /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp
+    
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -ivfsstatcache /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/SDKStatCaches.noindex/iphoneos18.2-22C146-d5b9239ec3bf5b3adbecdf21472871e3.sdkstatcache -fmessage-length\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\=0 -fno-color-diagnostics -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wshorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wno-implicit-fallthrough -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -index-store-path /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/Index.noindex/DataStore -Wall -Wextra @/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp -MMD -MT dependencies -MF /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SoundEffect.d --serialize-diagnostics /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SoundEffect.dia -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SoundEffect.cpp -o /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SoundEffect.o -index-unit-output-path /FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SoundEffect.o
+
+CompileC /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SnowmanEnemy.o /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowmanEnemy.cpp normal arm64 c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'FloppyTurd' from project 'FloppyTurd')
+    cd /Users/aimac/Documents/GitHub/FloppyTurd
+    
+    Using response file: /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp
+    
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -ivfsstatcache /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/SDKStatCaches.noindex/iphoneos18.2-22C146-d5b9239ec3bf5b3adbecdf21472871e3.sdkstatcache -fmessage-length\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\=0 -fno-color-diagnostics -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wshorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wno-implicit-fallthrough -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -index-store-path /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/Index.noindex/DataStore -Wall -Wextra @/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp -MMD -MT dependencies -MF /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SnowmanEnemy.d --serialize-diagnostics /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SnowmanEnemy.dia -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowmanEnemy.cpp -o /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SnowmanEnemy.o -index-unit-output-path /FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SnowmanEnemy.o
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowmanEnemy.cpp:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/LevelManager.h:7:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Level.h:9:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/PickUp.h:7:16: warning: field 'timeAlive' will be initialized after field 'wavePhase' [-Wreorder-ctor]
+    7 |     PickUp() : timeAlive(0.0f), wavePhase(0.0f) {}
+      |                ^~~~~~~~~~~~~~~  ~~~~~~~~~~~~~~~
+      |                wavePhase(0.0f)  timeAlive(0.0f)
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowmanEnemy.cpp:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/LevelManager.h:9:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Boss.h:24:44: warning: unused parameter 'playerPos' [-Wunused-parameter]
+   24 |     virtual void SetPlayerPosition(Vector2 playerPos) { }
+      |                                            ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowmanEnemy.cpp:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/LevelManager.h:11:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SewerPipe.h:26:7: warning: 'SetPanSpeed' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   26 |         void SetPanSpeed(float speed); // New: Set pan speed
+      |              ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowmanEnemy.cpp:8:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/LevelManager.h:7:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Level.h:5:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Obstacle.h:16:18: note: overridden virtual function is here
+   16 |     virtual void SetPanSpeed(float speed) = 0; // New: Virtual method for pan speed
+      |                  ^
+3 warnings generated.
+
+CompileC /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SnowballProjectile.o /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowballProjectile.cpp normal arm64 c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'FloppyTurd' from project 'FloppyTurd')
+    cd /Users/aimac/Documents/GitHub/FloppyTurd
+    
+    Using response file: /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp
+    
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -ivfsstatcache /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/SDKStatCaches.noindex/iphoneos18.2-22C146-d5b9239ec3bf5b3adbecdf21472871e3.sdkstatcache -fmessage-length\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\=0 -fno-color-diagnostics -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wshorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wno-implicit-fallthrough -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -index-store-path /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/Index.noindex/DataStore -Wall -Wextra @/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp -MMD -MT dependencies -MF /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SnowballProjectile.d --serialize-diagnostics /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SnowballProjectile.dia -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowballProjectile.cpp -o /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SnowballProjectile.o -index-unit-output-path /FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SnowballProjectile.o
+
+CompileC /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SnowOverlay.o /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowOverlay.cpp normal arm64 c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'FloppyTurd' from project 'FloppyTurd')
+    cd /Users/aimac/Documents/GitHub/FloppyTurd
+    
+    Using response file: /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp
+    
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -ivfsstatcache /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/SDKStatCaches.noindex/iphoneos18.2-22C146-d5b9239ec3bf5b3adbecdf21472871e3.sdkstatcache -fmessage-length\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\=0 -fno-color-diagnostics -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wshorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wno-implicit-fallthrough -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -index-store-path /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/Index.noindex/DataStore -Wall -Wextra @/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp -MMD -MT dependencies -MF /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SnowOverlay.d --serialize-diagnostics /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SnowOverlay.dia -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowOverlay.cpp -o /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SnowOverlay.o -index-unit-output-path /FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SnowOverlay.o
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowOverlay.cpp:19:50: warning: missing field 'texture' initializer [-Wmissing-field-initializers]
+   19 |     Texture2D snowflakeTexture = { 0, 0, 0, 0, 0 };
+      |                                                  ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowOverlay.cpp:19:15: warning: unused variable 'snowflakeTexture' [-Wunused-variable]
+   19 |     Texture2D snowflakeTexture = { 0, 0, 0, 0, 0 };
+      |               ^~~~~~~~~~~~~~~~
+2 warnings generated.
+
+CompileC /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SnowLevel.o /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowLevel.cpp normal arm64 c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'FloppyTurd' from project 'FloppyTurd')
+    cd /Users/aimac/Documents/GitHub/FloppyTurd
+    
+    Using response file: /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp
+    
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -ivfsstatcache /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/SDKStatCaches.noindex/iphoneos18.2-22C146-d5b9239ec3bf5b3adbecdf21472871e3.sdkstatcache -fmessage-length\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\=0 -fno-color-diagnostics -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wshorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wno-implicit-fallthrough -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -index-store-path /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/Index.noindex/DataStore -Wall -Wextra @/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp -MMD -MT dependencies -MF /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SnowLevel.d --serialize-diagnostics /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SnowLevel.dia -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowLevel.cpp -o /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SnowLevel.o -index-unit-output-path /FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SnowLevel.o
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowLevel.cpp:1:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowLevel.h:2:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Level.h:9:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/PickUp.h:7:16: warning: field 'timeAlive' will be initialized after field 'wavePhase' [-Wreorder-ctor]
+    7 |     PickUp() : timeAlive(0.0f), wavePhase(0.0f) {}
+      |                ^~~~~~~~~~~~~~~  ~~~~~~~~~~~~~~~
+      |                wavePhase(0.0f)  timeAlive(0.0f)
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowLevel.cpp:1:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowLevel.h:8:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPair.h:14:7: warning: 'Draw' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   14 |         void Draw();
+      |              ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowLevel.cpp:1:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowLevel.h:2:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Level.h:5:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Obstacle.h:12:18: note: overridden virtual function is here
+   12 |     virtual void Draw() = 0;
+      |                  ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowLevel.cpp:1:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowLevel.h:8:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPair.h:15:7: warning: 'Update' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   15 |         void Update(float deltaTime);
+      |              ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowLevel.cpp:1:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowLevel.h:2:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Level.h:5:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Obstacle.h:13:18: note: overridden virtual function is here
+   13 |     virtual void Update(float deltaTime) = 0;
+      |                  ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowLevel.cpp:1:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowLevel.h:8:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPair.h:19:25: warning: 'GetHitboxes' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   19 |         std::vector<Rectangle> GetHitboxes();
+      |                                ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowLevel.cpp:1:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowLevel.h:2:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Level.h:5:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Obstacle.h:14:36: note: overridden virtual function is here
+   14 |     virtual std::vector<Rectangle> GetHitboxes() = 0;
+      |                                    ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowLevel.cpp:1:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowLevel.h:8:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ToiletPair.h:23:7: warning: 'SetPanSpeed' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   23 |         void SetPanSpeed(float speed);
+      |              ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowLevel.cpp:1:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowLevel.h:2:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Level.h:5:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Obstacle.h:16:18: note: overridden virtual function is here
+   16 |     virtual void SetPanSpeed(float speed) = 0; // New: Virtual method for pan speed
+      |                  ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowLevel.cpp:4:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/PoopHeart.h:20:7: warning: 'SetPanSpeed' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   20 |         void SetPanSpeed(float speed) { panSpeed = speed; }
+      |              ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowLevel.cpp:1:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowLevel.h:2:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Level.h:9:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/PickUp.h:18:15: note: overridden virtual function is here
+   18 |         virtual void SetPanSpeed(float speed) { panSpeed = speed; }
+      |                      ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowLevel.cpp:60:59: warning: implicit conversion loses integer precision: 'size_type' (aka 'unsigned long') to 'int' [-Wshorten-64-to-32]
+   60 |             int lastIndex = (i - 1 < 0) ? (toilets.size() - 1) : (i - 1);
+      |                 ~~~~~~~~~                  ~~~~~~~~~~~~~~~^~~
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowLevel.cpp:142:23: warning: comparison of integers of different signs: 'int' and 'size_type' (aka 'unsigned long') [-Wsign-compare]
+  142 |     for (int i = 1; i < toilets.size(); ++i) {
+      |                     ~ ^ ~~~~~~~~~~~~~~
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowLevel.cpp:161:63: warning: unused parameter 'circleRadius' [-Wunused-parameter]
+  161 | bool SnowLevel::checkForPointGain(Vector2 circleCenter, float circleRadius)
+      |                                                               ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowLevel.cpp:1:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowLevel.h:35:11: warning: private field 'gameScale' is not used [-Wunused-private-field]
+   35 |     float gameScale{ 1.0f };
+      |           ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SnowLevel.h:36:11: warning: private field 'screenScale' is not used [-Wunused-private-field]
+   36 |     float screenScale{ 1.0f };
+      |           ^
+
+CompileC /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SewerPipe.o /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SewerPipe.cpp normal arm64 c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'FloppyTurd' from project 'FloppyTurd')
+    cd /Users/aimac/Documents/GitHub/FloppyTurd
+    
+    Using response file: /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp
+    
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -ivfsstatcache /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/SDKStatCaches.noindex/iphoneos18.2-22C146-d5b9239ec3bf5b3adbecdf21472871e3.sdkstatcache -fmessage-length\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\=0 -fno-color-diagnostics -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wshorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wno-implicit-fallthrough -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -index-store-path /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/Index.noindex/DataStore -Wall -Wextra @/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp -MMD -MT dependencies -MF /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SewerPipe.d --serialize-diagnostics /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SewerPipe.dia -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SewerPipe.cpp -o /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SewerPipe.o -index-unit-output-path /FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SewerPipe.o
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SewerPipe.cpp:1:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SewerPipe.h:26:7: warning: 'SetPanSpeed' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   26 |         void SetPanSpeed(float speed); // New: Set pan speed
+      |              ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SewerPipe.cpp:1:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SewerPipe.h:5:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Obstacle.h:16:18: note: overridden virtual function is here
+   16 |     virtual void SetPanSpeed(float speed) = 0; // New: Virtual method for pan speed
+      |                  ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SewerPipe.cpp:5:36: warning: unused parameter 'yPos' [-Wunused-parameter]
+    5 | SewerPipe::SewerPipe(int xPos, int yPos) {
+      |                                    ^
+2 warnings generated.
+
+CompileC /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SewerLevel.o /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SewerLevel.cpp normal arm64 c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'FloppyTurd' from project 'FloppyTurd')
+    cd /Users/aimac/Documents/GitHub/FloppyTurd
+    
+    Using response file: /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp
+    
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -ivfsstatcache /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/SDKStatCaches.noindex/iphoneos18.2-22C146-d5b9239ec3bf5b3adbecdf21472871e3.sdkstatcache -fmessage-length\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\=0 -fno-color-diagnostics -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wshorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wno-implicit-fallthrough -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -index-store-path /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/Index.noindex/DataStore -Wall -Wextra @/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp -MMD -MT dependencies -MF /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SewerLevel.d --serialize-diagnostics /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SewerLevel.dia -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SewerLevel.cpp -o /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SewerLevel.o -index-unit-output-path /FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/SewerLevel.o
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SewerLevel.cpp:1:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SewerLevel.h:2:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Level.h:9:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/PickUp.h:7:16: warning: field 'timeAlive' will be initialized after field 'wavePhase' [-Wreorder-ctor]
+    7 |     PickUp() : timeAlive(0.0f), wavePhase(0.0f) {}
+      |                ^~~~~~~~~~~~~~~  ~~~~~~~~~~~~~~~
+      |                wavePhase(0.0f)  timeAlive(0.0f)
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SewerLevel.cpp:1:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SewerLevel.h:8:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SewerPipe.h:26:7: warning: 'SetPanSpeed' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   26 |         void SetPanSpeed(float speed); // New: Set pan speed
+      |              ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SewerLevel.cpp:1:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SewerLevel.h:2:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Level.h:5:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Obstacle.h:16:18: note: overridden virtual function is here
+   16 |     virtual void SetPanSpeed(float speed) = 0; // New: Virtual method for pan speed
+      |                  ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SewerLevel.cpp:1:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SewerLevel.h:24:32: warning: unused parameter 'enable' [-Wunused-parameter]
+   24 |     void SetSwingingPipes(bool enable) override {};
+      |                                ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SewerLevel.cpp:3:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/PoopHeart.h:20:7: warning: 'SetPanSpeed' overrides a member function but is not marked 'override' [-Winconsistent-missing-override]
+   20 |         void SetPanSpeed(float speed) { panSpeed = speed; }
+      |              ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SewerLevel.cpp:1:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SewerLevel.h:2:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Level.h:9:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/PickUp.h:18:15: note: overridden virtual function is here
+   18 |         virtual void SetPanSpeed(float speed) { panSpeed = speed; }
+      |                      ^
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SewerLevel.cpp:5:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/LevelManager.h:9:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Boss.h:24:44: warning: unused parameter 'playerPos' [-Wunused-parameter]
+   24 |     virtual void SetPlayerPosition(Vector2 playerPos) { }
+      |                                            ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SewerLevel.cpp:209:23: warning: comparison of integers of different signs: 'int' and 'size_type' (aka 'unsigned long') [-Wsign-compare]
+  209 |     for (int i = 0; i < pipes.size(); i++) {
+      |                     ~ ^ ~~~~~~~~~~~~
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/SewerLevel.cpp:213:57: warning: implicit conversion loses integer precision: 'size_type' (aka 'unsigned long') to 'int' [-Wshorten-64-to-32]
+  213 |             int lastIndex = (i - 1 < 0) ? (pipes.size() - 1) : (i - 1);
+      |                 ~~~~~~~~~                  ~~~~~~~~~~~~~^~~
+
+CompileC /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/ResourceManager.o /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ResourceManager.cpp normal arm64 c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'FloppyTurd' from project 'FloppyTurd')
+    cd /Users/aimac/Documents/GitHub/FloppyTurd
+    
+    Using response file: /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp
+    
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -ivfsstatcache /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/SDKStatCaches.noindex/iphoneos18.2-22C146-d5b9239ec3bf5b3adbecdf21472871e3.sdkstatcache -fmessage-length\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\=0 -fno-color-diagnostics -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wshorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wno-implicit-fallthrough -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -index-store-path /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/Index.noindex/DataStore -Wall -Wextra @/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp -MMD -MT dependencies -MF /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/ResourceManager.d --serialize-diagnostics /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/ResourceManager.dia -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ResourceManager.cpp -o /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/ResourceManager.o -index-unit-output-path /FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/ResourceManager.o
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ResourceManager.cpp:54:40: warning: missing field 'width' initializer [-Wmissing-field-initializers]
+   54 |     static Texture2D placeholder = { 0 };
+      |                                        ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ResourceManager.cpp:81:16: warning: missing field 'frameCount' initializer [-Wmissing-field-initializers]
+   81 |     return { 0 };
+      |                ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/ResourceManager.cpp:97:16: warning: missing field 'frameCount' initializer [-Wmissing-field-initializers]
+   97 |     return { 0 };
+      |                ^
+
+CompileC /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/RaylibCompat.o /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp normal arm64 c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'FloppyTurd' from project 'FloppyTurd')
+    cd /Users/aimac/Documents/GitHub/FloppyTurd
+    
+    Using response file: /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp
+    
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -ivfsstatcache /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/SDKStatCaches.noindex/iphoneos18.2-22C146-d5b9239ec3bf5b3adbecdf21472871e3.sdkstatcache -fmessage-length\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\=0 -fno-color-diagnostics -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wshorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wno-implicit-fallthrough -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -index-store-path /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/Index.noindex/DataStore -Wall -Wextra @/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp -MMD -MT dependencies -MF /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/RaylibCompat.d --serialize-diagnostics /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/RaylibCompat.dia -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp -o /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/RaylibCompat.o -index-unit-output-path /FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/RaylibCompat.o
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:22:41: warning: missing field 'glyphCount' initializer [-Wmissing-field-initializers]
+   22 | static Font g_defaultFont = {nullptr, 16};
+      |                                         ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:53:28: warning: unused parameter 'button' [-Wunused-parameter]
+   53 | bool IsMouseButtonDown(int button) {
+      |                            ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:74:21: warning: unused parameter 'width' [-Wunused-parameter]
+   74 | void InitWindow(int width, int height, const char* title) {
+      |                     ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:74:32: warning: unused parameter 'height' [-Wunused-parameter]
+   74 | void InitWindow(int width, int height, const char* title) {
+      |                                ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:74:52: warning: unused parameter 'title' [-Wunused-parameter]
+   74 | void InitWindow(int width, int height, const char* title) {
+      |                                                    ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:99:23: warning: unused parameter 'fps' [-Wunused-parameter]
+   99 | void SetTargetFPS(int fps) {
+      |                       ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:144:28: warning: unused parameter 'color' [-Wunused-parameter]
+  144 | void ClearBackground(Color color) {
+      |                            ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:157:12: error: use of undeclared identifier 'LoadTexture_iOS'; did you mean 'LoadTexture'?
+  157 |     return LoadTexture_iOS(fileName);
+      |            ^~~~~~~~~~~~~~~
+      |            LoadTexture
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:154:11: note: 'LoadTexture' declared here
+  154 | Texture2D LoadTexture(const char *fileName)
+      |           ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:168:5: error: use of undeclared identifier 'UnloadTexture_iOS'; did you mean 'UnloadTexture'?
+  168 |     UnloadTexture_iOS(texture);
+      |     ^~~~~~~~~~~~~~~~~
+      |     UnloadTexture
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:165:6: note: 'UnloadTexture' declared here
+  165 | void UnloadTexture(Texture2D texture)
+      |      ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:177:12: error: use of undeclared identifier 'LoadTextureFromImage_iOS'; did you mean 'LoadTextureFromImage'?
+  177 |     return LoadTextureFromImage_iOS(image);
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~
+      |            LoadTextureFromImage
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:174:11: note: 'LoadTextureFromImage' declared here
+  174 | Texture2D LoadTextureFromImage(Image image)
+      |           ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:188:5: error: use of undeclared identifier 'DrawTexture_iOS'
+  188 |     DrawTexture_iOS(texture, posX, posY, tint);
+      |     ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:197:5: error: use of undeclared identifier 'DrawTextureV_iOS'; did you mean 'DrawTextureV'?
+  197 |     DrawTextureV_iOS(texture, position, tint);
+      |     ^~~~~~~~~~~~~~~~
+      |     DrawTextureV
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:194:6: note: 'DrawTextureV' declared here
+  194 | void DrawTextureV(Texture2D texture, Vector2 position, Color tint)
+      |      ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:206:5: error: use of undeclared identifier 'DrawTextureEx_iOS'; did you mean 'DrawTextureEx'?
+  206 |     DrawTextureEx_iOS(texture, position, rotation, scale, tint);
+      |     ^~~~~~~~~~~~~~~~~
+      |     DrawTextureEx
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:203:6: note: 'DrawTextureEx' declared here
+  203 | void DrawTextureEx(Texture2D texture, Vector2 position, float rotation, float scale, Color tint)
+      |      ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:215:5: error: use of undeclared identifier 'DrawTextureRec_iOS'; did you mean 'DrawTextureRec'?
+  215 |     DrawTextureRec_iOS(texture, source, dest, tint);
+      |     ^~~~~~~~~~~~~~~~~~
+      |     DrawTextureRec
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:212:6: note: 'DrawTextureRec' declared here
+  212 | void DrawTextureRec(Texture2D texture, Rectangle source, Rectangle dest, Color tint)
+      |      ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:230:5: error: use of undeclared identifier 'DrawTexturePro_iOS'; did you mean 'DrawTexturePro'?
+  230 |     DrawTexturePro_iOS(texture, source, dest, origin, rotation, tint);
+      |     ^~~~~~~~~~~~~~~~~~
+      |     DrawTexturePro
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:227:6: note: 'DrawTexturePro' declared here
+  227 | void DrawTexturePro(Texture2D texture, Rectangle source, Rectangle dest, Vector2 origin, float rotation, Color tint)
+      |      ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:243:12: error: no member named 'frameWidth' in 'Texture2D'
+  243 |     result.frameWidth = texture.frameWidth;
+      |     ~~~~~~ ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:243:33: error: no member named 'frameWidth' in 'Texture2D'
+  243 |     result.frameWidth = texture.frameWidth;
+      |                         ~~~~~~~ ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:244:12: error: no member named 'frameHeight' in 'Texture2D'
+  244 |     result.frameHeight = texture.frameHeight;
+      |     ~~~~~~ ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:244:34: error: no member named 'frameHeight' in 'Texture2D'
+  244 |     result.frameHeight = texture.frameHeight;
+      |                          ~~~~~~~ ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:253:12: error: use of undeclared identifier 'LoadImage_iOS'; did you mean 'LoadImage'?
+  253 |     return LoadImage_iOS(fileName);
+      |            ^~~~~~~~~~~~~
+      |            LoadImage
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:250:7: note: 'LoadImage' declared here
+  250 | Image LoadImage(const char* fileName)
+      |       ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:264:5: error: use of undeclared identifier 'UnloadImage_iOS'; did you mean 'UnloadImage'?
+  264 |     UnloadImage_iOS(image);
+      |     ^~~~~~~~~~~~~~~
+      |     UnloadImage
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:261:6: note: 'UnloadImage' declared here
+  261 | void UnloadImage(Image image)
+      |      ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:273:12: error: use of undeclared identifier 'GenImageColor_iOS'; did you mean 'GenImageColor'?
+  273 |     return GenImageColor_iOS(width, height, color);
+      |            ^~~~~~~~~~~~~~~~~
+      |            GenImageColor
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:270:7: note: 'GenImageColor' declared here
+  270 | Image GenImageColor(int width, int height, Color color)
+      |       ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:281:24: warning: unused parameter 'image' [-Wunused-parameter]
+  281 | void ImageToPOT(Image *image, Color fill) {
+      |                        ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:281:37: warning: unused parameter 'fill' [-Wunused-parameter]
+  281 | void ImageToPOT(Image *image, Color fill) {
+      |                                     ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:289:25: warning: unused parameter 'image' [-Wunused-parameter]
+  289 | void ImageFormat(Image *image, int newFormat) {
+      |                         ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:289:36: warning: unused parameter 'newFormat' [-Wunused-parameter]
+  289 | void ImageFormat(Image *image, int newFormat) {
+      |                                    ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:300:24: warning: unused parameter 'image' [-Wunused-parameter]
+  300 | bool ExportImage(Image image, const char *fileName) {
+      |                        ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:300:43: warning: unused parameter 'fileName' [-Wunused-parameter]
+  300 | bool ExportImage(Image image, const char *fileName) {
+      |                                           ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:312:5: error: use of undeclared identifier 'ImageDraw_iOS'; did you mean 'ImageDraw'?
+  312 |     ImageDraw_iOS(dst, src, srcRec, dstRec, tint);
+      |     ^~~~~~~~~~~~~
+      |     ImageDraw
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:309:6: note: 'ImageDraw' declared here
+  309 | void ImageDraw(Image* dst, Image src, Rectangle srcRec, Rectangle dstRec, Color tint)
+      |      ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:321:5: error: use of undeclared identifier 'ImageResize_iOS'; did you mean 'ImageResize'?
+  321 |     ImageResize_iOS(image, newWidth, newHeight);
+      |     ^~~~~~~~~~~~~~~
+      |     ImageResize
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:318:6: note: 'ImageResize' declared here
+  318 | void ImageResize(Image* image, int newWidth, int newHeight)
+      |      ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:329:35: warning: unused parameter 'fileName' [-Wunused-parameter]
+  329 | void* LoadTexture_iOS(const char* fileName, int* width, int* height) {
+      |                                   ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:329:50: warning: unused parameter 'width' [-Wunused-parameter]
+  329 | void* LoadTexture_iOS(const char* fileName, int* width, int* height) {
+      |                                                  ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:329:62: warning: unused parameter 'height' [-Wunused-parameter]
+  329 | void* LoadTexture_iOS(const char* fileName, int* width, int* height) {
+      |                                                              ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:333:30: warning: unused parameter 'texture' [-Wunused-parameter]
+  333 | void UnloadTexture_iOS(void* texture) {
+      |                              ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:337:33: warning: unused parameter 'width' [-Wunused-parameter]
+  337 | void* LoadRenderTexture_iOS(int width, int height) {
+      |                                 ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:337:44: warning: unused parameter 'height' [-Wunused-parameter]
+  337 | void* LoadRenderTexture_iOS(int width, int height) {
+      |                                            ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:341:36: warning: unused parameter 'texture' [-Wunused-parameter]
+  341 | void UnloadRenderTexture_iOS(void* texture) {
+      |                                    ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:345:29: warning: unused parameter 'renderTexture' [-Wunused-parameter]
+  345 | void BeginDrawing_iOS(void* renderTexture) {
+      |                             ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:349:27: warning: unused parameter 'renderTexture' [-Wunused-parameter]
+  349 | void EndDrawing_iOS(void* renderTexture) {
+      |                           ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:353:28: warning: unused parameter 'posX' [-Wunused-parameter]
+  353 | void DrawRectangle_iOS(int posX, int posY, int width, int height, unsigned int color) {
+      |                            ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:353:38: warning: unused parameter 'posY' [-Wunused-parameter]
+  353 | void DrawRectangle_iOS(int posX, int posY, int width, int height, unsigned int color) {
+      |                                      ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:353:48: warning: unused parameter 'width' [-Wunused-parameter]
+  353 | void DrawRectangle_iOS(int posX, int posY, int width, int height, unsigned int color) {
+      |                                                ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:353:59: warning: unused parameter 'height' [-Wunused-parameter]
+  353 | void DrawRectangle_iOS(int posX, int posY, int width, int height, unsigned int color) {
+      |                                                           ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:353:80: warning: unused parameter 'color' [-Wunused-parameter]
+  353 | void DrawRectangle_iOS(int posX, int posY, int width, int height, unsigned int color) {
+      |                                                                                ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:357:31: warning: unused parameter 'text' [-Wunused-parameter]
+  357 | void DrawText_iOS(const char* text, int posX, int posY, int fontSize, unsigned int color) {
+      |                               ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:357:41: warning: unused parameter 'posX' [-Wunused-parameter]
+  357 | void DrawText_iOS(const char* text, int posX, int posY, int fontSize, unsigned int color) {
+      |                                         ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:357:51: warning: unused parameter 'posY' [-Wunused-parameter]
+  357 | void DrawText_iOS(const char* text, int posX, int posY, int fontSize, unsigned int color) {
+      |                                                   ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:357:61: warning: unused parameter 'fontSize' [-Wunused-parameter]
+  357 | void DrawText_iOS(const char* text, int posX, int posY, int fontSize, unsigned int color) {
+      |                                                             ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:357:84: warning: unused parameter 'color' [-Wunused-parameter]
+  357 | void DrawText_iOS(const char* text, int posX, int posY, int fontSize, unsigned int color) {
+      |                                                                                    ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:369:33: warning: unused parameter 'fileName' [-Wunused-parameter]
+  369 | Image LoadImage_iOS(const char* fileName) {
+      |                                 ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:372:28: warning: unused parameter 'image' [-Wunused-parameter]
+  372 | void UnloadImage_iOS(Image image) {
+      |                            ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:375:29: warning: unused parameter 'width' [-Wunused-parameter]
+  375 | Image GenImageColor_iOS(int width, int height, Color color) {
+      |                             ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:375:40: warning: unused parameter 'height' [-Wunused-parameter]
+  375 | Image GenImageColor_iOS(int width, int height, Color color) {
+      |                                        ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:375:54: warning: unused parameter 'color' [-Wunused-parameter]
+  375 | Image GenImageColor_iOS(int width, int height, Color color) {
+      |                                                      ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:378:27: warning: unused parameter 'dst' [-Wunused-parameter]
+  378 | void ImageDraw_iOS(Image* dst, Image src, Rectangle srcRec, Rectangle dstRec, Color tint) {
+      |                           ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:378:38: warning: unused parameter 'src' [-Wunused-parameter]
+  378 | void ImageDraw_iOS(Image* dst, Image src, Rectangle srcRec, Rectangle dstRec, Color tint) {
+      |                                      ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:378:53: warning: unused parameter 'srcRec' [-Wunused-parameter]
+  378 | void ImageDraw_iOS(Image* dst, Image src, Rectangle srcRec, Rectangle dstRec, Color tint) {
+      |                                                     ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:378:71: warning: unused parameter 'dstRec' [-Wunused-parameter]
+  378 | void ImageDraw_iOS(Image* dst, Image src, Rectangle srcRec, Rectangle dstRec, Color tint) {
+      |                                                                       ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:378:85: warning: unused parameter 'tint' [-Wunused-parameter]
+  378 | void ImageDraw_iOS(Image* dst, Image src, Rectangle srcRec, Rectangle dstRec, Color tint) {
+      |                                                                                     ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:381:42: warning: unused parameter 'image' [-Wunused-parameter]
+  381 | Texture2D LoadTextureFromImage_iOS(Image image) {
+      |                                          ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:384:29: warning: unused parameter 'image' [-Wunused-parameter]
+  384 | void ImageResize_iOS(Image* image, int newWidth, int newHeight) {
+      |                             ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:384:40: warning: unused parameter 'newWidth' [-Wunused-parameter]
+  384 | void ImageResize_iOS(Image* image, int newWidth, int newHeight) {
+      |                                        ^
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RaylibCompat.cpp:384:54: warning: unused parameter 'newHeight' [-Wunused-parameter]
+  384 | void ImageResize_iOS(Image* image, int newWidth, int newHeight) {
+      |                                                      ^
+46 warnings and 17 errors generated.
+
+CompileC /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/RatKing.o /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RatKing.cpp normal arm64 c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'FloppyTurd' from project 'FloppyTurd')
+    cd /Users/aimac/Documents/GitHub/FloppyTurd
+    
+    Using response file: /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp
+    
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -ivfsstatcache /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/SDKStatCaches.noindex/iphoneos18.2-22C146-d5b9239ec3bf5b3adbecdf21472871e3.sdkstatcache -fmessage-length\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\=0 -fno-color-diagnostics -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wshorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wno-implicit-fallthrough -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -index-store-path /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/Index.noindex/DataStore -Wall -Wextra @/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp -MMD -MT dependencies -MF /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/RatKing.d --serialize-diagnostics /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/RatKing.dia -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/RatKing.cpp -o /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/RatKing.o -index-unit-output-path /FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/RatKing.o
+
+CompileC /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/Projectile.o /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Projectile.cpp normal arm64 c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'FloppyTurd' from project 'FloppyTurd')
+    cd /Users/aimac/Documents/GitHub/FloppyTurd
+    
+    Using response file: /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp
+    
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -ivfsstatcache /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/SDKStatCaches.noindex/iphoneos18.2-22C146-d5b9239ec3bf5b3adbecdf21472871e3.sdkstatcache -fmessage-length\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\=0 -fno-color-diagnostics -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wshorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wno-implicit-fallthrough -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -index-store-path /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/Index.noindex/DataStore -Wall -Wextra @/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp -MMD -MT dependencies -MF /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/Projectile.d --serialize-diagnostics /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/Projectile.dia -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Projectile.cpp -o /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/Projectile.o -index-unit-output-path /FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/Projectile.o
+
+CompileC /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/PoopHeart.o /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/PoopHeart.cpp normal arm64 c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'FloppyTurd' from project 'FloppyTurd')
+    cd /Users/aimac/Documents/GitHub/FloppyTurd
+    
+    Using response file: /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp
+    
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -ivfsstatcache /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/SDKStatCaches.noindex/iphoneos18.2-22C146-d5b9239ec3bf5b3adbecdf21472871e3.sdkstatcache -fmessage-length\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\=0 -fno-color-diagnostics -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wshorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wno-implicit-fallthrough -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -index-store-path /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/Index.noindex/DataStore -Wall -Wextra @/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp -MMD -MT dependencies -MF /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/PoopHeart.d --serialize-diagnostics /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/PoopHeart.dia -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/PoopHeart.cpp -o /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/PoopHeart.o -index-unit-output-path /FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/PoopHeart.o
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/PoopHeart.cpp:1:
+In file included from /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/PoopHeart.h:2:
+/Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/PickUp.h:7:16: warning: field 'timeAlive' will be initialized after field 'wavePhase' [-Wreorder-ctor]
+    7 |     PickUp() : timeAlive(0.0f), wavePhase(0.0f) {}
+      |                ^~~~~~~~~~~~~~~  ~~~~~~~~~~~~~~~
+      |                wavePhase(0.0f)  timeAlive(0.0f)
+
+CompileC /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/Playing.o /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Playing.cpp normal arm64 c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'FloppyTurd' from project 'FloppyTurd')
+    cd /Users/aimac/Documents/GitHub/FloppyTurd
+    
+    Using response file: /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp
+    
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -ivfsstatcache /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/SDKStatCaches.noindex/iphoneos18.2-22C146-d5b9239ec3bf5b3adbecdf21472871e3.sdkstatcache -fmessage-length\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\=0 -fno-color-diagnostics -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wshorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wno-implicit-fallthrough -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -index-store-path /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/Index.noindex/DataStore -Wall -Wextra @/Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp -MMD -MT dependencies -MF /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/Playing.d --serialize-diagnostics /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/Playing.dia -c /Users/aimac/Documents/GitHub/FloppyTurd/FloppyTurd/Playing.cpp -o /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/build/FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/Playing.o -index-unit-output-path /FloppyTurd.build/Debug-iphoneos/Objects-normal/arm64/Playing.o
+
+note: Run script build phase 'Generate CMakeFiles/ZERO_CHECK' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'ZERO_CHECK' from project 'FloppyTurd')

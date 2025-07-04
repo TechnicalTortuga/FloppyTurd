@@ -1,8 +1,0 @@
-#!/bin/sh
-set -e
-if test "$CONFIGURATION" = "Debug"; then :
-  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios-new/_deps/sdl2_mixer-subbuild
-  /opt/homebrew/bin/cmake -E echo_append
-  /opt/homebrew/bin/cmake -E touch /Users/aimac/Documents/GitHub/FloppyTurd/build-ios-new/_deps/sdl2_mixer-subbuild/sdl2_mixer-populate-prefix/src/sdl2_mixer-populate-stamp/$CONFIGURATION$EFFECTIVE_PLATFORM_NAME/sdl2_mixer-populate-patch
-fi
-

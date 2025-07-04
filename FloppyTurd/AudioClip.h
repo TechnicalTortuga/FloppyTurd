@@ -9,53 +9,25 @@ class AudioClip
 public:
     AudioClip(const std::string& filePath) {
         music = LoadMusicStream(filePath.c_str());
-        if (!music
-#if defined(__APPLE__) && TARGET_OS_IPHONE
-            .music
-#else
-            .audioData
-#endif
-        ) {
-#if defined(__APPLE__) && TARGET_OS_IPHONE
-            music.music = nullptr; // Explicitly set to nullptr for safety
-#else
-            music.audioData = nullptr; // Explicitly set to nullptr for safety
-#endif
+        if (!music.ctxData) {
+            music.ctxData = nullptr; // Explicitly set to nullptr for safety
         }
         AudioManager::GetInstance().RegisterClip(this);
     }
 
     virtual ~AudioClip() {
         AudioManager::GetInstance().UnregisterClip(this);
-        if (music
-#if defined(__APPLE__) && TARGET_OS_IPHONE
-            .music
-#else
-            .audioData
-#endif
-        ) { // Only unload if valid
+        if (music.ctxData) { // Only unload if valid
             UnloadMusicStream(music);
         }
     }
 
     void Play() {
-        if (music
-#if defined(__APPLE__) && TARGET_OS_IPHONE
-            .music
-#else
-            .audioData
-#endif
-        ) PlayMusicStream(music);
+        if (music.ctxData) PlayMusicStream(music);
     }
 
     void Stop() {
-        if (music
-#if defined(__APPLE__) && TARGET_OS_IPHONE
-            .music
-#else
-            .audioData
-#endif
-        && IsMusicStreamPlaying(music)) { // Add playing check
+        if (music.ctxData && IsMusicStreamPlaying(music)) { // Add playing check
             TraceLog(LOG_INFO, "Stopping music stream");
             StopMusicStream(music); // Line 31
         }
@@ -65,45 +37,21 @@ public:
     }
 
     void Update() {
-        if (music
-#if defined(__APPLE__) && TARGET_OS_IPHONE
-            .music
-#else
-            .audioData
-#endif
-        ) UpdateMusicStream(music);
+        if (music.ctxData) UpdateMusicStream(music);
     }
 
     bool IsPlaying() const {
-        return music
-#if defined(__APPLE__) && TARGET_OS_IPHONE
-            .music
-#else
-            .audioData
-#endif
-        && IsMusicStreamPlaying(music);
+        return music.ctxData && IsMusicStreamPlaying(music);
     }
 
     // NEW: Set the music volume (expected range 0.0 to 1.0)
     void SetVolume(float vol) {
-        if (music
-#if defined(__APPLE__) && TARGET_OS_IPHONE
-            .music
-#else
-            .audioData
-#endif
-        ) SetMusicVolume(music, vol);
+        if (music.ctxData) SetMusicVolume(music, vol);
     }
 
     // Corrected: Set looping state
     void SetLooping(bool loop) {
-        if (music
-#if defined(__APPLE__) && TARGET_OS_IPHONE
-            .music
-#else
-            .audioData
-#endif
-        ) music.looping = loop;
+        if (music.ctxData) music.looping = loop;
     }
 
     Music music;

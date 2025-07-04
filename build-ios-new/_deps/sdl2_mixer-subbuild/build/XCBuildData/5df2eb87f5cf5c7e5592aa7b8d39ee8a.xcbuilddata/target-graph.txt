@@ -1,7 +1,0 @@
-Target dependency graph (3 targets)
-Target 'ALL_BUILD' in project 'sdl2_mixer-populate'
-➜ Explicit dependency on target 'sdl2_mixer-populate' in project 'sdl2_mixer-populate'
-➜ Explicit dependency on target 'ZERO_CHECK' in project 'sdl2_mixer-populate'
-Target 'sdl2_mixer-populate' in project 'sdl2_mixer-populate'
-➜ Explicit dependency on target 'ZERO_CHECK' in project 'sdl2_mixer-populate'
-Target 'ZERO_CHECK' in project 'sdl2_mixer-populate' (no dependencies)

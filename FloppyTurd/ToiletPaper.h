@@ -9,10 +9,10 @@ public:
     ToiletPaper(Vector2 spawnPos, float panspeed, float extra = 20.0f);
     ~ToiletPaper();
 
-    void Update(float deltaTime);
-    void Draw() const;
+    void Update(float deltaTime) override;
+    void Draw() const override;
 
-    Rectangle GetHitbox() const;
+    Rectangle GetHitbox() const override;
     void TakeDamage() override;
     bool ShouldBeRemoved() const override;
     void SetInverted(bool val) { inverted = val; }
