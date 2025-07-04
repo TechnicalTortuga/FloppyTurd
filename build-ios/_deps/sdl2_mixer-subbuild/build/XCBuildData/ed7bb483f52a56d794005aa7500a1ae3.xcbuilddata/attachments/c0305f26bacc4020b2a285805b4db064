@@ -1,8 +1,0 @@
-#!/bin/sh
-set -e
-if test "$CONFIGURATION" = "Debug"; then :
-  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_mixer-subbuild
-  /opt/homebrew/bin/cmake -Dcfgdir=/$CONFIGURATION$EFFECTIVE_PLATFORM_NAME -P /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_mixer-subbuild/sdl2_mixer-populate-prefix/tmp/sdl2_mixer-populate-mkdirs.cmake
-  /opt/homebrew/bin/cmake -E touch /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_mixer-subbuild/sdl2_mixer-populate-prefix/src/sdl2_mixer-populate-stamp/$CONFIGURATION$EFFECTIVE_PLATFORM_NAME/sdl2_mixer-populate-mkdir
-fi
-

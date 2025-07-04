@@ -3,7 +3,7 @@ set(CMAKE_HOST_SYSTEM_NAME "Darwin")
 set(CMAKE_HOST_SYSTEM_VERSION "24.5.0")
 set(CMAKE_HOST_SYSTEM_PROCESSOR "arm64")
 
-include("/Users/aimac/Documents/ios-cmake-master/ios.toolchain.cmake")
+include("/Users/aimac/Documents/GitHub/FloppyTurd/ios-cmake-master/ios.toolchain.cmake")
 
 set(CMAKE_SYSTEM "iOS-18.2")
 set(CMAKE_SYSTEM_NAME "iOS")

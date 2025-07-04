@@ -1,8 +1,0 @@
-Target dependency graph (4 targets)
-Target 'SDL2_ttf' in project 'FloppyTurd'
-➜ Explicit dependency on target 'SDL2-static' in project 'FloppyTurd'
-➜ Explicit dependency on target 'freetype' in project 'FloppyTurd'
-Target 'freetype' in project 'FloppyTurd' (no dependencies)
-Target 'SDL2-static' in project 'FloppyTurd'
-➜ Explicit dependency on target 'sdl_headers_copy' in project 'FloppyTurd'
-Target 'sdl_headers_copy' in project 'FloppyTurd' (no dependencies)

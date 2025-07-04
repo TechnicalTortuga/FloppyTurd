@@ -1,7 +1,0 @@
-Target dependency graph (3 targets)
-Target 'ALL_BUILD' in project 'sdl2_ttf-populate'
-➜ Explicit dependency on target 'ZERO_CHECK' in project 'sdl2_ttf-populate'
-➜ Explicit dependency on target 'sdl2_ttf-populate' in project 'sdl2_ttf-populate'
-Target 'sdl2_ttf-populate' in project 'sdl2_ttf-populate'
-➜ Explicit dependency on target 'ZERO_CHECK' in project 'sdl2_ttf-populate'
-Target 'ZERO_CHECK' in project 'sdl2_ttf-populate' (no dependencies)

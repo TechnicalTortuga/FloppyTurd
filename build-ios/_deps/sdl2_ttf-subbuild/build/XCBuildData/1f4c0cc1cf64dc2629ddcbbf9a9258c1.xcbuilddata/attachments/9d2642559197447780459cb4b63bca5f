@@ -1,7 +1,0 @@
-#!/bin/sh
-set -e
-if test "$CONFIGURATION" = "Debug"; then :
-  cd /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-src
-  /opt/homebrew/bin/cmake -Dcan_fetch=YES -DCMAKE_MESSAGE_LOG_LEVEL=VERBOSE -P /Users/aimac/Documents/GitHub/FloppyTurd/build-ios/_deps/sdl2_ttf-subbuild/sdl2_ttf-populate-prefix/tmp/sdl2_ttf-populate-gitupdate.cmake
-fi
-

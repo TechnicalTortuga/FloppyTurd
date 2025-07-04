@@ -1,6 +1,11 @@
-#define SDL_MAIN_HANDLED
 #include <iostream>
+
+// Only include SDL on iOS if not using Metal renderer
+#if defined(PLATFORM_IOS) && !defined(USE_METAL_RENDERER)
+#define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
+#endif
+
 #include "RaylibCompat.h"
 #include "Game.h"
 #include "PlatformLayer.h"
@@ -65,20 +70,24 @@ int main()
 }
 #endif
 
-// SDL2 entry point for iOS
+// iOS entry point
 #if defined(PLATFORM_IOS)
 extern "C" int main(int argc, char *argv[]) {
-    // Initialize SDL2
+#if !defined(USE_METAL_RENDERER)
+    // Initialize SDL2 if not using Metal
     if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
         printf("SDL_Init failed: %s\n", SDL_GetError());
         return 1;
     }
+#endif
 
     // Call our game logic
     int result = game_main(argc, argv);
 
-    // Clean up SDL
+#if !defined(USE_METAL_RENDERER)
+    // Clean up SDL if used
     SDL_Quit();
+#endif
     return result;
 }
 #endif

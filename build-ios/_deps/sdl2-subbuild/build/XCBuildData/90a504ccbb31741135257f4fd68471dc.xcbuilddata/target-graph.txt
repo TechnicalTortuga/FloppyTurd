@@ -1,7 +1,0 @@
-Target dependency graph (3 targets)
-Target 'ALL_BUILD' in project 'sdl2-populate'
-➜ Explicit dependency on target 'ZERO_CHECK' in project 'sdl2-populate'
-➜ Explicit dependency on target 'sdl2-populate' in project 'sdl2-populate'
-Target 'sdl2-populate' in project 'sdl2-populate'
-➜ Explicit dependency on target 'ZERO_CHECK' in project 'sdl2-populate'
-Target 'ZERO_CHECK' in project 'sdl2-populate' (no dependencies)

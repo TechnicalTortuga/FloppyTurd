@@ -1,27 +1,26 @@
-#ifndef RAYLIB_COMPAT_H
-#define RAYLIB_COMPAT_H
-
-#if defined(__APPLE__) && defined(TARGET_OS_IOS) && defined(USE_METAL_RENDERER)
-    // On iOS with Metal, we include our own compatibility layer.
-    // The C++ files will not include raylib.h, but will get the function
-    // declarations from this header. The .mm files will provide the implementations.
-#else
-    // For all other platforms, use the original Raylib header.
-    #include "raylib.h"
-#endif
-
 #pragma once
 
 #ifdef __APPLE__
 #include <TargetConditionals.h>
 #endif
 
-// If we're on iOS and using Metal renderer, we define types and functions,
-// but do NOT include the Metal compatibility header. It must only be
-// included by .mm (Objective-C++) files.
-#if defined(__APPLE__) && TARGET_OS_IOS && defined(USE_METAL_RENDERER)
+#if defined(__APPLE__) && TARGET_OS_IOS
 
-// ========== iOS/Metal TYPE DEFINITIONS ==========
+// ========== METAL/IOS INCLUDES ==========
+#import <Metal/Metal.h>
+#import <MetalKit/MetalKit.h>
+#import <UIKit/UIKit.h>
+#import <CoreGraphics/CoreGraphics.h>
+#import <AVFoundation/AVFoundation.h>
+#import <CoreText/CoreText.h>
+
+#include <cmath>
+#include <string>
+#include <unordered_map>
+#include <memory>
+#include <vector>
+
+// ========== TYPE DEFINITIONS ==========
 
 typedef struct Vector2 {
     float x;
@@ -42,32 +41,20 @@ typedef struct Color {
     unsigned char a;
 } Color;
 
-// ========== PLATFORM-SPECIFIC DEFINITIONS ==========
-
-#if defined(__APPLE__) && TARGET_OS_IPHONE
-// iOS/Metal platform.
-// Here we define C-compatible structs that will be implemented
-// by the Objective-C++ (.mm) files.
-#include <cmath>
-#include <string>
-#include <unordered_map>
-#include <memory>
-#include <stdio.h>
-
 typedef struct Texture2D {
-    void* texture; // Will be an id<MTLTexture>
+    id<MTLTexture> metalTexture;
     int width;
     int height;
 } Texture2D;
 
 typedef struct Image {
-    void* surface; // Will be a UIImage or similar
+    CGImageRef cgImage;
     int width;
     int height;
 } Image;
 
 typedef struct Font {
-    void* fontData; // Will be a UIFont or CTFontRef
+    CTFontRef ctFont;
     int size;
     int glyphCount;
     int baseSize;
@@ -82,34 +69,18 @@ typedef struct AudioStream {
 } AudioStream;
 
 typedef struct Music {
-    void* music; // Will be an AVAudioPlayer
+    AVAudioPlayer* player;
     int volume;
     bool looping;
 } Music;
 
 typedef struct Sound {
-    void* chunk; // Will be an AVAudioPlayerNode/Buffer
+    AVAudioPlayer* player;
     int sampleCount;
     int stream; // Not used, for compatibility
 } Sound;
 
-#else
-// Non-iOS platforms (Raylib)
-#include <raylib.h>
-
-// Use Raylib's native types
-typedef ::Texture2D Texture2D;
-typedef ::Image Image;
-typedef ::Font Font;
-typedef ::AudioStream AudioStream;
-typedef ::Music Music;
-typedef ::Sound Sound;
-
-#endif
-
-// ========== COMMON CONSTANTS ==========
-
-// Color constants
+// ========== COLOR CONSTANTS ==========
 #define WHITE (Color){ 255, 255, 255, 255 }
 #define BLACK (Color){ 0, 0, 0, 255 }
 #define RED (Color){ 255, 0, 0, 255 }
@@ -122,6 +93,7 @@ typedef ::Sound Sound;
 #define MAGENTA (Color){ 255, 0, 255, 255 }
 #define BLANK (Color){ 0, 0, 0, 0 }
 
+// ========== CONSTANTS ==========
 // Texture constants
 #define TEXTURE_WRAP_REPEAT 0
 #define TEXTURE_WRAP_CLAMP 1
@@ -136,7 +108,7 @@ typedef ::Sound Sound;
 #define TEXTURE_FILTER_ANISOTROPIC_8X 4
 #define TEXTURE_FILTER_ANISOTROPIC_16X 5
 
-// Mouse button constants
+// Mouse button constants (mapped to touch)
 #define MOUSE_BUTTON_LEFT 0
 #define MOUSE_BUTTON_RIGHT 1
 #define MOUSE_BUTTON_MIDDLE 2
@@ -144,7 +116,7 @@ typedef ::Sound Sound;
 #define MOUSE_RIGHT_BUTTON 1
 #define MOUSE_MIDDLE_BUTTON 2
 
-// Key constants
+// Key constants (not used on iOS)
 #define KEY_NULL 0
 #define KEY_SPACE 32
 #define KEY_ESCAPE 256
@@ -236,6 +208,9 @@ int GetScreenHeight();
 void BeginDrawing();
 void EndDrawing();
 void ClearBackground(Color color);
+void UpdateSafeAreaInsets(float top, float right, float bottom, float left);
+void OnAppPause();
+void OnAppResume();
 
 // Texture functions
 Texture2D LoadTexture(const char* fileName);
@@ -255,6 +230,7 @@ void UnloadImage(Image image);
 Image GenImageColor(int width, int height, Color color);
 void ImageResize(Image* image, int newWidth, int newHeight);
 void ImageDraw(Image* dst, Image src, Rectangle srcRec, Rectangle dstRec, Color tint);
+Image LoadImageFromTexture(Texture2D texture);
 
 // Audio functions
 void InitAudioDevice();
@@ -275,11 +251,19 @@ bool IsMusicStreamPlaying(Music music);
 void UpdateMusicStream(Music music);
 
 // Input functions
+void UpdateTouchState(int touchId, float x, float y, bool is_down);
+void ClearAllTouchStates();
 Vector2 GetMousePosition();
 Vector2 GetMouseDelta();
 bool IsMouseButtonPressed(int button);
 bool IsMouseButtonReleased(int button);
 bool IsMouseButtonDown(int button);
+
+// Multi-touch functions
+int GetTouchCount();
+bool IsTouchDown(int index);
+bool IsTouchPressed(int index);
+bool IsTouchReleased(int index);
 
 // Font functions
 Font LoadFont(const char* fileName);
@@ -348,13 +332,7 @@ bool CheckCollisionCircleRec(Vector2 center, float radius, Rectangle rec);
 float GetFrameTime();
 double GetTime();
 
-// Additional functions
-Image LoadImageFromTexture(Texture2D texture);
-
-// ========== PLATFORM-SPECIFIC IMPLEMENTATIONS ==========
-
-#if defined(__APPLE__) && TARGET_OS_IPHONE
-// iOS/Metal implementations
+// ========== INLINE IMPLEMENTATIONS ==========
 
 // Utility functions
 inline float Clamp(float value, float min, float max) {
@@ -372,9 +350,17 @@ inline Color ColorLerp(Color a, Color b, float t) {
     return result;
 }
 
-// Stub functions for iOS/Metal
+inline Color ColorAlpha(Color color, float alpha) {
+    Color result = color;
+    result.a = (unsigned char)(color.a * alpha);
+    return result;
+}
+
+// Stub functions for iOS
 inline float GetMusicTimeLength(Music music) {
-    // TODO: Implement for iOS if needed
+    if (music.player) {
+        return music.player.duration;
+    }
     return 0.0f;
 }
 
@@ -390,8 +376,8 @@ inline bool IsKeyDown(int key) {
 
 // RenderTexture2D for compatibility
 typedef struct RenderTexture2D {
-    unsigned int id; // Not used on iOS/Metal
-    Texture2D texture; // Not used on iOS/Metal
+    unsigned int id; // Not used on iOS
+    Texture2D texture; // Not used on iOS
     int width;
     int height;
 } RenderTexture2D;
@@ -426,17 +412,11 @@ inline void UnloadRenderTexture(RenderTexture2D target) {
 
 // Drawing stubs
 inline void DrawCircle(int centerX, int centerY, float radius, Color color) {
-    // Not implemented for iOS/Metal; stub
+    DrawCircleV((Vector2){(float)centerX, (float)centerY}, radius, color);
 }
 
 inline void DrawRectangleLinesEx(Rectangle rec, float lineThick, Color color) {
-    // Not implemented for iOS/Metal; stub
-}
-
-inline Color ColorAlpha(Color color, float alpha) {
-    Color result = color;
-    result.a = (unsigned char)(color.a * alpha);
-    return result;
+    DrawRectangleRoundedLinesEx(rec, 0.0f, 1, lineThick, color);
 }
 
 // Platform functions
@@ -446,22 +426,22 @@ inline std::string GetApplicationDirectory() {
 }
 
 inline int GetTouchPointCount() {
-    // TODO: Implement with iOS touch events
+    // Will be implemented in .mm file
     return 0;
 }
 
 inline Vector2 GetTouchPosition(int index) {
-    // TODO: Implement with iOS touch events
+    // Will be implemented in .mm file
     return {0, 0};
 }
 
 inline bool IsGestureDetected(int gesture) {
-    // TODO: Implement with iOS gesture events
+    // Will be implemented in .mm file
     return false;
 }
 
 inline Vector2 GetWindowScaleDPI() {
-    // TODO: Implement DPI scaling for iOS
+    // Will be implemented in .mm file
     return {1.0f, 1.0f};
 }
 
@@ -475,9 +455,4 @@ inline const char* TextFormat(const char* format, ...) {
     return buffer;
 }
 
-#else
-// Non-iOS platforms (Raylib) - use Raylib's native functions
-// All the function declarations above will resolve to Raylib's implementations
-#endif
-
-#endif // Closing the USE_METAL_RENDERER conditional
+#endif // defined(__APPLE__) && TARGET_OS_IOS

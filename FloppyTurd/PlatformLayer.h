@@ -1,7 +1,9 @@
-#pragma once
-#include "RaylibCompat.h"
+#ifndef PLATFORM_LAYER_H
+#define PLATFORM_LAYER_H
+
 #include <string>
 #include <vector>
+#include "raylib.h"
 
 // Platform detection macros
 #if defined(__ANDROID__)
@@ -17,14 +19,19 @@
 
 class PlatformLayer {
 public:
-    static PlatformLayer& GetInstance() {
-        static PlatformLayer instance;
-        return instance;
-    }
+    static PlatformLayer& GetInstance();
 
-    // Initialize platform-specific features
+    // Deleted copy constructor and assignment operator for singleton
+    PlatformLayer(const PlatformLayer&) = delete;
+    PlatformLayer& operator=(const PlatformLayer&) = delete;
+
+    // Platform-specific features
     void Initialize();
     void Shutdown();
+
+    // App lifecycle events
+    void OnAppWillResignActive();
+    void OnAppDidBecomeActive();
 
     // File system helpers
     std::string GetResourcePath(const std::string& relativePath);
@@ -57,13 +64,25 @@ public:
     bool PreferLowPowerMode() const;
     int GetRecommendedTextureSize() const;
 
+    // UI and System
+    void SetWindowTitle(const std::string& title);
+    void SetWindowSize(int width, int height);
+    bool IsWindowFullscreen() const;
+    void ToggleFullscreen();
+    float GetScreenScale() const;
+
 private:
-    PlatformLayer() = default;
-    ~PlatformLayer() = default;
-    PlatformLayer(const PlatformLayer&) = delete;
-    PlatformLayer& operator=(const PlatformLayer&) = delete;
+    // Private constructor for singleton
+    PlatformLayer();
+    ~PlatformLayer();
+
+    // Forward-declared implementation class (PIMPL)
+    class PlatformLayerImpl;
+    PlatformLayerImpl* m_pImpl;
 
 #ifdef PLATFORM_MOBILE
     bool virtualKeyboardShown = false;
 #endif
-}; 
+};
+
+#endif // PLATFORM_LAYER_H 
