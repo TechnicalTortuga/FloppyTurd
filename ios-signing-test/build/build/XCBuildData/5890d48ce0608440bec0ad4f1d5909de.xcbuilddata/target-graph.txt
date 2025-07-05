@@ -1,0 +1,4 @@
+Target dependency graph (2 targets)
+Target 'SigningTest' in project 'SigningTest'
+➜ Explicit dependency on target 'ZERO_CHECK' in project 'SigningTest'
+Target 'ZERO_CHECK' in project 'SigningTest' (no dependencies)

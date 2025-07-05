@@ -1,0 +1,3 @@
+/Users/aimac/Development/FloppyTurd/ios-signing-test/build/CMakeFiles/SigningTest.dir
+/Users/aimac/Development/FloppyTurd/ios-signing-test/build/CMakeFiles/ALL_BUILD.dir
+/Users/aimac/Development/FloppyTurd/ios-signing-test/build/CMakeFiles/ZERO_CHECK.dir

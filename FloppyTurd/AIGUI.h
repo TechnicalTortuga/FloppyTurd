@@ -8,9 +8,9 @@
 #include <TargetConditionals.h>
 #endif
 
-#if defined(__APPLE__) && TARGET_OS_IOS && defined(USE_METAL_RENDERER)
-// For iOS with Metal, we'll include the compatibility layer in the .cpp file
-// to avoid including Objective-C headers in C++ compilation
+#if defined(__APPLE__) && TARGET_OS_IOS
+// For iOS builds, we never include or call raylib directly
+// We'll use the platform compatibility layer instead
 #else
 #include "raylib.h"
 #endif

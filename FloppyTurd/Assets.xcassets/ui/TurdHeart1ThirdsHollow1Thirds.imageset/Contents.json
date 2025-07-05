@@ -1,0 +1,13 @@
+{
+  "images" : [
+    {
+      "filename" : "TurdHeart1ThirdsHollow1Thirds.png",
+      "idiom" : "universal",
+      "scale" : "1x"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

@@ -159,7 +159,9 @@ void CloseWindow() {
 
 bool WindowShouldClose() {
     #ifdef PLATFORM_IOS
-        return false; // Implement actual logic if needed
+        // For iOS, we never want to close the app automatically.
+        // The OS handles app lifecycle events, and we'll respond to those.
+        return false;
     #else
         // Non-iOS implementation will be handled separately
         return g_shouldClose;

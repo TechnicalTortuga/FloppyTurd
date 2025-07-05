@@ -1,0 +1,1163 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 54;
+	objects = {
+
+/* Begin PBXAggregateTarget section */
+		1717823A4BFE00B8BAC286F2 /* ZERO_CHECK */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 45FD305C3E44440CB8AAE568 /* Build configuration list for PBXAggregateTarget "ZERO_CHECK" */;
+			buildPhases = (
+				114AF64CB5AD9270E2A5794A /* Generate CMakeFiles/ZERO_CHECK */,
+			);
+			dependencies = (
+			);
+			name = ZERO_CHECK;
+			productName = ZERO_CHECK;
+		};
+		68D43B69A91D279575D42231 /* ALL_BUILD */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = 5B0149F5E2DA4042A734FE11 /* Build configuration list for PBXAggregateTarget "ALL_BUILD" */;
+			buildPhases = (
+				6CE4074D3C411ACE0D617858 /* Generate CMakeFiles/ALL_BUILD */,
+			);
+			dependencies = (
+				831782445F70455689ADFAB1 /* PBXTargetDependency */,
+				8187F052BC9A434CA22ED6D2 /* PBXTargetDependency */,
+			);
+			name = ALL_BUILD;
+			productName = ALL_BUILD;
+		};
+/* End PBXAggregateTarget section */
+
+/* Begin PBXBuildFile section */
+		04F36230A9214E65A503A1B3 /* BossHealthBar.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 407165B22F9C4E10A9ED71C9 /* BossHealthBar.cpp */; };
+		06698961DBDE4A449B9E6FCD /* GameStats.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 025602EEB65441F98E872268 /* GameStats.cpp */; };
+		0DE29AFBAD8A4804902178DD /* Credits.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 070E99FB67554AEEAD19DDC5 /* Credits.cpp */; };
+		11ADC250710940B1A255760C /* Loading.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3601C2939A2C40A3AD2BB250 /* Loading.cpp */; };
+		154A482AFB4948D4B5118E83 /* Hat.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1A58D073C2364A75988AB5A2 /* Hat.cpp */; };
+		19115A8565C14BCEACAD559A /* AIGUI.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C9CC803197244EC59DC5F912 /* AIGUI.cpp */; };
+		2D300BA6789C4A5BAC00474F /* Playing.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 364CC90231AF455DA6DE70CC /* Playing.cpp */; };
+		30FDA5D1B30C446FBF730B7A /* RaylibCompat_iOS.mm in Sources */ = {isa = PBXBuildFile; fileRef = EAC7703580F2440D86851E9C /* RaylibCompat_iOS.mm */; };
+		3536C170E561459C96394DFA /* Enemy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = FE9046B0C094479286FDAA80 /* Enemy.cpp */; };
+		364C2E61A9E643018ACD7F75 /* StaticLayer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34398528A4C84C32A87EE2EF /* StaticLayer.cpp */; };
+		39C83C8DD2074D4C934D4062 /* SnowmanEnemy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F658374AC5B849068A6BEFFA /* SnowmanEnemy.cpp */; };
+		3C3B747448EB4E60BF573FCF /* Obstacle.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8DDF6C397D0445F7B11210F6 /* Obstacle.cpp */; };
+		3EAF86613E4E4D328CC47D35 /* PlatformLayer.mm in Sources */ = {isa = PBXBuildFile; fileRef = C3A670F7479A4AF7A6D076A1 /* PlatformLayer.mm */; };
+		4291404D00244325A968C154 /* LevelManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DA3C3EE29D7F4FD4BE37A1B9 /* LevelManager.cpp */; };
+		456501E06FA946A3A0584234 /* PerformanceProfiler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9BDFF6B077FF41549AB0CFC7 /* PerformanceProfiler.cpp */; };
+		4ACA1B365FD0496EB8ADB088 /* BossLevel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2D30E7625CBA4660B3B2E9D6 /* BossLevel.cpp */; };
+		50353B977805442EA0ACD66B /* SewerPipe.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B93A6C1395D644509A285AD2 /* SewerPipe.cpp */; };
+		513A20393B184734BBC705C8 /* CameraSystem.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9F4866EBF17E4E97ACEDC4B8 /* CameraSystem.cpp */; };
+		526C963E394246AAA0C5DB90 /* CoinType.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6B65A033F0DD4FEBAE209812 /* CoinType.cpp */; };
+		538F34AD90DB4D6299AFF17A /* TextureAtlas.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E0C9E94136E949A1B9B387B5 /* TextureAtlas.cpp */; };
+		567CF9C64D404F15A70FD75F /* RatKing.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A3EF91DFFAC54A85A0B75420 /* RatKing.cpp */; };
+		610743D91B5E4A6D92073111 /* Outhouse.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0D08803F2AD440A49825C2D2 /* Outhouse.cpp */; };
+		673D904705D2492593565596 /* Cactus.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 19682AE2D7244F4A86D73DB6 /* Cactus.cpp */; };
+		6A21F5A45D9E4BFBBB584343 /* SnowOverlay.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 33FC5BB10EA549DA9550798D /* SnowOverlay.cpp */; };
+		6E35DC5717C84F8D9FD3ABAF /* Explosion.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 25E77725074941B381DEBCD3 /* Explosion.cpp */; };
+		6FF8007B54E8465DB64A3AF4 /* CastleLevel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 486066D218A849CF8CD9860C /* CastleLevel.cpp */; };
+		71DC8578EE634F219ADC4081 /* RaylibCompat.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D053F220C9484A7993187E08 /* RaylibCompat.cpp */; };
+		835C6AF2CE234D68BBC50AE9 /* Boss.cpp in Sources */ = {isa = PBXBuildFile; fileRef = A156CC28376C4BD3BF1B3820 /* Boss.cpp */; };
+		876E89BEA5E44BEAA7E8136E /* AnimatedLayer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1D18D8A1057A48F895EEBACD /* AnimatedLayer.cpp */; };
+		895CB90121F546AB93139810 /* ResourceManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 012B4F75DF9246B79A873201 /* ResourceManager.cpp */; };
+		8BA3D226FD8E4D3185D6052D /* TouchControls.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 819F6C0649EF4DEB9D2D5B05 /* TouchControls.cpp */; };
+		8BB92D22ADAC4C1CB51790D7 /* GoldToilets.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 138BB4B0B5EF469A8EFBF0AC /* GoldToilets.cpp */; };
+		8EB08B9C33554996BE998907 /* AudioManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6128228214FD4CFF9FC6FDF7 /* AudioManager.cpp */; };
+		99CBBAB40F0B49A1B3BA5BC0 /* MainMenu.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B31612576E1F439A81179183 /* MainMenu.cpp */; };
+		9F268472B2354D6E8CBD9FF5 /* ToiletPair.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2FFFBF9ACC6C45D583616A0D /* ToiletPair.cpp */; };
+		9FB8E00EF17F4ABC83CB0536 /* ParkLevel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4A824E0CE6D64B91B45BF619 /* ParkLevel.cpp */; };
+		9FD7860A3AED41598EE32CF8 /* PickUp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5E8FE3CBE78A42C886A9726D /* PickUp.cpp */; };
+		A7B06AF87B84424991F4C898 /* SoundManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E633A03C5B0343649C64E966 /* SoundManager.cpp */; };
+		B3C02EE5C05B4703A3CAA6B3 /* Projectile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7483BCF69F6B4D99AF5CEBA9 /* Projectile.cpp */; };
+		B5E375510DFD4AA18C67C9C5 /* ParallaxLayer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7E5B23E32A2D47568FF96163 /* ParallaxLayer.cpp */; };
+		B719568E7BE34366BB48BC48 /* PoopHeart.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0672A9474F2D4CB7B02C125E /* PoopHeart.cpp */; };
+		B9B97EA5F90142EFB714F88D /* SnowballProjectile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BA15DEEFC482486BA9E6EE1A /* SnowballProjectile.cpp */; };
+		BCF402DCB420403C9282F173 /* TextureCache.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 99E236891D6A40B7BD697199 /* TextureCache.cpp */; };
+		BD81B2B8662D4D36A6BD53E6 /* MenuButton.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 08C20B43E34B4B6B823611FD /* MenuButton.cpp */; };
+		BEEBB2BE5EF0422A8E8F315B /* AudioClip.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DFD5461A0054656ACC99601 /* AudioClip.cpp */; };
+		BF8D5F47248B4C97BC562996 /* Window.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81542CF7792D49D8810A5944 /* Window.cpp */; };
+		C1324F8A7BC048549777745E /* Game.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BF5AC3DF01E540768C1894E6 /* Game.cpp */; };
+		C20A9151BF194D1592C8DE41 /* SoundEffect.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2184769303FF440983420887 /* SoundEffect.cpp */; };
+		C25BFBD45CD74BA0965D4290 /* DesertLevel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0B6216C2D6484EE0ABC6068A /* DesertLevel.cpp */; };
+		C8D751949E404B9CA7BE20F4 /* Coin.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6728D718CD434BE7898590FC /* Coin.cpp */; };
+		CC699CDC289C4A33B06F6C85 /* SnowLevel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C84605F80AA14217B4005A8C /* SnowLevel.cpp */; };
+		CD738978A34C4C80ACBAA3E9 /* Bird.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C63D4428C97D4DA6A867447B /* Bird.cpp */; };
+		CE51A0333CAF45B98593A209 /* RatCopter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6E89383A2E2E4F318E96419A /* RatCopter.cpp */; };
+		D532C3EFD71D4454843C3369 /* Player.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 324A1BC43152462194A4D666 /* Player.cpp */; };
+		D7627E09F62B40C58005508B /* BrickWall.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0E90E453154E409CBFD62A7D /* BrickWall.cpp */; };
+		DD38D3EB8BF64BBE8243881C /* ToiletPaperProjectile.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BCE31533FDD44C6ABD4E4064 /* ToiletPaperProjectile.cpp */; };
+		E6D4846D1276445B8C565440 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 97F0502390534E298B2A4F7E /* main.cpp */; };
+		E8D31BFC017F4BA983D41135 /* SpikeBall.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6900B50986254B39BE2EC1D0 /* SpikeBall.cpp */; };
+		E9F1FBABB05445CF969AAB30 /* ToiletPaper.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 01387E8A6299457FBC334086 /* ToiletPaper.cpp */; };
+		ED89428767394873968BB3A5 /* SewerLevel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 8020D0FE3B6A42A0817C639D /* SewerLevel.cpp */; };
+		F0FB6889002B417B9A748217 /* AnimatedParallaxLayer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2C1C01B0784C4876ACB52DFD /* AnimatedParallaxLayer.cpp */; };
+		F26C1C740EA14F2DA4FAFDAD /* Level.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BDD3F7589D08446CBCCBFCF2 /* Level.cpp */; };
+		FBF37265531B4634B9706179 /* Sprite.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9DA0A0141DC1492684974181 /* Sprite.cpp */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		3911D586C49F4D4383C0E1DE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 804C63067C1F404091BA49E1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 1717823A4BFE00B8BAC286F2;
+			remoteInfo = ZERO_CHECK;
+		};
+		B37E8A2126E24FB58ECBE200 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 804C63067C1F404091BA49E1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 8EFA9AA7BA22AECA1336F161;
+			remoteInfo = FloppyTurd;
+		};
+		E189F0908FCA421AB7DFA859 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 804C63067C1F404091BA49E1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 1717823A4BFE00B8BAC286F2;
+			remoteInfo = ZERO_CHECK;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		012B4F75DF9246B79A873201 /* ResourceManager.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = ResourceManager.cpp; path = FloppyTurd/ResourceManager.cpp; sourceTree = SOURCE_ROOT; };
+		01387E8A6299457FBC334086 /* ToiletPaper.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = ToiletPaper.cpp; path = FloppyTurd/ToiletPaper.cpp; sourceTree = SOURCE_ROOT; };
+		025602EEB65441F98E872268 /* GameStats.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = GameStats.cpp; path = FloppyTurd/GameStats.cpp; sourceTree = SOURCE_ROOT; };
+		0672A9474F2D4CB7B02C125E /* PoopHeart.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = PoopHeart.cpp; path = FloppyTurd/PoopHeart.cpp; sourceTree = SOURCE_ROOT; };
+		070E99FB67554AEEAD19DDC5 /* Credits.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Credits.cpp; path = FloppyTurd/Credits.cpp; sourceTree = SOURCE_ROOT; };
+		08C20B43E34B4B6B823611FD /* MenuButton.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = MenuButton.cpp; path = FloppyTurd/MenuButton.cpp; sourceTree = SOURCE_ROOT; };
+		0B6216C2D6484EE0ABC6068A /* DesertLevel.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = DesertLevel.cpp; path = FloppyTurd/DesertLevel.cpp; sourceTree = SOURCE_ROOT; };
+		0D08803F2AD440A49825C2D2 /* Outhouse.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Outhouse.cpp; path = FloppyTurd/Outhouse.cpp; sourceTree = SOURCE_ROOT; };
+		0E90E453154E409CBFD62A7D /* BrickWall.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = BrickWall.cpp; path = FloppyTurd/BrickWall.cpp; sourceTree = SOURCE_ROOT; };
+		138BB4B0B5EF469A8EFBF0AC /* GoldToilets.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = GoldToilets.cpp; path = FloppyTurd/GoldToilets.cpp; sourceTree = SOURCE_ROOT; };
+		19682AE2D7244F4A86D73DB6 /* Cactus.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Cactus.cpp; path = FloppyTurd/Cactus.cpp; sourceTree = SOURCE_ROOT; };
+		1A58D073C2364A75988AB5A2 /* Hat.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Hat.cpp; path = FloppyTurd/Hat.cpp; sourceTree = SOURCE_ROOT; };
+		1D18D8A1057A48F895EEBACD /* AnimatedLayer.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = AnimatedLayer.cpp; path = FloppyTurd/AnimatedLayer.cpp; sourceTree = SOURCE_ROOT; };
+		2184769303FF440983420887 /* SoundEffect.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = SoundEffect.cpp; path = FloppyTurd/SoundEffect.cpp; sourceTree = SOURCE_ROOT; };
+		21A3F2142B4F4F3EAD35295C /* Info.plist */ = {isa = PBXFileReference; explicitFileType = sourcecode.text.plist; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = build_ios_new/CMakeFiles/FloppyTurd.dir/Info.plist; sourceTree = SOURCE_ROOT; };
+		25E77725074941B381DEBCD3 /* Explosion.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Explosion.cpp; path = FloppyTurd/Explosion.cpp; sourceTree = SOURCE_ROOT; };
+		2C1C01B0784C4876ACB52DFD /* AnimatedParallaxLayer.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = AnimatedParallaxLayer.cpp; path = FloppyTurd/AnimatedParallaxLayer.cpp; sourceTree = SOURCE_ROOT; };
+		2D30E7625CBA4660B3B2E9D6 /* BossLevel.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = BossLevel.cpp; path = FloppyTurd/BossLevel.cpp; sourceTree = SOURCE_ROOT; };
+		2FFFBF9ACC6C45D583616A0D /* ToiletPair.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = ToiletPair.cpp; path = FloppyTurd/ToiletPair.cpp; sourceTree = SOURCE_ROOT; };
+		324A1BC43152462194A4D666 /* Player.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Player.cpp; path = FloppyTurd/Player.cpp; sourceTree = SOURCE_ROOT; };
+		33FC5BB10EA549DA9550798D /* SnowOverlay.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = SnowOverlay.cpp; path = FloppyTurd/SnowOverlay.cpp; sourceTree = SOURCE_ROOT; };
+		34398528A4C84C32A87EE2EF /* StaticLayer.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = StaticLayer.cpp; path = FloppyTurd/StaticLayer.cpp; sourceTree = SOURCE_ROOT; };
+		3601C2939A2C40A3AD2BB250 /* Loading.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Loading.cpp; path = FloppyTurd/Loading.cpp; sourceTree = SOURCE_ROOT; };
+		364CC90231AF455DA6DE70CC /* Playing.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Playing.cpp; path = FloppyTurd/Playing.cpp; sourceTree = SOURCE_ROOT; };
+		3DFD5461A0054656ACC99601 /* AudioClip.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = AudioClip.cpp; path = FloppyTurd/AudioClip.cpp; sourceTree = SOURCE_ROOT; };
+		407165B22F9C4E10A9ED71C9 /* BossHealthBar.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = BossHealthBar.cpp; path = FloppyTurd/BossHealthBar.cpp; sourceTree = SOURCE_ROOT; };
+		486066D218A849CF8CD9860C /* CastleLevel.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = CastleLevel.cpp; path = FloppyTurd/CastleLevel.cpp; sourceTree = SOURCE_ROOT; };
+		48D03654ADE44FBCBE669282 /* FloppyTurd.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; path = FloppyTurd.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4A824E0CE6D64B91B45BF619 /* ParkLevel.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = ParkLevel.cpp; path = FloppyTurd/ParkLevel.cpp; sourceTree = SOURCE_ROOT; };
+		5E8FE3CBE78A42C886A9726D /* PickUp.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = PickUp.cpp; path = FloppyTurd/PickUp.cpp; sourceTree = SOURCE_ROOT; };
+		6128228214FD4CFF9FC6FDF7 /* AudioManager.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = AudioManager.cpp; path = FloppyTurd/AudioManager.cpp; sourceTree = SOURCE_ROOT; };
+		6728D718CD434BE7898590FC /* Coin.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Coin.cpp; path = FloppyTurd/Coin.cpp; sourceTree = SOURCE_ROOT; };
+		6900B50986254B39BE2EC1D0 /* SpikeBall.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = SpikeBall.cpp; path = FloppyTurd/SpikeBall.cpp; sourceTree = SOURCE_ROOT; };
+		6B65A033F0DD4FEBAE209812 /* CoinType.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = CoinType.cpp; path = FloppyTurd/CoinType.cpp; sourceTree = SOURCE_ROOT; };
+		6E89383A2E2E4F318E96419A /* RatCopter.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = RatCopter.cpp; path = FloppyTurd/RatCopter.cpp; sourceTree = SOURCE_ROOT; };
+		6FD9B3696ABB45479E61807F /* CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
+		7483BCF69F6B4D99AF5CEBA9 /* Projectile.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Projectile.cpp; path = FloppyTurd/Projectile.cpp; sourceTree = SOURCE_ROOT; };
+		7E5B23E32A2D47568FF96163 /* ParallaxLayer.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = ParallaxLayer.cpp; path = FloppyTurd/ParallaxLayer.cpp; sourceTree = SOURCE_ROOT; };
+		8020D0FE3B6A42A0817C639D /* SewerLevel.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = SewerLevel.cpp; path = FloppyTurd/SewerLevel.cpp; sourceTree = SOURCE_ROOT; };
+		81542CF7792D49D8810A5944 /* Window.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Window.cpp; path = FloppyTurd/Window.cpp; sourceTree = SOURCE_ROOT; };
+		819F6C0649EF4DEB9D2D5B05 /* TouchControls.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = TouchControls.cpp; path = FloppyTurd/TouchControls.cpp; sourceTree = SOURCE_ROOT; };
+		8DDF6C397D0445F7B11210F6 /* Obstacle.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Obstacle.cpp; path = FloppyTurd/Obstacle.cpp; sourceTree = SOURCE_ROOT; };
+		97F0502390534E298B2A4F7E /* main.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = main.cpp; path = FloppyTurd/main.cpp; sourceTree = SOURCE_ROOT; };
+		99E236891D6A40B7BD697199 /* TextureCache.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = TextureCache.cpp; path = FloppyTurd/TextureCache.cpp; sourceTree = SOURCE_ROOT; };
+		9BDFF6B077FF41549AB0CFC7 /* PerformanceProfiler.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = PerformanceProfiler.cpp; path = FloppyTurd/PerformanceProfiler.cpp; sourceTree = SOURCE_ROOT; };
+		9DA0A0141DC1492684974181 /* Sprite.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Sprite.cpp; path = FloppyTurd/Sprite.cpp; sourceTree = SOURCE_ROOT; };
+		9F4866EBF17E4E97ACEDC4B8 /* CameraSystem.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = CameraSystem.cpp; path = FloppyTurd/CameraSystem.cpp; sourceTree = SOURCE_ROOT; };
+		A156CC28376C4BD3BF1B3820 /* Boss.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Boss.cpp; path = FloppyTurd/Boss.cpp; sourceTree = SOURCE_ROOT; };
+		A3EF91DFFAC54A85A0B75420 /* RatKing.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = RatKing.cpp; path = FloppyTurd/RatKing.cpp; sourceTree = SOURCE_ROOT; };
+		ADD5E89861994118A2ABD904 /* CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
+		B31612576E1F439A81179183 /* MainMenu.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = MainMenu.cpp; path = FloppyTurd/MainMenu.cpp; sourceTree = SOURCE_ROOT; };
+		B93A6C1395D644509A285AD2 /* SewerPipe.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = SewerPipe.cpp; path = FloppyTurd/SewerPipe.cpp; sourceTree = SOURCE_ROOT; };
+		BA15DEEFC482486BA9E6EE1A /* SnowballProjectile.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = SnowballProjectile.cpp; path = FloppyTurd/SnowballProjectile.cpp; sourceTree = SOURCE_ROOT; };
+		BCE31533FDD44C6ABD4E4064 /* ToiletPaperProjectile.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = ToiletPaperProjectile.cpp; path = FloppyTurd/ToiletPaperProjectile.cpp; sourceTree = SOURCE_ROOT; };
+		BDD3F7589D08446CBCCBFCF2 /* Level.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Level.cpp; path = FloppyTurd/Level.cpp; sourceTree = SOURCE_ROOT; };
+		BF5AC3DF01E540768C1894E6 /* Game.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Game.cpp; path = FloppyTurd/Game.cpp; sourceTree = SOURCE_ROOT; };
+		C3A670F7479A4AF7A6D076A1 /* PlatformLayer.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = PlatformLayer.mm; path = FloppyTurd/PlatformLayer.mm; sourceTree = SOURCE_ROOT; };
+		C63D4428C97D4DA6A867447B /* Bird.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Bird.cpp; path = FloppyTurd/Bird.cpp; sourceTree = SOURCE_ROOT; };
+		C84605F80AA14217B4005A8C /* SnowLevel.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = SnowLevel.cpp; path = FloppyTurd/SnowLevel.cpp; sourceTree = SOURCE_ROOT; };
+		C9CC803197244EC59DC5F912 /* AIGUI.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = AIGUI.cpp; path = FloppyTurd/AIGUI.cpp; sourceTree = SOURCE_ROOT; };
+		D053F220C9484A7993187E08 /* RaylibCompat.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = RaylibCompat.cpp; path = FloppyTurd/RaylibCompat.cpp; sourceTree = SOURCE_ROOT; };
+		DA3C3EE29D7F4FD4BE37A1B9 /* LevelManager.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = LevelManager.cpp; path = FloppyTurd/LevelManager.cpp; sourceTree = SOURCE_ROOT; };
+		E0C9E94136E949A1B9B387B5 /* TextureAtlas.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = TextureAtlas.cpp; path = FloppyTurd/TextureAtlas.cpp; sourceTree = SOURCE_ROOT; };
+		E633A03C5B0343649C64E966 /* SoundManager.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = SoundManager.cpp; path = FloppyTurd/SoundManager.cpp; sourceTree = SOURCE_ROOT; };
+		EAC7703580F2440D86851E9C /* RaylibCompat_iOS.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = RaylibCompat_iOS.mm; path = FloppyTurd/RaylibCompat_iOS.mm; sourceTree = SOURCE_ROOT; };
+		F658374AC5B849068A6BEFFA /* SnowmanEnemy.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = SnowmanEnemy.cpp; path = FloppyTurd/SnowmanEnemy.cpp; sourceTree = SOURCE_ROOT; };
+		FE9046B0C094479286FDAA80 /* Enemy.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Enemy.cpp; path = FloppyTurd/Enemy.cpp; sourceTree = SOURCE_ROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		487D0F3C8BBB46878CB396BE /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		20C763256E354C11A8E466F1 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				21A3F2142B4F4F3EAD35295C /* Info.plist */,
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
+		5CDB3AA2C6F04773B7729C98 /* CMake Rules */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = "CMake Rules";
+			sourceTree = "<group>";
+		};
+		7D65EB1044BE446585A7F4DC = {
+			isa = PBXGroup;
+			children = (
+				8B7E011C9DFB41E2A84782AE /* FloppyTurd */,
+				D402AB548E3746478D911166 /* ALL_BUILD */,
+				F48751DD5B794C10ADF969F0 /* Products */,
+				F70A15D90BE34FB29283E36C /* Frameworks */,
+				B5F8C2EF3F3B4C1C95DCC129 /* Resources */,
+			);
+			sourceTree = "<group>";
+		};
+		8B7E011C9DFB41E2A84782AE /* FloppyTurd */ = {
+			isa = PBXGroup;
+			children = (
+				C1BE20E7A1F6400DAE9C8A0E /* Source Files */,
+				20C763256E354C11A8E466F1 /* Resources */,
+				6FD9B3696ABB45479E61807F /* CMakeLists.txt */,
+			);
+			name = FloppyTurd;
+			sourceTree = "<group>";
+		};
+		B5F8C2EF3F3B4C1C95DCC129 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
+		C1BE20E7A1F6400DAE9C8A0E /* Source Files */ = {
+			isa = PBXGroup;
+			children = (
+				C9CC803197244EC59DC5F912 /* AIGUI.cpp */,
+				1D18D8A1057A48F895EEBACD /* AnimatedLayer.cpp */,
+				2C1C01B0784C4876ACB52DFD /* AnimatedParallaxLayer.cpp */,
+				3DFD5461A0054656ACC99601 /* AudioClip.cpp */,
+				6128228214FD4CFF9FC6FDF7 /* AudioManager.cpp */,
+				C63D4428C97D4DA6A867447B /* Bird.cpp */,
+				A156CC28376C4BD3BF1B3820 /* Boss.cpp */,
+				407165B22F9C4E10A9ED71C9 /* BossHealthBar.cpp */,
+				2D30E7625CBA4660B3B2E9D6 /* BossLevel.cpp */,
+				0E90E453154E409CBFD62A7D /* BrickWall.cpp */,
+				19682AE2D7244F4A86D73DB6 /* Cactus.cpp */,
+				9F4866EBF17E4E97ACEDC4B8 /* CameraSystem.cpp */,
+				486066D218A849CF8CD9860C /* CastleLevel.cpp */,
+				6728D718CD434BE7898590FC /* Coin.cpp */,
+				6B65A033F0DD4FEBAE209812 /* CoinType.cpp */,
+				070E99FB67554AEEAD19DDC5 /* Credits.cpp */,
+				0B6216C2D6484EE0ABC6068A /* DesertLevel.cpp */,
+				FE9046B0C094479286FDAA80 /* Enemy.cpp */,
+				25E77725074941B381DEBCD3 /* Explosion.cpp */,
+				BF5AC3DF01E540768C1894E6 /* Game.cpp */,
+				025602EEB65441F98E872268 /* GameStats.cpp */,
+				138BB4B0B5EF469A8EFBF0AC /* GoldToilets.cpp */,
+				1A58D073C2364A75988AB5A2 /* Hat.cpp */,
+				BDD3F7589D08446CBCCBFCF2 /* Level.cpp */,
+				DA3C3EE29D7F4FD4BE37A1B9 /* LevelManager.cpp */,
+				3601C2939A2C40A3AD2BB250 /* Loading.cpp */,
+				B31612576E1F439A81179183 /* MainMenu.cpp */,
+				08C20B43E34B4B6B823611FD /* MenuButton.cpp */,
+				8DDF6C397D0445F7B11210F6 /* Obstacle.cpp */,
+				0D08803F2AD440A49825C2D2 /* Outhouse.cpp */,
+				7E5B23E32A2D47568FF96163 /* ParallaxLayer.cpp */,
+				4A824E0CE6D64B91B45BF619 /* ParkLevel.cpp */,
+				9BDFF6B077FF41549AB0CFC7 /* PerformanceProfiler.cpp */,
+				5E8FE3CBE78A42C886A9726D /* PickUp.cpp */,
+				C3A670F7479A4AF7A6D076A1 /* PlatformLayer.mm */,
+				324A1BC43152462194A4D666 /* Player.cpp */,
+				364CC90231AF455DA6DE70CC /* Playing.cpp */,
+				0672A9474F2D4CB7B02C125E /* PoopHeart.cpp */,
+				7483BCF69F6B4D99AF5CEBA9 /* Projectile.cpp */,
+				6E89383A2E2E4F318E96419A /* RatCopter.cpp */,
+				A3EF91DFFAC54A85A0B75420 /* RatKing.cpp */,
+				D053F220C9484A7993187E08 /* RaylibCompat.cpp */,
+				EAC7703580F2440D86851E9C /* RaylibCompat_iOS.mm */,
+				012B4F75DF9246B79A873201 /* ResourceManager.cpp */,
+				8020D0FE3B6A42A0817C639D /* SewerLevel.cpp */,
+				B93A6C1395D644509A285AD2 /* SewerPipe.cpp */,
+				C84605F80AA14217B4005A8C /* SnowLevel.cpp */,
+				33FC5BB10EA549DA9550798D /* SnowOverlay.cpp */,
+				BA15DEEFC482486BA9E6EE1A /* SnowballProjectile.cpp */,
+				F658374AC5B849068A6BEFFA /* SnowmanEnemy.cpp */,
+				2184769303FF440983420887 /* SoundEffect.cpp */,
+				E633A03C5B0343649C64E966 /* SoundManager.cpp */,
+				6900B50986254B39BE2EC1D0 /* SpikeBall.cpp */,
+				9DA0A0141DC1492684974181 /* Sprite.cpp */,
+				34398528A4C84C32A87EE2EF /* StaticLayer.cpp */,
+				E0C9E94136E949A1B9B387B5 /* TextureAtlas.cpp */,
+				99E236891D6A40B7BD697199 /* TextureCache.cpp */,
+				2FFFBF9ACC6C45D583616A0D /* ToiletPair.cpp */,
+				01387E8A6299457FBC334086 /* ToiletPaper.cpp */,
+				BCE31533FDD44C6ABD4E4064 /* ToiletPaperProjectile.cpp */,
+				819F6C0649EF4DEB9D2D5B05 /* TouchControls.cpp */,
+				81542CF7792D49D8810A5944 /* Window.cpp */,
+				97F0502390534E298B2A4F7E /* main.cpp */,
+			);
+			name = "Source Files";
+			sourceTree = "<group>";
+		};
+		D402AB548E3746478D911166 /* ALL_BUILD */ = {
+			isa = PBXGroup;
+			children = (
+				5CDB3AA2C6F04773B7729C98 /* CMake Rules */,
+				ADD5E89861994118A2ABD904 /* CMakeLists.txt */,
+			);
+			name = ALL_BUILD;
+			sourceTree = "<group>";
+		};
+		F48751DD5B794C10ADF969F0 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				48D03654ADE44FBCBE669282 /* FloppyTurd.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F70A15D90BE34FB29283E36C /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		8EFA9AA7BA22AECA1336F161 /* FloppyTurd */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 22630F4E106A4AD585A8E7D7 /* Build configuration list for PBXNativeTarget "FloppyTurd" */;
+			buildPhases = (
+				3B65F119560F08E4C38CD92B /* CMake PreBuild Rules */,
+				68B7663580C04F21BCA0F9DD /* Sources */,
+				487D0F3C8BBB46878CB396BE /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				52DE132CB29D4113ABE13315 /* PBXTargetDependency */,
+			);
+			name = FloppyTurd;
+			productName = FloppyTurd;
+			productReference = 48D03654ADE44FBCBE669282 /* FloppyTurd.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		804C63067C1F404091BA49E1 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 1620;
+			};
+			buildConfigurationList = 044B28DE82604BF289236413 /* Build configuration list for PBXProject "FloppyTurd" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 7D65EB1044BE446585A7F4DC;
+			projectDirPath = /Users/aimac/Development/FloppyTurd;
+			projectRoot = "";
+			targets = (
+				68D43B69A91D279575D42231 /* ALL_BUILD */,
+				8EFA9AA7BA22AECA1336F161 /* FloppyTurd */,
+				1717823A4BFE00B8BAC286F2 /* ZERO_CHECK */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		114AF64CB5AD9270E2A5794A /* Generate CMakeFiles/ZERO_CHECK */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Generate CMakeFiles/ZERO_CHECK";
+			outputPaths = (
+				/Users/aimac/Development/FloppyTurd/build_ios_new/CMakeFiles/ZERO_CHECK,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e\nif test \"$CONFIGURATION\" = \"Debug\"; then :\n  cd /Users/aimac/Development/FloppyTurd/build_ios_new\n  make -f /Users/aimac/Development/FloppyTurd/build_ios_new/CMakeScripts/ReRunCMake.make\nfi\nif test \"$CONFIGURATION\" = \"Release\"; then :\n  cd /Users/aimac/Development/FloppyTurd/build_ios_new\n  make -f /Users/aimac/Development/FloppyTurd/build_ios_new/CMakeScripts/ReRunCMake.make\nfi\nif test \"$CONFIGURATION\" = \"MinSizeRel\"; then :\n  cd /Users/aimac/Development/FloppyTurd/build_ios_new\n  make -f /Users/aimac/Development/FloppyTurd/build_ios_new/CMakeScripts/ReRunCMake.make\nfi\nif test \"$CONFIGURATION\" = \"RelWithDebInfo\"; then :\n  cd /Users/aimac/Development/FloppyTurd/build_ios_new\n  make -f /Users/aimac/Development/FloppyTurd/build_ios_new/CMakeScripts/ReRunCMake.make\nfi\n";
+			showEnvVarsInLog = 0;
+		};
+		3B65F119560F08E4C38CD92B /* CMake PreBuild Rules */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			name = "CMake PreBuild Rules";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e\nif test \"$CONFIGURATION\" = \"Debug\"; then :\n  cd /Users/aimac/Development/FloppyTurd/build_ios_new\n  bash /Users/aimac/Development/FloppyTurd/scripts/generate_asset_catalog.sh\nfi\nif test \"$CONFIGURATION\" = \"Release\"; then :\n  cd /Users/aimac/Development/FloppyTurd/build_ios_new\n  bash /Users/aimac/Development/FloppyTurd/scripts/generate_asset_catalog.sh\nfi\nif test \"$CONFIGURATION\" = \"MinSizeRel\"; then :\n  cd /Users/aimac/Development/FloppyTurd/build_ios_new\n  bash /Users/aimac/Development/FloppyTurd/scripts/generate_asset_catalog.sh\nfi\nif test \"$CONFIGURATION\" = \"RelWithDebInfo\"; then :\n  cd /Users/aimac/Development/FloppyTurd/build_ios_new\n  bash /Users/aimac/Development/FloppyTurd/scripts/generate_asset_catalog.sh\nfi\n";
+			showEnvVarsInLog = 0;
+		};
+		6CE4074D3C411ACE0D617858 /* Generate CMakeFiles/ALL_BUILD */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Generate CMakeFiles/ALL_BUILD";
+			outputPaths = (
+				/Users/aimac/Development/FloppyTurd/build_ios_new/CMakeFiles/ALL_BUILD,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e\nif test \"$CONFIGURATION\" = \"Debug\"; then :\n  cd /Users/aimac/Development/FloppyTurd/build_ios_new\n  echo Build\\ all\\ projects\nfi\nif test \"$CONFIGURATION\" = \"Release\"; then :\n  cd /Users/aimac/Development/FloppyTurd/build_ios_new\n  echo Build\\ all\\ projects\nfi\nif test \"$CONFIGURATION\" = \"MinSizeRel\"; then :\n  cd /Users/aimac/Development/FloppyTurd/build_ios_new\n  echo Build\\ all\\ projects\nfi\nif test \"$CONFIGURATION\" = \"RelWithDebInfo\"; then :\n  cd /Users/aimac/Development/FloppyTurd/build_ios_new\n  echo Build\\ all\\ projects\nfi\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		68B7663580C04F21BCA0F9DD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				19115A8565C14BCEACAD559A /* AIGUI.cpp in Sources */,
+				876E89BEA5E44BEAA7E8136E /* AnimatedLayer.cpp in Sources */,
+				F0FB6889002B417B9A748217 /* AnimatedParallaxLayer.cpp in Sources */,
+				BEEBB2BE5EF0422A8E8F315B /* AudioClip.cpp in Sources */,
+				8EB08B9C33554996BE998907 /* AudioManager.cpp in Sources */,
+				CD738978A34C4C80ACBAA3E9 /* Bird.cpp in Sources */,
+				835C6AF2CE234D68BBC50AE9 /* Boss.cpp in Sources */,
+				04F36230A9214E65A503A1B3 /* BossHealthBar.cpp in Sources */,
+				4ACA1B365FD0496EB8ADB088 /* BossLevel.cpp in Sources */,
+				D7627E09F62B40C58005508B /* BrickWall.cpp in Sources */,
+				673D904705D2492593565596 /* Cactus.cpp in Sources */,
+				513A20393B184734BBC705C8 /* CameraSystem.cpp in Sources */,
+				6FF8007B54E8465DB64A3AF4 /* CastleLevel.cpp in Sources */,
+				C8D751949E404B9CA7BE20F4 /* Coin.cpp in Sources */,
+				526C963E394246AAA0C5DB90 /* CoinType.cpp in Sources */,
+				0DE29AFBAD8A4804902178DD /* Credits.cpp in Sources */,
+				C25BFBD45CD74BA0965D4290 /* DesertLevel.cpp in Sources */,
+				3536C170E561459C96394DFA /* Enemy.cpp in Sources */,
+				6E35DC5717C84F8D9FD3ABAF /* Explosion.cpp in Sources */,
+				C1324F8A7BC048549777745E /* Game.cpp in Sources */,
+				06698961DBDE4A449B9E6FCD /* GameStats.cpp in Sources */,
+				8BB92D22ADAC4C1CB51790D7 /* GoldToilets.cpp in Sources */,
+				154A482AFB4948D4B5118E83 /* Hat.cpp in Sources */,
+				F26C1C740EA14F2DA4FAFDAD /* Level.cpp in Sources */,
+				4291404D00244325A968C154 /* LevelManager.cpp in Sources */,
+				11ADC250710940B1A255760C /* Loading.cpp in Sources */,
+				99CBBAB40F0B49A1B3BA5BC0 /* MainMenu.cpp in Sources */,
+				BD81B2B8662D4D36A6BD53E6 /* MenuButton.cpp in Sources */,
+				3C3B747448EB4E60BF573FCF /* Obstacle.cpp in Sources */,
+				610743D91B5E4A6D92073111 /* Outhouse.cpp in Sources */,
+				B5E375510DFD4AA18C67C9C5 /* ParallaxLayer.cpp in Sources */,
+				9FB8E00EF17F4ABC83CB0536 /* ParkLevel.cpp in Sources */,
+				456501E06FA946A3A0584234 /* PerformanceProfiler.cpp in Sources */,
+				9FD7860A3AED41598EE32CF8 /* PickUp.cpp in Sources */,
+				3EAF86613E4E4D328CC47D35 /* PlatformLayer.mm in Sources */,
+				D532C3EFD71D4454843C3369 /* Player.cpp in Sources */,
+				2D300BA6789C4A5BAC00474F /* Playing.cpp in Sources */,
+				B719568E7BE34366BB48BC48 /* PoopHeart.cpp in Sources */,
+				B3C02EE5C05B4703A3CAA6B3 /* Projectile.cpp in Sources */,
+				CE51A0333CAF45B98593A209 /* RatCopter.cpp in Sources */,
+				567CF9C64D404F15A70FD75F /* RatKing.cpp in Sources */,
+				71DC8578EE634F219ADC4081 /* RaylibCompat.cpp in Sources */,
+				30FDA5D1B30C446FBF730B7A /* RaylibCompat_iOS.mm in Sources */,
+				895CB90121F546AB93139810 /* ResourceManager.cpp in Sources */,
+				ED89428767394873968BB3A5 /* SewerLevel.cpp in Sources */,
+				50353B977805442EA0ACD66B /* SewerPipe.cpp in Sources */,
+				CC699CDC289C4A33B06F6C85 /* SnowLevel.cpp in Sources */,
+				6A21F5A45D9E4BFBBB584343 /* SnowOverlay.cpp in Sources */,
+				B9B97EA5F90142EFB714F88D /* SnowballProjectile.cpp in Sources */,
+				39C83C8DD2074D4C934D4062 /* SnowmanEnemy.cpp in Sources */,
+				C20A9151BF194D1592C8DE41 /* SoundEffect.cpp in Sources */,
+				A7B06AF87B84424991F4C898 /* SoundManager.cpp in Sources */,
+				E8D31BFC017F4BA983D41135 /* SpikeBall.cpp in Sources */,
+				FBF37265531B4634B9706179 /* Sprite.cpp in Sources */,
+				364C2E61A9E643018ACD7F75 /* StaticLayer.cpp in Sources */,
+				538F34AD90DB4D6299AFF17A /* TextureAtlas.cpp in Sources */,
+				BCF402DCB420403C9282F173 /* TextureCache.cpp in Sources */,
+				9F268472B2354D6E8CBD9FF5 /* ToiletPair.cpp in Sources */,
+				E9F1FBABB05445CF969AAB30 /* ToiletPaper.cpp in Sources */,
+				DD38D3EB8BF64BBE8243881C /* ToiletPaperProjectile.cpp in Sources */,
+				8BA3D226FD8E4D3185D6052D /* TouchControls.cpp in Sources */,
+				BF8D5F47248B4C97BC562996 /* Window.cpp in Sources */,
+				E6D4846D1276445B8C565440 /* main.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		52DE132CB29D4113ABE13315 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 1717823A4BFE00B8BAC286F2 /* ZERO_CHECK */;
+			targetProxy = 3911D586C49F4D4383C0E1DE /* PBXContainerItemProxy */;
+		};
+		8187F052BC9A434CA22ED6D2 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 8EFA9AA7BA22AECA1336F161 /* FloppyTurd */;
+			targetProxy = B37E8A2126E24FB58ECBE200 /* PBXContainerItemProxy */;
+		};
+		831782445F70455689ADFAB1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 1717823A4BFE00B8BAC286F2 /* ZERO_CHECK */;
+			targetProxy = E189F0908FCA421AB7DFA859 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		01030878D42545768FA60C85 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SYMROOT = /Users/aimac/Development/FloppyTurd/build_ios_new/build;
+			};
+			name = Debug;
+		};
+		110A68A0289147DFA122E506 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = " $(inherited)";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ZERO_CHECK;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = MinSizeRel;
+		};
+		331AA553BB6E485CB1ADFE89 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SYMROOT = /Users/aimac/Development/FloppyTurd/build_ios_new/build;
+			};
+			name = Release;
+		};
+		5481BBABB2A4475EAAA7C993 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = " $(inherited)";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ZERO_CHECK;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = Release;
+		};
+		5AC54663F0134B3BBEB69D28 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = " $(inherited)";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ALL_BUILD;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = Release;
+		};
+		63864D75538A41CDB4CFF6B3 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SYMROOT = /Users/aimac/Development/FloppyTurd/build_ios_new/build;
+			};
+			name = MinSizeRel;
+		};
+		6FEB4766CD2949A2BE82089A /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = " $(inherited)";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ZERO_CHECK;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = RelWithDebInfo;
+		};
+		7CD9331605544EB7A20A11E0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = " $(inherited)";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ZERO_CHECK;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = Debug;
+		};
+		93916924C37B43ADBDE87CE5 /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = " $(inherited)";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ALL_BUILD;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = RelWithDebInfo;
+		};
+		A9AE45497BEB4BA78CD00F33 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				BUNDLE_VERSION = 1.0.0;
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGNING_REQUIRED = YES;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "/Users/aimac/Development/FloppyTurd/build_ios_new/MinSizeRel${EFFECTIVE_PLATFORM_NAME}";
+				DEVELOPMENT_TEAM = ZZYUYBHPUY;
+				EXECUTABLE_PREFIX = "";
+				EXECUTABLE_SUFFIX = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					PLATFORM_IOS,
+					__APPLE__,
+					"'TARGET_OS_IOS=1'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					/Users/aimac/Development/FloppyTurd/FloppyTurd,
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = /Users/aimac/Development/FloppyTurd/build_ios_new/CMakeFiles/FloppyTurd.dir/Info.plist;
+				INSTALL_PATH = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				OTHER_CPLUSPLUSFLAGS = (
+					"-DNDEBUG",
+					"'-std=gnu++20'",
+					"-Wall",
+					"-Wextra",
+					"-pedantic",
+				);
+				OTHER_LDFLAGS = (
+					"-Wl,-headerpad_max_install_names",
+					"-framework",
+					Foundation,
+					"-framework",
+					UIKit,
+					"-framework",
+					Metal,
+					"-framework",
+					MetalKit,
+					"-framework",
+					MetalPerformanceShaders,
+					"-framework",
+					SpriteKit,
+					"-framework",
+					QuartzCore,
+					"-framework",
+					CoreGraphics,
+					"-framework",
+					CoreText,
+					"-framework",
+					CoreAudio,
+					"-framework",
+					AudioToolbox,
+					"-framework",
+					AVFoundation,
+					"-framework",
+					GameController,
+					"-framework",
+					ImageIO,
+					"-framework",
+					MobileCoreServices,
+					"-framework",
+					CoreHaptics,
+					"$(inherited)",
+				);
+				OTHER_REZFLAGS = "";
+				PRODUCT_BUNDLE_IDENTIFIER = com.floppyturd.game;
+				PRODUCT_NAME = FloppyTurd;
+				RUN_SCRIPT_PHASES = "[{\"name\":\"Compile Asset Catalog\",\"shell_path\":\"/bin/sh\",\"shell_script\":\"echo '📦 Compiling asset catalog...'; \n\"\n                          \"# Use actool to compile the asset catalog properly\n\"\n                          \"xcrun actool \\\n\"\n                          \"  --compile \\\"/Users/aimac/Development/FloppyTurd/build_ios_new/assets\\\" \\\n\"\n                          \"  --platform iphoneos \\\n\"\n                          \"  --minimum-deployment-target 13.0 \\\n\"\n                          \"  --app-icon AppIcon \\\n\"\n                          \"  --output-partial-info-plist \\\"/Users/aimac/Development/FloppyTurd/build_ios_new/AssetInfo.plist\\\" \\\n\"\n                          \"  --compress-pngs \\\n\"\n                          \"  --enable-on-demand-resources YES \\\n\"\n                          \"  \\\"/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets\\\" \\\n\"\n                          \"  || { echo 'Asset catalog compilation failed!'; exit 1; }; \n\"\n\"\n                          \"# Copy compiled assets to app bundle\n\"\n                          \"APP_PATH=\\\"\\/\\\\\"\n\"\n                          \"echo 'Copying processed assets to: '$APP_PATH; \n\"\n                          \"mkdir -p \\\"$APP_PATH\\\" \n\"\n                          \"cp -R \\\"/Users/aimac/Development/FloppyTurd/build_ios_new/assets/\\\"* \\\"$APP_PATH/\\\" \n\"\n\"\n                          \"# Merge the partial Info.plist if it exists\n\"\n                          \"if [ -f \\\"/Users/aimac/Development/FloppyTurd/build_ios_new/AssetInfo.plist\\\" ]; then\n\"\n                          \"  echo 'Merging asset catalog info into Info.plist...'\n\"\n                          \"  plutil -insert CFBundleIcons -xml \\\"$(plutil -extract CFBundleIcons xml1 -o - \\\"/Users/aimac/Development/FloppyTurd/build_ios_new/AssetInfo.plist\\\")\\\" \\\"$APP_PATH/Info.plist\\\" || true\n\"\n                          \"  plutil -insert CFBundleIcons~ipad -xml \\\"$(plutil -extract CFBundleIcons~ipad xml1 -o - \\\"/Users/aimac/Development/FloppyTurd/build_ios_new/AssetInfo.plist\\\")\\\" \\\"$APP_PATH/Info.plist\\\" || true\n\"\n                          \"fi\n\"\n\"\n                          \"echo '✅ Asset catalog compilation and installation complete'\"}]";
+				SECTORDER_FLAGS = "";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGET_TEMP_DIR = "/Users/aimac/Development/FloppyTurd/build_ios_new/build/FloppyTurd.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				UI_REQUIRED_DEVICE_CAPABILITIES = arm64;
+				UI_SUPPORTED_INTERFACE_ORIENTATIONS = "UIInterfaceOrientationPortrait;UIInterfaceOrientationLandscapeLeft;UIInterfaceOrientationLandscapeRight";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = MinSizeRel;
+		};
+		B3BA1AE5EE3E40A0AB6B665D /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				BUNDLE_VERSION = 1.0.0;
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGNING_REQUIRED = YES;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "/Users/aimac/Development/FloppyTurd/build_ios_new/RelWithDebInfo${EFFECTIVE_PLATFORM_NAME}";
+				DEVELOPMENT_TEAM = ZZYUYBHPUY;
+				EXECUTABLE_PREFIX = "";
+				EXECUTABLE_SUFFIX = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					PLATFORM_IOS,
+					__APPLE__,
+					"'TARGET_OS_IOS=1'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					/Users/aimac/Development/FloppyTurd/FloppyTurd,
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = /Users/aimac/Development/FloppyTurd/build_ios_new/CMakeFiles/FloppyTurd.dir/Info.plist;
+				INSTALL_PATH = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				OTHER_CPLUSPLUSFLAGS = (
+					"-DNDEBUG",
+					"'-std=gnu++20'",
+					"-Wall",
+					"-Wextra",
+					"-pedantic",
+				);
+				OTHER_LDFLAGS = (
+					"-Wl,-headerpad_max_install_names",
+					"-framework",
+					Foundation,
+					"-framework",
+					UIKit,
+					"-framework",
+					Metal,
+					"-framework",
+					MetalKit,
+					"-framework",
+					MetalPerformanceShaders,
+					"-framework",
+					SpriteKit,
+					"-framework",
+					QuartzCore,
+					"-framework",
+					CoreGraphics,
+					"-framework",
+					CoreText,
+					"-framework",
+					CoreAudio,
+					"-framework",
+					AudioToolbox,
+					"-framework",
+					AVFoundation,
+					"-framework",
+					GameController,
+					"-framework",
+					ImageIO,
+					"-framework",
+					MobileCoreServices,
+					"-framework",
+					CoreHaptics,
+					"$(inherited)",
+				);
+				OTHER_REZFLAGS = "";
+				PRODUCT_BUNDLE_IDENTIFIER = com.floppyturd.game;
+				PRODUCT_NAME = FloppyTurd;
+				RUN_SCRIPT_PHASES = "[{\"name\":\"Compile Asset Catalog\",\"shell_path\":\"/bin/sh\",\"shell_script\":\"echo '📦 Compiling asset catalog...'; \n\"\n                          \"# Use actool to compile the asset catalog properly\n\"\n                          \"xcrun actool \\\n\"\n                          \"  --compile \\\"/Users/aimac/Development/FloppyTurd/build_ios_new/assets\\\" \\\n\"\n                          \"  --platform iphoneos \\\n\"\n                          \"  --minimum-deployment-target 13.0 \\\n\"\n                          \"  --app-icon AppIcon \\\n\"\n                          \"  --output-partial-info-plist \\\"/Users/aimac/Development/FloppyTurd/build_ios_new/AssetInfo.plist\\\" \\\n\"\n                          \"  --compress-pngs \\\n\"\n                          \"  --enable-on-demand-resources YES \\\n\"\n                          \"  \\\"/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets\\\" \\\n\"\n                          \"  || { echo 'Asset catalog compilation failed!'; exit 1; }; \n\"\n\"\n                          \"# Copy compiled assets to app bundle\n\"\n                          \"APP_PATH=\\\"\\/\\\\\"\n\"\n                          \"echo 'Copying processed assets to: '$APP_PATH; \n\"\n                          \"mkdir -p \\\"$APP_PATH\\\" \n\"\n                          \"cp -R \\\"/Users/aimac/Development/FloppyTurd/build_ios_new/assets/\\\"* \\\"$APP_PATH/\\\" \n\"\n\"\n                          \"# Merge the partial Info.plist if it exists\n\"\n                          \"if [ -f \\\"/Users/aimac/Development/FloppyTurd/build_ios_new/AssetInfo.plist\\\" ]; then\n\"\n                          \"  echo 'Merging asset catalog info into Info.plist...'\n\"\n                          \"  plutil -insert CFBundleIcons -xml \\\"$(plutil -extract CFBundleIcons xml1 -o - \\\"/Users/aimac/Development/FloppyTurd/build_ios_new/AssetInfo.plist\\\")\\\" \\\"$APP_PATH/Info.plist\\\" || true\n\"\n                          \"  plutil -insert CFBundleIcons~ipad -xml \\\"$(plutil -extract CFBundleIcons~ipad xml1 -o - \\\"/Users/aimac/Development/FloppyTurd/build_ios_new/AssetInfo.plist\\\")\\\" \\\"$APP_PATH/Info.plist\\\" || true\n\"\n                          \"fi\n\"\n\"\n                          \"echo '✅ Asset catalog compilation and installation complete'\"}]";
+				SECTORDER_FLAGS = "";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGET_TEMP_DIR = "/Users/aimac/Development/FloppyTurd/build_ios_new/build/FloppyTurd.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				UI_REQUIRED_DEVICE_CAPABILITIES = arm64;
+				UI_SUPPORTED_INTERFACE_ORIENTATIONS = "UIInterfaceOrientationPortrait;UIInterfaceOrientationLandscapeLeft;UIInterfaceOrientationLandscapeRight";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = RelWithDebInfo;
+		};
+		CBB8577FF19949529D7C2A33 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				BUNDLE_VERSION = 1.0.0;
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGNING_REQUIRED = YES;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "/Users/aimac/Development/FloppyTurd/build_ios_new/Debug${EFFECTIVE_PLATFORM_NAME}";
+				DEVELOPMENT_TEAM = ZZYUYBHPUY;
+				EXECUTABLE_PREFIX = "";
+				EXECUTABLE_SUFFIX = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					PLATFORM_IOS,
+					__APPLE__,
+					"'TARGET_OS_IOS=1'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					/Users/aimac/Development/FloppyTurd/FloppyTurd,
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = /Users/aimac/Development/FloppyTurd/build_ios_new/CMakeFiles/FloppyTurd.dir/Info.plist;
+				INSTALL_PATH = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				OTHER_CPLUSPLUSFLAGS = (
+					"'-std=gnu++20'",
+					"-Wall",
+					"-Wextra",
+					"-pedantic",
+				);
+				OTHER_LDFLAGS = (
+					"-Wl,-headerpad_max_install_names",
+					"-framework",
+					Foundation,
+					"-framework",
+					UIKit,
+					"-framework",
+					Metal,
+					"-framework",
+					MetalKit,
+					"-framework",
+					MetalPerformanceShaders,
+					"-framework",
+					SpriteKit,
+					"-framework",
+					QuartzCore,
+					"-framework",
+					CoreGraphics,
+					"-framework",
+					CoreText,
+					"-framework",
+					CoreAudio,
+					"-framework",
+					AudioToolbox,
+					"-framework",
+					AVFoundation,
+					"-framework",
+					GameController,
+					"-framework",
+					ImageIO,
+					"-framework",
+					MobileCoreServices,
+					"-framework",
+					CoreHaptics,
+					"$(inherited)",
+				);
+				OTHER_REZFLAGS = "";
+				PRODUCT_BUNDLE_IDENTIFIER = com.floppyturd.game;
+				PRODUCT_NAME = FloppyTurd;
+				RUN_SCRIPT_PHASES = "[{\"name\":\"Compile Asset Catalog\",\"shell_path\":\"/bin/sh\",\"shell_script\":\"echo '📦 Compiling asset catalog...'; \n\"\n                          \"# Use actool to compile the asset catalog properly\n\"\n                          \"xcrun actool \\\n\"\n                          \"  --compile \\\"/Users/aimac/Development/FloppyTurd/build_ios_new/assets\\\" \\\n\"\n                          \"  --platform iphoneos \\\n\"\n                          \"  --minimum-deployment-target 13.0 \\\n\"\n                          \"  --app-icon AppIcon \\\n\"\n                          \"  --output-partial-info-plist \\\"/Users/aimac/Development/FloppyTurd/build_ios_new/AssetInfo.plist\\\" \\\n\"\n                          \"  --compress-pngs \\\n\"\n                          \"  --enable-on-demand-resources YES \\\n\"\n                          \"  \\\"/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets\\\" \\\n\"\n                          \"  || { echo 'Asset catalog compilation failed!'; exit 1; }; \n\"\n\"\n                          \"# Copy compiled assets to app bundle\n\"\n                          \"APP_PATH=\\\"\\/\\\\\"\n\"\n                          \"echo 'Copying processed assets to: '$APP_PATH; \n\"\n                          \"mkdir -p \\\"$APP_PATH\\\" \n\"\n                          \"cp -R \\\"/Users/aimac/Development/FloppyTurd/build_ios_new/assets/\\\"* \\\"$APP_PATH/\\\" \n\"\n\"\n                          \"# Merge the partial Info.plist if it exists\n\"\n                          \"if [ -f \\\"/Users/aimac/Development/FloppyTurd/build_ios_new/AssetInfo.plist\\\" ]; then\n\"\n                          \"  echo 'Merging asset catalog info into Info.plist...'\n\"\n                          \"  plutil -insert CFBundleIcons -xml \\\"$(plutil -extract CFBundleIcons xml1 -o - \\\"/Users/aimac/Development/FloppyTurd/build_ios_new/AssetInfo.plist\\\")\\\" \\\"$APP_PATH/Info.plist\\\" || true\n\"\n                          \"  plutil -insert CFBundleIcons~ipad -xml \\\"$(plutil -extract CFBundleIcons~ipad xml1 -o - \\\"/Users/aimac/Development/FloppyTurd/build_ios_new/AssetInfo.plist\\\")\\\" \\\"$APP_PATH/Info.plist\\\" || true\n\"\n                          \"fi\n\"\n\"\n                          \"echo '✅ Asset catalog compilation and installation complete'\"}]";
+				SECTORDER_FLAGS = "";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGET_TEMP_DIR = "/Users/aimac/Development/FloppyTurd/build_ios_new/build/FloppyTurd.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				UI_REQUIRED_DEVICE_CAPABILITIES = arm64;
+				UI_SUPPORTED_INTERFACE_ORIENTATIONS = "UIInterfaceOrientationPortrait;UIInterfaceOrientationLandscapeLeft;UIInterfaceOrientationLandscapeRight";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = Debug;
+		};
+		D65CFBB03EF34B9485FAD20C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				BUNDLE_VERSION = 1.0.0;
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGNING_REQUIRED = YES;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "/Users/aimac/Development/FloppyTurd/build_ios_new/Release${EFFECTIVE_PLATFORM_NAME}";
+				DEVELOPMENT_TEAM = ZZYUYBHPUY;
+				EXECUTABLE_PREFIX = "";
+				EXECUTABLE_SUFFIX = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					PLATFORM_IOS,
+					__APPLE__,
+					"'TARGET_OS_IOS=1'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (
+					/Users/aimac/Development/FloppyTurd/FloppyTurd,
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = /Users/aimac/Development/FloppyTurd/build_ios_new/CMakeFiles/FloppyTurd.dir/Info.plist;
+				INSTALL_PATH = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				OTHER_CPLUSPLUSFLAGS = (
+					"-DNDEBUG",
+					"'-std=gnu++20'",
+					"-Wall",
+					"-Wextra",
+					"-pedantic",
+				);
+				OTHER_LDFLAGS = (
+					"-Wl,-headerpad_max_install_names",
+					"-framework",
+					Foundation,
+					"-framework",
+					UIKit,
+					"-framework",
+					Metal,
+					"-framework",
+					MetalKit,
+					"-framework",
+					MetalPerformanceShaders,
+					"-framework",
+					SpriteKit,
+					"-framework",
+					QuartzCore,
+					"-framework",
+					CoreGraphics,
+					"-framework",
+					CoreText,
+					"-framework",
+					CoreAudio,
+					"-framework",
+					AudioToolbox,
+					"-framework",
+					AVFoundation,
+					"-framework",
+					GameController,
+					"-framework",
+					ImageIO,
+					"-framework",
+					MobileCoreServices,
+					"-framework",
+					CoreHaptics,
+					"$(inherited)",
+				);
+				OTHER_REZFLAGS = "";
+				PRODUCT_BUNDLE_IDENTIFIER = com.floppyturd.game;
+				PRODUCT_NAME = FloppyTurd;
+				RUN_SCRIPT_PHASES = "[{\"name\":\"Compile Asset Catalog\",\"shell_path\":\"/bin/sh\",\"shell_script\":\"echo '📦 Compiling asset catalog...'; \n\"\n                          \"# Use actool to compile the asset catalog properly\n\"\n                          \"xcrun actool \\\n\"\n                          \"  --compile \\\"/Users/aimac/Development/FloppyTurd/build_ios_new/assets\\\" \\\n\"\n                          \"  --platform iphoneos \\\n\"\n                          \"  --minimum-deployment-target 13.0 \\\n\"\n                          \"  --app-icon AppIcon \\\n\"\n                          \"  --output-partial-info-plist \\\"/Users/aimac/Development/FloppyTurd/build_ios_new/AssetInfo.plist\\\" \\\n\"\n                          \"  --compress-pngs \\\n\"\n                          \"  --enable-on-demand-resources YES \\\n\"\n                          \"  \\\"/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets\\\" \\\n\"\n                          \"  || { echo 'Asset catalog compilation failed!'; exit 1; }; \n\"\n\"\n                          \"# Copy compiled assets to app bundle\n\"\n                          \"APP_PATH=\\\"\\/\\\\\"\n\"\n                          \"echo 'Copying processed assets to: '$APP_PATH; \n\"\n                          \"mkdir -p \\\"$APP_PATH\\\" \n\"\n                          \"cp -R \\\"/Users/aimac/Development/FloppyTurd/build_ios_new/assets/\\\"* \\\"$APP_PATH/\\\" \n\"\n\"\n                          \"# Merge the partial Info.plist if it exists\n\"\n                          \"if [ -f \\\"/Users/aimac/Development/FloppyTurd/build_ios_new/AssetInfo.plist\\\" ]; then\n\"\n                          \"  echo 'Merging asset catalog info into Info.plist...'\n\"\n                          \"  plutil -insert CFBundleIcons -xml \\\"$(plutil -extract CFBundleIcons xml1 -o - \\\"/Users/aimac/Development/FloppyTurd/build_ios_new/AssetInfo.plist\\\")\\\" \\\"$APP_PATH/Info.plist\\\" || true\n\"\n                          \"  plutil -insert CFBundleIcons~ipad -xml \\\"$(plutil -extract CFBundleIcons~ipad xml1 -o - \\\"/Users/aimac/Development/FloppyTurd/build_ios_new/AssetInfo.plist\\\")\\\" \\\"$APP_PATH/Info.plist\\\" || true\n\"\n                          \"fi\n\"\n\"\n                          \"echo '✅ Asset catalog compilation and installation complete'\"}]";
+				SECTORDER_FLAGS = "";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGET_TEMP_DIR = "/Users/aimac/Development/FloppyTurd/build_ios_new/build/FloppyTurd.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				UI_REQUIRED_DEVICE_CAPABILITIES = arm64;
+				UI_SUPPORTED_INTERFACE_ORIENTATIONS = "UIInterfaceOrientationPortrait;UIInterfaceOrientationLandscapeLeft;UIInterfaceOrientationLandscapeRight";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = Release;
+		};
+		DD0E8DD936134F34B93A4BC2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = " $(inherited)";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ALL_BUILD;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = Debug;
+		};
+		ECB05F7F5501498F9C396E5D /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SYMROOT = /Users/aimac/Development/FloppyTurd/build_ios_new/build;
+			};
+			name = RelWithDebInfo;
+		};
+		EE18203C79424772B240403A /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = " $(inherited)";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ALL_BUILD;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = "$(inherited)";
+			};
+			name = MinSizeRel;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		044B28DE82604BF289236413 /* Build configuration list for PBXProject "FloppyTurd" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				01030878D42545768FA60C85 /* Debug */,
+				331AA553BB6E485CB1ADFE89 /* Release */,
+				63864D75538A41CDB4CFF6B3 /* MinSizeRel */,
+				ECB05F7F5501498F9C396E5D /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		22630F4E106A4AD585A8E7D7 /* Build configuration list for PBXNativeTarget "FloppyTurd" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CBB8577FF19949529D7C2A33 /* Debug */,
+				D65CFBB03EF34B9485FAD20C /* Release */,
+				A9AE45497BEB4BA78CD00F33 /* MinSizeRel */,
+				B3BA1AE5EE3E40A0AB6B665D /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		45FD305C3E44440CB8AAE568 /* Build configuration list for PBXAggregateTarget "ZERO_CHECK" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7CD9331605544EB7A20A11E0 /* Debug */,
+				5481BBABB2A4475EAAA7C993 /* Release */,
+				110A68A0289147DFA122E506 /* MinSizeRel */,
+				6FEB4766CD2949A2BE82089A /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		5B0149F5E2DA4042A734FE11 /* Build configuration list for PBXAggregateTarget "ALL_BUILD" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DD0E8DD936134F34B93A4BC2 /* Debug */,
+				5AC54663F0134B3BBEB69D28 /* Release */,
+				EE18203C79424772B240403A /* MinSizeRel */,
+				93916924C37B43ADBDE87CE5 /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 804C63067C1F404091BA49E1 /* Project object */;
+}

@@ -1,0 +1,11 @@
+---
+triple:          'arm64-apple-darwin'
+binary-path:     '/Users/aimac/Development/FloppyTurd/ios-signing-test/build/Debug-iphonesimulator/SigningTest.app/SigningTest'
+relocations:
+  - { offset: 0x27, size: 0x8, addend: 0x0, symName: '-[AppDelegate application:didFinishLaunchingWithOptions:]', symObjAddr: 0x0, symBinAddr: 0x100006328, symSize: 0x1A0 }
+  - { offset: 0x187A, size: 0x8, addend: 0x0, symName: '-[AppDelegate application:didFinishLaunchingWithOptions:]', symObjAddr: 0x0, symBinAddr: 0x100006328, symSize: 0x1A0 }
+  - { offset: 0x18EA, size: 0x8, addend: 0x0, symName: __ZL10CGRectMakedddd, symObjAddr: 0x1A0, symBinAddr: 0x1000064C8, symSize: 0x4C }
+  - { offset: 0x1954, size: 0x8, addend: 0x0, symName: '-[AppDelegate window]', symObjAddr: 0x1EC, symBinAddr: 0x100006514, symSize: 0x24 }
+  - { offset: 0x198A, size: 0x8, addend: 0x0, symName: '-[AppDelegate setWindow:]', symObjAddr: 0x210, symBinAddr: 0x100006538, symSize: 0x3C }
+  - { offset: 0x19C8, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x24C, symBinAddr: 0x100006574, symSize: 0x74 }
+...

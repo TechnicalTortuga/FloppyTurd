@@ -145,25 +145,27 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
         PLATFORM_IOS
         __APPLE__
         TARGET_OS_IOS=1
-        USE_METAL_RENDERER=1
     )
     
+    # Use the existing Info.plist in the root directory
+    # Re-enable normal code signing process but add final cleanup step
     set_target_properties(${PROJECT_NAME} PROPERTIES
-        MACOSX_BUNDLE TRUE
+        MACOSX_BUNDLE ON
+        MACOSX_BUNDLE_GUI_IDENTIFIER "com.floppyturd.game"
         MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info.plist"
         XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.floppyturd.game"
-        XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
+        XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "${DEVELOPMENT_TEAM}"
+        XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "Apple Development"
         XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET "13.0"
         XCODE_ATTRIBUTE_PRODUCT_NAME "FloppyTurd"
         XCODE_ATTRIBUTE_BUNDLE_VERSION "1.0.0"
-        XCODE_ATTRIBUTE_SHORT_VERSION_STRING "1.0.0"
+        XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2"
         XCODE_ATTRIBUTE_UI_REQUIRED_DEVICE_CAPABILITIES "arm64"
         XCODE_ATTRIBUTE_UI_SUPPORTED_INTERFACE_ORIENTATIONS "UIInterfaceOrientationPortrait;UIInterfaceOrientationLandscapeLeft;UIInterfaceOrientationLandscapeRight"
-        # Automatic signing settings for device deployment
-        XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "${DEVELOPMENT_TEAM}"
-        XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "Apple Development"
+        # Enable code signing with automatic style
         XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "YES"
         XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "YES"
+        XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
     )
     
     # Bundle resources
@@ -180,40 +182,36 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
         target_sources(${PROJECT_NAME} PRIVATE ${METAL_SHADERS})
     endif()
     
+    # Asset catalogs handle resources properly, no need for cleanup scripts
+    
 
     
-    # Clean extended attributes from app bundle to prevent code signing errors
-    # This must run after resource bundling but before code signing
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND echo "🧹 Cleaning extended attributes to fix iOS code signing..."
-        COMMAND xattr -cr "$<TARGET_BUNDLE_DIR:${PROJECT_NAME}>" 2>/dev/null || true
-        COMMAND dot_clean -m "$<TARGET_BUNDLE_DIR:${PROJECT_NAME}>" 2>/dev/null || true
-        COMMAND find "$<TARGET_BUNDLE_DIR:${PROJECT_NAME}>" -exec xattr -c {} + 2>/dev/null || true
-        COMMAND echo "✅ Extended attributes cleaned from app bundle"
-        COMMENT "Removing extended attributes that cause 'detritus not allowed' code signing errors"
+    # ---- Disabled cleanup script BEGIN ----
+
+    # Asset Catalog generation for iOS resources
+    # This approach properly processes and packages resources to avoid extended attributes issues
+    
+    # Create asset catalog structure with generate_asset_catalog.sh script
+    add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
+        COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_asset_catalog.sh
+        COMMENT "Generating asset catalog from resources"
+        VERBATIM
     )
+    
+    # Set up asset catalog compilation with actool
+    # This script will run after asset catalog generation and before app bundle creation
+    set(ASSET_CATALOG_SCRIPT "[{\"name\":\"Compile Asset Catalog\",\"shell_path\":\"/bin/sh\",\"shell_script\":\"echo '📦 Compiling asset catalog...'; \n\"\n                          \"# Use actool to compile the asset catalog properly\n\"\n                          \"xcrun actool \\\n\"\n                          \"  --compile \\\"${CMAKE_BINARY_DIR}/assets\\\" \\\n\"\n                          \"  --platform iphoneos \\\n\"\n                          \"  --minimum-deployment-target 13.0 \\\n\"\n                          \"  --app-icon AppIcon \\\n\"\n                          \"  --output-partial-info-plist \\\"${CMAKE_BINARY_DIR}/AssetInfo.plist\\\" \\\n\"\n                          \"  --compress-pngs \\\n\"\n                          \"  --enable-on-demand-resources YES \\\n\"\n                          \"  \\\"${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/Assets.xcassets\\\" \\\n\"\n                          \"  || { echo 'Asset catalog compilation failed!'; exit 1; }; \n\"\n\"\n                          \"# Copy compiled assets to app bundle\n\"\n                          \"APP_PATH=\\\"\\${TARGET_BUILD_DIR}/\\${WRAPPER_NAME}\\\"\n\"\n                          \"echo 'Copying processed assets to: '$APP_PATH; \n\"\n                          \"mkdir -p \\\"$APP_PATH\\\" \n\"\n                          \"cp -R \\\"${CMAKE_BINARY_DIR}/assets/\\\"* \\\"$APP_PATH/\\\" \n\"\n\"\n                          \"# Merge the partial Info.plist if it exists\n\"\n                          \"if [ -f \\\"${CMAKE_BINARY_DIR}/AssetInfo.plist\\\" ]; then\n\"\n                          \"  echo 'Merging asset catalog info into Info.plist...'\n\"\n                          \"  plutil -insert CFBundleIcons -xml \\\"$(plutil -extract CFBundleIcons xml1 -o - \\\"${CMAKE_BINARY_DIR}/AssetInfo.plist\\\")\\\" \\\"$APP_PATH/Info.plist\\\" || true\n\"\n                          \"  plutil -insert CFBundleIcons~ipad -xml \\\"$(plutil -extract CFBundleIcons~ipad xml1 -o - \\\"${CMAKE_BINARY_DIR}/AssetInfo.plist\\\")\\\" \\\"$APP_PATH/Info.plist\\\" || true\n\"\n                          \"fi\n\"\n\"\n                          \"echo '✅ Asset catalog compilation and installation complete'\"}]")
 
-    # Final clean right before CodeSign (phase name prefixed with ZZZ to sort last)
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND echo "🧹 Final xattr cleanup before CodeSign..."
-        COMMAND dot_clean -m "$<TARGET_BUNDLE_DIR:${PROJECT_NAME}>" 2>/dev/null || true
-        COMMAND find "$<TARGET_BUNDLE_DIR:${PROJECT_NAME}>" -exec xattr -c {} + 2>/dev/null || true
-        COMMENT "Final removal of extended attributes to satisfy codesign"
-    )
-    # Retain the existing (earlier) custom command name so it’s visible in Xcode
-    set_property(TARGET ${PROJECT_NAME} PROPERTY XCODE_BUILD_PHASE_NAME "ZZZ_StripXattrs")
-
-    # --- Final cleanup script phase inserted LAST, before CodeSign ---
-    # We use the XCODE_ATTRIBUTE_RUN_SCRIPT_PHASES attribute to create a dedicated
-    # Run Script build phase that executes after all resource copy phases. The JSON
-    # payload defines the phase; prefixing the name with "ZZZ" helps ensure it
-    # sorts to the end of the list.
-    set(FINAL_CLEAN_SCRIPT "[{\"name\":\"ZZZ_FinalClean\",\"shell_path\":\"/bin/sh\",\"shell_script\":\"echo '🧹 ZZZ_FinalClean stripping extended attributes'; /usr/bin/dot_clean -m \\${TARGET_BUILD_DIR}/\\${WRAPPER_NAME} || true; /usr/bin/xattr -r -d com.apple.provenance \\${TARGET_BUILD_DIR}/\\${WRAPPER_NAME} || true; /usr/bin/xattr -r -c \\${TARGET_BUILD_DIR}/\\${WRAPPER_NAME} || true\"}]")
-
-    # Attach the run-script phase JSON to the target. This property is understood by
-    # the Xcode generator and will create the phase after the existing ones.
+    # Configure code signing to use automatic style
+    # Since we're using asset catalogs, Xcode's automatic signing should work correctly
     set_target_properties(${PROJECT_NAME} PROPERTIES
-        XCODE_ATTRIBUTE_RUN_SCRIPT_PHASES "${FINAL_CLEAN_SCRIPT}"
+        # Enable code signing
+        XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "YES"
+        XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "YES"
+        XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
+        XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "86886N72J8"
+        # Use our asset catalog script
+        XCODE_ATTRIBUTE_RUN_SCRIPT_PHASES "${ASSET_CATALOG_SCRIPT}"
     )
 else()
     # All other platforms use Raylib
@@ -225,12 +223,14 @@ if(${PLATFORM} STREQUAL "Windows")
     # Windows specific settings
     # Use console entry point (main() instead of WinMain())
     
-    # Copy resources to output directory
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/resources
-        $<TARGET_FILE_DIR:${PROJECT_NAME}>/resources
-    )
+    # Copy resources to output directory (skip for iOS - we use asset catalogs instead)
+    if(NOT APPLE OR NOT IOS)
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/resources
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>/resources
+        )
+    endif()
     
     # Set Visual Studio debugger working directory
     set_property(TARGET ${PROJECT_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
@@ -239,12 +239,15 @@ elif(IS_MACOS)
     # macOS specific settings
     message(STATUS "Applying macOS-specific build settings")
     
-    # Copy resources to output directory for macOS
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/resources
-        $<TARGET_FILE_DIR:${PROJECT_NAME}>/resources
-    )
+    # Copy resources to output directory for macOS (skip for iOS - we use asset catalogs instead)
+    # For macOS, we can use the standard resource copy approach
+    if(NOT IOS)
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/resources
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>/resources
+        )
+    endif()
     
     # macOS-specific compiler flags for better compatibility
     target_compile_options(${PROJECT_NAME} PRIVATE
@@ -267,12 +270,14 @@ elif(${PLATFORM} STREQUAL "Android")
     
 else()
     # Default/Linux settings
-    # Copy resources to output directory for other platforms
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/resources
-        $<TARGET_FILE_DIR:${PROJECT_NAME}>/resources
-    )
+    # Copy resources to output directory for other platforms (skip for iOS - we use asset catalogs instead)
+    if(NOT IOS)
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/resources
+            $<TARGET_FILE_DIR:${PROJECT_NAME}>/resources
+        )
+    endif()
 endif()
 
 # Compiler warnings
