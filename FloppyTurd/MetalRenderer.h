@@ -13,7 +13,7 @@
 #import <simd/simd.h>
 #include <vector>
 #include <queue>
-#include "MetalRaylibCompat.h"
+#include "RaylibCompat.h"
 
 // Vertex structure for 2D rendering
 typedef struct {

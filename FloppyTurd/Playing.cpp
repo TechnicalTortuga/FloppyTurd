@@ -1059,7 +1059,7 @@ void Playing::UpdateMusic() {
 }
 
 void Playing::HandleInput() {
-    if (gameOverState != NONE || paused) {
+    if (GAMEOVER || isPaused) {
         return;
     }
 
@@ -1114,7 +1114,7 @@ void Playing::HandleInput() {
     }
 
     if (IsKeyPressed(KEY_ESCAPE)) {
-        paused = !paused;
+        isPaused = !isPaused;
     }
 }
 

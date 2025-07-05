@@ -67,8 +67,20 @@ typedef struct Font {
     void* glyphs;
 #if defined(__APPLE__) && defined(TARGET_OS_IPHONE)
     void* fontData;
+    const void* ctFont; // CTFontRef for iOS (const qualified)
+    int size;           // Font size for iOS
 #endif
 } Font;
+
+// Render texture type
+#if !defined(RENDER_TEXTURE_TYPE)
+#define RENDER_TEXTURE_TYPE
+typedef struct RenderTexture2D {
+    unsigned int id;        // OpenGL framebuffer object id
+    Texture2D texture;      // Color buffer attachment texture
+    Texture2D depth;        // Depth buffer attachment texture
+} RenderTexture2D, RenderTexture;
+#endif
 
 // Define pixel format constants if needed
 #define PIXELFORMAT_UNCOMPRESSED_R8G8B8A8 7
@@ -93,21 +105,94 @@ typedef struct Font {
 #define BROWN               Color{ 165, 42, 42, 255 }
 #define GRAY                Color{ 128, 128, 128, 255 }
 #define PINK                Color{ 255, 192, 203, 255 }
+#define MAROON              Color{ 128, 0, 0, 255 }
+#define GOLD                Color{ 255, 203, 0, 255 }
 
 // Math constants
 const float PI = 3.14159265358979323846f;
-const float RAD2DEG = 57.2957795130823208768f;
+const float DEG2RAD = PI / 180.0f;
+const float RAD2DEG = 180.0f / PI;
 
-// Window configuration flags
-#define FLAG_WINDOW_RESIZABLE    0x00000002
-#define FLAG_VSYNC_HINT          0x00000040
-#define FLAG_WINDOW_MAXIMIZED    0x00000800
+// Window flags
+#define FLAG_WINDOW_RESIZABLE   0x00000004
+#define FLAG_VSYNC_HINT         0x00000040
+#define FLAG_WINDOW_MAXIMIZED   0x00000200
+
+// Logging levels
+#define LOG_ALL     0
+#define LOG_TRACE   1
+#define LOG_DEBUG   2
+#define LOG_INFO    3
+#define LOG_WARNING 4
+#define LOG_ERROR   5
+#define LOG_FATAL   6
+#define LOG_NONE    7
 
 // Mouse buttons
 #define MOUSE_LEFT_BUTTON 0
+#define MOUSE_RIGHT_BUTTON 1
+#define MOUSE_MIDDLE_BUTTON 2
+#define MOUSE_BUTTON_LEFT 0
+#define MOUSE_BUTTON_RIGHT 1
+#define MOUSE_BUTTON_MIDDLE 2
 
 // Keyboard keys
 #define KEY_NULL            0
+#define KEY_SPACE           32
+#define KEY_ENTER           257
+#define KEY_ESCAPE          256
+// Alphabetic keys
+#define KEY_A               65
+#define KEY_B               66
+#define KEY_C               67
+#define KEY_D               68
+#define KEY_E               69
+#define KEY_F               70
+#define KEY_G               71
+#define KEY_H               72
+#define KEY_I               73
+#define KEY_J               74
+#define KEY_K               75
+#define KEY_L               76
+#define KEY_M               77
+#define KEY_N               78
+#define KEY_O               79
+#define KEY_P               80
+#define KEY_Q               81
+#define KEY_R               82
+#define KEY_S               83
+#define KEY_T               84
+#define KEY_U               85
+#define KEY_V               86
+#define KEY_W               87
+#define KEY_X               88
+#define KEY_Y               89
+#define KEY_Z               90
+
+// API export macro
+#if defined(_WIN32) && defined(BUILD_LIBTYPE_SHARED)
+    #define RLAPI __declspec(dllexport)      // We are building the library as a Win32 shared library (.dll)
+#elif defined(_WIN32) && defined(USE_LIBTYPE_SHARED)
+    #define RLAPI __declspec(dllimport)      // We are using the library as a Win32 shared library (.dll)
+#else
+    #define RLAPI                            // We are using or building the library as a static library (or a shared library on other platforms than Windows)
+#endif
+
+// Music functions
+RLAPI float GetMusicTimeLength(Music music);
+
+#define KEY_F1              290
+#define KEY_F2              291
+#define KEY_F3              292
+#define KEY_F4              293
+#define KEY_F5              294
+#define KEY_F6              295
+#define KEY_F7              296
+#define KEY_F8              297
+#define KEY_F9              298
+#define KEY_F10             299
+#define KEY_F11             300
+#define KEY_F12             301
 
 // Gesture definitions
 #define GESTURE_NONE        0
@@ -122,11 +207,7 @@ const float RAD2DEG = 57.2957795130823208768f;
 #define GESTURE_PINCH_IN    256
 #define GESTURE_PINCH_OUT   512
 
-// Log level constants
-#define LOG_INFO 1
-#define LOG_WARNING 2
-#define LOG_ERROR 3
-#define LOG_DEBUG 4
+// Log level constants (removed - already defined above)
 
 // Function declarations - these should match raylib API signatures but be implemented in platform-specific files
 #ifdef __cplusplus
@@ -149,8 +230,10 @@ void DrawTexture(Texture2D texture, int posX, int posY, Color tint);
 void DrawTextureV(Texture2D texture, Vector2 position, Color tint);
 void DrawTextureEx(Texture2D texture, Vector2 position, float rotation, float scale, Color tint);
 void DrawTextureRec(Texture2D texture, Rectangle source, Rectangle dest, Color tint);
-
 void DrawTexturePro(Texture2D texture, Rectangle source, Rectangle dest, Vector2 origin, float rotation, Color tint);
+void DrawCircle(int centerX, int centerY, float radius, Color color);
+void DrawRectangleLinesEx(Rectangle rec, float lineThick, Color color);
+Color ColorAlpha(Color color, float alpha);
 Image LoadImage(const char *fileName);
 void UnloadImage(Image image);
 Image GenImageColor(int width, int height, Color color);
@@ -168,6 +251,7 @@ Vector2 MeasureTextEx(Font font, const char* text, float fontSize, float spacing
 void DrawTextEx(Font font, const char* text, Vector2 position, float fontSize, float spacing, Color tint);
 void DrawText(const char *text, int posX, int posY, int fontSize, Color color);
 int MeasureText(const char *text, int fontSize);
+const char* TextFormat(const char* text, ...);
 void DrawRectangle(int posX, int posY, int width, int height, Color color);
 void DrawRectangleRec(Rectangle rec, Color color);
 void DrawRectangleRounded(Rectangle rec, float roundness, int segments, Color color);
@@ -202,6 +286,19 @@ void ToggleFullscreen(void);
 void SetTextureFilter(Texture2D texture, int filter);
 void SetWindowPosition(int x, int y);
 double GetTime(void);
+RLAPI void SetWindowIcon(Image image);
+RLAPI RenderTexture2D LoadRenderTexture(int width, int height);
+RLAPI void UnloadRenderTexture(RenderTexture2D target);
+RLAPI void BeginTextureMode(RenderTexture2D target);
+RLAPI void EndTextureMode(void);
+RLAPI Vector2 GetMonitorPosition(int monitor);
+RLAPI Vector2 GetMousePosition(void);
+
+// iOS-specific input handling functions
+RLAPI void UpdateSafeAreaInsets(float top, float right, float bottom, float left);
+RLAPI void UpdateTouchState(int touchId, float x, float y, bool pressed);
+RLAPI void ClearAllTouchStates(void);
+
 // === Utility constants ===
 #ifndef PI
 #define PI 3.14159265358979323846f
@@ -217,6 +314,18 @@ double GetTime(void);
 #ifndef TEXTURE_FILTER_BILINEAR
 #define TEXTURE_FILTER_BILINEAR 1
 #endif
+#ifndef TEXTURE_FILTER_TRILINEAR
+#define TEXTURE_FILTER_TRILINEAR 2
+#endif
+#ifndef TEXTURE_FILTER_ANISOTROPIC_4X
+#define TEXTURE_FILTER_ANISOTROPIC_4X 3
+#endif
+#ifndef TEXTURE_FILTER_ANISOTROPIC_8X
+#define TEXTURE_FILTER_ANISOTROPIC_8X 4
+#endif
+#ifndef TEXTURE_FILTER_ANISOTROPIC_16X
+#define TEXTURE_FILTER_ANISOTROPIC_16X 5
+#endif
 
 // Utility math helpers
 float Clamp(float value, float min, float max);
@@ -224,6 +333,9 @@ Color ColorLerp(Color a, Color b, float t);
 
 // Mouse input functions
 bool IsMouseButtonDown(int button);
+bool IsMouseButtonReleased(int button);
+bool IsKeyPressed(int key);
+bool IsKeyDown(int key);
 Vector2 GetMouseDelta(void);
 float GetFrameTime(void);
 bool CheckCollisionPointRec(Vector2 point, Rectangle rec);

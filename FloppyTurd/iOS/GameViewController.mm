@@ -1,6 +1,6 @@
 #import "GameViewController.h"
 #import <Metal/Metal.h>
-#import "MetalRaylibCompat.h"
+#import "RaylibCompat.h"
 
 // Include our C++ game headers
 extern "C" int game_main(int argc, char *argv[]);

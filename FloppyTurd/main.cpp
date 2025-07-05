@@ -43,8 +43,8 @@ int game_main(int argc, char *argv[])
 	// Seed the random number generator
 	srand(static_cast<unsigned int>(time(NULL)));
 
-	// Initialize platform layer
-	PlatformLayer::GetInstance().Initialize();
+	// Initialize platform layer with a placeholder value for nativeView
+	PlatformLayer::GetInstance().Initialize(nullptr);
 
 	Game* game = new Game(); // Constructor automatically calls RunGame()
 	

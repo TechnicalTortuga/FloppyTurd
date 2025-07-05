@@ -63,21 +63,14 @@ list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/PlayerOLD.cpp)
 
 # Add platform-specific compatibility layer
 if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
-    # iOS uses Metal compatibility layer
+    # iOS uses centralized RaylibCompat with PlatformLayer.mm for Metal implementation
     list(APPEND SOURCES 
-        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalRaylibCompat.mm
-        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalRenderer.mm
-        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalTexture.mm
-        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalShader.mm
-        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalTextRenderer.mm
-        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/iOS/AppDelegate.mm
-        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/iOS/GameViewController.mm
-        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/iOS/HapticsManager.mm
+        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/RaylibCompat.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/RaylibCompat_iOS.mm
+        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/PlatformLayer.mm
     )
-    # Add Metal shader files as resources
-    set(METAL_SHADERS ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/Shaders2D.metal)
 else()
-    # Other platforms use SDL or direct Raylib
+    # Other platforms use RaylibCompat with direct Raylib
     list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/RaylibCompat.cpp)
 endif()
 
@@ -92,13 +85,13 @@ file(GLOB_RECURSE HEADERS
 list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/GameSettings.h)
 list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/Resources.h)
 
-# Add new platform abstraction files
-list(APPEND SOURCES 
-    ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/PlatformLayer.mm
-    ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/TouchControls.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/ResourceManager.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/AIGUI.cpp
-)
+# For iOS, remove PlatformLayer.cpp since we use PlatformLayer.mm instead
+if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
+    list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/PlatformLayer.cpp)
+endif()
+
+# TouchControls, ResourceManager, and AIGUI.cpp are already included via GLOB_RECURSE
+# PlatformLayer.mm is added in the platform-specific section above
 
 # Create executable
 if(${PLATFORM} STREQUAL "Android")

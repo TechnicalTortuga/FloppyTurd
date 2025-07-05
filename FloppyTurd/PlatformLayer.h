@@ -5,6 +5,11 @@
 #include <vector>
 #include "RaylibCompat.h"
 
+// Forward declarations for Metal rendering classes (iOS)
+class MetalRenderer;
+class MetalTextRenderer;
+
+
 #ifdef __APPLE__
 #include <TargetConditionals.h>
 #endif
@@ -16,6 +21,9 @@
 #elif defined(__APPLE__)
     #include <TargetConditionals.h>
     #if TARGET_OS_IPHONE
+#ifndef PLATFORM_IOS
+#define PLATFORM_IOS
+#endif
         #define PLATFORM_MOBILE
         // #define PLATFORM_IOS  // Commented out to avoid redefinition warning
     #endif
@@ -30,6 +38,8 @@ public:
     PlatformLayer& operator=(const PlatformLayer&) = delete;
 
     // Platform-specific features
+    void Initialize(void* nativeView);
+    // Overload for initialization when native view is not yet available (e.g., desktop or high-level bootstrap)
     void Initialize();
     void Shutdown();
 
@@ -44,12 +54,16 @@ public:
     // Input handling
     bool IsTouchSupported() const;
     Vector2 GetPrimaryInputPosition() const; // Mouse on desktop, primary touch on mobile
-    bool IsPrimaryInputPressed() const;
     bool IsPrimaryInputDown() const;
+    bool IsPrimaryInputPressed() const;
     bool IsPrimaryInputReleased() const;
     bool IsSecondaryInputPressed() const;
     bool IsSecondaryInputDown() const;
     bool IsSecondaryInputReleased() const;
+
+    // Touch-specific helpers (iOS)
+    int GetTouchCount() const;
+    Vector2 GetTouchPosition(int index) const;
 
     // Get all active touch points (for multi-touch support)
     std::vector<Vector2> GetTouchPoints() const;
@@ -64,9 +78,6 @@ public:
 
 #ifdef PLATFORM_IOS
     // Metal rendering interface
-    class MetalRenderer;
-    class MetalTextRenderer;
-    typedef void* id_MTLTexture; // Placeholder for id<MTLTexture>
     MetalRenderer* GetMetalRenderer() const;
 
     // Texture and image handling
@@ -100,6 +111,7 @@ public:
     void* LoadFont(const char* fileName, int size);
     void UnloadFont(void* font);
     Vector2 MeasureText(const char* text, void* font, float fontSize, float spacing);
+    void DrawText(const char* text, float x, float y, float fontSize, Color color, void* font);
 
     // Rendering integration
     void* LoadRenderTexture(int width, int height);
@@ -130,6 +142,9 @@ public:
     void ToggleFullscreen();
     float GetScreenScale() const;
 
+    bool IsMobilePlatform() const;
+    void UpdateTouchState();
+
 private:
     // Private constructor for singleton
     PlatformLayer();
@@ -138,6 +153,16 @@ private:
     // Forward-declared implementation class (PIMPL)
     class PlatformLayerImpl;
     PlatformLayerImpl* m_pImpl;
+
+    void* m_Delegate; // Pointer to PlatformLayerDelegate
+    void* m_View; // Pointer to UIView
+    std::vector<Vector2> m_TouchPoints;
+    bool m_PrimaryInputDown;
+    bool m_PrimaryInputPressed;
+    bool m_PrimaryInputReleased;
+    bool m_SecondaryInputDown;
+    bool m_SecondaryInputPressed;
+    bool m_SecondaryInputReleased;
 
 #ifdef PLATFORM_MOBILE
     bool virtualKeyboardShown = false;

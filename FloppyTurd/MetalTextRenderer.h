@@ -11,7 +11,7 @@
 #import <Metal/Metal.h>
 #import <CoreText/CoreText.h>
 #import <UIKit/UIKit.h>
-#include "MetalRaylibCompat.h"
+#include "RaylibCompat.h"
 
 // Text rendering utility for Metal
 class MetalTextRenderer {

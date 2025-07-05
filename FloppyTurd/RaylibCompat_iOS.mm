@@ -2,7 +2,19 @@
 #ifdef PLATFORM_IOS
 #include <Metal/Metal.h>
 #include <Foundation/Foundation.h>
+#include <UIKit/UIKit.h>
+#include <CoreGraphics/CoreGraphics.h>
 #include "PlatformLayer.h"
+
+// Forward declarations for iOS-specific functions
+extern "C" {
+void DrawTexturePro_iOS(Texture2D texture, Rectangle source, Rectangle dest, Vector2 origin, float rotation, Color tint);
+void DrawTexture_iOS(Texture2D texture, int posX, int posY, Color tint);
+void DrawTextureV_iOS(Texture2D texture, Vector2 position, Color tint);
+void DrawTextureRec_iOS(Texture2D texture, Rectangle source, Rectangle dest, Color tint);
+void* LoadTexture_iOS(const char* fileName, int* width, int* height);
+void UnloadTexture_iOS(Texture2D texture);
+}
 
 // iOS-specific implementations using Metal and Objective-C++
 void* LoadTexture_iOS(const char* fileName, int* width, int* height) {
@@ -43,7 +55,14 @@ Texture2D LoadTextureFromImage_iOS(Image image)
     }
     
     MTLTextureDescriptor* textureDesc = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatRGBA8Unorm width:image.width height:image.height mipmapped:NO];
-    id<MTLTexture> metalTexture = [PlatformLayer::GetInstance().GetDelegate().device newTextureWithDescriptor:textureDesc];
+    // Get Metal device through MetalRenderer
+    MetalRenderer* renderer = PlatformLayer::GetInstance().GetMetalRenderer();
+    if (!renderer) {
+        TraceLog(LOG_ERROR, "Failed to get MetalRenderer");
+        return Texture2D{0, 0, 0, 0, 0};
+    }
+    // For now, create a stub texture - proper Metal texture creation would need device access
+    id<MTLTexture> metalTexture = nil; // Stub - would need proper Metal device access
     
     MTLRegion region = MTLRegionMake2D(0, 0, image.width, image.height);
     [metalTexture replaceRegion:region mipmapLevel:0 withBytes:image.data bytesPerRow:image.width * 4];

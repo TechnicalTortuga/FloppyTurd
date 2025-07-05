@@ -8,11 +8,11 @@
 #endif
 
 #if defined(__APPLE__) && TARGET_OS_IOS && defined(USE_METAL_RENDERER)
-#import "MetalRaylibCompat.h"
+#import "RaylibCompat.h"
 #endif
 
 #ifdef PLATFORM_IOS
-#import "MetalRaylibCompat.h"
+#import "RaylibCompat.h"
 #import "HapticsManager.h"
 #endif
 

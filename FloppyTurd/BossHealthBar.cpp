@@ -53,7 +53,7 @@ void BossHealthBar::Draw()
                 DrawTextureRec(
                     hurtTexture,
                     { 0, 0, (float)fullShadowWidth, (float)originalHeight },
-                    { position.x, position.y },
+                    Vector2{ position.x, position.y },
                     hurtColor
                 );
             }
@@ -63,7 +63,7 @@ void BossHealthBar::Draw()
         {
             DrawTextureRec(healthTexture,
                 { 0, 0, (float)healthPixelWidth, (float)originalHeight },
-                { position.x, position.y },
+                Vector2{ position.x, position.y },
                 barColor);
         }
 

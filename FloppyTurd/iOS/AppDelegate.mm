@@ -1,6 +1,6 @@
 #import "AppDelegate.h"
 #import "GameViewController.h"
-#import "MetalRaylibCompat.h"
+#import "RaylibCompat.h"
 #import "HapticsManager.h"
 
 @implementation AppDelegate

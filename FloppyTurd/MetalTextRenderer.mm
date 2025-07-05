@@ -11,7 +11,20 @@ MetalTextRenderer* g_textRenderer = nullptr;
 MetalTextRenderer::MetalTextRenderer() 
     : m_device(nullptr)
 {
-    m_defaultFont = {nullptr, 16, 0, 16, {nullptr, 0, 0}};
+    // Initialize default font with proper Texture2D structure
+    m_defaultFont = {}; // Zero-initialize all fields
+    m_defaultFont.font = nullptr;
+    m_defaultFont.baseSize = 16;
+    m_defaultFont.glyphCount = 0;
+    m_defaultFont.glyphPadding = 16;
+    m_defaultFont.texture = {0, 0, 0, 1, 0, nullptr}; // id, width, height, mipmaps, format, texture
+    m_defaultFont.recs = nullptr;
+    m_defaultFont.glyphs = nullptr;
+#if defined(__APPLE__) && defined(TARGET_OS_IPHONE)
+    m_defaultFont.fontData = nullptr;
+    m_defaultFont.ctFont = nullptr;
+    m_defaultFont.size = 16;
+#endif
 }
 
 MetalTextRenderer::~MetalTextRenderer() {
@@ -37,7 +50,20 @@ void MetalTextRenderer::Shutdown() {
 }
 
 Font MetalTextRenderer::LoadFont(const char* fileName, int fontSize) {
-    Font font = {nullptr, fontSize, 0, fontSize, {nullptr, 0, 0}};
+    // Initialize font with proper Texture2D structure
+    Font font = {}; // Zero-initialize all fields
+    font.font = nullptr;
+    font.baseSize = fontSize;
+    font.glyphCount = 0;
+    font.glyphPadding = fontSize;
+    font.texture = {0, 0, 0, 1, 0, nullptr}; // id, width, height, mipmaps, format, texture
+    font.recs = nullptr;
+    font.glyphs = nullptr;
+#if defined(__APPLE__) && defined(TARGET_OS_IPHONE)
+    font.fontData = nullptr;
+    font.ctFont = nullptr;
+    font.size = fontSize;
+#endif
     
     @autoreleasepool {
         NSString* path = [NSString stringWithUTF8String:fileName];
@@ -70,7 +96,20 @@ Font MetalTextRenderer::LoadFont(const char* fileName, int fontSize) {
 }
 
 Font MetalTextRenderer::LoadSystemFont(const char* fontName, int fontSize) {
-    Font font = {nullptr, fontSize, 0, fontSize, {nullptr, 0, 0}};
+    // Initialize font with proper Texture2D structure
+    Font font = {}; // Zero-initialize all fields
+    font.font = nullptr;
+    font.baseSize = fontSize;
+    font.glyphCount = 0;
+    font.glyphPadding = fontSize;
+    font.texture = {0, 0, 0, 1, 0, nullptr}; // id, width, height, mipmaps, format, texture
+    font.recs = nullptr;
+    font.glyphs = nullptr;
+#if defined(__APPLE__) && defined(TARGET_OS_IPHONE)
+    font.fontData = nullptr;
+    font.ctFont = nullptr;
+    font.size = fontSize;
+#endif
     
     @autoreleasepool {
         NSString* name = [NSString stringWithUTF8String:fontName];
@@ -109,10 +148,10 @@ Vector2 MetalTextRenderer::MeasureText(const char* text, int fontSize) {
 Vector2 MetalTextRenderer::MeasureTextEx(Font font, const char* text, float fontSize, float spacing) {
     if (!text || !font.ctFont) return {0, 0};
     
-    CGSize size = GetTextSize(text, font.ctFont, spacing);
+    CGSize size = GetTextSize(text, (CTFontRef)font.ctFont, spacing);
     float scale = fontSize / font.size;
     
-    return {size.width * scale, size.height * scale};
+    return {static_cast<float>(size.width * scale), static_cast<float>(size.height * scale)};
 }
 
 CTFontRef MetalTextRenderer::CreateCTFont(const char* fontName, float fontSize) {
@@ -159,9 +198,9 @@ id<MTLTexture> MetalTextRenderer::RenderTextToTexture(const char* text, Font fon
         NSString* string = [NSString stringWithUTF8String:text];
         
         // Scale font if needed
-        CTFontRef scaledFont = font.ctFont;
+        CTFontRef scaledFont = (CTFontRef)font.ctFont;
         if (fontSize != font.size) {
-            scaledFont = CTFontCreateCopyWithAttributes(font.ctFont, fontSize, nullptr, nullptr);
+            scaledFont = CTFontCreateCopyWithAttributes((CTFontRef)font.ctFont, fontSize, nullptr, nullptr);
         }
         
         // Get text size

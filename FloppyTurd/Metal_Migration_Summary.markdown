@@ -88,6 +88,32 @@ This document summarizes the ongoing effort to migrate the FloppyTurd codebase t
 
 ---
 
+## Metal Migration Summary for FloppyTurd iOS
+
+## Overview
+The FloppyTurd project is undergoing a migration to use Metal for rendering on iOS devices. This document summarizes the progress and key milestones achieved in this migration effort.
+
+## Key Achievements
+1. **Compatibility Layer Centralization**: Successfully migrated raylib compatibility functions and constants to a centralized `RaylibCompat.h/cpp`, retiring `MetalRaylibCompat.h`. This layer now serves as the primary interface for cross-platform compatibility, with iOS-specific Metal implementations handled in separate files like `RaylibCompat_iOS.mm` and other `.mm` files.
+2. **Header Cleanup**: Replaced all references to `MetalRaylibCompat.h` with `RaylibCompat.h` across the codebase to maintain a unified compatibility layer.
+3. **API Shims Implementation**: Added missing raylib API shims such as `IsKeyDown`, `DrawCircle`, `GetMusicTimeLength` (hardcoded to 2:03 for credits), and various input/rendering functions as stubs for iOS within `RaylibCompat.h/cpp`.
+4. **Struct Fixes**: Resolved initialization issues with `Font` and `Texture2D` structs in `MetalTextRenderer.mm` and addressed type mismatches.
+5. **Key Constants**: Added full alphabetic key constants (`KEY_A` to `KEY_Z`) to resolve input-related errors in `RaylibCompat.h`.
+6. **RLAPI Macro Definition**: Defined the `RLAPI` macro in `RaylibCompat.h` to fix build errors related to function declarations.
+
+## Current Status
+- **Build Errors**: Resolved duplicate declaration issue with `GetMusicTimeLength` in `RaylibCompat.h`.
+- **Focus**: Currently focusing on iterative build-and-fix cycles to achieve a clean build for iOS deployment on a physical device.
+
+## Next Steps
+- Continue iterative builds to identify and fix remaining compatibility issues.
+- Ensure all raylib functions are either fully implemented with Metal API calls or have appropriate stubs.
+- Test the application on a physical iPhone device to verify functionality.
+
+*Last Updated: July 4, 2025*
+
+---
+
 ## File Relationship Tracker
 
 ### Core Game Files (C++)
@@ -112,49 +138,37 @@ This document summarizes the ongoing effort to migrate the FloppyTurd codebase t
 |------|------|--------------|-------------------|-------|
 | `PlatformLayer.h` | Header | RaylibCompat | No | Platform abstraction interface, uses forward declarations |
 | `PlatformLayer.cpp` | C++ | RaylibCompat | No | Raylib implementation for non-iOS |
-| `PlatformLayer.mm` | ObjC++ | MetalRaylibCompat | Yes | Metal implementation for iOS |
-| `RaylibCompat.h` | Header | None | No | C++-safe Raylib compatibility |
-| `MetalRaylibCompat.h` | Header | Metal, Foundation | Yes | iOS-only, ObjC++ only, in `include/ios` |
-| `AIGUI.h` | Header | RaylibCompat | No | GUI system interface |
-| `AIGUI.cpp` | C++ | RaylibCompat | No | GUI implementation for non-iOS |
-| `AIGUI.mm` | ObjC++ | MetalRaylibCompat | Yes | GUI implementation for iOS |
-| `Renderer.h` | Header | RaylibCompat | No | Unified rendering interface |
-| `RendererRaylib.cpp` | C++ | RaylibCompat | No | Raylib rendering implementation |
-| `RendererMetal.mm` | ObjC++ | MetalRaylibCompat | Yes | Metal rendering implementation |
-| `RendererFactory.cpp` | C++ | Renderer | Yes | Factory for platform-specific renderers |
+| `PlatformLayer.mm` | ObjC++ | RaylibCompat | Yes | Metal implementation for iOS |
+| `RaylibCompat.h` | Header | None | No | Centralized C++-safe Raylib compatibility layer |
+| `RaylibCompat.cpp` | C++ | PlatformLayer (for some functions) | No | Implementation of compatibility functions and stubs |
+| `RaylibCompat_iOS.mm` | ObjC++ | RaylibCompat | Yes | iOS-specific Metal implementations |
 
-### Metal Rendering Files (iOS Only)
+### Metal Rendering Files (iOS-Specific)
 | File | Type | Dependencies | Platform-Specific | Notes |
 |------|------|--------------|-------------------|-------|
-| `MetalRenderer.h` | Header | MetalRaylibCompat | Yes | Metal renderer interface |
-| `MetalRenderer.mm` | ObjC++ | Metal, MetalRaylibCompat | Yes | Metal 2D rendering |
-| `MetalTexture.h` | Header | MetalRaylibCompat | Yes | Metal texture interface |
-| `MetalTexture.mm` | ObjC++ | Metal, MetalRaylibCompat | Yes | Metal texture handling |
-| `MetalShader.h` | Header | MetalRaylibCompat | Yes | Metal shader interface |
-| `MetalShader.mm` | ObjC++ | Metal, MetalRaylibCompat | Yes | Metal shader management |
-| `MetalTextRenderer.h` | Header | MetalRaylibCompat | Yes | Metal text rendering |
-| `MetalTextRenderer.mm` | ObjC++ | Metal, MetalRaylibCompat | Yes | Metal text rendering |
+| `MetalRenderer.h/mm` | ObjC++ | RaylibCompat | Yes | Core Metal rendering for iOS |
+| `MetalTextRenderer.h/mm` | ObjC++ | RaylibCompat | Yes | Text rendering with CoreText and Metal |
+| `MetalTexture.h/mm` | ObjC++ | RaylibCompat | Yes | Texture handling with Metal |
 
-### iOS Platform Files
+### iOS Application Files
 | File | Type | Dependencies | Platform-Specific | Notes |
 |------|------|--------------|-------------------|-------|
-| `iOS/AppDelegate.mm` | ObjC++ | UIKit, MetalRaylibCompat | Yes | iOS app lifecycle |
-| `iOS/GameViewController.mm` | ObjC++ | UIKit, MetalRaylibCompat | Yes | iOS view controller |
-| `iOS/HapticsManager.mm` | ObjC++ | CoreHaptics | Yes | iOS haptic feedback |
+| `AppDelegate.mm` | ObjC++ | RaylibCompat | Yes | iOS app lifecycle management |
+| `GameViewController.mm` | ObjC++ | RaylibCompat | Yes | Main game view controller for iOS |
 
 ### Resource Management
 | File | Type | Dependencies | Platform-Specific | Notes |
 |------|------|--------------|-------------------|-------|
 | `ResourceManager.h` | Header | PlatformLayer, RaylibCompat | No | Resource management interface |
 | `ResourceManager.cpp` | C++ | PlatformLayer, RaylibCompat | No | Resource loading for non-iOS |
-| `ResourceManager.mm` | ObjC++ | MetalRaylibCompat | Yes | Resource loading for iOS |
+| `ResourceManager.mm` | ObjC++ | RaylibCompat | Yes | Resource loading for iOS |
 | `ResourceCompat.h` | Header | RaylibCompat | No | Resource compatibility layer |
 | `Sprite.h` | Header | RaylibCompat | No | Sprite interface, uses PIMPL |
 | `Sprite.cpp` | C++ | RaylibCompat | No | Sprite implementation for non-iOS |
-| `Sprite.mm` | ObjC++ | MetalRaylibCompat | Yes | Sprite implementation for iOS |
+| `Sprite.mm` | ObjC++ | RaylibCompat | Yes | Sprite implementation for iOS |
 | `Texture2D.h` | Header | RaylibCompat | No | Texture interface, uses PIMPL |
 | `Texture2D.cpp` | C++ | RaylibCompat | No | Texture implementation for non-iOS |
-| `Texture2D.mm` | ObjC++ | MetalRaylibCompat | Yes | Texture implementation for iOS |
+| `Texture2D.mm` | ObjC++ | RaylibCompat | Yes | Texture implementation for iOS |
 
 ### Build System Files
 | File | Type | Dependencies | Platform-Specific | Notes |
@@ -165,11 +179,12 @@ This document summarizes the ongoing effort to migrate the FloppyTurd codebase t
 
 ### Critical Dependencies to Monitor
 1. **RaylibCompat.h** - Safe for all C++ files, provides platform-agnostic API.
-2. **MetalRaylibCompat.h** - ONLY for .mm files, contains Objective-C code, located in `include/ios`.
-3. **PlatformLayer.h** - Must only include `RaylibCompat.h`, never `MetalRaylibCompat.h`.
-4. **AIGUI.h** - Must only include `RaylibCompat.h`, never `MetalRaylibCompat.h`.
-5. **Renderer.h** - Unified rendering interface, safe for all files.
-6. **Texture2D.h**, **Sprite.h** - Use PIMPL to hide platform-specific details.
+2. **RaylibCompat.cpp** - Implementation of compatibility functions and stubs.
+3. **RaylibCompat_iOS.mm** - iOS-specific Metal implementations.
+4. **PlatformLayer.h** - Must only include `RaylibCompat.h`, never `MetalRaylibCompat.h`.
+5. **AIGUI.h** - Must only include `RaylibCompat.h`, never `MetalRaylibCompat.h`.
+6. **Renderer.h** - Unified rendering interface, safe for all files.
+7. **Texture2D.h**, **Sprite.h** - Use PIMPL to hide platform-specific details.
 
 ### Refactoring Priority
 1. **High Priority**: Ensure no .cpp files transitively include `MetalRaylibCompat.h`, using forward declarations and PIMPL.

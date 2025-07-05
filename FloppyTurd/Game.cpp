@@ -177,11 +177,7 @@ void Game::InitClasses()
 	std::string iconPath = PlatformLayer::GetInstance().GetResourcePath("poophat.ico");
 	Image icon = LoadImage(iconPath.c_str());
 	if (
-#if defined(__APPLE__) && TARGET_OS_IPHONE
-		icon.surface
-#else
-		icon.data
-#endif
+icon.data
 	) {
 		SetWindowIcon(icon);
 		UnloadImage(icon);
