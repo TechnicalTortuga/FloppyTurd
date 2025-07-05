@@ -1,3 +1,0 @@
-/Users/aimac/Documents/GitHub/FloppyTurd/build-ios-new/CMakeFiles/FloppyTurd.dir
-/Users/aimac/Documents/GitHub/FloppyTurd/build-ios-new/CMakeFiles/edit_cache.dir
-/Users/aimac/Documents/GitHub/FloppyTurd/build-ios-new/CMakeFiles/rebuild_cache.dir

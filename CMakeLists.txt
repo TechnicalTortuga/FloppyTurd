@@ -32,6 +32,10 @@ if(IS_MACOS)
     message(STATUS "macOS detected - using Desktop platform with macOS-specific settings")
 endif()
 
+# Temporary: Override PLATFORM for raylib configure step only
+set(_FTURD_SAVED_PLATFORM "${PLATFORM}")
+set(PLATFORM Desktop CACHE STRING "Raylib platform override" FORCE)
+
 # Find or fetch Raylib (only for non-iOS platforms)
 if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "iOS")
     include(FetchContent)
@@ -52,6 +56,8 @@ else()
     # No external dependencies needed for Metal/SpriteKit - they're part of iOS SDK
     # The frameworks will be linked directly in the target_link_libraries section
 endif()
+
+set(PLATFORM "${_FTURD_SAVED_PLATFORM}" CACHE STRING "" FORCE)
 
 # Collect source files
 file(GLOB_RECURSE SOURCES 
@@ -153,6 +159,11 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
         XCODE_ATTRIBUTE_SHORT_VERSION_STRING "1.0.0"
         XCODE_ATTRIBUTE_UI_REQUIRED_DEVICE_CAPABILITIES "arm64"
         XCODE_ATTRIBUTE_UI_SUPPORTED_INTERFACE_ORIENTATIONS "UIInterfaceOrientationPortrait;UIInterfaceOrientationLandscapeLeft;UIInterfaceOrientationLandscapeRight"
+        # Automatic signing settings for device deployment
+        XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "${DEVELOPMENT_TEAM}"
+        XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "Apple Development"
+        XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "YES"
+        XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "YES"
     )
     
     # Bundle resources
@@ -168,6 +179,42 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
         endforeach()
         target_sources(${PROJECT_NAME} PRIVATE ${METAL_SHADERS})
     endif()
+    
+
+    
+    # Clean extended attributes from app bundle to prevent code signing errors
+    # This must run after resource bundling but before code signing
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND echo "🧹 Cleaning extended attributes to fix iOS code signing..."
+        COMMAND xattr -cr "$<TARGET_BUNDLE_DIR:${PROJECT_NAME}>" 2>/dev/null || true
+        COMMAND dot_clean -m "$<TARGET_BUNDLE_DIR:${PROJECT_NAME}>" 2>/dev/null || true
+        COMMAND find "$<TARGET_BUNDLE_DIR:${PROJECT_NAME}>" -exec xattr -c {} + 2>/dev/null || true
+        COMMAND echo "✅ Extended attributes cleaned from app bundle"
+        COMMENT "Removing extended attributes that cause 'detritus not allowed' code signing errors"
+    )
+
+    # Final clean right before CodeSign (phase name prefixed with ZZZ to sort last)
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND echo "🧹 Final xattr cleanup before CodeSign..."
+        COMMAND dot_clean -m "$<TARGET_BUNDLE_DIR:${PROJECT_NAME}>" 2>/dev/null || true
+        COMMAND find "$<TARGET_BUNDLE_DIR:${PROJECT_NAME}>" -exec xattr -c {} + 2>/dev/null || true
+        COMMENT "Final removal of extended attributes to satisfy codesign"
+    )
+    # Retain the existing (earlier) custom command name so it’s visible in Xcode
+    set_property(TARGET ${PROJECT_NAME} PROPERTY XCODE_BUILD_PHASE_NAME "ZZZ_StripXattrs")
+
+    # --- Final cleanup script phase inserted LAST, before CodeSign ---
+    # We use the XCODE_ATTRIBUTE_RUN_SCRIPT_PHASES attribute to create a dedicated
+    # Run Script build phase that executes after all resource copy phases. The JSON
+    # payload defines the phase; prefixing the name with "ZZZ" helps ensure it
+    # sorts to the end of the list.
+    set(FINAL_CLEAN_SCRIPT "[{\"name\":\"ZZZ_FinalClean\",\"shell_path\":\"/bin/sh\",\"shell_script\":\"echo '🧹 ZZZ_FinalClean stripping extended attributes'; /usr/bin/dot_clean -m \\${TARGET_BUILD_DIR}/\\${WRAPPER_NAME} || true; /usr/bin/xattr -r -d com.apple.provenance \\${TARGET_BUILD_DIR}/\\${WRAPPER_NAME} || true; /usr/bin/xattr -r -c \\${TARGET_BUILD_DIR}/\\${WRAPPER_NAME} || true\"}]")
+
+    # Attach the run-script phase JSON to the target. This property is understood by
+    # the Xcode generator and will create the phase after the existing ones.
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        XCODE_ATTRIBUTE_RUN_SCRIPT_PHASES "${FINAL_CLEAN_SCRIPT}"
+    )
 else()
     # All other platforms use Raylib
     target_link_libraries(${PROJECT_NAME} PRIVATE raylib)
