@@ -2,12 +2,14 @@
 #include <cstdarg>
 #include <cstdlib>
 #include "RaylibCompat.h"
+#include "Game.h"
 #include <cstdint>
 #include <ctime>
 // Removed Metal include to keep this file pure C++
 #include <cmath>
 #ifdef PLATFORM_IOS
 #include "RaylibCompat_iOS.h"
+#include "PlatformLayer.h"  // Make sure PlatformLayer is available for iOS
 #endif
 
 #ifdef PLATFORM_IOS
@@ -27,6 +29,8 @@ static bool g_audioInitialized = false;
 static bool g_windowFullscreen = false;
 static double g_startTime = 0.0;
 static double g_lastFrameTime = 0.0;
+
+
 
 // ========== UTILITY MATH FUNCTIONS ==========
 
@@ -225,7 +229,10 @@ void EndDrawing() {
 
 void ClearBackground(Color color) {
     #ifdef PLATFORM_IOS
-        // Implement if needed for iOS
+        // Draw a full-screen rectangle with the specified color
+        auto& platform = PlatformLayer::GetInstance();
+        unsigned int colorInt = ((unsigned int)color.r << 24) | ((unsigned int)color.g << 16) | ((unsigned int)color.b << 8) | (unsigned int)color.a;
+        platform.DrawRectangle(0, 0, 320, 180, colorInt); // Use game resolution
     #else
         // Non-iOS implementation will be handled separately
     #endif
@@ -803,87 +810,25 @@ Vector2 MeasureTextEx(Font font, const char* text, float fontSize, float spacing
     return {width, height};
 }
 
-// Metal implementation functions
-
-void* LoadTexture_iOS(const char* fileName, int* width, int* height) {
-    // Implemented in RaylibCompat_iOS.mm
-}
-
-void UnloadTexture_iOS(void* texture) {
-    // Implemented in RaylibCompat_iOS.mm
-}
-
-void* LoadRenderTexture_iOS(int width, int height) {
-    // Implemented in RaylibCompat_iOS.mm
-}
-
-void UnloadRenderTexture_iOS(void* texture) {
-    // Implemented in RaylibCompat_iOS.mm
-}
-
-void BeginDrawing_iOS(void* renderTexture) {
-    // Implemented in RaylibCompat_iOS.mm
-}
-
-void EndDrawing_iOS(void* renderTexture) {
-    // Implemented in RaylibCompat_iOS.mm
-}
-
-void DrawRectangle_iOS(int posX, int posY, int width, int height, unsigned int color) {
-    // Implemented in RaylibCompat_iOS.mm
-}
-
-void DrawText_iOS(const char* text, int posX, int posY, int fontSize, unsigned int color) {
-    // Implemented in RaylibCompat_iOS.mm
-}
-
-Image LoadImage_iOS(const char* fileName);
-void UnloadImage_iOS(Image image);
-Image GenImageColor_iOS(int width, int height, Color color);
-void ImageDraw_iOS(Image* dst, Image src, Rectangle srcRec, Rectangle dstRec, Color tint);
-Texture2D LoadTextureFromImage_iOS(Image image);
-void ImageResize_iOS(Image* image, int newWidth, int newHeight);
-
+// iOS lifecycle callbacks
+void OnAppPause()
+{
 #ifdef PLATFORM_IOS
-Image LoadImage_iOS(const char* fileName) {
-    // Implemented in RaylibCompat_iOS.mm
-}
-void UnloadImage_iOS(Image image) {
-    // Implemented in RaylibCompat_iOS.mm
-}
-Image GenImageColor_iOS(int width, int height, Color color) {
-    // Implemented in RaylibCompat_iOS.mm
-}
-void ImageDraw_iOS(Image* dst, Image src, Rectangle srcRec, Rectangle dstRec, Color tint) {
-    // Implemented in RaylibCompat_iOS.mm
-}
-Texture2D LoadTextureFromImage_iOS(Image image) {
-    // Implemented in RaylibCompat_iOS.mm
-}
-void ImageResize_iOS(Image* image, int newWidth, int newHeight) {
-    // Implemented in RaylibCompat_iOS.mm
-}
-#else
-// Stubs for non-iOS platforms
-Image LoadImage_iOS(const char* fileName) {
-    Image image = { 0 };
-    return image;
-}
-void UnloadImage_iOS(Image image) {
-    // Stub
-}
-Image GenImageColor_iOS(int width, int height, Color color) {
-    Image image = { 0 };
-    return image;
-}
-void ImageDraw_iOS(Image* dst, Image src, Rectangle srcRec, Rectangle dstRec, Color tint) {
-    // Stub
-}
-Texture2D LoadTextureFromImage_iOS(Image image) {
-    Texture2D texture = { 0 };
-    return texture;
-}
-void ImageResize_iOS(Image* image, int newWidth, int newHeight) {
-    // Stub
-}
+    Game* gameInstance = GetGameInstance();
+    if (gameInstance && gameInstance->IsInitialized()) {
+        gameInstance->OnPause();
+    }
 #endif
+}
+
+void OnAppResume()
+{
+#ifdef PLATFORM_IOS
+    Game* gameInstance = GetGameInstance();
+    if (gameInstance && gameInstance->IsInitialized()) {
+        gameInstance->OnResume();
+    }
+#endif
+}
+
+

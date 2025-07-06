@@ -44,7 +44,7 @@ Playing::Playing(Game* game) {
     SCORE = 0;
     TOTALSCORE = 0;
 
-    gameOverMusic = new AudioClip("resources/music/gameover.mp3");
+    gameOverMusic = new AudioClip("music/gameover.mp3");
     PreLoadLevels();
     SetCurrentLevel(0);
 
@@ -89,9 +89,9 @@ Playing::Playing(Game* game) {
     floppyButtonBlue = Resources::GetBlueButton();
     floppyButtonBlueHover = Resources::GetBlueButtonHover();
 
-    AudioManager::GetInstance().LoadSoundEffect("GotCoin", "resources/sounds/pickup.ogg");
-    AudioManager::GetInstance().LoadSoundEffect("GotHealth", "resources/sounds/SmallHealthPickup.wav");
-    AudioManager::GetInstance().LoadSoundEffect("GotHealthBig", "resources/sounds/BigHealthPickup.wav");
+    AudioManager::GetInstance().LoadSoundEffect("GotCoin", "sounds/pickup.ogg");
+    AudioManager::GetInstance().LoadSoundEffect("GotHealth", "sounds/SmallHealthPickup.wav");
+    AudioManager::GetInstance().LoadSoundEffect("GotHealthBig", "sounds/BigHealthPickup.wav");
 
     Texture2D rawSnowTexture = Resources::RM().GetTexture("snowfall");
     snowOverlay = std::make_unique<SnowOverlay>(rawSnowTexture, 16, 0.15f);
@@ -135,21 +135,21 @@ void Playing::InitializeHats() {
 
     // Define all 15 hats with their icon paths, sprite paths, and initial status
     // All hats now start as LOCKED by default. Using actual file paths instead of constants.
-    Hat* cowboyHat = new Hat("Cowboy Hat", "resources/hats/cowboyhat.png", "resources/hats/cowboyhatturdletjump.png", 6, "resources/hats/cowboyhatturdletshoot.png", 5, "resources/hats/cowboyhatbigturdjump.png", 6, "resources/hats/cowboyhatbigturdshoot.png", 5, LOCKED);
-    Hat* flowerHat = new Hat("Flower", "resources/hats/flowerhat.png", "resources/hats/flowerhatturdletjump.png", 6, "resources/hats/flowerhatturdletshoot.png", 5, "resources/hats/flowerhatbigturdjump.png", 6, "resources/hats/flowerhatbigturdshoot.png", 5, LOCKED);
-    Hat* doorag = new Hat("Doorag", "resources/hats/dooraghat.png", "resources/hats/dooragturdletjump.png", 6, "resources/hats/dooragturdletshoot.png", 5, "resources/hats/dooragbigturdjump.png", 6, "resources/hats/dooragbigturdshoot.png", 5, LOCKED);
-    Hat* ballcap = new Hat("Ballcap", "resources/hats/ballcap.png", "resources/hats/ballcapturdletjump.png", 6, "resources/hats/ballcapturdletshoot.png", 5, "resources/hats/ballcapbigturdjump.png", 6, "resources/hats/ballcapbigturdshoot.png", 5, LOCKED);
-    Hat* pinwheelHat = new Hat("Pinwheel Hat", "resources/hats/PinwheelHat.png", "resources/hats/pinwheelturdletjump.png", 6, "resources/hats/pinwheelturdletshoot.png", 5, "resources/hats/pinwheelbigturdjump.png", 6, "resources/hats/pinwheelbigturdshoot.png", 5, LOCKED);
-    Hat* strawHat = new Hat("Straw Hat", "resources/hats/strawhat.png", "resources/hats/strawhatturdletjump.png", 6, "resources/hats/strawhatturdletshoot.png", 5, "resources/hats/strawhatbigturdjump.png", 6, "resources/hats/strawhatbigturdshoot.png", 5, LOCKED);
-    Hat* samuraiHat = new Hat("Samurai Hat", "resources/hats/SamuraiHelmet.png", "resources/hats/samuraiturdletjump.png", 6, "resources/hats/samuraiturdletshoot.png", 5, "resources/hats/samuraibigturdjump.png", 6, "resources/hats/samuraibigturdshoot.png", 5, LOCKED);
-    Hat* topHat = new Hat("Top Hat", "resources/hats/tophat.png", "resources/hats/tophatturdletjump.png", 6, "resources/hats/tophatturdletshoot.png", 5, "resources/hats/tophatbigturdjump.png", 6, "resources/hats/tophatbigturdshoot.png", 5, LOCKED);
-    Hat* ushanka = new Hat("Ushanka", "resources/hats/ushanka.png", "resources/hats/ushankaturdletjump.png", 6, "resources/hats/ushankaturdletshoot.png", 5, "resources/hats/ushankabigturdjump.png", 6, "resources/hats/ushankabigturdshoot.png", 5, LOCKED);
-    Hat* beret = new Hat("Beret", "resources/hats/Beret.png", "resources/hats/berethatturdletjump.png", 6, "resources/hats/berethatturdletshoot.png", 5, "resources/hats/berethatbigturdjump.png", 6, "resources/hats/berethatbigturdshoot.png", 5, LOCKED);
-    Hat* crown = new Hat("Crown", "resources/hats/Crown.png", "resources/hats/crownhatturdletjump.png", 6, "resources/hats/crownhatturdletshoot.png", 5, "resources/hats/crownhatbigturdjump.png", 6, "resources/hats/crownhatbigturdshoot.png", 5, LOCKED);
-    Hat* poopHat = new Hat("Poop Hat", "resources/hats/poophat.png", "resources/hats/poophatturdletjump.png", 6, "resources/hats/poophatturdletshoot.png", 5, "resources/hats/poophatbigturdjump.png", 6, "resources/hats/poophatbigturdshoot.png", 5, LOCKED);
-    Hat* ramsesHat = new Hat("Ramses Hat", "resources/hats/RamsesHat.png", "resources/hats/ramsesturdletjump.png", 6, "resources/hats/ramsesturdletshoot.png", 5, "resources/hats/ramsesbigturdjump.png", 6, "resources/hats/ramsesbigturdshoot.png", 5, LOCKED);
-    Hat* spartanHelmet = new Hat("Spartan Helmet", "resources/hats/SpartanHelmet.png", "resources/hats/spartanhatturdletjump.png", 6, "resources/hats/spartanhatturdletshoot.png", 5, "resources/hats/spartanhatbigturdjump.png", 6, "resources/hats/spartanhatbigturdshoot.png", 5, LOCKED);
-    Hat* shellHat = new Hat("Shell Hat", "resources/hats/shellhat.png", "resources/hats/shellhatturdletjump.png", 6, "resources/hats/shellhatturdletshoot.png", 5, "resources/hats/shellhatbigturdjump.png", 6, "resources/hats/shellhatbigturdshoot.png", 5, LOCKED);
+    Hat* cowboyHat = new Hat("Cowboy Hat", "hats/cowboyhat.png", "hats/cowboyhatturdletjump.png", 6, "hats/cowboyhatturdletshoot.png", 5, "hats/cowboyhatbigturdjump.png", 6, "hats/cowboyhatbigturdshoot.png", 5, LOCKED);
+    Hat* flowerHat = new Hat("Flower", "hats/flowerhat.png", "hats/flowerhatturdletjump.png", 6, "hats/flowerhatturdletshoot.png", 5, "hats/flowerhatbigturdjump.png", 6, "hats/flowerhatbigturdshoot.png", 5, LOCKED);
+    Hat* doorag = new Hat("Doorag", "hats/dooraghat.png", "hats/dooragturdletjump.png", 6, "hats/dooragturdletshoot.png", 5, "hats/dooragbigturdjump.png", 6, "hats/dooragbigturdshoot.png", 5, LOCKED);
+    Hat* ballcap = new Hat("Ballcap", "hats/ballcap.png", "hats/ballcapturdletjump.png", 6, "hats/ballcapturdletshoot.png", 5, "hats/ballcapbigturdjump.png", 6, "hats/ballcapbigturdshoot.png", 5, LOCKED);
+    Hat* pinwheelHat = new Hat("Pinwheel Hat", "hats/PinwheelHat.png", "hats/pinwheelturdletjump.png", 6, "hats/pinwheelturdletshoot.png", 5, "hats/pinwheelbigturdjump.png", 6, "hats/pinwheelbigturdshoot.png", 5, LOCKED);
+    Hat* strawHat = new Hat("Straw Hat", "hats/strawhat.png", "hats/strawhatturdletjump.png", 6, "hats/strawhatturdletshoot.png", 5, "hats/strawhatbigturdjump.png", 6, "hats/strawhatbigturdshoot.png", 5, LOCKED);
+    Hat* samuraiHat = new Hat("Samurai Hat", "hats/SamuraiHelmet.png", "hats/samuraiturdletjump.png", 6, "hats/samuraiturdletshoot.png", 5, "hats/samuraibigturdjump.png", 6, "hats/samuraibigturdshoot.png", 5, LOCKED);
+    Hat* topHat = new Hat("Top Hat", "hats/tophat.png", "hats/tophatturdletjump.png", 6, "hats/tophatturdletshoot.png", 5, "hats/tophatbigturdjump.png", 6, "hats/tophatbigturdshoot.png", 5, LOCKED);
+    Hat* ushanka = new Hat("Ushanka", "hats/ushanka.png", "hats/ushankaturdletjump.png", 6, "hats/ushankaturdletshoot.png", 5, "hats/ushankabigturdjump.png", 6, "hats/ushankabigturdshoot.png", 5, LOCKED);
+    Hat* beret = new Hat("Beret", "hats/Beret.png", "hats/berethatturdletjump.png", 6, "hats/berethatturdletshoot.png", 5, "hats/berethatbigturdjump.png", 6, "hats/berethatbigturdshoot.png", 5, LOCKED);
+    Hat* crown = new Hat("Crown", "hats/Crown.png", "hats/crownhatturdletjump.png", 6, "hats/crownhatturdletshoot.png", 5, "hats/crownhatbigturdjump.png", 6, "hats/crownhatbigturdshoot.png", 5, LOCKED);
+    Hat* poopHat = new Hat("Poop Hat", "hats/poophat.png", "hats/poophatturdletjump.png", 6, "hats/poophatturdletshoot.png", 5, "hats/poophatbigturdjump.png", 6, "hats/poophatbigturdshoot.png", 5, LOCKED);
+    Hat* ramsesHat = new Hat("Ramses Hat", "hats/RamsesHat.png", "hats/ramsesturdletjump.png", 6, "hats/ramsesturdletshoot.png", 5, "hats/ramsesbigturdjump.png", 6, "hats/ramsesbigturdshoot.png", 5, LOCKED);
+    Hat* spartanHelmet = new Hat("Spartan Helmet", "hats/SpartanHelmet.png", "hats/spartanhatturdletjump.png", 6, "hats/spartanhatturdletshoot.png", 5, "hats/spartanhatbigturdjump.png", 6, "hats/spartanhatbigturdshoot.png", 5, LOCKED);
+    Hat* shellHat = new Hat("Shell Hat", "hats/shellhat.png", "hats/shellhatturdletjump.png", 6, "hats/shellhatturdletshoot.png", 5, "hats/shellhatbigturdjump.png", 6, "hats/shellhatbigturdshoot.png", 5, LOCKED);
 
     hats.push_back(cowboyHat);
     hats.push_back(flowerHat);

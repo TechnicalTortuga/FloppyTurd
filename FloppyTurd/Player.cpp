@@ -269,26 +269,26 @@ void Player::InitSprites() {
 	int jumpFrames = 6;
 	int shootFrames = 5;
 
-	idleSpriteTurdlet = new Sprite("resources/turd/TurdletIdle.png", idleFrames, 0.1f, playerScale, pos, AtlasCategory::PLAYER_SPRITES);
-	jumpSpriteTurdlet = new Sprite("resources/turd/TurdletJump.png", jumpFrames, 0.1f, playerScale, pos, AtlasCategory::PLAYER_SPRITES);
-	shootSpriteTurdlet = new Sprite("resources/turd/TurdletShoot.png", shootFrames, 0.1f, playerScale, pos, AtlasCategory::PLAYER_SPRITES);
+	idleSpriteTurdlet = new Sprite("turd/TurdletIdle.png", idleFrames, 0.1f, playerScale, pos, AtlasCategory::PLAYER_SPRITES);
+	jumpSpriteTurdlet = new Sprite("turd/TurdletJump.png", jumpFrames, 0.1f, playerScale, pos, AtlasCategory::PLAYER_SPRITES);
+	shootSpriteTurdlet = new Sprite("turd/TurdletShoot.png", shootFrames, 0.1f, playerScale, pos, AtlasCategory::PLAYER_SPRITES);
 
-	idleSpriteTeen = new Sprite("resources/turd/TeenageTurdIdle.png", idleFrames, 0.1f, playerScale, pos, AtlasCategory::PLAYER_SPRITES);
-	jumpSpriteTeen = new Sprite("resources/turd/TeenageTurdJump.png", jumpFrames, 0.1f, playerScale, pos, AtlasCategory::PLAYER_SPRITES);
-	shootSpriteTeen = new Sprite("resources/turd/TeenageTurdShoot.png", shootFrames, 0.1f, playerScale, pos, AtlasCategory::PLAYER_SPRITES);
+	idleSpriteTeen = new Sprite("turd/TeenageTurdIdle.png", idleFrames, 0.1f, playerScale, pos, AtlasCategory::PLAYER_SPRITES);
+	jumpSpriteTeen = new Sprite("turd/TeenageTurdJump.png", jumpFrames, 0.1f, playerScale, pos, AtlasCategory::PLAYER_SPRITES);
+	shootSpriteTeen = new Sprite("turd/TeenageTurdShoot.png", shootFrames, 0.1f, playerScale, pos, AtlasCategory::PLAYER_SPRITES);
 
-	idleSpriteBig = new Sprite("resources/turd/BigTurdIdle.png", idleFrames, 0.1f, playerScale, pos, AtlasCategory::PLAYER_SPRITES);
-	jumpSpriteBig = new Sprite("resources/turd/BigTurdJump.png", jumpFrames, 0.1f, playerScale, pos, AtlasCategory::PLAYER_SPRITES);
-	shootSpriteBig = new Sprite("resources/turd/BigTurdShoot.png", shootFrames, 0.1f, playerScale, pos, AtlasCategory::PLAYER_SPRITES);
+	idleSpriteBig = new Sprite("turd/BigTurdIdle.png", idleFrames, 0.1f, playerScale, pos, AtlasCategory::PLAYER_SPRITES);
+	jumpSpriteBig = new Sprite("turd/BigTurdJump.png", jumpFrames, 0.1f, playerScale, pos, AtlasCategory::PLAYER_SPRITES);
+	shootSpriteBig = new Sprite("turd/BigTurdShoot.png", shootFrames, 0.1f, playerScale, pos, AtlasCategory::PLAYER_SPRITES);
 
-	hurtSpriteTurdlet = new Sprite("resources/turd/TurdletHurt.png", jumpFrames, 0.1f, playerScale, pos, AtlasCategory::PLAYER_SPRITES);
-	hurtSpriteTeen = new Sprite("resources/turd/TeenageTurdHurt.png", jumpFrames, 0.1f, playerScale, pos, AtlasCategory::PLAYER_SPRITES);
-	hurtSpriteBig = new Sprite("resources/turd/BigTurdHurt.png", jumpFrames, 0.1f, playerScale, pos, AtlasCategory::PLAYER_SPRITES);
+	hurtSpriteTurdlet = new Sprite("turd/TurdletHurt.png", jumpFrames, 0.1f, playerScale, pos, AtlasCategory::PLAYER_SPRITES);
+	hurtSpriteTeen = new Sprite("turd/TeenageTurdHurt.png", jumpFrames, 0.1f, playerScale, pos, AtlasCategory::PLAYER_SPRITES);
+	hurtSpriteBig = new Sprite("turd/BigTurdHurt.png", jumpFrames, 0.1f, playerScale, pos, AtlasCategory::PLAYER_SPRITES);
 
 	formLevel = 0;
 	ChangeForm(formLevel);
 
-	hurtSound = LoadSound("resources/sounds/hurt.mp3");
+	hurtSound = LoadSound("sounds/hurt.mp3");
 }
 
 void Player::ChangeForm(int newForm) {
@@ -365,9 +365,9 @@ void Player::Shoot() {
 
 	float projectileScale = bigTurdBuffActive ? 1.2f : 1.0f;
 	float projectileSpeed = bigTurdBuffActive ? 400.0f : 300.0f;
-	const char* spritePath = "resources/turd/Floppy Poop.png";
-	if (formLevel == 1) spritePath = "resources/turd/Floppy Poop Mid.png";
-	else if (formLevel == 2 || bigTurdBuffActive) spritePath = "resources/turd/Floppy Poop Large.png";
+	const char* spritePath = "turd/Floppy Poop.png";
+	if (formLevel == 1) spritePath = "turd/Floppy Poop Mid.png";
+	else if (formLevel == 2 || bigTurdBuffActive) spritePath = "turd/Floppy Poop Large.png";
 
 	Vector2 spawnPos = { pos.x + size.x / 2.f, pos.y + size.y / 2.f - 8 };
 	Projectile* p = new Projectile(spawnPos, { 1, 0 }, projectileSpeed, projectileScale, spritePath);

@@ -1,10 +1,28 @@
 #include "RaylibCompat.h"
 #ifdef PLATFORM_IOS
 #include <Metal/Metal.h>
-#include <Foundation/Foundation.h>
-#include <UIKit/UIKit.h>
-#include <CoreGraphics/CoreGraphics.h>
+#import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
+#include "MetalTextureCache.h"
 #include "PlatformLayer.h"
+#include <CoreGraphics/CoreGraphics.h>
+#include "Game.h"
+
+// Global game instance
+Game* g_gameInstance = nullptr;
+
+// Game instance accessor function
+Game* GetGameInstance()
+{
+    NSLog(@"[INIT] GetGameInstance() called, returning: %p", g_gameInstance);
+    return g_gameInstance;
+}
+
+void SetGameInstance(Game* instance)
+{
+    NSLog(@"[INIT] SetGameInstance() called with: %p", instance);
+    g_gameInstance = instance;
+}
 
 // Forward declarations for iOS-specific functions
 extern "C" {
@@ -12,39 +30,197 @@ void DrawTexturePro_iOS(Texture2D texture, Rectangle source, Rectangle dest, Vec
 void DrawTexture_iOS(Texture2D texture, int posX, int posY, Color tint);
 void DrawTextureV_iOS(Texture2D texture, Vector2 position, Color tint);
 void DrawTextureRec_iOS(Texture2D texture, Rectangle source, Rectangle dest, Color tint);
-void* LoadTexture_iOS(const char* fileName, int* width, int* height);
 void UnloadTexture_iOS(Texture2D texture);
+Texture2D CreateFallbackTexture(const char* fileName);
+}
+
+// Helper function declaration
+
+// Error logging for Metal operations
+static void LogMetalError(NSError *error, NSString *operation) {
+    if (error) {
+        NSLog(@"[ERROR] Metal operation failed: %@ - Error: %@", operation, error.localizedDescription);
+    }
 }
 
 // iOS-specific implementations using Metal and Objective-C++
-void* LoadTexture_iOS(const char* fileName, int* width, int* height) {
-    return PlatformLayer::GetInstance().LoadTexture(fileName, width, height);
-}
 
-void UnloadTexture_iOS(void* texture) {
-    PlatformLayer::GetInstance().UnloadTexture(texture);
-}
+extern "C" {
 
 Texture2D LoadTexture_iOS(const char *fileName)
 {
+    NSLog(@"[EXTRA LOG] LoadTexture_iOS: fileName=%s", fileName);
+    
+    // Initialize texture cache if needed
+    static bool cacheInitialized = false;
+    if (!cacheInitialized) {
+        // Get Metal device through PlatformLayer
+        void* metalDevice = PlatformLayer::GetInstance().GetMetalDevice();
+        if (metalDevice) {
+            MetalTextureCache::GetInstance().Initialize(metalDevice);
+            cacheInitialized = true;
+        } else {
+            NSLog(@"[ERROR] LoadTexture_iOS: Failed to get Metal device for initializing texture cache");
+        }
+    }
+    
+    // Use the texture cache to load or retrieve the texture
+    if (cacheInitialized) {
+        std::string filePath(fileName);
+        Texture2D texture = MetalTextureCache::GetInstance().GetOrLoadTexture(filePath);
+        
+        if (texture.texture) {
+            NSLog(@"[EXTRA LOG] LoadTexture_iOS: SUCCESS texture=%p, w=%d, h=%d, file=%s", 
+                  texture.texture, texture.width, texture.height, fileName);
+            return texture;
+        }
+    }
+    
+    // Fallback to original implementation if cache fails or isn't initialized
+    NSLog(@"[WARNING] LoadTexture_iOS: Cache miss or not initialized, falling back to direct loading: %s", fileName);
+    
     Texture2D texture = { 0 };
     int width, height;
-    void* texturePtr = PlatformLayer::GetInstance().LoadTexture(fileName, &width, &height);
-    if (texturePtr) {
-        texture.id = (unsigned int)(uintptr_t)texturePtr;
+    
+    std::string filePath(fileName);
+    
+    // Handle asset catalog resources
+    if (filePath.substr(0, 8) == "asset://") {
+        std::string assetName = filePath.substr(8); // Remove "asset://" prefix
+        NSString* name = [NSString stringWithUTF8String:assetName.c_str()];
+        NSLog(@"[DEBUG] LoadTexture_iOS: Loading asset catalog texture: %@", name);
+        UIImage* uiImage = [UIImage imageNamed:name];
+        
+        if (!uiImage) {
+            NSLog(@"[ERROR] LoadTexture_iOS: Failed to load asset catalog texture: %s", fileName);
+            TraceLog(LOG_ERROR, "Failed to load asset catalog texture: %s", fileName);
+            
+            // Create a fallback texture instead of returning empty
+            NSLog(@"[DEBUG] LoadTexture_iOS: Creating fallback texture for: %s", fileName);
+            return CreateFallbackTexture(fileName);
+        }
+        
+        NSLog(@"[DEBUG] LoadTexture_iOS: Successfully loaded UIImage for %@", name);
+        
+        CGImageRef cgImage = uiImage.CGImage;
+        if (!cgImage) {
+            NSLog(@"[ERROR] LoadTexture_iOS: CGImage is null for: %s", fileName);
+            return CreateFallbackTexture(fileName);
+        }
+        
+        width = (int)CGImageGetWidth(cgImage);
+        height = (int)CGImageGetHeight(cgImage);
+        
+        if (width <= 0 || height <= 0) {
+            NSLog(@"[ERROR] LoadTexture_iOS: Invalid dimensions for: %s (w=%d, h=%d)", fileName, width, height);
+            return CreateFallbackTexture(fileName);
+        }
+        
+        // Get Metal device through PlatformLayer
+        id<MTLDevice> device = (__bridge id<MTLDevice>)PlatformLayer::GetInstance().GetMetalDevice();
+        if (!device) {
+            NSLog(@"[ERROR] LoadTexture_iOS: Failed to get Metal device for: %s", fileName);
+            TraceLog(LOG_ERROR, "Failed to get Metal device for asset catalog texture");
+            return CreateFallbackTexture(fileName);
+        }
+
+        // Create Metal texture with proper usage flags and mipmap support
+        MTLTextureDescriptor* textureDescriptor = [[MTLTextureDescriptor alloc] init];
+        textureDescriptor.pixelFormat = MTLPixelFormatRGBA8Unorm;
+        textureDescriptor.width = width;
+        textureDescriptor.height = height;
+        textureDescriptor.usage = MTLTextureUsageShaderRead;
+        textureDescriptor.storageMode = MTLStorageModeShared;
+        textureDescriptor.mipmapLevelCount = 1 + floor(log2(fmax(width, height)));
+        
+        NSError *error = nil;
+        id<MTLTexture> metalTexture = [device newTextureWithDescriptor:textureDescriptor];
+        if (!metalTexture) {
+            NSLog(@"Failed to create Metal texture: %@", error);
+            // ARC will handle descriptor cleanup
+            return CreateFallbackTexture(fileName);
+        }
+        
+        NSLog(@"[DEBUG] LoadTexture_iOS: Created Metal texture: %p (retain count: %lu)", (__bridge void*)metalTexture, (unsigned long)CFGetRetainCount((__bridge CFTypeRef)metalTexture));
+        
+        // Load image data into texture
+        MTLRegion region = {{0, 0, 0}, {(NSUInteger)width, (NSUInteger)height, 1}};
+        CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+        CGContextRef context = CGBitmapContextCreate(nil, width, height, 8, 4 * width, colorSpace, kCGImageAlphaPremultipliedLast);
+        
+        if (!context) {
+            NSLog(@"[ERROR] LoadTexture_iOS: Failed to create bitmap context for: %s", fileName);
+            CGColorSpaceRelease(colorSpace);
+            return CreateFallbackTexture(fileName);
+        }
+        
+        CGContextDrawImage(context, CGRectMake(0, 0, width, height), cgImage);
+        void* imageData = CGBitmapContextGetData(context);
+        
+        if (!imageData) {
+            NSLog(@"[ERROR] LoadTexture_iOS: Failed to get image data for: %s", fileName);
+            CGContextRelease(context);
+            CGColorSpaceRelease(colorSpace);
+            return CreateFallbackTexture(fileName);
+        }
+        
+        [metalTexture replaceRegion:region mipmapLevel:0 withBytes:imageData bytesPerRow:4 * width];
+        
+        // Generate mipmaps if needed
+        if (textureDescriptor.mipmapLevelCount > 1) {
+            id<MTLCommandQueue> commandQueue = [device newCommandQueue];
+            id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
+            id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
+            [blitEncoder generateMipmapsForTexture:metalTexture];
+            [blitEncoder endEncoding];
+            [commandBuffer commit];
+        }
+        
+        CGContextRelease(context);
+        CGColorSpaceRelease(colorSpace);
+        
+        texture.id = 0; // Will be assigned by texture cache
+        texture.texture = (__bridge_retained void*)metalTexture;
         texture.width = width;
         texture.height = height;
-        texture.mipmaps = 1;
+        texture.mipmaps = textureDescriptor.mipmapLevelCount;
         texture.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
+        
+        // Add to texture cache for future use
+        if (cacheInitialized) {
+            // Update texture cache with this new texture for future reuse
+            // First release our reference since cache will retain it
+            void* tempPtr = texture.texture;
+            texture.texture = nullptr;
+            CFRelease(tempPtr);
+            
+            // Use LoadTextureFromData to properly register in cache
+            return MetalTextureCache::GetInstance().LoadTextureFromData(
+                imageData, width, height, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
+        }
+    } else {
+        // Handle regular file paths
+        void* texturePtr = PlatformLayer::GetInstance().LoadTexture(fileName, &width, &height);
+        if (texturePtr) {
+            texture.id = 0; // Not used in Metal
+            texture.texture = texturePtr;
+            texture.width = width;
+            texture.height = height;
+            texture.mipmaps = 1;
+            texture.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
+        } else {
+            NSLog(@"[ERROR] LoadTexture_iOS: Failed to load regular file texture: %s", fileName);
+            return CreateFallbackTexture(fileName);
+        }
+    }
+    
+    if (texture.texture == NULL) {
+        NSLog(@"[EXTRA LOG] LoadTexture_iOS: FAILED to load texture for %s", fileName);
+        return CreateFallbackTexture(fileName);
+    } else {
+        NSLog(@"[EXTRA LOG] LoadTexture_iOS: SUCCESS texture=%p, w=%d, h=%d, file=%s", texture.texture, texture.width, texture.height, fileName);
     }
     return texture;
-}
-
-void UnloadTexture_iOS(Texture2D texture)
-{
-    if (texture.id) {
-        PlatformLayer::GetInstance().UnloadTexture((void*)(uintptr_t)texture.id);
-    }
 }
 
 Texture2D LoadTextureFromImage_iOS(Image image)
@@ -54,35 +230,102 @@ Texture2D LoadTextureFromImage_iOS(Image image)
         return Texture2D{0, 0, 0, 0, 0};
     }
     
-    MTLTextureDescriptor* textureDesc = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatRGBA8Unorm width:image.width height:image.height mipmapped:NO];
-    // Get Metal device through MetalRenderer
-    MetalRenderer* renderer = PlatformLayer::GetInstance().GetMetalRenderer();
-    if (!renderer) {
-        TraceLog(LOG_ERROR, "Failed to get MetalRenderer");
+    // Check if texture cache is initialized
+    static bool cacheInitialized = false;
+    static bool checkedCache = false;
+    
+    if (!checkedCache) {
+        // Get Metal device through PlatformLayer
+        void* metalDevice = PlatformLayer::GetInstance().GetMetalDevice();
+        if (metalDevice) {
+            // Initialize cache if needed
+            MetalTextureCache::GetInstance().Initialize(metalDevice);
+            cacheInitialized = true;
+        }
+        checkedCache = true;
+    }
+    
+    // Use texture cache if available
+    if (cacheInitialized) {
+        Texture2D texture = MetalTextureCache::GetInstance().LoadTextureFromData(
+            image.data, image.width, image.height, image.format);
+            
+        if (texture.texture) {
+            NSLog(@"[INFO] Texture created from image using cache: %p (w=%d, h=%d)", 
+                  texture.texture, texture.width, texture.height);
+            return texture;
+        }
+    }
+    
+    // Fallback to original implementation
+    NSLog(@"[WARNING] Falling back to original implementation for LoadTextureFromImage_iOS");
+    
+    // Use PlatformLayer delegate for texture creation instead of MetalRenderer
+    PlatformLayer& platform = PlatformLayer::GetInstance();
+    // Pass the image data pointer directly - image.data is already a void*
+    void* texture = platform.LoadTextureFromImage(image.data, image.width, image.height, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
+    
+    if (!texture) {
+        TraceLog(LOG_ERROR, "Failed to create texture from image");
         return Texture2D{0, 0, 0, 0, 0};
     }
-    // For now, create a stub texture - proper Metal texture creation would need device access
-    id<MTLTexture> metalTexture = nil; // Stub - would need proper Metal device access
     
-    MTLRegion region = MTLRegionMake2D(0, 0, image.width, image.height);
-    [metalTexture replaceRegion:region mipmapLevel:0 withBytes:image.data bytesPerRow:image.width * 4];
-    
-    Texture2D texture;
-    texture.id = (unsigned int)(uintptr_t)(__bridge void*)metalTexture;
-    texture.width = image.width;
-    texture.height = image.height;
-    texture.mipmaps = 1;
-    texture.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
-    return texture;
+    Texture2D texture2D;
+    texture2D.id = 0; // Not used in Metal
+    texture2D.texture = texture;
+    texture2D.width = image.width;
+    texture2D.height = image.height;
+    texture2D.mipmaps = 1;
+    texture2D.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
+    return texture2D;
 }
 
 Image LoadImage_iOS(const char* fileName)
 {
     std::string path = fileName;
-    UIImage* uiImage = [UIImage imageNamed:[NSString stringWithUTF8String:path.c_str()]];
+    
+    // Handle asset catalog resources
+    if (path.substr(0, 8) == "asset://") {
+        std::string assetName = path.substr(8); // Remove "asset://" prefix
+        NSString* name = [NSString stringWithUTF8String:assetName.c_str()];
+        UIImage* uiImage = [UIImage imageNamed:name];
+        
+        if (!uiImage) {
+            TraceLog(LOG_ERROR, "Failed to load asset catalog image: %s", path.c_str());
+            return Image{nullptr, 0, 0, 0, 0};
+        }
+        
+        // Convert UIImage to CGImage to get pixel data
+        CGImageRef cgImage = uiImage.CGImage;
+        size_t width = CGImageGetWidth(cgImage);
+        size_t height = CGImageGetHeight(cgImage);
+        
+        // Create a context to draw the image into for raw pixel data
+        void* data = malloc(width * height * 4);
+        CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+        CGContextRef context = CGBitmapContextCreate(data, width, height, 8, width * 4, colorSpace, kCGImageAlphaPremultipliedLast);
+        CGColorSpaceRelease(colorSpace);
+        
+        // Draw image into context
+        CGContextDrawImage(context, CGRectMake(0, 0, width, height), cgImage);
+        CGContextRelease(context);
+        
+        // Return raylib-compatible Image structure
+        Image img;
+        img.data = data;
+        img.width = (int)width;
+        img.height = (int)height;
+        img.mipmaps = 1;
+        img.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
+        return img;
+    }
+    
+    // Handle regular file paths
+    NSString* pathStr = [NSString stringWithUTF8String:path.c_str()];
+    UIImage* uiImage = [UIImage imageNamed:pathStr];
     if (!uiImage) {
         // Fallback to file system path if not found in bundle
-        uiImage = [UIImage imageWithContentsOfFile:[NSString stringWithUTF8String:path.c_str()]];
+        uiImage = [UIImage imageWithContentsOfFile:pathStr];
     }
     
     if (!uiImage) {
@@ -248,6 +491,11 @@ void DrawText_iOS(const char* text, int posX, int posY, int fontSize, unsigned i
 
 void DrawTexture_iOS(Texture2D texture, int posX, int posY, Color tint)
 {
+    if (texture.texture == NULL) {
+        NSLog(@"[EXTRA LOG] DrawTexture_iOS: SKIP invalid texture at posX=%d posY=%d", posX, posY);
+        return;
+    }
+    NSLog(@"[EXTRA LOG] DrawTexture_iOS: texture=%p, posX=%d, posY=%d, w=%d, h=%d", texture.texture, posX, posY, texture.width, texture.height);
     Rectangle source = { 0.0f, 0.0f, (float)texture.width, (float)texture.height };
     Rectangle dest = { (float)posX, (float)posY, (float)texture.width, (float)texture.height };
     DrawTexturePro_iOS(texture, source, dest, { 0.0f, 0.0f }, 0.0f, tint);
@@ -274,79 +522,135 @@ void DrawTextureRec_iOS(Texture2D texture, Rectangle source, Rectangle dest, Col
 
 void DrawTexturePro_iOS(Texture2D texture, Rectangle source, Rectangle dest, Vector2 origin, float rotation, Color tint)
 {
-    // Normalize source rectangle if flipped
-    Rectangle normalizedSource = source;
-    if (source.width < 0) {
-        normalizedSource.x += source.width;
-        normalizedSource.width = -source.width;
+    // Validate texture
+    if (texture.texture == NULL) {
+        NSLog(@"[EXTRA LOG] DrawTexturePro_iOS: SKIP invalid texture");
+        return;
     }
-    if (source.height < 0) {
-        normalizedSource.y += source.height;
-        normalizedSource.height = -source.height;
+    
+    // Validate texture pointer
+    id<MTLTexture> metalTexture = (__bridge id<MTLTexture>)texture.texture;
+    if (!metalTexture) {
+        NSLog(@"[ERROR] DrawTexturePro_iOS: Invalid texture (NULL) pointer for texture=%p", texture.texture);
+        return;
     }
+    
+    // Check if texture is still valid
+    if (metalTexture.width == 0 || metalTexture.height == 0) {
+        NSLog(@"[ERROR] DrawTexturePro_iOS: Texture has invalid dimensions (w=%lu, h=%lu)", (unsigned long)metalTexture.width, (unsigned long)metalTexture.height);
+        return;
+    }
+    
+    NSLog(@"[DEBUG] DrawTexturePro_iOS: Drawing texture=%p (ptr=%p, w=%lu, h=%lu)", texture.texture, (__bridge void*)metalTexture, (unsigned long)metalTexture.width, (unsigned long)metalTexture.height);
+    
+    // Call the platform layer to draw the texture
+    PlatformLayer::GetInstance().DrawTexture((__bridge void*)metalTexture, dest.x, dest.y, dest.width, dest.height, tint);
+}
 
-    // Calculate vertices with rotation and origin
-    float width = dest.width;
-    float height = dest.height;
-    float x = dest.x;
-    float y = dest.y;
-    float ox = origin.x;
-    float oy = origin.y;
+void UnloadTexture_iOS(Texture2D texture)
+{
+    if (texture.texture) {
+        PlatformLayer::GetInstance().UnloadTexture(texture.texture);
+    }
+}
 
-    // Apply rotation (CPU side for simplicity, could be moved to shader for performance)
-    float cosRot = cosf(rotation * DEG2RAD);
-    float sinRot = sinf(rotation * DEG2RAD);
-
-    // Define vertex positions relative to origin, rotated, then offset by position
-    struct Vertex {
-        float x, y;
-        float u, v;
-        float r, g, b, a;
+// Helper function to create fallback textures
+extern "C" Texture2D CreateFallbackTexture(const char* fileName)
+{
+    NSLog(@"[DEBUG] CreateFallbackTexture: Creating fallback for: %s", fileName);
+    
+    // Create a 2x2 magenta texture as fallback
+    const int fallbackSize = 2;
+    const int fallbackData[] = {
+        static_cast<int>(0xFFFF00FF), static_cast<int>(0xFFFF00FF),  // Magenta pixels
+        static_cast<int>(0xFFFF00FF), static_cast<int>(0xFFFF00FF)
     };
+    
+    id<MTLDevice> device = (__bridge id<MTLDevice>)PlatformLayer::GetInstance().GetMetalDevice();
+    if (!device) {
+        NSLog(@"[ERROR] CreateFallbackTexture: No Metal device available");
+        return { 0, 0, 0, 0, 0 };
+    }
+    
+    MTLTextureDescriptor* textureDescriptor = [[MTLTextureDescriptor alloc] init];
+    textureDescriptor.pixelFormat = MTLPixelFormatRGBA8Unorm;
+    textureDescriptor.width = fallbackSize;
+    textureDescriptor.height = fallbackSize;
+    textureDescriptor.usage = MTLTextureUsageShaderRead;
+    
+    NSError *error = nil;
+    id<MTLTexture> metalTexture = [device newTextureWithDescriptor:textureDescriptor];
+    if (!metalTexture) {
+        NSLog(@"Failed to create Metal texture: %@", error);
+        // ARC will handle descriptor cleanup
+        return { 0, 0, 0, 0, 0 };
+    }
+    
+    MTLRegion region = {{0, 0, 0}, {(NSUInteger)fallbackSize, (NSUInteger)fallbackSize, 1}};
+    [metalTexture replaceRegion:region mipmapLevel:0 withBytes:fallbackData bytesPerRow:4 * fallbackSize];
+    
+    Texture2D fallbackTexture;
+    fallbackTexture.id = 0; // Not used in Metal
+    fallbackTexture.texture = (__bridge_retained void*)metalTexture;
+    fallbackTexture.width = fallbackSize;
+    fallbackTexture.height = fallbackSize;
+    fallbackTexture.mipmaps = 1;
+    fallbackTexture.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
+    
+    NSLog(@"[DEBUG] CreateFallbackTexture: Fallback texture created successfully (id=%p)", fallbackTexture.id);
+    return fallbackTexture;
+}
 
-    float left = -ox;
-    float right = width - ox;
-    float top = -oy;
-    float bottom = height - oy;
+// iOS game initialization function
+extern "C" int game_main(int argc, char *argv[])
+{
+    NSLog(@"[INIT] ========================================");
+    NSLog(@"[INIT] game_main() STARTING (iOS version)");
+    NSLog(@"[INIT] argc=%d", argc);
+    NSLog(@"[INIT] ========================================");
+    
+    // Suppress unused parameter warnings
+    (void)argc;
+    (void)argv;
+    
+    // Setup working directory first
+    // SetupWorkingDirectory(); // iOS handles working directory differently
+    NSLog(@"[INIT] Skipping working directory setup for iOS");
+    
+    // Seed the random number generator
+    srand(static_cast<unsigned int>(time(NULL)));
+    NSLog(@"[INIT] Seeded random number generator");
 
-    Vertex vertices[4] = {
-        // Top-left
-        {
-            x + (left * cosRot - top * sinRot),
-            y + (left * sinRot + top * cosRot),
-            source.x / texture.width, 
-            source.y / texture.height,
-            tint.r / 255.f, tint.g / 255.f, tint.b / 255.f, tint.a / 255.f
-        },
-        // Top-right
-        {
-            x + (right * cosRot - top * sinRot),
-            y + (right * sinRot + top * cosRot),
-            (source.x + source.width) / texture.width, 
-            source.y / texture.height,
-            tint.r / 255.f, tint.g / 255.f, tint.b / 255.f, tint.a / 255.f
-        },
-        // Bottom-right
-        {
-            x + (right * cosRot - bottom * sinRot),
-            y + (right * sinRot + bottom * cosRot),
-            (source.x + source.width) / texture.width, 
-            (source.y + source.height) / texture.height,
-            tint.r / 255.f, tint.g / 255.f, tint.b / 255.f, tint.a / 255.f
-        },
-        // Bottom-left
-        {
-            x + (left * cosRot - bottom * sinRot),
-            y + (left * sinRot + bottom * cosRot),
-            source.x / texture.width, 
-            (source.y + source.height) / texture.height,
-            tint.r / 255.f, tint.g / 255.f, tint.b / 255.f, tint.a / 255.f
-        }
-    };
+    // Initialize platform layer with a placeholder value for nativeView
+    NSLog(@"[INIT] About to initialize PlatformLayer");
+    PlatformLayer::GetInstance().Initialize(nullptr);
+    NSLog(@"[INIT] PlatformLayer initialized");
 
-    // Enqueue draw command via PlatformLayer
-    PlatformLayer::GetInstance().EnqueueDrawCommand(vertices, (void*)(uintptr_t)texture.id, 4);
+    // On iOS, we only create the game instance
+    // The actual game loop is driven by the iOS display system
+    NSLog(@"[INIT] Creating Game instance");
+    g_gameInstance = new Game();
+    NSLog(@"[INIT] Game instance created: %p", g_gameInstance);
+    
+    // Initialize the game instance
+    NSLog(@"[INIT] Initializing Game instance");
+    bool initResult = g_gameInstance->Initialize();
+    NSLog(@"[INIT] Game instance Initialize() returned: %s", initResult ? "true" : "false");
+    if (!initResult) {
+        NSLog(@"[ERROR] Failed to initialize Game instance!");
+        delete g_gameInstance;
+        g_gameInstance = nullptr;
+        return -1;
+    }
+    
+    NSLog(@"[INIT] ========================================");
+    NSLog(@"[INIT] game_main() COMPLETED SUCCESSFULLY");
+    NSLog(@"[INIT] ========================================");
+    return 0; // iOS will keep the app running via UIApplicationMain
 }
 
 // Add other iOS-specific raylib compatibility functions here as needed
+
+} // extern "C"
+
 #endif

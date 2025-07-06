@@ -52,7 +52,7 @@ public:
         return GetApplicationDirectory() + relativePath;
 #else
         // On desktop, resources are in the "resources" subdirectory
-        return "resources/" + relativePath;
+        return "" + relativePath;
 #endif
     }
 
@@ -271,4 +271,15 @@ float PlatformLayer::GetScreenScale() const { return m_pImpl->GetScreenScale(); 
 void PlatformLayer::SetWindowTitle(const std::string& title) { (void)title; }
 void PlatformLayer::SetWindowSize(int width, int height) { (void)width; (void)height; }
 bool PlatformLayer::IsWindowFullscreen() const { return false; }
-void PlatformLayer::ToggleFullscreen() {} 
+void PlatformLayer::ToggleFullscreen() {}
+
+std::string PlatformLayer::GetPlatformResourcePath(const std::string& relativePath) const
+{
+#ifdef PLATFORM_IOS
+    // On iOS, return path as-is for asset catalog access
+    return relativePath;
+#else
+    // On other platforms, prepend "resources/" for file system access
+    return "resources/" + relativePath;
+#endif
+} 

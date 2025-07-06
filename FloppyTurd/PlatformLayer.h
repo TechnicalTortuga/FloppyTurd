@@ -9,6 +9,13 @@
 class MetalRenderer;
 class MetalTextRenderer;
 
+// Forward declaration for PlatformLayerDelegate (iOS)
+#ifdef PLATFORM_IOS
+#ifdef __OBJC__
+@class PlatformLayerDelegate;
+#endif
+#endif
+
 
 #ifdef __APPLE__
 #include <TargetConditionals.h>
@@ -120,6 +127,7 @@ public:
     void EndDrawing(void* renderTexture);
     void DrawRectangle(int posX, int posY, int width, int height, unsigned int color);
     void* LoadTextureFromImage(void* imageData, int width, int height, int format);
+    void DrawTexture(void* texture, float x, float y, float width, float height, Color tint);
     void EnqueueDrawCommand(void* vertexBuffer, void* texture, size_t vertexCount);
 #endif
 
@@ -127,6 +135,20 @@ public:
     void ShowVirtualKeyboard(bool show);
     bool IsVirtualKeyboardShown() const;
     void Vibrate(int milliseconds);
+
+    // Metal device access (iOS)
+    void* GetMetalDevice() const;
+    
+    // Metal pipeline setup (iOS)
+    void setupMetalPipeline();
+    
+    // Delegate access (iOS)
+    void* GetDelegate() const;
+    
+    // Platform-agnostic resource path helper
+    // On iOS: returns path as-is (for asset catalogs)
+    // On other platforms: prepends "resources/" for file system access
+    std::string GetPlatformResourcePath(const std::string& relativePath) const;
 
     // Safe area handling (for notched devices)
     Rectangle GetSafeArea() const;
@@ -154,8 +176,9 @@ private:
     class PlatformLayerImpl;
     PlatformLayerImpl* m_pImpl;
 
-    void* m_Delegate; // Pointer to PlatformLayerDelegate
     void* m_View; // Pointer to UIView
+    void* m_Delegate; // Pointer to PlatformLayerDelegate (Objective-C)
+    void* m_MetalDevice; // Pointer to Metal device (id<MTLDevice> in .mm)
     std::vector<Vector2> m_TouchPoints;
     bool m_PrimaryInputDown;
     bool m_PrimaryInputPressed;

@@ -74,18 +74,34 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
         ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/RaylibCompat.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/RaylibCompat_iOS.mm
         ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/PlatformLayer.mm
+        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/PlatformLayerDelegate.mm
+        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/main_ios.mm
+        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/iOS/AppDelegate.mm
+        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/iOS/GameViewController.mm
+        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/iOS/HapticsManager.mm
+        # Metal rendering implementation files
+        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalRenderer.mm
+        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalFrameResources.mm
+        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalTextureCache.mm
     )
+    
+    # Remove main.cpp from iOS builds to avoid duplicate main functions
+    list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/main.cpp)
 else()
     # Other platforms use RaylibCompat with direct Raylib
     list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/RaylibCompat.cpp)
+    
+    # Explicitly add main.cpp for non-iOS platforms
+    list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/main.cpp)
 endif()
 
-# Explicitly add main.cpp to ensure it's included
-list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/main.cpp)
+# Note: main.cpp vs main_ios.mm is handled above in platform-specific sections
 
 file(GLOB_RECURSE HEADERS 
     ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/*.h
 )
+# Ensure PlatformLayerDelegate.h is included for IDE visibility
+list(APPEND HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/PlatformLayerDelegate.h)
 
 # Remove the GameSettings.h and Resources.h from sources (header only)
 list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/GameSettings.h)
@@ -119,6 +135,14 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd
 )
 
+# Add iOS-specific include directories
+if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
+    target_include_directories(${PROJECT_NAME} PRIVATE 
+        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/iOS
+        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/Shaders
+    )
+endif()
+
 # Link libraries - conditional based on platform
 if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
     # iOS uses Metal/SpriteKit native frameworks
@@ -147,8 +171,41 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
         TARGET_OS_IOS=1
     )
     
-    # Use the existing Info.plist in the root directory
-    # Re-enable normal code signing process but add final cleanup step
+    # Bundle resources - use asset catalogs for proper iOS packaging
+    file(GLOB_RECURSE RESOURCES "${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/resources/*")
+    foreach(RESOURCE ${RESOURCES})
+        set_source_files_properties(${RESOURCE} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+    endforeach()
+    
+    # Define Metal shader files
+    set(METAL_SHADERS
+        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/Shaders2D.metal
+    )
+    
+    # Bundle Metal shader files
+    if(DEFINED METAL_SHADERS)
+        foreach(SHADER ${METAL_SHADERS})
+            set_source_files_properties(${SHADER} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+        endforeach()
+        target_sources(${PROJECT_NAME} PRIVATE ${METAL_SHADERS})
+    endif()
+    
+    # Asset catalogs handle resources properly, no need for cleanup scripts
+    
+    # ---- Asset Catalog generation for iOS resources ----
+    
+    # Create asset catalog structure with generate_asset_catalog.sh script
+    add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
+        COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_asset_catalog.sh
+        COMMENT "Generating asset catalog from resources"
+        VERBATIM
+    )
+    
+    # Include the asset catalog as a resource bundle
+    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/Assets.xcassets PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+    target_sources(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/Assets.xcassets)
+    
+    # Configure basic iOS target properties
     set_target_properties(${PROJECT_NAME} PROPERTIES
         MACOSX_BUNDLE ON
         MACOSX_BUNDLE_GUI_IDENTIFIER "com.floppyturd.game"
@@ -162,56 +219,11 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
         XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2"
         XCODE_ATTRIBUTE_UI_REQUIRED_DEVICE_CAPABILITIES "arm64"
         XCODE_ATTRIBUTE_UI_SUPPORTED_INTERFACE_ORIENTATIONS "UIInterfaceOrientationPortrait;UIInterfaceOrientationLandscapeLeft;UIInterfaceOrientationLandscapeRight"
-        # Enable code signing with automatic style
-        XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "YES"
-        XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "YES"
-        XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
-    )
-    
-    # Bundle resources
-    file(GLOB_RECURSE RESOURCES "${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/resources/*")
-    foreach(RESOURCE ${RESOURCES})
-        set_source_files_properties(${RESOURCE} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
-    endforeach()
-    
-    # Bundle Metal shader files
-    if(DEFINED METAL_SHADERS)
-        foreach(SHADER ${METAL_SHADERS})
-            set_source_files_properties(${SHADER} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
-        endforeach()
-        target_sources(${PROJECT_NAME} PRIVATE ${METAL_SHADERS})
-    endif()
-    
-    # Asset catalogs handle resources properly, no need for cleanup scripts
-    
-
-    
-    # ---- Disabled cleanup script BEGIN ----
-
-    # Asset Catalog generation for iOS resources
-    # This approach properly processes and packages resources to avoid extended attributes issues
-    
-    # Create asset catalog structure with generate_asset_catalog.sh script
-    add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
-        COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_asset_catalog.sh
-        COMMENT "Generating asset catalog from resources"
-        VERBATIM
-    )
-    
-    # Set up asset catalog compilation with actool
-    # This script will run after asset catalog generation and before app bundle creation
-    set(ASSET_CATALOG_SCRIPT "[{\"name\":\"Compile Asset Catalog\",\"shell_path\":\"/bin/sh\",\"shell_script\":\"echo '📦 Compiling asset catalog...'; \n\"\n                          \"# Use actool to compile the asset catalog properly\n\"\n                          \"xcrun actool \\\n\"\n                          \"  --compile \\\"${CMAKE_BINARY_DIR}/assets\\\" \\\n\"\n                          \"  --platform iphoneos \\\n\"\n                          \"  --minimum-deployment-target 13.0 \\\n\"\n                          \"  --app-icon AppIcon \\\n\"\n                          \"  --output-partial-info-plist \\\"${CMAKE_BINARY_DIR}/AssetInfo.plist\\\" \\\n\"\n                          \"  --compress-pngs \\\n\"\n                          \"  --enable-on-demand-resources YES \\\n\"\n                          \"  \\\"${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/Assets.xcassets\\\" \\\n\"\n                          \"  || { echo 'Asset catalog compilation failed!'; exit 1; }; \n\"\n\"\n                          \"# Copy compiled assets to app bundle\n\"\n                          \"APP_PATH=\\\"\\${TARGET_BUILD_DIR}/\\${WRAPPER_NAME}\\\"\n\"\n                          \"echo 'Copying processed assets to: '$APP_PATH; \n\"\n                          \"mkdir -p \\\"$APP_PATH\\\" \n\"\n                          \"cp -R \\\"${CMAKE_BINARY_DIR}/assets/\\\"* \\\"$APP_PATH/\\\" \n\"\n\"\n                          \"# Merge the partial Info.plist if it exists\n\"\n                          \"if [ -f \\\"${CMAKE_BINARY_DIR}/AssetInfo.plist\\\" ]; then\n\"\n                          \"  echo 'Merging asset catalog info into Info.plist...'\n\"\n                          \"  plutil -insert CFBundleIcons -xml \\\"$(plutil -extract CFBundleIcons xml1 -o - \\\"${CMAKE_BINARY_DIR}/AssetInfo.plist\\\")\\\" \\\"$APP_PATH/Info.plist\\\" || true\n\"\n                          \"  plutil -insert CFBundleIcons~ipad -xml \\\"$(plutil -extract CFBundleIcons~ipad xml1 -o - \\\"${CMAKE_BINARY_DIR}/AssetInfo.plist\\\")\\\" \\\"$APP_PATH/Info.plist\\\" || true\n\"\n                          \"fi\n\"\n\"\n                          \"echo '✅ Asset catalog compilation and installation complete'\"}]")
-
-    # Configure code signing to use automatic style
-    # Since we're using asset catalogs, Xcode's automatic signing should work correctly
-    set_target_properties(${PROJECT_NAME} PROPERTIES
         # Enable code signing
         XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "YES"
         XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "YES"
         XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
         XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "86886N72J8"
-        # Use our asset catalog script
-        XCODE_ATTRIBUTE_RUN_SCRIPT_PHASES "${ASSET_CATALOG_SCRIPT}"
     )
 else()
     # All other platforms use Raylib

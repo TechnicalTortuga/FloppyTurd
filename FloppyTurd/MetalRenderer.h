@@ -13,6 +13,7 @@
 #import <simd/simd.h>
 #include <vector>
 #include <queue>
+#include "MetalFrameResources.h"
 #include "RaylibCompat.h"
 
 // Vertex structure for 2D rendering
@@ -28,14 +29,67 @@ typedef struct {
     simd_float4x4 modelViewMatrix;
 } MetalUniforms;
 
-// Draw command for batching
+// Draw command for batching and sorting
 typedef struct {
     MTLPrimitiveType primitiveType;
     NSUInteger vertexStart;
     NSUInteger vertexCount;
     id<MTLTexture> texture;
     bool useTexture;
+    
+    // Enhanced fields for sorting and state management
+    uint32_t renderState;        // Combined render state hash
+    uint32_t textureId;          // Texture ID for sorting
+    float depth;                 // Z-depth for sorting
+    uint32_t sortKey;            // Combined sort key
+    
+    // Instance data for instanced rendering
+    uint32_t instanceCount;
+    NSUInteger instanceDataOffset;
+    
+    // Debug info
+    const char* debugName;
 } DrawCommand;
+
+// Render state flags for batching
+typedef enum {
+    RENDER_STATE_NONE = 0,
+    RENDER_STATE_ALPHA_BLEND = 1 << 0,
+    RENDER_STATE_DEPTH_TEST = 1 << 1,
+    RENDER_STATE_CULL_BACK = 1 << 2,
+    RENDER_STATE_WIREFRAME = 1 << 3,
+    RENDER_STATE_INSTANCED = 1 << 4
+} RenderStateFlags;
+
+// Instance data for instanced rendering
+typedef struct {
+    simd_float4x4 modelMatrix;
+    simd_float4 color;
+    simd_float4 texCoordScale; // For texture atlas support
+} InstanceData;
+
+// Mobile GPU optimization settings
+typedef struct {
+    bool enableMipmapping;
+    bool preferLowPowerGPU;
+    uint32_t maxDrawCallsPerFrame;
+    uint32_t maxTextureBindsPerFrame;
+    uint32_t vertexBufferSize;
+    uint32_t uniformBufferSize;
+    bool enableEarlyZTest;
+    bool enableOcclusionCulling;
+} MobileGPUSettings;
+
+// Debug and profiling stats
+typedef struct {
+    uint32_t drawCalls;
+    uint32_t stateChanges;
+    uint32_t textureBinds;
+    uint32_t instancedCalls;
+    uint32_t batchedVertices;
+    double frameTime;
+    double renderTime;
+} DebugStats;
 
 class MetalRenderer {
 public:
@@ -78,6 +132,23 @@ public:
     // Batch rendering
     void FlushBatch();
     
+    // Debug and profiling
+    void EnableDebugVisualization(bool enable);
+    const DebugStats& GetDebugStats() const { return m_debugStats; }
+    void ResetDebugStats();
+    
+    // Mobile GPU optimization
+    void SetMobileGPUSettings(const MobileGPUSettings& settings);
+    const MobileGPUSettings& GetMobileGPUSettings() const { return m_mobileSettings; }
+    void OptimizeForDevice();
+    
+    // Instanced rendering interface
+    void BeginInstancedBatch();
+    void EndInstancedBatch();
+    void DrawInstancedRectangles(const std::vector<Rectangle>& rects, const std::vector<Color>& colors);
+    void DrawInstancedTextures(id<MTLTexture> texture, const std::vector<Rectangle>& sources, 
+                              const std::vector<Rectangle>& dests, const std::vector<Color>& tints);
+    
     // Getters
     id<MTLDevice> GetDevice() const { return m_device; }
     id<MTLCommandQueue> GetCommandQueue() const { return m_commandQueue; }
@@ -90,8 +161,9 @@ private:
     id<MTLCommandQueue> m_commandQueue;
     id<MTLRenderPipelineState> m_texturePipeline;
     id<MTLRenderPipelineState> m_colorPipeline;
+    id<MTLRenderPipelineState> m_instancedTexturePipeline;
+    id<MTLRenderPipelineState> m_instancedColorPipeline;
     id<MTLDepthStencilState> m_depthStencilState;
-    id<MTLBuffer> m_uniformBuffer;
     id<MTLSamplerState> m_samplerState;
     
     // Current frame resources
@@ -99,11 +171,27 @@ private:
     id<MTLRenderCommandEncoder> m_currentEncoder;
     MTLRenderPassDescriptor* m_currentRenderPass;
     
+    // Triple-buffered frame resources manager
+    MetalFrameResources m_frameResources;
+    
     // Vertex batching
     std::vector<MetalVertex2D> m_vertices;
     std::vector<DrawCommand> m_drawCommands;
-    id<MTLBuffer> m_vertexBuffer;
-    size_t m_vertexBufferSize;
+    size_t m_currentVertexBufferOffset; // Offset within current frame's vertex buffer
+    
+    // Enhanced batching and sorting
+    std::vector<InstanceData> m_instanceData;
+    size_t m_currentInstanceBufferOffset;
+    
+    // Debug and profiling
+    DebugStats m_debugStats;
+    
+    bool m_debugVisualization;
+    id<MTLBuffer> m_debugVertexBuffer;
+    id<MTLRenderPipelineState> m_debugPipeline;
+    
+    // Mobile GPU optimization settings
+    MobileGPUSettings m_mobileSettings;
     
     // Matrix stack
     std::vector<simd_float4x4> m_matrixStack;
@@ -127,6 +215,32 @@ private:
     simd_float4x4 MakeTranslationMatrix(float x, float y);
     simd_float4x4 MakeRotationMatrix(float angle);
     simd_float4x4 MakeScaleMatrix(float x, float y);
+    
+    // Enhanced rendering methods
+    void SortDrawCommands();
+    uint32_t GenerateSortKey(const DrawCommand& cmd);
+    void OptimizeDrawCommands();
+    void ExecuteOptimizedDrawCommands();
+    
+    // Instanced rendering
+    void AddInstanceData(const InstanceData& instanceData);
+    void FlushInstancedBatch();
+    void DrawInstanced(id<MTLTexture> texture, uint32_t instanceCount, uint32_t renderState);
+    
+    // Debug visualization
+    void InitializeDebugVisualization();
+    void DrawDebugOverlay();
+    void UpdateDebugStats();
+    void RenderDebugInfo();
+    
+    // State management
+    void SetRenderState(uint32_t renderState);
+    void BindTexture(id<MTLTexture> texture);
+    void ValidateRenderState();
+    
+    // Utility methods
+    uint32_t GetTextureHash(id<MTLTexture> texture);
+    bool ShouldBatchCommands(const DrawCommand& cmd1, const DrawCommand& cmd2);
 };
 
 // Global renderer instance (managed by MetalRaylibCompat)

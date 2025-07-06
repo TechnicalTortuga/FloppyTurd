@@ -9,7 +9,7 @@
 // DrawCallTracker implementation
 namespace DrawCallTracker {
     static int frameDrawCalls = 0;
-    static std::unordered_set<unsigned int> activeTextureIDs;
+    static std::unordered_set<uintptr_t> activeTextureIDs;
     static size_t frameMemoryUsage = 0;
     
     void TrackDrawTexture(Texture2D texture, int posX, int posY, Color tint) {

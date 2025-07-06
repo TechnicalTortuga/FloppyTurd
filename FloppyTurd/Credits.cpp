@@ -16,7 +16,7 @@ Credits::Credits(Game* game)
 
     // Initialize CameraSystem for background scrolling
     cameraSystem = new CameraSystem();
-    cameraSystem->AddLayer(new ParallaxLayer({ "resources/ui/FloppyTurdCreditsBackground.png" }, 20.0f, 1.0f)); // Slower scroll for credits
+    cameraSystem->AddLayer(new ParallaxLayer({ "ui/FloppyTurdCreditsBackground.png" }, 20.0f, 1.0f)); // Slower scroll for credits
 
     // Load music
     music = new AudioClip(CreditsMusic);
@@ -39,7 +39,7 @@ Credits::Credits(Game* game)
     }
 
     // Initialize Turdlet sprite
-    turdletSprite = std::make_shared<Sprite>("resources/turd/TurdletIdle.png", 1, 0.1f, 1.0f);
+    turdletSprite = std::make_shared<Sprite>("turd/TurdletIdle.png", 1, 0.1f, 1.0f);
     turdletPos = { 150.0f, 50.0f };
 
     // Load FinLogo textures
@@ -77,7 +77,7 @@ Credits::Credits(Game* game)
     };
 
     // Load Whacky Joe font
-    font = LoadFont("resources/fonts/Whacky_Joe.fnt");
+    font = LoadFont("fonts/Whacky_Joe.fnt");
     if (font.baseSize <= 0 || font.glyphCount <= 0 || 
 #if defined(__APPLE__) && TARGET_OS_IPHONE
         font.texture.texture == nullptr
@@ -239,7 +239,7 @@ void Credits::Reset()
     // Reset camera system
     delete cameraSystem;
     cameraSystem = new CameraSystem();
-    cameraSystem->AddLayer(new ParallaxLayer({ "resources/ui/FloppyTurdCreditsBackground.png" }, 20.0f, 1.0f));
+    cameraSystem->AddLayer(new ParallaxLayer({ "ui/FloppyTurdCreditsBackground.png" }, 20.0f, 1.0f));
 }
 
 void Credits::UpdateMusic()

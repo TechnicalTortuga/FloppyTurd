@@ -299,6 +299,13 @@ RLAPI void UpdateSafeAreaInsets(float top, float right, float bottom, float left
 RLAPI void UpdateTouchState(int touchId, float x, float y, bool pressed);
 RLAPI void ClearAllTouchStates(void);
 
+// iOS lifecycle callbacks
+RLAPI void OnAppPause(void);
+RLAPI void OnAppResume(void);
+
+// iOS game initialization
+RLAPI int game_main(int argc, char *argv[]);
+
 // === Utility constants ===
 #ifndef PI
 #define PI 3.14159265358979323846f
@@ -356,6 +363,12 @@ bool ExportImage(Image image, const char *fileName);
 
 // C++ overloads (not exposed to C linkage)
 void DrawTextureRec(Texture2D texture, Rectangle source, Vector2 position, Color tint);
+
+// C++ Game instance access (for iOS)
+class Game;
+Game* GetGameInstance();
+void SetGameInstance(Game* instance);
+
 #endif
 
 #endif // RAYLIB_COMPAT_H

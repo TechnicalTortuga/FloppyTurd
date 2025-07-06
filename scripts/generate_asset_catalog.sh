@@ -136,8 +136,8 @@ EOF
 echo "Generating asset catalog from resources..."
 
 # Process image categories
-process_images "backgrounds"
 process_images "enemies"
+process_images "environment"
 process_images "hats"
 process_images "mainmenu"
 process_images "objects"
@@ -148,5 +148,34 @@ process_images "vfx"
 # Process audio categories
 process_audio "music"
 process_audio "sounds"
+
+# Process font resources (copy as-is)
+process_fonts() {
+  local source_dir="$RESOURCES_DIR/fonts"
+  
+  # Skip if source directory doesn't exist
+  if [ ! -d "$source_dir" ]; then
+    return
+  fi
+  
+  # Create fonts directory in asset catalog
+  mkdir -p "$ASSET_CATALOG_DIR/fonts"
+  
+  # Create category Contents.json
+  cat > "$ASSET_CATALOG_DIR/fonts/Contents.json" << EOF
+{
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
+EOF
+
+  # Copy font files directly
+  cp "$source_dir"/* "$ASSET_CATALOG_DIR/fonts/" 2>/dev/null || true
+  echo "Processed fonts"
+}
+
+process_fonts
 
 echo "Asset catalog generation complete at: $ASSET_CATALOG_DIR"

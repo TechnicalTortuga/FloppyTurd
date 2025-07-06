@@ -274,21 +274,30 @@ bool ResourceManager::LoadFontInternal(const std::string& id) {
 }
 
 std::string ResourceManager::ResolvePath(const std::string& id, ResourceType type) {
+    TraceLog(LOG_INFO, "[DEBUG] ResolvePath called with id=%s, type=%d", id.c_str(), (int)type);
+    
     auto it = resourceRegistry.find(id);
     if (it == resourceRegistry.end()) {
+        TraceLog(LOG_ERROR, "[DEBUG] ResolvePath: Resource not found in registry: %s", id.c_str());
         return "";
     }
 
+    TraceLog(LOG_INFO, "[DEBUG] ResolvePath: Found resource with relativePath=%s", it->second.relativePath.c_str());
+    
     std::string basePath = platform->GetResourcePath(it->second.relativePath);
+    
+    TraceLog(LOG_INFO, "[DEBUG] ResolvePath: GetResourcePath returned: %s", basePath.c_str());
     
     // Try quality variants for textures
     if (type == ResourceType::TEXTURE && currentQuality != ResourceQuality::HIGH) {
         std::string qualityPath = GetQualityVariant(basePath, currentQuality);
         if (!qualityPath.empty() && std::filesystem::exists(qualityPath)) {
+            TraceLog(LOG_INFO, "[DEBUG] ResolvePath: Using quality variant: %s", qualityPath.c_str());
             return qualityPath;
         }
     }
 
+    TraceLog(LOG_INFO, "[DEBUG] ResolvePath: Final resolved path: %s", basePath.c_str());
     return basePath;
 }
 

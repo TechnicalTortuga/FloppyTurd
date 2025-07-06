@@ -10,6 +10,13 @@ struct VertexIn {
     float4 color [[attribute(2)]];
 };
 
+// Instance data structure matching InstanceData
+struct InstanceData {
+    float4x4 modelMatrix;
+    float4 color;
+    float4 texCoordScale; // xy = scale, zw = offset
+};
+
 // Vertex output / Fragment input
 struct VertexOut {
     float4 position [[position]];
@@ -23,9 +30,43 @@ struct Uniforms {
     float4x4 modelViewMatrix;
 };
 
-// Vertex shader
+// Enhanced vertex shader with instancing support
 vertex VertexOut vertex_shader_2d(VertexIn in [[stage_in]],
-                                  constant Uniforms& uniforms [[buffer(1)]]) {
+                                  constant Uniforms& uniforms [[buffer(1)]],
+                                  constant InstanceData* instanceData [[buffer(2)]],
+                                  uint instanceID [[instance_id]]) {
+    VertexOut out;
+    
+    // Transform position
+    float4 localPos = float4(in.position, 0.0, 1.0);
+    
+    // Apply instance transformation if available
+    if (instanceData != nullptr) {
+        localPos = instanceData[instanceID].modelMatrix * localPos;
+    }
+    
+    // Apply model-view and projection transformations
+    float4 worldPos = uniforms.modelViewMatrix * localPos;
+    out.position = uniforms.projectionMatrix * worldPos;
+    
+    // Handle texture coordinates with instance scaling if available
+    if (instanceData != nullptr) {
+        // Apply texture coordinate scaling and offset
+        out.texCoords = in.texCoords * instanceData[instanceID].texCoordScale.xy + instanceData[instanceID].texCoordScale.zw;
+        // Apply instance color tinting
+        out.color = in.color * instanceData[instanceID].color;
+    } else {
+        // Use regular texture coordinates and color
+        out.texCoords = in.texCoords;
+        out.color = in.color;
+    }
+    
+    return out;
+}
+
+// Regular vertex shader (for non-instanced rendering)
+vertex VertexOut vertex_shader_2d_simple(VertexIn in [[stage_in]],
+                                         constant Uniforms& uniforms [[buffer(1)]]) {
     VertexOut out;
     
     // Transform position

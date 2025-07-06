@@ -3,6 +3,7 @@
 #include "AudioManager.h"
 #include "PlatformLayer.h"
 #include "ResourceCompat.h"
+#include "ResourceManager.h"
 
 // Enable draw call tracking
 #define ENABLE_DRAW_CALL_TRACKING
@@ -44,28 +45,29 @@ MainMenu::MainMenu(Game* game)
 {
 	using namespace Resources;
 
-	emptyPainting = LoadTexture(EmptyPainting);
-	_MenuBackground = LoadTexture(MainMenuBackground);
-	_FloppyLogo = LoadTexture(FloppyLogo);
-	finLogo = LoadTexture(FinLogo);
-	lockedPainting = LoadTexture(LockedPainting);
+	// Use ResourceManager instead of direct LoadTexture calls
+	emptyPainting = ResourceManager::GetInstance().GetTexture("empty_painting");
+	_MenuBackground = ResourceManager::GetInstance().GetTexture("main_menu_bg");
+	_FloppyLogo = ResourceManager::GetInstance().GetTexture("floppy_logo");
+	finLogo = ResourceManager::GetInstance().GetTexture("fin_logo");
+	lockedPainting = ResourceManager::GetInstance().GetTexture("locked_painting");
 
-	levelPaintings[0] = LoadTexture(ParkLevelPainting);
-	levelPaintings[1] = LoadTexture(SewerLevelPainting);
-	levelPaintings[2] = LoadTexture(DesertLevelPainting);
-	levelPaintings[3] = LoadTexture(SnowLevelPainting);
-	levelPaintings[4] = LoadTexture(CastleLevelPainting);
-	levelPaintings[5] = LoadTexture(RatKingPainting);
+	levelPaintings[0] = ResourceManager::GetInstance().GetTexture("park_painting");
+	levelPaintings[1] = ResourceManager::GetInstance().GetTexture("sewer_painting");
+	levelPaintings[2] = ResourceManager::GetInstance().GetTexture("desert_painting");
+	levelPaintings[3] = ResourceManager::GetInstance().GetTexture("snow_painting");
+	levelPaintings[4] = ResourceManager::GetInstance().GetTexture("castle_painting");
+	levelPaintings[5] = ResourceManager::GetInstance().GetTexture("ratking_painting");
 
 	const char* fartPaths[] = {
-		"resources/sounds/fart1.ogg", "resources/sounds/fart2.ogg", "resources/sounds/fart3.ogg", "resources/sounds/fart4.ogg", "resources/sounds/fart5.ogg",
-		"resources/sounds/fart6.ogg", "resources/sounds/fart7.ogg", "resources/sounds/fart8.ogg", "resources/sounds/fart9.ogg", "resources/sounds/fart10.ogg", "resources/sounds/fart11.ogg"
+		"sounds/fart1.ogg", "sounds/fart2.ogg", "sounds/fart3.ogg", "sounds/fart4.ogg", "sounds/fart5.ogg",
+		"sounds/fart6.ogg", "sounds/fart7.ogg", "sounds/fart8.ogg", "sounds/fart9.ogg", "sounds/fart10.ogg", "sounds/fart11.ogg"
 	};
 
 	for (int i = 0; i < 11; ++i)
 		fartSoundsLoaded[i] = LoadSound(fartPaths[i]);
 
-	currentMusic = new AudioClip("resources/mainmenu/FloppyTurdMenu.mp3");
+	currentMusic = new AudioClip("mainmenu/FloppyTurdMenu.mp3");
 	PlayMusic(currentMusic);
 
 	if (game && game->playing) {
@@ -74,8 +76,6 @@ MainMenu::MainMenu(Game* game)
 			if (i == 0) levelsUnlocked[i] = true; // Ensure Park is always unlocked
 		}
 	}
-
-
 }
 
 MainMenu::~MainMenu()
@@ -563,9 +563,9 @@ void MainMenu::ToggleFartMusic()
 	using namespace Resources;
 
 	if (fartModeEnabled)
-		PlayMusic(new AudioClip("resources/mainmenu/FloppyTurdMenu.mp3"));
+		PlayMusic(new AudioClip("mainmenu/FloppyTurdMenu.mp3"));
 	else
-		PlayMusic(new AudioClip("resources/mainmenu/FloppyTurdMenu Fart Variant.mp3"));
+		PlayMusic(new AudioClip("mainmenu/FloppyTurdMenu Fart Variant.mp3"));
 
 	fartModeEnabled = !fartModeEnabled;
 }

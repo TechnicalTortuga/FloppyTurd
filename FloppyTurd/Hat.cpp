@@ -77,7 +77,7 @@ Hat::Hat(const std::string& name,
         icon = LoadTexture(iconPath.c_str());
     }
     
-    std::string placeholderPath = "resources/hats/placeholder.png";
+    std::string placeholderPath = "hats/placeholder.png";
     // Assume placeholder has one frame
     for (int form = 0; form < 3; form++) {
         sprites[form][0] = new Sprite(placeholderPath, 1);

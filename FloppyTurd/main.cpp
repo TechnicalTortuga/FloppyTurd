@@ -14,6 +14,19 @@
 #include <unistd.h>
 #endif
 
+// Global game instance for iOS to access
+Game* g_gameInstance = nullptr;
+
+Game* GetGameInstance()
+{
+	return g_gameInstance;
+}
+
+void SetGameInstance(Game* instance)
+{
+	g_gameInstance = instance;
+}
+
 void SetupWorkingDirectory() {
 #ifdef __APPLE__
     // Get the path to the executable
@@ -37,6 +50,10 @@ void SetupWorkingDirectory() {
 
 int game_main(int argc, char *argv[])
 {
+	// Suppress unused parameter warnings
+	(void)argc;
+	(void)argv;
+	
 	// Setup working directory first
 	SetupWorkingDirectory();
 	
@@ -46,14 +63,23 @@ int game_main(int argc, char *argv[])
 	// Initialize platform layer with a placeholder value for nativeView
 	PlatformLayer::GetInstance().Initialize(nullptr);
 
-	Game* game = new Game(); // Constructor automatically calls RunGame()
+#if defined(PLATFORM_IOS)
+	// On iOS, we only create the game instance
+	// The actual game loop is driven by the iOS display system
+	g_gameInstance = new Game();
+	return 0; // iOS will keep the app running via UIApplicationMain
+#else
+	// On desktop, we create the game and run the traditional loop
+	Game* game = new Game();
+	game->RunGameDesktop();
 	
-	delete game; // Clean up the game object
+	delete game;
 	
 	// Clean up platform layer
 	PlatformLayer::GetInstance().Shutdown();
 	
 	return 0;
+#endif
 }
 
 // Regular main function for non-iOS platforms
@@ -64,11 +90,4 @@ int main()
 }
 #endif
 
-// iOS entry point
-#if defined(PLATFORM_IOS)
-extern "C" int main(int argc, char *argv[]) {
-    // Call our game logic directly with Metal on iOS, no SDL
-    int result = game_main(argc, argv);
-    return result;
-}
-#endif
+// iOS entry point is handled by main_ios.mm

@@ -8,13 +8,13 @@ PoopHeart::PoopHeart(Vector2 pos, PoopHeartType type) : type(type) {
 
     switch (type) {
     case PoopHeartType::SMALL:
-        sprite = new Sprite("resources/objects/PooHeart.png", 1, 0.1f, 1.0f, position);
+        sprite = new Sprite("objects/PooHeart.png", 1, 0.1f, 1.0f, position);
         break;
     case PoopHeartType::BIG:
-        sprite = new Sprite("resources/objects/PooHeartBig.png", 1, 0.1f, 1.0f, position);
+        sprite = new Sprite("objects/PooHeartBig.png", 1, 0.1f, 1.0f, position);
         break;
     case PoopHeartType::INVISIBLE:
-        sprite = new Sprite("resources/objects/PooHeartRainbowBeam.png", 11, 0.05f, 1.0f, position);
+        sprite = new Sprite("objects/PooHeartRainbowBeam.png", 11, 0.05f, 1.0f, position);
         break;
     }
 

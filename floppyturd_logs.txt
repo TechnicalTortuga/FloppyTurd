@@ -1,0 +1,264 @@
+getpwuid_r did not find a match for uid 501
+Filtering the log data using "process == "FloppyTurd""
+Timestamp               Ty Process[PID:TID]
+2025-07-06 15:08:33.050 Df FloppyTurd[3248:49e6d7] [com.apple.PlugInKit:discovery] Annotations changed, re-performing query for continuous discovery, report block = <0x600002a4a4c0>.
+2025-07-06 15:08:33.051 Df FloppyTurd[3248:49e87b] [com.apple.PlugInKit:discovery] Annotations changed, re-performing query for continuous discovery, report block = <0x600002a78000>.
+2025-07-06 15:08:33.052 Df FloppyTurd[3248:49e879] [com.apple.PlugInKit:discovery] Annotations changed, re-performing query for continuous discovery, report block = <0x600002a78690>.
+2025-07-06 15:08:34.152 Df FloppyTurd[5019:49e921] [DEBUG] iOS main() starting with argc=1
+2025-07-06 15:08:34.156 Df FloppyTurd[5019:49e921] [DEBUG] About to call UIApplicationMain
+2025-07-06 15:08:34.180 Df FloppyTurd[5019:49e9b9] [com.apple.xpc:connection] [0x60000075c0f0] activating connection: mach=true listener=false peer=false name=com.apple.cfprefsd.daemon
+2025-07-06 15:08:34.194 Df FloppyTurd[5019:49e9bd] (libMobileGestalt.dylib) No persisted cache on this platform.
+2025-07-06 15:08:34.218 Df FloppyTurd[5019:49e9b9] [com.apple.UIKit:BackgroundTask] Creating new assertion because there is no existing background assertion.
+2025-07-06 15:08:34.219 Df FloppyTurd[5019:49e9b9] [com.apple.UIKit:BackgroundTask] Creating new background assertion
+2025-07-06 15:08:34.222 Df FloppyTurd[5019:49e9b9] [com.apple.UIKit:BackgroundTask] Created new background assertion <BKSProcessAssertion: 0x600001b50410>
+2025-07-06 15:08:34.223 A  FloppyTurd[5019:49e9ba] (CoreFoundation) Loading Preferences From User Session CFPrefsD
+2025-07-06 15:08:34.223 Df FloppyTurd[5019:49e9b9] [com.apple.runningboard:connection] Initializing connection
+2025-07-06 15:08:34.225 Df FloppyTurd[5019:49e9b9] [com.apple.runningboard:process] Removing all cached process handles
+2025-07-06 15:08:34.227 Df FloppyTurd[5019:49e9bf] [com.apple.runningboard:connection] Sending handshake request attempt #1 to server
+2025-07-06 15:08:34.228 Df FloppyTurd[5019:49e9bf] [com.apple.runningboard:connection] Creating connection to com.apple.runningboard
+2025-07-06 15:08:34.231 Df FloppyTurd[5019:49e9bf] [com.apple.xpc:connection] [0x6000007580f0] activating connection: mach=true listener=false peer=false name=com.apple.runningboard
+2025-07-06 15:08:34.244 Df FloppyTurd[5019:49e9bb] [com.apple.xpc:connection] [0x7facee706000] activating connection: mach=false listener=false peer=false name=(anonymous)
+2025-07-06 15:08:34.245 Df FloppyTurd[5019:49e9bf] [com.apple.runningboard:connection] Handshake succeeded
+2025-07-06 15:08:34.246 Df FloppyTurd[5019:49e9bf] [com.apple.runningboard:connection] Identity resolved as app<com.floppyturd.game((null))>
+2025-07-06 15:08:34.250 Df FloppyTurd[5019:49e9b9] [com.apple.UIKit:BackgroundTask] Incrementing reference count for background assertion <BKSProcessAssertion: 0x600001b50410>
+2025-07-06 15:08:34.254 Df FloppyTurd[5019:49e9b9] [com.apple.UIKit:BackgroundTask] Created background task <_UIBackgroundTaskInfo: 0x600002d52000>: taskID = 1, taskName = Launch Background Task for Coalescing, creationTime = 176648 (elapsed = 0).
+2025-07-06 15:08:34.256 A  FloppyTurd[5019:49e9c2] (RunningBoardServices) didChangeInheritances
+2025-07-06 15:08:34.257 Df FloppyTurd[5019:49e9b9] [com.apple.FrontBoard:SceneExtension] Realizing settings extension _UIApplicationSceneKeyboardSettings on FBSSceneSettings
+2025-07-06 15:08:34.279 Df FloppyTurd[5019:49e9b9] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneOcclusionSettings> on FBSSceneSettings
+2025-07-06 15:08:34.279 Df FloppyTurd[5019:49e9b9] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneInterfaceProtectionSceneSettings> on FBSSceneSettings
+2025-07-06 15:08:34.280 Df FloppyTurd[5019:49e9b9] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UIHomeAffordanceHostSceneSettings> on FBSSceneSettings
+2025-07-06 15:08:34.280 Df FloppyTurd[5019:49e9b9] [com.apple.FrontBoard:SceneExtension] Realizing settings extension _UISystemShellSceneHostingEnvironmentSettings on FBSSceneSettings
+2025-07-06 15:08:34.280 Df FloppyTurd[5019:49e9b9] [com.apple.FrontBoard:SceneExtension] Realizing settings extension _UISceneRenderingEnvironmentSettings on FBSSceneSettings
+2025-07-06 15:08:34.281 Df FloppyTurd[5019:49e9b9] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneTransitioningHostSettings> on FBSSceneSettings
+2025-07-06 15:08:34.284 Df FloppyTurd[5019:49e9b9] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneHostingContentSizePreferenceClientSettings> on FBSSceneClientSettings
+2025-07-06 15:08:34.284 Df FloppyTurd[5019:49e9b9] [com.apple.FrontBoard:SceneExtension] Realizing settings extension _UISceneHostingTraitCollectionPropagationSettings on FBSSceneSettings
+2025-07-06 15:08:34.284 Df FloppyTurd[5019:49e921] [com.apple.UIKit:Application] Deactivation reason added: 10; deactivation reasons: 0 -> 1024; animating application lifecycle event: 0
+2025-07-06 15:08:34.286 Df FloppyTurd[5019:49e921] [com.apple.BoardServices:Injection] activating monitor for service com.apple.frontboard.open
+2025-07-06 15:08:34.287 Df FloppyTurd[5019:49e9b9] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneHostingSheetPresentationSettings> on FBSSceneSettings
+2025-07-06 15:08:34.287 Df FloppyTurd[5019:49e9b9] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneHostingSheetPresentationClientSettings> on FBSSceneClientSettings
+2025-07-06 15:08:34.287 Df FloppyTurd[5019:49e9b9] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UISceneHostingEventDeferringHostProviding> on FBSSceneSettings
+2025-07-06 15:08:34.289 Df FloppyTurd[5019:49e921] [com.apple.BoardServices:Injection] activating monitor for service com.apple.frontboard.workspace-service
+2025-07-06 15:08:34.290 Df FloppyTurd[5019:49e9b9] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <UIKit__UITypedKeyValueSceneSettings> on FBSSceneSettings
+2025-07-06 15:08:34.290 Df FloppyTurd[5019:49e9b9] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <UIKit__UITypedKeyValueSceneSettings> on FBSSceneClientSettings
+2025-07-06 15:08:34.290 Df FloppyTurd[5019:49e921] [com.apple.FrontBoard:Common] FBSWorkspace registering source: com.apple.frontboard.systemappservices
+2025-07-06 15:08:34.292 Df FloppyTurd[5019:49e921] [com.apple.FrontBoard:Common] FBSWorkspace connected to endpoint : <BSServiceConnectionEndpoint: 0x600002d5f180; target: com.apple.frontboard.systemappservices; service: com.apple.frontboard.workspace-service>
+2025-07-06 15:08:34.292 Df FloppyTurd[5019:49e921] [com.apple.FrontBoard:Common] <FBSWorkspaceScenesClient:0x60000164c000 com.apple.frontboard.systemappservices> attempting immediate handshake from activate
+2025-07-06 15:08:34.292 Df FloppyTurd[5019:49e921] [com.apple.FrontBoard:Common] <FBSWorkspaceScenesClient:0x60000164c000 com.apple.frontboard.systemappservices> sent handshake
+2025-07-06 15:08:34.293 Df FloppyTurd[5019:49e921] [com.apple.runningboard:general] Added observer for process assertions expiration warning: <_RBSExpirationWarningClient: 0x60000387d220>
+2025-07-06 15:08:34.296 Df FloppyTurd[5019:49e9bf] [com.apple.FrontBoard:SceneExtension] Realizing settings extension FBSSceneSettingsCore on FBSSceneSettings
+2025-07-06 15:08:34.297 Df FloppyTurd[5019:49e9bf] [com.apple.FrontBoard:SceneExtension] Realizing settings extension FBSSceneClientSettingsCore on FBSSceneClientSettings
+2025-07-06 15:08:34.302 Df FloppyTurd[5019:49e921] [com.apple.UIKit:UIScreen] Evaluated capturing state as 0 on <UIScreen: 0x7facee706e10> for initial
+2025-07-06 15:08:34.303 Df FloppyTurd[5019:49e9bf] [com.apple.FrontBoard:SceneExtension] UIMutableApplicationSceneSettings setting counterpart class: UIApplicationSceneSettings
+2025-07-06 15:08:34.306 Df FloppyTurd[5019:49e921] [com.apple.UIKit:UIScreen] Evaluated capturing state as 0 on <UIScreen: 0x7facee706e10> for CADisplay KVO
+2025-07-06 15:08:34.307 Df FloppyTurd[5019:49e9bf] [com.apple.FrontBoard:SceneExtension] UIMutableApplicationSceneClientSettings setting counterpart class: UIApplicationSceneClientSettings
+2025-07-06 15:08:34.308 Df FloppyTurd[5019:49e9bf] [com.apple.FrontBoard:SceneExtension] Realizing settings extension FBSSceneTransitionContextCore on FBSSceneTransitionContext
+2025-07-06 15:08:34.319 Df FloppyTurd[5019:49e921] [com.apple.Accessibility:AXSupportCommon] Read CategoryName: per-app = 1, category name = (null)
+2025-07-06 15:08:34.319 Df FloppyTurd[5019:49e921] [com.apple.Accessibility:AXSupportCommon] Read CategoryName: per-app = 0, category name = (null)
+2025-07-06 15:08:34.325 Df FloppyTurd[5019:49e921] [com.apple.dt.xctest:Default] Registering for test daemon availability notify post.
+2025-07-06 15:08:34.325 Df FloppyTurd[5019:49e921] [com.apple.dt.xctest:Default] notify_get_state check indicated test daemon not ready.
+2025-07-06 15:08:34.325 Df FloppyTurd[5019:49e921] [com.apple.dt.xctest:Default] notify_get_state check indicated test daemon not ready.
+2025-07-06 15:08:34.325 Df FloppyTurd[5019:49e921] [com.apple.dt.xctest:Default] notify_get_state check indicated test daemon not ready.
+2025-07-06 15:08:34.326 Df FloppyTurd[5019:49e921] [com.apple.UIKit:UpdateScheduler] Selected display: name=LCD (PurpleMain), id=1
+2025-07-06 15:08:34.338 Df FloppyTurd[5019:49e921] [com.apple.UIKit:Application] Deactivation reason added: 5; deactivation reasons: 1024 -> 1056; animating application lifecycle event: 1
+2025-07-06 15:08:34.341 Df FloppyTurd[5019:49e921] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 1, <UIWindowScene: 0x7facee70ab70> (179BBAD8-F58B-4316-97CD-97D274D28F04)
+2025-07-06 15:08:34.342 Df FloppyTurd[5019:49e921] [com.apple.UIKit:InterfaceStyle] Should send trait collection or coordinate space update, interface style 1 -> 1, <UIWindowScene: 0x7facee70ab70> (179BBAD8-F58B-4316-97CD-97D274D28F04)
+2025-07-06 15:08:34.344 Df FloppyTurd[5019:49e921] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 1, <UIWindowScene: 0x7facee70ab70> (179BBAD8-F58B-4316-97CD-97D274D28F04)
+2025-07-06 15:08:34.345 Df FloppyTurd[5019:49e921] [com.apple.UIKit:HomeAffordanceObservation] Initializing: <_UIHomeAffordanceSceneNotifier: 0x600001351f80>; with scene: <UIWindowScene: 0x7facee70ab70>
+2025-07-06 15:08:34.345 Df FloppyTurd[5019:49e921] [com.apple.BacklightServices:scenes] 0x600003670cc0 setDelegate:<0x600003671110 _UIBacklightEnvironment> hasDelegate:YES for environment:sceneID:com.floppyturd.game-default
+2025-07-06 15:08:34.345 Df FloppyTurd[5019:49e921] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 1, <UIWindowScene: 0x7facee70ab70> (179BBAD8-F58B-4316-97CD-97D274D28F04)
+2025-07-06 15:08:34.346 Df FloppyTurd[5019:49e921] [com.apple.UIKit:EventDeferring] [0x600001351f10] Initialized with scene: <UIWindowScene: 0x7facee70ab70>; behavior: <_UIEventDeferringBehavior_iOS: 0x6000038705a0>; systemShellManagesKeyboardFocus: 1
+2025-07-06 15:08:34.346 Df FloppyTurd[5019:49e921] [com.apple.xpc:connection] [0x7facee7077c0] activating connection: mach=false listener=false peer=false name=(anonymous)
+2025-07-06 15:08:34.350 Df FloppyTurd[5019:49e921] [com.apple.BackBoard:EventDelivery] policyStatus:<BKSHIDEventDeliveryPolicyObserver: 0x600001b53700; process scope; status: target> was:none
+2025-07-06 15:08:34.350 Df FloppyTurd[5019:49e921] [com.apple.UIKit:KeyWindow] Setting default evaluation strategy for UIUserInterfaceIdiomPhone to LastOneWins
+2025-07-06 15:08:34.350 Df FloppyTurd[5019:49e921] [com.apple.UIKit:KeyWindow] Scene target of keyboard event deferring environment did change: 1; scene: UIWindowScene: 0x7facee70ab70; scene identity: com.apple.frontboard.systemappservices/FBSceneManager:sceneID%3Acom.floppyturd.game-default
+2025-07-06 15:08:34.351 Df FloppyTurd[5019:49e921] [com.apple.UIKit:EventDeferring] [0x600001351f10] Scene target of event deferring environments did update: scene: 0x7facee70ab70; current systemShellManagesKeyboardFocus: 1; systemShellManagesKeyboardFocusForScene: 1; eligibleForRecordRemoval: 1;
+2025-07-06 15:08:34.351 Df FloppyTurd[5019:49e921] [com.apple.UIKit:KeyWindow] Scene became target of keyboard event deferring environment: UIWindowScene: 0x7facee70ab70; scene identity: com.apple.frontboard.systemappservices/FBSceneManager:sceneID%3Acom.floppyturd.game-default
+2025-07-06 15:08:34.351 Df FloppyTurd[5019:49e921] [com.apple.UIKit:KeyWindow] Setting default evaluation strategy for UIUserInterfaceIdiomPhone to SystemShellManaged
+2025-07-06 15:08:34.352 Df FloppyTurd[5019:49e921] [com.apple.UIKit:KeyWindow] Key window needs update: 0; currentKeyWindowScene: 0x0; evaluatedKeyWindowScene: 0x7facee70ab70; currentApplicationKeyWindow: 0x0; evaluatedApplicationKeyWindow: 0x0; reason: UIWindowScene: 0x7facee70ab70: Window scene became target of keyboard environment
+2025-07-06 15:08:34.352 Df FloppyTurd[5019:49e921] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 1, <UIWindowScene: 0x7facee70ab70> (179BBAD8-F58B-4316-97CD-97D274D28F04)
+2025-07-06 15:08:34.353 Df FloppyTurd[5019:49e921] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 1, <UIWindowScene: 0x7facee70ab70> (179BBAD8-F58B-4316-97CD-97D274D28F04)
+2025-07-06 15:08:34.354 Df FloppyTurd[5019:49e921] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 1, <UIWindowScene: 0x7facee70ab70> (179BBAD8-F58B-4316-97CD-97D274D28F04)
+2025-07-06 15:08:34.358 Df FloppyTurd[5019:49e921] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 1, <UIWindowScene: 0x7facee70ab70> (179BBAD8-F58B-4316-97CD-97D274D28F04)
+2025-07-06 15:08:34.360 Df FloppyTurd[5019:49e921] [com.apple.UIKit:AppLifecycle] sceneOfRecord: sceneID: sceneID:com.floppyturd.game-default  persistentID: 179BBAD8-F58B-4316-97CD-97D274D28F04
+2025-07-06 15:08:34.361 Df FloppyTurd[5019:49e921] [com.apple.UIKit:Application] Ignoring already applied deactivation reason: 5; deactivation reasons: 1056
+2025-07-06 15:08:34.361 Df FloppyTurd[5019:49e921] [com.apple.UIKit:Application] Deactivation reason added: 11; deactivation reasons: 1056 -> 3104; animating application lifecycle event: 1
+2025-07-06 15:08:34.363 Df FloppyTurd[5019:49e921] [com.apple.xpc:connection] [0x7facef309290] activating connection: mach=true listener=false peer=false name=com.apple.UIKit.KeyboardManagement.hosted
+2025-07-06 15:08:34.365 Df FloppyTurd[5019:49e921] [com.apple.UIKit:ViewServices] Launching as view service: NO
+2025-07-06 15:08:34.369 Df FloppyTurd[5019:49e921] [INIT] ========================================
+2025-07-06 15:08:34.369 Df FloppyTurd[5019:49e921] [INIT] AppDelegate didFinishLaunchingWithOptions STARTING
+2025-07-06 15:08:34.369 Df FloppyTurd[5019:49e921] [INIT] ========================================
+2025-07-06 15:08:34.380 Df FloppyTurd[5019:49e921] [INIT] Created window with frame: {{0, 0}, {393, 852}}
+2025-07-06 15:08:34.380 Df FloppyTurd[5019:49e921] [INIT] Creating GameViewController
+2025-07-06 15:08:34.381 Df FloppyTurd[5019:49e921] [INIT] Created GameViewController: <GameViewController: 0x7facee82ba00>
+2025-07-06 15:08:34.390 Df FloppyTurd[5019:49e921] [INIT] Set root view controller
+2025-07-06 15:08:34.410 Df FloppyTurd[5019:49e921] [com.apple.xpc:connection] [0x7facef30b260] activating connection: mach=true listener=false peer=false name=com.apple.metal.simulator
+2025-07-06 15:08:34.410 Df FloppyTurd[5019:49e921] [com.apple.xpc:connection] [0x7facef3098f0] activating connection: mach=true listener=false peer=false name=com.apple.metal.simulator
+2025-07-06 15:08:34.411 Df FloppyTurd[5019:49e921] [com.apple.xpc:connection] [0x7facee713f60] activating connection: mach=true listener=false peer=false name=com.apple.metal.simulator
+2025-07-06 15:08:34.418 Df FloppyTurd[5019:49e921] [INIT] ========================================
+2025-07-06 15:08:34.418 Df FloppyTurd[5019:49e921] [INIT] GameViewController viewDidLoad STARTING
+2025-07-06 15:08:34.418 Df FloppyTurd[5019:49e921] [INIT] ========================================
+2025-07-06 15:08:34.418 Df FloppyTurd[5019:49e921] [INIT] Set up touch handling
+2025-07-06 15:08:34.419 Df FloppyTurd[5019:49e921] [INIT] Created game queue: 0x600001647480
+2025-07-06 15:08:34.419 Df FloppyTurd[5019:49e921] [INIT] Dispatching game initialization to background queue
+2025-07-06 15:08:34.419 Df FloppyTurd[5019:49e921] [INIT] GameViewController viewDidLoad completed (async init started)
+2025-07-06 15:08:34.419 Df FloppyTurd[5019:49e9b9] [INIT] ========================================
+2025-07-06 15:08:34.419 Df FloppyTurd[5019:49e9b9] [INIT] BACKGROUND QUEUE: Starting game initialization
+2025-07-06 15:08:34.419 Df FloppyTurd[5019:49e9b9] [INIT] ========================================
+2025-07-06 15:08:34.419 Df FloppyTurd[5019:49e9b9] [INIT] About to call game_main()
+2025-07-06 15:08:34.419 Df FloppyTurd[5019:49e9b9] [INIT] game_main function pointer: 0x100ae24b0
+2025-07-06 15:08:34.419 Df FloppyTurd[5019:49e9b9] [INIT] ========================================
+2025-07-06 15:08:34.419 Df FloppyTurd[5019:49e9b9] [INIT] game_main() STARTING (iOS version)
+2025-07-06 15:08:34.419 Df FloppyTurd[5019:49e9b9] [INIT] argc=0
+2025-07-06 15:08:34.419 Df FloppyTurd[5019:49e9b9] [INIT] ========================================
+2025-07-06 15:08:34.419 Df FloppyTurd[5019:49e9b9] [INIT] Skipping working directory setup for iOS
+2025-07-06 15:08:34.420 Df FloppyTurd[5019:49e9b9] [INIT] Seeded random number generator
+2025-07-06 15:08:34.420 Df FloppyTurd[5019:49e9b9] [INIT] About to initialize PlatformLayer
+2025-07-06 15:08:34.420 Df FloppyTurd[5019:49e9b9] [DEBUG] PlatformLayer constructor starting
+2025-07-06 15:08:34.420 Df FloppyTurd[5019:49e9b9] [DEBUG] PlatformLayer: Metal device created: 0x7facee713a80
+2025-07-06 15:08:34.422 Df FloppyTurd[5019:49e9b9] [DEBUG] PlatformLayer: Command queue created: 0x7facef2065f0
+2025-07-06 15:08:34.422 Df FloppyTurd[5019:49e9b9] [DEBUG] PlatformLayer constructor completed
+2025-07-06 15:08:34.423 Df FloppyTurd[5019:49e9b9] [INIT] ========================================
+2025-07-06 15:08:34.423 Df FloppyTurd[5019:49e9b9] [INIT] PlatformLayer::Initialize(void* nativeView) STARTING
+2025-07-06 15:08:34.423 Df FloppyTurd[5019:49e9b9] [INIT] nativeView=0x0
+2025-07-06 15:08:34.423 Df FloppyTurd[5019:49e9b9] [INIT] ========================================
+2025-07-06 15:08:34.423 Df FloppyTurd[5019:49e9b9] [ERROR] PlatformLayer::Initialize: nativeView is null or invalid MTKView
+2025-07-06 15:08:34.423 Df FloppyTurd[5019:49e9b9] [INIT] PlatformLayer initialized
+2025-07-06 15:08:34.423 Df FloppyTurd[5019:49e9b9] [INIT] Creating Game instance
+2025-07-06 15:08:34.425 Df FloppyTurd[5019:49e9b9] [INIT] Game instance created: 0x6000001540e0
+2025-07-06 15:08:34.425 Df FloppyTurd[5019:49e9b9] [INIT] ========================================
+2025-07-06 15:08:34.425 Df FloppyTurd[5019:49e9b9] [INIT] game_main() COMPLETED SUCCESSFULLY
+2025-07-06 15:08:34.425 Df FloppyTurd[5019:49e9b9] [INIT] ========================================
+2025-07-06 15:08:34.425 Df FloppyTurd[5019:49e9b9] [INIT] game_main() returned: 0
+2025-07-06 15:08:34.426 Df FloppyTurd[5019:49e9b9] [INIT] GetGameInstance() returned: 0x0
+2025-07-06 15:08:34.426 Df FloppyTurd[5019:49e9b9] [ERROR] ========================================
+2025-07-06 15:08:34.426 Df FloppyTurd[5019:49e9b9] [ERROR] FAILED to get game instance!
+2025-07-06 15:08:34.426 Df FloppyTurd[5019:49e9b9] [ERROR] game_main() returned: 0
+2025-07-06 15:08:34.426 Df FloppyTurd[5019:49e9b9] [ERROR] GetGameInstance() returned: 0x0
+2025-07-06 15:08:34.426 Df FloppyTurd[5019:49e9b9] [ERROR] ========================================
+2025-07-06 15:08:34.427 Df FloppyTurd[5019:49e921] [com.apple.FrontBoard:SceneExtension] Realizing settings extension <_UIApplicationSceneDisplaySettings> on FBSSceneSettings
+2025-07-06 15:08:34.461 Df FloppyTurd[5019:49e921] [com.apple.UIKit:Orientation] <UIWindowScene: 0x7facee70ab70> (179BBAD8-F58B-4316-97CD-97D274D28F04) Scene updated orientation preferences: none -> ( Pu Ll Lr )
+2025-07-06 15:08:34.464 Df FloppyTurd[5019:49e921] [com.apple.UIKit:KeyWindow] Key window API is scene-level: YES
+2025-07-06 15:08:34.464 Df FloppyTurd[5019:49e921] [com.apple.UIKit:KeyWindow] UIWindowScene: 0x7facee70ab70: Window became key in scene: UIWindow: 0x7facef30c050; contextId: 0x32AF108D: reason: UIWindowScene: 0x7facee70ab70: Window requested to become key in scene: 0x7facef30c050
+2025-07-06 15:08:34.464 Df FloppyTurd[5019:49e921] [com.apple.UIKit:KeyWindow] Key window needs update: 1; currentKeyWindowScene: 0x0; evaluatedKeyWindowScene: 0x7facee70ab70; currentApplicationKeyWindow: 0x0; evaluatedApplicationKeyWindow: 0x7facef30c050; reason: UIWindowScene: 0x7facee70ab70: Window requested to become key in scene: 0x7facef30c050
+2025-07-06 15:08:34.464 Df FloppyTurd[5019:49e921] [com.apple.UIKit:KeyWindow] Window did become application key: UIWindow: 0x7facef30c050; contextId: 0x32AF108D; scene identity: com.apple.frontboard.systemappservices/FBSceneManager:sceneID%3Acom.floppyturd.game-default
+2025-07-06 15:08:34.464 Df FloppyTurd[5019:49e921] [com.apple.UIKit:EventDeferring] [0x600001351f10] Begin local event deferring requested for token: 0x600001c58c00; environments: 1; reason: UIWindowScene: 0x7facee70ab70: Begin event deferring in keyboardFocus for window: 0x7facef30c050
+2025-07-06 15:08:34.469 Df FloppyTurd[5019:49e921] [com.apple.BackBoard:EventDelivery] flushing changes: <contentsMask: 0x2; discreteDispatchingRules: <nil>; deferringRules: [[5019-1]; <keyboardFocus; builtin; com.apple.frontboard.systemappservices/FBSceneManager:sceneID%3Acom.floppyturd.game-default> -> <token: 0x32AF108D; pid: 5019>; reason: UIWindowScene: 0x7facee70ab70: Begin event deferring in keyboardFocus for window: 0x7facef30c050]; keyCommandDispatchingRules: <nil>; keyCommandsRegistrations: <nil>; bufferingPredicates: <nil>; activeUIResponders: <nil>>
+2025-07-06 15:08:34.472 Df FloppyTurd[5019:49e9b9] [com.apple.BackBoard:EventDelivery] policyStatus:<BKSHIDEventDeliveryPolicyObserver: 0x600001b53700; token: com.apple.frontboard.systemappservices/FBSceneManager:sceneID%3Acom.floppyturd.game-default; status: ancestor> was:target
+2025-07-06 15:08:34.472 Df FloppyTurd[5019:49e9b9] [com.apple.BackBoard:EventDelivery] observerPolicyDidChange: 0x600001b53700 -> <_UIKeyWindowSceneObserver: 0x600003670990>
+2025-07-06 15:08:34.473 Df FloppyTurd[5019:49e921] [INIT] Made window key and visible
+2025-07-06 15:08:34.476 Df FloppyTurd[5019:49e9b9] [com.apple.xpc:connection] [0x6000007581e0] activating connection: mach=false listener=false peer=false name=com.apple.audio.AudioConverterService
+2025-07-06 15:08:34.476 Df FloppyTurd[5019:49e921] Haptics not supported on this device.
+2025-07-06 15:08:34.476 Df FloppyTurd[5019:49e921] [INIT] Started haptics manager
+2025-07-06 15:08:34.476 Df FloppyTurd[5019:49e921] [INIT] ========================================
+2025-07-06 15:08:34.476 Df FloppyTurd[5019:49e921] [INIT] AppDelegate didFinishLaunchingWithOptions COMPLETED
+2025-07-06 15:08:34.476 Df FloppyTurd[5019:49e921] [INIT] ========================================
+2025-07-06 15:08:34.477 Df FloppyTurd[5019:49e921] [com.apple.UIKit:Application] Deactivation reason removed: 10; deactivation reasons: 3104 -> 2080; animating application lifecycle event: 1
+2025-07-06 15:08:34.478 Df FloppyTurd[5019:49e921] [com.apple.UIKit:Application] Deactivation reason added: 12; deactivation reasons: 2080 -> 6176; animating application lifecycle event: 1
+2025-07-06 15:08:34.478 Df FloppyTurd[5019:49e921] [com.apple.UIKit:Application] Deactivation reason removed: 11; deactivation reasons: 6176 -> 4128; animating application lifecycle event: 1
+2025-07-06 15:08:34.480 Df FloppyTurd[5019:49e9c3] [com.apple.UIIntelligenceSupport:xpc] establishing connection to agent
+2025-07-06 15:08:34.481 Df FloppyTurd[5019:49e9c3] [com.apple.xpc:session] [0x600001b5ef30] Session created.
+2025-07-06 15:08:34.481 Df FloppyTurd[5019:49e9c3] [com.apple.xpc:session] [0x600001b5ef30] Session created from connection [0x6000007501e0]
+2025-07-06 15:08:34.482 Df FloppyTurd[5019:49e9c3] [com.apple.xpc:connection] [0x6000007501e0] activating connection: mach=true listener=false peer=false name=com.apple.uiintelligencesupport.agent
+2025-07-06 15:08:34.482 Df FloppyTurd[5019:49e9c3] [com.apple.xpc:session] [0x600001b5ef30] Session activated
+2025-07-06 15:08:34.482 Df FloppyTurd[5019:49e921] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 1, <UIWindowScene: 0x7facee70ab70> (179BBAD8-F58B-4316-97CD-97D274D28F04)
+2025-07-06 15:08:34.490 Df FloppyTurd[5019:49e921] [DEBUG] drawInMTKView called
+2025-07-06 15:08:34.490 Df FloppyTurd[5019:49e921] [DEBUG] Game not initialized, skipping draw
+2025-07-06 15:08:34.501 A  FloppyTurd[5019:49e9c2] (RunningBoardServices) didChangeInheritances
+2025-07-06 15:08:34.503 A  FloppyTurd[5019:49e9c2] (RunningBoardServices) didChangeInheritances
+2025-07-06 15:08:34.521 Df FloppyTurd[5019:49e921] [com.apple.BackBoard:EventDelivery] flushing changes: <contentsMask: 0x8; discreteDispatchingRules: <nil>; deferringRules: <nil>; keyCommandDispatchingRules: <nil>; keyCommandsRegistrations: [<BKSMutableHIDEventKeyCommandsRegistration: 0x60000386cf20; environment: keyboardFocus; token: 32af108d> keyCommands = {
+    <BKSHIDEventKeyCommand: 0x600002d60e00; cmd|ctrl-s>;
+    <BKSHIDEventKeyCommand: 0x600002d60d00; cmd-b>;
+    <BKSHIDEventKeyCommand: 0x600002d60c80; glb-E>;
+    <BKSHIDEventKeyCommand: 0x600002d60a40; cmd-c>;
+    <BKSHIDEventKeyCommand: 0x600002d60ec0; cmd-"+">;
+    <BKSHIDEventKeyCommand: 0x600002d60dc0; cmd-"-">;
+    <BKSHIDEventKeyCommand: 0x600002d60f00; glb|ctrl|opt|shft|capslock|numpad-" ">;
+    <BKSHIDEventKeyCommand: 0x600002d60f40; cmd-(52:upArrow)>;
+    <BKSHIDEventKeyCommand: 0x600002d60f80; cmd-(51:downArrow)>;
+    <BKSHIDEventKeyCommand: 0x600002d60c00; cmd-e>;
+    <BKSHIDEventKeyCommand: 0x600002d60bc0; cmd|shft-g>;
+    <BKSHIDEventKeyCommand: 0x600002d60fc0; cmd-(50:leftArrow)>;
+    <BKSHIDEventKeyCommand: 0x600002d60a00; cmd-f
+2025-07-06 15:08:34.523 Df FloppyTurd[5019:49e9b9] [com.apple.xpc:connection] [0x6000007581e0] failed to do a bootstrap look-up: xpc_error=[3: No such process]
+2025-07-06 15:08:34.523 Df FloppyTurd[5019:49e9b9] [com.apple.xpc:connection] [0x6000007581e0] invalidated after a failed init
+2025-07-06 15:08:34.528 Df FloppyTurd[5019:49e9c2] [com.apple.CoreAnalytics:client] No XPC connection in Simulator
+2025-07-06 15:08:34.529 E  FloppyTurd[5019:49e9b9] [com.apple.coreaudio:AudioConverter]     AudioConverterOOP.cpp:858   Failed to prepare AudioConverterService: -302
+2025-07-06 15:08:34.550 Df FloppyTurd[5019:49e921] [com.apple.network:activity] Create activity from XPC object <nw_activity 50:1 [E9561465-DD54-4407-91DA-EEEE398641CD] (reporting strategy default)>
+2025-07-06 15:08:34.550 Df FloppyTurd[5019:49e921] [com.apple.network:activity] Create activity from XPC object <nw_activity 50:2 [721A5FA1-5DFB-4FAD-BC92-ED9A436B4BD2] (reporting strategy default)>
+2025-07-06 15:08:34.550 Df FloppyTurd[5019:49e921] [com.apple.network:activity] Set activity <nw_activity 50:1 [E9561465-DD54-4407-91DA-EEEE398641CD] (reporting strategy default)> as the global parent
+2025-07-06 15:08:34.551 Df FloppyTurd[5019:49e921] [com.apple.UIKit:BackgroundTask] Ending background task with UIBackgroundTaskIdentifier: 1
+2025-07-06 15:08:34.551 Df FloppyTurd[5019:49e921] [com.apple.UIKit:BackgroundTask] Ending task with identifier 1 and description: <_UIBackgroundTaskInfo: 0x600002d52000>: taskID = 1, taskName = Launch Background Task for Coalescing, creationTime = 176648 (elapsed = 0), _expireHandler: (null)
+2025-07-06 15:08:34.553 E  FloppyTurd[5019:49e9c2] [com.apple.app_launch_measurement:General] Failed to send CA Event for app launch measurements for ca_event_type: 0 event_name: com.apple.app_launch_measurement.FirstFramePresentationMetric
+2025-07-06 15:08:34.553 Df FloppyTurd[5019:49e921] [com.apple.UIKit:BackgroundTask] Decrementing reference count for assertion <BKSProcessAssertion: 0x600001b50410> (used by background task with identifier 1: <_UIBackgroundTaskInfo: 0x600002d52000>: taskID = 1, taskName = Launch Background Task for Coalescing, creationTime = 176648 (elapsed = 0))
+2025-07-06 15:08:34.553 Df FloppyTurd[5019:49e921] [com.apple.UIKit:BackgroundTask] Will invalidate assertion: <BKSProcessAssertion: 0x600001b50410> for task identifier: 1
+2025-07-06 15:08:34.555 Df FloppyTurd[5019:49e921] [com.apple.UIKit:EventBus] Event Timing Profile for Touch: not found, path="/System/Library/EventTimingProfiles/Sim.Touch.plist"
+2025-07-06 15:08:34.555 Df FloppyTurd[5019:49e921] [com.apple.UIKit:EventBus] Event Timing Profile for Pencil: not found, path="/System/Library/EventTimingProfiles/Sim.Pencil.plist"
+2025-07-06 15:08:34.556 Df FloppyTurd[5019:49e921] [com.apple.UIKit:UpdateScheduler] Target list changed: <CADisplay:LCD PurpleMain>
+2025-07-06 15:08:34.559 Df FloppyTurd[5019:49e921] [com.apple.UIKit:AppLifecycle] sceneOfRecord: sceneID: sceneID:com.floppyturd.game-default  persistentID: 179BBAD8-F58B-4316-97CD-97D274D28F04
+2025-07-06 15:08:34.560 A  FloppyTurd[5019:49e921] (CoreFoundation) Updating Key-Value Observers Of Preferences
+2025-07-06 15:08:34.563 Df FloppyTurd[5019:49e921] [com.apple.UIKit:EventDeferring] [0x600001351f10] Scene target of event deferring environments did update: scene: 0x7facee70ab70; current systemShellManagesKeyboardFocus: 1; systemShellManagesKeyboardFocusForScene: 1; eligibleForRecordRemoval: 1;
+2025-07-06 15:08:34.563 Df FloppyTurd[5019:49e921] [com.apple.UIKit:KeyWindow] Scene became target of keyboard event deferring environment: UIWindowScene: 0x7facee70ab70; scene identity: com.apple.frontboard.systemappservices/FBSceneManager:sceneID%3Acom.floppyturd.game-default
+2025-07-06 15:08:34.564 Df FloppyTurd[5019:49e921] [com.apple.UIKit:InterfaceStyle] Not push traits update to screen for new style 1, <UIWindowScene: 0x7facee70ab70> (179BBAD8-F58B-4316-97CD-97D274D28F04)
+2025-07-06 15:08:34.565 Df FloppyTurd[5019:49e921] [com.apple.UIKit:AppLifecycle] sceneOfRecord: sceneID: sceneID:com.floppyturd.game-default  persistentID: 179BBAD8-F58B-4316-97CD-97D274D28F04
+2025-07-06 15:08:34.565 Df FloppyTurd[5019:49e921] [com.apple.UIKit:Application] Deactivation reason removed: 12; deactivation reasons: 4128 -> 32; animating application lifecycle event: 1
+2025-07-06 15:08:34.566 Df FloppyTurd[5019:49e921] [com.apple.UIKit:Application] Deactivation reason removed: 5; deactivation reasons: 32 -> 0; animating application lifecycle event: 0
+2025-07-06 15:08:34.567 Df FloppyTurd[5019:49e921] [com.apple.UIKit:AppLifecycle] sceneOfRecord: sceneID: sceneID:com.floppyturd.game-default  persistentID: 179BBAD8-F58B-4316-97CD-97D274D28F04
+2025-07-06 15:08:34.568 Df FloppyTurd[5019:49e921] [com.apple.UIKit:AppLifecycle] sceneOfRecord: sceneID: sceneID:com.floppyturd.game-default  persistentID: 179BBAD8-F58B-4316-97CD-97D274D28F04
+2025-07-06 15:08:34.569 Df FloppyTurd[5019:49e921] [com.apple.UIKit:KeyboardSceneDelegate] forceReloadInputViews
+2025-07-06 15:08:34.569 Df FloppyTurd[5019:49e921] [com.apple.UIKit:KeyboardSceneDelegate] Reloading input views for: <(null): 0x0; > force: 1
+2025-07-06 15:08:34.570 Df FloppyTurd[5019:49e921] [com.apple.UIKit:KeyboardArbiterClientLog] isWritingToolsHandlingKeyboardTracking:Y (WT ready:Y, Arbiter ready:Y)
+2025-07-06 15:08:34.573 Df FloppyTurd[5019:49e9bb] [com.apple.extensionkit:NSExtension] Class EXGetExtensionClass(void) returning EXConcreteExtension
+2025-07-06 15:08:34.573 Df FloppyTurd[5019:49e9bb] [com.apple.xpc:connection] [0x60000075c4b0] activating connection: mach=true listener=false peer=false name=com.apple.pluginkit.pkd
+2025-07-06 15:08:34.574 A  FloppyTurd[5019:49e9bb] (PlugInKit) continuous-discovery
+2025-07-06 15:08:34.574 Df FloppyTurd[5019:49e9bb] [com.apple.PlugInKit:discovery] <PKDiscoveryDriver:0x600001c443c0> created discovery driver
+2025-07-06 15:08:34.575 Df FloppyTurd[5019:49e9bb] [com.apple.PlugInKit:discovery] [d 214C968E-6694-4DC1-A0A4-1174D1BB109D] <PKHost:0x600002d62780> Beginning discovery for flags: 0, point: com.apple.AudioUnit
+2025-07-06 15:08:34.577 Df FloppyTurd[5019:49e9bf] [com.apple.PlugInKit:discovery] [d 214C968E-6694-4DC1-A0A4-1174D1BB109D] <PKHost:0x600002d62780> Completed discovery. Final # of matches: 0
+2025-07-06 15:08:34.577 Df FloppyTurd[5019:49e9b9] [com.apple.PlugInKit:discovery] <PKDiscoveryDriver:0x600001c443c0> delivering update to host (0 plugins)
+2025-07-06 15:08:34.577 A  FloppyTurd[5019:49e9b9] (ExtensionFoundation) discovering extensions
+2025-07-06 15:08:34.578 Df FloppyTurd[5019:49e9b9] [com.apple.extensionkit:NSExtension] discovered extensions: attributes {
+    NSExtensionPointName = "com.apple.AudioUnit";
+}, extensionSet {(
+)}
+2025-07-06 15:08:34.578 A  FloppyTurd[5019:49e9bb] (PlugInKit) continuous-discovery
+2025-07-06 15:08:34.578 Df FloppyTurd[5019:49e9bb] [com.apple.PlugInKit:discovery] <PKDiscoveryDriver:0x600001c451a0> created discovery driver
+2025-07-06 15:08:34.578 Df FloppyTurd[5019:49e9bb] [com.apple.PlugInKit:discovery] [d AE895A99-4CA6-47A8-85C9-01638A8A9586] <PKHost:0x600002d62780> Beginning discovery for flags: 0, point: com.apple.AudioUnit-UI
+2025-07-06 15:08:34.578 Df FloppyTurd[5019:49e9bf] [com.apple.PlugInKit:discovery] <PKDiscoveryDriver:0x600001c443c0> installing watchers for continuous discovery
+2025-07-06 15:08:34.579 Df FloppyTurd[5019:49e9bf] [com.apple.launchservices:appinstallation] registering for distributed notification com.apple.LaunchServices.pluginsregistered in this process
+2025-07-06 15:08:34.579 Df FloppyTurd[5019:49e9bf] [com.apple.xpc:connection] [0x600000754000] activating connection: mach=true listener=false peer=false name=com.apple.distributed_notifications@1v3
+2025-07-06 15:08:34.579 Df FloppyTurd[5019:49e9b9] [com.apple.PlugInKit:discovery] [d AE895A99-4CA6-47A8-85C9-01638A8A9586] <PKHost:0x600002d62780> Completed discovery. Final # of matches: 0
+2025-07-06 15:08:34.579 Df FloppyTurd[5019:49e9c3] [com.apple.PlugInKit:discovery] <PKDiscoveryDriver:0x600001c451a0> delivering update to host (0 plugins)
+2025-07-06 15:08:34.579 A  FloppyTurd[5019:49e9c3] (ExtensionFoundation) discovering extensions
+2025-07-06 15:08:34.579 Df FloppyTurd[5019:49e9c3] [com.apple.extensionkit:NSExtension] discovered extensions: attributes {
+    NSExtensionPointName = "com.apple.AudioUnit-UI";
+}, extensionSet {(
+)}
+2025-07-06 15:08:34.579 Df FloppyTurd[5019:49e9c3] [com.apple.PlugInKit:discovery] <PKDiscoveryDriver:0x600001c451a0> installing watchers for continuous discovery
+2025-07-06 15:08:34.579 A  FloppyTurd[5019:49e9bb] (PlugInKit) continuous-discovery
+2025-07-06 15:08:34.579 Df FloppyTurd[5019:49e9bb] [com.apple.PlugInKit:discovery] <PKDiscoveryDriver:0x600001c54660> created discovery driver
+2025-07-06 15:08:34.579 Df FloppyTurd[5019:49e9bf] [com.apple.launchservices:appinstallation] registering for distributed notification com.apple.LaunchServices.pluginsunregistered in this process
+2025-07-06 15:08:34.579 Df FloppyTurd[5019:49e9bb] [com.apple.PlugInKit:discovery] [d 257F61AA-AC6F-4BF6-84D0-7C3F1AC78285] <PKHost:0x600002d62780> Beginning discovery for flags: 0, point: com.apple.AudioUnit-Speech
+2025-07-06 15:08:34.582 Df FloppyTurd[5019:49e9b9] [com.apple.PlugInKit:discovery] [d 257F61AA-AC6F-4BF6-84D0-7C3F1AC78285] <PKHost:0x600002d62780> Completed discovery. Final # of matches: 4
+2025-07-06 15:08:34.582 Df FloppyTurd[5019:49e9bc] [com.apple.PlugInKit:discovery] <PKDiscoveryDriver:0x600001c54660> delivering update to host (4 plugins)
+2025-07-06 15:08:34.582 A  FloppyTurd[5019:49e9bc] (ExtensionFoundation) discovering extensions
+2025-07-06 15:08:34.607 A  FloppyTurd[5019:49e9b9] (RunningBoardServices) didChangeInheritances
+2025-07-06 15:08:34.610 Df FloppyTurd[5019:49e921] [com.apple.network:activity] <nw_activity 50:1 [E9561465-DD54-4407-91DA-EEEE398641CD] (global parent) (reporting strategy default) complete (reason success)> complete with reason 2 (success), duration 244537891ms
+2025-07-06 15:08:34.611 Df FloppyTurd[5019:49e9bf] [com.apple.launchservices:progress] Establishing xpc connection to lsd
+2025-07-06 15:08:34.611 Df FloppyTurd[5019:49e921] [com.apple.network:activity] <nw_activity 50:2 [721A5FA1-5DFB-4FAD-BC92-ED9A436B4BD2] (reporting strategy default) complete (reason success)> complete with reason 2 (success), duration 244537892ms
+2025-07-06 15:08:34.611 Df FloppyTurd[5019:49e921] [com.apple.network:activity] Unsetting the global parent activity <nw_activity 50:1 [E9561465-DD54-4407-91DA-EEEE398641CD] (global parent) (reporting strategy default) complete (reason success)>
+2025-07-06 15:08:34.611 Df FloppyTurd[5019:49e921] [com.apple.network:activity] Unset the global parent activity
+2025-07-06 15:08:34.611 Df FloppyTurd[5019:49e9bf] [com.apple.xpc:connection] [0x7facef314f80] activating connection: mach=true listener=false peer=false name=com.apple.lsd.xpc
+2025-07-06 15:08:34.611 E  FloppyTurd[5019:49e9ba] [com.apple.app_launch_measurement:General] Failed to send CA Event for app launch measurements for ca_event_type: 1 event_name: com.apple.app_launch_measurement.ExtendedLaunchMetrics
+2025-07-06 15:08:34.612 Df FloppyTurd[5019:49e9ba] [com.apple.launchservices:progress] Received LSWorkspaceObserverPing, xpc connection established
+2025-07-06 15:08:34.613 Df FloppyTurd[5019:49e9bc] [com.apple.xpc:connection] [0x7facee710da0] activating connection: mach=true listener=false peer=false name=com.apple.lsd.mapdb
+2025-07-06 15:08:34.624 Df FloppyTurd[5019:49e9bc] [com.apple.extensionkit:NSExtension] discovered extensions: attributes {
+    NSExtensionPointName = "com.apple.AudioUnit-Speech";
+}, extensionSet {(
+    <EXConcreteExtension: 0x600000d5c600> {id = com.apple.ax.MauiTTSSupport.MauiAUSP},
+    <EXConcreteExtension: 0x600000d54180> {id = com.apple.texttospeech.SiriAUSP},
+    <EXConcreteExtension: 0x600000d59200> {id = com.apple.speech.MacinTalkFramework.MacinTalkAUSP},
+    <EXConcreteExtension: 0x600000d58fc0> {id = com.apple.ax.KonaTTSSupport.KonaSynthesizer}
+)}
+2025-07-06 15:08:34.625 Df FloppyTurd[5019:49e9bf] [com.apple.PlugInKit:discovery] <PKDiscoveryDriver:0x600001c54660> installing watchers for continuous discovery
+2025-07-06 15:08:35.345 A  FloppyTurd[5019:49e9bf] (RunningBoardServices) didChangeInheritances
+2025-07-06 15:08:35.454 A  FloppyTurd[5019:49e9bb] (RunningBoardServices) didChangeInheritances
+Child process terminated with signal 15: Terminated

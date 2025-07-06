@@ -15,7 +15,7 @@ Loading::Loading(Game* game)
 #endif
 	) {
 		TraceLog(LOG_WARNING, "Failed to load PoopHat texture from cache, using fallback path");
-		poophat = TextureCache::Get("resources/hats/poophat.png"); // Fallback path
+		poophat = TextureCache::Get("hats/poophat.png"); // Fallback path
 	}
 }
 
@@ -38,13 +38,13 @@ void Loading::Update()
 		game->mainMenu = new MainMenu(game);
 	}
 	if (game->mainMenu && !game->mainMenu->GetAudioClip()) {
-		game->mainMenu->PlayMusic(new AudioClip("resources/mainmenu/FloppyTurdMenu.mp3"));
+		game->mainMenu->PlayMusic(new AudioClip("mainmenu/FloppyTurdMenu.mp3"));
 	}
 }
 
 void Loading::Draw()
 {
-	ClearBackground(BLACK);
+	ClearBackground(BLUE);
 	// Draw rotating poophat in bottom right corner, doubled to 32x32
 	float x = 320.0f - 32.0f - 10.0f; // 10px margin from right edge, adjusted for 32x32
 	float y = 180.0f - 32.0f - 10.0f; // 10px margin from bottom edge, adjusted for 32x32

@@ -13,23 +13,23 @@ SnowmanEnemy::SnowmanEnemy(Vector2 spawnPos, SnowmanType type)
 
     switch (type) {
     case SnowmanType::sRed:
-        idleSprite = new Sprite("resources/enemies/SnowManIdle.png", 1, 0.1f, 1.0f, pos, AtlasCategory::ENEMY_SPRITES);
-        throwSprite = new Sprite("resources/enemies/SnowManThrow.png", 6, 0.12f, 1.0f, pos, AtlasCategory::ENEMY_SPRITES);
+        idleSprite = new Sprite("enemies/SnowManIdle.png", 1, 0.1f, 1.0f, pos, AtlasCategory::ENEMY_SPRITES);
+        throwSprite = new Sprite("enemies/SnowManThrow.png", 6, 0.12f, 1.0f, pos, AtlasCategory::ENEMY_SPRITES);
         currentSprite = idleSprite;
         break;
     case SnowmanType::sGREEN:
-        idleSprite = new Sprite("resources/enemies/SnowManGreen.png", 1, 0.1f, 1.0f, pos, AtlasCategory::ENEMY_SPRITES);
-        throwSprite = new Sprite("resources/enemies/SnowManThrow.png", 6, 0.12f, 1.0f, pos, AtlasCategory::ENEMY_SPRITES);
+        idleSprite = new Sprite("enemies/SnowManGreen.png", 1, 0.1f, 1.0f, pos, AtlasCategory::ENEMY_SPRITES);
+        throwSprite = new Sprite("enemies/SnowManThrow.png", 6, 0.12f, 1.0f, pos, AtlasCategory::ENEMY_SPRITES);
         currentSprite = idleSprite;
         break;
     case SnowmanType::sBLUE:
-        idleSprite = new Sprite("resources/enemies/SnowManChill.png", 1, 0.1f, 1.0f, pos, AtlasCategory::ENEMY_SPRITES);
-        throwSprite = new Sprite("resources/enemies/SnowManThrow.png", 6, 0.12f, 1.0f, pos, AtlasCategory::ENEMY_SPRITES);
+        idleSprite = new Sprite("enemies/SnowManChill.png", 1, 0.1f, 1.0f, pos, AtlasCategory::ENEMY_SPRITES);
+        throwSprite = new Sprite("enemies/SnowManThrow.png", 6, 0.12f, 1.0f, pos, AtlasCategory::ENEMY_SPRITES);
         currentSprite = idleSprite;
         break;
     case SnowmanType::sCHAD:
-        idleSprite = new Sprite("resources/enemies/SnowManChad.png", 1, 0.1f, 1.0f, pos, AtlasCategory::ENEMY_SPRITES);
-        throwSprite = new Sprite("resources/enemies/SnowManThrow.png", 6, 0.12f, 1.0f, pos, AtlasCategory::ENEMY_SPRITES);
+        idleSprite = new Sprite("enemies/SnowManChad.png", 1, 0.1f, 1.0f, pos, AtlasCategory::ENEMY_SPRITES);
+        throwSprite = new Sprite("enemies/SnowManThrow.png", 6, 0.12f, 1.0f, pos, AtlasCategory::ENEMY_SPRITES);
         currentSprite = idleSprite;
         break;
     }
