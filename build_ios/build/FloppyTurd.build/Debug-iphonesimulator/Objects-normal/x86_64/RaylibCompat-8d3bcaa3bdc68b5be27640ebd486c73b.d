@@ -52,5 +52,4 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/FloppyTurd/Credits.h \
   /Users/aimac/Development/FloppyTurd/FloppyTurd/Loading.h \
   /Users/aimac/Development/FloppyTurd/FloppyTurd/GameState.h \
-  /Users/aimac/Development/FloppyTurd/FloppyTurd/AudioStateManager.h \
-  /Users/aimac/Development/FloppyTurd/FloppyTurd/RaylibCompat_iOS.h
+  /Users/aimac/Development/FloppyTurd/FloppyTurd/AudioStateManager.h

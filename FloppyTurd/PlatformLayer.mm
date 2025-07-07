@@ -541,16 +541,31 @@ void PlatformLayer::UnloadTexture(void* texture) {
 }
 
 void* PlatformLayer::LoadRenderTexture(int width, int height) {
+    NSLog(@"[DEBUG] LoadRenderTexture: Starting with width=%d, height=%d", width, height);
+    NSLog(@"[DEBUG] LoadRenderTexture: Metal device: %p", m_MetalDevice);
+    
+    if (!m_MetalDevice) {
+        NSLog(@"[ERROR] LoadRenderTexture: No Metal device available!");
+        return nullptr;
+    }
+    
     MTLTextureDescriptor* textureDescriptor = [[MTLTextureDescriptor alloc] init];
     textureDescriptor.pixelFormat = MTLPixelFormatRGBA8Unorm;
     textureDescriptor.width = width;
     textureDescriptor.height = height;
     textureDescriptor.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
+    
+    NSLog(@"[DEBUG] LoadRenderTexture: Creating Metal texture with descriptor...");
     id<MTLTexture> texture = [(__bridge id<MTLDevice>)m_MetalDevice newTextureWithDescriptor:textureDescriptor];
+    
     if (!texture) {
         NSLog(@"[ERROR] LoadRenderTexture: Failed to create Metal render texture!");
         return nullptr;
     }
+    
+    NSLog(@"[DEBUG] LoadRenderTexture: Successfully created Metal texture: %p (w=%lu, h=%lu)", 
+          texture, (unsigned long)texture.width, (unsigned long)texture.height);
+    
     return (__bridge_retained void*)texture;
 }
 

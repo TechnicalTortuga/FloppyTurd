@@ -192,18 +192,8 @@ bool Game::Initialize()
             ResourceManager::GetInstance().Initialize(ResourceQuality::HIGH);
             GameLog::Log("[INIT] Step 1: Initialized ResourceManager - SUCCESS");
             
-            // Initialize AudioStateManager after ResourceManager
-            GameLog::Log("[INIT] Step 1.5: Initializing AudioStateManager...");
-            try {
-                AudioStateManager::GetInstance().Initialize();
-                GameLog::Log("[INIT] Step 1.5: Initialized AudioStateManager - SUCCESS");
-            } catch (const std::exception& e) {
-                GameLog::Log("[ERROR] Step 1.5: Exception initializing AudioStateManager: %s", e.what());
-                // Don't throw here, continue with initialization
-            } catch (...) {
-                GameLog::Log("[ERROR] Step 1.5: Unknown exception initializing AudioStateManager");
-                // Don't throw here, continue with initialization
-            }
+            // AudioStateManager will be initialized later in Step 11
+            GameLog::Log("[INIT] Step 1.5: AudioStateManager initialization deferred to Step 11");
             
             // Test that ResourceManager is working by trying to load a simple texture
             GameLog::Log("[INIT] Step 1.5: Testing ResourceManager with a simple texture...");
@@ -241,12 +231,12 @@ bool Game::Initialize()
             renderTarget = LoadRenderTexture(320, 180);
             
 #if defined(__APPLE__) && defined(TARGET_OS_IPHONE)
-            // On iOS, check if the render texture pointer is valid instead of just the ID
-            if (renderTarget.id == 0 || renderTarget.texture.texture == nullptr) {
+            // On iOS, check if the render texture pointer is valid (ID is always 0 for Metal)
+            if (renderTarget.texture.texture == nullptr) {
                 GameLog::Log("[ERROR] Step 2: Failed to create render target on iOS");
                 throw std::runtime_error("Failed to create render target on iOS");
             }
-            GameLog::Log("[INIT] Step 2: Created iOS render target 320x180 with ID %u - SUCCESS", renderTarget.id);
+            GameLog::Log("[INIT] Step 2: Created iOS render target 320x180 with texture %p - SUCCESS", renderTarget.texture.texture);
 #else
             if (renderTarget.id == 0) {
                 GameLog::Log("[ERROR] Step 2: Failed to create render target");
@@ -1072,7 +1062,13 @@ void Game::OnPause()
 
 void Game::OnResume()
 {
-	// Resume music when app returns to foreground
+	// Reactivate audio session and resume music when app returns to foreground
+	GameLog::Log("[GAME] OnResume: Reactivating audio session and resuming music");
+	
+	// Reactivate the audio session first
+	InitAudioDevice();
+	
+	// Resume music after audio session is active
 	AudioStateManager::GetInstance().ResumeMusic();
 	
 	// TODO: Add any other resume logic

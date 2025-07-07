@@ -23,7 +23,7 @@ Credits::Credits(Game* game)
     if (music)
     {
         music->Play();
-        totalScrollTime = GetMusicTimeLength(music->music);
+        totalScrollTime = GetMusicDuration(music->music);
         if (totalScrollTime <= 0.0f)
         {
             TraceLog(LOG_WARNING, "Failed to get music length, falling back to 10 seconds");

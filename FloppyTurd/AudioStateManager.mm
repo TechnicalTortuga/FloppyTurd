@@ -19,15 +19,11 @@ void AudioStateManager::Initialize() {
     
     InitializeTrackMapping();
     
-    // Start with main menu music
-    currentState = AUDIO_MAIN_MENU;
-    targetState = AUDIO_MAIN_MENU;
+    // Don't start music immediately - wait for state transition
+    currentState = AUDIO_LOADING; // Start in loading state (no music)
+    targetState = AUDIO_LOADING;
     
-    // Load and play main menu music
-    auto trackInfo = GetTrackInfoForAudioState(AUDIO_MAIN_MENU);
-    LoadAndPlayTrack(trackInfo);
-    
-    GameLog::Log("[AUDIO] AudioStateManager::Initialize() - Initialization complete");
+    GameLog::Log("[AUDIO] AudioStateManager::Initialize() - Initialization complete (no music started)");
 }
 
 void AudioStateManager::InitializeTrackMapping() {
@@ -43,11 +39,11 @@ void AudioStateManager::InitializeTrackMapping() {
     };
     
     trackMapping[AUDIO_LOADING] = {
-        "main_menu_music",  // Use main menu music for loading
-        true,   // loop
-        0.7f,   // volume
-        0.5f,   // fade in time
-        0.5f    // fade out time
+        "",  // No music for loading state
+        false,   // no loop
+        0.0f,   // no volume
+        0.0f,   // no fade in time
+        0.0f    // no fade out time
     };
     
     // Level music - these will be overridden by difficulty-based selection
@@ -321,6 +317,16 @@ void AudioStateManager::Update(float deltaTime) {
 void AudioStateManager::LoadAndPlayTrack(const AudioTrackInfo& trackInfo) {
     GameLog::Log("[AUDIO] Loading track: %s", trackInfo.resourcePath.c_str());
     
+    // Handle empty track path (for loading state)
+    if (trackInfo.resourcePath.empty()) {
+        GameLog::Log("[AUDIO] No music for this state (loading)");
+        if (currentMusic) {
+            currentMusic->Stop();
+            currentMusic.reset();
+        }
+        return;
+    }
+    
     try {
         // For level states, use difficulty-based track selection
         std::string finalTrackPath = trackInfo.resourcePath;
@@ -414,8 +420,34 @@ void AudioStateManager::ResumeMusic() {
     GameLog::Log("[AUDIO] Resuming music");
     
     if (currentMusic && isPaused) {
+        // Try to resume the music
         currentMusic->Resume();
-        isPaused = false;
+        
+        // Check if the music actually started playing
+        if (currentMusic->IsPlaying()) {
+            isPaused = false;
+            GameLog::Log("[AUDIO] Music resumed successfully");
+        } else {
+            GameLog::Log("[AUDIO] WARNING: Music resume failed, attempting to restart");
+            // If resume failed, try to restart the music
+            currentMusic->Stop();
+            currentMusic->Play();
+            if (currentMusic->IsPlaying()) {
+                isPaused = false;
+                GameLog::Log("[AUDIO] Music restarted successfully");
+            } else {
+                GameLog::Log("[AUDIO] ERROR: Failed to restart music after resume failure");
+            }
+        }
+    } else if (currentMusic && !isPaused && !currentMusic->IsPlaying()) {
+        // Music is not paused but not playing - this can happen after app lifecycle events
+        GameLog::Log("[AUDIO] Music not playing but not paused, attempting to restart");
+        currentMusic->Play();
+        if (currentMusic->IsPlaying()) {
+            GameLog::Log("[AUDIO] Music restarted successfully");
+        } else {
+            GameLog::Log("[AUDIO] ERROR: Failed to restart music");
+        }
     }
 }
 

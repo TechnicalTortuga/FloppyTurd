@@ -1432,6 +1432,6 @@ void Playing::SetCurrentLevel(int levelIndex) {
     SCORE = 0;
     player->ResetSessionCoins();
 
-    // Notify AudioStateManager of level change
-    AudioStateManager::GetInstance().TransitionToLevel(levelIndex+1, (AudioStateManager::Difficulty)difficultyIndex, false, 0.5f);
+    // Audio transitions are handled by AudioStateManager based on game state changes
+    // No need to call TransitionToLevel here during initialization
 }

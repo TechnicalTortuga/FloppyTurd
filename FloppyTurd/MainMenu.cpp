@@ -126,28 +126,8 @@ MainMenu::MainMenu(Game* game)
 			}
 		}
 
-		GameLog::Log("[MAINMENU] Loading main menu music from ResourceManager");
-		try {
-			// Use ResourceManager to get the music
-			Music musicResource = ResourceManager::GetInstance().GetMusic("main_menu_music");
-			if (musicResource.player) {
-				// Create AudioClip wrapper around the loaded music
-				currentMusic = new AudioClip(musicResource);
-				// Set looping for main menu music
-				currentMusic->SetLooping(true);
-				AudioStateManager::GetInstance().TransitionToState(AudioStateManager::AUDIO_MAIN_MENU, false, 0.5f);
-				GameLog::Log("[MAINMENU] Main menu music loaded successfully and set to loop");
-			} else {
-				GameLog::Log("[MAINMENU] Failed to load main menu music from ResourceManager");
-				currentMusic = nullptr;
-			}
-		} catch (const std::exception& e) {
-			GameLog::Log("[MAINMENU] Exception loading main menu music: %s", e.what());
-			currentMusic = nullptr;
-		} catch (...) {
-			GameLog::Log("[MAINMENU] Unknown exception loading main menu music");
-			currentMusic = nullptr;
-		}
+		GameLog::Log("[MAINMENU] Main menu music will be handled by AudioStateManager during state transition");
+		currentMusic = nullptr; // AudioStateManager will handle music
 
 		if (game && game->playing) {
 			GameLog::Log("[MAINMENU] Setting up level unlocks");
@@ -205,7 +185,7 @@ MainMenu::~MainMenu()
 	for (int i = 0; i < 11; ++i)
 		UnloadSound(fartSoundsLoaded[i]);
 
-	delete currentMusic;
+	// currentMusic is now managed by AudioStateManager, no need to delete
 }
 
 void MainMenu::PlayRandomFartSound()
@@ -216,11 +196,8 @@ void MainMenu::PlayRandomFartSound()
 
 void MainMenu::Update()
 {
-	if (currentMusic && !currentMusic->IsPlaying())
-		AudioStateManager::GetInstance().TransitionToState(AudioStateManager::AUDIO_MAIN_MENU, false, 0.5f);
-
-	if (currentMusic)
-		AudioStateManager::GetInstance().Update(GetFrameTime());
+	// AudioStateManager handles all music updates
+	AudioStateManager::GetInstance().Update(GetFrameTime());
 
 	if (currentMenu == MAIN_MENU)
 	{
@@ -679,12 +656,13 @@ void MainMenu::DrawMobileUI()
 {
 	UIManager& ui = UIManager::GetInstance();
 
-	// Draw background to fill the screen
-	float screenWidth = ui.GetSafeArea().width + ui.GetSafeArea().x * 2;
-	float screenHeight = ui.GetSafeArea().height + ui.GetSafeArea().y * 2;
+	// Draw background to fill the safe area only (not including offsets)
+	float screenWidth = ui.GetSafeArea().width;
+	float screenHeight = ui.GetSafeArea().height;
+	GameLog::Log("[DEBUG] SafeArea: x=%.1f y=%.1f w=%.1f h=%.1f", ui.GetSafeArea().x, ui.GetSafeArea().y, ui.GetSafeArea().width, ui.GetSafeArea().height);
 	DrawTexturePro(_MenuBackground,
 		Rectangle{ 0, 0, (float)_MenuBackground.width, (float)_MenuBackground.height },
-		Rectangle{ 0, 0, screenWidth, screenHeight },
+		Rectangle{ ui.GetSafeArea().x, ui.GetSafeArea().y, screenWidth, screenHeight },
 		Vector2{ 0,0 }, 0.0f, WHITE);
 
 	// Draw logo at the top-center of the safe area
@@ -692,14 +670,16 @@ void MainMenu::DrawMobileUI()
 	float logoScale = ui.GetScaleFactor() * 1.2f;
 	float logoWidth = _FloppyLogo.width * logoScale;
 	float logoHeight = _FloppyLogo.height * logoScale;
+	GameLog::Log("[DEBUG] Logo: pos=(%.1f,%.1f) size=(%.1f,%.1f)", logoPos.x, logoPos.y, logoWidth, logoHeight);
 	DrawTexturePro(_FloppyLogo,
 		Rectangle{ 0, 0, (float)_FloppyLogo.width, (float)_FloppyLogo.height },
 		Rectangle{ logoPos.x - logoWidth / 2, logoPos.y, logoWidth, logoHeight },
 		Vector2{ 0,0 }, 0.0f, WHITE);
 
 	// Draw buttons
-	float buttonWidth = screenWidth * 0.8f; // 80% of screen width for better mobile fit
-	float buttonHeight = 60 * ui.GetScaleFactor();
+	float buttonWidth = screenWidth * 0.8f; // 80% of safe area width
+	float minButtonHeight = 44.0f * ui.GetScaleFactor(); // Apple guideline minimum
+	float buttonHeight = fmaxf(60 * ui.GetScaleFactor(), minButtonHeight);
 	float buttonSpacing = 20 * ui.GetScaleFactor();
 
 	Vector2 playPos = ui.GetPosition(UIAnchor::CENTER, {0, -buttonHeight});
@@ -707,15 +687,10 @@ void MainMenu::DrawMobileUI()
 	Vector2 creditsPos = ui.GetPosition(UIAnchor::CENTER, {0, buttonHeight + buttonSpacing * 2});
 	Vector2 quitPos = ui.GetPosition(UIAnchor::BOTTOM_CENTER, {0, -buttonHeight});
 
-	// Debug logging to see what coordinates UIManager is returning
-	GameLog::Log("[UIMANAGER] Screen: %.0fx%.0f, SafeArea: %.0fx%.0f at (%.0f,%.0f)", 
-		ui.GetSafeArea().width + ui.GetSafeArea().x * 2, 
-		ui.GetSafeArea().height + ui.GetSafeArea().y * 2,
-		ui.GetSafeArea().width, ui.GetSafeArea().height, ui.GetSafeArea().x, ui.GetSafeArea().y);
-	GameLog::Log("[UIMANAGER] PLAY button: (%.1f,%.1f), size: %.1fx%.1f", 
-		playPos.x - buttonWidth / 2, playPos.y, buttonWidth, buttonHeight);
-	GameLog::Log("[UIMANAGER] OPTIONS button: (%.1f,%.1f), size: %.1fx%.1f", 
-		optionsPos.x - buttonWidth / 2, optionsPos.y, buttonWidth, buttonHeight);
+	GameLog::Log("[DEBUG] PLAY button: (%.1f,%.1f), size: %.1fx%.1f", playPos.x - buttonWidth / 2, playPos.y, buttonWidth, buttonHeight);
+	GameLog::Log("[DEBUG] OPTIONS button: (%.1f,%.1f), size: %.1fx%.1f", optionsPos.x - buttonWidth / 2, optionsPos.y, buttonWidth, buttonHeight);
+	GameLog::Log("[DEBUG] CREDITS button: (%.1f,%.1f), size: %.1fx%.1f", creditsPos.x - buttonWidth / 2, creditsPos.y, buttonWidth, buttonHeight);
+	GameLog::Log("[DEBUG] QUIT button: (%.1f,%.1f), size: %.1fx%.1f", quitPos.x - buttonWidth / 2, quitPos.y, buttonWidth, buttonHeight);
 
 	if (AIGUI_Button("PLAY", playPos.x - buttonWidth / 2, playPos.y, buttonWidth, buttonHeight)) {
 		currentMenu = LEVEL_SELECT;
@@ -733,9 +708,8 @@ void MainMenu::DrawMobileUI()
 
 void MainMenu::ResetMusic()
 {
-	if (currentMusic) {
-		AudioStateManager::GetInstance().TransitionToState(AudioStateManager::AUDIO_MAIN_MENU, false, 0.5f);
-	}
+	// AudioStateManager handles music transitions
+	AudioStateManager::GetInstance().TransitionToState(AudioStateManager::AUDIO_MAIN_MENU, false, 0.5f);
 }
 
 void MainMenu::ToggleFartMusic()

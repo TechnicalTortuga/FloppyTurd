@@ -189,7 +189,9 @@ const float RAD2DEG = 180.0f / PI;
 #define KEY_Z               90
 
 // API export macro
-#if defined(_WIN32) && defined(BUILD_LIBTYPE_SHARED)
+#if defined(__APPLE__) && defined(TARGET_OS_IPHONE)
+    #define RLAPI                            // iOS doesn't use raylib, so no export needed
+#elif defined(_WIN32) && defined(BUILD_LIBTYPE_SHARED)
     #define RLAPI __declspec(dllexport)      // We are building the library as a Win32 shared library (.dll)
 #elif defined(_WIN32) && defined(USE_LIBTYPE_SHARED)
     #define RLAPI __declspec(dllimport)      // We are using the library as a Win32 shared library (.dll)
@@ -198,7 +200,8 @@ const float RAD2DEG = 180.0f / PI;
 #endif
 
 // Music functions
-RLAPI float GetMusicTimeLength(Music music);
+float GetMusicTimeLength(Music music);
+float GetMusicDuration(Music music);
 
 #define KEY_F1              290
 #define KEY_F2              291
@@ -248,7 +251,7 @@ void UnloadTexture(Texture2D texture);
 void DrawTexture(Texture2D texture, int posX, int posY, Color tint);
 void DrawTextureV(Texture2D texture, Vector2 position, Color tint);
 void DrawTextureEx(Texture2D texture, Vector2 position, float rotation, float scale, Color tint);
-void DrawTextureRec(Texture2D texture, Rectangle source, Rectangle dest, Color tint);
+void DrawTextureRec(Texture2D texture, Rectangle source, Vector2 position, Color tint);
 void DrawTexturePro(Texture2D texture, Rectangle source, Rectangle dest, Vector2 origin, float rotation, Color tint);
 void DrawCircle(int centerX, int centerY, float radius, Color color);
 void DrawRectangleLinesEx(Rectangle rec, float lineThick, Color color);

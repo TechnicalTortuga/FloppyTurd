@@ -187,30 +187,10 @@ void Loading::LoadResources() {
                 TraceLog(LOG_INFO, "LoadResources() - MainMenu already exists");
             }
             
-            // Load main menu music
-            if (game->mainMenu && !game->mainMenu->GetAudioClip()) {
-                try {
-                    TraceLog(LOG_INFO, "LoadResources() - Loading main menu music");
-                    // Use ResourceManager to get the correct path for the music
-                    std::string musicPath = ResourceManager::GetInstance().GetResourcePath("main_menu_music", ResourceType::MUSIC);
-                    if (!musicPath.empty()) {
-                        AudioStateManager::GetInstance().TransitionToState(AudioStateManager::AUDIO_MAIN_MENU, false, 0.5f);
-                        TraceLog(LOG_INFO, "LoadResources() - Main menu music loaded successfully from path: %s", musicPath.c_str());
-                    } else {
-                        TraceLog(LOG_ERROR, "LoadResources() - Failed to get music path from ResourceManager");
-                    }
-                    UpdateLoadingProgress(0.6f);
-                    TraceLog(LOG_INFO, "LoadResources() - Main menu music loading attempt completed, progress updated to 60%%");
-                } catch (const std::exception& e) {
-                    TraceLog(LOG_ERROR, "Exception loading main menu music: %s", e.what());
-                    // Continue without music - it's not critical for basic functionality
-                } catch (...) {
-                    TraceLog(LOG_ERROR, "Unknown exception loading main menu music");
-                    // Continue without music - it's not critical for basic functionality
-                }
-            } else {
-                TraceLog(LOG_INFO, "LoadResources() - Main menu music already loaded or MainMenu not available");
-            }
+            // Note: Music will be started when transitioning to main menu state
+            // No music should play during loading
+            UpdateLoadingProgress(0.6f);
+            TraceLog(LOG_INFO, "LoadResources() - Music loading skipped (will be handled by state transition)");
             
             // Load other critical resources here
             // ...

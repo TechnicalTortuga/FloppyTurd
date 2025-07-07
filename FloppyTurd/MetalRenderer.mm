@@ -1,10 +1,12 @@
 #import "MetalRenderer.h"
+#import "MetalTextRenderer.h"
 #import <simd/simd.h>
 
 #if defined(__APPLE__) && TARGET_OS_IOS
 
 // Global renderer instance
 MetalRenderer* g_metalRenderer = nullptr;
+extern MetalTextRenderer* g_textRenderer;
 
 MetalRenderer::MetalRenderer() 
     : m_view(nullptr)
@@ -43,6 +45,12 @@ bool MetalRenderer::Initialize(MTKView* view) {
         if (!m_device) {
             NSLog(@"Failed to get Metal device");
             return false;
+        }
+        
+        // Initialize global MetalTextRenderer if needed
+        if (!g_textRenderer) {
+            g_textRenderer = new MetalTextRenderer();
+            g_textRenderer->Initialize(m_device);
         }
         
         // Create command queue
@@ -1018,14 +1026,20 @@ void MetalRenderer::DrawTextureEx(id<MTLTexture> texture, Vector2 position, floa
 
 void MetalRenderer::DrawText(const char* text, float x, float y, float fontSize, Color color) {
     NSLog(@"[METAL DEBUG] DrawText called: text='%s', x=%.2f, y=%.2f, fontSize=%.2f, color=(%d,%d,%d,%d)", text, x, y, fontSize, color.r, color.g, color.b, color.a);
-    size_t verticesBefore = m_vertices.size();
-    size_t commandsBefore = m_drawCommands.size();
-    // This will be implemented by rendering text to a texture and then drawing that texture
-    // For now, we'll draw a placeholder rectangle
-    float width = strlen(text) * fontSize * 0.6f;
-    float height = fontSize;
-    DrawRectangle(x, y, width, height, {color.r, color.g, color.b, 64}); // Semi-transparent placeholder
-    NSLog(@"[METAL DEBUG] DrawText: vertices before=%zu, after=%zu; drawCommands before=%zu, after=%zu", verticesBefore, m_vertices.size(), commandsBefore, m_drawCommands.size());
+    if (!g_textRenderer) {
+        NSLog(@"[METAL ERROR] g_textRenderer is not initialized!");
+        return;
+    }
+    Font font = g_textRenderer->GetDefaultFont();
+    NSLog(@"[METAL DEBUG] Default font pointer: %p, ctFont: %p", &font, font.ctFont);
+    id<MTLTexture> textTexture = g_textRenderer->RenderTextToTexture(text, (int)fontSize, color);
+    if (!textTexture) {
+        NSLog(@"[METAL ERROR] Failed to render text to texture for '%s' (font.ctFont=%p)", text, font.ctFont);
+        return;
+    }
+    float width = textTexture.width;
+    float height = textTexture.height;
+    DrawTexture(textTexture, Rectangle{0, 0, (float)width, (float)height}, Rectangle{x, y, (float)width, (float)height}, Color{255,255,255,255});
 }
 
 void MetalRenderer::PushMatrix() {

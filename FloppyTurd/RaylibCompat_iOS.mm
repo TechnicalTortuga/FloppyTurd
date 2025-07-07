@@ -692,8 +692,6 @@ extern "C" CGRect GetScreenBounds() {
 
 } // extern "C"
 
-#endif // PLATFORM_IOS
-
 // struct Sound {
 //     void* player; // Actually an AVAudioPlayer*
 //     int length;
@@ -862,6 +860,15 @@ void UnloadMusicStream(Music music) {
 void PlayMusic(Music music) {
     if (music.player) {
         AVAudioPlayer* player = (__bridge AVAudioPlayer*)music.player;
+        
+        // Ensure audio session is active before trying to play
+        NSError* error = nil;
+        BOOL sessionActive = [[AVAudioSession sharedInstance] setActive:YES error:&error];
+        if (!sessionActive) {
+            GameLog::Log("[AUDIO] WARNING: Failed to activate audio session: %s", 
+                         error.localizedDescription.UTF8String);
+        }
+        
         BOOL success = [player play];
         if (success) {
             GameLog::Log("[AUDIO] PlayMusic: Started playing successfully");
@@ -893,8 +900,24 @@ void PauseMusic(Music music) {
 void ResumeMusic(Music music) {
     if (music.player) {
         AVAudioPlayer* player = (__bridge AVAudioPlayer*)music.player;
-        [player play];
-        GameLog::Log("[AUDIO] ResumeMusic");
+        
+        // Ensure audio session is active before trying to play
+        NSError* error = nil;
+        BOOL sessionActive = [[AVAudioSession sharedInstance] setActive:YES error:&error];
+        if (!sessionActive) {
+            GameLog::Log("[AUDIO] WARNING: Failed to activate audio session: %s", 
+                         error.localizedDescription.UTF8String);
+        }
+        
+        // Try to play the music
+        BOOL success = [player play];
+        if (success) {
+            GameLog::Log("[AUDIO] ResumeMusic: Successfully resumed");
+        } else {
+            GameLog::Log("[AUDIO] ResumeMusic: Failed to resume, player may need to be restarted");
+        }
+    } else {
+        GameLog::Log("[AUDIO] ResumeMusic: No valid player to resume");
     }
 }
 
@@ -947,3 +970,480 @@ void UpdateMusicStream(Music music) {
 bool IsMusicStreamPlaying(Music music) {
     return IsMusicPlaying(music);
 }
+
+bool IsMouseButtonReleased(int button)
+{
+    // On iOS, treat touch release as left mouse button release
+    if (button == 0) {
+        return PlatformLayer::GetInstance().IsPrimaryInputReleased();
+    }
+    return false;
+}
+
+// ========== ESSENTIAL MISSING RAYLIB FUNCTIONS ==========
+// Only add functions that are not already defined
+
+extern "C" {
+
+void DrawTextureRec(Texture2D texture, Rectangle source, Vector2 position, Color tint)
+{
+    // Convert Vector2 position to Rectangle dest using source dimensions
+    Rectangle dest = { position.x, position.y, source.width, source.height };
+    DrawTexturePro_iOS(texture, source, dest, { 0.0f, 0.0f }, 0.0f, tint);
+}
+
+// Essential drawing functions that are missing
+void ClearBackground(Color color) {
+    // Simple background clear - just draw a full-screen rectangle
+    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), color);
+}
+
+// Text drawing wrappers
+void DrawText(const char* text, int posX, int posY, int fontSize, Color color) {
+    DrawText_iOS(text, posX, posY, fontSize, (color.r << 24) | (color.g << 16) | (color.b << 8) | color.a);
+}
+
+void DrawTextEx(Font font, const char* text, Vector2 position, float fontSize, float spacing, Color tint) {
+    // For now, use the simple DrawText implementation
+    DrawText(text, (int)position.x, (int)position.y, (int)fontSize, tint);
+}
+
+// Texture drawing wrappers
+void DrawTexture(Texture2D texture, int posX, int posY, Color tint) {
+    DrawTexture_iOS(texture, posX, posY, tint);
+}
+
+void DrawTextureV(Texture2D texture, Vector2 position, Color tint) {
+    DrawTextureV_iOS(texture, position, tint);
+}
+
+void DrawTextureEx(Texture2D texture, Vector2 position, float rotation, float scale, Color tint) {
+    DrawTextureEx_iOS(texture, position, rotation, scale, tint);
+}
+
+void DrawTexturePro(Texture2D texture, Rectangle source, Rectangle dest, Vector2 origin, float rotation, Color tint) {
+    DrawTexturePro_iOS(texture, source, dest, origin, rotation, tint);
+}
+
+// Rectangle drawing wrappers
+void DrawRectangle(int posX, int posY, int width, int height, Color color) {
+    DrawRectangle_iOS(posX, posY, width, height, (color.r << 24) | (color.g << 16) | (color.b << 8) | color.a);
+}
+
+void DrawRectangleRec(Rectangle rec, Color color) {
+    DrawRectangle((int)rec.x, (int)rec.y, (int)rec.width, (int)rec.height, color);
+}
+
+void DrawRectangleRounded(Rectangle rec, float roundness, int segments, Color color) {
+    // For now, use regular rectangle drawing
+    DrawRectangleRec(rec, color);
+}
+
+// Line and circle drawing (simple implementations)
+void DrawLine(int startPosX, int startPosY, int endPosX, int endPosY, Color color) {
+    // Simple line drawing - not implemented for iOS yet
+}
+
+void DrawCircleV(Vector2 center, float radius, Color color) {
+    // Simple circle drawing - not implemented for iOS yet
+}
+
+// Essential Vector2 math functions
+Vector2 Vector2Add(Vector2 v1, Vector2 v2) {
+    return { v1.x + v2.x, v1.y + v2.y };
+}
+
+Vector2 Vector2Subtract(Vector2 v1, Vector2 v2) {
+    return { v1.x - v2.x, v1.y - v2.y };
+}
+
+Vector2 Vector2Scale(Vector2 v, float scale) {
+    return { v.x * scale, v.y * scale };
+}
+
+float Vector2Length(Vector2 v) {
+    return sqrtf(v.x * v.x + v.y * v.y);
+}
+
+float Vector2Distance(Vector2 v1, Vector2 v2) {
+    return Vector2Length(Vector2Subtract(v2, v1));
+}
+
+Vector2 Vector2Normalize(Vector2 v) {
+    float len = Vector2Length(v);
+    if (len < 0.0001f) return { 0.0f, 0.0f };
+    float inv = 1.0f / len;
+    return { v.x * inv, v.y * inv };
+}
+
+// Essential color functions
+Color ColorLerp(Color a, Color b, float t) {
+    Color result;
+    result.r = (unsigned char)(a.r + (b.r - a.r) * t);
+    result.g = (unsigned char)(a.g + (b.g - a.g) * t);
+    result.b = (unsigned char)(a.b + (b.b - a.b) * t);
+    result.a = (unsigned char)(a.a + (b.a - a.a) * t);
+    return result;
+}
+
+Color ColorAlpha(Color color, float alpha) {
+    color.a = (unsigned char)(alpha * 255.0f);
+    return color;
+}
+
+Color Fade(Color color, float alpha) {
+    return ColorAlpha(color, alpha);
+}
+
+// Essential input functions (only add if not already defined)
+bool IsMouseButtonDown(int button) {
+    if (button >= 0 && button < 3) {
+        return PlatformLayer::GetInstance().IsPrimaryInputDown();
+    }
+    return false;
+}
+
+bool IsKeyPressed(int key) {
+    // iOS doesn't have keyboard input in the same way
+    return false;
+}
+
+bool IsKeyDown(int key) {
+    // iOS doesn't have keyboard input in the same way
+    return false;
+}
+
+Vector2 GetMouseDelta(void) {
+    return { 0, 0 }; // Not implemented for iOS
+}
+
+// Essential screen functions
+int GetScreenWidth(void) {
+    return PlatformLayer::GetInstance().GetScreenWidth();
+}
+
+int GetScreenHeight(void) {
+    return PlatformLayer::GetInstance().GetScreenHeight();
+}
+
+// Essential window functions
+bool IsWindowFullscreen(void) {
+    return false; // iOS is always fullscreen
+}
+
+void ToggleFullscreen(void) {
+    // Not applicable on iOS
+}
+
+void SetWindowPosition(int x, int y) {
+    // Not applicable on iOS
+}
+
+void SetWindowSize(int width, int height) {
+    // Not applicable on iOS
+}
+
+// Essential monitor functions
+int GetCurrentMonitor(void) {
+    return 0; // iOS has only one screen
+}
+
+int GetMonitorWidth(int monitor) {
+    return GetScreenWidth();
+}
+
+int GetMonitorHeight(int monitor) {
+    return GetScreenHeight();
+}
+
+Vector2 GetMonitorPosition(int monitor) {
+    return { 0, 0 };
+}
+
+// Essential time functions
+double GetTime(void) {
+    // Simple time implementation
+    static double startTime = 0.0;
+    if (startTime == 0.0) {
+        startTime = [[NSDate date] timeIntervalSince1970];
+    }
+    return [[NSDate date] timeIntervalSince1970] - startTime;
+}
+
+float GetFrameTime(void) {
+    // Simple frame time implementation
+    static double lastTime = 0.0;
+    double currentTime = GetTime();
+    float frameTime = (float)(currentTime - lastTime);
+    lastTime = currentTime;
+    return frameTime > 0.0f ? frameTime : 0.016f; // Default to 60 FPS
+}
+
+// Essential font functions
+Font GetFontDefault(void) {
+    // Return a default font structure
+    Font font = { nullptr, 16 };
+    return font;
+}
+
+Font LoadFont(const char* fileName) {
+    // For now, return default font
+    return GetFontDefault();
+}
+
+void UnloadFont(Font font) {
+    // Not implemented for iOS
+}
+
+// Essential text measurement
+int MeasureText(const char* text, int fontSize) {
+    // Rough approximation
+    return strlen(text) * (fontSize / 2);
+}
+
+Vector2 MeasureTextEx(Font font, const char* text, float fontSize, float spacing) {
+    // Rough approximation
+    int width = MeasureText(text, (int)fontSize);
+    return { (float)width, fontSize };
+}
+
+// Essential texture settings
+void SetTextureFilter(Texture2D texture, int filter) {
+    // Not implemented for iOS
+}
+
+void SetTextureWrap(Texture2D texture, int wrap) {
+    // Not implemented for iOS
+}
+
+// Essential image functions
+Image GenImageColor(int width, int height, Color color) {
+    // Create a simple colored image
+    Image image = { 0 };
+    image.width = width;
+    image.height = height;
+    image.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
+    image.mipmaps = 1;
+    
+    // Allocate memory for the image data
+    int dataSize = width * height * 4; // 4 bytes per pixel (RGBA)
+    image.data = malloc(dataSize);
+    
+    if (image.data) {
+        unsigned char* pixels = (unsigned char*)image.data;
+        for (int i = 0; i < width * height; i++) {
+            pixels[i * 4 + 0] = color.r;
+            pixels[i * 4 + 1] = color.g;
+            pixels[i * 4 + 2] = color.b;
+            pixels[i * 4 + 3] = color.a;
+        }
+    }
+    
+    return image;
+}
+
+Texture2D LoadTextureFromImage(Image image) {
+    // Convert image to texture
+    id<MTLDevice> device = (__bridge id<MTLDevice>)PlatformLayer::GetInstance().GetMetalDevice();
+    if (!device || !image.data) {
+        return { 0, 0, 0, 0, 0 };
+    }
+    
+    MTLTextureDescriptor* textureDescriptor = [[MTLTextureDescriptor alloc] init];
+    textureDescriptor.pixelFormat = MTLPixelFormatRGBA8Unorm;
+    textureDescriptor.width = image.width;
+    textureDescriptor.height = image.height;
+    textureDescriptor.usage = MTLTextureUsageShaderRead;
+    
+    NSError *error = nil;
+    id<MTLTexture> metalTexture = [device newTextureWithDescriptor:textureDescriptor];
+    if (!metalTexture) {
+        return { 0, 0, 0, 0, 0 };
+    }
+    
+    MTLRegion region = {{0, 0, 0}, {(NSUInteger)image.width, (NSUInteger)image.height, 1}};
+    [metalTexture replaceRegion:region mipmapLevel:0 withBytes:image.data bytesPerRow:4 * image.width];
+    
+    Texture2D texture;
+    texture.id = 0;
+    texture.texture = (__bridge_retained void*)metalTexture;
+    texture.width = image.width;
+    texture.height = image.height;
+    texture.mipmaps = 1;
+    texture.format = image.format;
+    
+    return texture;
+}
+
+Image LoadImageFromTexture(Texture2D texture) {
+    // Not implemented for iOS
+    Image image = { 0 };
+    return image;
+}
+
+void UnloadImage(Image image) {
+    if (image.data) {
+        free(image.data);
+    }
+}
+
+void ImageResize(Image* image, int newWidth, int newHeight) {
+    // Not implemented for iOS
+}
+
+// Essential render texture functions
+RenderTexture2D LoadRenderTexture(int width, int height) {
+    RenderTexture2D renderTexture = { 0 };
+    void* metalRenderTexture = PlatformLayer::GetInstance().LoadRenderTexture(width, height);
+    if (metalRenderTexture) {
+        renderTexture.id = 0; // Not used for Metal
+        // Initialize the texture field directly without overwriting
+        renderTexture.texture.id = 0; // Not used for Metal
+        renderTexture.texture.texture = metalRenderTexture;
+        renderTexture.texture.width = width;
+        renderTexture.texture.height = height;
+        renderTexture.texture.mipmaps = 1;
+        renderTexture.texture.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
+        // Initialize depth texture (not used for Metal)
+        renderTexture.depth.id = 0;
+        renderTexture.depth.texture = nullptr;
+        renderTexture.depth.width = 0;
+        renderTexture.depth.height = 0;
+        renderTexture.depth.mipmaps = 1;
+        renderTexture.depth.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
+        NSLog(@"[DEBUG] LoadRenderTexture: Successfully created render texture with Metal texture: %p", metalRenderTexture);
+    } else {
+        NSLog(@"[ERROR] LoadRenderTexture: Failed to create Metal render texture!");
+    }
+    return renderTexture;
+}
+
+// Essential music functions
+float GetMusicTimeLength_iOS(Music music) {
+    // Get the actual music duration using AVFoundation
+    if (music.player) {
+        AVAudioPlayer* player = (__bridge AVAudioPlayer*)music.player;
+        if (player) {
+            return (float)player.duration;
+        }
+    }
+    // Fallback for credits - return 123 seconds (2:03)
+    return 123.0f;
+}
+
+// Essential utility functions
+const char* TextFormat(const char* text, ...) {
+    // Not implemented for iOS - return a simple copy
+    char* result = (char*)malloc(strlen(text) + 1);
+    if (result) {
+        strcpy(result, text);
+    }
+    return result;
+}
+
+void TraceLog(int logLevel, const char* text, ...) {
+    // Simple logging to NSLog
+    va_list args;
+    va_start(args, text);
+    NSString* format = [NSString stringWithUTF8String:text];
+    NSString* message = [[NSString alloc] initWithFormat:format arguments:args];
+    NSLog(@"[TRACE] %@", message);
+    va_end(args);
+}
+
+// Essential app lifecycle
+void SetConfigFlags(unsigned int flags) {
+    // Not implemented for iOS
+}
+
+void SetExitKey(int key) {
+    // Not implemented for iOS
+}
+
+// Essential collision detection functions
+bool CheckCollisionCircleRec(Vector2 center, float radius, Rectangle rec) {
+    // Check if circle overlaps with rectangle
+    // Find the closest point to the circle within the rectangle
+    float closestX = (center.x < rec.x) ? rec.x : (center.x > rec.x + rec.width) ? rec.x + rec.width : center.x;
+    float closestY = (center.y < rec.y) ? rec.y : (center.y > rec.y + rec.height) ? rec.y + rec.height : center.y;
+    
+    // Calculate distance between circle center and closest point
+    float distanceX = center.x - closestX;
+    float distanceY = center.y - closestY;
+    float distanceSquared = distanceX * distanceX + distanceY * distanceY;
+    
+    // If distance is less than radius, collision occurred
+    return distanceSquared <= (radius * radius);
+}
+
+bool CheckCollisionPointRec(Vector2 point, Rectangle rec) {
+    // Check if point is inside rectangle
+    return (point.x >= rec.x && point.x <= rec.x + rec.width &&
+            point.y >= rec.y && point.y <= rec.y + rec.height);
+}
+
+bool CheckCollisionRecs(Rectangle rec1, Rectangle rec2) {
+    // Check if two rectangles overlap
+    return !(rec1.x + rec1.width < rec2.x || 
+             rec2.x + rec2.width < rec1.x || 
+             rec1.y + rec1.height < rec2.y || 
+             rec2.y + rec2.height < rec1.y);
+}
+
+// Essential drawing function
+void BeginDrawing(void) {
+    BeginDrawing_iOS(nullptr);
+}
+
+} // extern "C"
+
+// C++ function for music duration (outside extern C block)
+float GetMusicDuration(Music music) {
+    return GetMusicTimeLength_iOS(music);
+}
+
+// iOS-specific input handling functions
+void UpdateTouchState(int touchId, float x, float y, bool pressed) {
+    // Forward touch state to PlatformLayer
+    PlatformLayer::GetInstance().UpdateTouchState();
+}
+
+void ClearAllTouchStates(void) {
+    // Simple implementation - just call UpdateTouchState to refresh
+    PlatformLayer::GetInstance().UpdateTouchState();
+}
+
+void UpdateSafeAreaInsets(float top, float right, float bottom, float left) {
+    // Simple implementation - safe area insets are handled by UIKit
+    // This function is called but we don't need to do anything special
+    (void)top; (void)right; (void)bottom; (void)left; // Suppress unused parameter warnings
+}
+
+// Window management functions
+void CloseWindow(void) {
+    // Not applicable on iOS - window is managed by UIKit
+}
+
+void EndDrawing(void) {
+    // Not applicable on iOS - drawing is managed by Metal
+}
+
+Vector2 GetMousePosition(void) {
+    // Return touch position converted to mouse position (use index 0 for primary touch)
+    return PlatformLayer::GetInstance().GetTouchPosition(0);
+}
+
+// Texture functions
+Texture2D LoadTexture(const char* fileName) {
+    return LoadTexture_iOS(fileName);
+}
+
+void UnloadTexture(Texture2D texture) {
+    UnloadTexture_iOS(texture);
+}
+
+void UnloadRenderTexture(RenderTexture2D target) {
+    UnloadRenderTexture_iOS(target);
+}
+
+#endif // PLATFORM_IOS

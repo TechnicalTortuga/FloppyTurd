@@ -1,8 +1,8 @@
 {
   "buildCommand" : {
-    "command" : "prepareForIndexing",
-    "enableIndexBuildArena" : false,
-    "targets" : null
+    "command" : "build",
+    "skipDependencies" : false,
+    "style" : "buildOnly"
   },
   "configuredTargets" : [
     {
@@ -10,7 +10,7 @@
     }
   ],
   "containerPath" : "/Users/aimac/Development/FloppyTurd/build_ios/FloppyTurd.xcodeproj",
-  "continueBuildingAfterErrors" : true,
+  "continueBuildingAfterErrors" : false,
   "dependencyScope" : "workspace",
   "enableIndexBuildArena" : false,
   "hideShellScriptEnvironment" : false,
@@ -39,14 +39,20 @@
     },
     "configurationName" : "Debug",
     "overrides" : {
+      "commandLine" : {
+        "table" : {
+
+        }
+      },
       "synthesized" : {
         "table" : {
+          "ACTION" : "build",
           "ASSETCATALOG_FILTER_FOR_DEVICE_MODEL" : "iPhone17,1",
           "ASSETCATALOG_FILTER_FOR_DEVICE_OS_VERSION" : "18.3.1",
           "ASSETCATALOG_FILTER_FOR_THINNING_DEVICE_CONFIGURATION" : "iPhone17,1",
           "BUILD_ACTIVE_RESOURCES_ONLY" : "YES",
           "ENABLE_PREVIEWS" : "NO",
-          "ENABLE_XOJIT_PREVIEWS" : "NO",
+          "ENABLE_XOJIT_PREVIEWS" : "YES",
           "ONLY_ACTIVE_ARCH" : "YES",
           "TARGET_DEVICE_IDENTIFIER" : "0C6A16B2-EB3F-42F0-ADA0-C57447607E81",
           "TARGET_DEVICE_MODEL" : "iPhone17,1",
@@ -56,10 +62,9 @@
       }
     }
   },
-  "qos" : "default",
   "schemeCommand" : "launch",
   "showNonLoggedProgress" : true,
-  "useDryRun" : true,
+  "useDryRun" : false,
   "useImplicitDependencies" : true,
   "useLegacyBuildLocations" : false,
   "useParallelTargets" : true
