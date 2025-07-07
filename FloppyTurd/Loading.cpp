@@ -3,6 +3,7 @@
 #include "UIManager.h"
 #include <thread>
 #include <iostream>
+#include "AudioStateManager.h"
 
 Loading::Loading(Game* game)
     : game(game)
@@ -190,9 +191,16 @@ void Loading::LoadResources() {
             if (game->mainMenu && !game->mainMenu->GetAudioClip()) {
                 try {
                     TraceLog(LOG_INFO, "LoadResources() - Loading main menu music");
-                    game->mainMenu->PlayMusic(new AudioClip("mainmenu/FloppyTurdMenu.mp3"));
+                    // Use ResourceManager to get the correct path for the music
+                    std::string musicPath = ResourceManager::GetInstance().GetResourcePath("main_menu_music", ResourceType::MUSIC);
+                    if (!musicPath.empty()) {
+                        AudioStateManager::GetInstance().TransitionToState(AudioStateManager::AUDIO_MAIN_MENU, false, 0.5f);
+                        TraceLog(LOG_INFO, "LoadResources() - Main menu music loaded successfully from path: %s", musicPath.c_str());
+                    } else {
+                        TraceLog(LOG_ERROR, "LoadResources() - Failed to get music path from ResourceManager");
+                    }
                     UpdateLoadingProgress(0.6f);
-                    TraceLog(LOG_INFO, "LoadResources() - Main menu music loaded successfully, progress updated to 60%%");
+                    TraceLog(LOG_INFO, "LoadResources() - Main menu music loading attempt completed, progress updated to 60%%");
                 } catch (const std::exception& e) {
                     TraceLog(LOG_ERROR, "Exception loading main menu music: %s", e.what());
                     // Continue without music - it's not critical for basic functionality
@@ -264,7 +272,7 @@ void Loading::Update(float deltaTime) {
         
         // Set the game state to MAINMENU
         if (game) {
-            game->SetGameState(Game::MAINMENU);
+            game->SetGameState(MAINMENU);
             GameLog::Log("[LOADING] Game state set to MAINMENU");
         }
     }

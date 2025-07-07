@@ -63,8 +63,6 @@ void DesertLevel::Draw() const
 void DesertLevel::Update(float deltaTime)
 {
     cameraSystem->Update(deltaTime);
-    if (!currentMusic->IsPlaying()) currentMusic->Play();
-    currentMusic->Update();
 
     bool hasPassedFirstToilet = LevelManager::GetInstance()->hasPassedFirstToilet;
 
@@ -390,10 +388,6 @@ void DesertLevel::SetDifficulty(int difficultyIndex)
     case 1: currentMusic = levelMusicRegular; break;
     case 2: currentMusic = levelMusicFast; break;
     default: currentMusic = levelMusicRegular; break;
-    }
-    if (currentMusic) {
-        currentMusic->Stop();
-        currentMusic->Play();
     }
 }
 

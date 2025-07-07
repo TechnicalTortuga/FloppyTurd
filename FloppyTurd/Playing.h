@@ -47,7 +47,7 @@ public:
     void Update();
     void Draw();
     void PlayMusic(AudioClip* clip);
-    void UpdateMusic();
+    // AudioStateManager handles all music updates now
     void HandleInput();
     void FadeOutMusic(float deltaTime);
     void SetCurrentLevel(int levelIndex);

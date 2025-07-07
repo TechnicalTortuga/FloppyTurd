@@ -614,6 +614,7 @@ void ResourceManager::RegisterAllResources() {
     
     // Main Menu
     RegisterResource("main_menu_bg", "mainmenu/MainMenu.png", ResourceType::TEXTURE);
+    RegisterResource("main_menu_bg_mobile", "mainmenu/MainMenuMobile.png", ResourceType::TEXTURE);
     RegisterResource("floppy_logo", "mainmenu/FloppyLogo.png", ResourceType::TEXTURE);
     RegisterResource("fin_logo", "mainmenu/F.png", ResourceType::TEXTURE);
     RegisterResource("main_menu_music", "mainmenu/FloppyTurdMenu.mp3", ResourceType::MUSIC, LoadingMode::STREAM);
@@ -926,4 +927,9 @@ void ResourceManager::SetResourceQuality(ResourceQuality quality) {
         ClearCache(); // Force reload with new quality
         TraceLog(LOG_INFO, "Resource quality changed to: %d", (int)quality);
     }
+}
+
+// New public API to get resolved resource path
+std::string ResourceManager::GetResourcePath(const std::string& id, ResourceType type) {
+    return ResolvePath(id, type);
 } 

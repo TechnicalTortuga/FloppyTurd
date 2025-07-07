@@ -47,18 +47,6 @@ public:
     // Music-related functions with nullptr guards
     virtual AudioClip* GetAudioClip() const { return currentMusic; }
 
-    virtual void PlayMusic() {
-        if (currentMusic) currentMusic->Play();
-    }
-
-    virtual void StopMusic() {
-        if (currentMusic) currentMusic->Stop();
-    }
-
-    virtual void UpdateMusic() {
-        if (currentMusic) currentMusic->Update();
-    }
-
 protected:
     AudioClip* levelMusicSlow; // Slow theme (Runny)
     AudioClip* levelMusicRegular; // Regular theme (Regular)

@@ -1,0 +1,35 @@
+dependencies: \
+  /Users/aimac/Development/FloppyTurd/FloppyTurd/DesertLevel.cpp \
+  /Users/aimac/Development/FloppyTurd/FloppyTurd/DesertLevel.h \
+  /Users/aimac/Development/FloppyTurd/FloppyTurd/Level.h \
+  /Users/aimac/Development/FloppyTurd/FloppyTurd/RaylibCompat.h \
+  /Users/aimac/Development/FloppyTurd/FloppyTurd/Obstacle.h \
+  /Users/aimac/Development/FloppyTurd/FloppyTurd/AudioClip.h \
+  /Users/aimac/Development/FloppyTurd/FloppyTurd/AudioManager.h \
+  /Users/aimac/Development/FloppyTurd/FloppyTurd/SoundEffect.h \
+  /Users/aimac/Development/FloppyTurd/FloppyTurd/GameLog.h \
+  /Users/aimac/Development/FloppyTurd/FloppyTurd/PickUp.h \
+  /Users/aimac/Development/FloppyTurd/FloppyTurd/GameSettings.h \
+  /Users/aimac/Development/FloppyTurd/FloppyTurd/ResourceCompat.h \
+  /Users/aimac/Development/FloppyTurd/FloppyTurd/ResourceManager.h \
+  /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformLayer.h \
+  /Users/aimac/Development/FloppyTurd/FloppyTurd/CameraSystem.h \
+  /Users/aimac/Development/FloppyTurd/FloppyTurd/Layer.h \
+  /Users/aimac/Development/FloppyTurd/FloppyTurd/Outhouse.h \
+  /Users/aimac/Development/FloppyTurd/FloppyTurd/Sprite.h \
+  /Users/aimac/Development/FloppyTurd/FloppyTurd/TextureAtlas.h \
+  /Users/aimac/Development/FloppyTurd/FloppyTurd/ParallaxLayer.h \
+  /Users/aimac/Development/FloppyTurd/FloppyTurd/AnimatedParallaxLayer.h \
+  /Users/aimac/Development/FloppyTurd/FloppyTurd/BrickWall.h \
+  /Users/aimac/Development/FloppyTurd/FloppyTurd/Cactus.h \
+  /Users/aimac/Development/FloppyTurd/FloppyTurd/Coin.h \
+  /Users/aimac/Development/FloppyTurd/FloppyTurd/CoinType.h \
+  /Users/aimac/Development/FloppyTurd/FloppyTurd/PoopHeart.h \
+  /Users/aimac/Development/FloppyTurd/FloppyTurd/PoopHeartType.h \
+  /Users/aimac/Development/FloppyTurd/FloppyTurd/LevelManager.h \
+  /Users/aimac/Development/FloppyTurd/FloppyTurd/Enemy.h \
+  /Users/aimac/Development/FloppyTurd/FloppyTurd/Boss.h \
+  /Users/aimac/Development/FloppyTurd/FloppyTurd/SewerPipe.h \
+  /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowmanEnemy.h \
+  /Users/aimac/Development/FloppyTurd/FloppyTurd/Bird.h \
+  /Users/aimac/Development/FloppyTurd/FloppyTurd/QuickplaySettings.h

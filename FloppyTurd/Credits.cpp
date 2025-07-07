@@ -206,7 +206,7 @@ void Credits::HandleInput()
     {
         AudioManager::GetInstance().StopMusic();
         if (music) music->Stop();
-        game->SetGameState(Game::MAINMENU);
+        game->SetGameState(MAINMENU);
     }
 }
 

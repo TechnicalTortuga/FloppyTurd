@@ -169,6 +169,29 @@ std::string PlatformLayer::GetResourcePath(const std::string& relativePath) {
         return assetPath;
     }
     
+    // Special handling for music files - they should be loaded from the bundle
+    NSString* fileExtension = [path pathExtension];
+    if ([fileExtension isEqualToString:@"mp3"] || [fileExtension isEqualToString:@"ogg"] || [fileExtension isEqualToString:@"wav"]) {
+        NSLog(@"[DEBUG] GetResourcePath: Music file detected: %@", path);
+        
+        // For music files, we need to construct the proper bundle path
+        // The asset catalog script processes music files and puts them in the bundle
+        NSString* fileName = [baseName lastPathComponent];
+        NSString* musicPath = [[NSBundle mainBundle] pathForResource:fileName ofType:fileExtension];
+        
+        if (musicPath) {
+            NSLog(@"[DEBUG] GetResourcePath: Found music file in bundle: %@", musicPath);
+            return std::string([musicPath UTF8String]);
+        } else {
+            NSLog(@"[DEBUG] GetResourcePath: Music file not found in bundle: %@", fileName);
+            // Fallback to asset:// path for music files
+            NSString* assetName = [fileName stringByDeletingPathExtension];
+            std::string assetPath = std::string("asset://") + std::string([assetName UTF8String]);
+            NSLog(@"[DEBUG] GetResourcePath: Returning asset catalog path for music: %s", assetPath.c_str());
+            return assetPath;
+        }
+    }
+    
     NSLog(@"[DEBUG] GetResourcePath: Fallback to original path: %s", relativePath.c_str());
     // Fallback to original path
     return relativePath;

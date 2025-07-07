@@ -119,6 +119,8 @@ list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/Resources.h)
 # For iOS, remove PlatformLayer.cpp since we use PlatformLayer.mm instead
 if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
     list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/PlatformLayer.cpp)
+    # Remove AudioStateManager.cpp since we use AudioStateManager.mm for iOS
+    list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/AudioStateManager.cpp)
 endif()
 
 # TouchControls, ResourceManager, and AIGUI.cpp are already included via GLOB_RECURSE

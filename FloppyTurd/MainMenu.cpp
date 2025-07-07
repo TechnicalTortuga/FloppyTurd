@@ -2,6 +2,7 @@
 #include "AIGUI.h"
 #include "AudioManager.h"
 #include "PlatformLayer.h"
+#include "AudioStateManager.h"
 #include "ResourceCompat.h"
 #include "ResourceManager.h"
 #include "UIManager.h"
@@ -47,20 +48,30 @@ MainMenu::MainMenu(Game* game)
 	using namespace Resources;
 
 	try {
-		TraceLog(LOG_INFO, "MainMenu constructor STARTING");
+		GameLog::Log("[MAINMENU] Constructor starting");
 
 		// Validate game pointer
 		if (!game) {
-			TraceLog(LOG_ERROR, "MainMenu constructor: game pointer is null");
+			GameLog::Log("[MAINMENU] Constructor: game pointer is null");
 			throw std::invalid_argument("Game pointer is null");
 		}
 
 		// Use ResourceManager instead of direct LoadTexture calls
-		TraceLog(LOG_INFO, "MainMenu constructor - Loading textures from ResourceManager");
+		GameLog::Log("[MAINMENU] Loading textures from ResourceManager");
 		
 		try {
 			emptyPainting = ResourceManager::GetInstance().GetTexture("empty_painting");
-			_MenuBackground = ResourceManager::GetInstance().GetTexture("main_menu_bg");
+			
+			// Use mobile background on mobile platforms
+			auto& platform = PlatformLayer::GetInstance();
+			if (platform.IsMobilePlatform()) {
+				_MenuBackground = ResourceManager::GetInstance().GetTexture("main_menu_bg_mobile");
+				GameLog::Log("[MAINMENU] Using mobile background for mobile platform");
+			} else {
+				_MenuBackground = ResourceManager::GetInstance().GetTexture("main_menu_bg");
+				GameLog::Log("[MAINMENU] Using desktop background for desktop platform");
+			}
+			
 			_FloppyLogo = ResourceManager::GetInstance().GetTexture("floppy_logo");
 			finLogo = ResourceManager::GetInstance().GetTexture("fin_logo");
 			lockedPainting = ResourceManager::GetInstance().GetTexture("locked_painting");
@@ -72,9 +83,9 @@ MainMenu::MainMenu(Game* game)
 			levelPaintings[4] = ResourceManager::GetInstance().GetTexture("castle_painting");
 			levelPaintings[5] = ResourceManager::GetInstance().GetTexture("ratking_painting");
 
-			TraceLog(LOG_INFO, "MainMenu constructor - Textures loaded successfully");
+			GameLog::Log("[MAINMENU] Textures loaded successfully");
 		} catch (const std::exception& e) {
-			TraceLog(LOG_ERROR, "Exception loading MainMenu textures: %s", e.what());
+			GameLog::Log("[MAINMENU] Exception loading MainMenu textures: %s", e.what());
 			// Initialize with empty textures to prevent crashes
 			emptyPainting = { 0 };
 			_MenuBackground = { 0 };
@@ -85,7 +96,7 @@ MainMenu::MainMenu(Game* game)
 				levelPaintings[i] = { 0 };
 			}
 		} catch (...) {
-			TraceLog(LOG_ERROR, "Unknown exception loading MainMenu textures");
+			GameLog::Log("[MAINMENU] Unknown exception loading MainMenu textures");
 			// Initialize with empty textures to prevent crashes
 			emptyPainting = { 0 };
 			_MenuBackground = { 0 };
@@ -102,42 +113,53 @@ MainMenu::MainMenu(Game* game)
 			"sounds/fart6.ogg", "sounds/fart7.ogg", "sounds/fart8.ogg", "sounds/fart9.ogg", "sounds/fart10.ogg", "sounds/fart11.ogg"
 		};
 
-		TraceLog(LOG_INFO, "MainMenu constructor - Loading fart sounds");
+		GameLog::Log("[MAINMENU] Loading fart sounds");
 		for (int i = 0; i < 11; ++i) {
 			try {
 				fartSoundsLoaded[i] = LoadSound(fartPaths[i]);
 			} catch (const std::exception& e) {
-				TraceLog(LOG_ERROR, "Exception loading fart sound %d: %s", i, e.what());
+				GameLog::Log("[MAINMENU] Exception loading fart sound %d: %s", i, e.what());
 				fartSoundsLoaded[i] = { 0 }; // Initialize with empty sound
 			} catch (...) {
-				TraceLog(LOG_ERROR, "Unknown exception loading fart sound %d", i);
+				GameLog::Log("[MAINMENU] Unknown exception loading fart sound %d", i);
 				fartSoundsLoaded[i] = { 0 }; // Initialize with empty sound
 			}
 		}
 
-		TraceLog(LOG_INFO, "MainMenu constructor - Creating AudioClip");
+		GameLog::Log("[MAINMENU] Loading main menu music from ResourceManager");
 		try {
-			currentMusic = new AudioClip("mainmenu/FloppyTurdMenu.mp3");
-			PlayMusic(currentMusic);
+			// Use ResourceManager to get the music
+			Music musicResource = ResourceManager::GetInstance().GetMusic("main_menu_music");
+			if (musicResource.player) {
+				// Create AudioClip wrapper around the loaded music
+				currentMusic = new AudioClip(musicResource);
+				// Set looping for main menu music
+				currentMusic->SetLooping(true);
+				AudioStateManager::GetInstance().TransitionToState(AudioStateManager::AUDIO_MAIN_MENU, false, 0.5f);
+				GameLog::Log("[MAINMENU] Main menu music loaded successfully and set to loop");
+			} else {
+				GameLog::Log("[MAINMENU] Failed to load main menu music from ResourceManager");
+				currentMusic = nullptr;
+			}
 		} catch (const std::exception& e) {
-			TraceLog(LOG_ERROR, "Exception creating AudioClip: %s", e.what());
+			GameLog::Log("[MAINMENU] Exception loading main menu music: %s", e.what());
 			currentMusic = nullptr;
 		} catch (...) {
-			TraceLog(LOG_ERROR, "Unknown exception creating AudioClip");
+			GameLog::Log("[MAINMENU] Unknown exception loading main menu music");
 			currentMusic = nullptr;
 		}
 
 		if (game && game->playing) {
-			TraceLog(LOG_INFO, "MainMenu constructor - Setting up level unlocks");
+			GameLog::Log("[MAINMENU] Setting up level unlocks");
 			for (int i = 0; i < 6; ++i) {
 				levelsUnlocked[i] = game->playing->GetStats().levelUnlocked[i];
 				if (i == 0) levelsUnlocked[i] = true; // Ensure Park is always unlocked
 			}
 		}
 
-		TraceLog(LOG_INFO, "MainMenu constructor COMPLETED SUCCESSFULLY");
+		GameLog::Log("[MAINMENU] Constructor completed successfully");
 	} catch (const std::exception& e) {
-		TraceLog(LOG_ERROR, "Exception in MainMenu constructor: %s", e.what());
+		GameLog::Log("[MAINMENU] Exception in MainMenu constructor: %s", e.what());
 		// Initialize with default values to prevent crashes
 		emptyPainting = { 0 };
 		_MenuBackground = { 0 };
@@ -152,7 +174,7 @@ MainMenu::MainMenu(Game* game)
 		}
 		currentMusic = nullptr;
 	} catch (...) {
-		TraceLog(LOG_ERROR, "Unknown exception in MainMenu constructor");
+		GameLog::Log("[MAINMENU] Unknown exception in MainMenu constructor");
 		// Initialize with default values to prevent crashes
 		emptyPainting = { 0 };
 		_MenuBackground = { 0 };
@@ -194,10 +216,11 @@ void MainMenu::PlayRandomFartSound()
 
 void MainMenu::Update()
 {
-	if (!currentMusic->IsPlaying())
-		currentMusic->Play();
+	if (currentMusic && !currentMusic->IsPlaying())
+		AudioStateManager::GetInstance().TransitionToState(AudioStateManager::AUDIO_MAIN_MENU, false, 0.5f);
 
-	UpdateMusic();
+	if (currentMusic)
+		AudioStateManager::GetInstance().Update(GetFrameTime());
 
 	if (currentMenu == MAIN_MENU)
 	{
@@ -239,26 +262,6 @@ void MainMenu::Update()
 	}
 }
 
-void MainMenu::PlayMusic(AudioClip* clip)
-{
-	if (currentMusic == clip)
-	{
-		UpdateMusic();
-		return;
-	}
-
-	if (currentMusic) currentMusic->Stop();
-	currentMusic = clip;
-	if (currentMusic) currentMusic->Play();
-}
-
-void MainMenu::UpdateMusic()
-{
-	float vol = AudioManager::GetInstance().IsMusicMuted() ? 0.0f : (float)AudioManager::GetInstance().GetMusicVolume() / 10.0f;
-	currentMusic->SetVolume(vol);
-	currentMusic->Update();
-}
-
 bool MainMenu::CanPurchaseLevel(int levelIndex, int totalCoins, const int sessionRecords[6]) {
 	if (levelIndex < 0 || levelIndex >= 6) return false;
 	if (!game || !game->playing) return false;
@@ -284,13 +287,13 @@ bool MainMenu::CanPurchaseLevel(int levelIndex, int totalCoins, const int sessio
 }
 
 bool MainMenu::PurchaseLevel(int levelIndex) {
-	TraceLog(LOG_INFO, "Attempting to purchase level %d", levelIndex);
+	GameLog::Log("[MAINMENU] Attempting to purchase level %d", levelIndex);
 	if (levelsUnlocked[levelIndex]) {
-		TraceLog(LOG_INFO, "Level %d already unlocked", levelIndex);
+		GameLog::Log("[MAINMENU] Level %d already unlocked", levelIndex);
 		return true;
 	}
 	if (!game || !game->playing || !game->playing->player) {
-		TraceLog(LOG_WARNING, "Purchase failed: Invalid game or player pointers");
+		GameLog::Log("[MAINMENU] Purchase failed: Invalid game or player pointers");
 		return false;
 	}
 
@@ -301,7 +304,7 @@ bool MainMenu::PurchaseLevel(int levelIndex) {
 	}
 
 	if (!CanPurchaseLevel(levelIndex, totalCoins, sessionRecords)) {
-		TraceLog(LOG_WARNING, "Purchase failed: Requirements not met for level %d", levelIndex);
+		GameLog::Log("[MAINMENU] Purchase failed: Requirements not met for level %d", levelIndex);
 		return false;
 	}
 
@@ -322,7 +325,7 @@ bool MainMenu::PurchaseLevel(int levelIndex) {
 	levelsUnlocked[levelIndex] = true; // Unlock immediately
 	game->playing->GetStats().levelUnlocked[levelIndex] = true; // Sync with stats
 	game->playing->GetStats().Save();
-	TraceLog(LOG_INFO, "Level %d unlocked, deducted %d coins", levelIndex, cost);
+	GameLog::Log("[MAINMENU] Level %d unlocked, deducted %d coins", levelIndex, cost);
 	return true;
 }
 
@@ -400,13 +403,13 @@ void MainMenu::DrawDesktopUI()
 		buttonY += buttonH + spacingY;
 
 		if (AIGUI_ButtonRounded("Quickplay", buttonX, buttonY, buttonW, buttonH, cornerRadius, 24, BLACK)) {
-			game->SetGameState(Game::PLAYING);
+			game->SetGameState(PLAYING);
 			if (game->playing) game->playing->SetCurrentLevel(quickplaySettings.levelIndex);
 		}
 		buttonY += buttonH + spacingY;
 
 		if (AIGUI_ButtonRounded("Exit", buttonX, buttonY, buttonW, buttonH, cornerRadius, 24, BLACK))
-			game->SetGameState(game->SHUTDOWN);
+			game->SetGameState(SHUTDOWN);
 
 		float creditsBtnX = 6.0f;          // a little padding from the left edge
 		float creditsBtnY = 180.0f - 22.0f; // 2 px above bottom edge
@@ -422,7 +425,7 @@ void MainMenu::DrawDesktopUI()
 			AudioManager::GetInstance().StopMusic();
 
 			// Jump straight into the scrolling-credits scene
-			game->SetGameState(Game::CREDITS);
+			game->SetGameState(CREDITS);
 		}
 	}
 	else if (currentMenu == LEVEL_SELECT)
@@ -510,17 +513,17 @@ void MainMenu::DrawDesktopUI()
 
 				bool isButtonHovered = CheckCollisionPointRec(g_AIGUI.mousePos, buttonRect);
 				if (isButtonHovered) {
-					TraceLog(LOG_INFO, "Unlock button hovered at (%f, %f)", g_AIGUI.mousePos.x, g_AIGUI.mousePos.y);
+					GameLog::Log("[MAINMENU] Unlock button hovered at (%f, %f)", g_AIGUI.mousePos.x, g_AIGUI.mousePos.y);
 				}
 
 				if (AIGUI_ButtonRounded("Unlock", unlockPos.x, unlockPos.y + 2, 70.0f, 24.0f, 0.3f, 18, WHITE)) { // Increased font to 20
-					TraceLog(LOG_INFO, "Unlock button clicked for level %d", currentLevelIndex);
+					GameLog::Log("[MAINMENU] Unlock button clicked for level %d", currentLevelIndex);
 					if (PurchaseLevel(currentLevelIndex)) {
-						TraceLog(LOG_INFO, "Level %d unlocked successfully!", currentLevelIndex);
+						GameLog::Log("[MAINMENU] Level %d unlocked successfully!", currentLevelIndex);
 						PlayRandomFartSound(); // Celebrate with a fart!
 					}
 					else {
-						TraceLog(LOG_WARNING, "Failed to unlock level %d", currentLevelIndex);
+						GameLog::Log("[MAINMENU] Failed to unlock level %d", currentLevelIndex);
 					}
 				}
 			}
@@ -536,7 +539,7 @@ void MainMenu::DrawDesktopUI()
 			auto& platform = PlatformLayer::GetInstance();
 			if (platform.IsPrimaryInputReleased())
 			{
-				game->SetGameState(Game::PLAYING);
+				game->SetGameState(PLAYING);
 				if (game && game->playing) game->playing->SetCurrentLevel(currentLevelIndex);
 			}
 		}
@@ -586,6 +589,18 @@ void MainMenu::DrawDesktopUI()
 		if (AIGUI_ButtonRounded(fullscreenEnabled ? "[x] Fullscreen" : "[ ] Fullscreen", rightX - 25, startY + 28.0f, 150.0f, 20.0f, 0.1f, 20, BLACK)) {
 			fullscreenEnabled = !fullscreenEnabled;
 			ToggleFullscreen();
+		}
+		
+		startY = 120.0f;
+		if (AIGUI_ButtonRounded("Test Level Music", rightX - 25, startY + 28.0f, 150.0f, 20.0f, 0.1f, 20, BLACK)) {
+			// Test the difficulty-based music system
+			AudioStateManager::GetInstance().TestAllLevelMusic();
+		}
+		
+		startY = 150.0f;
+		if (AIGUI_ButtonRounded("Test Fart Mode", rightX - 25, startY + 28.0f, 150.0f, 20.0f, 0.1f, 20, BLACK)) {
+			// Test the fart mode system
+			AudioStateManager::GetInstance().TestFartMode();
 		}
 
 		// No Quickplay Settings for Now
@@ -709,31 +724,31 @@ void MainMenu::DrawMobileUI()
 		currentMenu = OPTIONS_MENU;
 	}
 	if (AIGUI_Button("CREDITS", creditsPos.x - buttonWidth / 2, creditsPos.y, buttonWidth, buttonHeight)) {
-		game->SetGameState(Game::CREDITS);
+		game->SetGameState(CREDITS);
 	}
 	if (AIGUI_Button("QUIT", quitPos.x - buttonWidth / 2, quitPos.y, buttonWidth, buttonHeight)) {
-		game->SetGameState(Game::SHUTDOWN);
+		game->SetGameState(SHUTDOWN);
 	}
 }
 
 void MainMenu::ResetMusic()
 {
 	if (currentMusic) {
-		currentMusic->Stop();
-		currentMusic->Play();
+		AudioStateManager::GetInstance().TransitionToState(AudioStateManager::AUDIO_MAIN_MENU, false, 0.5f);
 	}
 }
 
 void MainMenu::ToggleFartMusic()
 {
-	using namespace Resources;
-
-	if (fartModeEnabled)
-		PlayMusic(new AudioClip("mainmenu/FloppyTurdMenu.mp3"));
-	else
-		PlayMusic(new AudioClip("mainmenu/FloppyTurdMenu Fart Variant.mp3"));
-
+	GameLog::Log("[MAINMENU] ToggleFartMusic: Switching music mode");
+	
+	// Update the AudioStateManager's fart mode
+	AudioStateManager::GetInstance().SetFartMode(!fartModeEnabled);
+	
+	// Update local state
 	fartModeEnabled = !fartModeEnabled;
+	
+	GameLog::Log("[MAINMENU] ToggleFartMusic: Fart mode %s", fartModeEnabled ? "ENABLED" : "DISABLED");
 }
 
 void MainMenu::HandleInput()
@@ -741,7 +756,7 @@ void MainMenu::HandleInput()
 	if (IsKeyPressed(KEY_E))
 	{
 		if (game) {
-			game->SetGameState(Game::PLAYING);
+			game->SetGameState(PLAYING);
 			if (game->playing) game->playing->SetCurrentLevel(quickplaySettings.levelIndex);
 		}
 	}

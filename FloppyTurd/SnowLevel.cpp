@@ -47,9 +47,7 @@ void SnowLevel::Draw() const
 void SnowLevel::Update(float deltaTime)
 {
     cameraSystem->Update(deltaTime);
-    if (!currentMusic->IsPlaying()) currentMusic->Play();
-    currentMusic->Update();
-
+    
     // Update obstacles (toilets)
     for (int i = 0; i < (int)toilets.size(); ++i)
     {
@@ -195,10 +193,6 @@ void SnowLevel::SetDifficulty(int difficultyIndex)
     case 1: currentMusic = levelMusicRegular; break;
     case 2: currentMusic = levelMusicFast; break;
     default: currentMusic = levelMusicRegular; break;
-    }
-    if (currentMusic) {
-        currentMusic->Stop();
-        currentMusic->Play();
     }
 }
 

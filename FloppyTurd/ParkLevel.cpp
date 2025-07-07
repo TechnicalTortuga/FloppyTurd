@@ -45,8 +45,6 @@ void ParkLevel::Draw() const
 void ParkLevel::Update(float deltaTime)
 {
     cameraSystem->Update(deltaTime);
-    if (!currentMusic->IsPlaying()) currentMusic->Play();
-    currentMusic->Update();
 
     // Update all pickups
     for (auto& pickup : pickups) {
@@ -135,14 +133,10 @@ void ParkLevel::SetSwingingPipes(bool enable)
 void ParkLevel::SetDifficulty(int difficultyIndex)
 {
     switch (difficultyIndex) {
-    case 0: currentMusic = levelMusicSlow; break; // Runny
-    case 1: currentMusic = levelMusicRegular; break; // Regular
-    case 2: currentMusic = levelMusicFast; break; // Rough
+    case 0: currentMusic = levelMusicSlow; break;
+    case 1: currentMusic = levelMusicRegular; break;
+    case 2: currentMusic = levelMusicFast; break;
     default: currentMusic = levelMusicRegular; break;
-    }
-    if (currentMusic) {
-        currentMusic->Stop();
-        currentMusic->Play();
     }
 }
 

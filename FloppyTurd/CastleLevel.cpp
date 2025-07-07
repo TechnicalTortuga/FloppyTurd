@@ -190,19 +190,19 @@ void CastleLevel::ScrollSpriteVec(std::vector<std::shared_ptr<Sprite>>& v, float
     }
 }
 
-void CastleLevel::Update(float dt)
+void CastleLevel::Update(float deltaTime)
 {
+    camera->Update(deltaTime);
+
     const float torchY = 180 - 64.f - 21.f;
     const float toiletWidth = 45.f;
     static float swingTimer = 0.0f;
     const float swingFrequency = 1.0f;
     const float swingAmplitude = 20.0f;
 
-    swingTimer += dt * swingFrequency;
+    swingTimer += deltaTime * swingFrequency;
 
-    if (!currentMusic->IsPlaying()) currentMusic->Play();
-    currentMusic->Update();
-    camera->Update(dt);
+    camera->Update(deltaTime);
 
     if (!hasPassedFirstToilet && lastPlayerPosition.x > toilets[0]->pos.x + toiletWidth) {
         hasPassedFirstToilet = true;
@@ -218,7 +218,7 @@ void CastleLevel::Update(float dt)
     for (size_t i = 0; i < toilets.size(); ++i)
     {
         auto& loo = toilets[i];
-        loo->Update(dt);
+        loo->Update(deltaTime);
 
         if (i % 2 == 0) {
             curtains[i]->SetPosition({ loo->pos.x - 32.f, 21.f });
@@ -241,7 +241,7 @@ void CastleLevel::Update(float dt)
             float baseY = 90.f;
             float swingOffset = sinf(swingTimer) * swingAmplitude;
             spikes[i]->SetPosition({ centre, baseY + swingOffset });
-            spikes[i]->Update(dt);
+            spikes[i]->Update(deltaTime);
         }
         else if (pillars[i]) {
             pillars[i]->SetPosition({ centre, 21.f });
@@ -257,18 +257,18 @@ void CastleLevel::Update(float dt)
             SpawnPickupsBetween(xStart, xEnd);
         }
 
-        curtains[i]->Update(dt);
-        paintings[i]->Update(dt);
-        floorTorches[i * 2]->Update(dt);
-        floorTorches[i * 2 + 1]->Update(dt);
-        if (chandeliers[i]) chandeliers[i]->Update(dt);
-        if (spikes[i]) spikes[i]->Update(dt);
-        else if (pillars[i]) pillars[i]->Update(dt);
+        curtains[i]->Update(deltaTime);
+        paintings[i]->Update(deltaTime);
+        floorTorches[i * 2]->Update(deltaTime);
+        floorTorches[i * 2 + 1]->Update(deltaTime);
+        if (chandeliers[i]) chandeliers[i]->Update(deltaTime);
+        if (spikes[i]) spikes[i]->Update(deltaTime);
+        else if (pillars[i]) pillars[i]->Update(deltaTime);
     }
 
     for (auto& pickup : pickups) {
         if (!pickup->IsCollected()) {
-            pickup->Update(dt);
+            pickup->Update(deltaTime);
         }
     }
 
@@ -356,10 +356,6 @@ void CastleLevel::SetDifficulty(int difficultyIndex)
     case 1: currentMusic = levelMusicRegular; break;
     case 2: currentMusic = levelMusicFast; break;
     default: currentMusic = levelMusicRegular; break;
-    }
-    if (currentMusic) {
-        currentMusic->Stop();
-        currentMusic->Play();
     }
 }
 

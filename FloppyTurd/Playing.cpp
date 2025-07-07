@@ -17,6 +17,7 @@
 #include "SnowballProjectile.h"
 #include "PlatformLayer.h"
 #include <cmath>
+#include "AudioStateManager.h"
 
 Playing::Playing(Game* game) {
     using namespace Resources;
@@ -739,13 +740,12 @@ void Playing::DrawPauseMenu() {
                 game->mainMenu->ResetMusic();
             }
 
-            AudioManager::GetInstance().StopMusic();
-            if (currentMusic) currentMusic->Stop();
+            // AudioStateManager will handle music transitions when game state changes
             player->Revive();
             SCORE = 0;
             player->ResetSessionCoins();
             isPaused = false;
-            game->SetGameState(Game::MAINMENU);
+            game->SetGameState(MAINMENU);
         }
 
         AudioManager::GetInstance().DrawAudioOptions(160 - 80, 40);
@@ -797,21 +797,7 @@ void Playing::DrawGameOverScreen() {
     int btnX = (int)(panelX + (panelW - 2 * btnW - spacing) / 2.0f);
 
     if (AIGUI_ButtonRounded("Try Again", (float)btnX, (float)btnY, (float)btnW, (float)btnH, 0.3f, 24, BLACK)) {
-        AudioManager::GetInstance().StopMusic();
-        if (gameOverMusic) gameOverMusic->Stop();
-
-        int levelIndex = 0;
-        switch (lastLevelType) {
-        case LastLevelType::PARK:   levelIndex = 0; break;
-        case LastLevelType::SEWER:  levelIndex = 1; break;
-        case LastLevelType::DESERT: levelIndex = 2; break;
-        case LastLevelType::SNOW:   levelIndex = 3; break;
-        case LastLevelType::CASTLE: levelIndex = 4; break;
-        case LastLevelType::BOSS:   levelIndex = 5; break;
-        default:                    levelIndex = 0; break;
-        }
-
-        SetCurrentLevel(levelIndex);
+        // AudioStateManager will handle music transitions when game state changes
         player->Revive();
         SCORE = 0;
 
@@ -819,11 +805,33 @@ void Playing::DrawGameOverScreen() {
         gameOverTriggered = false;
         turdHasFallenOffScreen = false;
         stats.totalLevelTries++;
+
+        // Stop game over music
+        AudioStateManager::GetInstance().StopGameOverMusic();
+        // Determine current level index for music transition
+        int levelIndex = -1;
+        auto current = levelManager->GetCurrentLevel();
+        if (dynamic_cast<ParkLevel*>(current.get())) {
+            levelIndex = 0;
+        } else if (dynamic_cast<SewerLevel*>(current.get())) {
+            levelIndex = 1;
+        } else if (dynamic_cast<DesertLevel*>(current.get())) {
+            levelIndex = 2;
+        } else if (dynamic_cast<SnowLevel*>(current.get())) {
+            levelIndex = 3;
+        } else if (dynamic_cast<CastleLevel*>(current.get())) {
+            levelIndex = 4;
+        } else if (dynamic_cast<BossLevel*>(current.get())) {
+            levelIndex = 5;
+        }
+        // Reset and play level music if valid
+        if (levelIndex >= 0) {
+            AudioStateManager::GetInstance().TransitionToLevel(levelIndex+1, (AudioStateManager::Difficulty)difficultyIndex, false, 0.5f);
+        }
     }
 
     if (AIGUI_ButtonRounded("Quit", (float)(btnX + btnW + spacing), (float)btnY, (float)btnW, (float)btnH, 0.3f, 24, BLACK)) {
-        AudioManager::GetInstance().StopMusic();
-        if (gameOverMusic) gameOverMusic->Stop();
+        // AudioStateManager will handle music transitions when game state changes
         player->Revive();
         SCORE = 0;
 
@@ -832,7 +840,7 @@ void Playing::DrawGameOverScreen() {
         turdHasFallenOffScreen = false;
 
         if (game->mainMenu) game->mainMenu->ResetMusic();
-        game->SetGameState(Game::MAINMENU);
+        game->SetGameState(MAINMENU);
     }
 
     float sbScale = 2.0f;
@@ -908,8 +916,7 @@ void Playing::Update() {
             game->mainMenu->UpdateLevelUnlocks(TOTALCOINS, sessionRecords);
         }
 
-        if (current) current->StopMusic();
-        AudioManager::GetInstance().StopMusic();
+        // AudioStateManager will handle music transitions when game state changes
         gameOverMusic->Stop();
         gameOverMusic->SetLooping(false);
         gameOverMusic->Play();
@@ -1068,9 +1075,8 @@ void Playing::Update() {
             BossLevel* bossLevel = dynamic_cast<BossLevel*>(levelManager->GetCurrentLevel().get());
             if (bossLevel) {
                 if (bossLevel->IsComplete()) {
-                    AudioManager::GetInstance().StopMusic();
-                    if (currentMusic) currentMusic->Stop();
-                    game->SetGameState(Game::CREDITS);
+                    // AudioStateManager will handle music transitions when game state changes
+                    game->SetGameState(CREDITS);
                 }
 
                 std::shared_ptr<Boss> boss = bossLevel->GetBoss();
@@ -1105,7 +1111,7 @@ void Playing::Update() {
         }
     }
 
-    UpdateMusic();
+    // AudioStateManager handles all music updates now
 }
 
 void Playing::Draw() {
@@ -1176,158 +1182,6 @@ void Playing::Draw() {
         AIGUI_LabelRounded(godText, x, y, width, 18, 0.2f, 14, YELLOW, Fade(BLACK, 0.7f)); y += 22;
         AIGUI_LabelRounded("[F1] hide  [F2] god", x, y, width, 18, 0.2f, 14, WHITE, Fade(BLACK, 0.5f));
     }
-}
-
-void Playing::PlayMusic(AudioClip* clip) {
-    if (currentMusic == clip) {
-        UpdateMusic();
-        return;
-    }
-
-    if (currentMusic) {
-        currentMusic->Stop();
-    }
-
-    currentMusic = clip;
-
-    if (currentMusic) {
-        currentMusic->Play();
-    }
-    else {
-        TraceLog(LOG_WARNING, "Attempted to play null music clip");
-    }
-}
-
-void Playing::UpdateMusic() {
-    if (currentMusic && !GAMEOVER) {
-        float vol = AudioManager::GetInstance().IsMusicMuted() ? 0.0f : (float)AudioManager::GetInstance().GetMusicVolume() / 10.0f;
-        currentMusic->SetVolume(vol);
-        currentMusic->Update();
-    }
-}
-
-void Playing::HandleInput() {
-    if (GAMEOVER || isPaused) {
-        return;
-    }
-
-    // Handle input based on platform
-    auto& platform = PlatformLayer::GetInstance();
-    if (platform.IsTouchSupported() && touchControls && touchControls->IsEnabled()) {
-        // Handle touch input
-        if (touchControls->IsJumpPressed()) {
-            player->Jump();
-        }
-        if (touchControls->IsShootPressed()) {
-            player->Shoot();
-        }
-        if (touchControls->IsShootHeld()) {
-            player->Shoot();
-        }
-        // Integrate gesture recognition for additional controls
-        if (touchControls->IsGestureDetected(GESTURE_SWIPE_UP)) {
-            player->Jump(); // Swipe up can trigger a jump as an alternative input
-        }
-        if (touchControls->IsGestureDetected(GESTURE_SWIPE_DOWN)) {
-            // Swipe down could trigger a special action if implemented
-            // For now, just log for debugging
-            TraceLog(LOG_INFO, "Swipe down detected");
-        }
-        if (touchControls->IsGestureDetected(GESTURE_SWIPE_LEFT) || touchControls->IsGestureDetected(GESTURE_SWIPE_RIGHT)) {
-            // Swipe left/right could be used for dodging or quick menu navigation if needed
-            TraceLog(LOG_INFO, "Swipe left/right detected");
-        }
-        if (touchControls->IsGestureDetected(GESTURE_PINCH_IN)) {
-            // Pinch in could zoom out or trigger a defensive action
-            TraceLog(LOG_INFO, "Pinch in detected");
-        }
-        if (touchControls->IsGestureDetected(GESTURE_PINCH_OUT)) {
-            // Pinch out could zoom in or trigger an offensive action
-            TraceLog(LOG_INFO, "Pinch out detected");
-        }
-    } else {
-        // Handle keyboard/gamepad input
-        if (IsKeyPressed(KEY_SPACE)) {
-            player->Jump();
-        }
-        if (IsKeyDown(KEY_SPACE)) {
-            player->Jump();
-        }
-        if (IsKeyPressed(KEY_ENTER)) {
-            player->Shoot();
-        }
-        if (IsKeyDown(KEY_ENTER)) {
-            player->Shoot();
-        }
-    }
-
-    if (IsKeyPressed(KEY_ESCAPE)) {
-        isPaused = !isPaused;
-    }
-}
-
-void Playing::FadeOutMusic(float deltaTime) {
-}
-
-void Playing::SetCurrentLevel(int levelIndex) {
-    if (levelIndex < 0 || levelIndex >= levels.size()) {
-        std::cerr << "Try Again Error: Invalid level index " << levelIndex << std::endl;
-        return;
-    }
-
-    if (currentMusic) {
-        currentMusic->Stop();
-        currentMusic = nullptr;
-    }
-
-    std::shared_ptr<Level> newLevel;
-    switch (levelIndex) {
-    case 0: newLevel = std::make_shared<ParkLevel>(); break;
-    case 1: newLevel = std::make_shared<SewerLevel>(); break;
-    case 2: newLevel = std::make_shared<DesertLevel>(); break;
-    case 3: newLevel = std::make_shared<SnowLevel>(); break;
-    case 4: newLevel = std::make_shared<CastleLevel>(); break;
-    case 5: newLevel = std::make_shared<BossLevel>(); break;
-    default: newLevel = std::make_shared<ParkLevel>(); break;
-    }
-
-    if (game->mainMenu) {
-        quickplaySettings = game->mainMenu->GetQuickplaySettings();
-        difficultyIndex = game->mainMenu->GetDifficultyIndex();
-        player->SetInitialHearts(difficultyIndex);
-    }
-
-    levelManager = std::make_unique<LevelManager>(newLevel);
-    levelManager->SetQuickplaySettings(quickplaySettings);
-
-    newLevel->SetDifficulty(difficultyIndex);
-    float panSpeed = 80.0f;
-    switch (difficultyIndex) {
-    case 0: panSpeed = 60.0f; break;
-    case 2: panSpeed = 120.0f; break;
-    }
-    newLevel->SetPanSpeed(panSpeed);
-
-    if (BossLevel* bossLevel = dynamic_cast<BossLevel*>(newLevel.get())) {
-        std::shared_ptr<Boss> boss = bossLevel->GetBoss();
-        if (boss) {
-            delete bossHealthBar;
-            bossHealthBar = new BossHealthBar(boss, "King of Rats");
-            TraceLog(LOG_INFO, "[Playing] Created BossHealthBar for initial RatKing");
-        }
-        player->SetMaxHearts(9);
-    }
-
-    player->ResetPosition();
-    if (newLevel->GetAudioClip()) {
-        PlayMusic(newLevel->GetAudioClip());
-    }
-    else {
-        TraceLog(LOG_ERROR, "Failed to set music for level index %d", levelIndex);
-    }
-    isPaused = false;
-    SCORE = 0;
-    player->ResetSessionCoins();
 }
 
 void Playing::DrawUI() {
@@ -1463,4 +1317,121 @@ int Playing::GetTotalCoins() {
         return TOTALCOINS + player->GetSessionCoins();
     }
     return TOTALCOINS;
+}
+
+void Playing::HandleInput() {
+    if (GAMEOVER || isPaused) {
+        return;
+    }
+
+    // Handle input based on platform
+    auto& platform = PlatformLayer::GetInstance();
+    if (platform.IsTouchSupported() && touchControls && touchControls->IsEnabled()) {
+        // Handle touch input
+        if (touchControls->IsJumpPressed()) {
+            player->Jump();
+        }
+        if (touchControls->IsShootPressed()) {
+            player->Shoot();
+        }
+        if (touchControls->IsShootHeld()) {
+            player->Shoot();
+        }
+        // Integrate gesture recognition for additional controls
+        if (touchControls->IsGestureDetected(GESTURE_SWIPE_UP)) {
+            player->Jump(); // Swipe up can trigger a jump as an alternative input
+        }
+        if (touchControls->IsGestureDetected(GESTURE_SWIPE_DOWN)) {
+            // Swipe down could trigger a special action if implemented
+            // For now, just log for debugging
+            TraceLog(LOG_INFO, "Swipe down detected");
+        }
+        if (touchControls->IsGestureDetected(GESTURE_SWIPE_LEFT) || touchControls->IsGestureDetected(GESTURE_SWIPE_RIGHT)) {
+            // Swipe left/right could be used for dodging or quick menu navigation if needed
+            TraceLog(LOG_INFO, "Swipe left/right detected");
+        }
+        if (touchControls->IsGestureDetected(GESTURE_PINCH_IN)) {
+            // Pinch in could zoom out or trigger a defensive action
+            TraceLog(LOG_INFO, "Pinch in detected");
+        }
+        if (touchControls->IsGestureDetected(GESTURE_PINCH_OUT)) {
+            // Pinch out could zoom in or trigger an offensive action
+            TraceLog(LOG_INFO, "Pinch out detected");
+        }
+    } else {
+        // Handle keyboard/gamepad input
+        if (IsKeyPressed(KEY_SPACE)) {
+            player->Jump();
+        }
+        if (IsKeyDown(KEY_SPACE)) {
+            player->Jump();
+        }
+        if (IsKeyPressed(KEY_ENTER)) {
+            player->Shoot();
+        }
+        if (IsKeyDown(KEY_ENTER)) {
+            player->Shoot();
+        }
+    }
+
+    if (IsKeyPressed(KEY_ESCAPE)) {
+        isPaused = !isPaused;
+    }
+}
+
+void Playing::FadeOutMusic(float deltaTime) {
+    // Music fading is now handled by AudioStateManager
+}
+
+void Playing::SetCurrentLevel(int levelIndex) {
+    if (levelIndex < 0 || levelIndex >= levels.size()) {
+        std::cerr << "Try Again Error: Invalid level index " << levelIndex << std::endl;
+        return;
+    }
+
+    std::shared_ptr<Level> newLevel;
+    switch (levelIndex) {
+    case 0: newLevel = std::make_shared<ParkLevel>(); break;
+    case 1: newLevel = std::make_shared<SewerLevel>(); break;
+    case 2: newLevel = std::make_shared<DesertLevel>(); break;
+    case 3: newLevel = std::make_shared<SnowLevel>(); break;
+    case 4: newLevel = std::make_shared<CastleLevel>(); break;
+    case 5: newLevel = std::make_shared<BossLevel>(); break;
+    default: newLevel = std::make_shared<ParkLevel>(); break;
+    }
+
+    if (game->mainMenu) {
+        quickplaySettings = game->mainMenu->GetQuickplaySettings();
+        difficultyIndex = game->mainMenu->GetDifficultyIndex();
+        player->SetInitialHearts(difficultyIndex);
+    }
+
+    levelManager = std::make_unique<LevelManager>(newLevel);
+    levelManager->SetQuickplaySettings(quickplaySettings);
+
+    newLevel->SetDifficulty(difficultyIndex);
+    float panSpeed = 80.0f;
+    switch (difficultyIndex) {
+    case 0: panSpeed = 60.0f; break;
+    case 2: panSpeed = 120.0f; break;
+    }
+    newLevel->SetPanSpeed(panSpeed);
+
+    if (BossLevel* bossLevel = dynamic_cast<BossLevel*>(newLevel.get())) {
+        std::shared_ptr<Boss> boss = bossLevel->GetBoss();
+        if (boss) {
+            delete bossHealthBar;
+            bossHealthBar = new BossHealthBar(boss, "King of Rats");
+            TraceLog(LOG_INFO, "[Playing] Created BossHealthBar for initial RatKing");
+        }
+        player->SetMaxHearts(9);
+    }
+
+    player->ResetPosition();
+    isPaused = false;
+    SCORE = 0;
+    player->ResetSessionCoins();
+
+    // Notify AudioStateManager of level change
+    AudioStateManager::GetInstance().TransitionToLevel(levelIndex+1, (AudioStateManager::Difficulty)difficultyIndex, false, 0.5f);
 }

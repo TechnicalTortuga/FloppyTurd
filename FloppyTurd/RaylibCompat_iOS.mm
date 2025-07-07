@@ -706,8 +706,25 @@ extern "C" CGRect GetScreenBounds() {
 
 void InitAudioDevice() {
     GameLog::Log("[AUDIO] InitAudioDevice (iOS/AVFoundation)");
-    [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryAmbient error:nil];
-    [[AVAudioSession sharedInstance] setActive:YES error:nil];
+    NSError* error = nil;
+    
+    // Use AVAudioSessionCategoryPlayback for better music support
+    // This allows music to continue playing when the app is in the background
+    BOOL success = [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback 
+                                                          error:&error];
+    if (!success) {
+        GameLog::Log("[AUDIO] ERROR: Failed to set audio session category: %s", 
+                     error.localizedDescription.UTF8String);
+    }
+    
+    // Activate the audio session
+    success = [[AVAudioSession sharedInstance] setActive:YES error:&error];
+    if (!success) {
+        GameLog::Log("[AUDIO] ERROR: Failed to activate audio session: %s", 
+                     error.localizedDescription.UTF8String);
+    } else {
+        GameLog::Log("[AUDIO] Audio session activated successfully");
+    }
 }
 
 void CloseAudioDevice() {
@@ -761,19 +778,72 @@ Music LoadMusic(const char* fileName) {
     Music m = {0};
     @autoreleasepool {
         NSString* path = [NSString stringWithUTF8String:fileName];
-        NSURL* url = [NSURL fileURLWithPath:path];
+        GameLog::Log("[AUDIO] Attempting to load music from path: %s", fileName);
+        
+        NSURL* url = nil;
+        
+        // Handle asset catalog resources
+        if (path.length >= 8 && [[path substringToIndex:8] isEqualToString:@"asset://"]) {
+            NSString* assetName = [path substringFromIndex:8]; // Remove "asset://" prefix
+            GameLog::Log("[AUDIO] Loading asset catalog music: %@", assetName);
+            
+            // For asset catalog datasets, we need to use NSDataAsset to access the data
+            // Asset catalog datasets are compiled into Assets.car and accessed via NSDataAsset
+            NSDataAsset* dataAsset = [[NSDataAsset alloc] initWithName:assetName];
+            if (dataAsset && dataAsset.data) {
+                // Create a temporary file with the asset data
+                NSString* tempDir = NSTemporaryDirectory();
+                NSString* tempFileName = [NSString stringWithFormat:@"%@_%@.mp3", assetName, [[NSUUID UUID] UUIDString]];
+                NSString* tempFilePath = [tempDir stringByAppendingPathComponent:tempFileName];
+                
+                if ([dataAsset.data writeToFile:tempFilePath atomically:YES]) {
+                    url = [NSURL fileURLWithPath:tempFilePath];
+                    GameLog::Log("[AUDIO] Successfully created temp file from asset catalog: %@", tempFilePath);
+                } else {
+                    GameLog::Log("[AUDIO] ERROR: Failed to write asset data to temp file");
+                }
+            } else {
+                GameLog::Log("[AUDIO] ERROR: Failed to load asset catalog data for: %@", assetName);
+                
+                // Debug: List available data assets
+                GameLog::Log("[AUDIO] DEBUG: Cannot list all data assets - method not available");
+                // Note: NSDataAsset doesn't have an allDataAssets method
+                // We can only access assets by name using initWithName:
+            }
+        } else {
+            // Handle regular file paths
+            url = [NSURL fileURLWithPath:path];
+        }
+        
+        if (!url) {
+            GameLog::Log("[AUDIO] ERROR: Failed to create URL from path: %s", fileName);
+            return m;
+        }
+        
+        GameLog::Log("[AUDIO] Created URL: %@ -- %@", url, url.absoluteString);
+        
         NSError* error = nil;
         AVAudioPlayer* player = [[AVAudioPlayer alloc] initWithContentsOfURL:url error:&error];
         if (player && !error) {
             [player prepareToPlay];
             m.player = (__bridge_retained void*)player;
             m.length = (int)(player.duration * 1000);
-            GameLog::Log("[AUDIO] Loaded music: %s (duration: %d ms)", fileName, m.length);
+            GameLog::Log("[AUDIO] Successfully loaded music: %s (duration: %d ms)", fileName, m.length);
         } else {
-            GameLog::Log("[AUDIO] ERROR: Failed to load music: %s (%s)", fileName, error.localizedDescription.UTF8String);
+            GameLog::Log("[AUDIO] ERROR: Failed to load music: %s", fileName);
+            if (error) {
+                GameLog::Log("[AUDIO] Error details: %s", error.localizedDescription.UTF8String);
+            }
         }
     }
     return m;
+}
+
+Music LoadMusicStream(const char* fileName) {
+    // For iOS, LoadMusicStream is the same as LoadMusic since we use AVAudioPlayer
+    // which handles streaming internally
+    GameLog::Log("[AUDIO] LoadMusicStream called, delegating to LoadMusic: %s", fileName);
+    return LoadMusic(fileName);
 }
 
 void UnloadMusic(Music music) {
@@ -792,8 +862,14 @@ void UnloadMusicStream(Music music) {
 void PlayMusic(Music music) {
     if (music.player) {
         AVAudioPlayer* player = (__bridge AVAudioPlayer*)music.player;
-        [player play];
-        GameLog::Log("[AUDIO] PlayMusic");
+        BOOL success = [player play];
+        if (success) {
+            GameLog::Log("[AUDIO] PlayMusic: Started playing successfully");
+        } else {
+            GameLog::Log("[AUDIO] PlayMusic: Failed to start playing");
+        }
+    } else {
+        GameLog::Log("[AUDIO] PlayMusic: No valid player to play");
     }
 }
 
@@ -852,4 +928,22 @@ void SetLooping(Music music, bool looping) {
         player.numberOfLoops = looping ? -1 : 0; // -1 = infinite loop, 0 = play once
         GameLog::Log("[AUDIO] SetLooping: %s", looping ? "true" : "false");
     }
+}
+
+// Music stream functions (aliases for compatibility)
+void PlayMusicStream(Music music) {
+    PlayMusic(music);
+}
+
+void StopMusicStream(Music music) {
+    StopMusic(music);
+}
+
+void UpdateMusicStream(Music music) {
+    // No update needed for iOS AVAudioPlayer
+    // This function exists for raylib compatibility
+}
+
+bool IsMusicStreamPlaying(Music music) {
+    return IsMusicPlaying(music);
 }

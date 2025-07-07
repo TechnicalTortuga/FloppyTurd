@@ -3,6 +3,7 @@
 #include "AudioManager.h"
 #include "ResourceManager.h"
 #include "ResourceCompat.h"
+#include "AudioStateManager.h"
 
 // Enable draw call tracking
 #define ENABLE_DRAW_CALL_TRACKING
@@ -191,6 +192,19 @@ bool Game::Initialize()
             ResourceManager::GetInstance().Initialize(ResourceQuality::HIGH);
             GameLog::Log("[INIT] Step 1: Initialized ResourceManager - SUCCESS");
             
+            // Initialize AudioStateManager after ResourceManager
+            GameLog::Log("[INIT] Step 1.5: Initializing AudioStateManager...");
+            try {
+                AudioStateManager::GetInstance().Initialize();
+                GameLog::Log("[INIT] Step 1.5: Initialized AudioStateManager - SUCCESS");
+            } catch (const std::exception& e) {
+                GameLog::Log("[ERROR] Step 1.5: Exception initializing AudioStateManager: %s", e.what());
+                // Don't throw here, continue with initialization
+            } catch (...) {
+                GameLog::Log("[ERROR] Step 1.5: Unknown exception initializing AudioStateManager");
+                // Don't throw here, continue with initialization
+            }
+            
             // Test that ResourceManager is working by trying to load a simple texture
             GameLog::Log("[INIT] Step 1.5: Testing ResourceManager with a simple texture...");
             try {
@@ -303,12 +317,12 @@ bool Game::Initialize()
             GameLog::Log("[INIT] Step 5: Created MainMenu state - SUCCESS");
         } catch (const std::exception& e) {
             GameLog::Log("[ERROR] Step 5: Exception creating MainMenu: %s", e.what());
-            // Don't throw here, continue with initialization - MainMenu is not critical
+            // Don't throw here, continue with initialization - MainMenu is not critical for basic functionality
             mainMenu = nullptr;
             GameLog::Log("[WARNING] Step 5: Continuing without MainMenu state");
         } catch (...) {
             GameLog::Log("[ERROR] Step 5: Unknown exception creating MainMenu");
-            // Don't throw here, continue with initialization - MainMenu is not critical
+            // Don't throw here, continue with initialization - MainMenu is not critical for basic functionality
             mainMenu = nullptr;
             GameLog::Log("[WARNING] Step 5: Continuing without MainMenu state");
         }
@@ -457,6 +471,26 @@ bool Game::Initialize()
             printf("[INIT_PRINTF] WARNING: Continuing despite Loading::Initialize() failure\n");
         }
         
+        GameLog::Log("[INIT] Step 11: Initializing AudioStateManager...");
+        try {
+            AudioStateManager::GetInstance().Initialize();
+            GameLog::Log("[INIT] Step 11: AudioStateManager initialized - SUCCESS");
+            
+            // Set up initial audio state for main menu
+            GameLog::Log("[INIT] Step 11a: Setting up initial audio state...");
+            UpdateAudioState();
+            GameLog::Log("[INIT] Step 11a: Initial audio state setup complete");
+            
+        } catch (const std::exception& e) {
+            GameLog::Log("[ERROR] Step 11: Exception initializing AudioStateManager: %s", e.what());
+            // Don't throw here, continue with initialization - Audio is not critical for basic functionality
+            GameLog::Log("[WARNING] Step 11: Continuing without AudioStateManager");
+        } catch (...) {
+            GameLog::Log("[ERROR] Step 11: Unknown exception initializing AudioStateManager");
+            // Don't throw here, continue with initialization - Audio is not critical for basic functionality
+            GameLog::Log("[WARNING] Step 11: Continuing without AudioStateManager");
+        }
+        
         GameLog::Log("[INIT] =========================================");
         GameLog::Log("[INIT] Game::Initialize() COMPLETED SUCCESSFULLY");
         {
@@ -501,9 +535,15 @@ void Game::Update(float deltaTime)
         return;
     }
 
+    // Update AudioStateManager each frame
+    AudioStateManager::GetInstance().Update(deltaTime);
+
     if (prevState != gamestate) {
         std::cout << "[GAME] Game state changed from " << prevState << " to " << gamestate << std::endl;
         prevState = gamestate;
+        
+        // Update audio state when game state changes
+        UpdateAudioState();
     }
 
     switch (gamestate) {
@@ -519,8 +559,6 @@ void Game::Update(float deltaTime)
             if (credits) {
                 credits->Update(deltaTime);
                 if (credits->IsComplete()) {
-                    AudioManager::GetInstance().StopMusic();
-                    if (credits->GetMusic()) credits->GetMusic()->Stop();
                     SetGameState(MAINMENU);
                 }
             }
@@ -659,6 +697,9 @@ void Game::SetGameState(GAMESTATE newState)
     // Update state
     GAMESTATE oldState = gamestate;
     gamestate = newState;
+    
+    // Update audio state for the new game state
+    UpdateAudioState();
     
     // Handle entry to new state
     switch (newState) {
@@ -849,6 +890,9 @@ void Game::UpdateFrame(float deltaTime)
 	// -------------------------------------------------------------------------
 	PerformanceProfiler::GetInstance().BeginFrame();
 	
+	// Update audio state manager
+	AudioStateManager::GetInstance().Update(deltaTime);
+	
 	// Only update if not in loading state (loading is handled separately above)
 	if (gamestate != LOADING) {
 		Update();
@@ -1020,16 +1064,38 @@ void Game::Shutdown()
 
 void Game::OnPause()
 {
-	// Stop music when pausing (we'll restart it on resume if needed)
-	AudioManager::GetInstance().StopMusic();
+	// Pause music when app goes to background
+	AudioStateManager::GetInstance().PauseMusic();
 	
 	// TODO: Add any other pause logic
 }
 
 void Game::OnResume()
 {
-	// Note: Music will be restarted by the appropriate game state when needed
-	// (each state manages its own music)
+	// Resume music when app returns to foreground
+	AudioStateManager::GetInstance().ResumeMusic();
 	
 	// TODO: Add any other resume logic
+}
+
+void Game::UpdateAudioState()
+{
+    // Update the AudioStateManager based on current game state
+    auto audioState = AudioStateManager::GetInstance().GetAudioStateForGameState(gamestate);
+    
+    // Only transition if the audio state is different from current
+    if (audioState != AudioStateManager::GetInstance().GetCurrentState()) {
+        GameLog::Log("[GAME] Updating audio state to match game state %d -> audio state %d", 
+                     (int)gamestate, (int)audioState);
+        AudioStateManager::GetInstance().TransitionToState(audioState, true, 1.0f);
+    }
+}
+
+void Game::SetLevelAudio(int levelNumber, AudioStateManager::Difficulty difficulty)
+{
+    GameLog::Log("[GAME] Setting level audio: Level %d, Difficulty %s", 
+                 levelNumber, 
+                 difficulty == AudioStateManager::DIFFICULTY_EASY ? "EASY" : 
+                 difficulty == AudioStateManager::DIFFICULTY_NORMAL ? "NORMAL" : "HARD");
+    AudioStateManager::GetInstance().TransitionToLevel(levelNumber, difficulty, true, 1.0f);
 }

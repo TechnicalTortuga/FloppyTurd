@@ -650,6 +650,16 @@
 			<key>catalogPath</key>
 			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
 			<key>objcSymbol</key>
+			<string>ACImageNameMainMenuMobile</string>
+			<key>relativePath</key>
+			<string>./mainmenu/MainMenuMobile.imageset</string>
+			<key>swiftSymbol</key>
+			<string>mainMenuMobile</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<key>objcSymbol</key>
 			<string>ACImageNameOuthouse</string>
 			<key>relativePath</key>
 			<string>./environment/Outhouse.imageset</string>

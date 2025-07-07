@@ -316,10 +316,6 @@ void BossLevel::SetDifficulty(int difficultyIndex)
     case 2: currentMusic = levelMusicFast; break;
     default: currentMusic = levelMusicRegular; break;
     }
-    if (currentMusic) {
-        currentMusic->Stop();
-        currentMusic->Play();
-    }
 }
 
 void BossLevel::SetPanSpeed(float speed)

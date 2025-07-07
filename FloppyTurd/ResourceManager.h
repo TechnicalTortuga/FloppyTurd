@@ -95,6 +95,8 @@ public:
     void ReloadResource(const std::string& id);  // Force reload (useful for hot-reloading)
     std::vector<std::string> GetLoadedResources() const;
     const std::unordered_map<std::string, ResourceInfo>& GetResourceRegistry() const { return resourceRegistry; }
+    // New public API to get resolved resource path
+    std::string GetResourcePath(const std::string& id, ResourceType type);
 
 private:
     ResourceManager() = default;

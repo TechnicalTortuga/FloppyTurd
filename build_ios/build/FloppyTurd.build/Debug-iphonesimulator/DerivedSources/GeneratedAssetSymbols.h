@@ -198,6 +198,9 @@ static NSString * const ACImageNameLockedPainting AC_SWIFT_PRIVATE = @"LockedPai
 /// The "MainMenu" asset catalog image resource.
 static NSString * const ACImageNameMainMenu AC_SWIFT_PRIVATE = @"MainMenu";
 
+/// The "MainMenuMobile" asset catalog image resource.
+static NSString * const ACImageNameMainMenuMobile AC_SWIFT_PRIVATE = @"MainMenuMobile";
+
 /// The "Outhouse" asset catalog image resource.
 static NSString * const ACImageNameOuthouse AC_SWIFT_PRIVATE = @"Outhouse";
 

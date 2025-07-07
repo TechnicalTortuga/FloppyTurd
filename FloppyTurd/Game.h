@@ -12,6 +12,8 @@
 #include "Credits.h"
 #include "Loading.h" // New include
 #include "GameLog.h"
+#include "GameState.h"
+#include "AudioStateManager.h"
 
 // Cross-platform logging macro
 #if defined(__OBJC__) && defined(__APPLE__) && TARGET_OS_IPHONE
@@ -34,15 +36,7 @@ public:
 	Game();
 	~Game();
 
-	enum GAMESTATE
-	{
-		MAINMENU,
-		PLAYING,
-		PAUSEMENU,
-		SHUTDOWN,
-		CREDITS,
-		LOADING // New loading state
-	};
+	// Game state enum moved to GameState.h to avoid circular dependencies
 
 	void SetGameState(GAMESTATE newState);
 	Playing* playing;
@@ -63,6 +57,10 @@ public:
 	// iOS lifecycle hooks
 	void OnPause();              // App going to background
 	void OnResume();             // App returning to foreground
+	
+	// Audio state management
+	void UpdateAudioState();     // Update audio based on current game state
+	void SetLevelAudio(int levelNumber, AudioStateManager::Difficulty difficulty); // Set level audio with difficulty
 	
 	// Accessors for iOS integration
 	bool IsInitialized() const { 

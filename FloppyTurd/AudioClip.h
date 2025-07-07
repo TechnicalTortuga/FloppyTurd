@@ -3,6 +3,7 @@
 #include "RaylibCompat.h"
 #include <string>
 #include "AudioManager.h"
+#include "GameLog.h"
 
 class AudioClip
 {
@@ -10,7 +11,19 @@ public:
     AudioClip(const std::string& filePath) {
         music = LoadMusic(filePath.c_str());
         if (!music.player) {
-            TraceLog(LOG_WARNING, "Failed to load music: %s", filePath.c_str());
+            GameLog::Log("[AUDIOCLIP] Failed to load music: %s", filePath.c_str());
+        } else {
+            GameLog::Log("[AUDIOCLIP] Successfully loaded music: %s, attempting to play", filePath.c_str());
+            Play(); // Auto-play when loaded
+        }
+        AudioManager::GetInstance().RegisterClip(this);
+    }
+
+    // Constructor for pre-loaded music from ResourceManager
+    AudioClip(Music preloadedMusic) {
+        music = preloadedMusic;
+        if (!music.player) {
+            GameLog::Log("[AUDIOCLIP] AudioClip created with invalid music resource");
         }
         AudioManager::GetInstance().RegisterClip(this);
     }
@@ -32,11 +45,11 @@ public:
 
     void Stop() {
         if (music.player && IsMusicPlaying(music)) { // Add playing check
-            TraceLog(LOG_INFO, "Stopping music");
+            GameLog::Log("[AUDIOCLIP] Stopping music");
             StopMusic(music);
         }
         else {
-            TraceLog(LOG_WARNING, "Attempted to stop invalid or non-playing music");
+            GameLog::Log("[AUDIOCLIP] Attempted to stop invalid or non-playing music");
         }
     }
 

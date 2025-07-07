@@ -63,6 +63,7 @@ namespace Resources {
 
     // Main menu textures
     inline Texture2D GetMainMenuBackground() { return RM().GetTexture("main_menu_bg"); }
+    inline Texture2D GetMainMenuBackgroundMobile() { return RM().GetTexture("main_menu_bg_mobile"); }
     inline Texture2D GetFloppyLogo() { return RM().GetTexture("floppy_logo"); }
     inline Texture2D GetFinLogo() { return RM().GetTexture("fin_logo"); }
 

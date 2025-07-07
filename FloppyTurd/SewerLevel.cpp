@@ -188,9 +188,7 @@ float SewerLevel::GetPipePanSpeed() const {
 void SewerLevel::Update(float deltaTime)
 {
     cameraSystem->Update(deltaTime);
-    if (!currentMusic->IsPlaying()) currentMusic->Play();
-    currentMusic->Update();
-
+    
     if (panSpeedTimer > 0.0f) {
         panSpeedTimer -= deltaTime;
         if (panSpeedTimer <= 0.0f)
@@ -286,10 +284,6 @@ void SewerLevel::SetDifficulty(int difficultyIndex)
     case 1: currentMusic = levelMusicRegular; break;
     case 2: currentMusic = levelMusicFast; break;
     default: currentMusic = levelMusicRegular; break;
-    }
-    if (currentMusic) {
-        currentMusic->Stop();
-        currentMusic->Play();
     }
 }
 

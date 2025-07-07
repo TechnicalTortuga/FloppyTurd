@@ -148,6 +148,7 @@ process_images "vfx"
 # Process audio categories
 process_audio "music"
 process_audio "sounds"
+process_audio "mainmenu"  # Also process audio files in mainmenu directory
 
 # Process font resources (copy as-is)
 process_fonts() {
