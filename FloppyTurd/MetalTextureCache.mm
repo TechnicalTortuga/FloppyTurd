@@ -19,6 +19,7 @@ MetalTextureCache& MetalTextureCache::GetInstance() {
 
 MetalTextureCache::MetalTextureCache() 
     : m_metalDevice(nullptr)
+    , m_commandQueue(nullptr)
     , m_nextTextureId(1)  // Start from 1, 0 is reserved for invalid
 {
 }
@@ -29,16 +30,32 @@ MetalTextureCache::~MetalTextureCache() {
 
 void MetalTextureCache::Initialize(void* metalDevice) {
     m_metalDevice = metalDevice;
+    
+    // Create a shared command queue for texture operations
+    id<MTLDevice> device = (__bridge id<MTLDevice>)metalDevice;
+    if (device) {
+        m_commandQueue = (__bridge_retained void*)[device newCommandQueue];
+        TraceLog(LOG_INFO, "[INIT] MetalTextureCache created shared command queue: %p", m_commandQueue);
+    }
+    
     m_textureCache.clear();
     m_textureRefCounts.clear();
-    NSLog(@"[INIT] MetalTextureCache initialized with device: %p", m_metalDevice);
+    TraceLog(LOG_INFO, "[INIT] MetalTextureCache initialized with device: %p", m_metalDevice);
 }
 
 void MetalTextureCache::Shutdown() {
-    NSLog(@"[SHUTDOWN] Starting MetalTextureCache shutdown");
+    TraceLog(LOG_INFO, "[SHUTDOWN] Starting MetalTextureCache shutdown");
     UnloadAllTextures();
+    
+    // Release command queue
+    if (m_commandQueue) {
+        TraceLog(LOG_INFO, "[SHUTDOWN] Releasing shared command queue: %p", m_commandQueue);
+        CFRelease(m_commandQueue);
+        m_commandQueue = nullptr;
+    }
+    
     m_metalDevice = nullptr;
-    NSLog(@"[SHUTDOWN] MetalTextureCache shutdown complete");
+    TraceLog(LOG_INFO, "[SHUTDOWN] MetalTextureCache shutdown complete");
 }
 
 Texture2D MetalTextureCache::GetOrLoadTexture(const std::string& fileName) {
@@ -47,7 +64,7 @@ Texture2D MetalTextureCache::GetOrLoadTexture(const std::string& fileName) {
     if (it != m_textureCache.end()) {
         // Increment reference count
         m_textureRefCounts[it->second.texture]++;
-        NSLog(@"[INFO] Using cached texture for %s (refCount: %u)", 
+        TraceLog(LOG_INFO, "[INFO] Using cached texture for %s (refCount: %u)", 
               fileName.c_str(), m_textureRefCounts[it->second.texture]);
         return it->second;
     }
@@ -59,7 +76,7 @@ Texture2D MetalTextureCache::GetOrLoadTexture(const std::string& fileName) {
     id<MTLDevice> device = (__bridge id<MTLDevice>)m_metalDevice;
     
     if (!device) {
-        NSLog(@"[ERROR] Metal device is null in MetalTextureCache");
+        TraceLog(LOG_ERROR, "[ERROR] Metal device is null in MetalTextureCache");
         return CreateFallbackTexture();
     }
 
@@ -70,13 +87,13 @@ Texture2D MetalTextureCache::GetOrLoadTexture(const std::string& fileName) {
         UIImage* uiImage = [UIImage imageNamed:name];
         
         if (!uiImage) {
-            NSLog(@"[ERROR] Failed to load asset catalog texture: %s", fileName.c_str());
+            TraceLog(LOG_ERROR, "[ERROR] Failed to load asset catalog texture: %s", fileName.c_str());
             return CreateFallbackTexture();
         }
         
         CGImageRef cgImage = uiImage.CGImage;
         if (!cgImage) {
-            NSLog(@"[ERROR] CGImage is null for: %s", fileName.c_str());
+            TraceLog(LOG_ERROR, "[ERROR] CGImage is null for: %s", fileName.c_str());
             return CreateFallbackTexture();
         }
         
@@ -84,7 +101,7 @@ Texture2D MetalTextureCache::GetOrLoadTexture(const std::string& fileName) {
         height = (int)CGImageGetHeight(cgImage);
         
         if (width <= 0 || height <= 0) {
-            NSLog(@"[ERROR] Invalid dimensions for: %s (w=%d, h=%d)", fileName.c_str(), width, height);
+            TraceLog(LOG_ERROR, "[ERROR] Invalid dimensions for: %s (w=%d, h=%d)", fileName.c_str(), width, height);
             return CreateFallbackTexture();
         }
         
@@ -101,7 +118,7 @@ Texture2D MetalTextureCache::GetOrLoadTexture(const std::string& fileName) {
         
         id<MTLTexture> metalTexture = [device newTextureWithDescriptor:textureDescriptor];
         if (!metalTexture) {
-            NSLog(@"[ERROR] Failed to create Metal texture for: %s", fileName.c_str());
+            TraceLog(LOG_ERROR, "[ERROR] Failed to create Metal texture for: %s", fileName.c_str());
             return CreateFallbackTexture();
         }
         
@@ -112,7 +129,7 @@ Texture2D MetalTextureCache::GetOrLoadTexture(const std::string& fileName) {
                                                     colorSpace, kCGImageAlphaPremultipliedLast);
         
         if (!context) {
-            NSLog(@"[ERROR] Failed to create bitmap context for: %s", fileName.c_str());
+            TraceLog(LOG_ERROR, "[ERROR] Failed to create bitmap context for: %s", fileName.c_str());
             CGColorSpaceRelease(colorSpace);
             return CreateFallbackTexture();
         }
@@ -121,7 +138,7 @@ Texture2D MetalTextureCache::GetOrLoadTexture(const std::string& fileName) {
         void* imageData = CGBitmapContextGetData(context);
         
         if (!imageData) {
-            NSLog(@"[ERROR] Failed to get image data for: %s", fileName.c_str());
+            TraceLog(LOG_ERROR, "[ERROR] Failed to get image data for: %s", fileName.c_str());
             CGContextRelease(context);
             CGColorSpaceRelease(colorSpace);
             return CreateFallbackTexture();
@@ -131,12 +148,14 @@ Texture2D MetalTextureCache::GetOrLoadTexture(const std::string& fileName) {
         
         // Generate mipmaps if needed
         if (textureDescriptor.mipmapLevelCount > 1) {
-            id<MTLCommandQueue> commandQueue = [device newCommandQueue];
-            id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
-            id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
-            [blitEncoder generateMipmapsForTexture:metalTexture];
-            [blitEncoder endEncoding];
-            [commandBuffer commit];
+            id<MTLCommandQueue> commandQueue = (__bridge id<MTLCommandQueue>)m_commandQueue;
+            if (commandQueue) {
+                id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
+                id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
+                [blitEncoder generateMipmapsForTexture:metalTexture];
+                [blitEncoder endEncoding];
+                [commandBuffer commit];
+            }
         }
         
         CGContextRelease(context);
@@ -151,7 +170,7 @@ Texture2D MetalTextureCache::GetOrLoadTexture(const std::string& fileName) {
     } else {
         // Regular file loading would be implemented here
         // This would use device-specific methods to load from file paths
-        NSLog(@"[ERROR] Direct file loading not implemented for: %s", fileName.c_str());
+        TraceLog(LOG_ERROR, "[ERROR] Direct file loading not implemented for: %s", fileName.c_str());
         return CreateFallbackTexture();
     }
     
@@ -159,7 +178,7 @@ Texture2D MetalTextureCache::GetOrLoadTexture(const std::string& fileName) {
     m_textureCache[fileName] = texture;
     m_textureRefCounts[texture.texture] = 1; // Initial reference count
     
-    NSLog(@"[INFO] Loaded and cached new texture for %s (id=%u)", 
+            TraceLog(LOG_INFO, "[INFO] Loaded and cached new texture for %s (id=%u)", 
           fileName.c_str(), texture.id);
           
     return texture;
@@ -167,13 +186,13 @@ Texture2D MetalTextureCache::GetOrLoadTexture(const std::string& fileName) {
 
 Texture2D MetalTextureCache::LoadTextureFromData(void* data, int width, int height, int format) {
     if (!data || width <= 0 || height <= 0) {
-        NSLog(@"[ERROR] Invalid texture data: %p, w=%d, h=%d", data, width, height);
+        TraceLog(LOG_ERROR, "[ERROR] Invalid texture data: %p, w=%d, h=%d", data, width, height);
         return CreateFallbackTexture();
     }
     
     id<MTLDevice> device = (__bridge id<MTLDevice>)m_metalDevice;
     if (!device) {
-        NSLog(@"[ERROR] Metal device is null in LoadTextureFromData");
+        TraceLog(LOG_ERROR, "[ERROR] Metal device is null in LoadTextureFromData");
         return CreateFallbackTexture();
     }
     
@@ -190,7 +209,7 @@ Texture2D MetalTextureCache::LoadTextureFromData(void* data, int width, int heig
     
     id<MTLTexture> metalTexture = [device newTextureWithDescriptor:textureDesc];
     if (!metalTexture) {
-        NSLog(@"[ERROR] Failed to create Metal texture in LoadTextureFromData");
+        TraceLog(LOG_ERROR, "[ERROR] Failed to create Metal texture in LoadTextureFromData");
         return CreateFallbackTexture();
     }
     
@@ -200,12 +219,14 @@ Texture2D MetalTextureCache::LoadTextureFromData(void* data, int width, int heig
     
     // Generate mipmaps if needed
     if (textureDesc.mipmapLevelCount > 1) {
-        id<MTLCommandQueue> commandQueue = [device newCommandQueue];
-        id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
-        id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
-        [blitEncoder generateMipmapsForTexture:metalTexture];
-        [blitEncoder endEncoding];
-        [commandBuffer commit];
+        id<MTLCommandQueue> commandQueue = (__bridge id<MTLCommandQueue>)m_commandQueue;
+        if (commandQueue) {
+            id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
+            id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
+            [blitEncoder generateMipmapsForTexture:metalTexture];
+            [blitEncoder endEncoding];
+            [commandBuffer commit];
+        }
     }
     
     // Create Texture2D structure
@@ -220,7 +241,7 @@ Texture2D MetalTextureCache::LoadTextureFromData(void* data, int width, int heig
     // Track reference count
     m_textureRefCounts[texture.texture] = 1;
     
-    NSLog(@"[INFO] Created texture from data: %p (id=%u, w=%d, h=%d)", 
+            TraceLog(LOG_INFO, "[INFO] Created texture from data: %p (id=%u, w=%d, h=%d)", 
           texture.texture, texture.id, width, height);
           
     return texture;
@@ -237,25 +258,25 @@ void MetalTextureCache::UnloadTexture(unsigned int textureId) {
 
 void MetalTextureCache::UnloadTexture(void* texturePtr) {
     if (!texturePtr) {
-        NSLog(@"[WARNING] Attempting to unload null texture pointer");
+        TraceLog(LOG_WARNING, "[WARNING] Attempting to unload null texture pointer");
         return;
     }
     
     // Decrement reference count
     auto it = m_textureRefCounts.find(texturePtr);
     if (it == m_textureRefCounts.end()) {
-        NSLog(@"[WARNING] Attempting to unload texture not managed by cache: %p", texturePtr);
+        TraceLog(LOG_WARNING, "[WARNING] Attempting to unload texture not managed by cache: %p", texturePtr);
         // Release it anyway to prevent leaks
         CFRelease(texturePtr);
         return;
     }
     
     it->second--;
-    NSLog(@"[TEXTURE] Decremented texture refcount: %p (new count: %u)", texturePtr, it->second);
+            TraceLog(LOG_INFO, "[TEXTURE] Decremented texture refcount: %p (new count: %u)", texturePtr, it->second);
     
     if (it->second <= 0) {
         // No more references, release the Metal texture
-        NSLog(@"[TEXTURE] Releasing texture: %p", texturePtr);
+        TraceLog(LOG_INFO, "[TEXTURE] Releasing texture: %p", texturePtr);
         CFRelease(texturePtr); // Release our bridge_retained reference
         
         // Remove from reference count map
@@ -264,7 +285,7 @@ void MetalTextureCache::UnloadTexture(void* texturePtr) {
         // Remove from cache
         for (auto cacheIt = m_textureCache.begin(); cacheIt != m_textureCache.end(); /* no increment */) {
             if (cacheIt->second.texture == texturePtr) {
-                NSLog(@"[TEXTURE] Removing texture from cache: %s", cacheIt->first.c_str());
+                TraceLog(LOG_INFO, "[TEXTURE] Removing texture from cache: %s", cacheIt->first.c_str());
                 cacheIt = m_textureCache.erase(cacheIt);
             } else {
                 ++cacheIt;
@@ -274,22 +295,22 @@ void MetalTextureCache::UnloadTexture(void* texturePtr) {
 }
 
 void MetalTextureCache::UnloadAllTextures() {
-    NSLog(@"[SHUTDOWN] Unloading all textures (%lu textures in cache)", m_textureCache.size());
+    TraceLog(LOG_INFO, "[SHUTDOWN] Unloading all textures (%lu textures in cache)", m_textureCache.size());
     
     // Release all Metal textures
     for (auto& it : m_textureRefCounts) {
         if (it.first) {
-            NSLog(@"[SHUTDOWN] Releasing texture: %p (refCount was: %u)", it.first, it.second);
+            TraceLog(LOG_INFO, "[SHUTDOWN] Releasing texture: %p (refCount was: %u)", it.first, it.second);
             CFRelease(it.first);
         } else {
-            NSLog(@"[WARNING] Skipping release of null texture pointer (refCount was: %u)", it.second);
+            TraceLog(LOG_WARNING, "[WARNING] Skipping release of null texture pointer (refCount was: %u)", it.second);
         }
     }
     
     // Clear collections
     m_textureCache.clear();
     m_textureRefCounts.clear();
-    NSLog(@"[SHUTDOWN] All textures released and collections cleared");
+    TraceLog(LOG_INFO, "[SHUTDOWN] All textures released and collections cleared");
 }
 
 void MetalTextureCache::GenerateMipmapsForTexture(Texture2D texture) {
@@ -300,15 +321,17 @@ void MetalTextureCache::GenerateMipmapsForTexture(Texture2D texture) {
     
     if (!device) return;
     
-    id<MTLCommandQueue> commandQueue = [device newCommandQueue];
-    id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
-    id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
-    [blitEncoder generateMipmapsForTexture:metalTexture];
-    [blitEncoder endEncoding];
-    [commandBuffer commit];
-    
-    // Update mipmap count in texture structure
-    texture.mipmaps = metalTexture.mipmapLevelCount;
+    id<MTLCommandQueue> commandQueue = (__bridge id<MTLCommandQueue>)m_commandQueue;
+    if (commandQueue) {
+        id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
+        id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
+        [blitEncoder generateMipmapsForTexture:metalTexture];
+        [blitEncoder endEncoding];
+        [commandBuffer commit];
+        
+        // Update mipmap count in texture structure
+        texture.mipmaps = metalTexture.mipmapLevelCount;
+    }
 }
 
 unsigned int MetalTextureCache::GenerateTextureId() {
@@ -316,7 +339,7 @@ unsigned int MetalTextureCache::GenerateTextureId() {
 }
 
 Texture2D MetalTextureCache::CreateFallbackTexture() {
-    NSLog(@"[INFO] Creating fallback texture");
+    TraceLog(LOG_INFO, "[INFO] Creating fallback texture");
     
     // Create a small 2x2 magenta/black checkered texture as fallback
     const int fallbackSize = 2;
@@ -327,7 +350,7 @@ Texture2D MetalTextureCache::CreateFallbackTexture() {
     
     id<MTLDevice> device = (__bridge id<MTLDevice>)m_metalDevice;
     if (!device) {
-        NSLog(@"[ERROR] No Metal device available for fallback texture");
+        TraceLog(LOG_ERROR, "[ERROR] No Metal device available for fallback texture");
         Texture2D emptyTexture = {0};
         return emptyTexture;
     }
@@ -340,7 +363,7 @@ Texture2D MetalTextureCache::CreateFallbackTexture() {
     
     id<MTLTexture> metalTexture = [device newTextureWithDescriptor:textureDescriptor];
     if (!metalTexture) {
-        NSLog(@"[ERROR] Failed to create fallback Metal texture");
+        TraceLog(LOG_ERROR, "[ERROR] Failed to create fallback Metal texture");
         Texture2D emptyTexture = {0};
         return emptyTexture;
     }

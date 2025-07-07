@@ -101,6 +101,14 @@ bool MetalRenderer::Initialize(MTKView* view) {
 void MetalRenderer::Shutdown() {
     FlushBatch();
     
+    // Clean up global text renderer
+    if (g_textRenderer) {
+        g_textRenderer->Shutdown();
+        delete g_textRenderer;
+        g_textRenderer = nullptr;
+        TraceLog(LOG_INFO, "[SHUTDOWN] Global text renderer cleaned up");
+    }
+    
     m_view = nullptr;
     m_device = nullptr;
     m_commandQueue = nullptr;
@@ -509,25 +517,16 @@ void MetalRenderer::UpdateUniforms() {
 }
 
 void MetalRenderer::DrawRectangle(float x, float y, float width, float height, Color color) {
-    NSLog(@"[METAL DEBUG] DrawRectangle called: x=%.2f, y=%.2f, width=%.2f, height=%.2f, color=(%d,%d,%d,%d)", x, y, width, height, color.r, color.g, color.b, color.a);
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawRectangle: x=%.2f, y=%.2f, width=%.2f, height=%.2f, color=(%d,%d,%d,%d)", 
+             x, y, width, height, color.r, color.g, color.b, color.a);
     size_t verticesBefore = m_vertices.size();
     size_t commandsBefore = m_drawCommands.size();
     AddRectangleVertices(x, y, width, height, color);
-    DrawCommand cmd;
-    cmd.primitiveType = MTLPrimitiveTypeTriangle;
-    cmd.vertexStart = m_vertices.size() - 6;
-    cmd.vertexCount = 6;
-    cmd.texture = nullptr;
-    cmd.useTexture = false;
-    cmd.renderState = RENDER_STATE_ALPHA_BLEND;
-    cmd.textureId = 0;
-    cmd.depth = 0.0f;
-    cmd.sortKey = 0;
-    cmd.instanceCount = 1;
-    cmd.instanceDataOffset = 0;
-    cmd.debugName = "Rectangle";
+    DrawCommand cmd = CreateDrawCommand(MTLPrimitiveTypeTriangle, m_vertices.size() - 6, 6, nullptr, false, 
+                                       RENDER_STATE_ALPHA_BLEND, 0.0f, "Rectangle");
     m_drawCommands.push_back(cmd);
-    NSLog(@"[METAL DEBUG] DrawRectangle: vertices before=%zu, after=%zu; drawCommands before=%zu, after=%zu", verticesBefore, m_vertices.size(), commandsBefore, m_drawCommands.size());
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawRectangle: vertices before=%zu, after=%zu; drawCommands before=%zu, after=%zu", 
+             verticesBefore, m_vertices.size(), commandsBefore, m_drawCommands.size());
 }
 
 void MetalRenderer::AddRectangleVertices(float x, float y, float width, float height, Color color) {
@@ -555,15 +554,15 @@ void MetalRenderer::AddVertex(float x, float y, float u, float v, Color color) {
 }
 
 void MetalRenderer::FlushBatch() {
-    NSLog(@"[METAL DEBUG] FlushBatch: vertices=%zu, commands=%zu, encoder=%@", 
-          m_vertices.size(), m_drawCommands.size(), m_currentEncoder);
+    TraceLog(LOG_INFO, "[METAL DEBUG] FlushBatch: vertices=%zu, commands=%zu, encoder=%p", 
+             m_vertices.size(), m_drawCommands.size(), m_currentEncoder);
     
     if (m_vertices.empty() || !m_currentEncoder) {
         if (m_vertices.empty()) {
-            NSLog(@"[METAL DEBUG] FlushBatch: No vertices to flush");
+            TraceLog(LOG_WARNING, "[METAL DEBUG] FlushBatch: No vertices to flush");
         }
         if (!m_currentEncoder) {
-            NSLog(@"[METAL ERROR] FlushBatch: No render encoder available");
+            TraceLog(LOG_ERROR, "[METAL ERROR] FlushBatch: No render encoder available");
         }
         return;
     }
@@ -576,11 +575,11 @@ void MetalRenderer::FlushBatch() {
     void* destinationBuffer = m_frameResources.AllocateVertexBuffer(dataSize, &bufferOffset);
     
     if (!destinationBuffer) {
-        NSLog(@"[METAL ERROR] FlushBatch: Failed to allocate vertex buffer space");
+        TraceLog(LOG_ERROR, "[METAL ERROR] FlushBatch: Failed to allocate vertex buffer space");
         return;
     }
     
-    NSLog(@"[METAL DEBUG] FlushBatch: Allocated %zu bytes at offset %zu", dataSize, bufferOffset);
+    TraceLog(LOG_INFO, "[METAL DEBUG] FlushBatch: Allocated %zu bytes at offset %zu", dataSize, bufferOffset);
     
     // Copy vertex data to the frame's vertex buffer
     memcpy(destinationBuffer, m_vertices.data(), dataSize);
@@ -594,6 +593,9 @@ void MetalRenderer::FlushBatch() {
     size_t vertexStartOffset = m_currentVertexBufferOffset;
     m_currentVertexBufferOffset += m_vertices.size();
     
+    TraceLog(LOG_INFO, "[METAL DEBUG] FlushBatch: Updated vertex offsets, startOffset=%zu, newOffset=%zu", 
+             vertexStartOffset, m_currentVertexBufferOffset);
+    
     // Update draw commands to use buffer-relative offsets
     for (auto& cmd : m_drawCommands) {
         cmd.vertexStart += vertexStartOffset;
@@ -606,79 +608,69 @@ void MetalRenderer::FlushBatch() {
     m_vertices.clear();
     m_drawCommands.clear();
     
-    NSLog(@"[METAL DEBUG] FlushBatch: Completed successfully");
+    TraceLog(LOG_INFO, "[METAL DEBUG] FlushBatch: Completed successfully, cleared batch data");
 }
 
 void MetalRenderer::ExecuteOptimizedDrawCommands() {
-    NSLog(@"[METAL DEBUG] ExecuteOptimizedDrawCommands: %zu commands", m_drawCommands.size());
-    
-    if (m_drawCommands.empty()) return;
-    
-    // Sort draw commands for optimal rendering
-    SortDrawCommands();
-    
-    // Validate against mobile GPU limits
-    if (m_drawCommands.size() > m_mobileSettings.maxDrawCallsPerFrame) {
-        NSLog(@"[METAL WARNING] Draw calls (%lu) exceed mobile GPU limit (%u)", 
-              m_drawCommands.size(), m_mobileSettings.maxDrawCallsPerFrame);
+    if (m_drawCommands.empty()) {
+        TraceLog(LOG_WARNING, "[METAL DEBUG] ExecuteOptimizedDrawCommands: No draw commands to execute");
+        return;
     }
     
-    // Execute commands with state optimization
+    TraceLog(LOG_INFO, "[METAL DEBUG] ExecuteOptimizedDrawCommands: Executing %zu draw commands", m_drawCommands.size());
+    
+    // Track current state to minimize state changes
     id<MTLRenderPipelineState> currentPipeline = nullptr;
     id<MTLTexture> currentTexture = nullptr;
-    uint32_t currentRenderState = RENDER_STATE_NONE;
-    uint32_t textureBindCount = 0;
+    id<MTLDepthStencilState> currentDepthStencilState = nullptr;
+    
     uint32_t drawCallCount = 0;
     
     for (const auto& cmd : m_drawCommands) {
-        m_debugStats.drawCalls++;
-        drawCallCount++;
+        TraceLog(LOG_INFO, "[METAL DEBUG] Executing draw command: %s, vertices=%lu-%lu, texture=%p, layer=%d, depth=%.2f, instances=%lu", 
+                 cmd.debugName, (unsigned long)cmd.vertexStart, (unsigned long)(cmd.vertexStart + cmd.vertexCount - 1), 
+                 cmd.texture, (int)(cmd.depth / 0.1f), cmd.depth, (unsigned long)cmd.instanceCount);
         
-        TraceLog(LOG_INFO, "[METAL DEBUG] Draw call %u: %s, vertices=%lu, start=%lu, texture=%p, pipeline=%p", 
-                 drawCallCount, cmd.debugName, (unsigned long)cmd.vertexCount, (unsigned long)cmd.vertexStart, 
-                 cmd.texture, (cmd.useTexture ? m_texturePipeline : m_colorPipeline));
-        
-        // Check texture bind limits
-        if (cmd.useTexture && cmd.texture && cmd.texture != currentTexture) {
-            textureBindCount++;
-            if (textureBindCount > m_mobileSettings.maxTextureBindsPerFrame) {
-                NSLog(@"[METAL WARNING] Texture binds (%u) exceed mobile GPU limit (%u)", 
-                      textureBindCount, m_mobileSettings.maxTextureBindsPerFrame);
-            }
+        // Validate instance count to catch memory corruption early
+        if (cmd.instanceCount > 1000000) {
+            TraceLog(LOG_ERROR, "[METAL ERROR] ExecuteOptimizedDrawCommands: Suspicious instance count %lu for %s, possible memory corruption!", 
+                     (unsigned long)cmd.instanceCount, cmd.debugName);
+            // Continue execution but log the error
         }
         
-        // Set render state if changed
-        if (cmd.renderState != currentRenderState) {
-            SetRenderState(cmd.renderState);
-            currentRenderState = cmd.renderState;
-            m_debugStats.stateChanges++;
-        }
-        
-        // Set pipeline state if changed
-        id<MTLRenderPipelineState> requiredPipeline;
-        if (cmd.renderState & RENDER_STATE_INSTANCED) {
-            // Use instanced pipeline
-            requiredPipeline = cmd.useTexture ? m_instancedTexturePipeline : m_instancedColorPipeline;
+        // Determine required pipeline
+        id<MTLRenderPipelineState> requiredPipeline = nullptr;
+        if (cmd.useTexture) {
+            requiredPipeline = cmd.instanceCount > 1 ? m_instancedTexturePipeline : m_texturePipeline;
         } else {
-            // Use regular pipeline
-            requiredPipeline = cmd.useTexture ? m_texturePipeline : m_colorPipeline;
+            requiredPipeline = cmd.instanceCount > 1 ? m_instancedColorPipeline : m_colorPipeline;
         }
         
         // Set depth stencil state based on layer
+        id<MTLDepthStencilState> requiredDepthStencilState = nullptr;
         if (strcmp(cmd.debugName, "Background") == 0 || strcmp(cmd.debugName, "Midground") == 0 || 
             strcmp(cmd.debugName, "Foreground") == 0 || strcmp(cmd.debugName, "Logo") == 0 || 
             strcmp(cmd.debugName, "UI") == 0 || strcmp(cmd.debugName, "Text") == 0) {
-            [m_currentEncoder setDepthStencilState:m_uiDepthStencilState];
+            requiredDepthStencilState = m_uiDepthStencilState;
             TraceLog(LOG_INFO, "[METAL DEBUG] Using UI depth stencil state for %s", cmd.debugName);
         } else {
-            [m_currentEncoder setDepthStencilState:m_depthStencilState];
+            requiredDepthStencilState = m_depthStencilState;
         }
         
+        // Change depth stencil state if needed
+        if (requiredDepthStencilState != currentDepthStencilState) {
+            [m_currentEncoder setDepthStencilState:requiredDepthStencilState];
+            currentDepthStencilState = requiredDepthStencilState;
+            m_debugStats.stateChanges++;
+            TraceLog(LOG_INFO, "[METAL DEBUG] Changed depth stencil state for %s", cmd.debugName);
+        }
+        
+        // Change pipeline if needed
         if (requiredPipeline != currentPipeline) {
             [m_currentEncoder setRenderPipelineState:requiredPipeline];
             currentPipeline = requiredPipeline;
             m_debugStats.stateChanges++;
-            TraceLog(LOG_INFO, "[METAL DEBUG] Set pipeline: %p", requiredPipeline);
+            TraceLog(LOG_INFO, "[METAL DEBUG] Set pipeline: %p for %s", requiredPipeline, cmd.debugName);
         }
         
         // Bind texture if needed and changed
@@ -687,7 +679,7 @@ void MetalRenderer::ExecuteOptimizedDrawCommands() {
                 BindTexture(cmd.texture);
                 currentTexture = cmd.texture;
                 m_debugStats.textureBinds++;
-                TraceLog(LOG_INFO, "[METAL DEBUG] Bound texture: %p", cmd.texture);
+                TraceLog(LOG_INFO, "[METAL DEBUG] Bound texture: %p for %s", cmd.texture, cmd.debugName);
             }
         }
         
@@ -699,19 +691,22 @@ void MetalRenderer::ExecuteOptimizedDrawCommands() {
                                  vertexCount:cmd.vertexCount
                                instanceCount:cmd.instanceCount];
             m_debugStats.instancedCalls++;
-            NSLog(@"[METAL DEBUG] Instanced draw: %lu vertices, %lu instances", (unsigned long)cmd.vertexCount, (unsigned long)cmd.instanceCount);
+            TraceLog(LOG_INFO, "[METAL DEBUG] Instanced draw: %lu vertices, %lu instances for %s", 
+                     (unsigned long)cmd.vertexCount, (unsigned long)cmd.instanceCount, cmd.debugName);
         } else {
             // Regular rendering
             [m_currentEncoder drawPrimitives:cmd.primitiveType
                                  vertexStart:cmd.vertexStart
                                  vertexCount:cmd.vertexCount];
-            NSLog(@"[METAL DEBUG] Regular draw: %lu vertices", (unsigned long)cmd.vertexCount);
+            TraceLog(LOG_INFO, "[METAL DEBUG] Regular draw: %lu vertices for %s", 
+                     (unsigned long)cmd.vertexCount, cmd.debugName);
         }
         
         m_debugStats.batchedVertices += cmd.vertexCount;
+        drawCallCount++;
     }
     
-    NSLog(@"[METAL DEBUG] ExecuteOptimizedDrawCommands: Completed %u draw calls", drawCallCount);
+    TraceLog(LOG_INFO, "[METAL DEBUG] ExecuteOptimizedDrawCommands: Completed %u draw calls", drawCallCount);
 }
 
 void MetalRenderer::SortDrawCommands() {
@@ -725,6 +720,15 @@ void MetalRenderer::SortDrawCommands() {
               [](const DrawCommand& a, const DrawCommand& b) {
                   return a.sortKey < b.sortKey;
               });
+    
+    TraceLog(LOG_INFO, "[METAL DEBUG] SortDrawCommands: Sorted %zu draw commands", m_drawCommands.size());
+    
+    // Log the sorted order for debugging
+    for (size_t i = 0; i < m_drawCommands.size(); ++i) {
+        const auto& cmd = m_drawCommands[i];
+        TraceLog(LOG_INFO, "[METAL DEBUG] Draw command %zu: %s, layer=%d, depth=%.2f, sortKey=0x%08x", 
+                 i, cmd.debugName, (int)(cmd.depth / 0.1f), cmd.sortKey);
+    }
 }
 
 uint32_t MetalRenderer::GenerateSortKey(const DrawCommand& cmd) {
@@ -940,15 +944,23 @@ void MetalRenderer::DrawCircle(float x, float y, float radius, Color color) {
 }
 
 void MetalRenderer::DrawLine(float x1, float y1, float x2, float y2, Color color) {
-    // Simple line implementation using two triangles to form a thin rectangle
-    const float thickness = 1.0f;
+    // Use default thickness of 1.0f
+    DrawLineEx(x1, y1, x2, y2, 1.0f, color);
+}
+
+void MetalRenderer::DrawLineEx(float x1, float y1, float x2, float y2, float thickness, Color color) {
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawLineEx: (%.1f,%.1f) to (%.1f,%.1f), thickness=%.1f, color=(%d,%d,%d,%d)", 
+             x1, y1, x2, y2, thickness, color.r, color.g, color.b, color.a);
     
     // Calculate perpendicular vector for thickness
     float dx = x2 - x1;
     float dy = y2 - y1;
     float length = sqrtf(dx * dx + dy * dy);
     
-    if (length == 0) return;
+    if (length == 0) {
+        TraceLog(LOG_WARNING, "[METAL DEBUG] DrawLineEx: Zero length line, skipping");
+        return;
+    }
     
     // Normalize and get perpendicular
     float nx = -dy / length * thickness * 0.5f;
@@ -966,29 +978,26 @@ void MetalRenderer::DrawLine(float x1, float y1, float x2, float y2, Color color
     
     // Add vertices for two triangles
     size_t startIdx = m_vertices.size();
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawLineEx: Adding vertices starting at index %zu", startIdx);
     
     AddVertex(x1_top, y1_top, 0.5f, 0.5f, color);
     AddVertex(x1_bot, y1_bot, 0.5f, 0.5f, color);
     AddVertex(x2_top, y2_top, 0.5f, 0.5f, color);
     AddVertex(x2_bot, y2_bot, 0.5f, 0.5f, color);
     
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawLineEx: Added 4 vertices, total vertices=%zu", m_vertices.size());
+    
     // First triangle: top-left, bottom-left, top-right
-    DrawCommand cmd1;
-    cmd1.primitiveType = MTLPrimitiveTypeTriangle;
-    cmd1.vertexStart = startIdx;
-    cmd1.vertexCount = 3;
-    cmd1.texture = nullptr;
-    cmd1.useTexture = false;
+    DrawCommand cmd1 = CreateDrawCommand(MTLPrimitiveTypeTriangle, startIdx, 3, nullptr, false, 
+                                        RENDER_STATE_ALPHA_BLEND, 0.0f, "Line");
     m_drawCommands.push_back(cmd1);
     
     // Second triangle: bottom-left, bottom-right, top-right
-    DrawCommand cmd2;
-    cmd2.primitiveType = MTLPrimitiveTypeTriangle;
-    cmd2.vertexStart = startIdx + 1;
-    cmd2.vertexCount = 3;
-    cmd2.texture = nullptr;
-    cmd2.useTexture = false;
+    DrawCommand cmd2 = CreateDrawCommand(MTLPrimitiveTypeTriangle, startIdx + 1, 3, nullptr, false, 
+                                        RENDER_STATE_ALPHA_BLEND, 0.0f, "Line");
     m_drawCommands.push_back(cmd2);
+    
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawLineEx: Added 2 draw commands, total commands=%zu", m_drawCommands.size());
 }
 
 void MetalRenderer::DrawTexture(id<MTLTexture> texture, Rectangle source, Rectangle dest, Color tint) {
@@ -1112,14 +1121,14 @@ void MetalRenderer::DrawTextureEx(id<MTLTexture> texture, Vector2 position, floa
 void MetalRenderer::DrawText(const char* text, float x, float y, float fontSize, Color color) {
     NSLog(@"[METAL DEBUG] DrawText called: text='%s', x=%.2f, y=%.2f, fontSize=%.2f, color=(%d,%d,%d,%d)", text, x, y, fontSize, color.r, color.g, color.b, color.a);
     if (!g_textRenderer) {
-        NSLog(@"[METAL ERROR] g_textRenderer is not initialized!");
+        TraceLog(LOG_ERROR, "[METAL ERROR] g_textRenderer is not initialized!");
         return;
     }
     Font font = g_textRenderer->GetDefaultFont();
     NSLog(@"[METAL DEBUG] Default font pointer: %p, ctFont: %p", &font, font.ctFont);
     id<MTLTexture> textTexture = g_textRenderer->RenderTextToTexture(text, (int)fontSize, color);
     if (!textTexture) {
-        NSLog(@"[METAL ERROR] Failed to render text to texture for '%s' (font.ctFont=%p)", text, font.ctFont);
+        TraceLog(LOG_ERROR, "[METAL ERROR] Failed to render text to texture for '%s' (font.ctFont=%p)", text, font.ctFont);
         return;
     }
     float width = textTexture.width;
@@ -1151,6 +1160,65 @@ void MetalRenderer::ScaleMatrix(float x, float y) {
 }
 
 void MetalRenderer::DrawRoundedCorner(float centerX, float centerY, float radius, int segments, int corner, Color color) {
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawRoundedCorner: center=(%.1f,%.1f), radius=%.1f, segments=%d, corner=%d, color=(%d,%d,%d,%d)", 
+             centerX, centerY, radius, segments, corner, color.r, color.g, color.b, color.a);
+    
+    // Calculate angle range for this corner
+    float startAngle, endAngle;
+    switch (corner) {
+        case 0: // top-left
+            startAngle = M_PI;
+            endAngle = M_PI * 1.5f;
+            break;
+        case 1: // top-right
+            startAngle = M_PI * 1.5f;
+            endAngle = M_PI * 2.0f;
+            break;
+        case 2: // bottom-right
+            startAngle = 0;
+            endAngle = M_PI * 0.5f;
+            break;
+        case 3: // bottom-left
+            startAngle = M_PI * 0.5f;
+            endAngle = M_PI;
+            break;
+        default:
+            TraceLog(LOG_WARNING, "[METAL DEBUG] DrawRoundedCorner: Invalid corner %d", corner);
+            return;
+    }
+    
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawRoundedCorner: angle range %.2f to %.2f", startAngle, endAngle);
+    
+    // Center vertex
+    size_t centerIndex = m_vertices.size();
+    AddVertex(centerX, centerY, 0.5f, 0.5f, color);
+    
+    // Create triangles for the corner arc
+    for (int i = 0; i <= segments; i++) {
+        float t = (float)i / segments;
+        float angle = startAngle + (endAngle - startAngle) * t;
+        float px = centerX + cosf(angle) * radius;
+        float py = centerY + sinf(angle) * radius;
+        
+        AddVertex(px, py, 0.5f, 0.5f, color);
+        
+        if (i > 0) {
+            // Add triangle: center, previous point, current point
+            size_t centerIndex = m_vertices.size() - segments - 2;
+            size_t prevIndex = m_vertices.size() - 2;
+            size_t currIndex = m_vertices.size() - 1;
+            
+            DrawCommand cmd = CreateDrawCommand(MTLPrimitiveTypeTriangle, centerIndex, 3, nullptr, false, 
+                                               RENDER_STATE_ALPHA_BLEND, 0.0f, "RoundedCorner");
+            m_drawCommands.push_back(cmd);
+        }
+    }
+    
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawRoundedCorner: Added %d triangles, total vertices=%zu, total commands=%zu", 
+             segments, m_vertices.size(), m_drawCommands.size());
+}
+
+void MetalRenderer::DrawRoundedCornerLines(float centerX, float centerY, float radius, int segments, int corner, float lineThick, Color color) {
     // Calculate angle range for this corner
     float startAngle, endAngle;
     switch (corner) {
@@ -1174,30 +1242,20 @@ void MetalRenderer::DrawRoundedCorner(float centerX, float centerY, float radius
             return;
     }
     
-    // Center vertex
-    size_t centerIndex = m_vertices.size();
-    AddVertex(centerX, centerY, 0.5f, 0.5f, color);
-    
-    // Create triangles for the corner arc
-    for (int i = 0; i <= segments; i++) {
-        float t = (float)i / segments;
-        float angle = startAngle + (endAngle - startAngle) * t;
-        float px = centerX + cosf(angle) * radius;
-        float py = centerY + sinf(angle) * radius;
+    // Draw line segments along the arc
+    for (int i = 0; i < segments; i++) {
+        float t1 = (float)i / segments;
+        float t2 = (float)(i + 1) / segments;
         
-        AddVertex(px, py, 0.5f, 0.5f, color);
+        float angle1 = startAngle + (endAngle - startAngle) * t1;
+        float angle2 = startAngle + (endAngle - startAngle) * t2;
         
-        if (i > 0) {
-            // Add triangle: center, previous point, current point
-            DrawCommand cmd;
-            cmd.primitiveType = MTLPrimitiveTypeTriangle;
-            cmd.vertexStart = centerIndex;
-            cmd.vertexCount = 3;
-            cmd.texture = nullptr;
-            cmd.useTexture = false;
-            
-            m_drawCommands.push_back(cmd);
-        }
+        float x1 = centerX + cosf(angle1) * radius;
+        float y1 = centerY + sinf(angle1) * radius;
+        float x2 = centerX + cosf(angle2) * radius;
+        float y2 = centerY + sinf(angle2) * radius;
+        
+        DrawLineEx(x1, y1, x2, y2, lineThick, color);
     }
 }
 
@@ -1245,23 +1303,25 @@ void MetalRenderer::FlushInstancedBatch() {
 }
 
 void MetalRenderer::DrawInstanced(id<MTLTexture> texture, uint32_t instanceCount, uint32_t renderState) {
-    if (instanceCount == 0) return;
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawInstanced: texture=%p, instances=%lu, renderState=0x%08x", 
+             texture, (unsigned long)instanceCount, renderState);
+    
+    if (instanceCount == 0) {
+        TraceLog(LOG_WARNING, "[METAL DEBUG] DrawInstanced: Zero instances, skipping");
+        return;
+    }
     
     // Create instanced draw command
-    DrawCommand cmd;
-    cmd.primitiveType = MTLPrimitiveTypeTriangle;
-    cmd.vertexStart = m_vertices.size() - 6; // Assume rectangle (6 vertices)
-    cmd.vertexCount = 6;
-    cmd.texture = texture;
-    cmd.useTexture = (texture != nullptr);
-    cmd.renderState = renderState | RENDER_STATE_INSTANCED;
-    cmd.instanceCount = instanceCount;
+    DrawCommand cmd = CreateDrawCommand(MTLPrimitiveTypeTriangle, m_vertices.size() - 6, 6, texture, 
+                                       (texture != nullptr), renderState | RENDER_STATE_INSTANCED, 
+                                       0.0f, "Instanced Draw", instanceCount);
     cmd.instanceDataOffset = m_currentInstanceBufferOffset;
     cmd.textureId = GetTextureHash(texture);
-    cmd.depth = 0.0f; // Default depth
-    cmd.debugName = "Instanced Draw";
     
     m_drawCommands.push_back(cmd);
+    
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawInstanced: Added instanced command, total commands=%zu, instanceDataOffset=%zu", 
+             m_drawCommands.size(), m_currentInstanceBufferOffset);
 }
 
 void MetalRenderer::DrawInstancedRectangles(const std::vector<Rectangle>& rects, const std::vector<Color>& colors) {
@@ -1490,6 +1550,67 @@ void MetalRenderer::OptimizeForDevice() {
     SetMobileGPUSettings(settings);
     
     NSLog(@"[INFO] Optimized for device: %@ (Modern GPU: %s)", deviceName, isA12OrLater ? "YES" : "NO");
+}
+
+void MetalRenderer::DrawRectangleRoundedLines(float x, float y, float width, float height, float roundness, int segments, float lineThick, Color color) {
+    NSLog(@"[METAL DEBUG] DrawRectangleRoundedLines: rect=(%.1f,%.1f,%.1f,%.1f), roundness=%.1f, lineThick=%.1f, color=(%d,%d,%d,%d)", 
+          x, y, width, height, roundness, lineThick, color.r, color.g, color.b, color.a);
+    
+    // Clamp roundness to reasonable values
+    float maxRadius = fminf(width, height) * 0.5f;
+    float radius = fminf(roundness, maxRadius);
+    
+    if (radius <= 0) {
+        // Draw regular rectangle outline
+        DrawLineEx(x, y, x + width, y, lineThick, color);                    // Top
+        DrawLineEx(x + width, y, x + width, y + height, lineThick, color);   // Right
+        DrawLineEx(x + width, y + height, x, y + height, lineThick, color);  // Bottom
+        DrawLineEx(x, y + height, x, y, lineThick, color);                   // Left
+        return;
+    }
+    
+    // Calculate corner centers
+    float left = x + radius;
+    float right = x + width - radius;
+    float top = y + radius;
+    float bottom = y + height - radius;
+    
+    // Draw straight edges
+    DrawLineEx(left, y, right, y, lineThick, color);                    // Top
+    DrawLineEx(right, top, right, bottom, lineThick, color);            // Right
+    DrawLineEx(right, y + height, left, y + height, lineThick, color);  // Bottom
+    DrawLineEx(left, bottom, left, top, lineThick, color);              // Left
+    
+    // Draw rounded corners using line segments
+    DrawRoundedCornerLines(left, top, radius, segments, 0, lineThick, color);     // top-left
+    DrawRoundedCornerLines(right, top, radius, segments, 1, lineThick, color);    // top-right
+    DrawRoundedCornerLines(right, bottom, radius, segments, 2, lineThick, color); // bottom-right
+    DrawRoundedCornerLines(left, bottom, radius, segments, 3, lineThick, color);  // bottom-left
+}
+
+// Helper function to properly initialize DrawCommand objects
+DrawCommand MetalRenderer::CreateDrawCommand(MTLPrimitiveType primitiveType, NSUInteger vertexStart, NSUInteger vertexCount, 
+                                            id<MTLTexture> texture, bool useTexture, uint32_t renderState, 
+                                            float depth, const char* debugName, uint32_t instanceCount) {
+    DrawCommand cmd;
+    cmd.primitiveType = primitiveType;
+    cmd.vertexStart = vertexStart;
+    cmd.vertexCount = vertexCount;
+    cmd.texture = texture;
+    cmd.useTexture = useTexture;
+    cmd.renderState = renderState;
+    cmd.textureId = useTexture ? GetTextureHash(texture) : 0;
+    cmd.depth = depth;
+    cmd.sortKey = 0; // Will be generated during sorting
+    cmd.instanceCount = instanceCount;
+    cmd.instanceDataOffset = 0;
+    cmd.debugName = debugName;
+    
+    TraceLog(LOG_INFO, "[METAL DEBUG] CreateDrawCommand: %s, vertices=%lu-%lu, texture=%p, useTexture=%d, renderState=0x%08x, depth=%.2f, instances=%lu", 
+             debugName, (unsigned long)vertexStart, (unsigned long)(vertexStart + vertexCount - 1), 
+             texture, useTexture, renderState, depth, (unsigned long)instanceCount);
+    
+    return cmd;
 }
 
 #endif // defined(__APPLE__) && TARGET_OS_IOS 

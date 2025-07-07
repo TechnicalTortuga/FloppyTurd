@@ -28,7 +28,7 @@ AIGUI_DEF void AIGUI_Init() {
         g_AIGUI.defaultFont = whackyJoeFont;
         TraceLog(LOG_INFO, "AIGUI: Using Whacky Joe font for UI");
     } else {
-        g_AIGUI.defaultFont = GetFontDefault();
+    g_AIGUI.defaultFont = GetFontDefault();
         TraceLog(LOG_WARNING, "AIGUI: Whacky Joe font failed, trying system font");
         if (g_AIGUI.defaultFont.glyphCount == 0) {
             // Fallback to system font if GetFontDefault fails
@@ -81,6 +81,8 @@ AIGUI_DEF void AIGUI_BeginFrame() {
     auto& platform = PlatformLayer::GetInstance();
     g_AIGUI.mousePos = _GetScaledInputPosition();
     g_AIGUI.mouseLeftDown = platform.IsPrimaryInputDown();
+    
+    TraceLog(LOG_INFO, "[AIGUI] BeginFrame: mousePos=(%.1f,%.1f), mouseLeftDown=%d", g_AIGUI.mousePos.x, g_AIGUI.mousePos.y, g_AIGUI.mouseLeftDown);
 }
 
 AIGUI_DEF void AIGUI_EndFrame() {
@@ -103,34 +105,61 @@ AIGUI_DEF void AIGUI_SetTouchControls(class TouchControls* controls) {
 }
 
 AIGUI_DEF bool AIGUI_ButtonRounded(const char* label, float x, float y, float width, float height, float radius, int fontSize, Color textColor) {
-    TraceLog(LOG_INFO, "[AIGUI] ButtonRounded called with label: %s, font.baseSize: %d, font.glyphCount: %d", label, g_AIGUI.defaultFont.baseSize, g_AIGUI.defaultFont.glyphCount);
-    Rectangle rect = { x, y, width, height };
+    TraceLog(LOG_INFO, "[AIGUI] ButtonRounded called with label: %s, rect=(%.1f,%.1f,%.1f,%.1f), fontSize=%d, textColor=(%d,%d,%d,%d)", label, x, y, width, height, fontSize, textColor.r, textColor.g, textColor.b, textColor.a);
     
-    // Check if mouse is outside game area
+    Rectangle rect = { x, y, width, height };
     bool mouseOutsideGameArea = (g_AIGUI.mousePos.x < 0 || g_AIGUI.mousePos.y < 0);
     bool hovered = !mouseOutsideGameArea && CheckCollisionPointRec(g_AIGUI.mousePos, rect);
-    
-    // Use platform-agnostic input
     auto& platform = PlatformLayer::GetInstance();
     bool clicked = hovered && platform.IsPrimaryInputReleased();
-    
-    // Check for gesture interaction on mobile
     bool gestureTriggered = false;
+    
     if (g_AIGUI.isMobile) {
         if (AIGUI_IsGestureDetected(GESTURE_TAP) && CheckCollisionPointRec(_GetScaledInputPosition(), rect)) {
             gestureTriggered = true;
         }
     }
     
-    Color bgColor = clicked ? Fade(BLUE, 0.8f) : hovered ? Fade(BLUE, 0.6f) : Fade(BLUE, 0.4f);
+    // Use more visible button colors with better contrast
+    Color bgColor;
+    Color outlineColor = Color{255, 255, 255, 255}; // White outline for visibility
+    
+    if (clicked) {
+        bgColor = Color{255, 100, 100, 255}; // Bright red when clicked
+        outlineColor = Color{200, 50, 50, 255}; // Darker red outline
+    } else if (hovered) {
+        bgColor = Color{255, 150, 150, 255};  // Light red when hovered
+        outlineColor = Color{200, 100, 100, 255}; // Medium red outline
+    } else {
+        bgColor = Color{200, 200, 200, 255};   // Light gray when normal
+        outlineColor = Color{100, 100, 100, 255}; // Dark gray outline
+    }
+    
+    TraceLog(LOG_INFO, "[AIGUI] Button state: hovered=%d, clicked=%d, gestureTriggered=%d, bgColor=(%d,%d,%d,%d), outlineColor=(%d,%d,%d,%d)", 
+             hovered, clicked, gestureTriggered, bgColor.r, bgColor.g, bgColor.b, bgColor.a, 
+             outlineColor.r, outlineColor.g, outlineColor.b, outlineColor.a);
+    
+    // Draw button background with visible color
     DrawRectangleRounded(rect, radius, 8, bgColor);
+    
+    // Draw button outline for better visibility - use thicker line for mobile
+    float outlineThickness = g_AIGUI.isMobile ? 3.0f : 2.0f;
+    DrawRectangleRoundedLinesEx(rect, radius, 8, outlineThickness, outlineColor);
+    
+    // Center text in button
     Vector2 textSize = MeasureTextEx(g_AIGUI.defaultFont, label, fontSize, 1.0f);
     float textX = x + (width - textSize.x) / 2;
     float textY = y + (height - textSize.y) / 2;
+    
     TraceLog(LOG_INFO, "[AIGUI] DrawTextEx params: label=%s, x=%.1f, y=%.1f, fontSize=%d, color=(%d,%d,%d,%d)", label, textX, textY, fontSize, textColor.r, textColor.g, textColor.b, textColor.a);
     DrawTextEx(g_AIGUI.defaultFont, label, {textX, textY}, fontSize, 1.0f, textColor);
 
-    return (hovered && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) || gestureTriggered;
+    bool result = (hovered && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) || gestureTriggered;
+    if (result) {
+        TraceLog(LOG_INFO, "[AIGUI] Button '%s' was clicked/activated", label);
+    }
+    
+    return result;
 }
 
 AIGUI_DEF bool AIGUI_ImageButton(Texture2D textureDefault, Texture2D textureHover, float x, float y, float width, float height, const char* text, int fontSize, Color textColor, Vector2* customMousePos) {

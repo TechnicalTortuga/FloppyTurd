@@ -96,22 +96,17 @@ extern "C" int game_main(int argc, char *argv[]);
     platformLayer.Initialize((__bridge void*)_metalView);
     NSLog(@"[INIT] PlatformLayer initialized successfully");
     
-    // Initialize UIManager with safe area
-    CGRect safeAreaRect = self.view.safeAreaLayoutGuide.layoutFrame;
-    Rectangle safeArea = {
-        static_cast<float>(safeAreaRect.origin.x),
-        static_cast<float>(safeAreaRect.origin.y),
-        static_cast<float>(safeAreaRect.size.width),
-        static_cast<float>(safeAreaRect.size.height)
+    // Initialize UIManager with actual safe area, not full screen bounds
+    CGRect bounds = [UIScreen mainScreen].bounds;
+    CGRect safeArea = self.view.safeAreaLayoutGuide.layoutFrame;
+    Rectangle safeAreaRect = {
+        (float)safeArea.origin.x, (float)safeArea.origin.y,
+        (float)safeArea.size.width, (float)safeArea.size.height
     };
-    
     UIManager& uiManager = UIManager::GetInstance();
-    uiManager.Initialize(
-        static_cast<float>(safeAreaRect.size.width),
-        static_cast<float>(safeAreaRect.size.height),
-        safeArea
-    );
-    NSLog(@"[INIT] UIManager initialized with safe area: %.0fx%.0f", safeArea.width, safeArea.height);
+    uiManager.Initialize((float)bounds.size.width, (float)bounds.size.height, safeAreaRect);
+    NSLog(@"[INIT] UIManager initialized with safe area: x=%.0f y=%.0f w=%.0f h=%.0f", 
+          safeAreaRect.x, safeAreaRect.y, safeAreaRect.width, safeAreaRect.height);
     
     // Now initialize the game directly on the main thread.
     // This is CRITICAL to prevent race conditions where the game loop

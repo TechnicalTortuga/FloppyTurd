@@ -15,6 +15,7 @@
 #include <queue>
 #include "MetalFrameResources.h"
 #include "RaylibCompat.h"
+#include "RenderLayer.h"
 
 // Vertex structure for 2D rendering
 typedef struct {
@@ -60,16 +61,6 @@ typedef enum {
     RENDER_STATE_WIREFRAME = 1 << 3,
     RENDER_STATE_INSTANCED = 1 << 4
 } RenderStateFlags;
-
-// Render layer enum for 2D layering
-enum class RenderLayer {
-    Background = 0,    // Background elements (sky, distant mountains, etc.)
-    Midground = 1,     // Midground elements (buildings, trees, etc.)
-    Foreground = 2,    // Foreground elements (player, enemies, projectiles, etc.)
-    Logo = 3,          // Logo and branding elements
-    UI = 4,            // UI elements (buttons, menus, etc.)
-    Text = 5           // Text overlays (highest priority)
-};
 
 // Instance data for instanced rendering
 typedef struct {
@@ -130,8 +121,10 @@ public:
     // Drawing primitives
     void DrawRectangle(float x, float y, float width, float height, Color color);
     void DrawRectangleRounded(float x, float y, float width, float height, float roundness, int segments, Color color);
+    void DrawRectangleRoundedLines(float x, float y, float width, float height, float roundness, int segments, float lineThick, Color color);
     void DrawCircle(float x, float y, float radius, Color color);
     void DrawLine(float x1, float y1, float x2, float y2, Color color);
+    void DrawLineEx(float x1, float y1, float x2, float y2, float thickness, Color color);
     
     // Texture drawing
     void DrawTexture(id<MTLTexture> texture, Rectangle source, Rectangle dest, Color tint);
@@ -232,6 +225,7 @@ private:
     void AddRectangleVertices(float x, float y, float width, float height, Color color);
     void AddTexturedRectangleVertices(Rectangle dest, Rectangle source, Color tint);
     void DrawRoundedCorner(float centerX, float centerY, float radius, int segments, int corner, Color color);
+    void DrawRoundedCornerLines(float centerX, float centerY, float radius, int segments, int corner, float lineThick, Color color);
     void ExecuteDrawCommands();
     simd_float4x4 MakeOrthoMatrix(float left, float right, float bottom, float top, float near, float far);
     simd_float4x4 MakeTranslationMatrix(float x, float y);
@@ -263,6 +257,9 @@ private:
     // Utility methods
     uint32_t GetTextureHash(id<MTLTexture> texture);
     bool ShouldBatchCommands(const DrawCommand& cmd1, const DrawCommand& cmd2);
+    DrawCommand CreateDrawCommand(MTLPrimitiveType primitiveType, NSUInteger vertexStart, NSUInteger vertexCount, 
+                                 id<MTLTexture> texture, bool useTexture, uint32_t renderState, 
+                                 float depth, const char* debugName, uint32_t instanceCount = 1);
 };
 
 // Global renderer instance (managed by MetalRaylibCompat)

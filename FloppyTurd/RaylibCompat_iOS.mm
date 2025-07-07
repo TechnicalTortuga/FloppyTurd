@@ -173,12 +173,15 @@ Texture2D LoadTexture_iOS(const char *fileName)
         
         // Generate mipmaps if needed
         if (textureDescriptor.mipmapLevelCount > 1) {
-            id<MTLCommandQueue> commandQueue = [device newCommandQueue];
-            id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
-            id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
-            [blitEncoder generateMipmapsForTexture:metalTexture];
-            [blitEncoder endEncoding];
-            [commandBuffer commit];
+            // Use the shared command queue from PlatformLayer
+            id<MTLCommandQueue> commandQueue = (__bridge id<MTLCommandQueue>)PlatformLayer::GetInstance().GetMetalCommandQueue();
+            if (commandQueue) {
+                id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
+                id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
+                [blitEncoder generateMipmapsForTexture:metalTexture];
+                [blitEncoder endEncoding];
+                [commandBuffer commit];
+            }
         }
         
         CGContextRelease(context);
@@ -1037,6 +1040,19 @@ void DrawRectangleRounded(Rectangle rec, float roundness, int segments, Color co
 // Line and circle drawing (simple implementations)
 void DrawLine(int startPosX, int startPosY, int endPosX, int endPosY, Color color) {
     // Simple line drawing - not implemented for iOS yet
+}
+
+void DrawLineEx(Vector2 startPos, Vector2 endPos, float thick, Color color) {
+    PlatformLayer::GetInstance().DrawLineEx(startPos.x, startPos.y, endPos.x, endPos.y, thick, color);
+}
+
+void DrawRectangleRoundedLines(Rectangle rec, float roundness, int segments, Color color) {
+    // Use default line thickness of 1.0f
+    DrawRectangleRoundedLinesEx(rec, roundness, segments, 1.0f, color);
+}
+
+void DrawRectangleRoundedLinesEx(Rectangle rec, float roundness, int segments, float lineThick, Color color) {
+    PlatformLayer::GetInstance().DrawRectangleRoundedLines(rec.x, rec.y, rec.width, rec.height, roundness, segments, lineThick, color);
 }
 
 void DrawCircleV(Vector2 center, float radius, Color color) {

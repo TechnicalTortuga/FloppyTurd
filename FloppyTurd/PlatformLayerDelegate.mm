@@ -165,6 +165,52 @@ static inline unsigned int ColorToUInt(Color c) {
     _metalRenderer->DrawRectangle(posX, posY, width, height, raylibColor);
 }
 
+- (void)drawLineEx:(float)x1 y1:(float)y1 x2:(float)x2 y2:(float)y2 thickness:(float)thickness color:(unsigned int)color {
+    NSLog(@"[DEBUG] drawLineEx ENTRY: (%.1f,%.1f) to (%.1f,%.1f), thickness=%.1f, color=0x%08X", x1, y1, x2, y2, thickness, color);
+    if (![NSThread isMainThread]) {
+        NSLog(@"[ERROR] drawLineEx called on non-main thread! Current thread: %@", [NSThread currentThread]);
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self drawLineEx:x1 y1:y1 x2:x2 y2:y2 thickness:thickness color:color];
+        });
+        return;
+    }
+    if (!_metalRenderer) {
+        NSLog(@"[ERROR] drawLineEx: MetalRenderer not available");
+        return;
+    }
+    Color raylibColor = {
+        (unsigned char)((color >> 24) & 0xFF),
+        (unsigned char)((color >> 16) & 0xFF),
+        (unsigned char)((color >> 8) & 0xFF),
+        (unsigned char)(color & 0xFF)
+    };
+    NSLog(@"[DEBUG] drawLineEx calling MetalRenderer: (%.1f,%.1f) to (%.1f,%.1f), thickness=%.1f, color=(%d,%d,%d,%d)", x1, y1, x2, y2, thickness, raylibColor.r, raylibColor.g, raylibColor.b, raylibColor.a);
+    _metalRenderer->DrawLineEx(x1, y1, x2, y2, thickness, raylibColor);
+}
+
+- (void)drawRectangleRoundedLines:(float)x y:(float)y width:(float)width height:(float)height roundness:(float)roundness segments:(int)segments lineThick:(float)lineThick color:(unsigned int)color {
+    NSLog(@"[DEBUG] drawRectangleRoundedLines ENTRY: rect=(%.1f,%.1f,%.1f,%.1f), roundness=%.1f, lineThick=%.1f, color=0x%08X", x, y, width, height, roundness, lineThick, color);
+    if (![NSThread isMainThread]) {
+        NSLog(@"[ERROR] drawRectangleRoundedLines called on non-main thread! Current thread: %@", [NSThread currentThread]);
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self drawRectangleRoundedLines:x y:y width:width height:height roundness:roundness segments:segments lineThick:lineThick color:color];
+        });
+        return;
+    }
+    if (!_metalRenderer) {
+        NSLog(@"[ERROR] drawRectangleRoundedLines: MetalRenderer not available");
+        return;
+    }
+    Color raylibColor = {
+        (unsigned char)((color >> 24) & 0xFF),
+        (unsigned char)((color >> 16) & 0xFF),
+        (unsigned char)((color >> 8) & 0xFF),
+        (unsigned char)(color & 0xFF)
+    };
+    NSLog(@"[DEBUG] drawRectangleRoundedLines calling MetalRenderer: rect=(%.1f,%.1f,%.1f,%.1f), roundness=%.1f, lineThick=%.1f, color=(%d,%d,%d,%d)", x, y, width, height, roundness, lineThick, raylibColor.r, raylibColor.g, raylibColor.b, raylibColor.a);
+    _metalRenderer->DrawRectangleRoundedLines(x, y, width, height, roundness, segments, lineThick, raylibColor);
+}
+
 - (void)drawText:(const char*)text x:(float)x y:(float)y fontSize:(float)fontSize color:(unsigned int)color font:(void*)font {
     NSLog(@"[DEBUG] drawText ENTRY: text=%s, x=%f, y=%f, fontSize=%f, color=0x%08X", text, x, y, fontSize, color);
     if (![NSThread isMainThread]) {
@@ -293,6 +339,10 @@ static inline unsigned int ColorToUInt(Color c) {
         }
     }
     return 0;
+}
+
+- (id<MTLCommandQueue>)getMetalCommandQueue {
+    return _commandQueue;
 }
 
 @end

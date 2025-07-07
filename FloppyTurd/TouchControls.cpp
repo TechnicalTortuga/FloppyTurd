@@ -201,8 +201,8 @@ void TouchControls::Draw(float alpha) {
         
         DrawText(shootText, textX, textY, fontSize, WHITE);
         
-        // Draw a separator line
-        DrawLine(0, screenHeight - SHOOT_BAR_HEIGHT, screenWidth, screenHeight - SHOOT_BAR_HEIGHT, WHITE);
+        // Draw a separator line with proper thickness
+        DrawLineEx({0, (float)(screenHeight - SHOOT_BAR_HEIGHT)}, {(float)screenWidth, (float)(screenHeight - SHOOT_BAR_HEIGHT)}, 2.0f, WHITE);
     }
     
     // Optionally draw a subtle indicator for the jump area when touched

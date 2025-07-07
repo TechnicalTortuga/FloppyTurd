@@ -13,11 +13,14 @@
 
 - (instancetype)initWithView:(MTKView*)view;
 - (void)drawRectangleWithPosX:(int)posX posY:(int)posY width:(int)width height:(int)height color:(unsigned int)color;
+- (void)drawLineEx:(float)x1 y1:(float)y1 x2:(float)x2 y2:(float)y2 thickness:(float)thickness color:(unsigned int)color;
+- (void)drawRectangleRoundedLines:(float)x y:(float)y width:(float)width height:(float)height roundness:(float)roundness segments:(int)segments lineThick:(float)lineThick color:(unsigned int)color;
 - (void)drawText:(const char*)text x:(float)x y:(float)y fontSize:(float)fontSize color:(unsigned int)color font:(void*)font;
 - (void)drawTexture:(void*)texture x:(float)x y:(float)y width:(float)width height:(float)height tint:(unsigned int)tint;
 - (void*)loadTextureFromImage:(void*)imageData width:(int)width height:(int)height format:(int)format;
 - (void)processDrawCommands:(MTKView*)view;
 - (float)getLastFrameTime;
 - (int)getLastFPS;
+- (id<MTLCommandQueue>)getMetalCommandQueue;
 // Add methods for rendering, texture management, etc., as needed
 @end 

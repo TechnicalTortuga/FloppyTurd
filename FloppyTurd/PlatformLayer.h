@@ -126,6 +126,8 @@ public:
     void BeginDrawing(void* renderTexture);
     void EndDrawing(void* renderTexture);
     void DrawRectangle(int posX, int posY, int width, int height, unsigned int color);
+    void DrawLineEx(float x1, float y1, float x2, float y2, float thickness, Color color);
+    void DrawRectangleRoundedLines(float x, float y, float width, float height, float roundness, int segments, float lineThick, Color color);
     void* LoadTextureFromImage(void* imageData, int width, int height, int format);
     void DrawTexture(void* texture, float x, float y, float width, float height, Color tint);
     void EnqueueDrawCommand(void* vertexBuffer, void* texture, size_t vertexCount);
@@ -142,6 +144,7 @@ public:
 
     // Metal device access (iOS)
     void* GetMetalDevice() const;
+    void* GetMetalCommandQueue() const;
     
     // Metal pipeline setup (iOS)
     void setupMetalPipeline();

@@ -8,6 +8,7 @@
 #import "MetalRenderer.h"
 #import "PlatformLayerDelegate.h"
 #import "UIManager.h"
+#import "MetalTextureCache.h"
 
 // Singleton instance
 static PlatformLayer* s_Instance = nullptr;
@@ -27,7 +28,7 @@ static inline unsigned int ColorToUInt(Color c) {
 // Error logging for Metal operations
 static void LogMetalError(NSError *error, NSString *operation) {
     if (error) {
-        NSLog(@"[ERROR] Metal operation failed: %@ - Error: %@", operation, error.localizedDescription);
+        TraceLog(LOG_ERROR, "[ERROR] Metal operation failed: %s - Error: %s", [operation UTF8String], [error.localizedDescription UTF8String]);
     }
 }
 
@@ -110,7 +111,20 @@ void PlatformLayer::Initialize() {
 }
 
 void PlatformLayer::Shutdown() {
-    // Cleanup if needed
+    // Clean up MetalTextureCache
+    MetalTextureCache::GetInstance().Shutdown();
+    
+    // Clean up Metal resources - ARC will handle the releases automatically
+    if (m_Delegate) {
+        PlatformLayerDelegate* delegate = (__bridge PlatformLayerDelegate*)m_Delegate;
+        // ARC will handle delegate cleanup
+        m_Delegate = nullptr;
+    }
+    
+    m_View = nullptr;
+    m_MetalDevice = nullptr;
+    
+    TraceLog(LOG_INFO, "[SHUTDOWN] PlatformLayer shutdown complete");
 }
 
 // App lifecycle events
@@ -414,7 +428,7 @@ void* PlatformLayer::LoadTexture(const char* fileName, int* width, int* height) 
         UIImage* uiImage = [UIImage imageNamed:name];
         
         if (!uiImage) {
-            NSLog(@"[ERROR] LoadTexture: Failed to load asset catalog texture: %s", fileName);
+            TraceLog(LOG_ERROR, "[ERROR] LoadTexture: Failed to load asset catalog texture: %s", fileName);
             return nullptr;
         }
         
@@ -427,7 +441,7 @@ void* PlatformLayer::LoadTexture(const char* fileName, int* width, int* height) 
         
         // Validate CGImage dimensions
         if (cgWidth == 0 || cgHeight == 0) {
-            NSLog(@"[ERROR] LoadTexture: CGImage has invalid dimensions!");
+            TraceLog(LOG_ERROR, "[ERROR] LoadTexture: CGImage has invalid dimensions!");
             return nullptr;
         }
         
@@ -460,9 +474,9 @@ void* PlatformLayer::LoadTexture(const char* fileName, int* width, int* height) 
         id<MTLTexture> texture = [(__bridge id<MTLDevice>)m_MetalDevice newTextureWithDescriptor:textureDescriptor];
         LogMetalError(error, @"Creating Metal texture");
         if (!texture) {
-            NSLog(@"[ERROR] LoadTexture: Failed to create Metal texture!");
-            return nullptr;
-        }
+                    TraceLog(LOG_ERROR, "[ERROR] LoadTexture: Failed to create Metal texture!");
+        return nullptr;
+    }
         NSLog(@"[DEBUG] LoadTexture: Metal texture created: %p (retain count: %lu)", texture, (unsigned long)CFGetRetainCount((__bridge CFTypeRef)texture));
         
         // Load image data into texture
@@ -516,7 +530,7 @@ void* PlatformLayer::LoadTexture(const char* fileName, int* width, int* height) 
     textureDescriptor.height = *height;
     id<MTLTexture> texture = [(__bridge id<MTLDevice>)m_MetalDevice newTextureWithDescriptor:textureDescriptor];
     if (!texture) {
-        NSLog(@"[ERROR] LoadTexture: Failed to create Metal texture!");
+        TraceLog(LOG_ERROR, "[ERROR] LoadTexture: Failed to create Metal texture!");
         return nullptr;
     }
     NSLog(@"[DEBUG] LoadTexture: Regular file texture created: %p (retain count: %lu)", texture, (unsigned long)CFGetRetainCount((__bridge CFTypeRef)texture));
@@ -556,7 +570,7 @@ void* PlatformLayer::LoadRenderTexture(int width, int height) {
     NSLog(@"[DEBUG] LoadRenderTexture: Metal device: %p", m_MetalDevice);
     
     if (!m_MetalDevice) {
-        NSLog(@"[ERROR] LoadRenderTexture: No Metal device available!");
+        TraceLog(LOG_ERROR, "[ERROR] LoadRenderTexture: No Metal device available!");
         return nullptr;
     }
     
@@ -582,7 +596,7 @@ void* PlatformLayer::LoadRenderTexture(int width, int height) {
 
 void PlatformLayer::BeginDrawing(void* renderTexture) {
     if (!m_Delegate) {
-        NSLog(@"[ERROR] BeginDrawing called with no delegate set!");
+        TraceLog(LOG_ERROR, "[ERROR] BeginDrawing called with no delegate set!");
         return;
     }
     
@@ -687,6 +701,17 @@ void* PlatformLayer::GetMetalDevice() const {
     return m_MetalDevice;
 }
 
+void* PlatformLayer::GetMetalCommandQueue() const {
+    // Get the command queue from the delegate
+    if (m_Delegate) {
+        PlatformLayerDelegate* delegate = (__bridge PlatformLayerDelegate*)m_Delegate;
+        if ([delegate respondsToSelector:@selector(getMetalCommandQueue)]) {
+            return (__bridge void*)[delegate getMetalCommandQueue];
+        }
+    }
+    return nullptr;
+}
+
 void* PlatformLayer::GetDelegate() const {
     return m_Delegate;
 }
@@ -744,6 +769,52 @@ int PlatformLayer::GetLastFPS() const {
         return [delegate getLastFPS];
     }
     return 0;
+}
+
+void PlatformLayer::DrawLineEx(float x1, float y1, float x2, float y2, float thickness, Color color) {
+    NSLog(@"[DEBUG] PlatformLayer::DrawLineEx called: (%.1f,%.1f) to (%.1f,%.1f), thickness=%.1f, color=(%d,%d,%d,%d)", 
+          x1, y1, x2, y2, thickness, color.r, color.g, color.b, color.a);
+    
+    // Ensure we're on the main thread
+    if (![NSThread isMainThread]) {
+        NSLog(@"[ERROR] PlatformLayer::DrawLineEx called on non-main thread! Current thread: %@", [NSThread currentThread]);
+        dispatch_async(dispatch_get_main_queue(), ^{
+            this->DrawLineEx(x1, y1, x2, y2, thickness, color);
+        });
+        return;
+    }
+    
+    // Call the delegate's drawLineEx method
+    if (m_Delegate) {
+        PlatformLayerDelegate* delegate = (__bridge PlatformLayerDelegate*)m_Delegate;
+        unsigned int colorUInt = (color.r << 24) | (color.g << 16) | (color.b << 8) | color.a;
+        [delegate drawLineEx:x1 y1:y1 x2:x2 y2:y2 thickness:thickness color:colorUInt];
+    } else {
+        NSLog(@"[ERROR] PlatformLayer::DrawLineEx: No delegate available");
+    }
+}
+
+void PlatformLayer::DrawRectangleRoundedLines(float x, float y, float width, float height, float roundness, int segments, float lineThick, Color color) {
+    NSLog(@"[DEBUG] PlatformLayer::DrawRectangleRoundedLines called: rect=(%.1f,%.1f,%.1f,%.1f), roundness=%.1f, lineThick=%.1f, color=(%d,%d,%d,%d)", 
+          x, y, width, height, roundness, lineThick, color.r, color.g, color.b, color.a);
+    
+    // Ensure we're on the main thread
+    if (![NSThread isMainThread]) {
+        NSLog(@"[ERROR] PlatformLayer::DrawRectangleRoundedLines called on non-main thread! Current thread: %@", [NSThread currentThread]);
+        dispatch_async(dispatch_get_main_queue(), ^{
+            this->DrawRectangleRoundedLines(x, y, width, height, roundness, segments, lineThick, color);
+        });
+        return;
+    }
+    
+    // Call the delegate's drawRectangleRoundedLines method
+    if (m_Delegate) {
+        PlatformLayerDelegate* delegate = (__bridge PlatformLayerDelegate*)m_Delegate;
+        unsigned int colorUInt = (color.r << 24) | (color.g << 16) | (color.b << 8) | color.a;
+        [delegate drawRectangleRoundedLines:x y:y width:width height:height roundness:roundness segments:segments lineThick:lineThick color:colorUInt];
+    } else {
+        NSLog(@"[ERROR] PlatformLayer::DrawRectangleRoundedLines: No delegate available");
+    }
 }
 
 #endif // PLATFORM_IOS

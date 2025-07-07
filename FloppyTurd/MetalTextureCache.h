@@ -9,6 +9,7 @@
 #ifdef __APPLE__
 #ifdef __OBJC__
 @class MTLTexture;
+@class MTLCommandQueue;
 #endif
 #endif
 
@@ -47,6 +48,9 @@ private:
     
     // Metal device pointer (void* to avoid including Objective-C headers)
     void* m_metalDevice;
+    
+    // Command queue for texture operations (reused instead of creating new ones)
+    void* m_commandQueue;
     
     // Next texture ID
     unsigned int m_nextTextureId;

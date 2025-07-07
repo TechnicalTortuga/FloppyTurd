@@ -12,6 +12,9 @@
 #import <CoreText/CoreText.h>
 #import <UIKit/UIKit.h>
 #include "RaylibCompat.h"
+#include <unordered_map>
+#include <string>
+#include <mutex>
 
 // Text rendering utility for Metal
 class MetalTextRenderer {
@@ -36,9 +39,16 @@ public:
     id<MTLTexture> RenderTextToTexture(const char* text, Font font, float fontSize, Color color);
     id<MTLTexture> RenderTextToTexture(const char* text, int fontSize, Color color);
     
+    // Cache management
+    void ClearTextCache();
+    
 private:
     id<MTLDevice> m_device;
     Font m_defaultFont;
+    
+    // Text texture cache (moved from static to instance variable)
+    std::unordered_map<std::string, id<MTLTexture>> m_textTextureCache;
+    std::mutex m_cacheMutex;
     
     // Helper methods
     CTFontRef CreateCTFont(const char* fontName, float fontSize);
