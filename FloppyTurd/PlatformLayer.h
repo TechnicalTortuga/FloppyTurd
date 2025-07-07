@@ -129,6 +129,10 @@ public:
     void* LoadTextureFromImage(void* imageData, int width, int height, int format);
     void DrawTexture(void* texture, float x, float y, float width, float height, Color tint);
     void EnqueueDrawCommand(void* vertexBuffer, void* texture, size_t vertexCount);
+
+    // Performance metrics (iOS/Metal)
+    float GetLastFrameTime() const;
+    int GetLastFPS() const;
 #endif
 
     // Platform-specific features

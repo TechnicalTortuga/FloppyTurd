@@ -392,6 +392,10 @@ void ImageToPOT(Image *image, Color fill);
 void ImageFormat(Image *image, int newFormat);
 bool ExportImage(Image image, const char *fileName);
 
+// Agnostic FPS/frame time bridge
+int GetCurrentFPS();
+float GetCurrentFrameTime();
+
 #ifdef __cplusplus
 }
 

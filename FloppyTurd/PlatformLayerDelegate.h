@@ -17,5 +17,7 @@
 - (void)drawTexture:(void*)texture x:(float)x y:(float)y width:(float)width height:(float)height tint:(unsigned int)tint;
 - (void*)loadTextureFromImage:(void*)imageData width:(int)width height:(int)height format:(int)format;
 - (void)processDrawCommands:(MTKView*)view;
+- (float)getLastFrameTime;
+- (int)getLastFPS;
 // Add methods for rendering, texture management, etc., as needed
 @end 

@@ -1,13 +1,12 @@
-#include "PlatformLayer.h"
-#include <cstdarg>
-#include <cstdlib>
 #include "RaylibCompat.h"
 #include "Game.h"
-#include <cstdint>
+#include <iostream>
 #include <ctime>
 #include <cmath>
+#include "raylib.h"
 
 // Global state - these are the only things that should be here
+static Game* g_GameInstance = nullptr;
 static bool g_shouldClose = false;
 static int g_targetFPS = 60;
 static uint32_t g_frameStartTime = 0;
@@ -51,6 +50,15 @@ void OnAppPause()
 void OnAppResume()
 {
     // Non-iOS implementation will be handled separately
+}
+
+// Platform-agnostic FPS/frame time bridge
+int GetCurrentFPS() {
+    return GetFPS();
+}
+
+float GetCurrentFrameTime() {
+    return GetFrameTime();
 }
 
 

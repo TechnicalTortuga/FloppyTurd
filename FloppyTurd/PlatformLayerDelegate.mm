@@ -120,7 +120,9 @@ static inline unsigned int ColorToUInt(Color c) {
     // Process any pending draw commands (if needed)
     // The MetalRenderer handles all the optimized rendering internally
     
+    TraceLog(LOG_INFO, "[DEBUG] About to call EndFrame on MetalRenderer: %p", _metalRenderer);
     _metalRenderer->EndFrame();
+    TraceLog(LOG_INFO, "[DEBUG] EndFrame completed, calling Present");
     _metalRenderer->Present();
     
     if (frameCount == 1 || frameCount % 60 == 0) {
@@ -274,6 +276,23 @@ static inline unsigned int ColorToUInt(Color c) {
     } else {
         NSLog(@"[ERROR] processDrawCommands: MetalRenderer not available");
     }
+}
+
+- (float)getLastFrameTime {
+    if (_metalRenderer) {
+        return _metalRenderer->GetDebugStats().frameTime;
+    }
+    return 0.0f;
+}
+
+- (int)getLastFPS {
+    if (_metalRenderer) {
+        float frameTime = _metalRenderer->GetDebugStats().frameTime;
+        if (frameTime > 0.0f) {
+            return (int)(1.0f / frameTime + 0.5f);
+        }
+    }
+    return 0;
 }
 
 @end

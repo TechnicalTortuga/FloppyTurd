@@ -654,56 +654,70 @@ void MainMenu::DrawDesktopUI()
 
 void MainMenu::DrawMobileUI()
 {
+	TraceLog(LOG_INFO, "[MAINMENU] --- Begin DrawMobileUI Frame ---");
 	UIManager& ui = UIManager::GetInstance();
-
-	// Draw background to fill the safe area only (not including offsets)
-	float screenWidth = ui.GetSafeArea().width;
-	float screenHeight = ui.GetSafeArea().height;
-	GameLog::Log("[DEBUG] SafeArea: x=%.1f y=%.1f w=%.1f h=%.1f", ui.GetSafeArea().x, ui.GetSafeArea().y, ui.GetSafeArea().width, ui.GetSafeArea().height);
+	float screenWidth = GetScreenWidth();
+	float screenHeight = GetScreenHeight();
+	Rectangle safeArea = ui.GetSafeArea();
+	TraceLog(LOG_INFO, "[MAINMENU] Screen: %.1fx%.1f, Safe Area: x=%.1f y=%.1f w=%.1f h=%.1f", screenWidth, screenHeight, safeArea.x, safeArea.y, safeArea.width, safeArea.height);
+	TraceLog(LOG_INFO, "[MAINMENU] Background texture validity: id=%lu, w=%d, h=%d, mipmaps=%d, format=%d, metalPtr=%p", (unsigned long)_MenuBackground.id, _MenuBackground.width, _MenuBackground.height, _MenuBackground.mipmaps, _MenuBackground.format, (void*)_MenuBackground.texture);
 	DrawTexturePro(_MenuBackground,
 		Rectangle{ 0, 0, (float)_MenuBackground.width, (float)_MenuBackground.height },
-		Rectangle{ ui.GetSafeArea().x, ui.GetSafeArea().y, screenWidth, screenHeight },
+		Rectangle{ safeArea.x, safeArea.y, safeArea.width, safeArea.height },
 		Vector2{ 0,0 }, 0.0f, WHITE);
 
-	// Draw logo at the top-center of the safe area
+	// Draw logo at top center with proper scaling
 	Vector2 logoPos = ui.GetPosition(UIAnchor::TOP_CENTER, {0, 50});
 	float logoScale = ui.GetScaleFactor() * 1.2f;
 	float logoWidth = _FloppyLogo.width * logoScale;
 	float logoHeight = _FloppyLogo.height * logoScale;
-	GameLog::Log("[DEBUG] Logo: pos=(%.1f,%.1f) size=(%.1f,%.1f)", logoPos.x, logoPos.y, logoWidth, logoHeight);
+	TraceLog(LOG_INFO, "[MAINMENU] Drawing logo at x=%.1f y=%.1f w=%.1f h=%.1f", logoPos.x - logoWidth / 2, logoPos.y, logoWidth, logoHeight);
 	DrawTexturePro(_FloppyLogo,
 		Rectangle{ 0, 0, (float)_FloppyLogo.width, (float)_FloppyLogo.height },
 		Rectangle{ logoPos.x - logoWidth / 2, logoPos.y, logoWidth, logoHeight },
 		Vector2{ 0,0 }, 0.0f, WHITE);
 
-	// Draw buttons
-	float buttonWidth = screenWidth * 0.8f; // 80% of safe area width
-	float minButtonHeight = 44.0f * ui.GetScaleFactor(); // Apple guideline minimum
-	float buttonHeight = fmaxf(60 * ui.GetScaleFactor(), minButtonHeight);
-	float buttonSpacing = 20 * ui.GetScaleFactor();
-
-	Vector2 playPos = ui.GetPosition(UIAnchor::CENTER, {0, -buttonHeight});
-	Vector2 optionsPos = ui.GetPosition(UIAnchor::CENTER, {0, buttonSpacing});
-	Vector2 creditsPos = ui.GetPosition(UIAnchor::CENTER, {0, buttonHeight + buttonSpacing * 2});
-	Vector2 quitPos = ui.GetPosition(UIAnchor::BOTTOM_CENTER, {0, -buttonHeight});
-
-	GameLog::Log("[DEBUG] PLAY button: (%.1f,%.1f), size: %.1fx%.1f", playPos.x - buttonWidth / 2, playPos.y, buttonWidth, buttonHeight);
-	GameLog::Log("[DEBUG] OPTIONS button: (%.1f,%.1f), size: %.1fx%.1f", optionsPos.x - buttonWidth / 2, optionsPos.y, buttonWidth, buttonHeight);
-	GameLog::Log("[DEBUG] CREDITS button: (%.1f,%.1f), size: %.1fx%.1f", creditsPos.x - buttonWidth / 2, creditsPos.y, buttonWidth, buttonHeight);
-	GameLog::Log("[DEBUG] QUIT button: (%.1f,%.1f), size: %.1fx%.1f", quitPos.x - buttonWidth / 2, quitPos.y, buttonWidth, buttonHeight);
-
-	if (AIGUI_Button("PLAY", playPos.x - buttonWidth / 2, playPos.y, buttonWidth, buttonHeight)) {
+	// Calculate button dimensions and positions with reduced scaling
+	float buttonWidth = safeArea.width * 0.8f; // Use safe area width, not screen width
+	float minButtonHeight = 44.0f * ui.GetScaleFactor();
+	float buttonHeight = fmaxf(100 * ui.GetScaleFactor(), minButtonHeight); // Reduced from 60
+	float buttonSpacing = 40 * ui.GetScaleFactor(); // Increased spacing
+	
+	// Position buttons relative to safe area center
+	float centerX = safeArea.x + safeArea.width / 2.0f;
+	float centerY = safeArea.y + safeArea.height / 2.0f;
+	
+	// Calculate button positions with proper centering and no overlap
+	float playY = centerY - 1.5f * buttonHeight - buttonSpacing;
+	float optionsY = centerY - 0.5f * buttonHeight;
+	float creditsY = centerY + 0.5f * buttonHeight + buttonSpacing;
+	float quitY = centerY + 1.5f * buttonHeight + 2 * buttonSpacing;
+	
+	// Draw buttons with proper text rendering
+	TraceLog(LOG_INFO, "[MAINMENU] Drawing button: PLAY at x=%.1f y=%.1f w=%.1f h=%.1f", centerX - buttonWidth / 2, playY, buttonWidth, buttonHeight);
+	if (AIGUI_ButtonRounded("PLAY", centerX - buttonWidth / 2, playY, buttonWidth, buttonHeight, 0.1f, 24, WHITE)) {
 		currentMenu = LEVEL_SELECT;
 	}
-	if (AIGUI_Button("OPTIONS", optionsPos.x - buttonWidth / 2, optionsPos.y, buttonWidth, buttonHeight)) {
+	
+	TraceLog(LOG_INFO, "[MAINMENU] Drawing button: OPTIONS at x=%.1f y=%.1f w=%.1f h=%.1f", centerX - buttonWidth / 2, optionsY, buttonWidth, buttonHeight);
+	if (AIGUI_ButtonRounded("OPTIONS", centerX - buttonWidth / 2, optionsY, buttonWidth, buttonHeight, 0.1f, 24, WHITE)) {
 		currentMenu = OPTIONS_MENU;
 	}
-	if (AIGUI_Button("CREDITS", creditsPos.x - buttonWidth / 2, creditsPos.y, buttonWidth, buttonHeight)) {
+	
+	TraceLog(LOG_INFO, "[MAINMENU] Drawing button: CREDITS at x=%.1f y=%.1f w=%.1f h=%.1f", centerX - buttonWidth / 2, creditsY, buttonWidth, buttonHeight);
+	if (AIGUI_ButtonRounded("CREDITS", centerX - buttonWidth / 2, creditsY, buttonWidth, buttonHeight, 0.1f, 24, WHITE)) {
+		// Stop main-menu music so it doesn't overlap the credits track
+		AudioManager::GetInstance().StopMusic();
+		// Jump straight into the scrolling-credits scene
 		game->SetGameState(CREDITS);
 	}
-	if (AIGUI_Button("QUIT", quitPos.x - buttonWidth / 2, quitPos.y, buttonWidth, buttonHeight)) {
+	
+	TraceLog(LOG_INFO, "[MAINMENU] Drawing button: QUIT at x=%.1f y=%.1f w=%.1f h=%.1f", centerX - buttonWidth / 2, quitY, buttonWidth, buttonHeight);
+	if (AIGUI_ButtonRounded("QUIT", centerX - buttonWidth / 2, quitY, buttonWidth, buttonHeight, 0.1f, 24, WHITE)) {
 		game->SetGameState(SHUTDOWN);
 	}
+	
+	TraceLog(LOG_INFO, "[MAINMENU] --- End DrawMobileUI Frame ---");
 }
 
 void MainMenu::ResetMusic()

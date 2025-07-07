@@ -8,7 +8,7 @@ include("/Users/aimac/Development/FloppyTurd/ios-cmake-master/ios.toolchain.cmak
 set(CMAKE_SYSTEM "iOS-18.2")
 set(CMAKE_SYSTEM_NAME "iOS")
 set(CMAKE_SYSTEM_VERSION "18.2")
-set(CMAKE_SYSTEM_PROCESSOR "x86_64")
+set(CMAKE_SYSTEM_PROCESSOR "aarch64")
 
 set(CMAKE_CROSSCOMPILING "TRUE")
 

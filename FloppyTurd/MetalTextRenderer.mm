@@ -50,6 +50,8 @@ void MetalTextRenderer::Shutdown() {
 }
 
 Font MetalTextRenderer::LoadFont(const char* fileName, int fontSize) {
+    TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: fileName='%s', fontSize=%d", fileName, fontSize);
+    
     // Initialize font with proper Texture2D structure
     Font font = {}; // Zero-initialize all fields
     font.font = nullptr;
@@ -68,11 +70,46 @@ Font MetalTextRenderer::LoadFont(const char* fileName, int fontSize) {
     @autoreleasepool {
         NSString* path = [NSString stringWithUTF8String:fileName];
         
-        // Try to load from bundle
-        NSString* bundlePath = [[NSBundle mainBundle] pathForResource:path ofType:nil];
-        if (!bundlePath) {
-            bundlePath = path;
-        }
+        // Check if this is an asset catalog path
+        if ([path hasPrefix:@"asset://"]) {
+            NSString* assetName = [path substringFromIndex:7]; // Remove "asset://" prefix
+            NSLog(@"[DEBUG] LoadFont: Loading from asset catalog: %@", assetName);
+            
+            // For asset catalog fonts, we need to load them differently
+            // Try to load as a system font first (many fonts are available as system fonts)
+            font.ctFont = CTFontCreateWithName((__bridge CFStringRef)assetName, fontSize, nullptr);
+            
+            if (!font.ctFont) {
+                // If not available as system font, try to load from bundle
+                NSString* bundlePath = [[NSBundle mainBundle] pathForResource:assetName ofType:@"ttf"];
+                if (!bundlePath) {
+                    bundlePath = [[NSBundle mainBundle] pathForResource:assetName ofType:@"otf"];
+                }
+                
+                if (bundlePath) {
+                    NSURL* fontURL = [NSURL fileURLWithPath:bundlePath];
+                    CGDataProviderRef dataProvider = CGDataProviderCreateWithURL((__bridge CFURLRef)fontURL);
+                    
+                    if (dataProvider) {
+                        CGFontRef cgFont = CGFontCreateWithDataProvider(dataProvider);
+                        if (cgFont) {
+                            font.ctFont = CTFontCreateWithGraphicsFont(cgFont, fontSize, nullptr, nullptr);
+                            CGFontRelease(cgFont);
+                        }
+                        CGDataProviderRelease(dataProvider);
+                    }
+                }
+            }
+        } else {
+            // Try to load from bundle (legacy path)
+            TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: Trying to load from bundle: %s", [path UTF8String]);
+            NSString* bundlePath = [[NSBundle mainBundle] pathForResource:path ofType:nil];
+            if (!bundlePath) {
+                bundlePath = path;
+                TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: Using direct path: %s", [bundlePath UTF8String]);
+            } else {
+                TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: Found bundle path: %s", [bundlePath UTF8String]);
+            }
         
         NSURL* fontURL = [NSURL fileURLWithPath:bundlePath];
         CGDataProviderRef dataProvider = CGDataProviderCreateWithURL((__bridge CFURLRef)fontURL);
@@ -81,14 +118,22 @@ Font MetalTextRenderer::LoadFont(const char* fileName, int fontSize) {
             CGFontRef cgFont = CGFontCreateWithDataProvider(dataProvider);
             if (cgFont) {
                 font.ctFont = CTFontCreateWithGraphicsFont(cgFont, fontSize, nullptr, nullptr);
+                TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: Successfully created CTFont from CGFont");
                 CGFontRelease(cgFont);
+            } else {
+                TraceLog(LOG_ERROR, "[METAL ERROR] LoadFont: Failed to create CGFont from data provider");
             }
             CGDataProviderRelease(dataProvider);
+        } else {
+            TraceLog(LOG_ERROR, "[METAL ERROR] LoadFont: Failed to create data provider from URL: %s", [fontURL.path UTF8String]);
+        }
         }
         
         if (!font.ctFont) {
-            NSLog(@"Failed to load font: %@, falling back to system font", path);
+            TraceLog(LOG_WARNING, "Failed to load font: %s, falling back to system font", [path UTF8String]);
             return LoadSystemFont("Helvetica", fontSize);
+        } else {
+            TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: Successfully loaded font: %s", [path UTF8String]);
         }
     }
     
@@ -192,7 +237,11 @@ CGSize MetalTextRenderer::GetTextSize(const char* text, CTFontRef font, float sp
 }
 
 id<MTLTexture> MetalTextRenderer::RenderTextToTexture(const char* text, Font font, float fontSize, Color color) {
-    if (!text || !font.ctFont || !m_device) return nullptr;
+    TraceLog(LOG_INFO, "[METAL DEBUG] RenderTextToTexture: text='%s', font.ctFont=%p, fontSize=%.2f, color=(%d,%d,%d,%d)", text, font.ctFont, fontSize, color.r, color.g, color.b, color.a);
+    if (!text || !font.ctFont || !m_device) {
+        TraceLog(LOG_ERROR, "[METAL ERROR] RenderTextToTexture: Invalid input (text or font.ctFont or m_device is null)\ntext='%s', font.ctFont=%p, m_device=%p", text, font.ctFont, m_device);
+        return nullptr;
+    }
     
     @autoreleasepool {
         NSString* string = [NSString stringWithUTF8String:text];
@@ -206,6 +255,7 @@ id<MTLTexture> MetalTextRenderer::RenderTextToTexture(const char* text, Font fon
         // Get text size
         CGSize textSize = GetTextSize(text, scaledFont, 0);
         if (textSize.width <= 0 || textSize.height <= 0) {
+            TraceLog(LOG_WARNING, "[METAL WARNING] RenderTextToTexture: Calculated text size is zero or negative for text: '%s'. Returning nil.", text);
             if (scaledFont != font.ctFont) CFRelease(scaledFont);
             return nullptr;
         }
@@ -260,6 +310,12 @@ id<MTLTexture> MetalTextRenderer::RenderTextToTexture(const char* text, Font fon
         free(pixelData);
         
         if (scaledFont != font.ctFont) CFRelease(scaledFont);
+        
+        if (texture) {
+            TraceLog(LOG_INFO, "[METAL DEBUG] RenderTextToTexture: Created Metal texture %p for text '%s'", texture, text);
+        } else {
+            TraceLog(LOG_ERROR, "[METAL ERROR] RenderTextToTexture: Failed to create Metal texture for text '%s' from CGBitmapContext", text);
+        }
         
         return texture;
     }

@@ -9,6 +9,9 @@
 #include "Game.h"
 #import <AVFoundation/AVFoundation.h>
 #include "GameLog.h"
+#include "MetalTextRenderer.h"
+#include "ResourceManager.h"
+#include "LogManager.h"
 
 // Global game instance
 Game* g_gameInstance = nullptr;
@@ -482,13 +485,9 @@ void DrawRectangle_iOS(int posX, int posY, int width, int height, unsigned int c
     PlatformLayer::GetInstance().DrawRectangle(posX, posY, width, height, color);
 }
 
-void DrawText_iOS(const char* text, int posX, int posY, int fontSize, unsigned int color) {
-    Color raylibColor;
-    raylibColor.r = (color >> 24) & 0xFF;
-    raylibColor.g = (color >> 16) & 0xFF;
-    raylibColor.b = (color >> 8) & 0xFF;
-    raylibColor.a = color & 0xFF;
-    PlatformLayer::GetInstance().DrawText(text, (float)posX, (float)posY, (float)fontSize, raylibColor, nullptr);
+void DrawText(const char *text, int posX, int posY, int fontSize, Color color) {
+    TraceLog(LOG_INFO, "[RaylibCompat_iOS] DrawText called: text='%s', pos=(%d, %d), fontSize=%d, color=(%d,%d,%d,%d)", text, posX, posY, fontSize, color.r, color.g, color.b, color.a);
+    PlatformLayer::GetInstance().DrawText(text, (float)posX, (float)posY, (float)fontSize, color, nullptr);
 }
 
 void DrawTexture_iOS(Texture2D texture, int posX, int posY, Color tint)
@@ -999,12 +998,8 @@ void ClearBackground(Color color) {
 }
 
 // Text drawing wrappers
-void DrawText(const char* text, int posX, int posY, int fontSize, Color color) {
-    DrawText_iOS(text, posX, posY, fontSize, (color.r << 24) | (color.g << 16) | (color.b << 8) | color.a);
-}
-
 void DrawTextEx(Font font, const char* text, Vector2 position, float fontSize, float spacing, Color tint) {
-    // For now, use the simple DrawText implementation
+    TraceLog(LOG_INFO, "[RaylibCompat_iOS] DrawTextEx called: text='%s', pos=(%.1f, %.1f), font.baseSize=%d, glyphCount=%d, font.ctFont=%p", text, position.x, position.y, font.baseSize, font.glyphCount, font.ctFont);
     DrawText(text, (int)position.x, (int)position.y, (int)fontSize, tint);
 }
 
@@ -1181,13 +1176,88 @@ float GetFrameTime(void) {
 
 // Essential font functions
 Font GetFontDefault(void) {
-    // Return a default font structure
-    Font font = { nullptr, 16 };
-    return font;
+    NSLog(@"[LOG] GetFontDefault called");
+    // Try to load Whacky Joe font first, fall back to system font if it fails
+    static Font defaultFont = {0};
+    static bool initialized = false;
+    static bool whackyJoeAttempted = false; // Guard against infinite recursion
+    
+    if (!initialized) {
+        // Try to load Whacky Joe font through ResourceManager (only once)
+        if (!whackyJoeAttempted) {
+            whackyJoeAttempted = true;
+            Font whackyJoeFont = ResourceManager::GetInstance().GetFont("whacky_joe_font");
+            if (whackyJoeFont.baseSize > 0 && 
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+                whackyJoeFont.ctFont != nullptr
+#else
+                whackyJoeFont.glyphCount > 0 && whackyJoeFont.texture.texture != nullptr
+#endif
+            ) {
+                defaultFont = whackyJoeFont;
+                NSLog(@"[DEBUG] GetFontDefault: Using Whacky Joe font with ctFont: %p", defaultFont.ctFont);
+                initialized = true;
+                return defaultFont;
+            } else {
+                NSLog(@"[DEBUG] GetFontDefault: Whacky Joe font failed to load, falling back to system font");
+            }
+        }
+        
+        // Fall back to system font
+        if (g_textRenderer) {
+            defaultFont = g_textRenderer->LoadSystemFont("Helvetica", 16);
+            NSLog(@"[DEBUG] GetFontDefault: Created system font with ctFont: %p", defaultFont.ctFont);
+        } else {
+            NSLog(@"[ERROR] GetFontDefault: g_textRenderer not available");
+            // Fallback to empty font structure
+            defaultFont = { nullptr, 16, 0, 0, {0, 0, 0, 1, 0, nullptr}, nullptr, nullptr };
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+            defaultFont.fontData = nullptr;
+            defaultFont.ctFont = nullptr;
+            defaultFont.size = 16;
+#endif
+        }
+        initialized = true;
+    }
+    
+    return defaultFont;
 }
 
 Font LoadFont(const char* fileName) {
-    // For now, return default font
+    NSLog(@"[LOG] LoadFont called with fileName: %s", fileName);
+    // Try to load the font file using MetalTextRenderer
+    if (g_textRenderer) {
+        // Extract font size from the font name or use default
+        int fontSize = 16; // Default size
+        
+        // Try to load as TTF/OTF first
+        Font font = g_textRenderer->LoadFont(fileName, fontSize);
+        if (font.ctFont != nullptr) {
+            NSLog(@"[DEBUG] LoadFont: Successfully loaded font: %s", fileName);
+            return font;
+        }
+        
+        // If that fails, try to load as system font
+        NSString* fontName = [NSString stringWithUTF8String:fileName];
+        NSString* baseName = [fontName stringByDeletingPathExtension];
+        NSString* extension = [fontName pathExtension];
+        
+        if ([extension isEqualToString:@"ttf"] || [extension isEqualToString:@"otf"]) {
+            // For TTF/OTF files, try to load from bundle
+            NSString* bundlePath = [[NSBundle mainBundle] pathForResource:baseName ofType:extension];
+            if (bundlePath) {
+                font = g_textRenderer->LoadFont([bundlePath UTF8String], fontSize);
+                if (font.ctFont != nullptr) {
+                    NSLog(@"[DEBUG] LoadFont: Successfully loaded TTF/OTF from bundle: %@", bundlePath);
+                    return font;
+                }
+            }
+        }
+        
+        NSLog(@"[WARNING] LoadFont: Failed to load font: %s, falling back to default", fileName);
+    }
+    
+    // Fall back to default font
     return GetFontDefault();
 }
 
@@ -1342,12 +1412,16 @@ const char* TextFormat(const char* text, ...) {
 }
 
 void TraceLog(int logLevel, const char* text, ...) {
-    // Simple logging to NSLog
     va_list args;
     va_start(args, text);
     NSString* format = [NSString stringWithUTF8String:text];
     NSString* message = [[NSString alloc] initWithFormat:format arguments:args];
     NSLog(@"[TRACE] %@", message);
+    
+    // Use LogManager for file logging
+    std::string cppMessage = [message UTF8String];
+    LogManager::GetInstance().Log(cppMessage, "TRACE");
+    
     va_end(args);
 }
 
@@ -1393,6 +1467,14 @@ bool CheckCollisionRecs(Rectangle rec1, Rectangle rec2) {
 // Essential drawing function
 void BeginDrawing(void) {
     BeginDrawing_iOS(nullptr);
+}
+
+extern "C" int GetCurrentFPS() {
+    return PlatformLayer::GetInstance().GetLastFPS();
+}
+
+extern "C" float GetCurrentFrameTime() {
+    return PlatformLayer::GetInstance().GetLastFrameTime();
 }
 
 } // extern "C"
@@ -1444,6 +1526,36 @@ void UnloadTexture(Texture2D texture) {
 
 void UnloadRenderTexture(RenderTexture2D target) {
     UnloadRenderTexture_iOS(target);
+}
+
+// ========== UTILITY FUNCTIONS ==========
+
+extern "C" float Clamp(float value, float minVal, float maxVal) {
+    if (value < minVal) return minVal;
+    if (value > maxVal) return maxVal;
+    return value;
+}
+
+extern "C" int GetRandomValue(int min, int max) {
+    if (min > max) {
+        int temp = min;
+        min = max;
+        max = temp;
+    }
+    
+    return min + (arc4random_uniform(max - min + 1));
+}
+
+// ========== APP LIFECYCLE ==========
+
+extern "C" void OnAppPause() {
+    // iOS-specific pause handling if needed
+    // For now, just a stub implementation
+}
+
+extern "C" void OnAppResume() {
+    // iOS-specific resume handling if needed
+    // For now, just a stub implementation
 }
 
 #endif // PLATFORM_IOS

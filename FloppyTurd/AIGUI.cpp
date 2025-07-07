@@ -1,12 +1,45 @@
 #include "AIGUI.h"
 #include "TouchControls.h"
+#include "ResourceManager.h"
+
+#if defined(__APPLE__) && TARGET_OS_IOS
+#import <CoreText/CoreText.h>
+#endif
 
 AIGUI_Context g_AIGUI;
 static class TouchControls* s_TouchControls = nullptr;
 
 AIGUI_DEF void AIGUI_Init() {
     memset(&g_AIGUI, 0, sizeof(g_AIGUI));
-    g_AIGUI.defaultFont = GetFontDefault();
+    
+    // Try to load Whacky Joe font first, fall back to default if it fails
+    TraceLog(LOG_INFO, "AIGUI: Attempting to load whacky_joe_font from ResourceManager");
+    Font whackyJoeFont = ResourceManager::GetInstance().GetFont("whacky_joe_font");
+    TraceLog(LOG_INFO, "AIGUI: Font loaded - baseSize=%d, glyphCount=%d, ctFont=%p", 
+             whackyJoeFont.baseSize, whackyJoeFont.glyphCount, whackyJoeFont.ctFont);
+    
+    if (whackyJoeFont.baseSize > 0 && whackyJoeFont.glyphCount > 0 && 
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+        whackyJoeFont.ctFont != nullptr
+#else
+        whackyJoeFont.texture.id != 0
+#endif
+    ) {
+        g_AIGUI.defaultFont = whackyJoeFont;
+        TraceLog(LOG_INFO, "AIGUI: Using Whacky Joe font for UI");
+    } else {
+        g_AIGUI.defaultFont = GetFontDefault();
+        TraceLog(LOG_WARNING, "AIGUI: Whacky Joe font failed, trying system font");
+        if (g_AIGUI.defaultFont.glyphCount == 0) {
+            // Fallback to system font if GetFontDefault fails
+            CFStringRef fontName = CFSTR("Helvetica");
+            CTFontRef ctFont = CTFontCreateWithName(fontName, 16.0, nullptr);
+            g_AIGUI.defaultFont.ctFont = ctFont;
+            g_AIGUI.defaultFont.baseSize = 16;
+            g_AIGUI.defaultFont.glyphCount = 128; // Approximate for ASCII
+            TraceLog(LOG_INFO, "AIGUI: Using system font Helvetica, glyphCount=%d", g_AIGUI.defaultFont.glyphCount);
+        }
+    }
     
     // Detect mobile platform and set appropriate scaling
 #ifdef PLATFORM_MOBILE
@@ -16,8 +49,8 @@ AIGUI_DEF void AIGUI_Init() {
     auto& platform = PlatformLayer::GetInstance();
     float density = platform.GetScreenDensity();
     
-    // Set UI scale based on screen density
-    g_AIGUI.uiScale = fmaxf(1.0f, density * 0.8f);  // Scale but not too aggressively
+    // Set UI scale based on screen density with a cap to prevent excessive scaling
+    g_AIGUI.uiScale = fminf(fmaxf(1.0f, density * 0.8f), 2.0f);  // Cap at 2.0
     g_AIGUI.touchTargetScale = 1.2f;  // Slightly larger touch targets on mobile
     
     // Initialize safe area
@@ -70,6 +103,7 @@ AIGUI_DEF void AIGUI_SetTouchControls(class TouchControls* controls) {
 }
 
 AIGUI_DEF bool AIGUI_ButtonRounded(const char* label, float x, float y, float width, float height, float radius, int fontSize, Color textColor) {
+    TraceLog(LOG_INFO, "[AIGUI] ButtonRounded called with label: %s, font.baseSize: %d, font.glyphCount: %d", label, g_AIGUI.defaultFont.baseSize, g_AIGUI.defaultFont.glyphCount);
     Rectangle rect = { x, y, width, height };
     
     // Check if mouse is outside game area
@@ -93,6 +127,7 @@ AIGUI_DEF bool AIGUI_ButtonRounded(const char* label, float x, float y, float wi
     Vector2 textSize = MeasureTextEx(g_AIGUI.defaultFont, label, fontSize, 1.0f);
     float textX = x + (width - textSize.x) / 2;
     float textY = y + (height - textSize.y) / 2;
+    TraceLog(LOG_INFO, "[AIGUI] DrawTextEx params: label=%s, x=%.1f, y=%.1f, fontSize=%d, color=(%d,%d,%d,%d)", label, textX, textY, fontSize, textColor.r, textColor.g, textColor.b, textColor.a);
     DrawTextEx(g_AIGUI.defaultFont, label, {textX, textY}, fontSize, 1.0f, textColor);
 
     return (hovered && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) || gestureTriggered;
@@ -317,4 +352,9 @@ AIGUI_DEF bool AIGUI_TouchImageButton(Texture2D textureDefault, Texture2D textur
                    visualRect, { 0, 0 }, 0.0f, WHITE);
     
     return clicked;
+}
+
+AIGUI_DEF void AIGUI_DrawText(const char* text, float x, float y, float fontSize, Color color) {
+    TraceLog(LOG_INFO, "[AIGUI] DrawText called with text: %s, font.baseSize: %d, font.glyphCount: %d", text, g_AIGUI.defaultFont.baseSize, g_AIGUI.defaultFont.glyphCount);
+    DrawText(text, (int)x, (int)y, (int)fontSize, color);
 }

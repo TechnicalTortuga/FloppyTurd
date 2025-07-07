@@ -4,25 +4,29 @@
 #include "ResourceManager.h"
 #include "ResourceCompat.h"
 #include "AudioStateManager.h"
+#include "UIManager.h"
+#include "LogManager.h"
+#include <fstream>
+#include <ctime>
 
 // Enable draw call tracking
 #define ENABLE_DRAW_CALL_TRACKING
 #include "TextureAtlas.h"
 #include "PerformanceProfiler.h"
 
-Game::Game()
-{
+Game::Game() : window(nullptr), gamestate(LOADING), credits(nullptr), loading(nullptr), initialized(false) {
     try {
-        std::cout << "[INIT] ========================================" << std::endl;
-        std::cout << "[INIT] Game constructor STARTING" << std::endl;
-        std::cout << "[INIT] ========================================" << std::endl;
+        // Initialize LogManager first
+        LogManager::GetInstance().Initialize();
+        
+        LogManager::GetInstance().Log("Game constructor STARTING", "INIT");
         
         // Constructor only sets initial state, doesn't start the game
         {
             std::lock_guard<std::mutex> lock(initializedMutex);
             initialized = false;
         }
-        std::cout << "[DEBUG] Set initialized = false in constructor" << std::endl;
+        LogManager::GetInstance().Log("Set initialized = false in constructor", "DEBUG");
         
         // Initialize pointers to nullptr
         window = nullptr;
@@ -42,34 +46,37 @@ Game::Game()
         renderedHeight = 180.0f;
         
         // Initialize loading state first
-        std::cout << "[DEBUG] About to create Loading state..." << std::endl;
+        LogManager::GetInstance().Log("About to create Loading state...", "DEBUG");
         try {
             loading = new Loading(this);
             if (loading) {
-                std::cout << "[DEBUG] Created Loading state in constructor" << std::endl;
+                LogManager::GetInstance().Log("Created Loading state in constructor", "DEBUG");
             } else {
-                std::cerr << "[ERROR] Failed to create Loading state - new returned nullptr" << std::endl;
+                LogManager::GetInstance().Log("Failed to create Loading state - new returned nullptr", "ERROR");
                 throw std::runtime_error("Failed to create Loading state - new returned nullptr");
             }
         } catch (const std::exception& e) {
-            std::cerr << "[ERROR] Exception creating Loading state: " << e.what() << std::endl;
+            LogManager::GetInstance().Log("Exception creating Loading state: " + std::string(e.what()), "ERROR");
             throw;
         } catch (...) {
-            std::cerr << "[ERROR] Unknown exception creating Loading state" << std::endl;
+            LogManager::GetInstance().Log("Unknown exception creating Loading state", "ERROR");
             throw;
         }
         
-        std::cout << "[INIT] Game constructor COMPLETED" << std::endl;
+        // Initialize game instance
+        SetGameInstance(this);
+        
+        LogManager::GetInstance().Log("Game constructor COMPLETED", "INIT");
         {
             std::lock_guard<std::mutex> lock(initializedMutex);
-            std::cout << "[INIT] initialized=" << initialized << ", gamestate=LOADING" << std::endl;
+            LogManager::GetInstance().Log("initialized=" + std::string(initialized ? "true" : "false") + ", gamestate=LOADING", "INIT");
         }
-        std::cout << "[INIT] ========================================" << std::endl;
+        
     } catch (const std::exception& e) {
-        std::cerr << "[ERROR] Exception in Game constructor: " << e.what() << std::endl;
+        LogManager::GetInstance().Log("Exception in Game constructor: " + std::string(e.what()), "ERROR");
         throw;
     } catch (...) {
-        std::cerr << "[ERROR] Unknown exception in Game constructor" << std::endl;
+        LogManager::GetInstance().Log("Unknown exception in Game constructor", "ERROR");
         throw;
     }
 }
@@ -511,11 +518,22 @@ void Game::Update(float deltaTime)
 {
     static int updateCount = 0;
     static GAMESTATE prevState = SHUTDOWN; // Track previous state for reset
+    static float totalTime = 0.0f; // Track total running time
+    static bool debugFileWritten = false; // Track if debug file has been written
+    
+    totalTime += deltaTime;
     
     if (updateCount++ % 60 == 0) {  // Log every 60 updates to avoid log spam
         std::cout << "[GAME] Update called (count: " << updateCount << ") - "
                   << "initialized: " << (initialized ? "true" : "false") 
-                  << ", gamestate: " << gamestate << std::endl;
+                  << ", gamestate: " << gamestate 
+                  << ", totalTime: " << totalTime << "s" << std::endl;
+    }
+    
+    // Write debug file after 10 seconds of running
+    if (totalTime >= 10.0f && !debugFileWritten) {
+        WriteDebugFile();
+        debugFileWritten = true;
     }
     
     if (!initialized) {
@@ -1094,4 +1112,56 @@ void Game::SetLevelAudio(int levelNumber, AudioStateManager::Difficulty difficul
                  difficulty == AudioStateManager::DIFFICULTY_EASY ? "EASY" : 
                  difficulty == AudioStateManager::DIFFICULTY_NORMAL ? "NORMAL" : "HARD");
     AudioStateManager::GetInstance().TransitionToLevel(levelNumber, difficulty, true, 1.0f);
+}
+
+void Game::WriteDebugFile()
+{
+    try {
+        LogManager::GetInstance().Log("=== FLOPPYTURD DEBUG REPORT ===", "DEBUG");
+        
+        // Game state information
+        LogManager::GetInstance().Log("--- GAME STATE ---", "DEBUG");
+        LogManager::GetInstance().Log("Initialized: " + std::string(initialized ? "true" : "false"), "DEBUG");
+        LogManager::GetInstance().Log("Game State: " + std::to_string(static_cast<int>(gamestate)), "DEBUG");
+        LogManager::GetInstance().Log("Window: " + std::string(window ? "valid" : "null"), "DEBUG");
+        
+        // Screen information
+        LogManager::GetInstance().Log("--- SCREEN INFO ---", "DEBUG");
+        LogManager::GetInstance().Log("Screen Width: " + std::to_string(GetScreenWidth()), "DEBUG");
+        LogManager::GetInstance().Log("Screen Height: " + std::to_string(GetScreenHeight()), "DEBUG");
+        LogManager::GetInstance().Log("Game Scale: " + std::to_string(gameScale), "DEBUG");
+        LogManager::GetInstance().Log("Game Offset X: " + std::to_string(gameOffsetX), "DEBUG");
+        LogManager::GetInstance().Log("Game Offset Y: " + std::to_string(gameOffsetY), "DEBUG");
+        
+        // Performance information
+        LogManager::GetInstance().Log("--- PERFORMANCE ---", "DEBUG");
+        LogManager::GetInstance().Log("FPS: " + std::to_string(GetCurrentFPS()), "DEBUG");
+        LogManager::GetInstance().Log("Frame Time: " + std::to_string(GetCurrentFrameTime()) + "s", "DEBUG");
+        
+        // Resource information
+        LogManager::GetInstance().Log("--- RESOURCES ---", "DEBUG");
+        ResourceManager& rm = ResourceManager::GetInstance();
+        LogManager::GetInstance().Log("Resource Manager Memory Usage: " + std::to_string(rm.GetMemoryUsage()) + " bytes", "DEBUG");
+        
+        // Font information
+        LogManager::GetInstance().Log("--- FONT INFO ---", "DEBUG");
+        LogManager::GetInstance().Log("Whacky Joe Font Base Size: " + std::to_string(whackyJoe.baseSize), "DEBUG");
+        LogManager::GetInstance().Log("Whacky Joe Font Glyph Count: " + std::to_string(whackyJoe.glyphCount), "DEBUG");
+        
+        // UI information
+        LogManager::GetInstance().Log("--- UI INFO ---", "DEBUG");
+        UIManager& ui = UIManager::GetInstance();
+        LogManager::GetInstance().Log("UI Manager Safe Area: " + std::to_string((int)ui.GetSafeArea().width) + "x" + std::to_string((int)ui.GetSafeArea().height), "DEBUG");
+        
+        // Current log file path
+        LogManager::GetInstance().Log("--- LOG INFO ---", "DEBUG");
+        LogManager::GetInstance().Log("Current Log File: " + LogManager::GetInstance().GetCurrentLogPath(), "DEBUG");
+        
+        LogManager::GetInstance().Log("=== END DEBUG REPORT ===", "DEBUG");
+        
+    } catch (const std::exception& e) {
+        LogManager::GetInstance().Log("Error writing debug file: " + std::string(e.what()), "ERROR");
+    } catch (...) {
+        LogManager::GetInstance().Log("Unknown error writing debug file", "ERROR");
+    }
 }

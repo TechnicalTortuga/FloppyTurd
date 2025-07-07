@@ -298,16 +298,22 @@ void MetalRenderer::CreatePipelines() {
             NSLog(@"[METAL DEBUG] Instanced color pipeline created successfully");
         }
         
-        // Create depth stencil state
+        // Create depth stencil state for game elements
         MTLDepthStencilDescriptor* depthDesc = [[MTLDepthStencilDescriptor alloc] init];
         depthDesc.depthCompareFunction = MTLCompareFunctionLessEqual;
         depthDesc.depthWriteEnabled = YES;
         m_depthStencilState = [m_device newDepthStencilStateWithDescriptor:depthDesc];
         
-        if (m_depthStencilState) {
-            NSLog(@"[METAL DEBUG] Depth stencil state created successfully");
+        // Create depth stencil state for UI elements (no depth testing)
+        MTLDepthStencilDescriptor* uiDepthDesc = [[MTLDepthStencilDescriptor alloc] init];
+        uiDepthDesc.depthCompareFunction = MTLCompareFunctionAlways;
+        uiDepthDesc.depthWriteEnabled = NO;
+        m_uiDepthStencilState = [m_device newDepthStencilStateWithDescriptor:uiDepthDesc];
+        
+        if (m_depthStencilState && m_uiDepthStencilState) {
+            TraceLog(LOG_INFO, "[METAL DEBUG] Depth stencil states created successfully");
         } else {
-            NSLog(@"[METAL ERROR] Failed to create depth stencil state");
+            TraceLog(LOG_ERROR, "[METAL ERROR] Failed to create depth stencil states");
         }
         
         // Log pipeline creation summary
@@ -387,8 +393,10 @@ void MetalRenderer::BeginFrame() {
 }
 
 void MetalRenderer::EndFrame() {
+    TraceLog(LOG_INFO, "[METAL DEBUG] EndFrame called");
+    TraceLog(LOG_INFO, "[METAL DEBUG] EndFrame: MetalRenderer instance: %p", this);
     FlushBatch();
-    
+
     // Draw debug overlay if enabled
     if (m_debugVisualization) {
         DrawDebugOverlay();
@@ -410,6 +418,15 @@ void MetalRenderer::Present() {
         [m_currentCommandBuffer presentDrawable:m_view.currentDrawable];
         NSLog(@"[METAL DEBUG] Present: Scheduled drawable presentation");
         
+        // Add a completion handler to log command buffer status
+        [m_currentCommandBuffer addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
+            if (buffer.error) {
+                NSLog(@"[METAL ERROR] Command buffer failed with error: %@", buffer.error);
+            } else {
+                NSLog(@"[METAL INFO] Command buffer completed successfully.");
+            }
+        }];
+
         // Signal the completion of this frame
         m_frameResources.EndFrame(m_currentCommandBuffer);
         
@@ -457,6 +474,16 @@ void MetalRenderer::SetProjectionMatrix(float width, float height) {
     // Create orthographic projection matrix for 2D rendering
     // Metal uses NDC from -1 to 1, but we want 0 to width/height
     m_projectionMatrix = MakeOrthoMatrix(0, width, height, 0, -1.0f, 1.0f);
+    TraceLog(LOG_INFO, "[METAL DEBUG] SetProjectionMatrix: width=%.1f, height=%.1f", width, height);
+}
+
+void MetalRenderer::SetProjectionMatrixWithSafeArea(float screenWidth, float screenHeight, Rectangle safeArea) {
+    // Create orthographic projection matrix that accounts for safe area
+    // This ensures content is properly positioned within the safe area
+    m_projectionMatrix = MakeOrthoMatrix(safeArea.x, safeArea.x + safeArea.width, 
+                                        safeArea.y + safeArea.height, safeArea.y, -1.0f, 1.0f);
+    TraceLog(LOG_INFO, "[METAL DEBUG] SetProjectionMatrixWithSafeArea: screen=%.1fx%.1f, safeArea=(%.1f,%.1f,%.1f,%.1f)", 
+             screenWidth, screenHeight, safeArea.x, safeArea.y, safeArea.width, safeArea.height);
 }
 
 void MetalRenderer::UpdateUniforms() {
@@ -607,9 +634,9 @@ void MetalRenderer::ExecuteOptimizedDrawCommands() {
         m_debugStats.drawCalls++;
         drawCallCount++;
         
-        NSLog(@"[METAL DEBUG] Draw call %u: %s, vertices=%lu, start=%lu, texture=%p, pipeline=%p", 
-              drawCallCount, cmd.debugName, (unsigned long)cmd.vertexCount, (unsigned long)cmd.vertexStart, 
-              cmd.texture, (cmd.useTexture ? m_texturePipeline : m_colorPipeline));
+        TraceLog(LOG_INFO, "[METAL DEBUG] Draw call %u: %s, vertices=%lu, start=%lu, texture=%p, pipeline=%p", 
+                 drawCallCount, cmd.debugName, (unsigned long)cmd.vertexCount, (unsigned long)cmd.vertexStart, 
+                 cmd.texture, (cmd.useTexture ? m_texturePipeline : m_colorPipeline));
         
         // Check texture bind limits
         if (cmd.useTexture && cmd.texture && cmd.texture != currentTexture) {
@@ -637,11 +664,21 @@ void MetalRenderer::ExecuteOptimizedDrawCommands() {
             requiredPipeline = cmd.useTexture ? m_texturePipeline : m_colorPipeline;
         }
         
+        // Set depth stencil state based on layer
+        if (strcmp(cmd.debugName, "Background") == 0 || strcmp(cmd.debugName, "Midground") == 0 || 
+            strcmp(cmd.debugName, "Foreground") == 0 || strcmp(cmd.debugName, "Logo") == 0 || 
+            strcmp(cmd.debugName, "UI") == 0 || strcmp(cmd.debugName, "Text") == 0) {
+            [m_currentEncoder setDepthStencilState:m_uiDepthStencilState];
+            TraceLog(LOG_INFO, "[METAL DEBUG] Using UI depth stencil state for %s", cmd.debugName);
+        } else {
+            [m_currentEncoder setDepthStencilState:m_depthStencilState];
+        }
+        
         if (requiredPipeline != currentPipeline) {
             [m_currentEncoder setRenderPipelineState:requiredPipeline];
             currentPipeline = requiredPipeline;
             m_debugStats.stateChanges++;
-            NSLog(@"[METAL DEBUG] Set pipeline: %@", requiredPipeline);
+            TraceLog(LOG_INFO, "[METAL DEBUG] Set pipeline: %p", requiredPipeline);
         }
         
         // Bind texture if needed and changed
@@ -650,7 +687,7 @@ void MetalRenderer::ExecuteOptimizedDrawCommands() {
                 BindTexture(cmd.texture);
                 currentTexture = cmd.texture;
                 m_debugStats.textureBinds++;
-                NSLog(@"[METAL DEBUG] Bound texture: %@", cmd.texture);
+                TraceLog(LOG_INFO, "[METAL DEBUG] Bound texture: %p", cmd.texture);
             }
         }
         
@@ -776,6 +813,7 @@ void MetalRenderer::BindTexture(id<MTLTexture> texture) {
     if (texture) {
         [m_currentEncoder setFragmentTexture:texture atIndex:0];
         [m_currentEncoder setFragmentSamplerState:m_samplerState atIndex:0];
+        m_currentTexture = texture; // Track current texture for UV normalization
     }
 }
 
@@ -954,7 +992,18 @@ void MetalRenderer::DrawLine(float x1, float y1, float x2, float y2, Color color
 }
 
 void MetalRenderer::DrawTexture(id<MTLTexture> texture, Rectangle source, Rectangle dest, Color tint) {
-    if (!texture) return;
+    // Default to UI layer for backward compatibility
+    DrawTexture(texture, source, dest, tint, RenderLayer::UI);
+}
+
+void MetalRenderer::DrawTexture(id<MTLTexture> texture, Rectangle source, Rectangle dest, Color tint, RenderLayer layer) {
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawTexture: texture=%p, source=(%.1f,%.1f,%.1f,%.1f), dest=(%.1f,%.1f,%.1f,%.1f), tint=(%d,%d,%d,%d), layer=%d", 
+             texture, source.x, source.y, source.width, source.height, dest.x, dest.y, dest.width, dest.height, tint.r, tint.g, tint.b, tint.a, (int)layer);
+    
+    if (!texture) {
+        NSLog(@"[METAL WARNING] DrawTexture called with a null texture.");
+        return;
+    }
     
     AddTexturedRectangleVertices(dest, source, tint);
     
@@ -968,24 +1017,60 @@ void MetalRenderer::DrawTexture(id<MTLTexture> texture, Rectangle source, Rectan
     // Enhanced fields for sorting and optimization
     cmd.renderState = RENDER_STATE_ALPHA_BLEND;
     cmd.textureId = GetTextureHash(texture);
-    cmd.depth = 0.0f; // Default depth
+    cmd.depth = static_cast<float>(layer) * 0.1f; // Layer-based depth
     cmd.sortKey = 0; // Will be generated during sorting
     cmd.instanceCount = 1;
     cmd.instanceDataOffset = 0;
-    cmd.debugName = "Texture";
+    
+    // Set debug name based on layer
+    switch (layer) {
+        case RenderLayer::Background:
+            cmd.debugName = "Background";
+            break;
+        case RenderLayer::Midground:
+            cmd.debugName = "Midground";
+            break;
+        case RenderLayer::Foreground:
+            cmd.debugName = "Foreground";
+            break;
+        case RenderLayer::Logo:
+            cmd.debugName = "Logo";
+            break;
+        case RenderLayer::UI:
+            cmd.debugName = "UI";
+            break;
+        case RenderLayer::Text:
+            cmd.debugName = "Text";
+            break;
+    }
+    
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawTexture: layer=%d, depth=%.1f, dest=(%.1f,%.1f,%.1f,%.1f)", (int)layer, cmd.depth, dest.x, dest.y, dest.width, dest.height);
     
     m_drawCommands.push_back(cmd);
 }
 
 void MetalRenderer::AddTexturedRectangleVertices(Rectangle dest, Rectangle source, Color tint) {
-    // Calculate texture coordinates based on source rectangle
-    // Assume source is in normalized coordinates (0-1 range)
-    float u1 = source.x;
-    float v1 = source.y;
-    float u2 = source.x + source.width;
-    float v2 = source.y + source.height;
+    // Get current texture dimensions for proper UV normalization
+    float texWidth = 1.0f;
+    float texHeight = 1.0f;
     
-    // Two triangles to make a rectangle
+    // If we have a current texture, use its dimensions
+    if (m_currentTexture) {
+        texWidth = (float)m_currentTexture.width;
+        texHeight = (float)m_currentTexture.height;
+    }
+    
+    // Normalize texture coordinates by dividing by texture dimensions
+    float u1 = source.x / texWidth;
+    float v1 = source.y / texHeight;
+    float u2 = (source.x + source.width) / texWidth;
+    float v2 = (source.y + source.height) / texHeight;
+    
+    TraceLog(LOG_INFO, "[METAL DEBUG] UVs: u1=%.2f, v1=%.2f, u2=%.2f, v2=%.2f, tex=%dx%d", u1, v1, u2, v2, (int)texWidth, (int)texHeight);
+    
+    TraceLog(LOG_INFO, "[METAL DEBUG] Vertices: x1=%.1f, y1=%.1f, x2=%.1f, y2=%.1f", dest.x, dest.y, dest.x + dest.width, dest.y + dest.height);
+    
+    // Two triangles to make a rectangle (6 unique vertices)
     // Triangle 1: top-left, bottom-left, top-right
     AddVertex(dest.x, dest.y, u1, v1, tint);                           // top-left
     AddVertex(dest.x, dest.y + dest.height, u1, v2, tint);            // bottom-left  

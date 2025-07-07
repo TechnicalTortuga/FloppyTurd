@@ -86,6 +86,7 @@ private:
 	void Update(float deltaTime = 0.0f);
 	void Draw();
 	void HandleInput();
+	void WriteDebugFile(); // Write debug information to file after 10 seconds
 
 	Font whackyJoe;
 	

@@ -169,8 +169,19 @@ std::string PlatformLayer::GetResourcePath(const std::string& relativePath) {
         return assetPath;
     }
     
-    // Special handling for music files - they should be loaded from the bundle
+    // Special handling for font files - they should be loaded from asset catalog
     NSString* fileExtension = [path pathExtension];
+    if ([fileExtension isEqualToString:@"ttf"] || [fileExtension isEqualToString:@"otf"] || [fileExtension isEqualToString:@"fnt"]) {
+        NSLog(@"[DEBUG] GetResourcePath: Font file detected: %@", path);
+        
+        // For font files, use asset catalog path
+        NSString* assetName = [baseName lastPathComponent];
+        NSString* assetPath = [NSString stringWithFormat:@"asset://%@", assetName];
+        NSLog(@"[DEBUG] GetResourcePath: Returning asset catalog path for font: %@", assetPath);
+        return std::string([assetPath UTF8String]);
+    }
+    
+    // Special handling for music files - they should be loaded from the bundle
     if ([fileExtension isEqualToString:@"mp3"] || [fileExtension isEqualToString:@"ogg"] || [fileExtension isEqualToString:@"wav"]) {
         NSLog(@"[DEBUG] GetResourcePath: Music file detected: %@", path);
         
@@ -715,6 +726,24 @@ void PlatformLayer::DrawText(const char* text, float x, float y, float fontSize,
         PlatformLayerDelegate* delegate = (__bridge PlatformLayerDelegate*)m_Delegate;
         [delegate drawText:text x:x y:y fontSize:fontSize color:ColorToUInt(color) font:font];
     }
+}
+
+float PlatformLayer::GetLastFrameTime() const {
+    if (!m_Delegate) return 0.0f;
+    PlatformLayerDelegate* delegate = (__bridge PlatformLayerDelegate*)m_Delegate;
+    if ([delegate respondsToSelector:@selector(getLastFrameTime)]) {
+        return [delegate getLastFrameTime];
+    }
+    return 0.0f;
+}
+
+int PlatformLayer::GetLastFPS() const {
+    if (!m_Delegate) return 0;
+    PlatformLayerDelegate* delegate = (__bridge PlatformLayerDelegate*)m_Delegate;
+    if ([delegate respondsToSelector:@selector(getLastFPS)]) {
+        return [delegate getLastFPS];
+    }
+    return 0;
 }
 
 #endif // PLATFORM_IOS

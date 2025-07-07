@@ -5,6 +5,7 @@
 #include "ResourceCompat.h"
 #include "TextureCache.h"
 #include "AudioManager.h"
+#include "ResourceManager.h"
 
 #include <random>
 #include <cfloat>
@@ -76,8 +77,8 @@ Credits::Credits(Game* game)
         { "Thank you for playing!", "",                           offsetDist(engine) }
     };
 
-    // Load Whacky Joe font
-    font = LoadFont("fonts/Whacky_Joe.fnt");
+    // Load Whacky Joe font through ResourceManager
+    font = ResourceManager::GetInstance().GetFont("whacky_joe_font");
     if (font.baseSize <= 0 || font.glyphCount <= 0 || 
 #if defined(__APPLE__) && TARGET_OS_IPHONE
         font.texture.texture == nullptr

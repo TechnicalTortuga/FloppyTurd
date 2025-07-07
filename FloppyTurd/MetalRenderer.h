@@ -61,6 +61,16 @@ typedef enum {
     RENDER_STATE_INSTANCED = 1 << 4
 } RenderStateFlags;
 
+// Render layer enum for 2D layering
+enum class RenderLayer {
+    Background = 0,    // Background elements (sky, distant mountains, etc.)
+    Midground = 1,     // Midground elements (buildings, trees, etc.)
+    Foreground = 2,    // Foreground elements (player, enemies, projectiles, etc.)
+    Logo = 3,          // Logo and branding elements
+    UI = 4,            // UI elements (buttons, menus, etc.)
+    Text = 5           // Text overlays (highest priority)
+};
+
 // Instance data for instanced rendering
 typedef struct {
     simd_float4x4 modelMatrix;
@@ -110,6 +120,7 @@ public:
     
     // State management
     void SetProjectionMatrix(float width, float height);
+    void SetProjectionMatrixWithSafeArea(float screenWidth, float screenHeight, Rectangle safeArea);
     void PushMatrix();
     void PopMatrix();
     void TranslateMatrix(float x, float y);
@@ -125,6 +136,9 @@ public:
     // Texture drawing
     void DrawTexture(id<MTLTexture> texture, Rectangle source, Rectangle dest, Color tint);
     void DrawTextureEx(id<MTLTexture> texture, Vector2 position, float rotation, float scale, Color tint);
+    
+    // Layer-aware texture drawing
+    void DrawTexture(id<MTLTexture> texture, Rectangle source, Rectangle dest, Color tint, RenderLayer layer);
     
     // Text rendering
     void DrawText(const char* text, float x, float y, float fontSize, Color color);
@@ -156,6 +170,8 @@ public:
     id<MTLCommandQueue> GetCommandQueue() const { return m_commandQueue; }
     MTKView* GetView() const { return m_view; }
     
+    void DrawTestRectangle(); // Test function to verify Metal pipeline
+    
 private:
     // Metal objects
     MTKView* m_view;
@@ -166,12 +182,16 @@ private:
     id<MTLRenderPipelineState> m_instancedTexturePipeline;
     id<MTLRenderPipelineState> m_instancedColorPipeline;
     id<MTLDepthStencilState> m_depthStencilState;
+    id<MTLDepthStencilState> m_uiDepthStencilState;
     id<MTLSamplerState> m_samplerState;
     
     // Current frame resources
     id<MTLCommandBuffer> m_currentCommandBuffer;
     id<MTLRenderCommandEncoder> m_currentEncoder;
     MTLRenderPassDescriptor* m_currentRenderPass;
+    
+    // Current texture for UV normalization
+    id<MTLTexture> m_currentTexture;
     
     // Triple-buffered frame resources manager
     MetalFrameResources m_frameResources;

@@ -148,7 +148,22 @@ Font ResourceManager::GetFont(const std::string& id) {
     }
 
     TraceLog(LOG_WARNING, "Failed to load font: %s", id.c_str());
+    
+    // Guard against infinite recursion - only call GetFontDefault if we're not already trying to load whacky_joe_font
+    if (id != "whacky_joe_font") {
     return GetFontDefault();
+    } else {
+        // Return a basic fallback font structure to prevent infinite recursion
+        Font fallbackFont = {0};
+        fallbackFont.baseSize = 16;
+        fallbackFont.glyphCount = 0;
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+        fallbackFont.texture.texture = nullptr;
+#else
+        fallbackFont.texture.id = 0;
+#endif
+        return fallbackFont;
+    }
 }
 
 bool ResourceManager::LoadTextureInternal(const std::string& id) {
@@ -308,7 +323,7 @@ bool ResourceManager::LoadFontInternal(const std::string& id) {
 
     Font font = LoadFont(fullPath.c_str());
 #if defined(__APPLE__) && TARGET_OS_IPHONE
-    if (font.texture.texture == nullptr) {
+    if (font.ctFont == nullptr) {
 #else
     if (font.texture.id == 0) {
 #endif
@@ -780,7 +795,13 @@ void ResourceManager::RegisterAllResources() {
     RegisterResource("credits_music", "music/EndTheme.ogg", ResourceType::MUSIC, LoadingMode::STREAM);
 
     // Fonts
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+    // Use TTF version for iOS/Metal
+    RegisterResource("whacky_joe_font", "fonts/Whacky_Joe.ttf", ResourceType::FONT);
+#else
+    // Use FNT version for desktop/raylib
     RegisterResource("whacky_joe_font", "fonts/Whacky_Joe.fnt", ResourceType::FONT);
+#endif
 
     // Pickup items and objects - CRITICAL for level gameplay
     RegisterResource("gold_coin", "objects/GoldCoin.png", ResourceType::TEXTURE);

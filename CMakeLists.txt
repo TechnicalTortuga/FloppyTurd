@@ -72,16 +72,17 @@ set(SOURCES ${CPP_SOURCES} ${OBJC_SOURCES})
 # Remove PlayerOLD.cpp from sources
 list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/PlayerOLD.cpp)
 list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/GameLog.cpp)
+list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/LogManager.cpp)
 
 # Add UIManager.cpp explicitly to ensure it's included in the build
 list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/UIManager.cpp)
 
 # Add platform-specific compatibility layer
 if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
-    # iOS uses centralized RaylibCompat with PlatformLayer.mm for Metal implementation
+    # iOS uses RaylibCompat_iOS.mm for Metal implementation (NOT RaylibCompat.cpp)
     list(APPEND SOURCES 
-        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/RaylibCompat.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/RaylibCompat_iOS.mm
+        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/LogManager.mm
         ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/PlatformLayer.mm
         ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/PlatformLayerDelegate.mm
         ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/main_ios.mm
@@ -121,6 +122,8 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
     list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/PlatformLayer.cpp)
     # Remove AudioStateManager.cpp since we use AudioStateManager.mm for iOS
     list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/AudioStateManager.cpp)
+    # Remove RaylibCompat.cpp since we use RaylibCompat_iOS.mm for iOS
+    list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/RaylibCompat.cpp)
 endif()
 
 # TouchControls, ResourceManager, and AIGUI.cpp are already included via GLOB_RECURSE
