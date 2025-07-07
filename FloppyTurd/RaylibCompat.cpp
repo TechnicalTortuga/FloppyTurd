@@ -10,6 +10,11 @@
 #ifdef PLATFORM_IOS
 #include "RaylibCompat_iOS.h"
 #include "PlatformLayer.h"  // Make sure PlatformLayer is available for iOS
+#if defined(__APPLE__) && defined(TARGET_OS_IPHONE)
+#ifdef __OBJC__
+#import <Metal/Metal.h>
+#endif
+#endif
 #endif
 
 #ifdef PLATFORM_IOS
@@ -243,10 +248,33 @@ void ClearBackground(Color color) {
 RenderTexture2D LoadRenderTexture(int width, int height)
 {
 #if defined(__APPLE__) && defined(TARGET_OS_IPHONE)
-    // Stub for iOS Metal implementation
-    RenderTexture2D result = {0};
+    // Use the existing PlatformLayer implementation
+    void* renderTexturePtr = PlatformLayer::GetInstance().LoadRenderTexture(width, height);
+    
+    if (!renderTexturePtr) {
+        // Return a zeroed structure if creation failed
+        RenderTexture2D result = {0};
+        return result;
+    }
+    
+    // Create a proper RenderTexture2D structure
+    RenderTexture2D result;
+    result.id = (unsigned int)(uintptr_t)renderTexturePtr; // Use pointer as unique ID
+    result.texture.id = result.id; // Set texture ID to match
     result.texture.width = width;
     result.texture.height = height;
+    result.texture.mipmaps = 1;
+    result.texture.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
+    result.texture.texture = renderTexturePtr; // Store the Metal texture pointer
+    
+    // Initialize depth texture (stub for now)
+    result.depth.id = 0;
+    result.depth.width = 0;
+    result.depth.height = 0;
+    result.depth.mipmaps = 0;
+    result.depth.format = 0;
+    result.depth.texture = nullptr;
+    
     return result;
 #else
     return raylib::LoadRenderTexture(width, height);
@@ -256,7 +284,10 @@ RenderTexture2D LoadRenderTexture(int width, int height)
 void BeginTextureMode(RenderTexture2D target)
 {
 #if defined(__APPLE__) && defined(TARGET_OS_IPHONE)
-    // Stub for iOS Metal implementation
+    // Use PlatformLayer to begin drawing to the render texture
+    if (target.texture.texture != nullptr) {
+        PlatformLayer::GetInstance().BeginDrawing(target.texture.texture);
+    }
 #else
     raylib::BeginTextureMode(target);
 #endif
@@ -265,7 +296,8 @@ void BeginTextureMode(RenderTexture2D target)
 void EndTextureMode(void)
 {
 #if defined(__APPLE__) && defined(TARGET_OS_IPHONE)
-    // Stub for iOS Metal implementation
+    // Use PlatformLayer to end drawing to the render texture
+    PlatformLayer::GetInstance().EndDrawing(nullptr);
 #else
     raylib::EndTextureMode();
 #endif
@@ -274,8 +306,8 @@ void EndTextureMode(void)
 void UnloadRenderTexture(RenderTexture2D target)
 {
 #if defined(__APPLE__) && defined(TARGET_OS_IPHONE)
-    // TODO: Hook into PlatformLayer when Metal render textures are supported
-    (void)target;
+    // Call iOS-specific implementation
+    UnloadRenderTexture_iOS(target);
 #else
     raylib::UnloadRenderTexture(target);
 #endif

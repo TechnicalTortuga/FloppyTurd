@@ -213,11 +213,21 @@ bool Game::Initialize()
         GameLog::Log("[INIT] Step 2: Creating render target...");
         try {
             renderTarget = LoadRenderTexture(320, 180);
+            
+#if defined(__APPLE__) && defined(TARGET_OS_IPHONE)
+            // On iOS, check if the render texture pointer is valid instead of just the ID
+            if (renderTarget.id == 0 || renderTarget.texture.texture == nullptr) {
+                GameLog::Log("[ERROR] Step 2: Failed to create render target on iOS");
+                throw std::runtime_error("Failed to create render target on iOS");
+            }
+            GameLog::Log("[INIT] Step 2: Created iOS render target 320x180 with ID %u - SUCCESS", renderTarget.id);
+#else
             if (renderTarget.id == 0) {
                 GameLog::Log("[ERROR] Step 2: Failed to create render target");
                 throw std::runtime_error("Failed to create render target");
             }
             GameLog::Log("[INIT] Step 2: Created render target 320x180 - SUCCESS");
+#endif
         } catch (const std::exception& e) {
             GameLog::Log("[ERROR] Step 2: Exception creating render target: %s", e.what());
             throw;

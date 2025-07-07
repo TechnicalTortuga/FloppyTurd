@@ -601,6 +601,21 @@ extern "C" Texture2D CreateFallbackTexture(const char* fileName)
     return fallbackTexture;
 }
 
+// iOS-specific render texture cleanup
+extern "C" void UnloadRenderTexture_iOS(RenderTexture2D target)
+{
+    // Clean up the Metal render texture
+    if (target.texture.texture != nullptr) {
+        // Release the Metal texture
+        id<MTLTexture> metalTexture = (__bridge id<MTLTexture>)target.texture.texture;
+        if (metalTexture) {
+            // The texture will be automatically released when the bridge is released
+            CFBridgingRelease(target.texture.texture);
+            NSLog(@"[DEBUG] UnloadRenderTexture_iOS: Released Metal render texture: %p", (__bridge void*)metalTexture);
+        }
+    }
+}
+
 // iOS game initialization function
 extern "C" int game_main(int argc, char *argv[])
 {
