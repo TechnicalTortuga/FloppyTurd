@@ -1,25 +1,31 @@
 #include "GameLog.h"
 #include <cstdarg>
 #include <cstdio>
-
-#if defined(__APPLE__) && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
-    #ifdef __OBJC__
-        #import <Foundation/Foundation.h>
-    #endif
-#endif
+#import <Foundation/Foundation.h>
+#import <os/log.h> // Optional: for modern logging
 
 void GameLog::Log(const char* fmt, ...) {
     va_list args;
     va_start(args, fmt);
 
-#if defined(__APPLE__) && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE && defined(__OBJC__)
+    // Debug: Confirm the method is called
+    fprintf(stderr, "[GameLog] Log called with format: %s\n", fmt);
+
+    // Validate format string
     NSString* format = [NSString stringWithUTF8String:fmt];
-    NSLogv([@"[GAME] " stringByAppendingString:format], args);
-#else
-    printf("[GAME] ");
-    vprintf(fmt, args);
-    printf("\n");
-#endif
+    if (format == nil) {
+        NSLog(@"[GAME] Error: Invalid UTF-8 format string");
+        va_end(args);
+        return;
+    }
+
+    // Use os_log for better iOS integration (recommended)
+    NSString* message = [[NSString alloc] initWithFormat:format arguments:args];
+    os_log(OS_LOG_DEFAULT, "[GAME] %@", message);
+
+    // Alternative: Use NSLogv if you prefer
+    // NSString* fullFormat = [@"[GAME] " stringByAppendingString:format];
+    // NSLogv(fullFormat, args);
 
     va_end(args);
 }

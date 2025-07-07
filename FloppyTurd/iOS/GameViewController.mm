@@ -16,7 +16,7 @@ extern "C++" {
 // Include our C++ game headers
 extern "C" int game_main(int argc, char *argv[]);
 
-@interface GameViewController () <MTKViewDelegate> {
+@interface GameViewController () {
     MTKView *_metalView;
     dispatch_queue_t _gameQueue;
     BOOL _gameInitialized;
@@ -36,14 +36,17 @@ extern "C" int game_main(int argc, char *argv[]);
     _metalView.depthStencilPixelFormat = MTLPixelFormatDepth32Float;
     _metalView.clearColor = MTLClearColorMake(0.0, 0.0, 0.0, 1.0);
     
-    // Disable MTKView's automatic drawing - we'll control it via CADisplayLink
-    _metalView.paused = YES;
+    // PlatformLayerDelegate will handle rendering automatically
     _metalView.enableSetNeedsDisplay = YES; // Enable setNeedsDisplay so our calls work
     
     self.view = _metalView;
 }
 
 - (void)viewDidLoad {
+    NSLog(@"[TEST_NSLOG] ========================================");
+    NSLog(@"[TEST_NSLOG] This is a test NSLog call from GameViewController.mm");
+    NSLog(@"[TEST_NSLOG] ========================================");
+    
     NSLog(@"[INIT] ========================================");
     NSLog(@"[INIT] GameViewController viewDidLoad STARTING on thread: %@", [NSThread currentThread]);
     
@@ -66,8 +69,7 @@ extern "C" int game_main(int argc, char *argv[]);
     _metalView.depthStencilPixelFormat = MTLPixelFormatDepth32Float;
     _metalView.clearColor = MTLClearColorMake(0.1, 0.1, 0.1, 1.0);
     
-    // Disable MTKView's automatic drawing - we'll control it via CADisplayLink
-    _metalView.paused = YES;
+    // PlatformLayerDelegate will handle rendering automatically
     _metalView.enableSetNeedsDisplay = YES;
     
     // Setup touch handling
@@ -188,41 +190,6 @@ extern "C" int game_main(int argc, char *argv[]);
     if (_metalView) {
         // Trigger a redraw with the new orientation
         [_metalView setNeedsDisplay];
-    }
-}
-
-#pragma mark - MTKViewDelegate
-
-- (void)mtkView:(MTKView *)view drawableSizeWillChange:(CGSize)size {
-    // Handle view size changes
-    SetWindowSize(size.width, size.height);
-}
-
-- (void)drawInMTKView:(MTKView *)view {
-    // This is called at the preferred FPS rate
-    // The actual Metal rendering will be handled by MetalRenderer
-    // triggered from the game loop
-    NSLog(@"[DEBUG] drawInMTKView called on thread: %@", [NSThread currentThread]);
-    if (!_gameInitialized) {
-        NSLog(@"[DEBUG] Game not initialized, skipping draw on thread: %@", [NSThread currentThread]);
-        return;
-    }
-    
-    Game* game = GetGameInstance();
-    NSLog(@"[ACCESS] GetGameInstance() called from drawInMTKView, returning: %p on thread: %@", game, [NSThread currentThread]);
-    if (!game) {
-        NSLog(@"[DEBUG] Game instance is null, skipping draw on thread: %@", [NSThread currentThread]);
-        return;
-    }
-    
-    // Get the platform layer delegate to handle rendering
-    PlatformLayer& platformLayer = PlatformLayer::GetInstance();
-    if (platformLayer.GetDelegate()) {
-        PlatformLayerDelegate* delegate = (__bridge PlatformLayerDelegate*)platformLayer.GetDelegate();
-        // Let the delegate handle the rendering with MetalRenderer
-        [delegate drawInMTKView:view];
-    } else {
-        NSLog(@"[ERROR] drawInMTKView: No platform layer delegate available");
     }
 }
 

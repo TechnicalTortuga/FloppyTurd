@@ -87,12 +87,16 @@ void PlatformLayer::Initialize(void* nativeView) {
     view.clearColor = MTLClearColorMake(0.1, 0.1, 0.1, 1.0);
     NSLog(@"[INIT] MTKView device: %p", view.device);
     
-    // Create the delegate but DON'T assign it as the view delegate
-    // The GameViewController will be the delegate and will route draw commands to us
+    // Create the delegate and set it as the MTKView's delegate for rendering
     NSLog(@"[INIT] Creating PlatformLayerDelegate");
     id delegate = [[PlatformLayerDelegate alloc] initWithView:view];
     m_Delegate = (__bridge_retained void*)delegate;
-    NSLog(@"[INIT] PlatformLayerDelegate created: %p", m_Delegate);
+    
+    // Set the delegate as the MTKView's delegate for automatic rendering
+    view.delegate = delegate;
+    
+    // Enable automatic drawing
+    view.paused = NO;
     
     m_TouchPoints.clear();
     NSLog(@"[INIT] ========================================");

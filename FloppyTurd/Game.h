@@ -3,6 +3,7 @@
 #include <atomic>
 #include "RaylibCompat.h"
 #include <iostream>
+#include <mutex>
 
 #include "Window.h"
 #include "MainMenu.h"
@@ -65,10 +66,12 @@ public:
 	
 	// Accessors for iOS integration
 	bool IsInitialized() const { 
-    bool value = initialized.load();
-    std::cout << "[DEBUG] IsInitialized() called, returning: " << (value ? "true" : "false") << std::endl;
-    std::cout << "[DEBUG] IsInitialized() - initialized variable address: " << &initialized << std::endl;
-    std::cout << "[DEBUG] IsInitialized() - initialized variable value: " << value << std::endl;
+    std::lock_guard<std::mutex> lock(initializedMutex);
+    bool value = initialized;
+    GameLog::Log("[DEBUG] IsInitialized() called, returning: %s", value ? "true" : "false");
+    GameLog::Log("[DEBUG] IsInitialized() - initialized variable address: %p", &initialized);
+    GameLog::Log("[DEBUG] IsInitialized() - initialized variable value: %d", (int)value);
+    
     return value; 
 }
 
@@ -89,7 +92,8 @@ private:
 	Font whackyJoe;
 	
 	// Game loop state
-	std::atomic<bool> initialized;
+	bool initialized;
+	mutable std::mutex initializedMutex;
 	RenderTexture2D renderTarget;
 	
 	// Letterbox calculation state (preserved between frames)

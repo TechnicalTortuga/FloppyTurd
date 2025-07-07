@@ -242,9 +242,9 @@ bool ResourceManager::LoadSoundInternal(const std::string& id) {
 
     Sound sound = LoadSound(fullPath.c_str());
 #if defined(__APPLE__) && TARGET_OS_IPHONE
-    if (sound.chunk == nullptr) {
+    if (sound.player == nullptr) {
 #else
-    if (sound.music == nullptr) {
+    if (sound.chunk == nullptr) {
 #endif
         TraceLog(LOG_ERROR, "Failed to load sound: %s", fullPath.c_str());
         return false;
@@ -275,9 +275,9 @@ bool ResourceManager::LoadMusicInternal(const std::string& id) {
 
     Music music = LoadMusicStream(fullPath.c_str());
 #if defined(__APPLE__) && TARGET_OS_IPHONE
-    if (music.music == nullptr) {
+    if (music.player == nullptr) {
 #else
-    if (music.audioData == nullptr) {
+    if (music.music == nullptr) {
 #endif
         TraceLog(LOG_ERROR, "Failed to load music: %s", fullPath.c_str());
         return false;

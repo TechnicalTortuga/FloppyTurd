@@ -8,50 +8,64 @@ class AudioClip
 {
 public:
     AudioClip(const std::string& filePath) {
-        music = LoadMusicStream(filePath.c_str());
-        if (!music.ctxData) {
-            music.ctxData = nullptr; // Explicitly set to nullptr for safety
+        music = LoadMusic(filePath.c_str());
+        if (!music.player) {
+            TraceLog(LOG_WARNING, "Failed to load music: %s", filePath.c_str());
         }
         AudioManager::GetInstance().RegisterClip(this);
     }
 
     virtual ~AudioClip() {
         AudioManager::GetInstance().UnregisterClip(this);
-        if (music.ctxData) { // Only unload if valid
-            UnloadMusicStream(music);
+        if (music.player) { // Only unload if valid
+            UnloadMusic(music);
         }
     }
 
     void Play() {
-        if (music.ctxData) PlayMusicStream(music);
+        if (music.player) PlayMusic(music);
+    }
+
+    void PlayLoop() {
+        if (music.player) PlayMusicLoop(music);
     }
 
     void Stop() {
-        if (music.ctxData && IsMusicStreamPlaying(music)) { // Add playing check
-            TraceLog(LOG_INFO, "Stopping music stream");
-            StopMusicStream(music); // Line 31
+        if (music.player && IsMusicPlaying(music)) { // Add playing check
+            TraceLog(LOG_INFO, "Stopping music");
+            StopMusic(music);
         }
         else {
-            TraceLog(LOG_WARNING, "Attempted to stop invalid or non-playing music stream");
+            TraceLog(LOG_WARNING, "Attempted to stop invalid or non-playing music");
         }
+    }
+
+    void Pause() {
+        if (music.player) PauseMusic(music);
+    }
+
+    void Resume() {
+        if (music.player) ResumeMusic(music);
     }
 
     void Update() {
-        if (music.ctxData) UpdateMusicStream(music);
+        // No update needed for iOS AVAudioPlayer
     }
 
     bool IsPlaying() const {
-        return music.ctxData && IsMusicStreamPlaying(music);
+        return music.player && IsMusicPlaying(music);
     }
 
     // NEW: Set the music volume (expected range 0.0 to 1.0)
     void SetVolume(float vol) {
-        if (music.ctxData) SetMusicVolume(music, vol);
+        if (music.player) SetMusicVolume(music, vol);
     }
 
-    // Corrected: Set looping state
-    void SetLooping(bool loop) {
-        if (music.ctxData) music.looping = loop;
+    // Note: Looping is handled by PlayLoop() method instead of a looping field
+
+    // NEW: Set looping state for the music
+    void SetLooping(bool looping) {
+        if (music.player) ::SetLooping(music, looping);
     }
 
     Music music;

@@ -660,60 +660,14 @@ int GetRandomValue(int min, int max) {
     return min + (rand() % (max - min + 1));
 }
 
-// Audio functions (stubs)
-void InitAudioDevice() {
-    g_audioInitialized = true;
+// Audio functions - only SetLooping is implemented here for non-iOS platforms
+// All other audio functions are provided by raylib on non-iOS platforms
+// On iOS, all audio functions are implemented in RaylibCompat_iOS.mm
+#if !(defined(__APPLE__) && defined(TARGET_OS_IPHONE))
+void SetLooping(Music music, bool looping) {
+    music.looping = looping;
 }
-
-void CloseAudioDevice() {
-    g_audioInitialized = false;
-}
-
-bool IsMusicStreamPlaying(Music music) {
-    return false; // Stub
-}
-
-void PlayMusicStream(Music music) {
-    // Stub
-}
-
-void StopMusicStream(Music music) {
-    // Stub
-}
-
-void UpdateMusicStream(Music music) {
-    // Stub
-}
-
-void SetMusicVolume(Music music, float volume) {
-    // Stub
-}
-
-Music LoadMusicStream(const char* fileName) {
-    Music music = {0};
-    return music; // Stub
-}
-
-void UnloadMusicStream(Music music) {
-    // Stub
-}
-
-Sound LoadSound(const char* fileName) {
-    Sound sound = {0};
-    return sound; // Stub
-}
-
-void UnloadSound(Sound sound) {
-    // Stub
-}
-
-void PlaySound(Sound sound) {
-    // Stub
-}
-
-void SetSoundVolume(Sound sound, float volume) {
-    // Stub
-}
+#endif
 
 // Window functions
 bool IsWindowFullscreen() {

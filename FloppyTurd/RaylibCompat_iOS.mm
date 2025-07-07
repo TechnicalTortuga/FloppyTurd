@@ -7,6 +7,8 @@
 #include "PlatformLayer.h"
 #include <CoreGraphics/CoreGraphics.h>
 #include "Game.h"
+#import <AVFoundation/AVFoundation.h>
+#include "GameLog.h"
 
 // Global game instance
 Game* g_gameInstance = nullptr;
@@ -691,3 +693,163 @@ extern "C" CGRect GetScreenBounds() {
 } // extern "C"
 
 #endif // PLATFORM_IOS
+
+// struct Sound {
+//     void* player; // Actually an AVAudioPlayer*
+//     int length;
+// };
+
+// struct Music {
+//     void* player; // Actually an AVAudioPlayer*
+//     int length;
+// };
+
+void InitAudioDevice() {
+    GameLog::Log("[AUDIO] InitAudioDevice (iOS/AVFoundation)");
+    [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryAmbient error:nil];
+    [[AVAudioSession sharedInstance] setActive:YES error:nil];
+}
+
+void CloseAudioDevice() {
+    GameLog::Log("[AUDIO] CloseAudioDevice (iOS/AVFoundation)");
+}
+
+Sound LoadSound(const char* fileName) {
+    Sound s = {0};
+    @autoreleasepool {
+        NSString* path = [NSString stringWithUTF8String:fileName];
+        NSURL* url = [NSURL fileURLWithPath:path];
+        NSError* error = nil;
+        AVAudioPlayer* player = [[AVAudioPlayer alloc] initWithContentsOfURL:url error:&error];
+        if (player && !error) {
+            [player prepareToPlay];
+            s.player = (__bridge_retained void*)player;
+            s.length = (int)(player.duration * 1000);
+            GameLog::Log("[AUDIO] Loaded sound: %s (duration: %d ms)", fileName, s.length);
+        } else {
+            GameLog::Log("[AUDIO] ERROR: Failed to load sound: %s (%s)", fileName, error.localizedDescription.UTF8String);
+        }
+    }
+    return s;
+}
+
+void UnloadSound(Sound sound) {
+    if (sound.player) {
+        AVAudioPlayer* player = (__bridge_transfer AVAudioPlayer*)sound.player;
+        [player stop];
+        GameLog::Log("[AUDIO] Unloaded sound");
+    }
+}
+
+void PlaySound(Sound sound) {
+    if (sound.player) {
+        AVAudioPlayer* player = (__bridge AVAudioPlayer*)sound.player;
+        [player play];
+        GameLog::Log("[AUDIO] PlaySound");
+    }
+}
+
+void SetSoundVolume(Sound sound, float volume) {
+    if (sound.player) {
+        AVAudioPlayer* player = (__bridge AVAudioPlayer*)sound.player;
+        player.volume = volume;
+        GameLog::Log("[AUDIO] SetSoundVolume: %f", volume);
+    }
+}
+
+Music LoadMusic(const char* fileName) {
+    Music m = {0};
+    @autoreleasepool {
+        NSString* path = [NSString stringWithUTF8String:fileName];
+        NSURL* url = [NSURL fileURLWithPath:path];
+        NSError* error = nil;
+        AVAudioPlayer* player = [[AVAudioPlayer alloc] initWithContentsOfURL:url error:&error];
+        if (player && !error) {
+            [player prepareToPlay];
+            m.player = (__bridge_retained void*)player;
+            m.length = (int)(player.duration * 1000);
+            GameLog::Log("[AUDIO] Loaded music: %s (duration: %d ms)", fileName, m.length);
+        } else {
+            GameLog::Log("[AUDIO] ERROR: Failed to load music: %s (%s)", fileName, error.localizedDescription.UTF8String);
+        }
+    }
+    return m;
+}
+
+void UnloadMusic(Music music) {
+    if (music.player) {
+        AVAudioPlayer* player = (__bridge_transfer AVAudioPlayer*)music.player;
+        [player stop];
+        GameLog::Log("[AUDIO] Unloaded music");
+    }
+}
+
+void UnloadMusicStream(Music music) {
+    // Alias for UnloadMusic to maintain raylib compatibility
+    UnloadMusic(music);
+}
+
+void PlayMusic(Music music) {
+    if (music.player) {
+        AVAudioPlayer* player = (__bridge AVAudioPlayer*)music.player;
+        [player play];
+        GameLog::Log("[AUDIO] PlayMusic");
+    }
+}
+
+void PlayMusicLoop(Music music) {
+    if (music.player) {
+        AVAudioPlayer* player = (__bridge AVAudioPlayer*)music.player;
+        player.numberOfLoops = -1; // -1 means infinite loop
+        [player play];
+        GameLog::Log("[AUDIO] PlayMusicLoop (infinite)");
+    }
+}
+
+void PauseMusic(Music music) {
+    if (music.player) {
+        AVAudioPlayer* player = (__bridge AVAudioPlayer*)music.player;
+        [player pause];
+        GameLog::Log("[AUDIO] PauseMusic");
+    }
+}
+
+void ResumeMusic(Music music) {
+    if (music.player) {
+        AVAudioPlayer* player = (__bridge AVAudioPlayer*)music.player;
+        [player play];
+        GameLog::Log("[AUDIO] ResumeMusic");
+    }
+}
+
+void SetMusicVolume(Music music, float volume) {
+    if (music.player) {
+        AVAudioPlayer* player = (__bridge AVAudioPlayer*)music.player;
+        player.volume = volume;
+        GameLog::Log("[AUDIO] SetMusicVolume: %f", volume);
+    }
+}
+
+void StopMusic(Music music) {
+    if (music.player) {
+        AVAudioPlayer* player = (__bridge AVAudioPlayer*)music.player;
+        [player stop];
+        GameLog::Log("[AUDIO] StopMusic");
+    }
+}
+
+bool IsMusicPlaying(Music music) {
+    if (music.player) {
+        AVAudioPlayer* player = (__bridge AVAudioPlayer*)music.player;
+        return player.isPlaying;
+    }
+    return false;
+}
+
+void SetLooping(Music music, bool looping) {
+    if (music.player) {
+        AVAudioPlayer* player = (__bridge AVAudioPlayer*)music.player;
+        player.numberOfLoops = looping ? -1 : 0; // -1 = infinite loop, 0 = play once
+        GameLog::Log("[AUDIO] SetLooping: %s", looping ? "true" : "false");
+    }
+}

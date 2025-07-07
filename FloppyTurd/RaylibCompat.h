@@ -2,6 +2,8 @@
 #ifndef RAYLIB_COMPAT_H
 #define RAYLIB_COMPAT_H
 
+#include <TargetConditionals.h>
+
 // Define necessary types and structures compatible with raylib but without including raylib headers directly if possible
 // This header should be safe for inclusion in both C++ and Objective-C++ files
 
@@ -45,6 +47,19 @@ typedef struct Image {
     int format;
 } Image;
 
+#if defined(__APPLE__) && defined(TARGET_OS_IPHONE)
+struct Sound {
+    void* player; // Actually an AVAudioPlayer*
+    int length;
+};
+
+struct Music {
+    void* player; // Actually an AVAudioPlayer*
+    int length;
+};
+
+// Audio functions are now declared in the general section below
+#else
 typedef struct Sound {
     unsigned int id;        // Sound id
     unsigned int frameCount;// Total number of frames (considering channels)
@@ -59,6 +74,7 @@ typedef struct Music {
     int ctxType;            // Type of music context (audio codec)
     void *ctxData;          // Audio context data, depends on type
 } Music;
+#endif
 
 typedef struct Font {
     void* font;
@@ -240,12 +256,24 @@ Color ColorAlpha(Color color, float alpha);
 Image LoadImage(const char *fileName);
 void UnloadImage(Image image);
 Image GenImageColor(int width, int height, Color color);
-void InitAudioDevice(void);
-void CloseAudioDevice(void);
+// Audio functions
+void InitAudioDevice();
+void CloseAudioDevice();
 Sound LoadSound(const char* fileName);
 void UnloadSound(Sound sound);
 void PlaySound(Sound sound);
 void SetSoundVolume(Sound sound, float volume);
+Music LoadMusic(const char* fileName);
+void UnloadMusic(Music music);
+void PlayMusic(Music music);
+void PlayMusicLoop(Music music);
+void PauseMusic(Music music);
+void ResumeMusic(Music music);
+void SetMusicVolume(Music music, float volume);
+void StopMusic(Music music);
+bool IsMusicPlaying(Music music);
+void SetLooping(Music music, bool looping);
+
 Font LoadFont(const char* fileName);
 Font LoadFontEx(const char* fileName, int fontSize, int* codepoints, int codepointCount);
 Font GetFontDefault(void);
@@ -266,7 +294,7 @@ int GetRandomValue(int min, int max);
 void SetWindowSize(int width, int height);
 void EndScissorMode(void);
 void SetConfigFlags(unsigned int flags);
-void SetMusicVolume(Music music, float volume);
+// SetMusicVolume is declared in the iOS-specific section above
 void SetTextureWrap(Texture2D texture, int wrapMode);
 int GetMonitorWidth(int monitor);
 Music LoadMusicStream(const char* fileName);

@@ -2,6 +2,7 @@
 #include "RaylibCompat.h"
 #include "Game.h"
 #include <atomic>
+#include <thread>
 
 class Loading {
 public:
@@ -28,4 +29,5 @@ private:
 	bool loadingComplete;
 	bool poophatLoaded;
 	std::atomic<bool> resourcesLoaded{false};
+	std::thread loadingThread;
 };

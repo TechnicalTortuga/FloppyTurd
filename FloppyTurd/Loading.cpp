@@ -43,9 +43,27 @@ void Loading::Initialize() {
         
         TraceLog(LOG_INFO, "Loading::Initialize() STARTING");
         
+        // Add iOS-specific logging
+        GameLog::Log("[LOADING] Loading::Initialize() STARTING");
+        
+        // Add direct NSLog and printf calls for testing
+#if defined(__APPLE__) && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+        #ifdef __OBJC__
+            NSLog(@"[LOADING_NSLOG] Loading::Initialize() STARTING - direct NSLog call");
+        #endif
+#endif
+        printf("[LOADING_PRINTF] Loading::Initialize() STARTING - direct printf call\n");
+        
         // Validate game pointer
         if (!game) {
             TraceLog(LOG_ERROR, "Loading::Initialize(): game pointer is null");
+            GameLog::Log("[LOADING] ERROR: game pointer is null");
+#if defined(__APPLE__) && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+            #ifdef __OBJC__
+                NSLog(@"[LOADING_NSLOG] ERROR: game pointer is null");
+            #endif
+#endif
+            printf("[LOADING_PRINTF] ERROR: game pointer is null\n");
             return;
         }
         
@@ -53,87 +71,83 @@ void Loading::Initialize() {
         if (!poophatLoaded) {
             try {
                 TraceLog(LOG_INFO, "Loading::Initialize() - Attempting to load poop_hat texture");
-                poophat = ResourceManager::GetInstance().GetTexture("poop_hat");
-                if (
-#if defined(__APPLE__) && TARGET_OS_IPHONE
-                    poophat.texture == nullptr
-#else
-                    poophat.id == 0
+                GameLog::Log("[LOADING] Attempting to load poop_hat texture");
+#if defined(__APPLE__) && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+                #ifdef __OBJC__
+                    NSLog(@"[LOADING_NSLOG] Attempting to load poop_hat texture");
+                #endif
 #endif
-                ) {
-                    TraceLog(LOG_ERROR, "Failed to load PoopHat texture");
-                    // Initialize with empty texture to prevent crashes
-                    poophat = {};
-                } else {
+                printf("[LOADING_PRINTF] Attempting to load poop_hat texture\n");
+                
+                poophat = ResourceManager::GetInstance().GetTexture("poop_hat");
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+                if (poophat.texture != nullptr) {
+#else
+                if (poophat.id != 0) {
+#endif
+                    TraceLog(LOG_INFO, "Loading::Initialize() - Successfully loaded poop_hat texture");
+                    GameLog::Log("[LOADING] Successfully loaded poop_hat texture");
+#if defined(__APPLE__) && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+                    #ifdef __OBJC__
+                        NSLog(@"[LOADING_NSLOG] Successfully loaded poop_hat texture");
+                    #endif
+#endif
+                    printf("[LOADING_PRINTF] Successfully loaded poop_hat texture\n");
                     poophatLoaded = true;
-                    TraceLog(LOG_INFO, "Successfully loaded PoopHat texture");
+                } else {
+                    TraceLog(LOG_WARNING, "Loading::Initialize() - Failed to load poop_hat texture");
+                    GameLog::Log("[LOADING] WARNING: Failed to load poop_hat texture");
+#if defined(__APPLE__) && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+                    #ifdef __OBJC__
+                        NSLog(@"[LOADING_NSLOG] WARNING: Failed to load poop_hat texture");
+                    #endif
+#endif
+                    printf("[LOADING_PRINTF] WARNING: Failed to load poop_hat texture\n");
                 }
             } catch (const std::exception& e) {
-                TraceLog(LOG_ERROR, "Exception loading PoopHat texture: %s", e.what());
-                poophat = {};
-            } catch (...) {
-                TraceLog(LOG_ERROR, "Unknown exception loading PoopHat texture");
-                poophat = {};
+                TraceLog(LOG_ERROR, "Loading::Initialize() - Exception loading poop_hat texture: %s", e.what());
+                GameLog::Log("[LOADING] ERROR: Exception loading poop_hat texture: %s", e.what());
+#if defined(__APPLE__) && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+                #ifdef __OBJC__
+                    NSLog(@"[LOADING_NSLOG] ERROR: Exception loading poop_hat texture: %s", e.what());
+                #endif
+#endif
+                printf("[LOADING_PRINTF] ERROR: Exception loading poop_hat texture: %s\n", e.what());
             }
         }
         
-        // Start loading resources in a separate thread
-        try {
-            TraceLog(LOG_INFO, "Loading::Initialize() - Creating loading thread");
-            std::thread([this]() {
-                try {
-                    TraceLog(LOG_INFO, "Loading thread - Starting LoadResources()");
-                    LoadResources();
-                    TraceLog(LOG_INFO, "Loading thread - LoadResources() completed successfully");
-                    resourcesLoaded = true;
-                } catch (const std::exception& e) {
-                    TraceLog(LOG_ERROR, "Exception in LoadResources thread: %s", e.what());
-                    resourcesLoaded = true; // Mark as loaded to prevent hanging
-                } catch (...) {
-                    TraceLog(LOG_ERROR, "Unknown exception in LoadResources thread");
-                    resourcesLoaded = true; // Mark as loaded to prevent hanging
-                }
-            }).detach();
-            TraceLog(LOG_INFO, "Loading::Initialize() - Loading thread created successfully");
-        } catch (const std::exception& e) {
-            TraceLog(LOG_ERROR, "Exception creating loading thread: %s", e.what());
-            // Fall back to synchronous loading
-            try {
-                TraceLog(LOG_INFO, "Loading::Initialize() - Falling back to synchronous loading");
-                LoadResources();
-                resourcesLoaded = true;
-            } catch (const std::exception& e) {
-                TraceLog(LOG_ERROR, "Exception in synchronous LoadResources: %s", e.what());
-                resourcesLoaded = true; // Mark as loaded to prevent hanging
-            } catch (...) {
-                TraceLog(LOG_ERROR, "Unknown exception in synchronous LoadResources");
-                resourcesLoaded = true; // Mark as loaded to prevent hanging
-            }
-        } catch (...) {
-            TraceLog(LOG_ERROR, "Unknown exception creating loading thread");
-            // Fall back to synchronous loading
-            try {
-                TraceLog(LOG_INFO, "Loading::Initialize() - Falling back to synchronous loading (unknown exception)");
-                LoadResources();
-                resourcesLoaded = true;
-            } catch (const std::exception& e) {
-                TraceLog(LOG_ERROR, "Exception in synchronous LoadResources (unknown exception path): %s", e.what());
-                resourcesLoaded = true; // Mark as loaded to prevent hanging
-            } catch (...) {
-                TraceLog(LOG_ERROR, "Unknown exception in synchronous LoadResources (unknown exception path)");
-                resourcesLoaded = true; // Mark as loaded to prevent hanging
-            }
+        // Start background loading thread
+        if (!loadingThread.joinable()) {
+            TraceLog(LOG_INFO, "Loading::Initialize() - Starting background loading thread");
+            GameLog::Log("[LOADING] Starting background loading thread");
+#if defined(__APPLE__) && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+            #ifdef __OBJC__
+                NSLog(@"[LOADING_NSLOG] Starting background loading thread");
+            #endif
+#endif
+            printf("[LOADING_PRINTF] Starting background loading thread\n");
+            
+            loadingThread = std::thread(&Loading::LoadResources, this);
         }
         
         TraceLog(LOG_INFO, "Loading::Initialize() COMPLETED");
+        GameLog::Log("[LOADING] Loading::Initialize() COMPLETED");
+#if defined(__APPLE__) && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+        #ifdef __OBJC__
+            NSLog(@"[LOADING_NSLOG] Loading::Initialize() COMPLETED");
+        #endif
+#endif
+        printf("[LOADING_PRINTF] Loading::Initialize() COMPLETED\n");
+        
     } catch (const std::exception& e) {
-        TraceLog(LOG_ERROR, "Exception in Loading::Initialize(): %s", e.what());
-        // Don't re-throw - just log the error and continue
-        resourcesLoaded = true; // Mark as loaded to prevent hanging
-    } catch (...) {
-        TraceLog(LOG_ERROR, "Unknown exception in Loading::Initialize()");
-        // Don't re-throw - just log the error and continue
-        resourcesLoaded = true; // Mark as loaded to prevent hanging
+        TraceLog(LOG_ERROR, "Loading::Initialize() - Exception: %s", e.what());
+        GameLog::Log("[LOADING] ERROR: Exception in Initialize(): %s", e.what());
+#if defined(__APPLE__) && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+        #ifdef __OBJC__
+            NSLog(@"[LOADING_NSLOG] ERROR: Exception in Initialize(): %s", e.what());
+        #endif
+#endif
+        printf("[LOADING_PRINTF] ERROR: Exception in Initialize(): %s\n", e.what());
     }
 }
 
@@ -237,6 +251,18 @@ void Loading::Update(float deltaTime) {
     if (!loadingComplete && resourcesLoaded && loadingProgress >= 1.0f) {
         loadingComplete = true;
         TraceLog(LOG_INFO, "Loading complete, transitioning to main menu");
+        GameLog::Log("[LOADING] Loading complete, transitioning to main menu");
+    }
+    
+    // Log progress every few seconds to track loading
+    static float lastProgressLog = 0.0f;
+    lastProgressLog += deltaTime;
+    if (lastProgressLog >= 2.0f) { // Log every 2 seconds
+        lastProgressLog = 0.0f;
+        GameLog::Log("[LOADING] Progress: %.0f%%, resourcesLoaded=%s, loadingComplete=%s", 
+                    loadingProgress * 100.0f, 
+                    resourcesLoaded ? "true" : "false", 
+                    loadingComplete ? "true" : "false");
     }
 }
 

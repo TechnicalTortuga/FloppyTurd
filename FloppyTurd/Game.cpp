@@ -17,7 +17,10 @@ Game::Game()
         std::cout << "[INIT] ========================================" << std::endl;
         
         // Constructor only sets initial state, doesn't start the game
-        initialized.store(false);
+        {
+            std::lock_guard<std::mutex> lock(initializedMutex);
+            initialized = false;
+        }
         std::cout << "[DEBUG] Set initialized = false in constructor" << std::endl;
         
         // Initialize pointers to nullptr
@@ -56,7 +59,10 @@ Game::Game()
         }
         
         std::cout << "[INIT] Game constructor COMPLETED" << std::endl;
-        std::cout << "[INIT] initialized=" << initialized.load() << ", gamestate=LOADING" << std::endl;
+        {
+            std::lock_guard<std::mutex> lock(initializedMutex);
+            std::cout << "[INIT] initialized=" << initialized << ", gamestate=LOADING" << std::endl;
+        }
         std::cout << "[INIT] ========================================" << std::endl;
     } catch (const std::exception& e) {
         std::cerr << "[ERROR] Exception in Game constructor: " << e.what() << std::endl;
@@ -163,14 +169,20 @@ bool Game::Initialize()
         GameLog::Log("[INIT] Game::Initialize() STARTING");
         GameLog::Log("[INIT] =========================================");
         
-        if (initialized) {
-            GameLog::Log("[INIT] Game already initialized, returning early");
-            return true;
+        {
+            std::lock_guard<std::mutex> lock(initializedMutex);
+            if (initialized) {
+                GameLog::Log("[INIT] Game already initialized, returning early");
+                return true;
+            }
         }
         
         // Basic initialization
         gamestate = LOADING;
-        initialized.store(false);
+        {
+            std::lock_guard<std::mutex> lock(initializedMutex);
+            initialized = false;
+        }
         GameLog::Log("[INIT] Set initialized = false in Initialize() method");
         
         // Initialize ResourceManager first
@@ -360,8 +372,13 @@ bool Game::Initialize()
         
         // Mark as initialized
         GameLog::Log("[INIT] Step 9: Marking game as initialized...");
+        GameLog::Log("[INIT] Step 9: Before store - initialized value: %d", (int)initialized);
         try {
-            initialized.store(true);
+            {
+                std::lock_guard<std::mutex> lock(initializedMutex);
+                initialized = true;
+            }
+            GameLog::Log("[INIT] Step 9: After store - initialized value: %d", (int)initialized);
             GameLog::Log("[INIT] Step 9: Game marked as initialized - SUCCESS");
         } catch (const std::exception& e) {
             GameLog::Log("[ERROR] Step 9: Exception marking as initialized: %s", e.what());
@@ -373,28 +390,79 @@ bool Game::Initialize()
         
         // Start loading resources
         GameLog::Log("[INIT] Step 10: Starting resource loading...");
+#if defined(__APPLE__) && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+        #ifdef __OBJC__
+            NSLog(@"[INIT_NSLOG] Step 10: Starting resource loading...");
+        #endif
+#endif
+        printf("[INIT_PRINTF] Step 10: Starting resource loading...\n");
         try {
             if (loading) {
                 GameLog::Log("[INIT] Step 10: Calling Initialize() on Loading state...");
+#if defined(__APPLE__) && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+                #ifdef __OBJC__
+                    NSLog(@"[INIT_NSLOG] Step 10: Calling Initialize() on Loading state...");
+                #endif
+#endif
+                printf("[INIT_PRINTF] Step 10: Calling Initialize() on Loading state...\n");
                 loading->Initialize();
                 GameLog::Log("[INIT] Step 10: Completed Initialize() on Loading state - SUCCESS");
+#if defined(__APPLE__) && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+                #ifdef __OBJC__
+                    NSLog(@"[INIT_NSLOG] Step 10: Completed Initialize() on Loading state - SUCCESS");
+                #endif
+#endif
+                printf("[INIT_PRINTF] Step 10: Completed Initialize() on Loading state - SUCCESS\n");
             } else {
                 GameLog::Log("[ERROR] Step 10: Loading state is null, skipping initialization");
+#if defined(__APPLE__) && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+                #ifdef __OBJC__
+                    NSLog(@"[INIT_NSLOG] ERROR: Loading state is null, skipping initialization");
+                #endif
+#endif
+                printf("[INIT_PRINTF] ERROR: Loading state is null, skipping initialization\n");
                 throw std::runtime_error("Loading state is null");
             }
         } catch (const std::exception& e) {
             GameLog::Log("[ERROR] Step 10: Exception in Loading::Initialize(): %s", e.what());
+#if defined(__APPLE__) && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+            #ifdef __OBJC__
+                NSLog(@"[INIT_NSLOG] ERROR: Exception in Loading::Initialize(): %s", e.what());
+            #endif
+#endif
+            printf("[INIT_PRINTF] ERROR: Exception in Loading::Initialize(): %s\n", e.what());
             // Don't throw here, continue with initialization
             GameLog::Log("[WARNING] Step 10: Continuing despite Loading::Initialize() failure");
+#if defined(__APPLE__) && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+            #ifdef __OBJC__
+                NSLog(@"[INIT_NSLOG] WARNING: Continuing despite Loading::Initialize() failure");
+            #endif
+#endif
+            printf("[INIT_PRINTF] WARNING: Continuing despite Loading::Initialize() failure\n");
         } catch (...) {
             GameLog::Log("[ERROR] Step 10: Unknown exception in Loading::Initialize()");
+#if defined(__APPLE__) && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+            #ifdef __OBJC__
+                NSLog(@"[INIT_NSLOG] ERROR: Unknown exception in Loading::Initialize()");
+            #endif
+#endif
+            printf("[INIT_PRINTF] ERROR: Unknown exception in Loading::Initialize()\n");
             // Don't throw here, continue with initialization
             GameLog::Log("[WARNING] Step 10: Continuing despite Loading::Initialize() failure");
+#if defined(__APPLE__) && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+            #ifdef __OBJC__
+                NSLog(@"[INIT_NSLOG] WARNING: Continuing despite Loading::Initialize() failure");
+            #endif
+#endif
+            printf("[INIT_PRINTF] WARNING: Continuing despite Loading::Initialize() failure\n");
         }
         
         GameLog::Log("[INIT] =========================================");
         GameLog::Log("[INIT] Game::Initialize() COMPLETED SUCCESSFULLY");
-        GameLog::Log("[INIT] initialized=%d", (int)initialized.load());
+        {
+            std::lock_guard<std::mutex> lock(initializedMutex);
+            GameLog::Log("[INIT] initialized=%d", (int)initialized);
+        }
         GameLog::Log("[INIT] =========================================");
         
         return true;
@@ -422,11 +490,11 @@ void Game::Update(float deltaTime)
     
     if (updateCount++ % 60 == 0) {  // Log every 60 updates to avoid log spam
         std::cout << "[GAME] Update called (count: " << updateCount << ") - "
-                  << "initialized: " << (initialized.load() ? "true" : "false") 
+                  << "initialized: " << (initialized ? "true" : "false") 
                   << ", gamestate: " << gamestate << std::endl;
     }
     
-    if (!initialized.load()) {
+    if (!initialized) {
         if (updateCount == 1) {  // Only log this once to avoid spam
             std::cout << "[GAME] Update called but game not initialized" << std::endl;
         }
@@ -799,11 +867,11 @@ void Game::RenderFrame()
     static int frameCount = 0;
     if (frameCount++ % 60 == 0) {  // Log every 60 frames to avoid log spam
         std::cout << "[GAME] RenderFrame called (count: " << frameCount << ") - "
-                  << "initialized: " << (initialized.load() ? "true" : "false")
+                  << "initialized: " << (initialized ? "true" : "false")
                   << ", gamestate: " << gamestate << std::endl;
     }
     
-    if (!initialized.load()) {
+    if (!initialized) {
         if (frameCount == 1) {  // Only log this once to avoid spam
             std::cout << "[GAME] RenderFrame called but game not initialized" << std::endl;
         }
@@ -946,7 +1014,7 @@ void Game::Shutdown()
 	}
 	
 	// Cleanup will be handled by destructor
-	initialized.store(false);
+	initialized = false;
 	std::cout << "[DEBUG] Set initialized = false in Shutdown() method" << std::endl;
 }
 
