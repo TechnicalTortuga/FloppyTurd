@@ -4,6 +4,7 @@
 #include "PlatformLayer.h"
 #include "ResourceCompat.h"
 #include "ResourceManager.h"
+#include "UIManager.h"
 
 // Enable draw call tracking
 #define ENABLE_DRAW_CALL_TRACKING
@@ -45,36 +46,126 @@ MainMenu::MainMenu(Game* game)
 {
 	using namespace Resources;
 
-	// Use ResourceManager instead of direct LoadTexture calls
-	emptyPainting = ResourceManager::GetInstance().GetTexture("empty_painting");
-	_MenuBackground = ResourceManager::GetInstance().GetTexture("main_menu_bg");
-	_FloppyLogo = ResourceManager::GetInstance().GetTexture("floppy_logo");
-	finLogo = ResourceManager::GetInstance().GetTexture("fin_logo");
-	lockedPainting = ResourceManager::GetInstance().GetTexture("locked_painting");
+	try {
+		TraceLog(LOG_INFO, "MainMenu constructor STARTING");
 
-	levelPaintings[0] = ResourceManager::GetInstance().GetTexture("park_painting");
-	levelPaintings[1] = ResourceManager::GetInstance().GetTexture("sewer_painting");
-	levelPaintings[2] = ResourceManager::GetInstance().GetTexture("desert_painting");
-	levelPaintings[3] = ResourceManager::GetInstance().GetTexture("snow_painting");
-	levelPaintings[4] = ResourceManager::GetInstance().GetTexture("castle_painting");
-	levelPaintings[5] = ResourceManager::GetInstance().GetTexture("ratking_painting");
-
-	const char* fartPaths[] = {
-		"sounds/fart1.ogg", "sounds/fart2.ogg", "sounds/fart3.ogg", "sounds/fart4.ogg", "sounds/fart5.ogg",
-		"sounds/fart6.ogg", "sounds/fart7.ogg", "sounds/fart8.ogg", "sounds/fart9.ogg", "sounds/fart10.ogg", "sounds/fart11.ogg"
-	};
-
-	for (int i = 0; i < 11; ++i)
-		fartSoundsLoaded[i] = LoadSound(fartPaths[i]);
-
-	currentMusic = new AudioClip("mainmenu/FloppyTurdMenu.mp3");
-	PlayMusic(currentMusic);
-
-	if (game && game->playing) {
-		for (int i = 0; i < 6; ++i) {
-			levelsUnlocked[i] = game->playing->GetStats().levelUnlocked[i];
-			if (i == 0) levelsUnlocked[i] = true; // Ensure Park is always unlocked
+		// Validate game pointer
+		if (!game) {
+			TraceLog(LOG_ERROR, "MainMenu constructor: game pointer is null");
+			throw std::invalid_argument("Game pointer is null");
 		}
+
+		// Use ResourceManager instead of direct LoadTexture calls
+		TraceLog(LOG_INFO, "MainMenu constructor - Loading textures from ResourceManager");
+		
+		try {
+			emptyPainting = ResourceManager::GetInstance().GetTexture("empty_painting");
+			_MenuBackground = ResourceManager::GetInstance().GetTexture("main_menu_bg");
+			_FloppyLogo = ResourceManager::GetInstance().GetTexture("floppy_logo");
+			finLogo = ResourceManager::GetInstance().GetTexture("fin_logo");
+			lockedPainting = ResourceManager::GetInstance().GetTexture("locked_painting");
+
+			levelPaintings[0] = ResourceManager::GetInstance().GetTexture("park_painting");
+			levelPaintings[1] = ResourceManager::GetInstance().GetTexture("sewer_painting");
+			levelPaintings[2] = ResourceManager::GetInstance().GetTexture("desert_painting");
+			levelPaintings[3] = ResourceManager::GetInstance().GetTexture("snow_painting");
+			levelPaintings[4] = ResourceManager::GetInstance().GetTexture("castle_painting");
+			levelPaintings[5] = ResourceManager::GetInstance().GetTexture("ratking_painting");
+
+			TraceLog(LOG_INFO, "MainMenu constructor - Textures loaded successfully");
+		} catch (const std::exception& e) {
+			TraceLog(LOG_ERROR, "Exception loading MainMenu textures: %s", e.what());
+			// Initialize with empty textures to prevent crashes
+			emptyPainting = { 0 };
+			_MenuBackground = { 0 };
+			_FloppyLogo = { 0 };
+			finLogo = { 0 };
+			lockedPainting = { 0 };
+			for (int i = 0; i < 6; i++) {
+				levelPaintings[i] = { 0 };
+			}
+		} catch (...) {
+			TraceLog(LOG_ERROR, "Unknown exception loading MainMenu textures");
+			// Initialize with empty textures to prevent crashes
+			emptyPainting = { 0 };
+			_MenuBackground = { 0 };
+			_FloppyLogo = { 0 };
+			finLogo = { 0 };
+			lockedPainting = { 0 };
+			for (int i = 0; i < 6; i++) {
+				levelPaintings[i] = { 0 };
+			}
+		}
+
+		const char* fartPaths[] = {
+			"sounds/fart1.ogg", "sounds/fart2.ogg", "sounds/fart3.ogg", "sounds/fart4.ogg", "sounds/fart5.ogg",
+			"sounds/fart6.ogg", "sounds/fart7.ogg", "sounds/fart8.ogg", "sounds/fart9.ogg", "sounds/fart10.ogg", "sounds/fart11.ogg"
+		};
+
+		TraceLog(LOG_INFO, "MainMenu constructor - Loading fart sounds");
+		for (int i = 0; i < 11; ++i) {
+			try {
+				fartSoundsLoaded[i] = LoadSound(fartPaths[i]);
+			} catch (const std::exception& e) {
+				TraceLog(LOG_ERROR, "Exception loading fart sound %d: %s", i, e.what());
+				fartSoundsLoaded[i] = { 0 }; // Initialize with empty sound
+			} catch (...) {
+				TraceLog(LOG_ERROR, "Unknown exception loading fart sound %d", i);
+				fartSoundsLoaded[i] = { 0 }; // Initialize with empty sound
+			}
+		}
+
+		TraceLog(LOG_INFO, "MainMenu constructor - Creating AudioClip");
+		try {
+			currentMusic = new AudioClip("mainmenu/FloppyTurdMenu.mp3");
+			PlayMusic(currentMusic);
+		} catch (const std::exception& e) {
+			TraceLog(LOG_ERROR, "Exception creating AudioClip: %s", e.what());
+			currentMusic = nullptr;
+		} catch (...) {
+			TraceLog(LOG_ERROR, "Unknown exception creating AudioClip");
+			currentMusic = nullptr;
+		}
+
+		if (game && game->playing) {
+			TraceLog(LOG_INFO, "MainMenu constructor - Setting up level unlocks");
+			for (int i = 0; i < 6; ++i) {
+				levelsUnlocked[i] = game->playing->GetStats().levelUnlocked[i];
+				if (i == 0) levelsUnlocked[i] = true; // Ensure Park is always unlocked
+			}
+		}
+
+		TraceLog(LOG_INFO, "MainMenu constructor COMPLETED SUCCESSFULLY");
+	} catch (const std::exception& e) {
+		TraceLog(LOG_ERROR, "Exception in MainMenu constructor: %s", e.what());
+		// Initialize with default values to prevent crashes
+		emptyPainting = { 0 };
+		_MenuBackground = { 0 };
+		_FloppyLogo = { 0 };
+		finLogo = { 0 };
+		lockedPainting = { 0 };
+		for (int i = 0; i < 6; ++i) {
+			levelPaintings[i] = { 0 };
+		}
+		for (int i = 0; i < 11; ++i) {
+			fartSoundsLoaded[i] = { 0 };
+		}
+		currentMusic = nullptr;
+	} catch (...) {
+		TraceLog(LOG_ERROR, "Unknown exception in MainMenu constructor");
+		// Initialize with default values to prevent crashes
+		emptyPainting = { 0 };
+		_MenuBackground = { 0 };
+		_FloppyLogo = { 0 };
+		finLogo = { 0 };
+		lockedPainting = { 0 };
+		for (int i = 0; i < 6; ++i) {
+			levelPaintings[i] = { 0 };
+		}
+		for (int i = 0; i < 11; ++i) {
+			fartSoundsLoaded[i] = { 0 };
+		}
+		currentMusic = nullptr;
 	}
 }
 
@@ -244,12 +335,29 @@ void MainMenu::UpdateLevelUnlocks(int totalCoins, const int sessionRecords[6])
 
 void MainMenu::Draw()
 {
+#if defined(PLATFORM_MOBILE)
+	DrawMobileUI();
+#else
+	DrawDesktopUI();
+#endif
+}
+
+void MainMenu::DrawDesktopUI()
+{
 	using namespace GameSettings;
 
 	DrawCallTracker::TrackDrawTexturePro(_MenuBackground,
 		Rectangle{ 0, 0, (float)_MenuBackground.width, (float)_MenuBackground.height },
 		Rectangle{ 0, 0, 320, 180 },
-		Vector2{ 0, 0 }, 0.0f, WHITE);
+		Vector2{ 0,0 }, 0.0f, WHITE);
+
+	float logoWidth = _FloppyLogo.width;
+	float logoHeight = _FloppyLogo.height;
+
+	DrawTexturePro(_FloppyLogo,
+		Rectangle{ 0, 0, (float)_FloppyLogo.width, (float)_FloppyLogo.height },
+		Rectangle{ (320.0f - logoWidth) / 2, 10, logoWidth, logoHeight },
+		Vector2{ 0,0 }, 0.0f, WHITE);
 
 	UseHighDefFont(true);
 	Font hdFont = game->GetScaledFont(1.2f);
@@ -548,6 +656,52 @@ void MainMenu::Draw()
 	}
 
 	UseHighDefFont(false);
+}
+
+void MainMenu::DrawMobileUI()
+{
+	UIManager& ui = UIManager::GetInstance();
+
+	// Draw background to fill the screen
+	float screenWidth = ui.GetSafeArea().width + ui.GetSafeArea().x * 2;
+	float screenHeight = ui.GetSafeArea().height + ui.GetSafeArea().y * 2;
+	DrawTexturePro(_MenuBackground,
+		Rectangle{ 0, 0, (float)_MenuBackground.width, (float)_MenuBackground.height },
+		Rectangle{ 0, 0, screenWidth, screenHeight },
+		Vector2{ 0,0 }, 0.0f, WHITE);
+
+	// Draw logo at the top-center of the safe area
+	Vector2 logoPos = ui.GetPosition(UIAnchor::TOP_CENTER, {0, 50});
+	float logoScale = ui.GetScaleFactor() * 1.2f;
+	float logoWidth = _FloppyLogo.width * logoScale;
+	float logoHeight = _FloppyLogo.height * logoScale;
+	DrawTexturePro(_FloppyLogo,
+		Rectangle{ 0, 0, (float)_FloppyLogo.width, (float)_FloppyLogo.height },
+		Rectangle{ logoPos.x - logoWidth / 2, logoPos.y, logoWidth, logoHeight },
+		Vector2{ 0,0 }, 0.0f, WHITE);
+
+	// Draw buttons
+	float buttonWidth = 250 * ui.GetScaleFactor();
+	float buttonHeight = 60 * ui.GetScaleFactor();
+	float buttonSpacing = 20 * ui.GetScaleFactor();
+
+	Vector2 playPos = ui.GetPosition(UIAnchor::CENTER, {0, -buttonHeight});
+	Vector2 optionsPos = ui.GetPosition(UIAnchor::CENTER, {0, buttonSpacing});
+	Vector2 creditsPos = ui.GetPosition(UIAnchor::CENTER, {0, buttonHeight + buttonSpacing * 2});
+	Vector2 quitPos = ui.GetPosition(UIAnchor::BOTTOM_CENTER, {0, -buttonHeight});
+
+	if (AIGUI_Button("PLAY", playPos.x - buttonWidth / 2, playPos.y, buttonWidth, buttonHeight)) {
+		currentMenu = LEVEL_SELECT;
+	}
+	if (AIGUI_Button("OPTIONS", optionsPos.x - buttonWidth / 2, optionsPos.y, buttonWidth, buttonHeight)) {
+		currentMenu = OPTIONS_MENU;
+	}
+	if (AIGUI_Button("CREDITS", creditsPos.x - buttonWidth / 2, creditsPos.y, buttonWidth, buttonHeight)) {
+		game->SetGameState(Game::CREDITS);
+	}
+	if (AIGUI_Button("QUIT", quitPos.x - buttonWidth / 2, quitPos.y, buttonWidth, buttonHeight)) {
+		game->SetGameState(Game::SHUTDOWN);
+	}
 }
 
 void MainMenu::ResetMusic()

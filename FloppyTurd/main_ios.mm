@@ -4,11 +4,14 @@
 #import "iOS/AppDelegate.h"
 
 extern "C" int main(int argc, char *argv[]) {
-    NSLog(@"[DEBUG] iOS main() starting with argc=%d", argc);
+    NSLog(@"[INIT] ========================================");
+    NSLog(@"[INIT] iOS main() STARTING");
+    NSLog(@"[INIT] argc=%d", argc);
+    NSLog(@"[INIT] ========================================");
     @autoreleasepool {
-        NSLog(@"[DEBUG] About to call UIApplicationMain");
+        NSLog(@"[INIT] About to call UIApplicationMain");
         int result = UIApplicationMain(argc, argv, nil, NSStringFromClass([AppDelegate class]));
-        NSLog(@"[DEBUG] UIApplicationMain returned: %d", result);
+        NSLog(@"[INIT] UIApplicationMain returned: %d", result);
         return result;
     }
 }

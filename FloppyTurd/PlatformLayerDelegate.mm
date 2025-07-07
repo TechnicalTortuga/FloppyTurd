@@ -3,6 +3,12 @@
 #import <UIKit/UIKit.h>
 #import "MetalRenderer.h"
 #import "Game.h"
+#import "RaylibCompat.h"
+
+// Helper to convert Color to unsigned int (RGBA)
+static inline unsigned int ColorToUInt(Color c) {
+    return ((unsigned int)c.r << 24) | ((unsigned int)c.g << 16) | ((unsigned int)c.b << 8) | ((unsigned int)c.a);
+}
 
 @implementation PlatformLayerDelegate {
     MTKView* _view;
@@ -66,15 +72,40 @@
 }
 
 - (void)drawInMTKView:(MTKView*)view {
-    NSLog(@"[DEBUG] drawInMTKView called");
-    if (!_isInitialized || !_metalRenderer) {
-        NSLog(@"[DEBUG] Not initialized or MetalRenderer not available, skipping draw");
+    static int frameCount = 0;
+    if (frameCount++ % 60 == 0) {
+        NSLog(@"[RENDER] drawInMTKView called (frame: %d)", frameCount);
+    }
+    
+    if (!_isInitialized) {
+        if (frameCount == 1) {
+            NSLog(@"[ERROR] drawInMTKView: PlatformLayerDelegate not initialized");
+        }
         return;
     }
     
-    // Get the game instance and render the frame to generate draw commands
+    if (!_metalRenderer) {
+        if (frameCount == 1) {
+            NSLog(@"[ERROR] drawInMTKView: MetalRenderer not available");
+        }
+        return;
+    }
+    
+    // Get the game instance
     Game* game = GetGameInstance();
-    if (game && game->IsInitialized()) {
+    NSLog(@"[ACCESS] GetGameInstance() called from drawInMTKView, returning: %p", game);
+    if (!game) {
+        if (frameCount == 1 || frameCount % 120 == 0) {
+            NSLog(@"[ERROR] drawInMTKView: Game instance is null");
+        }
+    } else if (!game->IsInitialized()) {
+        if (frameCount == 1 || frameCount % 120 == 0) {
+            NSLog(@"[WARN] drawInMTKView: Game instance exists but not initialized");
+        }
+    } else {
+        if (frameCount == 1 || frameCount % 120 == 0) {
+            NSLog(@"[RENDER] Rendering game frame (frame: %d)", frameCount);
+        }
         // Render the game frame to generate draw commands
         game->RenderFrame();
     }
@@ -88,7 +119,10 @@
     
     _metalRenderer->EndFrame();
     _metalRenderer->Present();
-    NSLog(@"[DEBUG] drawInMTKView completed using MetalRenderer");
+    
+    if (frameCount == 1 || frameCount % 120 == 0) {
+        NSLog(@"[RENDER] drawInMTKView completed (frame: %d)", frameCount);
+    }
 }
 
 // MetalRenderer handles all the drawing internally, so we don't need these methods anymore
@@ -131,7 +165,7 @@
     _metalRenderer->DrawRectangle(posX, posY, width, height, raylibColor);
 }
 
-- (void)drawText:(const char*)text x:(float)x y:(float)y fontSize:(float)fontSize color:(Color)color font:(void*)font {
+- (void)drawText:(const char*)text x:(float)x y:(float)y fontSize:(float)fontSize color:(unsigned int)color font:(void*)font {
     // Ensure we're on the main thread for Metal operations
     if (![NSThread isMainThread]) {
         NSLog(@"[ERROR] drawText called on non-main thread! Current thread: %@", [NSThread currentThread]);
@@ -140,24 +174,27 @@
         });
         return;
     }
-    
     NSLog(@"[DEBUG] drawText called: text=%s, x=%f, y=%f, fontSize=%f", text, x, y, fontSize);
-    
-    // Create draw command
+    // Convert unsigned int to Color struct
+    Color raylibColor = {
+        (unsigned char)((color >> 24) & 0xFF),
+        (unsigned char)((color >> 16) & 0xFF),
+        (unsigned char)((color >> 8) & 0xFF),
+        (unsigned char)(color & 0xFF)
+    };
     NSDictionary* command = @{
         @"type": @"text",
         @"text": [NSString stringWithUTF8String:text],
         @"x": @(x),
         @"y": @(y),
         @"fontSize": @(fontSize),
-        @"color": @(ColorToUInt(color)),
+        @"color": @(color),
         @"font": @((uintptr_t)font)
     };
-    
     [_drawCommands addObject:command];
 }
 
-- (void)drawTexture:(void*)texture x:(float)x y:(float)y width:(float)width height:(float)height tint:(Color)tint {
+- (void)drawTexture:(void*)texture x:(float)x y:(float)y width:(float)width height:(float)height tint:(unsigned int)tint {
     // Ensure we're on the main thread for Metal operations
     if (![NSThread isMainThread]) {
         NSLog(@"[ERROR] drawTexture called on non-main thread! Current thread: %@", [NSThread currentThread]);
@@ -166,7 +203,13 @@
         });
         return;
     }
-    
+    // Convert unsigned int to Color struct
+    Color raylibColor = {
+        (unsigned char)((tint >> 24) & 0xFF),
+        (unsigned char)((tint >> 16) & 0xFF),
+        (unsigned char)((tint >> 8) & 0xFF),
+        (unsigned char)(tint & 0xFF)
+    };
     if (!_metalRenderer) {
         NSLog(@"[ERROR] drawTexture: MetalRenderer not available");
         return;
@@ -186,7 +229,7 @@
     Rectangle dest = {x, y, width, height};
     
     // Use our optimized MetalRenderer
-    _metalRenderer->DrawTexture(metalTexture, source, dest, tint);
+    _metalRenderer->DrawTexture(metalTexture, source, dest, raylibColor);
 }
 
 - (void*)loadTextureFromImage:(void*)imageData width:(int)width height:(int)height format:(int)format {
@@ -239,11 +282,6 @@
     } else {
         NSLog(@"[ERROR] processDrawCommands: MetalRenderer not available");
     }
-}
-
-// Helper to convert Color to unsigned int (RGBA)
-static inline unsigned int ColorToUInt(Color c) {
-    return ((unsigned int)c.r << 24) | ((unsigned int)c.g << 16) | ((unsigned int)c.b << 8) | ((unsigned int)c.a);
 }
 
 @end

@@ -137,6 +137,9 @@ public:
     const DebugStats& GetDebugStats() const { return m_debugStats; }
     void ResetDebugStats();
     
+    // Device access
+    id<MTLDevice> GetDevice() const { return m_device; }
+    
     // Mobile GPU optimization
     void SetMobileGPUSettings(const MobileGPUSettings& settings);
     const MobileGPUSettings& GetMobileGPUSettings() const { return m_mobileSettings; }
@@ -150,7 +153,6 @@ public:
                               const std::vector<Rectangle>& dests, const std::vector<Color>& tints);
     
     // Getters
-    id<MTLDevice> GetDevice() const { return m_device; }
     id<MTLCommandQueue> GetCommandQueue() const { return m_commandQueue; }
     MTKView* GetView() const { return m_view; }
     

@@ -46,6 +46,8 @@ public:
 private:
 	void PlayRandomFartSound();
 	void ToggleFartMusic();
+	void DrawDesktopUI();
+	void DrawMobileUI();
 
 	Game* game;
 	MenuState currentMenu{ MAIN_MENU };

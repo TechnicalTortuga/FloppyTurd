@@ -1,7 +1,6 @@
 #import <Foundation/Foundation.h>
 #import <Metal/Metal.h>
 #import <MetalKit/MetalKit.h>
-#import "RaylibCompat.h"
 
 @interface PlatformLayerDelegate : NSObject <MTKViewDelegate>
 @property (nonatomic, strong) id<MTLDevice> device;
@@ -14,8 +13,8 @@
 
 - (instancetype)initWithView:(MTKView*)view;
 - (void)drawRectangleWithPosX:(int)posX posY:(int)posY width:(int)width height:(int)height color:(unsigned int)color;
-- (void)drawText:(const char*)text x:(float)x y:(float)y fontSize:(float)fontSize color:(Color)color font:(void*)font;
-- (void)drawTexture:(void*)texture x:(float)x y:(float)y width:(float)width height:(float)height tint:(Color)tint;
+- (void)drawText:(const char*)text x:(float)x y:(float)y fontSize:(float)fontSize color:(unsigned int)color font:(void*)font;
+- (void)drawTexture:(void*)texture x:(float)x y:(float)y width:(float)width height:(float)height tint:(unsigned int)tint;
 - (void*)loadTextureFromImage:(void*)imageData width:(int)width height:(int)height format:(int)format;
 - (void)processDrawCommands:(MTKView*)view;
 // Add methods for rendering, texture management, etc., as needed

@@ -2,32 +2,50 @@
 #include <algorithm>
 #include <filesystem>
 #include <thread>
+#include <iostream>
+#include "GameLog.h"
 
 void ResourceManager::Initialize(ResourceQuality quality) {
-    platform = &PlatformLayer::GetInstance();
+    GameLog::Log("ResourceManager::Initialize() STARTING");
     
-    // Auto-detect quality based on platform if requested
-    if (quality == ResourceQuality::AUTO) {
-        if (platform->PreferLowPowerMode()) {
-            currentQuality = ResourceQuality::LOW;
-            maxCacheMemoryMB = 25;  // Limit cache on low-power devices
+    try {
+        platform = &PlatformLayer::GetInstance();
+        GameLog::Log("Got PlatformLayer instance: %p", platform);
+        
+        // Auto-detect quality based on platform if requested
+        if (quality == ResourceQuality::AUTO) {
+            if (platform->PreferLowPowerMode()) {
+                currentQuality = ResourceQuality::LOW;
+                maxCacheMemoryMB = 25;  // Limit cache on low-power devices
+            } else {
+                currentQuality = ResourceQuality::HIGH;
+                maxCacheMemoryMB = 100;
+            }
         } else {
-            currentQuality = ResourceQuality::HIGH;
-            maxCacheMemoryMB = 100;
+            currentQuality = quality;
         }
-    } else {
-        currentQuality = quality;
-    }
 
-    // Platform-specific optimizations
-    if (platform->PreferLowPowerMode()) {
-        maxTextureSize = platform->GetRecommendedTextureSize();
-        compressionEnabled = true;
-        streamingEnabled = true;
-    }
+        // Platform-specific optimizations
+        if (platform->PreferLowPowerMode()) {
+            maxTextureSize = platform->GetRecommendedTextureSize();
+            compressionEnabled = true;
+            streamingEnabled = true;
+        }
 
-    RegisterAllResources();
-    TraceLog(LOG_INFO, "ResourceManager initialized with quality: %d", (int)currentQuality);
+        GameLog::Log("About to call RegisterAllResources()");
+        RegisterAllResources();
+        GameLog::Log("RegisterAllResources() completed successfully");
+        
+        TraceLog(LOG_INFO, "ResourceManager initialized with quality: %d", (int)currentQuality);
+        GameLog::Log("ResourceManager::Initialize() COMPLETED SUCCESSFULLY");
+        
+    } catch (const std::exception& e) {
+        GameLog::Log("Exception in ResourceManager::Initialize(): %s", e.what());
+        throw; // Re-throw to be caught by Game::Initialize()
+    } catch (...) {
+        GameLog::Log("Unknown exception in ResourceManager::Initialize()");
+        throw; // Re-throw to be caught by Game::Initialize()
+    }
 }
 
 void ResourceManager::Shutdown() {
@@ -37,32 +55,52 @@ void ResourceManager::Shutdown() {
 }
 
 Texture2D ResourceManager::GetTexture(const std::string& id) {
-    auto it = textureCache.find(id);
-    if (it != textureCache.end() && it->second.isValid) {
-        UpdateAccessTime(id);
-        return it->second.resource;
-    }
+    try {
+        auto it = textureCache.find(id);
+        if (it != textureCache.end() && it->second.isValid) {
+            UpdateAccessTime(id);
+            return it->second.resource;
+        }
 
-    // Load the texture if not cached
-    if (LoadTextureInternal(id)) {
-        UpdateAccessTime(id);
-        return textureCache[id].resource;
-    }
+        // Load the texture if not cached
+        if (LoadTextureInternal(id)) {
+            UpdateAccessTime(id);
+            return textureCache[id].resource;
+        }
 
-    // Return a placeholder texture on failure
-    TraceLog(LOG_WARNING, "Failed to load texture: %s", id.c_str());
-    static Texture2D placeholder = { 0 };
+        // Return a placeholder texture on failure
+        TraceLog(LOG_WARNING, "Failed to load texture: %s", id.c_str());
+        static Texture2D placeholder = { 0 };
 #if defined(__APPLE__) && TARGET_OS_IPHONE
-    if (placeholder.texture == nullptr) {
+        if (placeholder.texture == nullptr) {
 #else
-    if (placeholder.id == 0) {
+        if (placeholder.id == 0) {
 #endif
-        // Create a 2x2 magenta placeholder texture
-        Image img = GenImageColor(2, 2, MAGENTA);
-        placeholder = LoadTextureFromImage(img);
-        UnloadImage(img);
+            // Create a 2x2 magenta placeholder texture
+            try {
+                Image img = GenImageColor(2, 2, MAGENTA);
+                placeholder = LoadTextureFromImage(img);
+                UnloadImage(img);
+            } catch (const std::exception& e) {
+                TraceLog(LOG_ERROR, "Exception creating placeholder texture: %s", e.what());
+                // Return empty texture if placeholder creation fails
+                placeholder = { 0 };
+            } catch (...) {
+                TraceLog(LOG_ERROR, "Unknown exception creating placeholder texture");
+                // Return empty texture if placeholder creation fails
+                placeholder = { 0 };
+            }
+        }
+        return placeholder;
+    } catch (const std::exception& e) {
+        TraceLog(LOG_ERROR, "Exception in GetTexture for %s: %s", id.c_str(), e.what());
+        // Return empty texture on exception
+        return { 0 };
+    } catch (...) {
+        TraceLog(LOG_ERROR, "Unknown exception in GetTexture for %s", id.c_str());
+        // Return empty texture on exception
+        return { 0 };
     }
-    return placeholder;
 }
 
 Sound ResourceManager::GetSound(const std::string& id) {
@@ -114,65 +152,81 @@ Font ResourceManager::GetFont(const std::string& id) {
 }
 
 bool ResourceManager::LoadTextureInternal(const std::string& id) {
-    auto regIt = resourceRegistry.find(id);
-    if (regIt == resourceRegistry.end() || regIt->second.type != ResourceType::TEXTURE) {
-        return false;
-    }
+    try {
+        auto regIt = resourceRegistry.find(id);
+        if (regIt == resourceRegistry.end() || regIt->second.type != ResourceType::TEXTURE) {
+            return false;
+        }
 
-    const auto& info = regIt->second;
-    if (info.minQuality > currentQuality) {
-        return false; // Skip loading if quality too low
-    }
+        const auto& info = regIt->second;
+        if (info.minQuality > currentQuality) {
+            return false; // Skip loading if quality too low
+        }
 
-    std::string fullPath = ResolvePath(id, ResourceType::TEXTURE);
-    if (fullPath.empty()) {
-        return false;
-    }
+        std::string fullPath = ResolvePath(id, ResourceType::TEXTURE);
+        if (fullPath.empty()) {
+            return false;
+        }
 
-    Texture2D texture = LoadTexture(fullPath.c_str());
+        Texture2D texture = LoadTexture(fullPath.c_str());
 #if defined(__APPLE__) && TARGET_OS_IPHONE
-    if (texture.texture == nullptr) {
+        if (texture.texture == nullptr) {
 #else
-    if (texture.id == 0) {
+        if (texture.id == 0) {
 #endif
+            return false;
+        }
+
+        // Apply quality restrictions
+        if (texture.width > maxTextureSize || texture.height > maxTextureSize) {
+            // Scale down large textures on mobile
+            try {
+                Image img = LoadImageFromTexture(texture);
+                UnloadTexture(texture);
+                
+                float scale = (float)maxTextureSize / std::max(img.width, img.height);
+                ImageResize(&img, (int)(img.width * scale), (int)(img.height * scale));
+                
+                texture = LoadTextureFromImage(img);
+                UnloadImage(img);
+            } catch (const std::exception& e) {
+                TraceLog(LOG_ERROR, "Exception scaling texture %s: %s", id.c_str(), e.what());
+                return false;
+            } catch (...) {
+                TraceLog(LOG_ERROR, "Unknown exception scaling texture %s", id.c_str());
+                return false;
+            }
+        }
+
+        // Estimate memory usage (rough calculation)
+        size_t memUsage = texture.width * texture.height * 4; // Assuming RGBA
+        
+        // Check if we need to trim cache
+        if (totalMemoryUsage + memUsage > maxCacheMemoryMB * 1024 * 1024) {
+            TrimCache(maxCacheMemoryMB);
+        }
+
+        // Cache the texture
+        CachedResource<Texture2D> cached;
+        cached.resource = texture;
+        cached.isValid = true;
+        cached.path = fullPath;
+        cached.memoryUsage = memUsage;
+        cached.lastAccessed = GetTime();
+
+        textureCache[id] = cached;
+        totalMemoryUsage += memUsage;
+
+        TraceLog(LOG_INFO, "Loaded texture: %s (%dx%d, %.1fKB)", 
+                 id.c_str(), texture.width, texture.height, memUsage / 1024.0f);
+        return true;
+    } catch (const std::exception& e) {
+        TraceLog(LOG_ERROR, "Exception in LoadTextureInternal for %s: %s", id.c_str(), e.what());
+        return false;
+    } catch (...) {
+        TraceLog(LOG_ERROR, "Unknown exception in LoadTextureInternal for %s", id.c_str());
         return false;
     }
-
-    // Apply quality restrictions
-    if (texture.width > maxTextureSize || texture.height > maxTextureSize) {
-        // Scale down large textures on mobile
-        Image img = LoadImageFromTexture(texture);
-        UnloadTexture(texture);
-        
-        float scale = (float)maxTextureSize / std::max(img.width, img.height);
-        ImageResize(&img, (int)(img.width * scale), (int)(img.height * scale));
-        
-        texture = LoadTextureFromImage(img);
-        UnloadImage(img);
-    }
-
-    // Estimate memory usage (rough calculation)
-    size_t memUsage = texture.width * texture.height * 4; // Assuming RGBA
-    
-    // Check if we need to trim cache
-    if (totalMemoryUsage + memUsage > maxCacheMemoryMB * 1024 * 1024) {
-        TrimCache(maxCacheMemoryMB);
-    }
-
-    // Cache the texture
-    CachedResource<Texture2D> cached;
-    cached.resource = texture;
-    cached.isValid = true;
-    cached.path = fullPath;
-    cached.memoryUsage = memUsage;
-    cached.lastAccessed = GetTime();
-
-    textureCache[id] = cached;
-    totalMemoryUsage += memUsage;
-
-    TraceLog(LOG_INFO, "Loaded texture: %s (%dx%d, %.1fKB)", 
-             id.c_str(), texture.width, texture.height, memUsage / 1024.0f);
-    return true;
 }
 
 bool ResourceManager::LoadSoundInternal(const std::string& id) {

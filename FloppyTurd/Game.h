@@ -10,6 +10,15 @@
 #include "GameSettings.h"
 #include "Credits.h"
 #include "Loading.h" // New include
+#include "GameLog.h"
+
+// Cross-platform logging macro
+#if defined(__OBJC__) && defined(__APPLE__) && TARGET_OS_IPHONE
+    #import <Foundation/Foundation.h>
+    #define GAME_LOG(fmt, ...) NSLog((@"[GAME] " fmt), ##__VA_ARGS__)
+#else
+    #define GAME_LOG(fmt, ...) printf("[GAME] " fmt "\n", ##__VA_ARGS__)
+#endif
 
 class Window;
 class MainMenu;
@@ -73,7 +82,7 @@ private:
 	void InitClasses();
 	void RunGame();
 
-	void Update();
+	void Update(float deltaTime = 0.0f);
 	void Draw();
 	void HandleInput();
 

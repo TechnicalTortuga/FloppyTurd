@@ -31,13 +31,14 @@ void MetalTextureCache::Initialize(void* metalDevice) {
     m_metalDevice = metalDevice;
     m_textureCache.clear();
     m_textureRefCounts.clear();
-    NSLog(@"[INFO] MetalTextureCache initialized");
+    NSLog(@"[INIT] MetalTextureCache initialized with device: %p", m_metalDevice);
 }
 
 void MetalTextureCache::Shutdown() {
+    NSLog(@"[SHUTDOWN] Starting MetalTextureCache shutdown");
     UnloadAllTextures();
     m_metalDevice = nullptr;
-    NSLog(@"[INFO] MetalTextureCache shutdown complete");
+    NSLog(@"[SHUTDOWN] MetalTextureCache shutdown complete");
 }
 
 Texture2D MetalTextureCache::GetOrLoadTexture(const std::string& fileName) {
@@ -235,7 +236,10 @@ void MetalTextureCache::UnloadTexture(unsigned int textureId) {
 }
 
 void MetalTextureCache::UnloadTexture(void* texturePtr) {
-    if (!texturePtr) return;
+    if (!texturePtr) {
+        NSLog(@"[WARNING] Attempting to unload null texture pointer");
+        return;
+    }
     
     // Decrement reference count
     auto it = m_textureRefCounts.find(texturePtr);
@@ -247,11 +251,11 @@ void MetalTextureCache::UnloadTexture(void* texturePtr) {
     }
     
     it->second--;
-    NSLog(@"[INFO] Decremented texture refcount: %p (new count: %u)", texturePtr, it->second);
+    NSLog(@"[TEXTURE] Decremented texture refcount: %p (new count: %u)", texturePtr, it->second);
     
     if (it->second <= 0) {
         // No more references, release the Metal texture
-        NSLog(@"[INFO] Releasing texture: %p", texturePtr);
+        NSLog(@"[TEXTURE] Releasing texture: %p", texturePtr);
         CFRelease(texturePtr); // Release our bridge_retained reference
         
         // Remove from reference count map
@@ -260,6 +264,7 @@ void MetalTextureCache::UnloadTexture(void* texturePtr) {
         // Remove from cache
         for (auto cacheIt = m_textureCache.begin(); cacheIt != m_textureCache.end(); /* no increment */) {
             if (cacheIt->second.texture == texturePtr) {
+                NSLog(@"[TEXTURE] Removing texture from cache: %s", cacheIt->first.c_str());
                 cacheIt = m_textureCache.erase(cacheIt);
             } else {
                 ++cacheIt;
@@ -269,17 +274,22 @@ void MetalTextureCache::UnloadTexture(void* texturePtr) {
 }
 
 void MetalTextureCache::UnloadAllTextures() {
-    NSLog(@"[INFO] Unloading all textures (%lu textures in cache)", m_textureCache.size());
+    NSLog(@"[SHUTDOWN] Unloading all textures (%lu textures in cache)", m_textureCache.size());
     
     // Release all Metal textures
     for (auto& it : m_textureRefCounts) {
-        NSLog(@"[INFO] Releasing texture: %p", it.first);
-        CFRelease(it.first);
+        if (it.first) {
+            NSLog(@"[SHUTDOWN] Releasing texture: %p (refCount was: %u)", it.first, it.second);
+            CFRelease(it.first);
+        } else {
+            NSLog(@"[WARNING] Skipping release of null texture pointer (refCount was: %u)", it.second);
+        }
     }
     
     // Clear collections
     m_textureCache.clear();
     m_textureRefCounts.clear();
+    NSLog(@"[SHUTDOWN] All textures released and collections cleared");
 }
 
 void MetalTextureCache::GenerateMipmapsForTexture(Texture2D texture) {

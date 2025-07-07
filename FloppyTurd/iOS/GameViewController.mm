@@ -3,28 +3,36 @@
 #import "RaylibCompat.h"
 #import "Game.h"
 #import "PlatformLayerDelegate.h"
+#import "MetalRenderer.h"
+#import "RaylibCompat_iOS.h"
+#import "UIManager.h"
+#import "PlatformLayer.h"
+
+// Game state
+extern "C++" {
+    Game* GetGameInstance();
+}
 
 // Include our C++ game headers
 extern "C" int game_main(int argc, char *argv[]);
 
-@interface GameViewController () {
+@interface GameViewController () <MTKViewDelegate> {
     MTKView *_metalView;
     dispatch_queue_t _gameQueue;
     BOOL _gameInitialized;
     CADisplayLink *_displayLink;
     CFTimeInterval _previousTime;
+    id<MTLDevice> _device;
 }
+
 @end
 
 @implementation GameViewController
 
 - (void)loadView {
-    // Create MTKView
+    // Create and configure the MTKView
     _metalView = [[MTKView alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
     _metalView.device = MTLCreateSystemDefaultDevice();
-    _metalView.delegate = self;
-    _metalView.preferredFramesPerSecond = 60;
-    _metalView.colorPixelFormat = MTLPixelFormatBGRA8Unorm;
     _metalView.depthStencilPixelFormat = MTLPixelFormatDepth32Float;
     _metalView.clearColor = MTLClearColorMake(0.0, 0.0, 0.0, 1.0);
     
@@ -37,80 +45,82 @@ extern "C" int game_main(int argc, char *argv[]);
 
 - (void)viewDidLoad {
     NSLog(@"[INIT] ========================================");
-    NSLog(@"[INIT] GameViewController viewDidLoad STARTING");
-    NSLog(@"[INIT] ========================================");
+    NSLog(@"[INIT] GameViewController viewDidLoad STARTING on thread: %@", [NSThread currentThread]);
+    
     [super viewDidLoad];
+    
+    NSLog(@"[ACCESS] Step 1: Checking initial game instance before any initialization on thread: %@", [NSThread currentThread]);
+    Game* initialGame = GetGameInstance();
+    NSLog(@"[ACCESS] Step 1: GetGameInstance() called before initialization, returning: %p on thread: %@", initialGame, [NSThread currentThread]);
+    
+    // Initialize Metal
+    _device = MTLCreateSystemDefaultDevice();
+    if (!_device) {
+        [self showErrorAlert:@"This device does not support Metal"];
+        return;
+    }
+    
+    // Configure MTKView
+    _metalView.device = _device;
+    _metalView.colorPixelFormat = MTLPixelFormatBGRA8Unorm;
+    _metalView.depthStencilPixelFormat = MTLPixelFormatDepth32Float;
+    _metalView.clearColor = MTLClearColorMake(0.1, 0.1, 0.1, 1.0);
+    
+    // Disable MTKView's automatic drawing - we'll control it via CADisplayLink
+    _metalView.paused = YES;
+    _metalView.enableSetNeedsDisplay = YES;
     
     // Setup touch handling
     _metalView.multipleTouchEnabled = YES;
     NSLog(@"[INIT] Set up touch handling");
     
-    // Create game queue
-    _gameQueue = dispatch_queue_create("com.floppyturd.gamequeue", DISPATCH_QUEUE_SERIAL);
-    NSLog(@"[INIT] Created game queue: %p", _gameQueue);
+    // Create game queue for background operations
+    _gameQueue = dispatch_queue_create("com.floppyturd.game", DISPATCH_QUEUE_SERIAL);
     
-    // Initialize game on background queue
-    NSLog(@"[INIT] Dispatching game initialization to background queue");
-    dispatch_async(_gameQueue, ^{
-        NSLog(@"[INIT] ========================================");
-        NSLog(@"[INIT] BACKGROUND QUEUE: Starting game initialization");
-        NSLog(@"[INIT] ========================================");
-        
-        NSLog(@"[INIT] About to call game_main()");
-        NSLog(@"[INIT] game_main function pointer: %p", (void*)game_main);
-        // Call game_main to create the game instance
-        int result = game_main(0, nullptr);
-        NSLog(@"[INIT] game_main() returned: %d", result);
-        
-        // Force flush the logs to make sure we see them
-        fflush(stdout);
-        fflush(stderr);
-        
-        // Get the game instance and initialize it
-        Game* game = GetGameInstance();
-        NSLog(@"[INIT] GetGameInstance() returned: %p", game);
-        
-        if (game) {
-            NSLog(@"[INIT] game->IsInitialized() = %d", game->IsInitialized());
-            
-            dispatch_async(dispatch_get_main_queue(), ^{
-                NSLog(@"[INIT] ========================================");
-                NSLog(@"[INIT] MAIN QUEUE: Setting up rendering pipeline");
-                NSLog(@"[INIT] ========================================");
-                
-                NSLog(@"[INIT] Initializing PlatformLayer with MTKView: %p", _metalView);
-                // Initialize the PlatformLayer with the MTKView to set up the delegate
-                PlatformLayer& platformLayer = PlatformLayer::GetInstance();
-                platformLayer.Initialize((__bridge void*)_metalView);
-                NSLog(@"[INIT] PlatformLayer initialized");
-                NSLog(@"[INIT] PlatformLayer delegate: %p", platformLayer.GetDelegate());
-                
-                NSLog(@"[INIT] Setting up display link on main queue");
-                // Set up display link on main thread after initialization
-                [self setupDisplayLink];
-                _gameInitialized = YES;
-                
-                // Force a small delay to ensure initialization is complete
-                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                    NSLog(@"[INIT] ========================================");
-                    NSLog(@"[INIT] DELAYED CHECK: game->IsInitialized() = %d", game->IsInitialized());
-                    NSLog(@"[INIT] ========================================");
-                });
-                NSLog(@"[INIT] ========================================");
-                NSLog(@"[INIT] Game initialization COMPLETE");
-                NSLog(@"[INIT] _gameInitialized = YES");
-                NSLog(@"[INIT] ========================================");
-            });
-        } else {
-            NSLog(@"[ERROR] ========================================");
-            NSLog(@"[ERROR] FAILED to get game instance!");
-            NSLog(@"[ERROR] game_main() returned: %d", result);
-            NSLog(@"[ERROR] GetGameInstance() returned: %p", game);
-            NSLog(@"[ERROR] ========================================");
-        }
-    });
+    // CRITICAL: Initialize PlatformLayer BEFORE calling game_main
+    NSLog(@"[INIT] Initializing PlatformLayer with MTKView: %p", _metalView);
+    PlatformLayer& platformLayer = PlatformLayer::GetInstance();
+    platformLayer.Initialize((__bridge void*)_metalView);
+    NSLog(@"[INIT] PlatformLayer initialized successfully");
     
-    NSLog(@"[INIT] GameViewController viewDidLoad completed (async init started)");
+    // Initialize UIManager with safe area
+    CGRect safeAreaRect = self.view.safeAreaLayoutGuide.layoutFrame;
+    Rectangle safeArea = {
+        static_cast<float>(safeAreaRect.origin.x),
+        static_cast<float>(safeAreaRect.origin.y),
+        static_cast<float>(safeAreaRect.size.width),
+        static_cast<float>(safeAreaRect.size.height)
+    };
+    
+    UIManager& uiManager = UIManager::GetInstance();
+    uiManager.Initialize(
+        static_cast<float>(safeAreaRect.size.width),
+        static_cast<float>(safeAreaRect.size.height),
+        safeArea
+    );
+    NSLog(@"[INIT] UIManager initialized with safe area: %.0fx%.0f", safeArea.width, safeArea.height);
+    
+    // Now initialize the game directly on the main thread.
+    // This is CRITICAL to prevent race conditions where the game loop
+    // starts before the game instance is created.
+    NSLog(@"[INIT] Step 2: Starting synchronous game initialization on main thread: %@", [NSThread currentThread]);
+    int result = game_main(0, nullptr);
+    
+    if (result == 0) {
+        NSLog(@"[INIT] Step 3: Game initialization successful, checking game instance on thread: %@", [NSThread currentThread]);
+        Game* postInitGame = GetGameInstance();
+        NSLog(@"[ACCESS] Step 3: GetGameInstance() called after initialization, returning: %p on thread: %@", postInitGame, [NSThread currentThread]);
+        _gameInitialized = YES;
+        [self startGameLoop];
+    } else {
+        NSLog(@"[ERROR] Step 3: Game initialization failed with code: %d on thread: %@", result, [NSThread currentThread]);
+        Game* failedInitGame = GetGameInstance();
+        NSLog(@"[ACCESS] Step 3: GetGameInstance() called after failed initialization, returning: %p on thread: %@", failedInitGame, [NSThread currentThread]);
+        [self showErrorAlert:[NSString stringWithFormat:@"Game initialization failed. Error code: %d", result]];
+    }
+    
+    NSLog(@"[INIT] GameViewController viewDidLoad COMPLETED");
+    NSLog(@"[INIT] ========================================");
 }
 
 - (void)setupDisplayLink {
@@ -123,15 +133,16 @@ extern "C" int game_main(int argc, char *argv[]);
 }
 
 - (void)gameLoopTick:(CADisplayLink *)sender {
-    NSLog(@"[DEBUG] gameLoopTick called");
+    NSLog(@"[DEBUG] gameLoopTick called on thread: %@", [NSThread currentThread]);
     if (!_gameInitialized) {
-        NSLog(@"[DEBUG] Game not initialized, skipping gameLoopTick");
+        NSLog(@"[DEBUG] Game not initialized, skipping gameLoopTick on thread: %@", [NSThread currentThread]);
         return;
     }
     
     Game* game = GetGameInstance();
+    NSLog(@"[ACCESS] GetGameInstance() called from gameLoopTick, returning: %p on thread: %@", game, [NSThread currentThread]);
     if (!game) {
-        NSLog(@"[DEBUG] Game instance is null, skipping gameLoopTick");
+        NSLog(@"[DEBUG] Game instance is null, skipping gameLoopTick on thread: %@", [NSThread currentThread]);
         return;
     }
     
@@ -161,10 +172,22 @@ extern "C" int game_main(int argc, char *argv[]);
 - (void)viewWillLayoutSubviews {
     [super viewWillLayoutSubviews];
     
-    // Handle safe area for notched devices
-    if (@available(iOS 11.0, *)) {
-        UIEdgeInsets safeArea = self.view.safeAreaInsets;
-        UpdateSafeAreaInsets(safeArea.top, safeArea.right, safeArea.bottom, safeArea.left);
+    NSLog(@"[LAYOUT] View bounds: %@", NSStringFromCGRect(self.view.bounds));
+    
+    // Update MTKView frame to match the view's bounds
+    if (_metalView && !CGRectEqualToRect(_metalView.frame, self.view.bounds)) {
+        _metalView.frame = self.view.bounds;
+        NSLog(@"[LAYOUT] MTKView frame updated to: %@", NSStringFromCGRect(_metalView.frame));
+    }
+    
+    // Handle rotation if needed
+    UIInterfaceOrientation newOrientation = self.view.window.windowScene.interfaceOrientation;
+    NSLog(@"[ROTATION] Current orientation: %ld", (long)newOrientation);
+    
+    // Notify the game about orientation change
+    if (_metalView) {
+        // Trigger a redraw with the new orientation
+        [_metalView setNeedsDisplay];
     }
 }
 
@@ -176,15 +199,19 @@ extern "C" int game_main(int argc, char *argv[]);
 }
 
 - (void)drawInMTKView:(MTKView *)view {
-    NSLog(@"[DEBUG] drawInMTKView called");
+    // This is called at the preferred FPS rate
+    // The actual Metal rendering will be handled by MetalRenderer
+    // triggered from the game loop
+    NSLog(@"[DEBUG] drawInMTKView called on thread: %@", [NSThread currentThread]);
     if (!_gameInitialized) {
-        NSLog(@"[DEBUG] Game not initialized, skipping draw");
+        NSLog(@"[DEBUG] Game not initialized, skipping draw on thread: %@", [NSThread currentThread]);
         return;
     }
     
     Game* game = GetGameInstance();
+    NSLog(@"[ACCESS] GetGameInstance() called from drawInMTKView, returning: %p on thread: %@", game, [NSThread currentThread]);
     if (!game) {
-        NSLog(@"[DEBUG] Game instance is null, skipping draw");
+        NSLog(@"[DEBUG] Game instance is null, skipping draw on thread: %@", [NSThread currentThread]);
         return;
     }
     
@@ -202,7 +229,6 @@ extern "C" int game_main(int argc, char *argv[]);
 #pragma mark - Touch Handling
 
 - (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
-    // Convert UITouch to game input format
     for (UITouch *touch in touches) {
         CGPoint location = [touch locationInView:_metalView];
         UpdateTouchState((int)touch.hash, location.x, location.y, true);
@@ -254,6 +280,9 @@ extern "C" int game_main(int argc, char *argv[]);
 }
 
 - (void)dealloc {
+    NSLog(@"[CLEANUP] GameViewController dealloc");
+    
+    // Invalidate display link
     if (_displayLink) {
         [_displayLink invalidate];
         _displayLink = nil;
@@ -261,24 +290,131 @@ extern "C" int game_main(int argc, char *argv[]);
     
     // Shutdown the game
     Game* game = GetGameInstance();
+    NSLog(@"[ACCESS] GetGameInstance() called from dealloc, returning: %p", game);
     if (game) {
+        NSLog(@"[CLEANUP] Shutting down game instance");
         game->Shutdown();
         delete game;
+        NSLog(@"[ACCESS] SetGameInstance(nullptr) called from dealloc");
         SetGameInstance(nullptr);
+        Game* afterNullGame = GetGameInstance();
+        NSLog(@"[ACCESS] GetGameInstance() called after SetGameInstance(nullptr), returning: %p", afterNullGame);
     }
     
-    // ARC handles deallocation automatically
+    // Clear the MTKView delegate
+    if (_metalView) {
+        _metalView.delegate = nil;
+    }
+    
+    // PlatformLayer is a singleton that manages its own lifetime
+    NSLog(@"[CLEANUP] PlatformLayer cleanup handled by singleton");
+    
+    // ARC will handle the rest of the Objective-C objects
+}
+
+#pragma mark - UI Helpers
+
+- (void)showLoadingIndicator:(BOOL)show {
+    static UIActivityIndicatorView *spinner = nil;
+    if (show) {
+        if (!spinner) {
+            spinner = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleLarge];
+            spinner.center = self.view.center;
+            spinner.color = [UIColor whiteColor];
+            spinner.hidesWhenStopped = YES;
+        }
+        [self.view addSubview:spinner];
+        [spinner startAnimating];
+    } else {
+        if (spinner) {
+            [spinner stopAnimating];
+            [spinner removeFromSuperview];
+        }
+    }
+}
+
+#pragma mark - Alert Handling
+
+- (void)startGameLoop {
+    NSLog(@"[INIT] Starting game loop with CADisplayLink");
+    
+    // Create display link for 60 FPS
+    _displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(gameLoopTick:)];
+    _displayLink.preferredFramesPerSecond = 60;
+    [_displayLink addToRunLoop:[NSRunLoop mainRunLoop] forMode:NSDefaultRunLoopMode];
+    
+    _previousTime = CACurrentMediaTime();
+    NSLog(@"[INIT] Game loop started successfully");
+}
+
+- (void)showErrorAlert:(NSString *)message {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Initialization Failed"
+                                                                       message:message
+                                                                preferredStyle:UIAlertControllerStyleAlert];
+        
+        UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"OK"
+                                                           style:UIAlertActionStyleDefault
+                                                         handler:^(UIAlertAction * action) {
+            // Exit the app or try to restart
+            exit(1);
+        }];
+        
+        [alert addAction:okAction];
+        [self presentViewController:alert animated:YES completion:nil];
+    });
+}
+
+- (void)showErrorAlert:(NSString*)title withMessage:(NSString*)message {
+    // Ensure UI updates happen on the main thread
+    dispatch_async(dispatch_get_main_queue(), ^{
+        UIAlertController *alert = [UIAlertController 
+            alertControllerWithTitle:title 
+            message:message 
+            preferredStyle:UIAlertControllerStyleAlert];
+            
+        UIAlertAction *okAction = [UIAlertAction 
+            actionWithTitle:@"OK" 
+            style:UIAlertActionStyleDefault 
+            handler:nil];
+        
+        [alert addAction:okAction];
+        [self presentViewController:alert animated:YES completion:nil];
+    });
 }
 
 #pragma mark - Device Orientation
+
+- (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
+    [super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
+    
+    // Update orientation on transition
+    [coordinator animateAlongsideTransition:^(id<UIViewControllerTransitionCoordinatorContext> context) {
+        // Update UIManager with new screen size
+        CGRect safeArea = self.view.safeAreaLayoutGuide.layoutFrame;
+        Rectangle safeAreaRect = {
+            (float)safeArea.origin.x, (float)safeArea.origin.y,
+            (float)safeArea.size.width, (float)safeArea.size.height
+        };
+        
+        UIManager& uiManager = UIManager::GetInstance();
+        uiManager.Initialize(size.width, size.height, safeAreaRect);
+        
+        NSLog(@"[SYSTEM] Orientation changed, updated UIManager.");
+        
+    } completion:nil];
+}
 
 - (BOOL)shouldAutorotate {
     return YES;
 }
 
 - (UIInterfaceOrientationMask)supportedInterfaceOrientations {
-    // Support both landscape orientations and portrait
     return UIInterfaceOrientationMaskAll;
 }
 
-@end 
+- (BOOL)prefersHomeIndicatorAutoHidden {
+    return YES;
+}
+
+@end

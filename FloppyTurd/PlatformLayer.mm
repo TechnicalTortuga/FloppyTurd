@@ -7,6 +7,7 @@
 #import "RaylibCompat.h"
 #import "MetalRenderer.h"
 #import "PlatformLayerDelegate.h"
+#import "UIManager.h"
 
 // Singleton instance
 static PlatformLayer* s_Instance = nullptr;
@@ -527,14 +528,44 @@ void* PlatformLayer::LoadRenderTexture(int width, int height) {
 }
 
 void PlatformLayer::BeginDrawing(void* renderTexture) {
-    // Start a new render pass if needed
-    // For simplicity, we rely on the MTKView delegate to handle rendering
-    // But in a more complex app, this would set up a specific render target
-    if (renderTexture) {
-        // If a render texture is provided, set up rendering to that texture
-        id<MTLTexture> texture = (__bridge id<MTLTexture>)renderTexture;
-        // Configure render pass to target this texture - would require additional setup
+    if (!m_Delegate) {
+        NSLog(@"[ERROR] BeginDrawing called with no delegate set!");
+        return;
     }
+    
+    // Get the delegate
+    PlatformLayerDelegate* delegate = (__bridge PlatformLayerDelegate*)m_Delegate;
+    
+    // Get the MTKView from the delegate
+    MTKView* mtkView = delegate.view;
+    if (!mtkView) {
+        NSLog(@"[ERROR] BeginDrawing: Could not get MTKView from delegate!");
+        return;
+    }
+
+#if defined(PLATFORM_MOBILE)
+    // --- MOBILE RENDERING PATH ---
+    // Use UIManager to get the actual screen dimensions for the projection matrix.
+    UIManager& uiManager = UIManager::GetInstance();
+    float screenWidth = uiManager.GetSafeArea().width;
+    float screenHeight = uiManager.GetSafeArea().height;
+    
+    // Update the drawable size for the MTKView
+    [mtkView setDrawableSize:CGSizeMake(screenWidth, screenHeight)];
+    
+    // Set the view's content scale factor based on the screen density
+    float density = GetScreenDensity();
+    [mtkView setContentScaleFactor:density];
+    
+    // Notify the view that it needs to redraw with the new size
+    [mtkView setNeedsDisplay];
+#else
+    // --- DESKTOP RENDERING PATH ---
+    // For desktop, we still use the fixed 320x180 resolution
+    [mtkView setDrawableSize:CGSizeMake(320.0f, 180.0f)];
+    [mtkView setContentScaleFactor:1.0f];
+    [mtkView setNeedsDisplay];
+#endif
 }
 
 void PlatformLayer::EndDrawing(void* renderTexture) {
@@ -564,7 +595,6 @@ void PlatformLayer::DrawRectangle(int posX, int posY, int width, int height, uns
 
 void PlatformLayer::DrawTexture(void* texture, float x, float y, float width, float height, Color tint) {
     NSLog(@"[DEBUG] PlatformLayer::DrawTexture called: texture=%p, x=%.2f, y=%.2f, width=%.2f, height=%.2f", texture, x, y, width, height);
-    
     // Ensure we're on the main thread
     if (![NSThread isMainThread]) {
         NSLog(@"[ERROR] PlatformLayer::DrawTexture called on non-main thread! Current thread: %@", [NSThread currentThread]);
@@ -573,30 +603,25 @@ void PlatformLayer::DrawTexture(void* texture, float x, float y, float width, fl
         });
         return;
     }
-    
     // Validate texture
     if (!texture) {
         NSLog(@"[ERROR] PlatformLayer::DrawTexture: Invalid texture pointer");
         return;
     }
-    
     id<MTLTexture> metalTexture = (__bridge id<MTLTexture>)texture;
     if (!metalTexture) {
         NSLog(@"[ERROR] PlatformLayer::DrawTexture: Failed to bridge texture pointer");
         return;
     }
-    
     // Check if texture is still valid
     if (metalTexture.width == 0 || metalTexture.height == 0) {
         NSLog(@"[ERROR] PlatformLayer::DrawTexture: Texture has invalid dimensions (w=%lu, h=%lu)", (unsigned long)metalTexture.width, (unsigned long)metalTexture.height);
         return;
     }
-    
     NSLog(@"[DEBUG] PlatformLayer::DrawTexture: Valid texture found (ptr=%p, w=%lu, h=%lu)", metalTexture, (unsigned long)metalTexture.width, (unsigned long)metalTexture.height);
-    
     if (m_Delegate) {
         PlatformLayerDelegate* delegate = (__bridge PlatformLayerDelegate*)m_Delegate;
-        [delegate drawTexture:texture x:(int)x y:(int)y width:(int)width height:(int)height tint:tint];
+        [delegate drawTexture:texture x:(int)x y:(int)y width:(int)width height:(int)height tint:ColorToUInt(tint)];
     }
 }
 
@@ -642,15 +667,12 @@ void* PlatformLayer::LoadTextureFromImage(void* imageData, int width, int height
 }
 
 void PlatformLayer::DrawText(const char* text, float x, float y, float fontSize, Color color, void* font) {
-    // For now, we'll just log this call - proper text rendering would require:
-    // 1. Font loading and management
-    // 2. Text to texture conversion 
-    // 3. Rendering the texture with the text
     NSLog(@"[DEBUG] DrawText called: text='%s', pos=(%.1f, %.1f), fontSize=%.1f, color=(%d,%d,%d,%d)", 
           text, x, y, fontSize, color.r, color.g, color.b, color.a);
-    
-    // TODO: Implement proper text rendering using Core Text or similar
-    // For now, text rendering is not critical for game functionality
+    if (m_Delegate) {
+        PlatformLayerDelegate* delegate = (__bridge PlatformLayerDelegate*)m_Delegate;
+        [delegate drawText:text x:x y:y fontSize:fontSize color:ColorToUInt(color) font:font];
+    }
 }
 
 #endif // PLATFORM_IOS

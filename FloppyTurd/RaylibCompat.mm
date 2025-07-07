@@ -1,6 +1,2 @@
-#ifdef PLATFORM_IOS
-#include <Metal/Metal.h>
-#include <Foundation/Foundation.h>
-#endif
-
-{{ ... }}
+// This file is intentionally left blank for iOS builds.
+// The actual implementation is in RaylibCompat_iOS.mm.

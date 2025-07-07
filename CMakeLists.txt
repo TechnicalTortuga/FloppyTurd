@@ -60,12 +60,21 @@ endif()
 set(PLATFORM "${_FTURD_SAVED_PLATFORM}" CACHE STRING "" FORCE)
 
 # Collect source files
-file(GLOB_RECURSE SOURCES 
+file(GLOB_RECURSE CPP_SOURCES 
     ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/*.cpp
 )
+file(GLOB_RECURSE OBJC_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/*.mm
+)
+set(SOURCES ${CPP_SOURCES} ${OBJC_SOURCES})
+
 
 # Remove PlayerOLD.cpp from sources
 list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/PlayerOLD.cpp)
+list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/GameLog.cpp)
+
+# Add UIManager.cpp explicitly to ensure it's included in the build
+list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/UIManager.cpp)
 
 # Add platform-specific compatibility layer
 if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
@@ -300,4 +309,4 @@ else()
 endif()
 
 # Export compile commands for better IDE support
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON) 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

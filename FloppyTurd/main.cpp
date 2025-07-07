@@ -14,18 +14,6 @@
 #include <unistd.h>
 #endif
 
-// Global game instance for iOS to access
-Game* g_gameInstance = nullptr;
-
-Game* GetGameInstance()
-{
-	return g_gameInstance;
-}
-
-void SetGameInstance(Game* instance)
-{
-	g_gameInstance = instance;
-}
 
 void SetupWorkingDirectory() {
 #ifdef __APPLE__
@@ -63,12 +51,7 @@ int game_main(int argc, char *argv[])
 	// Initialize platform layer with a placeholder value for nativeView
 	PlatformLayer::GetInstance().Initialize(nullptr);
 
-#if defined(PLATFORM_IOS)
-	// On iOS, we only create the game instance
-	// The actual game loop is driven by the iOS display system
-	g_gameInstance = new Game();
-	return 0; // iOS will keep the app running via UIApplicationMain
-#else
+
 	// On desktop, we create the game and run the traditional loop
 	Game* game = new Game();
 	game->RunGameDesktop();

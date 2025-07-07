@@ -14,13 +14,13 @@ Game* g_gameInstance = nullptr;
 // Game instance accessor function
 Game* GetGameInstance()
 {
-    NSLog(@"[INIT] GetGameInstance() called, returning: %p", g_gameInstance);
+    NSLog(@"[ACCESS] GetGameInstance() called from thread: %@, returning: %p", [NSThread currentThread], g_gameInstance);
     return g_gameInstance;
 }
 
 void SetGameInstance(Game* instance)
 {
-    NSLog(@"[INIT] SetGameInstance() called with: %p", instance);
+    NSLog(@"[ACCESS] SetGameInstance() called from thread: %@, with instance: %p", [NSThread currentThread], instance);
     g_gameInstance = instance;
 }
 
@@ -621,25 +621,41 @@ extern "C" int game_main(int argc, char *argv[])
     srand(static_cast<unsigned int>(time(NULL)));
     NSLog(@"[INIT] Seeded random number generator");
 
-    // Initialize platform layer with a placeholder value for nativeView
-    NSLog(@"[INIT] About to initialize PlatformLayer");
-    PlatformLayer::GetInstance().Initialize(nullptr);
-    NSLog(@"[INIT] PlatformLayer initialized");
+    // PlatformLayer is already initialized by GameViewController
+    NSLog(@"[INIT] PlatformLayer already initialized by GameViewController");
 
     // On iOS, we only create the game instance
     // The actual game loop is driven by the iOS display system
-    NSLog(@"[INIT] Creating Game instance");
-    g_gameInstance = new Game();
-    NSLog(@"[INIT] Game instance created: %p", g_gameInstance);
+    NSLog(@"[INIT] About to create Game instance and set it.");
+    
+    Game* gameInstance = nullptr;
+    try {
+        NSLog(@"[INIT] Creating Game instance...");
+        gameInstance = new Game();
+        NSLog(@"[INIT] Game instance created successfully: %p", gameInstance);
+    } catch (const std::exception& e) {
+        NSLog(@"[ERROR] Exception creating Game instance: %s", e.what());
+        return -1;
+    } catch (...) {
+        NSLog(@"[ERROR] Unknown exception creating Game instance");
+        return -1;
+    }
+    
+    if (!gameInstance) {
+        NSLog(@"[ERROR] Game instance creation returned nullptr");
+        return -1;
+    }
+    
+    SetGameInstance(gameInstance);
+    NSLog(@"[INIT] Game instance created and set: %p", g_gameInstance);
     
     // Initialize the game instance
-    NSLog(@"[INIT] Initializing Game instance");
+    NSLog(@"[INIT] Initializing Game instance - STARTING");
+    NSLog(@"[INIT] Calling Game::Initialize() on instance: %p", g_gameInstance);
     bool initResult = g_gameInstance->Initialize();
-    NSLog(@"[INIT] Game instance Initialize() returned: %s", initResult ? "true" : "false");
+    NSLog(@"[INIT] Game::Initialize() COMPLETED with result: %s", initResult ? "true" : "false");
     if (!initResult) {
-        NSLog(@"[ERROR] Failed to initialize Game instance!");
-        delete g_gameInstance;
-        g_gameInstance = nullptr;
+        NSLog(@"[ERROR] Failed to initialize Game instance! Keeping instance alive for debugging.");
         return -1;
     }
     
@@ -649,8 +665,14 @@ extern "C" int game_main(int argc, char *argv[])
     return 0; // iOS will keep the app running via UIApplicationMain
 }
 
-// Add other iOS-specific raylib compatibility functions here as needed
+// Function to get the main screen's bounds in a cross-platform way if needed
+// For now, this is handled in GameViewController
+/*
+extern "C" CGRect GetScreenBounds() {
+    return [[UIScreen mainScreen] bounds];
+}
+*/
 
 } // extern "C"
 
-#endif
+#endif // PLATFORM_IOS

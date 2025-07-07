@@ -1,6 +1,7 @@
 #include "Playing.h"
 #include "AIGUI.h"
 #include "RaylibCompat.h"
+#include "UIManager.h"
 #include <string>
 #include <functional>
 #include "RatCopter.h"
@@ -19,97 +20,244 @@
 
 Playing::Playing(Game* game) {
     using namespace Resources;
-    this->game = game;
-    player = new Player(game);
+    
+    try {
+        TraceLog(LOG_INFO, "Playing constructor STARTING");
+        
+        // Validate game pointer
+        if (!game) {
+            TraceLog(LOG_ERROR, "Playing constructor: game pointer is null");
+            throw std::invalid_argument("Game pointer is null");
+        }
+        
+        this->game = game;
+        
+        TraceLog(LOG_INFO, "Playing constructor - Creating Player");
+        try {
+            player = new Player(game);
+        } catch (const std::exception& e) {
+            TraceLog(LOG_ERROR, "Exception creating Player: %s", e.what());
+            player = nullptr;
+        } catch (...) {
+            TraceLog(LOG_ERROR, "Unknown exception creating Player");
+            player = nullptr;
+        }
 
-    stats.Load();
-    TOTALCOINS = stats.totalCoins;
+        TraceLog(LOG_INFO, "Playing constructor - Loading stats");
+        try {
+            stats.Load();
+            TOTALCOINS = stats.totalCoins;
+        } catch (const std::exception& e) {
+            TraceLog(LOG_ERROR, "Exception loading stats: %s", e.what());
+            TOTALCOINS = 0;
+        } catch (...) {
+            TraceLog(LOG_ERROR, "Unknown exception loading stats");
+            TOTALCOINS = 0;
+        }
 
-    if (game->mainMenu) {
-        difficultyIndex = game->mainMenu->GetDifficultyIndex();
-        player->SetInitialHearts(difficultyIndex);
-    }
-
-    LoadSessionRecords();
-
-    pauseMenuBackground = Resources::RM().GetTexture("pause_menu_bg");
-    Scoreboard = Resources::GetScoreBoard();
-    _TurdHeart = Resources::GetTurdHeart();
-    _CoinBag = Resources::RM().GetTexture("coin_bag");
-    ScoreSound = Resources::GetGotScore();
-    arrowLeft = Resources::GetArrowLeft();
-    arrowRight = Resources::GetArrowRight();
-    arrowLeftHover = Resources::GetArrowLeftHover();
-    arrowRightHover = Resources::GetArrowRightHover();
-    SCORE = 0;
-    TOTALSCORE = 0;
-
-    gameOverMusic = new AudioClip("music/gameover.mp3");
-    PreLoadLevels();
-    SetCurrentLevel(0);
-
-    gameOverBackground = Resources::RM().GetTexture("game_over_bg");
-    tryAgainBackground = Resources::RM().GetTexture("try_again_bg");
-    deadFloppy = Resources::RM().GetTexture("dead_floppy");
-    gameOverScore = Resources::RM().GetTexture("game_over_score");
-
-    InitializeSkillNodes();
-    InitializeHats();
-
-    // Sync loaded states with game objects
-    for (int i = 0; i < totalSkills; ++i) {
-        skillUnlocked[i] = stats.skillUnlocked[i];
-        if (skillUnlocked[i]) {
-            switch (i) {
-            case 0: 
-                player->EnableShooting(true); 
-                if (touchControls) touchControls->SetShootingEnabled(true);
-                break;
-            case 1: player->SetHeartMode(Player::HALVES); break;
-            case 2: player->EnableCoinMagnet(true); break;
-            case 3: player->EnableHeartMagnet(true); break;
-            case 4: player->SetHeartMode(Player::THIRDS); break;
-            case 5: player->EnableCoinShield(true); break;
+        if (game->mainMenu) {
+            difficultyIndex = game->mainMenu->GetDifficultyIndex();
+            if (player) {
+                player->SetInitialHearts(difficultyIndex);
             }
         }
-    }
-    for (int i = 0; i < 15; ++i) {
-        if (i < hats.size() && stats.hatUnlocked[i]) {
-            hats[i]->status = UNLOCKED;
-            if (i == 0) currentSelectedHat = hats[i];
+
+        try {
+            LoadSessionRecords();
+        } catch (const std::exception& e) {
+            TraceLog(LOG_ERROR, "Exception loading session records: %s", e.what());
+        } catch (...) {
+            TraceLog(LOG_ERROR, "Unknown exception loading session records");
         }
-    }
-    if (game->mainMenu) {
-        for (int i = 0; i < 6; ++i) {
-            game->mainMenu->levelsUnlocked[i] = stats.levelUnlocked[i];
-            if (i == 0) game->mainMenu->levelsUnlocked[i] = true;
+
+        TraceLog(LOG_INFO, "Playing constructor - Loading textures from ResourceManager");
+        try {
+            pauseMenuBackground = Resources::RM().GetTexture("pause_menu_bg");
+            Scoreboard = Resources::GetScoreBoard();
+            _TurdHeart = Resources::GetTurdHeart();
+            _CoinBag = Resources::RM().GetTexture("coin_bag");
+            ScoreSound = Resources::GetGotScore();
+            arrowLeft = Resources::GetArrowLeft();
+            arrowRight = Resources::GetArrowRight();
+            arrowLeftHover = Resources::GetArrowLeftHover();
+            arrowRightHover = Resources::GetArrowRightHover();
+        } catch (const std::exception& e) {
+            TraceLog(LOG_ERROR, "Exception loading UI textures: %s", e.what());
+            // Initialize with default values
+            pauseMenuBackground = { 0 };
+            Scoreboard = { 0 };
+            _TurdHeart = { 0 };
+            _CoinBag = { 0 };
+            ScoreSound = { 0 };
+            arrowLeft = { 0 };
+            arrowRight = { 0 };
+            arrowLeftHover = { 0 };
+            arrowRightHover = { 0 };
+        } catch (...) {
+            TraceLog(LOG_ERROR, "Unknown exception loading UI textures");
+            // Initialize with default values
+            pauseMenuBackground = { 0 };
+            Scoreboard = { 0 };
+            _TurdHeart = { 0 };
+            _CoinBag = { 0 };
+            ScoreSound = { 0 };
+            arrowLeft = { 0 };
+            arrowRight = { 0 };
+            arrowLeftHover = { 0 };
+            arrowRightHover = { 0 };
         }
+        
+        SCORE = 0;
+        TOTALSCORE = 0;
+
+        TraceLog(LOG_INFO, "Playing constructor - Creating game over music");
+        try {
+            gameOverMusic = new AudioClip("music/gameover.mp3");
+        } catch (const std::exception& e) {
+            TraceLog(LOG_ERROR, "Exception creating game over music: %s", e.what());
+            gameOverMusic = nullptr;
+        } catch (...) {
+            TraceLog(LOG_ERROR, "Unknown exception creating game over music");
+            gameOverMusic = nullptr;
+        }
+        
+        PreLoadLevels();
+        SetCurrentLevel(0);
+
+        TraceLog(LOG_INFO, "Playing constructor - Loading game over textures");
+        try {
+            gameOverBackground = Resources::RM().GetTexture("game_over_bg");
+            tryAgainBackground = Resources::RM().GetTexture("try_again_bg");
+            deadFloppy = Resources::RM().GetTexture("dead_floppy");
+            gameOverScore = Resources::RM().GetTexture("game_over_score");
+        } catch (const std::exception& e) {
+            TraceLog(LOG_ERROR, "Exception loading game over textures: %s", e.what());
+            gameOverBackground = { 0 };
+            tryAgainBackground = { 0 };
+            deadFloppy = { 0 };
+            gameOverScore = { 0 };
+        } catch (...) {
+            TraceLog(LOG_ERROR, "Unknown exception loading game over textures");
+            gameOverBackground = { 0 };
+            tryAgainBackground = { 0 };
+            deadFloppy = { 0 };
+            gameOverScore = { 0 };
+        }
+
+        InitializeSkillNodes();
+        InitializeHats();
+
+        // Sync loaded states with game objects
+        for (int i = 0; i < totalSkills; ++i) {
+            skillUnlocked[i] = stats.skillUnlocked[i];
+            if (skillUnlocked[i]) {
+                switch (i) {
+                case 0: 
+                    player->EnableShooting(true); 
+                    if (touchControls) touchControls->SetShootingEnabled(true);
+                    break;
+                case 1: player->SetHeartMode(Player::HALVES); break;
+                case 2: player->EnableCoinMagnet(true); break;
+                case 3: player->EnableHeartMagnet(true); break;
+                case 4: player->SetHeartMode(Player::THIRDS); break;
+                case 5: player->EnableCoinShield(true); break;
+                }
+            }
+        }
+        for (int i = 0; i < 15; ++i) {
+            if (i < hats.size() && stats.hatUnlocked[i]) {
+                hats[i]->status = UNLOCKED;
+                if (i == 0) currentSelectedHat = hats[i];
+            }
+        }
+        if (game->mainMenu) {
+            for (int i = 0; i < 6; ++i) {
+                game->mainMenu->levelsUnlocked[i] = stats.levelUnlocked[i];
+                if (i == 0) game->mainMenu->levelsUnlocked[i] = true;
+            }
+        }
+
+        TraceLog(LOG_INFO, "Playing constructor - Loading button textures");
+        try {
+            floppyButtonBlue = Resources::GetBlueButton();
+            floppyButtonBlueHover = Resources::GetBlueButtonHover();
+        } catch (const std::exception& e) {
+            TraceLog(LOG_ERROR, "Exception loading button textures: %s", e.what());
+            floppyButtonBlue = { 0 };
+            floppyButtonBlueHover = { 0 };
+        } catch (...) {
+            TraceLog(LOG_ERROR, "Unknown exception loading button textures");
+            floppyButtonBlue = { 0 };
+            floppyButtonBlueHover = { 0 };
+        }
+
+        TraceLog(LOG_INFO, "Playing constructor - Loading audio effects");
+        try {
+            AudioManager::GetInstance().LoadSoundEffect("GotCoin", "sounds/pickup.ogg");
+            AudioManager::GetInstance().LoadSoundEffect("GotHealth", "sounds/SmallHealthPickup.wav");
+            AudioManager::GetInstance().LoadSoundEffect("GotHealthBig", "sounds/BigHealthPickup.wav");
+        } catch (const std::exception& e) {
+            TraceLog(LOG_ERROR, "Exception loading audio effects: %s", e.what());
+        } catch (...) {
+            TraceLog(LOG_ERROR, "Unknown exception loading audio effects");
+        }
+
+        TraceLog(LOG_INFO, "Playing constructor - Creating snow overlay");
+        try {
+            Texture2D rawSnowTexture = Resources::RM().GetTexture("snowfall");
+            snowOverlay = std::make_unique<SnowOverlay>(rawSnowTexture, 16, 0.15f);
+            SetTextureWrap(rawSnowTexture, TEXTURE_WRAP_CLAMP);
+        } catch (const std::exception& e) {
+            TraceLog(LOG_ERROR, "Exception creating snow overlay: %s", e.what());
+            snowOverlay = nullptr;
+        } catch (...) {
+            TraceLog(LOG_ERROR, "Unknown exception creating snow overlay");
+            snowOverlay = nullptr;
+        }
+
+        // Initialize touch controls for mobile
+        TraceLog(LOG_INFO, "Playing constructor - Initializing touch controls");
+        try {
+            touchControls = new TouchControls();
+            touchControls->Initialize(320, 180);  // Virtual resolution
+            
+            // Enable touch controls only on mobile platforms
+            auto& platform = PlatformLayer::GetInstance();
+            touchControls->SetEnabled(platform.IsTouchSupported());
+
+            // Initialize AIGUI with touch controls for gesture support
+            AIGUI_Init();
+            AIGUI_SetTouchControls(touchControls);
+        } catch (const std::exception& e) {
+            TraceLog(LOG_ERROR, "Exception initializing touch controls: %s", e.what());
+            touchControls = nullptr;
+        } catch (...) {
+            TraceLog(LOG_ERROR, "Unknown exception initializing touch controls");
+            touchControls = nullptr;
+        }
+
+        savePending = false;
+        
+        TraceLog(LOG_INFO, "Playing constructor COMPLETED SUCCESSFULLY");
+    } catch (const std::exception& e) {
+        TraceLog(LOG_ERROR, "Exception in Playing constructor: %s", e.what());
+        // Initialize with safe defaults
+        player = nullptr;
+        gameOverMusic = nullptr;
+        touchControls = nullptr;
+        snowOverlay = nullptr;
+        savePending = false;
+        // Don't re-throw - just log the error and continue with default values
+    } catch (...) {
+        TraceLog(LOG_ERROR, "Unknown exception in Playing constructor");
+        // Initialize with safe defaults
+        player = nullptr;
+        gameOverMusic = nullptr;
+        touchControls = nullptr;
+        snowOverlay = nullptr;
+        savePending = false;
+        // Don't re-throw - just log the error and continue with default values
     }
-
-    floppyButtonBlue = Resources::GetBlueButton();
-    floppyButtonBlueHover = Resources::GetBlueButtonHover();
-
-    AudioManager::GetInstance().LoadSoundEffect("GotCoin", "sounds/pickup.ogg");
-    AudioManager::GetInstance().LoadSoundEffect("GotHealth", "sounds/SmallHealthPickup.wav");
-    AudioManager::GetInstance().LoadSoundEffect("GotHealthBig", "sounds/BigHealthPickup.wav");
-
-    Texture2D rawSnowTexture = Resources::RM().GetTexture("snowfall");
-    snowOverlay = std::make_unique<SnowOverlay>(rawSnowTexture, 16, 0.15f);
-    SetTextureWrap(rawSnowTexture, TEXTURE_WRAP_CLAMP);
-
-    // Initialize touch controls for mobile
-    touchControls = new TouchControls();
-    touchControls->Initialize(320, 180);  // Virtual resolution
-    
-    // Enable touch controls only on mobile platforms
-    auto& platform = PlatformLayer::GetInstance();
-    touchControls->SetEnabled(platform.IsTouchSupported());
-
-    // Initialize AIGUI with touch controls for gesture support
-    AIGUI_Init();
-    AIGUI_SetTouchControls(touchControls);
-
-    savePending = false;
 }
 
 void Playing::LoadSessionRecords() {
@@ -1183,77 +1331,116 @@ void Playing::SetCurrentLevel(int levelIndex) {
 }
 
 void Playing::DrawUI() {
-	using namespace Resources;
-	using namespace GameSettings;
+    using namespace Resources;
+    using namespace GameSettings;
+    
+    UIManager& ui = UIManager::GetInstance();
+    float scale = ui.GetScaleFactor();
+    
+    // Draw scoreboard (if not in boss level)
+    if (!(levelManager && dynamic_cast<BossLevel*>(levelManager->GetCurrentLevel().get()))) {
+        float scoreboardWidth = Scoreboard.width * scale;
+        float scoreboardHeight = Scoreboard.height * scale;
+        
+        // Position scoreboard in top-right corner with some padding
+        Vector2 scoreboardPos = ui.GetPosition(UIAnchor::TOP_RIGHT, { -10 * scale, 10 * scale });
+        
+        DrawTexturePro(Scoreboard,
+            { 0, 0, (float)Scoreboard.width, (float)Scoreboard.height },
+            { scoreboardPos.x - scoreboardWidth, scoreboardPos.y, scoreboardWidth, scoreboardHeight },
+            { 0, 0 }, 0.0f, WHITE);
+            
+        std::string scoreStr = TextFormat("%i", SCORE);
+        float fontSize = 24.0f * scale;
+        Vector2 scoreTextSize = MeasureTextEx(g_AIGUI.defaultFont, scoreStr.c_str(), fontSize, 1.0f);
+        
+        // Position score text centered in the scoreboard
+        float scoreTextX = scoreboardPos.x - scoreboardWidth / 2.0f - scoreTextSize.x / 2.0f + 5 * scale;
+        float scoreTextY = scoreboardPos.y + (scoreboardHeight - scoreTextSize.y) / 2.0f;
+        
+        Font fontToUse = IsHighDefFont() ? game->GetScaledFont(1.2f * scale) : g_AIGUI.defaultFont;
+        DrawTextEx(fontToUse, scoreStr.c_str(), { scoreTextX, scoreTextY }, fontSize, 1.0f, WHITE);
+    }
 
-	if (!(levelManager && dynamic_cast<BossLevel*>(levelManager->GetCurrentLevel().get()))) {
-		DrawTexturePro(Scoreboard,
-			{ 0, 0, (float)Scoreboard.width, (float)Scoreboard.height },
-			{ 320.0f - Scoreboard.width - 10, 180.0f - Scoreboard.height - 10,
-			 (float)Scoreboard.width, (float)Scoreboard.height },
-			{ 0, 0 }, 0.0f, WHITE);
-		std::string scoreStr = TextFormat("%i", SCORE);
-		Vector2 scoreTextSize = MeasureTextEx(g_AIGUI.defaultFont, scoreStr.c_str(), 20.0f, 1.0f);
-		float scoreTextX = 320.0f - 42.5f - scoreTextSize.x / 2.0f;
-		float scoreTextY = 180.0f - 35.0f;
-		Font fontToUse = IsHighDefFont() ? game->GetScaledFont(1.2f) : g_AIGUI.defaultFont;
-		DrawTextEx(fontToUse, scoreStr.c_str(), { scoreTextX, scoreTextY }, 24.0f, 1.0f, WHITE);
-	}
+    const int hearts = player->GetTotalHearts();
+    const int slicesPH = player->GetSlicesPerHeart();
+    int live = player->GetSlicesLeft();
+    int ghost = player->GetGhostSlicesLeft();
+    
+    // Calculate heart size and spacing
+    float heartSize = 32.0f * scale;
+    float heartSpacing = 4.0f * scale;
+    
+    // Position hearts in top-left corner with some padding
+    Vector2 heartStartPos = ui.GetPosition(UIAnchor::TOP_LEFT, { 10 * scale, 10 * scale });
+    
+    // Draw hearts only if there are live or ghost slices
+    for (int h = 0; h < hearts; ++h) {
+        int sliceStart = h * slicesPH;
+        int liveHere = std::max(0, std::min(slicesPH, live - sliceStart));
+        int ghostHere = std::max(0, std::min(slicesPH - liveHere, ghost - sliceStart));
 
-	const int hearts = player->GetTotalHearts();
-	const int slicesPH = player->GetSlicesPerHeart();
-	int live = player->GetSlicesLeft();
-	int ghost = player->GetGhostSlicesLeft();
+        // Skip drawing if no live or ghost slices remain for this heart
+        if (liveHere == 0 && ghostHere == 0) {
+            continue;
+        }
 
-	// Draw hearts only if there are live or ghost slices
-	for (int h = 0; h < hearts; ++h) {
-		int sliceStart = h * slicesPH;
-		int liveHere = std::max(0, std::min(slicesPH, live - sliceStart));
-		int ghostHere = std::max(0, std::min(slicesPH - liveHere, ghost - sliceStart));
+        const char* texPath = nullptr;
+        if (slicesPH == 1) {
+            if (liveHere == 1) texPath = TurdHeartSmall;
+            else texPath = TurdHeart0Half;
+        }
+        else if (slicesPH == 2) {
+            if (liveHere == 2) texPath = TurdHeartSmall;
+            else if (liveHere == 1) texPath = TurdHeart1Half;
+            else if (ghostHere >= 1) texPath = TurdHeart0HalfHollow;
+            else texPath = TurdHeart0Half;
+        }
+        else {
+            if (liveHere == 3) texPath = TurdHeartSmall;
+            else if (liveHere == 2) texPath = TurdHeart2Thirds;
+            else if (liveHere == 1) texPath = TurdHeart1Third;
+            else if (ghostHere >= 1) texPath = TurdHeart0ThirdHollow;
+            else texPath = TurdHeart0ThirdHollow;
+        }
 
-		// Skip drawing if no live or ghost slices remain for this heart
-		if (liveHere == 0 && ghostHere == 0) {
-			continue;
-		}
-
-		const char* texPath = nullptr;
-		if (slicesPH == 1) {
-			if (liveHere == 1) texPath = TurdHeartSmall;
-			else texPath = TurdHeart0Half;
-		}
-		else if (slicesPH == 2) {
-			if (liveHere == 2) texPath = TurdHeartSmall;
-			else if (liveHere == 1) texPath = TurdHeart1Half;
-			else if (ghostHere >= 1) texPath = TurdHeart0HalfHollow;
-			else texPath = TurdHeart0Half;
-		}
-		else {
-			if (liveHere == 3) texPath = TurdHeartSmall;
-			else if (liveHere == 2) texPath = TurdHeart2Thirds;
-			else if (liveHere == 1) texPath = TurdHeart1Third;
-			else if (ghostHere >= 1) texPath = TurdHeart0ThirdHollow;
-			else texPath = TurdHeart0ThirdHollow;
-		}
-
-		Texture2D tex = TextureCache::Get(texPath);
-		DrawTexturePro(tex,
-			{ 0, 0, (float)tex.width, (float)tex.height },
-			{ 4.0f + h * 32.0f, 4.0f, (float)tex.width, (float)tex.height },
-			{ 0, 0 }, 0.0f, WHITE);
-	}
-
-	float coinBagX = 4.0f;
-	float coinBagY = 4.0f + _TurdHeart.height + 4.0f;
-	DrawTexturePro(_CoinBag,
-		{ 0, 0, (float)_CoinBag.width, (float)_CoinBag.height },
-		{ coinBagX, coinBagY, (float)_CoinBag.width, (float)_CoinBag.height },
-		{ 0, 0 }, 0.0f, WHITE);
-	std::string coinStr = TextFormat("%i", player->GetSessionCoins());
-	Vector2 coinTextSize = MeasureTextEx(g_AIGUI.defaultFont, coinStr.c_str(), 20.0f, 1.0f);
-	float coinTextX = coinBagX + _CoinBag.width + 4.0f;
-	float coinTextY = coinBagY + (_CoinBag.height - coinTextSize.y) / 2.0f;
-	Font fontToUse = IsHighDefFont() ? game->GetScaledFont(1.2f) : g_AIGUI.defaultFont;
-	DrawTextEx(fontToUse, coinStr.c_str(), { coinTextX, coinTextY }, 24.0f, 1.0f, WHITE);
+        Texture2D tex = TextureCache::Get(texPath);
+        float aspectRatio = (float)tex.width / (float)tex.height;
+        float heartWidth = heartSize * aspectRatio;
+        
+        DrawTexturePro(tex,
+            { 0, 0, (float)tex.width, (float)tex.height },
+            { heartStartPos.x + h * (heartWidth + heartSpacing), heartStartPos.y, heartWidth, heartSize },
+            { 0, 0 }, 0.0f, WHITE);
+    }
+    
+    // Draw coins below the hearts
+    float coinSize = 24.0f * scale;
+    float coinYOffset = heartSize + 10.0f * scale;
+    
+    // Get coin bag texture
+    Texture2D coinBagTex = _CoinBag;
+    float coinAspectRatio = (float)coinBagTex.width / (float)coinBagTex.height;
+    float coinWidth = coinSize * coinAspectRatio;
+    
+    // Position coin bag below hearts
+    Vector2 coinPos = { heartStartPos.x, heartStartPos.y + coinYOffset };
+    
+    // Draw coin bag
+    DrawTexturePro(coinBagTex,
+        { 0, 0, (float)coinBagTex.width, (float)coinBagTex.height },
+        { coinPos.x, coinPos.y, coinWidth, coinSize },
+        { 0, 0 }, 0.0f, WHITE);
+        
+    // Draw coin count
+    std::string coinStr = TextFormat("%i", player->GetSessionCoins());
+    float coinFontSize = 20.0f * scale;
+    Vector2 coinTextSize = MeasureTextEx(g_AIGUI.defaultFont, coinStr.c_str(), coinFontSize, 1.0f);
+    float coinTextX = coinPos.x + coinWidth + 4.0f * scale;
+    float coinTextY = coinPos.y + (coinSize - coinTextSize.y) / 2.0f;
+    
+    Font fontToUse = IsHighDefFont() ? game->GetScaledFont(1.2f * scale) : g_AIGUI.defaultFont;
+    DrawTextEx(fontToUse, coinStr.c_str(), { coinTextX, coinTextY }, coinFontSize, 1.0f, WHITE);
 }
 
 void Playing::UpdatePlayerPosition() {

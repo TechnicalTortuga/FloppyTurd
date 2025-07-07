@@ -18,12 +18,15 @@ typedef struct Rectangle {
     float height;
 } Rectangle;
 
+#ifndef COLOR_TYPE_DEFINED
+#define COLOR_TYPE_DEFINED
 typedef struct Color {
     unsigned char r;
     unsigned char g;
     unsigned char b;
     unsigned char a;
 } Color;
+#endif
 
 typedef struct Texture2D {
     unsigned int id;        // OpenGL texture id
