@@ -60,10 +60,9 @@ Vector2 UIManager::GetPosition(UIAnchor anchor, Vector2 offset) const
             break;
     }
 
-    // Apply offset, scaled for resolution independence
-    float scale = GetScaleFactor();
-    position.x += offset.x * scale;
-    position.y += offset.y * scale;
+    // Apply offset (already scaled by the caller)
+    position.x += offset.x;
+    position.y += offset.y;
 
     return position;
 } 

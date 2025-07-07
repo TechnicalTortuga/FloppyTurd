@@ -72,6 +72,17 @@ extern "C" int game_main(int argc, char *argv[]);
     // PlatformLayerDelegate will handle rendering automatically
     _metalView.enableSetNeedsDisplay = YES;
     
+    // Add MTKView configuration debug logging
+    NSLog(@"[MTKVIEW DEBUG] Device: %p", _device);
+    NSLog(@"[MTKVIEW DEBUG] Color pixel format: %lu", (unsigned long)_metalView.colorPixelFormat);
+    NSLog(@"[MTKVIEW DEBUG] Depth stencil pixel format: %lu", (unsigned long)_metalView.depthStencilPixelFormat);
+    NSLog(@"[MTKVIEW DEBUG] Clear color: (%.3f,%.3f,%.3f,%.3f)", 
+          _metalView.clearColor.red, _metalView.clearColor.green, 
+          _metalView.clearColor.blue, _metalView.clearColor.alpha);
+    NSLog(@"[MTKVIEW DEBUG] Enable set needs display: %s", _metalView.enableSetNeedsDisplay ? "YES" : "NO");
+    NSLog(@"[MTKVIEW DEBUG] Frame: %@", NSStringFromCGRect(_metalView.frame));
+    NSLog(@"[MTKVIEW DEBUG] Bounds: %@", NSStringFromCGRect(_metalView.bounds));
+    
     // Setup touch handling
     _metalView.multipleTouchEnabled = YES;
     NSLog(@"[INIT] Set up touch handling");

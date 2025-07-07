@@ -336,8 +336,10 @@ void MainMenu::UpdateLevelUnlocks(int totalCoins, const int sessionRecords[6])
 void MainMenu::Draw()
 {
 #if defined(PLATFORM_MOBILE)
+	GameLog::Log("[MAINMENU] Using MOBILE UI path");
 	DrawMobileUI();
 #else
+	GameLog::Log("[MAINMENU] Using DESKTOP UI path");
 	DrawDesktopUI();
 #endif
 }
@@ -681,7 +683,7 @@ void MainMenu::DrawMobileUI()
 		Vector2{ 0,0 }, 0.0f, WHITE);
 
 	// Draw buttons
-	float buttonWidth = 250 * ui.GetScaleFactor();
+	float buttonWidth = screenWidth * 0.8f; // 80% of screen width for better mobile fit
 	float buttonHeight = 60 * ui.GetScaleFactor();
 	float buttonSpacing = 20 * ui.GetScaleFactor();
 
@@ -689,6 +691,16 @@ void MainMenu::DrawMobileUI()
 	Vector2 optionsPos = ui.GetPosition(UIAnchor::CENTER, {0, buttonSpacing});
 	Vector2 creditsPos = ui.GetPosition(UIAnchor::CENTER, {0, buttonHeight + buttonSpacing * 2});
 	Vector2 quitPos = ui.GetPosition(UIAnchor::BOTTOM_CENTER, {0, -buttonHeight});
+
+	// Debug logging to see what coordinates UIManager is returning
+	GameLog::Log("[UIMANAGER] Screen: %.0fx%.0f, SafeArea: %.0fx%.0f at (%.0f,%.0f)", 
+		ui.GetSafeArea().width + ui.GetSafeArea().x * 2, 
+		ui.GetSafeArea().height + ui.GetSafeArea().y * 2,
+		ui.GetSafeArea().width, ui.GetSafeArea().height, ui.GetSafeArea().x, ui.GetSafeArea().y);
+	GameLog::Log("[UIMANAGER] PLAY button: (%.1f,%.1f), size: %.1fx%.1f", 
+		playPos.x - buttonWidth / 2, playPos.y, buttonWidth, buttonHeight);
+	GameLog::Log("[UIMANAGER] OPTIONS button: (%.1f,%.1f), size: %.1fx%.1f", 
+		optionsPos.x - buttonWidth / 2, optionsPos.y, buttonWidth, buttonHeight);
 
 	if (AIGUI_Button("PLAY", playPos.x - buttonWidth / 2, playPos.y, buttonWidth, buttonHeight)) {
 		currentMenu = LEVEL_SELECT;

@@ -209,12 +209,21 @@ void Loading::LoadResources() {
             
             UpdateLoadingProgress(1.0f);
             TraceLog(LOG_INFO, "LoadResources() - Progress updated to 100%%, loading complete");
+            
+            // Set the resourcesLoaded flag to true to complete the loading process
+            resourcesLoaded = true;
+            TraceLog(LOG_INFO, "LoadResources() - resourcesLoaded set to true");
+            GameLog::Log("[LOADING] resourcesLoaded set to true - loading process complete");
         } catch (const std::exception& e) {
             TraceLog(LOG_ERROR, "Exception in LoadResources: %s", e.what());
             UpdateLoadingProgress(1.0f); // Mark as complete even if there was an error
+            resourcesLoaded = true; // Still mark as loaded even with errors
+            GameLog::Log("[LOADING] Exception in LoadResources, but setting resourcesLoaded=true");
         } catch (...) {
             TraceLog(LOG_ERROR, "Unknown exception in LoadResources");
             UpdateLoadingProgress(1.0f); // Mark as complete even if there was an error
+            resourcesLoaded = true; // Still mark as loaded even with errors
+            GameLog::Log("[LOADING] Unknown exception in LoadResources, but setting resourcesLoaded=true");
         }
         
         TraceLog(LOG_INFO, "LoadResources() COMPLETED");
@@ -252,6 +261,12 @@ void Loading::Update(float deltaTime) {
         loadingComplete = true;
         TraceLog(LOG_INFO, "Loading complete, transitioning to main menu");
         GameLog::Log("[LOADING] Loading complete, transitioning to main menu");
+        
+        // Set the game state to MAINMENU
+        if (game) {
+            game->SetGameState(Game::MAINMENU);
+            GameLog::Log("[LOADING] Game state set to MAINMENU");
+        }
     }
     
     // Log progress every few seconds to track loading

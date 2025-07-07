@@ -73,7 +73,9 @@ static inline unsigned int ColorToUInt(Color c) {
 
 - (void)drawInMTKView:(MTKView*)view {
     static int frameCount = 0;
-    if (frameCount++ % 60 == 0) {
+    frameCount++;
+    
+    if (frameCount == 1 || frameCount % 60 == 0) {
         NSLog(@"[RENDER] drawInMTKView called (frame: %d)", frameCount);
     }
     
@@ -94,6 +96,11 @@ static inline unsigned int ColorToUInt(Color c) {
     // Get the game instance
     Game* game = GetGameInstance();
     NSLog(@"[ACCESS] GetGameInstance() called from drawInMTKView, returning: %p", game);
+    // Use our optimized MetalRenderer for rendering
+    NSLog(@"[RENDER] drawInMTKView: Starting MetalRenderer frame");
+    _metalRenderer->BeginFrame();
+    _metalRenderer->Clear({25, 25, 25, 255}); // Dark gray background
+    
     if (!game) {
         if (frameCount == 1 || frameCount % 120 == 0) {
             NSLog(@"[ERROR] drawInMTKView: Game instance is null");
@@ -110,17 +117,13 @@ static inline unsigned int ColorToUInt(Color c) {
         game->RenderFrame();
     }
     
-    // Use our optimized MetalRenderer for rendering
-    _metalRenderer->BeginFrame();
-    _metalRenderer->Clear({25, 25, 25, 255}); // Dark gray background
-    
     // Process any pending draw commands (if needed)
     // The MetalRenderer handles all the optimized rendering internally
     
     _metalRenderer->EndFrame();
     _metalRenderer->Present();
     
-    if (frameCount == 1 || frameCount % 120 == 0) {
+    if (frameCount == 1 || frameCount % 60 == 0) {
         NSLog(@"[RENDER] drawInMTKView completed (frame: %d)", frameCount);
     }
 }
@@ -138,6 +141,7 @@ static inline unsigned int ColorToUInt(Color c) {
 #pragma mark - Public Methods
 
 - (void)drawRectangleWithPosX:(int)posX posY:(int)posY width:(int)width height:(int)height color:(unsigned int)color {
+    NSLog(@"[DEBUG] drawRectangleWithPosX ENTRY: posX=%d, posY=%d, width=%d, height=%d, color=0x%08X", posX, posY, width, height, color);
     if (![NSThread isMainThread]) {
         NSLog(@"[ERROR] drawRectangleWithPosX called on non-main thread! Current thread: %@", [NSThread currentThread]);
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -145,28 +149,22 @@ static inline unsigned int ColorToUInt(Color c) {
         });
         return;
     }
-    
     if (!_metalRenderer) {
         NSLog(@"[ERROR] drawRectangleWithPosX: MetalRenderer not available");
         return;
     }
-    
-    NSLog(@"[DEBUG] drawRectangleWithPosX called: posX=%d, posY=%d, width=%d, height=%d, color=0x%08X", posX, posY, width, height, color);
-    
-    // Convert color from RGBA to Color struct
+    NSLog(@"[DEBUG] drawRectangleWithPosX calling MetalRenderer: posX=%d, posY=%d, width=%d, height=%d, color=0x%08X", posX, posY, width, height, color);
     Color raylibColor = {
         (unsigned char)((color >> 24) & 0xFF),
         (unsigned char)((color >> 16) & 0xFF),
         (unsigned char)((color >> 8) & 0xFF),
         (unsigned char)(color & 0xFF)
     };
-    
-    // Use our optimized MetalRenderer
     _metalRenderer->DrawRectangle(posX, posY, width, height, raylibColor);
 }
 
 - (void)drawText:(const char*)text x:(float)x y:(float)y fontSize:(float)fontSize color:(unsigned int)color font:(void*)font {
-    // Ensure we're on the main thread for Metal operations
+    NSLog(@"[DEBUG] drawText ENTRY: text=%s, x=%f, y=%f, fontSize=%f, color=0x%08X", text, x, y, fontSize, color);
     if (![NSThread isMainThread]) {
         NSLog(@"[ERROR] drawText called on non-main thread! Current thread: %@", [NSThread currentThread]);
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -174,24 +172,18 @@ static inline unsigned int ColorToUInt(Color c) {
         });
         return;
     }
-    NSLog(@"[DEBUG] drawText called: text=%s, x=%f, y=%f, fontSize=%f", text, x, y, fontSize);
-    // Convert unsigned int to Color struct
     Color raylibColor = {
         (unsigned char)((color >> 24) & 0xFF),
         (unsigned char)((color >> 16) & 0xFF),
         (unsigned char)((color >> 8) & 0xFF),
         (unsigned char)(color & 0xFF)
     };
-    NSDictionary* command = @{
-        @"type": @"text",
-        @"text": [NSString stringWithUTF8String:text],
-        @"x": @(x),
-        @"y": @(y),
-        @"fontSize": @(fontSize),
-        @"color": @(color),
-        @"font": @((uintptr_t)font)
-    };
-    [_drawCommands addObject:command];
+    NSLog(@"[DEBUG] drawText calling MetalRenderer: text=%s, x=%f, y=%f, fontSize=%f, color=(%d,%d,%d,%d)", text, x, y, fontSize, raylibColor.r, raylibColor.g, raylibColor.b, raylibColor.a);
+    if (!_metalRenderer) {
+        NSLog(@"[ERROR] drawText: MetalRenderer not available");
+        return;
+    }
+    _metalRenderer->DrawText(text, x, y, fontSize, raylibColor);
 }
 
 - (void)drawTexture:(void*)texture x:(float)x y:(float)y width:(float)width height:(float)height tint:(unsigned int)tint {
