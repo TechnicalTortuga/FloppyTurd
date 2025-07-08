@@ -9,6 +9,8 @@
 #import "PlatformLayerDelegate.h"
 #import "UIManager.h"
 #import "MetalTextureCache.h"
+#import "UICoordinateSystem.h"
+#import "ResourceManager.h"
 
 // Singleton instance
 static PlatformLayer* s_Instance = nullptr;
@@ -422,8 +424,8 @@ void* PlatformLayer::LoadTexture(const char* fileName, int* width, int* height) 
     // Handle asset catalog resources
     std::string filePath(fileName);
     if (filePath.substr(0, 8) == "asset://") {
-        std::string assetName = filePath.substr(8); // Remove "asset://" prefix
-        NSString* name = [NSString stringWithUTF8String:assetName.c_str()];
+        ResourcePathParts parts = ResourceManager::ParseResourcePath(filePath);
+        NSString* name = [NSString stringWithUTF8String:parts.baseName.c_str()];
         NSLog(@"[DEBUG] LoadTexture: Loading asset catalog texture: %@", name);
         UIImage* uiImage = [UIImage imageNamed:name];
         
@@ -612,17 +614,15 @@ void PlatformLayer::BeginDrawing(void* renderTexture) {
 
 #if defined(PLATFORM_MOBILE)
     // --- MOBILE RENDERING PATH ---
-    // Use UIManager to get the actual screen dimensions for the projection matrix.
-    UIManager& uiManager = UIManager::GetInstance();
-    float screenWidth = uiManager.GetSafeArea().width;
-    float screenHeight = uiManager.GetSafeArea().height;
+    // Use UICoordinateSystem to get the actual pixel dimensions for the projection matrix.
+    Rectangle pixelScreenRect = UICoordinateSystem::GetPixelScreenRect();
     
-    // Update the drawable size for the MTKView
-    [mtkView setDrawableSize:CGSizeMake(screenWidth, screenHeight)];
+    // Update the drawable size for the MTKView to match native pixel resolution
+    [mtkView setDrawableSize:CGSizeMake(pixelScreenRect.width, pixelScreenRect.height)];
     
-    // Set the view's content scale factor based on the screen density
-    float density = GetScreenDensity();
-    [mtkView setContentScaleFactor:density];
+    // Set the view's content scale factor based on the native scale
+    float nativeScale = UICoordinateSystem::GetNativeScale();
+    [mtkView setContentScaleFactor:nativeScale];
     
     // Notify the view that it needs to redraw with the new size
     [mtkView setNeedsDisplay];

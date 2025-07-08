@@ -52,6 +52,12 @@ struct CachedResource {
     float lastAccessed = 0.0f;  // Time since last access (for LRU cache)
 };
 
+struct ResourcePathParts {
+    std::string directory;
+    std::string baseName;
+    std::string extension;
+};
+
 class ResourceManager {
 public:
     static ResourceManager& GetInstance() {
@@ -97,6 +103,9 @@ public:
     const std::unordered_map<std::string, ResourceInfo>& GetResourceRegistry() const { return resourceRegistry; }
     // New public API to get resolved resource path
     std::string GetResourcePath(const std::string& id, ResourceType type);
+
+    // Utility: Parse a resource path into directory, base name, and extension
+    static ResourcePathParts ParseResourcePath(const std::string& path);
 
 private:
     ResourceManager() = default;

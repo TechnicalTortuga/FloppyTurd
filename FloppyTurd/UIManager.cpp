@@ -6,63 +6,70 @@ UIManager& UIManager::GetInstance()
     return instance;
 }
 
-void UIManager::Initialize(float width, float height, Rectangle area)
+void UIManager::Initialize(float screenWidthPoints, float screenHeightPoints,
+                          float screenWidthPixels, float screenHeightPixels,
+                          Rectangle safeAreaPoints, Rectangle safeAreaPixels)
 {
-    this->screenWidth = width;
-    this->screenHeight = height;
-    this->safeArea = area;
+    this->screenWidthPoints = screenWidthPoints;
+    this->screenHeightPoints = screenHeightPoints;
+    this->screenWidthPixels = screenWidthPixels;
+    this->screenHeightPixels = screenHeightPixels;
+    this->safeAreaPoints = safeAreaPoints;
+    this->safeAreaPixels = safeAreaPixels;
+    this->nativeScale = (screenWidthPoints > 0) ? (screenWidthPixels / screenWidthPoints) : 1.0f;
 }
 
-Rectangle UIManager::GetSafeArea() const
-{
-    return this->safeArea;
+float UIManager::PointsToPixels(float value) const { return value * nativeScale; }
+float UIManager::PixelsToPoints(float value) const { return value / nativeScale; }
+Vector2 UIManager::PointsToPixels(Vector2 pt) const { return { pt.x * nativeScale, pt.y * nativeScale }; }
+Vector2 UIManager::PixelsToPoints(Vector2 px) const { return { px.x / nativeScale, px.y / nativeScale }; }
+Rectangle UIManager::PointsToPixels(Rectangle r) const { return { r.x * nativeScale, r.y * nativeScale, r.width * nativeScale, r.height * nativeScale }; }
+Rectangle UIManager::PixelsToPoints(Rectangle r) const { return { r.x / nativeScale, r.y / nativeScale, r.width / nativeScale, r.height / nativeScale }; }
+
+Rectangle UIManager::GetSafeArea(bool usePixels) const {
+    return usePixels ? safeAreaPixels : safeAreaPoints;
 }
 
-float UIManager::GetScaleFactor() const
-{
-    // Calculate scale factor based on height, assuming a landscape layout
-    return this->screenHeight / this->baseHeight;
+float UIManager::GetScaleFactor(bool usePixels) const {
+    float refHeight = usePixels ? screenHeightPixels : screenHeightPoints;
+    return refHeight / baseHeight;
 }
 
-Vector2 UIManager::GetPosition(UIAnchor anchor, Vector2 offset) const
-{
+Vector2 UIManager::GetPosition(UIAnchor anchor, Vector2 offset, bool usePixels) const {
+    const Rectangle& area = usePixels ? safeAreaPixels : safeAreaPoints;
     Vector2 position = {0, 0};
-
-    // Calculate base position from the safe area
     switch (anchor)
     {
         case UIAnchor::TOP_LEFT:
-            position = { safeArea.x, safeArea.y };
+            position = { area.x, area.y };
             break;
         case UIAnchor::TOP_CENTER:
-            position = { safeArea.x + safeArea.width / 2.0f, safeArea.y };
+            position = { area.x + area.width / 2.0f, area.y };
             break;
         case UIAnchor::TOP_RIGHT:
-            position = { safeArea.x + safeArea.width, safeArea.y };
+            position = { area.x + area.width, area.y };
             break;
         case UIAnchor::CENTER_LEFT:
-            position = { safeArea.x, safeArea.y + safeArea.height / 2.0f };
+            position = { area.x, area.y + area.height / 2.0f };
             break;
         case UIAnchor::CENTER:
-            position = { safeArea.x + safeArea.width / 2.0f, safeArea.y + safeArea.height / 2.0f };
+            position = { area.x + area.width / 2.0f, area.y + area.height / 2.0f };
             break;
         case UIAnchor::CENTER_RIGHT:
-            position = { safeArea.x + safeArea.width, safeArea.y + safeArea.height / 2.0f };
+            position = { area.x + area.width, area.y + area.height / 2.0f };
             break;
         case UIAnchor::BOTTOM_LEFT:
-            position = { safeArea.x, safeArea.y + safeArea.height };
+            position = { area.x, area.y + area.height };
             break;
         case UIAnchor::BOTTOM_CENTER:
-            position = { safeArea.x + safeArea.width / 2.0f, safeArea.y + safeArea.height };
+            position = { area.x + area.width / 2.0f, area.y + area.height };
             break;
         case UIAnchor::BOTTOM_RIGHT:
-            position = { safeArea.x + safeArea.width, safeArea.y + safeArea.height };
+            position = { area.x + area.width, area.y + area.height };
             break;
     }
-
-    // Apply offset (already scaled by the caller)
+    // Apply offset (already in correct units)
     position.x += offset.x;
     position.y += offset.y;
-
     return position;
 } 

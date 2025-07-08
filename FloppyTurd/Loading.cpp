@@ -270,89 +270,48 @@ void Loading::Update(float deltaTime) {
 }
 
 void Loading::Draw() {
-    // Get screen dimensions
-    int screenWidth = GetScreenWidth();
-    int screenHeight = GetScreenHeight();
-    
-    // Draw the loading background
+    UIManager& ui = UIManager::GetInstance();
+    Rectangle safeAreaPx = ui.GetSafeArea(true);
+    float screenWidthPx = safeAreaPx.x + safeAreaPx.width;
+    float screenHeightPx = safeAreaPx.y + safeAreaPx.height;
     ClearBackground(BLACK);
-    
-    // Only attempt to draw the poophat if it's loaded
+
+    // --- Centered, large rotating poophat ---
     if (this->poophat.id != 0) {
-#if defined(PLATFORM_MOBILE)
-        // --- MOBILE RENDERING PATH ---
-        // Use the UIManager to get the center position within the safe area.
-        Vector2 centerPos = UIManager::GetInstance().GetPosition(UIAnchor::CENTER);
-        
-        // The UIManager gives us the center, so we draw the texture there.
-        // The origin of DrawTexturePro is the top-left of the destination rectangle,
-        // so we need to offset it by half the texture size to truly center it.
-        float textureWidth = 32.0f;
-        float textureHeight = 32.0f;
-        Rectangle dest = { 
-            centerPos.x - textureWidth / 2.0f, 
-            centerPos.y - textureHeight / 2.0f, 
-            textureWidth, 
-            textureHeight 
+        Vector2 center = ui.GetPosition(UIAnchor::CENTER, {0, 0}, true);
+        float poophatSize = fminf(safeAreaPx.width, safeAreaPx.height) * 0.18f;
+        poophatSize = fmaxf(poophatSize, 96.0f);
+        Rectangle dest = {
+            center.x - poophatSize / 2.0f,
+            center.y - poophatSize / 2.0f,
+            poophatSize,
+            poophatSize
         };
         Rectangle source = { 0, 0, (float)this->poophat.width, (float)this->poophat.height };
-        DrawTexturePro(this->poophat, source, dest, { 0, 0 }, this->rotationAngle, WHITE);
-#else
-        // --- DESKTOP RENDERING PATH ---
-        // Draw rotating poophat in the center of the 320x180 canvas
-        float x = 320.0f / 2.0f;
-        float y = 180.0f / 2.0f;
-        Rectangle dest = { x, y, 32.0f, 32.0f };
-        Rectangle source = { 0, 0, (float)this->poophat.width, (float)this->poophat.height };
-        DrawTexturePro(this->poophat, source, dest, { 16.0f, 16.0f }, this->rotationAngle, WHITE);
-#endif
+        DrawTexturePro(this->poophat, source, dest, { poophatSize/2.0f, poophatSize/2.0f }, this->rotationAngle, WHITE);
     }
-    
-    // Draw progress bar
-    float progressBarWidth = screenWidth * 0.6f;
-    float progressBarHeight = screenHeight * 0.03f;
-    float progressBarX = (screenWidth - progressBarWidth) / 2.0f;
-    float progressBarY = screenHeight * 0.8f;
-    
-    // Background of progress bar
-    DrawRectangle(
-        progressBarX,
-        progressBarY,
-        progressBarWidth,
-        progressBarHeight,
-        ColorAlpha(WHITE, 0.2f)
-    );
-    
-    // Progress fill
-    DrawRectangle(
-        progressBarX,
-        progressBarY,
-        progressBarWidth * loadingProgress,
-        progressBarHeight,
-        WHITE
-    );
-    
-    // Loading text
+
+    // --- Progress bar at bottom center ---
+    float barWidth = safeAreaPx.width * 0.6f;
+    float barHeight = fmaxf(12.0f, safeAreaPx.height * 0.025f);
+    float barX = safeAreaPx.x + (safeAreaPx.width - barWidth) / 2.0f;
+    float barY = safeAreaPx.y + safeAreaPx.height * 0.88f;
+    Rectangle barRect = { barX, barY, barWidth, barHeight };
+    Rectangle barFillRect = { barX, barY, barWidth * loadingProgress, barHeight };
+    DrawRectangleRounded(barRect, 0.4f, 12, ColorAlpha(WHITE, 0.18f));
+    DrawRectangleRounded(barFillRect, 0.4f, 12, WHITE);
+
+    // --- Loading text above bar ---
     const char* loadingText = "Loading...";
-    int fontSize = screenHeight * 0.04f;
+    int fontSize = (int)fmaxf(18.0f, safeAreaPx.height * 0.035f);
     int textWidth = MeasureText(loadingText, fontSize);
-    DrawText(
-        loadingText,
-        (screenWidth - textWidth) / 2,
-        progressBarY - fontSize * 1.5f,
-        fontSize,
-        WHITE
-    );
-    
-    // Progress percentage
+    float textY = barY - fontSize * 1.6f;
+    DrawText(loadingText, (screenWidthPx - textWidth) / 2, textY, fontSize, WHITE);
+
+    // --- Progress percent below bar ---
     char progressText[32];
     snprintf(progressText, sizeof(progressText), "%.0f%%", loadingProgress * 100.0f);
     int percentWidth = MeasureText(progressText, fontSize);
-    DrawText(
-        progressText,
-        (screenWidth - percentWidth) / 2,
-        progressBarY + progressBarHeight + fontSize * 0.5f,
-        fontSize,
-        WHITE
-    );
+    float percentY = barY + barHeight + fontSize * 0.5f;
+    DrawText(progressText, (screenWidthPx - percentWidth) / 2, percentY, fontSize, WHITE);
 }

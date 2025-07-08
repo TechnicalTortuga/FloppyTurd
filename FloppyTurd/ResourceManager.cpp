@@ -953,4 +953,31 @@ void ResourceManager::SetResourceQuality(ResourceQuality quality) {
 // New public API to get resolved resource path
 std::string ResourceManager::GetResourcePath(const std::string& id, ResourceType type) {
     return ResolvePath(id, type);
+}
+
+ResourcePathParts ResourceManager::ParseResourcePath(const std::string& path) {
+    ResourcePathParts parts;
+    std::string working = path;
+    // Remove asset:// prefix if present
+    if (working.rfind("asset://", 0) == 0) {
+        working = working.substr(8);
+    }
+    // Find last slash for directory
+    size_t lastSlash = working.find_last_of("/");
+    if (lastSlash != std::string::npos) {
+        parts.directory = working.substr(0, lastSlash);
+        parts.baseName = working.substr(lastSlash + 1);
+    } else {
+        parts.directory = "";
+        parts.baseName = working;
+    }
+    // Find last dot for extension
+    size_t lastDot = parts.baseName.find_last_of('.');
+    if (lastDot != std::string::npos) {
+        parts.extension = parts.baseName.substr(lastDot + 1);
+        parts.baseName = parts.baseName.substr(0, lastDot);
+    } else {
+        parts.extension = "";
+    }
+    return parts;
 } 

@@ -96,17 +96,33 @@ extern "C" int game_main(int argc, char *argv[]);
     platformLayer.Initialize((__bridge void*)_metalView);
     NSLog(@"[INIT] PlatformLayer initialized successfully");
     
-    // Initialize UIManager with actual safe area, not full screen bounds
-    CGRect bounds = [UIScreen mainScreen].bounds;
-    CGRect safeArea = self.view.safeAreaLayoutGuide.layoutFrame;
-    Rectangle safeAreaRect = {
-        (float)safeArea.origin.x, (float)safeArea.origin.y,
-        (float)safeArea.size.width, (float)safeArea.size.height
-    };
+    // --- Metal/iOS Native Pixel Initialization ---
+    UIScreen* screen = [UIScreen mainScreen];
+    CGRect nativeBounds = screen.nativeBounds; // in pixels
+    CGFloat nativeScale = screen.nativeScale;
+    CGRect bounds = self.view.bounds; // in points
+    UIEdgeInsets insets = self.view.safeAreaInsets;
+    CGRect safeAreaPoints = UIEdgeInsetsInsetRect(bounds, insets); // in points
+    CGRect safeAreaPixels = CGRectMake(safeAreaPoints.origin.x * nativeScale,
+                                       safeAreaPoints.origin.y * nativeScale,
+                                       safeAreaPoints.size.width * nativeScale,
+                                       safeAreaPoints.size.height * nativeScale);
+    // Set Metal layer drawable size to native pixel size
+    if ([self.view isKindOfClass:[MTKView class]]) {
+        MTKView* mtkView = (MTKView*)self.view;
+        mtkView.contentScaleFactor = nativeScale;
+        mtkView.drawableSize = CGSizeMake(nativeBounds.size.width, nativeBounds.size.height);
+    }
+    // Initialize UIManager with both point and pixel safe area
     UIManager& uiManager = UIManager::GetInstance();
-    uiManager.Initialize((float)bounds.size.width, (float)bounds.size.height, safeAreaRect);
-    NSLog(@"[INIT] UIManager initialized with safe area: x=%.0f y=%.0f w=%.0f h=%.0f", 
-          safeAreaRect.x, safeAreaRect.y, safeAreaRect.width, safeAreaRect.height);
+    uiManager.Initialize((float)bounds.size.width, (float)bounds.size.height, // points
+                        (float)nativeBounds.size.width, (float)nativeBounds.size.height, // pixels
+                        { (float)safeAreaPoints.origin.x, (float)safeAreaPoints.origin.y, (float)safeAreaPoints.size.width, (float)safeAreaPoints.size.height }, // safe area in points
+                        { (float)safeAreaPixels.origin.x, (float)safeAreaPixels.origin.y, (float)safeAreaPixels.size.width, (float)safeAreaPixels.size.height }); // safe area in pixels
+    NSLog(@"[INIT] UIManager initialized: points=%.0fx%.0f, pixels=%.0fx%.0f, safeAreaPoints=(%.0f,%.0f,%.0f,%.0f), safeAreaPixels=(%.0f,%.0f,%.0f,%.0f)",
+        bounds.size.width, bounds.size.height, nativeBounds.size.width, nativeBounds.size.height,
+        safeAreaPoints.origin.x, safeAreaPoints.origin.y, safeAreaPoints.size.width, safeAreaPoints.size.height,
+        safeAreaPixels.origin.x, safeAreaPixels.origin.y, safeAreaPixels.size.width, safeAreaPixels.size.height);
     
     // Now initialize the game directly on the main thread.
     // This is CRITICAL to prevent race conditions where the game loop
@@ -363,17 +379,31 @@ extern "C" int game_main(int argc, char *argv[]);
     
     // Update orientation on transition
     [coordinator animateAlongsideTransition:^(id<UIViewControllerTransitionCoordinatorContext> context) {
+        // Get current screen scale and bounds
+        UIScreen* screen = [UIScreen mainScreen];
+        CGFloat nativeScale = screen.nativeScale;
+        CGRect nativeBounds = screen.nativeBounds;
+        
+        // Calculate pixel dimensions
+        CGSize sizePixels = CGSizeMake(size.width * nativeScale, size.height * nativeScale);
+        
+        // Get safe area in points and convert to pixels
+        UIEdgeInsets insets = self.view.safeAreaInsets;
+        CGRect safeAreaPoints = UIEdgeInsetsInsetRect(CGRectMake(0, 0, size.width, size.height), insets);
+        CGRect safeAreaPixels = CGRectMake(safeAreaPoints.origin.x * nativeScale,
+                                           safeAreaPoints.origin.y * nativeScale,
+                                           safeAreaPoints.size.width * nativeScale,
+                                           safeAreaPoints.size.height * nativeScale);
+        
         // Update UIManager with new screen size
-        CGRect safeArea = self.view.safeAreaLayoutGuide.layoutFrame;
-        Rectangle safeAreaRect = {
-            (float)safeArea.origin.x, (float)safeArea.origin.y,
-            (float)safeArea.size.width, (float)safeArea.size.height
-        };
-        
         UIManager& uiManager = UIManager::GetInstance();
-        uiManager.Initialize(size.width, size.height, safeAreaRect);
+        uiManager.Initialize((float)size.width, (float)size.height, // points
+                            (float)sizePixels.width, (float)sizePixels.height, // pixels
+                            { (float)safeAreaPoints.origin.x, (float)safeAreaPoints.origin.y, (float)safeAreaPoints.size.width, (float)safeAreaPoints.size.height }, // safe area in points
+                            { (float)safeAreaPixels.origin.x, (float)safeAreaPixels.origin.y, (float)safeAreaPixels.size.width, (float)safeAreaPixels.size.height }); // safe area in pixels
         
-        NSLog(@"[SYSTEM] Orientation changed, updated UIManager.");
+        NSLog(@"[SYSTEM] Orientation changed, updated UIManager: points=%.0fx%.0f, pixels=%.0fx%.0f", 
+              size.width, size.height, sizePixels.width, sizePixels.height);
         
     } completion:nil];
 }

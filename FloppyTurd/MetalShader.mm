@@ -1,5 +1,7 @@
 #import "MetalShader.h"
 #import <Foundation/Foundation.h>
+#include <string>
+#include "ResourceManager.h"
 
 #if defined(__APPLE__) && TARGET_OS_IOS
 
@@ -38,8 +40,11 @@ id<MTLLibrary> LoadShaderFromFile(const char* filePath, id<MTLDevice> device) {
     @autoreleasepool {
         NSString* path = [NSString stringWithUTF8String:filePath];
         
+        std::string cppPath = [path UTF8String];
+        ResourcePathParts parts = ResourceManager::ParseResourcePath(cppPath);
+        NSString* fileName = [NSString stringWithUTF8String:parts.baseName.c_str()];
         // Try to load from bundle first
-        NSString* bundlePath = [[NSBundle mainBundle] pathForResource:path ofType:nil];
+        NSString* bundlePath = [[NSBundle mainBundle] pathForResource:fileName ofType:parts.extension.length() ? [NSString stringWithUTF8String:parts.extension.c_str()] : nil];
         if (!bundlePath) {
             bundlePath = path;
         }

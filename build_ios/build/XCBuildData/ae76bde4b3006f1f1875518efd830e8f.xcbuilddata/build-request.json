@@ -31,10 +31,10 @@
     "arenaInfo" : {
       "buildIntermediatesPath" : "",
       "buildProductsPath" : "",
-      "derivedDataPath" : "/tmp/FloppyTurdBuild",
-      "indexDataStoreFolderPath" : "/tmp/FloppyTurdBuild/Index.noindex/DataStore",
+      "derivedDataPath" : "/Users/aimac/Library/Developer/Xcode/DerivedData",
+      "indexDataStoreFolderPath" : "/Users/aimac/Library/Developer/Xcode/DerivedData/FloppyTurd-ehjcevvolcublscivttljvwrigfx/Index.noindex/DataStore",
       "indexEnableDataStore" : true,
-      "indexPCHPath" : "/tmp/FloppyTurdBuild/Index.noindex/PrecompiledHeaders",
+      "indexPCHPath" : "/Users/aimac/Library/Developer/Xcode/DerivedData/FloppyTurd-ehjcevvolcublscivttljvwrigfx/Index.noindex/PrecompiledHeaders",
       "pchPath" : ""
     },
     "configurationName" : "Debug",

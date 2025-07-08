@@ -73,15 +73,15 @@ Playing::Playing(Game* game) {
 
         TraceLog(LOG_INFO, "Playing constructor - Loading textures from ResourceManager");
         try {
-            pauseMenuBackground = Resources::RM().GetTexture("pause_menu_bg");
-            Scoreboard = Resources::GetScoreBoard();
-            _TurdHeart = Resources::GetTurdHeart();
-            _CoinBag = Resources::RM().GetTexture("coin_bag");
-            ScoreSound = Resources::GetGotScore();
-            arrowLeft = Resources::GetArrowLeft();
-            arrowRight = Resources::GetArrowRight();
-            arrowLeftHover = Resources::GetArrowLeftHover();
-            arrowRightHover = Resources::GetArrowRightHover();
+            pauseMenuBackground = RM().GetTexture("pause_menu_bg");
+            Scoreboard = GetScoreBoard();
+            _TurdHeart = GetTurdHeart();
+            _CoinBag = RM().GetTexture("coin_bag");
+            ScoreSound = GetGotScore();
+            arrowLeft = GetArrowLeft();
+            arrowRight = GetArrowRight();
+            arrowLeftHover = GetArrowLeftHover();
+            arrowRightHover = GetArrowRightHover();
         } catch (const std::exception& e) {
             TraceLog(LOG_ERROR, "Exception loading UI textures: %s", e.what());
             // Initialize with default values
@@ -127,10 +127,10 @@ Playing::Playing(Game* game) {
 
         TraceLog(LOG_INFO, "Playing constructor - Loading game over textures");
         try {
-            gameOverBackground = Resources::RM().GetTexture("game_over_bg");
-            tryAgainBackground = Resources::RM().GetTexture("try_again_bg");
-            deadFloppy = Resources::RM().GetTexture("dead_floppy");
-            gameOverScore = Resources::RM().GetTexture("game_over_score");
+            gameOverBackground = RM().GetTexture("game_over_bg");
+            tryAgainBackground = RM().GetTexture("try_again_bg");
+            deadFloppy = RM().GetTexture("dead_floppy");
+            gameOverScore = RM().GetTexture("game_over_score");
         } catch (const std::exception& e) {
             TraceLog(LOG_ERROR, "Exception loading game over textures: %s", e.what());
             gameOverBackground = { 0 };
@@ -180,8 +180,8 @@ Playing::Playing(Game* game) {
 
         TraceLog(LOG_INFO, "Playing constructor - Loading button textures");
         try {
-            floppyButtonBlue = Resources::GetBlueButton();
-            floppyButtonBlueHover = Resources::GetBlueButtonHover();
+            floppyButtonBlue = GetBlueButton();
+            floppyButtonBlueHover = GetBlueButtonHover();
         } catch (const std::exception& e) {
             TraceLog(LOG_ERROR, "Exception loading button textures: %s", e.what());
             floppyButtonBlue = { 0 };
@@ -205,7 +205,7 @@ Playing::Playing(Game* game) {
 
         TraceLog(LOG_INFO, "Playing constructor - Creating snow overlay");
         try {
-            Texture2D rawSnowTexture = Resources::RM().GetTexture("snowfall");
+            Texture2D rawSnowTexture = RM().GetTexture("snowfall");
             snowOverlay = std::make_unique<SnowOverlay>(rawSnowTexture, 16, 0.15f);
             SetTextureWrap(rawSnowTexture, TEXTURE_WRAP_CLAMP);
         } catch (const std::exception& e) {
@@ -270,11 +270,11 @@ void Playing::LoadSessionRecords() {
 void Playing::InitializeHats() {
     using namespace Resources;
 
-    hatFrameNormal = Resources::RM().GetTexture("hat_frame_normal");
-    hatFrameHover = Resources::RM().GetTexture("hat_frame_hover");
-    hatFrameSelected = Resources::RM().GetTexture("hat_frame_selected");
-    hatFrameLocked = Resources::RM().GetTexture("hat_frame_locked");
-    hatFrameDenied = Resources::RM().GetTexture("hat_frame_denied");
+    hatFrameNormal = RM().GetTexture("hat_frame_normal");
+    hatFrameHover = RM().GetTexture("hat_frame_hover");
+    hatFrameSelected = RM().GetTexture("hat_frame_selected");
+    hatFrameLocked = RM().GetTexture("hat_frame_locked");
+    hatFrameDenied = RM().GetTexture("hat_frame_denied");
 
     // Clear existing hats
     for (auto hat : hats) {
@@ -1187,31 +1187,24 @@ void Playing::Draw() {
 void Playing::DrawUI() {
     using namespace Resources;
     using namespace GameSettings;
-    
     UIManager& ui = UIManager::GetInstance();
-    float scale = ui.GetScaleFactor();
-    
+    float scale = ui.GetScaleFactor(true); // Use pixel scale
+    Rectangle safeAreaPx = ui.GetSafeArea(true);
+
     // Draw scoreboard (if not in boss level)
     if (!(levelManager && dynamic_cast<BossLevel*>(levelManager->GetCurrentLevel().get()))) {
-        float scoreboardWidth = Scoreboard.width * scale;
-        float scoreboardHeight = Scoreboard.height * scale;
-        
-        // Position scoreboard in top-right corner with some padding
-        Vector2 scoreboardPos = ui.GetPosition(UIAnchor::TOP_RIGHT, { -10 * scale, 10 * scale });
-        
-        DrawTexturePro(Scoreboard,
-            { 0, 0, (float)Scoreboard.width, (float)Scoreboard.height },
+        float scoreboardWidth = GetScoreBoard().width * scale;
+        float scoreboardHeight = GetScoreBoard().height * scale;
+        Vector2 scoreboardPos = ui.GetPosition(UIAnchor::TOP_RIGHT, { -10 * scale, 10 * scale }, true);
+        DrawTexturePro(GetScoreBoard(),
+            { 0, 0, (float)GetScoreBoard().width, (float)GetScoreBoard().height },
             { scoreboardPos.x - scoreboardWidth, scoreboardPos.y, scoreboardWidth, scoreboardHeight },
             { 0, 0 }, 0.0f, WHITE);
-            
         std::string scoreStr = TextFormat("%i", SCORE);
         float fontSize = 24.0f * scale;
         Vector2 scoreTextSize = MeasureTextEx(g_AIGUI.defaultFont, scoreStr.c_str(), fontSize, 1.0f);
-        
-        // Position score text centered in the scoreboard
         float scoreTextX = scoreboardPos.x - scoreboardWidth / 2.0f - scoreTextSize.x / 2.0f + 5 * scale;
         float scoreTextY = scoreboardPos.y + (scoreboardHeight - scoreTextSize.y) / 2.0f;
-        
         Font fontToUse = IsHighDefFont() ? game->GetScaledFont(1.2f * scale) : g_AIGUI.defaultFont;
         DrawTextEx(fontToUse, scoreStr.c_str(), { scoreTextX, scoreTextY }, fontSize, 1.0f, WHITE);
     }
@@ -1226,7 +1219,7 @@ void Playing::DrawUI() {
     float heartSpacing = 4.0f * scale;
     
     // Position hearts in top-left corner with some padding
-    Vector2 heartStartPos = ui.GetPosition(UIAnchor::TOP_LEFT, { 10 * scale, 10 * scale });
+    Vector2 heartStartPos = ui.GetPosition(UIAnchor::TOP_LEFT, { 10 * scale, 10 * scale }, true);
     
     // Draw hearts only if there are live or ghost slices
     for (int h = 0; h < hearts; ++h) {
@@ -1273,7 +1266,7 @@ void Playing::DrawUI() {
     float coinYOffset = heartSize + 10.0f * scale;
     
     // Get coin bag texture
-    Texture2D coinBagTex = _CoinBag;
+    Texture2D coinBagTex = GetCoinBag();
     float coinAspectRatio = (float)coinBagTex.width / (float)coinBagTex.height;
     float coinWidth = coinSize * coinAspectRatio;
     
@@ -1434,4 +1427,65 @@ void Playing::SetCurrentLevel(int levelIndex) {
 
     // Audio transitions are handled by AudioStateManager based on game state changes
     // No need to call TransitionToLevel here during initialization
+}
+
+void Playing::DrawMobileUI() {
+    using namespace Resources;
+    using namespace GameSettings;
+    UIManager& ui = UIManager::GetInstance();
+    float scale = ui.GetScaleFactor(true); // Use pixel scale
+    Rectangle safeAreaPx = ui.GetSafeArea(true);
+
+    // --- Pipe Counter (Scoreboard) ---
+    float scoreboardWidth = GetScoreBoard().width * scale;
+    float scoreboardHeight = GetScoreBoard().height * scale;
+    Vector2 scoreboardPos = ui.GetPosition(UIAnchor::TOP_LEFT, { 10 * scale, 10 * scale }, true);
+    DrawTexturePro(GetScoreBoard(),
+        { 0, 0, (float)GetScoreBoard().width, (float)GetScoreBoard().height },
+        { scoreboardPos.x, scoreboardPos.y, scoreboardWidth, scoreboardHeight },
+        { 0, 0 }, 0.0f, WHITE);
+    std::string scoreStr = TextFormat("%i", SCORE);
+    float fontSize = 24.0f * scale;
+    Vector2 scoreTextSize = MeasureTextEx(g_AIGUI.defaultFont, scoreStr.c_str(), fontSize, 1.0f);
+    float scoreTextX = scoreboardPos.x + (scoreboardWidth - scoreTextSize.x) / 2.0f;
+    float scoreTextY = scoreboardPos.y + (scoreboardHeight - scoreTextSize.y) / 2.0f;
+    Font fontToUse = IsHighDefFont() ? game->GetScaledFont(1.2f * scale) : g_AIGUI.defaultFont;
+    DrawTextEx(fontToUse, scoreStr.c_str(), { scoreTextX, scoreTextY }, fontSize, 1.0f, WHITE);
+
+    // --- Coin Counter ---
+    float coinSize = 32.0f * scale;
+    float coinYOffset = scoreboardHeight + 10 * scale;
+    Texture2D coinBagTex = GetCoinBag();
+    float coinAspectRatio = (float)coinBagTex.width / (float)coinBagTex.height;
+    float coinWidth = coinSize * coinAspectRatio;
+    Vector2 coinPos = { scoreboardPos.x, scoreboardPos.y + coinYOffset };
+    DrawTexturePro(coinBagTex,
+        { 0, 0, (float)coinBagTex.width, (float)coinBagTex.height },
+        { coinPos.x, coinPos.y, coinWidth, coinSize },
+        { 0, 0 }, 0.0f, WHITE);
+    std::string coinStr = TextFormat("%i", player->GetSessionCoins());
+    float coinFontSize = 20.0f * scale;
+    Vector2 coinTextSize = MeasureTextEx(g_AIGUI.defaultFont, coinStr.c_str(), coinFontSize, 1.0f);
+    float coinTextX = coinPos.x + coinWidth + 8.0f * scale;
+    float coinTextY = coinPos.y + (coinSize - coinTextSize.y) / 2.0f;
+    DrawTextEx(g_AIGUI.defaultFont, coinStr.c_str(), { coinTextX, coinTextY }, coinFontSize, 1.0f, WHITE);
+
+    // --- Hearts (Zelda-style, above counters) ---
+    int hearts = player->GetTotalHearts();
+    int live = player->GetSlicesLeft();
+    int ghost = player->GetGhostSlicesLeft();
+    float heartSize = 32.0f * scale;
+    float heartSpacing = 4.0f * scale;
+    float heartsStartX = scoreboardPos.x;
+    float heartsStartY = scoreboardPos.y - heartSize - 8.0f * scale;
+    for (int i = 0; i < hearts; ++i) {
+        float x = heartsStartX + i * (heartSize + heartSpacing);
+        float y = heartsStartY;
+        Texture2D heartTex = (i < live) ? GetTurdHeartSmall() : (i < live + ghost) ? GetTurdHeart0HalfHollow() : GetTurdHeart0Half();
+        DrawTexturePro(heartTex,
+            { 0, 0, (float)heartTex.width, (float)heartTex.height },
+            { x, y, heartSize, heartSize },
+            { 0, 0 }, 0.0f, WHITE);
+    }
+    // ... (continue with other HUD/UI elements as needed, using pixel helpers) ...
 }

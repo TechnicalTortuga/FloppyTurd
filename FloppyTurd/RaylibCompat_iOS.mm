@@ -12,6 +12,8 @@
 #include "MetalTextRenderer.h"
 #include "ResourceManager.h"
 #include "LogManager.h"
+#include <string>
+#import "AudioStateManager.h"
 
 // Global game instance
 Game* g_gameInstance = nullptr;
@@ -91,8 +93,8 @@ Texture2D LoadTexture_iOS(const char *fileName)
     
     // Handle asset catalog resources
     if (filePath.substr(0, 8) == "asset://") {
-        std::string assetName = filePath.substr(8); // Remove "asset://" prefix
-        NSString* name = [NSString stringWithUTF8String:assetName.c_str()];
+        ResourcePathParts parts = ResourceManager::ParseResourcePath(filePath);
+        NSString* name = [NSString stringWithUTF8String:parts.baseName.c_str()];
         NSLog(@"[DEBUG] LoadTexture_iOS: Loading asset catalog texture: %@", name);
         UIImage* uiImage = [UIImage imageNamed:name];
         
@@ -176,11 +178,11 @@ Texture2D LoadTexture_iOS(const char *fileName)
             // Use the shared command queue from PlatformLayer
             id<MTLCommandQueue> commandQueue = (__bridge id<MTLCommandQueue>)PlatformLayer::GetInstance().GetMetalCommandQueue();
             if (commandQueue) {
-                id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
-                id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
-                [blitEncoder generateMipmapsForTexture:metalTexture];
-                [blitEncoder endEncoding];
-                [commandBuffer commit];
+            id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
+            id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
+            [blitEncoder generateMipmapsForTexture:metalTexture];
+            [blitEncoder endEncoding];
+            [commandBuffer commit];
             }
         }
         
@@ -294,8 +296,8 @@ Image LoadImage_iOS(const char* fileName)
     
     // Handle asset catalog resources
     if (path.substr(0, 8) == "asset://") {
-        std::string assetName = path.substr(8); // Remove "asset://" prefix
-        NSString* name = [NSString stringWithUTF8String:assetName.c_str()];
+        ResourcePathParts parts = ResourceManager::ParseResourcePath(path);
+        NSString* name = [NSString stringWithUTF8String:parts.baseName.c_str()];
         UIImage* uiImage = [UIImage imageNamed:name];
         
         if (!uiImage) {
@@ -784,11 +786,10 @@ Music LoadMusic(const char* fileName) {
         
         // Handle asset catalog resources
         if (path.length >= 8 && [[path substringToIndex:8] isEqualToString:@"asset://"]) {
-            NSString* assetName = [path substringFromIndex:8]; // Remove "asset://" prefix
-            GameLog::Log("[AUDIO] Loading asset catalog music: %@", assetName);
-            
-            // For asset catalog datasets, we need to use NSDataAsset to access the data
-            // Asset catalog datasets are compiled into Assets.car and accessed via NSDataAsset
+            std::string cppPath = [path UTF8String];
+            ResourcePathParts parts = ResourceManager::ParseResourcePath(cppPath);
+            NSString* assetName = [NSString stringWithUTF8String:parts.baseName.c_str()];
+            GameLog::Log("[AUDIO] Loading asset catalog music: %s", [assetName UTF8String]);
             NSDataAsset* dataAsset = [[NSDataAsset alloc] initWithName:assetName];
             if (dataAsset && dataAsset.data) {
                 // Create a temporary file with the asset data
@@ -1002,8 +1003,52 @@ void ClearBackground(Color color) {
 
 // Text drawing wrappers
 void DrawTextEx(Font font, const char* text, Vector2 position, float fontSize, float spacing, Color tint) {
-    TraceLog(LOG_INFO, "[RaylibCompat_iOS] DrawTextEx called: text='%s', pos=(%.1f, %.1f), font.baseSize=%d, glyphCount=%d, font.ctFont=%p", text, position.x, position.y, font.baseSize, font.glyphCount, font.ctFont);
-    DrawText(text, (int)position.x, (int)position.y, (int)fontSize, tint);
+    TraceLog(LOG_INFO, "[RaylibCompat_iOS] DrawTextEx called: text='%s', pos=(%.1f, %.1f), font.baseSize=%d, glyphCount=%d, font.ctFont=%p, texture.id=%u", text, position.x, position.y, font.baseSize, font.glyphCount, font.ctFont, font.texture.id);
+    
+    if (font.texture.id != 0 && font.recs && font.glyphs) {
+        float scale = fontSize / (float)font.baseSize;
+        float x = position.x;
+        float y = position.y;
+        const int startChar = 32;
+        const int endChar = 126;
+        int* glyphData = (int*)font.glyphs;
+        for (const char* p = text; *p; p++) {
+            unsigned char c = (unsigned char)*p;
+            if (c < startChar || c > endChar) {
+                // Skip unsupported chars
+                x += fontSize * 0.5f;
+                continue;
+            }
+            int index = c - startChar;
+            if (index < 0 || index >= font.glyphCount) {
+                // Skip invalid characters
+                x += fontSize * 0.5f;
+                continue;
+            }
+            Rectangle src = {
+                font.recs[index].x * font.texture.width,
+                font.recs[index].y * font.texture.height,
+                font.recs[index].width * font.texture.width,
+                font.recs[index].height * font.texture.height
+            };
+            Rectangle dst = {
+                x,
+                y,
+                src.width * scale,
+                src.height * scale
+            };
+            TraceLog(LOG_INFO, "[RaylibCompat_iOS] Drawing char '%c' (index=%d): src=(%.3f,%.3f,%.3f,%.3f), dst=(%.1f,%.1f,%.1f,%.1f)", 
+                     c, index, src.x, src.y, src.width, src.height, dst.x, dst.y, dst.width, dst.height);
+            Vector2 origin = {0, 0};
+            DrawTexturePro_iOS(font.texture, src, dst, origin, 0.0f, tint);
+            // Advance X by glyph advance + spacing
+            int advance = glyphData[index * 4 + 3];
+            x += (advance > 0 ? advance : src.width) * scale + spacing;
+        }
+    } else {
+        // Fallback: use system font
+        DrawText(text, (int)position.x, (int)position.y, (int)fontSize, tint);
+    }
 }
 
 // Texture drawing wrappers

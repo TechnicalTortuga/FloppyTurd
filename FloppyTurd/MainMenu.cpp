@@ -7,6 +7,7 @@
 #include "ResourceManager.h"
 #include "UIManager.h"
 #include "RenderLayer.h"
+#include "UICoordinateSystem.h"
 
 // Enable draw call tracking
 #define ENABLE_DRAW_CALL_TRACKING
@@ -656,70 +657,51 @@ void MainMenu::DrawDesktopUI()
 void MainMenu::DrawMobileUI()
 {
 	TraceLog(LOG_INFO, "[MAINMENU] --- Begin DrawMobileUI Frame ---");
-	UIManager& ui = UIManager::GetInstance();
-	float screenWidth = GetScreenWidth();
-	float screenHeight = GetScreenHeight();
-	Rectangle fullArea = {0, 0, screenWidth, screenHeight};
-	TraceLog(LOG_INFO, "[MAINMENU] Screen: %.1fx%.1f", screenWidth, screenHeight);
-	TraceLog(LOG_INFO, "[MAINMENU] Background texture validity: id=%lu, w=%d, h=%d, mipmaps=%d, format=%d, metalPtr=%p", (unsigned long)_MenuBackground.id, _MenuBackground.width, _MenuBackground.height, _MenuBackground.mipmaps, _MenuBackground.format, (void*)_MenuBackground.texture);
+	
+	// Use UICoordinateSystem for consistent coordinate handling
+	Rectangle pixelScreenRect = UICoordinateSystem::GetPixelScreenRect();
+	Rectangle safeAreaPx = UICoordinateSystem::GetSafeAreaRect(true);
+	
+	TraceLog(LOG_INFO, "[MAINMENU] PixelScreen: %.1fx%.1f, SafeAreaPx: x=%.1f y=%.1f w=%.1f h=%.1f", 
+	         pixelScreenRect.width, pixelScreenRect.height, safeAreaPx.x, safeAreaPx.y, safeAreaPx.width, safeAreaPx.height);
 
-	// Aspect fill scaling for background
+	// --- Background: fill entire device screen using pixel coordinates ---
 	float bgAspect = (float)_MenuBackground.width / (float)_MenuBackground.height;
-	float screenAspect = screenWidth / screenHeight;
+	float screenAspect = pixelScreenRect.width / pixelScreenRect.height;
 	float destWidth, destHeight, destX, destY;
 	if (screenAspect > bgAspect) {
-		destWidth = screenWidth;
-		destHeight = screenWidth / bgAspect;
+		destWidth = pixelScreenRect.width;
+		destHeight = pixelScreenRect.width / bgAspect;
 		destX = 0;
-		destY = (screenHeight - destHeight) / 2.0f;
+		destY = (pixelScreenRect.height - destHeight) / 2.0f;
 	} else {
-		destHeight = screenHeight;
-		destWidth = screenHeight * bgAspect;
+		destHeight = pixelScreenRect.height;
+		destWidth = pixelScreenRect.height * bgAspect;
 		destY = 0;
-		destX = (screenWidth - destWidth) / 2.0f;
+		destX = (pixelScreenRect.width - destWidth) / 2.0f;
 	}
-	
-	// Ensure background covers the full screen area
-	Rectangle safeArea = ui.GetSafeArea();
-	if (safeArea.width > 0 && safeArea.height > 0) {
-		// Use safe area for background if available
-		destWidth = safeArea.width;
-		destHeight = safeArea.height;
-		destX = safeArea.x;
-		destY = safeArea.y;
-	}
-	
-	TraceLog(LOG_INFO, "[MAINMENU] Background dest rect: x=%.1f y=%.1f w=%.1f h=%.1f", destX, destY, destWidth, destHeight);
-
+	TraceLog(LOG_INFO, "[MAINMENU] Background dest rect (pixels): x=%.1f y=%.1f w=%.1f h=%.1f", destX, destY, destWidth, destHeight);
 #if defined(__APPLE__) && TARGET_OS_IOS
-	// Use PlatformLayer drawing methods which internally use Metal renderer with Background layer
 	PlatformLayer& platform = PlatformLayer::GetInstance();
 	platform.DrawTexture(_MenuBackground.texture, destX, destY, destWidth, destHeight, WHITE);
 	TraceLog(LOG_INFO, "[MAINMENU] Background drawn with PlatformLayer at (%.1f,%.1f,%.1f,%.1f)", destX, destY, destWidth, destHeight);
 #else
-	// Standard raylib call for non-iOS platforms
 	DrawTexturePro(_MenuBackground,
 		Rectangle{ 0, 0, (float)_MenuBackground.width, (float)_MenuBackground.height },
 		Rectangle{ destX, destY, destWidth, destHeight },
 		Vector2{ 0,0 }, 0.0f, WHITE);
 #endif
 
-	// Logo positioning and scaling
-	Vector2 logoPos = ui.GetPosition(UIAnchor::TOP_CENTER, {0, 50});
-	float logoScale = ui.GetScaleFactor() * 1.5f; // Reduced from 2.0f to 1.5f to fit in safe area
+	// --- Logo: center in full screen, scale up to 2.4x but not exceeding safe area width ---
+	float logoMaxWidth = safeAreaPx.width * 0.8f;
+	float logoScale = fminf(2.4f, logoMaxWidth / (float)_FloppyLogo.width);
 	float logoWidth = _FloppyLogo.width * logoScale;
 	float logoHeight = _FloppyLogo.height * logoScale;
-	float logoX = logoPos.x - logoWidth / 2.0f;
-	float logoY = logoPos.y;
-	
-	// Debug logo positioning
-	TraceLog(LOG_INFO, "[MAINMENU] Logo positioning debug: safeArea=(%.1f,%.1f,%.1f,%.1f), logoPos=(%.1f,%.1f), logoScale=%.2f", 
-	         safeArea.x, safeArea.y, safeArea.width, safeArea.height, logoPos.x, logoPos.y, logoScale);
+	float logoX = safeAreaPx.x + (safeAreaPx.width - logoWidth) / 2.0f;
+	float logoY = safeAreaPx.y + safeAreaPx.height * 0.08f; // 8% from top of safe area
 	TraceLog(LOG_INFO, "[MAINMENU] Drawing logo at x=%.1f y=%.1f w=%.1f h=%.1f", logoX, logoY, logoWidth, logoHeight);
-
 #if defined(__APPLE__) && TARGET_OS_IOS
 	platform.DrawTexture(_FloppyLogo.texture, logoX, logoY, logoWidth, logoHeight, WHITE);
-	TraceLog(LOG_INFO, "[MAINMENU] Logo drawn with PlatformLayer at (%.1f,%.1f,%.1f,%.1f)", logoX, logoY, logoWidth, logoHeight);
 #else
 	DrawTexturePro(_FloppyLogo,
 		Rectangle{ 0, 0, (float)_FloppyLogo.width, (float)_FloppyLogo.height },
@@ -727,47 +709,23 @@ void MainMenu::DrawMobileUI()
 		Vector2{ 0,0 }, 0.0f, WHITE);
 #endif
 
-	// Button layout with full screen area
-	float buttonWidth = fullArea.width * 0.8f;
-	float buttonHeight = fmaxf(100 * ui.GetScaleFactor(), 44.0f * ui.GetScaleFactor()); // Capped height
-	float buttonSpacing = 40 * ui.GetScaleFactor(); // Increased spacing
-	float centerX = fullArea.x + fullArea.width / 2.0f;
-	float centerY = fullArea.y + fullArea.height / 2.0f;
-	
-	// Calculate button positions to avoid overlap
-	float playY = centerY - 1.5f * buttonHeight - buttonSpacing;
-	float optionsY = centerY - 0.5f * buttonHeight;
-	float creditsY = centerY + 0.5f * buttonHeight + buttonSpacing;
-	float quitY = centerY + 1.5f * buttonHeight + 2 * buttonSpacing;
-
-	TraceLog(LOG_INFO, "[MAINMENU] Button layout: center=(%.1f,%.1f), buttonSize=(%.1f,%.1f), spacing=%.1f", centerX, centerY, buttonWidth, buttonHeight, buttonSpacing);
-	TraceLog(LOG_INFO, "[MAINMENU] Button positions: PLAY=%.1f, OPTIONS=%.1f, CREDITS=%.1f, QUIT=%.1f", playY, optionsY, creditsY, quitY);
-
-	TraceLog(LOG_INFO, "[MAINMENU] Drawing button: PLAY at x=%.1f y=%.1f w=%.1f h=%.1f", centerX - buttonWidth / 2, playY, buttonWidth, buttonHeight);
-	if (AIGUI_ButtonRounded("PLAY", centerX - buttonWidth / 2, playY, buttonWidth, buttonHeight, 0.1f, 24, WHITE)) {
-		TraceLog(LOG_INFO, "[MAINMENU] PLAY button clicked - transitioning to LEVEL_SELECT");
-		currentMenu = LEVEL_SELECT;
+	// --- Buttons: layout within safe area using percentages ---
+	float buttonWidth = safeAreaPx.width * 0.8f;
+	float buttonHeight = safeAreaPx.height * 0.10f; // 10% of safe area height
+	float buttonSpacing = safeAreaPx.height * 0.04f; // 4% spacing
+	float centerX = safeAreaPx.x + safeAreaPx.width / 2.0f;
+	float firstButtonY = logoY + logoHeight + safeAreaPx.height * 0.06f; // 6% below logo
+	for (int i = 0; i < 4; ++i) {
+		float btnY = firstButtonY + i * (buttonHeight + buttonSpacing);
+		const char* label = (i == 0) ? "PLAY" : (i == 1) ? "OPTIONS" : (i == 2) ? "CREDITS" : "QUIT";
+		TraceLog(LOG_INFO, "[MAINMENU] Drawing button: %s at x=%.1f y=%.1f w=%.1f h=%.1f", label, centerX - buttonWidth / 2, btnY, buttonWidth, buttonHeight);
+		if (AIGUI_ButtonRounded(label, centerX - buttonWidth / 2, btnY, buttonWidth, buttonHeight, 0.1f, buttonHeight * 0.4f, WHITE)) {
+			if (i == 0) currentMenu = LEVEL_SELECT;
+			else if (i == 1) currentMenu = OPTIONS_MENU;
+			else if (i == 2) { AudioManager::GetInstance().StopMusic(); game->SetGameState(CREDITS); }
+			else if (i == 3) game->SetGameState(SHUTDOWN);
+		}
 	}
-	
-	TraceLog(LOG_INFO, "[MAINMENU] Drawing button: OPTIONS at x=%.1f y=%.1f w=%.1f h=%.1f", centerX - buttonWidth / 2, optionsY, buttonWidth, buttonHeight);
-	if (AIGUI_ButtonRounded("OPTIONS", centerX - buttonWidth / 2, optionsY, buttonWidth, buttonHeight, 0.1f, 24, WHITE)) {
-		TraceLog(LOG_INFO, "[MAINMENU] OPTIONS button clicked - transitioning to OPTIONS_MENU");
-		currentMenu = OPTIONS_MENU;
-	}
-	
-	TraceLog(LOG_INFO, "[MAINMENU] Drawing button: CREDITS at x=%.1f y=%.1f w=%.1f h=%.1f", centerX - buttonWidth / 2, creditsY, buttonWidth, buttonHeight);
-	if (AIGUI_ButtonRounded("CREDITS", centerX - buttonWidth / 2, creditsY, buttonWidth, buttonHeight, 0.1f, 24, WHITE)) {
-		TraceLog(LOG_INFO, "[MAINMENU] CREDITS button clicked - transitioning to CREDITS");
-		AudioManager::GetInstance().StopMusic();
-		game->SetGameState(CREDITS);
-	}
-	
-	TraceLog(LOG_INFO, "[MAINMENU] Drawing button: QUIT at x=%.1f y=%.1f w=%.1f h=%.1f", centerX - buttonWidth / 2, quitY, buttonWidth, buttonHeight);
-	if (AIGUI_ButtonRounded("QUIT", centerX - buttonWidth / 2, quitY, buttonWidth, buttonHeight, 0.1f, 24, WHITE)) {
-		TraceLog(LOG_INFO, "[MAINMENU] QUIT button clicked - transitioning to SHUTDOWN");
-		game->SetGameState(SHUTDOWN);
-	}
-	
 	TraceLog(LOG_INFO, "[MAINMENU] --- End DrawMobileUI Frame ---");
 }
 

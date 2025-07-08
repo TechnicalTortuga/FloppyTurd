@@ -61,6 +61,8 @@
         size_t width = CGImageGetWidth(cgImage);
         size_t height = CGImageGetHeight(cgImage);
         
+        NSLog(@"[TEXTURE] Loading texture: %zux%zu", width, height);
+        
         // Create texture descriptor
         MTLTextureDescriptor* textureDescriptor = [[MTLTextureDescriptor alloc] init];
         textureDescriptor.pixelFormat = MTLPixelFormatRGBA8Unorm;
@@ -71,7 +73,7 @@
         // Create texture
         id<MTLTexture> texture = [device newTextureWithDescriptor:textureDescriptor];
         if (!texture) {
-            NSLog(@"Failed to create Metal texture");
+            NSLog(@"[ERROR] Failed to create Metal texture");
             return nil;
         }
         

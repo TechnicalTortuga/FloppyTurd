@@ -1,5 +1,6 @@
 #import "MetalRenderer.h"
 #import "MetalTextRenderer.h"
+#import "UICoordinateSystem.h"
 #import <simd/simd.h>
 
 #if defined(__APPLE__) && TARGET_OS_IOS
@@ -43,7 +44,7 @@ bool MetalRenderer::Initialize(MTKView* view) {
         m_device = view.device;
         
         if (!m_device) {
-            NSLog(@"Failed to get Metal device");
+            TraceLog(LOG_ERROR, "[METAL ERROR] Failed to get Metal device");
             return false;
         }
         
@@ -56,7 +57,7 @@ bool MetalRenderer::Initialize(MTKView* view) {
         // Create command queue
         m_commandQueue = [m_device newCommandQueue];
         if (!m_commandQueue) {
-            NSLog(@"Failed to create command queue");
+            TraceLog(LOG_ERROR, "[METAL ERROR] Failed to create command queue");
             return false;
         }
         
@@ -67,7 +68,7 @@ bool MetalRenderer::Initialize(MTKView* view) {
         
         // Initialize frame resources for triple buffering
         if (!m_frameResources.Initialize(m_device)) {
-            NSLog(@"Failed to initialize frame resources");
+            TraceLog(LOG_ERROR, "[METAL ERROR] Failed to initialize frame resources");
             return false;
         }
         
@@ -86,14 +87,14 @@ bool MetalRenderer::Initialize(MTKView* view) {
         samplerDesc.tAddressMode = MTLSamplerAddressModeClampToEdge;
         m_samplerState = [m_device newSamplerStateWithDescriptor:samplerDesc];
         
-        // Set up initial projection matrix
-        CGSize size = view.drawableSize;
-        SetProjectionMatrix(size.width, size.height);
+        // Set up initial projection matrix using UICoordinateSystem
+        Rectangle pixelScreenRect = UICoordinateSystem::GetPixelScreenRect();
+        SetProjectionMatrix(pixelScreenRect.width, pixelScreenRect.height);
         
         // Optimize for current device
         OptimizeForDevice();
         
-        NSLog(@"MetalRenderer initialized successfully");
+        TraceLog(LOG_INFO, "[METAL DEBUG] MetalRenderer initialized successfully");
         return true;
     }
 }
@@ -174,20 +175,20 @@ void MetalRenderer::CreatePipelines() {
         id<MTLFunction> vertexInstancedFunction = [library newFunctionWithName:@"vertex_shader_2d"];
         id<MTLFunction> vertexSimpleFunction = [library newFunctionWithName:@"vertex_shader_2d_simple"];
         
-        // Check shader compilation
-        if (!vertexFunction) NSLog(@"[METAL ERROR] Failed to compile vertex_shader_2d");
-        if (!fragmentTexturedFunction) NSLog(@"[METAL ERROR] Failed to compile fragment_shader_textured");
-        if (!fragmentColorFunction) NSLog(@"[METAL ERROR] Failed to compile fragment_shader_color");
-        if (!vertexInstancedFunction) NSLog(@"[METAL ERROR] Failed to compile vertex_shader_2d (instanced)");
-        if (!vertexSimpleFunction) NSLog(@"[METAL ERROR] Failed to compile vertex_shader_2d_simple");
-        
-        if (vertexFunction && fragmentTexturedFunction && fragmentColorFunction && 
-            vertexInstancedFunction && vertexSimpleFunction) {
-            NSLog(@"[METAL DEBUG] All shaders compiled successfully");
-        } else {
-            NSLog(@"[METAL ERROR] Some shaders failed to compile - rendering will not work");
-            return;
-        }
+            // Check shader compilation
+    if (!vertexFunction) TraceLog(LOG_ERROR, "[METAL ERROR] Failed to compile vertex_shader_2d");
+    if (!fragmentTexturedFunction) TraceLog(LOG_ERROR, "[METAL ERROR] Failed to compile fragment_shader_textured");
+    if (!fragmentColorFunction) TraceLog(LOG_ERROR, "[METAL ERROR] Failed to compile fragment_shader_color");
+    if (!vertexInstancedFunction) TraceLog(LOG_ERROR, "[METAL ERROR] Failed to compile vertex_shader_2d (instanced)");
+    if (!vertexSimpleFunction) TraceLog(LOG_ERROR, "[METAL ERROR] Failed to compile vertex_shader_2d_simple");
+    
+    if (vertexFunction && fragmentTexturedFunction && fragmentColorFunction && 
+        vertexInstancedFunction && vertexSimpleFunction) {
+        TraceLog(LOG_INFO, "[METAL DEBUG] All shaders compiled successfully");
+    } else {
+        TraceLog(LOG_ERROR, "[METAL ERROR] Some shaders failed to compile - rendering will not work");
+        return;
+    }
         
         // Create vertex descriptor
         MTLVertexDescriptor* vertexDesc = [[MTLVertexDescriptor alloc] init];
@@ -227,14 +228,14 @@ void MetalRenderer::CreatePipelines() {
         texturedPipelineDesc.colorAttachments[0].destinationAlphaBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
         texturedPipelineDesc.depthAttachmentPixelFormat = m_view.depthStencilPixelFormat;
         
-        NSLog(@"[METAL DEBUG] Creating textured pipeline with pixelFormat=%lu, depthFormat=%lu", 
+        TraceLog(LOG_INFO, "[METAL DEBUG] Creating textured pipeline with pixelFormat=%lu, depthFormat=%lu", 
               (unsigned long)m_view.colorPixelFormat, (unsigned long)m_view.depthStencilPixelFormat);
         
         m_texturePipeline = [m_device newRenderPipelineStateWithDescriptor:texturedPipelineDesc error:&error];
         if (error) {
-            NSLog(@"[METAL ERROR] Failed to create textured pipeline: %@", error.localizedDescription);
+            TraceLog(LOG_ERROR, "[METAL ERROR] Failed to create textured pipeline: %@", error.localizedDescription);
         } else {
-            NSLog(@"[METAL DEBUG] Textured pipeline created successfully");
+            TraceLog(LOG_INFO, "[METAL DEBUG] Textured pipeline created successfully");
         }
         
         // Create color-only pipeline (non-instanced)
@@ -255,9 +256,9 @@ void MetalRenderer::CreatePipelines() {
         
         m_colorPipeline = [m_device newRenderPipelineStateWithDescriptor:colorPipelineDesc error:&error];
         if (error) {
-            NSLog(@"[METAL ERROR] Failed to create color pipeline: %@", error.localizedDescription);
+            TraceLog(LOG_ERROR, "[METAL ERROR] Failed to create color pipeline: %@", error.localizedDescription);
         } else {
-            NSLog(@"[METAL DEBUG] Color pipeline created successfully");
+            TraceLog(LOG_INFO, "[METAL DEBUG] Color pipeline created successfully");
         }
         
         // Create instanced textured pipeline
@@ -278,9 +279,9 @@ void MetalRenderer::CreatePipelines() {
         
         m_instancedTexturePipeline = [m_device newRenderPipelineStateWithDescriptor:instancedTexturedPipelineDesc error:&error];
         if (error) {
-            NSLog(@"[METAL ERROR] Failed to create instanced textured pipeline: %@", error.localizedDescription);
+            TraceLog(LOG_ERROR, "[METAL ERROR] Failed to create instanced textured pipeline: %@", error.localizedDescription);
         } else {
-            NSLog(@"[METAL DEBUG] Instanced textured pipeline created successfully");
+            TraceLog(LOG_INFO, "[METAL DEBUG] Instanced textured pipeline created successfully");
         }
         
         // Create instanced color-only pipeline
@@ -301,9 +302,9 @@ void MetalRenderer::CreatePipelines() {
         
         m_instancedColorPipeline = [m_device newRenderPipelineStateWithDescriptor:instancedColorPipelineDesc error:&error];
         if (error) {
-            NSLog(@"[METAL ERROR] Failed to create instanced color pipeline: %@", error.localizedDescription);
+            TraceLog(LOG_ERROR, "[METAL ERROR] Failed to create instanced color pipeline: %@", error.localizedDescription);
         } else {
-            NSLog(@"[METAL DEBUG] Instanced color pipeline created successfully");
+            TraceLog(LOG_INFO, "[METAL DEBUG] Instanced color pipeline created successfully");
         }
         
         // Create depth stencil state for game elements
@@ -326,9 +327,9 @@ void MetalRenderer::CreatePipelines() {
         
         // Log pipeline creation summary
         if (m_texturePipeline && m_colorPipeline && m_instancedTexturePipeline && m_instancedColorPipeline && m_depthStencilState) {
-            NSLog(@"[METAL DEBUG] All Metal pipelines created successfully - rendering should work");
+            TraceLog(LOG_INFO, "[METAL DEBUG] All Metal pipelines created successfully - rendering should work");
         } else {
-            NSLog(@"[METAL ERROR] Some Metal pipelines failed to create - rendering will not work");
+            TraceLog(LOG_ERROR, "[METAL ERROR] Some Metal pipelines failed to create - rendering will not work");
         }
     }
 }
@@ -365,31 +366,36 @@ void MetalRenderer::BeginFrame() {
     m_currentCommandBuffer.label = [NSString stringWithFormat:@"Frame %d Command Buffer", 
                                  m_frameResources.GetCurrentFrameIndex()];
     
-    NSLog(@"[METAL DEBUG] BeginFrame: Created command buffer for frame %d", m_frameResources.GetCurrentFrameIndex());
+    TraceLog(LOG_INFO, "[METAL DEBUG] BeginFrame: Created command buffer for frame %d", m_frameResources.GetCurrentFrameIndex());
     
     // Get render pass descriptor from view
     m_currentRenderPass = m_view.currentRenderPassDescriptor;
     if (!m_currentRenderPass) {
-        NSLog(@"[METAL ERROR] BeginFrame: No render pass descriptor available");
+        TraceLog(LOG_ERROR, "[METAL ERROR] BeginFrame: No render pass descriptor available");
         return;
     }
     
-    NSLog(@"[METAL DEBUG] BeginFrame: Got render pass descriptor");
+    TraceLog(LOG_INFO, "[METAL DEBUG] BeginFrame: Got render pass descriptor");
     
     // Create render encoder
     m_currentEncoder = [m_currentCommandBuffer renderCommandEncoderWithDescriptor:m_currentRenderPass];
     m_currentEncoder.label = @"Main Render Encoder";
     
     if (!m_currentEncoder) {
-        NSLog(@"[METAL ERROR] BeginFrame: Failed to create render command encoder");
+        TraceLog(LOG_ERROR, "[METAL ERROR] BeginFrame: Failed to create render command encoder");
         return;
     }
     
-    NSLog(@"[METAL DEBUG] BeginFrame: Created render command encoder successfully");
+    TraceLog(LOG_INFO, "[METAL DEBUG] BeginFrame: Created render command encoder successfully");
     
     // Set initial pipeline state
     [m_currentEncoder setDepthStencilState:m_depthStencilState];
     [m_currentEncoder setFragmentSamplerState:m_samplerState atIndex:0];
+    
+    // Set viewport to full drawable size
+    MTLViewport viewport = {0, 0, m_view.drawableSize.width, m_view.drawableSize.height, 0, 1};
+    [m_currentEncoder setViewport:viewport];
+    TraceLog(LOG_INFO, "[METAL DEBUG] Set viewport: %.1fx%.1f", viewport.width, viewport.height);
     
     // Update uniforms for this frame
     UpdateUniforms();
@@ -419,19 +425,19 @@ void MetalRenderer::EndFrame() {
 }
 
 void MetalRenderer::Present() {
-    NSLog(@"[METAL DEBUG] Present: Command buffer=%@, Drawable=%@", m_currentCommandBuffer, m_view.currentDrawable);
+    TraceLog(LOG_INFO, "[METAL DEBUG] Present: Command buffer=%p, Drawable=%p", m_currentCommandBuffer, m_view.currentDrawable);
     
     if (m_currentCommandBuffer && m_view.currentDrawable) {
         // Schedule presentation of the drawable
         [m_currentCommandBuffer presentDrawable:m_view.currentDrawable];
-        NSLog(@"[METAL DEBUG] Present: Scheduled drawable presentation");
+        TraceLog(LOG_INFO, "[METAL DEBUG] Present: Scheduled drawable presentation");
         
         // Add a completion handler to log command buffer status
         [m_currentCommandBuffer addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
             if (buffer.error) {
-                NSLog(@"[METAL ERROR] Command buffer failed with error: %@", buffer.error);
+                TraceLog(LOG_ERROR, "[METAL ERROR] Command buffer failed with error: %@", buffer.error);
             } else {
-                NSLog(@"[METAL INFO] Command buffer completed successfully.");
+                TraceLog(LOG_INFO, "[METAL INFO] Command buffer completed successfully.");
             }
         }];
 
@@ -440,7 +446,7 @@ void MetalRenderer::Present() {
         
         // Submit the command buffer to the GPU
         [m_currentCommandBuffer commit];
-        NSLog(@"[METAL DEBUG] Present: Command buffer committed to GPU");
+        TraceLog(LOG_INFO, "[METAL DEBUG] Present: Command buffer committed to GPU");
         
         m_currentCommandBuffer = nullptr;
         
@@ -453,16 +459,16 @@ void MetalRenderer::Present() {
         }
     } else {
         if (!m_currentCommandBuffer) {
-            NSLog(@"[METAL ERROR] Present: No command buffer available");
+            TraceLog(LOG_ERROR, "[METAL ERROR] Present: No command buffer available");
         }
         if (!m_view.currentDrawable) {
-            NSLog(@"[METAL ERROR] Present: No drawable available");
+            TraceLog(LOG_ERROR, "[METAL ERROR] Present: No drawable available");
         }
     }
 }
 
 void MetalRenderer::Clear(Color color) {
-    NSLog(@"[METAL DEBUG] Clear called with color=(%d,%d,%d,%d)", color.r, color.g, color.b, color.a);
+    TraceLog(LOG_INFO, "[METAL DEBUG] Clear called with color=(%d,%d,%d,%d)", color.r, color.g, color.b, color.a);
     
     if (m_currentRenderPass) {
         m_currentRenderPass.colorAttachments[0].clearColor = MTLClearColorMake(
@@ -471,18 +477,19 @@ void MetalRenderer::Clear(Color color) {
             color.b / 255.0f,
             color.a / 255.0f
         );
-        NSLog(@"[METAL DEBUG] Clear: Set clear color to (%.3f,%.3f,%.3f,%.3f)", 
+        TraceLog(LOG_INFO, "[METAL DEBUG] Clear: Set clear color to (%.3f,%.3f,%.3f,%.3f)", 
               color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f);
     } else {
-        NSLog(@"[METAL ERROR] Clear: No render pass available");
+        TraceLog(LOG_ERROR, "[METAL ERROR] Clear: No render pass available");
     }
 }
 
 void MetalRenderer::SetProjectionMatrix(float width, float height) {
-    // Create orthographic projection matrix for 2D rendering
-    // Metal uses NDC from -1 to 1, but we want 0 to width/height
-    m_projectionMatrix = MakeOrthoMatrix(0, width, height, 0, -1.0f, 1.0f);
-    TraceLog(LOG_INFO, "[METAL DEBUG] SetProjectionMatrix: width=%.1f, height=%.1f", width, height);
+    // Use MTKView's drawableSize for pixel-accurate rendering
+    CGSize drawableSize = m_view.drawableSize;
+    m_projectionMatrix = MakeOrthoMatrix(0, drawableSize.width, drawableSize.height, 0, -1.0f, 1.0f);
+    TraceLog(LOG_INFO, "[METAL DEBUG] SetProjectionMatrix: drawableSize=%.1fx%.1f, requested=%.1fx%.1f", 
+             drawableSize.width, drawableSize.height, width, height);
 }
 
 void MetalRenderer::SetProjectionMatrixWithSafeArea(float screenWidth, float screenHeight, Rectangle safeArea) {
@@ -502,7 +509,7 @@ void MetalRenderer::UpdateUniforms() {
     );
     
     if (!uniforms) {
-        NSLog(@"[ERROR] Failed to allocate uniform buffer");
+        TraceLog(LOG_ERROR, "[METAL ERROR] Failed to allocate uniform buffer");
         return;
     }
     
@@ -1010,9 +1017,12 @@ void MetalRenderer::DrawTexture(id<MTLTexture> texture, Rectangle source, Rectan
              texture, source.x, source.y, source.width, source.height, dest.x, dest.y, dest.width, dest.height, tint.r, tint.g, tint.b, tint.a, (int)layer);
     
     if (!texture) {
-        NSLog(@"[METAL WARNING] DrawTexture called with a null texture.");
+        TraceLog(LOG_WARNING, "[METAL WARNING] DrawTexture called with a null texture.");
         return;
     }
+    
+    // Set current texture for UV normalization
+    m_currentTexture = texture;
     
     AddTexturedRectangleVertices(dest, source, tint);
     
@@ -1059,15 +1069,14 @@ void MetalRenderer::DrawTexture(id<MTLTexture> texture, Rectangle source, Rectan
 }
 
 void MetalRenderer::AddTexturedRectangleVertices(Rectangle dest, Rectangle source, Color tint) {
-    // Get current texture dimensions for proper UV normalization
-    float texWidth = 1.0f;
-    float texHeight = 1.0f;
-    
-    // If we have a current texture, use its dimensions
-    if (m_currentTexture) {
-        texWidth = (float)m_currentTexture.width;
-        texHeight = (float)m_currentTexture.height;
+    if (!m_currentTexture) {
+        TraceLog(LOG_ERROR, "[METAL ERROR] No current texture set for UV normalization");
+        return;
     }
+    
+    float texWidth = (float)m_currentTexture.width;
+    float texHeight = (float)m_currentTexture.height;
+    TraceLog(LOG_INFO, "[METAL DEBUG] Texture dimensions: %fx%f", texWidth, texHeight);
     
     // Normalize texture coordinates by dividing by texture dimensions
     float u1 = source.x / texWidth;
@@ -1075,9 +1084,20 @@ void MetalRenderer::AddTexturedRectangleVertices(Rectangle dest, Rectangle sourc
     float u2 = (source.x + source.width) / texWidth;
     float v2 = (source.y + source.height) / texHeight;
     
-    TraceLog(LOG_INFO, "[METAL DEBUG] UVs: u1=%.2f, v1=%.2f, u2=%.2f, v2=%.2f, tex=%dx%d", u1, v1, u2, v2, (int)texWidth, (int)texHeight);
+    // Clamp UV coordinates to [0,1] range to prevent texture sampling issues
+    u1 = std::max(0.0f, std::min(1.0f, u1));
+    v1 = std::max(0.0f, std::min(1.0f, v1));
+    u2 = std::max(0.0f, std::min(1.0f, u2));
+    v2 = std::max(0.0f, std::min(1.0f, v2));
     
+    TraceLog(LOG_INFO, "[METAL DEBUG] UVs: u1=%.2f, v1=%.2f, u2=%.2f, v2=%.2f", u1, v1, u2, v2);
     TraceLog(LOG_INFO, "[METAL DEBUG] Vertices: x1=%.1f, y1=%.1f, x2=%.1f, y2=%.1f", dest.x, dest.y, dest.x + dest.width, dest.y + dest.height);
+    
+    // Log coordinate system info for debugging
+    Rectangle pixelScreenRect = UICoordinateSystem::GetPixelScreenRect();
+    Rectangle safeAreaPx = UICoordinateSystem::GetSafeAreaRect(true);
+    TraceLog(LOG_INFO, "[METAL DEBUG] Coordinate System: screen=%.1fx%.1f, safeArea=(%.1f,%.1f,%.1f,%.1f)", 
+             pixelScreenRect.width, pixelScreenRect.height, safeAreaPx.x, safeAreaPx.y, safeAreaPx.width, safeAreaPx.height);
     
     // Two triangles to make a rectangle (6 unique vertices)
     // Triangle 1: top-left, bottom-left, top-right
@@ -1119,21 +1139,42 @@ void MetalRenderer::DrawTextureEx(id<MTLTexture> texture, Vector2 position, floa
 }
 
 void MetalRenderer::DrawText(const char* text, float x, float y, float fontSize, Color color) {
-    NSLog(@"[METAL DEBUG] DrawText called: text='%s', x=%.2f, y=%.2f, fontSize=%.2f, color=(%d,%d,%d,%d)", text, x, y, fontSize, color.r, color.g, color.b, color.a);
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawText called: text='%s', x=%.2f, y=%.2f, fontSize=%.2f, color=(%d,%d,%d,%d)", text, x, y, fontSize, color.r, color.g, color.b, color.a);
+    
+    // Log coordinate system info for text positioning
+    Rectangle pixelScreenRect = UICoordinateSystem::GetPixelScreenRect();
+    Rectangle safeAreaPx = UICoordinateSystem::GetSafeAreaRect(true);
+    TraceLog(LOG_INFO, "[METAL DEBUG] Text Coordinate System: screen=%.1fx%.1f, safeArea=(%.1f,%.1f,%.1f,%.1f)", 
+             pixelScreenRect.width, pixelScreenRect.height, safeAreaPx.x, safeAreaPx.y, safeAreaPx.width, safeAreaPx.height);
+    
     if (!g_textRenderer) {
         TraceLog(LOG_ERROR, "[METAL ERROR] g_textRenderer is not initialized!");
         return;
     }
+    
     Font font = g_textRenderer->GetDefaultFont();
-    NSLog(@"[METAL DEBUG] Default font pointer: %p, ctFont: %p", &font, font.ctFont);
+    TraceLog(LOG_INFO, "[METAL DEBUG] Default font pointer: %p, ctFont: %p", &font, font.ctFont);
+    
     id<MTLTexture> textTexture = g_textRenderer->RenderTextToTexture(text, (int)fontSize, color);
     if (!textTexture) {
         TraceLog(LOG_ERROR, "[METAL ERROR] Failed to render text to texture for '%s' (font.ctFont=%p)", text, font.ctFont);
         return;
     }
+    
     float width = textTexture.width;
     float height = textTexture.height;
-    DrawTexture(textTexture, Rectangle{0, 0, (float)width, (float)height}, Rectangle{x, y, (float)width, (float)height}, Color{255,255,255,255});
+    
+    // Ensure source rectangle matches actual texture dimensions to prevent UV coordinate issues
+    Rectangle source = {0, 0, (float)textTexture.width, (float)textTexture.height};
+    Rectangle dest = {x, y, (float)width, (float)height};
+    
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawText: source=(%.1f,%.1f,%.1f,%.1f), dest=(%.1f,%.1f,%.1f,%.1f)", 
+             source.x, source.y, source.width, source.height, dest.x, dest.y, dest.width, dest.height);
+    
+    // Log text texture details
+    TraceLog(LOG_INFO, "[METAL DEBUG] Text texture: %p, size=%fx%f, text='%s'", textTexture, width, height, text);
+    
+    DrawTexture(textTexture, source, dest, WHITE, RenderLayer::Text);
 }
 
 void MetalRenderer::PushMatrix() {
@@ -1284,7 +1325,7 @@ void MetalRenderer::FlushInstancedBatch() {
     void* destinationBuffer = m_frameResources.AllocateUniformBuffer(dataSize, &bufferOffset);
     
     if (!destinationBuffer) {
-        NSLog(@"[ERROR] Failed to allocate instance buffer space");
+        TraceLog(LOG_ERROR, "[METAL ERROR] Failed to allocate instance buffer space");
         return;
     }
     
@@ -1410,7 +1451,7 @@ void MetalRenderer::InitializeDebugVisualization() {
     // Reset debug stats
     ResetDebugStats();
     
-    NSLog(@"[INFO] Debug visualization initialized");
+    TraceLog(LOG_INFO, "[METAL INFO] Debug visualization initialized");
 }
 
 void MetalRenderer::ResetDebugStats() {
@@ -1460,6 +1501,22 @@ void MetalRenderer::DrawDebugOverlay() {
     
     // Memory usage indicator (simplified)
     DrawRectangle(20, y, 150, 10, {0, 0, 255, 255});
+    
+    // Draw safe area visualization
+    Rectangle safeArea = UICoordinateSystem::GetSafeAreaRect(true);
+    DrawRectangleRoundedLines(safeArea.x, safeArea.y, safeArea.width, safeArea.height, 5.0f, 8, 2.0f, RED);
+    
+    // Draw screen bounds
+    Rectangle screenRect = UICoordinateSystem::GetPixelScreenRect();
+    DrawRectangleRoundedLines(0, 0, screenRect.width, screenRect.height, 0, 8, 1.0f, GREEN);
+    
+    // Draw viewport info
+    char viewportText[128];
+    snprintf(viewportText, sizeof(viewportText), 
+             "Viewport: %.0fx%.0f\nDrawable: %.0fx%.0f", 
+             m_view.bounds.size.width, m_view.bounds.size.height,
+             m_view.drawableSize.width, m_view.drawableSize.height);
+    DrawText(viewportText, 10, 180, 14, YELLOW);
 }
 
 void MetalRenderer::RenderDebugInfo() {
@@ -1475,7 +1532,7 @@ void MetalRenderer::RenderDebugInfo() {
     // 4. Show GPU utilization
     // 5. Display texture atlas usage
     
-    NSLog(@"[DEBUG] Frame Stats - Draws: %u, States: %u, Textures: %u, Instances: %u, Vertices: %u, Time: %.2fms",
+    TraceLog(LOG_INFO, "[METAL DEBUG] Frame Stats - Draws: %u, States: %u, Textures: %u, Instances: %u, Vertices: %u, Time: %.2fms",
           m_debugStats.drawCalls, m_debugStats.stateChanges, m_debugStats.textureBinds,
           m_debugStats.instancedCalls, m_debugStats.batchedVertices, m_debugStats.frameTime * 1000.0f);
 }
@@ -1485,23 +1542,23 @@ void MetalRenderer::ValidateRenderState() {
     
     // Validate that the current render state is consistent
     if (!m_currentEncoder) {
-        NSLog(@"[WARNING] No current render encoder set");
+        TraceLog(LOG_WARNING, "[METAL WARNING] No current render encoder set");
         return;
     }
     
     // Check for excessive state changes
     if (m_debugStats.stateChanges > 100) {
-        NSLog(@"[WARNING] High number of state changes: %u", m_debugStats.stateChanges);
+        TraceLog(LOG_WARNING, "[METAL WARNING] High number of state changes: %u", m_debugStats.stateChanges);
     }
     
     // Check for excessive draw calls
     if (m_debugStats.drawCalls > 200) {
-        NSLog(@"[WARNING] High number of draw calls: %u", m_debugStats.drawCalls);
+        TraceLog(LOG_WARNING, "[METAL WARNING] High number of draw calls: %u", m_debugStats.drawCalls);
     }
     
     // Check for excessive texture binds
     if (m_debugStats.textureBinds > 100) {
-        NSLog(@"[WARNING] High number of texture binds: %u", m_debugStats.textureBinds);
+        TraceLog(LOG_WARNING, "[METAL WARNING] High number of texture binds: %u", m_debugStats.textureBinds);
     }
 }
 
@@ -1509,7 +1566,7 @@ void MetalRenderer::ValidateRenderState() {
 void MetalRenderer::SetMobileGPUSettings(const MobileGPUSettings& settings) {
     m_mobileSettings = settings;
     
-    NSLog(@"[INFO] Mobile GPU settings updated - MaxDrawCalls: %u, MaxTextures: %u, Mipmaps: %s",
+    TraceLog(LOG_INFO, "[METAL INFO] Mobile GPU settings updated - MaxDrawCalls: %u, MaxTextures: %u, Mipmaps: %s",
           settings.maxDrawCallsPerFrame, settings.maxTextureBindsPerFrame,
           settings.enableMipmapping ? "YES" : "NO");
 }
@@ -1549,11 +1606,11 @@ void MetalRenderer::OptimizeForDevice() {
     
     SetMobileGPUSettings(settings);
     
-    NSLog(@"[INFO] Optimized for device: %@ (Modern GPU: %s)", deviceName, isA12OrLater ? "YES" : "NO");
+    TraceLog(LOG_INFO, "[METAL INFO] Optimized for device: %@ (Modern GPU: %s)", deviceName, isA12OrLater ? "YES" : "NO");
 }
 
 void MetalRenderer::DrawRectangleRoundedLines(float x, float y, float width, float height, float roundness, int segments, float lineThick, Color color) {
-    NSLog(@"[METAL DEBUG] DrawRectangleRoundedLines: rect=(%.1f,%.1f,%.1f,%.1f), roundness=%.1f, lineThick=%.1f, color=(%d,%d,%d,%d)", 
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawRectangleRoundedLines: rect=(%.1f,%.1f,%.1f,%.1f), roundness=%.1f, lineThick=%.1f, color=(%d,%d,%d,%d)", 
           x, y, width, height, roundness, lineThick, color.r, color.g, color.b, color.a);
     
     // Clamp roundness to reasonable values

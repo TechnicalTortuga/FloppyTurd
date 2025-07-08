@@ -77,23 +77,25 @@ list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/LogManager.cpp)
 # Add UIManager.cpp explicitly to ensure it's included in the build
 list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/UIManager.cpp)
 
-# Add platform-specific compatibility layer
-if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
-    # iOS uses RaylibCompat_iOS.mm for Metal implementation (NOT RaylibCompat.cpp)
-    list(APPEND SOURCES 
-        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/RaylibCompat_iOS.mm
-        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/LogManager.mm
-        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/PlatformLayer.mm
-        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/PlatformLayerDelegate.mm
-        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/main_ios.mm
-        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/iOS/AppDelegate.mm
-        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/iOS/GameViewController.mm
-        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/iOS/HapticsManager.mm
-        # Metal rendering implementation files
-        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalRenderer.mm
-        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalFrameResources.mm
-        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalTextureCache.mm
-    )
+    # Add platform-specific compatibility layer
+    if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
+        # iOS uses RaylibCompat_iOS.mm for Metal implementation (NOT RaylibCompat.cpp)
+        list(APPEND SOURCES 
+            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/RaylibCompat_iOS.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/LogManager.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/PlatformLayer.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/PlatformLayerDelegate.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/main_ios.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/iOS/AppDelegate.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/iOS/GameViewController.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/iOS/HapticsManager.mm
+            # Metal rendering implementation files
+            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalRenderer.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalFrameResources.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalTextureCache.mm
+            # iOS-specific coordinate system implementation
+            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/UICoordinateSystem.mm
+        )
     
     # Remove main.cpp from iOS builds to avoid duplicate main functions
     list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/main.cpp)
@@ -124,6 +126,8 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
     list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/AudioStateManager.cpp)
     # Remove RaylibCompat.cpp since we use RaylibCompat_iOS.mm for iOS
     list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/RaylibCompat.cpp)
+    # Remove UICoordinateSystem.cpp since we use Metal/UIKit implementation for iOS
+    list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/UICoordinateSystem.cpp)
 endif()
 
 # TouchControls, ResourceManager, and AIGUI.cpp are already included via GLOB_RECURSE

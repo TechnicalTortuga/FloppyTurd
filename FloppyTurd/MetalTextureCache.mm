@@ -1,4 +1,6 @@
 #include "MetalTextureCache.h"
+#include <string>
+#include "ResourceManager.h"
 
 #ifdef __APPLE__
 #include <TargetConditionals.h>
@@ -10,6 +12,8 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 #import <CoreGraphics/CoreGraphics.h>
+#import "PlatformLayer.h"
+#import "MetalRenderer.h"
 
 // Singleton instance
 MetalTextureCache& MetalTextureCache::GetInstance() {
@@ -81,9 +85,8 @@ Texture2D MetalTextureCache::GetOrLoadTexture(const std::string& fileName) {
     }
 
     if (fileName.substr(0, 8) == "asset://") {
-        // Handle asset catalog resources
-        std::string assetName = fileName.substr(8); // Remove "asset://" prefix
-        NSString* name = [NSString stringWithUTF8String:assetName.c_str()];
+        ResourcePathParts parts = ResourceManager::ParseResourcePath(fileName);
+        NSString* name = [NSString stringWithUTF8String:parts.baseName.c_str()];
         UIImage* uiImage = [UIImage imageNamed:name];
         
         if (!uiImage) {
@@ -99,6 +102,8 @@ Texture2D MetalTextureCache::GetOrLoadTexture(const std::string& fileName) {
         
         width = (int)CGImageGetWidth(cgImage);
         height = (int)CGImageGetHeight(cgImage);
+        
+        TraceLog(LOG_INFO, "[TEXTURE] Loading texture: %s, dimensions: %dx%d", fileName.c_str(), width, height);
         
         if (width <= 0 || height <= 0) {
             TraceLog(LOG_ERROR, "[ERROR] Invalid dimensions for: %s (w=%d, h=%d)", fileName.c_str(), width, height);
@@ -150,11 +155,11 @@ Texture2D MetalTextureCache::GetOrLoadTexture(const std::string& fileName) {
         if (textureDescriptor.mipmapLevelCount > 1) {
             id<MTLCommandQueue> commandQueue = (__bridge id<MTLCommandQueue>)m_commandQueue;
             if (commandQueue) {
-                id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
-                id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
-                [blitEncoder generateMipmapsForTexture:metalTexture];
-                [blitEncoder endEncoding];
-                [commandBuffer commit];
+            id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
+            id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
+            [blitEncoder generateMipmapsForTexture:metalTexture];
+            [blitEncoder endEncoding];
+            [commandBuffer commit];
             }
         }
         
@@ -221,11 +226,11 @@ Texture2D MetalTextureCache::LoadTextureFromData(void* data, int width, int heig
     if (textureDesc.mipmapLevelCount > 1) {
         id<MTLCommandQueue> commandQueue = (__bridge id<MTLCommandQueue>)m_commandQueue;
         if (commandQueue) {
-            id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
-            id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
-            [blitEncoder generateMipmapsForTexture:metalTexture];
-            [blitEncoder endEncoding];
-            [commandBuffer commit];
+        id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
+        id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
+        [blitEncoder generateMipmapsForTexture:metalTexture];
+        [blitEncoder endEncoding];
+        [commandBuffer commit];
         }
     }
     
@@ -323,14 +328,14 @@ void MetalTextureCache::GenerateMipmapsForTexture(Texture2D texture) {
     
     id<MTLCommandQueue> commandQueue = (__bridge id<MTLCommandQueue>)m_commandQueue;
     if (commandQueue) {
-        id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
-        id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
-        [blitEncoder generateMipmapsForTexture:metalTexture];
-        [blitEncoder endEncoding];
-        [commandBuffer commit];
-        
-        // Update mipmap count in texture structure
-        texture.mipmaps = metalTexture.mipmapLevelCount;
+    id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
+    id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
+    [blitEncoder generateMipmapsForTexture:metalTexture];
+    [blitEncoder endEncoding];
+    [commandBuffer commit];
+    
+    // Update mipmap count in texture structure
+    texture.mipmaps = metalTexture.mipmapLevelCount;
     }
 }
 

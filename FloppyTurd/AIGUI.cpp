@@ -151,8 +151,8 @@ AIGUI_DEF bool AIGUI_ButtonRounded(const char* label, float x, float y, float wi
     float textX = x + (width - textSize.x) / 2;
     float textY = y + (height - textSize.y) / 2;
     
-    TraceLog(LOG_INFO, "[AIGUI] DrawTextEx params: label=%s, x=%.1f, y=%.1f, fontSize=%d, color=(%d,%d,%d,%d)", label, textX, textY, fontSize, textColor.r, textColor.g, textColor.b, textColor.a);
-    DrawTextEx(g_AIGUI.defaultFont, label, {textX, textY}, fontSize, 1.0f, textColor);
+    TraceLog(LOG_INFO, "[AIGUI] DrawTextEx params: label=%s, x=%.1f, y=%.1f, fontSize=%d, color=(%d,%d,%d,%d)", label, textX, textY, fontSize, BLACK.r, BLACK.g, BLACK.b, BLACK.a);
+    DrawTextEx(g_AIGUI.defaultFont, label, {textX, textY}, fontSize, 1.0f, BLACK);
 
     bool result = (hovered && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) || gestureTriggered;
     if (result) {

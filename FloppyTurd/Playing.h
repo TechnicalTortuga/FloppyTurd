@@ -46,6 +46,7 @@ public:
     void DrawGameOverScreen();
     void Update();
     void Draw();
+    void DrawMobileUI();
     void PlayMusic(AudioClip* clip);
     // AudioStateManager handles all music updates now
     void HandleInput();

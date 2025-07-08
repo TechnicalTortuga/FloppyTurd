@@ -30,6 +30,7 @@ public:
     Font LoadSystemFont(const char* fontName, int fontSize);
     void UnloadFont(Font font);
     Font GetDefaultFont();
+    bool GenerateFontAtlas(Font& font);
     
     // Text measurement
     Vector2 MeasureText(const char* text, int fontSize);
