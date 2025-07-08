@@ -88,6 +88,7 @@ typedef struct Font {
     void* fontData;
     const void* ctFont; // CTFontRef for iOS (const qualified)
     int size;           // Font size for iOS
+    const char* name;   // Font name for debugging
 #endif
 } Font;
 

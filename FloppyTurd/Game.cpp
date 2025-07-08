@@ -944,6 +944,13 @@ void Game::RenderFrame()
     // For now, drawing is direct.
     BeginDrawing();
     
+    // Add SDF text rendering test
+    if (frameCount <= 300) { // Show test for first 5 seconds (60fps * 5)
+        Font testFont = GetFontDefault();
+        DrawTextEx(testFont, "Hello, Floppy Turd!", {100, 100}, 32, 2, WHITE);
+        DrawTextEx(testFont, "SDF Test with Chalkduster", {100, 140}, 24, 1, YELLOW);
+    }
+    
     switch (gamestate)
     {
         case MAINMENU:
@@ -978,6 +985,13 @@ void Game::RenderFrame()
     // -------------------------------------------------------------------------
     BeginTextureMode(renderTarget);
     ClearBackground(BLACK);
+    
+    // Add SDF text rendering test
+    if (frameCount <= 300) { // Show test for first 5 seconds (60fps * 5)
+        Font testFont = GetFontDefault();
+        DrawTextEx(testFont, "Hello, Floppy Turd!", {100, 100}, 32, 2, WHITE);
+        DrawTextEx(testFont, "SDF Test with Chalkduster", {100, 140}, 24, 1, YELLOW);
+    }
     
     switch (gamestate)
     {

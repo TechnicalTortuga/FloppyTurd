@@ -84,6 +84,7 @@ public:
     void PreloadLevel(int levelIndex);           // Preload all resources for a level
     void UnloadLevel(int levelIndex);            // Unload level-specific resources
     void ClearCache();                           // Clear all cached resources
+    void ClearFontCache();                       // Clear only font cache
     void TrimCache(size_t maxMemoryMB = 50);     // LRU cache trimming for mobile
 
     // Quality and performance

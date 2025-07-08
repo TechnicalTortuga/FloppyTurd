@@ -186,13 +186,13 @@ void Credits::Draw() const
         if (!entry.title.empty())
         {
             Vector2 textSize = MeasureTextEx(font, entry.title.c_str(), 28.0f, 1.0f);
-            DrawTextEx(font, entry.title.c_str(), { xOffset, yOffset }, 28.0f, 1.0f, BLACK); // Changed to BLACK
+            DrawTextEx(font, entry.title.c_str(), { xOffset, yOffset }, 28.0f, 1.0f, WHITE); // Changed to WHITE for SDF
             xOffset += textSize.x + 20.0f;
         }
         if (!entry.name.empty())
         {
             Vector2 textSize = MeasureTextEx(font, entry.name.c_str(), 28.0f, 1.0f);
-            DrawTextEx(font, entry.name.c_str(), { xOffset, yOffset + 30.0f }, 28.0f, 1.0f, BLACK); // Changed to BLACK
+            DrawTextEx(font, entry.name.c_str(), { xOffset, yOffset + 30.0f }, 28.0f, 1.0f, WHITE); // Changed to WHITE for SDF
             xOffset += textSize.x + 20.0f;
         }
     }

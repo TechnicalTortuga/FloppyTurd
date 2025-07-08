@@ -93,6 +93,7 @@ list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/UIManager.cpp)
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalRenderer.mm
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalFrameResources.mm
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalTextureCache.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/FontAtlasGenerator.mm
             # iOS-specific coordinate system implementation
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/UICoordinateSystem.mm
         )

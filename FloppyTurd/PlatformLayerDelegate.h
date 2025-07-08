@@ -22,5 +22,6 @@
 - (float)getLastFrameTime;
 - (int)getLastFPS;
 - (id<MTLCommandQueue>)getMetalCommandQueue;
+- (void*)getMetalRenderer; // Get the MetalRenderer instance
 // Add methods for rendering, texture management, etc., as needed
 @end 

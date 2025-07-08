@@ -28,6 +28,7 @@ typedef struct {
 typedef struct {
     simd_float4x4 projectionMatrix;
     simd_float4x4 modelViewMatrix;
+    float distanceRange; // Add distance range for SDF
 } MetalUniforms;
 
 // Draw command for batching and sorting
@@ -59,7 +60,8 @@ typedef enum {
     RENDER_STATE_DEPTH_TEST = 1 << 1,
     RENDER_STATE_CULL_BACK = 1 << 2,
     RENDER_STATE_WIREFRAME = 1 << 3,
-    RENDER_STATE_INSTANCED = 1 << 4
+    RENDER_STATE_INSTANCED = 1 << 4,
+    RENDER_STATE_SDF = 1 << 5  // SDF texture rendering
 } RenderStateFlags;
 
 // Instance data for instanced rendering
@@ -128,10 +130,9 @@ public:
     
     // Texture drawing
     void DrawTexture(id<MTLTexture> texture, Rectangle source, Rectangle dest, Color tint);
-    void DrawTextureEx(id<MTLTexture> texture, Vector2 position, float rotation, float scale, Color tint);
-    
-    // Layer-aware texture drawing
     void DrawTexture(id<MTLTexture> texture, Rectangle source, Rectangle dest, Color tint, RenderLayer layer);
+    void DrawTexture(id<MTLTexture> texture, Rectangle source, Rectangle dest, Color tint, RenderLayer layer, int textureFormat);
+    void DrawTextureEx(id<MTLTexture> texture, Vector2 position, float rotation, float scale, Color tint);
     
     // Text rendering
     void DrawText(const char* text, float x, float y, float fontSize, Color color);
@@ -172,6 +173,7 @@ private:
     id<MTLCommandQueue> m_commandQueue;
     id<MTLRenderPipelineState> m_texturePipeline;
     id<MTLRenderPipelineState> m_colorPipeline;
+    id<MTLRenderPipelineState> m_sdfPipeline;  // SDF-specific pipeline for grayscale textures
     id<MTLRenderPipelineState> m_instancedTexturePipeline;
     id<MTLRenderPipelineState> m_instancedColorPipeline;
     id<MTLDepthStencilState> m_depthStencilState;

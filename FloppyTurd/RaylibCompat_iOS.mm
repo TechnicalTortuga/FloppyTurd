@@ -14,6 +14,8 @@
 #include "LogManager.h"
 #include <string>
 #import "AudioStateManager.h"
+#include "MetalRenderer.h"
+#import "PlatformLayerDelegate.h"
 
 // Global game instance
 Game* g_gameInstance = nullptr;
@@ -528,29 +530,82 @@ void DrawTextureRec_iOS(Texture2D texture, Rectangle source, Rectangle dest, Col
 
 void DrawTexturePro_iOS(Texture2D texture, Rectangle source, Rectangle dest, Vector2 origin, float rotation, Color tint)
 {
-    // Validate texture
     if (texture.texture == NULL) {
-        NSLog(@"[EXTRA LOG] DrawTexturePro_iOS: SKIP invalid texture");
+        TraceLog(LOG_ERROR, "[RaylibCompat_iOS] DrawTexturePro_iOS: SKIP invalid texture");
         return;
     }
-    
-    // Validate texture pointer
+
+    // Add type checking to prevent crashes
+    id<NSObject> textureObj = (__bridge id<NSObject>)texture.texture;
+    // Check if it's a Metal texture (including simulator textures)
+    if (![textureObj isKindOfClass:NSClassFromString(@"MTLTexture")] && 
+        ![textureObj isKindOfClass:NSClassFromString(@"MTLSimTexture")]) {
+        TraceLog(LOG_ERROR, "[RaylibCompat_iOS] DrawTexturePro_iOS: Texture pointer is not a Metal texture! Type: %@, pointer: %p", 
+                 NSStringFromClass([textureObj class]), texture.texture);
+        return;
+    }
+
     id<MTLTexture> metalTexture = (__bridge id<MTLTexture>)texture.texture;
     if (!metalTexture) {
-        NSLog(@"[ERROR] DrawTexturePro_iOS: Invalid texture (NULL) pointer for texture=%p", texture.texture);
+        TraceLog(LOG_ERROR, "[RaylibCompat_iOS] DrawTexturePro_iOS: Invalid texture pointer (NULL)");
         return;
     }
-    
-    // Check if texture is still valid
+
     if (metalTexture.width == 0 || metalTexture.height == 0) {
-        NSLog(@"[ERROR] DrawTexturePro_iOS: Texture has invalid dimensions (w=%lu, h=%lu)", (unsigned long)metalTexture.width, (unsigned long)metalTexture.height);
+        TraceLog(LOG_ERROR, "[RaylibCompat_iOS] DrawTexturePro_iOS: Texture has invalid dimensions (w=%lu, h=%lu)",
+                 (unsigned long)metalTexture.width, (unsigned long)metalTexture.height);
         return;
     }
-    
-    NSLog(@"[DEBUG] DrawTexturePro_iOS: Drawing texture=%p (ptr=%p, w=%lu, h=%lu)", texture.texture, (__bridge void*)metalTexture, (unsigned long)metalTexture.width, (unsigned long)metalTexture.height);
-    
-    // Call the platform layer to draw the texture
-    PlatformLayer::GetInstance().DrawTexture((__bridge void*)metalTexture, dest.x, dest.y, dest.width, dest.height, tint);
+
+    if (source.width <= 0 || source.height <= 0 || dest.width <= 0 || dest.height <= 0) {
+        TraceLog(LOG_ERROR, "[RaylibCompat_iOS] DrawTexturePro_iOS: Invalid rectangles: src=(%.3f,%.3f,%.3f,%.3f), dest=(%.1f,%.1f,%.1f,%.1f)",
+                 source.x, source.y, source.width, source.height, dest.x, dest.y, dest.width, dest.height);
+        return;
+    }
+
+    // Additional safety check for source rectangle bounds
+    if (source.x < 0 || source.y < 0 || 
+        source.x + source.width > metalTexture.width || 
+        source.y + source.height > metalTexture.height) {
+        TraceLog(LOG_ERROR, "[RaylibCompat_iOS] DrawTexturePro_iOS: Source rectangle out of bounds: src=(%.3f,%.3f,%.3f,%.3f), texture=(%lu,%lu)",
+                 source.x, source.y, source.width, source.height, 
+                 (unsigned long)metalTexture.width, (unsigned long)metalTexture.height);
+        return;
+    }
+
+    TraceLog(LOG_INFO, "[RaylibCompat_iOS] DrawTexturePro_iOS: Drawing texture=%p (w=%lu, h=%lu), src=(%.3f,%.3f,%.3f,%.3f), dest=(%.1f,%.1f,%.1f,%.1f), origin=(%.1f,%.1f), rotation=%.1f, tint=(%d,%d,%d,%d)",
+             texture.texture, (unsigned long)metalTexture.width, (unsigned long)metalTexture.height,
+             source.x, source.y, source.width, source.height,
+             dest.x, dest.y, dest.width, dest.height,
+             origin.x, origin.y, rotation, tint.r, tint.g, tint.b, tint.a);
+
+    // Add try-catch to catch any Metal-related crashes
+    @try {
+        // Get the MetalRenderer from the PlatformLayerDelegate
+        PlatformLayer& platform = PlatformLayer::GetInstance();
+        void* delegatePtr = platform.GetDelegate();
+        MetalRenderer* metalRenderer = nullptr;
+        
+        if (delegatePtr) {
+            // Cast to PlatformLayerDelegate and get the MetalRenderer
+            PlatformLayerDelegate* delegate = (__bridge PlatformLayerDelegate*)delegatePtr;
+            if ([delegate respondsToSelector:@selector(getMetalRenderer)]) {
+                metalRenderer = (MetalRenderer*)[delegate getMetalRenderer];
+            }
+        }
+        
+        if (metalRenderer) {
+            // Use the new DrawTexture overload that accepts texture format
+            metalRenderer->DrawTexture(metalTexture, source, dest, tint, RenderLayer::UI, texture.format);
+        } else {
+            // Fallback to PlatformLayer if MetalRenderer not available
+            platform.DrawTexture((__bridge void*)metalTexture, dest.x, dest.y, dest.width, dest.height, tint);
+        }
+    } @catch (NSException *exception) {
+        TraceLog(LOG_ERROR, "[RaylibCompat_iOS] DrawTexturePro_iOS: Exception in DrawTexture: %s", [exception.reason UTF8String]);
+    } @catch (...) {
+        TraceLog(LOG_ERROR, "[RaylibCompat_iOS] DrawTexturePro_iOS: Unknown exception in DrawTexture");
+    }
 }
 
 void UnloadTexture_iOS(Texture2D texture)
@@ -1003,51 +1058,62 @@ void ClearBackground(Color color) {
 
 // Text drawing wrappers
 void DrawTextEx(Font font, const char* text, Vector2 position, float fontSize, float spacing, Color tint) {
-    TraceLog(LOG_INFO, "[RaylibCompat_iOS] DrawTextEx called: text='%s', pos=(%.1f, %.1f), font.baseSize=%d, glyphCount=%d, font.ctFont=%p, texture.id=%u", text, position.x, position.y, font.baseSize, font.glyphCount, font.ctFont, font.texture.id);
-    
-    if (font.texture.id != 0 && font.recs && font.glyphs) {
-        float scale = fontSize / (float)font.baseSize;
-        float x = position.x;
-        float y = position.y;
-        const int startChar = 32;
-        const int endChar = 126;
-        int* glyphData = (int*)font.glyphs;
-        for (const char* p = text; *p; p++) {
-            unsigned char c = (unsigned char)*p;
-            if (c < startChar || c > endChar) {
-                // Skip unsupported chars
-                x += fontSize * 0.5f;
-                continue;
-            }
-            int index = c - startChar;
-            if (index < 0 || index >= font.glyphCount) {
-                // Skip invalid characters
-                x += fontSize * 0.5f;
-                continue;
-            }
-            Rectangle src = {
-                font.recs[index].x * font.texture.width,
-                font.recs[index].y * font.texture.height,
-                font.recs[index].width * font.texture.width,
-                font.recs[index].height * font.texture.height
-            };
-            Rectangle dst = {
-                x,
-                y,
-                src.width * scale,
-                src.height * scale
-            };
-            TraceLog(LOG_INFO, "[RaylibCompat_iOS] Drawing char '%c' (index=%d): src=(%.3f,%.3f,%.3f,%.3f), dst=(%.1f,%.1f,%.1f,%.1f)", 
-                     c, index, src.x, src.y, src.width, src.height, dst.x, dst.y, dst.width, dst.height);
-            Vector2 origin = {0, 0};
-            DrawTexturePro_iOS(font.texture, src, dst, origin, 0.0f, tint);
-            // Advance X by glyph advance + spacing
-            int advance = glyphData[index * 4 + 3];
-            x += (advance > 0 ? advance : src.width) * scale + spacing;
-        }
-    } else {
-        // Fallback: use system font
+    TraceLog(LOG_INFO, "[RaylibCompat_iOS] DrawTextEx: text='%s', pos=(%.1f, %.1f), fontSize=%.1f, spacing=%.1f, color=(%d,%d,%d,%d)", 
+             text, position.x, position.y, fontSize, spacing, tint.r, tint.g, tint.b, tint.a);
+
+    if (font.texture.id == 0 || !font.recs || !font.glyphs || !font.texture.texture) {
+        TraceLog(LOG_WARNING, "[RaylibCompat_iOS] DrawTextEx: Invalid font, falling back to DrawText");
         DrawText(text, (int)position.x, (int)position.y, (int)fontSize, tint);
+        return;
+    }
+
+    float scale = fontSize / (float)font.baseSize;
+    float x = position.x;
+    float y = position.y;
+    const int startChar = 32;
+    const int endChar = 126;
+    int* glyphData = (int*)font.glyphs;
+
+    for (const char* p = text; *p; p++) {
+        unsigned char c = (unsigned char)*p;
+        if (c < startChar || c > endChar) {
+            x += fontSize * 0.5f;
+            continue;
+        }
+        int index = c - startChar;
+        if (index < 0 || index >= font.glyphCount) {
+            x += fontSize * 0.5f;
+            continue;
+        }
+
+        Rectangle src = {
+            font.recs[index].x * font.texture.width,
+            font.recs[index].y * font.texture.height,
+            font.recs[index].width * font.texture.width,
+            font.recs[index].height * font.texture.height
+        };
+        Rectangle dst = {
+            x + (glyphData[index * 4 + 0] * scale),
+            y + (glyphData[index * 4 + 1] * scale),
+            src.width * scale,
+            src.height * scale
+        };
+
+        if (src.width <= 0 || src.height <= 0) {
+            TraceLog(LOG_ERROR, "[RaylibCompat_iOS] DrawTextEx: Invalid UVs for char '%c'", c);
+            x += fontSize * 0.5f;
+            continue;
+        }
+
+        // Use SDF pipeline for grayscale textures
+        if (font.texture.format == IOS_PIXELFORMAT_UNCOMPRESSED_GRAYSCALE) {
+            // Ensure MetalRenderer uses SDF shader (handled in MetalRenderer::DrawTexture)
+            DrawTexturePro_iOS(font.texture, src, dst, {0, 0}, 0.0f, tint);
+        } else {
+            DrawTexturePro_iOS(font.texture, src, dst, {0, 0}, 0.0f, tint);
+        }
+
+        x += glyphData[index * 4 + 3] * scale + spacing;
     }
 }
 
@@ -1295,6 +1361,12 @@ Font LoadFont(const char* fileName) {
         Font font = g_textRenderer->LoadFont(fileName, fontSize);
         if (font.ctFont != nullptr) {
             NSLog(@"[DEBUG] LoadFont: Successfully loaded font: %s", fileName);
+            
+            // TODO: Re-enable PNG export once we fix the crash
+            // std::string debugPath = "/tmp/font_atlas_" + std::string(fileName) + ".png";
+            // g_textRenderer->SaveAtlasToPNG(font, debugPath.c_str());
+            // NSLog(@"[DEBUG] LoadFont: Saved atlas for font '%s' to %s", fileName, [NSString stringWithUTF8String:debugPath.c_str()]);
+            
             return font;
         }
         

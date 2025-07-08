@@ -345,4 +345,8 @@ static inline unsigned int ColorToUInt(Color c) {
     return _commandQueue;
 }
 
+- (void*)getMetalRenderer {
+    return _metalRenderer;
+}
+
 @end

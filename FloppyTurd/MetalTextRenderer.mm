@@ -4,6 +4,7 @@
 #import "MetalTexture.h"
 #import <CoreText/CoreText.h>
 #import <CoreGraphics/CoreGraphics.h>
+#import <MobileCoreServices/MobileCoreServices.h>
 #include <unordered_map>
 #include <string>
 #include <mutex>
@@ -30,6 +31,7 @@ MetalTextRenderer::MetalTextRenderer()
     m_defaultFont.fontData = nullptr;
     m_defaultFont.ctFont = nullptr;
     m_defaultFont.size = 16;
+    m_defaultFont.name = nullptr;
 #endif
 }
 
@@ -38,6 +40,12 @@ MetalTextRenderer::~MetalTextRenderer() {
 }
 bool MetalTextRenderer::Initialize(id<MTLDevice> device) {
     m_device = device;
+    
+    // Initialize atlas generator
+    if (!m_atlasGenerator.Initialize(device)) {
+        TraceLog(LOG_ERROR, "[METAL ERROR] MetalTextRenderer::Initialize: Failed to initialize atlas generator");
+        return false;
+    }
     
     // Create default font
     m_defaultFont = LoadSystemFont("Helvetica", 16);
@@ -74,6 +82,7 @@ Font MetalTextRenderer::LoadFont(const char* fileName, int fontSize) {
     font.fontData = nullptr;
     font.ctFont = nullptr;
     font.size = fontSize;
+    font.name = fileName; // Store the font name for debugging
 #endif
     
     @autoreleasepool {
@@ -225,6 +234,7 @@ Font MetalTextRenderer::LoadSystemFont(const char* fontName, int fontSize) {
     font.fontData = nullptr;
     font.ctFont = nullptr;
     font.size = fontSize;
+    font.name = fontName; // Store the font name for debugging
 #endif
     
     @autoreleasepool {
@@ -256,165 +266,56 @@ Font MetalTextRenderer::LoadSystemFont(const char* fontName, int fontSize) {
 }
 
 bool MetalTextRenderer::GenerateFontAtlas(Font& font) {
-    if (!font.ctFont || !m_device) {
-        TraceLog(LOG_ERROR, "[METAL ERROR] GenerateFontAtlas: Invalid font or device");
-        return false;
-    }
+    TraceLog(LOG_INFO, "[METAL DEBUG] GenerateFontAtlas: Using new FontAtlasGenerator");
     
-    TraceLog(LOG_INFO, "[METAL DEBUG] GenerateFontAtlas: Generating atlas for font with %d glyphs", (int)CTFontGetGlyphCount((CTFontRef)font.ctFont));
+    // Dynamically calculate atlas size
+    int glyphCount = 95; // Default to 95 printable ASCII glyphs; adjust if needed
+    if (font.glyphCount > 0) glyphCount = font.glyphCount;
+    int glyphSize = (int)(font.baseSize * 2.0f) + 4 * 2; // font size * 2 + padding on both sides
+    int glyphsPerRow = (int)ceil(sqrt((float)glyphCount));
+    int minAtlasSize = glyphsPerRow * glyphSize;
+    // Round up to next power of two
+    int atlasSize = 256;
+    while (atlasSize < minAtlasSize) atlasSize *= 2;
+    if (atlasSize > 4096) atlasSize = 4096; // Clamp to 4096 max
+
+    TraceLog(LOG_INFO, "[METAL DEBUG] Dynamic atlas size: %d (glyphSize=%d, glyphs=%d)", atlasSize, glyphSize, glyphCount);
+
+    // Configure atlas generation
+    AtlasConfig config;
+    config.type = AtlasType::SDF;  // Use SDF for better quality
+    config.atlasSize = atlasSize;
+    config.fontSize = font.baseSize * 2.0f;  // Double the font size for better SDF quality
+    config.distanceRange = 4.0f; // Increase for better gradients
+    config.glyphPadding = 4;  // Increase padding for better edge detection
     
-    // Define the character set to include in the atlas (ASCII printable characters)
-    const int startChar = 32;  // Space
-    const int endChar = 126;   // Tilde
-    const int charCount = endChar - startChar + 1;
+    // Generate atlas using the new generator
+    bool success = m_atlasGenerator.GenerateAtlas(font, config);
     
-    // Calculate atlas size (power of 2 for better GPU performance)
-    const int glyphSize = font.baseSize + 4; // Add padding
-    const int atlasSize = 512; // Start with 512x512, can be increased if needed
-    const int glyphsPerRow = atlasSize / glyphSize;
-    const int glyphsPerCol = atlasSize / glyphSize;
-    
-    if (charCount > glyphsPerRow * glyphsPerCol) {
-        TraceLog(LOG_ERROR, "[METAL ERROR] GenerateFontAtlas: Too many characters for atlas size");
-        return false;
-    }
-    
-    // Create bitmap context for the atlas
-    CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
-    uint8_t* pixelData = (uint8_t*)calloc(atlasSize * atlasSize * 4, 1); // Zeroed for transparency
-    CGContextRef context = CGBitmapContextCreate(pixelData, atlasSize, atlasSize, 8, atlasSize * 4, colorSpace, kCGImageAlphaPremultipliedLast);
-    
-    if (!context) {
-        TraceLog(LOG_ERROR, "[METAL ERROR] GenerateFontAtlas: Failed to create CGContext");
-        free(pixelData);
-        CGColorSpaceRelease(colorSpace);
-        return false;
-    }
-    
-    // Clear context to transparent
-    CGContextClearRect(context, CGRectMake(0, 0, atlasSize, atlasSize));
-    
-    // Flip coordinate system for Core Text
-    CGContextSetTextMatrix(context, CGAffineTransformIdentity);
-    CGContextTranslateCTM(context, 0, atlasSize);
-    CGContextScaleCTM(context, 1.0, -1.0);
-    
-    // Set text color to white
-    CGFloat components[] = {1.0f, 1.0f, 1.0f, 1.0f};
-    CGColorRef textColor = CGColorCreate(colorSpace, components);
-    
-    // Allocate glyph data arrays
-    font.glyphCount = charCount;
-    font.glyphs = (void*)malloc(charCount * sizeof(int) * 4); // Simple array of ints for glyph data
-    font.recs = (Rectangle*)malloc(charCount * sizeof(Rectangle));
-    
-    if (!font.glyphs || !font.recs) {
-        TraceLog(LOG_ERROR, "[METAL ERROR] GenerateFontAtlas: Failed to allocate glyph arrays");
-        CGContextRelease(context);
-        free(pixelData);
-        CGColorSpaceRelease(colorSpace);
-        CGColorRelease(textColor);
-        return false;
-    }
-    
-    // Render each character to the atlas
-    for (int i = 0; i < charCount; i++) {
-        int charCode = startChar + i;
-        int row = i / glyphsPerRow;
-        int col = i % glyphsPerRow;
-        
-        int x = col * glyphSize + 2; // Add 2px padding
-        int y = row * glyphSize + 2;
-        
-        // Convert character to string
-        char charStr[2] = {(char)charCode, 0};
-        NSString* string = [NSString stringWithUTF8String:charStr];
-        
-        // Create attributed string
-        NSDictionary* attributes = @{
-            (NSString*)kCTFontAttributeName: (__bridge id)font.ctFont,
-            (NSString*)kCTForegroundColorAttributeName: (__bridge id)textColor
-        };
-        NSAttributedString* attributedString = [[NSAttributedString alloc] initWithString:string attributes:attributes];
-        
-        // Create line and draw
-        CTLineRef line = CTLineCreateWithAttributedString((__bridge CFAttributedStringRef)attributedString);
-        CGContextSetTextPosition(context, x, y + font.baseSize); // Adjust Y position for baseline
-        CTLineDraw(line, context);
-        
-        // Get glyph metrics
-        CFArrayRef glyphRuns = CTLineGetGlyphRuns(line);
-        if (CFArrayGetCount(glyphRuns) > 0) {
-            CTRunRef run = (CTRunRef)CFArrayGetValueAtIndex(glyphRuns, 0);
-            CFIndex glyphCount = CTRunGetGlyphCount(run);
-            
-            if (glyphCount > 0) {
-                CGGlyph glyph;
-                CTRunGetGlyphs(run, CFRangeMake(0, 1), &glyph);
-                
-                // Get glyph bounds
-                CGRect bounds;
-                CTFontGetBoundingRectsForGlyphs((CTFontRef)font.ctFont, kCTFontHorizontalOrientation, &glyph, &bounds, 1);
-                
-                // Store glyph info in simple int array
-                int* glyphData = (int*)font.glyphs;
-                glyphData[i * 4 + 0] = charCode; // value
-                glyphData[i * 4 + 1] = 0;        // offsetX
-                glyphData[i * 4 + 2] = 0;        // offsetY
-                glyphData[i * 4 + 3] = (int)CTFontGetAdvancesForGlyphs((CTFontRef)font.ctFont, kCTFontHorizontalOrientation, &glyph, nullptr, 1); // advanceX
-                
-                // Store texture coordinates
-                font.recs[i] = {
-                    (float)x / atlasSize,
-                    (float)y / atlasSize,
-                    (float)glyphSize / atlasSize,
-                    (float)glyphSize / atlasSize
-                };
-            }
+    if (success) {
+        TraceLog(LOG_INFO, "[METAL DEBUG] GenerateFontAtlas: Successfully generated SDF atlas");
+        // Debug: Save Whacky Joe SDF atlas as PNG if this is the Whacky Joe font
+        if (font.name && strstr(font.name, "whacky_joe") != nullptr) {
+            TraceLog(LOG_INFO, "[METAL DEBUG] GenerateFontAtlas: Saving SDF atlas for Whacky Joe font");
+            // Note: We need to save the atlas from FontAtlasGenerator, not from here
+            // The actual PNG saving will be done in FontAtlasGenerator::GenerateAtlas
         }
+    } else {
+        TraceLog(LOG_ERROR, "[METAL ERROR] GenerateFontAtlas: Failed to generate atlas with new generator");
         
-        CFRelease(line);
+        // Fallback to bitmap mode if SDF fails
+        TraceLog(LOG_INFO, "[METAL DEBUG] GenerateFontAtlas: Trying bitmap fallback");
+        config.type = AtlasType::BITMAP;
+        success = m_atlasGenerator.GenerateAtlas(font, config);
+        
+        if (success) {
+            TraceLog(LOG_INFO, "[METAL DEBUG] GenerateFontAtlas: Successfully generated bitmap atlas");
+        } else {
+            TraceLog(LOG_ERROR, "[METAL ERROR] GenerateFontAtlas: Both SDF and bitmap generation failed");
+        }
     }
     
-    // Create Metal texture from the atlas
-    MTLTextureDescriptor* textureDesc = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatRGBA8Unorm
-                                                                                           width:atlasSize
-                                                                                          height:atlasSize
-                                                                                       mipmapped:NO];
-    id<MTLTexture> metalTexture = [m_device newTextureWithDescriptor:textureDesc];
-    
-    if (!metalTexture) {
-        TraceLog(LOG_ERROR, "[METAL ERROR] GenerateFontAtlas: Failed to create Metal texture");
-        CGContextRelease(context);
-        free(pixelData);
-        CGColorSpaceRelease(colorSpace);
-        CGColorRelease(textColor);
-        return false;
-    }
-    
-    // Upload pixel data to texture
-    [metalTexture replaceRegion:MTLRegionMake2D(0, 0, atlasSize, atlasSize)
-                   mipmapLevel:0
-                     withBytes:pixelData
-                   bytesPerRow:atlasSize * 4];
-    
-    // Set font texture properties
-    font.texture.id = (unsigned int)(uintptr_t)metalTexture; // Use pointer as ID
-    font.texture.width = atlasSize;
-    font.texture.height = atlasSize;
-    font.texture.mipmaps = 1;
-    font.texture.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
-    font.texture.texture = (__bridge void*)metalTexture;
-    
-    TraceLog(LOG_INFO, "[METAL DEBUG] GenerateFontAtlas: Successfully generated atlas %dx%d with %d glyphs", atlasSize, atlasSize, charCount);
-    
-    // Cleanup
-    CGContextRelease(context);
-    free(pixelData);
-    CGColorSpaceRelease(colorSpace);
-    CGColorRelease(textColor);
-    
-    return true;
+    return success;
 }
 
 void MetalTextRenderer::UnloadFont(Font font) {
@@ -428,9 +329,44 @@ void MetalTextRenderer::UnloadFont(Font font) {
         free(font.recs);
     }
     if (font.texture.texture) {
-        id<MTLTexture> metalTexture = (__bridge id<MTLTexture>)font.texture.texture;
-        // Metal textures are automatically managed by ARC
+        // Release the retained Metal texture
+        CFBridgingRelease(font.texture.texture);
     }
+}
+
+void MetalTextRenderer::SaveAtlasToPNG(const Font& font, const char* fileName) {
+    if (!font.texture.texture) {
+        TraceLog(LOG_ERROR, "[METAL ERROR] SaveAtlasToPNG: No texture to save");
+        return;
+    }
+
+    id<MTLTexture> metalTexture = (__bridge id<MTLTexture>)font.texture.texture;
+    int width = font.texture.width;
+    int height = font.texture.height;
+
+    uint8_t* pixelData = (uint8_t*)malloc(width * height * 4);
+    [metalTexture getBytes:pixelData bytesPerRow:width * 4 fromRegion:MTLRegionMake2D(0, 0, width, height) mipmapLevel:0];
+
+    CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+    CGContextRef context = CGBitmapContextCreate(pixelData, width, height, 8, width * 4, colorSpace, kCGImageAlphaPremultipliedLast);
+    CGImageRef cgImage = CGBitmapContextCreateImage(context);
+
+    NSString* path = [NSString stringWithUTF8String:fileName];
+    NSURL* url = [NSURL fileURLWithPath:path];
+    CGImageDestinationRef destination = CGImageDestinationCreateWithURL((__bridge CFURLRef)url, kUTTypePNG, 1, nullptr);
+    if (destination) {
+        CGImageDestinationAddImage(destination, cgImage, nullptr);
+        CGImageDestinationFinalize(destination);
+        CFRelease(destination);
+        TraceLog(LOG_INFO, "[METAL DEBUG] SaveAtlasToPNG: Saved atlas to %s", fileName);
+    } else {
+        TraceLog(LOG_ERROR, "[METAL ERROR] SaveAtlasToPNG: Failed to create image destination for %s", fileName);
+    }
+
+    CGImageRelease(cgImage);
+    CGContextRelease(context);
+    CGColorSpaceRelease(colorSpace);
+    free(pixelData);
 }
 
 Font MetalTextRenderer::GetDefaultFont() {
@@ -634,5 +570,18 @@ void MetalTextRenderer::ClearTextCache() {
         TraceLog(LOG_INFO, "[CLEANUP] Clearing text texture cache (%lu textures)", m_textTextureCache.size());
         m_textTextureCache.clear(); // ARC will release the Metal textures
     }
+
+// C function bridge for loading system fonts from C++ code
+extern "C" Font LoadSystemFontForUI(const char* fontName, float fontSize) {
+    // Get the global text renderer instance
+    if (g_textRenderer) {
+        return g_textRenderer->LoadSystemFont(fontName, fontSize);
+    } else {
+        // Fallback to default font if text renderer is not available
+        Font defaultFont = { 0 };
+        defaultFont.baseSize = fontSize;
+        return defaultFont;
+    }
+}
 
 #endif // defined(__APPLE__) && TARGET_OS_IOS 

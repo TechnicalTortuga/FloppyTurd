@@ -790,7 +790,7 @@ void Playing::DrawGameOverScreen() {
     const char* msg = poopMessages[poopMsgIndex];
     int msgWidth = MeasureText(msg, 18);
     Font hdFont = game->GetScaledFont(1.2f);
-    DrawTextEx(hdFont, msg, { 320.0f - msgWidth / 2.0f, 6.0f }, 18.0f, 1.0f, BLACK);
+    DrawTextEx(hdFont, msg, { 320.0f - msgWidth / 2.0f, 6.0f }, 18.0f, 1.0f, WHITE);
 
     int btnW = 128, btnH = 22, spacing = 12;
     int btnY = (int)(panelY + panelH) - btnH - 64;
@@ -857,11 +857,11 @@ void Playing::DrawGameOverScreen() {
     std::string scoreStr = std::to_string(SCORE);
     int scoreW = MeasureText(scoreStr.c_str(), 20);
     Font font = game->GetScaledFont(1.2f);
-    DrawTextEx(font, scoreStr.c_str(), { sbX + (sbW - (float)scoreW) / 2.0f + 20, sbY + (sbH / 2.0f - 12.0f) - 12 }, 24.0f, 1.0f, BLACK);
+    DrawTextEx(font, scoreStr.c_str(), { sbX + (sbW - (float)scoreW) / 2.0f + 20, sbY + (sbH / 2.0f - 12.0f) - 12 }, 24.0f, 1.0f, WHITE);
 
     std::string coinStr = std::to_string(player->GetSessionCoins());
     int coinW = MeasureText(coinStr.c_str(), 20);
-    DrawTextEx(font, coinStr.c_str(), { sbX + (sbW - (float)coinW) / 2.0f + 20, sbY + (sbH / 2.0f + 4.0f) }, 24.0f, 1.0f, BLACK);
+    DrawTextEx(font, coinStr.c_str(), { sbX + (sbW - (float)coinW) / 2.0f + 20, sbY + (sbH / 2.0f + 4.0f) }, 24.0f, 1.0f, WHITE);
 }
 
 void Playing::Update() {

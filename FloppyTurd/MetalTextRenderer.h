@@ -12,6 +12,7 @@
 #import <CoreText/CoreText.h>
 #import <UIKit/UIKit.h>
 #include "RaylibCompat.h"
+#include "FontAtlasGenerator.h"
 #include <unordered_map>
 #include <string>
 #include <mutex>
@@ -31,6 +32,7 @@ public:
     void UnloadFont(Font font);
     Font GetDefaultFont();
     bool GenerateFontAtlas(Font& font);
+    void SaveAtlasToPNG(const Font& font, const char* fileName);
     
     // Text measurement
     Vector2 MeasureText(const char* text, int fontSize);
@@ -46,6 +48,7 @@ public:
 private:
     id<MTLDevice> m_device;
     Font m_defaultFont;
+    FontAtlasGenerator m_atlasGenerator;
     
     // Text texture cache (moved from static to instance variable)
     std::unordered_map<std::string, id<MTLTexture>> m_textTextureCache;

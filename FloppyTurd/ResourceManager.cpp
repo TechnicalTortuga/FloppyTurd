@@ -330,6 +330,8 @@ bool ResourceManager::LoadFontInternal(const std::string& id) {
         return false;
     }
 
+
+
     CachedResource<Font> cached;
     cached.resource = font;
     cached.isValid = true;
@@ -474,6 +476,31 @@ void ResourceManager::ClearCache() {
     totalMemoryUsage = 0;
 
     TraceLog(LOG_INFO, "ResourceManager cache cleared");
+}
+
+void ResourceManager::ClearFontCache() {
+    // Unload only font cached resources
+    for (auto& [id, cached] : fontCache) {
+        if (cached.isValid) {
+            UnloadFont(cached.resource);
+        }
+    }
+
+    fontCache.clear();
+    
+    // Recalculate total memory usage
+    totalMemoryUsage = 0;
+    for (const auto& [id, cached] : textureCache) {
+        totalMemoryUsage += cached.memoryUsage;
+    }
+    for (const auto& [id, cached] : soundCache) {
+        totalMemoryUsage += cached.memoryUsage;
+    }
+    for (const auto& [id, cached] : musicCache) {
+        totalMemoryUsage += cached.memoryUsage;
+    }
+
+    TraceLog(LOG_INFO, "ResourceManager font cache cleared");
 }
 
 void ResourceManager::RegisterResource(const std::string& id, const std::string& relativePath, 

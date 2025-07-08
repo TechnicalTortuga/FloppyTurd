@@ -170,6 +170,7 @@ void MetalRenderer::CreatePipelines() {
         id<MTLFunction> vertexFunction = [library newFunctionWithName:@"vertex_shader_2d"];
         id<MTLFunction> fragmentTexturedFunction = [library newFunctionWithName:@"fragment_shader_textured"];
         id<MTLFunction> fragmentColorFunction = [library newFunctionWithName:@"fragment_shader_color"];
+        id<MTLFunction> fragmentSdfFunction = [library newFunctionWithName:@"fragment_shader_sdf"];
         
         // Load instanced vertex shader
         id<MTLFunction> vertexInstancedFunction = [library newFunctionWithName:@"vertex_shader_2d"];
@@ -179,11 +180,12 @@ void MetalRenderer::CreatePipelines() {
     if (!vertexFunction) TraceLog(LOG_ERROR, "[METAL ERROR] Failed to compile vertex_shader_2d");
     if (!fragmentTexturedFunction) TraceLog(LOG_ERROR, "[METAL ERROR] Failed to compile fragment_shader_textured");
     if (!fragmentColorFunction) TraceLog(LOG_ERROR, "[METAL ERROR] Failed to compile fragment_shader_color");
+    if (!fragmentSdfFunction) TraceLog(LOG_ERROR, "[METAL ERROR] Failed to compile fragment_shader_sdf");
     if (!vertexInstancedFunction) TraceLog(LOG_ERROR, "[METAL ERROR] Failed to compile vertex_shader_2d (instanced)");
     if (!vertexSimpleFunction) TraceLog(LOG_ERROR, "[METAL ERROR] Failed to compile vertex_shader_2d_simple");
     
     if (vertexFunction && fragmentTexturedFunction && fragmentColorFunction && 
-        vertexInstancedFunction && vertexSimpleFunction) {
+        fragmentSdfFunction && vertexInstancedFunction && vertexSimpleFunction) {
         TraceLog(LOG_INFO, "[METAL DEBUG] All shaders compiled successfully");
     } else {
         TraceLog(LOG_ERROR, "[METAL ERROR] Some shaders failed to compile - rendering will not work");
@@ -261,6 +263,29 @@ void MetalRenderer::CreatePipelines() {
             TraceLog(LOG_INFO, "[METAL DEBUG] Color pipeline created successfully");
         }
         
+        // Create SDF pipeline for single-channel grayscale textures
+        MTLRenderPipelineDescriptor* sdfPipelineDesc = [[MTLRenderPipelineDescriptor alloc] init];
+        sdfPipelineDesc.label = @"SDF Pipeline";
+        sdfPipelineDesc.vertexFunction = vertexSimpleFunction;
+        sdfPipelineDesc.fragmentFunction = fragmentSdfFunction;
+        sdfPipelineDesc.vertexDescriptor = vertexDesc;
+        sdfPipelineDesc.colorAttachments[0].pixelFormat = m_view.colorPixelFormat;
+        sdfPipelineDesc.colorAttachments[0].blendingEnabled = YES;
+        sdfPipelineDesc.colorAttachments[0].rgbBlendOperation = MTLBlendOperationAdd;
+        sdfPipelineDesc.colorAttachments[0].alphaBlendOperation = MTLBlendOperationAdd;
+        sdfPipelineDesc.colorAttachments[0].sourceRGBBlendFactor = MTLBlendFactorSourceAlpha;
+        sdfPipelineDesc.colorAttachments[0].sourceAlphaBlendFactor = MTLBlendFactorSourceAlpha;
+        sdfPipelineDesc.colorAttachments[0].destinationRGBBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
+        sdfPipelineDesc.colorAttachments[0].destinationAlphaBlendFactor = MTLBlendFactorOneMinusSourceAlpha;
+        sdfPipelineDesc.depthAttachmentPixelFormat = m_view.depthStencilPixelFormat;
+        
+        m_sdfPipeline = [m_device newRenderPipelineStateWithDescriptor:sdfPipelineDesc error:&error];
+        if (error) {
+            TraceLog(LOG_ERROR, "[METAL ERROR] Failed to create SDF pipeline: %@", error.localizedDescription);
+        } else {
+            TraceLog(LOG_INFO, "[METAL DEBUG] SDF pipeline created successfully");
+        }
+        
         // Create instanced textured pipeline
         MTLRenderPipelineDescriptor* instancedTexturedPipelineDesc = [[MTLRenderPipelineDescriptor alloc] init];
         instancedTexturedPipelineDesc.label = @"Instanced Textured Pipeline";
@@ -326,7 +351,7 @@ void MetalRenderer::CreatePipelines() {
         }
         
         // Log pipeline creation summary
-        if (m_texturePipeline && m_colorPipeline && m_instancedTexturePipeline && m_instancedColorPipeline && m_depthStencilState) {
+        if (m_texturePipeline && m_colorPipeline && m_sdfPipeline && m_instancedTexturePipeline && m_instancedColorPipeline && m_depthStencilState) {
             TraceLog(LOG_INFO, "[METAL DEBUG] All Metal pipelines created successfully - rendering should work");
         } else {
             TraceLog(LOG_ERROR, "[METAL ERROR] Some Metal pipelines failed to create - rendering will not work");
@@ -516,6 +541,7 @@ void MetalRenderer::UpdateUniforms() {
     // Update the uniform data
     uniforms->projectionMatrix = m_projectionMatrix;
     uniforms->modelViewMatrix = m_currentMatrix;
+    uniforms->distanceRange = 4.0f; // Match AtlasConfig::distanceRange
     
     // Set the uniform buffer for rendering
     [m_currentEncoder setVertexBuffer:m_frameResources.GetCurrentUniformBuffer() 
@@ -648,7 +674,14 @@ void MetalRenderer::ExecuteOptimizedDrawCommands() {
         // Determine required pipeline
         id<MTLRenderPipelineState> requiredPipeline = nullptr;
         if (cmd.useTexture) {
+            if (cmd.renderState & RENDER_STATE_SDF) {
+                // Use SDF pipeline for grayscale textures
+                requiredPipeline = m_sdfPipeline;
+                TraceLog(LOG_INFO, "[METAL DEBUG] Using SDF pipeline for texture: %p", cmd.texture);
+            } else {
+                // Use regular textured pipeline for RGBA textures
             requiredPipeline = cmd.instanceCount > 1 ? m_instancedTexturePipeline : m_texturePipeline;
+            }
         } else {
             requiredPipeline = cmd.instanceCount > 1 ? m_instancedColorPipeline : m_colorPipeline;
         }
@@ -1064,6 +1097,70 @@ void MetalRenderer::DrawTexture(id<MTLTexture> texture, Rectangle source, Rectan
     }
     
     TraceLog(LOG_INFO, "[METAL DEBUG] DrawTexture: layer=%d, depth=%.1f, dest=(%.1f,%.1f,%.1f,%.1f)", (int)layer, cmd.depth, dest.x, dest.y, dest.width, dest.height);
+    
+    m_drawCommands.push_back(cmd);
+}
+
+void MetalRenderer::DrawTexture(id<MTLTexture> texture, Rectangle source, Rectangle dest, Color tint, RenderLayer layer, int textureFormat) {
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawTexture (with format): texture=%p, format=%d, source=(%.1f,%.1f,%.1f,%.1f), dest=(%.1f,%.1f,%.1f,%.1f), tint=(%d,%d,%d,%d), layer=%d", 
+             texture, textureFormat, source.x, source.y, source.width, source.height, dest.x, dest.y, dest.width, dest.height, tint.r, tint.g, tint.b, tint.a, (int)layer);
+    
+    if (!texture) {
+        TraceLog(LOG_WARNING, "[METAL WARNING] DrawTexture called with a null texture.");
+        return;
+    }
+    
+    // Set current texture for UV normalization
+    m_currentTexture = texture;
+    
+    AddTexturedRectangleVertices(dest, source, tint);
+    
+    DrawCommand cmd;
+    cmd.primitiveType = MTLPrimitiveTypeTriangle;
+    cmd.vertexStart = m_vertices.size() - 6;
+    cmd.vertexCount = 6;
+    cmd.texture = texture;
+    cmd.useTexture = true;
+    
+    // Enhanced fields for sorting and optimization
+    cmd.renderState = RENDER_STATE_ALPHA_BLEND;
+    cmd.textureId = GetTextureHash(texture);
+    cmd.depth = static_cast<float>(layer) * 0.1f; // Layer-based depth
+    cmd.sortKey = 0; // Will be generated during sorting
+    cmd.instanceCount = 1;
+    cmd.instanceDataOffset = 0;
+    
+    // Check if this is an SDF texture (grayscale format)
+    bool isSdfTexture = (textureFormat == 1); // IOS_PIXELFORMAT_UNCOMPRESSED_GRAYSCALE
+    if (isSdfTexture) {
+        cmd.renderState |= RENDER_STATE_SDF; // Add SDF flag to render state
+        TraceLog(LOG_INFO, "[METAL DEBUG] DrawTexture: Detected SDF texture, will use SDF pipeline");
+    }
+    
+    // Set debug name based on layer
+    switch (layer) {
+        case RenderLayer::Background:
+            cmd.debugName = "Background";
+            break;
+        case RenderLayer::Midground:
+            cmd.debugName = "Midground";
+            break;
+        case RenderLayer::Foreground:
+            cmd.debugName = "Foreground";
+            break;
+        case RenderLayer::Logo:
+            cmd.debugName = "Logo";
+            break;
+        case RenderLayer::UI:
+            cmd.debugName = "UI";
+            break;
+        case RenderLayer::Text:
+            cmd.debugName = "Text";
+            break;
+    }
+    
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawTexture (with format): layer=%d, depth=%.1f, isSdf=%s, dest=(%.1f,%.1f,%.1f,%.1f)", 
+             (int)layer, cmd.depth, isSdfTexture ? "true" : "false", dest.x, dest.y, dest.width, dest.height);
     
     m_drawCommands.push_back(cmd);
 }

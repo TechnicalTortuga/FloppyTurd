@@ -3,7 +3,14 @@
 #include "ResourceManager.h"
 
 #if defined(__APPLE__) && TARGET_OS_IOS
-#import <CoreText/CoreText.h>
+// Forward declarations to avoid including Objective-C headers in C++
+class PlatformLayer;
+class PlatformLayerDelegate;
+class MetalTextRenderer;
+class MetalRenderer;
+
+// External C function to load system font (implemented in Objective-C++)
+extern "C" Font LoadSystemFontForUI(const char* fontName, float fontSize);
 #endif
 
 AIGUI_Context g_AIGUI;
@@ -11,6 +18,19 @@ static class TouchControls* s_TouchControls = nullptr;
 
 AIGUI_DEF void AIGUI_Init() {
     memset(&g_AIGUI, 0, sizeof(g_AIGUI));
+    
+    // Clear only font cache to force fresh font loading and avoid corrupted textures
+    TraceLog(LOG_INFO, "AIGUI: Clearing font cache to force fresh font loading");
+    ResourceManager::GetInstance().ClearFontCache();
+    
+#if defined(__APPLE__) && TARGET_OS_IOS
+    // Load ChalkDuster system font for testing
+    g_AIGUI.defaultFont = LoadSystemFontForUI("ChalkDuster", 32.0f);
+    TraceLog(LOG_INFO, "AIGUI: Using ChalkDuster system font for UI");
+#else
+    // Non-iOS platform - use default font loading
+    TraceLog(LOG_INFO, "AIGUI: Using default font loading for non-iOS platform");
+#endif
     
     // Try to load Whacky Joe font first, fall back to default if it fails
     TraceLog(LOG_INFO, "AIGUI: Attempting to load whacky_joe_font from ResourceManager");
@@ -28,16 +48,11 @@ AIGUI_DEF void AIGUI_Init() {
         g_AIGUI.defaultFont = whackyJoeFont;
         TraceLog(LOG_INFO, "AIGUI: Using Whacky Joe font for UI");
     } else {
-    g_AIGUI.defaultFont = GetFontDefault();
-        TraceLog(LOG_WARNING, "AIGUI: Whacky Joe font failed, trying system font");
+        g_AIGUI.defaultFont = GetFontDefault();
+        TraceLog(LOG_WARNING, "AIGUI: Whacky Joe font failed, using default font");
         if (g_AIGUI.defaultFont.glyphCount == 0) {
-            // Fallback to system font if GetFontDefault fails
-            CFStringRef fontName = CFSTR("Helvetica");
-            CTFontRef ctFont = CTFontCreateWithName(fontName, 16.0, nullptr);
-            g_AIGUI.defaultFont.ctFont = ctFont;
-            g_AIGUI.defaultFont.baseSize = 16;
-            g_AIGUI.defaultFont.glyphCount = 128; // Approximate for ASCII
-            TraceLog(LOG_INFO, "AIGUI: Using system font Helvetica, glyphCount=%d", g_AIGUI.defaultFont.glyphCount);
+            // Fallback to default font if GetFontDefault fails
+            TraceLog(LOG_ERROR, "AIGUI: GetFontDefault also failed, UI may not display text correctly");
         }
     }
     
@@ -151,8 +166,8 @@ AIGUI_DEF bool AIGUI_ButtonRounded(const char* label, float x, float y, float wi
     float textX = x + (width - textSize.x) / 2;
     float textY = y + (height - textSize.y) / 2;
     
-    TraceLog(LOG_INFO, "[AIGUI] DrawTextEx params: label=%s, x=%.1f, y=%.1f, fontSize=%d, color=(%d,%d,%d,%d)", label, textX, textY, fontSize, BLACK.r, BLACK.g, BLACK.b, BLACK.a);
-    DrawTextEx(g_AIGUI.defaultFont, label, {textX, textY}, fontSize, 1.0f, BLACK);
+    TraceLog(LOG_INFO, "[AIGUI] DrawTextEx params: label=%s, x=%.1f, y=%.1f, fontSize=%d, color=(%d,%d,%d,%d)", label, textX, textY, fontSize, WHITE.r, WHITE.g, WHITE.b, WHITE.a);
+    DrawTextEx(g_AIGUI.defaultFont, label, {textX, textY}, fontSize, 1.0f, WHITE);
 
     bool result = (hovered && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) || gestureTriggered;
     if (result) {
@@ -224,7 +239,7 @@ AIGUI_DEF bool AIGUI_TouchButton(const char* label, float x, float y, float widt
     Vector2 size = MeasureTextEx(g_AIGUI.defaultFont, label, (float)scaledFontSize, 1.0f);
     float textX = x + (width - size.x) / 2.0f;
     float textY = y + (height - size.y) / 2.0f;
-    DrawTextEx(g_AIGUI.defaultFont, label, { textX, textY }, (float)scaledFontSize, 1.0f, BLACK);
+    DrawTextEx(g_AIGUI.defaultFont, label, { textX, textY }, (float)scaledFontSize, 1.0f, WHITE);
     
     return clicked;
 }
@@ -311,7 +326,7 @@ AIGUI_DEF bool AIGUI_Button(const char* label, float x, float y, float width, fl
     Vector2 size = MeasureTextEx(g_AIGUI.defaultFont, label, 20.0f, 1.0f);
     float textX = x + (width - size.x) / 2.0f;
     float textY = y + (height - size.y) / 2.0f;
-    DrawTextEx(g_AIGUI.defaultFont, label, { textX, textY }, 20.0f, 1.0f, BLACK);
+    DrawTextEx(g_AIGUI.defaultFont, label, { textX, textY }, 20.0f, 1.0f, WHITE);
     
     return clicked;
 }

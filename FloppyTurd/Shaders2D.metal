@@ -28,6 +28,7 @@ struct VertexOut {
 struct Uniforms {
     float4x4 projectionMatrix;
     float4x4 modelViewMatrix;
+    float distanceRange; // Add distance range for SDF
 };
 
 // Enhanced vertex shader with instancing support
@@ -89,6 +90,26 @@ fragment float4 fragment_shader_textured(VertexOut in [[stage_in]],
     
     // Apply tint color
     return texColor * in.color;
+}
+
+// Fragment shader for SDF (Signed Distance Field) text rendering
+fragment float4 fragment_shader_sdf(VertexOut in [[stage_in]],
+                                   texture2d<float> sdfTexture [[texture(0)]],
+                                   sampler textureSampler [[sampler(0)]],
+                                   constant Uniforms& uniforms [[buffer(1)]]) {
+    // Sample the SDF texture (single-channel grayscale)
+    float distance = sdfTexture.sample(textureSampler, in.texCoords).r;
+    
+    // SDF thresholding with dynamic smoothing
+    // Since our SDF is normalized to [0,1], use threshold around 0.5
+    float threshold = 0.5; // Center of distance field
+    float smoothing = 0.15; // Increased smoothing for better visibility
+    float alpha = smoothstep(threshold - smoothing, threshold + smoothing, distance);
+    
+    // Apply tint color
+    float4 finalColor = in.color;
+    finalColor.a *= alpha;
+    return finalColor;
 }
 
 // Fragment shader for solid color rendering
