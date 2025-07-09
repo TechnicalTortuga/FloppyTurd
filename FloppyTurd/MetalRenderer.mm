@@ -1274,6 +1274,52 @@ void MetalRenderer::DrawText(const char* text, float x, float y, float fontSize,
     DrawTexture(textTexture, source, dest, WHITE, RenderLayer::Text);
 }
 
+void MetalRenderer::DrawText(const char* text, float x, float y, float fontSize, Color color, Font* font) {
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawText with font called: text='%s', x=%.2f, y=%.2f, fontSize=%.2f, color=(%d,%d,%d,%d), font=%p", 
+             text, x, y, fontSize, color.r, color.g, color.b, color.a, font);
+    
+    // Log coordinate system info for text positioning
+    Rectangle pixelScreenRect = UICoordinateSystem::GetPixelScreenRect();
+    Rectangle safeAreaPx = UICoordinateSystem::GetSafeAreaRect(true);
+    TraceLog(LOG_INFO, "[METAL DEBUG] Text Coordinate System: screen=%.1fx%.1f, safeArea=(%.1f,%.1f,%.1f,%.1f)", 
+             pixelScreenRect.width, pixelScreenRect.height, safeAreaPx.x, safeAreaPx.y, safeAreaPx.width, safeAreaPx.height);
+    
+    if (!g_textRenderer) {
+        TraceLog(LOG_ERROR, "[METAL ERROR] g_textRenderer is not initialized!");
+        return;
+    }
+    
+    if (!font) {
+        TraceLog(LOG_WARNING, "[METAL WARNING] Font is null, falling back to default font");
+        DrawText(text, x, y, fontSize, color);
+        return;
+    }
+    
+    TraceLog(LOG_INFO, "[METAL DEBUG] Using provided font: ctFont=%p, glyphCount=%d, baseSize=%d", 
+             font->ctFont, font->glyphCount, font->baseSize);
+    
+    id<MTLTexture> textTexture = g_textRenderer->RenderTextToTexture(text, (int)fontSize, color, font);
+    if (!textTexture) {
+        TraceLog(LOG_ERROR, "[METAL ERROR] Failed to render text to texture for '%s' with provided font (font.ctFont=%p)", text, font->ctFont);
+        return;
+    }
+    
+    float width = textTexture.width;
+    float height = textTexture.height;
+    
+    // Ensure source rectangle matches actual texture dimensions to prevent UV coordinate issues
+    Rectangle source = {0, 0, (float)textTexture.width, (float)textTexture.height};
+    Rectangle dest = {x, y, (float)width, (float)height};
+    
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawText with font: source=(%.1f,%.1f,%.1f,%.1f), dest=(%.1f,%.1f,%.1f,%.1f)", 
+             source.x, source.y, source.width, source.height, dest.x, dest.y, dest.width, dest.height);
+    
+    // Log text texture details
+    TraceLog(LOG_INFO, "[METAL DEBUG] Text texture with font: %p, size=%fx%f, text='%s'", textTexture, width, height, text);
+    
+    DrawTexture(textTexture, source, dest, WHITE, RenderLayer::Text);
+}
+
 void MetalRenderer::PushMatrix() {
     m_matrixStack.push_back(m_currentMatrix);
 }

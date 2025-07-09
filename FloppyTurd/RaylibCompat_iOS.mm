@@ -1093,7 +1093,7 @@ void DrawTextEx(Font font, const char* text, Vector2 position, float fontSize, f
             font.recs[index].height * font.texture.height
         };
         Rectangle dst = {
-            x + (glyphData[index * 4 + 0] * scale),
+            x,
             y + (glyphData[index * 4 + 1] * scale),
             src.width * scale,
             src.height * scale
@@ -1332,8 +1332,16 @@ Font GetFontDefault(void) {
         
         // Fall back to system font
         if (g_textRenderer) {
-            defaultFont = g_textRenderer->LoadSystemFont("Helvetica", 16);
-            NSLog(@"[DEBUG] GetFontDefault: Created system font with ctFont: %p", defaultFont.ctFont);
+            Font fallbackFont = g_textRenderer->LoadSystemFont("Chalkduster", 16);
+            if (!fallbackFont.ctFont) {
+                fallbackFont = g_textRenderer->LoadSystemFont("Chalkduster-Regular", 16);
+                if (fallbackFont.ctFont) {
+                    TraceLog(LOG_INFO, "[GetFontDefault] Loaded Chalkduster-Regular");
+                }
+            } else {
+                TraceLog(LOG_INFO, "[GetFontDefault] Loaded Chalkduster");
+            }
+            defaultFont = fallbackFont;
         } else {
             NSLog(@"[ERROR] GetFontDefault: g_textRenderer not available");
             // Fallback to empty font structure
@@ -1400,14 +1408,45 @@ void UnloadFont(Font font) {
 
 // Essential text measurement
 int MeasureText(const char* text, int fontSize) {
-    // Rough approximation
-    return strlen(text) * (fontSize / 2);
+    // Use the more accurate MeasureTextEx for better results
+    Vector2 size = MeasureTextEx(GetFontDefault(), text, (float)fontSize, 1.0f);
+    return (int)size.x;
 }
 
 Vector2 MeasureTextEx(Font font, const char* text, float fontSize, float spacing) {
-    // Rough approximation
-    int width = MeasureText(text, (int)fontSize);
-    return { (float)width, fontSize };
+    if (font.glyphCount == 0) {
+        // Fallback for system fonts or invalid fonts
+        return (Vector2){ (float)strlen(text) * (fontSize / 2.0f), (float)fontSize };
+    }
+
+    float textWidth = 0.0f;
+    float scale = fontSize / (float)font.baseSize;
+
+    const int startChar = 32;
+    const int endChar = 126;
+    int* glyphData = (int*)font.glyphs;
+
+    for (const char* p = text; *p; p++) {
+        unsigned char c = (unsigned char)*p;
+        if (c < startChar || c > endChar) {
+            // For unknown characters, you might want a default advance
+            textWidth += (font.recs[0].width * scale); 
+            continue;
+        }
+        int index = c - startChar;
+        if (index < 0 || index >= font.glyphCount) {
+            textWidth += (font.recs[0].width * scale);
+            continue;
+        }
+
+        // Add the advance width of the character
+        textWidth += glyphData[index * 4 + 3] * scale;
+    }
+
+    // Add inter-character spacing
+    textWidth += (strlen(text) - 1) * spacing;
+
+    return (Vector2){ textWidth, (float)fontSize };
 }
 
 // Essential texture settings

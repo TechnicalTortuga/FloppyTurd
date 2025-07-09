@@ -212,7 +212,7 @@ static inline unsigned int ColorToUInt(Color c) {
 }
 
 - (void)drawText:(const char*)text x:(float)x y:(float)y fontSize:(float)fontSize color:(unsigned int)color font:(void*)font {
-    TraceLog(LOG_INFO, "[DEBUG] drawText ENTRY: text=%s, x=%f, y=%f, fontSize=%f, color=0x%08X", text, x, y, fontSize, color);
+    TraceLog(LOG_INFO, "[DEBUG] drawText ENTRY: text=%s, x=%f, y=%f, fontSize=%f, color=0x%08X, font=%p", text, x, y, fontSize, color, font);
     if (![NSThread isMainThread]) {
         TraceLog(LOG_ERROR, "[ERROR] drawText called on non-main thread! Current thread: %@", [NSThread currentThread]);
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -226,12 +226,21 @@ static inline unsigned int ColorToUInt(Color c) {
         (unsigned char)((color >> 8) & 0xFF),
         (unsigned char)(color & 0xFF)
     };
-    TraceLog(LOG_INFO, "[DEBUG] drawText calling MetalRenderer: text=%s, x=%f, y=%f, fontSize=%f, color=(%d,%d,%d,%d)", text, x, y, fontSize, raylibColor.r, raylibColor.g, raylibColor.b, raylibColor.a);
+    TraceLog(LOG_INFO, "[DEBUG] drawText calling MetalRenderer: text=%s, x=%f, y=%f, fontSize=%f, color=(%d,%d,%d,%d), font=%p", text, x, y, fontSize, raylibColor.r, raylibColor.g, raylibColor.b, raylibColor.a, font);
     if (!_metalRenderer) {
         TraceLog(LOG_ERROR, "[ERROR] drawText: MetalRenderer not available");
         return;
     }
-    _metalRenderer->DrawText(text, x, y, fontSize, raylibColor);
+    
+    // Convert void* font to Font struct if provided, otherwise use nullptr
+    Font* fontPtr = font ? (Font*)font : nullptr;
+    if (fontPtr) {
+        TraceLog(LOG_INFO, "[DEBUG] drawText: Using provided font with ctFont=%p, glyphCount=%d", fontPtr->ctFont, fontPtr->glyphCount);
+        _metalRenderer->DrawText(text, x, y, fontSize, raylibColor, fontPtr);
+    } else {
+        TraceLog(LOG_INFO, "[DEBUG] drawText: No font provided, using default font");
+        _metalRenderer->DrawText(text, x, y, fontSize, raylibColor);
+    }
 }
 
 - (void)drawTexture:(void*)texture x:(float)x y:(float)y width:(float)width height:(float)height tint:(unsigned int)tint {

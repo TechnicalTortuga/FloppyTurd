@@ -140,7 +140,7 @@ void PlatformLayer::OnAppDidBecomeActive() {
 
 // File system helpers
 std::string PlatformLayer::GetResourcePath(const std::string& relativePath) {
-    NSLog(@"[DEBUG] GetResourcePath called with: %s", relativePath.c_str());
+    TraceLog(LOG_INFO, "[DEBUG] GetResourcePath called with: %s", relativePath.c_str());
     
     // For iOS asset catalogs, we need to handle the path differently
     // Asset catalogs store resources with their full path (e.g., "hats/poophat")
@@ -149,7 +149,7 @@ std::string PlatformLayer::GetResourcePath(const std::string& relativePath) {
     // First try to find the resource as a raw file (for non-asset catalog resources)
     NSString* fullPath = [[NSBundle mainBundle] pathForResource:path ofType:nil];
     if (fullPath) {
-        NSLog(@"[DEBUG] GetResourcePath: Found as raw file: %@", fullPath);
+        TraceLog(LOG_INFO, "[DEBUG] GetResourcePath: Found as raw file: %s", [fullPath UTF8String]);
         return std::string([fullPath UTF8String]);
     }
     
@@ -158,7 +158,7 @@ std::string PlatformLayer::GetResourcePath(const std::string& relativePath) {
     NSString* baseName = [path stringByDeletingPathExtension];
     NSString* directory = [path stringByDeletingLastPathComponent];
     
-    NSLog(@"[DEBUG] GetResourcePath: relativePath=%s, directory=%@, baseName=%@", relativePath.c_str(), directory, baseName);
+    TraceLog(LOG_INFO, "[DEBUG] GetResourcePath: relativePath=%s, directory=%s, baseName=%s", relativePath.c_str(), [directory UTF8String], [baseName UTF8String]);
     
     // For asset catalog resources, we need to construct the proper path
     // Asset catalogs are compiled into the bundle, so we need to check if the resource exists
@@ -171,7 +171,7 @@ std::string PlatformLayer::GetResourcePath(const std::string& relativePath) {
         [directory isEqualToString:@"vfx"] || 
         [directory isEqualToString:@"mainmenu"]) {
         
-        NSLog(@"[DEBUG] GetResourcePath: Directory %@ is in asset catalog list", directory);
+        TraceLog(LOG_INFO, "[DEBUG] GetResourcePath: Directory %s is in asset catalog list", [directory UTF8String]);
         
         // Extract just the filename without the directory prefix
         NSString* fileName = [baseName lastPathComponent];
@@ -181,25 +181,26 @@ std::string PlatformLayer::GetResourcePath(const std::string& relativePath) {
         // Since the asset catalog is compiled and we know these resources exist,
         // just return the asset:// path for all known asset catalog resources
         std::string assetPath = std::string("asset://") + std::string([assetName UTF8String]);
-        NSLog(@"[DEBUG] GetResourcePath: Returning asset catalog path: %s", assetPath.c_str());
+        TraceLog(LOG_INFO, "[DEBUG] GetResourcePath: Returning asset catalog path: %s", assetPath.c_str());
         return assetPath;
     }
     
     // Special handling for font files - they should be loaded from asset catalog
     NSString* fileExtension = [path pathExtension];
     if ([fileExtension isEqualToString:@"ttf"] || [fileExtension isEqualToString:@"otf"] || [fileExtension isEqualToString:@"fnt"]) {
-        NSLog(@"[DEBUG] GetResourcePath: Font file detected: %@", path);
+        TraceLog(LOG_INFO, "[DEBUG] GetResourcePath: Font file detected: %s", [path UTF8String]);
         
-        // For font files, use asset catalog path
-        NSString* assetName = [baseName lastPathComponent];
-        NSString* assetPath = [NSString stringWithFormat:@"asset://%@", assetName];
-        NSLog(@"[DEBUG] GetResourcePath: Returning asset catalog path for font: %@", assetPath);
+        // For font files, use asset catalog path with extension preserved
+        // Don't strip the extension first - get the full filename with extension
+        NSString* fileName = [path lastPathComponent];
+        NSString* assetPath = [NSString stringWithFormat:@"asset://%@", fileName];
+        TraceLog(LOG_INFO, "[DEBUG] GetResourcePath: Returning asset catalog path for font: %s", [assetPath UTF8String]);
         return std::string([assetPath UTF8String]);
     }
     
     // Special handling for music files - they should be loaded from the bundle
     if ([fileExtension isEqualToString:@"mp3"] || [fileExtension isEqualToString:@"ogg"] || [fileExtension isEqualToString:@"wav"]) {
-        NSLog(@"[DEBUG] GetResourcePath: Music file detected: %@", path);
+        TraceLog(LOG_INFO, "[DEBUG] GetResourcePath: Music file detected: %s", [path UTF8String]);
         
         // For music files, we need to construct the proper bundle path
         // The asset catalog script processes music files and puts them in the bundle
@@ -207,19 +208,19 @@ std::string PlatformLayer::GetResourcePath(const std::string& relativePath) {
         NSString* musicPath = [[NSBundle mainBundle] pathForResource:fileName ofType:fileExtension];
         
         if (musicPath) {
-            NSLog(@"[DEBUG] GetResourcePath: Found music file in bundle: %@", musicPath);
+            TraceLog(LOG_INFO, "[DEBUG] GetResourcePath: Found music file in bundle: %s", [musicPath UTF8String]);
             return std::string([musicPath UTF8String]);
         } else {
-            NSLog(@"[DEBUG] GetResourcePath: Music file not found in bundle: %@", fileName);
+            TraceLog(LOG_INFO, "[DEBUG] GetResourcePath: Music file not found in bundle: %s", [fileName UTF8String]);
             // Fallback to asset:// path for music files
             NSString* assetName = [fileName stringByDeletingPathExtension];
             std::string assetPath = std::string("asset://") + std::string([assetName UTF8String]);
-            NSLog(@"[DEBUG] GetResourcePath: Returning asset catalog path for music: %s", assetPath.c_str());
+            TraceLog(LOG_INFO, "[DEBUG] GetResourcePath: Returning asset catalog path for music: %s", assetPath.c_str());
             return assetPath;
         }
     }
     
-    NSLog(@"[DEBUG] GetResourcePath: Fallback to original path: %s", relativePath.c_str());
+    TraceLog(LOG_INFO, "[DEBUG] GetResourcePath: Fallback to original path: %s", relativePath.c_str());
     // Fallback to original path
     return relativePath;
 }

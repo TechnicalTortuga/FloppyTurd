@@ -196,6 +196,13 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
         set_source_files_properties(${RESOURCE} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
     endforeach()
     
+    # Explicitly add font files to bundle for iOS font registration (only from resources, not asset catalog)
+    file(GLOB FONT_FILES "${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/resources/fonts/*.ttf")
+    foreach(FONT_FILE ${FONT_FILES})
+        set_source_files_properties(${FONT_FILE} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+        target_sources(${PROJECT_NAME} PRIVATE ${FONT_FILE})
+    endforeach()
+    
     # Define Metal shader files
     set(METAL_SHADERS
         ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/Shaders2D.metal

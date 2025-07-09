@@ -41,6 +41,7 @@ public:
     // Text rendering to texture (for use with Metal renderer)
     id<MTLTexture> RenderTextToTexture(const char* text, Font font, float fontSize, Color color);
     id<MTLTexture> RenderTextToTexture(const char* text, int fontSize, Color color);
+    id<MTLTexture> RenderTextToTexture(const char* text, int fontSize, Color color, Font* font);
     
     // Cache management
     void ClearTextCache();

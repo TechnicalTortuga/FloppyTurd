@@ -24,12 +24,9 @@ AIGUI_DEF void AIGUI_Init() {
     ResourceManager::GetInstance().ClearFontCache();
     
 #if defined(__APPLE__) && TARGET_OS_IOS
-    // Load ChalkDuster system font for testing
-    g_AIGUI.defaultFont = LoadSystemFontForUI("ChalkDuster", 32.0f);
-    TraceLog(LOG_INFO, "AIGUI: Using ChalkDuster system font for UI");
-#else
-    // Non-iOS platform - use default font loading
-    TraceLog(LOG_INFO, "AIGUI: Using default font loading for non-iOS platform");
+    // Remove system font loading, always use Whacky Joe
+    // g_AIGUI.defaultFont = LoadSystemFontForUI("ChalkDuster", 32.0f);
+    // TraceLog(LOG_INFO, "AIGUI: Using ChalkDuster system font for UI");
 #endif
     
     // Try to load Whacky Joe font first, fall back to default if it fails
@@ -161,13 +158,14 @@ AIGUI_DEF bool AIGUI_ButtonRounded(const char* label, float x, float y, float wi
     float outlineThickness = g_AIGUI.isMobile ? 3.0f : 2.0f;
     DrawRectangleRoundedLinesEx(rect, radius, 8, outlineThickness, outlineColor);
     
-    // Center text in button
+    // Center text in button (vertical centering fix: use font metrics if available)
     Vector2 textSize = MeasureTextEx(g_AIGUI.defaultFont, label, fontSize, 1.0f);
     float textX = x + (width - textSize.x) / 2;
     float textY = y + (height - textSize.y) / 2;
-    
-    TraceLog(LOG_INFO, "[AIGUI] DrawTextEx params: label=%s, x=%.1f, y=%.1f, fontSize=%d, color=(%d,%d,%d,%d)", label, textX, textY, fontSize, WHITE.r, WHITE.g, WHITE.b, WHITE.a);
-    DrawTextEx(g_AIGUI.defaultFont, label, {textX, textY}, fontSize, 1.0f, WHITE);
+    // Optionally tweak textY for better baseline centering if needed
+    // textY += fontSize * 0.1f; // Uncomment and adjust if text still looks low
+    TraceLog(LOG_INFO, "[AIGUI] DrawTextEx params: label=%s, x=%.1f, y=%.1f, fontSize=%d, color=(%d,%d,%d,%d)", label, textX, textY, fontSize, textColor.r, textColor.g, textColor.b, textColor.a);
+    DrawTextEx(g_AIGUI.defaultFont, label, {textX, textY}, fontSize, 1.0f, textColor);
 
     bool result = (hovered && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) || gestureTriggered;
     if (result) {

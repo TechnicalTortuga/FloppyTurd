@@ -42,6 +42,16 @@ bool FontAtlasGenerator::Initialize(id<MTLDevice> device) {
 }
 
 bool FontAtlasGenerator::GenerateAtlas(Font& font, const AtlasConfig& config) {
+    TraceLog(LOG_INFO, "[FONT ATLAS DEBUG] GenerateAtlas: font.name=%s", font.name ? font.name : "(null)");
+    if (font.ctFont) {
+        CFStringRef psName = CTFontCopyPostScriptName((CTFontRef)font.ctFont);
+        if (psName) {
+            char psNameBuf[128];
+            CFStringGetCString(psName, psNameBuf, sizeof(psNameBuf), kCFStringEncodingUTF8);
+            TraceLog(LOG_INFO, "[FONT ATLAS DEBUG] GenerateAtlas: CTFont PostScript name: %s", psNameBuf);
+            CFRelease(psName);
+        }
+    }
     TraceLog(LOG_INFO, "[FONT ATLAS] GenerateAtlas: Starting atlas generation");
     TraceLog(LOG_INFO, "[FONT ATLAS] GenerateAtlas: font.ctFont=%p, config.type=%d, config.atlasSize=%d", 
              font.ctFont, (int)config.type, config.atlasSize);
@@ -160,6 +170,16 @@ bool FontAtlasGenerator::GenerateAtlas(Font& font, const AtlasConfig& config) {
 }
 
 bool FontAtlasGenerator::GenerateSDFAtlas(Font& font, FontAtlas& atlas, const AtlasConfig& config) {
+    TraceLog(LOG_INFO, "[FONT ATLAS DEBUG] GenerateSDFAtlas: font.name=%s", font.name ? font.name : "(null)");
+    if (font.ctFont) {
+        CFStringRef psName = CTFontCopyPostScriptName((CTFontRef)font.ctFont);
+        if (psName) {
+            char psNameBuf[128];
+            CFStringGetCString(psName, psNameBuf, sizeof(psNameBuf), kCFStringEncodingUTF8);
+            TraceLog(LOG_INFO, "[FONT ATLAS DEBUG] GenerateSDFAtlas: CTFont PostScript name: %s", psNameBuf);
+            CFRelease(psName);
+        }
+    }
     TraceLog(LOG_INFO, "[FONT ATLAS] GenerateSDFAtlas: Generating SDF atlas");
     TraceLog(LOG_INFO, "[FONT ATLAS DEBUG] Config: fontSize=%.1f, atlasSize=%d, distanceRange=%.1f", 
              config.fontSize, config.atlasSize, config.distanceRange);
@@ -471,7 +491,8 @@ bool FontAtlasGenerator::RasterizeGlyphs(Font& font, CGContextRef context, FontA
             double lineWidth = CTLineGetTypographicBounds(line, &ascent, &descent, &leading);
             
             // Draw text at baseline position (y + ascent) in flipped context
-            CGFloat drawX = x;
+            // Center the glyph horizontally within its cell.
+            CGFloat drawX = x + (glyphSize - lineWidth) / 2.0f;
             CGFloat drawY = y + ascent;
 
             // Apply a local vertical flip for each character to render it upright.
@@ -498,8 +519,11 @@ bool FontAtlasGenerator::RasterizeGlyphs(Font& font, CGContextRef context, FontA
                     CGRect bounds;
                     CTFontGetBoundingRectsForGlyphs(scaledFont, kCTFontHorizontalOrientation, &glyph, &bounds, 1);
                     
-                    // Get glyph advance
+                    // Get glyph advance from CoreText
                     CGFloat advance = CTFontGetAdvancesForGlyphs(scaledFont, kCTFontHorizontalOrientation, &glyph, nullptr, 1);
+                    // Add a much smaller extra spacing (1/16 base size)
+                    advance += font.baseSize * 0.0625f;
+                    TraceLog(LOG_INFO, "[FONT ATLAS DEBUG] Glyph %d (char '%c'): FINAL advance=%.3f", i, charCode, advance);
                     
                     // Store glyph data (normalize UVs for final atlas size)
                     float uvScale = (atlas.type == AtlasType::SDF) ? (float)contextSize / config.atlasSize : 1.0f;
@@ -512,7 +536,8 @@ bool FontAtlasGenerator::RasterizeGlyphs(Font& font, CGContextRef context, FontA
                         (float)glyphSize / contextSize
                     };
                     atlas.glyphOffsets[i] = {(float)bounds.origin.x / scaleFactor, (float)bounds.origin.y / scaleFactor};
-                    atlas.glyphAdvances[i] = (float)advance / scaleFactor;
+                    // Use the fixed cell size as the advance to ensure consistent spacing.
+                    atlas.glyphAdvances[i] = (float)glyphSize / scaleFactor;
                     
                     TraceLog(LOG_INFO, "[FONT ATLAS DEBUG] Glyph %d (char '%c'): Raw bounds=(%.1f,%.1f,%.1f,%.1f), scaled bounds=(%.1f,%.1f,%.1f,%.1f)", 
                              i, charCode, 

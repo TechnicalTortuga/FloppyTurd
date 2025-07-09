@@ -136,6 +136,7 @@ public:
     
     // Text rendering
     void DrawText(const char* text, float x, float y, float fontSize, Color color);
+    void DrawText(const char* text, float x, float y, float fontSize, Color color, Font* font);
     
     // Batch rendering
     void FlushBatch();
