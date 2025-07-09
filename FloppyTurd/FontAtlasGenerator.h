@@ -10,6 +10,7 @@
 #import <CoreGraphics/CoreGraphics.h>
 #import <Metal/Metal.h>
 #include "RaylibCompat.h"
+#include "FontCache.h"
 #include <vector>
 #include <string>
 
@@ -73,12 +74,18 @@ public:
     // Generate font atlas
     bool GenerateAtlas(Font& font, const AtlasConfig& config = AtlasConfig());
     
+    // Check cache and generate atlas if needed
+    bool GenerateAtlasWithCache(Font& font, const AtlasConfig& config = AtlasConfig());
+    
     // Generate SDF from bitmap
     bool GenerateSDF(const uint8_t* sourceBitmap, int width, int height, 
                      uint8_t* sdfBitmap, float distanceRange);
     
     // Create Metal texture from atlas
     id<MTLTexture> CreateMetalTexture(const FontAtlas& atlas);
+    
+    // Create Metal texture from raw data
+    id<MTLTexture> CreateMetalTextureFromData(const std::vector<uint8_t>& data, int width, int height, int channels);
     
     // Validation and error checking
     bool ValidateFont(const Font& font);

@@ -117,6 +117,8 @@ AIGUI_DEF void AIGUI_SetTouchControls(class TouchControls* controls) {
 }
 
 AIGUI_DEF bool AIGUI_ButtonRounded(const char* label, float x, float y, float width, float height, float radius, int fontSize, Color textColor) {
+    // Use fontSize=18 for main menu buttons unless otherwise specified
+    if (fontSize > 36) fontSize = 36;
     TraceLog(LOG_INFO, "[AIGUI] ButtonRounded called with label: %s, rect=(%.1f,%.1f,%.1f,%.1f), fontSize=%d, textColor=(%d,%d,%d,%d)", label, x, y, width, height, fontSize, textColor.r, textColor.g, textColor.b, textColor.a);
     
     Rectangle rect = { x, y, width, height };
@@ -162,10 +164,14 @@ AIGUI_DEF bool AIGUI_ButtonRounded(const char* label, float x, float y, float wi
     Vector2 textSize = MeasureTextEx(g_AIGUI.defaultFont, label, fontSize, 1.0f);
     float textX = x + (width - textSize.x) / 2;
     float textY = y + (height - textSize.y) / 2;
-    // Optionally tweak textY for better baseline centering if needed
-    // textY += fontSize * 0.1f; // Uncomment and adjust if text still looks low
+    // Try to use font ascent/descent for better vertical centering
+    if (g_AIGUI.defaultFont.baseSize > 0 && g_AIGUI.defaultFont.glyphCount > 0) {
+        float ascent = g_AIGUI.defaultFont.baseSize * 0.8f; // Approximate ascent
+        float descent = g_AIGUI.defaultFont.baseSize * 0.2f; // Approximate descent
+        textY = y + (height + ascent - descent - textSize.y) / 2.0f;
+    }
     TraceLog(LOG_INFO, "[AIGUI] DrawTextEx params: label=%s, x=%.1f, y=%.1f, fontSize=%d, color=(%d,%d,%d,%d)", label, textX, textY, fontSize, textColor.r, textColor.g, textColor.b, textColor.a);
-    DrawTextEx(g_AIGUI.defaultFont, label, {textX, textY}, fontSize, 1.0f, textColor);
+    DrawTextEx(g_AIGUI.defaultFont, label, {textX, textY}, fontSize, 1.0f, BLACK);
 
     bool result = (hovered && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) || gestureTriggered;
     if (result) {
@@ -203,7 +209,12 @@ AIGUI_DEF bool AIGUI_ImageButton(Texture2D textureDefault, Texture2D textureHove
         Vector2 textSize = MeasureTextEx(g_AIGUI.defaultFont, text, fontSize, 1.0f);
         float textX = x + (width - textSize.x) / 2;
         float textY = y + (height - textSize.y) / 2;
-        DrawTextEx(g_AIGUI.defaultFont, text, {textX, textY}, fontSize, 1.0f, textColor);
+        if (g_AIGUI.defaultFont.baseSize > 0 && g_AIGUI.defaultFont.glyphCount > 0) {
+            float ascent = g_AIGUI.defaultFont.baseSize * 0.8f;
+            float descent = g_AIGUI.defaultFont.baseSize * 0.2f;
+            textY = y + (height + ascent - descent - textSize.y) / 2.0f;
+        }
+        DrawTextEx(g_AIGUI.defaultFont, text, {textX, textY}, fontSize, 1.0f, BLACK);
     }
     
     return clicked;
@@ -337,7 +348,12 @@ AIGUI_DEF void AIGUI_LabelRounded(const char* text, float x, float y, float widt
     Vector2 textSize = MeasureTextEx(g_AIGUI.defaultFont, text, fontSize, 1.0f);
     float textX = x + (width - textSize.x) / 2;
     float textY = y + (height - textSize.y) / 2;
-    DrawTextEx(g_AIGUI.defaultFont, text, {textX, textY}, fontSize, 1.0f, textColor);
+    if (g_AIGUI.defaultFont.baseSize > 0 && g_AIGUI.defaultFont.glyphCount > 0) {
+        float ascent = g_AIGUI.defaultFont.baseSize * 0.8f;
+        float descent = g_AIGUI.defaultFont.baseSize * 0.2f;
+        textY = y + (height + ascent - descent - textSize.y) / 2.0f;
+    }
+    DrawTextEx(g_AIGUI.defaultFont, text, {textX, textY}, fontSize, 1.0f, BLACK);
 }
 
 AIGUI_DEF bool AIGUI_StateButton(Texture2D textureNormal, Texture2D textureHover, Texture2D textureClicked, float x, float y, float width, float height, const char* text, int fontSize, Color textColor, Vector2* customMousePos) {

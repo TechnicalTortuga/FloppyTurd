@@ -595,8 +595,19 @@ void DrawTexturePro_iOS(Texture2D texture, Rectangle source, Rectangle dest, Vec
         }
         
         if (metalRenderer) {
-            // Use the new DrawTexture overload that accepts texture format
-            metalRenderer->DrawTexture(metalTexture, source, dest, tint, RenderLayer::UI, texture.format);
+            // Check if rotation is needed
+            if (rotation != 0.0f) {
+                // Use DrawTextureEx for rotated textures
+                Vector2 position = {dest.x + origin.x, dest.y + origin.y};
+                float scale = dest.width / source.width; // Calculate scale from dest/source ratio
+                metalRenderer->DrawTextureEx(metalTexture, position, rotation, scale, tint);
+                TraceLog(LOG_INFO, "[RaylibCompat_iOS] DrawTexturePro_iOS: Using DrawTextureEx for rotation=%.2f, position=(%.1f,%.1f), scale=%.2f", 
+                         rotation, position.x, position.y, scale);
+            } else {
+                // Use the standard DrawTexture for non-rotated textures
+                metalRenderer->DrawTexture(metalTexture, source, dest, tint, RenderLayer::UI, texture.format);
+                TraceLog(LOG_INFO, "[RaylibCompat_iOS] DrawTexturePro_iOS: Using standard DrawTexture (no rotation)");
+            }
         } else {
             // Fallback to PlatformLayer if MetalRenderer not available
             platform.DrawTexture((__bridge void*)metalTexture, dest.x, dest.y, dest.width, dest.height, tint);

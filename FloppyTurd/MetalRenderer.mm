@@ -899,9 +899,10 @@ simd_float4x4 MetalRenderer::MakeRotationMatrix(float angle) {
     float s = sinf(angle);
     
     simd_float4x4 result = matrix_identity_float4x4;
+    // For screen coordinates (Y increases downward), we need to flip the Y component
     result.columns[0][0] = c;
-    result.columns[0][1] = s;
-    result.columns[1][0] = -s;
+    result.columns[0][1] = -s;  // Flip Y component for screen coordinates
+    result.columns[1][0] = s;
     result.columns[1][1] = c;
     
     return result;
@@ -1209,34 +1210,63 @@ void MetalRenderer::AddTexturedRectangleVertices(Rectangle dest, Rectangle sourc
 }
 
 void MetalRenderer::DrawTextureEx(id<MTLTexture> texture, Vector2 position, float rotation, float scale, Color tint) {
-    if (!texture) return;
+    if (!texture) {
+        TraceLog(LOG_WARNING, "[METAL DEBUG] DrawTextureEx: Null texture");
+        return;
+    }
     
     // Get texture dimensions
     float width = texture.width * scale;
     float height = texture.height * scale;
     
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawTextureEx: texture=%p, pos=(%.1f,%.1f), rotation=%.2f, scale=%.2f, size=%fx%f", 
+             texture, position.x, position.y, rotation, scale, width, height);
+    
     // Save current matrix
     PushMatrix();
     
-    // Apply transformations
-    TranslateMatrix(position.x + width * 0.5f, position.y + height * 0.5f);
+    // Apply transformations in the correct order for center pivot rotation:
+    // 1. Translate to the desired position (center of the scaled texture)
+    float centerX = position.x + width * 0.5f;
+    float centerY = position.y + height * 0.5f;
+    TranslateMatrix(centerX, centerY);
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawTextureEx: Translated to center (%.1f,%.1f)", centerX, centerY);
+    
+    // 2. Rotate around the center
     if (rotation != 0) {
         RotateMatrix(rotation);
+        TraceLog(LOG_INFO, "[METAL DEBUG] DrawTextureEx: Applied rotation %.2f radians", rotation);
     }
-    ScaleMatrix(scale, scale);
-    TranslateMatrix(-texture.width * 0.5f, -texture.height * 0.5f);
     
-    // Draw texture
-    Rectangle source = {0, 0, 1, 1}; // Full texture
+    // 3. Scale the texture
+    ScaleMatrix(scale, scale);
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawTextureEx: Applied scale %.2f", scale);
+    
+    // 4. Translate back so the texture is centered at origin before scaling
+    float offsetX = -(float)texture.width * 0.5f;
+    float offsetY = -(float)texture.height * 0.5f;
+    TranslateMatrix(offsetX, offsetY);
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawTextureEx: Translated back by (%.1f,%.1f)", offsetX, offsetY);
+    
+    // Update uniforms with the new matrix before drawing
+    UpdateUniforms();
+    
+    // Draw texture at origin with original dimensions (will be transformed by matrix)
+    Rectangle source = {0, 0, (float)texture.width, (float)texture.height};
     Rectangle dest = {0, 0, (float)texture.width, (float)texture.height};
     DrawTexture(texture, source, dest, tint);
     
     // Restore matrix
     PopMatrix();
+    
+    // Update uniforms with the restored matrix (identity) so subsequent draws aren't affected
+    UpdateUniforms();
+    
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawTextureEx: Matrix restored");
 }
 
 void MetalRenderer::DrawText(const char* text, float x, float y, float fontSize, Color color) {
-    TraceLog(LOG_INFO, "[METAL DEBUG] DrawText called: text='%s', x=%.2f, y=%.2f, fontSize=%.2f, color=(%d,%d,%d,%d)", text, x, y, fontSize, color.r, color.g, color.b, color.a);
+    // TraceLog(LOG_INFO, "[METAL DEBUG] DrawText called: text='%s', x=%.2f, y=%.2f, fontSize=%.2f, color=(%d,%d,%d,%d)", text, x, y, fontSize, color.r, color.g, color.b, color.a);
     
     // Log coordinate system info for text positioning
     Rectangle pixelScreenRect = UICoordinateSystem::GetPixelScreenRect();
@@ -1250,7 +1280,7 @@ void MetalRenderer::DrawText(const char* text, float x, float y, float fontSize,
     }
     
     Font font = g_textRenderer->GetDefaultFont();
-    TraceLog(LOG_INFO, "[METAL DEBUG] Default font pointer: %p, ctFont: %p", &font, font.ctFont);
+    // TraceLog(LOG_INFO, "[METAL DEBUG] Default font pointer: %p, ctFont: %p", &font, font.ctFont);
     
     id<MTLTexture> textTexture = g_textRenderer->RenderTextToTexture(text, (int)fontSize, color);
     if (!textTexture) {
@@ -1275,14 +1305,14 @@ void MetalRenderer::DrawText(const char* text, float x, float y, float fontSize,
 }
 
 void MetalRenderer::DrawText(const char* text, float x, float y, float fontSize, Color color, Font* font) {
-    TraceLog(LOG_INFO, "[METAL DEBUG] DrawText with font called: text='%s', x=%.2f, y=%.2f, fontSize=%.2f, color=(%d,%d,%d,%d), font=%p", 
-             text, x, y, fontSize, color.r, color.g, color.b, color.a, font);
+    // TraceLog(LOG_INFO, "[METAL DEBUG] DrawText with font called: text='%s', x=%.2f, y=%.2f, fontSize=%.2f, color=(%d,%d,%d,%d), font=%p", 
+    //          text, x, y, fontSize, color.r, color.g, color.b, color.a, font);
     
     // Log coordinate system info for text positioning
     Rectangle pixelScreenRect = UICoordinateSystem::GetPixelScreenRect();
     Rectangle safeAreaPx = UICoordinateSystem::GetSafeAreaRect(true);
-    TraceLog(LOG_INFO, "[METAL DEBUG] Text Coordinate System: screen=%.1fx%.1f, safeArea=(%.1f,%.1f,%.1f,%.1f)", 
-             pixelScreenRect.width, pixelScreenRect.height, safeAreaPx.x, safeAreaPx.y, safeAreaPx.width, safeAreaPx.height);
+    // TraceLog(LOG_INFO, "[METAL DEBUG] Text Coordinate System: screen=%.1fx%.1f, safeArea=(%.1f,%.1f,%.1f,%.1f)", 
+    //          pixelScreenRect.width, pixelScreenRect.height, safeAreaPx.x, safeAreaPx.y, safeAreaPx.width, safeAreaPx.height);
     
     if (!g_textRenderer) {
         TraceLog(LOG_ERROR, "[METAL ERROR] g_textRenderer is not initialized!");
@@ -1295,8 +1325,8 @@ void MetalRenderer::DrawText(const char* text, float x, float y, float fontSize,
         return;
     }
     
-    TraceLog(LOG_INFO, "[METAL DEBUG] Using provided font: ctFont=%p, glyphCount=%d, baseSize=%d", 
-             font->ctFont, font->glyphCount, font->baseSize);
+    // TraceLog(LOG_INFO, "[METAL DEBUG] Using provided font: ctFont=%p, glyphCount=%d, baseSize=%d", 
+    //          font->ctFont, font->glyphCount, font->baseSize);
     
     id<MTLTexture> textTexture = g_textRenderer->RenderTextToTexture(text, (int)fontSize, color, font);
     if (!textTexture) {
@@ -1311,11 +1341,11 @@ void MetalRenderer::DrawText(const char* text, float x, float y, float fontSize,
     Rectangle source = {0, 0, (float)textTexture.width, (float)textTexture.height};
     Rectangle dest = {x, y, (float)width, (float)height};
     
-    TraceLog(LOG_INFO, "[METAL DEBUG] DrawText with font: source=(%.1f,%.1f,%.1f,%.1f), dest=(%.1f,%.1f,%.1f,%.1f)", 
-             source.x, source.y, source.width, source.height, dest.x, dest.y, dest.width, dest.height);
+    // TraceLog(LOG_INFO, "[METAL DEBUG] DrawText with font: source=(%.1f,%.1f,%.1f,%.1f), dest=(%.1f,%.1f,%.1f,%.1f)", 
+    //          source.x, source.y, source.width, source.height, dest.x, dest.y, dest.width, dest.height);
     
     // Log text texture details
-    TraceLog(LOG_INFO, "[METAL DEBUG] Text texture with font: %p, size=%fx%f, text='%s'", textTexture, width, height, text);
+    // TraceLog(LOG_INFO, "[METAL DEBUG] Text texture with font: %p, size=%fx%f, text='%s'", textTexture, width, height, text);
     
     DrawTexture(textTexture, source, dest, WHITE, RenderLayer::Text);
 }

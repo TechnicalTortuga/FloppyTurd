@@ -1,8 +1,10 @@
 #pragma once
 #include "RaylibCompat.h"
 #include "Game.h"
+#include "ResourceManager.h"
 #include <atomic>
 #include <thread>
+#include <future>
 
 class Loading {
 public:
@@ -12,13 +14,13 @@ public:
 	void Initialize();
 	void Update(float deltaTime);
 	void Draw();
+	void Shutdown();
 	bool IsComplete() const { return loadingComplete; }
 	float GetProgress() const { return loadingProgress; }
 
-private:
-	void LoadResources();
 	void UpdateLoadingProgress(float progress);
 	void DrawLoadingProgress();
+	bool LoadFontsInBackground();
 
 	Game* game;
 	Texture2D poophat;
@@ -28,6 +30,10 @@ private:
 	bool loadingStarted;
 	bool loadingComplete;
 	bool poophatLoaded;
-	std::atomic<bool> resourcesLoaded{false};
-	std::thread loadingThread;
+	// Removed resourcesLoaded and loadingThread
+	// Only use m_fontLoadingFuture for background font loading
+
+	// Background font loading
+	std::future<bool> m_fontLoadingFuture;
+	bool m_fontLoadingComplete;
 };

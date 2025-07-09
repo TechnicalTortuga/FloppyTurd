@@ -4,6 +4,8 @@
 #include <thread>
 #include <iostream>
 #include "AudioStateManager.h"
+#include "FontCache.h"
+#include <future>
 
 Loading::Loading(Game* game)
     : game(game)
@@ -13,6 +15,8 @@ Loading::Loading(Game* game)
     , loadingStarted(false)
     , loadingComplete(false)
     , poophatLoaded(false)
+    , m_fontLoadingFuture()
+    , m_fontLoadingComplete(false)
 {
     try {
         std::cout << "[DEBUG] Loading constructor STARTING" << std::endl;
@@ -38,191 +42,136 @@ Loading::Loading(Game* game)
 }
 
 void Loading::Initialize() {
-    try {
-        if (loadingStarted) return;
-        loadingStarted = true;
-        
-        TraceLog(LOG_INFO, "Loading::Initialize() STARTING");
-        
-        // Add iOS-specific logging
-        GameLog::Log("[LOADING] Loading::Initialize() STARTING");
-        
-        // Add direct NSLog and printf calls for testing
+    if (loadingStarted) return;
+    loadingStarted = true;
+    
+    TraceLog(LOG_INFO, "Loading::Initialize() STARTING");
+    
+    // Add iOS-specific logging
+    GameLog::Log("[LOADING] Loading::Initialize() STARTING");
+    
+    // Add direct NSLog and printf calls for testing
+#if defined(__APPLE__) && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+    #ifdef __OBJC__
+        NSLog(@"[LOADING_NSLOG] Loading::Initialize() STARTING - direct NSLog call");
+    #endif
+#endif
+    printf("[LOADING_PRINTF] Loading::Initialize() STARTING - direct printf call\n");
+    
+    // Validate game pointer
+    if (!game) {
+        TraceLog(LOG_ERROR, "Loading::Initialize(): game pointer is null");
+        GameLog::Log("[LOADING] ERROR: game pointer is null");
 #if defined(__APPLE__) && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
         #ifdef __OBJC__
-            NSLog(@"[LOADING_NSLOG] Loading::Initialize() STARTING - direct NSLog call");
+            NSLog(@"[LOADING_NSLOG] ERROR: game pointer is null");
         #endif
 #endif
-        printf("[LOADING_PRINTF] Loading::Initialize() STARTING - direct printf call\n");
-        
-        // Validate game pointer
-        if (!game) {
-            TraceLog(LOG_ERROR, "Loading::Initialize(): game pointer is null");
-            GameLog::Log("[LOADING] ERROR: game pointer is null");
+        printf("[LOADING_PRINTF] ERROR: game pointer is null\n");
+        return;
+    }
+    
+    // Load the poophat texture now that ResourceManager should be initialized
+    if (!poophatLoaded) {
+        try {
+            TraceLog(LOG_INFO, "Loading::Initialize() - Attempting to load poop_hat texture");
+            GameLog::Log("[LOADING] Attempting to load poop_hat texture");
 #if defined(__APPLE__) && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
             #ifdef __OBJC__
-                NSLog(@"[LOADING_NSLOG] ERROR: game pointer is null");
+                NSLog(@"[LOADING_NSLOG] Attempting to load poop_hat texture");
             #endif
 #endif
-            printf("[LOADING_PRINTF] ERROR: game pointer is null\n");
-            return;
-        }
-        
-        // Load the poophat texture now that ResourceManager should be initialized
-        if (!poophatLoaded) {
-            try {
-                TraceLog(LOG_INFO, "Loading::Initialize() - Attempting to load poop_hat texture");
-                GameLog::Log("[LOADING] Attempting to load poop_hat texture");
-#if defined(__APPLE__) && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
-                #ifdef __OBJC__
-                    NSLog(@"[LOADING_NSLOG] Attempting to load poop_hat texture");
-                #endif
-#endif
-                printf("[LOADING_PRINTF] Attempting to load poop_hat texture\n");
-                
-                poophat = ResourceManager::GetInstance().GetTexture("poop_hat");
-#if defined(__APPLE__) && TARGET_OS_IPHONE
-                if (poophat.texture != nullptr) {
-#else
-                if (poophat.id != 0) {
-#endif
-                    TraceLog(LOG_INFO, "Loading::Initialize() - Successfully loaded poop_hat texture");
-                    GameLog::Log("[LOADING] Successfully loaded poop_hat texture");
-#if defined(__APPLE__) && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
-                    #ifdef __OBJC__
-                        NSLog(@"[LOADING_NSLOG] Successfully loaded poop_hat texture");
-                    #endif
-#endif
-                    printf("[LOADING_PRINTF] Successfully loaded poop_hat texture\n");
-                    poophatLoaded = true;
-                } else {
-                    TraceLog(LOG_WARNING, "Loading::Initialize() - Failed to load poop_hat texture");
-                    GameLog::Log("[LOADING] WARNING: Failed to load poop_hat texture");
-#if defined(__APPLE__) && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
-                    #ifdef __OBJC__
-                        NSLog(@"[LOADING_NSLOG] WARNING: Failed to load poop_hat texture");
-                    #endif
-#endif
-                    printf("[LOADING_PRINTF] WARNING: Failed to load poop_hat texture\n");
-                }
-            } catch (const std::exception& e) {
-                TraceLog(LOG_ERROR, "Loading::Initialize() - Exception loading poop_hat texture: %s", e.what());
-                GameLog::Log("[LOADING] ERROR: Exception loading poop_hat texture: %s", e.what());
-#if defined(__APPLE__) && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
-                #ifdef __OBJC__
-                    NSLog(@"[LOADING_NSLOG] ERROR: Exception loading poop_hat texture: %s", e.what());
-                #endif
-#endif
-                printf("[LOADING_PRINTF] ERROR: Exception loading poop_hat texture: %s\n", e.what());
-            }
-        }
-        
-        // Start background loading thread
-        if (!loadingThread.joinable()) {
-            TraceLog(LOG_INFO, "Loading::Initialize() - Starting background loading thread");
-            GameLog::Log("[LOADING] Starting background loading thread");
-#if defined(__APPLE__) && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
-            #ifdef __OBJC__
-                NSLog(@"[LOADING_NSLOG] Starting background loading thread");
-            #endif
-#endif
-            printf("[LOADING_PRINTF] Starting background loading thread\n");
+            printf("[LOADING_PRINTF] Attempting to load poop_hat texture\n");
             
-            loadingThread = std::thread(&Loading::LoadResources, this);
+            poophat = ResourceManager::GetInstance().GetTexture("poop_hat");
+            
+            // Debug logging to see what we got
+            TraceLog(LOG_INFO, "Loading::Initialize() - poophat.id=%u, poophat.texture=%p, poophat.width=%d, poophat.height=%d", 
+                    poophat.id, poophat.texture, poophat.width, poophat.height);
+            GameLog::Log("[LOADING] poophat.id=%u, poophat.texture=%p, poophat.width=%d, poophat.height=%d", 
+                        poophat.id, poophat.texture, poophat.width, poophat.height);
+            
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+            if (poophat.texture != nullptr) {
+#else
+            if (poophat.id != 0) {
+#endif
+                TraceLog(LOG_INFO, "Loading::Initialize() - Successfully loaded poop_hat texture");
+                GameLog::Log("[LOADING] Successfully loaded poop_hat texture");
+#if defined(__APPLE__) && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+                #ifdef __OBJC__
+                    NSLog(@"[LOADING_NSLOG] Successfully loaded poop_hat texture");
+                #endif
+#endif
+                printf("[LOADING_PRINTF] Successfully loaded poop_hat texture\n");
+                poophatLoaded = true;
+            } else {
+                TraceLog(LOG_WARNING, "Loading::Initialize() - Failed to load poop_hat texture");
+                GameLog::Log("[LOADING] WARNING: Failed to load poop_hat texture");
+#if defined(__APPLE__) && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+                #ifdef __OBJC__
+                    NSLog(@"[LOADING_NSLOG] WARNING: Failed to load poop_hat texture");
+                #endif
+#endif
+                printf("[LOADING_PRINTF] WARNING: Failed to load poop_hat texture\n");
+            }
+        } catch (const std::exception& e) {
+            TraceLog(LOG_ERROR, "Loading::Initialize() - Exception loading poop_hat texture: %s", e.what());
+            GameLog::Log("[LOADING] ERROR: Exception loading poop_hat texture: %s", e.what());
+#if defined(__APPLE__) && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+            #ifdef __OBJC__
+                NSLog(@"[LOADING_NSLOG] ERROR: Exception loading poop_hat texture: %s", e.what());
+            #endif
+#endif
+            printf("[LOADING_PRINTF] ERROR: Exception loading poop_hat texture: %s\n", e.what());
         }
-        
-        TraceLog(LOG_INFO, "Loading::Initialize() COMPLETED");
-        GameLog::Log("[LOADING] Loading::Initialize() COMPLETED");
+    }
+    
+    // Start background font loading thread
+    m_fontLoadingFuture = std::async(std::launch::async, [this]() {
+        return LoadFontsInBackground();
+    });
+    
+    TraceLog(LOG_INFO, "[LOADING] Background font loading started");
+    
+    TraceLog(LOG_INFO, "Loading::Initialize() COMPLETED");
+    GameLog::Log("[LOADING] Loading::Initialize() COMPLETED");
 #if defined(__APPLE__) && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
-        #ifdef __OBJC__
-            NSLog(@"[LOADING_NSLOG] Loading::Initialize() COMPLETED");
-        #endif
+    #ifdef __OBJC__
+        NSLog(@"[LOADING_NSLOG] Loading::Initialize() COMPLETED");
+    #endif
 #endif
-        printf("[LOADING_PRINTF] Loading::Initialize() COMPLETED\n");
-        
+    printf("[LOADING_PRINTF] Loading::Initialize() COMPLETED\n");
+    
+}
+
+bool Loading::LoadFontsInBackground() {
+    TraceLog(LOG_INFO, "[LOADING] Background thread: Starting font loading");
+    
+    // Initialize font cache
+    FontCache& cache = FontCache::GetInstance();
+    if (!cache.Initialize()) {
+        TraceLog(LOG_WARNING, "[LOADING] Background thread: Failed to initialize font cache");
+    }
+    
+    // Load Whacky Joe font in background
+    try {
+        Font whackyJoeFont = ResourceManager::GetInstance().GetFont("whacky_joe_font");
+        if (whackyJoeFont.baseSize > 0 && whackyJoeFont.glyphCount > 0) {
+            TraceLog(LOG_INFO, "[LOADING] Background thread: Successfully loaded Whacky Joe font");
+            return true;
+        } else {
+            TraceLog(LOG_WARNING, "[LOADING] Background thread: Whacky Joe font loading failed");
+            return false;
+        }
     } catch (const std::exception& e) {
-        TraceLog(LOG_ERROR, "Loading::Initialize() - Exception: %s", e.what());
-        GameLog::Log("[LOADING] ERROR: Exception in Initialize(): %s", e.what());
-#if defined(__APPLE__) && defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
-        #ifdef __OBJC__
-            NSLog(@"[LOADING_NSLOG] ERROR: Exception in Initialize(): %s", e.what());
-        #endif
-#endif
-        printf("[LOADING_PRINTF] ERROR: Exception in Initialize(): %s\n", e.what());
+        TraceLog(LOG_ERROR, "[LOADING] Background thread: Exception during font loading: %s", e.what());
+        return false;
     }
 }
 
-void Loading::LoadResources() {
-    try {
-        TraceLog(LOG_INFO, "LoadResources() STARTING");
-        
-        // Validate game pointer
-        if (!game) {
-            TraceLog(LOG_ERROR, "LoadResources(): game pointer is null");
-            return;
-        }
-        
-        try {
-            // Update progress as we load each resource
-            UpdateLoadingProgress(0.1f);
-            TraceLog(LOG_INFO, "LoadResources() - Progress updated to 10%%");
-            
-            // Preload MainMenu assets
-            if (!game->mainMenu) {
-                try {
-                    TraceLog(LOG_INFO, "LoadResources() - Creating MainMenu instance");
-                    game->mainMenu = new MainMenu(game);
-                    UpdateLoadingProgress(0.3f);
-                    TraceLog(LOG_INFO, "LoadResources() - MainMenu created successfully, progress updated to 30%%");
-                } catch (const std::exception& e) {
-                    TraceLog(LOG_ERROR, "Exception creating MainMenu: %s", e.what());
-                    // Continue without MainMenu - it's not critical for basic functionality
-                    game->mainMenu = nullptr;
-                } catch (...) {
-                    TraceLog(LOG_ERROR, "Unknown exception creating MainMenu");
-                    // Continue without MainMenu - it's not critical for basic functionality
-                    game->mainMenu = nullptr;
-                }
-            } else {
-                TraceLog(LOG_INFO, "LoadResources() - MainMenu already exists");
-            }
-            
-            // Note: Music will be started when transitioning to main menu state
-            // No music should play during loading
-            UpdateLoadingProgress(0.6f);
-            TraceLog(LOG_INFO, "LoadResources() - Music loading skipped (will be handled by state transition)");
-            
-            // Load other critical resources here
-            // ...
-            
-            UpdateLoadingProgress(1.0f);
-            TraceLog(LOG_INFO, "LoadResources() - Progress updated to 100%%, loading complete");
-            
-            // Set the resourcesLoaded flag to true to complete the loading process
-            resourcesLoaded = true;
-            TraceLog(LOG_INFO, "LoadResources() - resourcesLoaded set to true");
-            GameLog::Log("[LOADING] resourcesLoaded set to true - loading process complete");
-        } catch (const std::exception& e) {
-            TraceLog(LOG_ERROR, "Exception in LoadResources: %s", e.what());
-            UpdateLoadingProgress(1.0f); // Mark as complete even if there was an error
-            resourcesLoaded = true; // Still mark as loaded even with errors
-            GameLog::Log("[LOADING] Exception in LoadResources, but setting resourcesLoaded=true");
-        } catch (...) {
-            TraceLog(LOG_ERROR, "Unknown exception in LoadResources");
-            UpdateLoadingProgress(1.0f); // Mark as complete even if there was an error
-            resourcesLoaded = true; // Still mark as loaded even with errors
-            GameLog::Log("[LOADING] Unknown exception in LoadResources, but setting resourcesLoaded=true");
-        }
-        
-        TraceLog(LOG_INFO, "LoadResources() COMPLETED");
-    } catch (const std::exception& e) {
-        TraceLog(LOG_ERROR, "Exception in LoadResources outer try block: %s", e.what());
-        UpdateLoadingProgress(1.0f); // Mark as complete even if there was an error
-    } catch (...) {
-        TraceLog(LOG_ERROR, "Unknown exception in LoadResources outer try block");
-        UpdateLoadingProgress(1.0f); // Mark as complete even if there was an error
-    }
-}
+// Remove all references to LoadResources and loadingThread
+// Only use m_fontLoadingFuture for background font loading
 
 void Loading::UpdateLoadingProgress(float progress) {
     // Ensure progress is between 0 and 1
@@ -240,12 +189,42 @@ void Loading::Update(float deltaTime) {
         return;
     }
     
-    // Update rotation (one full rotation every 2 seconds)
-    rotationTimer += deltaTime;
-    rotationAngle = fmodf(rotationTimer * 180.0f, 360.0f);
+    // Update loading animation (poophat spin)
+    rotationAngle += 180.0f * deltaTime; // 180 degrees per second
+    if (rotationAngle >= 360.0f) {
+        rotationAngle -= 360.0f;
+    }
+    
+    // Check if background font loading is complete
+    if (m_fontLoadingFuture.valid()) {
+        auto status = m_fontLoadingFuture.wait_for(std::chrono::milliseconds(0));
+        if (status == std::future_status::ready) {
+            bool fontLoaded = m_fontLoadingFuture.get();
+            if (fontLoaded) {
+                TraceLog(LOG_INFO, "[LOADING] Font loading completed successfully");
+            } else {
+                TraceLog(LOG_WARNING, "[LOADING] Font loading completed with warnings");
+            }
+            m_fontLoadingComplete = true;
+        }
+    }
+    
+    // Update loading progress - make it take longer so users can see the rotating poophat
+    loadingProgress += deltaTime * 0.2f; // 5 seconds total (was 0.5f for 2 seconds)
+    if (loadingProgress >= 1.0f) {
+        loadingProgress = 1.0f;
+        loadingComplete = true;
+    }
+    
+    // Debug logging for loading progress
+    TraceLog(LOG_INFO, "[LOADING DEBUG] Progress: %.2f, fontLoadingComplete=%s, loadingComplete=%s, rotationAngle=%.2f", 
+             loadingProgress, 
+             m_fontLoadingComplete ? "true" : "false", 
+             loadingComplete ? "true" : "false",
+             rotationAngle);
     
     // Check if loading is complete
-    if (!loadingComplete && resourcesLoaded && loadingProgress >= 1.0f) {
+    if (!loadingComplete && m_fontLoadingComplete && loadingProgress >= 1.0f) {
         loadingComplete = true;
         TraceLog(LOG_INFO, "Loading complete, transitioning to main menu");
         GameLog::Log("[LOADING] Loading complete, transitioning to main menu");
@@ -262,9 +241,9 @@ void Loading::Update(float deltaTime) {
     lastProgressLog += deltaTime;
     if (lastProgressLog >= 2.0f) { // Log every 2 seconds
         lastProgressLog = 0.0f;
-        GameLog::Log("[LOADING] Progress: %.0f%%, resourcesLoaded=%s, loadingComplete=%s", 
+        GameLog::Log("[LOADING] Progress: %.0f%%, fontLoadingComplete=%s, loadingComplete=%s", 
                     loadingProgress * 100.0f, 
-                    resourcesLoaded ? "true" : "false", 
+                    m_fontLoadingComplete ? "true" : "false", 
                     loadingComplete ? "true" : "false");
     }
 }
@@ -277,7 +256,11 @@ void Loading::Draw() {
     ClearBackground(BLACK);
 
     // --- Centered, large rotating poophat ---
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+    if (this->poophat.texture != nullptr) {
+#else
     if (this->poophat.id != 0) {
+#endif
         Vector2 center = ui.GetPosition(UIAnchor::CENTER, {0, 0}, true);
         float poophatSize = fminf(safeAreaPx.width, safeAreaPx.height) * 0.18f;
         poophatSize = fmaxf(poophatSize, 96.0f);
@@ -288,7 +271,9 @@ void Loading::Draw() {
             poophatSize
         };
         Rectangle source = { 0, 0, (float)this->poophat.width, (float)this->poophat.height };
-        DrawTexturePro(this->poophat, source, dest, { poophatSize/2.0f, poophatSize/2.0f }, this->rotationAngle, WHITE);
+        // Convert degrees to radians for the Metal renderer
+        float rotationRadians = this->rotationAngle * DEG2RAD;
+        DrawTexturePro(this->poophat, source, dest, { poophatSize/2.0f, poophatSize/2.0f }, rotationRadians, WHITE);
     }
 
     // --- Progress bar at bottom center ---
@@ -309,9 +294,9 @@ void Loading::Draw() {
     DrawText(loadingText, (screenWidthPx - textWidth) / 2, textY, fontSize, WHITE);
 
     // --- Progress percent below bar ---
-    char progressText[32];
-    snprintf(progressText, sizeof(progressText), "%.0f%%", loadingProgress * 100.0f);
-    int percentWidth = MeasureText(progressText, fontSize);
-    float percentY = barY + barHeight + fontSize * 0.5f;
-    DrawText(progressText, (screenWidthPx - percentWidth) / 2, percentY, fontSize, WHITE);
+    // char progressText[32];
+    // snprintf(progressText, sizeof(progressText), "%.0f%%", loadingProgress * 100.0f);
+    // int percentWidth = MeasureText(progressText, fontSize);
+    // float percentY = barY + barHeight + fontSize * 0.5f;
+    // DrawText(progressText, (screenWidthPx - percentWidth) / 2, percentY, fontSize, WHITE);
 }

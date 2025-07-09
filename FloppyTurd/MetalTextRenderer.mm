@@ -41,33 +41,9 @@ MetalTextRenderer::~MetalTextRenderer() {
 bool MetalTextRenderer::Initialize(id<MTLDevice> device) {
     m_device = device;
     
-    // DEBUG: Log all available font family and font names using TraceLog
-    NSArray *familyNames = [UIFont familyNames];
-    for (NSString *family in familyNames) {
-        TraceLog(LOG_INFO, "[FONT DEBUG] Family: %s", [family UTF8String]);
-        NSArray *fontNames = [UIFont fontNamesForFamilyName:family];
-        for (NSString *name in fontNames) {
-            TraceLog(LOG_INFO, "[FONT DEBUG]   Font: %s", [name UTF8String]);
-        }
-    }
-    
-    // DEBUG: Also log all available CTFont families (but not individual font names to avoid API issues)
-    CFArrayRef ctFamilyNames = CTFontManagerCopyAvailableFontFamilyNames();
-    if (ctFamilyNames) {
-        CFIndex familyCount = CFArrayGetCount(ctFamilyNames);
-        TraceLog(LOG_INFO, "[FONT DEBUG] CTFontManager found %ld font families", (long)familyCount);
-        
-        for (CFIndex i = 0; i < familyCount; i++) {
-            CFStringRef familyName = (CFStringRef)CFArrayGetValueAtIndex(ctFamilyNames, i);
-            if (familyName) {
-                const char* familyStr = CFStringGetCStringPtr(familyName, kCFStringEncodingUTF8);
-                if (familyStr) {
-                    TraceLog(LOG_INFO, "[FONT DEBUG] CTFamily: %s", familyStr);
-                }
-            }
-        }
-        CFRelease(ctFamilyNames);
-    }
+    // REMOVED: Massive system font enumeration that was causing startup delay
+    // Only log essential information for debugging
+    TraceLog(LOG_INFO, "[METAL DEBUG] MetalTextRenderer::Initialize: Starting initialization");
     
     // Initialize atlas generator
     if (!m_atlasGenerator.Initialize(device)) {
@@ -75,9 +51,10 @@ bool MetalTextRenderer::Initialize(id<MTLDevice> device) {
         return false;
     }
     
-    // Create default font
+    // Create default font (will be overridden by Whacky Joe)
     m_defaultFont = LoadSystemFont("Helvetica", 16);
     
+    TraceLog(LOG_INFO, "[METAL DEBUG] MetalTextRenderer::Initialize: Initialization complete");
     return true;
 }
 
@@ -95,7 +72,7 @@ void MetalTextRenderer::Shutdown() {
 }
 
 Font MetalTextRenderer::LoadFont(const char* fileName, int fontSize) {
-        TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: fileName='%s', fontSize=%d", fileName, fontSize);
+    // TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: fileName='%s', fontSize=%d", fileName, fontSize);
         
     // Initialize font with proper Texture2D structure
     Font font = {}; // Zero-initialize all fields
@@ -121,7 +98,7 @@ Font MetalTextRenderer::LoadFont(const char* fileName, int fontSize) {
             std::string cppPath = [path UTF8String];
             ResourcePathParts parts = ResourceManager::ParseResourcePath(cppPath);
             NSString* assetName = [NSString stringWithUTF8String:parts.baseName.c_str()];
-            TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: Loading from asset catalog: %s", [assetName UTF8String]);
+            // TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: Loading from asset catalog: %s", [assetName UTF8String]);
             
             // For asset catalog fonts, check if this is a TTF/OTF file that should be loaded from bundle
             // Check both the asset name and the original fileName for TTF/OTF extensions
@@ -133,7 +110,7 @@ Font MetalTextRenderer::LoadFont(const char* fileName, int fontSize) {
                          [originalExtension isEqualToString:@"ttf"] || [originalExtension isEqualToString:@"otf"]);
             
             if (isTTF) {
-                TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: Detected TTF/OTF file, loading from bundle: %s", [assetName UTF8String]);
+                // TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: Detected TTF/OTF file, loading from bundle: %s", [assetName UTF8String]);
                 
                 // Load directly from bundle for TTF/OTF files
                 NSString* bundlePath = [[NSBundle mainBundle] pathForResource:assetName ofType:nil];
@@ -155,7 +132,7 @@ Font MetalTextRenderer::LoadFont(const char* fileName, int fontSize) {
                 }
                 
                 if (bundlePath) {
-                    TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: Found bundle path for TTF: %s", [bundlePath UTF8String]);
+                    // TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: Found bundle path for TTF: %s", [bundlePath UTF8String]);
                     NSURL* fontURL = [NSURL fileURLWithPath:bundlePath];
 
                     // Register the font with CoreText if not already registered
@@ -170,7 +147,7 @@ Font MetalTextRenderer::LoadFont(const char* fileName, int fontSize) {
                             TraceLog(LOG_ERROR, "[METAL ERROR] LoadFont: Failed to register font at %s (unknown error)", [bundlePath UTF8String]);
                         }
                     } else {
-                        TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: Successfully registered font at %s", [bundlePath UTF8String]);
+                        // TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: Successfully registered font at %s", [bundlePath UTF8String]);
                     }
 
                     CGDataProviderRef dataProvider = CGDataProviderCreateWithURL((__bridge CFURLRef)fontURL);
@@ -178,14 +155,14 @@ Font MetalTextRenderer::LoadFont(const char* fileName, int fontSize) {
                         CGFontRef cgFont = CGFontCreateWithDataProvider(dataProvider);
                         if (cgFont) {
                             font.ctFont = CTFontCreateWithGraphicsFont(cgFont, fontSize, nullptr, nullptr);
-                            TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: Successfully created CTFont from CGFont for TTF: %s", [assetName UTF8String]);
+                            // TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: Successfully created CTFont from CGFont for TTF: %s", [assetName UTF8String]);
                             
                             // Verify the font is correct
                             CFStringRef psName = CTFontCopyPostScriptName((CTFontRef)font.ctFont);
                             if (psName) {
                                 char psNameBuf[128];
                                 CFStringGetCString(psName, psNameBuf, sizeof(psNameBuf), kCFStringEncodingUTF8);
-                                TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: TTF CTFont PostScript name: %s", psNameBuf);
+                                // TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: TTF CTFont PostScript name: %s", psNameBuf);
                                 CFRelease(psName);
                             }
                             
@@ -202,7 +179,7 @@ Font MetalTextRenderer::LoadFont(const char* fileName, int fontSize) {
                 }
             } else {
                 // For non-TTF fonts, try to load as a system font first
-                TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: Trying to load as system font: %s", [assetName UTF8String]);
+                // TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: Trying to load as system font: %s", [assetName UTF8String]);
                 font.ctFont = CTFontCreateWithName((__bridge CFStringRef)assetName, fontSize, nullptr);
                 
                 // Check if CTFont was created and has glyphs, AND verify it's the correct font
@@ -213,7 +190,7 @@ Font MetalTextRenderer::LoadFont(const char* fileName, int fontSize) {
                     if (psName) {
                         char psNameBuf[128];
                         CFStringGetCString(psName, psNameBuf, sizeof(psNameBuf), kCFStringEncodingUTF8);
-                        TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: CTFont PostScript name: %s", psNameBuf);
+                        // TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: CTFont PostScript name: %s", psNameBuf);
                         
                         // Check if the PostScript name matches our expected font name (case-insensitive)
                         NSString* expectedName = [assetName stringByReplacingOccurrencesOfString:@"_" withString:@""];
@@ -227,8 +204,8 @@ Font MetalTextRenderer::LoadFont(const char* fileName, int fontSize) {
                     }
                 }
                 
-                TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: Initial font check - ctFont=%p, glyphCount=%d, fontValid=%s", 
-                         font.ctFont, font.ctFont ? (int)CTFontGetGlyphCount((CTFontRef)font.ctFont) : 0, fontValid ? "true" : "false");
+                // TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: Initial font check - ctFont=%p, glyphCount=%d, fontValid=%s", 
+                //          font.ctFont, font.ctFont ? (int)CTFontGetGlyphCount((CTFontRef)font.ctFont) : 0, fontValid ? "true" : "false");
                 
                 // If the initial font loading failed or has 0 glyphs, try font name variations
                 if (!fontValid) {
@@ -243,7 +220,7 @@ Font MetalTextRenderer::LoadFont(const char* fileName, int fontSize) {
                     
                     NSArray* variations = @[variation1, variation2, variation3, variation4, variation5];
                     for (NSString* variation in variations) {
-                        TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: Trying font name variation: %s", [variation UTF8String]);
+                        // TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: Trying font name variation: %s", [variation UTF8String]);
                         font.ctFont = CTFontCreateWithName((__bridge CFStringRef)variation, fontSize, nullptr);
                         
                         if (font.ctFont && CTFontGetGlyphCount((CTFontRef)font.ctFont) > 0) {
@@ -256,7 +233,7 @@ Font MetalTextRenderer::LoadFont(const char* fileName, int fontSize) {
                                 NSString* expectedName = [assetName stringByReplacingOccurrencesOfString:@"_" withString:@""];
                                 
                                 if ([actualName caseInsensitiveCompare:expectedName] == NSOrderedSame) {
-                                    TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: Successfully loaded font with variation: %s", [variation UTF8String]);
+                                    // TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: Successfully loaded font with variation: %s", [variation UTF8String]);
                                     fontValid = true;
                                     CFRelease(psName);
                                     break;
@@ -274,13 +251,13 @@ Font MetalTextRenderer::LoadFont(const char* fileName, int fontSize) {
             }
         } else {
             // Try to load from bundle (legacy path)
-            TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: Trying to load from bundle: %s", [path UTF8String]);
+            // TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: Trying to load from bundle: %s", [path UTF8String]);
             NSString* bundlePath = [[NSBundle mainBundle] pathForResource:path ofType:nil];
             if (!bundlePath) {
                 bundlePath = path;
-                TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: Using direct path: %s", [bundlePath UTF8String]);
+                // TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: Using direct path: %s", [bundlePath UTF8String]);
             } else {
-                TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: Found bundle path: %s", [bundlePath UTF8String]);
+                // TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: Found bundle path: %s", [bundlePath UTF8String]);
             }
             
             NSURL* fontURL = [NSURL fileURLWithPath:bundlePath];
@@ -290,7 +267,7 @@ Font MetalTextRenderer::LoadFont(const char* fileName, int fontSize) {
                 CGFontRef cgFont = CGFontCreateWithDataProvider(dataProvider);
                 if (cgFont) {
                     font.ctFont = CTFontCreateWithGraphicsFont(cgFont, fontSize, nullptr, nullptr);
-                    TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: Successfully created CTFont from CGFont");
+                    // TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: Successfully created CTFont from CGFont");
                     CGFontRelease(cgFont);
                 } else {
                     TraceLog(LOG_ERROR, "[METAL ERROR] LoadFont: Failed to create CGFont from data provider");
@@ -307,7 +284,7 @@ Font MetalTextRenderer::LoadFont(const char* fileName, int fontSize) {
         } else {
             // Generate font atlas for better performance
             if (GenerateFontAtlas(font)) {
-                TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: Successfully loaded font: %s with generated atlas", [path UTF8String]);
+                // TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: Successfully loaded font: %s with generated atlas", [path UTF8String]);
             } else {
                 TraceLog(LOG_WARNING, "[METAL WARNING] LoadFont: Failed to generate atlas for font: %s, using fallback", [path UTF8String]);
                 return LoadSystemFont("Helvetica", fontSize);
@@ -319,7 +296,7 @@ Font MetalTextRenderer::LoadFont(const char* fileName, int fontSize) {
 }
 
 Font MetalTextRenderer::LoadSystemFont(const char* fontName, int fontSize) {
-        TraceLog(LOG_INFO, "[METAL DEBUG] LoadSystemFont: fontName='%s', fontSize=%d", fontName, fontSize);
+        // TraceLog(LOG_INFO, "[METAL DEBUG] LoadSystemFont: fontName='%s', fontSize=%d", fontName, fontSize);
         
     // Initialize font with proper Texture2D structure
     Font font = {}; // Zero-initialize all fields
@@ -354,7 +331,7 @@ Font MetalTextRenderer::LoadSystemFont(const char* fontName, int fontSize) {
             } else {
                 // Generate font atlas for better performance
                 if (GenerateFontAtlas(font)) {
-                    TraceLog(LOG_INFO, "[METAL DEBUG] LoadSystemFont: Successfully created CTFont for font: %s with generated atlas", fontName);
+                    // TraceLog(LOG_INFO, "[METAL DEBUG] LoadSystemFont: Successfully created CTFont for font: %s with generated atlas", fontName);
                 } else {
                     TraceLog(LOG_WARNING, "[METAL WARNING] LoadSystemFont: Failed to generate atlas for font: %s, using fallback", fontName);
                     return LoadSystemFont("Helvetica", fontSize);
@@ -366,48 +343,43 @@ Font MetalTextRenderer::LoadSystemFont(const char* fontName, int fontSize) {
 }
 
 bool MetalTextRenderer::GenerateFontAtlas(Font& font) {
-    TraceLog(LOG_INFO, "[METAL DEBUG] GenerateFontAtlas: Using new FontAtlasGenerator");
+    // TraceLog(LOG_INFO, "[METAL DEBUG] GenerateFontAtlas: Using new FontAtlasGenerator");
     
-    // Dynamically calculate atlas size
+    // Dynamically calculate atlas size (reduced from 4096 to 2048 for performance)
     int glyphCount = 95; // Default to 95 printable ASCII glyphs; adjust if needed
     if (font.glyphCount > 0) glyphCount = font.glyphCount;
-    int glyphSize = (int)(font.baseSize * 2.0f) + 4 * 2; // font size * 2 + reduced padding
+    int glyphSize = (int)(font.baseSize * 2.0f) + 2 * 2; // font size * 2 + reduced padding
     int glyphsPerRow = (int)ceil(sqrt((float)glyphCount));
     int minAtlasSize = glyphsPerRow * glyphSize * 2; // double the minimum atlas size for more space
     // Round up to next power of two
     int atlasSize = 256;
     while (atlasSize < minAtlasSize) atlasSize *= 2;
-    if (atlasSize > 4096) atlasSize = 4096; // Clamp to 4096 max
-    TraceLog(LOG_INFO, "[METAL DEBUG] Dynamic atlas size: %d (glyphSize=%d, glyphs=%d, glyphPadding=4)", atlasSize, glyphSize, glyphCount);
+    if (atlasSize > 2048) atlasSize = 2048; // Reduced from 4096 to 2048 for performance
+    // TraceLog(LOG_INFO, "[METAL DEBUG] Dynamic atlas size: %d (glyphSize=%d, glyphs=%d, glyphPadding=2)", atlasSize, glyphSize, glyphCount);
+    
     // Configure atlas generation
     AtlasConfig config;
     config.type = AtlasType::SDF;  // Use SDF for better quality
-    config.glyphPadding = 4; // Reduced padding for tighter spacing
+    config.glyphPadding = 2; // Reduced padding for even tighter spacing
     config.distanceRange = 4.0f;
     config.fontSize = font.baseSize * 2.0f;
     config.atlasSize = atlasSize;
     
-    // Generate atlas using the new generator
-    bool success = m_atlasGenerator.GenerateAtlas(font, config);
+    // Generate atlas using the new generator with caching
+    bool success = m_atlasGenerator.GenerateAtlasWithCache(font, config);
     
     if (success) {
-        TraceLog(LOG_INFO, "[METAL DEBUG] GenerateFontAtlas: Successfully generated SDF atlas");
-        // Debug: Save Whacky Joe SDF atlas as PNG if this is the Whacky Joe font
-        if (font.name && strstr(font.name, "whacky_joe") != nullptr) {
-            TraceLog(LOG_INFO, "[METAL DEBUG] GenerateFontAtlas: Saving SDF atlas for Whacky Joe font");
-            // Note: We need to save the atlas from FontAtlasGenerator, not from here
-            // The actual PNG saving will be done in FontAtlasGenerator::GenerateAtlas
-        }
+        // TraceLog(LOG_INFO, "[METAL DEBUG] GenerateFontAtlas: Successfully generated SDF atlas");
     } else {
         TraceLog(LOG_ERROR, "[METAL ERROR] GenerateFontAtlas: Failed to generate atlas with new generator");
         
         // Fallback to bitmap mode if SDF fails
-        TraceLog(LOG_INFO, "[METAL DEBUG] GenerateFontAtlas: Trying bitmap fallback");
+        // TraceLog(LOG_INFO, "[METAL DEBUG] GenerateFontAtlas: Trying bitmap fallback");
         config.type = AtlasType::BITMAP;
         success = m_atlasGenerator.GenerateAtlas(font, config);
         
         if (success) {
-            TraceLog(LOG_INFO, "[METAL DEBUG] GenerateFontAtlas: Successfully generated bitmap atlas");
+            // TraceLog(LOG_INFO, "[METAL DEBUG] GenerateFontAtlas: Successfully generated bitmap atlas");
         } else {
             TraceLog(LOG_ERROR, "[METAL ERROR] GenerateFontAtlas: Both SDF and bitmap generation failed");
         }
