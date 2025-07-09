@@ -27,8 +27,8 @@ struct VertexOut {
 // Uniform buffer structure
 struct Uniforms {
     float4x4 projectionMatrix;
-    float4x4 modelViewMatrix;
     float distanceRange; // Add distance range for SDF
+    float time;          // Add time for future effects
 };
 
 // Enhanced vertex shader with instancing support
@@ -46,9 +46,8 @@ vertex VertexOut vertex_shader_2d(VertexIn in [[stage_in]],
         localPos = instanceData[instanceID].modelMatrix * localPos;
     }
     
-    // Apply model-view and projection transformations
-    float4 worldPos = uniforms.modelViewMatrix * localPos;
-    out.position = uniforms.projectionMatrix * worldPos;
+    // Position already transformed on CPU - just apply projection
+    out.position = uniforms.projectionMatrix * localPos;
     
     // Handle texture coordinates with instance scaling if available
     if (instanceData != nullptr) {
@@ -70,9 +69,8 @@ vertex VertexOut vertex_shader_2d_simple(VertexIn in [[stage_in]],
                                          constant Uniforms& uniforms [[buffer(1)]]) {
     VertexOut out;
     
-    // Transform position
-    float4 worldPos = uniforms.modelViewMatrix * float4(in.position, 0.0, 1.0);
-    out.position = uniforms.projectionMatrix * worldPos;
+    // Position already transformed on CPU - just apply projection
+    out.position = uniforms.projectionMatrix * float4(in.position, 0.0, 1.0);
     
     // Pass through texture coordinates and color
     out.texCoords = in.texCoords;

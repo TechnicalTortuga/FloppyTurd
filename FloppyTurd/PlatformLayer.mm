@@ -7,6 +7,7 @@
 #import "RaylibCompat.h"
 #import "MetalRenderer.h"
 #import "PlatformLayerDelegate.h"
+#import "GameViewController.h"
 #import "UIManager.h"
 #import "MetalTextureCache.h"
 #import "UICoordinateSystem.h"
@@ -69,13 +70,16 @@ PlatformLayer::~PlatformLayer() {
 }
 
 void PlatformLayer::Initialize(void* nativeView) {
-    NSLog(@"[INIT] ========================================");
     NSLog(@"[INIT] PlatformLayer::Initialize(void* nativeView) STARTING");
-    NSLog(@"[INIT] nativeView=%p", nativeView);
-    NSLog(@"[INIT] ========================================");
+    NSLog(@"[INIT] nativeView: %p", nativeView);
+    
+    if (!nativeView) {
+        NSLog(@"[ERROR] PlatformLayer::Initialize: nativeView is null");
+        return;
+    }
     
     MTKView* view = (__bridge MTKView*)nativeView;
-    if (!view) {
+    if (![view isKindOfClass:[MTKView class]]) {
         NSLog(@"[ERROR] PlatformLayer::Initialize: nativeView is null or invalid MTKView");
         return;
     }
@@ -92,7 +96,7 @@ void PlatformLayer::Initialize(void* nativeView) {
     
     // Create the delegate and set it as the MTKView's delegate for rendering
     NSLog(@"[INIT] Creating PlatformLayerDelegate");
-    id delegate = [[PlatformLayerDelegate alloc] initWithView:view];
+    id delegate = [[PlatformLayerDelegate alloc] initWithView:view gameViewController:nil];
     m_Delegate = (__bridge_retained void*)delegate;
     
     // Set the delegate as the MTKView's delegate for automatic rendering
@@ -104,6 +108,61 @@ void PlatformLayer::Initialize(void* nativeView) {
     m_TouchPoints.clear();
     NSLog(@"[INIT] ========================================");
     NSLog(@"[INIT] PlatformLayer::Initialize(void* nativeView) COMPLETED");
+    NSLog(@"[INIT] m_View=%p, m_Delegate=%p", m_View, m_Delegate);
+    NSLog(@"[INIT] ========================================");
+}
+
+void PlatformLayer::Initialize(void* nativeView, void* gameViewController) {
+    NSLog(@"[INIT] PlatformLayer::Initialize(void* nativeView, void* gameViewController) STARTING");
+    NSLog(@"[INIT] nativeView: %p, gameViewController: %p", nativeView, gameViewController);
+    
+    if (!nativeView) {
+        NSLog(@"[ERROR] PlatformLayer::Initialize: nativeView is null");
+        return;
+    }
+    
+    if (!gameViewController) {
+        NSLog(@"[ERROR] PlatformLayer::Initialize: gameViewController is null");
+        return;
+    }
+    
+    MTKView* view = (__bridge MTKView*)nativeView;
+    GameViewController* gvc = (__bridge GameViewController*)gameViewController;
+    
+    if (![view isKindOfClass:[MTKView class]]) {
+        NSLog(@"[ERROR] PlatformLayer::Initialize: nativeView is null or invalid MTKView");
+        return;
+    }
+    
+    if (![gvc isKindOfClass:[GameViewController class]]) {
+        NSLog(@"[ERROR] PlatformLayer::Initialize: gameViewController is null or invalid GameViewController");
+        return;
+    }
+    
+    NSLog(@"[INIT] Got MTKView: %p, GameViewController: %p", view, gvc);
+    m_View = nativeView;
+    
+    // Set up the MTKView
+    NSLog(@"[INIT] Setting up MTKView properties");
+    view.device = MTLCreateSystemDefaultDevice();
+    view.colorPixelFormat = MTLPixelFormatBGRA8Unorm;
+    view.clearColor = MTLClearColorMake(0.1, 0.1, 0.1, 1.0);
+    NSLog(@"[INIT] MTKView device: %p", view.device);
+    
+    // Create the delegate with GameViewController for touch event forwarding
+    NSLog(@"[INIT] Creating PlatformLayerDelegate with GameViewController");
+    id delegate = [[PlatformLayerDelegate alloc] initWithView:view gameViewController:gvc];
+    m_Delegate = (__bridge_retained void*)delegate;
+    
+    // Set the delegate as the MTKView's delegate for automatic rendering
+    view.delegate = delegate;
+    
+    // Enable automatic drawing
+    view.paused = NO;
+    
+    m_TouchPoints.clear();
+    NSLog(@"[INIT] ========================================");
+    NSLog(@"[INIT] PlatformLayer::Initialize(void* nativeView, void* gameViewController) COMPLETED");
     NSLog(@"[INIT] m_View=%p, m_Delegate=%p", m_View, m_Delegate);
     NSLog(@"[INIT] ========================================");
 }
@@ -241,23 +300,113 @@ bool PlatformLayer::IsMobilePlatform() const {
     return true;
 }
 
+// Touch state tracking variables
+static bool s_PrimaryInputDown = false;
+static bool s_PrimaryInputPressed = false;
+static bool s_PrimaryInputReleased = false;
+static Vector2 s_LastTouchPosition = {0, 0};
+
 void PlatformLayer::UpdateTouchState() {
-    if (!m_View) return;
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::UpdateTouchState ENTRY");
     
-    UIView* view = (__bridge UIView*)m_View;
-    // Accessing touches directly might not be the best approach. Consider using delegate methods or gesture recognizers.
-    // For now, we'll simulate an empty touch state or implement via delegate if touches are passed.
-    // NSSet* touches = view.window.allTouches; // This line caused an error, so we'll adjust the approach.
+    if (!m_View) {
+        TraceLog(LOG_WARNING, "[TOUCH] PlatformLayer::UpdateTouchState: No view available");
+        return;
+    }
     
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::UpdateTouchState: updating input states");
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::UpdateTouchState: static states - down=%s, pressed=%s, released=%s", 
+             s_PrimaryInputDown ? "true" : "false", 
+             s_PrimaryInputPressed ? "true" : "false", 
+             s_PrimaryInputReleased ? "true" : "false");
+    
+    // Update the input states based on the static variables
+    m_PrimaryInputDown = s_PrimaryInputDown;
+    m_PrimaryInputPressed = s_PrimaryInputPressed;
+    
+    // Keep the release state for one frame so button logic can detect it
+    // Only reset it after it has been read
+    m_PrimaryInputReleased = s_PrimaryInputReleased;
+    
+    // Clear the static release state after it has been copied to instance
+    if (s_PrimaryInputReleased) {
+        TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::UpdateTouchState: clearing static release state after copying to instance");
+        s_PrimaryInputReleased = false;
+    }
+    
+    // Clear the pressed state after one frame
+    if (s_PrimaryInputPressed) {
+        TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::UpdateTouchState: clearing static pressed state after copying to instance");
+        s_PrimaryInputPressed = false;
+    }
+    
+    // Update touch points
     m_TouchPoints.clear();
-    m_PrimaryInputDown = false;
-    m_PrimaryInputPressed = false;
-    m_PrimaryInputReleased = false;
-    m_SecondaryInputDown = false;
-    m_SecondaryInputPressed = false;
-    m_SecondaryInputReleased = false;
+    if (s_PrimaryInputDown) {
+        m_TouchPoints.push_back(s_LastTouchPosition);
+        TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::UpdateTouchState: added touch point at (%.1f, %.1f)", 
+                 s_LastTouchPosition.x, s_LastTouchPosition.y);
+    } else {
+        TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::UpdateTouchState: no touch points (touch not down)");
+    }
     
-    // If touch data comes from delegate or other source, update here.
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::UpdateTouchState: final states - down=%s, pressed=%s, released=%s, touchCount=%zu", 
+             m_PrimaryInputDown ? "true" : "false", 
+             m_PrimaryInputPressed ? "true" : "false", 
+             m_PrimaryInputReleased ? "true" : "false", 
+             m_TouchPoints.size());
+    
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::UpdateTouchState EXIT");
+}
+
+// Static function to update touch state from external sources
+void PlatformLayer::SetTouchState(bool pressed, float x, float y) {
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::SetTouchState ENTRY: pressed=%s, x=%.1f, y=%.1f", pressed ? "true" : "false", x, y);
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::SetTouchState: previous state - down=%s, pressed=%s, released=%s", 
+             s_PrimaryInputDown ? "true" : "false", 
+             s_PrimaryInputPressed ? "true" : "false", 
+             s_PrimaryInputReleased ? "true" : "false");
+    
+    s_LastTouchPosition = {x, y};
+    
+    if (pressed && !s_PrimaryInputDown) {
+        // Touch just started
+        TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::SetTouchState: Touch started - setting pressed=true, down=true, released=false");
+        s_PrimaryInputPressed = true;
+        s_PrimaryInputDown = true;
+        s_PrimaryInputReleased = false;
+    } else if (!pressed && s_PrimaryInputDown) {
+        // Touch just ended
+        TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::SetTouchState: Touch ended - setting pressed=false, down=false, released=true");
+        s_PrimaryInputPressed = false;
+        s_PrimaryInputDown = false;
+        s_PrimaryInputReleased = true;
+    } else {
+        TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::SetTouchState: Touch state unchanged - pressed=%s, down=%s", pressed ? "true" : "false", s_PrimaryInputDown ? "true" : "false");
+    }
+    
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::SetTouchState: new state - down=%s, pressed=%s, released=%s", 
+             s_PrimaryInputDown ? "true" : "false", 
+             s_PrimaryInputPressed ? "true" : "false", 
+             s_PrimaryInputReleased ? "true" : "false");
+    
+    // Update the PlatformLayer state immediately
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::SetTouchState calling UpdateTouchState");
+    PlatformLayer::GetInstance().UpdateTouchState();
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::SetTouchState UpdateTouchState completed");
+    
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::SetTouchState EXIT: pressed=%s, x=%.1f, y=%.1f", pressed ? "true" : "false", x, y);
+}
+
+// Static function to clear all touch states
+void PlatformLayer::ClearAllTouchStates() {
+    s_PrimaryInputDown = false;
+    s_PrimaryInputPressed = false;
+    s_PrimaryInputReleased = false;
+    s_LastTouchPosition = {0, 0};
+    
+    // Update the PlatformLayer state immediately
+    PlatformLayer::GetInstance().UpdateTouchState();
 }
 
 int PlatformLayer::GetTouchCount() const {
@@ -265,9 +414,24 @@ int PlatformLayer::GetTouchCount() const {
 }
 
 Vector2 PlatformLayer::GetTouchPosition(int index) const {
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::GetTouchPosition ENTRY: index=%d, touchPoints.size()=%zu", index, m_TouchPoints.size());
+    
     if (index >= 0 && index < m_TouchPoints.size()) {
-        return m_TouchPoints[index];
+        Vector2 touchPoint = m_TouchPoints[index];
+        // Convert from points to pixels by multiplying by screen scale
+        float scale = UIScreen.mainScreen.scale;
+        Vector2 pixelPos = Vector2{touchPoint.x * scale, touchPoint.y * scale};
+        
+        TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::GetTouchPosition: points=(%.1f,%.1f) -> pixels=(%.1f,%.1f), scale=%.1f", 
+                 touchPoint.x, touchPoint.y, pixelPos.x, pixelPos.y, scale);
+        
+        TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::GetTouchPosition EXIT: returning pixelPos=(%.1f,%.1f)", pixelPos.x, pixelPos.y);
+        return pixelPos;
     }
+    
+    TraceLog(LOG_WARNING, "[TOUCH] PlatformLayer::GetTouchPosition: No touch points available for index %d (size=%zu)", 
+             index, m_TouchPoints.size());
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::GetTouchPosition EXIT: returning (0,0)");
     return Vector2{0, 0};
 }
 
@@ -288,7 +452,9 @@ bool PlatformLayer::IsPrimaryInputPressed() const {
 }
 
 bool PlatformLayer::IsPrimaryInputReleased() const {
-    return m_PrimaryInputReleased;
+    bool result = m_PrimaryInputReleased;
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::IsPrimaryInputReleased called, returning %s", result ? "true" : "false");
+    return result;
 }
 
 bool PlatformLayer::IsSecondaryInputDown() const {

@@ -14,6 +14,7 @@
 #include "GameLog.h"
 #include "GameState.h"
 #include "AudioStateManager.h"
+#include "TouchControls.h"
 
 // Cross-platform logging macro
 #if defined(__OBJC__) && defined(__APPLE__) && TARGET_OS_IPHONE
@@ -101,4 +102,6 @@ private:
 	float gameOffsetY;
 	float renderedWidth;
 	float renderedHeight;
+
+    TouchControls touchControls;
 };

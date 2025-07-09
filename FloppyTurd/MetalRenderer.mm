@@ -30,7 +30,6 @@ MetalRenderer::MetalRenderer()
     , m_frameStartTime(0)
     , m_targetFrameTime(1.0f/60.0f)
 {
-    m_currentMatrix = matrix_identity_float4x4;
     m_projectionMatrix = matrix_identity_float4x4;
 }
 
@@ -78,11 +77,11 @@ bool MetalRenderer::Initialize(MTKView* view) {
         // Create buffers
         CreateBuffers();
         
-        // Create sampler state
+        // Create sampler state - use nearest-neighbor for crisp pixel art
         MTLSamplerDescriptor* samplerDesc = [[MTLSamplerDescriptor alloc] init];
-        samplerDesc.minFilter = MTLSamplerMinMagFilterLinear;
-        samplerDesc.magFilter = MTLSamplerMinMagFilterLinear;
-        samplerDesc.mipFilter = MTLSamplerMipFilterLinear;
+        samplerDesc.minFilter = MTLSamplerMinMagFilterNearest;
+        samplerDesc.magFilter = MTLSamplerMinMagFilterNearest;
+        samplerDesc.mipFilter = MTLSamplerMipFilterNearest;
         samplerDesc.sAddressMode = MTLSamplerAddressModeClampToEdge;
         samplerDesc.tAddressMode = MTLSamplerAddressModeClampToEdge;
         m_samplerState = [m_device newSamplerStateWithDescriptor:samplerDesc];
@@ -128,7 +127,7 @@ void MetalRenderer::Shutdown() {
     m_vertices.clear();
     m_drawCommands.clear();
     m_instanceData.clear();
-    m_matrixStack.clear();
+    // Matrix stack removed - using CPU vertex transformation
 }
 
 void MetalRenderer::CreatePipelines() {
@@ -540,8 +539,8 @@ void MetalRenderer::UpdateUniforms() {
     
     // Update the uniform data
     uniforms->projectionMatrix = m_projectionMatrix;
-    uniforms->modelViewMatrix = m_currentMatrix;
     uniforms->distanceRange = 4.0f; // Match AtlasConfig::distanceRange
+    uniforms->time = 0.0f; // Initialize time for future effects
     
     // Set the uniform buffer for rendering
     [m_currentEncoder setVertexBuffer:m_frameResources.GetCurrentUniformBuffer() 
@@ -1209,6 +1208,35 @@ void MetalRenderer::AddTexturedRectangleVertices(Rectangle dest, Rectangle sourc
     AddVertex(dest.x + dest.width, dest.y + dest.height, u2, v2, tint); // bottom-right
 }
 
+void MetalRenderer::AddTransformedTexturedQuad(const simd_float2 vertices[4], id<MTLTexture> texture, Color tint) {
+    if (!texture) {
+        TraceLog(LOG_ERROR, "[METAL ERROR] AddTransformedTexturedQuad: Null texture");
+        return;
+    }
+    
+    // Set current texture for UV normalization
+    m_currentTexture = texture;
+    
+    // Use full texture coordinates (0,0) to (1,1)
+    float u1 = 0.0f, v1 = 0.0f;
+    float u2 = 1.0f, v2 = 1.0f;
+    
+    TraceLog(LOG_INFO, "[METAL DEBUG] AddTransformedTexturedQuad: texture=%p, vertices=[(%.1f,%.1f),(%.1f,%.1f),(%.1f,%.1f),(%.1f,%.1f)]", 
+             texture, vertices[0].x, vertices[0].y, vertices[1].x, vertices[1].y, 
+             vertices[2].x, vertices[2].y, vertices[3].x, vertices[3].y);
+    
+    // Two triangles to make a quad using the pre-transformed vertices
+    // Triangle 1: vertices[0], vertices[1], vertices[2] (top-left, top-right, bottom-left)
+    AddVertex(vertices[0].x, vertices[0].y, u1, v1, tint);  // top-left
+    AddVertex(vertices[1].x, vertices[1].y, u2, v1, tint);  // top-right
+    AddVertex(vertices[2].x, vertices[2].y, u1, v2, tint);  // bottom-left
+    
+    // Triangle 2: vertices[1], vertices[2], vertices[3] (top-right, bottom-left, bottom-right)
+    AddVertex(vertices[1].x, vertices[1].y, u2, v1, tint);  // top-right
+    AddVertex(vertices[2].x, vertices[2].y, u1, v2, tint);  // bottom-left
+    AddVertex(vertices[3].x, vertices[3].y, u2, v2, tint);  // bottom-right
+}
+
 void MetalRenderer::DrawTextureEx(id<MTLTexture> texture, Vector2 position, float rotation, float scale, Color tint) {
     if (!texture) {
         TraceLog(LOG_WARNING, "[METAL DEBUG] DrawTextureEx: Null texture");
@@ -1216,53 +1244,80 @@ void MetalRenderer::DrawTextureEx(id<MTLTexture> texture, Vector2 position, floa
     }
     
     // Get texture dimensions
-    float width = texture.width * scale;
-    float height = texture.height * scale;
+    float width = texture.width;
+    float height = texture.height;
     
-    TraceLog(LOG_INFO, "[METAL DEBUG] DrawTextureEx: texture=%p, pos=(%.1f,%.1f), rotation=%.2f, scale=%.2f, size=%fx%f", 
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawTextureEx (CPU): texture=%p, pos=(%.1f,%.1f), rotation=%.2f, scale=%.2f, size=%fx%f", 
              texture, position.x, position.y, rotation, scale, width, height);
     
-    // Save current matrix
-    PushMatrix();
-    
+    // Calculate transform matrix on CPU
     // Apply transformations in the correct order for center pivot rotation:
     // 1. Translate to the desired position (center of the scaled texture)
-    float centerX = position.x + width * 0.5f;
-    float centerY = position.y + height * 0.5f;
-    TranslateMatrix(centerX, centerY);
-    TraceLog(LOG_INFO, "[METAL DEBUG] DrawTextureEx: Translated to center (%.1f,%.1f)", centerX, centerY);
+    float centerX = position.x + (width * scale) * 0.5f;
+    float centerY = position.y + (height * scale) * 0.5f;
+    
+    simd_float4x4 transform = MakeTranslationMatrix(centerX, centerY);
     
     // 2. Rotate around the center
     if (rotation != 0) {
-        RotateMatrix(rotation);
-        TraceLog(LOG_INFO, "[METAL DEBUG] DrawTextureEx: Applied rotation %.2f radians", rotation);
+        transform = simd_mul(transform, MakeRotationMatrix(rotation));
+        TraceLog(LOG_INFO, "[METAL DEBUG] DrawTextureEx (CPU): Applied rotation %.2f radians", rotation);
     }
     
     // 3. Scale the texture
-    ScaleMatrix(scale, scale);
-    TraceLog(LOG_INFO, "[METAL DEBUG] DrawTextureEx: Applied scale %.2f", scale);
+    if (scale != 1.0f) {
+        transform = simd_mul(transform, MakeScaleMatrix(scale, scale));
+        TraceLog(LOG_INFO, "[METAL DEBUG] DrawTextureEx (CPU): Applied scale %.2f", scale);
+    }
     
     // 4. Translate back so the texture is centered at origin before scaling
-    float offsetX = -(float)texture.width * 0.5f;
-    float offsetY = -(float)texture.height * 0.5f;
-    TranslateMatrix(offsetX, offsetY);
-    TraceLog(LOG_INFO, "[METAL DEBUG] DrawTextureEx: Translated back by (%.1f,%.1f)", offsetX, offsetY);
+    float offsetX = -width * 0.5f;
+    float offsetY = -height * 0.5f;
+    transform = simd_mul(transform, MakeTranslationMatrix(offsetX, offsetY));
     
-    // Update uniforms with the new matrix before drawing
-    UpdateUniforms();
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawTextureEx (CPU): Transform calculated, center=(%.1f,%.1f), offset=(%.1f,%.1f)", 
+             centerX, centerY, offsetX, offsetY);
     
-    // Draw texture at origin with original dimensions (will be transformed by matrix)
-    Rectangle source = {0, 0, (float)texture.width, (float)texture.height};
-    Rectangle dest = {0, 0, (float)texture.width, (float)texture.height};
-    DrawTexture(texture, source, dest, tint);
+    // Transform vertices on CPU
+    simd_float4 localVertices[4] = {
+        simd_make_float4(0, 0, 0, 1),           // top-left
+        simd_make_float4(width, 0, 0, 1),       // top-right
+        simd_make_float4(0, height, 0, 1),      // bottom-left
+        simd_make_float4(width, height, 0, 1)   // bottom-right
+    };
     
-    // Restore matrix
-    PopMatrix();
+    simd_float2 transformedVertices[4];
+    for (int i = 0; i < 4; i++) {
+        simd_float4 transformed = simd_mul(transform, localVertices[i]);
+        transformedVertices[i] = simd_make_float2(transformed.x, transformed.y);
+    }
     
-    // Update uniforms with the restored matrix (identity) so subsequent draws aren't affected
-    UpdateUniforms();
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawTextureEx (CPU): Transformed vertices: [(%.1f,%.1f),(%.1f,%.1f),(%.1f,%.1f),(%.1f,%.1f)]", 
+             transformedVertices[0].x, transformedVertices[0].y, transformedVertices[1].x, transformedVertices[1].y,
+             transformedVertices[2].x, transformedVertices[2].y, transformedVertices[3].x, transformedVertices[3].y);
     
-    TraceLog(LOG_INFO, "[METAL DEBUG] DrawTextureEx: Matrix restored");
+    // Submit pre-transformed vertices to GPU
+    AddTransformedTexturedQuad(transformedVertices, texture, tint);
+    
+    // Create draw command
+    DrawCommand cmd;
+    cmd.primitiveType = MTLPrimitiveTypeTriangle;
+    cmd.vertexStart = m_vertices.size() - 6;
+    cmd.vertexCount = 6;
+    cmd.texture = texture;
+    cmd.useTexture = true;
+    cmd.renderState = RENDER_STATE_ALPHA_BLEND;
+    cmd.textureId = GetTextureHash(texture);
+    cmd.depth = 0.0f;
+    cmd.sortKey = 0;
+    cmd.instanceCount = 1;
+    cmd.instanceDataOffset = 0;
+    cmd.debugName = "DrawTextureEx (CPU)";
+    
+    m_drawCommands.push_back(cmd);
+    
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawTextureEx (CPU): Added draw command, vertices=%zu, commands=%zu", 
+             m_vertices.size(), m_drawCommands.size());
 }
 
 void MetalRenderer::DrawText(const char* text, float x, float y, float fontSize, Color color) {
@@ -1350,28 +1405,7 @@ void MetalRenderer::DrawText(const char* text, float x, float y, float fontSize,
     DrawTexture(textTexture, source, dest, WHITE, RenderLayer::Text);
 }
 
-void MetalRenderer::PushMatrix() {
-    m_matrixStack.push_back(m_currentMatrix);
-}
-
-void MetalRenderer::PopMatrix() {
-    if (!m_matrixStack.empty()) {
-        m_currentMatrix = m_matrixStack.back();
-        m_matrixStack.pop_back();
-    }
-}
-
-void MetalRenderer::TranslateMatrix(float x, float y) {
-    m_currentMatrix = simd_mul(m_currentMatrix, MakeTranslationMatrix(x, y));
-}
-
-void MetalRenderer::RotateMatrix(float angle) {
-    m_currentMatrix = simd_mul(m_currentMatrix, MakeRotationMatrix(angle));
-}
-
-void MetalRenderer::ScaleMatrix(float x, float y) {
-    m_currentMatrix = simd_mul(m_currentMatrix, MakeScaleMatrix(x, y));
-}
+// Matrix stack methods removed - using CPU vertex transformation instead
 
 void MetalRenderer::DrawRoundedCorner(float centerX, float centerY, float radius, int segments, int corner, Color color) {
     TraceLog(LOG_INFO, "[METAL DEBUG] DrawRoundedCorner: center=(%.1f,%.1f), radius=%.1f, segments=%d, corner=%d, color=(%d,%d,%d,%d)", 

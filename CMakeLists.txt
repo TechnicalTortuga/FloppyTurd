@@ -187,6 +187,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
     
     target_compile_definitions(${PROJECT_NAME} PRIVATE 
         PLATFORM_IOS
+        PLATFORM_MOBILE
         __APPLE__
         TARGET_OS_IOS=1
     )

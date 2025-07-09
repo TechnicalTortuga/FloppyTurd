@@ -12,7 +12,8 @@ enum MenuState
 	MAIN_MENU,
 	LEVEL_SELECT,
 	OPTIONS_MENU,
-	QUICKPLAY_SETTINGS
+	QUICKPLAY_SETTINGS,
+	MOBILE_OPTIONS_MENU
 };
 
 class MainMenu
@@ -48,6 +49,8 @@ private:
 	void ToggleFartMusic();
 	void DrawDesktopUI();
 	void DrawMobileUI();
+	void DrawMobileLevelSelect();
+	void DrawMobileOptionsMenu();
 
 	Game* game;
 	MenuState currentMenu{ MAIN_MENU };
@@ -56,6 +59,11 @@ private:
 	Texture2D emptyPainting;
 	int currentLevelIndex{ 0 };
 	bool levelSelectMode = false;
+	
+	// Mobile level select variables
+	float levelSelectScrollOffset;
+	float lastTouchX;
+	bool isDragging;
 
 	Texture2D levelPaintings[6];
 	Texture2D lockedPainting;

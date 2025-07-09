@@ -867,6 +867,11 @@ void Playing::DrawGameOverScreen() {
 void Playing::Update() {
     deltaTime = GetFrameTime();
 
+    // Update touch controls for mobile
+    if (touchControls && touchControls->IsEnabled()) {
+        touchControls->Update();
+    }
+
     if (isPaused) {
         return;
     }

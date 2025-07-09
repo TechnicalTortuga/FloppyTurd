@@ -48,6 +48,10 @@ public:
     void Initialize(void* nativeView);
     // Overload for initialization when native view is not yet available (e.g., desktop or high-level bootstrap)
     void Initialize();
+    // Overload for iOS that accepts GameViewController for touch event forwarding
+#ifdef PLATFORM_IOS
+    void Initialize(void* nativeView, void* gameViewController);
+#endif
     void Shutdown();
 
     // App lifecycle events
@@ -173,6 +177,10 @@ public:
 
     bool IsMobilePlatform() const;
     void UpdateTouchState();
+    
+    // Static touch state management functions
+    static void SetTouchState(bool pressed, float x, float y);
+    static void ClearAllTouchStates();
 
 private:
     // Private constructor for singleton

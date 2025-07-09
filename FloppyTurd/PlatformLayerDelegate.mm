@@ -4,6 +4,7 @@
 #import "MetalRenderer.h"
 #import "Game.h"
 #import "RaylibCompat.h"
+#import "GameViewController.h"
 
 // Helper to convert Color to unsigned int (RGBA)
 static inline unsigned int ColorToUInt(Color c) {
@@ -15,16 +16,24 @@ static inline unsigned int ColorToUInt(Color c) {
     id<MTLDevice> _device;
     MetalRenderer* _metalRenderer;
     BOOL _isInitialized;
+    GameViewController* _gameViewController;
 }
 
-- (instancetype)initWithView:(MTKView*)view {
+- (instancetype)initWithView:(MTKView*)view gameViewController:(GameViewController*)gameViewController {
     self = [super init];
     if (self) {
-        TraceLog(LOG_INFO, "[DEBUG] PlatformLayerDelegate initWithView called");
+        TraceLog(LOG_INFO, "[INIT] ========================================");
+        TraceLog(LOG_INFO, "[INIT] PlatformLayerDelegate initWithView STARTING");
+        TraceLog(LOG_INFO, "[INIT] ========================================");
+        TraceLog(LOG_INFO, "[INIT] MTKView: %p", view);
+        TraceLog(LOG_INFO, "[INIT] MTKView frame: %@", NSStringFromCGRect(view.frame));
+        TraceLog(LOG_INFO, "[INIT] MTKView bounds: %@", NSStringFromCGRect(view.bounds));
+        TraceLog(LOG_INFO, "[INIT] GameViewController: %p", gameViewController);
         
         _view = view;
         _device = view.device;
-        TraceLog(LOG_INFO, "[DEBUG] Metal device: %@", _device ? @"available" : @"nil");
+        _gameViewController = gameViewController;
+        TraceLog(LOG_INFO, "[INIT] Metal device: %p", _device);
         
         if (!_device) {
             TraceLog(LOG_ERROR, "[ERROR] Metal is not supported on this device");
@@ -32,20 +41,31 @@ static inline unsigned int ColorToUInt(Color c) {
         }
         
         // Initialize MetalRenderer
+        TraceLog(LOG_INFO, "[INIT] Creating MetalRenderer");
         _metalRenderer = new MetalRenderer();
         if (!_metalRenderer->Initialize(view)) {
             TraceLog(LOG_ERROR, "[ERROR] Failed to initialize MetalRenderer");
             return nil;
         }
+        TraceLog(LOG_INFO, "[INIT] MetalRenderer initialized successfully: %p", _metalRenderer);
         
-        TraceLog(LOG_INFO, "[DEBUG] Setting up MTKView properties");
+        TraceLog(LOG_INFO, "[INIT] Setting up MTKView properties");
         view.delegate = self;
         view.enableSetNeedsDisplay = YES;
         view.preferredFramesPerSecond = 60;
+        view.multipleTouchEnabled = YES;
+        view.userInteractionEnabled = YES;
+        TraceLog(LOG_INFO, "[INIT] MTKView delegate set to self: %p", view.delegate);
+        TraceLog(LOG_INFO, "[INIT] MTKView enableSetNeedsDisplay: %s", view.enableSetNeedsDisplay ? "YES" : "NO");
+        TraceLog(LOG_INFO, "[INIT] MTKView preferredFramesPerSecond: %ld", (long)view.preferredFramesPerSecond);
+        TraceLog(LOG_INFO, "[INIT] MTKView multipleTouchEnabled: %s", view.multipleTouchEnabled ? "YES" : "NO");
+        TraceLog(LOG_INFO, "[INIT] MTKView userInteractionEnabled: %s", view.userInteractionEnabled ? "YES" : "NO");
         
-        TraceLog(LOG_INFO, "[DEBUG] MetalRenderer setup complete");
+        TraceLog(LOG_INFO, "[INIT] MetalRenderer setup complete");
         _isInitialized = YES;
-        TraceLog(LOG_INFO, "[DEBUG] PlatformLayerDelegate initialization complete");
+        TraceLog(LOG_INFO, "[INIT] ========================================");
+        TraceLog(LOG_INFO, "[INIT] PlatformLayerDelegate initialization COMPLETED");
+        TraceLog(LOG_INFO, "[INIT] ========================================");
     }
     return self;
 }
@@ -356,6 +376,60 @@ static inline unsigned int ColorToUInt(Color c) {
 
 - (void*)getMetalRenderer {
     return _metalRenderer;
+}
+
+#pragma mark - Touch Event Forwarding
+
+- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayerDelegate touchesBegan called with %lu touches", (unsigned long)touches.count);
+    
+    // Forward touch events to GameViewController
+    if (_gameViewController) {
+        TraceLog(LOG_INFO, "[TOUCH] PlatformLayerDelegate forwarding touchesBegan to GameViewController %p", _gameViewController);
+        [_gameViewController touchesBegan:touches withEvent:event];
+        TraceLog(LOG_INFO, "[TOUCH] PlatformLayerDelegate touchesBegan forwarding completed");
+    } else {
+        TraceLog(LOG_ERROR, "[TOUCH] PlatformLayerDelegate GameViewController is null, cannot forward touchesBegan");
+    }
+}
+
+- (void)touchesMoved:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayerDelegate touchesMoved called with %lu touches", (unsigned long)touches.count);
+    
+    // Forward touch events to GameViewController
+    if (_gameViewController) {
+        TraceLog(LOG_INFO, "[TOUCH] PlatformLayerDelegate forwarding touchesMoved to GameViewController %p", _gameViewController);
+        [_gameViewController touchesMoved:touches withEvent:event];
+        TraceLog(LOG_INFO, "[TOUCH] PlatformLayerDelegate touchesMoved forwarding completed");
+    } else {
+        TraceLog(LOG_ERROR, "[TOUCH] PlatformLayerDelegate GameViewController is null, cannot forward touchesMoved");
+    }
+}
+
+- (void)touchesEnded:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayerDelegate touchesEnded called with %lu touches", (unsigned long)touches.count);
+    
+    // Forward touch events to GameViewController
+    if (_gameViewController) {
+        TraceLog(LOG_INFO, "[TOUCH] PlatformLayerDelegate forwarding touchesEnded to GameViewController %p", _gameViewController);
+        [_gameViewController touchesEnded:touches withEvent:event];
+        TraceLog(LOG_INFO, "[TOUCH] PlatformLayerDelegate touchesEnded forwarding completed");
+    } else {
+        TraceLog(LOG_ERROR, "[TOUCH] PlatformLayerDelegate GameViewController is null, cannot forward touchesEnded");
+    }
+}
+
+- (void)touchesCancelled:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayerDelegate touchesCancelled called with %lu touches", (unsigned long)touches.count);
+    
+    // Forward touch events to GameViewController
+    if (_gameViewController) {
+        TraceLog(LOG_INFO, "[TOUCH] PlatformLayerDelegate forwarding touchesCancelled to GameViewController %p", _gameViewController);
+        [_gameViewController touchesCancelled:touches withEvent:event];
+        TraceLog(LOG_INFO, "[TOUCH] PlatformLayerDelegate touchesCancelled forwarding completed");
+    } else {
+        TraceLog(LOG_ERROR, "[TOUCH] PlatformLayerDelegate GameViewController is null, cannot forward touchesCancelled");
+    }
 }
 
 @end

@@ -1635,8 +1635,17 @@ bool CheckCollisionCircleRec(Vector2 center, float radius, Rectangle rec) {
 
 bool CheckCollisionPointRec(Vector2 point, Rectangle rec) {
     // Check if point is inside rectangle
-    return (point.x >= rec.x && point.x <= rec.x + rec.width &&
-            point.y >= rec.y && point.y <= rec.y + rec.height);
+    bool collision = (point.x >= rec.x && point.x <= rec.x + rec.width &&
+                     point.y >= rec.y && point.y <= rec.y + rec.height);
+    
+    // Log collision detection for debugging (throttled to avoid spam)
+    static int collisionLogCounter = 0;
+    if (++collisionLogCounter % 120 == 0) { // Log every 120 frames (2 seconds at 60fps)
+        TraceLog(LOG_INFO, "[COLLISION] CheckCollisionPointRec: point=(%.1f,%.1f), rect=(%.1f,%.1f,%.1f,%.1f), collision=%d", 
+                 point.x, point.y, rec.x, rec.y, rec.width, rec.height, collision);
+    }
+    
+    return collision;
 }
 
 bool CheckCollisionRecs(Rectangle rec1, Rectangle rec2) {
@@ -1669,13 +1678,19 @@ float GetMusicDuration(Music music) {
 
 // iOS-specific input handling functions
 void UpdateTouchState(int touchId, float x, float y, bool pressed) {
-    // Forward touch state to PlatformLayer
-    PlatformLayer::GetInstance().UpdateTouchState();
+    TraceLog(LOG_INFO, "[TOUCH] UpdateTouchState ENTRY: touchId=%d, x=%.1f, y=%.1f, pressed=%s", touchId, x, y, pressed ? "true" : "false");
+    
+    // Forward touch state to PlatformLayer with actual coordinates
+    TraceLog(LOG_INFO, "[TOUCH] UpdateTouchState calling PlatformLayer::SetTouchState");
+    PlatformLayer::SetTouchState(pressed, x, y);
+    TraceLog(LOG_INFO, "[TOUCH] UpdateTouchState PlatformLayer::SetTouchState completed");
+    
+    TraceLog(LOG_INFO, "[TOUCH] UpdateTouchState EXIT: touchId=%d, x=%.1f, y=%.1f, pressed=%s", touchId, x, y, pressed ? "true" : "false");
 }
 
 void ClearAllTouchStates(void) {
-    // Simple implementation - just call UpdateTouchState to refresh
-    PlatformLayer::GetInstance().UpdateTouchState();
+    // Clear all touch states
+    PlatformLayer::ClearAllTouchStates();
 }
 
 void UpdateSafeAreaInsets(float top, float right, float bottom, float left) {

@@ -232,6 +232,32 @@ public:
     {
         return GetWindowScaleDPI().x;
     }
+    
+    // Static touch state management functions
+    static void SetTouchState(bool pressed, float x, float y) {
+        // This is implemented in PlatformLayer.mm for iOS
+        // For desktop, we can implement basic mouse simulation here
+#ifdef PLATFORM_MOBILE
+        // iOS implementation is in PlatformLayer.mm
+#else
+        // Desktop implementation - simulate touch with mouse
+        if (pressed) {
+            // Simulate mouse press
+            // This would need to be implemented based on the desktop input system
+        }
+#endif
+    }
+    
+    static void ClearAllTouchStates() {
+        // This is implemented in PlatformLayer.mm for iOS
+        // For desktop, we can implement basic mouse simulation here
+#ifdef PLATFORM_MOBILE
+        // iOS implementation is in PlatformLayer.mm
+#else
+        // Desktop implementation - clear mouse states
+        // This would need to be implemented based on the desktop input system
+#endif
+    }
 };
 
 // --- PlatformLayer methods forwarding to PIMPL ---
@@ -282,4 +308,13 @@ std::string PlatformLayer::GetPlatformResourcePath(const std::string& relativePa
     // On other platforms, prepend "resources/" for file system access
     return "resources/" + relativePath;
 #endif
+}
+
+// Static touch state management functions
+void PlatformLayer::SetTouchState(bool pressed, float x, float y) {
+    m_pImpl->SetTouchState(pressed, x, y);
+}
+
+void PlatformLayer::ClearAllTouchStates() {
+    m_pImpl->ClearAllTouchStates();
 } 

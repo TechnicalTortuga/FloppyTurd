@@ -488,6 +488,12 @@ bool Game::Initialize()
             GameLog::Log("[WARNING] Step 11: Continuing without AudioStateManager");
         }
         
+        // Initialize TouchControls for mobile
+#ifdef PLATFORM_MOBILE
+    touchControls.Initialize(GetScreenWidth(), GetScreenHeight());
+    AIGUI_SetTouchControls(&touchControls);
+#endif
+        
         GameLog::Log("[INIT] =========================================");
         GameLog::Log("[INIT] Game::Initialize() COMPLETED SUCCESSFULLY");
         {
@@ -756,6 +762,63 @@ Font Game::GetScaledFont(float scaleFactor)
 
 void Game::UpdateFrame(float deltaTime)
 {
+    // Debug logging to see if UpdateFrame is being called
+    static int frameCount = 0;
+    if (++frameCount % 60 == 0) { // Log every 60 frames
+        TraceLog(LOG_INFO, "[GAME] UpdateFrame called (count: %d), gamestate: %d, PLATFORM_MOBILE: %s", 
+                 frameCount, gamestate, 
+#ifdef PLATFORM_MOBILE
+                 "DEFINED"
+#else
+                 "NOT DEFINED"
+#endif
+                 );
+    }
+    
+#ifdef PLATFORM_MOBILE
+    // --- MOBILE INPUT PATH ---
+    TraceLog(LOG_INFO, "[GAME] Mobile input polling ENTRY");
+    
+    // Use touch input from PlatformLayer instead of GetMousePosition()
+    auto& platform = PlatformLayer::GetInstance();
+    TraceLog(LOG_INFO, "[GAME] Mobile input: calling platform.GetTouchPosition(0)");
+    Vector2 touchPos = platform.GetTouchPosition(0); // Get primary touch position
+    TraceLog(LOG_INFO, "[GAME] Mobile input: platform.GetTouchPosition(0) returned (%.1f,%.1f)", touchPos.x, touchPos.y);
+    
+    // Convert from pixels back to UI coordinate system (points)
+    float scale = platform.GetScreenScale();
+    Vector2 uiPos = Vector2{touchPos.x / scale, touchPos.y / scale};
+    TraceLog(LOG_INFO, "[GAME] Mobile input: converting pixels=(%.1f,%.1f) to UI points=(%.1f,%.1f), scale=%.1f", 
+             touchPos.x, touchPos.y, uiPos.x, uiPos.y, scale);
+    
+    // Log touch position for debugging
+    static int mobileLogCounter = 0;
+    if (++mobileLogCounter % 60 == 0) { // Log every 60 frames
+        TraceLog(LOG_INFO, "[GAME] Mobile input: touchPos=(%.1f,%.1f), uiPos=(%.1f,%.1f), mousePos=(%.1f,%.1f)", 
+                 touchPos.x, touchPos.y, uiPos.x, uiPos.y, g_AIGUI.mousePos.x, g_AIGUI.mousePos.y);
+    }
+    
+    // Update AIGUI mouse position with UI coordinates (points)
+    Vector2 oldMousePos = g_AIGUI.mousePos;
+    TraceLog(LOG_INFO, "[GAME] Mobile input: updating AIGUI mousePos from (%.1f,%.1f) to (%.1f,%.1f)", 
+             oldMousePos.x, oldMousePos.y, uiPos.x, uiPos.y);
+    g_AIGUI.mousePos = uiPos;
+    
+    // Log when mouse position changes (indicating touch input)
+    if (oldMousePos.x != uiPos.x || oldMousePos.y != uiPos.y) {
+        TraceLog(LOG_INFO, "[GAME] Touch input detected: oldPos=(%.1f,%.1f) -> newPos=(%.1f,%.1f)", 
+                 oldMousePos.x, oldMousePos.y, uiPos.x, uiPos.y);
+    }
+    
+    TraceLog(LOG_INFO, "[GAME] Mobile input polling EXIT");
+    
+    // Log TouchControls update
+    static int touchControlsLogCounter = 0;
+    if (++touchControlsLogCounter % 60 == 0) { // Log every 60 frames
+        TraceLog(LOG_INFO, "[GAME] Calling TouchControls::Update() - frame %d", touchControlsLogCounter);
+    }
+    touchControls.Update();
+#endif
 	// Handle shutdown state
 	if (gamestate == SHUTDOWN)
 	{
@@ -848,11 +911,11 @@ void Game::UpdateFrame(float deltaTime)
 	#endif
 	
 	// Debug output for first few frames
-	static int frameCount = 0;
-	if (frameCount < 10) {  // Show more frames to catch any changes
+	static int debugFrameCount = 0;
+	if (debugFrameCount < 10) {  // Show more frames to catch any changes
 		// Get actual monitor information
 		printf("Frame %d: Effective=%.0fx%.0f, Scale=%.3f, Rendered=%.0fx%.0f, Offset=(%.1f,%.1f)\n", 
-			frameCount, effectiveWidth, effectiveHeight, gameScale, renderedWidth, renderedHeight, gameOffsetX, gameOffsetY);
+			debugFrameCount, effectiveWidth, effectiveHeight, gameScale, renderedWidth, renderedHeight, gameOffsetX, gameOffsetY);
 		printf("  ScaleX=%.6f, ScaleY=%.6f, Diff=%.6f\n", scaleX, scaleY, fabs(scaleX - scaleY));
 		printf("  Expected for 16:9: %.0fx%.0f\n", effectiveHeight * GAME_ASPECT, effectiveHeight);
 		printf("  Unused space: X=%.1f, Y=%.1f\n", effectiveWidth - renderedWidth, effectiveHeight - renderedHeight);
@@ -863,17 +926,15 @@ void Game::UpdateFrame(float deltaTime)
 			realMonitorWidth - (int)screenWidth, realMonitorHeight - (int)screenHeight,
 			IsWindowFullscreen() ? "YES" : "NO",
 			(hasDiscrepancy && IsWindowFullscreen()) ? "REAL" : "REPORTED");
-		frameCount++;
+		debugFrameCount++;
 	}
 	
 	// -------------------------------------------------------------------------
 	// 2) Proper mouse coordinate mapping with letterbox offset
 	// -------------------------------------------------------------------------
 #if defined(PLATFORM_MOBILE)
-    // --- MOBILE INPUT PATH ---
-    // On mobile, the coordinates from GetMousePosition() (which is mapped to touch)
-    // are already in the screen's coordinate space. No scaling is needed.
-    g_AIGUI.mousePos = GetMousePosition();
+    // --- MOBILE INPUT PATH (ALREADY HANDLED ABOVE) ---
+    // Touch input is already processed in the earlier mobile input section
 #else
     // --- DESKTOP INPUT PATH (UNCHANGED) ---
 	Vector2 rawMouse = GetMousePosition();

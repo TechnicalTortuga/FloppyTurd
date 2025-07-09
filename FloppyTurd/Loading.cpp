@@ -189,10 +189,10 @@ void Loading::Update(float deltaTime) {
         return;
     }
     
-    // Update loading animation (poophat spin)
-    rotationAngle += 180.0f * deltaTime; // 180 degrees per second
-    if (rotationAngle >= 360.0f) {
-        rotationAngle -= 360.0f;
+    // Update loading animation (poophat spin) - counter-clockwise
+    rotationAngle -= 180.0f * deltaTime; // 180 degrees per second counter-clockwise
+    if (rotationAngle <= -360.0f) {
+        rotationAngle += 360.0f;
     }
     
     // Check if background font loading is complete
@@ -264,16 +264,14 @@ void Loading::Draw() {
         Vector2 center = ui.GetPosition(UIAnchor::CENTER, {0, 0}, true);
         float poophatSize = fminf(safeAreaPx.width, safeAreaPx.height) * 0.18f;
         poophatSize = fmaxf(poophatSize, 96.0f);
-        Rectangle dest = {
+        // Use CPU vertex transformation for poophat rotation
+        Vector2 poophatPosition = {
             center.x - poophatSize / 2.0f,
-            center.y - poophatSize / 2.0f,
-            poophatSize,
-            poophatSize
+            center.y - poophatSize / 2.0f
         };
-        Rectangle source = { 0, 0, (float)this->poophat.width, (float)this->poophat.height };
-        // Convert degrees to radians for the Metal renderer
+        float poophatScale = poophatSize / (float)this->poophat.width;
         float rotationRadians = this->rotationAngle * DEG2RAD;
-        DrawTexturePro(this->poophat, source, dest, { poophatSize/2.0f, poophatSize/2.0f }, rotationRadians, WHITE);
+        DrawTextureEx(this->poophat, poophatPosition, rotationRadians, poophatScale, WHITE);
     }
 
     // --- Progress bar at bottom center ---
@@ -286,12 +284,7 @@ void Loading::Draw() {
     DrawRectangleRounded(barRect, 0.4f, 12, ColorAlpha(WHITE, 0.18f));
     DrawRectangleRounded(barFillRect, 0.4f, 12, WHITE);
 
-    // --- Loading text above bar ---
-    const char* loadingText = "Loading...";
-    int fontSize = (int)fmaxf(18.0f, safeAreaPx.height * 0.035f);
-    int textWidth = MeasureText(loadingText, fontSize);
-    float textY = barY - fontSize * 1.6f;
-    DrawText(loadingText, (screenWidthPx - textWidth) / 2, textY, fontSize, WHITE);
+    // --- Loading text removed - just show the progress bar ---
 
     // --- Progress percent below bar ---
     // char progressText[32];

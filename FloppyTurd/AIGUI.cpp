@@ -119,18 +119,25 @@ AIGUI_DEF void AIGUI_SetTouchControls(class TouchControls* controls) {
 AIGUI_DEF bool AIGUI_ButtonRounded(const char* label, float x, float y, float width, float height, float radius, int fontSize, Color textColor) {
     // Use fontSize=18 for main menu buttons unless otherwise specified
     if (fontSize > 36) fontSize = 36;
-    TraceLog(LOG_INFO, "[AIGUI] ButtonRounded called with label: %s, rect=(%.1f,%.1f,%.1f,%.1f), fontSize=%d, textColor=(%d,%d,%d,%d)", label, x, y, width, height, fontSize, textColor.r, textColor.g, textColor.b, textColor.a);
+    TraceLog(LOG_INFO, "[AIGUI] ButtonRounded ENTRY: label=%s, rect=(%.1f,%.1f,%.1f,%.1f), fontSize=%d", label, x, y, width, height, fontSize);
     
     Rectangle rect = { x, y, width, height };
     bool mouseOutsideGameArea = (g_AIGUI.mousePos.x < 0 || g_AIGUI.mousePos.y < 0);
+    TraceLog(LOG_INFO, "[AIGUI] ButtonRounded: mousePos=(%.1f,%.1f), mouseOutsideGameArea=%d", g_AIGUI.mousePos.x, g_AIGUI.mousePos.y, mouseOutsideGameArea);
+    
     bool hovered = !mouseOutsideGameArea && CheckCollisionPointRec(g_AIGUI.mousePos, rect);
+    TraceLog(LOG_INFO, "[AIGUI] ButtonRounded: CheckCollisionPointRec returned hovered=%d", hovered);
+    
     auto& platform = PlatformLayer::GetInstance();
     bool clicked = hovered && platform.IsPrimaryInputReleased();
+    TraceLog(LOG_INFO, "[AIGUI] ButtonRounded: platform.IsPrimaryInputReleased()=%d, clicked=%d", platform.IsPrimaryInputReleased(), clicked);
+    
     bool gestureTriggered = false;
     
     if (g_AIGUI.isMobile) {
         if (AIGUI_IsGestureDetected(GESTURE_TAP) && CheckCollisionPointRec(_GetScaledInputPosition(), rect)) {
             gestureTriggered = true;
+            TraceLog(LOG_INFO, "[AIGUI] ButtonRounded: gesture triggered");
         }
     }
     
@@ -149,9 +156,8 @@ AIGUI_DEF bool AIGUI_ButtonRounded(const char* label, float x, float y, float wi
         outlineColor = Color{100, 100, 100, 255}; // Dark gray outline
     }
     
-    TraceLog(LOG_INFO, "[AIGUI] Button state: hovered=%d, clicked=%d, gestureTriggered=%d, bgColor=(%d,%d,%d,%d), outlineColor=(%d,%d,%d,%d)", 
-             hovered, clicked, gestureTriggered, bgColor.r, bgColor.g, bgColor.b, bgColor.a, 
-             outlineColor.r, outlineColor.g, outlineColor.b, outlineColor.a);
+    TraceLog(LOG_INFO, "[AIGUI] ButtonRounded: final state - hovered=%d, clicked=%d, gestureTriggered=%d", 
+             hovered, clicked, gestureTriggered);
     
     // Draw button background with visible color
     DrawRectangleRounded(rect, radius, 8, bgColor);
@@ -170,14 +176,15 @@ AIGUI_DEF bool AIGUI_ButtonRounded(const char* label, float x, float y, float wi
         float descent = g_AIGUI.defaultFont.baseSize * 0.2f; // Approximate descent
         textY = y + (height + ascent - descent - textSize.y) / 2.0f;
     }
-    TraceLog(LOG_INFO, "[AIGUI] DrawTextEx params: label=%s, x=%.1f, y=%.1f, fontSize=%d, color=(%d,%d,%d,%d)", label, textX, textY, fontSize, textColor.r, textColor.g, textColor.b, textColor.a);
     DrawTextEx(g_AIGUI.defaultFont, label, {textX, textY}, fontSize, 1.0f, BLACK);
 
-    bool result = (hovered && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) || gestureTriggered;
+    // Use platform-agnostic clicked state instead of old mouse button check
+    bool result = clicked || gestureTriggered;
     if (result) {
-        TraceLog(LOG_INFO, "[AIGUI] Button '%s' was clicked/activated", label);
+        TraceLog(LOG_INFO, "[AIGUI] ButtonRounded: Button '%s' was clicked/activated", label);
     }
     
+    TraceLog(LOG_INFO, "[AIGUI] ButtonRounded EXIT: label=%s, result=%d", label, result);
     return result;
 }
 

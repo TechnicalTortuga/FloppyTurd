@@ -27,8 +27,8 @@ typedef struct {
 // Uniform buffer for transformations
 typedef struct {
     simd_float4x4 projectionMatrix;
-    simd_float4x4 modelViewMatrix;
     float distanceRange; // Add distance range for SDF
+    float time;          // Add time for future effects
 } MetalUniforms;
 
 // Draw command for batching and sorting
@@ -114,11 +114,6 @@ public:
     // State management
     void SetProjectionMatrix(float width, float height);
     void SetProjectionMatrixWithSafeArea(float screenWidth, float screenHeight, Rectangle safeArea);
-    void PushMatrix();
-    void PopMatrix();
-    void TranslateMatrix(float x, float y);
-    void RotateMatrix(float angle);
-    void ScaleMatrix(float x, float y);
     
     // Drawing primitives
     void DrawRectangle(float x, float y, float width, float height, Color color);
@@ -211,9 +206,7 @@ private:
     // Mobile GPU optimization settings
     MobileGPUSettings m_mobileSettings;
     
-    // Matrix stack
-    std::vector<simd_float4x4> m_matrixStack;
-    simd_float4x4 m_currentMatrix;
+    // Projection matrix
     simd_float4x4 m_projectionMatrix;
     
     // Frame timing
@@ -227,6 +220,7 @@ private:
     void AddVertex(float x, float y, float u, float v, Color color);
     void AddRectangleVertices(float x, float y, float width, float height, Color color);
     void AddTexturedRectangleVertices(Rectangle dest, Rectangle source, Color tint);
+    void AddTransformedTexturedQuad(const simd_float2 vertices[4], id<MTLTexture> texture, Color tint);
     void DrawRoundedCorner(float centerX, float centerY, float radius, int segments, int corner, Color color);
     void DrawRoundedCornerLines(float centerX, float centerY, float radius, int segments, int corner, float lineThick, Color color);
     void ExecuteDrawCommands();

@@ -51,8 +51,8 @@ bool MetalTextRenderer::Initialize(id<MTLDevice> device) {
         return false;
     }
     
-    // Create default font (will be overridden by Whacky Joe)
-    m_defaultFont = LoadSystemFont("Helvetica", 16);
+    // Defer font loading to avoid startup delay - will be loaded when first needed
+    // m_defaultFont = LoadSystemFont("Chalkduster", 16);
     
     TraceLog(LOG_INFO, "[METAL DEBUG] MetalTextRenderer::Initialize: Initialization complete");
     return true;
@@ -280,14 +280,14 @@ Font MetalTextRenderer::LoadFont(const char* fileName, int fontSize) {
         
         if (!font.ctFont) {
             TraceLog(LOG_WARNING, "[METAL WARNING] Failed to load font: %s, falling back to system font", [path UTF8String]);
-            return LoadSystemFont("Helvetica", fontSize);
+            return LoadSystemFont("Chalkduster", fontSize);
         } else {
             // Generate font atlas for better performance
             if (GenerateFontAtlas(font)) {
                 // TraceLog(LOG_INFO, "[METAL DEBUG] LoadFont: Successfully loaded font: %s with generated atlas", [path UTF8String]);
             } else {
                 TraceLog(LOG_WARNING, "[METAL WARNING] LoadFont: Failed to generate atlas for font: %s, using fallback", [path UTF8String]);
-                return LoadSystemFont("Helvetica", fontSize);
+                return LoadSystemFont("Chalkduster", fontSize);
             }
         }
     }
@@ -326,15 +326,15 @@ Font MetalTextRenderer::LoadSystemFont(const char* fontName, int fontSize) {
         font.ctFont = CTFontCreateWithName((__bridge CFStringRef)uiFont.fontName, fontSize, nullptr);
             
             if (!font.ctFont) {
-                TraceLog(LOG_ERROR, "[METAL ERROR] LoadSystemFont: Failed to create CTFont for font: %s, falling back to Helvetica", fontName);
-                return LoadSystemFont("Helvetica", fontSize);
+                TraceLog(LOG_ERROR, "[METAL ERROR] LoadSystemFont: Failed to create CTFont for font: %s, falling back to Chalkduster", fontName);
+                return LoadSystemFont("Chalkduster", fontSize);
             } else {
                 // Generate font atlas for better performance
                 if (GenerateFontAtlas(font)) {
                     // TraceLog(LOG_INFO, "[METAL DEBUG] LoadSystemFont: Successfully created CTFont for font: %s with generated atlas", fontName);
                 } else {
                     TraceLog(LOG_WARNING, "[METAL WARNING] LoadSystemFont: Failed to generate atlas for font: %s, using fallback", fontName);
-                    return LoadSystemFont("Helvetica", fontSize);
+                    return LoadSystemFont("Chalkduster", fontSize);
                 }
             }
     }
@@ -440,13 +440,18 @@ void MetalTextRenderer::SaveAtlasToPNG(const Font& font, const char* fileName) {
 }
 
 Font MetalTextRenderer::GetDefaultFont() {
+    // Lazy load the default font when first requested
+    if (!m_defaultFont.ctFont) {
+        TraceLog(LOG_INFO, "[METAL DEBUG] GetDefaultFont: Lazy loading Chalkduster font");
+        m_defaultFont = LoadSystemFont("Chalkduster", 16);
+    }
     return m_defaultFont;
 }
 
 Vector2 MetalTextRenderer::MeasureText(const char* text, int fontSize) {
     if (!text) return {0, 0};
     
-    Font tempFont = LoadSystemFont("Helvetica", fontSize);
+    Font tempFont = LoadSystemFont("Chalkduster", fontSize);
     Vector2 size = MeasureTextEx(tempFont, text, fontSize, 0);
     UnloadFont(tempFont);
     

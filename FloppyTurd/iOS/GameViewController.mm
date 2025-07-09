@@ -85,6 +85,7 @@ extern "C" int game_main(int argc, char *argv[]);
     
     // Setup touch handling
     _metalView.multipleTouchEnabled = YES;
+    _metalView.userInteractionEnabled = YES; // Ensure touch events are enabled
     NSLog(@"[INIT] Set up touch handling");
     
     // Create game queue for background operations
