@@ -1,9 +1,11 @@
 #ifndef PLATFORM_LAYER_H
 #define PLATFORM_LAYER_H
 
+#pragma once
+
+#include "RaylibCompat.h"
 #include <string>
 #include <vector>
-#include "RaylibCompat.h"
 
 // Forward declarations for Metal rendering classes (iOS)
 class MetalRenderer;
@@ -48,9 +50,9 @@ public:
     void Initialize(void* nativeView);
     // Overload for initialization when native view is not yet available (e.g., desktop or high-level bootstrap)
     void Initialize();
-    // Overload for iOS that accepts GameViewController for touch event forwarding
+    // Overload for iOS that accepts GameViewController and MetalRenderer for touch event forwarding
 #ifdef PLATFORM_IOS
-    void Initialize(void* nativeView, void* gameViewController);
+    void Initialize(void* nativeView, void* gameViewController, void* metalRenderer);
 #endif
     void Shutdown();
 
@@ -177,8 +179,9 @@ public:
 
     bool IsMobilePlatform() const;
     void UpdateTouchState();
+    void ClearTouchStatesAfterRender(); // Clear touch states after render phase
     
-    // Static touch state management functions
+    // Static touch state management functions (delegate to TouchControls)
     static void SetTouchState(bool pressed, float x, float y);
     static void ClearAllTouchStates();
 

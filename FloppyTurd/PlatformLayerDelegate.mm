@@ -19,7 +19,7 @@ static inline unsigned int ColorToUInt(Color c) {
     GameViewController* _gameViewController;
 }
 
-- (instancetype)initWithView:(MTKView*)view gameViewController:(GameViewController*)gameViewController {
+- (instancetype)initWithView:(MTKView*)view gameViewController:(GameViewController*)gameViewController metalRenderer:(void*)metalRenderer {
     self = [super init];
     if (self) {
         TraceLog(LOG_INFO, "[INIT] ========================================");
@@ -29,6 +29,7 @@ static inline unsigned int ColorToUInt(Color c) {
         TraceLog(LOG_INFO, "[INIT] MTKView frame: %@", NSStringFromCGRect(view.frame));
         TraceLog(LOG_INFO, "[INIT] MTKView bounds: %@", NSStringFromCGRect(view.bounds));
         TraceLog(LOG_INFO, "[INIT] GameViewController: %p", gameViewController);
+        TraceLog(LOG_INFO, "[INIT] MetalRenderer: %p", metalRenderer);
         
         _view = view;
         _device = view.device;
@@ -40,22 +41,23 @@ static inline unsigned int ColorToUInt(Color c) {
             return nil;
         }
         
-        // Initialize MetalRenderer
-        TraceLog(LOG_INFO, "[INIT] Creating MetalRenderer");
-        _metalRenderer = new MetalRenderer();
-        if (!_metalRenderer->Initialize(view)) {
-            TraceLog(LOG_ERROR, "[ERROR] Failed to initialize MetalRenderer");
+        if (!metalRenderer) {
+            TraceLog(LOG_ERROR, "[ERROR] MetalRenderer is required but not provided");
             return nil;
         }
-        TraceLog(LOG_INFO, "[INIT] MetalRenderer initialized successfully: %p", _metalRenderer);
+        
+        // Use the provided MetalRenderer
+        TraceLog(LOG_INFO, "[INIT] Using provided MetalRenderer: %p", metalRenderer);
+        _metalRenderer = (MetalRenderer*)metalRenderer;
         
         TraceLog(LOG_INFO, "[INIT] Setting up MTKView properties");
-        view.delegate = self;
+        // DON'T set the delegate - GameView is already the delegate and handles touch events
+        // view.delegate = self;
         view.enableSetNeedsDisplay = YES;
         view.preferredFramesPerSecond = 60;
         view.multipleTouchEnabled = YES;
         view.userInteractionEnabled = YES;
-        TraceLog(LOG_INFO, "[INIT] MTKView delegate set to self: %p", view.delegate);
+        TraceLog(LOG_INFO, "[INIT] MTKView delegate NOT set (GameView is the delegate): %p", view.delegate);
         TraceLog(LOG_INFO, "[INIT] MTKView enableSetNeedsDisplay: %s", view.enableSetNeedsDisplay ? "YES" : "NO");
         TraceLog(LOG_INFO, "[INIT] MTKView preferredFramesPerSecond: %ld", (long)view.preferredFramesPerSecond);
         TraceLog(LOG_INFO, "[INIT] MTKView multipleTouchEnabled: %s", view.multipleTouchEnabled ? "YES" : "NO");
@@ -85,79 +87,11 @@ static inline unsigned int ColorToUInt(Color c) {
     }
 }
 
-#pragma mark - MTKViewDelegate
-
-- (void)mtkView:(MTKView*)view drawableSizeWillChange:(CGSize)size {
-    TraceLog(LOG_INFO, "[DEBUG] Drawable size changed to: %@", NSStringFromCGSize(size));
-}
-
-- (void)drawInMTKView:(MTKView*)view {
-    static int frameCount = 0;
-    frameCount++;
-    
-    if (frameCount == 1 || frameCount % 60 == 0) {
-        TraceLog(LOG_INFO, "[RENDER] drawInMTKView called (frame: %d)", frameCount);
-    }
-    
-    if (!_isInitialized) {
-        if (frameCount == 1) {
-            TraceLog(LOG_ERROR, "[ERROR] drawInMTKView: PlatformLayerDelegate not initialized");
-        }
-        return;
-    }
-    
-    if (!_metalRenderer) {
-        if (frameCount == 1) {
-            TraceLog(LOG_ERROR, "[ERROR] drawInMTKView: MetalRenderer not available");
-        }
-        return;
-    }
-    
-    // Get the game instance
-    Game* game = GetGameInstance();
-    TraceLog(LOG_INFO, "[ACCESS] GetGameInstance() called from drawInMTKView, returning: %p", game);
-    // Use our optimized MetalRenderer for rendering
-    TraceLog(LOG_INFO, "[RENDER] drawInMTKView: Starting MetalRenderer frame");
-    _metalRenderer->BeginFrame();
-    _metalRenderer->Clear({25, 25, 25, 255}); // Dark gray background
-    
-    if (!game) {
-        if (frameCount == 1 || frameCount % 120 == 0) {
-            TraceLog(LOG_ERROR, "[ERROR] drawInMTKView: Game instance is null");
-        }
-    } else if (!game->IsInitialized()) {
-        if (frameCount == 1 || frameCount % 120 == 0) {
-            TraceLog(LOG_WARNING, "[WARN] drawInMTKView: Game instance exists but not initialized");
-        }
-    } else {
-        if (frameCount == 1 || frameCount % 120 == 0) {
-            TraceLog(LOG_INFO, "[RENDER] Rendering game frame (frame: %d)", frameCount);
-        }
-        // Render the game frame to generate draw commands
-        game->RenderFrame();
-    }
-    
-    // Process any pending draw commands (if needed)
-    // The MetalRenderer handles all the optimized rendering internally
-    
-    TraceLog(LOG_INFO, "[DEBUG] About to call EndFrame on MetalRenderer: %p", _metalRenderer);
-    _metalRenderer->EndFrame();
-    TraceLog(LOG_INFO, "[DEBUG] EndFrame completed, calling Present");
-    _metalRenderer->Present();
-    
-    if (frameCount == 1 || frameCount % 60 == 0) {
-        TraceLog(LOG_INFO, "[RENDER] drawInMTKView completed (frame: %d)", frameCount);
-    }
-}
-
-// MetalRenderer handles all the drawing internally, so we don't need these methods anymore
+// PlatformLayerDelegate is no longer the MTKView delegate
+// GameView handles all MTKView delegate responsibilities including rendering and touch events
 
 - (void)dealloc {
-    if (_metalRenderer) {
-        _metalRenderer->Shutdown();
-        delete _metalRenderer;
-        _metalRenderer = nullptr;
-    }
+    TraceLog(LOG_INFO, "[CLEANUP] PlatformLayerDelegate dealloc: MetalRenderer was provided externally, not deleting: %p", _metalRenderer);
 }
 
 #pragma mark - Public Methods
@@ -378,58 +312,7 @@ static inline unsigned int ColorToUInt(Color c) {
     return _metalRenderer;
 }
 
-#pragma mark - Touch Event Forwarding
-
-- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
-    TraceLog(LOG_INFO, "[TOUCH] PlatformLayerDelegate touchesBegan called with %lu touches", (unsigned long)touches.count);
-    
-    // Forward touch events to GameViewController
-    if (_gameViewController) {
-        TraceLog(LOG_INFO, "[TOUCH] PlatformLayerDelegate forwarding touchesBegan to GameViewController %p", _gameViewController);
-        [_gameViewController touchesBegan:touches withEvent:event];
-        TraceLog(LOG_INFO, "[TOUCH] PlatformLayerDelegate touchesBegan forwarding completed");
-    } else {
-        TraceLog(LOG_ERROR, "[TOUCH] PlatformLayerDelegate GameViewController is null, cannot forward touchesBegan");
-    }
-}
-
-- (void)touchesMoved:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
-    TraceLog(LOG_INFO, "[TOUCH] PlatformLayerDelegate touchesMoved called with %lu touches", (unsigned long)touches.count);
-    
-    // Forward touch events to GameViewController
-    if (_gameViewController) {
-        TraceLog(LOG_INFO, "[TOUCH] PlatformLayerDelegate forwarding touchesMoved to GameViewController %p", _gameViewController);
-        [_gameViewController touchesMoved:touches withEvent:event];
-        TraceLog(LOG_INFO, "[TOUCH] PlatformLayerDelegate touchesMoved forwarding completed");
-    } else {
-        TraceLog(LOG_ERROR, "[TOUCH] PlatformLayerDelegate GameViewController is null, cannot forward touchesMoved");
-    }
-}
-
-- (void)touchesEnded:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
-    TraceLog(LOG_INFO, "[TOUCH] PlatformLayerDelegate touchesEnded called with %lu touches", (unsigned long)touches.count);
-    
-    // Forward touch events to GameViewController
-    if (_gameViewController) {
-        TraceLog(LOG_INFO, "[TOUCH] PlatformLayerDelegate forwarding touchesEnded to GameViewController %p", _gameViewController);
-        [_gameViewController touchesEnded:touches withEvent:event];
-        TraceLog(LOG_INFO, "[TOUCH] PlatformLayerDelegate touchesEnded forwarding completed");
-    } else {
-        TraceLog(LOG_ERROR, "[TOUCH] PlatformLayerDelegate GameViewController is null, cannot forward touchesEnded");
-    }
-}
-
-- (void)touchesCancelled:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
-    TraceLog(LOG_INFO, "[TOUCH] PlatformLayerDelegate touchesCancelled called with %lu touches", (unsigned long)touches.count);
-    
-    // Forward touch events to GameViewController
-    if (_gameViewController) {
-        TraceLog(LOG_INFO, "[TOUCH] PlatformLayerDelegate forwarding touchesCancelled to GameViewController %p", _gameViewController);
-        [_gameViewController touchesCancelled:touches withEvent:event];
-        TraceLog(LOG_INFO, "[TOUCH] PlatformLayerDelegate touchesCancelled forwarding completed");
-    } else {
-        TraceLog(LOG_ERROR, "[TOUCH] PlatformLayerDelegate GameViewController is null, cannot forward touchesCancelled");
-    }
-}
+// Touch events are now handled directly by GameView
+// PlatformLayerDelegate is no longer the MTKView delegate
 
 @end

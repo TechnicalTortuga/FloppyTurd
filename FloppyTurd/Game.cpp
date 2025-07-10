@@ -6,6 +6,8 @@
 #include "AudioStateManager.h"
 #include "UIManager.h"
 #include "LogManager.h"
+#include "UICoordinateSystem.h"
+#include "TouchControls.h"
 #include <fstream>
 #include <ctime>
 
@@ -49,6 +51,7 @@ Game::Game() : window(nullptr), gamestate(LOADING), credits(nullptr), loading(nu
         LogManager::GetInstance().Log("About to create Loading state...", "DEBUG");
         try {
             loading = new Loading(this);
+            loading->SetTouchControls(&touchControls); // Set touch controls for loading state
             if (loading) {
                 LogManager::GetInstance().Log("Created Loading state in constructor", "DEBUG");
             } else {
@@ -492,6 +495,7 @@ bool Game::Initialize()
 #ifdef PLATFORM_MOBILE
     touchControls.Initialize(GetScreenWidth(), GetScreenHeight());
     AIGUI_SetTouchControls(&touchControls);
+    TraceLog(LOG_INFO, "[GAME] TouchControls initialized for mobile platform");
 #endif
         
         GameLog::Log("[INIT] =========================================");
@@ -762,6 +766,19 @@ Font Game::GetScaledFont(float scaleFactor)
 
 void Game::UpdateFrame(float deltaTime)
 {
+    // Get screen dimensions first (used by both mobile and desktop paths)
+    float screenWidth, screenHeight;
+    float effectiveWidth, effectiveHeight; // Declare for both mobile and desktop paths
+    
+#if defined(PLATFORM_MOBILE)
+    auto& platform = PlatformLayer::GetInstance();
+    screenWidth = (float)platform.GetScreenWidth();
+    screenHeight = (float)platform.GetScreenHeight();
+#else
+    screenWidth = (float)GetScreenWidth();
+    screenHeight = (float)GetScreenHeight();
+#endif
+
     // Debug logging to see if UpdateFrame is being called
     static int frameCount = 0;
     if (++frameCount % 60 == 0) { // Log every 60 frames
@@ -775,50 +792,16 @@ void Game::UpdateFrame(float deltaTime)
                  );
     }
     
-#ifdef PLATFORM_MOBILE
-    // --- MOBILE INPUT PATH ---
-    TraceLog(LOG_INFO, "[GAME] Mobile input polling ENTRY");
+    // NOTE: Input handling is now done in HandleInputFrame() before this is called
+    // This method focuses purely on game logic updates
     
-    // Use touch input from PlatformLayer instead of GetMousePosition()
-    auto& platform = PlatformLayer::GetInstance();
-    TraceLog(LOG_INFO, "[GAME] Mobile input: calling platform.GetTouchPosition(0)");
-    Vector2 touchPos = platform.GetTouchPosition(0); // Get primary touch position
-    TraceLog(LOG_INFO, "[GAME] Mobile input: platform.GetTouchPosition(0) returned (%.1f,%.1f)", touchPos.x, touchPos.y);
-    
-    // Convert from pixels back to UI coordinate system (points)
-    float scale = platform.GetScreenScale();
-    Vector2 uiPos = Vector2{touchPos.x / scale, touchPos.y / scale};
-    TraceLog(LOG_INFO, "[GAME] Mobile input: converting pixels=(%.1f,%.1f) to UI points=(%.1f,%.1f), scale=%.1f", 
-             touchPos.x, touchPos.y, uiPos.x, uiPos.y, scale);
-    
-    // Log touch position for debugging
-    static int mobileLogCounter = 0;
-    if (++mobileLogCounter % 60 == 0) { // Log every 60 frames
-        TraceLog(LOG_INFO, "[GAME] Mobile input: touchPos=(%.1f,%.1f), uiPos=(%.1f,%.1f), mousePos=(%.1f,%.1f)", 
-                 touchPos.x, touchPos.y, uiPos.x, uiPos.y, g_AIGUI.mousePos.x, g_AIGUI.mousePos.y);
+    // Disable visual overlay on main menu (but keep touch input processing active)
+    if (gamestate == MAINMENU) {
+        touchControls.SetVisualOverlayEnabled(false);
+    } else {
+        touchControls.SetVisualOverlayEnabled(true);
     }
-    
-    // Update AIGUI mouse position with UI coordinates (points)
-    Vector2 oldMousePos = g_AIGUI.mousePos;
-    TraceLog(LOG_INFO, "[GAME] Mobile input: updating AIGUI mousePos from (%.1f,%.1f) to (%.1f,%.1f)", 
-             oldMousePos.x, oldMousePos.y, uiPos.x, uiPos.y);
-    g_AIGUI.mousePos = uiPos;
-    
-    // Log when mouse position changes (indicating touch input)
-    if (oldMousePos.x != uiPos.x || oldMousePos.y != uiPos.y) {
-        TraceLog(LOG_INFO, "[GAME] Touch input detected: oldPos=(%.1f,%.1f) -> newPos=(%.1f,%.1f)", 
-                 oldMousePos.x, oldMousePos.y, uiPos.x, uiPos.y);
-    }
-    
-    TraceLog(LOG_INFO, "[GAME] Mobile input polling EXIT");
-    
-    // Log TouchControls update
-    static int touchControlsLogCounter = 0;
-    if (++touchControlsLogCounter % 60 == 0) { // Log every 60 frames
-        TraceLog(LOG_INFO, "[GAME] Calling TouchControls::Update() - frame %d", touchControlsLogCounter);
-    }
-    touchControls.Update();
-#endif
+
 	// Handle shutdown state
 	if (gamestate == SHUTDOWN)
 	{
@@ -848,12 +831,20 @@ void Game::UpdateFrame(float deltaTime)
 	// -------------------------------------------------------------------------
 	// 1) Calculate proper letterboxing with aspect ratio preservation
 	// -------------------------------------------------------------------------
+#if defined(PLATFORM_MOBILE)
+	// On mobile, use dynamic screen sizing - no fixed game dimensions
+	effectiveWidth = screenWidth;
+	effectiveHeight = screenHeight;
+	gameScale = 1.0f; // No scaling needed on mobile
+	renderedWidth = screenWidth;
+	renderedHeight = screenHeight;
+	gameOffsetX = 0.0f;
+	gameOffsetY = 0.0f;
+#else
+	// Desktop letterboxing with fixed game dimensions
 	const float GAME_WIDTH = 320.0f;
 	const float GAME_HEIGHT = 180.0f;
 	const float GAME_ASPECT = GAME_WIDTH / GAME_HEIGHT; // 16:9
-	
-	float screenWidth = (float)GetScreenWidth();
-	float screenHeight = (float)GetScreenHeight();
 	
 	// Get the REAL monitor resolution to fix macOS fullscreen discrepancies
 	// This needs to be checked every frame in case the user switches monitors or resolutions
@@ -865,7 +856,6 @@ void Game::UpdateFrame(float deltaTime)
 	bool hasDiscrepancy = (realMonitorWidth != (int)screenWidth || realMonitorHeight != (int)screenHeight);
 	
 	// Use the appropriate resolution for calculations
-	float effectiveWidth, effectiveHeight;
 	if (hasDiscrepancy && IsWindowFullscreen()) {
 		// In fullscreen with discrepancy, use real monitor resolution
 		effectiveWidth = (float)realMonitorWidth;
@@ -888,8 +878,10 @@ void Game::UpdateFrame(float deltaTime)
 	// Center the game area with proper rounding to avoid fractional pixels
 	gameOffsetX = floorf((effectiveWidth - renderedWidth) / 2.0f);
 	gameOffsetY = floorf((effectiveHeight - renderedHeight) / 2.0f);
+#endif
 	
-	// macOS fullscreen quirk detection and compensation
+#if !defined(PLATFORM_MOBILE)
+	// macOS fullscreen quirk detection and compensation (desktop only)
 	#ifdef __APPLE__
 	// On macOS, fullscreen mode sometimes reports incorrect screen dimensions
 	// that can cause asymmetrical letterboxing. Detect and compensate for this.
@@ -910,7 +902,7 @@ void Game::UpdateFrame(float deltaTime)
 	}
 	#endif
 	
-	// Debug output for first few frames
+	// Debug output for first few frames (desktop only)
 	static int debugFrameCount = 0;
 	if (debugFrameCount < 10) {  // Show more frames to catch any changes
 		// Get actual monitor information
@@ -928,6 +920,7 @@ void Game::UpdateFrame(float deltaTime)
 			(hasDiscrepancy && IsWindowFullscreen()) ? "REAL" : "REPORTED");
 		debugFrameCount++;
 	}
+#endif
 	
 	// -------------------------------------------------------------------------
 	// 2) Proper mouse coordinate mapping with letterbox offset
@@ -937,6 +930,10 @@ void Game::UpdateFrame(float deltaTime)
     // Touch input is already processed in the earlier mobile input section
 #else
     // --- DESKTOP INPUT PATH (UNCHANGED) ---
+    // Desktop uses fixed game dimensions for letterboxing
+    const float GAME_WIDTH = 320.0f;
+    const float GAME_HEIGHT = 180.0f;
+    
 	Vector2 rawMouse = GetMousePosition();
 	
 	// Account for letterbox offsets
@@ -975,6 +972,23 @@ void Game::UpdateFrame(float deltaTime)
 	}
 }
 
+void Game::HandleInputFrame()
+{
+#if defined(PLATFORM_MOBILE)
+    // --- MOBILE INPUT PATH ---
+    // Handle input on the main thread before any drawing or state logic
+    // This is now the single source of truth for touch updates.
+    if (touchControls.IsEnabled()) {
+        touchControls.Update();
+    }
+    
+    // Process static TouchControls buffer before AIGUI reads it
+    TouchControls::UpdateStatic();
+    
+    AIGUI_UpdateInput(); // AIGUI needs the latest touch state
+#endif
+}
+
 void Game::RenderFrame()
 {
     static int frameCount = 0;
@@ -991,6 +1005,11 @@ void Game::RenderFrame()
         return;
     }
     
+#if defined(PLATFORM_MOBILE)
+    // --- MOBILE RENDERING PATH ---
+    // Input processing is now handled in HandleInputFrame() before this is called
+#endif
+
     // Special handling for loading state
     if (gamestate == LOADING && loading) {
         loading->Draw();
@@ -998,24 +1017,18 @@ void Game::RenderFrame()
     }
 
 #if defined(PLATFORM_MOBILE)
-    // --- MOBILE RENDERING PATH ---
     ClearBackground(BLACK); // Clear the main framebuffer
 
     // The projection matrix will be updated in a subsequent step to match the screen.
     // For now, drawing is direct.
     BeginDrawing();
     
-    // Add SDF text rendering test
-    if (frameCount <= 300) { // Show test for first 5 seconds (60fps * 5)
-        Font testFont = GetFontDefault();
-        DrawTextEx(testFont, "Hello, Floppy Turd!", {100, 100}, 32, 2, WHITE);
-        DrawTextEx(testFont, "SDF Test with Chalkduster", {100, 140}, 24, 1, YELLOW);
-    }
-    
     switch (gamestate)
     {
         case MAINMENU:
+            AIGUI_BeginFrame();
             if (mainMenu) mainMenu->Draw();
+            AIGUI_EndFrame();
             break;
         case PLAYING:
             if (playing) playing->Draw();
@@ -1024,7 +1037,6 @@ void Game::RenderFrame()
             if (credits) credits->Draw();
             break;
         case PAUSEMENU:
-            // The `playing` state is expected to render the pause menu over itself.
             if (playing) playing->Draw();
             break;
         case LOADING:
@@ -1036,6 +1048,7 @@ void Game::RenderFrame()
     }
 
     EndDrawing();
+    
 #else
     // --- DESKTOP RENDERING PATH ---
     const float GAME_WIDTH = 320.0f;
@@ -1109,6 +1122,11 @@ void Game::RenderFrame()
     );
     
     EndDrawing();
+#endif
+
+    // Clear transient input states at the end of the frame
+#if defined(PLATFORM_MOBILE)
+    TouchControls::ClearTransientStates();
 #endif
 }
 

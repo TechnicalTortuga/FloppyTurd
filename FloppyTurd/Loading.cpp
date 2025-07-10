@@ -246,6 +246,12 @@ void Loading::Update(float deltaTime) {
                     m_fontLoadingComplete ? "true" : "false", 
                     loadingComplete ? "true" : "false");
     }
+
+    // Update touch state so overlay can respond
+    if (touchControls) {
+        touchControls->Update();
+        touchControls->Draw();
+    }
 }
 
 void Loading::Draw() {
@@ -292,4 +298,23 @@ void Loading::Draw() {
     // int percentWidth = MeasureText(progressText, fontSize);
     // float percentY = barY + barHeight + fontSize * 0.5f;
     // DrawText(progressText, (screenWidthPx - percentWidth) / 2, percentY, fontSize, WHITE);
+
+    // DEBUG: Draw touch state overlay for debugging
+    if (touchControls) {
+        bool touchActive = TouchControls::IsPrimaryInputDown();
+        bool touchPressed = TouchControls::IsPrimaryInputPressed();
+        // Vector2 touchPos = TouchControls::GetPrimaryInputPosition();
+        
+        // Draw fullscreen white overlay if touch is active
+        if (touchActive) {
+            DrawRectangle(0, 0, screenWidthPx, screenHeightPx, ColorAlpha(WHITE, 0.18f));
+        }
+        // Draw green overlay if pressed (for extra feedback)
+        if (touchPressed) {
+            DrawRectangle(0, 0, screenWidthPx, screenHeightPx, ColorAlpha(GREEN, 0.18f));
+        }
+    }
+    
+    // Draw the touch overlay so user sees feedback
+    if (touchControls) touchControls->Draw();
 }

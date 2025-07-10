@@ -79,7 +79,12 @@ public:
 
     Vector2 GetPrimaryInputPosition() const {
 #ifdef PLATFORM_MOBILE
-        return GetMousePosition(); // Mapped to first touch
+        // Use actual touch state from PlatformLayer instance
+        const PlatformLayer& instance = PlatformLayer::GetInstance();
+        if (instance.m_PrimaryInputDown && !instance.m_TouchPoints.empty()) {
+            return instance.m_TouchPoints[0];
+        }
+        return {0, 0};
 #else
         return GetMousePosition();
 #endif
@@ -87,7 +92,9 @@ public:
 
     bool IsPrimaryInputPressed() const {
 #ifdef PLATFORM_MOBILE
-        return IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
+        // Use actual touch state from PlatformLayer instance
+        const PlatformLayer& instance = PlatformLayer::GetInstance();
+        return instance.m_PrimaryInputPressed;
 #else
         return IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
 #endif
@@ -95,7 +102,9 @@ public:
 
     bool IsPrimaryInputDown() const {
 #ifdef PLATFORM_MOBILE
-        return IsMouseButtonDown(MOUSE_LEFT_BUTTON);
+        // Use actual touch state from PlatformLayer instance
+        const PlatformLayer& instance = PlatformLayer::GetInstance();
+        return instance.m_PrimaryInputDown;
 #else
         return IsMouseButtonDown(MOUSE_LEFT_BUTTON);
 #endif
@@ -103,7 +112,9 @@ public:
 
     bool IsPrimaryInputReleased() const {
 #ifdef PLATFORM_MOBILE
-        return IsMouseButtonReleased(MOUSE_LEFT_BUTTON);
+        // Use actual touch state from PlatformLayer instance
+        const PlatformLayer& instance = PlatformLayer::GetInstance();
+        return instance.m_PrimaryInputReleased;
 #else
         return IsMouseButtonReleased(MOUSE_LEFT_BUTTON);
 #endif
@@ -112,10 +123,9 @@ public:
     std::vector<Vector2> GetTouchPoints() const {
         std::vector<Vector2> points;
 #ifdef PLATFORM_MOBILE
-        int touchCount = GetTouchCount();
-        for (int i = 0; i < touchCount; i++) {
-            points.push_back(GetTouchPosition(i));
-        }
+        // Use actual touch points from PlatformLayer instance
+        const PlatformLayer& instance = PlatformLayer::GetInstance();
+        return instance.m_TouchPoints;
 #else
         // On desktop, simulate single touch with mouse
         if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {

@@ -1,6 +1,8 @@
 #include "AIGUI.h"
 #include "TouchControls.h"
 #include "ResourceManager.h"
+#include "UICoordinateSystem.h"
+#include "PlatformLayer.h"
 
 #if defined(__APPLE__) && TARGET_OS_IOS
 // Forward declarations to avoid including Objective-C headers in C++
@@ -18,6 +20,10 @@ static class TouchControls* s_TouchControls = nullptr;
 
 AIGUI_DEF void AIGUI_Init() {
     memset(&g_AIGUI, 0, sizeof(g_AIGUI));
+    
+    // Initialize touch state tracking
+    g_AIGUI.touchPressedOverButton = false;
+    g_AIGUI.touchStartPos = {0, 0};
     
     // Clear only font cache to force fresh font loading and avoid corrupted textures
     TraceLog(LOG_INFO, "AIGUI: Clearing font cache to force fresh font loading");
@@ -87,18 +93,26 @@ AIGUI_DEF void AIGUI_Shutdown() {
 }
 
 AIGUI_DEF void AIGUI_BeginFrame() {
-    // Use PlatformLayer for unified input handling
-    // Mouse position is now set by the Game class with proper letterboxing
-    // No need to recalculate here - just get button state
-    auto& platform = PlatformLayer::GetInstance();
-    g_AIGUI.mousePos = _GetScaledInputPosition();
-    g_AIGUI.mouseLeftDown = platform.IsPrimaryInputDown();
+    static int frameCount = 0;
+    frameCount++;
     
-    TraceLog(LOG_INFO, "[AIGUI] BeginFrame: mousePos=(%.1f,%.1f), mouseLeftDown=%d", g_AIGUI.mousePos.x, g_AIGUI.mousePos.y, g_AIGUI.mouseLeftDown);
+    TraceLog(LOG_INFO, "[AIGUI] BeginFrame ENTRY - Frame %d, touchPosition=(%.1f,%.1f), touchDown=%d, touchPressed=%d, touchReleased=%d, isMobile=%d",
+             frameCount, g_AIGUI.touchPosition.x, g_AIGUI.touchPosition.y,
+             g_AIGUI.touchDown, g_AIGUI.touchPressed, g_AIGUI.touchReleased, g_AIGUI.isMobile);
+    
+    // Reset transient states at the start of each frame
+    g_AIGUI.touchPressed = false;
+    g_AIGUI.touchReleased = false;
+    
+    TraceLog(LOG_INFO, "[AIGUI] BeginFrame EXIT - Frame %d", frameCount);
 }
 
 AIGUI_DEF void AIGUI_EndFrame() {
+    TraceLog(LOG_INFO, "[AIGUI] EndFrame ENTRY");
+    
     // End of frame logic if needed
+    
+    TraceLog(LOG_INFO, "[AIGUI] EndFrame EXIT");
 }
 
 AIGUI_DEF void AIGUI_SetFont(Font font) {
@@ -116,75 +130,182 @@ AIGUI_DEF void AIGUI_SetTouchControls(class TouchControls* controls) {
     s_TouchControls = controls;
 }
 
+AIGUI_DEF void AIGUI_UpdateInput() {
+    TraceLog(LOG_INFO, "[AIGUI] UpdateInput ENTRY - isMobile=%d, s_TouchControls=%p", g_AIGUI.isMobile, s_TouchControls);
+    
+    // Platform-specific input handling
+    if (g_AIGUI.isMobile) {
+        TraceLog(LOG_INFO, "[AIGUI] UpdateInput: Mobile platform detected");
+        
+        // On mobile, get input directly from TouchControls static API
+        bool touchActive = TouchControls::IsPrimaryInputDown();
+        Vector2 touchPos = TouchControls::GetPrimaryInputPosition();
+        bool touchPressed = TouchControls::IsPrimaryInputPressed();
+        bool touchReleased = TouchControls::IsPrimaryInputReleased();
+        
+        TraceLog(LOG_INFO, "[AIGUI] UpdateInput: Raw TouchControls data - active=%d, pos=(%.1f,%.1f), pressed=%d, released=%d", 
+                 touchActive, touchPos.x, touchPos.y, touchPressed, touchReleased);
+        
+        // Convert touch coordinates to UI coordinates
+        Vector2 uiPos = UICoordinateSystem::PointsToPixels(touchPos);
+        
+        TraceLog(LOG_INFO, "[AIGUI] UpdateInput: Coordinate conversion - points=(%.1f,%.1f) -> pixels=(%.1f,%.1f)", 
+                 touchPos.x, touchPos.y, uiPos.x, uiPos.y);
+        
+        // Update AIGUI context
+        g_AIGUI.touchPosition = uiPos;
+        g_AIGUI.touchDown = touchActive;
+        g_AIGUI.touchPressed = touchPressed;
+        g_AIGUI.touchReleased = touchReleased;
+        g_AIGUI.mousePos = uiPos;  // AIGUI still uses mousePos for compatibility
+        g_AIGUI.mouseLeftDown = touchActive;
+        
+        TraceLog(LOG_INFO, "[AIGUI] UpdateInput: AIGUI context updated - touchPosition=(%.1f,%.1f), touchDown=%d, touchPressed=%d, touchReleased=%d, mousePos=(%.1f,%.1f), mouseLeftDown=%d", 
+                 g_AIGUI.touchPosition.x, g_AIGUI.touchPosition.y,
+                 g_AIGUI.touchDown, g_AIGUI.touchPressed, g_AIGUI.touchReleased,
+                 g_AIGUI.mousePos.x, g_AIGUI.mousePos.y, g_AIGUI.mouseLeftDown);
+    } else {
+        TraceLog(LOG_INFO, "[AIGUI] UpdateInput: Desktop platform detected");
+        
+        // On desktop, use mouse input
+        Vector2 mousePos = GetMousePosition();
+        bool mouseDown = IsMouseButtonDown(MOUSE_LEFT_BUTTON);
+        bool mouseReleased = IsMouseButtonReleased(MOUSE_LEFT_BUTTON);
+        
+        // For desktop, we need to track the previous state to detect pressed
+        static bool previousMouseDown = false;
+        bool mousePressed = mouseDown && !previousMouseDown;
+        previousMouseDown = mouseDown;
+        
+        TraceLog(LOG_INFO, "[AIGUI] UpdateInput: Desktop mouse data - pos=(%.1f,%.1f), down=%d, pressed=%d, released=%d", 
+                 mousePos.x, mousePos.y, mouseDown, mousePressed, mouseReleased);
+        
+        g_AIGUI.mousePos = mousePos;
+        g_AIGUI.mouseLeftDown = mouseDown;
+        g_AIGUI.touchPosition = mousePos;
+        g_AIGUI.touchDown = mouseDown;
+        g_AIGUI.touchPressed = mousePressed;
+        g_AIGUI.touchReleased = mouseReleased;
+        
+        TraceLog(LOG_INFO, "[AIGUI] UpdateInput: Desktop AIGUI context updated");
+    }
+    
+    TraceLog(LOG_INFO, "[AIGUI] UpdateInput EXIT");
+}
+
 AIGUI_DEF bool AIGUI_ButtonRounded(const char* label, float x, float y, float width, float height, float radius, int fontSize, Color textColor) {
-    // Use fontSize=18 for main menu buttons unless otherwise specified
+    TraceLog(LOG_INFO, "[AIGUI] ButtonRounded ENTRY - '%s' at (%.1f,%.1f) size(%.1f,%.1f)", label, x, y, width, height);
+    
     if (fontSize > 36) fontSize = 36;
-    TraceLog(LOG_INFO, "[AIGUI] ButtonRounded ENTRY: label=%s, rect=(%.1f,%.1f,%.1f,%.1f), fontSize=%d", label, x, y, width, height, fontSize);
-    
     Rectangle rect = { x, y, width, height };
-    bool mouseOutsideGameArea = (g_AIGUI.mousePos.x < 0 || g_AIGUI.mousePos.y < 0);
-    TraceLog(LOG_INFO, "[AIGUI] ButtonRounded: mousePos=(%.1f,%.1f), mouseOutsideGameArea=%d", g_AIGUI.mousePos.x, g_AIGUI.mousePos.y, mouseOutsideGameArea);
-    
-    bool hovered = !mouseOutsideGameArea && CheckCollisionPointRec(g_AIGUI.mousePos, rect);
-    TraceLog(LOG_INFO, "[AIGUI] ButtonRounded: CheckCollisionPointRec returned hovered=%d", hovered);
-    
-    auto& platform = PlatformLayer::GetInstance();
-    bool clicked = hovered && platform.IsPrimaryInputReleased();
-    TraceLog(LOG_INFO, "[AIGUI] ButtonRounded: platform.IsPrimaryInputReleased()=%d, clicked=%d", platform.IsPrimaryInputReleased(), clicked);
-    
+    bool clicked = false;
     bool gestureTriggered = false;
+    Vector2 inputPos = g_AIGUI.touchPosition; // Use dedicated touch position
+    
+    TraceLog(LOG_INFO, "[AIGUI] ButtonRounded: Current input state - inputPos=(%.1f,%.1f), touchDown=%d, touchPressed=%d, touchReleased=%d, isMobile=%d", 
+             inputPos.x, inputPos.y, g_AIGUI.touchDown, g_AIGUI.touchPressed, g_AIGUI.touchReleased, g_AIGUI.isMobile);
+    
+    // Use full screen dimensions instead of hardcoded 320x180 or safe area
+    Rectangle pixelScreenRect = UICoordinateSystem::GetPixelScreenRect();
+    bool inputInBounds = (inputPos.x >= 0 && inputPos.y >= 0 && inputPos.x <= pixelScreenRect.width && inputPos.y <= pixelScreenRect.height);
+    
+    TraceLog(LOG_INFO, "[AIGUI] ButtonRounded: Screen bounds check - inputInBounds=%d, screenSize=(%.1f,%.1f)", 
+             inputInBounds, pixelScreenRect.width, pixelScreenRect.height);
+    
+    if (inputInBounds) {
+        bool touchInButton = CheckCollisionPointRec(inputPos, rect);
+        
+        TraceLog(LOG_INFO, "[AIGUI] ButtonRounded: Touch collision check - touchInButton=%d, buttonRect=(%.1f,%.1f,%.1f,%.1f)", 
+                 touchInButton, rect.x, rect.y, rect.width, rect.height);
+        
+        if (g_AIGUI.isMobile) {
+            TraceLog(LOG_INFO, "[AIGUI] ButtonRounded: Mobile touch logic");
+            
+            // Touch-based logic: detect clicks when touch begins over button
+            if (touchInButton && g_AIGUI.touchPressed) {
+                clicked = true;
+                TraceLog(LOG_INFO, "[AIGUI] Button '%s' clicked at (%.1f,%.1f)", label, inputPos.x, inputPos.y);
+            }
+            
+            TraceLog(LOG_INFO, "[AIGUI] ButtonRounded: Mobile state - touchPressedOverButton=%d, clicked=%d", 
+                     g_AIGUI.touchPressedOverButton, clicked);
+        } else {
+            TraceLog(LOG_INFO, "[AIGUI] ButtonRounded: Desktop mouse logic");
+            
+            // Desktop mouse logic: keep hover and click detection
+            bool hovered = CheckCollisionPointRec(inputPos, rect);
+            auto& platform = PlatformLayer::GetInstance();
+            clicked = hovered && platform.IsPrimaryInputReleased();
+            if (clicked) {
+                TraceLog(LOG_INFO, "[AIGUI] Button '%s' clicked at (%.1f,%.1f)", label, inputPos.x, inputPos.y);
+            }
+        }
+        
+        if (g_AIGUI.isMobile) {
+            if (AIGUI_IsGestureDetected(GESTURE_TAP) && CheckCollisionPointRec(inputPos, rect)) {
+                gestureTriggered = true;
+                TraceLog(LOG_INFO, "[AIGUI] Button '%s' gesture tap at (%.1f,%.1f)", label, inputPos.x, inputPos.y);
+            }
+        }
+    } else {
+        TraceLog(LOG_INFO, "[AIGUI] ButtonRounded: Input out of bounds, skipping collision check");
+    }
+    
+    // Visual state determination
+    Color bgColor;
+    Color outlineColor = Color{255, 255, 255, 255};
     
     if (g_AIGUI.isMobile) {
-        if (AIGUI_IsGestureDetected(GESTURE_TAP) && CheckCollisionPointRec(_GetScaledInputPosition(), rect)) {
-            gestureTriggered = true;
-            TraceLog(LOG_INFO, "[AIGUI] ButtonRounded: gesture triggered");
+        TraceLog(LOG_INFO, "[AIGUI] ButtonRounded: Mobile visual state determination");
+        
+        // Touch-based visual states
+        if (clicked) {
+            bgColor = Color{255, 100, 100, 255};
+            outlineColor = Color{200, 50, 50, 255};
+            TraceLog(LOG_INFO, "[AIGUI] Button '%s' visual state: CLICKED", label);
+        } else if (g_AIGUI.touchPressedOverButton && g_AIGUI.touchDown) {
+            // Button is being pressed
+            bgColor = Color{255, 150, 150, 255};
+            outlineColor = Color{200, 100, 100, 255};
+            TraceLog(LOG_INFO, "[AIGUI] Button '%s' visual state: PRESSED", label);
+        } else {
+            // Default state
+            bgColor = Color{200, 200, 200, 255};
+            outlineColor = Color{100, 100, 100, 255};
+            TraceLog(LOG_INFO, "[AIGUI] Button '%s' visual state: DEFAULT", label);
+        }
+    } else {
+        TraceLog(LOG_INFO, "[AIGUI] ButtonRounded: Desktop visual state determination");
+        
+        // Desktop mouse-based visual states (keep hover logic)
+        bool hovered = CheckCollisionPointRec(inputPos, rect);
+        if (clicked) {
+            bgColor = Color{255, 100, 100, 255};
+            outlineColor = Color{200, 50, 50, 255};
+        } else if (hovered) {
+            bgColor = Color{255, 150, 150, 255};
+            outlineColor = Color{200, 100, 100, 255};
+        } else {
+            bgColor = Color{200, 200, 200, 255};
+            outlineColor = Color{100, 100, 100, 255};
         }
     }
     
-    // Use more visible button colors with better contrast
-    Color bgColor;
-    Color outlineColor = Color{255, 255, 255, 255}; // White outline for visibility
-    
-    if (clicked) {
-        bgColor = Color{255, 100, 100, 255}; // Bright red when clicked
-        outlineColor = Color{200, 50, 50, 255}; // Darker red outline
-    } else if (hovered) {
-        bgColor = Color{255, 150, 150, 255};  // Light red when hovered
-        outlineColor = Color{200, 100, 100, 255}; // Medium red outline
-    } else {
-        bgColor = Color{200, 200, 200, 255};   // Light gray when normal
-        outlineColor = Color{100, 100, 100, 255}; // Dark gray outline
-    }
-    
-    TraceLog(LOG_INFO, "[AIGUI] ButtonRounded: final state - hovered=%d, clicked=%d, gestureTriggered=%d", 
-             hovered, clicked, gestureTriggered);
-    
-    // Draw button background with visible color
     DrawRectangleRounded(rect, radius, 8, bgColor);
-    
-    // Draw button outline for better visibility - use thicker line for mobile
     float outlineThickness = g_AIGUI.isMobile ? 3.0f : 2.0f;
     DrawRectangleRoundedLinesEx(rect, radius, 8, outlineThickness, outlineColor);
-    
-    // Center text in button (vertical centering fix: use font metrics if available)
     Vector2 textSize = MeasureTextEx(g_AIGUI.defaultFont, label, fontSize, 1.0f);
     float textX = x + (width - textSize.x) / 2;
     float textY = y + (height - textSize.y) / 2;
-    // Try to use font ascent/descent for better vertical centering
     if (g_AIGUI.defaultFont.baseSize > 0 && g_AIGUI.defaultFont.glyphCount > 0) {
-        float ascent = g_AIGUI.defaultFont.baseSize * 0.8f; // Approximate ascent
-        float descent = g_AIGUI.defaultFont.baseSize * 0.2f; // Approximate descent
+        float ascent = g_AIGUI.defaultFont.baseSize * 0.8f;
+        float descent = g_AIGUI.defaultFont.baseSize * 0.2f;
         textY = y + (height + ascent - descent - textSize.y) / 2.0f;
     }
     DrawTextEx(g_AIGUI.defaultFont, label, {textX, textY}, fontSize, 1.0f, BLACK);
-
-    // Use platform-agnostic clicked state instead of old mouse button check
     bool result = clicked || gestureTriggered;
-    if (result) {
-        TraceLog(LOG_INFO, "[AIGUI] ButtonRounded: Button '%s' was clicked/activated", label);
-    }
     
-    TraceLog(LOG_INFO, "[AIGUI] ButtonRounded EXIT: label=%s, result=%d", label, result);
+    TraceLog(LOG_INFO, "[AIGUI] ButtonRounded EXIT - '%s' result=%d (clicked=%d, gesture=%d)", label, result, clicked, gestureTriggered);
     return result;
 }
 
@@ -329,14 +450,50 @@ AIGUI_DEF void AIGUI_SliderFloat(const char* label, float x, float y, float widt
 AIGUI_DEF bool AIGUI_Button(const char* label, float x, float y, float width, float height) {
     Rectangle rect = { x, y, width, height };
     
-    bool hovered = CheckCollisionPointRec(g_AIGUI.mousePos, rect);
+    bool clicked = false;
     
-    // Use platform-agnostic input
-    auto& platform = PlatformLayer::GetInstance();
-    bool clicked = hovered && platform.IsPrimaryInputReleased();
+    if (g_AIGUI.isMobile) {
+        // Touch-based logic: no hovering, just press-and-release detection
+        bool touchInButton = CheckCollisionPointRec(g_AIGUI.touchPosition, rect);
+        
+        if (touchInButton && g_AIGUI.touchPressed) {
+            g_AIGUI.touchPressedOverButton = true;
+            g_AIGUI.touchStartPos = g_AIGUI.touchPosition;
+        } else if (g_AIGUI.touchPressedOverButton && g_AIGUI.touchReleased) {
+            // Check if we're still in the button when released
+            if (CheckCollisionPointRec(g_AIGUI.touchPosition, rect)) {
+                clicked = true;
+            }
+            g_AIGUI.touchPressedOverButton = false;
+        } else if (!g_AIGUI.touchDown) {
+            g_AIGUI.touchPressedOverButton = false;
+        }
+    } else {
+        // Desktop mouse logic: keep hover and click detection
+        bool hovered = CheckCollisionPointRec(g_AIGUI.mousePos, rect);
+        auto& platform = PlatformLayer::GetInstance();
+        clicked = hovered && platform.IsPrimaryInputReleased();
+    }
     
-    // Simple visual states
-    Color bgColor = hovered ? Color(255, 160, 0, 255) : Color(255, 128, 0, 255);
+    // Visual states
+    Color bgColor;
+    if (g_AIGUI.isMobile) {
+        // Touch-based visual states
+        if (clicked) {
+            bgColor = Color(255, 160, 0, 255);
+        } else if (g_AIGUI.touchPressedOverButton && g_AIGUI.touchDown) {
+            // Button is being pressed
+            bgColor = Color(255, 180, 0, 255);
+        } else {
+            // Default state
+            bgColor = Color(255, 128, 0, 255);
+        }
+    } else {
+        // Desktop mouse-based visual states
+        bool hovered = CheckCollisionPointRec(g_AIGUI.mousePos, rect);
+        bgColor = hovered ? Color(255, 160, 0, 255) : Color(255, 128, 0, 255);
+    }
+    
     DrawRectangleRec(rect, bgColor);
     
     Vector2 size = MeasureTextEx(g_AIGUI.defaultFont, label, 20.0f, 1.0f);
@@ -420,6 +577,6 @@ AIGUI_DEF bool AIGUI_TouchImageButton(Texture2D textureDefault, Texture2D textur
 }
 
 AIGUI_DEF void AIGUI_DrawText(const char* text, float x, float y, float fontSize, Color color) {
-    TraceLog(LOG_INFO, "[AIGUI] DrawText called with text: %s, font.baseSize: %d, font.glyphCount: %d", text, g_AIGUI.defaultFont.baseSize, g_AIGUI.defaultFont.glyphCount);
+
     DrawText(text, (int)x, (int)y, (int)fontSize, color);
 }

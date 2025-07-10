@@ -1178,7 +1178,18 @@ void DrawRectangleRoundedLinesEx(Rectangle rec, float roundness, int segments, f
 }
 
 void DrawCircleV(Vector2 center, float radius, Color color) {
-    // Simple circle drawing - not implemented for iOS yet
+    PlatformLayer& platform = PlatformLayer::GetInstance();
+    void* delegatePtr = platform.GetDelegate();
+    MetalRenderer* metalRenderer = nullptr;
+    if (delegatePtr) {
+        PlatformLayerDelegate* delegate = (__bridge PlatformLayerDelegate*)delegatePtr;
+        if ([delegate respondsToSelector:@selector(getMetalRenderer)]) {
+            metalRenderer = (MetalRenderer*)[delegate getMetalRenderer];
+        }
+    }
+    if (metalRenderer) {
+        metalRenderer->DrawCircle(center.x, center.y, radius, color);
+    }
 }
 
 // Essential Vector2 math functions

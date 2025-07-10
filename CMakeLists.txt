@@ -88,6 +88,7 @@ list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/UIManager.cpp)
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/main_ios.mm
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/iOS/AppDelegate.mm
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/iOS/GameViewController.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/iOS/GameView.mm
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/iOS/HapticsManager.mm
             # Metal rendering implementation files
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalRenderer.mm
@@ -114,8 +115,9 @@ endif()
 file(GLOB_RECURSE HEADERS 
     ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/*.h
 )
-# Ensure PlatformLayerDelegate.h is included for IDE visibility
+# Ensure PlatformLayerDelegate.h and GameView.h are included for IDE visibility
 list(APPEND HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/PlatformLayerDelegate.h)
+list(APPEND HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/iOS/GameView.h)
 
 # Remove the GameSettings.h and Resources.h from sources (header only)
 list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/GameSettings.h)

@@ -2,7 +2,7 @@
 #import <Metal/Metal.h>
 #import "RaylibCompat.h"
 #import "Game.h"
-#import "PlatformLayerDelegate.h"
+#import "GameView.h"
 #import "MetalRenderer.h"
 #import "RaylibCompat_iOS.h"
 #import "UIManager.h"
@@ -17,7 +17,7 @@ extern "C++" {
 extern "C" int game_main(int argc, char *argv[]);
 
 @interface GameViewController () {
-    MTKView *_metalView;
+    GameView *_gameView;
     dispatch_queue_t _gameQueue;
     BOOL _gameInitialized;
     CADisplayLink *_displayLink;
@@ -30,31 +30,23 @@ extern "C" int game_main(int argc, char *argv[]);
 @implementation GameViewController
 
 - (void)loadView {
-    // Create and configure the MTKView
-    _metalView = [[MTKView alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
-    _metalView.device = MTLCreateSystemDefaultDevice();
-    _metalView.depthStencilPixelFormat = MTLPixelFormatDepth32Float;
-    _metalView.clearColor = MTLClearColorMake(0.0, 0.0, 0.0, 1.0);
+    // Create and configure the GameView (custom MTKView subclass)
+    _gameView = [[GameView alloc] initWithFrame:[[UIScreen mainScreen] bounds] 
+                                         device:MTLCreateSystemDefaultDevice() 
+                                           game:nullptr]; // Will be set after game initialization
     
-    // PlatformLayerDelegate will handle rendering automatically
-    _metalView.enableSetNeedsDisplay = YES; // Enable setNeedsDisplay so our calls work
-    
-    self.view = _metalView;
+    self.view = _gameView;
 }
 
 - (void)viewDidLoad {
-    NSLog(@"[TEST_NSLOG] ========================================");
-    NSLog(@"[TEST_NSLOG] This is a test NSLog call from GameViewController.mm");
-    NSLog(@"[TEST_NSLOG] ========================================");
-    
-    NSLog(@"[INIT] ========================================");
-    NSLog(@"[INIT] GameViewController viewDidLoad STARTING on thread: %@", [NSThread currentThread]);
+    TraceLog(LOG_INFO, "[INIT] ========================================");
+    TraceLog(LOG_INFO, "[INIT] GameViewController viewDidLoad STARTING on thread: %@", [NSThread currentThread]);
     
     [super viewDidLoad];
     
-    NSLog(@"[ACCESS] Step 1: Checking initial game instance before any initialization on thread: %@", [NSThread currentThread]);
+    TraceLog(LOG_INFO, "[ACCESS] Step 1: Checking initial game instance before any initialization on thread: %@", [NSThread currentThread]);
     Game* initialGame = GetGameInstance();
-    NSLog(@"[ACCESS] Step 1: GetGameInstance() called before initialization, returning: %p on thread: %@", initialGame, [NSThread currentThread]);
+    TraceLog(LOG_INFO, "[ACCESS] Step 1: GetGameInstance() called before initialization, returning: %p on thread: %@", initialGame, [NSThread currentThread]);
     
     // Initialize Metal
     _device = MTLCreateSystemDefaultDevice();
@@ -63,39 +55,26 @@ extern "C" int game_main(int argc, char *argv[]);
         return;
     }
     
-    // Configure MTKView
-    _metalView.device = _device;
-    _metalView.colorPixelFormat = MTLPixelFormatBGRA8Unorm;
-    _metalView.depthStencilPixelFormat = MTLPixelFormatDepth32Float;
-    _metalView.clearColor = MTLClearColorMake(0.1, 0.1, 0.1, 1.0);
+    // GameView is already configured in loadView
+    // The GameView handles all MTKView configuration and touch handling automatically
     
-    // PlatformLayerDelegate will handle rendering automatically
-    _metalView.enableSetNeedsDisplay = YES;
-    
-    // Add MTKView configuration debug logging
-    NSLog(@"[MTKVIEW DEBUG] Device: %p", _device);
-    NSLog(@"[MTKVIEW DEBUG] Color pixel format: %lu", (unsigned long)_metalView.colorPixelFormat);
-    NSLog(@"[MTKVIEW DEBUG] Depth stencil pixel format: %lu", (unsigned long)_metalView.depthStencilPixelFormat);
-    NSLog(@"[MTKVIEW DEBUG] Clear color: (%.3f,%.3f,%.3f,%.3f)", 
-          _metalView.clearColor.red, _metalView.clearColor.green, 
-          _metalView.clearColor.blue, _metalView.clearColor.alpha);
-    NSLog(@"[MTKVIEW DEBUG] Enable set needs display: %s", _metalView.enableSetNeedsDisplay ? "YES" : "NO");
-    NSLog(@"[MTKVIEW DEBUG] Frame: %@", NSStringFromCGRect(_metalView.frame));
-    NSLog(@"[MTKVIEW DEBUG] Bounds: %@", NSStringFromCGRect(_metalView.bounds));
-    
-    // Setup touch handling
-    _metalView.multipleTouchEnabled = YES;
-    _metalView.userInteractionEnabled = YES; // Ensure touch events are enabled
-    NSLog(@"[INIT] Set up touch handling");
+    TraceLog(LOG_INFO, "[INIT] GameView configuration completed");
+    TraceLog(LOG_INFO, "[INIT] GameView frame: %@", NSStringFromCGRect(_gameView.frame));
+    TraceLog(LOG_INFO, "[INIT] GameView bounds: %@", NSStringFromCGRect(_gameView.bounds));
     
     // Create game queue for background operations
     _gameQueue = dispatch_queue_create("com.floppyturd.game", DISPATCH_QUEUE_SERIAL);
     
     // CRITICAL: Initialize PlatformLayer BEFORE calling game_main
-    NSLog(@"[INIT] Initializing PlatformLayer with MTKView: %p", _metalView);
+    TraceLog(LOG_INFO, "[INIT] Initializing PlatformLayer with GameView: %p", _gameView);
     PlatformLayer& platformLayer = PlatformLayer::GetInstance();
-    platformLayer.Initialize((__bridge void*)_metalView);
-    NSLog(@"[INIT] PlatformLayer initialized successfully");
+    
+    // Get the GameView's MetalRenderer to share with PlatformLayer
+    void* gameViewMetalRenderer = [_gameView getMetalRenderer];
+    TraceLog(LOG_INFO, "[INIT] GameView MetalRenderer: %p", gameViewMetalRenderer);
+    
+    platformLayer.Initialize((__bridge void*)_gameView, (__bridge void*)self, gameViewMetalRenderer);
+    TraceLog(LOG_INFO, "[INIT] PlatformLayer initialized successfully");
     
     // --- Metal/iOS Native Pixel Initialization ---
     UIScreen* screen = [UIScreen mainScreen];
@@ -120,7 +99,7 @@ extern "C" int game_main(int argc, char *argv[]);
                         (float)nativeBounds.size.width, (float)nativeBounds.size.height, // pixels
                         { (float)safeAreaPoints.origin.x, (float)safeAreaPoints.origin.y, (float)safeAreaPoints.size.width, (float)safeAreaPoints.size.height }, // safe area in points
                         { (float)safeAreaPixels.origin.x, (float)safeAreaPixels.origin.y, (float)safeAreaPixels.size.width, (float)safeAreaPixels.size.height }); // safe area in pixels
-    NSLog(@"[INIT] UIManager initialized: points=%.0fx%.0f, pixels=%.0fx%.0f, safeAreaPoints=(%.0f,%.0f,%.0f,%.0f), safeAreaPixels=(%.0f,%.0f,%.0f,%.0f)",
+    TraceLog(LOG_INFO, "[INIT] UIManager initialized: points=%.0fx%.0f, pixels=%.0fx%.0f, safeAreaPoints=(%.0f,%.0f,%.0f,%.0f), safeAreaPixels=(%.0f,%.0f,%.0f,%.0f)",
         bounds.size.width, bounds.size.height, nativeBounds.size.width, nativeBounds.size.height,
         safeAreaPoints.origin.x, safeAreaPoints.origin.y, safeAreaPoints.size.width, safeAreaPoints.size.height,
         safeAreaPixels.origin.x, safeAreaPixels.origin.y, safeAreaPixels.size.width, safeAreaPixels.size.height);
@@ -128,46 +107,51 @@ extern "C" int game_main(int argc, char *argv[]);
     // Now initialize the game directly on the main thread.
     // This is CRITICAL to prevent race conditions where the game loop
     // starts before the game instance is created.
-    NSLog(@"[INIT] Step 2: Starting synchronous game initialization on main thread: %@", [NSThread currentThread]);
+    TraceLog(LOG_INFO, "[INIT] Step 2: Starting synchronous game initialization on main thread: %@", [NSThread currentThread]);
     int result = game_main(0, nullptr);
     
     if (result == 0) {
-        NSLog(@"[INIT] Step 3: Game initialization successful, checking game instance on thread: %@", [NSThread currentThread]);
+        TraceLog(LOG_INFO, "[INIT] Step 3: Game initialization successful, checking game instance on thread: %@", [NSThread currentThread]);
         Game* postInitGame = GetGameInstance();
-        NSLog(@"[ACCESS] Step 3: GetGameInstance() called after initialization, returning: %p on thread: %@", postInitGame, [NSThread currentThread]);
+        TraceLog(LOG_INFO, "[ACCESS] Step 3: GetGameInstance() called after initialization, returning: %p on thread: %@", postInitGame, [NSThread currentThread]);
+        
+        // Set the game instance in GameView for rendering
+        _gameView.game = postInitGame;
+        TraceLog(LOG_INFO, "[INIT] Game instance set in GameView: %p", postInitGame);
+        
         _gameInitialized = YES;
         [self startGameLoop];
     } else {
-        NSLog(@"[ERROR] Step 3: Game initialization failed with code: %d on thread: %@", result, [NSThread currentThread]);
+        TraceLog(LOG_ERROR, "[ERROR] Step 3: Game initialization failed with code: %d on thread: %@", result, [NSThread currentThread]);
         Game* failedInitGame = GetGameInstance();
-        NSLog(@"[ACCESS] Step 3: GetGameInstance() called after failed initialization, returning: %p on thread: %@", failedInitGame, [NSThread currentThread]);
+        TraceLog(LOG_INFO, "[ACCESS] Step 3: GetGameInstance() called after failed initialization, returning: %p on thread: %@", failedInitGame, [NSThread currentThread]);
         [self showErrorAlert:[NSString stringWithFormat:@"Game initialization failed. Error code: %d", result]];
     }
     
-    NSLog(@"[INIT] GameViewController viewDidLoad COMPLETED");
-    NSLog(@"[INIT] ========================================");
+    TraceLog(LOG_INFO, "[INIT] GameViewController viewDidLoad COMPLETED");
+    TraceLog(LOG_INFO, "[INIT] ========================================");
 }
 
 - (void)setupDisplayLink {
-    NSLog(@"[DEBUG] setupDisplayLink called");
+    TraceLog(LOG_INFO, "[DEBUG] setupDisplayLink called");
     _displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(gameLoopTick:)];
     _displayLink.preferredFramesPerSecond = 60;
     [_displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSRunLoopCommonModes];
     _previousTime = CACurrentMediaTime();
-    NSLog(@"[DEBUG] setupDisplayLink completed, displayLink=%p", _displayLink);
+    TraceLog(LOG_INFO, "[DEBUG] setupDisplayLink completed, displayLink=%p", _displayLink);
 }
 
 - (void)gameLoopTick:(CADisplayLink *)sender {
-    NSLog(@"[DEBUG] gameLoopTick called on thread: %@", [NSThread currentThread]);
+    TraceLog(LOG_INFO, "[DEBUG] gameLoopTick called on thread: %@", [NSThread currentThread]);
     if (!_gameInitialized) {
-        NSLog(@"[DEBUG] Game not initialized, skipping gameLoopTick on thread: %@", [NSThread currentThread]);
+        TraceLog(LOG_INFO, "[DEBUG] Game not initialized, skipping gameLoopTick on thread: %@", [NSThread currentThread]);
         return;
     }
     
     Game* game = GetGameInstance();
-    NSLog(@"[ACCESS] GetGameInstance() called from gameLoopTick, returning: %p on thread: %@", game, [NSThread currentThread]);
+    TraceLog(LOG_INFO, "[ACCESS] GetGameInstance() called from gameLoopTick, returning: %p on thread: %@", game, [NSThread currentThread]);
     if (!game) {
-        NSLog(@"[DEBUG] Game instance is null, skipping gameLoopTick on thread: %@", [NSThread currentThread]);
+        TraceLog(LOG_INFO, "[DEBUG] Game instance is null, skipping gameLoopTick on thread: %@", [NSThread currentThread]);
         return;
     }
     
@@ -179,17 +163,20 @@ extern "C" int game_main(int argc, char *argv[]);
     // Clamp delta time to prevent large jumps
     if (deltaTime > 0.1f) deltaTime = 0.1f;
     
-    NSLog(@"[DEBUG] gameLoopTick: deltaTime=%f, calling game->UpdateFrame", deltaTime);
+    TraceLog(LOG_INFO, "[DEBUG] gameLoopTick: deltaTime=%f, calling game->HandleInputFrame + UpdateFrame", deltaTime);
     
     // Run game update on the game queue
     dispatch_async(_gameQueue, ^{
-        // Update game logic
+        // Phase 1: Handle input (latch all input before game logic)
+        game->HandleInputFrame();
+        
+        // Phase 2: Update game logic
         game->UpdateFrame(deltaTime);
         
-        // Trigger rendering on main thread
+        // Phase 3: Trigger rendering on main thread
         dispatch_async(dispatch_get_main_queue(), ^{
-            NSLog(@"[DEBUG] gameLoopTick: Triggering setNeedsDisplay");
-            [_metalView setNeedsDisplay];
+            TraceLog(LOG_INFO, "[DEBUG] gameLoopTick: Triggering setNeedsDisplay");
+            [_gameView setNeedsDisplay];
         });
     });
 }
@@ -197,57 +184,33 @@ extern "C" int game_main(int argc, char *argv[]);
 - (void)viewWillLayoutSubviews {
     [super viewWillLayoutSubviews];
     
-    NSLog(@"[LAYOUT] View bounds: %@", NSStringFromCGRect(self.view.bounds));
+    TraceLog(LOG_INFO, "[LAYOUT] View bounds: %@", NSStringFromCGRect(self.view.bounds));
     
-    // Update MTKView frame to match the view's bounds
-    if (_metalView && !CGRectEqualToRect(_metalView.frame, self.view.bounds)) {
-        _metalView.frame = self.view.bounds;
-        NSLog(@"[LAYOUT] MTKView frame updated to: %@", NSStringFromCGRect(_metalView.frame));
+    // Update GameView frame to match the view's bounds
+    if (_gameView && !CGRectEqualToRect(_gameView.frame, self.view.bounds)) {
+        _gameView.frame = self.view.bounds;
+        TraceLog(LOG_INFO, "[LAYOUT] GameView frame updated to: %@", NSStringFromCGRect(_gameView.frame));
     }
     
     // Handle rotation if needed
     UIInterfaceOrientation newOrientation = self.view.window.windowScene.interfaceOrientation;
-    NSLog(@"[ROTATION] Current orientation: %ld", (long)newOrientation);
+    TraceLog(LOG_INFO, "[ROTATION] Current orientation: %ld", (long)newOrientation);
     
     // Notify the game about orientation change
-    if (_metalView) {
+    if (_gameView) {
         // Trigger a redraw with the new orientation
-        [_metalView setNeedsDisplay];
+        [_gameView setNeedsDisplay];
     }
 }
 
 #pragma mark - Touch Handling
 
-- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
-    for (UITouch *touch in touches) {
-        CGPoint location = [touch locationInView:_metalView];
-        UpdateTouchState((int)touch.hash, location.x, location.y, true);
-    }
-}
-
-- (void)touchesMoved:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
-    for (UITouch *touch in touches) {
-        CGPoint location = [touch locationInView:_metalView];
-        UpdateTouchState((int)touch.hash, location.x, location.y, true);
-    }
-}
-
-- (void)touchesEnded:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
-    for (UITouch *touch in touches) {
-        CGPoint location = [touch locationInView:_metalView];
-        UpdateTouchState((int)touch.hash, location.x, location.y, false);
-    }
-}
-
-- (void)touchesCancelled:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
-    for (UITouch *touch in touches) {
-        UpdateTouchState((int)touch.hash, 0, 0, false);
-    }
-}
+// Touch handling is now managed by GameView
+// The GameView processes touch events and forwards them to TouchControls
 
 - (void)viewWillDisappear:(BOOL)animated {
     [super viewWillDisappear:animated];
-    ClearAllTouchStates(); // Clear touches when view is no longer active
+    // Touch state clearing is handled by GameView
 }
 
 - (void)viewDidDisappear:(BOOL)animated {
@@ -270,7 +233,7 @@ extern "C" int game_main(int argc, char *argv[]);
 }
 
 - (void)dealloc {
-    NSLog(@"[CLEANUP] GameViewController dealloc");
+    TraceLog(LOG_INFO, "[CLEANUP] GameViewController dealloc");
     
     // Invalidate display link
     if (_displayLink) {
@@ -280,24 +243,24 @@ extern "C" int game_main(int argc, char *argv[]);
     
     // Shutdown the game
     Game* game = GetGameInstance();
-    NSLog(@"[ACCESS] GetGameInstance() called from dealloc, returning: %p", game);
+    TraceLog(LOG_INFO, "[ACCESS] GetGameInstance() called from dealloc, returning: %p", game);
     if (game) {
-        NSLog(@"[CLEANUP] Shutting down game instance");
+        TraceLog(LOG_INFO, "[CLEANUP] Shutting down game instance");
         game->Shutdown();
         delete game;
-        NSLog(@"[ACCESS] SetGameInstance(nullptr) called from dealloc");
+        TraceLog(LOG_INFO, "[ACCESS] SetGameInstance(nullptr) called from dealloc");
         SetGameInstance(nullptr);
         Game* afterNullGame = GetGameInstance();
-        NSLog(@"[ACCESS] GetGameInstance() called after SetGameInstance(nullptr), returning: %p", afterNullGame);
+        TraceLog(LOG_INFO, "[ACCESS] GetGameInstance() called after SetGameInstance(nullptr), returning: %p", afterNullGame);
     }
     
-    // Clear the MTKView delegate
-    if (_metalView) {
-        _metalView.delegate = nil;
+    // Clear the GameView delegate
+    if (_gameView) {
+        _gameView.delegate = nil;
     }
     
     // PlatformLayer is a singleton that manages its own lifetime
-    NSLog(@"[CLEANUP] PlatformLayer cleanup handled by singleton");
+    TraceLog(LOG_INFO, "[CLEANUP] PlatformLayer cleanup handled by singleton");
     
     // ARC will handle the rest of the Objective-C objects
 }
@@ -326,7 +289,7 @@ extern "C" int game_main(int argc, char *argv[]);
 #pragma mark - Alert Handling
 
 - (void)startGameLoop {
-    NSLog(@"[INIT] Starting game loop with CADisplayLink");
+    TraceLog(LOG_INFO, "[INIT] Starting game loop with CADisplayLink");
     
     // Create display link for 60 FPS
     _displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(gameLoopTick:)];
@@ -334,7 +297,7 @@ extern "C" int game_main(int argc, char *argv[]);
     [_displayLink addToRunLoop:[NSRunLoop mainRunLoop] forMode:NSDefaultRunLoopMode];
     
     _previousTime = CACurrentMediaTime();
-    NSLog(@"[INIT] Game loop started successfully");
+    TraceLog(LOG_INFO, "[INIT] Game loop started successfully");
 }
 
 - (void)showErrorAlert:(NSString *)message {
@@ -403,7 +366,7 @@ extern "C" int game_main(int argc, char *argv[]);
                             { (float)safeAreaPoints.origin.x, (float)safeAreaPoints.origin.y, (float)safeAreaPoints.size.width, (float)safeAreaPoints.size.height }, // safe area in points
                             { (float)safeAreaPixels.origin.x, (float)safeAreaPixels.origin.y, (float)safeAreaPixels.size.width, (float)safeAreaPixels.size.height }); // safe area in pixels
         
-        NSLog(@"[SYSTEM] Orientation changed, updated UIManager: points=%.0fx%.0f, pixels=%.0fx%.0f", 
+        TraceLog(LOG_INFO, "[SYSTEM] Orientation changed, updated UIManager: points=%.0fx%.0f, pixels=%.0fx%.0f", 
               size.width, size.height, sizePixels.width, sizePixels.height);
         
     } completion:nil];
