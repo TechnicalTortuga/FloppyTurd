@@ -143,11 +143,11 @@ void MetalRenderer::CreatePipelines() {
         NSLog(@"[METAL DEBUG] Device: %@", m_device);
         
         if (shaderSource) {
-            // Metal debug logs removed for cleaner output
+            NSLog(@"[METAL DEBUG] Loading shader library from source");
             library = [m_device newLibraryWithSource:shaderSource options:nil error:&error];
         } else {
             // Try to load default library
-            // Metal debug logs removed for cleaner output
+            NSLog(@"[METAL DEBUG] Loading default shader library");
             library = [m_device newDefaultLibrary];
         }
         
@@ -158,12 +158,13 @@ void MetalRenderer::CreatePipelines() {
             }
             
             // Try to get more information about why the library failed to load
-                    // Metal debug logs removed for cleaner output
+            NSLog(@"[METAL DEBUG] Checking available library names");
+            NSLog(@"[METAL DEBUG] Device name: %@", m_device.name);
             
             return;
         }
         
-        // Metal debug logs removed for cleaner output
+        NSLog(@"[METAL DEBUG] Shader library loaded successfully");
         
         id<MTLFunction> vertexFunction = [library newFunctionWithName:@"vertex_shader_2d"];
         id<MTLFunction> fragmentTexturedFunction = [library newFunctionWithName:@"fragment_shader_textured"];
@@ -235,7 +236,7 @@ void MetalRenderer::CreatePipelines() {
         if (error) {
             TraceLog(LOG_ERROR, "[METAL ERROR] Failed to create textured pipeline: %@", error.localizedDescription);
         } else {
-            // Metal debug logs removed for cleaner output
+            TraceLog(LOG_INFO, "[METAL DEBUG] Textured pipeline created successfully");
         }
         
         // Create color-only pipeline (non-instanced)
@@ -258,7 +259,7 @@ void MetalRenderer::CreatePipelines() {
         if (error) {
             TraceLog(LOG_ERROR, "[METAL ERROR] Failed to create color pipeline: %@", error.localizedDescription);
         } else {
-            // Metal debug logs removed for cleaner output
+            TraceLog(LOG_INFO, "[METAL DEBUG] Color pipeline created successfully");
         }
         
         // Create SDF pipeline for single-channel grayscale textures
@@ -281,7 +282,7 @@ void MetalRenderer::CreatePipelines() {
         if (error) {
             TraceLog(LOG_ERROR, "[METAL ERROR] Failed to create SDF pipeline: %@", error.localizedDescription);
         } else {
-            // Metal debug logs removed for cleaner output
+            TraceLog(LOG_INFO, "[METAL DEBUG] SDF pipeline created successfully");
         }
         
         // Create instanced textured pipeline
@@ -389,7 +390,8 @@ void MetalRenderer::BeginFrame() {
     m_currentCommandBuffer.label = [NSString stringWithFormat:@"Frame %d Command Buffer", 
                                  m_frameResources.GetCurrentFrameIndex()];
     
-
+    TraceLog(LOG_INFO, "[METAL DEBUG] BeginFrame: Created command buffer for frame %d", m_frameResources.GetCurrentFrameIndex());
+    
     // Get render pass descriptor from view
     m_currentRenderPass = m_view.currentRenderPassDescriptor;
     if (!m_currentRenderPass) {
@@ -397,7 +399,7 @@ void MetalRenderer::BeginFrame() {
         return;
     }
     
-    // Metal debug logs removed for cleaner output
+    TraceLog(LOG_INFO, "[METAL DEBUG] BeginFrame: Got render pass descriptor");
     
     // Create render encoder
     m_currentEncoder = [m_currentCommandBuffer renderCommandEncoderWithDescriptor:m_currentRenderPass];
@@ -408,7 +410,7 @@ void MetalRenderer::BeginFrame() {
         return;
     }
     
-    // Metal debug logs removed for cleaner output
+    TraceLog(LOG_INFO, "[METAL DEBUG] BeginFrame: Created render command encoder successfully");
     
     // Set initial pipeline state
     [m_currentEncoder setDepthStencilState:m_depthStencilState];
@@ -417,7 +419,7 @@ void MetalRenderer::BeginFrame() {
     // Set viewport to full drawable size
     MTLViewport viewport = {0, 0, m_view.drawableSize.width, m_view.drawableSize.height, 0, 1};
     [m_currentEncoder setViewport:viewport];
-    // Metal debug logs removed for cleaner output
+    TraceLog(LOG_INFO, "[METAL DEBUG] Set viewport: %.1fx%.1f", viewport.width, viewport.height);
     
     // Update uniforms for this frame
     UpdateUniforms();
@@ -429,7 +431,8 @@ void MetalRenderer::BeginFrame() {
 }
 
 void MetalRenderer::EndFrame() {
-    // Metal debug logs removed for cleaner output
+    TraceLog(LOG_INFO, "[METAL DEBUG] EndFrame called");
+    TraceLog(LOG_INFO, "[METAL DEBUG] EndFrame: MetalRenderer instance: %p", this);
     FlushBatch();
 
     // Draw debug overlay if enabled
@@ -446,12 +449,12 @@ void MetalRenderer::EndFrame() {
 }
 
 void MetalRenderer::Present() {
-    // Metal debug logs removed for cleaner output
+    TraceLog(LOG_INFO, "[METAL DEBUG] Present: Command buffer=%p, Drawable=%p", m_currentCommandBuffer, m_view.currentDrawable);
     
     if (m_currentCommandBuffer && m_view.currentDrawable) {
         // Schedule presentation of the drawable
         [m_currentCommandBuffer presentDrawable:m_view.currentDrawable];
-        // Metal debug logs removed for cleaner output
+        TraceLog(LOG_INFO, "[METAL DEBUG] Present: Scheduled drawable presentation");
         
         // Add a completion handler to log command buffer status
         [m_currentCommandBuffer addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
@@ -467,7 +470,7 @@ void MetalRenderer::Present() {
         
         // Submit the command buffer to the GPU
         [m_currentCommandBuffer commit];
-        // Metal debug logs removed for cleaner output
+        TraceLog(LOG_INFO, "[METAL DEBUG] Present: Command buffer committed to GPU");
         
         m_currentCommandBuffer = nullptr;
         
@@ -489,7 +492,7 @@ void MetalRenderer::Present() {
 }
 
 void MetalRenderer::Clear(Color color) {
-    // Metal debug logs removed for cleaner output
+    TraceLog(LOG_INFO, "[METAL DEBUG] Clear called with color=(%d,%d,%d,%d)", color.r, color.g, color.b, color.a);
     
     if (m_currentRenderPass) {
         m_currentRenderPass.colorAttachments[0].clearColor = MTLClearColorMake(
@@ -498,7 +501,8 @@ void MetalRenderer::Clear(Color color) {
             color.b / 255.0f,
             color.a / 255.0f
         );
-        // Metal debug logs removed for cleaner output
+        TraceLog(LOG_INFO, "[METAL DEBUG] Clear: Set clear color to (%.3f,%.3f,%.3f,%.3f)", 
+              color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f);
     } else {
         TraceLog(LOG_ERROR, "[METAL ERROR] Clear: No render pass available");
     }
@@ -508,7 +512,8 @@ void MetalRenderer::SetProjectionMatrix(float width, float height) {
     // Use MTKView's drawableSize for pixel-accurate rendering
     CGSize drawableSize = m_view.drawableSize;
     m_projectionMatrix = MakeOrthoMatrix(0, drawableSize.width, drawableSize.height, 0, -1.0f, 1.0f);
-    // Metal debug logs removed for cleaner output
+    TraceLog(LOG_INFO, "[METAL DEBUG] SetProjectionMatrix: drawableSize=%.1fx%.1f, requested=%.1fx%.1f", 
+             drawableSize.width, drawableSize.height, width, height);
 }
 
 void MetalRenderer::SetProjectionMatrixWithSafeArea(float screenWidth, float screenHeight, Rectangle safeArea) {
@@ -516,7 +521,8 @@ void MetalRenderer::SetProjectionMatrixWithSafeArea(float screenWidth, float scr
     // This ensures content is properly positioned within the safe area
     m_projectionMatrix = MakeOrthoMatrix(safeArea.x, safeArea.x + safeArea.width, 
                                         safeArea.y + safeArea.height, safeArea.y, -1.0f, 1.0f);
-    // Metal debug logs removed for cleaner output
+    TraceLog(LOG_INFO, "[METAL DEBUG] SetProjectionMatrixWithSafeArea: screen=%.1fx%.1f, safeArea=(%.1f,%.1f,%.1f,%.1f)", 
+             screenWidth, screenHeight, safeArea.x, safeArea.y, safeArea.width, safeArea.height);
 }
 
 void MetalRenderer::UpdateUniforms() {
@@ -543,14 +549,16 @@ void MetalRenderer::UpdateUniforms() {
 }
 
 void MetalRenderer::DrawRectangle(float x, float y, float width, float height, Color color) {
-        // Drawing debug logs removed for cleaner output
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawRectangle: x=%.2f, y=%.2f, width=%.2f, height=%.2f, color=(%d,%d,%d,%d)", 
+             x, y, width, height, color.r, color.g, color.b, color.a);
     size_t verticesBefore = m_vertices.size();
     size_t commandsBefore = m_drawCommands.size();
     AddRectangleVertices(x, y, width, height, color);
     DrawCommand cmd = CreateDrawCommand(MTLPrimitiveTypeTriangle, m_vertices.size() - 6, 6, nullptr, false, 
                                        RENDER_STATE_ALPHA_BLEND, 0.0f, "Rectangle");
     m_drawCommands.push_back(cmd);
-        // Drawing debug logs removed for cleaner output
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawRectangle: vertices before=%zu, after=%zu; drawCommands before=%zu, after=%zu", 
+             verticesBefore, m_vertices.size(), commandsBefore, m_drawCommands.size());
 }
 
 void MetalRenderer::AddRectangleVertices(float x, float y, float width, float height, Color color) {
@@ -651,7 +659,10 @@ void MetalRenderer::ExecuteOptimizedDrawCommands() {
     uint32_t drawCallCount = 0;
     
     for (const auto& cmd : m_drawCommands) {
-
+        TraceLog(LOG_INFO, "[METAL DEBUG] Executing draw command: %s, vertices=%lu-%lu, texture=%p, layer=%d, depth=%.2f, instances=%lu", 
+                 cmd.debugName, (unsigned long)cmd.vertexStart, (unsigned long)(cmd.vertexStart + cmd.vertexCount - 1), 
+                 cmd.texture, (int)(cmd.depth / 0.1f), cmd.depth, (unsigned long)cmd.instanceCount);
+        
         // Validate instance count to catch memory corruption early
         if (cmd.instanceCount > 1000000) {
             TraceLog(LOG_ERROR, "[METAL ERROR] ExecuteOptimizedDrawCommands: Suspicious instance count %lu for %s, possible memory corruption!", 
@@ -726,6 +737,8 @@ void MetalRenderer::ExecuteOptimizedDrawCommands() {
             [m_currentEncoder drawPrimitives:cmd.primitiveType
                                  vertexStart:cmd.vertexStart
                                  vertexCount:cmd.vertexCount];
+            TraceLog(LOG_INFO, "[METAL DEBUG] Regular draw: %lu vertices for %s", 
+                     (unsigned long)cmd.vertexCount, cmd.debugName);
         }
         
         m_debugStats.batchedVertices += cmd.vertexCount;
@@ -976,7 +989,8 @@ void MetalRenderer::DrawLine(float x1, float y1, float x2, float y2, Color color
 }
 
 void MetalRenderer::DrawLineEx(float x1, float y1, float x2, float y2, float thickness, Color color) {
-    // Metal debug logs removed for cleaner output
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawLineEx: (%.1f,%.1f) to (%.1f,%.1f), thickness=%.1f, color=(%d,%d,%d,%d)", 
+             x1, y1, x2, y2, thickness, color.r, color.g, color.b, color.a);
     
     // Calculate perpendicular vector for thickness
     float dx = x2 - x1;
@@ -984,7 +998,7 @@ void MetalRenderer::DrawLineEx(float x1, float y1, float x2, float y2, float thi
     float length = sqrtf(dx * dx + dy * dy);
     
     if (length == 0) {
-        // Metal debug logs removed for cleaner output
+        TraceLog(LOG_WARNING, "[METAL DEBUG] DrawLineEx: Zero length line, skipping");
         return;
     }
     
@@ -1004,14 +1018,14 @@ void MetalRenderer::DrawLineEx(float x1, float y1, float x2, float y2, float thi
     
     // Add vertices for two triangles
     size_t startIdx = m_vertices.size();
-    // Metal debug logs removed for cleaner output
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawLineEx: Adding vertices starting at index %zu", startIdx);
     
     AddVertex(x1_top, y1_top, 0.5f, 0.5f, color);
     AddVertex(x1_bot, y1_bot, 0.5f, 0.5f, color);
     AddVertex(x2_top, y2_top, 0.5f, 0.5f, color);
     AddVertex(x2_bot, y2_bot, 0.5f, 0.5f, color);
     
-    // Metal debug logs removed for cleaner output
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawLineEx: Added 4 vertices, total vertices=%zu", m_vertices.size());
     
     // First triangle: top-left, bottom-left, top-right
     DrawCommand cmd1 = CreateDrawCommand(MTLPrimitiveTypeTriangle, startIdx, 3, nullptr, false, 
@@ -1023,7 +1037,7 @@ void MetalRenderer::DrawLineEx(float x1, float y1, float x2, float y2, float thi
                                         RENDER_STATE_ALPHA_BLEND, 0.0f, "Line");
     m_drawCommands.push_back(cmd2);
     
-    // Metal debug logs removed for cleaner output
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawLineEx: Added 2 draw commands, total commands=%zu", m_drawCommands.size());
 }
 
 void MetalRenderer::DrawTexture(id<MTLTexture> texture, Rectangle source, Rectangle dest, Color tint) {
@@ -1032,7 +1046,8 @@ void MetalRenderer::DrawTexture(id<MTLTexture> texture, Rectangle source, Rectan
 }
 
 void MetalRenderer::DrawTexture(id<MTLTexture> texture, Rectangle source, Rectangle dest, Color tint, RenderLayer layer) {
-        // Drawing debug logs removed for cleaner output
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawTexture: texture=%p, source=(%.1f,%.1f,%.1f,%.1f), dest=(%.1f,%.1f,%.1f,%.1f), tint=(%d,%d,%d,%d), layer=%d", 
+             texture, source.x, source.y, source.width, source.height, dest.x, dest.y, dest.width, dest.height, tint.r, tint.g, tint.b, tint.a, (int)layer);
     
     if (!texture) {
         TraceLog(LOG_WARNING, "[METAL WARNING] DrawTexture called with a null texture.");
@@ -1081,13 +1096,14 @@ void MetalRenderer::DrawTexture(id<MTLTexture> texture, Rectangle source, Rectan
             break;
     }
     
-    // Drawing debug logs removed for cleaner output
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawTexture: layer=%d, depth=%.1f, dest=(%.1f,%.1f,%.1f,%.1f)", (int)layer, cmd.depth, dest.x, dest.y, dest.width, dest.height);
     
     m_drawCommands.push_back(cmd);
 }
 
 void MetalRenderer::DrawTexture(id<MTLTexture> texture, Rectangle source, Rectangle dest, Color tint, RenderLayer layer, int textureFormat) {
-    // Metal debug logs removed for cleaner output
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawTexture (with format): texture=%p, format=%d, source=(%.1f,%.1f,%.1f,%.1f), dest=(%.1f,%.1f,%.1f,%.1f), tint=(%d,%d,%d,%d), layer=%d", 
+             texture, textureFormat, source.x, source.y, source.width, source.height, dest.x, dest.y, dest.width, dest.height, tint.r, tint.g, tint.b, tint.a, (int)layer);
     
     if (!texture) {
         TraceLog(LOG_WARNING, "[METAL WARNING] DrawTexture called with a null texture.");
@@ -1118,7 +1134,7 @@ void MetalRenderer::DrawTexture(id<MTLTexture> texture, Rectangle source, Rectan
     bool isSdfTexture = (textureFormat == 1); // IOS_PIXELFORMAT_UNCOMPRESSED_GRAYSCALE
     if (isSdfTexture) {
         cmd.renderState |= RENDER_STATE_SDF; // Add SDF flag to render state
-        // Metal debug logs removed for cleaner output
+        TraceLog(LOG_INFO, "[METAL DEBUG] DrawTexture: Detected SDF texture, will use SDF pipeline");
     }
     
     // Set debug name based on layer
@@ -1143,7 +1159,8 @@ void MetalRenderer::DrawTexture(id<MTLTexture> texture, Rectangle source, Rectan
             break;
     }
     
-    // Metal debug logs removed for cleaner output
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawTexture (with format): layer=%d, depth=%.1f, isSdf=%s, dest=(%.1f,%.1f,%.1f,%.1f)", 
+             (int)layer, cmd.depth, isSdfTexture ? "true" : "false", dest.x, dest.y, dest.width, dest.height);
     
     m_drawCommands.push_back(cmd);
 }
@@ -1156,7 +1173,7 @@ void MetalRenderer::AddTexturedRectangleVertices(Rectangle dest, Rectangle sourc
     
     float texWidth = (float)m_currentTexture.width;
     float texHeight = (float)m_currentTexture.height;
-    // Metal debug logs removed for cleaner output
+    TraceLog(LOG_INFO, "[METAL DEBUG] Texture dimensions: %fx%f", texWidth, texHeight);
     
     // Normalize texture coordinates by dividing by texture dimensions
     float u1 = source.x / texWidth;
@@ -1176,7 +1193,8 @@ void MetalRenderer::AddTexturedRectangleVertices(Rectangle dest, Rectangle sourc
     // Log coordinate system info for debugging
     Rectangle pixelScreenRect = UICoordinateSystem::GetPixelScreenRect();
     Rectangle safeAreaPx = UICoordinateSystem::GetSafeAreaRect(true);
-    // Metal debug logs removed for cleaner output
+    TraceLog(LOG_INFO, "[METAL DEBUG] Coordinate System: screen=%.1fx%.1f, safeArea=(%.1f,%.1f,%.1f,%.1f)", 
+             pixelScreenRect.width, pixelScreenRect.height, safeAreaPx.x, safeAreaPx.y, safeAreaPx.width, safeAreaPx.height);
     
     // Two triangles to make a rectangle (6 unique vertices)
     // Triangle 1: top-left, bottom-left, top-right
@@ -1203,7 +1221,9 @@ void MetalRenderer::AddTransformedTexturedQuad(const simd_float2 vertices[4], id
     float u1 = 0.0f, v1 = 0.0f;
     float u2 = 1.0f, v2 = 1.0f;
     
-    // Metal debug logs removed for cleaner output
+    TraceLog(LOG_INFO, "[METAL DEBUG] AddTransformedTexturedQuad: texture=%p, vertices=[(%.1f,%.1f),(%.1f,%.1f),(%.1f,%.1f),(%.1f,%.1f)]", 
+             texture, vertices[0].x, vertices[0].y, vertices[1].x, vertices[1].y, 
+             vertices[2].x, vertices[2].y, vertices[3].x, vertices[3].y);
     
     // Two triangles to make a quad using the pre-transformed vertices
     // Triangle 1: vertices[0], vertices[1], vertices[2] (top-left, top-right, bottom-left)
@@ -1219,7 +1239,7 @@ void MetalRenderer::AddTransformedTexturedQuad(const simd_float2 vertices[4], id
 
 void MetalRenderer::DrawTextureEx(id<MTLTexture> texture, Vector2 position, float rotation, float scale, Color tint) {
     if (!texture) {
-        // Metal debug logs removed for cleaner output
+        TraceLog(LOG_WARNING, "[METAL DEBUG] DrawTextureEx: Null texture");
         return;
     }
     
@@ -1227,7 +1247,8 @@ void MetalRenderer::DrawTextureEx(id<MTLTexture> texture, Vector2 position, floa
     float width = texture.width;
     float height = texture.height;
     
-    // Metal debug logs removed for cleaner output
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawTextureEx (CPU): texture=%p, pos=(%.1f,%.1f), rotation=%.2f, scale=%.2f, size=%fx%f", 
+             texture, position.x, position.y, rotation, scale, width, height);
     
     // Calculate transform matrix on CPU
     // Apply transformations in the correct order for center pivot rotation:
@@ -1240,13 +1261,13 @@ void MetalRenderer::DrawTextureEx(id<MTLTexture> texture, Vector2 position, floa
     // 2. Rotate around the center
     if (rotation != 0) {
         transform = simd_mul(transform, MakeRotationMatrix(rotation));
-        // Metal debug logs removed for cleaner output
+        TraceLog(LOG_INFO, "[METAL DEBUG] DrawTextureEx (CPU): Applied rotation %.2f radians", rotation);
     }
     
     // 3. Scale the texture
     if (scale != 1.0f) {
         transform = simd_mul(transform, MakeScaleMatrix(scale, scale));
-        // Metal debug logs removed for cleaner output
+        TraceLog(LOG_INFO, "[METAL DEBUG] DrawTextureEx (CPU): Applied scale %.2f", scale);
     }
     
     // 4. Translate back so the texture is centered at origin before scaling
@@ -1254,7 +1275,8 @@ void MetalRenderer::DrawTextureEx(id<MTLTexture> texture, Vector2 position, floa
     float offsetY = -height * 0.5f;
     transform = simd_mul(transform, MakeTranslationMatrix(offsetX, offsetY));
     
-    // Metal debug logs removed for cleaner output
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawTextureEx (CPU): Transform calculated, center=(%.1f,%.1f), offset=(%.1f,%.1f)", 
+             centerX, centerY, offsetX, offsetY);
     
     // Transform vertices on CPU
     simd_float4 localVertices[4] = {
@@ -1270,7 +1292,9 @@ void MetalRenderer::DrawTextureEx(id<MTLTexture> texture, Vector2 position, floa
         transformedVertices[i] = simd_make_float2(transformed.x, transformed.y);
     }
     
-    // Metal debug logs removed for cleaner output
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawTextureEx (CPU): Transformed vertices: [(%.1f,%.1f),(%.1f,%.1f),(%.1f,%.1f),(%.1f,%.1f)]", 
+             transformedVertices[0].x, transformedVertices[0].y, transformedVertices[1].x, transformedVertices[1].y,
+             transformedVertices[2].x, transformedVertices[2].y, transformedVertices[3].x, transformedVertices[3].y);
     
     // Submit pre-transformed vertices to GPU
     AddTransformedTexturedQuad(transformedVertices, texture, tint);
@@ -1292,7 +1316,8 @@ void MetalRenderer::DrawTextureEx(id<MTLTexture> texture, Vector2 position, floa
     
     m_drawCommands.push_back(cmd);
     
-    // Metal debug logs removed for cleaner output
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawTextureEx (CPU): Added draw command, vertices=%zu, commands=%zu", 
+             m_vertices.size(), m_drawCommands.size());
 }
 
 void MetalRenderer::DrawText(const char* text, float x, float y, float fontSize, Color color) {
@@ -1301,7 +1326,8 @@ void MetalRenderer::DrawText(const char* text, float x, float y, float fontSize,
     // Log coordinate system info for text positioning
     Rectangle pixelScreenRect = UICoordinateSystem::GetPixelScreenRect();
     Rectangle safeAreaPx = UICoordinateSystem::GetSafeAreaRect(true);
-    // Metal debug logs removed for cleaner output
+    TraceLog(LOG_INFO, "[METAL DEBUG] Text Coordinate System: screen=%.1fx%.1f, safeArea=(%.1f,%.1f,%.1f,%.1f)", 
+             pixelScreenRect.width, pixelScreenRect.height, safeAreaPx.x, safeAreaPx.y, safeAreaPx.width, safeAreaPx.height);
     
     if (!g_textRenderer) {
         TraceLog(LOG_ERROR, "[METAL ERROR] g_textRenderer is not initialized!");
@@ -1324,10 +1350,11 @@ void MetalRenderer::DrawText(const char* text, float x, float y, float fontSize,
     Rectangle source = {0, 0, (float)textTexture.width, (float)textTexture.height};
     Rectangle dest = {x, y, (float)width, (float)height};
     
-    // Metal debug logs removed for cleaner output
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawText: source=(%.1f,%.1f,%.1f,%.1f), dest=(%.1f,%.1f,%.1f,%.1f)", 
+             source.x, source.y, source.width, source.height, dest.x, dest.y, dest.width, dest.height);
     
     // Log text texture details
-    // Metal debug logs removed for cleaner output
+    TraceLog(LOG_INFO, "[METAL DEBUG] Text texture: %p, size=%fx%f, text='%s'", textTexture, width, height, text);
     
     DrawTexture(textTexture, source, dest, WHITE, RenderLayer::Text);
 }
@@ -1843,7 +1870,9 @@ DrawCommand MetalRenderer::CreateDrawCommand(MTLPrimitiveType primitiveType, NSU
     cmd.instanceDataOffset = 0;
     cmd.debugName = debugName;
     
-
+    TraceLog(LOG_INFO, "[METAL DEBUG] CreateDrawCommand: %s, vertices=%lu-%lu, texture=%p, useTexture=%d, renderState=0x%08x, depth=%.2f, instances=%lu", 
+             debugName, (unsigned long)vertexStart, (unsigned long)(vertexStart + vertexCount - 1), 
+             texture, useTexture, renderState, depth, (unsigned long)instanceCount);
     
     return cmd;
 }

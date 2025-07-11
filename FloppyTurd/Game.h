@@ -16,9 +16,6 @@
 #include "AudioStateManager.h"
 #include "TouchControls.h"
 
-// Forward declarations for iOS integration
-// Note: We're using PlatformLayer for touch state management instead of direct GameView access
-
 // Cross-platform logging macro
 #if defined(__OBJC__) && defined(__APPLE__) && TARGET_OS_IPHONE
     #import <Foundation/Foundation.h>
@@ -52,7 +49,6 @@ public:
 	// Platform-agnostic game interface
 	bool Initialize();           // One-time setup (platform-independent) - returns success
 	void UpdateFrame(float deltaTime); // Single frame update (platform-independent)
-	void HandleInputFrame(); // New: Dedicated input handling phase
 	void RenderFrame();          // Single frame render (platform-independent)
 	void Shutdown();             // Resource cleanup (platform-independent)
 	
@@ -77,6 +73,8 @@ public:
     
     return value; 
 }
+
+    TouchControls* GetTouchControls() { return &touchControls; }
 
 private:
 	Window* window;

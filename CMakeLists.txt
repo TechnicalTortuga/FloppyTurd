@@ -80,7 +80,7 @@ list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/UIManager.cpp)
     # Add platform-specific compatibility layer
     if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
         # iOS uses RaylibCompat_iOS.mm for Metal implementation (NOT RaylibCompat.cpp)
-        list(APPEND SOURCES 
+        list(APPEND SOURCES
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/RaylibCompat_iOS.mm
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/LogManager.mm
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/PlatformLayer.mm
@@ -115,9 +115,8 @@ endif()
 file(GLOB_RECURSE HEADERS 
     ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/*.h
 )
-# Ensure PlatformLayerDelegate.h and GameView.h are included for IDE visibility
+# Ensure PlatformLayerDelegate.h is included for IDE visibility
 list(APPEND HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/PlatformLayerDelegate.h)
-list(APPEND HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/iOS/GameView.h)
 
 # Remove the GameSettings.h and Resources.h from sources (header only)
 list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/GameSettings.h)

@@ -1,1 +1,0 @@
-../DerivedData/ArchiveIntermediates/FloppyTurd/IntermediateBuildFilesPath/UninstalledProducts/iphonesimulator/FloppyTurd.app

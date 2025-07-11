@@ -79,12 +79,7 @@ public:
 
     Vector2 GetPrimaryInputPosition() const {
 #ifdef PLATFORM_MOBILE
-        // Use actual touch state from PlatformLayer instance
-        const PlatformLayer& instance = PlatformLayer::GetInstance();
-        if (instance.m_PrimaryInputDown && !instance.m_TouchPoints.empty()) {
-            return instance.m_TouchPoints[0];
-        }
-        return {0, 0};
+        return GetMousePosition(); // Mapped to first touch
 #else
         return GetMousePosition();
 #endif
@@ -92,9 +87,7 @@ public:
 
     bool IsPrimaryInputPressed() const {
 #ifdef PLATFORM_MOBILE
-        // Use actual touch state from PlatformLayer instance
-        const PlatformLayer& instance = PlatformLayer::GetInstance();
-        return instance.m_PrimaryInputPressed;
+        return IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
 #else
         return IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
 #endif
@@ -102,9 +95,7 @@ public:
 
     bool IsPrimaryInputDown() const {
 #ifdef PLATFORM_MOBILE
-        // Use actual touch state from PlatformLayer instance
-        const PlatformLayer& instance = PlatformLayer::GetInstance();
-        return instance.m_PrimaryInputDown;
+        return IsMouseButtonDown(MOUSE_LEFT_BUTTON);
 #else
         return IsMouseButtonDown(MOUSE_LEFT_BUTTON);
 #endif
@@ -112,9 +103,7 @@ public:
 
     bool IsPrimaryInputReleased() const {
 #ifdef PLATFORM_MOBILE
-        // Use actual touch state from PlatformLayer instance
-        const PlatformLayer& instance = PlatformLayer::GetInstance();
-        return instance.m_PrimaryInputReleased;
+        return IsMouseButtonReleased(MOUSE_LEFT_BUTTON);
 #else
         return IsMouseButtonReleased(MOUSE_LEFT_BUTTON);
 #endif
@@ -123,9 +112,10 @@ public:
     std::vector<Vector2> GetTouchPoints() const {
         std::vector<Vector2> points;
 #ifdef PLATFORM_MOBILE
-        // Use actual touch points from PlatformLayer instance
-        const PlatformLayer& instance = PlatformLayer::GetInstance();
-        return instance.m_TouchPoints;
+        int touchCount = GetTouchCount();
+        for (int i = 0; i < touchCount; i++) {
+            points.push_back(GetTouchPosition(i));
+        }
 #else
         // On desktop, simulate single touch with mouse
         if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {

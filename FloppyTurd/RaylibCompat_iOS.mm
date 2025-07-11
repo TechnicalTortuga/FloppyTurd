@@ -16,9 +16,13 @@
 #import "AudioStateManager.h"
 #include "MetalRenderer.h"
 #import "PlatformLayerDelegate.h"
+#import "GameView.h"
 
 // Global game instance
 Game* g_gameInstance = nullptr;
+
+// Global GameView pointer for performance optimization
+static GameView* g_gameView = nullptr;
 
 // Game instance accessor function
 Game* GetGameInstance()
@@ -33,6 +37,46 @@ void SetGameInstance(Game* instance)
     g_gameInstance = instance;
 }
 
+// Function to set the global GameView pointer (called during initialization)
+extern "C" void SetGlobalGameView(GameView* gameView) {
+    g_gameView = gameView;
+    NSLog(@"[DEBUG] SetGlobalGameView: Set global GameView pointer to %p", gameView);
+}
+
+// Helper function to get GameView from global pointer (fast path)
+static GameView* GetGameView() {
+    if (g_gameView) {
+        return g_gameView;
+    }
+    
+    // Fallback to PlatformLayer if global pointer not set
+    void* viewPtr = PlatformLayer::GetInstance().GetView();
+    if (!viewPtr) {
+        NSLog(@"[ERROR] GetGameView: No view available from PlatformLayer");
+        return nil;
+    }
+    
+    UIView* view = (__bridge UIView*)viewPtr;
+    if (![view isKindOfClass:[GameView class]]) {
+        NSLog(@"[ERROR] GetGameView: View is not a GameView");
+        return nil;
+    }
+    
+    // Cache the result for future calls
+    g_gameView = (GameView*)view;
+    NSLog(@"[DEBUG] GetGameView: Cached GameView pointer: %p", g_gameView);
+    return g_gameView;
+}
+
+// Helper function to get MetalRenderer directly (eliminates PlatformLayer overhead)
+static MetalRenderer* GetMetalRenderer() {
+    GameView* gameView = GetGameView();
+    if (gameView) {
+        return [gameView getMetalRenderer];
+    }
+    return nullptr;
+}
+
 // Forward declarations for iOS-specific functions
 extern "C" {
 void DrawTexturePro_iOS(Texture2D texture, Rectangle source, Rectangle dest, Vector2 origin, float rotation, Color tint);
@@ -42,8 +86,6 @@ void DrawTextureRec_iOS(Texture2D texture, Rectangle source, Rectangle dest, Col
 void UnloadTexture_iOS(Texture2D texture);
 Texture2D CreateFallbackTexture(const char* fileName);
 }
-
-// Helper function declaration
 
 // Error logging for Metal operations
 static void LogMetalError(NSError *error, NSString *operation) {
@@ -63,13 +105,18 @@ Texture2D LoadTexture_iOS(const char *fileName)
     // Initialize texture cache if needed
     static bool cacheInitialized = false;
     if (!cacheInitialized) {
-        // Get Metal device through PlatformLayer
-        void* metalDevice = PlatformLayer::GetInstance().GetMetalDevice();
-        if (metalDevice) {
-            MetalTextureCache::GetInstance().Initialize(metalDevice);
-            cacheInitialized = true;
+        // Get Metal device through GameView instead of PlatformLayer
+        GameView* gameView = GetGameView();
+        if (gameView) {
+            id<MTLDevice> device = [gameView getMetalDevice];
+            if (device) {
+                MetalTextureCache::GetInstance().Initialize((__bridge_retained void*)device);
+                cacheInitialized = true;
+            } else {
+                NSLog(@"[ERROR] LoadTexture_iOS: Failed to get Metal device from GameView for initializing texture cache");
+            }
         } else {
-            NSLog(@"[ERROR] LoadTexture_iOS: Failed to get Metal device for initializing texture cache");
+            NSLog(@"[ERROR] LoadTexture_iOS: Failed to get GameView for initializing texture cache");
         }
     }
     
@@ -125,11 +172,18 @@ Texture2D LoadTexture_iOS(const char *fileName)
             return CreateFallbackTexture(fileName);
         }
         
-        // Get Metal device through PlatformLayer
-        id<MTLDevice> device = (__bridge id<MTLDevice>)PlatformLayer::GetInstance().GetMetalDevice();
+        // Get Metal device through GameView instead of PlatformLayer
+        GameView* gameView = GetGameView();
+        if (!gameView) {
+            NSLog(@"[ERROR] LoadTexture_iOS: Failed to get GameView for: %s", fileName);
+            TraceLog(LOG_ERROR, "Failed to get GameView for asset catalog texture");
+            return CreateFallbackTexture(fileName);
+        }
+        
+        id<MTLDevice> device = [gameView getMetalDevice];
         if (!device) {
-            NSLog(@"[ERROR] LoadTexture_iOS: Failed to get Metal device for: %s", fileName);
-            TraceLog(LOG_ERROR, "Failed to get Metal device for asset catalog texture");
+            NSLog(@"[ERROR] LoadTexture_iOS: Failed to get Metal device from GameView for: %s", fileName);
+            TraceLog(LOG_ERROR, "Failed to get Metal device from GameView for asset catalog texture");
             return CreateFallbackTexture(fileName);
         }
 
@@ -177,14 +231,17 @@ Texture2D LoadTexture_iOS(const char *fileName)
         
         // Generate mipmaps if needed
         if (textureDescriptor.mipmapLevelCount > 1) {
-            // Use the shared command queue from PlatformLayer
-            id<MTLCommandQueue> commandQueue = (__bridge id<MTLCommandQueue>)PlatformLayer::GetInstance().GetMetalCommandQueue();
-            if (commandQueue) {
-            id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
-            id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
-            [blitEncoder generateMipmapsForTexture:metalTexture];
-            [blitEncoder endEncoding];
-            [commandBuffer commit];
+            // Use the command queue from GameView instead of PlatformLayer
+            GameView* gameView = GetGameView();
+            if (gameView) {
+                id<MTLCommandQueue> commandQueue = [gameView getMetalCommandQueue];
+                if (commandQueue) {
+                    id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
+                    id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
+                    [blitEncoder generateMipmapsForTexture:metalTexture];
+                    [blitEncoder endEncoding];
+                    [commandBuffer commit];
+                }
             }
         }
         
@@ -247,12 +304,19 @@ Texture2D LoadTextureFromImage_iOS(Image image)
     static bool checkedCache = false;
     
     if (!checkedCache) {
-        // Get Metal device through PlatformLayer
-        void* metalDevice = PlatformLayer::GetInstance().GetMetalDevice();
-        if (metalDevice) {
-            // Initialize cache if needed
-            MetalTextureCache::GetInstance().Initialize(metalDevice);
-            cacheInitialized = true;
+        // Get Metal device through GameView instead of PlatformLayer
+        GameView* gameView = GetGameView();
+        if (gameView) {
+            id<MTLDevice> device = [gameView getMetalDevice];
+            if (device) {
+                // Initialize cache if needed
+                MetalTextureCache::GetInstance().Initialize((__bridge_retained void*)device);
+                cacheInitialized = true;
+            } else {
+                NSLog(@"[ERROR] LoadTextureFromImage_iOS: Failed to get Metal device from GameView");
+            }
+        } else {
+            NSLog(@"[ERROR] LoadTextureFromImage_iOS: Failed to get GameView");
         }
         checkedCache = true;
     }
@@ -583,15 +647,12 @@ void DrawTexturePro_iOS(Texture2D texture, Rectangle source, Rectangle dest, Vec
     @try {
         // Get the MetalRenderer from the PlatformLayerDelegate
         PlatformLayer& platform = PlatformLayer::GetInstance();
-        void* delegatePtr = platform.GetDelegate();
+        // Get MetalRenderer directly from GameView instead of PlatformLayerDelegate
+        GameView* gameView = GetGameView();
         MetalRenderer* metalRenderer = nullptr;
         
-        if (delegatePtr) {
-            // Cast to PlatformLayerDelegate and get the MetalRenderer
-            PlatformLayerDelegate* delegate = (__bridge PlatformLayerDelegate*)delegatePtr;
-            if ([delegate respondsToSelector:@selector(getMetalRenderer)]) {
-                metalRenderer = (MetalRenderer*)[delegate getMetalRenderer];
-            }
+        if (gameView) {
+            metalRenderer = [gameView getMetalRenderer];
         }
         
         if (metalRenderer) {
@@ -638,9 +699,16 @@ extern "C" Texture2D CreateFallbackTexture(const char* fileName)
         static_cast<int>(0xFFFF00FF), static_cast<int>(0xFFFF00FF)
     };
     
-    id<MTLDevice> device = (__bridge id<MTLDevice>)PlatformLayer::GetInstance().GetMetalDevice();
+    // Get Metal device through GameView instead of PlatformLayer
+    GameView* gameView = GetGameView();
+    if (!gameView) {
+        NSLog(@"[ERROR] CreateFallbackTexture: Failed to get GameView");
+        return { 0, 0, 0, 0, 0 };
+    }
+    
+    id<MTLDevice> device = [gameView getMetalDevice];
     if (!device) {
-        NSLog(@"[ERROR] CreateFallbackTexture: No Metal device available");
+        NSLog(@"[ERROR] CreateFallbackTexture: No Metal device available from GameView");
         return { 0, 0, 0, 0, 0 };
     }
     
@@ -1165,7 +1233,12 @@ void DrawLine(int startPosX, int startPosY, int endPosX, int endPosY, Color colo
 }
 
 void DrawLineEx(Vector2 startPos, Vector2 endPos, float thick, Color color) {
-    PlatformLayer::GetInstance().DrawLineEx(startPos.x, startPos.y, endPos.x, endPos.y, thick, color);
+    MetalRenderer* metalRenderer = GetMetalRenderer();
+    if (metalRenderer) {
+        metalRenderer->DrawLineEx(startPos.x, startPos.y, endPos.x, endPos.y, thick, color);
+    } else {
+        NSLog(@"[ERROR] DrawLineEx: MetalRenderer not available");
+    }
 }
 
 void DrawRectangleRoundedLines(Rectangle rec, float roundness, int segments, Color color) {
@@ -1174,19 +1247,23 @@ void DrawRectangleRoundedLines(Rectangle rec, float roundness, int segments, Col
 }
 
 void DrawRectangleRoundedLinesEx(Rectangle rec, float roundness, int segments, float lineThick, Color color) {
-    PlatformLayer::GetInstance().DrawRectangleRoundedLines(rec.x, rec.y, rec.width, rec.height, roundness, segments, lineThick, color);
+    MetalRenderer* metalRenderer = GetMetalRenderer();
+    if (metalRenderer) {
+        metalRenderer->DrawRectangleRoundedLines(rec.x, rec.y, rec.width, rec.height, roundness, segments, lineThick, color);
+    } else {
+        NSLog(@"[ERROR] DrawRectangleRoundedLinesEx: MetalRenderer not available");
+    }
 }
 
 void DrawCircleV(Vector2 center, float radius, Color color) {
-    PlatformLayer& platform = PlatformLayer::GetInstance();
-    void* delegatePtr = platform.GetDelegate();
+    // Get MetalRenderer directly from GameView instead of PlatformLayerDelegate
+    GameView* gameView = GetGameView();
     MetalRenderer* metalRenderer = nullptr;
-    if (delegatePtr) {
-        PlatformLayerDelegate* delegate = (__bridge PlatformLayerDelegate*)delegatePtr;
-        if ([delegate respondsToSelector:@selector(getMetalRenderer)]) {
-            metalRenderer = (MetalRenderer*)[delegate getMetalRenderer];
-        }
+    
+    if (gameView) {
+        metalRenderer = [gameView getMetalRenderer];
     }
+    
     if (metalRenderer) {
         metalRenderer->DrawCircle(center.x, center.y, radius, color);
     }
@@ -1508,8 +1585,16 @@ Image GenImageColor(int width, int height, Color color) {
 
 Texture2D LoadTextureFromImage(Image image) {
     // Convert image to texture
-    id<MTLDevice> device = (__bridge id<MTLDevice>)PlatformLayer::GetInstance().GetMetalDevice();
+    // Get Metal device through GameView instead of PlatformLayer
+    GameView* gameView = GetGameView();
+    if (!gameView) {
+        NSLog(@"[ERROR] LoadTextureFromImage: Failed to get GameView");
+        return { 0, 0, 0, 0, 0 };
+    }
+    
+    id<MTLDevice> device = [gameView getMetalDevice];
     if (!device || !image.data) {
+        NSLog(@"[ERROR] LoadTextureFromImage: No Metal device available from GameView or no image data");
         return { 0, 0, 0, 0, 0 };
     }
     

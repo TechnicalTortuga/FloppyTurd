@@ -6,20 +6,16 @@
 #import "RaylibCompat.h"
 #import "GameViewController.h"
 
-// Helper to convert Color to unsigned int (RGBA)
-static inline unsigned int ColorToUInt(Color c) {
-    return ((unsigned int)c.r << 24) | ((unsigned int)c.g << 16) | ((unsigned int)c.b << 8) | ((unsigned int)c.a);
-}
+// ColorToUInt is now defined in RaylibCompat.h
 
 @implementation PlatformLayerDelegate {
     MTKView* _view;
     id<MTLDevice> _device;
-    MetalRenderer* _metalRenderer;
     BOOL _isInitialized;
     GameViewController* _gameViewController;
 }
 
-- (instancetype)initWithView:(MTKView*)view gameViewController:(GameViewController*)gameViewController metalRenderer:(void*)metalRenderer {
+- (instancetype)initWithView:(MTKView*)view gameViewController:(GameViewController*)gameViewController {
     self = [super init];
     if (self) {
         TraceLog(LOG_INFO, "[INIT] ========================================");
@@ -29,7 +25,6 @@ static inline unsigned int ColorToUInt(Color c) {
         TraceLog(LOG_INFO, "[INIT] MTKView frame: %@", NSStringFromCGRect(view.frame));
         TraceLog(LOG_INFO, "[INIT] MTKView bounds: %@", NSStringFromCGRect(view.bounds));
         TraceLog(LOG_INFO, "[INIT] GameViewController: %p", gameViewController);
-        TraceLog(LOG_INFO, "[INIT] MetalRenderer: %p", metalRenderer);
         
         _view = view;
         _device = view.device;
@@ -41,29 +36,18 @@ static inline unsigned int ColorToUInt(Color c) {
             return nil;
         }
         
-        if (!metalRenderer) {
-            TraceLog(LOG_ERROR, "[ERROR] MetalRenderer is required but not provided");
-            return nil;
-        }
-        
-        // Use the provided MetalRenderer
-        TraceLog(LOG_INFO, "[INIT] Using provided MetalRenderer: %p", metalRenderer);
-        _metalRenderer = (MetalRenderer*)metalRenderer;
         
         TraceLog(LOG_INFO, "[INIT] Setting up MTKView properties");
-        // DON'T set the delegate - GameView is already the delegate and handles touch events
-        // view.delegate = self;
         view.enableSetNeedsDisplay = YES;
         view.preferredFramesPerSecond = 60;
         view.multipleTouchEnabled = YES;
         view.userInteractionEnabled = YES;
-        TraceLog(LOG_INFO, "[INIT] MTKView delegate NOT set (GameView is the delegate): %p", view.delegate);
+        TraceLog(LOG_INFO, "[INIT] MTKView delegate set to self: %p", view.delegate);
         TraceLog(LOG_INFO, "[INIT] MTKView enableSetNeedsDisplay: %s", view.enableSetNeedsDisplay ? "YES" : "NO");
         TraceLog(LOG_INFO, "[INIT] MTKView preferredFramesPerSecond: %ld", (long)view.preferredFramesPerSecond);
         TraceLog(LOG_INFO, "[INIT] MTKView multipleTouchEnabled: %s", view.multipleTouchEnabled ? "YES" : "NO");
         TraceLog(LOG_INFO, "[INIT] MTKView userInteractionEnabled: %s", view.userInteractionEnabled ? "YES" : "NO");
         
-        TraceLog(LOG_INFO, "[INIT] MetalRenderer setup complete");
         _isInitialized = YES;
         TraceLog(LOG_INFO, "[INIT] ========================================");
         TraceLog(LOG_INFO, "[INIT] PlatformLayerDelegate initialization COMPLETED");
@@ -78,20 +62,15 @@ static inline unsigned int ColorToUInt(Color c) {
         TraceLog(LOG_ERROR, "[ERROR] setupMetalPipeline: No Metal device available");
         return;
     }
-
-    // MetalRenderer handles all pipeline setup internally
-    if (_metalRenderer) {
-        TraceLog(LOG_INFO, "[DEBUG] MetalRenderer pipeline already initialized");
-    } else {
-        TraceLog(LOG_ERROR, "[ERROR] setupMetalPipeline: MetalRenderer not initialized");
-    }
 }
 
-// PlatformLayerDelegate is no longer the MTKView delegate
-// GameView handles all MTKView delegate responsibilities including rendering and touch events
+#pragma mark - MTKViewDelegate
+
+// MTKViewDelegate methods removed as GameView handles rendering responsibilities
+
+// MetalRenderer handles all the drawing internally, so we don't need these methods anymore
 
 - (void)dealloc {
-    TraceLog(LOG_INFO, "[CLEANUP] PlatformLayerDelegate dealloc: MetalRenderer was provided externally, not deleting: %p", _metalRenderer);
 }
 
 #pragma mark - Public Methods
@@ -105,18 +84,7 @@ static inline unsigned int ColorToUInt(Color c) {
         });
         return;
     }
-    if (!_metalRenderer) {
-        TraceLog(LOG_ERROR, "[ERROR] drawRectangleWithPosX: MetalRenderer not available");
-        return;
-    }
-    TraceLog(LOG_INFO, "[DEBUG] drawRectangleWithPosX calling MetalRenderer: posX=%d, posY=%d, width=%d, height=%d, color=0x%08X", posX, posY, width, height, color);
-    Color raylibColor = {
-        (unsigned char)((color >> 24) & 0xFF),
-        (unsigned char)((color >> 16) & 0xFF),
-        (unsigned char)((color >> 8) & 0xFF),
-        (unsigned char)(color & 0xFF)
-    };
-    _metalRenderer->DrawRectangle(posX, posY, width, height, raylibColor);
+    TraceLog(LOG_INFO, "[DEBUG] drawRectangleWithPosX: Functionality moved to GameView");
 }
 
 - (void)drawLineEx:(float)x1 y1:(float)y1 x2:(float)x2 y2:(float)y2 thickness:(float)thickness color:(unsigned int)color {
@@ -128,18 +96,7 @@ static inline unsigned int ColorToUInt(Color c) {
         });
         return;
     }
-    if (!_metalRenderer) {
-        TraceLog(LOG_ERROR, "[ERROR] drawLineEx: MetalRenderer not available");
-        return;
-    }
-    Color raylibColor = {
-        (unsigned char)((color >> 24) & 0xFF),
-        (unsigned char)((color >> 16) & 0xFF),
-        (unsigned char)((color >> 8) & 0xFF),
-        (unsigned char)(color & 0xFF)
-    };
-    TraceLog(LOG_INFO, "[DEBUG] drawLineEx calling MetalRenderer: (%.1f,%.1f) to (%.1f,%.1f), thickness=%.1f, color=(%d,%d,%d,%d)", x1, y1, x2, y2, thickness, raylibColor.r, raylibColor.g, raylibColor.b, raylibColor.a);
-    _metalRenderer->DrawLineEx(x1, y1, x2, y2, thickness, raylibColor);
+    TraceLog(LOG_INFO, "[DEBUG] drawLineEx: Functionality moved to GameView");
 }
 
 - (void)drawRectangleRoundedLines:(float)x y:(float)y width:(float)width height:(float)height roundness:(float)roundness segments:(int)segments lineThick:(float)lineThick color:(unsigned int)color {
@@ -151,18 +108,7 @@ static inline unsigned int ColorToUInt(Color c) {
         });
         return;
     }
-    if (!_metalRenderer) {
-        TraceLog(LOG_ERROR, "[ERROR] drawRectangleRoundedLines: MetalRenderer not available");
-        return;
-    }
-    Color raylibColor = {
-        (unsigned char)((color >> 24) & 0xFF),
-        (unsigned char)((color >> 16) & 0xFF),
-        (unsigned char)((color >> 8) & 0xFF),
-        (unsigned char)(color & 0xFF)
-    };
-    TraceLog(LOG_INFO, "[DEBUG] drawRectangleRoundedLines calling MetalRenderer: rect=(%.1f,%.1f,%.1f,%.1f), roundness=%.1f, lineThick=%.1f, color=(%d,%d,%d,%d)", x, y, width, height, roundness, lineThick, raylibColor.r, raylibColor.g, raylibColor.b, raylibColor.a);
-    _metalRenderer->DrawRectangleRoundedLines(x, y, width, height, roundness, segments, lineThick, raylibColor);
+    TraceLog(LOG_INFO, "[DEBUG] drawRectangleRoundedLines: Functionality moved to GameView");
 }
 
 - (void)drawText:(const char*)text x:(float)x y:(float)y fontSize:(float)fontSize color:(unsigned int)color font:(void*)font {
@@ -181,20 +127,7 @@ static inline unsigned int ColorToUInt(Color c) {
         (unsigned char)(color & 0xFF)
     };
     // TraceLog(LOG_INFO, "[DEBUG] drawText calling MetalRenderer: text=%s, x=%f, y=%f, fontSize=%f, color=(%d,%d,%d,%d), font=%p", text, x, y, fontSize, raylibColor.r, raylibColor.g, raylibColor.b, raylibColor.a, font);
-    if (!_metalRenderer) {
-        TraceLog(LOG_ERROR, "[ERROR] drawText: MetalRenderer not available");
-        return;
-    }
-    
-    // Convert void* font to Font struct if provided, otherwise use nullptr
-    Font* fontPtr = font ? (Font*)font : nullptr;
-    if (fontPtr) {
-        // TraceLog(LOG_INFO, "[DEBUG] drawText: Using provided font with ctFont=%p, glyphCount=%d", fontPtr->ctFont, fontPtr->glyphCount);
-        _metalRenderer->DrawText(text, x, y, fontSize, raylibColor, fontPtr);
-    } else {
-        // TraceLog(LOG_INFO, "[DEBUG] drawText: No font provided, using default font");
-        _metalRenderer->DrawText(text, x, y, fontSize, raylibColor);
-    }
+    TraceLog(LOG_INFO, "[DEBUG] drawText: Functionality moved to GameView");
 }
 
 - (void)drawTexture:(void*)texture x:(float)x y:(float)y width:(float)width height:(float)height tint:(unsigned int)tint {
@@ -213,26 +146,7 @@ static inline unsigned int ColorToUInt(Color c) {
         (unsigned char)((tint >> 8) & 0xFF),
         (unsigned char)(tint & 0xFF)
     };
-    if (!_metalRenderer) {
-        TraceLog(LOG_ERROR, "[ERROR] drawTexture: MetalRenderer not available");
-        return;
-    }
-    
-    TraceLog(LOG_INFO, "[DEBUG] drawTexture called: texture=%p, x=%f, y=%f, width=%f, height=%f", texture, x, y, width, height);
-    
-    // Convert void* texture to MTLTexture
-    id<MTLTexture> metalTexture = (__bridge id<MTLTexture>)texture;
-    if (!metalTexture) {
-        TraceLog(LOG_ERROR, "[ERROR] drawTexture: Invalid texture pointer");
-        return;
-    }
-    
-    // Create source and destination rectangles
-    Rectangle source = {0, 0, (float)metalTexture.width, (float)metalTexture.height};
-    Rectangle dest = {x, y, width, height};
-    
-    // Use our optimized MetalRenderer
-    _metalRenderer->DrawTexture(metalTexture, source, dest, raylibColor);
+    TraceLog(LOG_INFO, "[DEBUG] drawTexture: Functionality moved to GameView");
 }
 
 - (void*)loadTextureFromImage:(void*)imageData width:(int)width height:(int)height format:(int)format {
@@ -279,7 +193,7 @@ static inline unsigned int ColorToUInt(Color c) {
 - (void)processDrawCommands:(MTKView*)view {
     // MetalRenderer handles all command processing internally
     // This method is kept for compatibility but delegates to MetalRenderer
-    if (_metalRenderer) {
+    if (g_metalRenderer) {
         TraceLog(LOG_INFO, "[DEBUG] processDrawCommands: Delegating to MetalRenderer");
         // MetalRenderer handles its own command processing during BeginFrame/EndFrame
     } else {
@@ -288,15 +202,17 @@ static inline unsigned int ColorToUInt(Color c) {
 }
 
 - (float)getLastFrameTime {
-    if (_metalRenderer) {
-        return _metalRenderer->GetDebugStats().frameTime;
+    TraceLog(LOG_INFO, "[DEBUG] getLastFrameTime: Using global MetalRenderer");
+    if (g_metalRenderer) {
+        return g_metalRenderer->GetDebugStats().frameTime;
     }
     return 0.0f;
 }
 
 - (int)getLastFPS {
-    if (_metalRenderer) {
-        float frameTime = _metalRenderer->GetDebugStats().frameTime;
+    TraceLog(LOG_INFO, "[DEBUG] getLastFPS: Using global MetalRenderer");
+    if (g_metalRenderer) {
+        float frameTime = g_metalRenderer->GetDebugStats().frameTime;
         if (frameTime > 0.0f) {
             return (int)(1.0f / frameTime + 0.5f);
         }
@@ -309,10 +225,12 @@ static inline unsigned int ColorToUInt(Color c) {
 }
 
 - (void*)getMetalRenderer {
-    return _metalRenderer;
+    TraceLog(LOG_INFO, "[DEBUG] getMetalRenderer: Returning global MetalRenderer");
+    return g_metalRenderer;
 }
 
-// Touch events are now handled directly by GameView
-// PlatformLayerDelegate is no longer the MTKView delegate
+#pragma mark - Touch Event Forwarding
+
+// Touch event forwarding removed as GameView handles touch events directly
 
 @end

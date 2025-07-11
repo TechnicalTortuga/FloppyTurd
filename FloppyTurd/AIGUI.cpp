@@ -96,6 +96,9 @@ AIGUI_DEF void AIGUI_BeginFrame() {
     static int frameCount = 0;
     frameCount++;
     
+    // Update input at the beginning of each frame
+    AIGUI_UpdateInput();
+    
     TraceLog(LOG_INFO, "[AIGUI] BeginFrame ENTRY - Frame %d, touchPosition=(%.1f,%.1f), touchDown=%d, touchPressed=%d, touchReleased=%d, isMobile=%d",
              frameCount, g_AIGUI.touchPosition.x, g_AIGUI.touchPosition.y,
              g_AIGUI.touchDown, g_AIGUI.touchPressed, g_AIGUI.touchReleased, g_AIGUI.isMobile);
@@ -137,33 +140,49 @@ AIGUI_DEF void AIGUI_UpdateInput() {
     if (g_AIGUI.isMobile) {
         TraceLog(LOG_INFO, "[AIGUI] UpdateInput: Mobile platform detected");
         
-        // On mobile, get input directly from TouchControls static API
-        bool touchActive = TouchControls::IsPrimaryInputDown();
-        Vector2 touchPos = TouchControls::GetPrimaryInputPosition();
-        bool touchPressed = TouchControls::IsPrimaryInputPressed();
-        bool touchReleased = TouchControls::IsPrimaryInputReleased();
+        // On mobile, get input from TouchControls instance if available
+        if (s_TouchControls) {
+            bool touchActive = s_TouchControls->IsPrimaryInputDown();
+            Vector2 touchPos = s_TouchControls->GetPrimaryInputPosition();
+            bool touchPressed = s_TouchControls->IsPrimaryInputPressed();
+            bool touchReleased = s_TouchControls->IsPrimaryInputReleased();
+            
+            TraceLog(LOG_INFO, "[AIGUI] UpdateInput: TouchControls data - active=%d, pos=(%.1f,%.1f), pressed=%d, released=%d", 
+                     touchActive, touchPos.x, touchPos.y, touchPressed, touchReleased);
+            
+            // Convert touch coordinates to UI coordinates
+            Vector2 uiPos = UICoordinateSystem::PointsToPixels(touchPos);
+            
+            TraceLog(LOG_INFO, "[AIGUI] UpdateInput: Coordinate conversion - points=(%.1f,%.1f) -> pixels=(%.1f,%.1f)", 
+                     touchPos.x, touchPos.y, uiPos.x, uiPos.y);
+            
+            // Update AIGUI context
+            g_AIGUI.touchPosition = uiPos;
+            g_AIGUI.touchDown = touchActive;
+            g_AIGUI.touchPressed = touchPressed;
+            g_AIGUI.touchReleased = touchReleased;
+            g_AIGUI.mousePos = uiPos;  // AIGUI still uses mousePos for compatibility
+            g_AIGUI.mouseLeftDown = touchActive;
+        } else {
+            // Fallback to PlatformLayer if TouchControls not available
+            bool touchActive = PlatformLayer::GetInstance().IsPrimaryInputDown();
+            Vector2 touchPos = PlatformLayer::GetInstance().GetPrimaryInputPosition();
+            bool touchPressed = PlatformLayer::GetInstance().IsPrimaryInputPressed();
+            bool touchReleased = PlatformLayer::GetInstance().IsPrimaryInputReleased();
+            
+            Vector2 uiPos = UICoordinateSystem::PointsToPixels(touchPos);
+            
+            g_AIGUI.touchPosition = uiPos;
+            g_AIGUI.touchDown = touchActive;
+            g_AIGUI.touchPressed = touchPressed;
+            g_AIGUI.touchReleased = touchReleased;
+            g_AIGUI.mousePos = uiPos;
+            g_AIGUI.mouseLeftDown = touchActive;
+        }
         
-        TraceLog(LOG_INFO, "[AIGUI] UpdateInput: Raw TouchControls data - active=%d, pos=(%.1f,%.1f), pressed=%d, released=%d", 
-                 touchActive, touchPos.x, touchPos.y, touchPressed, touchReleased);
-        
-        // Convert touch coordinates to UI coordinates
-        Vector2 uiPos = UICoordinateSystem::PointsToPixels(touchPos);
-        
-        TraceLog(LOG_INFO, "[AIGUI] UpdateInput: Coordinate conversion - points=(%.1f,%.1f) -> pixels=(%.1f,%.1f)", 
-                 touchPos.x, touchPos.y, uiPos.x, uiPos.y);
-        
-        // Update AIGUI context
-        g_AIGUI.touchPosition = uiPos;
-        g_AIGUI.touchDown = touchActive;
-        g_AIGUI.touchPressed = touchPressed;
-        g_AIGUI.touchReleased = touchReleased;
-        g_AIGUI.mousePos = uiPos;  // AIGUI still uses mousePos for compatibility
-        g_AIGUI.mouseLeftDown = touchActive;
-        
-        TraceLog(LOG_INFO, "[AIGUI] UpdateInput: AIGUI context updated - touchPosition=(%.1f,%.1f), touchDown=%d, touchPressed=%d, touchReleased=%d, mousePos=(%.1f,%.1f), mouseLeftDown=%d", 
+        TraceLog(LOG_INFO, "[AIGUI] UpdateInput: AIGUI context updated - touchPosition=(%.1f,%.1f), touchDown=%d, touchPressed=%d, touchReleased=%d", 
                  g_AIGUI.touchPosition.x, g_AIGUI.touchPosition.y,
-                 g_AIGUI.touchDown, g_AIGUI.touchPressed, g_AIGUI.touchReleased,
-                 g_AIGUI.mousePos.x, g_AIGUI.mousePos.y, g_AIGUI.mouseLeftDown);
+                 g_AIGUI.touchDown, g_AIGUI.touchPressed, g_AIGUI.touchReleased);
     } else {
         TraceLog(LOG_INFO, "[AIGUI] UpdateInput: Desktop platform detected");
         

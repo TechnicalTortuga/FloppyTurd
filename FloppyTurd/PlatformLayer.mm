@@ -8,6 +8,7 @@
 #import "MetalRenderer.h"
 #import "PlatformLayerDelegate.h"
 #import "GameViewController.h"
+#import "GameView.h"
 #import "UIManager.h"
 #import "MetalTextureCache.h"
 #import "UICoordinateSystem.h"
@@ -17,17 +18,7 @@
 // Singleton instance
 static PlatformLayer* s_Instance = nullptr;
 
-// Metal rendering state
-static id<MTLCommandQueue> s_CommandQueue = nil;
-static id<MTLRenderCommandEncoder> s_CurrentRenderEncoder = nil;
-static id<MTLBuffer> s_VertexBuffer = nil;
-static id<MTLRenderPipelineState> s_PipelineState = nil;
-static id<MTLTexture> s_CurrentTexture = nil;
-
-// Helper to convert Color to unsigned int (RGBA)
-static inline unsigned int ColorToUInt(Color c) {
-    return ((unsigned int)c.r << 24) | ((unsigned int)c.g << 16) | ((unsigned int)c.b << 8) | ((unsigned int)c.a);
-}
+// ColorToUInt is now defined in RaylibCompat.h
 
 // Error logging for Metal operations
 static void LogMetalError(NSError *error, NSString *operation) {
@@ -45,29 +36,13 @@ PlatformLayer& PlatformLayer::GetInstance() {
 
 PlatformLayer::PlatformLayer() : m_View(nullptr), m_PrimaryInputDown(false), m_PrimaryInputPressed(false), m_PrimaryInputReleased(false), m_SecondaryInputDown(false), m_SecondaryInputPressed(false), m_SecondaryInputReleased(false) {
     TraceLog(LOG_INFO, "[DEBUG] PlatformLayer constructor starting");
-    // Initialize Metal device
-    m_MetalDevice = (__bridge_retained void*)MTLCreateSystemDefaultDevice();
-    TraceLog(LOG_INFO, "[DEBUG] PlatformLayer: Metal device created: %p", m_MetalDevice);
-    
-    // Create command queue
-    if (m_MetalDevice) {
-        id<MTLDevice> device = (__bridge id<MTLDevice>)m_MetalDevice;
-        s_CommandQueue = [device newCommandQueue];
-        if (!s_CommandQueue) {
-            TraceLog(LOG_ERROR, "[ERROR] PlatformLayer: Failed to create command queue!");
-        }
-        TraceLog(LOG_INFO, "[DEBUG] PlatformLayer: Command queue created: %p", s_CommandQueue);
-    } else {
-        TraceLog(LOG_ERROR, "[ERROR] PlatformLayer: Failed to create Metal device!");
-    }
+    // Metal device management moved to GameView
     TraceLog(LOG_INFO, "[DEBUG] PlatformLayer constructor completed");
 }
 
 PlatformLayer::~PlatformLayer() {
     // Clean up Metal resources - ARC will handle the releases automatically
-    s_CommandQueue = nil;
-    s_VertexBuffer = nil;
-    s_PipelineState = nil;
+    // Removed static variable initializations as they are managed elsewhere
 }
 
 void PlatformLayer::Initialize(void* nativeView) {
@@ -79,33 +54,26 @@ void PlatformLayer::Initialize(void* nativeView) {
         return;
     }
     
-    MTKView* view = (__bridge MTKView*)nativeView;
-    if (![view isKindOfClass:[MTKView class]]) {
-        TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::Initialize: nativeView is null or invalid MTKView");
+    UIView* view = (__bridge UIView*)nativeView;
+    if (![view isKindOfClass:[UIView class]]) {
+        TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::Initialize: nativeView is null or invalid UIView");
         return;
     }
     
-    TraceLog(LOG_INFO, "[INIT] Got MTKView: %p", view);
+    TraceLog(LOG_INFO, "[INIT] Got UIView (GameView): %p", view);
     m_View = nativeView;
     
-    // Set up the MTKView
-    TraceLog(LOG_INFO, "[INIT] Setting up MTKView properties");
-    view.device = MTLCreateSystemDefaultDevice();
-    view.colorPixelFormat = MTLPixelFormatBGRA8Unorm;
-    view.clearColor = MTLClearColorMake(0.1, 0.1, 0.1, 1.0);
-    TraceLog(LOG_INFO, "[INIT] MTKView device: %p", view.device);
+    // GameView handles its own setup
+    TraceLog(LOG_INFO, "[INIT] GameView handles its own properties setup");
     
-    // Create the delegate but DON'T set it as the MTKView's delegate
-    // The GameView is already the delegate and handles touch events
-    TraceLog(LOG_INFO, "[INIT] Creating PlatformLayerDelegate (but not setting as delegate)");
-    id delegate = [[PlatformLayerDelegate alloc] initWithView:view gameViewController:nil metalRenderer:nullptr];
-    m_Delegate = (__bridge_retained void*)delegate;
-    
-    // DON'T set the delegate - GameView is already the delegate
-    // view.delegate = delegate;
+    // No need to create PlatformLayerDelegate as GameView handles rendering and touch events
+    TraceLog(LOG_INFO, "[INIT] Skipping PlatformLayerDelegate creation as GameView handles rendering");
+    m_Delegate = nullptr;
     
     // Enable automatic drawing
-    view.paused = NO;
+    if ([view isKindOfClass:[MTKView class]]) {
+        ((MTKView*)view).paused = NO;
+    }
     
     m_TouchPoints.clear();
     TraceLog(LOG_INFO, "[INIT] ========================================");
@@ -128,11 +96,11 @@ void PlatformLayer::Initialize(void* nativeView, void* gameViewController, void*
         return;
     }
     
-    MTKView* view = (__bridge MTKView*)nativeView;
+    UIView* view = (__bridge UIView*)nativeView;
     GameViewController* gvc = (__bridge GameViewController*)gameViewController;
     
-    if (![view isKindOfClass:[MTKView class]]) {
-        TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::Initialize: nativeView is null or invalid MTKView");
+    if (![view isKindOfClass:[UIView class]]) {
+        TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::Initialize: nativeView is null or invalid UIView");
         return;
     }
     
@@ -141,27 +109,20 @@ void PlatformLayer::Initialize(void* nativeView, void* gameViewController, void*
         return;
     }
     
-    TraceLog(LOG_INFO, "[INIT] Got MTKView: %p, GameViewController: %p", view, gvc);
+    TraceLog(LOG_INFO, "[INIT] Got UIView (GameView): %p, GameViewController: %p", view, gvc);
     m_View = nativeView;
     
-    // Set up the MTKView
-    TraceLog(LOG_INFO, "[INIT] Setting up MTKView properties");
-    view.device = MTLCreateSystemDefaultDevice();
-    view.colorPixelFormat = MTLPixelFormatBGRA8Unorm;
-    view.clearColor = MTLClearColorMake(0.1, 0.1, 0.1, 1.0);
-    TraceLog(LOG_INFO, "[INIT] MTKView device: %p", view.device);
+    // GameView handles its own setup
+    TraceLog(LOG_INFO, "[INIT] GameView handles its own properties setup");
     
-    // Create the delegate with GameViewController and MetalRenderer but DON'T set it as the MTKView's delegate
-    // The GameView is already the delegate and handles touch events
-    TraceLog(LOG_INFO, "[INIT] Creating PlatformLayerDelegate with GameViewController and MetalRenderer (but not setting as delegate)");
-    id delegate = [[PlatformLayerDelegate alloc] initWithView:view gameViewController:gvc metalRenderer:metalRenderer];
-    m_Delegate = (__bridge_retained void*)delegate;
-    
-    // DON'T set the delegate - GameView is already the delegate
-    // view.delegate = delegate;
+    // No need to create PlatformLayerDelegate as GameView handles rendering and touch events
+    TraceLog(LOG_INFO, "[INIT] Skipping PlatformLayerDelegate creation as GameView handles rendering");
+    m_Delegate = nullptr;
     
     // Enable automatic drawing
-    view.paused = NO;
+    if ([view isKindOfClass:[MTKView class]]) {
+        ((MTKView*)view).paused = NO;
+    }
     
     m_TouchPoints.clear();
     TraceLog(LOG_INFO, "[INIT] ========================================");
@@ -178,15 +139,9 @@ void PlatformLayer::Shutdown() {
     // Clean up MetalTextureCache
     MetalTextureCache::GetInstance().Shutdown();
     
-    // Clean up Metal resources - ARC will handle the releases automatically
-    if (m_Delegate) {
-        PlatformLayerDelegate* delegate = (__bridge PlatformLayerDelegate*)m_Delegate;
-        // ARC will handle delegate cleanup
-        m_Delegate = nullptr;
-    }
-    
+    // Clean up resources
+    m_Delegate = nullptr;
     m_View = nullptr;
-    m_MetalDevice = nullptr;
     
     TraceLog(LOG_INFO, "[SHUTDOWN] PlatformLayer shutdown complete");
 }
@@ -313,19 +268,41 @@ void PlatformLayer::UpdateTouchState() {
         return;
     }
     
-    // Delegate to TouchControls (single source of truth)
-    TouchControls::UpdateTouchState();
+#ifdef PLATFORM_MOBILE
+    // Query GameView for touch states
+    UIView* view = (__bridge UIView*)m_View;
+    if ([view respondsToSelector:@selector(isPrimaryTouchDown)] &&
+        [view respondsToSelector:@selector(getPrimaryTouchLocation)] &&
+        [view respondsToSelector:@selector(getActiveTouchCount)]) {
+        
+        // Functionality for touch input moved to GameView
+        m_PrimaryInputDown = NO;
+        m_PrimaryInputPressed = NO;
+        m_PrimaryInputReleased = !m_PrimaryInputDown && m_PrevPrimaryInputDown;
+        m_PrevPrimaryInputDown = m_PrimaryInputDown;
+        
+        NSInteger touchCount = [(id)view getActiveTouchCount];
+        m_TouchPoints.clear();
+        if (touchCount > 0) {
+            CGPoint location = [(id)view getPrimaryTouchLocation];
+            m_TouchPoints.push_back(Vector2{(float)location.x, (float)location.y});
+        }
+        
+        // Update TouchControls with the latest state from GameView
+        m_TouchControls.UpdateGestureDetection();
+    } else {
+        TraceLog(LOG_WARNING, "[TOUCH] PlatformLayer::UpdateTouchState: View does not respond to touch state selectors");
+        m_PrimaryInputDown = false;
+        m_PrimaryInputPressed = false;
+        m_PrimaryInputReleased = false;
+        m_TouchPoints.clear();
+    }
+#endif
     
-    // Update instance variables from TouchControls
-    m_PrimaryInputDown = TouchControls::IsPrimaryInputDown();
-    m_PrimaryInputPressed = TouchControls::IsPrimaryInputPressed();
-    m_PrimaryInputReleased = TouchControls::IsPrimaryInputReleased();
-    m_TouchPoints = TouchControls::GetTouchPoints();
-    
-    TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::UpdateTouchState: final states - down=%s, pressed=%s, released=%s, touchCount=%zu", 
-             m_PrimaryInputDown ? "true" : "false", 
-             m_PrimaryInputPressed ? "true" : "false", 
-             m_PrimaryInputReleased ? "true" : "false", 
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::UpdateTouchState: final states - down=%s, pressed=%s, released=%s, touchCount=%zu",
+             m_PrimaryInputDown ? "true" : "false",
+             m_PrimaryInputPressed ? "true" : "false",
+             m_PrimaryInputReleased ? "true" : "false",
              m_TouchPoints.size());
     
     TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::UpdateTouchState EXIT");
@@ -343,11 +320,18 @@ void PlatformLayer::ClearTouchStatesAfterRender() {
 
 // Static function to update touch state from external sources
 void PlatformLayer::SetTouchState(bool pressed, float x, float y) {
-    TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::SetTouchState ENTRY: pressed=%s, pos=(%.1f,%.1f)", 
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::SetTouchState ENTRY: pressed=%s, pos=(%.1f,%.1f)",
              pressed ? "true" : "false", x, y);
     
-    // Delegate to TouchControls (single source of truth)
-    TouchControls::SetTouchState(pressed, x, y);
+#ifdef PLATFORM_MOBILE
+    PlatformLayer& instance = PlatformLayer::GetInstance();
+    
+    // Update TouchControls instance
+    instance.m_TouchControls.SetTouchState(pressed, x, y);
+    
+    // GameView handles primary touch state updates internally, so we don't update PlatformLayer's variables directly
+    // Instead, we'll query GameView in UpdateTouchState
+#endif
     
     TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::SetTouchState EXIT");
 }
@@ -356,8 +340,14 @@ void PlatformLayer::SetTouchState(bool pressed, float x, float y) {
 void PlatformLayer::ClearAllTouchStates() {
     TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::ClearAllTouchStates ENTRY");
     
-    // Delegate to TouchControls
-    TouchControls::ClearAllTouchStates();
+#ifdef PLATFORM_MOBILE
+    PlatformLayer& instance = PlatformLayer::GetInstance();
+    
+    // Clear TouchControls instance
+    instance.m_TouchControls.ClearAllTouchStates();
+    
+    // GameView handles touch state clearing internally
+#endif
     
     TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::ClearAllTouchStates EXIT");
 }
@@ -579,9 +569,18 @@ void* PlatformLayer::LoadTexture(const char* fileName, int* width, int* height) 
         textureDescriptor.width = *width;
         textureDescriptor.height = *height;
         TraceLog(LOG_INFO, "[DEBUG] LoadTexture: Metal texture descriptor configured");
-        TraceLog(LOG_INFO, "[DEBUG] LoadTexture: Creating Metal texture with device: %p", m_MetalDevice);
+        // Get Metal device from GameView instead of local storage
+        UIView* view = (__bridge UIView*)m_View;
+        if (![view isKindOfClass:[GameView class]]) {
+            TraceLog(LOG_ERROR, "[ERROR] LoadTexture: View is not a GameView");
+            return nullptr;
+        }
+        
+        GameView* gameView = (GameView*)view;
+        id<MTLDevice> device = [gameView getMetalDevice];
+        TraceLog(LOG_INFO, "[DEBUG] LoadTexture: Creating Metal texture with device: %p", device);
         NSError *error = nil;
-        id<MTLTexture> texture = [(__bridge id<MTLDevice>)m_MetalDevice newTextureWithDescriptor:textureDescriptor];
+        id<MTLTexture> texture = [device newTextureWithDescriptor:textureDescriptor];
         LogMetalError(error, @"Creating Metal texture");
         if (!texture) {
                     TraceLog(LOG_ERROR, "[ERROR] LoadTexture: Failed to create Metal texture!");
@@ -638,7 +637,17 @@ void* PlatformLayer::LoadTexture(const char* fileName, int* width, int* height) 
     textureDescriptor.pixelFormat = MTLPixelFormatRGBA8Unorm;
     textureDescriptor.width = *width;
     textureDescriptor.height = *height;
-    id<MTLTexture> texture = [(__bridge id<MTLDevice>)m_MetalDevice newTextureWithDescriptor:textureDescriptor];
+    
+    // Get Metal device from GameView instead of local storage
+    UIView* view = (__bridge UIView*)m_View;
+    if (![view isKindOfClass:[GameView class]]) {
+        TraceLog(LOG_ERROR, "[ERROR] LoadTexture: View is not a GameView");
+        return nullptr;
+    }
+    
+    GameView* gameView = (GameView*)view;
+    id<MTLDevice> device = [gameView getMetalDevice];
+    id<MTLTexture> texture = [device newTextureWithDescriptor:textureDescriptor];
     if (!texture) {
         TraceLog(LOG_ERROR, "[ERROR] LoadTexture: Failed to create Metal texture!");
         return nullptr;
@@ -677,9 +686,19 @@ void PlatformLayer::UnloadTexture(void* texture) {
 
 void* PlatformLayer::LoadRenderTexture(int width, int height) {
     TraceLog(LOG_INFO, "[DEBUG] LoadRenderTexture: Starting with width=%d, height=%d", width, height);
-    TraceLog(LOG_INFO, "[DEBUG] LoadRenderTexture: Metal device: %p", m_MetalDevice);
     
-    if (!m_MetalDevice) {
+    // Get Metal device from GameView instead of local storage
+    UIView* view = (__bridge UIView*)m_View;
+    if (![view isKindOfClass:[GameView class]]) {
+        TraceLog(LOG_ERROR, "[ERROR] LoadRenderTexture: View is not a GameView");
+        return nullptr;
+    }
+    
+    GameView* gameView = (GameView*)view;
+    id<MTLDevice> device = [gameView getMetalDevice];
+    TraceLog(LOG_INFO, "[DEBUG] LoadRenderTexture: Metal device: %p", device);
+    
+    if (!device) {
         TraceLog(LOG_ERROR, "[ERROR] LoadRenderTexture: No Metal device available!");
         return nullptr;
     }
@@ -691,7 +710,7 @@ void* PlatformLayer::LoadRenderTexture(int width, int height) {
     textureDescriptor.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
     
     TraceLog(LOG_INFO, "[DEBUG] LoadRenderTexture: Creating Metal texture with descriptor...");
-    id<MTLTexture> texture = [(__bridge id<MTLDevice>)m_MetalDevice newTextureWithDescriptor:textureDescriptor];
+    id<MTLTexture> texture = [device newTextureWithDescriptor:textureDescriptor];
     
     if (!texture) {
         TraceLog(LOG_ERROR, "[ERROR] LoadRenderTexture: Failed to create Metal render texture!");
@@ -705,18 +724,10 @@ void* PlatformLayer::LoadRenderTexture(int width, int height) {
 }
 
 void PlatformLayer::BeginDrawing(void* renderTexture) {
-    if (!m_Delegate) {
-        TraceLog(LOG_ERROR, "[ERROR] BeginDrawing called with no delegate set!");
-        return;
-    }
-    
-    // Get the delegate
-    PlatformLayerDelegate* delegate = (__bridge PlatformLayerDelegate*)m_Delegate;
-    
-    // Get the MTKView from the delegate
-    MTKView* mtkView = delegate.view;
-    if (!mtkView) {
-        TraceLog(LOG_ERROR, "[ERROR] BeginDrawing: Could not get MTKView from delegate!");
+    // GameView handles rendering setup internally
+    UIView* gameView = (__bridge UIView*)m_View;
+    if (!gameView) {
+        TraceLog(LOG_ERROR, "[ERROR] BeginDrawing: Could not get GameView from stored view!");
         return;
     }
 
@@ -725,21 +736,22 @@ void PlatformLayer::BeginDrawing(void* renderTexture) {
     // Use UICoordinateSystem to get the actual pixel dimensions for the projection matrix.
     Rectangle pixelScreenRect = UICoordinateSystem::GetPixelScreenRect();
     
-    // Update the drawable size for the MTKView to match native pixel resolution
-    [mtkView setDrawableSize:CGSizeMake(pixelScreenRect.width, pixelScreenRect.height)];
-    
-    // Set the view's content scale factor based on the native scale
-    float nativeScale = UICoordinateSystem::GetNativeScale();
-    [mtkView setContentScaleFactor:nativeScale];
-    
-    // Notify the view that it needs to redraw with the new size
-    [mtkView setNeedsDisplay];
+    // GameView handles drawable size and scale internally
+    // Notify GameView to render
+    if ([gameView respondsToSelector:@selector(render)]) {
+        [(id)gameView render];
+    } else {
+        TraceLog(LOG_ERROR, "[ERROR] BeginDrawing: GameView does not respond to render selector!");
+    }
 #else
     // --- DESKTOP RENDERING PATH ---
     // For desktop, we still use the fixed 320x180 resolution
-    [mtkView setDrawableSize:CGSizeMake(320.0f, 180.0f)];
-    [mtkView setContentScaleFactor:1.0f];
-    [mtkView setNeedsDisplay];
+    // GameView handles rendering internally
+    if ([gameView respondsToSelector:@selector(render)]) {
+        [(id)gameView render];
+    } else {
+        TraceLog(LOG_ERROR, "[ERROR] BeginDrawing: GameView does not respond to render selector!");
+    }
 #endif
 }
 
@@ -760,23 +772,17 @@ void PlatformLayer::DrawRectangle(int posX, int posY, int width, int height, uns
         return;
     }
     
-    // Get the GameView's MetalRenderer through the delegate
-    if (m_Delegate) {
-        PlatformLayerDelegate* delegate = (__bridge PlatformLayerDelegate*)m_Delegate;
-        MetalRenderer* metalRenderer = (MetalRenderer*)[delegate getMetalRenderer];
-        if (metalRenderer) {
-            Color raylibColor = {
-                (unsigned char)((color >> 24) & 0xFF),
-                (unsigned char)((color >> 16) & 0xFF),
-                (unsigned char)((color >> 8) & 0xFF),
-                (unsigned char)(color & 0xFF)
-            };
-            metalRenderer->DrawRectangle(posX, posY, width, height, raylibColor);
-        } else {
-            TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::DrawRectangle: MetalRenderer not available from delegate");
-        }
+    // Use global MetalRenderer if available
+    if (g_metalRenderer) {
+        Color raylibColor = {
+            (unsigned char)((color >> 24) & 0xFF),
+            (unsigned char)((color >> 16) & 0xFF),
+            (unsigned char)((color >> 8) & 0xFF),
+            (unsigned char)(color & 0xFF)
+        };
+        g_metalRenderer->DrawRectangle(posX, posY, width, height, raylibColor);
     } else {
-        TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::DrawRectangle: No delegate available");
+        TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::DrawRectangle: Global MetalRenderer not available");
     }
 }
 
@@ -807,19 +813,13 @@ void PlatformLayer::DrawTexture(void* texture, float x, float y, float width, fl
     }
     TraceLog(LOG_INFO, "[DEBUG] PlatformLayer::DrawTexture: Valid texture found (ptr=%p, w=%lu, h=%lu)", metalTexture, (unsigned long)metalTexture.width, (unsigned long)metalTexture.height);
     
-    // Get the GameView's MetalRenderer through the delegate
-    if (m_Delegate) {
-        PlatformLayerDelegate* delegate = (__bridge PlatformLayerDelegate*)m_Delegate;
-        MetalRenderer* metalRenderer = (MetalRenderer*)[delegate getMetalRenderer];
-        if (metalRenderer) {
-            Rectangle source = {0, 0, (float)metalTexture.width, (float)metalTexture.height};
-            Rectangle dest = {x, y, width, height};
-            metalRenderer->DrawTexture(metalTexture, source, dest, tint);
-        } else {
-            TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::DrawTexture: MetalRenderer not available from delegate");
-        }
+    // Use global MetalRenderer if available
+    if (g_metalRenderer) {
+        Rectangle source = {0, 0, (float)metalTexture.width, (float)metalTexture.height};
+        Rectangle dest = {x, y, width, height};
+        g_metalRenderer->DrawTexture(metalTexture, source, dest, tint);
     } else {
-        TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::DrawTexture: No delegate available");
+        TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::DrawTexture: Global MetalRenderer not available");
     }
 }
 
@@ -828,20 +828,7 @@ void PlatformLayer::EnqueueDrawCommand(void* vertexBuffer, void* texture, size_t
     // Keeping for compatibility but it's no longer used
 }
 
-void* PlatformLayer::GetMetalDevice() const {
-    return m_MetalDevice;
-}
-
-void* PlatformLayer::GetMetalCommandQueue() const {
-    // Get the command queue from the delegate
-    if (m_Delegate) {
-        PlatformLayerDelegate* delegate = (__bridge PlatformLayerDelegate*)m_Delegate;
-        if ([delegate respondsToSelector:@selector(getMetalCommandQueue)]) {
-            return (__bridge void*)[delegate getMetalCommandQueue];
-        }
-    }
-    return nullptr;
-}
+// Metal device management methods removed - now handled by GameView
 
 void* PlatformLayer::GetDelegate() const {
     return m_Delegate;
@@ -860,7 +847,16 @@ void* PlatformLayer::LoadTextureFromImage(void* imageData, int width, int height
     textureDescriptor.height = height;
     textureDescriptor.usage = MTLTextureUsageShaderRead;
     
-    id<MTLTexture> texture = [(__bridge id<MTLDevice>)m_MetalDevice newTextureWithDescriptor:textureDescriptor];
+    // Get Metal device from GameView instead of local storage
+    UIView* view = (__bridge UIView*)m_View;
+    if (![view isKindOfClass:[GameView class]]) {
+        TraceLog(LOG_ERROR, "[ERROR] LoadTextureFromImage: View is not a GameView");
+        return nullptr;
+    }
+    
+    GameView* gameView = (GameView*)view;
+    id<MTLDevice> device = [gameView getMetalDevice];
+    id<MTLTexture> texture = [device newTextureWithDescriptor:textureDescriptor];
     if (!texture) {
         TraceLog(LOG_ERROR, "[ERROR] LoadTextureFromImage: Failed to create Metal texture!");
         return nullptr;
@@ -879,39 +875,32 @@ void PlatformLayer::DrawText(const char* text, float x, float y, float fontSize,
     TraceLog(LOG_INFO, "[DEBUG] DrawText called: text='%s', pos=(%.1f, %.1f), fontSize=%.1f, color=(%d,%d,%d,%d)", 
           text, x, y, fontSize, color.r, color.g, color.b, color.a);
     
-    // Get the GameView's MetalRenderer through the delegate
-    if (m_Delegate) {
-        PlatformLayerDelegate* delegate = (__bridge PlatformLayerDelegate*)m_Delegate;
-        MetalRenderer* metalRenderer = (MetalRenderer*)[delegate getMetalRenderer];
-        if (metalRenderer) {
-            if (font) {
-                Font* fontPtr = (Font*)font;
-                metalRenderer->DrawText(text, x, y, fontSize, color, fontPtr);
-            } else {
-                metalRenderer->DrawText(text, x, y, fontSize, color);
-            }
+    // Use global MetalRenderer if available
+    if (g_metalRenderer) {
+        if (font) {
+            Font* fontPtr = (Font*)font;
+            g_metalRenderer->DrawText(text, x, y, fontSize, color, fontPtr);
         } else {
-            TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::DrawText: MetalRenderer not available from delegate");
+            g_metalRenderer->DrawText(text, x, y, fontSize, color);
         }
     } else {
-        TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::DrawText: No delegate available");
+        TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::DrawText: Global MetalRenderer not available");
     }
 }
 
 float PlatformLayer::GetLastFrameTime() const {
-    if (!m_Delegate) return 0.0f;
-    PlatformLayerDelegate* delegate = (__bridge PlatformLayerDelegate*)m_Delegate;
-    if ([delegate respondsToSelector:@selector(getLastFrameTime)]) {
-        return [delegate getLastFrameTime];
+    if (g_metalRenderer) {
+        return g_metalRenderer->GetDebugStats().frameTime;
     }
     return 0.0f;
 }
 
 int PlatformLayer::GetLastFPS() const {
-    if (!m_Delegate) return 0;
-    PlatformLayerDelegate* delegate = (__bridge PlatformLayerDelegate*)m_Delegate;
-    if ([delegate respondsToSelector:@selector(getLastFPS)]) {
-        return [delegate getLastFPS];
+    if (g_metalRenderer) {
+        float frameTime = g_metalRenderer->GetDebugStats().frameTime;
+        if (frameTime > 0.0f) {
+            return (int)(1.0f / frameTime + 0.5f);
+        }
     }
     return 0;
 }
@@ -929,17 +918,11 @@ void PlatformLayer::DrawLineEx(float x1, float y1, float x2, float y2, float thi
         return;
     }
     
-    // Get the GameView's MetalRenderer through the delegate
-    if (m_Delegate) {
-        PlatformLayerDelegate* delegate = (__bridge PlatformLayerDelegate*)m_Delegate;
-        MetalRenderer* metalRenderer = (MetalRenderer*)[delegate getMetalRenderer];
-        if (metalRenderer) {
-            metalRenderer->DrawLineEx(x1, y1, x2, y2, thickness, color);
-        } else {
-            TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::DrawLineEx: MetalRenderer not available from delegate");
-        }
+    // Use global MetalRenderer if available
+    if (g_metalRenderer) {
+        g_metalRenderer->DrawLineEx(x1, y1, x2, y2, thickness, color);
     } else {
-        TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::DrawLineEx: No delegate available");
+        TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::DrawLineEx: Global MetalRenderer not available");
     }
 }
 
@@ -956,13 +939,11 @@ void PlatformLayer::DrawRectangleRoundedLines(float x, float y, float width, flo
         return;
     }
     
-    // Call the delegate's drawRectangleRoundedLines method
-    if (m_Delegate) {
-        PlatformLayerDelegate* delegate = (__bridge PlatformLayerDelegate*)m_Delegate;
-        unsigned int colorUInt = (color.r << 24) | (color.g << 16) | (color.b << 8) | color.a;
-        [delegate drawRectangleRoundedLines:x y:y width:width height:height roundness:roundness segments:segments lineThick:lineThick color:colorUInt];
+    // Use global MetalRenderer if available
+    if (g_metalRenderer) {
+        g_metalRenderer->DrawRectangleRoundedLines(x, y, width, height, roundness, segments, lineThick, color);
     } else {
-        TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::DrawRectangleRoundedLines: No delegate available");
+        TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::DrawRectangleRoundedLines: Global MetalRenderer not available");
     }
 }
 

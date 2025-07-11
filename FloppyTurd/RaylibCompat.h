@@ -237,6 +237,11 @@ float GetMusicDuration(Music music);
 extern "C" {
 #endif
 
+// Helper to convert Color to unsigned int (RGBA order)
+static inline unsigned int ColorToUInt(Color c) {
+    return ((unsigned int)c.r << 24) | ((unsigned int)c.g << 16) | ((unsigned int)c.b << 8) | ((unsigned int)c.a);
+}
+
 void InitWindow(int width, int height, const char* title);
 void CloseWindow(void);
 bool WindowShouldClose(void);

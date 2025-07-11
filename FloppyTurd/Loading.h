@@ -5,7 +5,6 @@
 #include <atomic>
 #include <thread>
 #include <future>
-#include "TouchControls.h"
 
 class Loading {
 public:
@@ -22,7 +21,6 @@ public:
 	void UpdateLoadingProgress(float progress);
 	void DrawLoadingProgress();
 	bool LoadFontsInBackground();
-	void SetTouchControls(TouchControls* controls) { touchControls = controls; }
 
 	Game* game;
 	Texture2D poophat;
@@ -38,6 +36,4 @@ public:
 	// Background font loading
 	std::future<bool> m_fontLoadingFuture;
 	bool m_fontLoadingComplete;
-private:
-	TouchControls* touchControls = nullptr;
 };

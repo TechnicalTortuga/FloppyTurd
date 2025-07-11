@@ -33,6 +33,7 @@ AIGUI_DEF void AIGUI_Init();
 AIGUI_DEF void AIGUI_Shutdown();
 AIGUI_DEF void AIGUI_BeginFrame();
 AIGUI_DEF void AIGUI_EndFrame();
+AIGUI_DEF void AIGUI_UpdateInput();
 AIGUI_DEF void AIGUI_SetFont(Font font);
 AIGUI_DEF void AIGUI_SliderFloat(const char* label, float x, float y, float width, float min, float max, float* value);
 AIGUI_DEF bool AIGUI_Button(const char* label, float x, float y, float width, float height);
@@ -55,26 +56,23 @@ AIGUI_DEF void AIGUI_DrawResponsiveText(const char* text, Vector2 position, int 
 // Gesture support for UI interactions
 AIGUI_DEF bool AIGUI_IsGestureDetected(int gestureType);
 AIGUI_DEF void AIGUI_SetTouchControls(class TouchControls* controls);
-AIGUI_DEF void AIGUI_UpdateInput(); // New function to handle input updates internally
 
 struct AIGUI_Context {
-    Vector2 mousePos;  // Now used for both mouse and touch position
-    bool mouseLeftDown; // Now used for both mouse and touch state
+    Vector2 mousePos;
+    bool mouseLeftDown;
     Font defaultFont; 
     float uiScale;
     Rectangle safeArea;
     bool isMobile;
     float touchTargetScale;
     
-    // Touch state tracking for button handling
+    // Touch state fields
+    Vector2 touchPosition;
+    bool touchDown;
+    bool touchPressed;
+    bool touchReleased;
     bool touchPressedOverButton;
     Vector2 touchStartPos;
-    
-    // Add proper touch state tracking
-    bool touchDown;           // Touch is currently down
-    bool touchPressed;        // Touch just started this frame
-    bool touchReleased;       // Touch just ended this frame
-    Vector2 touchPosition;    // Current touch position
 };
 extern AIGUI_Context g_AIGUI;
 

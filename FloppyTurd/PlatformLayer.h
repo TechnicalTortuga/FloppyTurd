@@ -11,13 +11,16 @@
 class MetalRenderer;
 class MetalTextRenderer;
 
-// Forward declaration for PlatformLayerDelegate (iOS)
+// Forward declaration for PlatformLayerDelegate (iOS) - DEPRECATED
 #ifdef PLATFORM_IOS
 #ifdef __OBJC__
-@class PlatformLayerDelegate;
+@class PlatformLayerDelegate; // Will be removed in next phase
 #endif
 #endif
 
+#ifdef PLATFORM_MOBILE
+#include "TouchControls.h"
+#endif
 
 #ifdef __APPLE__
 #include <TargetConditionals.h>
@@ -90,20 +93,23 @@ public:
     double GetCurrentTime() const;
 
 #ifdef PLATFORM_IOS
-    // Metal rendering interface
+    // DEPRECATED: Metal rendering interface - Will be removed in next phase
+    // These methods are now handled by GameView and MetalRenderer directly
     MetalRenderer* GetMetalRenderer() const;
+    float GetLastFrameTime() const;
+    int GetLastFPS() const;
 
-    // Texture and image handling
+    // Texture and image handling - BRIDGE FUNCTIONS (keep these!)
     void* LoadTexture(const char* fileName, int* width, int* height);
     void UnloadTexture(void* texture);
     void* CreateTextureFromImage(void* image, int* width, int* height);
 
-    // Image handling
+    // Image handling - BRIDGE FUNCTIONS (keep these!)
     void* LoadImage(const char* fileName, int* width, int* height);
     void UnloadImage(void* image);
     void* CreateSolidColorImage(int width, int height, Color color);
 
-    // Audio management
+    // Audio management - BRIDGE FUNCTIONS (keep these!)
     void InitializeAudio();
     void ShutdownAudio();
     void* LoadSound(const char* fileName);
@@ -111,7 +117,7 @@ public:
     void PlaySound(void* sound);
     void SetSoundVolume(void* sound, float volume);
 
-    // Music streaming
+    // Music streaming - BRIDGE FUNCTIONS (keep these!)
     void* LoadMusic(const char* fileName);
     void UnloadMusic(void* music);
     void PlayMusic(void* music);
@@ -120,13 +126,13 @@ public:
     bool IsMusicPlaying(void* music);
     void SetMusicVolume(void* music, float volume);
 
-    // Text rendering via MetalTextRenderer
+    // Text rendering via MetalTextRenderer - BRIDGE FUNCTIONS (keep these!)
     void* LoadFont(const char* fileName, int size);
     void UnloadFont(void* font);
     Vector2 MeasureText(const char* text, void* font, float fontSize, float spacing);
     void DrawText(const char* text, float x, float y, float fontSize, Color color, void* font);
 
-    // Rendering integration
+    // Rendering integration - BRIDGE FUNCTIONS (keep these!)
     void* LoadRenderTexture(int width, int height);
     void UnloadRenderTexture(void* texture);
     void BeginDrawing(void* renderTexture);
@@ -137,10 +143,6 @@ public:
     void* LoadTextureFromImage(void* imageData, int width, int height, int format);
     void DrawTexture(void* texture, float x, float y, float width, float height, Color tint);
     void EnqueueDrawCommand(void* vertexBuffer, void* texture, size_t vertexCount);
-
-    // Performance metrics (iOS/Metal)
-    float GetLastFrameTime() const;
-    int GetLastFPS() const;
 #endif
 
     // Platform-specific features
@@ -148,14 +150,7 @@ public:
     bool IsVirtualKeyboardShown() const;
     void Vibrate(int milliseconds);
 
-    // Metal device access (iOS)
-    void* GetMetalDevice() const;
-    void* GetMetalCommandQueue() const;
-    
-    // Metal pipeline setup (iOS)
-    void setupMetalPipeline();
-    
-    // Delegate access (iOS)
+    // Delegate access (iOS) - DEPRECATED: Will be removed in next phase
     void* GetDelegate() const;
     
     // Platform-agnostic resource path helper
@@ -185,6 +180,10 @@ public:
     static void SetTouchState(bool pressed, float x, float y);
     static void ClearAllTouchStates();
 
+#ifdef PLATFORM_MOBILE
+    TouchControls* GetTouchControls() { return &m_TouchControls; }
+#endif
+
 private:
     // Private constructor for singleton
     PlatformLayer();
@@ -195,8 +194,7 @@ private:
     PlatformLayerImpl* m_pImpl;
 
     void* m_View; // Pointer to UIView
-    void* m_Delegate; // Pointer to PlatformLayerDelegate (Objective-C)
-    void* m_MetalDevice; // Pointer to Metal device (id<MTLDevice> in .mm)
+    void* m_Delegate; // Pointer to PlatformLayerDelegate (Objective-C) - DEPRECATED
     std::vector<Vector2> m_TouchPoints;
     bool m_PrimaryInputDown;
     bool m_PrimaryInputPressed;
@@ -204,6 +202,10 @@ private:
     bool m_SecondaryInputDown;
     bool m_SecondaryInputPressed;
     bool m_SecondaryInputReleased;
+
+#ifdef PLATFORM_MOBILE
+    TouchControls m_TouchControls;
+#endif
 
 #ifdef PLATFORM_MOBILE
     bool virtualKeyboardShown = false;

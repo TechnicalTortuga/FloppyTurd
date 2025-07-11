@@ -6,6 +6,7 @@
 #include "AudioStateManager.h"
 #include "FontCache.h"
 #include <future>
+#include "LogManager.h"
 
 Loading::Loading(Game* game)
     : game(game)
@@ -248,10 +249,10 @@ void Loading::Update(float deltaTime) {
     }
 
     // Update touch state so overlay can respond
-    if (touchControls) {
-        touchControls->Update();
-        touchControls->Draw();
-    }
+    // if (touchControls) { // Removed touchControls instance
+    //     touchControls->Update();
+    //     touchControls->Draw();
+    // }
 }
 
 void Loading::Draw() {
@@ -300,21 +301,41 @@ void Loading::Draw() {
     // DrawText(progressText, (screenWidthPx - percentWidth) / 2, percentY, fontSize, WHITE);
 
     // DEBUG: Draw touch state overlay for debugging
-    if (touchControls) {
-        bool touchActive = TouchControls::IsPrimaryInputDown();
-        bool touchPressed = TouchControls::IsPrimaryInputPressed();
-        // Vector2 touchPos = TouchControls::GetPrimaryInputPosition();
+#ifdef PLATFORM_MOBILE
+    TouchControls* tc = game->GetTouchControls();
+    if (tc) {
+        bool touchActive = tc->IsPrimaryInputDown();
+        bool touchPressed = tc->IsPrimaryInputPressed();
+        Vector2 touchPos = tc->GetPrimaryInputPosition();
+        
+        // Log touch state for debugging (only when state changes)
+        static bool lastTouchActive = false;
+        static bool lastTouchPressed = false;
+        if (touchActive != lastTouchActive || touchPressed != lastTouchPressed) {
+            LogManager::GetInstance().Log("Touch state changed - Active: " + std::string(touchActive ? "true" : "false") + 
+                                        ", Pressed: " + std::string(touchPressed ? "true" : "false") + 
+                                        ", Pos: (" + std::to_string((int)touchPos.x) + "," + std::to_string((int)touchPos.y) + ")", "TOUCH");
+            lastTouchActive = touchActive;
+            lastTouchPressed = touchPressed;
+        }
         
         // Draw fullscreen white overlay if touch is active
         if (touchActive) {
-            DrawRectangle(0, 0, screenWidthPx, screenHeightPx, ColorAlpha(WHITE, 0.18f));
+            PlatformLayer::GetInstance().DrawRectangle(0, 0, screenWidthPx, screenHeightPx, ColorToUInt(ColorAlpha(WHITE, 0.18f)));
         }
         // Draw green overlay if pressed (for extra feedback)
         if (touchPressed) {
-            DrawRectangle(0, 0, screenWidthPx, screenHeightPx, ColorAlpha(GREEN, 0.18f));
+            PlatformLayer::GetInstance().DrawRectangle(0, 0, screenWidthPx, screenHeightPx, ColorToUInt(ColorAlpha(GREEN, 0.18f)));
         }
+        // Draw debug rectangle at touch position
+        if (touchActive) {
+            PlatformLayer::GetInstance().DrawRectangle(touchPos.x - 25, touchPos.y - 25, 50, 50, ColorToUInt(ColorAlpha(GREEN, 0.8f)));
+        }
+    } else {
+        LogManager::GetInstance().Log("TouchControls is null in Loading::Draw()", "ERROR");
     }
+#endif
     
     // Draw the touch overlay so user sees feedback
-    if (touchControls) touchControls->Draw();
+    // if (touchControls) touchControls->Draw(); // Removed touchControls instance
 }

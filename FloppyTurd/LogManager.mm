@@ -22,11 +22,11 @@ void LogManager::Initialize() {
     
 #ifdef PLATFORM_IOS
     #if TARGET_IPHONE_SIMULATOR
-        // For simulator, use the user's home directory
+        // For simulator, use the user's home directory for easy access
         NSString *homeDirectory = NSHomeDirectory();
-        NSString *logsPath = [homeDirectory stringByAppendingPathComponent:@"Documents/FloppyTurdLogs"];
+        NSString *logsPath = [homeDirectory stringByAppendingPathComponent:@"FloppyTurdLogs"];
         m_logDir = [logsPath UTF8String];
-        NSLog(@"[LogManager] Using simulator logs directory: %@", logsPath);
+        NSLog(@"[LogManager] Using external logs directory: %@", logsPath);
     #else
         // For real devices, use the app's documents directory
         NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);

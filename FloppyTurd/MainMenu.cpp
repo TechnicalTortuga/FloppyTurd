@@ -661,7 +661,7 @@ void MainMenu::DrawDesktopUI()
 
 void MainMenu::DrawMobileUI()
 {
-	
+	TraceLog(LOG_INFO, "[MAINMENU] --- Begin DrawMobileUI Frame ---");
 	
 	// Use UICoordinateSystem for consistent coordinate handling
 	Rectangle pixelScreenRect = UICoordinateSystem::GetPixelScreenRect();
@@ -689,7 +689,7 @@ void MainMenu::DrawMobileUI()
 #if defined(__APPLE__) && TARGET_OS_IOS
 	PlatformLayer& platform = PlatformLayer::GetInstance();
 	platform.DrawTexture(_MenuBackground.texture, destX, destY, destWidth, destHeight, WHITE);
-	
+	TraceLog(LOG_INFO, "[MAINMENU] Background drawn with PlatformLayer at (%.1f,%.1f,%.1f,%.1f)", destX, destY, destWidth, destHeight);
 #else
 	DrawTexturePro(_MenuBackground,
 		Rectangle{ 0, 0, (float)_MenuBackground.width, (float)_MenuBackground.height },
@@ -697,14 +697,14 @@ void MainMenu::DrawMobileUI()
 		Vector2{ 0,0 }, 0.0f, WHITE);
 #endif
 
-	// --- Logo: center in full screen, scale up to 2.4x but not exceeding full screen width ---
-	float logoMaxWidth = pixelScreenRect.width * 0.8f;
+	// --- Logo: center in full screen, scale up to 2.4x but not exceeding safe area width ---
+	float logoMaxWidth = safeAreaPx.width * 0.8f;
 	float logoScale = fminf(2.4f, logoMaxWidth / (float)_FloppyLogo.width);
 	float logoWidth = _FloppyLogo.width * logoScale;
 	float logoHeight = _FloppyLogo.height * logoScale;
-	float logoX = (pixelScreenRect.width - logoWidth) / 2.0f; // Center in full screen
-	float logoY = pixelScreenRect.height * 0.08f; // 8% from top of full screen
-	
+	float logoX = safeAreaPx.x + (safeAreaPx.width - logoWidth) / 2.0f;
+	float logoY = safeAreaPx.y + safeAreaPx.height * 0.08f; // 8% from top of safe area
+	TraceLog(LOG_INFO, "[MAINMENU] Drawing logo at x=%.1f y=%.1f w=%.1f h=%.1f", logoX, logoY, logoWidth, logoHeight);
 #if defined(__APPLE__) && TARGET_OS_IOS
 	platform.DrawTexture(_FloppyLogo.texture, logoX, logoY, logoWidth, logoHeight, WHITE);
 #else
@@ -714,16 +714,16 @@ void MainMenu::DrawMobileUI()
 		Vector2{ 0,0 }, 0.0f, WHITE);
 #endif
 
-	// --- Buttons: layout within full screen using percentages ---
-	float buttonWidth = pixelScreenRect.width * 0.8f;
-	float buttonHeight = pixelScreenRect.height * 0.08f; // 8% of full screen height (smaller buttons)
-	float buttonSpacing = pixelScreenRect.height * 0.03f; // 3% spacing (tighter spacing)
-	float centerX = pixelScreenRect.width / 2.0f; // Center of full screen
-	float firstButtonY = logoY + logoHeight + pixelScreenRect.height * 0.20f; // 20% below logo (much lower)
+	// --- Buttons: layout within safe area using percentages ---
+	float buttonWidth = safeAreaPx.width * 0.8f;
+	float buttonHeight = safeAreaPx.height * 0.10f; // 10% of safe area height
+	float buttonSpacing = safeAreaPx.height * 0.04f; // 4% spacing
+	float centerX = safeAreaPx.x + safeAreaPx.width / 2.0f;
+	float firstButtonY = logoY + logoHeight + safeAreaPx.height * 0.06f; // 6% below logo
 	for (int i = 0; i < 4; ++i) {
 		float btnY = firstButtonY + i * (buttonHeight + buttonSpacing);
 		const char* label = (i == 0) ? "PLAY" : (i == 1) ? "OPTIONS" : (i == 2) ? "QUICKPLAY" : "QUIT";
-		// Button drawing debug removed for cleaner logs
+		TraceLog(LOG_INFO, "[MAINMENU] Drawing button: %s at x=%.1f y=%.1f w=%.1f h=%.1f", label, centerX - buttonWidth / 2, btnY, buttonWidth, buttonHeight);
 		if (AIGUI_ButtonRounded(label, centerX - buttonWidth / 2, btnY, buttonWidth, buttonHeight, 0.1f, buttonHeight * 0.4f, WHITE)) {
 			if (i == 0) currentMenu = LEVEL_SELECT;
 			else if (i == 1) currentMenu = MOBILE_OPTIONS_MENU;
@@ -743,12 +743,12 @@ void MainMenu::DrawMobileUI()
 		DrawMobileOptionsMenu();
 	}
 	
-	
+	TraceLog(LOG_INFO, "[MAINMENU] --- End DrawMobileUI Frame ---");
 }
 
 void MainMenu::DrawMobileOptionsMenu()
 {
-	
+	TraceLog(LOG_INFO, "[MAINMENU] --- Begin DrawMobileOptionsMenu Frame ---");
 	
 	// Use UICoordinateSystem for consistent coordinate handling
 	Rectangle pixelScreenRect = UICoordinateSystem::GetPixelScreenRect();
@@ -827,12 +827,12 @@ void MainMenu::DrawMobileOptionsMenu()
 		currentMenu = MAIN_MENU;
 	}
 
-	
+	TraceLog(LOG_INFO, "[MAINMENU] --- End DrawMobileOptionsMenu Frame ---");
 }
 
 void MainMenu::DrawMobileLevelSelect()
 {
-	
+	TraceLog(LOG_INFO, "[MAINMENU] --- Begin DrawMobileLevelSelect Frame ---");
 	
 	// Use UICoordinateSystem for consistent coordinate handling
 	Rectangle pixelScreenRect = UICoordinateSystem::GetPixelScreenRect();
@@ -967,7 +967,7 @@ void MainMenu::DrawMobileLevelSelect()
 		currentMenu = MAIN_MENU;
 	}
 
-	
+	TraceLog(LOG_INFO, "[MAINMENU] --- End DrawMobileLevelSelect Frame ---");
 }
 
 void MainMenu::ResetMusic()
