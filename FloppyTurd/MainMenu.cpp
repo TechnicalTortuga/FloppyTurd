@@ -1,7 +1,6 @@
 #include "MainMenu.h"
 #include "AIGUI.h"
 #include "AudioManager.h"
-#include "PlatformLayer.h"
 #include "AudioStateManager.h"
 #include "ResourceCompat.h"
 #include "ResourceManager.h"
@@ -65,7 +64,7 @@ MainMenu::MainMenu(Game* game)
 			emptyPainting = ResourceManager::GetInstance().GetTexture("empty_painting");
 			
 			// Use mobile background on mobile platforms
-			auto& platform = PlatformLayer::GetInstance();
+			auto& platform = PlatformAPI::GetPlatformImpl();
 			if (platform.IsMobilePlatform()) {
 				_MenuBackground = ResourceManager::GetInstance().GetTexture("main_menu_bg_mobile");
 				GameLog::Log("[MAINMENU] Using mobile background for mobile platform");
@@ -118,7 +117,8 @@ MainMenu::MainMenu(Game* game)
 		GameLog::Log("[MAINMENU] Loading fart sounds");
 		for (int i = 0; i < 11; ++i) {
 			try {
-				fartSoundsLoaded[i] = LoadSound(fartPaths[i]);
+				fartSoundsLoaded[i].player = LoadSound(fartPaths[i]);
+				fartSoundsLoaded[i].length = 0; // Length will be set by platform implementation
 			} catch (const std::exception& e) {
 				GameLog::Log("[MAINMENU] Exception loading fart sound %d: %s", i, e.what());
 				fartSoundsLoaded[i] = { 0 }; // Initialize with empty sound
@@ -190,7 +190,7 @@ MainMenu::~MainMenu()
 		UnloadTexture(levelPaintings[i]);
 
 	for (int i = 0; i < 11; ++i)
-		UnloadSound(fartSoundsLoaded[i]);
+		UnloadSound(fartSoundsLoaded[i].player);
 
 	// currentMusic is now managed by AudioStateManager, no need to delete
 }
@@ -198,7 +198,7 @@ MainMenu::~MainMenu()
 void MainMenu::PlayRandomFartSound()
 {
 	int index = GetRandomValue(0, 10);
-	PlaySound(fartSoundsLoaded[index]);
+	PlaySound(fartSoundsLoaded[index].player);
 }
 
 void MainMenu::Update()
@@ -229,7 +229,7 @@ void MainMenu::Update()
 			fClickCooldown -= GetFrameTime();
 
 		// Use platform-agnostic input
-		auto& platform = PlatformLayer::GetInstance();
+		auto& platform = PlatformAPI::GetPlatformImpl();
 		if (fHovered && platform.IsPrimaryInputPressed() && fClickCooldown <= 0.0f)
 		{
 			fClickCooldown = 0.3f;
@@ -520,7 +520,7 @@ void MainMenu::DrawDesktopUI()
 		if (levelsUnlocked[currentLevelIndex] && CheckCollisionPointRec(g_AIGUI.mousePos, scaledRect))
 		{
 			// Use platform-agnostic input
-			auto& platform = PlatformLayer::GetInstance();
+			auto& platform = PlatformAPI::GetPlatformImpl();
 			if (platform.IsPrimaryInputReleased())
 			{
 				game->SetGameState(PLAYING);
@@ -661,7 +661,7 @@ void MainMenu::DrawDesktopUI()
 
 void MainMenu::DrawMobileUI()
 {
-	TraceLog(LOG_INFO, "[MAINMENU] --- Begin DrawMobileUI Frame ---");
+	
 	
 	// Use UICoordinateSystem for consistent coordinate handling
 	Rectangle pixelScreenRect = UICoordinateSystem::GetPixelScreenRect();
@@ -687,9 +687,9 @@ void MainMenu::DrawMobileUI()
 	}
 	TraceLog(LOG_INFO, "[MAINMENU] Background dest rect (pixels): x=%.1f y=%.1f w=%.1f h=%.1f", destX, destY, destWidth, destHeight);
 #if defined(__APPLE__) && TARGET_OS_IOS
-	PlatformLayer& platform = PlatformLayer::GetInstance();
+	auto& platform = PlatformAPI::GetPlatformImpl();
 	platform.DrawTexture(_MenuBackground.texture, destX, destY, destWidth, destHeight, WHITE);
-	TraceLog(LOG_INFO, "[MAINMENU] Background drawn with PlatformLayer at (%.1f,%.1f,%.1f,%.1f)", destX, destY, destWidth, destHeight);
+	
 #else
 	DrawTexturePro(_MenuBackground,
 		Rectangle{ 0, 0, (float)_MenuBackground.width, (float)_MenuBackground.height },
@@ -697,15 +697,16 @@ void MainMenu::DrawMobileUI()
 		Vector2{ 0,0 }, 0.0f, WHITE);
 #endif
 
-	// --- Logo: center in full screen, scale up to 2.4x but not exceeding safe area width ---
-	float logoMaxWidth = safeAreaPx.width * 0.8f;
+	// --- Logo: center in full screen, scale up to 2.4x but not exceeding full screen width ---
+	float logoMaxWidth = pixelScreenRect.width * 0.8f;
 	float logoScale = fminf(2.4f, logoMaxWidth / (float)_FloppyLogo.width);
 	float logoWidth = _FloppyLogo.width * logoScale;
 	float logoHeight = _FloppyLogo.height * logoScale;
-	float logoX = safeAreaPx.x + (safeAreaPx.width - logoWidth) / 2.0f;
-	float logoY = safeAreaPx.y + safeAreaPx.height * 0.08f; // 8% from top of safe area
-	TraceLog(LOG_INFO, "[MAINMENU] Drawing logo at x=%.1f y=%.1f w=%.1f h=%.1f", logoX, logoY, logoWidth, logoHeight);
+	float logoX = (pixelScreenRect.width - logoWidth) / 2.0f; // Center in full screen
+	float logoY = pixelScreenRect.height * 0.08f; // 8% from top of full screen
+	
 #if defined(__APPLE__) && TARGET_OS_IOS
+	auto& platform = PlatformAPI::GetPlatformImpl();
 	platform.DrawTexture(_FloppyLogo.texture, logoX, logoY, logoWidth, logoHeight, WHITE);
 #else
 	DrawTexturePro(_FloppyLogo,
@@ -714,16 +715,16 @@ void MainMenu::DrawMobileUI()
 		Vector2{ 0,0 }, 0.0f, WHITE);
 #endif
 
-	// --- Buttons: layout within safe area using percentages ---
-	float buttonWidth = safeAreaPx.width * 0.8f;
-	float buttonHeight = safeAreaPx.height * 0.10f; // 10% of safe area height
-	float buttonSpacing = safeAreaPx.height * 0.04f; // 4% spacing
-	float centerX = safeAreaPx.x + safeAreaPx.width / 2.0f;
-	float firstButtonY = logoY + logoHeight + safeAreaPx.height * 0.06f; // 6% below logo
+	// --- Buttons: layout within full screen using percentages ---
+	float buttonWidth = pixelScreenRect.width * 0.8f;
+	float buttonHeight = pixelScreenRect.height * 0.08f; // 8% of full screen height (smaller buttons)
+	float buttonSpacing = pixelScreenRect.height * 0.03f; // 3% spacing (tighter spacing)
+	float centerX = pixelScreenRect.width / 2.0f; // Center of full screen
+	float firstButtonY = logoY + logoHeight + pixelScreenRect.height * 0.20f; // 20% below logo (much lower)
 	for (int i = 0; i < 4; ++i) {
 		float btnY = firstButtonY + i * (buttonHeight + buttonSpacing);
 		const char* label = (i == 0) ? "PLAY" : (i == 1) ? "OPTIONS" : (i == 2) ? "QUICKPLAY" : "QUIT";
-		TraceLog(LOG_INFO, "[MAINMENU] Drawing button: %s at x=%.1f y=%.1f w=%.1f h=%.1f", label, centerX - buttonWidth / 2, btnY, buttonWidth, buttonHeight);
+		// Button drawing debug removed for cleaner logs
 		if (AIGUI_ButtonRounded(label, centerX - buttonWidth / 2, btnY, buttonWidth, buttonHeight, 0.1f, buttonHeight * 0.4f, WHITE)) {
 			if (i == 0) currentMenu = LEVEL_SELECT;
 			else if (i == 1) currentMenu = MOBILE_OPTIONS_MENU;
@@ -743,12 +744,12 @@ void MainMenu::DrawMobileUI()
 		DrawMobileOptionsMenu();
 	}
 	
-	TraceLog(LOG_INFO, "[MAINMENU] --- End DrawMobileUI Frame ---");
+	
 }
 
 void MainMenu::DrawMobileOptionsMenu()
 {
-	TraceLog(LOG_INFO, "[MAINMENU] --- Begin DrawMobileOptionsMenu Frame ---");
+	
 	
 	// Use UICoordinateSystem for consistent coordinate handling
 	Rectangle pixelScreenRect = UICoordinateSystem::GetPixelScreenRect();
@@ -771,7 +772,7 @@ void MainMenu::DrawMobileOptionsMenu()
 	}
 	
 #if defined(__APPLE__) && TARGET_OS_IOS
-	PlatformLayer& platform = PlatformLayer::GetInstance();
+	auto& platform = PlatformAPI::GetPlatformImpl();
 	platform.DrawTexture(_MenuBackground.texture, destX, destY, destWidth, destHeight, WHITE);
 #else
 	DrawTexturePro(_MenuBackground,
@@ -827,12 +828,12 @@ void MainMenu::DrawMobileOptionsMenu()
 		currentMenu = MAIN_MENU;
 	}
 
-	TraceLog(LOG_INFO, "[MAINMENU] --- End DrawMobileOptionsMenu Frame ---");
+	
 }
 
 void MainMenu::DrawMobileLevelSelect()
 {
-	TraceLog(LOG_INFO, "[MAINMENU] --- Begin DrawMobileLevelSelect Frame ---");
+	
 	
 	// Use UICoordinateSystem for consistent coordinate handling
 	Rectangle pixelScreenRect = UICoordinateSystem::GetPixelScreenRect();
@@ -855,7 +856,7 @@ void MainMenu::DrawMobileLevelSelect()
 	}
 	
 #if defined(__APPLE__) && TARGET_OS_IOS
-	PlatformLayer& platform = PlatformLayer::GetInstance();
+	auto& platform = PlatformAPI::GetPlatformImpl();
 	platform.DrawTexture(_MenuBackground.texture, destX, destY, destWidth, destHeight, WHITE);
 #else
 	DrawTexturePro(_MenuBackground,
@@ -870,24 +871,26 @@ void MainMenu::DrawMobileLevelSelect()
 	DrawText("LEVEL SELECT", safeAreaPx.x + (safeAreaPx.width - MeasureText("LEVEL SELECT", titleFontSize)) / 2.0f, titleY, titleFontSize, WHITE);
 
 	// Handle touch input for swipe gestures
-	if (platform.IsPrimaryInputPressed()) {
-		Vector2 touchPos = platform.GetPrimaryInputPosition();
-		if (!isDragging) {
-			lastTouchX = touchPos.x;
-			isDragging = true;
-		} else {
-			float deltaX = touchPos.x - lastTouchX;
-			levelSelectScrollOffset += deltaX;
-			lastTouchX = touchPos.x;
+	if (auto& platform = PlatformAPI::GetPlatformImpl()) {
+		if (platform.IsPrimaryInputPressed()) {
+			Vector2 touchPos = platform.GetPrimaryInputPosition();
+			if (!isDragging) {
+				lastTouchX = touchPos.x;
+				isDragging = true;
+			} else {
+				float deltaX = touchPos.x - lastTouchX;
+				levelSelectScrollOffset += deltaX;
+				lastTouchX = touchPos.x;
+			}
+		} else if (platform.IsPrimaryInputReleased()) {
+			isDragging = false;
+			// Snap to nearest level
+			float levelWidth = safeAreaPx.width * 0.8f;
+			int targetLevel = (int)round(-levelSelectScrollOffset / levelWidth);
+			targetLevel = std::max(0, std::min(5, targetLevel)); // Clamp to 0-5
+			levelSelectScrollOffset = -targetLevel * levelWidth;
+			currentLevelIndex = targetLevel;
 		}
-	} else if (platform.IsPrimaryInputReleased()) {
-		isDragging = false;
-		// Snap to nearest level
-		float levelWidth = safeAreaPx.width * 0.8f;
-		int targetLevel = (int)round(-levelSelectScrollOffset / levelWidth);
-		targetLevel = std::max(0, std::min(5, targetLevel)); // Clamp to 0-5
-		levelSelectScrollOffset = -targetLevel * levelWidth;
-		currentLevelIndex = targetLevel;
 	}
 
 	// Level paintings layout
@@ -907,16 +910,19 @@ void MainMenu::DrawMobileLevelSelect()
 			
 			// Check if this painting is clicked
 			bool isClicked = false;
-			if (platform.IsPrimaryInputReleased() && !isDragging) {
-				Vector2 touchPos = platform.GetPrimaryInputPosition();
-				Rectangle paintingRect = { paintingX, paintingY, paintingWidth, paintingHeight };
-				if (CheckCollisionPointRec(touchPos, paintingRect)) {
-					isClicked = true;
+			if (auto& platform = PlatformAPI::GetPlatformImpl()) {
+				if (platform.IsPrimaryInputReleased() && !isDragging) {
+					Vector2 touchPos = platform.GetPrimaryInputPosition();
+					Rectangle paintingRect = { paintingX, paintingY, paintingWidth, paintingHeight };
+					if (CheckCollisionPointRec(touchPos, paintingRect)) {
+						isClicked = true;
+					}
 				}
 			}
 			
 			// Draw painting
 #if defined(__APPLE__) && TARGET_OS_IOS
+			auto& platform = PlatformAPI::GetPlatformImpl();
 			platform.DrawTexture(painting.texture, paintingX, paintingY, paintingWidth, paintingHeight, WHITE);
 #else
 			DrawTexturePro(painting,
@@ -967,7 +973,7 @@ void MainMenu::DrawMobileLevelSelect()
 		currentMenu = MAIN_MENU;
 	}
 
-	TraceLog(LOG_INFO, "[MAINMENU] --- End DrawMobileLevelSelect Frame ---");
+	
 }
 
 void MainMenu::ResetMusic()

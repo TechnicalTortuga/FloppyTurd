@@ -1,6 +1,6 @@
 #include "Playing.h"
 #include "AIGUI.h"
-#include "RaylibCompat.h"
+#include "PlatformAPI.h"
 #include "UIManager.h"
 #include <string>
 #include <functional>
@@ -15,7 +15,6 @@
 #include "Coin.h"
 #include "PoopHeart.h"
 #include "SnowballProjectile.h"
-#include "PlatformLayer.h"
 #include <cmath>
 #include "AudioStateManager.h"
 
@@ -220,10 +219,14 @@ Playing::Playing(Game* game) {
         TraceLog(LOG_INFO, "Playing constructor - Initializing touch controls");
         try {
             touchControls = new TouchControls();
-            touchControls->Initialize(320, 180);  // Virtual resolution
+            
+            // Get actual screen dimensions from PlatformAPI instead of using fixed 320x180
+            auto& platform = PlatformAPI::GetPlatformImpl();
+            int screenWidth = platform.GetScreenWidth();
+            int screenHeight = platform.GetScreenHeight();
+            touchControls->Initialize(screenWidth, screenHeight);
             
             // Enable touch controls only on mobile platforms
-            auto& platform = PlatformLayer::GetInstance();
             touchControls->SetEnabled(platform.IsTouchSupported());
 
             // Initialize AIGUI with touch controls for gesture support
@@ -343,7 +346,7 @@ void Playing::PreLoadLevels() {
 
 Playing::~Playing() {
     // ResourceManager handles texture cleanup automatically
-    UnloadSound(ScoreSound);
+    UnloadSound(ScoreSound.player);
 
     delete gameOverMusic;
     delete bossHealthBar;
@@ -953,7 +956,7 @@ void Playing::Update() {
                 else if (currentLevel->checkForPointGain(player->GetCircleCenter(), player->GetCircleRadius())) {
                     SCORE++;
                     TOTALSCORE++;
-                    PlaySound(ScoreSound);
+                    PlaySound(ScoreSound.player);
                 }
 
                 if (auto snowLevel = dynamic_cast<SnowLevel*>(currentLevel.get())) {
@@ -1323,38 +1326,43 @@ void Playing::HandleInput() {
     }
 
     // Handle input based on platform
-    auto& platform = PlatformLayer::GetInstance();
+    auto& platform = PlatformAPI::GetPlatformImpl();
     if (platform.IsTouchSupported() && touchControls && touchControls->IsEnabled()) {
-        // Handle touch input
+        // Handle touch input with full gesture recognition
         if (touchControls->IsJumpPressed()) {
             player->Jump();
+            TraceLog(LOG_INFO, "[PLAYING] Flop jumped from touch press");
         }
         if (touchControls->IsShootPressed()) {
             player->Shoot();
+            TraceLog(LOG_INFO, "[PLAYING] Flop shot from touch press");
         }
         if (touchControls->IsShootHeld()) {
             player->Shoot();
+            TraceLog(LOG_INFO, "[PLAYING] Flop shot from touch hold");
         }
+        
         // Integrate gesture recognition for additional controls
         if (touchControls->IsGestureDetected(GESTURE_SWIPE_UP)) {
             player->Jump(); // Swipe up can trigger a jump as an alternative input
+            TraceLog(LOG_INFO, "[PLAYING] Flop jumped from swipe up gesture");
         }
         if (touchControls->IsGestureDetected(GESTURE_SWIPE_DOWN)) {
             // Swipe down could trigger a special action if implemented
             // For now, just log for debugging
-            TraceLog(LOG_INFO, "Swipe down detected");
+            TraceLog(LOG_INFO, "[PLAYING] Swipe down detected");
         }
         if (touchControls->IsGestureDetected(GESTURE_SWIPE_LEFT) || touchControls->IsGestureDetected(GESTURE_SWIPE_RIGHT)) {
             // Swipe left/right could be used for dodging or quick menu navigation if needed
-            TraceLog(LOG_INFO, "Swipe left/right detected");
+            TraceLog(LOG_INFO, "[PLAYING] Swipe left/right detected");
         }
         if (touchControls->IsGestureDetected(GESTURE_PINCH_IN)) {
             // Pinch in could zoom out or trigger a defensive action
-            TraceLog(LOG_INFO, "Pinch in detected");
+            TraceLog(LOG_INFO, "[PLAYING] Pinch in detected");
         }
         if (touchControls->IsGestureDetected(GESTURE_PINCH_OUT)) {
             // Pinch out could zoom in or trigger an offensive action
-            TraceLog(LOG_INFO, "Pinch out detected");
+            TraceLog(LOG_INFO, "[PLAYING] Pinch out detected");
         }
     } else {
         // Handle keyboard/gamepad input

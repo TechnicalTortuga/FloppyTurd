@@ -288,7 +288,8 @@ void Player::InitSprites() {
 	formLevel = 0;
 	ChangeForm(formLevel);
 
-	hurtSound = LoadSound("sounds/hurt.mp3");
+	        hurtSound = LoadSound("sounds/hurt.mp3");
+	hurtSound.length = 0; // Length will be set by platform implementation
 }
 
 void Player::ChangeForm(int newForm) {

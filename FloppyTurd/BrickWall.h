@@ -1,6 +1,6 @@
 #pragma once
 #include "Obstacle.h"
-#include "RaylibCompat.h"
+#include "PlatformAPI.h"
 
 class BrickWall : public Obstacle {
 public:

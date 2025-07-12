@@ -1,5 +1,5 @@
 #pragma once
-#include "RaylibCompat.h"
+#include "PlatformAPI.h"
 class MenuButton
 {
 public:

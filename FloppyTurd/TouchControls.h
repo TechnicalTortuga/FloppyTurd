@@ -1,5 +1,5 @@
 #pragma once
-#include "RaylibCompat.h"
+#include "PlatformAPI.h"
 #include <vector>
 
 // Simplified touch controls for mobile gameplay

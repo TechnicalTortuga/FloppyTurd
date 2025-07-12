@@ -88,12 +88,12 @@ void Loading::Initialize() {
             
             // Debug logging to see what we got
             TraceLog(LOG_INFO, "Loading::Initialize() - poophat.id=%u, poophat.texture=%p, poophat.width=%d, poophat.height=%d", 
-                    poophat.id, poophat.texture, poophat.width, poophat.height);
+                    poophat.id, poophat.id, poophat.width, poophat.height);
             GameLog::Log("[LOADING] poophat.id=%u, poophat.texture=%p, poophat.width=%d, poophat.height=%d", 
-                        poophat.id, poophat.texture, poophat.width, poophat.height);
+                        poophat.id, poophat.id, poophat.width, poophat.height);
             
 #if defined(__APPLE__) && TARGET_OS_IPHONE
-            if (poophat.texture != nullptr) {
+            if (poophat.id != 0) {
 #else
             if (poophat.id != 0) {
 #endif
@@ -158,7 +158,7 @@ bool Loading::LoadFontsInBackground() {
     // Load Whacky Joe font in background
     try {
         Font whackyJoeFont = ResourceManager::GetInstance().GetFont("whacky_joe_font");
-        if (whackyJoeFont.baseSize > 0 && whackyJoeFont.glyphCount > 0) {
+        if (whackyJoeFont.baseSize > 0) {
             TraceLog(LOG_INFO, "[LOADING] Background thread: Successfully loaded Whacky Joe font");
             return true;
         } else {
@@ -264,7 +264,7 @@ void Loading::Draw() {
 
     // --- Centered, large rotating poophat ---
 #if defined(__APPLE__) && TARGET_OS_IPHONE
-    if (this->poophat.texture != nullptr) {
+    if (this->poophat.id != 0) {
 #else
     if (this->poophat.id != 0) {
 #endif
@@ -321,15 +321,15 @@ void Loading::Draw() {
         
         // Draw fullscreen white overlay if touch is active
         if (touchActive) {
-            PlatformLayer::GetInstance().DrawRectangle(0, 0, screenWidthPx, screenHeightPx, ColorToUInt(ColorAlpha(WHITE, 0.18f)));
+            DrawRectangle(0, 0, screenWidthPx, screenHeightPx, ColorAlpha(WHITE, 0.18f));
         }
         // Draw green overlay if pressed (for extra feedback)
         if (touchPressed) {
-            PlatformLayer::GetInstance().DrawRectangle(0, 0, screenWidthPx, screenHeightPx, ColorToUInt(ColorAlpha(GREEN, 0.18f)));
+            DrawRectangle(0, 0, screenWidthPx, screenHeightPx, ColorAlpha(GREEN, 0.18f));
         }
         // Draw debug rectangle at touch position
         if (touchActive) {
-            PlatformLayer::GetInstance().DrawRectangle(touchPos.x - 25, touchPos.y - 25, 50, 50, ColorToUInt(ColorAlpha(GREEN, 0.8f)));
+            DrawRectangle(touchPos.x - 25, touchPos.y - 25, 50, 50, ColorAlpha(GREEN, 0.8f));
         }
     } else {
         LogManager::GetInstance().Log("TouchControls is null in Loading::Draw()", "ERROR");

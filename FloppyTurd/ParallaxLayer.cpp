@@ -12,7 +12,7 @@ ParallaxLayer::ParallaxLayer(const std::vector<std::string>& texturePaths, float
 		Texture2D tex = TextureCache::Get(path.c_str());
 		if (
 #if defined(__APPLE__) && TARGET_OS_IPHONE
-			tex.texture == nullptr
+			tex.id == 0
 #else
 			tex.id == 0
 #endif

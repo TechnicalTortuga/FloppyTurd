@@ -1,5 +1,4 @@
 #include "TextureAtlas.h"
-#include "PlatformLayer.h"
 #include <algorithm>
 #include <memory>
 #include <numeric>
@@ -23,7 +22,7 @@ void TextureAtlas::Initialize() {
 void TextureAtlas::Shutdown() {
     // Unload all atlas textures
     for (auto& [category, texture] : atlasTextures) {
-        if (texture.texture != nullptr) {
+        if (texture.id != 0) {
             UnloadTexture(texture);
         }
     }
@@ -47,7 +46,7 @@ bool TextureAtlas::BuildAtlas(AtlasCategory category, const std::vector<std::str
     
     // Load all images
     for (const auto& path : texturePaths) {
-        std::string fullPath = PlatformLayer::GetInstance().GetResourcePath(path);
+        std::string fullPath = PlatformAPI::GetPlatformImpl()->GetResourcePath(path);
         Image img = LoadImage(fullPath.c_str());
         
         if (img.data != nullptr) {
@@ -101,7 +100,7 @@ bool TextureAtlas::BuildAtlas(AtlasCategory category, const std::vector<std::str
         UnloadImage(img);
     }
     
-    if (atlasTexture.texture == nullptr) {
+    if (atlasTexture.id == 0) {
         TraceLog(LOG_ERROR, "TextureAtlas: Failed to create texture for category %s", 
                  categoryNames[category].c_str());
         return false;
@@ -234,7 +233,7 @@ Texture2D TextureAtlas::GetAtlasTexture(AtlasCategory category) {
     }
     
     // Return empty texture if not found
-    return Texture2D{ 0 };
+    return Texture2D();
 }
 
 bool TextureAtlas::IsTextureAtlased(const std::string& texturePath) {

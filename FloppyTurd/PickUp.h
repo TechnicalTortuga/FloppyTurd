@@ -1,6 +1,6 @@
 // PickUp.h
 #pragma once
-#include "RaylibCompat.h"
+#include "PlatformAPI.h"
 
 class PickUp {
 public:

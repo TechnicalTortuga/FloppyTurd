@@ -1,0 +1,6 @@
+#!/bin/sh
+set -e
+if test "$CONFIGURATION" = "Debug"; then :
+  cd /Users/aimac/Development/FloppyTurd/build_ios/_deps/raylib-subbuild
+fi
+

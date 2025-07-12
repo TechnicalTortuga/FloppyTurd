@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <unordered_map>
 #include <string>
-#include "RaylibCompat.h"
+#include "PlatformAPI.h"
 
 class TextureCache
 {

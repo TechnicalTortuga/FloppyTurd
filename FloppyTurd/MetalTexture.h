@@ -9,7 +9,7 @@
 #import <Metal/Metal.h>
 #import <UIKit/UIKit.h>
 #import <CoreGraphics/CoreGraphics.h>
-#include "RaylibCompat.h"
+#include "PlatformAPI.h"
 
 // C++ namespace for Metal texture operations
 namespace MetalTexture {

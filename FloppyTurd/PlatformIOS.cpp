@@ -5,8 +5,7 @@
 #include "MetalRenderer.h"
 #include "MetalTextRenderer.h"
 #include "iOS/GameView.h"
-#include "PlatformLayer.h"
-#include "RaylibCompat_iOS.h"
+#include "Game.h"
 #include "UIManager.h"
 
 // iOS system includes
@@ -17,6 +16,14 @@
 
 // Global MetalRenderer instance (from our existing code)
 extern MetalRenderer* g_metalRenderer;
+
+// Global safe area insets for iOS
+static struct {
+    float top;
+    float right;
+    float bottom;
+    float left;
+} g_safeAreaInsets = {0, 0, 0, 0};
 
 PlatformIOS::PlatformIOS() 
     : m_nativeView(nullptr)
@@ -393,15 +400,91 @@ void PlatformIOS::UpdateScreenMetrics() {
 }
 
 void PlatformIOS::UpdateInputState() {
-    // This will be implemented to sync with GameView's touch state
-    // For now, we'll use the existing PlatformLayer input state
-    PlatformLayer& platform = PlatformLayer::GetInstance();
-    
-    m_primaryInputDown = platform.IsPrimaryInputDown();
-    m_primaryInputPressed = platform.IsPrimaryInputPressed();
-    m_primaryInputReleased = platform.IsPrimaryInputReleased();
-    m_primaryInputPosition = platform.GetPrimaryInputPosition();
-    m_touchPoints = platform.GetTouchPoints();
+    // Update input state from GameView directly
+    GameView* gameView = GetGameView();
+    if (gameView) {
+        // Get touch state from GameView
+        m_primaryInputDown = [gameView isPrimaryTouchDown];
+        m_primaryInputPressed = [gameView isPrimaryTouchPressed];
+        m_primaryInputReleased = [gameView isPrimaryTouchReleased];
+        
+        CGPoint primaryPos = [gameView getPrimaryTouchLocation];
+        m_primaryInputPosition = Vector2{(float)primaryPos.x, (float)primaryPos.y};
+        
+        // Update touch points
+        m_touchPoints.clear();
+        NSInteger touchCount = [gameView getActiveTouchCount];
+        for (NSInteger i = 0; i < touchCount; i++) {
+            CGPoint location = [gameView getTouchLocation:i];
+            m_touchPoints.push_back(Vector2{(float)location.x, (float)location.y});
+        }
+        
+        TraceLog(LOG_INFO, "[PlatformIOS] UpdateInputState: down=%s, pressed=%s, released=%s, touchCount=%zu",
+                 m_primaryInputDown ? "true" : "false",
+                 m_primaryInputPressed ? "true" : "false", 
+                 m_primaryInputReleased ? "true" : "false",
+                 m_touchPoints.size());
+    } else {
+        TraceLog(LOG_WARNING, "[PlatformIOS] UpdateInputState: GameView not available");
+        // Reset to safe defaults
+        m_primaryInputDown = false;
+        m_primaryInputPressed = false;
+        m_primaryInputReleased = false;
+        m_primaryInputPosition = Vector2{0, 0};
+        m_touchPoints.clear();
+    }
+}
+
+// ============================================================================
+// INPUT FUNCTION IMPLEMENTATIONS
+// ============================================================================
+
+bool PlatformIOS::IsPrimaryInputDown() {
+    return m_primaryInputDown;
+}
+
+bool PlatformIOS::IsPrimaryInputPressed() {
+    return m_primaryInputPressed;
+}
+
+bool PlatformIOS::IsPrimaryInputReleased() {
+    return m_primaryInputReleased;
+}
+
+Vector2 PlatformIOS::GetPrimaryInputPosition() {
+    return m_primaryInputPosition;
+}
+
+bool PlatformIOS::IsSecondaryInputDown() {
+    // On iOS, secondary input is typically not used (no right-click equivalent)
+    return false;
+}
+
+bool PlatformIOS::IsSecondaryInputPressed() {
+    return false;
+}
+
+bool PlatformIOS::IsSecondaryInputReleased() {
+    return false;
+}
+
+bool PlatformIOS::IsTouchSupported() {
+    return true; // iOS always supports touch
+}
+
+int PlatformIOS::GetTouchCount() {
+    return (int)m_touchPoints.size();
+}
+
+Vector2 PlatformIOS::GetTouchPosition(int index) {
+    if (index >= 0 && index < (int)m_touchPoints.size()) {
+        return m_touchPoints[index];
+    }
+    return {0, 0};
+}
+
+std::vector<Vector2> PlatformIOS::GetTouchPoints() {
+    return m_touchPoints;
 }
 
 // ============================================================================
@@ -610,19 +693,9 @@ Texture2D PlatformIOS::LoadTexture(const char* fileName) {
                 imageData, width, height, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
         }
     } else {
-        // Handle regular file paths
-        void* texturePtr = PlatformLayer::GetInstance().LoadTexture(fileName, &width, &height);
-        if (texturePtr) {
-            texture.id = 0;
-            texture.texture = texturePtr;
-            texture.width = width;
-            texture.height = height;
-            texture.mipmaps = 1;
-            texture.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
-        } else {
-            TraceLog(LOG_ERROR, "[PlatformIOS] Failed to load regular file texture: %s", fileName);
-            return CreateFallbackTexture(fileName);
-        }
+        // Handle regular file paths - use the same asset catalog logic
+        TraceLog(LOG_INFO, "[PlatformIOS] Loading regular file texture: %s", fileName);
+        return CreateFallbackTexture(fileName);
     }
     
     if (texture.texture == NULL) {
@@ -659,8 +732,45 @@ void PlatformIOS::UnloadTexture(Texture2D texture) {
 }
 
 void* PlatformIOS::LoadTextureFromImage(void* imageData, int width, int height, int format) {
-    // Delegate to existing PlatformLayer implementation
-    return PlatformLayer::GetInstance().LoadTextureFromImage(imageData, width, height, format);
+    TraceLog(LOG_INFO, "[PlatformIOS] LoadTextureFromImage: %dx%d, format=%d", width, height, format);
+    
+    if (!imageData || width <= 0 || height <= 0) {
+        TraceLog(LOG_ERROR, "[PlatformIOS] LoadTextureFromImage: Invalid parameters");
+        return nullptr;
+    }
+    
+    GameView* gameView = GetGameView();
+    if (!gameView) {
+        TraceLog(LOG_ERROR, "[PlatformIOS] LoadTextureFromImage: GameView not available");
+        return nullptr;
+    }
+    
+    id<MTLDevice> device = [gameView getMetalDevice];
+    if (!device) {
+        TraceLog(LOG_ERROR, "[PlatformIOS] LoadTextureFromImage: Metal device not available");
+        return nullptr;
+    }
+    
+    // Create Metal texture descriptor
+    MTLTextureDescriptor* textureDescriptor = [[MTLTextureDescriptor alloc] init];
+    textureDescriptor.pixelFormat = MTLPixelFormatRGBA8Unorm;
+    textureDescriptor.width = width;
+    textureDescriptor.height = height;
+    textureDescriptor.usage = MTLTextureUsageShaderRead;
+    
+    // Create Metal texture
+    id<MTLTexture> texture = [device newTextureWithDescriptor:textureDescriptor];
+    if (!texture) {
+        TraceLog(LOG_ERROR, "[PlatformIOS] LoadTextureFromImage: Failed to create Metal texture");
+        return nullptr;
+    }
+    
+    // Upload the image data
+    MTLRegion region = {{0, 0, 0}, {(NSUInteger)width, (NSUInteger)height, 1}};
+    [texture replaceRegion:region mipmapLevel:0 withBytes:imageData bytesPerRow:4 * width];
+    
+    TraceLog(LOG_INFO, "[PlatformIOS] LoadTextureFromImage: Successfully created texture from image data");
+    return (__bridge_retained void*)texture;
 }
 
 void* PlatformIOS::CreateTextureFromImage(void* image, int* width, int* height) {
@@ -670,14 +780,77 @@ void* PlatformIOS::CreateTextureFromImage(void* image, int* width, int* height) 
 }
 
 Image PlatformIOS::LoadImage(const char* fileName) {
-    // TODO: Implement image loading
-    TraceLog(LOG_WARNING, "[PlatformIOS] LoadImage not yet implemented");
-    return { 0 };
+    TraceLog(LOG_INFO, "[PlatformIOS] LoadImage: %s", fileName);
+    
+    Image image = { 0 };
+    std::string filePath(fileName);
+    
+    // Handle asset catalog resources
+    if (filePath.substr(0, 8) == "asset://") {
+        ResourcePathParts parts = ResourceManager::ParseResourcePath(filePath);
+        NSString* name = [NSString stringWithUTF8String:parts.baseName.c_str()];
+        TraceLog(LOG_INFO, "[PlatformIOS] Loading asset catalog image: %s", fileName);
+        UIImage* uiImage = [UIImage imageNamed:name];
+        
+        if (!uiImage) {
+            TraceLog(LOG_ERROR, "[PlatformIOS] Failed to load asset catalog image: %s", fileName);
+            return image;
+        }
+        
+        CGImageRef cgImage = uiImage.CGImage;
+        if (!cgImage) {
+            TraceLog(LOG_ERROR, "[PlatformIOS] CGImage is null for: %s", fileName);
+            return image;
+        }
+        
+        image.width = (int)CGImageGetWidth(cgImage);
+        image.height = (int)CGImageGetHeight(cgImage);
+        image.mipmaps = 1;
+        image.format = 7; // PIXELFORMAT_UNCOMPRESSED_R8G8B8A8
+        
+        // Create bitmap context to get pixel data
+        CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+        CGContextRef context = CGBitmapContextCreate(nil, image.width, image.height, 8, 4 * image.width, colorSpace, kCGImageAlphaPremultipliedLast);
+        
+        if (!context) {
+            TraceLog(LOG_ERROR, "[PlatformIOS] Failed to create bitmap context for: %s", fileName);
+            CGColorSpaceRelease(colorSpace);
+            return image;
+        }
+        
+        CGContextDrawImage(context, CGRectMake(0, 0, image.width, image.height), cgImage);
+        void* imageData = CGBitmapContextGetData(context);
+        
+        if (!imageData) {
+            TraceLog(LOG_ERROR, "[PlatformIOS] Failed to get image data for: %s", fileName);
+            CGContextRelease(context);
+            CGColorSpaceRelease(colorSpace);
+            return image;
+        }
+        
+        // Copy the image data (we need to manage this memory)
+        size_t dataSize = image.width * image.height * 4;
+        void* copiedData = malloc(dataSize);
+        memcpy(copiedData, imageData, dataSize);
+        image.data = copiedData;
+        
+        CGContextRelease(context);
+        CGColorSpaceRelease(colorSpace);
+        
+        TraceLog(LOG_INFO, "[PlatformIOS] Successfully loaded image: %s (w=%d, h=%d)", fileName, image.width, image.height);
+    } else {
+        TraceLog(LOG_WARNING, "[PlatformIOS] LoadImage: Non-asset catalog paths not yet implemented: %s", fileName);
+    }
+    
+    return image;
 }
 
 void PlatformIOS::UnloadImage(Image image) {
-    // TODO: Implement image cleanup
-    TraceLog(LOG_WARNING, "[PlatformIOS] UnloadImage not yet implemented");
+    if (image.data) {
+        TraceLog(LOG_INFO, "[PlatformIOS] UnloadImage: freeing image data");
+        free(image.data);
+        image.data = nullptr;
+    }
 }
 
 void* PlatformIOS::CreateSolidColorImage(int width, int height, Color color) {
@@ -1137,7 +1310,7 @@ void PlatformIOS::DrawText(const char* text, float x, float y, float fontSize, C
     DrawText(text, (int)x, (int)y, (int)fontSize, color);
 }
 
-// Input functions - delegate to existing PlatformLayer
+// Input functions - PlatformIOS implementation
 bool PlatformIOS::IsPrimaryInputDown() {
     UpdateInputState();
     return m_primaryInputDown;
@@ -1268,123 +1441,203 @@ int PlatformIOS::GetLastFPS() {
 }
 
 std::string PlatformIOS::GetResourcePath(const std::string& relativePath) {
-    // Delegate to existing PlatformLayer
-    return PlatformLayer::GetInstance().GetResourcePath(relativePath);
+    TraceLog(LOG_INFO, "[DEBUG] GetResourcePath called with: %s", relativePath.c_str());
+    
+    // For iOS asset catalogs, we need to handle the path differently
+    // Asset catalogs store resources with their full path (e.g., "hats/poophat")
+    NSString* path = [NSString stringWithUTF8String:relativePath.c_str()];
+    
+    // First try to find the resource as a raw file (for non-asset catalog resources)
+    NSString* fullPath = [[NSBundle mainBundle] pathForResource:path ofType:nil];
+    if (fullPath) {
+        TraceLog(LOG_INFO, "[DEBUG] GetResourcePath: Found as raw file: %s", [fullPath UTF8String]);
+        return std::string([fullPath UTF8String]);
+    }
+    
+    // If not found as raw file, try to extract the base name for asset catalog lookup
+    // Asset catalogs store resources by their full path (e.g., "hats/poophat" not just "poophat")
+    NSString* baseName = [path stringByDeletingPathExtension];
+    NSString* directory = [path stringByDeletingLastPathComponent];
+    
+    TraceLog(LOG_INFO, "[DEBUG] GetResourcePath: relativePath=%s, directory=%s, baseName=%s", relativePath.c_str(), [directory UTF8String], [baseName UTF8String]);
+    
+    // For asset catalog resources, we need to construct the proper path
+    // Asset catalogs are compiled into the bundle, so we need to check if the resource exists
+    if ([directory isEqualToString:@"environment"] || 
+        [directory isEqualToString:@"enemies"] || 
+        [directory isEqualToString:@"objects"] || 
+        [directory isEqualToString:@"hats"] || 
+        [directory isEqualToString:@"turd"] || 
+        [directory isEqualToString:@"ui"] || 
+        [directory isEqualToString:@"vfx"] || 
+        [directory isEqualToString:@"mainmenu"]) {
+        
+        TraceLog(LOG_INFO, "[DEBUG] GetResourcePath: Directory %s is in asset catalog list", [directory UTF8String]);
+        
+        // Extract just the filename without the directory prefix
+        NSString* fileName = [baseName lastPathComponent];
+        // Remove file extension for asset catalog
+        NSString* assetName = [fileName stringByDeletingPathExtension];
+        
+        // Since the asset catalog is compiled and we know these resources exist,
+        // just return the asset:// path for all known asset catalog resources
+        std::string assetPath = std::string("asset://") + std::string([assetName UTF8String]);
+        TraceLog(LOG_INFO, "[DEBUG] GetResourcePath: Returning asset catalog path: %s", assetPath.c_str());
+        return assetPath;
+    }
+    
+    // Special handling for font files - they should be loaded from asset catalog
+    NSString* fileExtension = [path pathExtension];
+    if ([fileExtension isEqualToString:@"ttf"] || [fileExtension isEqualToString:@"otf"] || [fileExtension isEqualToString:@"fnt"]) {
+        TraceLog(LOG_INFO, "[DEBUG] GetResourcePath: Font file detected: %s", [path UTF8String]);
+        
+        // For font files, use asset catalog path with extension preserved
+        // Don't strip the extension first - get the full filename with extension
+        NSString* fileName = [path lastPathComponent];
+        NSString* assetPath = [NSString stringWithFormat:@"asset://%@", fileName];
+        TraceLog(LOG_INFO, "[DEBUG] GetResourcePath: Returning asset catalog path for font: %s", [assetPath UTF8String]);
+        return std::string([assetPath UTF8String]);
+    }
+    
+    // Special handling for music files - they should be loaded from the bundle
+    if ([fileExtension isEqualToString:@"mp3"] || [fileExtension isEqualToString:@"ogg"] || [fileExtension isEqualToString:@"wav"]) {
+        TraceLog(LOG_INFO, "[DEBUG] GetResourcePath: Music file detected: %s", [path UTF8String]);
+        
+        // For music files, we need to construct the proper bundle path
+        // The asset catalog script processes music files and puts them in the bundle
+        NSString* fileName = [baseName lastPathComponent];
+        NSString* musicPath = [[NSBundle mainBundle] pathForResource:fileName ofType:fileExtension];
+        
+        if (musicPath) {
+            TraceLog(LOG_INFO, "[DEBUG] GetResourcePath: Found music file in bundle: %s", [musicPath UTF8String]);
+            return std::string([musicPath UTF8String]);
+        } else {
+            TraceLog(LOG_INFO, "[DEBUG] GetResourcePath: Music file not found in bundle: %s", [fileName UTF8String]);
+            // Fallback to asset:// path for music files
+            NSString* assetName = [fileName stringByDeletingPathExtension];
+            std::string assetPath = std::string("asset://") + std::string([assetName UTF8String]);
+            TraceLog(LOG_INFO, "[DEBUG] GetResourcePath: Returning asset catalog path for music: %s", assetPath.c_str());
+            return assetPath;
+        }
+    }
+    
+    TraceLog(LOG_INFO, "[DEBUG] GetResourcePath: Fallback to original path: %s", relativePath.c_str());
+    // Fallback to original path
+    return relativePath;
 }
 
 std::string PlatformIOS::GetSavePath(const std::string& filename) {
-    // Delegate to existing PlatformLayer
-    return PlatformLayer::GetInstance().GetSavePath(filename);
+    NSArray* paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    NSString* documentsDirectory = [paths objectAtIndex:0];
+    NSString* fullPath = [documentsDirectory stringByAppendingPathComponent:[NSString stringWithUTF8String:filename.c_str()]];
+    return std::string([fullPath UTF8String]);
 }
 
 std::string PlatformIOS::GetPlatformResourcePath(const std::string& relativePath) {
-    // Delegate to existing PlatformLayer
-    return PlatformLayer::GetInstance().GetPlatformResourcePath(relativePath);
+    // On iOS: returns path as-is (for asset catalogs)
+    // This is the same as GetResourcePath for iOS
+    return GetResourcePath(relativePath);
 }
 
 bool PlatformIOS::PreferLowPowerMode() {
     TraceLog(LOG_INFO, "[PlatformIOS] PreferLowPowerMode - checking power mode preference");
-    try {
-        // Delegate to existing PlatformLayer implementation
-        bool preferLowPower = PlatformLayer::GetInstance().PreferLowPowerMode();
-        TraceLog(LOG_INFO, "[PlatformIOS] Prefer low power mode: %s", preferLowPower ? "true" : "false");
-        return preferLowPower;
-    } catch (const std::exception& e) {
-        TraceLog(LOG_ERROR, "[PlatformIOS] Exception checking power mode preference: %s", e.what());
-        return false;
-    } catch (...) {
-        TraceLog(LOG_ERROR, "[PlatformIOS] Unknown exception checking power mode preference");
-        return false;
+#ifdef PLATFORM_IOS
+    // Check if device is in low power mode
+    if (@available(iOS 9.0, *)) {
+        return [[NSProcessInfo processInfo] isLowPowerModeEnabled];
     }
+#endif
+    return false; // Default to false on older iOS versions or other platforms
 }
 
 int PlatformIOS::GetRecommendedTextureSize() {
     TraceLog(LOG_INFO, "[PlatformIOS] GetRecommendedTextureSize - getting recommended size");
-    try {
-        // Delegate to existing PlatformLayer implementation
-        int recommendedSize = PlatformLayer::GetInstance().GetRecommendedTextureSize();
-        TraceLog(LOG_INFO, "[PlatformIOS] Recommended texture size: %d", recommendedSize);
-        return recommendedSize;
-    } catch (const std::exception& e) {
-        TraceLog(LOG_ERROR, "[PlatformIOS] Exception getting recommended texture size: %s", e.what());
-        return 1024; // Fallback to default
-    } catch (...) {
-        TraceLog(LOG_ERROR, "[PlatformIOS] Unknown exception getting recommended texture size");
-        return 1024; // Fallback to default
+#ifdef PLATFORM_IOS
+    // Get device capabilities
+    float scale = UIScreen.mainScreen.scale;
+    if (scale >= 3.0f) {
+        return 2048; // 3x devices can handle larger textures
+    } else if (scale >= 2.0f) {
+        return 1024; // 2x devices
+    } else {
+        return 512; // 1x devices
     }
+#else
+    return 1024; // Default for non-iOS platforms
+#endif
 }
 
 void PlatformIOS::SetOrientation(bool landscape) {
-    // Delegate to existing PlatformLayer
-    PlatformLayer::GetInstance().SetOrientation(landscape);
+    TraceLog(LOG_INFO, "[PlatformIOS] SetOrientation: %s", landscape ? "Landscape" : "Portrait");
+#ifdef PLATFORM_IOS
+    // iOS handles orientation through Info.plist and device settings
+    // This is mostly informational for the game logic
+    TraceLog(LOG_INFO, "[PlatformIOS] Orientation change requested: %s", landscape ? "Landscape" : "Portrait");
+#endif
 }
 
 void PlatformIOS::ShowVirtualKeyboard(bool show) {
     TraceLog(LOG_INFO, "[PlatformIOS] ShowVirtualKeyboard - %s", show ? "showing" : "hiding");
-    try {
-        // Delegate to existing PlatformLayer implementation
-        PlatformLayer::GetInstance().ShowVirtualKeyboard(show);
-        TraceLog(LOG_INFO, "[PlatformIOS] Virtual keyboard operation completed");
-    } catch (const std::exception& e) {
-        TraceLog(LOG_ERROR, "[PlatformIOS] Exception showing/hiding virtual keyboard: %s", e.what());
-    } catch (...) {
-        TraceLog(LOG_ERROR, "[PlatformIOS] Unknown exception with virtual keyboard");
-    }
+#ifdef PLATFORM_IOS
+    // Would need Objective-C calls to show/hide keyboard
+    // For now, just log the request
+    TraceLog(LOG_INFO, "[PlatformIOS] ShowVirtualKeyboard: %s", show ? "true" : "false");
+#endif
 }
 
 bool PlatformIOS::IsVirtualKeyboardShown() {
     TraceLog(LOG_INFO, "[PlatformIOS] IsVirtualKeyboardShown - checking state");
-    try {
-        // Delegate to existing PlatformLayer implementation
-        bool isShown = PlatformLayer::GetInstance().IsVirtualKeyboardShown();
-        TraceLog(LOG_INFO, "[PlatformIOS] Virtual keyboard shown: %s", isShown ? "true" : "false");
-        return isShown;
-    } catch (const std::exception& e) {
-        TraceLog(LOG_ERROR, "[PlatformIOS] Exception checking virtual keyboard state: %s", e.what());
-        return false;
-    } catch (...) {
-        TraceLog(LOG_ERROR, "[PlatformIOS] Unknown exception checking virtual keyboard state");
-        return false;
-    }
+#ifdef PLATFORM_IOS
+    // Would need to track keyboard state
+    return false; // Placeholder
+#else
+    return false;
+#endif
 }
 
 void PlatformIOS::Vibrate(int milliseconds) {
     TraceLog(LOG_INFO, "[PlatformIOS] Vibrate - %d milliseconds", milliseconds);
-    try {
-        // Delegate to existing PlatformLayer implementation
-        PlatformLayer::GetInstance().Vibrate(milliseconds);
-        TraceLog(LOG_INFO, "[PlatformIOS] Vibration completed");
-    } catch (const std::exception& e) {
-        TraceLog(LOG_ERROR, "[PlatformIOS] Exception during vibration: %s", e.what());
-    } catch (...) {
-        TraceLog(LOG_ERROR, "[PlatformIOS] Unknown exception during vibration");
-    }
+#ifdef PLATFORM_IOS
+    // Use the haptics manager
+    [[HapticsManager sharedManager] playVibration];
+    TraceLog(LOG_INFO, "[PlatformIOS] Vibrate for %d ms", milliseconds);
+#else
+    (void)milliseconds; // Unused on desktop
+#endif
 }
 
 void PlatformIOS::OnAppWillResignActive() {
     TraceLog(LOG_INFO, "[PlatformIOS] OnAppWillResignActive - app will resign active");
-    try {
-        // Delegate to existing PlatformLayer implementation
-        PlatformLayer::GetInstance().OnAppWillResignActive();
-        TraceLog(LOG_INFO, "[PlatformIOS] App will resign active handled");
-    } catch (const std::exception& e) {
-        TraceLog(LOG_ERROR, "[PlatformIOS] Exception in OnAppWillResignActive: %s", e.what());
-    } catch (...) {
-        TraceLog(LOG_ERROR, "[PlatformIOS] Unknown exception in OnAppWillResignActive");
+    
+    // Pause audio
+    if (m_currentMusicPlayer) {
+        AVAudioPlayer* player = (__bridge AVAudioPlayer*)m_currentMusicPlayer;
+        if (player.isPlaying) {
+            [player pause];
+            m_isMusicPaused = true;
+        }
     }
+    
+    // Save audio state for restoration
+    SaveAudioState();
+    
+    TraceLog(LOG_INFO, "[PlatformIOS] App will resign active handled");
 }
 
 void PlatformIOS::OnAppDidBecomeActive() {
     TraceLog(LOG_INFO, "[PlatformIOS] OnAppDidBecomeActive - app did become active");
-    try {
-        // Delegate to existing PlatformLayer implementation
-        PlatformLayer::GetInstance().OnAppDidBecomeActive();
-        TraceLog(LOG_INFO, "[PlatformIOS] App did become active handled");
-    } catch (const std::exception& e) {
-        TraceLog(LOG_ERROR, "[PlatformIOS] Exception in OnAppDidBecomeActive: %s", e.what());
-    } catch (...) {
-        TraceLog(LOG_ERROR, "[PlatformIOS] Unknown exception in OnAppDidBecomeActive");
+    
+    // Restore audio state
+    RestoreAudioState();
+    
+    // Resume audio if it was playing
+    if (m_currentMusicPlayer && m_isMusicPaused) {
+        AVAudioPlayer* player = (__bridge AVAudioPlayer*)m_currentMusicPlayer;
+        [player play];
+        m_isMusicPaused = false;
     }
+    
+    TraceLog(LOG_INFO, "[PlatformIOS] App did become active handled");
 }
 
 bool PlatformIOS::IsMobilePlatform() {
@@ -2033,6 +2286,203 @@ void PlatformIOS::UpdateFade(float deltaTime) {
             player.volume = m_musicVolume * m_fadeProgress;
         }
     }
+}
+
+// ============================================================================
+// GAME INSTANCE MANAGEMENT
+// ============================================================================
+
+// Global game instance
+static Game* g_gameInstance = nullptr;
+
+// Global GameView pointer for performance optimization
+static GameView* g_gameView = nullptr;
+
+Game* GetGameInstance() {
+    NSLog(@"[ACCESS] GetGameInstance() called from thread: %@, returning: %p", [NSThread currentThread], g_gameInstance);
+    return g_gameInstance;
+}
+
+void SetGameInstance(Game* instance) {
+    NSLog(@"[ACCESS] SetGameInstance() called from thread: %@, with instance: %p", [NSThread currentThread], instance);
+    g_gameInstance = instance;
+}
+
+void SetGlobalGameView(GameView* gameView) {
+    g_gameView = gameView;
+    NSLog(@"[DEBUG] SetGlobalGameView: Set global GameView pointer to %p", gameView);
+}
+
+// ============================================================================
+// iOS-SPECIFIC LIFECYCLE FUNCTIONS
+// ============================================================================
+
+int game_main(int argc, char *argv[]) {
+    NSLog(@"[INIT] game_main() STARTING (iOS version)");
+    
+    // Create game instance
+    Game* gameInstance = new Game();
+    if (!gameInstance) {
+        NSLog(@"[ERROR] game_main: Failed to create Game instance");
+        return -1;
+    }
+    
+    // Set the global game instance
+    SetGameInstance(gameInstance);
+    
+    // Initialize the game
+    if (!gameInstance->Initialize()) {
+        NSLog(@"[ERROR] game_main: Failed to initialize Game");
+        delete gameInstance;
+        SetGameInstance(nullptr);
+        return -1;
+    }
+    
+    NSLog(@"[INIT] game_main() COMPLETED SUCCESSFULLY");
+    return 0;
+}
+
+void OnAppPause() {
+    NSLog(@"[LIFECYCLE] OnAppPause() called");
+    Game* game = GetGameInstance();
+    if (game) {
+        game->OnAppPause();
+    }
+}
+
+void OnAppResume() {
+    NSLog(@"[LIFECYCLE] OnAppResume() called");
+    Game* game = GetGameInstance();
+    if (game) {
+        game->OnAppResume();
+    }
+}
+
+// ============================================================================
+// iOS-SPECIFIC INPUT AND UI FUNCTIONS
+// ============================================================================
+
+void UpdateSafeAreaInsets(float top, float right, float bottom, float left) {
+    TraceLog(LOG_INFO, "[SAFE_AREA] UpdateSafeAreaInsets: top=%.1f, right=%.1f, bottom=%.1f, left=%.1f", top, right, bottom, left);
+    
+    // Update global safe area insets
+    g_safeAreaInsets.top = top;
+    g_safeAreaInsets.right = right;
+    g_safeAreaInsets.bottom = bottom;
+    g_safeAreaInsets.left = left;
+    
+    // Update PlatformIOS instance if available
+    if (g_gameInstance) {
+        PlatformIOS* platform = dynamic_cast<PlatformIOS*>(g_gameInstance->GetPlatform());
+        if (platform) {
+            platform->m_safeArea = {top, right, bottom, left};
+        }
+    }
+}
+
+void UpdateTouchState(int touchId, float x, float y, bool pressed) {
+    TraceLog(LOG_INFO, "[TOUCH] UpdateTouchState ENTRY: touchId=%d, x=%.1f, y=%.1f, pressed=%s", touchId, x, y, pressed ? "true" : "false");
+    
+    // Update PlatformIOS instance if available
+    if (g_gameInstance) {
+        PlatformIOS* platform = dynamic_cast<PlatformIOS*>(g_gameInstance->GetPlatform());
+        if (platform) {
+            // Update primary input state based on touch
+            if (touchId == 0) { // Primary touch
+                platform->m_primaryInputDown = pressed;
+                if (pressed) {
+                    platform->m_primaryInputPressed = true;
+                    platform->m_primaryInputPosition = {x, y};
+                } else {
+                    platform->m_primaryInputReleased = true;
+                }
+            }
+        }
+    }
+    
+    TraceLog(LOG_INFO, "[TOUCH] UpdateTouchState EXIT: touchId=%d, x=%.1f, y=%.1f, pressed=%s", touchId, x, y, pressed ? "true" : "false");
+}
+
+void ClearAllTouchStates() {
+    TraceLog(LOG_INFO, "[TOUCH] ClearAllTouchStates ENTRY");
+    
+    // Clear PlatformIOS touch states if available
+    if (g_gameInstance) {
+        PlatformIOS* platform = dynamic_cast<PlatformIOS*>(g_gameInstance->GetPlatform());
+        if (platform) {
+            platform->m_primaryInputDown = false;
+            platform->m_primaryInputPressed = false;
+            platform->m_primaryInputReleased = false;
+            platform->m_primaryInputPosition = {0, 0};
+        }
+    }
+    
+    TraceLog(LOG_INFO, "[TOUCH] ClearAllTouchStates EXIT");
+}
+
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
+Texture2D CreateFallbackTexture(const char* fileName) {
+    NSLog(@"[DEBUG] CreateFallbackTexture: Creating fallback for: %s", fileName);
+    
+    // Get GameView for Metal device - use global pointer directly
+    GameView* gameView = g_gameView;
+    
+    if (!gameView) {
+        NSLog(@"[ERROR] CreateFallbackTexture: Failed to get GameView");
+        return {0};
+    }
+    
+    id<MTLDevice> device = [gameView getMetalDevice];
+    if (!device) {
+        NSLog(@"[ERROR] CreateFallbackTexture: No Metal device available from GameView");
+        return {0};
+    }
+    
+    // Create a simple magenta fallback texture
+    const int width = 64;
+    const int height = 64;
+    
+    MTLTextureDescriptor* textureDescriptor = [[MTLTextureDescriptor alloc] init];
+    textureDescriptor.pixelFormat = MTLPixelFormatRGBA8Unorm;
+    textureDescriptor.width = width;
+    textureDescriptor.height = height;
+    textureDescriptor.usage = MTLTextureUsageShaderRead;
+    textureDescriptor.storageMode = MTLStorageModeShared;
+    
+    NSError *error = nil;
+    id<MTLTexture> metalTexture = [device newTextureWithDescriptor:textureDescriptor];
+    if (!metalTexture) {
+        NSLog(@"[ERROR] CreateFallbackTexture: Failed to create Metal texture: %@", error);
+        return {0};
+    }
+    
+    // Create magenta pixel data
+    std::vector<uint8_t> pixelData(width * height * 4, 255); // RGBA
+    for (int i = 0; i < width * height; i++) {
+        pixelData[i * 4 + 0] = 255; // R
+        pixelData[i * 4 + 1] = 0;   // G
+        pixelData[i * 4 + 2] = 255; // B
+        pixelData[i * 4 + 3] = 255; // A
+    }
+    
+    // Upload pixel data to texture
+    MTLRegion region = {{0, 0, 0}, {(NSUInteger)width, (NSUInteger)height, 1}};
+    [metalTexture replaceRegion:region mipmapLevel:0 withBytes:pixelData.data() bytesPerRow:4 * width];
+    
+    // Create Texture2D struct
+    Texture2D fallbackTexture = {0};
+    fallbackTexture.id = 0; // Not used for Metal
+    fallbackTexture.width = width;
+    fallbackTexture.height = height;
+    fallbackTexture.mipmaps = 1;
+    fallbackTexture.format = 7; // PIXELFORMAT_UNCOMPRESSED_R8G8B8A8
+    fallbackTexture.texture = (__bridge_retained void*)metalTexture;
+    
+    NSLog(@"[DEBUG] CreateFallbackTexture: Fallback texture created successfully (id=%p)", fallbackTexture.texture);
+    return fallbackTexture;
 }
 
 #else // !PLATFORM_IOS

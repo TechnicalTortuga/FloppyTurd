@@ -1,6 +1,5 @@
 ﻿#pragma once
-#include "RaylibCompat.h"
-#include "PlatformLayer.h"
+#include "PlatformAPI.h"
 
 // Creates the window either in true-fullscreen or windowed mode using the monitor's native resolution.
 // Automatically detects the current monitor's resolution and uses it as the default window size.

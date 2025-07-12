@@ -1,5 +1,4 @@
 #include "UICoordinateSystem.h"
-#include "PlatformLayer.h"
 
 Rectangle UICoordinateSystem::GetPixelScreenRect() {
     // This is the fallback implementation for non-iOS platforms

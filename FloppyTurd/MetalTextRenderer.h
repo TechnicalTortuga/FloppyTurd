@@ -11,7 +11,7 @@
 #import <Metal/Metal.h>
 #import <CoreText/CoreText.h>
 #import <UIKit/UIKit.h>
-#include "RaylibCompat.h"
+#include "PlatformAPI.h"
 #include "FontAtlasGenerator.h"
 #include <unordered_map>
 #include <string>

@@ -3,7 +3,7 @@
 #include "GameSettings.h"
 #include "ResourceCompat.h"
 #include <vector>
-#include "RaylibCompat.h"
+#include "PlatformAPI.h"
 
 class Outhouse : public Obstacle
 {

@@ -1,5 +1,5 @@
 #include "FontCache.h"
-#include "RaylibCompat.h"
+#include "PlatformTypes.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>

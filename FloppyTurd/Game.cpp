@@ -144,7 +144,7 @@ void Game::InitClasses()
 #endif
 
 	// Load and set the window icon with platform-aware path
-	std::string iconPath = PlatformLayer::GetInstance().GetResourcePath("poophat.ico");
+	std::string iconPath = PlatformAPI::GetPlatformImpl()->GetResourcePath("poophat.ico");
 	Image icon = LoadImage(iconPath.c_str());
 	if (
 icon.data
@@ -780,7 +780,7 @@ void Game::UpdateFrame(float deltaTime)
     TraceLog(LOG_INFO, "[GAME] Mobile input polling ENTRY");
     
     // Use touch input from PlatformLayer instead of GetMousePosition()
-    auto& platform = PlatformLayer::GetInstance();
+    auto& platform = PlatformAPI::GetPlatformImpl();
     TraceLog(LOG_INFO, "[GAME] Mobile input: calling platform.GetTouchPosition(0)");
     Vector2 touchPos = platform.GetTouchPosition(0); // Get primary touch position
     TraceLog(LOG_INFO, "[GAME] Mobile input: platform.GetTouchPosition(0) returned (%.1f,%.1f)", touchPos.x, touchPos.y);

@@ -2,7 +2,6 @@
 #include "TouchControls.h"
 #include "ResourceManager.h"
 #include "UICoordinateSystem.h"
-#include "PlatformLayer.h"
 
 #if defined(__APPLE__) && TARGET_OS_IOS
 // Forward declarations to avoid including Objective-C headers in C++
@@ -64,15 +63,14 @@ AIGUI_DEF void AIGUI_Init() {
     g_AIGUI.isMobile = true;
     
     // Get screen density from platform layer
-    auto& platform = PlatformLayer::GetInstance();
-    float density = platform.GetScreenDensity();
+    float density = GetScreenDensity();
     
     // Set UI scale based on screen density with a cap to prevent excessive scaling
     g_AIGUI.uiScale = fminf(fmaxf(1.0f, density * 0.8f), 2.0f);  // Cap at 2.0
     g_AIGUI.touchTargetScale = 1.2f;  // Slightly larger touch targets on mobile
     
     // Initialize safe area
-    g_AIGUI.safeArea = platform.GetSafeArea();
+    g_AIGUI.safeArea = GetSafeArea();
     
     TraceLog(LOG_INFO, "AIGUI: Mobile platform detected, UI scale: %.2f, density: %.2f", 
              g_AIGUI.uiScale, density);
@@ -165,10 +163,10 @@ AIGUI_DEF void AIGUI_UpdateInput() {
             g_AIGUI.mouseLeftDown = touchActive;
         } else {
             // Fallback to PlatformLayer if TouchControls not available
-            bool touchActive = PlatformLayer::GetInstance().IsPrimaryInputDown();
-            Vector2 touchPos = PlatformLayer::GetInstance().GetPrimaryInputPosition();
-            bool touchPressed = PlatformLayer::GetInstance().IsPrimaryInputPressed();
-            bool touchReleased = PlatformLayer::GetInstance().IsPrimaryInputReleased();
+            bool touchActive = IsPrimaryInputDown();
+            Vector2 touchPos = GetPrimaryInputPosition();
+            bool touchPressed = IsPrimaryInputPressed();
+            bool touchReleased = IsPrimaryInputReleased();
             
             Vector2 uiPos = UICoordinateSystem::PointsToPixels(touchPos);
             
@@ -253,8 +251,7 @@ AIGUI_DEF bool AIGUI_ButtonRounded(const char* label, float x, float y, float wi
             
             // Desktop mouse logic: keep hover and click detection
             bool hovered = CheckCollisionPointRec(inputPos, rect);
-            auto& platform = PlatformLayer::GetInstance();
-            clicked = hovered && platform.IsPrimaryInputReleased();
+            bool clicked = hovered && IsPrimaryInputReleased();
             if (clicked) {
                 TraceLog(LOG_INFO, "[AIGUI] Button '%s' clicked at (%.1f,%.1f)", label, inputPos.x, inputPos.y);
             }
@@ -332,7 +329,7 @@ AIGUI_DEF bool AIGUI_ImageButton(Texture2D textureDefault, Texture2D textureHove
     Rectangle rect = {x, y, width, height};
     Vector2 mousePos = customMousePos ? *customMousePos : g_AIGUI.mousePos;
     bool hovered = CheckCollisionPointRec(mousePos, rect);
-    bool clicked = hovered && g_AIGUI.mouseLeftDown;
+    bool clicked = hovered && IsPrimaryInputReleased();
     Texture2D textureToDraw = (hovered || clicked) ? textureHover : textureDefault;
 
     // Check for gesture interaction on mobile
@@ -382,8 +379,7 @@ AIGUI_DEF bool AIGUI_TouchButton(const char* label, float x, float y, float widt
     bool hovered = CheckCollisionPointRec(g_AIGUI.mousePos, touchRect);
     
     // Use platform-agnostic input
-    auto& platform = PlatformLayer::GetInstance();
-    bool clicked = hovered && platform.IsPrimaryInputReleased();
+    bool clicked = hovered && IsPrimaryInputReleased();
     
     // Scale font size for mobile readability
     int scaledFontSize = AIGUI_GetScaledFontSize(20);
@@ -490,8 +486,7 @@ AIGUI_DEF bool AIGUI_Button(const char* label, float x, float y, float width, fl
     } else {
         // Desktop mouse logic: keep hover and click detection
         bool hovered = CheckCollisionPointRec(g_AIGUI.mousePos, rect);
-        auto& platform = PlatformLayer::GetInstance();
-        clicked = hovered && platform.IsPrimaryInputReleased();
+        bool clicked = hovered && IsPrimaryInputReleased();
     }
     
     // Visual states
@@ -546,9 +541,8 @@ AIGUI_DEF bool AIGUI_StateButton(Texture2D textureNormal, Texture2D textureHover
     bool hovered = CheckCollisionPointRec(inputPos, rect);
     
     // Use platform-agnostic input
-    auto& platform = PlatformLayer::GetInstance();
-    bool pressed = hovered && platform.IsPrimaryInputDown();
-    bool clicked = hovered && platform.IsPrimaryInputReleased();
+    bool pressed = hovered && IsPrimaryInputDown();
+    bool clicked = hovered && IsPrimaryInputReleased();
     
     // Choose texture based on state
     Texture2D textureToUse = textureNormal;
@@ -585,8 +579,7 @@ AIGUI_DEF bool AIGUI_TouchImageButton(Texture2D textureDefault, Texture2D textur
     bool hovered = CheckCollisionPointRec(g_AIGUI.mousePos, touchRect);
     
     // Use platform-agnostic input
-    auto& platform = PlatformLayer::GetInstance();
-    bool clicked = hovered && platform.IsPrimaryInputReleased();
+    bool clicked = hovered && IsPrimaryInputReleased();
     
     DrawTexturePro(hovered ? textureHover : textureDefault, 
                    { 0, 0, (float)textureDefault.width, (float)textureDefault.height }, 

@@ -1,5 +1,7 @@
+#include "PlatformAPI.h"
 #include "AudioManager.h"
-#include "RaylibCompat.h"
+#include "ResourceManager.h"
+#include "GameLog.h"
 #include "AIGUI.h" // If your custom GUI functions are here, include it
 #include "ResourceCompat.h"
 #include "AudioClip.h"

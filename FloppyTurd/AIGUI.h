@@ -1,8 +1,7 @@
 #ifndef AIGUI_H
 #define AIGUI_H
 
-#include "RaylibCompat.h"
-#include "PlatformLayer.h"
+#include "PlatformAPI.h"
 
 #ifdef __APPLE__
 #include <TargetConditionals.h>

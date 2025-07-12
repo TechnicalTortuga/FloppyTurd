@@ -79,12 +79,9 @@ list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/UIManager.cpp)
 
     # Add platform-specific compatibility layer
     if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
-        # iOS uses RaylibCompat_iOS.mm for Metal implementation (NOT RaylibCompat.cpp)
+        # iOS uses PlatformAPI and PlatformIOS for Metal implementation
         list(APPEND SOURCES
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/RaylibCompat_iOS.mm
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/LogManager.mm
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/PlatformLayer.mm
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/PlatformLayerDelegate.mm
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/main_ios.mm
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/iOS/AppDelegate.mm
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/iOS/GameViewController.mm
@@ -103,9 +100,7 @@ list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/UIManager.cpp)
     # Remove main.cpp from iOS builds to avoid duplicate main functions
     list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/main.cpp)
 else()
-    # Other platforms use RaylibCompat with direct Raylib
-    list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/RaylibCompat.cpp)
-    
+    # Other platforms use PlatformAPI with direct Raylib
     # Explicitly add main.cpp for non-iOS platforms
     list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/main.cpp)
 endif()
@@ -115,26 +110,19 @@ endif()
 file(GLOB_RECURSE HEADERS 
     ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/*.h
 )
-# Ensure PlatformLayerDelegate.h is included for IDE visibility
-list(APPEND HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/PlatformLayerDelegate.h)
-
 # Remove the GameSettings.h and Resources.h from sources (header only)
 list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/GameSettings.h)
 list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/Resources.h)
 
-# For iOS, remove PlatformLayer.cpp since we use PlatformLayer.mm instead
+# For iOS, remove files that are replaced by .mm versions
 if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
-    list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/PlatformLayer.cpp)
     # Remove AudioStateManager.cpp since we use AudioStateManager.mm for iOS
     list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/AudioStateManager.cpp)
-    # Remove RaylibCompat.cpp since we use RaylibCompat_iOS.mm for iOS
-    list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/RaylibCompat.cpp)
     # Remove UICoordinateSystem.cpp since we use Metal/UIKit implementation for iOS
     list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/UICoordinateSystem.cpp)
 endif()
 
 # TouchControls, ResourceManager, and AIGUI.cpp are already included via GLOB_RECURSE
-# PlatformLayer.mm is added in the platform-specific section above
 
 # Create executable
 if(${PLATFORM} STREQUAL "Android")

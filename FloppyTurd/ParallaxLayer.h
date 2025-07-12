@@ -1,6 +1,6 @@
 // ParallaxLayer.h
 #pragma once
-#include "RaylibCompat.h"
+#include "PlatformAPI.h"
 #include <vector>
 #include <string>
 #include "GameSettings.h"

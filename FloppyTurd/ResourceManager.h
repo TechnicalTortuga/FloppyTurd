@@ -1,10 +1,10 @@
 #pragma once
-#include "RaylibCompat.h"
+#include "PlatformAPI.h"
 #include <string>
 #include <unordered_map>
 #include <memory>
 #include <future>
-#include "PlatformLayer.h"
+#include "PlatformAPI.h"
 
 // Resource quality levels for different device tiers
 enum class ResourceQuality {
@@ -147,9 +147,6 @@ private:
     std::unordered_map<std::string, CachedResource<Sound>> soundCache;
     std::unordered_map<std::string, CachedResource<Music>> musicCache;
     std::unordered_map<std::string, CachedResource<Font>> fontCache;
-    
-    // Platform integration
-    PlatformLayer* platform = nullptr;
     
     // Performance tracking
     size_t totalMemoryUsage = 0;

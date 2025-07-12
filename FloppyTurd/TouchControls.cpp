@@ -1,7 +1,6 @@
 #include "TouchControls.h"
-#include "PlatformLayer.h"
-#include "RaylibCompat.h"
-#include <cmath>
+#include "PlatformAPI.h"
+#include "GameLog.h"
 
 TouchControls::TouchControls() {
     // Constructor - all initialization done in Initialize()
@@ -25,9 +24,9 @@ void TouchControls::Update() {
     shootPressed = false;
     
     // Get touch input from PlatformLayer
-    bool touchActive = PlatformLayer::GetInstance().IsPrimaryInputDown();
-    bool touchPressed = PlatformLayer::GetInstance().IsPrimaryInputPressed();
-    Vector2 touchPos = PlatformLayer::GetInstance().GetPrimaryInputPosition();
+    bool touchActive = IsPrimaryInputDown();
+    bool touchPressed = IsPrimaryInputPressed();
+    Vector2 touchPos = GetPrimaryInputPosition();
     
     if (touchActive && isEnabled) {
         // Determine which zone was touched
@@ -124,10 +123,10 @@ void TouchControls::Draw(float alpha) {
     if (shootingEnabled) {
         Color barColor = shootHeld ? SHOOT_BAR_ACTIVE : SHOOT_BAR_COLOR;
         barColor.a = (unsigned char)(barColor.a * alpha);
-        PlatformLayer::GetInstance().DrawRectangle(
+        DrawRectangle(
             (int)shootZone.x, (int)shootZone.y, 
             (int)shootZone.width, (int)shootZone.height, 
-            ColorToUInt(barColor)
+            barColor
         );
     }
     
@@ -135,10 +134,10 @@ void TouchControls::Draw(float alpha) {
     #ifdef DEBUG_TOUCH_ZONES
     Color zoneColor = { 255, 255, 255, 50 };
     zoneColor.a = (unsigned char)(zoneColor.a * alpha);
-    PlatformLayer::GetInstance().DrawRectangle(
+    DrawRectangle(
         (int)jumpZone.x, (int)jumpZone.y, 
         (int)jumpZone.width, (int)jumpZone.height, 
-        ColorToUInt(zoneColor)
+        zoneColor
     );
     #endif
 } 

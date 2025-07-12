@@ -29,7 +29,7 @@ endif()
 
 # Is this installation the result of a crosscompile?
 if(NOT DEFINED CMAKE_CROSSCOMPILING)
-  set(CMAKE_CROSSCOMPILING "TRUE")
+  set(CMAKE_CROSSCOMPILING "FALSE")
 endif()
 
 # Set path to fallback-tool for dependency-resolution.
@@ -39,22 +39,10 @@ endif()
 
 set(CMAKE_BINARY_DIR "/Users/aimac/Development/FloppyTurd/build_ios")
 
-if(NOT PLATFORM_NAME)
-  if(NOT "$ENV{PLATFORM_NAME}" STREQUAL "")
-    set(PLATFORM_NAME "$ENV{PLATFORM_NAME}")
-  endif()
-  if(NOT PLATFORM_NAME)
-    set(PLATFORM_NAME iphoneos)
-  endif()
-endif()
+if(NOT CMAKE_INSTALL_LOCAL_ONLY)
+  # Include the install script for each subdirectory.
+  include("/Users/aimac/Development/FloppyTurd/build_ios/_deps/raylib-build/cmake_install.cmake")
 
-if(NOT EFFECTIVE_PLATFORM_NAME)
-  if(NOT "$ENV{EFFECTIVE_PLATFORM_NAME}" STREQUAL "")
-    set(EFFECTIVE_PLATFORM_NAME "$ENV{EFFECTIVE_PLATFORM_NAME}")
-  endif()
-  if(NOT EFFECTIVE_PLATFORM_NAME)
-    set(EFFECTIVE_PLATFORM_NAME -iphoneos)
-  endif()
 endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT

@@ -3,7 +3,7 @@
 
 #include <string>
 #include <unordered_map>
-#include "RaylibCompat.h"
+#include "PlatformAPI.h"
 
 // Forward declaration for Metal texture
 #ifdef __APPLE__

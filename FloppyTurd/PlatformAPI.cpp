@@ -517,6 +517,49 @@ std::vector<Vector2> PlatformAPI::GetTouchPoints() {
 // SCREEN AND WINDOW FUNCTIONS
 // ============================================================================
 
+void PlatformAPI::InitWindow(int width, int height, const char* title) {
+    if (GetPlatformImpl()) {
+        GetPlatformImpl()->Initialize();
+    }
+}
+
+void PlatformAPI::CloseWindow() {
+    if (GetPlatformImpl()) {
+        GetPlatformImpl()->Shutdown();
+    }
+}
+
+bool PlatformAPI::WindowShouldClose() {
+    // iOS doesn't have a close window concept
+    return false;
+}
+
+void PlatformAPI::SetTargetFPS(int fps) {
+    // PlatformIOS will handle FPS limiting internally
+    // This could be implemented if needed
+}
+
+void PlatformAPI::BeginDrawing() {
+    if (GetPlatformImpl()) {
+        GetPlatformImpl()->BeginDrawing(nullptr);
+    }
+}
+
+void PlatformAPI::EndDrawing() {
+    if (GetPlatformImpl()) {
+        GetPlatformImpl()->EndDrawing(nullptr);
+    }
+}
+
+void PlatformAPI::ClearBackground(Color color) {
+    if (GetPlatformImpl()) {
+        // Draw a full-screen rectangle to clear the background
+        int width = GetScreenWidth();
+        int height = GetScreenHeight();
+        GetPlatformImpl()->DrawRectangle(0, 0, width, height, color);
+    }
+}
+
 int PlatformAPI::GetScreenWidth() {
     if (GetPlatformImpl()) {
         return GetPlatformImpl()->GetScreenWidth();

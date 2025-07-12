@@ -2,7 +2,7 @@
 // Updated to include CameraSystem for background scrolling.
 
 #pragma once
-#include "RaylibCompat.h"
+#include "PlatformAPI.h"
 #include "Sprite.h"
 #include <vector>
 #include <string>

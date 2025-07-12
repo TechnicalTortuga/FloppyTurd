@@ -5,7 +5,9 @@ Window::Window(bool fullScreen, int /*fallbackW*/, int /*fallbackH*/)
 {
 #ifdef PLATFORM_MOBILE
     // Mobile platform initialization
+#if !defined(__APPLE__) || !TARGET_OS_IPHONE
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT | FLAG_WINDOW_MAXIMIZED);
+#endif
     
     // Initialize with default mobile resolution, will be adjusted by platform
     InitWindow(1920, 1080, "Floppy Turd");
@@ -28,15 +30,19 @@ Window::Window(bool fullScreen, int /*fallbackW*/, int /*fallbackH*/)
     // We'll switch to fullscreen after initialization if needed
     
     // Always use windowed mode flags initially
+#if !defined(__APPLE__) || !TARGET_OS_IPHONE
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
+#endif
     
     // Create a temporary small window to initialize raylib and detect monitor resolution
     InitWindow(800, 600, "Floppy Turd");
     
     // Now that raylib is initialized, detect the native monitor resolution
+#if !defined(__APPLE__) || !TARGET_OS_IPHONE
     int monitor = GetCurrentMonitor();
     int monitorWidth = GetMonitorWidth(monitor);
     int monitorHeight = GetMonitorHeight(monitor);
+#endif
     printf("Detected monitor resolution: %dx%d\n", monitorWidth, monitorHeight);
     
     // Use monitor resolution as default, but respect fallback if specified and smaller (to avoid overflow)
@@ -47,9 +53,13 @@ Window::Window(bool fullScreen, int /*fallbackW*/, int /*fallbackH*/)
     CloseWindow();
     
     // Reinitialize with the detected/calculated size
+#if !defined(__APPLE__) || !TARGET_OS_IPHONE
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
+#endif
     InitWindow(windowWidth, windowHeight, "Floppy Turd");
+#if !defined(__APPLE__) || !TARGET_OS_IPHONE
     SetExitKey(KEY_NULL);          // ESC will be handled by the game itself
+#endif
     
     // Ensure window is properly focused on macOS
     #ifdef __APPLE__
@@ -67,9 +77,11 @@ Window::Window(bool fullScreen, int /*fallbackW*/, int /*fallbackH*/)
         ToggleFullscreen();
         
         // After switching to fullscreen, re-check monitor resolution (sometimes more accurate)
+#if !defined(__APPLE__) || !TARGET_OS_IPHONE
         int fullscreenMonitor = GetCurrentMonitor();
         int fullscreenMonitorWidth = GetMonitorWidth(fullscreenMonitor);
         int fullscreenMonitorHeight = GetMonitorHeight(fullscreenMonitor);
+#endif
         
         // Store the accurate monitor resolution for future windowed mode transitions
         detectedMonitorWidth = fullscreenMonitorWidth;
@@ -86,7 +98,9 @@ Window::Window(bool fullScreen, int /*fallbackW*/, int /*fallbackH*/)
 #endif
 
     // Common mobile/desktop setup
+#if !defined(__APPLE__) || !TARGET_OS_IPHONE
     SetExitKey(KEY_NULL);          // ESC will be handled by the game itself
+#endif
 }
 
 Window::~Window()
@@ -104,7 +118,9 @@ void Window::ToggleMode()
         int windowWidth, windowHeight;
         GetOptimalWindowedSize(windowWidth, windowHeight);
         SetWindowSize(windowWidth, windowHeight);
+#if !defined(__APPLE__) || !TARGET_OS_IPHONE
         SetWindowPosition(50, 50);
+#endif
         
         printf("Switched to windowed mode: %dx%d\n", GetScreenWidth(), GetScreenHeight());
     } else {
@@ -122,9 +138,13 @@ void Window::GetOptimalWindowedSize(int& width, int& height)
         height = (int)(detectedMonitorHeight * 0.85f); // 85% of monitor height
     } else {
         // Fallback: use current monitor detection
+        int monitorWidth = 1920;  // Default fallback
+        int monitorHeight = 1080; // Default fallback
+#if !defined(__APPLE__) || !TARGET_OS_IPHONE
         int monitor = GetCurrentMonitor();
-        int monitorWidth = GetMonitorWidth(monitor);
-        int monitorHeight = GetMonitorHeight(monitor);
+        monitorWidth = GetMonitorWidth(monitor);
+        monitorHeight = GetMonitorHeight(monitor);
+#endif
         width = (int)(monitorWidth * 0.85f);
         height = (int)(monitorHeight * 0.85f);
     }
@@ -142,12 +162,18 @@ void Window::SetBorderlessFullscreen(bool enable)
             ToggleFullscreen(); // Exit true fullscreen first
         }
         
+        int monitorWidth = 1920;  // Default fallback
+        int monitorHeight = 1080; // Default fallback
+#if !defined(__APPLE__) || !TARGET_OS_IPHONE
         int monitor = GetCurrentMonitor();
-        int monitorWidth = GetMonitorWidth(monitor);
-        int monitorHeight = GetMonitorHeight(monitor);
+        monitorWidth = GetMonitorWidth(monitor);
+        monitorHeight = GetMonitorHeight(monitor);
+#endif
         
         SetWindowSize(monitorWidth, monitorHeight);
+#if !defined(__APPLE__) || !TARGET_OS_IPHONE
         SetWindowPosition(0, 0);
+#endif
         borderlessFullscreen = true;
         
         printf("Switched to borderless windowed fullscreen: %dx%d\n", 
@@ -155,16 +181,22 @@ void Window::SetBorderlessFullscreen(bool enable)
     }
     else if (!enable && borderlessFullscreen) {
         // Switch back to windowed mode using monitor's native resolution
+        int monitorWidth = 1920;  // Default fallback
+        int monitorHeight = 1080; // Default fallback
+#if !defined(__APPLE__) || !TARGET_OS_IPHONE
         int monitor = GetCurrentMonitor();
-        int monitorWidth = GetMonitorWidth(monitor);
-        int monitorHeight = GetMonitorHeight(monitor);
+        monitorWidth = GetMonitorWidth(monitor);
+        monitorHeight = GetMonitorHeight(monitor);
+#endif
         
         // Use slightly smaller size to account for window decorations and taskbar
         int windowWidth = (int)(monitorWidth * 0.9f);
         int windowHeight = (int)(monitorHeight * 0.9f);
         
         SetWindowSize(windowWidth, windowHeight);
+#if !defined(__APPLE__) || !TARGET_OS_IPHONE
         SetWindowPosition(50, 50); // Center with some offset
+#endif
         borderlessFullscreen = false;
         
         printf("Switched back to windowed mode: %dx%d (monitor: %dx%d)\n", 
@@ -180,12 +212,12 @@ bool Window::IsBorderlessFullscreen() const
 // Mobile-specific screen management methods
 Rectangle Window::GetSafeArea() const
 {
-    return PlatformLayer::GetInstance().GetSafeArea();
+    return GetSafeArea();
 }
 
 float Window::GetScreenDensity() const
 {
-    return PlatformLayer::GetInstance().GetScreenDensity();
+    return GetScreenDensity();
 }
 
 bool Window::IsLandscape() const
@@ -202,8 +234,7 @@ bool Window::IsPortrait() const
 
 void Window::SetPreferredOrientation(bool landscape)
 {
-    preferLandscape = landscape;
-    PlatformLayer::GetInstance().SetOrientation(landscape);
+    SetPreferredOrientation(landscape);
 }
 
 // Universal screen utilities

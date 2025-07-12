@@ -14,7 +14,7 @@
 #include <vector>
 #include <queue>
 #include "MetalFrameResources.h"
-#include "RaylibCompat.h"
+#include "PlatformAPI.h"
 #include "RenderLayer.h"
 
 // Vertex structure for 2D rendering

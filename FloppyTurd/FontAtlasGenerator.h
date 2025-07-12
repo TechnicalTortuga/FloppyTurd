@@ -9,7 +9,7 @@
 #import <CoreText/CoreText.h>
 #import <CoreGraphics/CoreGraphics.h>
 #import <Metal/Metal.h>
-#include "RaylibCompat.h"
+#include "PlatformAPI.h"
 #include "FontCache.h"
 #include <vector>
 #include <string>

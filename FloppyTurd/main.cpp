@@ -1,8 +1,7 @@
 #include <iostream>
 
-#include "RaylibCompat.h"
+#include "PlatformAPI.h"
 #include "Game.h"
-#include "PlatformLayer.h"
 #include "AIGUI.h"
 
 // Uncomment this line to enable letterbox debugging
@@ -49,7 +48,8 @@ int game_main(int argc, char *argv[])
 	srand(static_cast<unsigned int>(time(NULL)));
 
 	// Initialize platform layer with a placeholder value for nativeView
-	PlatformLayer::GetInstance().Initialize(nullptr);
+	// Remove this line:
+	// PlatformLayer::GetInstance().Initialize(nullptr);
 
 
 	// On desktop, we create the game and run the traditional loop
@@ -59,7 +59,8 @@ int game_main(int argc, char *argv[])
 	delete game;
 	
 	// Clean up platform layer
-	PlatformLayer::GetInstance().Shutdown();
+	// Remove this line:
+	// PlatformLayer::GetInstance().Shutdown();
 	
 	return 0;
 #endif

@@ -29,7 +29,7 @@
 			);
 			name = CompilerIdCXX;
 			productName = CompilerIdCXX;
-			productType = "com.apple.product-type.framework";
+			productType = "com.apple.product-type.tool";
 		};
 		08FB7793FE84155DC02AAC07 = {
 			isa = PBXProject;
@@ -73,7 +73,7 @@
 		1DEB928608733DD80010E9CD = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_IDENTITY = "-";
 				PRODUCT_NAME = CompilerIdCXX;
 			};
 			name = Debug;
@@ -85,13 +85,13 @@
 				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)";
 				GENERATE_INFOPLIST_FILE = YES;
 				SYMROOT = .;
+				ARCHS = "arm64";
+				ONLY_ACTIVE_ARCH = NO;
 				
-				ONLY_ACTIVE_ARCH = YES;
 				
 				
 				
-				MACOSX_DEPLOYMENT_TARGET = "13.0";
-				SDKROOT = "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.2.sdk";
+				
 			};
 			name = Debug;
 		};

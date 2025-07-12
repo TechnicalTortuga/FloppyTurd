@@ -1,5 +1,5 @@
 #pragma once
-#include "RaylibCompat.h"
+#include "PlatformAPI.h"
 #include "Game.h"
 #include "ResourceManager.h"
 #include <atomic>

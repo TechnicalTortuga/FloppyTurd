@@ -9,12 +9,11 @@ void ResourceManager::Initialize(ResourceQuality quality) {
     GameLog::Log("ResourceManager::Initialize() STARTING");
     
     try {
-        platform = &PlatformLayer::GetInstance();
-        GameLog::Log("Got PlatformLayer instance: %p", platform);
+        GameLog::Log("Got PlatformLayer instance: %p", PlatformAPI::GetPlatformImpl());
         
         // Auto-detect quality based on platform if requested
         if (quality == ResourceQuality::AUTO) {
-            if (platform->PreferLowPowerMode()) {
+            if (PlatformAPI::GetPlatformImpl()->PreferLowPowerMode()) {
                 currentQuality = ResourceQuality::LOW;
                 maxCacheMemoryMB = 25;  // Limit cache on low-power devices
             } else {
@@ -26,8 +25,8 @@ void ResourceManager::Initialize(ResourceQuality quality) {
         }
 
         // Platform-specific optimizations
-        if (platform->PreferLowPowerMode()) {
-            maxTextureSize = platform->GetRecommendedTextureSize();
+        if (PlatformAPI::GetPlatformImpl()->PreferLowPowerMode()) {
+            maxTextureSize = PlatformAPI::GetPlatformImpl()->GetRecommendedTextureSize();
             compressionEnabled = true;
             streamingEnabled = true;
         }
@@ -255,7 +254,9 @@ bool ResourceManager::LoadSoundInternal(const std::string& id) {
         return false;
     }
 
-    Sound sound = LoadSound(fullPath.c_str());
+    Sound sound;
+    sound.player = LoadSound(fullPath.c_str());
+    sound.length = 0; // Length will be set by platform implementation
 #if defined(__APPLE__) && TARGET_OS_IPHONE
     if (sound.player == nullptr) {
 #else
@@ -288,7 +289,9 @@ bool ResourceManager::LoadMusicInternal(const std::string& id) {
         return false;
     }
 
-    Music music = LoadMusicStream(fullPath.c_str());
+    Music music;
+    music.player = LoadMusic(fullPath.c_str());
+    music.length = 0; // Length will be set by platform implementation
 #if defined(__APPLE__) && TARGET_OS_IPHONE
     if (music.player == nullptr) {
 #else
@@ -453,13 +456,13 @@ void ResourceManager::ClearCache() {
     
     for (auto& [id, cached] : soundCache) {
         if (cached.isValid) {
-            UnloadSound(cached.resource);
+            UnloadSound(cached.resource.player);
         }
     }
     
     for (auto& [id, cached] : musicCache) {
         if (cached.isValid) {
-            UnloadMusicStream(cached.resource);
+            UnloadMusic(cached.resource.player);
         }
     }
     

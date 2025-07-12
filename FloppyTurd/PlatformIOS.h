@@ -3,8 +3,7 @@
 
 #pragma once
 
-#include "PlatformSpecific.h"
-#include "RaylibCompat.h"
+#include "PlatformAPI.h"
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -19,12 +18,12 @@ class MetalTextRenderer;
 #endif
 
 /**
- * PlatformIOS - iOS/Metal implementation of PlatformSpecific
+ * PlatformIOS - iOS/Metal implementation of Raylib-compatible functions
  * 
  * This class provides iOS-specific implementations of all Raylib-compatible functions,
  * using Metal for rendering and iOS native APIs for other functionality.
  */
-class PlatformIOS : public PlatformSpecific {
+class PlatformIOS {
 public:
     PlatformIOS();
     virtual ~PlatformIOS();
@@ -33,76 +32,77 @@ public:
     // INITIALIZATION AND LIFECYCLE
     // ============================================================================
     
-    void Initialize(void* nativeView) override;
-    void Initialize() override;
-    void Shutdown() override;
-    void Update() override;
+    void Initialize(void* nativeView);
+    void Initialize();
+    void Shutdown();
+    void Update();
 
     // ============================================================================
     // RENDERING FUNCTIONS (Raylib-compatible)
     // ============================================================================
     
     // Drawing primitives
-    void DrawRectangle(int x, int y, int width, int height, Color color) override;
-    void DrawRectangleRec(Rectangle rec, Color color) override;
-    void DrawRectangleRounded(Rectangle rec, float roundness, int segments, Color color) override;
-    void DrawRectangleRoundedLines(Rectangle rec, float roundness, int segments, float lineThick, Color color) override;
-    void DrawRectangleRoundedLinesEx(Rectangle rec, float roundness, int segments, float lineThick, Color color) override;
+    void DrawRectangle(int x, int y, int width, int height, Color color);
+    void DrawRectangleRec(Rectangle rec, Color color);
+    void DrawRectangleRounded(Rectangle rec, float roundness, int segments, Color color);
+    void DrawRectangleRoundedLines(Rectangle rec, float roundness, int segments, float lineThick, Color color);
+    void DrawRectangleRoundedLinesEx(Rectangle rec, float roundness, int segments, float lineThick, Color color);
     
-    void DrawCircle(float centerX, float centerY, float radius, Color color) override;
-    void DrawCircleV(Vector2 center, float radius, Color color) override;
+    void DrawCircle(float centerX, float centerY, float radius, Color color);
+    void DrawCircleV(Vector2 center, float radius, Color color);
     
-    void DrawLine(float startPosX, float startPosY, float endPosX, float endPosY, Color color) override;
-    void DrawLineEx(Vector2 startPos, Vector2 endPos, float thick, Color color) override;
-    void DrawLineV(Vector2 startPos, Vector2 endPos, Color color) override;
+    void DrawLine(float startPosX, float startPosY, float endPosX, float endPosY, Color color);
+    void DrawLineEx(Vector2 startPos, Vector2 endPos, float thick, Color color);
+    void DrawLineV(Vector2 startPos, Vector2 endPos, Color color);
     
     // Texture drawing
-    void DrawTexture(Texture2D texture, int posX, int posY, Color tint) override;
-    void DrawTextureV(Texture2D texture, Vector2 position, Color tint) override;
-    void DrawTextureRec(Texture2D texture, Rectangle source, Rectangle dest, Color tint) override;
-    void DrawTexturePro(Texture2D texture, Rectangle source, Rectangle dest, Vector2 origin, float rotation, Color tint) override;
+    void DrawTexture(Texture2D texture, int posX, int posY, Color tint);
+    void DrawTextureV(Texture2D texture, Vector2 position, Color tint);
+    void DrawTextureRec(Texture2D texture, Rectangle source, Vector2 position, Color tint);
+    void DrawTexturePro(Texture2D texture, Rectangle source, Rectangle dest, Vector2 origin, float rotation, Color tint);
+    void DrawTextureEx(Texture2D texture, Vector2 position, float rotation, float scale, Color tint);
     
     // Text rendering
-    void DrawText(const char* text, int posX, int posY, int fontSize, Color color) override;
-    void DrawTextEx(Font font, const char* text, Vector2 position, float fontSize, float spacing, Color tint) override;
+    void DrawText(const char* text, int posX, int posY, int fontSize, Color color);
+    void DrawTextEx(Font font, const char* text, Vector2 position, float fontSize, float spacing, Color tint);
     
     // Render texture operations
-    void BeginDrawing(void* renderTexture) override;
-    void EndDrawing(void* renderTexture) override;
-    void* LoadRenderTexture(int width, int height) override;
-    void UnloadRenderTexture(void* renderTexture) override;
+    void BeginDrawing(void* renderTexture);
+    void EndDrawing(void* renderTexture);
+    void* LoadRenderTexture(int width, int height);
+    void UnloadRenderTexture(void* renderTexture);
 
     // ============================================================================
     // TEXTURE AND IMAGE FUNCTIONS
     // ============================================================================
     
-    Texture2D LoadTexture(const char* fileName) override;
-    void UnloadTexture(Texture2D texture) override;
-    void* LoadTextureFromImage(void* imageData, int width, int height, int format) override;
-    void* CreateTextureFromImage(void* image, int* width, int* height) override;
+    Texture2D LoadTexture(const char* fileName);
+    void UnloadTexture(Texture2D texture);
+    void* LoadTextureFromImage(void* imageData, int width, int height, int format);
+    void* CreateTextureFromImage(void* image, int* width, int* height);
     
-    Image LoadImage(const char* fileName) override;
-    void UnloadImage(Image image) override;
-    void* CreateSolidColorImage(int width, int height, Color color) override;
+    Image LoadImage(const char* fileName);
+    void UnloadImage(Image image);
+    void* CreateSolidColorImage(int width, int height, Color color);
 
     // ============================================================================
     // AUDIO FUNCTIONS
     // ============================================================================
     
-    void InitializeAudio() override;
-    void ShutdownAudio() override;
-    void* LoadSound(const char* fileName) override;
-    void UnloadSound(void* sound) override;
-    void PlaySound(void* sound) override;
-    void SetSoundVolume(void* sound, float volume) override;
+    void InitializeAudio();
+    void ShutdownAudio();
+    void* LoadSound(const char* fileName);
+    void UnloadSound(void* sound);
+    void PlaySound(void* sound);
+    void SetSoundVolume(void* sound, float volume);
     
-    void* LoadMusic(const char* fileName) override;
-    void UnloadMusic(void* music) override;
-    void PlayMusic(void* music) override;
-    void StopMusic(void* music) override;
-    void UpdateMusic(void* music) override;
-    bool IsMusicPlaying(void* music) override;
-    void SetMusicVolume(void* music, float volume) override;
+    void* LoadMusic(const char* fileName);
+    void UnloadMusic(void* music);
+    void PlayMusic(void* music);
+    void StopMusic(void* music);
+    void UpdateMusic(void* music);
+    bool IsMusicPlaying(void* music);
+    void SetMusicVolume(void* music, float volume);
     
     // Advanced audio functions
     void* PreloadNextTrack(const char* fileName);
@@ -119,78 +119,78 @@ public:
     // FONT AND TEXT FUNCTIONS
     // ============================================================================
     
-    void* LoadFont(const char* fileName, int size) override;
-    void UnloadFont(void* font) override;
-    Vector2 MeasureText(const char* text, void* font, float fontSize, float spacing) override;
-    void DrawText(const char* text, float x, float y, float fontSize, Color color, void* font) override;
+    void* LoadFont(const char* fileName, int size);
+    void UnloadFont(void* font);
+    Vector2 MeasureText(const char* text, void* font, float fontSize, float spacing);
+    void DrawText(const char* text, float x, float y, float fontSize, Color color, void* font);
 
     // ============================================================================
     // INPUT FUNCTIONS
     // ============================================================================
     
     // Primary input (primary touch on mobile)
-    bool IsPrimaryInputDown() override;
-    bool IsPrimaryInputPressed() override;
-    bool IsPrimaryInputReleased() override;
-    Vector2 GetPrimaryInputPosition() override;
+    bool IsPrimaryInputDown();
+    bool IsPrimaryInputPressed();
+    bool IsPrimaryInputReleased();
+    Vector2 GetPrimaryInputPosition();
     
     // Secondary input
-    bool IsSecondaryInputDown() override;
-    bool IsSecondaryInputPressed() override;
-    bool IsSecondaryInputReleased() override;
+    bool IsSecondaryInputDown();
+    bool IsSecondaryInputPressed();
+    bool IsSecondaryInputReleased();
     
     // Touch-specific (mobile)
-    bool IsTouchSupported() override;
-    int GetTouchCount() override;
-    Vector2 GetTouchPosition(int index) override;
-    std::vector<Vector2> GetTouchPoints() override;
+    bool IsTouchSupported();
+    int GetTouchCount();
+    Vector2 GetTouchPosition(int index);
+    std::vector<Vector2> GetTouchPoints();
 
     // ============================================================================
     // SCREEN AND WINDOW FUNCTIONS
     // ============================================================================
     
-    int GetScreenWidth() override;
-    int GetScreenHeight() override;
-    Vector2 GetScreenSize() override;
-    float GetScreenDensity() override;
-    float GetScreenScale() override;
-    Rectangle GetSafeArea() override;
-    bool IsWindowFullscreen() override;
-    void ToggleFullscreen() override;
-    void SetWindowTitle(const std::string& title) override;
-    void SetWindowSize(int width, int height) override;
-    bool SupportsFullscreen() override;
+    int GetScreenWidth();
+    int GetScreenHeight();
+    Vector2 GetScreenSize();
+    float GetScreenDensity();
+    float GetScreenScale();
+    Rectangle GetSafeArea();
+    bool IsWindowFullscreen();
+    void ToggleFullscreen();
+    void SetWindowTitle(const std::string& title);
+    void SetWindowSize(int width, int height);
+    bool SupportsFullscreen();
 
     // ============================================================================
     // UTILITY FUNCTIONS
     // ============================================================================
     
-    double GetCurrentTime() override;
-    float GetLastFrameTime() override;
-    int GetLastFPS() override;
-    std::string GetResourcePath(const std::string& relativePath) override;
-    std::string GetSavePath(const std::string& filename) override;
-    std::string GetPlatformResourcePath(const std::string& relativePath) override;
-    bool PreferLowPowerMode() override;
-    int GetRecommendedTextureSize() override;
-    void SetOrientation(bool landscape) override;
-    void ShowVirtualKeyboard(bool show) override;
-    bool IsVirtualKeyboardShown() override;
-    void Vibrate(int milliseconds) override;
+    double GetCurrentTime();
+    float GetLastFrameTime();
+    int GetLastFPS();
+    std::string GetResourcePath(const std::string& relativePath);
+    std::string GetSavePath(const std::string& filename);
+    std::string GetPlatformResourcePath(const std::string& relativePath);
+    bool PreferLowPowerMode();
+    int GetRecommendedTextureSize();
+    void SetOrientation(bool landscape);
+    void ShowVirtualKeyboard(bool show);
+    bool IsVirtualKeyboardShown();
+    void Vibrate(int milliseconds);
 
     // ============================================================================
     // APP LIFECYCLE
     // ============================================================================
     
-    void OnAppWillResignActive() override;
-    void OnAppDidBecomeActive() override;
+    void OnAppWillResignActive();
+    void OnAppDidBecomeActive();
 
     // ============================================================================
     // PLATFORM DETECTION
     // ============================================================================
     
-    bool IsMobilePlatform() override;
-    bool IsTouchSupported() const override;
+    bool IsMobilePlatform();
+    bool IsTouchSupported() const;
 
 private:
     // iOS-specific members
@@ -248,33 +248,13 @@ private:
     // Cache management
     static const size_t MAX_SOUND_CACHE_SIZE = 20;  // Maximum number of cached sounds
     
-    // Cache statistics
-    size_t m_soundCacheHits;
-    size_t m_soundCacheMisses;
-    size_t m_soundCacheEvictions;
-    
-    // Audio session management
-    bool m_audioSessionActive;
-    bool m_wasInterrupted;
-    bool m_wasInBackground;
-    float m_preInterruptionVolume;
-    bool m_preInterruptionPlaying;
-    
-    // Notification observers (bridged from Objective-C)
-    void* m_interruptionObserver;
-    void* m_routeChangeObserver;
-    void* m_appStateObserver;
-    
     // ============================================================================
-    // AUDIO HELPER METHODS
+    // PRIVATE HELPER FUNCTIONS
     // ============================================================================
     
-    void* CreateAVAudioPlayer(const char* fileName);
     void CleanupAVAudioPlayer(void* player);
     void ActivateAudioSession();
     void DeactivateAudioSession();
-    
-    // Audio session management
     void ConfigureAudioSession();
     void HandleAudioInterruption(bool began);
     void HandleRouteChange();
@@ -290,7 +270,7 @@ private:
     void EvictOldestSoundFromCache();
     void CleanupFinishedSounds();
     
-    // Cache statistics
+    // Performance tracking
     struct CacheStats {
         size_t hits;
         size_t misses;
@@ -299,16 +279,63 @@ private:
         size_t maxSize;
         float hitRate;
     };
-    CacheStats GetSoundCacheStats() const;
     
-    // ============================================================================
-    // HELPER METHODS
-    // ============================================================================
+    CacheStats GetCacheStats() const;
+    void LogCacheStats() const;
     
-    MetalRenderer* GetMetalRenderer();
-    GameView* GetGameView();
+    // Screen and input updates
     void UpdateScreenMetrics();
     void UpdateInputState();
 };
+
+// ============================================================================
+// GLOBAL PLATFORM INSTANCE
+// ============================================================================
+
+extern PlatformIOS* g_platformIOS;
+
+// ============================================================================
+// GLOBAL FUNCTIONS FOR PLATFORM ACCESS
+// ============================================================================
+
+void SetGameInstance(Game* instance);
+void SetGlobalGameView(GameView* gameView);
+
+// ============================================================================
+// iOS-SPECIFIC FUNCTIONS
+// ============================================================================
+
+int game_main(int argc, char *argv[]);
+void OnAppPause();
+void OnAppResume();
+
+// ============================================================================
+// TOUCH AND SAFE AREA FUNCTIONS
+// ============================================================================
+
+void UpdateSafeAreaInsets(float top, float right, float bottom, float left);
+void UpdateTouchState(int touchId, float x, float y, bool pressed);
+void ClearAllTouchStates();
+
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
+Texture2D CreateFallbackTexture(const char* fileName);
+
+// ============================================================================
+// RESOURCE PATH FUNCTIONS
+// ============================================================================
+
+std::string GetResourcePath(const std::string& relativePath);
+std::string GetSavePath(const std::string& filename);
+std::string GetPlatformResourcePath(const std::string& relativePath) const;
+
+// ============================================================================
+// PLATFORM-SPECIFIC FUNCTIONS
+// ============================================================================
+
+void ShowVirtualKeyboard(bool show);
+void Vibrate(int milliseconds);
 
 #endif // PLATFORM_IOS_H 

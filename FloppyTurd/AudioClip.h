@@ -9,8 +9,8 @@ class AudioClip
 {
 public:
     AudioClip(const std::string& filePath) {
-        m_platformMusicHandle = PlatformAPI::LoadMusic(filePath.c_str());
-        if (!m_platformMusicHandle) {
+        m_platformMusicHandle = LoadMusic(filePath.c_str());
+        if (!m_platformMusicHandle.player) {
             GameLog::Log("[AUDIOCLIP] Failed to load music: %s", filePath.c_str());
         } else {
             GameLog::Log("[AUDIOCLIP] Successfully loaded music: %s, attempting to play", filePath.c_str());
@@ -22,7 +22,7 @@ public:
     // Constructor for pre-loaded music from ResourceManager
     AudioClip(void* platformMusicHandle) {
         m_platformMusicHandle = platformMusicHandle;
-        if (!m_platformMusicHandle) {
+        if (!m_platformMusicHandle.player) {
             GameLog::Log("[AUDIOCLIP] AudioClip created with invalid music resource");
         }
         AudioManager::GetInstance().RegisterClip(this);
@@ -30,26 +30,26 @@ public:
 
     virtual ~AudioClip() {
         AudioManager::GetInstance().UnregisterClip(this);
-        if (m_platformMusicHandle) { // Only unload if valid
-            PlatformAPI::UnloadMusic(m_platformMusicHandle);
+        if (m_platformMusicHandle.player) { // Only unload if valid
+            UnloadMusic(m_platformMusicHandle);
         }
     }
 
     void Play() {
-        if (m_platformMusicHandle) PlatformAPI::PlayMusic(m_platformMusicHandle);
+        if (m_platformMusicHandle.player) PlayMusic(m_platformMusicHandle);
     }
 
     void PlayLoop() {
-        if (m_platformMusicHandle) {
-            PlatformAPI::PlayMusic(m_platformMusicHandle);
+        if (m_platformMusicHandle.player) {
+            PlayMusic(m_platformMusicHandle);
             // Note: Looping is handled by the platform implementation
         }
     }
 
     void Stop() {
-        if (m_platformMusicHandle && IsPlaying()) { // Add playing check
+        if (m_platformMusicHandle.player && IsPlaying()) { // Add playing check
             GameLog::Log("[AUDIOCLIP] Stopping music");
-            PlatformAPI::StopMusic(m_platformMusicHandle);
+            StopMusic(m_platformMusicHandle);
         }
         else {
             GameLog::Log("[AUDIOCLIP] Attempted to stop invalid or non-playing music");
@@ -57,34 +57,34 @@ public:
     }
 
     void Pause() {
-        if (m_platformMusicHandle) PlatformAPI::PauseMusic(m_platformMusicHandle);
+        if (m_platformMusicHandle.player) PauseMusic(m_platformMusicHandle);
     }
 
     void Resume() {
-        if (m_platformMusicHandle) PlatformAPI::ResumeMusic(m_platformMusicHandle);
+        if (m_platformMusicHandle.player) ResumeMusic(m_platformMusicHandle);
     }
 
     void Update() {
-        if (m_platformMusicHandle) PlatformAPI::UpdateMusic(m_platformMusicHandle);
+        if (m_platformMusicHandle.player) UpdateMusic(m_platformMusicHandle);
     }
 
     bool IsPlaying() const {
-        return m_platformMusicHandle && PlatformAPI::IsMusicPlaying(m_platformMusicHandle);
+        return m_platformMusicHandle.player && IsMusicPlaying(m_platformMusicHandle);
     }
 
     // Set the music volume (expected range 0.0 to 1.0)
     void SetVolume(float vol) {
-        if (m_platformMusicHandle) PlatformAPI::SetMusicVolume(m_platformMusicHandle, vol);
+        if (m_platformMusicHandle.player) SetMusicVolume(m_platformMusicHandle, vol);
     }
 
     // Set looping state for the music
     void SetLooping(bool looping) {
-        if (m_platformMusicHandle) PlatformAPI::SetMusicLooping(m_platformMusicHandle, looping);
+        if (m_platformMusicHandle.player) SetMusicLooping(m_platformMusicHandle, looping);
     }
 
     // Getter for platform handle (for compatibility with existing code)
-    void* GetPlatformHandle() const { return m_platformMusicHandle; }
+    void* GetPlatformHandle() const { return m_platformMusicHandle.player; }
 
 private:
-    void* m_platformMusicHandle; // Platform-specific music handle
+    Music m_platformMusicHandle = { 0 };  // Changed from void* to Music
 };

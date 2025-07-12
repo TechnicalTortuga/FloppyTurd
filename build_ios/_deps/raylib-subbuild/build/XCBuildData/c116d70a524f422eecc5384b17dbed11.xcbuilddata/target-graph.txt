@@ -1,0 +1,7 @@
+Target dependency graph (3 targets)
+Target 'ALL_BUILD' in project 'raylib-populate'
+➜ Explicit dependency on target 'raylib-populate' in project 'raylib-populate'
+➜ Explicit dependency on target 'ZERO_CHECK' in project 'raylib-populate'
+Target 'raylib-populate' in project 'raylib-populate'
+➜ Explicit dependency on target 'ZERO_CHECK' in project 'raylib-populate'
+Target 'ZERO_CHECK' in project 'raylib-populate' (no dependencies)
