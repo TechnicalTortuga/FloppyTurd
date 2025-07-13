@@ -1,4 +1,5 @@
 #import "UICoordinateSystem.h"
+#include "PlatformAPI.h"
 #import <UIKit/UIKit.h>
 #import <CoreGraphics/CoreGraphics.h>
 #include <algorithm>

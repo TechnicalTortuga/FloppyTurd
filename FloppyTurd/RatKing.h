@@ -17,7 +17,7 @@ public:
     void SetPanSpeed(float speed) override;
     void TakeDamage(int damage) override;
     bool ShouldBeRemoved() override;
-    void SetPlayerPosition(Vector2 playerPos);
+    void SetPlayerPosition(Vector2 playerPos) override;
     std::vector<ToiletPaperProjectile*>& GetProjectiles() { return projectiles; }
     bool IsInLowHealthMode() override;
     double GetLowHealthTriggerTime() const override;

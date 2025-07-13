@@ -3,17 +3,17 @@
 
 void SoundManager::PlaySoundClip(Sound soundClip) {
     // Set volume for this sound before playing.
-    SetSoundVolume(soundClip.player, volume);
-    PlaySound(soundClip.player);
+    SetSoundVolume(soundClip, volume);
+    PlaySound(soundClip);
 }
 
 Sound SoundManager::LoadSoundClip(const std::string& filePath) {
     Sound sound;
     sound = LoadSound(filePath.c_str());
-    sound.length = 0; // Length will be set by platform implementation
+    // sound.length = 0; // Length will be set by platform implementation (field does not exist)
     return sound;
 }
 
 void SoundManager::UnloadSoundClip(Sound soundClip) {
-    UnloadSound(soundClip.player);
+    UnloadSound(soundClip);
 }

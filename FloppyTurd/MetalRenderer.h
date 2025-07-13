@@ -99,6 +99,13 @@ public:
     MetalRenderer();
     ~MetalRenderer();
     
+    // --- Platform Abstraction Layer Stubs ---
+    void BeginDrawing();
+    void EndDrawing();
+    void ClearBackground(Color color);
+    void BeginScissorMode(int x, int y, int width, int height);
+    void EndScissorMode();
+
     // Initialize with MTKView
     bool Initialize(MTKView* view);
     void Shutdown();
@@ -117,11 +124,17 @@ public:
     
     // Drawing primitives
     void DrawRectangle(float x, float y, float width, float height, Color color);
+    void DrawRectangleRec(Rectangle rec, Color color);
+    void DrawRectangleLinesEx(Rectangle rec, float lineThick, Color color);
+    void DrawRectangleRounded(Rectangle rec, float roundness, int segments, Color color);
+    void DrawRectangleRoundedLines(Rectangle rec, float roundness, int segments, float lineThick, Color color);
     void DrawRectangleRounded(float x, float y, float width, float height, float roundness, int segments, Color color);
     void DrawRectangleRoundedLines(float x, float y, float width, float height, float roundness, int segments, float lineThick, Color color);
     void DrawCircle(float x, float y, float radius, Color color);
+    void DrawCircleV(Vector2 center, float radius, Color color);
     void DrawLine(float x1, float y1, float x2, float y2, Color color);
     void DrawLineEx(float x1, float y1, float x2, float y2, float thickness, Color color);
+    void DrawLineV(Vector2 startPos, Vector2 endPos, Color color);
     
     // Texture drawing
     void DrawTexture(id<MTLTexture> texture, Rectangle source, Rectangle dest, Color tint);
@@ -129,9 +142,27 @@ public:
     void DrawTexture(id<MTLTexture> texture, Rectangle source, Rectangle dest, Color tint, RenderLayer layer, int textureFormat);
     void DrawTextureEx(id<MTLTexture> texture, Vector2 position, float rotation, float scale, Color tint);
     
+    // PlatformAPI-compatible texture drawing methods
+    void DrawTexture(Texture2D texture, float x, float y, Color tint);
+    void DrawTextureRec(Texture2D texture, Rectangle source, Vector2 position, Color tint);
+    void DrawTexturePro(Texture2D texture, Rectangle source, Rectangle dest, Vector2 origin, float rotation, Color tint);
+    
     // Text rendering
     void DrawText(const char* text, float x, float y, float fontSize, Color color);
     void DrawText(const char* text, float x, float y, float fontSize, Color color, Font* font);
+    void DrawTextEx(Font font, const char* text, Vector2 position, float fontSize, float spacing, Color tint);
+    
+    // Texture management
+    Texture2D LoadTexture(const char* fileName);
+    void UnloadTexture(Texture2D texture);
+    void SetTextureWrap(Texture2D texture, int wrap);
+    void SetTextureFilter(Texture2D texture, int filter);
+    Rectangle GetTextureRec(Texture2D texture);
+    
+    // Image processing
+    void* CreateTextureFromImage(void* image, int* width, int* height);
+    Texture2D LoadTextureFromImage(Image image);
+    Image LoadImageFromTexture(Texture2D texture);
     
     // Batch rendering
     void FlushBatch();

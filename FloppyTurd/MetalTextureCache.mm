@@ -12,7 +12,7 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 #import <CoreGraphics/CoreGraphics.h>
-#import "PlatformLayer.h"
+#import "PlatformAPI.h"
 #import "MetalRenderer.h"
 
 // Singleton instance

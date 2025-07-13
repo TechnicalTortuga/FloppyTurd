@@ -19,7 +19,8 @@
 #include "MainMenu.h"
 #include "GameStats.h"
 #include "MenuButton.h"
-#include "TouchControls.h"
+#include "FloppyTurdInput.h"
+#include "MNKControls.h"
 
 class MainMenu;
 class Player;
@@ -172,6 +173,8 @@ private:
     MenuButton* tryAgainYes;
     MenuButton* tryAgainNo;
     
-    // Touch controls for mobile
-    TouchControls* touchControls;
+    // Floppy Turd specific input handling
+    FloppyTurdInput* floppyTurdInput;
+    TouchControls* touchControls; // Keep for AIGUI compatibility
+    MNKControls* mnkControls;
 };

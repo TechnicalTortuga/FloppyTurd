@@ -2,7 +2,7 @@
 #define GAME_VIEW_H
 
 #import <MetalKit/MetalKit.h>
-#import "RaylibCompat.h"
+#import "PlatformAPI.h"
 
 // Forward declarations
 class MetalRenderer;

@@ -7,7 +7,7 @@
 #include <fstream>
 #include <sstream>
 #include <sys/stat.h>
-#include "raylib.h"  // For Rectangle and Vector2 types
+#include "PlatformAPI.h"  // For Rectangle and Vector2 types
 
 #ifdef __APPLE__
 #include <TargetConditionals.h>

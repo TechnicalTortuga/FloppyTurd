@@ -10,43 +10,15 @@ void TouchControls::Initialize(int screenWidth, int screenHeight) {
     this->screenWidth = screenWidth;
     this->screenHeight = screenHeight;
     
-    // Set up touch zones
-    shootZone = { 0, (float)(screenHeight - SHOOT_BAR_HEIGHT), (float)screenWidth, SHOOT_BAR_HEIGHT };
-    jumpZone = { 0, 0, (float)screenWidth, (float)(screenHeight - SHOOT_BAR_HEIGHT) };
-    
-    TraceLog(LOG_INFO, "[TOUCH] TouchControls initialized: screen=%dx%d, shootZone=(%.1f,%.1f,%.1f,%.1f)", 
-             screenWidth, screenHeight, shootZone.x, shootZone.y, shootZone.width, shootZone.height);
+    TraceLog(LOG_INFO, "[TOUCH] TouchControls initialized: screen=%dx%d", screenWidth, screenHeight);
 }
 
 void TouchControls::Update() {
-    // Reset transient states
-    jumpPressed = false;
-    shootPressed = false;
-    
-    // Get touch input from PlatformLayer
+    // Update gesture detection with current touch state
     bool touchActive = IsPrimaryInputDown();
     bool touchPressed = IsPrimaryInputPressed();
     Vector2 touchPos = GetPrimaryInputPosition();
     
-    if (touchActive && isEnabled) {
-        // Determine which zone was touched
-        if (CheckCollisionPointRec(touchPos, shootZone) && shootingEnabled) {
-            // Touch in shoot zone
-            if (touchPressed) {
-                shootPressed = true;
-            }
-            shootHeld = true;
-        } else if (CheckCollisionPointRec(touchPos, jumpZone)) {
-            // Touch in jump zone
-            if (touchPressed) {
-                jumpPressed = true;
-            }
-        }
-    } else {
-        shootHeld = false;
-    }
-    
-    // Update gesture detection
     UpdateGestureDetection(touchActive, touchPressed, touchPos);
 }
 
@@ -117,58 +89,14 @@ bool TouchControls::IsGestureDetected(int gesture) const {
 }
 
 void TouchControls::Draw(float alpha) {
-    if (!isEnabled) return;
-    
-    // Draw shoot bar if shooting is enabled
-    if (shootingEnabled) {
-        Color barColor = shootHeld ? SHOOT_BAR_ACTIVE : SHOOT_BAR_COLOR;
-        barColor.a = (unsigned char)(barColor.a * alpha);
-        DrawRectangle(
-            (int)shootZone.x, (int)shootZone.y, 
-            (int)shootZone.width, (int)shootZone.height, 
-            barColor
-        );
-    }
-    
-    // Debug: Draw touch zones (optional)
-    #ifdef DEBUG_TOUCH_ZONES
-    Color zoneColor = { 255, 255, 255, 50 };
-    zoneColor.a = (unsigned char)(zoneColor.a * alpha);
-    DrawRectangle(
-        (int)jumpZone.x, (int)jumpZone.y, 
-        (int)jumpZone.width, (int)jumpZone.height, 
-        zoneColor
-    );
-    #endif
+    // Touch controls are now purely input - no visual elements
+    // Visual elements should be handled by the game-specific input handler
 } 
 
 // Touch state management methods
 void TouchControls::UpdateGestureDetection() {
-    // Clear per-frame states
-    primaryInputPressed = false;
-    primaryInputReleased = false;
-    
-    // Update gameplay-specific logic based on raw input
-    if (primaryInputDown) {
-        // Touch is active - determine if it's jump or shoot based on zones
-        if (shootingEnabled && primaryInputPosition.y > screenHeight - SHOOT_BAR_HEIGHT) {
-            // Touch in shoot zone
-            shootHeld = true;
-            if (!previousShootHeld) {
-                shootPressed = true;
-            }
-        } else {
-            // Touch in jump zone
-            jumpPressed = true;
-        }
-    } else {
-        // No touch
-        jumpPressed = false;
-        shootPressed = false;
-        shootHeld = false;
-    }
-    
-    previousShootHeld = shootHeld;
+    // This method is now handled by the game-specific input handler
+    // Touch controls only provide raw input state
 }
 
 void TouchControls::SetTouchState(bool pressed, float x, float y) {
@@ -193,11 +121,7 @@ void TouchControls::ClearAllTouchStates() {
     primaryInputReleased = false;
     primaryInputPosition = {0, 0};
     
-    // Clear gameplay states
-    jumpPressed = false;
-    shootPressed = false;
-    shootHeld = false;
-    previousShootHeld = false;
+    // Clear gesture states
     detectedGestures = 0;
     touchCount = 0;
 }

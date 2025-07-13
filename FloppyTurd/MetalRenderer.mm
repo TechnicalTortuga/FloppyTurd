@@ -37,6 +37,23 @@ MetalRenderer::~MetalRenderer() {
     Shutdown();
 }
 
+// --- Platform Abstraction Layer Stubs ---
+void MetalRenderer::BeginDrawing() {
+    // Stub: No-op for now
+}
+void MetalRenderer::EndDrawing() {
+    // Stub: No-op for now
+}
+void MetalRenderer::ClearBackground(Color color) {
+    // Stub: No-op for now
+}
+void MetalRenderer::BeginScissorMode(int x, int y, int width, int height) {
+    // Stub: No-op for now
+}
+void MetalRenderer::EndScissorMode() {
+    // Stub: No-op for now
+}
+
 bool MetalRenderer::Initialize(MTKView* view) {
     @autoreleasepool {
         m_view = view;
@@ -1320,6 +1337,58 @@ void MetalRenderer::DrawTextureEx(id<MTLTexture> texture, Vector2 position, floa
              m_vertices.size(), m_drawCommands.size());
 }
 
+// PlatformAPI-compatible texture drawing methods
+void MetalRenderer::DrawTexture(Texture2D texture, float x, float y, Color tint) {
+    if (texture.id == 0 || !texture.texture) {
+        TraceLog(LOG_WARNING, "[METAL DEBUG] DrawTexture: Invalid texture");
+        return;
+    }
+    
+    id<MTLTexture> mtlTexture = (__bridge id<MTLTexture>)texture.texture;
+    if (!mtlTexture) {
+        TraceLog(LOG_ERROR, "[METAL ERROR] DrawTexture: Failed to get MTLTexture from Texture2D");
+        return;
+    }
+    
+    Rectangle source = {0, 0, (float)texture.width, (float)texture.height};
+    Rectangle dest = {x, y, (float)texture.width, (float)texture.height};
+    
+    DrawTexture(mtlTexture, source, dest, tint);
+}
+
+void MetalRenderer::DrawTextureRec(Texture2D texture, Rectangle source, Vector2 position, Color tint) {
+    if (texture.id == 0 || !texture.texture) {
+        TraceLog(LOG_WARNING, "[METAL DEBUG] DrawTextureRec: Invalid texture");
+        return;
+    }
+    
+    id<MTLTexture> mtlTexture = (__bridge id<MTLTexture>)texture.texture;
+    if (!mtlTexture) {
+        TraceLog(LOG_ERROR, "[METAL ERROR] DrawTextureRec: Failed to get MTLTexture from Texture2D");
+        return;
+    }
+    
+    Rectangle dest = {position.x, position.y, source.width, source.height};
+    
+    DrawTexture(mtlTexture, source, dest, tint);
+}
+
+void MetalRenderer::DrawTexturePro(Texture2D texture, Rectangle source, Rectangle dest, Vector2 origin, float rotation, Color tint) {
+    if (texture.id == 0 || !texture.texture) {
+        TraceLog(LOG_WARNING, "[METAL DEBUG] DrawTexturePro: Invalid texture");
+        return;
+    }
+    
+    id<MTLTexture> mtlTexture = (__bridge id<MTLTexture>)texture.texture;
+    if (!mtlTexture) {
+        TraceLog(LOG_ERROR, "[METAL ERROR] DrawTexturePro: Failed to get MTLTexture from Texture2D");
+        return;
+    }
+    
+    // For now, just draw without rotation/origin - can be enhanced later
+    DrawTexture(mtlTexture, source, dest, tint);
+}
+
 void MetalRenderer::DrawText(const char* text, float x, float y, float fontSize, Color color) {
     // TraceLog(LOG_INFO, "[METAL DEBUG] DrawText called: text='%s', x=%.2f, y=%.2f, fontSize=%.2f, color=(%d,%d,%d,%d)", text, x, y, fontSize, color.r, color.g, color.b, color.a);
     
@@ -1401,6 +1470,27 @@ void MetalRenderer::DrawText(const char* text, float x, float y, float fontSize,
     
     // Log text texture details
     // TraceLog(LOG_INFO, "[METAL DEBUG] Text texture with font: %p, size=%fx%f, text='%s'", textTexture, width, height, text);
+    
+    DrawTexture(textTexture, source, dest, WHITE, RenderLayer::Text);
+}
+
+void MetalRenderer::DrawTextEx(Font font, const char* text, Vector2 position, float fontSize, float spacing, Color tint) {
+    if (!g_textRenderer) {
+        TraceLog(LOG_ERROR, "[METAL ERROR] g_textRenderer is not initialized!");
+        return;
+    }
+    
+    id<MTLTexture> textTexture = g_textRenderer->RenderTextToTexture(text, (int)fontSize, tint, &font);
+    if (!textTexture) {
+        TraceLog(LOG_ERROR, "[METAL ERROR] Failed to render text to texture for '%s'", text);
+        return;
+    }
+    
+    float width = textTexture.width;
+    float height = textTexture.height;
+    
+    Rectangle source = {0, 0, (float)textTexture.width, (float)textTexture.height};
+    Rectangle dest = {position.x, position.y, (float)width, (float)height};
     
     DrawTexture(textTexture, source, dest, WHITE, RenderLayer::Text);
 }
@@ -1875,6 +1965,61 @@ DrawCommand MetalRenderer::CreateDrawCommand(MTLPrimitiveType primitiveType, NSU
              texture, useTexture, renderState, depth, (unsigned long)instanceCount);
     
     return cmd;
+}
+
+// --- Texture Management Functions ---
+Texture2D MetalRenderer::LoadTexture(const char* fileName) {
+    // Stub implementation - return empty texture
+    // TODO: Implement actual texture loading
+    Texture2D texture = {0, 0, 0, 0, 0, nullptr};
+    TraceLog(LOG_WARNING, "[METAL WARNING] LoadTexture not implemented for: %s", fileName);
+    return texture;
+}
+
+void MetalRenderer::UnloadTexture(Texture2D texture) {
+    // Stub implementation
+    // TODO: Implement actual texture unloading
+    TraceLog(LOG_WARNING, "[METAL WARNING] UnloadTexture not implemented");
+}
+
+void MetalRenderer::SetTextureWrap(Texture2D texture, int wrap) {
+    // Stub implementation
+    // TODO: Implement texture wrap setting
+    TraceLog(LOG_WARNING, "[METAL WARNING] SetTextureWrap not implemented");
+}
+
+void MetalRenderer::SetTextureFilter(Texture2D texture, int filter) {
+    // Stub implementation
+    // TODO: Implement texture filter setting
+    TraceLog(LOG_WARNING, "[METAL WARNING] SetTextureFilter not implemented");
+}
+
+Rectangle MetalRenderer::GetTextureRec(Texture2D texture) {
+    // Return the full texture rectangle
+    return {0, 0, static_cast<float>(texture.width), static_cast<float>(texture.height)};
+}
+
+void* MetalRenderer::CreateTextureFromImage(void* image, int* width, int* height) {
+    // Stub implementation
+    // TODO: Implement texture creation from image
+    TraceLog(LOG_WARNING, "[METAL WARNING] CreateTextureFromImage not implemented");
+    return nullptr;
+}
+
+Texture2D MetalRenderer::LoadTextureFromImage(Image image) {
+    // Stub implementation
+    // TODO: Implement texture loading from image
+    Texture2D texture = {0, 0, 0, 0, 0, nullptr};
+    TraceLog(LOG_WARNING, "[METAL WARNING] LoadTextureFromImage not implemented");
+    return texture;
+}
+
+Image MetalRenderer::LoadImageFromTexture(Texture2D texture) {
+    // Stub implementation
+    // TODO: Implement image loading from texture
+    Image image = {nullptr, 0, 0, 0, 0};
+    TraceLog(LOG_WARNING, "[METAL WARNING] LoadImageFromTexture not implemented");
+    return image;
 }
 
 #endif // defined(__APPLE__) && TARGET_OS_IOS 

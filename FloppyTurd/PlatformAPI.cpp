@@ -1,754 +1,786 @@
 #include "PlatformAPI.h"
-#include "PlatformSpecific.h"
-
-// Platform-specific implementations
-#ifdef PLATFORM_IOS
-#include "PlatformIOS.h"
-#else
-#include "PlatformRaylib.h"
-#endif
-
-// Singleton instance
-PlatformAPI* PlatformAPI::s_instance = nullptr;
+#include "Game.h"
 
 // ============================================================================
-// SINGLETON IMPLEMENTATION
+// GLOBAL FUNCTION IMPLEMENTATIONS USING CURRENTPLATFORMAPI
 // ============================================================================
 
-PlatformAPI& PlatformAPI::GetInstance() {
-    if (!s_instance) {
-        s_instance = new PlatformAPI();
-    }
-    return *s_instance;
+// Window and Screen Functions
+void InitWindow(int width, int height, const char* title) {
+    CurrentPlatformAPI::GetInstance().InitWindow(width, height, title);
 }
 
-PlatformAPI::PlatformAPI() : m_platformImpl(nullptr) {
-    // Create platform-specific implementation
-#ifdef PLATFORM_IOS
-    m_platformImpl = new PlatformIOS();
-#else
-    m_platformImpl = new PlatformRaylib();
-#endif
+void SetWindowSize(int width, int height) {
+    CurrentPlatformAPI::GetInstance().SetWindowSize(width, height);
 }
 
-PlatformAPI::~PlatformAPI() {
-    if (m_platformImpl) {
-        delete m_platformImpl;
-        m_platformImpl = nullptr;
-    }
+void ToggleFullscreen() {
+    CurrentPlatformAPI::GetInstance().ToggleFullscreen();
 }
 
-PlatformSpecific* PlatformAPI::GetPlatformImpl() {
-    return GetInstance().m_platformImpl;
+void CloseWindow() {
+    CurrentPlatformAPI::GetInstance().CloseWindow();
 }
 
-// ============================================================================
-// INITIALIZATION AND LIFECYCLE
-// ============================================================================
-
-void PlatformAPI::Initialize(void* nativeView) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->Initialize(nativeView);
-    }
+int GetScreenWidth() {
+    return CurrentPlatformAPI::GetInstance().GetScreenWidth();
 }
 
-void PlatformAPI::Initialize() {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->Initialize();
-    }
+int GetScreenHeight() {
+    return CurrentPlatformAPI::GetInstance().GetScreenHeight();
 }
 
-void PlatformAPI::Shutdown() {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->Shutdown();
-    }
+float GetScreenScale() {
+    return CurrentPlatformAPI::GetInstance().GetScreenScale();
 }
 
-// ============================================================================
-// RENDERING FUNCTIONS (Raylib-compatible)
-// ============================================================================
-
-void PlatformAPI::DrawRectangle(int x, int y, int width, int height, Color color) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->DrawRectangle(x, y, width, height, color);
-    }
+bool WindowShouldClose() {
+    return CurrentPlatformAPI::GetInstance().WindowShouldClose();
 }
 
-void PlatformAPI::DrawRectangleRec(Rectangle rec, Color color) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->DrawRectangleRec(rec, color);
-    }
+// Rendering Functions
+void BeginDrawing() {
+    CurrentPlatformAPI::GetInstance().BeginDrawing();
 }
 
-void PlatformAPI::DrawRectangleRounded(Rectangle rec, float roundness, int segments, Color color) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->DrawRectangleRounded(rec, roundness, segments, color);
-    }
+void EndDrawing() {
+    CurrentPlatformAPI::GetInstance().EndDrawing();
 }
 
-void PlatformAPI::DrawRectangleRoundedLines(Rectangle rec, float roundness, int segments, float lineThick, Color color) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->DrawRectangleRoundedLines(rec, roundness, segments, lineThick, color);
-    }
+void ClearBackground(Color color) {
+    CurrentPlatformAPI::GetInstance().ClearBackground(color);
 }
 
-void PlatformAPI::DrawRectangleRoundedLinesEx(Rectangle rec, float roundness, int segments, float lineThick, Color color) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->DrawRectangleRoundedLinesEx(rec, roundness, segments, lineThick, color);
-    }
+void DrawRectangle(float x, float y, float width, float height, Color color) {
+    CurrentPlatformAPI::GetInstance().DrawRectangle(x, y, width, height, color);
 }
 
-void PlatformAPI::DrawCircle(float centerX, float centerY, float radius, Color color) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->DrawCircle(centerX, centerY, radius, color);
-    }
+void DrawRectangleRec(Rectangle rec, Color color) {
+    CurrentPlatformAPI::GetInstance().DrawRectangleRec(rec, color);
 }
 
-void PlatformAPI::DrawCircleV(Vector2 center, float radius, Color color) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->DrawCircleV(center, radius, color);
-    }
+void DrawRectangleLinesEx(Rectangle rec, float lineThick, Color color) {
+    CurrentPlatformAPI::GetInstance().DrawRectangleLinesEx(rec, lineThick, color);
 }
 
-void PlatformAPI::DrawLine(float startPosX, float startPosY, float endPosX, float endPosY, Color color) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->DrawLine(startPosX, startPosY, endPosX, endPosY, color);
-    }
+void DrawRectangleRounded(Rectangle rec, float roundness, int segments, Color color) {
+    CurrentPlatformAPI::GetInstance().DrawRectangleRounded(rec, roundness, segments, color);
 }
 
-void PlatformAPI::DrawLineEx(Vector2 startPos, Vector2 endPos, float thick, Color color) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->DrawLineEx(startPos, endPos, thick, color);
-    }
+void DrawRectangleRoundedLines(Rectangle rec, float roundness, int segments, float lineThick, Color color) {
+    CurrentPlatformAPI::GetInstance().DrawRectangleRoundedLines(rec, roundness, segments, lineThick, color);
 }
 
-void PlatformAPI::DrawLineV(Vector2 startPos, Vector2 endPos, Color color) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->DrawLineV(startPos, endPos, color);
-    }
+void DrawRectangleRoundedLinesEx(Rectangle rec, float roundness, int segments, float lineThick, Color color) {
+    CurrentPlatformAPI::GetInstance().DrawRectangleRoundedLinesEx(rec, roundness, segments, lineThick, color);
 }
 
-void PlatformAPI::DrawTexture(Texture2D texture, int posX, int posY, Color tint) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->DrawTexture(texture, posX, posY, tint);
-    }
+void DrawCircle(float centerX, float centerY, float radius, Color color) {
+    CurrentPlatformAPI::GetInstance().DrawCircle(centerX, centerY, radius, color);
 }
 
-void PlatformAPI::DrawTextureV(Texture2D texture, Vector2 position, Color tint) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->DrawTextureV(texture, position, tint);
-    }
+void DrawCircleV(Vector2 center, float radius, Color color) {
+    CurrentPlatformAPI::GetInstance().DrawCircleV(center, radius, color);
 }
 
-void PlatformAPI::DrawTextureRec(Texture2D texture, Rectangle source, Rectangle dest, Color tint) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->DrawTextureRec(texture, source, dest, tint);
-    }
+void DrawLine(float startPosX, float startPosY, float endPosX, float endPosY, Color color) {
+    CurrentPlatformAPI::GetInstance().DrawLine(startPosX, startPosY, endPosX, endPosY, color);
 }
 
-void PlatformAPI::DrawTexturePro(Texture2D texture, Rectangle source, Rectangle dest, Vector2 origin, float rotation, Color tint) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->DrawTexturePro(texture, source, dest, origin, rotation, tint);
-    }
+void DrawLineV(Vector2 startPos, Vector2 endPos, Color color) {
+    CurrentPlatformAPI::GetInstance().DrawLineV(startPos, endPos, color);
 }
 
-void PlatformAPI::DrawText(const char* text, int posX, int posY, int fontSize, Color color) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->DrawText(text, posX, posY, fontSize, color);
-    }
+void DrawLineEx(Vector2 startPos, Vector2 endPos, float thick, Color color) {
+    CurrentPlatformAPI::GetInstance().DrawLineEx(startPos, endPos, thick, color);
 }
 
-void PlatformAPI::DrawTextEx(Font font, const char* text, Vector2 position, float fontSize, float spacing, Color tint) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->DrawTextEx(font, text, position, fontSize, spacing, tint);
-    }
+void DrawTexture(Texture2D texture, float x, float y, Color tint) {
+    CurrentPlatformAPI::GetInstance().DrawTexture(texture, x, y, tint);
 }
 
-void PlatformAPI::BeginDrawing(void* renderTexture) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->BeginDrawing(renderTexture);
-    }
+void DrawTextureV(Texture2D texture, Vector2 position, Color tint) {
+    CurrentPlatformAPI::GetInstance().DrawTextureV(texture, position, tint);
 }
 
-void PlatformAPI::EndDrawing(void* renderTexture) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->EndDrawing(renderTexture);
-    }
+void DrawTextureRec(Texture2D texture, Rectangle source, Vector2 position, Color tint) {
+    CurrentPlatformAPI::GetInstance().DrawTextureRec(texture, source, position, tint);
 }
 
-void* PlatformAPI::LoadRenderTexture(int width, int height) {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->LoadRenderTexture(width, height);
-    }
-    return nullptr;
+void DrawTexturePro(Texture2D texture, Rectangle source, Rectangle dest, Vector2 origin, float rotation, Color tint) {
+    CurrentPlatformAPI::GetInstance().DrawTexturePro(texture, source, dest, origin, rotation, tint);
 }
 
-void PlatformAPI::UnloadRenderTexture(void* renderTexture) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->UnloadRenderTexture(renderTexture);
-    }
+void DrawTextureEx(Texture2D texture, Vector2 position, float rotation, float scale, Color tint) {
+    CurrentPlatformAPI::GetInstance().DrawTextureEx(texture, position, rotation, scale, tint);
 }
 
-// ============================================================================
-// TEXTURE AND IMAGE FUNCTIONS
-// ============================================================================
-
-Texture2D PlatformAPI::LoadTexture(const char* fileName) {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->LoadTexture(fileName);
-    }
-    return { 0 };
+void DrawText(const char* text, float x, float y, float fontSize, Color color) {
+    CurrentPlatformAPI::GetInstance().DrawText(text, static_cast<int>(x), static_cast<int>(y), static_cast<int>(fontSize), color);
 }
 
-void PlatformAPI::UnloadTexture(Texture2D texture) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->UnloadTexture(texture);
-    }
+void DrawTextEx(Font font, const char* text, Vector2 position, float fontSize, float spacing, Color tint) {
+    CurrentPlatformAPI::GetInstance().DrawTextEx(font, text, position, fontSize, spacing, tint);
 }
 
-void* PlatformAPI::LoadTextureFromImage(void* imageData, int width, int height, int format) {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->LoadTextureFromImage(imageData, width, height, format);
-    }
-    return nullptr;
+int MeasureText(const char* text, int fontSize) {
+    return CurrentPlatformAPI::GetInstance().MeasureText(text, fontSize);
 }
 
-void* PlatformAPI::CreateTextureFromImage(void* image, int* width, int* height) {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->CreateTextureFromImage(image, width, height);
-    }
-    return nullptr;
+// Variadic version for compatibility with raylib-style usage
+const char* TextFormat(const char* text, ...) {
+    va_list args;
+    va_start(args, text);
+    const char* result = CurrentPlatformAPI::GetInstance().TextFormat(text, args);
+    va_end(args);
+    return result;
 }
 
-Image PlatformAPI::LoadImage(const char* fileName) {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->LoadImage(fileName);
-    }
-    return { 0 };
+// Input Functions
+bool IsKeyPressed(int key) {
+    return CurrentPlatformAPI::GetInstance().IsKeyPressed(key);
 }
 
-void PlatformAPI::UnloadImage(Image image) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->UnloadImage(image);
-    }
+bool IsKeyDown(int key) {
+    return CurrentPlatformAPI::GetInstance().IsKeyDown(key);
 }
 
-void* PlatformAPI::CreateSolidColorImage(int width, int height, Color color) {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->CreateSolidColorImage(width, height, color);
-    }
-    return nullptr;
+bool IsKeyReleased(int key) {
+    return CurrentPlatformAPI::GetInstance().IsKeyReleased(key);
 }
 
-// ============================================================================
-// AUDIO FUNCTIONS
-// ============================================================================
-
-void PlatformAPI::InitializeAudio() {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->InitializeAudio();
-    }
+bool IsMouseButtonDown(int button) {
+    return CurrentPlatformAPI::GetInstance().IsMouseButtonDown(button);
 }
 
-void PlatformAPI::ShutdownAudio() {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->ShutdownAudio();
-    }
+bool IsMouseButtonPressed(int button) {
+    return CurrentPlatformAPI::GetInstance().IsMouseButtonPressed(button);
 }
 
-void* PlatformAPI::LoadSound(const char* fileName) {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->LoadSound(fileName);
-    }
-    return nullptr;
+bool IsMouseButtonReleased(int button) {
+    return CurrentPlatformAPI::GetInstance().IsMouseButtonReleased(button);
 }
 
-void PlatformAPI::UnloadSound(void* sound) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->UnloadSound(sound);
-    }
+Vector2 GetMousePosition() {
+    return CurrentPlatformAPI::GetInstance().GetMousePosition();
 }
 
-void PlatformAPI::PlaySound(void* sound) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->PlaySound(sound);
-    }
+Vector2 GetMouseDelta() {
+    return CurrentPlatformAPI::GetInstance().GetMouseDelta();
 }
 
-void PlatformAPI::SetSoundVolume(void* sound, float volume) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->SetSoundVolume(sound, volume);
-    }
+Vector2 GetTouchPosition(int index) {
+    return CurrentPlatformAPI::GetInstance().GetTouchPosition(index);
 }
 
-void* PlatformAPI::LoadMusic(const char* fileName) {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->LoadMusic(fileName);
-    }
-    return nullptr;
+bool IsPrimaryInputPressed() {
+    return CurrentPlatformAPI::GetInstance().IsPrimaryInputPressed();
 }
 
-void PlatformAPI::UnloadMusic(void* music) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->UnloadMusic(music);
-    }
+bool IsPrimaryInputReleased() {
+    return CurrentPlatformAPI::GetInstance().IsPrimaryInputReleased();
 }
 
-void PlatformAPI::PlayMusic(void* music) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->PlayMusic(music);
-    }
+// Texture Functions
+Texture2D LoadTexture(const char* fileName) {
+    return CurrentPlatformAPI::GetInstance().LoadTexture(fileName);
 }
 
-void PlatformAPI::StopMusic(void* music) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->StopMusic(music);
-    }
+void UnloadTexture(Texture2D texture) {
+    CurrentPlatformAPI::GetInstance().UnloadTexture(texture);
 }
 
-void PlatformAPI::UpdateMusic(void* music) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->UpdateMusic(music);
-    }
+Image LoadImage(const char* fileName) {
+    return CurrentPlatformAPI::GetInstance().LoadImage(fileName);
 }
 
-bool PlatformAPI::IsMusicPlaying(void* music) {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->IsMusicPlaying(music);
-    }
+void UnloadImage(Image image) {
+    CurrentPlatformAPI::GetInstance().UnloadImage(image);
+}
+
+void SetTextureWrap(Texture2D texture, int wrap) {
+    CurrentPlatformAPI::GetInstance().SetTextureWrap(texture, wrap);
+}
+
+Texture2D LoadTextureFromImage(Image image) {
+    return CurrentPlatformAPI::GetInstance().LoadTextureFromImage(image);
+}
+
+Image LoadImageFromTexture(Texture2D texture) {
+    return CurrentPlatformAPI::GetInstance().LoadImageFromTexture(texture);
+}
+
+Rectangle GetTextureRec(Texture2D texture) {
+    return CurrentPlatformAPI::GetInstance().GetTextureRec(texture);
+}
+
+// Font Functions
+Font LoadFont(const char* fileName) {
+    return CurrentPlatformAPI::GetInstance().LoadFont(fileName);
+}
+
+Font LoadFontEx(const char* fileName, int fontSize, int* fontChars, int glyphCount) {
+    return CurrentPlatformAPI::GetInstance().LoadFontEx(fileName, fontSize, fontChars, glyphCount);
+}
+
+void UnloadFont(Font font) {
+    CurrentPlatformAPI::GetInstance().UnloadFont(font);
+}
+
+Vector2 MeasureTextEx(Font font, const char* text, float fontSize, float spacing) {
+    return CurrentPlatformAPI::GetInstance().MeasureTextEx(font, text, fontSize, spacing);
+}
+
+// Rendering Functions
+void BeginScissorMode(int x, int y, int width, int height) {
+    CurrentPlatformAPI::GetInstance().BeginScissorMode(x, y, width, height);
+}
+
+void EndScissorMode() {
+    CurrentPlatformAPI::GetInstance().EndScissorMode();
+}
+
+void DrawFPS(int posX, int posY) {
+    CurrentPlatformAPI::GetInstance().DrawFPS(posX, posY);
+}
+
+// Audio Functions
+void InitAudioDevice() {
+    CurrentPlatformAPI::GetInstance().InitAudioDevice();
+}
+
+void InitializeAudio() {
+    CurrentPlatformAPI::GetInstance().InitializeAudio();
+}
+
+void CloseAudioDevice() {
+    CurrentPlatformAPI::GetInstance().CloseAudioDevice();
+}
+
+void ShutdownAudio() {
+    CurrentPlatformAPI::GetInstance().ShutdownAudio();
+}
+
+bool IsAudioDeviceReady() {
+    return CurrentPlatformAPI::GetInstance().IsAudioDeviceReady();
+}
+
+Sound LoadSound(const char* fileName) {
+    return CurrentPlatformAPI::GetInstance().LoadSound(fileName);
+}
+
+void UnloadSound(Sound sound) {
+    CurrentPlatformAPI::GetInstance().UnloadSound(sound);
+}
+
+void PlaySound(Sound sound) {
+    CurrentPlatformAPI::GetInstance().PlaySound(sound);
+}
+
+void StopSound(Sound sound) {
+    CurrentPlatformAPI::GetInstance().StopSound(sound);
+}
+
+void PauseSound(Sound sound) {
+    CurrentPlatformAPI::GetInstance().PauseSound(sound);
+}
+
+void ResumeSound(Sound sound) {
+    CurrentPlatformAPI::GetInstance().ResumeSound(sound);
+}
+
+void SetSoundVolume(Sound sound, float volume) {
+    CurrentPlatformAPI::GetInstance().SetSoundVolume(sound, volume);
+}
+
+bool IsSoundPlaying(Sound sound) {
+    return CurrentPlatformAPI::GetInstance().IsSoundPlaying(sound);
+}
+
+Music LoadMusicStream(const char* fileName) {
+    return CurrentPlatformAPI::GetInstance().LoadMusicStream(fileName);
+}
+
+Music LoadMusic(const char* fileName) {
+    return CurrentPlatformAPI::GetInstance().LoadMusic(fileName);
+}
+
+void UnloadMusicStream(Music music) {
+    CurrentPlatformAPI::GetInstance().UnloadMusicStream(music);
+}
+
+void UnloadMusic(Music music) {
+    CurrentPlatformAPI::GetInstance().UnloadMusic(music);
+}
+
+void PlayMusicStream(Music music) {
+    CurrentPlatformAPI::GetInstance().PlayMusicStream(music);
+}
+
+void PlayMusic(Music music) {
+    CurrentPlatformAPI::GetInstance().PlayMusic(music);
+}
+
+void StopMusicStream(Music music) {
+    CurrentPlatformAPI::GetInstance().StopMusicStream(music);
+}
+
+void StopMusic(Music music) {
+    CurrentPlatformAPI::GetInstance().StopMusic(music);
+}
+
+void PauseMusicStream(Music music) {
+    CurrentPlatformAPI::GetInstance().PauseMusicStream(music);
+}
+
+void PauseMusic(Music music) {
+    CurrentPlatformAPI::GetInstance().PauseMusic(music);
+}
+
+void ResumeMusicStream(Music music) {
+    CurrentPlatformAPI::GetInstance().ResumeMusicStream(music);
+}
+
+void ResumeMusic(Music music) {
+    CurrentPlatformAPI::GetInstance().ResumeMusic(music);
+}
+
+void UpdateMusicStream(Music music) {
+    CurrentPlatformAPI::GetInstance().UpdateMusicStream(music);
+}
+
+void UpdateMusic(Music music) {
+    CurrentPlatformAPI::GetInstance().UpdateMusic(music);
+}
+
+void SetMusicVolume(Music music, float volume) {
+    CurrentPlatformAPI::GetInstance().SetMusicVolume(music, volume);
+}
+
+bool IsMusicStreamPlaying(Music music) {
+    return CurrentPlatformAPI::GetInstance().IsMusicStreamPlaying(music);
+}
+
+bool IsMusicPlaying(Music music) {
+    return CurrentPlatformAPI::GetInstance().IsMusicPlaying(music);
+}
+
+void SetMusicLooping(Music music, bool looping) {
+    CurrentPlatformAPI::GetInstance().SetMusicLooping(music, looping);
+}
+
+float GetMusicDuration(Music music) {
+    return CurrentPlatformAPI::GetInstance().GetMusicDuration(music);
+}
+
+// Utility Functions
+double GetTime() {
+    return CurrentPlatformAPI::GetInstance().GetTime();
+}
+
+void TraceLog(int logLevel, const char* text, ...) {
+    va_list args;
+    va_start(args, text);
+    CurrentPlatformAPI::GetInstance().TraceLog(logLevel, text, args);
+    va_end(args);
+}
+
+int GetRandomValue(int min, int max) {
+    return CurrentPlatformAPI::GetInstance().GetRandomValue(min, max);
+}
+
+float GetRandomFloat(float min, float max) {
+    return CurrentPlatformAPI::GetInstance().GetRandomFloat(min, max);
+}
+
+// Additional Utility Functions
+void SetTraceLogLevel(int logLevel) {
+    CurrentPlatformAPI::GetInstance().SetTraceLogLevel(logLevel);
+}
+
+void SetConfigFlags(unsigned int flags) {
+    CurrentPlatformAPI::GetInstance().SetConfigFlags(flags);
+}
+
+void SetRandomSeed(unsigned int seed) {
+    CurrentPlatformAPI::GetInstance().SetRandomSeed(seed);
+}
+
+Vector2 GetRandomVector2(Vector2 min, Vector2 max) {
+    return CurrentPlatformAPI::GetInstance().GetRandomVector2(min, max);
+}
+
+Color GetRandomColor() {
+    return CurrentPlatformAPI::GetInstance().GetRandomColor();
+}
+
+// Vector Math Functions
+float Vector2Length(Vector2 v) {
+    return CurrentPlatformAPI::GetInstance().Vector2Length(v);
+}
+
+Vector2 Vector2Normalize(Vector2 v) {
+    return CurrentPlatformAPI::GetInstance().Vector2Normalize(v);
+}
+
+Vector2 Vector2Add(Vector2 v1, Vector2 v2) {
+    return CurrentPlatformAPI::GetInstance().Vector2Add(v1, v2);
+}
+
+Vector2 Vector2Subtract(Vector2 v1, Vector2 v2) {
+    return CurrentPlatformAPI::GetInstance().Vector2Subtract(v1, v2);
+}
+
+Vector2 Vector2Scale(Vector2 v, float scale) {
+    return CurrentPlatformAPI::GetInstance().Vector2Scale(v, scale);
+}
+
+float Vector2Distance(Vector2 v1, Vector2 v2) {
+    return CurrentPlatformAPI::GetInstance().Vector2Distance(v1, v2);
+}
+
+// Collision Detection Functions
+bool CheckCollisionRecs(Rectangle rec1, Rectangle rec2) {
+    return CurrentPlatformAPI::GetInstance().CheckCollisionRecs(rec1, rec2);
+}
+
+bool CheckCollisionCircleRec(Vector2 center, float radius, Rectangle rec) {
+    return CurrentPlatformAPI::GetInstance().CheckCollisionCircleRec(center, radius, rec);
+}
+
+bool CheckCollisionPointRec(Vector2 point, Rectangle rec) {
+    return CurrentPlatformAPI::GetInstance().CheckCollisionPointRec(point, rec);
+}
+
+// Color Functions
+Color ColorAlpha(Color color, float alpha) {
+    return CurrentPlatformAPI::GetInstance().ColorAlpha(color, alpha);
+}
+
+Color ColorLerp(Color color1, Color color2, float amount) {
+    return CurrentPlatformAPI::GetInstance().ColorLerp(color1, color2, amount);
+}
+
+Color Fade(Color color, float alpha) {
+    return CurrentPlatformAPI::GetInstance().Fade(color, alpha);
+}
+
+// Math Utility Functions - These are already defined as inline functions in PlatformTraits.h
+// No need to redefine them here as they're available directly
+
+// Sqrt is already defined as inline function in PlatformTraits.h
+// float Sqrt(float value) {
+//     return CurrentPlatformAPI::GetInstance().Sqrt(value);
+// }
+
+float Pow(float base, float exponent) {
+    return CurrentPlatformAPI::GetInstance().Pow(base, exponent);
+}
+
+// Time and Performance Functions
+float GetFrameTime() {
+    return CurrentPlatformAPI::GetInstance().GetFrameTime();
+}
+
+int GetCurrentFPS() {
+    return CurrentPlatformAPI::GetInstance().GetCurrentFPS();
+}
+
+float GetCurrentFrameTime() {
+    return CurrentPlatformAPI::GetInstance().GetCurrentFrameTime();
+}
+
+// Rectangle Utility Functions
+Rectangle RectangleNew(float x, float y, float width, float height) {
+    return CurrentPlatformAPI::GetInstance().RectangleNew(x, y, width, height);
+}
+
+Rectangle RectangleFromVector2(Vector2 position, Vector2 size) {
+    return CurrentPlatformAPI::GetInstance().RectangleFromVector2(position, size);
+}
+
+// Platform-Specific Utility Functions
+std::string GetResourcePath(const char* resourceName) {
+    return CurrentPlatformAPI::GetInstance().GetResourcePath(resourceName);
+}
+
+bool PreferLowPowerMode() {
+    return CurrentPlatformAPI::GetInstance().PreferLowPowerMode();
+}
+
+int GetRecommendedTextureSize() {
+    return CurrentPlatformAPI::GetInstance().GetRecommendedTextureSize();
+}
+
+bool IsMobilePlatform() {
+    return CurrentPlatformAPI::GetInstance().IsMobilePlatform();
+}
+
+// Initialization and Lifecycle Functions
+void Initialize(void* nativeView) {
+    CurrentPlatformAPI::GetInstance().Initialize(nativeView);
+}
+
+void Initialize() {
+    CurrentPlatformAPI::GetInstance().Initialize();
+}
+
+void Shutdown() {
+    CurrentPlatformAPI::GetInstance().Shutdown();
+}
+
+// Complex Audio Functions
+void StartCrossfade(float duration) {
+    CurrentPlatformAPI::StartCrossfade(duration);
+}
+
+void UpdateCrossfade(float deltaTime) {
+    CurrentPlatformAPI::UpdateCrossfade(deltaTime);
+}
+
+void FadeOutMusic(float duration) {
+    CurrentPlatformAPI::FadeOutMusic(duration);
+}
+
+void FadeInMusic(float duration) {
+    CurrentPlatformAPI::FadeInMusic(duration);
+}
+
+void UpdateFade(float deltaTime) {
+    CurrentPlatformAPI::UpdateFade(deltaTime);
+}
+
+// Complex Image Functions
+void ImageResize(Image* image, int newWidth, int newHeight) {
+    CurrentTraits::ImageResize(image, newWidth, newHeight);
+}
+
+void ImageDraw(Image* dst, Image src, Rectangle srcRec, Rectangle dstRec, Color tint) {
+    CurrentTraits::ImageDraw(dst, src, srcRec, dstRec, tint);
+}
+
+Image ImageCopy(Image image) {
+    return CurrentTraits::ImageCopy(image);
+}
+
+Image ImageFromImage(Image image, Rectangle rec) {
+    return CurrentTraits::ImageFromImage(image, rec);
+}
+
+void ImageFlipVertical(Image* image) {
+    CurrentTraits::ImageFlipVertical(image);
+}
+
+void ImageFlipHorizontal(Image* image) {
+    CurrentTraits::ImageFlipHorizontal(image);
+}
+
+// Add these global function implementations:
+void SetTextureFilter(Texture2D texture, int filter) {
+    CurrentTraits::SetTextureFilter(texture, filter);
+}
+
+Image GenImageColor(int width, int height, Color color) {
+    return CurrentTraits::GenImageColor(width, height, color);
+}
+
+Font GetFontDefault() {
+    return CurrentTraits::GetFontDefault();
+}
+
+// Platform-Specific Functions
+void SetOrientation(bool landscape) {
+    CurrentPlatformAPI::SetOrientation(landscape);
+}
+
+void ShowVirtualKeyboard(bool show) {
+    CurrentPlatformAPI::ShowVirtualKeyboard(show);
+}
+
+void Vibrate(int milliseconds) {
+    CurrentPlatformAPI::Vibrate(milliseconds);
+}
+
+void UpdateSafeAreaInsets(float top, float right, float bottom, float left) {
+    CurrentTraits::UpdateSafeAreaInsets(top, right, bottom, left);
+}
+
+// Render Texture Functions
+RenderTexture2D LoadRenderTexture(int width, int height) {
+    return CurrentPlatformAPI::GetInstance().LoadRenderTexture(width, height);
+}
+
+void UnloadRenderTexture(RenderTexture2D target) {
+    CurrentPlatformAPI::GetInstance().UnloadRenderTexture(target);
+}
+
+void BeginTextureMode(RenderTexture2D target) {
+    CurrentPlatformAPI::GetInstance().BeginTextureMode(target);
+}
+
+void EndTextureMode() {
+    CurrentPlatformAPI::GetInstance().EndTextureMode();
+}
+
+// Additional functions that might be needed
+void SetTargetFPS(int fps) {
+    CurrentPlatformAPI::GetInstance().SetTargetFPS(fps);
+}
+
+void SetScreenSize(int width, int height) {
+    CurrentPlatformAPI::GetInstance().SetScreenSize(width, height);
+}
+
+void SetScreenScale(float scale) {
+    CurrentPlatformAPI::GetInstance().SetScreenScale(scale);
+}
+
+Vector2 GetScreenCenter() {
+    return Vector2{static_cast<float>(GetScreenWidth()) / 2.0f, 
+                   static_cast<float>(GetScreenHeight()) / 2.0f};
+}
+
+Vector2 GetRenderScale() {
+    return CurrentTraits::GetRenderScale();
+}
+
+Rectangle GetSafeArea() {
+    return CurrentTraits::GetSafeArea();
+}
+
+float GetScreenDensity() {
+    return CurrentTraits::GetScreenDensity();
+}
+
+bool IsLandscape() {
+    return CurrentTraits::IsLandscape();
+}
+
+bool IsPortrait() {
+    return CurrentTraits::IsPortrait();
+}
+
+void SetPreferredOrientation(bool landscape) {
+    CurrentTraits::SetPreferredOrientation(landscape);
+}
+
+bool ShouldUseLargerTouchTargets() {
+    return CurrentTraits::ShouldUseLargerTouchTargets();
+}
+
+int GetRecommendedFontSize() {
+    return CurrentTraits::GetRecommendedFontSize();
+}
+
+// Additional functions that might be missing
+bool IsWindowFullscreen() {
+    // This would need to be implemented in the traits
     return false;
 }
 
-void PlatformAPI::SetMusicVolume(void* music, float volume) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->SetMusicVolume(music, volume);
-    }
+void SetWindowFocused() {
+    // This would need to be implemented in the traits
 }
 
-void PlatformAPI::PauseMusic(void* music) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->PauseMusic(music);
-    }
+void SetExitKey(int key) {
+    // This would need to be implemented in the traits
 }
 
-void PlatformAPI::ResumeMusic(void* music) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->ResumeMusic(music);
-    }
-}
-
-void PlatformAPI::SetMusicLooping(void* music, bool looping) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->SetMusicLooping(music, looping);
-    }
-}
-
-// ============================================================================
-// ADVANCED AUDIO FUNCTIONS
-// ============================================================================
-
-void* PlatformAPI::PreloadNextTrack(const char* fileName) {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->PreloadNextTrack(fileName);
-    }
-    return nullptr;
-}
-
-void PlatformAPI::SwitchToNextTrack() {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->SwitchToNextTrack();
-    }
-}
-
-void PlatformAPI::ClearNextTrack() {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->ClearNextTrack();
-    }
-}
-
-void PlatformAPI::StartCrossfade(float duration) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->StartCrossfade(duration);
-    }
-}
-
-void PlatformAPI::UpdateCrossfade(float deltaTime) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->UpdateCrossfade(deltaTime);
-    }
-}
-
-void PlatformAPI::CompleteCrossfade() {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->CompleteCrossfade();
-    }
-}
-
-void PlatformAPI::FadeOutMusic(float duration) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->FadeOutMusic(duration);
-    }
-}
-
-void PlatformAPI::FadeInMusic(float duration) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->FadeInMusic(duration);
-    }
-}
-
-void PlatformAPI::UpdateFade(float deltaTime) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->UpdateFade(deltaTime);
-    }
-}
-
-// ============================================================================
-// FONT AND TEXT FUNCTIONS
-// ============================================================================
-
-void* PlatformAPI::LoadFont(const char* fileName, int size) {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->LoadFont(fileName, size);
-    }
-    return nullptr;
-}
-
-void PlatformAPI::UnloadFont(void* font) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->UnloadFont(font);
-    }
-}
-
-Vector2 PlatformAPI::MeasureText(const char* text, void* font, float fontSize, float spacing) {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->MeasureText(text, font, fontSize, spacing);
-    }
-    return { 0, 0 };
-}
-
-void PlatformAPI::DrawText(const char* text, float x, float y, float fontSize, Color color, void* font) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->DrawText(text, x, y, fontSize, color, font);
-    }
-}
-
-// ============================================================================
-// INPUT FUNCTIONS
-// ============================================================================
-
-bool PlatformAPI::IsPrimaryInputDown() {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->IsPrimaryInputDown();
-    }
-    return false;
-}
-
-bool PlatformAPI::IsPrimaryInputPressed() {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->IsPrimaryInputPressed();
-    }
-    return false;
-}
-
-bool PlatformAPI::IsPrimaryInputReleased() {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->IsPrimaryInputReleased();
-    }
-    return false;
-}
-
-Vector2 PlatformAPI::GetPrimaryInputPosition() {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->GetPrimaryInputPosition();
-    }
-    return { 0, 0 };
-}
-
-bool PlatformAPI::IsSecondaryInputDown() {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->IsSecondaryInputDown();
-    }
-    return false;
-}
-
-bool PlatformAPI::IsSecondaryInputPressed() {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->IsSecondaryInputPressed();
-    }
-    return false;
-}
-
-bool PlatformAPI::IsSecondaryInputReleased() {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->IsSecondaryInputReleased();
-    }
-    return false;
-}
-
-bool PlatformAPI::IsTouchSupported() {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->IsTouchSupported();
-    }
-    return false;
-}
-
-int PlatformAPI::GetTouchCount() {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->GetTouchCount();
-    }
+int GetCurrentMonitor() {
+    // This would need to be implemented in the traits
     return 0;
 }
 
-Vector2 PlatformAPI::GetTouchPosition(int index) {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->GetTouchPosition(index);
-    }
-    return { 0, 0 };
+int GetMonitorWidth(int monitor) {
+    // This would need to be implemented in the traits
+    return 1920;
 }
 
-std::vector<Vector2> PlatformAPI::GetTouchPoints() {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->GetTouchPoints();
-    }
-    return {};
+int GetMonitorHeight(int monitor) {
+    // This would need to be implemented in the traits
+    return 1080;
 }
 
-// ============================================================================
-// SCREEN AND WINDOW FUNCTIONS
-// ============================================================================
-
-void PlatformAPI::InitWindow(int width, int height, const char* title) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->Initialize();
-    }
+void SetWindowPosition(int x, int y) {
+    // This would need to be implemented in the traits
 }
 
-void PlatformAPI::CloseWindow() {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->Shutdown();
-    }
-}
-
-bool PlatformAPI::WindowShouldClose() {
-    // iOS doesn't have a close window concept
-    return false;
-}
-
-void PlatformAPI::SetTargetFPS(int fps) {
-    // PlatformIOS will handle FPS limiting internally
-    // This could be implemented if needed
-}
-
-void PlatformAPI::BeginDrawing() {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->BeginDrawing(nullptr);
-    }
-}
-
-void PlatformAPI::EndDrawing() {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->EndDrawing(nullptr);
-    }
-}
-
-void PlatformAPI::ClearBackground(Color color) {
-    if (GetPlatformImpl()) {
-        // Draw a full-screen rectangle to clear the background
-        int width = GetScreenWidth();
-        int height = GetScreenHeight();
-        GetPlatformImpl()->DrawRectangle(0, 0, width, height, color);
-    }
-}
-
-int PlatformAPI::GetScreenWidth() {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->GetScreenWidth();
-    }
-    return 0;
-}
-
-int PlatformAPI::GetScreenHeight() {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->GetScreenHeight();
-    }
-    return 0;
-}
-
-Vector2 PlatformAPI::GetScreenSize() {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->GetScreenSize();
-    }
-    return { 0, 0 };
-}
-
-float PlatformAPI::GetScreenDensity() {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->GetScreenDensity();
-    }
-    return 1.0f;
-}
-
-float PlatformAPI::GetScreenScale() {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->GetScreenScale();
-    }
-    return 1.0f;
-}
-
-Rectangle PlatformAPI::GetSafeArea() {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->GetSafeArea();
-    }
-    return { 0, 0, 0, 0 };
-}
-
-bool PlatformAPI::IsWindowFullscreen() {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->IsWindowFullscreen();
-    }
-    return false;
-}
-
-void PlatformAPI::ToggleFullscreen() {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->ToggleFullscreen();
-    }
-}
-
-void PlatformAPI::SetWindowTitle(const std::string& title) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->SetWindowTitle(title);
-    }
-}
-
-void PlatformAPI::SetWindowSize(int width, int height) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->SetWindowSize(width, height);
-    }
-}
-
-bool PlatformAPI::SupportsFullscreen() {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->SupportsFullscreen();
-    }
-    return false;
-}
-
-// ============================================================================
-// UTILITY FUNCTIONS
-// ============================================================================
-
-double PlatformAPI::GetCurrentTime() {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->GetCurrentTime();
-    }
-    return 0.0;
-}
-
-float PlatformAPI::GetLastFrameTime() {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->GetLastFrameTime();
-    }
-    return 0.0f;
-}
-
-int PlatformAPI::GetLastFPS() {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->GetLastFPS();
-    }
-    return 0;
-}
-
-std::string PlatformAPI::GetResourcePath(const std::string& relativePath) {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->GetResourcePath(relativePath);
-    }
-    return "";
-}
-
-std::string PlatformAPI::GetSavePath(const std::string& filename) {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->GetSavePath(filename);
-    }
-    return "";
-}
-
-std::string PlatformAPI::GetPlatformResourcePath(const std::string& relativePath) {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->GetPlatformResourcePath(relativePath);
-    }
-    return "";
-}
-
-bool PlatformAPI::PreferLowPowerMode() {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->PreferLowPowerMode();
-    }
-    return false;
-}
-
-int PlatformAPI::GetRecommendedTextureSize() {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->GetRecommendedTextureSize();
-    }
-    return 1024;
-}
-
-void PlatformAPI::SetOrientation(bool landscape) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->SetOrientation(landscape);
-    }
-}
-
-void PlatformAPI::ShowVirtualKeyboard(bool show) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->ShowVirtualKeyboard(show);
-    }
-}
-
-bool PlatformAPI::IsVirtualKeyboardShown() {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->IsVirtualKeyboardShown();
-    }
-    return false;
-}
-
-void PlatformAPI::Vibrate(int milliseconds) {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->Vibrate(milliseconds);
-    }
-}
-
-// ============================================================================
-// APP LIFECYCLE
-// ============================================================================
-
-void PlatformAPI::OnAppWillResignActive() {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->OnAppWillResignActive();
-    }
-}
-
-void PlatformAPI::OnAppDidBecomeActive() {
-    if (GetPlatformImpl()) {
-        GetPlatformImpl()->OnAppDidBecomeActive();
-    }
-}
-
-// ============================================================================
-// PLATFORM DETECTION
-// ============================================================================
-
-bool PlatformAPI::IsMobilePlatform() {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->IsMobilePlatform();
-    }
-    return false;
-}
-
-bool PlatformAPI::IsTouchSupported() const {
-    if (GetPlatformImpl()) {
-        return GetPlatformImpl()->IsTouchSupported();
-    }
-    return false;
+void* CreateTextureFromImage(void* image, int* width, int* height) {
+    return CurrentTraits::CreateTextureFromImage(image, width, height);
 } 
+
+// ============================================================================
+// GLOBAL GAME INSTANCE MANAGEMENT (for iOS integration)
+// ============================================================================
+
+// Global game instance pointer
+static Game* g_gameInstance = nullptr;
+
+extern "C" Game* GetGameInstance() {
+    return g_gameInstance;
+}
+
+extern "C" void SetGameInstance(Game* game) {
+    g_gameInstance = game;
+}
+
+extern "C" void OnAppPause() {
+    if (g_gameInstance) {
+        // Pause the game when app goes to background
+        // This could call a pause method on the game instance
+    }
+}
+
+extern "C" void OnAppResume() {
+    if (g_gameInstance) {
+        // Resume the game when app comes to foreground
+        // This could call a resume method on the game instance
+    }
+}
+
+// Global game view management for iOS
+static void* g_globalGameView = nullptr;
+
+extern "C" void SetGlobalGameView(void* gameView) {
+    g_globalGameView = gameView;
+    TraceLog(LOG_INFO, "[PLATFORM] Global game view set: %p", gameView);
+}
+
+extern "C" void* GetGlobalGameView() {
+    return g_globalGameView;
+}
+
+extern "C" int game_main(int argc, char* argv[]) {
+    // Suppress unused parameter warnings
+    (void)argc;
+    (void)argv;
+    
+    // Initialize platform layer
+    CurrentPlatformAPI::GetInstance().Initialize();
+    
+    // Create the game instance
+    Game* game = new Game();
+    if (!game) {
+        TraceLog(LOG_ERROR, "[GAME] Failed to create Game instance");
+        return -1;
+    }
+    
+    // Set the game instance globally for iOS integration
+    SetGameInstance(game);
+    TraceLog(LOG_INFO, "[GAME] Game instance created and set globally: %p", game);
+    
+    // Initialize the game
+    if (!game->Initialize()) {
+        TraceLog(LOG_ERROR, "[GAME] Failed to initialize Game instance");
+        delete game;
+        SetGameInstance(nullptr);
+        return -2;
+    }
+    
+    TraceLog(LOG_INFO, "[GAME] Game initialization successful");
+    return 0;
+} 
+
+// RaylibTraits implementations
+// ColorFade is no longer a global function, so this implementation is removed.
+// The fade functionality is now handled by IOSTraits::Fade. 

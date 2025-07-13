@@ -112,9 +112,9 @@ private:
     Difficulty currentDifficulty = DIFFICULTY_NORMAL;
     int currentLevel = 1;
     
-    // Platform-specific audio objects (managed by AudioStateManager)
-    void* currentMusicPlayer = nullptr;  // AVAudioPlayer* (bridged)
-    void* nextMusicPlayer = nullptr;     // AVAudioPlayer* (bridged)
+    // Audio clip objects (managed by AudioStateManager)
+    std::unique_ptr<AudioClip> currentMusic;
+    std::unique_ptr<AudioClip> nextMusic;
     
     float musicVolume = 1.0f;
     float masterVolume = 1.0f;
@@ -134,14 +134,5 @@ private:
     // Initialize track mapping
     void InitializeTrackMapping();
     
-    // Platform-specific audio operations (delegates to PlatformIOS)
-    void* LoadMusicPlatform(const std::string& fileName);
-    void UnloadMusicPlatform(void* musicPlayer);
-    void PlayMusicPlatform(void* musicPlayer);
-    void StopMusicPlatform(void* musicPlayer);
-    void PauseMusicPlatform(void* musicPlayer);
-    void ResumeMusicPlatform(void* musicPlayer);
-    void SetMusicVolumePlatform(void* musicPlayer, float volume);
-    void SetMusicLoopingPlatform(void* musicPlayer, bool looping);
-    bool IsMusicPlayingPlatform(void* musicPlayer);
+
 }; 

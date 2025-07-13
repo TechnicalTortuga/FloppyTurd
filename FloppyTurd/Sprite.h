@@ -91,7 +91,7 @@ private:
 
 	// --- TextureAtlas support ---
 	bool isAtlased = false;
-	Texture2D atlasTexture = { 0, 0, 0, 0, 0 }; // Initialize with 5 values: id, width, height, mipmaps, format
+	Texture2D atlasTexture = { 0, 0, 0, 0, 0, nullptr }; // Initialize with 6 values: id, width, height, mipmaps, format, texture
 	Rectangle atlasRegion = { 0,0,0,0 }; // The region in the atlas for this sprite
 	AtlasCategory atlasCategory = AtlasCategory::PLAYER_SPRITES;
 };

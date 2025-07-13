@@ -1,4 +1,6 @@
 #pragma once
+#include <cstdarg>  // For va_list, va_start, va_end
+#include <cstdio>   // For printf
 #include "ResourceManager.h"
 #include "PlatformAPI.h"
 

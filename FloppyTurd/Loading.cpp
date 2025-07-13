@@ -1,12 +1,21 @@
 #include "Loading.h"
+#include "PlatformAPI.h"
 #include "ResourceManager.h"
 #include "UIManager.h"
 #include <thread>
 #include <iostream>
+#include <cstdarg>  // For va_list, va_start, va_end
+#include <cstdio>   // For printf
 #include "AudioStateManager.h"
 #include "FontCache.h"
 #include <future>
 #include "LogManager.h"
+
+// Forward declaration of TraceLog if not already included
+#ifndef TRACELOG_DEFINED
+#define TRACELOG_DEFINED
+void TraceLog(int logLevel, const char* text, ...);
+#endif
 
 Loading::Loading(Game* game)
     : game(game)
@@ -87,8 +96,8 @@ void Loading::Initialize() {
             poophat = ResourceManager::GetInstance().GetTexture("poop_hat");
             
             // Debug logging to see what we got
-            TraceLog(LOG_INFO, "Loading::Initialize() - poophat.id=%u, poophat.texture=%p, poophat.width=%d, poophat.height=%d", 
-                    poophat.id, poophat.id, poophat.width, poophat.height);
+            TraceLog(LOG_INFO, "Loading::Initialize() - poophat.id=%u, poophat.width=%d, poophat.height=%d", 
+                    poophat.id, poophat.width, poophat.height);
             GameLog::Log("[LOADING] poophat.id=%u, poophat.texture=%p, poophat.width=%d, poophat.height=%d", 
                         poophat.id, poophat.id, poophat.width, poophat.height);
             

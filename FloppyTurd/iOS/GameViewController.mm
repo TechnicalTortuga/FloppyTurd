@@ -1,23 +1,19 @@
 #import "GameViewController.h"
 #import <Metal/Metal.h>
-#import "RaylibCompat.h"
+#import <QuartzCore/QuartzCore.h>
 #import "Game.h"
-#import "PlatformLayerDelegate.h"
+#import "GameView.h"
 #import "MetalRenderer.h"
-#import "RaylibCompat_iOS.h"
 #import "UIManager.h"
-#import "PlatformLayer.h"
+#import "PlatformAPI.h"
 
 // Game state
 extern "C++" {
-    Game* GetGameInstance();
+    extern "C" Game* GetGameInstance();
 }
 
 // Include our C++ game headers
 extern "C" int game_main(int argc, char *argv[]);
-
-// Forward declaration for global GameView pointer
-extern "C" void SetGlobalGameView(GameView* gameView);
 
 @interface GameViewController () {
     GameView *_gameView;
@@ -69,11 +65,8 @@ extern "C" void SetGlobalGameView(GameView* gameView);
     // Create game queue for background operations
     _gameQueue = dispatch_queue_create("com.floppyturd.game", DISPATCH_QUEUE_SERIAL);
     
-    // CRITICAL: Initialize PlatformLayer BEFORE calling game_main
-    NSLog(@"[INIT] Initializing PlatformLayer with GameView: %p", _gameView);
-    PlatformLayer& platformLayer = PlatformLayer::GetInstance();
-    platformLayer.Initialize((__bridge void*)_gameView);
-    NSLog(@"[INIT] PlatformLayer initialized successfully");
+    // CRITICAL: Initialize PlatformAPI BEFORE calling game_main
+    NSLog(@"[INIT] PlatformAPI is already initialized");
     
     // --- Metal/iOS Native Pixel Initialization ---
     UIScreen* screen = [UIScreen mainScreen];
@@ -259,8 +252,8 @@ extern "C" void SetGlobalGameView(GameView* gameView);
     
     // GameView handles its own cleanup
     
-    // PlatformLayer is a singleton that manages its own lifetime
-    NSLog(@"[CLEANUP] PlatformLayer cleanup handled by singleton");
+    // PlatformAPI is a singleton that manages its own lifetime
+    NSLog(@"[CLEANUP] PlatformAPI cleanup handled by singleton");
     
     // ARC will handle the rest of the Objective-C objects
 }

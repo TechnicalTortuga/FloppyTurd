@@ -103,7 +103,7 @@ public:
     std::vector<std::string> GetLoadedResources() const;
     const std::unordered_map<std::string, ResourceInfo>& GetResourceRegistry() const { return resourceRegistry; }
     // New public API to get resolved resource path
-    std::string GetResourcePath(const std::string& id, ResourceType type);
+    std::string GetResourcePathForType(const std::string& id, ResourceType type);
 
     // Utility: Parse a resource path into directory, base name, and extension
     static ResourcePathParts ParseResourcePath(const std::string& path);

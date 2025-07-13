@@ -29,10 +29,9 @@ public:
     void ClearAllTouchStates();
     std::vector<Vector2> GetTouchPoints() const;
     
-    // Existing gameplay-specific methods
-    bool IsJumpPressed() const { return jumpPressed; }
-    bool IsShootPressed() const { return shootPressed; }
-    bool IsShootHeld() const { return shootHeld; }
+    // General input methods (no gameplay logic)
+    bool IsTouchInZone(const Rectangle& zone) const;
+    bool IsMultiTouch() const { return touchCount > 1; }
     
     // Gesture recognition
     bool IsGestureDetected(int gesture) const;
@@ -44,32 +43,18 @@ public:
     void SetEnabled(bool enabled) { isEnabled = enabled; }
     bool IsEnabled() const { return isEnabled; }
     
-    // Enable/disable shoot bar (for when shooting is unlocked)
-    void SetShootingEnabled(bool enabled) { shootingEnabled = enabled; }
-
 private:
     bool isEnabled = true;
-    bool shootingEnabled = false;
     
     // Screen dimensions
     int screenWidth = 0;
     int screenHeight = 0;
-    
-    // Touch zones
-    Rectangle shootZone;    // Bottom bar for shooting
-    Rectangle jumpZone;     // Rest of the screen for jumping
     
     // Raw touch state (instance-based, not static)
     bool primaryInputDown = false;
     bool primaryInputPressed = false;
     bool primaryInputReleased = false;
     Vector2 primaryInputPosition = {0, 0};
-    
-    // Input states (gameplay-specific)
-    bool jumpPressed = false;
-    bool shootPressed = false;
-    bool shootHeld = false;
-    bool previousShootHeld = false;
     
     // Gesture tracking
     int detectedGestures = 0; // Bitfield of detected gestures
@@ -78,11 +63,6 @@ private:
     float gestureStartTime = 0.0f;
     float gestureDuration = 0.0f;
     int touchCount = 0; // Number of active touches for multi-touch gestures
-    
-    // Visual settings
-    const float SHOOT_BAR_HEIGHT = 30.0f; // Height of the shoot bar at bottom
-    const Color SHOOT_BAR_COLOR = { 255, 200, 100, 80 };
-    const Color SHOOT_BAR_ACTIVE = { 255, 200, 100, 160 };
     
     // Gesture detection thresholds
     const float SWIPE_MIN_DISTANCE = 50.0f; // Minimum distance for swipe detection

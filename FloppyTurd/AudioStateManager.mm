@@ -348,7 +348,7 @@ void AudioStateManager::LoadAndPlayTrack(const AudioTrackInfo& trackInfo) {
         }
         
         // Get the resolved path from ResourceManager
-        std::string resolvedPath = ResourceManager::GetInstance().GetResourcePath(
+        std::string resolvedPath = ResourceManager::GetInstance().GetResourcePathForType(
             finalTrackPath, ResourceType::MUSIC);
         
         if (resolvedPath.empty()) {
@@ -492,7 +492,7 @@ void AudioStateManager::PlayTrack(const std::string& trackName, bool loop) {
     GameLog::Log("[AUDIO] Force playing track: %s (loop: %s)", trackName.c_str(), loop ? "true" : "false");
     
     try {
-        std::string resolvedPath = ResourceManager::GetInstance().GetResourcePath(trackName, ResourceType::MUSIC);
+        std::string resolvedPath = ResourceManager::GetInstance().GetResourcePathForType(trackName, ResourceType::MUSIC);
         
         if (resolvedPath.empty()) {
             GameLog::Log("[AUDIO] ERROR: Failed to resolve path for %s", trackName.c_str());

@@ -1,0 +1,636 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project FloppyTurd.xcodeproj -scheme FloppyTurd -destination "platform=iOS Simulator,name=iPhone 16" build
+
+User defaults from command line:
+    IDEPackageSupportUseBuiltinSCM = YES
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (2 targets)
+    Target 'FloppyTurd' in project 'FloppyTurd'
+        ➜ Explicit dependency on target 'ZERO_CHECK' in project 'FloppyTurd'
+    Target 'ZERO_CHECK' in project 'FloppyTurd' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.2.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.2.sdk -x c++ -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.2.sdk -x objective-c++ -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --print-asset-tag-combinations --output-format xml1 /Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --version --output-format xml1
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.2.sdk -x c -c /dev/null
+
+Build description signature: b42a89381263d142c0ec72f226ec34be
+Build description path: /Users/aimac/Development/FloppyTurd/build/XCBuildData/b42a89381263d142c0ec72f226ec34be.xcbuilddata
+ClangStatCache /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.2.sdk /Users/aimac/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator18.2-22C146-07b28473f605e47e75261259d3ef3b5a.sdkstatcache
+    cd /Users/aimac/Development/FloppyTurd/FloppyTurd.xcodeproj
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.2.sdk -o /Users/aimac/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator18.2-22C146-07b28473f605e47e75261259d3ef3b5a.sdkstatcache
+
+PhaseScriptExecution Generate\ CMakeFiles/ZERO_CHECK /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/ZERO_CHECK.build/Script-0D5912483BC1DD92F2BBAF6F.sh (in target 'ZERO_CHECK' from project 'FloppyTurd')
+    cd /Users/aimac/Development/FloppyTurd
+    /bin/sh -c /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/ZERO_CHECK.build/Script-0D5912483BC1DD92F2BBAF6F.sh
+make: `/Users/aimac/Development/FloppyTurd/CMakeFiles/cmake.check_cache' is up to date.
+
+PhaseScriptExecution CMake\ PreBuild\ Rules /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Script-3B65F119560F08E4C38CD92B.sh (in target 'FloppyTurd' from project 'FloppyTurd')
+    cd /Users/aimac/Development/FloppyTurd
+    /bin/sh -c /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Script-3B65F119560F08E4C38CD92B.sh
+Generating asset catalog from resources...
+Processed image: enemies/SnowManChill
+Processed image: enemies/BirdHurt
+Processed image: enemies/BirdIdle
+Processed image: enemies/RatkingHurt
+Processed image: enemies/SnowManThrow
+Processed image: enemies/RatCopterIdle
+Processed image: enemies/RatCopterHurt
+Processed image: enemies/SnowManChad
+Processed image: enemies/RatkingDeath
+Processed image: enemies/SnowManGreen
+Processed image: enemies/Ratking
+Processed image: enemies/ToiletPaperHit
+Processed image: enemies/toiletpaperprojectile
+Processed image: enemies/RatkingAimTossArmOnly
+Processed image: enemies/RatkingAimTorsoOnly
+Processed image: enemies/ToiletPaperFlap
+Processed image: enemies/RatkingAimBackArmOnly
+Processed image: enemies/RatkingWalk
+Processed image: enemies/SnowManIdle
+Processed image: environment/Cacti
+Processed image: environment/Snowfall
+Processed image: environment/SnowLevelMountains
+Processed image: environment/SewerBackgroundRunningWater
+Processed image: environment/BottomPipeWideBlue
+Processed image: environment/SnowLevelFrontTrees
+Processed image: environment/Level3MidLayerBackground
+Processed image: environment/BottomToiletSnow
+Processed image: environment/TopToilet
+Processed image: environment/Level1MidLayerBackground
+Processed image: environment/bosspillar
+Processed image: environment/dancingcacti
+Processed image: environment/castlelevelfloorceiling
+Processed image: environment/SnowLevelTundra
+Processed image: environment/BossFloor
+Processed image: environment/Level1Clouds
+Processed image: environment/castlelevelfloortorch
+Processed image: environment/SnowLevelBackground
+Processed image: environment/dancingcactismall
+Processed image: environment/Level3FrontLayerBackground
+Processed image: environment/BottomToilet
+Processed image: environment/BottomToiletGold-export
+Processed image: environment/TopToiletSnow
+Processed image: environment/sewerwidevarA
+Processed image: environment/sewerwidevarB
+Processed image: environment/Level1FrontLayerBackground
+Processed image: environment/sewerwidevarC
+Processed image: environment/OuthouseToilet
+Processed image: environment/BottomToiletGold
+Processed image: environment/BottomPipeWide
+Processed image: environment/snow_tile
+Processed image: environment/BossWalls
+Processed image: environment/sewerwidevarD
+Processed image: environment/Level1BackLayerBackground
+Processed image: environment/ratkingbackground
+Processed image: environment/sewerwidevarE
+Processed image: environment/TopPipeWideBlue
+Processed image: environment/castlelevelchandelier
+Processed image: environment/dancingcacticowboy
+Processed image: environment/TopPipeWide
+Processed image: environment/TorchPillar
+Processed image: environment/darkclouds
+Processed image: environment/sewerrunningwaterwide
+Processed image: environment/TopToiletGold
+Processed image: environment/Outhouse
+Processed image: environment/castlelevelbackgroundwall
+Processed image: environment/screenCurtains
+Processed image: environment/Level3BackLayerBackground
+Processed image: environment/SnowLevelBackTrees
+Processed image: environment/curtains
+Processed image: hats/ramsesbigturdshoot
+Processed image: hats/poophatturdletshoot
+Processed image: hats/shellhatturdletjump
+Processed image: hats/pinwheelbigturdshoot
+Processed image: hats/berethatbigturdjump
+Processed image: hats/ballcapturdletjump
+Processed image: hats/tophatbigturdshoot
+Processed image: hats/flowerhatbigturdshoot
+Processed image: hats/ramsesturdletjump
+Processed image: hats/crownhatturdletjump
+Processed image: hats/shellhatbigturdshoot
+Processed image: hats/cowboyhatturdlet
+Processed image: hats/ushanka
+Processed image: hats/samuraibigturdjump
+Processed image: hats/spartanhatturdletshoot
+Processed image: hats/dooragbigturdjump
+Processed image: hats/ushankaturdletshoot
+Processed image: hats/PinwheelHat
+Processed image: hats/ushankabigturdjump
+Processed image: hats/dooragbigturdshoot
+Processed image: hats/crownhatbigturdjump
+Processed image: hats/berethatbigturdshoot
+Processed image: hats/ramsesbigturdjump
+Processed image: hats/berethatturdletjump
+Processed image: hats/ballcapbigturdshoot
+Processed image: hats/ballcapbigturdjump
+Processed image: hats/shellhatbigturdjump
+Processed image: hats/strawhatturdletshoot
+Processed image: hats/samuraibigturdshoot
+Processed image: hats/poophat
+Processed image: hats/ushankaturdletjump
+Processed image: hats/dooraghat
+Processed image: hats/dooragturdletjump
+Processed image: hats/samuraiturdletjump
+Processed image: hats/crownhatturdletshoot
+Processed image: hats/ballcap
+Processed image: hats/cowboyhatbigturdshoot
+Processed image: hats/placeholder
+Processed image: hats/tophatbigturdjump
+Processed image: hats/flowerhatturdletjump
+Processed image: hats/poophatturdletjump
+Processed image: hats/SpartanHelmet
+Processed image: hats/spartanhatturdletjump
+Processed image: hats/SamuraiHelmet
+Processed image: hats/cowboyhatturdletshoot
+Processed image: hats/crownhatbigturdshoot
+Processed image: hats/cowboyhatteenage
+Processed image: hats/berethatturdletshoot
+Processed image: hats/cowboyhat
+Processed image: hats/dooragturdletshoot
+Processed image: hats/pinwheelbigturdjump
+Processed image: hats/cowboyhatturdletjump
+Processed image: hats/shellhat
+Processed image: hats/ballcapturdletshoot
+Processed image: hats/strawhatturdletjump
+Processed image: hats/samuraiturdletshoot
+Processed image: hats/strawhatbigturdshoot
+Processed image: hats/shellhatturdletshoot
+Processed image: hats/RamsesHat
+Processed image: hats/Beret
+Processed image: hats/spartanhatbigturdshoot
+Processed image: hats/spartanhatbigturdjump
+Processed image: hats/flowerhat
+Processed image: hats/ushankabigturdshoot
+Processed image: hats/poophatbigturdjump
+Processed image: hats/flowerhatbigturdjump
+Processed image: hats/tophatturdletjump
+Processed image: hats/pinwheelturdletshoot
+Processed image: hats/cowboyhatteenageshoot
+Processed image: hats/ramsesturdletshoot
+Processed image: hats/poophatbigturdshoot
+Processed image: hats/strawhatbigturdjump
+Processed image: hats/tophat
+Processed image: hats/crown
+Processed image: hats/strawhat
+Processed image: hats/flowerhatturdletshoot
+Processed image: hats/cowboyhatbigturdjump
+Processed image: hats/tophatturdletshoot
+Processed image: hats/pinwheelturdletjump
+Processed image: hats/cowboyhatbigturd
+Processed image: mainmenu/FloppyLogo
+Processed image: mainmenu/RatKingPainting
+Processed image: mainmenu/DesertLevelPainting
+Processed image: mainmenu/LockedPainting
+Processed image: mainmenu/EmptyPainting
+Processed image: mainmenu/ParkLevelPainting
+Processed image: mainmenu/MainMenuMobile
+Processed image: mainmenu/MainMenu
+Processed image: mainmenu/CastleLevelPainting
+Processed image: mainmenu/SnowLevelPainting
+Processed image: mainmenu/SewerLevelPainting
+Processed image: mainmenu/F
+Processed image: objects/BlueCoin
+Processed image: objects/RatBeachPainting
+Processed image: objects/CactiBush
+Processed image: objects/PooHeartRainbowBeam
+Processed image: objects/JanitorSweep
+Processed image: objects/Janitor
+Processed image: objects/PooHeartRainbow
+Processed image: objects/RiverWalkPainting
+Processed image: objects/JanitorSurprise
+Processed image: objects/SpikeBallBase
+Processed image: objects/Snowball
+Processed image: objects/BrickWall
+Processed image: objects/SpikeBall
+Processed image: objects/RedCoin
+Processed image: objects/GoldCoin
+Processed image: objects/PooHeartBig
+Processed image: objects/CactiC
+Processed image: objects/CactiB
+Processed image: objects/PooHeart
+Processed image: objects/CactiA
+Processed image: objects/CactiE
+Processed image: objects/CactiD
+Processed image: objects/CabinPainting
+Processed image: objects/RabbitKnightPainting
+Processed image: turd/Floppy Poop Mid
+Processed image: turd/TeenageTurdShoot
+Processed image: turd/Floppy Poop
+Processed image: turd/BigTurdShoot
+Processed image: turd/TeenageTurdJump
+Processed image: turd/TurdletShoot
+Processed image: turd/BigTurdHurt
+Processed image: turd/BigTurdIdle
+Processed image: turd/TurdletJump
+Processed image: turd/TeenageTurdHurt
+Processed image: turd/TeenageTurdIdle
+Processed image: turd/BigTurdJump
+Processed image: turd/TurdletIdle
+Processed image: turd/Floppy Poop Large
+Processed image: turd/TurdletHurt
+Processed image: ui/BossBarFrame
+Processed image: ui/mutebuttonclicked
+Processed image: ui/TurdHeart2ThirdsHollow
+Processed image: ui/HatFrameSelected
+Processed image: ui/TurdPointButtonClaimed
+Processed image: ui/TurdPointButtonAvailable
+Processed image: ui/achievementicon
+Processed image: ui/volumemeterempty
+Processed image: ui/SkillMenuBorder
+Processed image: ui/TryAgainBackground
+Processed image: ui/TurdPointMenu
+Processed image: ui/RightArrowHover
+Processed image: ui/HatFrameLocked
+Processed image: ui/TurdHeart2Thirds
+Processed image: ui/TurdHeart
+Processed image: ui/minusbuttonhover
+Processed image: ui/TurdHeart0HalfHollow
+Processed image: ui/TurdPointButtonFocused
+Processed image: ui/mutebutton
+Processed image: ui/mutebuttonlockedclicked
+Processed image: ui/SkillPointInfoBackground
+Processed image: ui/achievementiconunlocked
+Processed image: ui/TurdPointButton
+Processed image: ui/HatFrameDenied
+Processed image: ui/mutebuttonhover
+Processed image: ui/TurdHeart1Half
+Processed image: ui/TurdHeart2ThirdsHollow2Thirds
+Processed image: ui/CoinBag
+Processed image: ui/plusbuttonhover
+Processed image: ui/RightArrow
+Processed image: ui/LeftArrow
+Processed image: ui/HatFrame
+Processed image: ui/TurdHeartHollow
+Processed image: ui/GameOverBackground
+Processed image: ui/FloppyTurdMorte
+Processed image: ui/PauseMenuBackground
+Processed image: ui/BossBarHealth
+Processed image: ui/GameOverScore
+Processed image: ui/TurdHeart1ThirdHollow
+Processed image: ui/Score
+Processed image: ui/HatFrameHover
+Processed image: ui/mutebuttonlockedhover
+Processed image: ui/LeftArrowHover
+Processed image: ui/minusbuttonclicked
+Processed image: ui/TurdHeart1ThirdsHollow1Thirds
+Processed image: ui/UpArrow
+Processed image: ui/FloppyButtonBlueHover
+Processed image: ui/TurdHeart0ThirdHollow
+Processed image: ui/BossBarHurt
+Processed image: ui/TurdHeart1HalfHollow
+Processed image: ui/RatkingStatic
+Processed image: ui/TurdHeart1Third
+Processed image: ui/TurdHeart0ThirdHollow1Third
+Processed image: ui/a
+Processed image: ui/minusbutton
+Processed image: ui/TurdHeart0HalfHollow1Half
+Processed image: ui/TurdHeartSmall
+Processed image: ui/volumemeterfull
+Processed image: ui/plusbutton
+Processed image: ui/DownArrow
+Processed image: ui/plusbuttonclicked
+Processed image: ui/ScoreSmall
+Processed image: ui/mutebuttonlocked
+Processed image: ui/FloppyTurdCreditsBackground
+Processed image: ui/FloppyButtonBlue
+Processed image: vfx/blast_big
+Processed image: vfx/blast_small
+Processed audio: music/BossLevel
+Processed audio: music/SewerSlow
+Processed audio: music/ParkFast
+Processed audio: music/CastleFast
+Processed audio: music/BossThemeLowHealth
+Processed audio: music/BeachLevel
+Processed audio: music/SnowSlow
+Processed audio: music/DesertSlow
+Processed audio: music/BossThemeSlow
+Processed audio: music/BossKill
+Processed audio: music/gameover
+Processed audio: music/SewerFast
+Processed audio: music/BossThemeLowHealth
+Processed audio: music/SnowLevel
+Processed audio: music/FloppyBossSlowFartless
+Processed audio: music/MenuFast
+Processed audio: music/DesertLevel
+Processed audio: music/ParkSlow
+Processed audio: music/CastleSlow
+Processed audio: music/CastleFastFart
+Processed audio: music/ParkLevel
+Processed audio: music/SewerLevel
+Processed audio: music/SnowFast
+Processed audio: music/CastleLevel
+Processed audio: music/EndTheme
+Processed audio: music/BossThemeFast
+Processed audio: music/DesertFast
+Processed audio: sounds/BigHealthPickup
+Processed audio: sounds/fart11
+Processed audio: sounds/fart10
+Processed audio: sounds/fart9
+Processed audio: sounds/fart8
+Processed audio: sounds/pickup
+Processed audio: sounds/fart6
+Processed audio: sounds/fart7
+Processed audio: sounds/hurt
+Processed audio: sounds/fart5
+Processed audio: sounds/fart4
+Processed audio: sounds/fart1
+Processed audio: sounds/fart3
+Processed audio: sounds/RatKingScreech
+Processed audio: sounds/fart2
+Processed audio: sounds/ratkill
+Processed audio: sounds/confirm
+Processed audio: sounds/SmallHealthPickup
+Processed audio: sounds/tpkill
+Processed audio: mainmenu/FloppyTurdMenuAlt
+Processed audio: mainmenu/FloppyTurdMenu
+Processed fonts
+Asset catalog generation complete at: /Users/aimac/Development/FloppyTurd/scripts/../FloppyTurd/Assets.xcassets
+
+CompileAssetCatalog /Users/aimac/Development/FloppyTurd/Debug-iphonesimulator/FloppyTurd.app /Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets (in target 'FloppyTurd' from project 'FloppyTurd')
+    cd /Users/aimac/Development/FloppyTurd
+    /Applications/Xcode.app/Contents/Developer/usr/bin/actool --output-format human-readable-text --notices --warnings --export-dependency-info /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/assetcatalog_dependencies --output-partial-info-plist /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/assetcatalog_generated_info.plist --compress-pngs --enable-on-demand-resources YES --filter-for-thinning-device-configuration iPhone17,3 --filter-for-device-os-version 18.3.1 --development-region en --target-device iphone --target-device ipad --minimum-deployment-target 13.0 --platform iphonesimulator --compile /Users/aimac/Development/FloppyTurd/Debug-iphonesimulator/FloppyTurd.app /Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets
+
+GenerateAssetSymbols /Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets (in target 'FloppyTurd' from project 'FloppyTurd')
+    cd /Users/aimac/Development/FloppyTurd
+    /Applications/Xcode.app/Contents/Developer/usr/bin/actool --output-format human-readable-text --notices --warnings --export-dependency-info /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/assetcatalog_dependencies --output-partial-info-plist /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/assetcatalog_generated_info.plist --compress-pngs --enable-on-demand-resources YES --development-region en --target-device iphone --target-device ipad --minimum-deployment-target 13.0 --platform iphonesimulator --compile /Users/aimac/Development/FloppyTurd/Debug-iphonesimulator/FloppyTurd.app /Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets --bundle-identifier com.floppyturd.game --generate-objc-asset-symbols /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/DerivedSources/GeneratedAssetSymbols.h --generate-asset-symbol-index /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/DerivedSources/GeneratedAssetSymbols-Index.plist
+/* com.apple.actool.document.warnings */
+/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets:./music/Level5.dataset/(null)[2d][Level5.ogg]: warning: The data set "Level5" has an unassigned child.
+/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets:./music/BossThemeLowHealth.dataset/(null)[2d][BossThemeLowHealth.ogg]: warning: The data set "BossThemeLowHealth" has an unassigned child.
+/* com.apple.actool.compilation-results */
+/Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/DerivedSources/GeneratedAssetSymbols-Index.plist
+/Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/DerivedSources/GeneratedAssetSymbols.h
+
+
+CompileC /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/TextureAtlas.o /Users/aimac/Development/FloppyTurd/FloppyTurd/TextureAtlas.cpp normal arm64 c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'FloppyTurd' from project 'FloppyTurd')
+    cd /Users/aimac/Development/FloppyTurd
+    
+    Using response file: /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp
+    
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -ivfsstatcache /Users/aimac/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator18.2-22C146-07b28473f605e47e75261259d3ef3b5a.sdkstatcache -fmessage-length\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\=0 -fno-color-diagnostics -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wshorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wno-implicit-fallthrough -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -index-store-path /Users/aimac/Library/Developer/Xcode/DerivedData/FloppyTurd-gmfqtifroyfasvcubqfvsxhpuoel/Index.noindex/DataStore -Wall -Wextra @/Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp -MMD -MT dependencies -MF /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/TextureAtlas.d --serialize-diagnostics /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/TextureAtlas.dia -c /Users/aimac/Development/FloppyTurd/FloppyTurd/TextureAtlas.cpp -o /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/TextureAtlas.o -index-unit-output-path /FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/TextureAtlas.o
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/TextureAtlas.cpp:1:
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/TextureAtlas.h:2:
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.h:14:
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformTraits.h:5:
+/Users/aimac/Development/FloppyTurd/FloppyTurd/GlobalStateManager.h:210:35: warning: unused parameter 'safeArea' [-Wunused-parameter]
+  210 |     void UpdateSafeArea(Rectangle safeArea) {
+      |                                   ^
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/TextureAtlas.cpp:1:
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/TextureAtlas.h:2:
+/Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.h:907:9: warning: 'KEY_F11' macro redefined [-Wmacro-redefined]
+  907 | #define KEY_F11 290
+      |         ^
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/TextureAtlas.cpp:1:
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/TextureAtlas.h:2:
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.h:13:
+/Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformTypes.h:305:9: note: previous definition is here
+  305 | #define KEY_F11              300
+      |         ^
+/Users/aimac/Development/FloppyTurd/FloppyTurd/TextureAtlas.cpp:27:45: warning: unused parameter 'category' [-Wunused-parameter]
+   27 | bool TextureAtlas::BuildAtlas(AtlasCategory category, const std::vector<std::string>& texturePaths, int maxAtlasSize) {
+      |                                             ^
+/Users/aimac/Development/FloppyTurd/FloppyTurd/TextureAtlas.cpp:27:87: warning: unused parameter 'texturePaths' [-Wunused-parameter]
+   27 | bool TextureAtlas::BuildAtlas(AtlasCategory category, const std::vector<std::string>& texturePaths, int maxAtlasSize) {
+      |                                                                                       ^
+/Users/aimac/Development/FloppyTurd/FloppyTurd/TextureAtlas.cpp:27:105: warning: unused parameter 'maxAtlasSize' [-Wunused-parameter]
+   27 | bool TextureAtlas::BuildAtlas(AtlasCategory category, const std::vector<std::string>& texturePaths, int maxAtlasSize) {
+      |                                                                                                         ^
+/Users/aimac/Development/FloppyTurd/FloppyTurd/TextureAtlas.cpp:48:26: warning: missing field 'texture' initializer [-Wmissing-field-initializers]
+   48 |     return {0, 0, 0, 0, 0};
+      |                          ^
+/Users/aimac/Development/FloppyTurd/FloppyTurd/TextureAtlas.cpp:75:59: warning: unused parameter 'images' [-Wunused-parameter]
+   75 | bool TextureAtlas::PackTextures(const std::vector<Image>& images, const std::vector<std::string>& paths,
+      |                                                           ^
+/Users/aimac/Development/FloppyTurd/FloppyTurd/TextureAtlas.cpp:75:99: warning: unused parameter 'paths' [-Wunused-parameter]
+   75 | bool TextureAtlas::PackTextures(const std::vector<Image>& images, const std::vector<std::string>& paths,
+      |                                                                                                   ^
+/Users/aimac/Development/FloppyTurd/FloppyTurd/TextureAtlas.cpp:76:36: warning: unused parameter 'maxSize' [-Wunused-parameter]
+   76 |                                int maxSize, Image& atlasImage, std::vector<AtlasEntry>& entries) {
+      |                                    ^
+/Users/aimac/Development/FloppyTurd/FloppyTurd/TextureAtlas.cpp:76:52: warning: unused parameter 'atlasImage' [-Wunused-parameter]
+   76 |                                int maxSize, Image& atlasImage, std::vector<AtlasEntry>& entries) {
+      |                                                    ^
+/Users/aimac/Development/FloppyTurd/FloppyTurd/TextureAtlas.cpp:76:89: warning: unused parameter 'entries' [-Wunused-parameter]
+   76 |                                int maxSize, Image& atlasImage, std::vector<AtlasEntry>& entries) {
+      |                                                                                         ^
+/Users/aimac/Development/FloppyTurd/FloppyTurd/TextureAtlas.cpp:81:58: warning: unused parameter 'root' [-Wunused-parameter]
+   81 | TextureAtlas::PackNode* TextureAtlas::FindNode(PackNode* root, int width, int height) {
+      |                                                          ^
+/Users/aimac/Development/FloppyTurd/FloppyTurd/TextureAtlas.cpp:81:68: warning: unused parameter 'width' [-Wunused-parameter]
+   81 | TextureAtlas::PackNode* TextureAtlas::FindNode(PackNode* root, int width, int height) {
+      |                                                                    ^
+/Users/aimac/Development/FloppyTurd/FloppyTurd/TextureAtlas.cpp:81:79: warning: unused parameter 'height' [-Wunused-parameter]
+   81 | TextureAtlas::PackNode* TextureAtlas::FindNode(PackNode* root, int width, int height) {
+      |                                                                               ^
+/Users/aimac/Development/FloppyTurd/FloppyTurd/TextureAtlas.cpp:86:59: warning: unused parameter 'node' [-Wunused-parameter]
+   86 | TextureAtlas::PackNode* TextureAtlas::SplitNode(PackNode* node, int width, int height) {
+      |                                                           ^
+/Users/aimac/Development/FloppyTurd/FloppyTurd/TextureAtlas.cpp:86:69: warning: unused parameter 'width' [-Wunused-parameter]
+   86 | TextureAtlas::PackNode* TextureAtlas::SplitNode(PackNode* node, int width, int height) {
+      |                                                                     ^
+/Users/aimac/Development/FloppyTurd/FloppyTurd/TextureAtlas.cpp:86:80: warning: unused parameter 'height' [-Wunused-parameter]
+   86 | TextureAtlas::PackNode* TextureAtlas::SplitNode(PackNode* node, int width, int height) {
+      |                                                                                ^
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/TextureAtlas.cpp:1:
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/TextureAtlas.h:2:
+/Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.h:712:20: warning: unused function 'TextFormat' [-Wunused-function]
+  712 | static const char* TextFormat(const char* text, ...);
+      |                    ^~~~~~~~~~
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/TextureAtlas.cpp:1:
+/Users/aimac/Development/FloppyTurd/FloppyTurd/TextureAtlas.h:89:9: warning: private field 'maxMobileAtlasSize' is not used [-Wunused-private-field]
+   89 |     int maxMobileAtlasSize = 1024;
+      |         ^
+
+CompileC /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/PlatformAPI.o /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.cpp normal arm64 c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'FloppyTurd' from project 'FloppyTurd')
+    cd /Users/aimac/Development/FloppyTurd
+    
+    Using response file: /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp
+    
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -ivfsstatcache /Users/aimac/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator18.2-22C146-07b28473f605e47e75261259d3ef3b5a.sdkstatcache -fmessage-length\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\=0 -fno-color-diagnostics -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wshorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wno-implicit-fallthrough -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -index-store-path /Users/aimac/Library/Developer/Xcode/DerivedData/FloppyTurd-gmfqtifroyfasvcubqfvsxhpuoel/Index.noindex/DataStore -Wall -Wextra @/Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp -MMD -MT dependencies -MF /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/PlatformAPI.d --serialize-diagnostics /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/PlatformAPI.dia -c /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.cpp -o /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/PlatformAPI.o -index-unit-output-path /FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/PlatformAPI.o
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.cpp:1:
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.h:14:
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformTraits.h:5:
+/Users/aimac/Development/FloppyTurd/FloppyTurd/GlobalStateManager.h:210:35: warning: unused parameter 'safeArea' [-Wunused-parameter]
+  210 |     void UpdateSafeArea(Rectangle safeArea) {
+      |                                   ^
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.cpp:1:
+/Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.h:907:9: warning: 'KEY_F11' macro redefined [-Wmacro-redefined]
+  907 | #define KEY_F11 290
+      |         ^
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.cpp:1:
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.h:13:
+/Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformTypes.h:305:9: note: previous definition is here
+  305 | #define KEY_F11              300
+      |         ^
+/Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.cpp:680:21: warning: unused parameter 'key' [-Wunused-parameter]
+  680 | void SetExitKey(int key) {
+      |                     ^
+/Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.cpp:689:25: warning: unused parameter 'monitor' [-Wunused-parameter]
+  689 | int GetMonitorWidth(int monitor) {
+      |                         ^
+/Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.cpp:694:26: warning: unused parameter 'monitor' [-Wunused-parameter]
+  694 | int GetMonitorHeight(int monitor) {
+      |                          ^
+/Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.cpp:699:28: warning: unused parameter 'x' [-Wunused-parameter]
+  699 | void SetWindowPosition(int x, int y) {
+      |                            ^
+/Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.cpp:699:35: warning: unused parameter 'y' [-Wunused-parameter]
+  699 | void SetWindowPosition(int x, int y) {
+      |                                   ^
+/Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.cpp:754:5: error: use of class template 'PlatformAPI' requires template arguments
+  754 |     PlatformAPI::Initialize();
+      |     ^
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.cpp:1:
+/Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.h:50:7: note: template is declared here
+   49 | template <typename Traits>
+      | ~~~~~~~~~~~~~~~~~~~~~~~~~~
+   50 | class PlatformAPI {
+      |       ^
+/Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.cpp:757:22: error: allocation of incomplete type 'Game'
+  757 |     Game* game = new Game();
+      |                      ^~~~
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.cpp:1:
+/Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.h:5:7: note: forward declaration of 'Game'
+    5 | class Game;  // Forward declaration for Game class
+      |       ^
+/Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.cpp:758:9: error: member access into incomplete type 'Game'
+  758 |     game->RunGameDesktop();
+      |         ^
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.cpp:1:
+/Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.h:5:7: note: forward declaration of 'Game'
+    5 | class Game;  // Forward declaration for Game class
+      |       ^
+/Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.cpp:759:5: warning: deleting pointer to incomplete type 'Game' may cause undefined behavior [-Wdelete-incomplete]
+  759 |     delete game;
+      |     ^      ~~~~
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.cpp:1:
+/Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.h:5:7: note: forward declaration of 'Game'
+    5 | class Game;  // Forward declaration for Game class
+      |       ^
+/Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.cpp:762:5: error: use of class template 'PlatformAPI' requires template arguments
+  762 |     PlatformAPI::Shutdown();
+      |     ^
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.cpp:1:
+/Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.h:50:7: note: template is declared here
+   49 | template <typename Traits>
+      | ~~~~~~~~~~~~~~~~~~~~~~~~~~
+   50 | class PlatformAPI {
+      |       ^
+8 warnings and 4 errors generated.
+
+CompileC /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/MetalRenderer.o /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalRenderer.mm normal arm64 objective-c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'FloppyTurd' from project 'FloppyTurd')
+    cd /Users/aimac/Development/FloppyTurd
+    
+    Using response file: /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/af3fcb34312c57c0f52879cdce924b91-common-args.resp
+    
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x objective-c++ -ivfsstatcache /Users/aimac/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator18.2-22C146-07b28473f605e47e75261259d3ef3b5a.sdkstatcache -fmessage-length\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\=0 -fno-color-diagnostics -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-implicit-atomic-properties -Wno-objc-interface-ivars -Wno-arc-repeated-use-of-weak -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wshorten-64-to-32 -Wno-newline-eof -Wno-selector -Wno-strict-selector-match -Wno-undeclared-selector -Wno-deprecated-implementations -Wno-c++11-extensions -Wno-implicit-fallthrough -fstrict-aliasing -Wprotocol -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -index-store-path /Users/aimac/Library/Developer/Xcode/DerivedData/FloppyTurd-gmfqtifroyfasvcubqfvsxhpuoel/Index.noindex/DataStore -Wall -Wextra @/Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/af3fcb34312c57c0f52879cdce924b91-common-args.resp -MMD -MT dependencies -MF /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/MetalRenderer.d --serialize-diagnostics /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/MetalRenderer.dia -c /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalRenderer.mm -o /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/MetalRenderer.o -index-unit-output-path /FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/MetalRenderer.o
+
+CompileC /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/WindowIOS.o /Users/aimac/Development/FloppyTurd/FloppyTurd/WindowIOS.mm normal arm64 objective-c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'FloppyTurd' from project 'FloppyTurd')
+    cd /Users/aimac/Development/FloppyTurd
+    
+    Using response file: /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/af3fcb34312c57c0f52879cdce924b91-common-args.resp
+    
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x objective-c++ -ivfsstatcache /Users/aimac/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator18.2-22C146-07b28473f605e47e75261259d3ef3b5a.sdkstatcache -fmessage-length\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\=0 -fno-color-diagnostics -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-implicit-atomic-properties -Wno-objc-interface-ivars -Wno-arc-repeated-use-of-weak -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wshorten-64-to-32 -Wno-newline-eof -Wno-selector -Wno-strict-selector-match -Wno-undeclared-selector -Wno-deprecated-implementations -Wno-c++11-extensions -Wno-implicit-fallthrough -fstrict-aliasing -Wprotocol -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -index-store-path /Users/aimac/Library/Developer/Xcode/DerivedData/FloppyTurd-gmfqtifroyfasvcubqfvsxhpuoel/Index.noindex/DataStore -Wall -Wextra @/Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/af3fcb34312c57c0f52879cdce924b91-common-args.resp -MMD -MT dependencies -MF /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/WindowIOS.d --serialize-diagnostics /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/WindowIOS.dia -c /Users/aimac/Development/FloppyTurd/FloppyTurd/WindowIOS.mm -o /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/WindowIOS.o -index-unit-output-path /FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/WindowIOS.o
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/WindowIOS.mm:1:
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/WindowIOS.h:4:
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.h:14:
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformTraits.h:5:
+/Users/aimac/Development/FloppyTurd/FloppyTurd/GlobalStateManager.h:210:35: warning: unused parameter 'safeArea' [-Wunused-parameter]
+  210 |     void UpdateSafeArea(Rectangle safeArea) {
+      |                                   ^
+
+CompileC /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/PlatformTraitsIOS.o /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformTraitsIOS.mm normal arm64 objective-c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'FloppyTurd' from project 'FloppyTurd')
+    cd /Users/aimac/Development/FloppyTurd
+    
+    Using response file: /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/af3fcb34312c57c0f52879cdce924b91-common-args.resp
+    
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x objective-c++ -ivfsstatcache /Users/aimac/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator18.2-22C146-07b28473f605e47e75261259d3ef3b5a.sdkstatcache -fmessage-length\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\=0 -fno-color-diagnostics -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-implicit-atomic-properties -Wno-objc-interface-ivars -Wno-arc-repeated-use-of-weak -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wshorten-64-to-32 -Wno-newline-eof -Wno-selector -Wno-strict-selector-match -Wno-undeclared-selector -Wno-deprecated-implementations -Wno-c++11-extensions -Wno-implicit-fallthrough -fstrict-aliasing -Wprotocol -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -index-store-path /Users/aimac/Library/Developer/Xcode/DerivedData/FloppyTurd-gmfqtifroyfasvcubqfvsxhpuoel/Index.noindex/DataStore -Wall -Wextra @/Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/af3fcb34312c57c0f52879cdce924b91-common-args.resp -MMD -MT dependencies -MF /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/PlatformTraitsIOS.d --serialize-diagnostics /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/PlatformTraitsIOS.dia -c /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformTraitsIOS.mm -o /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/PlatformTraitsIOS.o -index-unit-output-path /FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/PlatformTraitsIOS.o
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformTraitsIOS.mm:1:
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformTraits.h:5:
+/Users/aimac/Development/FloppyTurd/FloppyTurd/GlobalStateManager.h:210:35: warning: unused parameter 'safeArea' [-Wunused-parameter]
+  210 |     void UpdateSafeArea(Rectangle safeArea) {
+      |                                   ^
+
+CompileC /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/UICoordinateSystem.o /Users/aimac/Development/FloppyTurd/FloppyTurd/UICoordinateSystem.mm normal arm64 objective-c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'FloppyTurd' from project 'FloppyTurd')
+    cd /Users/aimac/Development/FloppyTurd
+    
+    Using response file: /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/af3fcb34312c57c0f52879cdce924b91-common-args.resp
+    
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x objective-c++ -ivfsstatcache /Users/aimac/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator18.2-22C146-07b28473f605e47e75261259d3ef3b5a.sdkstatcache -fmessage-length\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\=0 -fno-color-diagnostics -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-implicit-atomic-properties -Wno-objc-interface-ivars -Wno-arc-repeated-use-of-weak -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wshorten-64-to-32 -Wno-newline-eof -Wno-selector -Wno-strict-selector-match -Wno-undeclared-selector -Wno-deprecated-implementations -Wno-c++11-extensions -Wno-implicit-fallthrough -fstrict-aliasing -Wprotocol -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -index-store-path /Users/aimac/Library/Developer/Xcode/DerivedData/FloppyTurd-gmfqtifroyfasvcubqfvsxhpuoel/Index.noindex/DataStore -Wall -Wextra @/Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/af3fcb34312c57c0f52879cdce924b91-common-args.resp -MMD -MT dependencies -MF /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/UICoordinateSystem.d --serialize-diagnostics /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/UICoordinateSystem.dia -c /Users/aimac/Development/FloppyTurd/FloppyTurd/UICoordinateSystem.mm -o /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/UICoordinateSystem.o -index-unit-output-path /FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/UICoordinateSystem.o
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/UICoordinateSystem.mm:1:
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/UICoordinateSystem.h:3:
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.h:14:
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformTraits.h:5:
+/Users/aimac/Development/FloppyTurd/FloppyTurd/GlobalStateManager.h:210:35: warning: unused parameter 'safeArea' [-Wunused-parameter]
+  210 |     void UpdateSafeArea(Rectangle safeArea) {
+      |                                   ^
+
+CompileC /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/Window.o /Users/aimac/Development/FloppyTurd/FloppyTurd/Window.cpp normal arm64 c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'FloppyTurd' from project 'FloppyTurd')
+    cd /Users/aimac/Development/FloppyTurd
+    
+    Using response file: /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp
+    
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -ivfsstatcache /Users/aimac/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator18.2-22C146-07b28473f605e47e75261259d3ef3b5a.sdkstatcache -fmessage-length\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\=0 -fno-color-diagnostics -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wshorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wno-implicit-fallthrough -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -index-store-path /Users/aimac/Library/Developer/Xcode/DerivedData/FloppyTurd-gmfqtifroyfasvcubqfvsxhpuoel/Index.noindex/DataStore -Wall -Wextra @/Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp -MMD -MT dependencies -MF /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/Window.d --serialize-diagnostics /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/Window.dia -c /Users/aimac/Development/FloppyTurd/FloppyTurd/Window.cpp -o /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/Window.o -index-unit-output-path /FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/Window.o
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/Window.cpp:1:
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/Window.h:2:
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.h:14:
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformTraits.h:5:
+/Users/aimac/Development/FloppyTurd/FloppyTurd/GlobalStateManager.h:210:35: warning: unused parameter 'safeArea' [-Wunused-parameter]
+  210 |     void UpdateSafeArea(Rectangle safeArea) {
+      |                                   ^
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/Window.cpp:1:
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/Window.h:2:
+/Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.h:907:9: warning: 'KEY_F11' macro redefined [-Wmacro-redefined]
+  907 | #define KEY_F11 290
+      |         ^
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/Window.cpp:1:
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/Window.h:2:
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.h:13:
+/Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformTypes.h:305:9: note: previous definition is here
+  305 | #define KEY_F11              300
+      |         ^
+/Users/aimac/Development/FloppyTurd/FloppyTurd/Window.cpp:5:21: warning: unused parameter 'fullScreen' [-Wunused-parameter]
+    5 | Window::Window(bool fullScreen, int /*fallbackW*/, int /*fallbackH*/)
+      |                     ^
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/Window.cpp:1:
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/Window.h:2:
+/Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.h:712:20: warning: unused function 'TextFormat' [-Wunused-function]
+  712 | static const char* TextFormat(const char* text, ...);
+      |                    ^~~~~~~~~~
+In file included from /Users/aimac/Development/FloppyTurd/FloppyTurd/Window.cpp:1:
+/Users/aimac/Development/FloppyTurd/FloppyTurd/Window.h:32:10: warning: private field 'preferLandscape' is not used [-Wunused-private-field]
+   32 |     bool preferLandscape = true;  // Default preference for game
+      |          ^
+5 warnings generated.
+
+CompileC /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/UIManager.o /Users/aimac/Development/FloppyTurd/FloppyTurd/UIManager.cpp normal arm64 c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'FloppyTurd' from project 'FloppyTurd')
+    cd /Users/aimac/Development/FloppyTurd
+    
+    Using response file: /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp
+    
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c++ -ivfsstatcache /Users/aimac/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator18.2-22C146-07b28473f605e47e75261259d3ef3b5a.sdkstatcache -fmessage-length\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\=0 -fno-color-diagnostics -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-non-virtual-dtor -Wno-overloaded-virtual -Wno-exit-time-destructors -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wshorten-64-to-32 -Wno-newline-eof -Wno-c++11-extensions -Wno-implicit-fallthrough -fstrict-aliasing -Wdeprecated-declarations -Winvalid-offsetof -Wno-sign-conversion -Wno-infinite-recursion -Wno-move -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-range-loop-analysis -Wno-semicolon-before-method-body -index-store-path /Users/aimac/Library/Developer/Xcode/DerivedData/FloppyTurd-gmfqtifroyfasvcubqfvsxhpuoel/Index.noindex/DataStore -Wall -Wextra @/Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/82b82416624d2658e5098eb0a28c15c5-common-args.resp -MMD -MT dependencies -MF /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/UIManager.d --serialize-diagnostics /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/UIManager.dia -c /Users/aimac/Development/FloppyTurd/FloppyTurd/UIManager.cpp -o /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/UIManager.o -index-unit-output-path /FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/UIManager.o
+
+note: Run script build phase 'Generate CMakeFiles/ZERO_CHECK' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'ZERO_CHECK' from project 'FloppyTurd')
+note: Run script build phase 'CMake PreBuild Rules' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'FloppyTurd' from project 'FloppyTurd')
+** BUILD FAILED **
+
+
+The following build commands failed:
+	CompileC /Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/arm64/PlatformAPI.o /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.cpp normal arm64 c++ com.apple.compilers.llvm.clang.1_0.compiler (in target 'FloppyTurd' from project 'FloppyTurd')
+	Building project FloppyTurd with scheme FloppyTurd
+(2 failures)

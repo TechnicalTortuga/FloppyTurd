@@ -21,7 +21,8 @@ public:
 
     // Constructor for pre-loaded music from ResourceManager
     AudioClip(void* platformMusicHandle) {
-        m_platformMusicHandle = platformMusicHandle;
+        m_platformMusicHandle.player = platformMusicHandle;
+        m_platformMusicHandle.length = 0; // Will be set by platform implementation
         if (!m_platformMusicHandle.player) {
             GameLog::Log("[AUDIOCLIP] AudioClip created with invalid music resource");
         }
@@ -84,7 +85,10 @@ public:
 
     // Getter for platform handle (for compatibility with existing code)
     void* GetPlatformHandle() const { return m_platformMusicHandle.player; }
+    
+    // Getter for Music struct (for duration and other Music-specific operations)
+    const Music& GetMusic() const { return m_platformMusicHandle; }
 
 private:
-    Music m_platformMusicHandle = { 0 };  // Changed from void* to Music
+    Music m_platformMusicHandle = { 0, 0 };  // Initialize with player=nullptr, length=0
 };

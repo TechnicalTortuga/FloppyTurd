@@ -207,20 +207,49 @@ class Game;
 
 - (void)updateTouchState:(UITouch *)touch phase:(UITouchPhase)phase location:(CGPoint)location
 {
-    // This method will update internal touch state tracking
-    // PlatformLayer will query this state for TouchControls
-    // Implementation details will be added based on how PlatformLayer interfaces with GameView
-    // For now, log the events for debugging
+    // Update GlobalStateManager with touch state
+    // This connects iOS touch events to the cross-platform input system
     
-    NSString *phaseStr;
+    // Convert CGPoint to Vector2
+    Vector2 touchPos = {(float)location.x, (float)location.y};
+    
+    // Get GlobalStateManager instance
+    auto& globalState = GlobalStateManager::GetInstance();
+    
+    // Update GlobalStateManager based on touch phase
     switch (phase) {
-        case UITouchPhaseBegan: phaseStr = @"Began"; break;
-        case UITouchPhaseMoved: phaseStr = @"Moved"; break;
-        case UITouchPhaseEnded: phaseStr = @"Ended"; break;
-        case UITouchPhaseCancelled: phaseStr = @"Cancelled"; break;
-        default: phaseStr = @"Unknown"; break;
+        case UITouchPhaseBegan:
+            globalState.SetPrimaryInputDown(true);
+            globalState.SetPrimaryInputPressed(true);
+            globalState.SetPrimaryInputReleased(false);
+            NSLog(@"Touch began at: %@ - Updated GlobalStateManager", NSStringFromCGPoint(location));
+            break;
+            
+        case UITouchPhaseMoved:
+            // Keep primary input down during move
+            globalState.SetPrimaryInputDown(true);
+            globalState.SetPrimaryInputPressed(false);
+            globalState.SetPrimaryInputReleased(false);
+            NSLog(@"Touch moved to: %@ - Updated GlobalStateManager", NSStringFromCGPoint(location));
+            break;
+            
+        case UITouchPhaseEnded:
+        case UITouchPhaseCancelled:
+            globalState.SetPrimaryInputDown(false);
+            globalState.SetPrimaryInputPressed(false);
+            globalState.SetPrimaryInputReleased(true);
+            NSLog(@"Touch ended at: %@ - Updated GlobalStateManager", NSStringFromCGPoint(location));
+            break;
+            
+        default:
+            break;
     }
-    NSLog(@"Touch update - Phase: %@, Location: %@", phaseStr, NSStringFromCGPoint(location));
+    
+    // Update touch points array
+    // For now, just update with the current touch position
+    // In a more sophisticated implementation, we'd track multiple touches
+    std::vector<Vector2> touchPoints = {touchPos};
+    globalState.SetTouchPoints(touchPoints);
 }
 
 // MARK: - Input State Queries for PlatformLayer/TouchControls

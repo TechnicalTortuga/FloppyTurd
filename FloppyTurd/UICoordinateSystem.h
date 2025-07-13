@@ -11,6 +11,10 @@
 typedef struct UIScreen UIScreen;
 typedef struct UIWindow UIWindow;
 #endif
+#else
+// Forward declarations for non-iOS platforms
+typedef struct UIScreen UIScreen;
+typedef struct UIWindow UIWindow;
 #endif
 
 // Coordinate system class to bridge UIKit and Metal coordinate systems

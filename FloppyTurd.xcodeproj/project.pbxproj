@@ -9,7 +9,7 @@
 /* Begin PBXAggregateTarget section */
 		5E72DDC5DEC7CBC59913B604 /* ZERO_CHECK */ = {
 			isa = PBXAggregateTarget;
-			buildConfigurationList = 819CF9AAE4F24E3990EEDB8A /* Build configuration list for PBXAggregateTarget "ZERO_CHECK" */;
+			buildConfigurationList = 868788401BEA4F83ABC16C24 /* Build configuration list for PBXAggregateTarget "ZERO_CHECK" */;
 			buildPhases = (
 				0D5912483BC1DD92F2BBAF6F /* Generate CMakeFiles/ZERO_CHECK */,
 			);
@@ -20,13 +20,13 @@
 		};
 		8114458CBDBF1783F538DC81 /* ALL_BUILD */ = {
 			isa = PBXAggregateTarget;
-			buildConfigurationList = 54D8DC9507BD49C694A06A96 /* Build configuration list for PBXAggregateTarget "ALL_BUILD" */;
+			buildConfigurationList = 18CAD4659C7A4EEB8471CC17 /* Build configuration list for PBXAggregateTarget "ALL_BUILD" */;
 			buildPhases = (
 				50587D7170726FB045515722 /* Generate CMakeFiles/ALL_BUILD */,
 			);
 			dependencies = (
-				5666D4B9492B4F94B4513110 /* PBXTargetDependency */,
-				6FDC6731365F4A57B0763FBC /* PBXTargetDependency */,
+				61FF73B06AE54EA7B473A856 /* PBXTargetDependency */,
+				5D554EB2127E4C0B85593215 /* PBXTargetDependency */,
 			);
 			name = ALL_BUILD;
 			productName = ALL_BUILD;
@@ -34,240 +34,246 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
-		00E994B4E1D64FC19A1FE32F /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/AppDelegate.mm */ = {isa = PBXBuildFile; fileRef = DFEFD69E3F074F9C94756AF1 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/AppDelegate.mm */; };
-		025E6C809CCC4E2AA50280EB /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalRenderer.mm */ = {isa = PBXBuildFile; fileRef = 2D0BFFFAE2B942BBB4B8286C /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalRenderer.mm */; };
-		027DB2FAABEE469FA48B09D0 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/GameViewController.mm */ = {isa = PBXBuildFile; fileRef = 65780871C046496A8404DAF6 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/GameViewController.mm */; };
-		02FA9D8015DE4818BF2557E6 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Credits.cpp */ = {isa = PBXBuildFile; fileRef = B29A9DA4DCFA4F33900948D2 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Credits.cpp */; };
-		033CDFA2431540D1AD77338C /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowOverlay.cpp */ = {isa = PBXBuildFile; fileRef = 07DFD3F30F2E40B0BD3EB5D0 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowOverlay.cpp */; };
-		05134C6E08B94834B1FB091B /* /Users/aimac/Development/FloppyTurd/FloppyTurd/BrickWall.cpp */ = {isa = PBXBuildFile; fileRef = E22514CB46E3413CA8391192 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/BrickWall.cpp */; };
-		05ABA89ECAC645BD8FA8BC5F /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AudioClip.cpp */ = {isa = PBXBuildFile; fileRef = 2DE0EED2969C4248A7A073B1 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AudioClip.cpp */; };
-		07A9B1CF22CB400FA59B4663 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Game.cpp */ = {isa = PBXBuildFile; fileRef = 80987DA1E8C44E7393DA62B8 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Game.cpp */; };
-		13E122717CAC4BA18211AC1F /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ParallaxLayer.cpp */ = {isa = PBXBuildFile; fileRef = 1D46BFDB695144CCA1CE4533 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ParallaxLayer.cpp */; };
-		14AB75B432C24E88BCAC5C44 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Window.cpp */ = {isa = PBXBuildFile; fileRef = 529BD6929D0C4F64B7D49CE8 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Window.cpp */; };
-		1727B72C13B940A980525957 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Outhouse.cpp */ = {isa = PBXBuildFile; fileRef = F94B984EC3B84A188720A111 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Outhouse.cpp */; };
-		1C8AAD85DDC7487BB0992958 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PerformanceProfiler.cpp */ = {isa = PBXBuildFile; fileRef = D5A9BADF060D40E782F3C845 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PerformanceProfiler.cpp */; };
-		1D3627377A9744019DA4E4F4 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/BossLevel.cpp */ = {isa = PBXBuildFile; fileRef = 45188EA70F154F26AB7F984C /* /Users/aimac/Development/FloppyTurd/FloppyTurd/BossLevel.cpp */; };
-		23AFD532735F48B5A63A1AEA /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalTexture.mm */ = {isa = PBXBuildFile; fileRef = 17F5607E33E1438AADBA8EAA /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalTexture.mm */; };
-		26B07C5E891D4B07ACE9E011 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowmanEnemy.cpp */ = {isa = PBXBuildFile; fileRef = 4A21DEA1CFFE4124A08E1217 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowmanEnemy.cpp */; };
-		27A8115FC1FC41138BC37B0F /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Sprite.cpp */ = {isa = PBXBuildFile; fileRef = 80D4258F83ED4208984EEEC3 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Sprite.cpp */; };
-		2A45CD4DA1D244EA8C66D0BB /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Playing.cpp */ = {isa = PBXBuildFile; fileRef = 70B07F5B8E274693834E31EA /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Playing.cpp */; };
-		3205D68BA67C4C5088029575 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PoopHeart.cpp */ = {isa = PBXBuildFile; fileRef = FA38B5E4A48A4242A651EC9B /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PoopHeart.cpp */; };
-		35308700D3FC483F8E3FCDD5 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Explosion.cpp */ = {isa = PBXBuildFile; fileRef = 78DC5F788F154870B7551F0C /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Explosion.cpp */; };
-		36A5DBD1D24B40339C839FD4 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AnimatedLayer.cpp */ = {isa = PBXBuildFile; fileRef = 80F4C04D5E2142FB9A3303C1 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AnimatedLayer.cpp */; };
-		37620585DC38407CBE382C3C /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MenuButton.cpp */ = {isa = PBXBuildFile; fileRef = B73E0FAD6A7B4A2C88B0EEBF /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MenuButton.cpp */; };
-		3AC0E00275F740A69BBAA3C6 /* /Users/aimac/Development/FloppyTurd/CMakeFiles/FloppyTurd.dir/Info.plist */ = {isa = PBXBuildFile; fileRef = 4A6DC26AF88C4971BDCA220C /* /Users/aimac/Development/FloppyTurd/CMakeFiles/FloppyTurd.dir/Info.plist */; };
-		3AF71AC8F5424CEE9FC9B867 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/main_ios.mm */ = {isa = PBXBuildFile; fileRef = 9C44D8DBEE834F5A8E4F8EAE /* /Users/aimac/Development/FloppyTurd/FloppyTurd/main_ios.mm */; };
-		3D49E91B45E242578171F26B /* /Users/aimac/Development/FloppyTurd/FloppyTurd/resources/fonts/Whacky_Joe.ttf */ = {isa = PBXBuildFile; fileRef = A7C0F626D07C407E9C25200B /* /Users/aimac/Development/FloppyTurd/FloppyTurd/resources/fonts/Whacky_Joe.ttf */; };
-		3E3355D85F274DFB83DBB14C /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Shaders2D.metal */ = {isa = PBXBuildFile; fileRef = EE7AF422FA5C4A858DC6F0D9 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Shaders2D.metal */; };
-		3F5524E7BCDE4A86AF61D3A8 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/GameStats.cpp */ = {isa = PBXBuildFile; fileRef = ED533FEFF81F4481A067521B /* /Users/aimac/Development/FloppyTurd/FloppyTurd/GameStats.cpp */; };
-		3F7F45D80DD848F895288296 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/GoldToilets.cpp */ = {isa = PBXBuildFile; fileRef = B9003454B8C84B818AC8E290 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/GoldToilets.cpp */; };
-		404EA1D1ECB942A7A1406648 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AudioStateManager.mm */ = {isa = PBXBuildFile; fileRef = DB7BE11CA99A44C6B4CDC65F /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AudioStateManager.mm */; };
-		409136B0429A4A0B98F2DE1E /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformIOS.cpp */ = {isa = PBXBuildFile; fileRef = F714F1B17FDB4D56AB5EB78B /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformIOS.cpp */; };
-		43FAC374BBAA419A86641848 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/GameView.mm */ = {isa = PBXBuildFile; fileRef = 7EDC526BB6E94DD08E44787A /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/GameView.mm */; };
-		443B8EE0BAC54264BA0EDD4B /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ToiletPair.cpp */ = {isa = PBXBuildFile; fileRef = 7152F9D36F994E99824C2F47 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ToiletPair.cpp */; };
-		490274D2587247E7BA0D128E /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ParkLevel.cpp */ = {isa = PBXBuildFile; fileRef = 69516364EA384427A91CA0A5 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ParkLevel.cpp */; };
-		5123BF0FD7CE4FB7ABDA5932 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/CastleLevel.cpp */ = {isa = PBXBuildFile; fileRef = 8E4A6149F2254391A13E763B /* /Users/aimac/Development/FloppyTurd/FloppyTurd/CastleLevel.cpp */; };
-		51FAB4631F354767A5E019FF /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PickUp.cpp */ = {isa = PBXBuildFile; fileRef = D78A04F1091843C6B5FCE397 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PickUp.cpp */; };
-		52C14946903549F58C5E9B97 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Projectile.cpp */ = {isa = PBXBuildFile; fileRef = 0F8180C7E98E4495B1A579E4 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Projectile.cpp */; };
-		566E9894212B4C41B4AD094E /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Cactus.cpp */ = {isa = PBXBuildFile; fileRef = 5B2FFFE0F64B40968B898219 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Cactus.cpp */; };
-		5B366B4EEE044BCF8D26D2F5 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ResourceManager.cpp */ = {isa = PBXBuildFile; fileRef = CE04CCDE2ED740F5AB809B77 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ResourceManager.cpp */; };
-		5D0340D60AA645668FF37B4D /* /Users/aimac/Development/FloppyTurd/FloppyTurd/LevelManager.cpp */ = {isa = PBXBuildFile; fileRef = 91C9FD91302E499199B07B13 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/LevelManager.cpp */; };
-		62E44A1C88BC4A51AAFF59CF /* /Users/aimac/Development/FloppyTurd/FloppyTurd/RatCopter.cpp */ = {isa = PBXBuildFile; fileRef = 80AC944448FD42F4B38305AB /* /Users/aimac/Development/FloppyTurd/FloppyTurd/RatCopter.cpp */; };
-		646AF4DE0CBA422AB5E509EF /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Coin.cpp */ = {isa = PBXBuildFile; fileRef = F8FB2BA6C65A4FFF9C7893BD /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Coin.cpp */; };
-		6AEAC83B164645C1A7780402 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowLevel.cpp */ = {isa = PBXBuildFile; fileRef = 269EC20612194785BD3AA123 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowLevel.cpp */; };
-		7077F4990CCB443B92CFA5F4 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ToiletPaper.cpp */ = {isa = PBXBuildFile; fileRef = 8A667E2F71CB42DCBEF2FFAA /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ToiletPaper.cpp */; };
-		7330C1C56C124038A982AB70 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/FontCache.mm */ = {isa = PBXBuildFile; fileRef = 2F0F3F3BFA66488195AE0089 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/FontCache.mm */; };
-		74087C94A8F941779C09CE62 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/DesertLevel.cpp */ = {isa = PBXBuildFile; fileRef = 967FAA622FAB4636B1FBE4FD /* /Users/aimac/Development/FloppyTurd/FloppyTurd/DesertLevel.cpp */; };
-		7DD2FDFC3C5843A9B95F3D97 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/UICoordinateSystem.mm */ = {isa = PBXBuildFile; fileRef = 34D4EA2A1C79467DA73B68E8 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/UICoordinateSystem.mm */; };
-		7F7994E1A61D40C086DF3FCA /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SoundManager.cpp */ = {isa = PBXBuildFile; fileRef = 5F6A3163E3514A4A96CCE82D /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SoundManager.cpp */; };
-		7FBB90E7178B4CB5A426ECAB /* /Users/aimac/Development/FloppyTurd/FloppyTurd/CoinType.cpp */ = {isa = PBXBuildFile; fileRef = B1CF0C035569431D806782A2 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/CoinType.cpp */; };
-		81CEDB6B5CAB4D8894CBEA8D /* /Users/aimac/Development/FloppyTurd/FloppyTurd/TextureAtlas.cpp */ = {isa = PBXBuildFile; fileRef = F36BC944F6004F8F8346FF9F /* /Users/aimac/Development/FloppyTurd/FloppyTurd/TextureAtlas.cpp */; };
-		83CAC2B5BA3B47528265188B /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AudioManager.cpp */ = {isa = PBXBuildFile; fileRef = 0965B4121C8847B19F069EEE /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AudioManager.cpp */; };
-		86E183757D5E48598111EE92 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/CameraSystem.cpp */ = {isa = PBXBuildFile; fileRef = 0FD1F936CE9344C18C52A29A /* /Users/aimac/Development/FloppyTurd/FloppyTurd/CameraSystem.cpp */; };
-		89E575D652F34D74AA8B59F0 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/TouchControls.cpp */ = {isa = PBXBuildFile; fileRef = 8E473D89F60F48C38B77B66F /* /Users/aimac/Development/FloppyTurd/FloppyTurd/TouchControls.cpp */; };
-		939CDD838AD743288DFC29B7 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ToiletPaperProjectile.cpp */ = {isa = PBXBuildFile; fileRef = 991294B196934C8788B903B1 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ToiletPaperProjectile.cpp */; };
-		95C73946D79A4B758BCB38B0 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalShader.mm */ = {isa = PBXBuildFile; fileRef = 7810A508E5B74A8D97EC4B66 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalShader.mm */; };
-		9C5FAAB2AD8D4DC7AF822094 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Bird.cpp */ = {isa = PBXBuildFile; fileRef = 2D645E03454E478B87452285 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Bird.cpp */; };
-		9C989EDFFCF848918D0D1BC4 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AnimatedParallaxLayer.cpp */ = {isa = PBXBuildFile; fileRef = BB3F7CDF885349D5B2D95CD8 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AnimatedParallaxLayer.cpp */; };
-		9E9C5FD7791F4A3D94B699E6 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalFrameResources.mm */ = {isa = PBXBuildFile; fileRef = 788392A2816C457584276448 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalFrameResources.mm */; };
-		A15133FA87DA4A849A598264 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Enemy.cpp */ = {isa = PBXBuildFile; fileRef = FC9FEE32360E41CC82A808B4 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Enemy.cpp */; };
-		A50B9720587C4F0BA6AD3AD5 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Level.cpp */ = {isa = PBXBuildFile; fileRef = F762DC7EAB61423D9E8E3C1A /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Level.cpp */; };
-		A63AE1FD53664E2D82900B98 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MainMenu.cpp */ = {isa = PBXBuildFile; fileRef = B8EE02AF001B4DCFB212A02F /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MainMenu.cpp */; };
-		A7732E43CC624022817C3B10 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Loading.cpp */ = {isa = PBXBuildFile; fileRef = 2C2706A64A7C4C728083764E /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Loading.cpp */; };
-		A9641020AE9546F08A6A0851 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SewerPipe.cpp */ = {isa = PBXBuildFile; fileRef = 4F2ECABDA30748A6BAD9B755 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SewerPipe.cpp */; };
-		AA4DB9E969DB448C8CCE171F /* /Users/aimac/Development/FloppyTurd/FloppyTurd/RaylibCompat.mm */ = {isa = PBXBuildFile; fileRef = 5C32120C6E114E709A6B41F5 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/RaylibCompat.mm */; };
-		AA9E7A57EFC14635BB701501 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Obstacle.cpp */ = {isa = PBXBuildFile; fileRef = 6A1000BD47A4420CAD60F6EF /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Obstacle.cpp */; };
-		AC64F671179B4209B5DE44C7 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/StaticLayer.cpp */ = {isa = PBXBuildFile; fileRef = C6F392CAECD04D9EB7983147 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/StaticLayer.cpp */; };
-		ACC1555E106547319F789BDE /* /Users/aimac/Development/FloppyTurd/FloppyTurd/TextureCache.cpp */ = {isa = PBXBuildFile; fileRef = 373385E739214AA38BEE141E /* /Users/aimac/Development/FloppyTurd/FloppyTurd/TextureCache.cpp */; };
-		AD9E66B6818140F289BF5A78 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowballProjectile.cpp */ = {isa = PBXBuildFile; fileRef = 2B8A4531F9B24C9CA746B8EE /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowballProjectile.cpp */; };
-		B078A3D948DB40E98C388E9C /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SpikeBall.cpp */ = {isa = PBXBuildFile; fileRef = FB4F47A71E4147C989F4D503 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SpikeBall.cpp */; };
-		BA095C5E473B4BB7B74F22C5 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.cpp */ = {isa = PBXBuildFile; fileRef = 50DACC9F002A4F6C9455AEE8 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.cpp */; };
-		BE3C02C448FE43CCA7DD0BCC /* /Users/aimac/Development/FloppyTurd/FloppyTurd/LogManager.mm */ = {isa = PBXBuildFile; fileRef = C1FF68B2AE994ACFBE7FDEE7 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/LogManager.mm */; };
-		BE4FAB5AC0BC4D96BAA9C057 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/RatKing.cpp */ = {isa = PBXBuildFile; fileRef = D99855D61C07497488ADA445 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/RatKing.cpp */; };
-		C4F66BE7AB9A49AAB935F856 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/HapticsManager.mm */ = {isa = PBXBuildFile; fileRef = 77EE393F978E4D5ABDFA277E /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/HapticsManager.mm */; };
-		C58017F8C7AC4F9AA0259C9F /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SewerLevel.cpp */ = {isa = PBXBuildFile; fileRef = 8D326B0701C74614BA9FA1E5 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SewerLevel.cpp */; };
-		C66DE8C28C2B46CC98AA76B0 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/FontAtlasGenerator.mm */ = {isa = PBXBuildFile; fileRef = 6BCB715975C04C2E876E9345 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/FontAtlasGenerator.mm */; };
-		C7AB571388604CD388C16725 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/GameLog.mm */ = {isa = PBXBuildFile; fileRef = 66C2BC12E2694281BFBAB59E /* /Users/aimac/Development/FloppyTurd/FloppyTurd/GameLog.mm */; };
-		C92C7FF7B2564290B700CA06 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AIGUI.cpp */ = {isa = PBXBuildFile; fileRef = 009AACBB7DB240C88936DC35 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AIGUI.cpp */; };
-		D0070BDACF454B4B8EA95047 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets */ = {isa = PBXBuildFile; fileRef = 777F036A25234E9E9BBA3D1D /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets */; };
-		D3293BBBA87E41BF877A0359 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Player.cpp */ = {isa = PBXBuildFile; fileRef = 0C545E728BDB47F992E70CCF /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Player.cpp */; };
-		D64FF588B46D44E8ACD517DF /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalTextureCache.mm */ = {isa = PBXBuildFile; fileRef = B74C01A2A94C4BDAA82D9354 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalTextureCache.mm */; };
-		E053BAA43B1C4C528A119EF2 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SoundEffect.cpp */ = {isa = PBXBuildFile; fileRef = 0D71867ED05048B8B1EE3A90 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SoundEffect.cpp */; };
-		E6DB6FD3DF184C31A1F203FC /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalTextRenderer.mm */ = {isa = PBXBuildFile; fileRef = 0E2B50CEA26540ACAC6B80B6 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalTextRenderer.mm */; };
-		E78615A650754F4DBBB6BB50 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Boss.cpp */ = {isa = PBXBuildFile; fileRef = DE865087DF384B13B2125DAF /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Boss.cpp */; };
-		EEFF136C7370466EBFA17D92 /* /Users/aimac/Development/FloppyTurd/CMakeLists.txt */ = {isa = PBXBuildFile; fileRef = FA9592E21C804EE4B4346C79 /* /Users/aimac/Development/FloppyTurd/CMakeLists.txt */; };
-		F116825D21894B35915F8577 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Hat.cpp */ = {isa = PBXBuildFile; fileRef = 1509AD9901804F388E7B05F6 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Hat.cpp */; };
-		F5696EF4288E485183A2B793 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/BossHealthBar.cpp */ = {isa = PBXBuildFile; fileRef = A847E20C65134D57A3245548 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/BossHealthBar.cpp */; };
-		FCBAD2573BD0442F94CDBB73 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/UIManager.cpp */ = {isa = PBXBuildFile; fileRef = DC74FB385430446EBE1F51D2 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/UIManager.cpp */; };
+		0107B6B9090D4B9DBE70BC59 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowOverlay.cpp */ = {isa = PBXBuildFile; fileRef = C7D6287875E34FF1B6C5BA55 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowOverlay.cpp */; };
+		038938D282FC4A8A82B799D4 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Level.cpp */ = {isa = PBXBuildFile; fileRef = FC6BCFAEC1784244812A61A7 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Level.cpp */; };
+		05E6B6E176CA4015AF5FF1B9 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MNKControls.cpp */ = {isa = PBXBuildFile; fileRef = 540441DF6E4E478F9794466A /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MNKControls.cpp */; };
+		07A2FAE8A55C42E194A19F69 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/HapticsManager.mm */ = {isa = PBXBuildFile; fileRef = 293630AF995A4EDAA0F0E51D /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/HapticsManager.mm */; };
+		1DC00DE37D84423B84E4C408 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/FloppyTurdInput.cpp */ = {isa = PBXBuildFile; fileRef = CE4F059C944A420CBF16966B /* /Users/aimac/Development/FloppyTurd/FloppyTurd/FloppyTurdInput.cpp */; };
+		1DC5B372D46A40D4A02A88BC /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Shaders2D.metal */ = {isa = PBXBuildFile; fileRef = BBC10EBB8DDA4356BCBA5FFD /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Shaders2D.metal */; };
+		272DDC78F9F74D98A28599CE /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Projectile.cpp */ = {isa = PBXBuildFile; fileRef = 8A29FEF21E544EF6A5A0E94F /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Projectile.cpp */; };
+		2DDFA02168994BEA8253F329 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Outhouse.cpp */ = {isa = PBXBuildFile; fileRef = EF819DA52B494F29B7F3E2E5 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Outhouse.cpp */; };
+		2EF0CF0E0D704379B17F3D1A /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Window.cpp */ = {isa = PBXBuildFile; fileRef = 48E4D2C8379347529A9A7B0B /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Window.cpp */; };
+		2FD6651621FA4760983B67BD /* /Users/aimac/Development/FloppyTurd/FloppyTurd/main_ios.mm */ = {isa = PBXBuildFile; fileRef = BF82AA3777BC4E7A8100667A /* /Users/aimac/Development/FloppyTurd/FloppyTurd/main_ios.mm */; };
+		305FC44FF02B47C885A7FD57 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/LevelManager.cpp */ = {isa = PBXBuildFile; fileRef = 3406C5AE24524F9E8B959072 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/LevelManager.cpp */; };
+		36FC2B679DD94ADE99846D2A /* /Users/aimac/Development/FloppyTurd/FloppyTurd/StaticLayer.cpp */ = {isa = PBXBuildFile; fileRef = 9C82D61735EF4976A361A4BE /* /Users/aimac/Development/FloppyTurd/FloppyTurd/StaticLayer.cpp */; };
+		3762BA88C8854217ADCB20E9 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ParkLevel.cpp */ = {isa = PBXBuildFile; fileRef = C2CB755731804E30935B9BB5 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ParkLevel.cpp */; };
+		3FE4A9652175418C94217F9A /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalTextRenderer.mm */ = {isa = PBXBuildFile; fileRef = FB9A093389F74B6982021683 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalTextRenderer.mm */; };
+		421AC763858D4978923F1CD0 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.cpp */ = {isa = PBXBuildFile; fileRef = 35C858AA661441CA810B44CC /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.cpp */; };
+		48D9279BD42D4D6EA6A3C3FF /* /Users/aimac/Development/FloppyTurd/FloppyTurd/GlobalStateManager.cpp */ = {isa = PBXBuildFile; fileRef = 7FA3430D0742423AA398E8BF /* /Users/aimac/Development/FloppyTurd/FloppyTurd/GlobalStateManager.cpp */; };
+		4B1860242586463C93F9AD5C /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalFrameResources.mm */ = {isa = PBXBuildFile; fileRef = 1478F903D6DB44938D9906FE /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalFrameResources.mm */; };
+		4E9811C54ABF4BE089899A34 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Sprite.cpp */ = {isa = PBXBuildFile; fileRef = 393298E874FC4B71B0AFFE83 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Sprite.cpp */; };
+		4F0521AA2F0F4E049D9AE814 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MenuButton.cpp */ = {isa = PBXBuildFile; fileRef = 93E58E3179A54994A14514A8 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MenuButton.cpp */; };
+		4F31B5AD81D5482B95140BB4 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ToiletPair.cpp */ = {isa = PBXBuildFile; fileRef = E49279E2E4454833BCD81AEA /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ToiletPair.cpp */; };
+		4F9F70ADB0D040B987E19BC0 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/UIManager.cpp */ = {isa = PBXBuildFile; fileRef = BE166110771B4C9EAF112CBF /* /Users/aimac/Development/FloppyTurd/FloppyTurd/UIManager.cpp */; };
+		51A004F9E6B44E0F9371ED89 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformTraitsIOS.mm */ = {isa = PBXBuildFile; fileRef = 2C877A27B9004254AEB9612C /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformTraitsIOS.mm */; };
+		52BB7A2F20F244638C7C3FD8 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/TouchControls.cpp */ = {isa = PBXBuildFile; fileRef = 4D34472C5BF941E1AB992159 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/TouchControls.cpp */; };
+		532FD397D718471EB535746C /* /Users/aimac/Development/FloppyTurd/FloppyTurd/BossHealthBar.cpp */ = {isa = PBXBuildFile; fileRef = FE4A0BEB6345482E86E9AE95 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/BossHealthBar.cpp */; };
+		5908C1D13B304BD8A4C991F7 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Obstacle.cpp */ = {isa = PBXBuildFile; fileRef = C279EDB9062746958ECEA7B6 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Obstacle.cpp */; };
+		630DBFC4D2B14885B01C2BD1 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Cactus.cpp */ = {isa = PBXBuildFile; fileRef = E440D011896A445DB63C699D /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Cactus.cpp */; };
+		65961C4044E54466BDDFE17D /* /Users/aimac/Development/FloppyTurd/FloppyTurd/UICoordinateSystem.mm */ = {isa = PBXBuildFile; fileRef = EA75E9AA8CFC4D999B99EFC9 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/UICoordinateSystem.mm */; };
+		68B4AAE9DEAA409CA7B87BEF /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Boss.cpp */ = {isa = PBXBuildFile; fileRef = B0D30EA252F84A4E813C7625 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Boss.cpp */; };
+		69E845F782D94F0A90387AE7 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SewerLevel.cpp */ = {isa = PBXBuildFile; fileRef = B6E141D2FA414424A56F571A /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SewerLevel.cpp */; };
+		6A569811152F4ED89F36A683 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalRenderer.mm */ = {isa = PBXBuildFile; fileRef = 710B01D632A84A0899C61A29 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalRenderer.mm */; };
+		6B4F135601E6441987F8905D /* /Users/aimac/Development/FloppyTurd/FloppyTurd/LogManager.mm */ = {isa = PBXBuildFile; fileRef = 66A94698A2D44E09A9FA0034 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/LogManager.mm */; };
+		6BF2354B079945C3A2CE3713 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AudioClip.cpp */ = {isa = PBXBuildFile; fileRef = B0637F3479EF4C60B9CD5909 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AudioClip.cpp */; };
+		6C437B2810E145F8B96433F9 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Hat.cpp */ = {isa = PBXBuildFile; fileRef = 04FB3AD234524AD2A7DD8083 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Hat.cpp */; };
+		70CC54D93A8A4C94B777157E /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets */ = {isa = PBXBuildFile; fileRef = 67939EB123C3496FA8A5BC4A /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets */; };
+		720676AD4AB346AFAC65E00A /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Game.cpp */ = {isa = PBXBuildFile; fileRef = 687C71569246436AA42DCF2A /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Game.cpp */; };
+		720CEE47DC044301A66D99F2 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Credits.cpp */ = {isa = PBXBuildFile; fileRef = 0E90515E6D8A4AFB97FD77D7 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Credits.cpp */; };
+		746E8403D8C3461CA1647F72 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/CastleLevel.cpp */ = {isa = PBXBuildFile; fileRef = 889F2BCADD5B4D62B90CEE02 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/CastleLevel.cpp */; };
+		7911FC54CF984C6FB0C7E5C2 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Playing.cpp */ = {isa = PBXBuildFile; fileRef = 69B56A42EC524C69B9203421 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Playing.cpp */; };
+		7AC0CB710993419CAE02212E /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PerformanceProfiler.cpp */ = {isa = PBXBuildFile; fileRef = 6987B09CF56D48768786C3B3 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PerformanceProfiler.cpp */; };
+		7C135B0FEEC5431782E3AC81 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SoundEffect.cpp */ = {isa = PBXBuildFile; fileRef = 1C4566700E984807926DE53D /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SoundEffect.cpp */; };
+		7DB99496141E4B388646FEDC /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PoopHeart.cpp */ = {isa = PBXBuildFile; fileRef = B5E3E514D2E34712A871B5AC /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PoopHeart.cpp */; };
+		7DE854B7282B404B8560DA90 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowballProjectile.cpp */ = {isa = PBXBuildFile; fileRef = 7075A9ACC9E9427A9F44F8EC /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowballProjectile.cpp */; };
+		8352FD5CB9DC4B8BA7D886CF /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Loading.cpp */ = {isa = PBXBuildFile; fileRef = AEF607C6303444029F8F03A5 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Loading.cpp */; };
+		845E18EB5E494E279C9AF7DD /* /Users/aimac/Development/FloppyTurd/FloppyTurd/FontAtlasGenerator.mm */ = {isa = PBXBuildFile; fileRef = FA7DCEEE9D4A4F7087454112 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/FontAtlasGenerator.mm */; };
+		850F03EC10EA441794BB6C0F /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AudioStateManager.mm */ = {isa = PBXBuildFile; fileRef = 822A8A31793B46D9B0EBB395 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AudioStateManager.mm */; };
+		87DB6AB810B64B3385EE5FFE /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowLevel.cpp */ = {isa = PBXBuildFile; fileRef = 8D328075FE4E4C29A63FB2D9 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowLevel.cpp */; };
+		88C020B838F146A78080C890 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AnimatedParallaxLayer.cpp */ = {isa = PBXBuildFile; fileRef = 07EB9FA6C1604E8E8E3A69F2 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AnimatedParallaxLayer.cpp */; };
+		8CF22A2360EC495CB4735F93 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/GameStats.cpp */ = {isa = PBXBuildFile; fileRef = 74E4495F96964A0C9231CCB9 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/GameStats.cpp */; };
+		8F1265DC0B88426CB64CAD98 /* /Users/aimac/Development/FloppyTurd/CMakeFiles/FloppyTurd.dir/Info.plist */ = {isa = PBXBuildFile; fileRef = 586A49AD00384835B0A74D63 /* /Users/aimac/Development/FloppyTurd/CMakeFiles/FloppyTurd.dir/Info.plist */; };
+		8F573AD88D154F32A5A2FA50 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/WindowIOS.mm */ = {isa = PBXBuildFile; fileRef = 5BD349C94A0941B1A7CB534B /* /Users/aimac/Development/FloppyTurd/FloppyTurd/WindowIOS.mm */; };
+		937B2AE0CAE849F4A69A9761 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ToiletPaper.cpp */ = {isa = PBXBuildFile; fileRef = 6A8CF88DCEF0424AAB4E76D8 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ToiletPaper.cpp */; };
+		941BAA77F8C94BD3AE514D2B /* /Users/aimac/Development/FloppyTurd/FloppyTurd/GoldToilets.cpp */ = {isa = PBXBuildFile; fileRef = 4CDE39112F1545C393062D99 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/GoldToilets.cpp */; };
+		96611D0AC1ED41E1B5C4546E /* /Users/aimac/Development/FloppyTurd/FloppyTurd/TextureCache.cpp */ = {isa = PBXBuildFile; fileRef = 4F245E504BB84CBF8C2E0904 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/TextureCache.cpp */; };
+		9839EC6B04674A5CA298EE34 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowmanEnemy.cpp */ = {isa = PBXBuildFile; fileRef = 285785456C214CF5810A5A78 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowmanEnemy.cpp */; };
+		9FB7C8A3F197461CB06CEC52 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AnimatedLayer.cpp */ = {isa = PBXBuildFile; fileRef = BFD025F8808142E8B6F3B194 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AnimatedLayer.cpp */; };
+		A1617E928BDF477D93A7E993 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MainMenu.cpp */ = {isa = PBXBuildFile; fileRef = 85284187A1004DC8921BB5C1 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MainMenu.cpp */; };
+		A2F7E1EAFA2B471399FFEE31 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ResourceManager.cpp */ = {isa = PBXBuildFile; fileRef = 1BEB7C0CB4BE44529B810D89 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ResourceManager.cpp */; };
+		A96E258137C14D89A5535EE4 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Player.cpp */ = {isa = PBXBuildFile; fileRef = 1379B090C83F4510823D73A0 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Player.cpp */; };
+		AA997CEE9BB14A63B340AD1C /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ParallaxLayer.cpp */ = {isa = PBXBuildFile; fileRef = 419641E973DE4C84BCFADED5 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ParallaxLayer.cpp */; };
+		ACB856309671469895034006 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/GameView.mm */ = {isa = PBXBuildFile; fileRef = 2719663BCFC54CB2A3AFA8E8 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/GameView.mm */; };
+		AD5F6291C06E427B8CB55A7D /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/AppDelegate.mm */ = {isa = PBXBuildFile; fileRef = 32A036480C90473FB773A68E /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/AppDelegate.mm */; };
+		B162CFFF27AC4AFBAF26E253 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/GameViewController.mm */ = {isa = PBXBuildFile; fileRef = 65F8E5AD3603494D88C115C2 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/GameViewController.mm */; };
+		B29091E97DF34B9E9948E65F /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SoundManager.cpp */ = {isa = PBXBuildFile; fileRef = F2FA24277B084335A3100AC1 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SoundManager.cpp */; };
+		B290931F0F0B4333890DFB56 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalTextureCache.mm */ = {isa = PBXBuildFile; fileRef = 37903421E0ED49EFB07E9ED7 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalTextureCache.mm */; };
+		B31B4B23A9B44CA6A20B0887 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/BrickWall.cpp */ = {isa = PBXBuildFile; fileRef = D78B0C30111E4C64895728B5 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/BrickWall.cpp */; };
+		B41DE63082F744B39DBCE014 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PickUp.cpp */ = {isa = PBXBuildFile; fileRef = 8B9988299CE543D19E100D3E /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PickUp.cpp */; };
+		BA33DAC57F6E49C8B48C41E2 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/DesertLevel.cpp */ = {isa = PBXBuildFile; fileRef = 027A5258259C4B558DA84A08 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/DesertLevel.cpp */; };
+		BB79D829477843DCB33C892E /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Enemy.cpp */ = {isa = PBXBuildFile; fileRef = C3A6D04F5AC048AC9B8BB4A7 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Enemy.cpp */; };
+		BFE43F33099D414DBE559D0D /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AudioManager.cpp */ = {isa = PBXBuildFile; fileRef = A1D4C4DA261E4D97BE679437 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AudioManager.cpp */; };
+		C060FEB4D423487993F7C505 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SpikeBall.cpp */ = {isa = PBXBuildFile; fileRef = B33A9F59529E46FCAC7CCAC3 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SpikeBall.cpp */; };
+		C648BA3A5D7C466EA02413FE /* /Users/aimac/Development/FloppyTurd/FloppyTurd/RatCopter.cpp */ = {isa = PBXBuildFile; fileRef = A36ABC412F694303AA4F20F3 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/RatCopter.cpp */; };
+		C6BD76B88BCA40F3A8C4C88A /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Explosion.cpp */ = {isa = PBXBuildFile; fileRef = D69D0595CD0E4FD0AF8AB563 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Explosion.cpp */; };
+		C784CAAC72F14742A60239C3 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Bird.cpp */ = {isa = PBXBuildFile; fileRef = 218CD26E008C4D9F893BDAEE /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Bird.cpp */; };
+		CC4EFFCE1909428299AF7B0F /* /Users/aimac/Development/FloppyTurd/FloppyTurd/GameLog.mm */ = {isa = PBXBuildFile; fileRef = 3EFA2D98E89947D58759DCFC /* /Users/aimac/Development/FloppyTurd/FloppyTurd/GameLog.mm */; };
+		CCD9763549F743079BC1BDEC /* /Users/aimac/Development/FloppyTurd/FloppyTurd/CoinType.cpp */ = {isa = PBXBuildFile; fileRef = B06BBD71A36F4BEEB47385F6 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/CoinType.cpp */; };
+		CDE629D9C56A4BC3999B6AF6 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AIGUI.cpp */ = {isa = PBXBuildFile; fileRef = 098B5B3C06614DB7BC17255C /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AIGUI.cpp */; };
+		D5B7882BF61741249AD065DF /* /Users/aimac/Development/FloppyTurd/FloppyTurd/TextureAtlas.cpp */ = {isa = PBXBuildFile; fileRef = 0D984A6123844475AE468552 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/TextureAtlas.cpp */; };
+		D76BBA83B646488BBA832F35 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SewerPipe.cpp */ = {isa = PBXBuildFile; fileRef = 1B37EE3EA4D94C9E8A9110EB /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SewerPipe.cpp */; };
+		D83FFFEE1F5F463688C89AE3 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/CameraSystem.cpp */ = {isa = PBXBuildFile; fileRef = 07C87293818B43C58D0C9706 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/CameraSystem.cpp */; };
+		E26E3902B20E431FBE17D07E /* /Users/aimac/Development/FloppyTurd/FloppyTurd/FontCache.mm */ = {isa = PBXBuildFile; fileRef = 0D109480837C4DC385DBFF04 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/FontCache.mm */; };
+		E3B911386C514F7F873065F8 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/resources/fonts/Whacky_Joe.ttf */ = {isa = PBXBuildFile; fileRef = 22F6D538A4A546D5B53CE1BE /* /Users/aimac/Development/FloppyTurd/FloppyTurd/resources/fonts/Whacky_Joe.ttf */; };
+		E69F33E089B44C828784FDF0 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalShader.mm */ = {isa = PBXBuildFile; fileRef = 2495A7DF9B5D4998BC6419E5 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalShader.mm */; };
+		E7575389645B41069626C7BF /* /Users/aimac/Development/FloppyTurd/FloppyTurd/BossLevel.cpp */ = {isa = PBXBuildFile; fileRef = 66A5A51C385D4CAE8616E799 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/BossLevel.cpp */; };
+		EA6DF7E21197491F8A0C6C30 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalTexture.mm */ = {isa = PBXBuildFile; fileRef = D827B392DA1E4D76B007B2B3 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalTexture.mm */; };
+		EBB419376D804640BD31A6B1 /* /Users/aimac/Development/FloppyTurd/CMakeLists.txt */ = {isa = PBXBuildFile; fileRef = CE91B5547F8941F39D111F7C /* /Users/aimac/Development/FloppyTurd/CMakeLists.txt */; };
+		F51789A8006849E2867754D7 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/RatKing.cpp */ = {isa = PBXBuildFile; fileRef = 7BB4E3B915B341CC8390B0D4 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/RatKing.cpp */; };
+		F8CA73B3987944A9BA58D5E5 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Coin.cpp */ = {isa = PBXBuildFile; fileRef = 0C454D44693C4DC7B0F8DC36 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Coin.cpp */; };
+		FBA2E8FD685D4FC0851970BC /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ToiletPaperProjectile.cpp */ = {isa = PBXBuildFile; fileRef = 1A64EC0DB2B94D948302A8D4 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ToiletPaperProjectile.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXBuildStyle section */
-		3B05F20C137640A4BBD00D9C /* Debug */ = {
+		5AED1B5CC01D43E78215A322 /* Debug */ = {
 			isa = PBXBuildStyle;
 			buildSettings = {
 				COPY_PHASE_STRIP = NO;
 			};
 			name = Debug;
 		};
-		8B88B70A344647A1B334B56C /* RelWithDebInfo */ = {
-			isa = PBXBuildStyle;
-			buildSettings = {
-				COPY_PHASE_STRIP = NO;
-			};
-			name = RelWithDebInfo;
-		};
-		DD0CA7CC7FD4455A9F4995D9 /* Release */ = {
+		A98D08832E6F45EDBE5DFF37 /* Release */ = {
 			isa = PBXBuildStyle;
 			buildSettings = {
 				COPY_PHASE_STRIP = NO;
 			};
 			name = Release;
 		};
-		FCB388E00EBD4DE7A8393280 /* MinSizeRel */ = {
+		B8303EE8997049978ECBB6D4 /* MinSizeRel */ = {
 			isa = PBXBuildStyle;
 			buildSettings = {
 				COPY_PHASE_STRIP = NO;
 			};
 			name = MinSizeRel;
 		};
+		C696B358B0B84788A5E734A1 /* RelWithDebInfo */ = {
+			isa = PBXBuildStyle;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+			};
+			name = RelWithDebInfo;
+		};
 /* End PBXBuildStyle section */
 
 /* Begin PBXContainerItemProxy section */
-		8CF6A7548E274FBBADBA48B8 /* PBXContainerItemProxy */ = {
+		2D33F9E9497E408CB604F4B2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4F36A8C86A414128B6E45933 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5E72DDC5DEC7CBC59913B604;
+			remoteInfo = ZERO_CHECK;
+		};
+		B3BC834AA82647B3B306D9A6 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4F36A8C86A414128B6E45933 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5E72DDC5DEC7CBC59913B604;
+			remoteInfo = ZERO_CHECK;
+		};
+		BCCFE2C9233F4FD7B204486B /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 4F36A8C86A414128B6E45933 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 8EFA9AA7BA22AECA1336F161;
 			remoteInfo = FloppyTurd;
 		};
-		AA2EC0AB138F49B2966C87AE /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 4F36A8C86A414128B6E45933 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 5E72DDC5DEC7CBC59913B604;
-			remoteInfo = ZERO_CHECK;
-		};
-		F251A5174717436298B5B7E6 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 4F36A8C86A414128B6E45933 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 5E72DDC5DEC7CBC59913B604;
-			remoteInfo = ZERO_CHECK;
-		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		009AACBB7DB240C88936DC35 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AIGUI.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = AIGUI.cpp; path = FloppyTurd/AIGUI.cpp; sourceTree = SOURCE_ROOT; };
-		07DFD3F30F2E40B0BD3EB5D0 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowOverlay.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = SnowOverlay.cpp; path = FloppyTurd/SnowOverlay.cpp; sourceTree = SOURCE_ROOT; };
-		0965B4121C8847B19F069EEE /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AudioManager.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = AudioManager.cpp; path = FloppyTurd/AudioManager.cpp; sourceTree = SOURCE_ROOT; };
-		0C545E728BDB47F992E70CCF /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Player.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Player.cpp; path = FloppyTurd/Player.cpp; sourceTree = SOURCE_ROOT; };
-		0D71867ED05048B8B1EE3A90 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SoundEffect.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = SoundEffect.cpp; path = FloppyTurd/SoundEffect.cpp; sourceTree = SOURCE_ROOT; };
-		0E2B50CEA26540ACAC6B80B6 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalTextRenderer.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = MetalTextRenderer.mm; path = FloppyTurd/MetalTextRenderer.mm; sourceTree = SOURCE_ROOT; };
-		0F8180C7E98E4495B1A579E4 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Projectile.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Projectile.cpp; path = FloppyTurd/Projectile.cpp; sourceTree = SOURCE_ROOT; };
-		0FD1F936CE9344C18C52A29A /* /Users/aimac/Development/FloppyTurd/FloppyTurd/CameraSystem.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = CameraSystem.cpp; path = FloppyTurd/CameraSystem.cpp; sourceTree = SOURCE_ROOT; };
-		1509AD9901804F388E7B05F6 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Hat.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Hat.cpp; path = FloppyTurd/Hat.cpp; sourceTree = SOURCE_ROOT; };
-		17F5607E33E1438AADBA8EAA /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalTexture.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = MetalTexture.mm; path = FloppyTurd/MetalTexture.mm; sourceTree = SOURCE_ROOT; };
-		1D46BFDB695144CCA1CE4533 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ParallaxLayer.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = ParallaxLayer.cpp; path = FloppyTurd/ParallaxLayer.cpp; sourceTree = SOURCE_ROOT; };
-		269EC20612194785BD3AA123 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowLevel.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = SnowLevel.cpp; path = FloppyTurd/SnowLevel.cpp; sourceTree = SOURCE_ROOT; };
-		2B8A4531F9B24C9CA746B8EE /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowballProjectile.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = SnowballProjectile.cpp; path = FloppyTurd/SnowballProjectile.cpp; sourceTree = SOURCE_ROOT; };
-		2C2706A64A7C4C728083764E /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Loading.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Loading.cpp; path = FloppyTurd/Loading.cpp; sourceTree = SOURCE_ROOT; };
-		2D0BFFFAE2B942BBB4B8286C /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalRenderer.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = MetalRenderer.mm; path = FloppyTurd/MetalRenderer.mm; sourceTree = SOURCE_ROOT; };
-		2D645E03454E478B87452285 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Bird.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Bird.cpp; path = FloppyTurd/Bird.cpp; sourceTree = SOURCE_ROOT; };
-		2DE0EED2969C4248A7A073B1 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AudioClip.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = AudioClip.cpp; path = FloppyTurd/AudioClip.cpp; sourceTree = SOURCE_ROOT; };
-		2F0F3F3BFA66488195AE0089 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/FontCache.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = FontCache.mm; path = FloppyTurd/FontCache.mm; sourceTree = SOURCE_ROOT; };
-		34D4EA2A1C79467DA73B68E8 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/UICoordinateSystem.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = UICoordinateSystem.mm; path = FloppyTurd/UICoordinateSystem.mm; sourceTree = SOURCE_ROOT; };
-		373385E739214AA38BEE141E /* /Users/aimac/Development/FloppyTurd/FloppyTurd/TextureCache.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = TextureCache.cpp; path = FloppyTurd/TextureCache.cpp; sourceTree = SOURCE_ROOT; };
-		45188EA70F154F26AB7F984C /* /Users/aimac/Development/FloppyTurd/FloppyTurd/BossLevel.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = BossLevel.cpp; path = FloppyTurd/BossLevel.cpp; sourceTree = SOURCE_ROOT; };
-		46A839F95A3046CC913A7D5A /* FloppyTurd */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; path = FloppyTurd; sourceTree = BUILT_PRODUCTS_DIR; };
-		4A21DEA1CFFE4124A08E1217 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowmanEnemy.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = SnowmanEnemy.cpp; path = FloppyTurd/SnowmanEnemy.cpp; sourceTree = SOURCE_ROOT; };
-		4A6DC26AF88C4971BDCA220C /* /Users/aimac/Development/FloppyTurd/CMakeFiles/FloppyTurd.dir/Info.plist */ = {isa = PBXFileReference; explicitFileType = sourcecode.text.plist; fileEncoding = 4; name = Info.plist; path = CMakeFiles/FloppyTurd.dir/Info.plist; sourceTree = SOURCE_ROOT; };
-		4F2ECABDA30748A6BAD9B755 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SewerPipe.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = SewerPipe.cpp; path = FloppyTurd/SewerPipe.cpp; sourceTree = SOURCE_ROOT; };
-		50DACC9F002A4F6C9455AEE8 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = PlatformAPI.cpp; path = FloppyTurd/PlatformAPI.cpp; sourceTree = SOURCE_ROOT; };
-		529BD6929D0C4F64B7D49CE8 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Window.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Window.cpp; path = FloppyTurd/Window.cpp; sourceTree = SOURCE_ROOT; };
-		5B2FFFE0F64B40968B898219 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Cactus.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Cactus.cpp; path = FloppyTurd/Cactus.cpp; sourceTree = SOURCE_ROOT; };
-		5C32120C6E114E709A6B41F5 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/RaylibCompat.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = RaylibCompat.mm; path = FloppyTurd/RaylibCompat.mm; sourceTree = SOURCE_ROOT; };
-		5F6A3163E3514A4A96CCE82D /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SoundManager.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = SoundManager.cpp; path = FloppyTurd/SoundManager.cpp; sourceTree = SOURCE_ROOT; };
-		65780871C046496A8404DAF6 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/GameViewController.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = GameViewController.mm; path = FloppyTurd/iOS/GameViewController.mm; sourceTree = SOURCE_ROOT; };
-		66C2BC12E2694281BFBAB59E /* /Users/aimac/Development/FloppyTurd/FloppyTurd/GameLog.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = GameLog.mm; path = FloppyTurd/GameLog.mm; sourceTree = SOURCE_ROOT; };
-		69516364EA384427A91CA0A5 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ParkLevel.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = ParkLevel.cpp; path = FloppyTurd/ParkLevel.cpp; sourceTree = SOURCE_ROOT; };
-		6A1000BD47A4420CAD60F6EF /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Obstacle.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Obstacle.cpp; path = FloppyTurd/Obstacle.cpp; sourceTree = SOURCE_ROOT; };
-		6BCB715975C04C2E876E9345 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/FontAtlasGenerator.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = FontAtlasGenerator.mm; path = FloppyTurd/FontAtlasGenerator.mm; sourceTree = SOURCE_ROOT; };
-		70B07F5B8E274693834E31EA /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Playing.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Playing.cpp; path = FloppyTurd/Playing.cpp; sourceTree = SOURCE_ROOT; };
-		7152F9D36F994E99824C2F47 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ToiletPair.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = ToiletPair.cpp; path = FloppyTurd/ToiletPair.cpp; sourceTree = SOURCE_ROOT; };
-		777F036A25234E9E9BBA3D1D /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = FloppyTurd/Assets.xcassets; sourceTree = SOURCE_ROOT; };
-		77EE393F978E4D5ABDFA277E /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/HapticsManager.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = HapticsManager.mm; path = FloppyTurd/iOS/HapticsManager.mm; sourceTree = SOURCE_ROOT; };
-		7810A508E5B74A8D97EC4B66 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalShader.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = MetalShader.mm; path = FloppyTurd/MetalShader.mm; sourceTree = SOURCE_ROOT; };
-		788392A2816C457584276448 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalFrameResources.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = MetalFrameResources.mm; path = FloppyTurd/MetalFrameResources.mm; sourceTree = SOURCE_ROOT; };
-		78DC5F788F154870B7551F0C /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Explosion.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Explosion.cpp; path = FloppyTurd/Explosion.cpp; sourceTree = SOURCE_ROOT; };
-		7EDC526BB6E94DD08E44787A /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/GameView.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = GameView.mm; path = FloppyTurd/iOS/GameView.mm; sourceTree = SOURCE_ROOT; };
-		80987DA1E8C44E7393DA62B8 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Game.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Game.cpp; path = FloppyTurd/Game.cpp; sourceTree = SOURCE_ROOT; };
-		80AC944448FD42F4B38305AB /* /Users/aimac/Development/FloppyTurd/FloppyTurd/RatCopter.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = RatCopter.cpp; path = FloppyTurd/RatCopter.cpp; sourceTree = SOURCE_ROOT; };
-		80D4258F83ED4208984EEEC3 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Sprite.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Sprite.cpp; path = FloppyTurd/Sprite.cpp; sourceTree = SOURCE_ROOT; };
-		80F4C04D5E2142FB9A3303C1 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AnimatedLayer.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = AnimatedLayer.cpp; path = FloppyTurd/AnimatedLayer.cpp; sourceTree = SOURCE_ROOT; };
-		8A54583342DE4486B8E7FB51 /* /Users/aimac/Development/FloppyTurd/CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = CMakeLists.txt; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
-		8A667E2F71CB42DCBEF2FFAA /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ToiletPaper.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = ToiletPaper.cpp; path = FloppyTurd/ToiletPaper.cpp; sourceTree = SOURCE_ROOT; };
-		8D326B0701C74614BA9FA1E5 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SewerLevel.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = SewerLevel.cpp; path = FloppyTurd/SewerLevel.cpp; sourceTree = SOURCE_ROOT; };
-		8E473D89F60F48C38B77B66F /* /Users/aimac/Development/FloppyTurd/FloppyTurd/TouchControls.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = TouchControls.cpp; path = FloppyTurd/TouchControls.cpp; sourceTree = SOURCE_ROOT; };
-		8E4A6149F2254391A13E763B /* /Users/aimac/Development/FloppyTurd/FloppyTurd/CastleLevel.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = CastleLevel.cpp; path = FloppyTurd/CastleLevel.cpp; sourceTree = SOURCE_ROOT; };
-		91C9FD91302E499199B07B13 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/LevelManager.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = LevelManager.cpp; path = FloppyTurd/LevelManager.cpp; sourceTree = SOURCE_ROOT; };
-		967FAA622FAB4636B1FBE4FD /* /Users/aimac/Development/FloppyTurd/FloppyTurd/DesertLevel.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = DesertLevel.cpp; path = FloppyTurd/DesertLevel.cpp; sourceTree = SOURCE_ROOT; };
-		991294B196934C8788B903B1 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ToiletPaperProjectile.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = ToiletPaperProjectile.cpp; path = FloppyTurd/ToiletPaperProjectile.cpp; sourceTree = SOURCE_ROOT; };
-		9C44D8DBEE834F5A8E4F8EAE /* /Users/aimac/Development/FloppyTurd/FloppyTurd/main_ios.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = main_ios.mm; path = FloppyTurd/main_ios.mm; sourceTree = SOURCE_ROOT; };
-		A7C0F626D07C407E9C25200B /* /Users/aimac/Development/FloppyTurd/FloppyTurd/resources/fonts/Whacky_Joe.ttf */ = {isa = PBXFileReference; explicitFileType = default; fileEncoding = 4; name = Whacky_Joe.ttf; path = FloppyTurd/resources/fonts/Whacky_Joe.ttf; sourceTree = SOURCE_ROOT; };
-		A847E20C65134D57A3245548 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/BossHealthBar.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = BossHealthBar.cpp; path = FloppyTurd/BossHealthBar.cpp; sourceTree = SOURCE_ROOT; };
-		B1CF0C035569431D806782A2 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/CoinType.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = CoinType.cpp; path = FloppyTurd/CoinType.cpp; sourceTree = SOURCE_ROOT; };
-		B29A9DA4DCFA4F33900948D2 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Credits.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Credits.cpp; path = FloppyTurd/Credits.cpp; sourceTree = SOURCE_ROOT; };
-		B73E0FAD6A7B4A2C88B0EEBF /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MenuButton.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = MenuButton.cpp; path = FloppyTurd/MenuButton.cpp; sourceTree = SOURCE_ROOT; };
-		B74C01A2A94C4BDAA82D9354 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalTextureCache.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = MetalTextureCache.mm; path = FloppyTurd/MetalTextureCache.mm; sourceTree = SOURCE_ROOT; };
-		B8EE02AF001B4DCFB212A02F /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MainMenu.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = MainMenu.cpp; path = FloppyTurd/MainMenu.cpp; sourceTree = SOURCE_ROOT; };
-		B9003454B8C84B818AC8E290 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/GoldToilets.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = GoldToilets.cpp; path = FloppyTurd/GoldToilets.cpp; sourceTree = SOURCE_ROOT; };
-		BB3F7CDF885349D5B2D95CD8 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AnimatedParallaxLayer.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = AnimatedParallaxLayer.cpp; path = FloppyTurd/AnimatedParallaxLayer.cpp; sourceTree = SOURCE_ROOT; };
-		C1FF68B2AE994ACFBE7FDEE7 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/LogManager.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = LogManager.mm; path = FloppyTurd/LogManager.mm; sourceTree = SOURCE_ROOT; };
-		C6F392CAECD04D9EB7983147 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/StaticLayer.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = StaticLayer.cpp; path = FloppyTurd/StaticLayer.cpp; sourceTree = SOURCE_ROOT; };
-		CE04CCDE2ED740F5AB809B77 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ResourceManager.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = ResourceManager.cpp; path = FloppyTurd/ResourceManager.cpp; sourceTree = SOURCE_ROOT; };
-		D5A9BADF060D40E782F3C845 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PerformanceProfiler.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = PerformanceProfiler.cpp; path = FloppyTurd/PerformanceProfiler.cpp; sourceTree = SOURCE_ROOT; };
-		D78A04F1091843C6B5FCE397 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PickUp.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = PickUp.cpp; path = FloppyTurd/PickUp.cpp; sourceTree = SOURCE_ROOT; };
-		D99855D61C07497488ADA445 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/RatKing.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = RatKing.cpp; path = FloppyTurd/RatKing.cpp; sourceTree = SOURCE_ROOT; };
-		DB7BE11CA99A44C6B4CDC65F /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AudioStateManager.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = AudioStateManager.mm; path = FloppyTurd/AudioStateManager.mm; sourceTree = SOURCE_ROOT; };
-		DC74FB385430446EBE1F51D2 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/UIManager.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = UIManager.cpp; path = FloppyTurd/UIManager.cpp; sourceTree = SOURCE_ROOT; };
-		DE865087DF384B13B2125DAF /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Boss.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Boss.cpp; path = FloppyTurd/Boss.cpp; sourceTree = SOURCE_ROOT; };
-		DFEFD69E3F074F9C94756AF1 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/AppDelegate.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = AppDelegate.mm; path = FloppyTurd/iOS/AppDelegate.mm; sourceTree = SOURCE_ROOT; };
-		E22514CB46E3413CA8391192 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/BrickWall.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = BrickWall.cpp; path = FloppyTurd/BrickWall.cpp; sourceTree = SOURCE_ROOT; };
-		ED533FEFF81F4481A067521B /* /Users/aimac/Development/FloppyTurd/FloppyTurd/GameStats.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = GameStats.cpp; path = FloppyTurd/GameStats.cpp; sourceTree = SOURCE_ROOT; };
-		EE7AF422FA5C4A858DC6F0D9 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Shaders2D.metal */ = {isa = PBXFileReference; explicitFileType = sourcecode.metal; fileEncoding = 4; name = Shaders2D.metal; path = FloppyTurd/Shaders2D.metal; sourceTree = SOURCE_ROOT; };
-		F36BC944F6004F8F8346FF9F /* /Users/aimac/Development/FloppyTurd/FloppyTurd/TextureAtlas.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = TextureAtlas.cpp; path = FloppyTurd/TextureAtlas.cpp; sourceTree = SOURCE_ROOT; };
-		F714F1B17FDB4D56AB5EB78B /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformIOS.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = PlatformIOS.cpp; path = FloppyTurd/PlatformIOS.cpp; sourceTree = SOURCE_ROOT; };
-		F762DC7EAB61423D9E8E3C1A /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Level.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Level.cpp; path = FloppyTurd/Level.cpp; sourceTree = SOURCE_ROOT; };
-		F8FB2BA6C65A4FFF9C7893BD /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Coin.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Coin.cpp; path = FloppyTurd/Coin.cpp; sourceTree = SOURCE_ROOT; };
-		F94B984EC3B84A188720A111 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Outhouse.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Outhouse.cpp; path = FloppyTurd/Outhouse.cpp; sourceTree = SOURCE_ROOT; };
-		FA38B5E4A48A4242A651EC9B /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PoopHeart.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = PoopHeart.cpp; path = FloppyTurd/PoopHeart.cpp; sourceTree = SOURCE_ROOT; };
-		FA9592E21C804EE4B4346C79 /* /Users/aimac/Development/FloppyTurd/CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = CMakeLists.txt; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
-		FB4F47A71E4147C989F4D503 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SpikeBall.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = SpikeBall.cpp; path = FloppyTurd/SpikeBall.cpp; sourceTree = SOURCE_ROOT; };
-		FC9FEE32360E41CC82A808B4 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Enemy.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Enemy.cpp; path = FloppyTurd/Enemy.cpp; sourceTree = SOURCE_ROOT; };
+		027A5258259C4B558DA84A08 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/DesertLevel.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = DesertLevel.cpp; path = FloppyTurd/DesertLevel.cpp; sourceTree = SOURCE_ROOT; };
+		04FB3AD234524AD2A7DD8083 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Hat.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Hat.cpp; path = FloppyTurd/Hat.cpp; sourceTree = SOURCE_ROOT; };
+		07C87293818B43C58D0C9706 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/CameraSystem.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = CameraSystem.cpp; path = FloppyTurd/CameraSystem.cpp; sourceTree = SOURCE_ROOT; };
+		07EB9FA6C1604E8E8E3A69F2 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AnimatedParallaxLayer.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = AnimatedParallaxLayer.cpp; path = FloppyTurd/AnimatedParallaxLayer.cpp; sourceTree = SOURCE_ROOT; };
+		098B5B3C06614DB7BC17255C /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AIGUI.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = AIGUI.cpp; path = FloppyTurd/AIGUI.cpp; sourceTree = SOURCE_ROOT; };
+		0C454D44693C4DC7B0F8DC36 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Coin.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Coin.cpp; path = FloppyTurd/Coin.cpp; sourceTree = SOURCE_ROOT; };
+		0D109480837C4DC385DBFF04 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/FontCache.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = FontCache.mm; path = FloppyTurd/FontCache.mm; sourceTree = SOURCE_ROOT; };
+		0D984A6123844475AE468552 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/TextureAtlas.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = TextureAtlas.cpp; path = FloppyTurd/TextureAtlas.cpp; sourceTree = SOURCE_ROOT; };
+		0E90515E6D8A4AFB97FD77D7 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Credits.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Credits.cpp; path = FloppyTurd/Credits.cpp; sourceTree = SOURCE_ROOT; };
+		1379B090C83F4510823D73A0 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Player.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Player.cpp; path = FloppyTurd/Player.cpp; sourceTree = SOURCE_ROOT; };
+		1478F903D6DB44938D9906FE /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalFrameResources.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = MetalFrameResources.mm; path = FloppyTurd/MetalFrameResources.mm; sourceTree = SOURCE_ROOT; };
+		1A64EC0DB2B94D948302A8D4 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ToiletPaperProjectile.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = ToiletPaperProjectile.cpp; path = FloppyTurd/ToiletPaperProjectile.cpp; sourceTree = SOURCE_ROOT; };
+		1B37EE3EA4D94C9E8A9110EB /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SewerPipe.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = SewerPipe.cpp; path = FloppyTurd/SewerPipe.cpp; sourceTree = SOURCE_ROOT; };
+		1BEB7C0CB4BE44529B810D89 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ResourceManager.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = ResourceManager.cpp; path = FloppyTurd/ResourceManager.cpp; sourceTree = SOURCE_ROOT; };
+		1C4566700E984807926DE53D /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SoundEffect.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = SoundEffect.cpp; path = FloppyTurd/SoundEffect.cpp; sourceTree = SOURCE_ROOT; };
+		218CD26E008C4D9F893BDAEE /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Bird.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Bird.cpp; path = FloppyTurd/Bird.cpp; sourceTree = SOURCE_ROOT; };
+		22F6D538A4A546D5B53CE1BE /* /Users/aimac/Development/FloppyTurd/FloppyTurd/resources/fonts/Whacky_Joe.ttf */ = {isa = PBXFileReference; explicitFileType = default; fileEncoding = 4; name = Whacky_Joe.ttf; path = FloppyTurd/resources/fonts/Whacky_Joe.ttf; sourceTree = SOURCE_ROOT; };
+		2495A7DF9B5D4998BC6419E5 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalShader.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = MetalShader.mm; path = FloppyTurd/MetalShader.mm; sourceTree = SOURCE_ROOT; };
+		2719663BCFC54CB2A3AFA8E8 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/GameView.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = GameView.mm; path = FloppyTurd/iOS/GameView.mm; sourceTree = SOURCE_ROOT; };
+		285785456C214CF5810A5A78 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowmanEnemy.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = SnowmanEnemy.cpp; path = FloppyTurd/SnowmanEnemy.cpp; sourceTree = SOURCE_ROOT; };
+		293630AF995A4EDAA0F0E51D /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/HapticsManager.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = HapticsManager.mm; path = FloppyTurd/iOS/HapticsManager.mm; sourceTree = SOURCE_ROOT; };
+		2C877A27B9004254AEB9612C /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformTraitsIOS.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = PlatformTraitsIOS.mm; path = FloppyTurd/PlatformTraitsIOS.mm; sourceTree = SOURCE_ROOT; };
+		32A036480C90473FB773A68E /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/AppDelegate.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = AppDelegate.mm; path = FloppyTurd/iOS/AppDelegate.mm; sourceTree = SOURCE_ROOT; };
+		3406C5AE24524F9E8B959072 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/LevelManager.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = LevelManager.cpp; path = FloppyTurd/LevelManager.cpp; sourceTree = SOURCE_ROOT; };
+		35C858AA661441CA810B44CC /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = PlatformAPI.cpp; path = FloppyTurd/PlatformAPI.cpp; sourceTree = SOURCE_ROOT; };
+		37903421E0ED49EFB07E9ED7 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalTextureCache.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = MetalTextureCache.mm; path = FloppyTurd/MetalTextureCache.mm; sourceTree = SOURCE_ROOT; };
+		393298E874FC4B71B0AFFE83 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Sprite.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Sprite.cpp; path = FloppyTurd/Sprite.cpp; sourceTree = SOURCE_ROOT; };
+		3EFA2D98E89947D58759DCFC /* /Users/aimac/Development/FloppyTurd/FloppyTurd/GameLog.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = GameLog.mm; path = FloppyTurd/GameLog.mm; sourceTree = SOURCE_ROOT; };
+		419641E973DE4C84BCFADED5 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ParallaxLayer.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = ParallaxLayer.cpp; path = FloppyTurd/ParallaxLayer.cpp; sourceTree = SOURCE_ROOT; };
+		48E4D2C8379347529A9A7B0B /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Window.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Window.cpp; path = FloppyTurd/Window.cpp; sourceTree = SOURCE_ROOT; };
+		4CDE39112F1545C393062D99 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/GoldToilets.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = GoldToilets.cpp; path = FloppyTurd/GoldToilets.cpp; sourceTree = SOURCE_ROOT; };
+		4D34472C5BF941E1AB992159 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/TouchControls.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = TouchControls.cpp; path = FloppyTurd/TouchControls.cpp; sourceTree = SOURCE_ROOT; };
+		4F245E504BB84CBF8C2E0904 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/TextureCache.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = TextureCache.cpp; path = FloppyTurd/TextureCache.cpp; sourceTree = SOURCE_ROOT; };
+		540441DF6E4E478F9794466A /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MNKControls.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = MNKControls.cpp; path = FloppyTurd/MNKControls.cpp; sourceTree = SOURCE_ROOT; };
+		586A49AD00384835B0A74D63 /* /Users/aimac/Development/FloppyTurd/CMakeFiles/FloppyTurd.dir/Info.plist */ = {isa = PBXFileReference; explicitFileType = sourcecode.text.plist; fileEncoding = 4; name = Info.plist; path = CMakeFiles/FloppyTurd.dir/Info.plist; sourceTree = SOURCE_ROOT; };
+		5BD349C94A0941B1A7CB534B /* /Users/aimac/Development/FloppyTurd/FloppyTurd/WindowIOS.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = WindowIOS.mm; path = FloppyTurd/WindowIOS.mm; sourceTree = SOURCE_ROOT; };
+		65F8E5AD3603494D88C115C2 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/GameViewController.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = GameViewController.mm; path = FloppyTurd/iOS/GameViewController.mm; sourceTree = SOURCE_ROOT; };
+		66A5A51C385D4CAE8616E799 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/BossLevel.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = BossLevel.cpp; path = FloppyTurd/BossLevel.cpp; sourceTree = SOURCE_ROOT; };
+		66A94698A2D44E09A9FA0034 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/LogManager.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = LogManager.mm; path = FloppyTurd/LogManager.mm; sourceTree = SOURCE_ROOT; };
+		67939EB123C3496FA8A5BC4A /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = FloppyTurd/Assets.xcassets; sourceTree = SOURCE_ROOT; };
+		687C71569246436AA42DCF2A /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Game.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Game.cpp; path = FloppyTurd/Game.cpp; sourceTree = SOURCE_ROOT; };
+		6987B09CF56D48768786C3B3 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PerformanceProfiler.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = PerformanceProfiler.cpp; path = FloppyTurd/PerformanceProfiler.cpp; sourceTree = SOURCE_ROOT; };
+		69B56A42EC524C69B9203421 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Playing.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Playing.cpp; path = FloppyTurd/Playing.cpp; sourceTree = SOURCE_ROOT; };
+		6A8CF88DCEF0424AAB4E76D8 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ToiletPaper.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = ToiletPaper.cpp; path = FloppyTurd/ToiletPaper.cpp; sourceTree = SOURCE_ROOT; };
+		7075A9ACC9E9427A9F44F8EC /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowballProjectile.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = SnowballProjectile.cpp; path = FloppyTurd/SnowballProjectile.cpp; sourceTree = SOURCE_ROOT; };
+		710B01D632A84A0899C61A29 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalRenderer.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = MetalRenderer.mm; path = FloppyTurd/MetalRenderer.mm; sourceTree = SOURCE_ROOT; };
+		74E4495F96964A0C9231CCB9 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/GameStats.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = GameStats.cpp; path = FloppyTurd/GameStats.cpp; sourceTree = SOURCE_ROOT; };
+		7BB4E3B915B341CC8390B0D4 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/RatKing.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = RatKing.cpp; path = FloppyTurd/RatKing.cpp; sourceTree = SOURCE_ROOT; };
+		7FA3430D0742423AA398E8BF /* /Users/aimac/Development/FloppyTurd/FloppyTurd/GlobalStateManager.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = GlobalStateManager.cpp; path = FloppyTurd/GlobalStateManager.cpp; sourceTree = SOURCE_ROOT; };
+		822A8A31793B46D9B0EBB395 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AudioStateManager.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = AudioStateManager.mm; path = FloppyTurd/AudioStateManager.mm; sourceTree = SOURCE_ROOT; };
+		85284187A1004DC8921BB5C1 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MainMenu.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = MainMenu.cpp; path = FloppyTurd/MainMenu.cpp; sourceTree = SOURCE_ROOT; };
+		889F2BCADD5B4D62B90CEE02 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/CastleLevel.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = CastleLevel.cpp; path = FloppyTurd/CastleLevel.cpp; sourceTree = SOURCE_ROOT; };
+		8A29FEF21E544EF6A5A0E94F /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Projectile.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Projectile.cpp; path = FloppyTurd/Projectile.cpp; sourceTree = SOURCE_ROOT; };
+		8B9988299CE543D19E100D3E /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PickUp.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = PickUp.cpp; path = FloppyTurd/PickUp.cpp; sourceTree = SOURCE_ROOT; };
+		8D328075FE4E4C29A63FB2D9 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowLevel.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = SnowLevel.cpp; path = FloppyTurd/SnowLevel.cpp; sourceTree = SOURCE_ROOT; };
+		93E58E3179A54994A14514A8 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MenuButton.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = MenuButton.cpp; path = FloppyTurd/MenuButton.cpp; sourceTree = SOURCE_ROOT; };
+		94AF13FC0BD54CB0A74988DB /* FloppyTurd */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; path = FloppyTurd; sourceTree = BUILT_PRODUCTS_DIR; };
+		9C82D61735EF4976A361A4BE /* /Users/aimac/Development/FloppyTurd/FloppyTurd/StaticLayer.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = StaticLayer.cpp; path = FloppyTurd/StaticLayer.cpp; sourceTree = SOURCE_ROOT; };
+		A1D4C4DA261E4D97BE679437 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AudioManager.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = AudioManager.cpp; path = FloppyTurd/AudioManager.cpp; sourceTree = SOURCE_ROOT; };
+		A36ABC412F694303AA4F20F3 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/RatCopter.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = RatCopter.cpp; path = FloppyTurd/RatCopter.cpp; sourceTree = SOURCE_ROOT; };
+		AEF607C6303444029F8F03A5 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Loading.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Loading.cpp; path = FloppyTurd/Loading.cpp; sourceTree = SOURCE_ROOT; };
+		B0637F3479EF4C60B9CD5909 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AudioClip.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = AudioClip.cpp; path = FloppyTurd/AudioClip.cpp; sourceTree = SOURCE_ROOT; };
+		B06BBD71A36F4BEEB47385F6 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/CoinType.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = CoinType.cpp; path = FloppyTurd/CoinType.cpp; sourceTree = SOURCE_ROOT; };
+		B0D30EA252F84A4E813C7625 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Boss.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Boss.cpp; path = FloppyTurd/Boss.cpp; sourceTree = SOURCE_ROOT; };
+		B33A9F59529E46FCAC7CCAC3 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SpikeBall.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = SpikeBall.cpp; path = FloppyTurd/SpikeBall.cpp; sourceTree = SOURCE_ROOT; };
+		B5E3E514D2E34712A871B5AC /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PoopHeart.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = PoopHeart.cpp; path = FloppyTurd/PoopHeart.cpp; sourceTree = SOURCE_ROOT; };
+		B6E141D2FA414424A56F571A /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SewerLevel.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = SewerLevel.cpp; path = FloppyTurd/SewerLevel.cpp; sourceTree = SOURCE_ROOT; };
+		BBC10EBB8DDA4356BCBA5FFD /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Shaders2D.metal */ = {isa = PBXFileReference; explicitFileType = sourcecode.metal; fileEncoding = 4; name = Shaders2D.metal; path = FloppyTurd/Shaders2D.metal; sourceTree = SOURCE_ROOT; };
+		BE166110771B4C9EAF112CBF /* /Users/aimac/Development/FloppyTurd/FloppyTurd/UIManager.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = UIManager.cpp; path = FloppyTurd/UIManager.cpp; sourceTree = SOURCE_ROOT; };
+		BF82AA3777BC4E7A8100667A /* /Users/aimac/Development/FloppyTurd/FloppyTurd/main_ios.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = main_ios.mm; path = FloppyTurd/main_ios.mm; sourceTree = SOURCE_ROOT; };
+		BFD025F8808142E8B6F3B194 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AnimatedLayer.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = AnimatedLayer.cpp; path = FloppyTurd/AnimatedLayer.cpp; sourceTree = SOURCE_ROOT; };
+		C279EDB9062746958ECEA7B6 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Obstacle.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Obstacle.cpp; path = FloppyTurd/Obstacle.cpp; sourceTree = SOURCE_ROOT; };
+		C2CB755731804E30935B9BB5 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ParkLevel.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = ParkLevel.cpp; path = FloppyTurd/ParkLevel.cpp; sourceTree = SOURCE_ROOT; };
+		C3A6D04F5AC048AC9B8BB4A7 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Enemy.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Enemy.cpp; path = FloppyTurd/Enemy.cpp; sourceTree = SOURCE_ROOT; };
+		C7D6287875E34FF1B6C5BA55 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowOverlay.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = SnowOverlay.cpp; path = FloppyTurd/SnowOverlay.cpp; sourceTree = SOURCE_ROOT; };
+		CE4F059C944A420CBF16966B /* /Users/aimac/Development/FloppyTurd/FloppyTurd/FloppyTurdInput.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = FloppyTurdInput.cpp; path = FloppyTurd/FloppyTurdInput.cpp; sourceTree = SOURCE_ROOT; };
+		CE91B5547F8941F39D111F7C /* /Users/aimac/Development/FloppyTurd/CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = CMakeLists.txt; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
+		D69D0595CD0E4FD0AF8AB563 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Explosion.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Explosion.cpp; path = FloppyTurd/Explosion.cpp; sourceTree = SOURCE_ROOT; };
+		D78B0C30111E4C64895728B5 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/BrickWall.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = BrickWall.cpp; path = FloppyTurd/BrickWall.cpp; sourceTree = SOURCE_ROOT; };
+		D827B392DA1E4D76B007B2B3 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalTexture.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = MetalTexture.mm; path = FloppyTurd/MetalTexture.mm; sourceTree = SOURCE_ROOT; };
+		E440D011896A445DB63C699D /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Cactus.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Cactus.cpp; path = FloppyTurd/Cactus.cpp; sourceTree = SOURCE_ROOT; };
+		E49279E2E4454833BCD81AEA /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ToiletPair.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = ToiletPair.cpp; path = FloppyTurd/ToiletPair.cpp; sourceTree = SOURCE_ROOT; };
+		EA75E9AA8CFC4D999B99EFC9 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/UICoordinateSystem.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = UICoordinateSystem.mm; path = FloppyTurd/UICoordinateSystem.mm; sourceTree = SOURCE_ROOT; };
+		EF819DA52B494F29B7F3E2E5 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Outhouse.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Outhouse.cpp; path = FloppyTurd/Outhouse.cpp; sourceTree = SOURCE_ROOT; };
+		EF9BA8C66B72431A8A699537 /* /Users/aimac/Development/FloppyTurd/CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = CMakeLists.txt; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
+		F2FA24277B084335A3100AC1 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SoundManager.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = SoundManager.cpp; path = FloppyTurd/SoundManager.cpp; sourceTree = SOURCE_ROOT; };
+		FA7DCEEE9D4A4F7087454112 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/FontAtlasGenerator.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = FontAtlasGenerator.mm; path = FloppyTurd/FontAtlasGenerator.mm; sourceTree = SOURCE_ROOT; };
+		FB9A093389F74B6982021683 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalTextRenderer.mm */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = MetalTextRenderer.mm; path = FloppyTurd/MetalTextRenderer.mm; sourceTree = SOURCE_ROOT; };
+		FC6BCFAEC1784244812A61A7 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Level.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Level.cpp; path = FloppyTurd/Level.cpp; sourceTree = SOURCE_ROOT; };
+		FE4A0BEB6345482E86E9AE95 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/BossHealthBar.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = BossHealthBar.cpp; path = FloppyTurd/BossHealthBar.cpp; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		A574F0A56F544BC69B96B98F /* Frameworks */ = {
+		E56D3FC5A5114F119A390C6E /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -277,161 +283,164 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		34DCD38F02AB494A88DAB901 /* Products */ = {
+		1073D70A2E0D42F8B05204CF /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				46A839F95A3046CC913A7D5A /* FloppyTurd */,
+				586A49AD00384835B0A74D63 /* /Users/aimac/Development/FloppyTurd/CMakeFiles/FloppyTurd.dir/Info.plist */,
+				67939EB123C3496FA8A5BC4A /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets */,
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
+		49B23CE05E3B4A20BA52EFBF = {
+			isa = PBXGroup;
+			children = (
+				B0FD89ACF38F4ECB89B643B9 /* FloppyTurd */,
+				57EE8AA70E8143FB9976AF6A /* ALL_BUILD */,
+				593D1B5EF6BA4879B46ECB61 /* Products */,
+				CF1BD2A4BCED45988D2F45B4 /* Frameworks */,
+				B2F707F3B67E45E4B5A1A483 /* Resources */,
+			);
+			sourceTree = "<group>";
+		};
+		57EE8AA70E8143FB9976AF6A /* ALL_BUILD */ = {
+			isa = PBXGroup;
+			children = (
+				E8776CA1E9A04E3AAADF24E9 /* CMake Rules */,
+				EF9BA8C66B72431A8A699537 /* /Users/aimac/Development/FloppyTurd/CMakeLists.txt */,
+			);
+			name = ALL_BUILD;
+			sourceTree = "<group>";
+		};
+		593D1B5EF6BA4879B46ECB61 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				94AF13FC0BD54CB0A74988DB /* FloppyTurd */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		663B37F41DA64BAEBCA101E7 /* Frameworks */ = {
+		740E509C3F6540719215C42F /* Source Files */ = {
+			isa = PBXGroup;
+			children = (
+				098B5B3C06614DB7BC17255C /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AIGUI.cpp */,
+				BFD025F8808142E8B6F3B194 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AnimatedLayer.cpp */,
+				07EB9FA6C1604E8E8E3A69F2 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AnimatedParallaxLayer.cpp */,
+				B0637F3479EF4C60B9CD5909 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AudioClip.cpp */,
+				A1D4C4DA261E4D97BE679437 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AudioManager.cpp */,
+				822A8A31793B46D9B0EBB395 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AudioStateManager.mm */,
+				218CD26E008C4D9F893BDAEE /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Bird.cpp */,
+				B0D30EA252F84A4E813C7625 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Boss.cpp */,
+				FE4A0BEB6345482E86E9AE95 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/BossHealthBar.cpp */,
+				66A5A51C385D4CAE8616E799 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/BossLevel.cpp */,
+				D78B0C30111E4C64895728B5 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/BrickWall.cpp */,
+				E440D011896A445DB63C699D /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Cactus.cpp */,
+				07C87293818B43C58D0C9706 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/CameraSystem.cpp */,
+				889F2BCADD5B4D62B90CEE02 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/CastleLevel.cpp */,
+				0C454D44693C4DC7B0F8DC36 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Coin.cpp */,
+				B06BBD71A36F4BEEB47385F6 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/CoinType.cpp */,
+				0E90515E6D8A4AFB97FD77D7 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Credits.cpp */,
+				027A5258259C4B558DA84A08 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/DesertLevel.cpp */,
+				C3A6D04F5AC048AC9B8BB4A7 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Enemy.cpp */,
+				D69D0595CD0E4FD0AF8AB563 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Explosion.cpp */,
+				CE4F059C944A420CBF16966B /* /Users/aimac/Development/FloppyTurd/FloppyTurd/FloppyTurdInput.cpp */,
+				FA7DCEEE9D4A4F7087454112 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/FontAtlasGenerator.mm */,
+				0D109480837C4DC385DBFF04 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/FontCache.mm */,
+				687C71569246436AA42DCF2A /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Game.cpp */,
+				3EFA2D98E89947D58759DCFC /* /Users/aimac/Development/FloppyTurd/FloppyTurd/GameLog.mm */,
+				74E4495F96964A0C9231CCB9 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/GameStats.cpp */,
+				7FA3430D0742423AA398E8BF /* /Users/aimac/Development/FloppyTurd/FloppyTurd/GlobalStateManager.cpp */,
+				4CDE39112F1545C393062D99 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/GoldToilets.cpp */,
+				04FB3AD234524AD2A7DD8083 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Hat.cpp */,
+				FC6BCFAEC1784244812A61A7 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Level.cpp */,
+				3406C5AE24524F9E8B959072 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/LevelManager.cpp */,
+				AEF607C6303444029F8F03A5 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Loading.cpp */,
+				66A94698A2D44E09A9FA0034 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/LogManager.mm */,
+				540441DF6E4E478F9794466A /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MNKControls.cpp */,
+				85284187A1004DC8921BB5C1 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MainMenu.cpp */,
+				93E58E3179A54994A14514A8 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MenuButton.cpp */,
+				1478F903D6DB44938D9906FE /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalFrameResources.mm */,
+				710B01D632A84A0899C61A29 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalRenderer.mm */,
+				2495A7DF9B5D4998BC6419E5 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalShader.mm */,
+				FB9A093389F74B6982021683 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalTextRenderer.mm */,
+				D827B392DA1E4D76B007B2B3 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalTexture.mm */,
+				37903421E0ED49EFB07E9ED7 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalTextureCache.mm */,
+				C279EDB9062746958ECEA7B6 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Obstacle.cpp */,
+				EF819DA52B494F29B7F3E2E5 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Outhouse.cpp */,
+				419641E973DE4C84BCFADED5 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ParallaxLayer.cpp */,
+				C2CB755731804E30935B9BB5 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ParkLevel.cpp */,
+				6987B09CF56D48768786C3B3 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PerformanceProfiler.cpp */,
+				8B9988299CE543D19E100D3E /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PickUp.cpp */,
+				35C858AA661441CA810B44CC /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.cpp */,
+				2C877A27B9004254AEB9612C /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformTraitsIOS.mm */,
+				1379B090C83F4510823D73A0 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Player.cpp */,
+				69B56A42EC524C69B9203421 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Playing.cpp */,
+				B5E3E514D2E34712A871B5AC /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PoopHeart.cpp */,
+				8A29FEF21E544EF6A5A0E94F /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Projectile.cpp */,
+				A36ABC412F694303AA4F20F3 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/RatCopter.cpp */,
+				7BB4E3B915B341CC8390B0D4 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/RatKing.cpp */,
+				1BEB7C0CB4BE44529B810D89 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ResourceManager.cpp */,
+				B6E141D2FA414424A56F571A /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SewerLevel.cpp */,
+				1B37EE3EA4D94C9E8A9110EB /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SewerPipe.cpp */,
+				8D328075FE4E4C29A63FB2D9 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowLevel.cpp */,
+				C7D6287875E34FF1B6C5BA55 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowOverlay.cpp */,
+				7075A9ACC9E9427A9F44F8EC /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowballProjectile.cpp */,
+				285785456C214CF5810A5A78 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowmanEnemy.cpp */,
+				1C4566700E984807926DE53D /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SoundEffect.cpp */,
+				F2FA24277B084335A3100AC1 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SoundManager.cpp */,
+				B33A9F59529E46FCAC7CCAC3 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SpikeBall.cpp */,
+				393298E874FC4B71B0AFFE83 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Sprite.cpp */,
+				9C82D61735EF4976A361A4BE /* /Users/aimac/Development/FloppyTurd/FloppyTurd/StaticLayer.cpp */,
+				0D984A6123844475AE468552 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/TextureAtlas.cpp */,
+				4F245E504BB84CBF8C2E0904 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/TextureCache.cpp */,
+				E49279E2E4454833BCD81AEA /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ToiletPair.cpp */,
+				6A8CF88DCEF0424AAB4E76D8 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ToiletPaper.cpp */,
+				1A64EC0DB2B94D948302A8D4 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ToiletPaperProjectile.cpp */,
+				4D34472C5BF941E1AB992159 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/TouchControls.cpp */,
+				EA75E9AA8CFC4D999B99EFC9 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/UICoordinateSystem.mm */,
+				BE166110771B4C9EAF112CBF /* /Users/aimac/Development/FloppyTurd/FloppyTurd/UIManager.cpp */,
+				48E4D2C8379347529A9A7B0B /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Window.cpp */,
+				5BD349C94A0941B1A7CB534B /* /Users/aimac/Development/FloppyTurd/FloppyTurd/WindowIOS.mm */,
+				32A036480C90473FB773A68E /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/AppDelegate.mm */,
+				2719663BCFC54CB2A3AFA8E8 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/GameView.mm */,
+				65F8E5AD3603494D88C115C2 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/GameViewController.mm */,
+				293630AF995A4EDAA0F0E51D /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/HapticsManager.mm */,
+				BF82AA3777BC4E7A8100667A /* /Users/aimac/Development/FloppyTurd/FloppyTurd/main_ios.mm */,
+			);
+			name = "Source Files";
+			sourceTree = "<group>";
+		};
+		B0FD89ACF38F4ECB89B643B9 /* FloppyTurd */ = {
+			isa = PBXGroup;
+			children = (
+				740E509C3F6540719215C42F /* Source Files */,
+				1073D70A2E0D42F8B05204CF /* Resources */,
+				CE91B5547F8941F39D111F7C /* /Users/aimac/Development/FloppyTurd/CMakeLists.txt */,
+				BBC10EBB8DDA4356BCBA5FFD /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Shaders2D.metal */,
+				22F6D538A4A546D5B53CE1BE /* /Users/aimac/Development/FloppyTurd/FloppyTurd/resources/fonts/Whacky_Joe.ttf */,
+			);
+			name = FloppyTurd;
+			sourceTree = "<group>";
+		};
+		B2F707F3B67E45E4B5A1A483 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
+		CF1BD2A4BCED45988D2F45B4 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		97AD222AE8174B2C9259995F /* FloppyTurd */ = {
-			isa = PBXGroup;
-			children = (
-				A68915274C924ED2A5B77FB1 /* Source Files */,
-				AC69CD80E2D14B4493B78C31 /* Resources */,
-				FA9592E21C804EE4B4346C79 /* /Users/aimac/Development/FloppyTurd/CMakeLists.txt */,
-				EE7AF422FA5C4A858DC6F0D9 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Shaders2D.metal */,
-				A7C0F626D07C407E9C25200B /* /Users/aimac/Development/FloppyTurd/FloppyTurd/resources/fonts/Whacky_Joe.ttf */,
-			);
-			name = FloppyTurd;
-			sourceTree = "<group>";
-		};
-		A68915274C924ED2A5B77FB1 /* Source Files */ = {
-			isa = PBXGroup;
-			children = (
-				009AACBB7DB240C88936DC35 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AIGUI.cpp */,
-				80F4C04D5E2142FB9A3303C1 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AnimatedLayer.cpp */,
-				BB3F7CDF885349D5B2D95CD8 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AnimatedParallaxLayer.cpp */,
-				2DE0EED2969C4248A7A073B1 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AudioClip.cpp */,
-				0965B4121C8847B19F069EEE /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AudioManager.cpp */,
-				DB7BE11CA99A44C6B4CDC65F /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AudioStateManager.mm */,
-				2D645E03454E478B87452285 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Bird.cpp */,
-				DE865087DF384B13B2125DAF /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Boss.cpp */,
-				A847E20C65134D57A3245548 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/BossHealthBar.cpp */,
-				45188EA70F154F26AB7F984C /* /Users/aimac/Development/FloppyTurd/FloppyTurd/BossLevel.cpp */,
-				E22514CB46E3413CA8391192 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/BrickWall.cpp */,
-				5B2FFFE0F64B40968B898219 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Cactus.cpp */,
-				0FD1F936CE9344C18C52A29A /* /Users/aimac/Development/FloppyTurd/FloppyTurd/CameraSystem.cpp */,
-				8E4A6149F2254391A13E763B /* /Users/aimac/Development/FloppyTurd/FloppyTurd/CastleLevel.cpp */,
-				F8FB2BA6C65A4FFF9C7893BD /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Coin.cpp */,
-				B1CF0C035569431D806782A2 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/CoinType.cpp */,
-				B29A9DA4DCFA4F33900948D2 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Credits.cpp */,
-				967FAA622FAB4636B1FBE4FD /* /Users/aimac/Development/FloppyTurd/FloppyTurd/DesertLevel.cpp */,
-				FC9FEE32360E41CC82A808B4 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Enemy.cpp */,
-				78DC5F788F154870B7551F0C /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Explosion.cpp */,
-				6BCB715975C04C2E876E9345 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/FontAtlasGenerator.mm */,
-				2F0F3F3BFA66488195AE0089 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/FontCache.mm */,
-				80987DA1E8C44E7393DA62B8 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Game.cpp */,
-				66C2BC12E2694281BFBAB59E /* /Users/aimac/Development/FloppyTurd/FloppyTurd/GameLog.mm */,
-				ED533FEFF81F4481A067521B /* /Users/aimac/Development/FloppyTurd/FloppyTurd/GameStats.cpp */,
-				B9003454B8C84B818AC8E290 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/GoldToilets.cpp */,
-				1509AD9901804F388E7B05F6 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Hat.cpp */,
-				F762DC7EAB61423D9E8E3C1A /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Level.cpp */,
-				91C9FD91302E499199B07B13 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/LevelManager.cpp */,
-				2C2706A64A7C4C728083764E /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Loading.cpp */,
-				C1FF68B2AE994ACFBE7FDEE7 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/LogManager.mm */,
-				B8EE02AF001B4DCFB212A02F /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MainMenu.cpp */,
-				B73E0FAD6A7B4A2C88B0EEBF /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MenuButton.cpp */,
-				788392A2816C457584276448 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalFrameResources.mm */,
-				2D0BFFFAE2B942BBB4B8286C /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalRenderer.mm */,
-				7810A508E5B74A8D97EC4B66 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalShader.mm */,
-				0E2B50CEA26540ACAC6B80B6 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalTextRenderer.mm */,
-				17F5607E33E1438AADBA8EAA /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalTexture.mm */,
-				B74C01A2A94C4BDAA82D9354 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalTextureCache.mm */,
-				6A1000BD47A4420CAD60F6EF /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Obstacle.cpp */,
-				F94B984EC3B84A188720A111 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Outhouse.cpp */,
-				1D46BFDB695144CCA1CE4533 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ParallaxLayer.cpp */,
-				69516364EA384427A91CA0A5 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ParkLevel.cpp */,
-				D5A9BADF060D40E782F3C845 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PerformanceProfiler.cpp */,
-				D78A04F1091843C6B5FCE397 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PickUp.cpp */,
-				50DACC9F002A4F6C9455AEE8 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.cpp */,
-				F714F1B17FDB4D56AB5EB78B /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformIOS.cpp */,
-				0C545E728BDB47F992E70CCF /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Player.cpp */,
-				70B07F5B8E274693834E31EA /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Playing.cpp */,
-				FA38B5E4A48A4242A651EC9B /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PoopHeart.cpp */,
-				0F8180C7E98E4495B1A579E4 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Projectile.cpp */,
-				80AC944448FD42F4B38305AB /* /Users/aimac/Development/FloppyTurd/FloppyTurd/RatCopter.cpp */,
-				D99855D61C07497488ADA445 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/RatKing.cpp */,
-				5C32120C6E114E709A6B41F5 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/RaylibCompat.mm */,
-				CE04CCDE2ED740F5AB809B77 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ResourceManager.cpp */,
-				8D326B0701C74614BA9FA1E5 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SewerLevel.cpp */,
-				4F2ECABDA30748A6BAD9B755 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SewerPipe.cpp */,
-				269EC20612194785BD3AA123 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowLevel.cpp */,
-				07DFD3F30F2E40B0BD3EB5D0 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowOverlay.cpp */,
-				2B8A4531F9B24C9CA746B8EE /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowballProjectile.cpp */,
-				4A21DEA1CFFE4124A08E1217 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowmanEnemy.cpp */,
-				0D71867ED05048B8B1EE3A90 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SoundEffect.cpp */,
-				5F6A3163E3514A4A96CCE82D /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SoundManager.cpp */,
-				FB4F47A71E4147C989F4D503 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SpikeBall.cpp */,
-				80D4258F83ED4208984EEEC3 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Sprite.cpp */,
-				C6F392CAECD04D9EB7983147 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/StaticLayer.cpp */,
-				F36BC944F6004F8F8346FF9F /* /Users/aimac/Development/FloppyTurd/FloppyTurd/TextureAtlas.cpp */,
-				373385E739214AA38BEE141E /* /Users/aimac/Development/FloppyTurd/FloppyTurd/TextureCache.cpp */,
-				7152F9D36F994E99824C2F47 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ToiletPair.cpp */,
-				8A667E2F71CB42DCBEF2FFAA /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ToiletPaper.cpp */,
-				991294B196934C8788B903B1 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ToiletPaperProjectile.cpp */,
-				8E473D89F60F48C38B77B66F /* /Users/aimac/Development/FloppyTurd/FloppyTurd/TouchControls.cpp */,
-				34D4EA2A1C79467DA73B68E8 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/UICoordinateSystem.mm */,
-				DC74FB385430446EBE1F51D2 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/UIManager.cpp */,
-				529BD6929D0C4F64B7D49CE8 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Window.cpp */,
-				DFEFD69E3F074F9C94756AF1 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/AppDelegate.mm */,
-				7EDC526BB6E94DD08E44787A /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/GameView.mm */,
-				65780871C046496A8404DAF6 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/GameViewController.mm */,
-				77EE393F978E4D5ABDFA277E /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/HapticsManager.mm */,
-				9C44D8DBEE834F5A8E4F8EAE /* /Users/aimac/Development/FloppyTurd/FloppyTurd/main_ios.mm */,
-			);
-			name = "Source Files";
-			sourceTree = "<group>";
-		};
-		AC69CD80E2D14B4493B78C31 /* Resources */ = {
-			isa = PBXGroup;
-			children = (
-				4A6DC26AF88C4971BDCA220C /* /Users/aimac/Development/FloppyTurd/CMakeFiles/FloppyTurd.dir/Info.plist */,
-				777F036A25234E9E9BBA3D1D /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets */,
-			);
-			name = Resources;
-			sourceTree = "<group>";
-		};
-		C44F5B9D50B44A43804F5A7C /* ALL_BUILD */ = {
-			isa = PBXGroup;
-			children = (
-				E4B5B0712D374619929B2C99 /* CMake Rules */,
-				8A54583342DE4486B8E7FB51 /* /Users/aimac/Development/FloppyTurd/CMakeLists.txt */,
-			);
-			name = ALL_BUILD;
-			sourceTree = "<group>";
-		};
-		E4B5B0712D374619929B2C99 /* CMake Rules */ = {
+		E8776CA1E9A04E3AAADF24E9 /* CMake Rules */ = {
 			isa = PBXGroup;
 			children = (
 			);
 			name = "CMake Rules";
-			sourceTree = "<group>";
-		};
-		E82026E0F34C4670A33BDCBE = {
-			isa = PBXGroup;
-			children = (
-				97AD222AE8174B2C9259995F /* FloppyTurd */,
-				C44F5B9D50B44A43804F5A7C /* ALL_BUILD */,
-				34DCD38F02AB494A88DAB901 /* Products */,
-				663B37F41DA64BAEBCA101E7 /* Frameworks */,
-				FF0DA4205F944668A2DFB35A /* Resources */,
-			);
-			sourceTree = "<group>";
-		};
-		FF0DA4205F944668A2DFB35A /* Resources */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Resources;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -439,21 +448,21 @@
 /* Begin PBXNativeTarget section */
 		8EFA9AA7BA22AECA1336F161 /* FloppyTurd */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 27A3396BF9DE4797949A2969 /* Build configuration list for PBXNativeTarget "FloppyTurd" */;
+			buildConfigurationList = 8C7EB5A0B00F4D979D368F07 /* Build configuration list for PBXNativeTarget "FloppyTurd" */;
 			buildPhases = (
 				3B65F119560F08E4C38CD92B /* CMake PreBuild Rules */,
-				082AC94045C249FE87706F20 /* Resources */,
-				4B8CD11D1E594ED687440E2B /* Sources */,
-				A574F0A56F544BC69B96B98F /* Frameworks */,
+				3EA529A401CA4C2CB42AAB02 /* Resources */,
+				CDF5E2C0C8B94D6488E513E8 /* Sources */,
+				E56D3FC5A5114F119A390C6E /* Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				264137353A714455B090AF5F /* PBXTargetDependency */,
+				905E83EA29C54D38B1F64CAB /* PBXTargetDependency */,
 			);
 			name = FloppyTurd;
 			productName = FloppyTurd;
-			productReference = 46A839F95A3046CC913A7D5A /* FloppyTurd */;
+			productReference = 94AF13FC0BD54CB0A74988DB /* FloppyTurd */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -465,18 +474,18 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1620;
 			};
-			buildConfigurationList = 8B06A3D8C1D84FE6A0F3D769 /* Build configuration list for PBXProject "FloppyTurd" */;
+			buildConfigurationList = 85BC97BEA45443F0B42E5CEA /* Build configuration list for PBXProject "FloppyTurd" */;
 			buildSettings = {
 			};
 			buildStyles = (
-				3B05F20C137640A4BBD00D9C /* Debug */,
-				DD0CA7CC7FD4455A9F4995D9 /* Release */,
-				FCB388E00EBD4DE7A8393280 /* MinSizeRel */,
-				8B88B70A344647A1B334B56C /* RelWithDebInfo */,
+				5AED1B5CC01D43E78215A322 /* Debug */,
+				A98D08832E6F45EDBE5DFF37 /* Release */,
+				B8303EE8997049978ECBB6D4 /* MinSizeRel */,
+				C696B358B0B84788A5E734A1 /* RelWithDebInfo */,
 			);
 			compatibilityVersion = "Xcode 3.2";
 			hasScannedForEncodings = 0;
-			mainGroup = E82026E0F34C4670A33BDCBE;
+			mainGroup = 49B23CE05E3B4A20BA52EFBF;
 			projectDirPath = .;
 			projectRoot = "";
 			targets = (
@@ -618,168 +627,131 @@ exit 0";
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXResourcesBuildPhase section */
-		082AC94045C249FE87706F20 /* Resources */ = {
+		3EA529A401CA4C2CB42AAB02 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D0070BDACF454B4B8EA95047 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets */,
-				3E3355D85F274DFB83DBB14C /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Shaders2D.metal */,
-				3D49E91B45E242578171F26B /* /Users/aimac/Development/FloppyTurd/FloppyTurd/resources/fonts/Whacky_Joe.ttf */,
+				70CC54D93A8A4C94B777157E /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets */,
+				1DC5B372D46A40D4A02A88BC /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Shaders2D.metal */,
+				E3B911386C514F7F873065F8 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/resources/fonts/Whacky_Joe.ttf */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		4B8CD11D1E594ED687440E2B /* Sources */ = {
+		CDF5E2C0C8B94D6488E513E8 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C92C7FF7B2564290B700CA06 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AIGUI.cpp */,
-				36A5DBD1D24B40339C839FD4 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AnimatedLayer.cpp */,
-				9C989EDFFCF848918D0D1BC4 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AnimatedParallaxLayer.cpp */,
-				05ABA89ECAC645BD8FA8BC5F /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AudioClip.cpp */,
-				83CAC2B5BA3B47528265188B /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AudioManager.cpp */,
-				404EA1D1ECB942A7A1406648 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AudioStateManager.mm */,
-				9C5FAAB2AD8D4DC7AF822094 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Bird.cpp */,
-				E78615A650754F4DBBB6BB50 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Boss.cpp */,
-				F5696EF4288E485183A2B793 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/BossHealthBar.cpp */,
-				1D3627377A9744019DA4E4F4 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/BossLevel.cpp */,
-				05134C6E08B94834B1FB091B /* /Users/aimac/Development/FloppyTurd/FloppyTurd/BrickWall.cpp */,
-				566E9894212B4C41B4AD094E /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Cactus.cpp */,
-				86E183757D5E48598111EE92 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/CameraSystem.cpp */,
-				5123BF0FD7CE4FB7ABDA5932 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/CastleLevel.cpp */,
-				646AF4DE0CBA422AB5E509EF /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Coin.cpp */,
-				7FBB90E7178B4CB5A426ECAB /* /Users/aimac/Development/FloppyTurd/FloppyTurd/CoinType.cpp */,
-				02FA9D8015DE4818BF2557E6 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Credits.cpp */,
-				74087C94A8F941779C09CE62 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/DesertLevel.cpp */,
-				A15133FA87DA4A849A598264 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Enemy.cpp */,
-				35308700D3FC483F8E3FCDD5 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Explosion.cpp */,
-				C66DE8C28C2B46CC98AA76B0 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/FontAtlasGenerator.mm */,
-				7330C1C56C124038A982AB70 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/FontCache.mm */,
-				07A9B1CF22CB400FA59B4663 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Game.cpp */,
-				C7AB571388604CD388C16725 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/GameLog.mm */,
-				3F5524E7BCDE4A86AF61D3A8 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/GameStats.cpp */,
-				3F7F45D80DD848F895288296 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/GoldToilets.cpp */,
-				F116825D21894B35915F8577 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Hat.cpp */,
-				A50B9720587C4F0BA6AD3AD5 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Level.cpp */,
-				5D0340D60AA645668FF37B4D /* /Users/aimac/Development/FloppyTurd/FloppyTurd/LevelManager.cpp */,
-				A7732E43CC624022817C3B10 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Loading.cpp */,
-				BE3C02C448FE43CCA7DD0BCC /* /Users/aimac/Development/FloppyTurd/FloppyTurd/LogManager.mm */,
-				A63AE1FD53664E2D82900B98 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MainMenu.cpp */,
-				37620585DC38407CBE382C3C /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MenuButton.cpp */,
-				9E9C5FD7791F4A3D94B699E6 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalFrameResources.mm */,
-				025E6C809CCC4E2AA50280EB /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalRenderer.mm */,
-				95C73946D79A4B758BCB38B0 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalShader.mm */,
-				E6DB6FD3DF184C31A1F203FC /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalTextRenderer.mm */,
-				23AFD532735F48B5A63A1AEA /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalTexture.mm */,
-				D64FF588B46D44E8ACD517DF /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalTextureCache.mm */,
-				AA9E7A57EFC14635BB701501 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Obstacle.cpp */,
-				1727B72C13B940A980525957 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Outhouse.cpp */,
-				13E122717CAC4BA18211AC1F /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ParallaxLayer.cpp */,
-				490274D2587247E7BA0D128E /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ParkLevel.cpp */,
-				1C8AAD85DDC7487BB0992958 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PerformanceProfiler.cpp */,
-				51FAB4631F354767A5E019FF /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PickUp.cpp */,
-				BA095C5E473B4BB7B74F22C5 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.cpp */,
-				409136B0429A4A0B98F2DE1E /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformIOS.cpp */,
-				D3293BBBA87E41BF877A0359 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Player.cpp */,
-				2A45CD4DA1D244EA8C66D0BB /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Playing.cpp */,
-				3205D68BA67C4C5088029575 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PoopHeart.cpp */,
-				52C14946903549F58C5E9B97 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Projectile.cpp */,
-				62E44A1C88BC4A51AAFF59CF /* /Users/aimac/Development/FloppyTurd/FloppyTurd/RatCopter.cpp */,
-				BE4FAB5AC0BC4D96BAA9C057 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/RatKing.cpp */,
-				AA4DB9E969DB448C8CCE171F /* /Users/aimac/Development/FloppyTurd/FloppyTurd/RaylibCompat.mm */,
-				5B366B4EEE044BCF8D26D2F5 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ResourceManager.cpp */,
-				C58017F8C7AC4F9AA0259C9F /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SewerLevel.cpp */,
-				A9641020AE9546F08A6A0851 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SewerPipe.cpp */,
-				6AEAC83B164645C1A7780402 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowLevel.cpp */,
-				033CDFA2431540D1AD77338C /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowOverlay.cpp */,
-				AD9E66B6818140F289BF5A78 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowballProjectile.cpp */,
-				26B07C5E891D4B07ACE9E011 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowmanEnemy.cpp */,
-				E053BAA43B1C4C528A119EF2 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SoundEffect.cpp */,
-				7F7994E1A61D40C086DF3FCA /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SoundManager.cpp */,
-				B078A3D948DB40E98C388E9C /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SpikeBall.cpp */,
-				27A8115FC1FC41138BC37B0F /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Sprite.cpp */,
-				AC64F671179B4209B5DE44C7 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/StaticLayer.cpp */,
-				81CEDB6B5CAB4D8894CBEA8D /* /Users/aimac/Development/FloppyTurd/FloppyTurd/TextureAtlas.cpp */,
-				ACC1555E106547319F789BDE /* /Users/aimac/Development/FloppyTurd/FloppyTurd/TextureCache.cpp */,
-				443B8EE0BAC54264BA0EDD4B /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ToiletPair.cpp */,
-				7077F4990CCB443B92CFA5F4 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ToiletPaper.cpp */,
-				939CDD838AD743288DFC29B7 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ToiletPaperProjectile.cpp */,
-				89E575D652F34D74AA8B59F0 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/TouchControls.cpp */,
-				7DD2FDFC3C5843A9B95F3D97 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/UICoordinateSystem.mm */,
-				FCBAD2573BD0442F94CDBB73 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/UIManager.cpp */,
-				14AB75B432C24E88BCAC5C44 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Window.cpp */,
-				00E994B4E1D64FC19A1FE32F /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/AppDelegate.mm */,
-				43FAC374BBAA419A86641848 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/GameView.mm */,
-				027DB2FAABEE469FA48B09D0 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/GameViewController.mm */,
-				C4F66BE7AB9A49AAB935F856 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/HapticsManager.mm */,
-				3AF71AC8F5424CEE9FC9B867 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/main_ios.mm */,
+				CDE629D9C56A4BC3999B6AF6 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AIGUI.cpp */,
+				9FB7C8A3F197461CB06CEC52 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AnimatedLayer.cpp */,
+				88C020B838F146A78080C890 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AnimatedParallaxLayer.cpp */,
+				6BF2354B079945C3A2CE3713 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AudioClip.cpp */,
+				BFE43F33099D414DBE559D0D /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AudioManager.cpp */,
+				850F03EC10EA441794BB6C0F /* /Users/aimac/Development/FloppyTurd/FloppyTurd/AudioStateManager.mm */,
+				C784CAAC72F14742A60239C3 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Bird.cpp */,
+				68B4AAE9DEAA409CA7B87BEF /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Boss.cpp */,
+				532FD397D718471EB535746C /* /Users/aimac/Development/FloppyTurd/FloppyTurd/BossHealthBar.cpp */,
+				E7575389645B41069626C7BF /* /Users/aimac/Development/FloppyTurd/FloppyTurd/BossLevel.cpp */,
+				B31B4B23A9B44CA6A20B0887 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/BrickWall.cpp */,
+				630DBFC4D2B14885B01C2BD1 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Cactus.cpp */,
+				D83FFFEE1F5F463688C89AE3 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/CameraSystem.cpp */,
+				746E8403D8C3461CA1647F72 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/CastleLevel.cpp */,
+				F8CA73B3987944A9BA58D5E5 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Coin.cpp */,
+				CCD9763549F743079BC1BDEC /* /Users/aimac/Development/FloppyTurd/FloppyTurd/CoinType.cpp */,
+				720CEE47DC044301A66D99F2 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Credits.cpp */,
+				BA33DAC57F6E49C8B48C41E2 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/DesertLevel.cpp */,
+				BB79D829477843DCB33C892E /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Enemy.cpp */,
+				C6BD76B88BCA40F3A8C4C88A /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Explosion.cpp */,
+				1DC00DE37D84423B84E4C408 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/FloppyTurdInput.cpp */,
+				845E18EB5E494E279C9AF7DD /* /Users/aimac/Development/FloppyTurd/FloppyTurd/FontAtlasGenerator.mm */,
+				E26E3902B20E431FBE17D07E /* /Users/aimac/Development/FloppyTurd/FloppyTurd/FontCache.mm */,
+				720676AD4AB346AFAC65E00A /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Game.cpp */,
+				CC4EFFCE1909428299AF7B0F /* /Users/aimac/Development/FloppyTurd/FloppyTurd/GameLog.mm */,
+				8CF22A2360EC495CB4735F93 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/GameStats.cpp */,
+				48D9279BD42D4D6EA6A3C3FF /* /Users/aimac/Development/FloppyTurd/FloppyTurd/GlobalStateManager.cpp */,
+				941BAA77F8C94BD3AE514D2B /* /Users/aimac/Development/FloppyTurd/FloppyTurd/GoldToilets.cpp */,
+				6C437B2810E145F8B96433F9 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Hat.cpp */,
+				038938D282FC4A8A82B799D4 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Level.cpp */,
+				305FC44FF02B47C885A7FD57 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/LevelManager.cpp */,
+				8352FD5CB9DC4B8BA7D886CF /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Loading.cpp */,
+				6B4F135601E6441987F8905D /* /Users/aimac/Development/FloppyTurd/FloppyTurd/LogManager.mm */,
+				05E6B6E176CA4015AF5FF1B9 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MNKControls.cpp */,
+				A1617E928BDF477D93A7E993 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MainMenu.cpp */,
+				4F0521AA2F0F4E049D9AE814 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MenuButton.cpp */,
+				4B1860242586463C93F9AD5C /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalFrameResources.mm */,
+				6A569811152F4ED89F36A683 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalRenderer.mm */,
+				E69F33E089B44C828784FDF0 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalShader.mm */,
+				3FE4A9652175418C94217F9A /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalTextRenderer.mm */,
+				EA6DF7E21197491F8A0C6C30 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalTexture.mm */,
+				B290931F0F0B4333890DFB56 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/MetalTextureCache.mm */,
+				5908C1D13B304BD8A4C991F7 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Obstacle.cpp */,
+				2DDFA02168994BEA8253F329 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Outhouse.cpp */,
+				AA997CEE9BB14A63B340AD1C /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ParallaxLayer.cpp */,
+				3762BA88C8854217ADCB20E9 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ParkLevel.cpp */,
+				7AC0CB710993419CAE02212E /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PerformanceProfiler.cpp */,
+				B41DE63082F744B39DBCE014 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PickUp.cpp */,
+				421AC763858D4978923F1CD0 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformAPI.cpp */,
+				51A004F9E6B44E0F9371ED89 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PlatformTraitsIOS.mm */,
+				A96E258137C14D89A5535EE4 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Player.cpp */,
+				7911FC54CF984C6FB0C7E5C2 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Playing.cpp */,
+				7DB99496141E4B388646FEDC /* /Users/aimac/Development/FloppyTurd/FloppyTurd/PoopHeart.cpp */,
+				272DDC78F9F74D98A28599CE /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Projectile.cpp */,
+				C648BA3A5D7C466EA02413FE /* /Users/aimac/Development/FloppyTurd/FloppyTurd/RatCopter.cpp */,
+				F51789A8006849E2867754D7 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/RatKing.cpp */,
+				A2F7E1EAFA2B471399FFEE31 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ResourceManager.cpp */,
+				69E845F782D94F0A90387AE7 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SewerLevel.cpp */,
+				D76BBA83B646488BBA832F35 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SewerPipe.cpp */,
+				87DB6AB810B64B3385EE5FFE /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowLevel.cpp */,
+				0107B6B9090D4B9DBE70BC59 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowOverlay.cpp */,
+				7DE854B7282B404B8560DA90 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowballProjectile.cpp */,
+				9839EC6B04674A5CA298EE34 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SnowmanEnemy.cpp */,
+				7C135B0FEEC5431782E3AC81 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SoundEffect.cpp */,
+				B29091E97DF34B9E9948E65F /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SoundManager.cpp */,
+				C060FEB4D423487993F7C505 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/SpikeBall.cpp */,
+				4E9811C54ABF4BE089899A34 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Sprite.cpp */,
+				36FC2B679DD94ADE99846D2A /* /Users/aimac/Development/FloppyTurd/FloppyTurd/StaticLayer.cpp */,
+				D5B7882BF61741249AD065DF /* /Users/aimac/Development/FloppyTurd/FloppyTurd/TextureAtlas.cpp */,
+				96611D0AC1ED41E1B5C4546E /* /Users/aimac/Development/FloppyTurd/FloppyTurd/TextureCache.cpp */,
+				4F31B5AD81D5482B95140BB4 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ToiletPair.cpp */,
+				937B2AE0CAE849F4A69A9761 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ToiletPaper.cpp */,
+				FBA2E8FD685D4FC0851970BC /* /Users/aimac/Development/FloppyTurd/FloppyTurd/ToiletPaperProjectile.cpp */,
+				52BB7A2F20F244638C7C3FD8 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/TouchControls.cpp */,
+				65961C4044E54466BDDFE17D /* /Users/aimac/Development/FloppyTurd/FloppyTurd/UICoordinateSystem.mm */,
+				4F9F70ADB0D040B987E19BC0 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/UIManager.cpp */,
+				2EF0CF0E0D704379B17F3D1A /* /Users/aimac/Development/FloppyTurd/FloppyTurd/Window.cpp */,
+				8F573AD88D154F32A5A2FA50 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/WindowIOS.mm */,
+				AD5F6291C06E427B8CB55A7D /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/AppDelegate.mm */,
+				ACB856309671469895034006 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/GameView.mm */,
+				B162CFFF27AC4AFBAF26E253 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/GameViewController.mm */,
+				07A2FAE8A55C42E194A19F69 /* /Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/HapticsManager.mm */,
+				2FD6651621FA4760983B67BD /* /Users/aimac/Development/FloppyTurd/FloppyTurd/main_ios.mm */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		264137353A714455B090AF5F /* PBXTargetDependency */ = {
+		5D554EB2127E4C0B85593215 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 5E72DDC5DEC7CBC59913B604 /* ZERO_CHECK */;
-			targetProxy = F251A5174717436298B5B7E6 /* PBXContainerItemProxy */;
+			targetProxy = B3BC834AA82647B3B306D9A6 /* PBXContainerItemProxy */;
 		};
-		5666D4B9492B4F94B4513110 /* PBXTargetDependency */ = {
+		61FF73B06AE54EA7B473A856 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 8EFA9AA7BA22AECA1336F161 /* FloppyTurd */;
-			targetProxy = 8CF6A7548E274FBBADBA48B8 /* PBXContainerItemProxy */;
+			targetProxy = BCCFE2C9233F4FD7B204486B /* PBXContainerItemProxy */;
 		};
-		6FDC6731365F4A57B0763FBC /* PBXTargetDependency */ = {
+		905E83EA29C54D38B1F64CAB /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 5E72DDC5DEC7CBC59913B604 /* ZERO_CHECK */;
-			targetProxy = AA2EC0AB138F49B2966C87AE /* PBXContainerItemProxy */;
+			targetProxy = 2D33F9E9497E408CB604F4B2 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		05316310F68247E291B37414 /* RelWithDebInfo */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = arm64;
-				BUNDLE_VERSION = 1.0.0;
-				CODE_SIGNING_ALLOWED = YES;
-				CODE_SIGNING_REQUIRED = YES;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
-				CONFIGURATION_BUILD_DIR = "/Users/aimac/Development/FloppyTurd/RelWithDebInfo${EFFECTIVE_PLATFORM_NAME}";
-				DEVELOPMENT_TEAM = 86886N72J8;
-				EXECUTABLE_PREFIX = "";
-				EXECUTABLE_SUFFIX = "";
-				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
-				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
-				GCC_OPTIMIZATION_LEVEL = 2;
-				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",PLATFORM_IOS,PLATFORM_MOBILE,__APPLE__,"'TARGET_OS_IOS=1'","$(inherited)");
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				HEADER_SEARCH_PATHS = (/Users/aimac/Development/FloppyTurd/FloppyTurd,/Users/aimac/Development/FloppyTurd/FloppyTurd/iOS,/Users/aimac/Development/FloppyTurd/FloppyTurd/Shaders,"$(inherited)");
-				INFOPLIST_FILE = /Users/aimac/Development/FloppyTurd/CMakeFiles/FloppyTurd.dir/Info.plist;
-				INSTALL_PATH = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
-				ONLY_ACTIVE_ARCH = NO;
-				OTHER_CPLUSPLUSFLAGS = "       -DNDEBUG '-std=gnu++20' -Wall -Wextra -pedantic ";
-				OTHER_LDFLAGS = (" -Wl,-headerpad_max_install_names","-framework Foundation","-framework UIKit","-framework Metal","-framework MetalKit","-framework MetalPerformanceShaders","-framework SpriteKit","-framework QuartzCore","-framework CoreGraphics","-framework CoreText","-framework CoreAudio","-framework AudioToolbox","-framework AVFoundation","-framework GameController","-framework ImageIO","-framework MobileCoreServices","-framework CoreHaptics","$(inherited)");
-				OTHER_REZFLAGS = "";
-				PRODUCT_BUNDLE_IDENTIFIER = com.floppyturd.game;
-				PRODUCT_NAME = FloppyTurd;
-				SECTORDER_FLAGS = "";
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TARGET_TEMP_DIR = "/Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
-				UI_REQUIRED_DEVICE_CAPABILITIES = arm64;
-				UI_SUPPORTED_INTERFACE_ORIENTATIONS = "UIInterfaceOrientationPortrait;UIInterfaceOrientationLandscapeLeft;UIInterfaceOrientationLandscapeRight";
-				USE_HEADERMAP = NO;
-				WARNING_CFLAGS = ("$(inherited)");
-			};
-			name = RelWithDebInfo;
-		};
-		09CADB490A1C40558F5C2A9C /* RelWithDebInfo */ = {
+		301C3FED665B4AFA98362789 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -797,9 +769,9 @@ exit 0";
 				USE_HEADERMAP = NO;
 				WARNING_CFLAGS = ("$(inherited)");
 			};
-			name = RelWithDebInfo;
+			name = Release;
 		};
-		20699289FC2D489488BB69F9 /* Debug */ = {
+		394E38528A804F95B1CE527E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -839,17 +811,47 @@ exit 0";
 			};
 			name = Debug;
 		};
-		379550FA233E42D79670B051 /* Debug */ = {
+		422C7A943F1E483EAA8515CB /* RelWithDebInfo */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
 				ARCHS = arm64;
+				BUNDLE_VERSION = 1.0.0;
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGNING_REQUIRED = YES;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "/Users/aimac/Development/FloppyTurd/RelWithDebInfo${EFFECTIVE_PLATFORM_NAME}";
+				DEVELOPMENT_TEAM = 86886N72J8;
+				EXECUTABLE_PREFIX = "";
+				EXECUTABLE_SUFFIX = "";
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'",PLATFORM_IOS,PLATFORM_MOBILE,__APPLE__,"'TARGET_OS_IOS=1'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/Users/aimac/Development/FloppyTurd/FloppyTurd,/Users/aimac/Development/FloppyTurd/FloppyTurd/iOS,/Users/aimac/Development/FloppyTurd/FloppyTurd/Shaders,"$(inherited)");
+				INFOPLIST_FILE = /Users/aimac/Development/FloppyTurd/CMakeFiles/FloppyTurd.dir/Info.plist;
+				INSTALL_PATH = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
-				SDKROOT = iphoneos;
-				SYMROOT = /Users/aimac/Development/FloppyTurd/build;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CPLUSPLUSFLAGS = "       -DNDEBUG '-std=gnu++20' -Wall -Wextra -pedantic ";
+				OTHER_LDFLAGS = (" -Wl,-headerpad_max_install_names","-framework Foundation","-framework UIKit","-framework Metal","-framework MetalKit","-framework MetalPerformanceShaders","-framework SpriteKit","-framework QuartzCore","-framework CoreGraphics","-framework CoreText","-framework CoreAudio","-framework AudioToolbox","-framework AVFoundation","-framework GameController","-framework ImageIO","-framework MobileCoreServices","-framework CoreHaptics","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_BUNDLE_IDENTIFIER = com.floppyturd.game;
+				PRODUCT_NAME = FloppyTurd;
+				SECTORDER_FLAGS = "";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGET_TEMP_DIR = "/Users/aimac/Development/FloppyTurd/build/FloppyTurd.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				UI_REQUIRED_DEVICE_CAPABILITIES = arm64;
+				UI_SUPPORTED_INTERFACE_ORIENTATIONS = "UIInterfaceOrientationPortrait;UIInterfaceOrientationLandscapeLeft;UIInterfaceOrientationLandscapeRight";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
 			};
-			name = Debug;
+			name = RelWithDebInfo;
 		};
-		3B3B0B1D6D224A57890C9A3A /* MinSizeRel */ = {
+		70358B59CA0A4EFEABA004C1 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -867,20 +869,49 @@ exit 0";
 				USE_HEADERMAP = NO;
 				WARNING_CFLAGS = ("$(inherited)");
 			};
-			name = MinSizeRel;
+			name = Debug;
 		};
-		631A6EF10F9947638C65AB40 /* RelWithDebInfo */ = {
+		71F4EE5ACB0A448794B4EE2B /* MinSizeRel */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = arm64;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
-				SDKROOT = iphoneos;
-				SWIFT_COMPILATION_MODE = wholemodule;
-				SYMROOT = /Users/aimac/Development/FloppyTurd/build;
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ZERO_CHECK;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = MinSizeRel;
+		};
+		738C317372EC48C28E2BEA81 /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ZERO_CHECK;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
 			};
 			name = RelWithDebInfo;
 		};
-		65BB1781EB4A4066BAFB0D52 /* Release */ = {
+		91826B88EB614B93A5A8FC28 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -920,7 +951,7 @@ exit 0";
 			};
 			name = Release;
 		};
-		74C58B410F754F7A882B00D4 /* Debug */ = {
+		95F0755E77EB447499B8BB00 /* MinSizeRel */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -938,29 +969,20 @@ exit 0";
 				USE_HEADERMAP = NO;
 				WARNING_CFLAGS = ("$(inherited)");
 			};
-			name = Debug;
+			name = MinSizeRel;
 		};
-		7529752F07D14C469EBC5CD2 /* RelWithDebInfo */ = {
+		979B3520728D4D25B353F86E /* RelWithDebInfo */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				COMBINE_HIDPI_IMAGES = YES;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
-				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				INSTALL_PATH = "";
-				OTHER_LDFLAGS = ("","$(inherited)");
-				OTHER_REZFLAGS = "";
-				PRODUCT_NAME = ZERO_CHECK;
-				SECTORDER_FLAGS = "";
-				USE_HEADERMAP = NO;
-				WARNING_CFLAGS = ("$(inherited)");
+				ARCHS = arm64;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SYMROOT = /Users/aimac/Development/FloppyTurd/build;
 			};
 			name = RelWithDebInfo;
 		};
-		777B9FAFF6F4449DA6885389 /* MinSizeRel */ = {
+		9E8E45BFC5ED428288F396BE /* MinSizeRel */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -1000,49 +1022,7 @@ exit 0";
 			};
 			name = MinSizeRel;
 		};
-		79E00B9E33EB4CF89F5B614D /* MinSizeRel */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ARCHS = arm64;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
-				SDKROOT = iphoneos;
-				SWIFT_COMPILATION_MODE = wholemodule;
-				SYMROOT = /Users/aimac/Development/FloppyTurd/build;
-			};
-			name = MinSizeRel;
-		};
-		924C21825A1A40A888D28242 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				COMBINE_HIDPI_IMAGES = YES;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
-				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				INSTALL_PATH = "";
-				OTHER_LDFLAGS = ("","$(inherited)");
-				OTHER_REZFLAGS = "";
-				PRODUCT_NAME = ZERO_CHECK;
-				SECTORDER_FLAGS = "";
-				USE_HEADERMAP = NO;
-				WARNING_CFLAGS = ("$(inherited)");
-			};
-			name = Release;
-		};
-		94F5864B37834EA080187F14 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ARCHS = arm64;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
-				SDKROOT = iphoneos;
-				SWIFT_COMPILATION_MODE = wholemodule;
-				SYMROOT = /Users/aimac/Development/FloppyTurd/build;
-			};
-			name = Release;
-		};
-		A247696DC7C547A6BDAD5409 /* Debug */ = {
+		CD3272C6CA274A1E88D1D5B4 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -1062,7 +1042,39 @@ exit 0";
 			};
 			name = Debug;
 		};
-		C90CB22214764411ADCB9DB6 /* MinSizeRel */ = {
+		D1A1090D75AE4397AC775D22 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SYMROOT = /Users/aimac/Development/FloppyTurd/build;
+			};
+			name = Release;
+		};
+		E1DE5D8B940741FB846374E9 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SYMROOT = /Users/aimac/Development/FloppyTurd/build;
+			};
+			name = MinSizeRel;
+		};
+		E6A907F55DBC4C8A809AD928 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				SDKROOT = iphoneos;
+				SYMROOT = /Users/aimac/Development/FloppyTurd/build;
+			};
+			name = Debug;
+		};
+		E7F7D0CF8DAA48F48BC0BA38 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -1080,9 +1092,9 @@ exit 0";
 				USE_HEADERMAP = NO;
 				WARNING_CFLAGS = ("$(inherited)");
 			};
-			name = MinSizeRel;
+			name = Release;
 		};
-		F8C7BFB64B7040C3BEDA65C8 /* Release */ = {
+		F71C426E059E4C6B95E66CED /* RelWithDebInfo */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -1100,51 +1112,51 @@ exit 0";
 				USE_HEADERMAP = NO;
 				WARNING_CFLAGS = ("$(inherited)");
 			};
-			name = Release;
+			name = RelWithDebInfo;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		27A3396BF9DE4797949A2969 /* Build configuration list for PBXNativeTarget "FloppyTurd" */ = {
+		18CAD4659C7A4EEB8471CC17 /* Build configuration list for PBXAggregateTarget "ALL_BUILD" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				20699289FC2D489488BB69F9 /* Debug */,
-				65BB1781EB4A4066BAFB0D52 /* Release */,
-				777B9FAFF6F4449DA6885389 /* MinSizeRel */,
-				05316310F68247E291B37414 /* RelWithDebInfo */,
+				70358B59CA0A4EFEABA004C1 /* Debug */,
+				301C3FED665B4AFA98362789 /* Release */,
+				95F0755E77EB447499B8BB00 /* MinSizeRel */,
+				F71C426E059E4C6B95E66CED /* RelWithDebInfo */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		54D8DC9507BD49C694A06A96 /* Build configuration list for PBXAggregateTarget "ALL_BUILD" */ = {
+		85BC97BEA45443F0B42E5CEA /* Build configuration list for PBXProject "FloppyTurd" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				74C58B410F754F7A882B00D4 /* Debug */,
-				F8C7BFB64B7040C3BEDA65C8 /* Release */,
-				3B3B0B1D6D224A57890C9A3A /* MinSizeRel */,
-				09CADB490A1C40558F5C2A9C /* RelWithDebInfo */,
+				E6A907F55DBC4C8A809AD928 /* Debug */,
+				D1A1090D75AE4397AC775D22 /* Release */,
+				E1DE5D8B940741FB846374E9 /* MinSizeRel */,
+				979B3520728D4D25B353F86E /* RelWithDebInfo */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		819CF9AAE4F24E3990EEDB8A /* Build configuration list for PBXAggregateTarget "ZERO_CHECK" */ = {
+		868788401BEA4F83ABC16C24 /* Build configuration list for PBXAggregateTarget "ZERO_CHECK" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				A247696DC7C547A6BDAD5409 /* Debug */,
-				924C21825A1A40A888D28242 /* Release */,
-				C90CB22214764411ADCB9DB6 /* MinSizeRel */,
-				7529752F07D14C469EBC5CD2 /* RelWithDebInfo */,
+				CD3272C6CA274A1E88D1D5B4 /* Debug */,
+				E7F7D0CF8DAA48F48BC0BA38 /* Release */,
+				71F4EE5ACB0A448794B4EE2B /* MinSizeRel */,
+				738C317372EC48C28E2BEA81 /* RelWithDebInfo */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		8B06A3D8C1D84FE6A0F3D769 /* Build configuration list for PBXProject "FloppyTurd" */ = {
+		8C7EB5A0B00F4D979D368F07 /* Build configuration list for PBXNativeTarget "FloppyTurd" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				379550FA233E42D79670B051 /* Debug */,
-				94F5864B37834EA080187F14 /* Release */,
-				79E00B9E33EB4CF89F5B614D /* MinSizeRel */,
-				631A6EF10F9947638C65AB40 /* RelWithDebInfo */,
+				394E38528A804F95B1CE527E /* Debug */,
+				91826B88EB614B93A5A8FC28 /* Release */,
+				9E8E45BFC5ED428288F396BE /* MinSizeRel */,
+				422C7A943F1E483EAA8515CB /* RelWithDebInfo */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

@@ -162,7 +162,7 @@ AIGUI_DEF void AIGUI_UpdateInput() {
             g_AIGUI.mousePos = uiPos;  // AIGUI still uses mousePos for compatibility
             g_AIGUI.mouseLeftDown = touchActive;
         } else {
-            // Fallback to PlatformLayer if TouchControls not available
+            // Fallback to PlatformAPI if TouchControls not available
             bool touchActive = IsPrimaryInputDown();
             Vector2 touchPos = GetPrimaryInputPosition();
             bool touchPressed = IsPrimaryInputPressed();
@@ -184,10 +184,10 @@ AIGUI_DEF void AIGUI_UpdateInput() {
     } else {
         TraceLog(LOG_INFO, "[AIGUI] UpdateInput: Desktop platform detected");
         
-        // On desktop, use mouse input
+        // On desktop, use mouse input via PlatformAPI
         Vector2 mousePos = GetMousePosition();
-        bool mouseDown = IsMouseButtonDown(MOUSE_LEFT_BUTTON);
-        bool mouseReleased = IsMouseButtonReleased(MOUSE_LEFT_BUTTON);
+        bool mouseDown = IsMouseButtonDown(MOUSE_BUTTON_LEFT);
+        bool mouseReleased = IsMouseButtonReleased(MOUSE_BUTTON_LEFT);
         
         // For desktop, we need to track the previous state to detect pressed
         static bool previousMouseDown = false;

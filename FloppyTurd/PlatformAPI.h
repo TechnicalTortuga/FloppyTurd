@@ -1,372 +1,938 @@
 #ifndef PLATFORM_API_H
 #define PLATFORM_API_H
 
+// Forward declarations
+class Game;  // Forward declaration for Game class
+
 #pragma once
 
 #include <string>
 #include <vector>
+#include <memory>
 #include <TargetConditionals.h>
+#include "PlatformTypes.h"
+#include "PlatformTraits.h"
 
 // Platform detection macros
-#if !defined(PLATFORM_MOBILE) && defined(__ANDROID__)
-    #define PLATFORM_MOBILE
-    #define PLATFORM_ANDROID
-#elif !defined(PLATFORM_IOS) && defined(__APPLE__)
-    #include <TargetConditionals.h>
-    #if TARGET_OS_IPHONE
+#if defined(__APPLE__) && defined(TARGET_OS_IPHONE)
+    #ifndef PLATFORM_IOS
         #define PLATFORM_IOS
-        #define PLATFORM_MOBILE
+    #endif
+#else
+    #ifndef PLATFORM_DESKTOP
+        #define PLATFORM_DESKTOP
     #endif
 #endif
 
 // ============================================================================
-// PLATFORM API - UNIFIED INTERFACE
+// PLATFORM-SPECIFIC STRUCTS
 // ============================================================================
 
-/**
- * PlatformAPI - Unified Raylib-compatible interface for all platforms
- * 
- * This header provides a single entry point for all Raylib function calls.
- * - Desktop: Direct Raylib calls via raylib.h include
- * - iOS: Function redefinitions that route to Metal implementations
- * 
- * Usage: All game files include this header and get access to Raylib types
- * and functions automatically.
- */
+// ============================================================================
+// PLATFORM-SPECIFIC STRUCTS
+// ============================================================================
 
-#if defined(PLATFORM_IOS)
-    // ============================================================================
-    // iOS: REDEFINE ALL FUNCTIONS FOR METAL IMPLEMENTATION
-    // ============================================================================
-    
-    // iOS-specific type definitions (compatible with Raylib)
-    struct Vector2 { float x, y; };
-    struct Color { unsigned char r, g, b, a; };
-    struct Rectangle { float x, y, width, height; };
-    struct Texture2D { unsigned int id; int width, height; };
-    struct Image { void* data; int width, height; int mipmaps; int format; };
-    struct Font { unsigned int baseSize; unsigned int glyphCount; unsigned int glyphPadding; Texture2D texture; Rectangle* recs; int* glyphs; };
-    struct Sound { void* player; };
-    struct Music { void* player; };
-    
-    // ============================================================================
-    // COLOR CONSTANTS (iOS redefinitions)
-    // ============================================================================
-    
-    #define WHITE           Color{255, 255, 255, 255}
-    #define BLACK           Color{0, 0, 0, 255}
-    #define RED             Color{255, 0, 0, 255}
-    #define GREEN           Color{0, 255, 0, 255}
-    #define BLUE            Color{0, 0, 255, 255}
-    #define YELLOW          Color{255, 255, 0, 255}
-    #define PURPLE          Color{255, 0, 255, 255}
-    #define CYAN            Color{0, 255, 255, 255}
-    #define ORANGE          Color{255, 165, 0, 255}
-    #define PINK            Color{255, 192, 203, 255}
-    #define BROWN           Color{165, 42, 42, 255}
-    #define GRAY            Color{128, 128, 128, 255}
-    #define LIGHTGRAY       Color{211, 211, 211, 255}
-    #define DARKGRAY        Color{64, 64, 64, 255}
-    #define MAROON          Color{128, 0, 0, 255}
-    #define LIME            Color{0, 255, 0, 255}
-    #define NAVY            Color{0, 0, 128, 255}
-    #define OLIVE           Color{128, 128, 0, 255}
-    #define TEAL            Color{0, 128, 128, 255}
-    #define VIOLET          Color{128, 0, 128, 255}
-    #define BLANK           Color{0, 0, 0, 0}
-    #define MAGENTA         Color{255, 0, 255, 255}
-    #define GOLD            Color{255, 203, 0, 255}
-    #define RAYWHITE        Color{245, 245, 245, 255}
-    
-    // ============================================================================
-    // MATH CONSTANTS (iOS redefinitions)
-    // ============================================================================
-    
-    #define PI              3.14159265358979323846f
-    #define DEG2RAD         (PI / 180.0f)
-    #define RAD2DEG         (180.0f / PI)
-    
-    // ============================================================================
-    // WINDOW FLAGS (iOS redefinitions)
-    // ============================================================================
-    
-    #define FLAG_WINDOW_RESIZABLE   0x00000004
-    #define FLAG_VSYNC_HINT         0x00000040
-    #define FLAG_WINDOW_MAXIMIZED   0x00000200
-    
-    // ============================================================================
-    // LOGGING LEVELS (iOS redefinitions)
-    // ============================================================================
-    
-    #define LOG_ALL     0
-    #define LOG_TRACE   1
-    #define LOG_DEBUG   2
-    #define LOG_INFO    3
-    #define LOG_WARNING 4
-    #define LOG_ERROR   5
-    #define LOG_FATAL   6
-    #define LOG_NONE    7
-    
-    // ============================================================================
-    // MOUSE BUTTONS (iOS redefinitions)
-    // ============================================================================
-    
-    #define MOUSE_LEFT_BUTTON 0
-    #define MOUSE_RIGHT_BUTTON 1
-    #define MOUSE_MIDDLE_BUTTON 2
-    #define MOUSE_BUTTON_LEFT 0
-    #define MOUSE_BUTTON_RIGHT 1
-    #define MOUSE_BUTTON_MIDDLE 2
-    
-    // ============================================================================
-    // KEYBOARD KEYS (iOS redefinitions)
-    // ============================================================================
-    
-    #define KEY_NULL            0
-    #define KEY_SPACE           32
-    #define KEY_ENTER           257
-    #define KEY_ESCAPE          256
-    #define KEY_A               65
-    #define KEY_B               66
-    #define KEY_C               67
-    #define KEY_D               68
-    #define KEY_E               69
-    #define KEY_F               70
-    #define KEY_G               71
-    #define KEY_H               72
-    #define KEY_I               73
-    #define KEY_J               74
-    #define KEY_K               75
-    #define KEY_L               76
-    #define KEY_M               77
-    #define KEY_N               78
-    #define KEY_O               79
-    #define KEY_P               80
-    #define KEY_Q               81
-    #define KEY_R               82
-    #define KEY_S               83
-    #define KEY_T               84
-    #define KEY_U               85
-    #define KEY_V               86
-    #define KEY_W               87
-    #define KEY_X               88
-    #define KEY_Y               89
-    #define KEY_Z               90
-    #define KEY_F1              290
-    #define KEY_F2              291
-    #define KEY_F3              292
-    #define KEY_F4              293
-    #define KEY_F5              294
-    #define KEY_F6              295
-    #define KEY_F7              296
-    #define KEY_F8              297
-    #define KEY_F9              298
-    #define KEY_F10             299
-    #define KEY_F11             300
-    #define KEY_F12             301
-    
-    // ============================================================================
-    // GESTURE DEFINITIONS (iOS redefinitions)
-    // ============================================================================
-    
-    #define GESTURE_NONE        0
-    #define GESTURE_TAP         1
-    #define GESTURE_DOUBLETAP   2
-    #define GESTURE_HOLD        4
-    #define GESTURE_DRAG        8
-    #define GESTURE_SWIPE_RIGHT 16
-    #define GESTURE_SWIPE_LEFT  32
-    #define GESTURE_SWIPE_UP    64
-    #define GESTURE_SWIPE_DOWN  128
-    #define GESTURE_PINCH_IN    256
-    #define GESTURE_PINCH_OUT   512
-    
-    // ============================================================================
-    // PIXEL FORMAT CONSTANTS (iOS redefinitions)
-    // ============================================================================
-    
-    #define PIXELFORMAT_UNCOMPRESSED_R8G8B8A8 7
-    
-    // ============================================================================
-    // TEXTURE WRAP MODE CONSTANTS (iOS redefinitions)
-    // ============================================================================
-    
-    #define TEXTURE_WRAP_REPEAT        0
-    #define TEXTURE_WRAP_CLAMP         1
-    #define TEXTURE_WRAP_MIRROR_REPEAT 2
-    #define TEXTURE_WRAP_MIRROR_CLAMP  3
-    
-    // ============================================================================
-    // UTILITY FUNCTIONS (iOS implementations)
-    // ============================================================================
-    
-    inline float Clamp(float value, float min, float max) {
-        if (value < min) return min;
-        if (value > max) return max;
-        return value;
-    }
+// All type definitions are now in PlatformTypes.h
+// No duplicate definitions needed here
 
-    inline float Lerp(float start, float end, float amount) {
-        return start + (end - start) * amount;
-    }
+// ============================================================================
+// CONSTANTS
+// ============================================================================
 
-    inline int Round(float value) {
-        return static_cast<int>(value + 0.5f);
-    }
+// All constants are now defined in PlatformTypes.h
+// This section is kept for backward compatibility but constants should be used from PlatformTypes.h
 
-    inline float Min(float a, float b) {
-        return (a < b) ? a : b;
-    }
+// ============================================================================
+// PLATFORM API CLASS 
+// ============================================================================
 
-    inline float Max(float a, float b) {
-        return (a > b) ? a : b;
-    }
-
-    inline float Abs(float value) {
-        return (value < 0) ? -value : value;
-    }
-
-    inline float Sqrt(float value) {
-        return sqrtf(value);
-    }
-
-    inline float Sin(float angle) {
-        return sinf(angle);
-    }
-
-    inline float Cos(float angle) {
-        return cosf(angle);
-    }
-
-    inline float Tan(float angle) {
-        return tanf(angle);
-    }
-
-    inline float Atan2(float y, float x) {
-        return atan2f(y, x);
+template <typename Traits>
+class PlatformAPI {
+public:
+    static PlatformAPI& GetInstance() {
+        static PlatformAPI instance;
+        return instance;
     }
     
-    // Window management
-    void InitWindow(int width, int height, const char* title);
-    void CloseWindow(void);
-    bool WindowShouldClose(void);
-    void SetTargetFPS(int fps);
-    int GetScreenWidth(void);
-    int GetScreenHeight(void);
-    void SetWindowSize(int width, int height);
-    bool IsWindowFullscreen(void);
-    void ToggleFullscreen(void);
+    // Constructor/Destructor
+    PlatformAPI() {
+        // No initialization needed in constructor
+    }
+    ~PlatformAPI() {
+        // No cleanup needed in destructor
+    }
     
-    // Drawing functions
-    void BeginDrawing(void);
-    void EndDrawing(void);
-    void ClearBackground(Color color);
-    void DrawRectangle(int posX, int posY, int width, int height, Color color);
-    void DrawRectangleRec(Rectangle rec, Color color);
-    void DrawRectangleLinesEx(Rectangle rec, float lineThick, Color color);
-    void DrawRectangleRounded(Rectangle rec, float roundness, int segments, Color color);
-    void DrawRectangleRoundedLines(Rectangle rec, float roundness, int segments, float lineThick, Color color);
-    void DrawRectangleRoundedLinesEx(Rectangle rec, float roundness, int segments, float lineThick, Color color);
-    void DrawCircle(int centerX, int centerY, float radius, Color color);
-    void DrawCircleV(Vector2 center, float radius, Color color);
-    void DrawLine(int startPosX, int startPosY, int endPosX, int endPosY, Color color);
-    void DrawLineEx(Vector2 startPos, Vector2 endPos, float thick, Color color);
-    void DrawLineV(Vector2 startPos, Vector2 endPos, Color color);
+    // Prevent copying
+    PlatformAPI(const PlatformAPI&) = delete;
+    PlatformAPI& operator=(const PlatformAPI&) = delete;
     
-    // Texture functions
-    Texture2D LoadTexture(const char* fileName);
-    void UnloadTexture(Texture2D texture);
-    void SetTextureWrap(Texture2D texture, int wrap);
-    void DrawTexture(Texture2D texture, int posX, int posY, Color tint);
-    void DrawTextureV(Texture2D texture, Vector2 position, Color tint);
-    void DrawTextureRec(Texture2D texture, Rectangle source, Vector2 position, Color tint);
-    void DrawTexturePro(Texture2D texture, Rectangle source, Rectangle dest, Vector2 origin, float rotation, Color tint);
-    void DrawTextureEx(Texture2D texture, Vector2 position, float rotation, float scale, Color tint);
-    
-    // Image functions
-    Image LoadImage(const char* fileName);
-    void UnloadImage(Image image);
-    Image GenImageColor(int width, int height, Color color);
-    void ImageResize(Image* image, int newWidth, int newHeight);
-    void ImageDraw(Image* dst, Image src, Rectangle srcRec, Rectangle dstRec, Color tint);
-    Texture2D LoadTextureFromImage(Image image);
-    
-    // Audio functions
-    void InitAudioDevice(void);
-    void CloseAudioDevice(void);
-    Sound LoadSound(const char* fileName);
-    void UnloadSound(Sound sound);
-    void PlaySound(Sound sound);
-    void SetSoundVolume(Sound sound, float volume);
-    Music LoadMusic(const char* fileName);
-    void UnloadMusic(Music music);
-    void PlayMusic(Music music);
-    void StopMusic(Music music);
-    void UpdateMusic(Music music);
-    bool IsMusicPlaying(Music music);
-    void SetMusicVolume(Music music, float volume);
-    void PauseMusic(Music music);
-    void ResumeMusic(Music music);
-    void SetMusicLooping(Music music, bool looping);
-    
-    // Font functions
-    Font LoadFont(const char* fileName);
-    void UnloadFont(Font font);
-    Vector2 MeasureTextEx(Font font, const char* text, float fontSize, float spacing);
-    void DrawTextEx(Font font, const char* text, Vector2 position, float fontSize, float spacing, Color tint);
-    void DrawText(const char* text, int posX, int posY, int fontSize, Color color);
-    int MeasureText(const char* text, int fontSize);
-    
-    // Scissor mode
-    void BeginScissorMode(int x, int y, int width, int height);
-    void EndScissorMode();
-    
-    // Input functions
-    bool IsMouseButtonDown(int button);
-    bool IsMouseButtonReleased(int button);
-    bool IsKeyPressed(int key);
-    bool IsKeyDown(int key);
-    Vector2 GetMousePosition(void);
-    Vector2 GetMouseDelta(void);
-    
-    // Time functions
-    double GetTime(void);
-    float GetFrameTime(void);
-    int GetRandomValue(int min, int max);
-    void TraceLog(int logLevel, const char* text, ...);
-    
-    // Collision functions
-    bool CheckCollisionRecs(Rectangle rec1, Rectangle rec2);
-    bool CheckCollisionPointRec(Vector2 point, Rectangle rec);
-    bool CheckCollisionCircleRec(Vector2 center, float radius, Rectangle rec);
-    
-    // Vector math functions
-    Vector2 Vector2Add(Vector2 v1, Vector2 v2);
-    Vector2 Vector2Subtract(Vector2 v1, Vector2 v2);
-    Vector2 Vector2Scale(Vector2 v, float scale);
-    float Vector2Distance(Vector2 v1, Vector2 v2);
-    float Vector2Length(Vector2 v);
-    Vector2 Vector2Normalize(Vector2 v);
-    
-    // Color functions
-    Color ColorAlpha(Color color, float alpha);
-    Color Fade(Color color, float alpha);
-    Color ColorLerp(Color a, Color b, float t);
-    
-    // Utility functions
-    float Clamp(float value, float min, float max);
-
-#else
     // ============================================================================
-    // DESKTOP: DIRECT RAYLIB USAGE
+    // INITIALIZATION AND LIFECYCLE
     // ============================================================================
     
-    // Include raylib.h for desktop platforms - all functions available directly
-    #include "raylib.h"
+    void Initialize(void* nativeView) {
+        Traits::Initialize(nativeView);
+    }
+    void Initialize() {
+        Traits::Initialize();
+    }
+    void Shutdown() {
+        Traits::Shutdown();
+    }
     
-    // No redefinitions needed - just use Raylib directly
-    // All game code can call Raylib functions as normal
+    // ============================================================================
+    // RENDERING FUNCTIONS
+    // ============================================================================
+    
+    void BeginDrawing() {
+        Traits::BeginDrawing();
+    }
+    void EndDrawing() {
+        Traits::EndDrawing();
+    }
+    void ClearBackground(Color color) {
+        Traits::ClearBackground(color);
+    }
+    void DrawRectangle(float x, float y, float width, float height, Color color) {
+        Traits::DrawRectangle(x, y, width, height, color);
+    }
+    void DrawRectangleRec(Rectangle rec, Color color) {
+        Traits::DrawRectangleRec(rec, color);
+    }
 
-#endif
+    void DrawRectangleLinesEx(Rectangle rec, float lineThick, Color color) {
+        Traits::DrawRectangleLinesEx(rec, lineThick, color);
+    }
+
+    void DrawRectangleRounded(Rectangle rec, float roundness, int segments, Color color) {
+        Traits::DrawRectangleRounded(rec, roundness, segments, color);
+    }
+
+    void DrawRectangleRoundedLines(Rectangle rec, float roundness, int segments, float lineThick, Color color) {
+        Traits::DrawRectangleRoundedLines(rec, roundness, segments, lineThick, color);
+    }
+
+    void DrawRectangleRoundedLinesEx(Rectangle rec, float roundness, int segments, float lineThick, Color color) {
+        Traits::DrawRectangleRoundedLinesEx(rec, roundness, segments, lineThick, color);
+    }
+    void DrawCircle(float centerX, float centerY, float radius, Color color) {
+        Traits::DrawCircle(centerX, centerY, radius, color);
+    }
+    void DrawCircleV(Vector2 center, float radius, Color color) {
+        Traits::DrawCircleV(center, radius, color);
+    }
+    void DrawLine(float startPosX, float startPosY, float endPosX, float endPosY, Color color) {
+        Traits::DrawLine(startPosX, startPosY, endPosX, endPosY, color);
+    }
+    void DrawLineV(Vector2 startPos, Vector2 endPos, Color color) {
+        Traits::DrawLineV(startPos, endPos, color);
+    }
+
+    void DrawLineEx(Vector2 startPos, Vector2 endPos, float thick, Color color) {
+        Traits::DrawLineEx(startPos, endPos, thick, color);
+    }
+    void DrawText(const char* text, int posX, int posY, int fontSize, Color color) {
+        Traits::DrawText(text, static_cast<float>(posX), static_cast<float>(posY), static_cast<float>(fontSize), color);
+    }
+    void DrawTextEx(Font font, const char* text, Vector2 position, float fontSize, float spacing, Color tint) {
+        Traits::DrawTextEx(font, text, position, fontSize, spacing, tint);
+    }
+
+    int MeasureText(const char* text, int fontSize) {
+        return Traits::MeasureText(text, fontSize);
+    }
+
+    const char* TextFormat(const char* text, va_list args) {
+        return Traits::TextFormat(text, args);
+    }
+    void DrawTexture(Texture2D texture, int posX, int posY, Color tint) {
+        Traits::DrawTexture(texture, static_cast<float>(posX), static_cast<float>(posY), tint);
+    }
+    void DrawTextureV(Texture2D texture, Vector2 position, Color tint) {
+        Traits::DrawTextureV(texture, position, tint);
+    }
+    void DrawTextureRec(Texture2D texture, Rectangle source, Vector2 position, Color tint) {
+        Traits::DrawTextureRec(texture, source, position, tint);
+    }
+    void DrawTexturePro(Texture2D texture, Rectangle source, Rectangle dest, Vector2 origin, float rotation, Color tint) {
+        Traits::DrawTexturePro(texture, source, dest, origin, rotation, tint);
+    }
+
+    void DrawTextureEx(Texture2D texture, Vector2 position, float rotation, float scale, Color tint) {
+        Traits::DrawTextureEx(texture, position, rotation, scale, tint);
+    }
+    void DrawTexture(Texture2D texture, float x, float y, float width, float height, Color color) {
+        Traits::DrawTexture(texture, x, y, width, height, color);
+    }
+    
+    // ============================================================================
+    // WINDOW AND SCREEN FUNCTIONS
+    // ============================================================================
+    
+    void SetTargetFPS(int fps) {
+        Traits::SetTargetFPS(fps);
+    }
+    bool WindowShouldClose() {
+        return Traits::WindowShouldClose();
+    }
+    int GetScreenWidth() {
+        return Traits::GetScreenWidth();
+    }
+    int GetScreenHeight() {
+        return Traits::GetScreenHeight();
+    }
+    Vector2 GetScreenToWorld2D(Vector2 screen, Camera2D camera) {
+        return Traits::GetScreenToWorld2D(screen, camera);
+    }
+    Vector2 GetWorldToScreen2D(Vector2 world, Camera2D camera) {
+        return Traits::GetWorldToScreen2D(world, camera);
+    }
+    float GetScreenScale() {
+        return Traits::GetScreenScale();
+    }
+    void SetScreenSize(int width, int height) {
+        Traits::SetScreenSize(width, height);
+    }
+    void SetScreenScale(float scale) {
+        Traits::SetScreenScale(scale);
+    }
+    
+    // ============================================================================
+    // INPUT FUNCTIONS
+    // ============================================================================
+    
+    bool IsKeyPressed(int key) {
+        return Traits::IsKeyPressed(key);
+    }
+    bool IsKeyDown(int key) {
+        return Traits::IsKeyDown(key);
+    }
+    bool IsKeyReleased(int key) {
+        return Traits::IsKeyReleased(key);
+    }
+    bool IsMouseButtonPressed(int button) {
+        return Traits::IsMouseButtonPressed(button);
+    }
+    bool IsMouseButtonDown(int button) {
+        return Traits::IsMouseButtonDown(button);
+    }
+    bool IsMouseButtonReleased(int button) {
+        return Traits::IsMouseButtonReleased(button);
+    }
+    Vector2 GetMousePosition() {
+        return Traits::GetMousePosition();
+    }
+    Vector2 GetMouseDelta() {
+        return Traits::GetMouseDelta();
+    }
+    Vector2 GetTouchPosition(int index) {
+        return Traits::GetTouchPosition(index);
+    }
+    bool IsPrimaryInputPressed() {
+        return Traits::IsPrimaryInputPressed();
+    }
+    bool IsPrimaryInputReleased() {
+        return Traits::IsPrimaryInputReleased();
+    }
+    
+    // ============================================================================
+    // TEXTURE FUNCTIONS
+    // ============================================================================
+    
+    Texture2D LoadTexture(const char* fileName) {
+        return Traits::LoadTexture(fileName);
+    }
+    void UnloadTexture(Texture2D texture) {
+        Traits::UnloadTexture(texture);
+    }
+
+    Image LoadImage(const char* fileName) {
+        return Traits::LoadImage(fileName);
+    }
+
+    void UnloadImage(Image image) {
+        Traits::UnloadImage(image);
+    }
+
+    void SetTextureWrap(Texture2D texture, int wrap) {
+        Traits::SetTextureWrap(texture, wrap);
+    }
+
+    void* CreateTextureFromImage(void* image, int* width, int* height) {
+        return Traits::CreateTextureFromImage(image, width, height);
+    }
+
+
+    Texture2D LoadTextureFromImage(Image image) {
+        return Traits::LoadTextureFromImage(image);
+    }
+    Image LoadImageFromTexture(Texture2D texture) {
+        return Traits::LoadImageFromTexture(texture);
+    }
+
+    Rectangle GetTextureRec(Texture2D texture) {
+        return Traits::GetTextureRec(texture);
+    }
+    
+    // ============================================================================
+    // FONT FUNCTIONS
+    // ============================================================================
+    
+    Font LoadFont(const char* fileName) {
+        return Traits::LoadFont(fileName);
+    }
+    Font LoadFontEx(const char* fileName, int fontSize, int* fontChars, int glyphCount) {
+        return Traits::LoadFontEx(fileName, fontSize, fontChars, glyphCount);
+    }
+    void UnloadFont(Font font) {
+        Traits::UnloadFont(font);
+    }
+    void DrawFPS(int posX, int posY) {
+        Traits::DrawFPS(posX, posY);
+    }
+
+    void BeginScissorMode(int x, int y, int width, int height) {
+        Traits::BeginScissorMode(x, y, width, height);
+    }
+
+    void EndScissorMode() {
+        Traits::EndScissorMode();
+    }
+    Vector2 MeasureTextEx(Font font, const char* text, float fontSize, float spacing) {
+        return Traits::MeasureTextEx(font, text, fontSize, spacing);
+    }
+    
+    // ============================================================================
+    // AUDIO FUNCTIONS
+    // ============================================================================
+    
+    void InitAudioDevice() {
+        Traits::InitAudioDevice();
+    }
+
+    void InitializeAudio() {
+        Traits::InitializeAudio();
+    }
+    void CloseAudioDevice() {
+        Traits::CloseAudioDevice();
+    }
+
+    void ShutdownAudio() {
+        Traits::ShutdownAudio();
+    }
+    bool IsAudioDeviceReady() {
+        return Traits::IsAudioDeviceReady();
+    }
+    void SetMasterVolume(float volume) {
+        Traits::SetMasterVolume(volume);
+    }
+    Sound LoadSound(const char* fileName) {
+        return Traits::LoadSound(fileName);
+    }
+    void UnloadSound(Sound sound) {
+        Traits::UnloadSound(sound);
+    }
+    void PlaySound(Sound sound) {
+        Traits::PlaySound(sound);
+    }
+    void StopSound(Sound sound) {
+        Traits::StopSound(sound);
+    }
+    void PauseSound(Sound sound) {
+        Traits::PauseSound(sound);
+    }
+    void ResumeSound(Sound sound) {
+        Traits::ResumeSound(sound);
+    }
+    bool IsSoundPlaying(Sound sound) {
+        return Traits::IsSoundPlaying(sound);
+    }
+    void SetSoundVolume(Sound sound, float volume) {
+        Traits::SetSoundVolume(sound, volume);
+    }
+    void SetSoundPitch(Sound sound, float pitch) {
+        Traits::SetSoundPitch(sound, pitch);
+    }
+    void SetSoundPan(Sound sound, float pan) {
+        Traits::SetSoundPan(sound, pan);
+    }
+    Music LoadMusicStream(const char* fileName) {
+        return Traits::LoadMusicStream(fileName);
+    }
+
+    Music LoadMusic(const char* fileName) {
+        return Traits::LoadMusic(fileName);
+    }
+    void UnloadMusicStream(Music music) {
+        Traits::UnloadMusicStream(music);
+    }
+
+    void UnloadMusic(Music music) {
+        Traits::UnloadMusic(music);
+    }
+    void PlayMusicStream(Music music) {
+        Traits::PlayMusicStream(music);
+    }
+
+    void PlayMusic(Music music) {
+        Traits::PlayMusic(music);
+    }
+    bool IsMusicStreamPlaying(Music music) {
+        return Traits::IsMusicStreamPlaying(music);
+    }
+
+    bool IsMusicPlaying(Music music) {
+        return Traits::IsMusicPlaying(music);
+    }
+    void UpdateMusicStream(Music music) {
+        Traits::UpdateMusicStream(music);
+    }
+    void UpdateMusic(Music music) {
+        Traits::UpdateMusic(music);
+    }
+    void StopMusicStream(Music music) {
+        Traits::StopMusicStream(music);
+    }
+
+    void StopMusic(Music music) {
+        Traits::StopMusic(music);
+    }
+    void PauseMusicStream(Music music) {
+        Traits::PauseMusicStream(music);
+    }
+
+    void PauseMusic(Music music) {
+        Traits::PauseMusic(music);
+    }
+    void ResumeMusicStream(Music music) {
+        Traits::ResumeMusicStream(music);
+    }
+
+    void ResumeMusic(Music music) {
+        Traits::ResumeMusic(music);
+    }
+    void SeekMusicStream(Music music, float position) {
+        Traits::SeekMusicStream(music, position);
+    }
+    void SetMusicVolume(Music music, float volume) {
+        Traits::SetMusicVolume(music, volume);
+    }
+    void SetMusicPitch(Music music, float pitch) {
+        Traits::SetMusicPitch(music, pitch);
+    }
+    void SetMusicPan(Music music, float pan) {
+        Traits::SetMusicPan(music, pan);
+    }
+    float GetMusicTimeLength(Music music) {
+        return Traits::GetMusicTimeLength(music);
+    }
+    float GetMusicTimePlayed(Music music) {
+        return Traits::GetMusicTimePlayed(music);
+    }
+    void PlayMusicLoop(Music music) {
+        Traits::PlayMusicLoop(music);
+    }
+    void SetLooping(Music music, bool looping) {
+        Traits::SetLooping(music, looping);
+    }
+
+    void SetMusicLooping(Music music, bool looping) {
+        Traits::SetMusicLooping(music, looping);
+    }
+    float GetMusicDuration(Music music) {
+        return Traits::GetMusicDuration(music);
+    }
+    
+    // ============================================================================
+    // RENDER TEXTURE FUNCTIONS
+    // ============================================================================
+    
+    RenderTexture2D LoadRenderTexture(int width, int height) {
+        return Traits::LoadRenderTexture(width, height);
+    }
+    void UnloadRenderTexture(RenderTexture2D target) {
+        Traits::UnloadRenderTexture(target);
+    }
+    void BeginTextureMode(RenderTexture2D target) {
+        Traits::BeginTextureMode(target);
+    }
+    void EndTextureMode() {
+        Traits::EndTextureMode();
+    }
+    
+    // ============================================================================
+    // TIME FUNCTIONS
+    // ============================================================================
+    
+    double GetTime() {
+        return Traits::GetTime();
+    }
+    float GetFrameTime() {
+        return Traits::GetFrameTime();
+    }
+    int GetCurrentFPS() {
+        return Traits::GetCurrentFPS();
+    }
+    float GetCurrentFrameTime() {
+        return Traits::GetCurrentFrameTime();
+    }
+    
+    // ============================================================================
+    // UTILITY FUNCTIONS
+    // ============================================================================
+    
+    void TraceLog(int logLevel, const char* text, ...) {
+        Traits::TraceLog(logLevel, text);
+    }
+    void SetTraceLogLevel(int logLevel) {
+        Traits::SetTraceLogLevel(logLevel);
+    }
+    void SetConfigFlags(unsigned int flags) {
+        Traits::SetConfigFlags(flags);
+    }
+    void InitWindow(int width, int height, const char* title) {
+        Traits::InitWindow(width, height, title);
+    }
+
+    void SetWindowSize(int width, int height) {
+        Traits::SetWindowSize(width, height);
+    }
+
+    void ToggleFullscreen() {
+        Traits::ToggleFullscreen();
+    }
+    void CloseWindow() {
+        Traits::CloseWindow();
+    }
+    void SetRandomSeed(unsigned int seed) {
+        Traits::SetRandomSeed(seed);
+    }
+    int GetRandomValue(int min, int max) {
+        return Traits::GetRandomValue(min, max);
+    }
+    float GetRandomFloat(float min, float max) {
+        return Traits::GetRandomFloat(min, max);
+    }
+    Vector2 GetRandomVector2(Vector2 min, Vector2 max) {
+        return Traits::GetRandomVector2(min, max);
+    }
+    Color GetRandomColor() {
+        return Traits::GetRandomColor();
+    }
+    Color ColorAlpha(Color color, float alpha) {
+        return Traits::ColorAlpha(color, alpha);
+    }
+    Color ColorAlphaBlend(Color dst, Color src, Color tint) {
+        return Traits::ColorAlphaBlend(dst, src, tint);
+    }
+    Color ColorLerp(Color color1, Color color2, float amount) {
+        return Traits::ColorLerp(color1, color2, amount);
+    }
+    Color Fade(Color color, float alpha) {
+        return Traits::Fade(color, alpha);
+    }
+    float Pow(float base, float exponent) {
+        return Traits::Pow(base, exponent);
+    }
+
+
+    Vector2 Vector2Add(Vector2 v1, Vector2 v2) {
+        return Traits::Vector2Add(v1, v2);
+    }
+
+    Vector2 Vector2Subtract(Vector2 v1, Vector2 v2) {
+        return Traits::Vector2Subtract(v1, v2);
+    }
+
+    float Vector2Length(Vector2 v) {
+        return Traits::Vector2Length(v);
+    }
+
+
+    float Vector2Distance(Vector2 v1, Vector2 v2) {
+        return Traits::Vector2Distance(v1, v2);
+    }
+
+
+    Vector2 Vector2Scale(Vector2 v, float scale) {
+        return Traits::Vector2Scale(v, scale);
+    }
+
+
+
+    Vector2 Vector2Normalize(Vector2 v) {
+        return Traits::Vector2Normalize(v);
+    }
+
+
+
+
+
+    Rectangle RectangleNew(float x, float y, float width, float height) {
+        return Traits::RectangleNew(x, y, width, height);
+    }
+    Rectangle RectangleFromVector2(Vector2 position, Vector2 size) {
+        return Traits::RectangleFromVector2(position, size);
+    }
+
+
+
+
+    bool CheckCollisionRecs(Rectangle rec1, Rectangle rec2) {
+        return Traits::CheckCollisionRecs(rec1, rec2);
+    }
+
+    bool CheckCollisionCircleRec(Vector2 center, float radius, Rectangle rec) {
+        return Traits::CheckCollisionCircleRec(center, radius, rec);
+    }
+    bool CheckCollisionPointRec(Vector2 point, Rectangle rec) {
+        return Traits::CheckCollisionPointRec(point, rec);
+    }
+
+
+
+
+    
+    // ============================================================================
+    // COMPLEX AUDIO FUNCTIONS
+    // ============================================================================
+    
+    static void StartCrossfade(float duration) {
+        Traits::StartCrossfade(duration);
+    }
+    
+    static void UpdateCrossfade(float deltaTime) {
+        Traits::UpdateCrossfade(deltaTime);
+    }
+    
+    static void FadeOutMusic(float duration) {
+        Traits::FadeOutMusic(duration);
+    }
+    
+    static void FadeInMusic(float duration) {
+        Traits::FadeInMusic(duration);
+    }
+    
+    static void UpdateFade(float deltaTime) {
+        Traits::UpdateFade(deltaTime);
+    }
+
+    // ============================================================================
+    // COMPLEX IMAGE FUNCTIONS
+    // ============================================================================
+    
+    
+
+    // ============================================================================
+    // PLATFORM-SPECIFIC FUNCTIONS
+    // ============================================================================
+    
+    static void SetOrientation(bool landscape) {
+        Traits::SetOrientation(landscape);
+    }
+    
+    static void ShowVirtualKeyboard(bool show) {
+        Traits::ShowVirtualKeyboard(show);
+    }
+    
+    static void Vibrate(int milliseconds) {
+        Traits::Vibrate(milliseconds);
+    }
+    
+    // UpdateSafeAreaInsets is handled by PlatformTraits directly
+
+    // ============================================================================
+    // UTILITY FUNCTIONS
+    // ============================================================================
+    
+    static std::string GetResourcePath(const char* resourceName) {
+        return Traits::GetResourcePath(resourceName);
+    }
+    
+    static bool PreferLowPowerMode() {
+        return Traits::PreferLowPowerMode();
+    }
+    
+    static int GetRecommendedTextureSize() {
+        return Traits::GetRecommendedTextureSize();
+    }
+    
+    static bool IsMobilePlatform() {
+        return Traits::IsMobilePlatform();
+    }
+
+    // ============================================================================
+    // RENDERING FUNCTIONS
+    // ============================================================================
+    
+};
+
+using CurrentPlatformAPI = PlatformAPI<CurrentTraits>;
+
+// ============================================================================
+// STANDALONE FUNCTION DECLARATIONS
+// ============================================================================
+
+// Window and Screen Functions
+void InitWindow(int width, int height, const char* title);
+void SetWindowSize(int width, int height);
+void ToggleFullscreen();
+void CloseWindow();
+int GetScreenWidth();
+int GetScreenHeight();
+float GetScreenScale();
+bool WindowShouldClose();
+
+// Rendering Functions
+void BeginDrawing();
+void EndDrawing();
+void ClearBackground(Color color);
+void DrawRectangle(float x, float y, float width, float height, Color color);
+void DrawRectangleRec(Rectangle rec, Color color);
+void DrawRectangleLinesEx(Rectangle rec, float lineThick, Color color);
+void DrawRectangleRounded(Rectangle rec, float roundness, int segments, Color color);
+void DrawRectangleRoundedLines(Rectangle rec, float roundness, int segments, float lineThick, Color color);
+void DrawRectangleRoundedLinesEx(Rectangle rec, float roundness, int segments, float lineThick, Color color);
+void DrawCircle(float centerX, float centerY, float radius, Color color);
+void DrawCircleV(Vector2 center, float radius, Color color);
+void DrawLine(float startPosX, float startPosY, float endPosX, float endPosY, Color color);
+void DrawLineV(Vector2 startPos, Vector2 endPos, Color color);
+void DrawLineEx(Vector2 startPos, Vector2 endPos, float thick, Color color);
+void DrawTexture(Texture2D texture, float x, float y, Color tint);
+void DrawTextureV(Texture2D texture, Vector2 position, Color tint);
+void DrawTextureRec(Texture2D texture, Rectangle source, Vector2 position, Color tint);
+void DrawTexturePro(Texture2D texture, Rectangle source, Rectangle dest, Vector2 origin, float rotation, Color tint);
+void DrawTextureEx(Texture2D texture, Vector2 position, float rotation, float scale, Color tint);
+void DrawText(const char* text, float x, float y, float fontSize, Color color);
+void DrawTextEx(Font font, const char* text, Vector2 position, float fontSize, float spacing, Color tint);
+int MeasureText(const char* text, int fontSize);
+const char* TextFormat(const char* text, va_list args);
+
+// Variadic version for compatibility with raylib-style usage
+static const char* TextFormat(const char* text, ...);
+
+// Input Functions
+bool IsKeyPressed(int key);
+bool IsKeyDown(int key);
+bool IsKeyReleased(int key);
+bool IsMouseButtonDown(int button);
+bool IsMouseButtonPressed(int button);
+bool IsMouseButtonReleased(int button);
+Vector2 GetMousePosition();
+Vector2 GetMouseDelta();
+Vector2 GetTouchPosition(int index);
+bool IsPrimaryInputPressed();
+bool IsPrimaryInputDown();
+bool IsPrimaryInputReleased();
+Vector2 GetPrimaryInputPosition();
+
+// Texture Functions
+Texture2D LoadTexture(const char* fileName);
+void UnloadTexture(Texture2D texture);
+Image LoadImage(const char* fileName);
+void UnloadImage(Image image);
+void SetTextureWrap(Texture2D texture, int wrap);
+Texture2D LoadTextureFromImage(Image image);
+Image LoadImageFromTexture(Texture2D texture);
+Rectangle GetTextureRec(Texture2D texture);
+
+// Font Functions
+Font LoadFont(const char* fileName);
+Font LoadFontEx(const char* fileName, int fontSize, int* fontChars, int glyphCount);
+void UnloadFont(Font font);
+Vector2 MeasureTextEx(Font font, const char* text, float fontSize, float spacing);
+
+// Rendering Functions
+void BeginScissorMode(int x, int y, int width, int height);
+void EndScissorMode();
+void DrawFPS(int posX, int posY);
+
+// Audio Functions
+void InitAudioDevice();
+void InitializeAudio();
+void CloseAudioDevice();
+void ShutdownAudio();
+bool IsAudioDeviceReady();
+Sound LoadSound(const char* fileName);
+void UnloadSound(Sound sound);
+void PlaySound(Sound sound);
+void StopSound(Sound sound);
+void PauseSound(Sound sound);
+void ResumeSound(Sound sound);
+void SetSoundVolume(Sound sound, float volume);
+bool IsSoundPlaying(Sound sound);
+Music LoadMusicStream(const char* fileName);
+Music LoadMusic(const char* fileName);
+void UnloadMusicStream(Music music);
+void UnloadMusic(Music music);
+void PlayMusicStream(Music music);
+void PlayMusic(Music music);
+void StopMusicStream(Music music);
+void StopMusic(Music music);
+void PauseMusicStream(Music music);
+void PauseMusic(Music music);
+void ResumeMusicStream(Music music);
+void ResumeMusic(Music music);
+void UpdateMusicStream(Music music);
+void UpdateMusic(Music music);
+void SetMusicVolume(Music music, float volume);
+bool IsMusicStreamPlaying(Music music);
+bool IsMusicPlaying(Music music);
+void SetMusicLooping(Music music, bool looping);
+float GetMusicDuration(Music music);
+
+// Utility Functions
+double GetTime();
+void TraceLog(int logLevel, const char* text, ...);
+int GetRandomValue(int min, int max);
+float GetRandomFloat(float min, float max);
+void SetTraceLogLevel(int logLevel);
+void SetConfigFlags(unsigned int flags);
+void SetRandomSeed(unsigned int seed);
+Vector2 GetRandomVector2(Vector2 min, Vector2 max);
+Color GetRandomColor();
+Color ColorAlphaBlend(Color dst, Color src, Color tint);
+Color ColorLerp(Color color1, Color color2, float amount);
+
+// Vector Math Functions
+float Vector2Length(Vector2 v);
+Vector2 Vector2Normalize(Vector2 v);
+Vector2 Vector2Add(Vector2 v1, Vector2 v2);
+Vector2 Vector2Subtract(Vector2 v1, Vector2 v2);
+Vector2 Vector2Scale(Vector2 v, float scale);
+float Vector2Distance(Vector2 v1, Vector2 v2);
+
+// Collision Detection Functions
+bool CheckCollisionRecs(Rectangle rec1, Rectangle rec2);
+bool CheckCollisionCircleRec(Vector2 center, float radius, Rectangle rec);
+bool CheckCollisionPointRec(Vector2 point, Rectangle rec);
+
+// Color Functions
+Color ColorAlpha(Color color, float alpha);
+Color ColorLerp(Color color1, Color color2, float amount);
+Color Fade(Color color, float alpha);
+
+// Math Utility Functions
+float Clamp(float value, float min, float max);
+float Lerp(float start, float end, float amount);
+float Min(float a, float b);
+float Max(float a, float b);
+float Abs(float value);
+float Sin(float angle);
+float Cos(float angle);
+float Atan2(float y, float x);
+float Sqrt(float value);
+float Pow(float base, float exponent);
+
+// Time and Performance Functions
+float GetFrameTime();
+int GetCurrentFPS();
+float GetCurrentFrameTime();
+
+// Rectangle Utility Functions
+Rectangle RectangleNew(float x, float y, float width, float height);
+Rectangle RectangleFromVector2(Vector2 position, Vector2 size);
+
+// Platform-Specific Utility Functions
+std::string GetResourcePath(const char* resourceName);
+bool PreferLowPowerMode();
+int GetRecommendedTextureSize();
+bool IsMobilePlatform();
+
+// Initialization and Lifecycle Functions
+void Initialize(void* nativeView);
+void Initialize();
+void Shutdown();
+
+// Complex Audio Functions
+void StartCrossfade(float duration);
+void UpdateCrossfade(float deltaTime);
+void FadeOutMusic(float duration);
+void FadeInMusic(float duration);
+void UpdateFade(float deltaTime);
+
+// Complex Image Functions
+void ImageResize(Image* image, int newWidth, int newHeight);
+void ImageDraw(Image* dst, Image src, Rectangle srcRec, Rectangle dstRec, Color tint);
+Image ImageCopy(Image image);
+Image ImageFromImage(Image image, Rectangle rec);
+void ImageFlipVertical(Image* image);
+void ImageFlipHorizontal(Image* image);
+
+// Platform-Specific Functions
+void SetOrientation(bool landscape);
+void ShowVirtualKeyboard(bool show);
+void Vibrate(int milliseconds);
+void UpdateSafeAreaInsets(float top, float right, float bottom, float left);
+
+// Render Texture Functions
+RenderTexture2D LoadRenderTexture(int width, int height);
+void UnloadRenderTexture(RenderTexture2D target);
+void BeginTextureMode(RenderTexture2D target);
+void EndTextureMode();
+
+// Additional functions
+void SetTargetFPS(int fps);
+void SetScreenSize(int width, int height);
+void SetScreenScale(float scale);
+Vector2 GetScreenCenter();
+Vector2 GetRenderScale();
+Rectangle GetSafeArea();
+float GetScreenDensity();
+bool IsLandscape();
+bool IsPortrait();
+void SetPreferredOrientation(bool landscape);
+bool ShouldUseLargerTouchTargets();
+int GetRecommendedFontSize();
+
+// Additional functions that might be missing
+bool IsWindowFullscreen();
+void SetWindowFocused();
+void SetExitKey(int key);
+int GetCurrentMonitor();
+int GetMonitorWidth(int monitor);
+int GetMonitorHeight(int monitor);
+void SetWindowPosition(int x, int y);
+void* CreateTextureFromImage(void* image, int* width, int* height);
+
+// ============================================================================
+// CONSTANTS (For backward compatibility)
+// ============================================================================
+
+#define TEXTURE_WRAP_CLAMP 1
+#define TEXTURE_FILTER_POINT 0
+#define TEXTURE_FILTER_BILINEAR 1
+#define MOUSE_LEFT_BUTTON 0
+#define KEY_E 69
+#define KEY_F11 290
+#define KEY_ESCAPE 256
+
+void SetTextureFilter(Texture2D texture, int filter);
+Image GenImageColor(int width, int height, Color color);
+Font GetFontDefault();
+
+// ============================================================================
+// GLOBAL GAME INSTANCE MANAGEMENT (for iOS integration)
+// ============================================================================
+// These functions allow iOS Objective-C++ code to access the C++ Game instance
+
+extern "C" {
+    // Get the current game instance (returns nullptr if not set)
+    Game* GetGameInstance();
+    
+    // Set the current game instance (call from Game constructor)
+    void SetGameInstance(Game* game);
+    
+    // App lifecycle functions
+    void OnAppPause();
+    void OnAppResume();
+    
+    // Global game view management for iOS
+    void SetGlobalGameView(void* gameView);
+    void* GetGlobalGameView();
+    
+    // Game main function
+    int game_main(int argc, char* argv[]);
+}
 
 #endif // PLATFORM_API_H 

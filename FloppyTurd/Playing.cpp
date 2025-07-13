@@ -154,7 +154,7 @@ Playing::Playing(Game* game) {
                 switch (i) {
                 case 0: 
                     player->EnableShooting(true); 
-                    if (touchControls) touchControls->SetShootingEnabled(true);
+                    if (floppyTurdInput) floppyTurdInput->SetShootingEnabled(true);
                     break;
                 case 1: player->SetHeartMode(Player::HALVES); break;
                 case 2: player->EnableCoinMagnet(true); break;
@@ -215,29 +215,40 @@ Playing::Playing(Game* game) {
             snowOverlay = nullptr;
         }
 
-        // Initialize touch controls for mobile
-        TraceLog(LOG_INFO, "Playing constructor - Initializing touch controls");
+        // Initialize input systems
+        TraceLog(LOG_INFO, "Playing constructor - Initializing input systems");
         try {
+            // Get actual screen dimensions from PlatformAPI
+            int screenWidth = GetScreenWidth();
+            int screenHeight = GetScreenHeight();
+            
+            // Initialize touch controls
             touchControls = new TouchControls();
-            
-            // Get actual screen dimensions from PlatformAPI instead of using fixed 320x180
-            auto& platform = PlatformAPI::GetPlatformImpl();
-            int screenWidth = platform.GetScreenWidth();
-            int screenHeight = platform.GetScreenHeight();
             touchControls->Initialize(screenWidth, screenHeight);
+            touchControls->SetEnabled(IsMobilePlatform());
             
-            // Enable touch controls only on mobile platforms
-            touchControls->SetEnabled(platform.IsTouchSupported());
+            // Initialize MNK controls
+            mnkControls = new MNKControls();
+            mnkControls->Initialize(screenWidth, screenHeight);
+            mnkControls->SetEnabled(!IsMobilePlatform());
+            
+            // Initialize Floppy Turd specific input handler
+            floppyTurdInput = new FloppyTurdInput();
+            floppyTurdInput->Initialize(touchControls, mnkControls, screenWidth, screenHeight);
 
             // Initialize AIGUI with touch controls for gesture support
             AIGUI_Init();
             AIGUI_SetTouchControls(touchControls);
         } catch (const std::exception& e) {
-            TraceLog(LOG_ERROR, "Exception initializing touch controls: %s", e.what());
+            TraceLog(LOG_ERROR, "Exception initializing input systems: %s", e.what());
             touchControls = nullptr;
+            mnkControls = nullptr;
+            floppyTurdInput = nullptr;
         } catch (...) {
-            TraceLog(LOG_ERROR, "Unknown exception initializing touch controls");
+            TraceLog(LOG_ERROR, "Unknown exception initializing input systems");
             touchControls = nullptr;
+            mnkControls = nullptr;
+            floppyTurdInput = nullptr;
         }
 
         savePending = false;
@@ -249,6 +260,8 @@ Playing::Playing(Game* game) {
         player = nullptr;
         gameOverMusic = nullptr;
         touchControls = nullptr;
+        mnkControls = nullptr;
+        floppyTurdInput = nullptr;
         snowOverlay = nullptr;
         savePending = false;
         // Don't re-throw - just log the error and continue with default values
@@ -258,6 +271,8 @@ Playing::Playing(Game* game) {
         player = nullptr;
         gameOverMusic = nullptr;
         touchControls = nullptr;
+        mnkControls = nullptr;
+        floppyTurdInput = nullptr;
         snowOverlay = nullptr;
         savePending = false;
         // Don't re-throw - just log the error and continue with default values
@@ -346,7 +361,7 @@ void Playing::PreLoadLevels() {
 
 Playing::~Playing() {
     // ResourceManager handles texture cleanup automatically
-    UnloadSound(ScoreSound.player);
+    UnloadSound(ScoreSound);
 
     delete gameOverMusic;
     delete bossHealthBar;
@@ -356,6 +371,8 @@ Playing::~Playing() {
     }
     delete player;
     delete touchControls;
+    delete mnkControls;
+    delete floppyTurdInput;
 }
 
 void Playing::InitializeSkillNodes() {
@@ -395,7 +412,7 @@ void Playing::UnlockSkill(int idx) {
         switch (idx) {
         case 0: 
             player->EnableShooting(true); 
-            if (touchControls) touchControls->SetShootingEnabled(true);
+            if (floppyTurdInput) floppyTurdInput->SetShootingEnabled(true);
             break;
         case 1: player->SetHeartMode(Player::HALVES); break;
         case 2: player->EnableCoinMagnet(true); break;
@@ -418,7 +435,7 @@ void Playing::OutputHatMenu() {
 
     static int selectedHatIndex = -1;
 
-    DrawRectangleRec({ (float)gridStartX - 2, (float)gridStartY - 2, 5 * (slotWidth + spacingX) + 2, 3 * (slotHeight + spacingY) + 2 }, Fade(BLACK, 0.7f));
+            DrawRectangleRec({ (float)gridStartX - 2, (float)gridStartY - 2, 5 * (slotWidth + spacingX) + 2, 3 * (slotHeight + spacingY) + 2 }, Fade(BLACK, 0.7f));
 
     for (int row = 0; row < 3; row++) {
         for (int col = 0; col < 5; col++) {
@@ -956,7 +973,7 @@ void Playing::Update() {
                 else if (currentLevel->checkForPointGain(player->GetCircleCenter(), player->GetCircleRadius())) {
                     SCORE++;
                     TOTALSCORE++;
-                    PlaySound(ScoreSound.player);
+                    PlaySound(ScoreSound);
                 }
 
                 if (auto snowLevel = dynamic_cast<SnowLevel*>(currentLevel.get())) {
@@ -1325,24 +1342,28 @@ void Playing::HandleInput() {
         return;
     }
 
-    // Handle input based on platform
-    auto& platform = PlatformAPI::GetPlatformImpl();
-    if (platform.IsTouchSupported() && touchControls && touchControls->IsEnabled()) {
-        // Handle touch input with full gesture recognition
-        if (touchControls->IsJumpPressed()) {
+    // Update the Floppy Turd input system
+    if (floppyTurdInput) {
+        floppyTurdInput->Update();
+        
+        // Handle jump input
+        if (floppyTurdInput->IsJumpPressed()) {
             player->Jump();
-            TraceLog(LOG_INFO, "[PLAYING] Flop jumped from touch press");
-        }
-        if (touchControls->IsShootPressed()) {
-            player->Shoot();
-            TraceLog(LOG_INFO, "[PLAYING] Flop shot from touch press");
-        }
-        if (touchControls->IsShootHeld()) {
-            player->Shoot();
-            TraceLog(LOG_INFO, "[PLAYING] Flop shot from touch hold");
+            TraceLog(LOG_INFO, "[PLAYING] Flop jumped");
         }
         
-        // Integrate gesture recognition for additional controls
+        // Handle shoot input
+        if (floppyTurdInput->IsShootPressed()) {
+            player->Shoot();
+            TraceLog(LOG_INFO, "[PLAYING] Flop shot from press");
+        }
+        if (floppyTurdInput->IsShootHeld()) {
+            player->Shoot();
+            TraceLog(LOG_INFO, "[PLAYING] Flop shot from hold");
+        }
+        
+        // Handle gesture recognition for additional controls (if touch controls are available)
+        if (touchControls && touchControls->IsEnabled()) {
         if (touchControls->IsGestureDetected(GESTURE_SWIPE_UP)) {
             player->Jump(); // Swipe up can trigger a jump as an alternative input
             TraceLog(LOG_INFO, "[PLAYING] Flop jumped from swipe up gesture");
@@ -1364,22 +1385,10 @@ void Playing::HandleInput() {
             // Pinch out could zoom in or trigger an offensive action
             TraceLog(LOG_INFO, "[PLAYING] Pinch out detected");
         }
-    } else {
-        // Handle keyboard/gamepad input
-        if (IsKeyPressed(KEY_SPACE)) {
-            player->Jump();
-        }
-        if (IsKeyDown(KEY_SPACE)) {
-            player->Jump();
-        }
-        if (IsKeyPressed(KEY_ENTER)) {
-            player->Shoot();
-        }
-        if (IsKeyDown(KEY_ENTER)) {
-            player->Shoot();
         }
     }
 
+    // Handle pause input (platform-independent)
     if (IsKeyPressed(KEY_ESCAPE)) {
         isPaused = !isPaused;
     }

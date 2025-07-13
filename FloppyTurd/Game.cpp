@@ -64,7 +64,7 @@ Game::Game() : window(nullptr), gamestate(LOADING), credits(nullptr), loading(nu
         }
         
         // Initialize game instance
-        SetGameInstance(this);
+        SetGameInstance(this); // Register game instance globally for iOS integration
         
         LogManager::GetInstance().Log("Game constructor COMPLETED", "INIT");
         {
@@ -133,23 +133,23 @@ void Game::InitClasses()
 	window = new Window(true, 0, 0);
 	
 	// Set preferred orientation for the game (landscape for this game)
-	window->SetPreferredOrientation(true);  // true = landscape
+	SetOrientation(true);  // true = landscape
 	
 	TraceLog(LOG_INFO, "Mobile window initialized: %dx%d, Safe area: %.0fx%.0f",
 		GetScreenWidth(), GetScreenHeight(),
-		window->GetSafeArea().width, window->GetSafeArea().height);
+		GetSafeArea().width, GetSafeArea().height);
 #else
 	// Desktop: Use native monitor resolution, start in fullscreen
 	window = new Window(true, 0, 0);
 #endif
 
 	// Load and set the window icon with platform-aware path
-	std::string iconPath = PlatformAPI::GetPlatformImpl()->GetResourcePath("poophat.ico");
+	        std::string iconPath = GetResourcePath("poophat.ico");
 	Image icon = LoadImage(iconPath.c_str());
 	if (
 icon.data
 	) {
-		SetWindowIcon(icon);
+		// SetWindowIcon(icon); // Window icon setting not implemented yet
 		UnloadImage(icon);
 		printf("Poophat icon set successfully from %s\n", iconPath.c_str());
 	}
@@ -780,13 +780,11 @@ void Game::UpdateFrame(float deltaTime)
     TraceLog(LOG_INFO, "[GAME] Mobile input polling ENTRY");
     
     // Use touch input from PlatformLayer instead of GetMousePosition()
-    auto& platform = PlatformAPI::GetPlatformImpl();
-    TraceLog(LOG_INFO, "[GAME] Mobile input: calling platform.GetTouchPosition(0)");
-    Vector2 touchPos = platform.GetTouchPosition(0); // Get primary touch position
-    TraceLog(LOG_INFO, "[GAME] Mobile input: platform.GetTouchPosition(0) returned (%.1f,%.1f)", touchPos.x, touchPos.y);
+    Vector2 touchPos = GetTouchPosition(0); // Get primary touch position
+    TraceLog(LOG_INFO, "[GAME] Mobile input: platform->GetTouchPosition(0) returned (%.1f,%.1f)", touchPos.x, touchPos.y);
     
     // Convert from pixels back to UI coordinate system (points)
-    float scale = platform.GetScreenScale();
+    float scale = GetScreenScale();
     Vector2 uiPos = Vector2{touchPos.x / scale, touchPos.y / scale};
     TraceLog(LOG_INFO, "[GAME] Mobile input: converting pixels=(%.1f,%.1f) to UI points=(%.1f,%.1f), scale=%.1f", 
              touchPos.x, touchPos.y, uiPos.x, uiPos.y, scale);
@@ -920,7 +918,7 @@ void Game::UpdateFrame(float deltaTime)
 		printf("  Expected for 16:9: %.0fx%.0f\n", effectiveHeight * GAME_ASPECT, effectiveHeight);
 		printf("  Unused space: X=%.1f, Y=%.1f\n", effectiveWidth - renderedWidth, effectiveHeight - renderedHeight);
 		printf("  MONITOR: Real=%dx%d, Position=(%.0f,%.0f), Reported=%.0fx%.0f\n", 
-			realMonitorWidth, realMonitorHeight, GetMonitorPosition(monitor).x, GetMonitorPosition(monitor).y, 
+			realMonitorWidth, realMonitorHeight, GetScreenCenter().x, GetScreenCenter().y, 
 			screenWidth, screenHeight);
 		printf("  DISCREPANCY: Width=%d, Height=%d, Fullscreen=%s, Using=%s\n", 
 			realMonitorWidth - (int)screenWidth, realMonitorHeight - (int)screenHeight,

@@ -69,20 +69,29 @@ file(GLOB_RECURSE OBJC_SOURCES
 set(SOURCES ${CPP_SOURCES} ${OBJC_SOURCES})
 
 
-# Remove PlayerOLD.cpp from sources
+# Remove files that no longer exist (were deleted during refactor)
+# Note: These files were already removed, so these commands are safe to keep
+# but they won't do anything if the files don't exist
 list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/PlayerOLD.cpp)
 list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/GameLog.cpp)
 list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/LogManager.cpp)
 
-# Add UIManager.cpp explicitly to ensure it's included in the build
-list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/UIManager.cpp)
+# Add new files that were created during refactor
+list(APPEND SOURCES 
+    ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/GlobalStateManager.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/FloppyTurdInput.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/UIManager.cpp
+)
 
     # Add platform-specific compatibility layer
     if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
         # iOS uses PlatformAPI and PlatformIOS for Metal implementation
         list(APPEND SOURCES
+            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/AudioStateManager.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/GameLog.mm
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/LogManager.mm
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/main_ios.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/WindowIOS.mm
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/iOS/AppDelegate.mm
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/iOS/GameViewController.mm
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/iOS/GameView.mm
@@ -91,8 +100,11 @@ list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/UIManager.cpp)
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalRenderer.mm
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalFrameResources.mm
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalTextureCache.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalTexture.mm
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/FontAtlasGenerator.mm
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/FontCache.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalShader.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalTextRenderer.mm
             # iOS-specific coordinate system implementation
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/UICoordinateSystem.mm
         )

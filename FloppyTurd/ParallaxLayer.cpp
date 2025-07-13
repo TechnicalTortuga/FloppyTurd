@@ -1,6 +1,7 @@
 #include "ParallaxLayer.h"
 #include <algorithm>
 #include "TextureCache.h"
+#include "PlatformAPI.h"
 
 ParallaxLayer::ParallaxLayer(const std::vector<std::string>& texturePaths, float speed, float scale)
 	: speed(speed), scale(scale), scrollOffset(0.0f), baseTextureIndex(0)

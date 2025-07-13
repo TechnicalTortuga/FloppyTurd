@@ -1,4 +1,5 @@
 #include "Window.h"
+#include "PlatformTraits.h"  // For CurrentTraits
 #include <cstdio>  // For printf
 
 Window::Window(bool fullScreen, int /*fallbackW*/, int /*fallbackH*/)
@@ -209,89 +210,16 @@ bool Window::IsBorderlessFullscreen() const
     return borderlessFullscreen;
 }
 
-// Mobile-specific screen management methods
-Rectangle Window::GetSafeArea() const
-{
-    return GetSafeArea();
-}
+// Mobile-specific screen management methods have been moved to WindowIOS.mm
+// These are now handled through PlatformAPI and PlatformTraits
 
-float Window::GetScreenDensity() const
-{
-    return GetScreenDensity();
-}
-
-bool Window::IsLandscape() const
-{
-    int width = GetScreenWidth();
-    int height = GetScreenHeight();
-    return width > height;
-}
-
-bool Window::IsPortrait() const
-{
-    return !IsLandscape();
-}
-
-void Window::SetPreferredOrientation(bool landscape)
-{
-    SetPreferredOrientation(landscape);
-}
-
-// Universal screen utilities
+// Universal screen utilities (platform-agnostic)
 Vector2 Window::GetScreenCenter() const
 {
-    return Vector2{ 
-        (float)GetScreenWidth() / 2.0f, 
-        (float)GetScreenHeight() / 2.0f 
-    };
+    return CurrentTraits::GetScreenCenter();
 }
 
 Vector2 Window::GetRenderScale() const
 {
-    float density = GetScreenDensity();
-    
-#ifdef PLATFORM_MOBILE
-    // On mobile, scale based on screen density for crisp UI
-    return Vector2{ density, density };
-#else
-    // On desktop, use 1:1 scaling unless high DPI
-    if (density > 1.5f) {
-        return Vector2{ density, density };
-    }
-    return Vector2{ 1.0f, 1.0f };
-#endif
-}
-
-bool Window::ShouldUseLargerTouchTargets() const
-{
-#ifdef PLATFORM_MOBILE
-    return true;  // Always use larger touch targets on mobile
-#else
-    return false; // Desktop can use smaller mouse targets
-#endif
-}
-
-int Window::GetRecommendedFontSize() const
-{
-    float density = GetScreenDensity();
-    int baseSize = 16;  // Base font size for desktop
-    
-#ifdef PLATFORM_MOBILE
-    // Scale font size based on screen density for mobile readability
-    int scaledSize = (int)(baseSize * density);
-    
-    // Ensure minimum readable size on mobile
-    if (scaledSize < 18) scaledSize = 18;
-    
-    // Cap maximum size to prevent overly large text
-    if (scaledSize > 32) scaledSize = 32;
-    
-    return scaledSize;
-#else
-    // Desktop: only scale for high DPI displays
-    if (density > 1.5f) {
-        return (int)(baseSize * density);
-    }
-    return baseSize;
-#endif
+    return CurrentTraits::GetRenderScale();
 }

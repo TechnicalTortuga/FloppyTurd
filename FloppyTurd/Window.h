@@ -21,18 +21,9 @@ public:
     void SetBorderlessFullscreen(bool enable);
     bool IsBorderlessFullscreen() const;
 
-    // Mobile-specific screen management
-    Rectangle GetSafeArea() const;
-    float GetScreenDensity() const;
-    bool IsLandscape() const;
-    bool IsPortrait() const;
-    void SetPreferredOrientation(bool landscape);
-    
-    // Universal screen utilities
+    // Universal screen utilities (platform-agnostic)
     Vector2 GetScreenCenter() const;
     Vector2 GetRenderScale() const;  // For scaling UI elements based on screen density
-    bool ShouldUseLargerTouchTargets() const;
-    int GetRecommendedFontSize() const;
 
 private:
     bool borderlessFullscreen = false;

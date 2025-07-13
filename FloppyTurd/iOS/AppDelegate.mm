@@ -1,7 +1,7 @@
 #import "AppDelegate.h"
 #import "GameViewController.h"
-#import "RaylibCompat.h"
 #import "HapticsManager.h"
+#import "PlatformAPI.h"
 
 @implementation AppDelegate
 

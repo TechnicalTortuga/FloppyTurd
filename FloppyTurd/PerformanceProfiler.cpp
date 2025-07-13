@@ -15,7 +15,7 @@ namespace DrawCallTracker {
     void TrackDrawTexture(Texture2D texture, int posX, int posY, Color tint) {
         frameDrawCalls++;
         #if defined(__APPLE__) && TARGET_OS_IPHONE
-            activeTextureIDs.insert(reinterpret_cast<uintptr_t>(texture.id));
+            activeTextureIDs.insert(static_cast<uintptr_t>(texture.id));
         #else
             activeTextureIDs.insert(texture.id);
         #endif
@@ -27,7 +27,7 @@ namespace DrawCallTracker {
     void TrackDrawTexturePro(Texture2D texture, Rectangle source, Rectangle dest, Vector2 origin, float rotation, Color tint) {
         frameDrawCalls++;
         #if defined(__APPLE__) && TARGET_OS_IPHONE
-            activeTextureIDs.insert(reinterpret_cast<uintptr_t>(texture.id));
+            activeTextureIDs.insert(static_cast<uintptr_t>(texture.id));
         #else
             activeTextureIDs.insert(texture.id);
         #endif
@@ -39,7 +39,7 @@ namespace DrawCallTracker {
     void TrackDrawTextureRec(Texture2D texture, Rectangle source, Vector2 position, Color tint) {
         frameDrawCalls++;
         #if defined(__APPLE__) && TARGET_OS_IPHONE
-            activeTextureIDs.insert(reinterpret_cast<uintptr_t>(texture.id));
+            activeTextureIDs.insert(static_cast<uintptr_t>(texture.id));
         #else
             activeTextureIDs.insert(texture.id);
         #endif
@@ -51,7 +51,7 @@ namespace DrawCallTracker {
     void TrackDrawTextureV(Texture2D texture, Vector2 position, Color tint) {
         frameDrawCalls++;
         #if defined(__APPLE__) && TARGET_OS_IPHONE
-            activeTextureIDs.insert(reinterpret_cast<uintptr_t>(texture.id));
+            activeTextureIDs.insert(static_cast<uintptr_t>(texture.id));
         #else
             activeTextureIDs.insert(texture.id);
         #endif
@@ -63,7 +63,7 @@ namespace DrawCallTracker {
     void TrackDrawTextureEx(Texture2D texture, Vector2 position, float rotation, float scale, Color tint) {
         frameDrawCalls++;
         #if defined(__APPLE__) && TARGET_OS_IPHONE
-            activeTextureIDs.insert(reinterpret_cast<uintptr_t>(texture.id));
+            activeTextureIDs.insert(static_cast<uintptr_t>(texture.id));
         #else
             activeTextureIDs.insert(texture.id);
         #endif

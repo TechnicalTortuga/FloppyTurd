@@ -1,8 +1,0 @@
-#!/bin/sh
-set -e
-if test "$CONFIGURATION" = "Debug"; then :
-  cd /Users/aimac/Development/FloppyTurd/build_ios/_deps/raylib-subbuild
-  /opt/homebrew/bin/cmake -Dcfgdir=/$CONFIGURATION$EFFECTIVE_PLATFORM_NAME -P /Users/aimac/Development/FloppyTurd/build_ios/_deps/raylib-subbuild/raylib-populate-prefix/tmp/raylib-populate-mkdirs.cmake
-  /opt/homebrew/bin/cmake -E touch /Users/aimac/Development/FloppyTurd/build_ios/_deps/raylib-subbuild/raylib-populate-prefix/src/raylib-populate-stamp/$CONFIGURATION$EFFECTIVE_PLATFORM_NAME/raylib-populate-mkdir
-fi
-
