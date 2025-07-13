@@ -231,6 +231,10 @@ public:
     bool IsPrimaryInputPressed() {
         return Traits::IsPrimaryInputPressed();
     }
+    
+    bool IsPrimaryInputDown() {
+        return Traits::IsPrimaryInputDown();
+    }
     bool IsPrimaryInputReleased() {
         return Traits::IsPrimaryInputReleased();
     }
@@ -709,7 +713,7 @@ int MeasureText(const char* text, int fontSize);
 const char* TextFormat(const char* text, va_list args);
 
 // Variadic version for compatibility with raylib-style usage
-static const char* TextFormat(const char* text, ...);
+const char* TextFormat(const char* text, ...);
 
 // Input Functions
 bool IsKeyPressed(int key);

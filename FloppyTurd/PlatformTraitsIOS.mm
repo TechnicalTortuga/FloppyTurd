@@ -303,20 +303,121 @@ bool IOSTraits::IsAudioDeviceReady() {
 // ============================================================================
 
 RenderTexture2D IOSTraits::LoadRenderTexture(int width, int height) {
-    // iOS render texture loading - would need Metal implementation
-    return {0, {0, 0, 0, 0, 0, nullptr}, {0, 0, 0, 0, 0, nullptr}};
+    TraceLog(LOG_INFO, "[IOSTraits] LoadRenderTexture: Called with %dx%d, g_metalRenderer=%p", width, height, g_metalRenderer);
+    if (!g_metalRenderer) {
+        TraceLog(LOG_ERROR, "[IOSTraits] LoadRenderTexture: Metal renderer not initialized");
+        return {0, {0, 0, 0, 0, 0, nullptr}, {0, 0, 0, 0, 0, nullptr}};
+    }
+    
+    // Create a Metal texture that can be used as a render target
+    id<MTLDevice> device = g_metalRenderer->GetDevice();
+    if (!device) {
+        TraceLog(LOG_ERROR, "[IOSTraits] LoadRenderTexture: No Metal device available");
+        return {0, {0, 0, 0, 0, 0, nullptr}, {0, 0, 0, 0, 0, nullptr}};
+    }
+    
+    // Create texture descriptor for render target
+    MTLTextureDescriptor* textureDesc = [[MTLTextureDescriptor alloc] init];
+    textureDesc.pixelFormat = MTLPixelFormatRGBA8Unorm;
+    textureDesc.width = width;
+    textureDesc.height = height;
+    textureDesc.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
+    textureDesc.storageMode = MTLStorageModePrivate;
+    
+    // Create the Metal texture
+    id<MTLTexture> metalTexture = [device newTextureWithDescriptor:textureDesc];
+    if (!metalTexture) {
+        TraceLog(LOG_ERROR, "[IOSTraits] LoadRenderTexture: Failed to create Metal texture %dx%d", width, height);
+        return {0, {0, 0, 0, 0, 0, nullptr}, {0, 0, 0, 0, 0, nullptr}};
+    }
+    
+    // Create Texture2D struct for the render target
+    Texture2D renderTexture;
+    renderTexture.id = 1; // Use ID 1 for render textures
+    renderTexture.texture = (__bridge_retained void*)metalTexture;
+    renderTexture.width = width;
+    renderTexture.height = height;
+    renderTexture.mipmaps = 1;
+    renderTexture.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
+    
+    // Create depth texture for depth testing
+    MTLTextureDescriptor* depthDesc = [[MTLTextureDescriptor alloc] init];
+    depthDesc.pixelFormat = MTLPixelFormatDepth32Float;
+    depthDesc.width = width;
+    depthDesc.height = height;
+    depthDesc.usage = MTLTextureUsageRenderTarget;
+    depthDesc.storageMode = MTLStorageModePrivate;
+    
+    id<MTLTexture> depthTexture = [device newTextureWithDescriptor:depthDesc];
+    if (!depthTexture) {
+        TraceLog(LOG_WARNING, "[IOSTraits] LoadRenderTexture: Failed to create depth texture, continuing without depth");
+        depthTexture = nil;
+    }
+    
+    // Create depth Texture2D struct
+    Texture2D depthTexture2D;
+    if (depthTexture) {
+        depthTexture2D.id = 2; // Use ID 2 for depth textures
+        depthTexture2D.texture = (__bridge_retained void*)depthTexture;
+        depthTexture2D.width = width;
+        depthTexture2D.height = height;
+        depthTexture2D.mipmaps = 1;
+        depthTexture2D.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8; // Use RGBA format for depth texture
+    } else {
+        depthTexture2D = {0, 0, 0, 0, 0, nullptr};
+    }
+    
+    // Create RenderTexture2D struct
+    RenderTexture2D renderTarget;
+    renderTarget.id = 1; // Use ID 1 for render textures
+    renderTarget.texture = renderTexture;
+    renderTarget.depth = depthTexture2D;
+    
+    TraceLog(LOG_INFO, "[IOSTraits] LoadRenderTexture: Created render target %dx%d with texture %p", 
+             width, height, metalTexture);
+    
+    return renderTarget;
 }
 
 void IOSTraits::UnloadRenderTexture(RenderTexture2D target) {
-    // iOS render texture unloading - would need Metal implementation
+    if (target.texture.texture) {
+        id<MTLTexture> metalTexture = (__bridge_transfer id<MTLTexture>)target.texture.texture;
+        metalTexture = nil; // Release the Metal texture
+        TraceLog(LOG_INFO, "[IOSTraits] UnloadRenderTexture: Released render texture");
+    }
+    
+    if (target.depth.texture) {
+        id<MTLTexture> depthTexture = (__bridge_transfer id<MTLTexture>)target.depth.texture;
+        depthTexture = nil; // Release the depth texture
+        TraceLog(LOG_INFO, "[IOSTraits] UnloadRenderTexture: Released depth texture");
+    }
 }
 
 void IOSTraits::BeginTextureMode(RenderTexture2D target) {
-    // iOS texture mode - would need Metal implementation
+    if (!g_metalRenderer) {
+        TraceLog(LOG_WARNING, "[IOSTraits] BeginTextureMode: Metal renderer not initialized");
+        return;
+    }
+    
+    if (!target.texture.texture) {
+        TraceLog(LOG_ERROR, "[IOSTraits] BeginTextureMode: Invalid render texture");
+        return;
+    }
+    
+    // Begin rendering to the render texture
+    g_metalRenderer->BeginRenderToTexture(target);
+    TraceLog(LOG_INFO, "[IOSTraits] BeginTextureMode: Started rendering to texture %p", target.texture.texture);
 }
 
 void IOSTraits::EndTextureMode() {
-    // iOS texture mode - would need Metal implementation
+    if (!g_metalRenderer) {
+        TraceLog(LOG_WARNING, "[IOSTraits] EndTextureMode: Metal renderer not initialized");
+        return;
+    }
+    
+    // End rendering to the render texture
+    g_metalRenderer->EndRenderToTexture();
+    TraceLog(LOG_INFO, "[IOSTraits] EndTextureMode: Finished rendering to texture");
 }
 
 // ============================================================================
@@ -413,6 +514,14 @@ void IOSTraits::DrawRectangle(float x, float y, float width, float height, Color
         g_metalRenderer->DrawRectangle(x, y, width, height, color);
     } else {
         TraceLog(LOG_WARNING, "[IOSTraits] DrawRectangle: Metal renderer not initialized");
+    }
+}
+
+void IOSTraits::DrawRectangleRoundedLinesEx(Rectangle rec, float roundness, int segments, float lineThick, Color color) {
+    if (g_metalRenderer) {
+        g_metalRenderer->DrawRectangleRoundedLines(rec.x, rec.y, rec.width, rec.height, roundness, segments, lineThick, color);
+    } else {
+        TraceLog(LOG_WARNING, "[IOSTraits] DrawRectangleRoundedLinesEx: Metal renderer not initialized");
     }
 }
 

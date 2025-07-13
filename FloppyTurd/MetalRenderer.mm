@@ -1,6 +1,7 @@
 #import "MetalRenderer.h"
 #import "MetalTextRenderer.h"
 #import "UICoordinateSystem.h"
+#import "MetalTexture.h"
 #import <simd/simd.h>
 
 #if defined(__APPLE__) && TARGET_OS_IOS
@@ -8,6 +9,14 @@
 // Global renderer instance
 MetalRenderer* g_metalRenderer = nullptr;
 extern MetalTextRenderer* g_textRenderer;
+
+// Static texture ID counter
+static unsigned int s_nextTextureId = 1;
+
+// Helper function to generate unique texture IDs
+static unsigned int GenerateTextureId() {
+    return s_nextTextureId++;
+}
 
 MetalRenderer::MetalRenderer() 
     : m_view(nullptr)
@@ -37,21 +46,46 @@ MetalRenderer::~MetalRenderer() {
     Shutdown();
 }
 
-// --- Platform Abstraction Layer Stubs ---
+// --- Platform Abstraction Layer Implementation ---
 void MetalRenderer::BeginDrawing() {
-    // Stub: No-op for now
+    // Begin a new frame for drawing
+    BeginFrame();
+    TraceLog(LOG_INFO, "[METAL DEBUG] BeginDrawing: Frame started");
 }
+
 void MetalRenderer::EndDrawing() {
-    // Stub: No-op for now
+    // End the current frame
+    EndFrame();
+    TraceLog(LOG_INFO, "[METAL DEBUG] EndDrawing: Frame ended");
 }
+
 void MetalRenderer::ClearBackground(Color color) {
-    // Stub: No-op for now
+    // Set the clear color for the current render pass
+    Clear(color);
+    TraceLog(LOG_INFO, "[METAL DEBUG] ClearBackground: Set clear color to (%d,%d,%d,%d)", 
+             color.r, color.g, color.b, color.a);
 }
 void MetalRenderer::BeginScissorMode(int x, int y, int width, int height) {
-    // Stub: No-op for now
+    if (m_currentEncoder) {
+        // Set scissor rectangle for clipping
+        MTLScissorRect scissorRect = {(NSUInteger)x, (NSUInteger)y, (NSUInteger)width, (NSUInteger)height};
+        [m_currentEncoder setScissorRect:scissorRect];
+        TraceLog(LOG_INFO, "[METAL DEBUG] BeginScissorMode: Set scissor rect (%d,%d,%d,%d)", x, y, width, height);
+    } else {
+        TraceLog(LOG_WARNING, "[METAL WARNING] BeginScissorMode: No render encoder available");
+    }
 }
+
 void MetalRenderer::EndScissorMode() {
-    // Stub: No-op for now
+    if (m_currentEncoder) {
+        // Reset scissor rectangle to full viewport
+        MTLViewport viewport = {0, 0, m_view.drawableSize.width, m_view.drawableSize.height, 0, 1};
+        MTLScissorRect scissorRect = {0, 0, (NSUInteger)viewport.width, (NSUInteger)viewport.height};
+        [m_currentEncoder setScissorRect:scissorRect];
+        TraceLog(LOG_INFO, "[METAL DEBUG] EndScissorMode: Reset scissor rect to full viewport");
+    } else {
+        TraceLog(LOG_WARNING, "[METAL WARNING] EndScissorMode: No render encoder available");
+    }
 }
 
 bool MetalRenderer::Initialize(MTKView* view) {
@@ -965,6 +999,11 @@ void MetalRenderer::DrawRectangleRounded(float x, float y, float width, float he
     DrawRoundedCorner(right, top, radius, segments, 1, color);    // top-right
     DrawRoundedCorner(right, bottom, radius, segments, 2, color); // bottom-right
     DrawRoundedCorner(left, bottom, radius, segments, 3, color);  // bottom-left
+}
+
+void MetalRenderer::DrawRectangleRounded(Rectangle rec, float roundness, int segments, Color color) {
+    // Overload that takes Rectangle parameter
+    DrawRectangleRounded(rec.x, rec.y, rec.width, rec.height, roundness, segments, color);
 }
 
 void MetalRenderer::DrawCircle(float x, float y, float radius, Color color) {
@@ -1969,29 +2008,69 @@ DrawCommand MetalRenderer::CreateDrawCommand(MTLPrimitiveType primitiveType, NSU
 
 // --- Texture Management Functions ---
 Texture2D MetalRenderer::LoadTexture(const char* fileName) {
-    // Stub implementation - return empty texture
-    // TODO: Implement actual texture loading
-    Texture2D texture = {0, 0, 0, 0, 0, nullptr};
-    TraceLog(LOG_WARNING, "[METAL WARNING] LoadTexture not implemented for: %s", fileName);
+    if (!fileName || !m_device) {
+        TraceLog(LOG_ERROR, "[METAL ERROR] LoadTexture: Invalid parameters");
+        return {0, 0, 0, 0, 0, nullptr};
+    }
+    
+    // Use the existing MetalTexture system to load the texture
+    id<MTLTexture> metalTexture = MetalTexture::LoadFromFile(fileName, m_device);
+    
+    if (!metalTexture) {
+        TraceLog(LOG_ERROR, "[METAL ERROR] LoadTexture: Failed to load texture from file: %s", fileName);
+        return {0, 0, 0, 0, 0, nullptr};
+    }
+    
+    // Create Texture2D struct from Metal texture
+    Texture2D texture;
+    texture.id = GenerateTextureId(); // Generate unique ID
+    texture.texture = (__bridge_retained void*)metalTexture; // Retain the Metal texture
+    texture.width = (int)metalTexture.width;
+    texture.height = (int)metalTexture.height;
+    texture.mipmaps = 1; // Single mipmap level for now
+    texture.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
+    
+    TraceLog(LOG_INFO, "[METAL DEBUG] LoadTexture: Successfully loaded texture %s (%dx%d)", 
+             fileName, texture.width, texture.height);
+    
     return texture;
 }
 
 void MetalRenderer::UnloadTexture(Texture2D texture) {
-    // Stub implementation
-    // TODO: Implement actual texture unloading
-    TraceLog(LOG_WARNING, "[METAL WARNING] UnloadTexture not implemented");
+    if (texture.texture) {
+        id<MTLTexture> metalTexture = (__bridge_transfer id<MTLTexture>)texture.texture;
+        if (metalTexture) {
+            // Metal texture will be automatically released when the bridge transfer completes
+            TraceLog(LOG_INFO, "[METAL DEBUG] UnloadTexture: Released texture %u (%dx%d)", 
+                     texture.id, texture.width, texture.height);
+        }
+    }
 }
 
 void MetalRenderer::SetTextureWrap(Texture2D texture, int wrap) {
-    // Stub implementation
-    // TODO: Implement texture wrap setting
-    TraceLog(LOG_WARNING, "[METAL WARNING] SetTextureWrap not implemented");
+    if (!texture.texture) {
+        TraceLog(LOG_WARNING, "[METAL WARNING] SetTextureWrap: Invalid texture");
+        return;
+    }
+    
+    // Note: Metal doesn't support changing texture wrap modes after creation
+    // This would require recreating the texture with new sampler state
+    // For now, we'll log the request but not implement it
+    TraceLog(LOG_INFO, "[METAL DEBUG] SetTextureWrap: Wrap mode %d requested for texture %u (not implemented)", 
+             wrap, texture.id);
 }
 
 void MetalRenderer::SetTextureFilter(Texture2D texture, int filter) {
-    // Stub implementation
-    // TODO: Implement texture filter setting
-    TraceLog(LOG_WARNING, "[METAL WARNING] SetTextureFilter not implemented");
+    if (!texture.texture) {
+        TraceLog(LOG_WARNING, "[METAL WARNING] SetTextureFilter: Invalid texture");
+        return;
+    }
+    
+    // Note: Metal doesn't support changing texture filter modes after creation
+    // This would require recreating the texture with new sampler state
+    // For now, we'll log the request but not implement it
+    TraceLog(LOG_INFO, "[METAL DEBUG] SetTextureFilter: Filter mode %d requested for texture %u (not implemented)", 
+             filter, texture.id);
 }
 
 Rectangle MetalRenderer::GetTextureRec(Texture2D texture) {
@@ -2000,26 +2079,176 @@ Rectangle MetalRenderer::GetTextureRec(Texture2D texture) {
 }
 
 void* MetalRenderer::CreateTextureFromImage(void* image, int* width, int* height) {
-    // Stub implementation
-    // TODO: Implement texture creation from image
-    TraceLog(LOG_WARNING, "[METAL WARNING] CreateTextureFromImage not implemented");
-    return nullptr;
+    if (!image || !width || !height || !m_device) {
+        TraceLog(LOG_ERROR, "[METAL ERROR] CreateTextureFromImage: Invalid parameters");
+        return nullptr;
+    }
+    
+    // Cast the image pointer to CGImageRef
+    CGImageRef cgImage = (__bridge CGImageRef)image;
+    if (!cgImage) {
+        TraceLog(LOG_ERROR, "[METAL ERROR] CreateTextureFromImage: Invalid CGImage");
+        return nullptr;
+    }
+    
+    // Create Metal texture from CGImage
+    id<MTLTexture> metalTexture = MetalTexture::CreateFromCGImage(cgImage, m_device);
+    if (!metalTexture) {
+        TraceLog(LOG_ERROR, "[METAL ERROR] CreateTextureFromImage: Failed to create Metal texture");
+        return nullptr;
+    }
+    
+    // Set output dimensions
+    *width = (int)metalTexture.width;
+    *height = (int)metalTexture.height;
+    
+    TraceLog(LOG_INFO, "[METAL DEBUG] CreateTextureFromImage: Created texture %dx%d", *width, *height);
+    
+    // Return the Metal texture as void* (caller is responsible for releasing)
+    return (__bridge_retained void*)metalTexture;
 }
 
 Texture2D MetalRenderer::LoadTextureFromImage(Image image) {
-    // Stub implementation
-    // TODO: Implement texture loading from image
-    Texture2D texture = {0, 0, 0, 0, 0, nullptr};
-    TraceLog(LOG_WARNING, "[METAL WARNING] LoadTextureFromImage not implemented");
+    if (!image.data || image.width <= 0 || image.height <= 0 || !m_device) {
+        TraceLog(LOG_ERROR, "[METAL ERROR] LoadTextureFromImage: Invalid image data");
+        return {0, 0, 0, 0, 0, nullptr};
+    }
+    
+    // Create texture descriptor
+    MTLTextureDescriptor* textureDesc = [[MTLTextureDescriptor alloc] init];
+    textureDesc.pixelFormat = MTLPixelFormatRGBA8Unorm;
+    textureDesc.width = image.width;
+    textureDesc.height = image.height;
+    textureDesc.usage = MTLTextureUsageShaderRead;
+    
+    // Create Metal texture
+    id<MTLTexture> metalTexture = [m_device newTextureWithDescriptor:textureDesc];
+    if (!metalTexture) {
+        TraceLog(LOG_ERROR, "[METAL ERROR] LoadTextureFromImage: Failed to create Metal texture");
+        return {0, 0, 0, 0, 0, nullptr};
+    }
+    
+    // Upload image data to texture
+    MTLRegion region = MTLRegionMake2D(0, 0, image.width, image.height);
+    [metalTexture replaceRegion:region mipmapLevel:0 withBytes:image.data bytesPerRow:image.width * 4];
+    
+    // Create Texture2D struct
+    Texture2D texture;
+    texture.id = GenerateTextureId();
+    texture.texture = (__bridge_retained void*)metalTexture;
+    texture.width = image.width;
+    texture.height = image.height;
+    texture.mipmaps = 1;
+    texture.format = image.format;
+    
+    TraceLog(LOG_INFO, "[METAL DEBUG] LoadTextureFromImage: Created texture %dx%d", texture.width, texture.height);
+    
     return texture;
 }
 
 Image MetalRenderer::LoadImageFromTexture(Texture2D texture) {
-    // Stub implementation
-    // TODO: Implement image loading from texture
-    Image image = {nullptr, 0, 0, 0, 0};
-    TraceLog(LOG_WARNING, "[METAL WARNING] LoadImageFromTexture not implemented");
+    if (!texture.texture || texture.width <= 0 || texture.height <= 0) {
+        TraceLog(LOG_ERROR, "[METAL ERROR] LoadImageFromTexture: Invalid texture");
+        return {nullptr, 0, 0, 0, 0};
+    }
+    
+    id<MTLTexture> metalTexture = (__bridge id<MTLTexture>)texture.texture;
+    if (!metalTexture) {
+        TraceLog(LOG_ERROR, "[METAL ERROR] LoadImageFromTexture: Failed to get Metal texture");
+        return {nullptr, 0, 0, 0, 0};
+    }
+    
+    // Allocate memory for image data
+    size_t dataSize = texture.width * texture.height * 4; // Assuming RGBA
+    void* imageData = malloc(dataSize);
+    if (!imageData) {
+        TraceLog(LOG_ERROR, "[METAL ERROR] LoadImageFromTexture: Failed to allocate memory");
+        return {nullptr, 0, 0, 0, 0};
+    }
+    
+    // Read texture data
+    MTLRegion region = MTLRegionMake2D(0, 0, texture.width, texture.height);
+    [metalTexture getBytes:imageData bytesPerRow:texture.width * 4 fromRegion:region mipmapLevel:0];
+    
+    // Create Image struct
+    Image image;
+    image.data = imageData;
+    image.width = texture.width;
+    image.height = texture.height;
+    image.mipmaps = texture.mipmaps;
+    image.format = texture.format;
+    
+    TraceLog(LOG_INFO, "[METAL DEBUG] LoadImageFromTexture: Created image %dx%d", image.width, image.height);
+    
     return image;
+}
+
+// ============================================================================
+// RENDER-TO-TEXTURE SUPPORT
+// ============================================================================
+
+void MetalRenderer::BeginRenderToTexture(RenderTexture2D target) {
+    if (!target.texture.texture) {
+        TraceLog(LOG_ERROR, "[METAL ERROR] BeginRenderToTexture: Invalid render texture");
+        return;
+    }
+    
+    // Store the current render target
+    m_previousRenderTarget = m_currentRenderTarget;
+    m_currentRenderTarget = target;
+    
+    // Create a render pass descriptor for the texture
+    MTLRenderPassDescriptor* renderPassDesc = [[MTLRenderPassDescriptor alloc] init];
+    
+    // Set the color attachment to our render texture
+    id<MTLTexture> colorTexture = (__bridge id<MTLTexture>)target.texture.texture;
+    renderPassDesc.colorAttachments[0].texture = colorTexture;
+    renderPassDesc.colorAttachments[0].loadAction = MTLLoadActionClear;
+    renderPassDesc.colorAttachments[0].storeAction = MTLStoreActionStore;
+    renderPassDesc.colorAttachments[0].clearColor = MTLClearColorMake(0, 0, 0, 0);
+    
+    // Set the depth attachment if available
+    if (target.depth.texture) {
+        id<MTLTexture> depthTexture = (__bridge id<MTLTexture>)target.depth.texture;
+        renderPassDesc.depthAttachment.texture = depthTexture;
+        renderPassDesc.depthAttachment.loadAction = MTLLoadActionClear;
+        renderPassDesc.depthAttachment.storeAction = MTLStoreActionStore;
+        renderPassDesc.depthAttachment.clearDepth = 1.0;
+    }
+    
+    // Begin the render pass
+    m_currentCommandBuffer = [m_commandQueue commandBuffer];
+    m_currentEncoder = [m_currentCommandBuffer renderCommandEncoderWithDescriptor:renderPassDesc];
+    
+    // Set the viewport to match the texture size
+    MTLViewport viewport = {0, 0, (double)target.texture.width, (double)target.texture.height, 0, 1};
+    [m_currentEncoder setViewport:viewport];
+    
+    // Set the projection matrix for the texture size
+    SetProjectionMatrix(target.texture.width, target.texture.height);
+    
+    TraceLog(LOG_INFO, "[METAL DEBUG] BeginRenderToTexture: Started rendering to texture %dx%d", 
+             target.texture.width, target.texture.height);
+}
+
+void MetalRenderer::EndRenderToTexture() {
+    if (!m_currentEncoder) {
+        TraceLog(LOG_WARNING, "[METAL WARNING] EndRenderToTexture: No active render encoder");
+        return;
+    }
+    
+    // End the render pass
+    [m_currentEncoder endEncoding];
+    m_currentEncoder = nullptr;
+    
+    // Commit the command buffer
+    [m_currentCommandBuffer commit];
+    m_currentCommandBuffer = nullptr;
+    
+    // Restore the previous render target
+    m_currentRenderTarget = m_previousRenderTarget;
+    
+    TraceLog(LOG_INFO, "[METAL DEBUG] EndRenderToTexture: Finished rendering to texture");
 }
 
 #endif // defined(__APPLE__) && TARGET_OS_IOS 

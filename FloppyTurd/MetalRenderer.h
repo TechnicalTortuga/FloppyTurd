@@ -175,6 +175,10 @@ public:
     // Device access
     id<MTLDevice> GetDevice() const { return m_device; }
     
+    // Render-to-texture support
+    void BeginRenderToTexture(RenderTexture2D target);
+    void EndRenderToTexture();
+    
     // Mobile GPU optimization
     void SetMobileGPUSettings(const MobileGPUSettings& settings);
     const MobileGPUSettings& GetMobileGPUSettings() const { return m_mobileSettings; }
@@ -211,6 +215,10 @@ private:
     id<MTLCommandBuffer> m_currentCommandBuffer;
     id<MTLRenderCommandEncoder> m_currentEncoder;
     MTLRenderPassDescriptor* m_currentRenderPass;
+    
+    // Render-to-texture state
+    RenderTexture2D m_currentRenderTarget;
+    RenderTexture2D m_previousRenderTarget;
     
     // Current texture for UV normalization
     id<MTLTexture> m_currentTexture;

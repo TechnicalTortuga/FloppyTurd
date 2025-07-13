@@ -17,24 +17,42 @@
 
 + (id<MTLTexture>)loadTextureFromFile:(NSString*)filePath device:(id<MTLDevice>)device {
     @autoreleasepool {
-        // First try to load from bundle
-        NSString* bundlePath = [[NSBundle mainBundle] pathForResource:filePath ofType:nil];
-        if (!bundlePath) {
-            // Try without bundle
-            bundlePath = filePath;
-        }
+        // Extract the filename without path and extension for asset catalog lookup
+        NSString* fileName = [filePath lastPathComponent];
+        NSString* assetName = [fileName stringByDeletingPathExtension];
         
-        UIImage* image = [UIImage imageWithContentsOfFile:bundlePath];
-        if (!image) {
-            // Try loading from bundle by name
-            image = [UIImage imageNamed:filePath];
-        }
-        
+        // First try to load from asset catalog using the asset name
+        UIImage* image = [UIImage imageNamed:assetName];
         if (image) {
+            TraceLog(LOG_INFO, "[TEXTURE] Loaded texture from asset catalog: %s", [assetName UTF8String]);
             return [self loadTextureFromUIImage:image device:device];
         }
         
-        NSLog(@"Failed to load texture from file: %@", filePath);
+        // Try with the full path in asset catalog
+        image = [UIImage imageNamed:filePath];
+        if (image) {
+            TraceLog(LOG_INFO, "[TEXTURE] Loaded texture from asset catalog with path: %s", [filePath UTF8String]);
+            return [self loadTextureFromUIImage:image device:device];
+        }
+        
+        // Fallback: try to load from bundle path
+        NSString* bundlePath = [[NSBundle mainBundle] pathForResource:filePath ofType:nil];
+        if (bundlePath) {
+            image = [UIImage imageWithContentsOfFile:bundlePath];
+            if (image) {
+                TraceLog(LOG_INFO, "[TEXTURE] Loaded texture from bundle path: %s", [bundlePath UTF8String]);
+                return [self loadTextureFromUIImage:image device:device];
+            }
+        }
+        
+        // Last resort: try the original file path
+        image = [UIImage imageWithContentsOfFile:filePath];
+        if (image) {
+            TraceLog(LOG_INFO, "[TEXTURE] Loaded texture from file path: %s", [filePath UTF8String]);
+            return [self loadTextureFromUIImage:image device:device];
+        }
+        
+        TraceLog(LOG_ERROR, "[TEXTURE ERROR] Failed to load texture: %s (tried asset: %s, path: %s)", [filePath UTF8String], [assetName UTF8String], [bundlePath UTF8String]);
         return nil;
     }
 }
@@ -61,7 +79,7 @@
         size_t width = CGImageGetWidth(cgImage);
         size_t height = CGImageGetHeight(cgImage);
         
-        NSLog(@"[TEXTURE] Loading texture: %zux%zu", width, height);
+        TraceLog(LOG_INFO, "[TEXTURE] Loading texture: %zux%zu", width, height);
         
         // Create texture descriptor
         MTLTextureDescriptor* textureDescriptor = [[MTLTextureDescriptor alloc] init];
@@ -73,7 +91,7 @@
         // Create texture
         id<MTLTexture> texture = [device newTextureWithDescriptor:textureDescriptor];
         if (!texture) {
-            NSLog(@"[ERROR] Failed to create Metal texture");
+            TraceLog(LOG_ERROR, "[ERROR] Failed to create Metal texture");
             return nil;
         }
         
@@ -88,7 +106,7 @@
         
         if (!context) {
             free(rawData);
-            NSLog(@"Failed to create bitmap context");
+            TraceLog(LOG_ERROR, "Failed to create bitmap context");
             return nil;
         }
         

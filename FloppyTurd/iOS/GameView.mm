@@ -1,10 +1,8 @@
 #import "GameView.h"
 #import "MetalRenderer.h"
+#import "Game.h"
 #import <MetalKit/MetalKit.h>
 #import <UIKit/UIKit.h>
-
-// Forward declarations
-class Game;
 
 @interface GameView () <MTKViewDelegate>
 {
@@ -52,7 +50,7 @@ class Game;
         _mtkView.device = _device;
         
         if (!_device) {
-            NSLog(@"Metal is not supported on this device");
+            TraceLog(LOG_ERROR, "[GameView] Metal is not supported on this device");
             return;
         }
         
@@ -61,15 +59,15 @@ class Game;
         // Create command queue
         _commandQueue = [_device newCommandQueue];
         if (!_commandQueue) {
-            NSLog(@"Failed to create Metal command queue");
+            TraceLog(LOG_ERROR, "[GameView] Failed to create Metal command queue");
             return;
         }
-        NSLog(@"Metal command queue created: %@", _commandQueue);
+        TraceLog(LOG_INFO, "[GameView] Metal command queue created successfully");
         
         // Initialize renderer
         _renderer = new MetalRenderer();
         if (!_renderer->Initialize(_mtkView)) {
-            NSLog(@"Renderer initialization failed");
+            TraceLog(LOG_ERROR, "[GameView] Renderer initialization failed");
             delete _renderer;
             _renderer = nullptr;
             return;
@@ -80,7 +78,7 @@ class Game;
         [self updateSafeArea];
     
     _isInitialized = YES;
-    NSLog(@"GameView initialized successfully");
+    TraceLog(LOG_INFO, "[GameView] GameView initialized successfully");
 }
 
 - (void)layoutSubviews
@@ -132,7 +130,7 @@ class Game;
         }
         
         // Log touch for debugging
-        NSLog(@"Touch began at: %@", NSStringFromCGPoint(location));
+        TraceLog(LOG_INFO, "[GameView] Touch began at: (%.1f, %.1f)", location.x, location.y);
         
         // Forward touch info to game logic (will be queried by PlatformLayer/TouchControls)
         [self updateTouchState:touch phase:UITouchPhaseBegan location:location];
@@ -149,7 +147,7 @@ class Game;
             CGPoint location = [touch locationInView:self];
             _lastTouchLocation = location;
             
-            NSLog(@"Touch moved to: %@", NSStringFromCGPoint(location));
+            TraceLog(LOG_INFO, "[GameView] Touch moved to: (%.1f, %.1f)", location.x, location.y);
             [self updateTouchState:touch phase:UITouchPhaseMoved location:location];
         }
     }
@@ -163,7 +161,7 @@ class Game;
         NSNumber *touchId = @((uintptr_t)touch);
         if (_activeTouches[touchId]) {
             CGPoint location = [touch locationInView:self];
-            NSLog(@"Touch ended at: %@", NSStringFromCGPoint(location));
+            TraceLog(LOG_INFO, "[GameView] Touch ended at: (%.1f, %.1f)", location.x, location.y);
             [self updateTouchState:touch phase:UITouchPhaseEnded location:location];
             [_activeTouches removeObjectForKey:touchId];
             
@@ -188,7 +186,7 @@ class Game;
         NSNumber *touchId = @((uintptr_t)touch);
         if (_activeTouches[touchId]) {
             CGPoint location = [touch locationInView:self];
-            NSLog(@"Touch cancelled at: %@", NSStringFromCGPoint(location));
+            TraceLog(LOG_INFO, "[GameView] Touch cancelled at: (%.1f, %.1f)", location.x, location.y);
             [self updateTouchState:touch phase:UITouchPhaseCancelled location:location];
             [_activeTouches removeObjectForKey:touchId];
             
@@ -222,7 +220,7 @@ class Game;
             globalState.SetPrimaryInputDown(true);
             globalState.SetPrimaryInputPressed(true);
             globalState.SetPrimaryInputReleased(false);
-            NSLog(@"Touch began at: %@ - Updated GlobalStateManager", NSStringFromCGPoint(location));
+            TraceLog(LOG_INFO, "[GameView] Touch began at: (%.1f, %.1f) - Updated GlobalStateManager", location.x, location.y);
             break;
             
         case UITouchPhaseMoved:
@@ -230,7 +228,7 @@ class Game;
             globalState.SetPrimaryInputDown(true);
             globalState.SetPrimaryInputPressed(false);
             globalState.SetPrimaryInputReleased(false);
-            NSLog(@"Touch moved to: %@ - Updated GlobalStateManager", NSStringFromCGPoint(location));
+            TraceLog(LOG_INFO, "[GameView] Touch moved to: (%.1f, %.1f) - Updated GlobalStateManager", location.x, location.y);
             break;
             
         case UITouchPhaseEnded:
@@ -238,7 +236,7 @@ class Game;
             globalState.SetPrimaryInputDown(false);
             globalState.SetPrimaryInputPressed(false);
             globalState.SetPrimaryInputReleased(true);
-            NSLog(@"Touch ended at: %@ - Updated GlobalStateManager", NSStringFromCGPoint(location));
+            TraceLog(LOG_INFO, "[GameView] Touch ended at: (%.1f, %.1f) - Updated GlobalStateManager", location.x, location.y);
             break;
             
         default:
@@ -283,11 +281,21 @@ class Game;
 {
     // This is called by MTKView when it's time to render
     // Delegate to MetalRenderer or trigger game render loop
-    if (_isInitialized && _renderer) {
+    if (_isInitialized && _renderer && _game) {
+        TraceLog(LOG_INFO, "[GameView] drawInMTKView: Starting frame render");
+        
         _renderer->BeginFrame();
-        // The game will call render methods here
+        
+        // Call the game's render frame method - this is the missing piece!
+        _game->RenderFrame();
+        
         _renderer->EndFrame();
         _renderer->Present();
+        
+        TraceLog(LOG_INFO, "[GameView] drawInMTKView: Frame render completed");
+    } else {
+        TraceLog(LOG_WARNING, "[GameView] drawInMTKView: Not ready to render - initialized=%d, renderer=%p, game=%p", 
+                 _isInitialized, _renderer, _game);
     }
 }
 // Implementation of missing methods from GameView.h
@@ -361,7 +369,7 @@ class Game;
 {
     // Placeholder for debug overlay to visualize touch zones
     // Will be implemented after core functionality
-    NSLog(@"Debug overlay setup pending implementation");
+    TraceLog(LOG_INFO, "[GameView] Debug overlay setup pending implementation");
 }
 
 - (void)dealloc

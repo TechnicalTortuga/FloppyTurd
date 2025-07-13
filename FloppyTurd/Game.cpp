@@ -233,24 +233,21 @@ bool Game::Initialize()
         }
         
         // Create render target for the game
+#if defined(__APPLE__) && defined(TARGET_OS_IPHONE)
+        // On iOS, skip render target creation - Metal view handles full screen rendering
+        GameLog::Log("[INIT] Step 2: Skipping render target creation on iOS - Metal view handles full screen");
+        renderTarget = {0, {0, 0, 0, 0, 0, nullptr}, {0, 0, 0, 0, 0, nullptr}}; // Empty render target
+        GameLog::Log("[INIT] Step 2: iOS render target skipped - SUCCESS");
+#else
         GameLog::Log("[INIT] Step 2: Creating render target...");
         try {
             renderTarget = LoadRenderTexture(320, 180);
             
-#if defined(__APPLE__) && defined(TARGET_OS_IPHONE)
-            // On iOS, check if the render texture pointer is valid (ID is always 0 for Metal)
-            if (renderTarget.texture.texture == nullptr) {
-                GameLog::Log("[ERROR] Step 2: Failed to create render target on iOS");
-                throw std::runtime_error("Failed to create render target on iOS");
-            }
-            GameLog::Log("[INIT] Step 2: Created iOS render target 320x180 with texture %p - SUCCESS", renderTarget.texture.texture);
-#else
             if (renderTarget.id == 0) {
                 GameLog::Log("[ERROR] Step 2: Failed to create render target");
                 throw std::runtime_error("Failed to create render target");
             }
             GameLog::Log("[INIT] Step 2: Created render target 320x180 - SUCCESS");
-#endif
         } catch (const std::exception& e) {
             GameLog::Log("[ERROR] Step 2: Exception creating render target: %s", e.what());
             throw;
@@ -258,6 +255,7 @@ bool Game::Initialize()
             GameLog::Log("[ERROR] Step 2: Unknown exception creating render target");
             throw;
         }
+#endif
         
         // On iOS, we don't create a Window instance as it's managed by the system
         #ifndef PLATFORM_IOS
@@ -367,12 +365,25 @@ bool Game::Initialize()
         // Initialize letterbox state
         GameLog::Log("[INIT] Step 8: Initializing letterbox state...");
         try {
+#if defined(__APPLE__) && defined(TARGET_OS_IPHONE)
+            // On iOS, use full screen dimensions - no letterboxing needed
+            gameScale = 1.0f;
+            gameOffsetX = 0.0f;
+            gameOffsetY = 0.0f;
+            // Get screen dimensions from UIManager
+            auto& uiManager = UIManager::GetInstance();
+            renderedWidth = uiManager.GetScreenWidth();
+            renderedHeight = uiManager.GetScreenHeight();
+            GameLog::Log("[INIT] Step 8: Initialized iOS letterbox state - full screen %.0fx%.0f - SUCCESS", renderedWidth, renderedHeight);
+#else
+            // Desktop: use fixed game resolution with letterboxing
             gameScale = 1.0f;
             gameOffsetX = 0.0f;
             gameOffsetY = 0.0f;
             renderedWidth = 320.0f;
             renderedHeight = 180.0f;
-            GameLog::Log("[INIT] Step 8: Initialized letterbox state - SUCCESS");
+            GameLog::Log("[INIT] Step 8: Initialized desktop letterbox state - SUCCESS");
+#endif
         } catch (const std::exception& e) {
             GameLog::Log("[ERROR] Step 8: Exception initializing letterbox: %s", e.what());
             throw;

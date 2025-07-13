@@ -181,6 +181,10 @@ bool IsPrimaryInputReleased() {
     return CurrentPlatformAPI::GetInstance().IsPrimaryInputReleased();
 }
 
+bool IsPrimaryInputDown() {
+    return CurrentPlatformAPI::GetInstance().IsPrimaryInputDown();
+}
+
 // Texture Functions
 Texture2D LoadTexture(const char* fileName) {
     return CurrentPlatformAPI::GetInstance().LoadTexture(fileName);
@@ -384,6 +388,8 @@ void TraceLog(int logLevel, const char* text, ...) {
     CurrentPlatformAPI::GetInstance().TraceLog(logLevel, text, args);
     va_end(args);
 }
+
+
 
 int GetRandomValue(int min, int max) {
     return CurrentPlatformAPI::GetInstance().GetRandomValue(min, max);
