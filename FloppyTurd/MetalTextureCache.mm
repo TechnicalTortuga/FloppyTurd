@@ -62,16 +62,52 @@ void MetalTextureCache::Shutdown() {
     TraceLog(LOG_INFO, "[SHUTDOWN] MetalTextureCache shutdown complete");
 }
 
-Texture2D MetalTextureCache::GetOrLoadTexture(const std::string& fileName) {
+Texture2D MetalTextureCache::GetOrLoadTexture(const char* fileName) {
+    // DETAILED CORRUPTION DEBUGGING - Check parameter at entry
+    TraceLog(LOG_INFO, "[MetalTextureCache] GetOrLoadTexture ENTRY - Raw parameter check");
+    
+    // Validate input parameter
+    if (!fileName) {
+        TraceLog(LOG_ERROR, "[ERROR] GetOrLoadTexture called with NULL fileName");
+        return CreateFallbackTexture();
+    }
+    
+    // Log detailed info about the received parameter
+    TraceLog(LOG_INFO, "[MetalTextureCache] fileName pointer: %p", fileName);
+    TraceLog(LOG_INFO, "[MetalTextureCache] strlen(fileName): %zu", strlen(fileName));
+    TraceLog(LOG_INFO, "[MetalTextureCache] First char: '%c' (0x%02X)", fileName[0], (unsigned char)fileName[0]);
+    TraceLog(LOG_INFO, "[MetalTextureCache] Raw fileName: %s", fileName);
+    
+    // Immediately convert to NSString to ensure proper memory management in Objective-C++ context
+    NSString* nsFileName = [NSString stringWithUTF8String:fileName];
+    if (!nsFileName) {
+        TraceLog(LOG_ERROR, "[ERROR] Failed to convert fileName to NSString: %s", fileName);
+        return CreateFallbackTexture();
+    }
+    
+    // Log the NSString conversion result
+    TraceLog(LOG_INFO, "[MetalTextureCache] NSString conversion result: %s", [nsFileName UTF8String]);
+    
+    // Create std::string for cache lookup (this ensures consistent key format)
+    std::string fileNameKey(fileName);
+    TraceLog(LOG_INFO, "[MetalTextureCache] std::string conversion result: %s", fileNameKey.c_str());
+    
+    // Use NSString's UTF8String for all logging to ensure consistent memory
+    TraceLog(LOG_INFO, "[MetalTextureCache] GetOrLoadTexture() STARTED with fileName: %s", [nsFileName UTF8String]);
+    
     // Check if the texture is already cached
-    auto it = m_textureCache.find(fileName);
+    TraceLog(LOG_INFO, "[MetalTextureCache] Checking texture cache for: %s", [nsFileName UTF8String]);
+    auto it = m_textureCache.find(fileNameKey);
     if (it != m_textureCache.end()) {
+        TraceLog(LOG_INFO, "[MetalTextureCache] Found cached texture for: %s", [nsFileName UTF8String]);
         // Increment reference count
         m_textureRefCounts[it->second.texture]++;
         TraceLog(LOG_INFO, "[INFO] Using cached texture for %s (refCount: %u)", 
-              fileName.c_str(), m_textureRefCounts[it->second.texture]);
+              [nsFileName UTF8String], m_textureRefCounts[it->second.texture]);
         return it->second;
     }
+    
+    TraceLog(LOG_INFO, "[MetalTextureCache] Texture not in cache, proceeding to load: %s", [nsFileName UTF8String]);
     
     // Texture not in cache, load it
     int width = 0;
@@ -86,58 +122,75 @@ Texture2D MetalTextureCache::GetOrLoadTexture(const std::string& fileName) {
     
     UIImage* uiImage = nil;
     
-    if (fileName.substr(0, 8) == "asset://") {
+    if (fileNameKey.substr(0, 8) == "asset://") {
         // Handle asset:// URLs by extracting the resource name
-        ResourcePathParts parts = ResourceManager::ParseResourcePath(fileName);
+        ResourcePathParts parts = ResourceManager::ParseResourcePath(fileNameKey);
         NSString* name = [NSString stringWithUTF8String:parts.baseName.c_str()];
         uiImage = [UIImage imageNamed:name];
-        TraceLog(LOG_INFO, "[TEXTURE] Loading from asset catalog: %s -> %s", fileName.c_str(), parts.baseName.c_str());
+        TraceLog(LOG_INFO, "[TEXTURE] Loading from asset catalog: %s -> %s", fileNameKey.c_str(), parts.baseName.c_str());
     } else {
         // Handle regular file paths - these come from GetResourcePath which already did the lookup
         // Extract the filename and try asset catalog first
-        NSString* nsFileName = [NSString stringWithUTF8String:fileName.c_str()];
-        NSString* baseName = [[nsFileName lastPathComponent] stringByDeletingPathExtension];
+        NSString* lastPathComponent = [nsFileName lastPathComponent];
+        NSString* baseName = [lastPathComponent stringByDeletingPathExtension];
+        
+        TraceLog(LOG_INFO, "[TEXTURE] Parsing path: '%s'", [nsFileName UTF8String]);
+        TraceLog(LOG_INFO, "[TEXTURE] -> lastPathComponent: '%s'", [lastPathComponent UTF8String]);
+        TraceLog(LOG_INFO, "[TEXTURE] -> baseName: '%s'", [baseName UTF8String]);
         
         // First try: Asset catalog lookup using just the base name
         uiImage = [UIImage imageNamed:baseName];
         if (uiImage) {
-            TraceLog(LOG_INFO, "[TEXTURE] Loaded from asset catalog using base name: %s -> %s", fileName.c_str(), [baseName UTF8String]);
+            TraceLog(LOG_INFO, "[TEXTURE] ✓ Loaded from asset catalog using base name: %s -> %s", [nsFileName UTF8String], [baseName UTF8String]);
         } else {
-            // Second try: Asset catalog with full relative path
-            uiImage = [UIImage imageNamed:nsFileName];
+            TraceLog(LOG_INFO, "[TEXTURE] ✗ Asset catalog lookup failed for base name: %s", [baseName UTF8String]);
+            
+            // Second try: Asset catalog with full relative path (without extension)
+            NSString* pathWithoutExt = [nsFileName stringByDeletingPathExtension];
+            uiImage = [UIImage imageNamed:pathWithoutExt];
             if (uiImage) {
-                TraceLog(LOG_INFO, "[TEXTURE] Loaded from asset catalog using full path: %s", fileName.c_str());
+                TraceLog(LOG_INFO, "[TEXTURE] ✓ Loaded from asset catalog using path without extension: %s", [pathWithoutExt UTF8String]);
             } else {
-                // Third try: Direct file path (bundle resources)
-                uiImage = [UIImage imageWithContentsOfFile:nsFileName];
+                TraceLog(LOG_INFO, "[TEXTURE] ✗ Asset catalog lookup failed for path without extension: %s", [pathWithoutExt UTF8String]);
+                
+                // Third try: Asset catalog with full relative path
+                uiImage = [UIImage imageNamed:nsFileName];
                 if (uiImage) {
-                    TraceLog(LOG_INFO, "[TEXTURE] Loaded from file path: %s", fileName.c_str());
+                    TraceLog(LOG_INFO, "[TEXTURE] ✓ Loaded from asset catalog using full path: %s", [nsFileName UTF8String]);
                 } else {
-                    TraceLog(LOG_ERROR, "[ERROR] Failed to load texture from any source: %s", fileName.c_str());
-                    return CreateFallbackTexture();
+                    TraceLog(LOG_INFO, "[TEXTURE] ✗ Asset catalog lookup failed for full path: %s", [nsFileName UTF8String]);
+                    
+                    // Fourth try: Direct file path (bundle resources)
+                    uiImage = [UIImage imageWithContentsOfFile:nsFileName];
+                    if (uiImage) {
+                        TraceLog(LOG_INFO, "[TEXTURE] ✓ Loaded from file path: %s", [nsFileName UTF8String]);
+                    } else {
+                        TraceLog(LOG_ERROR, "[ERROR] ✗ Failed to load texture from any source: %s", [nsFileName UTF8String]);
+                        return CreateFallbackTexture();
+                    }
                 }
             }
         }
     }
     
     if (!uiImage) {
-        TraceLog(LOG_ERROR, "[ERROR] Failed to load UIImage for: %s", fileName.c_str());
+        TraceLog(LOG_ERROR, "[ERROR] Failed to load UIImage for: %s", [nsFileName UTF8String]);
         return CreateFallbackTexture();
     }
     
     CGImageRef cgImage = uiImage.CGImage;
     if (!cgImage) {
-        TraceLog(LOG_ERROR, "[ERROR] CGImage is null for: %s", fileName.c_str());
+        TraceLog(LOG_ERROR, "[ERROR] CGImage is null for: %s", [nsFileName UTF8String]);
         return CreateFallbackTexture();
     }
     
         width = (int)CGImageGetWidth(cgImage);
         height = (int)CGImageGetHeight(cgImage);
         
-        TraceLog(LOG_INFO, "[TEXTURE] Loading texture: %s, dimensions: %dx%d", fileName.c_str(), width, height);
+        TraceLog(LOG_INFO, "[TEXTURE] Loading texture: %s, dimensions: %dx%d", [nsFileName UTF8String], width, height);
         
         if (width <= 0 || height <= 0) {
-            TraceLog(LOG_ERROR, "[ERROR] Invalid dimensions for: %s (w=%d, h=%d)", fileName.c_str(), width, height);
+            TraceLog(LOG_ERROR, "[ERROR] Invalid dimensions for: %s (w=%d, h=%d)", [nsFileName UTF8String], width, height);
             return CreateFallbackTexture();
         }
         
@@ -154,7 +207,7 @@ Texture2D MetalTextureCache::GetOrLoadTexture(const std::string& fileName) {
         
         id<MTLTexture> metalTexture = [device newTextureWithDescriptor:textureDescriptor];
         if (!metalTexture) {
-            TraceLog(LOG_ERROR, "[ERROR] Failed to create Metal texture for: %s", fileName.c_str());
+            TraceLog(LOG_ERROR, "[ERROR] Failed to create Metal texture for: %s", [nsFileName UTF8String]);
             return CreateFallbackTexture();
         }
         
@@ -165,7 +218,7 @@ Texture2D MetalTextureCache::GetOrLoadTexture(const std::string& fileName) {
                                                     colorSpace, kCGImageAlphaPremultipliedLast);
         
         if (!context) {
-            TraceLog(LOG_ERROR, "[ERROR] Failed to create bitmap context for: %s", fileName.c_str());
+            TraceLog(LOG_ERROR, "[ERROR] Failed to create bitmap context for: %s", [nsFileName UTF8String]);
             CGColorSpaceRelease(colorSpace);
             return CreateFallbackTexture();
         }
@@ -174,7 +227,7 @@ Texture2D MetalTextureCache::GetOrLoadTexture(const std::string& fileName) {
         void* imageData = CGBitmapContextGetData(context);
         
         if (!imageData) {
-            TraceLog(LOG_ERROR, "[ERROR] Failed to get image data for: %s", fileName.c_str());
+            TraceLog(LOG_ERROR, "[ERROR] Failed to get image data for: %s", [nsFileName UTF8String]);
             CGContextRelease(context);
             CGColorSpaceRelease(colorSpace);
             return CreateFallbackTexture();
@@ -205,12 +258,201 @@ Texture2D MetalTextureCache::GetOrLoadTexture(const std::string& fileName) {
         texture.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
     
     // Cache the texture
-    m_textureCache[fileName] = texture;
+    m_textureCache[fileNameKey] = texture;
     m_textureRefCounts[texture.texture] = 1; // Initial reference count
     
             TraceLog(LOG_INFO, "[INFO] Loaded and cached new texture for %s (id=%u)", 
-          fileName.c_str(), texture.id);
+          [nsFileName UTF8String], texture.id);
           
+    return texture;
+}
+
+// ABI-safe NSString version that bypasses const char* corruption issues
+Texture2D MetalTextureCache::GetOrLoadTexture(NSString* fileName) {
+    TraceLog(LOG_INFO, "[MetalTextureCache] GetOrLoadTexture(NSString*) ENTRY - ABI-safe version");
+    
+    if (!fileName) {
+        TraceLog(LOG_ERROR, "[ERROR] GetOrLoadTexture called with NULL NSString fileName");
+        return CreateFallbackTexture();
+    }
+    
+    TraceLog(LOG_INFO, "[MetalTextureCache] NSString parameter received: %s", [fileName UTF8String]);
+    
+    // Create std::string for cache lookup (this ensures consistent key format)
+    std::string fileNameKey([fileName UTF8String]);
+    TraceLog(LOG_INFO, "[MetalTextureCache] std::string conversion result: %s", fileNameKey.c_str());
+    
+    // Use NSString's UTF8String for all logging to ensure consistent memory
+    TraceLog(LOG_INFO, "[MetalTextureCache] GetOrLoadTexture() STARTED with fileName: %s", [fileName UTF8String]);
+    
+    // Check if the texture is already cached
+    TraceLog(LOG_INFO, "[MetalTextureCache] Checking texture cache for: %s", [fileName UTF8String]);
+    auto it = m_textureCache.find(fileNameKey);
+    if (it != m_textureCache.end()) {
+        TraceLog(LOG_INFO, "[MetalTextureCache] Found cached texture for: %s", [fileName UTF8String]);
+        // Increment reference count
+        m_textureRefCounts[it->second.texture]++;
+        TraceLog(LOG_INFO, "[INFO] Using cached texture for %s (refCount: %u)", 
+              [fileName UTF8String], m_textureRefCounts[it->second.texture]);
+        return it->second;
+    }
+    
+    TraceLog(LOG_INFO, "[MetalTextureCache] Texture not in cache, proceeding to load: %s", [fileName UTF8String]);
+    
+    // Texture not in cache, load it
+    int width = 0;
+    int height = 0;
+    Texture2D texture = {0};
+    id<MTLDevice> device = (__bridge id<MTLDevice>)m_metalDevice;
+    
+    if (!device) {
+        TraceLog(LOG_ERROR, "[ERROR] Metal device is null in MetalTextureCache");
+        return CreateFallbackTexture();
+    }
+    
+    UIImage* uiImage = nil;
+    
+    if (fileNameKey.substr(0, 8) == "asset://") {
+        // Handle asset:// URLs by extracting the resource name
+        ResourcePathParts parts = ResourceManager::ParseResourcePath(fileNameKey);
+        NSString* name = [NSString stringWithUTF8String:parts.baseName.c_str()];
+        uiImage = [UIImage imageNamed:name];
+        TraceLog(LOG_INFO, "[TEXTURE] Loading from asset catalog: %s -> %s", fileNameKey.c_str(), parts.baseName.c_str());
+    } else {
+        // Handle regular file paths - try asset catalog first with multiple strategies
+        NSString* lastPathComponent = [fileName lastPathComponent];
+        NSString* baseName = [lastPathComponent stringByDeletingPathExtension];
+        
+        TraceLog(LOG_INFO, "[TEXTURE] Parsing path: '%s'", [fileName UTF8String]);
+        TraceLog(LOG_INFO, "[TEXTURE] -> lastPathComponent: '%s'", [lastPathComponent UTF8String]);
+        TraceLog(LOG_INFO, "[TEXTURE] -> baseName: '%s'", [baseName UTF8String]);
+        
+        // First try: Asset catalog lookup using just the base name
+        uiImage = [UIImage imageNamed:baseName];
+        if (uiImage) {
+            TraceLog(LOG_INFO, "[TEXTURE] ✓ Loaded from asset catalog using base name: %s -> %s", [fileName UTF8String], [baseName UTF8String]);
+        } else {
+            TraceLog(LOG_INFO, "[TEXTURE] ✗ Asset catalog lookup failed for base name: %s", [baseName UTF8String]);
+            
+            // Second try: Asset catalog with full relative path (without extension)
+            NSString* pathWithoutExt = [fileName stringByDeletingPathExtension];
+            uiImage = [UIImage imageNamed:pathWithoutExt];
+            if (uiImage) {
+                TraceLog(LOG_INFO, "[TEXTURE] ✓ Loaded from asset catalog using path without extension: %s", [pathWithoutExt UTF8String]);
+            } else {
+                TraceLog(LOG_INFO, "[TEXTURE] ✗ Asset catalog lookup failed for path without extension: %s", [pathWithoutExt UTF8String]);
+                
+                // Third try: Asset catalog with full relative path
+                uiImage = [UIImage imageNamed:fileName];
+                if (uiImage) {
+                    TraceLog(LOG_INFO, "[TEXTURE] ✓ Loaded from asset catalog using full path: %s", [fileName UTF8String]);
+                } else {
+                    TraceLog(LOG_INFO, "[TEXTURE] ✗ Asset catalog lookup failed for full path: %s", [fileName UTF8String]);
+                    
+                    // Fourth try: Direct file path (bundle resources)
+                    uiImage = [UIImage imageWithContentsOfFile:fileName];
+                    if (uiImage) {
+                        TraceLog(LOG_INFO, "[TEXTURE] ✓ Loaded from file path: %s", [fileName UTF8String]);
+                    } else {
+                        TraceLog(LOG_ERROR, "[ERROR] ✗ Failed to load texture from any source: %s", [fileName UTF8String]);
+                        return CreateFallbackTexture();
+                    }
+                }
+            }
+        }
+    }
+    
+    if (!uiImage) {
+        TraceLog(LOG_ERROR, "[ERROR] Failed to load UIImage for: %s", [fileName UTF8String]);
+        return CreateFallbackTexture();
+    }
+    
+    CGImageRef cgImage = uiImage.CGImage;
+    if (!cgImage) {
+        TraceLog(LOG_ERROR, "[ERROR] CGImage is null for: %s", [fileName UTF8String]);
+        return CreateFallbackTexture();
+    }
+    
+    width = (int)CGImageGetWidth(cgImage);
+    height = (int)CGImageGetHeight(cgImage);
+    
+    TraceLog(LOG_INFO, "[TEXTURE] Loading texture: %s, dimensions: %dx%d", [fileName UTF8String], width, height);
+    
+    if (width <= 0 || height <= 0) {
+        TraceLog(LOG_ERROR, "[ERROR] Invalid dimensions for: %s (w=%d, h=%d)", [fileName UTF8String], width, height);
+        return CreateFallbackTexture();
+    }
+    
+    // Create Metal texture with proper usage flags
+    MTLTextureDescriptor* textureDescriptor = [[MTLTextureDescriptor alloc] init];
+    textureDescriptor.pixelFormat = MTLPixelFormatRGBA8Unorm;
+    textureDescriptor.width = width;
+    textureDescriptor.height = height;
+    textureDescriptor.usage = MTLTextureUsageShaderRead;
+    textureDescriptor.storageMode = MTLStorageModeShared;
+    
+    // Support mipmap generation
+    textureDescriptor.mipmapLevelCount = 1 + floor(log2(fmax(width, height)));
+    
+    id<MTLTexture> metalTexture = [device newTextureWithDescriptor:textureDescriptor];
+    if (!metalTexture) {
+        TraceLog(LOG_ERROR, "[ERROR] Failed to create Metal texture for: %s", [fileName UTF8String]);
+        return CreateFallbackTexture();
+    }
+    
+    // Load image data into texture
+    MTLRegion region = {{0, 0, 0}, {(NSUInteger)width, (NSUInteger)height, 1}};
+    CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+    CGContextRef context = CGBitmapContextCreate(nil, width, height, 8, 4 * width, 
+                                                colorSpace, kCGImageAlphaPremultipliedLast);
+    
+    if (!context) {
+        TraceLog(LOG_ERROR, "[ERROR] Failed to create bitmap context for: %s", [fileName UTF8String]);
+        CGColorSpaceRelease(colorSpace);
+        return CreateFallbackTexture();
+    }
+    
+    CGContextDrawImage(context, CGRectMake(0, 0, width, height), cgImage);
+    void* imageData = CGBitmapContextGetData(context);
+    
+    if (!imageData) {
+        TraceLog(LOG_ERROR, "[ERROR] Failed to get image data for: %s", [fileName UTF8String]);
+        CGContextRelease(context);
+        CGColorSpaceRelease(colorSpace);
+        return CreateFallbackTexture();
+    }
+    
+    [metalTexture replaceRegion:region mipmapLevel:0 withBytes:imageData bytesPerRow:4 * width];
+    
+    // Generate mipmaps if needed
+    if (textureDescriptor.mipmapLevelCount > 1) {
+        id<MTLCommandQueue> commandQueue = (__bridge id<MTLCommandQueue>)m_commandQueue;
+        if (commandQueue) {
+            id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
+            id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
+            [blitEncoder generateMipmapsForTexture:metalTexture];
+            [blitEncoder endEncoding];
+            [commandBuffer commit];
+        }
+    }
+    
+    CGContextRelease(context);
+    CGColorSpaceRelease(colorSpace);
+    
+    // Create Texture2D structure
+    texture.id = GenerateTextureId();
+    texture.width = width;
+    texture.height = height;
+    texture.mipmaps = textureDescriptor.mipmapLevelCount;
+    texture.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
+    texture.texture = (__bridge_retained void*)metalTexture;
+    
+    // Store in cache with reference counting
+    m_textureCache[fileNameKey] = texture;
+    m_textureRefCounts[texture.texture] = 1;
+    
+    TraceLog(LOG_INFO, "[INFO] Loaded and cached new texture for %s (id=%u)", [fileName UTF8String], texture.id);
+    
     return texture;
 }
 

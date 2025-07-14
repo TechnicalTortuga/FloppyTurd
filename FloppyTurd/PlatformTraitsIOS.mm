@@ -41,16 +41,38 @@ void* GetMetalDeviceFromGameView() {
 // ============================================================================
 
 Texture2D IOSTraits::LoadTexture(const char* fileName) {
+    TraceLog(LOG_INFO, "[IOSTraits] LoadTexture: ENTRY POINT - fileName: %s", fileName ? fileName : "NULL");
+    
     if (!fileName) {
         TraceLog(LOG_ERROR, "[IOSTraits] LoadTexture: Invalid fileName parameter");
         return {0, 0, 0, 0, 0, nullptr};
     }
     
-    TraceLog(LOG_INFO, "[IOSTraits] LoadTexture: Loading texture via MetalTextureCache: %s", fileName);
+    TraceLog(LOG_INFO, "[IOSTraits] LoadTexture: Original fileName: %s", fileName);
     
-    // Use MetalTextureCache for optimized loading and caching
-    // This handles both asset catalog and bundle resource loading
-    return MetalTextureCache::GetInstance().GetOrLoadTexture(std::string(fileName));
+    // ABI BOUNDARY SOLUTION: Use __bridge_retained to create strong reference across compilation units
+    // This follows Apple's ARC documentation for safe object passing between compilation boundaries
+    NSString* nsFileName = [NSString stringWithUTF8String:fileName];
+    if (!nsFileName) {
+        TraceLog(LOG_ERROR, "[IOSTraits] LoadTexture: Failed to convert fileName to NSString: %s", fileName);
+        return {0, 0, 0, 0, 0, nullptr};
+    }
+    
+    TraceLog(LOG_INFO, "[IOSTraits] LoadTexture: NSString created: %s", [nsFileName UTF8String]);
+    
+    // Create retained bridge to survive ABI crossing
+    void* retainedNSString = (__bridge_retained void*)nsFileName;
+    TraceLog(LOG_INFO, "[IOSTraits] LoadTexture: Created retained bridge: %p", retainedNSString);
+    
+    // Call the NSString version with proper ARC bridging
+    MetalTextureCache& cache = MetalTextureCache::GetInstance();
+    NSString* bridgedString = (__bridge NSString*)retainedNSString;
+    Texture2D result = cache.GetOrLoadTexture(bridgedString);
+    
+    // Release the retained reference
+    CFRelease(retainedNSString);
+    
+    return result;
 }
 
 void IOSTraits::UnloadTexture(Texture2D texture) {

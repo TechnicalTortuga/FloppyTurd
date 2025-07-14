@@ -53,7 +53,6 @@ void ResourceManager::Shutdown() {
 }
 
 Texture2D ResourceManager::GetTexture(const std::string& id) {
-    std::lock_guard<std::mutex> lock(resourceMutex);
     try {
         auto it = textureCache.find(id);
         if (it != textureCache.end() && it->second.isValid) {
@@ -103,7 +102,6 @@ Texture2D ResourceManager::GetTexture(const std::string& id) {
 }
 
 Sound ResourceManager::GetSound(const std::string& id) {
-    std::lock_guard<std::mutex> lock(resourceMutex);
     auto it = soundCache.find(id);
     if (it != soundCache.end() && it->second.isValid) {
         UpdateAccessTime(id);
@@ -120,7 +118,6 @@ Sound ResourceManager::GetSound(const std::string& id) {
 }
 
 Music ResourceManager::GetMusic(const std::string& id) {
-    std::lock_guard<std::mutex> lock(resourceMutex);
     auto it = musicCache.find(id);
     if (it != musicCache.end() && it->second.isValid) {
         UpdateAccessTime(id);
@@ -180,10 +177,13 @@ bool ResourceManager::LoadTextureInternal(const std::string& id) {
         }
 
         std::string fullPath = ResolvePath(id, ResourceType::TEXTURE);
+        TraceLog(LOG_INFO, "[ResourceManager] Resolved path for %s: %s", id.c_str(), fullPath.c_str());
         if (fullPath.empty()) {
+            TraceLog(LOG_WARNING, "[ResourceManager] Empty path resolved for texture ID: %s", id.c_str());
             return false;
         }
 
+        TraceLog(LOG_INFO, "[ResourceManager] About to call LoadTexture with path: %s", fullPath.c_str());
         Texture2D texture = LoadTexture(fullPath.c_str());
 #if defined(__APPLE__) && TARGET_OS_IPHONE
         if (texture.texture == nullptr) {
@@ -348,33 +348,21 @@ bool ResourceManager::LoadFontInternal(const std::string& id) {
 }
 
 std::string ResourceManager::ResolvePath(const std::string& id, ResourceType type) {
-    std::lock_guard<std::mutex> lock(resourceMutex);
-    TraceLog(LOG_INFO, "[DEBUG] ResolvePath called with id=%s, type=%d", id.c_str(), (int)type);
-    
     auto it = resourceRegistry.find(id);
     if (it == resourceRegistry.end()) {
-        TraceLog(LOG_ERROR, "[DEBUG] ResolvePath: Resource not found in registry: %s", id.c_str());
         return "";
     }
 
-    // Make a local copy of the relativePath to avoid threading issues
     std::string relativePath = it->second.relativePath;
-    TraceLog(LOG_INFO, "[DEBUG] ResolvePath: Found resource with relativePath=%s", relativePath.c_str());
-    
     std::string basePath = GetResourcePath(relativePath.c_str());
     
-    TraceLog(LOG_INFO, "[DEBUG] ResolvePath: GetResourcePath returned: %s", basePath.c_str());
-    
-    // Try quality variants for textures
     if (type == ResourceType::TEXTURE && currentQuality != ResourceQuality::HIGH) {
         std::string qualityPath = GetQualityVariant(basePath, currentQuality);
         if (!qualityPath.empty() && std::filesystem::exists(qualityPath)) {
-            TraceLog(LOG_INFO, "[DEBUG] ResolvePath: Using quality variant: %s", qualityPath.c_str());
             return qualityPath;
         }
     }
 
-    TraceLog(LOG_INFO, "[DEBUG] ResolvePath: Final resolved path: %s", basePath.c_str());
     return basePath;
 }
 
@@ -511,7 +499,6 @@ void ResourceManager::ClearFontCache() {
 
 void ResourceManager::RegisterResource(const std::string& id, const std::string& relativePath, 
                                      ResourceType type, LoadingMode mode, ResourceQuality minQuality) {
-    std::lock_guard<std::mutex> lock(resourceMutex);
     ResourceInfo info;
     info.id = id;
     info.relativePath = relativePath;
@@ -1017,4 +1004,45 @@ ResourcePathParts ResourceManager::ParseResourcePath(const std::string& path) {
         parts.extension = "";
     }
     return parts;
-} 
+}
+
+// Debug and diagnostics methods
+int ResourceManager::GetRegisteredResourceCount() const {
+    return static_cast<int>(resourceRegistry.size());
+}
+
+void ResourceManager::LogRegisteredResources(int maxCount) const {
+    if (maxCount <= 0 || maxCount > 100) {
+        maxCount = 10;
+    }
+    
+    TraceLog(LOG_INFO, "[DEBUG] Listing first %d registered resources (total: %d):", 
+             maxCount, (int)resourceRegistry.size());
+    
+    int count = 0;
+    for (const auto& pair : resourceRegistry) {
+        if (count >= maxCount) break;
+        
+        const auto& info = pair.second;
+        TraceLog(LOG_INFO, "[DEBUG] %d. %s -> %s (type: %d)", 
+                count + 1, pair.first.c_str(), info.relativePath.c_str(), (int)info.type);
+        count++;
+    }
+    
+    if (resourceRegistry.size() > static_cast<size_t>(maxCount)) {
+        TraceLog(LOG_INFO, "[DEBUG] ... and %d more resources", 
+                (int)resourceRegistry.size() - maxCount);
+    }
+}
+
+std::string ResourceManager::GetResourcePath(const std::string& id) const {
+    auto it = resourceRegistry.find(id);
+    if (it == resourceRegistry.end()) {
+        TraceLog(LOG_WARNING, "[DEBUG] GetResourcePath: Resource '%s' not found in registry", id.c_str());
+        return "";
+    }
+    
+    const auto& info = it->second;
+    std::string basePath = ::GetResourcePath(info.relativePath.c_str());
+    return basePath;
+}

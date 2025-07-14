@@ -52,7 +52,7 @@
           "ASSETCATALOG_FILTER_FOR_THINNING_DEVICE_CONFIGURATION" : "iPhone17,3",
           "BUILD_ACTIVE_RESOURCES_ONLY" : "YES",
           "COLOR_DIAGNOSTICS" : "YES",
-          "diagnostic_message_length" : "153",
+          "diagnostic_message_length" : "82",
           "ENABLE_PREVIEWS" : "NO",
           "ENABLE_XOJIT_PREVIEWS" : "YES",
           "ONLY_ACTIVE_ARCH" : "YES",

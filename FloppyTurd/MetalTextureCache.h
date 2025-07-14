@@ -24,7 +24,13 @@ public:
     MetalTextureCache& operator=(const MetalTextureCache&) = delete;
     
     // Interface for loading and caching textures
-    Texture2D GetOrLoadTexture(const std::string& fileName);
+    Texture2D GetOrLoadTexture(const char* fileName);
+    
+#ifdef __OBJC__
+    // iOS-safe NSString version to bypass C++/Objective-C++ ABI issues
+    Texture2D GetOrLoadTexture(NSString* fileName);
+#endif
+    
     Texture2D LoadTextureFromData(void* data, int width, int height, int format);
     void UnloadTexture(unsigned int textureId);
     void UnloadTexture(void* texturePtr);

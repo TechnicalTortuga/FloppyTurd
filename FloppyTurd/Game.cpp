@@ -201,22 +201,44 @@ bool Game::Initialize()
             // AudioStateManager will be initialized later in Step 11
             GameLog::Log("[INIT] Step 1.5: AudioStateManager initialization deferred to Step 11");
             
-            // Test that ResourceManager is working by trying to load a simple texture
+            // Test ResourceManager functionality step by step
             GameLog::Log("[INIT] Step 1.5: Testing ResourceManager...");
             
             try {
-                Texture2D testTexture = ResourceManager::GetInstance().GetTexture("main_menu_bg");
-                if (
+                // First, check if the resource is registered
+                GameLog::Log("[DEBUG] Step 1.5.1: Checking if main_menu_bg is registered...");
+                ResourceManager& rm = ResourceManager::GetInstance();
+                
+                // Get resource count to debug the 32 vs hundreds issue
+                GameLog::Log("[DEBUG] Step 1.5.2: Checking resource registry size...");
+                int registeredCount = rm.GetRegisteredResourceCount();
+                GameLog::Log("[INFO] Step 1.5.2: Currently registered resources: %d", registeredCount);
+                
+                // Test path resolution without loading
+                GameLog::Log("[DEBUG] Step 1.5.4: Testing path resolution for main_menu_bg...");
+                std::string resolvedPath = rm.GetResourcePath("main_menu_bg");
+                GameLog::Log("[INFO] Step 1.5.4: Resolved path: %s", resolvedPath.c_str());
+                
+                if (!resolvedPath.empty()) {
+                    GameLog::Log("[DEBUG] Step 1.5.5: Attempting to load texture: %s", resolvedPath.c_str());
+                    
+                    // Now try loading the texture
+                    Texture2D testTexture = rm.GetTexture("main_menu_bg");
+                    if (
 #if defined(__APPLE__) && TARGET_OS_IPHONE
-                    testTexture.texture != nullptr
+                        testTexture.texture != nullptr
 #else
-                    testTexture.id != 0
+                        testTexture.id != 0
 #endif
-                ) {
-                    GameLog::Log("[INIT] Step 1.5: ResourceManager test successful - texture loaded");
+                    ) {
+                        GameLog::Log("[SUCCESS] Step 1.5: ResourceManager test successful - texture loaded");
+                    } else {
+                        GameLog::Log("[WARNING] Step 1.5: ResourceManager test failed - texture is null/empty");
+                    }
                 } else {
-                    GameLog::Log("[WARNING] Step 1.5: ResourceManager test failed - texture is null/empty");
+                    GameLog::Log("[ERROR] Step 1.5: ResourceManager test failed - could not resolve path for main_menu_bg");
                 }
+                
             } catch (const std::exception& e) {
                 GameLog::Log("[ERROR] Step 1.5: Exception testing ResourceManager: %s", e.what());
                 // Don't throw here, continue with initialization

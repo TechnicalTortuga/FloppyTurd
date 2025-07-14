@@ -106,6 +106,11 @@ public:
     // New public API to get resolved resource path
     std::string GetResourcePathForType(const std::string& id, ResourceType type);
 
+    // Debug and diagnostics
+    int GetRegisteredResourceCount() const;
+    void LogRegisteredResources(int maxCount = 10) const;
+    std::string GetResourcePath(const std::string& id) const;
+
     // Utility: Parse a resource path into directory, base name, and extension
     static ResourcePathParts ParseResourcePath(const std::string& path);
 
