@@ -350,6 +350,7 @@ static float Vector2Distance(Vector2 v1, Vector2 v2);
     // ============================================================================
     
     static std::string GetResourcePath(const char* resourceName);
+    static std::string GetSaveDataPath(const char* filename);
     static bool PreferLowPowerMode();
     static int GetRecommendedTextureSize();
 
@@ -462,6 +463,7 @@ struct RaylibTraits {
     static void ShowVirtualKeyboard(bool show);
     static void Vibrate(int milliseconds);
     static std::string GetResourcePath(const char* resourceName);
+    static std::string GetSaveDataPath(const char* filename);
     static bool PreferLowPowerMode();
     static int GetRecommendedTextureSize();
     static bool IsMobilePlatform();
@@ -471,6 +473,20 @@ struct RaylibTraits {
     static Image GenImageColor(int width, int height, Color color);
     static Font GetFontDefault();
 };
+
+// ============================================================================
+// RAYLIB TRAITS INLINE IMPLEMENTATIONS
+// ============================================================================
+
+// Simple desktop implementation - just return the filename as-is since desktop doesn't have sandboxing
+inline std::string RaylibTraits::GetSaveDataPath(const char* filename) {
+    return std::string(filename);
+}
+
+// Simple desktop implementation - return filename as-is for now
+inline std::string RaylibTraits::GetResourcePath(const char* resourceName) {
+    return std::string(resourceName);
+}
 
 #ifdef PLATFORM_IOS
 using CurrentTraits = IOSTraits;

@@ -207,9 +207,10 @@ public:
         m_screenScale = scale;
     }
     
-    void UpdateSafeArea(Rectangle safeArea) {
+    void UpdateSafeArea([[maybe_unused]] Rectangle safeArea) {
         // Store safe area in platform-specific state for now
         // Could add a dedicated safe area member if needed
+        // Parameter is currently unused but kept for future implementation
     }
     
     void UpdateTargetFPS(int fps) {

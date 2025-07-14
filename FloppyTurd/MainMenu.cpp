@@ -704,7 +704,7 @@ void MainMenu::DrawMobileUI()
 		destX = (pixelScreenRect.width - destWidth) / 2.0f;
 	}
 	TraceLog(LOG_INFO, "[MAINMENU] Background dest rect (pixels): x=%.1f y=%.1f w=%.1f h=%.1f", destX, destY, destWidth, destHeight);
- 	DrawTexturePro(_MenuBackground,
+	DrawTexturePro(_MenuBackground,
 		Rectangle{ 0, 0, (float)_MenuBackground.width, (float)_MenuBackground.height },
 		Rectangle{ destX, destY, destWidth, destHeight },
 		Vector2{ 0,0 }, 0.0f, WHITE);
@@ -835,122 +835,122 @@ void MainMenu::DrawMobileOptionsMenu()
 
 void MainMenu::DrawMobileLevelSelect()
 {
-    // Use UICoordinateSystem for consistent coordinate handling
-    Rectangle pixelScreenRect = UICoordinateSystem::GetPixelScreenRect();
-    Rectangle safeAreaPx = UICoordinateSystem::GetSafeAreaRect(true);
-    
-    // Draw background
-    float bgAspect = (float)_MenuBackground.width / (float)_MenuBackground.height;
-    float screenAspect = pixelScreenRect.width / pixelScreenRect.height;
-    float destWidth, destHeight, destX, destY;
-    if (screenAspect > bgAspect) {
-        destWidth = pixelScreenRect.width;
-        destHeight = pixelScreenRect.width / bgAspect;
-        destX = 0;
-        destY = (pixelScreenRect.height - destHeight) / 2.0f;
-    } else {
-        destHeight = pixelScreenRect.height;
-        destWidth = pixelScreenRect.height * bgAspect;
-        destY = 0;
-        destX = (pixelScreenRect.width - destWidth) / 2.0f;
-    }
-    
-    DrawTexturePro(_MenuBackground,
-        Rectangle{ 0, 0, (float)_MenuBackground.width, (float)_MenuBackground.height },
-        Rectangle{ destX, destY, destWidth, destHeight },
-        Vector2{ 0,0 }, 0.0f, WHITE);
+	// Use UICoordinateSystem for consistent coordinate handling
+	Rectangle pixelScreenRect = UICoordinateSystem::GetPixelScreenRect();
+	Rectangle safeAreaPx = UICoordinateSystem::GetSafeAreaRect(true);
+	
+	// Draw background
+	float bgAspect = (float)_MenuBackground.width / (float)_MenuBackground.height;
+	float screenAspect = pixelScreenRect.width / pixelScreenRect.height;
+	float destWidth, destHeight, destX, destY;
+	if (screenAspect > bgAspect) {
+		destWidth = pixelScreenRect.width;
+		destHeight = pixelScreenRect.width / bgAspect;
+		destX = 0;
+		destY = (pixelScreenRect.height - destHeight) / 2.0f;
+	} else {
+		destHeight = pixelScreenRect.height;
+		destWidth = pixelScreenRect.height * bgAspect;
+		destY = 0;
+		destX = (pixelScreenRect.width - destWidth) / 2.0f;
+	}
+	
+	DrawTexturePro(_MenuBackground,
+		Rectangle{ 0, 0, (float)_MenuBackground.width, (float)_MenuBackground.height },
+		Rectangle{ destX, destY, destWidth, destHeight },
+		Vector2{ 0,0 }, 0.0f, WHITE);
 
-    // Title
-    float titleY = safeAreaPx.y + safeAreaPx.height * 0.05f;
-    float titleFontSize = safeAreaPx.height * 0.06f;
-    DrawText("LEVEL SELECT", safeAreaPx.x + (safeAreaPx.width - MeasureText("LEVEL SELECT", titleFontSize)) / 2.0f, titleY, titleFontSize, WHITE);
+	// Title
+	float titleY = safeAreaPx.y + safeAreaPx.height * 0.05f;
+	float titleFontSize = safeAreaPx.height * 0.06f;
+	DrawText("LEVEL SELECT", safeAreaPx.x + (safeAreaPx.width - MeasureText("LEVEL SELECT", titleFontSize)) / 2.0f, titleY, titleFontSize, WHITE);
 
-    // Handle touch input for swipe gestures
+	// Handle touch input for swipe gestures
     if (IsPrimaryInputPressed()) {
         Vector2 touchPos = GetTouchPosition(0);
-        if (!isDragging) {
-            lastTouchX = touchPos.x;
-            isDragging = true;
-        } else {
-            float deltaX = touchPos.x - lastTouchX;
-            levelSelectScrollOffset += deltaX;
-            lastTouchX = touchPos.x;
-        }
+			if (!isDragging) {
+				lastTouchX = touchPos.x;
+				isDragging = true;
+			} else {
+				float deltaX = touchPos.x - lastTouchX;
+				levelSelectScrollOffset += deltaX;
+				lastTouchX = touchPos.x;
+			}
     } else if (IsPrimaryInputReleased()) {
-        isDragging = false;
-        // Snap to nearest level
-        float levelWidth = safeAreaPx.width * 0.8f;
-        int targetLevel = (int)round(-levelSelectScrollOffset / levelWidth);
-        targetLevel = std::max(0, std::min(5, targetLevel)); // Clamp to 0-5
-        levelSelectScrollOffset = -targetLevel * levelWidth;
-        currentLevelIndex = targetLevel;
-    }
+			isDragging = false;
+			// Snap to nearest level
+			float levelWidth = safeAreaPx.width * 0.8f;
+			int targetLevel = (int)round(-levelSelectScrollOffset / levelWidth);
+			targetLevel = std::max(0, std::min(5, targetLevel)); // Clamp to 0-5
+			levelSelectScrollOffset = -targetLevel * levelWidth;
+			currentLevelIndex = targetLevel;
+	}
 
-    // Level paintings layout
-    float paintingWidth = safeAreaPx.width * 0.8f;
-    float paintingHeight = safeAreaPx.height * 0.6f;
-    float paintingSpacing = safeAreaPx.width * 0.1f;
-    float centerX = safeAreaPx.x + safeAreaPx.width / 2.0f;
-    float paintingY = titleY + titleFontSize + safeAreaPx.height * 0.05f;
+	// Level paintings layout
+	float paintingWidth = safeAreaPx.width * 0.8f;
+	float paintingHeight = safeAreaPx.height * 0.6f;
+	float paintingSpacing = safeAreaPx.width * 0.1f;
+	float centerX = safeAreaPx.x + safeAreaPx.width / 2.0f;
+	float paintingY = titleY + titleFontSize + safeAreaPx.height * 0.05f;
 
-    // Draw level paintings with scroll offset
-    for (int i = 0; i < 6; ++i) {
-        float paintingX = centerX - paintingWidth / 2.0f + i * (paintingWidth + paintingSpacing) + levelSelectScrollOffset;
-        // Only draw if visible
-        if (paintingX + paintingWidth > safeAreaPx.x && paintingX < safeAreaPx.x + safeAreaPx.width) {
-            Texture2D& painting = levelsUnlocked[i] ? levelPaintings[i] : lockedPainting;
-            // Check if this painting is clicked
-            bool isClicked = false;
+	// Draw level paintings with scroll offset
+	for (int i = 0; i < 6; ++i) {
+		float paintingX = centerX - paintingWidth / 2.0f + i * (paintingWidth + paintingSpacing) + levelSelectScrollOffset;
+		// Only draw if visible
+		if (paintingX + paintingWidth > safeAreaPx.x && paintingX < safeAreaPx.x + safeAreaPx.width) {
+			Texture2D& painting = levelsUnlocked[i] ? levelPaintings[i] : lockedPainting;
+			// Check if this painting is clicked
+			bool isClicked = false;
             if (IsPrimaryInputReleased() && !isDragging) {
                 Vector2 touchPos = GetTouchPosition(0);
-                Rectangle paintingRect = { paintingX, paintingY, paintingWidth, paintingHeight };
-                if (CheckCollisionPointRec(touchPos, paintingRect)) {
-                    isClicked = true;
-                }
-            }
-            // Draw painting
-            DrawTexturePro(painting,
-                Rectangle{ 0, 0, (float)painting.width, (float)painting.height },
-                Rectangle{ paintingX, paintingY, paintingWidth, paintingHeight },
-                Vector2{ 0,0 }, 0.0f, WHITE);
-            // Handle painting click
-            if (isClicked) {
-                if (levelsUnlocked[i]) {
-                    // Start the level
-                    game->SetGameState(PLAYING);
-                    if (game->playing) game->playing->SetCurrentLevel(i);
-                } else {
-                    // Try to purchase the level
-                    if (game && game->playing) {
-                        PurchaseLevel(i);
-                    }
-                }
-            }
-        }
-    }
+					Rectangle paintingRect = { paintingX, paintingY, paintingWidth, paintingHeight };
+					if (CheckCollisionPointRec(touchPos, paintingRect)) {
+						isClicked = true;
+					}
+				}
+			// Draw painting
+			DrawTexturePro(painting,
+				Rectangle{ 0, 0, (float)painting.width, (float)painting.height },
+				Rectangle{ paintingX, paintingY, paintingWidth, paintingHeight },
+				Vector2{ 0,0 }, 0.0f, WHITE);
+			// Handle painting click
+			if (isClicked) {
+				if (levelsUnlocked[i]) {
+					// Start the level
+					game->SetGameState(PLAYING);
+					if (game->playing) game->playing->SetCurrentLevel(i);
+				} else {
+					// Try to purchase the level
+					if (game && game->playing) {
+						PurchaseLevel(i);
+					}
+				}
+			}
+		}
+	}
 
-    // Navigation arrows
-    float arrowSize = safeAreaPx.height * 0.08f;
-    float arrowY = paintingY + paintingHeight / 2.0f - arrowSize / 2.0f;
-    // Left arrow
-    float leftArrowX = safeAreaPx.x + safeAreaPx.width * 0.05f;
-    if (AIGUI_ButtonRounded("<", leftArrowX, arrowY, arrowSize, arrowSize, 0.2f, arrowSize * 0.4f, WHITE)) {
-        currentLevelIndex = std::max(0, currentLevelIndex - 1);
-        levelSelectScrollOffset = -currentLevelIndex * (paintingWidth + paintingSpacing);
-    }
-    // Right arrow
-    float rightArrowX = safeAreaPx.x + safeAreaPx.width * 0.95f - arrowSize;
-    if (AIGUI_ButtonRounded(">", rightArrowX, arrowY, arrowSize, arrowSize, 0.2f, arrowSize * 0.4f, WHITE)) {
-        currentLevelIndex = std::min(5, currentLevelIndex + 1);
-        levelSelectScrollOffset = -currentLevelIndex * (paintingWidth + paintingSpacing);
-    }
-    // Back button
-    float backButtonWidth = safeAreaPx.width * 0.3f;
-    float backButtonHeight = safeAreaPx.height * 0.08f;
-    float backButtonY = paintingY + paintingHeight + safeAreaPx.height * 0.05f;
-    if (AIGUI_ButtonRounded("Back", centerX - backButtonWidth / 2, backButtonY, backButtonWidth, backButtonHeight, 0.1f, backButtonHeight * 0.4f, WHITE)) {
-        currentMenu = MAIN_MENU;
-    }
+	// Navigation arrows
+	float arrowSize = safeAreaPx.height * 0.08f;
+	float arrowY = paintingY + paintingHeight / 2.0f - arrowSize / 2.0f;
+	// Left arrow
+	float leftArrowX = safeAreaPx.x + safeAreaPx.width * 0.05f;
+	if (AIGUI_ButtonRounded("<", leftArrowX, arrowY, arrowSize, arrowSize, 0.2f, arrowSize * 0.4f, WHITE)) {
+		currentLevelIndex = std::max(0, currentLevelIndex - 1);
+		levelSelectScrollOffset = -currentLevelIndex * (paintingWidth + paintingSpacing);
+	}
+	// Right arrow
+	float rightArrowX = safeAreaPx.x + safeAreaPx.width * 0.95f - arrowSize;
+	if (AIGUI_ButtonRounded(">", rightArrowX, arrowY, arrowSize, arrowSize, 0.2f, arrowSize * 0.4f, WHITE)) {
+		currentLevelIndex = std::min(5, currentLevelIndex + 1);
+		levelSelectScrollOffset = -currentLevelIndex * (paintingWidth + paintingSpacing);
+	}
+	// Back button
+	float backButtonWidth = safeAreaPx.width * 0.3f;
+	float backButtonHeight = safeAreaPx.height * 0.08f;
+	float backButtonY = paintingY + paintingHeight + safeAreaPx.height * 0.05f;
+	if (AIGUI_ButtonRounded("Back", centerX - backButtonWidth / 2, backButtonY, backButtonWidth, backButtonHeight, 0.1f, backButtonHeight * 0.4f, WHITE)) {
+		currentMenu = MAIN_MENU;
+	}
 }
 
 void MainMenu::ResetMusic()

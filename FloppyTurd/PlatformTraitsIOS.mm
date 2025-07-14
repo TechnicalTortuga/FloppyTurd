@@ -1,5 +1,7 @@
 #import "PlatformTraits.h"
 #import "MetalRenderer.h"
+#import "MetalTextureCache.h"
+#import "iOS/GameView.h"
 #import "MetalTextRenderer.h"
 #import <AVFoundation/AVFoundation.h>
 #import <UIKit/UIKit.h>
@@ -9,10 +11,26 @@
 #include <cstdlib>
 #include <ctime>
 #include <algorithm>
+#include "GlobalStateManager.h"
+#include "LogManager.h"
+#include "GameLog.h"
 
 // External references to the Metal renderers
 extern MetalRenderer* g_metalRenderer;
 extern MetalTextRenderer* g_textRenderer;
+
+// Helper function to get Metal device from GameView
+void* GetMetalDeviceFromGameView() {
+    void* gameView = GetGlobalGameView();
+    if (gameView) {
+        // Cast to GameView and get the device
+        GameView* view = (__bridge GameView*)gameView;
+        if ([view respondsToSelector:@selector(device)]) {
+            return (__bridge void*)[view device];
+        }
+    }
+    return nullptr;
+}
 
 // ============================================================================
 // REAL IOS/METAL IMPLEMENTATIONS
@@ -23,18 +41,25 @@ extern MetalTextRenderer* g_textRenderer;
 // ============================================================================
 
 Texture2D IOSTraits::LoadTexture(const char* fileName) {
-    if (g_metalRenderer) {
-        return g_metalRenderer->LoadTexture(fileName);
+    if (!fileName) {
+        TraceLog(LOG_ERROR, "[IOSTraits] LoadTexture: Invalid fileName parameter");
+        return {0, 0, 0, 0, 0, nullptr};
     }
-    TraceLog(LOG_ERROR, "[IOSTraits] LoadTexture: Metal renderer not initialized");
-    return {0, 0, 0, 0, 0, nullptr};
+    
+    TraceLog(LOG_INFO, "[IOSTraits] LoadTexture: Loading texture via MetalTextureCache: %s", fileName);
+    
+    // Use MetalTextureCache for optimized loading and caching
+    // This handles both asset catalog and bundle resource loading
+    return MetalTextureCache::GetInstance().GetOrLoadTexture(std::string(fileName));
 }
 
 void IOSTraits::UnloadTexture(Texture2D texture) {
-    if (g_metalRenderer) {
-        g_metalRenderer->UnloadTexture(texture);
+    if (texture.texture) {
+        TraceLog(LOG_INFO, "[IOSTraits] UnloadTexture: Unloading texture via MetalTextureCache (id=%u)", texture.id);
+        // Use MetalTextureCache for proper reference counting and cleanup
+        MetalTextureCache::GetInstance().UnloadTexture(texture.texture);
     } else {
-        TraceLog(LOG_WARNING, "[IOSTraits] UnloadTexture: Metal renderer not initialized");
+        TraceLog(LOG_WARNING, "[IOSTraits] UnloadTexture: Texture has null texture pointer");
     }
 }
 
@@ -306,7 +331,7 @@ RenderTexture2D IOSTraits::LoadRenderTexture(int width, int height) {
     TraceLog(LOG_INFO, "[IOSTraits] LoadRenderTexture: Called with %dx%d, g_metalRenderer=%p", width, height, g_metalRenderer);
     if (!g_metalRenderer) {
         TraceLog(LOG_ERROR, "[IOSTraits] LoadRenderTexture: Metal renderer not initialized");
-        return {0, {0, 0, 0, 0, 0, nullptr}, {0, 0, 0, 0, 0, nullptr}};
+    return {0, {0, 0, 0, 0, 0, nullptr}, {0, 0, 0, 0, 0, nullptr}};
     }
     
     // Create a Metal texture that can be used as a render target
@@ -443,11 +468,61 @@ int IOSTraits::GetRecommendedFontSize() {
 std::string IOSTraits::GetResourcePath(const char* resourceName) {
     @autoreleasepool {
         NSString* nsResourceName = [NSString stringWithUTF8String:resourceName];
+        
+        // For iOS with .xcassets, we need to handle paths differently
+        // Extract the filename without extension for asset catalog lookup
+        NSString* fileName = [nsResourceName lastPathComponent];
+        NSString* assetName = [fileName stringByDeletingPathExtension];
+        
+        TraceLog(LOG_INFO, "[iOS GetResourcePath] Input: %s, FileName: %s, AssetName: %s", 
+                 resourceName, [fileName UTF8String], [assetName UTF8String]);
+        
+        // First try: Check if this exists as an asset in the catalog using just the name (without extension)
+        // This is the primary method for .xcassets bundles
+        UIImage* testImage = [UIImage imageNamed:assetName];
+        if (testImage) {
+            TraceLog(LOG_INFO, "[iOS GetResourcePath] Found asset catalog resource: %s", [assetName UTF8String]);
+            // Return the original path - MetalTextureLoader will handle the asset catalog lookup
+            return std::string(resourceName);
+        }
+        
+        // Second try: Check with the full relative path (for nested folders in xcassets)
+        testImage = [UIImage imageNamed:nsResourceName];
+        if (testImage) {
+            TraceLog(LOG_INFO, "[iOS GetResourcePath] Found asset catalog resource with path: %s", resourceName);
+            return std::string(resourceName);
+        }
+        
+        // Third try: Traditional bundle path lookup (fallback for non-xcassets resources)
         NSString* path = [[NSBundle mainBundle] pathForResource:nsResourceName ofType:nil];
         if (path) {
+            TraceLog(LOG_INFO, "[iOS GetResourcePath] Found bundle resource: %s", [path UTF8String]);
             return std::string([path UTF8String]);
         }
+        
+        // Fourth try: Traditional bundle lookup with separate name and extension
+        NSString* extension = [fileName pathExtension];
+        if (extension.length > 0) {
+            path = [[NSBundle mainBundle] pathForResource:assetName ofType:extension];
+            if (path) {
+                TraceLog(LOG_INFO, "[iOS GetResourcePath] Found bundle resource with extension: %s", [path UTF8String]);
+                return std::string([path UTF8String]);
+            }
+        }
+        
+        TraceLog(LOG_ERROR, "[iOS GetResourcePath] Resource not found: %s (tried asset: %s, bundle: %s)", 
+                 resourceName, [assetName UTF8String], [nsResourceName UTF8String]);
         return std::string();
+    }
+}
+
+std::string IOSTraits::GetSaveDataPath(const char* filename) {
+    @autoreleasepool {
+        // Get the Documents directory for save files
+        NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+        NSString *documentsDirectory = [paths objectAtIndex:0];
+        NSString *filePath = [documentsDirectory stringByAppendingPathComponent:[NSString stringWithUTF8String:filename]];
+        return std::string([filePath UTF8String]);
     }
 }
 
@@ -595,7 +670,7 @@ void IOSTraits::DrawTextureEx(Texture2D texture, Vector2 position, float rotatio
     }
     
     // Extract the Metal texture from the Texture2D
-    id<MTLTexture> metalTexture = (__bridge id<MTLTexture>)texture.id;
+    id<MTLTexture> metalTexture = (__bridge id<MTLTexture>)(void*)texture.id;
     g_metalRenderer->DrawTextureEx(metalTexture, position, rotation, scale, tint);
 }
 
@@ -887,10 +962,27 @@ double IOSTraits::GetTime() {
 }
 
 void IOSTraits::TraceLog(int logLevel, const char* text, ...) {
-    // iOS-specific logging - use C-style logging for now
-    // TODO: Implement proper iOS logging when needed
-    (void)logLevel;
-    (void)text;
+    // iOS-specific logging implementation
+    va_list args;
+    va_start(args, text);
+    
+    // Format the message
+    NSString* format = [NSString stringWithUTF8String:text];
+    if (format) {
+        NSString* message = [[NSString alloc] initWithFormat:format arguments:args];
+        
+        // Output to NSLog for immediate debugging
+        NSLog(@"[TRACELOG] %@", message);
+        
+        // Route to LogManager for file logging
+        std::string cppMessage = [message UTF8String];
+        LogManager::GetInstance().Log(cppMessage, "TRACELOG");
+        
+        // Also output to stderr for Xcode console
+        fprintf(stderr, "[TRACELOG] %s\n", cppMessage.c_str());
+    }
+    
+    va_end(args);
 }
 
 int IOSTraits::GetRandomValue(int min, int max) {
@@ -1281,12 +1373,48 @@ bool IOSTraits::IsMobilePlatform() {
 
 void IOSTraits::Initialize(void* nativeView) {
     // iOS initialization with native view
-    // This would need to be connected to the existing initialization system
+    TraceLog(LOG_INFO, "[IOSTraits] Initialize(void*): Starting iOS platform initialization with nativeView=%p", nativeView);
+    
+    // Get the global MetalRenderer instance that was set in GameView
+    if (g_metalRenderer) {
+        TraceLog(LOG_INFO, "[IOSTraits] Initialize: Found global MetalRenderer instance: %p", g_metalRenderer);
+    } else {
+        TraceLog(LOG_WARNING, "[IOSTraits] Initialize: No global MetalRenderer instance found - rendering may not work");
+    }
+    
+    // Initialize MetalTextureCache with the Metal device from GameView
+    void* metalDevice = GetGlobalGameView() ? GetMetalDeviceFromGameView() : nullptr;
+    if (metalDevice) {
+        MetalTextureCache::GetInstance().Initialize(metalDevice);
+        TraceLog(LOG_INFO, "[IOSTraits] Initialize: MetalTextureCache initialized with device: %p", metalDevice);
+    } else {
+        TraceLog(LOG_WARNING, "[IOSTraits] Initialize: No Metal device available for texture cache");
+    }
+    
+    TraceLog(LOG_INFO, "[IOSTraits] Initialize(void*): iOS platform initialization completed");
 }
 
 void IOSTraits::Initialize() {
     // iOS initialization
-    // This would need to be connected to the existing initialization system
+    TraceLog(LOG_INFO, "[IOSTraits] Initialize(): Starting iOS platform initialization");
+    
+    // Get the global MetalRenderer instance that was set in GameView
+    if (g_metalRenderer) {
+        TraceLog(LOG_INFO, "[IOSTraits] Initialize: Found global MetalRenderer instance: %p", g_metalRenderer);
+    } else {
+        TraceLog(LOG_WARNING, "[IOSTraits] Initialize: No global MetalRenderer instance found - rendering may not work");
+    }
+    
+    // Initialize MetalTextureCache with the Metal device from GameView
+    void* metalDevice = GetGlobalGameView() ? GetMetalDeviceFromGameView() : nullptr;
+    if (metalDevice) {
+        MetalTextureCache::GetInstance().Initialize(metalDevice);
+        TraceLog(LOG_INFO, "[IOSTraits] Initialize: MetalTextureCache initialized with device: %p", metalDevice);
+    } else {
+        TraceLog(LOG_WARNING, "[IOSTraits] Initialize: No Metal device available for texture cache");
+    }
+    
+    TraceLog(LOG_INFO, "[IOSTraits] Initialize(): iOS platform initialization completed");
 }
 
 void IOSTraits::Shutdown() {
@@ -1480,4 +1608,4 @@ void IOSTraits::Vibrate(int milliseconds) {
 
 // ============================================================================
 // TEXTURE FUNCTIONS - MISSING IMPLEMENTATIONS
-// ============================================================================ 
+// ============================================================================

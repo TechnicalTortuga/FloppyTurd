@@ -40,11 +40,19 @@ MetalRenderer::MetalRenderer()
     , m_targetFrameTime(1.0f/60.0f)
 {
     m_projectionMatrix = matrix_identity_float4x4;
+    
+    // Initialize mobile settings with safe defaults
+    m_mobileSettings = {};
+    m_mobileSettings.enableMipmapping = false;
+    m_mobileSettings.preferLowPowerGPU = true;
+    m_mobileSettings.maxDrawCallsPerFrame = 200;
+    m_mobileSettings.maxTextureBindsPerFrame = 100;
+    m_mobileSettings.vertexBufferSize = 256 * 1024; // 256KB
+    m_mobileSettings.uniformBufferSize = 32 * 1024;  // 32KB
+    m_mobileSettings.enableEarlyZTest = false;
+    m_mobileSettings.enableOcclusionCulling = false;
 }
 
-MetalRenderer::~MetalRenderer() {
-    Shutdown();
-}
 
 // --- Platform Abstraction Layer Implementation ---
 void MetalRenderer::BeginDrawing() {
@@ -90,45 +98,47 @@ void MetalRenderer::EndScissorMode() {
 
 bool MetalRenderer::Initialize(MTKView* view) {
     @autoreleasepool {
+        TraceLog(LOG_INFO, "[METAL DEBUG] Initialize START");
         m_view = view;
         m_device = view.device;
-        
+        TraceLog(LOG_INFO, "[METAL DEBUG] Device from view: %p", m_device);
         if (!m_device) {
             TraceLog(LOG_ERROR, "[METAL ERROR] Failed to get Metal device");
             return false;
         }
-        
-        // Initialize global MetalTextRenderer if needed
+        TraceLog(LOG_INFO, "[METAL DEBUG] About to initialize MetalTextRenderer");
         if (!g_textRenderer) {
+            TraceLog(LOG_INFO, "[METAL DEBUG] Creating MetalTextRenderer...");
             g_textRenderer = new MetalTextRenderer();
+            TraceLog(LOG_INFO, "[METAL DEBUG] MetalTextRenderer created: %p", g_textRenderer);
             g_textRenderer->Initialize(m_device);
+            TraceLog(LOG_INFO, "[METAL DEBUG] MetalTextRenderer initialized");
         }
-        
-        // Create command queue
+        TraceLog(LOG_INFO, "[METAL DEBUG] About to create command queue");
         m_commandQueue = [m_device newCommandQueue];
+        TraceLog(LOG_INFO, "[METAL DEBUG] Command queue created: %p", m_commandQueue);
         if (!m_commandQueue) {
             TraceLog(LOG_ERROR, "[METAL ERROR] Failed to create command queue");
             return false;
         }
-        
-        // Set up view properties
+        TraceLog(LOG_INFO, "[METAL DEBUG] About to set up view properties");
         view.colorPixelFormat = MTLPixelFormatBGRA8Unorm;
         view.depthStencilPixelFormat = MTLPixelFormatDepth32Float;
         view.clearColor = MTLClearColorMake(0.0, 0.0, 0.0, 1.0);
-        
-        // Initialize frame resources for triple buffering
+        TraceLog(LOG_INFO, "[METAL DEBUG] View properties set");
+        TraceLog(LOG_INFO, "[METAL DEBUG] About to initialize frame resources");
         if (!m_frameResources.Initialize(m_device)) {
             TraceLog(LOG_ERROR, "[METAL ERROR] Failed to initialize frame resources");
             return false;
         }
-        
-        // Create render pipelines
+        TraceLog(LOG_INFO, "[METAL DEBUG] Frame resources initialized");
+        TraceLog(LOG_INFO, "[METAL DEBUG] About to create pipelines");
         CreatePipelines();
-        
-        // Create buffers
+        TraceLog(LOG_INFO, "[METAL DEBUG] Pipelines created");
+        TraceLog(LOG_INFO, "[METAL DEBUG] About to create buffers");
         CreateBuffers();
-        
-        // Create sampler state - use nearest-neighbor for crisp pixel art
+        TraceLog(LOG_INFO, "[METAL DEBUG] Buffers created");
+        TraceLog(LOG_INFO, "[METAL DEBUG] About to create sampler state");
         MTLSamplerDescriptor* samplerDesc = [[MTLSamplerDescriptor alloc] init];
         samplerDesc.minFilter = MTLSamplerMinMagFilterNearest;
         samplerDesc.magFilter = MTLSamplerMinMagFilterNearest;
@@ -136,13 +146,14 @@ bool MetalRenderer::Initialize(MTKView* view) {
         samplerDesc.sAddressMode = MTLSamplerAddressModeClampToEdge;
         samplerDesc.tAddressMode = MTLSamplerAddressModeClampToEdge;
         m_samplerState = [m_device newSamplerStateWithDescriptor:samplerDesc];
-        
-        // Set up initial projection matrix using UICoordinateSystem
+        TraceLog(LOG_INFO, "[METAL DEBUG] Sampler state created: %p", m_samplerState);
+        TraceLog(LOG_INFO, "[METAL DEBUG] About to set up projection matrix");
         Rectangle pixelScreenRect = UICoordinateSystem::GetPixelScreenRect();
         SetProjectionMatrix(pixelScreenRect.width, pixelScreenRect.height);
+        TraceLog(LOG_INFO, "[METAL DEBUG] Projection matrix set");
         
-        // Optimize for current device
-        OptimizeForDevice();
+        // Device optimization temporarily disabled to match older working version
+        // OptimizeForDevice();
         
         TraceLog(LOG_INFO, "[METAL DEBUG] MetalRenderer initialized successfully");
         return true;
@@ -150,7 +161,14 @@ bool MetalRenderer::Initialize(MTKView* view) {
 }
 
 void MetalRenderer::Shutdown() {
+    TraceLog(LOG_INFO, "[SHUTDOWN] MetalRenderer shutdown started");
+    
+    // Flush any pending draw calls
     FlushBatch();
+
+    if (m_device) {
+        m_device = nil;
+    }
     
     // Clean up global text renderer
     if (g_textRenderer) {
@@ -160,62 +178,149 @@ void MetalRenderer::Shutdown() {
         TraceLog(LOG_INFO, "[SHUTDOWN] Global text renderer cleaned up");
     }
     
-    m_view = nullptr;
-    m_device = nullptr;
-    m_commandQueue = nullptr;
-    m_texturePipeline = nullptr;
-    m_colorPipeline = nullptr;
-    m_instancedTexturePipeline = nullptr;
-    m_instancedColorPipeline = nullptr;
-    m_depthStencilState = nullptr;
-    m_samplerState = nullptr;
-    m_currentCommandBuffer = nullptr;
-    m_currentEncoder = nullptr;
-    m_currentRenderPass = nullptr;
-    m_debugVertexBuffer = nullptr;
-    m_debugPipeline = nullptr;
+    // Release all Metal resources
+    ReleaseResources();
     
+    // Clean up Metal objects
+    m_commandQueue = nil;
+    m_texturePipeline = nil;
+    m_colorPipeline = nil;
+    m_instancedTexturePipeline = nil;
+    m_instancedColorPipeline = nil;
+    m_depthStencilState = nil;
+    m_samplerState = nil;
+    m_currentCommandBuffer = nil;
+    m_currentEncoder = nil;
+    m_currentRenderPass = nil;
+    m_debugVertexBuffer = nil;
+    m_debugPipeline = nil;
+    
+    // Clear containers
     m_vertices.clear();
     m_drawCommands.clear();
     m_instanceData.clear();
-    // Matrix stack removed - using CPU vertex transformation
+    
+    // Reset state
+    m_currentVertexBufferOffset = 0;
+    m_currentInstanceBufferOffset = 0;
+    m_frameStartTime = 0;
+    m_isPaused = false;
+    
+    // Clear the global renderer pointer if it points to this instance
+    if (g_metalRenderer == this) {
+        g_metalRenderer = nullptr;
+    }
+    
+    TraceLog(LOG_INFO, "[SHUTDOWN] MetalRenderer shutdown completed");
+}
+
+// Removed duplicate PauseRendering and ResumeRendering implementations
+
+void MetalRenderer::CreateBuffers() {
+    @autoreleasepool {
+        TraceLog(LOG_INFO, "[METAL DEBUG] Creating buffers...");
+        
+        // Create a vertex buffer for immediate mode drawing
+        // We'll use a dynamic buffer that we'll update each frame
+        const size_t initialVertexBufferSize = 1024 * sizeof(MetalVertex2D);
+        m_vertexBuffer = [m_device newBufferWithLength:initialVertexBufferSize 
+                                            options:MTLResourceStorageModeShared];
+        m_vertexBuffer.label = @"Vertex Buffer";
+        
+        if (!m_vertexBuffer) {
+            TraceLog(LOG_ERROR, "[METAL ERROR] Failed to create vertex buffer");
+            return;
+        }
+        
+        // Create a uniform buffer for the projection matrix
+        m_uniformBuffer = [m_device newBufferWithLength:sizeof(simd_float4x4) 
+                                             options:MTLResourceStorageModeShared];
+        m_uniformBuffer.label = @"Uniform Buffer";
+        
+        if (!m_uniformBuffer) {
+            TraceLog(LOG_ERROR, "[METAL ERROR] Failed to create uniform buffer");
+            return;
+        }
+        
+        // Initialize the uniform buffer with identity matrix
+        simd_float4x4* uniforms = (simd_float4x4*)m_uniformBuffer.contents;
+        *uniforms = matrix_identity_float4x4;
+        
+        TraceLog(LOG_INFO, "[METAL DEBUG] Buffers created successfully");
+    }
 }
 
 void MetalRenderer::CreatePipelines() {
     @autoreleasepool {
+        TraceLog(LOG_INFO, "[METAL DEBUG] CreatePipelines START");
         NSError* error = nil;
-        
-        // Load shader library
-        NSString* shaderPath = [[NSBundle mainBundle] pathForResource:@"Shaders2D" ofType:@"metal"];
-        NSString* shaderSource = [NSString stringWithContentsOfFile:shaderPath encoding:NSUTF8StringEncoding error:&error];
-        
-        id<MTLLibrary> library;
-        NSLog(@"[METAL DEBUG] Attempting to load shader library");
-        NSLog(@"[METAL DEBUG] Device: %@", m_device);
-        
-        if (shaderSource) {
-            NSLog(@"[METAL DEBUG] Loading shader library from source");
-            library = [m_device newLibraryWithSource:shaderSource options:nil error:&error];
-        } else {
-            // Try to load default library
-            NSLog(@"[METAL DEBUG] Loading default shader library");
-            library = [m_device newDefaultLibrary];
-        }
-        
+        id<MTLLibrary> library = nil;
+        library = [m_device newDefaultLibrary];
+        TraceLog(LOG_INFO, "[METAL DEBUG] newDefaultLibrary result: %p", library);
         if (!library) {
-            NSLog(@"[METAL ERROR] Failed to load shader library");
-            if (error) {
-                NSLog(@"[METAL ERROR] Error: %@", error.localizedDescription);
+            TraceLog(LOG_INFO, "[METAL DEBUG] Default library not found, attempting to load Shaders2D.metal from bundle");
+            // Try multiple possible locations for the shader file
+            NSString* shaderPath = nil;
+            NSArray* possiblePaths = @[
+                [[NSBundle mainBundle] pathForResource:@"Shaders2D" ofType:@"metal"],
+                [[NSBundle mainBundle] pathForResource:@"Shaders2D" ofType:@"metal" inDirectory:@"FloppyTurd"],
+                [[NSBundle mainBundle] pathForResource:@"Shaders2D" ofType:@"metal" inDirectory:@"FloppyTurd/resources"],
+                [[NSBundle mainBundle] pathForResource:@"Shaders2D" ofType:@"metal" inDirectory:@"resources"]
+            ];
+            
+            for (NSString* path in possiblePaths) {
+                if (path && [[NSFileManager defaultManager] fileExistsAtPath:path]) {
+                    shaderPath = path;
+                    TraceLog(LOG_INFO, "[METAL DEBUG] Found shader file at: %@", path);
+                    break;
+                }
             }
             
-            // Try to get more information about why the library failed to load
-            NSLog(@"[METAL DEBUG] Checking available library names");
-            NSLog(@"[METAL DEBUG] Device name: %@", m_device.name);
+            if (shaderPath) {
+                NSString* shaderSource = [NSString stringWithContentsOfFile:shaderPath 
+                                                                 encoding:NSUTF8StringEncoding 
+                                                                    error:&error];
+                if (shaderSource && !error) {
+                    TraceLog(LOG_INFO, "[METAL DEBUG] Successfully loaded shader source from file");
+                    
+                    // Compile the shader source
+                    MTLCompileOptions* compileOptions = [MTLCompileOptions new];
+                    compileOptions.fastMathEnabled = YES;
+                    if (@available(iOS 15.0, *)) {
+                        compileOptions.languageVersion = MTLLanguageVersion2_4;
+                    }
+                    
+                    library = [m_device newLibraryWithSource:shaderSource 
+                                                  options:compileOptions 
+                                                    error:&error];
+                    
+                    if (library) {
+                        TraceLog(LOG_INFO, "[METAL DEBUG] Successfully compiled shader library from source");
+                    } else {
+                        TraceLog(LOG_ERROR, "[METAL ERROR] Failed to compile shader library from source");
+                        if (error) {
+                            TraceLog(LOG_ERROR, "[METAL ERROR] Compilation error: %@", error.localizedDescription);
+                        }
+                    }
+                } else {
+                    TraceLog(LOG_ERROR, "[METAL ERROR] Failed to read shader file: %@", error.localizedDescription);
+                }
+            } else {
+                TraceLog(LOG_ERROR, "[METAL ERROR] Shaders2D.metal file not found in any expected location");
+                
+                // List bundle contents for debugging
+                NSArray* bundleContents = [[NSBundle mainBundle] pathsForResourcesOfType:nil inDirectory:nil];
+                TraceLog(LOG_INFO, "[METAL DEBUG] Bundle contents: %@", bundleContents);
+            }
             
-            return;
+            if (!library) {
+                TraceLog(LOG_ERROR, "[METAL ERROR] Failed to load shader library - rendering will not work");
+                TraceLog(LOG_ERROR, "[METAL ERROR] Device name: %@", m_device.name);
+                return;
+            }
         }
         
-        NSLog(@"[METAL DEBUG] Shader library loaded successfully");
+        TraceLog(LOG_INFO, "[METAL DEBUG] Shader library loaded successfully");
         
         id<MTLFunction> vertexFunction = [library newFunctionWithName:@"vertex_shader_2d"];
         id<MTLFunction> fragmentTexturedFunction = [library newFunctionWithName:@"fragment_shader_textured"];
@@ -393,223 +498,128 @@ void MetalRenderer::CreatePipelines() {
         uiDepthDesc.depthCompareFunction = MTLCompareFunctionAlways;
         uiDepthDesc.depthWriteEnabled = NO;
         m_uiDepthStencilState = [m_device newDepthStencilStateWithDescriptor:uiDepthDesc];
-        
-        if (m_depthStencilState && m_uiDepthStencilState) {
-            TraceLog(LOG_INFO, "[METAL DEBUG] Depth stencil states created successfully");
-        } else {
-            TraceLog(LOG_ERROR, "[METAL ERROR] Failed to create depth stencil states");
-        }
-        
-        // Log pipeline creation summary
-        if (m_texturePipeline && m_colorPipeline && m_sdfPipeline && m_instancedTexturePipeline && m_instancedColorPipeline && m_depthStencilState) {
-            TraceLog(LOG_INFO, "[METAL DEBUG] All Metal pipelines created successfully - rendering should work");
-        } else {
-            TraceLog(LOG_ERROR, "[METAL ERROR] Some Metal pipelines failed to create - rendering will not work");
-        }
+        TraceLog(LOG_INFO, "[METAL DEBUG] CreatePipelines END");
+    } // End of @autoreleasepool
+}
+
+void MetalRenderer::ReleaseResources() {
+    TraceLog(LOG_INFO, "[RESOURCE] Releasing Metal resources...");
+    
+    // Ensure all GPU work is complete before releasing resources
+    if (m_commandQueue) {
+        id<MTLCommandBuffer> commandBuffer = [m_commandQueue commandBuffer];
+        [commandBuffer commit];
+        [commandBuffer waitUntilCompleted];
     }
-}
-
-void MetalRenderer::CreateBuffers() {
-    // The actual buffer creation is now handled by MetalFrameResources
-    // Just initialize our local storage
-    m_vertices.reserve(10000);
-    m_currentVertexBufferOffset = 0;
-}
-
-void MetalRenderer::BeginFrame() {
-    // Record frame start time for frame pacing
-    m_frameStartTime = CACurrentMediaTime();
     
-    // Begin new frame in the triple buffer system
-    // This will wait on the GPU if needed to avoid resource conflicts
-    m_frameResources.BeginFrame();
+    // Release any dynamically allocated resources here
+    // (textures, buffers, etc. that aren't managed by ARC)
+    m_vertexBuffer = nil;
+    m_uniformBuffer = nil;
     
-    // Reset per-frame state
+    // Release pipeline states
+    m_texturePipeline = nil;
+    m_colorPipeline = nil;
+    m_sdfPipeline = nil;
+    m_instancedTexturePipeline = nil;
+    m_instancedColorPipeline = nil;
+    m_depthStencilState = nil;
+    m_uiDepthStencilState = nil;
+    m_samplerState = nil;
+    
+    // Clear command queue and encoder
+    m_commandQueue = nil;
+    m_currentCommandBuffer = nil;
+    m_currentEncoder = nil;
+    m_currentRenderPass = nil;
+    
+    // Clear current texture
+    m_currentTexture = nil;
+    
+    // Clear debug resources
+    m_debugVertexBuffer = nil;
+    m_debugPipeline = nil;
+    
+    // Clear vertex and command buffers
     m_vertices.clear();
     m_drawCommands.clear();
+    m_instanceData.clear();
+    
+    // Reset buffer offsets
     m_currentVertexBufferOffset = 0;
     m_currentInstanceBufferOffset = 0;
     
-    // Reset debug stats for this frame
-    if (m_debugVisualization) {
-        ResetDebugStats();
-        UpdateDebugStats();
-    }
-    
-    // Create command buffer
-    m_currentCommandBuffer = [m_commandQueue commandBuffer];
-    m_currentCommandBuffer.label = [NSString stringWithFormat:@"Frame %d Command Buffer", 
-                                 m_frameResources.GetCurrentFrameIndex()];
-    
-    TraceLog(LOG_INFO, "[METAL DEBUG] BeginFrame: Created command buffer for frame %d", m_frameResources.GetCurrentFrameIndex());
-    
-    // Get render pass descriptor from view
-    m_currentRenderPass = m_view.currentRenderPassDescriptor;
-    if (!m_currentRenderPass) {
-        TraceLog(LOG_ERROR, "[METAL ERROR] BeginFrame: No render pass descriptor available");
-        return;
-    }
-    
-    TraceLog(LOG_INFO, "[METAL DEBUG] BeginFrame: Got render pass descriptor");
-    
-    // Create render encoder
-    m_currentEncoder = [m_currentCommandBuffer renderCommandEncoderWithDescriptor:m_currentRenderPass];
-    m_currentEncoder.label = @"Main Render Encoder";
-    
-    if (!m_currentEncoder) {
-        TraceLog(LOG_ERROR, "[METAL ERROR] BeginFrame: Failed to create render command encoder");
-        return;
-    }
-    
-    TraceLog(LOG_INFO, "[METAL DEBUG] BeginFrame: Created render command encoder successfully");
-    
-    // Set initial pipeline state
-    [m_currentEncoder setDepthStencilState:m_depthStencilState];
-    [m_currentEncoder setFragmentSamplerState:m_samplerState atIndex:0];
-    
-    // Set viewport to full drawable size
-    MTLViewport viewport = {0, 0, m_view.drawableSize.width, m_view.drawableSize.height, 0, 1};
-    [m_currentEncoder setViewport:viewport];
-    TraceLog(LOG_INFO, "[METAL DEBUG] Set viewport: %.1fx%.1f", viewport.width, viewport.height);
-    
-    // Update uniforms for this frame
-    UpdateUniforms();
-    
-    // Validate render state if debugging
-    if (m_debugVisualization) {
-        ValidateRenderState();
-    }
+    TraceLog(LOG_INFO, "[RESOURCE] Metal resources released");
 }
 
-void MetalRenderer::EndFrame() {
-    TraceLog(LOG_INFO, "[METAL DEBUG] EndFrame called");
-    TraceLog(LOG_INFO, "[METAL DEBUG] EndFrame: MetalRenderer instance: %p", this);
+void MetalRenderer::RecreateResources() {
+    TraceLog(LOG_INFO, "[RESOURCE] Recreating Metal resources...");
+    
+    // First release existing resources
+    ReleaseResources();
+    
+    // Reinitialize frame resources
+    if (!m_frameResources.Initialize(m_device)) {
+        TraceLog(LOG_ERROR, "[RESOURCE] Failed to reinitialize frame resources");
+        return;
+    }
+    
+    // Recreate any other resources that were released
+    // (e.g., pipelines, samplers, etc.)
+    
+    // Reset state
+    m_currentVertexBufferOffset = 0;
+    m_currentInstanceBufferOffset = 0;
+    
+    TraceLog(LOG_INFO, "[RESOURCE] Metal resources recreated successfully");
+}
+
+void MetalRenderer::PauseRendering() {
+    if (m_isPaused) {
+        return;
+    }
+    
+    TraceLog(LOG_INFO, "[RENDER] Pausing rendering");
+    
+    // Flush any pending draw calls
     FlushBatch();
-
-    // Draw debug overlay if enabled
-    if (m_debugVisualization) {
-        DrawDebugOverlay();
-        RenderDebugInfo();
+    
+    // Release any resources that can be recreated
+    if (m_commandQueue) {
+        // Wait for all scheduled work to complete
+        id<MTLCommandBuffer> commandBuffer = [m_commandQueue commandBuffer];
+        [commandBuffer commit];
+        [commandBuffer waitUntilCompleted];
     }
     
-    if (m_currentEncoder) {
-        // End the render command encoder
-        [m_currentEncoder endEncoding];
-        m_currentEncoder = nullptr;
-    }
-}
-
-void MetalRenderer::Present() {
-    TraceLog(LOG_INFO, "[METAL DEBUG] Present: Command buffer=%p, Drawable=%p", m_currentCommandBuffer, m_view.currentDrawable);
+    // Release resources that can be temporarily freed
+    // Note: MetalFrameResources doesn't have a Release() method
+    // We'll release the frame resources by resetting them
+    m_frameResources.~MetalFrameResources();
+    new (&m_frameResources) MetalFrameResources();
     
-    if (m_currentCommandBuffer && m_view.currentDrawable) {
-        // Schedule presentation of the drawable
-        [m_currentCommandBuffer presentDrawable:m_view.currentDrawable];
-        TraceLog(LOG_INFO, "[METAL DEBUG] Present: Scheduled drawable presentation");
-        
-        // Add a completion handler to log command buffer status
-        [m_currentCommandBuffer addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
-            if (buffer.error) {
-                TraceLog(LOG_ERROR, "[METAL ERROR] Command buffer failed with error: %@", buffer.error);
-            } else {
-                TraceLog(LOG_INFO, "[METAL INFO] Command buffer completed successfully.");
-            }
-        }];
-
-        // Signal the completion of this frame
-        m_frameResources.EndFrame(m_currentCommandBuffer);
-        
-        // Submit the command buffer to the GPU
-        [m_currentCommandBuffer commit];
-        TraceLog(LOG_INFO, "[METAL DEBUG] Present: Command buffer committed to GPU");
-        
-        m_currentCommandBuffer = nullptr;
-        
-        // Implement frame pacing if needed
-        double frameEndTime = CACurrentMediaTime();
-        double frameTime = frameEndTime - m_frameStartTime;
-        if (frameTime < m_targetFrameTime) {
-            // Simple frame pacing - sleep if we're ahead of schedule
-            usleep((useconds_t)((m_targetFrameTime - frameTime) * 1000000));
-        }
-    } else {
-        if (!m_currentCommandBuffer) {
-            TraceLog(LOG_ERROR, "[METAL ERROR] Present: No command buffer available");
-        }
-        if (!m_view.currentDrawable) {
-            TraceLog(LOG_ERROR, "[METAL ERROR] Present: No drawable available");
-        }
-    }
+    m_isPaused = true;
+    TraceLog(LOG_INFO, "[RENDER] Rendering paused");
 }
 
-void MetalRenderer::Clear(Color color) {
-    TraceLog(LOG_INFO, "[METAL DEBUG] Clear called with color=(%d,%d,%d,%d)", color.r, color.g, color.b, color.a);
-    
-    if (m_currentRenderPass) {
-        m_currentRenderPass.colorAttachments[0].clearColor = MTLClearColorMake(
-            color.r / 255.0f,
-            color.g / 255.0f, 
-            color.b / 255.0f,
-            color.a / 255.0f
-        );
-        TraceLog(LOG_INFO, "[METAL DEBUG] Clear: Set clear color to (%.3f,%.3f,%.3f,%.3f)", 
-              color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f);
-    } else {
-        TraceLog(LOG_ERROR, "[METAL ERROR] Clear: No render pass available");
-    }
-}
-
-void MetalRenderer::SetProjectionMatrix(float width, float height) {
-    // Use MTKView's drawableSize for pixel-accurate rendering
-    CGSize drawableSize = m_view.drawableSize;
-    m_projectionMatrix = MakeOrthoMatrix(0, drawableSize.width, drawableSize.height, 0, -1.0f, 1.0f);
-    TraceLog(LOG_INFO, "[METAL DEBUG] SetProjectionMatrix: drawableSize=%.1fx%.1f, requested=%.1fx%.1f", 
-             drawableSize.width, drawableSize.height, width, height);
-}
-
-void MetalRenderer::SetProjectionMatrixWithSafeArea(float screenWidth, float screenHeight, Rectangle safeArea) {
-    // Create orthographic projection matrix that accounts for safe area
-    // This ensures content is properly positioned within the safe area
-    m_projectionMatrix = MakeOrthoMatrix(safeArea.x, safeArea.x + safeArea.width, 
-                                        safeArea.y + safeArea.height, safeArea.y, -1.0f, 1.0f);
-    TraceLog(LOG_INFO, "[METAL DEBUG] SetProjectionMatrixWithSafeArea: screen=%.1fx%.1f, safeArea=(%.1f,%.1f,%.1f,%.1f)", 
-             screenWidth, screenHeight, safeArea.x, safeArea.y, safeArea.width, safeArea.height);
-}
-
-void MetalRenderer::UpdateUniforms() {
-    // Allocate uniform buffer from the current frame's resources
-    size_t offset = 0;
-    MetalUniforms* uniforms = static_cast<MetalUniforms*>(
-        m_frameResources.AllocateUniformBuffer(sizeof(MetalUniforms), &offset)
-    );
-    
-    if (!uniforms) {
-        TraceLog(LOG_ERROR, "[METAL ERROR] Failed to allocate uniform buffer");
+void MetalRenderer::ResumeRendering() {
+    if (!m_isPaused) {
         return;
     }
     
-    // Update the uniform data
-    uniforms->projectionMatrix = m_projectionMatrix;
-    uniforms->distanceRange = 4.0f; // Match AtlasConfig::distanceRange
-    uniforms->time = 0.0f; // Initialize time for future effects
+    TraceLog(LOG_INFO, "[RENDER] Resuming rendering");
     
-    // Set the uniform buffer for rendering
-    [m_currentEncoder setVertexBuffer:m_frameResources.GetCurrentUniformBuffer() 
-                              offset:offset 
-                             atIndex:1];
+    // Recreate any resources that were released
+    RecreateResources();
+    
+    m_isPaused = false;
+    TraceLog(LOG_INFO, "[RENDER] Rendering resumed");
 }
 
-void MetalRenderer::DrawRectangle(float x, float y, float width, float height, Color color) {
-    TraceLog(LOG_INFO, "[METAL DEBUG] DrawRectangle: x=%.2f, y=%.2f, width=%.2f, height=%.2f, color=(%d,%d,%d,%d)", 
-             x, y, width, height, color.r, color.g, color.b, color.a);
-    size_t verticesBefore = m_vertices.size();
-    size_t commandsBefore = m_drawCommands.size();
-    AddRectangleVertices(x, y, width, height, color);
-    DrawCommand cmd = CreateDrawCommand(MTLPrimitiveTypeTriangle, m_vertices.size() - 6, 6, nullptr, false, 
-                                       RENDER_STATE_ALPHA_BLEND, 0.0f, "Rectangle");
-    m_drawCommands.push_back(cmd);
-    TraceLog(LOG_INFO, "[METAL DEBUG] DrawRectangle: vertices before=%zu, after=%zu; drawCommands before=%zu, after=%zu", 
-             verticesBefore, m_vertices.size(), commandsBefore, m_drawCommands.size());
+MetalRenderer::~MetalRenderer() {
+    TraceLog(LOG_INFO, "[DESTRUCTOR] Destroying MetalRenderer...");
+    Shutdown();
+    TraceLog(LOG_INFO, "[METAL] Renderer destroyed");
 }
 
 void MetalRenderer::AddRectangleVertices(float x, float y, float width, float height, Color color) {
@@ -625,6 +635,42 @@ void MetalRenderer::AddRectangleVertices(float x, float y, float width, float he
     AddVertex(x + width, y, 1.0f, 0.0f, color);           // top-right
     AddVertex(x, y + height, 0.0f, 1.0f, color);          // bottom-left
     AddVertex(x + width, y + height, 1.0f, 1.0f, color);  // bottom-right
+}
+
+void MetalRenderer::AddVertices(const MetalVertex2D* vertices, size_t count, id<MTLTexture> texture, uint32_t renderState) {
+    if (count == 0) return;
+    
+    // Check if we need to start a new draw command
+    if (m_drawCommands.empty() || 
+        m_drawCommands.back().texture != texture || 
+        m_drawCommands.back().renderState != renderState) {
+        
+        // Start a new draw command
+        DrawCommand cmd = {};
+        cmd.primitiveType = MTLPrimitiveTypeTriangleStrip;
+        cmd.vertexStart = m_vertices.size();
+        cmd.vertexCount = 0;
+        cmd.texture = texture;
+        cmd.useTexture = (texture != nullptr);
+        cmd.renderState = renderState;
+        cmd.depth = 0.0f; // Default depth
+        cmd.instanceCount = 1;
+        cmd.debugName = "BatchedVertices";
+        
+        m_drawCommands.push_back(cmd);
+    }
+    
+    // Add vertices to the batch
+    size_t startIndex = m_vertices.size();
+    m_vertices.insert(m_vertices.end(), vertices, vertices + count);
+    
+    // Update the current draw command
+    if (!m_drawCommands.empty()) {
+        m_drawCommands.back().vertexCount += count;
+    }
+    
+    // Update debug stats
+    m_debugStats.batchedVertices += count;
 }
 
 void MetalRenderer::AddVertex(float x, float y, float u, float v, Color color) {
@@ -926,15 +972,38 @@ simd_float4x4 MetalRenderer::MakeOrthoMatrix(float left, float right, float bott
     float height = top - bottom;
     float depth = far - near;
     
-    simd_float4x4 result = matrix_identity_float4x4;
-    result.columns[0][0] = 2.0f / width;
-    result.columns[1][1] = 2.0f / height;
-    result.columns[2][2] = -2.0f / depth;
-    result.columns[3][0] = -(right + left) / width;
-    result.columns[3][1] = -(top + bottom) / height;
-    result.columns[3][2] = -(far + near) / depth;
+    // Create an orthographic projection matrix for 2D rendering
+    // This maps from screen coordinates to NDC (Normalized Device Coordinates)
+    // where (-1,-1) is the bottom-left and (1,1) is the top-right
+    simd_float4x4 matrix = matrix_identity_float4x4;
+    matrix.columns[0][0] = 2.0f / width;
+    matrix.columns[1][1] = 2.0f / height;
+    matrix.columns[2][2] = -1.0f / depth;  // Flip Z for Metal's NDC (0 is the near plane)
+    matrix.columns[3][0] = -(right + left) / width;
+    matrix.columns[3][1] = -(top + bottom) / height;
+    matrix.columns[3][2] = -near / depth;
+    matrix.columns[3][3] = 1.0f;
     
-    return result;
+    return matrix;
+}
+
+// Helper function to create a 2D orthographic projection matrix with left-handed coordinates
+// where (0,0) is the top-left and (width,height) is the bottom-right
+static simd_float4x4 matrix_ortho_left_hand_2d(float left, float right, float bottom, float top, float near, float far) {
+    float rl = right - left;
+    float tb = top - bottom;
+    float fn = far - near;
+    
+    simd_float4x4 m = matrix_identity_float4x4;
+    m.columns[0][0] = 2.0f / rl;
+    m.columns[1][1] = -2.0f / tb;  // Flip Y for top-left origin
+    m.columns[2][2] = 1.0f / fn;
+    m.columns[3][0] = -(right + left) / rl;
+    m.columns[3][1] = (top + bottom) / tb;  // Adjust for Y flip
+    m.columns[3][2] = -near / fn;
+    m.columns[3][3] = 1.0f;
+    
+    return m;
 }
 
 simd_float4x4 MetalRenderer::MakeTranslationMatrix(float x, float y) {
@@ -951,8 +1020,8 @@ simd_float4x4 MetalRenderer::MakeRotationMatrix(float angle) {
     simd_float4x4 result = matrix_identity_float4x4;
     // For screen coordinates (Y increases downward), we need to flip the Y component
     result.columns[0][0] = c;
-    result.columns[0][1] = -s;  // Flip Y component for screen coordinates
-    result.columns[1][0] = s;
+    result.columns[0][1] = s;  
+    result.columns[1][0] = -s;
     result.columns[1][1] = c;
     
     return result;
@@ -966,6 +1035,58 @@ simd_float4x4 MetalRenderer::MakeScaleMatrix(float x, float y) {
 }
 
 // Stub implementations for remaining functions
+void MetalRenderer::DrawRectangle(float x, float y, float width, float height, Color color) {
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawRectangle: (%.1f,%.1f,%.1f,%.1f), color=(%d,%d,%d,%d)", 
+             x, y, width, height, color.r, color.g, color.b, color.a);
+    
+    // Create vertices for a rectangle
+    MetalVertex2D vertices[4] = {
+        {{x, y}, {0, 0}, {color.r/255.0f, color.g/255.0f, color.b/255.0f, color.a/255.0f}},
+        {{x + width, y}, {1, 0}, {color.r/255.0f, color.g/255.0f, color.b/255.0f, color.a/255.0f}},
+        {{x, y + height}, {0, 1}, {color.r/255.0f, color.g/255.0f, color.b/255.0f, color.a/255.0f}},
+        {{x + width, y + height}, {1, 1}, {color.r/255.0f, color.g/255.0f, color.b/255.0f, color.a/255.0f}}
+    };
+    
+    // Add vertices to batch
+    AddVertices(vertices, 4, nullptr, RENDER_STATE_ALPHA_BLEND);
+}
+
+void MetalRenderer::DrawRectangleRec(Rectangle rec, Color color) {
+    DrawRectangle(rec.x, rec.y, rec.width, rec.height, color);
+}
+
+void MetalRenderer::DrawRectangleLinesEx(Rectangle rec, float lineThick, Color color) {
+    TraceLog(LOG_INFO, "[METAL DEBUG] DrawRectangleLinesEx: (%.1f,%.1f,%.1f,%.1f), thickness=%.1f, color=(%d,%d,%d,%d)", 
+             rec.x, rec.y, rec.width, rec.height, lineThick, color.r, color.g, color.b, color.a);
+    
+    // Draw four lines to form the rectangle outline
+    float halfThick = lineThick * 0.5f;
+    
+    // Top line
+    DrawLineEx(
+        rec.x - halfThick, rec.y - halfThick,
+        rec.x + rec.width + halfThick, rec.y - halfThick,
+        lineThick, color);
+    
+    // Right line
+    DrawLineEx(
+        rec.x + rec.width + halfThick, rec.y - halfThick,
+        rec.x + rec.width + halfThick, rec.y + rec.height + halfThick,
+        lineThick, color);
+    
+    // Bottom line
+    DrawLineEx(
+        rec.x + rec.width + halfThick, rec.y + rec.height + halfThick,
+        rec.x - halfThick, rec.y + rec.height + halfThick,
+        lineThick, color);
+    
+    // Left line
+    DrawLineEx(
+        rec.x - halfThick, rec.y + rec.height + halfThick,
+        rec.x - halfThick, rec.y - halfThick,
+        lineThick, color);
+}
+
 void MetalRenderer::DrawRectangleRounded(float x, float y, float width, float height, float roundness, int segments, Color color) {
     if (roundness <= 0 || segments <= 0) {
         DrawRectangle(x, y, width, height, color);
@@ -1004,6 +1125,10 @@ void MetalRenderer::DrawRectangleRounded(float x, float y, float width, float he
 void MetalRenderer::DrawRectangleRounded(Rectangle rec, float roundness, int segments, Color color) {
     // Overload that takes Rectangle parameter
     DrawRectangleRounded(rec.x, rec.y, rec.width, rec.height, roundness, segments, color);
+}
+
+void MetalRenderer::DrawCircleV(Vector2 center, float radius, Color color) {
+    DrawCircle(center.x, center.y, radius, color);
 }
 
 void MetalRenderer::DrawCircle(float x, float y, float radius, Color color) {
@@ -1909,15 +2034,35 @@ void MetalRenderer::SetMobileGPUSettings(const MobileGPUSettings& settings) {
 
 void MetalRenderer::OptimizeForDevice() {
     // Get device capabilities
-    NSString* deviceName = m_device.name;
-    bool isA12OrLater = [deviceName containsString:@"A12"] || [deviceName containsString:@"A13"] || 
-                        [deviceName containsString:@"A14"] || [deviceName containsString:@"A15"] ||
-                        [deviceName containsString:@"A16"] || [deviceName containsString:@"A17"] ||
-                        [deviceName containsString:@"M1"] || [deviceName containsString:@"M2"];
+    if (!m_device) {
+        TraceLog(LOG_ERROR, "[METAL ERROR] m_device is nil in OptimizeForDevice");
+        return;
+    }
+    
+    // Safely get device name with proper error handling
+    NSString* deviceName = nil;
+    bool isA12OrLater = false;
+    
+    // Try to get device name safely
+    if (m_device && [m_device respondsToSelector:@selector(name)]) {
+        deviceName = m_device.name;
+        TraceLog(LOG_INFO, "[METAL INFO] Optimizing for device: %@", deviceName ?: @"Unknown");
+        
+        // Check for modern device types
+        if (deviceName && [deviceName length] > 0) {
+            isA12OrLater = [deviceName containsString:@"A12"] || [deviceName containsString:@"A13"] || 
+                          [deviceName containsString:@"A14"] || [deviceName containsString:@"A15"] ||
+                          [deviceName containsString:@"A16"] || [deviceName containsString:@"A17"] ||
+                          [deviceName containsString:@"M1"] || [deviceName containsString:@"M2"];
+        }
+    } else {
+        TraceLog(LOG_WARNING, "[METAL WARNING] Cannot access device name, using fallback settings");
+    }
+    
+    // Initialize settings struct with default values
+    MobileGPUSettings settings = {};
     
     // Configure settings based on device capabilities
-    MobileGPUSettings settings;
-    
     if (isA12OrLater) {
         // Modern devices can handle more draw calls and features
         settings.enableMipmapping = true;
@@ -1942,7 +2087,8 @@ void MetalRenderer::OptimizeForDevice() {
     
     SetMobileGPUSettings(settings);
     
-    TraceLog(LOG_INFO, "[METAL INFO] Optimized for device: %@ (Modern GPU: %s)", deviceName, isA12OrLater ? "YES" : "NO");
+    TraceLog(LOG_INFO, "[METAL INFO] Optimized for device: %@ (Modern GPU: %s)", 
+             deviceName ?: @"Unknown", isA12OrLater ? "YES" : "NO");
 }
 
 void MetalRenderer::DrawRectangleRoundedLines(float x, float y, float width, float height, float roundness, int segments, float lineThick, Color color) {
@@ -2085,7 +2231,7 @@ void* MetalRenderer::CreateTextureFromImage(void* image, int* width, int* height
     }
     
     // Cast the image pointer to CGImageRef
-    CGImageRef cgImage = (__bridge CGImageRef)image;
+    CGImageRef cgImage = (CGImageRef)image;
     if (!cgImage) {
         TraceLog(LOG_ERROR, "[METAL ERROR] CreateTextureFromImage: Invalid CGImage");
         return nullptr;
@@ -2251,4 +2397,157 @@ void MetalRenderer::EndRenderToTexture() {
     TraceLog(LOG_INFO, "[METAL DEBUG] EndRenderToTexture: Finished rendering to texture");
 }
 
-#endif // defined(__APPLE__) && TARGET_OS_IOS 
+void MetalRenderer::SetViewportSize(float width, float height) {
+    if (width <= 0 || height <= 0) {
+        TraceLog(LOG_WARNING, "[METAL] Invalid viewport size: %fx%f", width, height);
+        return;
+    }
+    
+    // Update viewport size
+    m_viewportSize = simd_make_float2(width, height);
+    
+    // Update projection matrix for 2D rendering with (0,0) at top-left
+    // Update projection matrix for the new viewport size
+    float aspect = width / height;
+    m_projectionMatrix = matrix_ortho_left_hand_2d(0.0f, width, height, 0.0f, -1.0f, 1.0f);
+    
+    // Update viewport
+    m_viewport = (MTLViewport) {
+        .originX = 0.0,
+        .originY = 0.0,
+        .width = static_cast<double>(width),
+        .height = static_cast<double>(height),
+        .znear = -1.0,
+        .zfar = 1.0
+    };
+    
+    // Update scissor rect
+    m_scissorRect = {
+        .x = 0,
+        .y = 0,
+        .width = static_cast<NSUInteger>(width),
+        .height = static_cast<NSUInteger>(height)
+    };
+    
+    // Update uniform buffer if it exists
+    if (m_uniformBuffer) {
+        MetalUniforms uniforms;
+        uniforms.projectionMatrix = m_projectionMatrix;
+        uniforms.distanceRange = 1.0f; // Default value for SDF
+        uniforms.time = 0.0f; // Reset time
+        
+        memcpy(m_uniformBuffer.contents, &uniforms, sizeof(MetalUniforms));
+    }
+    
+    TraceLog(LOG_INFO, "[RENDER] Viewport size updated to %.0fx%.0f", width, height);
+}
+
+void MetalRenderer::BeginFrame() {
+    // Start a new command buffer for the frame
+    @autoreleasepool {
+        m_currentCommandBuffer = [m_commandQueue commandBuffer];
+        m_currentCommandBuffer.label = @"FrameCommandBuffer";
+        
+        // Create a render pass descriptor for the current drawable
+        if (m_view.currentRenderPassDescriptor) {
+            m_currentRenderPass = [m_view.currentRenderPassDescriptor copy];
+            
+            // Configure clear color and load/store actions
+            m_currentRenderPass.colorAttachments[0].loadAction = MTLLoadActionClear;
+            m_currentRenderPass.colorAttachments[0].clearColor = MTLClearColorMake(0.1, 0.1, 0.1, 1.0);
+            
+            // Create a render command encoder
+            m_currentEncoder = [m_currentCommandBuffer renderCommandEncoderWithDescriptor:m_currentRenderPass];
+            m_currentEncoder.label = @"FrameRenderEncoder";
+            
+            // Set the viewport and scissor rect
+            [m_currentEncoder setViewport:m_viewport];
+            [m_currentEncoder setScissorRect:m_scissorRect];
+            
+            // Set the pipeline state for the current render pass
+            [m_currentEncoder setRenderPipelineState:m_texturePipeline];
+            
+            // Bind the vertex and uniform buffers
+            if (m_vertexBuffer) {
+                [m_currentEncoder setVertexBuffer:m_vertexBuffer offset:0 atIndex:0];
+            }
+            if (m_uniformBuffer) {
+                [m_currentEncoder setVertexBuffer:m_uniformBuffer offset:0 atIndex:1];
+            }
+        }
+    }
+}
+
+void MetalRenderer::EndFrame() {
+    if (m_currentEncoder) {
+        // End encoding and commit the command buffer
+        [m_currentEncoder endEncoding];
+        m_currentEncoder = nil;
+    }
+    
+    // Release the render pass descriptor
+    if (m_currentRenderPass) {
+        m_currentRenderPass = nil;
+    }
+    
+    // Reset frame resources for the next frame
+    m_frameResources.BeginFrame();
+    
+    // Reset debug stats
+    m_debugStats.drawCalls = 0;
+    m_debugStats.stateChanges = 0;
+    m_debugStats.textureBinds = 0;
+    m_debugStats.instancedCalls = 0;
+    m_debugStats.batchedVertices = 0;
+}
+
+void MetalRenderer::Present() {
+    @autoreleasepool {
+        // Present the drawable when rendering is complete
+        if (m_currentCommandBuffer) {
+            MTKView* view = m_view;
+            [m_currentCommandBuffer addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
+                // Update frame timing
+                double frameTime = buffer.GPUEndTime - buffer.GPUStartTime;
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    // Update UI or perform other tasks on the main thread
+                });
+            }];
+            
+            // Commit the command buffer
+            [m_currentCommandBuffer commit];
+            m_currentCommandBuffer = nil;
+        }
+    }
+}
+
+void MetalRenderer::Clear(Color color) {
+    if (m_currentRenderPass) {
+        // Update the clear color for the current render pass
+        m_currentRenderPass.colorAttachments[0].clearColor = MTLClearColorMake(
+            color.r / 255.0f,
+            color.g / 255.0f,
+            color.b / 255.0f,
+            color.a / 255.0f
+        );
+    }
+}
+
+
+
+void MetalRenderer::SetProjectionMatrix(float width, float height) {
+    // Update the projection matrix for the current viewport size
+    m_projectionMatrix = matrix_ortho_left_hand_2d(0.0f, width, height, 0.0f, -1.0f, 1.0f);
+    
+    // Update the uniform buffer if it exists
+    if (m_uniformBuffer) {
+        MetalUniforms uniforms;
+        uniforms.projectionMatrix = m_projectionMatrix;
+        uniforms.distanceRange = 1.0f; // Default value for SDF
+        uniforms.time = 0.0f; // Reset time
+        
+        memcpy(m_uniformBuffer.contents, &uniforms, sizeof(MetalUniforms));
+    }
+}
+
+#endif // defined(__APPLE__) && TARGET_OS_IOS

@@ -6,33 +6,42 @@
 @implementation AppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-    NSLog(@"[INIT] ========================================");
-    NSLog(@"[INIT] AppDelegate didFinishLaunchingWithOptions STARTING");
-    NSLog(@"[INIT] ========================================");
+    TraceLog(LOG_INFO, "[INIT] ========================================");
+    TraceLog(LOG_INFO, "[INIT] AppDelegate didFinishLaunchingWithOptions STARTING");
+    TraceLog(LOG_INFO, "[INIT] ========================================");
     
     // Create window
     self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
-    NSLog(@"[INIT] Created window with frame: %@", NSStringFromCGRect([[UIScreen mainScreen] bounds]));
+    TraceLog(LOG_INFO, "[INIT] Created window: %p", self.window);
+    if (!self.window) {
+        TraceLog(LOG_ERROR, "[INIT] Window is nil after creation!");
+        return NO;
+    }
     
     // Create and set root view controller
-    NSLog(@"[INIT] Creating GameViewController");
+    TraceLog(LOG_INFO, "[INIT] Creating GameViewController");
     GameViewController *gameViewController = [[GameViewController alloc] init];
-    NSLog(@"[INIT] Created GameViewController: %@", gameViewController);
-    
+    TraceLog(LOG_INFO, "[INIT] GameViewController created: %p", gameViewController);
+    if (!gameViewController) {
+        TraceLog(LOG_ERROR, "[INIT] GameViewController is nil after creation!");
+        return NO;
+    }
     self.window.rootViewController = gameViewController;
-    NSLog(@"[INIT] Set root view controller");
+    TraceLog(LOG_INFO, "[INIT] Set rootViewController: %p", self.window.rootViewController);
+    if (!self.window.rootViewController) {
+        TraceLog(LOG_ERROR, "[INIT] rootViewController is nil after setting!");
+        return NO;
+    }
     
-    // Make window visible
+    // Make window key and visible
     [self.window makeKeyAndVisible];
-    NSLog(@"[INIT] Made window key and visible");
+    TraceLog(LOG_INFO, "[INIT] Made window key and visible");
     
     // Start haptics manager
     [[HapticsManager sharedManager] start];
-    NSLog(@"[INIT] Started haptics manager");
+    TraceLog(LOG_INFO, "[INIT] Started haptics manager");
 
-    NSLog(@"[INIT] ========================================");
-    NSLog(@"[INIT] AppDelegate didFinishLaunchingWithOptions COMPLETED");
-    NSLog(@"[INIT] ========================================");
+    TraceLog(LOG_INFO, "[INIT] didFinishLaunchingWithOptions COMPLETED");
     return YES;
 }
 

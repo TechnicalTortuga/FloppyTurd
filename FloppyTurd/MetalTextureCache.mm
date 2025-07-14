@@ -83,23 +83,54 @@ Texture2D MetalTextureCache::GetOrLoadTexture(const std::string& fileName) {
         TraceLog(LOG_ERROR, "[ERROR] Metal device is null in MetalTextureCache");
         return CreateFallbackTexture();
     }
-
+    
+    UIImage* uiImage = nil;
+    
     if (fileName.substr(0, 8) == "asset://") {
+        // Handle asset:// URLs by extracting the resource name
         ResourcePathParts parts = ResourceManager::ParseResourcePath(fileName);
         NSString* name = [NSString stringWithUTF8String:parts.baseName.c_str()];
-        UIImage* uiImage = [UIImage imageNamed:name];
+        uiImage = [UIImage imageNamed:name];
+        TraceLog(LOG_INFO, "[TEXTURE] Loading from asset catalog: %s -> %s", fileName.c_str(), parts.baseName.c_str());
+    } else {
+        // Handle regular file paths - these come from GetResourcePath which already did the lookup
+        // Extract the filename and try asset catalog first
+        NSString* nsFileName = [NSString stringWithUTF8String:fileName.c_str()];
+        NSString* baseName = [[nsFileName lastPathComponent] stringByDeletingPathExtension];
         
-        if (!uiImage) {
-            TraceLog(LOG_ERROR, "[ERROR] Failed to load asset catalog texture: %s", fileName.c_str());
-            return CreateFallbackTexture();
+        // First try: Asset catalog lookup using just the base name
+        uiImage = [UIImage imageNamed:baseName];
+        if (uiImage) {
+            TraceLog(LOG_INFO, "[TEXTURE] Loaded from asset catalog using base name: %s -> %s", fileName.c_str(), [baseName UTF8String]);
+        } else {
+            // Second try: Asset catalog with full relative path
+            uiImage = [UIImage imageNamed:nsFileName];
+            if (uiImage) {
+                TraceLog(LOG_INFO, "[TEXTURE] Loaded from asset catalog using full path: %s", fileName.c_str());
+            } else {
+                // Third try: Direct file path (bundle resources)
+                uiImage = [UIImage imageWithContentsOfFile:nsFileName];
+                if (uiImage) {
+                    TraceLog(LOG_INFO, "[TEXTURE] Loaded from file path: %s", fileName.c_str());
+                } else {
+                    TraceLog(LOG_ERROR, "[ERROR] Failed to load texture from any source: %s", fileName.c_str());
+                    return CreateFallbackTexture();
+                }
+            }
         }
-        
-        CGImageRef cgImage = uiImage.CGImage;
-        if (!cgImage) {
-            TraceLog(LOG_ERROR, "[ERROR] CGImage is null for: %s", fileName.c_str());
-            return CreateFallbackTexture();
-        }
-        
+    }
+    
+    if (!uiImage) {
+        TraceLog(LOG_ERROR, "[ERROR] Failed to load UIImage for: %s", fileName.c_str());
+        return CreateFallbackTexture();
+    }
+    
+    CGImageRef cgImage = uiImage.CGImage;
+    if (!cgImage) {
+        TraceLog(LOG_ERROR, "[ERROR] CGImage is null for: %s", fileName.c_str());
+        return CreateFallbackTexture();
+    }
+    
         width = (int)CGImageGetWidth(cgImage);
         height = (int)CGImageGetHeight(cgImage);
         
@@ -172,12 +203,6 @@ Texture2D MetalTextureCache::GetOrLoadTexture(const std::string& fileName) {
         texture.height = height;
         texture.mipmaps = textureDescriptor.mipmapLevelCount;
         texture.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
-    } else {
-        // Regular file loading would be implemented here
-        // This would use device-specific methods to load from file paths
-        TraceLog(LOG_ERROR, "[ERROR] Direct file loading not implemented for: %s", fileName.c_str());
-        return CreateFallbackTexture();
-    }
     
     // Cache the texture
     m_textureCache[fileName] = texture;

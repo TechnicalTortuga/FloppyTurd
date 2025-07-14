@@ -53,6 +53,7 @@ void ResourceManager::Shutdown() {
 }
 
 Texture2D ResourceManager::GetTexture(const std::string& id) {
+    std::lock_guard<std::mutex> lock(resourceMutex);
     try {
         auto it = textureCache.find(id);
         if (it != textureCache.end() && it->second.isValid) {
@@ -102,6 +103,7 @@ Texture2D ResourceManager::GetTexture(const std::string& id) {
 }
 
 Sound ResourceManager::GetSound(const std::string& id) {
+    std::lock_guard<std::mutex> lock(resourceMutex);
     auto it = soundCache.find(id);
     if (it != soundCache.end() && it->second.isValid) {
         UpdateAccessTime(id);
@@ -118,6 +120,7 @@ Sound ResourceManager::GetSound(const std::string& id) {
 }
 
 Music ResourceManager::GetMusic(const std::string& id) {
+    std::lock_guard<std::mutex> lock(resourceMutex);
     auto it = musicCache.find(id);
     if (it != musicCache.end() && it->second.isValid) {
         UpdateAccessTime(id);
@@ -345,6 +348,7 @@ bool ResourceManager::LoadFontInternal(const std::string& id) {
 }
 
 std::string ResourceManager::ResolvePath(const std::string& id, ResourceType type) {
+    std::lock_guard<std::mutex> lock(resourceMutex);
     TraceLog(LOG_INFO, "[DEBUG] ResolvePath called with id=%s, type=%d", id.c_str(), (int)type);
     
     auto it = resourceRegistry.find(id);
@@ -353,9 +357,11 @@ std::string ResourceManager::ResolvePath(const std::string& id, ResourceType typ
         return "";
     }
 
-    TraceLog(LOG_INFO, "[DEBUG] ResolvePath: Found resource with relativePath=%s", it->second.relativePath.c_str());
+    // Make a local copy of the relativePath to avoid threading issues
+    std::string relativePath = it->second.relativePath;
+    TraceLog(LOG_INFO, "[DEBUG] ResolvePath: Found resource with relativePath=%s", relativePath.c_str());
     
-    std::string basePath = GetResourcePath(it->second.relativePath.c_str());
+    std::string basePath = GetResourcePath(relativePath.c_str());
     
     TraceLog(LOG_INFO, "[DEBUG] ResolvePath: GetResourcePath returned: %s", basePath.c_str());
     
@@ -505,6 +511,7 @@ void ResourceManager::ClearFontCache() {
 
 void ResourceManager::RegisterResource(const std::string& id, const std::string& relativePath, 
                                      ResourceType type, LoadingMode mode, ResourceQuality minQuality) {
+    std::lock_guard<std::mutex> lock(resourceMutex);
     ResourceInfo info;
     info.id = id;
     info.relativePath = relativePath;
@@ -516,7 +523,10 @@ void ResourceManager::RegisterResource(const std::string& id, const std::string&
 }
 
 void ResourceManager::RegisterAllResources() {
+    TraceLog(LOG_INFO, "[DEBUG] Starting RegisterAllResources - registering hundreds of resources...");
+    
     // UI and Core Resources (always load these first)
+    TraceLog(LOG_INFO, "[DEBUG] Registering UI and Core Resources...");
     RegisterResource("scoreboard", "ui/Score.png", ResourceType::TEXTURE, LoadingMode::SYNC);
     RegisterResource("turd_heart", "ui/TurdHeartSmall.png", ResourceType::TEXTURE, LoadingMode::SYNC);
     RegisterResource("coin_bag", "ui/CoinBag.png", ResourceType::TEXTURE, LoadingMode::SYNC);
@@ -558,10 +568,6 @@ void ResourceManager::RegisterAllResources() {
     // Button textures
     RegisterResource("blue_button", "ui/FloppyButtonBlue.png", ResourceType::TEXTURE);
     RegisterResource("blue_button_hover", "ui/FloppyButtonBlueHover.png", ResourceType::TEXTURE);
-    RegisterResource("arrow_left", "ui/LeftArrow.png", ResourceType::TEXTURE);
-    RegisterResource("arrow_left_hover", "ui/LeftArrowHover.png", ResourceType::TEXTURE);
-    RegisterResource("arrow_right", "ui/RightArrow.png", ResourceType::TEXTURE);
-    RegisterResource("arrow_right_hover", "ui/RightArrowHover.png", ResourceType::TEXTURE);
     RegisterResource("arrow_up", "ui/UpArrow.png", ResourceType::TEXTURE);
     RegisterResource("arrow_down", "ui/DownArrow.png", ResourceType::TEXTURE);
     
@@ -602,6 +608,7 @@ void ResourceManager::RegisterAllResources() {
     RegisterResource("options_button_selected", "mainmenu/OptionButtonSelect.png", ResourceType::TEXTURE);
     
     // Sounds (essential)
+    TraceLog(LOG_INFO, "[DEBUG] Registering essential sounds...");
     RegisterResource("click", "sounds/confirm.ogg", ResourceType::SOUND);
     RegisterResource("hurt", "sounds/hurt.mp3", ResourceType::SOUND);
     RegisterResource("got_coin", "sounds/pickup.ogg", ResourceType::SOUND);
@@ -634,6 +641,7 @@ void ResourceManager::RegisterAllResources() {
     RegisterResource("game_over_music", "music/GameOver.mp3", ResourceType::MUSIC, LoadingMode::STREAM);
     
     // Player sprites - CRITICAL for gameplay (synchronous loading)
+    TraceLog(LOG_INFO, "[DEBUG] Registering player sprites...");
     RegisterResource("turdlet_idle", "turd/TurdletIdle.png", ResourceType::TEXTURE, LoadingMode::SYNC);
     RegisterResource("turdlet_jump", "turd/TurdletJump.png", ResourceType::TEXTURE, LoadingMode::SYNC);
     RegisterResource("turdlet_shoot", "turd/TurdletShoot.png", ResourceType::TEXTURE, LoadingMode::SYNC);
@@ -673,6 +681,7 @@ void ResourceManager::RegisterAllResources() {
     RegisterResource("ratking_painting", "mainmenu/RatKingPainting.png", ResourceType::TEXTURE);
 
     // Level 1 (Park) - High priority
+    TraceLog(LOG_INFO, "[DEBUG] Registering Level 1 (Park) assets...");
     RegisterResource("park_back", "environment/Level1BackLayerBackground.png", ResourceType::TEXTURE, LoadingMode::LAZY, ResourceQuality::MEDIUM);
     RegisterResource("park_mid", "environment/Level1MidLayerBackground.png", ResourceType::TEXTURE, LoadingMode::LAZY, ResourceQuality::MEDIUM);
     RegisterResource("park_front", "environment/Level1FrontLayerBackground.png", ResourceType::TEXTURE, LoadingMode::LAZY, ResourceQuality::MEDIUM);
@@ -771,6 +780,7 @@ void ResourceManager::RegisterAllResources() {
     RegisterResource("snowball", "enemies/Snowball.png", ResourceType::TEXTURE);
 
     // VFX textures - CRITICAL for game effects
+    TraceLog(LOG_INFO, "[DEBUG] Registering VFX textures...");
     RegisterResource("blast_small", "vfx/blast_small.png", ResourceType::TEXTURE);
     RegisterResource("blast_big", "vfx/blast_big.png", ResourceType::TEXTURE);
 

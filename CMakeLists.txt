@@ -211,12 +211,12 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
         ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/Shaders2D.metal
     )
     
-    # Bundle Metal shader files
+    # Only add the .metal file as a resource for Xcode to pick up
     if(DEFINED METAL_SHADERS)
         foreach(SHADER ${METAL_SHADERS})
             set_source_files_properties(${SHADER} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+            target_sources(${PROJECT_NAME} PRIVATE ${SHADER})
         endforeach()
-        target_sources(${PROJECT_NAME} PRIVATE ${METAL_SHADERS})
     endif()
     
     # Asset catalogs handle resources properly, no need for cleanup scripts

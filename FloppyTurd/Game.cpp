@@ -63,8 +63,7 @@ Game::Game() : window(nullptr), gamestate(LOADING), credits(nullptr), loading(nu
             throw;
         }
         
-        // Initialize game instance
-        SetGameInstance(this); // Register game instance globally for iOS integration
+        // Game instance will be registered globally by game_main() after construction
         
         LogManager::GetInstance().Log("Game constructor COMPLETED", "INIT");
         {
@@ -203,7 +202,8 @@ bool Game::Initialize()
             GameLog::Log("[INIT] Step 1.5: AudioStateManager initialization deferred to Step 11");
             
             // Test that ResourceManager is working by trying to load a simple texture
-            GameLog::Log("[INIT] Step 1.5: Testing ResourceManager with a simple texture...");
+            GameLog::Log("[INIT] Step 1.5: Testing ResourceManager...");
+            
             try {
                 Texture2D testTexture = ResourceManager::GetInstance().GetTexture("main_menu_bg");
                 if (
@@ -234,10 +234,26 @@ bool Game::Initialize()
         
         // Create render target for the game
 #if defined(__APPLE__) && defined(TARGET_OS_IPHONE)
-        // On iOS, skip render target creation - Metal view handles full screen rendering
-        GameLog::Log("[INIT] Step 2: Skipping render target creation on iOS - Metal view handles full screen");
-        renderTarget = {0, {0, 0, 0, 0, 0, nullptr}, {0, 0, 0, 0, 0, nullptr}}; // Empty render target
-        GameLog::Log("[INIT] Step 2: iOS render target skipped - SUCCESS");
+        // On iOS, the render target is the MTKView itself, not a separate texture
+        GameLog::Log("[INIT] Step 2: Setting up iOS render target (MTKView)...");
+        try {
+            // Get the screen dimensions from the platform
+            int screenWidth = GetScreenWidth();
+            int screenHeight = GetScreenHeight();
+            
+            GameLog::Log("[INIT] Step 2: Screen dimensions: %dx%d", screenWidth, screenHeight);
+            
+            // For iOS, we don't create a separate render texture
+            // The MetalRenderer will use the MTKView as the render target
+            renderTarget = {0, {0, 0, 0, 0, 0, nullptr}, {0, 0, 0, 0, 0, nullptr}}; // Empty render target
+            GameLog::Log("[INIT] Step 2: iOS render target set to MTKView - SUCCESS");
+        } catch (const std::exception& e) {
+            GameLog::Log("[ERROR] Step 2: Exception setting up iOS render target: %s", e.what());
+            throw;
+        } catch (...) {
+            GameLog::Log("[ERROR] Step 2: Unknown exception setting up iOS render target");
+            throw;
+        }
 #else
         GameLog::Log("[INIT] Step 2: Creating render target...");
         try {
@@ -257,16 +273,25 @@ bool Game::Initialize()
         }
 #endif
         
-        // On iOS, we don't create a Window instance as it's managed by the system
-        #ifndef PLATFORM_IOS
-        GameLog::Log("[INIT] Step 3: Initializing window...");
+        // Initialize window system for all platforms
+        GameLog::Log("[INIT] Step 3: Initializing window system...");
         try {
+#if defined(__APPLE__) && defined(TARGET_OS_IPHONE)
+            // On iOS, create a window that represents the full screen
+            window = new Window(true, 0, 0); // Fullscreen window
+            if (!window) {
+                GameLog::Log("[ERROR] Step 3: Failed to create iOS window");
+                throw std::runtime_error("Failed to create iOS window");
+            }
+            GameLog::Log("[INIT] Step 3: Created iOS fullscreen window - SUCCESS");
+#else
             window = new Window();
             if (!window) {
                 GameLog::Log("[ERROR] Step 3: Failed to create window");
                 throw std::runtime_error("Failed to create window");
             }
             GameLog::Log("[INIT] Step 3: Created Window instance - SUCCESS");
+#endif
         } catch (const std::exception& e) {
             GameLog::Log("[ERROR] Step 3: Exception creating window: %s", e.what());
             throw;
@@ -274,10 +299,6 @@ bool Game::Initialize()
             GameLog::Log("[ERROR] Step 3: Unknown exception creating window");
             throw;
         }
-        #else
-        window = nullptr; // No window on iOS
-        GameLog::Log("[INIT] Step 3: Skipping Window creation on iOS - SUCCESS");
-        #endif
         
         // Initialize game states (loading state was created in constructor)
         GameLog::Log("[INIT] Step 4: Checking Loading state...");

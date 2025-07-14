@@ -653,6 +653,10 @@ public:
         return Traits::GetResourcePath(resourceName);
     }
     
+    static std::string GetSaveDataPath(const char* filename) {
+        return Traits::GetSaveDataPath(filename);
+    }
+    
     static bool PreferLowPowerMode() {
         return Traits::PreferLowPowerMode();
     }
@@ -839,6 +843,7 @@ Rectangle RectangleFromVector2(Vector2 position, Vector2 size);
 
 // Platform-Specific Utility Functions
 std::string GetResourcePath(const char* resourceName);
+std::string GetSaveDataPath(const char* filename);
 bool PreferLowPowerMode();
 int GetRecommendedTextureSize();
 bool IsMobilePlatform();
@@ -908,7 +913,7 @@ void* CreateTextureFromImage(void* image, int* width, int* height);
 #define TEXTURE_FILTER_BILINEAR 1
 #define MOUSE_LEFT_BUTTON 0
 #define KEY_E 69
-#define KEY_F11 290
+#define KEY_F11 300
 #define KEY_ESCAPE 256
 
 void SetTextureFilter(Texture2D texture, int filter);
@@ -939,4 +944,4 @@ extern "C" {
     int game_main(int argc, char* argv[]);
 }
 
-#endif // PLATFORM_API_H 
+#endif // PLATFORM_API_H

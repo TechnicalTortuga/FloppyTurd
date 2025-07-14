@@ -21,6 +21,8 @@
     <string>????</string>
     <key>LSRequiresIPhoneOS</key>
     <true/>
+    <key>UIApplicationDelegate</key>
+    <string>AppDelegate</string>
     <key>UILaunchStoryboardName</key>
     <string></string>
     <key>UIRequiredDeviceCapabilities</key>

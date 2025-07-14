@@ -1,0 +1,3231 @@
+@ -1,1184 +1,1195 @@
+#include "RaylibCompat.h"
+#ifdef PLATFORM_IOS
+#include <Metal/Metal.h>
+#import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
+#include "MetalTextureCache.h"
+#include "PlatformLayer.h"
+#include <CoreGraphics/CoreGraphics.h>
+#include "Game.h"
+#import <AVFoundation/AVFoundation.h>
+#include "GameLog.h"
+#include "MetalTextRenderer.h"
+#include "ResourceManager.h"
+#include "LogManager.h"
+#include <string>
+#import "AudioStateManager.h"
+#include "MetalRenderer.h"
+#import "PlatformLayerDelegate.h"
+
+// Global game instance
+Game* g_gameInstance = nullptr;
+
+// Game instance accessor function
+Game* GetGameInstance()
+{
+    NSLog(@"[ACCESS] GetGameInstance() called from thread: %@, returning: %p", [NSThread currentThread], g_gameInstance);
+    return g_gameInstance;
+}
+
+void SetGameInstance(Game* instance)
+{
+    NSLog(@"[ACCESS] SetGameInstance() called from thread: %@, with instance: %p", [NSThread currentThread], instance);
+    g_gameInstance = instance;
+}
+
+// Forward declarations for iOS-specific functions
+extern "C" {
+void DrawTexturePro_iOS(Texture2D texture, Rectangle source, Rectangle dest, Vector2 origin, float rotation, Color tint);
+void DrawTexture_iOS(Texture2D texture, int posX, int posY, Color tint);
+void DrawTextureV_iOS(Texture2D texture, Vector2 position, Color tint);
+void DrawTextureRec_iOS(Texture2D texture, Rectangle source, Rectangle dest, Color tint);
+void UnloadTexture_iOS(Texture2D texture);
+Texture2D CreateFallbackTexture(const char* fileName);
+}
+
+// Helper function declaration
+
+// Error logging for Metal operations
+static void LogMetalError(NSError *error, NSString *operation) {
+    if (error) {
+        NSLog(@"[ERROR] Metal operation failed: %@ - Error: %@", operation, error.localizedDescription);
+    }
+}
+
+// iOS-specific implementations using Metal and Objective-C++
+
+extern "C" {
+
+Texture2D LoadTexture_iOS(const char *fileName)
+{
+    NSLog(@"[EXTRA LOG] LoadTexture_iOS: fileName=%s", fileName);
+    
+    // Initialize texture cache if needed
+    static bool cacheInitialized = false;
+    if (!cacheInitialized) {
+        // Get Metal device through PlatformLayer
+        void* metalDevice = PlatformLayer::GetInstance().GetMetalDevice();
+        if (metalDevice) {
+            MetalTextureCache::GetInstance().Initialize(metalDevice);
+            cacheInitialized = true;
+        } else {
+            NSLog(@"[ERROR] LoadTexture_iOS: Failed to get Metal device for initializing texture cache");
+        }
+    }
+    
+    // Use the texture cache to load or retrieve the texture
+    if (cacheInitialized) {
+        std::string filePath(fileName);
+        Texture2D texture = MetalTextureCache::GetInstance().GetOrLoadTexture(filePath);
+        
+        if (texture.texture) {
+            NSLog(@"[EXTRA LOG] LoadTexture_iOS: SUCCESS texture=%p, w=%d, h=%d, file=%s", 
+                  texture.texture, texture.width, texture.height, fileName);
+            return texture;
+        }
+    }
+    
+    // Fallback to original implementation if cache fails or isn't initialized
+    NSLog(@"[WARNING] LoadTexture_iOS: Cache miss or not initialized, falling back to direct loading: %s", fileName);
+    
+    Texture2D texture = { 0 };
+    int width, height;
+    
+    std::string filePath(fileName);
+    
+    // Handle asset catalog resources
+    if (filePath.substr(0, 8) == "asset://") {
+        ResourcePathParts parts = ResourceManager::ParseResourcePath(filePath);
+        NSString* name = [NSString stringWithUTF8String:parts.baseName.c_str()];
+        NSLog(@"[DEBUG] LoadTexture_iOS: Loading asset catalog texture: %@", name);
+        UIImage* uiImage = [UIImage imageNamed:name];
+        
+        if (!uiImage) {
+            NSLog(@"[ERROR] LoadTexture_iOS: Failed to load asset catalog texture: %s", fileName);
+            TraceLog(LOG_ERROR, "Failed to load asset catalog texture: %s", fileName);
+            
+            // Create a fallback texture instead of returning empty
+            NSLog(@"[DEBUG] LoadTexture_iOS: Creating fallback texture for: %s", fileName);
+            return CreateFallbackTexture(fileName);
+        }
+        
+        NSLog(@"[DEBUG] LoadTexture_iOS: Successfully loaded UIImage for %@", name);
+        
+        CGImageRef cgImage = uiImage.CGImage;
+        if (!cgImage) {
+            NSLog(@"[ERROR] LoadTexture_iOS: CGImage is null for: %s", fileName);
+            return CreateFallbackTexture(fileName);
+        }
+        
+        width = (int)CGImageGetWidth(cgImage);
+        height = (int)CGImageGetHeight(cgImage);
+        
+        if (width <= 0 || height <= 0) {
+            NSLog(@"[ERROR] LoadTexture_iOS: Invalid dimensions for: %s (w=%d, h=%d)", fileName, width, height);
+            return CreateFallbackTexture(fileName);
+        }
+        
+        // Get Metal device through PlatformLayer
+        id<MTLDevice> device = (__bridge id<MTLDevice>)PlatformLayer::GetInstance().GetMetalDevice();
+        if (!device) {
+            NSLog(@"[ERROR] LoadTexture_iOS: Failed to get Metal device for: %s", fileName);
+            TraceLog(LOG_ERROR, "Failed to get Metal device for asset catalog texture");
+            return CreateFallbackTexture(fileName);
+        }
+
+        // Create Metal texture with proper usage flags and mipmap support
+        MTLTextureDescriptor* textureDescriptor = [[MTLTextureDescriptor alloc] init];
+        textureDescriptor.pixelFormat = MTLPixelFormatRGBA8Unorm;
+        textureDescriptor.width = width;
+        textureDescriptor.height = height;
+        textureDescriptor.usage = MTLTextureUsageShaderRead;
+        textureDescriptor.storageMode = MTLStorageModeShared;
+        textureDescriptor.mipmapLevelCount = 1 + floor(log2(fmax(width, height)));
+        
+        NSError *error = nil;
+        id<MTLTexture> metalTexture = [device newTextureWithDescriptor:textureDescriptor];
+        if (!metalTexture) {
+            NSLog(@"Failed to create Metal texture: %@", error);
+            // ARC will handle descriptor cleanup
+            return CreateFallbackTexture(fileName);
+        }
+        
+        NSLog(@"[DEBUG] LoadTexture_iOS: Created Metal texture: %p (retain count: %lu)", (__bridge void*)metalTexture, (unsigned long)CFGetRetainCount((__bridge CFTypeRef)metalTexture));
+        
+        // Load image data into texture
+        MTLRegion region = {{0, 0, 0}, {(NSUInteger)width, (NSUInteger)height, 1}};
+        CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+        CGContextRef context = CGBitmapContextCreate(nil, width, height, 8, 4 * width, colorSpace, kCGImageAlphaPremultipliedLast);
+        
+        if (!context) {
+            NSLog(@"[ERROR] LoadTexture_iOS: Failed to create bitmap context for: %s", fileName);
+            CGColorSpaceRelease(colorSpace);
+            return CreateFallbackTexture(fileName);
+        }
+        
+        CGContextDrawImage(context, CGRectMake(0, 0, width, height), cgImage);
+        void* imageData = CGBitmapContextGetData(context);
+        
+        if (!imageData) {
+            NSLog(@"[ERROR] LoadTexture_iOS: Failed to get image data for: %s", fileName);
+            CGContextRelease(context);
+            CGColorSpaceRelease(colorSpace);
+            return CreateFallbackTexture(fileName);
+        }
+        
+        [metalTexture replaceRegion:region mipmapLevel:0 withBytes:imageData bytesPerRow:4 * width];
+        
+        // Generate mipmaps if needed
+        if (textureDescriptor.mipmapLevelCount > 1) {
+            // Use the shared command queue from PlatformLayer
+            id<MTLCommandQueue> commandQueue = (__bridge id<MTLCommandQueue>)PlatformLayer::GetInstance().GetMetalCommandQueue();
+            if (commandQueue) {
+            id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
+            id<MTLBlitCommandEncoder> blitEncoder = [commandBuffer blitCommandEncoder];
+            [blitEncoder generateMipmapsForTexture:metalTexture];
+            [blitEncoder endEncoding];
+            [commandBuffer commit];
+            }
+        }
+        
+        CGContextRelease(context);
+        CGColorSpaceRelease(colorSpace);
+        
+        texture.id = 0; // Will be assigned by texture cache
+        texture.texture = (__bridge_retained void*)metalTexture;
+        texture.width = width;
+        texture.height = height;
+        texture.mipmaps = textureDescriptor.mipmapLevelCount;
+        texture.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
+        
+        // Add to texture cache for future use
+        if (cacheInitialized) {
+            // Update texture cache with this new texture for future reuse
+            // First release our reference since cache will retain it
+            void* tempPtr = texture.texture;
+            texture.texture = nullptr;
+            CFRelease(tempPtr);
+            
+            // Use LoadTextureFromData to properly register in cache
+            return MetalTextureCache::GetInstance().LoadTextureFromData(
+                imageData, width, height, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
+        }
+    } else {
+        // Handle regular file paths
+        void* texturePtr = PlatformLayer::GetInstance().LoadTexture(fileName, &width, &height);
+        if (texturePtr) {
+            texture.id = 0; // Not used in Metal
+            texture.texture = texturePtr;
+            texture.width = width;
+            texture.height = height;
+            texture.mipmaps = 1;
+            texture.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
+        } else {
+            NSLog(@"[ERROR] LoadTexture_iOS: Failed to load regular file texture: %s", fileName);
+            return CreateFallbackTexture(fileName);
+        }
+    }
+    
+    if (texture.texture == NULL) {
+        NSLog(@"[EXTRA LOG] LoadTexture_iOS: FAILED to load texture for %s", fileName);
+        return CreateFallbackTexture(fileName);
+    } else {
+        NSLog(@"[EXTRA LOG] LoadTexture_iOS: SUCCESS texture=%p, w=%d, h=%d, file=%s", texture.texture, texture.width, texture.height, fileName);
+    }
+    return texture;
+}
+
+Texture2D LoadTextureFromImage_iOS(Image image)
+{
+    if (!image.data) {
+        TraceLog(LOG_ERROR, "Cannot load texture from null image");
+        return Texture2D{0, 0, 0, 0, 0};
+    }
+    
+    // Check if texture cache is initialized
+    static bool cacheInitialized = false;
+    static bool checkedCache = false;
+    
+    if (!checkedCache) {
+        // Get Metal device through PlatformLayer
+        void* metalDevice = PlatformLayer::GetInstance().GetMetalDevice();
+        if (metalDevice) {
+            // Initialize cache if needed
+            MetalTextureCache::GetInstance().Initialize(metalDevice);
+            cacheInitialized = true;
+        }
+        checkedCache = true;
+    }
+    
+    // Use texture cache if available
+    if (cacheInitialized) {
+        Texture2D texture = MetalTextureCache::GetInstance().LoadTextureFromData(
+            image.data, image.width, image.height, image.format);
+            
+        if (texture.texture) {
+            NSLog(@"[INFO] Texture created from image using cache: %p (w=%d, h=%d)", 
+                  texture.texture, texture.width, texture.height);
+            return texture;
+        }
+    }
+    
+    // Fallback to original implementation
+    NSLog(@"[WARNING] Falling back to original implementation for LoadTextureFromImage_iOS");
+    
+    // Use PlatformLayer delegate for texture creation instead of MetalRenderer
+    PlatformLayer& platform = PlatformLayer::GetInstance();
+    // Pass the image data pointer directly - image.data is already a void*
+    void* texture = platform.LoadTextureFromImage(image.data, image.width, image.height, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
+    
+    if (!texture) {
+        TraceLog(LOG_ERROR, "Failed to create texture from image");
+        return Texture2D{0, 0, 0, 0, 0};
+    }
+    
+    Texture2D texture2D;
+    texture2D.id = 0; // Not used in Metal
+    texture2D.texture = texture;
+    texture2D.width = image.width;
+    texture2D.height = image.height;
+    texture2D.mipmaps = 1;
+    texture2D.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
+    return texture2D;
+}
+
+Image LoadImage_iOS(const char* fileName)
+{
+    std::string path = fileName;
+    
+    // Handle asset catalog resources
+    if (path.substr(0, 8) == "asset://") {
+        ResourcePathParts parts = ResourceManager::ParseResourcePath(path);
+        NSString* name = [NSString stringWithUTF8String:parts.baseName.c_str()];
+        UIImage* uiImage = [UIImage imageNamed:name];
+        
+        if (!uiImage) {
+            TraceLog(LOG_ERROR, "Failed to load asset catalog image: %s", path.c_str());
+            return Image{nullptr, 0, 0, 0, 0};
+        }
+        
+        // Convert UIImage to CGImage to get pixel data
+        CGImageRef cgImage = uiImage.CGImage;
+        size_t width = CGImageGetWidth(cgImage);
+        size_t height = CGImageGetHeight(cgImage);
+        
+        // Create a context to draw the image into for raw pixel data
+        void* data = malloc(width * height * 4);
+        CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+        CGContextRef context = CGBitmapContextCreate(data, width, height, 8, width * 4, colorSpace, kCGImageAlphaPremultipliedLast);
+        CGColorSpaceRelease(colorSpace);
+        
+        // Draw image into context
+        CGContextDrawImage(context, CGRectMake(0, 0, width, height), cgImage);
+        CGContextRelease(context);
+        
+        // Return raylib-compatible Image structure
+        Image img;
+        img.data = data;
+        img.width = (int)width;
+        img.height = (int)height;
+        img.mipmaps = 1;
+        img.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
+        return img;
+    }
+    
+    // Handle regular file paths
+    NSString* pathStr = [NSString stringWithUTF8String:path.c_str()];
+    UIImage* uiImage = [UIImage imageNamed:pathStr];
+    if (!uiImage) {
+        // Fallback to file system path if not found in bundle
+        uiImage = [UIImage imageWithContentsOfFile:pathStr];
+    }
+    
+    if (!uiImage) {
+        TraceLog(LOG_ERROR, "Failed to load image from path: %s", path.c_str());
+        return Image{nullptr, 0, 0, 0, 0};
+    }
+    
+    // Convert UIImage to CGImage to get pixel data
+    CGImageRef cgImage = uiImage.CGImage;
+    size_t width = CGImageGetWidth(cgImage);
+    size_t height = CGImageGetHeight(cgImage);
+    
+    // Create a context to draw the image into for raw pixel data
+    void* data = malloc(width * height * 4);
+    CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+    CGContextRef context = CGBitmapContextCreate(data, width, height, 8, width * 4, colorSpace, kCGImageAlphaPremultipliedLast);
+    CGColorSpaceRelease(colorSpace);
+    
+    // Draw image into context
+    CGContextDrawImage(context, CGRectMake(0, 0, width, height), cgImage);
+    CGContextRelease(context);
+    
+    // Return raylib-compatible Image structure
+    Image img;
+    img.data = data;
+    img.width = (int)width;
+    img.height = (int)height;
+    img.mipmaps = 1;
+    img.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
+    return img;
+}
+
+void UnloadImage_iOS(Image image)
+{
+    if (image.data) {
+        free(image.data);
+    }
+}
+
+Image GenImageColor_iOS(int width, int height, Color color)
+{
+    void* data = malloc(width * height * 4);
+    unsigned char* pixels = (unsigned char*)data;
+    unsigned char r = color.r;
+    unsigned char g = color.g;
+    unsigned char b = color.b;
+    unsigned char a = color.a;
+    
+    for (int i = 0; i < width * height; i++) {
+        pixels[i * 4 + 0] = r;
+        pixels[i * 4 + 1] = g;
+        pixels[i * 4 + 2] = b;
+        pixels[i * 4 + 3] = a;
+    }
+    
+    Image img;
+    img.data = data;
+    img.width = width;
+    img.height = height;
+    img.mipmaps = 1;
+    img.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
+    return img;
+}
+
+void ImageResize_iOS(Image* image, int newWidth, int newHeight)
+{
+    if (!image || !image->data) return;
+    
+    // Create a new buffer for resized image
+    void* newData = malloc(newWidth * newHeight * 4);
+    unsigned char* src = (unsigned char*)image->data;
+    unsigned char* dst = (unsigned char*)newData;
+    
+    // Simple nearest-neighbor resize
+    float xRatio = (float)image->width / newWidth;
+    float yRatio = (float)image->height / newHeight;
+    
+    for (int y = 0; y < newHeight; y++) {
+        for (int x = 0; x < newWidth; x++) {
+            int srcX = (int)(x * xRatio);
+            int srcY = (int)(y * yRatio);
+            int srcIndex = (srcY * image->width + srcX) * 4;
+            int dstIndex = (y * newWidth + x) * 4;
+            
+            dst[dstIndex + 0] = src[srcIndex + 0];
+            dst[dstIndex + 1] = src[srcIndex + 1];
+            dst[dstIndex + 2] = src[srcIndex + 2];
+            dst[dstIndex + 3] = src[srcIndex + 3];
+        }
+    }
+    
+    // Free old data and update image
+    free(image->data);
+    image->data = newData;
+    image->width = newWidth;
+    image->height = newHeight;
+}
+
+void ImageDraw_iOS(Image* dst, Image src, Rectangle srcRec, Rectangle dstRec, Color tint)
+{
+    if (!dst || !dst->data || !src.data) return;
+    
+    unsigned char* dstPixels = (unsigned char*)dst->data;
+    unsigned char* srcPixels = (unsigned char*)src.data;
+    
+    // Clamp source rectangle to src image bounds
+    int srcX = (int)std::max(0.0f, srcRec.x);
+    int srcY = (int)std::max(0.0f, srcRec.y);
+    int srcW = (int)std::min((float)src.width - srcX, srcRec.width);
+    int srcH = (int)std::min((float)src.height - srcY, srcRec.height);
+    
+    // Clamp destination rectangle to dst image bounds
+    int dstX = (int)std::max(0.0f, dstRec.x);
+    int dstY = (int)std::max(0.0f, dstRec.y);
+    int dstW = (int)std::min((float)dst->width - dstX, dstRec.width);
+    int dstH = (int)std::min((float)dst->height - dstY, dstRec.height);
+    
+    // Only draw the overlapping area
+    int drawW = std::min(srcW, dstW);
+    int drawH = std::min(srcH, dstH);
+    
+    float tintR = tint.r / 255.0f;
+    float tintG = tint.g / 255.0f;
+    float tintB = tint.b / 255.0f;
+    float tintA = tint.a / 255.0f;
+    
+    for (int y = 0; y < drawH; y++) {
+        for (int x = 0; x < drawW; x++) {
+            int srcIdx = ((srcY + y) * src.width + (srcX + x)) * 4;
+            int dstIdx = ((dstY + y) * dst->width + (dstX + x)) * 4;
+            
+            float srcA = srcPixels[srcIdx + 3] / 255.0f * tintA;
+            float invA = 1.0f - srcA;
+            
+            dstPixels[dstIdx + 0] = (unsigned char)((srcPixels[srcIdx + 0] * tintR * srcA + dstPixels[dstIdx + 0] * invA));
+            dstPixels[dstIdx + 1] = (unsigned char)((srcPixels[srcIdx + 1] * tintG * srcA + dstPixels[dstIdx + 1] * invA));
+            dstPixels[dstIdx + 2] = (unsigned char)((srcPixels[srcIdx + 2] * tintB * srcA + dstPixels[dstIdx + 2] * invA));
+            dstPixels[dstIdx + 3] = (unsigned char)(std::min(255.0f, (srcPixels[srcIdx + 3] * tintA + dstPixels[dstIdx + 3] * invA * (dstPixels[dstIdx + 3] / 255.0f))) * 255.0f);
+        }
+    }
+}
+
+void BeginDrawing_iOS(void* renderTexture) {
+    PlatformLayer::GetInstance().BeginDrawing(renderTexture);
+}
+
+void EndDrawing_iOS(void* renderTexture) {
+    PlatformLayer::GetInstance().EndDrawing(renderTexture);
+}
+
+void DrawRectangle_iOS(int posX, int posY, int width, int height, unsigned int color) {
+    PlatformLayer::GetInstance().DrawRectangle(posX, posY, width, height, color);
+}
+
+void DrawText(const char *text, int posX, int posY, int fontSize, Color color) {
+    TraceLog(LOG_INFO, "[RaylibCompat_iOS] DrawText called: text='%s', pos=(%d, %d), fontSize=%d, color=(%d,%d,%d,%d)", text, posX, posY, fontSize, color.r, color.g, color.b, color.a);
+    PlatformLayer::GetInstance().DrawText(text, (float)posX, (float)posY, (float)fontSize, color, nullptr);
+}
+
+void DrawTexture_iOS(Texture2D texture, int posX, int posY, Color tint)
+{
+    if (texture.texture == NULL) {
+        NSLog(@"[EXTRA LOG] DrawTexture_iOS: SKIP invalid texture at posX=%d posY=%d", posX, posY);
+        return;
+    }
+    NSLog(@"[EXTRA LOG] DrawTexture_iOS: texture=%p, posX=%d, posY=%d, w=%d, h=%d", texture.texture, posX, posY, texture.width, texture.height);
+    Rectangle source = { 0.0f, 0.0f, (float)texture.width, (float)texture.height };
+    Rectangle dest = { (float)posX, (float)posY, (float)texture.width, (float)texture.height };
+    DrawTexturePro_iOS(texture, source, dest, { 0.0f, 0.0f }, 0.0f, tint);
+}
+
+void DrawTextureV_iOS(Texture2D texture, Vector2 position, Color tint)
+{
+    Rectangle source = { 0.0f, 0.0f, (float)texture.width, (float)texture.height };
+    Rectangle dest = { position.x, position.y, (float)texture.width, (float)texture.height };
+    DrawTexturePro_iOS(texture, source, dest, { 0.0f, 0.0f }, 0.0f, tint);
+}
+
+void DrawTextureEx_iOS(Texture2D texture, Vector2 position, float rotation, float scale, Color tint)
+{
+    Rectangle source = { 0.0f, 0.0f, (float)texture.width, (float)texture.height };
+    Rectangle dest = { position.x, position.y, (float)texture.width * scale, (float)texture.height * scale };
+    DrawTexturePro_iOS(texture, source, dest, { 0.0f, 0.0f }, rotation, tint);
+}
+
+void DrawTextureRec_iOS(Texture2D texture, Rectangle source, Rectangle dest, Color tint)
+{
+    DrawTexturePro_iOS(texture, source, dest, { 0.0f, 0.0f }, 0.0f, tint);
+}
+
+void DrawTexturePro_iOS(Texture2D texture, Rectangle source, Rectangle dest, Vector2 origin, float rotation, Color tint)
+{
+    if (texture.texture == NULL) {
+        TraceLog(LOG_ERROR, "[RaylibCompat_iOS] DrawTexturePro_iOS: SKIP invalid texture");
+        return;
+    }
+
+    // Add type checking to prevent crashes
+    id<NSObject> textureObj = (__bridge id<NSObject>)texture.texture;
+    // Check if it's a Metal texture (including simulator textures)
+    if (![textureObj isKindOfClass:NSClassFromString(@"MTLTexture")] && 
+        ![textureObj isKindOfClass:NSClassFromString(@"MTLSimTexture")]) {
+        TraceLog(LOG_ERROR, "[RaylibCompat_iOS] DrawTexturePro_iOS: Texture pointer is not a Metal texture! Type: %@, pointer: %p", 
+                 NSStringFromClass([textureObj class]), texture.texture);
+        return;
+    }
+
+    id<MTLTexture> metalTexture = (__bridge id<MTLTexture>)texture.texture;
+    if (!metalTexture) {
+        TraceLog(LOG_ERROR, "[RaylibCompat_iOS] DrawTexturePro_iOS: Invalid texture pointer (NULL)");
+        return;
+    }
+
+    if (metalTexture.width == 0 || metalTexture.height == 0) {
+        TraceLog(LOG_ERROR, "[RaylibCompat_iOS] DrawTexturePro_iOS: Texture has invalid dimensions (w=%lu, h=%lu)",
+                 (unsigned long)metalTexture.width, (unsigned long)metalTexture.height);
+        return;
+    }
+
+    if (source.width <= 0 || source.height <= 0 || dest.width <= 0 || dest.height <= 0) {
+        TraceLog(LOG_ERROR, "[RaylibCompat_iOS] DrawTexturePro_iOS: Invalid rectangles: src=(%.3f,%.3f,%.3f,%.3f), dest=(%.1f,%.1f,%.1f,%.1f)",
+                 source.x, source.y, source.width, source.height, dest.x, dest.y, dest.width, dest.height);
+        return;
+    }
+
+    // Additional safety check for source rectangle bounds
+    if (source.x < 0 || source.y < 0 || 
+        source.x + source.width > metalTexture.width || 
+        source.y + source.height > metalTexture.height) {
+        TraceLog(LOG_ERROR, "[RaylibCompat_iOS] DrawTexturePro_iOS: Source rectangle out of bounds: src=(%.3f,%.3f,%.3f,%.3f), texture=(%lu,%lu)",
+                 source.x, source.y, source.width, source.height, 
+                 (unsigned long)metalTexture.width, (unsigned long)metalTexture.height);
+        return;
+    }
+
+    TraceLog(LOG_INFO, "[RaylibCompat_iOS] DrawTexturePro_iOS: Drawing texture=%p (w=%lu, h=%lu), src=(%.3f,%.3f,%.3f,%.3f), dest=(%.1f,%.1f,%.1f,%.1f), origin=(%.1f,%.1f), rotation=%.1f, tint=(%d,%d,%d,%d)",
+             texture.texture, (unsigned long)metalTexture.width, (unsigned long)metalTexture.height,
+             source.x, source.y, source.width, source.height,
+             dest.x, dest.y, dest.width, dest.height,
+             origin.x, origin.y, rotation, tint.r, tint.g, tint.b, tint.a);
+
+    // Add try-catch to catch any Metal-related crashes
+    @try {
+        // Get the MetalRenderer from the PlatformLayerDelegate
+        PlatformLayer& platform = PlatformLayer::GetInstance();
+        void* delegatePtr = platform.GetDelegate();
+        MetalRenderer* metalRenderer = nullptr;
+        
+        if (delegatePtr) {
+            // Cast to PlatformLayerDelegate and get the MetalRenderer
+            PlatformLayerDelegate* delegate = (__bridge PlatformLayerDelegate*)delegatePtr;
+            if ([delegate respondsToSelector:@selector(getMetalRenderer)]) {
+                metalRenderer = (MetalRenderer*)[delegate getMetalRenderer];
+            }
+        }
+        
+        if (metalRenderer) {
+            // Check if rotation is needed
+            if (rotation != 0.0f) {
+                // Use DrawTextureEx for rotated textures
+                Vector2 position = {dest.x + origin.x, dest.y + origin.y};
+                float scale = dest.width / source.width; // Calculate scale from dest/source ratio
+                metalRenderer->DrawTextureEx(metalTexture, position, rotation, scale, tint);
+                TraceLog(LOG_INFO, "[RaylibCompat_iOS] DrawTexturePro_iOS: Using DrawTextureEx for rotation=%.2f, position=(%.1f,%.1f), scale=%.2f", 
+                         rotation, position.x, position.y, scale);
+            } else {
+                // Use the standard DrawTexture for non-rotated textures
+                metalRenderer->DrawTexture(metalTexture, source, dest, tint, RenderLayer::UI, texture.format);
+                TraceLog(LOG_INFO, "[RaylibCompat_iOS] DrawTexturePro_iOS: Using standard DrawTexture (no rotation)");
+            }
+        } else {
+            // Fallback to PlatformLayer if MetalRenderer not available
+            platform.DrawTexture((__bridge void*)metalTexture, dest.x, dest.y, dest.width, dest.height, tint);
+        }
+    } @catch (NSException *exception) {
+        TraceLog(LOG_ERROR, "[RaylibCompat_iOS] DrawTexturePro_iOS: Exception in DrawTexture: %s", [exception.reason UTF8String]);
+    } @catch (...) {
+        TraceLog(LOG_ERROR, "[RaylibCompat_iOS] DrawTexturePro_iOS: Unknown exception in DrawTexture");
+    }
+}
+
+void UnloadTexture_iOS(Texture2D texture)
+{
+    if (texture.texture) {
+        PlatformLayer::GetInstance().UnloadTexture(texture.texture);
+    }
+}
+
+// Helper function to create fallback textures
+extern "C" Texture2D CreateFallbackTexture(const char* fileName)
+{
+    NSLog(@"[DEBUG] CreateFallbackTexture: Creating fallback for: %s", fileName);
+    
+    // Create a 2x2 magenta texture as fallback
+    const int fallbackSize = 2;
+    const int fallbackData[] = {
+        static_cast<int>(0xFFFF00FF), static_cast<int>(0xFFFF00FF),  // Magenta pixels
+        static_cast<int>(0xFFFF00FF), static_cast<int>(0xFFFF00FF)
+    };
+    
+    id<MTLDevice> device = (__bridge id<MTLDevice>)PlatformLayer::GetInstance().GetMetalDevice();
+    if (!device) {
+        NSLog(@"[ERROR] CreateFallbackTexture: No Metal device available");
+        return { 0, 0, 0, 0, 0 };
+    }
+    
+    MTLTextureDescriptor* textureDescriptor = [[MTLTextureDescriptor alloc] init];
+    textureDescriptor.pixelFormat = MTLPixelFormatRGBA8Unorm;
+    textureDescriptor.width = fallbackSize;
+    textureDescriptor.height = fallbackSize;
+    textureDescriptor.usage = MTLTextureUsageShaderRead;
+    
+    NSError *error = nil;
+    id<MTLTexture> metalTexture = [device newTextureWithDescriptor:textureDescriptor];
+    if (!metalTexture) {
+        NSLog(@"Failed to create Metal texture: %@", error);
+        // ARC will handle descriptor cleanup
+        return { 0, 0, 0, 0, 0 };
+    }
+    
+    MTLRegion region = {{0, 0, 0}, {(NSUInteger)fallbackSize, (NSUInteger)fallbackSize, 1}};
+    [metalTexture replaceRegion:region mipmapLevel:0 withBytes:fallbackData bytesPerRow:4 * fallbackSize];
+    
+    Texture2D fallbackTexture;
+    fallbackTexture.id = 0; // Not used in Metal
+    fallbackTexture.texture = (__bridge_retained void*)metalTexture;
+    fallbackTexture.width = fallbackSize;
+    fallbackTexture.height = fallbackSize;
+    fallbackTexture.mipmaps = 1;
+    fallbackTexture.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
+    
+    NSLog(@"[DEBUG] CreateFallbackTexture: Fallback texture created successfully (id=%p)", fallbackTexture.id);
+    return fallbackTexture;
+}
+
+// iOS-specific render texture cleanup
+extern "C" void UnloadRenderTexture_iOS(RenderTexture2D target)
+{
+    // Clean up the Metal render texture
+    if (target.texture.texture != nullptr) {
+        // Release the Metal texture
+        id<MTLTexture> metalTexture = (__bridge id<MTLTexture>)target.texture.texture;
+        if (metalTexture) {
+            // The texture will be automatically released when the bridge is released
+            CFBridgingRelease(target.texture.texture);
+            NSLog(@"[DEBUG] UnloadRenderTexture_iOS: Released Metal render texture: %p", (__bridge void*)metalTexture);
+        }
+    }
+}
+
+// iOS game initialization function
+extern "C" int game_main(int argc, char *argv[])
+{
+    NSLog(@"[INIT] ========================================");
+    NSLog(@"[INIT] game_main() STARTING (iOS version)");
+    NSLog(@"[INIT] argc=%d", argc);
+    NSLog(@"[INIT] ========================================");
+    
+    // Suppress unused parameter warnings
+    (void)argc;
+    (void)argv;
+    
+    // Setup working directory first
+    // SetupWorkingDirectory(); // iOS handles working directory differently
+    NSLog(@"[INIT] Skipping working directory setup for iOS");
+    
+    // Seed the random number generator
+    srand(static_cast<unsigned int>(time(NULL)));
+    NSLog(@"[INIT] Seeded random number generator");
+
+    // PlatformLayer is already initialized by GameViewController
+    NSLog(@"[INIT] PlatformLayer already initialized by GameViewController");
+
+    // On iOS, we only create the game instance
+    // The actual game loop is driven by the iOS display system
+    NSLog(@"[INIT] About to create Game instance and set it.");
+    
+    Game* gameInstance = nullptr;
+    try {
+        NSLog(@"[INIT] Creating Game instance...");
+        gameInstance = new Game();
+        NSLog(@"[INIT] Game instance created successfully: %p", gameInstance);
+    } catch (const std::exception& e) {
+        NSLog(@"[ERROR] Exception creating Game instance: %s", e.what());
+        return -1;
+    } catch (...) {
+        NSLog(@"[ERROR] Unknown exception creating Game instance");
+        return -1;
+    }
+    
+    if (!gameInstance) {
+        NSLog(@"[ERROR] Game instance creation returned nullptr");
+        return -1;
+    }
+    
+    SetGameInstance(gameInstance);
+    NSLog(@"[INIT] Game instance created and set: %p", g_gameInstance);
+    
+    // Initialize the game instance
+    NSLog(@"[INIT] Initializing Game instance - STARTING");
+    NSLog(@"[INIT] Calling Game::Initialize() on instance: %p", g_gameInstance);
+    bool initResult = g_gameInstance->Initialize();
+    NSLog(@"[INIT] Game::Initialize() COMPLETED with result: %s", initResult ? "true" : "false");
+    if (!initResult) {
+        NSLog(@"[ERROR] Failed to initialize Game instance! Keeping instance alive for debugging.");
+        return -1;
+    }
+    
+    NSLog(@"[INIT] ========================================");
+    NSLog(@"[INIT] game_main() COMPLETED SUCCESSFULLY");
+    NSLog(@"[INIT] ========================================");
+    return 0; // iOS will keep the app running via UIApplicationMain
+}
+
+// Function to get the main screen's bounds in a cross-platform way if needed
+// For now, this is handled in GameViewController
+/*
+extern "C" CGRect GetScreenBounds() {
+    return [[UIScreen mainScreen] bounds];
+}
+*/
+
+} // extern "C"
+
+// struct Sound {
+//     void* player; // Actually an AVAudioPlayer*
+//     int length;
+// };
+
+// struct Music {
+//     void* player; // Actually an AVAudioPlayer*
+//     int length;
+// };
+
+void InitAudioDevice() {
+    GameLog::Log("[AUDIO] InitAudioDevice (iOS/AVFoundation)");
+    NSError* error = nil;
+    
+    // Use AVAudioSessionCategoryPlayback for better music support
+    // This allows music to continue playing when the app is in the background
+    BOOL success = [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback 
+                                                          error:&error];
+    if (!success) {
+        GameLog::Log("[AUDIO] ERROR: Failed to set audio session category: %s", 
+                     error.localizedDescription.UTF8String);
+    }
+    
+    // Activate the audio session
+    success = [[AVAudioSession sharedInstance] setActive:YES error:&error];
+    if (!success) {
+        GameLog::Log("[AUDIO] ERROR: Failed to activate audio session: %s", 
+                     error.localizedDescription.UTF8String);
+    } else {
+        GameLog::Log("[AUDIO] Audio session activated successfully");
+    }
+}
+
+void CloseAudioDevice() {
+    GameLog::Log("[AUDIO] CloseAudioDevice (iOS/AVFoundation)");
+}
+
+Sound LoadSound(const char* fileName) {
+    Sound s = {0};
+    @autoreleasepool {
+        NSString* path = [NSString stringWithUTF8String:fileName];
+        NSURL* url = [NSURL fileURLWithPath:path];
+        NSError* error = nil;
+        AVAudioPlayer* player = [[AVAudioPlayer alloc] initWithContentsOfURL:url error:&error];
+        if (player && !error) {
+            [player prepareToPlay];
+            s.player = (__bridge_retained void*)player;
+            s.length = (int)(player.duration * 1000);
+            GameLog::Log("[AUDIO] Loaded sound: %s (duration: %d ms)", fileName, s.length);
+        } else {
+            GameLog::Log("[AUDIO] ERROR: Failed to load sound: %s (%s)", fileName, error.localizedDescription.UTF8String);
+        }
+    }
+    return s;
+}
+
+void UnloadSound(Sound sound) {
+    if (sound.player) {
+        AVAudioPlayer* player = (__bridge_transfer AVAudioPlayer*)sound.player;
+        [player stop];
+        GameLog::Log("[AUDIO] Unloaded sound");
+    }
+}
+
+void PlaySound(Sound sound) {
+    if (sound.player) {
+        AVAudioPlayer* player = (__bridge AVAudioPlayer*)sound.player;
+        [player play];
+        GameLog::Log("[AUDIO] PlaySound");
+    }
+}
+
+void SetSoundVolume(Sound sound, float volume) {
+    if (sound.player) {
+        AVAudioPlayer* player = (__bridge AVAudioPlayer*)sound.player;
+        player.volume = volume;
+        GameLog::Log("[AUDIO] SetSoundVolume: %f", volume);
+    }
+}
+
+Music LoadMusic(const char* fileName) {
+    Music m = {0};
+    @autoreleasepool {
+        NSString* path = [NSString stringWithUTF8String:fileName];
+        GameLog::Log("[AUDIO] Attempting to load music from path: %s", fileName);
+        
+        NSURL* url = nil;
+        
+        // Handle asset catalog resources
+        if (path.length >= 8 && [[path substringToIndex:8] isEqualToString:@"asset://"]) {
+            std::string cppPath = [path UTF8String];
+            ResourcePathParts parts = ResourceManager::ParseResourcePath(cppPath);
+            NSString* assetName = [NSString stringWithUTF8String:parts.baseName.c_str()];
+            GameLog::Log("[AUDIO] Loading asset catalog music: %s", [assetName UTF8String]);
+            NSDataAsset* dataAsset = [[NSDataAsset alloc] initWithName:assetName];
+            if (dataAsset && dataAsset.data) {
+                // Create a temporary file with the asset data
+                NSString* tempDir = NSTemporaryDirectory();
+                NSString* tempFileName = [NSString stringWithFormat:@"%@_%@.mp3", assetName, [[NSUUID UUID] UUIDString]];
+                NSString* tempFilePath = [tempDir stringByAppendingPathComponent:tempFileName];
+                
+                if ([dataAsset.data writeToFile:tempFilePath atomically:YES]) {
+                    url = [NSURL fileURLWithPath:tempFilePath];
+                    GameLog::Log("[AUDIO] Successfully created temp file from asset catalog: %@", tempFilePath);
+                } else {
+                    GameLog::Log("[AUDIO] ERROR: Failed to write asset data to temp file");
+                }
+            } else {
+                GameLog::Log("[AUDIO] ERROR: Failed to load asset catalog data for: %@", assetName);
+                
+                // Debug: List available data assets
+                GameLog::Log("[AUDIO] DEBUG: Cannot list all data assets - method not available");
+                // Note: NSDataAsset doesn't have an allDataAssets method
+                // We can only access assets by name using initWithName:
+            }
+        } else {
+            // Handle regular file paths
+            url = [NSURL fileURLWithPath:path];
+        }
+        
+        if (!url) {
+            GameLog::Log("[AUDIO] ERROR: Failed to create URL from path: %s", fileName);
+            return m;
+        }
+        
+        GameLog::Log("[AUDIO] Created URL: %@ -- %@", url, url.absoluteString);
+        
+        NSError* error = nil;
+        AVAudioPlayer* player = [[AVAudioPlayer alloc] initWithContentsOfURL:url error:&error];
+        if (player && !error) {
+            [player prepareToPlay];
+            m.player = (__bridge_retained void*)player;
+            m.length = (int)(player.duration * 1000);
+            GameLog::Log("[AUDIO] Successfully loaded music: %s (duration: %d ms)", fileName, m.length);
+        } else {
+            GameLog::Log("[AUDIO] ERROR: Failed to load music: %s", fileName);
+            if (error) {
+                GameLog::Log("[AUDIO] Error details: %s", error.localizedDescription.UTF8String);
+            }
+        }
+    }
+    return m;
+}
+
+Music LoadMusicStream(const char* fileName) {
+    // For iOS, LoadMusicStream is the same as LoadMusic since we use AVAudioPlayer
+    // which handles streaming internally
+    GameLog::Log("[AUDIO] LoadMusicStream called, delegating to LoadMusic: %s", fileName);
+    return LoadMusic(fileName);
+}
+
+void UnloadMusic(Music music) {
+    if (music.player) {
+        AVAudioPlayer* player = (__bridge_transfer AVAudioPlayer*)music.player;
+        [player stop];
+        GameLog::Log("[AUDIO] Unloaded music");
+    }
+}
+
+void UnloadMusicStream(Music music) {
+    // Alias for UnloadMusic to maintain raylib compatibility
+    UnloadMusic(music);
+}
+
+void PlayMusic(Music music) {
+    if (music.player) {
+        AVAudioPlayer* player = (__bridge AVAudioPlayer*)music.player;
+        
+        // Ensure audio session is active before trying to play
+        NSError* error = nil;
+        BOOL sessionActive = [[AVAudioSession sharedInstance] setActive:YES error:&error];
+        if (!sessionActive) {
+            GameLog::Log("[AUDIO] WARNING: Failed to activate audio session: %s", 
+                         error.localizedDescription.UTF8String);
+        }
+        
+        BOOL success = [player play];
+        if (success) {
+            GameLog::Log("[AUDIO] PlayMusic: Started playing successfully");
+        } else {
+            GameLog::Log("[AUDIO] PlayMusic: Failed to start playing");
+        }
+    } else {
+        GameLog::Log("[AUDIO] PlayMusic: No valid player to play");
+    }
+}
+
+void PlayMusicLoop(Music music) {
+    if (music.player) {
+        AVAudioPlayer* player = (__bridge AVAudioPlayer*)music.player;
+        player.numberOfLoops = -1; // -1 means infinite loop
+        [player play];
+        GameLog::Log("[AUDIO] PlayMusicLoop (infinite)");
+    }
+}
+
+void PauseMusic(Music music) {
+    if (music.player) {
+        AVAudioPlayer* player = (__bridge AVAudioPlayer*)music.player;
+        [player pause];
+        GameLog::Log("[AUDIO] PauseMusic");
+    }
+}
+
+void ResumeMusic(Music music) {
+    if (music.player) {
+        AVAudioPlayer* player = (__bridge AVAudioPlayer*)music.player;
+        
+        // Ensure audio session is active before trying to play
+        NSError* error = nil;
+        BOOL sessionActive = [[AVAudioSession sharedInstance] setActive:YES error:&error];
+        if (!sessionActive) {
+            GameLog::Log("[AUDIO] WARNING: Failed to activate audio session: %s", 
+                         error.localizedDescription.UTF8String);
+        }
+        
+        // Try to play the music
+        BOOL success = [player play];
+        if (success) {
+            GameLog::Log("[AUDIO] ResumeMusic: Successfully resumed");
+        } else {
+            GameLog::Log("[AUDIO] ResumeMusic: Failed to resume, player may need to be restarted");
+        }
+    } else {
+        GameLog::Log("[AUDIO] ResumeMusic: No valid player to resume");
+    }
+}
+
+void SetMusicVolume(Music music, float volume) {
+    if (music.player) {
+        AVAudioPlayer* player = (__bridge AVAudioPlayer*)music.player;
+        player.volume = volume;
+        GameLog::Log("[AUDIO] SetMusicVolume: %f", volume);
+    }
+}
+
+void StopMusic(Music music) {
+    if (music.player) {
+        AVAudioPlayer* player = (__bridge AVAudioPlayer*)music.player;
+        [player stop];
+        GameLog::Log("[AUDIO] StopMusic");
+    }
+}
+
+bool IsMusicPlaying(Music music) {
+    if (music.player) {
+        AVAudioPlayer* player = (__bridge AVAudioPlayer*)music.player;
+        return player.isPlaying;
+    }
+    return false;
+}
+
+void SetLooping(Music music, bool looping) {
+    if (music.player) {
+        AVAudioPlayer* player = (__bridge AVAudioPlayer*)music.player;
+        player.numberOfLoops = looping ? -1 : 0; // -1 = infinite loop, 0 = play once
+        GameLog::Log("[AUDIO] SetLooping: %s", looping ? "true" : "false");
+    }
+}
+
+// Music stream functions (aliases for compatibility)
+void PlayMusicStream(Music music) {
+    PlayMusic(music);
+}
+
+void StopMusicStream(Music music) {
+    StopMusic(music);
+}
+
+void UpdateMusicStream(Music music) {
+    // No update needed for iOS AVAudioPlayer
+    // This function exists for raylib compatibility
+}
+
+bool IsMusicStreamPlaying(Music music) {
+    return IsMusicPlaying(music);
+}
+
+bool IsMouseButtonReleased(int button)
+{
+    // On iOS, treat touch release as left mouse button release
+    if (button == 0) {
+        return PlatformLayer::GetInstance().IsPrimaryInputReleased();
+    }
+    return false;
+}
+
+// ========== ESSENTIAL MISSING RAYLIB FUNCTIONS ==========
+// Only add functions that are not already defined
+
+extern "C" {
+
+void DrawTextureRec(Texture2D texture, Rectangle source, Vector2 position, Color tint)
+{
+    // Convert Vector2 position to Rectangle dest using source dimensions
+    Rectangle dest = { position.x, position.y, source.width, source.height };
+    DrawTexturePro_iOS(texture, source, dest, { 0.0f, 0.0f }, 0.0f, tint);
+}
+
+// Essential drawing functions that are missing
+void ClearBackground(Color color) {
+    // Simple background clear - just draw a full-screen rectangle
+    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), color);
+}
+
+// Text drawing wrappers
+void DrawTextEx(Font font, const char* text, Vector2 position, float fontSize, float spacing, Color tint) {
+    TraceLog(LOG_INFO, "[RaylibCompat_iOS] DrawTextEx: text='%s', pos=(%.1f, %.1f), fontSize=%.1f, spacing=%.1f, color=(%d,%d,%d,%d)", 
+             text, position.x, position.y, fontSize, spacing, tint.r, tint.g, tint.b, tint.a);
+
+    if (font.texture.id == 0 || !font.recs || !font.glyphs || !font.texture.texture) {
+        TraceLog(LOG_WARNING, "[RaylibCompat_iOS] DrawTextEx: Invalid font, falling back to DrawText");
+        DrawText(text, (int)position.x, (int)position.y, (int)fontSize, tint);
+        return;
+    }
+
+    float scale = fontSize / (float)font.baseSize;
+    float x = position.x;
+    float y = position.y;
+    const int startChar = 32;
+    const int endChar = 126;
+    int* glyphData = (int*)font.glyphs;
+
+    for (const char* p = text; *p; p++) {
+        unsigned char c = (unsigned char)*p;
+        if (c < startChar || c > endChar) {
+            x += fontSize * 0.5f;
+            continue;
+        }
+        int index = c - startChar;
+        if (index < 0 || index >= font.glyphCount) {
+            x += fontSize * 0.5f;
+            continue;
+        }
+
+        Rectangle src = {
+            font.recs[index].x * font.texture.width,
+            font.recs[index].y * font.texture.height,
+            font.recs[index].width * font.texture.width,
+            font.recs[index].height * font.texture.height
+        };
+        Rectangle dst = {
+            x,
+            y + (glyphData[index * 4 + 1] * scale),
+            src.width * scale,
+            src.height * scale
+        };
+
+        if (src.width <= 0 || src.height <= 0) {
+            TraceLog(LOG_ERROR, "[RaylibCompat_iOS] DrawTextEx: Invalid UVs for char '%c'", c);
+            x += fontSize * 0.5f;
+            continue;
+        }
+
+        // Use SDF pipeline for grayscale textures
+        if (font.texture.format == IOS_PIXELFORMAT_UNCOMPRESSED_GRAYSCALE) {
+            // Ensure MetalRenderer uses SDF shader (handled in MetalRenderer::DrawTexture)
+            DrawTexturePro_iOS(font.texture, src, dst, {0, 0}, 0.0f, tint);
+        } else {
+            DrawTexturePro_iOS(font.texture, src, dst, {0, 0}, 0.0f, tint);
+        }
+
+        x += glyphData[index * 4 + 3] * scale + spacing;
+    }
+}
+
+// Texture drawing wrappers
+void DrawTexture(Texture2D texture, int posX, int posY, Color tint) {
+    DrawTexture_iOS(texture, posX, posY, tint);
+}
+
+void DrawTextureV(Texture2D texture, Vector2 position, Color tint) {
+    DrawTextureV_iOS(texture, position, tint);
+}
+
+void DrawTextureEx(Texture2D texture, Vector2 position, float rotation, float scale, Color tint) {
+    DrawTextureEx_iOS(texture, position, rotation, scale, tint);
+}
+
+void DrawTexturePro(Texture2D texture, Rectangle source, Rectangle dest, Vector2 origin, float rotation, Color tint) {
+    DrawTexturePro_iOS(texture, source, dest, origin, rotation, tint);
+}
+
+// Rectangle drawing wrappers
+void DrawRectangle(int posX, int posY, int width, int height, Color color) {
+    DrawRectangle_iOS(posX, posY, width, height, (color.r << 24) | (color.g << 16) | (color.b << 8) | color.a);
+}
+
+void DrawRectangleRec(Rectangle rec, Color color) {
+    DrawRectangle((int)rec.x, (int)rec.y, (int)rec.width, (int)rec.height, color);
+}
+
+void DrawRectangleRounded(Rectangle rec, float roundness, int segments, Color color) {
+    // For now, use regular rectangle drawing
+    DrawRectangleRec(rec, color);
+}
+
+// Line and circle drawing (simple implementations)
+void DrawLine(int startPosX, int startPosY, int endPosX, int endPosY, Color color) {
+    // Simple line drawing - not implemented for iOS yet
+}
+
+void DrawLineEx(Vector2 startPos, Vector2 endPos, float thick, Color color) {
+    PlatformLayer::GetInstance().DrawLineEx(startPos.x, startPos.y, endPos.x, endPos.y, thick, color);
+}
+
+void DrawRectangleRoundedLines(Rectangle rec, float roundness, int segments, Color color) {
+    // Use default line thickness of 1.0f
+    DrawRectangleRoundedLinesEx(rec, roundness, segments, 1.0f, color);
+}
+
+void DrawRectangleRoundedLinesEx(Rectangle rec, float roundness, int segments, float lineThick, Color color) {
+    PlatformLayer::GetInstance().DrawRectangleRoundedLines(rec.x, rec.y, rec.width, rec.height, roundness, segments, lineThick, color);
+}
+
+void DrawCircleV(Vector2 center, float radius, Color color) {
+    // Simple circle drawing - not implemented for iOS yet
+    PlatformLayer& platform = PlatformLayer::GetInstance();
+    void* delegatePtr = platform.GetDelegate();
+    MetalRenderer* metalRenderer = nullptr;
+    if (delegatePtr) {
+        PlatformLayerDelegate* delegate = (__bridge PlatformLayerDelegate*)delegatePtr;
+        if ([delegate respondsToSelector:@selector(getMetalRenderer)]) {
+            metalRenderer = (MetalRenderer*)[delegate getMetalRenderer];
+        }
+    }
+    if (metalRenderer) {
+        metalRenderer->DrawCircle(center.x, center.y, radius, color);
+    }
+}
+
+// Essential Vector2 math functions
+
+
+/////// OLD GAME VIEW
+
+@ -0,0 +1,537 @@
+#import "GameView.h"
+#import "MetalRenderer.h"
+#import "UIManager.h"
+#import "RaylibCompat.h"
+
+@implementation GameView {
+    MetalRenderer* _metalRenderer;
+    BOOL _isInitialized;
+    BOOL _touchActive;
+    CGPoint _currentTouchPosition;
+    CGPoint _touchStartPosition;
+    BOOL _touchPressed;
+    BOOL _touchReleased;
+    CFTimeInterval _touchStartTime;
+    CFTimeInterval _lastFrameTime;
+    
+    // Multi-touch support
+    NSMutableArray<UITouch *> *_activeTouches;
+    NSMutableDictionary *_touchStartPositions;
+    NSMutableDictionary *_touchStartTimes;
+    float _initialPinchDistance;
+    float _currentPinchDistance;
+}
+
+- (instancetype)initWithFrame:(CGRect)frame device:(id<MTLDevice>)device game:(Game*)game {
+    self = [super initWithFrame:frame device:device];
+    if (self) {
+        TraceLog(LOG_INFO, "[INIT] ========================================");
+        TraceLog(LOG_INFO, "[INIT] GameView initWithFrame STARTING");
+        TraceLog(LOG_INFO, "[INIT] ========================================");
+        TraceLog(LOG_INFO, "[INIT] Frame: %@", NSStringFromCGRect(frame));
+        TraceLog(LOG_INFO, "[INIT] Device: %p", device);
+        TraceLog(LOG_INFO, "[INIT] Game: %p", game);
+        
+        // Configure MTKView properties
+        self.delegate = self;
+        self.enableSetNeedsDisplay = YES;
+        self.multipleTouchEnabled = YES;
+        self.userInteractionEnabled = YES;
+        
+        // Debug: Test touch configuration
+        TraceLog(LOG_INFO, "[TOUCH_DEBUG] GameView touch configuration:");
+        TraceLog(LOG_INFO, "[TOUCH_DEBUG] - multipleTouchEnabled: %@", self.multipleTouchEnabled ? @"YES" : @"NO");
+        TraceLog(LOG_INFO, "[TOUCH_DEBUG] - userInteractionEnabled: %@", self.userInteractionEnabled ? @"YES" : @"NO");
+        TraceLog(LOG_INFO, "[TOUCH_DEBUG] - delegate: %p", self.delegate);
+        TraceLog(LOG_INFO, "[TOUCH_DEBUG] - frame: %@", NSStringFromCGRect(self.frame));
+        TraceLog(LOG_INFO, "[TOUCH_DEBUG] - bounds: %@", NSStringFromCGRect(self.bounds));
+        self.colorPixelFormat = MTLPixelFormatBGRA8Unorm;
+        self.depthStencilPixelFormat = MTLPixelFormatDepth32Float;
+        self.clearColor = MTLClearColorMake(0.1, 0.1, 0.1, 1.0);
+        self.preferredFramesPerSecond = 60;
+        
+        TraceLog(LOG_INFO, "[INIT] MTKView properties configured");
+        
+        // Store game reference
+        _game = game;
+        
+        // Initialize MetalRenderer
+        TraceLog(LOG_INFO, "[INIT] Creating MetalRenderer");
+        _metalRenderer = new MetalRenderer();
+        if (!_metalRenderer->Initialize(self)) {
+            TraceLog(LOG_ERROR, "[ERROR] Failed to initialize MetalRenderer");
+            return nil;
+        }
+        TraceLog(LOG_INFO, "[INIT] MetalRenderer initialized successfully: %p", _metalRenderer);
+        
+        // Initialize TouchControls with actual screen dimensions (pixels, not points)
+        UIScreen* screen = [UIScreen mainScreen];
+        CGRect nativeBounds = screen.nativeBounds;
+        _touchControls = new TouchControls();
+        _touchControls->Initialize(nativeBounds.size.width, nativeBounds.size.height);
+        TraceLog(LOG_INFO, "[INIT] TouchControls initialized with screen pixel dimensions: %.0fx%.0f", nativeBounds.size.width, nativeBounds.size.height);
+        
+        // Initialize multi-touch tracking
+        _activeTouches = [[NSMutableArray alloc] init];
+        _touchStartPositions = [[NSMutableDictionary alloc] init];
+        _touchStartTimes = [[NSMutableDictionary alloc] init];
+        _initialPinchDistance = 0.0f;
+        _currentPinchDistance = 0.0f;
+        
+        // Initialize UIManager with current screen metrics
+        // Reuse existing screen and nativeBounds variables
+        CGFloat nativeScale = screen.nativeScale;
+        UIEdgeInsets insets = self.safeAreaInsets;
+        CGRect safeAreaPoints = UIEdgeInsetsInsetRect(frame, insets);
+        CGRect safeAreaPixels = CGRectMake(safeAreaPoints.origin.x * nativeScale,
+                                           safeAreaPoints.origin.y * nativeScale,
+                                           safeAreaPoints.size.width * nativeScale,
+                                           safeAreaPoints.size.height * nativeScale);
+        
+        UIManager& uiManager = UIManager::GetInstance();
+        uiManager.Initialize((float)frame.size.width, (float)frame.size.height,
+                            (float)nativeBounds.size.width, (float)nativeBounds.size.height,
+                            { (float)safeAreaPoints.origin.x, (float)safeAreaPoints.origin.y, (float)safeAreaPoints.size.width, (float)safeAreaPoints.size.height },
+                            { (float)safeAreaPixels.origin.x, (float)safeAreaPixels.origin.y, (float)safeAreaPixels.size.width, (float)safeAreaPixels.size.height });
+        
+        TraceLog(LOG_INFO, "[INIT] UIManager initialized with safe area");
+        
+        _isInitialized = YES;
+        TraceLog(LOG_INFO, "[INIT] ========================================");
+        TraceLog(LOG_INFO, "[INIT] GameView initialization COMPLETED");
+        TraceLog(LOG_INFO, "[INIT] ========================================");
+    }
+    return self;
+}
+
+#pragma mark - Touch Handling
+
+- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+    TraceLog(LOG_INFO, "[TOUCH_DEBUG] touchesBegan called with %lu touches", (unsigned long)touches.count);
+    for (UITouch *touch in touches) {
+        CGPoint location = [touch locationInView:self];
+        TraceLog(LOG_INFO, "[TOUCH_DEBUG] touchesBegan: touch at (%.1f, %.1f)", location.x, location.y);
+        
+        // Add touch to active touches array
+        if (![_activeTouches containsObject:touch]) {
+            [_activeTouches addObject:touch];
+            NSNumber *touchKey = @((NSUInteger)touch);
+            [_touchStartPositions setObject:[NSValue valueWithCGPoint:location] forKey:touchKey];
+            [_touchStartTimes setObject:@(CACurrentMediaTime()) forKey:touchKey];
+        }
+        
+        // Update primary touch state for polling (use first touch)
+        if (_activeTouches.count == 1) {
+            _touchActive = YES;
+            _currentTouchPosition = location;
+            _touchStartPosition = location;
+            _touchPressed = YES;
+            _touchReleased = NO;
+            _touchStartTime = CACurrentMediaTime();
+        }
+        
+        // Update pinch distance for multi-touch
+        [self updatePinchDistance];
+        
+        // Log view bounds for coordinate context
+        CGRect bounds = self.bounds;
+        TraceLog(LOG_INFO, "[TOUCH] View bounds: (%.1f, %.1f, %.1f, %.1f)", 
+                 bounds.origin.x, bounds.origin.y, bounds.size.width, bounds.size.height);
+        
+        // SINGLE SOURCE OF TRUTH: Direct call to TouchControls static method
+        TraceLog(LOG_INFO, "[TOUCH_DEBUG] Calling TouchControls::SetTouchState(true, %.1f, %.1f)", location.x, location.y);
+        TouchControls::SetTouchState(true, location.x, location.y);
+        TraceLog(LOG_INFO, "[TOUCH] TouchControls::SetTouchState called with (%.1f, %.1f, true)", location.x, location.y);
+        
+        // IMMEDIATE PROCESSING: Update the static buffer right away so the processed state is available
+        TouchControls::UpdateStatic();
+        TraceLog(LOG_INFO, "[TOUCH_DEBUG] Immediate UpdateStatic() called after SetTouchState");
+        
+        // MULTI-TOUCH SUPPORT: Update multi-touch buffer for gesture recognition
+        int touchIndex = (int)[_activeTouches indexOfObject:touch];
+        if (touchIndex < 3) { // Support up to 3 touches
+            TouchControls::SetMultiTouchState(touchIndex, true, location.x, location.y);
+            TraceLog(LOG_INFO, "[TOUCH] Multi-touch: touch %d began at (%.1f, %.1f)", touchIndex, location.x, location.y);
+        }
+    }
+    [self setNeedsDisplay];
+}
+
+- (void)touchesMoved:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+    TraceLog(LOG_INFO, "[TOUCH] touchesMoved called with %lu touches", (unsigned long)touches.count);
+    
+    for (UITouch *touch in touches) {
+        CGPoint location = [touch locationInView:self];
+        TraceLog(LOG_INFO, "[TOUCH] touchesMoved: touch at (%.1f, %.1f)", location.x, location.y);
+        
+        // Update primary touch state for polling (use first touch)
+        if (_activeTouches.count > 0 && [_activeTouches indexOfObject:touch] == 0) {
+            _currentTouchPosition = location;
+        }
+        
+        // Update pinch distance for multi-touch
+        [self updatePinchDistance];
+        
+        // SINGLE SOURCE OF TRUTH: Direct call to TouchControls static method
+        TouchControls::SetTouchState(true, location.x, location.y);
+        TraceLog(LOG_INFO, "[TOUCH] TouchControls::SetTouchState called with (%.1f, %.1f, true)", location.x, location.y);
+        
+        // IMMEDIATE PROCESSING: Update the static buffer right away so the processed state is available
+        TouchControls::UpdateStatic();
+        TraceLog(LOG_INFO, "[TOUCH_DEBUG] Immediate UpdateStatic() called after SetTouchState (moved)");
+        
+        // MULTI-TOUCH SUPPORT: Update multi-touch buffer for gesture recognition
+        int touchIndex = (int)[_activeTouches indexOfObject:touch];
+        if (touchIndex < 3) { // Support up to 3 touches
+            TouchControls::SetMultiTouchState(touchIndex, true, location.x, location.y);
+            TraceLog(LOG_INFO, "[TOUCH] Multi-touch: touch %d moved to (%.1f, %.1f)", touchIndex, location.x, location.y);
+        }
+    }
+    [self setNeedsDisplay];
+}
+
+- (void)touchesEnded:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+    TraceLog(LOG_INFO, "[TOUCH_DEBUG] touchesEnded called with %lu touches", (unsigned long)touches.count);
+    for (UITouch *touch in touches) {
+        CGPoint location = [touch locationInView:self];
+        TraceLog(LOG_INFO, "[TOUCH_DEBUG] touchesEnded: touch at (%.1f, %.1f)", location.x, location.y);
+        
+        // MULTI-TOUCH SUPPORT: Update multi-touch buffer before removing touch
+        int touchIndex = (int)[_activeTouches indexOfObject:touch];
+        if (touchIndex < 3) { // Support up to 3 touches
+            TouchControls::SetMultiTouchState(touchIndex, false, location.x, location.y);
+            TraceLog(LOG_INFO, "[TOUCH] Multi-touch: touch %d ended at (%.1f, %.1f)", touchIndex, location.x, location.y);
+        }
+        
+        // Remove touch from active touches array
+        NSNumber *touchKey = @((NSUInteger)touch);
+        [_activeTouches removeObject:touch];
+        [_touchStartPositions removeObjectForKey:touchKey];
+        [_touchStartTimes removeObjectForKey:touchKey];
+        
+        // Update primary touch state for polling (if this was the first touch)
+        if (_activeTouches.count == 0) {
+            _touchActive = NO;
+            _touchPressed = NO;
+            _touchReleased = YES;
+        }
+        
+        // Update pinch distance for multi-touch
+        [self updatePinchDistance];
+        
+        // SINGLE SOURCE OF TRUTH: Direct call to TouchControls static method
+        TraceLog(LOG_INFO, "[TOUCH_DEBUG] Calling TouchControls::SetTouchState(false, %.1f, %.1f)", location.x, location.y);
+        TouchControls::SetTouchState(false, location.x, location.y);
+        TraceLog(LOG_INFO, "[TOUCH] TouchControls::SetTouchState called with (%.1f, %.1f, false)", location.x, location.y);
+        
+        // IMMEDIATE PROCESSING: Update the static buffer right away so the processed state is available
+        TouchControls::UpdateStatic();
+        TraceLog(LOG_INFO, "[TOUCH_DEBUG] Immediate UpdateStatic() called after SetTouchState (ended)");
+    }
+    [self setNeedsDisplay];
+}
+
+- (void)touchesCancelled:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+    TraceLog(LOG_INFO, "[TOUCH] touchesCancelled called with %lu touches", (unsigned long)touches.count);
+    
+    for (UITouch *touch in touches) {
+        // MULTI-TOUCH SUPPORT: Update multi-touch buffer before removing touch
+        int touchIndex = (int)[_activeTouches indexOfObject:touch];
+        if (touchIndex < 3) { // Support up to 3 touches
+            TouchControls::SetMultiTouchState(touchIndex, false, 0.0f, 0.0f);
+            TraceLog(LOG_INFO, "[TOUCH] Multi-touch: touch %d cancelled", touchIndex);
+        }
+        
+        // Remove touch from active touches array
+        NSNumber *touchKey = @((NSUInteger)touch);
+        [_activeTouches removeObject:touch];
+        [_touchStartPositions removeObjectForKey:touchKey];
+        [_touchStartTimes removeObjectForKey:touchKey];
+    }
+    
+    // Reset all touch states
+    _touchActive = NO;
+    _touchPressed = NO;
+    _touchReleased = NO;
+    _currentPinchDistance = 0.0f;
+    _initialPinchDistance = 0.0f;
+    
+    // SINGLE SOURCE OF TRUTH: Cancel all touches - set to false with zero coordinates
+    TouchControls::SetTouchState(false, 0.0f, 0.0f);
+    TraceLog(LOG_INFO, "[TOUCH] TouchControls::SetTouchState called with (0.0, 0.0, false) - cancelled");
+    
+    // IMMEDIATE PROCESSING: Update the static buffer right away so the processed state is available
+    TouchControls::UpdateStatic();
+    TraceLog(LOG_INFO, "[TOUCH_DEBUG] Immediate UpdateStatic() called after SetTouchState (cancelled)");
+    
+    [self setNeedsDisplay];
+}
+
+// Implementation of the missing processTouchAtPoint method
+- (void)processTouchAtPoint:(CGPoint)point isDown:(BOOL)isDown {
+    TraceLog(LOG_INFO, "[TOUCH] processTouchAtPoint called: (%.1f, %.1f), isDown: %s", 
+             point.x, point.y, isDown ? "YES" : "NO");
+    
+    // SINGLE SOURCE OF TRUTH: Direct call to TouchControls static method
+    TouchControls::SetTouchState(isDown, point.x, point.y);
+}
+
+#pragma mark - MTKViewDelegate
+
+- (void)mtkView:(MTKView *)view drawableSizeWillChange:(CGSize)size {
+    TraceLog(LOG_INFO, "[RENDER] Drawable size changed to: %@", NSStringFromCGSize(size));
+    
+    // Update TouchControls with new dimensions
+    if (_touchControls) {
+        _touchControls->Initialize(size.width, size.height);
+        TraceLog(LOG_INFO, "[RENDER] TouchControls updated with new dimensions: %.0fx%.0f", size.width, size.height);
+    }
+    
+    // Update UIManager with new screen metrics
+    UIScreen* screen = [UIScreen mainScreen];
+    CGFloat nativeScale = screen.nativeScale;
+    CGRect bounds = self.bounds;
+    UIEdgeInsets insets = self.safeAreaInsets;
+    CGRect safeAreaPoints = UIEdgeInsetsInsetRect(bounds, insets);
+    CGRect safeAreaPixels = CGRectMake(safeAreaPoints.origin.x * nativeScale,
+                                       safeAreaPoints.origin.y * nativeScale,
+                                       safeAreaPoints.size.width * nativeScale,
+                                       safeAreaPoints.size.height * nativeScale);
+    
+    UIManager& uiManager = UIManager::GetInstance();
+    uiManager.Initialize((float)bounds.size.width, (float)bounds.size.height,
+                        (float)(size.width * nativeScale), (float)(size.height * nativeScale),
+                        { (float)safeAreaPoints.origin.x, (float)safeAreaPoints.origin.y, (float)safeAreaPoints.size.width, (float)safeAreaPoints.size.height },
+                        { (float)safeAreaPixels.origin.x, (float)safeAreaPixels.origin.y, (float)safeAreaPixels.size.width, (float)safeAreaPixels.size.height });
+    
+    TraceLog(LOG_INFO, "[RENDER] UIManager updated with new dimensions");
+}
+
+- (void)drawInMTKView:(MTKView *)view {
+    static int frameCount = 0;
+    frameCount++;
+    
+    if (frameCount == 1 || frameCount % 60 == 0) {
+        TraceLog(LOG_INFO, "[RENDER] drawInMTKView called (frame: %d)", frameCount);
+    }
+    
+    if (!_isInitialized || !_metalRenderer) {
+        if (frameCount == 1) {
+            TraceLog(LOG_ERROR, "[ERROR] drawInMTKView: GameView not properly initialized");
+        }
+        return;
+    }
+    
+    // Begin Metal frame
+    _metalRenderer->BeginFrame();
+    _metalRenderer->Clear({25, 25, 25, 255}); // Dark gray background
+    
+    // Render game if available and initialized
+    if (_game && _game->IsInitialized()) {
+        if (frameCount == 1 || frameCount % 120 == 0) {
+            TraceLog(LOG_INFO, "[RENDER] Rendering game frame (frame: %d)", frameCount);
+        }
+        
+        // Render the game frame
+        _game->RenderFrame();
+        
+        // Draw touch controls overlay (always active for touch input)
+        if (_touchControls && _touchControls->IsEnabled()) {
+            _touchControls->Draw(0.3f); // Draw with 30% alpha for subtle overlay
+        }
+    } else {
+        if (frameCount == 1 || frameCount % 120 == 0) {
+            TraceLog(LOG_WARNING, "[WARN] drawInMTKView: Game not available or not initialized");
+        }
+    }
+    
+    // End Metal frame
+    _metalRenderer->EndFrame();
+    _metalRenderer->Present();
+    
+    if (frameCount == 1 || frameCount % 60 == 0) {
+        TraceLog(LOG_INFO, "[RENDER] drawInMTKView completed (frame: %d)", frameCount);
+    }
+}
+
+#pragma mark - MetalRenderer Access
+
+- (void*)getMetalRenderer {
+    return _metalRenderer;
+}
+
+#pragma mark - Touch State Polling
+
+- (BOOL)isTouchActive {
+    return _touchActive;
+}
+
+- (CGPoint)getCurrentTouchPosition {
+    return _currentTouchPosition;
+}
+
+- (CGPoint)getTouchStartPosition {
+    return _touchStartPosition;
+}
+
+- (BOOL)isTouchPressed {
+    return _touchPressed;
+}
+
+- (BOOL)isTouchReleased {
+    return _touchReleased;
+}
+
+- (float)getTouchDuration {
+    if (!_touchActive) return 0.0f;
+    return (float)(CACurrentMediaTime() - _touchStartTime);
+}
+
+- (float)getTouchDistance {
+    if (!_touchActive) return 0.0f;
+    float dx = _currentTouchPosition.x - _touchStartPosition.x;
+    float dy = _currentTouchPosition.y - _touchStartPosition.y;
+    return sqrtf(dx * dx + dy * dy);
+}
+
+- (void)resetFrameTouchStates {
+    // Reset frame-specific states that should only last one frame
+    _touchPressed = NO;
+    _touchReleased = NO;
+}
+
+#pragma mark - Multi-touch Support
+
+- (int)getTouchCount {
+    return (int)_activeTouches.count;
+}
+
+- (CGPoint)getTouchPositionAtIndex:(int)index {
+    if (index >= 0 && index < _activeTouches.count) {
+        UITouch *touch = _activeTouches[index];
+        return [touch locationInView:self];
+    }
+    return CGPointMake(0, 0);
+}
+
+- (BOOL)isTouchActiveAtIndex:(int)index {
+    return (index >= 0 && index < _activeTouches.count);
+}
+
+- (float)getPinchDistance {
+    return _currentPinchDistance;
+}
+
+- (float)getPinchScale {
+    if (_initialPinchDistance > 0.0f) {
+        return _currentPinchDistance / _initialPinchDistance;
+    }
+    return 1.0f;
+}
+
+- (void)updatePinchDistance {
+    if (_activeTouches.count >= 2) {
+        CGPoint pos1 = [self getTouchPositionAtIndex:0];
+        CGPoint pos2 = [self getTouchPositionAtIndex:1];
+        
+        float dx = pos2.x - pos1.x;
+        float dy = pos2.y - pos1.y;
+        _currentPinchDistance = sqrtf(dx * dx + dy * dy);
+        
+        // Set initial distance on first multi-touch
+        if (_initialPinchDistance == 0.0f) {
+            _initialPinchDistance = _currentPinchDistance;
+        }
+    } else {
+        _currentPinchDistance = 0.0f;
+        _initialPinchDistance = 0.0f;
+    }
+}
+
+- (void)getTouchData:(int*)touchCount 
+         positions:(CGPoint*)positions 
+         active:(BOOL*)active 
+         pinchDistance:(float*)pinchDistance 
+         pinchScale:(float*)pinchScale {
+    
+    if (touchCount) *touchCount = (int)_activeTouches.count;
+    if (pinchDistance) *pinchDistance = _currentPinchDistance;
+    if (pinchScale) *pinchScale = [self getPinchScale];
+    
+    // Fill positions and active arrays if provided
+    if (positions && active) {
+        int maxTouches = MIN((int)_activeTouches.count, 10); // Limit to 10 touches max
+        for (int i = 0; i < maxTouches; i++) {
+            positions[i] = [self getTouchPositionAtIndex:i];
+            active[i] = [self isTouchActiveAtIndex:i];
+        }
+    }
+}
+
+#pragma mark - TouchControls Polling
+
+- (int)getTouchControlsTouchCount {
+    if (!_touchControls) return 0;
+    return _touchControls->GetTouchCount();
+}
+
+- (CGPoint)getTouchControlsTouchPositionAtIndex:(int)index {
+    if (!_touchControls) return CGPointMake(0, 0);
+    Vector2 pos = _touchControls->GetTouchPosition(index);
+    return CGPointMake(pos.x, pos.y);
+}
+
+- (BOOL)isTouchControlsTouchActiveAtIndex:(int)index {
+    if (!_touchControls) return NO;
+    return _touchControls->IsTouchActive(index);
+}
+
+- (float)getTouchControlsPinchDistance {
+    if (!_touchControls) return 0.0f;
+    return _touchControls->GetPinchDistance();
+}
+
+- (float)getTouchControlsPinchScale {
+    if (!_touchControls) return 1.0f;
+    return _touchControls->GetPinchScale();
+}
+
+#pragma mark - Safe Area Handling
+
+- (void)updateSafeAreaWithInsets:(UIEdgeInsets)insets {
+    UIScreen* screen = [UIScreen mainScreen];
+    CGFloat nativeScale = screen.nativeScale;
+    CGRect bounds = self.bounds;
+    CGRect safeAreaPoints = UIEdgeInsetsInsetRect(bounds, insets);
+    CGRect safeAreaPixels = CGRectMake(safeAreaPoints.origin.x * nativeScale,
+                                       safeAreaPoints.origin.y * nativeScale,
+                                       safeAreaPoints.size.width * nativeScale,
+                                       safeAreaPoints.size.height * nativeScale);
+    
+    UIManager& uiManager = UIManager::GetInstance();
+    uiManager.Initialize((float)bounds.size.width, (float)bounds.size.height,
+                        (float)(bounds.size.width * nativeScale), (float)(bounds.size.height * nativeScale),
+                        { (float)safeAreaPoints.origin.x, (float)safeAreaPoints.origin.y, (float)safeAreaPoints.size.width, (float)safeAreaPoints.size.height },
+                        { (float)safeAreaPixels.origin.x, (float)safeAreaPixels.origin.y, (float)safeAreaPixels.size.width, (float)safeAreaPixels.size.height });
+    
+    TraceLog(LOG_INFO, "[SAFE_AREA] Updated safe area with insets: %@", NSStringFromUIEdgeInsets(insets));
+}
+
+#pragma mark - Cleanup
+
+- (void)dealloc {
+    TraceLog(LOG_INFO, "[CLEANUP] GameView dealloc");
+    
+    if (_metalRenderer) {
+        _metalRenderer->Shutdown();
+        delete _metalRenderer;
+        _metalRenderer = nullptr;
+    }
+    
+    if (_touchControls) {
+        delete _touchControls;
+        _touchControls = nullptr;
+    }
+}
+
+@end 
+
+// Old Game View Controller
+
+@ -1,23 +1,23 @@
+#import "GameViewController.h"
+#import <Metal/Metal.h>
+#import "RaylibCompat.h"
+#import "Game.h"
+#import "PlatformLayerDelegate.h"
+#import "GameView.h"
+#import "MetalRenderer.h"
+#import "RaylibCompat_iOS.h"
+#import "UIManager.h"
+#import "PlatformLayer.h"
+
+// Game state
+extern "C++" {
+    Game* GetGameInstance();
+}
+
+// Include our C++ game headers
+extern "C" int game_main(int argc, char *argv[]);
+
+@interface GameViewController () {
+    MTKView *_metalView;
+    GameView *_gameView;
+    dispatch_queue_t _gameQueue;
+    BOOL _gameInitialized;
+    CADisplayLink *_displayLink;
+@ -30,166 +30,153 @@
+@implementation GameViewController
+
+- (void)loadView {
+    // Create and configure the MTKView
+    _metalView = [[MTKView alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
+    _metalView.device = MTLCreateSystemDefaultDevice();
+    _metalView.depthStencilPixelFormat = MTLPixelFormatDepth32Float;
+    _metalView.clearColor = MTLClearColorMake(0.0, 0.0, 0.0, 1.0);
+    // Create and configure the GameView (custom MTKView subclass)
+    _gameView = [[GameView alloc] initWithFrame:[[UIScreen mainScreen] bounds] 
+                                         device:MTLCreateSystemDefaultDevice() 
+                                           game:nullptr]; // Will be set after game initialization
+    
+    // PlatformLayerDelegate will handle rendering automatically
+    _metalView.enableSetNeedsDisplay = YES; // Enable setNeedsDisplay so our calls work
+    
+    self.view = _metalView;
+    self.view = _gameView;
+}
+
+- (void)viewDidLoad {
+    NSLog(@"[TEST_NSLOG] ========================================");
+    NSLog(@"[TEST_NSLOG] This is a test NSLog call from GameViewController.mm");
+    NSLog(@"[TEST_NSLOG] ========================================");
+    
+    NSLog(@"[INIT] ========================================");
+    NSLog(@"[INIT] GameViewController viewDidLoad STARTING on thread: %@", [NSThread currentThread]);
+    TraceLog(LOG_INFO, "[INIT] ========================================");
+    TraceLog(LOG_INFO, "[INIT] GameViewController viewDidLoad STARTING on thread: %@", [NSThread currentThread]);
+    
+    [super viewDidLoad];
+    
+    NSLog(@"[ACCESS] Step 1: Checking initial game instance before any initialization on thread: %@", [NSThread currentThread]);
+    TraceLog(LOG_INFO, "[ACCESS] Step 1: Checking initial game instance before any initialization on thread: %@", [NSThread currentThread]);
+    Game* initialGame = GetGameInstance();
+    NSLog(@"[ACCESS] Step 1: GetGameInstance() called before initialization, returning: %p on thread: %@", initialGame, [NSThread currentThread]);
+    TraceLog(LOG_INFO, "[ACCESS] Step 1: GetGameInstance() called before initialization, returning: %p on thread: %@", initialGame, [NSThread currentThread]);
+    
+    // Initialize Metal
+    _device = MTLCreateSystemDefaultDevice();
+    if (!_device) {
+        [self showErrorAlert:@"This device does not support Metal"];
+        return;
+    }
+    
+    // Configure MTKView
+    _metalView.device = _device;
+    _metalView.colorPixelFormat = MTLPixelFormatBGRA8Unorm;
+    _metalView.depthStencilPixelFormat = MTLPixelFormatDepth32Float;
+    _metalView.clearColor = MTLClearColorMake(0.1, 0.1, 0.1, 1.0);
+    
+    // PlatformLayerDelegate will handle rendering automatically
+    _metalView.enableSetNeedsDisplay = YES;
+    
+    // Add MTKView configuration debug logging
+    NSLog(@"[MTKVIEW DEBUG] Device: %p", _device);
+    NSLog(@"[MTKVIEW DEBUG] Color pixel format: %lu", (unsigned long)_metalView.colorPixelFormat);
+    NSLog(@"[MTKVIEW DEBUG] Depth stencil pixel format: %lu", (unsigned long)_metalView.depthStencilPixelFormat);
+    NSLog(@"[MTKVIEW DEBUG] Clear color: (%.3f,%.3f,%.3f,%.3f)", 
+          _metalView.clearColor.red, _metalView.clearColor.green, 
+          _metalView.clearColor.blue, _metalView.clearColor.alpha);
+    NSLog(@"[MTKVIEW DEBUG] Enable set needs display: %s", _metalView.enableSetNeedsDisplay ? "YES" : "NO");
+    NSLog(@"[MTKVIEW DEBUG] Frame: %@", NSStringFromCGRect(_metalView.frame));
+    NSLog(@"[MTKVIEW DEBUG] Bounds: %@", NSStringFromCGRect(_metalView.bounds));
+    
+    // Setup touch handling
+    _metalView.multipleTouchEnabled = YES;
+    _metalView.userInteractionEnabled = YES; // Ensure touch events are enabled
+    NSLog(@"[INIT] Set up touch handling");
+    // GameView is already configured in loadView
+    // The GameView handles all MTKView configuration and touch handling automatically
+    
+    TraceLog(LOG_INFO, "[INIT] GameView configuration completed");
+    TraceLog(LOG_INFO, "[INIT] GameView frame: %@", NSStringFromCGRect(_gameView.frame));
+    TraceLog(LOG_INFO, "[INIT] GameView bounds: %@", NSStringFromCGRect(_gameView.bounds));
+    
+    // Create game queue for background operations
+    _gameQueue = dispatch_queue_create("com.floppyturd.game", DISPATCH_QUEUE_SERIAL);
+    
+    // CRITICAL: Initialize PlatformLayer BEFORE calling game_main
+    NSLog(@"[INIT] Initializing PlatformLayer with MTKView: %p", _metalView);
+    TraceLog(LOG_INFO, "[INIT] Initializing PlatformLayer with GameView: %p", _gameView);
+    PlatformLayer& platformLayer = PlatformLayer::GetInstance();
+    platformLayer.Initialize((__bridge void*)_metalView);
+    NSLog(@"[INIT] PlatformLayer initialized successfully");
+    
+    // Get the GameView's MetalRenderer to share with PlatformLayer
+    void* gameViewMetalRenderer = [_gameView getMetalRenderer];
+    TraceLog(LOG_INFO, "[INIT] GameView MetalRenderer: %p", gameViewMetalRenderer);
+    
+    platformLayer.Initialize((__bridge void*)_gameView, (__bridge void*)self, gameViewMetalRenderer);
+    TraceLog(LOG_INFO, "[INIT] PlatformLayer initialized successfully");
+    
+    // --- Metal/iOS Native Pixel Initialization ---
+    UIScreen* screen = [UIScreen mainScreen];
+    CGRect nativeBounds = screen.nativeBounds; // in pixels
+    CGFloat nativeScale = screen.nativeScale;
+    CGRect bounds = self.view.bounds; // in points
+    UIEdgeInsets insets = self.view.safeAreaInsets;
+    CGRect safeAreaPoints = UIEdgeInsetsInsetRect(bounds, insets); // in points
+    CGRect safeAreaPixels = CGRectMake(safeAreaPoints.origin.x * nativeScale,
+                                       safeAreaPoints.origin.y * nativeScale,
+                                       safeAreaPoints.size.width * nativeScale,
+                                       safeAreaPoints.size.height * nativeScale);
+    // Set Metal layer drawable size to native pixel size
+    if ([self.view isKindOfClass:[MTKView class]]) {
+        MTKView* mtkView = (MTKView*)self.view;
+        mtkView.contentScaleFactor = nativeScale;
+        mtkView.drawableSize = CGSizeMake(nativeBounds.size.width, nativeBounds.size.height);
+    }
+    // Initialize UIManager with both point and pixel safe area
+    UIManager& uiManager = UIManager::GetInstance();
+    uiManager.Initialize((float)bounds.size.width, (float)bounds.size.height, // points
+                        (float)nativeBounds.size.width, (float)nativeBounds.size.height, // pixels
+                        { (float)safeAreaPoints.origin.x, (float)safeAreaPoints.origin.y, (float)safeAreaPoints.size.width, (float)safeAreaPoints.size.height }, // safe area in points
+                        { (float)safeAreaPixels.origin.x, (float)safeAreaPixels.origin.y, (float)safeAreaPixels.size.width, (float)safeAreaPixels.size.height }); // safe area in pixels
+    NSLog(@"[INIT] UIManager initialized: points=%.0fx%.0f, pixels=%.0fx%.0f, safeAreaPoints=(%.0f,%.0f,%.0f,%.0f), safeAreaPixels=(%.0f,%.0f,%.0f,%.0f)",
+    TraceLog(LOG_INFO, "[INIT] UIManager initialized: points=%.0fx%.0f, pixels=%.0fx%.0f, safeAreaPoints=(%.0f,%.0f,%.0f,%.0f), safeAreaPixels=(%.0f,%.0f,%.0f,%.0f)",
+        bounds.size.width, bounds.size.height, nativeBounds.size.width, nativeBounds.size.height,
+        safeAreaPoints.origin.x, safeAreaPoints.origin.y, safeAreaPoints.size.width, safeAreaPoints.size.height,
+        safeAreaPixels.origin.x, safeAreaPixels.origin.y, safeAreaPixels.size.width, safeAreaPixels.size.height);
+    
+    // Now initialize the game directly on the main thread.
+    // This is CRITICAL to prevent race conditions where the game loop
+    // starts before the game instance is created.
+    NSLog(@"[INIT] Step 2: Starting synchronous game initialization on main thread: %@", [NSThread currentThread]);
+    TraceLog(LOG_INFO, "[INIT] Step 2: Starting synchronous game initialization on main thread: %@", [NSThread currentThread]);
+    int result = game_main(0, nullptr);
+    
+    if (result == 0) {
+        NSLog(@"[INIT] Step 3: Game initialization successful, checking game instance on thread: %@", [NSThread currentThread]);
+        TraceLog(LOG_INFO, "[INIT] Step 3: Game initialization successful, checking game instance on thread: %@", [NSThread currentThread]);
+        Game* postInitGame = GetGameInstance();
+        NSLog(@"[ACCESS] Step 3: GetGameInstance() called after initialization, returning: %p on thread: %@", postInitGame, [NSThread currentThread]);
+        TraceLog(LOG_INFO, "[ACCESS] Step 3: GetGameInstance() called after initialization, returning: %p on thread: %@", postInitGame, [NSThread currentThread]);
+        
+        // Set the game instance in GameView for rendering
+        _gameView.game = postInitGame;
+        TraceLog(LOG_INFO, "[INIT] Game instance set in GameView: %p", postInitGame);
+        
+        _gameInitialized = YES;
+        [self startGameLoop];
+    } else {
+        NSLog(@"[ERROR] Step 3: Game initialization failed with code: %d on thread: %@", result, [NSThread currentThread]);
+        TraceLog(LOG_ERROR, "[ERROR] Step 3: Game initialization failed with code: %d on thread: %@", result, [NSThread currentThread]);
+        Game* failedInitGame = GetGameInstance();
+        NSLog(@"[ACCESS] Step 3: GetGameInstance() called after failed initialization, returning: %p on thread: %@", failedInitGame, [NSThread currentThread]);
+        TraceLog(LOG_INFO, "[ACCESS] Step 3: GetGameInstance() called after failed initialization, returning: %p on thread: %@", failedInitGame, [NSThread currentThread]);
+        [self showErrorAlert:[NSString stringWithFormat:@"Game initialization failed. Error code: %d", result]];
+    }
+    
+    NSLog(@"[INIT] GameViewController viewDidLoad COMPLETED");
+    NSLog(@"[INIT] ========================================");
+    TraceLog(LOG_INFO, "[INIT] GameViewController viewDidLoad COMPLETED");
+    TraceLog(LOG_INFO, "[INIT] ========================================");
+}
+
+- (void)setupDisplayLink {
+    NSLog(@"[DEBUG] setupDisplayLink called");
+    TraceLog(LOG_INFO, "[DEBUG] setupDisplayLink called");
+    _displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(gameLoopTick:)];
+    _displayLink.preferredFramesPerSecond = 60;
+    [_displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSRunLoopCommonModes];
+    _previousTime = CACurrentMediaTime();
+    NSLog(@"[DEBUG] setupDisplayLink completed, displayLink=%p", _displayLink);
+    TraceLog(LOG_INFO, "[DEBUG] setupDisplayLink completed, displayLink=%p", _displayLink);
+}
+
+- (void)gameLoopTick:(CADisplayLink *)sender {
+    NSLog(@"[DEBUG] gameLoopTick called on thread: %@", [NSThread currentThread]);
+    TraceLog(LOG_INFO, "[DEBUG] gameLoopTick called on thread: %@", [NSThread currentThread]);
+    if (!_gameInitialized) {
+        NSLog(@"[DEBUG] Game not initialized, skipping gameLoopTick on thread: %@", [NSThread currentThread]);
+        TraceLog(LOG_INFO, "[DEBUG] Game not initialized, skipping gameLoopTick on thread: %@", [NSThread currentThread]);
+        return;
+    }
+    
+    Game* game = GetGameInstance();
+    NSLog(@"[ACCESS] GetGameInstance() called from gameLoopTick, returning: %p on thread: %@", game, [NSThread currentThread]);
+    TraceLog(LOG_INFO, "[ACCESS] GetGameInstance() called from gameLoopTick, returning: %p on thread: %@", game, [NSThread currentThread]);
+    if (!game) {
+        NSLog(@"[DEBUG] Game instance is null, skipping gameLoopTick on thread: %@", [NSThread currentThread]);
+        TraceLog(LOG_INFO, "[DEBUG] Game instance is null, skipping gameLoopTick on thread: %@", [NSThread currentThread]);
+        return;
+    }
+    
+    // Calculate delta time
+    CFTimeInterval currentTime = CACurrentMediaTime();
+    float deltaTime = (float)(currentTime - _previousTime);
+    _previousTime = currentTime;
+    
+    // Clamp delta time to prevent large jumps
+    if (deltaTime > 0.1f) deltaTime = 0.1f;
+    
+    NSLog(@"[DEBUG] gameLoopTick: deltaTime=%f, calling game->UpdateFrame", deltaTime);
+    TraceLog(LOG_INFO, "[DEBUG] gameLoopTick: deltaTime=%f, calling game->HandleInputFrame + UpdateFrame", deltaTime);
+    
+    // Run game update on the game queue
+    dispatch_async(_gameQueue, ^{
+        // Update game logic
+        // Phase 1: Handle input (latch all input before game logic)
+        game->HandleInputFrame();
+        
+        // Phase 2: Update game logic
+        game->UpdateFrame(deltaTime);
+        
+        // Trigger rendering on main thread
+        // Phase 3: Trigger rendering on main thread
+        dispatch_async(dispatch_get_main_queue(), ^{
+            NSLog(@"[DEBUG] gameLoopTick: Triggering setNeedsDisplay");
+            [_metalView setNeedsDisplay];
+            TraceLog(LOG_INFO, "[DEBUG] gameLoopTick: Triggering setNeedsDisplay");
+            [_gameView setNeedsDisplay];
+        });
+    });
+}
+@ -197,57 +184,33 @@ extern "C" int game_main(int argc, char *argv[]);
+- (void)viewWillLayoutSubviews {
+    [super viewWillLayoutSubviews];
+    
+    NSLog(@"[LAYOUT] View bounds: %@", NSStringFromCGRect(self.view.bounds));
+    TraceLog(LOG_INFO, "[LAYOUT] View bounds: %@", NSStringFromCGRect(self.view.bounds));
+    
+    // Update MTKView frame to match the view's bounds
+    if (_metalView && !CGRectEqualToRect(_metalView.frame, self.view.bounds)) {
+        _metalView.frame = self.view.bounds;
+        NSLog(@"[LAYOUT] MTKView frame updated to: %@", NSStringFromCGRect(_metalView.frame));
+    // Update GameView frame to match the view's bounds
+    if (_gameView && !CGRectEqualToRect(_gameView.frame, self.view.bounds)) {
+        _gameView.frame = self.view.bounds;
+        TraceLog(LOG_INFO, "[LAYOUT] GameView frame updated to: %@", NSStringFromCGRect(_gameView.frame));
+    }
+    
+    // Handle rotation if needed
+    UIInterfaceOrientation newOrientation = self.view.window.windowScene.interfaceOrientation;
+    NSLog(@"[ROTATION] Current orientation: %ld", (long)newOrientation);
+    TraceLog(LOG_INFO, "[ROTATION] Current orientation: %ld", (long)newOrientation);
+    
+    // Notify the game about orientation change
+    if (_metalView) {
+    if (_gameView) {
+        // Trigger a redraw with the new orientation
+        [_metalView setNeedsDisplay];
+        [_gameView setNeedsDisplay];
+    }
+}
+
+#pragma mark - Touch Handling
+
+- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+    for (UITouch *touch in touches) {
+        CGPoint location = [touch locationInView:_metalView];
+        UpdateTouchState((int)touch.hash, location.x, location.y, true);
+    }
+}
+
+- (void)touchesMoved:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+    for (UITouch *touch in touches) {
+        CGPoint location = [touch locationInView:_metalView];
+        UpdateTouchState((int)touch.hash, location.x, location.y, true);
+    }
+}
+
+- (void)touchesEnded:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+    for (UITouch *touch in touches) {
+        CGPoint location = [touch locationInView:_metalView];
+        UpdateTouchState((int)touch.hash, location.x, location.y, false);
+    }
+}
+
+- (void)touchesCancelled:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+    for (UITouch *touch in touches) {
+        UpdateTouchState((int)touch.hash, 0, 0, false);
+    }
+}
+// Touch handling is now managed by GameView
+// The GameView processes touch events and forwards them to TouchControls
+
+- (void)viewWillDisappear:(BOOL)animated {
+    [super viewWillDisappear:animated];
+    ClearAllTouchStates(); // Clear touches when view is no longer active
+    // Touch state clearing is handled by GameView
+}
+
+- (void)viewDidDisappear:(BOOL)animated {
+@ -270,7 +233,7 @@ extern "C" int game_main(int argc, char *argv[]);
+}
+
+- (void)dealloc {
+    NSLog(@"[CLEANUP] GameViewController dealloc");
+    TraceLog(LOG_INFO, "[CLEANUP] GameViewController dealloc");
+    
+    // Invalidate display link
+    if (_displayLink) {
+@ -280,146 +243,146 @@
+    
+    // Shutdown the game
+    Game* game = GetGameInstance();
+    NSLog(@"[ACCESS] GetGameInstance() called from dealloc, returning: %p", game);
+    TraceLog(LOG_INFO, "[ACCESS] GetGameInstance() called from dealloc, returning: %p", game);
+    if (game) {
+        NSLog(@"[CLEANUP] Shutting down game instance");
+        TraceLog(LOG_INFO, "[CLEANUP] Shutting down game instance");
+        game->Shutdown();
+        delete game;
+        NSLog(@"[ACCESS] SetGameInstance(nullptr) called from dealloc");
+        TraceLog(LOG_INFO, "[ACCESS] SetGameInstance(nullptr) called from dealloc");
+        SetGameInstance(nullptr);
+        Game* afterNullGame = GetGameInstance();
+        NSLog(@"[ACCESS] GetGameInstance() called after SetGameInstance(nullptr), returning: %p", afterNullGame);
+        TraceLog(LOG_INFO, "[ACCESS] GetGameInstance() called after SetGameInstance(nullptr), returning: %p", afterNullGame);
+    }
+    
+    // Clear the MTKView delegate
+    if (_metalView) {
+        _metalView.delegate = nil;
+    // Clear the GameView delegate
+    if (_gameView) {
+        _gameView.delegate = nil;
+    }
+    
+    // PlatformLayer is a singleton that manages its own lifetime
+    NSLog(@"[CLEANUP] PlatformLayer cleanup handled by singleton");
+    TraceLog(LOG_INFO, "[CLEANUP] PlatformLayer cleanup handled by singleton");
+    
+    // ARC will handle the rest of the Objective-C objects
+}
+
+#pragma mark - UI Helpers
+
+- (void)showLoadingIndicator:(BOOL)show {
+    static UIActivityIndicatorView *spinner = nil;
+    if (show) {
+        if (!spinner) {
+            spinner = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleLarge];
+            spinner.center = self.view.center;
+            spinner.color = [UIColor whiteColor];
+            spinner.hidesWhenStopped = YES;
+        }
+        [self.view addSubview:spinner];
+        [spinner startAnimating];
+    } else {
+        if (spinner) {
+            [spinner stopAnimating];
+            [spinner removeFromSuperview];
+        }
+    }
+}
+
+#pragma mark - Alert Handling
+
+- (void)startGameLoop {
+    NSLog(@"[INIT] Starting game loop with CADisplayLink");
+    TraceLog(LOG_INFO, "[INIT] Starting game loop with CADisplayLink");
+    
+    // Create display link for 60 FPS
+    _displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(gameLoopTick:)];
+    _displayLink.preferredFramesPerSecond = 60;
+    [_displayLink addToRunLoop:[NSRunLoop mainRunLoop] forMode:NSDefaultRunLoopMode];
+    
+    _previousTime = CACurrentMediaTime();
+    NSLog(@"[INIT] Game loop started successfully");
+    TraceLog(LOG_INFO, "[INIT] Game loop started successfully");
+}
+
+- (void)showErrorAlert:(NSString *)message {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Initialization Failed"
+                                                                       message:message
+                                                                preferredStyle:UIAlertControllerStyleAlert];
+        
+        UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"OK"
+                                                           style:UIAlertActionStyleDefault
+                                                         handler:^(UIAlertAction * action) {
+            // Exit the app or try to restart
+            exit(1);
+        }];
+        
+        [alert addAction:okAction];
+        [self presentViewController:alert animated:YES completion:nil];
+    });
+}
+
+- (void)showErrorAlert:(NSString*)title withMessage:(NSString*)message {
+    // Ensure UI updates happen on the main thread
+    dispatch_async(dispatch_get_main_queue(), ^{
+        UIAlertController *alert = [UIAlertController 
+            alertControllerWithTitle:title 
+            message:message 
+            preferredStyle:UIAlertControllerStyleAlert];
+            
+        UIAlertAction *okAction = [UIAlertAction 
+            actionWithTitle:@"OK" 
+            style:UIAlertActionStyleDefault 
+            handler:nil];
+        
+        [alert addAction:okAction];
+        [self presentViewController:alert animated:YES completion:nil];
+    });
+}
+
+#pragma mark - Device Orientation
+
+- (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
+    [super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
+    
+    // Update orientation on transition
+    [coordinator animateAlongsideTransition:^(id<UIViewControllerTransitionCoordinatorContext> context) {
+        // Get current screen scale and bounds
+        UIScreen* screen = [UIScreen mainScreen];
+        CGFloat nativeScale = screen.nativeScale;
+        CGRect nativeBounds = screen.nativeBounds;
+        
+        // Calculate pixel dimensions
+        CGSize sizePixels = CGSizeMake(size.width * nativeScale, size.height * nativeScale);
+        
+        // Get safe area in points and convert to pixels
+        UIEdgeInsets insets = self.view.safeAreaInsets;
+        CGRect safeAreaPoints = UIEdgeInsetsInsetRect(CGRectMake(0, 0, size.width, size.height), insets);
+        CGRect safeAreaPixels = CGRectMake(safeAreaPoints.origin.x * nativeScale,
+                                           safeAreaPoints.origin.y * nativeScale,
+                                           safeAreaPoints.size.width * nativeScale,
+                                           safeAreaPoints.size.height * nativeScale);
+        
+        // Update UIManager with new screen size
+        UIManager& uiManager = UIManager::GetInstance();
+        uiManager.Initialize((float)size.width, (float)size.height, // points
+                            (float)sizePixels.width, (float)sizePixels.height, // pixels
+                            { (float)safeAreaPoints.origin.x, (float)safeAreaPoints.origin.y, (float)safeAreaPoints.size.width, (float)safeAreaPoints.size.height }, // safe area in points
+                            { (float)safeAreaPixels.origin.x, (float)safeAreaPixels.origin.y, (float)safeAreaPixels.size.width, (float)safeAreaPixels.size.height }); // safe area in pixels
+        
+        NSLog(@"[SYSTEM] Orientation changed, updated UIManager: points=%.0fx%.0f, pixels=%.0fx%.0f", 
+        TraceLog(LOG_INFO, "[SYSTEM] Orientation changed, updated UIManager: points=%.0fx%.0f, pixels=%.0fx%.0f", 
+              size.width, size.height, sizePixels.width, sizePixels.height);
+        
+    } completion:nil];
+}
+
+- (BOOL)shouldAutorotate {
+    return YES;
+}
+
+- (UIInterfaceOrientationMask)supportedInterfaceOrientations {
+    return UIInterfaceOrientationMaskAll;
+}
+
+- (BOOL)prefersHomeIndicatorAutoHidden {
+    return YES;
+}
+
+@end
+
+// Old platform Layer References
+
+@ -1,190 +1,193 @@
+#import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
+#import <Metal/Metal.h>
+#import <MetalKit/MetalKit.h>
+#import <AVFoundation/AVFoundation.h>
+#import "PlatformLayer.h"
+#import "RaylibCompat.h"
+#import "MetalRenderer.h"
+#import "PlatformLayerDelegate.h"
+#import "GameViewController.h"
+#import "UIManager.h"
+#import "MetalTextureCache.h"
+#import "UICoordinateSystem.h"
+#import "ResourceManager.h"
+#import "TouchControls.h"
+
+// Singleton instance
+static PlatformLayer* s_Instance = nullptr;
+
+// Metal rendering state
+static id<MTLCommandQueue> s_CommandQueue = nil;
+static id<MTLRenderCommandEncoder> s_CurrentRenderEncoder = nil;
+static id<MTLBuffer> s_VertexBuffer = nil;
+static id<MTLRenderPipelineState> s_PipelineState = nil;
+static id<MTLTexture> s_CurrentTexture = nil;
+
+// Helper to convert Color to unsigned int (RGBA)
+static inline unsigned int ColorToUInt(Color c) {
+    return ((unsigned int)c.r << 24) | ((unsigned int)c.g << 16) | ((unsigned int)c.b << 8) | ((unsigned int)c.a);
+}
+
+// Error logging for Metal operations
+static void LogMetalError(NSError *error, NSString *operation) {
+    if (error) {
+        TraceLog(LOG_ERROR, "[ERROR] Metal operation failed: %s - Error: %s", [operation UTF8String], [error.localizedDescription UTF8String]);
+    }
+}
+
+PlatformLayer& PlatformLayer::GetInstance() {
+    if (!s_Instance) {
+        s_Instance = new PlatformLayer();
+    }
+    return *s_Instance;
+}
+
+PlatformLayer::PlatformLayer() : m_View(nullptr), m_PrimaryInputDown(false), m_PrimaryInputPressed(false), m_PrimaryInputReleased(false), m_SecondaryInputDown(false), m_SecondaryInputPressed(false), m_SecondaryInputReleased(false) {
+    NSLog(@"[DEBUG] PlatformLayer constructor starting");
+    TraceLog(LOG_INFO, "[DEBUG] PlatformLayer constructor starting");
+    // Initialize Metal device
+    m_MetalDevice = (__bridge_retained void*)MTLCreateSystemDefaultDevice();
+    NSLog(@"[DEBUG] PlatformLayer: Metal device created: %p", m_MetalDevice);
+    TraceLog(LOG_INFO, "[DEBUG] PlatformLayer: Metal device created: %p", m_MetalDevice);
+    
+    // Create command queue
+    if (m_MetalDevice) {
+        id<MTLDevice> device = (__bridge id<MTLDevice>)m_MetalDevice;
+        s_CommandQueue = [device newCommandQueue];
+        if (!s_CommandQueue) {
+            NSLog(@"[ERROR] PlatformLayer: Failed to create command queue!");
+            TraceLog(LOG_ERROR, "[ERROR] PlatformLayer: Failed to create command queue!");
+        }
+        NSLog(@"[DEBUG] PlatformLayer: Command queue created: %p", s_CommandQueue);
+        TraceLog(LOG_INFO, "[DEBUG] PlatformLayer: Command queue created: %p", s_CommandQueue);
+    } else {
+        NSLog(@"[ERROR] PlatformLayer: Failed to create Metal device!");
+        TraceLog(LOG_ERROR, "[ERROR] PlatformLayer: Failed to create Metal device!");
+    }
+    NSLog(@"[DEBUG] PlatformLayer constructor completed");
+    TraceLog(LOG_INFO, "[DEBUG] PlatformLayer constructor completed");
+}
+
+PlatformLayer::~PlatformLayer() {
+    // Clean up Metal resources - ARC will handle the releases automatically
+    s_CommandQueue = nil;
+    s_VertexBuffer = nil;
+    s_PipelineState = nil;
+}
+
+void PlatformLayer::Initialize(void* nativeView) {
+    NSLog(@"[INIT] PlatformLayer::Initialize(void* nativeView) STARTING");
+    NSLog(@"[INIT] nativeView: %p", nativeView);
+    TraceLog(LOG_INFO, "[INIT] PlatformLayer::Initialize(void* nativeView) STARTING");
+    TraceLog(LOG_INFO, "[INIT] nativeView: %p", nativeView);
+    
+    if (!nativeView) {
+        NSLog(@"[ERROR] PlatformLayer::Initialize: nativeView is null");
+        TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::Initialize: nativeView is null");
+        return;
+    }
+    
+    MTKView* view = (__bridge MTKView*)nativeView;
+    if (![view isKindOfClass:[MTKView class]]) {
+        NSLog(@"[ERROR] PlatformLayer::Initialize: nativeView is null or invalid MTKView");
+        TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::Initialize: nativeView is null or invalid MTKView");
+        return;
+    }
+    
+    NSLog(@"[INIT] Got MTKView: %p", view);
+    TraceLog(LOG_INFO, "[INIT] Got MTKView: %p", view);
+    m_View = nativeView;
+    
+    // Set up the MTKView
+    NSLog(@"[INIT] Setting up MTKView properties");
+    TraceLog(LOG_INFO, "[INIT] Setting up MTKView properties");
+    view.device = MTLCreateSystemDefaultDevice();
+    view.colorPixelFormat = MTLPixelFormatBGRA8Unorm;
+    view.clearColor = MTLClearColorMake(0.1, 0.1, 0.1, 1.0);
+    NSLog(@"[INIT] MTKView device: %p", view.device);
+    TraceLog(LOG_INFO, "[INIT] MTKView device: %p", view.device);
+    
+    // Create the delegate and set it as the MTKView's delegate for rendering
+    NSLog(@"[INIT] Creating PlatformLayerDelegate");
+    id delegate = [[PlatformLayerDelegate alloc] initWithView:view gameViewController:nil];
+    // Create the delegate but DON'T set it as the MTKView's delegate
+    // The GameView is already the delegate and handles touch events
+    TraceLog(LOG_INFO, "[INIT] Creating PlatformLayerDelegate (but not setting as delegate)");
+    id delegate = [[PlatformLayerDelegate alloc] initWithView:view gameViewController:nil metalRenderer:nullptr];
+    m_Delegate = (__bridge_retained void*)delegate;
+    
+    // Set the delegate as the MTKView's delegate for automatic rendering
+    view.delegate = delegate;
+    // DON'T set the delegate - GameView is already the delegate
+    // view.delegate = delegate;
+    
+    // Enable automatic drawing
+    view.paused = NO;
+    
+    m_TouchPoints.clear();
+    NSLog(@"[INIT] ========================================");
+    NSLog(@"[INIT] PlatformLayer::Initialize(void* nativeView) COMPLETED");
+    NSLog(@"[INIT] m_View=%p, m_Delegate=%p", m_View, m_Delegate);
+    NSLog(@"[INIT] ========================================");
+    TraceLog(LOG_INFO, "[INIT] ========================================");
+    TraceLog(LOG_INFO, "[INIT] PlatformLayer::Initialize(void* nativeView) COMPLETED");
+    TraceLog(LOG_INFO, "[INIT] m_View=%p, m_Delegate=%p", m_View, m_Delegate);
+    TraceLog(LOG_INFO, "[INIT] ========================================");
+}
+
+void PlatformLayer::Initialize(void* nativeView, void* gameViewController) {
+    NSLog(@"[INIT] PlatformLayer::Initialize(void* nativeView, void* gameViewController) STARTING");
+    NSLog(@"[INIT] nativeView: %p, gameViewController: %p", nativeView, gameViewController);
+void PlatformLayer::Initialize(void* nativeView, void* gameViewController, void* metalRenderer) {
+    TraceLog(LOG_INFO, "[INIT] PlatformLayer::Initialize(void* nativeView, void* gameViewController, void* metalRenderer) STARTING");
+    TraceLog(LOG_INFO, "[INIT] nativeView: %p, gameViewController: %p, metalRenderer: %p", nativeView, gameViewController, metalRenderer);
+    
+    if (!nativeView) {
+        NSLog(@"[ERROR] PlatformLayer::Initialize: nativeView is null");
+        TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::Initialize: nativeView is null");
+        return;
+    }
+    
+    if (!gameViewController) {
+        NSLog(@"[ERROR] PlatformLayer::Initialize: gameViewController is null");
+        TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::Initialize: gameViewController is null");
+        return;
+    }
+    
+    MTKView* view = (__bridge MTKView*)nativeView;
+    GameViewController* gvc = (__bridge GameViewController*)gameViewController;
+    
+    if (![view isKindOfClass:[MTKView class]]) {
+        NSLog(@"[ERROR] PlatformLayer::Initialize: nativeView is null or invalid MTKView");
+        TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::Initialize: nativeView is null or invalid MTKView");
+        return;
+    }
+    
+    if (![gvc isKindOfClass:[GameViewController class]]) {
+        NSLog(@"[ERROR] PlatformLayer::Initialize: gameViewController is null or invalid GameViewController");
+        TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::Initialize: gameViewController is null or invalid GameViewController");
+        return;
+    }
+    
+    NSLog(@"[INIT] Got MTKView: %p, GameViewController: %p", view, gvc);
+    TraceLog(LOG_INFO, "[INIT] Got MTKView: %p, GameViewController: %p", view, gvc);
+    m_View = nativeView;
+    
+    // Set up the MTKView
+    NSLog(@"[INIT] Setting up MTKView properties");
+    TraceLog(LOG_INFO, "[INIT] Setting up MTKView properties");
+    view.device = MTLCreateSystemDefaultDevice();
+    view.colorPixelFormat = MTLPixelFormatBGRA8Unorm;
+    view.clearColor = MTLClearColorMake(0.1, 0.1, 0.1, 1.0);
+    NSLog(@"[INIT] MTKView device: %p", view.device);
+    TraceLog(LOG_INFO, "[INIT] MTKView device: %p", view.device);
+    
+    // Create the delegate with GameViewController for touch event forwarding
+    NSLog(@"[INIT] Creating PlatformLayerDelegate with GameViewController");
+    id delegate = [[PlatformLayerDelegate alloc] initWithView:view gameViewController:gvc];
+    // Create the delegate with GameViewController and MetalRenderer but DON'T set it as the MTKView's delegate
+    // The GameView is already the delegate and handles touch events
+    TraceLog(LOG_INFO, "[INIT] Creating PlatformLayerDelegate with GameViewController and MetalRenderer (but not setting as delegate)");
+    id delegate = [[PlatformLayerDelegate alloc] initWithView:view gameViewController:gvc metalRenderer:metalRenderer];
+    m_Delegate = (__bridge_retained void*)delegate;
+    
+    // Set the delegate as the MTKView's delegate for automatic rendering
+    view.delegate = delegate;
+    // DON'T set the delegate - GameView is already the delegate
+    // view.delegate = delegate;
+    
+    // Enable automatic drawing
+    view.paused = NO;
+    
+    m_TouchPoints.clear();
+    NSLog(@"[INIT] ========================================");
+    NSLog(@"[INIT] PlatformLayer::Initialize(void* nativeView, void* gameViewController) COMPLETED");
+    NSLog(@"[INIT] m_View=%p, m_Delegate=%p", m_View, m_Delegate);
+    NSLog(@"[INIT] ========================================");
+    TraceLog(LOG_INFO, "[INIT] ========================================");
+    TraceLog(LOG_INFO, "[INIT] PlatformLayer::Initialize(void* nativeView, void* gameViewController, void* metalRenderer) COMPLETED");
+    TraceLog(LOG_INFO, "[INIT] m_View=%p, m_Delegate=%p", m_View, m_Delegate);
+    TraceLog(LOG_INFO, "[INIT] ========================================");
+}
+
+void PlatformLayer::Initialize() {
+    // Implementation for initialization if needed beyond what's in Initialize(void*)
+}
+
+void PlatformLayer::Shutdown() {
+    // Clean up MetalTextureCache
+    MetalTextureCache::GetInstance().Shutdown();
+    
+    // Clean up Metal resources - ARC will handle the releases automatically
+    if (m_Delegate) {
+        PlatformLayerDelegate* delegate = (__bridge PlatformLayerDelegate*)m_Delegate;
+        // ARC will handle delegate cleanup
+        m_Delegate = nullptr;
+    }
+    
+    m_View = nullptr;
+    m_MetalDevice = nullptr;
+    
+    TraceLog(LOG_INFO, "[SHUTDOWN] PlatformLayer shutdown complete");
+}
+
+@ -300,113 +303,63 @@
+    return true;
+}
+
+// Touch state tracking variables
+static bool s_PrimaryInputDown = false;
+static bool s_PrimaryInputPressed = false;
+static bool s_PrimaryInputReleased = false;
+static Vector2 s_LastTouchPosition = {0, 0};
+// Touch state is now managed by TouchControls (single source of truth)
+
+void PlatformLayer::UpdateTouchState() {
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::UpdateTouchState ENTRY");
+    
+    if (!m_View) {
+        TraceLog(LOG_WARNING, "[TOUCH] PlatformLayer::UpdateTouchState: No view available");
+        return;
+    }
+    
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::UpdateTouchState: updating input states");
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::UpdateTouchState: static states - down=%s, pressed=%s, released=%s", 
+             s_PrimaryInputDown ? "true" : "false", 
+             s_PrimaryInputPressed ? "true" : "false", 
+             s_PrimaryInputReleased ? "true" : "false");
+    // Delegate to TouchControls (single source of truth)
+    TouchControls::UpdateTouchState();
+    
+    // Update the input states based on the static variables
+    m_PrimaryInputDown = s_PrimaryInputDown;
+    m_PrimaryInputPressed = s_PrimaryInputPressed;
+    
+    // Keep the release state for one frame so button logic can detect it
+    // Only reset it after it has been read
+    m_PrimaryInputReleased = s_PrimaryInputReleased;
+    
+    // Clear the static release state after it has been copied to instance
+    if (s_PrimaryInputReleased) {
+        TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::UpdateTouchState: clearing static release state after copying to instance");
+        s_PrimaryInputReleased = false;
+    }
+    
+    // Clear the pressed state after one frame
+    if (s_PrimaryInputPressed) {
+        TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::UpdateTouchState: clearing static pressed state after copying to instance");
+        s_PrimaryInputPressed = false;
+    }
+    
+    // Update touch points
+    m_TouchPoints.clear();
+    if (s_PrimaryInputDown) {
+        m_TouchPoints.push_back(s_LastTouchPosition);
+        TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::UpdateTouchState: added touch point at (%.1f, %.1f)", 
+                 s_LastTouchPosition.x, s_LastTouchPosition.y);
+    } else {
+        TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::UpdateTouchState: no touch points (touch not down)");
+    }
+    // Update instance variables from TouchControls
+    m_PrimaryInputDown = TouchControls::IsPrimaryInputDown();
+    m_PrimaryInputPressed = TouchControls::IsPrimaryInputPressed();
+    m_PrimaryInputReleased = TouchControls::IsPrimaryInputReleased();
+    m_TouchPoints = TouchControls::GetTouchPoints();
+    
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::UpdateTouchState: final states - down=%s, pressed=%s, released=%s, touchCount=%zu", 
+             m_PrimaryInputDown ? "true" : "false", 
+             m_PrimaryInputPressed ? "true" : "false", 
+             m_PrimaryInputReleased ? "true" : "false", 
+             m_TouchPoints.size());
+    
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::UpdateTouchState EXIT");
+}
+
+// New function to clear touch states after render phase
+void PlatformLayer::ClearTouchStatesAfterRender() {
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::ClearTouchStatesAfterRender ENTRY");
+    
+    // Touch states are now managed internally by TouchControls
+    // No need to call external clear function
+    
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::ClearTouchStatesAfterRender EXIT");
+}
+
+// Static function to update touch state from external sources
+void PlatformLayer::SetTouchState(bool pressed, float x, float y) {
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::SetTouchState ENTRY: pressed=%s, x=%.1f, y=%.1f", pressed ? "true" : "false", x, y);
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::SetTouchState: previous state - down=%s, pressed=%s, released=%s", 
+             s_PrimaryInputDown ? "true" : "false", 
+             s_PrimaryInputPressed ? "true" : "false", 
+             s_PrimaryInputReleased ? "true" : "false");
+    
+    s_LastTouchPosition = {x, y};
+    
+    if (pressed && !s_PrimaryInputDown) {
+        // Touch just started
+        TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::SetTouchState: Touch started - setting pressed=true, down=true, released=false");
+        s_PrimaryInputPressed = true;
+        s_PrimaryInputDown = true;
+        s_PrimaryInputReleased = false;
+    } else if (!pressed && s_PrimaryInputDown) {
+        // Touch just ended
+        TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::SetTouchState: Touch ended - setting pressed=false, down=false, released=true");
+        s_PrimaryInputPressed = false;
+        s_PrimaryInputDown = false;
+        s_PrimaryInputReleased = true;
+    } else {
+        TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::SetTouchState: Touch state unchanged - pressed=%s, down=%s", pressed ? "true" : "false", s_PrimaryInputDown ? "true" : "false");
+    }
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::SetTouchState ENTRY: pressed=%s, pos=(%.1f,%.1f)", 
+             pressed ? "true" : "false", x, y);
+    
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::SetTouchState: new state - down=%s, pressed=%s, released=%s", 
+             s_PrimaryInputDown ? "true" : "false", 
+             s_PrimaryInputPressed ? "true" : "false", 
+             s_PrimaryInputReleased ? "true" : "false");
+    // Delegate to TouchControls (single source of truth)
+    TouchControls::SetTouchState(pressed, x, y);
+    
+    // Update the PlatformLayer state immediately
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::SetTouchState calling UpdateTouchState");
+    PlatformLayer::GetInstance().UpdateTouchState();
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::SetTouchState UpdateTouchState completed");
+    
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::SetTouchState EXIT: pressed=%s, x=%.1f, y=%.1f", pressed ? "true" : "false", x, y);
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::SetTouchState EXIT");
+}
+
+// Static function to clear all touch states
+void PlatformLayer::ClearAllTouchStates() {
+    s_PrimaryInputDown = false;
+    s_PrimaryInputPressed = false;
+    s_PrimaryInputReleased = false;
+    s_LastTouchPosition = {0, 0};
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::ClearAllTouchStates ENTRY");
+    
+    // Delegate to TouchControls
+    TouchControls::ClearAllTouchStates();
+    
+    // Update the PlatformLayer state immediately
+    PlatformLayer::GetInstance().UpdateTouchState();
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::ClearAllTouchStates EXIT");
+}
+
+int PlatformLayer::GetTouchCount() const {
+@ -414,147 +367,135 @@
+}
+
+Vector2 PlatformLayer::GetTouchPosition(int index) const {
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::GetTouchPosition ENTRY: index=%d, touchPoints.size()=%zu", index, m_TouchPoints.size());
+    
+    if (index >= 0 && index < m_TouchPoints.size()) {
+        Vector2 touchPoint = m_TouchPoints[index];
+        // Convert from points to pixels by multiplying by screen scale
+        float scale = UIScreen.mainScreen.scale;
+        Vector2 pixelPos = Vector2{touchPoint.x * scale, touchPoint.y * scale};
+        
+        TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::GetTouchPosition: points=(%.1f,%.1f) -> pixels=(%.1f,%.1f), scale=%.1f", 
+                 touchPoint.x, touchPoint.y, pixelPos.x, pixelPos.y, scale);
+        
+        TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::GetTouchPosition EXIT: returning pixelPos=(%.1f,%.1f)", pixelPos.x, pixelPos.y);
+        return pixelPos;
+    }
+    
+    TraceLog(LOG_WARNING, "[TOUCH] PlatformLayer::GetTouchPosition: No touch points available for index %d (size=%zu)", 
+             index, m_TouchPoints.size());
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::GetTouchPosition EXIT: returning (0,0)");
+    return Vector2{0, 0};
+}
+
+std::vector<Vector2> PlatformLayer::GetTouchPoints() const {
+    return m_TouchPoints;
+}
+
+Vector2 PlatformLayer::GetPrimaryInputPosition() const {
+    return m_TouchPoints.size() > 0 ? m_TouchPoints[0] : Vector2{0, 0};
+}
+
+bool PlatformLayer::IsPrimaryInputDown() const {
+    return m_PrimaryInputDown;
+}
+
+bool PlatformLayer::IsPrimaryInputPressed() const {
+    return m_PrimaryInputPressed;
+}
+
+bool PlatformLayer::IsPrimaryInputReleased() const {
+    bool result = m_PrimaryInputReleased;
+    TraceLog(LOG_INFO, "[TOUCH] PlatformLayer::IsPrimaryInputReleased called, returning %s", result ? "true" : "false");
+    return result;
+    return m_PrimaryInputReleased;
+}
+
+bool PlatformLayer::IsSecondaryInputDown() const {
+    return m_SecondaryInputDown;
+}
+
+bool PlatformLayer::IsSecondaryInputPressed() const {
+    return m_SecondaryInputPressed;
+}
+
+bool PlatformLayer::IsSecondaryInputReleased() const {
+    return m_SecondaryInputReleased;
+}
+
+// Screen/Window management
+float PlatformLayer::GetScreenDensity() const {
+    return UIScreen.mainScreen.scale;
+}
+
+void PlatformLayer::SetOrientation(bool landscape) {
+    // iOS orientation handling if needed
+}
+
+bool PlatformLayer::SupportsFullscreen() const {
+    return true; // iOS apps are always fullscreen
+}
+
+int PlatformLayer::GetScreenWidth() const {
+    return static_cast<int>(UIScreen.mainScreen.bounds.size.width * UIScreen.mainScreen.scale);
+}
+
+int PlatformLayer::GetScreenHeight() const {
+    return static_cast<int>(UIScreen.mainScreen.bounds.size.height * UIScreen.mainScreen.scale);
+}
+
+double PlatformLayer::GetCurrentTime() const {
+    return CACurrentMediaTime();
+}
+
+// Platform-specific features
+void PlatformLayer::ShowVirtualKeyboard(bool show) {
+#ifdef PLATFORM_MOBILE
+    virtualKeyboardShown = show;
+    if (show) {
+        UIWindow* window = UIApplication.sharedApplication.windows.firstObject;
+        UIViewController* rootVC = window.rootViewController;
+        UITextField* dummyTextField = [[UITextField alloc] init];
+        [rootVC.view addSubview:dummyTextField];
+        [dummyTextField becomeFirstResponder];
+        [dummyTextField removeFromSuperview];
+    } else {
+        UIWindow* window = UIApplication.sharedApplication.windows.firstObject;
+        [window endEditing:YES];
+    }
+#endif
+}
+
+bool PlatformLayer::IsVirtualKeyboardShown() const {
+#ifdef PLATFORM_MOBILE
+    return virtualKeyboardShown;
+#else
+    return false;
+#endif
+}
+
+void PlatformLayer::Vibrate(int milliseconds) {
+    AudioServicesPlaySystemSound(kSystemSoundID_Vibrate);
+}
+
+// Safe area handling
+Rectangle PlatformLayer::GetSafeArea() const {
+    Rectangle safeArea = {0, 0, 0, 0};
+    if (@available(iOS 11.0, *)) {
+        UIWindow* window = UIApplication.sharedApplication.windows.firstObject;
+        safeArea.x = window.safeAreaInsets.left;
+        safeArea.y = window.safeAreaInsets.top;
+        safeArea.width = window.bounds.size.width - (window.safeAreaInsets.left + window.safeAreaInsets.right);
+        safeArea.height = window.bounds.size.height - (window.safeAreaInsets.top + window.safeAreaInsets.bottom);
+    } else {
+        UIWindow* window = UIApplication.sharedApplication.windows.firstObject;
+        safeArea.x = 0;
+        safeArea.y = 20; // Status bar height
+        safeArea.width = window.bounds.size.width;
+        safeArea.height = window.bounds.size.height - 20;
+    }
+    return safeArea;
+}
+
+// Performance hints
+bool PlatformLayer::PreferLowPowerMode() const {
+    if (@available(iOS 9.0, *)) {
+        return NSProcessInfo.processInfo.isLowPowerModeEnabled;
+    }
+    return false;
+}
+
+int PlatformLayer::GetRecommendedTextureSize() const {
+    return 2048; // Reasonable default for modern iOS devices
+}
+
+// UI and System
+void PlatformLayer::SetWindowTitle(const std::string& title) {
+    // Not applicable on iOS
+@ -586,93 +527,93 @@
+
+// Texture and image handling
+void* PlatformLayer::LoadTexture(const char* fileName, int* width, int* height) {
+    NSLog(@"[DEBUG] LoadTexture called: fileName=%s", fileName);
+    TraceLog(LOG_INFO, "[DEBUG] LoadTexture called: fileName=%s", fileName);
+    
+    // Handle asset catalog resources
+    std::string filePath(fileName);
+    if (filePath.substr(0, 8) == "asset://") {
+        ResourcePathParts parts = ResourceManager::ParseResourcePath(filePath);
+        NSString* name = [NSString stringWithUTF8String:parts.baseName.c_str()];
+        NSLog(@"[DEBUG] LoadTexture: Loading asset catalog texture: %@", name);
+        TraceLog(LOG_INFO, "[DEBUG] LoadTexture: Loading asset catalog texture: %@", name);
+        UIImage* uiImage = [UIImage imageNamed:name];
+        
+        if (!uiImage) {
+            TraceLog(LOG_ERROR, "[ERROR] LoadTexture: Failed to load asset catalog texture: %s", fileName);
+            return nullptr;
+        }
+        
+        NSLog(@"[DEBUG] LoadTexture: Successfully loaded UIImage for %@", name);
+        TraceLog(LOG_INFO, "[DEBUG] LoadTexture: Successfully loaded UIImage for %@", name);
+        
+        CGImageRef cgImage = uiImage.CGImage;
+        size_t cgWidth = CGImageGetWidth(cgImage);
+        size_t cgHeight = CGImageGetHeight(cgImage);
+        NSLog(@"[DEBUG] LoadTexture: CGImage dimensions: %zux%zu", cgWidth, cgHeight);
+        TraceLog(LOG_INFO, "[DEBUG] LoadTexture: CGImage dimensions: %zux%zu", cgWidth, cgHeight);
+        
+        // Validate CGImage dimensions
+        if (cgWidth == 0 || cgHeight == 0) {
+            TraceLog(LOG_ERROR, "[ERROR] LoadTexture: CGImage has invalid dimensions!");
+            return nullptr;
+        }
+        
+        // Validate width/height pointers
+        NSLog(@"[DEBUG] LoadTexture: About to validate pointers - width: %p, height: %p", width, height);
+        TraceLog(LOG_INFO, "[DEBUG] LoadTexture: About to validate pointers - width: %p, height: %p", width, height);
+        if (!width) {
+            NSLog(@"[ERROR] LoadTexture: Width pointer is null!");
+            TraceLog(LOG_ERROR, "[ERROR] LoadTexture: Width pointer is null!");
+            return nullptr;
+        }
+        if (!height) {
+            NSLog(@"[ERROR] LoadTexture: Height pointer is null!");
+            TraceLog(LOG_ERROR, "[ERROR] LoadTexture: Height pointer is null!");
+            return nullptr;
+        }
+        
+        NSLog(@"[DEBUG] LoadTexture: Pointers validated, about to assign dimensions");
+        TraceLog(LOG_INFO, "[DEBUG] LoadTexture: Pointers validated, about to assign dimensions");
+        *width = (int)cgWidth;
+        *height = (int)cgHeight;
+        NSLog(@"[DEBUG] LoadTexture: Final image dimensions: %dx%d", *width, *height);
+        TraceLog(LOG_INFO, "[DEBUG] LoadTexture: Final image dimensions: %dx%d", *width, *height);
+        
+        // Create Metal texture
+        NSLog(@"[DEBUG] LoadTexture: Creating Metal texture descriptor");
+        TraceLog(LOG_INFO, "[DEBUG] LoadTexture: Creating Metal texture descriptor");
+        MTLTextureDescriptor* textureDescriptor = [[MTLTextureDescriptor alloc] init];
+        NSLog(@"[DEBUG] LoadTexture: Metal texture descriptor created: %p", textureDescriptor);
+        TraceLog(LOG_INFO, "[DEBUG] LoadTexture: Metal texture descriptor created: %p", textureDescriptor);
+        textureDescriptor.pixelFormat = MTLPixelFormatRGBA8Unorm;
+        textureDescriptor.width = *width;
+        textureDescriptor.height = *height;
+        NSLog(@"[DEBUG] LoadTexture: Metal texture descriptor configured");
+        NSLog(@"[DEBUG] LoadTexture: Creating Metal texture with device: %p", m_MetalDevice);
+        TraceLog(LOG_INFO, "[DEBUG] LoadTexture: Metal texture descriptor configured");
+        TraceLog(LOG_INFO, "[DEBUG] LoadTexture: Creating Metal texture with device: %p", m_MetalDevice);
+        NSError *error = nil;
+        id<MTLTexture> texture = [(__bridge id<MTLDevice>)m_MetalDevice newTextureWithDescriptor:textureDescriptor];
+        LogMetalError(error, @"Creating Metal texture");
+        if (!texture) {
+                    TraceLog(LOG_ERROR, "[ERROR] LoadTexture: Failed to create Metal texture!");
+        return nullptr;
+    }
+        NSLog(@"[DEBUG] LoadTexture: Metal texture created: %p (retain count: %lu)", texture, (unsigned long)CFGetRetainCount((__bridge CFTypeRef)texture));
+        TraceLog(LOG_INFO, "[DEBUG] LoadTexture: Metal texture created: %p (retain count: %lu)", texture, (unsigned long)CFGetRetainCount((__bridge CFTypeRef)texture));
+        
+        // Load image data into texture
+        NSLog(@"[DEBUG] LoadTexture: Creating color space");
+        TraceLog(LOG_INFO, "[DEBUG] LoadTexture: Creating color space");
+        MTLRegion region = {{0, 0, 0}, {(NSUInteger)*width, (NSUInteger)*height, 1}};
+        CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+        NSLog(@"[DEBUG] LoadTexture: Color space created: %p", colorSpace);
+        NSLog(@"[DEBUG] LoadTexture: Creating bitmap context");
+        TraceLog(LOG_INFO, "[DEBUG] LoadTexture: Color space created: %p", colorSpace);
+        TraceLog(LOG_INFO, "[DEBUG] LoadTexture: Creating bitmap context");
+        CGContextRef context = CGBitmapContextCreate(nil, *width, *height, 8, 0, colorSpace, kCGImageAlphaPremultipliedLast);
+        if (!context) {
+            NSLog(@"[ERROR] LoadTexture: Failed to create bitmap context!");
+            TraceLog(LOG_ERROR, "[ERROR] LoadTexture: Failed to create bitmap context!");
+            CGColorSpaceRelease(colorSpace);
+            return nullptr;
+        }
+        NSLog(@"[DEBUG] LoadTexture: Bitmap context created: %p", context);
+        NSLog(@"[DEBUG] LoadTexture: Drawing image into context");
+        TraceLog(LOG_INFO, "[DEBUG] LoadTexture: Bitmap context created: %p", context);
+        TraceLog(LOG_INFO, "[DEBUG] LoadTexture: Drawing image into context");
+        CGContextDrawImage(context, CGRectMake(0, 0, *width, *height), cgImage);
+        NSLog(@"[DEBUG] LoadTexture: Image drawn into context");
+        TraceLog(LOG_INFO, "[DEBUG] LoadTexture: Image drawn into context");
+        void* imageData = CGBitmapContextGetData(context);
+        NSLog(@"[DEBUG] LoadTexture: Image data pointer: %p", imageData);
+        NSLog(@"[DEBUG] LoadTexture: Replacing Metal texture region");
+        TraceLog(LOG_INFO, "[DEBUG] LoadTexture: Image data pointer: %p", imageData);
+        TraceLog(LOG_INFO, "[DEBUG] LoadTexture: Replacing Metal texture region");
+        [texture replaceRegion:region mipmapLevel:0 withBytes:imageData bytesPerRow:4 * *width];
+        NSLog(@"[DEBUG] LoadTexture: Metal texture region replaced");
+        TraceLog(LOG_INFO, "[DEBUG] LoadTexture: Metal texture region replaced");
+        CGContextRelease(context);
+        CGColorSpaceRelease(colorSpace);
+        
+        NSLog(@"[DEBUG] LoadTexture: Texture loading completed successfully");
+        TraceLog(LOG_INFO, "[DEBUG] LoadTexture: Texture loading completed successfully");
+        return (__bridge_retained void*)texture;
+    }
+    
+@ -684,7 +625,7 @@ void* PlatformLayer::LoadTexture(const char* fileName, int* width, int* height)
+    }
+    UIImage* uiImage = [UIImage imageWithContentsOfFile:fullPath];
+    if (!uiImage) {
+        NSLog(@"[ERROR] LoadTexture: Failed to load image: %s", fileName);
+        TraceLog(LOG_ERROR, "[ERROR] LoadTexture: Failed to load image: %s", fileName);
+        return nullptr;
+    }
+    
+@ -702,41 +643,41 @@
+        TraceLog(LOG_ERROR, "[ERROR] LoadTexture: Failed to create Metal texture!");
+        return nullptr;
+    }
+    NSLog(@"[DEBUG] LoadTexture: Regular file texture created: %p (retain count: %lu)", texture, (unsigned long)CFGetRetainCount((__bridge CFTypeRef)texture));
+    TraceLog(LOG_INFO, "[DEBUG] LoadTexture: Regular file texture created: %p (retain count: %lu)", texture, (unsigned long)CFGetRetainCount((__bridge CFTypeRef)texture));
+    
+    // Load image data into texture
+    MTLRegion region = {{0, 0, 0}, {(NSUInteger)*width, (NSUInteger)*height, 1}};
+    CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+    CGContextRef context = CGBitmapContextCreate(nil, *width, *height, 8, 0, colorSpace, kCGImageAlphaPremultipliedLast);
+    if (!context) {
+        NSLog(@"[ERROR] LoadTexture: Failed to create bitmap context!");
+        TraceLog(LOG_ERROR, "[ERROR] LoadTexture: Failed to create bitmap context!");
+        CGColorSpaceRelease(colorSpace);
+        return nullptr;
+    }
+    CGContextDrawImage(context, CGRectMake(0, 0, *width, *height), cgImage);
+    void* imageData = CGBitmapContextGetData(context);
+    [texture replaceRegion:region mipmapLevel:0 withBytes:imageData bytesPerRow:4 * *width];
+    
+    CGContextRelease(context);
+    CGColorSpaceRelease(colorSpace);
+    
+    return (__bridge_retained void*)texture;
+}
+
+void PlatformLayer::UnloadTexture(void* texture) {
+    if (texture) {
+        id<MTLTexture> metalTexture = (__bridge id<MTLTexture>)texture;
+        NSLog(@"[DEBUG] UnloadTexture: Releasing texture: %p", metalTexture);
+        TraceLog(LOG_INFO, "[DEBUG] UnloadTexture: Releasing texture: %p", metalTexture);
+        
+        // Release the bridged texture
+        CFBridgingRelease(texture);
+        NSLog(@"[DEBUG] UnloadTexture: Bridge released for texture: %p", metalTexture);
+        TraceLog(LOG_INFO, "[DEBUG] UnloadTexture: Bridge released for texture: %p", metalTexture);
+    }
+}
+
+void* PlatformLayer::LoadRenderTexture(int width, int height) {
+    NSLog(@"[DEBUG] LoadRenderTexture: Starting with width=%d, height=%d", width, height);
+    NSLog(@"[DEBUG] LoadRenderTexture: Metal device: %p", m_MetalDevice);
+    TraceLog(LOG_INFO, "[DEBUG] LoadRenderTexture: Starting with width=%d, height=%d", width, height);
+    TraceLog(LOG_INFO, "[DEBUG] LoadRenderTexture: Metal device: %p", m_MetalDevice);
+    
+    if (!m_MetalDevice) {
+        TraceLog(LOG_ERROR, "[ERROR] LoadRenderTexture: No Metal device available!");
+@ -749,53 +690,53 @@
+    textureDescriptor.height = height;
+    textureDescriptor.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead;
+    
+    NSLog(@"[DEBUG] LoadRenderTexture: Creating Metal texture with descriptor...");
+    TraceLog(LOG_INFO, "[DEBUG] LoadRenderTexture: Creating Metal texture with descriptor...");
+    id<MTLTexture> texture = [(__bridge id<MTLDevice>)m_MetalDevice newTextureWithDescriptor:textureDescriptor];
+    
+    if (!texture) {
+        NSLog(@"[ERROR] LoadRenderTexture: Failed to create Metal render texture!");
+        TraceLog(LOG_ERROR, "[ERROR] LoadRenderTexture: Failed to create Metal render texture!");
+        return nullptr;
+    }
+    
+    NSLog(@"[DEBUG] LoadRenderTexture: Successfully created Metal texture: %p (w=%lu, h=%lu)", 
+    TraceLog(LOG_INFO, "[DEBUG] LoadRenderTexture: Successfully created Metal texture: %p (w=%lu, h=%lu)", 
+          texture, (unsigned long)texture.width, (unsigned long)texture.height);
+    
+    return (__bridge_retained void*)texture;
+}
+
+void PlatformLayer::BeginDrawing(void* renderTexture) {
+    if (!m_Delegate) {
+        TraceLog(LOG_ERROR, "[ERROR] BeginDrawing called with no delegate set!");
+        return;
+    }
+    
+    // Get the delegate
+    PlatformLayerDelegate* delegate = (__bridge PlatformLayerDelegate*)m_Delegate;
+    
+    // Get the MTKView from the delegate
+    MTKView* mtkView = delegate.view;
+    if (!mtkView) {
+        NSLog(@"[ERROR] BeginDrawing: Could not get MTKView from delegate!");
+        TraceLog(LOG_ERROR, "[ERROR] BeginDrawing: Could not get MTKView from delegate!");
+        return;
+    }
+
+#if defined(PLATFORM_MOBILE)
+    // --- MOBILE RENDERING PATH ---
+    // Use UICoordinateSystem to get the actual pixel dimensions for the projection matrix.
+    Rectangle pixelScreenRect = UICoordinateSystem::GetPixelScreenRect();
+    
+    // Update the drawable size for the MTKView to match native pixel resolution
+    [mtkView setDrawableSize:CGSizeMake(pixelScreenRect.width, pixelScreenRect.height)];
+    
+    // Set the view's content scale factor based on the native scale
+    float nativeScale = UICoordinateSystem::GetNativeScale();
+    [mtkView setContentScaleFactor:nativeScale];
+    
+    // Notify the view that it needs to redraw with the new size
+    [mtkView setNeedsDisplay];
+#else
+    // --- DESKTOP RENDERING PATH ---
+    // For desktop, we still use the fixed 320x180 resolution
+    [mtkView setDrawableSize:CGSizeMake(320.0f, 180.0f)];
+    [mtkView setContentScaleFactor:1.0f];
+    [mtkView setNeedsDisplay];
+@ -808,30 +749,42 @@ void PlatformLayer::EndDrawing(void* renderTexture) {
+}
+
+void PlatformLayer::DrawRectangle(int posX, int posY, int width, int height, unsigned int color) {
+    NSLog(@"[DEBUG] PlatformLayer::DrawRectangle called: posX=%d, posY=%d, width=%d, height=%d, color=0x%08X", posX, posY, width, height, color);
+    TraceLog(LOG_INFO, "[DEBUG] PlatformLayer::DrawRectangle called: posX=%d, posY=%d, width=%d, height=%d, color=0x%08X", posX, posY, width, height, color);
+    
+    // Ensure we're on the main thread
+    if (![NSThread isMainThread]) {
+        NSLog(@"[ERROR] PlatformLayer::DrawRectangle called on non-main thread! Current thread: %@", [NSThread currentThread]);
+        TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::DrawRectangle called on non-main thread! Current thread: %@", [NSThread currentThread]);
+        dispatch_async(dispatch_get_main_queue(), ^{
+            this->DrawRectangle(posX, posY, width, height, color);
+        });
+        return;
+    }
+    
+    NSLog(@"[DEBUG] PlatformLayer::DrawRectangle: Calling delegate drawRectangleWithPosX");
+    // Get the GameView's MetalRenderer through the delegate
+    if (m_Delegate) {
+        PlatformLayerDelegate* delegate = (__bridge PlatformLayerDelegate*)m_Delegate;
+        [delegate drawRectangleWithPosX:posX posY:posY width:width height:height color:color];
+        MetalRenderer* metalRenderer = (MetalRenderer*)[delegate getMetalRenderer];
+        if (metalRenderer) {
+            Color raylibColor = {
+                (unsigned char)((color >> 24) & 0xFF),
+                (unsigned char)((color >> 16) & 0xFF),
+                (unsigned char)((color >> 8) & 0xFF),
+                (unsigned char)(color & 0xFF)
+            };
+            metalRenderer->DrawRectangle(posX, posY, width, height, raylibColor);
+        } else {
+            TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::DrawRectangle: MetalRenderer not available from delegate");
+        }
+    } else {
+        TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::DrawRectangle: No delegate available");
+    }
+    NSLog(@"[DEBUG] PlatformLayer::DrawRectangle: Delegate call completed");
+}
+
+void PlatformLayer::DrawTexture(void* texture, float x, float y, float width, float height, Color tint) {
+    NSLog(@"[DEBUG] PlatformLayer::DrawTexture called: texture=%p, x=%.2f, y=%.2f, width=%.2f, height=%.2f", texture, x, y, width, height);
+    TraceLog(LOG_INFO, "[DEBUG] PlatformLayer::DrawTexture called: texture=%p, x=%.2f, y=%.2f, width=%.2f, height=%.2f", texture, x, y, width, height);
+    // Ensure we're on the main thread
+    if (![NSThread isMainThread]) {
+        NSLog(@"[ERROR] PlatformLayer::DrawTexture called on non-main thread! Current thread: %@", [NSThread currentThread]);
+        TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::DrawTexture called on non-main thread! Current thread: %@", [NSThread currentThread]);
+        dispatch_async(dispatch_get_main_queue(), ^{
+            this->DrawTexture(texture, x, y, width, height, tint);
+        });
+@ -839,66 +792,77 @@
+    }
+    // Validate texture
+    if (!texture) {
+        NSLog(@"[ERROR] PlatformLayer::DrawTexture: Invalid texture pointer");
+        TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::DrawTexture: Invalid texture pointer");
+        return;
+    }
+    id<MTLTexture> metalTexture = (__bridge id<MTLTexture>)texture;
+    if (!metalTexture) {
+        NSLog(@"[ERROR] PlatformLayer::DrawTexture: Failed to bridge texture pointer");
+        TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::DrawTexture: Failed to bridge texture pointer");
+        return;
+    }
+    // Check if texture is still valid
+    if (metalTexture.width == 0 || metalTexture.height == 0) {
+        NSLog(@"[ERROR] PlatformLayer::DrawTexture: Texture has invalid dimensions (w=%lu, h=%lu)", (unsigned long)metalTexture.width, (unsigned long)metalTexture.height);
+        TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::DrawTexture: Texture has invalid dimensions (w=%lu, h=%lu)", (unsigned long)metalTexture.width, (unsigned long)metalTexture.height);
+        return;
+    }
+    NSLog(@"[DEBUG] PlatformLayer::DrawTexture: Valid texture found (ptr=%p, w=%lu, h=%lu)", metalTexture, (unsigned long)metalTexture.width, (unsigned long)metalTexture.height);
+    TraceLog(LOG_INFO, "[DEBUG] PlatformLayer::DrawTexture: Valid texture found (ptr=%p, w=%lu, h=%lu)", metalTexture, (unsigned long)metalTexture.width, (unsigned long)metalTexture.height);
+    
+    // Get the GameView's MetalRenderer through the delegate
+    if (m_Delegate) {
+        PlatformLayerDelegate* delegate = (__bridge PlatformLayerDelegate*)m_Delegate;
+        [delegate drawTexture:texture x:(int)x y:(int)y width:(int)width height:(int)height tint:ColorToUInt(tint)];
+        MetalRenderer* metalRenderer = (MetalRenderer*)[delegate getMetalRenderer];
+        if (metalRenderer) {
+            Rectangle source = {0, 0, (float)metalTexture.width, (float)metalTexture.height};
+            Rectangle dest = {x, y, width, height};
+            metalRenderer->DrawTexture(metalTexture, source, dest, tint);
+        } else {
+            TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::DrawTexture: MetalRenderer not available from delegate");
+        }
+    } else {
+        TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::DrawTexture: No delegate available");
+    }
+}
+
+void PlatformLayer::EnqueueDrawCommand(void* vertexBuffer, void* texture, size_t vertexCount) {
+    // This function is now deprecated in favor of direct drawing
+    // Keeping for compatibility but it's no longer used
+}
+
+void* PlatformLayer::GetMetalDevice() const {
+    return m_MetalDevice;
+}
+
+void* PlatformLayer::GetMetalCommandQueue() const {
+    // Get the command queue from the delegate
+    if (m_Delegate) {
+        PlatformLayerDelegate* delegate = (__bridge PlatformLayerDelegate*)m_Delegate;
+        if ([delegate respondsToSelector:@selector(getMetalCommandQueue)]) {
+            return (__bridge void*)[delegate getMetalCommandQueue];
+        }
+    }
+    return nullptr;
+}
+
+void* PlatformLayer::GetDelegate() const {
+    return m_Delegate;
+}
+
+void* PlatformLayer::LoadTextureFromImage(void* imageData, int width, int height, int format) {
+    if (!imageData || width <= 0 || height <= 0) {
+        NSLog(@"[ERROR] LoadTextureFromImage: Invalid parameters - imageData=%p, width=%d, height=%d", imageData, width, height);
+        TraceLog(LOG_ERROR, "[ERROR] LoadTextureFromImage: Invalid parameters - imageData=%p, width=%d, height=%d", imageData, width, height);
+        return nullptr;
+    }
+    
+    // Create Metal texture
+    MTLTextureDescriptor* textureDescriptor = [[MTLTextureDescriptor alloc] init];
+    textureDescriptor.pixelFormat = MTLPixelFormatRGBA8Unorm;
+    textureDescriptor.width = width;
+    textureDescriptor.height = height;
+    textureDescriptor.usage = MTLTextureUsageShaderRead;
+    
+    id<MTLTexture> texture = [(__bridge id<MTLDevice>)m_MetalDevice newTextureWithDescriptor:textureDescriptor];
+    if (!texture) {
+        NSLog(@"[ERROR] LoadTextureFromImage: Failed to create Metal texture!");
+        TraceLog(LOG_ERROR, "[ERROR] LoadTextureFromImage: Failed to create Metal texture!");
+        return nullptr;
+    }
+    
+@ -906,83 +870,101 @@
+    MTLRegion region = {{0, 0, 0}, {(NSUInteger)width, (NSUInteger)height, 1}};
+    [texture replaceRegion:region mipmapLevel:0 withBytes:imageData bytesPerRow:4 * width];
+    
+    NSLog(@"[DEBUG] LoadTextureFromImage: Created texture from image data - %dx%d, format=%d", width, height, format);
+    TraceLog(LOG_INFO, "[DEBUG] LoadTextureFromImage: Created texture from image data - %dx%d, format=%d", width, height, format);
+    
+    return (__bridge_retained void*)texture;
+}
+
+void PlatformLayer::DrawText(const char* text, float x, float y, float fontSize, Color color, void* font) {
+    NSLog(@"[DEBUG] DrawText called: text='%s', pos=(%.1f, %.1f), fontSize=%.1f, color=(%d,%d,%d,%d)", 
+    TraceLog(LOG_INFO, "[DEBUG] DrawText called: text='%s', pos=(%.1f, %.1f), fontSize=%.1f, color=(%d,%d,%d,%d)", 
+          text, x, y, fontSize, color.r, color.g, color.b, color.a);
+    
+    // Get the GameView's MetalRenderer through the delegate
+    if (m_Delegate) {
+        PlatformLayerDelegate* delegate = (__bridge PlatformLayerDelegate*)m_Delegate;
+        [delegate drawText:text x:x y:y fontSize:fontSize color:ColorToUInt(color) font:font];
+        MetalRenderer* metalRenderer = (MetalRenderer*)[delegate getMetalRenderer];
+        if (metalRenderer) {
+            if (font) {
+                Font* fontPtr = (Font*)font;
+                metalRenderer->DrawText(text, x, y, fontSize, color, fontPtr);
+            } else {
+                metalRenderer->DrawText(text, x, y, fontSize, color);
+            }
+        } else {
+            TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::DrawText: MetalRenderer not available from delegate");
+        }
+    } else {
+        TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::DrawText: No delegate available");
+    }
+}
+
+float PlatformLayer::GetLastFrameTime() const {
+    if (!m_Delegate) return 0.0f;
+    PlatformLayerDelegate* delegate = (__bridge PlatformLayerDelegate*)m_Delegate;
+    if ([delegate respondsToSelector:@selector(getLastFrameTime)]) {
+        return [delegate getLastFrameTime];
+    }
+    return 0.0f;
+}
+
+int PlatformLayer::GetLastFPS() const {
+    if (!m_Delegate) return 0;
+    PlatformLayerDelegate* delegate = (__bridge PlatformLayerDelegate*)m_Delegate;
+    if ([delegate respondsToSelector:@selector(getLastFPS)]) {
+        return [delegate getLastFPS];
+    }
+    return 0;
+}
+
+void PlatformLayer::DrawLineEx(float x1, float y1, float x2, float y2, float thickness, Color color) {
+    NSLog(@"[DEBUG] PlatformLayer::DrawLineEx called: (%.1f,%.1f) to (%.1f,%.1f), thickness=%.1f, color=(%d,%d,%d,%d)", 
+    TraceLog(LOG_INFO, "[DEBUG] PlatformLayer::DrawLineEx called: (%.1f,%.1f) to (%.1f,%.1f), thickness=%.1f, color=(%d,%d,%d,%d)", 
+          x1, y1, x2, y2, thickness, color.r, color.g, color.b, color.a);
+    
+    // Ensure we're on the main thread
+    if (![NSThread isMainThread]) {
+        NSLog(@"[ERROR] PlatformLayer::DrawLineEx called on non-main thread! Current thread: %@", [NSThread currentThread]);
+        TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::DrawLineEx called on non-main thread! Current thread: %@", [NSThread currentThread]);
+        dispatch_async(dispatch_get_main_queue(), ^{
+            this->DrawLineEx(x1, y1, x2, y2, thickness, color);
+        });
+        return;
+    }
+    
+    // Call the delegate's drawLineEx method
+    // Get the GameView's MetalRenderer through the delegate
+    if (m_Delegate) {
+        PlatformLayerDelegate* delegate = (__bridge PlatformLayerDelegate*)m_Delegate;
+        unsigned int colorUInt = (color.r << 24) | (color.g << 16) | (color.b << 8) | color.a;
+        [delegate drawLineEx:x1 y1:y1 x2:x2 y2:y2 thickness:thickness color:colorUInt];
+        MetalRenderer* metalRenderer = (MetalRenderer*)[delegate getMetalRenderer];
+        if (metalRenderer) {
+            metalRenderer->DrawLineEx(x1, y1, x2, y2, thickness, color);
+        } else {
+            TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::DrawLineEx: MetalRenderer not available from delegate");
+        }
+    } else {
+        NSLog(@"[ERROR] PlatformLayer::DrawLineEx: No delegate available");
+        TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::DrawLineEx: No delegate available");
+    }
+}
+
+void PlatformLayer::DrawRectangleRoundedLines(float x, float y, float width, float height, float roundness, int segments, float lineThick, Color color) {
+    NSLog(@"[DEBUG] PlatformLayer::DrawRectangleRoundedLines called: rect=(%.1f,%.1f,%.1f,%.1f), roundness=%.1f, lineThick=%.1f, color=(%d,%d,%d,%d)", 
+    TraceLog(LOG_INFO, "[DEBUG] PlatformLayer::DrawRectangleRoundedLines called: rect=(%.1f,%.1f,%.1f,%.1f), roundness=%.1f, lineThick=%.1f, color=(%d,%d,%d,%d)", 
+          x, y, width, height, roundness, lineThick, color.r, color.g, color.b, color.a);
+    
+    // Ensure we're on the main thread
+    if (![NSThread isMainThread]) {
+        NSLog(@"[ERROR] PlatformLayer::DrawRectangleRoundedLines called on non-main thread! Current thread: %@", [NSThread currentThread]);
+        TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::DrawRectangleRoundedLines called on non-main thread! Current thread: %@", [NSThread currentThread]);
+        dispatch_async(dispatch_get_main_queue(), ^{
+            this->DrawRectangleRoundedLines(x, y, width, height, roundness, segments, lineThick, color);
+        });
+        return;
+    }
+    
+    // Call the delegate's drawRectangleRoundedLines method
+    if (m_Delegate) {
+        PlatformLayerDelegate* delegate = (__bridge PlatformLayerDelegate*)m_Delegate;
+        unsigned int colorUInt = (color.r << 24) | (color.g << 16) | (color.b << 8) | color.a;
+        [delegate drawRectangleRoundedLines:x y:y width:width height:height roundness:roundness segments:segments lineThick:lineThick color:colorUInt];
+    } else {
+        NSLog(@"[ERROR] PlatformLayer::DrawRectangleRoundedLines: No delegate available");
+        TraceLog(LOG_ERROR, "[ERROR] PlatformLayer::DrawRectangleRoundedLines: No delegate available");
+    }
+}
+
+#endif // PLATFORM_IO

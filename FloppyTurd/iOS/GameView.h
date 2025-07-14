@@ -7,9 +7,10 @@
 // Forward declarations
 class MetalRenderer;
 
-@interface GameView : MTKView
+@interface GameView : MTKView <MTKViewDelegate>
 
 // Initialization
+- (instancetype)initWithFrame:(CGRect)frame;
 - (instancetype)initWithFrame:(CGRect)frame device:(id<MTLDevice>)device;
 
 // Rendering

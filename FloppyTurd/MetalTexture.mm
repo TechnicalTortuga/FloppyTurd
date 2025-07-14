@@ -29,7 +29,7 @@
         }
         
         // Try with the full path in asset catalog
-        image = [UIImage imageNamed:filePath];
+            image = [UIImage imageNamed:filePath];
         if (image) {
             TraceLog(LOG_INFO, "[TEXTURE] Loaded texture from asset catalog with path: %s", [filePath UTF8String]);
             return [self loadTextureFromUIImage:image device:device];

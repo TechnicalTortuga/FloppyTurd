@@ -94,21 +94,34 @@ typedef struct {
     double renderTime;
 } DebugStats;
 
-class MetalRenderer {
+class MetalRenderer
+{
 public:
     MetalRenderer();
-    ~MetalRenderer();
+    virtual ~MetalRenderer();
     
+    // Core lifecycle methods
+    bool Initialize(MTKView* view);
+    void Shutdown();
+    
+    // Resource management
+    void ReleaseResources();
+    void RecreateResources();
+    
+    // State management
+    void PauseRendering();
+    void ResumeRendering();
+    
+    // Memory management
+    MetalRenderer(const MetalRenderer&) = delete;
+    MetalRenderer& operator=(const MetalRenderer&) = delete;
+
     // --- Platform Abstraction Layer Stubs ---
     void BeginDrawing();
     void EndDrawing();
     void ClearBackground(Color color);
     void BeginScissorMode(int x, int y, int width, int height);
     void EndScissorMode();
-
-    // Initialize with MTKView
-    bool Initialize(MTKView* view);
-    void Shutdown();
     
     // Frame management
     void BeginFrame();
@@ -197,11 +210,17 @@ public:
     
     void DrawTestRectangle(); // Test function to verify Metal pipeline
     
+    // Viewport management
+    void SetViewportSize(float width, float height);
+    
 private:
     // Metal objects
     MTKView* m_view;
     id<MTLDevice> m_device;
     id<MTLCommandQueue> m_commandQueue;
+    
+    // State management
+    bool m_isPaused;
     id<MTLRenderPipelineState> m_texturePipeline;
     id<MTLRenderPipelineState> m_colorPipeline;
     id<MTLRenderPipelineState> m_sdfPipeline;  // SDF-specific pipeline for grayscale textures
@@ -227,6 +246,8 @@ private:
     MetalFrameResources m_frameResources;
     
     // Vertex batching
+    id<MTLBuffer> m_vertexBuffer;
+    id<MTLBuffer> m_uniformBuffer;
     std::vector<MetalVertex2D> m_vertices;
     std::vector<DrawCommand> m_drawCommands;
     size_t m_currentVertexBufferOffset; // Offset within current frame's vertex buffer
@@ -245,8 +266,11 @@ private:
     // Mobile GPU optimization settings
     MobileGPUSettings m_mobileSettings;
     
-    // Projection matrix
+    // Projection and viewport
     simd_float4x4 m_projectionMatrix;
+    simd_float2 m_viewportSize;
+    MTLViewport m_viewport;
+    MTLScissorRect m_scissorRect;
     
     // Frame timing
     double m_frameStartTime;
@@ -256,6 +280,7 @@ private:
     void CreatePipelines();
     void CreateBuffers();
     void UpdateUniforms();
+    void AddVertices(const MetalVertex2D* vertices, size_t count, id<MTLTexture> texture, uint32_t renderState);
     void AddVertex(float x, float y, float u, float v, Color color);
     void AddRectangleVertices(float x, float y, float width, float height, Color color);
     void AddTexturedRectangleVertices(Rectangle dest, Rectangle source, Color tint);
@@ -301,4 +326,4 @@ private:
 // Global renderer instance (managed by MetalRaylibCompat)
 extern MetalRenderer* g_metalRenderer;
 
-#endif // defined(__APPLE__) && TARGET_OS_IOS 
+#endif // defined(__APPLE__) && TARGET_OS_IOS

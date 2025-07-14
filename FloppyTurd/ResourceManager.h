@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <memory>
 #include <future>
+#include <mutex>
 #include "PlatformAPI.h"
 
 // Resource quality levels for different device tiers
@@ -151,4 +152,7 @@ private:
     // Performance tracking
     size_t totalMemoryUsage = 0;
     float frameTime = 0.0f;
-}; 
+    
+    // Thread safety
+    mutable std::mutex resourceMutex;  // Protects all resource registry and cache operations
+};

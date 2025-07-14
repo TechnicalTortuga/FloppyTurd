@@ -4,10 +4,10 @@
 #include <cstring>
 
 void GameStats::Load() {
-    const char* filename = "floppy_turd_stats.bin";
-    std::ifstream file(filename, std::ios::binary | std::ios::ate);
+    std::string filepath = GetSaveDataPath("floppy_turd_stats.bin");
+    std::ifstream file(filepath, std::ios::binary | std::ios::ate);
     if (!file.is_open()) {
-        TraceLog(LOG_INFO, "No stats file found, creating default: %s", filename);
+        TraceLog(LOG_INFO, "No stats file found, creating default: %s", filepath.c_str());
         levelUnlocked[0] = true; // Park is always open for business!
         Save();
         return;
@@ -51,17 +51,17 @@ void GameStats::Load() {
 }
 
 void GameStats::Save() const {
-    const char* filename = "floppy_turd_stats.bin";
-    std::ofstream file(filename, std::ios::binary);
+    std::string filepath = GetSaveDataPath("floppy_turd_stats.bin");
+    std::ofstream file(filepath, std::ios::binary);
     if (!file.is_open()) {
-        TraceLog(LOG_ERROR, "Failed to open stats file for writing: %s", filename);
+        TraceLog(LOG_ERROR, "Failed to open stats file for writing: %s", filepath.c_str());
         return;
     }
 
     // Write the entire struct
     file.write(reinterpret_cast<const char*>(this), sizeof(GameStats));
     if (!file.good()) {
-        TraceLog(LOG_ERROR, "Failed to write stats file: %s", filename);
+        TraceLog(LOG_ERROR, "Failed to write stats file: %s", filepath.c_str());
         file.close();
         return;
     }

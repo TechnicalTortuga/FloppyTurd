@@ -510,6 +510,10 @@ std::string GetResourcePath(const char* resourceName) {
     return CurrentPlatformAPI::GetInstance().GetResourcePath(resourceName);
 }
 
+std::string GetSaveDataPath(const char* filename) {
+    return CurrentPlatformAPI::GetInstance().GetSaveDataPath(filename);
+}
+
 bool PreferLowPowerMode() {
     return CurrentPlatformAPI::GetInstance().PreferLowPowerMode();
 }
@@ -761,32 +765,45 @@ extern "C" int game_main(int argc, char* argv[]) {
     (void)argc;
     (void)argv;
     
+    TraceLog(LOG_INFO, "[GAME] game_main() STARTING");
+    
     // Initialize platform layer
+    TraceLog(LOG_INFO, "[GAME] About to initialize platform layer");
     CurrentPlatformAPI::GetInstance().Initialize();
+    TraceLog(LOG_INFO, "[GAME] Platform layer initialized successfully");
     
     // Create the game instance
+    TraceLog(LOG_INFO, "[GAME] About to create Game instance");
     Game* game = new Game();
     if (!game) {
         TraceLog(LOG_ERROR, "[GAME] Failed to create Game instance");
         return -1;
     }
+    TraceLog(LOG_INFO, "[GAME] Game instance created successfully: %p", game);
     
     // Set the game instance globally for iOS integration
+    TraceLog(LOG_INFO, "[GAME] About to set game instance globally");
     SetGameInstance(game);
-    TraceLog(LOG_INFO, "[GAME] Game instance created and set globally: %p", game);
+    TraceLog(LOG_INFO, "[GAME] Game instance set globally: %p", game);
     
     // Initialize the game
+    TraceLog(LOG_INFO, "[GAME] About to call game->Initialize()");
     if (!game->Initialize()) {
         TraceLog(LOG_ERROR, "[GAME] Failed to initialize Game instance");
         delete game;
         SetGameInstance(nullptr);
         return -2;
     }
+    TraceLog(LOG_INFO, "[GAME] Game->Initialize() completed successfully");
     
     TraceLog(LOG_INFO, "[GAME] Game initialization successful");
-    return 0;
+    TraceLog(LOG_INFO, "[GAME] game_main() returning 0");
+    
+    int result = 0;
+    TraceLog(LOG_INFO, "[GAME] game_main() final result: %d", result);
+    return result;
 } 
 
 // RaylibTraits implementations
 // ColorFade is no longer a global function, so this implementation is removed.
-// The fade functionality is now handled by IOSTraits::Fade. 
+// The fade functionality is now handled by IOSTraits::Fade.
