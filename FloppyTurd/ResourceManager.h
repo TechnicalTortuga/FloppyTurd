@@ -5,7 +5,6 @@
 #include <memory>
 #include <future>
 #include <mutex>
-#include "PlatformAPI.h"
 
 // Resource quality levels for different device tiers
 enum class ResourceQuality {

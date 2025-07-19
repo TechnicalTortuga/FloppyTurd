@@ -5612,6 +5612,8 @@ SWIFT_EXTERN float $s10FloppyTurd16CppInteropBridgeC17getTouchPositionYySfs5Int3
 SWIFT_EXTERN float $s10FloppyTurd16CppInteropBridgeC24getPrimaryInputPositionXSfyF(SWIFT_CONTEXT void * _Nonnull _self) SWIFT_NOEXCEPT SWIFT_CALL; // getPrimaryInputPositionX()
 SWIFT_EXTERN float $s10FloppyTurd16CppInteropBridgeC24getPrimaryInputPositionYSfyF(SWIFT_CONTEXT void * _Nonnull _self) SWIFT_NOEXCEPT SWIFT_CALL; // getPrimaryInputPositionY()
 SWIFT_EXTERN bool $s10FloppyTurd16CppInteropBridgeC21isPrimaryInputPressedSbyF(SWIFT_CONTEXT void * _Nonnull _self) SWIFT_NOEXCEPT SWIFT_CALL; // isPrimaryInputPressed()
+SWIFT_EXTERN bool $s10FloppyTurd16CppInteropBridgeC18isPrimaryInputDownSbyF(SWIFT_CONTEXT void * _Nonnull _self) SWIFT_NOEXCEPT SWIFT_CALL; // isPrimaryInputDown()
+SWIFT_EXTERN bool $s10FloppyTurd16CppInteropBridgeC22isPrimaryInputReleasedSbyF(SWIFT_CONTEXT void * _Nonnull _self) SWIFT_NOEXCEPT SWIFT_CALL; // isPrimaryInputReleased()
 SWIFT_EXTERN int32_t $s10FloppyTurd16CppInteropBridgeC13getTouchCounts5Int32VyF(SWIFT_CONTEXT void * _Nonnull _self) SWIFT_NOEXCEPT SWIFT_CALL; // getTouchCount()
 SWIFT_EXTERN void $s10FloppyTurd16CppInteropBridgeC21triggerHapticFeedbackyys5Int32VF(int32_t type, SWIFT_CONTEXT void * _Nonnull _self) SWIFT_NOEXCEPT SWIFT_CALL; // triggerHapticFeedback(_:)
 SWIFT_EXTERN bool $s10FloppyTurd16CppInteropBridgeC20isVibrationSupportedSbyF(SWIFT_CONTEXT void * _Nonnull _self) SWIFT_NOEXCEPT SWIFT_CALL; // isVibrationSupported()
@@ -5745,6 +5747,7 @@ SWIFT_EXTERN struct swift_interop_returnStub_FloppyTurd_uint64_t_0_8_void_ptr_8_
 SWIFT_EXTERN struct swift_interop_returnStub_FloppyTurd_uint64_t_0_8_void_ptr_8_16 $s10FloppyTurd16CppInteropBridgeC15getSaveDataPathyS2SF(struct swift_interop_passStub_FloppyTurd_uint64_t_0_8_void_ptr_8_16 filename, SWIFT_CONTEXT void * _Nonnull _self) SWIFT_NOEXCEPT SWIFT_CALL; // getSaveDataPath(_:)
 SWIFT_EXTERN bool $s10FloppyTurd16CppInteropBridgeC16isMobilePlatformSbyF(SWIFT_CONTEXT void * _Nonnull _self) SWIFT_NOEXCEPT SWIFT_CALL; // isMobilePlatform()
 SWIFT_EXTERN bool $s10FloppyTurd16CppInteropBridgeC18preferLowPowerModeSbyF(SWIFT_CONTEXT void * _Nonnull _self) SWIFT_NOEXCEPT SWIFT_CALL; // preferLowPowerMode()
+SWIFT_EXTERN int32_t $s10FloppyTurd16CppInteropBridgeC25getRecommendedTextureSizes5Int32VyF(SWIFT_CONTEXT void * _Nonnull _self) SWIFT_NOEXCEPT SWIFT_CALL; // getRecommendedTextureSize()
 SWIFT_EXTERN int32_t $s10FloppyTurd4FontV8baseSizes5Int32Vvg(SWIFT_CONTEXT const void * _Nonnull _self) SWIFT_NOEXCEPT SWIFT_CALL; // _
 SWIFT_EXTERN int32_t $s10FloppyTurd4FontV10glyphCounts5Int32Vvg(SWIFT_CONTEXT const void * _Nonnull _self) SWIFT_NOEXCEPT SWIFT_CALL; // _
 SWIFT_EXTERN int32_t $s10FloppyTurd4FontV12glyphPaddings5Int32Vvg(SWIFT_CONTEXT const void * _Nonnull _self) SWIFT_NOEXCEPT SWIFT_CALL; // _
@@ -6399,6 +6402,10 @@ public:
   SWIFT_INLINE_THUNK float getPrimaryInputPositionY() SWIFT_SYMBOL("s:10FloppyTurd16CppInteropBridgeC24getPrimaryInputPositionYSfyF");
 /// Check if primary input is pressed - callable from C++ (nonisolated = safe for C++ interop)
   SWIFT_INLINE_THUNK bool isPrimaryInputPressed() SWIFT_SYMBOL("s:10FloppyTurd16CppInteropBridgeC21isPrimaryInputPressedSbyF");
+/// Check if primary input is down - callable from C++ (nonisolated = safe for C++ interop)
+  SWIFT_INLINE_THUNK bool isPrimaryInputDown() SWIFT_SYMBOL("s:10FloppyTurd16CppInteropBridgeC18isPrimaryInputDownSbyF");
+/// Check if primary input is released - callable from C++ (nonisolated = safe for C++ interop)
+  SWIFT_INLINE_THUNK bool isPrimaryInputReleased() SWIFT_SYMBOL("s:10FloppyTurd16CppInteropBridgeC22isPrimaryInputReleasedSbyF");
 /// Check if touch count - callable from C++ (nonisolated = safe for C++ interop)
   SWIFT_INLINE_THUNK int32_t getTouchCount() SWIFT_SYMBOL("s:10FloppyTurd16CppInteropBridgeC13getTouchCounts5Int32VyF");
 /// Trigger haptic feedback - callable from C++ (nonisolated = safe for C++ interop)
@@ -6617,6 +6624,8 @@ public:
   SWIFT_INLINE_THUNK bool isMobilePlatform() SWIFT_SYMBOL("s:10FloppyTurd16CppInteropBridgeC16isMobilePlatformSbyF");
 /// Check if should prefer low power mode - callable from C++
   SWIFT_INLINE_THUNK bool preferLowPowerMode() SWIFT_SYMBOL("s:10FloppyTurd16CppInteropBridgeC18preferLowPowerModeSbyF");
+/// Get recommended texture size for optimal performance - callable from C++
+  SWIFT_INLINE_THUNK int32_t getRecommendedTextureSize() SWIFT_SYMBOL("s:10FloppyTurd16CppInteropBridgeC25getRecommendedTextureSizes5Int32VyF");
 protected:
   SWIFT_INLINE_THUNK CppInteropBridge(void * _Nonnull ptr) noexcept : RefCountedClass(ptr) {}
 private:
@@ -9313,6 +9322,12 @@ static_assert(swift::isUsableInGenericContext<T_0_0>, "type cannot be used in a 
   SWIFT_INLINE_THUNK bool CppInteropBridge::isPrimaryInputPressed() {
   return _impl::$s10FloppyTurd16CppInteropBridgeC21isPrimaryInputPressedSbyF(::swift::_impl::_impl_RefCountedClass::getOpaquePointer(*this));
   }
+  SWIFT_INLINE_THUNK bool CppInteropBridge::isPrimaryInputDown() {
+  return _impl::$s10FloppyTurd16CppInteropBridgeC18isPrimaryInputDownSbyF(::swift::_impl::_impl_RefCountedClass::getOpaquePointer(*this));
+  }
+  SWIFT_INLINE_THUNK bool CppInteropBridge::isPrimaryInputReleased() {
+  return _impl::$s10FloppyTurd16CppInteropBridgeC22isPrimaryInputReleasedSbyF(::swift::_impl::_impl_RefCountedClass::getOpaquePointer(*this));
+  }
   SWIFT_INLINE_THUNK int32_t CppInteropBridge::getTouchCount() {
   return _impl::$s10FloppyTurd16CppInteropBridgeC13getTouchCounts5Int32VyF(::swift::_impl::_impl_RefCountedClass::getOpaquePointer(*this));
   }
@@ -9653,6 +9668,9 @@ static_assert(swift::isUsableInGenericContext<T_0_0>, "type cannot be used in a 
   }
   SWIFT_INLINE_THUNK bool CppInteropBridge::preferLowPowerMode() {
   return _impl::$s10FloppyTurd16CppInteropBridgeC18preferLowPowerModeSbyF(::swift::_impl::_impl_RefCountedClass::getOpaquePointer(*this));
+  }
+  SWIFT_INLINE_THUNK int32_t CppInteropBridge::getRecommendedTextureSize() {
+  return _impl::$s10FloppyTurd16CppInteropBridgeC25getRecommendedTextureSizes5Int32VyF(::swift::_impl::_impl_RefCountedClass::getOpaquePointer(*this));
   }
   SWIFT_INLINE_THUNK int32_t Font::getBaseSize() const {
   return _impl::$s10FloppyTurd4FontV8baseSizes5Int32Vvg(_getOpaquePointer());

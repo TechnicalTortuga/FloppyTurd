@@ -119,6 +119,14 @@ public:
     float GetCurrentFrameTime() { 
         return FloppyTurd::getCppInteropBridge().getCurrentFrameTime();
     }
+    void SetWindowSize(int width, int height) { 
+        // iOS: Window size is managed by the system
+        // This is a no-op for iOS but provided for compatibility
+    }
+    void ToggleFullscreen() { 
+        // iOS: Fullscreen is managed by the system  
+        // This is a no-op for iOS but provided for compatibility
+    }
     
     // Input Functions
     bool IsKeyPressed(int key) { return FloppyTurd::getCppInteropBridge().isKeyPressed(key); }
@@ -297,6 +305,16 @@ public:
     // Math Utility Functions
     float Clamp(float value, float min, float max) { return FloppyTurd::getCppInteropBridge().clamp(value, min, max); }
     float Lerp(float start, float end, float amount) { return FloppyTurd::getCppInteropBridge().lerp(start, end, amount); }
+    
+    // Text Formatting Functions
+    const char* TextFormat(const char* text, ...) {
+        static char buffer[1024];
+        va_list args;
+        va_start(args, text);
+        vsnprintf(buffer, sizeof(buffer), text, args);
+        va_end(args);
+        return buffer;
+    }
     
     // Rectangle Utility Functions
     Rectangle RectangleNew(float x, float y, float width, float height) { 
@@ -480,12 +498,12 @@ public:
     // VECTOR MATH FUNCTIONS  
     // ============================================================================
     
-    float Vector2Length(Vector2 v) { return Vector2Length(v); }
-    Vector2 Vector2Normalize(Vector2 v) { return Vector2Normalize(v); }
-    Vector2 Vector2Add(Vector2 v1, Vector2 v2) { return Vector2Add(v1, v2); }
-    Vector2 Vector2Subtract(Vector2 v1, Vector2 v2) { return Vector2Subtract(v1, v2); }
-    Vector2 Vector2Scale(Vector2 v, float scale) { return Vector2Scale(v, scale); }
-    float Vector2Distance(Vector2 v1, Vector2 v2) { return Vector2Distance(v1, v2); }
+    float Vector2Length(Vector2 v) { return ::Vector2Length(v); }
+    Vector2 Vector2Normalize(Vector2 v) { return ::Vector2Normalize(v); }
+    Vector2 Vector2Add(Vector2 v1, Vector2 v2) { return ::Vector2Add(v1, v2); }
+    Vector2 Vector2Subtract(Vector2 v1, Vector2 v2) { return ::Vector2Subtract(v1, v2); }
+    Vector2 Vector2Scale(Vector2 v, float scale) { return ::Vector2Scale(v, scale); }
+    float Vector2Distance(Vector2 v1, Vector2 v2) { return ::Vector2Distance(v1, v2); }
 
     // ============================================================================
     // COLLISION DETECTION FUNCTIONS
@@ -508,6 +526,20 @@ public:
     // ============================================================================
     
     float Clamp(float value, float min, float max) { return ::Clamp(value, min, max); }
+    float Lerp(float start, float end, float amount) { return ::Lerp(start, end, amount); }
+    
+    // ============================================================================
+    // TEXT FORMATTING FUNCTIONS
+    // ============================================================================
+    
+    const char* TextFormat(const char* text, ...) { 
+        static char buffer[1024];
+        va_list args;
+        va_start(args, text);
+        vsnprintf(buffer, sizeof(buffer), text, args);
+        va_end(args);
+        return buffer;
+    }
     float Lerp(float start, float end, float amount) { return ::Lerp(start, end, amount); }
 
     // ============================================================================
@@ -578,23 +610,71 @@ inline void SetSoundVolume(Sound sound, float volume) { PlatformAPI::GetInstance
 inline Music LoadMusic(const char* fileName) { return PlatformAPI::GetInstance().LoadMusic(fileName); }
 inline void PlayMusic(Music music) { PlatformAPI::GetInstance().PlayMusic(music); }
 inline void StopMusic() { PlatformAPI::GetInstance().StopMusic(); }
+inline void StopMusic(Music music) { PlatformAPI::GetInstance().StopMusicStream(music); }
+inline void UnloadMusic(Music music) { PlatformAPI::GetInstance().UnloadMusic(music); }
+inline void PauseMusic(Music music) { PlatformAPI::GetInstance().PauseMusicStream(music); }
+inline void ResumeMusic(Music music) { PlatformAPI::GetInstance().ResumeMusicStream(music); }
+inline void UpdateMusic(Music music) { PlatformAPI::GetInstance().UpdateMusicStream(music); }
+inline bool IsMusicPlaying() { return PlatformAPI::GetInstance().IsMusicPlaying(); }
+inline bool IsMusicPlaying(Music music) { return PlatformAPI::GetInstance().IsMusicStreamPlaying(music); }
+inline void SetMusicVolume(float volume) { PlatformAPI::GetInstance().SetMusicVolume(volume); }
+inline void SetMusicVolume(Music music, float volume) { PlatformAPI::GetInstance().SetMusicVolumeForId(music, volume); }
+inline void SetMusicLooping(Music music, bool looping) { PlatformAPI::GetInstance().SetMusicLooping(music, looping); }
+
+// Math and Utility Functions  
+inline float Clamp(float value, float min, float max) { return PlatformAPI::GetInstance().Clamp(value, min, max); }
+inline float Lerp(float start, float end, float amount) { return PlatformAPI::GetInstance().Lerp(start, end, amount); }
+inline Image GenImageColor(int width, int height, Color color) { 
+    // For now, return an invalid image - this function needs proper implementation in PlatformAPI
+    return Image{0}; 
+}
+inline Texture2D LoadTextureFromImage(Image image) { return PlatformAPI::GetInstance().LoadTextureFromImage(image); }
+
+// Additional functions
+inline Color ColorLerp(Color color1, Color color2, float amount) { return PlatformAPI::GetInstance().ColorLerp(color1, color2, amount); }
+inline Color ColorAlpha(Color color, float alpha) { return PlatformAPI::GetInstance().ColorAlpha(color, alpha); }
+inline Color Fade(Color color, float alpha) { return PlatformAPI::GetInstance().Fade(color, alpha); }
+inline void BeginScissorMode(int x, int y, int width, int height) { PlatformAPI::GetInstance().BeginScissorMode(x, y, width, height); }
+inline void EndScissorMode() { PlatformAPI::GetInstance().EndScissorMode(); }
+inline Vector2 GetMouseDelta() { return PlatformAPI::GetInstance().GetMouseDelta(); }
+inline bool IsMobilePlatform() { return PlatformAPI::GetInstance().IsMobilePlatform(); }
+
+// Constants that are missing
+#ifndef MOUSE_LEFT_BUTTON
+#define MOUSE_LEFT_BUTTON 0
+#endif
 
 // Font Functions
 inline Font LoadFont(const char* fileName) { return PlatformAPI::GetInstance().LoadFont(fileName); }
 inline void UnloadFont(Font font) { PlatformAPI::GetInstance().UnloadFont(font); }
 inline int MeasureText(const char* text, int fontSize) { return PlatformAPI::GetInstance().MeasureText(text, fontSize); }
 inline Vector2 MeasureTextEx(Font font, const char* text, float fontSize, float spacing) { return PlatformAPI::GetInstance().MeasureTextEx(font, text, fontSize, spacing); }
+inline const char* TextFormat(const char* text, ...) { 
+    static char buffer[1024];
+    va_list args;
+    va_start(args, text);
+    vsnprintf(buffer, sizeof(buffer), text, args);
+    va_end(args);
+    return buffer;
+}
 
 // Rendering Functions
 inline void BeginDrawing() { PlatformAPI::GetInstance().BeginDrawing(); }
 inline void EndDrawing() { PlatformAPI::GetInstance().EndDrawing(); }
 inline void ClearBackground(Color color) { PlatformAPI::GetInstance().ClearBackground(color); }
 inline void DrawRectangle(int posX, int posY, int width, int height, Color color) { PlatformAPI::GetInstance().DrawRectangle(posX, posY, width, height, color); }
+inline void DrawRectangleRec(Rectangle rec, Color color) { PlatformAPI::GetInstance().DrawRectangleRec(rec, color); }
+inline void DrawRectangleLinesEx(Rectangle rec, float lineThick, Color color) { PlatformAPI::GetInstance().DrawRectangleLinesEx(rec, lineThick, color); }
+inline void DrawLine(int startPosX, int startPosY, int endPosX, int endPosY, Color color) { PlatformAPI::GetInstance().DrawLine(startPosX, startPosY, endPosX, endPosY, color); }
 inline void DrawTexture(Texture2D texture, int posX, int posY, Color tint) { PlatformAPI::GetInstance().DrawTexture(texture, posX, posY, tint); }
+inline void DrawTextureV(Texture2D texture, Vector2 position, Color tint) { PlatformAPI::GetInstance().DrawTextureV(texture, position, tint); }
+inline void DrawTextureEx(Texture2D texture, Vector2 position, float rotation, float scale, Color tint) { PlatformAPI::GetInstance().DrawTextureEx(texture, position, rotation, scale, tint); }
 inline void DrawTextureRec(Texture2D texture, Rectangle source, Vector2 position, Color tint) { PlatformAPI::GetInstance().DrawTextureRec(texture, source, position, tint); }
 inline void DrawTexturePro(Texture2D texture, Rectangle source, Rectangle dest, Vector2 origin, float rotation, Color tint) { PlatformAPI::GetInstance().DrawTexturePro(texture, source, dest, origin, rotation, tint); }
 inline void DrawText(const char* text, int posX, int posY, int fontSize, Color color) { PlatformAPI::GetInstance().DrawText(text, posX, posY, fontSize, color); }
 inline void DrawTextEx(Font font, const char* text, Vector2 position, float fontSize, float spacing, Color tint) { PlatformAPI::GetInstance().DrawTextEx(font, text, position, fontSize, spacing, tint); }
+inline void DrawCircle(int centerX, int centerY, float radius, Color color) { PlatformAPI::GetInstance().DrawCircle(centerX, centerY, radius, color); }
+inline void DrawCircleV(Vector2 center, float radius, Color color) { PlatformAPI::GetInstance().DrawCircleV(center, radius, color); }
 
 // Window and Screen Functions
 inline void InitWindow(int width, int height, const char* title) { PlatformAPI::GetInstance().InitWindow(width, height, title); }
@@ -603,16 +683,36 @@ inline bool WindowShouldClose() { return PlatformAPI::GetInstance().WindowShould
 inline int GetScreenWidth() { return PlatformAPI::GetInstance().GetScreenWidth(); }
 inline int GetScreenHeight() { return PlatformAPI::GetInstance().GetScreenHeight(); }
 inline void SetTargetFPS(int fps) { PlatformAPI::GetInstance().SetTargetFPS(fps); }
+inline void SetWindowSize(int width, int height) { PlatformAPI::GetInstance().SetWindowSize(width, height); }
+inline void ToggleFullscreen() { PlatformAPI::GetInstance().ToggleFullscreen(); }
 
 // Input Functions
 inline bool IsKeyPressed(int key) { return PlatformAPI::GetInstance().IsKeyPressed(key); }
 inline bool IsKeyDown(int key) { return PlatformAPI::GetInstance().IsKeyDown(key); }
 inline bool IsMouseButtonPressed(int button) { return PlatformAPI::GetInstance().IsMouseButtonPressed(button); }
+inline bool IsMouseButtonDown(int button) { return PlatformAPI::GetInstance().IsMouseButtonDown(button); }
+inline bool IsMouseButtonReleased(int button) { return PlatformAPI::GetInstance().IsMouseButtonReleased(button); }
+inline bool IsPrimaryInputPressed() { return PlatformAPI::GetInstance().IsPrimaryInputPressed(); }
+inline bool IsPrimaryInputReleased() { return PlatformAPI::GetInstance().IsPrimaryInputReleased(); }
 inline Vector2 GetMousePosition() { return PlatformAPI::GetInstance().GetMousePosition(); }
+inline Vector2 GetTouchPosition(int index) { return PlatformAPI::GetInstance().GetTouchPosition(index); }
 
 // Time Functions
 inline double GetTime() { return PlatformAPI::GetInstance().GetTime(); }
 inline float GetFrameTime() { return PlatformAPI::GetInstance().GetFrameTime(); }
+
+// Vector Math Functions
+inline float Vector2Length(Vector2 v) { return PlatformAPI::GetInstance().Vector2Length(v); }
+inline Vector2 Vector2Normalize(Vector2 v) { return PlatformAPI::GetInstance().Vector2Normalize(v); }
+inline Vector2 Vector2Add(Vector2 v1, Vector2 v2) { return PlatformAPI::GetInstance().Vector2Add(v1, v2); }
+inline Vector2 Vector2Subtract(Vector2 v1, Vector2 v2) { return PlatformAPI::GetInstance().Vector2Subtract(v1, v2); }
+inline Vector2 Vector2Scale(Vector2 v, float scale) { return PlatformAPI::GetInstance().Vector2Scale(v, scale); }
+inline float Vector2Distance(Vector2 v1, Vector2 v2) { return PlatformAPI::GetInstance().Vector2Distance(v1, v2); }
+
+// Collision Detection Functions
+inline bool CheckCollisionRecs(Rectangle rec1, Rectangle rec2) { return PlatformAPI::GetInstance().CheckCollisionRecs(rec1, rec2); }
+inline bool CheckCollisionCircleRec(Vector2 center, float radius, Rectangle rec) { return PlatformAPI::GetInstance().CheckCollisionCircleRec(center, radius, rec); }
+inline bool CheckCollisionPointRec(Vector2 point, Rectangle rec) { return PlatformAPI::GetInstance().CheckCollisionPointRec(point, rec); }
 
 // ============================================================================
 // GLOBAL GAME INSTANCE MANAGEMENT (for iOS integration)

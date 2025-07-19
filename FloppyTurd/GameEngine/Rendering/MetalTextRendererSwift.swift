@@ -15,7 +15,10 @@ import CoreText
 
 /// Professional Metal text renderer implementation in pure Swift
 /// Direct replacement for MetalTextRenderer.mm with zero C++ dependencies
-public class MetalTextRendererSwift {
+public class MetalTextRendererSwift: @unchecked Sendable {
+    
+    // MARK: - Shared Instance
+    nonisolated(unsafe) public static let shared = MetalTextRendererSwift()
     
     // MARK: - Metal Resources
     private var device: MTLDevice?
@@ -677,7 +680,8 @@ public class MetalTextRendererSwift {
         
         // Try to load the font
         var font: CTFont?
-        if let customFont = CTFontCreateWithName(name as CFString, CGFloat(size), nil) {
+        let customFont = CTFontCreateWithName(name as CFString, CGFloat(size), nil)
+        if customFont != nil {
             font = customFont
         } else {
             // Fallback to default font with specified size

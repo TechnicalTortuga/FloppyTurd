@@ -227,28 +227,28 @@ public final class CppInteropBridge: Sendable {
     
     /// Check if mouse button is pressed - callable from C++ (nonisolated = safe for C++ interop)
     nonisolated public func isMouseButtonPressed(_ button: Int32) -> Bool {
-        return InputEngineSwift.shared.isMouseButtonPressed(button)
+        return InputEngine.isMouseButtonPressed(button)
     }
     
     /// Check if mouse button is down - callable from C++ (nonisolated = safe for C++ interop)
     nonisolated public func isMouseButtonDown(_ button: Int32) -> Bool {
-        return InputEngineSwift.shared.isMouseButtonPressed(button) // Same as pressed for touch
+        return InputEngine.isMouseButtonPressed(button) // Same as pressed for touch
     }
     
     /// Check if mouse button is released - callable from C++ (nonisolated = safe for C++ interop)
     nonisolated public func isMouseButtonReleased(_ button: Int32) -> Bool {
-        return !InputEngineSwift.shared.isMouseButtonPressed(button)
+        return !InputEngine.isMouseButtonPressed(button)
     }
     
     /// Get mouse position - callable from C++ (nonisolated = safe for C++ interop)
     nonisolated public func getMousePosition() -> (Float, Float) {
-        let pos = InputEngineSwift.shared.getMousePosition()
+        let pos = InputEngine.getMousePosition()
         return (pos.x, pos.y)
     }
     
     /// Get mouse position X - callable from C++ (workaround for tuple interop)
     nonisolated public func getMousePositionX() -> Float {
-        return InputEngineSwift.shared.getMouseX()
+        return InputEngine.getMouseX()
     }
     
     /// Get mouse position Y - callable from C++ (workaround for tuple interop)
@@ -308,6 +308,18 @@ public final class CppInteropBridge: Sendable {
     nonisolated public func isPrimaryInputPressed() -> Bool {
         // For mobile, check if touch is active
         return InputEngine.isMouseButtonPressed(0) // Treat as left mouse button
+    }
+    
+    /// Check if primary input is down - callable from C++ (nonisolated = safe for C++ interop)
+    nonisolated public func isPrimaryInputDown() -> Bool {
+        // For mobile, same as pressed
+        return InputEngine.isMouseButtonPressed(0)
+    }
+    
+    /// Check if primary input is released - callable from C++ (nonisolated = safe for C++ interop)
+    nonisolated public func isPrimaryInputReleased() -> Bool {
+        // For mobile, opposite of pressed
+        return !InputEngine.isMouseButtonPressed(0)
     }
     
     /// Check if touch count - callable from C++ (nonisolated = safe for C++ interop)
@@ -1087,6 +1099,13 @@ public final class CppInteropBridge: Sendable {
     /// Check if should prefer low power mode - callable from C++
     public func preferLowPowerMode() -> Bool {
         return ProcessInfo.processInfo.isLowPowerModeEnabled
+    }
+    
+    /// Get recommended texture size for optimal performance - callable from C++
+    public func getRecommendedTextureSize() -> Int32 {
+        // For iOS, use a reasonable default based on device capabilities
+        // This could be enhanced to detect device specs
+        return 2048 // 2K textures are generally well supported on iOS
     }
 }
 

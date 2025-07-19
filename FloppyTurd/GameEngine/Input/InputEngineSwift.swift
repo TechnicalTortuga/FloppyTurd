@@ -29,10 +29,10 @@ public class InputEngine {
     private static var screenSize: CGSize = .zero
     private static var safeAreaInsets: UIEdgeInsets = .zero
     
-    // Current input state for C++ queries - nonisolated(unsafe) for C++ interop access
-    nonisolated(unsafe) private static var currentTouchPositions: [Vector2] = []
-    nonisolated(unsafe) private static var isMousePressed: Bool = false
-    nonisolated(unsafe) private static var mousePosition: Vector2 = Vector2(x: 0, y: 0)
+    // Current input state cache for C++ queries - nonisolated(unsafe) for thread-safe C++ interop access
+    nonisolated(unsafe) static var currentTouchPositions: [Vector2] = []
+    nonisolated(unsafe) static var isMousePressed: Bool = false
+    nonisolated(unsafe) static var mousePosition: Vector2 = Vector2(x: 0, y: 0)
     
     // MARK: - Touch Data Structure
     
