@@ -1,0 +1,14 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "shell",
+			"label": "Build FloppyTurd",
+			"command": "xcodebuild -workspace FloppyTurd.xcworkspace -scheme FloppyTurd -configuration Debug clean build",
+			"group": "build",
+			"problemMatcher": [
+				"$gcc"
+			]
+		}
+	]
+}

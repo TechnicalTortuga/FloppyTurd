@@ -1,0 +1,3 @@
+/Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/FloppyTurd.dir
+/Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/ALL_BUILD.dir
+/Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/ZERO_CHECK.dir

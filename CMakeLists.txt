@@ -1,9 +1,13 @@
 cmake_minimum_required(VERSION 3.5)
-project(FloppyTurd VERSION 1.0.0 LANGUAGES CXX)
+project(FloppyTurd VERSION 1.0.0 LANGUAGES CXX Swift)
 
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Set Swift version and enable C++ interop
+set(CMAKE_Swift_LANGUAGE_VERSION 6.0)
+enable_language(Swift)
 
 # Options for different platforms
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
@@ -63,10 +67,13 @@ set(PLATFORM "${_FTURD_SAVED_PLATFORM}" CACHE STRING "" FORCE)
 file(GLOB_RECURSE CPP_SOURCES 
     ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/*.cpp
 )
+file(GLOB_RECURSE SWIFT_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/*.swift
+)
 file(GLOB_RECURSE OBJC_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/*.mm
 )
-set(SOURCES ${CPP_SOURCES} ${OBJC_SOURCES})
+set(SOURCES ${CPP_SOURCES} ${SWIFT_SOURCES} ${OBJC_SOURCES})
 
 
 # Remove files that no longer exist (were deleted during refactor)
@@ -85,18 +92,19 @@ list(APPEND SOURCES
 
     # Add platform-specific compatibility layer
     if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
-        # iOS uses PlatformAPI and PlatformIOS for Metal implementation
-        list(APPEND SOURCES
+        # iOS uses PlatformAPI and Swift for Metal implementation
+        # All .mm files have been migrated to Swift
+        
+        # Remove old .mm files that have been migrated to Swift
+        list(REMOVE_ITEM SOURCES 
+            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/WindowIOS.mm
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/AudioStateManager.mm
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/GameLog.mm
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/LogManager.mm
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/main_ios.mm
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/WindowIOS.mm
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/iOS/AppDelegate.mm
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/iOS/GameViewController.mm
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/iOS/GameView.mm
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/iOS/HapticsManager.mm
-            # Metal rendering implementation files
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalRenderer.mm
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalFrameResources.mm
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalTextureCache.mm
@@ -105,7 +113,6 @@ list(APPEND SOURCES
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/FontCache.mm
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalShader.mm
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalTextRenderer.mm
-            # iOS-specific coordinate system implementation
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/UICoordinateSystem.mm
         )
     
@@ -126,12 +133,25 @@ file(GLOB_RECURSE HEADERS
 list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/GameSettings.h)
 list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/Resources.h)
 
-# For iOS, remove files that are replaced by .mm versions
+# For iOS, remove files that are replaced by Swift versions
 if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
-    # Remove AudioStateManager.cpp since we use AudioStateManager.mm for iOS
-    list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/AudioStateManager.cpp)
     # Remove UICoordinateSystem.cpp since we use Metal/UIKit implementation for iOS
     list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/UICoordinateSystem.cpp)
+    # Remove ONLY raylib-dependent desktop components
+    list(REMOVE_ITEM SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/Window.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/TouchControls.cpp
+    )
+    
+    # Keep cross-platform systems (now Swift-bridged)
+    if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "iOS")
+        target_link_libraries(${PROJECT_NAME} PRIVATE raylib)
+    endif()
+    
+    # Disable raylib dependencies completely for iOS
+    if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "iOS")
+        target_link_libraries(${PROJECT_NAME} PRIVATE raylib)
+    endif()
 endif()
 
 # TouchControls, ResourceManager, and AIGUI.cpp are already included via GLOB_RECURSE
@@ -193,6 +213,11 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
         TARGET_OS_IOS=1
     )
     
+    # Swift/C++ interop configuration
+    target_compile_options(${PROJECT_NAME} PRIVATE
+        $<$<COMPILE_LANGUAGE:Swift>:-cxx-interoperability-mode=default>
+    )
+    
     # Bundle resources - use asset catalogs for proper iOS packaging
     file(GLOB_RECURSE RESOURCES "${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/resources/*")
     foreach(RESOURCE ${RESOURCES})
@@ -242,12 +267,14 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
         XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.floppyturd.game"
         XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "${DEVELOPMENT_TEAM}"
         XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "Apple Development"
-        XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET "13.0"
+        XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET "16.0"
         XCODE_ATTRIBUTE_PRODUCT_NAME "FloppyTurd"
         XCODE_ATTRIBUTE_BUNDLE_VERSION "1.0.0"
         XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2"
         XCODE_ATTRIBUTE_UI_REQUIRED_DEVICE_CAPABILITIES "arm64"
         XCODE_ATTRIBUTE_UI_SUPPORTED_INTERFACE_ORIENTATIONS "UIInterfaceOrientationPortrait;UIInterfaceOrientationLandscapeLeft;UIInterfaceOrientationLandscapeRight"
+        # Swift header configuration
+        XCODE_ATTRIBUTE_SWIFT_OBJC_INTERFACE_HEADER_NAME "GameEngine-Swift.h"
         # Enable code signing
         XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "YES"
         XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "YES"
@@ -323,9 +350,15 @@ endif()
 
 # Compiler warnings
 if(MSVC)
-    target_compile_options(${PROJECT_NAME} PRIVATE /W3)
+    target_compile_options(${PROJECT_NAME} PRIVATE 
+        $<$<COMPILE_LANGUAGE:CXX>:/W3>
+    )
 else()
-    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -pedantic)
+    target_compile_options(${PROJECT_NAME} PRIVATE 
+        $<$<COMPILE_LANGUAGE:CXX>:-Wall>
+        $<$<COMPILE_LANGUAGE:CXX>:-Wextra>
+        $<$<COMPILE_LANGUAGE:CXX>:-pedantic>
+    )
 endif()
 
 # Export compile commands for better IDE support

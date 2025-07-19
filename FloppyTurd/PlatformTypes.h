@@ -55,7 +55,7 @@ typedef struct Matrix {
 // ============================================================================
 
 typedef struct Texture2D {
-    unsigned int id;        // OpenGL texture id
+    int32_t id;             // Texture ID for bridge compatibility (int32_t expected by Swift)
     int width;              // Texture base width
     int height;             // Texture base height
     int mipmaps;            // Mipmap levels, 1 by default
@@ -64,7 +64,7 @@ typedef struct Texture2D {
 } Texture2D;
 
 typedef struct Image {
-    void* data;
+    int32_t data;           // Image ID for bridge compatibility (int32_t expected by Swift)
     int width;
     int height;
     int mipmaps;
@@ -72,26 +72,29 @@ typedef struct Image {
 } Image;
 
 typedef struct Font {
+    int32_t id;             // Font ID for bridge compatibility (int32_t expected by Swift)
     void* font;
     int baseSize;
     int glyphCount;
     int glyphPadding;
     Texture2D texture;
-    Rectangle* recs;  // Rectangle* recs;
-    void* glyphs;  // GlyphInfo* glyphs;
+    Rectangle* recs;        // Rectangle* recs;
+    void* glyphs;           // GlyphInfo* glyphs;
     void* fontData;
-    const void* ctFont; // CTFontRef for iOS (const qualified)
-    int size;           // Font size for iOS
-    const char* name;   // Font name for debugging
+    const void* ctFont;     // CTFontRef for iOS (const qualified)
+    int size;               // Font size for iOS
+    const char* name;       // Font name for debugging
 } Font;
 
 typedef struct Sound {
-    void* player; // Actually an AVAudioPlayer*
+    int32_t id;             // Sound ID for bridge compatibility (int32_t expected by Swift)
+    void* player;           // Actually an AVAudioPlayer*
     int length;
 } Sound;
 
 typedef struct Music {
-    void* player; // Actually an AVAudioPlayer*
+    int32_t id;             // Music ID for bridge compatibility (int32_t expected by Swift)
+    void* player;           // Actually an AVAudioPlayer*
     int length;
 } Music;
 
@@ -199,6 +202,12 @@ inline Color MakeColor(unsigned char r, unsigned char g, unsigned char b, unsign
 #define TEXTURE_FILTER_ANISOTROPIC_4X 3
 #define TEXTURE_FILTER_ANISOTROPIC_8X 4
 #define TEXTURE_FILTER_ANISOTROPIC_16X 5
+
+// Texture wrap constants
+#define TEXTURE_WRAP_REPEAT      0
+#define TEXTURE_WRAP_CLAMP       1
+#define TEXTURE_WRAP_MIRROR_REPEAT 2
+#define TEXTURE_WRAP_MIRROR_CLAMP 3
 
 // Pixel format constants
 #define PIXELFORMAT_UNCOMPRESSED_GRAYSCALE    1

@@ -1,0 +1,44 @@
+module GameEngineCpp {
+    // Core platform types and APIs
+    header "PlatformTypes.h"
+    header "PlatformAPI.h"
+    
+    // Input management system
+    header "GameEngine/Input/InputManager.h"
+    header "GameEngine/Input/TouchController.h"
+    
+    // Core engine subsystems
+    header "ResourceManager.h"
+    header "AudioManager.h"
+    header "AudioStateManager.h"
+    
+    // Rendering engine
+    header "MetalRenderer.h"
+    header "MetalTextRenderer.h"
+    header "Sprite.h"
+    header "TextureAtlas.h"
+    header "TextureCache.h"
+    
+    // Audio engine
+    header "SoundManager.h"
+    header "AudioClip.h"
+    header "SoundEffect.h"
+    
+    // UI and window management (platform-agnostic)
+    header "Window.h"
+    header "WindowIOS.h"
+    header "UIManager.h"
+    header "UICoordinateSystem.h"
+    header "TouchControls.h"
+    
+    // Game framework components (game-agnostic)
+    header "Level.h"
+    header "LevelManager.h"
+    header "Enemy.h"
+    header "Obstacle.h"
+    header "PickUp.h"
+    header "Projectile.h"
+    
+    // Export all imported headers
+    export *
+}

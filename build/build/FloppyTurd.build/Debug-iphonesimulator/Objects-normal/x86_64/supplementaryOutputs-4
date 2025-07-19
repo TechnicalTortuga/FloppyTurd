@@ -1,0 +1,18 @@
+"/Users/aimac/Development/FloppyTurd/FloppyTurd/GameEngine/Rendering/MetalTextureSwift.swift":
+  dependencies: "/Users/aimac/Development/FloppyTurd/build/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalTextureSwift.d"
+  const-values: "/Users/aimac/Development/FloppyTurd/build/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalTextureSwift.swiftconstvalues"
+  object: "/Users/aimac/Development/FloppyTurd/build/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalTextureSwift.o"
+  swift-dependencies: "/Users/aimac/Development/FloppyTurd/build/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalTextureSwift.swiftdeps"
+  diagnostics: "/Users/aimac/Development/FloppyTurd/build/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalTextureSwift.dia"
+"/Users/aimac/Development/FloppyTurd/FloppyTurd/GameEngine/Rendering/MetalTextRendererSwift.swift":
+  dependencies: "/Users/aimac/Development/FloppyTurd/build/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalTextRendererSwift.d"
+  swift-dependencies: "/Users/aimac/Development/FloppyTurd/build/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalTextRendererSwift.swiftdeps"
+  diagnostics: "/Users/aimac/Development/FloppyTurd/build/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalTextRendererSwift.dia"
+  object: "/Users/aimac/Development/FloppyTurd/build/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalTextRendererSwift.o"
+  const-values: "/Users/aimac/Development/FloppyTurd/build/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalTextRendererSwift.swiftconstvalues"
+"/Users/aimac/Development/FloppyTurd/FloppyTurd/GameEngine/Rendering/MetalRendererSwift.swift":
+  swift-dependencies: "/Users/aimac/Development/FloppyTurd/build/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalRendererSwift.swiftdeps"
+  dependencies: "/Users/aimac/Development/FloppyTurd/build/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalRendererSwift.d"
+  object: "/Users/aimac/Development/FloppyTurd/build/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalRendererSwift.o"
+  diagnostics: "/Users/aimac/Development/FloppyTurd/build/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalRendererSwift.dia"
+  const-values: "/Users/aimac/Development/FloppyTurd/build/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalRendererSwift.swiftconstvalues"
