@@ -5926,6 +5926,12 @@ struct FloppyTurd_LoadingMode {
   _Alignas(1) char _storage[1];
 };
 
+SWIFT_EXTERN struct swift_interop_returnStub_FloppyTurd_uint8_t_0_1 $s10FloppyTurd8LogLevelO8rawValueACSgs5Int32V_tcfC(int32_t rawValue) SWIFT_NOEXCEPT SWIFT_CALL; // init(rawValue:)
+SWIFT_EXTERN int32_t $s10FloppyTurd8LogLevelO8rawValues5Int32Vvg(struct swift_interop_passStub_FloppyTurd_uint8_t_0_1 _self) SWIFT_NOEXCEPT SWIFT_CALL; // _
+struct FloppyTurd_LogLevel {
+  _Alignas(1) char _storage[1];
+};
+
 SWIFT_EXTERN float $s10FloppyTurd6MatrixV2m0Sfvg(SWIFT_CONTEXT const void * _Nonnull _self) SWIFT_NOEXCEPT SWIFT_CALL; // _
 SWIFT_EXTERN float $s10FloppyTurd6MatrixV2m1Sfvg(SWIFT_CONTEXT const void * _Nonnull _self) SWIFT_NOEXCEPT SWIFT_CALL; // _
 SWIFT_EXTERN float $s10FloppyTurd6MatrixV2m2Sfvg(SWIFT_CONTEXT const void * _Nonnull _self) SWIFT_NOEXCEPT SWIFT_CALL; // _
@@ -6566,7 +6572,7 @@ public:
   SWIFT_INLINE_THUNK float getRandomVector2Y(float minX, float minY, float maxX, float maxY) SWIFT_SYMBOL("s:10FloppyTurd16CppInteropBridgeC17getRandomVector2YyS2f_S3ftF");
 /// Get random color - callable from C++
   SWIFT_INLINE_THUNK RaylibColor getRandomColor() SWIFT_SYMBOL("s:10FloppyTurd16CppInteropBridgeC14getRandomColorAA06RaylibH0VyF");
-/// Trace log - callable from C++
+/// Trace log - callable from C++ (now routes through LogManagerSwift for file logging)
   SWIFT_INLINE_THUNK void traceLog(int32_t logLevel, const swift::String& text) SWIFT_SYMBOL("s:10FloppyTurd16CppInteropBridgeC8traceLogyys5Int32V_SStF");
 /// Set trace log level - callable from C++
   SWIFT_INLINE_THUNK void setTraceLogLevel(int32_t logLevel) SWIFT_SYMBOL("s:10FloppyTurd16CppInteropBridgeC16setTraceLogLevelyys5Int32VF");
@@ -7455,6 +7461,243 @@ template<>
 static inline const constexpr bool isValueType<FloppyTurd::LoadingMode> = true;
 template<>
 struct implClassFor<FloppyTurd::LoadingMode> { using type = FloppyTurd::_impl::_impl_LoadingMode; };
+} // namespace
+#pragma clang diagnostic pop
+} // namespace swift
+
+namespace FloppyTurd SWIFT_PRIVATE_ATTR SWIFT_SYMBOL_MODULE("FloppyTurd") {
+
+class SWIFT_SYMBOL("s:10FloppyTurd8LogLevelO") LogLevel;
+} // end namespace 
+
+namespace swift SWIFT_PRIVATE_ATTR {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wc++17-extensions"
+template<>
+static inline const constexpr bool isUsableInGenericContext<FloppyTurd::LogLevel> = true;
+#pragma clang diagnostic pop
+} // namespace swift
+
+namespace FloppyTurd SWIFT_PRIVATE_ATTR SWIFT_SYMBOL_MODULE("FloppyTurd") {
+/// Log levels for the game engine
+namespace _impl {
+
+class _impl_LogLevel;
+
+// Type metadata accessor for LogLevel
+SWIFT_EXTERN swift::_impl::MetadataResponseTy $s10FloppyTurd8LogLevelOMa(swift::_impl::MetadataRequestTy) SWIFT_NOEXCEPT SWIFT_CALL;
+
+
+} // namespace _impl
+
+class SWIFT_SYMBOL("s:10FloppyTurd8LogLevelO") LogLevel final {
+public:
+  SWIFT_INLINE_THUNK ~LogLevel() noexcept {
+    auto metadata = _impl::$s10FloppyTurd8LogLevelOMa(0);
+    auto *vwTableAddr = reinterpret_cast<swift::_impl::ValueWitnessTable **>(metadata._0) - 1;
+#ifdef __arm64e__
+    auto *vwTable = reinterpret_cast<swift::_impl::ValueWitnessTable *>(ptrauth_auth_data(reinterpret_cast<void *>(*vwTableAddr), ptrauth_key_process_independent_data, ptrauth_blend_discriminator(vwTableAddr, 11839)));
+#else
+    auto *vwTable = *vwTableAddr;
+#endif
+    vwTable->destroy(_getOpaquePointer(), metadata._0);
+  }
+  SWIFT_INLINE_THUNK LogLevel(const LogLevel &other) noexcept {
+    auto metadata = _impl::$s10FloppyTurd8LogLevelOMa(0);
+    auto *vwTableAddr = reinterpret_cast<swift::_impl::ValueWitnessTable **>(metadata._0) - 1;
+#ifdef __arm64e__
+    auto *vwTable = reinterpret_cast<swift::_impl::ValueWitnessTable *>(ptrauth_auth_data(reinterpret_cast<void *>(*vwTableAddr), ptrauth_key_process_independent_data, ptrauth_blend_discriminator(vwTableAddr, 11839)));
+#else
+    auto *vwTable = *vwTableAddr;
+#endif
+    vwTable->initializeWithCopy(_getOpaquePointer(), const_cast<char *>(other._getOpaquePointer()), metadata._0);
+  }
+  SWIFT_INLINE_THUNK LogLevel &operator =(const LogLevel &other) noexcept {
+    auto metadata = _impl::$s10FloppyTurd8LogLevelOMa(0);
+    auto *vwTableAddr = reinterpret_cast<swift::_impl::ValueWitnessTable **>(metadata._0) - 1;
+#ifdef __arm64e__
+    auto *vwTable = reinterpret_cast<swift::_impl::ValueWitnessTable *>(ptrauth_auth_data(reinterpret_cast<void *>(*vwTableAddr), ptrauth_key_process_independent_data, ptrauth_blend_discriminator(vwTableAddr, 11839)));
+#else
+    auto *vwTable = *vwTableAddr;
+#endif
+    vwTable->assignWithCopy(_getOpaquePointer(), const_cast<char *>(other._getOpaquePointer()), metadata._0);
+  return *this;
+  }
+  SWIFT_INLINE_THUNK LogLevel &operator =(LogLevel &&other) = delete;
+  [[noreturn]] SWIFT_INLINE_PRIVATE_HELPER LogLevel(LogLevel &&) noexcept {
+  swift::_impl::_fatalError_Cxx_move_of_Swift_value_type_not_supported_yet();
+  swift::_impl::_swift_stdlib_reportFatalError("swift", 5, "C++ does not support moving a Swift value yet", 45, 0);
+  abort();
+  }
+
+  enum class cases {
+    trace SWIFT_SYMBOL("s:10FloppyTurd8LogLevelO5traceyA2CmF"),
+    debug SWIFT_SYMBOL("s:10FloppyTurd8LogLevelO5debugyA2CmF"),
+    info SWIFT_SYMBOL("s:10FloppyTurd8LogLevelO4infoyA2CmF"),
+    warning SWIFT_SYMBOL("s:10FloppyTurd8LogLevelO7warningyA2CmF"),
+    error SWIFT_SYMBOL("s:10FloppyTurd8LogLevelO5erroryA2CmF"),
+    fatal SWIFT_SYMBOL("s:10FloppyTurd8LogLevelO5fatalyA2CmF")
+  };
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wc++17-extensions"  // allow use of inline static data member
+  inline const static struct _impl_trace {  // impl struct for case trace
+    SWIFT_INLINE_THUNK constexpr operator cases() const {
+      return cases::trace;
+    }
+    SWIFT_INLINE_THUNK LogLevel operator()() const;
+  } trace SWIFT_SYMBOL("s:10FloppyTurd8LogLevelO5traceyA2CmF");
+  SWIFT_INLINE_THUNK bool isTrace() const;
+
+  inline const static struct _impl_debug {  // impl struct for case debug
+    SWIFT_INLINE_THUNK constexpr operator cases() const {
+      return cases::debug;
+    }
+    SWIFT_INLINE_THUNK LogLevel operator()() const;
+  } debug SWIFT_SYMBOL("s:10FloppyTurd8LogLevelO5debugyA2CmF");
+  SWIFT_INLINE_THUNK bool isDebug() const;
+
+  inline const static struct _impl_info {  // impl struct for case info
+    SWIFT_INLINE_THUNK constexpr operator cases() const {
+      return cases::info;
+    }
+    SWIFT_INLINE_THUNK LogLevel operator()() const;
+  } info SWIFT_SYMBOL("s:10FloppyTurd8LogLevelO4infoyA2CmF");
+  SWIFT_INLINE_THUNK bool isInfo() const;
+
+  inline const static struct _impl_warning {  // impl struct for case warning
+    SWIFT_INLINE_THUNK constexpr operator cases() const {
+      return cases::warning;
+    }
+    SWIFT_INLINE_THUNK LogLevel operator()() const;
+  } warning SWIFT_SYMBOL("s:10FloppyTurd8LogLevelO7warningyA2CmF");
+  SWIFT_INLINE_THUNK bool isWarning() const;
+
+  inline const static struct _impl_error {  // impl struct for case error
+    SWIFT_INLINE_THUNK constexpr operator cases() const {
+      return cases::error;
+    }
+    SWIFT_INLINE_THUNK LogLevel operator()() const;
+  } error SWIFT_SYMBOL("s:10FloppyTurd8LogLevelO5erroryA2CmF");
+  SWIFT_INLINE_THUNK bool isError() const;
+
+  inline const static struct _impl_fatal {  // impl struct for case fatal
+    SWIFT_INLINE_THUNK constexpr operator cases() const {
+      return cases::fatal;
+    }
+    SWIFT_INLINE_THUNK LogLevel operator()() const;
+  } fatal SWIFT_SYMBOL("s:10FloppyTurd8LogLevelO5fatalyA2CmF");
+  SWIFT_INLINE_THUNK bool isFatal() const;
+
+#pragma clang diagnostic pop
+  SWIFT_INLINE_THUNK operator cases() const {
+    switch (_getEnumTag()) {
+      case 0: return cases::trace;
+      case 1: return cases::debug;
+      case 2: return cases::info;
+      case 3: return cases::warning;
+      case 4: return cases::error;
+      case 5: return cases::fatal;
+      default: abort();
+    }
+  }
+
+  static SWIFT_INLINE_THUNK swift::Optional<LogLevel> init(int32_t rawValue) SWIFT_SYMBOL("s:10FloppyTurd8LogLevelO8rawValueACSgs5Int32V_tcfc");
+  SWIFT_INLINE_THUNK int32_t getRawValue() const SWIFT_SYMBOL("s:10FloppyTurd8LogLevelO8rawValues5Int32Vvp");
+private:
+  SWIFT_INLINE_THUNK LogLevel() noexcept {}
+  static SWIFT_INLINE_THUNK LogLevel _make() noexcept { return LogLevel(); }
+  SWIFT_INLINE_THUNK const char * _Nonnull _getOpaquePointer() const noexcept { return _storage; }
+  SWIFT_INLINE_THUNK char * _Nonnull _getOpaquePointer() noexcept { return _storage; }
+
+  SWIFT_INLINE_THUNK char * _Nonnull _destructiveProjectEnumData() noexcept {
+    auto metadata = _impl::$s10FloppyTurd8LogLevelOMa(0);
+    auto *vwTableAddr = reinterpret_cast<swift::_impl::ValueWitnessTable **>(metadata._0) - 1;
+#ifdef __arm64e__
+    auto *vwTable = reinterpret_cast<swift::_impl::ValueWitnessTable *>(ptrauth_auth_data(reinterpret_cast<void *>(*vwTableAddr), ptrauth_key_process_independent_data, ptrauth_blend_discriminator(vwTableAddr, 11839)));
+#else
+    auto *vwTable = *vwTableAddr;
+#endif
+    const auto *enumVWTable = reinterpret_cast<swift::_impl::EnumValueWitnessTable *>(vwTable);
+    enumVWTable->destructiveProjectEnumData(_getOpaquePointer(), metadata._0);
+    return _getOpaquePointer();
+  }
+  SWIFT_INLINE_THUNK void _destructiveInjectEnumTag(unsigned tag) noexcept {
+    auto metadata = _impl::$s10FloppyTurd8LogLevelOMa(0);
+    auto *vwTableAddr = reinterpret_cast<swift::_impl::ValueWitnessTable **>(metadata._0) - 1;
+#ifdef __arm64e__
+    auto *vwTable = reinterpret_cast<swift::_impl::ValueWitnessTable *>(ptrauth_auth_data(reinterpret_cast<void *>(*vwTableAddr), ptrauth_key_process_independent_data, ptrauth_blend_discriminator(vwTableAddr, 11839)));
+#else
+    auto *vwTable = *vwTableAddr;
+#endif
+    const auto *enumVWTable = reinterpret_cast<swift::_impl::EnumValueWitnessTable *>(vwTable);
+    enumVWTable->destructiveInjectEnumTag(_getOpaquePointer(), tag, metadata._0);
+  }
+  SWIFT_INLINE_THUNK unsigned _getEnumTag() const noexcept {
+    auto metadata = _impl::$s10FloppyTurd8LogLevelOMa(0);
+    auto *vwTableAddr = reinterpret_cast<swift::_impl::ValueWitnessTable **>(metadata._0) - 1;
+#ifdef __arm64e__
+    auto *vwTable = reinterpret_cast<swift::_impl::ValueWitnessTable *>(ptrauth_auth_data(reinterpret_cast<void *>(*vwTableAddr), ptrauth_key_process_independent_data, ptrauth_blend_discriminator(vwTableAddr, 11839)));
+#else
+    auto *vwTable = *vwTableAddr;
+#endif
+    const auto *enumVWTable = reinterpret_cast<swift::_impl::EnumValueWitnessTable *>(vwTable);
+    return enumVWTable->getEnumTag(_getOpaquePointer(), metadata._0);
+  }
+  alignas(1) char _storage[1];
+  friend class _impl::_impl_LogLevel;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wc++17-extensions"
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wreserved-identifier"
+  typedef char $s10FloppyTurd8LogLevelOD;
+  static inline constexpr $s10FloppyTurd8LogLevelOD __swift_mangled_name = 0;
+#pragma clang diagnostic pop
+#pragma clang diagnostic pop
+};
+
+namespace _impl {
+
+class _impl_LogLevel {
+public:
+  static SWIFT_INLINE_THUNK char * _Nonnull getOpaquePointer(LogLevel &object) { return object._getOpaquePointer(); }
+  static SWIFT_INLINE_THUNK const char * _Nonnull getOpaquePointer(const LogLevel &object) { return object._getOpaquePointer(); }
+  template<class T>
+  static SWIFT_INLINE_PRIVATE_HELPER LogLevel returnNewValue(T callable) {
+    auto result = LogLevel::_make();
+    callable(result._getOpaquePointer());
+    return result;
+  }
+  static SWIFT_INLINE_THUNK void initializeWithTake(char * _Nonnull destStorage, char * _Nonnull srcStorage) {
+    auto metadata = _impl::$s10FloppyTurd8LogLevelOMa(0);
+    auto *vwTableAddr = reinterpret_cast<swift::_impl::ValueWitnessTable **>(metadata._0) - 1;
+#ifdef __arm64e__
+    auto *vwTable = reinterpret_cast<swift::_impl::ValueWitnessTable *>(ptrauth_auth_data(reinterpret_cast<void *>(*vwTableAddr), ptrauth_key_process_independent_data, ptrauth_blend_discriminator(vwTableAddr, 11839)));
+#else
+    auto *vwTable = *vwTableAddr;
+#endif
+    vwTable->initializeWithTake(destStorage, srcStorage, metadata._0);
+  }
+};
+
+} // namespace _impl
+
+} // end namespace 
+
+namespace swift SWIFT_PRIVATE_ATTR {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wc++17-extensions"
+template<>
+struct TypeMetadataTrait<FloppyTurd::LogLevel> {
+  static SWIFT_INLINE_PRIVATE_HELPER void * _Nonnull getTypeMetadata() {
+    return FloppyTurd::_impl::$s10FloppyTurd8LogLevelOMa(0)._0;
+  }
+};
+namespace _impl{
+template<>
+static inline const constexpr bool isValueType<FloppyTurd::LogLevel> = true;
+template<>
+struct implClassFor<FloppyTurd::LogLevel> { using type = FloppyTurd::_impl::_impl_LogLevel; };
 } // namespace
 #pragma clang diagnostic pop
 } // namespace swift
@@ -9838,6 +10081,62 @@ static_assert(swift::isUsableInGenericContext<T_0_0>, "type cannot be used in a 
   return swift::_impl::_impl_String::returnNewValue([&](char * _Nonnull result) SWIFT_INLINE_THUNK_ATTRIBUTES {
     _impl::swift_interop_returnDirect_FloppyTurd_uint64_t_0_8_void_ptr_8_16(result, _impl::$s10FloppyTurd11LoadingModeO8rawValueSSvg(_impl::swift_interop_passDirect_FloppyTurd_uint8_t_0_1(_getOpaquePointer())));
   });
+  }
+  SWIFT_INLINE_THUNK LogLevel LogLevel::_impl_trace::operator()() const {
+    auto result = LogLevel::_make();
+    result._destructiveInjectEnumTag(0);
+    return result;
+  }
+  SWIFT_INLINE_THUNK  bool LogLevel::isTrace() const {
+    return *this == LogLevel::trace;
+  }
+  SWIFT_INLINE_THUNK LogLevel LogLevel::_impl_debug::operator()() const {
+    auto result = LogLevel::_make();
+    result._destructiveInjectEnumTag(1);
+    return result;
+  }
+  SWIFT_INLINE_THUNK  bool LogLevel::isDebug() const {
+    return *this == LogLevel::debug;
+  }
+  SWIFT_INLINE_THUNK LogLevel LogLevel::_impl_info::operator()() const {
+    auto result = LogLevel::_make();
+    result._destructiveInjectEnumTag(2);
+    return result;
+  }
+  SWIFT_INLINE_THUNK  bool LogLevel::isInfo() const {
+    return *this == LogLevel::info;
+  }
+  SWIFT_INLINE_THUNK LogLevel LogLevel::_impl_warning::operator()() const {
+    auto result = LogLevel::_make();
+    result._destructiveInjectEnumTag(3);
+    return result;
+  }
+  SWIFT_INLINE_THUNK  bool LogLevel::isWarning() const {
+    return *this == LogLevel::warning;
+  }
+  SWIFT_INLINE_THUNK LogLevel LogLevel::_impl_error::operator()() const {
+    auto result = LogLevel::_make();
+    result._destructiveInjectEnumTag(4);
+    return result;
+  }
+  SWIFT_INLINE_THUNK  bool LogLevel::isError() const {
+    return *this == LogLevel::error;
+  }
+  SWIFT_INLINE_THUNK LogLevel LogLevel::_impl_fatal::operator()() const {
+    auto result = LogLevel::_make();
+    result._destructiveInjectEnumTag(5);
+    return result;
+  }
+  SWIFT_INLINE_THUNK  bool LogLevel::isFatal() const {
+    return *this == LogLevel::fatal;
+  }
+  SWIFT_INLINE_THUNK swift::Optional<LogLevel> LogLevel::init(int32_t rawValue) {
+  return swift::_impl::_impl_Optional<LogLevel>::returnNewValue([&](char * _Nonnull result) SWIFT_INLINE_THUNK_ATTRIBUTES {
+    _impl::swift_interop_returnDirect_FloppyTurd_uint8_t_0_1(result, _impl::$s10FloppyTurd8LogLevelO8rawValueACSgs5Int32V_tcfC(rawValue));
+  });
+  }
+  SWIFT_INLINE_THUNK int32_t LogLevel::getRawValue() const {
+  return _impl::$s10FloppyTurd8LogLevelO8rawValues5Int32Vvg(_impl::swift_interop_passDirect_FloppyTurd_uint8_t_0_1(_getOpaquePointer()));
   }
   SWIFT_INLINE_THUNK float Matrix::getM0() const {
   return _impl::$s10FloppyTurd6MatrixV2m0Sfvg(_getOpaquePointer());

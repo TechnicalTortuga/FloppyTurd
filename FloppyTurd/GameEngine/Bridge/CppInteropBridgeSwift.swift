@@ -115,20 +115,16 @@ public final class CppInteropBridge: Sendable {
     nonisolated public func setSharedRenderer(_ rendererPtr: UnsafeRawPointer?) {
         // Store renderer pointer for C++ access if needed
         // This function maintains the shared renderer instance
-        DispatchQueue.main.sync {
-            // Store the renderer reference if needed
-            print("[CppInteropBridge] Shared renderer set")
-        }
+        // No need for dispatch since this is just storing a reference
+        print("[CppInteropBridge] Shared renderer set")
     }
     
     /// Set shared text renderer instance - callable from Swift and C++
     nonisolated public func setSharedTextRenderer(_ rendererPtr: UnsafeRawPointer?) {
         // Store text renderer pointer for C++ access if needed
         // This function maintains the shared text renderer instance
-        DispatchQueue.main.sync {
-            // Store the text renderer reference if needed
-            print("[CppInteropBridge] Shared text renderer set")
-        }
+        // No need for dispatch since this is just storing a reference
+        print("[CppInteropBridge] Shared text renderer set")
     }
     
     // MARK: - Screen Information (C++ Callable - nonisolated)
@@ -899,9 +895,22 @@ public final class CppInteropBridge: Sendable {
         )
     }
     
-    /// Trace log - callable from C++
+    /// Trace log - callable from C++ (now routes through LogManagerSwift for file logging)
     public func traceLog(_ logLevel: Int32, _ text: String) {
-        print("[TraceLog \(logLevel)]: \(text)")
+        // Convert C++ log level to Swift log level
+        let swiftLogLevel: LogLevel
+        switch logLevel {
+        case 0: swiftLogLevel = .trace
+        case 1: swiftLogLevel = .debug
+        case 2: swiftLogLevel = .info
+        case 3: swiftLogLevel = .warning
+        case 4: swiftLogLevel = .error
+        case 5: swiftLogLevel = .fatal
+        default: swiftLogLevel = .info
+        }
+        
+        // Route through LogManagerSwift for both console and file logging
+        LogManagerSwift.shared.log(level: swiftLogLevel, message: text)
     }
     
     /// Set trace log level - callable from C++

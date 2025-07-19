@@ -1,8 +1,12 @@
 #ifndef PLATFORM_TYPES_H
 #define PLATFORM_TYPES_H
 
+#include <stdint.h>  // For int32_t, int64_t, etc.
+
 // Forward declaration for GlobalStateManager to avoid circular dependencies
+#ifdef __cplusplus
 class GlobalStateManager;
+#endif
 
 #ifdef PLATFORM_IOS
 // iOS platform - define our own types to avoid raylib conflicts
@@ -108,10 +112,18 @@ typedef struct RenderTexture2D {
 // COLOR HELPER FUNCTION
 // ============================================================================
 
-// Color helper function
+#ifdef __cplusplus
+// Color helper function with default argument (C++ only)
 inline Color MakeColor(unsigned char r, unsigned char g, unsigned char b, unsigned char a = 255) {
     return {r, g, b, a};
-    }
+}
+#else
+// C version without default arguments
+static inline Color MakeColor(unsigned char r, unsigned char g, unsigned char b, unsigned char a) {
+    Color color = {r, g, b, a};
+    return color;
+}
+#endif
 
 // ============================================================================
 // BASIC COLORS

@@ -11,8 +11,8 @@ import UIKit
 #endif
 
 /// Simple font resource manager for C++ compatibility - non-actor for C++ interop
-public final class FontResourceManager: @unchecked Sendable {
-    public static let shared = FontResourceManager()
+internal final class FontResourceManager: @unchecked Sendable {
+    internal static let shared = FontResourceManager()
     
     private var fonts: [Int32: UIFont] = [:]
     private var nextFontId: Int32 = 1
@@ -21,7 +21,7 @@ public final class FontResourceManager: @unchecked Sendable {
     private init() {}
     
     /// Create a font and return its ID for C++ compatibility
-    public func createFont(name: String, size: CGFloat) async -> Int32 {
+    internal func createFont(name: String, size: CGFloat) -> Int32 {
         let font: UIFont
         
         // Try to load custom font or fallback to system font
@@ -43,7 +43,7 @@ public final class FontResourceManager: @unchecked Sendable {
     }
     
     /// Remove a font by ID
-    public func removeFont(id: Int32) async {
+    internal func removeFont(id: Int32) {
         lock.lock()
         defer { lock.unlock() }
         
@@ -51,12 +51,13 @@ public final class FontResourceManager: @unchecked Sendable {
         print("[FontResourceManager] 🗑️ Removed font with ID: \(id)")
     }
     
-    /// Get a font by ID
-    public func getFont(id: Int32) -> UIFont? {
+    /// Get a font by ID - returns opaque pointer for C++ compatibility
+    internal func getFont(id: Int32) -> UnsafeMutableRawPointer? {
         lock.lock()
         defer { lock.unlock() }
         
-        return fonts[id]
+        guard let font = fonts[id] else { return nil }
+        return Unmanaged.passUnretained(font).toOpaque()
     }
     
     /// Clean up all fonts

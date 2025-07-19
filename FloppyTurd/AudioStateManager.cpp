@@ -286,61 +286,72 @@ void AudioStateManager::StopGameOverMusic() {
 
 void* AudioStateManager::LoadMusicPlatform(const std::string& fileName) {
     GameLog::Log("[AUDIO] Loading music through PlatformAPI: %s", fileName.c_str());
-    return LoadMusic(fileName.c_str());
+    Music* music = new Music();
+    *music = LoadMusic(fileName.c_str());
+    return music;
 }
 
 void AudioStateManager::UnloadMusicPlatform(void* musicPlayer) {
     if (musicPlayer) {
         GameLog::Log("[AUDIO] Unloading music through PlatformAPI");
-        UnloadMusic(musicPlayer);
+        Music* music = static_cast<Music*>(musicPlayer);
+        UnloadMusic(*music);
+        delete music;
     }
 }
 
 void AudioStateManager::PlayMusicPlatform(void* musicPlayer) {
     if (musicPlayer) {
         GameLog::Log("[AUDIO] Playing music through PlatformAPI");
-        PlayMusic(musicPlayer);
+        Music* music = static_cast<Music*>(musicPlayer);
+        PlayMusic(*music);
     }
 }
 
 void AudioStateManager::StopMusicPlatform(void* musicPlayer) {
     if (musicPlayer) {
         GameLog::Log("[AUDIO] Stopping music through PlatformAPI");
-        StopMusic(musicPlayer);
+        Music* music = static_cast<Music*>(musicPlayer);
+        StopMusicStream(*music);
     }
 }
 
 void AudioStateManager::PauseMusicPlatform(void* musicPlayer) {
     if (musicPlayer) {
         GameLog::Log("[AUDIO] Pausing music through PlatformAPI");
-        PauseMusic(musicPlayer);
+        Music* music = static_cast<Music*>(musicPlayer);
+        PauseMusicStream(*music);
     }
 }
 
 void AudioStateManager::ResumeMusicPlatform(void* musicPlayer) {
     if (musicPlayer) {
         GameLog::Log("[AUDIO] Resuming music through PlatformAPI");
-        ResumeMusic(musicPlayer);
+        Music* music = static_cast<Music*>(musicPlayer);
+        ResumeMusicStream(*music);
     }
 }
 
 void AudioStateManager::SetMusicVolumePlatform(void* musicPlayer, float volume) {
     if (musicPlayer) {
         GameLog::Log("[AUDIO] Setting music volume through PlatformAPI: %.2f", volume);
-        SetMusicVolume(musicPlayer, volume);
+        Music* music = static_cast<Music*>(musicPlayer);
+        SetMusicVolumeForId(*music, volume);
     }
 }
 
 void AudioStateManager::SetMusicLoopingPlatform(void* musicPlayer, bool looping) {
     if (musicPlayer) {
         GameLog::Log("[AUDIO] Setting music looping through PlatformAPI: %s", looping ? "true" : "false");
-        SetMusicLooping(musicPlayer, looping);
+        Music* music = static_cast<Music*>(musicPlayer);
+        SetMusicLooping(*music, looping);
     }
 }
 
-bool AudioStateManager::IsMusicPlayingPlatform(void* musicPlayer) {
+bool AudioStateManager::IsMusicPlayingPlatform(void* musicPlayer) const {
     if (musicPlayer) {
-        bool isPlaying = IsMusicPlaying(musicPlayer);
+        Music* music = static_cast<Music*>(musicPlayer);
+        bool isPlaying = IsMusicStreamPlaying(*music);
         GameLog::Log("[AUDIO] Checking music playing status through PlatformAPI: %s", isPlaying ? "true" : "false");
         return isPlaying;
     }

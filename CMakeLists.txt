@@ -206,6 +206,9 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
         "-framework CoreHaptics"
     )
     
+    # Swift runtime libraries will be linked automatically by Xcode
+    # Remove explicit Swift library linking to avoid simulator/device conflicts
+    
     target_compile_definitions(${PROJECT_NAME} PRIVATE 
         PLATFORM_IOS
         PLATFORM_MOBILE
@@ -216,6 +219,20 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
     # Swift/C++ interop configuration
     target_compile_options(${PROJECT_NAME} PRIVATE
         $<$<COMPILE_LANGUAGE:Swift>:-cxx-interoperability-mode=default>
+    )
+    
+    # Swift standard library embedding and linking
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        XCODE_ATTRIBUTE_ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES YES
+        XCODE_ATTRIBUTE_EMBEDDED_CONTENT_CONTAINS_SWIFT YES
+        XCODE_ATTRIBUTE_LD_RUNPATH_SEARCH_PATHS "@executable_path/Frameworks @loader_path/Frameworks"
+        XCODE_ATTRIBUTE_SWIFT_OBJC_BRIDGING_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/FloppyTurd-Bridging-Header.h"
+    )
+    
+    # Ensure Swift standard library is linked
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        XCODE_ATTRIBUTE_ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES YES
+        XCODE_ATTRIBUTE_EMBEDDED_CONTENT_CONTAINS_SWIFT YES
     )
     
     # Bundle resources - use asset catalogs for proper iOS packaging

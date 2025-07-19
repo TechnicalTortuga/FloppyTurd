@@ -42,7 +42,10 @@ class Game;  // Forward declaration for Game class
     
     // NOTE: Swift-generated header will be included when C++ interop is enabled
     // The bridge provides thread-safe access to Swift functions from C++
-    #include "GameEngine-Swift.h"  // Generated Swift C++ interop header
+    // Don't include during bridging header compilation to avoid circular dependencies
+    #if !defined(FLOPPYTURD_BRIDGING_HEADER_H) && !defined(SWIFT_PACKAGE) && !defined(__SWIFT_CLANG_MODULE_BUILD__)
+        #include "GameEngine-Swift.h"  // Generated Swift C++ interop header
+    #endif
 #else
     #include "raylib.h"
 #endif
@@ -127,6 +130,21 @@ public:
         // iOS: Fullscreen is managed by the system  
         // This is a no-op for iOS but provided for compatibility
     }
+    bool IsWindowFullscreen() { 
+        // iOS: Apps are always fullscreen
+        return true;
+    }
+    Vector2 GetScreenCenter() { 
+        return {(float)GetScreenWidth() / 2.0f, (float)GetScreenHeight() / 2.0f};
+    }
+    Rectangle GetSafeArea() { 
+        // iOS: Return the full screen as safe area for compatibility
+        return Rectangle{0, 0, (float)GetScreenWidth(), (float)GetScreenHeight()};
+    }
+    float GetScreenDensity() {
+        // iOS: Get screen density from bridge
+        return FloppyTurd::getCppInteropBridge().getScreenScale();
+    }
     
     // Input Functions
     bool IsKeyPressed(int key) { return FloppyTurd::getCppInteropBridge().isKeyPressed(key); }
@@ -167,6 +185,10 @@ public:
     void DrawRectangleRec(Rectangle rec, Color color) { FloppyTurd::getCppInteropBridge().drawRectangleRec(rec.x, rec.y, rec.width, rec.height, color.r, color.g, color.b, color.a); }
     void DrawRectangleLinesEx(Rectangle rec, float lineThick, Color color) { FloppyTurd::getCppInteropBridge().drawRectangleLinesEx(rec.x, rec.y, rec.width, rec.height, lineThick, color.r, color.g, color.b, color.a); }
     void DrawRectangleRounded(Rectangle rec, float roundness, int segments, Color color) { FloppyTurd::getCppInteropBridge().drawRectangleRounded(rec.x, rec.y, rec.width, rec.height, roundness, segments, color.r, color.g, color.b, color.a); }
+    void DrawRectangleRoundedLinesEx(Rectangle rec, float roundness, int segments, float lineThick, Color color) { 
+        // iOS: Fallback to regular rectangle lines since drawRectangleRoundedLinesEx is not available in bridge
+        FloppyTurd::getCppInteropBridge().drawRectangleLinesEx(rec.x, rec.y, rec.width, rec.height, lineThick, color.r, color.g, color.b, color.a); 
+    }
     void DrawCircle(int centerX, int centerY, float radius, Color color) { FloppyTurd::getCppInteropBridge().drawCircle(centerX, centerY, radius, color.r, color.g, color.b, color.a); }
     void DrawCircleV(Vector2 center, float radius, Color color) { FloppyTurd::getCppInteropBridge().drawCircleV(center.x, center.y, radius, color.r, color.g, color.b, color.a); }
     void DrawLine(int startPosX, int startPosY, int endPosX, int endPosY, Color color) { FloppyTurd::getCppInteropBridge().drawLine(startPosX, startPosY, endPosX, endPosY, color.r, color.g, color.b, color.a); }
@@ -235,6 +257,7 @@ public:
     void SetMusicLooping(Music music, bool looping) { FloppyTurd::getCppInteropBridge().setMusicLooping(music.id, looping); }
     float GetMusicTimeLength(Music music) { return FloppyTurd::getCppInteropBridge().getMusicTimeLength(music.id); }
     float GetMusicTimePlayed(Music music) { return FloppyTurd::getCppInteropBridge().getMusicTimePlayed(music.id); }
+    float GetMusicDuration(Music music) { return FloppyTurd::getCppInteropBridge().getMusicTimeLength(music.id); } // Alias for compatibility
     void UnloadMusicStream(Music music) { FloppyTurd::getCppInteropBridge().unloadMusicStream(music.id); }
     void UnloadMusic(Music music) { FloppyTurd::getCppInteropBridge().unloadMusic(music.id); }
     
@@ -338,6 +361,17 @@ public:
     }
     bool IsMobilePlatform() { return FloppyTurd::getCppInteropBridge().isMobilePlatform(); }
     bool PreferLowPowerMode() { return FloppyTurd::getCppInteropBridge().preferLowPowerMode(); }
+
+    // Monitor Functions (iOS implementation - no multi-monitor support)
+    int GetCurrentMonitor() { return 0; } // Always return 0 on iOS
+    int GetMonitorWidth(int monitor) { return GetScreenWidth(); } // Return screen width
+    int GetMonitorHeight(int monitor) { return GetScreenHeight(); } // Return screen height
+
+    // Render Texture Functions
+    void UnloadRenderTexture(RenderTexture2D target) { 
+        // iOS: Render texture cleanup handled by Metal renderer
+        // This is a no-op for iOS but provided for compatibility
+    }
     int GetRecommendedTextureSize() { return FloppyTurd::getCppInteropBridge().getRecommendedTextureSize(); }
 
 #else
@@ -374,6 +408,14 @@ public:
     bool ShouldUseLargerTouchTargets() { return false; }
     int GetRecommendedFontSize() { return 20; }
     void UpdateSafeAreaInsets(float top, float right, float bottom, float left) { /* No-op on desktop */ }
+
+    // Monitor Functions
+    int GetCurrentMonitor() { return ::GetCurrentMonitor(); }
+    int GetMonitorWidth(int monitor) { return ::GetMonitorWidth(monitor); }
+    int GetMonitorHeight(int monitor) { return ::GetMonitorHeight(monitor); }
+
+    // Render Texture Functions
+    void UnloadRenderTexture(RenderTexture2D target) { ::UnloadRenderTexture(target); }
 
     // Input Functions
     bool IsKeyPressed(int key) { return ::IsKeyPressed(key); }
@@ -471,6 +513,7 @@ public:
     void SetMusicLooping(Music music, bool looping) { ::SetMusicLooping(music, looping); }
     float GetMusicTimeLength(Music music) { return ::GetMusicTimeLength(music); }
     float GetMusicTimePlayed(Music music) { return ::GetMusicTimePlayed(music); }
+    float GetMusicDuration(Music music) { return ::GetMusicTimeLength(music); } // Alias for compatibility
     void UnloadMusicStream(Music music) { ::UnloadMusicStream(music); }
     void UnloadMusic(Music music) { ::UnloadMusic(music); }
     
@@ -664,6 +707,7 @@ inline void EndDrawing() { PlatformAPI::GetInstance().EndDrawing(); }
 inline void ClearBackground(Color color) { PlatformAPI::GetInstance().ClearBackground(color); }
 inline void DrawRectangle(int posX, int posY, int width, int height, Color color) { PlatformAPI::GetInstance().DrawRectangle(posX, posY, width, height, color); }
 inline void DrawRectangleRec(Rectangle rec, Color color) { PlatformAPI::GetInstance().DrawRectangleRec(rec, color); }
+inline void DrawRectangleRounded(Rectangle rec, float roundness, int segments, Color color) { PlatformAPI::GetInstance().DrawRectangleRounded(rec, roundness, segments, color); }
 inline void DrawRectangleLinesEx(Rectangle rec, float lineThick, Color color) { PlatformAPI::GetInstance().DrawRectangleLinesEx(rec, lineThick, color); }
 inline void DrawLine(int startPosX, int startPosY, int endPosX, int endPosY, Color color) { PlatformAPI::GetInstance().DrawLine(startPosX, startPosY, endPosX, endPosY, color); }
 inline void DrawTexture(Texture2D texture, int posX, int posY, Color tint) { PlatformAPI::GetInstance().DrawTexture(texture, posX, posY, tint); }
@@ -700,6 +744,8 @@ inline Vector2 GetTouchPosition(int index) { return PlatformAPI::GetInstance().G
 // Time Functions
 inline double GetTime() { return PlatformAPI::GetInstance().GetTime(); }
 inline float GetFrameTime() { return PlatformAPI::GetInstance().GetFrameTime(); }
+inline int GetCurrentFPS() { return PlatformAPI::GetInstance().GetCurrentFPS(); }
+inline float GetCurrentFrameTime() { return PlatformAPI::GetInstance().GetCurrentFrameTime(); }
 
 // Vector Math Functions
 inline float Vector2Length(Vector2 v) { return PlatformAPI::GetInstance().Vector2Length(v); }
@@ -713,6 +759,46 @@ inline float Vector2Distance(Vector2 v1, Vector2 v2) { return PlatformAPI::GetIn
 inline bool CheckCollisionRecs(Rectangle rec1, Rectangle rec2) { return PlatformAPI::GetInstance().CheckCollisionRecs(rec1, rec2); }
 inline bool CheckCollisionCircleRec(Vector2 center, float radius, Rectangle rec) { return PlatformAPI::GetInstance().CheckCollisionCircleRec(center, radius, rec); }
 inline bool CheckCollisionPointRec(Vector2 point, Rectangle rec) { return PlatformAPI::GetInstance().CheckCollisionPointRec(point, rec); }
+
+// File and Storage Functions
+inline const char* GetSaveDataPath(const char* filename) { return PlatformAPI::GetInstance().GetSaveDataPath(filename); }
+inline const char* GetResourcePath(const char* resourceName) { return PlatformAPI::GetInstance().GetResourcePath(resourceName); }
+
+// Audio Functions
+inline void InitAudioDevice() { PlatformAPI::GetInstance().InitAudioDevice(); }
+inline void CloseAudioDevice() { PlatformAPI::GetInstance().CloseAudioDevice(); }
+inline float GetMusicDuration(Music music) { return PlatformAPI::GetInstance().GetMusicDuration(music); }
+inline void StopMusicStream(Music music) { PlatformAPI::GetInstance().StopMusicStream(music); }
+inline void PauseMusicStream(Music music) { PlatformAPI::GetInstance().PauseMusicStream(music); }
+inline void ResumeMusicStream(Music music) { PlatformAPI::GetInstance().ResumeMusicStream(music); }
+inline void SetMusicVolumeForId(Music music, float volume) { PlatformAPI::GetInstance().SetMusicVolumeForId(music, volume); }
+inline bool IsMusicStreamPlaying(Music music) { return PlatformAPI::GetInstance().IsMusicStreamPlaying(music); }
+
+// Font Functions
+inline Font GetFontDefault() { return PlatformAPI::GetInstance().GetFontDefault(); }
+
+// Screen and Monitor Functions
+inline float GetScreenScale() { return PlatformAPI::GetInstance().GetScreenScale(); }
+inline bool IsWindowFullscreen() { return PlatformAPI::GetInstance().IsWindowFullscreen(); }
+inline Vector2 GetScreenCenter() { return PlatformAPI::GetInstance().GetScreenCenter(); }
+inline Rectangle GetSafeArea() { return PlatformAPI::GetInstance().GetSafeArea(); }
+inline int GetCurrentMonitor() { return PlatformAPI::GetInstance().GetCurrentMonitor(); }
+inline int GetMonitorWidth(int monitor) { return PlatformAPI::GetInstance().GetMonitorWidth(monitor); }
+inline int GetMonitorHeight(int monitor) { return PlatformAPI::GetInstance().GetMonitorHeight(monitor); }
+inline float GetScreenDensity() { return PlatformAPI::GetInstance().GetScreenDensity(); }
+
+// Input Functions
+inline bool IsPrimaryInputDown() { return PlatformAPI::GetInstance().IsPrimaryInputDown(); }
+inline Vector2 GetPrimaryInputPosition() { return PlatformAPI::GetInstance().GetPrimaryInputPosition(); }
+
+// Platform-Specific Functions
+inline void SetOrientation(bool landscape) { PlatformAPI::GetInstance().SetOrientation(landscape); }
+
+// Render Texture Functions
+inline void UnloadRenderTexture(RenderTexture2D target) { PlatformAPI::GetInstance().UnloadRenderTexture(target); }
+
+// Drawing Functions
+inline void DrawRectangleRoundedLinesEx(Rectangle rec, float roundness, int segments, float lineThick, Color color) { PlatformAPI::GetInstance().DrawRectangleRoundedLinesEx(rec, roundness, segments, lineThick, color); }
 
 // ============================================================================
 // GLOBAL GAME INSTANCE MANAGEMENT (for iOS integration)
