@@ -124,11 +124,11 @@ public class MetalTextureSwift {
     // MARK: - Initialization
     
     public init() {
-        print("[MetalTextureSwift] Initializing texture manager")
+        traceLog(SWLogLevel.SWLOG_INFO, "[MetalTextureSwift] Initializing texture manager")
     }
     
     deinit {
-        print("[MetalTextureSwift] Destroying texture: \(filePath)")
+        traceLog(SWLogLevel.SWLOG_INFO, "[MetalTextureSwift] Destroying texture: \(filePath)")
         releaseTexture()
     }
     
@@ -138,7 +138,7 @@ public class MetalTextureSwift {
         self.commandQueue = commandQueue
         self.textureLoader = MTKTextureLoader(device: device)
         
-        print("[MetalTextureSwift] ✅ Texture manager initialized")
+        traceLog(SWLogLevel.SWLOG_INFO, "[MetalTextureSwift] ✅ Texture manager initialized")
         return true
     }
     
@@ -146,16 +146,16 @@ public class MetalTextureSwift {
     
     /// Load texture from file with advanced caching and SDF detection
     public func loadFromFile(_ filename: String) async -> Bool {
-        print("[MetalTextureSwift] Loading texture: \(filename)")
+        traceLog(SWLogLevel.SWLOG_INFO, "[MetalTextureSwift] Loading texture: \(filename)")
         // Check cache first
         if let cachedTexture = await Self.cacheActor.getCachedTexture(filename) {
-            print("[MetalTextureSwift] ✅ Using cached texture: \(filename)")
+            traceLog(SWLogLevel.SWLOG_INFO, "[MetalTextureSwift] ✅ Using cached texture: \(filename)")
             applyCachedTexture(cachedTexture)
             return true
         }
         // Find file in bundle
         guard let filePath = findTextureFile(filename) else {
-            print("[MetalTextureSwift] ERROR: Texture file not found: \(filename)")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[MetalTextureSwift] ERROR: Texture file not found: \(filename)")
             return false
         }
         // Detect if this is an SDF texture based on filename or content
@@ -177,9 +177,9 @@ public class MetalTextureSwift {
                 filePath: filename
             )
             await Self.cacheActor.cacheTexture(filename, cachedTexture: cachedTexture)
-            print("[MetalTextureSwift] ✅ Loaded texture: \(filename), size: \(width)x\(height), format: \(format), SDF: \(isSDF)")
+            traceLog(SWLogLevel.SWLOG_INFO, "[MetalTextureSwift] ✅ Loaded texture: \(filename), size: \(width)x\(height), format: \(format), SDF: \(isSDF)")
         } else {
-            print("[MetalTextureSwift] ERROR: Failed to load texture: \(filename)")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[MetalTextureSwift] ERROR: Failed to load texture: \(filename)")
         }
         return success
     }
@@ -187,7 +187,7 @@ public class MetalTextureSwift {
     /// Create texture from raw data (for procedural generation)
     public func createFromData(_ data: Data, width: Int, height: Int, format: TextureFormat) -> Bool {
         guard let device = device else {
-            print("[MetalTextureSwift] ERROR: No Metal device available")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[MetalTextureSwift] ERROR: No Metal device available")
             return false
         }
         
@@ -203,7 +203,7 @@ public class MetalTextureSwift {
         textureDesc.storageMode = .shared
         
         guard let texture = device.makeTexture(descriptor: textureDesc) else {
-            print("[MetalTextureSwift] ERROR: Failed to create Metal texture")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[MetalTextureSwift] ERROR: Failed to create Metal texture")
             return false
         }
         
@@ -229,7 +229,7 @@ public class MetalTextureSwift {
         
         texture.label = "Procedural Texture \(textureID)"
         
-        print("[MetalTextureSwift] ✅ Created procedural texture: \(width)x\(height), format: \(format)")
+        traceLog(SWLogLevel.SWLOG_INFO, "[MetalTextureSwift] ✅ Created procedural texture: \(width)x\(height), format: \(format)")
         return true
     }
     
@@ -237,13 +237,13 @@ public class MetalTextureSwift {
     
     /// Load SDF (Signed Distance Field) texture with specialized handling
     private func loadSDFTexture(from path: String) -> Bool {
-        print("[MetalTextureSwift] Loading SDF texture from: \(path)")
+        traceLog(SWLogLevel.SWLOG_INFO, "[MetalTextureSwift] Loading SDF texture from: \(path)")
         
         guard let device = device else { return false }
         
         // Load image data
         guard let imageData = loadImageData(from: path) else {
-            print("[MetalTextureSwift] ERROR: Failed to load SDF image data")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[MetalTextureSwift] ERROR: Failed to load SDF image data")
             return false
         }
         
@@ -258,7 +258,7 @@ public class MetalTextureSwift {
         textureDesc.storageMode = .shared
         
         guard let texture = device.makeTexture(descriptor: textureDesc) else {
-            print("[MetalTextureSwift] ERROR: Failed to create SDF Metal texture")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[MetalTextureSwift] ERROR: Failed to create SDF Metal texture")
             return false
         }
         
@@ -279,16 +279,16 @@ public class MetalTextureSwift {
         
         texture.label = "SDF Texture: \(URL(fileURLWithPath: path).lastPathComponent)"
         
-        print("[MetalTextureSwift] ✅ SDF texture loaded: \(width)x\(height), mipmaps: \(texture.mipmapLevelCount)")
+        traceLog(SWLogLevel.SWLOG_INFO, "[MetalTextureSwift] ✅ SDF texture loaded: \(width)x\(height), mipmaps: \(texture.mipmapLevelCount)")
         return true
     }
     
     /// Load regular RGBA texture
     private func loadRegularTexture(from path: String) -> Bool {
-        print("[MetalTextureSwift] Loading regular texture from: \(path)")
+        traceLog(SWLogLevel.SWLOG_INFO, "[MetalTextureSwift] Loading regular texture from: \(path)")
         
         guard let textureLoader = textureLoader else {
-            print("[MetalTextureSwift] ERROR: No texture loader available")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[MetalTextureSwift] ERROR: No texture loader available")
             return false
         }
         
@@ -314,7 +314,7 @@ public class MetalTextureSwift {
             
             return true
         } catch {
-            print("[MetalTextureSwift] ERROR: Failed to load texture: \(error)")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[MetalTextureSwift] ERROR: Failed to load texture: \(error)")
             return false
         }
     }
@@ -333,7 +333,7 @@ public class MetalTextureSwift {
         
         for pattern in sdfPatterns {
             if lowercaseFilename.contains(pattern) {
-                print("[MetalTextureSwift] Detected SDF texture by filename: \(filename)")
+                traceLog(SWLogLevel.SWLOG_INFO, "[MetalTextureSwift] Detected SDF texture by filename: \(filename)")
                 return true
             }
         }
@@ -341,7 +341,7 @@ public class MetalTextureSwift {
         // Check if it's a single-channel image (common for SDF)
         if let imageData = loadImageData(from: path) {
             if imageData.channels == 1 {
-                print("[MetalTextureSwift] Detected SDF texture by single channel: \(filename)")
+                traceLog(SWLogLevel.SWLOG_INFO, "[MetalTextureSwift] Detected SDF texture by single channel: \(filename)")
                 return true
             }
         }
@@ -367,7 +367,7 @@ public class MetalTextureSwift {
     /// Clear texture cache to free memory
     public static func clearCache() async {
         let count = await cacheActor.clearCache()
-        print("[MetalTextureSwift] ✅ Cleared texture cache: \(count) textures released")
+        traceLog(SWLogLevel.SWLOG_INFO, "[MetalTextureSwift] ✅ Cleared texture cache: \(count) textures released")
     }
     
     /// Get cache statistics
@@ -457,7 +457,7 @@ public class MetalTextureSwift {
         commandBuffer?.commit()
         commandBuffer?.waitUntilCompleted()
         
-        print("[MetalTextureSwift] Generated \(texture.mipmapLevelCount) mipmap levels")
+        traceLog(SWLogLevel.SWLOG_INFO, "[MetalTextureSwift] Generated \(texture.mipmapLevelCount) mipmap levels")
     }
     
     /// Convert TextureFormat to MTLPixelFormat
@@ -535,6 +535,8 @@ public class MetalTextureSwift {
         filePath = ""
     }
     
+    // MARK: - C++ Interop Functions (moved to separate bridge class)
+    
     // MARK: - Public API
     
     /// Get the Metal texture for rendering
@@ -570,6 +572,53 @@ public class MetalTextureSwift {
     }
 }
 
+// MARK: - C++ Interop Bridge
+
+/// C++ interop bridge for MetalTextureSwift
+/// Separates C++ exposure from MainActor isolation
+@_expose(Cxx)
+public final class MetalTextureCppBridge {
+    
+    /// Load texture from file - equivalent to LoadTexture() (C++ Interop)
+    @_expose(Cxx) nonisolated public static func loadTexture(_ filename: String) -> Int32 {
+        // This is a simplified synchronous wrapper for C++ compatibility
+        // In a real implementation, you'd want to handle async loading properly
+        return 1 // Return dummy texture ID for now
+    }
+    
+    /// Unload texture - equivalent to UnloadTexture() (C++ Interop)
+    @_expose(Cxx) nonisolated public static func unloadTexture(_ textureId: Int32) {
+        // Implementation for texture cleanup
+        traceLog(SWLogLevel.SWLOG_INFO, "[MetalTextureSwift] Unloading texture ID: \(textureId)")
+    }
+    
+    /// Load image - equivalent to LoadImage() (C++ Interop)
+    @_expose(Cxx) nonisolated public static func loadImage(_ filename: String) -> Int32 {
+        // Return dummy image ID for now
+        return 1
+    }
+    
+    /// Unload image - equivalent to UnloadImage() (C++ Interop)
+    @_expose(Cxx) nonisolated public static func unloadImage(_ imageId: Int32) {
+        traceLog(SWLogLevel.SWLOG_INFO, "[MetalTextureSwift] Unloading image ID: \(imageId)")
+    }
+    
+    /// Load texture from image - equivalent to LoadTextureFromImage() (C++ Interop)
+    @_expose(Cxx) nonisolated public static func loadTextureFromImage(_ imageId: Int32) -> Int32 {
+        return 1 // Return dummy texture ID
+    }
+    
+    /// Set texture filter - equivalent to SetTextureFilter() (C++ Interop)
+    @_expose(Cxx) nonisolated public static func setTextureFilter(_ textureId: Int32, _ filter: Int32) {
+        traceLog(SWLogLevel.SWLOG_INFO, "[MetalTextureSwift] Setting texture filter for ID: \(textureId), filter: \(filter)")
+    }
+    
+    /// Set texture wrap - equivalent to SetTextureWrap() (C++ Interop)
+    @_expose(Cxx) nonisolated public static func setTextureWrap(_ textureId: Int32, _ wrap: Int32) {
+        traceLog(SWLogLevel.SWLOG_INFO, "[MetalTextureSwift] Setting texture wrap for ID: \(textureId), wrap: \(wrap)")
+    }
+}
+
 // MARK: - Global Texture Management Functions
 
 /// Global texture creation function (equivalent to C++ API)
@@ -596,7 +645,7 @@ public func createSDFTextureFromFile(_ filename: String, device: MTLDevice, comm
             if texture.isSDF {
                 return texture
             } else {
-                print("[MetalTextureSwift] WARNING: Texture '\(filename)' was not detected as SDF")
+                traceLog(SWLogLevel.SWLOG_WARNING, "[MetalTextureSwift] WARNING: Texture '\(filename)' was not detected as SDF")
             }
         }
     }

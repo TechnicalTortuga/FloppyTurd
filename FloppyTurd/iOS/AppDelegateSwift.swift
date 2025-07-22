@@ -19,7 +19,7 @@ class AppDelegateSwift: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         
-        print("[AppDelegateSwift] 🚀 FloppyTurd starting up...")
+        traceLog(SWLogLevel.SWLOG_INFO, "[AppDelegateSwift] 🚀 FloppyTurd starting up...")
         
         // Create window
         window = UIWindow(frame: UIScreen.main.bounds)
@@ -32,40 +32,40 @@ class AppDelegateSwift: UIResponder, UIApplicationDelegate {
         window?.rootViewController = gameViewController
         window?.makeKeyAndVisible()
         
-        print("[AppDelegateSwift] ✅ Application launched successfully")
+        traceLog(SWLogLevel.SWLOG_INFO, "[AppDelegateSwift] ✅ Application launched successfully")
         return true
     }
 
     func applicationWillResignActive(_ application: UIApplication) {
-        print("[AppDelegateSwift] Application will resign active")
+        traceLog(SWLogLevel.SWLOG_INFO, "[AppDelegateSwift] Application will resign active")
         
         // Pause the game when app loses focus
         gameViewController?.currentGameView?.pauseGameLoop()
     }
 
     func applicationDidEnterBackground(_ application: UIApplication) {
-        print("[AppDelegateSwift] Application entered background")
+        traceLog(SWLogLevel.SWLOG_INFO, "[AppDelegateSwift] Application entered background")
         
         // Handle background transition
         gameViewController?.currentGameView?.applicationDidEnterBackground()
     }
 
     func applicationWillEnterForeground(_ application: UIApplication) {
-        print("[AppDelegateSwift] Application will enter foreground")
+        traceLog(SWLogLevel.SWLOG_INFO, "[AppDelegateSwift] Application will enter foreground")
         
         // Handle foreground transition
         gameViewController?.currentGameView?.applicationWillEnterForeground()
     }
 
     func applicationDidBecomeActive(_ application: UIApplication) {
-        print("[AppDelegateSwift] Application became active")
+        traceLog(SWLogLevel.SWLOG_INFO, "[AppDelegateSwift] Application became active")
         
         // Resume the game when app becomes active
         gameViewController?.currentGameView?.resumeGameLoop()
     }
 
     func applicationWillTerminate(_ application: UIApplication) {
-        print("[AppDelegateSwift] Application will terminate")
+        traceLog(SWLogLevel.SWLOG_INFO, "[AppDelegateSwift] Application will terminate")
         
         // Perform final cleanup
         gameViewController?.currentGameView?.stopGameLoop()
@@ -73,7 +73,7 @@ class AppDelegateSwift: UIResponder, UIApplicationDelegate {
     }
     
     func applicationDidReceiveMemoryWarning(_ application: UIApplication) {
-        print("[AppDelegateSwift] Received memory warning")
+        traceLog(SWLogLevel.SWLOG_WARNING, "[AppDelegateSwift] Received memory warning")
         
         // Let the game handle memory cleanup
         GameEngine.handleMemoryWarning()
@@ -93,7 +93,7 @@ class SceneDelegateSwift: UIResponder, UIWindowSceneDelegate {
         
         guard let windowScene = (scene as? UIWindowScene) else { return }
         
-        print("[SceneDelegateSwift] 🚀 Scene connecting...")
+        traceLog(SWLogLevel.SWLOG_INFO, "[SceneDelegateSwift] 🚀 Scene connecting...")
         
         // Create window
         window = UIWindow(windowScene: windowScene)
@@ -106,11 +106,11 @@ class SceneDelegateSwift: UIResponder, UIWindowSceneDelegate {
         window?.rootViewController = gameViewController
         window?.makeKeyAndVisible()
         
-        print("[SceneDelegateSwift] ✅ Scene connected successfully")
+        traceLog(SWLogLevel.SWLOG_INFO, "[SceneDelegateSwift] ✅ Scene connected successfully")
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {
-        print("[SceneDelegateSwift] Scene disconnected")
+        traceLog(SWLogLevel.SWLOG_INFO, "[SceneDelegateSwift] Scene disconnected")
         
         // Cleanup when scene disconnects
         gameViewController?.currentGameView?.stopGameLoop()
@@ -118,27 +118,27 @@ class SceneDelegateSwift: UIResponder, UIWindowSceneDelegate {
     }
 
     func sceneDidBecomeActive(_ scene: UIScene) {
-        print("[SceneDelegateSwift] Scene became active")
+        traceLog(SWLogLevel.SWLOG_INFO, "[SceneDelegateSwift] Scene became active")
         
         // Resume game
         gameViewController?.currentGameView?.resumeGameLoop()
     }
 
     func sceneWillResignActive(_ scene: UIScene) {
-        print("[SceneDelegateSwift] Scene will resign active")
+        traceLog(SWLogLevel.SWLOG_INFO, "[SceneDelegateSwift] Scene will resign active")
         
         // Pause game
         gameViewController?.currentGameView?.pauseGameLoop()
     }
 
     func sceneWillEnterForeground(_ scene: UIScene) {
-        print("[SceneDelegateSwift] Scene entering foreground")
+        traceLog(SWLogLevel.SWLOG_INFO, "[SceneDelegateSwift] Scene entering foreground")
         
         gameViewController?.currentGameView?.applicationWillEnterForeground()
     }
 
     func sceneDidEnterBackground(_ scene: UIScene) {
-        print("[SceneDelegateSwift] Scene entered background")
+        traceLog(SWLogLevel.SWLOG_INFO, "[SceneDelegateSwift] Scene entered background")
         
         gameViewController?.currentGameView?.applicationDidEnterBackground()
     }

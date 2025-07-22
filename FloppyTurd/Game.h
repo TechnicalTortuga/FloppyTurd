@@ -5,7 +5,10 @@
 #include <iostream>
 #include <mutex>
 
+#ifndef PLATFORM_MOBILE
 #include "Window.h"
+#include "TouchControls.h"
+#endif
 #include "MainMenu.h"
 #include "Playing.h"
 #include "GameSettings.h"
@@ -14,7 +17,6 @@
 #include "GameLog.h"
 #include "GameState.h"
 #include "AudioStateManager.h"
-#include "TouchControls.h"
 
 // Cross-platform logging macro
 #if defined(__OBJC__) && defined(__APPLE__) && TARGET_OS_IPHONE
@@ -74,10 +76,16 @@ public:
     return value; 
 }
 
-    TouchControls* GetTouchControls() { return &touchControls; }
+#ifndef PLATFORM_MOBILE
+    TouchControls* GetTouchControls();
+#endif
 
 private:
+#ifndef PLATFORM_MOBILE
 	Window* window;
+#else
+    void* window; // Placeholder for iOS
+#endif
 	GAMESTATE gamestate;
 	//PauseMenu* pauseMenu;
 	Credits* credits;
@@ -104,6 +112,20 @@ private:
 	float gameOffsetY;
 	float renderedWidth;
 	float renderedHeight;
+	
+	// Pause/Resume state management
+	double pauseTimestamp;
+	bool showResumeCountdown;
+	float resumeCountdownTimer;
 
+#ifndef PLATFORM_MOBILE
     TouchControls touchControls;
+#else
+    void* touchControls; // Placeholder for iOS
+#endif
+#ifndef PLATFORM_MOBILE
+    Window* GetWindow() { return window; }
+#else
+    void* GetWindow() { return window; }
+#endif
 };

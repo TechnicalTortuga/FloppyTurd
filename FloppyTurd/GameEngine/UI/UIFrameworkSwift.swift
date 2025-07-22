@@ -353,7 +353,7 @@ private static var screenSize: Vector2 = Vector2(x: 0, y: 0)
     /// Initialize the UI framework with Swift managers
     /// Pure Swift implementation - no C++ bridge required
     public static func initialize(screenSize: Vector2, safeAreaInsets: UIEdgeInsets, pixelDensity: Float) {
-        print("[UIFramework] Initializing with pure Swift architecture")
+        traceLog(SWLogLevel.SWLOG_INFO, "[UIFramework] Initializing with pure Swift architecture")
         
         UIFramework.screenSize = screenSize
         UIFramework.safeAreaInsets = safeAreaInsets
@@ -368,19 +368,19 @@ private static var screenSize: Vector2 = Vector2(x: 0, y: 0)
         textRenderer = MetalTextRendererSwift()
         
         if metalRenderer != nil {
-            print("[UIFramework] Initialized with MetalRendererSwift")
+            traceLog(SWLogLevel.SWLOG_INFO, "[UIFramework] Initialized with MetalRendererSwift")
         } else {
-            print("[UIFramework] MetalRendererSwift initialization failed")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[UIFramework] MetalRendererSwift initialization failed")
         }
         
         if textRenderer != nil {
-            print("[UIFramework] Initialized with MetalTextRendererSwift")
+            traceLog(SWLogLevel.SWLOG_INFO, "[UIFramework] Initialized with MetalTextRendererSwift")
         } else {
-            print("[UIFramework] MetalTextRendererSwift initialization failed")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[UIFramework] MetalTextRendererSwift initialization failed")
         }
         
         isInitialized = true
-        print("[UIFramework] UI framework initialization complete")
+        traceLog(SWLogLevel.SWLOG_INFO, "[UIFramework] UI framework initialization complete")
     }
     
     // MARK: - Element Management
@@ -393,7 +393,7 @@ private static var screenSize: Vector2 = Vector2(x: 0, y: 0)
             elementHierarchy.append(element)
         }
         
-        print("[UIFramework] Added UI element: \(element.id)")
+        traceLog(SWLogLevel.SWLOG_INFO, "[UIFramework] Added UI element: \(element.id)")
     }
     
     /// Remove UI element from the framework
@@ -406,7 +406,7 @@ private static var screenSize: Vector2 = Vector2(x: 0, y: 0)
                 parent.removeChild(element)
             }
             
-            print("[UIFramework] Removed UI element: \(elementId)")
+            traceLog(SWLogLevel.SWLOG_INFO, "[UIFramework] Removed UI element: \(elementId)")
         }
     }
     
@@ -421,7 +421,7 @@ private static var screenSize: Vector2 = Vector2(x: 0, y: 0)
         elementHierarchy.removeAll()
         focusedElement = nil
         
-        print("[UIFramework] Cleared all UI elements")
+        traceLog(SWLogLevel.SWLOG_INFO, "[UIFramework] Cleared all UI elements")
     }
     
     // MARK: - Rendering
@@ -496,7 +496,7 @@ private static var screenSize: Vector2 = Vector2(x: 0, y: 0)
     
     /// Shutdown UI framework - cleanup resources
     public static func shutdown() {
-        print("[UIFramework] Shutting down UI framework")
+        traceLog(SWLogLevel.SWLOG_INFO, "[UIFramework] Shutting down UI framework")
         
         // Clear all elements
         clearAllElements()
@@ -506,7 +506,7 @@ private static var screenSize: Vector2 = Vector2(x: 0, y: 0)
         metalRenderer = nil
         textRenderer = nil
         
-        print("[UIFramework] UI framework shutdown complete")
+        traceLog(SWLogLevel.SWLOG_INFO, "[UIFramework] UI framework shutdown complete")
     }
 }
 

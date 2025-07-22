@@ -6,9 +6,8 @@
 #include "ResourceManager.h"
 #include "UIManager.h"
 #include "RenderLayer.h"
-#include "UICoordinateSystem.h"
+
 #include "PlatformAPI.h"
-#include "PlatformTypes.h"
 
 // Enable draw call tracking
 #define ENABLE_DRAW_CALL_TRACKING
@@ -681,9 +680,10 @@ void MainMenu::DrawMobileUI()
 {
 	
 	
-	// Use UICoordinateSystem for consistent coordinate handling
-	Rectangle pixelScreenRect = UICoordinateSystem::GetPixelScreenRect();
-	Rectangle safeAreaPx = UICoordinateSystem::GetSafeAreaRect(true);
+	// Use UIManager for consistent coordinate handling
+	UIManager& uiManager = UIManager::GetInstance();
+	Rectangle pixelScreenRect = {0, 0, (float)uiManager.GetScreenWidth(), (float)uiManager.GetScreenHeight()};
+	Rectangle safeAreaPx = uiManager.GetSafeArea();
 	
 	TraceLog(LOG_INFO, "[MAINMENU] PixelScreen: %.1fx%.1f, SafeAreaPx: x=%.1f y=%.1f w=%.1f h=%.1f", 
 	         pixelScreenRect.width, pixelScreenRect.height, safeAreaPx.x, safeAreaPx.y, safeAreaPx.width, safeAreaPx.height);
@@ -758,9 +758,10 @@ void MainMenu::DrawMobileOptionsMenu()
 {
 	
 	
-	// Use UICoordinateSystem for consistent coordinate handling
-	Rectangle pixelScreenRect = UICoordinateSystem::GetPixelScreenRect();
-	Rectangle safeAreaPx = UICoordinateSystem::GetSafeAreaRect(true);
+	// Use UIManager for consistent coordinate handling
+	UIManager& uiManager = UIManager::GetInstance();
+	Rectangle pixelScreenRect = {0, 0, (float)uiManager.GetScreenWidth(), (float)uiManager.GetScreenHeight()};
+	Rectangle safeAreaPx = uiManager.GetSafeArea();
 	
 	// Draw background
 	float bgAspect = (float)_MenuBackground.width / (float)_MenuBackground.height;
@@ -835,9 +836,10 @@ void MainMenu::DrawMobileOptionsMenu()
 
 void MainMenu::DrawMobileLevelSelect()
 {
-	// Use UICoordinateSystem for consistent coordinate handling
-	Rectangle pixelScreenRect = UICoordinateSystem::GetPixelScreenRect();
-	Rectangle safeAreaPx = UICoordinateSystem::GetSafeAreaRect(true);
+	// Use UIManager for consistent coordinate handling
+	UIManager& uiManager = UIManager::GetInstance();
+	Rectangle pixelScreenRect = {0, 0, (float)uiManager.GetScreenWidth(), (float)uiManager.GetScreenHeight()};
+	Rectangle safeAreaPx = uiManager.GetSafeArea();
 	
 	// Draw background
 	float bgAspect = (float)_MenuBackground.width / (float)_MenuBackground.height;

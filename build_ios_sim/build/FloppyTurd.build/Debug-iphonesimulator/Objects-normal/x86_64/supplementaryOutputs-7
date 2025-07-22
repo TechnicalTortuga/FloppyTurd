@@ -1,0 +1,18 @@
+"/Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/AppDelegateSwift.swift":
+  dependencies: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AppDelegateSwift.d"
+  const-values: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AppDelegateSwift.swiftconstvalues"
+  swift-dependencies: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AppDelegateSwift.swiftdeps"
+  object: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AppDelegateSwift.o"
+  diagnostics: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AppDelegateSwift.dia"
+"/Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/GameViewSwift.swift":
+  swift-dependencies: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GameViewSwift.swiftdeps"
+  diagnostics: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GameViewSwift.dia"
+  const-values: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GameViewSwift.swiftconstvalues"
+  object: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GameViewSwift.o"
+  dependencies: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GameViewSwift.d"
+"/Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/GameViewControllerSwift.swift":
+  diagnostics: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GameViewControllerSwift.dia"
+  object: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GameViewControllerSwift.o"
+  dependencies: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GameViewControllerSwift.d"
+  const-values: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GameViewControllerSwift.swiftconstvalues"
+  swift-dependencies: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GameViewControllerSwift.swiftdeps"

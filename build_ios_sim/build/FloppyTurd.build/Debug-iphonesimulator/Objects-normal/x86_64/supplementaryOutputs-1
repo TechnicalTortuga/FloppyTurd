@@ -1,0 +1,18 @@
+"/Users/aimac/Development/FloppyTurd/FloppyTurd/GameEngine/Audio/AudioEngineSwift.swift":
+  dependencies: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AudioEngineSwift.d"
+  const-values: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AudioEngineSwift.swiftconstvalues"
+  diagnostics: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AudioEngineSwift.dia"
+  swift-dependencies: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AudioEngineSwift.swiftdeps"
+  object: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AudioEngineSwift.o"
+"/Users/aimac/Development/FloppyTurd/FloppyTurd/GameEngine/Audio/AudioManagerSwift.swift":
+  dependencies: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AudioManagerSwift.d"
+  object: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AudioManagerSwift.o"
+  swift-dependencies: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AudioManagerSwift.swiftdeps"
+  diagnostics: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AudioManagerSwift.dia"
+  const-values: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AudioManagerSwift.swiftconstvalues"
+"/Users/aimac/Development/FloppyTurd/FloppyTurd/GameEngine/Bridge/UICoordinateSystemBridgeSwift.swift":
+  swift-dependencies: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UICoordinateSystemBridgeSwift.swiftdeps"
+  const-values: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UICoordinateSystemBridgeSwift.swiftconstvalues"
+  dependencies: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UICoordinateSystemBridgeSwift.d"
+  object: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UICoordinateSystemBridgeSwift.o"
+  diagnostics: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UICoordinateSystemBridgeSwift.dia"

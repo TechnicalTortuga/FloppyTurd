@@ -109,7 +109,7 @@ public class MetalTextRendererSwift: @unchecked Sendable {
             atlasTexture?.label = "Font Atlas"
             
             guard atlasTexture != nil else {
-                print("[MetalTextRendererSwift] ERROR: Failed to create font atlas texture")
+                traceLog(SWLogLevel.SWLOG_ERROR, "[MetalTextRendererSwift] ERROR: Failed to create font atlas texture")
                 return false
             }
             
@@ -120,7 +120,7 @@ public class MetalTextRendererSwift: @unchecked Sendable {
                 _ = getOrCreateGlyph(char: char, font: font, sdfEnabled: true)  // Cache as SDF by default
             }
             
-            print("[MetalTextRendererSwift] ✅ Font atlas initialized with \(glyphMap.count) glyphs")
+            traceLog(SWLogLevel.SWLOG_INFO, "[MetalTextRendererSwift] ✅ Font atlas initialized with \(glyphMap.count) glyphs")
             return true
         }
         
@@ -162,7 +162,7 @@ public class MetalTextRendererSwift: @unchecked Sendable {
             
             // Check if we're out of space
             if currentY + glyphHeight > atlasSize {
-                print("[MetalTextRendererSwift] WARNING: Font atlas is full, glyph '\(char)' skipped")
+                traceLog(SWLogLevel.SWLOG_WARNING, "[MetalTextRendererSwift] WARNING: Font atlas is full, glyph '\(char)' skipped")
                 return nil
             }
             
@@ -179,7 +179,7 @@ public class MetalTextRendererSwift: @unchecked Sendable {
             )
             
             guard let context = bitmapContext else {
-                print("[MetalTextRendererSwift] ERROR: Failed to create bitmap context for glyph '\(char)'")
+                traceLog(SWLogLevel.SWLOG_ERROR, "[MetalTextRendererSwift] ERROR: Failed to create bitmap context for glyph '\(char)'")
                 return nil
             }
             
@@ -244,7 +244,7 @@ public class MetalTextRendererSwift: @unchecked Sendable {
         /// Generate SDF (Signed Distance Field) from bitmap (preserving your SDF system)
         private func generateSDFFromBitmap(context: CGContext, width: Int, height: Int) -> UnsafeMutableRawPointer {
             guard let inputData = context.data else {
-                print("[MetalTextRendererSwift] ERROR: No bitmap data for SDF generation")
+                traceLog(SWLogLevel.SWLOG_ERROR, "[MetalTextRendererSwift] ERROR: No bitmap data for SDF generation")
                 return context.data!
             }
             
@@ -302,7 +302,7 @@ public class MetalTextRendererSwift: @unchecked Sendable {
                 }
             }
             
-            print("[MetalTextRendererSwift] ✅ Generated SDF for glyph: \(width)x\(height)")
+            traceLog(SWLogLevel.SWLOG_INFO, "[MetalTextRendererSwift] ✅ Generated SDF for glyph: \(width)x\(height)")
             return outputData
         }
         
@@ -314,55 +314,55 @@ public class MetalTextRendererSwift: @unchecked Sendable {
     // MARK: - Initialization
     
     public init() {
-        print("[MetalTextRendererSwift] Initializing Swift text renderer")
+        traceLog(SWLogLevel.SWLOG_INFO, "[MetalTextRendererSwift] Initializing Swift text renderer")
     }
     
     deinit {
-        print("[MetalTextRendererSwift] Destroying Swift text renderer")
+        traceLog(SWLogLevel.SWLOG_INFO, "[MetalTextRendererSwift] Destroying Swift text renderer")
         shutdown()
     }
     
     /// Initialize the text renderer
     @MainActor public func initialize(device: MTLDevice, view: MTKView) -> Bool {
-        print("[MetalTextRendererSwift] Initialize START")
+        traceLog(SWLogLevel.SWLOG_INFO, "[MetalTextRendererSwift] Initialize START")
         
         self.device = device
         self.view = view
         
         // Load default font
         if !loadDefaultFont() {
-            print("[MetalTextRendererSwift] ERROR: Failed to load default font")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[MetalTextRendererSwift] ERROR: Failed to load default font")
             return false
         }
         
         // Create font atlas
         guard let font = defaultFont else {
-            print("[MetalTextRendererSwift] ERROR: No default font available")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[MetalTextRendererSwift] ERROR: No default font available")
             return false
         }
         
         fontAtlas = FontAtlas()
         if !fontAtlas!.initialize(device: device, font: font) {
-            print("[MetalTextRendererSwift] ERROR: Failed to initialize font atlas")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[MetalTextRendererSwift] ERROR: Failed to initialize font atlas")
             return false
         }
         
         // Create text rendering pipeline
         if !createTextPipeline() {
-            print("[MetalTextRendererSwift] ERROR: Failed to create text pipeline")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[MetalTextRendererSwift] ERROR: Failed to create text pipeline")
             return false
         }
         
         // Create sampler state
         createTextSamplerState()
         
-        print("[MetalTextRendererSwift] ✅ Text renderer initialized successfully")
+        traceLog(SWLogLevel.SWLOG_INFO, "[MetalTextRendererSwift] ✅ Text renderer initialized successfully")
         return true
     }
     
     /// Shutdown the text renderer
     public func shutdown() {
-        print("[MetalTextRendererSwift] Shutting down text renderer")
+        traceLog(SWLogLevel.SWLOG_INFO, "[MetalTextRendererSwift] Shutting down text renderer")
         
         // Release resources
         textPipeline = nil
@@ -375,7 +375,7 @@ public class MetalTextRendererSwift: @unchecked Sendable {
         textVertices.removeAll()
         textDrawCommands.removeAll()
         
-        print("[MetalTextRendererSwift] ✅ Text renderer shutdown complete")
+        traceLog(SWLogLevel.SWLOG_INFO, "[MetalTextRendererSwift] ✅ Text renderer shutdown complete")
     }
     
     // MARK: - Text Rendering API
@@ -387,10 +387,10 @@ public class MetalTextRendererSwift: @unchecked Sendable {
     
     /// Draw text with explicit SDF control (preserving your SDF system)
     public func drawText(_ text: String, x: Float, y: Float, fontSize: Float, color: RaylibColor, sdfEnabled: Bool) {
-        print("[MetalTextRendererSwift] DrawText: '\(text)' at (\(x),\(y)), size=\(fontSize), SDF=\(sdfEnabled)")
+        traceLog(LOG_TRACE, "[MetalTextRendererSwift] DrawText: '\(text)' at (\(x),\(y)), size=\(fontSize), SDF=\(sdfEnabled)")
         
         guard let font = getFont(size: fontSize) else {
-            print("[MetalTextRendererSwift] ERROR: Failed to get font for size \(fontSize)")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[MetalTextRendererSwift] ERROR: Failed to get font for size \(fontSize)")
             return
         }
         
@@ -402,7 +402,7 @@ public class MetalTextRendererSwift: @unchecked Sendable {
         // Generate vertices for each character
         for char in text {
             guard let glyphInfo = fontAtlas?.getOrCreateGlyph(char: char, font: font, sdfEnabled: sdfEnabled) else {
-                print("[MetalTextRendererSwift] WARNING: Failed to get glyph for '\(char)'")
+                traceLog(SWLogLevel.SWLOG_WARNING, "[MetalTextRendererSwift] WARNING: Failed to get glyph for '\(char)'")
                 continue
             }
             
@@ -494,11 +494,13 @@ public class MetalTextRendererSwift: @unchecked Sendable {
         return Vector2(x: totalWidth, y: maxHeight)
     }
     
+    // MARK: - C++ Interop Functions (moved to separate bridge class)
+    
     /// Flush all batched text to the GPU with SDF support
     public func flushTextBatch(encoder: MTLRenderCommandEncoder) {
         guard !textVertices.isEmpty, !textDrawCommands.isEmpty else { return }
         
-        print("[MetalTextRendererSwift] FlushTextBatch: vertices=\(textVertices.count), commands=\(textDrawCommands.count)")
+        traceLog(LOG_TRACE, "[MetalTextRendererSwift] FlushTextBatch: vertices=\(textVertices.count), commands=\(textDrawCommands.count)")
         
         // Set text pipeline
         encoder.setRenderPipelineState(textPipeline!)
@@ -512,7 +514,7 @@ public class MetalTextRendererSwift: @unchecked Sendable {
         // Create temporary vertex buffer for this batch
         let vertexDataSize = textVertices.count * MemoryLayout<TextVertex>.stride
         guard let vertexBuffer = device?.makeBuffer(bytes: textVertices, length: vertexDataSize, options: .storageModeShared) else {
-            print("[MetalTextRendererSwift] ERROR: Failed to create vertex buffer")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[MetalTextRendererSwift] ERROR: Failed to create vertex buffer")
             return
         }
         
@@ -526,14 +528,14 @@ public class MetalTextRendererSwift: @unchecked Sendable {
                 var sdfParams = cmd.sdfParams
                 let sdfParamSize = MemoryLayout<SDFParams>.stride
                 guard let sdfBuffer = device?.makeBuffer(bytes: &sdfParams, length: sdfParamSize, options: .storageModeShared) else {
-                    print("[MetalTextRendererSwift] ERROR: Failed to create SDF parameter buffer")
+                    traceLog(SWLogLevel.SWLOG_ERROR, "[MetalTextRendererSwift] ERROR: Failed to create SDF parameter buffer")
                     continue
                 }
                 
                 // Bind SDF parameters to fragment shader
                 encoder.setFragmentBuffer(sdfBuffer, offset: 0, index: 0)
                 
-                print("[MetalTextRendererSwift] SDF text '\(cmd.debugText)': smoothing=\(sdfParams.smoothing), threshold=\(sdfParams.threshold)")
+                traceLog(LOG_TRACE, "[MetalTextRendererSwift] SDF text '\(cmd.debugText)': smoothing=\(sdfParams.smoothing), threshold=\(sdfParams.threshold)")
             }
             
             // Draw the text
@@ -544,7 +546,7 @@ public class MetalTextRendererSwift: @unchecked Sendable {
         textVertices.removeAll()
         textDrawCommands.removeAll()
         
-        print("[MetalTextRendererSwift] ✅ Text batch flushed successfully")
+        traceLog(LOG_TRACE, "[MetalTextRendererSwift] ✅ Text batch flushed successfully")
     }
     
     // MARK: - Private Implementation
@@ -556,18 +558,18 @@ public class MetalTextRendererSwift: @unchecked Sendable {
         for fontName in fontNames {
             let font = CTFontCreateWithName(fontName as CFString, 24.0, nil)
             defaultFont = font
-            print("[MetalTextRendererSwift] ✅ Loaded default font: \(fontName)")
+            traceLog(SWLogLevel.SWLOG_INFO, "[MetalTextRendererSwift] ✅ Loaded default font: \(fontName)")
             return true
         }
         
         // Fallback to system font
         if let systemFont = CTFontCreateUIFontForLanguage(.system, 24.0, nil) {
              defaultFont = systemFont
-             print("[MetalTextRendererSwift] ✅ Loaded system font as fallback")
+             traceLog(SWLogLevel.SWLOG_INFO, "[MetalTextRendererSwift] ✅ Loaded system font as fallback")
              return true
         }
         
-        print("[MetalTextRendererSwift] ERROR: Failed to load any default font")
+        traceLog(SWLogLevel.SWLOG_ERROR, "[MetalTextRendererSwift] ERROR: Failed to load any default font")
         return false
     }
     
@@ -592,13 +594,13 @@ public class MetalTextRendererSwift: @unchecked Sendable {
         
         // Create shader library (using same shader library as main renderer)
         guard let library = device.makeDefaultLibrary() else {
-            print("[MetalTextRendererSwift] ERROR: Failed to load shader library")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[MetalTextRendererSwift] ERROR: Failed to load shader library")
             return false
         }
         
         guard let vertexFunction = library.makeFunction(name: "vertex_shader_text"),
               let fragmentFunction = library.makeFunction(name: "fragment_shader_text") else {
-            print("[MetalTextRendererSwift] ERROR: Failed to load text shader functions")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[MetalTextRendererSwift] ERROR: Failed to load text shader functions")
             return false
         }
         
@@ -644,10 +646,10 @@ public class MetalTextRendererSwift: @unchecked Sendable {
         
         do {
             textPipeline = try device.makeRenderPipelineState(descriptor: pipelineDesc)
-            print("[MetalTextRendererSwift] ✅ Text pipeline created successfully")
+            traceLog(SWLogLevel.SWLOG_INFO, "[MetalTextRendererSwift] ✅ Text pipeline created successfully")
             return true
         } catch {
-            print("[MetalTextRendererSwift] ERROR: Failed to create text pipeline: \(error)")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[MetalTextRendererSwift] ERROR: Failed to create text pipeline: \(error)")
             return false
         }
     }
@@ -663,7 +665,7 @@ public class MetalTextRendererSwift: @unchecked Sendable {
         samplerDesc.tAddressMode = .clampToEdge
         
         textSamplerState = device.makeSamplerState(descriptor: samplerDesc)
-        print("[MetalTextRendererSwift] ✅ Text sampler state created")
+        traceLog(SWLogLevel.SWLOG_INFO, "[MetalTextRendererSwift] ✅ Text sampler state created")
     }
     
     // MARK: - Font Management API for C++ Interop
@@ -674,29 +676,19 @@ public class MetalTextRendererSwift: @unchecked Sendable {
         
         // Check if already cached
         if fontCache[fontKey] != nil {
-            print("[MetalTextRendererSwift] Font '\(name)' already loaded")
+            traceLog(SWLogLevel.SWLOG_INFO, "[MetalTextRendererSwift] Font '\(name)' already loaded")
             return hashFontName(fontKey)
         }
         
         // Try to load the font
-        var font: CTFont?
         let customFont = CTFontCreateWithName(name as CFString, CGFloat(size), nil)
-        if customFont != nil {
-            font = customFont
-        } else {
-            // Fallback to default font with specified size
-            if let baseFont = defaultFont {
-                font = CTFontCreateCopyWithAttributes(baseFont, CGFloat(size), nil, nil)
-            }
-        }
+        let loadedFont: CTFont
         
-        guard let loadedFont = font else {
-            print("[MetalTextRendererSwift] Failed to load font '\(name)'")
-            return 0
-        }
+        // Use the custom font directly (CTFont is non-optional)
+        loadedFont = customFont
         
         fontCache[fontKey] = loadedFont
-        print("[MetalTextRendererSwift] ✅ Loaded font '\(name)' with size \(size)")
+        traceLog(SWLogLevel.SWLOG_INFO, "[MetalTextRendererSwift] ✅ Loaded font '\(name)' with size \(size)")
         return hashFontName(fontKey)
     }
     
@@ -706,11 +698,11 @@ public class MetalTextRendererSwift: @unchecked Sendable {
         for (key, _) in fontCache {
             if hashFontName(key) == id {
                 fontCache.removeValue(forKey: key)
-                print("[MetalTextRendererSwift] Unloaded font with ID \(id)")
+                traceLog(SWLogLevel.SWLOG_INFO, "[MetalTextRendererSwift] Unloaded font with ID \(id)")
                 return
             }
         }
-        print("[MetalTextRendererSwift] Font with ID \(id) not found")
+        traceLog(SWLogLevel.SWLOG_WARNING, "[MetalTextRendererSwift] Font with ID \(id) not found")
     }
     
     /// Get default font ID
@@ -731,5 +723,47 @@ public class MetalTextRendererSwift: @unchecked Sendable {
             hash = ((hash << 5) &+ hash) &+ Int32(char.asciiValue ?? 0)
         }
         return abs(hash)
+    }
+}
+
+// MARK: - C++ Interop Bridge
+
+/// C++ interop bridge for MetalTextRendererSwift
+/// Separates C++ exposure from MainActor isolation
+@_expose(Cxx)
+public final class MetalTextRendererCppBridge {
+    
+    /// Draw text - equivalent to DrawText() (C++ Interop)
+    @_expose(Cxx) nonisolated public static func drawText(_ text: String, _ x: Float, _ y: Float, _ fontSize: Float, _ r: UInt8, _ g: UInt8, _ b: UInt8, _ a: UInt8) {
+        let color = RaylibColor(r: r, g: g, b: b, a: a)
+        Task { @MainActor in
+            MetalTextRendererSwift.shared.drawText(text, x: x, y: y, fontSize: fontSize, color: color)
+        }
+    }
+    
+    /// Measure text - equivalent to MeasureText() (C++ Interop)
+    @_expose(Cxx) nonisolated public static func measureText(_ text: String, _ fontSize: Float) -> Vector2 {
+        return MainActor.assumeIsolated {
+            MetalTextRendererSwift.shared.measureText(text, fontSize: fontSize)
+        }
+    }
+    
+    /// Load font - equivalent to LoadFont() (C++ Interop)
+    @_expose(Cxx) nonisolated public static func loadFont(_ fontPath: String, _ fontSize: Float) -> Int32 {
+        // For now, return a dummy font ID since we use system fonts
+        // This can be expanded to support custom font loading
+        return 1
+    }
+    
+    /// Get default font - equivalent to GetFontDefault() (C++ Interop)
+    @_expose(Cxx) nonisolated public static func getFontDefault() -> Int32 {
+        return 0 // Default font ID
+    }
+    
+    /// Unload font - equivalent to UnloadFont() (C++ Interop)
+    @_expose(Cxx) nonisolated public static func unloadFont(_ fontId: Int32) {
+        Task { @MainActor in
+            MetalTextRendererSwift.shared.unloadFont(id: fontId)
+        }
     }
 }

@@ -1,7 +1,9 @@
 #include "AIGUI.h"
 #include "TouchControls.h"
 #include "ResourceManager.h"
-#include "UICoordinateSystem.h"
+#include "UIManager.h"
+#include "PlatformAPI.h"
+
 
 #if defined(__APPLE__) && TARGET_OS_IOS
 // Forward declarations to avoid including Objective-C headers in C++
@@ -149,7 +151,7 @@ AIGUI_DEF void AIGUI_UpdateInput() {
                      touchActive, touchPos.x, touchPos.y, touchPressed, touchReleased);
             
             // Convert touch coordinates to UI coordinates
-            Vector2 uiPos = UICoordinateSystem::PointsToPixels(touchPos);
+            Vector2 uiPos = touchPos; // Direct use since coordinates are already in pixels
             
             TraceLog(LOG_INFO, "[AIGUI] UpdateInput: Coordinate conversion - points=(%.1f,%.1f) -> pixels=(%.1f,%.1f)", 
                      touchPos.x, touchPos.y, uiPos.x, uiPos.y);
@@ -168,7 +170,7 @@ AIGUI_DEF void AIGUI_UpdateInput() {
             bool touchPressed = IsPrimaryInputPressed();
             bool touchReleased = IsPrimaryInputReleased();
             
-            Vector2 uiPos = UICoordinateSystem::PointsToPixels(touchPos);
+            Vector2 uiPos = touchPos; // Direct use since coordinates are already in pixels
             
             g_AIGUI.touchPosition = uiPos;
             g_AIGUI.touchDown = touchActive;
@@ -223,7 +225,8 @@ AIGUI_DEF bool AIGUI_ButtonRounded(const char* label, float x, float y, float wi
              inputPos.x, inputPos.y, g_AIGUI.touchDown, g_AIGUI.touchPressed, g_AIGUI.touchReleased, g_AIGUI.isMobile);
     
     // Use full screen dimensions instead of hardcoded 320x180 or safe area
-    Rectangle pixelScreenRect = UICoordinateSystem::GetPixelScreenRect();
+    UIManager& uiManager = UIManager::GetInstance();
+		Rectangle pixelScreenRect = {0, 0, (float)uiManager.GetScreenWidth(true), (float)uiManager.GetScreenHeight(true)};
     bool inputInBounds = (inputPos.x >= 0 && inputPos.y >= 0 && inputPos.x <= pixelScreenRect.width && inputPos.y <= pixelScreenRect.height);
     
     TraceLog(LOG_INFO, "[AIGUI] ButtonRounded: Screen bounds check - inputInBounds=%d, screenSize=(%.1f,%.1f)", 
@@ -457,9 +460,95 @@ AIGUI_DEF void AIGUI_DrawResponsiveText(const char* text, Vector2 position, int 
     DrawText(text, (int)position.x, (int)position.y, scaledFontSize, color);
 }
 
-// Stub implementations for missing functions
+// Slider implementation for float values
 AIGUI_DEF void AIGUI_SliderFloat(const char* label, float x, float y, float width, float min, float max, float* value) {
-    // TODO: Implement slider functionality
+    if (!value) return;
+    
+    float height = 30.0f * g_AIGUI.uiScale;
+    float thumbSize = 20.0f * g_AIGUI.uiScale;
+    float trackHeight = 6.0f * g_AIGUI.uiScale;
+    
+    // Ensure minimum touch target size on mobile
+    float minTouchSize = AIGUI_GetMinTouchSize();
+    float touchHeight = fmaxf(height, minTouchSize);
+    float touchY = y - (touchHeight - height) / 2.0f;
+    
+    Rectangle trackRect = { x, y + (height - trackHeight) / 2.0f, width, trackHeight };
+    Rectangle touchRect = { x - thumbSize/2, touchY, width + thumbSize, touchHeight };
+    
+    // Calculate thumb position based on current value
+    float normalizedValue = (*value - min) / (max - min);
+    normalizedValue = fmaxf(0.0f, fminf(1.0f, normalizedValue)); // Clamp to [0,1]
+    float thumbX = x + normalizedValue * width;
+    Rectangle thumbRect = { thumbX - thumbSize/2, y + (height - thumbSize) / 2.0f, thumbSize, thumbSize };
+    
+    bool hovered = CheckCollisionPointRec(g_AIGUI.mousePos, touchRect);
+    bool dragging = false;
+    
+    // Handle input
+    if (g_AIGUI.isMobile) {
+        // Touch-based interaction
+        if (hovered && g_AIGUI.touchPressed) {
+            g_AIGUI.touchPressedOverButton = true;
+        }
+        
+        if (g_AIGUI.touchPressedOverButton && g_AIGUI.touchDown) {
+            dragging = true;
+            // Calculate new value based on touch position
+            float touchProgress = (g_AIGUI.touchPosition.x - x) / width;
+            touchProgress = fmaxf(0.0f, fminf(1.0f, touchProgress));
+            *value = min + touchProgress * (max - min);
+        }
+        
+        if (!g_AIGUI.touchDown) {
+            g_AIGUI.touchPressedOverButton = false;
+        }
+    } else {
+        // Desktop mouse interaction
+        if (hovered && IsPrimaryInputDown()) {
+            dragging = true;
+            // Calculate new value based on mouse position
+            float mouseProgress = (g_AIGUI.mousePos.x - x) / width;
+            mouseProgress = fmaxf(0.0f, fminf(1.0f, mouseProgress));
+            *value = min + mouseProgress * (max - min);
+        }
+    }
+    
+    // Visual rendering
+    Color trackColor = Color(100, 100, 100, 255);
+    Color fillColor = dragging ? Color(255, 180, 0, 255) : Color(255, 128, 0, 255);
+    Color thumbColor = dragging ? Color(255, 200, 100, 255) : Color(255, 255, 255, 255);
+    
+    // Draw track
+    DrawRectangleRounded(trackRect, 0.5f, 8, trackColor);
+    
+    // Draw filled portion
+    Rectangle fillRect = { x, trackRect.y, normalizedValue * width, trackHeight };
+    if (fillRect.width > 0) {
+        DrawRectangleRounded(fillRect, 0.5f, 8, fillColor);
+    }
+    
+    // Draw thumb
+    DrawCircle((int)thumbX, (int)(y + height/2), thumbSize/2, thumbColor);
+    DrawCircleLines((int)thumbX, (int)(y + height/2), thumbSize/2, Color(0, 0, 0, 100));
+    
+    // Draw label if provided
+    if (label && strlen(label) > 0) {
+        int fontSize = AIGUI_GetScaledFontSize(16);
+        Vector2 labelSize = MeasureTextEx(g_AIGUI.defaultFont, label, fontSize, 1.0f);
+        float labelX = x;
+        float labelY = y - labelSize.y - 5.0f * g_AIGUI.uiScale;
+        DrawTextEx(g_AIGUI.defaultFont, label, { labelX, labelY }, fontSize, 1.0f, WHITE);
+    }
+    
+    // Draw value text
+    char valueText[32];
+    snprintf(valueText, sizeof(valueText), "%.2f", *value);
+    int valueFontSize = AIGUI_GetScaledFontSize(14);
+    Vector2 valueSize = MeasureTextEx(g_AIGUI.defaultFont, valueText, valueFontSize, 1.0f);
+    float valueX = x + width - valueSize.x;
+    float valueY = y + height + 5.0f * g_AIGUI.uiScale;
+    DrawTextEx(g_AIGUI.defaultFont, valueText, { valueX, valueY }, valueFontSize, 1.0f, Color(200, 200, 200, 255));
 }
 
 AIGUI_DEF bool AIGUI_Button(const char* label, float x, float y, float width, float height) {

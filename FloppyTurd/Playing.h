@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "PlatformAPI.h"
 #include <iostream>
 #include "ResourceCompat.h"

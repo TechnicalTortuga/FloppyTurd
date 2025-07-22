@@ -1,15 +1,32 @@
 import Foundation
 import os.log
 
-/// Log levels for the game engine
-public enum LogLevel: Int32, CaseIterable {
-    case trace = 0
-    case debug = 1
-    case info = 2
-    case warning = 3
-    case error = 4
-    case fatal = 5
-    
+// MARK: - Log Levels (matching Raylib's TraceLogLevel)
+public enum LogLevel: Int32 {
+    case all = 0
+    case trace = 1
+    case debug = 2
+    case info = 3
+    case warning = 4
+    case error = 5
+    case fatal = 6
+    case none = 7
+}
+
+// MARK: - Swift-specific Log Constants (SWLOG)
+public enum SWLogLevel {
+    public static let SWLOG_ALL: Int32 = 0
+    public static let SWLOG_TRACE: Int32 = 1
+    public static let SWLOG_DEBUG: Int32 = 2
+    public static let SWLOG_INFO: Int32 = 3
+    public static let SWLOG_WARNING: Int32 = 4
+    public static let SWLOG_ERROR: Int32 = 5
+    public static let SWLOG_FATAL: Int32 = 6
+    public static let SWLOG_NONE: Int32 = 7
+}
+
+// Extension to add OSLog support to LogLevel
+extension LogLevel {
     var osLogType: OSLogType {
         switch self {
         case .trace, .debug:
@@ -22,6 +39,8 @@ public enum LogLevel: Int32, CaseIterable {
             return .error
         case .fatal:
             return .fault
+        default:
+            return .default
         }
     }
     
@@ -33,6 +52,7 @@ public enum LogLevel: Int32, CaseIterable {
         case .warning: return "[WARN]"
         case .error: return "[ERROR]"
         case .fatal: return "[FATAL]"
+        default: return "[LOG]"
         }
     }
 }
@@ -92,6 +112,75 @@ public final class LogManagerSwift {
             FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
         }
         guard let documentsURL = urls.first else { return nil }
-        return documentsURL.appendingPathComponent(logFileName)
+        
+        // Create FloppyTurdLogs directory in app container root
+        let logsDirectory = documentsURL.appendingPathComponent("FloppyTurdLogs")
+        
+        // Ensure the directory exists
+        MainActor.assumeIsolated {
+            try? FileManager.default.createDirectory(at: logsDirectory, withIntermediateDirectories: true, attributes: nil)
+        }
+        
+        return logsDirectory.appendingPathComponent(logFileName)
+    }
+}
+
+// MARK: - Global Logging Functions
+// Global traceLog function for Swift files to use directly
+nonisolated public func traceLog(_ logLevel: Int32, _ text: String) {
+    LoggingSwift.traceLog(logLevel, text)
+}
+
+// MARK: - C++ Interop Bridge
+@_expose(Cxx)
+public class LoggingSwift {
+    
+    private static nonisolated(unsafe) var currentLogLevel: LogLevel = .info
+    private static let logger = Logger(subsystem: "com.floppyturd.game", category: "GameEngine")
+    
+    // MARK: - Log Level Management
+    @_expose(Cxx)
+    public static func setTraceLogLevel(_ level: Int32) {
+        if let logLevel = LogLevel(rawValue: level) {
+            currentLogLevel = logLevel
+        }
+    }
+    
+    @_expose(Cxx)
+    public static func getTraceLogLevel() -> Int32 {
+        return currentLogLevel.rawValue
+    }
+    
+    // MARK: - Logging Functions
+    @_expose(Cxx)
+    public static func traceLog(_ logLevel: Int32, _ text: String) {
+        guard let level = LogLevel(rawValue: logLevel),
+              level.rawValue >= currentLogLevel.rawValue else {
+            return
+        }
+        
+        // Route through LogManagerSwift for unified logging
+        LogManagerSwift.shared.log(level: level, message: text)
+    }
+    
+    // Convenience logging functions
+    @_expose(Cxx)
+    public static func logDebug(_ message: String) {
+        traceLog(SWLogLevel.SWLOG_DEBUG, message)
+    }
+    
+    @_expose(Cxx)
+    public static func logInfo(_ message: String) {
+        traceLog(SWLogLevel.SWLOG_INFO, message)
+    }
+    
+    @_expose(Cxx)
+    public static func logWarning(_ message: String) {
+        traceLog(SWLogLevel.SWLOG_WARNING, message)
+    }
+    
+    @_expose(Cxx)
+    public static func logError(_ message: String) {
+        traceLog(SWLogLevel.SWLOG_ERROR, message)
     }
 }

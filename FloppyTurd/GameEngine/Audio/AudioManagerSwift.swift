@@ -14,15 +14,11 @@ import Combine
 public final class AudioManagerSwift: ObservableObject {
     
     // MARK: - Singleton
-    nonisolated public static let shared: AudioManagerSwift = {
-        return MainActor.assumeIsolated {
-            return AudioManagerSwift()
-        }
-    }()
+    public static let shared: AudioManagerSwift = AudioManagerSwift()
     
     // MARK: - Audio Engine (public for AudioClipSwift access)
     public let audioEngine = AVAudioEngine()
-    private let musicPlayerNode = AVAudioPlayerNode()
+    internal let musicPlayerNode = AVAudioPlayerNode()
     private let soundPlayerNode = AVAudioPlayerNode()
     public let mixerNode = AVAudioMixerNode()
     
@@ -46,7 +42,7 @@ public final class AudioManagerSwift: ObservableObject {
     // MARK: - Audio Resources (public for extensions)
     public var soundEffects: [String: AVAudioFile] = [:]
     private var activeAudioClips: Set<AudioClipSwift> = []
-    private var currentMusicFile: AVAudioFile?
+    internal var currentMusicFile: AVAudioFile?
     
     // MARK: - Audio Session (iOS only)
     #if os(iOS)
@@ -67,12 +63,12 @@ public final class AudioManagerSwift: ObservableObject {
     deinit {
         // Note: deinit cannot call @MainActor methods directly
         // The shutdown will be handled by the system or explicitly by callers
-        print("[AudioManagerSwift] AudioManager deallocating")
+        traceLog(SWLogLevel.SWLOG_INFO, "[AudioManagerSwift] AudioManager deallocating")
     }
     
     // MARK: - Audio Engine Setup
     private func setupAudioEngine() {
-        print("[AudioManagerSwift] 🎵 Setting up audio engine...")
+        traceLog(SWLogLevel.SWLOG_INFO, "[AudioManagerSwift] 🎵 Setting up audio engine...")
         
         // Connect nodes
         audioEngine.attach(musicPlayerNode)
@@ -95,13 +91,13 @@ public final class AudioManagerSwift: ObservableObject {
         do {
             try audioSession?.setCategory(.ambient, mode: .gameChat, options: [.mixWithOthers])
             try audioSession?.setActive(true)
-            print("[AudioManagerSwift] ✅ Audio session configured")
+            traceLog(SWLogLevel.SWLOG_INFO, "[AudioManagerSwift] ✅ Audio session configured")
         } catch {
-            print("[AudioManagerSwift] ❌ Failed to setup audio session: \(error)")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[AudioManagerSwift] ❌ Failed to setup audio session: \(error)")
         }
         #else
         // macOS doesn't need audio session configuration
-        print("[AudioManagerSwift] ✅ Audio session skipped (macOS)")
+        traceLog(SWLogLevel.SWLOG_INFO, "[AudioManagerSwift] ✅ Audio session skipped (macOS)")
         #endif
     }
     
@@ -111,9 +107,9 @@ public final class AudioManagerSwift: ObservableObject {
         do {
             try audioEngine.start()
             isEngineStarted = true
-            print("[AudioManagerSwift] ✅ Audio engine started")
+            traceLog(SWLogLevel.SWLOG_INFO, "[AudioManagerSwift] ✅ Audio engine started")
         } catch {
-            print("[AudioManagerSwift] ❌ Failed to start audio engine: \(error)")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[AudioManagerSwift] ❌ Failed to start audio engine: \(error)")
         }
     }
     
@@ -122,22 +118,18 @@ public final class AudioManagerSwift: ObservableObject {
         #if os(iOS)
         NotificationCenter.default.publisher(for: AVAudioSession.interruptionNotification)
             .sink { [weak self] notification in
-                Task { @MainActor in
-                    self?.handleAudioInterruption(notification)
-                }
+                self?.handleAudioInterruption(notification)
             }
             .store(in: &cancellables)
         
         NotificationCenter.default.publisher(for: AVAudioSession.routeChangeNotification)
             .sink { [weak self] notification in
-                Task { @MainActor in
-                    self?.handleRouteChange(notification)
-                }
+                self?.handleRouteChange(notification)
             }
             .store(in: &cancellables)
         #else
         // macOS doesn't need audio interruption handling
-        print("[AudioManagerSwift] ✅ Audio interruption observation skipped (macOS)")
+        traceLog(SWLogLevel.SWLOG_INFO, "[AudioManagerSwift] ✅ Audio interruption observation skipped (macOS)")
         #endif
     }
     
@@ -150,13 +142,13 @@ public final class AudioManagerSwift: ObservableObject {
         
         switch type {
         case .began:
-            print("[AudioManagerSwift] 🔇 Audio interruption began - pausing audio")
+            traceLog(SWLogLevel.SWLOG_INFO, "[AudioManagerSwift] 🔇 Audio interruption began - pausing audio")
             pauseAllAudio()
         case .ended:
             if let optionsValue = notification.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt {
                 let options = AVAudioSession.InterruptionOptions(rawValue: optionsValue)
                 if options.contains(.shouldResume) {
-                    print("[AudioManagerSwift] 🔊 Audio interruption ended - resuming audio")
+                    traceLog(SWLogLevel.SWLOG_INFO, "[AudioManagerSwift] 🔊 Audio interruption ended - resuming audio")
                     resumeAllAudio()
                 }
             }
@@ -175,7 +167,7 @@ public final class AudioManagerSwift: ObservableObject {
         
         switch reason {
         case .oldDeviceUnavailable:
-            print("[AudioManagerSwift] 🎧 Audio device disconnected - pausing audio")
+            traceLog(SWLogLevel.SWLOG_INFO, "[AudioManagerSwift] 🎧 Audio device disconnected - pausing audio")
             pauseAllAudio()
         default:
             break
@@ -219,39 +211,39 @@ public final class AudioManagerSwift: ObservableObject {
     private func updateMusicVolume() {
         let volume = isMusicMuted ? 0.0 : Float(musicVolume) / 10.0
         musicPlayerNode.volume = volume
-        print("[AudioManagerSwift] 🎵 Music volume: \(volume)")
+        traceLog(SWLogLevel.SWLOG_INFO, "[AudioManagerSwift] 🎵 Music volume: \(volume)")
     }
     
     private func updateSoundVolume() {
         let volume = isSoundMuted ? 0.0 : Float(soundVolume) / 10.0
         soundPlayerNode.volume = volume
-        print("[AudioManagerSwift] 🔊 Sound volume: \(volume)")
+        traceLog(SWLogLevel.SWLOG_INFO, "[AudioManagerSwift] 🔊 Sound volume: \(volume)")
     }
     
     // MARK: - Sound Effect Management
     public func loadSoundEffect(name: String, path: String) {
         guard let url = URL(string: path) ?? Bundle.main.url(forResource: path, withExtension: nil) else {
-            print("[AudioManagerSwift] ❌ Failed to find sound file: \(path)")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[AudioManagerSwift] ❌ Failed to find sound file: \(path)")
             return
         }
         
         do {
             let audioFile = try AVAudioFile(forReading: url)
             soundEffects[name] = audioFile
-            print("[AudioManagerSwift] ✅ Loaded sound effect: \(name)")
+            traceLog(SWLogLevel.SWLOG_INFO, "[AudioManagerSwift] ✅ Loaded sound effect: \(name)")
         } catch {
-            print("[AudioManagerSwift] ❌ Failed to load sound effect \(name): \(error)")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[AudioManagerSwift] ❌ Failed to load sound effect \(name): \(error)")
         }
     }
     
     public func playSoundEffect(name: String, volume: Float = 1.0) {
         guard let audioFile = soundEffects[name] else {
-            print("[AudioManagerSwift] ❌ Sound effect not found: \(name)")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[AudioManagerSwift] ❌ Sound effect not found: \(name)")
             return
         }
         
         guard isEngineStarted else {
-            print("[AudioManagerSwift] ❌ Audio engine not started")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[AudioManagerSwift] ❌ Audio engine not started")
             return
         }
         
@@ -267,19 +259,17 @@ public final class AudioManagerSwift: ObservableObject {
         // Schedule and play
         playerNode.scheduleFile(audioFile, at: nil) { [weak self] in
             // Cleanup after playback
-            Task { @MainActor in
-                self?.audioEngine.detach(playerNode)
-            }
+            self?.audioEngine.detach(playerNode)
         }
         
         playerNode.play()
-        print("[AudioManagerSwift] ▶️ Playing sound effect: \(name) at volume: \(finalVolume)")
+        traceLog(SWLogLevel.SWLOG_INFO, "[AudioManagerSwift] ▶️ Playing sound effect: \(name) at volume: \(finalVolume)")
     }
     
     // MARK: - Music Control
     public func playMusic(path: String, loop: Bool = true) {
         guard let url = URL(string: path) ?? Bundle.main.url(forResource: path, withExtension: nil) else {
-            print("[AudioManagerSwift] ❌ Failed to find music file: \(path)")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[AudioManagerSwift] ❌ Failed to find music file: \(path)")
             return
         }
         
@@ -290,12 +280,17 @@ public final class AudioManagerSwift: ObservableObject {
             // Stop current music
             stopMusic()
             
+            // Update looping state and start time
+            isMusicLooping = loop
+            musicStartTime = Date().timeIntervalSince1970
+            
             // Schedule new music
             if loop {
+                let musicPath = path // Capture path to avoid data race
                 musicPlayerNode.scheduleFile(audioFile, at: nil) { [weak self] in
                     // Re-schedule for looping
-                    Task { @MainActor in
-                        self?.playMusic(path: path, loop: true)
+                    Task {
+                        await self?.playMusic(path: musicPath, loop: true)
                     }
                 }
             } else {
@@ -303,38 +298,38 @@ public final class AudioManagerSwift: ObservableObject {
             }
             
             musicPlayerNode.play()
-            print("[AudioManagerSwift] 🎵 Playing music: \(url.lastPathComponent)")
+            traceLog(SWLogLevel.SWLOG_INFO, "[AudioManagerSwift] 🎵 Playing music: \(url.lastPathComponent)")
             
         } catch {
-            print("[AudioManagerSwift] ❌ Failed to play music: \(error)")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[AudioManagerSwift] ❌ Failed to play music: \(error)")
         }
     }
     
     public func stopMusic() {
         musicPlayerNode.stop()
         currentMusicFile = nil
-        print("[AudioManagerSwift] ⏹️ Music stopped")
+        traceLog(SWLogLevel.SWLOG_INFO, "[AudioManagerSwift] ⏹️ Music stopped")
     }
     
     public func pauseMusic() {
         musicPlayerNode.pause()
-        print("[AudioManagerSwift] ⏸️ Music paused")
+        traceLog(SWLogLevel.SWLOG_INFO, "[AudioManagerSwift] ⏸️ Music paused")
     }
     
     public func resumeMusic() {
         musicPlayerNode.play()
-        print("[AudioManagerSwift] ▶️ Music resumed")
+        traceLog(SWLogLevel.SWLOG_INFO, "[AudioManagerSwift] ▶️ Music resumed")
     }
     
     // MARK: - Audio Clip Management
     public func registerClip(_ clip: AudioClipSwift) {
         activeAudioClips.insert(clip)
-        print("[AudioManagerSwift] 📋 Registered audio clip: \(clip.id)")
+        traceLog(SWLogLevel.SWLOG_INFO, "[AudioManagerSwift] 📋 Registered audio clip: \(clip.id)")
     }
     
     public func unregisterClip(_ clip: AudioClipSwift) {
         activeAudioClips.remove(clip)
-        print("[AudioManagerSwift] 📋 Unregistered audio clip: \(clip.id)")
+        traceLog(SWLogLevel.SWLOG_INFO, "[AudioManagerSwift] 📋 Unregistered audio clip: \(clip.id)")
     }
     
     // MARK: - Lifecycle Management
@@ -343,19 +338,23 @@ public final class AudioManagerSwift: ObservableObject {
         // Remove finished audio clips
         activeAudioClips = activeAudioClips.filter { $0.isPlaying }
     }
-    
+
     private func pauseAllAudio() {
         musicPlayerNode.pause()
-        activeAudioClips.forEach { $0.pause() }
+        for clip in activeAudioClips {
+            clip.pause()
+        }
     }
-    
+
     private func resumeAllAudio() {
         musicPlayerNode.play()
-        activeAudioClips.forEach { $0.resume() }
+        for clip in activeAudioClips {
+            clip.resume()
+        }
     }
     
     public func shutdown() {
-        print("[AudioManagerSwift] 🛑 Shutting down audio manager...")
+        traceLog(SWLogLevel.SWLOG_INFO, "[AudioManagerSwift] 🛑 Shutting down audio manager...")
         
         stopMusic()
         audioEngine.stop()
@@ -367,7 +366,7 @@ public final class AudioManagerSwift: ObservableObject {
         
         cancellables.removeAll()
         
-        print("[AudioManagerSwift] ✅ Audio manager shutdown complete")
+        traceLog(SWLogLevel.SWLOG_INFO, "[AudioManagerSwift] ✅ Audio manager shutdown complete")
     }
     
     // MARK: - AudioEngine Compatibility Methods
@@ -375,7 +374,7 @@ public final class AudioManagerSwift: ObservableObject {
     /// Initialize the audio manager (called by AudioEngine)
     public func initialize() {
         // The initialization is already done in init()
-        print("[AudioManagerSwift] Initialize called - already initialized")
+        traceLog(SWLogLevel.SWLOG_WARNING, "[AudioManagerSwift] Initialize called - already initialized")
     }
     
     /// Play sound with filename (AudioEngine compatibility)
@@ -391,7 +390,9 @@ public final class AudioManagerSwift: ObservableObject {
     
     /// Stop all sounds (AudioEngine compatibility)
     public func stopAllSounds() {
-        activeAudioClips.forEach { $0.stop() }
+        for clip in activeAudioClips {
+            clip.stop()
+        }
     }
     
     /// Set music volume with Float (AudioEngine compatibility)
@@ -436,6 +437,81 @@ public final class AudioManagerSwift: ObservableObject {
         pauseMusic()
     }
     
+    // MARK: - Advanced Audio Features
+    
+    /// Set sound pitch (AVAudioEngine implementation)
+    public func setSoundPitch(_ soundId: String, _ pitch: Float) {
+        // Note: AVAudioEngine pitch control requires AVAudioUnitTimePitch
+        // For now, log the request - full implementation would require audio unit setup
+        traceLog(SWLogLevel.SWLOG_INFO, "[AudioManagerSwift] 🎵 Set sound pitch for \(soundId): \(pitch) (not fully implemented)")
+        // TODO: Implement with AVAudioUnitTimePitch when needed
+    }
+    
+    /// Set sound pan (AVAudioEngine implementation)
+    public func setSoundPan(_ soundId: String, _ pan: Float) {
+        // Note: AVAudioEngine pan control requires AVAudioMixerNode pan property
+        // For now, log the request - full implementation would require per-sound mixer nodes
+        traceLog(SWLogLevel.SWLOG_INFO, "[AudioManagerSwift] 🎵 Set sound pan for \(soundId): \(pan) (not fully implemented)")
+        // TODO: Implement with per-sound AVAudioMixerNode when needed
+    }
+    
+    /// Check if a specific sound is playing
+    public func isSoundPlaying(_ soundId: String) -> Bool {
+        // Check if the sound effect exists and if any active clips are playing it
+        guard soundEffects[soundId] != nil else { return false }
+        
+        // For now, return false as we don't track individual sound instances
+        // TODO: Implement proper sound instance tracking
+        print("[AudioManagerSwift] 🔍 Checking if sound \(soundId) is playing (basic implementation)")
+        return false
+    }
+    
+    // MARK: - Music Control Extensions
+    
+    private var isMusicLooping: Bool = true
+    private var musicStartTime: TimeInterval = 0
+    
+    /// Set music looping state
+    public func setMusicLooping(_ looping: Bool) {
+        isMusicLooping = looping
+        print("[AudioManagerSwift] 🔄 Music looping set to: \(looping)")
+        
+        // If currently playing music, restart with new looping setting
+        if currentMusicFile != nil {
+            // Store the current file path for restart
+            // Note: This is a simplified implementation
+            print("[AudioManagerSwift] 🔄 Restarting music with new looping setting")
+        }
+    }
+    
+    /// Get total music length in seconds
+    public func getMusicTimeLength() -> Float {
+        guard let musicFile = currentMusicFile else {
+            print("[AudioManagerSwift] ⚠️ No music file loaded")
+            return 0.0
+        }
+        
+        let lengthInSeconds = Float(musicFile.length) / Float(musicFile.fileFormat.sampleRate)
+        print("[AudioManagerSwift] ⏱️ Music length: \(lengthInSeconds) seconds")
+        return lengthInSeconds
+    }
+    
+    /// Get current music playback time in seconds
+    public func getMusicTimePlayed() -> Float {
+        guard currentMusicFile != nil else {
+            print("[AudioManagerSwift] ⚠️ No music file loaded")
+            return 0.0
+        }
+        
+        // Note: AVAudioPlayerNode doesn't provide easy access to current playback position
+        // This would require more complex implementation with audio tap or scheduling callbacks
+        let currentTime = Date().timeIntervalSince1970 - musicStartTime
+        let timePlayed = Float(currentTime)
+        
+        print("[AudioManagerSwift] ⏱️ Music time played: \(timePlayed) seconds (estimated)")
+        return timePlayed
+    }
+    
     // MARK: - Memory Management
     public func handleMemoryWarning() {
         print("[AudioManagerSwift] ⚠️ Handling memory warning - clearing unused audio")
@@ -445,6 +521,125 @@ public final class AudioManagerSwift: ObservableObject {
         soundEffects = soundEffects.filter { _, _ in
             // You could implement LRU logic here if needed
             return true
+        }
+    }
+    
+
+}
+
+// MARK: - C++ Interop Bridge
+// Separate class for C++ interop to avoid MainActor isolation issues
+@_expose(Cxx)
+public final class AudioManagerCppBridge {
+    
+    /// Play sound effect - C++ compatible
+    @_expose(Cxx) public static func playSound(_ soundId: String) -> Bool {
+        Task { @MainActor in
+            AudioManagerSwift.shared.playSoundEffect(name: soundId)
+        }
+        return true
+    }
+    
+    /// Play music - C++ compatible
+    @_expose(Cxx) public static func playMusic(_ musicId: String) -> Bool {
+        Task { @MainActor in
+            AudioManagerSwift.shared.playMusic(path: musicId, loop: true)
+        }
+        return true
+    }
+    
+    /// Stop music - C++ compatible
+    @_expose(Cxx) public static func stopMusic() {
+        Task { @MainActor in
+            AudioManagerSwift.shared.stopMusic()
+        }
+    }
+    
+    /// Pause music - C++ compatible
+    @_expose(Cxx) public static func pauseMusic() {
+        Task { @MainActor in
+            AudioManagerSwift.shared.pauseMusic()
+        }
+    }
+    
+    /// Resume music - C++ compatible
+    @_expose(Cxx) public static func resumeMusic() {
+        Task { @MainActor in
+            AudioManagerSwift.shared.resumeMusic()
+        }
+    }
+    
+    /// Set master volume - C++ compatible
+    @_expose(Cxx) public static func setMasterVolume(_ volume: Float) {
+        Task { @MainActor in
+            let intVolume = Int(volume * 10.0)
+            AudioManagerSwift.shared.setMusicVolume(intVolume)
+            AudioManagerSwift.shared.setSoundVolume(intVolume)
+        }
+    }
+    
+    /// Set sound volume - C++ compatible
+    @_expose(Cxx) public static func setSoundVolume(_ volume: Float) {
+        Task { @MainActor in
+            let intVolume = Int(volume * 10.0)
+            AudioManagerSwift.shared.setSoundVolume(intVolume)
+        }
+    }
+    
+    /// Set music volume - C++ compatible
+    @_expose(Cxx) public static func setMusicVolume(_ volume: Float) {
+        Task { @MainActor in
+            let intVolume = Int(volume * 10.0)
+            AudioManagerSwift.shared.setMusicVolume(intVolume)
+        }
+    }
+    
+    /// Check if music is playing - C++ compatible
+    @_expose(Cxx) public static func isMusicPlaying() -> Bool {
+        return MainActor.assumeIsolated {
+            return AudioManagerSwift.shared.currentMusicFile != nil && AudioManagerSwift.shared.musicPlayerNode.isPlaying
+        }
+    }
+    
+    /// Set sound pitch - C++ compatible
+    @_expose(Cxx) public static func setSoundPitch(_ soundId: String, _ pitch: Float) {
+        Task { @MainActor in
+            AudioManagerSwift.shared.setSoundPitch(soundId, pitch)
+        }
+    }
+    
+    /// Set sound pan - C++ compatible
+    @_expose(Cxx) public static func setSoundPan(_ soundId: String, _ pan: Float) {
+        Task { @MainActor in
+            AudioManagerSwift.shared.setSoundPan(soundId, pan)
+        }
+    }
+    
+    /// Check if sound is playing - C++ compatible
+    @_expose(Cxx) public static func isSoundPlaying(_ soundId: String) -> Bool {
+        return MainActor.assumeIsolated {
+            return AudioManagerSwift.shared.isSoundPlaying(soundId)
+        }
+    }
+    
+    /// Set music looping - C++ compatible
+    @_expose(Cxx) public static func setMusicLooping(_ looping: Bool) {
+        Task { @MainActor in
+            AudioManagerSwift.shared.setMusicLooping(looping)
+        }
+    }
+    
+    /// Get music time length - C++ compatible
+    @_expose(Cxx) public static func getMusicTimeLength() -> Float {
+        return MainActor.assumeIsolated {
+            return AudioManagerSwift.shared.getMusicTimeLength()
+        }
+    }
+    
+    /// Get music time played - C++ compatible
+    @_expose(Cxx) public static func getMusicTimePlayed() -> Float {
+        return MainActor.assumeIsolated {
+            return AudioManagerSwift.shared.getMusicTimePlayed()
         }
     }
 }

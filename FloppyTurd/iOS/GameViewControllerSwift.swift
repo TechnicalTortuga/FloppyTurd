@@ -34,7 +34,7 @@ public class GameViewControllerSwift: UIViewController {
     public    override func viewDidLoad() {
         super.viewDidLoad()
         
-        print("[GameViewControllerSwift] 🚀 Starting game view controller...")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewControllerSwift] 🚀 Starting game view controller...")
         
         // Continue with normal initialization
         setupUI()
@@ -49,7 +49,7 @@ public class GameViewControllerSwift: UIViewController {
     public override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
-        print("[GameViewControllerSwift] viewWillAppear")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewControllerSwift] viewWillAppear")
         
         // Hide status bar for immersive gaming
         setupImmersiveMode()
@@ -63,7 +63,7 @@ public class GameViewControllerSwift: UIViewController {
     public override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         
-        print("[GameViewControllerSwift] viewDidDisappear")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewControllerSwift] viewDidDisappear")
         
         // Pause game when view disappears
         gameView?.pauseGameLoop()
@@ -77,7 +77,7 @@ public class GameViewControllerSwift: UIViewController {
     }
     
     deinit {
-        print("[GameViewControllerSwift] Deallocating view controller")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewControllerSwift] Deallocating view controller")
         Task { [weak self] in
             guard let self = self else { return }
             await self.cleanupResources()
@@ -87,20 +87,20 @@ public class GameViewControllerSwift: UIViewController {
     // MARK: - Setup
     
     private func setupUI() {
-        print("[GameViewControllerSwift] Setting up view controller...")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewControllerSwift] Setting up view controller...")
         
         // Show loading screen immediately
         showLoadingScreen()
         
         // Initialize Metal device
         guard let device = MTLCreateSystemDefaultDevice() else {
-            print("[GameViewControllerSwift] ERROR: Metal is not supported on this device")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[GameViewControllerSwift] ERROR: Metal is not supported on this device")
             showError(message: "Metal graphics are not supported on this device. The game requires Metal to run.")
             return
         }
         
         metalDevice = device
-        print("[GameViewControllerSwift] ✅ Metal device created: \(device.name)")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewControllerSwift] ✅ Metal device created: \(device.name)")
         
         // Initialize game asynchronously to avoid blocking UI
         initializeGameAsync()
@@ -122,7 +122,7 @@ public class GameViewControllerSwift: UIViewController {
     // MARK: - Game Initialization
     
     private func initializeGameAsync() {
-        print("[GameViewControllerSwift] Starting async game initialization...")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewControllerSwift] Starting async game initialization...")
         
         // Perform game initialization on a background queue
         Task.detached { [weak self] in
@@ -133,7 +133,7 @@ public class GameViewControllerSwift: UIViewController {
                 try await self.performGameInitialization()
                 await MainActor.run { self.onGameInitializationComplete() }
             } catch {
-                print("[GameViewControllerSwift] ERROR: Game initialization failed: \(error)")
+                traceLog(SWLogLevel.SWLOG_ERROR, "[GameViewControllerSwift] ERROR: Game initialization failed: \(error)")
                 await MainActor.run {
                     self.initializationError = error
                     self.onGameInitializationFailed(error: error)
@@ -144,17 +144,17 @@ public class GameViewControllerSwift: UIViewController {
     
     @MainActor
     private func performGameInitialization() async throws {
-        print("[GameViewControllerSwift] Performing game initialization...")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewControllerSwift] Performing game initialization...")
         
         // Add any heavy initialization work here
         // For now, we'll just simulate some work
         try await Task.sleep(nanoseconds: 1_000_000_000) // Simulate loading time
         
-        print("[GameViewControllerSwift] ✅ Game initialization complete")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewControllerSwift] ✅ Game initialization complete")
     }
     
     private func onGameInitializationComplete() {
-        print("[GameViewControllerSwift] Game initialization completed successfully")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewControllerSwift] Game initialization completed successfully")
         
         // Step 1: Create game view first (this sets up Metal)
         createGameView()
@@ -162,14 +162,14 @@ public class GameViewControllerSwift: UIViewController {
         // Step 2: The Swift architecture doesn't need SetGlobalGameView
         // Swift GameEngine handles this internally via GameViewSwift
         if let gv = self.gameView {
-            print("[GameViewControllerSwift] GameView ready: \(gv)")
+            traceLog(SWLogLevel.SWLOG_INFO, "[GameViewControllerSwift] GameView ready: \(gv)")
         }
         
         // Step 3: Initialize UIManager with screen dimensions
         initializeUIManager()
         
         // Step 4: Initialize Swift GameEngine (replaces C++ game_main)
-        print("[GameViewControllerSwift] Initializing Swift GameEngine...")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewControllerSwift] Initializing Swift GameEngine...")
         guard let gameView = self.gameView else {
             showError(message: "GameView not created")
             return
@@ -178,7 +178,7 @@ public class GameViewControllerSwift: UIViewController {
         // The GameEngine initialization is handled by GameViewSwift internally
         // Just start the game loop
         gameView.startGameLoop()
-        print("[GameViewControllerSwift] ✅ Swift GameEngine started successfully")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewControllerSwift] ✅ Swift GameEngine started successfully")
         
         // Step 5: Hide loading screen and start the game
         hideLoadingScreen()
@@ -186,7 +186,7 @@ public class GameViewControllerSwift: UIViewController {
     }
     
     private func onGameInitializationFailed(error: Error) {
-        print("[GameViewControllerSwift] Game initialization failed: \(error)")
+        traceLog(SWLogLevel.SWLOG_ERROR, "[GameViewControllerSwift] Game initialization failed: \(error)")
         
         hideLoadingScreen()
         showError(message: "Failed to initialize the game: \(error.localizedDescription)")
@@ -195,7 +195,7 @@ public class GameViewControllerSwift: UIViewController {
     // MARK: - UIManager Setup
     
     private func initializeUIManager() {
-        print("[GameViewControllerSwift] Initializing UIManager with screen dimensions...")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewControllerSwift] Initializing UIManager with screen dimensions...")
         
         let bounds = view.bounds
         let nativeBounds = UIScreen.main.nativeBounds
@@ -218,8 +218,8 @@ public class GameViewControllerSwift: UIViewController {
             height: safeAreaPoints.size.height * nativeScale
         )
         
-        print("[GameViewControllerSwift] Screen dimensions: points=\(sizePoints.width)x\(sizePoints.height), pixels=\(sizePixels.width)x\(sizePixels.height)")
-        print("[GameViewControllerSwift] Safe area: points=\(safeAreaPoints), pixels=\(safeAreaPixels)")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewControllerSwift] Screen dimensions: points=\(sizePoints.width)x\(sizePoints.height), pixels=\(sizePixels.width)x\(sizePixels.height)")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewControllerSwift] Safe area: points=\(safeAreaPoints), pixels=\(safeAreaPixels)")
         
         // Initialize UIManager using Swift architecture
         let uiManager = UIManagerSwift.shared
@@ -242,24 +242,24 @@ public class GameViewControllerSwift: UIViewController {
         // Update screen info in Swift UIManager (automatically handles initialization)
         uiManager.updateScreenInfo()
         
-        print("[GameViewControllerSwift] ✅ UIManagerSwift updated successfully")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewControllerSwift] ✅ UIManagerSwift updated successfully")
     }
     
     // MARK: - Game View Management
     
     private func createGameView() {
         guard let device = metalDevice else {
-            print("[GameViewControllerSwift] ERROR: No Metal device available")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[GameViewControllerSwift] ERROR: No Metal device available")
             return
         }
         
-        print("[GameViewControllerSwift] Creating game view...")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewControllerSwift] Creating game view...")
         
         // Create the game view
         gameView = GameViewSwift(frame: view.bounds, metalDevice: device)
         
         guard let gameView = gameView else {
-            print("[GameViewControllerSwift] ERROR: Failed to create game view")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[GameViewControllerSwift] ERROR: Failed to create game view")
             showError(message: "Failed to create the game view")
             return
         }
@@ -276,27 +276,27 @@ public class GameViewControllerSwift: UIViewController {
             gameView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
         
-        print("[GameViewControllerSwift] ✅ Game view created and added to hierarchy")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewControllerSwift] ✅ Game view created and added to hierarchy")
     }
     
     private func startGame() {
         guard let gameView = gameView else {
-            print("[GameViewControllerSwift] ERROR: No game view to start")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[GameViewControllerSwift] ERROR: No game view to start")
             return
         }
         
-        print("[GameViewControllerSwift] Starting game...")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewControllerSwift] Starting game...")
         
         gameView.startGameLoop()
         isGameLoaded = true
         
-        print("[GameViewControllerSwift] ✅ Game started successfully")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewControllerSwift] ✅ Game started successfully")
     }
     
     // MARK: - Loading Screen Management
     
     private func showLoadingScreen() {
-        print("[GameViewControllerSwift] Showing loading screen...")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewControllerSwift] Showing loading screen...")
         
         loadingViewController = LoadingViewController()
         
@@ -312,7 +312,7 @@ public class GameViewControllerSwift: UIViewController {
     }
     
     private func hideLoadingScreen() {
-        print("[GameViewControllerSwift] Hiding loading screen...")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewControllerSwift] Hiding loading screen...")
         
         guard let loadingVC = loadingViewController else { return }
         
@@ -329,7 +329,7 @@ public class GameViewControllerSwift: UIViewController {
     // MARK: - Error Handling
     
     private func showError(message: String) {
-        print("[GameViewControllerSwift] Showing error: \(message)")
+        traceLog(SWLogLevel.SWLOG_ERROR, "[GameViewControllerSwift] Showing error: \(message)")
         
         let alert = UIAlertController(
             title: "FloppyTurd Error",
@@ -349,7 +349,7 @@ public class GameViewControllerSwift: UIViewController {
     }
     
     private func retryInitialization() {
-        print("[GameViewControllerSwift] Retrying initialization...")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewControllerSwift] Retrying initialization...")
         Task {
             await cleanupResources()
             setupUI()
@@ -357,7 +357,7 @@ public class GameViewControllerSwift: UIViewController {
     }
     
     private func exitApplication() {
-        print("[GameViewControllerSwift] Exiting application...")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewControllerSwift] Exiting application...")
         Task {
             await cleanupResources()
             exit(0)
@@ -367,12 +367,12 @@ public class GameViewControllerSwift: UIViewController {
     // MARK: - App Lifecycle Integration
     
     @objc private func applicationDidEnterBackground() {
-        print("[GameViewControllerSwift] Application entering background")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewControllerSwift] Application entering background")
         gameView?.applicationDidEnterBackground()
     }
     
     @objc private func applicationWillEnterForeground() {
-        print("[GameViewControllerSwift] Application entering foreground")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewControllerSwift] Application entering foreground")
         gameView?.applicationWillEnterForeground()
     }
     
@@ -425,7 +425,7 @@ public class GameViewControllerSwift: UIViewController {
     public override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         
-        print("[GameViewControllerSwift] Received memory warning")
+        traceLog(SWLogLevel.SWLOG_WARNING, "[GameViewControllerSwift] Received memory warning")
         
         // Let the game engine handle memory cleanup
         GameEngine.handleMemoryWarning()
@@ -433,7 +433,7 @@ public class GameViewControllerSwift: UIViewController {
     
     @MainActor
     private func cleanupResources() async {
-        print("[GameViewControllerSwift] Cleaning up resources...")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewControllerSwift] Cleaning up resources...")
         
         // Remove notifications
         NotificationCenter.default.removeObserver(self)
@@ -456,7 +456,7 @@ public class GameViewControllerSwift: UIViewController {
         isGameLoaded = false
         initializationError = nil
         
-        print("[GameViewControllerSwift] ✅ Resource cleanup complete")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewControllerSwift] ✅ Resource cleanup complete")
     }
     
     // MARK: - Public API

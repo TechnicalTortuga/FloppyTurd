@@ -19,15 +19,15 @@ import UIKit
 // Manual main entry point (if @main attribute is not used)
 @_cdecl("main")
 func main(argc: Int32, argv: UnsafeMutablePointer<UnsafeMutablePointer<CChar>?>) -> Int32 {
-    print("[main_ios_swift] ========================================")
-    print("[main_ios_swift] iOS main() STARTING (Swift)")
-    print("[main_ios_swift] argc=\(argc)")
-    print("[main_ios_swift] ========================================")
+    traceLog(SWLogLevel.SWLOG_INFO, "[main_ios_swift] ========================================")
+    traceLog(SWLogLevel.SWLOG_INFO, "[main_ios_swift] iOS main() STARTING (Swift)")
+    traceLog(SWLogLevel.SWLOG_INFO, "[main_ios_swift] argc=\(argc)")
+    traceLog(SWLogLevel.SWLOG_INFO, "[main_ios_swift] ========================================")
     
     return autoreleasepool {
-        print("[main_ios_swift] About to call UIApplicationMain (Swift)")
-        let result = UIApplicationMain(argc, argv, nil, NSStringFromClass(AppDelegateSwift.self))
-        print("[main_ios_swift] UIApplicationMain returned: \(result)")
+        traceLog(SWLogLevel.SWLOG_INFO, "[main_ios_swift] About to call UIApplicationMain (Swift)")
+    let result = UIApplicationMain(argc, argv, nil, NSStringFromClass(AppDelegateSwift.self))
+    traceLog(SWLogLevel.SWLOG_INFO, "[main_ios_swift] UIApplicationMain returned: \(result)")
         return result
     }
 }

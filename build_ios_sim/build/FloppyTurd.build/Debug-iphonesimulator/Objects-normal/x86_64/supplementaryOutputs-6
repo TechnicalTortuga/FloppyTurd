@@ -1,0 +1,18 @@
+"/Users/aimac/Development/FloppyTurd/FloppyTurd/GameEngine/UI/UIFrameworkSwift.swift":
+  const-values: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UIFrameworkSwift.swiftconstvalues"
+  swift-dependencies: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UIFrameworkSwift.swiftdeps"
+  diagnostics: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UIFrameworkSwift.dia"
+  dependencies: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UIFrameworkSwift.d"
+  object: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UIFrameworkSwift.o"
+"/Users/aimac/Development/FloppyTurd/FloppyTurd/GameEngine/UI/UIManagerSwift.swift":
+  const-values: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UIManagerSwift.swiftconstvalues"
+  swift-dependencies: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UIManagerSwift.swiftdeps"
+  dependencies: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UIManagerSwift.d"
+  object: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UIManagerSwift.o"
+  diagnostics: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UIManagerSwift.dia"
+"/Users/aimac/Development/FloppyTurd/FloppyTurd/GameEngine/Resources/ResourceManagerSwift.swift":
+  const-values: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/ResourceManagerSwift.swiftconstvalues"
+  swift-dependencies: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/ResourceManagerSwift.swiftdeps"
+  dependencies: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/ResourceManagerSwift.d"
+  object: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/ResourceManagerSwift.o"
+  diagnostics: "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/ResourceManagerSwift.dia"

@@ -1,5 +1,4 @@
 #include "ResourceManager.h"
-#include "PlatformTypes.h"
 #include "PlatformAPI.h"
 #include <iostream>
 #include <filesystem>

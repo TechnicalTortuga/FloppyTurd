@@ -60,7 +60,7 @@ public class GameViewSwift: MTKView {
     public init(frame: CGRect, metalDevice: MTLDevice) {
         super.init(frame: frame, device: metalDevice)
         
-        print("[GameViewSwift] Initializing with frame: \(frame)")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewSwift] Initializing with frame: \(frame)")
         setupView()
     }
     
@@ -70,7 +70,7 @@ public class GameViewSwift: MTKView {
     }
     
     deinit {
-        print("[GameViewSwift] Deallocating game view")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewSwift] Deallocating game view")
         Task { [weak self] in
             guard let self = self else { return }
             await self.shutdown()
@@ -79,10 +79,10 @@ public class GameViewSwift: MTKView {
     
     /// Setup the view and initialize all game systems
     private func setupView() {
-        print("[GameViewSwift] Setting up view...")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewSwift] Setting up view...")
         
         guard let metalDevice = device else {
-            print("[GameViewSwift] ERROR: No Metal device available")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[GameViewSwift] ERROR: No Metal device available")
             gameState = .error
             return
         }
@@ -103,7 +103,7 @@ public class GameViewSwift: MTKView {
         
         // Initialize core engine systems
         if !initializeEngineComponents(device: metalDevice) {
-            print("[GameViewSwift] ERROR: Failed to initialize engine components")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[GameViewSwift] ERROR: Failed to initialize engine components")
             gameState = .error
             return
         }
@@ -112,16 +112,16 @@ public class GameViewSwift: MTKView {
         isInitialized = true
         gameState = .running
         
-        print("[GameViewSwift] ✅ View setup complete, starting game loop")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewSwift] ✅ View setup complete, starting game loop")
     }
     
     /// Initialize all engine components
     private func initializeEngineComponents(device: MTLDevice) -> Bool {
-        print("[GameViewSwift] Initializing engine components...")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewSwift] Initializing engine components...")
         
         // Create command queue
         guard let commandQueue = device.makeCommandQueue() else {
-            print("[GameViewSwift] ERROR: Failed to create command queue")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[GameViewSwift] ERROR: Failed to create command queue")
             return false
         }
         _ = commandQueue
@@ -130,23 +130,19 @@ public class GameViewSwift: MTKView {
         metalRenderer = MetalRendererSwift()
         guard let renderer = metalRenderer,
               renderer.initialize(view: self) else {
-            print("[GameViewSwift] ERROR: Failed to initialize Metal renderer")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[GameViewSwift] ERROR: Failed to initialize Metal renderer")
             return false
         }
         
-        // Set the shared renderer instance for the C++ bridge
-        CppInteropBridge.shared.setSharedRenderer(Unmanaged.passUnretained(renderer).toOpaque())
-
         // Initialize text renderer
         textRenderer = MetalTextRendererSwift()
         guard let textRenderer = textRenderer,
               textRenderer.initialize(device: device, view: self) else {
-            print("[GameViewSwift] ERROR: Failed to initialize text renderer")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[GameViewSwift] ERROR: Failed to initialize text renderer")
             return false
         }
         
-        // Set the shared text renderer instance for the C++ bridge
-        CppInteropBridge.shared.setSharedTextRenderer(Unmanaged.passUnretained(textRenderer).toOpaque())
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewSwift] ✅ C++ game engine initialized successfully")
         
         // Initialize main game engine via static methods
         GameEngine.initialize(view: self, 
@@ -157,7 +153,7 @@ public class GameViewSwift: MTKView {
         // Create a simple game engine wrapper for instance access
         gameEngine = GameEngine()
         
-        print("[GameViewSwift] ✅ All engine components initialized")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewSwift] ✅ All engine components initialized")
         return true
     }
     
@@ -166,7 +162,7 @@ public class GameViewSwift: MTKView {
     /// Start the game loop
     public func startGameLoop() {
         guard isInitialized else {
-            print("[GameViewSwift] WARNING: Cannot start game loop - not initialized")
+            traceLog(SWLogLevel.SWLOG_WARNING, "[GameViewSwift] WARNING: Cannot start game loop - not initialized")
             return
         }
         
@@ -177,7 +173,7 @@ public class GameViewSwift: MTKView {
         // Start the global game engine loop
         GameEngine.startGameLoop()
         
-        print("[GameViewSwift] ✅ Game loop started")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewSwift] ✅ Game loop started")
     }
     
     /// Pause the game loop
@@ -192,7 +188,7 @@ public class GameViewSwift: MTKView {
         // Pause the global game engine loop
         GameEngine.stopGameLoop()
         
-        print("[GameViewSwift] Game loop paused")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewSwift] Game loop paused")
     }
     
     /// Resume the game loop
@@ -210,7 +206,7 @@ public class GameViewSwift: MTKView {
         // Resume the global game engine loop
         GameEngine.startGameLoop()
         
-        print("[GameViewSwift] Game loop resumed after \(pauseDuration)s")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewSwift] Game loop resumed after \(pauseDuration)s")
     }
     
     /// Stop the game loop
@@ -222,7 +218,7 @@ public class GameViewSwift: MTKView {
         // Stop the global game engine loop
         GameEngine.stopGameLoop()
         
-        print("[GameViewSwift] Game loop stopped")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewSwift] Game loop stopped")
     }
     
     // MARK: - Touch Handling (Modern Swift approach)
@@ -245,7 +241,7 @@ public class GameViewSwift: MTKView {
             // Send to game engine
             GameEngine.touchesBegan(Set([touch]), in: self)
             
-            print("[GameViewSwift] Touch began: ID=\(touchID), location=\(gameLocation)")
+            traceLog(SWLogLevel.SWLOG_DEBUG, "[GameViewSwift] Touch began: ID=\(touchID), location=\(gameLocation)")
         }
     }
     
@@ -285,7 +281,7 @@ public class GameViewSwift: MTKView {
             // Remove from tracking
             activeTouches.removeValue(forKey: touch)
             
-            print("[GameViewSwift] Touch ended: ID=\(touchID), location=\(gameLocation)")
+            traceLog(SWLogLevel.SWLOG_DEBUG, "[GameViewSwift] Touch ended: ID=\(touchID), location=\(gameLocation)")
         }
     }
     
@@ -323,7 +319,7 @@ public class GameViewSwift: MTKView {
     
     /// Handle app entering background
     public func applicationDidEnterBackground() {
-        print("[GameViewSwift] Application entering background")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewSwift] Application entering background")
         pauseGameLoop()
         
         // Notify global game engine
@@ -332,7 +328,7 @@ public class GameViewSwift: MTKView {
     
     /// Handle app entering foreground
     public func applicationWillEnterForeground() {
-        print("[GameViewSwift] Application entering foreground")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewSwift] Application entering foreground")
         resumeGameLoop()
         
         // Notify global game engine
@@ -342,7 +338,7 @@ public class GameViewSwift: MTKView {
     /// Shutdown all systems
     @MainActor
     private func shutdown() async {
-        print("[GameViewSwift] Shutting down game systems...")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewSwift] Shutting down game systems...")
         
         stopGameLoop()
         
@@ -365,7 +361,7 @@ public class GameViewSwift: MTKView {
         gameState = .stopped
         isInitialized = false
         
-        print("[GameViewSwift] ✅ Shutdown complete")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewSwift] ✅ Shutdown complete")
     }
     
     // MARK: - Public API
@@ -401,13 +397,20 @@ public class GameViewSwift: MTKView {
 extension GameViewSwift: MTKViewDelegate {
     
     public func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
-        print("[GameViewSwift] Drawable size changed: \(size)")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameViewSwift] Drawable size changed: \(size)")
         
         // Update renderer viewport
         metalRenderer?.updateViewport(size: size)
         
-        // Notify global game engine of size change
-        GameEngine.handleScreenSizeChanged(size: size, safeAreaInsets: safeAreaInsets)
+        // Notify global game engine of size change via C++ bridge
+        GameEngineCppBridge.handleScreenSizeChanged(
+            width: Float(size.width),
+            height: Float(size.height),
+            topInset: Float(safeAreaInsets.top),
+            leftInset: Float(safeAreaInsets.left),
+            bottomInset: Float(safeAreaInsets.bottom),
+            rightInset: Float(safeAreaInsets.right)
+        )
     }
     
     public func draw(in view: MTKView) {

@@ -140,8 +140,8 @@ public final class ResourceManagerSwift: ObservableObject {
     private var loadingTasks: [String: Task<Bool, Error>] = [:]
     
     // MARK: - Bundle & Paths
-    private let bundle = Bundle.main
-    private var resourcesPath: String = ""
+    internal let bundle = Bundle.main
+    internal var resourcesPath: String = ""
     
     // MARK: - Combine
     private var cancellables = Set<AnyCancellable>()
@@ -158,11 +158,11 @@ public final class ResourceManagerSwift: ObservableObject {
         } else {
             resourcesPath = ""
         }
-        print("[ResourceManagerSwift] 📁 Resources path: \(resourcesPath)")
+        traceLog(SWLogLevel.SWLOG_INFO, "[ResourceManagerSwift] 📁 Resources path: \(resourcesPath)")
     }
     
     public func initialize(quality: ResourceQuality = .auto, metalDevice: MTLDevice? = nil) {
-        print("[ResourceManagerSwift] 🚀 Initializing with quality: \(quality)")
+        traceLog(SWLogLevel.SWLOG_INFO, "[ResourceManagerSwift] 🚀 Initializing with quality: \(quality)")
         
         self.metalDevice = metalDevice
         
@@ -173,17 +173,17 @@ public final class ResourceManagerSwift: ObservableObject {
             currentQuality = quality
         }
         
-        print("[ResourceManagerSwift] 📊 Detected quality level: \(currentQuality)")
+        traceLog(SWLogLevel.SWLOG_INFO, "[ResourceManagerSwift] 📊 Detected quality level: \(currentQuality)")
         
         // Register default resources
         registerDefaultResources()
         
         isInitialized = true
-        print("[ResourceManagerSwift] ✅ Resource manager initialized")
+        traceLog(SWLogLevel.SWLOG_INFO, "[ResourceManagerSwift] ✅ Resource manager initialized")
     }
     
     public func shutdown() {
-        print("[ResourceManagerSwift] 🛑 Shutting down resource manager...")
+        traceLog(SWLogLevel.SWLOG_INFO, "[ResourceManagerSwift] 🛑 Shutting down resource manager...")
         
         // Cancel all loading tasks
         loadingTasks.values.forEach { $0.cancel() }
@@ -195,12 +195,12 @@ public final class ResourceManagerSwift: ObservableObject {
         isInitialized = false
         cancellables.removeAll()
         
-        print("[ResourceManagerSwift] ✅ Resource manager shutdown complete")
+        traceLog(SWLogLevel.SWLOG_INFO, "[ResourceManagerSwift] ✅ Resource manager shutdown complete")
     }
     
     // MARK: - Resource Registration
     private func registerDefaultResources() {
-        print("[ResourceManagerSwift] 📋 Registering default resources...")
+        traceLog(SWLogLevel.SWLOG_INFO, "[ResourceManagerSwift] 📋 Registering default resources...")
         
         // Register common game resources
         registerResource(id: "font_default", relativePath: "fonts/default.ttf", type: .font)
@@ -213,7 +213,7 @@ public final class ResourceManagerSwift: ObservableObject {
         registerResource(id: "music_game", relativePath: "music/game.mp3", type: .music, loadingMode: .stream)
         
         // Texture resources - these will be detected automatically when requested
-        print("[ResourceManagerSwift] ✅ Default resources registered")
+        traceLog(SWLogLevel.SWLOG_INFO, "[ResourceManagerSwift] ✅ Default resources registered")
     }
     
     public func registerResource(id: String, relativePath: String, type: ResourceType, 
@@ -221,7 +221,7 @@ public final class ResourceManagerSwift: ObservableObject {
         let resource = ResourceInfo(id: id, relativePath: relativePath, type: type, 
                                    loadingMode: loadingMode, minQuality: minQuality)
         resourceRegistry[id] = resource
-        print("[ResourceManagerSwift] 📝 Registered resource: \(id) -> \(relativePath)")
+        traceLog(SWLogLevel.SWLOG_INFO, "[ResourceManagerSwift] 📝 Registered resource: \(id) -> \(relativePath)")
     }
     
     // MARK: - Resource Loading - Textures
@@ -248,19 +248,19 @@ public final class ResourceManagerSwift: ObservableObject {
     #if canImport(UIKit)
     private func loadTextureSync(id: String) -> Bool {
         guard let device = metalDevice else {
-            print("[ResourceManagerSwift] ❌ No Metal device available for texture loading")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[ResourceManagerSwift] ❌ No Metal device available for texture loading")
             return false
         }
         guard let path = resolveResourcePath(id: id, type: .texture) else {
-            print("[ResourceManagerSwift] ❌ Failed to resolve texture path: \(id)")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[ResourceManagerSwift] ❌ Failed to resolve texture path: \(id)")
             return false
         }
         guard let image = UIImage(contentsOfFile: path) else {
-            print("[ResourceManagerSwift] ❌ Failed to load image: \(path)")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[ResourceManagerSwift] ❌ Failed to load image: \(path)")
             return false
         }
         guard let cgImage = image.cgImage else {
-            print("[ResourceManagerSwift] ❌ Failed to get CGImage from UIImage")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[ResourceManagerSwift] ❌ Failed to get CGImage from UIImage")
             return false
         }
         // Create Metal texture
@@ -278,10 +278,10 @@ public final class ResourceManagerSwift: ObservableObject {
             textureCache[id] = cachedTexture
             // Update memory tracking
             totalMemoryUsage += memoryUsage
-            print("[ResourceManagerSwift] ✅ Loaded texture: \(id) (\(texture.width)x\(texture.height))")
+            traceLog(SWLogLevel.SWLOG_INFO, "[ResourceManagerSwift] ✅ Loaded texture: \(id) (\(texture.width)x\(texture.height))")
             return true
         } catch {
-            print("[ResourceManagerSwift] ❌ Failed to create Metal texture: \(error)")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[ResourceManagerSwift] ❌ Failed to create Metal texture: \(error)")
             return false
         }
     }
@@ -312,7 +312,7 @@ public final class ResourceManagerSwift: ObservableObject {
         // Try to get registered path
         if let info = resourceRegistry[id], info.type == .font {
             guard let path = resolveResourcePath(id: id, type: .font) else {
-                print("[ResourceManagerSwift] ❌ Failed to resolve font path: \(id)")
+                traceLog(SWLogLevel.SWLOG_ERROR, "[ResourceManagerSwift] ❌ Failed to resolve font path: \(id)")
                 return false
             }
             // Load custom font
@@ -320,7 +320,7 @@ public final class ResourceManagerSwift: ObservableObject {
                 let cached = CachedResource(resource: font, path: path, memoryUsage: 1024) // Estimate
                 fontCache[fontKey] = cached
                 totalMemoryUsage += 1024
-                print("[ResourceManagerSwift] ✅ Loaded custom font: \(id)")
+                traceLog(SWLogLevel.SWLOG_INFO, "[ResourceManagerSwift] ✅ Loaded custom font: \(id)")
                 return true
             }
         }
@@ -344,7 +344,7 @@ public final class ResourceManagerSwift: ObservableObject {
         var error: Unmanaged<CFError>?
         if !CTFontManagerRegisterGraphicsFont(cgFont, &error) {
             if let error = error?.takeRetainedValue() {
-                print("[ResourceManagerSwift] ⚠️ Font registration warning: \(error)")
+                traceLog(SWLogLevel.SWLOG_WARNING, "[ResourceManagerSwift] ⚠️ Font registration warning: \(error)")
             }
         }
         if let fontName = cgFont.postScriptName as String? {
@@ -395,7 +395,7 @@ public final class ResourceManagerSwift: ObservableObject {
     
     private func loadSoundSync(id: String) -> Bool {
         guard let path = resolveResourcePath(id: id, type: .sound) else {
-            print("[ResourceManagerSwift] ❌ Failed to resolve sound path: \(id)")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[ResourceManagerSwift] ❌ Failed to resolve sound path: \(id)")
             return false
         }
         
@@ -404,17 +404,17 @@ public final class ResourceManagerSwift: ObservableObject {
             let cached = CachedResource(resource: data, path: path, memoryUsage: data.count)
             soundCache[id] = cached
             totalMemoryUsage += data.count
-            print("[ResourceManagerSwift] ✅ Loaded sound: \(id) (\(data.count) bytes)")
+            traceLog(SWLogLevel.SWLOG_INFO, "[ResourceManagerSwift] ✅ Loaded sound: \(id) (\(data.count) bytes)")
             return true
         } catch {
-            print("[ResourceManagerSwift] ❌ Failed to load sound \(id): \(error)")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[ResourceManagerSwift] ❌ Failed to load sound \(id): \(error)")
             return false
         }
     }
     
     private func loadMusicSync(id: String) -> Bool {
         guard let path = resolveResourcePath(id: id, type: .music) else {
-            print("[ResourceManagerSwift] ❌ Failed to resolve music path: \(id)")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[ResourceManagerSwift] ❌ Failed to resolve music path: \(id)")
             return false
         }
         
@@ -423,10 +423,10 @@ public final class ResourceManagerSwift: ObservableObject {
             let cached = CachedResource(resource: data, path: path, memoryUsage: data.count)
             musicCache[id] = cached
             totalMemoryUsage += data.count
-            print("[ResourceManagerSwift] ✅ Loaded music: \(id) (\(data.count) bytes)")
+            traceLog(SWLogLevel.SWLOG_INFO, "[ResourceManagerSwift] ✅ Loaded music: \(id) (\(data.count) bytes)")
             return true
         } catch {
-            print("[ResourceManagerSwift] ❌ Failed to load music \(id): \(error)")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[ResourceManagerSwift] ❌ Failed to load music \(id): \(error)")
             return false
         }
     }
@@ -450,7 +450,7 @@ public final class ResourceManagerSwift: ObservableObject {
             }
         }
         
-        print("[ResourceManagerSwift] ❌ Could not resolve path for resource: \(id)")
+        traceLog(SWLogLevel.SWLOG_ERROR, "[ResourceManagerSwift] ❌ Could not resolve path for resource: \(id)")
         return nil
     }
     
@@ -549,7 +549,7 @@ public final class ResourceManagerSwift: ObservableObject {
         
         totalMemoryUsage = 0
         
-        print("[ResourceManagerSwift] 🗑️ Cleared all caches (freed \(previousMemory) bytes)")
+        traceLog(SWLogLevel.SWLOG_INFO, "[ResourceManagerSwift] 🗑️ Cleared all caches (freed \(previousMemory) bytes)")
     }
     
     public func trimCache(maxMemoryMB: Int = 50) {
@@ -557,7 +557,7 @@ public final class ResourceManagerSwift: ObservableObject {
         
         guard totalMemoryUsage > maxBytes else { return }
         
-        print("[ResourceManagerSwift] ✂️ Trimming cache from \(totalMemoryUsage) to \(maxBytes) bytes")
+        traceLog(SWLogLevel.SWLOG_INFO, "[ResourceManagerSwift] ✂️ Trimming cache from \(totalMemoryUsage) to \(maxBytes) bytes")
         
         // Implement LRU eviction
         var freedMemory = 0
@@ -571,7 +571,7 @@ public final class ResourceManagerSwift: ObservableObject {
         }
         
         totalMemoryUsage -= freedMemory
-        print("[ResourceManagerSwift] ✅ Cache trimmed, freed \(freedMemory) bytes")
+        traceLog(SWLogLevel.SWLOG_INFO, "[ResourceManagerSwift] ✅ Cache trimmed, freed \(freedMemory) bytes")
     }
     
     // MARK: - Utility Methods
@@ -598,30 +598,84 @@ public final class ResourceManagerSwift: ObservableObject {
         // Reset loading state
         resourceRegistry[id]?.isLoaded = false
         
-        print("[ResourceManagerSwift] 🔄 Resource marked for reload: \(id)")
+        traceLog(SWLogLevel.SWLOG_INFO, "[ResourceManagerSwift] 🔄 Resource marked for reload: \(id)")
     }
     
     public func handleMemoryWarning() {
-        print("[ResourceManagerSwift] ⚠️ Handling memory warning")
+        traceLog(SWLogLevel.SWLOG_WARNING, "[ResourceManagerSwift] ⚠️ Handling memory warning")
         trimCache(maxMemoryMB: maxCacheMemoryMB / 2) // More aggressive trimming
     }
     
     // MARK: - Level Management
     public func preloadLevel(_ levelIndex: Int) {
-        print("[ResourceManagerSwift] 📦 Preloading level \(levelIndex)...")
+        traceLog(SWLogLevel.SWLOG_INFO, "[ResourceManagerSwift] 📦 Preloading level \(levelIndex)...")
         
         // This would be implemented based on your level resource definitions
         // For now, just a placeholder
         
-        print("[ResourceManagerSwift] ✅ Level \(levelIndex) preloaded")
+        traceLog(SWLogLevel.SWLOG_INFO, "[ResourceManagerSwift] ✅ Level \(levelIndex) preloaded")
     }
     
     public func unloadLevel(_ levelIndex: Int) {
-        print("[ResourceManagerSwift] 📤 Unloading level \(levelIndex)...")
+        traceLog(SWLogLevel.SWLOG_INFO, "[ResourceManagerSwift] 📤 Unloading level \(levelIndex)...")
         
         // Remove level-specific resources from cache
         // This would be implemented based on your level resource tagging system
         
-        print("[ResourceManagerSwift] ✅ Level \(levelIndex) unloaded")
+        traceLog(SWLogLevel.SWLOG_INFO, "[ResourceManagerSwift] ✅ Level \(levelIndex) unloaded")
+    }
+    
+}
+
+// MARK: - C++ Interop Bridge
+/// Bridge class for C++ interoperability with ResourceManagerSwift
+@_expose(Cxx)
+public class ResourceManagerCppBridge {
+    
+    /// Get resource path - C++ compatible
+    @_expose(Cxx) nonisolated public static func getResourcePath(_ resourceName: String) -> String {
+        return MainActor.assumeIsolated {
+            let manager = ResourceManagerSwift.shared
+            if let path = manager.bundle.path(forResource: resourceName, ofType: nil) {
+                return path
+            }
+            // Try with common extensions
+            let extensions = ["png", "jpg", "wav", "mp3", "ttf", "json"]
+            for ext in extensions {
+                if let path = manager.bundle.path(forResource: resourceName, ofType: ext) {
+                    return path
+                }
+            }
+            return manager.resourcesPath + "/" + resourceName
+        }
+    }
+    
+    /// Get save data path - C++ compatible
+    @_expose(Cxx) nonisolated public static func getSaveDataPath(_ fileName: String) -> String {
+        let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.path ?? ""
+        return documentsPath + "/" + fileName
+    }
+    
+    /// Get documents directory - C++ compatible
+    @_expose(Cxx) nonisolated public static func getDocumentsDirectory() -> String {
+        return FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.path ?? ""
+    }
+    
+    /// Get application support directory - C++ compatible
+    @_expose(Cxx) nonisolated public static func getApplicationSupportDirectory() -> String {
+        return FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?.path ?? ""
+    }
+    
+    /// Get bundle path - C++ compatible
+    @_expose(Cxx) nonisolated public static func getBundlePath() -> String {
+        return Bundle.main.bundlePath
+    }
+    
+    /// Check if resource exists - C++ compatible
+    @_expose(Cxx) nonisolated public static func resourceExists(_ resourceName: String) -> Bool {
+        return MainActor.assumeIsolated {
+            let manager = ResourceManagerSwift.shared
+            return manager.bundle.path(forResource: resourceName, ofType: nil) != nil
+        }
     }
 }

@@ -80,7 +80,9 @@ set(SOURCES ${CPP_SOURCES} ${SWIFT_SOURCES} ${OBJC_SOURCES})
 # Note: These files were already removed, so these commands are safe to keep
 # but they won't do anything if the files don't exist
 list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/PlayerOLD.cpp)
-list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/GameLog.cpp)
+# GameLog.cpp is needed for all platforms including iOS
+# list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/GameLog.cpp)
+# LogManager.cpp removed - using Swift LogManagerSwift for iOS, raylib TraceLog for desktop
 list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/LogManager.cpp)
 
 # Add new files that were created during refactor
@@ -113,7 +115,6 @@ list(APPEND SOURCES
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/FontCache.mm
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalShader.mm
             ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalTextRenderer.mm
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/UICoordinateSystem.mm
         )
     
     # Remove main.cpp from iOS builds to avoid duplicate main functions
@@ -140,7 +141,6 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
     # Remove ONLY raylib-dependent desktop components
     list(REMOVE_ITEM SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/Window.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/TouchControls.cpp
     )
     
     # Keep cross-platform systems (now Swift-bridged)
@@ -207,7 +207,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
     )
     
     # Swift runtime libraries will be linked automatically by Xcode
-    # Remove explicit Swift library linking to avoid simulator/device conflicts
+    # Set proper Swift library search paths and linking flags
     
     target_compile_definitions(${PROJECT_NAME} PRIVATE 
         PLATFORM_IOS
@@ -222,17 +222,15 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
     )
     
     # Swift standard library embedding and linking
+    # Based on Apple documentation and community solutions for Swift/C++ interop
     set_target_properties(${PROJECT_NAME} PROPERTIES
         XCODE_ATTRIBUTE_ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES YES
         XCODE_ATTRIBUTE_EMBEDDED_CONTENT_CONTAINS_SWIFT YES
         XCODE_ATTRIBUTE_LD_RUNPATH_SEARCH_PATHS "@executable_path/Frameworks @loader_path/Frameworks"
         XCODE_ATTRIBUTE_SWIFT_OBJC_BRIDGING_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/FloppyTurd-Bridging-Header.h"
-    )
-    
-    # Ensure Swift standard library is linked
-    set_target_properties(${PROJECT_NAME} PROPERTIES
-        XCODE_ATTRIBUTE_ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES YES
-        XCODE_ATTRIBUTE_EMBEDDED_CONTENT_CONTAINS_SWIFT YES
+        XCODE_ATTRIBUTE_LIBRARY_SEARCH_PATHS "$(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME) $(SDKROOT)/usr/lib/swift $(TOOLCHAIN_DIR)/usr/lib/swift-5.0/$(PLATFORM_NAME) $(inherited)"
+        XCODE_ATTRIBUTE_OTHER_LDFLAGS "$(inherited) -lswiftCore -lswiftFoundation -lswiftUIKit -lswiftDispatch -lswiftObjectiveC -lswiftCoreFoundation -lswiftDarwin -lswiftCoreGraphics -lswiftMetal -lswiftQuartzCore -lswiftAVFoundation -lswiftCoreAudio"
+        XCODE_ATTRIBUTE_SWIFT_INCLUDE_PATHS "$(TOOLCHAIN_DIR)/usr/lib/swift $(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME) $(inherited)"
     )
     
     # Bundle resources - use asset catalogs for proper iOS packaging

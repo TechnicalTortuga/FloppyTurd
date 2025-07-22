@@ -34,6 +34,23 @@ void SetGameInstance(Game* instance)
     g_gameInstance = instance;
 }
 
+// Game method wrapper functions for Swift interop
+extern "C" {
+void Game_UpdateFrame(void* gameInstance, float deltaTime)
+{
+    if (gameInstance) {
+        static_cast<Game*>(gameInstance)->UpdateFrame(deltaTime);
+    }
+}
+
+void Game_RenderFrame(void* gameInstance)
+{
+    if (gameInstance) {
+        static_cast<Game*>(gameInstance)->RenderFrame();
+    }
+}
+}
+
 // Forward declarations for iOS-specific functions
 extern "C" {
 void DrawTexturePro_iOS(Texture2D texture, Rectangle source, Rectangle dest, Vector2 origin, float rotation, Color tint);

@@ -66,7 +66,7 @@ public class InputEngine {
     
     /// Initialize the input engine for iOS
     public static func initialize(screenSize: CGSize, safeAreaInsets: UIEdgeInsets) {
-        print("[InputEngine] Initializing iOS input system")
+        traceLog(SWLogLevel.SWLOG_INFO, "[InputEngine] Initializing iOS input system")
         
         self.screenSize = screenSize
         self.safeAreaInsets = safeAreaInsets
@@ -78,7 +78,7 @@ public class InputEngine {
         mousePosition = Vector2(x: 0, y: 0)
         
         isInitialized = true
-        print("[InputEngine] iOS input engine initialization complete")
+        traceLog(SWLogLevel.SWLOG_INFO, "[InputEngine] iOS input engine initialization complete")
     }
     
     // MARK: - Touch Event Processing
@@ -105,7 +105,7 @@ public class InputEngine {
                 callback(touchData)
             }
             
-            print("[InputEngine] Touch began: id=\(touchData.id), pos=(\(touchData.position.x), \(touchData.position.y))")
+            traceLog(SWLogLevel.SWLOG_DEBUG, "[InputEngine] Touch began: id=\(touchData.id), pos=(\(touchData.position.x), \(touchData.position.y))")
         }
     }
     
@@ -158,7 +158,7 @@ public class InputEngine {
                 callback(touchData)
             }
             
-            print("[InputEngine] Touch ended: id=\(touchData.id), pos=(\(touchData.position.x), \(touchData.position.y))")
+            traceLog(SWLogLevel.SWLOG_DEBUG, "[InputEngine] Touch ended: id=\(touchData.id), pos=(\(touchData.position.x), \(touchData.position.y))")
         }
     }
     
@@ -178,7 +178,7 @@ public class InputEngine {
                 isMousePressed = false
             }
             
-            print("[InputEngine] Touch cancelled: id=\(touchData.id)")
+            traceLog(SWLogLevel.SWLOG_DEBUG, "[InputEngine] Touch cancelled: id=\(touchData.id)")
         }
     }
     
@@ -299,7 +299,7 @@ public class InputEngine {
         self.screenSize = size
         self.safeAreaInsets = safeAreaInsets
         
-        print("[InputEngine] Screen configuration updated: \(size), safe area: \(safeAreaInsets)")
+        traceLog(SWLogLevel.SWLOG_INFO, "[InputEngine] Screen configuration updated: \(size), safe area: \(safeAreaInsets)")
     }
     
     /// Get current screen size
@@ -316,7 +316,7 @@ public class InputEngine {
     
     /// Shutdown input engine - cleanup resources
     public static func shutdown() {
-        print("[InputEngine] Shutting down input engine")
+        traceLog(SWLogLevel.SWLOG_INFO, "[InputEngine] Shutting down input engine")
         
         // Clear all active touches
         activeTouches.removeAll()
@@ -330,7 +330,7 @@ public class InputEngine {
         isMousePressed = false
         mousePosition = Vector2(x: 0, y: 0)
         
-        print("[InputEngine] Input engine shutdown complete")
+        traceLog(SWLogLevel.SWLOG_INFO, "[InputEngine] Input engine shutdown complete")
     }
 }
 
@@ -388,6 +388,26 @@ extension InputEngine {
     nonisolated public static func getTouchCount() -> Int32 {
         return Int32(currentTouchPositions.count)
     }
+    
+    /// Check if mouse button is currently down (treats first touch as mouse)
+    @_expose(Cxx)
+    nonisolated public static func isMouseButtonDown(_ button: Int32) -> Bool {
+        return button == 0 ? isMousePressed : false // MOUSE_LEFT_BUTTON = 0
+    }
+    
+    /// Check if mouse button was released this frame (treats first touch as mouse)
+    @_expose(Cxx)
+    nonisolated public static func isMouseButtonReleased(_ button: Int32) -> Bool {
+        // For now, return false - would need frame-based state tracking
+        return false
+    }
+    
+    /// Get mouse delta movement (simplified for touch)
+    @_expose(Cxx)
+    nonisolated public static func getMouseDelta() -> Vector2 {
+        // For touch devices, delta is typically zero unless tracking movement
+        return Vector2(x: 0, y: 0)
+    }
 }
 
 // MARK: - Input Engine Extensions
@@ -427,5 +447,82 @@ extension InputEngine {
         let adjustedY = Float(position.y - Float(safeAreaInsets.top))
         
         return Vector2(x: adjustedX, y: adjustedY)
+    }
+}
+
+// MARK: - C++ Bridge Class
+
+@_expose(Cxx)
+public final class InputEngineCppBridge {
+    
+    /// Initialize input engine - C++ compatible
+    @_expose(Cxx) nonisolated public static func initialize(screenWidth: Float, screenHeight: Float, safeAreaTop: Float, safeAreaLeft: Float, safeAreaBottom: Float, safeAreaRight: Float) {
+        Task { @MainActor in
+            let screenSize = CGSize(width: CGFloat(screenWidth), height: CGFloat(screenHeight))
+            let safeAreaInsets = UIEdgeInsets(top: CGFloat(safeAreaTop), left: CGFloat(safeAreaLeft), bottom: CGFloat(safeAreaBottom), right: CGFloat(safeAreaRight))
+            InputEngine.initialize(screenSize: screenSize, safeAreaInsets: safeAreaInsets)
+        }
+    }
+    
+    /// Shutdown input engine - C++ compatible
+    @_expose(Cxx) nonisolated public static func shutdown() {
+        Task { @MainActor in
+            InputEngine.shutdown()
+        }
+    }
+    
+    /// Check if mouse button is pressed - C++ compatible
+    @_expose(Cxx) nonisolated public static func isMouseButtonPressed(_ button: Int32) -> Bool {
+        return InputEngine.isMouseButtonPressed(button)
+    }
+    
+    /// Check if mouse button is down - C++ compatible
+    @_expose(Cxx) nonisolated public static func isMouseButtonDown(_ button: Int32) -> Bool {
+        return InputEngine.isMouseButtonDown(button)
+    }
+    
+    /// Check if mouse button is released - C++ compatible
+    @_expose(Cxx) nonisolated public static func isMouseButtonReleased(_ button: Int32) -> Bool {
+        return InputEngine.isMouseButtonReleased(button)
+    }
+    
+    /// Get mouse position - C++ compatible
+    @_expose(Cxx) nonisolated public static func getMousePosition() -> Vector2 {
+        return InputEngine.getMousePosition()
+    }
+    
+    /// Get mouse X position - C++ compatible
+    @_expose(Cxx) nonisolated public static func getMouseX() -> Float {
+        return InputEngine.getMouseX()
+    }
+    
+    /// Get mouse Y position - C++ compatible
+    @_expose(Cxx) nonisolated public static func getMouseY() -> Float {
+        return InputEngine.getMouseY()
+    }
+    
+    /// Get mouse delta - C++ compatible
+    @_expose(Cxx) nonisolated public static func getMouseDelta() -> Vector2 {
+        return InputEngine.getMouseDelta()
+    }
+    
+    /// Get touch position by index - C++ compatible
+    @_expose(Cxx) nonisolated public static func getTouchPosition(_ index: Int32) -> Vector2 {
+        return InputEngine.getTouchPosition(index)
+    }
+    
+    /// Get touch X coordinate - C++ compatible
+    @_expose(Cxx) nonisolated public static func getTouchX() -> Float {
+        return InputEngine.getTouchX()
+    }
+    
+    /// Get touch Y coordinate - C++ compatible
+    @_expose(Cxx) nonisolated public static func getTouchY() -> Float {
+        return InputEngine.getTouchY()
+    }
+    
+    /// Get touch count - C++ compatible
+    @_expose(Cxx) nonisolated public static func getTouchCount() -> Int32 {
+        return InputEngine.getTouchCount()
     }
 }

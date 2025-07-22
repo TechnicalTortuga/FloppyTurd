@@ -13,6 +13,7 @@ import simd
 
 /// Professional Metal renderer implementation in pure Swift
 /// Direct replacement for MetalRenderer.mm with native C++ interop
+@_expose(Cxx)
 public class MetalRendererSwift: @unchecked Sendable {
     
     // MARK: - Shared Instance
@@ -20,7 +21,7 @@ public class MetalRendererSwift: @unchecked Sendable {
     
     /// Update the viewport and projection matrix for a new drawable size
     public func updateViewport(size: CGSize) {
-        print("[MetalRendererSwift] updateViewport: size=\(size)")
+        traceLog(SWLogLevel.SWLOG_TRACE, "[MetalRendererSwift] updateViewport: size=\(size)")
         setProjectionMatrix(width: Float(size.width), height: Float(size.height))
     }
     
@@ -57,7 +58,13 @@ public class MetalRendererSwift: @unchecked Sendable {
     // Performance tracking
     private var debugStats = DebugStats()
     private var frameStartTime: CFTimeInterval = 0
-    private let targetFrameTime: Float = 1.0/60.0
+    private var lastFrameTime: CFTimeInterval = 0
+    private var currentFrameTime: Float = 1.0/60.0
+    private var targetFPS: Int32 = 60
+    private var targetFrameTime: Float = 1.0/60.0
+    private var fpsCounter: Int = 0
+    private var fpsTimer: CFTimeInterval = 0
+    private var currentFPS: Int32 = 60
     
     // Frame resources (we'll need to create a Swift equivalent)
     private var frameResources: MetalFrameResourcesSwift?
@@ -113,11 +120,11 @@ public class MetalRendererSwift: @unchecked Sendable {
     // MARK: - Initialization
     
     public init() {
-        print("[MetalRendererSwift] Initializing Swift Metal renderer")
+        traceLog(SWLogLevel.SWLOG_INFO, "[MetalRendererSwift] Initializing Swift Metal renderer")
     }
     
     deinit {
-        print("[MetalRendererSwift] Destroying Swift Metal renderer")
+        traceLog(SWLogLevel.SWLOG_INFO, "[MetalRendererSwift] Destroying Swift Metal renderer")
         shutdown()
     }
     
@@ -125,22 +132,22 @@ public class MetalRendererSwift: @unchecked Sendable {
     /// Direct equivalent of MetalRenderer::Initialize
     @MainActor
     public func initialize(view: MTKView) -> Bool {
-        print("[MetalRendererSwift] Initialize START")
+        traceLog(SWLogLevel.SWLOG_INFO, "[MetalRendererSwift] Initialize START")
         
         self.view = view
         self.device = view.device
         
         guard let device = self.device else {
-            print("[MetalRendererSwift] ERROR: Failed to get Metal device")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[MetalRendererSwift] ERROR: Failed to get Metal device")
             return false
         }
         
-        print("[MetalRendererSwift] Device: \(device)")
+        traceLog(SWLogLevel.SWLOG_INFO, "[MetalRendererSwift] Device: \(device)")
         
         // Create command queue
         commandQueue = device.makeCommandQueue()
         guard commandQueue != nil else {
-            print("[MetalRendererSwift] ERROR: Failed to create command queue")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[MetalRendererSwift] ERROR: Failed to create command queue")
             return false
         }
         
@@ -152,24 +159,24 @@ public class MetalRendererSwift: @unchecked Sendable {
         // Initialize frame resources
         frameResources = MetalFrameResourcesSwift()
         guard let frameResources = frameResources else {
-            print("[MetalRendererSwift] ERROR: Failed to create frame resources")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[MetalRendererSwift] ERROR: Failed to create frame resources")
             return false
         }
         
         if !frameResources.initialize(device: device) {
-            print("[MetalRendererSwift] ERROR: Failed to initialize frame resources")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[MetalRendererSwift] ERROR: Failed to initialize frame resources")
             return false
         }
         
         // Create pipelines
         if !createPipelines() {
-            print("[MetalRendererSwift] ERROR: Failed to create pipelines")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[MetalRendererSwift] ERROR: Failed to create pipelines")
             return false
         }
         
         // Create buffers
         if !createBuffers() {
-            print("[MetalRendererSwift] ERROR: Failed to create buffers")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[MetalRendererSwift] ERROR: Failed to create buffers")
             return false
         }
         
@@ -177,16 +184,16 @@ public class MetalRendererSwift: @unchecked Sendable {
         createSamplerState()
         
         // Set up projection matrix
-        let screenRect = UICoordinateSystem.getPixelScreenRect()
+        let screenRect = UICoordinateSystemHelper.getPixelScreenRect()
         setProjectionMatrix(width: screenRect.width, height: screenRect.height)
         
-        print("[MetalRendererSwift] ✅ Metal renderer initialized successfully")
+        traceLog(SWLogLevel.SWLOG_INFO, "[MetalRendererSwift] ✅ Metal renderer initialized successfully")
         return true
     }
     
     /// Shutdown the renderer and release resources
     public func shutdown() {
-        print("[MetalRendererSwift] Shutting down")
+        traceLog(SWLogLevel.SWLOG_INFO, "[MetalRendererSwift] Shutting down")
         
         // Flush any pending draw calls
         flushBatch()
@@ -194,7 +201,7 @@ public class MetalRendererSwift: @unchecked Sendable {
         // Release resources
         releaseResources()
         
-        print("[MetalRendererSwift] ✅ Shutdown complete")
+        traceLog(SWLogLevel.SWLOG_INFO, "[MetalRendererSwift] ✅ Shutdown complete")
     }
     
     // MARK: - Platform API Implementation (Raylib-style functions)
@@ -202,24 +209,24 @@ public class MetalRendererSwift: @unchecked Sendable {
     /// Begin drawing a frame - equivalent to BeginDrawing()
     @MainActor public func beginDrawing() {
         beginFrame()
-        print("[MetalRendererSwift] BeginDrawing: Frame started")
+        traceLog(SWLogLevel.SWLOG_TRACE, "[MetalRendererSwift] BeginDrawing: Frame started")
     }
     
     /// End drawing a frame - equivalent to EndDrawing()  
     @MainActor public func endDrawing() {
         endFrame()
-        print("[MetalRendererSwift] EndDrawing: Frame ended")
+        traceLog(SWLogLevel.SWLOG_TRACE, "[MetalRendererSwift] EndDrawing: Frame ended")
     }
     
     /// Clear the background - equivalent to ClearBackground()
     @MainActor public func clearBackground(_ color: RaylibColor) {
         clear(color)
-        print("[MetalRendererSwift] ClearBackground: Set clear color to (\(color.r),\(color.g),\(color.b),\(color.a))")
+        traceLog(SWLogLevel.SWLOG_TRACE, "[MetalRendererSwift] ClearBackground: Set clear color to (\(color.r),\(color.g),\(color.b),\(color.a))")
     }
     
     /// Draw a rectangle - equivalent to DrawRectangle()
     public func drawRectangle(x: Float, y: Float, width: Float, height: Float, color: RaylibColor) {
-        print("[MetalRendererSwift] DrawRectangle: (\(x),\(y),\(width),\(height)), color=(\(color.r),\(color.g),\(color.b),\(color.a))")
+        traceLog(SWLogLevel.SWLOG_TRACE, "[MetalRendererSwift] DrawRectangle: (\(x),\(y),\(width),\(height)), color=(\(color.r),\(color.g),\(color.b),\(color.a))")
         
         // Create vertices for a rectangle (two triangles)
         let vertices = [
@@ -243,7 +250,7 @@ public class MetalRendererSwift: @unchecked Sendable {
 
     /// Draw a rectangle with rounded corners - equivalent to DrawRectangleRounded()
     public func drawRectangleRounded(rec: Rectangle, roundness: Float, segments: Int, color: RaylibColor) {
-        print("[MetalRendererSwift] TRACE: drawRectangleRounded - rec: \(rec), roundness: \(roundness), segments: \(segments)")
+        traceLog(SWLogLevel.SWLOG_TRACE, "[MetalRendererSwift] TRACE: drawRectangleRounded - rec: \(rec), roundness: \(roundness), segments: \(segments)")
 
         let colorVec = simd_float4(Float(color.r)/255.0, Float(color.g)/255.0, Float(color.b)/255.0, Float(color.a)/255.0)
         let x = rec.x
@@ -291,7 +298,7 @@ public class MetalRendererSwift: @unchecked Sendable {
 
     /// Draw the lines of a rectangle with rounded corners
     public func drawRectangleRoundedLines(rec: Rectangle, roundness: Float, segments: Int, lineThick: Float, color: RaylibColor) {
-        print("[MetalRendererSwift] TRACE: drawRectangleRoundedLines - rec: \(rec), roundness: \(roundness), segments: \(segments), lineThick: \(lineThick)")
+        traceLog(SWLogLevel.SWLOG_TRACE, "[MetalRendererSwift] TRACE: drawRectangleRoundedLines - rec: \(rec), roundness: \(roundness), segments: \(segments), lineThick: \(lineThick)")
 
         let x = rec.x
         let y = rec.y
@@ -331,7 +338,7 @@ public class MetalRendererSwift: @unchecked Sendable {
     
     /// Draw a circle - equivalent to DrawCircle()
     public func drawCircle(centerX: Float, centerY: Float, radius: Float, color: RaylibColor) {
-        print("[MetalRendererSwift] DrawCircle: center=(\(centerX),\(centerY)), radius=\(radius)")
+        traceLog(SWLogLevel.SWLOG_TRACE, "[MetalRendererSwift] DrawCircle: center=(\(centerX),\(centerY)), radius=\(radius)")
         
         let segments = 32
         let colorVec = simd_float4(Float(color.r)/255.0, Float(color.g)/255.0, Float(color.b)/255.0, Float(color.a)/255.0)
@@ -358,12 +365,12 @@ public class MetalRendererSwift: @unchecked Sendable {
     
     /// Draw a texture with extended parameters - equivalent to DrawTexturePro()
     public func drawTexturePro(textureId: Int32, source: Rectangle, dest: Rectangle, origin: Vector2, rotation: Float, tint: RaylibColor) {
-        print("[MetalRendererSwift] DrawTexturePro: textureId=\(textureId), source=\(source), dest=\(dest), origin=\(origin), rotation=\(rotation)")
+        traceLog(SWLogLevel.SWLOG_TRACE, "[MetalRendererSwift] DrawTexturePro: textureId=\(textureId), source=\(source), dest=\(dest), origin=\(origin), rotation=\(rotation)")
         
         // For now, we'll implement a basic version that doesn't use the textureId
         // In a full implementation, you'd look up the texture by ID
         guard let texture = currentTexture else {
-            print("[MetalRendererSwift] WARNING: DrawTexturePro called but no current texture set")
+            traceLog(SWLogLevel.SWLOG_WARNING, "[MetalRendererSwift] WARNING: DrawTexturePro called but no current texture set")
             return
         }
         
@@ -419,7 +426,7 @@ public class MetalRendererSwift: @unchecked Sendable {
     
     /// Draw a line with thickness - equivalent to DrawLineEx()
     public func drawLineEx(startX: Float, startY: Float, endX: Float, endY: Float, thickness: Float, color: RaylibColor) {
-        print("[MetalRendererSwift] DrawLineEx: (\(startX),\(startY)) to (\(endX),\(endY)), thickness=\(thickness)")
+        traceLog(SWLogLevel.SWLOG_TRACE, "[MetalRendererSwift] DrawLineEx: (\(startX),\(startY)) to (\(endX),\(endY)), thickness=\(thickness)")
         
         // Calculate perpendicular vector for thickness
         let dx = endX - startX
@@ -427,7 +434,7 @@ public class MetalRendererSwift: @unchecked Sendable {
         let length = sqrt(dx * dx + dy * dy)
         
         guard length > 0 else {
-            print("[MetalRendererSwift] WARNING: Zero length line, skipping")
+            traceLog(SWLogLevel.SWLOG_WARNING, "[MetalRendererSwift] WARNING: Zero length line, skipping")
             return
         }
         
@@ -450,10 +457,10 @@ public class MetalRendererSwift: @unchecked Sendable {
     
     /// Draw a texture - equivalent to DrawTexture()
     public func drawTexture(_ texture: MTLTexture?, source: Rectangle, dest: Rectangle, tint: RaylibColor, layer: RenderLayer = .ui) {
-        print("[MetalRendererSwift] DrawTexture: source=(\(source.x),\(source.y),\(source.width),\(source.height)), dest=(\(dest.x),\(dest.y),\(dest.width),\(dest.height))")
+        traceLog(SWLogLevel.SWLOG_TRACE, "[MetalRendererSwift] DrawTexture: source=(\(source.x),\(source.y),\(source.width),\(source.height)), dest=(\(dest.x),\(dest.y),\(dest.width),\(dest.height))")
         
         guard let texture = texture else {
-            print("[MetalRendererSwift] WARNING: DrawTexture called with nil texture")
+            traceLog(SWLogLevel.SWLOG_WARNING, "[MetalRendererSwift] WARNING: DrawTexture called with nil texture")
             return
         }
         
@@ -498,11 +505,11 @@ public class MetalRendererSwift: @unchecked Sendable {
     private func createPipelines() -> Bool {
         guard let device = device else { return false }
         
-        print("[MetalRendererSwift] Creating pipelines...")
+        traceLog(SWLogLevel.SWLOG_INFO, "[MetalRendererSwift] Creating pipelines...")
         
         // Load shader library
         guard let library = loadShaderLibrary() else {
-            print("[MetalRendererSwift] ERROR: Failed to load shader library")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[MetalRendererSwift] ERROR: Failed to load shader library")
             return false
         }
         
@@ -511,7 +518,7 @@ public class MetalRendererSwift: @unchecked Sendable {
               let fragmentTexturedFunction = library.makeFunction(name: "fragment_shader_textured"),
               let fragmentColorFunction = library.makeFunction(name: "fragment_shader_color"),
               let fragmentSdfFunction = library.makeFunction(name: "fragment_shader_sdf") else {
-            print("[MetalRendererSwift] ERROR: Failed to load shader functions")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[MetalRendererSwift] ERROR: Failed to load shader functions")
             return false
         }
         
@@ -552,7 +559,7 @@ public class MetalRendererSwift: @unchecked Sendable {
         do {
             texturePipeline = try device.makeRenderPipelineState(descriptor: texturedPipelineDesc)
         } catch {
-            print("[MetalRendererSwift] ERROR: Failed to create textured pipeline: \(error)")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[MetalRendererSwift] ERROR: Failed to create textured pipeline: \(error)")
             return false
         }
         
@@ -569,7 +576,7 @@ public class MetalRendererSwift: @unchecked Sendable {
         do {
             colorPipeline = try device.makeRenderPipelineState(descriptor: colorPipelineDesc)
         } catch {
-            print("[MetalRendererSwift] ERROR: Failed to create color pipeline: \(error)")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[MetalRendererSwift] ERROR: Failed to create color pipeline: \(error)")
             return false
         }
         
@@ -586,7 +593,7 @@ public class MetalRendererSwift: @unchecked Sendable {
         do {
             sdfPipeline = try device.makeRenderPipelineState(descriptor: sdfPipelineDesc)
         } catch {
-            print("[MetalRendererSwift] ERROR: Failed to create SDF pipeline: \(error)")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[MetalRendererSwift] ERROR: Failed to create SDF pipeline: \(error)")
             return false
         }
         
@@ -601,7 +608,7 @@ public class MetalRendererSwift: @unchecked Sendable {
         uiDepthDesc.isDepthWriteEnabled = false
         uiDepthStencilState = device.makeDepthStencilState(descriptor: uiDepthDesc)
         
-        print("[MetalRendererSwift] ✅ Pipelines created successfully")
+        traceLog(SWLogLevel.SWLOG_INFO, "[MetalRendererSwift] ✅ Pipelines created successfully")
         return true
     }
     
@@ -620,7 +627,7 @@ public class MetalRendererSwift: @unchecked Sendable {
         
         // Try default library first
         if let library = device.makeDefaultLibrary() {
-            print("[MetalRendererSwift] Loaded default shader library")
+            traceLog(SWLogLevel.SWLOG_INFO, "[MetalRendererSwift] Loaded default shader library")
             return library
         }
         
@@ -636,7 +643,7 @@ public class MetalRendererSwift: @unchecked Sendable {
             if let shaderPath = Bundle.main.path(forResource: path, ofType: "metal"),
                let shaderSource = try? String(contentsOfFile: shaderPath) {
                 
-                print("[MetalRendererSwift] Found shader file at: \(shaderPath)")
+                traceLog(SWLogLevel.SWLOG_INFO, "[MetalRendererSwift] Found shader file at: \(shaderPath)")
                 
                 let options = MTLCompileOptions()
                 options.fastMathEnabled = true
@@ -646,22 +653,22 @@ public class MetalRendererSwift: @unchecked Sendable {
                 
                 do {
                     let library = try device.makeLibrary(source: shaderSource, options: options)
-                    print("[MetalRendererSwift] Successfully compiled shader library from source")
+                    traceLog(SWLogLevel.SWLOG_INFO, "[MetalRendererSwift] Successfully compiled shader library from source")
                     return library
                 } catch {
-                    print("[MetalRendererSwift] ERROR: Failed to compile shader library: \(error)")
+                    traceLog(SWLogLevel.SWLOG_ERROR, "[MetalRendererSwift] ERROR: Failed to compile shader library: \(error)")
                 }
             }
         }
         
-        print("[MetalRendererSwift] ERROR: Shaders2D.metal file not found")
+        traceLog(SWLogLevel.SWLOG_ERROR, "[MetalRendererSwift] ERROR: Shaders2D.metal file not found")
         return nil
     }
     
     private func createBuffers() -> Bool {
         guard let device = device else { return false }
         
-        print("[MetalRendererSwift] Creating buffers...")
+        traceLog(SWLogLevel.SWLOG_INFO, "[MetalRendererSwift] Creating buffers...")
         
         // Create vertex buffer
         let initialVertexBufferSize = 1024 * MemoryLayout<MetalVertex2D>.stride
@@ -669,7 +676,7 @@ public class MetalRendererSwift: @unchecked Sendable {
         vertexBuffer?.label = "Vertex Buffer"
         
         guard vertexBuffer != nil else {
-            print("[MetalRendererSwift] ERROR: Failed to create vertex buffer")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[MetalRendererSwift] ERROR: Failed to create vertex buffer")
             return false
         }
         
@@ -678,7 +685,7 @@ public class MetalRendererSwift: @unchecked Sendable {
         uniformBuffer?.label = "Uniform Buffer"
         
         guard let uniformBuffer = uniformBuffer else {
-            print("[MetalRendererSwift] ERROR: Failed to create uniform buffer")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[MetalRendererSwift] ERROR: Failed to create uniform buffer")
             return false
         }
         
@@ -686,7 +693,7 @@ public class MetalRendererSwift: @unchecked Sendable {
         let uniforms = uniformBuffer.contents().bindMemory(to: simd_float4x4.self, capacity: 1)
         uniforms.pointee = matrix_identity_float4x4
         
-        print("[MetalRendererSwift] ✅ Buffers created successfully")
+        traceLog(SWLogLevel.SWLOG_INFO, "[MetalRendererSwift] ✅ Buffers created successfully")
         return true
     }
     
@@ -701,7 +708,7 @@ public class MetalRendererSwift: @unchecked Sendable {
         samplerDesc.tAddressMode = .clampToEdge
         
         samplerState = device.makeSamplerState(descriptor: samplerDesc)
-        print("[MetalRendererSwift] ✅ Sampler state created")
+        traceLog(SWLogLevel.SWLOG_INFO, "[MetalRendererSwift] ✅ Sampler state created")
     }
     
     // MARK: - Frame Management
@@ -710,10 +717,13 @@ public class MetalRendererSwift: @unchecked Sendable {
     private func beginFrame() {
         frameStartTime = CACurrentMediaTime()
         
+        // Update frame timing for FPS calculation
+        updateFrameTiming()
+        
         guard let view = view,
               let drawable = view.currentDrawable,
               let commandQueue = commandQueue else {
-            print("[MetalRendererSwift] ERROR: Missing rendering resources")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[MetalRendererSwift] ERROR: Missing rendering resources")
             return
         }
         
@@ -804,7 +814,7 @@ public class MetalRendererSwift: @unchecked Sendable {
     private func flushBatch() {
         guard !vertices.isEmpty, let encoder = currentEncoder else { return }
         
-        print("[MetalRendererSwift] FlushBatch: vertices=\(vertices.count), commands=\(drawCommands.count)")
+        traceLog(LOG_TRACE, "[MetalRendererSwift] FlushBatch: vertices=\(vertices.count), commands=\(drawCommands.count)")
         
         // Get vertex data size
         let dataSize = vertices.count * MemoryLayout<MetalVertex2D>.stride
@@ -812,7 +822,7 @@ public class MetalRendererSwift: @unchecked Sendable {
         // Allocate space in frame's vertex buffer
         guard let frameResources = frameResources,
               let (destinationBuffer, bufferOffset) = frameResources.allocateVertexBuffer(size: dataSize) else {
-            print("[MetalRendererSwift] ERROR: Failed to allocate vertex buffer space")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[MetalRendererSwift] ERROR: Failed to allocate vertex buffer space")
             return
         }
         
@@ -832,7 +842,7 @@ public class MetalRendererSwift: @unchecked Sendable {
         vertices.removeAll()
         drawCommands.removeAll()
         
-        print("[MetalRendererSwift] ✅ FlushBatch completed")
+        traceLog(LOG_TRACE, "[MetalRendererSwift] ✅ FlushBatch completed")
     }
     
     private func executeDrawCommands() {
@@ -876,6 +886,236 @@ public class MetalRendererSwift: @unchecked Sendable {
                                  vertexStart: cmd.vertexStart,
                                  vertexCount: cmd.vertexCount)
         }
+    }
+    
+    // MARK: - FPS and Frame Timing Functions (C++ Interop)
+    
+    /// Set target FPS - equivalent to SetTargetFPS()
+    @_expose(Cxx) nonisolated public static func setTargetFPS(_ fps: Int32) {
+        let instance = MetalRendererSwift.shared
+        instance.targetFPS = fps
+        instance.targetFrameTime = fps > 0 ? 1.0 / Float(fps) : 1.0/60.0
+        traceLog(SWLogLevel.SWLOG_INFO, "[MetalRendererSwift] Target FPS set to \(fps) (frame time: \(instance.targetFrameTime)s)")
+    }
+    
+    /// Get current FPS - equivalent to GetFPS()
+    @_expose(Cxx) nonisolated public static func getCurrentFPS() -> Int32 {
+        return MetalRendererSwift.shared.currentFPS
+    }
+    
+    /// Get current frame time - equivalent to GetFrameTime()
+    @_expose(Cxx) nonisolated public static func getFrameTime() -> Float {
+        return MetalRendererSwift.shared.currentFrameTime
+    }
+    
+    // MARK: - Render Texture Functions
+    /// Load render texture - equivalent to LoadRenderTexture()
+    @_expose(Cxx) nonisolated public static func loadRenderTexture(_ width: Int32, _ height: Int32) -> Int32 {
+        // For now, return a dummy texture ID since full render texture system needs implementation
+        traceLog(SWLogLevel.SWLOG_INFO, "[MetalRendererSwift] LoadRenderTexture: width=\(width), height=\(height)")
+        
+        // When fully implemented, this will:
+        // 1. Create MTLTexture with specified dimensions
+        // 2. Set up render pass descriptor for the texture
+        // 3. Configure depth/stencil buffers if needed
+        // 4. Store in render texture cache with unique ID
+        // 5. Return the texture ID for future reference
+        
+        // TODO: Implement full render texture creation
+        return 1 // Return dummy texture ID
+    }
+    
+    @_expose(Cxx) nonisolated public static func unloadRenderTexture(_ textureId: Int32) {
+        Task { @MainActor in
+            MetalRendererSwift.shared.unloadRenderTextureInternal(textureId)
+        }
+    }
+    
+    /// Internal render texture cleanup implementation
+    @MainActor
+    private func unloadRenderTextureInternal(_ textureId: Int32) {
+        // For now, just log the unload since render texture system needs full implementation
+        traceLog(SWLogLevel.SWLOG_INFO, "[MetalRendererSwift] Unloading render texture ID: \(textureId)")
+        
+        // When render texture system is fully implemented, this will:
+        // 1. Clean up Metal texture resources
+        // 2. Release associated render pass descriptors
+        // 3. Update memory tracking
+        // 4. Remove from render texture cache
+        
+        // Placeholder for future render texture management
+        // renderTextures.removeValue(forKey: textureId)
+    }
+    
+    /// Begin texture mode - equivalent to BeginTextureMode()
+    @_expose(Cxx) nonisolated public static func beginTextureMode(_ renderTextureId: Int32) {
+        Task { @MainActor in
+            MetalRendererSwift.shared.beginTextureModeInternal(renderTextureId)
+        }
+    }
+    
+    /// Internal begin texture mode implementation
+    @MainActor
+    private func beginTextureModeInternal(_ renderTextureId: Int32) {
+        traceLog(LOG_TRACE, "[MetalRendererSwift] BeginTextureMode: renderTextureId=\(renderTextureId)")
+        
+        // Flush current batch before switching render targets
+        flushBatch()
+        
+        // For now, just log the operation since full render texture system needs implementation
+        // When fully implemented, this will:
+        // 1. End current render encoder
+        // 2. Create new render pass descriptor for render texture
+        // 3. Set up new render encoder targeting the render texture
+        // 4. Update viewport and projection matrix for render texture dimensions
+        
+        // TODO: Implement full render texture mode switching
+    }
+    
+    /// End texture mode - equivalent to EndTextureMode()
+    @_expose(Cxx) nonisolated public static func endTextureMode() {
+        Task { @MainActor in
+            MetalRendererSwift.shared.endTextureModeInternal()
+        }
+    }
+    
+    /// Internal end texture mode implementation
+    @MainActor
+    private func endTextureModeInternal() {
+        traceLog(LOG_TRACE, "[MetalRendererSwift] EndTextureMode")
+        
+        // Flush current batch before switching back to main render target
+        flushBatch()
+        
+        // For now, just log the operation since full render texture system needs implementation
+        // When fully implemented, this will:
+        // 1. End render texture render encoder
+        // 2. Restore previous render encoder (main framebuffer)
+        // 3. Restore viewport and projection matrix
+        
+        // TODO: Implement full render texture mode restoration
+    }
+    
+    // MARK: - Scissor Mode Functions
+    @_expose(Cxx) nonisolated public static func beginScissorMode(_ rect: Rectangle) {
+        Task { @MainActor in
+            MetalRendererSwift.shared.beginScissorModeInternal(rect)
+        }
+    }
+    
+    @_expose(Cxx) nonisolated public static func endScissorMode() {
+        Task { @MainActor in
+            MetalRendererSwift.shared.endScissorModeInternal()
+        }
+    }
+    
+    @MainActor
+    private func beginScissorModeInternal(_ rect: Rectangle) {
+        // Flush current batch before changing scissor state
+        flushBatch()
+        
+        // Set scissor rectangle on current encoder
+        if let encoder = currentEncoder {
+            let scissorRect = MTLScissorRect(
+                x: Int(rect.x),
+                y: Int(rect.y),
+                width: Int(rect.width),
+                height: Int(rect.height)
+            )
+            encoder.setScissorRect(scissorRect)
+        }
+    }
+    
+    @MainActor
+    private func endScissorModeInternal() {
+        // Flush current batch before changing scissor state
+        flushBatch()
+        
+        // Reset scissor rectangle to full screen
+        if let encoder = currentEncoder, let view = view {
+            let fullScreenRect = MTLScissorRect(
+                x: 0,
+                y: 0,
+                width: Int(view.drawableSize.width),
+                height: Int(view.drawableSize.height)
+            )
+            encoder.setScissorRect(fullScreenRect)
+        }
+    }
+    
+    // MARK: - Core Rendering Functions (C++ Interop)
+    
+    /// Begin drawing frame - equivalent to BeginDrawing()
+    @_expose(Cxx) nonisolated public static func beginDrawing() {
+        Task { @MainActor in
+            MetalRendererSwift.shared.beginDrawing()
+        }
+    }
+    
+    /// End drawing frame - equivalent to EndDrawing()
+    @_expose(Cxx) nonisolated public static func endDrawing() {
+        Task { @MainActor in
+            MetalRendererSwift.shared.endDrawing()
+        }
+    }
+    
+    /// Clear background - equivalent to ClearBackground()
+    @_expose(Cxx) nonisolated public static func clearBackground(_ r: UInt8, _ g: UInt8, _ b: UInt8, _ a: UInt8) {
+        let color = RaylibColor(r: r, g: g, b: b, a: a)
+        Task { @MainActor in
+            MetalRendererSwift.shared.clearBackground(color)
+        }
+    }
+    
+    /// Draw rectangle - equivalent to DrawRectangle()
+    @_expose(Cxx) nonisolated public static func drawRectangle(_ x: Float, _ y: Float, _ width: Float, _ height: Float, _ r: UInt8, _ g: UInt8, _ b: UInt8, _ a: UInt8) {
+        let color = RaylibColor(r: r, g: g, b: b, a: a)
+        MetalRendererSwift.shared.drawRectangle(x: x, y: y, width: width, height: height, color: color)
+    }
+    
+    /// Draw circle - equivalent to DrawCircle()
+    @_expose(Cxx) nonisolated public static func drawCircle(_ centerX: Float, _ centerY: Float, _ radius: Float, _ r: UInt8, _ g: UInt8, _ b: UInt8, _ a: UInt8) {
+        let color = RaylibColor(r: r, g: g, b: b, a: a)
+        MetalRendererSwift.shared.drawCircle(centerX: centerX, centerY: centerY, radius: radius, color: color)
+    }
+    
+    /// Draw line - equivalent to DrawLine()
+    @_expose(Cxx) nonisolated public static func drawLine(_ startX: Float, _ startY: Float, _ endX: Float, _ endY: Float, _ r: UInt8, _ g: UInt8, _ b: UInt8, _ a: UInt8) {
+        let color = RaylibColor(r: r, g: g, b: b, a: a)
+        MetalRendererSwift.shared.drawLine(startX: startX, startY: startY, endX: endX, endY: endY, color: color)
+    }
+    
+    /// Draw texture - equivalent to DrawTexturePro()
+    @_expose(Cxx) nonisolated public static func drawTexturePro(_ textureId: Int32, _ sourceX: Float, _ sourceY: Float, _ sourceWidth: Float, _ sourceHeight: Float, _ destX: Float, _ destY: Float, _ destWidth: Float, _ destHeight: Float, _ originX: Float, _ originY: Float, _ rotation: Float, _ r: UInt8, _ g: UInt8, _ b: UInt8, _ a: UInt8) {
+        let source = Rectangle(x: sourceX, y: sourceY, width: sourceWidth, height: sourceHeight)
+        let dest = Rectangle(x: destX, y: destY, width: destWidth, height: destHeight)
+        let origin = Vector2(x: originX, y: originY)
+        let tint = RaylibColor(r: r, g: g, b: b, a: a)
+        MetalRendererSwift.shared.drawTexturePro(textureId: textureId, source: source, dest: dest, origin: origin, rotation: rotation, tint: tint)
+    }
+    
+    /// Update frame timing (called internally during frame rendering)
+    private func updateFrameTiming() {
+        let currentTime = CACurrentMediaTime()
+        
+        if lastFrameTime > 0 {
+            currentFrameTime = Float(currentTime - lastFrameTime)
+            
+            // Update FPS counter
+            fpsCounter += 1
+            fpsTimer += currentTime - lastFrameTime
+            
+            // Calculate FPS every second
+            if fpsTimer >= 1.0 {
+                currentFPS = Int32(Double(fpsCounter) / fpsTimer)
+                fpsCounter = 0
+                fpsTimer = 0
+            }
+        } else {
+            currentFrameTime = targetFrameTime
+        }
+        
+        lastFrameTime = currentTime
     }
     
     // MARK: - Utility Functions

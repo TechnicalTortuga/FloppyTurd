@@ -13,7 +13,10 @@
 #include "TextureAtlas.h"
 #include "PerformanceProfiler.h"
 
-Game::Game() : window(nullptr), gamestate(LOADING), credits(nullptr), loading(nullptr), initialized(false) {
+Game::Game() : gamestate(LOADING), credits(nullptr), loading(nullptr), initialized(false) {
+#ifndef PLATFORM_MOBILE
+    window = nullptr;
+#endif
     try {
         TraceLog(LOG_INFO, "[GAME] Game constructor STARTING");
         
@@ -25,7 +28,6 @@ Game::Game() : window(nullptr), gamestate(LOADING), credits(nullptr), loading(nu
         TraceLog(LOG_DEBUG, "[GAME] Set initialized = false in constructor");
         
         // Initialize pointers to nullptr
-        window = nullptr;
         mainMenu = nullptr;
         playing = nullptr;
         credits = nullptr;
@@ -123,21 +125,21 @@ void Game::InitClasses()
 {
 	using namespace GameSettings;
 	
-#ifdef PLATFORM_MOBILE
-	// On mobile, always use fullscreen and let the platform handle the display
+#ifndef PLATFORM_MOBILE
+	// Desktop: Use native monitor resolution, start in fullscreen
 	window = new Window(true, 0, 0);
+#else
+	// On mobile platforms, we don't use the Window class
+	// The platform handles window management directly
+	// window = nullptr; // Already handled in constructor
+#endif
 	
 	// Set preferred orientation for the game (landscape for this game)
 	SetOrientation(true);  // true = landscape
 	
-	TraceLog(LOG_INFO, "Mobile window initialized: %dx%d, Safe area: %.0fx%.0f",
+	TraceLog(LOG_INFO, "Mobile platform initialized: %dx%d, Safe area: %.0fx%.0f",
 		GetScreenWidth(), GetScreenHeight(),
 		GetSafeArea().width, GetSafeArea().height);
-#else
-	// Desktop: Use native monitor resolution, start in fullscreen
-	window = new Window(true, 0, 0);
-#endif
-
 	// Load and set the window icon with platform-aware path
 	        std::string iconPath = GetResourcePath("poophat.ico");
 	Image icon = LoadImage(iconPath.c_str());
@@ -154,7 +156,7 @@ icon.data
 	
 #ifndef PLATFORM_MOBILE
 	// Focus only makes sense on desktop
-	SetWindowFocused();
+	if (window) window->SetFocused();
 #endif
 
 	mainMenu = nullptr; // Initialized in Loading state
@@ -294,21 +296,17 @@ bool Game::Initialize()
         // Initialize window system for all platforms
         GameLog::Log("[INIT] Step 3: Initializing window system...");
         try {
-#if defined(__APPLE__) && defined(TARGET_OS_IPHONE)
-            // On iOS, create a window that represents the full screen
-            window = new Window(true, 0, 0); // Fullscreen window
-            if (!window) {
-                GameLog::Log("[ERROR] Step 3: Failed to create iOS window");
-                throw std::runtime_error("Failed to create iOS window");
-            }
-            GameLog::Log("[INIT] Step 3: Created iOS fullscreen window - SUCCESS");
-#else
+#ifndef PLATFORM_MOBILE
             window = new Window();
             if (!window) {
                 GameLog::Log("[ERROR] Step 3: Failed to create window");
                 throw std::runtime_error("Failed to create window");
             }
             GameLog::Log("[INIT] Step 3: Created Window instance - SUCCESS");
+#else
+            // On mobile, the platform layer handles window creation.
+            // We don't use the Window class.
+            GameLog::Log("[INIT] Step 3: Window system initialization skipped for mobile - SUCCESS");
 #endif
         } catch (const std::exception& e) {
             GameLog::Log("[ERROR] Step 3: Exception creating window: %s", e.what());
@@ -540,8 +538,9 @@ bool Game::Initialize()
         
         // Initialize TouchControls for mobile
 #ifdef PLATFORM_MOBILE
-    touchControls.Initialize(GetScreenWidth(), GetScreenHeight());
-    AIGUI_SetTouchControls(&touchControls);
+    // For mobile platforms, we use the FloppyTurdInput system instead of direct touchControls
+    // This will be handled by the platform-specific input system
+    // AIGUI_SetTouchControls is handled differently on mobile
 #endif
         
         GameLog::Log("[INIT] =========================================");
@@ -687,9 +686,11 @@ void Game::Draw()
 
 void Game::HandleInput()
 {
+#ifndef PLATFORM_MOBILE
 	if (IsKeyPressed(KEY_F11) && window) {
 		window->ToggleMode();
 	}
+#endif
 
 	switch (gamestate) {
 	case MAINMENU:
@@ -717,6 +718,13 @@ void Game::HandleInput()
 		break;
 	}
 }
+
+#ifndef PLATFORM_MOBILE
+TouchControls* Game::GetTouchControls()
+{
+    return &touchControls;
+}
+#endif
 
 void Game::SetGameState(GAMESTATE newState)
 {
@@ -860,12 +868,6 @@ void Game::UpdateFrame(float deltaTime)
     
     TraceLog(LOG_INFO, "[GAME] Mobile input polling EXIT");
     
-    // Log TouchControls update
-    static int touchControlsLogCounter = 0;
-    if (++touchControlsLogCounter % 60 == 0) { // Log every 60 frames
-        TraceLog(LOG_INFO, "[GAME] Calling TouchControls::Update() - frame %d", touchControlsLogCounter);
-    }
-    touchControls.Update();
 #endif
 	// Handle shutdown state
 	if (gamestate == SHUTDOWN)
@@ -1162,6 +1164,7 @@ void Game::RenderFrame()
 
 void Game::RunGameDesktop()
 {
+#ifndef PLATFORM_MOBILE
     Initialize(); // One-time initialization
     
     // Traditional desktop game loop using Raylib
@@ -1178,6 +1181,7 @@ void Game::RunGameDesktop()
     }
     
     Shutdown(); // Cleanup
+#endif
 }
 
 void Game::Shutdown()
@@ -1198,7 +1202,25 @@ void Game::OnPause()
 	// Pause music when app goes to background
 	AudioStateManager::GetInstance().PauseMusic();
 	
-	// TODO: Add any other pause logic
+	// Enhanced pause logic
+	// Save current game state for restoration
+	if (gamestate == PLAYING) {
+		// Store pause timestamp for potential time-based mechanics
+		pauseTimestamp = GetTime();
+		
+		// Pause any active animations or timers
+		if (window) {
+			window->OnPause();
+		}
+		
+		// Save critical game progress
+		GameStats::GetInstance().SaveProgress();
+		
+		GameLog::Log("[GAME] Game paused - state preserved");
+	}
+	
+	// Reduce performance impact while backgrounded
+	SetTargetFPS(10); // Lower FPS when paused
 }
 
 void Game::OnResume()
@@ -1212,7 +1234,32 @@ void Game::OnResume()
 	// Resume music after audio session is active
 	AudioStateManager::GetInstance().ResumeMusic();
 	
-	// TODO: Add any other resume logic
+	// Enhanced resume logic
+	if (gamestate == PLAYING) {
+		// Calculate pause duration for time-sensitive mechanics
+		double currentTime = GetTime();
+		double pauseDuration = currentTime - pauseTimestamp;
+		
+		// Restore normal FPS
+		SetTargetFPS(60);
+		
+		// Resume window and UI systems
+		if (window) {
+			window->OnResume();
+		}
+		
+		// Show resume countdown if pause was significant
+		if (pauseDuration > 3.0) {
+			// Could trigger a "Get Ready" countdown overlay
+			showResumeCountdown = true;
+			resumeCountdownTimer = 3.0f;
+		}
+		
+		GameLog::Log("[GAME] Game resumed after %.2f seconds", pauseDuration);
+	}
+	
+	// Reset pause timestamp
+	pauseTimestamp = 0.0;
 }
 
 void Game::UpdateAudioState()
@@ -1239,6 +1286,7 @@ void Game::SetLevelAudio(int levelNumber, AudioStateManager::Difficulty difficul
 
 void Game::WriteDebugFile()
 {
+#ifndef PLATFORM_MOBILE
     try {
         TraceLog(LOG_DEBUG, "[GAME] === FLOPPYTURD DEBUG REPORT ===");
         
@@ -1283,4 +1331,39 @@ void Game::WriteDebugFile()
     } catch (...) {
         TraceLog(LOG_ERROR, "[GAME] Unknown error writing debug file");
     }
+#endif
+}
+
+// Global game instance for Swift interop
+Game* g_gameInstance = nullptr;
+
+// C++ bridge functions for Swift interop
+extern "C" {
+
+// Game instance accessor functions
+Game* GetGameInstance()
+{
+    return g_gameInstance;
+}
+
+void SetGameInstance(Game* instance)
+{
+    g_gameInstance = instance;
+}
+
+// Game method wrapper functions for Swift interop
+void Game_UpdateFrame(void* gameInstance, float deltaTime)
+{
+    if (gameInstance) {
+        static_cast<Game*>(gameInstance)->UpdateFrame(deltaTime);
+    }
+}
+
+void Game_RenderFrame(void* gameInstance)
+{
+    if (gameInstance) {
+        static_cast<Game*>(gameInstance)->RenderFrame();
+    }
+}
+
 }

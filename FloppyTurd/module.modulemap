@@ -20,7 +20,7 @@ module GameEngineCpp {
     
     // UI and coordinate system (platform-agnostic)
     header "UIManager.h"
-    header "UICoordinateSystem.h"
+    // Note: UICoordinateSystem now uses direct Swift 5.9+ C++ interop via GameEngine-Swift.h
     
     // Game framework components (game-agnostic)
     header "Level.h"

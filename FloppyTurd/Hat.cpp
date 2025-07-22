@@ -37,13 +37,13 @@ Hat::Hat(const std::string& name,
         icon = LoadTexture(iconPath.c_str());
     }
     
-    sprites[0][0] = new Sprite(turdletNormalPath, turdletNormalFrames, 0.1f, 1.0f, {0,0}, AtlasCategory::PLAYER_SPRITES);
-    sprites[0][1] = new Sprite(turdletShootingPath, turdletShootingFrames, 0.1f, 1.0f, {0,0}, AtlasCategory::PLAYER_SPRITES);
+    sprites[0][0] = new Sprite(turdletNormalPath, turdletNormalFrames, 0.1f, 1.0f, {0,0}, AtlasCategory::GAME_OBJECTS);
+    sprites[0][1] = new Sprite(turdletShootingPath, turdletShootingFrames, 0.1f, 1.0f, {0,0}, AtlasCategory::GAME_OBJECTS);
     // Use Turdlet sprites as placeholders for TeenageTurd
-    sprites[1][0] = new Sprite(turdletNormalPath, turdletNormalFrames, 0.1f, 1.0f, {0,0}, AtlasCategory::PLAYER_SPRITES);
-    sprites[1][1] = new Sprite(turdletShootingPath, turdletShootingFrames, 0.1f, 1.0f, {0,0}, AtlasCategory::PLAYER_SPRITES);
-    sprites[2][0] = new Sprite(bigNormalPath, bigNormalFrames, 0.1f, 1.0f, {0,0}, AtlasCategory::PLAYER_SPRITES);
-    sprites[2][1] = new Sprite(bigShootingPath, bigShootingFrames, 0.1f, 1.0f, {0,0}, AtlasCategory::PLAYER_SPRITES);
+    sprites[1][0] = new Sprite(turdletNormalPath, turdletNormalFrames, 0.1f, 1.0f, {0,0}, AtlasCategory::GAME_OBJECTS);
+    sprites[1][1] = new Sprite(turdletShootingPath, turdletShootingFrames, 0.1f, 1.0f, {0,0}, AtlasCategory::GAME_OBJECTS);
+    sprites[2][0] = new Sprite(bigNormalPath, bigNormalFrames, 0.1f, 1.0f, {0,0}, AtlasCategory::GAME_OBJECTS);
+    sprites[2][1] = new Sprite(bigShootingPath, bigShootingFrames, 0.1f, 1.0f, {0,0}, AtlasCategory::GAME_OBJECTS);
 }
 
 // Minimal constructor: uses a placeholder for all animated sprites

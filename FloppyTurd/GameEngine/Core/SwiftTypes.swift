@@ -8,6 +8,9 @@
 
 import Foundation
 import simd
+#if canImport(UIKit)
+import UIKit
+#endif
 
 // MARK: - Core Game Types
 
@@ -35,6 +38,30 @@ public struct RaylibColor: Sendable {
 }
 
 /// Swift equivalent of raylib Rectangle struct
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@_expose(Cxx)
 public struct Rectangle: Sendable {
     public let x: Float
     public let y: Float
@@ -56,6 +83,7 @@ public struct Rectangle: Sendable {
 }
 
 /// Swift equivalent of raylib Vector2 struct
+@_expose(Cxx)
 public struct Vector2: Sendable {
     public let x: Float
     public let y: Float
@@ -68,14 +96,7 @@ public struct Vector2: Sendable {
     public static let zero = Vector2(x: 0, y: 0)
 }
 
-/// Swift equivalent for UICoordinateSystem functions
-public struct UICoordinateSystem {
-    public static func getPixelScreenRect() -> Rectangle {
-        // This would call into the C++ UICoordinateSystem
-        // For now, return a default value
-        return Rectangle(x: 0, y: 0, width: 1080, height: 1920)
-    }
-}
+
 
 // MARK: - Texture Types
 

@@ -25,10 +25,10 @@ public final class GameEngine: @unchecked Sendable {
     nonisolated(unsafe) private static var isRunning: Bool = false
     
     // Core engine systems - nonisolated access for C++ interoperability
-    nonisolated(unsafe) public static let audioManager = AudioManagerSwift.shared
-    nonisolated(unsafe) public static let resourceManager = ResourceManagerSwift.shared
-    nonisolated(unsafe) public static let hapticsManager = HapticsManagerSwift.shared
-    nonisolated(unsafe) public static let metalRenderer = MetalRendererSwift.shared
+    nonisolated(unsafe) public static var audioManager: AudioManagerSwift!
+    nonisolated(unsafe) public static var resourceManager: ResourceManagerSwift!
+    nonisolated(unsafe) public static var hapticsManager: HapticsManagerSwift!
+    nonisolated(unsafe) public static var metalRenderer: MetalRendererSwift!
 
     // Game loop properties - externally synchronized
     nonisolated(unsafe) private static var displayLink: CADisplayLink?
@@ -55,61 +55,66 @@ public final class GameEngine: @unchecked Sendable {
                                 pixelDensity: Float = 2.0, // Default scale for iOS devices
                                 metalDevice: MTLDevice? = nil) {
         guard !isInitialized else {
-            print("[GameEngine] Already initialized")
+            traceLog(SWLogLevel.SWLOG_WARNING, "[GameEngine] Already initialized")
             return
         }
-        print("[GameEngine] Initializing professional game engine...")
-        print("[GameEngine] Screen Size: \(screenSize)")
-        print("[GameEngine] Safe Area: \(safeAreaInsets)")
-        print("[GameEngine] Pixel Density: \(pixelDensity)")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameEngine] Initializing professional game engine...")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameEngine] Screen Size: \(screenSize)")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameEngine] Safe Area: \(safeAreaInsets)")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameEngine] Pixel Density: \(pixelDensity)")
         
         // Initialize Swift managers from main actor context
+        audioManager = AudioManagerSwift.shared
+        resourceManager = ResourceManagerSwift.shared
+        hapticsManager = HapticsManagerSwift.shared
+        metalRenderer = MetalRendererSwift.shared
+        
         if let metalDevice = metalDevice {
             resourceManager.initialize(metalDevice: metalDevice)
         }
         
-        print("[GameEngine] Initializing Swift audio manager...")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameEngine] Initializing Swift audio manager...")
         // AudioManager initializes automatically as singleton
-        print("[GameEngine] Initializing Swift haptics manager...")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameEngine] Initializing Swift haptics manager...")
         _ = hapticsManager // Triggers haptics engine preparation
         // Verify systems are ready
-        print("[GameEngine] Verifying systems...")
-        print("[GameEngine] ✅ All systems ready")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameEngine] Verifying systems...")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameEngine] ✅ All systems ready")
         // Setup input callbacks for game logic
         setupGameCallbacks()
         isInitialized = true
-        print("[GameEngine] ✅ Game engine initialization complete!")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameEngine] ✅ Game engine initialization complete!")
     }
 
     /// Pre-load common resources for optimal performance
     public static func preloadResources() {
-        print("[GameEngine] Preloading common resources...")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameEngine] Preloading common resources...")
         // Expand to preload textures, sounds, etc. as needed
-        print("[GameEngine] ✅ Resource preloading complete")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameEngine] ✅ Resource preloading complete")
     }
 
     /// Clear all resource caches
     public static func clearResourceCaches() {
-        print("[GameEngine] Clearing resource caches...")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameEngine] Clearing resource caches...")
         // Expand to clear texture/audio caches as needed
-        print("[GameEngine] ✅ Resource caches cleared")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameEngine] ✅ Resource caches cleared")
     }
     
     /// Setup game callbacks to integrate with C++ systems
     private static func setupGameCallbacks() {
         // Setup update callback for game logic
         onUpdate = { deltaTime in
-            // Update game logic (C++ systems called directly if needed)
-            print("[GameEngine] Update: \(deltaTime)")
+            // Update game logic (native Swift-C++ interop)
+            // Game logic will be handled by individual managers
         }
         
         // Setup render callback
         onRender = {
-            // Render game logic (Metal rendering handled by GameView)
-            print("[GameEngine] Render frame")
+            // Render game logic (native Swift-C++ interop)
+            // Rendering will be handled by MetalRendererSwift
         }
         
-        print("[GameEngine] ✅ Game callbacks configured")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameEngine] ✅ Game callbacks configured with test rendering")
     }
     
     // MARK: - Game Loop Management
@@ -117,16 +122,16 @@ public final class GameEngine: @unchecked Sendable {
     /// Start the main game loop
     public static func startGameLoop() {
         guard isInitialized else {
-            print("[GameEngine] ERROR: Cannot start game loop - not initialized")
+            traceLog(SWLogLevel.SWLOG_ERROR, "[GameEngine] ERROR: Cannot start game loop - not initialized")
             return
         }
         
         guard !isRunning else {
-            print("[GameEngine] Game loop already running")
+            traceLog(SWLogLevel.SWLOG_WARNING, "[GameEngine] Game loop already running")
             return
         }
         
-        print("[GameEngine] Starting game loop...")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameEngine] Starting game loop...")
         
         // Create display link for smooth 60 FPS
         displayLink = CADisplayLink(target: GameEngineDisplayLinkTarget.shared, 
@@ -136,24 +141,24 @@ public final class GameEngine: @unchecked Sendable {
         isRunning = true
         lastFrameTime = CACurrentMediaTime()
         
-        print("[GameEngine] ✅ Game loop started")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameEngine] ✅ Game loop started")
     }
     
     /// Stop the main game loop
     public static func stopGameLoop() {
         guard isRunning else {
-            print("[GameEngine] Game loop not running")
+            traceLog(SWLogLevel.SWLOG_WARNING, "[GameEngine] Game loop not running")
             return
         }
         
-        print("[GameEngine] Stopping game loop...")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameEngine] Stopping game loop...")
         
         displayLink?.invalidate()
         displayLink = nil
         
         isRunning = false
         
-        print("[GameEngine] ✅ Game loop stopped")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameEngine] ✅ Game loop stopped")
     }
     
     /// Main game loop tick - called by display link
@@ -222,7 +227,7 @@ public final class GameEngine: @unchecked Sendable {
         DispatchQueue.main.async {
             for touch in touches {
                 let location = touch.location(in: view)
-                print("[GameEngine] Touch began at: \(location)")
+                traceLog(SWLogLevel.SWLOG_DEBUG, "[GameEngine] Touch began at: \(location)")
             }
         }
     }
@@ -244,7 +249,7 @@ public final class GameEngine: @unchecked Sendable {
         DispatchQueue.main.async {
             for touch in touches {
                 let location = touch.location(in: view)
-                print("[GameEngine] Touch ended at: \(location)")
+                traceLog(SWLogLevel.SWLOG_DEBUG, "[GameEngine] Touch ended at: \(location)")
             }
         }
     }
@@ -259,7 +264,7 @@ public final class GameEngine: @unchecked Sendable {
     
     /// Handle app becoming active
     public static func handleAppBecameActive() {
-        print("[GameEngine] App became active")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameEngine] App became active")
         
         // Resume game loop if it was running
         if isInitialized && !isRunning {
@@ -269,7 +274,7 @@ public final class GameEngine: @unchecked Sendable {
     
     /// Handle app becoming inactive
     public static func handleAppBecameInactive() {
-        print("[GameEngine] App became inactive")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameEngine] App became inactive")
         
         // Pause game loop
         if isRunning {
@@ -279,7 +284,7 @@ public final class GameEngine: @unchecked Sendable {
     
     /// Handle memory warnings
     public static func handleMemoryWarning() {
-        print("[GameEngine] ⚠️ Memory warning received")
+        traceLog(SWLogLevel.SWLOG_WARNING, "[GameEngine] ⚠️ Memory warning received")
         
         // Let Swift managers handle memory cleanup on main thread
         DispatchQueue.main.async {
@@ -291,12 +296,17 @@ public final class GameEngine: @unchecked Sendable {
     }
     
     /// Handle device rotation or screen size change
-    public static func handleScreenSizeChanged(size: CGSize, safeAreaInsets: UIEdgeInsets) {
-        print("[GameEngine] Screen size changed: \(size), safe area: \(safeAreaInsets)")
+    /// Note: This function is intentionally internal to prevent automatic C++ interop exposure
+    /// while still allowing access from GameEngineCppBridge
+    /// Use GameEngineCppBridge.handleScreenSizeChanged for C++ calls
+    internal static func handleScreenSizeChanged(size: CGSize, safeAreaInsets: UIEdgeInsets) {
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameEngine] Screen size changed: \(size), safe area: \(safeAreaInsets)")
         
         // Call game-specific resize callback
         onResize?(size)
     }
+    
+
     
     // MARK: - Platform Integration
     
@@ -350,11 +360,11 @@ public final class GameEngine: @unchecked Sendable {
     
     /// Shutdown the complete game engine
     public static func shutdown() {
-        print("[GameEngine] Shutting down game engine...")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameEngine] Shutting down game engine...")
         // Stop game loop first
         stopGameLoop()
         // Shutdown Swift managers
-        print("[GameEngine] Shutting down Swift managers...")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameEngine] Shutting down Swift managers...")
         DispatchQueue.main.async {
             audioManager.shutdown()
             resourceManager.shutdown()
@@ -368,7 +378,7 @@ public final class GameEngine: @unchecked Sendable {
         isInitialized = false
         frameCount = 0
         frameTimeBuffer = []
-        print("[GameEngine] ✅ Game engine shutdown complete")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameEngine] ✅ Game engine shutdown complete")
     }
 }
 
@@ -409,7 +419,7 @@ extension GameEngine {
         preloadResources()
         // Start game loop
         startGameLoop()
-        print("[GameEngine] ✅ Basic game setup complete")
+        traceLog(SWLogLevel.SWLOG_INFO, "[GameEngine] ✅ Basic game setup complete")
     }
     
     /// Quick debug info string
@@ -426,5 +436,57 @@ extension GameEngine {
         - Audio Manager: Available
         - Resource Manager: Available
         """
+    }
+}
+
+// MARK: - C++ Bridge
+
+/// C++ bridge for GameEngine functionality
+/// Provides nonisolated static functions that can be called from C++
+@_expose(Cxx)
+public final class GameEngineCppBridge {
+    
+    /// C++ bridge function for handling screen size changes with C++ compatible types
+    @_expose(Cxx)
+    public static func handleScreenSizeChanged(width: Float, height: Float, 
+                                             topInset: Float, leftInset: Float, 
+                                             bottomInset: Float, rightInset: Float) {
+        let size = CGSize(width: CGFloat(width), height: CGFloat(height))
+        let safeAreaInsets = UIEdgeInsets(top: CGFloat(topInset), 
+                                        left: CGFloat(leftInset), 
+                                        bottom: CGFloat(bottomInset), 
+                                        right: CGFloat(rightInset))
+        
+        GameEngine.handleScreenSizeChanged(size: size, safeAreaInsets: safeAreaInsets)
+    }
+    
+    /// C++ bridge for triggering haptic feedback
+    @_expose(Cxx)
+    public static func triggerHapticFeedback(type: Int32) {
+        GameEngine.triggerHapticFeedback(type: Int(type))
+    }
+    
+    /// C++ bridge for playing sound
+    @_expose(Cxx)
+    public static func playSound(soundName: String) {
+        GameEngine.playSound(soundName)
+    }
+    
+    /// C++ bridge for playing music
+    @_expose(Cxx)
+    public static func playMusic(musicName: String) {
+        GameEngine.playMusic(musicName)
+    }
+    
+    /// C++ bridge for getting platform time
+    @_expose(Cxx)
+    public static func getPlatformTime() -> Double {
+        return GameEngine.platformTime
+    }
+    
+    /// C++ bridge for checking vibration support
+    @_expose(Cxx)
+    public static func getIsVibrationSupported() -> Bool {
+        return GameEngine.isVibrationSupported
     }
 }

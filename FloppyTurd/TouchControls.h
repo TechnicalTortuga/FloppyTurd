@@ -2,6 +2,13 @@
 #include "PlatformAPI.h"
 #include <vector>
 
+#ifdef PLATFORM_MOBILE
+// Forward declaration for Swift interop
+extern "C" {
+    // getCppInteropBridge is available from GameEngine-Swift.h when built
+}
+#endif
+
 // Simplified touch controls for mobile gameplay
 class TouchControls {
 public:

@@ -24,21 +24,41 @@ void TouchControls::Update() {
 
 // Remove static variables - using instance variables instead
 
-// Generic input methods (decoupled from gameplay)
+// Generic input methods (decoupled from gameplay) - Route to Swift input system
 bool TouchControls::IsPrimaryInputDown() const {
+#ifdef PLATFORM_MOBILE
+    // Route to modern PlatformAPI for iOS input handling
+    return PlatformAPI::GetInstance().IsPrimaryInputDown();
+#else
     return primaryInputDown;
+#endif
 }
 
 bool TouchControls::IsPrimaryInputPressed() const {
+#ifdef PLATFORM_MOBILE
+    // Route to modern PlatformAPI for iOS input handling
+    return PlatformAPI::GetInstance().IsPrimaryInputPressed();
+#else
     return primaryInputPressed;
+#endif
 }
 
 bool TouchControls::IsPrimaryInputReleased() const {
+#ifdef PLATFORM_MOBILE
+    // Route to modern PlatformAPI for iOS input handling
+    return PlatformAPI::GetInstance().IsPrimaryInputReleased();
+#else
     return primaryInputReleased;
+#endif
 }
 
 Vector2 TouchControls::GetPrimaryInputPosition() const {
+#ifdef PLATFORM_MOBILE
+    // Route to modern PlatformAPI for iOS input handling
+    return PlatformAPI::GetInstance().GetPrimaryInputPosition();
+#else
     return primaryInputPosition;
+#endif
 }
 
 void TouchControls::UpdateGestureDetection(bool touchActive, bool touchPressed, Vector2 touchPos) {
@@ -100,6 +120,12 @@ void TouchControls::UpdateGestureDetection() {
 }
 
 void TouchControls::SetTouchState(bool pressed, float x, float y) {
+#ifdef PLATFORM_MOBILE
+    // On mobile, input state is managed by Swift InputEngine
+    // This method is kept for compatibility but doesn't need to do anything
+    // as the Swift system handles all touch state management
+#else
+    // Desktop implementation maintains local state
     bool wasDown = primaryInputDown;
     
     primaryInputDown = pressed;
@@ -113,6 +139,7 @@ void TouchControls::SetTouchState(bool pressed, float x, float y) {
         primaryInputPressed = false;
         primaryInputReleased = true;
     }
+#endif
 }
 
 void TouchControls::ClearAllTouchStates() {
@@ -128,8 +155,19 @@ void TouchControls::ClearAllTouchStates() {
 
 std::vector<Vector2> TouchControls::GetTouchPoints() const {
     std::vector<Vector2> points;
+#ifdef PLATFORM_MOBILE
+    // Route to modern PlatformAPI for iOS touch handling
+    int touchCount = PlatformAPI::GetInstance().GetTouchCount();
+    
+    for (int i = 0; i < touchCount; i++) {
+        Vector2 touchPos = PlatformAPI::GetInstance().GetTouchPosition(i);
+        points.push_back(touchPos);
+    }
+#else
+    // Desktop implementation
     if (primaryInputDown) {
         points.push_back(primaryInputPosition);
     }
+#endif
     return points;
-} 
+}

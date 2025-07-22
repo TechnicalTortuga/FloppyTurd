@@ -1,0 +1,238 @@
+{
+  "" : {
+    "diagnostics" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/FloppyTurd-master.dia",
+    "emit-module-dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/FloppyTurd-master-emit-module.d",
+    "emit-module-diagnostics" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/FloppyTurd-master-emit-module.dia",
+    "swift-dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/FloppyTurd-master.swiftdeps"
+  },
+  "/Users/aimac/Development/FloppyTurd/FloppyTurd/GameEngine/Audio/AudioEngineSwift.swift" : {
+    "const-values" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AudioEngineSwift.swiftconstvalues",
+    "dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AudioEngineSwift.d",
+    "diagnostics" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AudioEngineSwift.dia",
+    "index-unit-output-path" : "/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AudioEngineSwift.o",
+    "llvm-bc" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AudioEngineSwift.bc",
+    "object" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AudioEngineSwift.o",
+    "swift-dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AudioEngineSwift.swiftdeps",
+    "swiftmodule" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AudioEngineSwift~partial.swiftmodule"
+  },
+  "/Users/aimac/Development/FloppyTurd/FloppyTurd/GameEngine/Audio/AudioManagerSwift.swift" : {
+    "const-values" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AudioManagerSwift.swiftconstvalues",
+    "dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AudioManagerSwift.d",
+    "diagnostics" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AudioManagerSwift.dia",
+    "index-unit-output-path" : "/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AudioManagerSwift.o",
+    "llvm-bc" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AudioManagerSwift.bc",
+    "object" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AudioManagerSwift.o",
+    "swift-dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AudioManagerSwift.swiftdeps",
+    "swiftmodule" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AudioManagerSwift~partial.swiftmodule"
+  },
+  "/Users/aimac/Development/FloppyTurd/FloppyTurd/GameEngine/Bridge/UICoordinateSystemBridgeSwift.swift" : {
+    "const-values" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UICoordinateSystemBridgeSwift.swiftconstvalues",
+    "dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UICoordinateSystemBridgeSwift.d",
+    "diagnostics" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UICoordinateSystemBridgeSwift.dia",
+    "index-unit-output-path" : "/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UICoordinateSystemBridgeSwift.o",
+    "llvm-bc" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UICoordinateSystemBridgeSwift.bc",
+    "object" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UICoordinateSystemBridgeSwift.o",
+    "swift-dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UICoordinateSystemBridgeSwift.swiftdeps",
+    "swiftmodule" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UICoordinateSystemBridgeSwift~partial.swiftmodule"
+  },
+  "/Users/aimac/Development/FloppyTurd/FloppyTurd/GameEngine/Core/ConfigurationSwift.swift" : {
+    "const-values" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/ConfigurationSwift.swiftconstvalues",
+    "dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/ConfigurationSwift.d",
+    "diagnostics" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/ConfigurationSwift.dia",
+    "index-unit-output-path" : "/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/ConfigurationSwift.o",
+    "llvm-bc" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/ConfigurationSwift.bc",
+    "object" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/ConfigurationSwift.o",
+    "swift-dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/ConfigurationSwift.swiftdeps",
+    "swiftmodule" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/ConfigurationSwift~partial.swiftmodule"
+  },
+  "/Users/aimac/Development/FloppyTurd/FloppyTurd/GameEngine/Core/MathUtilsSwift.swift" : {
+    "const-values" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MathUtilsSwift.swiftconstvalues",
+    "dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MathUtilsSwift.d",
+    "diagnostics" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MathUtilsSwift.dia",
+    "index-unit-output-path" : "/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MathUtilsSwift.o",
+    "llvm-bc" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MathUtilsSwift.bc",
+    "object" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MathUtilsSwift.o",
+    "swift-dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MathUtilsSwift.swiftdeps",
+    "swiftmodule" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MathUtilsSwift~partial.swiftmodule"
+  },
+  "/Users/aimac/Development/FloppyTurd/FloppyTurd/GameEngine/Core/SwiftTypes.swift" : {
+    "const-values" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/SwiftTypes.swiftconstvalues",
+    "dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/SwiftTypes.d",
+    "diagnostics" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/SwiftTypes.dia",
+    "index-unit-output-path" : "/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/SwiftTypes.o",
+    "llvm-bc" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/SwiftTypes.bc",
+    "object" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/SwiftTypes.o",
+    "swift-dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/SwiftTypes.swiftdeps",
+    "swiftmodule" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/SwiftTypes~partial.swiftmodule"
+  },
+  "/Users/aimac/Development/FloppyTurd/FloppyTurd/GameEngine/Extensions/SwiftManagersExtensions.swift" : {
+    "const-values" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/SwiftManagersExtensions.swiftconstvalues",
+    "dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/SwiftManagersExtensions.d",
+    "diagnostics" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/SwiftManagersExtensions.dia",
+    "index-unit-output-path" : "/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/SwiftManagersExtensions.o",
+    "llvm-bc" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/SwiftManagersExtensions.bc",
+    "object" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/SwiftManagersExtensions.o",
+    "swift-dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/SwiftManagersExtensions.swiftdeps",
+    "swiftmodule" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/SwiftManagersExtensions~partial.swiftmodule"
+  },
+  "/Users/aimac/Development/FloppyTurd/FloppyTurd/GameEngine/GameEngine.swift" : {
+    "const-values" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GameEngine.swiftconstvalues",
+    "dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GameEngine.d",
+    "diagnostics" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GameEngine.dia",
+    "index-unit-output-path" : "/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GameEngine.o",
+    "llvm-bc" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GameEngine.bc",
+    "object" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GameEngine.o",
+    "swift-dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GameEngine.swiftdeps",
+    "swiftmodule" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GameEngine~partial.swiftmodule"
+  },
+  "/Users/aimac/Development/FloppyTurd/FloppyTurd/GameEngine/HapticsManagerSwift.swift" : {
+    "const-values" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/HapticsManagerSwift.swiftconstvalues",
+    "dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/HapticsManagerSwift.d",
+    "diagnostics" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/HapticsManagerSwift.dia",
+    "index-unit-output-path" : "/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/HapticsManagerSwift.o",
+    "llvm-bc" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/HapticsManagerSwift.bc",
+    "object" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/HapticsManagerSwift.o",
+    "swift-dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/HapticsManagerSwift.swiftdeps",
+    "swiftmodule" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/HapticsManagerSwift~partial.swiftmodule"
+  },
+  "/Users/aimac/Development/FloppyTurd/FloppyTurd/GameEngine/Input/InputEngineSwift.swift" : {
+    "const-values" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/InputEngineSwift.swiftconstvalues",
+    "dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/InputEngineSwift.d",
+    "diagnostics" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/InputEngineSwift.dia",
+    "index-unit-output-path" : "/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/InputEngineSwift.o",
+    "llvm-bc" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/InputEngineSwift.bc",
+    "object" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/InputEngineSwift.o",
+    "swift-dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/InputEngineSwift.swiftdeps",
+    "swiftmodule" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/InputEngineSwift~partial.swiftmodule"
+  },
+  "/Users/aimac/Development/FloppyTurd/FloppyTurd/GameEngine/LogManagerSwift.swift" : {
+    "const-values" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/LogManagerSwift.swiftconstvalues",
+    "dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/LogManagerSwift.d",
+    "diagnostics" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/LogManagerSwift.dia",
+    "index-unit-output-path" : "/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/LogManagerSwift.o",
+    "llvm-bc" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/LogManagerSwift.bc",
+    "object" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/LogManagerSwift.o",
+    "swift-dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/LogManagerSwift.swiftdeps",
+    "swiftmodule" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/LogManagerSwift~partial.swiftmodule"
+  },
+  "/Users/aimac/Development/FloppyTurd/FloppyTurd/GameEngine/Rendering/MetalRendererSwift.swift" : {
+    "const-values" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalRendererSwift.swiftconstvalues",
+    "dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalRendererSwift.d",
+    "diagnostics" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalRendererSwift.dia",
+    "index-unit-output-path" : "/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalRendererSwift.o",
+    "llvm-bc" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalRendererSwift.bc",
+    "object" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalRendererSwift.o",
+    "swift-dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalRendererSwift.swiftdeps",
+    "swiftmodule" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalRendererSwift~partial.swiftmodule"
+  },
+  "/Users/aimac/Development/FloppyTurd/FloppyTurd/GameEngine/Rendering/MetalTextRendererSwift.swift" : {
+    "const-values" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalTextRendererSwift.swiftconstvalues",
+    "dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalTextRendererSwift.d",
+    "diagnostics" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalTextRendererSwift.dia",
+    "index-unit-output-path" : "/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalTextRendererSwift.o",
+    "llvm-bc" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalTextRendererSwift.bc",
+    "object" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalTextRendererSwift.o",
+    "swift-dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalTextRendererSwift.swiftdeps",
+    "swiftmodule" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalTextRendererSwift~partial.swiftmodule"
+  },
+  "/Users/aimac/Development/FloppyTurd/FloppyTurd/GameEngine/Rendering/MetalTextureSwift.swift" : {
+    "const-values" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalTextureSwift.swiftconstvalues",
+    "dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalTextureSwift.d",
+    "diagnostics" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalTextureSwift.dia",
+    "index-unit-output-path" : "/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalTextureSwift.o",
+    "llvm-bc" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalTextureSwift.bc",
+    "object" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalTextureSwift.o",
+    "swift-dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalTextureSwift.swiftdeps",
+    "swiftmodule" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/MetalTextureSwift~partial.swiftmodule"
+  },
+  "/Users/aimac/Development/FloppyTurd/FloppyTurd/GameEngine/Resources/FontResourceManager.swift" : {
+    "const-values" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/FontResourceManager.swiftconstvalues",
+    "dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/FontResourceManager.d",
+    "diagnostics" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/FontResourceManager.dia",
+    "index-unit-output-path" : "/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/FontResourceManager.o",
+    "llvm-bc" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/FontResourceManager.bc",
+    "object" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/FontResourceManager.o",
+    "swift-dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/FontResourceManager.swiftdeps",
+    "swiftmodule" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/FontResourceManager~partial.swiftmodule"
+  },
+  "/Users/aimac/Development/FloppyTurd/FloppyTurd/GameEngine/Resources/ResourceManagerSwift.swift" : {
+    "const-values" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/ResourceManagerSwift.swiftconstvalues",
+    "dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/ResourceManagerSwift.d",
+    "diagnostics" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/ResourceManagerSwift.dia",
+    "index-unit-output-path" : "/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/ResourceManagerSwift.o",
+    "llvm-bc" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/ResourceManagerSwift.bc",
+    "object" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/ResourceManagerSwift.o",
+    "swift-dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/ResourceManagerSwift.swiftdeps",
+    "swiftmodule" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/ResourceManagerSwift~partial.swiftmodule"
+  },
+  "/Users/aimac/Development/FloppyTurd/FloppyTurd/GameEngine/UI/UIFrameworkSwift.swift" : {
+    "const-values" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UIFrameworkSwift.swiftconstvalues",
+    "dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UIFrameworkSwift.d",
+    "diagnostics" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UIFrameworkSwift.dia",
+    "index-unit-output-path" : "/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UIFrameworkSwift.o",
+    "llvm-bc" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UIFrameworkSwift.bc",
+    "object" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UIFrameworkSwift.o",
+    "swift-dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UIFrameworkSwift.swiftdeps",
+    "swiftmodule" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UIFrameworkSwift~partial.swiftmodule"
+  },
+  "/Users/aimac/Development/FloppyTurd/FloppyTurd/GameEngine/UI/UIManagerSwift.swift" : {
+    "const-values" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UIManagerSwift.swiftconstvalues",
+    "dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UIManagerSwift.d",
+    "diagnostics" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UIManagerSwift.dia",
+    "index-unit-output-path" : "/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UIManagerSwift.o",
+    "llvm-bc" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UIManagerSwift.bc",
+    "object" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UIManagerSwift.o",
+    "swift-dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UIManagerSwift.swiftdeps",
+    "swiftmodule" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/UIManagerSwift~partial.swiftmodule"
+  },
+  "/Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/AppDelegateSwift.swift" : {
+    "const-values" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AppDelegateSwift.swiftconstvalues",
+    "dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AppDelegateSwift.d",
+    "diagnostics" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AppDelegateSwift.dia",
+    "index-unit-output-path" : "/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AppDelegateSwift.o",
+    "llvm-bc" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AppDelegateSwift.bc",
+    "object" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AppDelegateSwift.o",
+    "swift-dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AppDelegateSwift.swiftdeps",
+    "swiftmodule" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/AppDelegateSwift~partial.swiftmodule"
+  },
+  "/Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/GameViewControllerSwift.swift" : {
+    "const-values" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GameViewControllerSwift.swiftconstvalues",
+    "dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GameViewControllerSwift.d",
+    "diagnostics" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GameViewControllerSwift.dia",
+    "index-unit-output-path" : "/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GameViewControllerSwift.o",
+    "llvm-bc" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GameViewControllerSwift.bc",
+    "object" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GameViewControllerSwift.o",
+    "swift-dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GameViewControllerSwift.swiftdeps",
+    "swiftmodule" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GameViewControllerSwift~partial.swiftmodule"
+  },
+  "/Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/GameViewSwift.swift" : {
+    "const-values" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GameViewSwift.swiftconstvalues",
+    "dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GameViewSwift.d",
+    "diagnostics" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GameViewSwift.dia",
+    "index-unit-output-path" : "/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GameViewSwift.o",
+    "llvm-bc" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GameViewSwift.bc",
+    "object" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GameViewSwift.o",
+    "swift-dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GameViewSwift.swiftdeps",
+    "swiftmodule" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GameViewSwift~partial.swiftmodule"
+  },
+  "/Users/aimac/Development/FloppyTurd/FloppyTurd/iOS/main_ios_swift.swift" : {
+    "const-values" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/main_ios_swift.swiftconstvalues",
+    "dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/main_ios_swift.d",
+    "diagnostics" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/main_ios_swift.dia",
+    "index-unit-output-path" : "/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/main_ios_swift.o",
+    "llvm-bc" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/main_ios_swift.bc",
+    "object" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/main_ios_swift.o",
+    "swift-dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/main_ios_swift.swiftdeps",
+    "swiftmodule" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/main_ios_swift~partial.swiftmodule"
+  },
+  "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "const-values" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GeneratedAssetSymbols.swiftconstvalues",
+    "dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GeneratedAssetSymbols.d",
+    "diagnostics" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GeneratedAssetSymbols.dia",
+    "index-unit-output-path" : "/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GeneratedAssetSymbols.o",
+    "swift-dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GeneratedAssetSymbols.swiftdeps",
+    "swiftmodule" : "/Users/aimac/Development/FloppyTurd/build_ios_sim/build/FloppyTurd.build/Debug-iphonesimulator/Objects-normal/x86_64/GeneratedAssetSymbols~partial.swiftmodule"
+  }
+}

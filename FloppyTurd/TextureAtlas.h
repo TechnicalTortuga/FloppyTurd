@@ -6,19 +6,31 @@
 
 // Structure to store atlas entry information
 struct AtlasEntry {
+    std::string texturePath;    // Original texture file path
     Rectangle sourceRect;       // Position and size within the atlas texture
     Vector2 originalSize;       // Original texture dimensions
-    std::string originalPath;   // Original file path for reference
+    bool rotated = false;       // Whether texture was rotated in atlas
+    AtlasCategory category;     // Which category this texture belongs to
     bool isLoaded = false;
+};
+
+// Structure for texture information during atlas building
+struct TextureInfo {
+    std::string path;
+    Image image;
+    int width, height;
+    int originalWidth, originalHeight;
+    bool rotated = false;
+    AtlasCategory category;
+    int priority;               // Packing priority (larger textures first)
 };
 
 // Atlas configuration for different sprite categories
 enum class AtlasCategory {
-    UI_ELEMENTS,      // Buttons, frames, icons
-    PLAYER_SPRITES,   // Player animations and hats
-    ENEMY_SPRITES,    // Enemy animations and projectiles
-    ENVIRONMENT,      // Backgrounds, tiles, decorations
-    PARTICLES         // Effects, explosions, pickups
+    UI,               // UI elements, buttons, frames, icons
+    GAME_OBJECTS,     // Player, enemies, game sprites
+    BACKGROUNDS,      // Background images and tiles
+    EFFECTS           // Particles, effects, explosions
 };
 
 class TextureAtlas {
@@ -59,16 +71,25 @@ private:
     TextureAtlas& operator=(const TextureAtlas&) = delete;
 
     // Atlas building helpers
-    bool PackTextures(const std::vector<Image>& images, const std::vector<std::string>& paths,
-                     int maxSize, Image& atlasImage, std::vector<AtlasEntry>& entries);
+    bool PackTextures(const std::vector<TextureInfo>& textures, int atlasSize, std::vector<AtlasEntry>& entries);
+    bool CreateAtlasTexture(AtlasCategory category, const std::vector<TextureInfo>& textures, 
+                           const std::vector<AtlasEntry>& entries, int atlasSize);
+    int NextPowerOfTwo(int value);
     
-    // Simple rect packing algorithm
+    // Binary tree packing algorithm
     struct PackNode {
         int x, y, width, height;
-        bool used = false;
-        std::unique_ptr<PackNode> right, down;
+        bool occupied = false;
+        PackNode* left = nullptr;
+        PackNode* right = nullptr;
+        std::string texturePath;    // Path of texture in this node (if occupied)
         
         PackNode(int x, int y, int w, int h) : x(x), y(y), width(w), height(h) {}
+        
+        ~PackNode() {
+            delete left;
+            delete right;
+        }
     };
     
     PackNode* FindNode(PackNode* root, int width, int height);
@@ -87,4 +108,4 @@ private:
     bool mobileOptimizations = false;
     float compressionQuality = 0.8f;
     int maxMobileAtlasSize = 1024;
-}; 
+};

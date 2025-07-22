@@ -11,7 +11,7 @@ public:
 		float frameTime = 0.1f,
 		float scale = 1.0f,
 		Vector2 startPosition = { 0,0 },
-		AtlasCategory atlasCategory = AtlasCategory::PLAYER_SPRITES);
+		AtlasCategory atlasCategory = AtlasCategory::GAME_OBJECTS);
 
 	// Legacy constructor
 	Sprite(const std::string& filePath,
@@ -93,5 +93,5 @@ private:
 	bool isAtlased = false;
 	Texture2D atlasTexture = { 0, 0, 0, 0, 0, nullptr }; // Initialize with 6 values: id, width, height, mipmaps, format, texture
 	Rectangle atlasRegion = { 0,0,0,0 }; // The region in the atlas for this sprite
-	AtlasCategory atlasCategory = AtlasCategory::PLAYER_SPRITES;
+	AtlasCategory atlasCategory = AtlasCategory::GAME_OBJECTS;
 };

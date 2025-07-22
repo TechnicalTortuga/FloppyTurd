@@ -1,4 +1,5 @@
 #pragma once
+#include "PlatformTypes.h"
 #include "PlatformAPI.h"
 #include <string>
 
