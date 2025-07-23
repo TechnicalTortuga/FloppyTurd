@@ -1,14 +1,20 @@
 module GameEngineCpp {
     // Core platform types and APIs
-    // Note: PlatformAPI.h excluded from module to prevent circular dependency during bridging header compilation
-    // It will be included directly in the bridging header instead
+    header "PlatformTypes.h"
+    header "PlatformAPI.h"
+    
+    // Input management system
+    header "GameEngine/Input/InputManager.h"
+    header "GameEngine/Input/TouchController.h"
     
     // Core engine subsystems
     header "ResourceManager.h"
     header "AudioManager.h"
     header "AudioStateManager.h"
     
-    // Rendering engine (C++ components only)
+    // Rendering engine
+    header "MetalRenderer.h"
+    header "MetalTextRenderer.h"
     header "Sprite.h"
     header "TextureAtlas.h"
     header "TextureCache.h"
@@ -18,9 +24,12 @@ module GameEngineCpp {
     header "AudioClip.h"
     header "SoundEffect.h"
     
-    // UI and coordinate system (platform-agnostic)
+    // UI and window management (platform-agnostic)
+    header "Window.h"
+    header "WindowIOS.h"
     header "UIManager.h"
     header "UICoordinateSystem.h"
+    header "TouchControls.h"
     
     // Game framework components (game-agnostic)
     header "Level.h"

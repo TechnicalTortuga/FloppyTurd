@@ -63,6 +63,7 @@ int game_main(int argc, char *argv[])
 	// PlatformLayer::GetInstance().Shutdown();
 	
 	return 0;
+#endif
 }
 
 // Regular main function for non-iOS platforms

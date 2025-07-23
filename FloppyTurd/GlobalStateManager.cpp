@@ -1,5 +1,6 @@
 #include "GlobalStateManager.h"
 #include "PlatformAPI.h"
+#include "PlatformTraits.h"
 
 // ============================================================================
 // RENDERING STATE QUERIES IMPLEMENTATION

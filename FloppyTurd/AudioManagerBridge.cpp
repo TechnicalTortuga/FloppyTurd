@@ -1,6 +1,7 @@
 #include "AudioManagerBridge.h"
 #include "AudioManager.h"
 #include "SoundManager.h"
+#include "SwiftTypes.h"
 
 extern "C" {
 
@@ -14,7 +15,7 @@ SoundManagerRef SoundManager_getInstance() {
 
 void AudioManager_playMusic(AudioManagerRef mgr, const char* fileName) {
     if (!mgr) return;
-    // AudioManager doesn't have PlayMusic method, this is a no-op for compatibility
+    ((AudioManager*)mgr)->PlayMusic(fileName);
 }
 
 void AudioManager_stopMusic(AudioManagerRef mgr) {
@@ -24,12 +25,12 @@ void AudioManager_stopMusic(AudioManagerRef mgr) {
 
 void AudioManager_pauseMusic(AudioManagerRef mgr) {
     if (!mgr) return;
-    // AudioManager doesn't have PauseMusic method, this is a no-op for compatibility
+    ((AudioManager*)mgr)->PauseMusic();
 }
 
 void AudioManager_resumeMusic(AudioManagerRef mgr) {
     if (!mgr) return;
-    // AudioManager doesn't have ResumeMusic method, this is a no-op for compatibility
+    ((AudioManager*)mgr)->ResumeMusic();
 }
 
 void AudioManager_setMusicVolume(AudioManagerRef mgr, float volume) {
@@ -39,44 +40,32 @@ void AudioManager_setMusicVolume(AudioManagerRef mgr, float volume) {
 
 void AudioManager_setMusicMuted(AudioManagerRef mgr, bool muted) {
     if (!mgr) return;
-    // AudioManager doesn't have SetMusicMuted method, use ToggleMusicMute if needed
-    if (muted && !((AudioManager*)mgr)->IsMusicMuted()) {
-        ((AudioManager*)mgr)->ToggleMusicMute();
-    } else if (!muted && ((AudioManager*)mgr)->IsMusicMuted()) {
-        ((AudioManager*)mgr)->ToggleMusicMute();
-    }
+    ((AudioManager*)mgr)->SetMusicMuted(muted);
 }
 
 void SoundManager_playSound(SoundManagerRef mgr, const char* fileName) {
-    if (!mgr || !fileName) return;
-    // SoundManager doesn't have PlaySound method with filename, use PlaySoundEffect through AudioManager
-    AudioManager::GetInstance().PlaySoundEffect(fileName);
+    if (!mgr) return;
+    ((SoundManager*)mgr)->PlaySound(fileName);
 }
 
 void SoundManager_playSoundAtPosition(SoundManagerRef mgr, const char* fileName, void* position) {
-    if (!mgr || !position || !fileName) return;
-    // SoundManager doesn't have PlaySoundAtPosition method, fallback to regular sound
-    AudioManager::GetInstance().PlaySoundEffect(fileName);
+    if (!mgr || !position) return;
+    ((SoundManager*)mgr)->PlaySoundAtPosition(fileName, *(Vector2*)position);
 }
 
 void SoundManager_stopAllSounds(SoundManagerRef mgr) {
     if (!mgr) return;
-    // SoundManager doesn't have StopAllSounds method, this is a no-op for compatibility
+    ((SoundManager*)mgr)->StopAllSounds();
 }
 
 void SoundManager_setVolume(SoundManagerRef mgr, float volume) {
     if (!mgr) return;
-    ((SoundManager*)mgr)->SetVolume(volume);
+    ((SoundManager*)mgr)->SetVolume((int)(volume * 10.0f));
 }
 
 void SoundManager_setMuted(SoundManagerRef mgr, bool muted) {
     if (!mgr) return;
-    // SoundManager doesn't have SetMuted method, set volume to 0 for mute
-    if (muted) {
-        ((SoundManager*)mgr)->SetVolume(0.0f);
-    } else {
-        ((SoundManager*)mgr)->SetVolume(1.0f);
-    }
+    ((SoundManager*)mgr)->SetMuted(muted);
 }
 
 } // extern "C"

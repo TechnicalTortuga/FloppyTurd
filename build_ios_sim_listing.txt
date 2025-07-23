@@ -1,0 +1,8 @@
+total 40
+drwxr-xr-x@  6 aimac  staff    192 Jul 15 20:05 build
+-rw-r--r--@  1 aimac  staff   2622 Jul 15 20:05 cmake_install.cmake
+-rw-r--r--@  1 aimac  staff  15927 Jul 15 20:05 CMakeCache.txt
+drwxr-xr-x@ 10 aimac  staff    320 Jul 15 20:05 CMakeFiles
+drwxr-xr-x@  3 aimac  staff     96 Jul 15 20:05 CMakeScripts
+drwxr-xr-x@  3 aimac  staff     96 Jul 15 20:05 Debug-iphonesimulator
+drwxr-xr-x@  4 aimac  staff    128 Jul 15 20:05 FloppyTurd.xcodeproj

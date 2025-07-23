@@ -128,26 +128,11 @@ private:
     bool isPaused = false;
     bool fartModeEnabled = false;
     
-    // Platform-specific music player pointer
-    void* currentMusicPlayer = nullptr;
-    void* nextMusicPlayer = nullptr;
-    
     // Track mapping
     std::unordered_map<AudioState, AudioTrackInfo> trackMapping;
     
     // Initialize track mapping
     void InitializeTrackMapping();
-    
-    // Platform-specific audio operations (delegates to PlatformAPI)
-    void* LoadMusicPlatform(const std::string& fileName);
-    void UnloadMusicPlatform(void* musicPlayer);
-    void PlayMusicPlatform(void* musicPlayer);
-    void StopMusicPlatform(void* musicPlayer);
-    void PauseMusicPlatform(void* musicPlayer);
-    void ResumeMusicPlatform(void* musicPlayer);
-    void SetMusicVolumePlatform(void* musicPlayer, float volume);
-    void SetMusicLoopingPlatform(void* musicPlayer, bool looping);
-    bool IsMusicPlayingPlatform(void* musicPlayer) const;
     
 
 }; 
