@@ -1,7 +1,8 @@
 #ifndef RAYLIB_INPUT_HANDLER_H
 #define RAYLIB_INPUT_HANDLER_H
 
-#include "../../Engine/Platform/PlatformInterfaces.h"
+#include <string>
+#include "../../Engine/Platform/PlatformDelegates.h"
 
 namespace Gnosis {
 

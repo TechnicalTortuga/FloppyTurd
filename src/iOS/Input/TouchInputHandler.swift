@@ -13,7 +13,9 @@ import GameController
 /**
  * @protocol TouchInputHandlerDelegate
  * @brief Delegate protocol for TouchInputHandler events
+ * @MainActor ensures all delegate methods run on the main thread for Swift 6 concurrency safety
  */
+@MainActor
 public protocol TouchInputHandlerDelegate: AnyObject {
     func touchInputHandler(_ handler: TouchInputHandler, didReceiveInput input: Any)
 }

@@ -253,8 +253,22 @@ public class MetalRenderer: NSObject {
         clearColor = MTLClearColor(red: Double(r), green: Double(g), blue: Double(b), alpha: Double(a))
     }
     
+    public func clearScreen(r: Float, g: Float, b: Float, a: Float) {
+        // Set clear color and clear the current render target
+        clearColor = MTLClearColor(red: Double(r), green: Double(g), blue: Double(b), alpha: Double(a))
+        
+        guard let commandBuffer = currentCommandBuffer,
+              let renderPassDescriptor = currentRenderPassDescriptor else { return }
+        
+        renderPassDescriptor.colorAttachments[0].clearColor = clearColor
+        renderPassDescriptor.colorAttachments[0].loadAction = .clear
+        
+        let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor)
+        renderEncoder?.endEncoding()
+    }
+    
     public func clear() {
-        // Clear the current render target with the clear color
+        // Clear the current render target with the current clear color
         guard let commandBuffer = currentCommandBuffer,
               let renderPassDescriptor = currentRenderPassDescriptor else { return }
         

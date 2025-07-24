@@ -14,6 +14,7 @@ import MetalKit
 /// Main game view controller for iOS with native C++ interop
 /// Direct C++ instantiation: std::make_unique<FloppyTurd::GameViewController>()
 /// Manages the Metal view, game engine lifecycle, and user input
+@MainActor
 public class GameViewController: UIViewController {
     
     // MARK: - Properties
@@ -71,7 +72,17 @@ public class GameViewController: UIViewController {
         log("GameViewController will appear")
         
         if isGameInitialized {
-            resumeGame()
+            if isPaused {
+                resumeGame()
+            } else if !gameEngine.isGameRunning() {
+                // Start the game loop for the first time
+                log("Starting game loop...")
+                if gameEngine.start() {
+                    log("Game loop started successfully")
+                } else {
+                    log("Failed to start game loop", level: .error)
+                }
+            }
         }
     }
     
@@ -122,6 +133,8 @@ public class GameViewController: UIViewController {
     private func setupGameEngine() {
         log("Setting up game engine...")
         
+        log("Initializing C++ game on main thread...")
+        
         // Initialize the C++ game engine through Swift interop
         gameEngine = GameEngine()
         
@@ -134,7 +147,7 @@ public class GameViewController: UIViewController {
         // Initialize the game
         if gameEngine.initialize() {
             isGameInitialized = true
-            log("Game engine initialized successfully")
+            log("Game engine initialized successfully on main thread")
         } else {
             log("Failed to initialize game engine", level: .error)
             fatalError("Game engine initialization failed")
@@ -271,8 +284,9 @@ extension GameViewController: MTKViewDelegate {
 
 extension GameViewController: TouchInputHandlerDelegate {
     
-    nonisolated public func touchInputHandler(_ handler: TouchInputHandler, didReceiveInput input: Any) {
-        // Forward touch input to game engine
+    public func touchInputHandler(_ handler: TouchInputHandler, didReceiveInput input: Any) {
+        // Forward touch input to game engine on main actor
+        // Since GameViewController is @MainActor, this method runs on main thread
         // TODO: Define proper TouchInput type and implement handleTouchInput in GameEngine
         // gameEngine.handleTouchInput(input)
     }

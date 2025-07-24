@@ -2,7 +2,7 @@
 #define FLOPPY_TURD_GAME_H
 
 #include "../../Engine/Core/ECS.h"
-#include "../../Engine/Platform/PlatformInterfaces.h"
+#include "../../Engine/Platform/PlatformDelegates.h"
 #include "../States/GameState.h"
 #include "../Entities/Player.h"
 #include <memory>
@@ -35,10 +35,14 @@ namespace FloppyTurd {
         FloppyTurdGame(FloppyTurdGame&& other) = default;
         FloppyTurdGame& operator=(FloppyTurdGame&& other) = default;
 
-        // Game lifecycle
-        bool Initialize(Gnosis::IPlatform* platform);
+        // Game lifecycle - Single point of initialization
+        bool Initialize();
         void Shutdown();
         void Run();
+        
+        // Platform-specific component setters (iOS only)
+        // Note: Always declared for Swift C++ interop compatibility
+        void SetSwiftComponents(void* metalRenderer, void* touchInputHandler, void* audioHandler);
 
         // Game loop
         void Update(float deltaTime);
@@ -63,8 +67,7 @@ namespace FloppyTurd {
         void AddCoins(int amount) { m_playerCoins += amount; }
         void SpendCoins(int amount) { m_playerCoins -= amount; }
 
-        // Platform access
-        Gnosis::IPlatform* GetPlatform() const { return m_platform; }
+        // System access
         Gnosis::ECS* GetECS() const { return m_ecsSystem.get(); }
 
         // Game settings
@@ -92,7 +95,19 @@ namespace FloppyTurd {
         // Core systems
         std::unique_ptr<Gnosis::ECS> m_ecsSystem;
         std::unique_ptr<GameStateManager> m_stateManager;
-        Gnosis::IPlatform* m_platform;
+        
+        // Platform abstraction
+        PlatformDelegates m_platformDelegates;
+        
+        // Platform-specific components
+        #ifdef __APPLE__
+        #if TARGET_OS_IPHONE
+        // iOS: Direct Swift component references
+        void* m_swiftMetalRenderer;
+        void* m_swiftTouchInputHandler;
+        void* m_swiftAudioHandler;
+        #endif
+        #endif
 
         // Game state
         bool m_initialized;

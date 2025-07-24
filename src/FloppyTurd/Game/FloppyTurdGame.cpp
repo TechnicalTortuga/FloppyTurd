@@ -1,11 +1,22 @@
 #include "FloppyTurdGame.h"
 #include "../../Engine/Core/GNLog.h"
-#include "../../Engine/Systems/RenderSystem.h"
+#include "../../Engine/Platform/PlatformDelegates.h"
 #include <iostream>
 #include <fstream>
 #include <chrono>
 #include <thread>
 #include <memory>
+#include <algorithm>
+
+#ifdef __APPLE__
+#if TARGET_OS_IPHONE
+#include "../../Engine/Platform/iOSPlatformImpl.h"
+#else
+#include "../../Engine/Platform/RaylibPlatformImpl.h"
+#endif
+#else
+#include "../../Engine/Platform/RaylibPlatformImpl.h"
+#endif
 
 namespace FloppyTurd {
 
@@ -20,7 +31,6 @@ namespace FloppyTurd {
     FloppyTurdGame::FloppyTurdGame()
         : m_ecsSystem(nullptr)
         , m_stateManager(nullptr)
-        , m_platform(nullptr)
         , m_initialized(false)
         , m_running(false)
         , m_paused(false)
@@ -34,6 +44,13 @@ namespace FloppyTurd {
         , m_fpsTimer(0.0f)
         , m_currentFPS(0.0f)
         , m_showDebugInfo(false)
+#ifdef __APPLE__
+#if TARGET_OS_IPHONE
+        , m_swiftMetalRenderer(nullptr)
+        , m_swiftTouchInputHandler(nullptr)
+        , m_swiftAudioHandler(nullptr)
+#endif
+#endif
     {
         // Initialize game stats
         m_gameStats = {0, 0, 0, 0, 0, 0.0f, 0, 0};
@@ -48,20 +65,54 @@ namespace FloppyTurd {
         GN_LOG_INFO("Game instance destroyed");
     }
 
-    bool FloppyTurdGame::Initialize(Gnosis::IPlatform* platform) {
+    bool FloppyTurdGame::Initialize() {
         if (m_initialized) {
             GN_LOG_WARN("Game already initialized");
             return true;
         }
-
-        if (!platform) {
-            GN_LOG_ERROR("Platform interface is null");
-            return false;
-        }
-
-        m_platform = platform;
         
         GN_LOG_INFO("Initializing Floppy Turd Game...");
+        
+        // Platform-specific initialization using delegates
+        #ifdef __APPLE__
+        #if TARGET_OS_IPHONE
+        // iOS: Ensure Swift components are set and setup delegates
+        GN_LOG_INFO("Checking Swift components...");
+        GN_LOG_INFO("m_swiftMetalRenderer: %p", m_swiftMetalRenderer);
+        GN_LOG_INFO("m_swiftTouchInputHandler: %p", m_swiftTouchInputHandler);
+        GN_LOG_INFO("m_swiftAudioHandler: %p", m_swiftAudioHandler);
+        
+        if (!m_swiftMetalRenderer || !m_swiftTouchInputHandler || !m_swiftAudioHandler) {
+            GN_LOG_ERROR("iOS Swift components not set. Call SetSwiftComponents() first.");
+            return false;
+        }
+        GN_LOG_INFO("All Swift components are valid, proceeding with delegate setup...");
+        // Setup iOS platform delegates
+        iOSPlatform::SetSwiftComponents(
+            static_cast<FloppyTurd::MetalRenderer*>(m_swiftMetalRenderer),
+            static_cast<FloppyTurd::TouchInputHandler*>(m_swiftTouchInputHandler),
+            static_cast<FloppyTurd::AudioManagerSwift*>(m_swiftAudioHandler)
+        );
+        iOSPlatform::SetupDelegates(m_platformDelegates);
+        GN_LOG_INFO("iOS platform delegates configured");
+        #else
+        // macOS: Setup Raylib delegates
+        RaylibPlatform::SetupDelegates(m_platformDelegates);
+        if (!RaylibPlatform::Initialize(800, 600, "Floppy Turd")) {
+            GN_LOG_ERROR("Failed to initialize Raylib platform");
+            return false;
+        }
+        GN_LOG_INFO("macOS Raylib platform initialized");
+        #endif
+        #else
+        // Desktop: Setup Raylib delegates
+        RaylibPlatform::SetupDelegates(m_platformDelegates);
+        if (!RaylibPlatform::Initialize(800, 600, "Floppy Turd")) {
+            GN_LOG_ERROR("Failed to initialize Raylib platform");
+            return false;
+        }
+        GN_LOG_INFO("Desktop Raylib platform initialized");
+        #endif
 
         // Initialize core systems
         if (!InitializeECS()) {
@@ -69,20 +120,35 @@ namespace FloppyTurd {
             return false;
         }
 
-        if (!InitializePlatform()) {
-            GN_LOG_ERROR("Failed to initialize platform");
-            return false;
-        }
-
+        // Platform-specific system initialization
+        #ifdef __APPLE__
+        #if TARGET_OS_IPHONE
+        // iOS: Systems are handled by Swift components
+        GN_LOG_INFO("iOS systems managed by Swift components");
+        #else
+        // macOS: Initialize Raylib systems (TODO)
         if (!InitializeAudio()) {
             GN_LOG_ERROR("Failed to initialize audio");
             return false;
         }
-
+        
         if (!InitializeGraphics()) {
             GN_LOG_ERROR("Failed to initialize graphics");
             return false;
         }
+        #endif
+        #else
+        // Desktop: Initialize Raylib systems (TODO)
+        if (!InitializeAudio()) {
+            GN_LOG_ERROR("Failed to initialize audio");
+            return false;
+        }
+        
+        if (!InitializeGraphics()) {
+            GN_LOG_ERROR("Failed to initialize graphics");
+            return false;
+        }
+        #endif
 
         // Initialize game states
         InitializeGameStates();
@@ -127,7 +193,6 @@ namespace FloppyTurd {
             m_ecsSystem.reset();
         }
 
-        m_platform = nullptr;
         m_initialized = false;
         
         GN_LOG_INFO("Game shutdown complete");
@@ -140,7 +205,7 @@ namespace FloppyTurd {
         }
 
         m_running = true;
-        GN_LOG_INFO("Starting game loop...");
+        GN_LOG_INFO("Entering game loop...");
 
         auto lastTime = std::chrono::high_resolution_clock::now();
 
@@ -196,9 +261,12 @@ namespace FloppyTurd {
             return;
         }
 
-        // Clear screen
-        if (m_platform) {
-            // m_platform->ClearScreen();
+        // Begin frame and clear screen using platform delegates
+        if (m_platformDelegates.renderer.beginFrame) {
+            m_platformDelegates.renderer.beginFrame();
+        }
+        if (m_platformDelegates.renderer.clearScreen) {
+            m_platformDelegates.renderer.clearScreen(0.2f, 0.3f, 0.3f, 1.0f); // Dark blue-gray background
         }
 
         // Render ECS systems
@@ -220,19 +288,20 @@ namespace FloppyTurd {
             RenderDebugInfo();
         }
 
-        // Present frame
-        if (m_platform) {
-            // m_platform->PresentFrame();
+        // End frame using platform delegates
+        if (m_platformDelegates.renderer.endFrame) {
+            m_platformDelegates.renderer.endFrame();
         }
     }
 
     void FloppyTurdGame::HandleInput() {
-        if (!m_initialized || !m_platform) {
+        if (!m_initialized) {
             return;
         }
 
-        // Handle platform input
-        // m_platform->HandleInput();
+        // Handle platform input using delegates
+        // Input handling is done through the input delegate functions as needed
+        // No general handleInput function in the delegate structure
 
         // Pass input to state manager
         if (m_stateManager) {
@@ -364,7 +433,7 @@ namespace FloppyTurd {
     bool FloppyTurdGame::InitializeECS() {
         GN_LOG_INFO("Initializing ECS system...");
         
-        m_ecsSystem = std::make_unique<Gnosis::ECS>();
+        m_ecsSystem = std::unique_ptr<Gnosis::ECS>(new Gnosis::ECS());
         if (!m_ecsSystem) {
             return false;
         }
@@ -379,12 +448,11 @@ namespace FloppyTurd {
     bool FloppyTurdGame::InitializePlatform() {
         GN_LOG_INFO("Initializing platform...");
         
-        if (!m_platform) {
+        // Platform delegates are already initialized in Initialize() method
+        if (!m_platformDelegates.IsValid()) {
+            GN_LOG_ERROR("Platform delegates not properly configured");
             return false;
         }
-
-        // Platform-specific initialization
-        // return m_platform->Initialize();
         
         GN_LOG_INFO("Platform initialized");
         return true;
@@ -505,6 +573,32 @@ namespace FloppyTurd {
 
     void FloppyTurdGame::RenderDebugInfo() {
         // Render debug overlay
+    }
+
+    void FloppyTurdGame::SetSwiftComponents(void* metalRenderer, void* touchInputHandler, void* audioHandler) {
+        GN_LOG_INFO("Setting Swift components...");
+        GN_LOG_INFO("MetalRenderer pointer: %p", metalRenderer);
+        GN_LOG_INFO("TouchInputHandler pointer: %p", touchInputHandler);
+        GN_LOG_INFO("AudioHandler pointer: %p", audioHandler);
+        
+        if (!metalRenderer || !touchInputHandler || !audioHandler) {
+            GN_LOG_ERROR("One or more Swift components are null");
+            return;
+        }
+        
+#ifdef __APPLE__
+#if TARGET_OS_IPHONE
+        m_swiftMetalRenderer = metalRenderer;
+        m_swiftTouchInputHandler = touchInputHandler;
+        m_swiftAudioHandler = audioHandler;
+        
+        GN_LOG_INFO("Swift components set successfully - iOS platform detected");
+#else
+        GN_LOG_WARN("SetSwiftComponents called on non-iOS platform - ignoring");
+#endif
+#else
+        GN_LOG_WARN("SetSwiftComponents called on non-Apple platform - ignoring");
+#endif
     }
 
     // Global utility functions

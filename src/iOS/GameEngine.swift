@@ -11,12 +11,16 @@
 import Foundation
 import UIKit
 import Metal
+import QuartzCore
 import FloppyTurdEngine
 import FloppyTurdGame
 
 /// GameEngine - Swift implementation with native C++ interop
 /// Direct C++ instantiation: std::make_unique<FloppyTurd::GameEngine>()
 /// Manages game lifecycle and coordinates between iOS and C++ systems
+/// @MainActor ensures all GameEngine operations happen on the main thread
+/// This is required for Swift 6 concurrency safety with UI-related operations
+@MainActor
 public class GameEngine: NSObject {
     
     // MARK: - Properties
@@ -30,6 +34,11 @@ public class GameEngine: NSObject {
     // iOS subsystems
     private var metalRenderer: MetalRenderer?
     private var touchInputHandler: TouchInputHandler?
+    private var audioManager: AVAudioHandler?
+    
+    // iOS-specific game loop using CADisplayLink
+    private var displayLink: CADisplayLink?
+    private var lastFrameTime: CFTimeInterval = 0
     
     // GNLog integration
     private func log(_ message: String, level: LogLevel = .info) {
@@ -59,8 +68,9 @@ public class GameEngine: NSObject {
     }
     
     deinit {
-        shutdown()
-        log("GameEngine Swift bridge destroyed")
+        // Note: Cannot call @MainActor isolated methods from deinit
+        // Cleanup should be handled explicitly via shutdown() before deallocation
+        // Swift will handle automatic cleanup of properties
     }
     
     // MARK: - Lifecycle Management
@@ -74,18 +84,51 @@ public class GameEngine: NSObject {
         
         log("Initializing GameEngine...")
         
+        // Create platform components first
+        if metalRenderer == nil {
+            metalRenderer = MetalRenderer()
+            log("Created MetalRenderer")
+        }
+        
+        if touchInputHandler == nil {
+            touchInputHandler = TouchInputHandler()
+            log("Created TouchInputHandler")
+        }
+        
+        if audioManager == nil {
+            audioManager = AVAudioHandler()
+            log("Created AudioManager")
+        }
+        
         // Create and initialize C++ game instance
         cppGame = FloppyTurd.FloppyTurdGame()
         
-        // TODO: Initialize with platform interface
-        // guard cppGame?.Initialize(platform) == true else {
-        //     log("Failed to initialize C++ game", level: .error)
-        //     cppGame = nil
-        //     return false
-        // }
+        // Initialize with Swift components using the new iOS-specific method
+        guard let renderer = metalRenderer,
+              let inputHandler = touchInputHandler,
+              let audio = audioManager else {
+            log("Failed to create platform components", level: .error)
+            return false
+        }
+        
+        // Use SetSwiftComponents method for iOS
+        cppGame?.SetSwiftComponents(
+            Unmanaged.passUnretained(renderer).toOpaque(),
+            Unmanaged.passUnretained(inputHandler).toOpaque(),
+            Unmanaged.passUnretained(audio).toOpaque()
+        )
+        
+        // Now initialize the C++ game
+        let success = cppGame?.Initialize() ?? false
+        
+        guard success else {
+            log("Failed to initialize C++ game with Swift components", level: .error)
+            cppGame = nil
+            return false
+        }
         
         isInitialized = true
-        log("GameEngine initialized successfully")
+        log("GameEngine initialized successfully with Swift components")
         return true
     }
     
@@ -107,30 +150,37 @@ public class GameEngine: NSObject {
         // Cleanup iOS subsystems
         metalRenderer = nil
         touchInputHandler = nil
+        audioManager = nil
         
         isInitialized = false
         log("GameEngine shutdown complete")
     }
     
-    /// Start the game loop
+    /// Start the game loop using iOS-compatible frame-based approach
+    /// @MainActor ensures this runs on the main thread for Swift 6 concurrency safety
     public func start() -> Bool {
         guard isInitialized && !isRunning else {
             log("Cannot start game - not initialized or already running", level: .warning)
             return false
         }
-        
-        log("Starting game loop...")
+
+        log("Starting iOS-compatible game loop...")
         
         guard cppGame != nil else {
             log("C++ game instance is null", level: .error)
             return false
         }
 
-        // Start the C++ game
-        cppGame?.Run()
+        // Start the C++ game state (but don't call the blocking Run() method)
+        cppGame?.StartGame()
+        
+        // Set up iOS-compatible frame-based rendering using CADisplayLink
+        setupDisplayLink()
+        
         isRunning = true
         isPaused = false
-        log("Game loop started successfully")
+        log("iOS-compatible game loop started successfully")
+        
         return true
     }
     
@@ -140,8 +190,12 @@ public class GameEngine: NSObject {
         
         log("Stopping game loop...")
         
-        // C++ game loop will be stopped when the game is paused or shutdown
-        // The Run() method handles the game loop internally
+        // Stop the display link
+        displayLink?.invalidate()
+        displayLink = nil
+        
+        // Stop the C++ game
+        cppGame?.EndGame()
         
         isRunning = false
         isPaused = false
@@ -154,6 +208,9 @@ public class GameEngine: NSObject {
         
         log("Pausing game...")
         
+        // Pause the display link
+        displayLink?.isPaused = true
+        
         cppGame?.PauseGame()
         
         isPaused = true
@@ -165,6 +222,10 @@ public class GameEngine: NSObject {
         guard isRunning && isPaused else { return }
         
         log("Resuming game...")
+        
+        // Resume the display link and reset frame timing
+        displayLink?.isPaused = false
+        lastFrameTime = CACurrentMediaTime()
         
         cppGame?.ResumeGame()
         
@@ -223,6 +284,21 @@ public class GameEngine: NSObject {
     public func render() {
         guard isRunning && !isPaused else { return }
         
+        // For now, directly call MetalRenderer to test blue screen rendering
+        // TODO: Connect MetalRenderer to C++ game properly
+        if let renderer = metalRenderer {
+            renderer.beginFrame()
+            renderer.setClearColor(r: 0.0, g: 0.5, b: 1.0, a: 1.0) // Blue background
+            renderer.clear()
+            
+            // Draw a simple white rectangle as a test
+            renderer.drawRectangle(x: 100, y: 100, width: 200, height: 100, r: 1.0, g: 1.0, b: 1.0, a: 1.0)
+            
+            renderer.endFrame()
+            renderer.present()
+        }
+        
+        // Call C++ game render (currently mostly commented out)
         cppGame?.Render()
     }
     
@@ -230,6 +306,32 @@ public class GameEngine: NSObject {
     
     // Note: Direct access to cppGame property is available
     // No getter function needed - use gameEngine.cppGame directly
+    
+    // MARK: - iOS Display Link Integration
+    
+    /// Set up CADisplayLink for iOS-compatible frame-based rendering
+    private func setupDisplayLink() {
+        displayLink = CADisplayLink(target: self, selector: #selector(frameUpdate))
+        displayLink?.add(to: .main, forMode: .default)
+        lastFrameTime = CACurrentMediaTime()
+        log("CADisplayLink setup complete for frame-based rendering")
+    }
+    
+    /// Frame update callback called by CADisplayLink
+    @objc private func frameUpdate() {
+        guard isRunning && !isPaused else { 
+            return 
+        }
+        
+        let currentTime = CACurrentMediaTime()
+        let deltaTime = Float(currentTime - lastFrameTime)
+        lastFrameTime = currentTime
+        
+        // Call individual C++ methods for iOS-compatible frame-based rendering
+        cppGame?.HandleInput()
+        cppGame?.Update(deltaTime)
+        cppGame?.Render()
+    }
 }
 
 // MARK: - C++ Integration Notes

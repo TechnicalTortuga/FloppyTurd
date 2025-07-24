@@ -1,7 +1,7 @@
 #ifndef RAYLIB_PLATFORM_H
 #define RAYLIB_PLATFORM_H
 
-#include "../../Engine/Platform/PlatformInterfaces.h"
+#include "../../Engine/Platform/PlatformDelegates.h"
 #include "../../Engine/Core/GnosisTypes.h"
 #include <map>
 #include <vector>

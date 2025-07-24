@@ -2,7 +2,7 @@ module FloppyTurdEngine {
     header "Core/ECS.h"
     header "Core/GNLog.h"
     header "Core/GnosisTypes.h"
-    header "Platform/PlatformInterfaces.h"
+    header "Platform/PlatformDelegates.h"
     header "Events/Event.h"
     header "Events/EventManager.h"
     
@@ -17,7 +17,6 @@ module FloppyTurdGame {
     header "../FloppyTurd/Components/GameComponents.h"
     header "../FloppyTurd/Entities/Player.h"
     header "../FloppyTurd/States/GameState.h"
-    header "Systems/RenderSystem.h"
     
     export *
     

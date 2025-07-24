@@ -1,5 +1,5 @@
 #include "LoadingState.h"
-#include "../../Engine/Platform/PlatformInterfaces.h"
+#include "../../Engine/Platform/PlatformDelegates.h"
 #include "../../Engine/Core/GNLog.h"
 #include <iostream>
 
