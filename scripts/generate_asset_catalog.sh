@@ -7,8 +7,8 @@ set -e  # Exit on error
 # Define paths
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$SCRIPT_DIR/.."
-RESOURCES_DIR="$PROJECT_ROOT/FloppyTurd/resources"
-ASSET_CATALOG_DIR="$PROJECT_ROOT/FloppyTurd/Assets.xcassets"
+RESOURCES_DIR="$PROJECT_ROOT/src/Assets"
+ASSET_CATALOG_DIR="$PROJECT_ROOT/src/Assets.xcassets"
 
 # Create asset catalog base structure if it doesn't exist
 mkdir -p "$ASSET_CATALOG_DIR"

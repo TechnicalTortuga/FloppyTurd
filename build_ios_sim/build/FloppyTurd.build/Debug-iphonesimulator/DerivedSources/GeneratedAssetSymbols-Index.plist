@@ -8,7 +8,7 @@
 	<array>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameBeret</string>
 			<key>relativePath</key>
@@ -18,7 +18,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameBigTurdHurt</string>
 			<key>relativePath</key>
@@ -28,7 +28,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameBigTurdIdle</string>
 			<key>relativePath</key>
@@ -38,7 +38,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameBigTurdJump</string>
 			<key>relativePath</key>
@@ -48,7 +48,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameBigTurdShoot</string>
 			<key>relativePath</key>
@@ -58,7 +58,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameBirdHurt</string>
 			<key>relativePath</key>
@@ -68,7 +68,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameBirdIdle</string>
 			<key>relativePath</key>
@@ -78,7 +78,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameBlueCoin</string>
 			<key>relativePath</key>
@@ -88,7 +88,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameBossBarFrame</string>
 			<key>relativePath</key>
@@ -98,7 +98,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameBossBarHealth</string>
 			<key>relativePath</key>
@@ -108,7 +108,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameBossBarHurt</string>
 			<key>relativePath</key>
@@ -118,7 +118,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameBossFloor</string>
 			<key>relativePath</key>
@@ -128,7 +128,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameBossWalls</string>
 			<key>relativePath</key>
@@ -138,7 +138,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameBottomPipeWide</string>
 			<key>relativePath</key>
@@ -148,7 +148,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameBottomPipeWideBlue</string>
 			<key>relativePath</key>
@@ -158,7 +158,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameBottomToilet</string>
 			<key>relativePath</key>
@@ -168,7 +168,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameBottomToiletGold</string>
 			<key>relativePath</key>
@@ -178,7 +178,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameBottomToiletGoldExport</string>
 			<key>relativePath</key>
@@ -188,7 +188,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameBottomToiletSnow</string>
 			<key>relativePath</key>
@@ -198,7 +198,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameBrickWall</string>
 			<key>relativePath</key>
@@ -208,7 +208,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameCabinPainting</string>
 			<key>relativePath</key>
@@ -218,7 +218,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameCacti</string>
 			<key>relativePath</key>
@@ -228,7 +228,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameCactiA</string>
 			<key>relativePath</key>
@@ -238,7 +238,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameCactiB</string>
 			<key>relativePath</key>
@@ -248,7 +248,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameCactiBush</string>
 			<key>relativePath</key>
@@ -258,7 +258,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameCactiC</string>
 			<key>relativePath</key>
@@ -268,7 +268,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameCactiD</string>
 			<key>relativePath</key>
@@ -278,7 +278,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameCactiE</string>
 			<key>relativePath</key>
@@ -288,7 +288,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameCastleLevelPainting</string>
 			<key>relativePath</key>
@@ -298,7 +298,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameCoinBag</string>
 			<key>relativePath</key>
@@ -308,7 +308,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameDesertLevelPainting</string>
 			<key>relativePath</key>
@@ -318,7 +318,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameDownArrow</string>
 			<key>relativePath</key>
@@ -328,7 +328,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameEmptyPainting</string>
 			<key>relativePath</key>
@@ -338,7 +338,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameF</string>
 			<key>relativePath</key>
@@ -348,7 +348,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameFloppyPoop</string>
 			<key>relativePath</key>
@@ -358,7 +358,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameFloppyPoopLarge</string>
 			<key>relativePath</key>
@@ -368,7 +368,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameFloppyPoopMid</string>
 			<key>relativePath</key>
@@ -378,7 +378,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameFloppyButtonBlue</string>
 			<key>relativePath</key>
@@ -388,7 +388,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameFloppyButtonBlueHover</string>
 			<key>relativePath</key>
@@ -398,7 +398,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameFloppyLogo</string>
 			<key>relativePath</key>
@@ -408,7 +408,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameFloppyTurdCreditsBackground</string>
 			<key>relativePath</key>
@@ -418,7 +418,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameFloppyTurdMorte</string>
 			<key>relativePath</key>
@@ -428,7 +428,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameGameOverBackground</string>
 			<key>relativePath</key>
@@ -438,7 +438,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameGameOverScore</string>
 			<key>relativePath</key>
@@ -448,7 +448,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameGoldCoin</string>
 			<key>relativePath</key>
@@ -458,7 +458,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameHatFrame</string>
 			<key>relativePath</key>
@@ -468,7 +468,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameHatFrameDenied</string>
 			<key>relativePath</key>
@@ -478,7 +478,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameHatFrameHover</string>
 			<key>relativePath</key>
@@ -488,7 +488,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameHatFrameLocked</string>
 			<key>relativePath</key>
@@ -498,7 +498,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameHatFrameSelected</string>
 			<key>relativePath</key>
@@ -508,7 +508,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameJanitor</string>
 			<key>relativePath</key>
@@ -518,7 +518,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameJanitorSurprise</string>
 			<key>relativePath</key>
@@ -528,7 +528,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameJanitorSweep</string>
 			<key>relativePath</key>
@@ -538,7 +538,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameLeftArrow</string>
 			<key>relativePath</key>
@@ -548,7 +548,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameLeftArrowHover</string>
 			<key>relativePath</key>
@@ -558,7 +558,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameLevel1BackLayerBackground</string>
 			<key>relativePath</key>
@@ -568,7 +568,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameLevel1Clouds</string>
 			<key>relativePath</key>
@@ -578,7 +578,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameLevel1FrontLayerBackground</string>
 			<key>relativePath</key>
@@ -588,7 +588,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameLevel1MidLayerBackground</string>
 			<key>relativePath</key>
@@ -598,7 +598,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameLevel3BackLayerBackground</string>
 			<key>relativePath</key>
@@ -608,7 +608,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameLevel3FrontLayerBackground</string>
 			<key>relativePath</key>
@@ -618,7 +618,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameLevel3MidLayerBackground</string>
 			<key>relativePath</key>
@@ -628,7 +628,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameLockedPainting</string>
 			<key>relativePath</key>
@@ -638,7 +638,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameMainMenu</string>
 			<key>relativePath</key>
@@ -648,7 +648,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameMainMenuMobile</string>
 			<key>relativePath</key>
@@ -658,7 +658,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameOuthouse</string>
 			<key>relativePath</key>
@@ -668,7 +668,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameOuthouseToilet</string>
 			<key>relativePath</key>
@@ -678,7 +678,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameParkLevelPainting</string>
 			<key>relativePath</key>
@@ -688,7 +688,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNamePauseMenuBackground</string>
 			<key>relativePath</key>
@@ -698,7 +698,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNamePinwheelHat</string>
 			<key>relativePath</key>
@@ -708,7 +708,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNamePooHeart</string>
 			<key>relativePath</key>
@@ -718,7 +718,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNamePooHeartBig</string>
 			<key>relativePath</key>
@@ -728,7 +728,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNamePooHeartRainbow</string>
 			<key>relativePath</key>
@@ -738,7 +738,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNamePooHeartRainbowBeam</string>
 			<key>relativePath</key>
@@ -748,7 +748,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameRabbitKnightPainting</string>
 			<key>relativePath</key>
@@ -758,7 +758,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameRamsesHat</string>
 			<key>relativePath</key>
@@ -768,7 +768,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameRatBeachPainting</string>
 			<key>relativePath</key>
@@ -778,7 +778,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameRatCopterHurt</string>
 			<key>relativePath</key>
@@ -788,7 +788,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameRatCopterIdle</string>
 			<key>relativePath</key>
@@ -798,7 +798,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameRatKingPainting</string>
 			<key>relativePath</key>
@@ -808,7 +808,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameRatking</string>
 			<key>relativePath</key>
@@ -818,7 +818,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameRatkingAimBackArmOnly</string>
 			<key>relativePath</key>
@@ -828,7 +828,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameRatkingAimTorsoOnly</string>
 			<key>relativePath</key>
@@ -838,7 +838,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameRatkingAimTossArmOnly</string>
 			<key>relativePath</key>
@@ -848,7 +848,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameRatkingDeath</string>
 			<key>relativePath</key>
@@ -858,7 +858,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameRatkingHurt</string>
 			<key>relativePath</key>
@@ -868,7 +868,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameRatkingStatic</string>
 			<key>relativePath</key>
@@ -878,7 +878,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameRatkingWalk</string>
 			<key>relativePath</key>
@@ -888,7 +888,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameRedCoin</string>
 			<key>relativePath</key>
@@ -898,7 +898,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameRightArrow</string>
 			<key>relativePath</key>
@@ -908,7 +908,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameRightArrowHover</string>
 			<key>relativePath</key>
@@ -918,7 +918,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameRiverWalkPainting</string>
 			<key>relativePath</key>
@@ -928,7 +928,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameSamuraiHelmet</string>
 			<key>relativePath</key>
@@ -938,7 +938,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameScore</string>
 			<key>relativePath</key>
@@ -948,7 +948,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameScoreSmall</string>
 			<key>relativePath</key>
@@ -958,7 +958,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameSewerBackgroundRunningWater</string>
 			<key>relativePath</key>
@@ -968,7 +968,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameSewerLevelPainting</string>
 			<key>relativePath</key>
@@ -978,7 +978,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameSkillMenuBorder</string>
 			<key>relativePath</key>
@@ -988,7 +988,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameSkillPointInfoBackground</string>
 			<key>relativePath</key>
@@ -998,7 +998,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameSnowLevelBackTrees</string>
 			<key>relativePath</key>
@@ -1008,7 +1008,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameSnowLevelBackground</string>
 			<key>relativePath</key>
@@ -1018,7 +1018,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameSnowLevelFrontTrees</string>
 			<key>relativePath</key>
@@ -1028,7 +1028,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameSnowLevelMountains</string>
 			<key>relativePath</key>
@@ -1038,7 +1038,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameSnowLevelPainting</string>
 			<key>relativePath</key>
@@ -1048,7 +1048,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameSnowLevelTundra</string>
 			<key>relativePath</key>
@@ -1058,7 +1058,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameSnowManChad</string>
 			<key>relativePath</key>
@@ -1068,7 +1068,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameSnowManChill</string>
 			<key>relativePath</key>
@@ -1078,7 +1078,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameSnowManGreen</string>
 			<key>relativePath</key>
@@ -1088,7 +1088,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameSnowManIdle</string>
 			<key>relativePath</key>
@@ -1098,7 +1098,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameSnowManThrow</string>
 			<key>relativePath</key>
@@ -1108,7 +1108,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameSnowball</string>
 			<key>relativePath</key>
@@ -1118,7 +1118,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameSnowfall</string>
 			<key>relativePath</key>
@@ -1128,7 +1128,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameSpartanHelmet</string>
 			<key>relativePath</key>
@@ -1138,7 +1138,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameSpikeBall</string>
 			<key>relativePath</key>
@@ -1148,7 +1148,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameSpikeBallBase</string>
 			<key>relativePath</key>
@@ -1158,7 +1158,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTeenageTurdHurt</string>
 			<key>relativePath</key>
@@ -1168,7 +1168,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTeenageTurdIdle</string>
 			<key>relativePath</key>
@@ -1178,7 +1178,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTeenageTurdJump</string>
 			<key>relativePath</key>
@@ -1188,7 +1188,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTeenageTurdShoot</string>
 			<key>relativePath</key>
@@ -1198,7 +1198,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameToiletPaperFlap</string>
 			<key>relativePath</key>
@@ -1208,7 +1208,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameToiletPaperHit</string>
 			<key>relativePath</key>
@@ -1218,7 +1218,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTopPipeWide</string>
 			<key>relativePath</key>
@@ -1228,7 +1228,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTopPipeWideBlue</string>
 			<key>relativePath</key>
@@ -1238,7 +1238,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTopToilet</string>
 			<key>relativePath</key>
@@ -1248,7 +1248,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTopToiletGold</string>
 			<key>relativePath</key>
@@ -1258,7 +1258,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTopToiletSnow</string>
 			<key>relativePath</key>
@@ -1268,7 +1268,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTorchPillar</string>
 			<key>relativePath</key>
@@ -1278,7 +1278,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTryAgainBackground</string>
 			<key>relativePath</key>
@@ -1288,7 +1288,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdHeart</string>
 			<key>relativePath</key>
@@ -1298,7 +1298,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdHeart0HalfHollow</string>
 			<key>relativePath</key>
@@ -1308,7 +1308,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdHeart0HalfHollow1Half</string>
 			<key>relativePath</key>
@@ -1318,7 +1318,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdHeart0ThirdHollow</string>
 			<key>relativePath</key>
@@ -1328,7 +1328,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdHeart0ThirdHollow1Third</string>
 			<key>relativePath</key>
@@ -1338,7 +1338,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdHeart1Half</string>
 			<key>relativePath</key>
@@ -1348,7 +1348,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdHeart1HalfHollow</string>
 			<key>relativePath</key>
@@ -1358,7 +1358,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdHeart1Third</string>
 			<key>relativePath</key>
@@ -1368,7 +1368,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdHeart1ThirdHollow</string>
 			<key>relativePath</key>
@@ -1378,7 +1378,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdHeart1ThirdsHollow1Thirds</string>
 			<key>relativePath</key>
@@ -1388,7 +1388,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdHeart2Thirds</string>
 			<key>relativePath</key>
@@ -1398,7 +1398,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdHeart2ThirdsHollow</string>
 			<key>relativePath</key>
@@ -1408,7 +1408,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdHeart2ThirdsHollow2Thirds</string>
 			<key>relativePath</key>
@@ -1418,7 +1418,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdHeartHollow</string>
 			<key>relativePath</key>
@@ -1428,7 +1428,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdHeartSmall</string>
 			<key>relativePath</key>
@@ -1438,7 +1438,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdPointButton</string>
 			<key>relativePath</key>
@@ -1448,7 +1448,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdPointButtonAvailable</string>
 			<key>relativePath</key>
@@ -1458,7 +1458,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdPointButtonClaimed</string>
 			<key>relativePath</key>
@@ -1468,7 +1468,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdPointButtonFocused</string>
 			<key>relativePath</key>
@@ -1478,7 +1478,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdPointMenu</string>
 			<key>relativePath</key>
@@ -1488,7 +1488,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdletHurt</string>
 			<key>relativePath</key>
@@ -1498,7 +1498,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdletIdle</string>
 			<key>relativePath</key>
@@ -1508,7 +1508,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdletJump</string>
 			<key>relativePath</key>
@@ -1518,7 +1518,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdletShoot</string>
 			<key>relativePath</key>
@@ -1528,7 +1528,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameUpArrow</string>
 			<key>relativePath</key>
@@ -1538,7 +1538,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameA</string>
 			<key>relativePath</key>
@@ -1548,7 +1548,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameAchievementicon</string>
 			<key>relativePath</key>
@@ -1558,7 +1558,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameAchievementiconunlocked</string>
 			<key>relativePath</key>
@@ -1568,7 +1568,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameBallcap</string>
 			<key>relativePath</key>
@@ -1578,7 +1578,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameBallcapbigturdjump</string>
 			<key>relativePath</key>
@@ -1588,7 +1588,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameBallcapbigturdshoot</string>
 			<key>relativePath</key>
@@ -1598,7 +1598,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameBallcapturdletjump</string>
 			<key>relativePath</key>
@@ -1608,7 +1608,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameBallcapturdletshoot</string>
 			<key>relativePath</key>
@@ -1618,7 +1618,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameBerethatbigturdjump</string>
 			<key>relativePath</key>
@@ -1628,7 +1628,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameBerethatbigturdshoot</string>
 			<key>relativePath</key>
@@ -1638,7 +1638,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameBerethatturdletjump</string>
 			<key>relativePath</key>
@@ -1648,7 +1648,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameBerethatturdletshoot</string>
 			<key>relativePath</key>
@@ -1658,7 +1658,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameBlastBig</string>
 			<key>relativePath</key>
@@ -1668,7 +1668,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameBlastSmall</string>
 			<key>relativePath</key>
@@ -1678,7 +1678,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameBosspillar</string>
 			<key>relativePath</key>
@@ -1688,7 +1688,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameCastlelevelbackgroundwall</string>
 			<key>relativePath</key>
@@ -1698,7 +1698,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameCastlelevelchandelier</string>
 			<key>relativePath</key>
@@ -1708,7 +1708,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameCastlelevelfloorceiling</string>
 			<key>relativePath</key>
@@ -1718,7 +1718,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameCastlelevelfloortorch</string>
 			<key>relativePath</key>
@@ -1728,7 +1728,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameCowboyhat</string>
 			<key>relativePath</key>
@@ -1738,7 +1738,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameCowboyhatbigturd</string>
 			<key>relativePath</key>
@@ -1748,7 +1748,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameCowboyhatbigturdjump</string>
 			<key>relativePath</key>
@@ -1758,7 +1758,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameCowboyhatbigturdshoot</string>
 			<key>relativePath</key>
@@ -1768,7 +1768,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameCowboyhatteenage</string>
 			<key>relativePath</key>
@@ -1778,7 +1778,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameCowboyhatteenageshoot</string>
 			<key>relativePath</key>
@@ -1788,7 +1788,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameCowboyhatturdlet</string>
 			<key>relativePath</key>
@@ -1798,7 +1798,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameCowboyhatturdletjump</string>
 			<key>relativePath</key>
@@ -1808,7 +1808,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameCowboyhatturdletshoot</string>
 			<key>relativePath</key>
@@ -1818,7 +1818,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameCrown</string>
 			<key>relativePath</key>
@@ -1828,7 +1828,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameCrownhatbigturdjump</string>
 			<key>relativePath</key>
@@ -1838,7 +1838,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameCrownhatbigturdshoot</string>
 			<key>relativePath</key>
@@ -1848,7 +1848,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameCrownhatturdletjump</string>
 			<key>relativePath</key>
@@ -1858,7 +1858,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameCrownhatturdletshoot</string>
 			<key>relativePath</key>
@@ -1868,7 +1868,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameCurtains</string>
 			<key>relativePath</key>
@@ -1878,7 +1878,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameDancingcacti</string>
 			<key>relativePath</key>
@@ -1888,7 +1888,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameDancingcacticowboy</string>
 			<key>relativePath</key>
@@ -1898,7 +1898,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameDancingcactismall</string>
 			<key>relativePath</key>
@@ -1908,7 +1908,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameDarkclouds</string>
 			<key>relativePath</key>
@@ -1918,7 +1918,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameDooragbigturdjump</string>
 			<key>relativePath</key>
@@ -1928,7 +1928,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameDooragbigturdshoot</string>
 			<key>relativePath</key>
@@ -1938,7 +1938,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameDooraghat</string>
 			<key>relativePath</key>
@@ -1948,7 +1948,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameDooragturdletjump</string>
 			<key>relativePath</key>
@@ -1958,7 +1958,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameDooragturdletshoot</string>
 			<key>relativePath</key>
@@ -1968,7 +1968,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameFlowerhat</string>
 			<key>relativePath</key>
@@ -1978,7 +1978,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameFlowerhatbigturdjump</string>
 			<key>relativePath</key>
@@ -1988,7 +1988,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameFlowerhatbigturdshoot</string>
 			<key>relativePath</key>
@@ -1998,7 +1998,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameFlowerhatturdletjump</string>
 			<key>relativePath</key>
@@ -2008,7 +2008,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameFlowerhatturdletshoot</string>
 			<key>relativePath</key>
@@ -2018,7 +2018,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameMinusbutton</string>
 			<key>relativePath</key>
@@ -2028,7 +2028,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameMinusbuttonclicked</string>
 			<key>relativePath</key>
@@ -2038,7 +2038,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameMinusbuttonhover</string>
 			<key>relativePath</key>
@@ -2048,7 +2048,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameMutebutton</string>
 			<key>relativePath</key>
@@ -2058,7 +2058,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameMutebuttonclicked</string>
 			<key>relativePath</key>
@@ -2068,7 +2068,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameMutebuttonhover</string>
 			<key>relativePath</key>
@@ -2078,7 +2078,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameMutebuttonlocked</string>
 			<key>relativePath</key>
@@ -2088,7 +2088,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameMutebuttonlockedclicked</string>
 			<key>relativePath</key>
@@ -2098,7 +2098,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameMutebuttonlockedhover</string>
 			<key>relativePath</key>
@@ -2108,7 +2108,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNamePinwheelbigturdjump</string>
 			<key>relativePath</key>
@@ -2118,7 +2118,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNamePinwheelbigturdshoot</string>
 			<key>relativePath</key>
@@ -2128,7 +2128,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNamePinwheelturdletjump</string>
 			<key>relativePath</key>
@@ -2138,7 +2138,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNamePinwheelturdletshoot</string>
 			<key>relativePath</key>
@@ -2148,7 +2148,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNamePlaceholder</string>
 			<key>relativePath</key>
@@ -2158,7 +2158,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNamePlusbutton</string>
 			<key>relativePath</key>
@@ -2168,7 +2168,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNamePlusbuttonclicked</string>
 			<key>relativePath</key>
@@ -2178,7 +2178,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNamePlusbuttonhover</string>
 			<key>relativePath</key>
@@ -2188,7 +2188,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNamePoophat</string>
 			<key>relativePath</key>
@@ -2198,7 +2198,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNamePoophatbigturdjump</string>
 			<key>relativePath</key>
@@ -2208,7 +2208,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNamePoophatbigturdshoot</string>
 			<key>relativePath</key>
@@ -2218,7 +2218,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNamePoophatturdletjump</string>
 			<key>relativePath</key>
@@ -2228,7 +2228,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNamePoophatturdletshoot</string>
 			<key>relativePath</key>
@@ -2238,7 +2238,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameRamsesbigturdjump</string>
 			<key>relativePath</key>
@@ -2248,7 +2248,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameRamsesbigturdshoot</string>
 			<key>relativePath</key>
@@ -2258,7 +2258,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameRamsesturdletjump</string>
 			<key>relativePath</key>
@@ -2268,7 +2268,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameRamsesturdletshoot</string>
 			<key>relativePath</key>
@@ -2278,7 +2278,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameRatkingbackground</string>
 			<key>relativePath</key>
@@ -2288,7 +2288,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameSamuraibigturdjump</string>
 			<key>relativePath</key>
@@ -2298,7 +2298,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameSamuraibigturdshoot</string>
 			<key>relativePath</key>
@@ -2308,7 +2308,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameSamuraiturdletjump</string>
 			<key>relativePath</key>
@@ -2318,7 +2318,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameSamuraiturdletshoot</string>
 			<key>relativePath</key>
@@ -2328,7 +2328,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameScreenCurtains</string>
 			<key>relativePath</key>
@@ -2338,7 +2338,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameSewerrunningwaterwide</string>
 			<key>relativePath</key>
@@ -2348,7 +2348,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameSewerwidevarA</string>
 			<key>relativePath</key>
@@ -2358,7 +2358,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameSewerwidevarB</string>
 			<key>relativePath</key>
@@ -2368,7 +2368,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameSewerwidevarC</string>
 			<key>relativePath</key>
@@ -2378,7 +2378,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameSewerwidevarD</string>
 			<key>relativePath</key>
@@ -2388,7 +2388,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameSewerwidevarE</string>
 			<key>relativePath</key>
@@ -2398,7 +2398,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameShellhat</string>
 			<key>relativePath</key>
@@ -2408,7 +2408,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameShellhatbigturdjump</string>
 			<key>relativePath</key>
@@ -2418,7 +2418,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameShellhatbigturdshoot</string>
 			<key>relativePath</key>
@@ -2428,7 +2428,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameShellhatturdletjump</string>
 			<key>relativePath</key>
@@ -2438,7 +2438,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameShellhatturdletshoot</string>
 			<key>relativePath</key>
@@ -2448,7 +2448,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameSnowTile</string>
 			<key>relativePath</key>
@@ -2458,7 +2458,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameSpartanhatbigturdjump</string>
 			<key>relativePath</key>
@@ -2468,7 +2468,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameSpartanhatbigturdshoot</string>
 			<key>relativePath</key>
@@ -2478,7 +2478,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameSpartanhatturdletjump</string>
 			<key>relativePath</key>
@@ -2488,7 +2488,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameSpartanhatturdletshoot</string>
 			<key>relativePath</key>
@@ -2498,7 +2498,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameStrawhat</string>
 			<key>relativePath</key>
@@ -2508,7 +2508,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameStrawhatbigturdjump</string>
 			<key>relativePath</key>
@@ -2518,7 +2518,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameStrawhatbigturdshoot</string>
 			<key>relativePath</key>
@@ -2528,7 +2528,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameStrawhatturdletjump</string>
 			<key>relativePath</key>
@@ -2538,7 +2538,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameStrawhatturdletshoot</string>
 			<key>relativePath</key>
@@ -2548,7 +2548,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameToiletpaperprojectile</string>
 			<key>relativePath</key>
@@ -2558,7 +2558,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTophat</string>
 			<key>relativePath</key>
@@ -2568,7 +2568,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTophatbigturdjump</string>
 			<key>relativePath</key>
@@ -2578,7 +2578,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTophatbigturdshoot</string>
 			<key>relativePath</key>
@@ -2588,7 +2588,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTophatturdletjump</string>
 			<key>relativePath</key>
@@ -2598,7 +2598,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameTophatturdletshoot</string>
 			<key>relativePath</key>
@@ -2608,7 +2608,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameUshanka</string>
 			<key>relativePath</key>
@@ -2618,7 +2618,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameUshankabigturdjump</string>
 			<key>relativePath</key>
@@ -2628,7 +2628,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameUshankabigturdshoot</string>
 			<key>relativePath</key>
@@ -2638,7 +2638,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameUshankaturdletjump</string>
 			<key>relativePath</key>
@@ -2648,7 +2648,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameUshankaturdletshoot</string>
 			<key>relativePath</key>
@@ -2658,7 +2658,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameVolumemeterempty</string>
 			<key>relativePath</key>
@@ -2668,7 +2668,7 @@
 		</dict>
 		<dict>
 			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/FloppyTurd/Assets.xcassets</string>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
 			<string>ACImageNameVolumemeterfull</string>
 			<key>relativePath</key>

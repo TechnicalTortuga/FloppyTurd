@@ -65,13 +65,13 @@ set(PLATFORM "${_FTURD_SAVED_PLATFORM}" CACHE STRING "" FORCE)
 
 # Collect source files
 file(GLOB_RECURSE CPP_SOURCES 
-    ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
 )
 file(GLOB_RECURSE SWIFT_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/*.swift
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/*.swift
 )
 file(GLOB_RECURSE OBJC_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/*.mm
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/*.mm
 )
 set(SOURCES ${CPP_SOURCES} ${SWIFT_SOURCES} ${OBJC_SOURCES})
 
@@ -79,16 +79,9 @@ set(SOURCES ${CPP_SOURCES} ${SWIFT_SOURCES} ${OBJC_SOURCES})
 # Remove files that no longer exist (were deleted during refactor)
 # Note: These files were already removed, so these commands are safe to keep
 # but they won't do anything if the files don't exist
-list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/PlayerOLD.cpp)
-list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/GameLog.cpp)
-list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/LogManager.cpp)
-
-# Add new files that were created during refactor
-list(APPEND SOURCES 
-    ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/GlobalStateManager.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/FloppyTurdInput.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/UIManager.cpp
-)
+list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/PlayerOLD.cpp)
+list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/GameLog.cpp)
+list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/LogManager.cpp)
 
     # Add platform-specific compatibility layer
     if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
@@ -97,61 +90,69 @@ list(APPEND SOURCES
         
         # Remove old .mm files that have been migrated to Swift
         list(REMOVE_ITEM SOURCES 
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/WindowIOS.mm
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/AudioStateManager.mm
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/GameLog.mm
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/LogManager.mm
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/iOS/AppDelegate.mm
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/iOS/GameViewController.mm
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/iOS/GameView.mm
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/iOS/HapticsManager.mm
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalRenderer.mm
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalFrameResources.mm
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalTextureCache.mm
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalTexture.mm
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/FontAtlasGenerator.mm
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/FontCache.mm
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalShader.mm
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalTextRenderer.mm
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/UICoordinateSystem.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/WindowIOS.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/AudioStateManager.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/GameLog.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/LogManager.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/AppDelegate.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/GameViewController.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/GameView.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/HapticsManager.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/MetalRenderer.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/MetalFrameResources.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/MetalTextureCache.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/MetalTexture.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/FontAtlasGenerator.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/FontCache.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/MetalShader.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/MetalTextRenderer.mm
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/UICoordinateSystem.mm
         )
     
     # Remove main.cpp from iOS builds to avoid duplicate main functions
-    list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/main.cpp)
+    list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp)
 else()
     # Other platforms use PlatformAPI with direct Raylib
     # Explicitly add main.cpp for non-iOS platforms
-    list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/main.cpp)
+    list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp)
 endif()
 
 # Note: main.cpp vs main_ios.mm is handled above in platform-specific sections
 
 file(GLOB_RECURSE HEADERS 
-    ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/*.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/*.h
 )
 # Remove the GameSettings.h and Resources.h from sources (header only)
-list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/GameSettings.h)
-list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/Resources.h)
+list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/GameSettings.h)
+list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/Resources.h)
 
 # For iOS, remove files that are replaced by Swift versions
 if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
     # Remove UICoordinateSystem.cpp since we use Metal/UIKit implementation for iOS
-    list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/UICoordinateSystem.cpp)
+    list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/UICoordinateSystem.cpp)
     # Remove ONLY raylib-dependent desktop components
     list(REMOVE_ITEM SOURCES
-        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/Window.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/TouchControls.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Window.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/TouchControls.cpp
     )
     
-    # Keep cross-platform systems (now Swift-bridged)
-    if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "iOS")
-        target_link_libraries(${PROJECT_NAME} PRIVATE raylib)
-    endif()
+    # Remove ALL Raylib-related files from iOS builds
+    list(REMOVE_ITEM SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Raylib/Rendering/RaylibRenderer.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Raylib/Rendering/RaylibRenderer.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Raylib/Input/RaylibInputHandler.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Raylib/Logging/ConsoleLogHandler.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Raylib/Logging/ConsoleLogHandler.h
+    )
     
-    # Disable raylib dependencies completely for iOS
-    if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "iOS")
-        target_link_libraries(${PROJECT_NAME} PRIVATE raylib)
-    endif()
+    # Remove any other Raylib files that might be picked up by GLOB_RECURSE
+    file(GLOB_RECURSE RAYLIB_FILES 
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Raylib/*.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Raylib/*.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Raylib/*.fs
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Raylib/*.vs
+    )
+    list(REMOVE_ITEM SOURCES ${RAYLIB_FILES})
 endif()
 
 # TouchControls, ResourceManager, and AIGUI.cpp are already included via GLOB_RECURSE
@@ -173,14 +174,14 @@ endif()
 
 # Include directories
 target_include_directories(${PROJECT_NAME} PRIVATE 
-    ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
 # Add iOS-specific include directories
 if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
     target_include_directories(${PROJECT_NAME} PRIVATE 
-        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/iOS
-        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/Shaders
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/iOS
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/Shaders
     )
 endif()
 
@@ -219,13 +220,13 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
     )
     
     # Bundle resources - use asset catalogs for proper iOS packaging
-    file(GLOB_RECURSE RESOURCES "${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/resources/*")
+    file(GLOB_RECURSE RESOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/Assets/*")
     foreach(RESOURCE ${RESOURCES})
         set_source_files_properties(${RESOURCE} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
     endforeach()
     
     # Explicitly add font files to bundle for iOS font registration (only from resources, not asset catalog)
-    file(GLOB FONT_FILES "${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/resources/fonts/*.ttf")
+    file(GLOB FONT_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/Assets/fonts/*.ttf")
     foreach(FONT_FILE ${FONT_FILES})
         set_source_files_properties(${FONT_FILE} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
         target_sources(${PROJECT_NAME} PRIVATE ${FONT_FILE})
@@ -233,7 +234,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
     
     # Define Metal shader files
     set(METAL_SHADERS
-        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/Shaders2D.metal
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/Shaders/Shaders2D.metal
     )
     
     # Only add the .metal file as a resource for Xcode to pick up
@@ -256,8 +257,8 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
     )
     
     # Include the asset catalog as a resource bundle
-    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/Assets.xcassets PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
-    target_sources(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/Assets.xcassets)
+    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/Assets.xcassets PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+    target_sources(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/Assets.xcassets)
     
     # Configure basic iOS target properties
     set_target_properties(${PROJECT_NAME} PROPERTIES
@@ -295,7 +296,7 @@ if(${PLATFORM} STREQUAL "Windows")
     if(NOT APPLE OR NOT IOS)
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/resources
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/Assets
             $<TARGET_FILE_DIR:${PROJECT_NAME}>/resources
         )
     endif()
@@ -312,7 +313,7 @@ elif(IS_MACOS)
     if(NOT IOS)
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/resources
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/Assets
             $<TARGET_FILE_DIR:${PROJECT_NAME}>/resources
         )
     endif()
@@ -342,7 +343,7 @@ else()
     if(NOT IOS)
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/resources
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/Assets
             $<TARGET_FILE_DIR:${PROJECT_NAME}>/resources
         )
     endif()
