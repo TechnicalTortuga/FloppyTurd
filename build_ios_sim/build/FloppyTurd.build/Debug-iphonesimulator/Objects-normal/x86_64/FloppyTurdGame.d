@@ -1,0 +1,27 @@
+dependencies: \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/FloppyTurdGame.cpp \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/FloppyTurdGame.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../../Engine/Core/ECS.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../../Engine/Core/GnosisTypes.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../../Engine/Core/Entity.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../../Engine/Core/Component.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../../Engine/Core/../Events/EventManager.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../../Engine/Core/../Events/Event.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../../Engine/Core/../Events/../Core/GnosisTypes.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../../Engine/Platform/PlatformInterfaces.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../../Engine/Platform/../Core/GnosisTypes.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/GameState.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../../Engine/Core/GnosisTypes.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../../Engine/Core/ECS.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../Entities/Player.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../Entities/../../Engine/Core/Entity.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../Entities/../../Engine/Core/GnosisTypes.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../Entities/../../Engine/Core/ECS.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../Entities/../Components/GameComponents.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../Entities/../Components/../../Engine/Core/Component.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../Entities/../Components/../../Engine/Core/GnosisTypes.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../../Engine/Core/GNLog.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../../Engine/Systems/RenderSystem.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../../Engine/Systems/../Core/GnosisTypes.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../../Engine/Systems/../Platform/PlatformInterfaces.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../../Engine/Systems/../../FloppyTurd/Components/GameComponents.h

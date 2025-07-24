@@ -42,7 +42,7 @@ namespace FloppyTurd {
     class GameStateManager {
     public:
         GameStateManager();
-        ~GameStateManager();
+        ~GameStateManager() noexcept;
 
         // State management
         void PushState(std::unique_ptr<GameState> state);

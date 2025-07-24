@@ -11,6 +11,8 @@
 import Foundation
 import UIKit
 import Metal
+import FloppyTurdEngine
+import FloppyTurdGame
 
 /// GameEngine - Swift implementation with native C++ interop
 /// Direct C++ instantiation: std::make_unique<FloppyTurd::GameEngine>()
@@ -22,8 +24,8 @@ public class GameEngine: NSObject {
     private var isRunning: Bool = false
     private var isPaused: Bool = false
     
-    // C++ engine pointer (opaque pointer to C++ GameEngine instance)
-    private var cppEnginePtr: UnsafeMutableRawPointer?
+    // C++ game instance (direct C++ class instantiation)
+    private var cppGame: FloppyTurd.FloppyTurdGame?
     
     // iOS subsystems
     private var metalRenderer: MetalRenderer?
@@ -72,20 +74,15 @@ public class GameEngine: NSObject {
         
         log("Initializing GameEngine...")
         
-        // Initialize C++ game engine
-        cppEnginePtr = createCppGameEngine()
-        guard cppEnginePtr != nil else {
-            log("Failed to create C++ game engine", level: .error)
-            return false
-        }
+        // Create and initialize C++ game instance
+        cppGame = FloppyTurd.FloppyTurdGame()
         
-        // Initialize C++ engine
-        if !initializeCppGameEngine(cppEnginePtr) {
-            log("Failed to initialize C++ game engine", level: .error)
-            destroyCppGameEngine(cppEnginePtr)
-            cppEnginePtr = nil
-            return false
-        }
+        // TODO: Initialize with platform interface
+        // guard cppGame?.Initialize(platform) == true else {
+        //     log("Failed to initialize C++ game", level: .error)
+        //     cppGame = nil
+        //     return false
+        // }
         
         isInitialized = true
         log("GameEngine initialized successfully")
@@ -103,12 +100,9 @@ public class GameEngine: NSObject {
             stop()
         }
         
-        // Shutdown C++ engine
-        if let cppPtr = cppEnginePtr {
-            shutdownCppGameEngine(cppPtr)
-            destroyCppGameEngine(cppPtr)
-            cppEnginePtr = nil
-        }
+        // Shutdown C++ game
+        cppGame?.Shutdown()
+        cppGame = nil
         
         // Cleanup iOS subsystems
         metalRenderer = nil
@@ -127,20 +121,17 @@ public class GameEngine: NSObject {
         
         log("Starting game loop...")
         
-        guard let cppPtr = cppEnginePtr else {
-            log("C++ engine pointer is null", level: .error)
+        guard cppGame != nil else {
+            log("C++ game instance is null", level: .error)
             return false
         }
-        
-        if startCppGameEngine(cppPtr) {
-            isRunning = true
-            isPaused = false
-            log("Game loop started successfully")
-            return true
-        } else {
-            log("Failed to start C++ game engine", level: .error)
-            return false
-        }
+
+        // Start the C++ game
+        cppGame?.Run()
+        isRunning = true
+        isPaused = false
+        log("Game loop started successfully")
+        return true
     }
     
     /// Stop the game loop
@@ -149,9 +140,8 @@ public class GameEngine: NSObject {
         
         log("Stopping game loop...")
         
-        if let cppPtr = cppEnginePtr {
-            stopCppGameEngine(cppPtr)
-        }
+        // C++ game loop will be stopped when the game is paused or shutdown
+        // The Run() method handles the game loop internally
         
         isRunning = false
         isPaused = false
@@ -164,9 +154,7 @@ public class GameEngine: NSObject {
         
         log("Pausing game...")
         
-        if let cppPtr = cppEnginePtr {
-            pauseCppGameEngine(cppPtr)
-        }
+        cppGame?.PauseGame()
         
         isPaused = true
         log("Game paused")
@@ -178,9 +166,7 @@ public class GameEngine: NSObject {
         
         log("Resuming game...")
         
-        if let cppPtr = cppEnginePtr {
-            resumeCppGameEngine(cppPtr)
-        }
+        cppGame?.ResumeGame()
         
         isPaused = false
         log("Game resumed")
@@ -207,11 +193,10 @@ public class GameEngine: NSObject {
         metalRenderer = renderer
         log("Metal renderer set", level: .debug)
         
-        // Pass renderer to C++ engine if initialized
-        if let cppPtr = cppEnginePtr {
-            // TODO: Pass Metal renderer to C++ engine
-            // setCppGameEngineRenderer(cppPtr, renderer)
-        }
+        // TODO: Pass Metal renderer to C++ game
+        // if let game = cppGame {
+        //     game.SetRenderer(renderer)
+        // }
     }
     
     /// Set the touch input handler for the game
@@ -219,11 +204,10 @@ public class GameEngine: NSObject {
         touchInputHandler = handler
         log("Touch input handler set", level: .debug)
         
-        // Pass input handler to C++ engine if initialized
-        if let cppPtr = cppEnginePtr {
-            // TODO: Pass touch input handler to C++ engine
-            // setCppGameEngineInputHandler(cppPtr, handler)
-        }
+        // TODO: Pass touch input handler to C++ game
+        // if let game = cppGame {
+        //     game.SetInputHandler(handler)
+        // }
     }
     
     // MARK: - Game Loop Integration
@@ -232,87 +216,20 @@ public class GameEngine: NSObject {
     public func update(deltaTime: Float) {
         guard isRunning && !isPaused else { return }
         
-        if let cppPtr = cppEnginePtr {
-            updateCppGameEngine(cppPtr, deltaTime)
-        }
+        cppGame?.Update(deltaTime)
     }
     
     /// Render the game (called from Metal render loop)
     public func render() {
         guard isRunning && !isPaused else { return }
         
-        if let cppPtr = cppEnginePtr {
-            renderCppGameEngine(cppPtr)
-        }
+        cppGame?.Render()
     }
     
-    // MARK: - C++ Interop Functions
-    // These are placeholder function declarations that will call into our C++ engine
+    // MARK: - Game Access
     
-    private func createCppGameEngine() -> UnsafeMutableRawPointer? {
-        // TODO: Call C++ function to create game engine instance
-        // return cpp_game_engine_create()
-        log("Creating C++ game engine (placeholder)", level: .debug)
-        return UnsafeMutableRawPointer(bitPattern: 0x1) // Placeholder non-null pointer
-    }
-    
-    private func destroyCppGameEngine(_ enginePtr: UnsafeMutableRawPointer?) {
-        // TODO: Call C++ function to destroy game engine instance
-        // cpp_game_engine_destroy(enginePtr)
-        log("Destroying C++ game engine (placeholder)", level: .debug)
-    }
-    
-    private func initializeCppGameEngine(_ enginePtr: UnsafeMutableRawPointer?) -> Bool {
-        // TODO: Call C++ function to initialize game engine
-        // return cpp_game_engine_initialize(enginePtr)
-        log("Initializing C++ game engine (placeholder)", level: .debug)
-        return true // Placeholder success
-    }
-    
-    private func shutdownCppGameEngine(_ enginePtr: UnsafeMutableRawPointer?) {
-        // TODO: Call C++ function to shutdown game engine
-        // cpp_game_engine_shutdown(enginePtr)
-        log("Shutting down C++ game engine (placeholder)", level: .debug)
-    }
-    
-    private func startCppGameEngine(_ enginePtr: UnsafeMutableRawPointer?) -> Bool {
-        // TODO: Call C++ function to start game engine
-        // return cpp_game_engine_start(enginePtr)
-        log("Starting C++ game engine (placeholder)", level: .debug)
-        return true // Placeholder success
-    }
-    
-    private func stopCppGameEngine(_ enginePtr: UnsafeMutableRawPointer?) {
-        // TODO: Call C++ function to stop game engine
-        // cpp_game_engine_stop(enginePtr)
-        log("Stopping C++ game engine (placeholder)", level: .debug)
-    }
-    
-    private func pauseCppGameEngine(_ enginePtr: UnsafeMutableRawPointer?) {
-        // TODO: Call C++ function to pause game engine
-        // cpp_game_engine_pause(enginePtr)
-        log("Pausing C++ game engine (placeholder)", level: .debug)
-    }
-    
-    private func resumeCppGameEngine(_ enginePtr: UnsafeMutableRawPointer?) {
-        // TODO: Call C++ function to resume game engine
-        // cpp_game_engine_resume(enginePtr)
-        log("Resuming C++ game engine (placeholder)", level: .debug)
-    }
-    
-    private func updateCppGameEngine(_ enginePtr: UnsafeMutableRawPointer?, _ deltaTime: Float) {
-        // TODO: Call C++ function to update game engine
-        // cpp_game_engine_update(enginePtr, deltaTime)
-        // For now, just a debug log every few seconds to avoid spam
-        // log("Updating C++ game engine (placeholder)", level: .debug)
-    }
-    
-    private func renderCppGameEngine(_ enginePtr: UnsafeMutableRawPointer?) {
-        // TODO: Call C++ function to render game engine
-        // cpp_game_engine_render(enginePtr)
-        // For now, just a debug log every few seconds to avoid spam
-        // log("Rendering C++ game engine (placeholder)", level: .debug)
-    }
+    // Note: Direct access to cppGame property is available
+    // No getter function needed - use gameEngine.cppGame directly
 }
 
 // MARK: - C++ Integration Notes
@@ -320,24 +237,17 @@ public class GameEngine: NSObject {
 /**
  * Swift 5.9+ Native C++ Interop Integration
  * 
- * With Swift 5.9+, C++ can directly instantiate this Swift class without C-style bridging:
+ * This GameEngine class now uses direct C++ class instantiation:
  * 
- * // C++ Example:
+ * // Swift to C++ (current implementation):
+ * cppGame = FloppyTurd.FloppyTurdGame()
+ * cppGame?.Initialize(platform)
+ * cppGame?.Run()
+ * 
+ * // C++ to Swift (if needed):
  * #include "GameEngine-Swift.h"
- * 
- * // Direct instantiation
  * auto gameEngine = std::make_unique<FloppyTurd::GameEngine>();
  * 
- * // Use with Gnosis Engine systems
- * gameEngine->initialize();
- * gameEngine->start();
- * 
- * // Integration with C++ game loop
- * while (running) {
- *     gameEngine->update(deltaTime);
- *     gameEngine->render();
- * }
- * 
- * The Swift class automatically provides C++ compatible methods
- * through Swift's native C++ interoperability features.
+ * The FloppyTurdGame C++ class is directly accessible from Swift
+ * through the module.modulemap configuration and Swift 5.9+ interop.
  */

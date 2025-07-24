@@ -8,6 +8,15 @@
 #include <memory>
 
 namespace FloppyTurd {
+    class GameStateManager;
+}
+
+// Swift 5.9+ Native C++ Interop Support
+#if __has_include(<swift/bridging>)
+#include <swift/bridging>
+#endif
+
+namespace FloppyTurd {
 
     /**
      * @brief Main game class for Floppy Turd
@@ -19,6 +28,12 @@ namespace FloppyTurd {
     public:
         FloppyTurdGame();
         ~FloppyTurdGame();
+        
+        // Swift 5.9+ C++ Interop: Allow copy/move for Swift compatibility
+        FloppyTurdGame(const FloppyTurdGame& other) = default;
+        FloppyTurdGame& operator=(const FloppyTurdGame& other) = default;
+        FloppyTurdGame(FloppyTurdGame&& other) = default;
+        FloppyTurdGame& operator=(FloppyTurdGame&& other) = default;
 
         // Game lifecycle
         bool Initialize(Gnosis::IPlatform* platform);
@@ -187,10 +202,7 @@ namespace FloppyTurd {
     FloppyTurdGame* GetGame();
     void SetGame(FloppyTurdGame* game);
     
-    // Game constants
-    const float FloppyTurdGame::TARGET_FPS = 60.0f;
-    const char* FloppyTurdGame::SAVE_FILE_NAME = "floppyturd_save.dat";
-    const char* FloppyTurdGame::SETTINGS_FILE_NAME = "floppyturd_settings.cfg";
+    // Swift 5.9+ C++ Interop: FloppyTurdGame is now directly accessible as a Swift reference type
 
 } // namespace FloppyTurd
 

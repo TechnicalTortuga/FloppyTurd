@@ -44,8 +44,10 @@ public class MetalRenderer: NSObject {
     private var device: MTLDevice?
     private var commandQueue: MTLCommandQueue?
     private var renderPipelineState: MTLRenderPipelineState?
+    private var texturedPipelineState: MTLRenderPipelineState?
     private var vertexBuffer: MTLBuffer?
     private var indexBuffer: MTLBuffer?
+    private var library: MTLLibrary?
     
     private func log(_ message: String, level: LogLevel = .info) {
         Task {
@@ -108,55 +110,69 @@ public class MetalRenderer: NSObject {
     private func setupRenderPipeline() {
         guard let device = device else { return }
         
-        // Create basic vertex and fragment shaders for 2D rendering
-        let vertexShaderSource = """
-        #include <metal_stdlib>
-        using namespace metal;
-        
-        struct VertexIn {
-            float2 position [[attribute(0)]];
-            float2 texCoord [[attribute(1)]];
-        };
-        
-        struct VertexOut {
-            float4 position [[position]];
-            float2 texCoord;
-        };
-        
-        vertex VertexOut vertex_main(VertexIn in [[stage_in]]) {
-            VertexOut out;
-            out.position = float4(in.position, 0.0, 1.0);
-            out.texCoord = in.texCoord;
-            return out;
-        }
-        """
-        
-        let fragmentShaderSource = """
-        #include <metal_stdlib>
-        using namespace metal;
-        
-        struct VertexOut {
-            float4 position [[position]];
-            float2 texCoord;
-        };
-        
-        fragment float4 fragment_main(VertexOut in [[stage_in]]) {
-            return float4(1.0, 1.0, 1.0, 1.0); // White color
-        }
-        """
-        
         do {
-            let library = try device.makeLibrary(source: vertexShaderSource + "\n" + fragmentShaderSource, options: nil)
-            let vertexFunction = library.makeFunction(name: "vertex_main")
-            let fragmentFunction = library.makeFunction(name: "fragment_main")
+            // Load the default Metal library (compiled from .metal files)
+            guard let metalLibrary = device.makeDefaultLibrary() else {
+                log("Failed to create default Metal library", level: .error)
+                return
+            }
             
-            let pipelineDescriptor = MTLRenderPipelineDescriptor()
-            pipelineDescriptor.vertexFunction = vertexFunction
-            pipelineDescriptor.fragmentFunction = fragmentFunction
-            pipelineDescriptor.colorAttachments[0].pixelFormat = .bgra8Unorm
+            self.library = metalLibrary
             
-            renderPipelineState = try device.makeRenderPipelineState(descriptor: pipelineDescriptor)
-            log("Successfully created render pipeline state", level: .debug)
+            // Get shader functions from the compiled library
+            guard let vertexFunction = metalLibrary.makeFunction(name: "vertex_main") else {
+                log("Failed to find vertex_main function in Metal library", level: .error)
+                return
+            }
+            
+            // Configure vertex descriptor to match our VertexIn structure
+            let vertexDescriptor = MTLVertexDescriptor()
+            // Position attribute
+            vertexDescriptor.attributes[0].format = .float2
+            vertexDescriptor.attributes[0].offset = 0
+            vertexDescriptor.attributes[0].bufferIndex = 0
+            // TexCoord attribute
+            vertexDescriptor.attributes[1].format = .float2
+            vertexDescriptor.attributes[1].offset = 8
+            vertexDescriptor.attributes[1].bufferIndex = 0
+            // Color attribute
+            vertexDescriptor.attributes[2].format = .float4
+            vertexDescriptor.attributes[2].offset = 16
+            vertexDescriptor.attributes[2].bufferIndex = 0
+            // Buffer layout
+            vertexDescriptor.layouts[0].stride = 32 // 2 floats + 2 floats + 4 floats = 8 * 4 bytes
+            vertexDescriptor.layouts[0].stepRate = 1
+            vertexDescriptor.layouts[0].stepFunction = .perVertex
+            
+            // Create solid color pipeline state
+            guard let fragmentSolidFunction = metalLibrary.makeFunction(name: "fragment_solid") else {
+                log("Failed to find fragment_solid function in Metal library", level: .error)
+                return
+            }
+            
+            let solidPipelineDescriptor = MTLRenderPipelineDescriptor()
+            solidPipelineDescriptor.vertexFunction = vertexFunction
+            solidPipelineDescriptor.fragmentFunction = fragmentSolidFunction
+            solidPipelineDescriptor.colorAttachments[0].pixelFormat = .bgra8Unorm
+            solidPipelineDescriptor.vertexDescriptor = vertexDescriptor
+            
+            renderPipelineState = try device.makeRenderPipelineState(descriptor: solidPipelineDescriptor)
+            
+            // Create textured pipeline state
+            guard let fragmentTexturedFunction = metalLibrary.makeFunction(name: "fragment_textured") else {
+                log("Failed to find fragment_textured function in Metal library", level: .error)
+                return
+            }
+            
+            let texturedPipelineDescriptor = MTLRenderPipelineDescriptor()
+            texturedPipelineDescriptor.vertexFunction = vertexFunction
+            texturedPipelineDescriptor.fragmentFunction = fragmentTexturedFunction
+            texturedPipelineDescriptor.colorAttachments[0].pixelFormat = .bgra8Unorm
+            texturedPipelineDescriptor.vertexDescriptor = vertexDescriptor
+            
+            texturedPipelineState = try device.makeRenderPipelineState(descriptor: texturedPipelineDescriptor)
+            
+            log("Successfully created both solid and textured render pipeline states using compiled Metal shaders", level: .debug)
         } catch {
             log("Failed to create render pipeline state: \(error)", level: .error)
         }
@@ -166,12 +182,13 @@ public class MetalRenderer: NSObject {
         guard let device = device else { return }
         
         // Create vertex buffer for sprite rendering
+        // Format: Position(2) + TexCoord(2) + Color(4) = 8 floats per vertex
         let vertexData: [Float] = [
-            // Position     // Texture Coords
-            -1.0, -1.0,     0.0, 1.0,
-             1.0, -1.0,     1.0, 1.0,
-             1.0,  1.0,     1.0, 0.0,
-            -1.0,  1.0,     0.0, 0.0
+            // Position     // Texture Coords  // Color (RGBA)
+            -1.0, -1.0,     0.0, 1.0,         1.0, 1.0, 1.0, 1.0,
+             1.0, -1.0,     1.0, 1.0,         1.0, 1.0, 1.0, 1.0,
+             1.0,  1.0,     1.0, 0.0,         1.0, 1.0, 1.0, 1.0,
+            -1.0,  1.0,     0.0, 0.0,         1.0, 1.0, 1.0, 1.0
         ]
         
         vertexBuffer = device.makeBuffer(bytes: vertexData, 
@@ -196,6 +213,8 @@ public class MetalRenderer: NSObject {
         vertexBuffer = nil
         indexBuffer = nil
         renderPipelineState = nil
+        texturedPipelineState = nil
+        library = nil
         commandQueue = nil
         device = nil
     }
@@ -262,12 +281,13 @@ public class MetalRenderer: NSObject {
         let normalizedWidth = (width / Float(viewportSize.width)) * 2.0
         let normalizedHeight = (height / Float(viewportSize.height)) * 2.0
         
-        // Create vertex data for the rectangle
+        // Create vertex data for the rectangle with color
         let vertices: [Float] = [
-            normalizedX, normalizedY - normalizedHeight, 0.0, 1.0,
-            normalizedX + normalizedWidth, normalizedY - normalizedHeight, 1.0, 1.0,
-            normalizedX + normalizedWidth, normalizedY, 1.0, 0.0,
-            normalizedX, normalizedY, 0.0, 0.0
+            // Position                                          // TexCoord  // Color (RGBA)
+            normalizedX, normalizedY - normalizedHeight,        0.0, 1.0,   r, g, b, a,
+            normalizedX + normalizedWidth, normalizedY - normalizedHeight, 1.0, 1.0, r, g, b, a,
+            normalizedX + normalizedWidth, normalizedY,         1.0, 0.0,   r, g, b, a,
+            normalizedX, normalizedY,                           0.0, 0.0,   r, g, b, a
         ]
         
         // Update vertex buffer with rectangle data
@@ -286,13 +306,45 @@ public class MetalRenderer: NSObject {
     public func drawTexture(textureHandle: UInt32, x: Float, y: Float, 
                                  width: Float, height: Float, 
                                  r: Float, g: Float, b: Float, a: Float) {
-        // TODO: Implement texture drawing using Metal
-        guard let texture = textures[textureHandle] else {
-            log("Invalid texture handle: \(textureHandle)", level: .warning)
+        guard let commandBuffer = currentCommandBuffer,
+              let renderPassDescriptor = currentRenderPassDescriptor,
+              let texturedPipelineState = texturedPipelineState,
+              let vertexBuffer = vertexBuffer,
+              let indexBuffer = indexBuffer,
+              let texture = textures[textureHandle] else {
+            if textures[textureHandle] == nil {
+                log("Invalid texture handle: \(textureHandle)", level: .warning)
+            }
             return
         }
         
-        // Render the texture at the specified position
+        // Convert screen coordinates to normalized device coordinates
+        let normalizedX = (x / Float(viewportSize.width)) * 2.0 - 1.0
+        let normalizedY = 1.0 - (y / Float(viewportSize.height)) * 2.0
+        let normalizedWidth = (width / Float(viewportSize.width)) * 2.0
+        let normalizedHeight = (height / Float(viewportSize.height)) * 2.0
+        
+        // Create vertex data for the textured rectangle
+        let vertices: [Float] = [
+            // Position                                          // TexCoord  // Color (RGBA)
+            normalizedX, normalizedY - normalizedHeight,        0.0, 1.0,   r, g, b, a,
+            normalizedX + normalizedWidth, normalizedY - normalizedHeight, 1.0, 1.0, r, g, b, a,
+            normalizedX + normalizedWidth, normalizedY,         1.0, 0.0,   r, g, b, a,
+            normalizedX, normalizedY,                           0.0, 0.0,   r, g, b, a
+        ]
+        
+        // Update vertex buffer with texture rectangle data
+        let vertexBufferPointer = vertexBuffer.contents().bindMemory(to: Float.self, capacity: vertices.count)
+        for (index, vertex) in vertices.enumerated() {
+            vertexBufferPointer[index] = vertex
+        }
+        
+        let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor)
+        renderEncoder?.setRenderPipelineState(texturedPipelineState)
+        renderEncoder?.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
+        renderEncoder?.setFragmentTexture(texture, index: 0)
+        renderEncoder?.drawIndexedPrimitives(type: .triangle, indexCount: 6, indexType: .uint16, indexBuffer: indexBuffer, indexBufferOffset: 0)
+        renderEncoder?.endEncoding()
     }
     
     public func drawText(text: String, x: Float, y: Float, fontSize: Float, 
