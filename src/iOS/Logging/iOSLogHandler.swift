@@ -18,6 +18,14 @@ extension DateFormatter {
     static let logTimestamp: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
+        formatter.timeZone = TimeZone.current // Use local timezone
+        return formatter
+    }()
+    
+    static let sessionTimestamp: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        formatter.timeZone = TimeZone.current // Use local timezone
         return formatter
     }()
 }
@@ -81,17 +89,23 @@ actor iOSLogActor {
         
         guard let logFileURL = logFileURL else { return }
         
-        // Create or append to log file
-        if !FileManager.default.fileExists(atPath: logFileURL.path) {
-            FileManager.default.createFile(atPath: logFileURL.path, contents: nil, attributes: nil)
+        // Always recreate the log file to clear previous session logs
+        if FileManager.default.fileExists(atPath: logFileURL.path) {
+            do {
+                try FileManager.default.removeItem(at: logFileURL)
+            } catch {
+                print("Failed to remove existing log file: \(error)")
+            }
         }
+        
+        // Create fresh log file
+        FileManager.default.createFile(atPath: logFileURL.path, contents: nil, attributes: nil)
         
         do {
             logFileHandle = try FileHandle(forWritingTo: logFileURL)
-            logFileHandle?.seekToEndOfFile()
             
-            // Write session start marker
-            let sessionStart = "\n=== FloppyTurd Debug Session Started: \(Date()) ===\n"
+            // Write session start marker for new session
+            let sessionStart = "=== FloppyTurd Debug Session Started: \(DateFormatter.sessionTimestamp.string(from: Date())) ===\n"
             if let data = sessionStart.data(using: .utf8) {
                 logFileHandle?.write(data)
             }
@@ -164,7 +178,7 @@ actor iOSLogActor {
     func cleanup() {
         // Write session end marker
         if fileLoggingEnabled, let logFileHandle = logFileHandle {
-            let sessionEnd = "=== FloppyTurd Debug Session Ended: \(Date()) ===\n\n"
+            let sessionEnd = "=== FloppyTurd Debug Session Ended: \(DateFormatter.sessionTimestamp.string(from: Date())) ===\n\n"
             if let data = sessionEnd.data(using: .utf8) {
                 logFileHandle.write(data)
             }

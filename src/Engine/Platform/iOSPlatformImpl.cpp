@@ -2,6 +2,7 @@
 #if TARGET_OS_IPHONE
 
 #include "iOSPlatformImpl.h"
+#include "../../iOS/Threading/ThreadingProxy.h"
 #include "../Graphics/Sprite.h"
 #include <cstring>
 
@@ -11,20 +12,20 @@ namespace FloppyTurd {
     static MetalRenderer* g_metalRenderer = nullptr;
     static TouchInputHandler* g_touchInputHandler = nullptr;
     static AudioManagerSwift* g_audioManager = nullptr;
+    
+    // Global threading proxy for command queue
+    static ThreadingProxy* g_threadingProxy = nullptr;
 
     namespace iOSPlatform {
         
         void SetupDelegates(PlatformDelegates& delegates) {
-            // Renderer delegates
-            delegates.renderer.beginFrame = BeginFrame;
-            delegates.renderer.endFrame = EndFrame;
-            delegates.renderer.clearScreen = ClearScreen;
-            delegates.renderer.drawSprite = DrawSprite;
-            delegates.renderer.drawSpriteScaled = DrawSpriteScaled;
-            delegates.renderer.drawText = DrawText;
-            delegates.renderer.drawRectangle = DrawRectangle;
-            delegates.renderer.drawCircle = DrawCircle;
-            delegates.renderer.getScreenSize = GetScreenSize;
+            // Initialize threading proxy if not already done
+            if (!g_threadingProxy) {
+                g_threadingProxy = new ThreadingProxy();
+            }
+            
+            // Use ThreadingProxy to setup delegates with command queue
+            g_threadingProxy->setupDelegates(delegates);
             
             // Input delegates
             delegates.input.isActionPressed = IsActionPressed;
@@ -58,6 +59,11 @@ namespace FloppyTurd {
             g_metalRenderer = renderer;
             g_touchInputHandler = input;
             g_audioManager = audio;
+            
+            // Set Swift components in threading proxy for command processing
+            if (g_threadingProxy) {
+                g_threadingProxy->setSwiftComponents(renderer, input, audio);
+            }
         }
         
         // Renderer implementations (native Swift/C++ interop)
@@ -70,6 +76,12 @@ namespace FloppyTurd {
         void EndFrame() {
             if (g_metalRenderer) {
                 g_metalRenderer->endFrame();
+            }
+        }
+        
+        void Present() {
+            if (g_metalRenderer) {
+                g_metalRenderer->present();
             }
         }
         
@@ -272,16 +284,17 @@ namespace FloppyTurd {
 
 } // namespace FloppyTurd
 
-// C interface implementation
-extern "C" {
-    void SetIOSComponents(void* renderer, void* input, void* audio) {
-        FloppyTurd::iOSPlatform::SetSwiftComponents(
-            static_cast<FloppyTurd::MetalRenderer*>(renderer),
-            static_cast<FloppyTurd::TouchInputHandler*>(input),
-            static_cast<FloppyTurd::AudioManagerSwift*>(audio)
-        );
-    }
-}
+// Native C++ interface for Swift interop (no extern C needed)
+namespace FloppyTurd {
+    namespace iOSPlatform {
+        
+        // Swift-accessible function to set iOS components
+        void setIOSComponents(MetalRenderer* renderer, TouchInputHandler* input, AudioManagerSwift* audio) {
+            SetSwiftComponents(renderer, input, audio);
+        }
+        
+    } // namespace iOSPlatform
+} // namespace FloppyTurd
 
 #endif // TARGET_OS_IPHONE
 #endif // __APPLE__

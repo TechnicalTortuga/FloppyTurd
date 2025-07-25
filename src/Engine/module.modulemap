@@ -3,12 +3,14 @@ module FloppyTurdEngine {
     header "Core/GNLog.h"
     header "Core/GnosisTypes.h"
     header "Platform/PlatformDelegates.h"
+    header "Platform/iOSPlatformImpl.h"
+    header "../iOS/Threading/ThreadingProxy.h"
     header "Events/Event.h"
     header "Events/EventManager.h"
     
     export *
     
-    // Enable C++ interop
+    // Enable C++ interop for Swift 5.9+
     use _Builtin_stddef_max_align_t
 }
 

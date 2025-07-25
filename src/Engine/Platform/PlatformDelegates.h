@@ -1,8 +1,68 @@
 #pragma once
 
 #include <cstdint>
+#include <queue>
 
 namespace FloppyTurd {
+
+    // Threading System - Command Queue for Thread-Safe Platform Interop
+    // Enqueuing turd draw commands for silky-smooth rendering! 🚀
+    
+    enum CommandType {
+        CMD_BEGIN_FRAME = 0,
+        CMD_END_FRAME,
+        CMD_PRESENT,
+        CMD_CLEAR_SCREEN,
+        CMD_DRAW_SPRITE,
+        CMD_DRAW_SPRITE_SCALED,
+        CMD_DRAW_TEXT,
+        CMD_DRAW_RECTANGLE,
+        CMD_DRAW_CIRCLE,
+        CMD_GET_SCREEN_SIZE
+    };
+    
+    struct RenderCommand {
+        CommandType type;
+        
+        union {
+            struct {
+                float r, g, b, a;
+            } clearScreen;
+            
+            struct {
+                void* sprite;
+                float x, y, rotation;
+            } drawSprite;
+            
+            struct {
+                void* sprite;
+                float x, y, scaleX, scaleY, rotation;
+            } drawSpriteScaled;
+            
+            struct {
+                const char* text;  // Note: Caller must ensure string lifetime
+                float x, y, fontSize;
+                float r, g, b, a;
+            } drawText;
+            
+            struct {
+                float x, y, width, height;
+                float r, g, b, a;
+            } drawRect;
+            
+            struct {
+                float x, y, radius;
+                float r, g, b, a;
+            } drawCircle;
+            
+            struct {
+                float* width;
+                float* height;
+            } getScreenSize;
+        } data;
+        
+        RenderCommand() : type(CMD_BEGIN_FRAME) {}
+    };
 
     // Forward declarations
     struct Sprite;
@@ -20,6 +80,7 @@ namespace FloppyTurd {
         // Core rendering functions
         void (*beginFrame)();
         void (*endFrame)();
+        void (*present)();  // Present the frame to screen
         void (*clearScreen)(float r, float g, float b, float a);
         
         // Sprite rendering (using void* for sprite to avoid forward declaration issues)
@@ -40,7 +101,7 @@ namespace FloppyTurd {
         void* platformContext;
         
         // Initialize to null
-        RendererDelegate() : beginFrame(nullptr), endFrame(nullptr), clearScreen(nullptr),
+        RendererDelegate() : beginFrame(nullptr), endFrame(nullptr), present(nullptr), clearScreen(nullptr),
                            drawSprite(nullptr), drawSpriteScaled(nullptr), drawText(nullptr),
                            drawRectangle(nullptr), drawCircle(nullptr), getScreenSize(nullptr),
                            platformContext(nullptr) {}

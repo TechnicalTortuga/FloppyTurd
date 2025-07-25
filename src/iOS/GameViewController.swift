@@ -141,6 +141,10 @@ public class GameViewController: UIViewController {
         // Initialize Metal renderer
         metalRenderer = MetalRenderer()
         
+        // Connect Metal view to renderer - THIS WAS MISSING!
+        metalRenderer.setMetalView(metalView)
+        log("Connected MTKView to MetalRenderer")
+        
         // Connect renderer to game engine
         gameEngine.setMetalRenderer(metalRenderer)
         
@@ -263,7 +267,7 @@ extension GameViewController: MTKViewDelegate {
     
     public func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
         log("Metal view size changed to \(size)")
-        metalRenderer?.updateViewportSize(size)
+        metalRenderer?.updateViewportSize(width: Float(size.width), height: Float(size.height))
     }
     
     public func draw(in view: MTKView) {

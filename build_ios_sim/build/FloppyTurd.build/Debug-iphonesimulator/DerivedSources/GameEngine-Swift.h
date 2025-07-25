@@ -371,17 +371,6 @@ SWIFT_CLASS("_TtC10FloppyTurd18GameViewController")
 @end
 
 
-/// @class MetalRenderer
-/// @brief Swift implementation of Gnosis::IRenderer for iOS Metal rendering
-/// This class can be directly instantiated from C++ using Swift 5.9+ native interop:
-/// auto renderer = std::make_unique<a href="FloppyTurd::MetalRenderer">FloppyTurd::MetalRenderer</a>();
-/// Provides high-performance Metal-based 2D rendering with full Gnosis Engine integration.
-SWIFT_CLASS("_TtC10FloppyTurd13MetalRenderer")
-@interface MetalRenderer : NSObject
-- (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
-@end
-
-
 /// @file TouchInputHandler.swift
 /// @brief iOS Touch Input Handler using Swift 5.9+ native C++ interop
 /// @class TouchInputHandler
@@ -5938,6 +5927,8 @@ namespace FloppyTurd SWIFT_PRIVATE_ATTR SWIFT_SYMBOL_MODULE("FloppyTurd") {
   SWIFT_INLINE_THUNK int32_t LogLevel::getRawValue() const {
   return _impl::$s10FloppyTurd8LogLevelO8rawValues5Int32Vvg(_impl::swift_interop_passDirect_FloppyTurd_uint8_t_0_1(_getOpaquePointer()));
   }
+
+class MetalRenderer { } SWIFT_UNAVAILABLE_MSG("actor-isolated class 'MetalRenderer' can not be exposed to C++");
 
 class TouchInputHandlerDelegate { } SWIFT_UNAVAILABLE_MSG("actor-isolated protocol 'TouchInputHandlerDelegate' can not be exposed to C++");
 

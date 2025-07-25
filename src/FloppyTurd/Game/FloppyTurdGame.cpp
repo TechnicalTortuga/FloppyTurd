@@ -292,6 +292,11 @@ namespace FloppyTurd {
         if (m_platformDelegates.renderer.endFrame) {
             m_platformDelegates.renderer.endFrame();
         }
+        
+        // Present the rendered frame
+        if (m_platformDelegates.renderer.present) {
+            m_platformDelegates.renderer.present();
+        }
     }
 
     void FloppyTurdGame::HandleInput() {

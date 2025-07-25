@@ -26,6 +26,9 @@ namespace FloppyTurd {
         // Set Swift components directly (native interop)
         void SetSwiftComponents(MetalRenderer* renderer, TouchInputHandler* input, AudioManagerSwift* audio);
         
+        // Swift-accessible function to set iOS components
+        void setIOSComponents(MetalRenderer* renderer, TouchInputHandler* input, AudioManagerSwift* audio);
+        
         // Renderer functions that call Swift MetalRenderer directly
         void BeginFrame();
         void EndFrame();

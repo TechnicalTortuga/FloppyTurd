@@ -38,7 +38,20 @@ vertex VertexOut vertex_main(VertexIn in [[stage_in]],
     return out;
 }
 
+// Fragment shader for solid color rendering (main fragment shader)
+fragment float4 fragment_main(VertexOut in [[stage_in]]) {
+    return in.color;
+}
+
 // Fragment shader for textured sprites
+fragment float4 textured_fragment_main(VertexOut in [[stage_in]],
+                                      texture2d<float> colorTexture [[texture(0)]],
+                                      sampler colorSampler [[sampler(0)]]) {
+    float4 texColor = colorTexture.sample(colorSampler, in.texCoord);
+    return texColor * in.color;
+}
+
+// Legacy fragment shader names for compatibility
 fragment float4 fragment_textured(VertexOut in [[stage_in]],
                                  texture2d<float> colorTexture [[texture(0)]],
                                  sampler colorSampler [[sampler(0)]]) {
@@ -46,7 +59,6 @@ fragment float4 fragment_textured(VertexOut in [[stage_in]],
     return texColor * in.color;
 }
 
-// Fragment shader for solid color sprites (no texture)
 fragment float4 fragment_solid(VertexOut in [[stage_in]]) {
     return in.color;
 }
