@@ -67,3 +67,81 @@ fragment float4 fragment_solid(VertexOut in [[stage_in]]) {
 fragment float4 fragment_debug(VertexOut in [[stage_in]]) {
     return float4(1.0, 0.0, 1.0, 1.0); // Magenta for debug
 }
+
+// Fragment shader for SDF text rendering
+fragment float4 sdf_text_fragment(VertexOut in [[stage_in]],
+                                  texture2d<float> sdfTexture [[texture(0)]],
+                                  sampler sdfSampler [[sampler(0)]]) {
+    // Sample the SDF texture
+    float distance = sdfTexture.sample(sdfSampler, in.texCoord).r;
+    
+    // Convert from 0-255 range back to signed distance (-1 to +1)
+    // Our SDF generation uses 128 (0.5) as the edge, values > 128 are inside
+    float normalizedDistance = (distance - 0.5) * 2.0;
+    
+    // Calculate the width of the antialiased edge
+    float edgeWidth = 0.7 * length(float2(dfdx(normalizedDistance), dfdy(normalizedDistance)));
+    
+    // Use 0.0 as the threshold for the normalized distance
+    float edgeDistance = 0.0;
+    
+    // Apply antialiasing using smoothstep
+    float alpha = smoothstep(edgeDistance - edgeWidth, edgeDistance + edgeWidth, normalizedDistance);
+    
+    // Apply the text color with computed alpha
+    float4 textColor = in.color;
+    textColor.a *= alpha;
+    
+    return textColor;
+}
+
+// Fragment shader for SDF text with outline
+fragment float4 sdf_text_outline_fragment(VertexOut in [[stage_in]],
+                                          texture2d<float> sdfTexture [[texture(0)]],
+                                          sampler sdfSampler [[sampler(0)]],
+                                          constant float& outlineWidth [[buffer(0)]],
+                                          constant float4& outlineColor [[buffer(1)]]) {
+    // Sample the SDF texture
+    float distance = sdfTexture.sample(sdfSampler, in.texCoord).r;
+    
+    // Calculate outline and fill
+    float smoothWidth = fwidth(distance) * 0.5;
+    float outlineAlpha = smoothstep(0.5 - outlineWidth - smoothWidth, 0.5 - outlineWidth + smoothWidth, distance);
+    float fillAlpha = smoothstep(0.5 - smoothWidth, 0.5 + smoothWidth, distance);
+    
+    // Combine outline and fill
+    float4 finalColor = mix(outlineColor, in.color, fillAlpha);
+    finalColor.a *= outlineAlpha;
+    
+    return finalColor;
+}
+
+// Fragment shader for SDF text with drop shadow
+fragment float4 sdf_text_shadow_fragment(VertexOut in [[stage_in]],
+                                         texture2d<float> sdfTexture [[texture(0)]],
+                                         sampler sdfSampler [[sampler(0)]],
+                                         constant float2& shadowOffset [[buffer(0)]],
+                                         constant float4& shadowColor [[buffer(1)]]) {
+    // Sample main text
+    float distance = sdfTexture.sample(sdfSampler, in.texCoord).r;
+    float smoothWidth = fwidth(distance) * 0.5;
+    float alpha = smoothstep(0.5 - smoothWidth, 0.5 + smoothWidth, distance);
+    
+    // Sample shadow (offset texture coordinates)
+    float2 shadowCoord = in.texCoord + shadowOffset;
+    float shadowDistance = sdfTexture.sample(sdfSampler, shadowCoord).r;
+    float shadowAlpha = smoothstep(0.5 - smoothWidth, 0.5 + smoothWidth, shadowDistance);
+    
+    // Combine shadow and text
+    float4 textColor = in.color;
+    textColor.a *= alpha;
+    
+    float4 finalShadowColor = shadowColor;
+    finalShadowColor.a *= shadowAlpha * (1.0 - alpha); // Only show shadow where text isn't
+    
+    // Blend shadow behind text
+    float4 finalColor = mix(finalShadowColor, textColor, textColor.a);
+    finalColor.a = max(shadowAlpha * shadowColor.a, textColor.a);
+    
+    return finalColor;
+}

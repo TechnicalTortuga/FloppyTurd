@@ -20,13 +20,17 @@
 		<data>
 		4yP1TxtQY/Zb+UsF6MOLy+39KvE=
 		</data>
+		<key>Whacky_Joe.fnt</key>
+		<data>
+		jQkooiaRttEo4rWAqBI2On4lH38=
+		</data>
 		<key>Whacky_Joe.ttf</key>
 		<data>
 		hV+u8EDpBrj9Bo/POFO5ScRt8Vs=
 		</data>
 		<key>default.metallib</key>
 		<data>
-		Sfho9Fb/XDmb3TMWA2R+XeZeR/s=
+		YS/5Isz5eRPcHCuzf36AiOuNq2g=
 		</data>
 	</dict>
 	<key>files2</key>
@@ -45,6 +49,13 @@
 			blCvrXuF+7qjf4Y7bRUb6RKkHcRFEx+kLMY40gRzSzE=
 			</data>
 		</dict>
+		<key>Whacky_Joe.fnt</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			t4btOLLhNJVasQzmi8pXGGnfKqwDWNCedPbdJAHoMWo=
+			</data>
+		</dict>
 		<key>Whacky_Joe.ttf</key>
 		<dict>
 			<key>hash2</key>
@@ -56,7 +67,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			yiM5U9ZxfSXiRsOr4oksES0Hkfiluy8HVcWyzoVSdR0=
+			a0uoUMEbilfygLFxF0f8ZSzUYrpkW5TbDxn1oqdZ55o=
 			</data>
 		</dict>
 	</dict>

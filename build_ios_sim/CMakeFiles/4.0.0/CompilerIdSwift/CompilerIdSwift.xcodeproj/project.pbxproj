@@ -90,8 +90,8 @@
 				
 				SWIFT_VERSION = 4.0;
 				
-				
-				SDKROOT = "iphonesimulator";
+				MACOSX_DEPLOYMENT_TARGET = "17.0";
+				SDKROOT = "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.2.sdk";
 			};
 			name = Debug;
 		};

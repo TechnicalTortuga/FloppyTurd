@@ -293,9 +293,42 @@ public class GameEngine: NSObject {
             renderer.setClearColor(r: 0.0, g: 0.5, b: 1.0, a: 1.0) // Blue background
             renderer.clear()
             
-            // SIMPLE TEST: Draw ONE huge rectangle that should cover most of the screen
-            // If this doesn't work, then we have a fundamental vertex/projection issue
-            renderer.drawRectangle(x: 200, y: 200, width: 800, height: 1000, r: 1.0, g: 0.0, b: 0.0, a: 1.0) // Huge red rectangle
+            // PRIMITIVE SHAPES TEST: Show off our new rendering capabilities
+            
+            // 1. Large background rectangle (semi-transparent blue)
+            renderer.drawRectangle(x: 50, y: 50, width: 1079, height: 2456, r: 0.0, g: 0.3, b: 0.8, a: 0.3)
+            
+            // 2. Solid rectangle (red)
+            renderer.drawRectangle(x: 100, y: 100, width: 300, height: 200, r: 1.0, g: 0.0, b: 0.0, a: 1.0)
+            
+            // 3. Circle (green)
+            renderer.drawCircle(x: 600, y: 200, radius: 100, r: 0.0, g: 1.0, b: 0.0, a: 1.0)
+            
+            // 4. Triangle (blue)
+            renderer.drawTriangle(x1: 200, y1: 400, x2: 350, y2: 400, x3: 275, y3: 300, r: 0.0, g: 0.0, b: 1.0, a: 1.0)
+            
+            // 5. Line (white)
+            renderer.drawLine(x1: 100, y1: 600, x2: 700, y2: 650, width: 8, r: 1.0, g: 1.0, b: 1.0, a: 1.0)
+            
+            // 6. Rounded rectangle (yellow) - perfect for buttons!
+            renderer.drawRoundedRectangle(x: 400, y: 800, width: 400, height: 100, cornerRadius: 25, r: 1.0, g: 1.0, b: 0.0, a: 1.0)
+            
+            // 7. Small rounded rectangle (purple) - another button
+            renderer.drawRoundedRectangle(x: 200, y: 1000, width: 200, height: 80, cornerRadius: 40, r: 0.8, g: 0.0, b: 0.8, a: 1.0)
+            
+            // 8. SDF TEXT RENDERING TEST
+            // Initialize font system (using placeholder for now)
+            if renderer.loadFont(fontName: "Whacky_Joe", fontSize: 32) {
+                // Test text rendering with much larger sizes for better diagnosis
+                renderer.drawText("FLOPPY TURD!", x: 100, y: 500, fontSize: 120, r: 1.0, g: 1.0, b: 1.0, a: 1.0)
+                renderer.drawText("High Quality SDF Text", x: 100, y: 700, fontSize: 80, r: 1.0, g: 0.8, b: 0.0, a: 1.0)
+                renderer.drawText("Ready for UI buttons!", x: 100, y: 900, fontSize: 60, r: 0.0, g: 1.0, b: 0.8, a: 1.0)
+            } else {
+                // Fallback - draw text placeholders using rectangles
+                renderer.drawRectangle(x: 100, y: 1200, width: 400, height: 40, r: 0.5, g: 0.5, b: 0.5, a: 0.8) // Text placeholder
+                renderer.drawRectangle(x: 100, y: 1280, width: 350, height: 30, r: 0.4, g: 0.4, b: 0.4, a: 0.8) // Text placeholder
+                renderer.drawRectangle(x: 100, y: 1340, width: 300, height: 25, r: 0.3, g: 0.3, b: 0.3, a: 0.8) // Text placeholder
+            }
             
             renderer.endFrame()
             renderer.present()

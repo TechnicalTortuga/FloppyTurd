@@ -349,6 +349,42 @@ else()
     endif()
 endif()
 
+# Font resources configuration for iOS
+if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
+    # Find all font files
+    file(GLOB FONT_TTF_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/Assets/fonts/*.ttf")
+    file(GLOB FONT_FNT_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/Assets/fonts/*.fnt") 
+    file(GLOB FONT_PNG_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/Assets/fonts/*.png")
+    
+    # Combine all font files
+    set(ALL_FONT_FILES ${FONT_TTF_FILES} ${FONT_FNT_FILES} ${FONT_PNG_FILES})
+    
+    # Debug: Print found files
+    message(STATUS "Found TTF files: ${FONT_TTF_FILES}")
+    message(STATUS "Found FNT files: ${FONT_FNT_FILES}")
+    message(STATUS "Found PNG files: ${FONT_PNG_FILES}")
+    message(STATUS "All font files: ${ALL_FONT_FILES}")
+    
+    # Create custom commands to copy each font file to the iOS bundle
+    if(ALL_FONT_FILES)
+        list(LENGTH ALL_FONT_FILES FONT_COUNT)
+        message(STATUS "Configuring ${FONT_COUNT} font files for iOS bundle inclusion")
+        
+        foreach(FONT_FILE ${ALL_FONT_FILES})
+            get_filename_component(FONT_NAME ${FONT_FILE} NAME)
+            add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    "${FONT_FILE}"
+                    "$<TARGET_BUNDLE_DIR:${PROJECT_NAME}>/${FONT_NAME}"
+                COMMENT "Copying font file ${FONT_NAME} to iOS bundle"
+            )
+            message(STATUS "Configured copy command for font: ${FONT_NAME}")
+        endforeach()
+    else()
+        message(WARNING "No font files found in ${CMAKE_CURRENT_SOURCE_DIR}/src/Assets/fonts/")
+    endif()
+endif()
+
 # Compiler warnings
 if(MSVC)
     target_compile_options(${PROJECT_NAME} PRIVATE 

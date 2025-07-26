@@ -268,12 +268,40 @@ foreach(SHADER ${METAL_SHADERS})
     target_sources(FloppyTurdEngine PRIVATE ${SHADER})
 endforeach()
 
-# Font resources
-file(GLOB FONT_FILES "${CMAKE_CURRENT_SOURCE_DIR}/Assets/fonts/*.ttf")
-foreach(FONT_FILE ${FONT_FILES})
-    set_source_files_properties(${FONT_FILE} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
-    target_sources(FloppyTurdEngine PRIVATE ${FONT_FILE})
-endforeach()
+# Font resources - Use explicit copying for reliable iOS bundle inclusion
+file(GLOB FONT_TTF_FILES "${CMAKE_CURRENT_SOURCE_DIR}/Assets/fonts/*.ttf")
+file(GLOB FONT_FNT_FILES "${CMAKE_CURRENT_SOURCE_DIR}/Assets/fonts/*.fnt") 
+file(GLOB FONT_PNG_FILES "${CMAKE_CURRENT_SOURCE_DIR}/Assets/fonts/*.png")
+
+# Combine all font files
+set(ALL_FONT_FILES ${FONT_TTF_FILES} ${FONT_FNT_FILES} ${FONT_PNG_FILES})
+
+# Debug: Print found files
+message(STATUS "Found TTF files: ${FONT_TTF_FILES}")
+message(STATUS "Found FNT files: ${FONT_FNT_FILES}")
+message(STATUS "Found PNG files: ${FONT_PNG_FILES}")
+message(STATUS "All font files: ${ALL_FONT_FILES}")
+
+# For iOS bundles, use custom commands to explicitly copy font files
+# This ensures .fnt files are properly included in the bundle
+if(ALL_FONT_FILES)
+    list(LENGTH ALL_FONT_FILES FONT_COUNT)
+    message(STATUS "Configuring ${FONT_COUNT} font files for iOS bundle inclusion")
+    
+    # Create custom commands to copy each font file to the bundle
+    foreach(FONT_FILE ${ALL_FONT_FILES})
+        get_filename_component(FONT_NAME ${FONT_FILE} NAME)
+        add_custom_command(TARGET FloppyTurdEngine POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${FONT_FILE}"
+                "$<TARGET_BUNDLE_DIR:FloppyTurdEngine>/${FONT_NAME}"
+            COMMENT "Copying font file ${FONT_NAME} to iOS bundle"
+        )
+        message(STATUS "Configured copy command for font: ${FONT_NAME}")
+    endforeach()
+else()
+    message(WARNING "No font files found in ${CMAKE_CURRENT_SOURCE_DIR}/Assets/fonts/")
+endif()
 
 # Compiler warnings
 target_compile_options(FloppyTurdEngine PRIVATE
