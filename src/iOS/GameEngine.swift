@@ -293,8 +293,9 @@ public class GameEngine: NSObject {
             renderer.setClearColor(r: 0.0, g: 0.5, b: 1.0, a: 1.0) // Blue background
             renderer.clear()
             
-            // Draw a simple white rectangle as a test
-            renderer.drawRectangle(x: 100, y: 100, width: 200, height: 100, r: 1.0, g: 1.0, b: 1.0, a: 1.0)
+            // SIMPLE TEST: Draw ONE huge rectangle that should cover most of the screen
+            // If this doesn't work, then we have a fundamental vertex/projection issue
+            renderer.drawRectangle(x: 200, y: 200, width: 800, height: 1000, r: 1.0, g: 0.0, b: 0.0, a: 1.0) // Huge red rectangle
             
             renderer.endFrame()
             renderer.present()

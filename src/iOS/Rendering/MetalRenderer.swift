@@ -79,6 +79,7 @@ public class MetalRenderer {
     private var currentRenderTarget: MTLTexture?
     private var currentCommandBuffer: MTLCommandBuffer?
     private var currentRenderPassDescriptor: MTLRenderPassDescriptor?
+    private var currentRenderEncoder: MTLRenderCommandEncoder? // FIX: Track the single render encoder
     private var currentDrawable: CAMetalDrawable?
     private var viewportSize: CGSize = CGSize.zero
     private var clearColor: MTLClearColor = MTLClearColor(red: 0.0, green: 0.0, blue: 0.0, alpha: 1.0)
@@ -178,14 +179,17 @@ public class MetalRenderer {
         pipelineDescriptor.vertexDescriptor = vertexDescriptor
         pipelineDescriptor.colorAttachments[0].pixelFormat = .bgra8Unorm
         
-        // Enable blending for transparency
-        pipelineDescriptor.colorAttachments[0].isBlendingEnabled = true
-        pipelineDescriptor.colorAttachments[0].rgbBlendOperation = .add
-        pipelineDescriptor.colorAttachments[0].alphaBlendOperation = .add
-        pipelineDescriptor.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
-        pipelineDescriptor.colorAttachments[0].sourceAlphaBlendFactor = .sourceAlpha
-        pipelineDescriptor.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
-        pipelineDescriptor.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
+        // TEMPORARY: Disable blending to test if that's causing artifacts
+        pipelineDescriptor.colorAttachments[0].isBlendingEnabled = false
+        
+        // TODO: Re-enable blending with proper settings later
+        // pipelineDescriptor.colorAttachments[0].isBlendingEnabled = true
+        // pipelineDescriptor.colorAttachments[0].rgbBlendOperation = .add
+        // pipelineDescriptor.colorAttachments[0].alphaBlendOperation = .add
+        // pipelineDescriptor.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
+        // pipelineDescriptor.colorAttachments[0].sourceAlphaBlendFactor = .sourceAlpha
+        // pipelineDescriptor.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
+        // pipelineDescriptor.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
         
         do {
             renderPipelineState = try device.makeRenderPipelineState(descriptor: pipelineDescriptor)
@@ -327,15 +331,21 @@ public class MetalRenderer {
         let near: Float = -1.0
         let far: Float = 1.0
         
+        // FIX: Metal uses column-major matrices, so we need to transpose this
         let projectionMatrix = simd_float4x4(
-            simd_float4(2.0 / (right - left), 0, 0, -(right + left) / (right - left)),
-            simd_float4(0, 2.0 / (top - bottom), 0, -(top + bottom) / (top - bottom)),
-            simd_float4(0, 0, -2.0 / (far - near), -(far + near) / (far - near)),
-            simd_float4(0, 0, 0, 1)
+            simd_float4(2.0 / (right - left), 0, 0, 0),
+            simd_float4(0, 2.0 / (top - bottom), 0, 0),
+            simd_float4(0, 0, -2.0 / (far - near), 0),
+            simd_float4(-(right + left) / (right - left), -(top + bottom) / (top - bottom), -(far + near) / (far - near), 1)
         )
         
         let contents = uniformBuffer.contents().bindMemory(to: simd_float4x4.self, capacity: 1)
         contents.pointee = projectionMatrix
+        
+        // NOTE: didModifyRange not needed on iOS - cache coherency is automatic
+        
+        print("🔧 Updated projection matrix for viewport \(width)x\(height): left=\(left), right=\(right), top=\(top), bottom=\(bottom)")
+        log("Updated projection matrix for viewport \(width)x\(height): left=\(left), right=\(right), top=\(top), bottom=\(bottom)", level: .debug)
     }
     
     public func beginFrame() {
@@ -350,11 +360,16 @@ public class MetalRenderer {
         } else {
             log("beginFrame: No MTKView set - skipping drawable/descriptor", level: .warning)
         }
+        
+        // FIX: Do NOT create render encoder here - wait until first draw call
+        currentRenderEncoder = nil
     }
     
     public func endFrame() {
-        // End encoding but don't commit - that happens in present()
-        log("endFrame() called", level: .debug)
+        // FIX: End the render encoder if it exists
+        currentRenderEncoder?.endEncoding()
+        currentRenderEncoder = nil
+        log("endFrame() called - render encoder ended", level: .debug)
     }
 
     public func present() {
@@ -391,7 +406,7 @@ public class MetalRenderer {
             return
         }
         
-        // Set clear color and load action - this will clear when the next render encoder is created
+        // FIX: Set clear color and load action - this will clear when the render encoder is created
         renderPassDescriptor.colorAttachments[0].clearColor = clearColor
         renderPassDescriptor.colorAttachments[0].loadAction = .clear
         
@@ -402,15 +417,53 @@ public class MetalRenderer {
         clearScreen()
     }
     
+    // FIX: Helper method to ensure render encoder is created only once per frame
+    private func ensureRenderEncoder() -> MTLRenderCommandEncoder? {
+        if currentRenderEncoder == nil {
+            guard let commandBuffer = currentCommandBuffer,
+                  let renderPassDescriptor = currentRenderPassDescriptor else {
+                log("ensureRenderEncoder: Missing command buffer or render pass descriptor", level: .warning)
+                return nil
+            }
+            
+            currentRenderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor)
+            currentRenderEncoder?.label = "FloppyTurd Render Pass"
+            
+            // NEW: fully define raster-state each frame so we match Apple docs
+            if let enc = currentRenderEncoder {
+                // 1) viewport covers the whole drawable
+                let vp = MTLViewport(originX: 0,
+                                       originY: 0,
+                                       width: Double(viewportSize.width),
+                                       height: Double(viewportSize.height),
+                                       znear: 0,
+                                       zfar: 1)
+                enc.setViewport(vp)
+                // 2) solid fill
+                enc.setTriangleFillMode(.fill)
+                // 3) no culling while we diagnose
+                enc.setCullMode(.none)
+            }
+            
+            print("🎬 Created new render encoder for frame - viewport: \(viewportSize)")
+            log("Created new render encoder for frame - viewport: \(viewportSize)", level: .debug)
+        }
+        return currentRenderEncoder
+    }
+    
     public func drawRectangle(x: Float, y: Float, width: Float, height: Float, 
                              r: Float, g: Float, b: Float, a: Float) {
         guard let device = device,
-              let commandBuffer = currentCommandBuffer,
-              let renderPassDescriptor = currentRenderPassDescriptor,
               let renderPipelineState = renderPipelineState,
               let indexBuffer = indexBuffer,
               let uniformBuffer = uniformBuffer else {
             log("drawRectangle: Missing required Metal resources", level: .warning)
+            return
+        }
+        
+        // FIX: Use the single render encoder for the entire frame
+        guard let renderEncoder = ensureRenderEncoder() else {
+            log("drawRectangle: Failed to get render encoder", level: .error)
             return
         }
         
@@ -427,19 +480,23 @@ public class MetalRenderer {
             x, y,  0.0, 0.0,  r, g, b, a
         ]
         
+        // Use print for immediate debug output
+        print("🎯 Drawing rectangle at (\(x), \(y)) size (\(width), \(height)) color (\(r), \(g), \(b), \(a))")
+        print("🎯 Vertices: [\(vertices[0]),\(vertices[1]) \(vertices[8]),\(vertices[9]) \(vertices[16]),\(vertices[17]) \(vertices[24]),\(vertices[25])]")
+        log("Drawing rectangle: vertices=[\(vertices[0]),\(vertices[1]) \(vertices[8]),\(vertices[9]) \(vertices[16]),\(vertices[17]) \(vertices[24]),\(vertices[25])]", level: .debug)
+        
         // Create temporary vertex buffer for this rectangle
         guard let tempVertexBuffer = device.makeBuffer(bytes: vertices, length: vertices.count * MemoryLayout<Float>.stride, options: []) else {
             log("drawRectangle: Failed to create vertex buffer", level: .error)
             return
         }
         
-        let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor)
-        renderEncoder?.setRenderPipelineState(renderPipelineState)
-        renderEncoder?.setVertexBuffer(tempVertexBuffer, offset: 0, index: 0)
-        renderEncoder?.setVertexBuffer(uniformBuffer, offset: 0, index: 1)
+        // FIX: Use the shared render encoder, don't create a new one or end it
+        renderEncoder.setRenderPipelineState(renderPipelineState)
+        renderEncoder.setVertexBuffer(tempVertexBuffer, offset: 0, index: 0)
+        renderEncoder.setVertexBuffer(uniformBuffer, offset: 0, index: 1)
         
-        renderEncoder?.drawIndexedPrimitives(type: .triangle, indexCount: 6, indexType: .uint16, indexBuffer: indexBuffer, indexBufferOffset: 0)
-        renderEncoder?.endEncoding()
+        renderEncoder.drawIndexedPrimitives(type: .triangle, indexCount: 6, indexType: .uint16, indexBuffer: indexBuffer, indexBufferOffset: 0)
         
         log("Rectangle drawn at (\(x), \(y)) with size (\(width), \(height)) and color (\(r), \(g), \(b), \(a)) - Viewport: \(viewportSize.width)x\(viewportSize.height)", level: .debug)
     }
@@ -450,9 +507,7 @@ public class MetalRenderer {
             return
         }
         
-        guard let commandBuffer = currentCommandBuffer,
-              let renderPassDescriptor = currentRenderPassDescriptor,
-              let texturedPipelineState = texturedPipelineState,
+        guard let texturedPipelineState = texturedPipelineState,
               let vertexBuffer = vertexBuffer,
               let indexBuffer = indexBuffer,
               let uniformBuffer = uniformBuffer else {
@@ -460,15 +515,19 @@ public class MetalRenderer {
             return
         }
         
-        let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor)
-        renderEncoder?.setRenderPipelineState(texturedPipelineState)
-        renderEncoder?.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
-        renderEncoder?.setVertexBuffer(uniformBuffer, offset: 0, index: 1)
-        renderEncoder?.setFragmentTexture(texture, index: 0)
-        renderEncoder?.setFragmentSamplerState(samplerState, index: 0)
+        // FIX: Use the single render encoder for the entire frame
+        guard let renderEncoder = ensureRenderEncoder() else {
+            log("drawTexture: Failed to get render encoder", level: .error)
+            return
+        }
         
-        renderEncoder?.drawIndexedPrimitives(type: .triangle, indexCount: 6, indexType: .uint16, indexBuffer: indexBuffer, indexBufferOffset: 0)
-        renderEncoder?.endEncoding()
+        renderEncoder.setRenderPipelineState(texturedPipelineState)
+        renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
+        renderEncoder.setVertexBuffer(uniformBuffer, offset: 0, index: 1)
+        renderEncoder.setFragmentTexture(texture, index: 0)
+        renderEncoder.setFragmentSamplerState(samplerState, index: 0)
+        
+        renderEncoder.drawIndexedPrimitives(type: .triangle, indexCount: 6, indexType: .uint16, indexBuffer: indexBuffer, indexBufferOffset: 0)
         
         log("Texture \(textureHandle) drawn at (\(x), \(y)) with size (\(width), \(height))", level: .debug)
     }
@@ -554,7 +613,7 @@ public class MetalRenderer {
     }
     
     public func drawCircle(_ x: Float, _ y: Float, _ radius: Float, _ r: Float, _ g: Float, _ b: Float, _ a: Float) {
-        // For now, approximate circle as a square
+        // For now, approximate circle as a square using our fixed drawRectangle method
         let diameter = radius * 2
         drawRectangle(x: x - radius, y: y - radius, width: diameter, height: diameter, r: r, g: g, b: b, a: a)
         log("drawCircle: Approximated as rectangle at (\(x), \(y)) with radius \(radius)", level: .debug)
