@@ -1,8 +1,9 @@
 #pragma once
 
 #include "../../Engine/Platform/PlatformDelegates.h"
-#include <queue>
+#include <vector>  // For std::vector (bridges to Swift Array)
 #include <mutex>
+#include <queue>  // Internal queue, but we return vector for interop
 
 // Forward declarations for Swift classes
 class MetalRenderer;
@@ -15,30 +16,25 @@ namespace FloppyTurd {
      * @class ThreadingProxy
      * @brief Thread-safe command queue proxy for iOS platform interop
      * 
-     * This turd-tastic proxy enqueues rendering commands from C++ game logic
-     * and allows Swift to dequeue them safely on the main thread via CADisplayLink.
-     * Prevents deadlocks by avoiding sync dispatch to main from main thread.
+     * Enqueues rendering commands from C++ game logic and allows Swift to dequeue them safely on the main thread.
+     * Follows Apple's C++/Swift interop best practices: Simple POD structs for commands, std::vector for bridging to Array,
+     * no unions (flattened data), and mutex protection for thread safety (though C++ game loop is single-threaded).
      * 
      * Usage:
-     * - C++ side: Calls delegate functions → enqueues commands
-     * - Swift side: Polls queue via CADisplayLink → dequeues and processes
+     * - C++: Enqueue via delegates.
+     * - Swift: Get vector of commands via getAndClearCommands() (UnsafePointer to call), process on main.
      * 
      * Features:
-     * - Zero-lag rendering via command batching
-     * - Thread-safe queue operations (single-threaded C++ game loop)
-     * - Lightweight std::queue with minimal overhead (~50ns per command)
-     * - Scalable for future optimizations (texture sorting, priority commands)
+     * - Batch dequeuing via vector for efficient interop (avoids per-command calls).
+     * - Flattened command data to avoid union limitations in interop.
+     * - Scalable for optimizations like command sorting.
      */
     class ThreadingProxy {
     public:
         ThreadingProxy();
         ~ThreadingProxy();
         
-        // Get reference to command queue for Swift interop
-        std::queue<RenderCommand>& getCommandQueue() { return m_commandQueue; }
-        
         // Delegate function implementations - these enqueue commands
-        // Renderer delegates
         static void enqueueBeginFrame();
         static void enqueueEndFrame();
         static void enqueuePresent();
@@ -56,17 +52,17 @@ namespace FloppyTurd {
         // Set Swift components for command processing
         void setSwiftComponents(MetalRenderer* renderer, TouchInputHandler* input, AudioManagerSwift* audio);
         
-        // Get command queue for Swift processing
-        std::queue<RenderCommand> getAndClearCommands();
+        // Get and clear commands as vector (bridges to Swift Array<RenderCommand>)
+        std::vector<RenderCommand> getAndClearCommands();
         
-        // Queue management
-        bool hasCommands() const { return !m_commandQueue.empty(); }
-        size_t getCommandCount() const { return m_commandQueue.size(); }
-        void clearQueue() { while (!m_commandQueue.empty()) m_commandQueue.pop(); }
+        // Queue management - Thread-safe
+        bool hasCommands() const;
+        size_t getCommandCount() const;
+        void clearQueue();
         
     private:
         std::queue<RenderCommand> m_commandQueue;
-        std::mutex m_queueMutex;
+        mutable std::mutex m_queueMutex;  // mutable for const methods
         
         // Swift component references
         MetalRenderer* m_metalRenderer;
@@ -87,5 +83,8 @@ namespace FloppyTurd {
     void initializeThreadingSystem();
     void shutdownThreadingSystem();
     ThreadingProxy* getThreadingProxy();
+    
+    // Helper function for Swift to get commands without dealing with C++ method calls
+    std::vector<RenderCommand> getAndClearCommandsFromProxy();
 
 } // namespace FloppyTurd

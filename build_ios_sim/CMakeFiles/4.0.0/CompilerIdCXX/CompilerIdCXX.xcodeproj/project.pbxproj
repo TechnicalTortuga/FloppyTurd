@@ -90,7 +90,7 @@
 				
 				
 				
-				MACOSX_DEPLOYMENT_TARGET = "16.0";
+				
 				SDKROOT = "iphonesimulator";
 			};
 			name = Debug;

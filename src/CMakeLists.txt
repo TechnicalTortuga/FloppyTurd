@@ -15,11 +15,11 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
     set(CMAKE_Swift_LANGUAGE_VERSION 6.0)
     enable_language(Swift)
     
-    # iOS 16+ deployment target
-    set(CMAKE_OSX_DEPLOYMENT_TARGET "16.0")
-    set(IPHONEOS_DEPLOYMENT_TARGET "16.0")
+    # iOS 17+ deployment target
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "17.0")
+    set(IPHONEOS_DEPLOYMENT_TARGET "17.0")
     
-    message(STATUS "Building for iOS 16+ with Swift 6.0 and C++ interop (NO RAYLIB)")
+    message(STATUS "Building for iOS 17+ with Swift 6.0 and C++ interop (NO RAYLIB)")
 else()
     # Non-iOS platforms use Raylib
     set(PLATFORM_DESKTOP TRUE)
@@ -94,16 +94,20 @@ file(GLOB_RECURSE GAME_SOURCES
 if(PLATFORM_IOS)
     # iOS sources (NO RAYLIB - uses Metal/SpriteKit)
     file(GLOB_RECURSE IOS_CPP_SOURCES
+        "${CMAKE_CURRENT_SOURCE_DIR}/iOS/Audio/*.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/iOS/Input/*.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/iOS/Logging/*.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/iOS/Rendering/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/iOS/Threading/*.cpp"
     )
     
     file(GLOB_RECURSE IOS_SWIFT_SOURCES
         "${CMAKE_CURRENT_SOURCE_DIR}/iOS/*.swift"
+        "${CMAKE_CURRENT_SOURCE_DIR}/iOS/Audio/*.swift"
         "${CMAKE_CURRENT_SOURCE_DIR}/iOS/Input/*.swift"
         "${CMAKE_CURRENT_SOURCE_DIR}/iOS/Logging/*.swift"
         "${CMAKE_CURRENT_SOURCE_DIR}/iOS/Rendering/*.swift"
+        "${CMAKE_CURRENT_SOURCE_DIR}/iOS/Threading/*.swift"
     )
     
     # Combine sources for iOS (NO RAYLIB)
@@ -150,9 +154,11 @@ if(PLATFORM_IOS)
         ${CMAKE_CURRENT_SOURCE_DIR}/Engine/Events
         ${CMAKE_CURRENT_SOURCE_DIR}/Engine/Platform
         ${CMAKE_CURRENT_SOURCE_DIR}/iOS
+        ${CMAKE_CURRENT_SOURCE_DIR}/iOS/Audio
         ${CMAKE_CURRENT_SOURCE_DIR}/iOS/Input
         ${CMAKE_CURRENT_SOURCE_DIR}/iOS/Logging
         ${CMAKE_CURRENT_SOURCE_DIR}/iOS/Rendering
+        ${CMAKE_CURRENT_SOURCE_DIR}/iOS/Threading
         ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/Components
         ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/Entities
         ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/Game
@@ -224,7 +230,7 @@ set_target_properties(FloppyTurdEngine PROPERTIES
     XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.floppyturd.engine"
     XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "86886N72J8"
     XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "Apple Development"
-    XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET "16.0"
+    XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET "17.0"
     XCODE_ATTRIBUTE_PRODUCT_NAME "FloppyTurdEngine"
     XCODE_ATTRIBUTE_BUNDLE_VERSION "1.0.0"
     XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2"
@@ -280,7 +286,7 @@ target_compile_options(FloppyTurdEngine PRIVATE
 # Export compile commands for IDE support
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-message(STATUS "FloppyTurd Engine configured for iOS 16+ with Swift 6.0 and native C++ interop")
+message(STATUS "FloppyTurd Engine configured for iOS 17+ with Swift 6.0 and native C++ interop")
 message(STATUS "Module map: ${MODULE_MAP_PATH}")
 message(STATUS "Swift header: FloppyTurdEngine-Swift.h")
 message(STATUS "Total source files: ${CMAKE_CURRENT_LIST_LENGTH}")

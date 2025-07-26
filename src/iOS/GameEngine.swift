@@ -35,9 +35,9 @@ public class GameEngine: NSObject {
     private var metalRenderer: MetalRenderer?
     private var touchInputHandler: TouchInputHandler?
     private var audioManager: AVAudioHandler?
+    private var commandProcessor: CommandProcessor?
     
-    // iOS-specific game loop using CADisplayLink
-    private var displayLink: CADisplayLink?
+    // Frame timing for MTKView-driven rendering
     private var lastFrameTime: CFTimeInterval = 0
     
     // GNLog integration
@@ -100,6 +100,12 @@ public class GameEngine: NSObject {
             log("Created AudioManager")
         }
         
+        if commandProcessor == nil {
+            commandProcessor = CommandProcessor()
+            commandProcessor?.setMetalRenderer(metalRenderer!)
+            log("Created CommandProcessor")
+        }
+        
         // Create and initialize C++ game instance
         cppGame = FloppyTurd.FloppyTurdGame()
         
@@ -151,6 +157,7 @@ public class GameEngine: NSObject {
         metalRenderer = nil
         touchInputHandler = nil
         audioManager = nil
+        commandProcessor = nil
         
         isInitialized = false
         log("GameEngine shutdown complete")
@@ -174,12 +181,12 @@ public class GameEngine: NSObject {
         // Start the C++ game state (but don't call the blocking Run() method)
         cppGame?.StartGame()
         
-        // Set up iOS-compatible frame-based rendering using CADisplayLink
-        setupDisplayLink()
+        // Initialize frame timing for MTKView-driven rendering
+        lastFrameTime = CACurrentMediaTime()
         
         isRunning = true
         isPaused = false
-        log("iOS-compatible game loop started successfully")
+        log("Game started - now driven by MTKView draw loop")
         
         return true
     }
@@ -189,10 +196,6 @@ public class GameEngine: NSObject {
         guard isRunning else { return }
         
         log("Stopping game loop...")
-        
-        // Stop the display link
-        displayLink?.invalidate()
-        displayLink = nil
         
         // Stop the C++ game
         cppGame?.EndGame()
@@ -208,9 +211,6 @@ public class GameEngine: NSObject {
         
         log("Pausing game...")
         
-        // Pause the display link
-        displayLink?.isPaused = true
-        
         cppGame?.PauseGame()
         
         isPaused = true
@@ -223,8 +223,7 @@ public class GameEngine: NSObject {
         
         log("Resuming game...")
         
-        // Resume the display link and reset frame timing
-        displayLink?.isPaused = false
+        // Reset frame timing for MTKView-driven rendering
         lastFrameTime = CACurrentMediaTime()
         
         cppGame?.ResumeGame()
@@ -284,6 +283,9 @@ public class GameEngine: NSObject {
     public func render() {
         guard isRunning && !isPaused else { return }
         
+        // Process any queued C++ render commands synchronously
+        commandProcessor?.processCommands()
+        
         // For now, directly call MetalRenderer to test blue screen rendering
         // TODO: Connect MetalRenderer to C++ game properly
         if let renderer = metalRenderer {
@@ -307,30 +309,14 @@ public class GameEngine: NSObject {
     // Note: Direct access to cppGame property is available
     // No getter function needed - use gameEngine.cppGame directly
     
-    // MARK: - iOS Display Link Integration
+    // MARK: - MTKView Integration
     
-    /// Set up CADisplayLink for iOS-compatible frame-based rendering
-    private func setupDisplayLink() {
-        displayLink = CADisplayLink(target: self, selector: #selector(frameUpdate))
-        displayLink?.add(to: .main, forMode: .default)
-        lastFrameTime = CACurrentMediaTime()
-        log("CADisplayLink setup complete for frame-based rendering")
-    }
-    
-    /// Frame update callback called by CADisplayLink
-    @objc private func frameUpdate() {
-        guard isRunning && !isPaused else { 
-            return 
-        }
-        
+    /// Update delta time for MTKView-driven rendering
+    public func updateDeltaTime() -> Float {
         let currentTime = CACurrentMediaTime()
         let deltaTime = Float(currentTime - lastFrameTime)
         lastFrameTime = currentTime
-        
-        // Call individual C++ methods for iOS-compatible frame-based rendering
-        cppGame?.HandleInput()
-        cppGame?.Update(deltaTime)
-        cppGame?.Render()
+        return deltaTime
     }
 }
 

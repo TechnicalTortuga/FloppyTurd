@@ -273,8 +273,8 @@ extension GameViewController: MTKViewDelegate {
     public func draw(in view: MTKView) {
         guard isGameInitialized && !isPaused else { return }
         
-        // Calculate delta time (simplified for now)
-        let deltaTime: Float = 1.0 / 60.0 // 60 FPS target
+        // Calculate delta time using GameEngine's MTKView-driven timing
+        let deltaTime = gameEngine.updateDeltaTime()
         
         // Update game logic
         gameEngine.update(deltaTime: deltaTime)

@@ -30,6 +30,7 @@ namespace FloppyTurd {
     }
 
     void ThreadingProxy::enqueueCommand(const RenderCommand& command) {
+        std::lock_guard<std::mutex> lock(m_queueMutex);
         m_commandQueue.push(command);
         // Uncomment for debug logging:
         // std::cout << "[ThreadingProxy] Enqueued command type: " << command.type << " (Queue size: " << m_commandQueue.size() << ")" << std::endl;
@@ -65,10 +66,10 @@ namespace FloppyTurd {
         
         RenderCommand cmd;
         cmd.type = CMD_CLEAR_SCREEN;
-        cmd.data.clearScreen.r = r;
-        cmd.data.clearScreen.g = g;
-        cmd.data.clearScreen.b = b;
-        cmd.data.clearScreen.a = a;
+        cmd.data.r = r;
+        cmd.data.g = g;
+        cmd.data.b = b;
+        cmd.data.a = a;
         s_instance->enqueueCommand(cmd);
     }
 
@@ -77,10 +78,10 @@ namespace FloppyTurd {
         
         RenderCommand cmd;
         cmd.type = CMD_DRAW_SPRITE;
-        cmd.data.drawSprite.sprite = sprite;
-        cmd.data.drawSprite.x = x;
-        cmd.data.drawSprite.y = y;
-        cmd.data.drawSprite.rotation = rotation;
+        cmd.data.sprite = sprite;
+        cmd.data.x = x;
+        cmd.data.y = y;
+        cmd.data.rotation = rotation;
         s_instance->enqueueCommand(cmd);
     }
 
@@ -89,12 +90,12 @@ namespace FloppyTurd {
         
         RenderCommand cmd;
         cmd.type = CMD_DRAW_SPRITE_SCALED;
-        cmd.data.drawSpriteScaled.sprite = sprite;
-        cmd.data.drawSpriteScaled.x = x;
-        cmd.data.drawSpriteScaled.y = y;
-        cmd.data.drawSpriteScaled.scaleX = scaleX;
-        cmd.data.drawSpriteScaled.scaleY = scaleY;
-        cmd.data.drawSpriteScaled.rotation = rotation;
+        cmd.data.sprite = sprite;
+        cmd.data.x = x;
+        cmd.data.y = y;
+        cmd.data.scaleX = scaleX;
+        cmd.data.scaleY = scaleY;
+        cmd.data.rotation = rotation;
         s_instance->enqueueCommand(cmd);
     }
 
@@ -103,14 +104,14 @@ namespace FloppyTurd {
         
         RenderCommand cmd;
         cmd.type = CMD_DRAW_TEXT;
-        cmd.data.drawText.text = text;  // Note: Caller must ensure string lifetime
-        cmd.data.drawText.x = x;
-        cmd.data.drawText.y = y;
-        cmd.data.drawText.fontSize = fontSize;
-        cmd.data.drawText.r = r;
-        cmd.data.drawText.g = g;
-        cmd.data.drawText.b = b;
-        cmd.data.drawText.a = a;
+        cmd.data.text = text;  // Note: Caller must ensure string lifetime
+        cmd.data.x = x;
+        cmd.data.y = y;
+        cmd.data.fontSize = fontSize;
+        cmd.data.r = r;
+        cmd.data.g = g;
+        cmd.data.b = b;
+        cmd.data.a = a;
         s_instance->enqueueCommand(cmd);
     }
 
@@ -119,14 +120,14 @@ namespace FloppyTurd {
         
         RenderCommand cmd;
         cmd.type = CMD_DRAW_RECTANGLE;
-        cmd.data.drawRect.x = x;
-        cmd.data.drawRect.y = y;
-        cmd.data.drawRect.width = width;
-        cmd.data.drawRect.height = height;
-        cmd.data.drawRect.r = r;
-        cmd.data.drawRect.g = g;
-        cmd.data.drawRect.b = b;
-        cmd.data.drawRect.a = a;
+        cmd.data.x = x;
+        cmd.data.y = y;
+        cmd.data.width = width;
+        cmd.data.height = height;
+        cmd.data.r = r;
+        cmd.data.g = g;
+        cmd.data.b = b;
+        cmd.data.a = a;
         s_instance->enqueueCommand(cmd);
     }
 
@@ -135,13 +136,13 @@ namespace FloppyTurd {
         
         RenderCommand cmd;
         cmd.type = CMD_DRAW_CIRCLE;
-        cmd.data.drawCircle.x = x;
-        cmd.data.drawCircle.y = y;
-        cmd.data.drawCircle.radius = radius;
-        cmd.data.drawCircle.r = r;
-        cmd.data.drawCircle.g = g;
-        cmd.data.drawCircle.b = b;
-        cmd.data.drawCircle.a = a;
+        cmd.data.x = x;
+        cmd.data.y = y;
+        cmd.data.radius = radius;
+        cmd.data.r = r;
+        cmd.data.g = g;
+        cmd.data.b = b;
+        cmd.data.a = a;
         s_instance->enqueueCommand(cmd);
     }
 
@@ -150,8 +151,8 @@ namespace FloppyTurd {
         
         RenderCommand cmd;
         cmd.type = CMD_GET_SCREEN_SIZE;
-        cmd.data.getScreenSize.width = width;
-        cmd.data.getScreenSize.height = height;
+        cmd.data.screenWidth = width;
+        cmd.data.screenHeight = height;
         s_instance->enqueueCommand(cmd);
     }
 
@@ -161,13 +162,33 @@ namespace FloppyTurd {
         m_audioManager = audio;
     }
     
-    std::queue<RenderCommand> ThreadingProxy::getAndClearCommands() {
+    std::vector<RenderCommand> ThreadingProxy::getAndClearCommands() {
         std::lock_guard<std::mutex> lock(m_queueMutex);
-        std::queue<RenderCommand> commands;
-        commands.swap(m_commandQueue);
-        return commands;
+        std::vector<RenderCommand> commands;
+        while (!m_commandQueue.empty()) {
+            commands.push_back(m_commandQueue.front());
+            m_commandQueue.pop();
+        }
+        return commands;  // Bridges to Array<RenderCommand> in Swift
     }
     
+    bool ThreadingProxy::hasCommands() const {
+        std::lock_guard<std::mutex> lock(m_queueMutex);
+        return !m_commandQueue.empty();
+    }
+    
+    size_t ThreadingProxy::getCommandCount() const {
+        std::lock_guard<std::mutex> lock(m_queueMutex);
+        return m_commandQueue.size();
+    }
+    
+    void ThreadingProxy::clearQueue() {
+        std::lock_guard<std::mutex> lock(m_queueMutex);
+        while (!m_commandQueue.empty()) {
+            m_commandQueue.pop();
+        }
+    }
+
     void ThreadingProxy::setupDelegates(PlatformDelegates& delegates) {
         std::cout << "[ThreadingProxy] Setting up delegates to use command queue - turds will fly smoothly!" << std::endl;
         
@@ -210,6 +231,13 @@ namespace FloppyTurd {
     // Get the global threading proxy instance for Swift
     ThreadingProxy* getThreadingProxy() {
         return g_threadingProxy;
+    }
+    
+    std::vector<RenderCommand> getAndClearCommandsFromProxy() {
+        if (g_threadingProxy) {
+            return g_threadingProxy->getAndClearCommands();
+        }
+        return std::vector<RenderCommand>();
     }
 
 } // namespace FloppyTurd

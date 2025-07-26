@@ -353,12 +353,12 @@ public class MetalRenderer {
     }
     
     public func endFrame() {
-        currentCommandBuffer?.commit()
-        currentCommandBuffer = nil
+        // End encoding but don't commit - that happens in present()
         log("endFrame() called", level: .debug)
     }
 
     public func present() {
+        // Proper commit/present order: present THEN commit
         if let drawable = currentDrawable {
             currentCommandBuffer?.present(drawable)
         }

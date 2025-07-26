@@ -24,41 +24,23 @@ namespace FloppyTurd {
     struct RenderCommand {
         CommandType type;
         
-        union {
-            struct {
-                float r, g, b, a;
-            } clearScreen;
+        // Flattened data - all fields present, ignore irrelevant based on type
+        // Avoids union interop limitations; simple POD for easy bridging
+        struct Data {
+            // Common color/position fields
+            float r = 0.0f, g = 0.0f, b = 0.0f, a = 0.0f;
+            float x = 0.0f, y = 0.0f;
+            float width = 0.0f, height = 0.0f;
+            float radius = 0.0f;
+            float fontSize = 0.0f;
+            float rotation = 0.0f;
+            float scaleX = 1.0f, scaleY = 1.0f;
             
-            struct {
-                void* sprite;
-                float x, y, rotation;
-            } drawSprite;
-            
-            struct {
-                void* sprite;
-                float x, y, scaleX, scaleY, rotation;
-            } drawSpriteScaled;
-            
-            struct {
-                const char* text;  // Note: Caller must ensure string lifetime
-                float x, y, fontSize;
-                float r, g, b, a;
-            } drawText;
-            
-            struct {
-                float x, y, width, height;
-                float r, g, b, a;
-            } drawRect;
-            
-            struct {
-                float x, y, radius;
-                float r, g, b, a;
-            } drawCircle;
-            
-            struct {
-                float* width;
-                float* height;
-            } getScreenSize;
+            // Pointer fields
+            void* sprite = nullptr;
+            const char* text = nullptr;  // Caller ensures lifetime
+            float* screenWidth = nullptr;
+            float* screenHeight = nullptr;
         } data;
         
         RenderCommand() : type(CMD_BEGIN_FRAME) {}
