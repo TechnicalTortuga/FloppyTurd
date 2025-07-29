@@ -12,7 +12,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameBeret</string>
 			<key>relativePath</key>
-			<string>./hats/Beret.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/base_hats/Beret.imageset</string>
 			<key>swiftSymbol</key>
 			<string>beret</string>
 		</dict>
@@ -22,7 +22,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameBigTurdHurt</string>
 			<key>relativePath</key>
-			<string>./turd/BigTurdHurt.imageset</string>
+			<string>./graphics/characters/player/turd/base/BigTurdHurt.imageset</string>
 			<key>swiftSymbol</key>
 			<string>bigTurdHurt</string>
 		</dict>
@@ -32,7 +32,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameBigTurdIdle</string>
 			<key>relativePath</key>
-			<string>./turd/BigTurdIdle.imageset</string>
+			<string>./graphics/characters/player/turd/base/BigTurdIdle.imageset</string>
 			<key>swiftSymbol</key>
 			<string>bigTurdIdle</string>
 		</dict>
@@ -42,7 +42,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameBigTurdJump</string>
 			<key>relativePath</key>
-			<string>./turd/BigTurdJump.imageset</string>
+			<string>./graphics/characters/player/turd/base/BigTurdJump.imageset</string>
 			<key>swiftSymbol</key>
 			<string>bigTurdJump</string>
 		</dict>
@@ -52,7 +52,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameBigTurdShoot</string>
 			<key>relativePath</key>
-			<string>./turd/BigTurdShoot.imageset</string>
+			<string>./graphics/characters/player/turd/base/BigTurdShoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>bigTurdShoot</string>
 		</dict>
@@ -82,7 +82,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameBlueCoin</string>
 			<key>relativePath</key>
-			<string>./objects/BlueCoin.imageset</string>
+			<string>./graphics/environment/objects/interactive/coins/BlueCoin.imageset</string>
 			<key>swiftSymbol</key>
 			<string>blueCoin</string>
 		</dict>
@@ -92,7 +92,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameBossBarFrame</string>
 			<key>relativePath</key>
-			<string>./ui/BossBarFrame.imageset</string>
+			<string>./graphics/ui/hud/BossBarFrame.imageset</string>
 			<key>swiftSymbol</key>
 			<string>bossBarFrame</string>
 		</dict>
@@ -102,7 +102,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameBossBarHealth</string>
 			<key>relativePath</key>
-			<string>./ui/BossBarHealth.imageset</string>
+			<string>./graphics/ui/hud/BossBarHealth.imageset</string>
 			<key>swiftSymbol</key>
 			<string>bossBarHealth</string>
 		</dict>
@@ -112,7 +112,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameBossBarHurt</string>
 			<key>relativePath</key>
-			<string>./ui/BossBarHurt.imageset</string>
+			<string>./graphics/ui/hud/BossBarHurt.imageset</string>
 			<key>swiftSymbol</key>
 			<string>bossBarHurt</string>
 		</dict>
@@ -202,7 +202,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameBrickWall</string>
 			<key>relativePath</key>
-			<string>./objects/BrickWall.imageset</string>
+			<string>./graphics/environment/objects/decorative/walls/BrickWall.imageset</string>
 			<key>swiftSymbol</key>
 			<string>brickWall</string>
 		</dict>
@@ -212,7 +212,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameCabinPainting</string>
 			<key>relativePath</key>
-			<string>./objects/CabinPainting.imageset</string>
+			<string>./graphics/environment/objects/decorative/paintings/CabinPainting.imageset</string>
 			<key>swiftSymbol</key>
 			<string>cabinPainting</string>
 		</dict>
@@ -232,7 +232,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameCactiA</string>
 			<key>relativePath</key>
-			<string>./objects/CactiA.imageset</string>
+			<string>./graphics/environment/objects/decorative/cacti/CactiA.imageset</string>
 			<key>swiftSymbol</key>
 			<string>cactiA</string>
 		</dict>
@@ -242,7 +242,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameCactiB</string>
 			<key>relativePath</key>
-			<string>./objects/CactiB.imageset</string>
+			<string>./graphics/environment/objects/decorative/cacti/CactiB.imageset</string>
 			<key>swiftSymbol</key>
 			<string>cactiB</string>
 		</dict>
@@ -252,7 +252,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameCactiBush</string>
 			<key>relativePath</key>
-			<string>./objects/CactiBush.imageset</string>
+			<string>./graphics/environment/objects/decorative/cacti/CactiBush.imageset</string>
 			<key>swiftSymbol</key>
 			<string>cactiBush</string>
 		</dict>
@@ -262,7 +262,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameCactiC</string>
 			<key>relativePath</key>
-			<string>./objects/CactiC.imageset</string>
+			<string>./graphics/environment/objects/decorative/cacti/CactiC.imageset</string>
 			<key>swiftSymbol</key>
 			<string>cactiC</string>
 		</dict>
@@ -272,7 +272,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameCactiD</string>
 			<key>relativePath</key>
-			<string>./objects/CactiD.imageset</string>
+			<string>./graphics/environment/objects/decorative/cacti/CactiD.imageset</string>
 			<key>swiftSymbol</key>
 			<string>cactiD</string>
 		</dict>
@@ -282,7 +282,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameCactiE</string>
 			<key>relativePath</key>
-			<string>./objects/CactiE.imageset</string>
+			<string>./graphics/environment/objects/decorative/cacti/CactiE.imageset</string>
 			<key>swiftSymbol</key>
 			<string>cactiE</string>
 		</dict>
@@ -292,7 +292,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameCastleLevelPainting</string>
 			<key>relativePath</key>
-			<string>./mainmenu/CastleLevelPainting.imageset</string>
+			<string>./graphics/ui/menus/level_select/CastleLevelPainting.imageset</string>
 			<key>swiftSymbol</key>
 			<string>castleLevelPainting</string>
 		</dict>
@@ -302,7 +302,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameCoinBag</string>
 			<key>relativePath</key>
-			<string>./ui/CoinBag.imageset</string>
+			<string>./graphics/ui/hud/CoinBag.imageset</string>
 			<key>swiftSymbol</key>
 			<string>coinBag</string>
 		</dict>
@@ -312,7 +312,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameDesertLevelPainting</string>
 			<key>relativePath</key>
-			<string>./mainmenu/DesertLevelPainting.imageset</string>
+			<string>./graphics/ui/menus/level_select/DesertLevelPainting.imageset</string>
 			<key>swiftSymbol</key>
 			<string>desertLevelPainting</string>
 		</dict>
@@ -322,7 +322,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameDownArrow</string>
 			<key>relativePath</key>
-			<string>./ui/DownArrow.imageset</string>
+			<string>./graphics/ui/hud/DownArrow.imageset</string>
 			<key>swiftSymbol</key>
 			<string>downArrow</string>
 		</dict>
@@ -332,7 +332,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameEmptyPainting</string>
 			<key>relativePath</key>
-			<string>./mainmenu/EmptyPainting.imageset</string>
+			<string>./graphics/ui/menus/level_select/EmptyPainting.imageset</string>
 			<key>swiftSymbol</key>
 			<string>emptyPainting</string>
 		</dict>
@@ -342,7 +342,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameF</string>
 			<key>relativePath</key>
-			<string>./mainmenu/F.imageset</string>
+			<string>./graphics/ui/menus/main/F.imageset</string>
 			<key>swiftSymbol</key>
 			<string>F</string>
 		</dict>
@@ -352,7 +352,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameFloppyPoop</string>
 			<key>relativePath</key>
-			<string>./turd/Floppy Poop.imageset</string>
+			<string>./graphics/characters/player/turd/projectiles/Floppy Poop.imageset</string>
 			<key>swiftSymbol</key>
 			<string>floppyPoop</string>
 		</dict>
@@ -362,7 +362,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameFloppyPoopLarge</string>
 			<key>relativePath</key>
-			<string>./turd/Floppy Poop Large.imageset</string>
+			<string>./graphics/characters/player/turd/projectiles/Floppy Poop Large.imageset</string>
 			<key>swiftSymbol</key>
 			<string>floppyPoopLarge</string>
 		</dict>
@@ -372,7 +372,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameFloppyPoopMid</string>
 			<key>relativePath</key>
-			<string>./turd/Floppy Poop Mid.imageset</string>
+			<string>./graphics/characters/player/turd/projectiles/Floppy Poop Mid.imageset</string>
 			<key>swiftSymbol</key>
 			<string>floppyPoopMid</string>
 		</dict>
@@ -382,7 +382,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameFloppyButtonBlue</string>
 			<key>relativePath</key>
-			<string>./ui/FloppyButtonBlue.imageset</string>
+			<string>./graphics/ui/hud/FloppyButtonBlue.imageset</string>
 			<key>swiftSymbol</key>
 			<string>floppyButtonBlue</string>
 		</dict>
@@ -392,7 +392,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameFloppyButtonBlueHover</string>
 			<key>relativePath</key>
-			<string>./ui/FloppyButtonBlueHover.imageset</string>
+			<string>./graphics/ui/hud/FloppyButtonBlueHover.imageset</string>
 			<key>swiftSymbol</key>
 			<string>floppyButtonBlueHover</string>
 		</dict>
@@ -402,7 +402,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameFloppyLogo</string>
 			<key>relativePath</key>
-			<string>./mainmenu/FloppyLogo.imageset</string>
+			<string>./graphics/ui/menus/main/FloppyLogo.imageset</string>
 			<key>swiftSymbol</key>
 			<string>floppyLogo</string>
 		</dict>
@@ -412,7 +412,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameFloppyTurdCreditsBackground</string>
 			<key>relativePath</key>
-			<string>./ui/FloppyTurdCreditsBackground.imageset</string>
+			<string>./graphics/ui/hud/FloppyTurdCreditsBackground.imageset</string>
 			<key>swiftSymbol</key>
 			<string>floppyTurdCreditsBackground</string>
 		</dict>
@@ -422,7 +422,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameFloppyTurdMorte</string>
 			<key>relativePath</key>
-			<string>./ui/FloppyTurdMorte.imageset</string>
+			<string>./graphics/ui/hud/FloppyTurdMorte.imageset</string>
 			<key>swiftSymbol</key>
 			<string>floppyTurdMorte</string>
 		</dict>
@@ -432,7 +432,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameGameOverBackground</string>
 			<key>relativePath</key>
-			<string>./ui/GameOverBackground.imageset</string>
+			<string>./graphics/ui/hud/GameOverBackground.imageset</string>
 			<key>swiftSymbol</key>
 			<string>gameOverBackground</string>
 		</dict>
@@ -442,7 +442,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameGameOverScore</string>
 			<key>relativePath</key>
-			<string>./ui/GameOverScore.imageset</string>
+			<string>./graphics/ui/hud/GameOverScore.imageset</string>
 			<key>swiftSymbol</key>
 			<string>gameOverScore</string>
 		</dict>
@@ -452,7 +452,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameGoldCoin</string>
 			<key>relativePath</key>
-			<string>./objects/GoldCoin.imageset</string>
+			<string>./graphics/environment/objects/interactive/coins/GoldCoin.imageset</string>
 			<key>swiftSymbol</key>
 			<string>goldCoin</string>
 		</dict>
@@ -462,7 +462,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameHatFrame</string>
 			<key>relativePath</key>
-			<string>./ui/HatFrame.imageset</string>
+			<string>./graphics/ui/hud/HatFrame.imageset</string>
 			<key>swiftSymbol</key>
 			<string>hatFrame</string>
 		</dict>
@@ -472,7 +472,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameHatFrameDenied</string>
 			<key>relativePath</key>
-			<string>./ui/HatFrameDenied.imageset</string>
+			<string>./graphics/ui/hud/HatFrameDenied.imageset</string>
 			<key>swiftSymbol</key>
 			<string>hatFrameDenied</string>
 		</dict>
@@ -482,7 +482,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameHatFrameHover</string>
 			<key>relativePath</key>
-			<string>./ui/HatFrameHover.imageset</string>
+			<string>./graphics/ui/hud/HatFrameHover.imageset</string>
 			<key>swiftSymbol</key>
 			<string>hatFrameHover</string>
 		</dict>
@@ -492,7 +492,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameHatFrameLocked</string>
 			<key>relativePath</key>
-			<string>./ui/HatFrameLocked.imageset</string>
+			<string>./graphics/ui/hud/HatFrameLocked.imageset</string>
 			<key>swiftSymbol</key>
 			<string>hatFrameLocked</string>
 		</dict>
@@ -502,7 +502,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameHatFrameSelected</string>
 			<key>relativePath</key>
-			<string>./ui/HatFrameSelected.imageset</string>
+			<string>./graphics/ui/hud/HatFrameSelected.imageset</string>
 			<key>swiftSymbol</key>
 			<string>hatFrameSelected</string>
 		</dict>
@@ -512,7 +512,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameJanitor</string>
 			<key>relativePath</key>
-			<string>./objects/Janitor.imageset</string>
+			<string>./graphics/environment/objects/npcs/Janitor.imageset</string>
 			<key>swiftSymbol</key>
 			<string>janitor</string>
 		</dict>
@@ -522,7 +522,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameJanitorSurprise</string>
 			<key>relativePath</key>
-			<string>./objects/JanitorSurprise.imageset</string>
+			<string>./graphics/environment/objects/npcs/JanitorSurprise.imageset</string>
 			<key>swiftSymbol</key>
 			<string>janitorSurprise</string>
 		</dict>
@@ -532,7 +532,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameJanitorSweep</string>
 			<key>relativePath</key>
-			<string>./objects/JanitorSweep.imageset</string>
+			<string>./graphics/environment/objects/npcs/JanitorSweep.imageset</string>
 			<key>swiftSymbol</key>
 			<string>janitorSweep</string>
 		</dict>
@@ -542,7 +542,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameLeftArrow</string>
 			<key>relativePath</key>
-			<string>./ui/LeftArrow.imageset</string>
+			<string>./graphics/ui/hud/LeftArrow.imageset</string>
 			<key>swiftSymbol</key>
 			<string>leftArrow</string>
 		</dict>
@@ -552,7 +552,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameLeftArrowHover</string>
 			<key>relativePath</key>
-			<string>./ui/LeftArrowHover.imageset</string>
+			<string>./graphics/ui/hud/LeftArrowHover.imageset</string>
 			<key>swiftSymbol</key>
 			<string>leftArrowHover</string>
 		</dict>
@@ -632,7 +632,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameLockedPainting</string>
 			<key>relativePath</key>
-			<string>./mainmenu/LockedPainting.imageset</string>
+			<string>./graphics/ui/menus/level_select/LockedPainting.imageset</string>
 			<key>swiftSymbol</key>
 			<string>lockedPainting</string>
 		</dict>
@@ -642,7 +642,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameMainMenu</string>
 			<key>relativePath</key>
-			<string>./mainmenu/MainMenu.imageset</string>
+			<string>./graphics/ui/menus/main/MainMenu.imageset</string>
 			<key>swiftSymbol</key>
 			<string>mainMenu</string>
 		</dict>
@@ -652,7 +652,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameMainMenuMobile</string>
 			<key>relativePath</key>
-			<string>./mainmenu/MainMenuMobile.imageset</string>
+			<string>./graphics/ui/menus/main/MainMenuMobile.imageset</string>
 			<key>swiftSymbol</key>
 			<string>mainMenuMobile</string>
 		</dict>
@@ -682,7 +682,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameParkLevelPainting</string>
 			<key>relativePath</key>
-			<string>./mainmenu/ParkLevelPainting.imageset</string>
+			<string>./graphics/ui/menus/level_select/ParkLevelPainting.imageset</string>
 			<key>swiftSymbol</key>
 			<string>parkLevelPainting</string>
 		</dict>
@@ -692,7 +692,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNamePauseMenuBackground</string>
 			<key>relativePath</key>
-			<string>./ui/PauseMenuBackground.imageset</string>
+			<string>./graphics/ui/hud/PauseMenuBackground.imageset</string>
 			<key>swiftSymbol</key>
 			<string>pauseMenuBackground</string>
 		</dict>
@@ -702,7 +702,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNamePinwheelHat</string>
 			<key>relativePath</key>
-			<string>./hats/PinwheelHat.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/base_hats/PinwheelHat.imageset</string>
 			<key>swiftSymbol</key>
 			<string>pinwheelHat</string>
 		</dict>
@@ -712,7 +712,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNamePooHeart</string>
 			<key>relativePath</key>
-			<string>./objects/PooHeart.imageset</string>
+			<string>./graphics/environment/objects/interactive/powerups/PooHeart.imageset</string>
 			<key>swiftSymbol</key>
 			<string>pooHeart</string>
 		</dict>
@@ -722,7 +722,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNamePooHeartBig</string>
 			<key>relativePath</key>
-			<string>./objects/PooHeartBig.imageset</string>
+			<string>./graphics/environment/objects/interactive/powerups/PooHeartBig.imageset</string>
 			<key>swiftSymbol</key>
 			<string>pooHeartBig</string>
 		</dict>
@@ -732,7 +732,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNamePooHeartRainbow</string>
 			<key>relativePath</key>
-			<string>./objects/PooHeartRainbow.imageset</string>
+			<string>./graphics/environment/objects/interactive/powerups/PooHeartRainbow.imageset</string>
 			<key>swiftSymbol</key>
 			<string>pooHeartRainbow</string>
 		</dict>
@@ -742,7 +742,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNamePooHeartRainbowBeam</string>
 			<key>relativePath</key>
-			<string>./objects/PooHeartRainbowBeam.imageset</string>
+			<string>./graphics/environment/objects/interactive/powerups/PooHeartRainbowBeam.imageset</string>
 			<key>swiftSymbol</key>
 			<string>pooHeartRainbowBeam</string>
 		</dict>
@@ -752,7 +752,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameRabbitKnightPainting</string>
 			<key>relativePath</key>
-			<string>./objects/RabbitKnightPainting.imageset</string>
+			<string>./graphics/environment/objects/decorative/paintings/RabbitKnightPainting.imageset</string>
 			<key>swiftSymbol</key>
 			<string>rabbitKnightPainting</string>
 		</dict>
@@ -762,7 +762,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameRamsesHat</string>
 			<key>relativePath</key>
-			<string>./hats/RamsesHat.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/base_hats/RamsesHat.imageset</string>
 			<key>swiftSymbol</key>
 			<string>ramsesHat</string>
 		</dict>
@@ -772,7 +772,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameRatBeachPainting</string>
 			<key>relativePath</key>
-			<string>./objects/RatBeachPainting.imageset</string>
+			<string>./graphics/environment/objects/decorative/paintings/RatBeachPainting.imageset</string>
 			<key>swiftSymbol</key>
 			<string>ratBeachPainting</string>
 		</dict>
@@ -802,7 +802,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameRatKingPainting</string>
 			<key>relativePath</key>
-			<string>./mainmenu/RatKingPainting.imageset</string>
+			<string>./graphics/ui/menus/level_select/RatKingPainting.imageset</string>
 			<key>swiftSymbol</key>
 			<string>ratKingPainting</string>
 		</dict>
@@ -872,7 +872,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameRatkingStatic</string>
 			<key>relativePath</key>
-			<string>./ui/RatkingStatic.imageset</string>
+			<string>./graphics/ui/hud/RatkingStatic.imageset</string>
 			<key>swiftSymbol</key>
 			<string>ratkingStatic</string>
 		</dict>
@@ -892,7 +892,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameRedCoin</string>
 			<key>relativePath</key>
-			<string>./objects/RedCoin.imageset</string>
+			<string>./graphics/environment/objects/interactive/coins/RedCoin.imageset</string>
 			<key>swiftSymbol</key>
 			<string>redCoin</string>
 		</dict>
@@ -902,7 +902,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameRightArrow</string>
 			<key>relativePath</key>
-			<string>./ui/RightArrow.imageset</string>
+			<string>./graphics/ui/hud/RightArrow.imageset</string>
 			<key>swiftSymbol</key>
 			<string>rightArrow</string>
 		</dict>
@@ -912,7 +912,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameRightArrowHover</string>
 			<key>relativePath</key>
-			<string>./ui/RightArrowHover.imageset</string>
+			<string>./graphics/ui/hud/RightArrowHover.imageset</string>
 			<key>swiftSymbol</key>
 			<string>rightArrowHover</string>
 		</dict>
@@ -922,7 +922,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameRiverWalkPainting</string>
 			<key>relativePath</key>
-			<string>./objects/RiverWalkPainting.imageset</string>
+			<string>./graphics/environment/objects/decorative/paintings/RiverWalkPainting.imageset</string>
 			<key>swiftSymbol</key>
 			<string>riverWalkPainting</string>
 		</dict>
@@ -932,7 +932,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameSamuraiHelmet</string>
 			<key>relativePath</key>
-			<string>./hats/SamuraiHelmet.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/base_hats/SamuraiHelmet.imageset</string>
 			<key>swiftSymbol</key>
 			<string>samuraiHelmet</string>
 		</dict>
@@ -942,7 +942,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameScore</string>
 			<key>relativePath</key>
-			<string>./ui/Score.imageset</string>
+			<string>./graphics/ui/hud/Score.imageset</string>
 			<key>swiftSymbol</key>
 			<string>score</string>
 		</dict>
@@ -952,7 +952,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameScoreSmall</string>
 			<key>relativePath</key>
-			<string>./ui/ScoreSmall.imageset</string>
+			<string>./graphics/ui/hud/ScoreSmall.imageset</string>
 			<key>swiftSymbol</key>
 			<string>scoreSmall</string>
 		</dict>
@@ -972,7 +972,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameSewerLevelPainting</string>
 			<key>relativePath</key>
-			<string>./mainmenu/SewerLevelPainting.imageset</string>
+			<string>./graphics/ui/menus/level_select/SewerLevelPainting.imageset</string>
 			<key>swiftSymbol</key>
 			<string>sewerLevelPainting</string>
 		</dict>
@@ -982,7 +982,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameSkillMenuBorder</string>
 			<key>relativePath</key>
-			<string>./ui/SkillMenuBorder.imageset</string>
+			<string>./graphics/ui/hud/SkillMenuBorder.imageset</string>
 			<key>swiftSymbol</key>
 			<string>skillMenuBorder</string>
 		</dict>
@@ -992,7 +992,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameSkillPointInfoBackground</string>
 			<key>relativePath</key>
-			<string>./ui/SkillPointInfoBackground.imageset</string>
+			<string>./graphics/ui/hud/SkillPointInfoBackground.imageset</string>
 			<key>swiftSymbol</key>
 			<string>skillPointInfoBackground</string>
 		</dict>
@@ -1042,7 +1042,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameSnowLevelPainting</string>
 			<key>relativePath</key>
-			<string>./mainmenu/SnowLevelPainting.imageset</string>
+			<string>./graphics/ui/menus/level_select/SnowLevelPainting.imageset</string>
 			<key>swiftSymbol</key>
 			<string>snowLevelPainting</string>
 		</dict>
@@ -1112,7 +1112,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameSnowball</string>
 			<key>relativePath</key>
-			<string>./objects/Snowball.imageset</string>
+			<string>./graphics/environment/objects/interactive/hazards/Snowball.imageset</string>
 			<key>swiftSymbol</key>
 			<string>snowball</string>
 		</dict>
@@ -1132,7 +1132,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameSpartanHelmet</string>
 			<key>relativePath</key>
-			<string>./hats/SpartanHelmet.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/base_hats/SpartanHelmet.imageset</string>
 			<key>swiftSymbol</key>
 			<string>spartanHelmet</string>
 		</dict>
@@ -1142,7 +1142,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameSpikeBall</string>
 			<key>relativePath</key>
-			<string>./objects/SpikeBall.imageset</string>
+			<string>./graphics/environment/objects/interactive/hazards/SpikeBall.imageset</string>
 			<key>swiftSymbol</key>
 			<string>spikeBall</string>
 		</dict>
@@ -1152,7 +1152,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameSpikeBallBase</string>
 			<key>relativePath</key>
-			<string>./objects/SpikeBallBase.imageset</string>
+			<string>./graphics/environment/objects/interactive/hazards/SpikeBallBase.imageset</string>
 			<key>swiftSymbol</key>
 			<string>spikeBallBase</string>
 		</dict>
@@ -1162,7 +1162,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTeenageTurdHurt</string>
 			<key>relativePath</key>
-			<string>./turd/TeenageTurdHurt.imageset</string>
+			<string>./graphics/characters/player/turd/base/TeenageTurdHurt.imageset</string>
 			<key>swiftSymbol</key>
 			<string>teenageTurdHurt</string>
 		</dict>
@@ -1172,7 +1172,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTeenageTurdIdle</string>
 			<key>relativePath</key>
-			<string>./turd/TeenageTurdIdle.imageset</string>
+			<string>./graphics/characters/player/turd/base/TeenageTurdIdle.imageset</string>
 			<key>swiftSymbol</key>
 			<string>teenageTurdIdle</string>
 		</dict>
@@ -1182,7 +1182,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTeenageTurdJump</string>
 			<key>relativePath</key>
-			<string>./turd/TeenageTurdJump.imageset</string>
+			<string>./graphics/characters/player/turd/base/TeenageTurdJump.imageset</string>
 			<key>swiftSymbol</key>
 			<string>teenageTurdJump</string>
 		</dict>
@@ -1192,7 +1192,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTeenageTurdShoot</string>
 			<key>relativePath</key>
-			<string>./turd/TeenageTurdShoot.imageset</string>
+			<string>./graphics/characters/player/turd/base/TeenageTurdShoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>teenageTurdShoot</string>
 		</dict>
@@ -1282,7 +1282,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTryAgainBackground</string>
 			<key>relativePath</key>
-			<string>./ui/TryAgainBackground.imageset</string>
+			<string>./graphics/ui/hud/TryAgainBackground.imageset</string>
 			<key>swiftSymbol</key>
 			<string>tryAgainBackground</string>
 		</dict>
@@ -1292,7 +1292,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdHeart</string>
 			<key>relativePath</key>
-			<string>./ui/TurdHeart.imageset</string>
+			<string>./graphics/ui/hud/TurdHeart.imageset</string>
 			<key>swiftSymbol</key>
 			<string>turdHeart</string>
 		</dict>
@@ -1302,7 +1302,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdHeart0HalfHollow</string>
 			<key>relativePath</key>
-			<string>./ui/TurdHeart0HalfHollow.imageset</string>
+			<string>./graphics/ui/hud/TurdHeart0HalfHollow.imageset</string>
 			<key>swiftSymbol</key>
 			<string>turdHeart0HalfHollow</string>
 		</dict>
@@ -1312,7 +1312,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdHeart0HalfHollow1Half</string>
 			<key>relativePath</key>
-			<string>./ui/TurdHeart0HalfHollow1Half.imageset</string>
+			<string>./graphics/ui/hud/TurdHeart0HalfHollow1Half.imageset</string>
 			<key>swiftSymbol</key>
 			<string>turdHeart0HalfHollow1Half</string>
 		</dict>
@@ -1322,7 +1322,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdHeart0ThirdHollow</string>
 			<key>relativePath</key>
-			<string>./ui/TurdHeart0ThirdHollow.imageset</string>
+			<string>./graphics/ui/hud/TurdHeart0ThirdHollow.imageset</string>
 			<key>swiftSymbol</key>
 			<string>turdHeart0ThirdHollow</string>
 		</dict>
@@ -1332,7 +1332,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdHeart0ThirdHollow1Third</string>
 			<key>relativePath</key>
-			<string>./ui/TurdHeart0ThirdHollow1Third.imageset</string>
+			<string>./graphics/ui/hud/TurdHeart0ThirdHollow1Third.imageset</string>
 			<key>swiftSymbol</key>
 			<string>turdHeart0ThirdHollow1Third</string>
 		</dict>
@@ -1342,7 +1342,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdHeart1Half</string>
 			<key>relativePath</key>
-			<string>./ui/TurdHeart1Half.imageset</string>
+			<string>./graphics/ui/hud/TurdHeart1Half.imageset</string>
 			<key>swiftSymbol</key>
 			<string>turdHeart1Half</string>
 		</dict>
@@ -1352,7 +1352,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdHeart1HalfHollow</string>
 			<key>relativePath</key>
-			<string>./ui/TurdHeart1HalfHollow.imageset</string>
+			<string>./graphics/ui/hud/TurdHeart1HalfHollow.imageset</string>
 			<key>swiftSymbol</key>
 			<string>turdHeart1HalfHollow</string>
 		</dict>
@@ -1362,7 +1362,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdHeart1Third</string>
 			<key>relativePath</key>
-			<string>./ui/TurdHeart1Third.imageset</string>
+			<string>./graphics/ui/hud/TurdHeart1Third.imageset</string>
 			<key>swiftSymbol</key>
 			<string>turdHeart1Third</string>
 		</dict>
@@ -1372,7 +1372,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdHeart1ThirdHollow</string>
 			<key>relativePath</key>
-			<string>./ui/TurdHeart1ThirdHollow.imageset</string>
+			<string>./graphics/ui/hud/TurdHeart1ThirdHollow.imageset</string>
 			<key>swiftSymbol</key>
 			<string>turdHeart1ThirdHollow</string>
 		</dict>
@@ -1382,7 +1382,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdHeart1ThirdsHollow1Thirds</string>
 			<key>relativePath</key>
-			<string>./ui/TurdHeart1ThirdsHollow1Thirds.imageset</string>
+			<string>./graphics/ui/hud/TurdHeart1ThirdsHollow1Thirds.imageset</string>
 			<key>swiftSymbol</key>
 			<string>turdHeart1ThirdsHollow1Thirds</string>
 		</dict>
@@ -1392,7 +1392,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdHeart2Thirds</string>
 			<key>relativePath</key>
-			<string>./ui/TurdHeart2Thirds.imageset</string>
+			<string>./graphics/ui/hud/TurdHeart2Thirds.imageset</string>
 			<key>swiftSymbol</key>
 			<string>turdHeart2Thirds</string>
 		</dict>
@@ -1402,7 +1402,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdHeart2ThirdsHollow</string>
 			<key>relativePath</key>
-			<string>./ui/TurdHeart2ThirdsHollow.imageset</string>
+			<string>./graphics/ui/hud/TurdHeart2ThirdsHollow.imageset</string>
 			<key>swiftSymbol</key>
 			<string>turdHeart2ThirdsHollow</string>
 		</dict>
@@ -1412,7 +1412,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdHeart2ThirdsHollow2Thirds</string>
 			<key>relativePath</key>
-			<string>./ui/TurdHeart2ThirdsHollow2Thirds.imageset</string>
+			<string>./graphics/ui/hud/TurdHeart2ThirdsHollow2Thirds.imageset</string>
 			<key>swiftSymbol</key>
 			<string>turdHeart2ThirdsHollow2Thirds</string>
 		</dict>
@@ -1422,7 +1422,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdHeartHollow</string>
 			<key>relativePath</key>
-			<string>./ui/TurdHeartHollow.imageset</string>
+			<string>./graphics/ui/hud/TurdHeartHollow.imageset</string>
 			<key>swiftSymbol</key>
 			<string>turdHeartHollow</string>
 		</dict>
@@ -1432,7 +1432,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdHeartSmall</string>
 			<key>relativePath</key>
-			<string>./ui/TurdHeartSmall.imageset</string>
+			<string>./graphics/ui/hud/TurdHeartSmall.imageset</string>
 			<key>swiftSymbol</key>
 			<string>turdHeartSmall</string>
 		</dict>
@@ -1442,7 +1442,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdPointButton</string>
 			<key>relativePath</key>
-			<string>./ui/TurdPointButton.imageset</string>
+			<string>./graphics/ui/hud/TurdPointButton.imageset</string>
 			<key>swiftSymbol</key>
 			<string>turdPointButton</string>
 		</dict>
@@ -1452,7 +1452,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdPointButtonAvailable</string>
 			<key>relativePath</key>
-			<string>./ui/TurdPointButtonAvailable.imageset</string>
+			<string>./graphics/ui/hud/TurdPointButtonAvailable.imageset</string>
 			<key>swiftSymbol</key>
 			<string>turdPointButtonAvailable</string>
 		</dict>
@@ -1462,7 +1462,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdPointButtonClaimed</string>
 			<key>relativePath</key>
-			<string>./ui/TurdPointButtonClaimed.imageset</string>
+			<string>./graphics/ui/hud/TurdPointButtonClaimed.imageset</string>
 			<key>swiftSymbol</key>
 			<string>turdPointButtonClaimed</string>
 		</dict>
@@ -1472,7 +1472,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdPointButtonFocused</string>
 			<key>relativePath</key>
-			<string>./ui/TurdPointButtonFocused.imageset</string>
+			<string>./graphics/ui/hud/TurdPointButtonFocused.imageset</string>
 			<key>swiftSymbol</key>
 			<string>turdPointButtonFocused</string>
 		</dict>
@@ -1482,7 +1482,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdPointMenu</string>
 			<key>relativePath</key>
-			<string>./ui/TurdPointMenu.imageset</string>
+			<string>./graphics/ui/hud/TurdPointMenu.imageset</string>
 			<key>swiftSymbol</key>
 			<string>turdPointMenu</string>
 		</dict>
@@ -1492,7 +1492,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdletHurt</string>
 			<key>relativePath</key>
-			<string>./turd/TurdletHurt.imageset</string>
+			<string>./graphics/characters/player/turd/base/TurdletHurt.imageset</string>
 			<key>swiftSymbol</key>
 			<string>turdletHurt</string>
 		</dict>
@@ -1502,7 +1502,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdletIdle</string>
 			<key>relativePath</key>
-			<string>./turd/TurdletIdle.imageset</string>
+			<string>./graphics/characters/player/turd/base/TurdletIdle.imageset</string>
 			<key>swiftSymbol</key>
 			<string>turdletIdle</string>
 		</dict>
@@ -1512,7 +1512,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdletJump</string>
 			<key>relativePath</key>
-			<string>./turd/TurdletJump.imageset</string>
+			<string>./graphics/characters/player/turd/base/TurdletJump.imageset</string>
 			<key>swiftSymbol</key>
 			<string>turdletJump</string>
 		</dict>
@@ -1522,7 +1522,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTurdletShoot</string>
 			<key>relativePath</key>
-			<string>./turd/TurdletShoot.imageset</string>
+			<string>./graphics/characters/player/turd/base/TurdletShoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>turdletShoot</string>
 		</dict>
@@ -1532,7 +1532,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameUpArrow</string>
 			<key>relativePath</key>
-			<string>./ui/UpArrow.imageset</string>
+			<string>./graphics/ui/hud/UpArrow.imageset</string>
 			<key>swiftSymbol</key>
 			<string>upArrow</string>
 		</dict>
@@ -1542,7 +1542,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameA</string>
 			<key>relativePath</key>
-			<string>./ui/a.imageset</string>
+			<string>./graphics/ui/hud/a.imageset</string>
 			<key>swiftSymbol</key>
 			<string>a</string>
 		</dict>
@@ -1552,7 +1552,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameAchievementicon</string>
 			<key>relativePath</key>
-			<string>./ui/achievementicon.imageset</string>
+			<string>./graphics/ui/hud/achievementicon.imageset</string>
 			<key>swiftSymbol</key>
 			<string>achievementicon</string>
 		</dict>
@@ -1562,7 +1562,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameAchievementiconunlocked</string>
 			<key>relativePath</key>
-			<string>./ui/achievementiconunlocked.imageset</string>
+			<string>./graphics/ui/hud/achievementiconunlocked.imageset</string>
 			<key>swiftSymbol</key>
 			<string>achievementiconunlocked</string>
 		</dict>
@@ -1572,7 +1572,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameBallcap</string>
 			<key>relativePath</key>
-			<string>./hats/ballcap.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/base_hats/ballcap.imageset</string>
 			<key>swiftSymbol</key>
 			<string>ballcap</string>
 		</dict>
@@ -1582,7 +1582,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameBallcapbigturdjump</string>
 			<key>relativePath</key>
-			<string>./hats/ballcapbigturdjump.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/bigturd/ballcapbigturdjump.imageset</string>
 			<key>swiftSymbol</key>
 			<string>ballcapbigturdjump</string>
 		</dict>
@@ -1592,7 +1592,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameBallcapbigturdshoot</string>
 			<key>relativePath</key>
-			<string>./hats/ballcapbigturdshoot.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/bigturd/ballcapbigturdshoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>ballcapbigturdshoot</string>
 		</dict>
@@ -1602,7 +1602,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameBallcapturdletjump</string>
 			<key>relativePath</key>
-			<string>./hats/ballcapturdletjump.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/turdlet/ballcapturdletjump.imageset</string>
 			<key>swiftSymbol</key>
 			<string>ballcapturdletjump</string>
 		</dict>
@@ -1612,7 +1612,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameBallcapturdletshoot</string>
 			<key>relativePath</key>
-			<string>./hats/ballcapturdletshoot.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/turdlet/ballcapturdletshoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>ballcapturdletshoot</string>
 		</dict>
@@ -1622,7 +1622,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameBerethatbigturdjump</string>
 			<key>relativePath</key>
-			<string>./hats/berethatbigturdjump.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/bigturd/berethatbigturdjump.imageset</string>
 			<key>swiftSymbol</key>
 			<string>berethatbigturdjump</string>
 		</dict>
@@ -1632,7 +1632,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameBerethatbigturdshoot</string>
 			<key>relativePath</key>
-			<string>./hats/berethatbigturdshoot.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/bigturd/berethatbigturdshoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>berethatbigturdshoot</string>
 		</dict>
@@ -1642,7 +1642,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameBerethatturdletjump</string>
 			<key>relativePath</key>
-			<string>./hats/berethatturdletjump.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/turdlet/berethatturdletjump.imageset</string>
 			<key>swiftSymbol</key>
 			<string>berethatturdletjump</string>
 		</dict>
@@ -1652,7 +1652,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameBerethatturdletshoot</string>
 			<key>relativePath</key>
-			<string>./hats/berethatturdletshoot.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/turdlet/berethatturdletshoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>berethatturdletshoot</string>
 		</dict>
@@ -1662,7 +1662,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameBlastBig</string>
 			<key>relativePath</key>
-			<string>./vfx/blast_big.imageset</string>
+			<string>./graphics/vfx/explosions/blast_big.imageset</string>
 			<key>swiftSymbol</key>
 			<string>blastBig</string>
 		</dict>
@@ -1672,7 +1672,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameBlastSmall</string>
 			<key>relativePath</key>
-			<string>./vfx/blast_small.imageset</string>
+			<string>./graphics/vfx/explosions/blast_small.imageset</string>
 			<key>swiftSymbol</key>
 			<string>blastSmall</string>
 		</dict>
@@ -1732,7 +1732,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameCowboyhat</string>
 			<key>relativePath</key>
-			<string>./hats/cowboyhat.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/base_hats/cowboyhat.imageset</string>
 			<key>swiftSymbol</key>
 			<string>cowboyhat</string>
 		</dict>
@@ -1742,7 +1742,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameCowboyhatbigturd</string>
 			<key>relativePath</key>
-			<string>./hats/cowboyhatbigturd.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/bigturd/cowboyhatbigturd.imageset</string>
 			<key>swiftSymbol</key>
 			<string>cowboyhatbigturd</string>
 		</dict>
@@ -1752,7 +1752,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameCowboyhatbigturdjump</string>
 			<key>relativePath</key>
-			<string>./hats/cowboyhatbigturdjump.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/bigturd/cowboyhatbigturdjump.imageset</string>
 			<key>swiftSymbol</key>
 			<string>cowboyhatbigturdjump</string>
 		</dict>
@@ -1762,7 +1762,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameCowboyhatbigturdshoot</string>
 			<key>relativePath</key>
-			<string>./hats/cowboyhatbigturdshoot.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/bigturd/cowboyhatbigturdshoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>cowboyhatbigturdshoot</string>
 		</dict>
@@ -1772,7 +1772,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameCowboyhatteenage</string>
 			<key>relativePath</key>
-			<string>./hats/cowboyhatteenage.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/turdlet/cowboyhatteenage.imageset</string>
 			<key>swiftSymbol</key>
 			<string>cowboyhatteenage</string>
 		</dict>
@@ -1782,7 +1782,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameCowboyhatteenageshoot</string>
 			<key>relativePath</key>
-			<string>./hats/cowboyhatteenageshoot.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/turdlet/cowboyhatteenageshoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>cowboyhatteenageshoot</string>
 		</dict>
@@ -1792,7 +1792,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameCowboyhatturdlet</string>
 			<key>relativePath</key>
-			<string>./hats/cowboyhatturdlet.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/turdlet/cowboyhatturdlet.imageset</string>
 			<key>swiftSymbol</key>
 			<string>cowboyhatturdlet</string>
 		</dict>
@@ -1802,7 +1802,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameCowboyhatturdletjump</string>
 			<key>relativePath</key>
-			<string>./hats/cowboyhatturdletjump.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/turdlet/cowboyhatturdletjump.imageset</string>
 			<key>swiftSymbol</key>
 			<string>cowboyhatturdletjump</string>
 		</dict>
@@ -1812,7 +1812,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameCowboyhatturdletshoot</string>
 			<key>relativePath</key>
-			<string>./hats/cowboyhatturdletshoot.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/turdlet/cowboyhatturdletshoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>cowboyhatturdletshoot</string>
 		</dict>
@@ -1822,7 +1822,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameCrown</string>
 			<key>relativePath</key>
-			<string>./hats/crown.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/base_hats/crown.imageset</string>
 			<key>swiftSymbol</key>
 			<string>crown</string>
 		</dict>
@@ -1832,7 +1832,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameCrownhatbigturdjump</string>
 			<key>relativePath</key>
-			<string>./hats/crownhatbigturdjump.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/bigturd/crownhatbigturdjump.imageset</string>
 			<key>swiftSymbol</key>
 			<string>crownhatbigturdjump</string>
 		</dict>
@@ -1842,7 +1842,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameCrownhatbigturdshoot</string>
 			<key>relativePath</key>
-			<string>./hats/crownhatbigturdshoot.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/bigturd/crownhatbigturdshoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>crownhatbigturdshoot</string>
 		</dict>
@@ -1852,7 +1852,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameCrownhatturdletjump</string>
 			<key>relativePath</key>
-			<string>./hats/crownhatturdletjump.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/turdlet/crownhatturdletjump.imageset</string>
 			<key>swiftSymbol</key>
 			<string>crownhatturdletjump</string>
 		</dict>
@@ -1862,7 +1862,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameCrownhatturdletshoot</string>
 			<key>relativePath</key>
-			<string>./hats/crownhatturdletshoot.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/turdlet/crownhatturdletshoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>crownhatturdletshoot</string>
 		</dict>
@@ -1922,7 +1922,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameDooragbigturdjump</string>
 			<key>relativePath</key>
-			<string>./hats/dooragbigturdjump.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/bigturd/dooragbigturdjump.imageset</string>
 			<key>swiftSymbol</key>
 			<string>dooragbigturdjump</string>
 		</dict>
@@ -1932,7 +1932,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameDooragbigturdshoot</string>
 			<key>relativePath</key>
-			<string>./hats/dooragbigturdshoot.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/bigturd/dooragbigturdshoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>dooragbigturdshoot</string>
 		</dict>
@@ -1942,7 +1942,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameDooraghat</string>
 			<key>relativePath</key>
-			<string>./hats/dooraghat.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/base_hats/dooraghat.imageset</string>
 			<key>swiftSymbol</key>
 			<string>dooraghat</string>
 		</dict>
@@ -1952,7 +1952,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameDooragturdletjump</string>
 			<key>relativePath</key>
-			<string>./hats/dooragturdletjump.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/turdlet/dooragturdletjump.imageset</string>
 			<key>swiftSymbol</key>
 			<string>dooragturdletjump</string>
 		</dict>
@@ -1962,7 +1962,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameDooragturdletshoot</string>
 			<key>relativePath</key>
-			<string>./hats/dooragturdletshoot.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/turdlet/dooragturdletshoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>dooragturdletshoot</string>
 		</dict>
@@ -1972,7 +1972,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameFlowerhat</string>
 			<key>relativePath</key>
-			<string>./hats/flowerhat.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/base_hats/flowerhat.imageset</string>
 			<key>swiftSymbol</key>
 			<string>flowerhat</string>
 		</dict>
@@ -1982,7 +1982,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameFlowerhatbigturdjump</string>
 			<key>relativePath</key>
-			<string>./hats/flowerhatbigturdjump.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/bigturd/flowerhatbigturdjump.imageset</string>
 			<key>swiftSymbol</key>
 			<string>flowerhatbigturdjump</string>
 		</dict>
@@ -1992,7 +1992,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameFlowerhatbigturdshoot</string>
 			<key>relativePath</key>
-			<string>./hats/flowerhatbigturdshoot.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/bigturd/flowerhatbigturdshoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>flowerhatbigturdshoot</string>
 		</dict>
@@ -2002,7 +2002,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameFlowerhatturdletjump</string>
 			<key>relativePath</key>
-			<string>./hats/flowerhatturdletjump.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/turdlet/flowerhatturdletjump.imageset</string>
 			<key>swiftSymbol</key>
 			<string>flowerhatturdletjump</string>
 		</dict>
@@ -2012,7 +2012,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameFlowerhatturdletshoot</string>
 			<key>relativePath</key>
-			<string>./hats/flowerhatturdletshoot.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/turdlet/flowerhatturdletshoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>flowerhatturdletshoot</string>
 		</dict>
@@ -2022,7 +2022,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameMinusbutton</string>
 			<key>relativePath</key>
-			<string>./ui/minusbutton.imageset</string>
+			<string>./graphics/ui/hud/minusbutton.imageset</string>
 			<key>swiftSymbol</key>
 			<string>minusbutton</string>
 		</dict>
@@ -2032,7 +2032,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameMinusbuttonclicked</string>
 			<key>relativePath</key>
-			<string>./ui/minusbuttonclicked.imageset</string>
+			<string>./graphics/ui/hud/minusbuttonclicked.imageset</string>
 			<key>swiftSymbol</key>
 			<string>minusbuttonclicked</string>
 		</dict>
@@ -2042,7 +2042,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameMinusbuttonhover</string>
 			<key>relativePath</key>
-			<string>./ui/minusbuttonhover.imageset</string>
+			<string>./graphics/ui/hud/minusbuttonhover.imageset</string>
 			<key>swiftSymbol</key>
 			<string>minusbuttonhover</string>
 		</dict>
@@ -2052,7 +2052,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameMutebutton</string>
 			<key>relativePath</key>
-			<string>./ui/mutebutton.imageset</string>
+			<string>./graphics/ui/hud/mutebutton.imageset</string>
 			<key>swiftSymbol</key>
 			<string>mutebutton</string>
 		</dict>
@@ -2062,7 +2062,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameMutebuttonclicked</string>
 			<key>relativePath</key>
-			<string>./ui/mutebuttonclicked.imageset</string>
+			<string>./graphics/ui/hud/mutebuttonclicked.imageset</string>
 			<key>swiftSymbol</key>
 			<string>mutebuttonclicked</string>
 		</dict>
@@ -2072,7 +2072,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameMutebuttonhover</string>
 			<key>relativePath</key>
-			<string>./ui/mutebuttonhover.imageset</string>
+			<string>./graphics/ui/hud/mutebuttonhover.imageset</string>
 			<key>swiftSymbol</key>
 			<string>mutebuttonhover</string>
 		</dict>
@@ -2082,7 +2082,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameMutebuttonlocked</string>
 			<key>relativePath</key>
-			<string>./ui/mutebuttonlocked.imageset</string>
+			<string>./graphics/ui/hud/mutebuttonlocked.imageset</string>
 			<key>swiftSymbol</key>
 			<string>mutebuttonlocked</string>
 		</dict>
@@ -2092,7 +2092,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameMutebuttonlockedclicked</string>
 			<key>relativePath</key>
-			<string>./ui/mutebuttonlockedclicked.imageset</string>
+			<string>./graphics/ui/hud/mutebuttonlockedclicked.imageset</string>
 			<key>swiftSymbol</key>
 			<string>mutebuttonlockedclicked</string>
 		</dict>
@@ -2102,7 +2102,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameMutebuttonlockedhover</string>
 			<key>relativePath</key>
-			<string>./ui/mutebuttonlockedhover.imageset</string>
+			<string>./graphics/ui/hud/mutebuttonlockedhover.imageset</string>
 			<key>swiftSymbol</key>
 			<string>mutebuttonlockedhover</string>
 		</dict>
@@ -2112,7 +2112,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNamePinwheelbigturdjump</string>
 			<key>relativePath</key>
-			<string>./hats/pinwheelbigturdjump.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/bigturd/pinwheelbigturdjump.imageset</string>
 			<key>swiftSymbol</key>
 			<string>pinwheelbigturdjump</string>
 		</dict>
@@ -2122,7 +2122,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNamePinwheelbigturdshoot</string>
 			<key>relativePath</key>
-			<string>./hats/pinwheelbigturdshoot.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/bigturd/pinwheelbigturdshoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>pinwheelbigturdshoot</string>
 		</dict>
@@ -2132,7 +2132,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNamePinwheelturdletjump</string>
 			<key>relativePath</key>
-			<string>./hats/pinwheelturdletjump.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/turdlet/pinwheelturdletjump.imageset</string>
 			<key>swiftSymbol</key>
 			<string>pinwheelturdletjump</string>
 		</dict>
@@ -2142,7 +2142,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNamePinwheelturdletshoot</string>
 			<key>relativePath</key>
-			<string>./hats/pinwheelturdletshoot.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/turdlet/pinwheelturdletshoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>pinwheelturdletshoot</string>
 		</dict>
@@ -2162,7 +2162,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNamePlusbutton</string>
 			<key>relativePath</key>
-			<string>./ui/plusbutton.imageset</string>
+			<string>./graphics/ui/hud/plusbutton.imageset</string>
 			<key>swiftSymbol</key>
 			<string>plusbutton</string>
 		</dict>
@@ -2172,7 +2172,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNamePlusbuttonclicked</string>
 			<key>relativePath</key>
-			<string>./ui/plusbuttonclicked.imageset</string>
+			<string>./graphics/ui/hud/plusbuttonclicked.imageset</string>
 			<key>swiftSymbol</key>
 			<string>plusbuttonclicked</string>
 		</dict>
@@ -2182,7 +2182,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNamePlusbuttonhover</string>
 			<key>relativePath</key>
-			<string>./ui/plusbuttonhover.imageset</string>
+			<string>./graphics/ui/hud/plusbuttonhover.imageset</string>
 			<key>swiftSymbol</key>
 			<string>plusbuttonhover</string>
 		</dict>
@@ -2192,7 +2192,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNamePoophat</string>
 			<key>relativePath</key>
-			<string>./hats/poophat.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/base_hats/poophat.imageset</string>
 			<key>swiftSymbol</key>
 			<string>poophat</string>
 		</dict>
@@ -2202,7 +2202,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNamePoophatbigturdjump</string>
 			<key>relativePath</key>
-			<string>./hats/poophatbigturdjump.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/bigturd/poophatbigturdjump.imageset</string>
 			<key>swiftSymbol</key>
 			<string>poophatbigturdjump</string>
 		</dict>
@@ -2212,7 +2212,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNamePoophatbigturdshoot</string>
 			<key>relativePath</key>
-			<string>./hats/poophatbigturdshoot.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/bigturd/poophatbigturdshoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>poophatbigturdshoot</string>
 		</dict>
@@ -2222,7 +2222,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNamePoophatturdletjump</string>
 			<key>relativePath</key>
-			<string>./hats/poophatturdletjump.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/turdlet/poophatturdletjump.imageset</string>
 			<key>swiftSymbol</key>
 			<string>poophatturdletjump</string>
 		</dict>
@@ -2232,7 +2232,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNamePoophatturdletshoot</string>
 			<key>relativePath</key>
-			<string>./hats/poophatturdletshoot.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/turdlet/poophatturdletshoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>poophatturdletshoot</string>
 		</dict>
@@ -2242,7 +2242,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameRamsesbigturdjump</string>
 			<key>relativePath</key>
-			<string>./hats/ramsesbigturdjump.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/bigturd/ramsesbigturdjump.imageset</string>
 			<key>swiftSymbol</key>
 			<string>ramsesbigturdjump</string>
 		</dict>
@@ -2252,7 +2252,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameRamsesbigturdshoot</string>
 			<key>relativePath</key>
-			<string>./hats/ramsesbigturdshoot.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/bigturd/ramsesbigturdshoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>ramsesbigturdshoot</string>
 		</dict>
@@ -2262,7 +2262,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameRamsesturdletjump</string>
 			<key>relativePath</key>
-			<string>./hats/ramsesturdletjump.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/turdlet/ramsesturdletjump.imageset</string>
 			<key>swiftSymbol</key>
 			<string>ramsesturdletjump</string>
 		</dict>
@@ -2272,7 +2272,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameRamsesturdletshoot</string>
 			<key>relativePath</key>
-			<string>./hats/ramsesturdletshoot.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/turdlet/ramsesturdletshoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>ramsesturdletshoot</string>
 		</dict>
@@ -2292,7 +2292,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameSamuraibigturdjump</string>
 			<key>relativePath</key>
-			<string>./hats/samuraibigturdjump.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/bigturd/samuraibigturdjump.imageset</string>
 			<key>swiftSymbol</key>
 			<string>samuraibigturdjump</string>
 		</dict>
@@ -2302,7 +2302,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameSamuraibigturdshoot</string>
 			<key>relativePath</key>
-			<string>./hats/samuraibigturdshoot.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/bigturd/samuraibigturdshoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>samuraibigturdshoot</string>
 		</dict>
@@ -2312,7 +2312,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameSamuraiturdletjump</string>
 			<key>relativePath</key>
-			<string>./hats/samuraiturdletjump.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/turdlet/samuraiturdletjump.imageset</string>
 			<key>swiftSymbol</key>
 			<string>samuraiturdletjump</string>
 		</dict>
@@ -2322,7 +2322,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameSamuraiturdletshoot</string>
 			<key>relativePath</key>
-			<string>./hats/samuraiturdletshoot.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/turdlet/samuraiturdletshoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>samuraiturdletshoot</string>
 		</dict>
@@ -2402,7 +2402,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameShellhat</string>
 			<key>relativePath</key>
-			<string>./hats/shellhat.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/base_hats/shellhat.imageset</string>
 			<key>swiftSymbol</key>
 			<string>shellhat</string>
 		</dict>
@@ -2412,7 +2412,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameShellhatbigturdjump</string>
 			<key>relativePath</key>
-			<string>./hats/shellhatbigturdjump.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/bigturd/shellhatbigturdjump.imageset</string>
 			<key>swiftSymbol</key>
 			<string>shellhatbigturdjump</string>
 		</dict>
@@ -2422,7 +2422,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameShellhatbigturdshoot</string>
 			<key>relativePath</key>
-			<string>./hats/shellhatbigturdshoot.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/bigturd/shellhatbigturdshoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>shellhatbigturdshoot</string>
 		</dict>
@@ -2432,7 +2432,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameShellhatturdletjump</string>
 			<key>relativePath</key>
-			<string>./hats/shellhatturdletjump.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/turdlet/shellhatturdletjump.imageset</string>
 			<key>swiftSymbol</key>
 			<string>shellhatturdletjump</string>
 		</dict>
@@ -2442,7 +2442,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameShellhatturdletshoot</string>
 			<key>relativePath</key>
-			<string>./hats/shellhatturdletshoot.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/turdlet/shellhatturdletshoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>shellhatturdletshoot</string>
 		</dict>
@@ -2462,7 +2462,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameSpartanhatbigturdjump</string>
 			<key>relativePath</key>
-			<string>./hats/spartanhatbigturdjump.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/bigturd/spartanhatbigturdjump.imageset</string>
 			<key>swiftSymbol</key>
 			<string>spartanhatbigturdjump</string>
 		</dict>
@@ -2472,7 +2472,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameSpartanhatbigturdshoot</string>
 			<key>relativePath</key>
-			<string>./hats/spartanhatbigturdshoot.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/bigturd/spartanhatbigturdshoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>spartanhatbigturdshoot</string>
 		</dict>
@@ -2482,7 +2482,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameSpartanhatturdletjump</string>
 			<key>relativePath</key>
-			<string>./hats/spartanhatturdletjump.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/turdlet/spartanhatturdletjump.imageset</string>
 			<key>swiftSymbol</key>
 			<string>spartanhatturdletjump</string>
 		</dict>
@@ -2492,7 +2492,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameSpartanhatturdletshoot</string>
 			<key>relativePath</key>
-			<string>./hats/spartanhatturdletshoot.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/turdlet/spartanhatturdletshoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>spartanhatturdletshoot</string>
 		</dict>
@@ -2502,7 +2502,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameStrawhat</string>
 			<key>relativePath</key>
-			<string>./hats/strawhat.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/base_hats/strawhat.imageset</string>
 			<key>swiftSymbol</key>
 			<string>strawhat</string>
 		</dict>
@@ -2512,7 +2512,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameStrawhatbigturdjump</string>
 			<key>relativePath</key>
-			<string>./hats/strawhatbigturdjump.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/bigturd/strawhatbigturdjump.imageset</string>
 			<key>swiftSymbol</key>
 			<string>strawhatbigturdjump</string>
 		</dict>
@@ -2522,7 +2522,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameStrawhatbigturdshoot</string>
 			<key>relativePath</key>
-			<string>./hats/strawhatbigturdshoot.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/bigturd/strawhatbigturdshoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>strawhatbigturdshoot</string>
 		</dict>
@@ -2532,7 +2532,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameStrawhatturdletjump</string>
 			<key>relativePath</key>
-			<string>./hats/strawhatturdletjump.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/turdlet/strawhatturdletjump.imageset</string>
 			<key>swiftSymbol</key>
 			<string>strawhatturdletjump</string>
 		</dict>
@@ -2542,7 +2542,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameStrawhatturdletshoot</string>
 			<key>relativePath</key>
-			<string>./hats/strawhatturdletshoot.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/turdlet/strawhatturdletshoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>strawhatturdletshoot</string>
 		</dict>
@@ -2562,7 +2562,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTophat</string>
 			<key>relativePath</key>
-			<string>./hats/tophat.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/base_hats/tophat.imageset</string>
 			<key>swiftSymbol</key>
 			<string>tophat</string>
 		</dict>
@@ -2572,7 +2572,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTophatbigturdjump</string>
 			<key>relativePath</key>
-			<string>./hats/tophatbigturdjump.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/bigturd/tophatbigturdjump.imageset</string>
 			<key>swiftSymbol</key>
 			<string>tophatbigturdjump</string>
 		</dict>
@@ -2582,7 +2582,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTophatbigturdshoot</string>
 			<key>relativePath</key>
-			<string>./hats/tophatbigturdshoot.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/bigturd/tophatbigturdshoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>tophatbigturdshoot</string>
 		</dict>
@@ -2592,7 +2592,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTophatturdletjump</string>
 			<key>relativePath</key>
-			<string>./hats/tophatturdletjump.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/turdlet/tophatturdletjump.imageset</string>
 			<key>swiftSymbol</key>
 			<string>tophatturdletjump</string>
 		</dict>
@@ -2602,7 +2602,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTophatturdletshoot</string>
 			<key>relativePath</key>
-			<string>./hats/tophatturdletshoot.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/turdlet/tophatturdletshoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>tophatturdletshoot</string>
 		</dict>
@@ -2612,7 +2612,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameUshanka</string>
 			<key>relativePath</key>
-			<string>./hats/ushanka.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/base_hats/ushanka.imageset</string>
 			<key>swiftSymbol</key>
 			<string>ushanka</string>
 		</dict>
@@ -2622,7 +2622,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameUshankabigturdjump</string>
 			<key>relativePath</key>
-			<string>./hats/ushankabigturdjump.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/bigturd/ushankabigturdjump.imageset</string>
 			<key>swiftSymbol</key>
 			<string>ushankabigturdjump</string>
 		</dict>
@@ -2632,7 +2632,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameUshankabigturdshoot</string>
 			<key>relativePath</key>
-			<string>./hats/ushankabigturdshoot.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/bigturd/ushankabigturdshoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>ushankabigturdshoot</string>
 		</dict>
@@ -2642,7 +2642,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameUshankaturdletjump</string>
 			<key>relativePath</key>
-			<string>./hats/ushankaturdletjump.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/turdlet/ushankaturdletjump.imageset</string>
 			<key>swiftSymbol</key>
 			<string>ushankaturdletjump</string>
 		</dict>
@@ -2652,7 +2652,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameUshankaturdletshoot</string>
 			<key>relativePath</key>
-			<string>./hats/ushankaturdletshoot.imageset</string>
+			<string>./graphics/characters/player/cosmetics/hats/character_combinations/turdlet/ushankaturdletshoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>ushankaturdletshoot</string>
 		</dict>
@@ -2662,7 +2662,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameVolumemeterempty</string>
 			<key>relativePath</key>
-			<string>./ui/volumemeterempty.imageset</string>
+			<string>./graphics/ui/hud/volumemeterempty.imageset</string>
 			<key>swiftSymbol</key>
 			<string>volumemeterempty</string>
 		</dict>
@@ -2672,7 +2672,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameVolumemeterfull</string>
 			<key>relativePath</key>
-			<string>./ui/volumemeterfull.imageset</string>
+			<string>./graphics/ui/hud/volumemeterfull.imageset</string>
 			<key>swiftSymbol</key>
 			<string>volumemeterfull</string>
 		</dict>

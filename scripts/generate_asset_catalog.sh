@@ -7,7 +7,7 @@ set -e  # Exit on error
 # Define paths
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$SCRIPT_DIR/.."
-RESOURCES_DIR="$PROJECT_ROOT/src/Assets"
+RESOURCES_DIR="$PROJECT_ROOT/src/assets"
 ASSET_CATALOG_DIR="$PROJECT_ROOT/src/Assets.xcassets"
 
 # Create asset catalog base structure if it doesn't exist
@@ -135,48 +135,136 @@ EOF
 # Process all resource directories
 echo "Generating asset catalog from resources..."
 
-# Process image categories
-process_images "enemies"
-process_images "environment"
-process_images "hats"
-process_images "mainmenu"
-process_images "objects"
-process_images "turd"
-process_images "ui"
-process_images "vfx"
-
-# Process audio categories
-process_audio "music"
-process_audio "sounds"
-process_audio "mainmenu"  # Also process audio files in mainmenu directory
-
-# Process font resources (copy as-is)
-process_fonts() {
-  local source_dir="$RESOURCES_DIR/fonts"
-  
-  # Skip if source directory doesn't exist
-  if [ ! -d "$source_dir" ]; then
+# Process all image files recursively, preserving directory structure
+process_all_images() {
+  local base_dir="$RESOURCES_DIR/graphics"
+  if [ ! -d "$base_dir" ]; then
     return
   fi
   
-  # Create fonts directory in asset catalog
-  mkdir -p "$ASSET_CATALOG_DIR/fonts"
-  
-  # Create category Contents.json
-  cat > "$ASSET_CATALOG_DIR/fonts/Contents.json" << EOF
+  echo "Processing all graphics directories and subdirectories..."
+  find "$base_dir" -type f \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" \) | while read img_file; do
+    # Get relative path from graphics directory
+    rel_path="${img_file#$base_dir/}"
+    # Get directory path and filename
+    dir_path=$(dirname "$rel_path")
+    filename=$(basename "$img_file")
+    name="${filename%.*}"
+    
+    # Create full category path preserving directory structure
+    if [ "$dir_path" = "." ]; then
+      category_path="graphics"
+    else
+      category_path="graphics/$dir_path"
+    fi
+    
+    # Create asset catalog directory structure
+    mkdir -p "$ASSET_CATALOG_DIR/$category_path/$name.imageset"
+    
+    # Create Contents.json
+    cat > "$ASSET_CATALOG_DIR/$category_path/$name.imageset/Contents.json" << EOF
 {
+  "images" : [
+    {
+      "filename" : "$filename",
+      "idiom" : "universal",
+      "scale" : "1x"
+    }
+  ],
   "info" : {
     "author" : "xcode",
     "version" : 1
   }
 }
 EOF
-
-  # Copy font files directly
-  cp "$source_dir"/* "$ASSET_CATALOG_DIR/fonts/" 2>/dev/null || true
-  echo "Processed fonts"
+    
+    # Copy image file
+    cp "$img_file" "$ASSET_CATALOG_DIR/$category_path/$name.imageset/"
+    echo "Processed graphics: $category_path/$name"
+  done
 }
 
-process_fonts
+# Process all audio files recursively, preserving directory structure
+process_all_audio() {
+  local base_dir="$RESOURCES_DIR/audio"
+  if [ ! -d "$base_dir" ]; then
+    return
+  fi
+  
+  echo "Processing all audio directories and subdirectories..."
+  find "$base_dir" -type f \( -name "*.mp3" -o -name "*.ogg" -o -name "*.wav" \) | while read audio_file; do
+    # Get relative path from audio directory
+    rel_path="${audio_file#$base_dir/}"
+    # Get directory path and filename
+    dir_path=$(dirname "$rel_path")
+    filename=$(basename "$audio_file")
+    name="${filename%.*}"
+    
+    # Create full category path preserving directory structure
+    if [ "$dir_path" = "." ]; then
+      category_path="audio"
+    else
+      category_path="audio/$dir_path"
+    fi
+    
+    # Create asset catalog directory structure
+    mkdir -p "$ASSET_CATALOG_DIR/$category_path/$name.dataset"
+    
+    # Create Contents.json
+    cat > "$ASSET_CATALOG_DIR/$category_path/$name.dataset/Contents.json" << EOF
+{
+  "data" : [
+    {
+      "filename" : "$filename",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
+EOF
+    
+    # Copy audio file
+    cp "$audio_file" "$ASSET_CATALOG_DIR/$category_path/$name.dataset/"
+    echo "Processed audio: $category_path/$name"
+  done
+}
+
+# Process all font files recursively, preserving directory structure
+process_all_fonts() {
+  local base_dir="$RESOURCES_DIR/fonts"
+  if [ ! -d "$base_dir" ]; then
+    return
+  fi
+  
+  echo "Processing all font directories and subdirectories..."
+  find "$base_dir" -type f \( -name "*.fnt" -o -name "*.ttf" -o -name "*.otf" \) | while read font_file; do
+    # Get relative path from fonts directory
+    rel_path="${font_file#$base_dir/}"
+    # Get directory path and filename
+    dir_path=$(dirname "$rel_path")
+    filename=$(basename "$font_file")
+    
+    # Create full category path preserving directory structure
+    if [ "$dir_path" = "." ]; then
+      category_path="fonts"
+    else
+      category_path="fonts/$dir_path"
+    fi
+    
+    # Create asset catalog directory structure
+    mkdir -p "$ASSET_CATALOG_DIR/$category_path"
+    
+    # Copy font file preserving directory structure
+    cp "$font_file" "$ASSET_CATALOG_DIR/$category_path/"
+    echo "Processed font: $category_path/$filename"
+  done
+}
+
+process_all_images
+process_all_audio  
+process_all_fonts
 
 echo "Asset catalog generation complete at: $ASSET_CATALOG_DIR"
