@@ -136,7 +136,7 @@ namespace Gnosis {
         
         switch (static_cast<int>(level)) {
             case static_cast<int>(LogLevel::TRACE): return "\033[37m";      // White
-            case static_cast<int>(LogLevel::DEBUG): return "\033[36m";      // Cyan
+            case static_cast<int>(LogLevel::DBG): return "\033[36m";      // Cyan
             case static_cast<int>(LogLevel::INFO):  return "\033[32m";      // Green
             case static_cast<int>(LogLevel::WARN):  return "\033[33m";      // Yellow
             case static_cast<int>(LogLevel::ERROR): return "\033[31m";      // Red
@@ -159,7 +159,7 @@ namespace Gnosis {
         oss << message.message;
         
         // Add file and line info for debug builds or error levels
-        if (!message.file.empty() && (message.level >= LogLevel::ERROR || message.level == LogLevel::DEBUG)) {
+        if (!message.file.empty() && (message.level >= LogLevel::ERROR || message.level == LogLevel::DBG)) {
             // Extract just the filename from the full path
             std::string filename = message.file;
             size_t lastSlash = filename.find_last_of("/\\");

@@ -1,11 +1,14 @@
 #ifndef FLOPPY_TURD_GAME_STATE_H
 #define FLOPPY_TURD_GAME_STATE_H
 
+// Use forward declarations and proper includes to avoid circular dependencies
 #include "../../Engine/Core/GnosisTypes.h"
 #include "../../Engine/Core/ECS.h"
+#include "../../Engine/Platform/PlatformDelegates.h"
+
 #include <memory>
 
-namespace FloppyTurd {
+namespace GameCore {
 
     /**
      * @brief Base class for all game states in Floppy Turd
@@ -67,37 +70,6 @@ namespace FloppyTurd {
         bool m_shouldClear;
 
         void ProcessPendingChanges();
-    };
-
-    /**
-     * @brief Main Menu State
-     */
-    class MainMenuState : public GameState {
-    public:
-        MainMenuState(Gnosis::ECS* ecsSystem);
-        ~MainMenuState() override;
-
-        void Enter() override;
-        void Exit() override;
-        void Pause() override;
-        void Resume() override;
-
-        void Update(float deltaTime) override;
-        void Render() override;
-        void HandleInput() override;
-
-        bool IsFinished() const override { return m_finished; }
-        const char* GetStateName() const override { return "MainMenu"; }
-
-    private:
-        Gnosis::ECS* m_ecsSystem;
-        bool m_finished;
-        int m_selectedOption;
-        float m_animationTimer;
-
-        void CreateMenuEntities();
-        void DestroyMenuEntities();
-        void UpdateMenuSelection();
     };
 
     /**
@@ -256,6 +228,6 @@ namespace FloppyTurd {
         void SavePlayerData();
     };
 
-} // namespace FloppyTurd
+} // namespace GameCore
 
 #endif // FLOPPY_TURD_GAME_STATE_H

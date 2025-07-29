@@ -1,0 +1,66 @@
+#ifndef FLOPPY_TURD_MAIN_MENU_STATE_H
+#define FLOPPY_TURD_MAIN_MENU_STATE_H
+
+#include "GameState.h"
+
+namespace GameCore {
+
+    /**
+     * @brief Main Menu State - displays the game's main menu with logo and options
+     * 
+     * Features the Floppy Turd logo with interactive F button, and menu options
+     * for Playing, Options, Quick Play, and Quit. Supports both desktop and mobile layouts.
+     */
+    class MainMenuState : public GameState {
+    public:
+        MainMenuState(Gnosis::ECS* ecsCoordinator);
+        ~MainMenuState() override;
+
+        void Enter() override;
+        void Exit() override;
+        void Pause() override;
+        void Resume() override;
+
+        void Update(float deltaTime) override;
+        void Render() override;
+        void HandleInput() override;
+
+        bool IsFinished() const override { return m_finished; }
+        const char* GetStateName() const override { return "MainMenu"; }
+
+    private:
+        enum class MenuOption {
+            PLAYING = 0,
+            OPTIONS = 1,
+            QUICK_PLAY = 2,
+            QUIT = 3,
+            COUNT = 4
+        };
+
+        Gnosis::ECS* m_ecsCoordinator;  // Reference to shared ECS coordinator
+        bool m_finished;
+        int m_selectedOption;
+        float m_animationTimer;
+        bool m_isMobile;
+
+        // Layout functions - separate for desktop and mobile
+        void CreateDesktopLayout();
+        void CreateMobileLayout();
+        
+        // Update functions
+        void UpdateMenuSelection();
+        void UpdateMenuAnimations(float deltaTime);
+        
+        // Input handling
+        void OnMenuOptionSelected(MenuOption option);
+        void OnFButtonPressed();
+        
+        // Utility functions
+        const char* GetMenuOptionText(int optionIndex) const;
+        int GetMenuOptionCount() const;
+        bool IsMobilePlatform() const;
+    };
+
+} // namespace GameCore
+
+#endif // FLOPPY_TURD_MAIN_MENU_STATE_H

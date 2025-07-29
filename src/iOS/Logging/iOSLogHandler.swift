@@ -308,7 +308,7 @@ public class iOSLogHandler: NSObject, @unchecked Sendable {
 // With Swift 5.9+ native C++ interop, C++ code can directly instantiate this class:
 //
 // Example usage in C++:
-// #include "GameEngine-Swift.h"  // Auto-generated Swift interface
+// #include "FloppyTurd-Swift.h"  // Auto-generated Swift interface
 // 
 // // Direct instantiation - no bridge functions needed!
 // auto iosLogHandler = std::make_unique<FloppyTurd::iOSLogHandler>();

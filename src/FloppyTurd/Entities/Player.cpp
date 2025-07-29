@@ -1,7 +1,7 @@
 #include "Player.h"
 #include "../Components/GameComponents.h"
 
-namespace FloppyTurd {
+namespace GameCore {
 
     Player::Player() 
         : m_entity(Gnosis::INVALID_ENTITY)
@@ -12,13 +12,13 @@ namespace FloppyTurd {
         , m_coins(0)
         , m_invulnerabilityTimer(0.0f)
         , m_shootCooldown(0.0f)
-        , m_equippedHat(FloppyTurd::HatType::None)
+        , m_equippedHat(GameCore::HatType::None)
     {
         // Initialize skill states
-        m_skills[FloppyTurd::SkillType::DoubleJump] = {false, 0.0f, 5.0f};
-        m_skills[FloppyTurd::SkillType::Shield] = {false, 0.0f, 10.0f};
-        m_skills[FloppyTurd::SkillType::SpeedBoost] = {false, 0.0f, 8.0f};
-        m_skills[FloppyTurd::SkillType::RapidFire] = {false, 0.0f, 12.0f};
+        m_skills[GameCore::SkillType::DoubleJump] = {false, 0.0f, 5.0f};
+        m_skills[GameCore::SkillType::Shield] = {false, 0.0f, 10.0f};
+        m_skills[GameCore::SkillType::SpeedBoost] = {false, 0.0f, 8.0f};
+        m_skills[GameCore::SkillType::RapidFire] = {false, 0.0f, 12.0f};
     }
 
     Player::~Player() {
@@ -36,7 +36,7 @@ namespace FloppyTurd {
         m_entity = m_ecsSystem->CreateEntity();
         
         // Add Transform component
-        FloppyTurd::Transform transform;
+        GameCore::Transform transform;
         transform.position = Gnosis::GNVector2(100.0f, 300.0f);
         transform.scale = Gnosis::GNVector2(1.0f, 1.0f);
         transform.rotation = 0.0f;
@@ -304,4 +304,4 @@ namespace FloppyTurd {
         // TODO: Remove skill effects
     }
 
-} // namespace FloppyTurd
+} // namespace GameCore

@@ -4,6 +4,8 @@
 #include "Entity.h"
 #include "Component.h"
 #include "../Events/EventManager.h"
+#include "../Platform/PlatformDelegates.h"
+#include "SystemManager.h"
 #include <memory>
 
 namespace Gnosis {
@@ -18,6 +20,7 @@ namespace Gnosis {
         std::unique_ptr<EntityManager> entityManager;
         std::unique_ptr<ComponentManager> componentManager;
         std::unique_ptr<EventManager> eventManager;
+        std::unique_ptr<SystemManager> systemManager;
         
         bool initialized;
         
@@ -31,7 +34,7 @@ namespace Gnosis {
         /**
          * Initialize the ECS system
          */
-        void Initialize() {
+        void Initialize(const GameCore::PlatformDelegates& delegates) {
             if (initialized) {
                 return;
             }
@@ -40,6 +43,10 @@ namespace Gnosis {
             entityManager = std::unique_ptr<EntityManager>(new EntityManager());
             componentManager = std::unique_ptr<ComponentManager>(new ComponentManager());
             eventManager = std::unique_ptr<EventManager>(new EventManager());
+            
+            // Create system manager with platform delegates
+            systemManager = std::unique_ptr<SystemManager>(new SystemManager(this, delegates));
+            systemManager->Initialize();
             
             initialized = true;
         }
@@ -53,6 +60,12 @@ namespace Gnosis {
             }
             
             eventManager->Clear();
+            
+            // Clean up system manager first
+            if (systemManager) {
+                systemManager->Shutdown();
+                systemManager.reset();
+            }
             
             eventManager.reset();
             componentManager.reset();
@@ -72,6 +85,11 @@ namespace Gnosis {
             
             // Process events first
             eventManager->ProcessEvents();
+            
+            // Update all systems via system manager
+            if (systemManager) {
+                systemManager->Update(deltaTime);
+            }
         }
         
         /**
@@ -83,7 +101,10 @@ namespace Gnosis {
                 return;
             }
             
-            // Systems handle their own rendering now
+            // Render all systems via system manager
+            if (systemManager) {
+                systemManager->Render();
+            }
         }
         
         // Entity Management
@@ -223,6 +244,13 @@ namespace Gnosis {
             return eventManager.get();
         }
         
+        /**
+         * Get the system manager for direct access
+         */
+        SystemManager* GetSystemManager() {
+            return systemManager.get();
+        }
+        
         // Utility Methods
         
         /**
@@ -256,7 +284,8 @@ namespace Gnosis {
             
             // Create component signature for the required components
             ComponentSignature requiredSignature;
-            (requiredSignature.set(Component::GetComponentTypeId<ComponentTypes>()), ...);
+            int dummy[] = { (requiredSignature.set(Component::GetComponentTypeId<ComponentTypes>()), 0)... };
+            (void)dummy; // Suppress unused variable warning
             
             // Check all entities to see which ones match the signature
             for (Entity entity = 0; entity < entityManager->GetActiveEntityCount(); ++entity) {

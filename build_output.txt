@@ -1,0 +1,8 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project FloppyTurd.xcodeproj -scheme FloppyTurd -destination "platform=iOS Simulator,name=iPhone 16" clean build
+
+User defaults from command line:
+    IDEPackageSupportUseBuiltinSCM = YES
+
+2025-07-29 10:20:40.150 xcodebuild[76135:900664] Writing error result bundle to /var/folders/09/pw3zby3x5pn4pvjgr515b_sw0000gn/T/ResultBundle_2025-29-07_10-20-0040.xcresult
+xcodebuild: error: 'FloppyTurd.xcodeproj' does not exist.

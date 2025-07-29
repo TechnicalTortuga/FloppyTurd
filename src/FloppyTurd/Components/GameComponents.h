@@ -1,11 +1,12 @@
 #ifndef FLOPPY_TURD_GAME_COMPONENTS_H
 #define FLOPPY_TURD_GAME_COMPONENTS_H
 
-#include "../../Engine/Core/Component.h"
+// Use forward declarations and proper includes to avoid circular dependencies
 #include "../../Engine/Core/GnosisTypes.h"
+
 #include <string>
 
-namespace FloppyTurd {
+namespace GameCore {
 
     // ============================================================================
     // Game-Specific Enums
@@ -59,6 +60,8 @@ namespace FloppyTurd {
             , rotation(rot)
             , scale(scl)
         {}
+        
+        ~Transform() noexcept = default;
     };
     
     /**
@@ -81,7 +84,7 @@ namespace FloppyTurd {
     };
     
     /**
-     * Sprite component - visual representation
+     * Sprite component - visual representation (static or animated)
      */
     struct Sprite : public Gnosis::Component {
         std::string textureId;
@@ -91,14 +94,36 @@ namespace FloppyTurd {
         bool visible;
         int layer;
         
+        // Animation support
+        bool isAnimated;
+        int frameWidth;          // Width of each frame in the sprite sheet
+        int frameHeight;         // Height of each frame in the sprite sheet
+        int frameCount;          // Total number of frames
+        int currentFrame;        // Current frame index (0-based)
+        float frameTime;         // Time per frame in seconds
+        float currentFrameTime;  // Accumulated time for current frame
+        bool loop;               // Should animation loop?
+        bool playing;            // Is animation currently playing?
+        
+        // Static sprite constructor
         Sprite()
             : width(32.0f)
             , height(32.0f)
             , color(255, 255, 255, 255)
             , visible(true)
             , layer(0)
+            , isAnimated(false)
+            , frameWidth(32)
+            , frameHeight(32)
+            , frameCount(1)
+            , currentFrame(0)
+            , frameTime(0.1f)
+            , currentFrameTime(0.0f)
+            , loop(true)
+            , playing(false)
         {}
         
+        // Static sprite constructor with texture
         Sprite(const std::string& texId, float w, float h)
             : textureId(texId)
             , width(w)
@@ -106,7 +131,41 @@ namespace FloppyTurd {
             , color(255, 255, 255, 255)
             , visible(true)
             , layer(0)
+            , isAnimated(false)
+            , frameWidth(static_cast<int>(w))
+            , frameHeight(static_cast<int>(h))
+            , frameCount(1)
+            , currentFrame(0)
+            , frameTime(0.1f)
+            , currentFrameTime(0.0f)
+            , loop(true)
+            , playing(false)
         {}
+        
+        // Animated sprite constructor
+        Sprite(const std::string& texId, float w, float h, int fWidth, int fHeight, int fCount, float fTime = 0.1f)
+            : textureId(texId)
+            , width(w)
+            , height(h)
+            , color(255, 255, 255, 255)
+            , visible(true)
+            , layer(0)
+            , isAnimated(true)
+            , frameWidth(fWidth)
+            , frameHeight(fHeight)
+            , frameCount(fCount)
+            , currentFrame(0)
+            , frameTime(fTime)
+            , currentFrameTime(0.0f)
+            , loop(true)
+            , playing(true)
+        {}
+        
+        // Animation control methods
+        void Play() { playing = true; }
+        void Pause() { playing = false; }
+        void Stop() { playing = false; currentFrame = 0; currentFrameTime = 0.0f; }
+        void SetFrame(int frame) { currentFrame = (frame >= 0 && frame < frameCount) ? frame : 0; }
     };
     
     /**
@@ -302,24 +361,24 @@ namespace FloppyTurd {
         {}
     };
 
-} // namespace FloppyTurd
+} // namespace GameCore
 
-// Bring FloppyTurd components into Gnosis namespace for easier access
+// Bring GameCore components into Gnosis namespace for easier access
 namespace Gnosis {
-    using Transform = FloppyTurd::Transform;
-    using Physics = FloppyTurd::Physics;
-    using Sprite = FloppyTurd::Sprite;
-    using Collider = FloppyTurd::Collider;
-    using Animation = FloppyTurd::Animation;
-    using PlayerComponent = FloppyTurd::PlayerComponent;
-    using Enemy = FloppyTurd::Enemy;
-    using Projectile = FloppyTurd::Projectile;
-    using PowerUp = FloppyTurd::PowerUp;
-    using Obstacle = FloppyTurd::Obstacle;
-    using Parallax = FloppyTurd::Parallax;
-    using Lifetime = FloppyTurd::Lifetime;
-    using AudioSource = FloppyTurd::AudioSource;
-    using ColliderType = FloppyTurd::ColliderType;
+    using Transform = GameCore::Transform;
+    using Physics = GameCore::Physics;
+    using Sprite = GameCore::Sprite;
+    using Collider = GameCore::Collider;
+    using Animation = GameCore::Animation;
+    using PlayerComponent = GameCore::PlayerComponent;
+    using Enemy = GameCore::Enemy;
+    using Projectile = GameCore::Projectile;
+    using PowerUp = GameCore::PowerUp;
+    using Obstacle = GameCore::Obstacle;
+    using Parallax = GameCore::Parallax;
+    using Lifetime = GameCore::Lifetime;
+    using AudioSource = GameCore::AudioSource;
+    using ColliderType = GameCore::ColliderType;
 }
 
 #endif // FLOPPY_TURD_GAME_COMPONENTS_H

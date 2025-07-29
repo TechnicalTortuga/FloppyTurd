@@ -708,25 +708,25 @@ public class MetalRenderer {
         clearScreen()
     }
     
-    public func drawSprite(_ sprite: UInt32, _ x: Float, _ y: Float, _ rotation: Float) {
+    public func drawSprite(textureHandle: UInt32, x: Float, y: Float, rotation: Float) {
         // For now, treat sprites as textures with full size
-        if let texture = textures[sprite] {
+        if let texture = textures[textureHandle] {
             let width = Float(texture.width)
             let height = Float(texture.height)
-            drawTexture(textureHandle: sprite, x: x, y: y, width: width, height: height)
+            drawTexture(textureHandle: textureHandle, x: x, y: y, width: width, height: height)
         } else {
-            log("drawSprite: Invalid sprite handle \(sprite)", level: .warning)
+            log("drawSprite: Invalid sprite handle \(textureHandle)", level: .warning)
         }
     }
     
-    public func drawSpriteScaled(_ sprite: UInt32, _ x: Float, _ y: Float, _ scaleX: Float, _ scaleY: Float, _ rotation: Float) {
+    public func drawSpriteScaled(textureHandle: UInt32, x: Float, y: Float, scaleX: Float, scaleY: Float, rotation: Float) {
         // For now, treat sprites as textures with scaled size
-        if let texture = textures[sprite] {
+        if let texture = textures[textureHandle] {
             let width = Float(texture.width) * scaleX
             let height = Float(texture.height) * scaleY
-            drawTexture(textureHandle: sprite, x: x, y: y, width: width, height: height)
+            drawTexture(textureHandle: textureHandle, x: x, y: y, width: width, height: height)
         } else {
-            log("drawSpriteScaled: Invalid sprite handle \(sprite)", level: .warning)
+            log("drawSpriteScaled: Invalid sprite handle \(textureHandle)", level: .warning)
         }
     }
     
@@ -1048,19 +1048,60 @@ public class MetalRenderer {
         // Load the .fnt file from the bundle - try multiple possible locations
         var fontData: String?
         
+        log("Attempting to load font: \(fontName)", level: .debug)
+        
         // Try loading from main bundle first
         if let fontPath = Bundle.main.path(forResource: fontName, ofType: "fnt") {
+            log("Found font at main bundle path: \(fontPath)", level: .debug)
             fontData = try? String(contentsOfFile: fontPath)
+            if fontData != nil {
+                log("Successfully loaded font data from main bundle", level: .debug)
+            }
+        } else {
+            log("Font not found in main bundle root", level: .debug)
         }
         
         // If not found, try loading from the fonts subfolder in assets
         if fontData == nil, let fontPath = Bundle.main.path(forResource: fontName, ofType: "fnt", inDirectory: "fonts") {
+            log("Found font at fonts subfolder path: \(fontPath)", level: .debug)
             fontData = try? String(contentsOfFile: fontPath)
+            if fontData != nil {
+                log("Successfully loaded font data from fonts subfolder", level: .debug)
+            }
+        } else {
+            log("Font not found in fonts subfolder", level: .debug)
         }
         
         // If still not found, try loading as a bundled resource directly
         if fontData == nil, let fontURL = Bundle.main.url(forResource: fontName, withExtension: "fnt") {
+            log("Found font at bundle URL: \(fontURL)", level: .debug)
             fontData = try? String(contentsOf: fontURL)
+            if fontData != nil {
+                log("Successfully loaded font data from bundle URL", level: .debug)
+            }
+        } else {
+            log("Font not found via bundle URL", level: .debug)
+        }
+        
+        // Debug: List all .fnt files in the bundle
+        if let bundlePath = Bundle.main.resourcePath {
+            log("Bundle resource path: \(bundlePath)", level: .debug)
+            let fileManager = FileManager.default
+            do {
+                let contents = try fileManager.contentsOfDirectory(atPath: bundlePath)
+                let fntFiles = contents.filter { $0.hasSuffix(".fnt") }
+                log("Found .fnt files in bundle: \(fntFiles)", level: .debug)
+                
+                // Also check fonts subdirectory
+                let fontsPath = bundlePath + "/fonts"
+                if fileManager.fileExists(atPath: fontsPath) {
+                    let fontsContents = try fileManager.contentsOfDirectory(atPath: fontsPath)
+                    let fontsFntFiles = fontsContents.filter { $0.hasSuffix(".fnt") }
+                    log("Found .fnt files in fonts subdirectory: \(fontsFntFiles)", level: .debug)
+                }
+            } catch {
+                log("Error listing bundle contents: \(error)", level: .debug)
+            }
         }
         
         guard let fntContent = fontData else {
@@ -1319,17 +1360,61 @@ public class MetalRenderer {
     private func generateFontAtlas(fontName: String, fontSize: Float) -> UIImage? {
         // First try to load from cache
         let cacheKey = "\(fontName)_\(Int(fontSize))"
+        
+        // Check in-memory cache first
         if let cachedImage = fontAtlasCache[cacheKey] {
-            log("Using cached font atlas for: \(cacheKey)", level: .debug)
+            log("Using in-memory cached font atlas for: \(cacheKey)", level: .debug)
             return cachedImage
         }
         
-        // Try to load the TTF font file from bundle
-        guard let fontPath = Bundle.main.path(forResource: fontName, ofType: "ttf"),
+        // Check pre-bundled atlas from assets/fonts directory
+        let preBundledName = "\(fontName)_\(Int(fontSize))"
+        
+        // Check in asset catalog (preferred)
+        if let bundledAtlas = UIImage(named: preBundledName) {
+            log("Using pre-bundled font atlas: \(preBundledName) from asset catalog", level: .debug)
+            fontAtlasCache[cacheKey] = bundledAtlas
+            return bundledAtlas
+        }
+        
+        // Check in bundle resources (fallback)
+        if let bundlePath = Bundle.main.path(forResource: preBundledName, ofType: "png") {
+            if let bundledAtlas = UIImage(contentsOfFile: bundlePath) {
+                log("Using pre-bundled font atlas: \(preBundledName) from bundle resources", level: .debug)
+                fontAtlasCache[cacheKey] = bundledAtlas
+                return bundledAtlas
+            }
+        }
+        
+        // Check development disk cache
+        let fileManager = FileManager.default
+        if let documentsPath = fileManager.urls(for: FileManager.SearchPathDirectory.documentDirectory, in: FileManager.SearchPathDomainMask.userDomainMask).first {
+            let cacheFileName = "font_atlas_\(cacheKey).png"
+            let cacheFilePath = documentsPath.appendingPathComponent(cacheFileName)
+            
+            if fileManager.fileExists(atPath: cacheFilePath.path),
+               let cachedImage = UIImage(contentsOfFile: cacheFilePath.path) {
+                log("Using disk-cached font atlas for: \(cacheKey) from \(cacheFilePath.path)", level: .debug)
+                fontAtlasCache[cacheKey] = cachedImage
+                return cachedImage
+            }
+        }
+        
+        // Try to load the TTF font file from bundle (iOS uses TTF)
+        // First try fonts subdirectory, then root
+        let fontPath: String?
+        if let fontsPath = Bundle.main.path(forResource: fontName, ofType: "ttf", inDirectory: "fonts") {
+            fontPath = fontsPath
+        } else {
+            fontPath = Bundle.main.path(forResource: fontName, ofType: "ttf")
+        }
+        
+        guard let fontPath = fontPath,
               let fontData = NSData(contentsOfFile: fontPath),
               let dataProvider = CGDataProvider(data: fontData),
               let cgFont = CGFont(dataProvider) else {
             log("Failed to load TTF font: \(fontName), will generate simple atlas", level: .warning)
+            log("Checked paths: fonts/\(fontName).ttf and \(fontName).ttf", level: .debug)
             // Generate a simple white atlas as fallback
             return generateSimpleAtlas()
         }
@@ -1346,8 +1431,24 @@ public class MetalRenderer {
         
         // Cache the generated atlas
         fontAtlasCache[cacheKey] = atlasImage
-        log("Generated and cached font atlas for: \(cacheKey)", level: .debug)
         
+        // Save to disk cache for development/testing
+        if let documentsPath = FileManager.default.urls(for: FileManager.SearchPathDirectory.documentDirectory, in: FileManager.SearchPathDomainMask.userDomainMask).first {
+            let cacheFileName = "font_atlas_\(cacheKey).png"
+            let cacheFilePath = documentsPath.appendingPathComponent(cacheFileName)
+            
+            if let pngData = atlasImage.pngData() {
+                do {
+                    try pngData.write(to: cacheFilePath)
+                    log("Saved font atlas to disk cache: \(cacheFileName) at \(cacheFilePath.path)", level: .debug)
+                    log("You can now copy this file to your bundle as: \(fontName)_\(Int(fontSize)).png", level: .info)
+                } catch {
+                    log("Failed to save disk cache: \(error)", level: .warning)
+                }
+            }
+        }
+        
+        log("Generated and cached font atlas for: \(cacheKey)", level: .debug)
         return atlasImage
     }
     
@@ -1374,6 +1475,11 @@ public class MetalRenderer {
         
         let atlasImage = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
+        
+        // Save atlas to Documents for inspection
+        if let atlasImage = atlasImage {
+            saveAtlasImageToDocuments(atlasImage, filename: "simple_atlas.png")
+        }
         
         return atlasImage
     }
@@ -1458,6 +1564,7 @@ public class MetalRenderer {
         return sdfImage
     }
     
+
     private func renderGlyphToSDF(
         character: Character,
         glyphInfo: GlyphInfo,

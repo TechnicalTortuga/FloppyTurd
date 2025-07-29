@@ -1,4 +1,4 @@
-#if !defined(__APPLE__) || !TARGET_OS_IPHONE
+#ifndef PLATFORM_IOS
 
 #include "RaylibPlatformImpl.h"
 #include <unordered_map>
@@ -176,16 +176,14 @@ namespace FloppyTurd {
         }
         
         // Delegate-compatible wrapper functions (with void* parameter)
-        void DrawSprite(void* sprite, float x, float y, float rotation) {
-            if (sprite) {
-                DrawSpriteInternal(*(static_cast<const Sprite*>(sprite)), x, y, rotation);
-            }
+        void DrawSprite(uint32_t textureHandle, float x, float y, float rotation) {
+            Sprite& spriteRef = *reinterpret_cast<Sprite*>(textureHandle);
+            DrawSpriteInternal(spriteRef, x, y, rotation);
         }
         
-        void DrawSpriteScaled(void* sprite, float x, float y, float scaleX, float scaleY, float rotation) {
-            if (sprite) {
-                DrawSpriteScaledInternal(*(static_cast<const Sprite*>(sprite)), x, y, scaleX, scaleY, rotation);
-            }
+        void DrawSpriteScaled(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation) {
+            Sprite& spriteRef = *reinterpret_cast<Sprite*>(textureHandle);
+            DrawSpriteScaledInternal(spriteRef, x, y, scaleX, scaleY, rotation);
         }
         
         void DrawText(const char* text, float x, float y, float fontSize, float r, float g, float b, float a) {
@@ -391,4 +389,4 @@ namespace FloppyTurd {
 
 } // namespace FloppyTurd
 
-#endif // !iOS
+#endif // !PLATFORM_IOS

@@ -1,14 +1,14 @@
 #ifndef FLOPPY_TURD_PLAYER_H
 #define FLOPPY_TURD_PLAYER_H
 
-#include "../../Engine/Core/Entity.h"
+// Use forward declarations and proper includes to avoid circular dependencies
 #include "../../Engine/Core/GnosisTypes.h"
-#include "../../Engine/Core/ECS.h"
+
 #include "../Components/GameComponents.h"
 #include <vector>
 #include <map>
 
-namespace FloppyTurd {
+namespace GameCore {
 
     /**
      * @brief Player entity for Floppy Turd game
@@ -41,13 +41,13 @@ namespace FloppyTurd {
         int GetCoins() const { return m_coins; }
         
         // Equipment and skills
-        void EquipHat(FloppyTurd::HatType hat);
+        void EquipHat(GameCore::HatType hat);
         void UnequipHat();
-        FloppyTurd::HatType GetEquippedHat() const { return m_equippedHat; }
+        GameCore::HatType GetEquippedHat() const { return m_equippedHat; }
         
-        void ActivateSkill(FloppyTurd::SkillType skill);
-        bool IsSkillActive(FloppyTurd::SkillType skill) const;
-        float GetSkillCooldown(FloppyTurd::SkillType skill) const;
+        void ActivateSkill(GameCore::SkillType skill);
+        bool IsSkillActive(GameCore::SkillType skill) const;
+        float GetSkillCooldown(GameCore::SkillType skill) const;
         
         // Position and movement
         Gnosis::GNVector2 GetPosition() const;
@@ -77,7 +77,7 @@ namespace FloppyTurd {
         float m_shootCooldown;
         
         // Equipment
-        FloppyTurd::HatType m_equippedHat;
+        GameCore::HatType m_equippedHat;
         
         // Active skills and their timers
         struct SkillState {
@@ -85,7 +85,7 @@ namespace FloppyTurd {
             float duration;
             float cooldown;
         };
-        std::map<FloppyTurd::SkillType, SkillState> m_skills;
+        std::map<GameCore::SkillType, SkillState> m_skills;
         
         // Player configuration
         static const float JUMP_FORCE;
@@ -106,7 +106,7 @@ namespace FloppyTurd {
         void ActivateSpeedBoost();
         void ActivateRapidFire();
         
-        void DeactivateSkill(FloppyTurd::SkillType skill);
+        void DeactivateSkill(GameCore::SkillType skill);
     };
     
     // Player constants
@@ -116,6 +116,6 @@ namespace FloppyTurd {
     const float Player::INVULNERABILITY_DURATION = 2.0f;
     const float Player::SHOOT_COOLDOWN_DURATION = 0.3f;
 
-} // namespace FloppyTurd
+} // namespace GameCore
 
 #endif // FLOPPY_TURD_PLAYER_H

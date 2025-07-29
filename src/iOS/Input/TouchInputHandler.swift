@@ -71,17 +71,17 @@ public class TouchInputHandler: NSObject {
         Task {
             switch level {
             case .trace:
-                await SwiftLog.debug(message, category: "TouchInputHandler")
+                SwiftLog.debug(message, category: "TouchInputHandler")
             case .debug:
-                await SwiftLog.debug(message, category: "TouchInputHandler")
+                SwiftLog.debug(message, category: "TouchInputHandler")
             case .info:
-                await SwiftLog.info(message, category: "TouchInputHandler")
+                SwiftLog.info(message, category: "TouchInputHandler")
             case .warning:
-                await SwiftLog.warn(message, category: "TouchInputHandler")
+                SwiftLog.warn(message, category: "TouchInputHandler")
             case .error:
-                await SwiftLog.error(message, category: "TouchInputHandler")
+                SwiftLog.error(message, category: "TouchInputHandler")
             case .fatal:
-                await SwiftLog.fatal(message, category: "TouchInputHandler")
+                SwiftLog.fatal(message, category: "TouchInputHandler")
             }
         }
     }
@@ -202,15 +202,14 @@ public class TouchInputHandler: NSObject {
         initialized = false
     }
     
-    nonisolated public func update() {
+    @MainActor public func update() {
         // Update touch states (pressed -> down, released -> up)
         for (touchId, state) in touchStates {
             switch state {
             case .pressed:
                 touchStates[touchId] = .down
             case .released:
-                touchStates.removeValue(forKey: touchId)
-                touchPositions.removeValue(forKey: touchId)
+                touchStates[touchId] = .up
             default:
                 break
             }
@@ -305,28 +304,41 @@ public class TouchInputHandler: NSObject {
     // MARK: - Touch Event Handlers
     
     @MainActor public func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?, in view: UIView) {
+        log("TouchesBegan: \(touches.count) touches detected", level: .debug)
         for touch in touches {
             let touchId = nextTouchId
             nextTouchId += 1
+            let position = touch.location(in: view)
             
             activeTouches[touch] = touchId
-            touchPositions[touchId] = touch.location(in: view)
-            touchStates[touchId] = .pressed
+            touchPositions[touchId] = position
+            touchStates[touchId] = .down
+            
+            log("Touch \(touchId) began at position (\(position.x), \(position.y))", level: .debug)
         }
     }
     
     @MainActor public func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?, in view: UIView) {
+        log("TouchesMoved: \(touches.count) touches moved", level: .debug)
         for touch in touches {
             guard let touchId = activeTouches[touch] else { continue }
-            touchPositions[touchId] = touch.location(in: view)
+            let position = touch.location(in: view)
+            
+            touchPositions[touchId] = position
+            
+            log("Touch \(touchId) moved to position (\(position.x), \(position.y))", level: .debug)
         }
     }
     
     @MainActor public func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?, in view: UIView) {
+        log("TouchesEnded: \(touches.count) touches ended", level: .debug)
         for touch in touches {
             guard let touchId = activeTouches[touch] else { continue }
+            let position = touch.location(in: view)
             touchStates[touchId] = .released
             activeTouches.removeValue(forKey: touch)
+            
+            log("Touch \(touchId) ended at position (\(position.x), \(position.y))", level: .debug)
         }
     }
     
@@ -362,6 +374,7 @@ public class TouchInputHandler: NSObject {
     @MainActor @objc private func handleTapInternal(_ gesture: UITapGestureRecognizer) {
         lastGestureType = .tap
         lastGesturePosition = gesture.location(in: gesture.view)
+        log("Tap gesture detected at position (\(lastGesturePosition.x), \(lastGesturePosition.y))", level: .debug)
     }
     
     @MainActor @objc private func handleSwipe(_ gesture: UISwipeGestureRecognizer) {
@@ -410,7 +423,7 @@ public class TouchInputHandler: NSObject {
 // With Swift 5.9+ native C++ interop, C++ code can directly instantiate this class:
 //
 // Example usage in C++:
-// #include "GameEngine-Swift.h"  // Auto-generated Swift interface
+// #include "FloppyTurd-Swift.h"  // Auto-generated Swift interface
 // 
 // // Direct instantiation - no bridge functions needed!
 // auto touchHandler = std::make_unique<FloppyTurd::TouchInputHandler>();

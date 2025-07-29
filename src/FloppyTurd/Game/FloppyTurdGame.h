@@ -1,13 +1,25 @@
 #ifndef FLOPPY_TURD_GAME_H
 #define FLOPPY_TURD_GAME_H
 
+#ifdef PLATFORM_IOS
+#include <TargetConditionals.h>
+#endif
+
+// Include necessary engine headers first
 #include "../../Engine/Core/ECS.h"
 #include "../../Engine/Platform/PlatformDelegates.h"
+
+// Forward declarations to avoid circular dependencies
+namespace GameCore {
+    class GameStateManager;
+    class EventManager;
+}
+
 #include "../States/GameState.h"
 #include "../Entities/Player.h"
 #include <memory>
 
-namespace FloppyTurd {
+namespace GameCore {
     class GameStateManager;
 }
 
@@ -16,7 +28,7 @@ namespace FloppyTurd {
 #include <swift/bridging>
 #endif
 
-namespace FloppyTurd {
+namespace GameCore {
 
     /**
      * @brief Main game class for Floppy Turd
@@ -30,8 +42,8 @@ namespace FloppyTurd {
         ~FloppyTurdGame();
         
         // Swift 5.9+ C++ Interop: Allow copy/move for Swift compatibility
-        FloppyTurdGame(const FloppyTurdGame& other) = default;
-        FloppyTurdGame& operator=(const FloppyTurdGame& other) = default;
+        FloppyTurdGame(const FloppyTurdGame& other) = delete;
+        FloppyTurdGame& operator=(const FloppyTurdGame& other) = delete;
         FloppyTurdGame(FloppyTurdGame&& other) = default;
         FloppyTurdGame& operator=(FloppyTurdGame&& other) = default;
 
@@ -42,7 +54,7 @@ namespace FloppyTurd {
         
         // Platform-specific component setters (iOS only)
         // Note: Always declared for Swift C++ interop compatibility
-        void SetSwiftComponents(void* metalRenderer, void* touchInputHandler, void* audioHandler);
+        // SetSwiftComponents removed - Swift components managed entirely on Swift side
 
         // Game loop
         void Update(float deltaTime);
@@ -99,15 +111,7 @@ namespace FloppyTurd {
         // Platform abstraction
         PlatformDelegates m_platformDelegates;
         
-        // Platform-specific components
-        #ifdef __APPLE__
-        #if TARGET_OS_IPHONE
-        // iOS: Direct Swift component references
-        void* m_swiftMetalRenderer;
-        void* m_swiftTouchInputHandler;
-        void* m_swiftAudioHandler;
-        #endif
-        #endif
+        // Platform-specific components removed - using delegates only
 
         // Game state
         bool m_initialized;
@@ -143,6 +147,9 @@ namespace FloppyTurd {
         // Game loop helpers
         void UpdatePerformanceStats(float deltaTime);
         void LimitFrameRate();
+        
+        // State management helpers
+        void HandleStateTransition(GameState* finishedState);
         
         // Data management
         void LoadSettings();
@@ -219,6 +226,6 @@ namespace FloppyTurd {
     
     // Swift 5.9+ C++ Interop: FloppyTurdGame is now directly accessible as a Swift reference type
 
-} // namespace FloppyTurd
+} // namespace GameCore
 
 #endif // FLOPPY_TURD_GAME_H

@@ -150,7 +150,7 @@ namespace Gnosis {
     const char* LogLevelToString(LogLevel level) {
         switch (static_cast<int>(level)) {
             case static_cast<int>(LogLevel::TRACE): return "TRACE";
-            case static_cast<int>(LogLevel::DEBUG): return "DEBUG";
+            case static_cast<int>(LogLevel::DBG): return "DEBUG";
             case static_cast<int>(LogLevel::INFO):  return "INFO";
             case static_cast<int>(LogLevel::WARN):  return "WARN";
             case static_cast<int>(LogLevel::ERROR): return "ERROR";
@@ -164,7 +164,7 @@ namespace Gnosis {
         std::transform(upperStr.begin(), upperStr.end(), upperStr.begin(), ::toupper);
         
         if (upperStr == "TRACE") return LogLevel::TRACE;
-        if (upperStr == "DEBUG") return LogLevel::DEBUG;
+        if (upperStr == "DEBUG") return LogLevel::DBG;
         if (upperStr == "INFO")  return LogLevel::INFO;
         if (upperStr == "WARN")  return LogLevel::WARN;
         if (upperStr == "ERROR") return LogLevel::ERROR;

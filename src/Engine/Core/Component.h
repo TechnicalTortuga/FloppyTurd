@@ -260,7 +260,8 @@ namespace Gnosis {
             ComponentSignature requiredSignature;
             
             // Set bits for all required component types
-            (requiredSignature.set(Component::GetComponentTypeId<ComponentTypes>()), ...);
+            int dummy[] = { (requiredSignature.set(Component::GetComponentTypeId<ComponentTypes>()), 0)... };
+            (void)dummy; // Suppress unused variable warning
             
             std::vector<Entity> matchingEntities;
             

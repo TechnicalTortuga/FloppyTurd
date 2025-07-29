@@ -3,16 +3,17 @@
 
 #include "GameState.h"
 
-namespace FloppyTurd {
+namespace GameCore {
 
     /**
-     * @brief Loading State - shows blue screen with "Loading" text
+     * @brief Loading State - shows rotating poop hat icon while loading
      * 
-     * Simple initial state to verify our rendering pipeline works
+     * Displays the base poop hat rotating around the center of the screen
+     * until loading is complete, then transitions to main menu
      */
     class LoadingState : public GameState {
     public:
-        LoadingState(Gnosis::ECS* ecsSystem);
+        LoadingState(Gnosis::ECS* ecsCoordinator);
         ~LoadingState() override = default;
 
         void Enter() override;
@@ -26,18 +27,27 @@ namespace FloppyTurd {
 
         bool IsFinished() const override { return m_finished; }
         const char* GetStateName() const override { return "Loading"; }
+        
+        // Get loading progress (0.0 to 1.0)
+        float GetLoadingProgress() const;
 
     private:
-        Gnosis::ECS* m_ecsSystem;
+        Gnosis::ECS* m_ecsCoordinator;  // Reference to shared ECS coordinator
         bool m_finished;
         float m_loadingTimer;
-        float m_textBlinkTimer;
-        bool m_showText;
+        float m_rotationAngle;  // Current rotation angle in degrees
+        void* m_poopHatEntity;  // Pointer to the poop hat entity (TODO: proper type when ECS is integrated)
         
         static const float LOADING_DURATION;
-        static const float TEXT_BLINK_INTERVAL;
+        static const float ROTATION_SPEED;   // degrees per second
+        static const float ORBIT_RADIUS;     // pixels from center
+        
+        // Helper functions
+        void CreateLoadingEntities();
+        void DestroyLoadingEntities();
+        void UpdatePoopHatPosition();
     };
 
-} // namespace FloppyTurd
+} // namespace GameCore
 
 #endif // FLOPPY_TURD_LOADING_STATE_H

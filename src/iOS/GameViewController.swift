@@ -26,27 +26,25 @@ public class GameViewController: UIViewController {
     
     // MARK: - Logging Helper - Direct Swift/C++ interop
     private func log(_ message: String, level: LogLevel = .info) {
-        Task {
-            switch level {
-            case .trace:
-                await SwiftLog.debug(message, category: "GameViewController")
-            case .debug:
-                await SwiftLog.debug(message, category: "GameViewController")
-            case .info:
-                await SwiftLog.info(message, category: "GameViewController")
-            case .warning:
-                await SwiftLog.warn(message, category: "GameViewController")
-            case .error:
-                await SwiftLog.error(message, category: "GameViewController")
-            case .fatal:
-                await SwiftLog.fatal(message, category: "GameViewController")
-            }
+        switch level {
+        case .trace:
+            SwiftLog.debug(message, category: "GameViewController")
+        case .debug:
+            SwiftLog.debug(message, category: "GameViewController")
+        case .info:
+            SwiftLog.info(message, category: "GameViewController")
+        case .warning:
+            SwiftLog.warn(message, category: "GameViewController")
+        case .error:
+            SwiftLog.error(message, category: "GameViewController")
+        case .fatal:
+            SwiftLog.fatal(message, category: "GameViewController")
         }
     }
     
-    private func shutdownGame() async {
-        await gameEngine.shutdown()
-        await log("Game shutdown complete")
+    private func shutdownGame() {
+        gameEngine.shutdown()
+        log("Game shutdown complete")
     }
     
     // Game state
@@ -59,10 +57,21 @@ public class GameViewController: UIViewController {
         super.viewDidLoad()
         log("GameViewController loading...")
         
+        log("About to call setupMetalView()...")
         setupMetalView()
+        log("setupMetalView() completed")
+        
+        log("About to call setupGameEngine()...")
         setupGameEngine()
+        log("setupGameEngine() completed successfully")
+        
+        log("About to call setupTouchInput()...")
         setupTouchInput()
+        log("setupTouchInput() completed")
+        
+        log("About to call setupNotifications()...")
         setupNotifications()
+        log("setupNotifications() completed")
         
         log("GameViewController loaded successfully")
     }
@@ -136,26 +145,35 @@ public class GameViewController: UIViewController {
         log("Initializing C++ game on main thread...")
         
         // Initialize the C++ game engine through Swift interop
+        log("About to create GameEngine() object...")
         gameEngine = GameEngine()
+        log("GameEngine() object created successfully")
         
         // Initialize Metal renderer
+        log("About to create MetalRenderer...")
         metalRenderer = MetalRenderer()
+        log("MetalRenderer created successfully")
         
         // Connect Metal view to renderer - THIS WAS MISSING!
+        log("About to connect MTKView to MetalRenderer...")
         metalRenderer.setMetalView(metalView)
         log("Connected MTKView to MetalRenderer")
         
         // Connect renderer to game engine
+        log("About to connect renderer to game engine...")
         gameEngine.setMetalRenderer(metalRenderer)
+        log("Connected renderer to game engine")
         
         // Initialize the game
+        log("About to initialize game engine...")
         if gameEngine.initialize() {
             isGameInitialized = true
             log("Game engine initialized successfully on main thread")
         } else {
-            log("Failed to initialize game engine", level: .error)
+            log("Failed to initialize game engine")
             fatalError("Game engine initialization failed")
         }
+        log("setupGameEngine completed successfully")
     }
     
     private func setupTouchInput() {
@@ -282,6 +300,36 @@ extension GameViewController: MTKViewDelegate {
         // Render frame
         gameEngine.render()
     }
+    
+    // MARK: - Touch Event Forwarding
+    
+    public override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesBegan(touches, with: event)
+        if let view = self.view {
+            touchInputHandler?.touchesBegan(touches, with: event, in: view)
+        }
+    }
+    
+    public override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesMoved(touches, with: event)
+        if let view = self.view {
+            touchInputHandler?.touchesMoved(touches, with: event, in: view)
+        }
+    }
+    
+    public override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesEnded(touches, with: event)
+        if let view = self.view {
+            touchInputHandler?.touchesEnded(touches, with: event, in: view)
+        }
+    }
+    
+    public override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesCancelled(touches, with: event)
+        if let view = self.view {
+            touchInputHandler?.touchesCancelled(touches, with: event, in: view)
+        }
+    }
 }
 
 // MARK: - TouchInputHandlerDelegate
@@ -291,10 +339,11 @@ extension GameViewController: TouchInputHandlerDelegate {
     public func touchInputHandler(_ handler: TouchInputHandler, didReceiveInput input: Any) {
         // Forward touch input to game engine on main actor
         // Since GameViewController is @MainActor, this method runs on main thread
-        // TODO: Define proper TouchInput type and implement handleTouchInput in GameEngine
-        // gameEngine.handleTouchInput(input)
+        gameEngine.handleTouchInput(input)  // ✅ ENABLED - forwards to C++ state manager
     }
 }
+
+
 
 // MARK: - C++ Integration Notes
 
@@ -304,7 +353,7 @@ extension GameViewController: TouchInputHandlerDelegate {
  * With Swift 5.9+, C++ can directly instantiate this Swift class without C-style bridging:
  * 
  * // C++ Example:
- * #include "GameEngine-Swift.h"
+ * #include "FloppyTurd-Swift.h"
  * 
  * // Direct instantiation
  * auto viewController = std::make_unique<FloppyTurd::GameViewController>();

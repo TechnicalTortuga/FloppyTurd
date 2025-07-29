@@ -1,17 +1,12 @@
 #pragma once
 
-#include "../../Engine/Platform/PlatformDelegates.h"
-#include <vector>  // For std::vector (bridges to Swift Array)
+#include <vector>
 #include <mutex>
-#include <queue>  // Internal queue, but we return vector for interop
+#include <memory>
+#include "../../Engine/Platform/PlatformDelegates.h"
 
-// Forward declarations for Swift classes
-class MetalRenderer;
-class TouchInputHandler;
-class AudioManagerSwift;
-
-namespace FloppyTurd {
-
+namespace GameCore {
+    
     /**
      * @class ThreadingProxy
      * @brief Thread-safe command queue proxy for iOS platform interop
@@ -34,46 +29,77 @@ namespace FloppyTurd {
         ThreadingProxy();
         ~ThreadingProxy();
         
-        // Delegate function implementations - these enqueue commands
+        // Command queue management
+        static bool hasCommands();
+        static void clearCommands();
+        
+        // Rendering commands
         static void enqueueBeginFrame();
         static void enqueueEndFrame();
         static void enqueuePresent();
         static void enqueueClearScreen(float r, float g, float b, float a);
-        static void enqueueDrawSprite(void* sprite, float x, float y, float rotation);
-        static void enqueueDrawSpriteScaled(void* sprite, float x, float y, float scaleX, float scaleY, float rotation);
+        static void enqueueDrawSprite(uint32_t textureHandle, float x, float y, float rotation);
+        static void enqueueDrawSpriteScaled(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation);
         static void enqueueDrawText(const char* text, float x, float y, float fontSize, float r, float g, float b, float a);
         static void enqueueDrawRectangle(float x, float y, float width, float height, float r, float g, float b, float a);
         static void enqueueDrawCircle(float x, float y, float radius, float r, float g, float b, float a);
         static void enqueueGetScreenSize(float* width, float* height);
         
+        // Audio commands
+        static void enqueuePlayMusic(const char* musicName, float volume, int loopCount);
+        static void enqueueStopMusic();
+        static void enqueuePlaySound(const char* soundName, float volume);
+        static void enqueueStopSound();
+        static void enqueueSetMusicVolume(float volume);
+        static void enqueueSetSoundVolume(float volume);
+        
+        // Logging commands
+        static void enqueueLogTrace(const char* message, const char* category = "C++");
+        static void enqueueLogDebug(const char* message, const char* category = "C++");
+        static void enqueueLogInfo(const char* message, const char* category = "C++");
+        static void enqueueLogWarn(const char* message, const char* category = "C++");
+        static void enqueueLogError(const char* message, const char* category = "C++");
+        static void enqueueLogFatal(const char* message, const char* category = "C++");
+        
+        // Asset loading commands - modern callback signatures with userData
+        static void enqueueLoadTexture(const std::string& path, void (*callback)(TextureData* texture, const char* error, void* userData), void* userData);
+        static void enqueueLoadAudio(const std::string& path, void (*callback)(void* audioData, size_t size, const char* error, void* userData), void* userData);
+        static void enqueueLoadFont(const std::string& path, int size, void (*callback)(void* fontData, const char* error, void* userData), void* userData);
+        static void enqueueLoadData(const std::string& path, void (*callback)(void* data, size_t size, const char* error, void* userData), void* userData);
+        
         // Setup function to configure delegates to use this proxy
         void setupDelegates(PlatformDelegates& delegates);
         
-        // Set Swift components for command processing
-        void setSwiftComponents(MetalRenderer* renderer, TouchInputHandler* input, AudioManagerSwift* audio);
+        // Swift components are managed entirely on the Swift side
         
-        // Get and clear commands as vector (bridges to Swift Array<RenderCommand>)
-        std::vector<RenderCommand> getAndClearCommands();
+        // Command retrieval (for Swift) - returns vectors that bridge to Swift Arrays
+        std::vector<GameCore::RenderCommand> getAndClearRenderCommands();
+        std::vector<GameCore::AudioCommand> getAndClearAudioCommands();
+        std::vector<GameCore::LogCommand> getAndClearLogCommands();
+        std::vector<GameCore::AssetCommand> getAndClearAssetCommands();
         
         // Queue management - Thread-safe
-        bool hasCommands() const;
         size_t getCommandCount() const;
         void clearQueue();
         
     private:
-        std::queue<RenderCommand> m_commandQueue;
+        std::vector<RenderCommand> m_renderCommandQueue;
+        std::vector<AudioCommand> m_audioCommandQueue;
+        std::vector<LogCommand> m_logCommandQueue;
+        std::vector<AssetCommand> m_assetCommandQueue;
         mutable std::mutex m_queueMutex;  // mutable for const methods
         
-        // Swift component references
-        MetalRenderer* m_metalRenderer;
-        TouchInputHandler* m_touchInputHandler;
-        AudioManagerSwift* m_audioManager;
+        // Swift components are managed entirely on the Swift side
+        // No C++ references needed
         
         // Static instance for delegate callbacks
         static ThreadingProxy* s_instance;
         
-        // Helper to enqueue a command
-        void enqueueCommand(const RenderCommand& command);
+        // Helper to enqueue commands
+        void enqueueRenderCommand(const RenderCommand& command);
+        void enqueueAudioCommand(const AudioCommand& command);
+        void enqueueLogCommand(const LogCommand& command);
+        void enqueueAssetCommand(const AssetCommand& command);
     };
     
     // Global instance accessor for C++ interop
@@ -85,6 +111,9 @@ namespace FloppyTurd {
     ThreadingProxy* getThreadingProxy();
     
     // Helper function for Swift to get commands without dealing with C++ method calls
-    std::vector<RenderCommand> getAndClearCommandsFromProxy();
-
-} // namespace FloppyTurd
+    std::vector<RenderCommand> getAndClearRenderCommandsFromProxy();
+    std::vector<AudioCommand> getAndClearAudioCommandsFromProxy();
+    std::vector<LogCommand> getAndClearLogCommandsFromProxy();
+    std::vector<AssetCommand> getAndClearAssetCommandsFromProxy();
+    
+}

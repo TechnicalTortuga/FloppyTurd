@@ -9,11 +9,16 @@
 //
 
 import Foundation
+
 import UIKit
 import Metal
 import QuartzCore
-import FloppyTurdEngine
-import FloppyTurdGame
+
+import GameCoreEngine
+import GameCorePlatform
+import GameCoreGame
+
+// import FloppyTurdGame (C++ class is available via module.modulemap and C++ interop)
 
 /// GameEngine - Swift implementation with native C++ interop
 /// Direct C++ instantiation: std::make_unique<FloppyTurd::GameEngine>()
@@ -24,47 +29,54 @@ import FloppyTurdGame
 public class GameEngine: NSObject {
     
     // MARK: - Properties
-    private var isInitialized: Bool = false
-    private var isRunning: Bool = false
-    private var isPaused: Bool = false
     
-    // C++ game instance (direct C++ class instantiation)
-    private var cppGame: FloppyTurd.FloppyTurdGame?
+    private var isInitialized = false
+    private var isRunning = false
+    private var isPaused = false
+    private var lastFrameTime: CFTimeInterval = 0
     
-    // iOS subsystems
+    // Platform-specific managers
     private var metalRenderer: MetalRenderer?
     private var touchInputHandler: TouchInputHandler?
+    private var inputHandler: TouchInputHandler?
     private var audioManager: AVAudioHandler?
     private var commandProcessor: CommandProcessor?
     
-    // Frame timing for MTKView-driven rendering
-    private var lastFrameTime: CFTimeInterval = 0
+    // C++ Game Engine instance
+    private var cppGame: GameCoreGame.GameCore.FloppyTurdGame?
     
-    // GNLog integration
+    // GNLog integration - Direct SwiftLog (like ThreadingSystem)
     private func log(_ message: String, level: LogLevel = .info) {
-        Task { @Sendable in
-            switch level {
-            case .trace:
-                await SwiftLog.debug(message, category: "GameEngine")
-            case .debug:
-                await SwiftLog.debug(message, category: "GameEngine")
-            case .info:
-                await SwiftLog.info(message, category: "GameEngine")
-            case .warning:
-                await SwiftLog.warn(message, category: "GameEngine")
-            case .error:
-                await SwiftLog.error(message, category: "GameEngine")
-            case .fatal:
-                await SwiftLog.fatal(message, category: "GameEngine")
-            }
+        switch level {
+        case .trace:
+            SwiftLog.debug(message, category: "GameEngine")
+        case .debug:
+            SwiftLog.debug(message, category: "GameEngine")
+        case .info:
+            SwiftLog.info(message, category: "GameEngine")
+        case .warning:
+            SwiftLog.warn(message, category: "GameEngine")
+        case .error:
+            SwiftLog.error(message, category: "GameEngine")
+        case .fatal:
+            SwiftLog.fatal(message, category: "GameEngine")
         }
     }
     
     // MARK: - Initialization
     
     public override init() {
+        // Use direct SwiftLog (like ThreadingSystem) to avoid Task/await delays
+        SwiftLog.info("🚨 GameEngine.init() STARTED", category: "GameEngine")
+        
         super.init()
-        log("GameEngine Swift bridge created")
+        
+        // Create command processor (this initializes the ThreadingProxy)
+        commandProcessor = CommandProcessor()
+        
+        SwiftLog.info("🚨 GameEngine.super.init() COMPLETED", category: "GameEngine")
+        
+        SwiftLog.info("🚨 GameEngine Swift bridge created successfully", category: "GameEngine")
     }
     
     deinit {
@@ -95,43 +107,62 @@ public class GameEngine: NSObject {
             log("Created TouchInputHandler")
         }
         
-        if audioManager == nil {
-            audioManager = AVAudioHandler()
-            log("Created AudioManager")
-        }
+        // Create audio manager
+        log("Creating AVAudioHandler...")
+        audioManager = AVAudioHandler()
+        log("AVAudioHandler created successfully - instance: \(ObjectIdentifier(audioManager!))")
         
-        if commandProcessor == nil {
-            commandProcessor = CommandProcessor()
-            commandProcessor?.setMetalRenderer(metalRenderer!)
-            log("Created CommandProcessor")
-        }
+        // Set up the command processor with Swift components
+        log("Setting up CommandProcessor with Swift components...")
+        commandProcessor?.setMetalRenderer(metalRenderer!)
+        commandProcessor?.setAudioManager(audioManager!)
+        log("CommandProcessor configured with Swift components")
         
-        // Create and initialize C++ game instance
-        cppGame = FloppyTurd.FloppyTurdGame()
+        // Ensure ThreadingProxy is properly initialized before C++ game creation
+        log("Ensuring ThreadingProxy is initialized...")
+        GameCorePlatform.GameCore.initializeThreadingSystem()
+        log("ThreadingProxy initialization confirmed")
         
-        // Initialize with Swift components using the new iOS-specific method
-        guard let renderer = metalRenderer,
-              let inputHandler = touchInputHandler,
-              let audio = audioManager else {
-            log("Failed to create platform components", level: .error)
+        // Create C++ Game Engine - This returns the main game instance
+        log("Creating C++ FloppyTurdGame object...")
+        cppGame = GameCoreGame.GameCore.FloppyTurdGame()
+        
+        guard cppGame != nil else {
+            log("Failed to create C++ FloppyTurdGame object", level: .error)
             return false
         }
         
-        // Use SetSwiftComponents method for iOS
-        cppGame?.SetSwiftComponents(
-            Unmanaged.passUnretained(renderer).toOpaque(),
-            Unmanaged.passUnretained(inputHandler).toOpaque(),
-            Unmanaged.passUnretained(audio).toOpaque()
-        )
+        log("C++ FloppyTurdGame object created successfully")
+        
+        // Create Swift objects
+        log("Creating Swift component objects...")
+        let inputHandler = TouchInputHandler()
+        
+        // Store references
+        self.inputHandler = inputHandler
+        // audioManager already set - don't overwrite it
+        
+        log("Swift components created - ready to initialize C++ game")
         
         // Now initialize the C++ game
         let success = cppGame?.Initialize() ?? false
+        
+        log("C++ game Initialize() returned: \(success)")
         
         guard success else {
             log("Failed to initialize C++ game with Swift components", level: .error)
             cppGame = nil
             return false
         }
+        
+        log("C++ game initialized successfully - starting game and showing main menu")
+        
+        // Show main menu and start background music
+        cppGame?.ShowMainMenu()
+        log("ShowMainMenu() called")
+        
+        cppGame?.StartGame()
+        log("StartGame() called")
         
         isInitialized = true
         log("GameEngine initialized successfully with Swift components")
@@ -251,12 +282,26 @@ public class GameEngine: NSObject {
     /// Set the Metal renderer for the game
     public func setMetalRenderer(_ renderer: MetalRenderer) {
         metalRenderer = renderer
+        
+        // Update the CommandProcessor with the new renderer
+        commandProcessor?.setMetalRenderer(renderer)
+        
         log("Metal renderer set", level: .debug)
         
         // TODO: Pass Metal renderer to C++ game
         // if let game = cppGame {
         //     game.SetRenderer(renderer)
         // }
+    }
+    
+    /// Set the audio manager for the game
+    public func setAudioManager(_ manager: AVAudioHandler) {
+        audioManager = manager
+        
+        // Update the CommandProcessor with the new audio manager
+        commandProcessor?.setAudioManager(manager)
+        
+        log("Audio manager set", level: .debug)
     }
     
     /// Set the touch input handler for the game
@@ -268,6 +313,19 @@ public class GameEngine: NSObject {
         // if let game = cppGame {
         //     game.SetInputHandler(handler)
         // }
+    }
+    
+    /// Handle touch input and forward to C++ game state manager
+    public func handleTouchInput(_ input: Any) {
+        guard isRunning && !isPaused else { return }
+        guard cppGame != nil else {
+            log("Cannot handle touch input - C++ game not initialized", level: .warning)
+            return
+        }
+        
+        // Forward touch input to C++ game state manager
+        cppGame?.HandleInput()
+        log("Touch input forwarded to C++ state manager", level: .debug)
     }
     
     // MARK: - Game Loop Integration
@@ -362,14 +420,14 @@ public class GameEngine: NSObject {
  * This GameEngine class now uses direct C++ class instantiation:
  * 
  * // Swift to C++ (current implementation):
- * cppGame = FloppyTurd.FloppyTurdGame()
+ * cppGame = GameCoreGame.GameCore.FloppyTurdGame()
  * cppGame?.Initialize(platform)
  * cppGame?.Run()
  * 
  * // C++ to Swift (if needed):
- * #include "GameEngine-Swift.h"
+ * #include "FloppyTurd-Swift.h"
  * auto gameEngine = std::make_unique<FloppyTurd::GameEngine>();
  * 
  * The FloppyTurdGame C++ class is directly accessible from Swift
- * through the module.modulemap configuration and Swift 5.9+ interop.
+ * through the GameCoreGame module and Swift 5.9+ interop.
  */

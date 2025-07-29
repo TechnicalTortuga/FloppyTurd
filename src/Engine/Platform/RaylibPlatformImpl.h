@@ -1,6 +1,6 @@
 #pragma once
 
-#if !defined(__APPLE__) || !TARGET_OS_IPHONE
+#ifndef PLATFORM_IOS
 
 #include "PlatformDelegates.h"
 // Forward declarations to avoid raylib.h dependency in header
@@ -69,4 +69,4 @@ namespace FloppyTurd {
 
 } // namespace FloppyTurd
 
-#endif // !iOS
+#endif // !PLATFORM_IOS

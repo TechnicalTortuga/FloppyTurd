@@ -1,49 +1,125 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 #include <queue>
 
-namespace FloppyTurd {
+namespace GameCore {
 
     // Threading System - Command Queue for Thread-Safe Platform Interop
     // Enqueuing turd draw commands for silky-smooth rendering! 🚀
     
-    enum CommandType {
+    enum class CommandType : uint32_t {
+        // Rendering commands
         CMD_BEGIN_FRAME = 0,
-        CMD_END_FRAME,
-        CMD_PRESENT,
-        CMD_CLEAR_SCREEN,
-        CMD_DRAW_SPRITE,
-        CMD_DRAW_SPRITE_SCALED,
-        CMD_DRAW_TEXT,
-        CMD_DRAW_RECTANGLE,
-        CMD_DRAW_CIRCLE,
-        CMD_GET_SCREEN_SIZE
+        CMD_END_FRAME = 1,
+        CMD_PRESENT = 2,
+        CMD_CLEAR_SCREEN = 3,
+        CMD_DRAW_SPRITE = 4,
+        CMD_DRAW_SPRITE_SCALED = 5,
+        CMD_DRAW_TEXT = 6,
+        CMD_DRAW_RECTANGLE = 7,
+        CMD_DRAW_CIRCLE = 8,
+        CMD_GET_SCREEN_SIZE = 9,
+        
+        // Audio commands
+        CMD_PLAY_MUSIC = 10,
+        CMD_STOP_MUSIC = 11,
+        CMD_PLAY_SOUND = 12,
+        CMD_STOP_SOUND = 13,
+        CMD_SET_MUSIC_VOLUME = 14,
+        CMD_SET_SOUND_VOLUME = 15,
+        
+        // Logging commands
+        CMD_LOG_TRACE = 16,
+        CMD_LOG_DEBUG = 17,
+        CMD_LOG_INFO = 18,
+        CMD_LOG_WARN = 19,
+        CMD_LOG_ERROR = 20,
+        CMD_LOG_FATAL = 21,
+        
+        // Asset loading commands
+        CMD_LOAD_TEXTURE = 22,
+        CMD_LOAD_AUDIO = 23,
+        CMD_LOAD_FONT = 24,
+        CMD_LOAD_DATA = 25
     };
     
+    // Rendering command data
+    struct RenderCommandData {
+        // Common color/position fields
+        float r = 0.0f, g = 0.0f, b = 0.0f, a = 0.0f;
+        float x = 0.0f, y = 0.0f;
+        float width = 0.0f, height = 0.0f;
+        float radius = 0.0f;
+        float fontSize = 0.0f;
+        float rotation = 0.0f;
+        float scaleX = 1.0f, scaleY = 1.0f;
+        
+        // Pointer fields
+        uint32_t textureHandle = 0;
+        const char* text = nullptr;  // Caller ensures lifetime
+        float* screenWidth = nullptr;
+        float* screenHeight = nullptr;
+    };
+    
+    // Audio command data
+    struct AudioCommandData {
+        float volume = 1.0f;
+        float pitch = 1.0f;
+        int loopCount = 0;  // -1 for infinite loop, 0 for no loop, >0 for specific count
+        const char* audioFileName = nullptr;  // For music and sound file names
+    };
+    
+    // Logging command data
+    struct LogCommandData {
+        std::string logMessage;
+        std::string logCategory;
+    };
+    
+    // Command structures
     struct RenderCommand {
         CommandType type;
+        RenderCommandData data;
         
-        // Flattened data - all fields present, ignore irrelevant based on type
-        // Avoids union interop limitations; simple POD for easy bridging
-        struct Data {
-            // Common color/position fields
-            float r = 0.0f, g = 0.0f, b = 0.0f, a = 0.0f;
-            float x = 0.0f, y = 0.0f;
-            float width = 0.0f, height = 0.0f;
-            float radius = 0.0f;
-            float fontSize = 0.0f;
-            float rotation = 0.0f;
-            float scaleX = 1.0f, scaleY = 1.0f;
-            
-            // Pointer fields
-            void* sprite = nullptr;
-            const char* text = nullptr;  // Caller ensures lifetime
-            float* screenWidth = nullptr;
-            float* screenHeight = nullptr;
-        } data;
+        // Constructors
+        RenderCommand() : type(CommandType::CMD_BEGIN_FRAME) {}
+        RenderCommand(CommandType t) : type(t) {}
+    };
+    
+    struct AudioCommand {
+        CommandType type;
+        AudioCommandData data;
         
-        RenderCommand() : type(CMD_BEGIN_FRAME) {}
+        // Constructors
+        AudioCommand() : type(CommandType::CMD_PLAY_MUSIC) {}
+        AudioCommand(CommandType t) : type(t) {}
+    };
+    
+    struct LogCommand {
+        CommandType type;
+        LogCommandData data;
+        
+        // Constructors
+        LogCommand() : type(CommandType::CMD_LOG_INFO) {}
+        LogCommand(CommandType t) : type(t) {}
+    };
+    
+    // Asset loading command data
+    struct AssetCommandData {
+        std::string assetPath;  // Full path to asset
+        int fontSize = 16;  // For font loading
+        void* callback = nullptr;  // Callback function pointer
+        void* userData = nullptr;  // User context data for callback
+    };
+    
+    struct AssetCommand {
+        CommandType type;
+        AssetCommandData data;
+        
+        // Constructors
+        AssetCommand() : type(CommandType::CMD_LOAD_TEXTURE) {}
+        AssetCommand(CommandType t) : type(t) {}
     };
 
     // Forward declarations
@@ -66,8 +142,8 @@ namespace FloppyTurd {
         void (*clearScreen)(float r, float g, float b, float a);
         
         // Sprite rendering (using void* for sprite to avoid forward declaration issues)
-        void (*drawSprite)(void* sprite, float x, float y, float rotation);
-        void (*drawSpriteScaled)(void* sprite, float x, float y, float scaleX, float scaleY, float rotation);
+        void (*drawSprite)(uint32_t textureHandle, float x, float y, float rotation);
+        void (*drawSpriteScaled)(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation);
         
         // Text rendering
         void (*drawText)(const char* text, float x, float y, float fontSize, float r, float g, float b, float a);
@@ -125,34 +201,94 @@ namespace FloppyTurd {
     // Audio delegate - platform-agnostic audio interface
     struct AudioDelegate {
         // Sound effects
-        void (*playSound)(const char* soundName);
-        void (*playSoundWithVolume)(const char* soundName, float volume);
-        void (*stopSound)(const char* soundName);
+        void (*playSound)(const char* soundName, float volume);
+        void (*stopSound)();
         
         // Background music
-        void (*playMusic)(const char* musicName);
+        void (*playMusic)(const char* musicName, float volume, int loopCount);
         void (*stopMusic)();
-        void (*pauseMusic)();
-        void (*resumeMusic)();
         
         // Volume control
-        void (*setMasterVolume)(float volume);  // 0.0 to 1.0
-        void (*setSFXVolume)(float volume);
         void (*setMusicVolume)(float volume);
-        
-        // Audio state
-        bool (*isMusicPlaying)();
-        bool (*isSoundPlaying)(const char* soundName);
+        void (*setSFXVolume)(float volume);
         
         // Platform-specific context
         void* platformContext;
         
         // Initialize to null
-        AudioDelegate() : playSound(nullptr), playSoundWithVolume(nullptr), stopSound(nullptr),
-                        playMusic(nullptr), stopMusic(nullptr), pauseMusic(nullptr), resumeMusic(nullptr),
-                        setMasterVolume(nullptr), setSFXVolume(nullptr), setMusicVolume(nullptr),
-                        isMusicPlaying(nullptr), isSoundPlaying(nullptr),
+        AudioDelegate() : playSound(nullptr), stopSound(nullptr),
+                        playMusic(nullptr), stopMusic(nullptr),
+                        setMusicVolume(nullptr), setSFXVolume(nullptr),
                         platformContext(nullptr) {}
+    };
+
+    // Asset loading delegates - platform-agnostic asset management
+    struct TextureData {
+        void* platformTexture;
+        int width;
+        int height;
+        int format;
+        int channels;
+        size_t dataSize;
+    };
+
+    struct AssetDelegate {
+        // Modern texture loading with user context using std::string for Swift interop
+        void (*loadTexture)(const std::string& texturePath, 
+                           void (*callback)(TextureData* texture, const char* error, void* userData),
+                           void* userData);
+        
+        void (*loadAudio)(const std::string& audioPath, 
+                         void (*callback)(void* audioData, size_t size, const char* error, void* userData),
+                         void* userData);
+        
+        void (*loadFont)(const std::string& fontPath, int size, 
+                        void (*callback)(void* fontData, const char* error, void* userData),
+                        void* userData);
+        
+        void (*loadShader)(const std::string& vertexPath, const std::string& fragmentPath,
+                          void (*callback)(void* shaderProgram, const char* error, void* userData),
+                          void* userData);
+        
+        void (*loadData)(const std::string& dataPath,
+                        void (*callback)(void* data, size_t size, const char* error, void* userData),
+                        void* userData);
+        
+        // Asset lifecycle management
+        void (*unloadAsset)(void* platformAsset);
+        bool (*isAssetLoaded)(const char* assetPath);
+        
+        // Asset path resolution
+        const char* (*getAssetPath)(const char* relativePath);
+        bool (*fileExists)(const char* relativePath);
+        
+        // Platform-specific context
+        void* platformContext;
+        
+        // Initialize to null
+        AssetDelegate() : loadTexture(nullptr), loadAudio(nullptr), loadFont(nullptr),
+                         loadShader(nullptr), loadData(nullptr), unloadAsset(nullptr),
+                         isAssetLoaded(nullptr), getAssetPath(nullptr), fileExists(nullptr),
+                         platformContext(nullptr) {}
+    };
+
+    // Logging delegate - platform-agnostic logging interface
+    struct LogDelegate {
+        // Logging functions
+        void (*logTrace)(const char* message, const char* category);
+        void (*logDebug)(const char* message, const char* category);
+        void (*logInfo)(const char* message, const char* category);
+        void (*logWarn)(const char* message, const char* category);
+        void (*logError)(const char* message, const char* category);
+        void (*logFatal)(const char* message, const char* category);
+        
+        // Platform-specific context
+        void* platformContext;
+        
+        // Initialize to null
+        LogDelegate() : logTrace(nullptr), logDebug(nullptr), logInfo(nullptr),
+                       logWarn(nullptr), logError(nullptr), logFatal(nullptr),
+                       platformContext(nullptr) {}
     };
 
     // Platform delegate container - holds all platform-specific delegates
@@ -160,6 +296,8 @@ namespace FloppyTurd {
         RendererDelegate renderer;
         InputDelegate input;
         AudioDelegate audio;
+        AssetDelegate asset;
+        LogDelegate log;
         
         // Platform identification
         enum PlatformType {
@@ -180,9 +318,10 @@ namespace FloppyTurd {
                    renderer.endFrame != nullptr &&
                    renderer.clearScreen != nullptr &&
                    renderer.drawSprite != nullptr &&
-                   input.isActionPressed != nullptr &&
-                   input.getPrimaryInputPosition != nullptr &&
-                   audio.playSound != nullptr;
+                   audio.playSound != nullptr &&
+                   asset.loadTexture != nullptr &&
+                   asset.loadAudio != nullptr;
+            // Note: Input delegates are not required for iOS as input is handled directly by Swift
         }
         
         // Get platform name as string
@@ -197,4 +336,4 @@ namespace FloppyTurd {
         }
     };
 
-} // namespace FloppyTurd
+} // namespace GameCore

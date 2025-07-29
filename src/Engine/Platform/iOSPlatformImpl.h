@@ -1,7 +1,6 @@
 #pragma once
 
-#ifdef __APPLE__
-#if TARGET_OS_IPHONE
+#ifdef PLATFORM_IOS
 
 #include "PlatformDelegates.h"
 
@@ -10,24 +9,18 @@
 #include <swift/bridging>
 #endif
 
-namespace FloppyTurd {
+namespace GameCore {
 
     // Forward declarations for Swift classes (native interop)
     class MetalRenderer;
     class TouchInputHandler;
-    class AudioManagerSwift;
+    class AVAudioHandler;
 
     // iOS Platform Implementation using native Swift/C++ interop
     namespace iOSPlatform {
         
         // Setup function to configure delegates for iOS
         void SetupDelegates(PlatformDelegates& delegates);
-        
-        // Set Swift components directly (native interop)
-        void SetSwiftComponents(MetalRenderer* renderer, TouchInputHandler* input, AudioManagerSwift* audio);
-        
-        // Swift-accessible function to set iOS components
-        void setIOSComponents(MetalRenderer* renderer, TouchInputHandler* input, AudioManagerSwift* audio);
         
         // Renderer functions that call Swift MetalRenderer directly
         void BeginFrame();
@@ -53,7 +46,7 @@ namespace FloppyTurd {
         bool IsKeyPressed(int keyCode);  // Stubbed for iOS
         bool IsKeyJustPressed(int keyCode);  // Stubbed for iOS
         
-        // Audio functions that call Swift AudioManagerSwift directly
+        // Audio functions that call Swift AVAudioHandler directly
         void PlaySound(const char* soundName);
         void PlaySoundWithVolume(const char* soundName, float volume);
         void StopSound(const char* soundName);
@@ -67,9 +60,19 @@ namespace FloppyTurd {
         bool IsMusicPlaying();
         bool IsSoundPlaying(const char* soundName);
         
+        // Asset loading functions
+        void LoadTexture(const char* texturePath, void (*callback)(bool success, const char* error));
+        void LoadAudio(const char* audioPath, void (*callback)(bool success, const char* error));
+        void LoadFont(const char* fontPath, int size, void (*callback)(bool success, const char* error));
+        void LoadShader(const char* vertexPath, const char* fragmentPath, void (*callback)(bool success, const char* error));
+        void LoadData(const char* dataPath, void (*callback)(bool success, const char* error));
+        
+        // Asset management
+        const char* GetAssetPath(const char* relativePath);
+        bool FileExists(const char* relativePath);
+        
     } // namespace iOSPlatform
 
-} // namespace FloppyTurd
+} // namespace GameCore
 
-#endif // TARGET_OS_IPHONE
-#endif // __APPLE__
+#endif // PLATFORM_IOS

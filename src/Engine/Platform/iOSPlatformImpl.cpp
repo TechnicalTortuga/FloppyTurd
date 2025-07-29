@@ -1,20 +1,14 @@
-#ifdef __APPLE__
-#if TARGET_OS_IPHONE
+#ifdef PLATFORM_IOS
 
 #include "iOSPlatformImpl.h"
 #include "../../iOS/Threading/ThreadingProxy.h"
-#include "../Graphics/Sprite.h"
+#include "../Utility/Helper.h"
 #include <cstring>
 
-namespace FloppyTurd {
+namespace GameCore {
 
-    // Global iOS component pointers (native Swift/C++ interop)
-    static MetalRenderer* g_metalRenderer = nullptr;
-    static TouchInputHandler* g_touchInputHandler = nullptr;
-    static AudioManagerSwift* g_audioManager = nullptr;
-    
-    // Global threading proxy for command queue
-    static ThreadingProxy* g_threadingProxy = nullptr;
+    // Global threading proxy for command queue (extern reference)
+    extern ThreadingProxy* g_threadingProxy;
 
     namespace iOSPlatform {
         
@@ -27,274 +21,177 @@ namespace FloppyTurd {
             // Use ThreadingProxy to setup delegates with command queue
             g_threadingProxy->setupDelegates(delegates);
             
-            // Input delegates
-            delegates.input.isActionPressed = IsActionPressed;
-            delegates.input.isActionJustPressed = IsActionJustPressed;
-            delegates.input.isActionReleased = IsActionReleased;
-            delegates.input.getPrimaryInputPosition = GetPrimaryInputPosition;
-            delegates.input.isPrimaryInputDown = IsPrimaryInputDown;
-            delegates.input.isPrimaryInputJustPressed = IsPrimaryInputJustPressed;
-            delegates.input.isPrimaryInputJustReleased = IsPrimaryInputJustReleased;
-            delegates.input.getTouchCount = GetTouchCount;
-            delegates.input.getTouchPosition = GetTouchPosition;
-            delegates.input.isKeyPressed = IsKeyPressed;
-            delegates.input.isKeyJustPressed = IsKeyJustPressed;
-            
-            // Audio delegates
-            delegates.audio.playSound = PlaySound;
-            delegates.audio.playSoundWithVolume = PlaySoundWithVolume;
-            delegates.audio.stopSound = StopSound;
-            delegates.audio.playMusic = PlayMusic;
-            delegates.audio.stopMusic = StopMusic;
-            delegates.audio.pauseMusic = PauseMusic;
-            delegates.audio.resumeMusic = ResumeMusic;
-            delegates.audio.setMasterVolume = SetMasterVolume;
-            delegates.audio.setSFXVolume = SetSFXVolume;
-            delegates.audio.setMusicVolume = SetMusicVolume;
-            delegates.audio.isMusicPlaying = IsMusicPlaying;
-            delegates.audio.isSoundPlaying = IsSoundPlaying;
+            // Set up asset loading delegates
+            // Asset loading delegates are handled by ThreadingProxy::setupDelegates
+            // which assigns the enqueue functions directly
+            delegates.asset.getAssetPath = GetAssetPath;
+            delegates.asset.fileExists = FileExists;
+            delegates.asset.platformContext = nullptr;
         }
         
-        void SetSwiftComponents(MetalRenderer* renderer, TouchInputHandler* input, AudioManagerSwift* audio) {
-            g_metalRenderer = renderer;
-            g_touchInputHandler = input;
-            g_audioManager = audio;
-            
-            // Set Swift components in threading proxy for command processing
-            if (g_threadingProxy) {
-                g_threadingProxy->setSwiftComponents(renderer, input, audio);
-            }
-        }
+        // SetSwiftComponents removed - Swift components managed entirely on Swift side
         
-        // Renderer implementations (native Swift/C++ interop)
+        // Renderer implementations (using ThreadingProxy static methods)
         void BeginFrame() {
-            if (g_metalRenderer) {
-                g_metalRenderer->beginFrame();
-            }
+            ThreadingProxy::enqueueBeginFrame();
         }
         
         void EndFrame() {
-            if (g_metalRenderer) {
-                g_metalRenderer->endFrame();
-            }
+            ThreadingProxy::enqueueEndFrame();
         }
         
         void Present() {
-            if (g_metalRenderer) {
-                g_metalRenderer->present();
-            }
+            ThreadingProxy::enqueuePresent();
         }
         
         void ClearScreen(float r, float g, float b, float a) {
-            if (g_metalRenderer) {
-                g_metalRenderer->clearScreen(r, g, b, a);
+            ThreadingProxy::enqueueClearScreen(r, g, b, a);
+        }
+        
+        void DrawSprite(uint32_t textureHandle, float x, float y, float rotation) {
+            if (textureHandle != 0) {
+                ThreadingProxy::enqueueDrawSprite(textureHandle, x, y, rotation);
             }
         }
         
-        void DrawSprite(void* sprite, float x, float y, float rotation) {
-            if (g_metalRenderer && sprite) {
-                g_metalRenderer->drawSprite(sprite, x, y, rotation);
-            }
-        }
-        
-        void DrawSpriteScaled(void* sprite, float x, float y, float scaleX, float scaleY, float rotation) {
-            if (g_metalRenderer && sprite) {
-                g_metalRenderer->drawSpriteScaled(sprite, x, y, scaleX, scaleY, rotation);
+        void DrawSpriteScaled(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation) {
+            if (textureHandle != 0) {
+                ThreadingProxy::enqueueDrawSpriteScaled(textureHandle, x, y, scaleX, scaleY, rotation);
             }
         }
         
         void DrawText(const char* text, float x, float y, float fontSize, float r, float g, float b, float a) {
-            if (g_metalRenderer && text) {
-                g_metalRenderer->drawText(text, x, y, fontSize, r, g, b, a);
+            if (text) {
+                ThreadingProxy::enqueueDrawText(text, x, y, fontSize, r, g, b, a);
             }
         }
         
         void DrawRectangle(float x, float y, float width, float height, float r, float g, float b, float a) {
-            if (g_metalRenderer) {
-                g_metalRenderer->drawRectangle(x, y, width, height, r, g, b, a);
-            }
+            ThreadingProxy::enqueueDrawRectangle(x, y, width, height, r, g, b, a);
         }
         
         void DrawCircle(float x, float y, float radius, float r, float g, float b, float a) {
-            if (g_metalRenderer) {
-                g_metalRenderer->drawCircle(x, y, radius, r, g, b, a);
-            }
+            ThreadingProxy::enqueueDrawCircle(x, y, radius, r, g, b, a);
         }
         
         void GetScreenSize(float* width, float* height) {
-            if (g_metalRenderer && width && height) {
-                auto size = g_metalRenderer->getScreenSize();
-                *width = size.width;
-                *height = size.height;
+            if (width && height) {
+                ThreadingProxy::enqueueGetScreenSize(width, height);
             }
         }
         
-        // Input implementations (native Swift/C++ interop)
-        bool IsActionPressed(int action) {
-            if (g_touchInputHandler) {
-                return g_touchInputHandler->isActionPressed(action);
-            }
-            return false;
-        }
-        
-        bool IsActionJustPressed(int action) {
-            if (g_touchInputHandler) {
-                return g_touchInputHandler->isActionJustPressed(action);
-            }
-            return false;
-        }
-        
-        bool IsActionReleased(int action) {
-            if (g_touchInputHandler) {
-                return g_touchInputHandler->isActionReleased(action);
-            }
-            return false;
-        }
-        
-        void GetPrimaryInputPosition(float* x, float* y) {
-            if (g_touchInputHandler && x && y) {
-                auto position = g_touchInputHandler->getPrimaryInputPosition();
-                *x = position.x;
-                *y = position.y;
-            }
-        }
-        
-        bool IsPrimaryInputDown() {
-            if (g_touchInputHandler) {
-                return g_touchInputHandler->isPrimaryInputDown();
-            }
-            return false;
-        }
-        
-        bool IsPrimaryInputJustPressed() {
-            if (g_touchInputHandler) {
-                return g_touchInputHandler->isPrimaryInputJustPressed();
-            }
-            return false;
-        }
-        
-        bool IsPrimaryInputJustReleased() {
-            if (g_touchInputHandler) {
-                return g_touchInputHandler->isPrimaryInputJustReleased();
-            }
-            return false;
-        }
-        
-        int GetTouchCount() {
-            if (g_touchInputHandler) {
-                return g_touchInputHandler->getTouchCount();
-            }
-            return 0;
-        }
-        
-        void GetTouchPosition(int touchIndex, float* x, float* y) {
-            if (g_touchInputHandler && x && y) {
-                auto position = g_touchInputHandler->getTouchPosition(touchIndex);
-                *x = position.x;
-                *y = position.y;
-            }
-        }
-        
-        bool IsKeyPressed(int keyCode) {
-            // iOS doesn't have keyboard input in typical game scenarios
-            return false;
-        }
-        
-        bool IsKeyJustPressed(int keyCode) {
-            // iOS doesn't have keyboard input in typical game scenarios
-            return false;
-        }
-        
-        // Audio implementations (native Swift/C++ interop)
-        void PlaySound(const char* soundName) {
-            if (g_audioManager && soundName) {
-                g_audioManager->playSound(soundName);
-            }
-        }
-        
-        void PlaySoundWithVolume(const char* soundName, float volume) {
-            if (g_audioManager && soundName) {
-                g_audioManager->playSoundWithVolume(soundName, volume);
-            }
-        }
-        
-        void StopSound(const char* soundName) {
-            if (g_audioManager && soundName) {
-                g_audioManager->stopSound(soundName);
-            }
-        }
-        
-        void PlayMusic(const char* musicName) {
-            if (g_audioManager && musicName) {
-                g_audioManager->playMusic(musicName);
-            }
+        // Audio implementations (using ThreadingProxy static methods)
+        void PlayMusic(const char* musicName, float volume, int loopCount) {
+            ThreadingProxy::enqueuePlayMusic(musicName, volume, loopCount);
         }
         
         void StopMusic() {
-            if (g_audioManager) {
-                g_audioManager->stopMusic();
-            }
+            ThreadingProxy::enqueueStopMusic();
         }
         
-        void PauseMusic() {
-            if (g_audioManager) {
-                g_audioManager->pauseMusic();
-            }
+        void PlaySound(const char* soundName, float volume) {
+            ThreadingProxy::enqueuePlaySound(soundName, volume);
         }
         
-        void ResumeMusic() {
-            if (g_audioManager) {
-                g_audioManager->resumeMusic();
-            }
-        }
-        
-        void SetMasterVolume(float volume) {
-            if (g_audioManager) {
-                g_audioManager->setMasterVolume(volume);
-            }
-        }
-        
-        void SetSFXVolume(float volume) {
-            if (g_audioManager) {
-                g_audioManager->setSFXVolume(volume);
-            }
+        void StopSound() {
+            ThreadingProxy::enqueueStopSound();
         }
         
         void SetMusicVolume(float volume) {
-            if (g_audioManager) {
-                g_audioManager->setMusicVolume(volume);
-            }
+            ThreadingProxy::enqueueSetMusicVolume(volume);
         }
         
-        bool IsMusicPlaying() {
-            if (g_audioManager) {
-                return g_audioManager->isMusicPlaying();
-            }
-            return false;
+        void SetSoundVolume(float volume) {
+            ThreadingProxy::enqueueSetSoundVolume(volume);
         }
         
-        bool IsSoundPlaying(const char* soundName) {
-            if (g_audioManager && soundName) {
-                return g_audioManager->isSoundPlaying(soundName);
-            }
-            return false;
+        // Logging implementations (using ThreadingProxy static methods)
+        void LogTrace(const char* message, const char* category) {
+            ThreadingProxy::enqueueLogTrace(message, category);
         }
+        
+        void LogDebug(const char* message, const char* category) {
+            ThreadingProxy::enqueueLogDebug(message, category);
+        }
+        
+        void LogInfo(const char* message, const char* category) {
+            ThreadingProxy::enqueueLogInfo(message, category);
+        }
+        
+        void LogWarn(const char* message, const char* category) {
+            ThreadingProxy::enqueueLogWarn(message, category);
+        }
+        
+        void LogError(const char* message, const char* category) {
+            ThreadingProxy::enqueueLogError(message, category);
+        }
+        
+        void LogFatal(const char* message, const char* category) {
+            ThreadingProxy::enqueueLogFatal(message, category);
+        }
+        
+        // Asset loading implementations - using modern callback signatures
+        void LoadTexture(const std::string& texturePath,
+                        void (*callback)(TextureData* texture, const char* error, void* userData),
+                        void* userData) {
+            if (texturePath.empty() || !callback) return;
+            ThreadingProxy::enqueueLoadTexture(texturePath, callback, userData);
+        }
+
+        void LoadAudio(const std::string& audioPath,
+                      void (*callback)(void* audioData, size_t size, const char* error, void* userData),
+                      void* userData) {
+            if (audioPath.empty() || !callback) return;
+            ThreadingProxy::enqueueLoadAudio(audioPath, callback, userData);
+        }
+
+        void LoadFont(const std::string& fontPath, int size,
+                     void (*callback)(void* fontData, const char* error, void* userData),
+                     void* userData) {
+            if (fontPath.empty() || !callback) return;
+            ThreadingProxy::enqueueLoadFont(fontPath, size, callback, userData);
+        }
+
+        void LoadShader(const std::string& vertexPath, const std::string& fragmentPath,
+                       void (*callback)(void* shaderProgram, const char* error, void* userData),
+                       void* userData) {
+            if (vertexPath.empty() || fragmentPath.empty() || !callback) return;
+            // For iOS, shaders are handled by Metal - call success immediately
+            callback(nullptr, nullptr, userData);
+        }
+
+        void LoadData(const std::string& dataPath,
+                     void (*callback)(void* data, size_t size, const char* error, void* userData),
+                     void* userData) {
+            if (dataPath.empty() || !callback) return;
+            ThreadingProxy::enqueueLoadData(dataPath, callback, userData);
+        }
+
+        const char* GetAssetPath(const char* relativePath) {
+            static std::string fullPath;
+            if (!relativePath) return "";
+            fullPath = GameCore::GetAssetFullPath(relativePath);
+            return fullPath.c_str();
+            // For now, return the relative path as-is since we don't have sync operations
+            // In a full implementation, this would need to be handled differently
+            // or made async like other asset operations
+            return relativePath;
+        }
+
+        bool FileExists(const char* relativePath) {
+            if (!relativePath) return false;
+            return GameCore::FileExists(relativePath);
+            // For now, assume files exist since we don't have sync operations
+            // In a full implementation, this would need to be handled differently
+            // or made async like other asset operations
+            return true;
+        }
+        
+        // Input is handled by ThreadingProxy's setupDelegates method
+        // No need for manual implementations here
         
     } // namespace iOSPlatform
 
-} // namespace FloppyTurd
+} // namespace GameCore
 
-// Native C++ interface for Swift interop (no extern C needed)
-namespace FloppyTurd {
-    namespace iOSPlatform {
-        
-        // Swift-accessible function to set iOS components
-        void setIOSComponents(MetalRenderer* renderer, TouchInputHandler* input, AudioManagerSwift* audio) {
-            SetSwiftComponents(renderer, input, audio);
-        }
-        
-    } // namespace iOSPlatform
-} // namespace FloppyTurd
-
-#endif // TARGET_OS_IPHONE
-#endif // __APPLE__
+#endif // PLATFORM_IOS

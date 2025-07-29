@@ -1,6 +1,11 @@
 #include "FloppyTurdGame.h"
+#include "../States/LoadingState.h"
+#include "../States/MainMenuState.h"
 #include "../../Engine/Core/GNLog.h"
 #include "../../Engine/Platform/PlatformDelegates.h"
+#ifdef PLATFORM_IOS
+#include "../../iOS/Threading/ThreadingProxy.h"
+#endif
 #include <iostream>
 #include <fstream>
 #include <chrono>
@@ -8,17 +13,13 @@
 #include <memory>
 #include <algorithm>
 
-#ifdef __APPLE__
-#if TARGET_OS_IPHONE
+#ifdef PLATFORM_IOS
 #include "../../Engine/Platform/iOSPlatformImpl.h"
 #else
 #include "../../Engine/Platform/RaylibPlatformImpl.h"
 #endif
-#else
-#include "../../Engine/Platform/RaylibPlatformImpl.h"
-#endif
 
-namespace FloppyTurd {
+namespace GameCore {
 
     // Global game instance
     FloppyTurdGame* g_Game = nullptr;
@@ -44,13 +45,6 @@ namespace FloppyTurd {
         , m_fpsTimer(0.0f)
         , m_currentFPS(0.0f)
         , m_showDebugInfo(false)
-#ifdef __APPLE__
-#if TARGET_OS_IPHONE
-        , m_swiftMetalRenderer(nullptr)
-        , m_swiftTouchInputHandler(nullptr)
-        , m_swiftAudioHandler(nullptr)
-#endif
-#endif
     {
         // Initialize game stats
         m_gameStats = {0, 0, 0, 0, 0, 0.0f, 0, 0};
@@ -73,46 +67,24 @@ namespace FloppyTurd {
         
         GN_LOG_INFO("Initializing Floppy Turd Game...");
         
-        // Platform-specific initialization using delegates
-        #ifdef __APPLE__
-        #if TARGET_OS_IPHONE
-        // iOS: Ensure Swift components are set and setup delegates
-        GN_LOG_INFO("Checking Swift components...");
-        GN_LOG_INFO("m_swiftMetalRenderer: %p", m_swiftMetalRenderer);
-        GN_LOG_INFO("m_swiftTouchInputHandler: %p", m_swiftTouchInputHandler);
-        GN_LOG_INFO("m_swiftAudioHandler: %p", m_swiftAudioHandler);
-        
-        if (!m_swiftMetalRenderer || !m_swiftTouchInputHandler || !m_swiftAudioHandler) {
-            GN_LOG_ERROR("iOS Swift components not set. Call SetSwiftComponents() first.");
-            return false;
-        }
-        GN_LOG_INFO("All Swift components are valid, proceeding with delegate setup...");
-        // Setup iOS platform delegates
-        iOSPlatform::SetSwiftComponents(
-            static_cast<FloppyTurd::MetalRenderer*>(m_swiftMetalRenderer),
-            static_cast<FloppyTurd::TouchInputHandler*>(m_swiftTouchInputHandler),
-            static_cast<FloppyTurd::AudioManagerSwift*>(m_swiftAudioHandler)
-        );
+        // Initialize platform using existing implementations
+        #ifdef PLATFORM_IOS
         iOSPlatform::SetupDelegates(m_platformDelegates);
         GN_LOG_INFO("iOS platform delegates configured");
         #else
-        // macOS: Setup Raylib delegates
         RaylibPlatform::SetupDelegates(m_platformDelegates);
         if (!RaylibPlatform::Initialize(800, 600, "Floppy Turd")) {
             GN_LOG_ERROR("Failed to initialize Raylib platform");
             return false;
         }
-        GN_LOG_INFO("macOS Raylib platform initialized");
+        GN_LOG_INFO("Desktop platform initialized");
         #endif
-        #else
-        // Desktop: Setup Raylib delegates
-        RaylibPlatform::SetupDelegates(m_platformDelegates);
-        if (!RaylibPlatform::Initialize(800, 600, "Floppy Turd")) {
-            GN_LOG_ERROR("Failed to initialize Raylib platform");
+        
+        // Validate delegates
+        if (!m_platformDelegates.IsValid()) {
+            GN_LOG_ERROR("Platform delegates not properly configured");
             return false;
         }
-        GN_LOG_INFO("Desktop Raylib platform initialized");
-        #endif
 
         // Initialize core systems
         if (!InitializeECS()) {
@@ -120,25 +92,12 @@ namespace FloppyTurd {
             return false;
         }
 
-        // Platform-specific system initialization
-        #ifdef __APPLE__
-        #if TARGET_OS_IPHONE
+        // Platform-specific system initialization (using delegates)
+        #ifdef PLATFORM_IOS
         // iOS: Systems are handled by Swift components
         GN_LOG_INFO("iOS systems managed by Swift components");
         #else
-        // macOS: Initialize Raylib systems (TODO)
-        if (!InitializeAudio()) {
-            GN_LOG_ERROR("Failed to initialize audio");
-            return false;
-        }
-        
-        if (!InitializeGraphics()) {
-            GN_LOG_ERROR("Failed to initialize graphics");
-            return false;
-        }
-        #endif
-        #else
-        // Desktop: Initialize Raylib systems (TODO)
+        // Desktop: Initialize Raylib systems
         if (!InitializeAudio()) {
             GN_LOG_ERROR("Failed to initialize audio");
             return false;
@@ -240,17 +199,25 @@ namespace FloppyTurd {
             return;
         }
 
-        // Update ECS systems
+        // 1. Update current game state FIRST (states manage entities)
+        if (m_stateManager) {
+            m_stateManager->Update(deltaTime);  // ✅ ENABLED
+        }
+
+        // 2. Check for state transitions
+        if (m_stateManager && !m_stateManager->IsEmpty()) {
+            GameState* currentState = m_stateManager->GetCurrentState();
+            if (currentState && currentState->IsFinished()) {
+                HandleStateTransition(currentState);
+            }
+        }
+
+        // 3. Update ECS systems (process entities created by states)
         if (m_ecsSystem) {
             m_ecsSystem->Update(deltaTime);
         }
 
-        // Update state manager
-        if (m_stateManager) {
-            // m_stateManager->Update(deltaTime);
-        }
-
-        // Update debug info
+        // 4. Update debug info
         if (m_showDebugInfo) {
             UpdateDebugInfo(deltaTime);
         }
@@ -269,18 +236,14 @@ namespace FloppyTurd {
             m_platformDelegates.renderer.clearScreen(0.2f, 0.3f, 0.3f, 1.0f); // Dark blue-gray background
         }
 
-        // Render ECS systems
-        if (m_ecsSystem) {
-            // Get render system and render
-            // auto renderSystem = m_ecsSystem->GetSystem<Gnosis::RenderSystem>();
-            // if (renderSystem) {
-            //     renderSystem->Render();
-            // }
+        // 1. Render current game state (creates/manages entities for rendering)
+        if (m_stateManager) {
+            m_stateManager->Render();  // ✅ ENABLED
         }
 
-        // Render state manager
-        if (m_stateManager) {
-            // m_stateManager->Render();
+        // 2. Render ECS systems (render entities managed by states)
+        if (m_ecsSystem) {
+            m_ecsSystem->Render();
         }
 
         // Render debug info
@@ -310,7 +273,7 @@ namespace FloppyTurd {
 
         // Pass input to state manager
         if (m_stateManager) {
-            // m_stateManager->HandleInput();
+            m_stateManager->HandleInput();  // ✅ ENABLED
         }
     }
 
@@ -360,6 +323,10 @@ namespace FloppyTurd {
 
     void FloppyTurdGame::ShowMainMenu() {
         GN_LOG_INFO("Showing main menu");
+        
+        // Start playing background music for the main menu
+        PlayBackgroundMusic();
+        
         // TODO: Implement main menu state
     }
 
@@ -443,10 +410,10 @@ namespace FloppyTurd {
             return false;
         }
 
-        // Register systems
-        // m_ecsSystem->RegisterSystem<Gnosis::RenderSystem>();
+        // Initialize ECS with platform delegates for integrated rendering
+        m_ecsSystem->Initialize(m_platformDelegates);
         
-        GN_LOG_INFO("ECS system initialized");
+        GN_LOG_INFO("ECS system initialized with integrated sprite rendering");
         return true;
     }
 
@@ -484,9 +451,38 @@ namespace FloppyTurd {
     void FloppyTurdGame::InitializeGameStates() {
         GN_LOG_INFO("Initializing game states...");
         
-        // TODO: Initialize state manager and states
+        // Initialize state manager
+        m_stateManager = std::make_unique<GameStateManager>();
         
-        GN_LOG_INFO("Game states initialized");
+        // Start with loading state using shared ECS coordinator
+        auto loadingState = std::make_unique<LoadingState>(m_ecsSystem.get());
+        m_stateManager->PushState(std::move(loadingState));
+        
+        GN_LOG_INFO("Game states initialized - starting with LoadingState");
+    }
+
+    void FloppyTurdGame::HandleStateTransition(GameState* finishedState) {
+        if (!finishedState) {
+            return;
+        }
+        
+        const char* stateName = finishedState->GetStateName();
+        GN_LOG_INFO("Handling state transition from: %s", stateName);
+        
+        if (strcmp(stateName, "Loading") == 0) {
+            // Transition from loading to main menu
+            auto mainMenuState = std::make_unique<MainMenuState>(m_ecsSystem.get());
+            m_stateManager->ChangeState(std::move(mainMenuState));
+            GN_LOG_INFO("Transitioned to MainMenuState");
+        }
+        else if (strcmp(stateName, "MainMenu") == 0) {
+            // Handle main menu selections
+            // TODO: Implement based on menu selection
+            GN_LOG_INFO("Main menu finished - implement game state transition");
+        }
+        else {
+            GN_LOG_WARN("Unknown state transition from: %s", stateName);
+        }
     }
 
     void FloppyTurdGame::UpdatePerformanceStats(float deltaTime) {
@@ -546,18 +542,39 @@ namespace FloppyTurd {
     }
 
     void FloppyTurdGame::PlayBackgroundMusic() {
-        GN_LOG_INFO("Starting background music");
-        // TODO: Implement background music
+        GN_LOG_INFO("Starting background music via delegates");
+        
+        // Use platform audio delegate consistently for all platforms
+        if (m_platformDelegates.audio.playMusic) {
+            m_platformDelegates.audio.playMusic("FloppyTurdMenu.mp3", m_musicVolume, -1);  // Use stored volume, loop infinitely
+            GN_LOG_INFO("Background music started via platform delegate");
+        } else {
+            GN_LOG_WARN("Audio delegate not available - cannot play background music");
+        }
     }
 
     void FloppyTurdGame::StopBackgroundMusic() {
         GN_LOG_INFO("Stopping background music");
-        // TODO: Stop background music
+        
+        // Use platform audio delegate to stop music
+        if (m_platformDelegates.audio.stopMusic) {
+            m_platformDelegates.audio.stopMusic();
+            GN_LOG_INFO("Background music stopped via platform delegate");
+        } else {
+            GN_LOG_WARN("Audio delegate not available - cannot stop background music");
+        }
     }
 
     void FloppyTurdGame::PlaySFX(const std::string& soundName) {
         GN_LOG_DEBUG("Playing SFX: " + soundName);
-        // TODO: Implement SFX playback
+        
+        // Use platform audio delegate to play sound effect
+        if (m_platformDelegates.audio.playSound) {
+            m_platformDelegates.audio.playSound(soundName.c_str(), 1.0f);  // Default volume 1.0
+            GN_LOG_DEBUG("SFX played via platform delegate: " + soundName);
+        } else {
+            GN_LOG_WARN("Audio delegate not available - cannot play SFX: " + soundName);
+        }
     }
 
     void FloppyTurdGame::LoadGameResources() {
@@ -580,31 +597,7 @@ namespace FloppyTurd {
         // Render debug overlay
     }
 
-    void FloppyTurdGame::SetSwiftComponents(void* metalRenderer, void* touchInputHandler, void* audioHandler) {
-        GN_LOG_INFO("Setting Swift components...");
-        GN_LOG_INFO("MetalRenderer pointer: %p", metalRenderer);
-        GN_LOG_INFO("TouchInputHandler pointer: %p", touchInputHandler);
-        GN_LOG_INFO("AudioHandler pointer: %p", audioHandler);
-        
-        if (!metalRenderer || !touchInputHandler || !audioHandler) {
-            GN_LOG_ERROR("One or more Swift components are null");
-            return;
-        }
-        
-#ifdef __APPLE__
-#if TARGET_OS_IPHONE
-        m_swiftMetalRenderer = metalRenderer;
-        m_swiftTouchInputHandler = touchInputHandler;
-        m_swiftAudioHandler = audioHandler;
-        
-        GN_LOG_INFO("Swift components set successfully - iOS platform detected");
-#else
-        GN_LOG_WARN("SetSwiftComponents called on non-iOS platform - ignoring");
-#endif
-#else
-        GN_LOG_WARN("SetSwiftComponents called on non-Apple platform - ignoring");
-#endif
-    }
+    // SetSwiftComponents removed - Swift components managed entirely on Swift side
 
     // Global utility functions
     FloppyTurdGame* GetGame() {

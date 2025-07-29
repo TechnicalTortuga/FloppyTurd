@@ -1,7 +1,7 @@
 #include "GameState.h"
 #include "../../Engine/Core/GNLog.h"
 
-namespace FloppyTurd {
+namespace GameCore {
 
     GameStateManager::GameStateManager() 
         : m_shouldPop(false), m_shouldClear(false) {

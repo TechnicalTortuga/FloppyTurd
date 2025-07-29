@@ -27,7 +27,7 @@ namespace Gnosis {
      */
     enum class LogLevel {
         TRACE = 0,    // Detailed trace information
-        DEBUG = 1,    // Debug information
+        DBG = 1,      // Debug information
         INFO = 2,     // General information
         WARN = 3,     // Warning messages
         ERROR = 4,    // Error messages
@@ -188,60 +188,107 @@ namespace Gnosis {
 
 } // namespace Gnosis
 
+
+
 // Convenience macros for logging
-#define GN_LOG_TRACE(msg, ...) \
-    if (Gnosis::GNLog::GetInstance().ShouldLog(Gnosis::LogLevel::TRACE)) { \
-        std::ostringstream oss; \
-        oss << msg; \
-        Gnosis::GNLog::GetInstance().Log(Gnosis::LogLevel::TRACE, oss.str(), "GAME", __FILE__, __LINE__, __FUNCTION__); \
-    }
+#ifdef PLATFORM_IOS
+    // iOS-specific macros - simplified without ThreadingProxy
+    #define GN_LOG_TRACE(msg, ...) \
+        do { \
+            /* Logging disabled for iOS to avoid circular dependencies */ \
+        } while(0)
 
-#define GN_LOG_DEBUG(msg, ...) \
-    if (Gnosis::GNLog::GetInstance().ShouldLog(Gnosis::LogLevel::DEBUG)) { \
-        std::ostringstream oss; \
-        oss << msg; \
-        Gnosis::GNLog::GetInstance().Log(Gnosis::LogLevel::DEBUG, oss.str(), "GAME", __FILE__, __LINE__, __FUNCTION__); \
-    }
+    #define GN_LOG_DEBUG(msg, ...) \
+        do { \
+            /* Logging disabled for iOS to avoid circular dependencies */ \
+        } while(0)
 
-#define GN_LOG_INFO(msg, ...) \
-    if (Gnosis::GNLog::GetInstance().ShouldLog(Gnosis::LogLevel::INFO)) { \
-        std::ostringstream oss; \
-        oss << msg; \
-        Gnosis::GNLog::GetInstance().Log(Gnosis::LogLevel::INFO, oss.str(), "GAME", __FILE__, __LINE__, __FUNCTION__); \
-    }
+    #define GN_LOG_INFO(msg, ...) \
+        do { \
+            /* Logging disabled for iOS to avoid circular dependencies */ \
+        } while(0)
 
-#define GN_LOG_WARN(msg, ...) \
-    if (Gnosis::GNLog::GetInstance().ShouldLog(Gnosis::LogLevel::WARN)) { \
-        std::ostringstream oss; \
-        oss << msg; \
-        Gnosis::GNLog::GetInstance().Log(Gnosis::LogLevel::WARN, oss.str(), "GAME", __FILE__, __LINE__, __FUNCTION__); \
-    }
+    #define GN_LOG_WARN(msg, ...) \
+        do { \
+            /* Logging disabled for iOS to avoid circular dependencies */ \
+        } while(0)
 
-#define GN_LOG_ERROR(msg, ...) \
-    if (Gnosis::GNLog::GetInstance().ShouldLog(Gnosis::LogLevel::ERROR)) { \
-        std::ostringstream oss; \
-        oss << msg; \
-        Gnosis::GNLog::GetInstance().Log(Gnosis::LogLevel::ERROR, oss.str(), "GAME", __FILE__, __LINE__, __FUNCTION__); \
-    }
+    #define GN_LOG_ERROR(msg, ...) \
+        do { \
+            /* Logging disabled for iOS to avoid circular dependencies */ \
+        } while(0)
 
-#define GN_LOG_FATAL(msg, ...) \
-    if (Gnosis::GNLog::GetInstance().ShouldLog(Gnosis::LogLevel::FATAL)) { \
-        std::ostringstream oss; \
-        oss << msg; \
-        Gnosis::GNLog::GetInstance().Log(Gnosis::LogLevel::FATAL, oss.str(), "GAME", __FILE__, __LINE__, __FUNCTION__); \
-    }
+    #define GN_LOG_FATAL(msg, ...) \
+        do { \
+            /* Logging disabled for iOS to avoid circular dependencies */ \
+        } while(0)
+#else
+    // Default macros for non-iOS platforms
+    #define GN_LOG_TRACE(msg, ...) \
+        if (Gnosis::GNLog::GetInstance().ShouldLog(Gnosis::LogLevel::TRACE)) { \
+            std::ostringstream oss; \
+            oss << msg; \
+            Gnosis::GNLog::GetInstance().Log(Gnosis::LogLevel::TRACE, oss.str(), "GAME", __FILE__, __LINE__, __FUNCTION__); \
+        }
+
+    #define GN_LOG_DEBUG(msg, ...) \
+        if (Gnosis::GNLog::GetInstance().ShouldLog(Gnosis::LogLevel::DBG)) { \
+            std::ostringstream oss; \
+            oss << msg; \
+            Gnosis::GNLog::GetInstance().Log(Gnosis::LogLevel::DBG, oss.str(), "GAME", __FILE__, __LINE__, __FUNCTION__); \
+        }
+
+    #define GN_LOG_INFO(msg, ...) \
+        if (Gnosis::GNLog::GetInstance().ShouldLog(Gnosis::LogLevel::INFO)) { \
+            std::ostringstream oss; \
+            oss << msg; \
+            Gnosis::GNLog::GetInstance().Log(Gnosis::LogLevel::INFO, oss.str(), "GAME", __FILE__, __LINE__, __FUNCTION__); \
+        }
+
+    #define GN_LOG_WARN(msg, ...) \
+        if (Gnosis::GNLog::GetInstance().ShouldLog(Gnosis::LogLevel::WARN)) { \
+            std::ostringstream oss; \
+            oss << msg; \
+            Gnosis::GNLog::GetInstance().Log(Gnosis::LogLevel::WARN, oss.str(), "GAME", __FILE__, __LINE__, __FUNCTION__); \
+        }
+
+    #define GN_LOG_ERROR(msg, ...) \
+        if (Gnosis::GNLog::GetInstance().ShouldLog(Gnosis::LogLevel::ERROR)) { \
+            std::ostringstream oss; \
+            oss << msg; \
+            Gnosis::GNLog::GetInstance().Log(Gnosis::LogLevel::ERROR, oss.str(), "GAME", __FILE__, __LINE__, __FUNCTION__); \
+        }
+
+    #define GN_LOG_FATAL(msg, ...) \
+        if (Gnosis::GNLog::GetInstance().ShouldLog(Gnosis::LogLevel::FATAL)) { \
+            std::ostringstream oss; \
+            oss << msg; \
+            Gnosis::GNLog::GetInstance().Log(Gnosis::LogLevel::FATAL, oss.str(), "GAME", __FILE__, __LINE__, __FUNCTION__); \
+        }
+#endif
 
 // Category-specific logging macros
-#define GN_LOG_CATEGORY(level, category, msg) \
-    if (Gnosis::GNLog::GetInstance().ShouldLog(level)) { \
-        std::ostringstream oss; \
-        oss << msg; \
-        Gnosis::GNLog::GetInstance().Log(level, oss.str(), category, __FILE__, __LINE__, __FUNCTION__); \
-    }
+#ifdef PLATFORM_IOS
+    // iOS-specific category macros - simplified without ThreadingProxy
+    #define GN_LOG_CATEGORY(level, category, msg) \
+        do { \
+            std::ostringstream oss; \
+            oss << msg; \
+            /* Logging disabled for iOS to avoid circular dependencies */ \
+        } while(0)
+#else
+    // Default category macro for non-iOS platforms  
+    #define GN_LOG_CATEGORY(level, category, msg) \
+        if (Gnosis::GNLog::GetInstance().ShouldLog(level)) { \
+            std::ostringstream oss; \
+            oss << msg; \
+            Gnosis::GNLog::GetInstance().Log(level, oss.str(), category, __FILE__, __LINE__, __FUNCTION__); \
+        }
+#endif
 
-#define GN_LOG_RENDER(msg) GN_LOG_CATEGORY(Gnosis::LogLevel::DEBUG, "RENDER", msg)
-#define GN_LOG_AUDIO(msg) GN_LOG_CATEGORY(Gnosis::LogLevel::DEBUG, "AUDIO", msg)
-#define GN_LOG_INPUT(msg) GN_LOG_CATEGORY(Gnosis::LogLevel::DEBUG, "INPUT", msg)
-#define GN_LOG_PHYSICS(msg) GN_LOG_CATEGORY(Gnosis::LogLevel::DEBUG, "PHYSICS", msg)
-#define GN_LOG_NETWORK(msg) GN_LOG_CATEGORY(Gnosis::LogLevel::DEBUG, "NETWORK", msg)
-#define GN_LOG_MEMORY(msg) GN_LOG_CATEGORY(Gnosis::LogLevel::DEBUG, "MEMORY", msg)
+#define GN_LOG_RENDER(msg) GN_LOG_CATEGORY(Gnosis::LogLevel::DBG, "RENDER", msg)
+#define GN_LOG_AUDIO(msg) GN_LOG_CATEGORY(Gnosis::LogLevel::DBG, "AUDIO", msg)
+#define GN_LOG_INPUT(msg) GN_LOG_CATEGORY(Gnosis::LogLevel::DBG, "INPUT", msg)
+#define GN_LOG_PHYSICS(msg) GN_LOG_CATEGORY(Gnosis::LogLevel::DBG, "PHYSICS", msg)
+#define GN_LOG_NETWORK(msg) GN_LOG_CATEGORY(Gnosis::LogLevel::DBG, "NETWORK", msg)
+#define GN_LOG_MEMORY(msg) GN_LOG_CATEGORY(Gnosis::LogLevel::DBG, "MEMORY", msg)

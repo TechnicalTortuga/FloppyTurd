@@ -1,27 +1,30 @@
-module FloppyTurdEngine {
-    header "Core/ECS.h"
+module GameCoreEngine {
+    // Core engine headers only
     header "Core/GNLog.h"
     header "Core/GnosisTypes.h"
-    header "Platform/PlatformDelegates.h"
-    header "Platform/iOSPlatformImpl.h"
-    header "../iOS/Threading/ThreadingProxy.h"
+    header "Core/ECS.h"
+    header "Core/Entity.h"
+    header "Core/Component.h"
     header "Events/Event.h"
     header "Events/EventManager.h"
     
     export *
-    
-    // Enable C++ interop for Swift 5.9+
     use _Builtin_stddef_max_align_t
 }
 
-module FloppyTurdGame {
-    header "../FloppyTurd/Game/FloppyTurdGame.h"
-    header "../FloppyTurd/Components/GameComponents.h"
-    header "../FloppyTurd/Entities/Player.h"
-    header "../FloppyTurd/States/GameState.h"
+module GameCorePlatform {
+    // Platform abstraction headers only (no implementation details)
+    header "Platform/PlatformDelegates.h"
+    header "../iOS/Threading/ThreadingProxy.h"
     
     export *
+    use _Builtin_stddef_max_align_t
+}
+
+module GameCoreGame {
+    // Main game class only - avoid circular dependencies
+    header "../FloppyTurd/Game/FloppyTurdGame.h"
     
-    // Enable C++ interop
+    export *
     use _Builtin_stddef_max_align_t
 }
