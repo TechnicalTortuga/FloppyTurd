@@ -117,6 +117,9 @@ namespace GameCore {
         LoadGameData();
         LoadGameResources();
 
+        // Set global game instance for access from other parts of the code
+        SetGame(this);
+        
         m_initialized = true;
         GN_LOG_INFO("Game initialization complete!");
         return true;

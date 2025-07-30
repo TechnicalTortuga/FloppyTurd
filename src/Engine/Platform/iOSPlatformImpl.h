@@ -71,6 +71,8 @@ namespace GameCore {
         const char* GetAssetPath(const char* relativePath);
         bool FileExists(const char* relativePath);
         
+        // Platform delegates initialization for Swift/C++ interop
+        void InitializePlatformDelegates();
     } // namespace iOSPlatform
 
 } // namespace GameCore

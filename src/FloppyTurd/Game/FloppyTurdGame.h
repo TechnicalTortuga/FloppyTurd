@@ -81,6 +81,7 @@ namespace GameCore {
 
         // System access
         Gnosis::ECS* GetECS() const { return m_ecsSystem.get(); }
+        const PlatformDelegates& GetPlatformDelegates() const { return m_platformDelegates; }
 
         // Game settings
         void SetMusicVolume(float volume);

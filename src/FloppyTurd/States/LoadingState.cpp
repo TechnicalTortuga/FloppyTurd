@@ -3,6 +3,7 @@
 #include "../../Engine/Core/GNLog.h"
 #include "../../Engine/AssetPaths.h"
 #include "../Components/GameComponents.h"
+#include "../Game/FloppyTurdGame.h"
 #include <iostream>
 #include <cmath>
 
@@ -47,11 +48,11 @@ namespace GameCore {
         // Update loading timer
         m_loadingTimer += deltaTime;
         
-        // Update rotation angle for the poop hat
-        m_rotationAngle += ROTATION_SPEED * deltaTime;
-        if (m_rotationAngle >= 360.0f) {
-            m_rotationAngle -= 360.0f;
-        }
+        // TEMPORARILY PAUSED: Update rotation angle for the poop hat
+        // m_rotationAngle += ROTATION_SPEED * deltaTime;
+        // if (m_rotationAngle >= 360.0f) {
+        //     m_rotationAngle -= 360.0f;
+        // }
         
         // Update poop hat position (circular orbit around center)
         UpdatePoopHatPosition();
@@ -68,10 +69,41 @@ namespace GameCore {
     }
 
     void LoadingState::Render() {
-        // This will be handled by the RenderSystem
-        // For now, we'll just ensure the ECS renders our entities
+        // Draw debug rectangle at poophat's position and size
+        if (m_poopHatEntity && m_ecsCoordinator) {
+            Gnosis::Entity poopHatEntityId = static_cast<Gnosis::Entity>(reinterpret_cast<uintptr_t>(m_poopHatEntity));
+            Transform* transform = m_ecsCoordinator->GetComponent<Transform>(poopHatEntityId);
+            Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(poopHatEntityId);
+            if (transform && sprite) {
+                float x = transform->position.x - (sprite->width * transform->scale.x) / 2.0f;
+                float y = transform->position.y - (sprite->height * transform->scale.y) / 2.0f;
+                float width = sprite->width * transform->scale.x;
+                float height = sprite->height * transform->scale.y;
+                
+                GN_LOG_DEBUG("[LoadingState] Drawing debug rectangle at (" + std::to_string(x) + ", " + std::to_string(y) + 
+                           ") size (" + std::to_string(width) + "x" + std::to_string(height) + 
+                           ") for sprite '" + sprite->textureId + "'");
+                
+                // REMOVED: Debug rectangle - coordinates are confirmed working
+                // extern GameCore::FloppyTurdGame* g_Game;
+                // if (g_Game && g_Game->GetPlatformDelegates().renderer.drawRectangle) {
+                //     g_Game->GetPlatformDelegates().renderer.drawRectangle(x, y, width, height, 1.0f, 0.0f, 1.0f, 0.5f);
+                // }
+                GN_LOG_DEBUG("[LoadingState] Drawing debug rectangle at (" + std::to_string(x) + ", " + std::to_string(y) + 
+                           ") size (" + std::to_string(width) + "x" + std::to_string(height) + ")");
+            } else {
+                GN_LOG_WARN("[LoadingState] Transform or Sprite component missing for poophat entity");
+            }
+        } else {
+            GN_LOG_WARN("[LoadingState] Poophat entity or ECS coordinator is null");
+        }
+        
+        // Render ECS entities as usual
         if (m_ecsCoordinator) {
+            GN_LOG_DEBUG("[LoadingState] Calling ECS Render()");
             m_ecsCoordinator->Render();
+        } else {
+            GN_LOG_WARN("[LoadingState] ECS coordinator is null during render");
         }
     }
 
@@ -98,7 +130,7 @@ namespace GameCore {
         // Add Transform component (position will be updated in UpdatePoopHatPosition)
         GN_LOG_INFO("[LoadingState] About to add Transform component to entity " + std::to_string(poopHatEntityId));
         Transform transform;
-        transform.position = Gnosis::GNVector2(400.0f, 300.0f); // Screen center (placeholder)
+        transform.position = Gnosis::GNVector2(1179.0f / 2.0f, 2556.0f / 2.0f); // Screen center
         transform.scale = Gnosis::GNVector2(1.0f, 1.0f);
         m_ecsCoordinator->AddComponent<Transform>(poopHatEntityId, transform);
         GN_LOG_INFO("[LoadingState] Added Transform component to entity " + std::to_string(poopHatEntityId));
@@ -108,15 +140,19 @@ namespace GameCore {
         
         // Add Sprite component using just the asset name for iOS asset catalog
         GN_LOG_INFO("[LoadingState] About to add Sprite component to entity " + std::to_string(poopHatEntityId));
+        // Try using a different texture to test if the issue is with the poophat texture specifically
         Sprite sprite("poophat", 256.0f, 256.0f); // Much bigger size!
         sprite.frameWidth = 16;  // Set correct frame dimensions for scaling
         sprite.frameHeight = 16; // Set correct frame dimensions for scaling
         sprite.layer = 10; // High layer for UI elements
+        sprite.visible = true; // Ensure sprite is visible
         m_ecsCoordinator->AddComponent<Sprite>(poopHatEntityId, sprite);
         GN_LOG_INFO("[LoadingState] Added Sprite component to entity " + std::to_string(poopHatEntityId));
         
         GN_LOG_INFO("Added Sprite component to entity " + std::to_string(poopHatEntityId) + " with texture '" + 
-                   sprite.textureId + "'");
+                   sprite.textureId + "' size (" + std::to_string(sprite.width) + "x" + std::to_string(sprite.height) + 
+                   ") frame (" + std::to_string(sprite.frameWidth) + "x" + std::to_string(sprite.frameHeight) + 
+                   ") layer " + std::to_string(sprite.layer) + " visible " + (sprite.visible ? "true" : "false"));
         
         // Store entity ID (convert to void* for compatibility)
         m_poopHatEntity = reinterpret_cast<void*>(static_cast<uintptr_t>(poopHatEntityId));
@@ -144,16 +180,18 @@ namespace GameCore {
             return;
         }
         
-        // Calculate orbital position
-        float radians = m_rotationAngle * (3.14159f / 180.0f);
+        // TEMPORARILY DISABLED: Calculate orbital position
+        // float radians = m_rotationAngle * (3.14159f / 180.0f);
         
-        // TODO: Get actual screen center coordinates from renderer
-        float centerX = 400.0f; // Placeholder - should get from renderer
-        float centerY = 300.0f; // Placeholder - should get from renderer
+        // Get actual screen center coordinates from viewport
+        float centerX = 1179.0f / 2.0f; // Viewport width / 2
+        float centerY = 2556.0f / 2.0f; // Viewport height / 2
         
-        // Calculate new position
-        float poopHatX = centerX + cos(radians) * ORBIT_RADIUS;
-        float poopHatY = centerY + sin(radians) * ORBIT_RADIUS;
+        // TEMPORARILY CENTERED: Calculate new position
+        // float poopHatX = centerX + cos(radians) * ORBIT_RADIUS;
+        // float poopHatY = centerY + sin(radians) * ORBIT_RADIUS;
+        float poopHatX = centerX;
+        float poopHatY = centerY;
         
         // Update the entity's Transform component
         Gnosis::Entity poopHatEntityId = static_cast<Gnosis::Entity>(reinterpret_cast<uintptr_t>(m_poopHatEntity));
@@ -163,7 +201,7 @@ namespace GameCore {
             if (transform) {
                 transform->position.x = poopHatX;
                 transform->position.y = poopHatY;
-                transform->rotation = m_rotationAngle; // Rotate the sprite itself too
+                transform->rotation = 0.0f; // TEMPORARILY NO ROTATION
             }
         }
         

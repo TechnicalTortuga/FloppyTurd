@@ -17,4 +17,11 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../../Engine/Platform/PlatformDelegates.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../../Engine/AssetPaths.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Components/GameComponents.h \
-  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Components/../../Engine/Core/GnosisTypes.h
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Components/../../Engine/Core/GnosisTypes.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/FloppyTurdGame.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../../Engine/Core/ECS.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../../Engine/Platform/PlatformDelegates.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/GameState.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../Entities/Player.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../Entities/../../Engine/Core/GnosisTypes.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../Entities/../Components/GameComponents.h

@@ -34,6 +34,11 @@ class CommandProcessor {
     /// Audio manager for executing audio commands
     private var audioManager: AVAudioHandler?
     
+    /// Phase 2: Handle cache to avoid redundant texture registration requests
+    private var textureHandleCache: [String: UInt32] = [:]
+    private var handleCacheHitCount: Int = 0
+    private var handleCacheMissCount: Int = 0
+    
     // MARK: - Private Logging
     
     private func log(_ message: String, level: LogLevel = .info) {
@@ -338,6 +343,37 @@ class CommandProcessor {
     private func loadTextureWithMetalRenderer(name: String, extension: String, callback: UnsafeMutableRawPointer?, userData: UnsafeMutableRawPointer?) {
         Task {
             do {
+                // Phase 2: Check handle cache first
+                let cacheKey = "\(name).\(`extension`)"
+                if let cachedHandle = textureHandleCache[cacheKey] {
+                    handleCacheHitCount += 1
+                    log("[CommandProcessor] Handle cache HIT: \(cacheKey) -> handle \(cachedHandle) (hits: \(handleCacheHitCount))", level: .debug)
+                    
+                    // Load texture to get dimensions for TextureData
+                    let texture = try await AssetManager.shared.loadTexture(name: name, extension: `extension`)
+                    
+                    // Create TextureData structure for C++ with cached handle
+                    let textureData = UnsafeMutableRawPointer.allocate(
+                        byteCount: MemoryLayout<GameCore.TextureData>.stride,
+                        alignment: MemoryLayout<GameCore.TextureData>.alignment
+                    )
+                    
+                    let textureDataPtr = textureData.bindMemory(to: GameCore.TextureData.self, capacity: 1)
+                    textureDataPtr.pointee.platformTexture = UnsafeMutableRawPointer(bitPattern: UInt(cachedHandle))
+                    textureDataPtr.pointee.width = Int32(texture.width)
+                    textureDataPtr.pointee.height = Int32(texture.height)
+                    textureDataPtr.pointee.format = 0 // Default format
+                    textureDataPtr.pointee.channels = 4 // RGBA
+                    textureDataPtr.pointee.dataSize = Int(texture.width * texture.height * 4)
+                    
+                    AssetManager.invokeCallback(callback, textureData: textureData, error: nil, userData: userData)
+                    return
+                }
+                
+                // Phase 2: Cache miss - proceed with original flow
+                handleCacheMissCount += 1
+                log("[CommandProcessor] Handle cache MISS: \(cacheKey) (misses: \(handleCacheMissCount))", level: .debug)
+                
                 // Load texture from AssetManager
                 let texture = try await AssetManager.shared.loadTexture(name: name, extension: `extension`)
                 
@@ -349,6 +385,10 @@ class CommandProcessor {
                 }
                 
                 let handle = renderer.registerTexture(texture)
+                
+                // Phase 2: Cache the new handle
+                textureHandleCache[cacheKey] = handle
+                log("[CommandProcessor] Handle cached: \(cacheKey) -> handle \(handle)", level: .debug)
                 
                 // Create TextureData structure for C++
                 let textureData = UnsafeMutableRawPointer.allocate(

@@ -437,12 +437,25 @@ public class AssetManager {
             throw AssetError.unknownError
         }
         
+        // Add debug logging for texture loading
+        logger.debug("🔥 Loaded texture: size \(image.size.width)x\(image.size.height), cgImage format? \(cgImage.bitsPerComponent) bits/component")
+        logger.debug("🔥 UIImage colorSpace: \(image.cgImage?.colorSpace?.name as String? ?? "unknown")")
+        logger.debug("🔥 UIImage alphaInfo: \(image.cgImage?.alphaInfo.rawValue ?? 0)")
+        logger.debug("🔥 UIImage bitmapInfo: \(image.cgImage?.bitmapInfo.rawValue ?? 0)")
+        
         let textureLoader = MTKTextureLoader(device: device)
         
-        return try await textureLoader.newTexture(cgImage: cgImage, options: [
+        let texture = try await textureLoader.newTexture(cgImage: cgImage, options: [
             MTKTextureLoader.Option.textureUsage: NSNumber(value: MTLTextureUsage.shaderRead.rawValue),
-            MTKTextureLoader.Option.textureStorageMode: NSNumber(value: MTLStorageMode.`private`.rawValue)
+            MTKTextureLoader.Option.textureStorageMode: NSNumber(value: MTLStorageMode.shared.rawValue),  // TEMPORARY: Use shared for debugging
+            MTKTextureLoader.Option.SRGB: NSNumber(value: false),  // Don't convert to sRGB
+            MTKTextureLoader.Option.generateMipmaps: NSNumber(value: false)  // Don't generate mipmaps
         ])
+        
+        // Add debug logging for created texture
+        logger.debug("🔥 Created MTLTexture: \(texture.width)x\(texture.height), pixelFormat: \(texture.pixelFormat.rawValue)")
+        
+        return texture
     }
 }
 
