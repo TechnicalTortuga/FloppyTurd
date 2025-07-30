@@ -112,7 +112,7 @@ public class MetalRenderer {
     private var currentRenderEncoder: MTLRenderCommandEncoder? // FIX: Track the single render encoder
     private var currentDrawable: CAMetalDrawable?
     private var viewportSize: CGSize = CGSize.zero
-    private var clearColor: MTLClearColor = MTLClearColor(red: 0.0, green: 0.0, blue: 0.0, alpha: 1.0)
+    private var clearColor: MTLClearColor = MTLClearColor(red: 0.0, green: 0.0, blue: 1.0, alpha: 1.0)  // Blue background for debugging
     
     // MTKView connection (weak, private)
     private weak var metalView: MTKView?
@@ -255,16 +255,16 @@ public class MetalRenderer {
         texturedPipelineDescriptor.vertexFunction = vertexFunction
         texturedPipelineDescriptor.fragmentFunction = texturedFragmentFunction
         texturedPipelineDescriptor.vertexDescriptor = vertexDescriptor
-        texturedPipelineDescriptor.colorAttachments[0].pixelFormat = .bgra8Unorm
+        texturedPipelineDescriptor.colorAttachments[0].pixelFormat = .bgra8Unorm_srgb  // Match the texture format
         
-        // TEMPORARILY DISABLED: Enable blending for textured rendering
-        // texturedPipelineDescriptor.colorAttachments[0].isBlendingEnabled = true
-        // texturedPipelineDescriptor.colorAttachments[0].rgbBlendOperation = .add
-        // texturedPipelineDescriptor.colorAttachments[0].alphaBlendOperation = .add
-        // texturedPipelineDescriptor.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
-        // texturedPipelineDescriptor.colorAttachments[0].sourceAlphaBlendFactor = .sourceAlpha
-        // texturedPipelineDescriptor.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
-        // texturedPipelineDescriptor.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
+        // Enable blending for textured rendering (required for sprites with transparency)
+        texturedPipelineDescriptor.colorAttachments[0].isBlendingEnabled = true
+        texturedPipelineDescriptor.colorAttachments[0].rgbBlendOperation = .add
+        texturedPipelineDescriptor.colorAttachments[0].alphaBlendOperation = .add
+        texturedPipelineDescriptor.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
+        texturedPipelineDescriptor.colorAttachments[0].sourceAlphaBlendFactor = .sourceAlpha
+        texturedPipelineDescriptor.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
+        texturedPipelineDescriptor.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
         
         // Also create a non-blending pipeline for testing
 
@@ -427,8 +427,8 @@ public class MetalRenderer {
     public func setMetalView(_ view: MTKView) {
         metalView = view
         view.device = device
-        view.colorPixelFormat = .bgra8Unorm
-        view.clearColor = MTLClearColor(red: 0.0, green: 0.0, blue: 0.0, alpha: 1.0)
+        view.colorPixelFormat = .bgra8Unorm  // Use non-sRGB to avoid double conversion
+        view.clearColor = MTLClearColor(red: 0.0, green: 0.0, blue: 1.0, alpha: 1.0)  // Blue background for debugging
         view.framebufferOnly = false
         view.enableSetNeedsDisplay = false
         view.isPaused = false
@@ -824,6 +824,15 @@ public class MetalRenderer {
         // DEBUG: Dump actual pixel data for 16x16 texture
         if texture.width == 16 && texture.height == 16 {
             dumpTexturePixelData(texture: texture, textureHandle: textureHandle)
+            
+            // DEBUG: Draw a magenta rectangle at the sprite position to verify positioning
+            let debugDraw = false // Set to true to enable debug rectangle
+            if debugDraw {
+                drawRectangle(x: x - spriteWidth/2, y: y - spriteHeight/2, width: spriteWidth, height: spriteHeight, 
+                            r: 1.0, g: 0.0, b: 1.0, a: 0.5)
+                log("DEBUG: Drew debug rectangle at texture position", level: .debug)
+                return // Skip texture drawing to see just the rectangle
+            }
         }
         
         // Use helper function to create sprite transformation matrix
@@ -841,6 +850,12 @@ public class MetalRenderer {
         // Create MVP matrix
         let mvpMatrix = projectionMatrix * modelMatrix
         
+        // DEBUG: Log the MVP matrix to see if coordinate system is correct
+        log("DEBUG: MVP Matrix for sprite at (\(x), \(y)):", level: .debug)
+        log("DEBUG: Projection Matrix: \(projectionMatrix)", level: .debug)
+        log("DEBUG: Model Matrix: \(modelMatrix)", level: .debug)
+        log("DEBUG: Final MVP Matrix: \(mvpMatrix)", level: .debug)
+        
         // Create temporary uniform buffer for this sprite
         guard let device = device,
               let tempUniformBuffer = device.makeBuffer(bytes: [mvpMatrix], length: MemoryLayout<simd_float4x4>.stride, options: []) else {
@@ -855,8 +870,16 @@ public class MetalRenderer {
         renderEncoder.setFragmentTexture(texture, index: 0)
         renderEncoder.setFragmentSamplerState(samplerState, index: 0)
         
+        // DEBUG: Log texture binding details
+        log("DEBUG: Texture bound to fragment shader - handle: \(textureHandle), texture: \(texture), sampler: \(samplerState?.label ?? "nil")", level: .debug)
+        
+        // DEBUG: Check buffers before drawing
+        log("DEBUG: Before drawIndexedPrimitives - indexBuffer: \(indexBuffer != nil ? "valid" : "nil"), vertexBuffer: \(vertexBuffer != nil ? "valid" : "nil")", level: .debug)
+        
         // Draw the sprite
         renderEncoder.drawIndexedPrimitives(type: .triangle, indexCount: 6, indexType: .uint16, indexBuffer: indexBuffer!, indexBufferOffset: 0)
+        
+        log("DEBUG: After drawIndexedPrimitives - call completed", level: .debug)
         
         log("drawSpriteScaled: Rendered sprite \(textureHandle) at (\(x), \(y)) with scale (\(scaleX), \(scaleY)) rotation \(rotation)°", level: .debug)
     }
@@ -869,7 +892,26 @@ public class MetalRenderer {
     private func dumpTexturePixelData(texture: MTLTexture, textureHandle: UInt32) {
         guard let device = device else { return }
         
-        // Create a buffer to read the texture data
+        log("DEBUG: Dumping texture \(textureHandle) - size: \(texture.width)x\(texture.height), format: \(texture.pixelFormat), storage: \(texture.storageMode)", level: .debug)
+        
+        // If texture is in shared storage mode, we can read it directly
+        if texture.storageMode == .shared {
+            let bytesPerRow = texture.width * 4 // RGBA = 4 bytes per pixel
+            let region = MTLRegion(origin: MTLOrigin(x: 0, y: 0, z: 0), 
+                                  size: MTLSize(width: texture.width, height: texture.height, depth: 1))
+            
+            let bufferSize = texture.height * bytesPerRow
+            let pixelData = UnsafeMutableRawPointer.allocate(byteCount: bufferSize, alignment: 4)
+            defer { pixelData.deallocate() }
+            
+            texture.getBytes(pixelData, bytesPerRow: bytesPerRow, from: region, mipmapLevel: 0)
+            
+            let pixels = pixelData.bindMemory(to: UInt8.self, capacity: bufferSize)
+            analyzeDumpedPixelData(pixels: pixels, texture: texture, textureHandle: textureHandle)
+            return
+        }
+        
+        // For private or managed storage, use blit encoder
         let bytesPerRow = texture.width * 4 // RGBA = 4 bytes per pixel
         let bufferSize = texture.height * bytesPerRow
         
@@ -893,48 +935,71 @@ public class MetalRenderer {
         
         // Read the pixel data
         let pixelData = buffer.contents().bindMemory(to: UInt8.self, capacity: bufferSize)
+        analyzeDumpedPixelData(pixels: pixelData, texture: texture, textureHandle: textureHandle)
+    }
+    
+    private func analyzeDumpedPixelData(pixels: UnsafePointer<UInt8>, texture: MTLTexture, textureHandle: UInt32) {
+        // bytesPerRow not needed in this function anymore
         
-        log("DEBUG: Texture \(textureHandle) pixel data dump (16x16 RGBA):", level: .debug)
+        log("DEBUG: Analyzing texture \(textureHandle) pixel data (\(texture.width)x\(texture.height) RGBA):", level: .debug)
         
         // Dump first few pixels to see if there's any non-zero data
         var hasNonZeroData = false
         var firstFewPixels = ""
         var nonTransparentPixels = 0
+        var coloredPixels = 0
+        let totalPixels = texture.width * texture.height
         
+        // Check a sample of pixels for the corner display
         for y in 0..<min(4, texture.height) {
             for x in 0..<min(4, texture.width) {
                 let pixelIndex = (y * texture.width + x) * 4
-                let r = pixelData[pixelIndex]
-                let g = pixelData[pixelIndex + 1]
-                let b = pixelData[pixelIndex + 2]
-                let a = pixelData[pixelIndex + 3]
+                let r = pixels[pixelIndex]
+                let g = pixels[pixelIndex + 1]
+                let b = pixels[pixelIndex + 2]
+                let a = pixels[pixelIndex + 3]
                 
                 if r > 0 || g > 0 || b > 0 || a > 0 {
                     hasNonZeroData = true
-                }
-                
-                if a > 0 {
-                    nonTransparentPixels += 1
                 }
                 
                 firstFewPixels += " (\(r),\(g),\(b),\(a))"
             }
         }
         
-        log("DEBUG: First 16 pixels (4x4 corner): \(firstFewPixels)", level: .debug)
-        log("DEBUG: Texture has non-zero data: \(hasNonZeroData)", level: .debug)
-        log("DEBUG: Non-transparent pixels in 4x4 corner: \(nonTransparentPixels)/16", level: .debug)
-        
-        // Check if all pixels are transparent (alpha = 0)
-        var allTransparent = true
-        for i in stride(from: 3, to: bufferSize, by: 4) { // Check alpha channel
-            if pixelData[i] > 0 {
-                allTransparent = false
-                break
+        // Scan entire texture for colored pixels
+        for y in 0..<texture.height {
+            for x in 0..<texture.width {
+                let pixelIndex = (y * texture.width + x) * 4
+                let r = pixels[pixelIndex]
+                let g = pixels[pixelIndex + 1]
+                let b = pixels[pixelIndex + 2]
+                let a = pixels[pixelIndex + 3]
+                
+                if a > 0 {
+                    nonTransparentPixels += 1
+                    // Check if this pixel has actual color (not just black)
+                    if r > 0 || g > 0 || b > 0 {
+                        coloredPixels += 1
+                        // Log the first few colored pixels we find
+                        if coloredPixels <= 5 {
+                            log("DEBUG: Colored pixel \(coloredPixels) at (\(x),\(y)): RGBA(\(r),\(g),\(b),\(a))", level: .debug)
+                        }
+                    }
+                }
             }
         }
         
-        log("DEBUG: All pixels transparent (alpha=0): \(allTransparent)", level: .debug)
+        log("DEBUG: First 16 pixels (4x4 corner): \(firstFewPixels)", level: .debug)
+        log("DEBUG: Texture has non-zero data: \(hasNonZeroData)", level: .debug)
+        log("DEBUG: Non-transparent pixels: \(nonTransparentPixels)/\(totalPixels) (\(Int(Float(nonTransparentPixels) / Float(totalPixels) * 100))%)", level: .debug)
+        log("DEBUG: Colored pixels (non-black): \(coloredPixels)/\(nonTransparentPixels) (\(Int(Float(coloredPixels) / Float(max(1, nonTransparentPixels)) * 100))%)", level: .debug)
+        
+        if coloredPixels == 0 && nonTransparentPixels > 0 {
+            log("DEBUG: WARNING - All non-transparent pixels are black! Texture may not be loading colors correctly.", level: .error)
+        } else if coloredPixels > 0 {
+            log("DEBUG: Found \(coloredPixels) colored pixels - texture appears to have color data", level: .debug)
+        }
     }
     
     public func drawCircle(x: Float, y: Float, radius: Float, r: Float, g: Float, b: Float, a: Float, segments: Int = 32) {

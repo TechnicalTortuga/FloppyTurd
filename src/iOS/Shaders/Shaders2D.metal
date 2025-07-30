@@ -48,7 +48,12 @@ fragment float4 textured_fragment_main(VertexOut in [[stage_in]],
                                       texture2d<float> colorTexture [[texture(0)]],
                                       sampler colorSampler [[sampler(0)]]) {
     float4 texColor = colorTexture.sample(colorSampler, in.texCoord);
-    return texColor * in.color;
+    
+    // DEBUG: Return the raw texture color without vertex color multiplication
+    return texColor;
+    
+    // Original code (commented out for testing)
+    // return texColor * in.color;
 }
 
 // Legacy fragment shader names for compatibility

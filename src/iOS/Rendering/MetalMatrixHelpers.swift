@@ -127,7 +127,7 @@ struct MetalMatrixHelpers {
         // 3. Apply scale
         // 4. Translate to final position
         
-        let centerTranslation = translationMatrix(x: -scale.x * 0.5, y: -scale.y * 0.5)
+        let centerTranslation = translationMatrix(x: -0.5, y: -0.5)  // Center the unit quad
         let rotation = rotationMatrixZ(angleDegrees: rotation)
         let scale = scaleMatrix(x: scale.x, y: scale.y)
         let finalTranslation = translationMatrix(x: position.x, y: position.y)
@@ -171,8 +171,8 @@ struct MetalMatrixHelpers {
         return orthographicMatrix(
             left: 0.0,
             right: width,
-            bottom: height,
-            top: 0.0,
+            bottom: height,   // Correct: bottom is height (bottom of screen)
+            top: 0.0,         // Correct: top is 0.0 (top of screen)
             near: -1.0,
             far: 1.0
         )

@@ -448,8 +448,10 @@ public class AssetManager {
         let texture = try await textureLoader.newTexture(cgImage: cgImage, options: [
             MTKTextureLoader.Option.textureUsage: NSNumber(value: MTLTextureUsage.shaderRead.rawValue),
             MTKTextureLoader.Option.textureStorageMode: NSNumber(value: MTLStorageMode.shared.rawValue),  // TEMPORARY: Use shared for debugging
-            MTKTextureLoader.Option.SRGB: NSNumber(value: false),  // Don't convert to sRGB
-            MTKTextureLoader.Option.generateMipmaps: NSNumber(value: false)  // Don't generate mipmaps
+            MTKTextureLoader.Option.SRGB: NSNumber(value: true),  // IMPORTANT: Convert sRGB to linear for Metal
+            MTKTextureLoader.Option.generateMipmaps: NSNumber(value: false),  // Don't generate mipmaps
+            MTKTextureLoader.Option.allocateMipmaps: NSNumber(value: false),  // Don't allocate space for mipmaps
+            MTKTextureLoader.Option.origin: MTKTextureLoader.Origin.topLeft.rawValue as NSString  // Ensure correct origin
         ])
         
         // Add debug logging for created texture

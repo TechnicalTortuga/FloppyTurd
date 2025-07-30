@@ -48,11 +48,11 @@ namespace GameCore {
         // Update loading timer
         m_loadingTimer += deltaTime;
         
-        // TEMPORARILY PAUSED: Update rotation angle for the poop hat
-        // m_rotationAngle += ROTATION_SPEED * deltaTime;
-        // if (m_rotationAngle >= 360.0f) {
-        //     m_rotationAngle -= 360.0f;
-        // }
+        // Update rotation angle for the poop hat
+        m_rotationAngle += ROTATION_SPEED * deltaTime;
+        if (m_rotationAngle >= 360.0f) {
+            m_rotationAngle -= 360.0f;
+        }
         
         // Update poop hat position (circular orbit around center)
         UpdatePoopHatPosition();
@@ -201,7 +201,7 @@ namespace GameCore {
             if (transform) {
                 transform->position.x = poopHatX;
                 transform->position.y = poopHatY;
-                transform->rotation = 0.0f; // TEMPORARILY NO ROTATION
+                transform->rotation = m_rotationAngle; // Apply rotation
             }
         }
         
