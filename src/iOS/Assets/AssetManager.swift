@@ -282,6 +282,17 @@ public class AssetManager {
     
     // MARK: - Asset Management
     
+    /// Get cached audio file if available
+    public func getCachedAudio(name: String, extension: String = "mp3") -> AVAudioFile? {
+        let cacheKey = "\(name).\(`extension`)"
+        if let cached = audioCache[cacheKey] {
+            cacheAccessTimes[cacheKey] = Date()
+            logger.debug("Audio retrieved from cache: \(cacheKey)")
+            return cached
+        }
+        return nil
+    }
+    
     /// Clear asset cache
     public func clearCache(for type: AssetType? = nil) {
         if let type = type {

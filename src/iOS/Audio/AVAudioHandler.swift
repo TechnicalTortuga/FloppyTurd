@@ -98,22 +98,40 @@ public class AVAudioHandler: NSObject {
             logger.info("[AVAudioHandler] Audio system already initialized")
         }
         
-        // Safely get the main bundle and resource URL
-        let mainBundle = Bundle.main
-        logger.info("[AVAudioHandler] Looking for audio file: \(fileName)")
+        // First, check AssetManager's cache for pre-loaded audio files
+        logger.info("[AVAudioHandler] Checking AssetManager cache for: \(fileName)")
         
-        guard let url = mainBundle.url(forResource: fileName, withExtension: nil) else {
-            logger.info("[AVAudioHandler] File not found with exact name, trying extensions...")
-            // Try with common audio extensions if no extension provided
-            let extensions = ["ogg", "mp3", "wav", "m4a"]
+        let extensions = ["mp3", "ogg", "wav", "m4a"]
+        var audioFile: AVAudioFile?
+        
+        // Try to find the file in AssetManager's cache with different extensions
+        for ext in extensions {
+            if let cachedAudioFile = AssetManager.shared.getCachedAudio(name: fileName, extension: ext) {
+                logger.info("[AVAudioHandler] Found cached audio file: \(fileName).\(ext)")
+                audioFile = cachedAudioFile
+                break
+            }
+        }
+        
+        // If not found in cache, try loading directly from Bundle.main (fallback)
+        if audioFile == nil {
+            logger.info("[AVAudioHandler] Not found in cache, loading from Bundle.main: \(fileName)")
+            
+            let mainBundle = Bundle.main
             var foundURL: URL?
             
-            for ext in extensions {
-                logger.info("[AVAudioHandler] Trying extension: .\(ext)")
-                if let testURL = mainBundle.url(forResource: fileName, withExtension: ext) {
-                    foundURL = testURL
-                    logger.info("[AVAudioHandler] Found file with extension .\(ext): \(testURL)")
-                    break
+            // First try with exact filename
+            if let url = mainBundle.url(forResource: fileName, withExtension: nil) {
+                foundURL = url
+            } else {
+                // Try with common audio extensions
+                for ext in extensions {
+                    logger.info("[AVAudioHandler] Trying extension: .\(ext)")
+                    if let testURL = mainBundle.url(forResource: fileName, withExtension: ext) {
+                        foundURL = testURL
+                        logger.info("[AVAudioHandler] Found file with extension .\(ext): \(testURL)")
+                        break
+                    }
                 }
             }
             
@@ -122,24 +140,23 @@ public class AVAudioHandler: NSObject {
                 return
             }
             
-            // Load audio file and schedule for playback
+            // Load audio file from URL
             logger.info("[AVAudioHandler] Attempting to create AVAudioFile from: \(url)")
-            if let audioFile = try? AVAudioFile(forReading: url) {
-                logger.info("[AVAudioHandler] Successfully created AVAudioFile, scheduling music")
-                scheduleMusic(audioFile)
-            } else {
-                logger.error("Failed to create AVAudioFile from: \(url)")
+            do {
+                audioFile = try AVAudioFile(forReading: url)
+                logger.info("[AVAudioHandler] Successfully created AVAudioFile from Bundle")
+            } catch {
+                logger.error("Failed to create AVAudioFile from: \(url) - \(error)")
+                return
             }
-            return
         }
         
-        logger.info("[AVAudioHandler] Found file with exact name: \(url)")
-        // Load audio file and schedule for playback
-        if let audioFile = try? AVAudioFile(forReading: url) {
-            logger.info("[AVAudioHandler] Successfully created AVAudioFile, scheduling music")
+        // Schedule the audio file for playback
+        if let audioFile = audioFile {
+            logger.info("[AVAudioHandler] Scheduling music: \(audioFile.url.lastPathComponent)")
             scheduleMusic(audioFile)
         } else {
-            logger.error("Failed to create AVAudioFile from: \(url)")
+            logger.error("No audio file available for playback: \(fileName)")
         }
     }
     
@@ -154,17 +171,36 @@ public class AVAudioHandler: NSObject {
             }
         }
         
-        // Safely get the main bundle and resource URL
-        let mainBundle = Bundle.main
-        guard let url = mainBundle.url(forResource: fileName, withExtension: nil) else {
-            // Try with common audio extensions if no extension provided
-            let extensions = ["ogg", "mp3", "wav", "m4a"]
+        // First, check AssetManager's cache for pre-loaded audio files
+        let extensions = ["ogg", "mp3", "wav", "m4a"]
+        var audioFile: AVAudioFile?
+        
+        // Try to find the file in AssetManager's cache with different extensions
+        for ext in extensions {
+            if let cachedAudioFile = AssetManager.shared.getCachedAudio(name: fileName, extension: ext) {
+                logger.info("[AVAudioHandler] Found cached sound file: \(fileName).\(ext)")
+                audioFile = cachedAudioFile
+                break
+            }
+        }
+        
+        // If not found in cache, try loading directly from Bundle.main (fallback)
+        if audioFile == nil {
+            logger.info("[AVAudioHandler] Sound not found in cache, loading from Bundle.main: \(fileName)")
+            
+            let mainBundle = Bundle.main
             var foundURL: URL?
             
-            for ext in extensions {
-                if let testURL = mainBundle.url(forResource: fileName, withExtension: ext) {
-                    foundURL = testURL
-                    break
+            // First try with exact filename
+            if let url = mainBundle.url(forResource: fileName, withExtension: nil) {
+                foundURL = url
+            } else {
+                // Try with common audio extensions
+                for ext in extensions {
+                    if let testURL = mainBundle.url(forResource: fileName, withExtension: ext) {
+                        foundURL = testURL
+                        break
+                    }
                 }
             }
             
@@ -173,20 +209,21 @@ public class AVAudioHandler: NSObject {
                 return
             }
             
-            // Load audio file and schedule for playback
-            if let audioFile = try? AVAudioFile(forReading: url) {
-                scheduleSound(audioFile)
-            } else {
-                logger.error("Failed to create AVAudioFile from: \(url)")
+            // Load audio file from URL
+            do {
+                audioFile = try AVAudioFile(forReading: url)
+                logger.info("[AVAudioHandler] Successfully created sound AVAudioFile from Bundle")
+            } catch {
+                logger.error("Failed to create AVAudioFile from: \(url) - \(error)")
+                return
             }
-            return
         }
         
-        // Load audio file and schedule for playback
-        if let audioFile = try? AVAudioFile(forReading: url) {
+        // Schedule the audio file for playback
+        if let audioFile = audioFile {
             scheduleSound(audioFile)
         } else {
-            logger.error("Failed to create AVAudioFile from: \(url)")
+            logger.error("No sound file available for playback: \(fileName)")
         }
     }
     
@@ -202,21 +239,40 @@ public class AVAudioHandler: NSObject {
         if !isInitialized {
             if !initialize() {
                 logger.error("Failed to auto-initialize audio system")
-            return
+                return
             }
         }
         
-        // Safely get the main bundle and resource URL
-        let mainBundle = Bundle.main
-        guard let url = mainBundle.url(forResource: soundName, withExtension: nil) else {
-            // Try with common audio extensions if no extension provided
-            let extensions = ["ogg", "mp3", "wav", "m4a"]
+        // First, check AssetManager's cache for pre-loaded audio files
+        let extensions = ["ogg", "mp3", "wav", "m4a"]
+        var audioFile: AVAudioFile?
+        
+        // Try to find the file in AssetManager's cache with different extensions
+        for ext in extensions {
+            if let cachedAudioFile = AssetManager.shared.getCachedAudio(name: soundName, extension: ext) {
+                logger.info("[AVAudioHandler] Found cached sound file: \(soundName).\(ext)")
+                audioFile = cachedAudioFile
+                break
+            }
+        }
+        
+        // If not found in cache, try loading directly from Bundle.main (fallback)
+        if audioFile == nil {
+            logger.info("[AVAudioHandler] Sound not found in cache, loading from Bundle.main: \(soundName)")
+            
+            let mainBundle = Bundle.main
             var foundURL: URL?
             
-            for ext in extensions {
-                if let testURL = mainBundle.url(forResource: soundName, withExtension: ext) {
-                    foundURL = testURL
-                    break
+            // First try with exact filename
+            if let url = mainBundle.url(forResource: soundName, withExtension: nil) {
+                foundURL = url
+            } else {
+                // Try with common audio extensions
+                for ext in extensions {
+                    if let testURL = mainBundle.url(forResource: soundName, withExtension: ext) {
+                        foundURL = testURL
+                        break
+                    }
                 }
             }
             
@@ -225,22 +281,22 @@ public class AVAudioHandler: NSObject {
                 return
             }
             
-            // Load audio file and schedule for playback
-            if let audioFile = try? AVAudioFile(forReading: url) {
-                soundPlayerNode.volume = max(0.0, min(1.0, volume))
-                scheduleSound(audioFile)
-            } else {
-                logger.error("Failed to create AVAudioFile from: \(url)")
+            // Load audio file from URL
+            do {
+                audioFile = try AVAudioFile(forReading: url)
+                logger.info("[AVAudioHandler] Successfully created sound AVAudioFile from Bundle")
+            } catch {
+                logger.error("Failed to create AVAudioFile from: \(url) - \(error)")
+                return
             }
-            return
         }
         
-        // Load audio file and schedule for playback
-        if let audioFile = try? AVAudioFile(forReading: url) {
+        // Schedule the audio file for playback
+        if let audioFile = audioFile {
             soundPlayerNode.volume = max(0.0, min(1.0, volume))
             scheduleSound(audioFile)
         } else {
-            logger.error("Failed to create AVAudioFile from: \(url)")
+            logger.error("No sound file available for playback: \(soundName)")
         }
     }
     

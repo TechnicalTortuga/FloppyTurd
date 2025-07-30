@@ -42,6 +42,14 @@ namespace GameCore {
         int m_selectedOption;
         float m_animationTimer;
         bool m_isMobile;
+        
+        // UI Entity storage
+        Gnosis::Entity m_backgroundEntity;
+        Gnosis::Entity m_logoEntity;
+        Gnosis::Entity m_fButtonEntity;
+        
+        // Asset loading state
+        bool m_assetsLoaded;
 
         // Layout functions - separate for desktop and mobile
         void CreateDesktopLayout();

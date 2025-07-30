@@ -2,7 +2,10 @@
 #include "../../Engine/Platform/PlatformDelegates.h"
 #include "../../Engine/Core/GNLog.h"
 #include "../../Engine/AssetPaths.h"
+#include "../Components/GameComponents.h"
+#include "../Game/FloppyTurdGame.h"
 #include <iostream>
+#include <random>
 
 namespace GameCore {
 
@@ -11,7 +14,11 @@ namespace GameCore {
         , m_finished(false)
         , m_selectedOption(0)
         , m_animationTimer(0.0f)
-        , m_isMobile(false) {
+        , m_isMobile(false)
+        , m_backgroundEntity(0)
+        , m_logoEntity(0)
+        , m_fButtonEntity(0)
+        , m_assetsLoaded(false) {
         
         // Detect if we're on a mobile platform
         m_isMobile = IsMobilePlatform();
@@ -26,20 +33,55 @@ namespace GameCore {
         m_finished = false;
         m_selectedOption = 0;
         m_animationTimer = 0.0f;
+        m_assetsLoaded = false;
         
-        // TODO: Initialize platform-specific UI rendering for menu
+        // Start playing main menu music using delegate system
+        extern FloppyTurdGame* g_Game;
+        if (g_Game) {
+            const PlatformDelegates& delegates = g_Game->GetPlatformDelegates();
+            if (delegates.audio.playMusic) {
+                delegates.audio.playMusic("FloppyTurdMenu", 0.7f, -1); // -1 = infinite loop
+                GN_LOG_INFO("Started main menu music: FloppyTurdMenu.mp3");
+            }
+        }
         
-        // Start playing main menu music
-        // TODO: Use AssetManager to play menu music
-        GN_LOG_INFO("Starting main menu music");
+        // Create the appropriate layout based on platform
+        if (m_isMobile) {
+            CreateMobileLayout();
+        } else {
+            CreateDesktopLayout();
+        }
+        
+        m_assetsLoaded = true;
+        GN_LOG_INFO("Main Menu State fully initialized");
     }
 
     void MainMenuState::Exit() {
         GN_LOG_INFO("Exiting Main Menu State");
         
-        // Stop menu music
-        // TODO: Stop menu music through AssetManager
-        // TODO: Cleanup platform-specific UI rendering
+        // Stop menu music using delegate system
+        extern FloppyTurdGame* g_Game;
+        if (g_Game) {
+            const PlatformDelegates& delegates = g_Game->GetPlatformDelegates();
+            if (delegates.audio.stopMusic) {
+                delegates.audio.stopMusic();
+                GN_LOG_INFO("Stopped main menu music");
+            }
+        }
+        
+        // Cleanup UI entities
+        if (m_ecsCoordinator && m_assetsLoaded) {
+            if (m_backgroundEntity != 0) {
+                m_ecsCoordinator->DestroyEntity(m_backgroundEntity);
+            }
+            if (m_logoEntity != 0) {
+                m_ecsCoordinator->DestroyEntity(m_logoEntity);
+            }
+            if (m_fButtonEntity != 0) {
+                m_ecsCoordinator->DestroyEntity(m_fButtonEntity);
+            }
+            GN_LOG_INFO("Cleaned up main menu UI entities");
+        }
     }
 
     void MainMenuState::Pause() {
@@ -75,13 +117,50 @@ namespace GameCore {
     }
 
     void MainMenuState::HandleInput() {
-        // TODO: Get input from platform delegates
-        // Handle menu navigation (up/down arrows)
-        // Handle selection (enter/space)
-        // Handle F button press for fart sound
+        if (!m_ecsCoordinator || !m_assetsLoaded) {
+            return;
+        }
         
-        // For now, just log input handling
-        // GN_LOG_DEBUG("Handling main menu input");
+        // Get input from platform delegates
+        extern FloppyTurdGame* g_Game;
+        if (!g_Game) {
+            return;
+        }
+        
+        const PlatformDelegates& delegates = g_Game->GetPlatformDelegates();
+        
+        // Handle touch/click input for F button
+        if (delegates.input.isPrimaryInputJustPressed && delegates.input.isPrimaryInputJustPressed()) {
+            float touchX, touchY;
+            if (delegates.input.getPrimaryInputPosition) {
+                delegates.input.getPrimaryInputPosition(&touchX, &touchY);
+                
+                // Check if touch/click is within F button bounds
+                if (m_fButtonEntity != 0) {
+                    Transform* fButtonTransform = m_ecsCoordinator->GetComponent<Transform>(m_fButtonEntity);
+                    Sprite* fButtonSprite = m_ecsCoordinator->GetComponent<Sprite>(m_fButtonEntity);
+                    
+                    if (fButtonTransform && fButtonSprite) {
+                        // Calculate F button bounds (centered)
+                        float buttonWidth = fButtonSprite->width * fButtonTransform->scale.x;
+                        float buttonHeight = fButtonSprite->height * fButtonTransform->scale.y;
+                        float buttonLeft = fButtonTransform->position.x - (buttonWidth / 2.0f);
+                        float buttonRight = fButtonTransform->position.x + (buttonWidth / 2.0f);
+                        float buttonTop = fButtonTransform->position.y - (buttonHeight / 2.0f);
+                        float buttonBottom = fButtonTransform->position.y + (buttonHeight / 2.0f);
+                        
+                        // Check if touch is within bounds
+                        if (touchX >= buttonLeft && touchX <= buttonRight &&
+                            touchY >= buttonTop && touchY <= buttonBottom) {
+                            OnFButtonPressed();
+                        }
+                    }
+                }
+            }
+        }
+        
+        // TODO: Handle menu navigation (up/down arrows) for desktop
+        // TODO: Handle selection (enter/space) for menu options
     }
 
     void MainMenuState::CreateDesktopLayout() {
@@ -109,23 +188,52 @@ namespace GameCore {
     void MainMenuState::CreateMobileLayout() {
         GN_LOG_INFO("Creating mobile main menu layout");
         
-        // TODO: Create mobile UI elements:
-        // 1. Background (MainMenuMobile.png) - optimized for mobile aspect ratio
-        // 2. Floppy Turd Logo at top (FloppyLogo.png) - scaled for mobile
-        // 3. Interactive F button in logo (F.png) - larger touch target
-        // 4. Touch-friendly menu buttons with larger spacing:
-        //    - Playing
-        //    - Options  
-        //    - Quick Play
-        //    - Quit
-        // 5. No cursor - direct touch interaction
+        if (!m_ecsCoordinator) {
+            GN_LOG_ERROR("ECS coordinator is null in CreateMobileLayout");
+            return;
+        }
         
-        // Asset paths for mobile layout:
-        // Background: AssetPaths::Graphics::UI::UI_MENUS_MAIN + "MainMenuMobile.png"
-        // Logo: AssetPaths::Graphics::UI::UI_MENUS_MAIN + "FloppyLogo.png"
-        // F Button: AssetPaths::Graphics::UI::UI_ICONS + "F.png"
+        // Get actual screen dimensions from platform (use realistic mobile portrait dimensions)
+        float screenWidth = 1179.0f;
+        float screenHeight = 2556.0f;
+        float centerX = screenWidth / 2.0f;
         
-        GN_LOG_INFO("Mobile layout: Touch-optimized buttons, larger spacing, no cursor");
+        // 1. Create Background Entity (MainMenuMobile.png) - FULL SCREEN SCALING
+        m_backgroundEntity = m_ecsCoordinator->CreateEntity();
+        Transform bgTransform(Gnosis::GNVector2(centerX, screenHeight / 2.0f), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+        // Background should fill entire screen - use viewport dimensions as sprite size
+        Sprite bgSprite("MainMenuMobile", screenWidth, screenHeight);
+        bgSprite.layer = 0; // Background layer
+        bgSprite.visible = true;
+        m_ecsCoordinator->AddComponent<Transform>(m_backgroundEntity, bgTransform);
+        m_ecsCoordinator->AddComponent<Sprite>(m_backgroundEntity, bgSprite);
+        GN_LOG_INFO("Created full-screen background entity: MainMenuMobile.png (%fx%f)", screenWidth, screenHeight);
+        
+        // 2. Create Logo Entity (FloppyLogo.png) - MUCH LARGER SCALING (~3x)
+        m_logoEntity = m_ecsCoordinator->CreateEntity();
+        float logoY = screenHeight * 0.25f; // Top quarter
+        Transform logoTransform(Gnosis::GNVector2(centerX, logoY), 0.0f, Gnosis::GNVector2(3.5f, 3.5f)); // 3.5x scale for mobile
+        Sprite logoSprite("FloppyLogo", 400.0f, 200.0f); // Base size, will be scaled by transform
+        logoSprite.layer = 1; // Logo layer
+        logoSprite.visible = true;
+        m_ecsCoordinator->AddComponent<Transform>(m_logoEntity, logoTransform);
+        m_ecsCoordinator->AddComponent<Sprite>(m_logoEntity, logoSprite);
+        GN_LOG_INFO("Created scaled logo entity: FloppyLogo.png (3.5x scale)");
+        
+        // 3. Create Interactive F Button Entity (F.png) - MUCH LARGER SCALING (~3x)
+        m_fButtonEntity = m_ecsCoordinator->CreateEntity();
+        // Position F button relative to scaled logo - need to adjust for larger logo
+        float fButtonX = centerX + 380.0f; // Adjusted for 3.5x scaled logo width
+        float fButtonY = logoY + 35.0f; // Slightly below logo center, adjusted for scale
+        Transform fButtonTransform(Gnosis::GNVector2(fButtonX, fButtonY), 0.0f, Gnosis::GNVector2(4.5f, 4.5f)); // Even larger for touch
+        Sprite fButtonSprite("F", 80.0f, 80.0f); // Base size, will be scaled by transform
+        fButtonSprite.layer = 2; // F button layer
+        fButtonSprite.visible = true;
+        m_ecsCoordinator->AddComponent<Transform>(m_fButtonEntity, fButtonTransform);
+        m_ecsCoordinator->AddComponent<Sprite>(m_fButtonEntity, fButtonSprite);
+        GN_LOG_INFO("Created large F button entity: F.png (4.5x scale)");
+        
+        GN_LOG_INFO("Mobile layout created: Background, Logo, and F Button entities");
     }
 
     void MainMenuState::UpdateMenuSelection() {
@@ -138,16 +246,34 @@ namespace GameCore {
     }
 
     void MainMenuState::UpdateMenuAnimations(float deltaTime) {
-        // TODO: Update menu animations
-        // - Logo bobbing/floating animation
-        // - Button hover effects
-        // - Background animations
-        // - Particle effects
+        if (!m_ecsCoordinator || !m_assetsLoaded) {
+            return;
+        }
         
-        // Simple animation timer for now
-        float logoFloat = sin(m_animationTimer * 2.0f) * 5.0f; // 5 pixel float
+        // Logo floating animation
+        if (m_logoEntity != 0) {
+            Transform* logoTransform = m_ecsCoordinator->GetComponent<Transform>(m_logoEntity);
+            if (logoTransform) {
+                // Create a gentle floating effect
+                float logoFloat = sin(m_animationTimer * 1.5f) * 8.0f; // 8 pixel float amplitude
+                
+                // Update logo Y position (preserve original Y + float offset)
+                float screenHeight = 2556.0f;
+                float originalLogoY = screenHeight * 0.25f;
+                logoTransform->position.y = originalLogoY + logoFloat;
+            }
+        }
         
-        // This will be used to update entity positions when ECS is integrated
+        // F Button gentle pulsing animation
+        if (m_fButtonEntity != 0) {
+            Transform* fButtonTransform = m_ecsCoordinator->GetComponent<Transform>(m_fButtonEntity);
+            if (fButtonTransform) {
+                // Create a subtle pulsing scale effect - based on new 4.5x base scale
+                float pulseScale = 4.5f + sin(m_animationTimer * 2.5f) * 0.3f; // 4.2f to 4.8f scale range
+                fButtonTransform->scale.x = pulseScale;
+                fButtonTransform->scale.y = pulseScale;
+            }
+        }
     }
 
     void MainMenuState::OnMenuOptionSelected(MenuOption option) {
@@ -184,13 +310,36 @@ namespace GameCore {
     }
 
     void MainMenuState::OnFButtonPressed() {
-        GN_LOG_INFO("F button pressed - playing fart sound!");
+        GN_LOG_INFO("F button pressed - playing random fart sound!");
         
-        // TODO: Play fart sound through AssetManager
-        // AssetManager::getInstance().playSound(AssetPaths::Audio::SFX::SFX_PLAYER + "fart1.ogg");
+        // Play random fart sound (fart1.ogg through fart11.ogg)
+        static std::random_device rd;
+        static std::mt19937 gen(rd());
+        static std::uniform_int_distribution<> dis(1, 11);
         
-        // For now, just log it
-        GN_LOG_INFO("*FART SOUND*");
+        int randomFartNumber = dis(gen);
+        std::string fartSoundName = "fart" + std::to_string(randomFartNumber);
+        
+        // Use delegate system to play sound
+        extern FloppyTurdGame* g_Game;
+        if (g_Game) {
+            const PlatformDelegates& delegates = g_Game->GetPlatformDelegates();
+            if (delegates.audio.playSound) {
+                delegates.audio.playSound(fartSoundName.c_str(), 0.8f); // 80% volume
+                GN_LOG_INFO("Playing fart sound: %s.ogg", fartSoundName.c_str());
+            }
+        }
+        
+        // Add visual feedback - make F button briefly larger
+        if (m_fButtonEntity != 0 && m_ecsCoordinator) {
+            Transform* fButtonTransform = m_ecsCoordinator->GetComponent<Transform>(m_fButtonEntity);
+            if (fButtonTransform) {
+                // Temporarily scale up the F button for feedback - based on new 4.5x scale
+                fButtonTransform->scale.x = 5.2f; // Bigger feedback for larger base scale
+                fButtonTransform->scale.y = 5.2f;
+                // Note: This will be smoothed back by the pulsing animation
+            }
+        }
     }
 
     const char* MainMenuState::GetMenuOptionText(int optionIndex) const {
