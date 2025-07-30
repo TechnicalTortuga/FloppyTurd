@@ -228,10 +228,12 @@ namespace GameCore {
             return;
         }
 
-        // Begin frame and clear screen using platform delegates
+        // Begin frame using platform delegates
         if (m_platformDelegates.renderer.beginFrame) {
             m_platformDelegates.renderer.beginFrame();
         }
+
+        // Clear screen using platform delegates
         if (m_platformDelegates.renderer.clearScreen) {
             m_platformDelegates.renderer.clearScreen(0.2f, 0.3f, 0.3f, 1.0f); // Dark blue-gray background
         }
@@ -243,20 +245,15 @@ namespace GameCore {
 
         // 2. Render ECS systems (render entities managed by states)
         if (m_ecsSystem) {
-            m_ecsSystem->Render();
-        }
-
-        // Render debug info
-        if (m_showDebugInfo) {
-            RenderDebugInfo();
+            m_ecsSystem->Render();  // ✅ ENABLED
         }
 
         // End frame using platform delegates
         if (m_platformDelegates.renderer.endFrame) {
             m_platformDelegates.renderer.endFrame();
         }
-        
-        // Present the rendered frame
+
+        // Present frame using platform delegates
         if (m_platformDelegates.renderer.present) {
             m_platformDelegates.renderer.present();
         }

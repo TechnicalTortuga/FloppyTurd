@@ -15,9 +15,6 @@ namespace GameCore {
 
     LoadingState::LoadingState(Gnosis::ECS* ecsCoordinator)
         : m_ecsCoordinator(ecsCoordinator)
-        , m_finished(false)
-        , m_loadingTimer(0.0f)
-        , m_rotationAngle(0.0f)
         , m_poopHatEntity(nullptr) {
     }
 
@@ -33,7 +30,9 @@ namespace GameCore {
 
     void LoadingState::Exit() {
         GN_LOG_INFO("Exiting Loading State");
-        DestroyLoadingEntities();
+        // Don't destroy entities - let them persist for the main menu
+        // DestroyLoadingEntities();
+        GN_LOG_INFO("Keeping loading entities alive for main menu");
     }
 
     void LoadingState::Pause() {
@@ -92,21 +91,37 @@ namespace GameCore {
         // Create rotating poop hat entity
         Gnosis::Entity poopHatEntityId = m_ecsCoordinator->CreateEntity();
         
+        GN_LOG_INFO("Created entity with ID: " + std::to_string(poopHatEntityId));
+        
+        GN_LOG_INFO("[LoadingState] m_ecsCoordinator ptr: " + std::to_string(reinterpret_cast<uintptr_t>(m_ecsCoordinator)));
+        GN_LOG_INFO("[LoadingState] IsEntityValid(" + std::to_string(poopHatEntityId) + "): " + (m_ecsCoordinator && m_ecsCoordinator->IsEntityValid(poopHatEntityId) ? "true" : "false"));
         // Add Transform component (position will be updated in UpdatePoopHatPosition)
+        GN_LOG_INFO("[LoadingState] About to add Transform component to entity " + std::to_string(poopHatEntityId));
         Transform transform;
         transform.position = Gnosis::GNVector2(400.0f, 300.0f); // Screen center (placeholder)
         transform.scale = Gnosis::GNVector2(1.0f, 1.0f);
         m_ecsCoordinator->AddComponent<Transform>(poopHatEntityId, transform);
+        GN_LOG_INFO("[LoadingState] Added Transform component to entity " + std::to_string(poopHatEntityId));
         
-        // Add Sprite component (static sprite for now)
-        Sprite sprite("poophat.png", 64.0f, 64.0f);
+        GN_LOG_INFO("Added Transform component to entity " + std::to_string(poopHatEntityId) + " at position (" + 
+                   std::to_string(transform.position.x) + ", " + std::to_string(transform.position.y) + ")");
+        
+        // Add Sprite component using just the asset name for iOS asset catalog
+        GN_LOG_INFO("[LoadingState] About to add Sprite component to entity " + std::to_string(poopHatEntityId));
+        Sprite sprite("poophat", 256.0f, 256.0f); // Much bigger size!
+        sprite.frameWidth = 16;  // Set correct frame dimensions for scaling
+        sprite.frameHeight = 16; // Set correct frame dimensions for scaling
         sprite.layer = 10; // High layer for UI elements
         m_ecsCoordinator->AddComponent<Sprite>(poopHatEntityId, sprite);
+        GN_LOG_INFO("[LoadingState] Added Sprite component to entity " + std::to_string(poopHatEntityId));
+        
+        GN_LOG_INFO("Added Sprite component to entity " + std::to_string(poopHatEntityId) + " with texture '" + 
+                   sprite.textureId + "'");
         
         // Store entity ID (convert to void* for compatibility)
         m_poopHatEntity = reinterpret_cast<void*>(static_cast<uintptr_t>(poopHatEntityId));
         
-        GN_LOG_INFO("Created poop hat entity with ID: %u", poopHatEntityId);
+        GN_LOG_INFO("Created poop hat entity with ID: " + std::to_string(poopHatEntityId));
     }
 
     void LoadingState::DestroyLoadingEntities() {
@@ -117,7 +132,7 @@ namespace GameCore {
             
             if (m_ecsCoordinator->IsEntityValid(poopHatEntityId)) {
                 m_ecsCoordinator->DestroyEntity(poopHatEntityId);
-                GN_LOG_INFO("Destroyed poop hat entity with ID: %u", poopHatEntityId);
+                GN_LOG_INFO("Destroyed poop hat entity with ID: " + std::to_string(poopHatEntityId));
             }
             
             m_poopHatEntity = nullptr;
@@ -154,8 +169,8 @@ namespace GameCore {
         
         // Log position for debugging (remove in final version)
         if (static_cast<int>(m_rotationAngle) % 90 == 0) {
-            GN_LOG_DEBUG("Poop hat position: (%.1f, %.1f) at angle %.1f°", 
-                        poopHatX, poopHatY, m_rotationAngle);
+            GN_LOG_DEBUG("Poop hat position: (" + std::to_string(poopHatX) + ", " + std::to_string(poopHatY) + 
+                        ") at angle " + std::to_string(m_rotationAngle) + "°");
         }
     }
 

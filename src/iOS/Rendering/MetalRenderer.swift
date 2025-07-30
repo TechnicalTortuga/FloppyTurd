@@ -524,7 +524,7 @@ public class MetalRenderer {
             return
         }
         
-        // FIX: Set clear color and load action - this will clear when the render encoder is created
+        // Set clear color and load action - this will clear when the render encoder is created
         renderPassDescriptor.colorAttachments[0].clearColor = clearColor
         renderPassDescriptor.colorAttachments[0].loadAction = .clear
         
@@ -699,6 +699,16 @@ public class MetalRenderer {
         }
         
         return (texture.width, texture.height)
+    }
+    
+    /// Register a texture from AssetManager and return a handle for MetalRenderer
+    public func registerTexture(_ texture: MTLTexture) -> UInt32 {
+        let handle = nextTextureHandle
+        textures[handle] = texture
+        nextTextureHandle += 1
+        
+        log("Texture registered: handle \(handle) (\(texture.width)x\(texture.height))", level: .debug)
+        return handle
     }
     
     // MARK: - Additional Drawing Methods for Threading System

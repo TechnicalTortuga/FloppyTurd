@@ -96,6 +96,11 @@ public class GameEngine: NSObject {
         
         log("Initializing GameEngine...")
         
+        // Set up iOS logging system first
+        log("Setting up iOS logging system...")
+        setupIOSLogging()
+        log("iOS logging system configured")
+        
         // Create platform components first
         if metalRenderer == nil {
             metalRenderer = MetalRenderer()
@@ -155,14 +160,11 @@ public class GameEngine: NSObject {
             return false
         }
         
-        log("C++ game initialized successfully - starting game and showing main menu")
+        log("C++ game initialized successfully - LoadingState should be active")
         
-        // Show main menu and start background music
-        cppGame?.ShowMainMenu()
-        log("ShowMainMenu() called")
-        
+        // Start the game (this sets m_running = true)
         cppGame?.StartGame()
-        log("StartGame() called")
+        log("StartGame() called - game is now running")
         
         isInitialized = true
         log("GameEngine initialized successfully with Swift components")
@@ -341,59 +343,18 @@ public class GameEngine: NSObject {
     public func render() {
         guard isRunning && !isPaused else { return }
         
+        log("GameEngine.render() called", level: .debug)
+        
+        // Call C++ game's Render() function to queue render commands
+        log("About to call cppGame?.Render()", level: .debug)
+        cppGame?.Render()
+        log("Finished calling cppGame?.Render()", level: .debug)
+        
         // Process any queued C++ render commands synchronously
+        // This includes beginFrame, clearScreen, draw calls, endFrame, and present
         commandProcessor?.processCommands()
         
-        // For now, directly call MetalRenderer to test blue screen rendering
-        // TODO: Connect MetalRenderer to C++ game properly
-        if let renderer = metalRenderer {
-            renderer.beginFrame()
-            renderer.setClearColor(r: 0.0, g: 0.5, b: 1.0, a: 1.0) // Blue background
-            renderer.clear()
-            
-            // PRIMITIVE SHAPES TEST: Show off our new rendering capabilities
-            
-            // 1. Large background rectangle (semi-transparent blue)
-            renderer.drawRectangle(x: 50, y: 50, width: 1079, height: 2456, r: 0.0, g: 0.3, b: 0.8, a: 0.3)
-            
-            // 2. Solid rectangle (red)
-            renderer.drawRectangle(x: 100, y: 100, width: 300, height: 200, r: 1.0, g: 0.0, b: 0.0, a: 1.0)
-            
-            // 3. Circle (green)
-            renderer.drawCircle(x: 600, y: 200, radius: 100, r: 0.0, g: 1.0, b: 0.0, a: 1.0)
-            
-            // 4. Triangle (blue)
-            renderer.drawTriangle(x1: 200, y1: 400, x2: 350, y2: 400, x3: 275, y3: 300, r: 0.0, g: 0.0, b: 1.0, a: 1.0)
-            
-            // 5. Line (white)
-            renderer.drawLine(x1: 100, y1: 600, x2: 700, y2: 650, width: 8, r: 1.0, g: 1.0, b: 1.0, a: 1.0)
-            
-            // 6. Rounded rectangle (yellow) - perfect for buttons!
-            renderer.drawRoundedRectangle(x: 400, y: 800, width: 400, height: 100, cornerRadius: 25, r: 1.0, g: 1.0, b: 0.0, a: 1.0)
-            
-            // 7. Small rounded rectangle (purple) - another button
-            renderer.drawRoundedRectangle(x: 200, y: 1000, width: 200, height: 80, cornerRadius: 40, r: 0.8, g: 0.0, b: 0.8, a: 1.0)
-            
-            // 8. SDF TEXT RENDERING TEST
-            // Initialize font system (using placeholder for now)
-            if renderer.loadFont(fontName: "Whacky_Joe", fontSize: 32) {
-                // Test text rendering with much larger sizes for better diagnosis
-                renderer.drawText("FLOPPY TURD!", x: 100, y: 500, fontSize: 120, r: 1.0, g: 1.0, b: 1.0, a: 1.0)
-                renderer.drawText("High Quality SDF Text", x: 100, y: 700, fontSize: 80, r: 1.0, g: 0.8, b: 0.0, a: 1.0)
-                renderer.drawText("Ready for UI buttons!", x: 100, y: 900, fontSize: 60, r: 0.0, g: 1.0, b: 0.8, a: 1.0)
-            } else {
-                // Fallback - draw text placeholders using rectangles
-                renderer.drawRectangle(x: 100, y: 1200, width: 400, height: 40, r: 0.5, g: 0.5, b: 0.5, a: 0.8) // Text placeholder
-                renderer.drawRectangle(x: 100, y: 1280, width: 350, height: 30, r: 0.4, g: 0.4, b: 0.4, a: 0.8) // Text placeholder
-                renderer.drawRectangle(x: 100, y: 1340, width: 300, height: 25, r: 0.3, g: 0.3, b: 0.3, a: 0.8) // Text placeholder
-            }
-            
-            renderer.endFrame()
-            renderer.present()
-        }
-        
-        // Call C++ game render (currently mostly commented out)
-        cppGame?.Render()
+        log("GameEngine.render() completed", level: .debug)
     }
     
     // MARK: - Game Access
@@ -409,6 +370,27 @@ public class GameEngine: NSObject {
         let deltaTime = Float(currentTime - lastFrameTime)
         lastFrameTime = currentTime
         return deltaTime
+    }
+    
+    // MARK: - iOS Logging Setup
+    
+    /// Set up iOS logging system with GNLog integration
+    private func setupIOSLogging() {
+        // Create iOS log handler
+        let iosLogHandler = iOSLogHandler()
+        
+        // Initialize the iOS log handler
+        let success = iosLogHandler.initialize()
+        if success {
+            log("iOS log handler initialized successfully")
+        } else {
+            log("Failed to initialize iOS log handler", level: .error)
+        }
+        
+        // Add the iOS log handler to the GNLog system
+        // This should be done through the C++ interop system
+        // The iOS log handler should be automatically integrated when the C++ game is initialized
+        log("iOS logging system setup completed - will be integrated with GNLog when C++ game initializes")
     }
 }
 

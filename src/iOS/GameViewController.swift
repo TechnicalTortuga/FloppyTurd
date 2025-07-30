@@ -291,6 +291,9 @@ extension GameViewController: MTKViewDelegate {
     public func draw(in view: MTKView) {
         guard isGameInitialized && !isPaused else { return }
         
+        // DEBUG: Log that draw is being called
+        log("MTKView draw() called - rendering frame", level: .debug)
+        
         // Calculate delta time using GameEngine's MTKView-driven timing
         let deltaTime = gameEngine.updateDeltaTime()
         
@@ -299,6 +302,9 @@ extension GameViewController: MTKViewDelegate {
         
         // Render frame
         gameEngine.render()
+        
+        // DEBUG: Log that render completed
+        log("MTKView draw() completed", level: .debug)
     }
     
     // MARK: - Touch Event Forwarding

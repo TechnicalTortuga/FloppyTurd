@@ -415,17 +415,30 @@ endif()
 
 # ---- Asset Catalog generation for iOS resources ----
 if(PLATFORM_IOS)
-    # Create asset catalog structure with generate_asset_catalog.sh script
+    # Create asset catalog structure with generate_asset_catalog.sh
     add_custom_command(TARGET FloppyTurd PRE_BUILD
         COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_asset_catalog.sh
         COMMENT "Generating asset catalog from resources"
-        VERBATIM
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
-
-    # Include the asset catalog as a resource bundle
-    set_source_files_properties("${CMAKE_CURRENT_SOURCE_DIR}/src/Assets.xcassets" PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
-    target_sources(FloppyTurd PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/Assets.xcassets")
-
+    
+    # Explicitly include the Assets.xcassets directory in the app bundle
+    set_source_files_properties(
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Assets.xcassets
+        PROPERTIES
+        MACOSX_PACKAGE_LOCATION "Resources"
+    )
+    
+    # Add the Assets.xcassets directory to the target
+    target_sources(FloppyTurd PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Assets.xcassets
+    )
+    
+    # Set the ASSETCATALOG_COMPILER_APPICON_NAME if not set
+    set_target_properties(FloppyTurd PROPERTIES
+        ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon"
+    )
+    
     # Explicitly add font files to bundle for iOS font registration (from new assets directory)
     # This makes .fnt files accessible via Bundle.main.path() calls
     file(GLOB FONT_FNT_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/assets/fonts/bitmap/*.fnt")

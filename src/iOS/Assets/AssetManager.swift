@@ -50,14 +50,14 @@ public class AssetManager {
     // MARK: - Asset Paths
     
     private struct AssetPaths {
-        static let basePath = "Assets"
-        static let textures = "Assets/textures"
-        static let audio = "Assets/audio"
-        static let music = "Assets/audio/music"
-        static let sfx = "Assets/audio/sfx"
-        static let fonts = "Assets/fonts"
-        static let shaders = "Assets/shaders"
-        static let data = "Assets/data"
+        static let basePath = ""
+        static let textures = "graphics"
+        static let audio = "audio"
+        static let music = "audio/music"
+        static let sfx = "audio/sfx"
+        static let fonts = "fonts"
+        static let shaders = "shaders"
+        static let data = "data"
     }
     
     // MARK: - Properties
@@ -150,12 +150,12 @@ public class AssetManager {
             return cached
         }
         
-        // Load from bundle
-        guard let url = Bundle.main.url(forResource: name, withExtension: `extension`, subdirectory: AssetPaths.textures) else {
-            throw AssetError.fileNotFound("\(name).\(`extension`) in \(AssetPaths.textures)")
+        // Load from asset catalog using UIImage
+        guard let image = UIImage(named: name) else {
+            throw AssetError.fileNotFound("\(name) in asset catalog")
         }
         
-        let texture = try await loadTextureFromURL(url)
+        let texture = try await loadTextureFromUIImage(image)
         textureCache[cacheKey] = texture
         cacheAccessTimes[cacheKey] = Date()
         logger.info("Texture loaded: \(cacheKey)")
@@ -427,6 +427,23 @@ public class AssetManager {
             }
         }
     }
+    
+    private func loadTextureFromUIImage(_ image: UIImage) async throws -> MTLTexture {
+        guard let device = device else {
+            throw AssetError.metalNotAvailable
+        }
+        
+        guard let cgImage = image.cgImage else {
+            throw AssetError.unknownError
+        }
+        
+        let textureLoader = MTKTextureLoader(device: device)
+        
+        return try await textureLoader.newTexture(cgImage: cgImage, options: [
+            MTKTextureLoader.Option.textureUsage: NSNumber(value: MTLTextureUsage.shaderRead.rawValue),
+            MTKTextureLoader.Option.textureStorageMode: NSNumber(value: MTLStorageMode.`private`.rawValue)
+        ])
+    }
 }
 
 // MARK: - Supporting Types
@@ -680,7 +697,7 @@ extension AssetManager {
     }
     
     /// Safely invoke C++ callback function
-    private static func invokeCallback(_ callback: UnsafeMutableRawPointer?, textureData: UnsafeMutableRawPointer?, error: String?, userData: UnsafeMutableRawPointer?) {
+    public static func invokeCallback(_ callback: UnsafeMutableRawPointer?, textureData: UnsafeMutableRawPointer?, error: String?, userData: UnsafeMutableRawPointer?) {
         guard let callback = callback else { return }
         
         // Cast to the expected C++ callback function signature

@@ -3,6 +3,7 @@
 #include "iOSPlatformImpl.h"
 #include "../../iOS/Threading/ThreadingProxy.h"
 #include "../Utility/Helper.h"
+#include "../Core/GNLog.h"
 #include <cstring>
 
 namespace GameCore {
@@ -13,6 +14,10 @@ namespace GameCore {
     namespace iOSPlatform {
         
         void SetupDelegates(PlatformDelegates& delegates) {
+            // Use ThreadingProxy for logging instead of GNLog
+            // ThreadingProxy is already working with SwiftLog bridge
+            GameCore::ThreadingProxy::enqueueLogInfo("Initializing iOS platform delegates...", "PLATFORM");
+            
             // Initialize threading proxy if not already done
             if (!g_threadingProxy) {
                 g_threadingProxy = new ThreadingProxy();
@@ -27,6 +32,8 @@ namespace GameCore {
             delegates.asset.getAssetPath = GetAssetPath;
             delegates.asset.fileExists = FileExists;
             delegates.asset.platformContext = nullptr;
+            
+            GameCore::ThreadingProxy::enqueueLogInfo("iOS platform delegates configured successfully", "PLATFORM");
         }
         
         // SetSwiftComponents removed - Swift components managed entirely on Swift side
@@ -168,23 +175,23 @@ namespace GameCore {
         }
 
         const char* GetAssetPath(const char* relativePath) {
-            static std::string fullPath;
             if (!relativePath) return "";
-            fullPath = GameCore::GetAssetFullPath(relativePath);
-            return fullPath.c_str();
-            // For now, return the relative path as-is since we don't have sync operations
-            // In a full implementation, this would need to be handled differently
-            // or made async like other asset operations
+            
+            // For iOS asset catalogs, return the asset name as-is
+            // The Swift AssetManager will handle the actual asset loading
             return relativePath;
         }
 
         bool FileExists(const char* relativePath) {
             if (!relativePath) return false;
-            return GameCore::FileExists(relativePath);
-            // For now, assume files exist since we don't have sync operations
-            // In a full implementation, this would need to be handled differently
-            // or made async like other asset operations
+            
+            // For iOS asset catalogs, always return true since the asset catalog system
+            // handles file existence internally. The actual loading will be handled by
+            // the asset loading system which can properly access bundled assets.
             return true;
+            
+            // Legacy filesystem check (commented out for iOS asset catalogs)
+            // return GameCore::FileExists(relativePath);
         }
         
         // Input is handled by ThreadingProxy's setupDelegates method

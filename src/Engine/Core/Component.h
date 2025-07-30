@@ -7,6 +7,7 @@
 #include <bitset>
 #include <stdexcept>
 #include <cstddef>
+#include "GNLog.h"
 
 namespace Gnosis {
 
@@ -196,11 +197,13 @@ namespace Gnosis {
          */
         template<typename T>
         void AddComponent(Entity entity, T component) {
+            GN_LOG_INFO(std::string("[ComponentManager] Adding component ") + typeid(T).name() + " to entity " + std::to_string(entity));
             GetComponentArray<T>()->AddComponent(entity, component);
             
             // Update entity signature
             std::size_t typeId = Component::GetComponentTypeId<T>();
             entitySignatures[entity].set(typeId);
+            GN_LOG_INFO(std::string("[ComponentManager] Added component ") + typeid(T).name() + " to entity " + std::to_string(entity));
         }
         
         /**

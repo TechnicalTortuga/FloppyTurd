@@ -7,7 +7,7 @@ namespace GameCore {
     SpriteSystem::SpriteSystem(Gnosis::ECS* ecsCoordinator, const GameCore::PlatformDelegates& delegates)
         : m_ecsCoordinator(ecsCoordinator)
         , m_delegates(delegates)
-        , m_textureBasePath("Assets/Graphics/")
+        , m_textureBasePath("")
     {
         if (!m_ecsCoordinator) {
             GN_LOG_ERROR("SpriteSystem: ECS coordinator is null");
@@ -40,6 +40,8 @@ namespace GameCore {
         // Get all entities with both Transform and Sprite components
         auto entities = m_ecsCoordinator->GetEntitiesWithComponents<Transform, Sprite>();
         
+        GN_LOG_DEBUG("SpriteSystem: Found " + std::to_string(entities.size()) + " entities with Transform and Sprite components");
+        
         // Collect visible sprites with their layer info
         std::vector<std::pair<Gnosis::Entity, int>> visibleSprites;
         
@@ -51,8 +53,11 @@ namespace GameCore {
             Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(entity);
             if (sprite && sprite->visible) {
                 visibleSprites.emplace_back(entity, sprite->layer);
+                GN_LOG_DEBUG("SpriteSystem: Found visible sprite entity " + std::to_string(entity) + " with texture '" + sprite->textureId + "'");
             }
         }
+        
+        GN_LOG_DEBUG("SpriteSystem: Rendering " + std::to_string(visibleSprites.size()) + " visible sprites");
         
         // Sort by layer (lower layers render first)
         std::sort(visibleSprites.begin(), visibleSprites.end(), 
@@ -67,6 +72,8 @@ namespace GameCore {
             Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(entity);
             
             if (transform && sprite) {
+                GN_LOG_DEBUG("SpriteSystem: Rendering sprite entity " + std::to_string(entity) + " at position (" + 
+                           std::to_string(transform->position.x) + ", " + std::to_string(transform->position.y) + ")");
                 RenderSprite(entity, *transform, *sprite);
             }
         }
@@ -144,8 +151,11 @@ namespace GameCore {
         // Get or load the texture
         uint32_t textureHandle = GetOrLoadTexture(sprite.textureId, entity);
         if (textureHandle == 0) {
+            GN_LOG_DEBUG("SpriteSystem: Texture not ready for entity " + std::to_string(entity) + ", texture '" + sprite.textureId + "'");
             return; // Skip if texture couldn't be loaded or is still loading
         }
+        
+        GN_LOG_DEBUG("SpriteSystem: Rendering sprite entity " + std::to_string(entity) + " with texture handle " + std::to_string(textureHandle));
         
         // Calculate source rectangle for animated sprites
         Gnosis::GNRectangle sourceRect = CalculateSourceRect(sprite);
@@ -164,6 +174,13 @@ namespace GameCore {
                 scaleY * transform.scale.y,
                 transform.rotation
             );
+            
+            GN_LOG_DEBUG("SpriteSystem: Called drawSpriteScaled for entity " + std::to_string(entity) + " at (" + 
+                        std::to_string(transform.position.x) + ", " + std::to_string(transform.position.y) + 
+                        ") with scale (" + std::to_string(scaleX * transform.scale.x) + ", " + std::to_string(scaleY * transform.scale.y) + 
+                        ") rotation " + std::to_string(transform.rotation));
+        } else {
+            GN_LOG_ERROR("SpriteSystem: No drawSpriteScaled delegate available for entity " + std::to_string(entity));
         }
     }
     
@@ -183,7 +200,7 @@ namespace GameCore {
         
         // Check if file exists using platform delegate
         if (m_delegates.asset.fileExists && !m_delegates.asset.fileExists(fullPath.c_str())) {
-            GN_LOG_ERROR("SpriteSystem: Texture file not found: %s", fullPath.c_str());
+            GN_LOG_ERROR("SpriteSystem: Texture file not found: " + fullPath);
             return 0;
         }
         
@@ -208,7 +225,7 @@ namespace GameCore {
             return 0; // Will be available async
         }
         
-        GN_LOG_ERROR("SpriteSystem: No texture loading interface available for '%s'", textureId.c_str());
+        GN_LOG_ERROR("SpriteSystem: No texture loading interface available for '" + textureId + "'");
         return 0;
     }
     
@@ -242,12 +259,9 @@ namespace GameCore {
         if (textureData && textureData->platformTexture) {
             // Store texture handle as uint32_t (platform-specific conversion)
         system->m_textureCache[context->textureId] = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(textureData->platformTexture));
-            GN_LOG_INFO("SpriteSystem: Successfully loaded texture '%s' (%dx%d, platform: %p)", 
-                       context->textureId.c_str(), textureData->width, textureData->height, 
-                       textureData->platformTexture);
+            GN_LOG_INFO("SpriteSystem: Successfully loaded texture '" + context->textureId + "' (" + std::to_string(textureData->width) + "x" + std::to_string(textureData->height) + ", platform: " + std::to_string(reinterpret_cast<uintptr_t>(textureData->platformTexture)) + ")");
         } else {
-            GN_LOG_ERROR("SpriteSystem: Failed to load texture '%s': %s", 
-                       context->textureId.c_str(), error ? error : "Unknown error");
+            GN_LOG_ERROR("SpriteSystem: Failed to load texture '" + context->textureId + "': " + (error ? error : "Unknown error"));
         }
         
         system->m_pendingTextures.erase(context->textureId);
@@ -255,17 +269,17 @@ namespace GameCore {
     }
     
     void SpriteSystem::LoadTexture(const std::string& textureId, const std::string& filePath) {
-        GN_LOG_INFO("SpriteSystem: Load texture '%s' from '%s'", textureId.c_str(), filePath.c_str());
+        GN_LOG_INFO("SpriteSystem: Load texture '" + textureId + "' from '" + filePath + "'");
         
         // Check if already loaded
         if (m_textureCache.find(textureId) != m_textureCache.end()) {
-            GN_LOG_INFO("SpriteSystem: Texture '%s' already loaded", textureId.c_str());
+            GN_LOG_INFO("SpriteSystem: Texture '" + textureId + "' already loaded");
             return;
         }
         
         // Verify file exists
         if (m_delegates.asset.fileExists && !m_delegates.asset.fileExists(filePath.c_str())) {
-            GN_LOG_ERROR("SpriteSystem: Texture file not found: %s", filePath.c_str());
+            GN_LOG_ERROR("SpriteSystem: Texture file not found: " + filePath);
             return;
         }
     }

@@ -6,7 +6,9 @@
 #include "../Events/EventManager.h"
 #include "../Platform/PlatformDelegates.h"
 #include "SystemManager.h"
+#include "../../iOS/Threading/ThreadingProxy.h"
 #include <memory>
+#include <sstream> // Added for debug logging
 
 namespace Gnosis {
 
@@ -287,17 +289,39 @@ namespace Gnosis {
             int dummy[] = { (requiredSignature.set(Component::GetComponentTypeId<ComponentTypes>()), 0)... };
             (void)dummy; // Suppress unused variable warning
             
-            // Check all entities to see which ones match the signature
-            for (Entity entity = 0; entity < entityManager->GetActiveEntityCount(); ++entity) {
-                if (!entityManager->IsEntityValid(entity)) {
-                    continue;
-                }
-                
+            // Debug logging
+            std::ostringstream oss;
+            oss << "GetEntitiesWithComponents: Required signature: " << requiredSignature.to_string();
+            GameCore::ThreadingProxy::enqueueLogDebug(oss.str().c_str(), "ECS");
+            
+            // Get all entities and check their signatures
+            auto allEntities = entityManager->GetAllActiveEntities();
+            oss.str("");
+            oss.clear();
+            oss << "GetEntitiesWithComponents: Checking " << allEntities.size() << " active entities";
+            GameCore::ThreadingProxy::enqueueLogDebug(oss.str().c_str(), "ECS");
+            
+            for (Entity entity : allEntities) {
                 ComponentSignature entitySignature = componentManager->GetEntitySignature(entity);
+                oss.str("");
+                oss.clear();
+                oss << "GetEntitiesWithComponents: Entity " << entity << " signature: " << entitySignature.to_string();
+                GameCore::ThreadingProxy::enqueueLogDebug(oss.str().c_str(), "ECS");
+                
+                // Check if entity has all required components
                 if ((entitySignature & requiredSignature) == requiredSignature) {
                     result.push_back(entity);
+                    oss.str("");
+                    oss.clear();
+                    oss << "GetEntitiesWithComponents: Entity " << entity << " matches required signature";
+                    GameCore::ThreadingProxy::enqueueLogDebug(oss.str().c_str(), "ECS");
                 }
             }
+            
+            oss.str("");
+            oss.clear();
+            oss << "GetEntitiesWithComponents: Found " << result.size() << " matching entities";
+            GameCore::ThreadingProxy::enqueueLogDebug(oss.str().c_str(), "ECS");
             
             return result;
         }

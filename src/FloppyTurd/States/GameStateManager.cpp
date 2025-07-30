@@ -92,6 +92,8 @@ namespace GameCore {
         // Handle pending state pushes
         for (auto& state : m_pendingStates) {
             if (state) {
+                // Call Enter() on the new state before pushing it
+                state->Enter();
                 m_stateStack.push_back(std::move(state));
             }
         }

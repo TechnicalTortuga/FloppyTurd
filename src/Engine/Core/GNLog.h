@@ -19,6 +19,10 @@
 #include <vector>
 #include <mutex>
 
+#ifdef PLATFORM_IOS
+#include "../../iOS/Threading/ThreadingProxy.h"
+#endif
+
 namespace Gnosis {
 
     /**
@@ -192,35 +196,47 @@ namespace Gnosis {
 
 // Convenience macros for logging
 #ifdef PLATFORM_IOS
-    // iOS-specific macros - simplified without ThreadingProxy
+    // iOS-specific macros - use std::string with proper formatting
     #define GN_LOG_TRACE(msg, ...) \
         do { \
-            /* Logging disabled for iOS to avoid circular dependencies */ \
+            std::ostringstream oss; \
+            oss << msg; \
+            GameCore::ThreadingProxy::enqueueLogTrace(oss.str().c_str(), "GAME"); \
         } while(0)
 
     #define GN_LOG_DEBUG(msg, ...) \
         do { \
-            /* Logging disabled for iOS to avoid circular dependencies */ \
+            std::ostringstream oss; \
+            oss << msg; \
+            GameCore::ThreadingProxy::enqueueLogDebug(oss.str().c_str(), "GAME"); \
         } while(0)
 
     #define GN_LOG_INFO(msg, ...) \
         do { \
-            /* Logging disabled for iOS to avoid circular dependencies */ \
+            std::ostringstream oss; \
+            oss << msg; \
+            GameCore::ThreadingProxy::enqueueLogInfo(oss.str().c_str(), "GAME"); \
         } while(0)
 
     #define GN_LOG_WARN(msg, ...) \
         do { \
-            /* Logging disabled for iOS to avoid circular dependencies */ \
+            std::ostringstream oss; \
+            oss << msg; \
+            GameCore::ThreadingProxy::enqueueLogWarn(oss.str().c_str(), "GAME"); \
         } while(0)
 
     #define GN_LOG_ERROR(msg, ...) \
         do { \
-            /* Logging disabled for iOS to avoid circular dependencies */ \
+            std::ostringstream oss; \
+            oss << msg; \
+            GameCore::ThreadingProxy::enqueueLogError(oss.str().c_str(), "GAME"); \
         } while(0)
 
     #define GN_LOG_FATAL(msg, ...) \
         do { \
-            /* Logging disabled for iOS to avoid circular dependencies */ \
+            std::ostringstream oss; \
+            oss << msg; \
+            GameCore::ThreadingProxy::enqueueLogFatal(oss.str().c_str(), "GAME"); \
         } while(0)
 #else
     // Default macros for non-iOS platforms
@@ -269,12 +285,31 @@ namespace Gnosis {
 
 // Category-specific logging macros
 #ifdef PLATFORM_IOS
-    // iOS-specific category macros - simplified without ThreadingProxy
-    #define GN_LOG_CATEGORY(level, category, msg) \
+    // iOS-specific category macros - use std::string with proper formatting
+    #define GN_LOG_CATEGORY(level, category, msg, ...) \
         do { \
             std::ostringstream oss; \
             oss << msg; \
-            /* Logging disabled for iOS to avoid circular dependencies */ \
+            switch(level) { \
+                case Gnosis::LogLevel::TRACE: \
+                    GameCore::ThreadingProxy::enqueueLogTrace(oss.str().c_str(), category); \
+                    break; \
+                case Gnosis::LogLevel::DBG: \
+                    GameCore::ThreadingProxy::enqueueLogDebug(oss.str().c_str(), category); \
+                    break; \
+                case Gnosis::LogLevel::INFO: \
+                    GameCore::ThreadingProxy::enqueueLogInfo(oss.str().c_str(), category); \
+                    break; \
+                case Gnosis::LogLevel::WARN: \
+                    GameCore::ThreadingProxy::enqueueLogWarn(oss.str().c_str(), category); \
+                    break; \
+                case Gnosis::LogLevel::ERROR: \
+                    GameCore::ThreadingProxy::enqueueLogError(oss.str().c_str(), category); \
+                    break; \
+                case Gnosis::LogLevel::FATAL: \
+                    GameCore::ThreadingProxy::enqueueLogFatal(oss.str().c_str(), category); \
+                    break; \
+            } \
         } while(0)
 #else
     // Default category macro for non-iOS platforms  

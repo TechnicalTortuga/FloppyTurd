@@ -315,7 +315,7 @@ class CommandProcessor {
         switch commandType {
         case .CMD_LOAD_TEXTURE:
             let ext = fileExtension.isEmpty ? "png" : fileExtension
-            AssetManager.shared.loadTextureSync(name: name, extension: ext, callback: data.callback, userData: data.userData)
+            loadTextureWithMetalRenderer(name: name, extension: ext, callback: data.callback, userData: data.userData)
             
         case .CMD_LOAD_AUDIO:
             let ext = fileExtension.isEmpty ? "mp3" : fileExtension
@@ -331,6 +331,45 @@ class CommandProcessor {
             
         default:
             log("[CommandProcessor] Unsupported asset command type: \(commandType)", level: .warning)
+        }
+    }
+    
+    /// Load texture and register it with MetalRenderer
+    private func loadTextureWithMetalRenderer(name: String, extension: String, callback: UnsafeMutableRawPointer?, userData: UnsafeMutableRawPointer?) {
+        Task {
+            do {
+                // Load texture from AssetManager
+                let texture = try await AssetManager.shared.loadTexture(name: name, extension: `extension`)
+                
+                // Register texture with MetalRenderer
+                guard let renderer = metalRenderer else {
+                    log("[CommandProcessor] ERROR: No Metal renderer available for texture registration", level: .error)
+                    AssetManager.invokeCallback(callback, textureData: nil, error: "No Metal renderer available", userData: userData)
+                    return
+                }
+                
+                let handle = renderer.registerTexture(texture)
+                
+                // Create TextureData structure for C++
+                let textureData = UnsafeMutableRawPointer.allocate(
+                    byteCount: MemoryLayout<GameCore.TextureData>.stride,
+                    alignment: MemoryLayout<GameCore.TextureData>.alignment
+                )
+                
+                let textureDataPtr = textureData.bindMemory(to: GameCore.TextureData.self, capacity: 1)
+                textureDataPtr.pointee.platformTexture = UnsafeMutableRawPointer(bitPattern: UInt(handle))
+                textureDataPtr.pointee.width = Int32(texture.width)
+                textureDataPtr.pointee.height = Int32(texture.height)
+                textureDataPtr.pointee.format = 0 // Default format
+                textureDataPtr.pointee.channels = 4 // RGBA
+                textureDataPtr.pointee.dataSize = Int(texture.width * texture.height * 4)
+                
+                log("[CommandProcessor] Texture registered with MetalRenderer: \(name) -> handle \(handle)", level: .debug)
+                AssetManager.invokeCallback(callback, textureData: textureData, error: nil, userData: userData)
+            } catch {
+                log("[CommandProcessor] ERROR: Failed to load texture \(name): \(error)", level: .error)
+                AssetManager.invokeCallback(callback, textureData: nil, error: error.localizedDescription, userData: userData)
+            }
         }
     }
 }
