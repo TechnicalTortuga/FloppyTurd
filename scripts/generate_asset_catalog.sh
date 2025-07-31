@@ -102,8 +102,8 @@ process_audio() {
 }
 EOF
 
-  # Process each audio file
-  find "$source_dir" -type f \( -name "*.mp3" -o -name "*.ogg" -o -name "*.wav" \) | while read audio_file; do
+  # Process each audio file (.mp3 and .wav only, skip .ogg for iOS compatibility)
+  find "$source_dir" -type f \( -name "*.mp3" -o -name "*.wav" \) | while read audio_file; do
     filename=$(basename "$audio_file")
     name="${filename%.*}"
     
@@ -192,7 +192,8 @@ process_all_audio() {
   fi
   
   echo "Processing all audio directories and subdirectories..."
-  find "$base_dir" -type f \( -name "*.mp3" -o -name "*.ogg" -o -name "*.wav" \) | while read audio_file; do
+  # Process .mp3 files first, then .wav, skip .ogg for iOS compatibility
+  find "$base_dir" -type f \( -name "*.mp3" -o -name "*.wav" \) | while read audio_file; do
     # Get relative path from audio directory
     rel_path="${audio_file#$base_dir/}"
     # Get directory path and filename

@@ -70,7 +70,11 @@ namespace GameCore {
         // Asset management
         const char* GetAssetPath(const char* relativePath);
         bool FileExists(const char* relativePath);
-        
+
+        // Asset cache management delegates
+        void preloadEssentialAssets();
+        bool isCached(const char* assetName, int type);
+
         // Platform delegates initialization for Swift/C++ interop
         void InitializePlatformDelegates();
     } // namespace iOSPlatform

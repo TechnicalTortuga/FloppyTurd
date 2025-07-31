@@ -14,8 +14,6 @@
 #include "../Platform/PlatformDelegates.h"
 #endif
 
-#include "AssetTypes.h"
-
 namespace GameCore {
 
     /**

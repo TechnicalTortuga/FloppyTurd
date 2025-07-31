@@ -39,6 +39,12 @@ namespace GameCore {
         extern FloppyTurdGame* g_Game;
         if (g_Game) {
             const PlatformDelegates& delegates = g_Game->GetPlatformDelegates();
+            // Check if music is cached using new delegate
+            if (delegates.asset.isCached) {
+                bool cached = delegates.asset.isCached("FloppyTurdMenu", 1); // 1 = audio type
+                GN_LOG_INFO("FloppyTurdMenu cached status: " + std::string(cached ? "true" : "false"));
+            }
+            // Play music using existing delegate
             if (delegates.audio.playMusic) {
                 delegates.audio.playMusic("FloppyTurdMenu", 0.7f, -1); // -1 = infinite loop
                 GN_LOG_INFO("Started main menu music: FloppyTurdMenu.mp3");
@@ -129,8 +135,19 @@ namespace GameCore {
         
         const PlatformDelegates& delegates = g_Game->GetPlatformDelegates();
         
+        // Debug: Check if input delegates are properly set
+        if (!delegates.input.isPrimaryInputJustPressed) {
+            GN_LOG_ERROR("MainMenuState: isPrimaryInputJustPressed delegate is NULL!");
+            return;
+        }
+        
         // Handle touch/click input for F button
-        if (delegates.input.isPrimaryInputJustPressed && delegates.input.isPrimaryInputJustPressed()) {
+        bool inputPressed = delegates.input.isPrimaryInputJustPressed();
+        if (inputPressed) {
+            GN_LOG_INFO("🎮 MainMenuState: Input detected! Checking F button bounds...");
+        }
+        
+        if (inputPressed) {
             float touchX, touchY;
             if (delegates.input.getPrimaryInputPosition) {
                 delegates.input.getPrimaryInputPosition(&touchX, &touchY);
@@ -150,9 +167,15 @@ namespace GameCore {
                         float buttonBottom = fButtonTransform->position.y + (buttonHeight / 2.0f);
                         
                         // Check if touch is within bounds
+                        GN_LOG_INFO("🎯 MainMenuState: Touch at (%f, %f), F button bounds: L=%f R=%f T=%f B=%f", 
+                                   touchX, touchY, buttonLeft, buttonRight, buttonTop, buttonBottom);
+                        
                         if (touchX >= buttonLeft && touchX <= buttonRight &&
                             touchY >= buttonTop && touchY <= buttonBottom) {
+                            GN_LOG_INFO("🎉 MainMenuState: F BUTTON HIT! Playing fart sound...");
                             OnFButtonPressed();
+                        } else {
+                            GN_LOG_INFO("❌ MainMenuState: Touch missed F button");
                         }
                     }
                 }
@@ -312,7 +335,7 @@ namespace GameCore {
     void MainMenuState::OnFButtonPressed() {
         GN_LOG_INFO("F button pressed - playing random fart sound!");
         
-        // Play random fart sound (fart1.ogg through fart11.ogg)
+        // Play random fart sound (fart1.mp3 through fart11.mp3)
         static std::random_device rd;
         static std::mt19937 gen(rd());
         static std::uniform_int_distribution<> dis(1, 11);
@@ -326,7 +349,7 @@ namespace GameCore {
             const PlatformDelegates& delegates = g_Game->GetPlatformDelegates();
             if (delegates.audio.playSound) {
                 delegates.audio.playSound(fartSoundName.c_str(), 0.8f); // 80% volume
-                GN_LOG_INFO("Playing fart sound: %s.ogg", fartSoundName.c_str());
+                GN_LOG_INFO("Playing fart sound: %s.mp3", fartSoundName.c_str());
             }
         }
         

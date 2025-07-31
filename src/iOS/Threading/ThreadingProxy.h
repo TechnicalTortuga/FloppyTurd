@@ -67,6 +67,16 @@ namespace GameCore {
         static void enqueueLoadFont(const std::string& path, int size, void (*callback)(void* fontData, const char* error, void* userData), void* userData);
         static void enqueueLoadData(const std::string& path, void (*callback)(void* data, size_t size, const char* error, void* userData), void* userData);
         
+        // Asset cache management commands
+        static void enqueuePreloadEssentialAssets();
+        static bool enqueueIsCached(const char* assetName, int assetType);
+        
+        // Input delegate implementations
+        static void getPrimaryInputPosition(float* x, float* y);
+        static bool isPrimaryInputDown();
+        static bool isPrimaryInputJustPressed();
+        static bool isPrimaryInputJustReleased();
+        
         // Setup function to configure delegates to use this proxy
         void setupDelegates(PlatformDelegates& delegates);
         
@@ -82,12 +92,26 @@ namespace GameCore {
         size_t getCommandCount() const;
         void clearQueue();
         
+        // Global function for Swift to update touch state
+        static void updateTouchStateGlobal(float x, float y, bool isDown, bool justPressed, bool justReleased);
+        
+        // Touch state management
+        void updateTouchState(float x, float y, bool isDown, bool justPressed, bool justReleased);
+        void resetInputFrameState();
+        
     private:
         std::vector<RenderCommand> m_renderCommandQueue;
         std::vector<AudioCommand> m_audioCommandQueue;
         std::vector<LogCommand> m_logCommandQueue;
         std::vector<AssetCommand> m_assetCommandQueue;
         mutable std::mutex m_queueMutex;  // mutable for const methods
+        
+        // Touch input state
+        float m_lastTouchX = 0.0f;
+        float m_lastTouchY = 0.0f;
+        bool m_isTouchDown = false;
+        bool m_isTouchJustPressed = false;
+        bool m_isTouchJustReleased = false;
         
         // Swift components are managed entirely on the Swift side
         // No C++ references needed
@@ -116,4 +140,9 @@ namespace GameCore {
     std::vector<LogCommand> getAndClearLogCommandsFromProxy();
     std::vector<AssetCommand> getAndClearAssetCommandsFromProxy();
     
+    bool isAssetCachedFromProxy(const char* assetName, int assetType);
+
+    // Touch input state management - global functions for Swift
+    void updateTouchState(float x, float y, bool isDown, bool justPressed, bool justReleased);
+    void resetInputFrameState();
 }

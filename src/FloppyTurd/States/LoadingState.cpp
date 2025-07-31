@@ -27,6 +27,16 @@ namespace GameCore {
         
         // Create the rotating poop hat loading icon
         CreateLoadingEntities();
+
+        // Preload essential assets during loading screen
+        extern GameCore::FloppyTurdGame* g_Game;
+        if (g_Game) {
+            const PlatformDelegates& delegates = g_Game->GetPlatformDelegates();
+            if (delegates.asset.preloadEssentialAssets) {
+                delegates.asset.preloadEssentialAssets();
+                GN_LOG_INFO("Initiated asset preloading during loading screen");
+            }
+        }
     }
 
     void LoadingState::Exit() {

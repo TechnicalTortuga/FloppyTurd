@@ -98,10 +98,16 @@ public class AVAudioHandler: NSObject {
             logger.info("[AVAudioHandler] Audio system already initialized")
         }
         
+        // Early return if the same music is already playing
+        if musicPlayerNode.isPlaying && currentMusicFile?.url.lastPathComponent.contains(fileName) == true {
+            logger.info("[AVAudioHandler] Music '\(fileName)' is already playing, skipping restart")
+            return
+        }
+        
         // First, check AssetManager's cache for pre-loaded audio files
         logger.info("[AVAudioHandler] Checking AssetManager cache for: \(fileName)")
         
-        let extensions = ["mp3", "ogg", "wav", "m4a"]
+        let extensions = ["mp3", "wav", "m4a"]  // iOS compatible formats only, no .ogg
         var audioFile: AVAudioFile?
         
         // Try to find the file in AssetManager's cache with different extensions
@@ -172,7 +178,7 @@ public class AVAudioHandler: NSObject {
         }
         
         // First, check AssetManager's cache for pre-loaded audio files
-        let extensions = ["ogg", "mp3", "wav", "m4a"]
+        let extensions = ["mp3", "wav", "m4a"]  // iOS compatible formats only, no .ogg
         var audioFile: AVAudioFile?
         
         // Try to find the file in AssetManager's cache with different extensions
@@ -233,18 +239,22 @@ public class AVAudioHandler: NSObject {
      * @param volume Volume level (0.0 to 1.0)
      */
     public func playSoundWithVolume(_ soundName: String, volume: Float) {
+        print("🚨 DIRECT PRINT: AVAudioHandler.playSoundWithVolume() called with: \(soundName), volume: \(volume)")
         logger.info("🔊 [DEBUG] AVAudioHandler.playSoundWithVolume() called with: \(soundName), volume: \(volume)")
         
         // Auto-initialize if not already done
         if !isInitialized {
+            print("🚨 DIRECT PRINT: AVAudioHandler auto-initializing...")
             if !initialize() {
+                print("🚨 DIRECT PRINT: AVAudioHandler auto-initialization FAILED")
                 logger.error("Failed to auto-initialize audio system")
                 return
             }
+            print("🚨 DIRECT PRINT: AVAudioHandler auto-initialization SUCCESS")
         }
         
         // First, check AssetManager's cache for pre-loaded audio files
-        let extensions = ["ogg", "mp3", "wav", "m4a"]
+        let extensions = ["mp3", "wav", "m4a"]  // iOS compatible formats only, no .ogg
         var audioFile: AVAudioFile?
         
         // Try to find the file in AssetManager's cache with different extensions
@@ -293,9 +303,11 @@ public class AVAudioHandler: NSObject {
         
         // Schedule the audio file for playback
         if let audioFile = audioFile {
+            print("🚨 DIRECT PRINT: AVAudioHandler found audioFile, setting volume to \(volume) and calling scheduleSound")
             soundPlayerNode.volume = max(0.0, min(1.0, volume))
             scheduleSound(audioFile)
         } else {
+            print("🚨 DIRECT PRINT: AVAudioHandler ERROR - No sound file available for playback: \(soundName)")
             logger.error("No sound file available for playback: \(soundName)")
         }
     }
@@ -365,8 +377,8 @@ public class AVAudioHandler: NSObject {
             // Perform file loading on a background queue
             DispatchQueue.global(qos: .userInitiated).async {
                 do {
-                    // Try to find the file with various extensions
-                    let extensions = ["ogg", "mp3", "wav", "m4a", "aiff"]
+                    // Try to find the file with various extensions (mp3 first, no ogg for iOS compatibility)
+                    let extensions = ["mp3", "wav", "m4a", "aiff"]
                     var fileURL: URL?
                     
                     // First try without extension
@@ -432,22 +444,34 @@ public class AVAudioHandler: NSObject {
     }
     
     private func scheduleSound(_ audioFile: AVAudioFile) {
+        print("🚨 DIRECT PRINT: AVAudioHandler.scheduleSound() called for: \(audioFile.url.lastPathComponent)")
+        logger.info("[AVAudioHandler] scheduleSound() called for: \(audioFile.url.lastPathComponent)")
+        
         guard audioEngine.isRunning else {
+            print("🚨 DIRECT PRINT: AVAudioHandler ERROR - Cannot schedule sound: audio engine not running")
             logger.error("Cannot schedule sound: audio engine not running")
             return
         }
         
+        logger.info("[AVAudioHandler] Audio engine is running, checking sound player state")
+        logger.info("[AVAudioHandler] Sound player currently playing: \(self.soundPlayerNode.isPlaying)")
+        logger.info("[AVAudioHandler] Sound player volume: \(self.soundPlayerNode.volume)")
+        
         // Use synchronous scheduleFile (Apple's recommended approach for basic audio)
+        logger.info("[AVAudioHandler] Scheduling sound file: \(audioFile.url.lastPathComponent)")
         soundPlayerNode.scheduleFile(audioFile, at: nil) { [weak self] in
-            self?.logger.info("Sound playback completed")
+            self?.logger.info("[AVAudioHandler] Sound playback completed for: \(audioFile.url.lastPathComponent)")
         }
         
         // Start playback if not already playing
         if !soundPlayerNode.isPlaying {
+            logger.info("[AVAudioHandler] Starting sound playback")
             soundPlayerNode.play()
+        } else {
+            logger.info("[AVAudioHandler] Sound player already playing, file will queue")
         }
         
-        logger.info("Sound scheduled and playing: \(audioFile.url.lastPathComponent)")
+        logger.info("[AVAudioHandler] Sound scheduled and playing: \(audioFile.url.lastPathComponent)")
     }
 }
 

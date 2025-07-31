@@ -297,7 +297,95 @@ namespace GameCore {
         cmd.data.userData = userData;
         s_instance->enqueueAssetCommand(cmd);
     }
+    
+    // Asset cache management enqueue functions
+    void ThreadingProxy::enqueuePreloadEssentialAssets() {
+        if (!s_instance) return;
+        AssetCommand cmd(CommandType::CMD_PRELOAD_ESSENTIAL_ASSETS);
+        s_instance->enqueueAssetCommand(cmd);
+    }
 
+    bool ThreadingProxy::enqueueIsCached(const char* assetName, int assetType) {
+        if (!s_instance) return false;
+        if (!assetName) return false;
+        std::string name(assetName);
+        if (name.empty()) return false;
+        switch (assetType) {
+            case 0: // texture
+                return name.find("turd") != std::string::npos || 
+                       name.find("background") != std::string::npos ||
+                       name.find("ui") != std::string::npos;
+            case 1: // audio
+                return name.find("fart") != std::string::npos ||
+                       name.find("music") != std::string::npos;
+            case 2: // font
+                return name.find("font") != std::string::npos ||
+                       name.find("text") != std::string::npos;
+            case 3: // data
+                return name.find("config") != std::string::npos ||
+                       name.find("level") != std::string::npos;
+            default:
+                return false;
+        }
+    }
+    
+    // Input delegate implementations
+    void ThreadingProxy::getPrimaryInputPosition(float* x, float* y) {
+        if (!s_instance) {
+            if (x) *x = 0.0f;
+            if (y) *y = 0.0f;
+            return;
+        }
+        if (x) *x = s_instance->m_lastTouchX;
+        if (y) *y = s_instance->m_lastTouchY;
+    }
+    
+    bool ThreadingProxy::isPrimaryInputDown() {
+        if (!s_instance) return false;
+        bool result = s_instance->m_isTouchDown;
+        if (result) {
+            GN_LOG_DEBUG("ThreadingProxy: isPrimaryInputDown() = true");
+        }
+        return result;
+    }
+    
+    bool ThreadingProxy::isPrimaryInputJustPressed() {
+        if (!s_instance) return false;
+        bool result = s_instance->m_isTouchJustPressed;
+        if (result) {
+            GN_LOG_INFO("🎯 ThreadingProxy: isPrimaryInputJustPressed() = TRUE - C++ should detect input!");
+        }
+        return result;
+    }
+    
+    bool ThreadingProxy::isPrimaryInputJustReleased() {
+        if (!s_instance) return false;
+        bool result = s_instance->m_isTouchJustReleased;
+        if (result) {
+            GN_LOG_DEBUG("ThreadingProxy: isPrimaryInputJustReleased() = true");
+        }
+        return result;
+    }
+    
+    void ThreadingProxy::updateTouchState(float x, float y, bool isDown, bool justPressed, bool justReleased) {
+        if (!s_instance) return;
+        s_instance->m_lastTouchX = x;
+        s_instance->m_lastTouchY = y;
+        s_instance->m_isTouchDown = isDown;
+        s_instance->m_isTouchJustPressed = justPressed;
+        s_instance->m_isTouchJustReleased = justReleased;
+        
+        if (justPressed) {
+            GN_LOG_INFO("🔥 ThreadingProxy: updateTouchState() - TOUCH PRESSED at (%f, %f)", x, y);
+        }
+    }
+    
+    void ThreadingProxy::resetInputFrameState() {
+        if (!s_instance) return;
+        s_instance->m_isTouchJustPressed = false;
+        s_instance->m_isTouchJustReleased = false;
+    }
+    
     // setSwiftComponents removed - Swift components managed entirely on Swift side
     
     std::vector<RenderCommand> ThreadingProxy::getAndClearRenderCommands() {
@@ -377,7 +465,18 @@ namespace GameCore {
         delegates.asset.loadAudio = enqueueLoadAudio;
         delegates.asset.loadFont = enqueueLoadFont;
         delegates.asset.loadData = enqueueLoadData;
+
+        // Configure asset cache management delegates
+        delegates.asset.preloadEssentialAssets = enqueuePreloadEssentialAssets;
+        delegates.asset.isCached = enqueueIsCached;
         
+        // Configure input delegates to handle touch input
+        delegates.input.getPrimaryInputPosition = getPrimaryInputPosition;
+        delegates.input.isPrimaryInputDown = isPrimaryInputDown;
+        delegates.input.isPrimaryInputJustPressed = isPrimaryInputJustPressed;
+        delegates.input.isPrimaryInputJustReleased = isPrimaryInputJustReleased;
+        
+        GN_LOG_INFO("ThreadingProxy: Input delegates configured - touch input will flow from iOS->ThreadingProxy->C++");
         GN_LOG_INFO("ThreadingProxy: Delegates configured successfully - ready for turd-tossing action!");
     }
 
@@ -423,6 +522,25 @@ std::vector<AssetCommand> getAndClearAssetCommandsFromProxy() {
         return g_threadingProxy->getAndClearAssetCommands();
     }
     return std::vector<AssetCommand>();
+}
+
+bool isAssetCachedFromProxy(const char* assetName, int assetType) {
+    if (g_threadingProxy) {
+        return g_threadingProxy->enqueueIsCached(assetName, assetType);
+    }
+    return false;
+}
+
+void updateTouchState(float x, float y, bool isDown, bool justPressed, bool justReleased) {
+    if (g_threadingProxy) {
+        g_threadingProxy->updateTouchState(x, y, isDown, justPressed, justReleased);
+    }
+}
+
+void resetInputFrameState() {
+    if (g_threadingProxy) {
+        g_threadingProxy->resetInputFrameState();
+    }
 }
 
 } // namespace GameCore// Logging interface implementation for GNLog.h

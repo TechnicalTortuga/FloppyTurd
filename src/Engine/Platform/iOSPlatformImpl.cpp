@@ -22,26 +22,29 @@ void InitializePlatformDelegates() {
 }
 
     namespace iOSPlatform {
+        // Asset cache management delegate implementations
+        // Note: Removed redundant wrapper functions - delegates now point directly to ThreadingProxy
         
         void SetupDelegates(GameCore::PlatformDelegates& delegates) {
             // Use ThreadingProxy for logging instead of GNLog
-            // ThreadingProxy is already working with SwiftLog bridge
             GameCore::ThreadingProxy::enqueueLogInfo("Initializing iOS platform delegates...", "PLATFORM");
-            
-            // Initialize threading proxy if not already done
+
+            // Ensure global threading proxy is initialized
             if (!GameCore::g_threadingProxy) {
                 GameCore::g_threadingProxy = new GameCore::ThreadingProxy();
             }
-            // Use ThreadingProxy to setup delegates with command queue
+            // Setup delegates using ThreadingProxy's command queue
             GameCore::g_threadingProxy->setupDelegates(delegates);
-            
-            // Set up asset loading delegates
-            // Asset loading delegates are handled by ThreadingProxy::setupDelegates
-            // which assigns the enqueue functions directly
+
+            // Asset loading delegates (direct assignment, consistent with rest of file)
             delegates.asset.getAssetPath = GameCore::iOSPlatform::GetAssetPath;
             delegates.asset.fileExists = GameCore::iOSPlatform::FileExists;
             delegates.asset.platformContext = nullptr;
-            
+
+            // Asset cache management delegates (direct ThreadingProxy assignment)
+            delegates.asset.preloadEssentialAssets = GameCore::ThreadingProxy::enqueuePreloadEssentialAssets;
+            delegates.asset.isCached = GameCore::ThreadingProxy::enqueueIsCached;
+
             GameCore::ThreadingProxy::enqueueLogInfo("iOS platform delegates configured successfully", "PLATFORM");
         }
         

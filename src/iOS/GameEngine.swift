@@ -330,6 +330,28 @@ public class GameEngine: NSObject {
         log("Touch input forwarded to C++ state manager", level: .debug)
     }
     
+    /// Handle touch input with coordinates and forward to C++ game state manager
+    public func handleTouchInput(_ input: Any, touchPosition: CGPoint, viewSize: CGSize) {
+        guard isRunning && !isPaused else { return }
+        guard cppGame != nil else {
+            log("Cannot handle touch input - C++ game not initialized", level: .warning)
+            return
+        }
+        
+        // Transform touch coordinates from view space to game space
+        let gameX = Float(touchPosition.x / viewSize.width * 1179.0) // Game width
+        let gameY = Float(touchPosition.y / viewSize.height * 2556.0) // Game height
+        
+        log("🎯 Touch input: view coords (\(touchPosition.x), \(touchPosition.y)) viewSize(\(viewSize.width)x\(viewSize.height)) -> game coords (\(gameX), \(gameY))", level: .debug)
+        
+        // Update touch state in ThreadingProxy for C++ side to access
+        GameCore.updateTouchState(gameX, gameY, true, true, false)
+        
+        // Forward touch input to C++ game state manager
+        cppGame?.HandleInput()
+        log("Touch input with coordinates forwarded to C++ state manager", level: .debug)
+    }
+    
     // MARK: - Game Loop Integration
     
     /// Update the game (called from Metal render loop)
@@ -337,6 +359,9 @@ public class GameEngine: NSObject {
         guard isRunning && !isPaused else { return }
         
         cppGame?.Update(deltaTime)
+        
+        // Reset input frame state after C++ game has processed input
+        GameCore.resetInputFrameState()
     }
     
     /// Render the game (called from Metal render loop)

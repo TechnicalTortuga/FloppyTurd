@@ -177,30 +177,29 @@ public class AssetManager {
             return cached
         }
         
-        // Try different paths for audio
-        let paths = [AssetPaths.audio, AssetPaths.music, AssetPaths.sfx]
-        var audioURL: URL?
-        
-        for path in paths {
-            if let url = Bundle.main.url(forResource: name, withExtension: `extension`, subdirectory: path) {
-                audioURL = url
-                break
-            }
+        // For asset catalog datasets, we need to use NSDataAsset
+        // The audio files are stored as .dataset files in the asset catalog
+        guard let dataAsset = NSDataAsset(name: name) else {
+            throw AssetError.fileNotFound("\(name) in asset catalog")
         }
         
-        guard let url = audioURL else {
-            throw AssetError.fileNotFound("\(name).\(`extension`) in audio paths")
+        // Create a temporary file from the data asset
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(name).\(`extension`)")
+        
+        do {
+            try dataAsset.data.write(to: tempURL)
+            let audioFile = try AVAudioFile(forReading: tempURL)
+            audioCache[cacheKey] = audioFile
+            cacheAccessTimes[cacheKey] = Date()
+            logger.info("Audio loaded from asset catalog dataset: \(cacheKey)")
+            
+            // Check cache size and evict if necessary
+            checkCacheSizeAndEvict()
+            
+            return audioFile
+        } catch {
+            throw AssetError.fileNotFound("Failed to load audio from asset catalog: \(error)")
         }
-        
-        let audioFile = try AVAudioFile(forReading: url)
-        audioCache[cacheKey] = audioFile
-        cacheAccessTimes[cacheKey] = Date()
-        logger.info("Audio loaded: \(cacheKey)")
-        
-        // Check cache size and evict if necessary
-        checkCacheSizeAndEvict()
-        
-        return audioFile
     }
     
     /// Load font data
@@ -252,6 +251,17 @@ public class AssetManager {
         let essentialAssets = [
             ("FloppyTurdMenu", "mp3", AssetType.audio),
             ("button_click", "wav", AssetType.audio),
+            ("fart1", "mp3", AssetType.audio),
+            ("fart2", "mp3", AssetType.audio),
+            ("fart3", "mp3", AssetType.audio),
+            ("fart4", "mp3", AssetType.audio),
+            ("fart5", "mp3", AssetType.audio),
+            ("fart6", "mp3", AssetType.audio),
+            ("fart7", "mp3", AssetType.audio),
+            ("fart8", "mp3", AssetType.audio),
+            ("fart9", "mp3", AssetType.audio),
+            ("fart10", "mp3", AssetType.audio),
+            ("fart11", "mp3", AssetType.audio),
             ("player_sprite", "png", AssetType.textures),
             ("background", "png", AssetType.textures),
             ("Whacky_Joe", "ttf", AssetType.fonts)
@@ -276,25 +286,38 @@ public class AssetManager {
                 SwiftLog.error("Failed to preload essential asset: \(name).\(ext) - \(error)", category: "AssetManager")
             }
         }
-        
-        logger.info("Essential assets preloaded")
     }
     
-    // MARK: - Asset Management
+    // MARK: - Cache Checking
     
-    /// Get cached audio file if available
-    public func getCachedAudio(name: String, extension: String = "mp3") -> AVAudioFile? {
+    public func isTextureCached(name: String) -> Bool {
+        let cacheKey = name.hasSuffix(".png") ? name : "\(name).png"
+        return textureCache[cacheKey] != nil
+    }
+
+    public func isAudioCached(name: String) -> Bool {
+        let cacheKey = name.hasSuffix(".mp3") ? name : "\(name).mp3"
+        return audioCache[cacheKey] != nil
+    }
+
+    public func isFontCached(name: String) -> Bool {
+        let cacheKey = name.hasSuffix(".ttf") ? name : "\(name).ttf"
+        return fontCache[cacheKey] != nil || dataCache[cacheKey] != nil
+    }
+
+    public func isDataCached(name: String) -> Bool {
+        let cacheKey = name.hasSuffix(".json") ? name : "\(name).json"
+        return dataCache[cacheKey] != nil
+    }
+    
+    /// Get cached audio file
+    public func getCachedAudio(name: String, extension: String) -> AVAudioFile? {
         let cacheKey = "\(name).\(`extension`)"
-        if let cached = audioCache[cacheKey] {
-            cacheAccessTimes[cacheKey] = Date()
-            logger.debug("Audio retrieved from cache: \(cacheKey)")
-            return cached
-        }
-        return nil
+        return audioCache[cacheKey]
     }
     
-    /// Clear asset cache
-    public func clearCache(for type: AssetType? = nil) {
+    /// Clear cache for specific asset type or all assets
+    public func clearCache(for type: AssetManager.AssetType? = nil) {
         if let type = type {
             switch type {
             case .textures:
@@ -319,7 +342,7 @@ public class AssetManager {
     }
     
     /// Get asset info
-    public func getAssetInfo(name: String, type: AssetType) -> AssetInfo? {
+    public func getAssetInfo(name: String, type: AssetManager.AssetType) -> AssetInfo? {
         let path: String
         switch type {
         case .textures:
@@ -537,6 +560,45 @@ extension AssetManager {
         return true
     }
     
+    /// C++ accessible method for checking if asset is cached
+    public static func isAssetCachedForCPP(name: String, type: Int32) -> Bool {
+        switch type {
+        case 0: // texture
+            return shared.isTextureCached(name: name)
+        case 1: // audio
+            return shared.isAudioCached(name: name)
+        case 2: // font
+            return shared.isFontCached(name: name)
+        case 3: // data
+            return shared.isDataCached(name: name)
+        default:
+            return false
+        }
+    }
+    
+    /// C++ accessible method for checking if asset is cached (C string version)
+    public static func isAssetCachedForCPP(name: UnsafePointer<CChar>, type: Int32) -> Bool {
+        let assetName = String(cString: name)
+        return isAssetCachedForCPP(name: assetName, type: type)
+    }
+    
+    /// C++ accessible method for checking if asset is cached (for direct C++ interop)
+    public static func isAssetCachedFromSwift(name: UnsafePointer<CChar>, type: Int32) -> Bool {
+        let assetName = String(cString: name)
+        switch type {
+        case 0: // texture
+            return shared.isTextureCached(name: assetName)
+        case 1: // audio
+            return shared.isAudioCached(name: assetName)
+        case 2: // font
+            return shared.isFontCached(name: assetName)
+        case 3: // data
+            return shared.isDataCached(name: assetName)
+        default:
+            return false
+        }
+    }
+    
     /// Get asset path for C++
     public static func getAssetPath(name: String, type: Int32) -> String {
         let assetType = AssetType.allCases[Int(type)]
@@ -722,7 +784,9 @@ extension AssetManager {
         }
     }
     
-    /// Safely invoke C++ callback function
+
+
+
     public static func invokeCallback(_ callback: UnsafeMutableRawPointer?, textureData: UnsafeMutableRawPointer?, error: String?, userData: UnsafeMutableRawPointer?) {
         guard let callback = callback else { return }
         

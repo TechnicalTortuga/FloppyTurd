@@ -18,6 +18,7 @@ import GameController
 @MainActor
 public protocol TouchInputHandlerDelegate: AnyObject {
     func touchInputHandler(_ handler: TouchInputHandler, didReceiveInput input: Any)
+    func touchInputHandler(_ handler: TouchInputHandler, didReceiveInput input: Any, touchPosition: CGPoint, viewSize: CGSize)
 }
 
 /**
@@ -218,65 +219,65 @@ public class TouchInputHandler: NSObject {
     
     // MARK: - Touch Input Methods
     
-    nonisolated public func isTouchDown(_ touchId: Int) -> Bool {
+    public func isTouchDown(_ touchId: Int) -> Bool {
         return touchStates[touchId] == .down || touchStates[touchId] == .pressed
     }
     
-    nonisolated public func isTouchPressed(_ touchId: Int) -> Bool {
+    public func isTouchPressed(_ touchId: Int) -> Bool {
         return touchStates[touchId] == .pressed
     }
     
-    nonisolated public func isTouchReleased(_ touchId: Int) -> Bool {
+    public func isTouchReleased(_ touchId: Int) -> Bool {
         return touchStates[touchId] == .released
     }
     
-    nonisolated public func getTouchPosition(_ touchId: Int) -> CGPoint {
+    public func getTouchPosition(_ touchId: Int) -> CGPoint {
         return touchPositions[touchId] ?? CGPoint.zero
     }
     
-    nonisolated public func getTouchCount() -> Int {
+    public func getTouchCount() -> Int {
         return activeTouches.count
     }
     
     // MARK: - Gesture Recognition Methods
     
-    nonisolated public func isGestureDetected(_ gestureType: Int) -> Bool {
+    public func isGestureDetected(_ gestureType: Int) -> Bool {
         // Convert int to GestureType and check
         return false // TODO: Implement gesture detection
     }
     
-    nonisolated public func getGesturePosition() -> CGPoint {
+    public func getGesturePosition() -> CGPoint {
         return lastGesturePosition
     }
     
-    nonisolated public func getGestureDistance() -> Float {
+    public func getGestureDistance() -> Float {
         return lastGestureDistance
     }
     
-    nonisolated public func getGestureAngle() -> Float {
+    public func getGestureAngle() -> Float {
         return lastGestureAngle
     }
     
     // MARK: - Input Action Methods
     
-    nonisolated public func isActionDown(_ action: Int) -> Bool {
+    public func isActionDown(_ action: Int) -> Bool {
         // TODO: Check if mapped action is currently down
         return false
     }
     
-    nonisolated public func isActionPressed(_ action: Int) -> Bool {
+    public func isActionPressed(_ action: Int) -> Bool {
         // TODO: Check if mapped action was just pressed
         return false
     }
     
-    nonisolated public func isActionReleased(_ action: Int) -> Bool {
+    public func isActionReleased(_ action: Int) -> Bool {
         // TODO: Check if mapped action was just released
         return false
     }
     
     // MARK: - Configuration Methods
     
-    nonisolated public func setTouchSensitivity(_ sensitivity: Float) {
+    public func setTouchSensitivity(_ sensitivity: Float) {
         touchSensitivity = sensitivity
     }
     
@@ -287,7 +288,7 @@ public class TouchInputHandler: NSObject {
         }
     }
     
-    nonisolated public func setVibrationEnabled(_ enabled: Bool) {
+    public func setVibrationEnabled(_ enabled: Bool) {
         vibrationEnabled = enabled
     }
     
@@ -351,7 +352,16 @@ public class TouchInputHandler: NSObject {
     @MainActor public func handleTap(_ gesture: UITapGestureRecognizer) {
         lastGestureType = .tap
         lastGesturePosition = gesture.location(in: gesture.view)
-        delegate?.touchInputHandler(self, didReceiveInput: gesture)
+        log("🔥 TouchInputHandler: handleTap() at (\(lastGesturePosition.x), \(lastGesturePosition.y)) - notifying delegate with coordinates", level: .debug)
+        
+        // Call the coordinate version of the delegate method
+        if let view = gesture.view {
+            let viewSize = view.bounds.size
+            delegate?.touchInputHandler(self, didReceiveInput: gesture, touchPosition: lastGesturePosition, viewSize: viewSize)
+        } else {
+            // Fallback to basic version if no view
+            delegate?.touchInputHandler(self, didReceiveInput: gesture)
+        }
     }
     
     @MainActor public func handleTouchBegan(_ touches: Set<UITouch>, with event: UIEvent?, in view: UIView) {
@@ -366,7 +376,15 @@ public class TouchInputHandler: NSObject {
     
     @MainActor public func handleTouchEnded(_ touches: Set<UITouch>, with event: UIEvent?, in view: UIView) {
         touchesEnded(touches, with: event, in: view)
-        delegate?.touchInputHandler(self, didReceiveInput: touches)
+        
+        // Get the touch position and view size for coordinate transformation
+        if let touch = touches.first {
+            let position = touch.location(in: view)
+            let viewSize = view.bounds.size
+            delegate?.touchInputHandler(self, didReceiveInput: touches, touchPosition: position, viewSize: viewSize)
+        } else {
+            delegate?.touchInputHandler(self, didReceiveInput: touches)
+        }
     }
     
     // MARK: - Gesture Handlers

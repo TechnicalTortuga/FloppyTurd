@@ -42,7 +42,10 @@ namespace GameCore {
         CMD_LOAD_TEXTURE = 22,
         CMD_LOAD_AUDIO = 23,
         CMD_LOAD_FONT = 24,
-        CMD_LOAD_DATA = 25
+        CMD_LOAD_DATA = 25,
+        // Asset cache management commands
+        CMD_PRELOAD_ESSENTIAL_ASSETS = 26,
+        CMD_IS_CACHED = 27
     };
     
     // Rendering command data
@@ -68,7 +71,7 @@ namespace GameCore {
         float volume = 1.0f;
         float pitch = 1.0f;
         int loopCount = 0;  // -1 for infinite loop, 0 for no loop, >0 for specific count
-        const char* audioFileName = nullptr;  // For music and sound file names
+        std::string audioFileName;  // For music and sound file names - FIXED: Use string instead of pointer
     };
     
     // Logging command data
@@ -111,6 +114,11 @@ namespace GameCore {
         int fontSize = 16;  // For font loading
         void* callback = nullptr;  // Callback function pointer
         void* userData = nullptr;  // User context data for callback
+
+        // For cache management
+        std::string cacheAssetName; // For isCached
+        int cacheAssetType = 0;    // For isCached: 0=texture, 1=audio, 2=font, 3=data
+        bool cacheResult = false;  // For isCached result
     };
     
     struct AssetCommand {
@@ -262,6 +270,9 @@ namespace GameCore {
         const char* (*getAssetPath)(const char* relativePath);
         bool (*fileExists)(const char* relativePath);
         
+        // Asset cache management
+        void (*preloadEssentialAssets)();
+        bool (*isCached)(const char* assetName, int assetType);  // assetType: 0=texture, 1=audio, 2=font, 3=data
         // Platform-specific context
         void* platformContext;
         
@@ -269,6 +280,7 @@ namespace GameCore {
         AssetDelegate() : loadTexture(nullptr), loadAudio(nullptr), loadFont(nullptr),
                          loadShader(nullptr), loadData(nullptr), unloadAsset(nullptr),
                          isAssetLoaded(nullptr), getAssetPath(nullptr), fileExists(nullptr),
+                         preloadEssentialAssets(nullptr), isCached(nullptr),
                          platformContext(nullptr) {}
     };
 

@@ -254,6 +254,7 @@ public class GameViewController: UIViewController {
             x: location.x / metalView.bounds.width,
             y: location.y / metalView.bounds.height
         )
+        log("🎯 GameViewController: Tap detected at (\(location.x), \(location.y)) - forwarding to TouchInputHandler", level: .debug)
         touchInputHandler.handleTap(gesture)
     }
     
@@ -346,6 +347,12 @@ extension GameViewController: TouchInputHandlerDelegate {
         // Forward touch input to game engine on main actor
         // Since GameViewController is @MainActor, this method runs on main thread
         gameEngine.handleTouchInput(input)  // ✅ ENABLED - forwards to C++ state manager
+    }
+    
+    public func touchInputHandler(_ handler: TouchInputHandler, didReceiveInput input: Any, touchPosition: CGPoint, viewSize: CGSize) {
+        // Forward touch input with coordinates to game engine on main actor
+        // Since GameViewController is @MainActor, this method runs on main thread
+        gameEngine.handleTouchInput(input, touchPosition: touchPosition, viewSize: viewSize)
     }
 }
 
