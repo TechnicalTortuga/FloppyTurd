@@ -348,8 +348,8 @@ namespace GameCore {
         if (g_Game) {
             const PlatformDelegates& delegates = g_Game->GetPlatformDelegates();
             if (delegates.audio.playSound) {
-                delegates.audio.playSound(fartSoundName.c_str(), 0.8f); // 80% volume
-                GN_LOG_INFO("Playing fart sound: %s.mp3", fartSoundName.c_str());
+                delegates.audio.playSound(fartSoundName, 0.8f); // 80% volume
+                GN_LOG_INFO("Playing fart sound: " + fartSoundName + ".mp3");
             }
         }
         

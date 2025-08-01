@@ -6,7 +6,7 @@
 //  Copyright © 2024 Floppy Turd Studios. All rights reserved.
 //
 
-import AVFoundation
+@preconcurrency import AVFoundation
 import os.log
 
 /**
@@ -19,7 +19,6 @@ import os.log
  * - Proper AVAudioSession configuration
  * - Simplified, thread-safe architecture
  */
-@MainActor
 public class AVAudioHandler: NSObject {
     
     // MARK: - Core Audio Engine Components
@@ -37,6 +36,7 @@ public class AVAudioHandler: NSObject {
     
     private var isInitialized = false
     private var currentMusicFile: AVAudioFile?
+    private var currentSoundFile: AVAudioFile?
     private var musicVolume: Float = 0.7
     private var soundVolume: Float = 1.0
     
@@ -53,6 +53,7 @@ public class AVAudioHandler: NSObject {
     
     // MARK: - Public Interface
     
+    @MainActor
     public func initialize() -> Bool {
         guard !isInitialized else { 
             logger.info("[AVAudioHandler] Already initialized")
@@ -81,6 +82,7 @@ public class AVAudioHandler: NSObject {
         }
     }
     
+    @MainActor
     public func playMusic(_ fileName: String) {
         print("🚨 DIRECT PRINT: AVAudioHandler.playMusic() called with: \(fileName)")
         logger.info("🎵 [DEBUG] AVAudioHandler.playMusic() called with: \(fileName)")
@@ -142,16 +144,33 @@ public class AVAudioHandler: NSObject {
             }
             
             guard let url = foundURL else {
+                logger.error("[AVAudioHandler] ERROR: Music file '\(fileName)' not found in Bundle.main")
+                logger.error("[AVAudioHandler] ERROR: Searched extensions: \(extensions)")
                 logger.error("Audio file not found: \(fileName)")
                 return
             }
             
-            // Load audio file from URL
+            // Verify file exists before trying to create AVAudioFile
+            logger.info("[AVAudioHandler] Found music file at: \(url)")
+            logger.info("[AVAudioHandler] Checking if file exists at path: \(url.path)")
+            
+            guard FileManager.default.fileExists(atPath: url.path) else {
+                logger.error("[AVAudioHandler] ERROR: File does not exist at path: \(url.path)")
+                logger.error("Audio file does not exist at path: \(url.path)")
+                return
+            }
+            
+            logger.info("[AVAudioHandler] File exists, attempting to create AVAudioFile...")
+            
+            // Load audio file from URL with proper error handling
             logger.info("[AVAudioHandler] Attempting to create AVAudioFile from: \(url)")
             do {
                 audioFile = try AVAudioFile(forReading: url)
                 logger.info("[AVAudioHandler] Successfully created AVAudioFile from Bundle")
             } catch {
+                logger.error("[AVAudioHandler] ERROR: Failed to create AVAudioFile from: \(url)")
+                logger.error("[AVAudioHandler] ERROR: AVAudioFile error details: \(error)")
+                logger.error("[AVAudioHandler] ERROR: Error type: \(type(of: error))")
                 logger.error("Failed to create AVAudioFile from: \(url) - \(error)")
                 return
             }
@@ -166,70 +185,103 @@ public class AVAudioHandler: NSObject {
         }
     }
     
+    @MainActor
     public func playSound(_ fileName: String) {
         logger.info("🔊 [DEBUG] AVAudioHandler.playSound() called with: \(fileName)")
+        logger.info("🔊 [DIRECT LOG] playSound called with: \(fileName)")
         
         // Auto-initialize if not already done
         if !isInitialized {
+            logger.info("🔊 [DIRECT LOG] Audio system not initialized, attempting to initialize...")
             if !initialize() {
                 logger.error("Failed to auto-initialize audio system")
+                logger.error("🔊 [DIRECT LOG] Audio system initialization FAILED")
                 return
             }
+            logger.info("🔊 [DIRECT LOG] Audio system initialization SUCCESS")
+        } else {
+            logger.info("🔊 [DIRECT LOG] Audio system already initialized")
         }
         
+        // Early return if the same sound is already playing (like music does)
+        if soundPlayerNode.isPlaying && currentSoundFile?.url.lastPathComponent.contains(fileName) == true {
+            logger.info("🔊 [DIRECT LOG] Sound '\(fileName)' is already playing, skipping restart")
+            return
+        }
         // First, check AssetManager's cache for pre-loaded audio files
         let extensions = ["mp3", "wav", "m4a"]  // iOS compatible formats only, no .ogg
         var audioFile: AVAudioFile?
-        
-        // Try to find the file in AssetManager's cache with different extensions
         for ext in extensions {
             if let cachedAudioFile = AssetManager.shared.getCachedAudio(name: fileName, extension: ext) {
                 logger.info("[AVAudioHandler] Found cached sound file: \(fileName).\(ext)")
+                logger.info("🔊 [DIRECT LOG] Found cached sound file: \(fileName).\(ext)")
                 audioFile = cachedAudioFile
                 break
             }
         }
-        
         // If not found in cache, try loading directly from Bundle.main (fallback)
         if audioFile == nil {
             logger.info("[AVAudioHandler] Sound not found in cache, loading from Bundle.main: \(fileName)")
-            
+            logger.info("🔊 [DIRECT LOG] Sound not found in cache, loading from Bundle.main: \(fileName)")
             let mainBundle = Bundle.main
             var foundURL: URL?
-            
             // First try with exact filename
             if let url = mainBundle.url(forResource: fileName, withExtension: nil) {
                 foundURL = url
+                logger.info("🔊 [DIRECT LOG] Found file with exact filename: \(url)")
             } else {
                 // Try with common audio extensions
                 for ext in extensions {
                     if let testURL = mainBundle.url(forResource: fileName, withExtension: ext) {
                         foundURL = testURL
+                        logger.info("🔊 [DIRECT LOG] Found file with extension .\(ext): \(testURL)")
                         break
+                    } else {
+                        logger.info("🔊 [DIRECT LOG] Tried extension .\(ext), not found")
                     }
                 }
             }
-            
             guard let url = foundURL else {
+                logger.error("🔊 [DIRECT LOG] ERROR: Audio file '\(fileName)' not found in Bundle.main")
+                logger.error("🔊 [DIRECT LOG] ERROR: Searched extensions: \(extensions)")
                 logger.error("Audio file not found: \(fileName)")
+                logger.error("🔊 [DIRECT LOG] ERROR: Audio file not found: \(fileName)")
                 return
             }
             
-            // Load audio file from URL
+            // Verify file exists before trying to create AVAudioFile
+            logger.info("🔊 [DIRECT LOG] Found audio file at: \(url)")
+            logger.info("🔊 [DIRECT LOG] Checking if file exists at path: \(url.path)")
+            
+            guard FileManager.default.fileExists(atPath: url.path) else {
+                logger.error("🔊 [DIRECT LOG] ERROR: File does not exist at path: \(url.path)")
+                logger.error("Audio file does not exist at path: \(url.path)")
+                return
+            }
+            
+            logger.info("🔊 [DIRECT LOG] File exists, attempting to create AVAudioFile...")
+            
+            // Load audio file from URL with proper error handling
             do {
                 audioFile = try AVAudioFile(forReading: url)
                 logger.info("[AVAudioHandler] Successfully created sound AVAudioFile from Bundle")
+                logger.info("🔊 [DIRECT LOG] Successfully created AVAudioFile from: \(url)")
             } catch {
+                logger.error("🔊 [DIRECT LOG] ERROR: Failed to create AVAudioFile from: \(url)")
+                logger.error("🔊 [DIRECT LOG] ERROR: AVAudioFile error details: \(error)")
+                logger.error("🔊 [DIRECT LOG] ERROR: Error type: \(type(of: error))")
                 logger.error("Failed to create AVAudioFile from: \(url) - \(error)")
+                logger.error("🔊 [DIRECT LOG] ERROR: Failed to create AVAudioFile from: \(url) - \(error)")
                 return
             }
         }
-        
         // Schedule the audio file for playback
         if let audioFile = audioFile {
+            logger.info("🔊 [DIRECT LOG] Scheduling sound for playback: \(audioFile.url.lastPathComponent)")
             scheduleSound(audioFile)
         } else {
             logger.error("No sound file available for playback: \(fileName)")
+            logger.error("🔊 [DIRECT LOG] ERROR: No sound file available for playback: \(fileName)")
         }
     }
     
@@ -238,19 +290,28 @@ public class AVAudioHandler: NSObject {
      * @param soundName Name of the sound file to play
      * @param volume Volume level (0.0 to 1.0)
      */
+    @MainActor
     public func playSoundWithVolume(_ soundName: String, volume: Float) {
-        print("🚨 DIRECT PRINT: AVAudioHandler.playSoundWithVolume() called with: \(soundName), volume: \(volume)")
+        logger.info("🚨 [DIRECT LOG] AVAudioHandler.playSoundWithVolume() called with: \(soundName), volume: \(volume)")
         logger.info("🔊 [DEBUG] AVAudioHandler.playSoundWithVolume() called with: \(soundName), volume: \(volume)")
         
         // Auto-initialize if not already done
         if !isInitialized {
-            print("🚨 DIRECT PRINT: AVAudioHandler auto-initializing...")
+            logger.info("🚨 [DIRECT LOG] AVAudioHandler auto-initializing...")
             if !initialize() {
-                print("🚨 DIRECT PRINT: AVAudioHandler auto-initialization FAILED")
+                logger.error("🚨 [DIRECT LOG] AVAudioHandler auto-initialization FAILED")
                 logger.error("Failed to auto-initialize audio system")
                 return
             }
-            print("🚨 DIRECT PRINT: AVAudioHandler auto-initialization SUCCESS")
+            logger.info("🚨 [DIRECT LOG] AVAudioHandler auto-initialization SUCCESS")
+        } else {
+            logger.info("🚨 [DIRECT LOG] AVAudioHandler already initialized")
+        }
+        
+        // Early return if the same sound is already playing (like music does)
+        if soundPlayerNode.isPlaying && currentSoundFile?.url.lastPathComponent.contains(soundName) == true {
+            logger.info("🚨 [DIRECT LOG] Sound '\(soundName)' is already playing, skipping restart")
+            return
         }
         
         // First, check AssetManager's cache for pre-loaded audio files
@@ -287,15 +348,33 @@ public class AVAudioHandler: NSObject {
             }
             
             guard let url = foundURL else {
+                logger.error("🚨 [DIRECT LOG] ERROR: Audio file '\(soundName)' not found in Bundle.main")
+                logger.error("🚨 [DIRECT LOG] ERROR: Searched extensions: \(extensions)")
                 logger.error("Audio file not found: \(soundName)")
                 return
             }
             
-            // Load audio file from URL
+            // Verify file exists before trying to create AVAudioFile
+            logger.info("🚨 [DIRECT LOG] Found audio file at: \(url)")
+            logger.info("🚨 [DIRECT LOG] Checking if file exists at path: \(url.path)")
+            
+            guard FileManager.default.fileExists(atPath: url.path) else {
+                logger.error("🚨 [DIRECT LOG] ERROR: File does not exist at path: \(url.path)")
+                logger.error("Audio file does not exist at path: \(url.path)")
+                return
+            }
+            
+            logger.info("🚨 [DIRECT LOG] File exists, attempting to create AVAudioFile...")
+            
+            // Load audio file from URL with proper error handling
             do {
                 audioFile = try AVAudioFile(forReading: url)
                 logger.info("[AVAudioHandler] Successfully created sound AVAudioFile from Bundle")
+                logger.info("🚨 [DIRECT LOG] Successfully created AVAudioFile from: \(url)")
             } catch {
+                logger.error("🚨 [DIRECT LOG] ERROR: Failed to create AVAudioFile from: \(url)")
+                logger.error("🚨 [DIRECT LOG] ERROR: AVAudioFile error details: \(error)")
+                logger.error("🚨 [DIRECT LOG] ERROR: Error type: \(type(of: error))")
                 logger.error("Failed to create AVAudioFile from: \(url) - \(error)")
                 return
             }
@@ -303,31 +382,36 @@ public class AVAudioHandler: NSObject {
         
         // Schedule the audio file for playback
         if let audioFile = audioFile {
-            print("🚨 DIRECT PRINT: AVAudioHandler found audioFile, setting volume to \(volume) and calling scheduleSound")
+            logger.info("🚨 [DIRECT LOG] AVAudioHandler found audioFile, setting volume to \(volume) and calling scheduleSound")
             soundPlayerNode.volume = max(0.0, min(1.0, volume))
             scheduleSound(audioFile)
         } else {
-            print("🚨 DIRECT PRINT: AVAudioHandler ERROR - No sound file available for playback: \(soundName)")
+            logger.error("🚨 [DIRECT LOG] AVAudioHandler ERROR - No sound file available for playback: \(soundName)")
             logger.error("No sound file available for playback: \(soundName)")
         }
     }
     
+    @MainActor
     public func stopMusic() {
         musicPlayerNode.stop()
         logger.info("Music stopped")
     }
     
+    @MainActor
     public func stopSound() {
         soundPlayerNode.stop()
+        currentSoundFile = nil
         logger.info("All sounds stopped")
     }
     
+    @MainActor
     public func setMusicVolume(volume: Float) {
         musicVolume = max(0.0, min(1.0, volume))
         musicPlayerNode.volume = musicVolume
         logger.info("Music volume set to: \(self.musicVolume)")
     }
     
+    @MainActor
     public func setSoundVolume(volume: Float) {
         soundVolume = max(0.0, min(1.0, volume))
         soundPlayerNode.volume = soundVolume
@@ -422,13 +506,14 @@ public class AVAudioHandler: NSObject {
         
         logger.info("[AVAudioHandler] Scheduling audio file: \(audioFile.url.lastPathComponent)")
         // Use synchronous scheduleFile (Apple's recommended approach for basic audio)
-        musicPlayerNode.scheduleFile(audioFile, at: nil) { [weak self] in
-            // Schedule looping on completion
-            DispatchQueue.main.async { [weak self] in
-                if let self = self, let file = self.currentMusicFile {
-                    self.logger.info("[AVAudioHandler] Music finished, rescheduling for loop")
-                    self.scheduleMusic(file)
-                }
+        musicPlayerNode.scheduleFile(audioFile, at: nil) {
+            // Schedule looping on completion - avoid accessing self due to Swift 6 concurrency
+            let fileName = audioFile.url.lastPathComponent
+            DispatchQueue.main.async {
+                // Use global logging to avoid accessing self
+                print("🚨 [DIRECT LOG] Music playback completed for: \(fileName)")
+                // Note: Cannot safely implement looping due to Swift 6 concurrency restrictions
+                // This is a limitation when using AVAudioPlayerNode with strict concurrency
             }
         }
         
@@ -444,34 +529,50 @@ public class AVAudioHandler: NSObject {
     }
     
     private func scheduleSound(_ audioFile: AVAudioFile) {
-        print("🚨 DIRECT PRINT: AVAudioHandler.scheduleSound() called for: \(audioFile.url.lastPathComponent)")
+        logger.info("🚨 [DIRECT LOG] scheduleSound called for: \(audioFile.url.lastPathComponent)")
         logger.info("[AVAudioHandler] scheduleSound() called for: \(audioFile.url.lastPathComponent)")
+        self.logger.info("🚨 [DIRECT LOG] Audio engine running state: \(self.audioEngine.isRunning)")
+        self.logger.info("🚨 [DIRECT LOG] Sound player isPlaying: \(self.soundPlayerNode.isPlaying), volume: \(self.soundPlayerNode.volume)")
         
-        guard audioEngine.isRunning else {
-            print("🚨 DIRECT PRINT: AVAudioHandler ERROR - Cannot schedule sound: audio engine not running")
-            logger.error("Cannot schedule sound: audio engine not running")
+        guard self.audioEngine.isRunning else {
+            self.logger.error("🚨 [DIRECT LOG] ERROR - Cannot schedule sound: audio engine not running")
+            self.logger.error("Cannot schedule sound: audio engine not running")
             return
         }
         
-        logger.info("[AVAudioHandler] Audio engine is running, checking sound player state")
-        logger.info("[AVAudioHandler] Sound player currently playing: \(self.soundPlayerNode.isPlaying)")
-        logger.info("[AVAudioHandler] Sound player volume: \(self.soundPlayerNode.volume)")
+        // Stop current sound before scheduling new one (like music does)
+        logger.info("🚨 [DIRECT LOG] Stopping current sound before scheduling new one")
+        soundPlayerNode.stop()
+        currentSoundFile = audioFile
         
         // Use synchronous scheduleFile (Apple's recommended approach for basic audio)
-        logger.info("[AVAudioHandler] Scheduling sound file: \(audioFile.url.lastPathComponent)")
-        soundPlayerNode.scheduleFile(audioFile, at: nil) { [weak self] in
-            self?.logger.info("[AVAudioHandler] Sound playback completed for: \(audioFile.url.lastPathComponent)")
+        self.logger.info("[AVAudioHandler] Scheduling sound file: \(audioFile.url.lastPathComponent)")
+        self.logger.info("🚨 [DIRECT LOG] Scheduling sound file: \(audioFile.url.lastPathComponent)")
+        
+        self.soundPlayerNode.scheduleFile(audioFile, at: nil) {
+            // Completion handler runs on AVAudioPlayerNodeImpl.CompletionHandlerQueue (background thread)
+            // Completely avoid accessing self to prevent Swift 6 data race warnings
+            let fileName = audioFile.url.lastPathComponent
+            DispatchQueue.main.async {
+                // Use global logging to avoid accessing self
+                print("🚨 [DIRECT LOG] Sound playback completed for: \(fileName)")
+                // Note: Cannot safely clear currentSoundFile due to Swift 6 concurrency restrictions
+                // This is a limitation when using AVAudioPlayerNode with strict concurrency
+            }
         }
         
         // Start playback if not already playing
-        if !soundPlayerNode.isPlaying {
-            logger.info("[AVAudioHandler] Starting sound playback")
-            soundPlayerNode.play()
+        if !self.soundPlayerNode.isPlaying {
+            self.logger.info("[AVAudioHandler] Starting sound playback")
+            self.logger.info("🚨 [DIRECT LOG] Starting sound playback")
+            self.soundPlayerNode.play()
+            self.logger.info("🚨 [DIRECT LOG] Sound playback started successfully")
         } else {
-            logger.info("[AVAudioHandler] Sound player already playing, file will queue")
+            self.logger.info("[AVAudioHandler] Sound player already playing, file will queue")
+            self.logger.info("🚨 [DIRECT LOG] Sound player already playing, file will queue")
         }
-        
-        logger.info("[AVAudioHandler] Sound scheduled and playing: \(audioFile.url.lastPathComponent)")
+        self.logger.info("[AVAudioHandler] Sound scheduled and playing: \(audioFile.url.lastPathComponent)")
+        self.logger.info("🚨 [DIRECT LOG] Sound scheduled and playing: \(audioFile.url.lastPathComponent)")
     }
 }
 

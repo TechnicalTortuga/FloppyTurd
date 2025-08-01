@@ -183,7 +183,7 @@ namespace GameCore {
         s_instance->enqueueAudioCommand(cmd);
     }
     
-    void ThreadingProxy::enqueuePlaySound(const char* soundName, float volume) {
+    void ThreadingProxy::enqueuePlaySound(const std::string& soundName, float volume) {
         if (!s_instance) return;
         AudioCommand cmd(CommandType::CMD_PLAY_SOUND);
         cmd.data.audioFileName = soundName;

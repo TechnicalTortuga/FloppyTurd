@@ -48,7 +48,7 @@ namespace GameCore {
         // Audio commands
         static void enqueuePlayMusic(const char* musicName, float volume, int loopCount);
         static void enqueueStopMusic();
-        static void enqueuePlaySound(const char* soundName, float volume);
+        static void enqueuePlaySound(const std::string& soundName, float volume);
         static void enqueueStopSound();
         static void enqueueSetMusicVolume(float volume);
         static void enqueueSetSoundVolume(float volume);
