@@ -118,7 +118,7 @@ namespace GameCore {
         s_instance->enqueueRenderCommand(cmd);
     }
     
-    void ThreadingProxy::enqueueDrawText(const char* text, float x, float y, float fontSize, float r, float g, float b, float a) {
+    void ThreadingProxy::enqueueDrawText(const std::string& text, float x, float y, float fontSize, float r, float g, float b, float a) {
         if (!s_instance) return;
         RenderCommand cmd(CommandType::CMD_DRAW_TEXT);
         cmd.data.text = text;

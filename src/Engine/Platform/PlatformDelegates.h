@@ -61,7 +61,7 @@ namespace GameCore {
         
         // Pointer fields
         uint32_t textureHandle = 0;
-        const char* text = nullptr;  // Caller ensures lifetime
+        std::string text;  // Use std::string for proper Swift interop
         float* screenWidth = nullptr;
         float* screenHeight = nullptr;
     };
@@ -154,7 +154,7 @@ namespace GameCore {
         void (*drawSpriteScaled)(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation);
         
         // Text rendering
-        void (*drawText)(const char* text, float x, float y, float fontSize, float r, float g, float b, float a);
+        void (*drawText)(const std::string& text, float x, float y, float fontSize, float r, float g, float b, float a);
         
         // Primitive rendering
         void (*drawRectangle)(float x, float y, float width, float height, float r, float g, float b, float a);

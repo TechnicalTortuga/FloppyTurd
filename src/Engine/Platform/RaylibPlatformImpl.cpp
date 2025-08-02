@@ -186,7 +186,7 @@ namespace FloppyTurd {
             DrawSpriteScaledInternal(spriteRef, x, y, scaleX, scaleY, rotation);
         }
         
-        void DrawText(const char* text, float x, float y, float fontSize, float r, float g, float b, float a) {
+        void DrawText(const std::string& text, float x, float y, float fontSize, float r, float g, float b, float a) {
             Color color = {(unsigned char)(r * 255), (unsigned char)(g * 255), (unsigned char)(b * 255), (unsigned char)(a * 255)};
             ::DrawText(text, (int)x, (int)y, (int)fontSize, color);
         }

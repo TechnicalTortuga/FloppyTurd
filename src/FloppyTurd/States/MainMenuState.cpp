@@ -15,9 +15,16 @@ namespace GameCore {
         , m_selectedOption(0)
         , m_animationTimer(0.0f)
         , m_isMobile(false)
+        , m_screenWidth(800.0f)
+        , m_screenHeight(600.0f)
         , m_backgroundEntity(0)
         , m_logoEntity(0)
         , m_fButtonEntity(0)
+        , m_playButtonEntity(0)
+        , m_optionsButtonEntity(0)
+        , m_quickPlayButtonEntity(0)
+        , m_quitButtonEntity(0)
+        , m_fontLoaded(false)
         , m_assetsLoaded(false) {
         
         // Detect if we're on a mobile platform
@@ -49,6 +56,24 @@ namespace GameCore {
                 delegates.audio.playMusic("FloppyTurdMenu", 0.7f, -1); // -1 = infinite loop
                 GN_LOG_INFO("Started main menu music: FloppyTurdMenu.mp3");
             }
+        }
+        
+        // Load the Whacky Joe font for text rendering
+        extern FloppyTurdGame* g_Game;
+        if (g_Game) {
+            const PlatformDelegates& delegates = g_Game->GetPlatformDelegates();
+            if (delegates.asset.loadFont) {
+                // For now, just load the font without callback to test
+                delegates.asset.loadFont("fonts/Whacky_Joe", 32, nullptr, nullptr);
+                GN_LOG_INFO("Requested Whacky Joe font loading with path: fonts/Whacky_Joe");
+                
+                // Set font as loaded after a short delay to allow loading
+                m_fontLoaded = true;
+            } else {
+                GN_LOG_INFO("❌ Font loading delegate not available");
+            }
+        } else {
+            GN_LOG_INFO("❌ Game instance not available for font loading");
         }
         
         // Create the appropriate layout based on platform
@@ -86,6 +111,18 @@ namespace GameCore {
             if (m_fButtonEntity != 0) {
                 m_ecsCoordinator->DestroyEntity(m_fButtonEntity);
             }
+            if (m_playButtonEntity != 0) {
+                m_ecsCoordinator->DestroyEntity(m_playButtonEntity);
+            }
+            if (m_optionsButtonEntity != 0) {
+                m_ecsCoordinator->DestroyEntity(m_optionsButtonEntity);
+            }
+            if (m_quickPlayButtonEntity != 0) {
+                m_ecsCoordinator->DestroyEntity(m_quickPlayButtonEntity);
+            }
+            if (m_quitButtonEntity != 0) {
+                m_ecsCoordinator->DestroyEntity(m_quitButtonEntity);
+            }
             GN_LOG_INFO("Cleaned up main menu UI entities");
         }
     }
@@ -120,6 +157,9 @@ namespace GameCore {
         if (m_ecsCoordinator) {
             m_ecsCoordinator->Render();
         }
+        
+        // Render button text using platform delegates
+        RenderButtonText();
     }
 
     void MainMenuState::HandleInput() {
@@ -176,6 +216,9 @@ namespace GameCore {
                             OnFButtonPressed();
                         } else {
                             GN_LOG_INFO("❌ MainMenuState: Touch missed F button");
+                            
+                            // Check menu buttons
+                            CheckMenuButtonClicks(touchX, touchY);
                         }
                     }
                 }
@@ -189,23 +232,85 @@ namespace GameCore {
     void MainMenuState::CreateDesktopLayout() {
         GN_LOG_INFO("Creating desktop main menu layout");
         
-        // TODO: Create desktop UI elements:
-        // 1. Background (MainMenu.png)
-        // 2. Floppy Turd Logo at top center (FloppyLogo.png)
-        // 3. Interactive F button in logo (F.png) - plays fart sound when clicked
-        // 4. Vertical menu buttons in center:
-        //    - Playing
-        //    - Options  
-        //    - Quick Play
-        //    - Quit
-        // 5. Menu selection highlight/cursor (keyboard/gamepad navigation)
+        if (!m_ecsCoordinator) {
+            GN_LOG_ERROR("ECS coordinator is null in CreateDesktopLayout");
+            return;
+        }
         
-        // Asset paths for desktop layout:
-        // Background: AssetPaths::Graphics::UI::UI_MENUS_MAIN + "MainMenu.png"
-        // Logo: AssetPaths::Graphics::UI::UI_MENUS_MAIN + "FloppyLogo.png"
-        // F Button: AssetPaths::Graphics::UI::UI_ICONS + "F.png"
+        // Get actual screen dimensions from platform delegates
+        float screenWidth = 800.0f;  // Default fallback
+        float screenHeight = 600.0f; // Default fallback
         
-        GN_LOG_INFO("Desktop layout: Logo at top, vertical menu buttons, keyboard navigation");
+        extern FloppyTurdGame* g_Game;
+        if (g_Game) {
+            const PlatformDelegates& delegates = g_Game->GetPlatformDelegates();
+            if (delegates.renderer.getScreenSize) {
+                delegates.renderer.getScreenSize(&screenWidth, &screenHeight);
+                GN_LOG_INFO("Desktop screen dimensions: %fx%f", screenWidth, screenHeight);
+            }
+        }
+        
+        // Store screen dimensions for consistent use across the class
+        m_screenWidth = screenWidth;
+        m_screenHeight = screenHeight;
+        
+        float centerX = screenWidth / 2.0f;
+        float centerY = screenHeight / 2.0f;
+        
+        // 1. Create Background Entity (MainMenu.png) - FULL SCREEN SCALING
+        m_backgroundEntity = m_ecsCoordinator->CreateEntity();
+        Transform bgTransform(Gnosis::GNVector2(centerX, centerY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+        
+        // Background texture dimensions (from file: 320x180)
+        float textureWidth = 320.0f;
+        float textureHeight = 180.0f;
+        
+        // Calculate scale to fill screen
+        float scaleX = screenWidth / textureWidth;
+        float scaleY = screenHeight / textureHeight;
+        
+        // Create sprite with actual texture dimensions, scale will be applied by transform
+        Sprite bgSprite("MainMenu", textureWidth, textureHeight);
+        bgSprite.layer = 0; // Background layer
+        bgSprite.visible = true;
+        
+        // Apply the calculated scale to the transform
+        bgTransform.scale.x = scaleX;
+        bgTransform.scale.y = scaleY;
+        
+        m_ecsCoordinator->AddComponent<Transform>(m_backgroundEntity, bgTransform);
+        m_ecsCoordinator->AddComponent<Sprite>(m_backgroundEntity, bgSprite);
+        GN_LOG_INFO("Created full-screen background entity: MainMenu.png (texture: %fx%f, scale: %fx%f, screen: %fx%f)", 
+                   textureWidth, textureHeight, scaleX, scaleY, screenWidth, screenHeight);
+        
+        // 2. Create Logo Entity (FloppyLogo.png) - Desktop scaling
+        m_logoEntity = m_ecsCoordinator->CreateEntity();
+        float logoY = screenHeight * 0.25f; // Top quarter
+        Transform logoTransform(Gnosis::GNVector2(centerX, logoY), 0.0f, Gnosis::GNVector2(2.0f, 2.0f)); // 2x scale for desktop
+        Sprite logoSprite("FloppyLogo", 400.0f, 200.0f); // Base size, will be scaled by transform
+        logoSprite.layer = 1; // Logo layer
+        logoSprite.visible = true;
+        m_ecsCoordinator->AddComponent<Transform>(m_logoEntity, logoTransform);
+        m_ecsCoordinator->AddComponent<Sprite>(m_logoEntity, logoSprite);
+        GN_LOG_INFO("Created scaled logo entity: FloppyLogo.png (2x scale)");
+        
+        // 3. Create Interactive F Button Entity (F.png) - Desktop scaling
+        m_fButtonEntity = m_ecsCoordinator->CreateEntity();
+        // Position F button relative to scaled logo
+        float fButtonX = centerX + 200.0f; // Adjusted for 2x scaled logo width
+        float fButtonY = logoY + 20.0f; // Slightly below logo center, adjusted for scale
+        Transform fButtonTransform(Gnosis::GNVector2(fButtonX, fButtonY), 0.0f, Gnosis::GNVector2(2.5f, 2.5f)); // Larger for desktop
+        Sprite fButtonSprite("F", 80.0f, 80.0f); // Base size, will be scaled by transform
+        fButtonSprite.layer = 2; // F button layer
+        fButtonSprite.visible = true;
+        m_ecsCoordinator->AddComponent<Transform>(m_fButtonEntity, fButtonTransform);
+        m_ecsCoordinator->AddComponent<Sprite>(m_fButtonEntity, fButtonSprite);
+        GN_LOG_INFO("Created F button entity: F.png (2.5x scale)");
+        
+        // Create menu buttons for desktop
+        CreateMenuButtons();
+        
+        GN_LOG_INFO("Desktop layout created: Background, Logo, F Button, and Menu Button entities");
     }
 
     void MainMenuState::CreateMobileLayout() {
@@ -216,47 +321,79 @@ namespace GameCore {
             return;
         }
         
-        // Get actual screen dimensions from platform (use realistic mobile portrait dimensions)
-        float screenWidth = 1179.0f;
-        float screenHeight = 2556.0f;
+        // Get actual screen dimensions from platform delegates
+        float screenWidth = 1179.0f;  // Default fallback for mobile
+        float screenHeight = 2556.0f; // Default fallback for mobile
+        
+        extern FloppyTurdGame* g_Game;
+        if (g_Game) {
+            const PlatformDelegates& delegates = g_Game->GetPlatformDelegates();
+            if (delegates.renderer.getScreenSize) {
+                delegates.renderer.getScreenSize(&screenWidth, &screenHeight);
+                GN_LOG_INFO("Mobile screen dimensions: %fx%f", screenWidth, screenHeight);
+            }
+        }
+        
+        // Store screen dimensions for consistent use across the class
+        m_screenWidth = screenWidth;
+        m_screenHeight = screenHeight;
+        
         float centerX = screenWidth / 2.0f;
         
         // 1. Create Background Entity (MainMenuMobile.png) - FULL SCREEN SCALING
         m_backgroundEntity = m_ecsCoordinator->CreateEntity();
         Transform bgTransform(Gnosis::GNVector2(centerX, screenHeight / 2.0f), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
-        // Background should fill entire screen - use viewport dimensions as sprite size
-        Sprite bgSprite("MainMenuMobile", screenWidth, screenHeight);
+        
+        // Background texture dimensions (from file: 393x852)
+        float textureWidth = 393.0f;
+        float textureHeight = 852.0f;
+        
+        // Calculate scale to fill screen
+        float scaleX = screenWidth / textureWidth;
+        float scaleY = screenHeight / textureHeight;
+        
+        // Create sprite with actual texture dimensions, scale will be applied by transform
+        Sprite bgSprite("MainMenuMobile", textureWidth, textureHeight);
         bgSprite.layer = 0; // Background layer
         bgSprite.visible = true;
+        
+        // Apply the calculated scale to the transform
+        bgTransform.scale.x = scaleX;
+        bgTransform.scale.y = scaleY;
+        
         m_ecsCoordinator->AddComponent<Transform>(m_backgroundEntity, bgTransform);
         m_ecsCoordinator->AddComponent<Sprite>(m_backgroundEntity, bgSprite);
-        GN_LOG_INFO("Created full-screen background entity: MainMenuMobile.png (%fx%f)", screenWidth, screenHeight);
+        GN_LOG_INFO("Created full-screen background entity: MainMenuMobile.png (texture: %fx%f, scale: %fx%f, screen: %fx%f)", 
+                   textureWidth, textureHeight, scaleX, scaleY, screenWidth, screenHeight);
         
-        // 2. Create Logo Entity (FloppyLogo.png) - MUCH LARGER SCALING (~3x)
+        // 2. Create Logo Entity (FloppyLogo.png) - EVEN BIGGER SCALING (~8x)
         m_logoEntity = m_ecsCoordinator->CreateEntity();
-        float logoY = screenHeight * 0.25f; // Top quarter
-        Transform logoTransform(Gnosis::GNVector2(centerX, logoY), 0.0f, Gnosis::GNVector2(3.5f, 3.5f)); // 3.5x scale for mobile
+        float logoY = screenHeight * 0.20f; // Shifted more upward (was 0.25f)
+        float logoX = centerX - 80.0f; // Shifted more to the left
+        Transform logoTransform(Gnosis::GNVector2(logoX, logoY), 0.0f, Gnosis::GNVector2(8.0f, 8.0f)); // 8x scale for mobile
         Sprite logoSprite("FloppyLogo", 400.0f, 200.0f); // Base size, will be scaled by transform
         logoSprite.layer = 1; // Logo layer
         logoSprite.visible = true;
         m_ecsCoordinator->AddComponent<Transform>(m_logoEntity, logoTransform);
         m_ecsCoordinator->AddComponent<Sprite>(m_logoEntity, logoSprite);
-        GN_LOG_INFO("Created scaled logo entity: FloppyLogo.png (3.5x scale)");
+        GN_LOG_INFO("Created scaled logo entity: FloppyLogo.png (8x scale, shifted up and left)");
         
-        // 3. Create Interactive F Button Entity (F.png) - MUCH LARGER SCALING (~3x)
+        // 3. Create F Button Entity (F.png) - SAME SCALE AS LOGO, POSITIONED TO FILL GAP
         m_fButtonEntity = m_ecsCoordinator->CreateEntity();
-        // Position F button relative to scaled logo - need to adjust for larger logo
-        float fButtonX = centerX + 380.0f; // Adjusted for 3.5x scaled logo width
-        float fButtonY = logoY + 35.0f; // Slightly below logo center, adjusted for scale
-        Transform fButtonTransform(Gnosis::GNVector2(fButtonX, fButtonY), 0.0f, Gnosis::GNVector2(4.5f, 4.5f)); // Even larger for touch
-        Sprite fButtonSprite("F", 80.0f, 80.0f); // Base size, will be scaled by transform
-        fButtonSprite.layer = 2; // F button layer
+        float fButtonX = logoX - 270.0f; // FINAL FINE-TUNE - before the "L" in "Floppy"
+        float fButtonY = logoY + 20.0f; // Slightly down (was -40.0f)
+        Transform fButtonTransform(Gnosis::GNVector2(fButtonX, fButtonY), 0.0f, Gnosis::GNVector2(8.0f, 8.0f)); // 8x scale to match logo
+        Sprite fButtonSprite("F", 50.0f, 50.0f); // Base size, will be scaled by transform
+        fButtonSprite.layer = 2; // F button layer (above logo)
         fButtonSprite.visible = true;
         m_ecsCoordinator->AddComponent<Transform>(m_fButtonEntity, fButtonTransform);
         m_ecsCoordinator->AddComponent<Sprite>(m_fButtonEntity, fButtonSprite);
-        GN_LOG_INFO("Created large F button entity: F.png (4.5x scale)");
+        GN_LOG_INFO("Created F button entity: F.png (8x scale, positioned to fill logo gap - more right and down)");
         
-        GN_LOG_INFO("Mobile layout created: Background, Logo, and F Button entities");
+        // Create menu buttons for mobile
+        CreateMobileMenuButtons();
+        
+        GN_LOG_INFO("Mobile layout created: Background, Logo, F Button, and Menu Button entities");
     }
 
     void MainMenuState::UpdateMenuSelection() {
@@ -281,8 +418,7 @@ namespace GameCore {
                 float logoFloat = sin(m_animationTimer * 1.5f) * 8.0f; // 8 pixel float amplitude
                 
                 // Update logo Y position (preserve original Y + float offset)
-                float screenHeight = 2556.0f;
-                float originalLogoY = screenHeight * 0.25f;
+                float originalLogoY = m_screenHeight * 0.25f;
                 logoTransform->position.y = originalLogoY + logoFloat;
             }
         }
@@ -291,8 +427,9 @@ namespace GameCore {
         if (m_fButtonEntity != 0) {
             Transform* fButtonTransform = m_ecsCoordinator->GetComponent<Transform>(m_fButtonEntity);
             if (fButtonTransform) {
-                // Create a subtle pulsing scale effect - based on new 4.5x base scale
-                float pulseScale = 4.5f + sin(m_animationTimer * 2.5f) * 0.3f; // 4.2f to 4.8f scale range
+                // Create a subtle pulsing scale effect - adjust base scale based on platform
+                float baseScale = m_isMobile ? 8.0f : 2.5f;
+                float pulseScale = baseScale + sin(m_animationTimer * 2.5f) * 0.3f;
                 fButtonTransform->scale.x = pulseScale;
                 fButtonTransform->scale.y = pulseScale;
             }
@@ -396,6 +533,339 @@ namespace GameCore {
         #else
             return false; // Desktop (Windows, Linux, etc.)
         #endif
+    }
+
+    void MainMenuState::CreateMenuButtons() {
+        GN_LOG_INFO("Creating desktop menu buttons");
+        
+        if (!m_ecsCoordinator) {
+            GN_LOG_ERROR("ECS coordinator is null in CreateMenuButtons");
+            return;
+        }
+        
+        float centerX = m_screenWidth / 2.0f;
+        float buttonY = m_screenHeight * 0.55f; // Position buttons higher up
+        float buttonSpacing = 150.0f; // Much more spacing between buttons
+        float buttonScale = 12.0f; // Even bigger buttons!
+        
+        // Create Play Button
+        m_playButtonEntity = m_ecsCoordinator->CreateEntity();
+        Transform playTransform(Gnosis::GNVector2(centerX, buttonY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
+        Sprite playSprite("FloppyButtonBlue", 200.0f, 60.0f);
+        playSprite.layer = 3; // Button layer
+        playSprite.visible = true;
+        Button playButton("PLAY", "FloppyButtonBlue", "FloppyButtonBlueHover");
+        playButton.fontSize = 32.0f;
+        GN_LOG_INFO("Created Play button with text: '%s' (length: %zu)", playButton.buttonText.c_str(), playButton.buttonText.length());
+        
+        m_ecsCoordinator->AddComponent<Transform>(m_playButtonEntity, playTransform);
+        m_ecsCoordinator->AddComponent<Sprite>(m_playButtonEntity, playSprite);
+        m_ecsCoordinator->AddComponent<Button>(m_playButtonEntity, playButton);
+        
+        // Create Options Button
+        m_optionsButtonEntity = m_ecsCoordinator->CreateEntity();
+        Transform optionsTransform(Gnosis::GNVector2(centerX, buttonY + buttonSpacing), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
+        Sprite optionsSprite("FloppyButtonBlue", 200.0f, 60.0f);
+        optionsSprite.layer = 3;
+        optionsSprite.visible = true;
+        Button optionsButton("OPTIONS", "FloppyButtonBlue", "FloppyButtonBlueHover");
+        optionsButton.fontSize = 32.0f;
+        GN_LOG_INFO("Created Options button with text: '%s' (length: %zu)", optionsButton.buttonText.c_str(), optionsButton.buttonText.length());
+        
+        m_ecsCoordinator->AddComponent<Transform>(m_optionsButtonEntity, optionsTransform);
+        m_ecsCoordinator->AddComponent<Sprite>(m_optionsButtonEntity, optionsSprite);
+        m_ecsCoordinator->AddComponent<Button>(m_optionsButtonEntity, optionsButton);
+        
+        // Create Quick Play Button
+        m_quickPlayButtonEntity = m_ecsCoordinator->CreateEntity();
+        Transform quickPlayTransform(Gnosis::GNVector2(centerX, buttonY + buttonSpacing * 2), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
+        Sprite quickPlaySprite("FloppyButtonBlue", 200.0f, 60.0f);
+        quickPlaySprite.layer = 3;
+        quickPlaySprite.visible = true;
+        Button quickPlayButton("QUICK PLAY", "FloppyButtonBlue", "FloppyButtonBlueHover");
+        quickPlayButton.fontSize = 28.0f; // Slightly smaller for longer text
+        GN_LOG_INFO("Created Quick Play button with text: '%s' (length: %zu)", quickPlayButton.buttonText.c_str(), quickPlayButton.buttonText.length());
+        
+        m_ecsCoordinator->AddComponent<Transform>(m_quickPlayButtonEntity, quickPlayTransform);
+        m_ecsCoordinator->AddComponent<Sprite>(m_quickPlayButtonEntity, quickPlaySprite);
+        m_ecsCoordinator->AddComponent<Button>(m_quickPlayButtonEntity, quickPlayButton);
+        
+        // Create Quit Button
+        m_quitButtonEntity = m_ecsCoordinator->CreateEntity();
+        Transform quitTransform(Gnosis::GNVector2(centerX, buttonY + buttonSpacing * 3), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
+        Sprite quitSprite("FloppyButtonBlue", 200.0f, 60.0f);
+        quitSprite.layer = 3;
+        quitSprite.visible = true;
+        Button quitButton("QUIT", "FloppyButtonBlue", "FloppyButtonBlueHover");
+        quitButton.fontSize = 32.0f;
+        GN_LOG_INFO("Created Quit button with text: '%s' (length: %zu)", quitButton.buttonText.c_str(), quitButton.buttonText.length());
+        
+        m_ecsCoordinator->AddComponent<Transform>(m_quitButtonEntity, quitTransform);
+        m_ecsCoordinator->AddComponent<Sprite>(m_quitButtonEntity, quitSprite);
+        m_ecsCoordinator->AddComponent<Button>(m_quitButtonEntity, quitButton);
+        
+        GN_LOG_INFO("Created desktop menu buttons: Play, Options, Quick Play, Quit");
+    }
+
+    void MainMenuState::CreateMobileMenuButtons() {
+        GN_LOG_INFO("Creating mobile menu buttons");
+        
+        if (!m_ecsCoordinator) {
+            GN_LOG_ERROR("ECS coordinator is null in CreateMobileMenuButtons");
+            return;
+        }
+        
+        float centerX = m_screenWidth / 2.0f;
+        float buttonY = m_screenHeight * 0.60f; // Position buttons higher up
+        float buttonSpacing = 180.0f; // Much more spacing for mobile
+        float buttonScale = 12.0f; // Even bigger buttons for mobile!
+        
+        // Create Play Button
+        m_playButtonEntity = m_ecsCoordinator->CreateEntity();
+        Transform playTransform(Gnosis::GNVector2(centerX, buttonY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
+        Sprite playSprite("FloppyButtonBlue", 200.0f, 60.0f);
+        playSprite.layer = 3; // Button layer
+        playSprite.visible = true;
+        Button playButton("PLAY", "FloppyButtonBlue", "FloppyButtonBlueHover");
+        playButton.fontSize = 48.0f; // Larger font for mobile
+        GN_LOG_INFO("Created mobile Play button with text: '%s' (length: %zu)", playButton.buttonText.c_str(), playButton.buttonText.length());
+        
+        m_ecsCoordinator->AddComponent<Transform>(m_playButtonEntity, playTransform);
+        m_ecsCoordinator->AddComponent<Sprite>(m_playButtonEntity, playSprite);
+        m_ecsCoordinator->AddComponent<Button>(m_playButtonEntity, playButton);
+        
+        // Create Options Button
+        m_optionsButtonEntity = m_ecsCoordinator->CreateEntity();
+        Transform optionsTransform(Gnosis::GNVector2(centerX, buttonY + buttonSpacing), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
+        Sprite optionsSprite("FloppyButtonBlue", 200.0f, 60.0f);
+        optionsSprite.layer = 3;
+        optionsSprite.visible = true;
+        Button optionsButton("OPTIONS", "FloppyButtonBlue", "FloppyButtonBlueHover");
+        optionsButton.fontSize = 48.0f;
+        GN_LOG_INFO("Created mobile Options button with text: '%s' (length: %zu)", optionsButton.buttonText.c_str(), optionsButton.buttonText.length());
+        
+        m_ecsCoordinator->AddComponent<Transform>(m_optionsButtonEntity, optionsTransform);
+        m_ecsCoordinator->AddComponent<Sprite>(m_optionsButtonEntity, optionsSprite);
+        m_ecsCoordinator->AddComponent<Button>(m_optionsButtonEntity, optionsButton);
+        
+        // Create Quick Play Button
+        m_quickPlayButtonEntity = m_ecsCoordinator->CreateEntity();
+        Transform quickPlayTransform(Gnosis::GNVector2(centerX, buttonY + buttonSpacing * 2), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
+        Sprite quickPlaySprite("FloppyButtonBlue", 200.0f, 60.0f);
+        quickPlaySprite.layer = 3;
+        quickPlaySprite.visible = true;
+        Button quickPlayButton("QUICK PLAY", "FloppyButtonBlue", "FloppyButtonBlueHover");
+        quickPlayButton.fontSize = 42.0f; // Slightly smaller for longer text
+        GN_LOG_INFO("Created mobile Quick Play button with text: '%s' (length: %zu)", quickPlayButton.buttonText.c_str(), quickPlayButton.buttonText.length());
+        
+        m_ecsCoordinator->AddComponent<Transform>(m_quickPlayButtonEntity, quickPlayTransform);
+        m_ecsCoordinator->AddComponent<Sprite>(m_quickPlayButtonEntity, quickPlaySprite);
+        m_ecsCoordinator->AddComponent<Button>(m_quickPlayButtonEntity, quickPlayButton);
+        
+        // Create Quit Button
+        m_quitButtonEntity = m_ecsCoordinator->CreateEntity();
+        Transform quitTransform(Gnosis::GNVector2(centerX, buttonY + buttonSpacing * 3), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
+        Sprite quitSprite("FloppyButtonBlue", 200.0f, 60.0f);
+        quitSprite.layer = 3;
+        quitSprite.visible = true;
+        Button quitButton("QUIT", "FloppyButtonBlue", "FloppyButtonBlueHover");
+        quitButton.fontSize = 48.0f;
+        GN_LOG_INFO("Created mobile Quit button with text: '%s' (length: %zu)", quitButton.buttonText.c_str(), quitButton.buttonText.length());
+        
+        m_ecsCoordinator->AddComponent<Transform>(m_quitButtonEntity, quitTransform);
+        m_ecsCoordinator->AddComponent<Sprite>(m_quitButtonEntity, quitSprite);
+        m_ecsCoordinator->AddComponent<Button>(m_quitButtonEntity, quitButton);
+        
+        GN_LOG_INFO("Created mobile menu buttons: Play, Options, Quick Play, Quit");
+    }
+
+    void MainMenuState::OnPlayButtonPressed() {
+        GN_LOG_INFO("Play button pressed - transitioning to level select");
+        OnMenuOptionSelected(MenuOption::PLAYING);
+    }
+
+    void MainMenuState::OnOptionsButtonPressed() {
+        GN_LOG_INFO("Options button pressed - transitioning to options menu");
+        OnMenuOptionSelected(MenuOption::OPTIONS);
+    }
+
+    void MainMenuState::OnQuickPlayButtonPressed() {
+        GN_LOG_INFO("Quick Play button pressed - starting level 1");
+        OnMenuOptionSelected(MenuOption::QUICK_PLAY);
+    }
+
+    void MainMenuState::OnQuitButtonPressed() {
+        GN_LOG_INFO("Quit button pressed - exiting game");
+        OnMenuOptionSelected(MenuOption::QUIT);
+    }
+
+    void MainMenuState::CheckMenuButtonClicks(float touchX, float touchY) {
+        if (!m_ecsCoordinator || !m_assetsLoaded) {
+            return;
+        }
+        
+        // Check Play Button
+        if (m_playButtonEntity != 0) {
+            Transform* transform = m_ecsCoordinator->GetComponent<Transform>(m_playButtonEntity);
+            Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(m_playButtonEntity);
+            
+            if (transform && sprite) {
+                float buttonWidth = sprite->width * transform->scale.x;
+                float buttonHeight = sprite->height * transform->scale.y;
+                float buttonLeft = transform->position.x - (buttonWidth / 2.0f);
+                float buttonRight = transform->position.x + (buttonWidth / 2.0f);
+                float buttonTop = transform->position.y - (buttonHeight / 2.0f);
+                float buttonBottom = transform->position.y + (buttonHeight / 2.0f);
+                
+                if (touchX >= buttonLeft && touchX <= buttonRight &&
+                    touchY >= buttonTop && touchY <= buttonBottom) {
+                    GN_LOG_INFO("🎮 MainMenuState: PLAY BUTTON HIT!");
+                    OnPlayButtonPressed();
+                    return;
+                }
+            }
+        }
+        
+        // Check Options Button
+        if (m_optionsButtonEntity != 0) {
+            Transform* transform = m_ecsCoordinator->GetComponent<Transform>(m_optionsButtonEntity);
+            Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(m_optionsButtonEntity);
+            
+            if (transform && sprite) {
+                float buttonWidth = sprite->width * transform->scale.x;
+                float buttonHeight = sprite->height * transform->scale.y;
+                float buttonLeft = transform->position.x - (buttonWidth / 2.0f);
+                float buttonRight = transform->position.x + (buttonWidth / 2.0f);
+                float buttonTop = transform->position.y - (buttonHeight / 2.0f);
+                float buttonBottom = transform->position.y + (buttonHeight / 2.0f);
+                
+                if (touchX >= buttonLeft && touchX <= buttonRight &&
+                    touchY >= buttonTop && touchY <= buttonBottom) {
+                    GN_LOG_INFO("🎮 MainMenuState: OPTIONS BUTTON HIT!");
+                    OnOptionsButtonPressed();
+                    return;
+                }
+            }
+        }
+        
+        // Check Quick Play Button
+        if (m_quickPlayButtonEntity != 0) {
+            Transform* transform = m_ecsCoordinator->GetComponent<Transform>(m_quickPlayButtonEntity);
+            Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(m_quickPlayButtonEntity);
+            
+            if (transform && sprite) {
+                float buttonWidth = sprite->width * transform->scale.x;
+                float buttonHeight = sprite->height * transform->scale.y;
+                float buttonLeft = transform->position.x - (buttonWidth / 2.0f);
+                float buttonRight = transform->position.x + (buttonWidth / 2.0f);
+                float buttonTop = transform->position.y - (buttonHeight / 2.0f);
+                float buttonBottom = transform->position.y + (buttonHeight / 2.0f);
+                
+                if (touchX >= buttonLeft && touchX <= buttonRight &&
+                    touchY >= buttonTop && touchY <= buttonBottom) {
+                    GN_LOG_INFO("🎮 MainMenuState: QUICK PLAY BUTTON HIT!");
+                    OnQuickPlayButtonPressed();
+                    return;
+                }
+            }
+        }
+        
+        // Check Quit Button
+        if (m_quitButtonEntity != 0) {
+            Transform* transform = m_ecsCoordinator->GetComponent<Transform>(m_quitButtonEntity);
+            Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(m_quitButtonEntity);
+            
+            if (transform && sprite) {
+                float buttonWidth = sprite->width * transform->scale.x;
+                float buttonHeight = sprite->height * transform->scale.y;
+                float buttonLeft = transform->position.x - (buttonWidth / 2.0f);
+                float buttonRight = transform->position.x + (buttonWidth / 2.0f);
+                float buttonTop = transform->position.y - (buttonHeight / 2.0f);
+                float buttonBottom = transform->position.y + (buttonHeight / 2.0f);
+                
+                if (touchX >= buttonLeft && touchX <= buttonRight &&
+                    touchY >= buttonTop && touchY <= buttonBottom) {
+                    GN_LOG_INFO("🎮 MainMenuState: QUIT BUTTON HIT!");
+                    OnQuitButtonPressed();
+                    return;
+                }
+            }
+        }
+        
+        GN_LOG_INFO("❌ MainMenuState: Touch missed all buttons");
+    }
+
+    void MainMenuState::RenderButtonText() {
+        if (!m_ecsCoordinator || !m_assetsLoaded) {
+            GN_LOG_INFO("❌ RenderButtonText: ECS coordinator or assets not ready");
+            return;
+        }
+        
+        if (!m_fontLoaded) {
+            GN_LOG_INFO("❌ RenderButtonText: Font not loaded yet");
+            return;
+        }
+        
+        // Get platform delegates for text rendering
+        extern FloppyTurdGame* g_Game;
+        if (!g_Game) {
+            GN_LOG_INFO("❌ RenderButtonText: Game instance not available");
+            return;
+        }
+        
+        const PlatformDelegates& delegates = g_Game->GetPlatformDelegates();
+        if (!delegates.renderer.drawText) {
+            GN_LOG_INFO("❌ RenderButtonText: drawText delegate not available");
+            return;
+        }
+        
+        GN_LOG_INFO("🎨 RenderButtonText: Rendering text for all buttons");
+        
+        // Render text for each button
+        RenderButtonTextForEntity(m_playButtonEntity, delegates);
+        RenderButtonTextForEntity(m_optionsButtonEntity, delegates);
+        RenderButtonTextForEntity(m_quickPlayButtonEntity, delegates);
+        RenderButtonTextForEntity(m_quitButtonEntity, delegates);
+        
+        GN_LOG_INFO("🎨 RenderButtonText: Finished text rendering");
+    }
+    
+    void MainMenuState::RenderButtonTextForEntity(Gnosis::Entity entity, const PlatformDelegates& delegates) {
+        if (entity == 0) {
+            GN_LOG_INFO("❌ RenderButtonTextForEntity: Entity is null");
+            return;
+        }
+        
+        Transform* transform = m_ecsCoordinator->GetComponent<Transform>(entity);
+        Button* button = m_ecsCoordinator->GetComponent<Button>(entity);
+        
+        if (!transform || !button) {
+            GN_LOG_INFO("❌ RenderButtonTextForEntity: Transform or Button component missing for entity %d", entity);
+            return;
+        }
+        
+        // Calculate text position (center of button)
+        float textX = transform->position.x;
+        float textY = transform->position.y;
+        
+        // Choose text color based on button state
+        float r, g, b, a;
+        if (button->isHovered) {
+            r = button->textHoverColor.r / 255.0f;
+            g = button->textHoverColor.g / 255.0f;
+            b = button->textHoverColor.b / 255.0f;
+            a = button->textHoverColor.a / 255.0f;
+        } else {
+            r = button->textColor.r / 255.0f;
+            g = button->textColor.g / 255.0f;
+            b = button->textColor.b / 255.0f;
+            a = button->textColor.a / 255.0f;
+        }
+        
+        // Draw the text using platform delegates
+        GN_LOG_INFO("🎨 Rendering button text: '%s' at (%.1f, %.1f) with size %.1f, color (%.2f, %.2f, %.2f, %.2f)", 
+                   button->buttonText.c_str(), textX, textY, button->fontSize, r, g, b, a);
+        delegates.renderer.drawText(button->buttonText, textX, textY, button->fontSize, r, g, b, a);
     }
 
 } // namespace GameCore

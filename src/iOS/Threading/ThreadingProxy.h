@@ -40,7 +40,7 @@ namespace GameCore {
         static void enqueueClearScreen(float r, float g, float b, float a);
         static void enqueueDrawSprite(uint32_t textureHandle, float x, float y, float rotation);
         static void enqueueDrawSpriteScaled(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation);
-        static void enqueueDrawText(const char* text, float x, float y, float fontSize, float r, float g, float b, float a);
+        static void enqueueDrawText(const std::string& text, float x, float y, float fontSize, float r, float g, float b, float a);
         static void enqueueDrawRectangle(float x, float y, float width, float height, float r, float g, float b, float a);
         static void enqueueDrawCircle(float x, float y, float radius, float r, float g, float b, float a);
         static void enqueueGetScreenSize(float* width, float* height);

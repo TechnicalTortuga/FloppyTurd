@@ -7,25 +7,24 @@
 //
 
 import AVFoundation
-import os.log
+import UIKit
 
 /**
- * Modern iOS Audio Manager following Apple's 2024 best practices
+ * Modern iOS Audio Manager following Swift 6 concurrency best practices
  * 
- * Key improvements:
- * - Single AVAudioEngine instance (Apple recommended)
- * - AVAudioPlayerNode for individual sources
- * - Async/await resource loading
- * - Proper AVAudioSession configuration
- * - Simplified, thread-safe architecture
+ * Key design decisions:
+ * - AVPlayer for music playback (stable for streaming/looping)
+ * - AVAudioEngine for sound effects (low latency)
+ * - MainActor isolation for UI thread safety
+ * - Proper notification handling with nonisolated methods
+ * - Comprehensive error handling and recovery
  */
 @MainActor
-public class AVAudioHandler: NSObject {
+public final class AVAudioHandler: NSObject {
     
-    // MARK: - Core Audio Engine Components
+    // MARK: - Core Audio Components
     
     private let audioEngine = AVAudioEngine()
-    private let musicPlayerNode = AVAudioPlayerNode()
     private let soundPlayerNode = AVAudioPlayerNode()
     private let mixerNode = AVAudioMixerNode()
     
@@ -36,442 +35,488 @@ public class AVAudioHandler: NSObject {
     // MARK: - State Management
     
     private var isInitialized = false
-    private var currentMusicFile: AVAudioFile?
+    private var isEngineRunning = false
     private var musicVolume: Float = 0.7
-    private var soundVolume: Float = 1.0
+    public private(set) var soundVolume: Float = 1.0
+    
+    // MARK: - Music Player
+    
+    private var musicPlayer: AVPlayer?
+    private var musicEndObserver: NSObjectProtocol?
+    private var isMusicLooping = true
+    
+    // MARK: - Audio Session Notifications
+    
+    private var routeChangeObserver: NSObjectProtocol?
+    private var interruptionObserver: NSObjectProtocol?
+    private var mediaResetObserver: NSObjectProtocol?
+    
+    // MARK: - Sound Cache
+    
+    private var soundCache: [String: AVAudioFile] = [:]
     
     // MARK: - Logging
     
-    private let logger = Logger(subsystem: "com.floppyturd.game", category: "Audio")
+    private func log(_ message: String, level: LogLevel = .info) {
+        switch level {
+        case .trace, .debug:
+            SwiftLog.debug(message, category: "AVAudioHandler")
+        case .info:
+            SwiftLog.info(message, category: "AVAudioHandler")
+        case .warning:
+            SwiftLog.warn(message, category: "AVAudioHandler")
+        case .error:
+            SwiftLog.error(message, category: "AVAudioHandler")
+        case .fatal:
+            SwiftLog.fatal(message, category: "AVAudioHandler")
+        }
+    }
     
     // MARK: - Initialization
     
     public override init() {
         super.init()
-        logger.info("AVAudioHandler initialized with modern architecture")
+        // Notification setup will be called after initialization
     }
     
     // MARK: - Public Interface
     
     public func initialize() -> Bool {
         guard !isInitialized else { 
-            logger.info("[AVAudioHandler] Already initialized")
+            log("[AVAudioHandler] Already initialized")
             return true 
         }
         
-        logger.info("[AVAudioHandler] Starting audio system initialization")
+        log("[AVAudioHandler] Starting audio system initialization")
         
         do {
-            logger.info("[AVAudioHandler] Setting up audio session...")
+            log("[AVAudioHandler] Setting up audio session...")
             try setupAudioSession()
             
-            logger.info("[AVAudioHandler] Setting up audio engine...")
+            log("[AVAudioHandler] Setting up audio engine...")
             setupAudioEngine()
             
-            logger.info("[AVAudioHandler] Starting audio engine...")
-            try audioEngine.start()
+            log("[AVAudioHandler] Starting audio engine...")
+            try startEngine()
+            
+            // Setup notifications after successful initialization
+            setupNotificationObservers()
             
             isInitialized = true
-            logger.info("Audio system initialized successfully")
+            log("Audio system initialized successfully")
             return true
             
         } catch {
-            logger.error("Failed to initialize audio system: \(error.localizedDescription)")
+            log("Failed to initialize audio system: \(error.localizedDescription)", level: .error)
             return false
         }
     }
     
     public func playMusic(_ fileName: String) {
-        print("🚨 DIRECT PRINT: AVAudioHandler.playMusic() called with: \(fileName)")
-        logger.info("🎵 [DEBUG] AVAudioHandler.playMusic() called with: \(fileName)")
+        log("🎵 [AVAudioHandler] playMusic() called with: \(fileName)")
         
         // Auto-initialize if not already done
         if !isInitialized {
-            logger.info("[AVAudioHandler] Auto-initializing audio system")
+            log("[AVAudioHandler] Auto-initializing audio system")
             if !initialize() {
-                logger.error("Failed to auto-initialize audio system")
+                log("Failed to auto-initialize audio system")
                 return
-            } else {
-                logger.info("[AVAudioHandler] Audio system auto-initialized successfully")
             }
-        } else {
-            logger.info("[AVAudioHandler] Audio system already initialized")
         }
         
-        // Early return if the same music is already playing
-        if musicPlayerNode.isPlaying && currentMusicFile?.url.lastPathComponent.contains(fileName) == true {
-            logger.info("[AVAudioHandler] Music '\(fileName)' is already playing, skipping restart")
+        // Stop any existing music
+        stopMusic()
+        
+        // Find the audio file
+        guard let url = findAudioFile(named: fileName) else {
+            log("Music file not found: \(fileName)")
             return
         }
         
-        // First, check AssetManager's cache for pre-loaded audio files
-        logger.info("[AVAudioHandler] Checking AssetManager cache for: \(fileName)")
+        // Create player item and player
+        let playerItem = AVPlayerItem(url: url)
+        musicPlayer = AVPlayer(playerItem: playerItem)
         
-        let extensions = ["mp3", "wav", "m4a"]  // iOS compatible formats only, no .ogg
-        var audioFile: AVAudioFile?
+        // Set volume
+        musicPlayer?.volume = musicVolume
         
-        // Try to find the file in AssetManager's cache with different extensions
-        for ext in extensions {
-            if let cachedAudioFile = AssetManager.shared.getCachedAudio(name: fileName, extension: ext) {
-                logger.info("[AVAudioHandler] Found cached audio file: \(fileName).\(ext)")
-                audioFile = cachedAudioFile
-                break
-            }
-        }
+        // Play the music
+        musicPlayer?.play()
         
-        // If not found in cache, try loading directly from Bundle.main (fallback)
-        if audioFile == nil {
-            logger.info("[AVAudioHandler] Not found in cache, loading from Bundle.main: \(fileName)")
-            
-            let mainBundle = Bundle.main
-            var foundURL: URL?
-            
-            // First try with exact filename
-            if let url = mainBundle.url(forResource: fileName, withExtension: nil) {
-                foundURL = url
-            } else {
-                // Try with common audio extensions
-                for ext in extensions {
-                    logger.info("[AVAudioHandler] Trying extension: .\(ext)")
-                    if let testURL = mainBundle.url(forResource: fileName, withExtension: ext) {
-                        foundURL = testURL
-                        logger.info("[AVAudioHandler] Found file with extension .\(ext): \(testURL)")
-                        break
-                    }
-                }
-            }
-            
-            guard let url = foundURL else {
-                logger.error("Audio file not found: \(fileName)")
-                return
-            }
-            
-            // Load audio file from URL
-            logger.info("[AVAudioHandler] Attempting to create AVAudioFile from: \(url)")
-            do {
-                audioFile = try AVAudioFile(forReading: url)
-                logger.info("[AVAudioHandler] Successfully created AVAudioFile from Bundle")
-            } catch {
-                logger.error("Failed to create AVAudioFile from: \(url) - \(error)")
-                return
-            }
-        }
-        
-        // Schedule the audio file for playback
-        if let audioFile = audioFile {
-            logger.info("[AVAudioHandler] Scheduling music: \(audioFile.url.lastPathComponent)")
-            scheduleMusic(audioFile)
-        } else {
-            logger.error("No audio file available for playback: \(fileName)")
-        }
+        setupMusicLoopObserverIfNeeded()
+        log("Music started: \(fileName)")
     }
     
     public func playSound(_ fileName: String) {
-        logger.info("🔊 [DEBUG] AVAudioHandler.playSound() called with: \(fileName)")
+        log("🔊 [AVAudioHandler] playSound() called with: \(fileName)")
         
         // Auto-initialize if not already done
         if !isInitialized {
+            log("[AVAudioHandler] Audio system not initialized, attempting auto-initialization")
             if !initialize() {
-                logger.error("Failed to auto-initialize audio system")
+                log("Failed to auto-initialize audio system")
                 return
             }
         }
         
-        // First, check AssetManager's cache for pre-loaded audio files
-        let extensions = ["mp3", "wav", "m4a"]  // iOS compatible formats only, no .ogg
-        var audioFile: AVAudioFile?
-        
-        // Try to find the file in AssetManager's cache with different extensions
-        for ext in extensions {
-            if let cachedAudioFile = AssetManager.shared.getCachedAudio(name: fileName, extension: ext) {
-                logger.info("[AVAudioHandler] Found cached sound file: \(fileName).\(ext)")
-                audioFile = cachedAudioFile
-                break
-            }
+        // Ensure engine is running
+        guard ensureEngineRunning() else {
+            log("Cannot play sound: audio engine not running")
+            return
         }
         
-        // If not found in cache, try loading directly from Bundle.main (fallback)
-        if audioFile == nil {
-            logger.info("[AVAudioHandler] Sound not found in cache, loading from Bundle.main: \(fileName)")
-            
-            let mainBundle = Bundle.main
-            var foundURL: URL?
-            
-            // First try with exact filename
-            if let url = mainBundle.url(forResource: fileName, withExtension: nil) {
-                foundURL = url
-            } else {
-                // Try with common audio extensions
-                for ext in extensions {
-                    if let testURL = mainBundle.url(forResource: fileName, withExtension: ext) {
-                        foundURL = testURL
-                        break
-                    }
-                }
-            }
-            
-            guard let url = foundURL else {
-                logger.error("Audio file not found: \(fileName)")
-                return
-            }
-            
-            // Load audio file from URL
-            do {
-                audioFile = try AVAudioFile(forReading: url)
-                logger.info("[AVAudioHandler] Successfully created sound AVAudioFile from Bundle")
-            } catch {
-                logger.error("Failed to create AVAudioFile from: \(url) - \(error)")
-                return
-            }
+        // Load or get cached audio file
+        guard let audioFile = loadSoundFile(fileName) else {
+            log("Failed to load sound file: \(fileName)")
+            return
         }
         
-        // Schedule the audio file for playback
-        if let audioFile = audioFile {
-            scheduleSound(audioFile)
-        } else {
-            logger.error("No sound file available for playback: \(fileName)")
-        }
-    }
-    
-    /**
-     * @brief Play a sound effect
-     * @param soundName Name of the sound file to play
-     * @param volume Volume level (0.0 to 1.0)
-     */
-    public func playSoundWithVolume(_ soundName: String, volume: Float) {
-        print("🚨 DIRECT PRINT: AVAudioHandler.playSoundWithVolume() called with: \(soundName), volume: \(volume)")
-        logger.info("🔊 [DEBUG] AVAudioHandler.playSoundWithVolume() called with: \(soundName), volume: \(volume)")
-        
-        // Auto-initialize if not already done
-        if !isInitialized {
-            print("🚨 DIRECT PRINT: AVAudioHandler auto-initializing...")
-            if !initialize() {
-                print("🚨 DIRECT PRINT: AVAudioHandler auto-initialization FAILED")
-                logger.error("Failed to auto-initialize audio system")
-                return
-            }
-            print("🚨 DIRECT PRINT: AVAudioHandler auto-initialization SUCCESS")
-        }
-        
-        // First, check AssetManager's cache for pre-loaded audio files
-        let extensions = ["mp3", "wav", "m4a"]  // iOS compatible formats only, no .ogg
-        var audioFile: AVAudioFile?
-        
-        // Try to find the file in AssetManager's cache with different extensions
-        for ext in extensions {
-            if let cachedAudioFile = AssetManager.shared.getCachedAudio(name: soundName, extension: ext) {
-                logger.info("[AVAudioHandler] Found cached sound file: \(soundName).\(ext)")
-                audioFile = cachedAudioFile
-                break
-            }
-        }
-        
-        // If not found in cache, try loading directly from Bundle.main (fallback)
-        if audioFile == nil {
-            logger.info("[AVAudioHandler] Sound not found in cache, loading from Bundle.main: \(soundName)")
-            
-            let mainBundle = Bundle.main
-            var foundURL: URL?
-            
-            // First try with exact filename
-            if let url = mainBundle.url(forResource: soundName, withExtension: nil) {
-                foundURL = url
-            } else {
-                // Try with common audio extensions
-                for ext in extensions {
-                    if let testURL = mainBundle.url(forResource: soundName, withExtension: ext) {
-                        foundURL = testURL
-                        break
-                    }
-                }
-            }
-            
-            guard let url = foundURL else {
-                logger.error("Audio file not found: \(soundName)")
-                return
-            }
-            
-            // Load audio file from URL
-            do {
-                audioFile = try AVAudioFile(forReading: url)
-                logger.info("[AVAudioHandler] Successfully created sound AVAudioFile from Bundle")
-            } catch {
-                logger.error("Failed to create AVAudioFile from: \(url) - \(error)")
-                return
-            }
-        }
-        
-        // Schedule the audio file for playback
-        if let audioFile = audioFile {
-            print("🚨 DIRECT PRINT: AVAudioHandler found audioFile, setting volume to \(volume) and calling scheduleSound")
-            soundPlayerNode.volume = max(0.0, min(1.0, volume))
-            scheduleSound(audioFile)
-        } else {
-            print("🚨 DIRECT PRINT: AVAudioHandler ERROR - No sound file available for playback: \(soundName)")
-            logger.error("No sound file available for playback: \(soundName)")
-        }
+        // Schedule and play the sound
+        scheduleSound(audioFile)
     }
     
     public func stopMusic() {
-        musicPlayerNode.stop()
-        logger.info("Music stopped")
+        musicPlayer?.pause()
+        musicPlayer = nil
+        if let observer = musicEndObserver {
+            NotificationCenter.default.removeObserver(observer)
+            musicEndObserver = nil
+        }
+        log("Music stopped")
     }
     
     public func stopSound() {
         soundPlayerNode.stop()
-        logger.info("All sounds stopped")
+        log("Sound stopped")
     }
     
     public func setMusicVolume(volume: Float) {
         musicVolume = max(0.0, min(1.0, volume))
-        musicPlayerNode.volume = musicVolume
-        logger.info("Music volume set to: \(self.musicVolume)")
+        musicPlayer?.volume = musicVolume
+        log("Music volume set to: \(self.musicVolume)")
     }
     
     public func setSoundVolume(volume: Float) {
         soundVolume = max(0.0, min(1.0, volume))
         soundPlayerNode.volume = soundVolume
-        logger.info("Sound volume set to: \(self.soundVolume)")
+        log("Sound volume set to: \(self.soundVolume)")
     }
     
-    // MARK: - Private Implementation
+    public func pause() {
+        musicPlayer?.pause()
+        if audioEngine.isRunning {
+            audioEngine.pause()
+        }
+        log("Audio paused")
+    }
+    
+    public func resume() {
+        musicPlayer?.play()
+        if !audioEngine.isRunning {
+            do {
+                try startEngine()
+            } catch {
+                log("Failed to resume audio engine: \(error)", level: .error)
+            }
+        }
+        log("Audio resumed")
+    }
+    
+    // MARK: - Private Setup Methods
     
     private func setupAudioSession() throws {
-        try audioSession.setCategory(
-            .playback,
-            mode: .gameChat,
-            options: [.defaultToSpeaker, .allowBluetooth]
-        )
+        // Configure for game audio
+        try audioSession.setCategory(.playback, 
+                                    mode: .default,
+                                    options: [.mixWithOthers])
         
-        try audioSession.setPreferredSampleRate(44100.0)
-        try audioSession.setPreferredIOBufferDuration(0.005) // 5ms for low latency
+        // Low latency for sound effects
+        try audioSession.setPreferredIOBufferDuration(0.005) // 5ms
         try audioSession.setActive(true)
         
-        logger.info("Audio session configured: rate=\(self.audioSession.sampleRate)Hz")
+        log("Audio session configured: rate=\(self.audioSession.sampleRate)Hz")
     }
     
     private func setupAudioEngine() {
         // Attach nodes to the engine
-        audioEngine.attach(musicPlayerNode)
         audioEngine.attach(soundPlayerNode)
         audioEngine.attach(mixerNode)
         
         // Connect the audio graph
-        // Music -> Mixer -> Output
-        audioEngine.connect(musicPlayerNode, to: mixerNode, format: nil)
         audioEngine.connect(soundPlayerNode, to: mixerNode, format: nil)
         audioEngine.connect(mixerNode, to: audioEngine.outputNode, format: nil)
         
         // Set initial volumes
-        musicPlayerNode.volume = musicVolume
         soundPlayerNode.volume = soundVolume
         
         // Prepare the engine
         audioEngine.prepare()
         
-        logger.info("Audio engine configured with mixer topology")
+        log("Audio engine configured")
     }
     
-    private func loadAudioFile(_ fileName: String) async throws -> AVAudioFile {
-        return try await withCheckedThrowingContinuation { continuation in
-            // Perform file loading on a background queue
-            DispatchQueue.global(qos: .userInitiated).async {
-                do {
-                    // Try to find the file with various extensions (mp3 first, no ogg for iOS compatibility)
-                    let extensions = ["mp3", "wav", "m4a", "aiff"]
-                    var fileURL: URL?
-                    
-                    // First try without extension
-                    if let url = Bundle.main.url(forResource: fileName, withExtension: nil) {
-                        fileURL = url
-                    } else {
-                        // Try with each extension
-                        for ext in extensions {
-                            if let url = Bundle.main.url(forResource: fileName, withExtension: ext) {
-                                fileURL = url
-                                break
-                            }
-                        }
-                    }
-                    
-                    guard let url = fileURL else {
-                        throw AudioError.fileNotFound(fileName)
-                    }
-                    
-                    let audioFile = try AVAudioFile(forReading: url)
-                    continuation.resume(returning: audioFile)
-                    
-                } catch {
-                    continuation.resume(throwing: error)
-                }
-            }
-        }
-    }
-    
-    private func scheduleMusic(_ audioFile: AVAudioFile) {
-        logger.info("[AVAudioHandler] scheduleMusic() called")
-        
-        guard audioEngine.isRunning else {
-            logger.error("Cannot schedule music: audio engine not running")
+    private func startEngine() throws {
+        guard !audioEngine.isRunning else {
+            log("Audio engine already running")
             return
         }
         
-        logger.info("[AVAudioHandler] Audio engine is running, stopping current music")
-        musicPlayerNode.stop()
-        currentMusicFile = audioFile
+        try audioEngine.start()
+        isEngineRunning = true
+        log("Audio engine started successfully")
+    }
+    
+    private func stopEngine() {
+        guard audioEngine.isRunning else { return }
         
-        logger.info("[AVAudioHandler] Scheduling audio file: \(audioFile.url.lastPathComponent)")
-        // Use synchronous scheduleFile (Apple's recommended approach for basic audio)
-        musicPlayerNode.scheduleFile(audioFile, at: nil) { [weak self] in
-            // Schedule looping on completion
-            DispatchQueue.main.async { [weak self] in
-                if let self = self, let file = self.currentMusicFile {
-                    self.logger.info("[AVAudioHandler] Music finished, rescheduling for loop")
-                    self.scheduleMusic(file)
+        soundPlayerNode.stop()
+        audioEngine.stop()
+        isEngineRunning = false
+        log("Audio engine stopped")
+    }
+    
+    private func ensureEngineRunning() -> Bool {
+        if !audioEngine.isRunning {
+            do {
+                try startEngine()
+                return true
+            } catch {
+                log("Failed to start audio engine: \(error)", level: .error)
+                return false
+            }
+        }
+        return true
+    }
+    
+    // MARK: - File Loading
+    
+    private func findAudioFile(named fileName: String) -> URL? {
+        let extensions = ["mp3", "m4a", "wav", "aac", "ogg"]
+        
+        // First try with the filename as-is in the bundle
+        if let url = Bundle.main.url(forResource: fileName, withExtension: nil) {
+            return url
+        }
+        
+        // Try with common extensions in the bundle
+        for ext in extensions {
+            if let url = Bundle.main.url(forResource: fileName, withExtension: ext) {
+                return url
+            }
+        }
+        
+        // Try NSDataAsset for Asset Catalog resources
+        if let dataAsset = NSDataAsset(name: fileName) {
+            // Write the data to a temporary file
+            let tempURL = FileManager.default.temporaryDirectory
+                .appendingPathComponent(fileName)
+                .appendingPathExtension("mp3")
+            
+            do {
+                try dataAsset.data.write(to: tempURL)
+                return tempURL
+            } catch {
+                log("Failed to write asset data to temp file: \(error)", level: .error)
+            }
+        }
+        
+        // Also try with extensions in Asset Catalog
+        let fileNameWithoutExt = (fileName as NSString).deletingPathExtension
+        for ext in extensions {
+            if let dataAsset = NSDataAsset(name: "\(fileNameWithoutExt)") {
+                let tempURL = FileManager.default.temporaryDirectory
+                    .appendingPathComponent(fileNameWithoutExt)
+                    .appendingPathExtension(ext)
+                
+                do {
+                    try dataAsset.data.write(to: tempURL)
+                    return tempURL
+                } catch {
+                    log("Failed to write asset data to temp file: \(error)", level: .error)
                 }
             }
         }
         
-        // Start playback if not already playing
-        if !musicPlayerNode.isPlaying {
-            logger.info("[AVAudioHandler] Starting music playback")
-            musicPlayerNode.play()
-        } else {
-            logger.info("[AVAudioHandler] Music player already playing")
+        return nil
+    }
+    
+    private func loadSoundFile(_ fileName: String) -> AVAudioFile? {
+        // Check cache first
+        if let cachedFile = soundCache[fileName] {
+            log("[AVAudioHandler] Using cached sound for: \(fileName)")
+            return cachedFile
         }
         
-        logger.info("Music scheduled and playing: \(audioFile.url.lastPathComponent)")
+        // Find file URL
+        guard let url = findAudioFile(named: fileName) else {
+            log("Sound file not found: \(fileName)")
+            return nil
+        }
+        
+        // Load audio file
+        do {
+            let audioFile = try AVAudioFile(forReading: url)
+            soundCache[fileName] = audioFile
+            log("[AVAudioHandler] Successfully loaded sound file: \(fileName)")
+            return audioFile
+        } catch {
+            log("Failed to create AVAudioFile from: \(url) - \(error)", level: .error)
+            return nil
+        }
     }
+    
+    // MARK: - Sound Playback
     
     private func scheduleSound(_ audioFile: AVAudioFile) {
-        print("🚨 DIRECT PRINT: AVAudioHandler.scheduleSound() called for: \(audioFile.url.lastPathComponent)")
-        logger.info("[AVAudioHandler] scheduleSound() called for: \(audioFile.url.lastPathComponent)")
+        log("[AVAudioHandler] Scheduling sound: \(audioFile.url.lastPathComponent)")
         
-        guard audioEngine.isRunning else {
-            print("🚨 DIRECT PRINT: AVAudioHandler ERROR - Cannot schedule sound: audio engine not running")
-            logger.error("Cannot schedule sound: audio engine not running")
-            return
+        // Stop any currently playing sound
+        soundPlayerNode.stop()
+        
+        // Schedule the file without completion handler
+        // We don't need to track completion for simple sound effects
+        soundPlayerNode.scheduleFile(audioFile, at: nil)
+        
+        // Start playback
+        soundPlayerNode.play()
+        log("[AVAudioHandler] Sound playing: \(audioFile.url.lastPathComponent)")
+    }
+    
+    // MARK: - Music Looping
+    
+    private func setupMusicLoopObserverIfNeeded() {
+        // Remove any existing observer
+        if let observer = musicEndObserver {
+            NotificationCenter.default.removeObserver(observer)
+            musicEndObserver = nil
         }
         
-        logger.info("[AVAudioHandler] Audio engine is running, checking sound player state")
-        logger.info("[AVAudioHandler] Sound player currently playing: \(self.soundPlayerNode.isPlaying)")
-        logger.info("[AVAudioHandler] Sound player volume: \(self.soundPlayerNode.volume)")
+        guard isMusicLooping, let item = musicPlayer?.currentItem else { return }
         
-        // Use synchronous scheduleFile (Apple's recommended approach for basic audio)
-        logger.info("[AVAudioHandler] Scheduling sound file: \(audioFile.url.lastPathComponent)")
-        soundPlayerNode.scheduleFile(audioFile, at: nil) { [weak self] in
-            self?.logger.info("[AVAudioHandler] Sound playback completed for: \(audioFile.url.lastPathComponent)")
+        // Create observer for when music ends
+        musicEndObserver = NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemDidPlayToEndTime,
+            object: item,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self = self else { return }
+            Task { @MainActor in
+                self.handleMusicEnd()
+            }
+        }
+    }
+    
+    private func handleMusicEnd() {
+        log("Music ended - looping")
+        musicPlayer?.seek(to: .zero)
+        musicPlayer?.play()
+    }
+    
+    // MARK: - Notification Setup
+    
+    private func setupNotificationObservers() {
+        // Route change notifications
+        routeChangeObserver = NotificationCenter.default.addObserver(
+            forName: AVAudioSession.routeChangeNotification,
+            object: nil,
+            queue: nil
+        ) { [weak self] notification in
+            self?.handleRouteChangeNotification(notification)
         }
         
-        // Start playback if not already playing
-        if !soundPlayerNode.isPlaying {
-            logger.info("[AVAudioHandler] Starting sound playback")
-            soundPlayerNode.play()
-        } else {
-            logger.info("[AVAudioHandler] Sound player already playing, file will queue")
+        // Interruption notifications
+        interruptionObserver = NotificationCenter.default.addObserver(
+            forName: AVAudioSession.interruptionNotification,
+            object: nil,
+            queue: nil
+        ) { [weak self] notification in
+            self?.handleInterruptionNotification(notification)
         }
         
-        logger.info("[AVAudioHandler] Sound scheduled and playing: \(audioFile.url.lastPathComponent)")
+        // Media services reset
+        mediaResetObserver = NotificationCenter.default.addObserver(
+            forName: AVAudioSession.mediaServicesWereResetNotification,
+            object: nil,
+            queue: nil
+        ) { [weak self] _ in
+            self?.handleMediaServicesResetNotification()
+        }
+    }
+    
+    private func cleanupNotificationObservers() {
+        if let observer = routeChangeObserver {
+            NotificationCenter.default.removeObserver(observer)
+            routeChangeObserver = nil
+        }
+        if let observer = interruptionObserver {
+            NotificationCenter.default.removeObserver(observer)
+            interruptionObserver = nil
+        }
+        if let observer = mediaResetObserver {
+            NotificationCenter.default.removeObserver(observer)
+            mediaResetObserver = nil
+        }
+    }
+}
+
+// MARK: - Notification Handlers (nonisolated)
+
+extension AVAudioHandler {
+    
+    // These methods are nonisolated to be safely called from notification callbacks
+    
+    nonisolated private func handleRouteChangeNotification(_ notification: Notification) {
+        Task { @MainActor in
+            self.handleRouteChange()
+        }
+    }
+    
+    nonisolated private func handleInterruptionNotification(_ notification: Notification) {
+        Task { @MainActor in
+            self.handleInterruption()
+        }
+    }
+    
+    nonisolated private func handleMediaServicesResetNotification() {
+        Task { @MainActor in
+            self.handleMediaServicesReset()
+        }
+    }
+    
+    // MARK: - MainActor handlers
+    
+    private func handleRouteChange() {
+        log("Audio route changed")
+        
+        // Restart engine if needed after route change
+        if isInitialized && !audioEngine.isRunning {
+            _ = ensureEngineRunning()
+        }
+    }
+    
+    private func handleInterruption() {
+        log("Audio interruption occurred")
+        
+        // Simple recovery - ensure engine is running
+        if isInitialized && !audioEngine.isRunning {
+            _ = ensureEngineRunning()
+        }
+    }
+    
+    private func handleMediaServicesReset() {
+        log("Media services were reset - reinitializing")
+        
+        // Full reset required
+        stopEngine()
+        isInitialized = false
+        isEngineRunning = false
+        soundCache.removeAll()
+        
+        // Cleanup observers before reinit
+        cleanupNotificationObservers()
+        
+        // Re-initialize
+        _ = initialize()
     }
 }
 

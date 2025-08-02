@@ -361,6 +361,44 @@ namespace GameCore {
         {}
     };
 
+    /**
+     * Button component - interactive UI button
+     */
+    struct Button : public Gnosis::Component {
+        std::string buttonText;
+        std::string normalTextureId;
+        std::string hoverTextureId;
+        std::string pressedTextureId;
+        bool isHovered;
+        bool isPressed;
+        bool isEnabled;
+        float fontSize;
+        Gnosis::GNColor textColor;
+        Gnosis::GNColor textHoverColor;
+        
+        Button()
+            : isHovered(false)
+            , isPressed(false)
+            , isEnabled(true)
+            , fontSize(24.0f)
+            , textColor(255, 255, 255, 255)
+            , textHoverColor(255, 255, 0, 255)
+        {}
+        
+        Button(const std::string& text, const std::string& normalTex, const std::string& hoverTex = "", const std::string& pressedTex = "")
+            : buttonText(text)
+            , normalTextureId(normalTex)
+            , hoverTextureId(hoverTex.empty() ? normalTex : hoverTex)
+            , pressedTextureId(pressedTex.empty() ? normalTex : pressedTex)
+            , isHovered(false)
+            , isPressed(false)
+            , isEnabled(true)
+            , fontSize(24.0f)
+            , textColor(255, 255, 255, 255)
+            , textHoverColor(255, 255, 0, 255)
+        {}
+    };
+
 } // namespace GameCore
 
 // Bring GameCore components into Gnosis namespace for easier access
@@ -378,6 +416,7 @@ namespace Gnosis {
     using Parallax = GameCore::Parallax;
     using Lifetime = GameCore::Lifetime;
     using AudioSource = GameCore::AudioSource;
+    using Button = GameCore::Button;
     using ColliderType = GameCore::ColliderType;
 }
 

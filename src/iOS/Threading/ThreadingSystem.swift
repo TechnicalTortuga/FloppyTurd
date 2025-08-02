@@ -157,8 +157,9 @@ class CommandProcessor {
             }
             
         case .CMD_DRAW_TEXT:
-            if let text = data.text {
-                renderer.drawText(text: String(cString: text),
+            let text = String(data.text)
+            if !text.isEmpty {
+                renderer.drawText(text: text,
                                  x: data.x,
                                  y: data.y,
                                  fontSize: data.fontSize,
@@ -237,13 +238,17 @@ class CommandProcessor {
                 if let audioManager = audioManager {
                     log("[CommandProcessor] AudioManager found - instance: \(ObjectIdentifier(audioManager)) - dispatching to main thread")
                     Task { @MainActor in
+                        log("[CommandProcessor] Task started on main actor")
                         if data.volume > 0 {
-                            audioManager.playSoundWithVolume(audioFileName, volume: data.volume)
-                            log("[CommandProcessor] Playing sound: \(audioFileName) with volume \(data.volume)")
-                        } else {
-                            audioManager.playSound(audioFileName)
-                            log("[CommandProcessor] Playing sound: \(audioFileName)")
+                            log("[CommandProcessor] Setting sound volume to: \(data.volume)")
+                            audioManager.setSoundVolume(volume: data.volume)
+                            log("[CommandProcessor] Sound volume set successfully")
                         }
+                        log("[CommandProcessor] About to call audioManager.playSound(\(audioFileName))")
+                        log("[CommandProcessor] audioManager instance: \(ObjectIdentifier(audioManager))")
+                        audioManager.playSound(audioFileName)
+                        log("[CommandProcessor] playSound call completed successfully")
+                        log("[CommandProcessor] Playing sound: \(audioFileName) with volume \(data.volume > 0 ? data.volume : audioManager.soundVolume)")
                     }
                 } else {
                     log("[CommandProcessor] ERROR: AudioManager is nil! Cannot play sound: \(audioFileName)", level: .error)

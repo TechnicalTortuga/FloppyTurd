@@ -307,29 +307,30 @@ typedef unsigned int swift_uint4  __attribute__((__ext_vector_type__(4)));
 
 #if defined(__OBJC__)
 
-/// Modern iOS Audio Manager following Apple’s 2024 best practices
-/// Key improvements:
+/// Modern iOS Audio Manager following Swift 6 concurrency best practices
+/// Key design decisions:
 /// <ul>
 ///   <li>
-///     Single AVAudioEngine instance (Apple recommended)
+///     AVPlayer for music playback (stable for streaming/looping)
 ///   </li>
 ///   <li>
-///     AVAudioPlayerNode for individual sources
+///     AVAudioEngine for sound effects (low latency)
 ///   </li>
 ///   <li>
-///     Async/await resource loading
+///     MainActor isolation for UI thread safety
 ///   </li>
 ///   <li>
-///     Proper AVAudioSession configuration
+///     Proper notification handling with nonisolated methods
 ///   </li>
 ///   <li>
-///     Simplified, thread-safe architecture
+///     Comprehensive error handling and recovery
 ///   </li>
 /// </ul>
 SWIFT_CLASS("_TtC10FloppyTurd14AVAudioHandler")
 @interface AVAudioHandler : NSObject
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
+
 
 @class UIWindow;
 @class UIApplication;
@@ -5730,6 +5731,7 @@ struct FloppyTurd_LogLevel {
 }
 }
 namespace FloppyTurd SWIFT_PRIVATE_ATTR SWIFT_SYMBOL_MODULE("FloppyTurd") {
+
 
 class SWIFT_SYMBOL("s:10FloppyTurd10AssetErrorO") AssetError;
 } // end namespace 

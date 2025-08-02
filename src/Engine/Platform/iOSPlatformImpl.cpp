@@ -79,8 +79,8 @@ void InitializePlatformDelegates() {
             }
         }
         
-        void DrawText(const char* text, float x, float y, float fontSize, float r, float g, float b, float a) {
-            if (text) {
+        void DrawText(const std::string& text, float x, float y, float fontSize, float r, float g, float b, float a) {
+            if (!text.empty()) {
                 GameCore::ThreadingProxy::enqueueDrawText(text, x, y, fontSize, r, g, b, a);
             }
         }

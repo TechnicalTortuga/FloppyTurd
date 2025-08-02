@@ -28,7 +28,7 @@ namespace FloppyTurd {
         // Internal functions (const Sprite& parameter)
         void DrawSpriteInternal(const Sprite& sprite, float x, float y, float rotation);
         void DrawSpriteScaledInternal(const Sprite& sprite, float x, float y, float scaleX, float scaleY, float rotation);
-        void DrawText(const char* text, float x, float y, float fontSize, float r, float g, float b, float a);
+        void DrawText(const std::string& text, float x, float y, float fontSize, float r, float g, float b, float a);
         void DrawRectangle(float x, float y, float width, float height, float r, float g, float b, float a);
         void DrawCircle(float x, float y, float radius, float r, float g, float b, float a);
         void GetScreenSize(float* width, float* height);
