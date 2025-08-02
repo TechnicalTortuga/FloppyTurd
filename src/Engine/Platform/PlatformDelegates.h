@@ -209,7 +209,7 @@ namespace GameCore {
     // Audio delegate - platform-agnostic audio interface
     struct AudioDelegate {
         // Sound effects
-        void (*playSound)(const std::string& soundName, float volume);
+        void (*playSound)(const char* soundName, float volume);
         void (*stopSound)();
         
         // Background music
