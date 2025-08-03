@@ -41,6 +41,7 @@ namespace GameCore {
         static void enqueueDrawSprite(uint32_t textureHandle, float x, float y, float rotation);
         static void enqueueDrawSpriteScaled(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation);
         static void enqueueDrawText(const std::string& text, float x, float y, float fontSize, float r, float g, float b, float a);
+        static void enqueueDrawTextCentered(const std::string& text, float x, float y, float fontSize, float r, float g, float b, float a);
         static void enqueueDrawRectangle(float x, float y, float width, float height, float r, float g, float b, float a);
         static void enqueueDrawCircle(float x, float y, float radius, float r, float g, float b, float a);
         static void enqueueGetScreenSize(float* width, float* height);
@@ -77,6 +78,13 @@ namespace GameCore {
         static bool isPrimaryInputJustPressed();
         static bool isPrimaryInputJustReleased();
         
+        // Gesture detection methods
+        static bool isSwipeLeftDetected();
+        static bool isSwipeRightDetected();
+        static bool isSwipeUpDetected();
+        static bool isSwipeDownDetected();
+        static void resetGestureState();
+        
         // Setup function to configure delegates to use this proxy
         void setupDelegates(PlatformDelegates& delegates);
         
@@ -97,6 +105,9 @@ namespace GameCore {
         
         // Touch state management
         void updateTouchState(float x, float y, bool isDown, bool justPressed, bool justReleased);
+        
+        // Gesture state management
+        void updateGestureState(bool swipeLeft, bool swipeRight, bool swipeUp, bool swipeDown);
         void resetInputFrameState();
         
     private:
@@ -112,6 +123,12 @@ namespace GameCore {
         bool m_isTouchDown = false;
         bool m_isTouchJustPressed = false;
         bool m_isTouchJustReleased = false;
+        
+        // Gesture input state
+        bool m_isSwipeLeftDetected = false;
+        bool m_isSwipeRightDetected = false;
+        bool m_isSwipeUpDetected = false;
+        bool m_isSwipeDownDetected = false;
         
         // Swift components are managed entirely on the Swift side
         // No C++ references needed
@@ -144,5 +161,6 @@ namespace GameCore {
 
     // Touch input state management - global functions for Swift
     void updateTouchState(float x, float y, bool isDown, bool justPressed, bool justReleased);
+    void updateGestureState(bool swipeLeft, bool swipeRight, bool swipeUp, bool swipeDown);
     void resetInputFrameState();
 }

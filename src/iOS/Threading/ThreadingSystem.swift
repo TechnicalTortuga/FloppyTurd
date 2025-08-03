@@ -166,6 +166,16 @@ class CommandProcessor {
                                  r: data.r, g: data.g, b: data.b, a: data.a)
             }
             
+        case .CMD_DRAW_TEXT_CENTERED:
+            let text = String(data.text)
+            if !text.isEmpty {
+                renderer.drawTextCentered(text,
+                                         x: data.x,
+                                         y: data.y,
+                                         fontSize: data.fontSize,
+                                         r: data.r, g: data.g, b: data.b, a: data.a)
+            }
+            
         case .CMD_DRAW_RECTANGLE:
             renderer.drawRectangle(x: data.x,
                                  y: data.y,

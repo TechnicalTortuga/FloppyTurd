@@ -132,6 +132,20 @@ namespace GameCore {
         s_instance->enqueueRenderCommand(cmd);
     }
     
+    void ThreadingProxy::enqueueDrawTextCentered(const std::string& text, float x, float y, float fontSize, float r, float g, float b, float a) {
+        if (!s_instance) return;
+        RenderCommand cmd(CommandType::CMD_DRAW_TEXT_CENTERED);
+        cmd.data.text = text;
+        cmd.data.x = x;
+        cmd.data.y = y;
+        cmd.data.fontSize = fontSize;
+        cmd.data.r = r;
+        cmd.data.g = g;
+        cmd.data.b = b;
+        cmd.data.a = a;
+        s_instance->enqueueRenderCommand(cmd);
+    }
+    
     void ThreadingProxy::enqueueDrawRectangle(float x, float y, float width, float height, float r, float g, float b, float a) {
         if (!s_instance) return;
         RenderCommand cmd(CommandType::CMD_DRAW_RECTANGLE);
@@ -386,6 +400,64 @@ namespace GameCore {
         s_instance->m_isTouchJustReleased = false;
     }
     
+    // Gesture detection method implementations
+    bool ThreadingProxy::isSwipeLeftDetected() {
+        if (!s_instance) return false;
+        bool result = s_instance->m_isSwipeLeftDetected;
+        if (result) {
+            GN_LOG_INFO("🎯 ThreadingProxy: isSwipeLeftDetected() = TRUE - SWIPE LEFT DETECTED!");
+        }
+        return result;
+    }
+    
+    bool ThreadingProxy::isSwipeRightDetected() {
+        if (!s_instance) return false;
+        bool result = s_instance->m_isSwipeRightDetected;
+        if (result) {
+            GN_LOG_INFO("🎯 ThreadingProxy: isSwipeRightDetected() = TRUE - SWIPE RIGHT DETECTED!");
+        }
+        return result;
+    }
+    
+    bool ThreadingProxy::isSwipeUpDetected() {
+        if (!s_instance) return false;
+        bool result = s_instance->m_isSwipeUpDetected;
+        if (result) {
+            GN_LOG_INFO("🎯 ThreadingProxy: isSwipeUpDetected() = TRUE - SWIPE UP DETECTED!");
+        }
+        return result;
+    }
+    
+    bool ThreadingProxy::isSwipeDownDetected() {
+        if (!s_instance) return false;
+        bool result = s_instance->m_isSwipeDownDetected;
+        if (result) {
+            GN_LOG_INFO("🎯 ThreadingProxy: isSwipeDownDetected() = TRUE - SWIPE DOWN DETECTED!");
+        }
+        return result;
+    }
+    
+    void ThreadingProxy::resetGestureState() {
+        if (!s_instance) return;
+        s_instance->m_isSwipeLeftDetected = false;
+        s_instance->m_isSwipeRightDetected = false;
+        s_instance->m_isSwipeUpDetected = false;
+        s_instance->m_isSwipeDownDetected = false;
+    }
+    
+    void ThreadingProxy::updateGestureState(bool swipeLeft, bool swipeRight, bool swipeUp, bool swipeDown) {
+        if (!s_instance) return;
+        s_instance->m_isSwipeLeftDetected = swipeLeft;
+        s_instance->m_isSwipeRightDetected = swipeRight;
+        s_instance->m_isSwipeUpDetected = swipeUp;
+        s_instance->m_isSwipeDownDetected = swipeDown;
+        
+        if (swipeLeft || swipeRight || swipeUp || swipeDown) {
+            GN_LOG_INFO("🔥 ThreadingProxy: updateGestureState() - GESTURE DETECTED: Left=%d, Right=%d, Up=%d, Down=%d", 
+                       swipeLeft, swipeRight, swipeUp, swipeDown);
+        }
+    }
+    
     // setSwiftComponents removed - Swift components managed entirely on Swift side
     
     std::vector<RenderCommand> ThreadingProxy::getAndClearRenderCommands() {
@@ -440,6 +512,7 @@ namespace GameCore {
         delegates.renderer.drawSprite = enqueueDrawSprite;
         delegates.renderer.drawSpriteScaled = enqueueDrawSpriteScaled;
         delegates.renderer.drawText = enqueueDrawText;
+        delegates.renderer.drawTextCentered = enqueueDrawTextCentered;
         delegates.renderer.drawRectangle = enqueueDrawRectangle;
         delegates.renderer.drawCircle = enqueueDrawCircle;
         delegates.renderer.getScreenSize = enqueueGetScreenSize;
@@ -475,6 +548,13 @@ namespace GameCore {
         delegates.input.isPrimaryInputDown = isPrimaryInputDown;
         delegates.input.isPrimaryInputJustPressed = isPrimaryInputJustPressed;
         delegates.input.isPrimaryInputJustReleased = isPrimaryInputJustReleased;
+        
+        // Configure gesture detection delegates
+        delegates.input.isSwipeLeftDetected = isSwipeLeftDetected;
+        delegates.input.isSwipeRightDetected = isSwipeRightDetected;
+        delegates.input.isSwipeUpDetected = isSwipeUpDetected;
+        delegates.input.isSwipeDownDetected = isSwipeDownDetected;
+        delegates.input.resetGestureState = resetGestureState;
         
         GN_LOG_INFO("ThreadingProxy: Input delegates configured - touch input will flow from iOS->ThreadingProxy->C++");
         GN_LOG_INFO("ThreadingProxy: Delegates configured successfully - ready for turd-tossing action!");
@@ -534,6 +614,12 @@ bool isAssetCachedFromProxy(const char* assetName, int assetType) {
 void updateTouchState(float x, float y, bool isDown, bool justPressed, bool justReleased) {
     if (g_threadingProxy) {
         g_threadingProxy->updateTouchState(x, y, isDown, justPressed, justReleased);
+    }
+}
+
+void updateGestureState(bool swipeLeft, bool swipeRight, bool swipeUp, bool swipeDown) {
+    if (g_threadingProxy) {
+        g_threadingProxy->updateGestureState(swipeLeft, swipeRight, swipeUp, swipeDown);
     }
 }
 

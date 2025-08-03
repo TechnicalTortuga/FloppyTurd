@@ -2,6 +2,7 @@
 #include "ECS.h"
 #include "Component.h"
 #include "../../FloppyTurd/Systems/SpriteSystem.h"
+#include "../../FloppyTurd/Systems/UISystem.h"
 #include "GNLog.h"
 
 namespace Gnosis {
@@ -73,6 +74,10 @@ namespace Gnosis {
             m_spriteSystem->Render();
         }
         
+        if (m_uiSystem) {
+            m_uiSystem->Render();
+        }
+        
         // Future system rendering:
         // if (m_particleSystem) {
         //     m_particleSystem->Render();
@@ -83,12 +88,20 @@ namespace Gnosis {
         return m_spriteSystem.get();
     }
 
+    GameCore::UISystem* SystemManager::GetUISystem() const {
+        return m_uiSystem.get();
+    }
+
     void SystemManager::InitializeSystems() {
         // Initialize systems in dependency order
         
         // Rendering systems (SpriteSystem handles sprite animation and rendering)
         m_spriteSystem = std::make_unique<GameCore::SpriteSystem>(m_ecsCoordinator, m_delegates);
         GN_LOG_INFO("SystemManager: SpriteSystem initialized with integrated rendering");
+        
+        // UI rendering system
+        m_uiSystem = std::make_unique<GameCore::UISystem>(m_ecsCoordinator, m_delegates);
+        GN_LOG_INFO("SystemManager: UISystem initialized with integrated UI rendering");
         
         // Future systems would be initialized here:
         // m_physicsSystem = std::make_unique<GameCore::PhysicsSystem>(m_ecsCoordinator);
@@ -98,6 +111,9 @@ namespace Gnosis {
 
     void SystemManager::ShutdownSystems() {
         // Shutdown systems in reverse order
+        
+        m_uiSystem.reset();
+        GN_LOG_INFO("SystemManager: UISystem shut down");
         
         m_spriteSystem.reset();
         GN_LOG_INFO("SystemManager: SpriteSystem shut down");
@@ -114,6 +130,10 @@ namespace Gnosis {
         
         if (m_spriteSystem) {
             m_spriteSystem->Update(deltaTime);
+        }
+        
+        if (m_uiSystem) {
+            m_uiSystem->Update(deltaTime);
         }
         
         // Future system updates:

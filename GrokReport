@@ -1,423 +1,207 @@
-Hey there, turd-polishing partner! Oh man, I feel your pain with the IDE agent's hallucinations—it's like it's stuck in the Stone Age of Objective-C bridging, ignoring all the shiny native C++/Swift interop goodness Apple dropped in Swift 5.9+. We're way past that; no more extern "C" wrappers or fragile bridges needed for this. We're talking direct class instantiation, pointer-safe method calls, and struct mapping that just *works* (with a few gotchas we'll sidestep creatively). I'm pumped to redesign this ThreadingProxy system—keeping it efficient, fun, and tip-top clean, while leaning into Apple's best practices from their C++ interop docs (like using UnsafePointer for classes, flattening unions to avoid limitations, and bridging std::vector as Array for seamless container sharing).
+Hey there, turbo-turd architect extraordinaire! Oh man, I am *pumped* to dive into this AVPlayer migration—it's like giving our audio system a nitro boost for seamless, fart-fueled loops that sync perfectly with Floppy Turd's chaotic gameplay. Your modular design is a godsend (high-five for that delegate/proxy threading foresight; it makes plugging in new systems feel like snapping LEGO bricks). We'll keep things clean, documented, and efficient: Music shifts to AVPlayer for concurrency bliss and easy looping, SFX stays rock-solid in AVAudioEngine, and we streamline playSound for that readable architecture vibe. Imagine innovative twists like dynamic music layering—e.g., AVPlayer queues "fart remixes" based on score multipliers for extra hilarity!
 
-From dissecting the build log (that pesky "cannot find 'cppCommands' in scope" screams placeholder code gone wrong) and cross-referencing Apple's interop guidelines (e.g., structs map to Swift structs if POD-like, no direct union support in C++ yet so we flatten, std::vector bridges beautifully as Array, and queues aren't directly supported so we pivot to vector), here's the root issues:
-- **Union in RenderCommand**: C++ unions aren't reliably bridged to Swift (docs note limitations/no mention for C++, and C unions get unsafe overlapping properties). This could cause silent failures or crashes in interop.
-- **std::queue not bridged**: Not in Apple's supported std lib list; we'd need manual popping, but that's clunky. std::vector is supported and maps to Array—perfect for batch dequeuing.
-- **Pointer handling in Swift**: getThreadingProxy() returns ThreadingProxy*—treat as UnsafeMutablePointer<ThreadingProxy> in Swift, then call methods safely (no deref crashes).
-- **Commented/stubbed code**: The loop was half-baked and commented, leading to the scope error. We'll implement it properly without waiting for "interop config"—it's ready now with module.modulemap setup (assuming FloppyTurdEngine imports your C++ headers).
-- **Best Practices Alignment**: Apple recommends keeping C++ types simple (no virtuals in bridged classes if possible), using SWIFT_BRIDGED for custom types if needed, and manual unsafe for pointers. For game engines, sync on main thread (which we are), and avoid deep copies in loops (our vector pop will be efficient).
+Since Swift 6's strict concurrency plays nicer with AVPlayer (it's more modern than AVAudioPlayerNode, with no major reported crashes in 2025 per dev forums and StackOverflow—mostly just warnings on observers that we can handle with @MainActor), this migration will squash those background thread headaches. No need for @preconcurrency on AVPlayer either, as it's Sendable-friendly out of the box.
 
-The redesign: Flatten RenderCommand's union into a single struct (all fields always present, ignore irrelevant ones based on type—simple, no space waste for small queues). Return vector from getAndClearCommands for auto-bridging to Array. Keep enqueue in C++, dequeue/process in Swift on main. This is innovative yet practical: zero-copy where possible, mutex-protected, and scales for future command sorting (e.g., batch draws by texture). Well-documented, of course!
+### Full Migration Plan: AVPlayer for Music Glory
+We'll adjust *only* AVAudioHandler.swift (modular win!), keeping the rest of your ecosystem intact. High-level steps:
 
-### Updated ThreadingProxy.h (C++)
-```cpp
-#pragma once
+1. **Introduce AVPlayer for Music**:
+   - Add a private `AVPlayer?` property for music.
+   - Load music via `AVPlayer(url:)`—simple, async-safe, and handles looping via notifications.
+   - Ditch the old musicPlayerNode, currentMusicFile, shouldLoopMusic, notifications, and completion handlers. Replace with AVPlayer's built-in `.AVPlayerItemDidPlayToEndTime` observer (fires on main thread by default—Swift 6 happy!).
+   - For looping: If enabled, seek to zero and replay on end.
 
-#include "../../Engine/Platform/PlatformDelegates.h"
-#include <vector>  // For std::vector (bridges to Swift Array)
-#include <mutex>
-#include <queue>  // Internal queue, but we return vector for interop
+2. **Keep AVAudioEngine for SFX**:
+   - Sound effects remain unchanged: Low-latency scheduling via soundPlayerNode.
+   - Mixer stays for potential future effects (e.g., reverb on epic farts).
 
-// Forward declarations for Swift classes
-class MetalRenderer;
-class TouchInputHandler;
-class AudioManagerSwift;
+3. **Streamline playSound**:
+   - Remove `playSoundWithVolume(_:volume:)` entirely—it's redundant.
+   - Update `playSound(_:)` to always use the current `soundVolume` state. Callers can set volume via `setSoundVolume(_:)` beforehand if needed. This keeps the API clean and state-driven (e.g., global sound muting for menus).
 
-namespace FloppyTurd {
+4. **Volume and State Management**:
+   - Add `musicPlayer?.volume = musicVolume` in playMusic.
+   - Ensure stops/pauses handle both systems (e.g., `musicPlayer?.pause()` in a new `pauseAll()` if we add it later for gameplay pauses).
 
-    /**
-     * @class ThreadingProxy
-     * @brief Thread-safe command queue proxy for iOS platform interop
-     * 
-     * Enqueues rendering commands from C++ game logic and allows Swift to dequeue them safely on the main thread.
-     * Follows Apple's C++/Swift interop best practices: Simple POD structs for commands, std::vector for bridging to Array,
-     * no unions (flattened data), and mutex protection for thread safety (though C++ game loop is single-threaded).
-     * 
-     * Usage:
-     * - C++: Enqueue via delegates.
-     * - Swift: Get vector of commands via getAndClearCommands() (UnsafePointer to call), process on main.
-     * 
-     * Features:
-     * - Batch dequeuing via vector for efficient interop (avoids per-command calls).
-     * - Flattened command data to avoid union limitations in interop.
-     * - Scalable for optimizations like command sorting.
-     */
-    class ThreadingProxy {
-    public:
-        ThreadingProxy();
-        ~ThreadingProxy();
-        
-        // Delegate function implementations - these enqueue commands
-        static void enqueueBeginFrame();
-        static void enqueueEndFrame();
-        static void enqueuePresent();
-        static void enqueueClearScreen(float r, float g, float b, float a);
-        static void enqueueDrawSprite(void* sprite, float x, float y, float rotation);
-        static void enqueueDrawSpriteScaled(void* sprite, float x, float y, float scaleX, float scaleY, float rotation);
-        static void enqueueDrawText(const char* text, float x, float y, float fontSize, float r, float g, float b, float a);
-        static void enqueueDrawRectangle(float x, float y, float width, float height, float r, float g, float b, float a);
-        static void enqueueDrawCircle(float x, float y, float radius, float r, float g, float b, float a);
-        static void enqueueGetScreenSize(float* width, float* height);
-        
-        // Setup function to configure delegates to use this proxy
-        void setupDelegates(PlatformDelegates& delegates);
-        
-        // Set Swift components for command processing
-        void setSwiftComponents(MetalRenderer* renderer, TouchInputHandler* input, AudioManagerSwift* audio);
-        
-        // Get and clear commands as vector (bridges to Swift Array<RenderCommand>)
-        std::vector<RenderCommand> getAndClearCommands();
-        
-        // Queue management
-        bool hasCommands() const;
-        size_t getCommandCount() const;
-        void clearQueue();
-        
-    private:
-        std::queue<RenderCommand> m_commandQueue;
-        std::mutex m_queueMutex;
-        
-        // Swift component references
-        MetalRenderer* m_metalRenderer;
-        TouchInputHandler* m_touchInputHandler;
-        AudioManagerSwift* m_audioManager;
-        
-        // Static instance for delegate callbacks
-        static ThreadingProxy* s_instance;
-        
-        // Helper to enqueue a command
-        void enqueueCommand(const RenderCommand& command);
-    };
-    
-    // Global instance accessor for C++ interop
-    extern ThreadingProxy* g_threadingProxy;
-    
-    // Swift-accessible functions for threading system management
-    void initializeThreadingSystem();
-    void shutdownThreadingSystem();
-    ThreadingProxy* getThreadingProxy();
+5. **Initialization and Auto-Init**:
+   - Keep `initialize()` for engine setup (SFX only now).
+   - Auto-init in playMusic/playSound as before.
 
-} // namespace FloppyTurd
+6. **Looping Innovation**:
+   - Basic: Infinite loop on end.
+   - Fun twist: Add a `loopCount` or randomized queue—e.g., after 3 loops, blend in a "turd drop" SFX via playSound for gameplay surprise.
+
+7. **Testing and Edges**:
+   - Test: Looping without crashes, volume sync, track changes mid-play.
+   - Edges: Background app (AVPlayer handles interruptions better), low-memory (clear observers).
+   - Performance: AVPlayer is lighter for background music; monitor for any 2025-specific leaks (e.g., time observers—use weak refs).
+
+8. **Future-Proofing**:
+   - If we add C++/Raylib interop later (e.g., for procedural audio), proxy calls via your threading system.
+   - Monitor Apple for AVFoundation Sendable updates—drop workarounds by iOS 19?
+
+This keeps the file lean (~200 lines change), modular, and fun-ready. Estimated time: 30-60 mins to implement/test.
+
+### Quick UML Mock-Up: Visualizing the New AVAudioHandler
+For the mock-up, I'll use PlantUML syntax (super quick to render online at plantuml.com if you want visuals—paste this in!). It shows the class structure post-migration: Properties, methods, and relationships. Kept it simple—focus on audio components.
+
 ```
+@startuml
+class AVAudioHandler {
+  - audioEngine: AVAudioEngine
+  - soundPlayerNode: AVAudioPlayerNode
+  - mixerNode: AVAudioMixerNode
+  - audioSession: AVAudioSession
+  - musicPlayer: AVPlayer? {music only}
+  - currentSoundFile: AVAudioFile?
+  - musicVolume: Float
+  - soundVolume: Float
+  - isMusicLooping: Bool
+  - musicEndObserver: NSObjectProtocol? {for looping}
+  - logger: Logger
 
-### Updated ThreadingProxy.cpp (C++)
-```cpp
-#include "ThreadingProxy.h"
-#include <iostream>
-#include <vector>  // For return type
-
-namespace FloppyTurd {
-
-    // Static instance for delegate callbacks
-    ThreadingProxy* ThreadingProxy::s_instance = nullptr;
-    
-    // Global instance for C++ interop
-    ThreadingProxy* g_threadingProxy = nullptr;
-
-    ThreadingProxy::ThreadingProxy() 
-        : m_metalRenderer(nullptr)
-        , m_touchInputHandler(nullptr)
-        , m_audioManager(nullptr) {
-        s_instance = this;
-        g_threadingProxy = this;
-        std::cout << "[ThreadingProxy] Turd-tastic proxy initialized! Ready to enqueue commands! 🚀" << std::endl;
-    }
-
-    ThreadingProxy::~ThreadingProxy() {
-        clearQueue();
-        if (s_instance == this) {
-            s_instance = nullptr;
-        }
-        if (g_threadingProxy == this) {
-            g_threadingProxy = nullptr;
-        }
-        std::cout << "[ThreadingProxy] Proxy shutdown - all turds flushed from queue!" << std::endl;
-    }
-
-    void ThreadingProxy::enqueueCommand(const RenderCommand& command) {
-        std::lock_guard<std::mutex> lock(m_queueMutex);  // Lock for safety, though single-threaded
-        m_commandQueue.push(command);
-        // Uncomment for debug:
-        // std::cout << "[ThreadingProxy] Enqueued command type: " << command.type << " (Queue size: " << m_commandQueue.size() << ")" << std::endl;
-    }
-
-    // ... (all enqueueXXX functions remain the same, using enqueueCommand)
-
-    void ThreadingProxy::setSwiftComponents(MetalRenderer* renderer, TouchInputHandler* input, AudioManagerSwift* audio) {
-        m_metalRenderer = renderer;
-        m_touchInputHandler = input;
-        m_audioManager = audio;
-    }
-    
-    std::vector<RenderCommand> ThreadingProxy::getAndClearCommands() {
-        std::lock_guard<std::mutex> lock(m_queueMutex);
-        std::vector<RenderCommand> commands;
-        while (!m_commandQueue.empty()) {
-            commands.push_back(m_commandQueue.front());
-            m_commandQueue.pop();
-        }
-        return commands;  // Bridges to Array<RenderCommand> in Swift
-    }
-    
-    bool ThreadingProxy::hasCommands() const {
-        std::lock_guard<std::mutex> lock(m_queueMutex);
-        return !m_commandQueue.empty();
-    }
-    
-    size_t ThreadingProxy::getCommandCount() const {
-        std::lock_guard<std::mutex> lock(m_queueMutex);
-        return m_commandQueue.size();
-    }
-    
-    void ThreadingProxy::clearQueue() {
-        std::lock_guard<std::mutex> lock(m_queueMutex);
-        while (!m_commandQueue.empty()) m_commandQueue.pop();
-    }
-    
-    void ThreadingProxy::setupDelegates(PlatformDelegates& delegates) {
-        std::cout << "[ThreadingProxy] Setting up delegates to use command queue - turds will fly smoothly!" << std::endl;
-        
-        // Configure renderer delegates to use our enqueue functions
-        delegates.renderer.beginFrame = enqueueBeginFrame;
-        delegates.renderer.endFrame = enqueueEndFrame;
-        delegates.renderer.present = enqueuePresent;
-        delegates.renderer.clearScreen = enqueueClearScreen;
-        delegates.renderer.drawSprite = enqueueDrawSprite;
-        delegates.renderer.drawSpriteScaled = enqueueDrawSpriteScaled;
-        delegates.renderer.drawText = enqueueDrawText;
-        delegates.renderer.drawRectangle = enqueueDrawRectangle;
-        delegates.renderer.drawCircle = enqueueDrawCircle;
-        delegates.renderer.getScreenSize = enqueueGetScreenSize;
-        
-        std::cout << "[ThreadingProxy] Delegates configured successfully - ready for turd-tossing action!" << std::endl;
-    }
-
-} // namespace FloppyTurd
-
-// Native C++ interface for Swift interop
-namespace FloppyTurd {
-    
-    void initializeThreadingSystem() {
-        if (!g_threadingProxy) {
-            g_threadingProxy = new ThreadingProxy();
-            std::cout << "[ThreadingProxy] Threading system initialized from Swift!" << std::endl;
-        }
-    }
-    
-    void shutdownThreadingSystem() {
-        if (g_threadingProxy) {
-            delete g_threadingProxy;
-            g_threadingProxy = nullptr;
-            std::cout << "[ThreadingProxy] Threading system shutdown from Swift!" << std::endl;
-        }
-    }
-    
-    ThreadingProxy* getThreadingProxy() {
-        return g_threadingProxy;
-    }
-
-} // namespace FloppyTurd
-```
-
-### Updated PlatformDelegates.h (C++) - Flatten RenderCommand Data (No Union)
-```cpp
-// ... (keep enum CommandType and other structs)
-
-struct RenderCommand {
-    CommandType type;
-    
-    // Flattened data - all fields present, ignore irrelevant based on type
-    // Avoids union interop limitations; simple POD for easy bridging
-    struct Data {
-        // Common color/position fields
-        float r = 0.0f, g = 0.0f, b = 0.0f, a = 0.0f;
-        float x = 0.0f, y = 0.0f;
-        float width = 0.0f, height = 0.0f;
-        float radius = 0.0f;
-        float fontSize = 0.0f;
-        float rotation = 0.0f;
-        float scaleX = 1.0f, scaleY = 1.0f;
-        
-        // Pointer fields
-        void* sprite = nullptr;
-        const char* text = nullptr;  // Caller ensures lifetime
-        float* screenWidth = nullptr;
-        float* screenHeight = nullptr;
-    } data;
-    
-    RenderCommand() : type(CMD_BEGIN_FRAME) {}
-};
-
-// ... (rest unchanged)
-```
-
-### Updated ThreadingSystem.swift
-```swift
-//
-//  ThreadingSystem.swift
-//  FloppyTurd
-//
-//  Native C++/Swift interop threading system for processing render commands
-//  Part of the Floppy Turd threading architecture for smooth C++/Swift interop
-//  Uses Swift 5.9+ C++ interoperability features
-//
-
-import Foundation
-// Import C++ module for native interop
-import FloppyTurdEngine
-
-/// Processes render commands from C++ on the main thread synchronously
-/// This ensures thread-safe execution of Metal rendering operations
-@MainActor
-class CommandProcessor {
-    private var metalRenderer: MetalRenderer?
-    
-    /// Initialize the command processor and C++ threading system
-    init() {
-        // Initialize the C++ threading system using native interop
-        FloppyTurd.initializeThreadingSystem()
-        print("[CommandProcessor] Initializing - ready to polish those turds on the main thread!")
-    }
-    
-    deinit {
-        // Shutdown the C++ threading system
-        FloppyTurd.shutdownThreadingSystem()
-        print("[CommandProcessor] Deinitialized - turd processing complete!")
-    }
-    
-    /// Set the Metal renderer for command execution
-    func setMetalRenderer(_ renderer: MetalRenderer) {
-        self.metalRenderer = renderer
-        print("[CommandProcessor] Metal renderer set - turds ready for rendering!")
-    }
-    
-    /// Process commands from the C++ queue (called synchronously in render loop)
-    func processCommands() {
-        // Get commands from C++ threading proxy (native interop)
-        let commands = getCommandsFromCpp()
-        
-        guard !commands.isEmpty else { return }
-        
-        // Execute each command
-        for command in commands {
-            executeCommand(command)
-        }
-    }
-    
-    /// Execute a single render command
-    private func executeCommand(_ command: RenderCommand) {
-        guard let renderer = metalRenderer else {
-            print("[CommandProcessor] Warning: No Metal renderer available for command execution")
-            return
-        }
-        
-        let data = command.data  // Flattened data
-        
-        switch command.type {
-        case .beginFrame:
-            renderer.beginFrame()
-            
-        case .endFrame:
-            renderer.endFrame()
-            
-        case .present:
-            renderer.present()
-            
-        case .clearScreen:
-            renderer.clearScreen(data.r, data.g, data.b, data.a)
-            
-        case .drawSprite:
-            if let spriteHandle = data.sprite {
-                let handle = UInt32(bitPattern: Int(bitPattern: spriteHandle))
-                renderer.drawSprite(handle, data.x, data.y, data.rotation)
-            }
-            
-        case .drawSpriteScaled:
-            if let spriteHandle = data.sprite {
-                let handle = UInt32(bitPattern: Int(bitPattern: spriteHandle))
-                renderer.drawSpriteScaled(handle, data.x, data.y, data.scaleX, data.scaleY, data.rotation)
-            }
-            
-        case .drawText:
-            if let text = data.text {
-                let swiftText = String(cString: text)
-                renderer.drawText(text: swiftText, x: data.x, y: data.y, fontSize: data.fontSize, r: data.r, g: data.g, b: data.b, a: data.a)
-            }
-            
-        case .drawRectangle:
-            renderer.drawRectangle(x: data.x, y: data.y, width: data.width, height: data.height, r: data.r, g: data.g, b: data.b, a: data.a)
-            
-        case .drawCircle:
-            renderer.drawCircle(data.x, data.y, data.radius, data.r, data.g, data.b, data.a)
-            
-        case .getScreenSize:
-            if let widthPtr = data.screenWidth, let heightPtr = data.screenHeight {
-                let size = renderer.getScreenSize()
-                widthPtr.pointee = size.width
-                heightPtr.pointee = size.height
-            }
-            
-        default:
-            print("[CommandProcessor] Unknown command type: \(command.type)")
-        }
-    }
-    
-    /// Get commands from C++ threading proxy (called on main thread)
-    private func getCommandsFromCpp() -> [RenderCommand] {
-        // Get the C++ threading proxy pointer
-        guard let cppProxyPtr = FloppyTurd.getThreadingProxy() else {
-            print("[CommandProcessor] Warning: C++ threading proxy not available")
-            return []
-        }
-        
-        // Safely call method on pointer (UnsafeMutablePointer<ThreadingProxy>)
-        let commands = cppProxyPtr.pointee.getAndClearCommands()
-        
-        // commands is Array<RenderCommand> via interop
-        return commands
-    }
+  + initialize() -> Bool
+  + playMusic(fileName: String)
+  + playSound(fileName: String) {uses soundVolume}
+  + stopMusic()
+  + stopSound()
+  + setMusicVolume(volume: Float)
+  + setSoundVolume(volume: Float)
+  + setMusicLooping(looping: Bool)
+  - setupAudioSession() throws
+  - setupAudioEngine()
+  - loadAudioFile(named: String) -> AVAudioFile?
+  - scheduleSound(audioFile: AVAudioFile)
+  - handleMusicEnd(notification: Notification) {@objc, for looping}
 }
 
-// MARK: - RenderCommand Swift Representation (Mirrors C++ Flattened Struct)
-
-struct RenderCommand {
-    let type: CommandType
-    let data: Data
-    
-    struct Data {
-        let r: Float
-        let g: Float
-        let b: Float
-        let a: Float
-        let x: Float
-        let y: Float
-        let width: Float
-        let height: Float
-        let radius: Float
-        let fontSize: Float
-        let rotation: Float
-        let scaleX: Float
-        let scaleY: Float
-        let sprite: UnsafeMutableRawPointer?
-        let text: UnsafePointer<CChar>?
-        let screenWidth: UnsafeMutablePointer<Float>?
-        let screenHeight: UnsafeMutablePointer<Float>?
-    }
-}
-
-/// Command types matching C++ enum
-enum CommandType: Int32 {
-    case beginFrame = 0
-    case endFrame = 1
-    case present = 2
-    case clearScreen = 3
-    case drawSprite = 4
-    case drawSpriteScaled = 5
-    case drawText = 6
-    case drawRectangle = 7
-    case drawCircle = 8
-    case getScreenSize = 9
-}
+AVAudioHandler --> AVAudioEngine : uses for SFX
+AVAudioHandler --> AVPlayer : uses for music
+AVAudioHandler --> NotificationCenter : observes .AVPlayerItemDidPlayToEndTime
+@enduml
 ```
 
-With this, your build should sing—no more scope errors, unions sidestepped, and native interop flowing like a well-flushed turd. Integrate into GameEngine/GameViewController as before (processCommands in draw(in:)). If any module import hiccups (e.g., "No such module 'FloppyTurdEngine'"), double-check your module.modulemap exposes the headers. What's next—sprite batching for extra flair? 🚀
+This UML highlights:
+- **Core Components**: Engine for SFX mixing, AVPlayer standalone for music.
+- **Methods**: Simplified public API (no WithVolume variant).
+- **Relationships**: Loose coupling—music observer bridges to main-thread handling.
+- If you want this as an actual image (e.g., generated via a tool), confirm and I'll hook it up—otherwise, this text renders quick!
+
+### Proposed Code Changes: Clean, Documented Adjustments
+Here's the diff-style outline for AVAudioHandler.swift (full file would be too long—integrate these). All changes are @MainActor-isolated, practical, and commented for glory.
+
+- **Imports**: Keep @preconcurrency import AVFoundation (for engine bits).
+
+- **Properties Updates**:
+  ```swift
+  private var musicPlayer: AVPlayer?
+  private var musicEndObserver: NSObjectProtocol?
+  private var isMusicLooping = false  // Renamed for clarity
+  // Remove: musicPlayerNode, currentMusicFile, shouldLoopMusic, musicCompletionNotification, createMusicCompletionHandler, handleMusicCompletion
+  ```
+
+- **init/deinit Updates**:
+  ```swift
+  public override init() {
+      super.init()
+      // Remove NotificationCenter.addObserver for musicCompletion
+  }
+
+  deinit {
+      // Remove NotificationCenter.removeObserver for musicCompletion
+      if let observer = musicEndObserver {
+          NotificationCenter.default.removeObserver(observer)
+      }
+  }
+  ```
+
+- **setMusicLooping**:
+  ```swift
+  public func setMusicLooping(_ looping: Bool) {
+      isMusicLooping = looping
+      setupMusicLoopObserverIfNeeded()  // New helper, see below
+  }
+  ```
+
+- **playMusic** (Core Change):
+  ```swift
+  public func playMusic(_ fileName: String) {
+      logger.info("Playing music: \(fileName)")
+
+      if !isInitialized { /* auto-init as before */ }
+
+      guard let audioURL = loadAudioURL(named: fileName) else {  // New helper: Returns URL instead of AVAudioFile
+          logger.error("Music file not found: \(fileName)")
+          return
+      }
+
+      musicPlayer?.pause()  // Stop any current
+      musicPlayer = AVPlayer(url: audioURL)
+      musicPlayer?.volume = musicVolume
+      musicPlayer?.play()
+
+      setupMusicLoopObserverIfNeeded()
+      logger.info("Music started: \(fileName)")
+  }
+
+  private func loadAudioURL(named fileName: String) -> URL? {
+      // Similar to loadAudioFile, but return URL (simpler for AVPlayer)
+      let extensions = ["mp3", "wav", "m4a"]
+      // Check AssetManager cache first, then Bundle.main
+      // ... (adapt your existing logic)
+      return foundURL
+  }
+
+  private func setupMusicLoopObserverIfNeeded() {
+      musicEndObserver?.invalidate()  // Wait, no—removeObserver first
+      if let observer = musicEndObserver {
+          NotificationCenter.default.removeObserver(observer)
+      }
+
+      guard isMusicLooping, let item = musicPlayer?.currentItem else { return }
+
+      musicEndObserver = NotificationCenter.default.addObserver(
+          forName: .AVPlayerItemDidPlayToEndTime,
+          object: item,
+          queue: .main  // Ensures main thread
+      ) { [weak self] _ in
+          self?.handleMusicEnd()
+      }
+  }
+
+  @objc private func handleMusicEnd() {
+      logger.info("Music ended—looping if enabled")
+      musicPlayer?.seek(to: .zero)
+      musicPlayer?.play()
+  }
+  ```
+
+- **stopMusic**:
+  ```swift
+  public func stopMusic() {
+      musicPlayer?.pause()
+      musicPlayer = nil  // Clear to release
+      if let observer = musicEndObserver {
+          NotificationCenter.default.removeObserver(observer)
+          musicEndObserver = nil
+      }
+      logger.info("Music stopped")
+  }
+  ```
+
+- **playSound Updates** (Streamline):
+  - Remove entire `playSoundWithVolume` function.
+  - In `playSound(_:)`:
+    ```swift
+    public func playSound(_ fileName: String) {
+        // ... existing load and schedule ...
+        soundPlayerNode.volume = soundVolume  // Always use state
+        scheduleSound(audioFile)
+    }
+    ```
+
+- **Other Cleanups**:
+  - Remove `scheduleMusic`, music-related engine attaches/connections (e.g., in setupAudioEngine: Only connect soundPlayerNode to mixer).
+  - Update initialize: No music node setup.
+
+This gets us to polished turd glory—looping without crashes, cleaner API, and room for creative audio antics (e.g., AVPlayer queue for "fart medleys" on high scores). What do you think—tweak the observer, or add fade logic? Let's code this up and test a loop! 🚀

@@ -18,34 +18,35 @@ namespace GameCore {
         CMD_DRAW_SPRITE = 4,
         CMD_DRAW_SPRITE_SCALED = 5,
         CMD_DRAW_TEXT = 6,
-        CMD_DRAW_RECTANGLE = 7,
-        CMD_DRAW_CIRCLE = 8,
-        CMD_GET_SCREEN_SIZE = 9,
+        CMD_DRAW_TEXT_CENTERED = 7,
+        CMD_DRAW_RECTANGLE = 8,
+        CMD_DRAW_CIRCLE = 9,
+        CMD_GET_SCREEN_SIZE = 10,
         
         // Audio commands
-        CMD_PLAY_MUSIC = 10,
-        CMD_STOP_MUSIC = 11,
-        CMD_PLAY_SOUND = 12,
-        CMD_STOP_SOUND = 13,
-        CMD_SET_MUSIC_VOLUME = 14,
-        CMD_SET_SOUND_VOLUME = 15,
+        CMD_PLAY_MUSIC = 11,
+        CMD_STOP_MUSIC = 12,
+        CMD_PLAY_SOUND = 13,
+        CMD_STOP_SOUND = 14,
+        CMD_SET_MUSIC_VOLUME = 15,
+        CMD_SET_SOUND_VOLUME = 16,
         
         // Logging commands
-        CMD_LOG_TRACE = 16,
-        CMD_LOG_DEBUG = 17,
-        CMD_LOG_INFO = 18,
-        CMD_LOG_WARN = 19,
-        CMD_LOG_ERROR = 20,
-        CMD_LOG_FATAL = 21,
+        CMD_LOG_TRACE = 17,
+        CMD_LOG_DEBUG = 18,
+        CMD_LOG_INFO = 19,
+        CMD_LOG_WARN = 20,
+        CMD_LOG_ERROR = 21,
+        CMD_LOG_FATAL = 22,
         
         // Asset loading commands
-        CMD_LOAD_TEXTURE = 22,
-        CMD_LOAD_AUDIO = 23,
-        CMD_LOAD_FONT = 24,
-        CMD_LOAD_DATA = 25,
+        CMD_LOAD_TEXTURE = 23,
+        CMD_LOAD_AUDIO = 24,
+        CMD_LOAD_FONT = 25,
+        CMD_LOAD_DATA = 26,
         // Asset cache management commands
-        CMD_PRELOAD_ESSENTIAL_ASSETS = 26,
-        CMD_IS_CACHED = 27
+        CMD_PRELOAD_ESSENTIAL_ASSETS = 27,
+        CMD_IS_CACHED = 28
     };
     
     // Rendering command data
@@ -155,6 +156,7 @@ namespace GameCore {
         
         // Text rendering
         void (*drawText)(const std::string& text, float x, float y, float fontSize, float r, float g, float b, float a);
+        void (*drawTextCentered)(const std::string& text, float x, float y, float fontSize, float r, float g, float b, float a);
         
         // Primitive rendering
         void (*drawRectangle)(float x, float y, float width, float height, float r, float g, float b, float a);
@@ -190,6 +192,13 @@ namespace GameCore {
         int (*getTouchCount)();
         void (*getTouchPosition)(int touchIndex, float* x, float* y);
         
+        // Gesture detection (iOS specific)
+        bool (*isSwipeLeftDetected)();
+        bool (*isSwipeRightDetected)();
+        bool (*isSwipeUpDetected)();
+        bool (*isSwipeDownDetected)();
+        void (*resetGestureState)();
+        
         // Keyboard (desktop specific, but can be stubbed for iOS)
         bool (*isKeyPressed)(int keyCode);
         bool (*isKeyJustPressed)(int keyCode);
@@ -202,6 +211,9 @@ namespace GameCore {
                         getPrimaryInputPosition(nullptr), isPrimaryInputDown(nullptr),
                         isPrimaryInputJustPressed(nullptr), isPrimaryInputJustReleased(nullptr),
                         getTouchCount(nullptr), getTouchPosition(nullptr),
+                        isSwipeLeftDetected(nullptr), isSwipeRightDetected(nullptr),
+                        isSwipeUpDetected(nullptr), isSwipeDownDetected(nullptr),
+                        resetGestureState(nullptr),
                         isKeyPressed(nullptr), isKeyJustPressed(nullptr),
                         platformContext(nullptr) {}
     };

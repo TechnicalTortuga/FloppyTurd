@@ -37,6 +37,7 @@ namespace GameCore {
         float m_loadingTimer;
         float m_rotationAngle;  // Current rotation angle in degrees
         void* m_poopHatEntity;  // Pointer to the poop hat entity (TODO: proper type when ECS is integrated)
+        void* m_loadingTextEntity;  // Pointer to the loading text entity
         
         static const float LOADING_DURATION;
         static const float ROTATION_SPEED;   // degrees per second
@@ -46,6 +47,7 @@ namespace GameCore {
         void CreateLoadingEntities();
         void DestroyLoadingEntities();
         void UpdatePoopHatPosition();
+        void CreateLoadingText();
     };
 
 } // namespace GameCore

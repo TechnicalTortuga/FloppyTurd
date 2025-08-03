@@ -1,0 +1,9 @@
+"/Users/aimac/Development/FloppyTurd/src/iOS/AppDelegate.swift":
+  dependencies: "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/Release-iphonesimulator/Objects-normal/x86_64/FloppyTurd-master.d"
+  swiftsourceinfo: "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/Release-iphonesimulator/Objects-normal/x86_64/FloppyTurd.swiftsourceinfo"
+  swiftdoc: "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/Release-iphonesimulator/Objects-normal/x86_64/FloppyTurd.swiftdoc"
+  objc-header: "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/Release-iphonesimulator/Objects-normal/x86_64/FloppyTurd-Swift.h"
+  abi-baseline-json: "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/Release-iphonesimulator/Objects-normal/x86_64/FloppyTurd.abi.json"
+  swiftmodule: "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/Release-iphonesimulator/Objects-normal/x86_64/FloppyTurd.swiftmodule"
+  const-values: "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/Release-iphonesimulator/Objects-normal/x86_64/FloppyTurd-master.swiftconstvalues"
+  diagnostics: "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/Release-iphonesimulator/Objects-normal/x86_64/FloppyTurd-master.dia"

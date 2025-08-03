@@ -85,6 +85,12 @@ void InitializePlatformDelegates() {
             }
         }
         
+        void DrawTextCentered(const std::string& text, float x, float y, float fontSize, float r, float g, float b, float a) {
+            if (!text.empty()) {
+                GameCore::ThreadingProxy::enqueueDrawTextCentered(text, x, y, fontSize, r, g, b, a);
+            }
+        }
+        
         void DrawRectangle(float x, float y, float width, float height, float r, float g, float b, float a) {
             GameCore::ThreadingProxy::enqueueDrawRectangle(x, y, width, height, r, g, b, a);
         }

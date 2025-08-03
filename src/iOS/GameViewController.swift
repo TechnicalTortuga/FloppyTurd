@@ -22,7 +22,7 @@ public class GameViewController: UIViewController {
     private var metalView: MTKView!
     private var metalRenderer: MetalRenderer!
     private var touchInputHandler: TouchInputHandler!
-    private var gameEngine: GameEngine!
+    public var gameEngine: GameEngine!
     
     // MARK: - Logging Helper - Direct Swift/C++ interop
     private func log(_ message: String, level: LogLevel = .info) {

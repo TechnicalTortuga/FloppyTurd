@@ -12,6 +12,7 @@ namespace Gnosis {
 
 namespace GameCore {
     class SpriteSystem;
+    class UISystem;
 }
 
 namespace Gnosis {
@@ -43,6 +44,7 @@ namespace Gnosis {
 
         // System access
         GameCore::SpriteSystem* GetSpriteSystem() const;
+        GameCore::UISystem* GetUISystem() const;
 
         // System management
         bool IsInitialized() const { return m_initialized; }
@@ -54,6 +56,7 @@ namespace Gnosis {
 
         // Systems (in update order)
         std::unique_ptr<GameCore::SpriteSystem> m_spriteSystem;
+        std::unique_ptr<GameCore::UISystem> m_uiSystem;
         
         // Future systems:
         // std::unique_ptr<GameCore::PhysicsSystem> m_physicsSystem;

@@ -73,30 +73,51 @@ fragment float4 fragment_debug(VertexOut in [[stage_in]]) {
     return float4(1.0, 0.0, 1.0, 1.0); // Magenta for debug
 }
 
+
+
 // Fragment shader for SDF text rendering
 fragment float4 sdf_text_fragment(VertexOut in [[stage_in]],
                                   texture2d<float> sdfTexture [[texture(0)]],
                                   sampler sdfSampler [[sampler(0)]]) {
-    // Sample the SDF texture
-    float distance = sdfTexture.sample(sdfSampler, in.texCoord).r;
+    // Sample the SDF texture (grayscale, so all channels should be the same)
+    float4 sdfSample = sdfTexture.sample(sdfSampler, in.texCoord);
+    float distance = sdfSample.r; // Red channel for grayscale
     
-    // Convert from 0-255 range back to signed distance (-1 to +1)
-    // Our SDF generation uses 128 (0.5) as the edge, values > 128 are inside
-    float normalizedDistance = (distance - 0.5) * 2.0;
+    // Our SDF generation produces values 0-255, converted to 0.0-1.0 by Metal
+    // where 128/255 ≈ 0.5 is the edge, values > 0.5 are inside, < 0.5 are outside
     
-    // Calculate the width of the antialiased edge
-    float edgeWidth = 0.7 * length(float2(dfdx(normalizedDistance), dfdy(normalizedDistance)));
+    // Calculate signed distance from edge (0.5 is the edge)
+    float signedDistance = distance - 0.5;
     
-    // Use 0.0 as the threshold for the normalized distance
-    float edgeDistance = 0.0;
+    // Calculate edge smoothing based on texture resolution and scale
+    // The 0.25 constant provides good antialiasing for most text sizes
+    float edgeWidth = 0.7 * length(float2(dfdx(distance), dfdy(distance)));
+    float smoothing = max(edgeWidth, 0.01); // Prevent division by zero
     
-    // Apply antialiasing using smoothstep
-    float alpha = smoothstep(edgeDistance - edgeWidth, edgeDistance + edgeWidth, normalizedDistance);
+    // Apply smoothstep for antialiasing around the edge
+    float alpha = smoothstep(-smoothing, smoothing, signedDistance);
+    
+    // DEBUG: Show what we're actually sampling and calculating
+    // Uncomment one of these to debug:
+    
+    // Show raw distance values as grayscale
+    // return float4(distance, distance, distance, 1.0);
+    
+    // Show alpha values as grayscale (what should be opaque vs transparent)
+    // return float4(alpha, alpha, alpha, 1.0);
+    
+    // Show signed distance (red=positive/inside, blue=negative/outside)
+    // return float4(max(signedDistance, 0.0), 0.0, max(-signedDistance, 0.0), 1.0);
+    
+    // POTENTIAL FIX: Try inverting the alpha calculation
+    // Maybe our SDF values are inverted from what we expect
+    float invertedAlpha = 1.0 - alpha;
     
     // Apply the text color with computed alpha
     float4 textColor = in.color;
-    textColor.a *= alpha;
+    textColor.a *= invertedAlpha;  // Try inverted alpha
     
+    // Apply the text color with computed alpha
     return textColor;
 }
 

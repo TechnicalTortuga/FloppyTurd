@@ -352,6 +352,24 @@ public class GameEngine: NSObject {
         log("Touch input with coordinates forwarded to C++ state manager", level: .debug)
     }
     
+    /// Update gesture state and forward to C++ game state manager
+    public func updateGestureState(swipeLeft: Bool, swipeRight: Bool, swipeUp: Bool, swipeDown: Bool) {
+        guard isRunning && !isPaused else { return }
+        guard cppGame != nil else {
+            log("Cannot update gesture state - C++ game not initialized", level: .warning)
+            return
+        }
+        
+        log("🎯 Gesture state: Left=\(swipeLeft), Right=\(swipeRight), Up=\(swipeUp), Down=\(swipeDown)", level: .debug)
+        
+        // Update gesture state in ThreadingProxy for C++ side to access
+        GameCore.updateGestureState(swipeLeft, swipeRight, swipeUp, swipeDown)
+        
+        // Forward gesture input to C++ game state manager
+        cppGame?.HandleInput()
+        log("Gesture state forwarded to C++ state manager", level: .debug)
+    }
+    
     // MARK: - Game Loop Integration
     
     /// Update the game (called from Metal render loop)

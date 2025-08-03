@@ -79,12 +79,22 @@ namespace GameCore {
     void GameStateManager::ProcessPendingChanges() {
         // Handle clear request
         if (m_shouldClear) {
+            // Call Exit() on all states before clearing
+            for (auto& state : m_stateStack) {
+                if (state) {
+                    state->Exit();
+                }
+            }
             m_stateStack.clear();
             m_shouldClear = false;
         }
         
         // Handle pop request
         if (m_shouldPop && !m_stateStack.empty()) {
+            // Call Exit() on the state being popped
+            if (m_stateStack.back()) {
+                m_stateStack.back()->Exit();
+            }
             m_stateStack.pop_back();
             m_shouldPop = false;
         }

@@ -24,5 +24,6 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../Entities/../Components/../../Engine/Core/GnosisTypes.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/LoadingState.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/MainMenuState.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../Components/GameComponents.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../../iOS/Threading/ThreadingProxy.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../../Engine/Platform/iOSPlatformImpl.h

@@ -409,6 +409,24 @@ public class TouchInputHandler: NSObject {
             lastGestureType = .none
         }
         lastGesturePosition = gesture.location(in: gesture.view)
+        
+        // Update ThreadingProxy with gesture state
+        updateGestureStateInThreadingProxy()
+        
+        log("Swipe gesture detected: \(lastGestureType) at position (\(lastGesturePosition.x), \(lastGesturePosition.y))", level: .debug)
+    }
+    
+    @MainActor private func updateGestureStateInThreadingProxy() {
+        // Update the ThreadingProxy with the detected gesture
+        let swipeLeft = lastGestureType == .swipeLeft
+        let swipeRight = lastGestureType == .swipeRight
+        let swipeUp = lastGestureType == .swipeUp
+        let swipeDown = lastGestureType == .swipeDown
+        
+        // Call the C++ ThreadingProxy method through Swift interop
+        if let gameViewController = delegate as? GameViewController {
+            gameViewController.gameEngine?.updateGestureState(swipeLeft: swipeLeft, swipeRight: swipeRight, swipeUp: swipeUp, swipeDown: swipeDown)
+        }
     }
     
     @MainActor @objc private func handlePinch(_ gesture: UIPinchGestureRecognizer) {

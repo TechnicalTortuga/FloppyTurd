@@ -11,6 +11,7 @@ import Metal
 import MetalKit
 import UIKit
 import CoreGraphics
+import CoreText
 import simd
 
 // MARK: - SDF Font Data Structures
@@ -78,6 +79,7 @@ public class MetalRenderer {
     private var sdfTextPipelineState: MTLRenderPipelineState?
     private var sdfTextOutlinePipelineState: MTLRenderPipelineState?
     private var sdfTextShadowPipelineState: MTLRenderPipelineState?
+
     private var vertexBuffer: MTLBuffer?
     private var indexBuffer: MTLBuffer?
     private var uniformBuffer: MTLBuffer?
@@ -133,14 +135,15 @@ public class MetalRenderer {
     private var fontAtlas: MTLTexture?
     private var fontMetrics: FontMetrics?
     private var glyphMap: [Character: GlyphInfo] = [:]
-    private var fontAtlasCache: [String: UIImage] = [:] // Cache for generated font atlases
+    private var fontAtlasCache: [String: UIImage] = [:]
+
     
     // MARK: - Initialization (@MainActor ensures main thread execution)
     
     public init() {
-        log("MetalRenderer init() called - setting up Metal on main thread", level: .debug)
+        log("🔧 MetalRenderer init() called - setting up Metal on main thread", level: .info)
         setupMetal()
-        log("MetalRenderer init() completed - device: \(device != nil), commandQueue: \(commandQueue != nil)", level: .debug)
+        log("🔧 MetalRenderer init() completed - device: \(device != nil), commandQueue: \(commandQueue != nil)", level: .info)
     }
     
     deinit {
@@ -152,7 +155,7 @@ public class MetalRenderer {
     // MARK: - Metal Setup
     
     private func setupMetal() {
-        log("setupMetal() starting - initializing Metal device and command queue", level: .debug)
+        log("🔧 setupMetal() starting - initializing Metal device and command queue", level: .info)
         
         // Get the default Metal device
         guard let device = MTLCreateSystemDefaultDevice() else {
@@ -169,7 +172,16 @@ public class MetalRenderer {
         setupRenderPipeline()
         setupBuffers()
         
-        log("setupMetal() completed - ready for rendering", level: .debug)
+        // Load the default font for text rendering
+        log("About to load default font 'Whacky_Joe' with fontSize 32.0", level: .info)
+        let fontLoaded = loadFont(fontName: "Whacky_Joe", fontSize: 32.0)
+        if fontLoaded {
+            log("Default font 'Whacky_Joe' loaded successfully", level: .info)
+        } else {
+            log("Failed to load default font 'Whacky_Joe' - text rendering will use placeholders", level: .warning)
+        }
+        
+        log("🔧 setupMetal() completed - ready for rendering", level: .info)
     }
     
     private func setupRenderPipeline() {
@@ -367,6 +379,8 @@ public class MetalRenderer {
                 log("Failed to create SDF text shadow pipeline state: \(error)", level: .error)
             }
         }
+        
+
     }
     
     private func setupBuffers() {
@@ -671,9 +685,8 @@ public class MetalRenderer {
     
     public func drawText(text: String, x: Float, y: Float, fontSize: Float, 
                         r: Float, g: Float, b: Float, a: Float) {
-        // Text rendering implementation would go here
-        // For now, just log the call
-        log("drawText: '\(text)' at (\(x), \(y)) with fontSize \(fontSize)", level: .debug)
+        // Call the real SDF text rendering function
+        drawTextSDF(text, x: x, y: y, fontSize: fontSize, r: r, g: g, b: b, a: a)
     }
     
     public func loadTexture(imagePath: String) -> UInt32 {
@@ -1274,23 +1287,120 @@ public class MetalRenderer {
     // MARK: - SDF Text Rendering
     
     public func loadFont(fontName: String, fontSize: Float) -> Bool {
-        // Clear any cached atlas to ensure we regenerate with new algorithm
+        log("Loading font: \(fontName) with size: \(fontSize)", level: .debug)
+        
+        // Check if we already have the font loaded
+        if fontAtlas != nil && !glyphMap.isEmpty {
+            log("Font already loaded: \(fontName)", level: .debug)
+            return true
+        }
+        
+        // First, load the TTF font to get glyph metrics
+        guard let fontURL = Bundle.main.url(forResource: fontName, withExtension: "ttf", subdirectory: "fonts") ?? Bundle.main.url(forResource: fontName, withExtension: "ttf") else {
+            log("Failed to find TTF font: \(fontName).ttf", level: .error)
+            return false
+        }
+        
+        // Load font data and create Core Text font
+        guard let fontData = try? Data(contentsOf: fontURL),
+              let dataProvider = CGDataProvider(data: fontData as CFData),
+              let cgFont = CGFont(dataProvider) else {
+            log("Failed to create CGFont from: \(fontURL.path)", level: .error)
+            return false
+        }
+        
+        // Create CTFont for glyph metrics
+        let ctFont = CTFontCreateWithGraphicsFont(cgFont, CGFloat(fontSize), nil, nil)
+        
+        // Try to load pre-generated atlas
+        var atlasImage: UIImage? = nil
+        var isSDFAtlas = false
+        
+        // Try different naming conventions for the atlas
+        let atlasNames = [
+            "WhackyJoe_32",  // Specific atlas name
+            "Whacky_Joe_32", // Alternative spelling
+            fontName,        // Exact font name
+            "\(fontName)_32", // Font name with size
+            "\(fontName)_\(Int(fontSize))" // Font name with requested size
+        ]
+        
+        for name in atlasNames {
+            // Try asset catalog first
+            atlasImage = UIImage(named: name)
+            if atlasImage != nil {
+                log("Found pre-generated atlas: \(name) in asset catalog", level: .debug)
+                // Check if this is an SDF atlas by looking for SDF-specific naming
+                isSDFAtlas = name.contains("SDF") || name.contains("sdf")
+                break
+            }
+            
+            // Try bundle with fonts subdirectory
+            if let url = Bundle.main.url(forResource: name, withExtension: "png", subdirectory: "fonts") {
+                atlasImage = UIImage(contentsOfFile: url.path)
+                if atlasImage != nil {
+                    log("Found pre-generated atlas: \(name).png in fonts subdirectory", level: .debug)
+                    // Check if this is an SDF atlas by looking for SDF-specific naming
+                    isSDFAtlas = name.contains("SDF") || name.contains("sdf")
+                    break
+                }
+            }
+        }
+        
+        if let atlasImage = atlasImage, isSDFAtlas {
+            // Use pre-generated SDF atlas
+            guard let device = device else {
+                log("Device not available for font loading", level: .error)
+                return false
+            }
+            
+            let textureLoader = MTKTextureLoader(device: device)
+            do {
+                fontAtlas = try textureLoader.newTexture(cgImage: atlasImage.cgImage!, options: [
+                    .textureUsage: MTLTextureUsage.shaderRead.rawValue,
+                    .textureStorageMode: MTLStorageMode.shared.rawValue
+                ])
+                
+                // Generate glyph metrics from TTF font
+                if generateGlyphMetricsFromTTF(ctFont: ctFont, atlasWidth: Float(atlasImage.size.width), atlasHeight: Float(atlasImage.size.height)) {
+                    fontMetrics = FontMetrics(
+                        size: fontSize,
+                        lineHeight: fontSize * 1.2,
+                        ascender: fontSize * 0.8,
+                        descender: fontSize * 0.2,
+                        base: fontSize * 0.8,
+                        atlasWidth: Float(atlasImage.size.width),
+                        atlasHeight: Float(atlasImage.size.height)
+                    )
+                    
+                    log("Font loaded successfully with pre-generated SDF atlas for: \(fontName)", level: .debug)
+                    return true
+                } else {
+                    log("Failed to generate glyph metrics for: \(fontName)", level: .error)
+                    return false
+                }
+                
+            } catch {
+                log("Failed to create texture from pre-generated atlas: \(error)", level: .error)
+            }
+        } else if atlasImage != nil {
+            log("Found pre-generated atlas but it's not an SDF atlas, falling back to TTF generation", level: .debug)
+        }
+        
+        // Fallback: Generate SDF atlas from TTF
+        log("Pre-generated atlas not found, generating SDF from TTF font", level: .debug)
+        
+        // Generate SDF atlas
+        guard let sdfAtlas = generateSDFAtlas(from: ctFont, atlasSize: 512, padding: 8) else {
+            log("Failed to generate SDF atlas", level: .error)
+            return false
+        }
+        
+        // Cache the generated atlas
         let cacheKey = "\(fontName)_\(Int(fontSize))"
-        fontAtlasCache.removeValue(forKey: cacheKey)
+        fontAtlasCache[cacheKey] = sdfAtlas
         
-        // First, try to load the .fnt file to get glyph metrics
-        guard loadBMFontMetrics(fontName: fontName) else {
-            log("Failed to load font metrics for: \(fontName)", level: .error)
-            return false
-        }
-        
-        // Generate an SDF atlas from the font
-        guard let fontAtlasImage = generateFontAtlas(fontName: fontName, fontSize: fontSize) else {
-            log("Failed to generate SDF atlas for: \(fontName)", level: .error)
-            return false
-        }
-        
-        // Create Metal texture from the atlas image
+        // Create Metal texture
         guard let device = device else {
             log("Device not available for font loading", level: .error)
             return false
@@ -1298,12 +1408,25 @@ public class MetalRenderer {
         
         let textureLoader = MTKTextureLoader(device: device)
         do {
-            fontAtlas = try textureLoader.newTexture(cgImage: fontAtlasImage.cgImage!, options: [
+            // Force single-channel format for SDF texture
+            fontAtlas = try textureLoader.newTexture(cgImage: sdfAtlas.cgImage!, options: [
                 .textureUsage: MTLTextureUsage.shaderRead.rawValue,
-                .textureStorageMode: MTLStorageMode.shared.rawValue
+                .textureStorageMode: MTLStorageMode.shared.rawValue,
+                .SRGB: false,
+                .generateMipmaps: false
             ])
             
-            log("Font atlas texture created successfully for: \(fontName)", level: .debug)
+            fontMetrics = FontMetrics(
+                size: fontSize,
+                lineHeight: fontSize * 1.2,
+                ascender: fontSize * 0.8,
+                descender: fontSize * 0.2,
+                base: fontSize * 0.8,
+                atlasWidth: Float(sdfAtlas.size.width),
+                atlasHeight: Float(sdfAtlas.size.height)
+            )
+            
+            log("Font loaded successfully with generated SDF atlas for: \(fontName)", level: .debug)
             return true
             
         } catch {
@@ -1312,194 +1435,95 @@ public class MetalRenderer {
         }
     }
     
-    private func loadBMFontMetrics(fontName: String) -> Bool {
-        // Load the .fnt file from the bundle - try multiple possible locations
-        var fontData: String?
+    private func loadTTFFont(fontName: String, fontSize: Float) -> Bool {
+        log("Loading TTF font: \(fontName) with size: \(fontSize)", level: .debug)
         
-        log("Attempting to load font: \(fontName)", level: .debug)
-        
-        // Try loading from main bundle first
-        if let fontPath = Bundle.main.path(forResource: fontName, ofType: "fnt") {
-            log("Found font at main bundle path: \(fontPath)", level: .debug)
-            fontData = try? String(contentsOfFile: fontPath)
-            if fontData != nil {
-                log("Successfully loaded font data from main bundle", level: .debug)
+        // Try to load TTF font from bundle
+        guard let fontURL = Bundle.main.url(forResource: fontName, withExtension: "ttf", subdirectory: "fonts") else {
+            log("TTF font not found in fonts subdirectory, trying main bundle", level: .debug)
+            guard let fontURL = Bundle.main.url(forResource: fontName, withExtension: "ttf") else {
+                log("Failed to find TTF font: \(fontName).ttf", level: .error)
+                return false
             }
-        } else {
-            log("Font not found in main bundle root", level: .debug)
+            return loadTTFFontFromURL(fontURL, fontName: fontName, fontSize: fontSize)
         }
         
-        // If not found, try loading from the fonts subfolder in assets
-        if fontData == nil, let fontPath = Bundle.main.path(forResource: fontName, ofType: "fnt", inDirectory: "fonts") {
-            log("Found font at fonts subfolder path: \(fontPath)", level: .debug)
-            fontData = try? String(contentsOfFile: fontPath)
-            if fontData != nil {
-                log("Successfully loaded font data from fonts subfolder", level: .debug)
-            }
-        } else {
-            log("Font not found in fonts subfolder", level: .debug)
-        }
-        
-        // If still not found, try loading as a bundled resource directly
-        if fontData == nil, let fontURL = Bundle.main.url(forResource: fontName, withExtension: "fnt") {
-            log("Found font at bundle URL: \(fontURL)", level: .debug)
-            fontData = try? String(contentsOf: fontURL)
-            if fontData != nil {
-                log("Successfully loaded font data from bundle URL", level: .debug)
-            }
-        } else {
-            log("Font not found via bundle URL", level: .debug)
-        }
-        
-        // Debug: List all .fnt files in the bundle
-        if let bundlePath = Bundle.main.resourcePath {
-            log("Bundle resource path: \(bundlePath)", level: .debug)
-            let fileManager = FileManager.default
-            do {
-                let contents = try fileManager.contentsOfDirectory(atPath: bundlePath)
-                let fntFiles = contents.filter { $0.hasSuffix(".fnt") }
-                log("Found .fnt files in bundle: \(fntFiles)", level: .debug)
-                
-                // Also check fonts subdirectory
-                let fontsPath = bundlePath + "/fonts"
-                if fileManager.fileExists(atPath: fontsPath) {
-                    let fontsContents = try fileManager.contentsOfDirectory(atPath: fontsPath)
-                    let fontsFntFiles = fontsContents.filter { $0.hasSuffix(".fnt") }
-                    log("Found .fnt files in fonts subdirectory: \(fontsFntFiles)", level: .debug)
-                }
-            } catch {
-                log("Error listing bundle contents: \(error)", level: .debug)
-            }
-        }
-        
-        guard let fntContent = fontData else {
-            log("Failed to load .fnt file for font: \(fontName) from any location", level: .error)
+        return loadTTFFontFromURL(fontURL, fontName: fontName, fontSize: fontSize)
+    }
+    
+    private func loadTTFFontFromURL(_ fontURL: URL, fontName: String, fontSize: Float) -> Bool {
+        guard let fontData = try? Data(contentsOf: fontURL),
+              let dataProvider = CGDataProvider(data: fontData as CFData),
+              let cgFont = CGFont(dataProvider) else {
+            log("Failed to create CTFont from URL: \(fontURL)", level: .error)
             return false
         }
         
-        // Parse the BMFont format
-        let lines = fntContent.components(separatedBy: .newlines)
-        var lineHeight: Float = 48
-        var base: Float = 38
-        var atlasWidth: Float = 512
-        var atlasHeight: Float = 512
+        let font = CTFontCreateWithGraphicsFont(cgFont, CGFloat(fontSize), nil, nil)
         
-        glyphMap.removeAll()
+        log("Successfully created CTFont from: \(fontURL.lastPathComponent)", level: .debug)
         
-        for line in lines {
-            let trimmedLine = line.trimmingCharacters(in: .whitespaces)
-            
-            if trimmedLine.hasPrefix("common") {
-                // Parse: common lineHeight=48 base=38 scaleW=512 scaleH=512 pages=1 packed=0
-                if let lineHeightMatch = extractValue(from: trimmedLine, key: "lineHeight") {
-                    lineHeight = Float(lineHeightMatch) ?? 48
-                }
-                if let baseMatch = extractValue(from: trimmedLine, key: "base") {
-                    base = Float(baseMatch) ?? 38
-                }
-                if let scaleWMatch = extractValue(from: trimmedLine, key: "scaleW") {
-                    atlasWidth = Float(scaleWMatch) ?? 512
-                }
-                if let scaleHMatch = extractValue(from: trimmedLine, key: "scaleH") {
-                    atlasHeight = Float(scaleHMatch) ?? 512
-                }
-            } else if trimmedLine.hasPrefix("char id=") {
-                // Parse: char id=65 x=0 y=0 width=32 height=32 xoffset=0 yoffset=8 xadvance=28 page=0 chnl=0
-                if let glyph = parseCharLine(trimmedLine, atlasWidth: atlasWidth, atlasHeight: atlasHeight) {
-                    if let character = UnicodeScalar(glyph.charId) {
-                        glyphMap[Character(character)] = glyph.glyphInfo
-                    }
-                }
-            }
+        // Get font metrics
+        let ascent = CTFontGetAscent(font)
+        let descent = CTFontGetDescent(font)
+        let leading = CTFontGetLeading(font)
+        let lineHeight = ascent + descent + leading
+        
+        // Generate SDF atlas
+        let atlasSize = 1024 // 1024x1024 atlas
+        let padding = 4 // Padding between glyphs
+        
+        guard let atlasImage = generateSDFAtlas(from: font, atlasSize: atlasSize, padding: padding) else {
+            log("Failed to generate SDF atlas", level: .error)
+            return false
+        }
+        
+        // Cache the atlas image
+        let cacheKey = "\(fontName)_\(Int(fontSize))"
+        fontAtlasCache[cacheKey] = atlasImage
+        
+        // Convert UIImage to Metal texture
+        guard let device = device,
+              let cgImage = atlasImage.cgImage else {
+            log("Failed to get CGImage from atlas or device not available", level: .error)
+            return false
+        }
+        
+        do {
+            let textureLoader = MTKTextureLoader(device: device)
+            fontAtlas = try textureLoader.newTexture(cgImage: cgImage, options: [
+                .SRGB: false,
+                .generateMipmaps: false
+            ])
+            log("Successfully created Metal texture from font atlas", level: .debug)
+        } catch {
+            log("Failed to create Metal texture from font atlas: \(error)", level: .error)
+            return false
         }
         
         // Store font metrics
         fontMetrics = FontMetrics(
-            size: lineHeight,
-            lineHeight: lineHeight,
-            ascender: lineHeight * 0.8,
-            descender: lineHeight * 0.2,
-            base: base,
-            atlasWidth: atlasWidth,
-            atlasHeight: atlasHeight
+            size: Float(lineHeight),
+            lineHeight: Float(lineHeight),
+            ascender: Float(ascent),
+            descender: Float(descent),
+            base: Float(ascent),
+            atlasWidth: Float(atlasSize),
+            atlasHeight: Float(atlasSize)
         )
         
-        log("Loaded BMFont with \(glyphMap.count) characters, atlas: \(atlasWidth)x\(atlasHeight)", level: .debug)
+        log("Generated SDF atlas for TTF font: \(atlasSize)x\(atlasSize), \(glyphMap.count) characters", level: .debug)
         return true
     }
     
-    private func extractValue(from line: String, key: String) -> String? {
-        let pattern = "\(key)=(\\d+)"
-        let regex = try? NSRegularExpression(pattern: pattern)
-        let range = NSRange(line.startIndex..<line.endIndex, in: line)
-        
-        if let match = regex?.firstMatch(in: line, options: [], range: range) {
-            let matchRange = Range(match.range(at: 1), in: line)!
-            return String(line[matchRange])
-        }
-        return nil
-    }
+
     
-    private func parseCharLine(_ line: String, atlasWidth: Float, atlasHeight: Float) -> (charId: Int, glyphInfo: GlyphInfo)? {
-        // Extract values using regex patterns
-        let patterns = [
-            "id=(\\d+)",
-            "x=(\\d+)",
-            "y=(\\d+)", 
-            "width=(\\d+)",
-            "height=(\\d+)",
-            "xoffset=(-?\\d+)",
-            "yoffset=(-?\\d+)",
-            "xadvance=(\\d+)"
-        ]
-        
-        var values: [Int] = []
-        
-        for pattern in patterns {
-            let regex = try? NSRegularExpression(pattern: pattern)
-            let range = NSRange(line.startIndex..<line.endIndex, in: line)
-            
-            if let match = regex?.firstMatch(in: line, options: [], range: range) {
-                let matchRange = Range(match.range(at: 1), in: line)!
-                let valueString = String(line[matchRange])
-                values.append(Int(valueString) ?? 0)
-            } else {
-                values.append(0)
-            }
-        }
-        
-        guard values.count == 8 else { return nil }
-        
-        let charId = values[0]
-        let x = Float(values[1])
-        let y = Float(values[2])
-        let width = Float(values[3])
-        let height = Float(values[4])
-        let xoffset = Float(values[5])
-        let yoffset = Float(values[6])
-        let xadvance = Float(values[7])
-        
-        let glyphInfo = GlyphInfo(
-            atlasX: x / atlasWidth,
-            atlasY: y / atlasHeight,
-            atlasWidth: width / atlasWidth,
-            atlasHeight: height / atlasHeight,
-            bearingX: xoffset,
-            bearingY: yoffset,
-            advance: xadvance,
-            width: width,
-            height: height
-        )
-        
-        return (charId, glyphInfo)
-    }
-    
-    public func drawText(_ text: String, x: Float, y: Float, fontSize: Float, r: Float, g: Float, b: Float, a: Float) {
+    public func drawTextSDF(_ text: String, x: Float, y: Float, fontSize: Float, r: Float, g: Float, b: Float, a: Float) {
         guard let fontAtlas = fontAtlas,
               let fontMetrics = fontMetrics,
               let device = device,
               let samplerState = samplerState else {
-            log("drawText: Font system not properly initialized", level: .warning)
+            log("drawText: Font system not properly initialized", level: .error)
             return
         }
         
@@ -1507,8 +1531,6 @@ public class MetalRenderer {
             log("drawText: Failed to get render encoder", level: .error)
             return
         }
-        
-        // Text rendering - no debug overlays needed
         
         // Build all vertices and indices for the entire text string in one batch
         var allVertices: [Float] = []
@@ -1520,8 +1542,17 @@ public class MetalRenderer {
         let cursorY = y
         
         // Render text with proper SDF scaling and baseline alignment
+        var currentLineY = cursorY
+        let lineHeight = fontMetrics.lineHeight * scale * 1.3  // Match the Y stretch factor
         
         for char in text {
+            // Handle line breaks
+            if char == "\n" {
+                currentLineY += lineHeight  // Add line height to move down to next line
+                cursorX = x  // Reset to start of line
+                continue
+            }
+            
             guard let glyph = glyphMap[char] else {
                 log("Character '\(char)' not found in font atlas", level: .warning)
                 cursorX += fontSize * 0.5 // Default advance for unknown chars
@@ -1529,18 +1560,16 @@ public class MetalRenderer {
             }
             
             // Calculate glyph screen position with proper baseline alignment
-            // Use the font's baseline (base) from .fnt file for consistent alignment
             let glyphX = cursorX + glyph.bearingX * scale
-            let glyphY = cursorY - (fontMetrics.base - glyph.bearingY) * scale  // Correct baseline calculation
+            let glyphY = currentLineY - (fontMetrics.base - glyph.bearingY) * scale  // Proper baseline alignment
             let glyphWidth = glyph.width * scale
-            let glyphHeight = glyph.height * scale
+            let glyphHeight = glyph.height * scale * 1.3  // Stretch Y by 1.3x to make text taller
             
-            // Calculate UV coordinates with proper Y-flip for Metal texture coordinates
-            // The atlas shows characters in the upper portion, so we need to map correctly
+            // Calculate UV coordinates - Metal uses Y-up coordinate system
             let u1 = glyph.atlasX
-            let v1 = glyph.atlasY  // Don't flip - use direct atlas coordinates
+            let v1 = 1.0 - glyph.atlasY - glyph.atlasHeight  // Flip Y for Metal
             let u2 = glyph.atlasX + glyph.atlasWidth
-            let v2 = glyph.atlasY + glyph.atlasHeight  // Don't flip - use direct atlas coordinates
+            let v2 = 1.0 - glyph.atlasY  // Flip Y for Metal
             
             // Add vertices for this glyph to the batch
             let glyphVertices: [Float] = [
@@ -1564,8 +1593,8 @@ public class MetalRenderer {
             allIndices.append(contentsOf: glyphIndices)
             vertexCount += 4
             
-            // Advance cursor with proper character spacing
-            cursorX += glyph.advance * scale + 4.0  // Add 4 pixels of padding between characters
+            // Advance cursor with reduced character spacing
+            cursorX += glyph.advance * scale + 0.5  // Add 0.5 pixel of padding between characters
         }
         
         // Only render if we have valid characters
@@ -1575,8 +1604,6 @@ public class MetalRenderer {
         }
         
         // Prepare vertex and index buffers for efficient batch rendering
-        
-        // Create single buffers for all characters
         guard let batchVertexBuffer = device.makeBuffer(bytes: allVertices, length: allVertices.count * MemoryLayout<Float>.stride, options: []),
               let batchIndexBuffer = device.makeBuffer(bytes: allIndices, length: allIndices.count * MemoryLayout<UInt16>.stride, options: []) else {
             log("drawText: Failed to create batch buffers for text '\(text)'", level: .error)
@@ -1625,421 +1652,287 @@ public class MetalRenderer {
         log("drawTextWithShadow not yet implemented", level: .warning)
     }
     
-    private func generateFontAtlas(fontName: String, fontSize: Float) -> UIImage? {
-        // First try to load from cache
-        let cacheKey = "\(fontName)_\(Int(fontSize))"
+    private func generateSDFAtlas(from font: CTFont, atlasSize: Int, padding: Int) -> UIImage? {
+        log("Generating SDF atlas from TTF font, size: \(atlasSize)x\(atlasSize)", level: .debug)
         
-        // Check in-memory cache first
-        if let cachedImage = fontAtlasCache[cacheKey] {
-            log("Using in-memory cached font atlas for: \(cacheKey)", level: .debug)
-            return cachedImage
-        }
+        // First create a high-resolution bitmap to draw glyphs
+        let superSampleFactor = 2  // Moderate supersampling for good quality and performance
+        let highResSize = atlasSize * superSampleFactor
         
-        // Check pre-bundled atlas from assets/fonts directory
-        let preBundledName = "\(fontName)_\(Int(fontSize))"
-        
-        // Check in asset catalog (preferred)
-        if let bundledAtlas = UIImage(named: preBundledName) {
-            log("Using pre-bundled font atlas: \(preBundledName) from asset catalog", level: .debug)
-            fontAtlasCache[cacheKey] = bundledAtlas
-            return bundledAtlas
-        }
-        
-        // Check in bundle resources (fallback)
-        if let bundlePath = Bundle.main.path(forResource: preBundledName, ofType: "png") {
-            if let bundledAtlas = UIImage(contentsOfFile: bundlePath) {
-                log("Using pre-bundled font atlas: \(preBundledName) from bundle resources", level: .debug)
-                fontAtlasCache[cacheKey] = bundledAtlas
-                return bundledAtlas
-            }
-        }
-        
-        // Check development disk cache
-        let fileManager = FileManager.default
-        if let documentsPath = fileManager.urls(for: FileManager.SearchPathDirectory.documentDirectory, in: FileManager.SearchPathDomainMask.userDomainMask).first {
-            let cacheFileName = "font_atlas_\(cacheKey).png"
-            let cacheFilePath = documentsPath.appendingPathComponent(cacheFileName)
-            
-            if fileManager.fileExists(atPath: cacheFilePath.path),
-               let cachedImage = UIImage(contentsOfFile: cacheFilePath.path) {
-                log("Using disk-cached font atlas for: \(cacheKey) from \(cacheFilePath.path)", level: .debug)
-                fontAtlasCache[cacheKey] = cachedImage
-                return cachedImage
-            }
-        }
-        
-        // Try to load the TTF font file from bundle (iOS uses TTF)
-        // First try fonts subdirectory, then root
-        let fontPath: String?
-        if let fontsPath = Bundle.main.path(forResource: fontName, ofType: "ttf", inDirectory: "fonts") {
-            fontPath = fontsPath
-        } else {
-            fontPath = Bundle.main.path(forResource: fontName, ofType: "ttf")
-        }
-        
-        guard let fontPath = fontPath,
-              let fontData = NSData(contentsOfFile: fontPath),
-              let dataProvider = CGDataProvider(data: fontData),
-              let cgFont = CGFont(dataProvider) else {
-            log("Failed to load TTF font: \(fontName), will generate simple atlas", level: .warning)
-            log("Checked paths: fonts/\(fontName).ttf and \(fontName).ttf", level: .debug)
-            // Generate a simple white atlas as fallback
-            return generateSimpleAtlas()
-        }
-        
-        let ctFont = CTFontCreateWithGraphicsFont(cgFont, CGFloat(fontSize), nil, nil)
-        
-        log("Successfully loaded TTF font: \(fontName) at size \(fontSize)", level: .debug)
-        
-        // Generate atlas based on the glyph metrics we parsed from .fnt
-        guard let atlasImage = renderFontAtlasToImage(font: ctFont, fontSize: fontSize) else {
-            log("Failed to render font atlas image, using simple atlas", level: .warning)
-            return generateSimpleAtlas()
-        }
-        
-        // Cache the generated atlas
-        fontAtlasCache[cacheKey] = atlasImage
-        
-        // Save to disk cache for development/testing
-        if let documentsPath = FileManager.default.urls(for: FileManager.SearchPathDirectory.documentDirectory, in: FileManager.SearchPathDomainMask.userDomainMask).first {
-            let cacheFileName = "font_atlas_\(cacheKey).png"
-            let cacheFilePath = documentsPath.appendingPathComponent(cacheFileName)
-            
-            if let pngData = atlasImage.pngData() {
-                do {
-                    try pngData.write(to: cacheFilePath)
-                    log("Saved font atlas to disk cache: \(cacheFileName) at \(cacheFilePath.path)", level: .debug)
-                    log("You can now copy this file to your bundle as: \(fontName)_\(Int(fontSize)).png", level: .info)
-                } catch {
-                    log("Failed to save disk cache: \(error)", level: .warning)
-                }
-            }
-        }
-        
-        log("Generated and cached font atlas for: \(cacheKey)", level: .debug)
-        return atlasImage
-    }
-    
-    private func generateSimpleAtlas() -> UIImage? {
-        guard let metrics = fontMetrics else {
-            log("No font metrics available for simple atlas generation", level: .error)
-            return nil
-        }
-        
-        let atlasSize = CGSize(width: CGFloat(metrics.atlasWidth), height: CGFloat(metrics.atlasHeight))
-        
-        // Create a simple white atlas for debugging
-        UIGraphicsBeginImageContextWithOptions(atlasSize, false, 1.0)
-        guard let context = UIGraphicsGetCurrentContext() else {
-            log("Failed to create graphics context for simple atlas", level: .error)
-            return nil
-        }
-        
-        // Fill with white background
-        context.setFillColor(UIColor.white.cgColor)
-        context.fill(CGRect(origin: .zero, size: atlasSize))
-        
-        log("Generated simple white atlas of size \(atlasSize)", level: .debug)
-        
-        let atlasImage = UIGraphicsGetImageFromCurrentImageContext()
-        UIGraphicsEndImageContext()
-        
-        // Save atlas to Documents for inspection
-        if let atlasImage = atlasImage {
-            saveAtlasImageToDocuments(atlasImage, filename: "simple_atlas.png")
-        }
-        
-        return atlasImage
-    }
-    
-    private func renderFontAtlasToImage(font: CTFont, fontSize: Float) -> UIImage? {
-        guard let metrics = fontMetrics else {
-            log("No font metrics available for atlas generation", level: .error)
-            return nil
-        }
-        
-        let atlasSize = CGSize(width: CGFloat(metrics.atlasWidth), height: CGFloat(metrics.atlasHeight))
-        
-        log("Rendering \(glyphMap.count) glyphs to SDF atlas of size \(atlasSize)", level: .debug)
-        
-        // Create the final SDF atlas image
-        guard let sdfAtlasImage = createSDFAtlas(font: font, atlasSize: atlasSize) else {
-            log("Failed to create SDF atlas", level: .error)
-            return nil
-        }
-        
-        log("Successfully generated SDF atlas with \(glyphMap.count) glyphs", level: .debug)
-        return sdfAtlasImage
-    }
-    
-    private func createSDFAtlas(font: CTFont, atlasSize: CGSize) -> UIImage? {
-        // Create a bitmap context for the SDF atlas
+        // Create high-res context for drawing glyphs
         let colorSpace = CGColorSpaceCreateDeviceGray()
-        let bytesPerPixel = 1
-        let bytesPerRow = Int(atlasSize.width) * bytesPerPixel
-        let bitmapInfo = CGImageAlphaInfo.none.rawValue
-        
-        guard let context = CGContext(
-            data: nil,
-            width: Int(atlasSize.width),
-            height: Int(atlasSize.height),
-            bitsPerComponent: 8,
-            bytesPerRow: bytesPerRow,
-            space: colorSpace,
-            bitmapInfo: bitmapInfo
-        ) else {
-            log("Failed to create bitmap context for SDF atlas", level: .error)
+        guard let highResContext = CGContext(data: nil, width: highResSize, height: highResSize, bitsPerComponent: 8, bytesPerRow: highResSize, space: colorSpace, bitmapInfo: CGImageAlphaInfo.none.rawValue) else {
+            log("Failed to create high-res graphics context for atlas", level: .error)
             return nil
         }
         
-        // Clear the context to black (distance = 0)
-        context.setFillColor(red: 0.0, green: 0.0, blue: 0.0, alpha: 1.0)
-        context.fill(CGRect(origin: .zero, size: atlasSize))
+        // Clear with black background (outside glyph)
+        highResContext.setFillColor(CGColor(gray: 0.0, alpha: 1.0))
+        highResContext.fill(CGRect(x: 0, y: 0, width: highResSize, height: highResSize))
         
-        // Render each glyph as SDF
-        var renderedCount = 0
-        for (character, glyphInfo) in glyphMap {
-            if renderGlyphToSDF(
-                character: character,
-                glyphInfo: glyphInfo,
-                font: font,
-                context: context,
-                atlasSize: atlasSize
-            ) {
-                renderedCount += 1
-                
-                // Debug log for first few characters
-                if renderedCount <= 3 {
-                    let pixelX = glyphInfo.atlasX * fontMetrics!.atlasWidth
-                    let pixelY = glyphInfo.atlasY * fontMetrics!.atlasHeight
-                    log("Rendered SDF '\(character)' at (\(pixelX), \(pixelY)) size (\(glyphInfo.width), \(glyphInfo.height))", level: .debug)
-                }
+        // Characters to include in the atlas (basic ASCII + common symbols)
+        let characters = Array(" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~")
+        
+        // Fixed grid layout: 16x6 = 96 characters (ASCII 32-127)
+        let gridCols = 16
+        let gridRows = 6
+        let cellWidth = CGFloat(atlasSize) / CGFloat(gridCols)
+        let cellHeight = CGFloat(atlasSize) / CGFloat(gridRows)
+        
+        glyphMap.removeAll()
+        
+        // Draw glyphs to high-res bitmap using fixed grid layout
+        for (index, char) in characters.enumerated() {
+            // Calculate grid position
+            let col = index % gridCols
+            let row = index / gridCols
+            
+            log("Processing character '\(char)' (ASCII \(char.unicodeScalars.first!.value)) at grid position (\(col), \(row))", level: .debug)
+            
+            // Calculate cell position
+            let currentX = CGFloat(col) * cellWidth
+            let currentY = CGFloat(row) * cellHeight
+            // Get glyph for this character
+            let unichars = [UniChar(char.unicodeScalars.first!.value)]
+            var glyphs = [CGGlyph](repeating: 0, count: 1)
+            let success = CTFontGetGlyphsForCharacters(font, unichars, &glyphs, 1)
+            
+            guard success && glyphs[0] != 0 else {
+                log("Failed to get glyph for character: \(char)", level: .warning)
+                continue
+            }
+            
+            var glyph = glyphs[0]
+            
+            // Get glyph metrics
+            var boundingRect = CGRect.zero
+            CTFontGetBoundingRectsForGlyphs(font, .horizontal, &glyph, &boundingRect, 1)
+            
+            var advance = CGSize.zero
+            CTFontGetAdvancesForGlyphs(font, .horizontal, &glyph, &advance, 1)
+            
+            // Use fixed cell dimensions for consistent layout
+            _ = cellWidth  // Fixed cell width
+            _ = cellHeight // Fixed cell height
+            
+            // Render glyph to high-res context
+            highResContext.saveGState()
+            highResContext.textMatrix = CGAffineTransform.identity
+            
+            // Scale position for high-res rendering
+            let highResX = currentX * CGFloat(superSampleFactor)
+            let highResY = currentY * CGFloat(superSampleFactor)
+            
+            // Center the glyph within the fixed cell (scaled for high-res)
+            let cellCenterX = highResX + (cellWidth * CGFloat(superSampleFactor)) / 2.0
+            let cellCenterY = highResY + (cellHeight * CGFloat(superSampleFactor)) / 2.0
+            
+            // Position glyph at center of cell
+            let glyphCenterX = cellCenterX - (boundingRect.width * CGFloat(superSampleFactor)) / 2.0
+            let glyphCenterY = cellCenterY - (boundingRect.height * CGFloat(superSampleFactor)) / 2.0
+            
+            highResContext.translateBy(x: glyphCenterX - boundingRect.minX * CGFloat(superSampleFactor), 
+                                      y: glyphCenterY - boundingRect.minY * CGFloat(superSampleFactor))
+            highResContext.scaleBy(x: CGFloat(superSampleFactor), y: CGFloat(superSampleFactor))
+            
+            let glyphPath = CTFontCreatePathForGlyph(font, glyph, nil)
+            if let path = glyphPath {
+                highResContext.addPath(path)
+                highResContext.setFillColor(CGColor(gray: 1.0, alpha: 1.0)) // White = inside glyph
+                highResContext.fillPath()
+            }
+            
+            highResContext.restoreGState()
+            
+            // Store glyph information with fixed grid coordinates
+            // Note: Y-axis is flipped for Metal texture coordinates
+            let glyphInfo = GlyphInfo(
+                atlasX: Float(currentX) / Float(atlasSize),
+                atlasY: Float(currentY) / Float(atlasSize),
+                atlasWidth: Float(cellWidth) / Float(atlasSize),
+                atlasHeight: Float(cellHeight) / Float(atlasSize),
+                bearingX: Float(boundingRect.minX),
+                bearingY: Float(boundingRect.minY),
+                advance: Float(advance.width),
+                width: Float(boundingRect.width),
+                height: Float(boundingRect.height)
+            )
+            
+            glyphMap[char] = glyphInfo
+        }
+        
+        // Get the high-res bitmap data
+        guard let highResImage = highResContext.makeImage() else {
+            log("Failed to create high-res image from context", level: .error)
+            return nil
+        }
+        
+        log("High-res image created: \(highResImage.width)x\(highResImage.height)", level: .debug)
+        
+        // Convert to raw pixel data for SDF calculation
+        guard let highResData = highResImage.dataProvider?.data,
+              let highResPixels = CFDataGetBytePtr(highResData) else {
+            log("Failed to get pixel data from high-res image", level: .error)
+            return nil
+        }
+        
+        // Generate SDF from the high-res bitmap
+        let sdfData = generateSignedDistanceField(from: highResPixels, 
+                                                 width: highResSize, 
+                                                 height: highResSize, 
+                                                 outputWidth: atlasSize, 
+                                                 outputHeight: atlasSize,
+                                                 spread: Float(padding * superSampleFactor))
+        
+        // Create SDF image
+        let sdfDataPtr = UnsafeMutablePointer<UInt8>.allocate(capacity: sdfData.count)
+        sdfDataPtr.initialize(from: sdfData, count: sdfData.count)
+        defer { sdfDataPtr.deallocate() }
+        
+        guard let sdfContext = CGContext(data: sdfDataPtr, width: atlasSize, height: atlasSize, bitsPerComponent: 8, bytesPerRow: atlasSize, space: colorSpace, bitmapInfo: CGImageAlphaInfo.none.rawValue),
+              let sdfCGImage = sdfContext.makeImage() else {
+            log("Failed to create SDF context or image", level: .error)
+            return nil
+        }
+        
+        // Save debug image to app container for inspection
+        if let documentPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+            let debugImagePath = documentPath.appendingPathComponent("sdf_atlas_debug.png")
+            let debugImageURL = debugImagePath as CFURL
+            
+            if let destination = CGImageDestinationCreateWithURL(debugImageURL, "public.png" as CFString, 1, nil) {
+                CGImageDestinationAddImage(destination, sdfCGImage, nil)
+                CGImageDestinationFinalize(destination)
+                log("SDF atlas debug image saved to: \(debugImagePath.path)", level: .debug)
             }
         }
         
-        // Create image from context
-        guard let cgImage = context.makeImage() else {
-            log("Failed to create CGImage from SDF context", level: .error)
-            return nil
-        }
-        
-        let sdfImage = UIImage(cgImage: cgImage)
-        log("Successfully rendered \(renderedCount) glyphs to SDF atlas", level: .debug)
-        
-                    // DEBUG: Save atlas to documents folder for inspection
-            saveAtlasImageToDocuments(sdfImage, filename: "SDF_Atlas_Debug.png")
-        
-        return sdfImage
+        return UIImage(cgImage: sdfCGImage)
     }
     
-
-    private func renderGlyphToSDF(
-        character: Character,
-        glyphInfo: GlyphInfo,
-        font: CTFont,
-        context: CGContext,
-        atlasSize: CGSize
-    ) -> Bool {
-        guard let metrics = fontMetrics else { return false }
-        
-        // Calculate the glyph position in the atlas
-        let pixelX = glyphInfo.atlasX * metrics.atlasWidth
-        let pixelY = glyphInfo.atlasY * metrics.atlasHeight
-        let glyphWidth = Int(glyphInfo.width)
-        let glyphHeight = Int(glyphInfo.height)
-        
-        // Add significant padding to ensure tall characters aren't clipped
-        // Make the frame substantially bigger to prevent any edge cutoff
-        let extraHeight = max(12, Int(Double(glyphHeight) * 0.5)) // Add 50% more height or minimum 12 pixels
-        let extraWidth = max(8, Int(Double(glyphWidth) * 0.3)) // Add 30% more width or minimum 8 pixels
-        let paddedHeight = glyphHeight + extraHeight
-        let paddedWidth = glyphWidth + extraWidth
-        
-        // Skip if glyph is too small
-        guard glyphWidth > 0 && glyphHeight > 0 else { return false }
-        
-        // Create a high-resolution bitmap for the glyph (2x resolution for better SDF quality)
-        let scale: CGFloat = 2.0
-        let highResWidth = Int(CGFloat(paddedWidth) * scale) // Use padded width
-        let highResHeight = Int(CGFloat(paddedHeight) * scale) // Use padded height for full character
-        
-        guard let highResContext = CGContext(
-            data: nil,
-            width: highResWidth,
-            height: highResHeight,
-            bitsPerComponent: 8,
-            bytesPerRow: highResWidth,
-            space: CGColorSpaceCreateDeviceGray(),
-            bitmapInfo: CGImageAlphaInfo.none.rawValue
-        ) else {
-            return false
-        }
-        
-        // Clear high-res context
-        highResContext.setFillColor(red: 0.0, green: 0.0, blue: 0.0, alpha: 1.0)
-        highResContext.fill(CGRect(x: 0, y: 0, width: highResWidth, height: highResHeight))
-        
-        // Set up text rendering
-        highResContext.setFillColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0)
-        highResContext.textMatrix = CGAffineTransform.identity
-        
-        // Create attributed string for the character
-        let attributedString = NSAttributedString(string: String(character), attributes: [
-            .font: CTFontCreateCopyWithAttributes(font, CTFontGetSize(font) * scale, nil, nil),
-            .foregroundColor: UIColor.white
-        ])
-        
-        // Draw the glyph with proper baseline positioning
-        let line = CTLineCreateWithAttributedString(attributedString)
-        
-        // Get font metrics to center the text properly
-        let ascent = CTFontGetAscent(font) * scale
-        let descent = CTFontGetDescent(font) * scale
-        
-        // Center the text both horizontally and vertically within the padded frame
-        let horizontalPadding = CGFloat(extraWidth) * scale * 0.5 // Center horizontally
-        let verticalCenter = CGFloat(highResHeight) * 0.5 // Find vertical center
-        let textHeight = ascent + descent
-        let baselineY = verticalCenter - (textHeight * 0.5) + descent // Center the text baseline
-        
-        let baselineX = horizontalPadding // Center horizontally
-        
-        highResContext.textPosition = CGPoint(x: baselineX, y: baselineY)
-        CTLineDraw(line, highResContext)
-        
-        // Generate SDF from the high-resolution bitmap
-        // Use the original glyph dimensions for output to maintain atlas coordinates
-        guard let sdfData = generateSDFFromBitmap(
-            context: highResContext,
-            width: highResWidth,
-            height: highResHeight,
-            outputWidth: glyphWidth,
-            outputHeight: glyphHeight  // Keep original dimensions for atlas consistency
-        ) else {
-            return false
-        }
-        
-        // Copy SDF data to the atlas
-        copySDFToAtlas(
-            sdfData: sdfData,
-            atlasContext: context,
-            atlasX: Int(pixelX),
-            atlasY: Int(pixelY),
-            glyphWidth: glyphWidth,
-            glyphHeight: glyphHeight,
-            atlasWidth: Int(atlasSize.width)
-        )
-        
-        return true
-    }
+    // MARK: - SDF Generation Algorithm
     
-    private func generateSDFFromBitmap(
-        context: CGContext,
-        width: Int,
-        height: Int,
-        outputWidth: Int,
-        outputHeight: Int
-    ) -> [UInt8]? {
-        guard let data = context.data else { return nil }
+    /// Generates a signed distance field from a high-resolution bitmap
+    /// This implements an efficient distance transform algorithm - O(n) complexity
+    private func generateSignedDistanceField(from pixels: UnsafePointer<UInt8>, 
+                                           width: Int, height: Int, 
+                                           outputWidth: Int, outputHeight: Int,
+                                           spread: Float) -> [UInt8] {
         
-        let inputData = data.bindMemory(to: UInt8.self, capacity: width * height)
-        var sdfData = [UInt8](repeating: 0, count: outputWidth * outputHeight)
+        log("Generating SDF: input \(width)x\(height), output \(outputWidth)x\(outputHeight), spread \(spread)", level: .debug)
         
-        let maxDistance: Float = 8.0 // Maximum distance to search for edges
-        let spread: Float = 4.0 // SDF spread parameter
+        // First, downsample the input to output resolution
+        var bitmap = [Bool](repeating: false, count: outputWidth * outputHeight)
         
         for y in 0..<outputHeight {
             for x in 0..<outputWidth {
                 // Map output coordinates to input coordinates
-                let inputX = Float(x) * Float(width) / Float(outputWidth)
-                let inputY = Float(y) * Float(height) / Float(outputHeight)
+                let inputX = Int(Float(x) * Float(width) / Float(outputWidth))
+                let inputY = Int(Float(y) * Float(height) / Float(outputHeight))
                 
-                // Sample the input bitmap (bilinear interpolation)
-                let pixelValue = sampleBitmap(inputData, width: width, height: height, x: inputX, y: inputY)
-                let isInside = pixelValue > 128 // White pixels are "inside"
-                
-                // Find distance to nearest edge
-                var minDistance: Float = maxDistance
-                let searchRadius = Int(maxDistance)
-                
-                for dy in -searchRadius...searchRadius {
-                    for dx in -searchRadius...searchRadius {
-                        let testX = inputX + Float(dx)
-                        let testY = inputY + Float(dy)
-                        
-                        if testX >= 0 && testX < Float(width) && testY >= 0 && testY < Float(height) {
-                            let testPixel = sampleBitmap(inputData, width: width, height: height, x: testX, y: testY)
-                            let testIsInside = testPixel > 128
-                            
-                            // If we found an edge (inside/outside transition)
-                            if testIsInside != isInside {
-                                let distance = sqrt(Float(dx * dx + dy * dy))
-                                if distance < minDistance {
-                                    minDistance = distance
-                                }
-                            }
-                        }
-                    }
+                let inputIndex = inputY * width + inputX
+                if inputIndex < width * height {
+                    bitmap[y * outputWidth + x] = pixels[inputIndex] >= 128
                 }
-                
-                // Normalize distance and apply sign
-                var normalizedDistance: Float
-                if isInside {
-                    // Inside: distance is positive, scaled from 0.5 to 1.0
-                    normalizedDistance = 0.5 + (minDistance / spread) * 0.5
-                } else {
-                    // Outside: distance is negative, scaled from 0.0 to 0.5
-                    normalizedDistance = 0.5 - (minDistance / spread) * 0.5
-                }
-                
-                // Clamp to [0, 1] range
-                normalizedDistance = max(0.0, min(1.0, normalizedDistance))
-                
-                // Convert to 8-bit value
-                sdfData[y * outputWidth + x] = UInt8(normalizedDistance * 255.0)
             }
         }
+        
+        // Debug: Check if bitmap has any data
+        let totalTrue = bitmap.filter { $0 }.count
+        let totalFalse = bitmap.filter { !$0 }.count
+        log("Bitmap analysis: \(totalTrue) inside pixels, \(totalFalse) outside pixels", level: .debug)
+        
+        // Generate distance fields for inside and outside
+        let insideDistances = computeDistanceTransform(bitmap: bitmap, width: outputWidth, height: outputHeight, findInside: true)
+        let outsideDistances = computeDistanceTransform(bitmap: bitmap, width: outputWidth, height: outputHeight, findInside: false)
+        
+        // Combine into signed distance field
+        var sdfData = [UInt8](repeating: 127, count: outputWidth * outputHeight)
+        let maxDist = spread / 2.0  // Use half spread as max distance for better range
+        
+        for i in 0..<(outputWidth * outputHeight) {
+            let inside = bitmap[i]
+            
+            // For SDF: inside pixels use distance to outside (negative), outside pixels use distance to inside (positive)
+            let distanceToOpposite = inside ? outsideDistances[i] : insideDistances[i]
+            let signedDistance = inside ? -distanceToOpposite : distanceToOpposite
+            
+            // Normalize to 0-255 range, with 128 = edge (distance 0) to match shader expectations
+            let normalizedDistance = (signedDistance / maxDist) * 128.0 + 128.0
+            let clampedDistance = max(0.0, min(255.0, normalizedDistance))
+            
+            sdfData[i] = UInt8(clampedDistance)
+        }
+        
+        // Debug: Check final SDF values
+        let minVal = sdfData.min() ?? 0
+        let maxVal = sdfData.max() ?? 255
+        let avgVal = Int(sdfData.reduce(0) { $0 + Int($1) }) / sdfData.count
+        log("SDF generation completed - Min: \(minVal), Max: \(maxVal), Avg: \(avgVal)", level: .debug)
         
         return sdfData
     }
     
-    private func sampleBitmap(_ data: UnsafeMutablePointer<UInt8>, width: Int, height: Int, x: Float, y: Float) -> UInt8 {
-        let ix = Int(x)
-        let iy = Int(y)
+    /// Efficient distance transform using separable algorithm - O(n) complexity
+    private func computeDistanceTransform(bitmap: [Bool], width: Int, height: Int, findInside: Bool) -> [Float] {
+        var distances = [Float](repeating: Float.greatestFiniteMagnitude, count: width * height)
         
-        if ix >= 0 && ix < width && iy >= 0 && iy < height {
-            return data[iy * width + ix]
-        }
-        return 0 // Outside bounds = black/outside
-    }
-    
-    private func copySDFToAtlas(
-        sdfData: [UInt8],
-        atlasContext: CGContext,
-        atlasX: Int,
-        atlasY: Int,
-        glyphWidth: Int,
-        glyphHeight: Int,
-        atlasWidth: Int
-    ) {
-        guard let atlasData = atlasContext.data else { return }
-        
-        let atlasBytes = atlasData.bindMemory(to: UInt8.self, capacity: atlasWidth * Int(atlasContext.height))
-        
-        for y in 0..<glyphHeight {
-            for x in 0..<glyphWidth {
-                let srcIndex = y * glyphWidth + x
-                let dstX = atlasX + x
-                let dstY = atlasY + y
-                let dstIndex = dstY * atlasWidth + dstX
-                
-                if srcIndex < sdfData.count && dstIndex < atlasWidth * Int(atlasContext.height) {
-                    atlasBytes[dstIndex] = sdfData[srcIndex]
-                }
+        // Initialize distances - 0 for target pixels, infinity for others
+        for i in 0..<(width * height) {
+            if bitmap[i] == findInside {
+                distances[i] = 0.0
             }
         }
+        
+        // Forward pass - process rows left to right
+        for y in 0..<height {
+            for x in 1..<width {
+                let idx = y * width + x
+                let leftIdx = y * width + (x - 1)
+                distances[idx] = min(distances[idx], distances[leftIdx] + 1.0)
+            }
+        }
+        
+        // Backward pass - process rows right to left
+        for y in 0..<height {
+            for x in stride(from: width - 2, through: 0, by: -1) {
+                let idx = y * width + x
+                let rightIdx = y * width + (x + 1)
+                distances[idx] = min(distances[idx], distances[rightIdx] + 1.0)
+            }
+        }
+        
+        // Forward pass - process columns top to bottom
+        for x in 0..<width {
+            for y in 1..<height {
+                let idx = y * width + x
+                let topIdx = (y - 1) * width + x
+                distances[idx] = min(distances[idx], distances[topIdx] + 1.0)
+            }
+        }
+        
+        // Backward pass - process columns bottom to top
+        for x in 0..<width {
+            for y in stride(from: height - 2, through: 0, by: -1) {
+                let idx = y * width + x
+                let bottomIdx = (y + 1) * width + x
+                distances[idx] = min(distances[idx], distances[bottomIdx] + 1.0)
+            }
+        }
+        
+        // Convert Manhattan distance to approximate Euclidean distance
+        // This is a good approximation that's much faster than true Euclidean
+        for i in 0..<distances.count {
+            if distances[i] < Float.greatestFiniteMagnitude {
+                // Apply a scaling factor to approximate Euclidean distance
+                distances[i] = distances[i] * 0.8  // Approximate correction factor
+            } else {
+                distances[i] = 64.0  // Max distance for pixels that are very far
+            }
+        }
+        
+        return distances
     }
-    
     // MARK: - Screen Size Query
     
     public func getScreenSize() -> (width: Float, height: Float) {
@@ -2047,6 +1940,178 @@ public class MetalRenderer {
     }
     
     // MARK: - Helper Methods
+    
+    private func generateGlyphMetricsFromTTF(ctFont: CTFont, atlasWidth: Float, atlasHeight: Float) -> Bool {
+        log("Generating glyph metrics from TTF font", level: .debug)
+        
+        // Clear existing glyph map
+        glyphMap.removeAll()
+        
+        // Simple ordered character set (ASCII 32-126)
+        let characters = Array(" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~")
+        
+        // Fixed grid layout: 16x6 = 96 characters (ASCII 32-127)
+        let gridCols = 16
+        let gridRows = 6
+        let cellWidth = atlasWidth / Float(gridCols)
+        let cellHeight = atlasHeight / Float(gridRows)
+        
+        // Generate metrics for each character in fixed grid order
+        for (index, character) in characters.enumerated() {
+            // Calculate grid position
+            let col = index % gridCols
+            let row = index / gridCols
+            
+            // Calculate UV coordinates based on grid position
+            let u = Float(col) * cellWidth / atlasWidth
+            let v = Float(row) * cellHeight / atlasHeight
+            let uWidth = cellWidth / atlasWidth
+            let vHeight = cellHeight / atlasHeight
+            
+            // Get glyph metrics for this character
+            let unichars = [UniChar(character.unicodeScalars.first!.value)]
+            var glyphs = [CGGlyph](repeating: 0, count: 1)
+            let success = CTFontGetGlyphsForCharacters(ctFont, unichars, &glyphs, 1)
+            
+            guard success && glyphs[0] != 0 else {
+                log("Failed to get glyph for character: \(character)", level: .warning)
+                continue
+            }
+            
+            var glyph = glyphs[0]
+            
+            // Get glyph metrics
+            var boundingRect = CGRect.zero
+            CTFontGetBoundingRectsForGlyphs(ctFont, .horizontal, &glyph, &boundingRect, 1)
+            
+            var advance = CGSize.zero
+            CTFontGetAdvancesForGlyphs(ctFont, .horizontal, &glyph, &advance, 1)
+            
+            // Create glyph info with predictable grid-based UV coordinates
+            let glyphInfo = GlyphInfo(
+                atlasX: u,
+                atlasY: v,
+                atlasWidth: uWidth,
+                atlasHeight: vHeight,
+                bearingX: Float(boundingRect.origin.x),
+                bearingY: Float(boundingRect.origin.y),
+                advance: Float(advance.width),
+                width: Float(boundingRect.width),
+                height: Float(boundingRect.height)
+            )
+            
+            glyphMap[character] = glyphInfo
+            log("Generated glyph metrics for '\(character)' at grid position (\(col), \(row)): UV(\(u), \(v)) Size(\(uWidth), \(vHeight))", level: .debug)
+        }
+        
+        log("Generated \(glyphMap.count) glyph metrics from TTF using fixed grid layout", level: .debug)
+        return !glyphMap.isEmpty
+    }
+    
+    private func loadBMFontGlyphs(fontName: String) -> Bool {
+        log("Loading BMFont glyphs for: \(fontName)", level: .debug)
+        
+        // Try to load BMFont file from bundle
+        guard let fntURL = Bundle.main.url(forResource: fontName, withExtension: "fnt", subdirectory: "fonts") else {
+            log("BMFont file not found in fonts subdirectory, trying main bundle", level: .debug)
+            guard let fntURL = Bundle.main.url(forResource: fontName, withExtension: "fnt") else {
+                log("Failed to find BMFont file: \(fontName).fnt", level: .error)
+                return false
+            }
+            return loadBMFontFromURL(fntURL)
+        }
+        
+        return loadBMFontFromURL(fntURL)
+    }
+    
+    private func loadBMFontFromURL(_ fntURL: URL) -> Bool {
+        do {
+            let fntContent = try String(contentsOf: fntURL)
+            let lines = fntContent.components(separatedBy: .newlines)
+            
+            var atlasWidth: Float = 0
+            var atlasHeight: Float = 0
+            
+            // Parse BMFont file
+            for line in lines {
+                let trimmedLine = line.trimmingCharacters(in: .whitespaces)
+                if trimmedLine.isEmpty { continue }
+                
+                let parts = trimmedLine.components(separatedBy: " ")
+                if parts.isEmpty { continue }
+                
+                let command = parts[0]
+                
+                switch command {
+                case "info":
+                    // Parse info line (font info)
+                    break
+                case "common":
+                    // Parse common line (atlas info)
+                    for part in parts.dropFirst() {
+                        if part.hasPrefix("scaleW=") {
+                            atlasWidth = Float(part.dropFirst(7)) ?? 0
+                        } else if part.hasPrefix("scaleH=") {
+                            atlasHeight = Float(part.dropFirst(7)) ?? 0
+                        }
+                    }
+                case "char":
+                    // Parse character line
+                    var charId: Int = 0
+                    var x: Float = 0, y: Float = 0
+                    var width: Float = 0, height: Float = 0
+                    var xoffset: Float = 0, yoffset: Float = 0
+                    var xadvance: Float = 0
+                    
+                    for part in parts.dropFirst() {
+                        if part.hasPrefix("id=") {
+                            charId = Int(part.dropFirst(3)) ?? 0
+                        } else if part.hasPrefix("x=") {
+                            x = Float(part.dropFirst(2)) ?? 0
+                        } else if part.hasPrefix("y=") {
+                            y = Float(part.dropFirst(2)) ?? 0
+                        } else if part.hasPrefix("width=") {
+                            width = Float(part.dropFirst(6)) ?? 0
+                        } else if part.hasPrefix("height=") {
+                            height = Float(part.dropFirst(7)) ?? 0
+                        } else if part.hasPrefix("xoffset=") {
+                            xoffset = Float(part.dropFirst(8)) ?? 0
+                        } else if part.hasPrefix("yoffset=") {
+                            yoffset = Float(part.dropFirst(8)) ?? 0
+                        } else if part.hasPrefix("xadvance=") {
+                            xadvance = Float(part.dropFirst(9)) ?? 0
+                        }
+                    }
+                    
+                    // Create glyph info
+                    let glyphInfo = GlyphInfo(
+                        atlasX: x / atlasWidth,
+                        atlasY: y / atlasHeight,
+                        atlasWidth: width / atlasWidth,
+                        atlasHeight: height / atlasHeight,
+                        bearingX: xoffset,
+                        bearingY: yoffset,
+                        advance: xadvance,
+                        width: width,
+                        height: height
+                    )
+                    
+                    // Store in glyph map
+                    let char = Character(UnicodeScalar(charId)!)
+                    glyphMap[char] = glyphInfo
+                default:
+                    break
+                }
+            }
+            
+            log("Loaded \(glyphMap.count) glyphs from BMFont file", level: .debug)
+            return !glyphMap.isEmpty
+            
+        } catch {
+            log("Failed to load BMFont file: \(error)", level: .error)
+            return false
+        }
+    }
     
     private func createTexture(width: Int, height: Int, pixelFormat: MTLPixelFormat = .rgba8Unorm) -> MTLTexture? {
         guard let device = device else { return nil }
@@ -2061,25 +2126,56 @@ public class MetalRenderer {
         return device.makeTexture(descriptor: descriptor)
     }
     
-    // MARK: - Debug Functions
+    // MARK: - Text Measurement
     
-    private func saveAtlasImageToDocuments(_ image: UIImage, filename: String) {
-        guard let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
-            log("Could not access documents directory", level: .error)
-            return
+    public func measureText(_ text: String, fontSize: Float) -> (width: Float, height: Float) {
+        guard let fontMetrics = fontMetrics else {
+            log("measureText: Font metrics not available", level: .error)
+            return (width: 0, height: 0)
         }
         
-        let fileURL = documentsDirectory.appendingPathComponent(filename)
+        let scale = fontSize / fontMetrics.size
+        var maxWidth: Float = 0
+        var currentLineWidth: Float = 0
+        var totalHeight: Float = 0
+        var lineCount: Int = 1
         
-        if let imageData = image.pngData() {
-            do {
-                try imageData.write(to: fileURL)
-                log("Atlas saved to: \(fileURL.path)", level: .debug)
-            } catch {
-                log("Failed to save atlas image: \(error)", level: .error)
+        for char in text {
+            // Handle line breaks
+            if char == "\n" {
+                maxWidth = max(maxWidth, currentLineWidth)
+                currentLineWidth = 0
+                lineCount += 1
+                continue
             }
+            
+            guard let glyph = glyphMap[char] else {
+                currentLineWidth += fontSize * 0.5 // Default advance for unknown chars
+                continue
+            }
+            
+            currentLineWidth += glyph.advance * scale + 0.5 // Add character spacing (match drawTextSDF)
         }
+        
+        // Check the last line
+        maxWidth = max(maxWidth, currentLineWidth)
+        
+        // Remove the last character spacing from the last line
+        if !text.isEmpty && !text.hasSuffix("\n") {
+            maxWidth -= 0.5
+        }
+        
+        // Calculate total height based on line count
+        let lineHeight = fontMetrics.lineHeight * scale * 1.3  // Match the Y stretch factor
+        totalHeight = Float(lineCount) * lineHeight
+        
+        return (width: maxWidth, height: totalHeight)
     }
     
-    // MARK: - Font Loading
+    public func drawTextCentered(_ text: String, x: Float, y: Float, fontSize: Float, r: Float, g: Float, b: Float, a: Float) {
+        let textSize = measureText(text, fontSize: fontSize)
+        let centeredX = x - textSize.width * 0.5
+        let centeredY = y - textSize.height * 0.5
+        drawTextSDF(text, x: centeredX, y: centeredY, fontSize: fontSize, r: r, g: g, b: b, a: a)
+    }
 }

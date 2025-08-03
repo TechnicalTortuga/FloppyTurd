@@ -362,9 +362,10 @@ namespace GameCore {
     };
 
     /**
-     * Button component - interactive UI button
+     * UIElement component - combines button and text functionality
      */
-    struct Button : public Gnosis::Component {
+    struct UIElement : public Gnosis::Component {
+        // Button properties
         std::string buttonText;
         std::string normalTextureId;
         std::string hoverTextureId;
@@ -372,20 +373,26 @@ namespace GameCore {
         bool isHovered;
         bool isPressed;
         bool isEnabled;
+        bool visible;  // Visibility control
+        
+        // Text properties
         float fontSize;
         Gnosis::GNColor textColor;
         Gnosis::GNColor textHoverColor;
+        int textLayer;  // Layer for text rendering
         
-        Button()
+        UIElement()
             : isHovered(false)
             , isPressed(false)
             , isEnabled(true)
+            , visible(true)
             , fontSize(24.0f)
-            , textColor(255, 255, 255, 255)
+            , textColor(0, 0, 0, 255)
             , textHoverColor(255, 255, 0, 255)
+            , textLayer(10)  // Default to high layer for UI text
         {}
         
-        Button(const std::string& text, const std::string& normalTex, const std::string& hoverTex = "", const std::string& pressedTex = "")
+        UIElement(const std::string& text, const std::string& normalTex, const std::string& hoverTex = "", const std::string& pressedTex = "")
             : buttonText(text)
             , normalTextureId(normalTex)
             , hoverTextureId(hoverTex.empty() ? normalTex : hoverTex)
@@ -393,10 +400,51 @@ namespace GameCore {
             , isHovered(false)
             , isPressed(false)
             , isEnabled(true)
+            , visible(true)
             , fontSize(24.0f)
-            , textColor(255, 255, 255, 255)
+            , textColor(0, 0, 0, 255)
             , textHoverColor(255, 255, 0, 255)
+            , textLayer(10)
         {}
+    };
+
+    /**
+     * Text component - for rendering text
+     */
+    struct Text : public Gnosis::Component {
+        std::string text;
+        float fontSize;
+        Gnosis::GNColor color;
+        bool visible;
+        int layer;
+        
+        Text()
+            : fontSize(24.0f)
+            , color(255, 255, 255, 255)
+            , visible(true)
+            , layer(10)  // Default to high layer for UI text
+        {}
+        
+        Text(const std::string& text, float fontSize = 24.0f, const Gnosis::GNColor& color = Gnosis::GNColor(255, 255, 255, 255), int layer = 10)
+            : text(text)
+            , fontSize(fontSize)
+            , color(color)
+            , visible(true)
+            , layer(layer)
+        {}
+    };
+
+    struct Bounds {
+        float width;
+        float height;
+        float offsetX = 0.0f;  // Offset from sprite center
+        float offsetY = 0.0f;
+        bool useTextureSize = false;  // If true, use actual texture size instead of sprite size
+        
+        Bounds() : width(0.0f), height(0.0f) {}
+        Bounds(float w, float h) : width(w), height(h) {}
+        Bounds(float w, float h, float ox, float oy) : width(w), height(h), offsetX(ox), offsetY(oy) {}
+        Bounds(float w, float h, float ox, float oy, bool useTex) : width(w), height(h), offsetX(ox), offsetY(oy), useTextureSize(useTex) {}
     };
 
 } // namespace GameCore
@@ -416,7 +464,8 @@ namespace Gnosis {
     using Parallax = GameCore::Parallax;
     using Lifetime = GameCore::Lifetime;
     using AudioSource = GameCore::AudioSource;
-    using Button = GameCore::Button;
+    using UIElement = GameCore::UIElement;
+    using Text = GameCore::Text;
     using ColliderType = GameCore::ColliderType;
 }
 

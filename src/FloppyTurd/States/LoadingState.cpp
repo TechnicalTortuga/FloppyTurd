@@ -16,7 +16,8 @@ namespace GameCore {
 
     LoadingState::LoadingState(Gnosis::ECS* ecsCoordinator)
         : m_ecsCoordinator(ecsCoordinator)
-        , m_poopHatEntity(nullptr) {
+        , m_poopHatEntity(nullptr)
+        , m_loadingTextEntity(nullptr) {
     }
 
     void LoadingState::Enter() {
@@ -27,6 +28,9 @@ namespace GameCore {
         
         // Create the rotating poop hat loading icon
         CreateLoadingEntities();
+        
+        // Create loading text
+        CreateLoadingText();
 
         // Preload essential assets during loading screen
         extern GameCore::FloppyTurdGame* g_Game;
@@ -41,9 +45,9 @@ namespace GameCore {
 
     void LoadingState::Exit() {
         GN_LOG_INFO("Exiting Loading State");
-        // Don't destroy entities - let them persist for the main menu
-        // DestroyLoadingEntities();
-        GN_LOG_INFO("Keeping loading entities alive for main menu");
+        // Clean up debug loading entities - we don't want them in main menu anymore
+        DestroyLoadingEntities();
+        GN_LOG_INFO("Cleaned up loading entities for cleaner main menu");
     }
 
     void LoadingState::Pause() {
@@ -173,6 +177,7 @@ namespace GameCore {
     void LoadingState::DestroyLoadingEntities() {
         GN_LOG_INFO("Destroying loading screen entities");
         
+        // Destroy poop hat entity
         if (m_poopHatEntity && m_ecsCoordinator) {
             Gnosis::Entity poopHatEntityId = static_cast<Gnosis::Entity>(reinterpret_cast<uintptr_t>(m_poopHatEntity));
             
@@ -182,6 +187,18 @@ namespace GameCore {
             }
             
             m_poopHatEntity = nullptr;
+        }
+        
+        // Destroy loading text entity
+        if (m_loadingTextEntity && m_ecsCoordinator) {
+            Gnosis::Entity loadingTextEntityId = static_cast<Gnosis::Entity>(reinterpret_cast<uintptr_t>(m_loadingTextEntity));
+            
+            if (m_ecsCoordinator->IsEntityValid(loadingTextEntityId)) {
+                m_ecsCoordinator->DestroyEntity(loadingTextEntityId);
+                GN_LOG_INFO("Destroyed loading text entity with ID: " + std::to_string(loadingTextEntityId));
+            }
+            
+            m_loadingTextEntity = nullptr;
         }
     }
 
@@ -224,6 +241,37 @@ namespace GameCore {
 
     float LoadingState::GetLoadingProgress() const {
         return std::min(m_loadingTimer / LOADING_DURATION, 1.0f);
+    }
+
+    void LoadingState::CreateLoadingText() {
+        if (!m_ecsCoordinator) {
+            GN_LOG_ERROR("ECS coordinator is null in LoadingState");
+            return;
+        }
+        
+        GN_LOG_INFO("Creating loading text entity");
+        
+        // Create loading text entity
+        Gnosis::Entity loadingTextEntityId = m_ecsCoordinator->CreateEntity();
+        
+        // Add Transform component
+        Transform transform;
+        transform.position = Gnosis::GNVector2(1179.0f / 2.0f, 2556.0f / 2.0f + 200.0f); // Below the poop hat
+        transform.scale = Gnosis::GNVector2(1.0f, 1.0f);
+        m_ecsCoordinator->AddComponent<Transform>(loadingTextEntityId, transform);
+        
+        // Add UIElement component for text rendering
+        UIElement loadingText;
+        loadingText.buttonText = "LOADING...";
+        loadingText.fontSize = 160.0f; // Larger font size for mobile readability
+        loadingText.textColor = Gnosis::GNColor(255, 255, 255, 255); // White text
+        loadingText.textLayer = 15; // Higher layer than poop hat
+        m_ecsCoordinator->AddComponent<UIElement>(loadingTextEntityId, loadingText);
+        
+        // Store entity ID
+        m_loadingTextEntity = reinterpret_cast<void*>(static_cast<uintptr_t>(loadingTextEntityId));
+        
+        GN_LOG_INFO("Created loading text entity with ID: " + std::to_string(loadingTextEntityId));
     }
 
 } // namespace GameCore
