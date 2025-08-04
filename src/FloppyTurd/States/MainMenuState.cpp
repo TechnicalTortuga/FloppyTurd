@@ -27,6 +27,7 @@ namespace GameCore {
         , m_quickPlayButtonEntity(0)
         , m_quitButtonEntity(0)
         , m_currentLevelIndex(0)
+        , m_selectedLevelIndex(-1)
         , m_backButtonEntity(0)
         , m_leftArrowButtonEntity(0)
         , m_rightArrowButtonEntity(0)
@@ -1777,7 +1778,15 @@ namespace GameCore {
     void MainMenuState::OnLevelSelected(int levelIndex) {
         if (levelIndex >= 0 && levelIndex < m_levels.size()) {
             GN_LOG_INFO("Level selected: " + m_levels[levelIndex].name + " (Level " + std::to_string(m_levels[levelIndex].levelNumber) + ")");
-            // TODO: Transition to game state with selected level
+            
+            // Check if level is unlocked
+            if (!m_levels[levelIndex].isUnlocked) {
+                GN_LOG_INFO("Level is locked - cannot start");
+                return;
+            }
+            
+            // Store the selected level index for the transition
+            m_selectedLevelIndex = levelIndex;
             m_finished = true;
         }
     }

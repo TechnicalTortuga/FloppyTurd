@@ -123,6 +123,11 @@ namespace GameCore {
         }
     }
 
+    void SpriteSystem::SetTextureBasePath(const std::string& basePath) {
+        m_textureBasePath = basePath;
+        GN_LOG_INFO("SpriteSystem: Set texture base path to '" + basePath + "'");
+    }
+
     void SpriteSystem::UpdateSpriteAnimation(Sprite* sprite, float deltaTime) {
         if (!sprite || !sprite->isAnimated || !sprite->playing) {
             return;
@@ -144,6 +149,8 @@ namespace GameCore {
                     sprite->playing = false; // Stop animation if not looping
                 }
             }
+            
+            GN_LOG_DEBUG("Animation frame advanced: currentFrame=" + std::to_string(sprite->currentFrame) + ", frameCount=" + std::to_string(sprite->frameCount) + ", playing=" + std::to_string(sprite->playing));
         }
     }
 
@@ -157,12 +164,38 @@ namespace GameCore {
         
         GN_LOG_DEBUG("SpriteSystem: Rendering sprite entity " + std::to_string(entity) + " with texture handle " + std::to_string(textureHandle));
         
-        // Calculate source rectangle for animated sprites
-        Gnosis::GNRectangle sourceRect = CalculateSourceRect(sprite);
-        
         // Use platform delegate to render the sprite
-        if (m_delegates.renderer.drawSpriteScaled) {
-            // Calculate scale from sprite dimensions
+        if (sprite.isAnimated && m_delegates.renderer.drawSpriteScaledWithSource) {
+            // For animated sprites, use source rectangle to show current frame
+            Gnosis::GNRectangle sourceRect = CalculateSourceRect(sprite);
+            
+            // Calculate scale factor relative to frame size (Metal renderer multiplies this by sourceWidth/sourceHeight)
+            float scaleX = sprite.width / sprite.frameWidth;
+            float scaleY = sprite.height / sprite.frameHeight;
+            
+            m_delegates.renderer.drawSpriteScaledWithSource(
+                textureHandle,
+                transform.position.x,
+                transform.position.y,
+                scaleX * transform.scale.x,
+                scaleY * transform.scale.y,
+                transform.rotation,
+                sourceRect.x,
+                sourceRect.y,
+                sourceRect.width,
+                sourceRect.height
+            );
+            
+            GN_LOG_INFO("🎯 ANIMATED SPRITE RENDER: Entity " + std::to_string(entity) + 
+                        " | Position: (" + std::to_string(transform.position.x) + ", " + std::to_string(transform.position.y) + ")" +
+                        " | Scale: (" + std::to_string(scaleX * transform.scale.x) + ", " + std::to_string(scaleY * transform.scale.y) + ")" +
+                        " | Rotation: " + std::to_string(transform.rotation) +
+                        " | SourceRect: (" + std::to_string(sourceRect.x) + ", " + std::to_string(sourceRect.y) + ", " + 
+                        std::to_string(sourceRect.width) + ", " + std::to_string(sourceRect.height) + ")" +
+                        " | CurrentFrame: " + std::to_string(sprite.currentFrame) + "/" + std::to_string(sprite.frameCount) +
+                        " | Texture: " + sprite.textureId);
+        } else if (m_delegates.renderer.drawSpriteScaled) {
+            // For non-animated sprites, use the old method (draw entire texture)
             float scaleX = sprite.width / sprite.frameWidth;
             float scaleY = sprite.height / sprite.frameHeight;
             
@@ -175,12 +208,13 @@ namespace GameCore {
                 transform.rotation
             );
             
-            GN_LOG_DEBUG("SpriteSystem: Called drawSpriteScaled for entity " + std::to_string(entity) + " at (" + 
-                        std::to_string(transform.position.x) + ", " + std::to_string(transform.position.y) + 
-                        ") with scale (" + std::to_string(scaleX * transform.scale.x) + ", " + std::to_string(scaleY * transform.scale.y) + 
-                        ") rotation " + std::to_string(transform.rotation));
+            GN_LOG_INFO("🎯 STATIC SPRITE RENDER: Entity " + std::to_string(entity) + 
+                        " | Position: (" + std::to_string(transform.position.x) + ", " + std::to_string(transform.position.y) + ")" +
+                        " | Scale: (" + std::to_string(scaleX * transform.scale.x) + ", " + std::to_string(scaleY * transform.scale.y) + ")" +
+                        " | Rotation: " + std::to_string(transform.rotation) +
+                        " | Texture: " + sprite.textureId);
         } else {
-            GN_LOG_ERROR("SpriteSystem: No drawSpriteScaled delegate available for entity " + std::to_string(entity));
+            GN_LOG_ERROR("SpriteSystem: No sprite rendering delegate available for entity " + std::to_string(entity));
         }
     }
     
@@ -249,7 +283,9 @@ namespace GameCore {
     }
     
     std::string SpriteSystem::GetFullTexturePath(const std::string& textureId) const {
-        return m_textureBasePath + textureId;
+        // For iOS asset catalog, just return the texture ID directly
+        // The asset catalog structure already organizes assets by folder
+        return textureId;
     }
     
     void SpriteSystem::HandleTextureLoaded(GameCore::TextureData* textureData, const char* error, void* userData) {

@@ -72,62 +72,7 @@ namespace GameCore {
         void ProcessPendingChanges();
     };
 
-    /**
-     * @brief Playing State - main gameplay
-     */
-    class PlayingState : public GameState {
-    public:
-        PlayingState(Gnosis::ECS* ecsSystem);
-        ~PlayingState() override;
-
-        void Enter() override;
-        void Exit() override;
-        void Pause() override;
-        void Resume() override;
-
-        void Update(float deltaTime) override;
-        void Render() override;
-        void HandleInput() override;
-
-        bool IsFinished() const override { return m_finished; }
-        const char* GetStateName() const override { return "Playing"; }
-
-        // Game-specific methods
-        void SpawnObstacle();
-        void SpawnPowerUp();
-        void CheckCollisions();
-        void UpdateScore(int points);
-        void GameOver();
-
-    private:
-        Gnosis::ECS* m_ecsSystem;
-        bool m_finished;
-        bool m_paused;
-        
-        // Game entities
-        Gnosis::Entity m_playerEntity;
-        std::vector<Gnosis::Entity> m_obstacles;
-        std::vector<Gnosis::Entity> m_powerUps;
-        std::vector<Gnosis::Entity> m_projectiles;
-        
-        // Game state
-        int m_score;
-        int m_lives;
-        float m_gameSpeed;
-        float m_obstacleSpawnTimer;
-        float m_powerUpSpawnTimer;
-        
-        // Spawn timers
-        static const float OBSTACLE_SPAWN_INTERVAL;
-        static const float POWERUP_SPAWN_INTERVAL;
-        static const float GAME_SPEED_INCREASE;
-        
-        void CreateGameEntities();
-        void DestroyGameEntities();
-        void UpdateSpawning(float deltaTime);
-        void UpdateGameSpeed(float deltaTime);
-        void CleanupDestroyedEntities();
-    };
+    // PlayingState moved to dedicated GameplayState.h/cpp files
 
     /**
      * @brief Paused State

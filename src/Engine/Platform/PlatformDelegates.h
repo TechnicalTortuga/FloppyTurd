@@ -17,36 +17,37 @@ namespace GameCore {
         CMD_CLEAR_SCREEN = 3,
         CMD_DRAW_SPRITE = 4,
         CMD_DRAW_SPRITE_SCALED = 5,
-        CMD_DRAW_TEXT = 6,
-        CMD_DRAW_TEXT_CENTERED = 7,
-        CMD_DRAW_RECTANGLE = 8,
-        CMD_DRAW_CIRCLE = 9,
-        CMD_GET_SCREEN_SIZE = 10,
+        CMD_DRAW_SPRITE_SCALED_WITH_SOURCE = 6,
+        CMD_DRAW_TEXT = 7,
+        CMD_DRAW_TEXT_CENTERED = 8,
+        CMD_DRAW_RECTANGLE = 9,
+        CMD_DRAW_CIRCLE = 10,
+        CMD_GET_SCREEN_SIZE = 11,
         
         // Audio commands
-        CMD_PLAY_MUSIC = 11,
-        CMD_STOP_MUSIC = 12,
-        CMD_PLAY_SOUND = 13,
-        CMD_STOP_SOUND = 14,
-        CMD_SET_MUSIC_VOLUME = 15,
-        CMD_SET_SOUND_VOLUME = 16,
+        CMD_PLAY_MUSIC = 12,
+        CMD_STOP_MUSIC = 13,
+        CMD_PLAY_SOUND = 14,
+        CMD_STOP_SOUND = 15,
+        CMD_SET_MUSIC_VOLUME = 16,
+        CMD_SET_SOUND_VOLUME = 17,
         
         // Logging commands
-        CMD_LOG_TRACE = 17,
-        CMD_LOG_DEBUG = 18,
-        CMD_LOG_INFO = 19,
-        CMD_LOG_WARN = 20,
-        CMD_LOG_ERROR = 21,
-        CMD_LOG_FATAL = 22,
+        CMD_LOG_TRACE = 18,
+        CMD_LOG_DEBUG = 19,
+        CMD_LOG_INFO = 20,
+        CMD_LOG_WARN = 21,
+        CMD_LOG_ERROR = 22,
+        CMD_LOG_FATAL = 23,
         
         // Asset loading commands
-        CMD_LOAD_TEXTURE = 23,
-        CMD_LOAD_AUDIO = 24,
-        CMD_LOAD_FONT = 25,
-        CMD_LOAD_DATA = 26,
+        CMD_LOAD_TEXTURE = 24,
+        CMD_LOAD_AUDIO = 25,
+        CMD_LOAD_FONT = 26,
+        CMD_LOAD_DATA = 27,
         // Asset cache management commands
-        CMD_PRELOAD_ESSENTIAL_ASSETS = 27,
-        CMD_IS_CACHED = 28
+        CMD_PRELOAD_ESSENTIAL_ASSETS = 28,
+        CMD_IS_CACHED = 29
     };
     
     // Rendering command data
@@ -59,6 +60,9 @@ namespace GameCore {
         float fontSize = 0.0f;
         float rotation = 0.0f;
         float scaleX = 1.0f, scaleY = 1.0f;
+        
+        // Source rectangle for sprite sheets
+        float sourceX = 0.0f, sourceY = 0.0f, sourceWidth = 0.0f, sourceHeight = 0.0f;
         
         // Pointer fields
         uint32_t textureHandle = 0;
@@ -153,6 +157,7 @@ namespace GameCore {
         // Sprite rendering (using void* for sprite to avoid forward declaration issues)
         void (*drawSprite)(uint32_t textureHandle, float x, float y, float rotation);
         void (*drawSpriteScaled)(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation);
+        void (*drawSpriteScaledWithSource)(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation, float sourceX, float sourceY, float sourceWidth, float sourceHeight);
         
         // Text rendering
         void (*drawText)(const std::string& text, float x, float y, float fontSize, float r, float g, float b, float a);

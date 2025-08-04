@@ -118,6 +118,22 @@ namespace GameCore {
         s_instance->enqueueRenderCommand(cmd);
     }
     
+    void ThreadingProxy::enqueueDrawSpriteScaledWithSource(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation, float sourceX, float sourceY, float sourceWidth, float sourceHeight) {
+        if (!s_instance) return;
+        RenderCommand cmd(CommandType::CMD_DRAW_SPRITE_SCALED_WITH_SOURCE);
+        cmd.data.textureHandle = textureHandle;
+        cmd.data.x = x;
+        cmd.data.y = y;
+        cmd.data.scaleX = scaleX;
+        cmd.data.scaleY = scaleY;
+        cmd.data.rotation = rotation;
+        cmd.data.sourceX = sourceX;
+        cmd.data.sourceY = sourceY;
+        cmd.data.sourceWidth = sourceWidth;
+        cmd.data.sourceHeight = sourceHeight;
+        s_instance->enqueueRenderCommand(cmd);
+    }
+    
     void ThreadingProxy::enqueueDrawText(const std::string& text, float x, float y, float fontSize, float r, float g, float b, float a) {
         if (!s_instance) return;
         RenderCommand cmd(CommandType::CMD_DRAW_TEXT);
@@ -381,6 +397,29 @@ namespace GameCore {
         return result;
     }
     
+    // Touch input delegate implementations
+    int ThreadingProxy::getTouchCount() {
+        if (!s_instance) return 0;
+        // For now, return 1 if touch is down, 0 otherwise
+        // This can be expanded later for multi-touch support
+        int count = s_instance->m_isTouchDown ? 1 : 0;
+        if (count > 0) {
+            GN_LOG_DEBUG("ThreadingProxy: getTouchCount() = %d", count);
+        }
+        return count;
+    }
+    
+    void ThreadingProxy::getTouchPosition(int touchIndex, float* x, float* y) {
+        if (!s_instance || touchIndex != 0) {
+            if (x) *x = 0.0f;
+            if (y) *y = 0.0f;
+            return;
+        }
+        if (x) *x = s_instance->m_lastTouchX;
+        if (y) *y = s_instance->m_lastTouchY;
+        GN_LOG_DEBUG("ThreadingProxy: getTouchPosition(%d) = (%f, %f)", touchIndex, s_instance->m_lastTouchX, s_instance->m_lastTouchY);
+    }
+    
     void ThreadingProxy::updateTouchState(float x, float y, bool isDown, bool justPressed, bool justReleased) {
         if (!s_instance) return;
         s_instance->m_lastTouchX = x;
@@ -511,6 +550,7 @@ namespace GameCore {
         delegates.renderer.clearScreen = enqueueClearScreen;
         delegates.renderer.drawSprite = enqueueDrawSprite;
         delegates.renderer.drawSpriteScaled = enqueueDrawSpriteScaled;
+        delegates.renderer.drawSpriteScaledWithSource = enqueueDrawSpriteScaledWithSource;
         delegates.renderer.drawText = enqueueDrawText;
         delegates.renderer.drawTextCentered = enqueueDrawTextCentered;
         delegates.renderer.drawRectangle = enqueueDrawRectangle;
@@ -548,6 +588,10 @@ namespace GameCore {
         delegates.input.isPrimaryInputDown = isPrimaryInputDown;
         delegates.input.isPrimaryInputJustPressed = isPrimaryInputJustPressed;
         delegates.input.isPrimaryInputJustReleased = isPrimaryInputJustReleased;
+        
+        // Configure touch input delegates
+        delegates.input.getTouchCount = getTouchCount;
+        delegates.input.getTouchPosition = getTouchPosition;
         
         // Configure gesture detection delegates
         delegates.input.isSwipeLeftDetected = isSwipeLeftDetected;

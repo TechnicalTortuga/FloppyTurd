@@ -22,6 +22,16 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../../Engine/Core/ECS.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../../Engine/Platform/PlatformDelegates.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/GameState.h \
-  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../Entities/Player.h \
-  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../Entities/../../Engine/Core/GnosisTypes.h \
-  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../Entities/../Components/GameComponents.h
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/GameplayState.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../../Engine/Core/GnosisTypes.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../../Engine/Core/ECS.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../../Engine/Platform/PlatformDelegates.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Entities/Player.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Entities/../../Engine/Core/GnosisTypes.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Entities/../Components/GameComponents.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/SpriteSystem.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/../../Engine/Core/ECS.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/../Components/GameComponents.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/../../Engine/Platform/PlatformDelegates.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/PlayerControllerSystem.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../Entities/Player.h

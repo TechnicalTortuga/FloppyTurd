@@ -16,6 +16,7 @@ namespace GameCore {
 }
 
 #include "../States/GameState.h"
+#include "../States/GameplayState.h"
 #include "../Entities/Player.h"
 #include <memory>
 

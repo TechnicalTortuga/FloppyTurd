@@ -29,6 +29,9 @@ namespace GameCore {
 
         bool IsFinished() const override { return m_finished; }
         const char* GetStateName() const override { return "MainMenu"; }
+        
+        // Level selection
+        int GetSelectedLevelIndex() const { return m_selectedLevelIndex; }
 
     private:
         enum class MenuOption {
@@ -83,6 +86,7 @@ namespace GameCore {
         // Level select entities
         std::vector<LevelInfo> m_levels;
         int m_currentLevelIndex;
+        int m_selectedLevelIndex; // Level selected for gameplay
         Gnosis::Entity m_backButtonEntity;
         Gnosis::Entity m_leftArrowButtonEntity;
         Gnosis::Entity m_rightArrowButtonEntity;

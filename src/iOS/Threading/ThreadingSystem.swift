@@ -156,6 +156,20 @@ class CommandProcessor {
                                         rotation: data.rotation)
             }
             
+        case .CMD_DRAW_SPRITE_SCALED_WITH_SOURCE:
+            if data.textureHandle != 0 {
+                renderer.drawSpriteScaledWithSource(textureHandle: data.textureHandle,
+                                                  x: data.x,
+                                                  y: data.y,
+                                                  scaleX: data.scaleX,
+                                                  scaleY: data.scaleY,
+                                                  rotation: data.rotation,
+                                                  sourceX: data.sourceX,
+                                                  sourceY: data.sourceY,
+                                                  sourceWidth: data.sourceWidth,
+                                                  sourceHeight: data.sourceHeight)
+            }
+            
         case .CMD_DRAW_TEXT:
             let text = String(data.text)
             if !text.isEmpty {
