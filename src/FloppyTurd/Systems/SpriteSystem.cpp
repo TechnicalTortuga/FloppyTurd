@@ -147,6 +147,7 @@ namespace GameCore {
                 } else {
                     sprite->currentFrame = sprite->frameCount - 1;
                     sprite->playing = false; // Stop animation if not looping
+                    sprite->hasCompleted = true; // Mark animation as completed
                 }
             }
             

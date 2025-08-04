@@ -109,6 +109,10 @@ namespace GameCore {
         float m_pickupSpawnTimer;
         float m_enemySpawnTimer;
         
+        // Input delay timer to prevent auto-shooting when entering level
+        float m_inputDelayTimer;
+        static constexpr float INPUT_DELAY_TIME = 0.5f; // 0.5 seconds delay
+        
         // Configuration
         static constexpr float OBSTACLE_SPAWN_INTERVAL = 2.0f;
         static constexpr float PICKUP_SPAWN_INTERVAL = 5.0f;

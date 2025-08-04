@@ -933,11 +933,11 @@ public class MetalRenderer {
         
         log("🖼️ Drawing sprite with source rect: texture \(textureHandle), source (\(sourceX),\(sourceY),\(sourceWidth)x\(sourceHeight)), UV (\(u0),\(v0)) to (\(u1),\(v1)), screen \(spriteWidth)x\(spriteHeight), pos (\(x),\(y))", level: .debug)
         
-        // Use helper function to create sprite transformation matrix
+        // Use sprite transformation matrix for centered positioning like other sprites
         let modelMatrix = MetalMatrixHelpers.spriteTransformMatrix(
             position: (x: x, y: y),
             scale: (x: spriteWidth, y: spriteHeight),
-            rotation: rotation
+            rotation: 0.0
         )
         
         // Get current projection matrix
@@ -954,12 +954,13 @@ public class MetalRenderer {
         }
         
         // Create vertex buffer with custom UV coordinates for the source rectangle
+        // Use same vertex coordinates as static sprites to ensure consistent positioning
         let vertices: [Float] = [
             // Position (x, y), TexCoord (u, v), Color (r, g, b, a)
-            -0.5, -0.5, u0, v0, 1.0, 1.0, 1.0, 1.0,  // Bottom-left
-             0.5, -0.5, u1, v0, 1.0, 1.0, 1.0, 1.0,  // Bottom-right
-             0.5,  0.5, u1, v1, 1.0, 1.0, 1.0, 1.0,  // Top-right
-            -0.5,  0.5, u0, v1, 1.0, 1.0, 1.0, 1.0   // Top-left
+            0.0, 1.0, u0, v1, 1.0, 1.0, 1.0, 1.0,   // Bottom-left
+            1.0, 1.0, u1, v1, 1.0, 1.0, 1.0, 1.0,   // Bottom-right
+            1.0, 0.0, u1, v0, 1.0, 1.0, 1.0, 1.0,   // Top-right
+            0.0, 0.0, u0, v0, 1.0, 1.0, 1.0, 1.0    // Top-left
         ]
         
         guard let sourceVertexBuffer = device.makeBuffer(bytes: vertices, length: vertices.count * MemoryLayout<Float>.stride, options: []) else {

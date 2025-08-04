@@ -420,6 +420,22 @@ namespace GameCore {
         GN_LOG_DEBUG("ThreadingProxy: getTouchPosition(%d) = (%f, %f)", touchIndex, s_instance->m_lastTouchX, s_instance->m_lastTouchY);
     }
     
+    void ThreadingProxy::clearInputBuffer() {
+        if (!s_instance) return;
+        
+        // Clear all input state to prevent lingering touches from causing auto-shooting
+        s_instance->m_isTouchDown = false;
+        s_instance->m_isTouchJustPressed = false;
+        s_instance->m_isTouchJustReleased = false;
+        s_instance->m_lastTouchX = 0.0f;
+        s_instance->m_lastTouchY = 0.0f;
+        
+        // Reset gesture state as well
+        resetGestureState();
+        
+        GN_LOG_INFO("ThreadingProxy: Input buffer cleared - no more lingering touches!");
+    }
+    
     void ThreadingProxy::updateTouchState(float x, float y, bool isDown, bool justPressed, bool justReleased) {
         if (!s_instance) return;
         s_instance->m_lastTouchX = x;
@@ -599,6 +615,9 @@ namespace GameCore {
         delegates.input.isSwipeUpDetected = isSwipeUpDetected;
         delegates.input.isSwipeDownDetected = isSwipeDownDetected;
         delegates.input.resetGestureState = resetGestureState;
+        
+        // Configure input buffer management
+        delegates.input.clearInputBuffer = clearInputBuffer;
         
         GN_LOG_INFO("ThreadingProxy: Input delegates configured - touch input will flow from iOS->ThreadingProxy->C++");
         GN_LOG_INFO("ThreadingProxy: Delegates configured successfully - ready for turd-tossing action!");

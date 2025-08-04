@@ -24,6 +24,7 @@ namespace GameCore {
         , m_obstacleSpawnTimer(0.0f)
         , m_pickupSpawnTimer(0.0f)
         , m_enemySpawnTimer(0.0f)
+        , m_inputDelayTimer(0.0f)
     {
         GN_LOG_INFO("GameplayState created for level: " + std::to_string(levelId));
     }
@@ -63,6 +64,15 @@ namespace GameCore {
         m_pickupSpawnTimer = 0.0f;
         m_enemySpawnTimer = 0.0f;
         
+        // Reset input delay timer to prevent immediate input processing
+        m_inputDelayTimer = 0.0f;
+        
+        // Clear any lingering input commands to prevent auto-shooting when entering level
+        if (m_platformDelegates && m_platformDelegates->input.clearInputBuffer) {
+            m_platformDelegates->input.clearInputBuffer();
+            GN_LOG_INFO("GameplayState: Cleared input buffer to prevent lingering touch inputs");
+        }
+        
         GN_LOG_INFO("GameplayState entered successfully");
     }
 
@@ -97,8 +107,13 @@ namespace GameCore {
         // Update game time
         m_gameTime += deltaTime;
         
-        // Handle input first
-        HandleInput();
+        // Update input delay timer
+        m_inputDelayTimer += deltaTime;
+        
+        // Handle input only after delay period to prevent auto-shooting
+        if (m_inputDelayTimer >= INPUT_DELAY_TIME) {
+            HandleInput();
+        }
         
         // Update systems
         if (m_spriteSystem) {

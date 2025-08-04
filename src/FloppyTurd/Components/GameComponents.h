@@ -104,6 +104,7 @@ namespace GameCore {
         float currentFrameTime;  // Accumulated time for current frame
         bool loop;               // Should animation loop?
         bool playing;            // Is animation currently playing?
+        bool hasCompleted;       // Has animation completed at least once?
         
         // Static sprite constructor
         Sprite()
@@ -121,6 +122,7 @@ namespace GameCore {
             , currentFrameTime(0.0f)
             , loop(true)
             , playing(false)
+            , hasCompleted(false)
         {}
         
         // Static sprite constructor with texture
@@ -140,6 +142,7 @@ namespace GameCore {
             , currentFrameTime(0.0f)
             , loop(true)
             , playing(false)
+            , hasCompleted(false)
         {}
         
         // Animated sprite constructor
@@ -159,12 +162,14 @@ namespace GameCore {
             , currentFrameTime(0.0f)
             , loop(true)
             , playing(true)
+            , hasCompleted(false)
         {}
         
         // Animation control methods
         void Play() { playing = true; }
         void Pause() { playing = false; }
         void Stop() { playing = false; currentFrame = 0; currentFrameTime = 0.0f; }
+        void Reset() { playing = false; currentFrame = 0; currentFrameTime = 0.0f; hasCompleted = false; }
         void SetFrame(int frame) { currentFrame = (frame >= 0 && frame < frameCount) ? frame : 0; }
     };
     

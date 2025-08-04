@@ -88,8 +88,21 @@ namespace GameCore {
     }
 
     void PlayerControllerSystem::HandleJumpInput() {
-        if (!m_playerAlive || m_jumpCooldown > 0.0f || m_isShooting) {
+        if (!m_playerAlive || m_jumpCooldown > 0.0f || m_isShooting || m_isJumping) {
+            GN_LOG_DEBUG("Jump input ignored - alive=" + std::to_string(m_playerAlive) + 
+                        ", cooldown=" + std::to_string(m_jumpCooldown) + 
+                        ", shooting=" + std::to_string(m_isShooting) + 
+                        ", jumping=" + std::to_string(m_isJumping));
             return;
+        }
+        
+        // Check if we're currently in any non-idle animation and it's still playing
+        if (m_playerEntity != 0) {
+            Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(m_playerEntity);
+            if (sprite && m_currentAnimation != m_idleAnimation && sprite->playing) {
+                GN_LOG_DEBUG("Jump input ignored - currently in animation: " + m_currentAnimation);
+                return;
+            }
         }
 
         if (m_isGrounded) {
@@ -110,7 +123,19 @@ namespace GameCore {
 
     void PlayerControllerSystem::HandleShootInput() {
         if (!m_playerAlive || m_shootCooldown > 0.0f || m_isShooting) {
+            GN_LOG_DEBUG("Shoot input ignored - alive=" + std::to_string(m_playerAlive) + 
+                        ", cooldown=" + std::to_string(m_shootCooldown) + 
+                        ", shooting=" + std::to_string(m_isShooting));
             return;
+        }
+        
+        // Check if we're currently in any non-idle animation and it's still playing
+        if (m_playerEntity != 0) {
+            Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(m_playerEntity);
+            if (sprite && m_currentAnimation != m_idleAnimation && sprite->playing) {
+                GN_LOG_DEBUG("Shoot input ignored - currently in animation: " + m_currentAnimation);
+                return;
+            }
         }
 
         m_isShooting = true;
@@ -132,10 +157,51 @@ namespace GameCore {
             // Update the sprite's texture ID to the new animation
             Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(m_playerEntity);
             if (sprite) {
+                // LOGIC GATE 1: Check if we're trying to change to the same animation
+                if (m_currentAnimation == animationName) {
+                    // LOGIC GATE 2: Check if animation is currently playing
+                    if (sprite->playing) {
+                        GN_LOG_DEBUG("PlayerController: Animation " + animationName + " already playing, skipping restart");
+                        return;
+                    }
+                    
+                                    // LOGIC GATE 3: Check if animation has completed its first loop (but allow IDLE to always reset)
+                if (sprite->hasCompleted && animationName != m_idleAnimation) {
+                    GN_LOG_DEBUG("PlayerController: Animation " + animationName + " has completed, skipping restart");
+                    return;
+                }
+                    
+                    // LOGIC GATE 4: Check if animation is non-loopable and has stopped
+                    if (!sprite->loop && !sprite->playing) {
+                        GN_LOG_DEBUG("PlayerController: Non-loopable animation " + animationName + " has stopped, skipping restart");
+                        return;
+                    }
+                    
+                    // If we get here, the animation is stopped but not completed - this might indicate a problem
+                    GN_LOG_ERROR("PlayerController: Animation " + animationName + " is stopped but not completed - this might indicate a bug");
+                }
+                
+                // Only restart animation if it's a different animation or if current animation has finished
+                bool shouldRestartAnimation = (m_currentAnimation != animationName) || !sprite->playing;
+                
                 sprite->textureId = animationName;
-                sprite->playing = true;
-                sprite->currentFrame = 0;
-                sprite->currentFrameTime = 0.0f;
+                
+                if (shouldRestartAnimation) {
+                                    // LOGIC GATE 5: Prevent restarting if animation has completed and is non-loopable (but always allow IDLE)
+                if (sprite->hasCompleted && !sprite->loop && animationName != m_idleAnimation) {
+                    GN_LOG_DEBUG("PlayerController: Cannot restart completed non-loopable animation: " + animationName);
+                    return;
+                }
+                    
+                    sprite->playing = true;
+                    sprite->currentFrame = 0;
+                    sprite->currentFrameTime = 0.0f;
+                    sprite->hasCompleted = false; // Reset completion flag for new animation
+                    GN_LOG_DEBUG("PlayerController: Starting new animation: " + animationName);
+                } else {
+                    GN_LOG_DEBUG("PlayerController: Animation " + animationName + " already playing, not restarting");
+                }
+                
                 m_currentAnimation = animationName;
                 
                 // Store current sprite dimensions to maintain consistency
@@ -149,7 +215,9 @@ namespace GameCore {
                     sprite->frameHeight = 64;
                     sprite->frameTime = 0.1f; // Frame timing (not used for single frame)
                     sprite->isAnimated = false; // Single frame, not animated
-                    sprite->playing = false;
+                    sprite->playing = true; // IDLE should always be playing
+                    sprite->loop = true; // IDLE should loop continuously
+                    sprite->hasCompleted = false; // Reset completion flag for IDLE
                 } else if (animationName == "TurdletJump") {
                     sprite->frameCount = 6; // 384x64 pixels = 6 frames
                     sprite->frameWidth = 64; // Each frame is 64x64 pixels
@@ -287,52 +355,97 @@ namespace GameCore {
             return;
         }
 
-        // Check if current animation has finished (for non-looping animations)
         Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(m_playerEntity);
-        if (sprite && sprite->isAnimated && !sprite->playing && m_currentAnimation != m_idleAnimation) {
-            // Animation finished, return to idle
-            GN_LOG_INFO("Animation finished, returning to idle: " + m_currentAnimation);
-            ChangePlayerAnimation(m_idleAnimation);
+        if (!sprite) {
             return;
         }
-        
-        // Also check if we're in an animation state but the sprite is not playing
-        if (sprite && m_currentAnimation != m_idleAnimation && !sprite->playing) {
-            GN_LOG_INFO("Animation stopped playing, returning to idle: " + m_currentAnimation);
+
+        // DEBUG: Log current animation state
+        GN_LOG_DEBUG("Animation Debug - Current: " + m_currentAnimation + 
+                    ", Playing: " + std::to_string(sprite->playing) + 
+                    ", Completed: " + std::to_string(sprite->hasCompleted) + 
+                    ", Frame: " + std::to_string(sprite->currentFrame) + "/" + std::to_string(sprite->frameCount) +
+                    ", Shooting: " + std::to_string(m_isShooting) + " (timer: " + std::to_string(m_shootTimer) + ")" +
+                    ", Jumping: " + std::to_string(m_isJumping) + " (timer: " + std::to_string(m_jumpTimer) + ")");
+
+        // AGGRESSIVE FIX: If we're in a non-idle animation and the sprite is not playing, force return to idle
+        if (m_currentAnimation != m_idleAnimation && !sprite->playing) {
+            GN_LOG_INFO("FORCE RETURN TO IDLE: Animation " + m_currentAnimation + " is not playing");
+            
+            // Clear ALL states immediately
+            m_shootTimer = 0.0f;
+            m_shootCooldown = 0.0f;
+            m_isShooting = false;
+            m_jumpTimer = 0.0f;
+            m_jumpCooldown = 0.0f;
+            m_isJumping = false;
+            
             ChangePlayerAnimation(m_idleAnimation);
             return;
         }
 
-        // Determine which animation to play based on state
-        std::string targetAnimation = m_idleAnimation;
+        // Check if current animation has completed - if so, don't restart it even if timer is still active
+        bool currentAnimationCompleted = (sprite->hasCompleted && m_currentAnimation != m_idleAnimation);
         
-        if (m_isShooting && m_shootTimer > 0.0f) {
-            targetAnimation = m_shootAnimation;
-            GN_LOG_DEBUG("PlayerController: Shooting animation requested, timer=" + std::to_string(m_shootTimer));
-        } else if (m_isJumping && m_jumpTimer > 0.0f) {
-            targetAnimation = m_jumpAnimation;
-            GN_LOG_DEBUG("PlayerController: Jump animation requested, timer=" + std::to_string(m_jumpTimer));
-        } else {
-            targetAnimation = m_idleAnimation;
-            GN_LOG_DEBUG("PlayerController: Idle animation requested");
+        if (currentAnimationCompleted) {
+            // Animation has completed, return to idle regardless of timer
+            GN_LOG_INFO("PlayerController: Animation completed, returning to idle: " + m_currentAnimation);
+            
+            // Clear the timers and states to prevent looping
+            if (m_currentAnimation == m_shootAnimation) {
+                m_shootTimer = 0.0f;
+                m_shootCooldown = 0.0f;
+                m_isShooting = false;
+            } else if (m_currentAnimation == m_jumpAnimation) {
+                m_jumpTimer = 0.0f;
+                m_jumpCooldown = 0.0f;
+                m_isJumping = false;
+            }
+            
+            ChangePlayerAnimation(m_idleAnimation);
+            return;
         }
-        
-        // Change animation if needed
-        if (targetAnimation != m_currentAnimation) {
-            GN_LOG_INFO("Animation state change: " + m_currentAnimation + " -> " + targetAnimation);
-            ChangePlayerAnimation(targetAnimation);
+
+        // AGGRESSIVE FIX: If we're in a non-idle animation and the sprite has reached the last frame, force completion
+        if (m_currentAnimation != m_idleAnimation && sprite->isAnimated && 
+            sprite->currentFrame >= sprite->frameCount - 1 && sprite->playing) {
+            GN_LOG_INFO("FORCE COMPLETION: Animation " + m_currentAnimation + " reached last frame");
+            
+            // Mark as completed and stop playing
+            sprite->hasCompleted = true;
+            sprite->playing = false;
+            
+            // Clear states
+            if (m_currentAnimation == m_shootAnimation) {
+                m_shootTimer = 0.0f;
+                m_shootCooldown = 0.0f;
+                m_isShooting = false;
+            } else if (m_currentAnimation == m_jumpAnimation) {
+                m_jumpTimer = 0.0f;
+                m_jumpCooldown = 0.0f;
+                m_isJumping = false;
+            }
+            
+            ChangePlayerAnimation(m_idleAnimation);
+            return;
         }
+
+        // REMOVED: Conflicting logic that was overriding the IDLE return logic
+        // The animation state is now controlled by the input handlers and completion logic above
+        // This prevents the method from overriding the IDLE return when animations complete
     }
 
     void PlayerControllerSystem::UpdatePlayerState(float deltaTime) {
         // Update shooting state
         if (m_isShooting && m_shootTimer <= 0.0f) {
             m_isShooting = false;
+            GN_LOG_DEBUG("PlayerController: Shoot timer expired, clearing shoot state");
         }
         
         // Update jumping state
         if (m_isJumping && m_jumpTimer <= 0.0f) {
             m_isJumping = false;
+            GN_LOG_DEBUG("PlayerController: Jump timer expired, clearing jump state");
         }
     }
 

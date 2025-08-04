@@ -83,6 +83,9 @@ namespace GameCore {
         static int getTouchCount();
         static void getTouchPosition(int touchIndex, float* x, float* y);
         
+        // Input buffer management
+        static void clearInputBuffer();
+        
         // Gesture detection methods
         static bool isSwipeLeftDetected();
         static bool isSwipeRightDetected();

@@ -204,6 +204,9 @@ namespace GameCore {
         bool (*isSwipeDownDetected)();
         void (*resetGestureState)();
         
+        // Input buffer management
+        void (*clearInputBuffer)();
+        
         // Keyboard (desktop specific, but can be stubbed for iOS)
         bool (*isKeyPressed)(int keyCode);
         bool (*isKeyJustPressed)(int keyCode);
@@ -218,7 +221,7 @@ namespace GameCore {
                         getTouchCount(nullptr), getTouchPosition(nullptr),
                         isSwipeLeftDetected(nullptr), isSwipeRightDetected(nullptr),
                         isSwipeUpDetected(nullptr), isSwipeDownDetected(nullptr),
-                        resetGestureState(nullptr),
+                        resetGestureState(nullptr), clearInputBuffer(nullptr),
                         isKeyPressed(nullptr), isKeyJustPressed(nullptr),
                         platformContext(nullptr) {}
     };
