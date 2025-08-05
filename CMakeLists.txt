@@ -105,6 +105,8 @@ if(PLATFORM_IOS)
         "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/States/*.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Systems/*.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Systems/*.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Config/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Config/*.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Core/*.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Core/*.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Platform/*.cpp"
@@ -125,6 +127,7 @@ if(PLATFORM_IOS)
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Platform
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Assets
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Utility
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Config
     )
 endif()
 
@@ -170,6 +173,8 @@ file(GLOB_RECURSE ENGINE_CORE_SOURCES
 file(GLOB_RECURSE GAME_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Components/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Components/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Config/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Config/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Entities/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Entities/*.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Game/*.cpp"
@@ -268,6 +273,7 @@ if(PLATFORM_IOS)
         ${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/Threading
         ${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd
         ${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Components
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Config
         ${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Entities
         ${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Game
         ${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/States

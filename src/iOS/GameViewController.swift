@@ -21,7 +21,7 @@ public class GameViewController: UIViewController {
     
     private var metalView: MTKView!
     private var metalRenderer: MetalRenderer!
-    private var touchInputHandler: TouchInputHandler!
+    private var touchInputHandler: TouchInputHandler?
     public var gameEngine: GameEngine!
     
     // MARK: - Logging Helper - Direct Swift/C++ interop
@@ -179,11 +179,9 @@ public class GameViewController: UIViewController {
     private func setupTouchInput() {
         log("Setting up touch input...")
         
-        touchInputHandler = TouchInputHandler()
-        touchInputHandler.delegate = self
-        
-        // Connect touch input handler to game engine
-        gameEngine.setTouchInputHandler(touchInputHandler)
+        // Use GameEngine's TouchInputHandler (GameEngine creates it internally and sets itself as delegate)
+        // GameEngine.initialize() must be called before this to ensure TouchInputHandler exists
+        touchInputHandler = gameEngine.getTouchInputHandler()
         
         // Add gesture recognizers
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
@@ -255,7 +253,7 @@ public class GameViewController: UIViewController {
             y: location.y / metalView.bounds.height
         )
         log("🎯 GameViewController: Tap detected at (\(location.x), \(location.y)) - forwarding to TouchInputHandler", level: .debug)
-        touchInputHandler.handleTap(gesture)
+        touchInputHandler?.handleTap(gesture)
     }
     
     @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
@@ -338,25 +336,6 @@ extension GameViewController: MTKViewDelegate {
         }
     }
 }
-
-// MARK: - TouchInputHandlerDelegate
-
-extension GameViewController: TouchInputHandlerDelegate {
-    
-    public func touchInputHandler(_ handler: TouchInputHandler, didReceiveInput input: Any) {
-        // Forward touch input to game engine on main actor
-        // Since GameViewController is @MainActor, this method runs on main thread
-        gameEngine.handleTouchInput(input)  // ✅ ENABLED - forwards to C++ state manager
-    }
-    
-    public func touchInputHandler(_ handler: TouchInputHandler, didReceiveInput input: Any, touchPosition: CGPoint, viewSize: CGSize) {
-        // Forward touch input with coordinates to game engine on main actor
-        // Since GameViewController is @MainActor, this method runs on main thread
-        gameEngine.handleTouchInput(input, touchPosition: touchPosition, viewSize: viewSize)
-    }
-}
-
-
 
 // MARK: - C++ Integration Notes
 

@@ -196,6 +196,9 @@ namespace GameCore {
         // Multi-touch (iOS specific, but can be stubbed for desktop)
         int (*getTouchCount)();
         void (*getTouchPosition)(int touchIndex, float* x, float* y);
+        bool (*isTouchDown)();
+        bool (*isTouchJustPressed)();
+        bool (*isTouchJustReleased)();
         
         // Gesture detection (iOS specific)
         bool (*isSwipeLeftDetected)();
@@ -219,6 +222,7 @@ namespace GameCore {
                         getPrimaryInputPosition(nullptr), isPrimaryInputDown(nullptr),
                         isPrimaryInputJustPressed(nullptr), isPrimaryInputJustReleased(nullptr),
                         getTouchCount(nullptr), getTouchPosition(nullptr),
+                        isTouchDown(nullptr), isTouchJustPressed(nullptr), isTouchJustReleased(nullptr),
                         isSwipeLeftDetected(nullptr), isSwipeRightDetected(nullptr),
                         isSwipeUpDetected(nullptr), isSwipeDownDetected(nullptr),
                         resetGestureState(nullptr), clearInputBuffer(nullptr),

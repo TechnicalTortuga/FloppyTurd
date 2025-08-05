@@ -420,6 +420,21 @@ namespace GameCore {
         GN_LOG_DEBUG("ThreadingProxy: getTouchPosition(%d) = (%f, %f)", touchIndex, s_instance->m_lastTouchX, s_instance->m_lastTouchY);
     }
     
+    bool ThreadingProxy::isTouchDown() {
+        if (!s_instance) return false;
+        return s_instance->m_isTouchDown;
+    }
+    
+    bool ThreadingProxy::isTouchJustPressed() {
+        if (!s_instance) return false;
+        return s_instance->m_isTouchJustPressed;
+    }
+    
+    bool ThreadingProxy::isTouchJustReleased() {
+        if (!s_instance) return false;
+        return s_instance->m_isTouchJustReleased;
+    }
+    
     void ThreadingProxy::clearInputBuffer() {
         if (!s_instance) return;
         
@@ -608,6 +623,9 @@ namespace GameCore {
         // Configure touch input delegates
         delegates.input.getTouchCount = getTouchCount;
         delegates.input.getTouchPosition = getTouchPosition;
+        delegates.input.isTouchDown = isTouchDown;
+        delegates.input.isTouchJustPressed = isTouchJustPressed;
+        delegates.input.isTouchJustReleased = isTouchJustReleased;
         
         // Configure gesture detection delegates
         delegates.input.isSwipeLeftDetected = isSwipeLeftDetected;

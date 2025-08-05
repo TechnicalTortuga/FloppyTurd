@@ -1,5 +1,6 @@
 #include "PlayerControllerSystem.h"
 #include "../../Engine/Core/GNLog.h"
+#include "../../Engine/Utility/Utils.h"
 #include <algorithm>
 
 namespace GameCore {
@@ -15,11 +16,15 @@ namespace GameCore {
         , m_jumpCooldown(0.0f)
         , m_shootCooldown(0.0f)
         , m_isGrounded(true)
-        , m_isJumping(false)
-        , m_isShooting(false)
-        , m_jumpTimer(0.0f)
-        , m_shootTimer(0.0f)
-        , m_currentAnimation("idle")
+        , m_currentState(PlayerAnimationState::IDLE)
+        , m_previousState(PlayerAnimationState::IDLE)
+        , m_touchActive(false)
+        , m_lastTouchX(0.0f)
+        , m_lastTouchY(0.0f)
+        , m_jumpButtonHeld(false)
+        , m_jumpHoldTime(0.0f)
+        , m_isAscending(false)
+        , m_lastVerticalVelocity(0.0f)
         , m_idleAnimation("TurdletIdle")
         , m_jumpAnimation("TurdletJump")
         , m_shootAnimation("TurdletShoot")
@@ -37,6 +42,9 @@ namespace GameCore {
             return;
         }
 
+        // DEBUG: Show flag states at start of update - LOG ALWAYS for debugging
+        GN_LOG_INFO("🎯 Update flags: m_touchSession.active=" + std::to_string(m_touchSession.active) + ", m_jumpButtonHeld=" + std::to_string(m_jumpButtonHeld) + ", m_jumpHoldTime=" + std::to_string(m_jumpHoldTime * 1000.0f) + "ms, startTime=" + std::to_string(m_touchSession.startTime));
+
         // Update cooldowns
         if (m_jumpCooldown > 0.0f) {
             m_jumpCooldown -= deltaTime;
@@ -45,12 +53,31 @@ namespace GameCore {
             m_shootCooldown -= deltaTime;
         }
 
-        // Update timers
-        if (m_jumpTimer > 0.0f) {
-            m_jumpTimer -= deltaTime;
-        }
-        if (m_shootTimer > 0.0f) {
-            m_shootTimer -= deltaTime;
+        // Update variable jump mechanics - handle hold time and auto-jump
+        if (m_jumpButtonHeld && m_touchSession.active) {
+            // Use timestamp-based calculation instead of deltaTime accumulation
+            uint64_t currentTime = GameCore::GetCurrentTimestamp();
+            uint64_t holdDurationMs = currentTime - m_touchSession.startTime;
+            
+            // Add debug logging to track timestamp-based timing
+            GN_LOG_INFO("🔥 Jump hold duration: " + std::to_string(holdDurationMs) + "ms (timestamp-based)");
+            
+            // Check for auto-jump after 200ms
+            if (holdDurationMs >= 200) { // AUTO_JUMP_THRESHOLD converted to milliseconds
+                GN_LOG_INFO("Auto-jump triggered at " + std::to_string(holdDurationMs) + "ms - executing max force jump!");
+                
+                // Trigger max force jump for auto-jump
+                HandleJumpInputWithForce(JUMP_FORCE);
+                
+                // Clear jump process - we don't need to wait for release anymore
+                m_jumpButtonHeld = false;
+                m_jumpHoldTime = 0.0f;
+                // Keep m_touchSession.active true so we can ignore the eventual release
+                GN_LOG_INFO("Auto-jump complete - release events will be ignored");
+            } else {
+                // Update legacy m_jumpHoldTime for compatibility with other systems that might read it
+                m_jumpHoldTime = holdDurationMs / 1000.0f;
+            }
         }
 
         // Update player systems
@@ -60,91 +87,160 @@ namespace GameCore {
         HandleCollisions();
     }
 
-    void PlayerControllerSystem::HandleTouchInput(float x, float y, bool isPressed) {
-        GN_LOG_INFO("PlayerControllerSystem::HandleTouchInput called with (" + std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(isPressed) + ")");
+    void PlayerControllerSystem::HandleTouchInput(float x, float y, bool isJustPressed) {
+        GN_LOG_INFO("PlayerControllerSystem::HandleTouchInput called with (" + std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(isJustPressed) + ")");
         
         if (!m_playerAlive) {
             GN_LOG_WARN("Input ignored - player not alive");
             return;
         }
 
-        // Determine if touch is in bottom area (shoot zone) or general area (jump zone)
-        float screenHeight = 2556.0f; // iPhone 16 game height
-        float shootZoneHeight = screenHeight * 0.33f; // Bottom 1/3 of screen for shooting
-        
-        if (isPressed) {
-            GN_LOG_INFO("Touch detected at y=" + std::to_string(y) + ", shootZone starts at y=" + std::to_string(screenHeight - shootZoneHeight));
+        uint64_t currentTime = GameCore::GetCurrentTimestamp();
+
+        if (isJustPressed) {
+            // This is a isJustPressed event - only triggers ONCE when touch starts
+            GN_LOG_INFO("Touch JUST PRESSED detected - starting touch session");
+            
+            // Don't start new touch if we're already tracking one
+            if (m_touchSession.active) {
+                GN_LOG_WARN("Ignoring new touch - already tracking active touch session");
+                return;
+            }
+            
+            // Start new touch session with timestamp
+            m_touchSession.active = true;
+            m_touchSession.startTime = currentTime;
+            m_touchSession.startX = x;
+            m_touchSession.startY = y;
+            
+            // Determine if touch is in bottom area (shoot zone) or general area (jump zone)
+            float screenHeight = 2556.0f; // iPhone 16 game height
+            float shootZoneHeight = screenHeight * 0.33f; // Bottom 1/3 of screen for shooting
+            
+            GN_LOG_INFO("Touch press at y=" + std::to_string(y) + ", shootZone starts at y=" + std::to_string(screenHeight - shootZoneHeight));
             
             if (y > (screenHeight - shootZoneHeight)) {
-                // Bottom area - shoot
-                GN_LOG_INFO("Shoot zone touched!");
+                // Bottom area - shoot immediately on press
+                GN_LOG_INFO("Shoot zone pressed!");
                 HandleShootInput();
+                m_touchSession.active = false; // Shooting doesn't use hold mechanics
             } else {
-                // Upper area - jump
-                GN_LOG_INFO("Jump zone touched!");
-                HandleJumpInput();
+                // Upper area - START jump hold tracking (don't jump yet!)
+                GN_LOG_INFO("Jump zone pressed - starting hold timer (no jump yet)!");
+                m_jumpButtonHeld = true;
+                m_jumpHoldTime = 0.0f; // Keep this for compatibility with existing Update() logic
+                
+                // DON'T trigger jump here - wait for release or auto-jump
             }
+            
+        } else {
+            // This is a isJustReleased event - only triggers ONCE when touch ends
+            GN_LOG_INFO("Touch JUST RELEASED detected");
+            
+            if (m_touchSession.active) {
+                // Calculate actual hold duration using timestamps
+                uint64_t holdDurationMs = currentTime - m_touchSession.startTime;
+                double holdDurationSeconds = holdDurationMs / 1000.0;
+                
+                GN_LOG_INFO("Touch session duration: " + std::to_string(holdDurationMs) + "ms (" + std::to_string(holdDurationSeconds) + "s)");
+                
+                if (m_jumpButtonHeld) {
+                    // We were holding a jump and haven't auto-jumped yet - trigger jump with variable force
+                    GN_LOG_INFO("Jump button released after " + std::to_string(holdDurationMs) + "ms hold - executing jump now!");
+                    
+                    // Calculate jump force based on hold time
+                    float jumpForce = JUMP_FORCE;
+                    if (holdDurationSeconds < VARIABLE_JUMP_THRESHOLD) {
+                        // Early release - reduce jump force based on how long it was held
+                        float holdRatio = holdDurationSeconds / VARIABLE_JUMP_THRESHOLD;
+                        jumpForce = JUMP_FORCE * (EARLY_RELEASE_MULTIPLIER + holdRatio * (1.0f - EARLY_RELEASE_MULTIPLIER));
+                        GN_LOG_INFO("Variable jump: Early release at " + std::to_string(holdDurationMs) + "ms, force=" + std::to_string(jumpForce));
+                    } else {
+                        GN_LOG_INFO("Variable jump: Full hold completed, force=" + std::to_string(jumpForce));
+                    }
+                    
+                    // Execute the jump with calculated force
+                    HandleJumpInputWithForce(jumpForce);
+                } else {
+                    // Release after auto-jump or in shoot zone - ignore it
+                    GN_LOG_INFO("Release ignored - auto-jump already occurred or was in shoot zone");
+                }
+            }
+            
+            // Reset touch session and jump state
+            m_touchSession.active = false;
+            m_touchSession.startTime = 0;
+            m_touchSession.startX = 0.0f;
+            m_touchSession.startY = 0.0f;
+            m_jumpButtonHeld = false;
+            m_jumpHoldTime = 0.0f;
         }
     }
 
     void PlayerControllerSystem::HandleJumpInput() {
-        if (!m_playerAlive || m_jumpCooldown > 0.0f || m_isShooting || m_isJumping) {
+        HandleJumpInputWithForce(JUMP_FORCE);
+    }
+
+    void PlayerControllerSystem::HandleJumpInputWithForce(float force) {
+        if (!m_playerAlive || m_jumpCooldown > 0.0f) {
             GN_LOG_DEBUG("Jump input ignored - alive=" + std::to_string(m_playerAlive) + 
-                        ", cooldown=" + std::to_string(m_jumpCooldown) + 
-                        ", shooting=" + std::to_string(m_isShooting) + 
-                        ", jumping=" + std::to_string(m_isJumping));
+                        ", cooldown=" + std::to_string(m_jumpCooldown));
             return;
         }
         
-        // Check if we're currently in any non-idle animation and it's still playing
+        // Apply jump force regardless of being grounded - this is Flappy Bird style
         if (m_playerEntity != 0) {
-            Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(m_playerEntity);
-            if (sprite && m_currentAnimation != m_idleAnimation && sprite->playing) {
-                GN_LOG_DEBUG("Jump input ignored - currently in animation: " + m_currentAnimation);
-                return;
-            }
-        }
-
-        if (m_isGrounded) {
-            // Apply jump force
             Physics* physics = m_ecsSystem->GetComponent<Physics>(m_playerEntity);
             if (physics) {
-                physics->velocity.y = -JUMP_FORCE; // Negative Y is up in our coordinate system
-                m_isGrounded = false;
-                m_isJumping = true;
+                // Apply jump impulse with specified force
+                physics->velocity.y = -force; // Negative Y is up in our coordinate system
                 m_jumpCooldown = JUMP_COOLDOWN;
-                m_jumpTimer = 1.2f; // Jump animation duration (6 frames * 0.2f frameTime)
+                m_isAscending = true;  // Track that we're now ascending
                 
-                PlayJumpAnimation();
-                GN_LOG_INFO("Player jumped");
+                // ONLY transition to JUMPING state if we actually jumped (passed cooldown check)
+                TransitionToState(PlayerAnimationState::JUMPING);
+                
+                GN_LOG_INFO("Player jumped with force (" + std::to_string(force) + ") - transitioned to JUMPING state");
+            }
+        }
+    }
+
+    void PlayerControllerSystem::HandleJumpRelease() {
+        if (!m_playerAlive || m_playerEntity == 0) {
+            return;
+        }
+        
+        Physics* physics = m_ecsSystem->GetComponent<Physics>(m_playerEntity);
+        if (physics && m_isAscending && physics->velocity.y < 0) {
+            // Apply early release penalty - cut the jump short by reducing upward velocity
+            if (m_jumpHoldTime < VARIABLE_JUMP_THRESHOLD) {
+                physics->velocity.y *= EARLY_RELEASE_MULTIPLIER;
+                GN_LOG_INFO("Variable jump: Early release penalty applied at " + 
+                           std::to_string(m_jumpHoldTime * 1000.0f) + "ms, velocity reduced from " + 
+                           std::to_string(physics->velocity.y / EARLY_RELEASE_MULTIPLIER) + 
+                           " to " + std::to_string(physics->velocity.y));
+            } else {
+                GN_LOG_INFO("Variable jump: Full jump completed, hold time: " + 
+                           std::to_string(m_jumpHoldTime * 1000.0f) + "ms");
             }
         }
     }
 
     void PlayerControllerSystem::HandleShootInput() {
-        if (!m_playerAlive || m_shootCooldown > 0.0f || m_isShooting) {
+        if (!m_playerAlive || m_shootCooldown > 0.0f) {
             GN_LOG_DEBUG("Shoot input ignored - alive=" + std::to_string(m_playerAlive) + 
-                        ", cooldown=" + std::to_string(m_shootCooldown) + 
-                        ", shooting=" + std::to_string(m_isShooting));
+                        ", cooldown=" + std::to_string(m_shootCooldown));
             return;
         }
         
-        // Check if we're currently in any non-idle animation and it's still playing
-        if (m_playerEntity != 0) {
-            Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(m_playerEntity);
-            if (sprite && m_currentAnimation != m_idleAnimation && sprite->playing) {
-                GN_LOG_DEBUG("Shoot input ignored - currently in animation: " + m_currentAnimation);
-                return;
-            }
-        }
-
-        m_isShooting = true;
+        // Set shoot cooldown and spawn projectile - this happens ONCE per input
         m_shootCooldown = SHOOT_COOLDOWN;
-        m_shootTimer = SHOOT_ANIMATION_DURATION;
-        
-        PlayShootAnimation();
         SpawnProjectile();
-        GN_LOG_INFO("Player shot projectile");
+        
+        // ONLY transition to SHOOTING state if we actually shot (passed cooldown check)
+        TransitionToState(PlayerAnimationState::SHOOTING);
+        
+        GN_LOG_INFO("Player shot projectile - transitioned to SHOOTING state");
     }
 
     void PlayerControllerSystem::SetPlayerEntity(Gnosis::Entity playerEntity) {
@@ -154,55 +250,16 @@ namespace GameCore {
 
     void PlayerControllerSystem::ChangePlayerAnimation(const std::string& animationName) {
         if (m_spriteSystem && m_playerEntity != 0) {
-            // Update the sprite's texture ID to the new animation
             Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(m_playerEntity);
             if (sprite) {
-                // LOGIC GATE 1: Check if we're trying to change to the same animation
-                if (m_currentAnimation == animationName) {
-                    // LOGIC GATE 2: Check if animation is currently playing
-                    if (sprite->playing) {
-                        GN_LOG_DEBUG("PlayerController: Animation " + animationName + " already playing, skipping restart");
-                        return;
-                    }
-                    
-                                    // LOGIC GATE 3: Check if animation has completed its first loop (but allow IDLE to always reset)
-                if (sprite->hasCompleted && animationName != m_idleAnimation) {
-                    GN_LOG_DEBUG("PlayerController: Animation " + animationName + " has completed, skipping restart");
-                    return;
-                }
-                    
-                    // LOGIC GATE 4: Check if animation is non-loopable and has stopped
-                    if (!sprite->loop && !sprite->playing) {
-                        GN_LOG_DEBUG("PlayerController: Non-loopable animation " + animationName + " has stopped, skipping restart");
-                        return;
-                    }
-                    
-                    // If we get here, the animation is stopped but not completed - this might indicate a problem
-                    GN_LOG_ERROR("PlayerController: Animation " + animationName + " is stopped but not completed - this might indicate a bug");
-                }
-                
-                // Only restart animation if it's a different animation or if current animation has finished
-                bool shouldRestartAnimation = (m_currentAnimation != animationName) || !sprite->playing;
-                
+                // ALWAYS restart animation - no more logic gates
                 sprite->textureId = animationName;
+                sprite->playing = true;
+                sprite->currentFrame = 0;
+                sprite->currentFrameTime = 0.0f;
+                sprite->hasCompleted = false; // Reset completion flag
                 
-                if (shouldRestartAnimation) {
-                                    // LOGIC GATE 5: Prevent restarting if animation has completed and is non-loopable (but always allow IDLE)
-                if (sprite->hasCompleted && !sprite->loop && animationName != m_idleAnimation) {
-                    GN_LOG_DEBUG("PlayerController: Cannot restart completed non-loopable animation: " + animationName);
-                    return;
-                }
-                    
-                    sprite->playing = true;
-                    sprite->currentFrame = 0;
-                    sprite->currentFrameTime = 0.0f;
-                    sprite->hasCompleted = false; // Reset completion flag for new animation
-                    GN_LOG_DEBUG("PlayerController: Starting new animation: " + animationName);
-                } else {
-                    GN_LOG_DEBUG("PlayerController: Animation " + animationName + " already playing, not restarting");
-                }
-                
-                m_currentAnimation = animationName;
+                GN_LOG_DEBUG("PlayerController: Force starting animation: " + animationName + " at frame 0");
                 
                 // Store current sprite dimensions to maintain consistency
                 float currentWidth = sprite->width;
@@ -217,7 +274,7 @@ namespace GameCore {
                     sprite->isAnimated = false; // Single frame, not animated
                     sprite->playing = true; // IDLE should always be playing
                     sprite->loop = true; // IDLE should loop continuously
-                    sprite->hasCompleted = false; // Reset completion flag for IDLE
+                    sprite->hasCompleted = false; // IDLE never completes
                 } else if (animationName == "TurdletJump") {
                     sprite->frameCount = 6; // 384x64 pixels = 6 frames
                     sprite->frameWidth = 64; // Each frame is 64x64 pixels
@@ -253,15 +310,56 @@ namespace GameCore {
         }
     }
 
+    void PlayerControllerSystem::TransitionToState(PlayerAnimationState newState) {
+        if (newState == m_currentState) {
+            // Same state - don't restart animation, just log that we're already in this state
+            GN_LOG_DEBUG("PlayerController: Already in state " + GetStateName(newState) + ", keeping current animation");
+            return;
+        }
+        
+        // Different state - log transition
+        GN_LOG_INFO("PlayerController: State transition from " + GetStateName(m_currentState) + " to " + GetStateName(newState));
+        m_previousState = m_currentState;
+        m_currentState = newState;
+        
+        // Get animation name for this state and play it
+        std::string animationName = GetStateAnimationName(newState);
+        ChangePlayerAnimation(animationName);
+    }
+
+    std::string PlayerControllerSystem::GetStateName(PlayerAnimationState state) const {
+        switch (state) {
+            case PlayerAnimationState::IDLE:     return "IDLE";
+            case PlayerAnimationState::JUMPING:  return "JUMPING";
+            case PlayerAnimationState::SHOOTING: return "SHOOTING";
+            case PlayerAnimationState::HURT:     return "HURT";
+            default:                             return "UNKNOWN";
+        }
+    }
+
+    std::string PlayerControllerSystem::GetStateAnimationName(PlayerAnimationState state) const {
+        switch (state) {
+            case PlayerAnimationState::IDLE:     return m_idleAnimation;
+            case PlayerAnimationState::JUMPING:  return m_jumpAnimation;
+            case PlayerAnimationState::SHOOTING: return m_shootAnimation;
+            case PlayerAnimationState::HURT:     return m_hurtAnimation;
+            default:                             return m_idleAnimation;
+        }
+    }
+
     void PlayerControllerSystem::ResetPlayer() {
         m_playerAlive = true;
-        m_isGrounded = true;
-        m_isJumping = false;
-        m_isShooting = false;
-        m_jumpTimer = 0.0f;
-        m_shootTimer = 0.0f;
-        m_jumpCooldown = 0.0f;
-        m_shootCooldown = 0.0f;
+        m_isGrounded = false; // Start in the air for Flappy Bird style
+        
+        // Reset state machine to IDLE
+        m_currentState = PlayerAnimationState::IDLE;
+        m_previousState = PlayerAnimationState::IDLE;
+        
+        // Reset enhanced jump mechanics state
+        m_jumpButtonHeld = false;
+        m_jumpHoldTime = 0.0f;
+        m_isAscending = false;
+        m_lastVerticalVelocity = 0.0f;
         
         if (m_playerEntity != 0) {
             // Reset player position and physics
@@ -269,18 +367,21 @@ namespace GameCore {
             Physics* physics = m_ecsSystem->GetComponent<Physics>(m_playerEntity);
             
             if (transform) {
-                transform->position = Gnosis::GNVector2(589.5f, GROUND_Y); // Centered on screen
+                // Start player at the fixed X position (closer to center) and at center Y
+                transform->position = Gnosis::GNVector2(400.0f, CENTER_SPAWN_Y);
             }
             
             if (physics) {
                 physics->velocity = Gnosis::GNVector2(0.0f, 0.0f);
                 physics->acceleration = Gnosis::GNVector2(0.0f, 0.0f);
+                physics->drag = 0.99f; // Slightly higher drag for better control
+                physics->useGravity = true;
             }
             
-            PlayIdleAnimation();
+            TransitionToState(PlayerAnimationState::IDLE);
         }
         
-        GN_LOG_INFO("Player reset");
+        GN_LOG_INFO("Player reset for enhanced Flappy Bird mode - state machine and physics reset to IDLE");
     }
 
     void PlayerControllerSystem::UpdatePlayerPhysics(float deltaTime) {
@@ -290,61 +391,82 @@ namespace GameCore {
 
         Transform* transform = m_ecsSystem->GetComponent<Transform>(m_playerEntity);
         Physics* physics = m_ecsSystem->GetComponent<Physics>(m_playerEntity);
-        Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(m_playerEntity);
         
         if (!transform || !physics) {
             return;
         }
-
-        // FREEZE PHYSICS DURING ANIMATIONS to prevent position jumping
-        // Only update physics if we're in idle state (not animating)
-        bool isAnimating = (sprite && sprite->isAnimated && sprite->playing && m_currentAnimation != m_idleAnimation);
         
-        if (isAnimating) {
-            // During animations, only apply gravity but don't update position
-            if (physics->useGravity) {
-                physics->acceleration.y = 800.0f; // Gravity force
-            }
-            
-            // Update velocity for physics simulation
-            physics->velocity += physics->acceleration * deltaTime;
-            physics->velocity = physics->velocity * physics->drag;
-            
-            // DON'T update transform position during animations
-            // This prevents the sprite from jumping between frames
-            
-            // Reset acceleration
-            physics->acceleration = Gnosis::GNVector2(0.0f, 0.0f);
-            return;
-        } else if (sprite && sprite->isAnimated && !sprite->playing && m_currentAnimation != m_idleAnimation) {
-            // Animation just finished - reset velocity to prevent position jumps
-            physics->velocity = Gnosis::GNVector2(0.0f, 0.0f);
-            physics->acceleration = Gnosis::GNVector2(0.0f, 0.0f);
-            GN_LOG_INFO("Animation finished, resetting physics velocity to prevent position jump");
+        // Enhanced physics system with variable gravity and terminal velocity
+        // Based on modern platformer best practices from research
+        
+        // Track velocity direction for ascending/descending detection
+        bool wasAscending = m_isAscending;
+        m_isAscending = (physics->velocity.y < 0); // Negative Y is upward
+        
+        // Detect velocity direction change (peak of jump reached)
+        if (wasAscending && !m_isAscending) {
+            GN_LOG_DEBUG("Jump peak reached, switching to descending gravity");
         }
-
-        // Normal physics update when not animating
-        // Apply gravity
+        
+        // In Flappy Bird, the player moves forward at a constant rate
+        // The world moves past the player, but in our implementation we'll keep the player
+        // at a fixed X position and handle world movement separately in the obstacle system
+        physics->velocity.x = 0; // Player doesn't actually move horizontally in screen space
+        
+        // Apply enhanced gravity system - different rates for ascending vs falling
         if (physics->useGravity) {
-            physics->acceleration.y = 800.0f; // Gravity force
+            if (m_isAscending) {
+                // Lighter gravity while ascending for floaty feel
+                physics->acceleration.y = GRAVITY_UP;
+                GN_LOG_TRACE("Applying ascending gravity: " + std::to_string(GRAVITY_UP));
+            } else {
+                // Much heavier gravity while falling for fast, satisfying drops
+                physics->acceleration.y = GRAVITY_DOWN;
+                GN_LOG_TRACE("Applying descending gravity: " + std::to_string(GRAVITY_DOWN));
+            }
         }
-
-        // Update velocity
+        
+        // Update velocity with enhanced gravity
         physics->velocity += physics->acceleration * deltaTime;
         
-        // Apply drag
-        physics->velocity = physics->velocity * physics->drag;
-        
-        // Update position
-        transform->position += physics->velocity * deltaTime;
-        
-        // Check ground collision
-        if (transform->position.y >= GROUND_Y) {
-            transform->position.y = GROUND_Y;
-            physics->velocity.y = 0.0f;
-            m_isGrounded = true;
-            m_isJumping = false;
+        // Apply terminal velocity for realistic falling (only limit downward velocity)
+        if (physics->velocity.y > TERMINAL_VELOCITY) {
+            physics->velocity.y = TERMINAL_VELOCITY;
+            GN_LOG_DEBUG("Terminal velocity reached: " + std::to_string(TERMINAL_VELOCITY));
         }
+        
+        // Apply drag (only to Y velocity in Flappy Bird style)
+        physics->velocity.y = physics->velocity.y * physics->drag;
+        
+        // Update position (only Y position changes for the player)
+        transform->position.y += physics->velocity.y * deltaTime;
+        
+        // Keep player at a fixed horizontal position (closer to center than original)
+        transform->position.x = 400.0f; // Moved closer to center (was 300.0f)
+        
+        // Check if player goes below the screen (bottom boundary death)
+        // Reset when player hits the bottom edge of the screen (not below it)
+        if (transform->position.y >= SCREEN_HEIGHT) {
+            // Player hit bottom of screen - trigger damage and reset position
+            GN_LOG_INFO("Player hit bottom of screen - resetting position");
+            transform->position.y = CENTER_SPAWN_Y;
+            physics->velocity.y = 0.0f;
+            m_isAscending = false;
+            m_jumpButtonHeld = false;
+            m_jumpHoldTime = 0.0f;
+            // TODO: Trigger damage event
+        }
+        
+        // Check if player hits top of screen
+        if (transform->position.y <= 0.0f) {
+            transform->position.y = 0.0f;
+            physics->velocity.y = 0.0f;
+            m_isAscending = false;
+            GN_LOG_INFO("Player hit ceiling");
+        }
+        
+        // Store current velocity for next frame's direction detection
+        m_lastVerticalVelocity = physics->velocity.y;
         
         // Reset acceleration
         physics->acceleration = Gnosis::GNVector2(0.0f, 0.0f);
@@ -361,92 +483,47 @@ namespace GameCore {
         }
 
         // DEBUG: Log current animation state
-        GN_LOG_DEBUG("Animation Debug - Current: " + m_currentAnimation + 
+        GN_LOG_DEBUG("Animation Debug - State: " + GetStateName(m_currentState) + 
                     ", Playing: " + std::to_string(sprite->playing) + 
                     ", Completed: " + std::to_string(sprite->hasCompleted) + 
                     ", Frame: " + std::to_string(sprite->currentFrame) + "/" + std::to_string(sprite->frameCount) +
-                    ", Shooting: " + std::to_string(m_isShooting) + " (timer: " + std::to_string(m_shootTimer) + ")" +
-                    ", Jumping: " + std::to_string(m_isJumping) + " (timer: " + std::to_string(m_jumpTimer) + ")");
+                    ", JumpCooldown: " + std::to_string(m_jumpCooldown));
 
-        // AGGRESSIVE FIX: If we're in a non-idle animation and the sprite is not playing, force return to idle
-        if (m_currentAnimation != m_idleAnimation && !sprite->playing) {
-            GN_LOG_INFO("FORCE RETURN TO IDLE: Animation " + m_currentAnimation + " is not playing");
-            
-            // Clear ALL states immediately
-            m_shootTimer = 0.0f;
-            m_shootCooldown = 0.0f;
-            m_isShooting = false;
-            m_jumpTimer = 0.0f;
-            m_jumpCooldown = 0.0f;
-            m_isJumping = false;
-            
-            ChangePlayerAnimation(m_idleAnimation);
+        // Check for animation completion based on state
+        if (m_currentState != PlayerAnimationState::IDLE && sprite->hasCompleted) {
+            GN_LOG_INFO("PlayerController: Animation completed in state " + GetStateName(m_currentState) + ", returning to IDLE");
+            TransitionToState(PlayerAnimationState::IDLE);
             return;
         }
-
-        // Check if current animation has completed - if so, don't restart it even if timer is still active
-        bool currentAnimationCompleted = (sprite->hasCompleted && m_currentAnimation != m_idleAnimation);
         
-        if (currentAnimationCompleted) {
-            // Animation has completed, return to idle regardless of timer
-            GN_LOG_INFO("PlayerController: Animation completed, returning to idle: " + m_currentAnimation);
-            
-            // Clear the timers and states to prevent looping
-            if (m_currentAnimation == m_shootAnimation) {
-                m_shootTimer = 0.0f;
-                m_shootCooldown = 0.0f;
-                m_isShooting = false;
-            } else if (m_currentAnimation == m_jumpAnimation) {
-                m_jumpTimer = 0.0f;
-                m_jumpCooldown = 0.0f;
-                m_isJumping = false;
-            }
-            
-            ChangePlayerAnimation(m_idleAnimation);
-            return;
-        }
-
-        // AGGRESSIVE FIX: If we're in a non-idle animation and the sprite has reached the last frame, force completion
-        if (m_currentAnimation != m_idleAnimation && sprite->isAnimated && 
+        // Force completion detection for non-looping animations at last frame
+        if (m_currentState != PlayerAnimationState::IDLE && !sprite->loop && 
             sprite->currentFrame >= sprite->frameCount - 1 && sprite->playing) {
-            GN_LOG_INFO("FORCE COMPLETION: Animation " + m_currentAnimation + " reached last frame");
             
-            // Mark as completed and stop playing
+            GN_LOG_INFO("PlayerController: Animation at last frame in state " + GetStateName(m_currentState) + 
+                       ", forcing completion, currentFrame=" + std::to_string(sprite->currentFrame) + 
+                       ", frameCount=" + std::to_string(sprite->frameCount));
+            
+            // Force animation completion
             sprite->hasCompleted = true;
             sprite->playing = false;
             
-            // Clear states
-            if (m_currentAnimation == m_shootAnimation) {
-                m_shootTimer = 0.0f;
-                m_shootCooldown = 0.0f;
-                m_isShooting = false;
-            } else if (m_currentAnimation == m_jumpAnimation) {
-                m_jumpTimer = 0.0f;
-                m_jumpCooldown = 0.0f;
-                m_isJumping = false;
-            }
-            
-            ChangePlayerAnimation(m_idleAnimation);
+            TransitionToState(PlayerAnimationState::IDLE);
             return;
         }
-
-        // REMOVED: Conflicting logic that was overriding the IDLE return logic
-        // The animation state is now controlled by the input handlers and completion logic above
-        // This prevents the method from overriding the IDLE return when animations complete
+        
+        // Check if non-idle animation stopped unexpectedly
+        if (m_currentState != PlayerAnimationState::IDLE && !sprite->playing && !sprite->hasCompleted) {
+            GN_LOG_WARN("PlayerController: Animation stopped unexpectedly in state " + GetStateName(m_currentState) + ", returning to IDLE");
+            TransitionToState(PlayerAnimationState::IDLE);
+            return;
+        }
     }
 
     void PlayerControllerSystem::UpdatePlayerState(float deltaTime) {
-        // Update shooting state
-        if (m_isShooting && m_shootTimer <= 0.0f) {
-            m_isShooting = false;
-            GN_LOG_DEBUG("PlayerController: Shoot timer expired, clearing shoot state");
-        }
-        
-        // Update jumping state
-        if (m_isJumping && m_jumpTimer <= 0.0f) {
-            m_isJumping = false;
-            GN_LOG_DEBUG("PlayerController: Jump timer expired, clearing jump state");
-        }
+        // Cooldown timers are updated in main Update() method
+        // State management is now handled by the state machine
+        // Animation completion is handled by UpdatePlayerAnimation()
     }
 
     void PlayerControllerSystem::HandleCollisions() {
@@ -504,19 +581,19 @@ namespace GameCore {
     }
 
     void PlayerControllerSystem::PlayIdleAnimation() {
-        ChangePlayerAnimation(m_idleAnimation);
+        TransitionToState(PlayerAnimationState::IDLE);
     }
 
     void PlayerControllerSystem::PlayJumpAnimation() {
-        ChangePlayerAnimation(m_jumpAnimation);
+        TransitionToState(PlayerAnimationState::JUMPING);
     }
 
     void PlayerControllerSystem::PlayShootAnimation() {
-        ChangePlayerAnimation(m_shootAnimation);
+        TransitionToState(PlayerAnimationState::SHOOTING);
     }
 
     void PlayerControllerSystem::PlayHurtAnimation() {
-        ChangePlayerAnimation(m_hurtAnimation);
+        TransitionToState(PlayerAnimationState::HURT);
     }
 
 } // namespace GameCore 

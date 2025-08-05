@@ -2,7 +2,7 @@
 
 #include "iOSPlatformImpl.h"
 #include "../../iOS/Threading/ThreadingProxy.h"
-#include "../Utility/Helper.h"
+#include "../Utility/Utils.h"
 #include "../Core/GNLog.h"
 #include <cstring>
 

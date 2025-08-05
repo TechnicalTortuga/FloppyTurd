@@ -1785,8 +1785,8 @@ namespace GameCore {
                 return;
             }
             
-            // Store the selected level index for the transition
-            m_selectedLevelIndex = levelIndex;
+            // Store the selected level NUMBER (1-6) for the transition, not the index (0-5)
+            m_selectedLevelIndex = m_levels[levelIndex].levelNumber;
             m_finished = true;
         }
     }

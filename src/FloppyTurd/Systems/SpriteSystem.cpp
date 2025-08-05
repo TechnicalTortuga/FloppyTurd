@@ -72,8 +72,7 @@ namespace GameCore {
             Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(entity);
             
             if (transform && sprite) {
-                GN_LOG_DEBUG("SpriteSystem: Rendering sprite entity " + std::to_string(entity) + " at position (" + 
-                           std::to_string(transform->position.x) + ", " + std::to_string(transform->position.y) + ")");
+                // Removed repetitive per-frame debug log that was flooding the system
                 RenderSprite(entity, *transform, *sprite);
             }
         }

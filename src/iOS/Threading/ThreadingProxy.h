@@ -82,6 +82,9 @@ namespace GameCore {
         // Touch input delegate implementations
         static int getTouchCount();
         static void getTouchPosition(int touchIndex, float* x, float* y);
+        static bool isTouchDown();
+        static bool isTouchJustPressed();
+        static bool isTouchJustReleased();
         
         // Input buffer management
         static void clearInputBuffer();

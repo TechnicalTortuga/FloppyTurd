@@ -62,7 +62,7 @@ public enum LogLevel: Int32, CaseIterable, Sendable {
     }
 }
 
-/// Thread-safe iOS logging actor using os_log
+/// Thread-safe iOS logging actor using os_log with intelligent deduplication
 @globalActor
 actor iOSLogActor {
     static let shared = iOSLogActor()
@@ -74,6 +74,27 @@ actor iOSLogActor {
     private var fileLoggingEnabled: Bool = true
     private var logFileURL: URL?
     private var logFileHandle: FileHandle?
+    
+    // Intelligent deduplication system
+    private var logPatterns: [String: LogPattern] = [:]
+    private let patternThrottleInterval: TimeInterval = 10.0 // 10 seconds between identical patterns
+    private let maxPatternCacheSize: Int = 1000 // Prevent memory bloat
+    
+    private struct LogPattern {
+        let signature: String
+        var lastLogTime: Date
+        var suppressedCount: Int
+        var category: String
+        var level: LogLevel
+        
+        init(signature: String, category: String, level: LogLevel) {
+            self.signature = signature
+            self.lastLogTime = Date()
+            self.suppressedCount = 0
+            self.category = category
+            self.level = level
+        }
+    }
     
     private init() {
         Task {
@@ -148,10 +169,73 @@ actor iOSLogActor {
             return
         }
         
+        // Generate pattern signature for deduplication
+        let patternSignature = generatePatternSignature(message: message, category: category, level: level)
+        let now = Date()
+        
+        // Check if this is a repetitive pattern
+        if let existingPattern = logPatterns[patternSignature] {
+            let timeSinceLastLog = now.timeIntervalSince(existingPattern.lastLogTime)
+            
+            if timeSinceLastLog < patternThrottleInterval {
+                // Pattern is being throttled - increment suppressed count
+                logPatterns[patternSignature]?.suppressedCount += 1
+                return
+            } else {
+                // Throttle period has passed - log with suppression info if needed
+                let suppressedCount = existingPattern.suppressedCount
+                if suppressedCount > 0 {
+                    // Log the suppression summary first
+                    let suppressionMessage = "📊 SUPPRESSED: Previous message repeated \(suppressedCount) times in last \(Int(patternThrottleInterval))s"
+                    actuallyLogMessage(level: .info, category: category, message: suppressionMessage, timestamp: now)
+                }
+                
+                // Reset pattern and log the current message
+                logPatterns[patternSignature] = LogPattern(signature: patternSignature, category: category, level: level)
+                actuallyLogMessage(level: level, category: category, message: message, timestamp: now)
+            }
+        } else {
+            // New pattern - add to cache and log normally
+            logPatterns[patternSignature] = LogPattern(signature: patternSignature, category: category, level: level)
+            actuallyLogMessage(level: level, category: category, message: message, timestamp: now)
+            
+            // Cleanup cache if it's getting too large
+            if logPatterns.count > maxPatternCacheSize {
+                cleanupOldPatterns()
+            }
+        }
+    }
+    
+    private func generatePatternSignature(message: String, category: String, level: LogLevel) -> String {
+        // Extract patterns from common repetitive logs
+        var signature = message
+        
+        // Replace entity IDs with placeholder
+        signature = signature.replacingOccurrences(of: #"entity \d+"#, with: "entity XXX", options: .regularExpression)
+        
+        // Replace texture handles with placeholder
+        signature = signature.replacingOccurrences(of: #"texture handle \d+"#, with: "texture handle XXX", options: .regularExpression)
+        
+        // Replace coordinates with placeholder
+        signature = signature.replacingOccurrences(of: #"position \([^)]+\)"#, with: "position (XXX, XXX)", options: .regularExpression)
+        
+        // Replace frame numbers with placeholder
+        signature = signature.replacingOccurrences(of: #"frame \d+/\d+"#, with: "frame XXX/XXX", options: .regularExpression)
+        
+        // Replace texture names with category if it's texture loading
+        if signature.contains("Texture not ready") {
+            signature = signature.replacingOccurrences(of: #"texture '[^']*'"#, with: "texture 'XXX'", options: .regularExpression)
+        }
+        
+        // Include category and level in signature to differentiate between similar messages in different contexts
+        return "\(category):\(level.description):\(signature)"
+    }
+    
+    private func actuallyLogMessage(level: LogLevel, category: String, message: String, timestamp: Date) {
         let logger = getLogger(for: category)
-        let timestamp = DateFormatter.logTimestamp.string(from: Date())
+        let timestampString = DateFormatter.logTimestamp.string(from: timestamp)
         let formattedMessage = "[\(level.description)] \(message)"
-        let fullLogMessage = "\(timestamp) [\(subsystem)/\(category)] \(formattedMessage)"
+        let fullLogMessage = "\(timestampString) [\(subsystem)/\(category)] \(formattedMessage)"
         
         // Write to os_log
         os_log("%{public}@", log: logger, type: level.osLogType, formattedMessage)
@@ -170,12 +254,30 @@ actor iOSLogActor {
         }
     }
     
+    private func cleanupOldPatterns() {
+        let now = Date()
+        let cleanupThreshold = patternThrottleInterval * 2 // Remove patterns older than 2x throttle interval
+        
+        logPatterns = logPatterns.filter { _, pattern in
+            now.timeIntervalSince(pattern.lastLogTime) < cleanupThreshold
+        }
+    }
+    
     func flush() {
         // os_log automatically handles flushing, but we can clear cached loggers if needed
         // This is mainly for consistency with the C++ interface
     }
     
     func cleanup() {
+        // Log any remaining suppression summaries before cleanup
+        let now = Date()
+        for (_, pattern) in logPatterns {
+            if pattern.suppressedCount > 0 {
+                let suppressionMessage = "📊 FINAL SUPPRESSION: '\(pattern.signature)' repeated \(pattern.suppressedCount) times (category: \(pattern.category), level: \(pattern.level.description))"
+                actuallyLogMessage(level: .info, category: "LogSuppression", message: suppressionMessage, timestamp: now)
+            }
+        }
+        
         // Write session end marker
         if fileLoggingEnabled, let logFileHandle = logFileHandle {
             let sessionEnd = "=== FloppyTurd Debug Session Ended: \(DateFormatter.sessionTimestamp.string(from: Date())) ===\n\n"
@@ -187,6 +289,7 @@ actor iOSLogActor {
         
         logFileHandle = nil
         loggers.removeAll()
+        logPatterns.removeAll()
     }
     
     func getLogFilePath() -> String? {

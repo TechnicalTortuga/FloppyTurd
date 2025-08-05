@@ -10,6 +10,18 @@
 namespace GameCore {
 
     /**
+     * @brief Player Animation State Machine
+     * 
+     * Enum for tracking player animation states with immediate transitions
+     */
+    enum class PlayerAnimationState {
+        IDLE,
+        JUMPING,
+        SHOOTING,
+        HURT
+    };
+
+    /**
      * @brief Player Controller System
      * 
      * Handles player input, movement, jumping, and shooting:
@@ -27,18 +39,22 @@ namespace GameCore {
         void Update(float deltaTime);
 
         // Input handling
-        void HandleTouchInput(float x, float y, bool isPressed);
+        void HandleTouchInput(float x, float y, bool isJustPressed);
         void HandleJumpInput();
+        void HandleJumpInputWithForce(float force);  // New method for variable jump force
+        void HandleJumpRelease();  // New method for variable jump height
         void HandleShootInput();
 
         // Player state management
         void SetPlayerEntity(Gnosis::Entity playerEntity);
         void ChangePlayerAnimation(const std::string& animationName);
+        void TransitionToState(PlayerAnimationState newState);
         void ResetPlayer();
 
         // Getters
         Gnosis::Entity GetPlayerEntity() const { return m_playerEntity; }
         bool IsPlayerAlive() const { return m_playerAlive; }
+        PlayerAnimationState GetCurrentState() const { return m_currentState; }
 
     private:
         Gnosis::ECS* m_ecsSystem;
@@ -54,26 +70,53 @@ namespace GameCore {
         float m_jumpCooldown;
         float m_shootCooldown;
         
+        // Touch state tracking to prevent input cascading
+        bool m_touchActive;
+        float m_lastTouchX;
+        float m_lastTouchY;
+        
+        // Touch session for frame-independent timing
+        struct TouchSession {
+            bool active = false;
+            uint64_t startTime = 0;
+            float startX = 0.0f;
+            float startY = 0.0f;
+        } m_touchSession;
+        
+        // Enhanced jump mechanics state
+        bool m_jumpButtonHeld;           // Is jump button currently held down
+        float m_jumpHoldTime;            // How long has jump been held
+        bool m_isAscending;              // Is player currently moving upward
+        float m_lastVerticalVelocity;    // Previous frame's Y velocity for direction detection
+        
         // Player state
         bool m_isGrounded;
-        bool m_isJumping;
-        bool m_isShooting;
-        float m_jumpTimer;
-        float m_shootTimer;
         
-        // Animation states
-        std::string m_currentAnimation;
+        // Animation state machine
+        PlayerAnimationState m_currentState;
+        PlayerAnimationState m_previousState;
+        
+        // Animation name mappings
         std::string m_idleAnimation;
         std::string m_jumpAnimation;
         std::string m_shootAnimation;
         std::string m_hurtAnimation;
         
-        // Constants
-        static constexpr float JUMP_FORCE = 400.0f;
-        static constexpr float JUMP_COOLDOWN = 0.1f;
+        // Enhanced Jump Physics Constants (research-based from platformer best practices)
+        static constexpr float JUMP_FORCE = 1800.0f;         // Much larger base impulse for dramatic jumps
+        static constexpr float GRAVITY_UP = 1600.0f;          // Gravity while ascending (lighter for floaty feel)
+        static constexpr float GRAVITY_DOWN = 3200.0f;        // Much heavier gravity while falling for speed
+        static constexpr float TERMINAL_VELOCITY = 1200.0f;   // Higher maximum falling speed
+        static constexpr float AUTO_JUMP_THRESHOLD = 0.2f;    // Auto-jump after 200ms (1/5 second) of holding
+        static constexpr float VARIABLE_JUMP_THRESHOLD = 0.8f; // Extended time window for variable jump height
+        static constexpr float EARLY_RELEASE_MULTIPLIER = 0.5f; // Stronger velocity reduction on early release
+        
+        static constexpr float JUMP_COOLDOWN = 0.15f; // Reduced for more responsive input
         static constexpr float SHOOT_COOLDOWN = 0.3f;
-        static constexpr float SHOOT_ANIMATION_DURATION = 0.75f; // 5 frames * 0.15f frameTime
-        static constexpr float GROUND_Y = 1278.0f; // Ground level (centered on screen)
+        static constexpr float SCREEN_HEIGHT = 1278.0f; // Screen height
+        static constexpr float SCREEN_WIDTH = 1179.0f;  // Screen width
+        static constexpr float WORLD_SPEED = 200.0f; // Speed at which the world moves past the player
+        static constexpr float CENTER_SPAWN_Y = 639.0f; // Center Y position for respawn
         
         // Helper methods
         void UpdatePlayerPhysics(float deltaTime);
@@ -87,6 +130,10 @@ namespace GameCore {
         void PlayJumpAnimation();
         void PlayShootAnimation();
         void PlayHurtAnimation();
+        
+        // State machine helpers
+        std::string GetStateName(PlayerAnimationState state) const;
+        std::string GetStateAnimationName(PlayerAnimationState state) const;
     };
 
 } // namespace GameCore

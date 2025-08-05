@@ -3,6 +3,7 @@
 
 // Use forward declarations and proper includes to avoid circular dependencies
 #include "../../Engine/Core/GnosisTypes.h"
+#include "../../Engine/Core/Component.h"
 
 #include <string>
 
@@ -319,6 +320,27 @@ namespace GameCore {
             , health(1)
         {}
     };
+
+    /**
+     * Camera component - world view and scrolling
+     */
+    struct Camera : public Gnosis::Component {
+        Gnosis::GNVector2 position;
+        float zoom;
+        Gnosis::GNVector2 viewportSize;
+        bool followTarget;
+        Gnosis::Entity targetEntity;
+        Gnosis::GNVector2 offset;
+        
+        Camera()
+            : position(0.0f, 0.0f)
+            , zoom(1.0f)
+            , viewportSize(1179.0f, 1278.0f)
+            , followTarget(false)
+            , targetEntity(0)
+            , offset(0.0f, 0.0f)
+        {}
+    };
     
     /**
      * Parallax component - background scrolling
@@ -452,6 +474,36 @@ namespace GameCore {
         Bounds(float w, float h, float ox, float oy, bool useTex) : width(w), height(h), offsetX(ox), offsetY(oy), useTextureSize(useTex) {}
     };
 
+    /**
+     * Pickup component - collectible items like coins and power-ups
+     */
+    struct Pickup : public Gnosis::Component {
+        std::string pickupType;
+        int value;
+        bool isActive;
+        float bobbingSpeed;
+        float bobbingAmplitude;
+        float bobbingTimer;
+        
+        Pickup()
+            : pickupType("BlueCoin")
+            , value(10)
+            , isActive(true)
+            , bobbingSpeed(2.0f)
+            , bobbingAmplitude(5.0f)
+            , bobbingTimer(0.0f)
+        {}
+        
+        Pickup(const std::string& type, int val)
+            : pickupType(type)
+            , value(val)
+            , isActive(true)
+            , bobbingSpeed(2.0f)
+            , bobbingAmplitude(5.0f)
+            , bobbingTimer(0.0f)
+        {}
+    };
+
 } // namespace GameCore
 
 // Bring GameCore components into Gnosis namespace for easier access
@@ -471,6 +523,7 @@ namespace Gnosis {
     using AudioSource = GameCore::AudioSource;
     using UIElement = GameCore::UIElement;
     using Text = GameCore::Text;
+    using Pickup = GameCore::Pickup;
     using ColliderType = GameCore::ColliderType;
 }
 

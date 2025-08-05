@@ -26,7 +26,7 @@ import GameCoreGame
 /// @MainActor ensures all GameEngine operations happen on the main thread
 /// This is required for Swift 6 concurrency safety with UI-related operations
 @MainActor
-public class GameEngine: NSObject {
+public class GameEngine: NSObject, TouchInputDelegate {
     
     // MARK: - Properties
     
@@ -38,7 +38,6 @@ public class GameEngine: NSObject {
     // Platform-specific managers
     private var metalRenderer: MetalRenderer?
     private var touchInputHandler: TouchInputHandler?
-    private var inputHandler: TouchInputHandler?
     private var audioManager: AVAudioHandler?
     private var commandProcessor: CommandProcessor?
     
@@ -109,7 +108,8 @@ public class GameEngine: NSObject {
         
         if touchInputHandler == nil {
             touchInputHandler = TouchInputHandler()
-            log("Created TouchInputHandler")
+            touchInputHandler?.delegate = self
+            log("Created TouchInputHandler with GameEngine as delegate")
         }
         
         // Create audio manager
@@ -139,15 +139,7 @@ public class GameEngine: NSObject {
         
         log("C++ FloppyTurdGame object created successfully")
         
-        // Create Swift objects
-        log("Creating Swift component objects...")
-        let inputHandler = TouchInputHandler()
-        
-        // Store references
-        self.inputHandler = inputHandler
-        // audioManager already set - don't overwrite it
-        
-        log("Swift components created - ready to initialize C++ game")
+        log("Swift components already created - ready to initialize C++ game")
         
         // Now initialize the C++ game
         let success = cppGame?.Initialize() ?? false
@@ -219,7 +211,7 @@ public class GameEngine: NSObject {
         
         isRunning = true
         isPaused = false
-        log("Game started - now driven by MTKView draw loop")
+        log("Game started - now driven by MTKView draw loop with TouchInputHandler delegate system")
         
         return true
     }
@@ -317,6 +309,11 @@ public class GameEngine: NSObject {
         // }
     }
     
+    /// Get the touch input handler for the game
+    public func getTouchInputHandler() -> TouchInputHandler? {
+        return touchInputHandler
+    }
+    
     /// Handle touch input and forward to C++ game state manager
     public func handleTouchInput(_ input: Any) {
         guard isRunning && !isPaused else { return }
@@ -330,28 +327,7 @@ public class GameEngine: NSObject {
         log("Touch input forwarded to C++ state manager", level: .debug)
     }
     
-    /// Handle touch input with coordinates and forward to C++ game state manager
-    public func handleTouchInput(_ input: Any, touchPosition: CGPoint, viewSize: CGSize) {
-        guard isRunning && !isPaused else { return }
-        guard cppGame != nil else {
-            log("Cannot handle touch input - C++ game not initialized", level: .warning)
-            return
-        }
-        
-        // Transform touch coordinates from view space to game space
-        let gameX = Float(touchPosition.x / viewSize.width * 1179.0) // Game width
-        let gameY = Float(touchPosition.y / viewSize.height * 2556.0) // Game height
-        
-        log("🎯 Touch input: view coords (\(touchPosition.x), \(touchPosition.y)) viewSize(\(viewSize.width)x\(viewSize.height)) -> game coords (\(gameX), \(gameY))", level: .debug)
-        
-        // Update touch state in ThreadingProxy for C++ side to access
-        GameCore.updateTouchState(gameX, gameY, true, true, false)
-        
-        // Forward touch input to C++ game state manager
-        cppGame?.HandleInput()
-        log("Touch input with coordinates forwarded to C++ state manager", level: .debug)
-    }
-    
+    /// Handle touch press events and forward to C++ game state manager
     /// Update gesture state and forward to C++ game state manager
     public func updateGestureState(swipeLeft: Bool, swipeRight: Bool, swipeUp: Bool, swipeDown: Bool) {
         guard isRunning && !isPaused else { return }
@@ -375,6 +351,9 @@ public class GameEngine: NSObject {
     /// Update the game (called from Metal render loop)
     public func update(deltaTime: Float) {
         guard isRunning && !isPaused else { return }
+        
+        // Update TouchInputHandler (handles frame-based input processing internally)
+        touchInputHandler?.update()
         
         cppGame?.Update(deltaTime)
         
@@ -434,6 +413,50 @@ public class GameEngine: NSObject {
         // This should be done through the C++ interop system
         // The iOS log handler should be automatically integrated when the C++ game is initialized
         log("iOS logging system setup completed - will be integrated with GNLog when C++ game initializes")
+    }
+    
+    // MARK: - TouchInputDelegate Implementation
+    
+    /// Handle touch press events from TouchInputHandler
+    public func onTouchPress(normalizedPosition: CGPoint, viewSize: CGSize) {
+        guard isRunning && !isPaused else { return }
+        guard cppGame != nil else {
+            log("Cannot handle touch press - C++ game not initialized", level: .warning)
+            return
+        }
+        
+        // Transform normalized coordinates to game space
+        let gameX = Float(normalizedPosition.x * 1179.0) // Game width
+        let gameY = Float(normalizedPosition.y * 2556.0) // Game height
+        
+        log("🎯 Touch PRESS: normalized (\(normalizedPosition.x), \(normalizedPosition.y)) -> game coords (\(gameX), \(gameY))", level: .debug)
+        
+        // Update touch state in ThreadingProxy for C++ side to access
+        GameCore.updateTouchState(gameX, gameY, true, true, false) // PRESS EVENT
+        
+        // Forward input event to C++ game state manager
+        cppGame?.HandleInput()
+    }
+    
+    /// Handle touch release events from TouchInputHandler
+    public func onTouchRelease(normalizedPosition: CGPoint, viewSize: CGSize) {
+        guard isRunning && !isPaused else { return }
+        guard cppGame != nil else {
+            log("Cannot handle touch release - C++ game not initialized", level: .warning)
+            return
+        }
+        
+        // Transform normalized coordinates to game space
+        let gameX = Float(normalizedPosition.x * 1179.0) // Game width
+        let gameY = Float(normalizedPosition.y * 2556.0) // Game height
+        
+        log("🎯 Touch RELEASE: normalized (\(normalizedPosition.x), \(normalizedPosition.y)) -> game coords (\(gameX), \(gameY))", level: .debug)
+        
+        // Update touch state in ThreadingProxy for C++ side to access
+        GameCore.updateTouchState(gameX, gameY, false, false, true) // RELEASE EVENT
+        
+        // Forward input event to C++ game state manager
+        cppGame?.HandleInput()
     }
 }
 

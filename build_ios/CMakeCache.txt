@@ -16,9 +16,6 @@
 
 APPLE:BOOL=ON
 
-//No help, variable specified on the command line.
-ARCHS:UNINITIALIZED=x86_64
-
 //Path to a program.
 CMAKE_ADDR2LINE:FILEPATH=CMAKE_ADDR2LINE-NOTFOUND
 
@@ -235,7 +232,7 @@ IOS:BOOL=ON
 NAMED_LANGUAGE_SUPPORT_INT:BOOL=ON
 
 //No help, variable specified on the command line.
-PLATFORM:UNINITIALIZED=SIMULATOR64
+PLATFORM:UNINITIALIZED=OS64COMBINED
 
 UNIX:BOOL=ON
 
@@ -249,7 +246,7 @@ XCODEBUILD_EXECUTABLE:FILEPATH=/usr/bin/xcodebuild
 
 //Stored Xcode object GUID
 ALL_BUILD_GUID_CMAKE:INTERNAL=5B099B38C254862E8781CD94
-APPLE_TARGET_TRIPLE:INTERNAL=x86_64-apple-ios13.0-simulator
+APPLE_TARGET_TRIPLE:INTERNAL=arm64-x86_64-apple-ios13.0
 //ADVANCED property for variable: CMAKE_ADDR2LINE
 CMAKE_ADDR2LINE-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_AR
@@ -281,7 +278,7 @@ CMAKE_CXX_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_DLLTOOL
 CMAKE_DLLTOOL-ADVANCED:INTERNAL=1
 //Executable file format
-CMAKE_EXECUTABLE_FORMAT:INTERNAL=Unknown
+CMAKE_EXECUTABLE_FORMAT:INTERNAL=MACHO
 //ADVANCED property for variable: CMAKE_EXE_LINKER_FLAGS
 CMAKE_EXE_LINKER_FLAGS-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_EXE_LINKER_FLAGS_DEBUG
@@ -298,7 +295,7 @@ CMAKE_FIND_ROOT_PATH_MODE_INCLUDE:INTERNAL=BOTH
 CMAKE_FIND_ROOT_PATH_MODE_LIBRARY:INTERNAL=BOTH
 CMAKE_FIND_ROOT_PATH_MODE_PACKAGE:INTERNAL=BOTH
 CMAKE_FIND_ROOT_PATH_MODE_PROGRAM:INTERNAL=BOTH
-CMAKE_FRAMEWORK_PATH:INTERNAL=/Library/PrivateFrameworks;/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.2.sdk/System/Library/Frameworks;/Library/PrivateFrameworks;/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.2.sdk/System/Library/Frameworks;/Library/PrivateFrameworks;/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.2.sdk/System/Library/Frameworks
+CMAKE_FRAMEWORK_PATH:INTERNAL=/Library/PrivateFrameworks;/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.2.sdk/System/Library/Frameworks;/Library/PrivateFrameworks;/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.2.sdk/System/Library/Frameworks
 //Name of generator.
 CMAKE_GENERATOR:INTERNAL=Xcode
 //Generator instance identifier.
@@ -311,6 +308,8 @@ CMAKE_GENERATOR_TOOLSET:INTERNAL=
 // project
 CMAKE_HOME_DIRECTORY:INTERNAL=/Users/aimac/Development/FloppyTurd
 CMAKE_IGNORE_PATH:INTERNAL=/System/Library/Frameworks;/usr/local/lib;/opt/homebrew
+//ADVANCED property for variable: CMAKE_INSTALL_NAME_TOOL
+CMAKE_INSTALL_NAME_TOOL-ADVANCED:INTERNAL=1
 CMAKE_INSTALL_NAME_TOOL:INTERNAL=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/install_name_tool
 //ADVANCED property for variable: CMAKE_LINKER
 CMAKE_LINKER-ADVANCED:INTERNAL=1
@@ -334,11 +333,11 @@ CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=1
 CMAKE_OBJCOPY-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_OBJDUMP
 CMAKE_OBJDUMP-ADVANCED:INTERNAL=1
-CMAKE_OSX_ARCHITECTURES:INTERNAL=x86_64
+CMAKE_OSX_ARCHITECTURES:INTERNAL=arm64;x86_64
 //Minimum OS X deployment version
 CMAKE_OSX_DEPLOYMENT_TARGET:INTERNAL=13.0
-CMAKE_OSX_SYSROOT:INTERNAL=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.2.sdk
-CMAKE_OSX_SYSROOT_INT:INTERNAL=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.2.sdk
+CMAKE_OSX_SYSROOT:INTERNAL=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.2.sdk
+CMAKE_OSX_SYSROOT_INT:INTERNAL=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.2.sdk
 //Platform information initialized
 CMAKE_PLATFORM_INFO_INITIALIZED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_RANLIB
@@ -396,7 +395,7 @@ FloppyTurdGame_GUID_CMAKE:INTERNAL=0DE0C202AEDEA1EE745377B5
 //Stored Xcode object GUID
 FloppyTurd_GUID_CMAKE:INTERNAL=8EFA9AA7BA22AECA1336F161
 //Stored Xcode object GUID
-PROJECT_FloppyTurd_GUID_CMAKE:INTERNAL=E037D3A4D840498E9A4FF0E8
+PROJECT_FloppyTurd_GUID_CMAKE:INTERNAL=3D730FBAB8E5480E80D29AED
 XCODE_VERSION_INT:INTERNAL=16.2
 //Stored Xcode object GUID
 ZERO_CHECK_GUID_CMAKE:INTERNAL=D9EF5759F53BF46D2676F7EB

@@ -9,6 +9,7 @@ namespace GameCore {
         : m_ecsSystem(ecsSystem)
         , m_platformDelegates(platformDelegates)
         , m_currentLevelId(levelId)
+        , m_currentLevelConfig(LevelConfigFactory::GetLevelConfig(levelId))
         , m_currentScore(0)
         , m_currentCoins(0)
         , m_currentLives(STARTING_LIVES)
@@ -26,7 +27,7 @@ namespace GameCore {
         , m_enemySpawnTimer(0.0f)
         , m_inputDelayTimer(0.0f)
     {
-        GN_LOG_INFO("GameplayState created for level: " + std::to_string(levelId));
+        GN_LOG_INFO("GameplayState created for level: " + std::to_string(levelId) + " (" + m_currentLevelConfig.levelName + ")");
     }
 
     GameplayState::~GameplayState() {
@@ -124,6 +125,10 @@ namespace GameCore {
             m_playerControllerSystem->Update(deltaTime);
         }
         
+        if (m_cameraSystem) {
+            m_cameraSystem->Update(deltaTime);
+        }
+        
         // Update game logic
         UpdateGameLogic(deltaTime);
         
@@ -144,9 +149,9 @@ namespace GameCore {
     }
 
     void GameplayState::Render() {
-        // Render sprites
-        if (m_spriteSystem) {
-            m_spriteSystem->Render();
+        // Use unified render system instead of individual sprite system
+        if (m_renderSystem) {
+            m_renderSystem->Render();
         }
     }
 
@@ -166,27 +171,47 @@ namespace GameCore {
         
         // Handle gameplay input
         if (m_playerControllerSystem && m_platformDelegates) {
-            // Check for touch input
-            if (m_platformDelegates->input.getTouchCount && m_platformDelegates->input.getTouchPosition) {
-                int touchCount = m_platformDelegates->input.getTouchCount();
+            // Check for touch input with proper state tracking
+            if (m_platformDelegates->input.getTouchCount && m_platformDelegates->input.getTouchPosition &&
+                m_platformDelegates->input.isTouchJustPressed && m_platformDelegates->input.isTouchJustReleased) {
                 
-                if (touchCount > 0) {
-                    GN_LOG_INFO("Touch detected! Count: " + std::to_string(touchCount));
+                // Handle touch press events
+                if (m_platformDelegates->input.isTouchJustPressed()) {
+                    int touchCount = m_platformDelegates->input.getTouchCount();
+                    GN_LOG_INFO("Touch PRESSED! Count: " + std::to_string(touchCount));
+                    
+                    for (int i = 0; i < touchCount; i++) {
+                        float x, y;
+                        m_platformDelegates->input.getTouchPosition(i, &x, &y);
+                        
+                        GN_LOG_INFO("Touch " + std::to_string(i) + " PRESSED at (" + std::to_string(x) + ", " + std::to_string(y) + ")");
+                        
+                        // Send touch press event
+                        m_playerControllerSystem->HandleTouchInput(x, y, true);
+                    }
                 }
                 
-                for (int i = 0; i < touchCount; i++) {
-                    float x, y;
-                    m_platformDelegates->input.getTouchPosition(i, &x, &y);
+                // Handle touch release events
+                if (m_platformDelegates->input.isTouchJustReleased()) {
+                    GN_LOG_INFO("Touch RELEASED!");
                     
-                    GN_LOG_INFO("Touch " + std::to_string(i) + " at (" + std::to_string(x) + ", " + std::to_string(y) + ")");
+                    // Send touch release event with last known position
+                    float x = 0.0f, y = 0.0f;
+                    if (m_platformDelegates->input.getTouchCount() > 0) {
+                        m_platformDelegates->input.getTouchPosition(0, &x, &y);
+                    }
                     
-                    // For now, treat any touch as a press (we'll refine this later)
-                    m_playerControllerSystem->HandleTouchInput(x, y, true);
+                    GN_LOG_INFO("Touch RELEASED at (" + std::to_string(x) + ", " + std::to_string(y) + ")");
+                    
+                    // Send touch release event
+                    m_playerControllerSystem->HandleTouchInput(x, y, false);
                 }
             } else {
                 GN_LOG_WARN("Touch input functions not available!");
                 GN_LOG_DEBUG("GameplayState: getTouchCount = " + std::string(m_platformDelegates->input.getTouchCount ? "available" : "NULL"));
                 GN_LOG_DEBUG("GameplayState: getTouchPosition = " + std::string(m_platformDelegates->input.getTouchPosition ? "available" : "NULL"));
+                GN_LOG_DEBUG("GameplayState: isTouchJustPressed = " + std::string(m_platformDelegates->input.isTouchJustPressed ? "available" : "NULL"));
+                GN_LOG_DEBUG("GameplayState: isTouchJustReleased = " + std::string(m_platformDelegates->input.isTouchJustReleased ? "available" : "NULL"));
             }
         } else {
             GN_LOG_WARN("PlayerControllerSystem or PlatformDelegates is null!");
@@ -198,6 +223,10 @@ namespace GameCore {
     void GameplayState::SetLevel(int levelId) {
         GN_LOG_INFO("Setting level to: " + std::to_string(levelId));
         m_currentLevelId = levelId;
+        
+        // Load level configuration
+        m_currentLevelConfig = LevelConfigFactory::GetLevelConfig(levelId);
+        GN_LOG_INFO("Loaded configuration for: " + m_currentLevelConfig.levelName);
         
         // Reset game state for new level
         m_currentScore = 0;
@@ -262,6 +291,22 @@ namespace GameCore {
         // Create player controller system
         m_playerControllerSystem = std::make_unique<PlayerControllerSystem>(m_ecsSystem, m_platformDelegates, m_spriteSystem.get());
         
+        // Create camera system
+        m_cameraSystem = std::make_unique<CameraSystem>(m_ecsSystem);
+        
+        // Create unified render system (replaces individual sprite rendering)
+        m_renderSystem = std::make_unique<RenderSystem>(m_ecsSystem, *m_platformDelegates);
+        
+        // Create level manager system
+        m_levelManager = std::make_unique<LevelManager>(m_ecsSystem);
+        
+        // Load the current level
+        if (!m_levelManager->LoadLevel(m_currentLevelId)) {
+            GN_LOG_ERROR("Failed to load level " + std::to_string(m_currentLevelId));
+        } else {
+            GN_LOG_INFO("Level " + std::to_string(m_currentLevelId) + " loaded successfully");
+        }
+        
         GN_LOG_INFO("Gameplay systems initialized successfully");
     }
 
@@ -276,17 +321,18 @@ namespace GameCore {
         // Create player entity
         m_playerEntity = m_ecsSystem->CreateEntity();
         if (m_playerEntity != 0) {
-            // Add basic components to player (centered on screen)
-            // iPhone 16 game coordinates are 1179x2556, so center at (589.5, 1278)
-            Transform playerTransform(Gnosis::GNVector2(589.5f, 1278.0f), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            // Add basic components to player (positioned by PlayerControllerSystem)
+            // Use level's base scale for consistent sizing
+            float playerScale = m_currentLevelConfig.baseScale;
+            Transform playerTransform(Gnosis::GNVector2(400.0f, 639.0f), 0.0f, Gnosis::GNVector2(playerScale, playerScale));
             m_ecsSystem->AddComponent<Transform>(m_playerEntity, playerTransform);
             
-            // Add sprite component with Turdlet idle animation (16x scale)
+            // Add sprite component with Turdlet idle animation (use existing playerScale)
             // TurdletIdle.png is 64x64 pixels, single frame
-            Sprite playerSprite("TurdletIdle", 512.0f, 512.0f, 64, 64, 1, 0.1f); // 16x scale (64 * 8 = 512)
+            Sprite playerSprite("TurdletIdle", 64.0f, 64.0f, 64, 64, 1, 0.1f);
             playerSprite.color = Gnosis::GNColor(255, 255, 255, 255);
             playerSprite.visible = true;
-            playerSprite.layer = 1;
+            playerSprite.layer = 4; // Player layer (above backgrounds, below effects)
             m_ecsSystem->AddComponent<Sprite>(m_playerEntity, playerSprite);
             
             // Add physics component
@@ -296,11 +342,11 @@ namespace GameCore {
             playerPhysics.drag = 0.98f;
             m_ecsSystem->AddComponent<Physics>(m_playerEntity, playerPhysics);
             
-            // Add collider component (16x scale)
+            // Add collider component (scaled to match sprite)
             Collider playerCollider;
             playerCollider.type = ColliderType::Rectangle;
-            playerCollider.width = 512.0f;
-            playerCollider.height = 512.0f;
+            playerCollider.width = 64.0f * playerScale;
+            playerCollider.height = 64.0f * playerScale;
             m_ecsSystem->AddComponent<Collider>(m_playerEntity, playerCollider);
             
             // Add player component
@@ -315,16 +361,105 @@ namespace GameCore {
             GN_LOG_INFO("Created player entity: " + std::to_string(m_playerEntity));
         }
         
-        // Create camera entity
+        // Create camera entity with proper camera component
         m_cameraEntity = m_ecsSystem->CreateEntity();
         if (m_cameraEntity != 0) {
-            // Camera functionality will be implemented in Phase 2
-            // For now, just add a transform component
             Transform cameraTransform(Gnosis::GNVector2(0.0f, 0.0f), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
             m_ecsSystem->AddComponent<Transform>(m_cameraEntity, cameraTransform);
             
+            // Add camera component
+            Camera cameraComponent;
+            cameraComponent.zoom = 1.0f;
+            cameraComponent.viewportSize = Gnosis::GNVector2(1179.0f, 1278.0f); // iPhone 16 screen size
+            m_ecsSystem->AddComponent<Camera>(m_cameraEntity, cameraComponent);
+            
+            // Set as main camera for systems
+            if (m_cameraSystem) {
+                m_cameraSystem->SetMainCamera(m_cameraEntity);
+                m_cameraSystem->SetWorldScrollSpeed(m_currentLevelConfig.worldSpeed);
+            }
+            
+            if (m_renderSystem) {
+                m_renderSystem->SetActiveCamera(m_cameraEntity);
+            }
+            
             GN_LOG_INFO("Created camera entity: " + std::to_string(m_cameraEntity));
         }
+        
+        // Background layers are now created by LevelManager in InitializeSystems
+        GN_LOG_INFO("Background layers managed by LevelManager");
+    }
+
+    void GameplayState::CreateBackgroundLayers() {
+        GN_LOG_INFO("Creating background layers for level: " + m_currentLevelConfig.levelName);
+        
+        if (!m_ecsSystem) {
+            GN_LOG_ERROR("ECS system is null!");
+            return;
+        }
+        
+        // Clear existing background entities
+        for (Gnosis::Entity entity : m_backgroundEntities) {
+            if (entity != 0) {
+                m_ecsSystem->DestroyEntity(entity);
+            }
+        }
+        m_backgroundEntities.clear();
+        
+        // Create background layers from level configuration
+        for (const BackgroundLayer& layerConfig : m_currentLevelConfig.backgroundLayers) {
+            // Calculate scaling and positioning
+            float baseScale = m_currentLevelConfig.baseScale;
+            float finalScale = baseScale * layerConfig.scaleMultiplier;
+            
+            // Original texture size (assume 320x180 base)
+            float textureWidth = 320.0f;
+            float textureHeight = 180.0f;
+            
+            // Scaled dimensions
+            float scaledWidth = textureWidth * finalScale;
+            float scaledHeight = textureHeight * finalScale;
+            
+            // Create multiple instances for seamless wrapping
+            int numInstances = 3; // Create 3 instances to ensure seamless scrolling
+            float repeatWidth = layerConfig.repeatWidth > 0 ? layerConfig.repeatWidth : scaledWidth;
+            
+            for (int i = 0; i < numInstances; i++) {
+                Gnosis::Entity bgEntity = m_ecsSystem->CreateEntity();
+                if (bgEntity != 0) {
+                    // Position instances side by side
+                    float xPos = i * repeatWidth;
+                    float yPos = 1278.0f / 2.0f; // Center vertically on screen
+                    
+                    Transform bgTransform(Gnosis::GNVector2(xPos, yPos), 0.0f, Gnosis::GNVector2(finalScale, finalScale));
+                    m_ecsSystem->AddComponent<Transform>(bgEntity, bgTransform);
+                    
+                    // Create sprite component
+                    Sprite bgSprite(layerConfig.textureId, textureWidth, textureHeight);
+                    bgSprite.color = Gnosis::GNColor(255, 255, 255, 255);
+                    bgSprite.visible = true;
+                    bgSprite.layer = layerConfig.renderLayer;
+                    m_ecsSystem->AddComponent<Sprite>(bgEntity, bgSprite);
+                    
+                    // Add parallax component
+                    Parallax parallaxComponent;
+                    parallaxComponent.scrollSpeed = layerConfig.scrollSpeed;
+                    parallaxComponent.repeatWidth = repeatWidth;
+                    parallaxComponent.autoScroll = true;
+                    m_ecsSystem->AddComponent<Parallax>(bgEntity, parallaxComponent);
+                    
+                    m_backgroundEntities.push_back(bgEntity);
+                    
+                    GN_LOG_INFO("Created background layer '" + layerConfig.textureId + 
+                               "' instance " + std::to_string(i) + 
+                               " at (" + std::to_string(xPos) + ", " + std::to_string(yPos) + ")" +
+                               " with scale " + std::to_string(finalScale) +
+                               " on render layer " + std::to_string(layerConfig.renderLayer));
+                }
+            }
+        }
+        
+        GN_LOG_INFO("Created " + std::to_string(m_backgroundEntities.size()) + " background entities");
     }
 
     void GameplayState::DestroyGameEntities() {
@@ -345,6 +480,14 @@ namespace GameCore {
             m_ecsSystem->DestroyEntity(m_cameraEntity);
             m_cameraEntity = 0;
         }
+        
+        // Destroy background entities
+        for (Gnosis::Entity entity : m_backgroundEntities) {
+            if (entity != 0) {
+                m_ecsSystem->DestroyEntity(entity);
+            }
+        }
+        m_backgroundEntities.clear();
         
         // Destroy obstacles
         for (Gnosis::Entity entity : m_obstacles) {
@@ -475,25 +618,11 @@ namespace GameCore {
     }
 
     void GameplayState::UpdateSpawning(float deltaTime) {
-        // Update obstacle spawning
-        m_obstacleSpawnTimer += deltaTime;
-        if (m_obstacleSpawnTimer >= OBSTACLE_SPAWN_INTERVAL) {
-            SpawnObstacle();
-            m_obstacleSpawnTimer = 0.0f;
-        }
-        
-        // Update pickup spawning
-        m_pickupSpawnTimer += deltaTime;
-        if (m_pickupSpawnTimer >= PICKUP_SPAWN_INTERVAL) {
-            SpawnPickup();
-            m_pickupSpawnTimer = 0.0f;
-        }
-        
-        // Update enemy spawning
-        m_enemySpawnTimer += deltaTime;
-        if (m_enemySpawnTimer >= ENEMY_SPAWN_INTERVAL) {
-            SpawnEnemy();
-            m_enemySpawnTimer = 0.0f;
+        // Use LevelManager for all spawning
+        if (m_levelManager) {
+            m_levelManager->UpdateObstacleSpawning(deltaTime);
+            m_levelManager->UpdateEnemySpawning(deltaTime);
+            m_levelManager->UpdatePickupSpawning(deltaTime);
         }
     }
 
@@ -613,60 +742,13 @@ namespace GameCore {
     }
 
     void GameplayState::CleanupOffscreenEntities() {
-        if (!m_ecsSystem) {
-            return;
+        // Use LevelManager for cleanup
+        if (m_levelManager) {
+            m_levelManager->CleanupOffscreenEntities(-100.0f); // Left boundary
         }
-        
-        // Clean up obstacles that are off-screen to the left
-        m_obstacles.erase(
-            std::remove_if(m_obstacles.begin(), m_obstacles.end(),
-                [this](Gnosis::Entity entity) {
-                    if (entity == 0) return true;
-                    
-                    Transform* transform = m_ecsSystem->GetComponent<Transform>(entity);
-                    if (transform && transform->position.x < -100.0f) {
-                        m_ecsSystem->DestroyEntity(entity);
-                        return true;
-                    }
-                    return false;
-                }),
-            m_obstacles.end()
-        );
-        
-        // Clean up pickups that are off-screen to the left
-        m_pickups.erase(
-            std::remove_if(m_pickups.begin(), m_pickups.end(),
-                [this](Gnosis::Entity entity) {
-                    if (entity == 0) return true;
-                    
-                    Transform* transform = m_ecsSystem->GetComponent<Transform>(entity);
-                    if (transform && transform->position.x < -100.0f) {
-                        m_ecsSystem->DestroyEntity(entity);
-                        return true;
-                    }
-                    return false;
-                }),
-            m_pickups.end()
-        );
-        
-        // Clean up enemies that are off-screen to the left
-        m_enemies.erase(
-            std::remove_if(m_enemies.begin(), m_enemies.end(),
-                [this](Gnosis::Entity entity) {
-                    if (entity == 0) return true;
-                    
-                    Transform* transform = m_ecsSystem->GetComponent<Transform>(entity);
-                    if (transform && transform->position.x < -100.0f) {
-                        m_ecsSystem->DestroyEntity(entity);
-                        return true;
-                    }
-                    return false;
-                }),
-            m_enemies.end()
-        );
     }
 
-    void GameplayState::CheckLevelCompletion() {
+    void GameCore::GameplayState::CheckLevelCompletion() {
         // Level completion logic will be implemented in Phase 3
         // For now, just check if player is still alive
         if (!m_playerAlive && m_currentLives <= 0) {
@@ -674,21 +756,21 @@ namespace GameCore {
         }
     }
 
-    void GameplayState::SaveGameProgress() {
+    void GameCore::GameplayState::SaveGameProgress() {
         GN_LOG_INFO("Saving game progress");
         // Save logic will be implemented in Phase 4
     }
 
     // Event handler implementations (will be expanded in Phase 2)
-    void GameplayState::OnPlayerJump() {
+    void GameCore::GameplayState::OnPlayerJump() {
         GN_LOG_INFO("Player jumped");
     }
 
-    void GameplayState::OnPlayerShoot() {
+    void GameCore::GameplayState::OnPlayerShoot() {
         GN_LOG_INFO("Player shot");
     }
 
-    void GameplayState::OnPlayerHurt(int damage) {
+    void GameCore::GameplayState::OnPlayerHurt(int damage) {
         GN_LOG_INFO("Player hurt: " + std::to_string(damage));
         m_currentLives--;
         m_invulnerabilityTimer = 2.0f; // 2 seconds of invulnerability
@@ -698,31 +780,31 @@ namespace GameCore {
         }
     }
 
-    void GameplayState::OnPlayerDeath() {
+    void GameCore::GameplayState::OnPlayerDeath() {
         GN_LOG_INFO("Player died");
         m_playerAlive = false;
         GameOver();
     }
 
-    void GameplayState::OnCoinCollected(int value) {
+    void GameCore::GameplayState::OnCoinCollected(int value) {
         GN_LOG_INFO("Coin collected: " + std::to_string(value));
         m_currentCoins += value;
         m_currentScore += value * 10;
     }
 
-    void GameplayState::OnPickupCollected() {
+    void GameCore::GameplayState::OnPickupCollected() {
         GN_LOG_INFO("Pickup collected");
         m_currentScore += 50;
     }
 
-    void GameplayState::OnObstacleHit() {
+    void GameCore::GameplayState::OnObstacleHit() {
         GN_LOG_INFO("Obstacle hit");
         if (m_invulnerabilityTimer <= 0.0f) {
             OnPlayerHurt(1);
         }
     }
 
-    void GameplayState::OnEnemyDefeated() {
+    void GameCore::GameplayState::OnEnemyDefeated() {
         GN_LOG_INFO("Enemy defeated");
         m_currentScore += 100;
     }

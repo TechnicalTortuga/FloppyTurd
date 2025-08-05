@@ -43,6 +43,9 @@ namespace GameCore {
         bool IsPrimaryInputJustReleased();
         int GetTouchCount();
         void GetTouchPosition(int touchIndex, float* x, float* y);
+        bool IsTouchDown();
+        bool IsTouchJustPressed();
+        bool IsTouchJustReleased();
         bool IsKeyPressed(int keyCode);  // Stubbed for iOS
         bool IsKeyJustPressed(int keyCode);  // Stubbed for iOS
         

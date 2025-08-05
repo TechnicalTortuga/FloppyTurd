@@ -8,6 +8,10 @@
 #include "../Entities/Player.h"
 #include "../Systems/SpriteSystem.h"
 #include "../Systems/PlayerControllerSystem.h"
+#include "../Systems/CameraSystem.h"
+#include "../Systems/RenderSystem.h"
+#include "../Systems/LevelManager.h"
+#include "../Config/LevelConfig.h"
 #include <memory>
 #include <vector>
 #include <map>
@@ -70,17 +74,24 @@ namespace GameCore {
         // Game systems
         std::unique_ptr<SpriteSystem> m_spriteSystem;
         std::unique_ptr<PlayerControllerSystem> m_playerControllerSystem;
+        std::unique_ptr<CameraSystem> m_cameraSystem;
+        std::unique_ptr<RenderSystem> m_renderSystem;
+        std::unique_ptr<LevelManager> m_levelManager;
+
+        // Level configuration
+        int m_currentLevelId;
+        LevelConfig m_currentLevelConfig;
 
         // Game entities
         Gnosis::Entity m_playerEntity;
         Gnosis::Entity m_cameraEntity;
+        std::vector<Gnosis::Entity> m_backgroundEntities;
         std::vector<Gnosis::Entity> m_obstacles;
         std::vector<Gnosis::Entity> m_pickups;
         std::vector<Gnosis::Entity> m_projectiles;
         std::vector<Gnosis::Entity> m_enemies;
 
         // Game state
-        int m_currentLevelId;
         int m_currentScore;
         int m_currentCoins;
         int m_currentLives;
@@ -124,6 +135,7 @@ namespace GameCore {
         // Private methods
         void InitializeSystems();
         void CreateGameEntities();
+        void CreateBackgroundLayers();
         void DestroyGameEntities();
         void CreateUI();
         void DestroyUI();

@@ -289,39 +289,17 @@ namespace Gnosis {
             int dummy[] = { (requiredSignature.set(Component::GetComponentTypeId<ComponentTypes>()), 0)... };
             (void)dummy; // Suppress unused variable warning
             
-            // Debug logging
-            std::ostringstream oss;
-            oss << "GetEntitiesWithComponents: Required signature: " << requiredSignature.to_string();
-            GameCore::ThreadingProxy::enqueueLogDebug(oss.str().c_str(), "ECS");
-            
             // Get all entities and check their signatures
             auto allEntities = entityManager->GetAllActiveEntities();
-            oss.str("");
-            oss.clear();
-            oss << "GetEntitiesWithComponents: Checking " << allEntities.size() << " active entities";
-            GameCore::ThreadingProxy::enqueueLogDebug(oss.str().c_str(), "ECS");
             
             for (Entity entity : allEntities) {
                 ComponentSignature entitySignature = componentManager->GetEntitySignature(entity);
-                oss.str("");
-                oss.clear();
-                oss << "GetEntitiesWithComponents: Entity " << entity << " signature: " << entitySignature.to_string();
-                GameCore::ThreadingProxy::enqueueLogDebug(oss.str().c_str(), "ECS");
                 
                 // Check if entity has all required components
                 if ((entitySignature & requiredSignature) == requiredSignature) {
                     result.push_back(entity);
-                    oss.str("");
-                    oss.clear();
-                    oss << "GetEntitiesWithComponents: Entity " << entity << " matches required signature";
-                    GameCore::ThreadingProxy::enqueueLogDebug(oss.str().c_str(), "ECS");
                 }
             }
-            
-            oss.str("");
-            oss.clear();
-            oss << "GetEntitiesWithComponents: Found " << result.size() << " matching entities";
-            GameCore::ThreadingProxy::enqueueLogDebug(oss.str().c_str(), "ECS");
             
             return result;
         }
