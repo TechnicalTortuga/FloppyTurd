@@ -156,6 +156,16 @@ class CommandProcessor {
                                         rotation: data.rotation)
             }
             
+        case .CMD_DRAW_SPRITE_SCALED_CENTERED:
+            if data.textureHandle != 0 {
+                renderer.drawSpriteScaledCentered(textureHandle: data.textureHandle,
+                                                x: data.x,
+                                                y: data.y,
+                                                scaleX: data.scaleX,
+                                                scaleY: data.scaleY,
+                                                rotation: data.rotation)
+            }
+            
         case .CMD_DRAW_SPRITE_SCALED_WITH_SOURCE:
             if data.textureHandle != 0 {
                 renderer.drawSpriteScaledWithSource(textureHandle: data.textureHandle,

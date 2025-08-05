@@ -367,8 +367,8 @@ namespace GameCore {
             Physics* physics = m_ecsSystem->GetComponent<Physics>(m_playerEntity);
             
             if (transform) {
-                // Start player at the fixed X position (closer to center) and at center Y
-                transform->position = Gnosis::GNVector2(400.0f, CENTER_SPAWN_Y);
+                // Start player at the fixed X position (configurable for optimal obstacle visibility) and at center Y
+                transform->position = Gnosis::GNVector2(PLAYER_X_POSITION, CENTER_SPAWN_Y);
             }
             
             if (physics) {
@@ -441,8 +441,8 @@ namespace GameCore {
         // Update position (only Y position changes for the player)
         transform->position.y += physics->velocity.y * deltaTime;
         
-        // Keep player at a fixed horizontal position (closer to center than original)
-        transform->position.x = 400.0f; // Moved closer to center (was 300.0f)
+        // Keep player at a fixed horizontal position (configurable for optimal gameplay visibility)
+        transform->position.x = PLAYER_X_POSITION;
         
         // Check if player goes below the screen (bottom boundary death)
         // Reset when player hits the bottom edge of the screen (not below it)

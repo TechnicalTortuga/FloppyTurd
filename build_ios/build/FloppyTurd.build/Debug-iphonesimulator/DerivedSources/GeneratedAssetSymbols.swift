@@ -400,9 +400,6 @@ extension DeveloperToolsSupport.ImageResource {
     /// The "TopToiletSnow" asset catalog image resource.
     static let topToiletSnow = DeveloperToolsSupport.ImageResource(name: "TopToiletSnow", bundle: resourceBundle)
 
-    /// The "TorchPillar" asset catalog image resource.
-    static let torchPillar = DeveloperToolsSupport.ImageResource(name: "TorchPillar", bundle: resourceBundle)
-
     /// The "TryAgainBackground" asset catalog image resource.
     static let tryAgainBackground = DeveloperToolsSupport.ImageResource(name: "TryAgainBackground", bundle: resourceBundle)
 
@@ -523,21 +520,6 @@ extension DeveloperToolsSupport.ImageResource {
     /// The "blast_small" asset catalog image resource.
     static let blastSmall = DeveloperToolsSupport.ImageResource(name: "blast_small", bundle: resourceBundle)
 
-    /// The "bosspillar" asset catalog image resource.
-    static let bosspillar = DeveloperToolsSupport.ImageResource(name: "bosspillar", bundle: resourceBundle)
-
-    /// The "castlelevelbackgroundwall" asset catalog image resource.
-    static let castlelevelbackgroundwall = DeveloperToolsSupport.ImageResource(name: "castlelevelbackgroundwall", bundle: resourceBundle)
-
-    /// The "castlelevelchandelier" asset catalog image resource.
-    static let castlelevelchandelier = DeveloperToolsSupport.ImageResource(name: "castlelevelchandelier", bundle: resourceBundle)
-
-    /// The "castlelevelfloorceiling" asset catalog image resource.
-    static let castlelevelfloorceiling = DeveloperToolsSupport.ImageResource(name: "castlelevelfloorceiling", bundle: resourceBundle)
-
-    /// The "castlelevelfloortorch" asset catalog image resource.
-    static let castlelevelfloortorch = DeveloperToolsSupport.ImageResource(name: "castlelevelfloortorch", bundle: resourceBundle)
-
     /// The "cowboyhat" asset catalog image resource.
     static let cowboyhat = DeveloperToolsSupport.ImageResource(name: "cowboyhat", bundle: resourceBundle)
 
@@ -579,21 +561,6 @@ extension DeveloperToolsSupport.ImageResource {
 
     /// The "crownhatturdletshoot" asset catalog image resource.
     static let crownhatturdletshoot = DeveloperToolsSupport.ImageResource(name: "crownhatturdletshoot", bundle: resourceBundle)
-
-    /// The "curtains" asset catalog image resource.
-    static let curtains = DeveloperToolsSupport.ImageResource(name: "curtains", bundle: resourceBundle)
-
-    /// The "dancingcacti" asset catalog image resource.
-    static let dancingcacti = DeveloperToolsSupport.ImageResource(name: "dancingcacti", bundle: resourceBundle)
-
-    /// The "dancingcacticowboy" asset catalog image resource.
-    static let dancingcacticowboy = DeveloperToolsSupport.ImageResource(name: "dancingcacticowboy", bundle: resourceBundle)
-
-    /// The "dancingcactismall" asset catalog image resource.
-    static let dancingcactismall = DeveloperToolsSupport.ImageResource(name: "dancingcactismall", bundle: resourceBundle)
-
-    /// The "darkclouds" asset catalog image resource.
-    static let darkclouds = DeveloperToolsSupport.ImageResource(name: "darkclouds", bundle: resourceBundle)
 
     /// The "dooragbigturdjump" asset catalog image resource.
     static let dooragbigturdjump = DeveloperToolsSupport.ImageResource(name: "dooragbigturdjump", bundle: resourceBundle)
@@ -664,9 +631,6 @@ extension DeveloperToolsSupport.ImageResource {
     /// The "pinwheelturdletshoot" asset catalog image resource.
     static let pinwheelturdletshoot = DeveloperToolsSupport.ImageResource(name: "pinwheelturdletshoot", bundle: resourceBundle)
 
-    /// The "placeholder" asset catalog image resource.
-    static let placeholder = DeveloperToolsSupport.ImageResource(name: "placeholder", bundle: resourceBundle)
-
     /// The "plusbutton" asset catalog image resource.
     static let plusbutton = DeveloperToolsSupport.ImageResource(name: "plusbutton", bundle: resourceBundle)
 
@@ -703,9 +667,6 @@ extension DeveloperToolsSupport.ImageResource {
     /// The "ramsesturdletshoot" asset catalog image resource.
     static let ramsesturdletshoot = DeveloperToolsSupport.ImageResource(name: "ramsesturdletshoot", bundle: resourceBundle)
 
-    /// The "ratkingbackground" asset catalog image resource.
-    static let ratkingbackground = DeveloperToolsSupport.ImageResource(name: "ratkingbackground", bundle: resourceBundle)
-
     /// The "samuraibigturdjump" asset catalog image resource.
     static let samuraibigturdjump = DeveloperToolsSupport.ImageResource(name: "samuraibigturdjump", bundle: resourceBundle)
 
@@ -717,27 +678,6 @@ extension DeveloperToolsSupport.ImageResource {
 
     /// The "samuraiturdletshoot" asset catalog image resource.
     static let samuraiturdletshoot = DeveloperToolsSupport.ImageResource(name: "samuraiturdletshoot", bundle: resourceBundle)
-
-    /// The "screenCurtains" asset catalog image resource.
-    static let screenCurtains = DeveloperToolsSupport.ImageResource(name: "screenCurtains", bundle: resourceBundle)
-
-    /// The "sewerrunningwaterwide" asset catalog image resource.
-    static let sewerrunningwaterwide = DeveloperToolsSupport.ImageResource(name: "sewerrunningwaterwide", bundle: resourceBundle)
-
-    /// The "sewerwidevarA" asset catalog image resource.
-    static let sewerwidevarA = DeveloperToolsSupport.ImageResource(name: "sewerwidevarA", bundle: resourceBundle)
-
-    /// The "sewerwidevarB" asset catalog image resource.
-    static let sewerwidevarB = DeveloperToolsSupport.ImageResource(name: "sewerwidevarB", bundle: resourceBundle)
-
-    /// The "sewerwidevarC" asset catalog image resource.
-    static let sewerwidevarC = DeveloperToolsSupport.ImageResource(name: "sewerwidevarC", bundle: resourceBundle)
-
-    /// The "sewerwidevarD" asset catalog image resource.
-    static let sewerwidevarD = DeveloperToolsSupport.ImageResource(name: "sewerwidevarD", bundle: resourceBundle)
-
-    /// The "sewerwidevarE" asset catalog image resource.
-    static let sewerwidevarE = DeveloperToolsSupport.ImageResource(name: "sewerwidevarE", bundle: resourceBundle)
 
     /// The "shellhat" asset catalog image resource.
     static let shellhat = DeveloperToolsSupport.ImageResource(name: "shellhat", bundle: resourceBundle)
@@ -753,9 +693,6 @@ extension DeveloperToolsSupport.ImageResource {
 
     /// The "shellhatturdletshoot" asset catalog image resource.
     static let shellhatturdletshoot = DeveloperToolsSupport.ImageResource(name: "shellhatturdletshoot", bundle: resourceBundle)
-
-    /// The "snow_tile" asset catalog image resource.
-    static let snowTile = DeveloperToolsSupport.ImageResource(name: "snow_tile", bundle: resourceBundle)
 
     /// The "spartanhatbigturdjump" asset catalog image resource.
     static let spartanhatbigturdjump = DeveloperToolsSupport.ImageResource(name: "spartanhatbigturdjump", bundle: resourceBundle)

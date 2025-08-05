@@ -39,6 +39,9 @@ namespace GameCore {
         void LoadTexture(const std::string& textureId, const std::string& filePath);
         void UnloadTexture(const std::string& textureId);
         void SetTextureBasePath(const std::string& basePath);
+        
+        // Get texture dimensions (returns {width, height} or {0, 0} if not found)
+        std::pair<int, int> GetTextureDimensions(const std::string& textureId) const;
 
     private:
         Gnosis::ECS* m_ecsCoordinator;
@@ -47,6 +50,9 @@ namespace GameCore {
         
         // Texture cache (textureId -> platform texture handle)
         std::unordered_map<std::string, uint32_t> m_textureCache;
+        
+        // Texture dimensions cache (textureId -> {width, height})
+        std::unordered_map<std::string, std::pair<int, int>> m_textureDimensions;
         
         // Pending texture loads (textureId -> pending status)
         std::unordered_map<std::string, bool> m_pendingTextures;

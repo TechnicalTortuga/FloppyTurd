@@ -384,9 +384,6 @@ static NSString * const ACImageNameTopToiletGold AC_SWIFT_PRIVATE = @"TopToiletG
 /// The "TopToiletSnow" asset catalog image resource.
 static NSString * const ACImageNameTopToiletSnow AC_SWIFT_PRIVATE = @"TopToiletSnow";
 
-/// The "TorchPillar" asset catalog image resource.
-static NSString * const ACImageNameTorchPillar AC_SWIFT_PRIVATE = @"TorchPillar";
-
 /// The "TryAgainBackground" asset catalog image resource.
 static NSString * const ACImageNameTryAgainBackground AC_SWIFT_PRIVATE = @"TryAgainBackground";
 
@@ -507,21 +504,6 @@ static NSString * const ACImageNameBlastBig AC_SWIFT_PRIVATE = @"blast_big";
 /// The "blast_small" asset catalog image resource.
 static NSString * const ACImageNameBlastSmall AC_SWIFT_PRIVATE = @"blast_small";
 
-/// The "bosspillar" asset catalog image resource.
-static NSString * const ACImageNameBosspillar AC_SWIFT_PRIVATE = @"bosspillar";
-
-/// The "castlelevelbackgroundwall" asset catalog image resource.
-static NSString * const ACImageNameCastlelevelbackgroundwall AC_SWIFT_PRIVATE = @"castlelevelbackgroundwall";
-
-/// The "castlelevelchandelier" asset catalog image resource.
-static NSString * const ACImageNameCastlelevelchandelier AC_SWIFT_PRIVATE = @"castlelevelchandelier";
-
-/// The "castlelevelfloorceiling" asset catalog image resource.
-static NSString * const ACImageNameCastlelevelfloorceiling AC_SWIFT_PRIVATE = @"castlelevelfloorceiling";
-
-/// The "castlelevelfloortorch" asset catalog image resource.
-static NSString * const ACImageNameCastlelevelfloortorch AC_SWIFT_PRIVATE = @"castlelevelfloortorch";
-
 /// The "cowboyhat" asset catalog image resource.
 static NSString * const ACImageNameCowboyhat AC_SWIFT_PRIVATE = @"cowboyhat";
 
@@ -563,21 +545,6 @@ static NSString * const ACImageNameCrownhatturdletjump AC_SWIFT_PRIVATE = @"crow
 
 /// The "crownhatturdletshoot" asset catalog image resource.
 static NSString * const ACImageNameCrownhatturdletshoot AC_SWIFT_PRIVATE = @"crownhatturdletshoot";
-
-/// The "curtains" asset catalog image resource.
-static NSString * const ACImageNameCurtains AC_SWIFT_PRIVATE = @"curtains";
-
-/// The "dancingcacti" asset catalog image resource.
-static NSString * const ACImageNameDancingcacti AC_SWIFT_PRIVATE = @"dancingcacti";
-
-/// The "dancingcacticowboy" asset catalog image resource.
-static NSString * const ACImageNameDancingcacticowboy AC_SWIFT_PRIVATE = @"dancingcacticowboy";
-
-/// The "dancingcactismall" asset catalog image resource.
-static NSString * const ACImageNameDancingcactismall AC_SWIFT_PRIVATE = @"dancingcactismall";
-
-/// The "darkclouds" asset catalog image resource.
-static NSString * const ACImageNameDarkclouds AC_SWIFT_PRIVATE = @"darkclouds";
 
 /// The "dooragbigturdjump" asset catalog image resource.
 static NSString * const ACImageNameDooragbigturdjump AC_SWIFT_PRIVATE = @"dooragbigturdjump";
@@ -648,9 +615,6 @@ static NSString * const ACImageNamePinwheelturdletjump AC_SWIFT_PRIVATE = @"pinw
 /// The "pinwheelturdletshoot" asset catalog image resource.
 static NSString * const ACImageNamePinwheelturdletshoot AC_SWIFT_PRIVATE = @"pinwheelturdletshoot";
 
-/// The "placeholder" asset catalog image resource.
-static NSString * const ACImageNamePlaceholder AC_SWIFT_PRIVATE = @"placeholder";
-
 /// The "plusbutton" asset catalog image resource.
 static NSString * const ACImageNamePlusbutton AC_SWIFT_PRIVATE = @"plusbutton";
 
@@ -687,9 +651,6 @@ static NSString * const ACImageNameRamsesturdletjump AC_SWIFT_PRIVATE = @"ramses
 /// The "ramsesturdletshoot" asset catalog image resource.
 static NSString * const ACImageNameRamsesturdletshoot AC_SWIFT_PRIVATE = @"ramsesturdletshoot";
 
-/// The "ratkingbackground" asset catalog image resource.
-static NSString * const ACImageNameRatkingbackground AC_SWIFT_PRIVATE = @"ratkingbackground";
-
 /// The "samuraibigturdjump" asset catalog image resource.
 static NSString * const ACImageNameSamuraibigturdjump AC_SWIFT_PRIVATE = @"samuraibigturdjump";
 
@@ -701,27 +662,6 @@ static NSString * const ACImageNameSamuraiturdletjump AC_SWIFT_PRIVATE = @"samur
 
 /// The "samuraiturdletshoot" asset catalog image resource.
 static NSString * const ACImageNameSamuraiturdletshoot AC_SWIFT_PRIVATE = @"samuraiturdletshoot";
-
-/// The "screenCurtains" asset catalog image resource.
-static NSString * const ACImageNameScreenCurtains AC_SWIFT_PRIVATE = @"screenCurtains";
-
-/// The "sewerrunningwaterwide" asset catalog image resource.
-static NSString * const ACImageNameSewerrunningwaterwide AC_SWIFT_PRIVATE = @"sewerrunningwaterwide";
-
-/// The "sewerwidevarA" asset catalog image resource.
-static NSString * const ACImageNameSewerwidevarA AC_SWIFT_PRIVATE = @"sewerwidevarA";
-
-/// The "sewerwidevarB" asset catalog image resource.
-static NSString * const ACImageNameSewerwidevarB AC_SWIFT_PRIVATE = @"sewerwidevarB";
-
-/// The "sewerwidevarC" asset catalog image resource.
-static NSString * const ACImageNameSewerwidevarC AC_SWIFT_PRIVATE = @"sewerwidevarC";
-
-/// The "sewerwidevarD" asset catalog image resource.
-static NSString * const ACImageNameSewerwidevarD AC_SWIFT_PRIVATE = @"sewerwidevarD";
-
-/// The "sewerwidevarE" asset catalog image resource.
-static NSString * const ACImageNameSewerwidevarE AC_SWIFT_PRIVATE = @"sewerwidevarE";
 
 /// The "shellhat" asset catalog image resource.
 static NSString * const ACImageNameShellhat AC_SWIFT_PRIVATE = @"shellhat";
@@ -737,9 +677,6 @@ static NSString * const ACImageNameShellhatturdletjump AC_SWIFT_PRIVATE = @"shel
 
 /// The "shellhatturdletshoot" asset catalog image resource.
 static NSString * const ACImageNameShellhatturdletshoot AC_SWIFT_PRIVATE = @"shellhatturdletshoot";
-
-/// The "snow_tile" asset catalog image resource.
-static NSString * const ACImageNameSnowTile AC_SWIFT_PRIVATE = @"snow_tile";
 
 /// The "spartanhatbigturdjump" asset catalog image resource.
 static NSString * const ACImageNameSpartanhatbigturdjump AC_SWIFT_PRIVATE = @"spartanhatbigturdjump";

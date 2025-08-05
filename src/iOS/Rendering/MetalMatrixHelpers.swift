@@ -114,13 +114,29 @@ struct MetalMatrixHelpers {
     
     // MARK: - Sprite Transformations
     
-    /// Creates a complete transformation matrix for a 2D sprite
+    /// Creates a transformation matrix for a sprite positioned from top-left (standard rendering)
+    /// - Parameters:
+    ///   - position: Sprite position (x, y) - top-left corner
+    ///   - scale: Sprite scale (x, y)
+    ///   - rotation: Rotation angle in degrees (rotates around top-left)
+    /// - Returns: 4x4 transformation matrix
+    static func spriteTransformMatrix(position: (x: Float, y: Float), scale: (x: Float, y: Float), rotation: Float) -> simd_float4x4 {
+        // Standard top-left positioning without centering
+        let rotation = rotationMatrixZ(angleDegrees: rotation)
+        let scale = scaleMatrix(x: scale.x, y: scale.y)
+        let translation = translationMatrix(x: position.x, y: position.y)
+        
+        // Combine transformations: translation * scale * rotation
+        return translation * scale * rotation
+    }
+    
+    /// Creates a complete transformation matrix for a sprite with rotation (centered for rotation)
     /// - Parameters:
     ///   - position: Sprite position (x, y)
     ///   - scale: Sprite scale (x, y)
     ///   - rotation: Rotation angle in degrees
     /// - Returns: 4x4 transformation matrix
-    static func spriteTransformMatrix(position: (x: Float, y: Float), scale: (x: Float, y: Float), rotation: Float) -> simd_float4x4 {
+    static func spriteTransformMatrixCentered(position: (x: Float, y: Float), scale: (x: Float, y: Float), rotation: Float) -> simd_float4x4 {
         // For proper rotation around center, we need to:
         // 1. Translate to center the sprite at origin
         // 2. Apply rotation

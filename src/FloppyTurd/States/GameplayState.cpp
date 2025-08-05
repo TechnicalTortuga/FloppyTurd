@@ -74,11 +74,17 @@ namespace GameCore {
             GN_LOG_INFO("GameplayState: Cleared input buffer to prevent lingering touch inputs");
         }
         
+        // Start level music based on current difficulty
+        StartLevelMusic();
+        
         GN_LOG_INFO("GameplayState entered successfully");
     }
 
     void GameplayState::Exit() {
         GN_LOG_INFO("Exiting GameplayState");
+        
+        // Stop level music
+        StopLevelMusic();
         
         // Save game progress
         SaveGameProgress();
@@ -410,11 +416,15 @@ namespace GameCore {
         for (const BackgroundLayer& layerConfig : m_currentLevelConfig.backgroundLayers) {
             // Calculate scaling and positioning
             float baseScale = m_currentLevelConfig.baseScale;
-            float finalScale = baseScale * layerConfig.scaleMultiplier;
             
-            // Original texture size (assume 320x180 base)
-            float textureWidth = 320.0f;
-            float textureHeight = 180.0f;
+            // For 1024x480 backgrounds, we need different scaling than player
+            // Player uses baseScale (8.0f), backgrounds need 2.66f for proper fit
+            float backgroundScale = 2.66f;  // 1278 ÷ 480 = 2.66 for height fit
+            float finalScale = backgroundScale * layerConfig.scaleMultiplier;
+            
+            // Updated texture size for new 1024x480 backgrounds
+            float textureWidth = 1024.0f;
+            float textureHeight = 480.0f;
             
             // Scaled dimensions
             float scaledWidth = textureWidth * finalScale;
@@ -429,7 +439,7 @@ namespace GameCore {
                 if (bgEntity != 0) {
                     // Position instances side by side
                     float xPos = i * repeatWidth;
-                    float yPos = 1278.0f / 2.0f; // Center vertically on screen
+                    float yPos = 0.0f; // Position at top of screen for top-left rendering
                     
                     Transform bgTransform(Gnosis::GNVector2(xPos, yPos), 0.0f, Gnosis::GNVector2(finalScale, finalScale));
                     m_ecsSystem->AddComponent<Transform>(bgEntity, bgTransform);
@@ -807,6 +817,52 @@ namespace GameCore {
     void GameCore::GameplayState::OnEnemyDefeated() {
         GN_LOG_INFO("Enemy defeated");
         m_currentScore += 100;
+    }
+
+    void GameCore::GameplayState::StartLevelMusic() {
+        GN_LOG_INFO("Starting level music for level: " + std::to_string(m_currentLevelId));
+        
+        if (!m_platformDelegates || !m_platformDelegates->audio.playMusic) {
+            GN_LOG_WARN("Audio delegate not available - cannot play level music");
+            return;
+        }
+        
+        // Get the level config from LevelManager which has difficulty applied
+        const LevelConfig* levelConfig = nullptr;
+        if (m_levelManager && m_levelManager->IsLevelLoaded()) {
+            levelConfig = &m_levelManager->GetCurrentLevelConfig();
+        } else {
+            // Fallback to our local config if LevelManager isn't available
+            levelConfig = &m_currentLevelConfig;
+        }
+        
+        // Get the appropriate music file for the current difficulty
+        std::string musicFile = levelConfig->GetMusicForDifficulty();
+        
+        if (musicFile.empty()) {
+            GN_LOG_WARN("No music configured for level " + std::to_string(m_currentLevelId));
+            return;
+        }
+        
+        GN_LOG_INFO("Playing music: " + musicFile + " (Difficulty: " + DifficultyToString(levelConfig->currentDifficulty) + ")");
+        
+        // Play music with loop (-1 for infinite loop) and appropriate volume
+        float musicVolume = 0.7f; // 70% volume for gameplay music
+        m_platformDelegates->audio.playMusic(musicFile.c_str(), musicVolume, -1);
+        
+        GN_LOG_INFO("Level music started: " + musicFile);
+    }
+
+    void GameCore::GameplayState::StopLevelMusic() {
+        GN_LOG_INFO("Stopping level music");
+        
+        if (!m_platformDelegates || !m_platformDelegates->audio.stopMusic) {
+            GN_LOG_WARN("Audio delegate not available - cannot stop level music");
+            return;
+        }
+        
+        m_platformDelegates->audio.stopMusic();
+        GN_LOG_INFO("Level music stopped");
     }
 
 } // namespace GameCore 

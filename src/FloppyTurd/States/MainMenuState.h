@@ -4,6 +4,8 @@
 #include "GameState.h"
 #include "../../Engine/Platform/PlatformDelegates.h"
 #include "../Components/GameComponents.h"
+#include "../Systems/SpriteSystem.h"
+#include <memory>
 
 namespace GameCore {
 
@@ -62,6 +64,7 @@ namespace GameCore {
         };
 
         Gnosis::ECS* m_ecsCoordinator;  // Reference to shared ECS coordinator
+        std::unique_ptr<SpriteSystem> m_spriteSystem;  // For texture dimension queries
         bool m_finished;
         int m_selectedOption;
         float m_animationTimer;

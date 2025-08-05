@@ -57,6 +57,10 @@ namespace GameCore {
         PlayerAnimationState GetCurrentState() const { return m_currentState; }
 
     private:
+        // Constants
+        static constexpr float PLAYER_X_POSITION = 300.0f;  // Configurable player X position for optimal gameplay visibility
+        
+        // Core systems
         Gnosis::ECS* m_ecsSystem;
         GameCore::PlatformDelegates* m_platformDelegates;
         SpriteSystem* m_spriteSystem;

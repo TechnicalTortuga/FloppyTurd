@@ -504,6 +504,19 @@ namespace GameCore {
         {}
     };
 
+    /**
+     * RotationRenderer component - marks sprites that should use centered rendering for rotation
+     * This component tells the SpriteSystem to use centered positioning instead of top-left
+     * for sprites that need to rotate properly (like the poophat)
+     */
+    struct RotationRenderer : public Gnosis::Component {
+        bool enabled;
+        
+        RotationRenderer(bool isEnabled = true)
+            : enabled(isEnabled)
+        {}
+    };
+
 } // namespace GameCore
 
 // Bring GameCore components into Gnosis namespace for easier access
@@ -524,6 +537,7 @@ namespace Gnosis {
     using UIElement = GameCore::UIElement;
     using Text = GameCore::Text;
     using Pickup = GameCore::Pickup;
+    using RotationRenderer = GameCore::RotationRenderer;
     using ColliderType = GameCore::ColliderType;
 }
 

@@ -173,6 +173,8 @@ namespace GameCore {
             float scaleX = sprite.width / sprite.frameWidth;
             float scaleY = sprite.height / sprite.frameHeight;
             
+            // Note: drawSpriteScaledWithSource currently uses centered positioning
+            // This should be fine for animated sprites that might rotate
             m_delegates.renderer.drawSpriteScaledWithSource(
                 textureHandle,
                 transform.position.x,
@@ -194,27 +196,49 @@ namespace GameCore {
                         std::to_string(sourceRect.width) + ", " + std::to_string(sourceRect.height) + ")" +
                         " | CurrentFrame: " + std::to_string(sprite.currentFrame) + "/" + std::to_string(sprite.frameCount) +
                         " | Texture: " + sprite.textureId);
-        } else if (m_delegates.renderer.drawSpriteScaled) {
-            // For non-animated sprites, use the old method (draw entire texture)
+        } else {
+            // For non-animated sprites, choose rendering method based on RotationRenderer component
             float scaleX = sprite.width / sprite.frameWidth;
             float scaleY = sprite.height / sprite.frameHeight;
             
-            m_delegates.renderer.drawSpriteScaled(
-                textureHandle,
-                transform.position.x,
-                transform.position.y,
-                scaleX * transform.scale.x,
-                scaleY * transform.scale.y,
-                transform.rotation
-            );
+            // Check if entity has RotationRenderer component for centered rendering
+            bool usesCenteredRendering = m_ecsCoordinator->HasComponent<RotationRenderer>(entity);
             
-            GN_LOG_INFO("🎯 STATIC SPRITE RENDER: Entity " + std::to_string(entity) + 
-                        " | Position: (" + std::to_string(transform.position.x) + ", " + std::to_string(transform.position.y) + ")" +
-                        " | Scale: (" + std::to_string(scaleX * transform.scale.x) + ", " + std::to_string(scaleY * transform.scale.y) + ")" +
-                        " | Rotation: " + std::to_string(transform.rotation) +
-                        " | Texture: " + sprite.textureId);
-        } else {
-            GN_LOG_ERROR("SpriteSystem: No sprite rendering delegate available for entity " + std::to_string(entity));
+            if (usesCenteredRendering && m_delegates.renderer.drawSpriteScaledCentered) {
+                // Use centered positioning for sprites with RotationRenderer component (like poophat)
+                m_delegates.renderer.drawSpriteScaledCentered(
+                    textureHandle,
+                    transform.position.x,
+                    transform.position.y,
+                    scaleX * transform.scale.x,
+                    scaleY * transform.scale.y,
+                    transform.rotation
+                );
+                
+                GN_LOG_INFO("🎯 CENTERED SPRITE RENDER: Entity " + std::to_string(entity) + 
+                            " | Position: (" + std::to_string(transform.position.x) + ", " + std::to_string(transform.position.y) + ")" +
+                            " | Scale: (" + std::to_string(scaleX * transform.scale.x) + ", " + std::to_string(scaleY * transform.scale.y) + ")" +
+                            " | Rotation: " + std::to_string(transform.rotation) +
+                            " | Texture: " + sprite.textureId + " (CENTERED)");
+            } else if (m_delegates.renderer.drawSpriteScaled) {
+                // Use top-left positioning for all other sprites (backgrounds, UI, player, etc.)
+                m_delegates.renderer.drawSpriteScaled(
+                    textureHandle,
+                    transform.position.x,
+                    transform.position.y,
+                    scaleX * transform.scale.x,
+                    scaleY * transform.scale.y,
+                    transform.rotation
+                );
+                
+                GN_LOG_INFO("🎯 TOP-LEFT SPRITE RENDER: Entity " + std::to_string(entity) + 
+                            " | Position: (" + std::to_string(transform.position.x) + ", " + std::to_string(transform.position.y) + ")" +
+                            " | Scale: (" + std::to_string(scaleX * transform.scale.x) + ", " + std::to_string(scaleY * transform.scale.y) + ")" +
+                            " | Rotation: " + std::to_string(transform.rotation) +
+                            " | Texture: " + sprite.textureId + " (TOP-LEFT)");
+            } else {
+                GN_LOG_ERROR("SpriteSystem: No sprite rendering delegate available for entity " + std::to_string(entity));
+            }
         }
     }
     
@@ -295,6 +319,10 @@ namespace GameCore {
         if (textureData && textureData->platformTexture) {
             // Store texture handle as uint32_t (platform-specific conversion)
         system->m_textureCache[context->textureId] = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(textureData->platformTexture));
+            
+            // Store texture dimensions
+            system->m_textureDimensions[context->textureId] = {textureData->width, textureData->height};
+            
             GN_LOG_INFO("SpriteSystem: Successfully loaded texture '" + context->textureId + "' (" + std::to_string(textureData->width) + "x" + std::to_string(textureData->height) + ", platform: " + std::to_string(reinterpret_cast<uintptr_t>(textureData->platformTexture)) + ")");
         } else {
             GN_LOG_ERROR("SpriteSystem: Failed to load texture '" + context->textureId + "': " + (error ? error : "Unknown error"));
@@ -329,6 +357,14 @@ namespace GameCore {
         // Basic visibility check - could be extended with frustum culling
         Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(entity);
         return sprite && sprite->visible;
+    }
+
+    std::pair<int, int> SpriteSystem::GetTextureDimensions(const std::string& textureId) const {
+        auto it = m_textureDimensions.find(textureId);
+        if (it != m_textureDimensions.end()) {
+            return it->second;
+        }
+        return {0, 0}; // Return {0, 0} if texture not found
     }
 
 } // namespace GameCore

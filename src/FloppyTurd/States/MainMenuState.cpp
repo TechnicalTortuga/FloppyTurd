@@ -60,8 +60,18 @@ namespace GameCore {
         m_animationTimer = 0.0f;
         m_assetsLoaded = false;
         
-        // Start playing main menu music using delegate system
+        // Initialize sprite system for texture dimension queries
         extern FloppyTurdGame* g_Game;
+        if (g_Game && !m_spriteSystem) {
+            const PlatformDelegates& delegates = g_Game->GetPlatformDelegates();
+            m_spriteSystem = std::make_unique<SpriteSystem>(m_ecsCoordinator, delegates);
+            // Don't set texture base path for mobile - Asset Catalog loads directly
+            if (!m_isMobile) {
+                m_spriteSystem->SetTextureBasePath("mainmenu/");
+            }
+        }
+        
+        // Start playing main menu music using delegate system
         if (g_Game) {
             const PlatformDelegates& delegates = g_Game->GetPlatformDelegates();
             // Check if music is cached using new delegate
@@ -282,13 +292,13 @@ namespace GameCore {
                     Sprite* fButtonSprite = m_ecsCoordinator->GetComponent<Sprite>(m_fButtonEntity);
                     
                     if (fButtonTransform && fButtonSprite) {
-                        // Calculate F button bounds (centered)
+                        // F button is now positioned at top-left, so collision detection uses top-left based bounds
                         float buttonWidth = fButtonSprite->width * fButtonTransform->scale.x;
                         float buttonHeight = fButtonSprite->height * fButtonTransform->scale.y;
-                        float buttonLeft = fButtonTransform->position.x - (buttonWidth / 2.0f);
-                        float buttonRight = fButtonTransform->position.x + (buttonWidth / 2.0f);
-                        float buttonTop = fButtonTransform->position.y - (buttonHeight / 2.0f);
-                        float buttonBottom = fButtonTransform->position.y + (buttonHeight / 2.0f);
+                        float buttonLeft = fButtonTransform->position.x;
+                        float buttonRight = fButtonTransform->position.x + buttonWidth;
+                        float buttonTop = fButtonTransform->position.y;
+                        float buttonBottom = fButtonTransform->position.y + buttonHeight;
                         
                         // Check if touch is within bounds
                         GN_LOG_INFO("🎯 MainMenuState: Touch at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + 
@@ -344,24 +354,24 @@ namespace GameCore {
         
         // 1. Create Background Entity (MainMenu.png) - FULL SCREEN SCALING
         m_backgroundEntity = m_ecsCoordinator->CreateEntity();
-        Transform bgTransform(Gnosis::GNVector2(centerX, centerY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
         
-        // Background texture dimensions (from file: 320x180)
-        float textureWidth = 320.0f;
-        float textureHeight = 180.0f;
+        // Load texture to get actual dimensions
+        m_spriteSystem->LoadTexture("MainMenu", "MainMenu.png");
+        auto bgDimensions = m_spriteSystem->GetTextureDimensions("MainMenu");
+        float textureWidth = bgDimensions.first > 0 ? bgDimensions.first : 320.0f;   // Use actual width or fallback
+        float textureHeight = bgDimensions.second > 0 ? bgDimensions.second : 180.0f; // Use actual height or fallback
         
         // Calculate scale to fill screen
         float scaleX = screenWidth / textureWidth;
         float scaleY = screenHeight / textureHeight;
         
+        // Position at top-left (0,0) since we now render from top-left
+        Transform bgTransform(Gnosis::GNVector2(0.0f, 0.0f), 0.0f, Gnosis::GNVector2(scaleX, scaleY));
+        
         // Create sprite with actual texture dimensions, scale will be applied by transform
         Sprite bgSprite("MainMenu", textureWidth, textureHeight);
         bgSprite.layer = 0; // Background layer
         bgSprite.visible = true;
-        
-        // Apply the calculated scale to the transform
-        bgTransform.scale.x = scaleX;
-        bgTransform.scale.y = scaleY;
         
         m_ecsCoordinator->AddComponent<Transform>(m_backgroundEntity, bgTransform);
         m_ecsCoordinator->AddComponent<Sprite>(m_backgroundEntity, bgSprite);
@@ -370,9 +380,23 @@ namespace GameCore {
         
         // 2. Create Logo Entity (FloppyLogo.png) - Desktop scaling
         m_logoEntity = m_ecsCoordinator->CreateEntity();
-        float logoY = screenHeight * 0.25f; // Top quarter
-        Transform logoTransform(Gnosis::GNVector2(centerX, logoY), 0.0f, Gnosis::GNVector2(2.0f, 2.0f)); // 2x scale for desktop
-        Sprite logoSprite("FloppyLogo", 400.0f, 200.0f); // Base size, will be scaled by transform
+        float logoY = screenHeight * 0.35f; // 35% down from top
+        
+        // Load texture to get actual dimensions
+        m_spriteSystem->LoadTexture("FloppyLogo", "FloppyLogo.png");
+        auto logoDimensions = m_spriteSystem->GetTextureDimensions("FloppyLogo");
+        float logoWidth = logoDimensions.first > 0 ? logoDimensions.first : 112.0f;   // Use actual width or fallback
+        float logoHeight = logoDimensions.second > 0 ? logoDimensions.second : 80.0f; // Use actual height or fallback
+        float logoScale = 2.0f; // 2x scale for desktop
+        
+        // Convert from center-based to top-left positioning
+        float scaledLogoWidth = logoWidth * logoScale;  // 112 * 2 = 224
+        float scaledLogoHeight = logoHeight * logoScale; // 80 * 2 = 160
+        float logoX = centerX - (scaledLogoWidth / 2.0f);  // Convert center X to top-left X
+        float logoTopLeftY = logoY - (scaledLogoHeight / 2.0f);  // Convert center Y to top-left Y
+        
+        Transform logoTransform(Gnosis::GNVector2(logoX, logoTopLeftY), 0.0f, Gnosis::GNVector2(logoScale, logoScale));
+        Sprite logoSprite("FloppyLogo", logoWidth, logoHeight); // Use actual texture dimensions
         logoSprite.layer = 1; // Logo layer
         logoSprite.visible = true;
         m_ecsCoordinator->AddComponent<Transform>(m_logoEntity, logoTransform);
@@ -381,16 +405,33 @@ namespace GameCore {
         
         // 3. Create Interactive F Button Entity (F.png) - Desktop scaling
         m_fButtonEntity = m_ecsCoordinator->CreateEntity();
+        
+        // Load texture to get actual dimensions
+        m_spriteSystem->LoadTexture("F", "F.png");
+        auto fButtonDimensions = m_spriteSystem->GetTextureDimensions("F");
+        float fButtonTextureWidth = fButtonDimensions.first > 0 ? fButtonDimensions.first : 28.0f;   // Use actual width or fallback
+        float fButtonTextureHeight = fButtonDimensions.second > 0 ? fButtonDimensions.second : 40.0f; // Use actual height or fallback
+        
         // Position F button relative to scaled logo
         float fButtonX = centerX + 200.0f; // Adjusted for 2x scaled logo width
-        float fButtonY = logoY + 20.0f; // Slightly below logo center, adjusted for scale
-        Transform fButtonTransform(Gnosis::GNVector2(fButtonX, fButtonY), 0.0f, Gnosis::GNVector2(2.5f, 2.5f)); // Larger for desktop
-        Sprite fButtonSprite("F", 80.0f, 80.0f); // Base size, will be scaled by transform
+        float fButtonY = logoY; // Same Y coordinate as logo for perfect alignment
+        
+        // Scale for desktop visibility
+        float fButtonScale = 2.5f;
+        float fButtonWidth = fButtonTextureWidth * fButtonScale;
+        float fButtonHeight = fButtonTextureHeight * fButtonScale;
+        
+        // Convert from center-based to top-left positioning
+        float fButtonTopLeftX = fButtonX - (fButtonWidth / 2.0f);   // Convert center X to top-left X
+        float fButtonTopLeftY = fButtonY - (fButtonHeight / 2.0f);  // Convert center Y to top-left Y
+        
+        Transform fButtonTransform(Gnosis::GNVector2(fButtonTopLeftX, fButtonTopLeftY), 0.0f, Gnosis::GNVector2(fButtonScale, fButtonScale));
+        Sprite fButtonSprite("F", fButtonTextureWidth, fButtonTextureHeight); // Use actual texture dimensions
         fButtonSprite.layer = 2; // F button layer
         fButtonSprite.visible = true;
         m_ecsCoordinator->AddComponent<Transform>(m_fButtonEntity, fButtonTransform);
         m_ecsCoordinator->AddComponent<Sprite>(m_fButtonEntity, fButtonSprite);
-        GN_LOG_INFO("Created F button entity: F.png (2.5x scale)");
+        GN_LOG_INFO("Created F button entity: F.png (" + std::to_string(fButtonScale) + "x scale, actual size: " + std::to_string(fButtonTextureWidth) + "x" + std::to_string(fButtonTextureHeight) + ")");
         
         // Create menu buttons for desktop
         CreateMenuButtons();
@@ -427,53 +468,93 @@ namespace GameCore {
         
         // 1. Create Background Entity (MainMenuMobile.png) - FULL SCREEN SCALING
         m_backgroundEntity = m_ecsCoordinator->CreateEntity();
-        Transform bgTransform(Gnosis::GNVector2(centerX, screenHeight / 2.0f), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
         
-        // Background texture dimensions (from file: 393x852)
-        float textureWidth = 393.0f;
-        float textureHeight = 852.0f;
+        // Load texture to get actual dimensions
+        m_spriteSystem->LoadTexture("MainMenuMobile", "MainMenuMobile.png");
+        auto bgDimensions = m_spriteSystem->GetTextureDimensions("MainMenuMobile");
+        float textureWidth = bgDimensions.first > 0 ? bgDimensions.first : 393.0f;   // Use actual width or fallback
+        float textureHeight = bgDimensions.second > 0 ? bgDimensions.second : 852.0f; // Use actual height or fallback
         
         // Calculate scale to fill screen
         float scaleX = screenWidth / textureWidth;
         float scaleY = screenHeight / textureHeight;
+        
+        // Position at top-left (0,0) since we now render from top-left
+        Transform bgTransform(Gnosis::GNVector2(0.0f, 0.0f), 0.0f, Gnosis::GNVector2(scaleX, scaleY));
         
         // Create sprite with actual texture dimensions, scale will be applied by transform
         Sprite bgSprite("MainMenuMobile", textureWidth, textureHeight);
         bgSprite.layer = 0; // Background layer
         bgSprite.visible = true;
         
-        // Apply the calculated scale to the transform
-        bgTransform.scale.x = scaleX;
-        bgTransform.scale.y = scaleY;
-        
         m_ecsCoordinator->AddComponent<Transform>(m_backgroundEntity, bgTransform);
         m_ecsCoordinator->AddComponent<Sprite>(m_backgroundEntity, bgSprite);
         GN_LOG_INFO("Created full-screen background entity: MainMenuMobile.png (texture: %fx%f, scale: %fx%f, screen: %fx%f)", 
                    textureWidth, textureHeight, scaleX, scaleY, screenWidth, screenHeight);
         
-        // 2. Create Logo Entity (FloppyLogo.png) - EVEN BIGGER SCALING (~8x)
+        // 2. Create Logo Entity (FloppyLogo.png) - SCALED FOR MOBILE
         m_logoEntity = m_ecsCoordinator->CreateEntity();
-        float logoY = screenHeight * 0.20f; // Shifted more upward (was 0.25f)
-        float logoX = centerX - 80.0f; // Shifted more to the left
-        Transform logoTransform(Gnosis::GNVector2(logoX, logoY), 0.0f, Gnosis::GNVector2(8.0f, 8.0f)); // 8x scale for mobile
-        Sprite logoSprite("FloppyLogo", 400.0f, 200.0f); // Base size, will be scaled by transform
+        float logoY = screenHeight * 0.35f; // 35% down from top - moved down significantly
+        float logoX = centerX; // Keep it centered horizontally
+        
+        // Load texture to get actual dimensions (reuse from desktop version)
+        auto logoDimensions = m_spriteSystem->GetTextureDimensions("FloppyLogo");
+        float logoWidth = logoDimensions.first > 0 ? logoDimensions.first : 112.0f;   // Use actual width or fallback
+        float logoHeight = logoDimensions.second > 0 ? logoDimensions.second : 80.0f; // Use actual height or fallback
+        
+        // Use 8x scaling as originally intended for high DPI mobile displays
+        float logoScale = 8.0f;
+        float scaledLogoWidth = logoWidth * logoScale;   // 112 * 8 = 896px
+        float scaledLogoHeight = logoHeight * logoScale; // 80 * 8 = 640px
+        
+        // Convert from center-based to top-left positioning
+        float logoTopLeftX = logoX - (scaledLogoWidth / 2.0f);   // Convert center X to top-left X
+        float logoTopLeftY = logoY - (scaledLogoHeight / 2.0f);  // Convert center Y to top-left Y
+        
+        // Ensure logo doesn't go off-screen (but allow negative positions for centering)
+        // Only clamp if it's going too far off-screen
+        if (logoTopLeftX < -scaledLogoWidth * 0.25f) logoTopLeftX = -scaledLogoWidth * 0.25f; // Allow 25% off-screen
+        if (logoTopLeftY < 0) logoTopLeftY = 0;
+        
+        Transform logoTransform(Gnosis::GNVector2(logoTopLeftX, logoTopLeftY), 0.0f, Gnosis::GNVector2(logoScale, logoScale));
+        Sprite logoSprite("FloppyLogo", logoWidth, logoHeight); // Use actual texture dimensions
         logoSprite.layer = 1; // Logo layer
         logoSprite.visible = true;
         m_ecsCoordinator->AddComponent<Transform>(m_logoEntity, logoTransform);
         m_ecsCoordinator->AddComponent<Sprite>(m_logoEntity, logoSprite);
-        GN_LOG_INFO("Created scaled logo entity: FloppyLogo.png (8x scale, shifted up and left)");
+        GN_LOG_INFO("Created scaled logo entity: FloppyLogo.png (8x scale, centered and positioned for high DPI)");
         
-        // 3. Create F Button Entity (F.png) - SAME SCALE AS LOGO, POSITIONED TO FILL GAP
+        // 3. Create F Button Entity (F.png) - SCALED TO MATCH LOGO, POSITIONED TO FILL GAP
         m_fButtonEntity = m_ecsCoordinator->CreateEntity();
-        float fButtonX = logoX - 270.0f; // FINAL FINE-TUNE - before the "L" in "Floppy"
-        float fButtonY = logoY + 20.0f; // Slightly down (was -40.0f)
-        Transform fButtonTransform(Gnosis::GNVector2(fButtonX, fButtonY), 0.0f, Gnosis::GNVector2(8.0f, 8.0f)); // 8x scale to match logo
-        Sprite fButtonSprite("F", 50.0f, 50.0f); // Base size, will be scaled by transform
+        
+        // Get F button texture dimensions (already loaded in desktop version)
+        auto fButtonDimensions = m_spriteSystem->GetTextureDimensions("F");
+        float fButtonTextureWidth = fButtonDimensions.first > 0 ? fButtonDimensions.first : 28.0f;   // Use actual width or fallback
+        float fButtonTextureHeight = fButtonDimensions.second > 0 ? fButtonDimensions.second : 40.0f; // Use actual height or fallback
+        
+        float fButtonX = logoX - 200.0f; // Position relative to logo center, but adjust for new scale
+        float fButtonY = logoY; // Same Y coordinate as logo for perfect alignment
+        
+        // Use same scale as logo (8x)
+        float fButtonScale = 8.0f;
+        float fButtonWidth = fButtonTextureWidth * fButtonScale;
+        float fButtonHeight = fButtonTextureHeight * fButtonScale;
+        
+        // Convert from center-based to top-left positioning
+        float fButtonTopLeftX = fButtonX - (fButtonWidth / 2.0f);   // Convert center X to top-left X
+        float fButtonTopLeftY = fButtonY - (fButtonHeight / 2.0f);  // Convert center Y to top-left Y
+        
+        // Allow F button to be partially off-screen for proper positioning
+        if (fButtonTopLeftX < -fButtonWidth * 0.25f) fButtonTopLeftX = -fButtonWidth * 0.25f;
+        if (fButtonTopLeftY < 0) fButtonTopLeftY = 0;
+        
+        Transform fButtonTransform(Gnosis::GNVector2(fButtonTopLeftX, fButtonTopLeftY), 0.0f, Gnosis::GNVector2(fButtonScale, fButtonScale));
+        Sprite fButtonSprite("F", fButtonTextureWidth, fButtonTextureHeight); // Use actual texture dimensions
         fButtonSprite.layer = 2; // F button layer (above logo)
         fButtonSprite.visible = true;
         m_ecsCoordinator->AddComponent<Transform>(m_fButtonEntity, fButtonTransform);
         m_ecsCoordinator->AddComponent<Sprite>(m_fButtonEntity, fButtonSprite);
-        GN_LOG_INFO("Created F button entity: F.png (8x scale, positioned to fill logo gap - more right and down)");
+        GN_LOG_INFO("Created F button entity: F.png (" + std::to_string(fButtonScale) + "x scale, actual size: " + std::to_string(fButtonTextureWidth) + "x" + std::to_string(fButtonTextureHeight) + ")");
         
         // Create menu buttons for mobile
         CreateMobileMenuButtons();
@@ -503,8 +584,11 @@ namespace GameCore {
                 float logoFloat = sin(m_animationTimer * 1.5f) * 8.0f; // 8 pixel float amplitude
                 
                 // Update logo Y position (preserve original Y + float offset)
-                float originalLogoY = m_screenHeight * 0.25f;
-                logoTransform->position.y = originalLogoY + logoFloat;
+                // Since logo is now positioned top-left, we need to adjust the base calculation
+                float originalLogoY = m_screenHeight * 0.25f; // Original center Y
+                float logoHeight = 200.0f * logoTransform->scale.y; // Height of scaled logo
+                float originalTopLeftY = originalLogoY - (logoHeight / 2.0f); // Convert to top-left Y
+                logoTransform->position.y = originalTopLeftY + logoFloat;
             }
         }
         
@@ -512,8 +596,8 @@ namespace GameCore {
         if (m_fButtonEntity != 0) {
             Transform* fButtonTransform = m_ecsCoordinator->GetComponent<Transform>(m_fButtonEntity);
             if (fButtonTransform) {
-                // Create a subtle pulsing scale effect - adjust base scale based on platform
-                float baseScale = m_isMobile ? 8.0f : 2.5f;
+                // Create a subtle pulsing scale effect - use consistent 8x scale for mobile
+                float baseScale = m_isMobile ? 8.0f : 2.5f; // Fixed mobile scale to 8.0f
                 float pulseScale = baseScale + sin(m_animationTimer * 2.5f) * 0.3f;
                 fButtonTransform->scale.x = pulseScale;
                 fButtonTransform->scale.y = pulseScale;
@@ -579,9 +663,10 @@ namespace GameCore {
         if (m_fButtonEntity != 0 && m_ecsCoordinator) {
             Transform* fButtonTransform = m_ecsCoordinator->GetComponent<Transform>(m_fButtonEntity);
             if (fButtonTransform) {
-                // Temporarily scale up the F button for feedback - based on new 4.5x scale
-                fButtonTransform->scale.x = 5.2f; // Bigger feedback for larger base scale
-                fButtonTransform->scale.y = 5.2f;
+                // Temporarily scale up the F button for feedback - based on 8x scale for mobile
+                float feedbackScale = m_isMobile ? 9.0f : 3.0f; // Bigger feedback for mobile 8x base scale
+                fButtonTransform->scale.x = feedbackScale;
+                fButtonTransform->scale.y = feedbackScale;
                 // Note: This will be smoothed back by the pulsing animation
             }
         }
@@ -628,6 +713,14 @@ namespace GameCore {
             return;
         }
         
+        // Load button texture to get actual dimensions
+        m_spriteSystem->LoadTexture("FloppyButtonBlue", "FloppyButtonBlue.png");
+        auto buttonDimensions = m_spriteSystem->GetTextureDimensions("FloppyButtonBlue");
+        float buttonTextureWidth = buttonDimensions.first > 0 ? buttonDimensions.first : 90.0f;   // Use actual width or fallback
+        float buttonTextureHeight = buttonDimensions.second > 0 ? buttonDimensions.second : 16.0f; // Use actual height or fallback
+        
+        GN_LOG_INFO("Button texture dimensions: " + std::to_string(buttonTextureWidth) + "x" + std::to_string(buttonTextureHeight));
+        
         float centerX = m_screenWidth / 2.0f;
         float buttonY = m_screenHeight * 0.55f; // Position buttons higher up
         float buttonSpacing = 150.0f; // Much more spacing between buttons
@@ -635,8 +728,15 @@ namespace GameCore {
         
         // Create Play Button
         m_playButtonEntity = m_ecsCoordinator->CreateEntity();
-        Transform playTransform(Gnosis::GNVector2(centerX, buttonY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
-        Sprite playSprite("FloppyButtonBlue", 200.0f, 60.0f);
+        
+        // Convert from center-based to top-left positioning
+        float playButtonWidth = buttonTextureWidth * buttonScale;
+        float playButtonHeight = buttonTextureHeight * buttonScale;
+        float playButtonTopLeftX = centerX - (playButtonWidth / 2.0f);   // Convert center X to top-left X
+        float playButtonTopLeftY = buttonY - (playButtonHeight / 2.0f);  // Convert center Y to top-left Y
+        
+        Transform playTransform(Gnosis::GNVector2(playButtonTopLeftX, playButtonTopLeftY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
+        Sprite playSprite("FloppyButtonBlue", buttonTextureWidth, buttonTextureHeight); // Use actual texture dimensions
         playSprite.layer = 2; // Button layer (lower than text)
         playSprite.visible = true;
         UIElement playButton("PLAY", "FloppyButtonBlue", "FloppyButtonBlueHover");
@@ -650,8 +750,15 @@ namespace GameCore {
         
         // Create Options Button
         m_optionsButtonEntity = m_ecsCoordinator->CreateEntity();
-        Transform optionsTransform(Gnosis::GNVector2(centerX, buttonY + buttonSpacing), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
-        Sprite optionsSprite("FloppyButtonBlue", 200.0f, 60.0f);
+        
+        // Convert from center-based to top-left positioning
+        float optionsButtonWidth = buttonTextureWidth * buttonScale;
+        float optionsButtonHeight = buttonTextureHeight * buttonScale;
+        float optionsButtonTopLeftX = centerX - (optionsButtonWidth / 2.0f);   // Convert center X to top-left X
+        float optionsButtonTopLeftY = (buttonY + buttonSpacing) - (optionsButtonHeight / 2.0f);  // Convert center Y to top-left Y
+        
+        Transform optionsTransform(Gnosis::GNVector2(optionsButtonTopLeftX, optionsButtonTopLeftY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
+        Sprite optionsSprite("FloppyButtonBlue", buttonTextureWidth, buttonTextureHeight); // Use actual texture dimensions
         optionsSprite.layer = 2; // Button layer (lower than text)
         optionsSprite.visible = true;
         UIElement optionsButton("OPTIONS", "FloppyButtonBlue", "FloppyButtonBlueHover");
@@ -665,8 +772,15 @@ namespace GameCore {
         
         // Create Quick Play Button
         m_quickPlayButtonEntity = m_ecsCoordinator->CreateEntity();
-        Transform quickPlayTransform(Gnosis::GNVector2(centerX, buttonY + buttonSpacing * 2), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
-        Sprite quickPlaySprite("FloppyButtonBlue", 200.0f, 60.0f);
+        
+        // Convert from center-based to top-left positioning
+        float quickPlayButtonWidth = buttonTextureWidth * buttonScale;
+        float quickPlayButtonHeight = buttonTextureHeight * buttonScale;
+        float quickPlayButtonTopLeftX = centerX - (quickPlayButtonWidth / 2.0f);   // Convert center X to top-left X
+        float quickPlayButtonTopLeftY = (buttonY + buttonSpacing * 2) - (quickPlayButtonHeight / 2.0f);  // Convert center Y to top-left Y
+        
+        Transform quickPlayTransform(Gnosis::GNVector2(quickPlayButtonTopLeftX, quickPlayButtonTopLeftY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
+        Sprite quickPlaySprite("FloppyButtonBlue", buttonTextureWidth, buttonTextureHeight); // Use actual texture dimensions
         quickPlaySprite.layer = 2; // Button layer (lower than text)
         quickPlaySprite.visible = true;
         UIElement quickPlayButton("QUICK PLAY", "FloppyButtonBlue", "FloppyButtonBlueHover");
@@ -680,8 +794,15 @@ namespace GameCore {
         
         // Create Quit Button
         m_quitButtonEntity = m_ecsCoordinator->CreateEntity();
-        Transform quitTransform(Gnosis::GNVector2(centerX, buttonY + buttonSpacing * 3), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
-        Sprite quitSprite("FloppyButtonBlue", 200.0f, 60.0f);
+        
+        // Convert from center-based to top-left positioning
+        float quitButtonWidth = buttonTextureWidth * buttonScale;
+        float quitButtonHeight = buttonTextureHeight * buttonScale;
+        float quitButtonTopLeftX = centerX - (quitButtonWidth / 2.0f);   // Convert center X to top-left X
+        float quitButtonTopLeftY = (buttonY + buttonSpacing * 3) - (quitButtonHeight / 2.0f);  // Convert center Y to top-left Y
+        
+        Transform quitTransform(Gnosis::GNVector2(quitButtonTopLeftX, quitButtonTopLeftY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
+        Sprite quitSprite("FloppyButtonBlue", buttonTextureWidth, buttonTextureHeight); // Use actual texture dimensions
         quitSprite.layer = 2; // Button layer (lower than text)
         quitSprite.visible = true;
         UIElement quitButton("QUIT", "FloppyButtonBlue", "FloppyButtonBlueHover");
@@ -702,6 +823,13 @@ namespace GameCore {
             return;
         }
         
+        // Get button texture dimensions (already loaded in desktop version)
+        auto buttonDimensions = m_spriteSystem->GetTextureDimensions("FloppyButtonBlue");
+        float buttonTextureWidth = buttonDimensions.first > 0 ? buttonDimensions.first : 90.0f;   // Use actual width or fallback
+        float buttonTextureHeight = buttonDimensions.second > 0 ? buttonDimensions.second : 16.0f; // Use actual height or fallback
+        
+        GN_LOG_INFO("Mobile button texture dimensions: " + std::to_string(buttonTextureWidth) + "x" + std::to_string(buttonTextureHeight));
+        
         float centerX = m_screenWidth / 2.0f;
         float buttonY = m_screenHeight * 0.45f; // Position buttons higher up to avoid bottom overlap
         float buttonSpacing = 300.0f; // Increased spacing to eliminate Y-bound overlap
@@ -713,9 +841,15 @@ namespace GameCore {
         
         // Create Play Button
         m_playButtonEntity = m_ecsCoordinator->CreateEntity();
-        Transform playTransform(Gnosis::GNVector2(centerX, buttonY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
-        // Use actual scaled button dimensions: 64x16 texture * 12 scale = 768x192
-        Sprite playSprite("FloppyButtonBlue", 64.0f * buttonScale, 16.0f * buttonScale);
+        
+        // Convert from center-based to top-left positioning  
+        float playButtonWidth = buttonTextureWidth * buttonScale;
+        float playButtonHeight = buttonTextureHeight * buttonScale;
+        float playButtonTopLeftX = centerX - (playButtonWidth / 2.0f);   // Convert center X to top-left X
+        float playButtonTopLeftY = buttonY - (playButtonHeight / 2.0f);  // Convert center Y to top-left Y
+        
+        Transform playTransform(Gnosis::GNVector2(playButtonTopLeftX, playButtonTopLeftY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
+        Sprite playSprite("FloppyButtonBlue", buttonTextureWidth, buttonTextureHeight); // Use actual texture dimensions
         playSprite.layer = 2; // Button layer (lower than text)
         playSprite.visible = true;
         UIElement playButton("PLAY", "FloppyButtonBlue", "FloppyButtonBlueHover");
@@ -730,9 +864,15 @@ namespace GameCore {
         
         // Create Options Button
         m_optionsButtonEntity = m_ecsCoordinator->CreateEntity();
-        Transform optionsTransform(Gnosis::GNVector2(centerX, buttonY + buttonSpacing), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
-        // Use actual scaled button dimensions: 64x16 texture * 12 scale = 768x192
-        Sprite optionsSprite("FloppyButtonBlue", 64.0f * buttonScale, 16.0f * buttonScale);
+        
+        // Convert from center-based to top-left positioning  
+        float optionsButtonWidth = buttonTextureWidth * buttonScale;
+        float optionsButtonHeight = buttonTextureHeight * buttonScale;
+        float optionsButtonTopLeftX = centerX - (optionsButtonWidth / 2.0f);   // Convert center X to top-left X
+        float optionsButtonTopLeftY = (buttonY + buttonSpacing) - (optionsButtonHeight / 2.0f);  // Convert center Y to top-left Y
+        
+        Transform optionsTransform(Gnosis::GNVector2(optionsButtonTopLeftX, optionsButtonTopLeftY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
+        Sprite optionsSprite("FloppyButtonBlue", buttonTextureWidth, buttonTextureHeight); // Use actual texture dimensions
         optionsSprite.layer = 2; // Button layer (lower than text)
         optionsSprite.visible = true;
         UIElement optionsButton("OPTIONS", "FloppyButtonBlue", "FloppyButtonBlueHover");
@@ -747,9 +887,15 @@ namespace GameCore {
         
         // Create Quick Play Button
         m_quickPlayButtonEntity = m_ecsCoordinator->CreateEntity();
-        Transform quickPlayTransform(Gnosis::GNVector2(centerX, buttonY + buttonSpacing * 2), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
-        // Use actual scaled button dimensions: 64x16 texture * 12 scale = 768x192
-        Sprite quickPlaySprite("FloppyButtonBlue", 64.0f * buttonScale, 16.0f * buttonScale);
+        
+        // Convert from center-based to top-left positioning  
+        float quickPlayButtonWidth = buttonTextureWidth * buttonScale;
+        float quickPlayButtonHeight = buttonTextureHeight * buttonScale;
+        float quickPlayButtonTopLeftX = centerX - (quickPlayButtonWidth / 2.0f);   // Convert center X to top-left X
+        float quickPlayButtonTopLeftY = (buttonY + buttonSpacing * 2) - (quickPlayButtonHeight / 2.0f);  // Convert center Y to top-left Y
+        
+        Transform quickPlayTransform(Gnosis::GNVector2(quickPlayButtonTopLeftX, quickPlayButtonTopLeftY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
+        Sprite quickPlaySprite("FloppyButtonBlue", buttonTextureWidth, buttonTextureHeight); // Use actual texture dimensions
         quickPlaySprite.layer = 2; // Button layer (lower than text)
         quickPlaySprite.visible = true;
         UIElement quickPlayButton("QUICK PLAY", "FloppyButtonBlue", "FloppyButtonBlueHover");
@@ -764,9 +910,15 @@ namespace GameCore {
         
         // Create Quit Button
         m_quitButtonEntity = m_ecsCoordinator->CreateEntity();
-        Transform quitTransform(Gnosis::GNVector2(centerX, buttonY + buttonSpacing * 3), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
-        // Use actual scaled button dimensions: 64x16 texture * 12 scale = 768x192
-        Sprite quitSprite("FloppyButtonBlue", 64.0f * buttonScale, 16.0f * buttonScale);
+        
+        // Convert from center-based to top-left positioning  
+        float quitButtonWidth = buttonTextureWidth * buttonScale;
+        float quitButtonHeight = buttonTextureHeight * buttonScale;
+        float quitButtonTopLeftX = centerX - (quitButtonWidth / 2.0f);   // Convert center X to top-left X
+        float quitButtonTopLeftY = (buttonY + buttonSpacing * 3) - (quitButtonHeight / 2.0f);  // Convert center Y to top-left Y
+        
+        Transform quitTransform(Gnosis::GNVector2(quitButtonTopLeftX, quitButtonTopLeftY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
+        Sprite quitSprite("FloppyButtonBlue", buttonTextureWidth, buttonTextureHeight); // Use actual texture dimensions
         quitSprite.layer = 2; // Button layer (lower than text)
         quitSprite.visible = true;
         UIElement quitButton("QUIT", "FloppyButtonBlue", "FloppyButtonBlueHover");
@@ -860,13 +1012,13 @@ namespace GameCore {
             UIElement* uiElement = m_ecsCoordinator->GetComponent<UIElement>(m_playButtonEntity);
             
             if (transform && sprite && uiElement) {
-                // Use actual button texture dimensions (64x16) instead of sprite dimensions (200x60)
+                // Button is now positioned at top-left, so collision detection uses top-left based bounds
                 float buttonWidth = 64.0f * transform->scale.x * 0.8f; // 80% of actual button texture size
                 float buttonHeight = 16.0f * transform->scale.y * 0.8f; // 80% of actual button texture size
-                float buttonLeft = transform->position.x - (buttonWidth / 2.0f);
-                float buttonRight = transform->position.x + (buttonWidth / 2.0f);
-                float buttonTop = transform->position.y - (buttonHeight / 2.0f);
-                float buttonBottom = transform->position.y + (buttonHeight / 2.0f);
+                float buttonLeft = transform->position.x;
+                float buttonRight = transform->position.x + buttonWidth;
+                float buttonTop = transform->position.y;
+                float buttonBottom = transform->position.y + buttonHeight;
                 
                 // Debug logging for button bounds
                 GN_LOG_INFO("🎯 PLAY Button - Touch at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + 
@@ -895,13 +1047,13 @@ namespace GameCore {
             UIElement* uiElement = m_ecsCoordinator->GetComponent<UIElement>(m_optionsButtonEntity);
             
             if (transform && sprite && uiElement) {
-                // Use actual button texture dimensions (64x16) instead of sprite dimensions (200x60)
+                // Button is now positioned at top-left, so collision detection uses top-left based bounds
                 float buttonWidth = 64.0f * transform->scale.x * 0.8f; // 80% of actual button texture size
                 float buttonHeight = 16.0f * transform->scale.y * 0.8f; // 80% of actual button texture size
-                float buttonLeft = transform->position.x - (buttonWidth / 2.0f);
-                float buttonRight = transform->position.x + (buttonWidth / 2.0f);
-                float buttonTop = transform->position.y - (buttonHeight / 2.0f);
-                float buttonBottom = transform->position.y + (buttonHeight / 2.0f);
+                float buttonLeft = transform->position.x;
+                float buttonRight = transform->position.x + buttonWidth;
+                float buttonTop = transform->position.y;
+                float buttonBottom = transform->position.y + buttonHeight;
                 
                 // Debug logging for button bounds
                 GN_LOG_INFO("🎯 OPTIONS Button - Touch at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + 
@@ -930,13 +1082,13 @@ namespace GameCore {
             UIElement* uiElement = m_ecsCoordinator->GetComponent<UIElement>(m_quickPlayButtonEntity);
             
             if (transform && sprite && uiElement) {
-                // Use actual button texture dimensions (64x16) instead of sprite dimensions (200x60)
+                // Button is now positioned at top-left, so collision detection uses top-left based bounds
                 float buttonWidth = 64.0f * transform->scale.x * 0.8f; // 80% of actual button texture size
                 float buttonHeight = 16.0f * transform->scale.y * 0.8f; // 80% of actual button texture size
-                float buttonLeft = transform->position.x - (buttonWidth / 2.0f);
-                float buttonRight = transform->position.x + (buttonWidth / 2.0f);
-                float buttonTop = transform->position.y - (buttonHeight / 2.0f);
-                float buttonBottom = transform->position.y + (buttonHeight / 2.0f);
+                float buttonLeft = transform->position.x;
+                float buttonRight = transform->position.x + buttonWidth;
+                float buttonTop = transform->position.y;
+                float buttonBottom = transform->position.y + buttonHeight;
                 
                 // Debug logging for button bounds
                 GN_LOG_INFO("🎯 QUICK PLAY Button - Touch at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + 
@@ -965,13 +1117,13 @@ namespace GameCore {
             UIElement* uiElement = m_ecsCoordinator->GetComponent<UIElement>(m_quitButtonEntity);
             
             if (transform && sprite && uiElement) {
-                // Use actual button texture dimensions (64x16) instead of sprite dimensions (200x60)
+                // Button is now positioned at top-left, so collision detection uses top-left based bounds
                 float buttonWidth = 64.0f * transform->scale.x * 0.8f; // 80% of actual button texture size
                 float buttonHeight = 16.0f * transform->scale.y * 0.8f; // 80% of actual button texture size
-                float buttonLeft = transform->position.x - (buttonWidth / 2.0f);
-                float buttonRight = transform->position.x + (buttonWidth / 2.0f);
-                float buttonTop = transform->position.y - (buttonHeight / 2.0f);
-                float buttonBottom = transform->position.y + (buttonHeight / 2.0f);
+                float buttonLeft = transform->position.x;
+                float buttonRight = transform->position.x + buttonWidth;
+                float buttonTop = transform->position.y;
+                float buttonBottom = transform->position.y + buttonHeight;
                 
                 // Debug logging for button bounds
                 GN_LOG_INFO("🎯 QUIT Button - Touch at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + 
@@ -1104,11 +1256,23 @@ namespace GameCore {
         float buttonY = m_screenHeight / 2.0f;     // Center vertically
         float buttonScale = m_isMobile ? 4.0f : 2.0f;
         
-        Transform leftTransform(Gnosis::GNVector2(leftButtonX, buttonY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
-        Sprite leftSprite("LeftArrow", 100.0f, 100.0f);
+        // Load texture to get actual dimensions
+        m_spriteSystem->LoadTexture("LeftArrow", "LeftArrow.png");
+        auto leftArrowDimensions = m_spriteSystem->GetTextureDimensions("LeftArrow");
+        float leftArrowWidth = leftArrowDimensions.first > 0 ? leftArrowDimensions.first : 100.0f;
+        float leftArrowHeight = leftArrowDimensions.second > 0 ? leftArrowDimensions.second : 100.0f;
+        
+        // Convert from center-based to top-left positioning for left arrow
+        float leftButtonWidth = leftArrowWidth * buttonScale;
+        float leftButtonHeight = leftArrowHeight * buttonScale;
+        float leftButtonTopLeftX = leftButtonX - (leftButtonWidth / 2.0f);   // Convert center X to top-left X
+        float leftButtonTopLeftY = buttonY - (leftButtonHeight / 2.0f);      // Convert center Y to top-left Y
+        
+        Transform leftTransform(Gnosis::GNVector2(leftButtonTopLeftX, leftButtonTopLeftY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
+        Sprite leftSprite("LeftArrow", leftArrowWidth, leftArrowHeight);
         leftSprite.layer = 5; // Top layer
         leftSprite.visible = false;
-                    UIElement leftButton("", "LeftArrow", "LeftArrowHover"); // Remove text, keep arrow sprite
+        UIElement leftButton("", "LeftArrow", "LeftArrowHover"); // Remove text, keep arrow sprite
         leftButton.fontSize = m_isMobile ? 96.0f : 48.0f;
         leftButton.textColor = Gnosis::GNColor(255, 255, 255, 255);
         leftButton.visible = false;
@@ -1120,11 +1284,23 @@ namespace GameCore {
         m_rightArrowButtonEntity = m_ecsCoordinator->CreateEntity();
         float rightButtonX = m_screenWidth * 0.9f;  // 90% from left edge (10% from right)
         
-        Transform rightTransform(Gnosis::GNVector2(rightButtonX, buttonY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
-        Sprite rightSprite("RightArrow", 100.0f, 100.0f);
+        // Load texture to get actual dimensions
+        m_spriteSystem->LoadTexture("RightArrow", "RightArrow.png");
+        auto rightArrowDimensions = m_spriteSystem->GetTextureDimensions("RightArrow");
+        float rightArrowWidth = rightArrowDimensions.first > 0 ? rightArrowDimensions.first : 100.0f;
+        float rightArrowHeight = rightArrowDimensions.second > 0 ? rightArrowDimensions.second : 100.0f;
+        
+        // Convert from center-based to top-left positioning for right arrow
+        float rightButtonWidth = rightArrowWidth * buttonScale;
+        float rightButtonHeight = rightArrowHeight * buttonScale;
+        float rightButtonTopLeftX = rightButtonX - (rightButtonWidth / 2.0f);   // Convert center X to top-left X
+        float rightButtonTopLeftY = buttonY - (rightButtonHeight / 2.0f);       // Convert center Y to top-left Y
+        
+        Transform rightTransform(Gnosis::GNVector2(rightButtonTopLeftX, rightButtonTopLeftY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
+        Sprite rightSprite("RightArrow", rightArrowWidth, rightArrowHeight);
         rightSprite.layer = 5; // Top layer
         rightSprite.visible = false;
-                    UIElement rightButton("", "RightArrow", "RightArrowHover"); // Remove text, keep arrow sprite
+        UIElement rightButton("", "RightArrow", "RightArrowHover"); // Remove text, keep arrow sprite
         rightButton.fontSize = m_isMobile ? 96.0f : 48.0f;
         rightButton.textColor = Gnosis::GNColor(255, 255, 255, 255);
         rightButton.visible = false;
@@ -1177,8 +1353,21 @@ namespace GameCore {
             // Create painting entity
             Gnosis::Entity paintingEntity = m_ecsCoordinator->CreateEntity();
             float xPos = centerX + (i - m_currentLevelIndex) * paintingSpacing;
-            Transform paintingTransform(Gnosis::GNVector2(xPos, centerY), 0.0f, Gnosis::GNVector2(paintingScale, paintingScale));
-            Sprite paintingSprite(m_levels[i].paintingTexture, 200.0f, 150.0f);
+            
+            // Load texture to get actual dimensions for each painting
+            m_spriteSystem->LoadTexture(m_levels[i].paintingTexture, m_levels[i].paintingTexture + ".png");
+            auto paintingDimensions = m_spriteSystem->GetTextureDimensions(m_levels[i].paintingTexture);
+            float paintingTextureWidth = paintingDimensions.first > 0 ? paintingDimensions.first : 200.0f;
+            float paintingTextureHeight = paintingDimensions.second > 0 ? paintingDimensions.second : 150.0f;
+            
+            // Convert from center-based to top-left positioning for paintings
+            float paintingWidth = paintingTextureWidth * paintingScale;
+            float paintingHeight = paintingTextureHeight * paintingScale;
+            float paintingTopLeftX = xPos - (paintingWidth / 2.0f);   // Convert center X to top-left X
+            float paintingTopLeftY = centerY - (paintingHeight / 2.0f); // Convert center Y to top-left Y
+            
+            Transform paintingTransform(Gnosis::GNVector2(paintingTopLeftX, paintingTopLeftY), 0.0f, Gnosis::GNVector2(paintingScale, paintingScale));
+            Sprite paintingSprite(m_levels[i].paintingTexture, paintingTextureWidth, paintingTextureHeight);
             paintingSprite.layer = 3; // Above background, below UI
             paintingSprite.visible = false; // Initially hidden
             m_ecsCoordinator->AddComponent<Transform>(paintingEntity, paintingTransform);
@@ -1191,9 +1380,22 @@ namespace GameCore {
             
             // Create frame entity (locked/unlocked indicator)
             Gnosis::Entity frameEntity = m_ecsCoordinator->CreateEntity();
-            Transform frameTransform(Gnosis::GNVector2(xPos, centerY), 0.0f, Gnosis::GNVector2(paintingScale * 1.1f, paintingScale * 1.1f));
+            
+            // Load locked painting texture dimensions for consistent framing
+            m_spriteSystem->LoadTexture("LockedPainting", "LockedPainting.png");
+            auto lockedDimensions = m_spriteSystem->GetTextureDimensions("LockedPainting");
+            float frameTextureWidth = lockedDimensions.first > 0 ? lockedDimensions.first : 220.0f;
+            float frameTextureHeight = lockedDimensions.second > 0 ? lockedDimensions.second : 170.0f;
+            
+            // Convert from center-based to top-left positioning for frames
+            float frameWidth = frameTextureWidth * (paintingScale * 1.1f);
+            float frameHeight = frameTextureHeight * (paintingScale * 1.1f);
+            float frameTopLeftX = xPos - (frameWidth / 2.0f);   // Convert center X to top-left X
+            float frameTopLeftY = centerY - (frameHeight / 2.0f); // Convert center Y to top-left Y
+            
+            Transform frameTransform(Gnosis::GNVector2(frameTopLeftX, frameTopLeftY), 0.0f, Gnosis::GNVector2(paintingScale * 1.1f, paintingScale * 1.1f));
             std::string frameTexture = m_levels[i].isUnlocked ? "" : "LockedPainting"; // Use LockedPainting for locked levels, empty for unlocked
-            Sprite frameSprite(frameTexture, 220.0f, 170.0f);
+            Sprite frameSprite(frameTexture, frameTextureWidth, frameTextureHeight);
             frameSprite.layer = 4; // Above paintings
             frameSprite.visible = false;
             m_ecsCoordinator->AddComponent<Transform>(frameEntity, frameTransform);
@@ -1225,8 +1427,20 @@ namespace GameCore {
         float buttonY = m_screenHeight * 0.9f;  // 90% from top (near bottom)
         float buttonScale = m_isMobile ? 8.0f : 3.0f;
         
-        Transform backTransform(Gnosis::GNVector2(buttonX, buttonY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
-        Sprite backSprite("FloppyButtonBlue", 200.0f, 60.0f);
+        // Load texture to get actual dimensions
+        m_spriteSystem->LoadTexture("FloppyButtonBlue", "FloppyButtonBlue.png");
+        auto buttonDimensions = m_spriteSystem->GetTextureDimensions("FloppyButtonBlue");
+        float buttonTextureWidth = buttonDimensions.first > 0 ? buttonDimensions.first : 90.0f;
+        float buttonTextureHeight = buttonDimensions.second > 0 ? buttonDimensions.second : 16.0f;
+        
+        // Convert from center-based to top-left positioning for back button
+        float backButtonWidth = buttonTextureWidth * buttonScale;
+        float backButtonHeight = buttonTextureHeight * buttonScale;
+        float backButtonTopLeftX = buttonX - (backButtonWidth / 2.0f);   // Convert center X to top-left X
+        float backButtonTopLeftY = buttonY - (backButtonHeight / 2.0f);  // Convert center Y to top-left Y
+        
+        Transform backTransform(Gnosis::GNVector2(backButtonTopLeftX, backButtonTopLeftY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
+        Sprite backSprite("FloppyButtonBlue", buttonTextureWidth, buttonTextureHeight);
         backSprite.layer = 5; // Top layer
         backSprite.visible = false;
         UIElement backButton("BACK", "FloppyButtonBlue", "FloppyButtonBlueHover");
@@ -1251,8 +1465,20 @@ namespace GameCore {
         float buttonY = m_screenHeight * 0.8f;
         float buttonScale = m_isMobile ? 10.0f : 4.0f;
         
-        Transform playTransform(Gnosis::GNVector2(buttonX, buttonY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
-        Sprite playSprite("FloppyButtonBlue", 200.0f, 60.0f);
+        // Load texture to get actual dimensions
+        m_spriteSystem->LoadTexture("FloppyButtonBlue", "FloppyButtonBlue.png");
+        auto buttonDimensions = m_spriteSystem->GetTextureDimensions("FloppyButtonBlue");
+        float buttonTextureWidth = buttonDimensions.first > 0 ? buttonDimensions.first : 90.0f;
+        float buttonTextureHeight = buttonDimensions.second > 0 ? buttonDimensions.second : 16.0f;
+        
+        // Convert from center-based to top-left positioning for level play button
+        float playButtonWidth = buttonTextureWidth * buttonScale;
+        float playButtonHeight = buttonTextureHeight * buttonScale;
+        float playButtonTopLeftX = buttonX - (playButtonWidth / 2.0f);   // Convert center X to top-left X
+        float playButtonTopLeftY = buttonY - (playButtonHeight / 2.0f);  // Convert center Y to top-left Y
+        
+        Transform playTransform(Gnosis::GNVector2(playButtonTopLeftX, playButtonTopLeftY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
+        Sprite playSprite("FloppyButtonBlue", buttonTextureWidth, buttonTextureHeight);
         playSprite.layer = 5; // Top layer
         playSprite.visible = false;
         UIElement playButton("PLAY LEVEL", "FloppyButtonBlue", "FloppyButtonBlueHover");
@@ -1430,12 +1656,13 @@ namespace GameCore {
                     Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(m_backButtonEntity);
                     
                     if (transform && sprite) {
+                        // Button is now positioned at top-left, so collision detection uses top-left based bounds
                         float buttonWidth = sprite->width * transform->scale.x;
                         float buttonHeight = sprite->height * transform->scale.y;
-                        float buttonLeft = transform->position.x - (buttonWidth / 2.0f);
-                        float buttonRight = transform->position.x + (buttonWidth / 2.0f);
-                        float buttonTop = transform->position.y - (buttonHeight / 2.0f);
-                        float buttonBottom = transform->position.y + (buttonHeight / 2.0f);
+                        float buttonLeft = transform->position.x;
+                        float buttonRight = transform->position.x + buttonWidth;
+                        float buttonTop = transform->position.y;
+                        float buttonBottom = transform->position.y + buttonHeight;
                         
                         if (touchX >= buttonLeft && touchX <= buttonRight &&
                             touchY >= buttonTop && touchY <= buttonBottom) {
@@ -1451,12 +1678,13 @@ namespace GameCore {
                     Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(m_levelPlayButtonEntity);
                     
                     if (transform && sprite) {
+                        // Button is now positioned at top-left, so collision detection uses top-left based bounds
                         float buttonWidth = sprite->width * transform->scale.x;
                         float buttonHeight = sprite->height * transform->scale.y;
-                        float buttonLeft = transform->position.x - (buttonWidth / 2.0f);
-                        float buttonRight = transform->position.x + (buttonWidth / 2.0f);
-                        float buttonTop = transform->position.y - (buttonHeight / 2.0f);
-                        float buttonBottom = transform->position.y + (buttonHeight / 2.0f);
+                        float buttonLeft = transform->position.x;
+                        float buttonRight = transform->position.x + buttonWidth;
+                        float buttonTop = transform->position.y;
+                        float buttonBottom = transform->position.y + buttonHeight;
                         
                         if (touchX >= buttonLeft && touchX <= buttonRight &&
                             touchY >= buttonTop && touchY <= buttonBottom) {
@@ -1472,12 +1700,13 @@ namespace GameCore {
                     Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(m_leftArrowButtonEntity);
                     
                     if (transform && sprite) {
+                        // Button is now positioned at top-left, so collision detection uses top-left based bounds
                         float buttonWidth = sprite->width * transform->scale.x;
                         float buttonHeight = sprite->height * transform->scale.y;
-                        float buttonLeft = transform->position.x - (buttonWidth / 2.0f);
-                        float buttonRight = transform->position.x + (buttonWidth / 2.0f);
-                        float buttonTop = transform->position.y - (buttonHeight / 2.0f);
-                        float buttonBottom = transform->position.y + (buttonHeight / 2.0f);
+                        float buttonLeft = transform->position.x;
+                        float buttonRight = transform->position.x + buttonWidth;
+                        float buttonTop = transform->position.y;
+                        float buttonBottom = transform->position.y + buttonHeight;
                         
                         if (touchX >= buttonLeft && touchX <= buttonRight &&
                             touchY >= buttonTop && touchY <= buttonBottom) {
@@ -1493,12 +1722,13 @@ namespace GameCore {
                     Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(m_rightArrowButtonEntity);
                     
                     if (transform && sprite) {
+                        // Button is now positioned at top-left, so collision detection uses top-left based bounds
                         float buttonWidth = sprite->width * transform->scale.x;
                         float buttonHeight = sprite->height * transform->scale.y;
-                        float buttonLeft = transform->position.x - (buttonWidth / 2.0f);
-                        float buttonRight = transform->position.x + (buttonWidth / 2.0f);
-                        float buttonTop = transform->position.y - (buttonHeight / 2.0f);
-                        float buttonBottom = transform->position.y + (buttonHeight / 2.0f);
+                        float buttonLeft = transform->position.x;
+                        float buttonRight = transform->position.x + buttonWidth;
+                        float buttonTop = transform->position.y;
+                        float buttonBottom = transform->position.y + buttonHeight;
                         
                         if (touchX >= buttonLeft && touchX <= buttonRight &&
                             touchY >= buttonTop && touchY <= buttonBottom) {
@@ -1624,24 +1854,37 @@ namespace GameCore {
                 if (m_levelPaintingEntities[i] != 0) {
                     Transform* transform = m_ecsCoordinator->GetComponent<Transform>(m_levelPaintingEntities[i]);
                     if (transform) {
-                        float targetX = centerX + (i - m_currentLevelIndex) * paintingSpacing;
-                        transform->position.x = targetX;
+                        float targetCenterX = centerX + (i - m_currentLevelIndex) * paintingSpacing;
+                        
+                        // Convert from center-based to top-left positioning for painting
+                        float paintingScale = m_isMobile ? 6.0f : 2.0f;
+                        float paintingWidth = 200.0f * paintingScale;
+                        float paintingTopLeftX = targetCenterX - (paintingWidth / 2.0f);
+                        
+                        transform->position.x = paintingTopLeftX;
                     }
                 }
                 
                 if (m_levelFrameEntities[i] != 0) {
                     Transform* transform = m_ecsCoordinator->GetComponent<Transform>(m_levelFrameEntities[i]);
                     if (transform) {
-                        float targetX = centerX + (i - m_currentLevelIndex) * paintingSpacing;
-                        transform->position.x = targetX;
+                        float targetCenterX = centerX + (i - m_currentLevelIndex) * paintingSpacing;
+                        
+                        // Convert from center-based to top-left positioning for frame
+                        float frameScale = m_isMobile ? 6.6f : 2.2f; // paintingScale * 1.1f
+                        float frameWidth = 220.0f * frameScale;
+                        float frameTopLeftX = targetCenterX - (frameWidth / 2.0f);
+                        
+                        transform->position.x = frameTopLeftX;
                     }
                 }
                 
                 if (m_levelTextEntities[i] != 0) {
                     Transform* transform = m_ecsCoordinator->GetComponent<Transform>(m_levelTextEntities[i]);
                     if (transform) {
-                        float targetX = centerX + (i - m_currentLevelIndex) * paintingSpacing;
-                        transform->position.x = targetX;
+                        float targetCenterX = centerX + (i - m_currentLevelIndex) * paintingSpacing;
+                        // Text can stay at center X since it's positioned normally
+                        transform->position.x = targetCenterX;
                     }
                 }
             }
@@ -1669,9 +1912,16 @@ namespace GameCore {
                 Transform* transform = m_ecsCoordinator->GetComponent<Transform>(m_levelPaintingEntities[i]);
                 Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(m_levelPaintingEntities[i]);
                 if (transform && sprite) {
-                    // Update position to center the current level
-                    transform->position.x = targetX;
-                    transform->position.y = centerY;
+                    // Convert from center-based to top-left positioning
+                    float paintingScale = m_isMobile ? 6.0f : 2.0f;
+                    float paintingWidth = 200.0f * paintingScale;
+                    float paintingHeight = 150.0f * paintingScale;
+                    float paintingTopLeftX = targetX - (paintingWidth / 2.0f);
+                    float paintingTopLeftY = centerY - (paintingHeight / 2.0f);
+                    
+                    // Update position to use top-left coordinates
+                    transform->position.x = paintingTopLeftX;
+                    transform->position.y = paintingTopLeftY;
                     
                     // Update visibility
                     sprite->visible = shouldBeVisible;
@@ -1680,7 +1930,7 @@ namespace GameCore {
                     if (i < m_levels.size()) {
                         std::string oldTexture = sprite->textureId;
                         sprite->textureId = m_levels[i].paintingTexture;
-                        GN_LOG_INFO("🎨 Updated painting " + std::to_string(i) + " from '" + oldTexture + "' to texture: '" + m_levels[i].paintingTexture + "' at position (" + std::to_string(targetX) + ", " + std::to_string(centerY) + ")");
+                        GN_LOG_INFO("🎨 Updated painting " + std::to_string(i) + " from '" + oldTexture + "' to texture: '" + m_levels[i].paintingTexture + "' at position (" + std::to_string(paintingTopLeftX) + ", " + std::to_string(paintingTopLeftY) + ")");
                     }
                 }
             }
@@ -1690,9 +1940,16 @@ namespace GameCore {
                 Transform* transform = m_ecsCoordinator->GetComponent<Transform>(m_levelFrameEntities[i]);
                 Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(m_levelFrameEntities[i]);
                 if (transform && sprite) {
+                    // Convert from center-based to top-left positioning for frame
+                    float frameScale = m_isMobile ? 6.6f : 2.2f; // paintingScale * 1.1f
+                    float frameWidth = 220.0f * frameScale;
+                    float frameHeight = 170.0f * frameScale;
+                    float frameTopLeftX = targetX - (frameWidth / 2.0f);
+                    float frameTopLeftY = centerY - (frameHeight / 2.0f);
+                    
                     // Update position to match the painting
-                    transform->position.x = targetX;
-                    transform->position.y = centerY;
+                    transform->position.x = frameTopLeftX;
+                    transform->position.y = frameTopLeftY;
                     
                     // Update visibility - only show frame if level is locked
                     sprite->visible = shouldBeVisible && !m_levels[i].isUnlocked;

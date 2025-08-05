@@ -118,6 +118,18 @@ namespace GameCore {
         s_instance->enqueueRenderCommand(cmd);
     }
     
+    void ThreadingProxy::enqueueDrawSpriteScaledCentered(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation) {
+        if (!s_instance) return;
+        RenderCommand cmd(CommandType::CMD_DRAW_SPRITE_SCALED_CENTERED);
+        cmd.data.textureHandle = textureHandle;
+        cmd.data.x = x;
+        cmd.data.y = y;
+        cmd.data.scaleX = scaleX;
+        cmd.data.scaleY = scaleY;
+        cmd.data.rotation = rotation;
+        s_instance->enqueueRenderCommand(cmd);
+    }
+    
     void ThreadingProxy::enqueueDrawSpriteScaledWithSource(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation, float sourceX, float sourceY, float sourceWidth, float sourceHeight) {
         if (!s_instance) return;
         RenderCommand cmd(CommandType::CMD_DRAW_SPRITE_SCALED_WITH_SOURCE);
@@ -581,6 +593,7 @@ namespace GameCore {
         delegates.renderer.clearScreen = enqueueClearScreen;
         delegates.renderer.drawSprite = enqueueDrawSprite;
         delegates.renderer.drawSpriteScaled = enqueueDrawSpriteScaled;
+        delegates.renderer.drawSpriteScaledCentered = enqueueDrawSpriteScaledCentered;
         delegates.renderer.drawSpriteScaledWithSource = enqueueDrawSpriteScaledWithSource;
         delegates.renderer.drawText = enqueueDrawText;
         delegates.renderer.drawTextCentered = enqueueDrawTextCentered;

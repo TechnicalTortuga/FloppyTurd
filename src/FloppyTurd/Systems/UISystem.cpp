@@ -105,13 +105,30 @@ namespace GameCore {
             GN_LOG_ERROR("UISystem: Text alpha is very low (" + std::to_string(a) + ") - text may be invisible!");
         }
         
-        // Adjust Y position to center text within the button's visual area
-        // The button texture is 16 pixels tall, scaled by the transform scale
-        float buttonHeight = 16.0f * transform.scale.y;  // Actual button height in pixels
-        float adjustedY = transform.position.y + (buttonHeight * 0.5f);  // Move text down to center of button
+        // Get actual sprite dimensions from the Sprite component
+        Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(entity);
+        float buttonWidth, buttonHeight;
         
-        // Draw the text using platform delegates with proper centering
-        m_delegates.renderer.drawTextCentered(uiElement.buttonText, transform.position.x, adjustedY, mobileFontSize, r, g, b, a);
+        if (sprite) {
+            // Use actual sprite dimensions scaled by transform
+            buttonWidth = sprite->width * transform.scale.x;
+            buttonHeight = sprite->height * transform.scale.y;
+        } else {
+            // Fallback to default button dimensions
+            buttonWidth = 90.0f * transform.scale.x;   // Default button texture width scaled
+            buttonHeight = 16.0f * transform.scale.y;  // Default button texture height scaled
+        }
+        
+        // Calculate center position of the button
+        float buttonCenterX = transform.position.x + (buttonWidth * 0.5f);   // Center X of button
+        float buttonCenterY = transform.position.y + (buttonHeight * 0.5f);  // Center Y of button
+        
+        GN_LOG_DEBUG("UISystem: Button bounds - position(" + std::to_string(transform.position.x) + ", " + std::to_string(transform.position.y) + 
+                   "), size(" + std::to_string(buttonWidth) + "x" + std::to_string(buttonHeight) + 
+                   "), center(" + std::to_string(buttonCenterX) + ", " + std::to_string(buttonCenterY) + ")");
+        
+        // Draw the text centered within the button bounds
+        m_delegates.renderer.drawTextCentered(uiElement.buttonText, buttonCenterX, buttonCenterY, mobileFontSize, r, g, b, a);
     }
 
     bool UISystem::IsEntityVisible(Gnosis::Entity entity) const {

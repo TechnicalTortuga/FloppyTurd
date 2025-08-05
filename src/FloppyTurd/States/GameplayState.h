@@ -150,6 +150,10 @@ namespace GameCore {
         void CheckLevelCompletion();
         void SaveGameProgress();
         
+        // Audio methods
+        void StartLevelMusic();
+        void StopLevelMusic();
+        
         // Event handlers
         void OnPlayerJump();
         void OnPlayerShoot();

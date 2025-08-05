@@ -17,37 +17,38 @@ namespace GameCore {
         CMD_CLEAR_SCREEN = 3,
         CMD_DRAW_SPRITE = 4,
         CMD_DRAW_SPRITE_SCALED = 5,
-        CMD_DRAW_SPRITE_SCALED_WITH_SOURCE = 6,
-        CMD_DRAW_TEXT = 7,
-        CMD_DRAW_TEXT_CENTERED = 8,
-        CMD_DRAW_RECTANGLE = 9,
-        CMD_DRAW_CIRCLE = 10,
-        CMD_GET_SCREEN_SIZE = 11,
+        CMD_DRAW_SPRITE_SCALED_CENTERED = 6,
+        CMD_DRAW_SPRITE_SCALED_WITH_SOURCE = 7,
+        CMD_DRAW_TEXT = 8,
+        CMD_DRAW_TEXT_CENTERED = 9,
+        CMD_DRAW_RECTANGLE = 10,
+        CMD_DRAW_CIRCLE = 11,
+        CMD_GET_SCREEN_SIZE = 12,
         
         // Audio commands
-        CMD_PLAY_MUSIC = 12,
-        CMD_STOP_MUSIC = 13,
-        CMD_PLAY_SOUND = 14,
-        CMD_STOP_SOUND = 15,
-        CMD_SET_MUSIC_VOLUME = 16,
-        CMD_SET_SOUND_VOLUME = 17,
+        CMD_PLAY_MUSIC = 13,
+        CMD_STOP_MUSIC = 14,
+        CMD_PLAY_SOUND = 15,
+        CMD_STOP_SOUND = 16,
+        CMD_SET_MUSIC_VOLUME = 17,
+        CMD_SET_SOUND_VOLUME = 18,
         
         // Logging commands
-        CMD_LOG_TRACE = 18,
-        CMD_LOG_DEBUG = 19,
-        CMD_LOG_INFO = 20,
-        CMD_LOG_WARN = 21,
-        CMD_LOG_ERROR = 22,
-        CMD_LOG_FATAL = 23,
+        CMD_LOG_TRACE = 19,
+        CMD_LOG_DEBUG = 20,
+        CMD_LOG_INFO = 21,
+        CMD_LOG_WARN = 22,
+        CMD_LOG_ERROR = 23,
+        CMD_LOG_FATAL = 24,
         
         // Asset loading commands
-        CMD_LOAD_TEXTURE = 24,
-        CMD_LOAD_AUDIO = 25,
-        CMD_LOAD_FONT = 26,
-        CMD_LOAD_DATA = 27,
+        CMD_LOAD_TEXTURE = 25,
+        CMD_LOAD_AUDIO = 26,
+        CMD_LOAD_FONT = 27,
+        CMD_LOAD_DATA = 28,
         // Asset cache management commands
-        CMD_PRELOAD_ESSENTIAL_ASSETS = 28,
-        CMD_IS_CACHED = 29
+        CMD_PRELOAD_ESSENTIAL_ASSETS = 29,
+        CMD_IS_CACHED = 30
     };
     
     // Rendering command data
@@ -157,6 +158,7 @@ namespace GameCore {
         // Sprite rendering (using void* for sprite to avoid forward declaration issues)
         void (*drawSprite)(uint32_t textureHandle, float x, float y, float rotation);
         void (*drawSpriteScaled)(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation);
+        void (*drawSpriteScaledCentered)(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation);
         void (*drawSpriteScaledWithSource)(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation, float sourceX, float sourceY, float sourceWidth, float sourceHeight);
         
         // Text rendering
@@ -175,8 +177,8 @@ namespace GameCore {
         
         // Initialize to null
         RendererDelegate() : beginFrame(nullptr), endFrame(nullptr), present(nullptr), clearScreen(nullptr),
-                           drawSprite(nullptr), drawSpriteScaled(nullptr), drawText(nullptr),
-                           drawRectangle(nullptr), drawCircle(nullptr), getScreenSize(nullptr),
+                           drawSprite(nullptr), drawSpriteScaled(nullptr), drawSpriteScaledCentered(nullptr),
+                           drawText(nullptr), drawRectangle(nullptr), drawCircle(nullptr), getScreenSize(nullptr),
                            platformContext(nullptr) {}
     };
 

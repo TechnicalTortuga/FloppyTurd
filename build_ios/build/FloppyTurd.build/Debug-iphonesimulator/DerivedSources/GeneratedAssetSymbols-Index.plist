@@ -62,7 +62,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameBirdHurt</string>
 			<key>relativePath</key>
-			<string>./enemies/BirdHurt.imageset</string>
+			<string>./graphics/characters/enemies/flying/BirdHurt.imageset</string>
 			<key>swiftSymbol</key>
 			<string>birdHurt</string>
 		</dict>
@@ -72,7 +72,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameBirdIdle</string>
 			<key>relativePath</key>
-			<string>./enemies/BirdIdle.imageset</string>
+			<string>./graphics/characters/enemies/flying/BirdIdle.imageset</string>
 			<key>swiftSymbol</key>
 			<string>birdIdle</string>
 		</dict>
@@ -122,7 +122,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameBossFloor</string>
 			<key>relativePath</key>
-			<string>./environment/BossFloor.imageset</string>
+			<string>./graphics/environment/backgrounds/boss/BossFloor.imageset</string>
 			<key>swiftSymbol</key>
 			<string>bossFloor</string>
 		</dict>
@@ -132,7 +132,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameBossWalls</string>
 			<key>relativePath</key>
-			<string>./environment/BossWalls.imageset</string>
+			<string>./graphics/environment/backgrounds/boss/BossWalls.imageset</string>
 			<key>swiftSymbol</key>
 			<string>bossWalls</string>
 		</dict>
@@ -142,7 +142,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameBottomPipeWide</string>
 			<key>relativePath</key>
-			<string>./environment/BottomPipeWide.imageset</string>
+			<string>./graphics/environment/structures/pipes/BottomPipeWide.imageset</string>
 			<key>swiftSymbol</key>
 			<string>bottomPipeWide</string>
 		</dict>
@@ -152,7 +152,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameBottomPipeWideBlue</string>
 			<key>relativePath</key>
-			<string>./environment/BottomPipeWideBlue.imageset</string>
+			<string>./graphics/environment/structures/pipes/BottomPipeWideBlue.imageset</string>
 			<key>swiftSymbol</key>
 			<string>bottomPipeWideBlue</string>
 		</dict>
@@ -162,7 +162,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameBottomToilet</string>
 			<key>relativePath</key>
-			<string>./environment/BottomToilet.imageset</string>
+			<string>./graphics/environment/structures/toilets/BottomToilet.imageset</string>
 			<key>swiftSymbol</key>
 			<string>bottomToilet</string>
 		</dict>
@@ -172,7 +172,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameBottomToiletGold</string>
 			<key>relativePath</key>
-			<string>./environment/BottomToiletGold.imageset</string>
+			<string>./graphics/environment/structures/toilets/BottomToiletGold.imageset</string>
 			<key>swiftSymbol</key>
 			<string>bottomToiletGold</string>
 		</dict>
@@ -182,7 +182,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameBottomToiletGoldExport</string>
 			<key>relativePath</key>
-			<string>./environment/BottomToiletGold-export.imageset</string>
+			<string>./graphics/environment/structures/toilets/BottomToiletGold-export.imageset</string>
 			<key>swiftSymbol</key>
 			<string>bottomToiletGoldExport</string>
 		</dict>
@@ -192,7 +192,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameBottomToiletSnow</string>
 			<key>relativePath</key>
-			<string>./environment/BottomToiletSnow.imageset</string>
+			<string>./graphics/environment/structures/toilets/BottomToiletSnow.imageset</string>
 			<key>swiftSymbol</key>
 			<string>bottomToiletSnow</string>
 		</dict>
@@ -222,7 +222,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameCacti</string>
 			<key>relativePath</key>
-			<string>./environment/Cacti.imageset</string>
+			<string>./graphics/environment/props/vegetation/Cacti.imageset</string>
 			<key>swiftSymbol</key>
 			<string>cacti</string>
 		</dict>
@@ -562,7 +562,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameLevel1BackLayerBackground</string>
 			<key>relativePath</key>
-			<string>./environment/Level1BackLayerBackground.imageset</string>
+			<string>./graphics/environment/backgrounds/level1/Level1BackLayerBackground.imageset</string>
 			<key>swiftSymbol</key>
 			<string>level1BackLayerBackground</string>
 		</dict>
@@ -572,7 +572,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameLevel1Clouds</string>
 			<key>relativePath</key>
-			<string>./environment/Level1Clouds.imageset</string>
+			<string>./graphics/environment/backgrounds/level1/Level1Clouds.imageset</string>
 			<key>swiftSymbol</key>
 			<string>level1Clouds</string>
 		</dict>
@@ -582,7 +582,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameLevel1FrontLayerBackground</string>
 			<key>relativePath</key>
-			<string>./environment/Level1FrontLayerBackground.imageset</string>
+			<string>./graphics/environment/backgrounds/level1/Level1FrontLayerBackground.imageset</string>
 			<key>swiftSymbol</key>
 			<string>level1FrontLayerBackground</string>
 		</dict>
@@ -592,7 +592,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameLevel1MidLayerBackground</string>
 			<key>relativePath</key>
-			<string>./environment/Level1MidLayerBackground.imageset</string>
+			<string>./graphics/environment/backgrounds/level1/Level1MidLayerBackground.imageset</string>
 			<key>swiftSymbol</key>
 			<string>level1MidLayerBackground</string>
 		</dict>
@@ -602,7 +602,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameLevel3BackLayerBackground</string>
 			<key>relativePath</key>
-			<string>./environment/Level3BackLayerBackground.imageset</string>
+			<string>./graphics/environment/backgrounds/level3/Level3BackLayerBackground.imageset</string>
 			<key>swiftSymbol</key>
 			<string>level3BackLayerBackground</string>
 		</dict>
@@ -612,7 +612,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameLevel3FrontLayerBackground</string>
 			<key>relativePath</key>
-			<string>./environment/Level3FrontLayerBackground.imageset</string>
+			<string>./graphics/environment/backgrounds/level3/Level3FrontLayerBackground.imageset</string>
 			<key>swiftSymbol</key>
 			<string>level3FrontLayerBackground</string>
 		</dict>
@@ -622,7 +622,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameLevel3MidLayerBackground</string>
 			<key>relativePath</key>
-			<string>./environment/Level3MidLayerBackground.imageset</string>
+			<string>./graphics/environment/backgrounds/level3/Level3MidLayerBackground.imageset</string>
 			<key>swiftSymbol</key>
 			<string>level3MidLayerBackground</string>
 		</dict>
@@ -662,7 +662,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameOuthouse</string>
 			<key>relativePath</key>
-			<string>./environment/Outhouse.imageset</string>
+			<string>./graphics/environment/structures/buildings/Outhouse.imageset</string>
 			<key>swiftSymbol</key>
 			<string>outhouse</string>
 		</dict>
@@ -672,7 +672,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameOuthouseToilet</string>
 			<key>relativePath</key>
-			<string>./environment/OuthouseToilet.imageset</string>
+			<string>./graphics/environment/structures/buildings/OuthouseToilet.imageset</string>
 			<key>swiftSymbol</key>
 			<string>outhouseToilet</string>
 		</dict>
@@ -782,7 +782,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameRatCopterHurt</string>
 			<key>relativePath</key>
-			<string>./enemies/RatCopterHurt.imageset</string>
+			<string>./graphics/characters/enemies/flying/RatCopterHurt.imageset</string>
 			<key>swiftSymbol</key>
 			<string>ratCopterHurt</string>
 		</dict>
@@ -792,7 +792,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameRatCopterIdle</string>
 			<key>relativePath</key>
-			<string>./enemies/RatCopterIdle.imageset</string>
+			<string>./graphics/characters/enemies/flying/RatCopterIdle.imageset</string>
 			<key>swiftSymbol</key>
 			<string>ratCopterIdle</string>
 		</dict>
@@ -812,7 +812,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameRatking</string>
 			<key>relativePath</key>
-			<string>./enemies/Ratking.imageset</string>
+			<string>./graphics/characters/enemies/ground/Ratking.imageset</string>
 			<key>swiftSymbol</key>
 			<string>ratking</string>
 		</dict>
@@ -822,7 +822,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameRatkingAimBackArmOnly</string>
 			<key>relativePath</key>
-			<string>./enemies/RatkingAimBackArmOnly.imageset</string>
+			<string>./graphics/characters/enemies/ground/RatkingAimBackArmOnly.imageset</string>
 			<key>swiftSymbol</key>
 			<string>ratkingAimBackArmOnly</string>
 		</dict>
@@ -832,7 +832,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameRatkingAimTorsoOnly</string>
 			<key>relativePath</key>
-			<string>./enemies/RatkingAimTorsoOnly.imageset</string>
+			<string>./graphics/characters/enemies/ground/RatkingAimTorsoOnly.imageset</string>
 			<key>swiftSymbol</key>
 			<string>ratkingAimTorsoOnly</string>
 		</dict>
@@ -842,7 +842,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameRatkingAimTossArmOnly</string>
 			<key>relativePath</key>
-			<string>./enemies/RatkingAimTossArmOnly.imageset</string>
+			<string>./graphics/characters/enemies/ground/RatkingAimTossArmOnly.imageset</string>
 			<key>swiftSymbol</key>
 			<string>ratkingAimTossArmOnly</string>
 		</dict>
@@ -852,7 +852,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameRatkingDeath</string>
 			<key>relativePath</key>
-			<string>./enemies/RatkingDeath.imageset</string>
+			<string>./graphics/characters/enemies/ground/RatkingDeath.imageset</string>
 			<key>swiftSymbol</key>
 			<string>ratkingDeath</string>
 		</dict>
@@ -862,7 +862,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameRatkingHurt</string>
 			<key>relativePath</key>
-			<string>./enemies/RatkingHurt.imageset</string>
+			<string>./graphics/characters/enemies/ground/RatkingHurt.imageset</string>
 			<key>swiftSymbol</key>
 			<string>ratkingHurt</string>
 		</dict>
@@ -882,7 +882,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameRatkingWalk</string>
 			<key>relativePath</key>
-			<string>./enemies/RatkingWalk.imageset</string>
+			<string>./graphics/characters/enemies/ground/RatkingWalk.imageset</string>
 			<key>swiftSymbol</key>
 			<string>ratkingWalk</string>
 		</dict>
@@ -962,7 +962,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameSewerBackgroundRunningWater</string>
 			<key>relativePath</key>
-			<string>./environment/SewerBackgroundRunningWater.imageset</string>
+			<string>./graphics/environment/backgrounds/sewer/SewerBackgroundRunningWater.imageset</string>
 			<key>swiftSymbol</key>
 			<string>sewerBackgroundRunningWater</string>
 		</dict>
@@ -1002,7 +1002,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameSnowLevelBackTrees</string>
 			<key>relativePath</key>
-			<string>./environment/SnowLevelBackTrees.imageset</string>
+			<string>./graphics/environment/backgrounds/snow_level/SnowLevelBackTrees.imageset</string>
 			<key>swiftSymbol</key>
 			<string>snowLevelBackTrees</string>
 		</dict>
@@ -1012,7 +1012,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameSnowLevelBackground</string>
 			<key>relativePath</key>
-			<string>./environment/SnowLevelBackground.imageset</string>
+			<string>./graphics/environment/backgrounds/snow_level/SnowLevelBackground.imageset</string>
 			<key>swiftSymbol</key>
 			<string>snowLevelBackground</string>
 		</dict>
@@ -1022,7 +1022,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameSnowLevelFrontTrees</string>
 			<key>relativePath</key>
-			<string>./environment/SnowLevelFrontTrees.imageset</string>
+			<string>./graphics/environment/backgrounds/snow_level/SnowLevelFrontTrees.imageset</string>
 			<key>swiftSymbol</key>
 			<string>snowLevelFrontTrees</string>
 		</dict>
@@ -1032,7 +1032,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameSnowLevelMountains</string>
 			<key>relativePath</key>
-			<string>./environment/SnowLevelMountains.imageset</string>
+			<string>./graphics/environment/backgrounds/snow_level/SnowLevelMountains.imageset</string>
 			<key>swiftSymbol</key>
 			<string>snowLevelMountains</string>
 		</dict>
@@ -1052,7 +1052,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameSnowLevelTundra</string>
 			<key>relativePath</key>
-			<string>./environment/SnowLevelTundra.imageset</string>
+			<string>./graphics/environment/backgrounds/snow_level/SnowLevelTundra.imageset</string>
 			<key>swiftSymbol</key>
 			<string>snowLevelTundra</string>
 		</dict>
@@ -1062,7 +1062,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameSnowManChad</string>
 			<key>relativePath</key>
-			<string>./enemies/SnowManChad.imageset</string>
+			<string>./graphics/characters/enemies/ground/SnowManChad.imageset</string>
 			<key>swiftSymbol</key>
 			<string>snowManChad</string>
 		</dict>
@@ -1072,7 +1072,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameSnowManChill</string>
 			<key>relativePath</key>
-			<string>./enemies/SnowManChill.imageset</string>
+			<string>./graphics/characters/enemies/ground/SnowManChill.imageset</string>
 			<key>swiftSymbol</key>
 			<string>snowManChill</string>
 		</dict>
@@ -1082,7 +1082,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameSnowManGreen</string>
 			<key>relativePath</key>
-			<string>./enemies/SnowManGreen.imageset</string>
+			<string>./graphics/characters/enemies/ground/SnowManGreen.imageset</string>
 			<key>swiftSymbol</key>
 			<string>snowManGreen</string>
 		</dict>
@@ -1092,7 +1092,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameSnowManIdle</string>
 			<key>relativePath</key>
-			<string>./enemies/SnowManIdle.imageset</string>
+			<string>./graphics/characters/enemies/ground/SnowManIdle.imageset</string>
 			<key>swiftSymbol</key>
 			<string>snowManIdle</string>
 		</dict>
@@ -1102,7 +1102,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameSnowManThrow</string>
 			<key>relativePath</key>
-			<string>./enemies/SnowManThrow.imageset</string>
+			<string>./graphics/characters/enemies/ground/SnowManThrow.imageset</string>
 			<key>swiftSymbol</key>
 			<string>snowManThrow</string>
 		</dict>
@@ -1122,7 +1122,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameSnowfall</string>
 			<key>relativePath</key>
-			<string>./environment/Snowfall.imageset</string>
+			<string>./graphics/environment/props/particles/Snowfall.imageset</string>
 			<key>swiftSymbol</key>
 			<string>snowfall</string>
 		</dict>
@@ -1202,7 +1202,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameToiletPaperFlap</string>
 			<key>relativePath</key>
-			<string>./enemies/ToiletPaperFlap.imageset</string>
+			<string>./graphics/characters/enemies/flying/ToiletPaperFlap.imageset</string>
 			<key>swiftSymbol</key>
 			<string>toiletPaperFlap</string>
 		</dict>
@@ -1212,7 +1212,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameToiletPaperHit</string>
 			<key>relativePath</key>
-			<string>./enemies/ToiletPaperHit.imageset</string>
+			<string>./graphics/characters/enemies/flying/ToiletPaperHit.imageset</string>
 			<key>swiftSymbol</key>
 			<string>toiletPaperHit</string>
 		</dict>
@@ -1222,7 +1222,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTopPipeWide</string>
 			<key>relativePath</key>
-			<string>./environment/TopPipeWide.imageset</string>
+			<string>./graphics/environment/structures/pipes/TopPipeWide.imageset</string>
 			<key>swiftSymbol</key>
 			<string>topPipeWide</string>
 		</dict>
@@ -1232,7 +1232,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTopPipeWideBlue</string>
 			<key>relativePath</key>
-			<string>./environment/TopPipeWideBlue.imageset</string>
+			<string>./graphics/environment/structures/pipes/TopPipeWideBlue.imageset</string>
 			<key>swiftSymbol</key>
 			<string>topPipeWideBlue</string>
 		</dict>
@@ -1242,7 +1242,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTopToilet</string>
 			<key>relativePath</key>
-			<string>./environment/TopToilet.imageset</string>
+			<string>./graphics/environment/structures/toilets/TopToilet.imageset</string>
 			<key>swiftSymbol</key>
 			<string>topToilet</string>
 		</dict>
@@ -1252,7 +1252,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTopToiletGold</string>
 			<key>relativePath</key>
-			<string>./environment/TopToiletGold.imageset</string>
+			<string>./graphics/environment/structures/toilets/TopToiletGold.imageset</string>
 			<key>swiftSymbol</key>
 			<string>topToiletGold</string>
 		</dict>
@@ -1262,19 +1262,9 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameTopToiletSnow</string>
 			<key>relativePath</key>
-			<string>./environment/TopToiletSnow.imageset</string>
+			<string>./graphics/environment/structures/toilets/TopToiletSnow.imageset</string>
 			<key>swiftSymbol</key>
 			<string>topToiletSnow</string>
-		</dict>
-		<dict>
-			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
-			<key>objcSymbol</key>
-			<string>ACImageNameTorchPillar</string>
-			<key>relativePath</key>
-			<string>./environment/TorchPillar.imageset</string>
-			<key>swiftSymbol</key>
-			<string>torchPillar</string>
 		</dict>
 		<dict>
 			<key>catalogPath</key>
@@ -1680,56 +1670,6 @@
 			<key>catalogPath</key>
 			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
-			<string>ACImageNameBosspillar</string>
-			<key>relativePath</key>
-			<string>./environment/bosspillar.imageset</string>
-			<key>swiftSymbol</key>
-			<string>bosspillar</string>
-		</dict>
-		<dict>
-			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
-			<key>objcSymbol</key>
-			<string>ACImageNameCastlelevelbackgroundwall</string>
-			<key>relativePath</key>
-			<string>./environment/castlelevelbackgroundwall.imageset</string>
-			<key>swiftSymbol</key>
-			<string>castlelevelbackgroundwall</string>
-		</dict>
-		<dict>
-			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
-			<key>objcSymbol</key>
-			<string>ACImageNameCastlelevelchandelier</string>
-			<key>relativePath</key>
-			<string>./environment/castlelevelchandelier.imageset</string>
-			<key>swiftSymbol</key>
-			<string>castlelevelchandelier</string>
-		</dict>
-		<dict>
-			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
-			<key>objcSymbol</key>
-			<string>ACImageNameCastlelevelfloorceiling</string>
-			<key>relativePath</key>
-			<string>./environment/castlelevelfloorceiling.imageset</string>
-			<key>swiftSymbol</key>
-			<string>castlelevelfloorceiling</string>
-		</dict>
-		<dict>
-			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
-			<key>objcSymbol</key>
-			<string>ACImageNameCastlelevelfloortorch</string>
-			<key>relativePath</key>
-			<string>./environment/castlelevelfloortorch.imageset</string>
-			<key>swiftSymbol</key>
-			<string>castlelevelfloortorch</string>
-		</dict>
-		<dict>
-			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
-			<key>objcSymbol</key>
 			<string>ACImageNameCowboyhat</string>
 			<key>relativePath</key>
 			<string>./graphics/characters/player/cosmetics/hats/base_hats/cowboyhat.imageset</string>
@@ -1865,56 +1805,6 @@
 			<string>./graphics/characters/player/cosmetics/hats/character_combinations/turdlet/crownhatturdletshoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>crownhatturdletshoot</string>
-		</dict>
-		<dict>
-			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
-			<key>objcSymbol</key>
-			<string>ACImageNameCurtains</string>
-			<key>relativePath</key>
-			<string>./environment/curtains.imageset</string>
-			<key>swiftSymbol</key>
-			<string>curtains</string>
-		</dict>
-		<dict>
-			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
-			<key>objcSymbol</key>
-			<string>ACImageNameDancingcacti</string>
-			<key>relativePath</key>
-			<string>./environment/dancingcacti.imageset</string>
-			<key>swiftSymbol</key>
-			<string>dancingcacti</string>
-		</dict>
-		<dict>
-			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
-			<key>objcSymbol</key>
-			<string>ACImageNameDancingcacticowboy</string>
-			<key>relativePath</key>
-			<string>./environment/dancingcacticowboy.imageset</string>
-			<key>swiftSymbol</key>
-			<string>dancingcacticowboy</string>
-		</dict>
-		<dict>
-			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
-			<key>objcSymbol</key>
-			<string>ACImageNameDancingcactismall</string>
-			<key>relativePath</key>
-			<string>./environment/dancingcactismall.imageset</string>
-			<key>swiftSymbol</key>
-			<string>dancingcactismall</string>
-		</dict>
-		<dict>
-			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
-			<key>objcSymbol</key>
-			<string>ACImageNameDarkclouds</string>
-			<key>relativePath</key>
-			<string>./environment/darkclouds.imageset</string>
-			<key>swiftSymbol</key>
-			<string>darkclouds</string>
 		</dict>
 		<dict>
 			<key>catalogPath</key>
@@ -2150,16 +2040,6 @@
 			<key>catalogPath</key>
 			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
-			<string>ACImageNamePlaceholder</string>
-			<key>relativePath</key>
-			<string>./hats/placeholder.imageset</string>
-			<key>swiftSymbol</key>
-			<string>placeholder</string>
-		</dict>
-		<dict>
-			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
-			<key>objcSymbol</key>
 			<string>ACImageNamePlusbutton</string>
 			<key>relativePath</key>
 			<string>./graphics/ui/hud/plusbutton.imageset</string>
@@ -2280,16 +2160,6 @@
 			<key>catalogPath</key>
 			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
-			<string>ACImageNameRatkingbackground</string>
-			<key>relativePath</key>
-			<string>./environment/ratkingbackground.imageset</string>
-			<key>swiftSymbol</key>
-			<string>ratkingbackground</string>
-		</dict>
-		<dict>
-			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
-			<key>objcSymbol</key>
 			<string>ACImageNameSamuraibigturdjump</string>
 			<key>relativePath</key>
 			<string>./graphics/characters/player/cosmetics/hats/character_combinations/bigturd/samuraibigturdjump.imageset</string>
@@ -2325,76 +2195,6 @@
 			<string>./graphics/characters/player/cosmetics/hats/character_combinations/turdlet/samuraiturdletshoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>samuraiturdletshoot</string>
-		</dict>
-		<dict>
-			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
-			<key>objcSymbol</key>
-			<string>ACImageNameScreenCurtains</string>
-			<key>relativePath</key>
-			<string>./environment/screenCurtains.imageset</string>
-			<key>swiftSymbol</key>
-			<string>screenCurtains</string>
-		</dict>
-		<dict>
-			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
-			<key>objcSymbol</key>
-			<string>ACImageNameSewerrunningwaterwide</string>
-			<key>relativePath</key>
-			<string>./environment/sewerrunningwaterwide.imageset</string>
-			<key>swiftSymbol</key>
-			<string>sewerrunningwaterwide</string>
-		</dict>
-		<dict>
-			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
-			<key>objcSymbol</key>
-			<string>ACImageNameSewerwidevarA</string>
-			<key>relativePath</key>
-			<string>./environment/sewerwidevarA.imageset</string>
-			<key>swiftSymbol</key>
-			<string>sewerwidevarA</string>
-		</dict>
-		<dict>
-			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
-			<key>objcSymbol</key>
-			<string>ACImageNameSewerwidevarB</string>
-			<key>relativePath</key>
-			<string>./environment/sewerwidevarB.imageset</string>
-			<key>swiftSymbol</key>
-			<string>sewerwidevarB</string>
-		</dict>
-		<dict>
-			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
-			<key>objcSymbol</key>
-			<string>ACImageNameSewerwidevarC</string>
-			<key>relativePath</key>
-			<string>./environment/sewerwidevarC.imageset</string>
-			<key>swiftSymbol</key>
-			<string>sewerwidevarC</string>
-		</dict>
-		<dict>
-			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
-			<key>objcSymbol</key>
-			<string>ACImageNameSewerwidevarD</string>
-			<key>relativePath</key>
-			<string>./environment/sewerwidevarD.imageset</string>
-			<key>swiftSymbol</key>
-			<string>sewerwidevarD</string>
-		</dict>
-		<dict>
-			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
-			<key>objcSymbol</key>
-			<string>ACImageNameSewerwidevarE</string>
-			<key>relativePath</key>
-			<string>./environment/sewerwidevarE.imageset</string>
-			<key>swiftSymbol</key>
-			<string>sewerwidevarE</string>
 		</dict>
 		<dict>
 			<key>catalogPath</key>
@@ -2445,16 +2245,6 @@
 			<string>./graphics/characters/player/cosmetics/hats/character_combinations/turdlet/shellhatturdletshoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>shellhatturdletshoot</string>
-		</dict>
-		<dict>
-			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
-			<key>objcSymbol</key>
-			<string>ACImageNameSnowTile</string>
-			<key>relativePath</key>
-			<string>./environment/snow_tile.imageset</string>
-			<key>swiftSymbol</key>
-			<string>snowTile</string>
 		</dict>
 		<dict>
 			<key>catalogPath</key>
@@ -2552,7 +2342,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameToiletpaperprojectile</string>
 			<key>relativePath</key>
-			<string>./enemies/toiletpaperprojectile.imageset</string>
+			<string>./graphics/characters/enemies/projectiles/toiletpaperprojectile.imageset</string>
 			<key>swiftSymbol</key>
 			<string>toiletpaperprojectile</string>
 		</dict>

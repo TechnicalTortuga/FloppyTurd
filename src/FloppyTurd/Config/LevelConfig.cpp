@@ -8,7 +8,7 @@ namespace GameCore {
         // Set level-specific properties
         config.musicTrack = "Park";        // Base name for difficulty variants
         config.worldSpeed = 200.0f;
-        config.baseScale = 8.0f;  // Scale up from 320x180
+        config.baseScale = 8.0f;  // Keep player scale consistent
         
         AddParkLevelLayers(config);
         AddParkObstacles(config);
@@ -122,102 +122,112 @@ namespace GameCore {
     }
 
     void LevelConfigFactory::AddParkLevelLayers(LevelConfig& config) {
-        // Background layers from back to front based on original 320x180 design
+        // Background layers from back to front based on new 1024x480 design
         // Each layer has different scroll speeds for parallax effect
+        
+        float backgroundScale = 2.66f;  // Separate scale for 1024x480 backgrounds
         
         // Back layer - slowest moving (furthest back)
         config.backgroundLayers.emplace_back("Level1BackLayerBackground", 50.0f, 0.1f, 0);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 320.0f * config.baseScale;
+        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
         
         // Mid layer - medium speed
         config.backgroundLayers.emplace_back("Level1MidLayerBackground", 100.0f, 0.3f, 1);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 320.0f * config.baseScale;
+        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
         
         // Clouds - independent movement
         config.backgroundLayers.emplace_back("Level1Clouds", 75.0f, 0.2f, 1);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 320.0f * config.baseScale;
+        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
         
         // Front layer - fastest moving (closest to player, behind game objects)
         config.backgroundLayers.emplace_back("Level1FrontLayerBackground", 150.0f, 0.5f, 2);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 320.0f * config.baseScale;
+        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
     }
 
     void LevelConfigFactory::AddSewerLevelLayers(LevelConfig& config) {
         // Sewer level layers - darker, underground feel
+        float backgroundScale = 2.66f;  // Separate scale for 1024x480 backgrounds
+        
         config.backgroundLayers.emplace_back("SewerLevelBackground", 50.0f, 0.1f, 0);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 320.0f * config.baseScale;
+        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
         
         config.backgroundLayers.emplace_back("SewerLevelPipes", 75.0f, 0.2f, 1);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 320.0f * config.baseScale;
+        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
         
         config.backgroundLayers.emplace_back("SewerLevelWater", 100.0f, 0.3f, 2);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 320.0f * config.baseScale;
+        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
     }
 
     void LevelConfigFactory::AddDesertLevelLayers(LevelConfig& config) {
         // Desert level layers - hot, sandy environment
+        float backgroundScale = 2.66f;  // Separate scale for 1024x480 backgrounds
+        
         config.backgroundLayers.emplace_back("DesertLevelSky", 40.0f, 0.1f, 0);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 320.0f * config.baseScale;
+        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
         
         config.backgroundLayers.emplace_back("DesertLevelMountains", 60.0f, 0.2f, 1);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 320.0f * config.baseScale;
+        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
         
         config.backgroundLayers.emplace_back("DesertLevelDunes", 90.0f, 0.3f, 2);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 320.0f * config.baseScale;
+        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
         
         config.backgroundLayers.emplace_back("DesertLevelCacti", 120.0f, 0.4f, 3);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 320.0f * config.baseScale;
+        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
     }
 
     void LevelConfigFactory::AddSnowLevelLayers(LevelConfig& config) {
         // Snow level layers
+        float backgroundScale = 2.66f;  // Separate scale for 1024x480 backgrounds
+        
         config.backgroundLayers.emplace_back("SnowLevelBackground", 50.0f, 0.1f, 0);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 320.0f * config.baseScale;
+        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
         
         config.backgroundLayers.emplace_back("SnowLevelMountains", 75.0f, 0.2f, 1);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 320.0f * config.baseScale;
+        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
         
         config.backgroundLayers.emplace_back("SnowLevelBackTrees", 100.0f, 0.3f, 2);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 320.0f * config.baseScale;
+        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
         
         config.backgroundLayers.emplace_back("SnowLevelFrontTrees", 150.0f, 0.5f, 3);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 320.0f * config.baseScale;
+        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
         
         // Add snow particles layer
         config.backgroundLayers.emplace_back("Snowfall", 25.0f, 0.15f, 1);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 320.0f * config.baseScale;
+        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
     }
 
     void LevelConfigFactory::AddCastleLevelLayers(LevelConfig& config) {
         // Castle level layers - more gothic/dungeon feel
+        float backgroundScale = 2.66f;  // Separate scale for 1024x480 backgrounds
+        
         config.backgroundLayers.emplace_back("castlelevelbackgroundwall", 50.0f, 0.1f, 0);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 320.0f * config.baseScale;
+        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
         
         config.backgroundLayers.emplace_back("castlelevelfloorceiling", 100.0f, 0.3f, 1);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 320.0f * config.baseScale;
+        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
         
         // Add atmospheric elements
         config.backgroundLayers.emplace_back("curtains", 75.0f, 0.2f, 2);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 320.0f * config.baseScale;
+        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
     }
 
     void LevelConfigFactory::AddBossLevelLayers(LevelConfig& config) {
@@ -225,9 +235,10 @@ namespace GameCore {
         AddCastleLevelLayers(config);
         
         // Add dramatic boss-specific elements
+        float backgroundScale = 2.66f;  // Separate scale for 1024x480 backgrounds
         config.backgroundLayers.emplace_back("BossBackground", 30.0f, 0.05f, 0);
         config.backgroundLayers.back().scaleMultiplier = 1.2f; // Slightly larger for dramatic effect
-        config.backgroundLayers.back().repeatWidth = 320.0f * config.baseScale;
+        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
     }
 
     // OBSTACLE CONFIGURATIONS

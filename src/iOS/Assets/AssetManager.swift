@@ -155,6 +155,14 @@ public class AssetManager {
             throw AssetError.fileNotFound("\(name) in asset catalog")
         }
         
+        // TEMPORARY DEBUG: Force print texture dimensions
+        print("🔥🔥🔥 LOADING TEXTURE: \(name)")
+        print("🔥🔥🔥 UIImage size: \(image.size.width)x\(image.size.height)")
+        print("🔥🔥🔥 UIImage scale: \(image.scale)")
+        if let cgImage = image.cgImage {
+            print("🔥🔥🔥 CGImage size: \(cgImage.width)x\(cgImage.height)")
+        }
+        
         let texture = try await loadTextureFromUIImage(image)
         textureCache[cacheKey] = texture
         cacheAccessTimes[cacheKey] = Date()
@@ -489,6 +497,7 @@ public class AssetManager {
         ])
         
         // Add debug logging for created texture
+        print("🔥🔥🔥 CREATED MTLTexture: \(texture.width)x\(texture.height), pixelFormat: \(texture.pixelFormat.rawValue)")
         logger.debug("🔥 Created MTLTexture: \(texture.width)x\(texture.height), pixelFormat: \(texture.pixelFormat.rawValue)")
         
         return texture
