@@ -77,9 +77,8 @@ namespace GameCore {
             return;
         }
 
-        // Use the new centered text function for proper centering
-        // Scale font size for mobile devices (make it bigger for better readability)
-        float mobileFontSize = uiElement.fontSize * 1.2f; // 20% larger for better readability
+        // Use the font size as specified without additional scaling
+        float mobileFontSize = uiElement.fontSize;
         
         // Choose text color based on button state
         float r, g, b, a;
@@ -94,11 +93,6 @@ namespace GameCore {
             b = uiElement.textColor.b / 255.0f;
             a = uiElement.textColor.a / 255.0f;
         }
-        
-        GN_LOG_DEBUG("UISystem: Rendering centered text '" + uiElement.buttonText + "' at (" + 
-                   std::to_string(transform.position.x) + ", " + std::to_string(transform.position.y) + ") with size " + 
-                   std::to_string(mobileFontSize) + ", color (" + 
-                   std::to_string(r) + ", " + std::to_string(g) + ", " + std::to_string(b) + ", " + std::to_string(a) + ")");
         
         // Debug: Check if alpha is 0 (transparent)
         if (a < 0.01f) {
@@ -119,16 +113,65 @@ namespace GameCore {
             buttonHeight = 16.0f * transform.scale.y;  // Default button texture height scaled
         }
         
-        // Calculate center position of the button
-        float buttonCenterX = transform.position.x + (buttonWidth * 0.5f);   // Center X of button
-        float buttonCenterY = transform.position.y + (buttonHeight * 0.5f);  // Center Y of button
+        // === IMPROVED TEXT POSITIONING WITH SDF BASELINE CORRECTION === //
         
-        GN_LOG_DEBUG("UISystem: Button bounds - position(" + std::to_string(transform.position.x) + ", " + std::to_string(transform.position.y) + 
-                   "), size(" + std::to_string(buttonWidth) + "x" + std::to_string(buttonHeight) + 
-                   "), center(" + std::to_string(buttonCenterX) + ", " + std::to_string(buttonCenterY) + ")");
+        // Calculate text position based on centering properties
+        float textX, textY;
         
-        // Draw the text centered within the button bounds
-        m_delegates.renderer.drawTextCentered(uiElement.buttonText, buttonCenterX, buttonCenterY, mobileFontSize, r, g, b, a);
+        // Check if this is a text-only element (no button background)
+        bool isTextOnly = uiElement.normalTextureId.empty();
+        
+        if (uiElement.centerTextHorizontally) {
+            if (isTextOnly) {
+                // For text-only elements, transform.position.x is already the center coordinate
+                textX = transform.position.x;
+            } else {
+                // For button elements, transform.position.x is top-left, so calculate center
+                textX = transform.position.x + (buttonWidth * 0.5f);   // Center X of button
+            }
+        } else {
+            textX = transform.position.x;  // Top-left X of button or text position
+        }
+        
+        if (uiElement.centerTextVertically) {
+            if (isTextOnly) {
+                // For text-only elements, transform.position.y is already the center coordinate
+                textY = transform.position.y;
+            } else {
+                // For button elements, calculate the visual center Y position for text rendering
+                // Start from the mathematical center of the button
+                float buttonCenterY = transform.position.y + (buttonHeight * 0.5f);
+                
+                // Apply visual correction for SDF font baseline (font-specific adjustment)
+                // Most fonts have their visual center slightly below the mathematical center
+                float visualAdjustment = mobileFontSize * 0.15f;  // 15% of font size down from center
+                textY = buttonCenterY + visualAdjustment;
+            }
+            
+            // Note: MetalRenderer.drawTextCentered now only handles horizontal centering
+            // All vertical positioning logic is handled here in UISystem
+        } else {
+            textY = transform.position.y;  // Top-left Y of button or text position
+        }
+        
+        // Apply manual text offsets (after baseline correction)
+        textX += uiElement.textOffsetX;
+        textY += uiElement.textOffsetY;
+        
+        GN_LOG_DEBUG("UISystem: Text '" + uiElement.buttonText + "' - Button bounds: pos(" + std::to_string(transform.position.x) + "," + std::to_string(transform.position.y) + ") size(" + std::to_string(buttonWidth) + "x" + std::to_string(buttonHeight) + "), Text center: (" + std::to_string(textX) + "," + std::to_string(textY) + "), Font: " + std::to_string(mobileFontSize));
+        
+        // Choose appropriate text rendering function based on centering
+        if (uiElement.centerTextHorizontally && uiElement.centerTextVertically) {
+            // Use centered text rendering with improved baseline correction
+            GN_LOG_DEBUG("UISystem: Drawing centered text '" + uiElement.buttonText + "' at (" + std::to_string(textX) + "," + std::to_string(textY) + ")");
+            
+            // Draw the actual centered text
+            m_delegates.renderer.drawTextCentered(uiElement.buttonText, textX, textY, mobileFontSize, r, g, b, a);
+        } else {
+            // Use regular text rendering for non-centered text
+            GN_LOG_DEBUG("UISystem: Drawing left-aligned text '" + uiElement.buttonText + "' at (" + std::to_string(textX) + "," + std::to_string(textY) + ")");
+            m_delegates.renderer.drawText(uiElement.buttonText, textX, textY, mobileFontSize, r, g, b, a);
+        }
     }
 
     bool UISystem::IsEntityVisible(Gnosis::Entity entity) const {
@@ -182,8 +225,8 @@ namespace GameCore {
         // Create bounds component using actual button texture size (64x16)
         Bounds bounds(64.0f * scale, 16.0f * scale, 0.0f, 0.0f, true);
         
-        // Increase font size for better readability
-        uiElement.fontSize = fontSize * 1.2f;
+        // Use the font size as specified
+        uiElement.fontSize = fontSize;
         
         // Add components to entity
         m_ecsCoordinator->AddComponent<Transform>(entity, transform);
@@ -235,8 +278,8 @@ namespace GameCore {
         // Create custom bounds component
         Bounds bounds(boundsWidth, boundsHeight, 0.0f, 0.0f, false);
         
-        // Increase font size for better readability
-        uiElement.fontSize = fontSize * 1.2f;
+        // Use the font size as specified
+        uiElement.fontSize = fontSize;
         
         // Add components to entity
         m_ecsCoordinator->AddComponent<Transform>(entity, transform);

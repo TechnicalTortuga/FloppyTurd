@@ -18,4 +18,5 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Components/../../Engine/Core/Component.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Platform/PlatformDelegates.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/SpriteSystem.h \
-  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Utility/Utils.h
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Utility/Utils.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Utility/../Core/GnosisTypes.h

@@ -1687,7 +1687,7 @@ public class MetalRenderer {
         
         // Render text with proper SDF scaling and baseline alignment
         var currentLineY = cursorY
-        let lineHeight = fontMetrics.lineHeight * scale * 1.3  // Match the Y stretch factor
+        let lineHeight = fontMetrics.lineHeight * scale  // Remove artificial Y stretch factor
         
         for char in text {
             // Handle line breaks
@@ -1703,11 +1703,12 @@ public class MetalRenderer {
                 continue
             }
             
-            // Calculate glyph screen position with proper baseline alignment
-            let glyphX = cursorX + glyph.bearingX * scale
-            let glyphY = currentLineY - (fontMetrics.base - glyph.bearingY) * scale  // Proper baseline alignment
+            // Calculate glyph screen position with cell-based positioning
+            let glyphX = cursorX  // No bearing offset for cell-centered glyphs
+            // For cell-based atlas, use baseline calculation without artificial centering
+            let glyphY = currentLineY - fontMetrics.ascender * scale  // Pure baseline positioning
             let glyphWidth = glyph.width * scale
-            let glyphHeight = glyph.height * scale * 1.3  // Stretch Y by 1.3x to make text taller
+            let glyphHeight = glyph.height * scale  // No vertical stretch to ensure accurate positioning
             
             // Calculate UV coordinates - Metal uses Y-up coordinate system
             let u1 = glyph.atlasX
@@ -1737,8 +1738,8 @@ public class MetalRenderer {
             allIndices.append(contentsOf: glyphIndices)
             vertexCount += 4
             
-            // Advance cursor with reduced character spacing
-            cursorX += glyph.advance * scale + 0.5  // Add 0.5 pixel of padding between characters
+            // Advance cursor with improved character spacing
+            cursorX += glyph.advance * scale + (fontSize * 0.1)  // Use 10% of font size for spacing
         }
         
         // Only render if we have valid characters
@@ -1871,9 +1872,20 @@ public class MetalRenderer {
             let cellCenterX = highResX + (cellWidth * CGFloat(superSampleFactor)) / 2.0
             let cellCenterY = highResY + (cellHeight * CGFloat(superSampleFactor)) / 2.0
             
-            // Position glyph at center of cell
+            // Position glyph at center of cell (with special handling for punctuation)
             let glyphCenterX = cellCenterX - (boundingRect.width * CGFloat(superSampleFactor)) / 2.0
-            let glyphCenterY = cellCenterY - (boundingRect.height * CGFloat(superSampleFactor)) / 2.0
+            
+            // Check if this is a character that should align to baseline (only small bottom-sitting chars)
+            let isBottomAligned = ".,:_".contains(char)  // Only periods, commas, colons, underscores
+            let glyphCenterY: CGFloat
+            if isBottomAligned {
+                // Position small punctuation at top of cell (inverted for Metal coordinates)
+                let cellTop = highResY
+                glyphCenterY = cellTop + (boundingRect.height * CGFloat(superSampleFactor)) + (cellHeight * CGFloat(superSampleFactor) * 0.1) // 10% padding from top
+            } else {
+                // Normal characters (including ! ? [] {} () etc.) remain centered
+                glyphCenterY = cellCenterY - (boundingRect.height * CGFloat(superSampleFactor)) / 2.0
+            }
             
             highResContext.translateBy(x: glyphCenterX - boundingRect.minX * CGFloat(superSampleFactor), 
                                       y: glyphCenterY - boundingRect.minY * CGFloat(superSampleFactor))
@@ -1890,16 +1902,19 @@ public class MetalRenderer {
             
             // Store glyph information with fixed grid coordinates
             // Note: Y-axis is flipped for Metal texture coordinates
+            // IMPORTANT: For consistent rendering, we use the cell dimensions for both atlas UV and screen rendering
+            // This ensures that punctuation and small characters render at the correct size
+            
             let glyphInfo = GlyphInfo(
                 atlasX: Float(currentX) / Float(atlasSize),
                 atlasY: Float(currentY) / Float(atlasSize),
                 atlasWidth: Float(cellWidth) / Float(atlasSize),
                 atlasHeight: Float(cellHeight) / Float(atlasSize),
-                bearingX: Float(boundingRect.minX),
-                bearingY: Float(boundingRect.minY),
+                bearingX: 0.0,  // No bearing offset for cell-centered glyphs
+                bearingY: 0.0,  // No bearing offset for cell-centered glyphs
                 advance: Float(advance.width),
-                width: Float(boundingRect.width),
-                height: Float(boundingRect.height)
+                width: Float(cellWidth),  // Use cell width for consistent rendering
+                height: Float(cellHeight) // Use cell height for consistent rendering
             )
             
             glyphMap[char] = glyphInfo
@@ -2298,7 +2313,7 @@ public class MetalRenderer {
                 continue
             }
             
-            currentLineWidth += glyph.advance * scale + 0.5 // Add character spacing (match drawTextSDF)
+            currentLineWidth += glyph.advance * scale + (fontSize * 0.1) // Add character spacing (match drawTextSDF)
         }
         
         // Check the last line
@@ -2306,11 +2321,11 @@ public class MetalRenderer {
         
         // Remove the last character spacing from the last line
         if !text.isEmpty && !text.hasSuffix("\n") {
-            maxWidth -= 0.5
+            maxWidth -= (fontSize * 0.1)
         }
         
         // Calculate total height based on line count
-        let lineHeight = fontMetrics.lineHeight * scale * 1.3  // Match the Y stretch factor
+        let lineHeight = fontMetrics.lineHeight * scale  // Remove artificial Y stretch factor
         totalHeight = Float(lineCount) * lineHeight
         
         return (width: maxWidth, height: totalHeight)
@@ -2318,8 +2333,17 @@ public class MetalRenderer {
     
     public func drawTextCentered(_ text: String, x: Float, y: Float, fontSize: Float, r: Float, g: Float, b: Float, a: Float) {
         let textSize = measureText(text, fontSize: fontSize)
+        
+        // Center horizontally around the provided X coordinate
         let centeredX = x - textSize.width * 0.5
+        
+        // Center vertically around the provided Y coordinate
+        // The Y coordinate from UISystem is the center point where text should be centered
         let centeredY = y - textSize.height * 0.5
+        
+        // Debug: Log text centering calculations
+        log("MetalRenderer: drawTextCentered '\(text)' - Input center (\(x),\(y)), TextSize (\(textSize.width),\(textSize.height)), Final position (\(centeredX),\(centeredY))", level: .debug)
+        
         drawTextSDF(text, x: centeredX, y: centeredY, fontSize: fontSize, r: r, g: g, b: b, a: a)
     }
 }

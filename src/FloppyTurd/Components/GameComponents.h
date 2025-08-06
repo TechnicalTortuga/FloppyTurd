@@ -408,6 +408,12 @@ namespace GameCore {
         Gnosis::GNColor textHoverColor;
         int textLayer;  // Layer for text rendering
         
+        // Text centering properties
+        bool centerTextHorizontally;  // Center text horizontally within button bounds
+        bool centerTextVertically;    // Center text vertically within button bounds
+        float textOffsetX;            // Manual text offset X (applied after centering)
+        float textOffsetY;            // Manual text offset Y (applied after centering)
+        
         UIElement()
             : isHovered(false)
             , isPressed(false)
@@ -417,6 +423,10 @@ namespace GameCore {
             , textColor(0, 0, 0, 255)
             , textHoverColor(255, 255, 0, 255)
             , textLayer(10)  // Default to high layer for UI text
+            , centerTextHorizontally(true)  // Default to centered text
+            , centerTextVertically(true)
+            , textOffsetX(0.0f)
+            , textOffsetY(0.0f)
         {}
         
         UIElement(const std::string& text, const std::string& normalTex, const std::string& hoverTex = "", const std::string& pressedTex = "")
@@ -432,6 +442,10 @@ namespace GameCore {
             , textColor(0, 0, 0, 255)
             , textHoverColor(255, 255, 0, 255)
             , textLayer(10)
+            , centerTextHorizontally(true)  // Default to centered text
+            , centerTextVertically(true)
+            , textOffsetX(0.0f)
+            , textOffsetY(0.0f)
         {}
     };
 

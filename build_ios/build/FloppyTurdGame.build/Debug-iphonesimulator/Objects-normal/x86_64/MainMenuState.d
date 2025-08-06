@@ -23,6 +23,8 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Systems/../Components/GameComponents.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Systems/../../Engine/Platform/PlatformDelegates.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../../Engine/AssetPaths.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../../Engine/Utility/Utils.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../../Engine/Utility/../Core/GnosisTypes.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/FloppyTurdGame.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../../Engine/Core/ECS.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../../Engine/Platform/PlatformDelegates.h \

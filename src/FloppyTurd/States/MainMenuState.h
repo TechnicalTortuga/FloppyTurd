@@ -112,6 +112,10 @@ namespace GameCore {
         float m_targetOffsetX;
         float m_currentOffsetX;
         
+        // Button debouncing for level select arrows
+        float m_lastArrowPressTime;
+        float m_arrowDebounceDelay;
+        
         // Font loading state
         bool m_fontLoaded;
         
