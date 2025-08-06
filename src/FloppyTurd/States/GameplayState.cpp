@@ -412,64 +412,143 @@ namespace GameCore {
         }
         m_backgroundEntities.clear();
         
+        GN_LOG_INFO("=== PHASE 1: Starting background layer creation ===");
+        GN_LOG_INFO("Number of layer configs: " + std::to_string(m_currentLevelConfig.backgroundLayers.size()));
+        
+        int totalEntitiesCreated = 0;
+        
         // Create background layers from level configuration
-        for (const BackgroundLayer& layerConfig : m_currentLevelConfig.backgroundLayers) {
+        for (size_t layerIdx = 0; layerIdx < m_currentLevelConfig.backgroundLayers.size(); layerIdx++) {
+            const BackgroundLayer& layerConfig = m_currentLevelConfig.backgroundLayers[layerIdx];
+            
+            GN_LOG_INFO("--- Creating layer " + std::to_string(layerIdx) + ": '" + layerConfig.textureId + "' ---");
+            
             // Calculate scaling and positioning
             float baseScale = m_currentLevelConfig.baseScale;
             
-            // For 1024x480 backgrounds, we need different scaling than player
-            // Player uses baseScale (8.0f), backgrounds need 2.66f for proper fit
-            float backgroundScale = 2.66f;  // 1278 ÷ 480 = 2.66 for height fit
-            float finalScale = backgroundScale * layerConfig.scaleMultiplier;
+            // For backgrounds, calculate scale to fit screen height
+            // Determine texture size based on specific texture ID
+            float textureWidth, textureHeight;
+            if (layerConfig.textureId.find("Front") != std::string::npos) {
+                // FrontLayer backgrounds are 2048x480
+                textureWidth = 2048.0f;
+                textureHeight = 480.0f;
+            } else if (layerConfig.textureId.find("Clouds") != std::string::npos) {
+                // Cloud layers are 512x180
+                textureWidth = 512.0f;
+                textureHeight = 180.0f;
+            } else {
+                // Other background layers (Back, Mid) are 1024x480
+                textureWidth = 1024.0f;
+                textureHeight = 480.0f;
+            }
             
-            // Updated texture size for new 1024x480 backgrounds
-            float textureWidth = 1024.0f;
-            float textureHeight = 480.0f;
+            // Scale to fit iPhone 16 screen height in portrait mode (actual pixels)
+            // iPhone 16 Portrait: 1179×2556 actual pixels
+            float screenHeight = 2556.0f; // iPhone 16 portrait pixel height
+            float heightScale = screenHeight / textureHeight; // Scale to fill screen height
+            float finalScale = heightScale * layerConfig.scaleMultiplier;
+            
+            GN_LOG_INFO("Texture '" + layerConfig.textureId + "': width=" + std::to_string(textureWidth) + 
+                       ", height=" + std::to_string(textureHeight) + 
+                       ", heightScale=" + std::to_string(heightScale) + 
+                       ", scaleMultiplier=" + std::to_string(layerConfig.scaleMultiplier) +
+                       ", finalScale=" + std::to_string(finalScale));
             
             // Scaled dimensions
             float scaledWidth = textureWidth * finalScale;
             float scaledHeight = textureHeight * finalScale;
             
-            // Create multiple instances for seamless wrapping
-            int numInstances = 3; // Create 3 instances to ensure seamless scrolling
+            // Calculate number of instances needed for seamless wrapping
+            // Use screen width + 2 extra instances for smooth scrolling
+            float screenWidth = 1179.0f; // iPhone 16 portrait pixel width
+            int numInstances = static_cast<int>(std::ceil(screenWidth / scaledWidth)) + 2;
+            
+            // Ensure minimum of 3 instances for proper wrapping
+            numInstances = std::max(numInstances, 3);
+            
+            GN_LOG_INFO("Layer calculations: textureWidth=" + std::to_string(textureWidth) + 
+                       ", finalScale=" + std::to_string(finalScale) + 
+                       ", scaledWidth=" + std::to_string(scaledWidth) + 
+                       ", numInstances=" + std::to_string(numInstances));
+            
             float repeatWidth = layerConfig.repeatWidth > 0 ? layerConfig.repeatWidth : scaledWidth;
             
+            // For initial positioning, we want instances to be placed touching each other
+            // So use the actual scaled texture width for positioning
+            float positionSpacing = scaledWidth;
+            
+            int layerEntitiesCreated = 0;
+            
+            // Create multiple instances for this layer
             for (int i = 0; i < numInstances; i++) {
+                GN_LOG_INFO("Creating instance " + std::to_string(i) + " of " + std::to_string(numInstances));
+                
                 Gnosis::Entity bgEntity = m_ecsSystem->CreateEntity();
-                if (bgEntity != 0) {
-                    // Position instances side by side
-                    float xPos = i * repeatWidth;
-                    float yPos = 0.0f; // Position at top of screen for top-left rendering
-                    
-                    Transform bgTransform(Gnosis::GNVector2(xPos, yPos), 0.0f, Gnosis::GNVector2(finalScale, finalScale));
-                    m_ecsSystem->AddComponent<Transform>(bgEntity, bgTransform);
-                    
-                    // Create sprite component
-                    Sprite bgSprite(layerConfig.textureId, textureWidth, textureHeight);
-                    bgSprite.color = Gnosis::GNColor(255, 255, 255, 255);
-                    bgSprite.visible = true;
-                    bgSprite.layer = layerConfig.renderLayer;
-                    m_ecsSystem->AddComponent<Sprite>(bgEntity, bgSprite);
-                    
-                    // Add parallax component
-                    Parallax parallaxComponent;
-                    parallaxComponent.scrollSpeed = layerConfig.scrollSpeed;
-                    parallaxComponent.repeatWidth = repeatWidth;
-                    parallaxComponent.autoScroll = true;
-                    m_ecsSystem->AddComponent<Parallax>(bgEntity, parallaxComponent);
-                    
-                    m_backgroundEntities.push_back(bgEntity);
-                    
-                    GN_LOG_INFO("Created background layer '" + layerConfig.textureId + 
-                               "' instance " + std::to_string(i) + 
-                               " at (" + std::to_string(xPos) + ", " + std::to_string(yPos) + ")" +
-                               " with scale " + std::to_string(finalScale) +
-                               " on render layer " + std::to_string(layerConfig.renderLayer));
+                if (bgEntity == 0) {
+                    GN_LOG_ERROR("Failed to create entity for instance " + std::to_string(i));
+                    continue;
                 }
+                
+                GN_LOG_INFO("Successfully created entity " + std::to_string(bgEntity) + " for instance " + std::to_string(i));
+                
+                // Position instances side by side for seamless wrapping
+                // Start first instance at x=0, others follow consecutively using texture width
+                float xPos = i * positionSpacing;
+                float yPos = 0.0f; // Position at top of screen for top-left rendering
+                
+                GN_LOG_INFO("Positioning entity " + std::to_string(bgEntity) + " at (" + std::to_string(xPos) + ", " + std::to_string(yPos) + ")");
+                
+                // Create and add Transform component
+                // Apply the final scaling through Transform component
+                Transform bgTransform(Gnosis::GNVector2(xPos, yPos), 0.0f, Gnosis::GNVector2(finalScale, finalScale));
+                m_ecsSystem->AddComponent<Transform>(bgEntity, bgTransform);
+                GN_LOG_INFO("Added Transform component to entity " + std::to_string(bgEntity) + " at (" + std::to_string(xPos) + ", " + std::to_string(yPos) + ") with scale=" + std::to_string(finalScale));
+                
+                // Create and add Sprite component
+                // Use the original texture dimensions, scaling is handled by Transform
+                Sprite bgSprite(layerConfig.textureId, textureWidth, textureHeight);
+                bgSprite.color = Gnosis::GNColor(255, 255, 255, 255);
+                bgSprite.visible = true;
+                bgSprite.layer = layerConfig.renderLayer;
+                m_ecsSystem->AddComponent<Sprite>(bgEntity, bgSprite);
+                GN_LOG_INFO("Added Sprite component to entity " + std::to_string(bgEntity) + " with texture '" + layerConfig.textureId + "'" +
+                           " textureSize=(" + std::to_string(textureWidth) + "x" + std::to_string(textureHeight) + ")" +
+                           " finalScale=" + std::to_string(finalScale) + " scaledSize=(" + std::to_string(scaledWidth) + "x" + std::to_string(scaledHeight) + ")");
+                
+                // Create and add Parallax component
+                Parallax parallaxComponent;
+                parallaxComponent.scrollSpeed = layerConfig.scrollSpeed;
+                parallaxComponent.repeatWidth = repeatWidth;
+                parallaxComponent.autoScroll = true;
+                m_ecsSystem->AddComponent<Parallax>(bgEntity, parallaxComponent);
+                GN_LOG_INFO("Added Parallax component to entity " + std::to_string(bgEntity) + " with scrollSpeed=" + std::to_string(layerConfig.scrollSpeed));
+                
+                // Create and add ParallaxInstance component for better management
+                ParallaxInstance instanceComponent(layerConfig.textureId, i, numInstances, scaledWidth);
+                m_ecsSystem->AddComponent<ParallaxInstance>(bgEntity, instanceComponent);
+                GN_LOG_INFO("Added ParallaxInstance component to entity " + std::to_string(bgEntity) + " (instance " + std::to_string(i) + " of " + std::to_string(numInstances) + ")");
+                
+                m_backgroundEntities.push_back(bgEntity);
+                layerEntitiesCreated++;
+                totalEntitiesCreated++;
+                
+                GN_LOG_INFO("✓ Successfully created background layer '" + layerConfig.textureId + 
+                           "' instance " + std::to_string(i) + " (entity " + std::to_string(bgEntity) + ")" +
+                           " at (" + std::to_string(xPos) + ", " + std::to_string(yPos) + ")" +
+                           " with scale " + std::to_string(finalScale) +
+                           " positionSpacing " + std::to_string(positionSpacing) +
+                           " repeatWidth " + std::to_string(repeatWidth) +
+                           " scaledWidth " + std::to_string(scaledWidth) +
+                           " on render layer " + std::to_string(layerConfig.renderLayer));
             }
+            
+            GN_LOG_INFO("Created " + std::to_string(layerEntitiesCreated) + " entities for layer '" + layerConfig.textureId + "'");
         }
         
-        GN_LOG_INFO("Created " + std::to_string(m_backgroundEntities.size()) + " background entities");
+        GN_LOG_INFO("=== PHASE 1 COMPLETE: Created " + std::to_string(totalEntitiesCreated) + " total background entities ===");
+        GN_LOG_INFO("Expected entities: " + std::to_string(m_currentLevelConfig.backgroundLayers.size()) + " layers × 3+ instances = " + std::to_string(m_currentLevelConfig.backgroundLayers.size() * 3) + "+ entities");
+        GN_LOG_INFO("Actual entities in vector: " + std::to_string(m_backgroundEntities.size()));
     }
 
     void GameplayState::DestroyGameEntities() {

@@ -280,8 +280,8 @@ namespace GameCore {
 
     // ENEMY CONFIGURATIONS
     void LevelConfigFactory::AddParkEnemies(LevelConfig& config) {
-        // Simple flying birds
-        config.enemies.emplace_back("BirdIdle", 40.0f, 30.0f, 150.0f, 5.0f, 1, "horizontal");
+        // Flying birds with proper animation - 4 frames of 32x32 in horizontal spritesheet (128x32 total)
+        config.enemies.emplace_back("BirdIdle", 32.0f, 32.0f, 150.0f, 5.0f, 1, "horizontal");
     }
 
     void LevelConfigFactory::AddSewerEnemies(LevelConfig& config) {
@@ -291,8 +291,8 @@ namespace GameCore {
     }
 
     void LevelConfigFactory::AddDesertEnemies(LevelConfig& config) {
-        // Desert wildlife
-        config.enemies.emplace_back("BirdIdle", 40.0f, 30.0f, 160.0f, 4.8f, 1, "horizontal");
+        // Desert wildlife - birds with proper frame size
+        config.enemies.emplace_back("BirdIdle", 32.0f, 32.0f, 160.0f, 4.8f, 1, "horizontal");
         // Could add desert-specific enemies like vultures or scorpions
     }
 
@@ -303,8 +303,8 @@ namespace GameCore {
     }
 
     void LevelConfigFactory::AddCastleEnemies(LevelConfig& config) {
-        // Castle/dungeon enemies
-        config.enemies.emplace_back("BirdIdle", 40.0f, 30.0f, 140.0f, 3.8f, 2, "swoop");
+        // Castle/dungeon enemies - birds with proper frame size
+        config.enemies.emplace_back("BirdIdle", 32.0f, 32.0f, 140.0f, 3.8f, 2, "swoop");
         config.enemies.emplace_back("ToiletPaperFlap", 35.0f, 35.0f, 200.0f, 4.2f, 1, "vertical");
     }
 

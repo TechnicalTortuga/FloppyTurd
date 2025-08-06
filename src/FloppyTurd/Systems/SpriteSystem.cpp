@@ -294,9 +294,18 @@ namespace GameCore {
         }
         
         // Animated sprite - calculate frame position
-        // Assuming horizontal sprite sheet layout
-        int frameX = (sprite.currentFrame % (sprite.frameCount > 0 ? sprite.frameCount : 1)) * sprite.frameWidth;
-        int frameY = 0; // Could be extended for multi-row sprite sheets
+        // Ensure we don't go out of bounds
+        int safeFrameCount = sprite.frameCount > 0 ? sprite.frameCount : 1;
+        int currentFrame = sprite.currentFrame % safeFrameCount;
+        
+        // Calculate frame position in spritesheet (horizontal layout)
+        int frameX = currentFrame * sprite.frameWidth;
+        int frameY = 0; // Single row layout - could be extended for multi-row sheets
+        
+        GN_LOG_DEBUG("SpriteSystem: CalculateSourceRect - frame " + std::to_string(currentFrame) + 
+                    " of " + std::to_string(safeFrameCount) + 
+                    " at (" + std::to_string(frameX) + "," + std::to_string(frameY) + ") " +
+                    "size " + std::to_string(sprite.frameWidth) + "x" + std::to_string(sprite.frameHeight));
         
         return Gnosis::GNRectangle{
             static_cast<float>(frameX),

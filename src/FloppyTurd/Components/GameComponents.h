@@ -356,6 +356,29 @@ namespace GameCore {
             , autoScroll(true)
         {}
     };
+
+    /**
+     * ParallaxInstance component - manages multiple instances of parallax layers
+     */
+    struct ParallaxInstance : public Gnosis::Component {
+        std::string layerId;        // Unique identifier for the layer type
+        int instanceIndex;          // Which instance this is (0, 1, 2, 3)
+        int totalInstances;         // Total number of instances for this layer
+        float textureWidth;         // Width of the texture for wrapping calculations
+        
+        ParallaxInstance()
+            : instanceIndex(0)
+            , totalInstances(1)
+            , textureWidth(1024.0f)
+        {}
+        
+        ParallaxInstance(const std::string& id, int index, int total, float width)
+            : layerId(id)
+            , instanceIndex(index)
+            , totalInstances(total)
+            , textureWidth(width)
+        {}
+    };
     
     /**
      * Lifetime component - auto-destroy after time

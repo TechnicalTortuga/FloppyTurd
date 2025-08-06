@@ -71,21 +71,68 @@ namespace GameCore {
     }
 
     void CameraSystem::UpdateParallaxLayers(float deltaTime) {
-        // Update parallax background layers
-        auto parallaxEntities = m_ecsSystem->GetEntitiesWithComponents<Transform, Sprite, Parallax>();
+        // Update parallax background layers - only works with ParallaxInstance component
+        auto parallaxEntities = m_ecsSystem->GetEntitiesWithComponents<Transform, Sprite, Parallax, ParallaxInstance>();
+        
+        static float debugTimer = 0.0f;
+        debugTimer += deltaTime;
+        bool shouldLog = debugTimer >= 1.0f; // Log every 1 second for better debugging
+        if (shouldLog) {
+            debugTimer = 0.0f;
+            GN_LOG_INFO("=== PARALLAX DEBUG: Found " + std::to_string(parallaxEntities.size()) + " parallax entities ===");
+            
+            // Also check if we have any entities with just Transform, Sprite, Parallax
+            auto basicParallaxEntities = m_ecsSystem->GetEntitiesWithComponents<Transform, Sprite, Parallax>();
+            GN_LOG_INFO("=== BASIC PARALLAX: Found " + std::to_string(basicParallaxEntities.size()) + " basic parallax entities ===");
+        }
+        
         for (Gnosis::Entity entity : parallaxEntities) {
             auto transform = m_ecsSystem->GetComponent<Transform>(entity);
             auto sprite = m_ecsSystem->GetComponent<Sprite>(entity);
             auto parallax = m_ecsSystem->GetComponent<Parallax>(entity);
+            auto instance = m_ecsSystem->GetComponent<ParallaxInstance>(entity);
             
-            if (transform && sprite && parallax && parallax->autoScroll) {
+            if (transform && sprite && parallax && instance && parallax->autoScroll) {
+                if (shouldLog) {
+                    GN_LOG_INFO("Entity " + std::to_string(entity) + " texture '" + sprite->textureId + 
+                               "' instance " + std::to_string(instance->instanceIndex) + "/" + std::to_string(instance->totalInstances) +
+                               " at x=" + std::to_string(transform->position.x) + 
+                               " y=" + std::to_string(transform->position.y) +
+                               " scale=" + std::to_string(transform->scale.x) +
+                               " textureWidth=" + std::to_string(instance->textureWidth) +
+                               " scrollSpeed=" + std::to_string(parallax->scrollSpeed) +
+                               " autoScroll=" + (parallax->autoScroll ? "true" : "false") +
+                               " visible=" + (sprite->visible ? "true" : "false"));
+                }
+                
                 // Move background based on its scroll speed
+                float oldX = transform->position.x;
                 transform->position.x -= parallax->scrollSpeed * deltaTime;
                 
-                // Handle wrapping for seamless scrolling
-                if (parallax->repeatWidth > 0.0f) {
-                    if (transform->position.x <= -parallax->repeatWidth) {
-                        transform->position.x += parallax->repeatWidth * 2.0f;
+                if (shouldLog) {
+                    GN_LOG_INFO("Entity " + std::to_string(entity) + " moved from x=" + std::to_string(oldX) + 
+                               " to x=" + std::to_string(transform->position.x) + 
+                               " (delta=" + std::to_string(parallax->scrollSpeed * deltaTime) + ")");
+                }
+                
+                // Seamless wrapping logic for continuous scrolling
+                if (instance->textureWidth > 0.0f) {
+                    // Calculate the total width of all instances for this layer
+                    float totalLayerWidth = instance->textureWidth * instance->totalInstances;
+                    
+                    // When an instance moves completely off-screen to the left,
+                    // wrap it around to the right side for seamless scrolling
+                    if (transform->position.x <= -instance->textureWidth) {
+                        // Move it to the right edge of all instances
+                        transform->position.x += totalLayerWidth;
+                        
+                        if (shouldLog) {
+                            GN_LOG_INFO("CameraSystem: Wrapped parallax layer '" + sprite->textureId + 
+                                       "' instance " + std::to_string(instance->instanceIndex) +
+                                       " to x=" + std::to_string(transform->position.x) + 
+                                       " (textureWidth=" + std::to_string(instance->textureWidth) + 
+                                       ", totalLayerWidth=" + std::to_string(totalLayerWidth) + ")");
+                        }
                     }
                 }
             }

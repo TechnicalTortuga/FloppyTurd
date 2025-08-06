@@ -1,0 +1,8 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -workspace FloppyTurd.xcworkspace -scheme FloppyTurd -configuration Debug clean build
+
+User defaults from command line:
+    IDEPackageSupportUseBuiltinSCM = YES
+
+2025-08-06 16:37:21.327 xcodebuild[60106:12806611] Writing error result bundle to /var/folders/09/pw3zby3x5pn4pvjgr515b_sw0000gn/T/ResultBundle_2025-06-08_16-37-0021.xcresult
+xcodebuild: error: 'FloppyTurd.xcworkspace' does not exist.
