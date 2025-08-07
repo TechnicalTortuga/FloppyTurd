@@ -314,10 +314,26 @@ namespace GameCore {
         int health;
         std::string obstacleType;
         
+        // Toilet/pipe specific properties
+        int behavior;               // ToiletBehavior as int (0=STATIC, 1=OSCILLATE_VERTICAL, 2=OSCILLATE_HORIZONTAL)
+        float oscillationSpeed;     // Speed of oscillation (radians per second)
+        float oscillationRange;     // Range of oscillation (pixels)
+        float oscillationTimer;     // Current oscillation time
+        Gnosis::GNVector2 basePosition; // Original spawn position for oscillation
+        Gnosis::Entity pairedEntity; // For toilet pairs (top/bottom linked)
+        bool isTopPart;             // True if this is the top part of a pair
+        
         Obstacle()
             : damage(1)
             , isDestructible(false)
             , health(1)
+            , behavior(0) // STATIC = 0
+            , oscillationSpeed(0.0f)
+            , oscillationRange(0.0f)
+            , oscillationTimer(0.0f)
+            , basePosition(0.0f, 0.0f)
+            , pairedEntity(0)
+            , isTopPart(false)
         {}
     };
 

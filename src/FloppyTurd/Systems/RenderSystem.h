@@ -17,6 +17,8 @@ namespace GameCore {
      * - Game objects (layer 3)
      * - Player (layer 4)
      * - Effects and UI (layers 5+)
+     * 
+     * Enhanced with dynamic screen information for responsive rendering.
      */
     class RenderSystem {
     public:
@@ -36,6 +38,15 @@ namespace GameCore {
 
         // Screen space rendering (for UI)
         void RenderScreenSpace();
+        
+        // Dynamic screen information
+        const ScreenInfo& GetScreenInfo() const { return m_screenInfo; }
+        void UpdateScreenInfo(); // Call when screen changes (rotation, etc.)
+        float GetDynamicScale() const;
+        float GetUIScale() const;
+        
+        // Platform-specific layout setup
+        void SetupLayout();  // Calls appropriate platform layout function
 
     private:
         Gnosis::ECS* m_ecsSystem;
@@ -43,6 +54,10 @@ namespace GameCore {
         
         Gnosis::Entity m_activeCamera;
         bool m_useRenderLayers;
+        
+        // Dynamic screen information
+        ScreenInfo m_screenInfo;
+        bool m_screenInfoValid;
         
         // Render data structures
         struct RenderItem {
@@ -60,6 +75,11 @@ namespace GameCore {
         void SortRenderQueue();
         void RenderWorldSpace();
         void RenderSingleItem(const RenderItem& item);
+        
+        // Dynamic layout helpers
+        void SetupIOSLayout();
+        void SetupDesktopLayout();
+        void CalculateDynamicScaling();
         
         // World-to-screen transformation
         Gnosis::GNVector2 WorldToScreen(const Gnosis::GNVector2& worldPos);

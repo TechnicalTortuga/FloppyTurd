@@ -7,12 +7,17 @@ namespace GameCore {
     UISystem::UISystem(Gnosis::ECS* ecsCoordinator, const GameCore::PlatformDelegates& delegates)
         : m_ecsCoordinator(ecsCoordinator)
         , m_delegates(delegates)
+        , m_screenInfoValid(false)
     {
         if (!m_ecsCoordinator) {
             GN_LOG_ERROR("UISystem: ECS coordinator is null");
         }
         
         GN_LOG_INFO("UISystem: Initialized with integrated UI rendering");
+        
+        // Initialize screen info and layout
+        UpdateScreenInfo();
+        SetupLayout();
     }
 
     void UISystem::Update(float deltaTime) {
@@ -380,6 +385,132 @@ namespace GameCore {
                 UpdateButtonSprite(entity);
             }
         }
+    }
+    
+    // Responsive layout implementation
+    void UISystem::UpdateScreenInfo() {
+        if (m_delegates.renderer.getScreenInfo) {
+            m_delegates.renderer.getScreenInfo(&m_screenInfo);
+            m_screenInfoValid = true;
+            
+            GN_LOG_INFO("UISystem: Screen info updated: " + 
+                       std::to_string((int)m_screenInfo.logicalWidth) + "x" + 
+                       std::to_string((int)m_screenInfo.logicalHeight));
+        } else if (m_delegates.renderer.getScreenSize) {
+            // Fallback to legacy screen size
+            m_delegates.renderer.getScreenSize(&m_screenInfo.logicalWidth, &m_screenInfo.logicalHeight);
+            m_screenInfo.pixelWidth = m_screenInfo.logicalWidth;
+            m_screenInfo.pixelHeight = m_screenInfo.logicalHeight;
+            m_screenInfo.scaleFactor = 1.0f;
+            m_screenInfo.isPortrait = m_screenInfo.logicalHeight > m_screenInfo.logicalWidth;
+            m_screenInfo.deviceModel = "Unknown";
+            m_screenInfoValid = true;
+            
+            GN_LOG_WARN("UISystem: Using legacy screen size: " + 
+                       std::to_string((int)m_screenInfo.logicalWidth) + "x" + 
+                       std::to_string((int)m_screenInfo.logicalHeight));
+        } else {
+            GN_LOG_ERROR("UISystem: No screen size information available");
+            m_screenInfoValid = false;
+        }
+    }
+    
+    float UISystem::GetResponsiveScale() const {
+        if (!m_screenInfoValid) {
+            return 1.0f;
+        }
+        
+        // Calculate responsive scale based on screen size
+        // Use logical height as base reference (iPhone 16 logical height is 852)
+        const float referenceHeight = 852.0f;  // iPhone 16 logical height
+        return m_screenInfo.logicalHeight / referenceHeight;
+    }
+    
+    float UISystem::GetUIScale() const {
+        if (!m_screenInfoValid) {
+            return 1.0f;
+        }
+        
+        // UI scaling with reasonable bounds
+        float baseScale = GetResponsiveScale();
+        return std::max(0.8f, std::min(2.0f, baseScale));
+    }
+    
+    void UISystem::SetupLayout() {
+        if (!m_screenInfoValid) {
+            GN_LOG_WARN("UISystem: Cannot setup layout - screen info not valid");
+            return;
+        }
+        
+#ifdef PLATFORM_IOS
+        SetupIOSLayout();
+#else
+        SetupDesktopLayout();
+#endif
+    }
+    
+    void UISystem::SetupIOSLayout() {
+        GN_LOG_INFO("UISystem: Setting up iOS layout for device: " + m_screenInfo.deviceModel);
+        
+        float scale = GetUIScale();
+        GN_LOG_INFO("UISystem: Calculated UI scale: " + std::to_string(scale));
+        
+        // iOS-specific UI setup can go here
+        // e.g., safe area calculations, notch handling, etc.
+    }
+    
+    void UISystem::SetupDesktopLayout() {
+        GN_LOG_INFO("UISystem: Setting up desktop layout");
+        
+        float scale = GetUIScale();
+        GN_LOG_INFO("UISystem: Calculated UI scale: " + std::to_string(scale));
+        
+        // Desktop-specific UI setup can go here
+    }
+    
+    void UISystem::GetSafeArea(float& left, float& top, float& right, float& bottom) const {
+        if (!m_screenInfoValid) {
+            left = top = right = bottom = 0.0f;
+            return;
+        }
+        
+        // Default safe area - can be enhanced with platform-specific notch detection
+        left = 0.0f;
+        top = 0.0f;
+        right = m_screenInfo.logicalWidth;
+        bottom = m_screenInfo.logicalHeight;
+        
+#ifdef PLATFORM_IOS
+        // iOS safe area considerations (notch, home indicator, etc.)
+        // These values can be refined based on device model
+        if (m_screenInfo.deviceModel.find("iPhone") != std::string::npos) {
+            top = 44.0f;  // Status bar / notch area
+            bottom = m_screenInfo.logicalHeight - 34.0f;  // Home indicator area
+        }
+#endif
+    }
+    
+    float UISystem::CalculateResponsivePosition(float basePosition, bool isHorizontal) const {
+        if (!m_screenInfoValid) {
+            return basePosition;
+        }
+        
+        float scale = GetUIScale();
+        if (isHorizontal) {
+            // Scale horizontal position based on screen width
+            return basePosition * (m_screenInfo.logicalWidth / 393.0f); // iPhone 16 reference
+        } else {
+            // Scale vertical position based on screen height
+            return basePosition * (m_screenInfo.logicalHeight / 852.0f); // iPhone 16 reference
+        }
+    }
+    
+    float UISystem::CalculateResponsiveSize(float baseSize) const {
+        if (!m_screenInfoValid) {
+            return baseSize;
+        }
+        
+        return baseSize * GetUIScale();
     }
 
 } // namespace GameCore 

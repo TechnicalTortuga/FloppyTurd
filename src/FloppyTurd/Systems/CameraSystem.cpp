@@ -38,10 +38,13 @@ namespace GameCore {
         // Update world position (this represents how far the world has scrolled)
         m_worldPosition += m_worldScrollSpeed * deltaTime;
         
-        // Update camera position
+        // Camera stays stationary at (0,0) for side-scrolling games
+        // Only track world scroll distance, don't move the camera
         Camera* camera = m_ecsSystem->GetComponent<Camera>(m_mainCamera);
         if (camera) {
-            camera->position.x = m_worldPosition;
+            // Keep camera at origin - only objects move, not the camera
+            camera->position.x = 0.0f;
+            camera->position.y = 0.0f;
         }
         
         // Move all non-player, non-background entities to the left
@@ -59,6 +62,11 @@ namespace GameCore {
             
             // Skip camera entities
             if (entity == m_mainCamera) {
+                continue;
+            }
+            
+            // Skip UI elements (they should stay fixed in screen space)
+            if (m_ecsSystem->HasComponent<UIElement>(entity)) {
                 continue;
             }
             

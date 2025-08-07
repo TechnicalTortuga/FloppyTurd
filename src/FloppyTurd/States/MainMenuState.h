@@ -5,6 +5,7 @@
 #include "../../Engine/Platform/PlatformDelegates.h"
 #include "../Components/GameComponents.h"
 #include "../Systems/SpriteSystem.h"
+#include "../Systems/RenderSystem.h"
 #include <memory>
 
 namespace GameCore {
@@ -17,7 +18,7 @@ namespace GameCore {
      */
     class MainMenuState : public GameState {
     public:
-        MainMenuState(Gnosis::ECS* ecsCoordinator);
+        MainMenuState(Gnosis::ECS* ecsCoordinator, GameCore::PlatformDelegates* platformDelegates);
         ~MainMenuState() override;
 
         void Enter() override;
@@ -64,7 +65,9 @@ namespace GameCore {
         };
 
         Gnosis::ECS* m_ecsCoordinator;  // Reference to shared ECS coordinator
+        GameCore::PlatformDelegates* m_platformDelegates;  // For system creation
         std::unique_ptr<SpriteSystem> m_spriteSystem;  // For texture dimension queries
+        std::unique_ptr<RenderSystem> m_renderSystem;  // For screen info access
         bool m_finished;
         int m_selectedOption;
         float m_animationTimer;
@@ -189,6 +192,11 @@ namespace GameCore {
         const char* GetMenuOptionText(int optionIndex) const;
         int GetMenuOptionCount() const;
         bool IsMobilePlatform() const;
+        
+        // Platform-specific layout functions
+        void SetupLayout();
+        void SetupIOSLayout();
+        void SetupDesktopLayout();
     };
 
 } // namespace GameCore

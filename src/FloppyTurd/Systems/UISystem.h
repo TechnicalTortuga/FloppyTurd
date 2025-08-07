@@ -11,11 +11,16 @@ namespace GameCore {
     /**
      * UISystem - Handles UI element rendering within the ECS architecture
      * Combines button and text rendering for UIElement components
+     * Enhanced with responsive layout for dynamic screen sizes
      */
     class UISystem {
     private:
         Gnosis::ECS* m_ecsCoordinator;
         GameCore::PlatformDelegates m_delegates;
+        
+        // Dynamic screen information
+        ScreenInfo m_screenInfo;
+        bool m_screenInfoValid;
         
     public:
         UISystem(Gnosis::ECS* ecsCoordinator, const GameCore::PlatformDelegates& delegates);
@@ -82,6 +87,27 @@ namespace GameCore {
          * Reset all button states to normal
          */
         void ResetAllButtonStates();
+        
+        /**
+         * Responsive layout methods
+         */
+        void UpdateScreenInfo();
+        float GetResponsiveScale() const;
+        float GetUIScale() const;
+        void SetupLayout();
+        
+        /**
+         * Platform-specific layout functions
+         */
+        void SetupIOSLayout();
+        void SetupDesktopLayout();
+        
+        /**
+         * Safe area and responsive calculations
+         */
+        void GetSafeArea(float& left, float& top, float& right, float& bottom) const;
+        float CalculateResponsivePosition(float basePosition, bool isHorizontal) const;
+        float CalculateResponsiveSize(float baseSize) const;
     };
 
 } // namespace GameCore 

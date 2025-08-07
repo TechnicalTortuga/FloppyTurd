@@ -302,6 +302,57 @@ public class AssetManager {
         let cacheKey = name.hasSuffix(".png") ? name : "\(name).png"
         return textureCache[cacheKey] != nil
     }
+    
+    // MARK: - Texture Metadata
+    
+    public func getTextureMetadata(name: String) -> (width: Int, height: Int, channels: Int, format: String, dataSize: Int, isLoaded: Bool, assetPath: String) {
+        let cacheKey = name.hasSuffix(".png") ? name : "\(name).png"
+        
+        // Check if texture is cached first
+        if let cachedTexture = textureCache[cacheKey] {
+            logger.debug("🔍 Getting metadata for cached texture: \(name)")
+            return (
+                width: cachedTexture.width,
+                height: cachedTexture.height,
+                channels: 4, // Metal textures are typically RGBA
+                format: "RGBA8",
+                dataSize: cachedTexture.width * cachedTexture.height * 4,
+                isLoaded: true,
+                assetPath: "graphics/\(name)"
+            )
+        }
+        
+        // Try to get metadata from UIImage without fully loading
+        if let image = UIImage(named: name) {
+            let scaledSize = CGSize(
+                width: image.size.width * image.scale,
+                height: image.size.height * image.scale
+            )
+            
+            logger.debug("🔍 Getting metadata from UIImage for: \(name) - Size: \(scaledSize.width)x\(scaledSize.height)")
+            return (
+                width: Int(scaledSize.width),
+                height: Int(scaledSize.height),
+                channels: 4, // Assume RGBA
+                format: "RGBA8",
+                dataSize: Int(scaledSize.width * scaledSize.height * 4),
+                isLoaded: false,
+                assetPath: "graphics/\(name)"
+            )
+        }
+        
+        // Fallback - return zero dimensions for unknown textures
+        logger.warning("⚠️ Could not get metadata for texture: \(name)")
+        return (
+            width: 0,
+            height: 0,
+            channels: 4,
+            format: "RGBA8",
+            dataSize: 0,
+            isLoaded: false,
+            assetPath: "graphics/\(name)"
+        )
+    }
 
     public func isAudioCached(name: String) -> Bool {
         let cacheKey = name.hasSuffix(".mp3") ? name : "\(name).mp3"

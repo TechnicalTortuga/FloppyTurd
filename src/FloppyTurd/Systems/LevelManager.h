@@ -46,8 +46,16 @@ namespace GameCore {
         void UpdateEnemySpawning(float deltaTime);
         void UpdatePickupSpawning(float deltaTime);
         
+        // New object pooling system
+        void UpdateObstaclePooling(float deltaTime, float worldScrollDistance);
+        void InitializeObstaclePool();
+        void WrapObstacleAroundScreen(Gnosis::Entity obstacle, float worldScrollDistance);
+        
         // Obstacle management
         Gnosis::Entity SpawnObstacle(const ObstacleConfig& config, float x, float y);
+        Gnosis::Entity SpawnToiletPair(const ObstacleConfig& config, float x, float y); // For toilet pairs
+        Gnosis::Entity SpawnToiletPairWithGap(const ObstacleConfig& config, float x, float gapCenterY, float gapHeight); // For toilet pairs with custom gap
+        Gnosis::Entity SpawnSingleObstacle(const ObstacleConfig& config, float x, float y); // For single obstacles
         void RemoveObstacle(Gnosis::Entity obstacle);
         std::vector<Gnosis::Entity> GetActiveObstacles() const { return m_activeObstacles; }
         
@@ -100,6 +108,11 @@ namespace GameCore {
         float m_lastObstacleX;
         float m_lastEnemyX;
         float m_lastPickupX;
+        
+        // Object pooling system
+        static const int OBSTACLE_POOL_SIZE = 6;  // Pool of 6 obstacles (like old ParkLevel had 5+1)
+        float m_obstacleSpacing;                   // Distance between obstacles
+        bool m_poolInitialized;
         
         // Internal methods
         void InitializeProgressionSystem();

@@ -106,21 +106,21 @@ namespace GameCore {
         std::string m_shootAnimation;
         std::string m_hurtAnimation;
         
-        // Enhanced Jump Physics Constants (research-based from platformer best practices)
-        static constexpr float JUMP_FORCE = 1800.0f;         // Much larger base impulse for dramatic jumps
-        static constexpr float GRAVITY_UP = 1600.0f;          // Gravity while ascending (lighter for floaty feel)
-        static constexpr float GRAVITY_DOWN = 3200.0f;        // Much heavier gravity while falling for speed
-        static constexpr float TERMINAL_VELOCITY = 1200.0f;   // Higher maximum falling speed
+        // Enhanced Jump Physics Constants (adjusted for snappier feel based on user feedback)
+        static constexpr float JUMP_FORCE = 2400.0f;         // INCREASED: Stronger jump impulse for more dramatic jumps
+        static constexpr float GRAVITY_UP = 2000.0f;          // INCREASED: More gravity while ascending for less floaty feel
+        static constexpr float GRAVITY_DOWN = 4800.0f;        // INCREASED: Much heavier gravity while falling for faster drop
+        static constexpr float TERMINAL_VELOCITY = 1800.0f;   // INCREASED: Higher maximum falling speed for faster descent
         static constexpr float AUTO_JUMP_THRESHOLD = 0.2f;    // Auto-jump after 200ms (1/5 second) of holding
         static constexpr float VARIABLE_JUMP_THRESHOLD = 0.8f; // Extended time window for variable jump height
         static constexpr float EARLY_RELEASE_MULTIPLIER = 0.5f; // Stronger velocity reduction on early release
         
         static constexpr float JUMP_COOLDOWN = 0.15f; // Reduced for more responsive input
         static constexpr float SHOOT_COOLDOWN = 0.3f;
-        static constexpr float SCREEN_HEIGHT = 1278.0f; // Screen height
+        static constexpr float SCREEN_HEIGHT = 2556.0f; // iPhone 16 portrait height
         static constexpr float SCREEN_WIDTH = 1179.0f;  // Screen width
         static constexpr float WORLD_SPEED = 200.0f; // Speed at which the world moves past the player
-        static constexpr float CENTER_SPAWN_Y = 639.0f; // Center Y position for respawn
+        static constexpr float TOP_SPAWN_Y = 300.0f; // Top spawn position (near top of screen)
         
         // Helper methods
         void UpdatePlayerPhysics(float deltaTime);

@@ -11,6 +11,7 @@
 #include "../Systems/CameraSystem.h"
 #include "../Systems/RenderSystem.h"
 #include "../Systems/LevelManager.h"
+#include "../Systems/UISystem.h"
 #include "../Config/LevelConfig.h"
 #include <memory>
 #include <vector>
@@ -65,6 +66,11 @@ namespace GameCore {
         // Pause menu
         void TogglePause();
         bool IsPaused() const { return m_isPaused; }
+        
+        // Platform-specific layout functions
+        void SetupLayout();
+        void SetupIOSLayout();
+        void SetupDesktopLayout();
 
     private:
         // Core systems
@@ -77,6 +83,7 @@ namespace GameCore {
         std::unique_ptr<CameraSystem> m_cameraSystem;
         std::unique_ptr<RenderSystem> m_renderSystem;
         std::unique_ptr<LevelManager> m_levelManager;
+        std::unique_ptr<UISystem> m_uiSystem;
 
         // Level configuration
         int m_currentLevelId;
@@ -114,6 +121,7 @@ namespace GameCore {
         Gnosis::Entity m_livesTextEntity;
         Gnosis::Entity m_coinsTextEntity;
         Gnosis::Entity m_pauseMenuEntity;
+        Gnosis::Entity m_tempMenuButtonEntity;  // Temporary button to return to main menu
 
         // Spawn timers
         float m_obstacleSpawnTimer;
@@ -163,6 +171,10 @@ namespace GameCore {
         void OnPickupCollected();
         void OnObstacleHit();
         void OnEnemyDefeated();
+        
+        // Menu navigation (for pause menu integration later)
+        void ReturnToMainMenu();  // Function to connect to pause menu later
+        void CheckMenuButtonClick(float touchX, float touchY);
     };
 
 } // namespace GameCore

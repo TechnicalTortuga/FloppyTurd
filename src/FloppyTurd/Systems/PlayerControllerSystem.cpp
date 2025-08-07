@@ -367,8 +367,8 @@ namespace GameCore {
             Physics* physics = m_ecsSystem->GetComponent<Physics>(m_playerEntity);
             
             if (transform) {
-                // Start player at the fixed X position (configurable for optimal obstacle visibility) and at center Y
-                transform->position = Gnosis::GNVector2(PLAYER_X_POSITION, CENTER_SPAWN_Y);
+                // Start player at the fixed X position and near the top of screen
+                transform->position = Gnosis::GNVector2(PLAYER_X_POSITION, TOP_SPAWN_Y);
             }
             
             if (physics) {
@@ -444,12 +444,15 @@ namespace GameCore {
         // Keep player at a fixed horizontal position (configurable for optimal gameplay visibility)
         transform->position.x = PLAYER_X_POSITION;
         
-        // Check if player goes below the screen (bottom boundary death)
-        // Reset when player hits the bottom edge of the screen (not below it)
-        if (transform->position.y >= SCREEN_HEIGHT) {
-            // Player hit bottom of screen - trigger damage and reset position
-            GN_LOG_INFO("Player hit bottom of screen - resetting position");
-            transform->position.y = CENTER_SPAWN_Y;
+        // Get player sprite to calculate actual size for proper boundary checking
+        Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(m_playerEntity);
+        float playerHeight = sprite ? sprite->height * transform->scale.y : 64.0f; // Default to 64 if no sprite
+        
+        // Only reset when player is completely off screen below (entire sprite past bottom)
+        if (transform->position.y > SCREEN_HEIGHT + playerHeight) {
+            // Player is completely off screen below - trigger damage and reset position
+            GN_LOG_INFO("Player completely off screen below - resetting position");
+            transform->position.y = TOP_SPAWN_Y;
             physics->velocity.y = 0.0f;
             m_isAscending = false;
             m_jumpButtonHeld = false;

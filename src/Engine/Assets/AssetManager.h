@@ -75,6 +75,11 @@ namespace GameCore {
         bool isAssetLoading(const std::string& name, AssetType type) const;
         std::string getAssetPath(const std::string& name, AssetType type) const;
         
+        // Dynamic texture metadata (NEW)
+        bool getTextureMetadata(const std::string& textureId, TextureMetadata* metadata) const;
+        bool getTextureDimensions(const std::string& textureId, int* width, int* height) const;
+        void cacheTextureMetadata(const std::string& textureId, const TextureMetadata& metadata);
+        
         // Raw byte access (thread-safe)
         std::vector<uint8_t>* getAssetData(const std::string& name, AssetType type, int size = 0);
         const std::vector<uint8_t>* getAssetData(const std::string& name, AssetType type, int size = 0) const;
@@ -89,6 +94,7 @@ namespace GameCore {
         
         // Platform integration
         void initialize();
+        void initialize(const PlatformDelegates& delegates); // NEW: Initialize with delegates
         void shutdown();
         
         // Memory management
@@ -125,9 +131,16 @@ namespace GameCore {
         std::unordered_map<std::string, AssetData> m_assetDataCache;
         std::unordered_map<std::string, std::vector<std::function<void(bool, const std::string&)>>> m_loadingCallbacks;
         
+        // Dynamic texture metadata cache (NEW)
+        std::unordered_map<std::string, TextureMetadata> m_textureMetadataCache;
+        
+        // Platform delegates reference
+        const PlatformDelegates* m_platformDelegates;
+        
         std::mutex m_cacheMutex;
         std::mutex m_registryMutex;
         std::mutex m_callbackMutex;
+        mutable std::mutex m_metadataMutex;
         
         bool m_initialized = false;
     };

@@ -13,6 +13,7 @@ import UIKit
 import CoreGraphics
 import CoreText
 import simd
+import GameCorePlatform
 
 // MARK: - SDF Font Data Structures
 
@@ -769,6 +770,7 @@ public class MetalRenderer {
             textures.removeValue(forKey: handle)
             textureToHandle.removeValue(forKey: textureId)
             handleReferenceCount.removeValue(forKey: handle)
+            
             log("Texture unregistered: handle \(handle)", level: .debug)
         } else {
             // Still has references
@@ -2096,6 +2098,93 @@ public class MetalRenderer {
     
     public func getScreenSize() -> (width: Float, height: Float) {
         return (width: Float(viewportSize.width), height: Float(viewportSize.height))
+    }
+    
+    // MARK: - Enhanced Screen Information
+    
+    public func getScreenInfo() -> GameCore.ScreenInfo {
+        // Get the main screen for device information
+        let mainScreen = UIScreen.main
+        
+        // Get logical bounds (in points)
+        let logicalBounds = mainScreen.bounds
+        let logicalWidth = Float(logicalBounds.width)
+        let logicalHeight = Float(logicalBounds.height)
+        
+        // Get pixel bounds (native scale)
+        let pixelBounds = mainScreen.nativeBounds
+        let pixelWidth = Float(pixelBounds.width)
+        let pixelHeight = Float(pixelBounds.height)
+        
+        // Calculate scale factor
+        let scaleFactor = Float(mainScreen.nativeScale)
+        
+        // Determine orientation
+        let isPortrait = logicalHeight > logicalWidth
+        
+        // Get device model (simplified)
+        let deviceModel = getDeviceModel()
+        
+        log("Screen Info - Logical: \(logicalWidth)x\(logicalHeight), Pixel: \(pixelWidth)x\(pixelHeight), Scale: \(scaleFactor), Portrait: \(isPortrait), Device: \(deviceModel)", level: .debug)
+        
+        // Create and return ScreenInfo struct
+        var screenInfo = GameCore.ScreenInfo()
+        screenInfo.logicalWidth = logicalWidth
+        screenInfo.logicalHeight = logicalHeight
+        screenInfo.pixelWidth = pixelWidth
+        screenInfo.pixelHeight = pixelHeight
+        screenInfo.scaleFactor = scaleFactor
+        screenInfo.isPortrait = isPortrait
+        screenInfo.deviceModel = std.string(deviceModel)
+        
+        return screenInfo
+    }
+    
+    private func getDeviceModel() -> String {
+        var systemInfo = utsname()
+        uname(&systemInfo)
+        let modelCode = withUnsafePointer(to: &systemInfo.machine) {
+            $0.withMemoryRebound(to: CChar.self, capacity: 1) {
+                ptr in String.init(validatingCString: ptr)
+            }
+        }
+        
+        // Map common device codes to readable names
+        switch modelCode {
+        case "iPhone16,1": return "iPhone 15 Pro"
+        case "iPhone16,2": return "iPhone 15 Pro Max"
+        case "iPhone15,4": return "iPhone 15"
+        case "iPhone15,5": return "iPhone 15 Plus"
+        case "iPhone17,1": return "iPhone 16 Pro"
+        case "iPhone17,2": return "iPhone 16 Pro Max"
+        case "iPhone17,3": return "iPhone 16"
+        case "iPhone17,4": return "iPhone 16 Plus"
+        default: return modelCode ?? "Unknown iPhone"
+        }
+    }
+    
+    // MARK: - Texture Metadata
+    
+    public func getTextureMetadata(textureId: String) -> GameCore.TextureMetadata? {
+        log("Getting texture metadata for: \(textureId)", level: .debug)
+        
+        // Use AssetManager to get texture metadata - it handles both cached and uncached textures
+        let metadata = AssetManager.shared.getTextureMetadata(name: textureId)
+        
+        // Convert to GameCore.TextureMetadata format
+        var platformMetadata = GameCore.TextureMetadata()
+        platformMetadata.width = Int32(metadata.width)
+        platformMetadata.height = Int32(metadata.height)
+        platformMetadata.channels = Int32(metadata.channels)
+        platformMetadata.format = std.string(metadata.format)
+        platformMetadata.dataSize = Int(metadata.dataSize)
+        platformMetadata.isLoaded = metadata.isLoaded
+        platformMetadata.assetPath = std.string(metadata.assetPath)
+        platformMetadata.platformHandle = 0 // We don't expose handles through metadata
+        
+        log("Texture metadata for \(textureId): \(metadata.width)x\(metadata.height), loaded: \(metadata.isLoaded)", level: .debug)
+        
+        return platformMetadata
     }
     
     // MARK: - Helper Methods

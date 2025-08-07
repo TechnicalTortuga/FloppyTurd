@@ -47,6 +47,8 @@ namespace GameCore {
         static void enqueueDrawRectangle(float x, float y, float width, float height, float r, float g, float b, float a);
         static void enqueueDrawCircle(float x, float y, float radius, float r, float g, float b, float a);
         static void enqueueGetScreenSize(float* width, float* height);
+        static void enqueueGetScreenInfo(ScreenInfo* screenInfo);
+        static void enqueueGetTextureMetadata(const char* textureId, TextureMetadata* metadata);
         
         // Audio commands
         static void enqueuePlayMusic(const char* musicName, float volume, int loopCount);
@@ -99,6 +101,10 @@ namespace GameCore {
         
         // Setup function to configure delegates to use this proxy
         void setupDelegates(PlatformDelegates& delegates);
+        
+        // NEW: Static delegate functions for enhanced screen and texture info
+        static void getScreenInfoDelegate(ScreenInfo* info);
+        static bool getTextureMetadataDelegate(const char* textureId, TextureMetadata* metadata);
         
         // Swift components are managed entirely on the Swift side
         

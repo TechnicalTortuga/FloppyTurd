@@ -2,6 +2,9 @@
 #include "../../Engine/Core/GNLog.h"
 #include <cstring>
 
+// Import Swift module for direct interop calls
+#include "FloppyTurd-Swift.h"
+
 namespace GameCore {
     
     // Static instance for delegate callbacks
@@ -206,6 +209,21 @@ namespace GameCore {
         RenderCommand cmd(CommandType::CMD_GET_SCREEN_SIZE);
         cmd.data.screenWidth = width;
         cmd.data.screenHeight = height;
+        s_instance->enqueueRenderCommand(cmd);
+    }
+    
+    void ThreadingProxy::enqueueGetScreenInfo(ScreenInfo* screenInfo) {
+        if (!s_instance) return;
+        RenderCommand cmd(CommandType::CMD_GET_SCREEN_INFO);
+        cmd.data.screenInfo = screenInfo;
+        s_instance->enqueueRenderCommand(cmd);
+    }
+    
+    void ThreadingProxy::enqueueGetTextureMetadata(const char* textureId, TextureMetadata* metadata) {
+        if (!s_instance) return;
+        RenderCommand cmd(CommandType::CMD_GET_TEXTURE_METADATA);
+        cmd.data.textureId = textureId;
+        cmd.data.textureMetadata = metadata;
         s_instance->enqueueRenderCommand(cmd);
     }
     
@@ -601,6 +619,10 @@ namespace GameCore {
         delegates.renderer.drawCircle = enqueueDrawCircle;
         delegates.renderer.getScreenSize = enqueueGetScreenSize;
         
+        // NEW: Enhanced screen and texture information delegates
+        delegates.renderer.getScreenInfo = getScreenInfoDelegate;
+        delegates.renderer.getTextureMetadata = getTextureMetadataDelegate;
+        
         // Configure audio delegates to use our enqueue functions
         delegates.audio.playMusic = enqueuePlayMusic;
         delegates.audio.stopMusic = enqueueStopMusic;
@@ -723,17 +745,55 @@ void resetInputFrameState() {
     }
 }
 
-} // namespace GameCore// Logging interface implementation for GNLog.h
-namespace GameCore {
-    void LogToThreadingProxy(const char* message, const char* category, int level) {
-        switch (level) {
-            case 0: ThreadingProxy::enqueueLogTrace(message, category); break;
-            case 1: ThreadingProxy::enqueueLogDebug(message, category); break;
-            case 2: ThreadingProxy::enqueueLogInfo(message, category); break;
-            case 3: ThreadingProxy::enqueueLogWarn(message, category); break;
-            case 4: ThreadingProxy::enqueueLogError(message, category); break;
-            case 5: ThreadingProxy::enqueueLogFatal(message, category); break;
-        }
+// Enhanced screen and texture information delegates - following existing command system design
+void ThreadingProxy::getScreenInfoDelegate(ScreenInfo* info) {
+    if (!info) {
+        GN_LOG_ERROR("getScreenInfoDelegate: info parameter is null");
+        return;
+    }
+    
+    if (!s_instance) {
+        GN_LOG_ERROR("getScreenInfoDelegate: No ThreadingProxy instance available");
+        return;
+    }
+    
+    // Follow the existing command system design pattern - enqueue command for processing
+    s_instance->enqueueGetScreenInfo(info);
+    
+    GN_LOG_DEBUG("getScreenInfoDelegate: Enqueued screen info request following command system design");
+}
+
+bool ThreadingProxy::getTextureMetadataDelegate(const char* textureId, TextureMetadata* metadata) {
+    if (!textureId || !metadata) {
+        GN_LOG_ERROR("getTextureMetadataDelegate: null parameters");
+        return false;
+    }
+    
+    if (!s_instance) {
+        GN_LOG_ERROR("getTextureMetadataDelegate: No ThreadingProxy instance available");
+        return false;
+    }
+    
+    // Follow the existing command system design pattern - enqueue command for processing
+    s_instance->enqueueGetTextureMetadata(textureId, metadata);
+    
+    GN_LOG_DEBUG("getTextureMetadataDelegate: Enqueued texture metadata request for: " + std::string(textureId));
+    
+    // Return true indicating command was enqueued (actual result processed via command system)
+    return true;
+}
+
+// Logging interface implementation for GNLog.h
+void LogToThreadingProxy(const char* message, const char* category, int level) {
+    switch (level) {
+        case 0: ThreadingProxy::enqueueLogTrace(message, category); break;
+        case 1: ThreadingProxy::enqueueLogDebug(message, category); break;
+        case 2: ThreadingProxy::enqueueLogInfo(message, category); break;
+        case 3: ThreadingProxy::enqueueLogWarn(message, category); break;
+        case 4: ThreadingProxy::enqueueLogError(message, category); break;
+        case 5: ThreadingProxy::enqueueLogFatal(message, category); break;
     }
 }
+
+} // namespace GameCore
 

@@ -11,14 +11,19 @@ namespace GameCore {
         return instance;
     }
 
-    AssetManager::AssetManager() {
+    AssetManager::AssetManager() : m_platformDelegates(nullptr) {
         // Constructor - initialization happens in initialize()
     }
 
     void AssetManager::initialize() {
+        initialize(PlatformDelegates{}); // Default empty delegates
+    }
+
+    void AssetManager::initialize(const PlatformDelegates& delegates) {
         if (m_initialized) return;
         
         GN_LOG_INFO("Initializing AssetManager with threading support and caching");
+        m_platformDelegates = &delegates;
         m_initialized = true;
         
         // Clear all caches
@@ -850,6 +855,58 @@ namespace GameCore {
 
     void AssetManager::clearCache() {
         unloadAllAssets();
+    }
+    
+    // Dynamic texture metadata implementation
+    bool AssetManager::getTextureMetadata(const std::string& textureId, TextureMetadata* metadata) const {
+        if (!metadata) {
+            return false;
+        }
+        
+        // Check cache first
+        {
+            std::lock_guard<std::mutex> lock(m_metadataMutex);
+            auto it = m_textureMetadataCache.find(textureId);
+            if (it != m_textureMetadataCache.end()) {
+                *metadata = it->second;
+                return true;
+            }
+        }
+        
+        // Try to get from platform delegate
+        if (m_platformDelegates && m_platformDelegates->renderer.getTextureMetadata) {
+            if (m_platformDelegates->renderer.getTextureMetadata(textureId.c_str(), metadata)) {
+                // Cache the result
+                const_cast<AssetManager*>(this)->cacheTextureMetadata(textureId, *metadata);
+                return true;
+            }
+        }
+        
+        GN_LOG_WARN("Could not get texture metadata for: " + textureId);
+        return false;
+    }
+    
+    bool AssetManager::getTextureDimensions(const std::string& textureId, int* width, int* height) const {
+        if (!width || !height) {
+            return false;
+        }
+        
+        TextureMetadata metadata;
+        if (getTextureMetadata(textureId, &metadata)) {
+            *width = metadata.width;
+            *height = metadata.height;
+            return true;
+        }
+        
+        return false;
+    }
+    
+    void AssetManager::cacheTextureMetadata(const std::string& textureId, const TextureMetadata& metadata) {
+        std::lock_guard<std::mutex> lock(m_metadataMutex);
+        m_textureMetadataCache[textureId] = metadata;
+        
+        GN_LOG_DEBUG("Cached texture metadata for " + textureId + ": " + 
+                    std::to_string(metadata.width) + "x" + std::to_string(metadata.height));
     }
 
     // Asset Delegates Implementation

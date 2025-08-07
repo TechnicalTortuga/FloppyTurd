@@ -27,12 +27,26 @@ namespace GameCore {
         }
     }
     
+    // CONFIGURABLE SPEED CONSTANTS - Easy to adjust from header
+    namespace SpeedConstants {
+        // Base world speeds for normal difficulty (user requested higher defaults)
+        static constexpr float BASE_WORLD_SPEED = 180.0f;        // Increased from 100.0f
+        static constexpr float BASE_BACKGROUND_SPEED = 120.0f;    // Background scrolling
+        static constexpr float BASE_OBSTACLE_SPEED = 180.0f;     // Obstacle movement
+        static constexpr float BASE_ENEMY_SPEED = 150.0f;        // Enemy movement
+        
+        // Difficulty multipliers (user requested: current speed perfect for easy)
+        static constexpr float RUNNY_MULTIPLIER = 0.8f;    // 80% speed (slightly slower than current)
+        static constexpr float REGULAR_MULTIPLIER = 1.0f;  // 100% speed (new higher base)
+        static constexpr float ROUGH_MULTIPLIER = 1.5f;    // 150% speed (really fast)
+    }
+    
     inline float GetDifficultyMultiplier(Difficulty diff) {
         switch (diff) {
-            case Difficulty::Runny: return 0.7f;    // 70% speed
-            case Difficulty::Regular: return 1.0f;  // 100% speed
-            case Difficulty::Rough: return 1.4f;    // 140% speed
-            default: return 1.0f;
+            case Difficulty::Runny: return SpeedConstants::RUNNY_MULTIPLIER;
+            case Difficulty::Regular: return SpeedConstants::REGULAR_MULTIPLIER;
+            case Difficulty::Rough: return SpeedConstants::ROUGH_MULTIPLIER;
+            default: return SpeedConstants::REGULAR_MULTIPLIER;
         }
     }
 
@@ -62,10 +76,20 @@ namespace GameCore {
     };
 
     /**
+     * @brief Toilet/Pipe behavior types for obstacles
+     */
+    enum class ToiletBehavior {
+        STATIC,                 // Basic toilets - fixed position
+        OSCILLATE_VERTICAL,     // Gold/Snow toilets - move up/down
+        OSCILLATE_HORIZONTAL    // Sewer pipes - move left/right
+    };
+
+    /**
      * @brief Obstacle Configuration for each level
      */
     struct ObstacleConfig {
-        std::string textureId;
+        std::string textureId;      // Base texture ID (for single obstacles) or top texture ID (for pairs)
+        std::string bottomTextureId; // Bottom texture ID for toilet pairs (empty for single obstacles)
         float width;
         float height;
         float gapHeight;            // Height of gap for player to pass through
@@ -73,8 +97,36 @@ namespace GameCore {
         float speed;                // Movement speed
         bool hasTopAndBottom;       // Whether obstacle has both top and bottom parts (like pipes)
         
+        // Toilet-specific properties
+        ToiletBehavior behavior;    // How this obstacle moves
+        float oscillationSpeed;     // Speed of oscillation (radians per second)
+        float oscillationRange;     // Range of oscillation (pixels)
+        bool spawnAsPair;          // Whether to spawn as top/bottom pair
+        
         ObstacleConfig(const std::string& texture, float w, float h, float gap, float rate, float spd, bool topBottom = true)
-            : textureId(texture), width(w), height(h), gapHeight(gap), spawnRate(rate), speed(spd), hasTopAndBottom(topBottom) {}
+            : textureId(texture)
+            , bottomTextureId("")
+            , width(w), height(h), gapHeight(gap), spawnRate(rate), speed(spd), hasTopAndBottom(topBottom)
+            , behavior(ToiletBehavior::STATIC)
+            , oscillationSpeed(0.0f)
+            , oscillationRange(0.0f)
+            , spawnAsPair(topBottom)
+        {}
+        
+        // Toilet pair constructor
+        ObstacleConfig(const std::string& topTexture, const std::string& bottomTexture, 
+                      float w, float h, float gap, float rate, float spd, 
+                      ToiletBehavior behav = ToiletBehavior::STATIC, 
+                      float oscSpeed = 0.0f, float oscRange = 0.0f)
+            : textureId(topTexture)
+            , bottomTextureId(bottomTexture)
+            , width(w), height(h), gapHeight(gap), spawnRate(rate), speed(spd)
+            , hasTopAndBottom(!bottomTexture.empty() && gap > 0.0f) // Only pairs if bottom texture and gap exist
+            , behavior(behav)
+            , oscillationSpeed(oscSpeed)
+            , oscillationRange(oscRange)
+            , spawnAsPair(!bottomTexture.empty() && gap > 0.0f) // Same logic as hasTopAndBottom
+        {}
     };
 
     /**
@@ -171,24 +223,28 @@ namespace GameCore {
             currentDifficulty = difficulty;
             float diffMultiplier = GetDifficultyMultiplier(difficulty);
             
-            // Apply difficulty to world speed and spawn rates
-            worldSpeed = 200.0f * diffMultiplier;
+            // UPDATED: Use new configurable speed constants with higher base speeds
+            worldSpeed = SpeedConstants::BASE_WORLD_SPEED * diffMultiplier;
             obstacleSpawnRate = 2.0f / diffMultiplier;  // Faster spawning = harder
             enemySpawnRate = 3.0f / diffMultiplier;
             pickupSpawnRate = 5.0f / diffMultiplier;
             difficultyMultiplier = diffMultiplier;
             
-            // Update background layer scroll speeds
+            // FIXED: Update background layer scroll speeds with proper parallax multipliers
+            // Preserve the original parallax effect by using depth-based multipliers
             for (auto& layer : backgroundLayers) {
-                layer.scrollSpeed *= diffMultiplier;
+                // Calculate parallax multiplier based on layer depth (0.0 = furthest back, 1.0 = closest)
+                // Further layers move slower, closer layers move faster
+                float parallaxMultiplier = 0.3f + (layer.depth * 0.7f); // Range: 0.3x to 1.0x
+                layer.scrollSpeed = SpeedConstants::BASE_BACKGROUND_SPEED * parallaxMultiplier * diffMultiplier;
             }
             
-            // Update obstacle and enemy speeds
+            // Update obstacle and enemy speeds with proper base speeds
             for (auto& obstacle : obstacles) {
-                obstacle.speed *= diffMultiplier;
+                obstacle.speed = SpeedConstants::BASE_OBSTACLE_SPEED * diffMultiplier;
             }
             for (auto& enemy : enemies) {
-                enemy.speed *= diffMultiplier;
+                enemy.speed = SpeedConstants::BASE_ENEMY_SPEED * diffMultiplier;
             }
         }
     };

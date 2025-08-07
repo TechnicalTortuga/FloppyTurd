@@ -471,7 +471,7 @@ namespace GameCore {
         
         if (strcmp(stateName, "Loading") == 0) {
             // Transition from loading to main menu
-            auto mainMenuState = std::make_unique<MainMenuState>(m_ecsSystem.get());
+            auto mainMenuState = std::make_unique<MainMenuState>(m_ecsSystem.get(), &m_platformDelegates);
             m_stateManager->ChangeState(std::move(mainMenuState));
             GN_LOG_INFO("Transitioned to MainMenuState");
         }
@@ -486,7 +486,7 @@ namespace GameCore {
                 GN_LOG_INFO("Transitioned to GameplayState with level: " + std::to_string(selectedLevel));
             } else {
                 // Return to main menu (no level selected)
-                auto mainMenuState = std::make_unique<MainMenuState>(m_ecsSystem.get());
+                auto mainMenuState = std::make_unique<MainMenuState>(m_ecsSystem.get(), &m_platformDelegates);
                 m_stateManager->ChangeState(std::move(mainMenuState));
                 GN_LOG_INFO("Returned to MainMenuState");
             }
@@ -494,7 +494,7 @@ namespace GameCore {
         else if (strcmp(stateName, "Gameplay") == 0) {
             // Handle gameplay state transitions (game over, level complete, etc.)
             // For now, return to main menu
-            auto mainMenuState = std::make_unique<MainMenuState>(m_ecsSystem.get());
+            auto mainMenuState = std::make_unique<MainMenuState>(m_ecsSystem.get(), &m_platformDelegates);
             m_stateManager->ChangeState(std::move(mainMenuState));
             GN_LOG_INFO("Gameplay finished - returned to MainMenuState");
         }

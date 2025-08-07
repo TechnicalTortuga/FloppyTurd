@@ -11,8 +11,9 @@
 
 namespace GameCore {
 
-    MainMenuState::MainMenuState(Gnosis::ECS* ecsCoordinator)
+    MainMenuState::MainMenuState(Gnosis::ECS* ecsCoordinator, GameCore::PlatformDelegates* platformDelegates)
         : m_ecsCoordinator(ecsCoordinator)
+        , m_platformDelegates(platformDelegates)
         , m_finished(false)
         , m_selectedOption(0)
         , m_animationTimer(0.0f)
@@ -48,6 +49,23 @@ namespace GameCore {
         // Detect if we're on a mobile platform
         m_isMobile = IsMobilePlatform();
         
+        // Initialize systems once in constructor
+        if (m_platformDelegates) {
+            // Create sprite system for texture dimension queries
+            m_spriteSystem = std::make_unique<SpriteSystem>(m_ecsCoordinator, *m_platformDelegates);
+            // Don't set texture base path for mobile - Asset Catalog loads directly
+            if (!m_isMobile) {
+                m_spriteSystem->SetTextureBasePath("mainmenu/");
+            }
+            
+            // Create render system for screen info access
+            m_renderSystem = std::make_unique<RenderSystem>(m_ecsCoordinator, *m_platformDelegates);
+            
+            GN_LOG_INFO("MainMenuState systems initialized in constructor");
+        } else {
+            GN_LOG_ERROR("MainMenuState: PlatformDelegates is null in constructor!");
+        }
+        
         // Initialize level data
         InitializeLevels();
     }
@@ -63,18 +81,8 @@ namespace GameCore {
         m_animationTimer = 0.0f;
         m_assetsLoaded = false;
         
-        // Initialize sprite system for texture dimension queries
-        extern FloppyTurdGame* g_Game;
-        if (g_Game && !m_spriteSystem) {
-            const PlatformDelegates& delegates = g_Game->GetPlatformDelegates();
-            m_spriteSystem = std::make_unique<SpriteSystem>(m_ecsCoordinator, delegates);
-            // Don't set texture base path for mobile - Asset Catalog loads directly
-            if (!m_isMobile) {
-                m_spriteSystem->SetTextureBasePath("mainmenu/");
-            }
-        }
-        
         // Start playing main menu music using delegate system
+        extern FloppyTurdGame* g_Game;
         if (g_Game) {
             const PlatformDelegates& delegates = g_Game->GetPlatformDelegates();
             // Check if music is cached using new delegate
@@ -338,25 +346,51 @@ namespace GameCore {
             return;
         }
         
-        // Get actual screen dimensions from platform delegates
-        float screenWidth = 800.0f;  // Default fallback
-        float screenHeight = 600.0f; // Default fallback
-        
-        extern FloppyTurdGame* g_Game;
-        if (g_Game) {
-            const PlatformDelegates& delegates = g_Game->GetPlatformDelegates();
-            if (delegates.renderer.getScreenSize) {
-                delegates.renderer.getScreenSize(&screenWidth, &screenHeight);
-                GN_LOG_INFO("Desktop screen dimensions: " + std::to_string(screenWidth) + "x" + std::to_string(screenHeight));
+        // Get enhanced screen information from render system (like GameplayState)
+        ScreenInfo screenInfo;
+        if (m_renderSystem) {
+            screenInfo = m_renderSystem->GetScreenInfo();
+            GN_LOG_INFO("Desktop enhanced screen info: logical=" + 
+                       std::to_string(screenInfo.logicalWidth) + "x" + std::to_string(screenInfo.logicalHeight) + 
+                       ", pixel=" + std::to_string(screenInfo.pixelWidth) + "x" + std::to_string(screenInfo.pixelHeight) + 
+                       ", scale=" + std::to_string(screenInfo.scaleFactor));
+        } else {
+            // Fallback to platform delegates if render system not available
+            extern FloppyTurdGame* g_Game;
+            if (g_Game) {
+                const PlatformDelegates& delegates = g_Game->GetPlatformDelegates();
+                if (delegates.renderer.getScreenInfo) {
+                    delegates.renderer.getScreenInfo(&screenInfo);
+                    GN_LOG_INFO("Desktop enhanced screen info (delegate): logical=" + 
+                               std::to_string(screenInfo.logicalWidth) + "x" + std::to_string(screenInfo.logicalHeight) + 
+                               ", pixel=" + std::to_string(screenInfo.pixelWidth) + "x" + std::to_string(screenInfo.pixelHeight) + 
+                               ", scale=" + std::to_string(screenInfo.scaleFactor));
+                } else {
+                    // Fallback to legacy screen size if enhanced info not available
+                    if (delegates.renderer.getScreenSize) {
+                        delegates.renderer.getScreenSize(&screenInfo.logicalWidth, &screenInfo.logicalHeight);
+                        screenInfo.pixelWidth = screenInfo.logicalWidth;
+                        screenInfo.pixelHeight = screenInfo.logicalHeight;
+                        screenInfo.scaleFactor = 1.0f;
+                        GN_LOG_INFO("Desktop fallback screen dimensions: " + std::to_string(screenInfo.logicalWidth) + "x" + std::to_string(screenInfo.logicalHeight));
+                    } else {
+                        // Ultimate fallback
+                        screenInfo.logicalWidth = 800.0f;
+                        screenInfo.logicalHeight = 600.0f;
+                        screenInfo.pixelWidth = 800.0f;
+                        screenInfo.pixelHeight = 600.0f;
+                        screenInfo.scaleFactor = 1.0f;
+                    }
+                }
             }
         }
         
-        // Store screen dimensions for consistent use across the class
-        m_screenWidth = screenWidth;
-        m_screenHeight = screenHeight;
+        // Store screen dimensions for consistent use across the class - USE PIXEL DIMENSIONS for proper scaling
+        m_screenWidth = screenInfo.pixelWidth;
+        m_screenHeight = screenInfo.pixelHeight;
         
-        float centerX = screenWidth / 2.0f;
-        float centerY = screenHeight / 2.0f;
+        float centerX = screenInfo.pixelWidth / 2.0f;
+        float centerY = screenInfo.pixelHeight / 2.0f;
         
         // 1. Create Background Entity (MainMenu.png) - FULL SCREEN SCALING
         m_backgroundEntity = m_ecsCoordinator->CreateEntity();
@@ -367,9 +401,9 @@ namespace GameCore {
         float textureWidth = bgDimensions.first > 0 ? bgDimensions.first : 320.0f;   // Use actual width or fallback
         float textureHeight = bgDimensions.second > 0 ? bgDimensions.second : 180.0f; // Use actual height or fallback
         
-        // Calculate scale to fill screen
-        float scaleX = screenWidth / textureWidth;
-        float scaleY = screenHeight / textureHeight;
+        // Calculate scale to fill screen - USE PIXEL DIMENSIONS
+        float scaleX = screenInfo.pixelWidth / textureWidth;
+        float scaleY = screenInfo.pixelHeight / textureHeight;
         
         // Position at top-left (0,0) since we now render from top-left
         Transform bgTransform(Gnosis::GNVector2(0.0f, 0.0f), 0.0f, Gnosis::GNVector2(scaleX, scaleY));
@@ -381,7 +415,7 @@ namespace GameCore {
         
         m_ecsCoordinator->AddComponent<Transform>(m_backgroundEntity, bgTransform);
         m_ecsCoordinator->AddComponent<Sprite>(m_backgroundEntity, bgSprite);
-        GN_LOG_INFO("Created full-screen background entity: MainMenu.png (texture: " + std::to_string(textureWidth) + "x" + std::to_string(textureHeight) + ", scale: " + std::to_string(scaleX) + "x" + std::to_string(scaleY) + ", screen: " + std::to_string(screenWidth) + "x" + std::to_string(screenHeight) + ")");
+        GN_LOG_INFO("Created full-screen background entity: MainMenu.png (texture: " + std::to_string(textureWidth) + "x" + std::to_string(textureHeight) + ", scale: " + std::to_string(scaleX) + "x" + std::to_string(scaleY) + ", screen: " + std::to_string(screenInfo.pixelWidth) + "x" + std::to_string(screenInfo.pixelHeight) + ")");
         
         // 2. Create Logo Entity (FloppyLogo.png) - Desktop scaling
         m_logoEntity = m_ecsCoordinator->CreateEntity();
@@ -393,9 +427,9 @@ namespace GameCore {
         float logoHeight = logoDimensions.second > 0 ? logoDimensions.second : 80.0f; // Use actual height or fallback
         float logoScale = 2.0f; // 2x scale for desktop
         
-        // Calculate logo position - use same x,y for both logo and F button
+        // Calculate logo position - use same x,y for both logo and F button - USE PIXEL DIMENSIONS
         float logoX = centerX - 150.0f; // Position to the left of center
-        float logoY = screenHeight * 0.35f; // 35% down from top
+        float logoY = screenInfo.pixelHeight * 0.35f; // 35% down from top
         
         // Calculate scaled dimensions using helper
         auto logoScaledDimensions = GetScaledDimensions(logoWidth, logoHeight, logoScale);
@@ -463,22 +497,51 @@ namespace GameCore {
             return;
         }
         
-        // Get actual screen dimensions from platform delegates
-        float screenWidth = 1179.0f;  // Default fallback for mobile
-        float screenHeight = 2556.0f; // Default fallback for mobile
+        // Setup platform-specific layout first
+        SetupLayout();
         
-        extern FloppyTurdGame* g_Game;
-        if (g_Game) {
-            const PlatformDelegates& delegates = g_Game->GetPlatformDelegates();
-            if (delegates.renderer.getScreenSize) {
-                delegates.renderer.getScreenSize(&screenWidth, &screenHeight);
-                GN_LOG_INFO("Mobile screen dimensions: " + std::to_string(screenWidth) + "x" + std::to_string(screenHeight));
+        // Get enhanced screen information from render system (like GameplayState)
+        ScreenInfo screenInfo;
+        if (m_renderSystem) {
+            screenInfo = m_renderSystem->GetScreenInfo();
+            GN_LOG_INFO("Mobile enhanced screen info: logical=" + 
+                       std::to_string(screenInfo.logicalWidth) + "x" + std::to_string(screenInfo.logicalHeight) + 
+                       ", pixel=" + std::to_string(screenInfo.pixelWidth) + "x" + std::to_string(screenInfo.pixelHeight) + 
+                       ", scale=" + std::to_string(screenInfo.scaleFactor));
+        } else {
+            // Fallback to platform delegates if render system not available
+            extern FloppyTurdGame* g_Game;
+            if (g_Game) {
+                const PlatformDelegates& delegates = g_Game->GetPlatformDelegates();
+                if (delegates.renderer.getScreenInfo) {
+                    delegates.renderer.getScreenInfo(&screenInfo);
+                    GN_LOG_INFO("Mobile enhanced screen info (delegate): logical=" + 
+                               std::to_string(screenInfo.logicalWidth) + "x" + std::to_string(screenInfo.logicalHeight) + 
+                               ", pixel=" + std::to_string(screenInfo.pixelWidth) + "x" + std::to_string(screenInfo.pixelHeight) + 
+                               ", scale=" + std::to_string(screenInfo.scaleFactor));
+                } else {
+                    // Fallback to legacy screen size if enhanced info not available
+                    if (delegates.renderer.getScreenSize) {
+                        delegates.renderer.getScreenSize(&screenInfo.logicalWidth, &screenInfo.logicalHeight);
+                        screenInfo.pixelWidth = screenInfo.logicalWidth;
+                        screenInfo.pixelHeight = screenInfo.logicalHeight;
+                        screenInfo.scaleFactor = 1.0f;
+                        GN_LOG_INFO("Mobile fallback screen dimensions: " + std::to_string(screenInfo.logicalWidth) + "x" + std::to_string(screenInfo.logicalHeight));
+                    } else {
+                        // Ultimate fallback to iPhone 16 logical dimensions
+                        screenInfo.logicalWidth = 393.0f;
+                        screenInfo.logicalHeight = 852.0f;
+                        screenInfo.pixelWidth = 1179.0f;
+                        screenInfo.pixelHeight = 2556.0f;
+                        screenInfo.scaleFactor = 3.0f;
+                    }
+                }
             }
         }
         
-        // Store screen dimensions for consistent use across the class
-        m_screenWidth = screenWidth;
-        m_screenHeight = screenHeight;
+        // Store screen dimensions for consistent use across the class - USE PIXEL DIMENSIONS for proper scaling
+        m_screenWidth = screenInfo.pixelWidth;
+        m_screenHeight = screenInfo.pixelHeight;
         
         // === SIMPLIFIED MOBILE LAYOUT POSITIONING === //
         
@@ -491,9 +554,9 @@ namespace GameCore {
         float bgTextureWidth = bgDimensions.first > 0 ? bgDimensions.first : 393.0f;
         float bgTextureHeight = bgDimensions.second > 0 ? bgDimensions.second : 852.0f;
         
-        // Calculate scale to fill screen
-        float bgScaleX = screenWidth / bgTextureWidth;
-        float bgScaleY = screenHeight / bgTextureHeight;
+        // Calculate scale to fill screen - USE PIXEL DIMENSIONS
+        float bgScaleX = screenInfo.pixelWidth / bgTextureWidth;
+        float bgScaleY = screenInfo.pixelHeight / bgTextureHeight;
         
         // Background positioned at (0,0) top-left
         Transform bgTransform(Gnosis::GNVector2(0.0f, 0.0f), 0.0f, Gnosis::GNVector2(bgScaleX, bgScaleY));
@@ -520,9 +583,9 @@ namespace GameCore {
         float logoScaledHeight = logoScaledDimensions.second;
         
         // For top-left rendering, position logo so it's centered on screen but accounting for its size
-        // Calculate position so logo appears centered but renders from top-left
-        float logoX = (screenWidth - logoScaledWidth) / 2.0f;  // Center horizontally with top-left rendering
-        float logoY = screenHeight * 0.15f;  // 15% from top for top-left rendering
+        // Calculate position so logo appears centered but renders from top-left - USE PIXEL DIMENSIONS
+        float logoX = (screenInfo.pixelWidth - logoScaledWidth) / 2.0f;  // Center horizontally with top-left rendering
+        float logoY = screenInfo.pixelHeight * 0.15f;  // 15% from top for top-left rendering
         
         Transform logoTransform(Gnosis::GNVector2(logoX, logoY), 0.0f, Gnosis::GNVector2(logoScale, logoScale));
         Sprite logoSprite("FloppyLogo", logoTextureWidth, logoTextureHeight);
@@ -1191,11 +1254,11 @@ namespace GameCore {
         
         // Add all levels with their painting textures
         m_levels.push_back({"A Flop in the Park", "ParkLevelPainting", "LockedPainting", true, 1});      // Park is unlocked
-        m_levels.push_back({"Home Sweet Home", "SewerLevelPainting", "LockedPainting", false, 2});       // Sewer is locked
-        m_levels.push_back({"The Good, The Bad,\nand the Stinky", "DesertLevelPainting", "LockedPainting", false, 3}); // Desert is locked
-        m_levels.push_back({"Polar Pandemonium", "SnowLevelPainting", "LockedPainting", false, 4});      // Snow is locked
-        m_levels.push_back({"Dung in the Dungeon", "CastleLevelPainting", "LockedPainting", false, 5});  // Castle is locked
-        m_levels.push_back({"Curtains for Crap", "RatKingPainting", "LockedPainting", false, 6});       // Boss is locked
+        m_levels.push_back({"Home Sweet Home", "SewerLevelPainting", "LockedPainting", true, 2});        // Sewer UNLOCKED for testing
+        m_levels.push_back({"The Good, The Bad,\nand the Stinky", "DesertLevelPainting", "LockedPainting", true, 3}); // Desert UNLOCKED for testing
+        m_levels.push_back({"Polar Pandemonium", "SnowLevelPainting", "LockedPainting", true, 4});       // Snow UNLOCKED for testing
+        m_levels.push_back({"Dung in the Dungeon", "CastleLevelPainting", "LockedPainting", true, 5});   // Castle UNLOCKED for testing
+        m_levels.push_back({"Curtains for Crap", "RatKingPainting", "LockedPainting", true, 6});        // Boss UNLOCKED for testing
         
         m_currentLevelIndex = 0;
         GN_LOG_INFO("Initialized " + std::to_string(m_levels.size()) + " levels");
@@ -2152,6 +2215,48 @@ namespace GameCore {
         GN_LOG_INFO("Level Select Debug: Current level " + std::to_string(m_currentLevelIndex + 1) + 
                    " of " + std::to_string(m_levels.size()) + 
                    ", Mode: " + (m_currentMode == MenuMode::LEVEL_SELECT ? "LEVEL_SELECT" : "MAIN_MENU"));
+    }
+    
+    // Platform-specific layout implementation
+    void MainMenuState::SetupLayout() {
+#ifdef PLATFORM_IOS
+        SetupIOSLayout();
+#else
+        SetupDesktopLayout();
+#endif
+    }
+    
+    void MainMenuState::SetupIOSLayout() {
+        GN_LOG_INFO("MainMenuState: Setting up iOS layout");
+        
+        // Calculate dynamic scaling for iOS based on screen size
+        float scaleX = m_screenWidth / 393.0f;   // iPhone 16 logical width reference
+        float scaleY = m_screenHeight / 852.0f;  // iPhone 16 logical height reference
+        float dynamicScale = std::min(scaleX, scaleY);
+        
+        GN_LOG_INFO("MainMenuState: iOS layout - Screen: " + 
+                   std::to_string((int)m_screenWidth) + "x" + 
+                   std::to_string((int)m_screenHeight) + 
+                   ", Scale: " + std::to_string(dynamicScale));
+        
+        // iOS-specific main menu layout adjustments can go here
+        // e.g., adjusting button positions, logo placement, safe area handling, etc.
+    }
+    
+    void MainMenuState::SetupDesktopLayout() {
+        GN_LOG_INFO("MainMenuState: Setting up desktop layout");
+        
+        // Calculate dynamic scaling for desktop
+        float scaleX = m_screenWidth / 800.0f;   // Desktop reference width
+        float scaleY = m_screenHeight / 600.0f;  // Desktop reference height
+        float dynamicScale = std::min(scaleX, scaleY);
+        
+        GN_LOG_INFO("MainMenuState: Desktop layout - Screen: " + 
+                   std::to_string((int)m_screenWidth) + "x" + 
+                   std::to_string((int)m_screenHeight) + 
+                   ", Scale: " + std::to_string(dynamicScale));
+        
+        // Desktop-specific main menu layout adjustments can go here
     }
 
 } // namespace GameCore

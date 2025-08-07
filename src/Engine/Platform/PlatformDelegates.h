@@ -6,6 +6,36 @@
 
 namespace GameCore {
 
+    // Enhanced Screen Information for Dynamic Resolution Support
+    struct ScreenInfo {
+        float pixelWidth;        // Actual pixel dimensions (e.g., 1179 for iPhone 16)
+        float pixelHeight;       // Actual pixel dimensions (e.g., 2556 for iPhone 16)
+        float logicalWidth;      // Logical coordinate space (e.g., 393 for iPhone 16)
+        float logicalHeight;     // Logical coordinate space (e.g., 852 for iPhone 16)
+        float scaleFactor;       // Pixel to logical ratio (e.g., 3.0 for iPhone 16)
+        bool isPortrait;         // Orientation flag
+        std::string deviceModel; // For device-specific optimizations
+        
+        ScreenInfo() : pixelWidth(800.0f), pixelHeight(600.0f), 
+                      logicalWidth(800.0f), logicalHeight(600.0f),
+                      scaleFactor(1.0f), isPortrait(false), deviceModel("Unknown") {}
+    };
+
+    // Enhanced Texture Metadata for Dynamic Asset Management
+    struct TextureMetadata {
+        int width;               // Actual texture width in pixels
+        int height;              // Actual texture height in pixels
+        int channels;            // Number of color channels (3=RGB, 4=RGBA)
+        std::string format;      // Pixel format (e.g., "RGBA8", "RGB8")
+        size_t dataSize;         // Size of texture data in bytes
+        bool isLoaded;           // Loading status
+        std::string assetPath;   // Original asset path
+        uint32_t platformHandle; // Platform-specific texture handle
+        
+        TextureMetadata() : width(0), height(0), channels(4), format("RGBA8"), 
+                           dataSize(0), isLoaded(false), assetPath(""), platformHandle(0) {}
+    };
+
     // Threading System - Command Queue for Thread-Safe Platform Interop
     // Enqueuing turd draw commands for silky-smooth rendering! 🚀
     
@@ -48,7 +78,11 @@ namespace GameCore {
         CMD_LOAD_DATA = 28,
         // Asset cache management commands
         CMD_PRELOAD_ESSENTIAL_ASSETS = 29,
-        CMD_IS_CACHED = 30
+        CMD_IS_CACHED = 30,
+        
+        // Enhanced screen and texture info commands
+        CMD_GET_SCREEN_INFO = 31,
+        CMD_GET_TEXTURE_METADATA = 32
     };
     
     // Rendering command data
@@ -70,6 +104,11 @@ namespace GameCore {
         std::string text;  // Use std::string for proper Swift interop
         float* screenWidth = nullptr;
         float* screenHeight = nullptr;
+        
+        // Enhanced screen and texture info fields
+        ScreenInfo* screenInfo = nullptr;      // For CMD_GET_SCREEN_INFO
+        std::string textureId;                 // For CMD_GET_TEXTURE_METADATA
+        TextureMetadata* textureMetadata = nullptr; // For CMD_GET_TEXTURE_METADATA
     };
     
     // Audio command data
@@ -169,8 +208,10 @@ namespace GameCore {
         void (*drawRectangle)(float x, float y, float width, float height, float r, float g, float b, float a);
         void (*drawCircle)(float x, float y, float radius, float r, float g, float b, float a);
         
-        // Screen info
-        void (*getScreenSize)(float* width, float* height);
+        // Enhanced screen and texture information
+        void (*getScreenInfo)(ScreenInfo* info);        // NEW: Get comprehensive screen info
+        void (*getScreenSize)(float* width, float* height); // Legacy support
+        bool (*getTextureMetadata)(const char* textureId, TextureMetadata* metadata); // NEW: Dynamic texture info
         
         // Platform-specific context (iOS: Swift objects, Raylib: global state)
         void* platformContext;
@@ -178,7 +219,8 @@ namespace GameCore {
         // Initialize to null
         RendererDelegate() : beginFrame(nullptr), endFrame(nullptr), present(nullptr), clearScreen(nullptr),
                            drawSprite(nullptr), drawSpriteScaled(nullptr), drawSpriteScaledCentered(nullptr),
-                           drawText(nullptr), drawRectangle(nullptr), drawCircle(nullptr), getScreenSize(nullptr),
+                           drawText(nullptr), drawRectangle(nullptr), drawCircle(nullptr), 
+                           getScreenInfo(nullptr), getScreenSize(nullptr), getTextureMetadata(nullptr),
                            platformContext(nullptr) {}
     };
 
@@ -292,6 +334,10 @@ namespace GameCore {
         void (*unloadAsset)(void* platformAsset);
         bool (*isAssetLoaded)(const char* assetPath);
         
+        // Enhanced texture metadata support
+        bool (*getTextureMetadata)(const char* textureId, TextureMetadata* metadata); // NEW: Get texture dimensions dynamically
+        void (*cacheTextureMetadata)(const char* textureId, const TextureMetadata* metadata); // NEW: Cache metadata
+        
         // Asset path resolution
         const char* (*getAssetPath)(const char* relativePath);
         bool (*fileExists)(const char* relativePath);
@@ -305,7 +351,8 @@ namespace GameCore {
         // Initialize to null
         AssetDelegate() : loadTexture(nullptr), loadAudio(nullptr), loadFont(nullptr),
                          loadShader(nullptr), loadData(nullptr), unloadAsset(nullptr),
-                         isAssetLoaded(nullptr), getAssetPath(nullptr), fileExists(nullptr),
+                         isAssetLoaded(nullptr), getTextureMetadata(nullptr), cacheTextureMetadata(nullptr),
+                         getAssetPath(nullptr), fileExists(nullptr),
                          preloadEssentialAssets(nullptr), isCached(nullptr),
                          platformContext(nullptr) {}
     };

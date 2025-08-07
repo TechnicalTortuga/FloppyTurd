@@ -9,9 +9,14 @@ namespace GameCore {
         , m_platformDelegates(platformDelegates)
         , m_activeCamera(0)
         , m_useRenderLayers(true)
+        , m_screenInfoValid(false)
     {
         GN_LOG_INFO("RenderSystem initialized with unified rendering");
         m_renderQueue.reserve(1000); // Pre-allocate for performance
+        
+        // Initialize screen info
+        UpdateScreenInfo();
+        SetupLayout();
     }
 
     RenderSystem::~RenderSystem() {
@@ -199,6 +204,102 @@ namespace GameCore {
         // Fallback to camera transform
         Transform* transform = m_ecsSystem->GetComponent<Transform>(m_activeCamera);
         return transform ? transform->position : Gnosis::GNVector2(0.0f, 0.0f);
+    }
+
+    void RenderSystem::UpdateScreenInfo() {
+        if (m_platformDelegates.renderer.getScreenInfo) {
+            m_platformDelegates.renderer.getScreenInfo(&m_screenInfo);
+            m_screenInfoValid = true;
+            
+            GN_LOG_INFO("Screen info updated: " + 
+                       std::to_string((int)m_screenInfo.logicalWidth) + "x" + 
+                       std::to_string((int)m_screenInfo.logicalHeight) + 
+                       " (" + std::to_string((int)m_screenInfo.pixelWidth) + "x" + 
+                       std::to_string((int)m_screenInfo.pixelHeight) + " pixels)");
+        } else {
+            // Fallback to legacy screen size if available
+            if (m_platformDelegates.renderer.getScreenSize) {
+                m_platformDelegates.renderer.getScreenSize(&m_screenInfo.logicalWidth, &m_screenInfo.logicalHeight);
+                m_screenInfo.pixelWidth = m_screenInfo.logicalWidth;
+                m_screenInfo.pixelHeight = m_screenInfo.logicalHeight;
+                m_screenInfo.scaleFactor = 1.0f;
+                m_screenInfo.isPortrait = m_screenInfo.logicalHeight > m_screenInfo.logicalWidth;
+                m_screenInfo.deviceModel = "Unknown";
+                m_screenInfoValid = true;
+                
+                GN_LOG_WARN("Using legacy screen size: " + 
+                           std::to_string((int)m_screenInfo.logicalWidth) + "x" + 
+                           std::to_string((int)m_screenInfo.logicalHeight));
+            } else {
+                GN_LOG_ERROR("No screen size information available from platform delegates");
+                m_screenInfoValid = false;
+            }
+        }
+    }
+
+    float RenderSystem::GetDynamicScale() const {
+        if (!m_screenInfoValid) {
+            return 1.0f;
+        }
+        
+        // Calculate dynamic scale based on screen size
+        // Use logical height as base reference (iPhone 16 logical height is 852)
+        const float referenceHeight = 852.0f;  // iPhone 16 logical height
+        return m_screenInfo.logicalHeight / referenceHeight;
+    }
+
+    float RenderSystem::GetUIScale() const {
+        if (!m_screenInfoValid) {
+            return 1.0f;
+        }
+        
+        // UI scaling is different - we want consistent UI sizes across devices
+        // Use a base scale that looks good on most devices
+        float baseScale = GetDynamicScale();
+        
+        // Clamp UI scale to reasonable bounds
+        return std::max(0.8f, std::min(2.0f, baseScale));
+    }
+
+    void RenderSystem::SetupLayout() {
+        if (!m_screenInfoValid) {
+            GN_LOG_WARN("Cannot setup layout - screen info not valid");
+            return;
+        }
+        
+#ifdef PLATFORM_IOS
+        SetupIOSLayout();
+#else
+        SetupDesktopLayout();
+#endif
+    }
+
+    void RenderSystem::SetupIOSLayout() {
+        GN_LOG_INFO("Setting up iOS layout for device: " + m_screenInfo.deviceModel);
+        
+        // iOS-specific layout calculations
+        float scale = GetDynamicScale();
+        GN_LOG_INFO("Calculated dynamic scale: " + std::to_string(scale));
+        
+        // Additional iOS-specific setup can go here
+        // e.g., safe area calculations, notch handling, etc.
+    }
+
+    void RenderSystem::SetupDesktopLayout() {
+        GN_LOG_INFO("Setting up desktop layout");
+        
+        // Desktop-specific layout calculations
+        float scale = GetDynamicScale();
+        GN_LOG_INFO("Calculated dynamic scale: " + std::to_string(scale));
+        
+        // Additional desktop-specific setup can go here
+    }
+
+    void RenderSystem::CalculateDynamicScaling() {
+        // This method can be called when screen info changes
+        // to recalculate any cached scaling values
+        UpdateScreenInfo();
+        SetupLayout();
     }
 
 } // namespace GameCore

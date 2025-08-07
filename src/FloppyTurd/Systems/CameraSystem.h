@@ -30,6 +30,7 @@ namespace GameCore {
         // Getters
         Gnosis::Entity GetMainCamera() const { return m_mainCamera; }
         Gnosis::GNVector2 GetCameraPosition() const;
+        float GetWorldPosition() const { return m_worldPosition; }
         float GetWorldScrollSpeed() const { return m_worldScrollSpeed; }
         void SetWorldScrollSpeed(float speed) { m_worldScrollSpeed = speed; }
 

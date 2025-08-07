@@ -20,6 +20,8 @@ namespace GameCore {
         , m_lastObstacleX(1000.0f)   // Start obstacles off screen to the right
         , m_lastEnemyX(1200.0f)      // Start enemies further out
         , m_lastPickupX(800.0f)      // Start pickups closer
+        , m_obstacleSpacing(400.0f)  // Default spacing between obstacles
+        , m_poolInitialized(false)
     {
         GN_LOG_INFO("LevelManager created");
         InitializeProgressionSystem();
@@ -61,7 +63,12 @@ namespace GameCore {
         m_lastEnemyX = 1200.0f;
         m_lastPickupX = 800.0f;
         
+        // Set loaded flag BEFORE initializing obstacle pool
         m_isLoaded = true;
+        
+        // Initialize object pool instead of timer-based spawning
+        m_poolInitialized = false;
+        InitializeObstaclePool();
         GN_LOG_INFO("Level " + std::to_string(levelId) + " (" + m_currentLevelConfig.levelName + ") loaded successfully");
         
         return true;
@@ -81,6 +88,7 @@ namespace GameCore {
         m_isLoaded = false;
         m_currentLevelId = 0;
         m_currentLevelConfig = LevelConfig(0, "");
+        m_poolInitialized = false;
         
         GN_LOG_INFO("Level unloaded");
     }
@@ -209,6 +217,11 @@ namespace GameCore {
             return;
         }
         
+        // Skip pickup spawning if spawn rate is 0 (disabled for this level)
+        if (m_currentLevelConfig.pickupSpawnRate <= 0.0f) {
+            return;
+        }
+        
         m_pickupSpawnTimer += deltaTime;
         
         // Check if it's time to spawn a new pickup
@@ -230,6 +243,251 @@ namespace GameCore {
     }
 
     Gnosis::Entity LevelManager::SpawnObstacle(const ObstacleConfig& config, float x, float y) {
+        if (!m_ecsSystem) {
+            return 0;
+        }
+        
+        // Handle toilet pairs vs single obstacles
+        if (config.spawnAsPair && !config.bottomTextureId.empty()) {
+            return SpawnToiletPair(config, x, y);
+        } else {
+            return SpawnSingleObstacle(config, x, y);
+        }
+    }
+    
+    Gnosis::Entity LevelManager::SpawnToiletPair(const ObstacleConfig& config, float x, float y) {
+        if (!m_ecsSystem) {
+            return 0;
+        }
+        
+        // Calculate positions for top and bottom toilets with gap
+        float gapCenter = y; // y is the center of the gap
+        float topToiletY = gapCenter - (config.gapHeight / 2.0f) - config.height;
+        float bottomToiletY = gapCenter + (config.gapHeight / 2.0f);
+        
+        // Create top toilet
+        Gnosis::Entity topToilet = m_ecsSystem->CreateEntity();
+        
+        Transform topTransform(Gnosis::GNVector2(x, topToiletY), 0.0f, 
+                              Gnosis::GNVector2(m_currentLevelConfig.baseScale, m_currentLevelConfig.baseScale));
+        
+        Sprite topSprite(config.textureId, config.width, config.height);
+        topSprite.layer = 3;
+        topSprite.visible = true;
+        
+        GN_LOG_DEBUG("Creating toilet pair: topTexture=" + config.textureId + " bottomTexture=" + config.bottomTextureId);
+        GN_LOG_DEBUG("Toilet dimensions: width=" + std::to_string(config.width) + " height=" + std::to_string(config.height));
+        GN_LOG_DEBUG("Toilet position: x=" + std::to_string(x) + " topY=" + std::to_string(topToiletY) + " bottomY=" + std::to_string(bottomToiletY));
+        GN_LOG_DEBUG("Toilet speed: " + std::to_string(config.speed) + " layer: " + std::to_string(topSprite.layer));
+        
+        Physics topPhysics;
+        topPhysics.velocity.x = -config.speed;
+        topPhysics.useGravity = false;
+        
+        Collider topCollider;
+        topCollider.type = ColliderType::Rectangle;
+        topCollider.width = config.width;
+        topCollider.height = config.height;
+        topCollider.isStatic = false;
+        topCollider.isTrigger = false;
+        topCollider.tag = "obstacle";
+        
+        Obstacle topObstacle;
+        topObstacle.obstacleType = config.textureId;
+        topObstacle.damage = 1;
+        topObstacle.behavior = static_cast<int>(config.behavior);
+        topObstacle.oscillationSpeed = config.oscillationSpeed;
+        topObstacle.oscillationRange = config.oscillationRange;
+        topObstacle.oscillationTimer = 0.0f;
+        topObstacle.basePosition = Gnosis::GNVector2(x, topToiletY);
+        topObstacle.isTopPart = true;
+        
+        // Create bottom toilet
+        Gnosis::Entity bottomToilet = m_ecsSystem->CreateEntity();
+        
+        Transform bottomTransform(Gnosis::GNVector2(x, bottomToiletY), 0.0f, 
+                                 Gnosis::GNVector2(m_currentLevelConfig.baseScale, m_currentLevelConfig.baseScale));
+        
+        Sprite bottomSprite(config.bottomTextureId, config.width, config.height);
+        bottomSprite.layer = 3;
+        bottomSprite.visible = true;
+        
+        Physics bottomPhysics;
+        bottomPhysics.velocity.x = -config.speed;
+        bottomPhysics.useGravity = false;
+        
+        Collider bottomCollider;
+        bottomCollider.type = ColliderType::Rectangle;
+        bottomCollider.width = config.width;
+        bottomCollider.height = config.height;
+        bottomCollider.isStatic = false;
+        bottomCollider.isTrigger = false;
+        bottomCollider.tag = "obstacle";
+        
+        Obstacle bottomObstacle;
+        bottomObstacle.obstacleType = config.bottomTextureId;
+        bottomObstacle.damage = 1;
+        bottomObstacle.behavior = static_cast<int>(config.behavior);
+        bottomObstacle.oscillationSpeed = config.oscillationSpeed;
+        bottomObstacle.oscillationRange = config.oscillationRange;
+        bottomObstacle.oscillationTimer = 0.0f;
+        bottomObstacle.basePosition = Gnosis::GNVector2(x, bottomToiletY);
+        bottomObstacle.isTopPart = false;
+        
+        // Link the pair
+        topObstacle.pairedEntity = bottomToilet;
+        bottomObstacle.pairedEntity = topToilet;
+        
+        // Add components to both entities
+        m_ecsSystem->AddComponent<Transform>(topToilet, topTransform);
+        m_ecsSystem->AddComponent<Sprite>(topToilet, topSprite);
+        m_ecsSystem->AddComponent<Physics>(topToilet, topPhysics);
+        m_ecsSystem->AddComponent<Collider>(topToilet, topCollider);
+        m_ecsSystem->AddComponent<Obstacle>(topToilet, topObstacle);
+        
+        m_ecsSystem->AddComponent<Transform>(bottomToilet, bottomTransform);
+        m_ecsSystem->AddComponent<Sprite>(bottomToilet, bottomSprite);
+        m_ecsSystem->AddComponent<Physics>(bottomToilet, bottomPhysics);
+        m_ecsSystem->AddComponent<Collider>(bottomToilet, bottomCollider);
+        m_ecsSystem->AddComponent<Obstacle>(bottomToilet, bottomObstacle);
+        
+        // Track both active obstacles
+        m_activeObstacles.push_back(topToilet);
+        m_activeObstacles.push_back(bottomToilet);
+        
+        GN_LOG_DEBUG("Spawned toilet pair: " + config.textureId + "/" + config.bottomTextureId + " at (" + std::to_string(x) + ", " + std::to_string(gapCenter) + ")");
+        
+        return topToilet; // Return top toilet as primary entity
+    }
+    
+    Gnosis::Entity LevelManager::SpawnToiletPairWithGap(const ObstacleConfig& config, float x, float gapCenterY, float gapHeight) {
+        if (!m_ecsSystem) {
+            return 0;
+        }
+        
+        // NEW TOILET POSITIONING GROUND RULES:
+        // 1. Top toilet ALWAYS positioned above screen (negative Y values)
+        // 2. Much larger gap between toilets for better gameplay
+        // 3. Bottom toilet position calculated from top toilet + large fixed gap
+        
+        float screenHeight = 2556.0f; // iPhone 16 portrait height
+        float toiletHeight = config.height * m_currentLevelConfig.baseScale; // Scaled toilet height
+        
+        // Top toilet should be above screen but not too far - UPDATED for better center gap positioning
+        float minTopY = -toiletHeight * 0.8f; // Closer to screen top (less negative)
+        float maxTopY = -toiletHeight * 0.2f; // Even closer to screen top
+        
+        // Generate random position for top toilet within allowed range (all negative Y)
+        float randomTopY = minTopY + (maxTopY - minTopY) * ((float)rand() / RAND_MAX);
+        
+        // Use EVEN LARGER gap height for better gameplay
+        float fixedGapHeight = 600.0f; // Increased from 500.0f for more space
+        
+        // Calculate bottom toilet position: top toilet bottom + large fixed gap
+        float bottomToiletY = randomTopY + toiletHeight + fixedGapHeight;
+        
+        GN_LOG_DEBUG("Toilet positioning: screenHeight=" + std::to_string(screenHeight) + 
+                    ", toiletHeight=" + std::to_string(toiletHeight) + 
+                    ", minTopY=" + std::to_string(minTopY) + 
+                    ", maxTopY=" + std::to_string(maxTopY) + 
+                    ", topY=" + std::to_string(randomTopY) + 
+                    ", bottomY=" + std::to_string(bottomToiletY) + 
+                    ", gap=" + std::to_string(fixedGapHeight) + 
+                    " (improved positioning: lower top, larger gaps)");
+        
+        // Create top toilet
+        Gnosis::Entity topToilet = m_ecsSystem->CreateEntity();
+        
+        Transform topTransform(Gnosis::GNVector2(x, randomTopY), 0.0f, 
+                              Gnosis::GNVector2(m_currentLevelConfig.baseScale, m_currentLevelConfig.baseScale));
+        
+        Sprite topSprite(config.textureId, config.width, config.height);
+        topSprite.layer = 3;
+        topSprite.visible = true;
+        
+        Physics topPhysics;
+        topPhysics.velocity.x = -config.speed;
+        topPhysics.useGravity = false;
+        
+        Collider topCollider;
+        topCollider.type = ColliderType::Rectangle;
+        topCollider.width = config.width;
+        topCollider.height = config.height;
+        topCollider.isStatic = false;
+        topCollider.isTrigger = false;
+        topCollider.tag = "obstacle";
+        
+        Obstacle topObstacle;
+        topObstacle.obstacleType = config.textureId;
+        topObstacle.damage = 1;
+        topObstacle.behavior = static_cast<int>(config.behavior);
+        topObstacle.oscillationSpeed = config.oscillationSpeed;
+        topObstacle.oscillationRange = config.oscillationRange;
+        topObstacle.oscillationTimer = 0.0f;
+        topObstacle.basePosition = Gnosis::GNVector2(x, randomTopY);
+        topObstacle.isTopPart = true;
+        
+        // Create bottom toilet
+        Gnosis::Entity bottomToilet = m_ecsSystem->CreateEntity();
+        
+        Transform bottomTransform(Gnosis::GNVector2(x, bottomToiletY), 0.0f, 
+                                 Gnosis::GNVector2(m_currentLevelConfig.baseScale, m_currentLevelConfig.baseScale));
+        
+        Sprite bottomSprite(config.bottomTextureId, config.width, config.height);
+        bottomSprite.layer = 3;
+        bottomSprite.visible = true;
+        
+        Physics bottomPhysics;
+        bottomPhysics.velocity.x = -config.speed;
+        bottomPhysics.useGravity = false;
+        
+        Collider bottomCollider;
+        bottomCollider.type = ColliderType::Rectangle;
+        bottomCollider.width = config.width;
+        bottomCollider.height = config.height;
+        bottomCollider.isStatic = false;
+        bottomCollider.isTrigger = false;
+        bottomCollider.tag = "obstacle";
+        
+        Obstacle bottomObstacle;
+        bottomObstacle.obstacleType = config.bottomTextureId;
+        bottomObstacle.damage = 1;
+        bottomObstacle.behavior = static_cast<int>(config.behavior);
+        bottomObstacle.oscillationSpeed = config.oscillationSpeed;
+        bottomObstacle.oscillationRange = config.oscillationRange;
+        bottomObstacle.oscillationTimer = 0.0f;
+        bottomObstacle.basePosition = Gnosis::GNVector2(x, bottomToiletY);
+        bottomObstacle.isTopPart = false;
+        
+        // Link the pair
+        topObstacle.pairedEntity = bottomToilet;
+        bottomObstacle.pairedEntity = topToilet;
+        
+        // Add components to both entities
+        m_ecsSystem->AddComponent<Transform>(topToilet, topTransform);
+        m_ecsSystem->AddComponent<Sprite>(topToilet, topSprite);
+        m_ecsSystem->AddComponent<Physics>(topToilet, topPhysics);
+        m_ecsSystem->AddComponent<Collider>(topToilet, topCollider);
+        m_ecsSystem->AddComponent<Obstacle>(topToilet, topObstacle);
+        
+        m_ecsSystem->AddComponent<Transform>(bottomToilet, bottomTransform);
+        m_ecsSystem->AddComponent<Sprite>(bottomToilet, bottomSprite);
+        m_ecsSystem->AddComponent<Physics>(bottomToilet, bottomPhysics);
+        m_ecsSystem->AddComponent<Collider>(bottomToilet, bottomCollider);
+        m_ecsSystem->AddComponent<Obstacle>(bottomToilet, bottomObstacle);
+        
+        // Track both active obstacles
+        m_activeObstacles.push_back(topToilet);
+        m_activeObstacles.push_back(bottomToilet);
+        
+        GN_LOG_DEBUG("Spawned toilet pair with gap: " + config.textureId + "/" + config.bottomTextureId + 
+                    " at x=" + std::to_string(x) + ", gap center=" + std::to_string(gapCenterY) + 
+                    ", gap height=" + std::to_string(gapHeight));
+        
+        return topToilet; // Return top toilet as primary entity
+    }
+    
+    Gnosis::Entity LevelManager::SpawnSingleObstacle(const ObstacleConfig& config, float x, float y) {
         if (!m_ecsSystem) {
             return 0;
         }
@@ -263,6 +521,13 @@ namespace GameCore {
         Obstacle obstacleComp;
         obstacleComp.obstacleType = config.textureId;
         obstacleComp.damage = 1;
+        obstacleComp.behavior = static_cast<int>(config.behavior);
+        obstacleComp.oscillationSpeed = config.oscillationSpeed;
+        obstacleComp.oscillationRange = config.oscillationRange;
+        obstacleComp.oscillationTimer = 0.0f;
+        obstacleComp.basePosition = Gnosis::GNVector2(x, y);
+        obstacleComp.pairedEntity = 0;
+        obstacleComp.isTopPart = false;
         
         // Add components
         m_ecsSystem->AddComponent<Transform>(obstacle, transform);
@@ -274,7 +539,7 @@ namespace GameCore {
         // Track active obstacle
         m_activeObstacles.push_back(obstacle);
         
-        GN_LOG_DEBUG("Spawned obstacle: " + config.textureId + " at (" + std::to_string(x) + ", " + std::to_string(y) + ")");
+        GN_LOG_DEBUG("Spawned single obstacle: " + config.textureId + " at (" + std::to_string(x) + ", " + std::to_string(y) + ")");
         
         return obstacle;
     }
@@ -485,34 +750,57 @@ namespace GameCore {
     }
 
     void LevelManager::CleanupOffscreenEntities(float leftBoundary) {
-        // Clean up obstacles that have moved off screen
-        for (auto it = m_activeObstacles.begin(); it != m_activeObstacles.end();) {
-            Transform* transform = m_ecsSystem->GetComponent<Transform>(*it);
-            if (transform && transform->position.x < leftBoundary) {
-                m_ecsSystem->DestroyEntity(*it);
-                it = m_activeObstacles.erase(it);
-            } else {
-                ++it;
+        // CRITICAL FIX: Don't cleanup obstacles when pooling system is active!
+        // The pooling system handles obstacle reuse via wrapping, not destruction
+        if (!m_poolInitialized) {
+            // Only clean up obstacles if pooling is NOT active (legacy behavior)
+            for (auto it = m_activeObstacles.begin(); it != m_activeObstacles.end();) {
+                Transform* transform = m_ecsSystem->GetComponent<Transform>(*it);
+                if (transform && transform->position.x < leftBoundary) {
+                    m_ecsSystem->DestroyEntity(*it);
+                    it = m_activeObstacles.erase(it);
+                } else {
+                    ++it;
+                }
             }
         }
+        // Note: When pooling is active, obstacles are managed by UpdateObstaclePooling() instead
         
         // Clean up enemies that have moved off screen
+        // FIXED: Use right edge of entity for proper cleanup, like toilet logic
         for (auto it = m_activeEnemies.begin(); it != m_activeEnemies.end();) {
             Transform* transform = m_ecsSystem->GetComponent<Transform>(*it);
-            if (transform && transform->position.x < leftBoundary) {
-                m_ecsSystem->DestroyEntity(*it);
-                it = m_activeEnemies.erase(it);
+            Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(*it);
+            if (transform && sprite) {
+                // Calculate right edge of enemy for proper cleanup
+                float scaledWidth = sprite->width * std::abs(transform->scale.x);
+                float rightEdge = transform->position.x + scaledWidth;
+                if (rightEdge < leftBoundary) {
+                    m_ecsSystem->DestroyEntity(*it);
+                    it = m_activeEnemies.erase(it);
+                } else {
+                    ++it;
+                }
             } else {
                 ++it;
             }
         }
         
         // Clean up pickups that have moved off screen
+        // FIXED: Use right edge of entity for proper cleanup, like toilet logic
         for (auto it = m_activePickups.begin(); it != m_activePickups.end();) {
             Transform* transform = m_ecsSystem->GetComponent<Transform>(*it);
-            if (transform && transform->position.x < leftBoundary) {
-                m_ecsSystem->DestroyEntity(*it);
-                it = m_activePickups.erase(it);
+            Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(*it);
+            if (transform && sprite) {
+                // Calculate right edge of pickup for proper cleanup
+                float scaledWidth = sprite->width * std::abs(transform->scale.x);
+                float rightEdge = transform->position.x + scaledWidth;
+                if (rightEdge < leftBoundary) {
+                    m_ecsSystem->DestroyEntity(*it);
+                    it = m_activePickups.erase(it);
+                } else {
+                    ++it;
+                }
             } else {
                 ++it;
             }
@@ -755,6 +1043,240 @@ namespace GameCore {
         // TODO: Implement load system (file I/O or platform-specific storage)
         // For now, just log the action
         GN_LOG_DEBUG("Progression loaded");
+    }
+
+    // ============================================================================
+    // Object Pooling System Implementation
+    // ============================================================================
+
+    void LevelManager::InitializeObstaclePool() {
+        GN_LOG_INFO("=== OBSTACLE POOL INITIALIZATION CHECK ===");
+        GN_LOG_INFO("Pool initialized: " + std::to_string(m_poolInitialized));
+        GN_LOG_INFO("Level loaded: " + std::to_string(m_isLoaded));
+        GN_LOG_INFO("Current level ID: " + std::to_string(m_currentLevelId));
+        GN_LOG_INFO("Obstacles count: " + std::to_string(m_currentLevelConfig.obstacles.size()));
+        
+        if (m_currentLevelConfig.obstacles.size() > 0) {
+            GN_LOG_INFO("First obstacle: top='" + m_currentLevelConfig.obstacles[0].textureId + 
+                       "', bottom='" + m_currentLevelConfig.obstacles[0].bottomTextureId + 
+                       "', spawnAsPair=" + std::to_string(m_currentLevelConfig.obstacles[0].spawnAsPair));
+        }
+        
+        if (m_poolInitialized || !m_isLoaded || m_currentLevelConfig.obstacles.empty()) {
+            GN_LOG_ERROR("Skipping pool initialization - already initialized or no data");
+            GN_LOG_ERROR("Reason: poolInit=" + std::to_string(m_poolInitialized) + 
+                          ", levelLoaded=" + std::to_string(m_isLoaded) + 
+                          ", obstaclesEmpty=" + std::to_string(m_currentLevelConfig.obstacles.empty()));
+            return;
+        }
+
+        GN_LOG_INFO("Initializing obstacle pool for level " + std::to_string(m_currentLevelId));
+
+        // Calculate spacing based on screen width and desired difficulty
+        m_obstacleSpacing = 600.0f; // Closer spacing between toilet pairs for better gameplay
+        
+        // Choose the first obstacle type for the pool (can randomize later)
+        const ObstacleConfig& baseConfig = m_currentLevelConfig.obstacles[0];
+        
+        // Create initial pool of obstacles - position them off-screen to the right using screen positions
+        // iPhone 16 portrait width is ~1179px, start obstacles at screen position screenWidth + 100
+        float screenWidth = 1179.0f;
+        
+        // Get current camera position to convert screen positions to world positions
+        // For initial setup, camera should be at 0, but let's be safe
+        float initialCameraX = 0.0f; // Initial camera position
+        
+        float startScreenX = screenWidth + 100.0f; // Screen position: just off-screen to the right
+        for (int i = 0; i < OBSTACLE_POOL_SIZE; i++) {
+            float screenX = startScreenX + (i * m_obstacleSpacing); // Screen position
+            float worldX = screenX + initialCameraX; // Convert to world position
+            
+            GN_LOG_DEBUG("Spawning obstacle " + std::to_string(i) + " at screen X: " + std::to_string(screenX) + ", world X: " + std::to_string(worldX));
+            
+            if (baseConfig.spawnAsPair && !baseConfig.bottomTextureId.empty()) {
+                // Spawn toilet pair using consistent positioning rules
+                // No longer randomize gap height or center - use fixed rules
+                SpawnToiletPairWithGap(baseConfig, worldX, 0.0f, 0.0f); // Parameters ignored, method uses ground rules
+            } else {
+                // Spawn single obstacle
+                float spawnY = 500.0f; // Default position for single obstacles
+                SpawnObstacle(baseConfig, worldX, spawnY);
+            }
+        }
+
+        m_poolInitialized = true;
+        GN_LOG_INFO("Obstacle pool initialized with " + std::to_string(OBSTACLE_POOL_SIZE) + " obstacles");
+    }
+
+    void LevelManager::UpdateObstaclePooling(float deltaTime, float worldScrollDistance) {
+        if (!m_poolInitialized || m_activeObstacles.empty()) {
+            GN_LOG_DEBUG("UpdateObstaclePooling skipped: poolInit=" + std::to_string(m_poolInitialized) + ", obstacles=" + std::to_string(m_activeObstacles.size()));
+            return;
+        }
+
+        // Debug: Log obstacle positions periodically
+        static float debugTimer = 0.0f;
+        debugTimer += deltaTime;
+        if (debugTimer >= 2.0f) { // Every 2 seconds
+            debugTimer = 0.0f;
+            GN_LOG_DEBUG("=== OBSTACLE POSITIONS DEBUG ===");
+            GN_LOG_DEBUG("World scroll distance: " + std::to_string(worldScrollDistance));
+            for (size_t i = 0; i < m_activeObstacles.size() && i < 4; i++) { // Log first 4 obstacles
+                Transform* t = m_ecsSystem->GetComponent<Transform>(m_activeObstacles[i]);
+                if (t) {
+                    GN_LOG_DEBUG("Obstacle " + std::to_string(i) + " X: " + std::to_string(t->position.x));
+                }
+            }
+        }
+
+        // Check each obstacle for wrapping
+        for (Gnosis::Entity obstacle : m_activeObstacles) {
+            WrapObstacleAroundScreen(obstacle, worldScrollDistance);
+        }
+    }
+
+    void LevelManager::WrapObstacleAroundScreen(Gnosis::Entity obstacle, float worldScrollDistance) {
+        if (!m_ecsSystem || obstacle == 0) {
+            return;
+        }
+
+        Transform* transform = m_ecsSystem->GetComponent<Transform>(obstacle);
+        Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(obstacle);
+        Obstacle* obstacleComp = m_ecsSystem->GetComponent<Obstacle>(obstacle);
+        
+        if (!transform || !sprite || !obstacleComp) {
+            return;
+        }
+
+        // Check if obstacle is off screen to the left for wrapping
+        // With stationary camera at (0,0), screen coordinates are absolute world coordinates
+        float scaledWidth = sprite->width * std::abs(transform->scale.x);
+        float leftEdge = transform->position.x;
+        float rightEdge = leftEdge + scaledWidth;
+        float screenWidth = 1179.0f; // iPhone 16 portrait width
+
+        // FIXED: Wrap when obstacle starts going off the left side of screen
+        // The user reports they disappear when touching the left edge, so trigger earlier
+        // Use a more lenient condition that matches what the user observes
+        float wrapBuffer = 0.0f; // No buffer - wrap as soon as right edge hits left screen edge
+        bool shouldWrap = (rightEdge < wrapBuffer);
+
+        GN_LOG_DEBUG("Obstacle wrap check: leftEdge=" + std::to_string(leftEdge) +
+                     ", rightEdge=" + std::to_string(rightEdge) +
+                     ", scaledWidth=" + std::to_string(scaledWidth) +
+                     ", shouldWrap=" + std::to_string(shouldWrap));
+        
+        if (shouldWrap) {
+            // FIXED QUEUE SYSTEM: Find the rightmost obstacle position to queue this one behind it
+            // The old scripts used a simple circular queue - replicate that logic
+            float rightmostX = screenWidth; // Start from right edge of screen as minimum
+            int totalObstacles = 0;
+            int obstaclesChecked = 0;
+        
+            GN_LOG_DEBUG("=== WRAPPING DEBUG: Finding rightmost obstacle ===");
+            GN_LOG_DEBUG("World Scroll Distance: " + std::to_string(worldScrollDistance));
+            GN_LOG_DEBUG("Screen Width: " + std::to_string(screenWidth));
+            GN_LOG_DEBUG("Starting rightmost search from: " + std::to_string(rightmostX));
+            GN_LOG_DEBUG("Current obstacle X: " + std::to_string(transform->position.x));
+            GN_LOG_DEBUG("Total active obstacles: " + std::to_string(m_activeObstacles.size()));
+        
+            // Find the actual rightmost obstacle position (excluding the one being wrapped)
+            for (Gnosis::Entity otherObstacle : m_activeObstacles) {
+                totalObstacles++;
+                if (otherObstacle != obstacle) {
+                    obstaclesChecked++;
+                    Transform* otherTransform = m_ecsSystem->GetComponent<Transform>(otherObstacle);
+                    Sprite* otherSprite = m_ecsSystem->GetComponent<Sprite>(otherObstacle);
+                    if (otherTransform && otherSprite) {
+                        // FIXED: Find rightmost LEFT EDGE to match initialization spacing logic
+                        // Initialization uses leftEdge + spacing, so wrapping should too
+                        float otherLeftEdge = otherTransform->position.x;
+                    
+                        GN_LOG_DEBUG("Obstacle " + std::to_string(obstaclesChecked) + " leftEdge: " + std::to_string(otherLeftEdge));
+                    
+                        // Use the rightmost left edge to match initialization spacing
+                        if (otherLeftEdge > rightmostX) {
+                            float previousRightmost = rightmostX;
+                            rightmostX = otherLeftEdge;
+                            GN_LOG_DEBUG("New rightmost leftEdge: " + std::to_string(rightmostX) + " (was: " + std::to_string(previousRightmost) + ")");
+                        }
+                    }
+                }
+            }
+            
+            // FIXED: Queue this obstacle after the rightmost one with proper spacing
+            // The old scripts maintained consistent spacing between obstacle pairs
+            float newX = rightmostX + m_obstacleSpacing;
+        
+            // Ensure minimum distance from screen edge to prevent immediate re-wrapping
+            float minDistanceFromScreen = screenWidth + 100.0f;
+            if (newX < minDistanceFromScreen) {
+                newX = minDistanceFromScreen;
+                GN_LOG_DEBUG("Adjusted newX to minimum distance: " + std::to_string(newX));
+            }
+            
+            GN_LOG_DEBUG("=== WRAPPING RESULT ===");
+            GN_LOG_DEBUG("Rightmost X found: " + std::to_string(rightmostX));
+            GN_LOG_DEBUG("Obstacle spacing: " + std::to_string(m_obstacleSpacing));
+            GN_LOG_DEBUG("New X position: " + std::to_string(newX));
+            
+            transform->position.x = newX;
+            
+            // UPDATED TOILET POSITIONING - use same improved ground rules as spawning
+            if (obstacleComp->pairedEntity != 0) {
+                Transform* pairedTransform = m_ecsSystem->GetComponent<Transform>(obstacleComp->pairedEntity);
+                Obstacle* pairedObstacle = m_ecsSystem->GetComponent<Obstacle>(obstacleComp->pairedEntity);
+                
+                if (pairedTransform && pairedObstacle) {
+                    float screenHeight = 2556.0f; // TODO: Get from platform delegates  
+                    float toiletHeight = sprite->height * transform->scale.y; // Scaled toilet height
+                    
+                    // Use same improved positioning: top toilet closer to screen, larger gap - UPDATED
+                    float minTopY = -toiletHeight * 0.8f; // Closer to screen top (less negative)
+                    float maxTopY = -toiletHeight * 0.2f; // Even closer to screen top
+                    
+                    // Generate new random position for top toilet within allowed range (all negative Y)
+                    float randomTopY = minTopY + (maxTopY - minTopY) * ((float)rand() / RAND_MAX);
+                    
+                    // Use EVEN LARGER gap height for better gameplay
+                    float fixedGapHeight = 600.0f; // Increased gap for more space
+                    
+                    // Calculate bottom toilet position: top toilet bottom + fixed gap
+                    float bottomToiletY = randomTopY + toiletHeight + fixedGapHeight;
+                    
+                    if (obstacleComp->isTopPart) {
+                        // This is top toilet, position it with new random position
+                        transform->position.y = randomTopY;
+                        // Position bottom toilet consistently
+                        pairedTransform->position.x = newX;
+                        pairedTransform->position.y = bottomToiletY;
+                    } else {
+                        // This is bottom toilet, calculate from top toilet position
+                        transform->position.y = bottomToiletY;
+                        // Position top toilet consistently  
+                        pairedTransform->position.x = newX;
+                        pairedTransform->position.y = randomTopY;
+                    }
+                    
+                    // Update both base positions
+                    obstacleComp->basePosition = transform->position;
+                    pairedObstacle->basePosition = pairedTransform->position;
+                    pairedObstacle->oscillationTimer = 0.0f;
+                    
+                    GN_LOG_DEBUG("Wrapped toilet pair to x=" + std::to_string(newX) + 
+                                ", topY=" + std::to_string(randomTopY) + 
+                                ", bottomY=" + std::to_string(bottomToiletY) + 
+                                ", gap=" + std::to_string(fixedGapHeight) + 
+                                " (improved positioning: lower top, larger gaps)");
+                }
+            } else {
+                // Single obstacle - update base position for oscillation calculations
+                obstacleComp->basePosition = Gnosis::GNVector2(newX, transform->position.y);
+                obstacleComp->oscillationTimer = 0.0f;
+                
+                GN_LOG_DEBUG("Wrapped single obstacle to x=" + std::to_string(newX));
+            }
+        }
     }
 
 } // namespace GameCore

@@ -7,12 +7,15 @@ namespace GameCore {
         
         // Set level-specific properties
         config.musicTrack = "Park";        // Base name for difficulty variants
-        config.worldSpeed = 200.0f;
+        config.worldSpeed = SpeedConstants::BASE_WORLD_SPEED;  // Use configurable speed constants
         config.baseScale = 8.0f;  // Keep player scale consistent
+        
+        // Disable pickup spawning for Level 1 - focus on core mechanics only
+        config.pickupSpawnRate = 0.0f;  // No pickups in Level 1
         
         AddParkLevelLayers(config);
         AddParkObstacles(config);
-        AddParkEnemies(config);
+        // No enemies or pickups for Level 1 - focus on core mechanics
         
         return config;
     }
@@ -243,34 +246,85 @@ namespace GameCore {
 
     // OBSTACLE CONFIGURATIONS
     void LevelConfigFactory::AddParkObstacles(LevelConfig& config) {
-        // Simple pipes - classic Flappy Bird style
-        config.obstacles.emplace_back("PipeTop", 64.0f, 200.0f, 180.0f, 3.0f, config.worldSpeed, true);
-        config.obstacles.emplace_back("PipeBottom", 64.0f, 200.0f, 180.0f, 3.0f, config.worldSpeed, true);
+        // Level 1: Basic toilet pairs - simple static obstacles for park level
+        // Using actual toilet assets with appropriate gap size for gameplay
+        // Smaller size and larger gap for easier introduction level
+        config.obstacles.emplace_back("TopToilet", "BottomToilet", 
+                                     48.0f, 150.0f, 200.0f, 3.0f, config.worldSpeed, 
+                                     ToiletBehavior::STATIC, 0.0f, 0.0f);
     }
 
     void LevelConfigFactory::AddSewerObstacles(LevelConfig& config) {
-        // Toilets and plumbing fixtures
-        config.obstacles.emplace_back("ToiletObstacle", 80.0f, 150.0f, 160.0f, 2.8f, config.worldSpeed, false);
-        config.obstacles.emplace_back("SewerPipe", 70.0f, 180.0f, 170.0f, 3.2f, config.worldSpeed, true);
+        // Level 2: Wide sewer pipes - static (too long to oscillate nicely)
+        // Save oscillation for gold toilets in harder difficulties
+        config.obstacles.emplace_back("TopPipeWide", "BottomPipeWide", 
+                                     80.0f, 180.0f, 160.0f, 2.8f, config.worldSpeed, 
+                                     ToiletBehavior::STATIC, 0.0f, 0.0f);
+        
+        // Add blue variant for variety
+        config.obstacles.emplace_back("TopPipeWideBlue", "BottomPipeWideBlue", 
+                                     80.0f, 180.0f, 160.0f, 3.2f, config.worldSpeed, 
+                                     ToiletBehavior::STATIC, 0.0f, 0.0f);
     }
 
     void LevelConfigFactory::AddDesertObstacles(LevelConfig& config) {
-        // Outhouses and desert structures
-        config.obstacles.emplace_back("Outhouse", 90.0f, 160.0f, 150.0f, 2.5f, config.worldSpeed, false);
-        config.obstacles.emplace_back("CactiA", 60.0f, 120.0f, 200.0f, 3.5f, config.worldSpeed, false);
-        config.obstacles.emplace_back("CactiB", 70.0f, 140.0f, 180.0f, 3.0f, config.worldSpeed, false);
+        // Level 3: Desert level with outhouses and ground hazards
+        // Outhouse is a single bottom obstacle (not a pair) - player flies over it
+        // Uses OuthouseToilet.png which is the toilet part underneath the Outhouse structure
+        config.obstacles.emplace_back("OuthouseToilet", "", 
+                                     90.0f, 160.0f, 0.0f, 2.5f, config.worldSpeed, 
+                                     ToiletBehavior::STATIC, 0.0f, 0.0f);
+        
+        // Ground cacti hazards - various sizes, also single bottom obstacles
+        config.obstacles.emplace_back("CactiA", "", 
+                                     60.0f, 120.0f, 0.0f, 3.5f, config.worldSpeed, 
+                                     ToiletBehavior::STATIC, 0.0f, 0.0f);
+        config.obstacles.emplace_back("CactiB", "", 
+                                     70.0f, 140.0f, 0.0f, 3.0f, config.worldSpeed, 
+                                     ToiletBehavior::STATIC, 0.0f, 0.0f);
+        config.obstacles.emplace_back("CactiC", "", 
+                                     65.0f, 130.0f, 0.0f, 3.2f, config.worldSpeed, 
+                                     ToiletBehavior::STATIC, 0.0f, 0.0f);
     }
 
     void LevelConfigFactory::AddSnowObstacles(LevelConfig& config) {
-        // Ice formations and snow structures
-        config.obstacles.emplace_back("IcePipe", 65.0f, 190.0f, 170.0f, 2.8f, config.worldSpeed, true);
-        config.obstacles.emplace_back("Snowball", 80.0f, 80.0f, 220.0f, 4.0f, config.worldSpeed, false);
+        // Level 4: Snow level with ice toilets
+        // Basic snow toilets for all difficulties
+        config.obstacles.emplace_back("TopToiletSnow", "BottomToiletSnow", 
+                                     65.0f, 190.0f, 170.0f, 2.8f, config.worldSpeed, 
+                                     ToiletBehavior::STATIC, 0.0f, 0.0f);
+        
+        // Add oscillating gold toilets for "Rough" difficulty
+        if (config.currentDifficulty == Difficulty::Rough) {
+            config.obstacles.emplace_back("TopToiletGold", "BottomToiletGold", 
+                                         65.0f, 190.0f, 160.0f, 3.5f, config.worldSpeed, 
+                                         ToiletBehavior::OSCILLATE_VERTICAL, 1.5f, 50.0f);
+        }
+        
+        // Single snowball obstacles for ground hazards
+        config.obstacles.emplace_back("Snowball", "", 
+                                     80.0f, 80.0f, 0.0f, 4.0f, config.worldSpeed, 
+                                     ToiletBehavior::STATIC, 0.0f, 0.0f);
     }
 
     void LevelConfigFactory::AddCastleObstacles(LevelConfig& config) {
-        // Castle/dungeon obstacles
-        config.obstacles.emplace_back("BrickWall", 100.0f, 180.0f, 140.0f, 2.2f, config.worldSpeed, true);
-        config.obstacles.emplace_back("SpikeBall", 70.0f, 70.0f, 250.0f, 3.5f, config.worldSpeed, false);
+        // Level 5: Castle/dungeon obstacles
+        // Standard brick wall pairs (like toilets but made of bricks)
+        config.obstacles.emplace_back("TorchPillar", "", 
+                                     100.0f, 180.0f, 0.0f, 2.2f, config.worldSpeed, 
+                                     ToiletBehavior::STATIC, 0.0f, 0.0f);
+        
+        // Spike ball hazards - ground obstacles
+        config.obstacles.emplace_back("SpikeBall", "", 
+                                     70.0f, 70.0f, 0.0f, 3.5f, config.worldSpeed, 
+                                     ToiletBehavior::STATIC, 0.0f, 0.0f);
+                                     
+        // Add oscillating gold toilets for variety and "Rough" difficulty
+        if (config.currentDifficulty == Difficulty::Rough) {
+            config.obstacles.emplace_back("TopToiletGold", "BottomToiletGold", 
+                                         65.0f, 180.0f, 140.0f, 3.0f, config.worldSpeed, 
+                                         ToiletBehavior::OSCILLATE_VERTICAL, 2.0f, 60.0f);
+        }
     }
 
     void LevelConfigFactory::AddBossObstacles(LevelConfig& config) {
@@ -280,8 +334,9 @@ namespace GameCore {
 
     // ENEMY CONFIGURATIONS
     void LevelConfigFactory::AddParkEnemies(LevelConfig& config) {
-        // Flying birds with proper animation - 4 frames of 32x32 in horizontal spritesheet (128x32 total)
-        config.enemies.emplace_back("BirdIdle", 32.0f, 32.0f, 150.0f, 5.0f, 1, "horizontal");
+        // Level 1: No enemies or coins - simple introduction level
+        // Player just needs to learn basic flying controls and navigate toilet obstacles
+        // This keeps Level 1 focused on core mechanics without distractions
     }
 
     void LevelConfigFactory::AddSewerEnemies(LevelConfig& config) {

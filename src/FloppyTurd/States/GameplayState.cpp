@@ -135,6 +135,11 @@ namespace GameCore {
             m_cameraSystem->Update(deltaTime);
         }
         
+        // Update UI system for menu button rendering
+        if (m_uiSystem) {
+            m_uiSystem->Update(deltaTime);
+        }
+        
         // Update game logic
         UpdateGameLogic(deltaTime);
         
@@ -191,7 +196,10 @@ namespace GameCore {
                         m_platformDelegates->input.getTouchPosition(i, &x, &y);
                         
                         GN_LOG_INFO("Touch " + std::to_string(i) + " PRESSED at (" + std::to_string(x) + ", " + std::to_string(y) + ")");
-                        
+                    
+                        // Check for menu button click first
+                        CheckMenuButtonClick(x, y);
+                    
                         // Send touch press event
                         m_playerControllerSystem->HandleTouchInput(x, y, true);
                     }
@@ -303,6 +311,9 @@ namespace GameCore {
         // Create unified render system (replaces individual sprite rendering)
         m_renderSystem = std::make_unique<RenderSystem>(m_ecsSystem, *m_platformDelegates);
         
+        // Create UI system for text and button rendering
+        m_uiSystem = std::make_unique<UISystem>(m_ecsSystem, *m_platformDelegates);
+        
         // Create level manager system
         m_levelManager = std::make_unique<LevelManager>(m_ecsSystem);
         
@@ -314,6 +325,9 @@ namespace GameCore {
         }
         
         GN_LOG_INFO("Gameplay systems initialized successfully");
+        
+        // Setup platform-specific layout after systems are initialized
+        SetupLayout();
     }
 
     void GameplayState::CreateGameEntities() {
@@ -634,50 +648,92 @@ namespace GameCore {
             Transform livesTransform(Gnosis::GNVector2(50.0f, 80.0f), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
             m_ecsSystem->AddComponent<Transform>(m_livesTextEntity, livesTransform);
             
-            Text livesText("Lives: " + std::to_string(m_currentLives), 24.0f, Gnosis::GNColor(255, 255, 255, 255), 10);
-            m_ecsSystem->AddComponent<Text>(m_livesTextEntity, livesText);
-        }
-        
-        // Create coins text entity
-        m_coinsTextEntity = m_ecsSystem->CreateEntity();
-        if (m_coinsTextEntity != 0) {
-            Transform coinsTransform(Gnosis::GNVector2(50.0f, 110.0f), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
-            m_ecsSystem->AddComponent<Transform>(m_coinsTextEntity, coinsTransform);
-            
-            Text coinsText("Coins: " + std::to_string(m_currentCoins), 24.0f, Gnosis::GNColor(255, 255, 0, 255), 10);
-            m_ecsSystem->AddComponent<Text>(m_coinsTextEntity, coinsText);
-        }
     }
-
-    void GameplayState::DestroyUI() {
-        GN_LOG_INFO("Destroying UI elements");
+    
+    // Create coins text entity
+    m_coinsTextEntity = m_ecsSystem->CreateEntity();
+    if (m_coinsTextEntity != 0) {
+        Transform coinsTransform(Gnosis::GNVector2(50.0f, 110.0f), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+        m_ecsSystem->AddComponent<Transform>(m_coinsTextEntity, coinsTransform);
         
-        if (!m_ecsSystem) {
-            return;
-        }
-        
-        if (m_scoreTextEntity != 0) {
-            m_ecsSystem->DestroyEntity(m_scoreTextEntity);
-            m_scoreTextEntity = 0;
-        }
-        
-        if (m_livesTextEntity != 0) {
-            m_ecsSystem->DestroyEntity(m_livesTextEntity);
-            m_livesTextEntity = 0;
-        }
-        
-        if (m_coinsTextEntity != 0) {
-            m_ecsSystem->DestroyEntity(m_coinsTextEntity);
-            m_coinsTextEntity = 0;
-        }
-        
-        if (m_pauseMenuEntity != 0) {
-            m_ecsSystem->DestroyEntity(m_pauseMenuEntity);
-            m_pauseMenuEntity = 0;
-        }
+        Text coinsText("Coins: " + std::to_string(m_currentCoins), 24.0f, Gnosis::GNColor(255, 255, 0, 255), 10);
+        m_ecsSystem->AddComponent<Text>(m_coinsTextEntity, coinsText);
     }
+    
+    // Create temporary menu button using proper UI system
+    m_tempMenuButtonEntity = m_ecsSystem->CreateEntity();
+    if (m_tempMenuButtonEntity != 0) {
+        // Calculate proper top-right position using screen info
+        // IMPORTANT: Always use pixelWidth/pixelHeight for UI positioning!
+        // Logical dimensions don't represent actual pixel dimensions needed for proper rendering.
+        float screenWidth = 1179.0f;  // Default iPhone 16 pixel width
+        float screenHeight = 2556.0f; // Default iPhone 16 pixel height
+        
+        // Get actual screen dimensions from render system if available
+        if (m_renderSystem) {
+            const ScreenInfo& screenInfo = m_renderSystem->GetScreenInfo();
+            screenWidth = screenInfo.pixelWidth;   // Use PIXEL dimensions, not logical!
+            screenHeight = screenInfo.pixelHeight; // Use PIXEL dimensions, not logical!
+        }
+        
+        // Position in top-right corner with safe margins
+        // Use percentage-based positioning: 90% from left, 8% from top (below notch/safe area)
+        float menuX = screenWidth * 0.90f;   // 90% from left edge
+        float menuY = screenHeight * 0.08f;  // 8% from top (safe area)
+        
+        Transform menuButtonTransform(Gnosis::GNVector2(menuX, menuY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+        m_ecsSystem->AddComponent<Transform>(m_tempMenuButtonEntity, menuButtonTransform);
+        
+        // Create UIElement for proper text rendering
+        UIElement menuButton;
+        menuButton.buttonText = "[MENU]";
+        menuButton.fontSize = 24.0f;
+        menuButton.textColor = Gnosis::GNColor(255, 100, 100, 255);  // Red color for visibility
+        menuButton.centerTextHorizontally = true;
+        menuButton.centerTextVertically = true;
+        menuButton.visible = true;
+        menuButton.isEnabled = true;
+        menuButton.normalTextureId = "";  // Text-only button (no background texture)
+        m_ecsSystem->AddComponent<UIElement>(m_tempMenuButtonEntity, menuButton);
+        
+        GN_LOG_INFO("Created temporary menu button with UIElement at (" + std::to_string(menuX) + ", " + std::to_string(menuY) + ")");
+    }
+}
 
-    void GameplayState::UpdateGameLogic(float deltaTime) {
+void GameplayState::DestroyUI() {
+    GN_LOG_INFO("Destroying UI elements");
+    
+    if (!m_ecsSystem) {
+        return;
+    }
+    
+    if (m_scoreTextEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_scoreTextEntity);
+        m_scoreTextEntity = 0;
+    }
+    
+    if (m_livesTextEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_livesTextEntity);
+        m_livesTextEntity = 0;
+    }
+    
+    if (m_coinsTextEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_coinsTextEntity);
+        m_coinsTextEntity = 0;
+    }
+    
+    if (m_pauseMenuEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_pauseMenuEntity);
+        m_pauseMenuEntity = 0;
+    }
+    
+    if (m_tempMenuButtonEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_tempMenuButtonEntity);
+        m_tempMenuButtonEntity = 0;
+    }
+}
+
+void GameplayState::UpdateGameLogic(float deltaTime) {
         // Update invulnerability timer
         if (m_invulnerabilityTimer > 0.0f) {
             m_invulnerabilityTimer -= deltaTime;
@@ -707,9 +763,16 @@ namespace GameCore {
     }
 
     void GameplayState::UpdateSpawning(float deltaTime) {
-        // Use LevelManager for all spawning
-        if (m_levelManager) {
-            m_levelManager->UpdateObstacleSpawning(deltaTime);
+        // Use LevelManager object pooling system instead of spawning new obstacles
+        if (m_levelManager && m_cameraSystem) {
+            // Get world scroll distance for wrapping calculations
+            // Camera stays at (0,0), only world objects move, so use world scroll distance directly
+            float worldScrollDistance = m_cameraSystem->GetWorldPosition();
+            
+            // Update object pooling (wraps obstacles around screen)
+            m_levelManager->UpdateObstaclePooling(deltaTime, worldScrollDistance);
+            
+            // Still spawn enemies and pickups using traditional spawning for now
             m_levelManager->UpdateEnemySpawning(deltaTime);
             m_levelManager->UpdatePickupSpawning(deltaTime);
         }
@@ -894,8 +957,40 @@ namespace GameCore {
     }
 
     void GameCore::GameplayState::OnEnemyDefeated() {
-        GN_LOG_INFO("Enemy defeated");
-        m_currentScore += 100;
+        GN_LOG_INFO("Enemy defeated!");
+        // Handle enemy defeat logic
+    }
+    
+    // Menu navigation functions
+    void GameplayState::ReturnToMainMenu() {
+        GN_LOG_INFO("Returning to main menu from gameplay");
+        m_finished = true;  // This will trigger state transition back to main menu
+    }
+    
+    void GameplayState::CheckMenuButtonClick(float touchX, float touchY) {
+        if (m_tempMenuButtonEntity == 0) {
+            return;  // No menu button exists
+        }
+        
+        // Get button transform for simple text-based button
+        auto transform = m_ecsSystem->GetComponent<Transform>(m_tempMenuButtonEntity);
+        
+        if (transform) {
+            // Simple rectangular hit area around the text button (approximate size)
+            float buttonWidth = 100.0f;  // Approximate width for "[MENU]" text
+            float buttonHeight = 30.0f;  // Approximate height for text
+            
+            float buttonLeft = transform->position.x - (buttonWidth / 2.0f);
+            float buttonRight = transform->position.x + (buttonWidth / 2.0f);
+            float buttonTop = transform->position.y - (buttonHeight / 2.0f);
+            float buttonBottom = transform->position.y + (buttonHeight / 2.0f);
+            
+            if (touchX >= buttonLeft && touchX <= buttonRight && 
+                touchY >= buttonTop && touchY <= buttonBottom) {
+                GN_LOG_INFO("Menu button clicked! Returning to main menu.");
+                ReturnToMainMenu();
+            }
+        }
     }
 
     void GameCore::GameplayState::StartLevelMusic() {
@@ -942,6 +1037,50 @@ namespace GameCore {
         
         m_platformDelegates->audio.stopMusic();
         GN_LOG_INFO("Level music stopped");
+    }
+    
+    // Platform-specific layout implementation
+    void GameplayState::SetupLayout() {
+#ifdef PLATFORM_IOS
+        SetupIOSLayout();
+#else
+        SetupDesktopLayout();
+#endif
+    }
+    
+    void GameplayState::SetupIOSLayout() {
+        GN_LOG_INFO("GameplayState: Setting up iOS layout");
+        
+        // Get dynamic screen info from render system
+        if (m_renderSystem) {
+            const ScreenInfo& screenInfo = m_renderSystem->GetScreenInfo();
+            float dynamicScale = m_renderSystem->GetDynamicScale();
+            
+            GN_LOG_INFO("GameplayState: iOS layout - Screen: " + 
+                       std::to_string((int)screenInfo.logicalWidth) + "x" + 
+                       std::to_string((int)screenInfo.logicalHeight) + 
+                       ", Scale: " + std::to_string(dynamicScale));
+            
+            // iOS-specific gameplay layout adjustments can go here
+            // e.g., adjusting spawn positions, UI element positions, etc.
+        }
+    }
+    
+    void GameplayState::SetupDesktopLayout() {
+        GN_LOG_INFO("GameplayState: Setting up desktop layout");
+        
+        // Get dynamic screen info from render system  
+        if (m_renderSystem) {
+            const ScreenInfo& screenInfo = m_renderSystem->GetScreenInfo();
+            float dynamicScale = m_renderSystem->GetDynamicScale();
+            
+            GN_LOG_INFO("GameplayState: Desktop layout - Screen: " + 
+                       std::to_string((int)screenInfo.logicalWidth) + "x" + 
+                       std::to_string((int)screenInfo.logicalHeight) + 
+                       ", Scale: " + std::to_string(dynamicScale));
+            
+            // Desktop-specific gameplay layout adjustments can go here
+        }
     }
 
 } // namespace GameCore 
