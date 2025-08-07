@@ -219,8 +219,12 @@ namespace GameCore {
         
         // Skip pickup spawning if spawn rate is 0 (disabled for this level)
         if (m_currentLevelConfig.pickupSpawnRate <= 0.0f) {
+            // Log active pickup count to help debug
+            GN_LOG_DEBUG("Pickup spawning disabled for this level (spawn rate: " + std::to_string(m_currentLevelConfig.pickupSpawnRate) + "), active pickups: " + std::to_string(m_activePickups.size()));
             return;
         }
+        
+        GN_LOG_DEBUG("Pickup spawning active (spawn rate: " + std::to_string(m_currentLevelConfig.pickupSpawnRate) + ")");
         
         m_pickupSpawnTimer += deltaTime;
         

@@ -44,6 +44,10 @@ void InitializePlatformDelegates() {
             // Asset cache management delegates (direct ThreadingProxy assignment)
             delegates.asset.preloadEssentialAssets = GameCore::ThreadingProxy::enqueuePreloadEssentialAssets;
             delegates.asset.isCached = GameCore::ThreadingProxy::enqueueIsCached;
+            
+            // Renderer delegates - add screen info support
+            delegates.renderer.getScreenInfo = GameCore::iOSPlatform::GetScreenInfo;
+            delegates.renderer.getScreenSize = GameCore::iOSPlatform::GetScreenSize;
 
             GameCore::ThreadingProxy::enqueueLogInfo("iOS platform delegates configured successfully", "PLATFORM");
         }
@@ -102,6 +106,12 @@ void InitializePlatformDelegates() {
         void GetScreenSize(float* width, float* height) {
             if (width && height) {
                 GameCore::ThreadingProxy::enqueueGetScreenSize(width, height);
+            }
+        }
+        
+        void GetScreenInfo(ScreenInfo* screenInfo) {
+            if (screenInfo) {
+                GameCore::ThreadingProxy::enqueueGetScreenInfo(screenInfo);
             }
         }
         

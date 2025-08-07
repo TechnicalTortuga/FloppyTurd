@@ -664,22 +664,25 @@ namespace GameCore {
     m_tempMenuButtonEntity = m_ecsSystem->CreateEntity();
     if (m_tempMenuButtonEntity != 0) {
         // Calculate proper top-right position using screen info
-        // IMPORTANT: Always use pixelWidth/pixelHeight for UI positioning!
-        // Logical dimensions don't represent actual pixel dimensions needed for proper rendering.
-        float screenWidth = 1179.0f;  // Default iPhone 16 pixel width
-        float screenHeight = 2556.0f; // Default iPhone 16 pixel height
+        // IMPORTANT: The render system returns scaled dimensions (800x600), not actual device pixels!
+        // For UI positioning, we need to use the actual device pixel dimensions.
+        float screenWidth = 1179.0f;  // iPhone 16 actual pixel width
+        float screenHeight = 2556.0f; // iPhone 16 actual pixel height
         
-        // Get actual screen dimensions from render system if available
+        // Get screen dimensions from render system for debugging
         if (m_renderSystem) {
             const ScreenInfo& screenInfo = m_renderSystem->GetScreenInfo();
-            screenWidth = screenInfo.pixelWidth;   // Use PIXEL dimensions, not logical!
-            screenHeight = screenInfo.pixelHeight; // Use PIXEL dimensions, not logical!
+            GN_LOG_INFO("Render system dimensions: " + std::to_string(screenInfo.pixelWidth) + "x" + std::to_string(screenInfo.pixelHeight));
+            GN_LOG_INFO("Using actual device dimensions: " + std::to_string(screenWidth) + "x" + std::to_string(screenHeight));
+            
+            // For now, use hardcoded iPhone 16 dimensions since render system gives scaled values
+            // TODO: Get actual device dimensions from platform layer
         }
         
         // Position in top-right corner with safe margins
-        // Use percentage-based positioning: 90% from left, 8% from top (below notch/safe area)
-        float menuX = screenWidth * 0.90f;   // 90% from left edge
-        float menuY = screenHeight * 0.08f;  // 8% from top (safe area)
+        // Use percentage-based positioning: 95% from left, 12% from top (well below notch)
+        float menuX = screenWidth * 0.95f;      // 95% from left edge (top-right)
+        float menuY = screenHeight * 0.12f;     // 12% from top (safe area)
         
         Transform menuButtonTransform(Gnosis::GNVector2(menuX, menuY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
         m_ecsSystem->AddComponent<Transform>(m_tempMenuButtonEntity, menuButtonTransform);

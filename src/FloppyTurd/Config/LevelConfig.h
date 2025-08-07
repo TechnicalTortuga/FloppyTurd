@@ -227,7 +227,14 @@ namespace GameCore {
             worldSpeed = SpeedConstants::BASE_WORLD_SPEED * diffMultiplier;
             obstacleSpawnRate = 2.0f / diffMultiplier;  // Faster spawning = harder
             enemySpawnRate = 3.0f / diffMultiplier;
-            pickupSpawnRate = 5.0f / diffMultiplier;
+            
+            // FIXED: Only apply difficulty to pickup spawn rate if it's not disabled (> 0)
+            // Preserve level-specific setting of 0.0f (disabled pickups)
+            if (pickupSpawnRate > 0.0f) {
+                pickupSpawnRate = 5.0f / diffMultiplier;
+            }
+            // If pickupSpawnRate is 0.0f, leave it as 0.0f (disabled)
+            
             difficultyMultiplier = diffMultiplier;
             
             // FIXED: Update background layer scroll speeds with proper parallax multipliers

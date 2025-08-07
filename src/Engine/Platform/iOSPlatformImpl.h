@@ -32,6 +32,7 @@ namespace GameCore {
         void DrawRectangle(float x, float y, float width, float height, float r, float g, float b, float a);
         void DrawCircle(float x, float y, float radius, float r, float g, float b, float a);
         void GetScreenSize(float* width, float* height);
+        void GetScreenInfo(ScreenInfo* screenInfo);
         
         // Input functions that call Swift TouchInputHandler directly
         bool IsActionPressed(int action);
