@@ -30,50 +30,10 @@ namespace GameCore {
     }
 
     void UISystem::Render() {
-        if (!m_ecsCoordinator) {
-            return;
-        }
-
-        // Get all entities with both Transform and UIElement components
-        auto entities = m_ecsCoordinator->GetEntitiesWithComponents<Transform, UIElement>();
-        
-        GN_LOG_DEBUG("UISystem: Found " + std::to_string(entities.size()) + " entities with Transform and UIElement components");
-        
-        // Collect visible UI elements with their layer info
-        std::vector<std::pair<Gnosis::Entity, int>> visibleUIElements;
-        
-        for (Gnosis::Entity entity : entities) {
-            if (!IsEntityVisible(entity)) {
-                continue;
-            }
-            
-            UIElement* uiElement = m_ecsCoordinator->GetComponent<UIElement>(entity);
-            if (uiElement && uiElement->isEnabled && uiElement->visible) {
-                visibleUIElements.emplace_back(entity, uiElement->textLayer);
-                GN_LOG_DEBUG("UISystem: Found visible UI element entity " + std::to_string(entity) + " with text '" + uiElement->buttonText + "'");
-            }
-        }
-        
-        GN_LOG_DEBUG("UISystem: Rendering " + std::to_string(visibleUIElements.size()) + " visible UI elements");
-        
-        // Sort by layer (lower layers render first)
-        std::sort(visibleUIElements.begin(), visibleUIElements.end(), 
-                  [](const std::pair<Gnosis::Entity, int>& a, const std::pair<Gnosis::Entity, int>& b) {
-                      return a.second < b.second;
-                  });
-        
-        // Render all visible UI elements in layer order
-        for (const auto& entityLayer : visibleUIElements) {
-            Gnosis::Entity entity = entityLayer.first;
-            Transform* transform = m_ecsCoordinator->GetComponent<Transform>(entity);
-            UIElement* uiElement = m_ecsCoordinator->GetComponent<UIElement>(entity);
-            
-            if (transform && uiElement) {
-                GN_LOG_DEBUG("UISystem: Rendering UI element entity " + std::to_string(entity) + " at position (" + 
-                           std::to_string(transform->position.x) + ", " + std::to_string(transform->position.y) + ")");
-                RenderUIElement(entity, *transform, *uiElement);
-            }
-        }
+        // DISABLED: UISystem rendering is now handled by unified RenderSystem
+        // This prevents duplicate rendering while preserving UI logic functionality
+        GN_LOG_DEBUG("UISystem::Render() disabled - using unified RenderSystem for all rendering");
+        return;
     }
 
     void UISystem::RenderUIElement(Gnosis::Entity entity, const Transform& transform, const UIElement& uiElement) {

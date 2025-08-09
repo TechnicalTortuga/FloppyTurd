@@ -18,4 +18,5 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/Engine/Core/../../FloppyTurd/Systems/../Components/../../Engine/Core/GnosisTypes.h \
   /Users/aimac/Development/FloppyTurd/src/Engine/Core/../../FloppyTurd/Systems/../Components/../../Engine/Core/Component.h \
   /Users/aimac/Development/FloppyTurd/src/Engine/Core/../../FloppyTurd/Systems/../../Engine/Platform/PlatformDelegates.h \
-  /Users/aimac/Development/FloppyTurd/src/Engine/Core/../../FloppyTurd/Systems/UISystem.h
+  /Users/aimac/Development/FloppyTurd/src/Engine/Core/../../FloppyTurd/Systems/UISystem.h \
+  /Users/aimac/Development/FloppyTurd/src/Engine/Core/../../FloppyTurd/Systems/RenderSystem.h

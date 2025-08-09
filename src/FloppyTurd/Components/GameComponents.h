@@ -175,25 +175,35 @@ namespace GameCore {
     };
     
     /**
-     * Collider component - collision detection
+     * Hitbox component - unified collision and debug bounds
      */
-    struct Collider : public Gnosis::Component {
+    struct Hitbox : public Gnosis::Component {
         ColliderType type;
-        float radius;           // For circle colliders
-        float width, height;    // For rectangle colliders
+        // Circle
+        float radius; 
+        // Rectangle
+        float width;
+        float height;
+        // Offset from entity transform position (sprite center)
+        float offsetX;
+        float offsetY;
+        // Behavior
         bool isTrigger;
         bool isStatic;
         std::string tag;
-        
-        Collider()
+
+        Hitbox()
             : type(ColliderType::Circle)
             , radius(16.0f)
             , width(32.0f)
             , height(32.0f)
+            , offsetX(0.0f)
+            , offsetY(0.0f)
             , isTrigger(false)
             , isStatic(false)
         {}
     };
+
     
     /**
      * Animation component - sprite animation
@@ -322,6 +332,7 @@ namespace GameCore {
         Gnosis::GNVector2 basePosition; // Original spawn position for oscillation
         Gnosis::Entity pairedEntity; // For toilet pairs (top/bottom linked)
         bool isTopPart;             // True if this is the top part of a pair
+        bool pipeCleared;           // True if player has passed through this pipe
         
         Obstacle()
             : damage(1)
@@ -334,6 +345,7 @@ namespace GameCore {
             , basePosition(0.0f, 0.0f)
             , pairedEntity(0)
             , isTopPart(false)
+            , pipeCleared(false)
         {}
     };
 
@@ -528,6 +540,27 @@ namespace GameCore {
     };
 
     /**
+     * DebugDraw component - indicates an entity should show debug overlays (hitboxes, bounds)
+     */
+    struct DebugDraw : public Gnosis::Component {
+        bool showBounds = true;         // Show bounding box rectangle
+        bool showCollider = true;       // Show collider rectangle  
+        Gnosis::GNColor boundsColor;            // Color for bounds rectangle
+        Gnosis::GNColor colliderColor;          // Color for collider rectangle
+        float alpha = 0.3f;             // Transparency for debug overlays
+        int debugLayer = 18;            // Layer for debug overlays (high priority)
+        
+        DebugDraw() 
+            : boundsColor(Gnosis::GNColor(0, 255, 0, 255))      // Green for bounds
+            , colliderColor(Gnosis::GNColor(255, 0, 0, 255))    // Red for colliders
+        {}
+        
+        DebugDraw(bool bounds, bool collider, Gnosis::GNColor bColor, Gnosis::GNColor cColor, float a = 0.3f)
+            : showBounds(bounds), showCollider(collider), boundsColor(bColor), colliderColor(cColor), alpha(a)
+        {}
+    };
+
+    /**
      * Pickup component - collectible items like coins and power-ups
      */
     struct Pickup : public Gnosis::Component {
@@ -577,7 +610,7 @@ namespace Gnosis {
     using Transform = GameCore::Transform;
     using Physics = GameCore::Physics;
     using Sprite = GameCore::Sprite;
-    using Collider = GameCore::Collider;
+    using Hitbox = GameCore::Hitbox;
     using Animation = GameCore::Animation;
     using PlayerComponent = GameCore::PlayerComponent;
     using Enemy = GameCore::Enemy;

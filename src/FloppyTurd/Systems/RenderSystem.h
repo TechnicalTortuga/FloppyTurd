@@ -6,6 +6,9 @@
 #include "../Components/GameComponents.h"
 #include <vector>
 #include <map>
+#include <unordered_set>
+#include <unordered_map>
+#include <string>
 
 namespace GameCore {
 
@@ -22,7 +25,7 @@ namespace GameCore {
      */
     class RenderSystem {
     public:
-        RenderSystem(Gnosis::ECS* ecsSystem, GameCore::PlatformDelegates& platformDelegates);
+        RenderSystem(Gnosis::ECS* ecsSystem, const GameCore::PlatformDelegates& platformDelegates);
         ~RenderSystem();
 
         // Main render method
@@ -45,12 +48,15 @@ namespace GameCore {
         float GetDynamicScale() const;
         float GetUIScale() const;
         
+        // Texture management (1:1 with SpriteSystem)
+        void SetTextureBasePath(const std::string& basePath);
+        
         // Platform-specific layout setup
         void SetupLayout();  // Calls appropriate platform layout function
 
     private:
         Gnosis::ECS* m_ecsSystem;
-        GameCore::PlatformDelegates& m_platformDelegates;
+        const GameCore::PlatformDelegates& m_platformDelegates;
         
         Gnosis::Entity m_activeCamera;
         bool m_useRenderLayers;
@@ -64,17 +70,52 @@ namespace GameCore {
             Gnosis::Entity entity;
             Transform* transform;
             Sprite* sprite;
+            Text* text;
             int layer;
             float depth;
+            
+            // Debug rendering fields
+            bool isDebugBounds = false;
+            bool isDebugCollider = false;
+            Gnosis::GNColor debugColor = {255, 255, 255, 255};
+            float debugAlpha = 0.3f;
+            float debugWidth = 0.0f;
+            float debugHeight = 0.0f;
+            float debugOffsetX = 0.0f;
+            float debugOffsetY = 0.0f;
+            // Circle support
+            bool debugIsCircle = false;
+            float debugRadius = 0.0f;
         };
         
         std::vector<RenderItem> m_renderQueue;
+        // Async texture loading state (mirrors SpriteSystem minimal behavior)
+        std::unordered_set<std::string> m_pendingTextures;
+        std::unordered_map<std::string, uint32_t> m_textureCache;
+        std::string m_textureBasePath; // Base path for texture loading (mirrors SpriteSystem)
         
         // Helper methods
         void CollectRenderItems();
         void SortRenderQueue();
         void RenderWorldSpace();
         void RenderSingleItem(const RenderItem& item);
+
+        // Texture load helpers
+        // 1:1 with SpriteSystem flow
+        uint32_t GetOrLoadTexture(const std::string& textureId, Gnosis::Entity entity);
+        std::string GetFullTexturePath(const std::string& textureId) const;
+        static void HandleTextureLoaded(GameCore::TextureData* textureData, const char* error, void* userData);
+        void EnsureTextureReady(const std::string& textureId); // retained but not used for gating
+        struct TextureLoadContext {
+            std::string textureId;
+            RenderSystem* system;
+            Gnosis::Entity entity;
+            TextureLoadContext(const std::string& id, RenderSystem* sys, Gnosis::Entity e)
+                : textureId(id), system(sys), entity(e) {}
+            // Overload preserved for legacy call sites (unused by new path)
+            TextureLoadContext(const std::string& id, RenderSystem* sys)
+                : textureId(id), system(sys), entity() {}
+        };
         
         // Dynamic layout helpers
         void SetupIOSLayout();

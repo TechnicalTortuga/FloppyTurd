@@ -197,8 +197,13 @@ namespace GameCore {
                 m_jumpCooldown = JUMP_COOLDOWN;
                 m_isAscending = true;  // Track that we're now ascending
                 
-                // ONLY transition to JUMPING state if we actually jumped (passed cooldown check)
-                TransitionToState(PlayerAnimationState::JUMPING);
+                // ONLY transition to JUMPING state if we actually jumped AND not in hurt state
+                // Don't interrupt hurt animation with jump animation
+                if (m_currentState != PlayerAnimationState::HURT) {
+                    TransitionToState(PlayerAnimationState::JUMPING);
+                } else {
+                    GN_LOG_INFO("Player jumped but staying in HURT animation state");
+                }
                 
                 GN_LOG_INFO("Player jumped with force (" + std::to_string(force) + ") - transitioned to JUMPING state");
             }
@@ -270,22 +275,6 @@ namespace GameCore {
                     sprite->frameCount = 1; // 64x64 pixels, single frame
                     sprite->frameWidth = 64; // Each frame is 64x64 pixels
                     sprite->frameHeight = 64;
-                    sprite->frameTime = 0.1f; // Frame timing (not used for single frame)
-                    sprite->isAnimated = false; // Single frame, not animated
-                    sprite->playing = true; // IDLE should always be playing
-                    sprite->loop = true; // IDLE should loop continuously
-                    sprite->hasCompleted = false; // IDLE never completes
-                } else if (animationName == "TurdletJump") {
-                    sprite->frameCount = 6; // 384x64 pixels = 6 frames
-                    sprite->frameWidth = 64; // Each frame is 64x64 pixels
-                    sprite->frameHeight = 64;
-                    sprite->frameTime = 0.2f; // Slower for jump animation
-                    sprite->isAnimated = true; // Multi-frame animation
-                    sprite->playing = true;
-                    sprite->loop = false; // Don't loop - play once and stop
-                } else if (animationName == "TurdletShoot") {
-                    sprite->frameCount = 5; // 320x64 pixels = 5 frames
-                    sprite->frameWidth = 64; // Each frame is 64x64 pixels
                     sprite->frameHeight = 64;
                     sprite->frameTime = 0.15f; // Slower for shoot animation
                     sprite->isAnimated = true; // Multi-frame animation
@@ -295,7 +284,7 @@ namespace GameCore {
                     sprite->frameCount = 6; // 384x64 pixels = 6 frames
                     sprite->frameWidth = 64; // Each frame is 64x64 pixels
                     sprite->frameHeight = 64;
-                    sprite->frameTime = 0.18f; // Slower for hurt animation
+                    sprite->frameTime = 0.15f; // Slightly slower than original 0.1f but not too slow
                     sprite->isAnimated = true; // Multi-frame animation
                     sprite->playing = true;
                     sprite->loop = false; // Don't loop - play once and stop
@@ -562,12 +551,12 @@ namespace GameCore {
         projectileSprite.color = Gnosis::GNColor(255, 255, 0, 255); // Yellow
         m_ecsSystem->AddComponent<Sprite>(projectileEntity, projectileSprite);
         
-        // Add collider component
-        Collider projectileCollider;
-        projectileCollider.type = ColliderType::Circle;
-        projectileCollider.radius = 8.0f;
-        projectileCollider.tag = "projectile";
-        m_ecsSystem->AddComponent<Collider>(projectileEntity, projectileCollider);
+        // Add hitbox component
+        Hitbox projectileHitbox;
+        projectileHitbox.type = ColliderType::Circle;
+        projectileHitbox.radius = 8.0f;
+        projectileHitbox.tag = "projectile";
+        m_ecsSystem->AddComponent<Hitbox>(projectileEntity, projectileHitbox);
         
         // Add projectile component
         Projectile projectileData;

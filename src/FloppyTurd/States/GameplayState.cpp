@@ -18,6 +18,7 @@ namespace GameCore {
         , m_difficultyLevel(1.0f)
         , m_playerAlive(true)
         , m_invulnerabilityTimer(0.0f)
+        , m_pipesCleared(0)
         , m_finished(false)
         , m_isPaused(false)
         , m_levelCompleted(false)
@@ -55,6 +56,7 @@ namespace GameCore {
         m_difficultyLevel = 1.0f;
         m_playerAlive = true;
         m_invulnerabilityTimer = 0.0f;
+        m_pipesCleared = 0;
         m_finished = false;
         m_isPaused = false;
         m_levelCompleted = false;
@@ -117,6 +119,17 @@ namespace GameCore {
         // Update input delay timer
         m_inputDelayTimer += deltaTime;
         
+        // PlayerControllerSystem now handles hurt state transitions automatically
+        // No manual hurt state management needed
+        
+        // Update invulnerability timer
+        if (m_invulnerabilityTimer > 0.0f) {
+            m_invulnerabilityTimer -= deltaTime;
+            if (m_invulnerabilityTimer <= 0.0f) {
+                GN_LOG_INFO("Player invulnerability ended");
+            }
+        }
+        
         // Handle input only after delay period to prevent auto-shooting
         if (m_inputDelayTimer >= INPUT_DELAY_TIME) {
             HandleInput();
@@ -143,6 +156,12 @@ namespace GameCore {
         // Update game logic
         UpdateGameLogic(deltaTime);
         
+        // Check toilet collisions and pipe clearing
+        CheckToiletCollisions();
+        
+        // Update pipe counter UI
+        UpdatePipeCounterUI();
+        
         // Update spawning
         UpdateSpawning(deltaTime);
         
@@ -160,10 +179,13 @@ namespace GameCore {
     }
 
     void GameplayState::Render() {
-        // Use unified render system instead of individual sprite system
-        if (m_renderSystem) {
-            m_renderSystem->Render();
-        }
+        // All rendering now handled by unified SystemManager::Render() -> RenderSystem::Render() path
+        // Remove direct m_renderSystem->Render() call to prevent duplicate rendering
+        
+        // UI rendering is now handled by RenderSystem; avoid calling UISystem::Render() to prevent duplication
+        
+        // Draw debug rectangles overlay (after world/UI render so they appear on top)
+        DrawDebugRectangles();
     }
 
     void GameplayState::HandleInput() {
@@ -362,12 +384,12 @@ namespace GameCore {
             playerPhysics.drag = 0.98f;
             m_ecsSystem->AddComponent<Physics>(m_playerEntity, playerPhysics);
             
-            // Add collider component (scaled to match sprite)
-            Collider playerCollider;
-            playerCollider.type = ColliderType::Rectangle;
-            playerCollider.width = 64.0f * playerScale;
-            playerCollider.height = 64.0f * playerScale;
-            m_ecsSystem->AddComponent<Collider>(m_playerEntity, playerCollider);
+            // Add hitbox component (circle, legacy radius before scaling)
+            Hitbox playerHitbox;
+            playerHitbox.type = ColliderType::Circle;
+            playerHitbox.radius = 16.0f; // TODO: confirm legacy radius from original scripts
+            playerHitbox.isTrigger = false;
+            m_ecsSystem->AddComponent<Hitbox>(m_playerEntity, playerHitbox);
             
             // Add player component
             PlayerComponent playerData;
@@ -626,48 +648,75 @@ namespace GameCore {
     }
 
     void GameplayState::CreateUI() {
-        GN_LOG_INFO("Creating UI elements");
-        
-        if (!m_ecsSystem) {
-            return;
-        }
-        
-        // Create score text entity
-        m_scoreTextEntity = m_ecsSystem->CreateEntity();
-        if (m_scoreTextEntity != 0) {
-            Transform scoreTransform(Gnosis::GNVector2(50.0f, 50.0f), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
-            m_ecsSystem->AddComponent<Transform>(m_scoreTextEntity, scoreTransform);
-            
-            Text scoreText("Score: 0", 24.0f, Gnosis::GNColor(255, 255, 255, 255), 10);
-            m_ecsSystem->AddComponent<Text>(m_scoreTextEntity, scoreText);
-        }
-        
-        // Create lives text entity
-        m_livesTextEntity = m_ecsSystem->CreateEntity();
-        if (m_livesTextEntity != 0) {
-            Transform livesTransform(Gnosis::GNVector2(50.0f, 80.0f), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
-            m_ecsSystem->AddComponent<Transform>(m_livesTextEntity, livesTransform);
-            
+    GN_LOG_INFO("Creating UI elements - SIMPLIFIED for pipe counter only");
+    
+    if (!m_ecsSystem) {
+        return;
     }
     
-    // Create coins text entity
-    m_coinsTextEntity = m_ecsSystem->CreateEntity();
-    if (m_coinsTextEntity != 0) {
-        Transform coinsTransform(Gnosis::GNVector2(50.0f, 110.0f), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
-        m_ecsSystem->AddComponent<Transform>(m_coinsTextEntity, coinsTransform);
+    // TODO: Temporarily disable score, lives, coins UI to focus on pipe counter
+    // These will be re-enabled once unified rendering system is implemented
+    m_scoreTextEntity = 0;
+    m_livesTextEntity = 0; 
+    m_coinsTextEntity = 0;
+    
+    // Create pipe counter text entity - centered under iPhone notch
+    m_pipeCounterEntity = m_ecsSystem->CreateEntity();
+    if (m_pipeCounterEntity != 0) {
+        // Get safe area information for proper positioning under notch
+        float safeLeft, safeTop, safeRight, safeBottom;
+        if (m_uiSystem) {
+            m_uiSystem->GetSafeArea(safeLeft, safeTop, safeRight, safeBottom);
+        } else {
+            // Fallback values for iPhone notch area
+            safeLeft = 0.0f;
+            safeTop = 44.0f;  // Standard notch height
+            if (m_renderSystem) {
+                const ScreenInfo& si = m_renderSystem->GetScreenInfo();
+                safeRight = si.pixelWidth;
+                safeBottom = si.pixelHeight;
+            } else {
+                safeRight = 1179.0f;  // Fallback iPhone 16 width
+                safeBottom = 2556.0f; // Fallback iPhone 16 height
+            }
+        }
         
-        Text coinsText("Coins: " + std::to_string(m_currentCoins), 24.0f, Gnosis::GNColor(255, 255, 0, 255), 10);
-        m_ecsSystem->AddComponent<Text>(m_coinsTextEntity, coinsText);
+        // Center horizontally using pixel width, position comfortably below notch safe area
+        float centerX = safeLeft + (safeRight - safeLeft) / 2.0f;
+        float pipeCounterY = safeTop + 96.0f;  // Well below notch for visibility
+        
+        Transform pipeTransform(Gnosis::GNVector2(centerX, pipeCounterY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+        m_ecsSystem->AddComponent<Transform>(m_pipeCounterEntity, pipeTransform);
+        
+        // Create UIElement for pipe counter (HIGH PRIORITY LAYER for visibility)
+        UIElement pipeCounter;
+        pipeCounter.buttonText = "0";  // Just the number, no label
+        pipeCounter.fontSize = 96.0f;  // Larger font for clear visibility
+        pipeCounter.textColor = Gnosis::GNColor(255, 255, 255, 255);  // White color
+        pipeCounter.centerTextHorizontally = true;
+        pipeCounter.centerTextVertically = true;
+        pipeCounter.visible = true;
+        pipeCounter.isEnabled = true;   // Must be enabled for UISystem to render
+        pipeCounter.textLayer = 10;     // High UI layer to ensure on-top ordering
+        pipeCounter.normalTextureId = "";  // Text-only (no background texture)
+        m_ecsSystem->AddComponent<UIElement>(m_pipeCounterEntity, pipeCounter);
+        
+        GN_LOG_INFO("Created pipe counter entity " + std::to_string(m_pipeCounterEntity) + " at (" + std::to_string(centerX) + ", " + std::to_string(pipeCounterY) + ") - centered under notch");
+    } else {
+        GN_LOG_ERROR("Failed to create pipe counter entity!");
     }
     
     // Create temporary menu button using proper UI system
     m_tempMenuButtonEntity = m_ecsSystem->CreateEntity();
     if (m_tempMenuButtonEntity != 0) {
-        // Calculate proper top-right position using screen info
-        // IMPORTANT: The render system returns scaled dimensions (800x600), not actual device pixels!
-        // For UI positioning, we need to use the actual device pixel dimensions.
-        float screenWidth = 1179.0f;  // iPhone 16 actual pixel width
-        float screenHeight = 2556.0f; // iPhone 16 actual pixel height
+        // Calculate proper top-right position using actual pixel dimensions from ScreenInfo
+        float screenWidth = 1179.0f;
+        float screenHeight = 2556.0f;
+        if (m_renderSystem) {
+            const ScreenInfo& si = m_renderSystem->GetScreenInfo();
+            screenWidth = si.pixelWidth;
+            screenHeight = si.pixelHeight;
+        }
         
         // Get screen dimensions from render system for debugging
         if (m_renderSystem) {
@@ -723,6 +772,11 @@ void GameplayState::DestroyUI() {
     if (m_coinsTextEntity != 0) {
         m_ecsSystem->DestroyEntity(m_coinsTextEntity);
         m_coinsTextEntity = 0;
+    }
+    
+    if (m_pipeCounterEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_pipeCounterEntity);
+        m_pipeCounterEntity = 0;
     }
     
     if (m_pauseMenuEntity != 0) {
@@ -817,12 +871,12 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             obstacleSprite.layer = 1;
             m_ecsSystem->AddComponent<Sprite>(obstacleEntity, obstacleSprite);
             
-            // Add collider component
-            Collider obstacleCollider;
-            obstacleCollider.type = ColliderType::Rectangle;
-            obstacleCollider.width = 64.0f;
-            obstacleCollider.height = 64.0f;
-            m_ecsSystem->AddComponent<Collider>(obstacleEntity, obstacleCollider);
+            // Add hitbox component
+            Hitbox obstacleHitbox;
+            obstacleHitbox.type = ColliderType::Rectangle;
+            obstacleHitbox.width = 64.0f;
+            obstacleHitbox.height = 64.0f;
+            m_ecsSystem->AddComponent<Hitbox>(obstacleEntity, obstacleHitbox);
             
             m_obstacles.push_back(obstacleEntity);
         }
@@ -851,12 +905,12 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             pickupSprite.layer = 1;
             m_ecsSystem->AddComponent<Sprite>(pickupEntity, pickupSprite);
             
-            // Add collider component
-            Collider pickupCollider;
-            pickupCollider.type = ColliderType::Rectangle;
-            pickupCollider.width = 32.0f;
-            pickupCollider.height = 32.0f;
-            m_ecsSystem->AddComponent<Collider>(pickupEntity, pickupCollider);
+            // Add hitbox component
+            Hitbox pickupHitbox;
+            pickupHitbox.type = ColliderType::Rectangle;
+            pickupHitbox.width = 32.0f;
+            pickupHitbox.height = 32.0f;
+            m_ecsSystem->AddComponent<Hitbox>(pickupEntity, pickupHitbox);
             
             m_pickups.push_back(pickupEntity);
         }
@@ -885,12 +939,12 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             enemySprite.layer = 1;
             m_ecsSystem->AddComponent<Sprite>(enemyEntity, enemySprite);
             
-            // Add collider component
-            Collider enemyCollider;
-            enemyCollider.type = ColliderType::Rectangle;
-            enemyCollider.width = 48.0f;
-            enemyCollider.height = 48.0f;
-            m_ecsSystem->AddComponent<Collider>(enemyEntity, enemyCollider);
+            // Add hitbox component
+            Hitbox enemyHitbox;
+            enemyHitbox.type = ColliderType::Rectangle;
+            enemyHitbox.width = 48.0f;
+            enemyHitbox.height = 48.0f;
+            m_ecsSystem->AddComponent<Hitbox>(enemyEntity, enemyHitbox);
             
             m_enemies.push_back(enemyEntity);
         }
@@ -926,13 +980,10 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
     }
 
     void GameCore::GameplayState::OnPlayerHurt(int damage) {
-        GN_LOG_INFO("Player hurt: " + std::to_string(damage));
-        m_currentLives--;
-        m_invulnerabilityTimer = 2.0f; // 2 seconds of invulnerability
-        
-        if (m_currentLives <= 0) {
-            OnPlayerDeath();
-        }
+        // DEBUG: Disable damage/life reduction during collision tuning
+        GN_LOG_INFO("Player hurt (debug mode - no life reduction): " + std::to_string(damage));
+        m_invulnerabilityTimer = 2.0f; // keep invulnerability to avoid spam
+        // Intentionally do NOT decrement lives or trigger death here
     }
 
     void GameCore::GameplayState::OnPlayerDeath() {
@@ -1085,5 +1136,202 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             // Desktop-specific gameplay layout adjustments can go here
         }
     }
+    
+    void GameplayState::CheckToiletCollisions() {
+        if (!m_playerAlive || !m_ecsSystem || !m_levelManager) {
+            return;
+        }
+        
+        // Get player transform
+        Transform* playerTransform = m_ecsSystem->GetComponent<Transform>(m_playerEntity);
+        if (!playerTransform) {
+            return;
+        }
+        
+        // Player collision box (approximate)
+        float playerX = playerTransform->position.x;
+        float playerY = playerTransform->position.y;
+        float playerWidth = 32.0f * playerTransform->scale.x;  // Approximate player width
+        float playerHeight = 32.0f * playerTransform->scale.y; // Approximate player height
+        
+        // Check collision with all active obstacles (toilets)
+        const auto& activeObstacles = m_levelManager->GetActiveObstacles();
+        for (Gnosis::Entity obstacleEntity : activeObstacles) {
+            Transform* obstacleTransform = m_ecsSystem->GetComponent<Transform>(obstacleEntity);
+            Sprite* obstacleSprite = m_ecsSystem->GetComponent<Sprite>(obstacleEntity);
+            Obstacle* obstacle = m_ecsSystem->GetComponent<Obstacle>(obstacleEntity);
+            
+            if (!obstacleTransform || !obstacleSprite || !obstacle) {
+                continue;
+            }
+            
+            // Calculate toilet collision box with specified dimensions
+            // Base toilet size: 64x256, scaled by transform
+            float toiletWidth = 20.0f * obstacleTransform->scale.x;  // 20px wide collision box
+            float toiletHeight = obstacleSprite->height * obstacleTransform->scale.y;
+            float toiletX = obstacleTransform->position.x;
+            float toiletY = obstacleTransform->position.y;
+            
+            // Apply 28px inset from top/bottom (scaled)
+            float inset = 28.0f * obstacleTransform->scale.y;
+            
+            if (obstacle->isTopPart) {
+                // Top toilet: end early by 28 pixels (reduce height from bottom)
+                toiletHeight -= inset;
+            } else {
+                // Bottom toilet: start later by 28 pixels (move up and reduce height)
+                toiletY += inset;
+                toiletHeight -= inset;
+            }
+            
+            // Center the collision box horizontally on the toilet sprite
+            float spriteWidth = obstacleSprite->width * obstacleTransform->scale.x;
+            toiletX = obstacleTransform->position.x + (spriteWidth - toiletWidth) / 2.0f;
+            
+            // AABB collision detection - ensure proper bounds checking
+            bool collisionX = (playerX < toiletX + toiletWidth) && (playerX + playerWidth > toiletX);
+            bool collisionY = (playerY < toiletY + toiletHeight) && (playerY + playerHeight > toiletY);
+            
+            // Enhanced debug logging
+            if (collisionX || collisionY) {
+                GN_LOG_INFO("Collision check - Entity: " + std::to_string(obstacleEntity) + 
+                           ", IsTop: " + std::to_string(obstacle->isTopPart) + 
+                           ", CollisionX: " + std::to_string(collisionX) + 
+                           ", CollisionY: " + std::to_string(collisionY) + 
+                           ", Invulnerable: " + std::to_string(m_invulnerabilityTimer > 0.0f) + 
+                           ", Timer: " + std::to_string(m_invulnerabilityTimer));
+            }
+            
+            if (collisionX && collisionY && m_invulnerabilityTimer <= 0.0f) {
+                // Collision detected and player is not invulnerable!
+                GN_LOG_INFO("Toilet collision detected! Player hurt.");
+                
+                // Set invulnerability timer to prevent repeated hits
+                m_invulnerabilityTimer = 1.0f;  // 1 second invulnerability
+                
+                // Play hurt sound effect
+                if (m_platformDelegates && m_platformDelegates->audio.playSound) {
+                    m_platformDelegates->audio.playSound("hurt.mp3", 0.8f);  // 80% volume
+                }
+                
+                // Trigger hurt state through PlayerControllerSystem - it will handle the animation and return to idle automatically
+                if (m_playerControllerSystem) {
+                    m_playerControllerSystem->PlayHurtAnimation();
+                }
+                
+                // Call the existing hurt handler for consistency
+                OnPlayerHurt(1);
+                
+                GN_LOG_INFO("Player hurt - invulnerable for 1 second, PlayerControllerSystem managing hurt animation");
+                return; // Only process one collision per frame
+            }
+            
+            // Check if player has passed through a toilet pair (pipe cleared)
+            if (obstacle->pairedEntity != 0 && !obstacle->pipeCleared) {
+                // Check if player has passed the toilet pair horizontally
+                if (playerX > toiletX + toiletWidth) {
+                    // Mark both toilets as cleared
+                    obstacle->pipeCleared = true;
+                    
+                    Obstacle* pairedObstacle = m_ecsSystem->GetComponent<Obstacle>(obstacle->pairedEntity);
+                    if (pairedObstacle) {
+                        pairedObstacle->pipeCleared = true;
+                    }
+                    
+                    // Increment pipe counter
+                    OnPipeCleared();
+                }
+            }
+        }
+    }
+    
+    void GameplayState::UpdatePipeCounterUI() {
+        if (m_pipeCounterEntity == 0 || !m_ecsSystem) {
+            return;
+        }
+        
+        UIElement* pipeCounter = m_ecsSystem->GetComponent<UIElement>(m_pipeCounterEntity);
+        if (pipeCounter) {
+            pipeCounter->buttonText = std::to_string(m_pipesCleared);  // Just the number
+        }
+    }
+    
+    void GameplayState::OnPipeCleared() {
+        m_pipesCleared++;
+        GN_LOG_INFO("Pipe cleared! Total pipes: " + std::to_string(m_pipesCleared));
+        
+        // Update score (optional)
+        m_currentScore += 10; // 10 points per pipe
+        
+        // Could add pipe clear sound effect here
+        // if (m_platformDelegates && m_platformDelegates->audio.playSound) {
+        //     m_platformDelegates->audio.playSound("pipe_clear.mp3", 0.6f);
+        // }
+    }
 
-} // namespace GameCore 
+    void GameplayState::DrawDebugRectangles() {
+        GN_LOG_INFO("DrawDebugRectangles: Called");
+        if (!m_platformDelegates || !m_platformDelegates->renderer.drawRectangle) {
+            GN_LOG_ERROR("DrawDebugRectangles: Platform delegates or drawRectangle not available");
+            return;
+        }
+        if (!m_ecsSystem) {
+            GN_LOG_ERROR("DrawDebugRectangles: ECS system not available");
+            return;
+        }
+
+        // Camera X for world->screen conversion
+        float camX = 0.0f;
+        Camera* camera = m_ecsSystem->GetComponent<Camera>(m_cameraEntity);
+        if (camera) {
+            camX = camera->position.x;
+        } else {
+            Transform* camTransform = m_ecsSystem->GetComponent<Transform>(m_cameraEntity);
+            if (camTransform) camX = camTransform->position.x;
+        }
+
+        // Use raw pixel coordinates for Metal renderer
+
+        // Player AABB (approx)
+        Transform* playerTransform = m_ecsSystem->GetComponent<Transform>(m_playerEntity);
+        if (playerTransform) {
+            float px = playerTransform->position.x;
+            float py = playerTransform->position.y;
+            float pw = 32.0f * playerTransform->scale.x;
+            float ph = 32.0f * playerTransform->scale.y;
+            float sx = px - camX;
+            float sy = py;
+            m_platformDelegates->renderer.drawRectangle(sx, sy, pw, ph, 0.0f, 1.0f, 0.0f, 0.35f);
+        }
+
+        // Toilet hitboxes
+        if (m_levelManager) {
+            const auto& activeObstacles = m_levelManager->GetActiveObstacles();
+            for (Gnosis::Entity obstacleEntity : activeObstacles) {
+                Transform* ot = m_ecsSystem->GetComponent<Transform>(obstacleEntity);
+                Sprite* os = m_ecsSystem->GetComponent<Sprite>(obstacleEntity);
+                Obstacle* ob = m_ecsSystem->GetComponent<Obstacle>(obstacleEntity);
+                if (!ot || !os || !ob) continue;
+
+                float toiletWidth = 20.0f * ot->scale.x;
+                float toiletHeight = os->height * ot->scale.y;
+                float toiletX = ot->position.x;
+                float toiletY = ot->position.y;
+                float inset = 28.0f * ot->scale.y;
+                if (ob->isTopPart) {
+                    toiletHeight -= inset;
+                } else {
+                    toiletY += inset;
+                    toiletHeight -= inset;
+                }
+                float spriteWidth = os->width * ot->scale.x;
+                toiletX = ot->position.x + (spriteWidth - toiletWidth) / 2.0f;
+
+                float sx = toiletX - camX;
+                float sy = toiletY;
+                m_platformDelegates->renderer.drawRectangle(sx, sy, toiletWidth, toiletHeight, 1.0f, 0.0f, 0.0f, 0.30f);
+            }
+        }
+    }
+
+} // namespace GameCore

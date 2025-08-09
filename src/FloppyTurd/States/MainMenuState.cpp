@@ -53,8 +53,8 @@ namespace GameCore {
         if (m_platformDelegates) {
             // Create sprite system for texture dimension queries
             m_spriteSystem = std::make_unique<SpriteSystem>(m_ecsCoordinator, *m_platformDelegates);
-            // Don't set texture base path for mobile - Asset Catalog loads directly
-            if (!m_isMobile) {
+            GN_LOG_INFO("MainMenuState: SpriteSystem initialized (rendering disabled, used for texture queries only)");
+            if (m_spriteSystem) {
                 m_spriteSystem->SetTextureBasePath("mainmenu/");
             }
             
@@ -793,7 +793,7 @@ namespace GameCore {
         float centerX = m_screenWidth / 2.0f;
         float buttonY = m_screenHeight * 0.55f; // Position buttons higher up
         float buttonSpacing = 150.0f; // Much more spacing between buttons
-        float buttonScale = 12.0f; // Even bigger buttons!
+        float buttonScale = 10.0f; // Perfect mobile button size (scale factor fix applied)
         
         // Create Play Button
         m_playButtonEntity = m_ecsCoordinator->CreateEntity();
@@ -813,7 +813,7 @@ namespace GameCore {
         playSprite.layer = 2; // Button layer (lower than text)
         playSprite.visible = true;
         UIElement playButton("PLAY", "FloppyButtonBlue", "FloppyButtonBlueHover");
-        playButton.fontSize = 24.0f; // Reduced for better fit in button
+        playButton.fontSize = 18.0f; // Reduced for better fit in button
         playButton.textColor = Gnosis::GNColor(255, 255, 255, 255); // White text
         GN_LOG_INFO("Created Play button with text: '%s' (length: %zu)", playButton.buttonText.c_str(), playButton.buttonText.length());
         
@@ -840,7 +840,7 @@ namespace GameCore {
         optionsSprite.layer = 2; // Button layer (lower than text)
         optionsSprite.visible = true;
         UIElement optionsButton("OPTIONS", "FloppyButtonBlue", "FloppyButtonBlueHover");
-        optionsButton.fontSize = 24.0f; // Reduced for better fit in button
+        optionsButton.fontSize = 18.0f; // Reduced for better fit in button
         optionsButton.textColor = Gnosis::GNColor(255, 255, 255, 255); // White text
         GN_LOG_INFO("Created Options button with text: '%s' (length: %zu)", optionsButton.buttonText.c_str(), optionsButton.buttonText.length());
         
@@ -867,7 +867,7 @@ namespace GameCore {
         quickPlaySprite.layer = 2; // Button layer (lower than text)
         quickPlaySprite.visible = true;
         UIElement quickPlayButton("QUICK PLAY", "FloppyButtonBlue", "FloppyButtonBlueHover");
-        quickPlayButton.fontSize = 20.0f; // Reduced significantly to fit longer text
+        quickPlayButton.fontSize = 16.0f; // Reduced significantly to fit longer text
         quickPlayButton.textColor = Gnosis::GNColor(255, 255, 255, 255); // White text
         GN_LOG_INFO("Created Quick Play button with text: '%s' (length: %zu)", quickPlayButton.buttonText.c_str(), quickPlayButton.buttonText.length());
         
@@ -894,7 +894,7 @@ namespace GameCore {
         quitSprite.layer = 2; // Button layer (lower than text)
         quitSprite.visible = true;
         UIElement quitButton("QUIT", "FloppyButtonBlue", "FloppyButtonBlueHover");
-        quitButton.fontSize = 24.0f; // Reduced for better fit in button
+        quitButton.fontSize = 18.0f; // Reduced for better fit in button
         quitButton.textColor = Gnosis::GNColor(255, 255, 255, 255); // White text
         GN_LOG_INFO("Created Quit button with text: '%s' (length: %zu)", quitButton.buttonText.c_str(), quitButton.buttonText.length());
         
@@ -920,7 +920,7 @@ namespace GameCore {
         
         // === SIMPLIFIED MOBILE BUTTON POSITIONING === //
         
-        float buttonScale = 12.0f;  // Fixed scale for all buttons
+        float buttonScale = 10.0f;  // Perfect mobile button size (scale factor fix applied)
         auto buttonScaledDimensions = GetScaledDimensions(buttonTextureWidth, buttonTextureHeight, buttonScale);
         float buttonScaledWidth = buttonScaledDimensions.first;
         float buttonScaledHeight = buttonScaledDimensions.second;
@@ -1292,7 +1292,7 @@ namespace GameCore {
         // Create left arrow button
         m_leftArrowButtonEntity = m_ecsCoordinator->CreateEntity();
         float buttonY = m_screenHeight / 2.0f;     // Center vertically
-        float buttonScale = m_isMobile ? 8.0f : 4.0f;  // Larger arrows for better visibility
+        float buttonScale = m_isMobile ? 10.0f : 5.0f;  // Perfect mobile button size (scale factor fix applied)
         
         // Load texture to get actual dimensions
         m_spriteSystem->LoadTexture("LeftArrow", "LeftArrow.png");
@@ -1320,7 +1320,7 @@ namespace GameCore {
         leftSprite.layer = 5; // Top layer
         leftSprite.visible = false;
         UIElement leftButton("", "LeftArrow", "LeftArrowHover"); // Remove text, keep arrow sprite
-        leftButton.fontSize = m_isMobile ? 96.0f : 48.0f;
+        leftButton.fontSize = m_isMobile ? 116.0f : 58.0f;
         leftButton.textColor = Gnosis::GNColor(255, 255, 255, 255);
         leftButton.visible = false;
         m_ecsCoordinator->AddComponent<Transform>(m_leftArrowButtonEntity, leftTransform);
@@ -1356,7 +1356,7 @@ namespace GameCore {
         rightSprite.layer = 5; // Top layer
         rightSprite.visible = false;
         UIElement rightButton("", "RightArrow", "RightArrowHover"); // Remove text, keep arrow sprite
-        rightButton.fontSize = m_isMobile ? 96.0f : 48.0f;
+        rightButton.fontSize = m_isMobile ? 116.0f : 58.0f;
         rightButton.textColor = Gnosis::GNColor(255, 255, 255, 255);
         rightButton.visible = false;
         m_ecsCoordinator->AddComponent<Transform>(m_rightArrowButtonEntity, rightTransform);
@@ -1380,7 +1380,7 @@ namespace GameCore {
         
         Transform indicatorTransform(Gnosis::GNVector2(centerX, yPos), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
         UIElement indicatorElement("[Locked!]", "", "");
-        indicatorElement.fontSize = m_isMobile ? 72.0f : 36.0f; // Big red text
+        indicatorElement.fontSize = m_isMobile ? 92.0f : 46.0f; // Big red text
         indicatorElement.textColor = Gnosis::GNColor(255, 0, 0, 255); // Red text
         indicatorElement.visible = false; // Initially hidden
         
@@ -1476,7 +1476,7 @@ namespace GameCore {
             
             Transform textTransform(Gnosis::GNVector2(textX, textY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
             UIElement textElement(m_levels[i].name, "", "");
-            textElement.fontSize = m_isMobile ? 48.0f : 24.0f;
+            textElement.fontSize = m_isMobile ? 64.0f : 32.0f;
             textElement.textColor = Gnosis::GNColor(255, 255, 255, 255);
             textElement.centerTextHorizontally = true;
             textElement.centerTextVertically = true;
@@ -1497,7 +1497,7 @@ namespace GameCore {
         m_backButtonEntity = m_ecsCoordinator->CreateEntity();
         float buttonX = m_screenWidth / 2.0f;  // Center horizontally
         float buttonY = m_screenHeight * 0.9f;  // 90% from top (near bottom)
-        float buttonScale = m_isMobile ? 8.0f : 3.0f;
+        float buttonScale = m_isMobile ? 10.0f : 5.0f;
         
         // Load texture to get actual dimensions
         m_spriteSystem->LoadTexture("FloppyButtonBlue", "FloppyButtonBlue.png");
@@ -1519,7 +1519,7 @@ namespace GameCore {
         backSprite.layer = 5; // Top layer
         backSprite.visible = false;
         UIElement backButton("BACK", "FloppyButtonBlue", "FloppyButtonBlueHover");
-        backButton.fontSize = m_isMobile ? 64.0f : 32.0f;
+        backButton.fontSize = m_isMobile ? 80.0f : 40.0f;
         backButton.textColor = Gnosis::GNColor(255, 255, 255, 255);
         backButton.visible = false;
         
@@ -1538,7 +1538,7 @@ namespace GameCore {
         m_levelPlayButtonEntity = m_ecsCoordinator->CreateEntity();
         float buttonX = m_screenWidth / 2.0f;
         float buttonY = m_screenHeight * 0.8f;
-        float buttonScale = m_isMobile ? 10.0f : 4.0f;
+        float buttonScale = m_isMobile ? 10.0f : 5.0f;
         
         // Load texture to get actual dimensions
         m_spriteSystem->LoadTexture("FloppyButtonBlue", "FloppyButtonBlue.png");
@@ -1560,7 +1560,7 @@ namespace GameCore {
         playSprite.layer = 5; // Top layer
         playSprite.visible = false;
         UIElement playButton("PLAY LEVEL", "FloppyButtonBlue", "FloppyButtonBlueHover");
-        playButton.fontSize = m_isMobile ? 52.0f : 24.0f; // Increased slightly for better readability
+        playButton.fontSize = m_isMobile ? 68.0f : 34.0f; // Increased slightly for better readability
         playButton.textColor = Gnosis::GNColor(255, 255, 255, 255);
         playButton.visible = false;
         

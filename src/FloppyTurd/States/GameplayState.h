@@ -109,6 +109,8 @@ namespace GameCore {
         // Player state
         bool m_playerAlive;
         float m_invulnerabilityTimer;
+        int m_pipesCleared;                     // Number of pipes passed through
+        // Hurt state is now managed by PlayerControllerSystem
         
         // Game flow
         bool m_finished;
@@ -120,6 +122,7 @@ namespace GameCore {
         Gnosis::Entity m_scoreTextEntity;
         Gnosis::Entity m_livesTextEntity;
         Gnosis::Entity m_coinsTextEntity;
+        Gnosis::Entity m_pipeCounterEntity;     // Pipe counter display under notch
         Gnosis::Entity m_pauseMenuEntity;
         Gnosis::Entity m_tempMenuButtonEntity;  // Temporary button to return to main menu
 
@@ -157,6 +160,14 @@ namespace GameCore {
         void CleanupOffscreenEntities();
         void CheckLevelCompletion();
         void SaveGameProgress();
+        
+        // Collision and pipe tracking
+        void CheckToiletCollisions();
+        void UpdatePipeCounterUI();
+        void OnPipeCleared();
+        
+        // Debug rendering
+        void DrawDebugRectangles();
         
         // Audio methods
         void StartLevelMusic();

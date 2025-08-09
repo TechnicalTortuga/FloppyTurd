@@ -288,7 +288,7 @@ namespace GameCore {
         topPhysics.velocity.x = -config.speed;
         topPhysics.useGravity = false;
         
-        Collider topCollider;
+        Hitbox topCollider;
         topCollider.type = ColliderType::Rectangle;
         topCollider.width = config.width;
         topCollider.height = config.height;
@@ -320,7 +320,7 @@ namespace GameCore {
         bottomPhysics.velocity.x = -config.speed;
         bottomPhysics.useGravity = false;
         
-        Collider bottomCollider;
+        Hitbox bottomCollider;
         bottomCollider.type = ColliderType::Rectangle;
         bottomCollider.width = config.width;
         bottomCollider.height = config.height;
@@ -346,14 +346,22 @@ namespace GameCore {
         m_ecsSystem->AddComponent<Transform>(topToilet, topTransform);
         m_ecsSystem->AddComponent<Sprite>(topToilet, topSprite);
         m_ecsSystem->AddComponent<Physics>(topToilet, topPhysics);
-        m_ecsSystem->AddComponent<Collider>(topToilet, topCollider);
+        m_ecsSystem->AddComponent<Hitbox>(topToilet, topCollider);
         m_ecsSystem->AddComponent<Obstacle>(topToilet, topObstacle);
+
+        // Debug overlays for top toilet (uses Hitbox for dimensions)
+        DebugDraw topDebug(true, true, Gnosis::GNColor(0, 255, 0, 255), Gnosis::GNColor(255, 0, 0, 255));
+        m_ecsSystem->AddComponent<DebugDraw>(topToilet, topDebug);
         
         m_ecsSystem->AddComponent<Transform>(bottomToilet, bottomTransform);
         m_ecsSystem->AddComponent<Sprite>(bottomToilet, bottomSprite);
         m_ecsSystem->AddComponent<Physics>(bottomToilet, bottomPhysics);
-        m_ecsSystem->AddComponent<Collider>(bottomToilet, bottomCollider);
+        m_ecsSystem->AddComponent<Hitbox>(bottomToilet, bottomCollider);
         m_ecsSystem->AddComponent<Obstacle>(bottomToilet, bottomObstacle);
+
+        // Debug overlays for bottom toilet (uses Hitbox for dimensions)
+        DebugDraw bottomDebug(true, true, Gnosis::GNColor(0, 255, 0, 255), Gnosis::GNColor(255, 0, 0, 255));
+        m_ecsSystem->AddComponent<DebugDraw>(bottomToilet, bottomDebug);
         
         // Track both active obstacles
         m_activeObstacles.push_back(topToilet);
@@ -384,8 +392,8 @@ namespace GameCore {
         // Generate random position for top toilet within allowed range (all negative Y)
         float randomTopY = minTopY + (maxTopY - minTopY) * ((float)rand() / RAND_MAX);
         
-        // Use EVEN LARGER gap height for better gameplay
-        float fixedGapHeight = 600.0f; // Increased from 500.0f for more space
+        // Use EVEN LARGER gap height for better gameplay with 256px toilets
+        float fixedGapHeight = 1100.0f; // Further increased for better spacing (was 900.0f)
         
         // Calculate bottom toilet position: top toilet bottom + large fixed gap
         float bottomToiletY = randomTopY + toiletHeight + fixedGapHeight;
@@ -413,7 +421,7 @@ namespace GameCore {
         topPhysics.velocity.x = -config.speed;
         topPhysics.useGravity = false;
         
-        Collider topCollider;
+        Hitbox topCollider;
         topCollider.type = ColliderType::Rectangle;
         topCollider.width = config.width;
         topCollider.height = config.height;
@@ -445,7 +453,7 @@ namespace GameCore {
         bottomPhysics.velocity.x = -config.speed;
         bottomPhysics.useGravity = false;
         
-        Collider bottomCollider;
+        Hitbox bottomCollider;
         bottomCollider.type = ColliderType::Rectangle;
         bottomCollider.width = config.width;
         bottomCollider.height = config.height;
@@ -471,14 +479,20 @@ namespace GameCore {
         m_ecsSystem->AddComponent<Transform>(topToilet, topTransform);
         m_ecsSystem->AddComponent<Sprite>(topToilet, topSprite);
         m_ecsSystem->AddComponent<Physics>(topToilet, topPhysics);
-        m_ecsSystem->AddComponent<Collider>(topToilet, topCollider);
+        m_ecsSystem->AddComponent<Hitbox>(topToilet, topCollider);
         m_ecsSystem->AddComponent<Obstacle>(topToilet, topObstacle);
+        // Debug overlays for top toilet (uses Hitbox for dimensions)
+        DebugDraw topDebug2(true, true, Gnosis::GNColor(0, 255, 0, 255), Gnosis::GNColor(255, 0, 0, 255));
+        m_ecsSystem->AddComponent<DebugDraw>(topToilet, topDebug2);
         
         m_ecsSystem->AddComponent<Transform>(bottomToilet, bottomTransform);
         m_ecsSystem->AddComponent<Sprite>(bottomToilet, bottomSprite);
         m_ecsSystem->AddComponent<Physics>(bottomToilet, bottomPhysics);
-        m_ecsSystem->AddComponent<Collider>(bottomToilet, bottomCollider);
+        m_ecsSystem->AddComponent<Hitbox>(bottomToilet, bottomCollider);
         m_ecsSystem->AddComponent<Obstacle>(bottomToilet, bottomObstacle);
+        // Debug overlays for bottom toilet (uses Hitbox for dimensions)
+        DebugDraw bottomDebug2(true, true, Gnosis::GNColor(0, 255, 0, 255), Gnosis::GNColor(255, 0, 0, 255));
+        m_ecsSystem->AddComponent<DebugDraw>(bottomToilet, bottomDebug2);
         
         // Track both active obstacles
         m_activeObstacles.push_back(topToilet);
@@ -512,8 +526,8 @@ namespace GameCore {
         physics.velocity.x = -config.speed; // Move left with world
         physics.useGravity = false; // Obstacles don't use gravity
         
-        // Create collider component
-        Collider collider;
+        // Create hitbox component
+        Hitbox collider;
         collider.type = ColliderType::Rectangle;
         collider.width = config.width;
         collider.height = config.height;
@@ -537,7 +551,7 @@ namespace GameCore {
         m_ecsSystem->AddComponent<Transform>(obstacle, transform);
         m_ecsSystem->AddComponent<Sprite>(obstacle, sprite);
         m_ecsSystem->AddComponent<Physics>(obstacle, physics);
-        m_ecsSystem->AddComponent<Collider>(obstacle, collider);
+        m_ecsSystem->AddComponent<Hitbox>(obstacle, collider);
         m_ecsSystem->AddComponent<Obstacle>(obstacle, obstacleComp);
         
         // Track active obstacle
@@ -618,8 +632,8 @@ namespace GameCore {
         Physics physics;
         physics.velocity.x = -config.speed; // Move left with world
         
-        // Create collider
-        Collider collider;
+        // Create hitbox
+        Hitbox collider;
         collider.isStatic = false;
         collider.width = config.width;
         collider.height = config.height;
@@ -635,7 +649,7 @@ namespace GameCore {
         m_ecsSystem->AddComponent<Transform>(enemy, transform);
         m_ecsSystem->AddComponent<Sprite>(enemy, sprite);
         m_ecsSystem->AddComponent<Physics>(enemy, physics);
-        m_ecsSystem->AddComponent<Collider>(enemy, collider);
+        m_ecsSystem->AddComponent<Hitbox>(enemy, collider);
         m_ecsSystem->AddComponent<Enemy>(enemy, enemyComp);
         
         // Track active enemy
@@ -710,8 +724,8 @@ namespace GameCore {
         Physics physics;
         physics.velocity.x = -m_currentLevelConfig.worldSpeed; // Move left with world
         
-        // Create collider  
-        Collider collider;
+        // Create hitbox  
+        Hitbox collider;
         collider.isStatic = false;
         collider.width = width;
         collider.height = height;
@@ -727,7 +741,7 @@ namespace GameCore {
         m_ecsSystem->AddComponent<Transform>(pickup, transform);
         m_ecsSystem->AddComponent<Sprite>(pickup, sprite);
         m_ecsSystem->AddComponent<Physics>(pickup, physics);
-        m_ecsSystem->AddComponent<Collider>(pickup, collider);
+        m_ecsSystem->AddComponent<Hitbox>(pickup, collider);
         m_ecsSystem->AddComponent<Pickup>(pickup, pickupComp);
         
         // Track active pickup
@@ -1225,9 +1239,12 @@ namespace GameCore {
             GN_LOG_DEBUG("New X position: " + std::to_string(newX));
             
             transform->position.x = newX;
-            
-            // UPDATED TOILET POSITIONING - use same improved ground rules as spawning
-            if (obstacleComp->pairedEntity != 0) {
+        
+        // CRITICAL FIX: Reset collision state when wrapping to prevent collision detection from breaking
+        obstacleComp->pipeCleared = false;  // Reset pipe cleared flag so collision works again
+        
+        // UPDATED TOILET POSITIONING - use same improved ground rules as spawning
+        if (obstacleComp->pairedEntity != 0) {
                 Transform* pairedTransform = m_ecsSystem->GetComponent<Transform>(obstacleComp->pairedEntity);
                 Obstacle* pairedObstacle = m_ecsSystem->GetComponent<Obstacle>(obstacleComp->pairedEntity);
                 
@@ -1242,8 +1259,8 @@ namespace GameCore {
                     // Generate new random position for top toilet within allowed range (all negative Y)
                     float randomTopY = minTopY + (maxTopY - minTopY) * ((float)rand() / RAND_MAX);
                     
-                    // Use EVEN LARGER gap height for better gameplay
-                    float fixedGapHeight = 600.0f; // Increased gap for more space
+                    // Use EVEN LARGER gap height for better gameplay with 256px toilets
+                    float fixedGapHeight = 1100.0f; // Further increased for better spacing (was 900.0f)
                     
                     // Calculate bottom toilet position: top toilet bottom + fixed gap
                     float bottomToiletY = randomTopY + toiletHeight + fixedGapHeight;
@@ -1261,6 +1278,9 @@ namespace GameCore {
                         pairedTransform->position.x = newX;
                         pairedTransform->position.y = randomTopY;
                     }
+                    
+                    // CRITICAL FIX: Reset collision state for BOTH toilets in the pair
+                    pairedObstacle->pipeCleared = false;
                     
                     // Update both base positions
                     obstacleComp->basePosition = transform->position;

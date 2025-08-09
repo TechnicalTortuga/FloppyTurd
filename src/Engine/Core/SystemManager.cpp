@@ -3,6 +3,7 @@
 #include "Component.h"
 #include "../../FloppyTurd/Systems/SpriteSystem.h"
 #include "../../FloppyTurd/Systems/UISystem.h"
+#include "../../FloppyTurd/Systems/RenderSystem.h"
 #include "GNLog.h"
 
 namespace Gnosis {
@@ -69,13 +70,12 @@ namespace Gnosis {
             return;
         }
 
-        // Render all systems
-        if (m_spriteSystem) {
-            m_spriteSystem->Render();
-        }
-        
-        if (m_uiSystem) {
-            m_uiSystem->Render();
+        // Use unified rendering system for proper layering of world, debug, and UI
+        if (m_renderSystem) {
+            GN_LOG_INFO("SystemManager: Using unified RenderSystem for all rendering");
+            m_renderSystem->Render();
+        } else {
+            GN_LOG_ERROR("SystemManager: RenderSystem is null. Skipping rendering to avoid legacy duplicate paths.");
         }
         
         // Future system rendering:
@@ -92,6 +92,10 @@ namespace Gnosis {
         return m_uiSystem.get();
     }
 
+    GameCore::RenderSystem* SystemManager::GetRenderSystem() const {
+        return m_renderSystem.get();
+    }
+
     void SystemManager::InitializeSystems() {
         // Initialize systems in dependency order
         
@@ -103,6 +107,10 @@ namespace Gnosis {
         m_uiSystem = std::make_unique<GameCore::UISystem>(m_ecsCoordinator, m_delegates);
         GN_LOG_INFO("SystemManager: UISystem initialized with integrated UI rendering");
         
+        // Unified rendering system (handles all rendering with proper layering)
+        m_renderSystem = std::make_unique<GameCore::RenderSystem>(m_ecsCoordinator, m_delegates);
+        GN_LOG_INFO("SystemManager: RenderSystem initialized with unified rendering pipeline");
+        
         // Future systems would be initialized here:
         // m_physicsSystem = std::make_unique<GameCore::PhysicsSystem>(m_ecsCoordinator);
         // m_collisionSystem = std::make_unique<GameCore::CollisionSystem>(m_ecsCoordinator);
@@ -111,6 +119,9 @@ namespace Gnosis {
 
     void SystemManager::ShutdownSystems() {
         // Shutdown systems in reverse order
+        
+        m_renderSystem.reset();
+        GN_LOG_INFO("SystemManager: RenderSystem shut down");
         
         m_uiSystem.reset();
         GN_LOG_INFO("SystemManager: UISystem shut down");

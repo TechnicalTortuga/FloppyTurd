@@ -55,6 +55,12 @@ namespace GameCore {
         Gnosis::Entity GetPlayerEntity() const { return m_playerEntity; }
         bool IsPlayerAlive() const { return m_playerAlive; }
         PlayerAnimationState GetCurrentState() const { return m_currentState; }
+        
+        // Animation control methods (public for external state management)
+        void PlayIdleAnimation();
+        void PlayJumpAnimation();
+        void PlayShootAnimation();
+        void PlayHurtAnimation();
 
     private:
         // Constants
@@ -128,12 +134,6 @@ namespace GameCore {
         void UpdatePlayerState(float deltaTime);
         void HandleCollisions();
         void SpawnProjectile();
-        
-        // Animation helpers
-        void PlayIdleAnimation();
-        void PlayJumpAnimation();
-        void PlayShootAnimation();
-        void PlayHurtAnimation();
         
         // State machine helpers
         std::string GetStateName(PlayerAnimationState state) const;

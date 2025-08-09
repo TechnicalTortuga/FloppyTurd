@@ -58,12 +58,12 @@ namespace GameCore {
         sprite.color = Gnosis::GNColor(255, 255, 255, 255);
         m_ecsSystem->AddComponent<FloppyTurd::Sprite>(m_entity, sprite);
         
-        // Add Collider component
-        FloppyTurd::Collider collider;
-        collider.type = FloppyTurd::ColliderType::Circle;
-        collider.radius = 16.0f;
-        collider.isTrigger = false;
-        m_ecsSystem->AddComponent<FloppyTurd::Collider>(m_entity, collider);
+        // Add Hitbox component (circle)
+        FloppyTurd::Hitbox hitbox;
+        hitbox.type = FloppyTurd::ColliderType::Circle;
+        hitbox.radius = 16.0f; // Legacy radius pre-scaling; adjust if needed
+        hitbox.isTrigger = false;
+        m_ecsSystem->AddComponent<FloppyTurd::Hitbox>(m_entity, hitbox);
     }
 
     void Player::Shutdown() {

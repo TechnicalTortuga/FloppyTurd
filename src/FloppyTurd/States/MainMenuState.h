@@ -66,7 +66,7 @@ namespace GameCore {
 
         Gnosis::ECS* m_ecsCoordinator;  // Reference to shared ECS coordinator
         GameCore::PlatformDelegates* m_platformDelegates;  // For system creation
-        std::unique_ptr<SpriteSystem> m_spriteSystem;  // For texture dimension queries
+        std::unique_ptr<SpriteSystem> m_spriteSystem;  // For texture dimension queries (rendering disabled)
         std::unique_ptr<RenderSystem> m_renderSystem;  // For screen info access
         bool m_finished;
         int m_selectedOption;

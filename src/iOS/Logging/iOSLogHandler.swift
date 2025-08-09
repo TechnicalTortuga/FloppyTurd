@@ -71,7 +71,7 @@ actor iOSLogActor {
     private var subsystem: String = Bundle.main.bundleIdentifier ?? "FloppyTurd"
     private var consoleFallbackEnabled: Bool = true
     private var currentLogLevel: LogLevel = .debug
-    private var fileLoggingEnabled: Bool = true
+    private var fileLoggingEnabled: Bool = true  // Enable for debugging UI issues
     private var logFileURL: URL?
     private var logFileHandle: FileHandle?
     

@@ -33,49 +33,10 @@ namespace GameCore {
     }
 
     void SpriteSystem::Render() {
-        if (!m_ecsCoordinator) {
-            return;
-        }
-
-        // Get all entities with both Transform and Sprite components
-        auto entities = m_ecsCoordinator->GetEntitiesWithComponents<Transform, Sprite>();
-        
-        GN_LOG_DEBUG("SpriteSystem: Found " + std::to_string(entities.size()) + " entities with Transform and Sprite components");
-        
-        // Collect visible sprites with their layer info
-        std::vector<std::pair<Gnosis::Entity, int>> visibleSprites;
-        
-        for (Gnosis::Entity entity : entities) {
-            if (!IsEntityVisible(entity)) {
-                continue;
-            }
-            
-            Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(entity);
-            if (sprite && sprite->visible) {
-                visibleSprites.emplace_back(entity, sprite->layer);
-                GN_LOG_DEBUG("SpriteSystem: Found visible sprite entity " + std::to_string(entity) + " with texture '" + sprite->textureId + "'");
-            }
-        }
-        
-        GN_LOG_DEBUG("SpriteSystem: Rendering " + std::to_string(visibleSprites.size()) + " visible sprites");
-        
-        // Sort by layer (lower layers render first)
-        std::sort(visibleSprites.begin(), visibleSprites.end(), 
-                  [](const std::pair<Gnosis::Entity, int>& a, const std::pair<Gnosis::Entity, int>& b) {
-                      return a.second < b.second;
-                  });
-        
-        // Render all visible sprites in layer order
-        for (const auto& entityLayer : visibleSprites) {
-            Gnosis::Entity entity = entityLayer.first;
-            Transform* transform = m_ecsCoordinator->GetComponent<Transform>(entity);
-            Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(entity);
-            
-            if (transform && sprite) {
-                // Removed repetitive per-frame debug log that was flooding the system
-                RenderSprite(entity, *transform, *sprite);
-            }
-        }
+        // DISABLED: SpriteSystem rendering is now handled by unified RenderSystem
+        // This prevents duplicate rendering while preserving texture loading/dimension functionality
+        GN_LOG_DEBUG("SpriteSystem::Render() disabled - using unified RenderSystem for all rendering");
+        return;
     }
 
     void SpriteSystem::PlayAnimation(Gnosis::Entity entity) {

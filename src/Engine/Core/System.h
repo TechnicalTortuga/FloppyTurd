@@ -218,12 +218,12 @@ namespace Gnosis {
         }
         
         /**
-         * Render all systems
+         * Render all systems - DISABLED: Use unified SystemManager::Render() instead
          */
         void Render() {
-            for (auto& system : systems) {
-                system->Render();
-            }
+            // DISABLED: Generic system render loop disabled to prevent duplicate rendering
+            // All rendering now goes through SystemManager::Render() -> RenderSystem::Render()
+            // This prevents multiple ECS coordinators from calling individual system render methods
         }
         
         /**
