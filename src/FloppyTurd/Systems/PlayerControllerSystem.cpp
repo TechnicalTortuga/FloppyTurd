@@ -272,20 +272,39 @@ namespace GameCore {
                 
                 // Update frame count and animation properties based on animation type
                 if (animationName == "TurdletIdle") {
-                    sprite->frameCount = 1; // 64x64 pixels, single frame
-                    sprite->frameWidth = 64; // Each frame is 64x64 pixels
+                    // Single-frame idle pose
+                    sprite->frameCount = 1;
+                    sprite->frameWidth = 64;  // 64x64 frames
                     sprite->frameHeight = 64;
+                    sprite->frameTime = 0.15f;
+                    sprite->isAnimated = false; // idle should not advance frames
+                    sprite->playing = false;
+                    sprite->loop = false;
+                } else if (animationName == "TurdletJump") {
+                    // Jump animation (assumes 64x64 frames laid out horizontally)
+                    sprite->frameCount = 6;
+                    sprite->frameWidth = 64;
                     sprite->frameHeight = 64;
-                    sprite->frameTime = 0.15f; // Slower for shoot animation
-                    sprite->isAnimated = true; // Multi-frame animation
+                    sprite->frameTime = 0.08f;
+                    sprite->isAnimated = true;
                     sprite->playing = true;
-                    sprite->loop = false; // Don't loop - play once and stop
-                } else if (animationName == "TurdletHurt") {
-                    sprite->frameCount = 6; // 384x64 pixels = 6 frames
-                    sprite->frameWidth = 64; // Each frame is 64x64 pixels
+                    sprite->loop = false; // play once
+                } else if (animationName == "TurdletShoot") {
+                    // Shoot animation (assumes 64x64 frames laid out horizontally)
+                    sprite->frameCount = 6;
+                    sprite->frameWidth = 64;
                     sprite->frameHeight = 64;
-                    sprite->frameTime = 0.15f; // Slightly slower than original 0.1f but not too slow
-                    sprite->isAnimated = true; // Multi-frame animation
+                    sprite->frameTime = 0.1f;
+                    sprite->isAnimated = true;
+                    sprite->playing = true;
+                    sprite->loop = false; // play once
+                } else if (animationName == "TurdletHurt") {
+                    // Hurt animation (assumes 64x64 frames laid out horizontally)
+                    sprite->frameCount = 6;
+                    sprite->frameWidth = 64;
+                    sprite->frameHeight = 64;
+                    sprite->frameTime = 0.12f;
+                    sprite->isAnimated = true;
                     sprite->playing = true;
                     sprite->loop = false; // Don't loop - play once and stop
                 }

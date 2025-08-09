@@ -384,12 +384,20 @@ namespace GameCore {
             playerPhysics.drag = 0.98f;
             m_ecsSystem->AddComponent<Physics>(m_playerEntity, playerPhysics);
             
-            // Add hitbox component (circle, legacy radius before scaling)
+            // Add hitbox component (circle)
             Hitbox playerHitbox;
             playerHitbox.type = ColliderType::Circle;
-            playerHitbox.radius = 16.0f; // TODO: confirm legacy radius from original scripts
+            playerHitbox.radius = 12.0f;
+            // Transform is top-left anchored for sprites; center the collider on a 64x64 frame
+            playerHitbox.offsetX = 32.0f;
+            playerHitbox.offsetY = 32.0f;
             playerHitbox.isTrigger = false;
             m_ecsSystem->AddComponent<Hitbox>(m_playerEntity, playerHitbox);
+
+            // Enable debug overlay for player collider (circle only), high visibility
+            DebugDraw playerDebug(false, true, Gnosis::GNColor(0, 255, 0, 255), Gnosis::GNColor(255, 0, 0, 255));
+            playerDebug.alpha = 0.35f;
+            m_ecsSystem->AddComponent<DebugDraw>(m_playerEntity, playerDebug);
             
             // Add player component
             PlayerComponent playerData;
@@ -1142,17 +1150,16 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             return;
         }
         
-        // Get player transform
+        // Get player transform and hitbox
         Transform* playerTransform = m_ecsSystem->GetComponent<Transform>(m_playerEntity);
-        if (!playerTransform) {
+        Hitbox* playerHitbox = m_ecsSystem->GetComponent<Hitbox>(m_playerEntity);
+        if (!playerTransform || !playerHitbox) {
             return;
         }
-        
-        // Player collision box (approximate)
-        float playerX = playerTransform->position.x;
-        float playerY = playerTransform->position.y;
-        float playerWidth = 32.0f * playerTransform->scale.x;  // Approximate player width
-        float playerHeight = 32.0f * playerTransform->scale.y; // Approximate player height
+        // Player circle collision (true to Hitbox)
+        float pCenterX = playerTransform->position.x + (playerHitbox->offsetX * playerTransform->scale.x);
+        float pCenterY = playerTransform->position.y + (playerHitbox->offsetY * playerTransform->scale.y);
+        float pRadius  = playerHitbox->radius * ((playerTransform->scale.x + playerTransform->scale.y) * 0.5f);
         
         // Check collision with all active obstacles (toilets)
         const auto& activeObstacles = m_levelManager->GetActiveObstacles();
@@ -1160,49 +1167,37 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             Transform* obstacleTransform = m_ecsSystem->GetComponent<Transform>(obstacleEntity);
             Sprite* obstacleSprite = m_ecsSystem->GetComponent<Sprite>(obstacleEntity);
             Obstacle* obstacle = m_ecsSystem->GetComponent<Obstacle>(obstacleEntity);
+            Hitbox* obstacleHitbox = m_ecsSystem->GetComponent<Hitbox>(obstacleEntity);
             
-            if (!obstacleTransform || !obstacleSprite || !obstacle) {
+            if (!obstacleTransform || !obstacleSprite || !obstacle || !obstacleHitbox) {
                 continue;
             }
-            
-            // Calculate toilet collision box with specified dimensions
-            // Base toilet size: 64x256, scaled by transform
-            float toiletWidth = 20.0f * obstacleTransform->scale.x;  // 20px wide collision box
-            float toiletHeight = obstacleSprite->height * obstacleTransform->scale.y;
-            float toiletX = obstacleTransform->position.x;
-            float toiletY = obstacleTransform->position.y;
-            
-            // Apply 28px inset from top/bottom (scaled)
-            float inset = 28.0f * obstacleTransform->scale.y;
-            
-            if (obstacle->isTopPart) {
-                // Top toilet: end early by 28 pixels (reduce height from bottom)
-                toiletHeight -= inset;
-            } else {
-                // Bottom toilet: start later by 28 pixels (move up and reduce height)
-                toiletY += inset;
-                toiletHeight -= inset;
-            }
-            
-            // Center the collision box horizontally on the toilet sprite
-            float spriteWidth = obstacleSprite->width * obstacleTransform->scale.x;
-            toiletX = obstacleTransform->position.x + (spriteWidth - toiletWidth) / 2.0f;
-            
-            // AABB collision detection - ensure proper bounds checking
-            bool collisionX = (playerX < toiletX + toiletWidth) && (playerX + playerWidth > toiletX);
-            bool collisionY = (playerY < toiletY + toiletHeight) && (playerY + playerHeight > toiletY);
+            // Rectangle from Hitbox component (center-based offsets, scaled)
+            float rectW = obstacleHitbox->width * obstacleTransform->scale.x;
+            float rectH = obstacleHitbox->height * obstacleTransform->scale.y;
+            float rectCenterX = obstacleTransform->position.x + (obstacleHitbox->offsetX * obstacleTransform->scale.x);
+            float rectCenterY = obstacleTransform->position.y + (obstacleHitbox->offsetY * obstacleTransform->scale.y);
+            float rectX = rectCenterX - (rectW * 0.5f);
+            float rectY = rectCenterY - (rectH * 0.5f);
+
+            // Circle-rectangle intersection
+            float closestX = std::max(rectX, std::min(pCenterX, rectX + rectW));
+            float closestY = std::max(rectY, std::min(pCenterY, rectY + rectH));
+            float dx = pCenterX - closestX;
+            float dy = pCenterY - closestY;
+            bool collided = (dx * dx + dy * dy) <= (pRadius * pRadius);
             
             // Enhanced debug logging
-            if (collisionX || collisionY) {
+            if (collided) {
                 GN_LOG_INFO("Collision check - Entity: " + std::to_string(obstacleEntity) + 
                            ", IsTop: " + std::to_string(obstacle->isTopPart) + 
-                           ", CollisionX: " + std::to_string(collisionX) + 
-                           ", CollisionY: " + std::to_string(collisionY) + 
+                           ", RectX: " + std::to_string(rectX) + 
+                           ", RectY: " + std::to_string(rectY) + 
                            ", Invulnerable: " + std::to_string(m_invulnerabilityTimer > 0.0f) + 
                            ", Timer: " + std::to_string(m_invulnerabilityTimer));
             }
             
-            if (collisionX && collisionY && m_invulnerabilityTimer <= 0.0f) {
+            if (collided && m_invulnerabilityTimer <= 0.0f) {
                 // Collision detected and player is not invulnerable!
                 GN_LOG_INFO("Toilet collision detected! Player hurt.");
                 
@@ -1229,7 +1224,8 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             // Check if player has passed through a toilet pair (pipe cleared)
             if (obstacle->pairedEntity != 0 && !obstacle->pipeCleared) {
                 // Check if player has passed the toilet pair horizontally
-                if (playerX > toiletX + toiletWidth) {
+                float playerRight = pCenterX + pRadius;
+                if (playerRight > rectX + rectW) {
                     // Mark both toilets as cleared
                     obstacle->pipeCleared = true;
                     
@@ -1290,48 +1286,8 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             if (camTransform) camX = camTransform->position.x;
         }
 
-        // Use raw pixel coordinates for Metal renderer
-
-        // Player AABB (approx)
-        Transform* playerTransform = m_ecsSystem->GetComponent<Transform>(m_playerEntity);
-        if (playerTransform) {
-            float px = playerTransform->position.x;
-            float py = playerTransform->position.y;
-            float pw = 32.0f * playerTransform->scale.x;
-            float ph = 32.0f * playerTransform->scale.y;
-            float sx = px - camX;
-            float sy = py;
-            m_platformDelegates->renderer.drawRectangle(sx, sy, pw, ph, 0.0f, 1.0f, 0.0f, 0.35f);
-        }
-
-        // Toilet hitboxes
-        if (m_levelManager) {
-            const auto& activeObstacles = m_levelManager->GetActiveObstacles();
-            for (Gnosis::Entity obstacleEntity : activeObstacles) {
-                Transform* ot = m_ecsSystem->GetComponent<Transform>(obstacleEntity);
-                Sprite* os = m_ecsSystem->GetComponent<Sprite>(obstacleEntity);
-                Obstacle* ob = m_ecsSystem->GetComponent<Obstacle>(obstacleEntity);
-                if (!ot || !os || !ob) continue;
-
-                float toiletWidth = 20.0f * ot->scale.x;
-                float toiletHeight = os->height * ot->scale.y;
-                float toiletX = ot->position.x;
-                float toiletY = ot->position.y;
-                float inset = 28.0f * ot->scale.y;
-                if (ob->isTopPart) {
-                    toiletHeight -= inset;
-                } else {
-                    toiletY += inset;
-                    toiletHeight -= inset;
-                }
-                float spriteWidth = os->width * ot->scale.x;
-                toiletX = ot->position.x + (spriteWidth - toiletWidth) / 2.0f;
-
-                float sx = toiletX - camX;
-                float sy = toiletY;
-                m_platformDelegates->renderer.drawRectangle(sx, sy, toiletWidth, toiletHeight, 1.0f, 0.0f, 0.0f, 0.30f);
-            }
-        }
+        // Debug rectangles are now handled by RenderSystem via DebugDraw components.
+        // Legacy manual rectangles removed to prevent duplicates and mismatches.
     }
 
 } // namespace GameCore

@@ -248,9 +248,9 @@ namespace GameCore {
     void LevelConfigFactory::AddParkObstacles(LevelConfig& config) {
         // Level 1: Basic toilet pairs - simple static obstacles for park level
         // Using actual toilet assets with appropriate gap size for gameplay
-        // Smaller size and larger gap for easier introduction level
+        // Updated to match actual sprite dimensions: 64x256 pixels
         config.obstacles.emplace_back("TopToilet", "BottomToilet", 
-                                     48.0f, 150.0f, 200.0f, 3.0f, config.worldSpeed, 
+                                     64.0f, 256.0f, 200.0f, 3.0f, config.worldSpeed, 
                                      ToiletBehavior::STATIC, 0.0f, 0.0f);
     }
 

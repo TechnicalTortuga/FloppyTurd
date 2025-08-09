@@ -1,0 +1,22 @@
+dependencies: \
+  /Users/aimac/Development/FloppyTurd/src/Engine/Core/SystemManager.cpp \
+  /Users/aimac/Development/FloppyTurd/src/Engine/Core/SystemManager.h \
+  /Users/aimac/Development/FloppyTurd/src/Engine/Core/../Platform/PlatformDelegates.h \
+  /Users/aimac/Development/FloppyTurd/src/Engine/Core/ECS.h \
+  /Users/aimac/Development/FloppyTurd/src/Engine/Core/GnosisTypes.h \
+  /Users/aimac/Development/FloppyTurd/src/Engine/Core/Entity.h \
+  /Users/aimac/Development/FloppyTurd/src/Engine/Core/Component.h \
+  /Users/aimac/Development/FloppyTurd/src/Engine/Core/GNLog.h \
+  /Users/aimac/Development/FloppyTurd/src/Engine/Core/../../iOS/Threading/ThreadingProxy.h \
+  /Users/aimac/Development/FloppyTurd/src/Engine/Core/../../iOS/Threading/../../Engine/Platform/PlatformDelegates.h \
+  /Users/aimac/Development/FloppyTurd/src/Engine/Core/../Events/EventManager.h \
+  /Users/aimac/Development/FloppyTurd/src/Engine/Core/../Events/Event.h \
+  /Users/aimac/Development/FloppyTurd/src/Engine/Core/../Events/../Core/GnosisTypes.h \
+  /Users/aimac/Development/FloppyTurd/src/Engine/Core/../../FloppyTurd/Systems/SpriteSystem.h \
+  /Users/aimac/Development/FloppyTurd/src/Engine/Core/../../FloppyTurd/Systems/../../Engine/Core/ECS.h \
+  /Users/aimac/Development/FloppyTurd/src/Engine/Core/../../FloppyTurd/Systems/../Components/GameComponents.h \
+  /Users/aimac/Development/FloppyTurd/src/Engine/Core/../../FloppyTurd/Systems/../Components/../../Engine/Core/GnosisTypes.h \
+  /Users/aimac/Development/FloppyTurd/src/Engine/Core/../../FloppyTurd/Systems/../Components/../../Engine/Core/Component.h \
+  /Users/aimac/Development/FloppyTurd/src/Engine/Core/../../FloppyTurd/Systems/../../Engine/Platform/PlatformDelegates.h \
+  /Users/aimac/Development/FloppyTurd/src/Engine/Core/../../FloppyTurd/Systems/UISystem.h \
+  /Users/aimac/Development/FloppyTurd/src/Engine/Core/../../FloppyTurd/Systems/RenderSystem.h

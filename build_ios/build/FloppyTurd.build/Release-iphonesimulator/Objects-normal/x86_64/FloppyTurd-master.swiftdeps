@@ -1,0 +1,17 @@
+version: "Apple Swift version 6.0.3 (swiftlang-6.0.3.1.10 clang-1600.0.30.1)"
+options: "04997f37cc3a68e6b39668cad7f9408daec51852b18ab4eb15f0e1d2abac099f"
+build_start_time: [1754756632, 146503000]
+build_end_time: [1754756659, 348104000]
+inputs:
+  ? "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/Release-iphonesimulator/DerivedSources/GeneratedAssetSymbols.swift"
+  : [1754756632, 2233680]
+  "/Users/aimac/Development/FloppyTurd/src/iOS/AppDelegate.swift": [1753592702, 266803993]
+  "/Users/aimac/Development/FloppyTurd/src/iOS/Assets/AssetManager.swift": [1754519351, 497334889]
+  "/Users/aimac/Development/FloppyTurd/src/iOS/Audio/AVAudioHandler.swift": [1754107844, 337644269]
+  "/Users/aimac/Development/FloppyTurd/src/iOS/GameEngine.swift": [1754359996, 17943251]
+  "/Users/aimac/Development/FloppyTurd/src/iOS/GameViewController.swift": [1754359996, 21291458]
+  "/Users/aimac/Development/FloppyTurd/src/iOS/Input/TouchInputHandler.swift": [1754359996, 18450841]
+  "/Users/aimac/Development/FloppyTurd/src/iOS/Logging/iOSLogHandler.swift": [1754617067, 704027536]
+  "/Users/aimac/Development/FloppyTurd/src/iOS/Rendering/MetalMatrixHelpers.swift": [1754426584, 76062268]
+  "/Users/aimac/Development/FloppyTurd/src/iOS/Rendering/MetalRenderer.swift": [1754526317, 479015508]
+  "/Users/aimac/Development/FloppyTurd/src/iOS/Threading/ThreadingSystem.swift": [1754526317, 477944870]

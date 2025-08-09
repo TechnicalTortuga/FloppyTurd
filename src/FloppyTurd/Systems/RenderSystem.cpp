@@ -423,13 +423,34 @@ namespace GameCore {
             if (textureHandle == 0) {
                 GN_LOG_WARN("RenderSystem: Invalid/zero texture handle for id '" + item.sprite->textureId + "' — skipping sprite draw");
             } else {
-                // Mirror centered vs top-left rendering based on RotationRenderer
+                // Compute final scale based on sprite frame vs logical size
                 bool usesCenteredRendering = m_ecsSystem->HasComponent<RotationRenderer>(item.entity);
                 float scaleX = item.sprite->width / item.sprite->frameWidth;
                 float scaleY = item.sprite->height / item.sprite->frameHeight;
                 float finalScaleX = scaleX * item.transform->scale.x * GetCameraScale();
                 float finalScaleY = scaleY * item.transform->scale.y * GetCameraScale();
-                if (usesCenteredRendering && m_platformDelegates.renderer.drawSpriteScaledCentered) {
+
+                // If animated and we have a with-source delegate, render the correct frame sub-rect
+                if (item.sprite->isAnimated && m_platformDelegates.renderer.drawSpriteScaledWithSource) {
+                    int safeFrameCount = item.sprite->frameCount > 0 ? item.sprite->frameCount : 1;
+                    int currentFrame = item.sprite->currentFrame % safeFrameCount;
+                    int frameX = currentFrame * static_cast<int>(item.sprite->frameWidth);
+                    int frameY = 0;
+
+                    m_platformDelegates.renderer.drawSpriteScaledWithSource(
+                        textureHandle,
+                        screenPos.x,
+                        screenPos.y,
+                        finalScaleX,
+                        finalScaleY,
+                        item.transform->rotation,
+                        static_cast<float>(frameX),
+                        static_cast<float>(frameY),
+                        item.sprite->frameWidth,
+                        item.sprite->frameHeight
+                    );
+                } else if (usesCenteredRendering && m_platformDelegates.renderer.drawSpriteScaledCentered) {
+                    // Centered rendering path (e.g., for rotating hats)
                     m_platformDelegates.renderer.drawSpriteScaledCentered(
                         textureHandle,
                         screenPos.x,
@@ -439,6 +460,7 @@ namespace GameCore {
                         item.transform->rotation
                     );
                 } else if (m_platformDelegates.renderer.drawSpriteScaled) {
+                    // Default top-left rendering
                     m_platformDelegates.renderer.drawSpriteScaled(
                         textureHandle,
                         screenPos.x,
@@ -468,32 +490,44 @@ namespace GameCore {
                 );
             }
         } else if (item.isDebugBounds || item.isDebugCollider) {
-            // Render debug rectangles - use world-to-screen transform for world entities
+            // Render debug overlays in pixel coordinates with transform scaling
+            // Hitbox offsets are relative to the sprite CENTER. Our drawRectangle expects TOP-LEFT.
             Gnosis::GNVector2 screenPos = WorldToScreen(item.transform->position);
-            
-            // Apply debug offset
-            float debugX = screenPos.x + item.debugOffsetX;
-            float debugY = screenPos.y + item.debugOffsetY;
-            
+
+            // Scale offsets and sizes by transform scale to match sprite scaling
+            float sx = item.transform->scale.x;
+            float sy = item.transform->scale.y;
+
+            float width  = item.debugWidth * sx;
+            float height = item.debugHeight * sy;
+            float radius = item.debugRadius * ((sx + sy) * 0.5f);
+
+            // Use CENTER-based offsets for both overlays so they match Hitbox semantics
+            float centerX = screenPos.x + (item.debugOffsetX * sx);
+            float centerY = screenPos.y + (item.debugOffsetY * sy);
+            float debugX = centerX - (width * 0.5f);
+            float debugY = centerY - (height * 0.5f);
+
             // Convert color to normalized values with debug alpha
             float r = item.debugColor.r / 255.0f;
             float g = item.debugColor.g / 255.0f;
             float b = item.debugColor.b / 255.0f;
             float a = item.debugAlpha;
-            
+
             if (item.debugIsCircle && m_platformDelegates.renderer.drawCircle) {
+                // Circles are drawn from center
                 m_platformDelegates.renderer.drawCircle(
-                    debugX,
-                    debugY,
-                    item.debugRadius,
+                    centerX,
+                    centerY,
+                    radius,
                     r, g, b, a
                 );
             } else if (m_platformDelegates.renderer.drawRectangle) {
                 m_platformDelegates.renderer.drawRectangle(
                     debugX,
                     debugY,
-                    item.debugWidth,
-                    item.debugHeight,
+                    width,
+                    height,
                     r, g, b, a
                 );
             }

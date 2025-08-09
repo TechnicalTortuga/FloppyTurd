@@ -1,0 +1,54 @@
+{
+  "" : {
+    "const-values" : "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/Release-iphonesimulator/Objects-normal/x86_64/FloppyTurd-master.swiftconstvalues",
+    "dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/Release-iphonesimulator/Objects-normal/x86_64/FloppyTurd-master.d",
+    "diagnostics" : "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/Release-iphonesimulator/Objects-normal/x86_64/FloppyTurd-master.dia",
+    "emit-module-dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/Release-iphonesimulator/Objects-normal/x86_64/FloppyTurd-master-emit-module.d",
+    "emit-module-diagnostics" : "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/Release-iphonesimulator/Objects-normal/x86_64/FloppyTurd-master-emit-module.dia",
+    "swift-dependencies" : "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/Release-iphonesimulator/Objects-normal/x86_64/FloppyTurd-master.swiftdeps"
+  },
+  "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/Release-iphonesimulator/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "llvm-bc" : "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/Release-iphonesimulator/Objects-normal/x86_64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/Release-iphonesimulator/Objects-normal/x86_64/GeneratedAssetSymbols.o"
+  },
+  "/Users/aimac/Development/FloppyTurd/src/iOS/AppDelegate.swift" : {
+    "llvm-bc" : "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/Release-iphonesimulator/Objects-normal/x86_64/AppDelegate.bc",
+    "object" : "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/Release-iphonesimulator/Objects-normal/x86_64/AppDelegate.o"
+  },
+  "/Users/aimac/Development/FloppyTurd/src/iOS/Assets/AssetManager.swift" : {
+    "llvm-bc" : "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/Release-iphonesimulator/Objects-normal/x86_64/AssetManager.bc",
+    "object" : "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/Release-iphonesimulator/Objects-normal/x86_64/AssetManager.o"
+  },
+  "/Users/aimac/Development/FloppyTurd/src/iOS/Audio/AVAudioHandler.swift" : {
+    "llvm-bc" : "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/Release-iphonesimulator/Objects-normal/x86_64/AVAudioHandler.bc",
+    "object" : "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/Release-iphonesimulator/Objects-normal/x86_64/AVAudioHandler.o"
+  },
+  "/Users/aimac/Development/FloppyTurd/src/iOS/GameEngine.swift" : {
+    "llvm-bc" : "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/Release-iphonesimulator/Objects-normal/x86_64/GameEngine.bc",
+    "object" : "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/Release-iphonesimulator/Objects-normal/x86_64/GameEngine.o"
+  },
+  "/Users/aimac/Development/FloppyTurd/src/iOS/GameViewController.swift" : {
+    "llvm-bc" : "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/Release-iphonesimulator/Objects-normal/x86_64/GameViewController.bc",
+    "object" : "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/Release-iphonesimulator/Objects-normal/x86_64/GameViewController.o"
+  },
+  "/Users/aimac/Development/FloppyTurd/src/iOS/Input/TouchInputHandler.swift" : {
+    "llvm-bc" : "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/Release-iphonesimulator/Objects-normal/x86_64/TouchInputHandler.bc",
+    "object" : "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/Release-iphonesimulator/Objects-normal/x86_64/TouchInputHandler.o"
+  },
+  "/Users/aimac/Development/FloppyTurd/src/iOS/Logging/iOSLogHandler.swift" : {
+    "llvm-bc" : "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/Release-iphonesimulator/Objects-normal/x86_64/iOSLogHandler.bc",
+    "object" : "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/Release-iphonesimulator/Objects-normal/x86_64/iOSLogHandler.o"
+  },
+  "/Users/aimac/Development/FloppyTurd/src/iOS/Rendering/MetalMatrixHelpers.swift" : {
+    "llvm-bc" : "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/Release-iphonesimulator/Objects-normal/x86_64/MetalMatrixHelpers.bc",
+    "object" : "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/Release-iphonesimulator/Objects-normal/x86_64/MetalMatrixHelpers.o"
+  },
+  "/Users/aimac/Development/FloppyTurd/src/iOS/Rendering/MetalRenderer.swift" : {
+    "llvm-bc" : "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/Release-iphonesimulator/Objects-normal/x86_64/MetalRenderer.bc",
+    "object" : "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/Release-iphonesimulator/Objects-normal/x86_64/MetalRenderer.o"
+  },
+  "/Users/aimac/Development/FloppyTurd/src/iOS/Threading/ThreadingSystem.swift" : {
+    "llvm-bc" : "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/Release-iphonesimulator/Objects-normal/x86_64/ThreadingSystem.bc",
+    "object" : "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/Release-iphonesimulator/Objects-normal/x86_64/ThreadingSystem.o"
+  }
+}

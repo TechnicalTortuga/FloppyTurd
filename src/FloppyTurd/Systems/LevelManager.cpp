@@ -290,8 +290,12 @@ namespace GameCore {
         
         Hitbox topCollider;
         topCollider.type = ColliderType::Rectangle;
-        topCollider.width = config.width;
-        topCollider.height = config.height;
+        // Center-based: top collider spans from texture top to 48px before bottom
+        // With height reduced by 48, center shifts up by 24 from sprite center
+        topCollider.width = 20.0f;
+        topCollider.height = config.height - 48.0f;
+        topCollider.offsetX = 0.0f;
+        topCollider.offsetY = -24.0f;
         topCollider.isStatic = false;
         topCollider.isTrigger = false;
         topCollider.tag = "obstacle";
@@ -322,8 +326,12 @@ namespace GameCore {
         
         Hitbox bottomCollider;
         bottomCollider.type = ColliderType::Rectangle;
-        bottomCollider.width = config.width;
-        bottomCollider.height = config.height;
+        // Center-based: bottom collider starts 48px down from texture top
+        // With height reduced by 48, center shifts down by 24 from sprite center
+        bottomCollider.width = 20.0f;
+        bottomCollider.height = config.height - 48.0f;
+        bottomCollider.offsetX = 0.0f;
+        bottomCollider.offsetY = 24.0f;
         bottomCollider.isStatic = false;
         bottomCollider.isTrigger = false;
         bottomCollider.tag = "obstacle";
@@ -423,8 +431,11 @@ namespace GameCore {
         
         Hitbox topCollider;
         topCollider.type = ColliderType::Rectangle;
-        topCollider.width = config.width;
-        topCollider.height = config.height;
+        // Center-based: trim 48px from bottom => center shifts -24
+        topCollider.width = 20.0f;
+        topCollider.height = config.height - 48.0f;
+        topCollider.offsetX = 0.0f;
+        topCollider.offsetY = -24.0f;
         topCollider.isStatic = false;
         topCollider.isTrigger = false;
         topCollider.tag = "obstacle";
@@ -455,8 +466,11 @@ namespace GameCore {
         
         Hitbox bottomCollider;
         bottomCollider.type = ColliderType::Rectangle;
-        bottomCollider.width = config.width;
-        bottomCollider.height = config.height;
+        // Center-based: start 48px down => center shifts +24
+        bottomCollider.width = 20.0f;
+        bottomCollider.height = config.height - 48.0f;
+        bottomCollider.offsetX = 0.0f;
+        bottomCollider.offsetY = 24.0f;
         bottomCollider.isStatic = false;
         bottomCollider.isTrigger = false;
         bottomCollider.tag = "obstacle";
