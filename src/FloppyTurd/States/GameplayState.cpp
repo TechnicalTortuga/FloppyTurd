@@ -388,9 +388,10 @@ namespace GameCore {
             Hitbox playerHitbox;
             playerHitbox.type = ColliderType::Circle;
             playerHitbox.radius = 12.0f;
-            // Transform is top-left anchored for sprites; center the collider on a 64x64 frame
-            playerHitbox.offsetX = 32.0f;
-            playerHitbox.offsetY = 32.0f;
+            // Offsets are relative to the sprite CENTER in our collision/render math.
+            // Keep centered by using zero offsets so pCenter = spriteTopLeft + (spriteHalfW/H).
+            playerHitbox.offsetX = 0.0f;
+            playerHitbox.offsetY = 0.0f;
             playerHitbox.isTrigger = false;
             m_ecsSystem->AddComponent<Hitbox>(m_playerEntity, playerHitbox);
 
@@ -1156,9 +1157,12 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         if (!playerTransform || !playerHitbox) {
             return;
         }
-        // Player circle collision (true to Hitbox)
-        float pCenterX = playerTransform->position.x + (playerHitbox->offsetX * playerTransform->scale.x);
-        float pCenterY = playerTransform->position.y + (playerHitbox->offsetY * playerTransform->scale.y);
+        // Player circle collision (center-based): transform position is top-left; add sprite half-dimensions
+        Sprite* playerSprite = m_ecsSystem->GetComponent<Sprite>(m_playerEntity);
+        float pHalfW = playerSprite ? (playerSprite->width * playerTransform->scale.x * 0.5f) : 0.0f;
+        float pHalfH = playerSprite ? (playerSprite->height * playerTransform->scale.y * 0.5f) : 0.0f;
+        float pCenterX = playerTransform->position.x + pHalfW + (playerHitbox->offsetX * playerTransform->scale.x);
+        float pCenterY = playerTransform->position.y + pHalfH + (playerHitbox->offsetY * playerTransform->scale.y);
         float pRadius  = playerHitbox->radius * ((playerTransform->scale.x + playerTransform->scale.y) * 0.5f);
         
         // Check collision with all active obstacles (toilets)
@@ -1173,10 +1177,13 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 continue;
             }
             // Rectangle from Hitbox component (center-based offsets, scaled)
+            // Transform position is sprite top-left; add half sprite size to get center
             float rectW = obstacleHitbox->width * obstacleTransform->scale.x;
             float rectH = obstacleHitbox->height * obstacleTransform->scale.y;
-            float rectCenterX = obstacleTransform->position.x + (obstacleHitbox->offsetX * obstacleTransform->scale.x);
-            float rectCenterY = obstacleTransform->position.y + (obstacleHitbox->offsetY * obstacleTransform->scale.y);
+            float spriteHalfW = obstacleSprite ? (obstacleSprite->width * obstacleTransform->scale.x * 0.5f) : 0.0f;
+            float spriteHalfH = obstacleSprite ? (obstacleSprite->height * obstacleTransform->scale.y * 0.5f) : 0.0f;
+            float rectCenterX = obstacleTransform->position.x + spriteHalfW + (obstacleHitbox->offsetX * obstacleTransform->scale.x);
+            float rectCenterY = obstacleTransform->position.y + spriteHalfH + (obstacleHitbox->offsetY * obstacleTransform->scale.y);
             float rectX = rectCenterX - (rectW * 0.5f);
             float rectY = rectCenterY - (rectH * 0.5f);
 

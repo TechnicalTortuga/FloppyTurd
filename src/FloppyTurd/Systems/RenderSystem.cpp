@@ -151,7 +151,8 @@ namespace GameCore {
                     RenderItem debugItem;
                     debugItem.entity = entity;
                     debugItem.transform = transform;
-                    debugItem.sprite = nullptr;
+                    // Provide sprite so overlay centering uses sprite half-dimensions
+                    debugItem.sprite = m_ecsSystem->GetComponent<Sprite>(entity);
                     debugItem.text = nullptr;
                     debugItem.layer = debugDraw->debugLayer;  // High priority layer
                     debugItem.depth = static_cast<float>(debugItem.layer) * 1000.0f + transform->position.y;
@@ -169,7 +170,8 @@ namespace GameCore {
                     RenderItem debugItem;
                     debugItem.entity = entity;
                     debugItem.transform = transform;
-                    debugItem.sprite = nullptr;
+                    // Provide sprite so overlay centering uses sprite half-dimensions
+                    debugItem.sprite = m_ecsSystem->GetComponent<Sprite>(entity);
                     debugItem.text = nullptr;
                     debugItem.layer = debugDraw->debugLayer;  // High priority layer
                     debugItem.depth = static_cast<float>(debugItem.layer) * 1000.0f + transform->position.y;
@@ -403,7 +405,74 @@ namespace GameCore {
     }
 
     void RenderSystem::RenderSingleItem(const RenderItem& item) {
-        if (item.sprite) {
+        // Debug overlays must take precedence even if a Sprite is present on the item.
+        // This allows passing Sprite for centering math without re-rendering the sprite.
+        if (item.isDebugBounds || item.isDebugCollider) {
+            // Render debug overlays in pixel coordinates with transform scaling
+            // Hitbox offsets are relative to the sprite CENTER.
+            // Transform position is sprite top-left; convert to center for correct overlay placement.
+            Gnosis::GNVector2 screenPosTopLeft = WorldToScreen(item.transform->position);
+
+            // Scale offsets and sizes by transform scale to match sprite scaling
+            float sx = item.transform->scale.x;
+            float sy = item.transform->scale.y;
+
+            float width  = item.debugWidth * sx;
+            float height = item.debugHeight * sy;
+            float radius = item.debugRadius * ((sx + sy) * 0.5f);
+
+            // Use CENTER-based offsets to match Hitbox semantics; add sprite half-dimensions if provided
+            float spriteHalfW = 0.0f;
+            float spriteHalfH = 0.0f;
+            if (item.sprite) {
+                spriteHalfW = (item.sprite->width * sx) * 0.5f;
+                spriteHalfH = (item.sprite->height * sy) * 0.5f;
+            }
+            float centerX = screenPosTopLeft.x + spriteHalfW + (item.debugOffsetX * sx);
+            float centerY = screenPosTopLeft.y + spriteHalfH + (item.debugOffsetY * sy);
+            float debugX = centerX - (width * 0.5f);
+            float debugY = centerY - (height * 0.5f);
+
+            // Convert color to normalized values with debug alpha
+            float r = item.debugColor.r / 255.0f;
+            float g = item.debugColor.g / 255.0f;
+            float b = item.debugColor.b / 255.0f;
+            float a = item.debugAlpha;
+
+            if (item.debugIsCircle && m_platformDelegates.renderer.drawCircle) {
+                // Circles are drawn from center
+                m_platformDelegates.renderer.drawCircle(
+                    centerX,
+                    centerY,
+                    radius,
+                    r, g, b, a
+                );
+            } else if (m_platformDelegates.renderer.drawRectangle) {
+                m_platformDelegates.renderer.drawRectangle(
+                    debugX,
+                    debugY,
+                    width,
+                    height,
+                    r, g, b, a
+                );
+            }
+        } else if (item.text) {
+            // Render text - use screen coordinates directly (no world-to-screen transform for UI)
+            if (m_platformDelegates.renderer.drawText) {
+                float r = item.text->color.r / 255.0f;
+                float g = item.text->color.g / 255.0f;
+                float b = item.text->color.b / 255.0f;
+                float a = item.text->color.a / 255.0f;
+                
+                m_platformDelegates.renderer.drawText(
+                    item.text->text,
+                    item.transform->position.x,
+                    item.transform->position.y,
+                    item.text->fontSize,
+                    r, g, b, a
+                );
+            }
+        } else if (item.sprite) {
             // Render sprite
             // Transform world position to screen position
             Gnosis::GNVector2 screenPos = WorldToScreen(item.transform->position);
@@ -472,64 +541,6 @@ namespace GameCore {
                 } else {
                     GN_LOG_ERROR("RenderSystem: No sprite rendering delegate available for entity " + std::to_string(item.entity));
                 }
-            }
-        } else if (item.text) {
-            // Render text - use screen coordinates directly (no world-to-screen transform for UI)
-            if (m_platformDelegates.renderer.drawText) {
-                float r = item.text->color.r / 255.0f;
-                float g = item.text->color.g / 255.0f;
-                float b = item.text->color.b / 255.0f;
-                float a = item.text->color.a / 255.0f;
-                
-                m_platformDelegates.renderer.drawText(
-                    item.text->text,
-                    item.transform->position.x,
-                    item.transform->position.y,
-                    item.text->fontSize,
-                    r, g, b, a
-                );
-            }
-        } else if (item.isDebugBounds || item.isDebugCollider) {
-            // Render debug overlays in pixel coordinates with transform scaling
-            // Hitbox offsets are relative to the sprite CENTER. Our drawRectangle expects TOP-LEFT.
-            Gnosis::GNVector2 screenPos = WorldToScreen(item.transform->position);
-
-            // Scale offsets and sizes by transform scale to match sprite scaling
-            float sx = item.transform->scale.x;
-            float sy = item.transform->scale.y;
-
-            float width  = item.debugWidth * sx;
-            float height = item.debugHeight * sy;
-            float radius = item.debugRadius * ((sx + sy) * 0.5f);
-
-            // Use CENTER-based offsets for both overlays so they match Hitbox semantics
-            float centerX = screenPos.x + (item.debugOffsetX * sx);
-            float centerY = screenPos.y + (item.debugOffsetY * sy);
-            float debugX = centerX - (width * 0.5f);
-            float debugY = centerY - (height * 0.5f);
-
-            // Convert color to normalized values with debug alpha
-            float r = item.debugColor.r / 255.0f;
-            float g = item.debugColor.g / 255.0f;
-            float b = item.debugColor.b / 255.0f;
-            float a = item.debugAlpha;
-
-            if (item.debugIsCircle && m_platformDelegates.renderer.drawCircle) {
-                // Circles are drawn from center
-                m_platformDelegates.renderer.drawCircle(
-                    centerX,
-                    centerY,
-                    radius,
-                    r, g, b, a
-                );
-            } else if (m_platformDelegates.renderer.drawRectangle) {
-                m_platformDelegates.renderer.drawRectangle(
-                    debugX,
-                    debugY,
-                    width,
-                    height,
-                    r, g, b, a
-                );
             }
         }
     }

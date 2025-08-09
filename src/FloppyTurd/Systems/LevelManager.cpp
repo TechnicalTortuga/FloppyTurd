@@ -264,10 +264,10 @@ namespace GameCore {
             return 0;
         }
         
-        // Calculate positions for top and bottom toilets with gap
-        float gapCenter = y; // y is the center of the gap
-        float topToiletY = gapCenter - (config.gapHeight / 2.0f) - config.height;
-        float bottomToiletY = gapCenter + (config.gapHeight / 2.0f);
+        // Calculate positions for top and bottom toilets with gap, interpreting Transform.position as top-left
+        float gapCenter = y; // y is the center of the gap in world pixels
+        float topToiletY = gapCenter - (config.gapHeight * 0.5f) - config.height;      // top sprite top-left
+        float bottomToiletY = gapCenter + (config.gapHeight * 0.5f);                    // bottom sprite top-left
         
         // Create top toilet
         Gnosis::Entity topToilet = m_ecsSystem->CreateEntity();
@@ -290,12 +290,12 @@ namespace GameCore {
         
         Hitbox topCollider;
         topCollider.type = ColliderType::Rectangle;
-        // Center-based: top collider spans from texture top to 48px before bottom
-        // With height reduced by 48, center shifts up by 24 from sprite center
+        // Trim a fixed 30px from bottom; bias center up by half trim so collider top aligns with sprite top
+        const float TRIM_PX = 30.0f;
         topCollider.width = 20.0f;
-        topCollider.height = config.height - 48.0f;
-        topCollider.offsetX = 0.0f;
-        topCollider.offsetY = -24.0f;
+        topCollider.height = config.height - TRIM_PX;
+        topCollider.offsetX = 0.0f; // centered horizontally
+        topCollider.offsetY = -(TRIM_PX * 0.5f);
         topCollider.isStatic = false;
         topCollider.isTrigger = false;
         topCollider.tag = "obstacle";
@@ -309,6 +309,34 @@ namespace GameCore {
         topObstacle.oscillationTimer = 0.0f;
         topObstacle.basePosition = Gnosis::GNVector2(x, topToiletY);
         topObstacle.isTopPart = true;
+
+        // Verbose debug: exact sprite and hitbox world metrics for TOP toilet
+        {
+            const float scale = m_currentLevelConfig.baseScale;
+            const float spriteWidth = config.width * scale;
+            const float spriteHeight = config.height * scale;
+            const float centerX = x + spriteWidth * 0.5f;
+            const float centerY = topToiletY + spriteHeight * 0.5f;
+            const float hbWidth = topCollider.width * scale;
+            const float hbHeight = topCollider.height * scale;
+            const float hbLeft = centerX + (topCollider.offsetX * scale) - (hbWidth * 0.5f);
+            const float hbRight = hbLeft + hbWidth;
+            const float hbTop = centerY + (topCollider.offsetY * scale) - (hbHeight * 0.5f);
+            const float hbBottom = hbTop + hbHeight;
+            const float spriteTop = topToiletY;
+            const float spriteBottom = topToiletY + spriteHeight;
+            GN_LOG_DEBUG(std::string("TOP spriteTL=(") + std::to_string(x) + "," + std::to_string(topToiletY) + ") size=(" +
+                          std::to_string(config.width) + "x" + std::to_string(config.height) + ") scale=" + std::to_string(scale) +
+                          " worldSize=(" + std::to_string(spriteWidth) + "x" + std::to_string(spriteHeight) + ")");
+            GN_LOG_DEBUG(std::string("TOP hitbox LRTB=") +
+                          "L=" + std::to_string(hbLeft) +
+                          " R=" + std::to_string(hbRight) +
+                          " T=" + std::to_string(hbTop) +
+                          " B=" + std::to_string(hbBottom) +
+                          " size=(" + std::to_string(hbWidth) + "x" + std::to_string(hbHeight) + ")");
+            GN_LOG_DEBUG(std::string("TOP spriteTop=") + std::to_string(spriteTop) +
+                          " spriteBottom=" + std::to_string(spriteBottom));
+        }
         
         // Create bottom toilet
         Gnosis::Entity bottomToilet = m_ecsSystem->CreateEntity();
@@ -326,12 +354,11 @@ namespace GameCore {
         
         Hitbox bottomCollider;
         bottomCollider.type = ColliderType::Rectangle;
-        // Center-based: bottom collider starts 48px down from texture top
-        // With height reduced by 48, center shifts down by 24 from sprite center
+        // Start 30px down; bias center down by half trim so collider top = sprite top + 30
         bottomCollider.width = 20.0f;
-        bottomCollider.height = config.height - 48.0f;
-        bottomCollider.offsetX = 0.0f;
-        bottomCollider.offsetY = 24.0f;
+        bottomCollider.height = config.height - TRIM_PX;
+        bottomCollider.offsetX = 0.0f; // centered horizontally
+        bottomCollider.offsetY = +(TRIM_PX * 0.5f);
         bottomCollider.isStatic = false;
         bottomCollider.isTrigger = false;
         bottomCollider.tag = "obstacle";
@@ -374,8 +401,53 @@ namespace GameCore {
         // Track both active obstacles
         m_activeObstacles.push_back(topToilet);
         m_activeObstacles.push_back(bottomToilet);
+
+        // Verbose debug: exact sprite and hitbox world metrics for BOTTOM toilet (+ gap analysis)
+        {
+            const float scale = m_currentLevelConfig.baseScale;
+            const float spriteWidth = config.width * scale;
+            const float spriteHeight = config.height * scale;
+            const float centerX = x + spriteWidth * 0.5f;
+            const float centerY = bottomToiletY + spriteHeight * 0.5f;
+            const float hbWidth = bottomCollider.width * scale;
+            const float hbHeight = bottomCollider.height * scale;
+            const float hbLeft = centerX + (bottomCollider.offsetX * scale) - (hbWidth * 0.5f);
+            const float hbRight = hbLeft + hbWidth;
+            const float hbTop = centerY + (bottomCollider.offsetY * scale) - (hbHeight * 0.5f);
+            const float hbBottom = hbTop + hbHeight;
+            const float spriteTop = bottomToiletY;
+            const float spriteBottom = bottomToiletY + spriteHeight;
+
+            // Compute gaps between TOP/BOTTOM sprites and colliders for cross-check
+            const float scaleTop = m_currentLevelConfig.baseScale;
+            const float topSpriteHeight = config.height * scaleTop;
+            const float topSpriteBottom = topToiletY + topSpriteHeight;
+            const float spriteGap = bottomToiletY - topSpriteBottom; // should equal config.gapHeight (unscaled)
+            const float topColliderBottom = (topToiletY + topSpriteHeight) - (30.0f * scaleTop);
+            const float bottomColliderTop = bottomToiletY + (30.0f * scale);
+            const float colliderGap = bottomColliderTop - topColliderBottom; // should be fixedGapHeight + 60*scale
+
+            GN_LOG_DEBUG(std::string("BOTTOM spriteTL=(") + std::to_string(x) + "," + std::to_string(bottomToiletY) + ") size=(" +
+                          std::to_string(config.width) + "x" + std::to_string(config.height) + ") scale=" + std::to_string(scale) +
+                          " worldSize=(" + std::to_string(spriteWidth) + "x" + std::to_string(spriteHeight) + ")");
+            GN_LOG_DEBUG(std::string("BOTTOM hitbox LRTB=") +
+                          "L=" + std::to_string(hbLeft) +
+                          " R=" + std::to_string(hbRight) +
+                          " T=" + std::to_string(hbTop) +
+                          " B=" + std::to_string(hbBottom) +
+                          " size=(" + std::to_string(hbWidth) + "x" + std::to_string(hbHeight) + ")");
+            GN_LOG_DEBUG(std::string("GAP check: spriteGap=") + std::to_string(spriteGap) +
+                          " (expected=" + std::to_string(config.gapHeight) + ") spriteGapScaled=" + std::to_string(spriteGap * scale) +
+                          " (expectedScaled=" + std::to_string(config.gapHeight * scale) + ") colliderGap=" + std::to_string(colliderGap) +
+                          " (expectedColliderGapScaled=" + std::to_string(config.gapHeight * scale + 60.0f * scale) + ")");
+        }
         
-        GN_LOG_DEBUG("Spawned toilet pair: " + config.textureId + "/" + config.bottomTextureId + " at (" + std::to_string(x) + ", " + std::to_string(gapCenter) + ")");
+            // Summary line to confirm initial spawn metrics
+            GN_LOG_DEBUG(std::string("SPAWN SUMMARY: x=") + std::to_string(x) +
+                         " topY=" + std::to_string(topToiletY) +
+                         " bottomY=" + std::to_string(bottomToiletY) +
+                         " gap(unscaled)=" + std::to_string(config.gapHeight) +
+                         " scale=" + std::to_string(m_currentLevelConfig.baseScale));
         
         return topToilet; // Return top toilet as primary entity
     }
@@ -400,8 +472,8 @@ namespace GameCore {
         // Generate random position for top toilet within allowed range (all negative Y)
         float randomTopY = minTopY + (maxTopY - minTopY) * ((float)rand() / RAND_MAX);
         
-        // Use EVEN LARGER gap height for better gameplay with 256px toilets
-        float fixedGapHeight = 1100.0f; // Further increased for better spacing (was 900.0f)
+        // Reduce the gap further (another ~25%): 412 -> ~309
+        float fixedGapHeight = 309.0f;
         
         // Calculate bottom toilet position: top toilet bottom + large fixed gap
         float bottomToiletY = randomTopY + toiletHeight + fixedGapHeight;
@@ -431,11 +503,12 @@ namespace GameCore {
         
         Hitbox topCollider;
         topCollider.type = ColliderType::Rectangle;
-        // Center-based: trim 48px from bottom => center shifts -24
+        // Center-based: trim 30px from bottom; offset center up by 15 so collider top aligns with sprite top
+        const float TRIM_TOP = 30.0f;
         topCollider.width = 20.0f;
-        topCollider.height = config.height - 48.0f;
+        topCollider.height = config.height - TRIM_TOP;
         topCollider.offsetX = 0.0f;
-        topCollider.offsetY = -24.0f;
+        topCollider.offsetY = -(TRIM_TOP * 0.5f);
         topCollider.isStatic = false;
         topCollider.isTrigger = false;
         topCollider.tag = "obstacle";
@@ -466,11 +539,12 @@ namespace GameCore {
         
         Hitbox bottomCollider;
         bottomCollider.type = ColliderType::Rectangle;
-        // Center-based: start 48px down => center shifts +24
+        // Center-based: start 30px down; offset center down by 15 so collider top = sprite top + 30
+        const float TRIM_BOTTOM = 30.0f;
         bottomCollider.width = 20.0f;
-        bottomCollider.height = config.height - 48.0f;
+        bottomCollider.height = config.height - TRIM_BOTTOM;
         bottomCollider.offsetX = 0.0f;
-        bottomCollider.offsetY = 24.0f;
+        bottomCollider.offsetY = +(TRIM_BOTTOM * 0.5f);
         bottomCollider.isStatic = false;
         bottomCollider.isTrigger = false;
         bottomCollider.tag = "obstacle";
@@ -511,9 +585,65 @@ namespace GameCore {
         // Track both active obstacles
         m_activeObstacles.push_back(topToilet);
         m_activeObstacles.push_back(bottomToilet);
-        
-        GN_LOG_DEBUG("Spawned toilet pair with gap: " + config.textureId + "/" + config.bottomTextureId + 
-                    " at x=" + std::to_string(x) + ", gap center=" + std::to_string(gapCenterY) + 
+
+        // Verbose debug: exact sprite and hitbox world metrics for TOP and BOTTOM (pool spawn variant)
+        {
+            const float scale = m_currentLevelConfig.baseScale;
+            const float spriteWidth = config.width * scale;
+            const float spriteHeight = config.height * scale;
+            const float centerXTop = x + spriteWidth * 0.5f;
+            const float centerYTop = randomTopY + spriteHeight * 0.5f;
+            const float topHbW = topCollider.width * scale;
+            const float topHbH = topCollider.height * scale;
+            const float topHbL = centerXTop + (topCollider.offsetX * scale) - (topHbW * 0.5f);
+            const float topHbT = centerYTop + (topCollider.offsetY * scale) - (topHbH * 0.5f);
+            const float topHbR = topHbL + topHbW;
+            const float topHbB = topHbT + topHbH;
+
+            GN_LOG_DEBUG(std::string("POOL TOP spriteTL=(") + std::to_string(x) + "," + std::to_string(randomTopY) + ") size=(" +
+                          std::to_string(config.width) + "x" + std::to_string(config.height) + ") scale=" + std::to_string(scale) +
+                          " worldSize=(" + std::to_string(spriteWidth) + "x" + std::to_string(spriteHeight) + ")");
+            GN_LOG_DEBUG(std::string("POOL TOP hitbox LRTB=") +
+                          "L=" + std::to_string(topHbL) +
+                          " R=" + std::to_string(topHbR) +
+                          " T=" + std::to_string(topHbT) +
+                          " B=" + std::to_string(topHbB) +
+                          " size=(" + std::to_string(topHbW) + "x" + std::to_string(topHbH) + ")");
+
+            const float centerXBot = x + spriteWidth * 0.5f;
+            const float centerYBot = bottomToiletY + spriteHeight * 0.5f;
+            const float botHbW = bottomCollider.width * scale;
+            const float botHbH = bottomCollider.height * scale;
+            const float botHbL = centerXBot + (bottomCollider.offsetX * scale) - (botHbW * 0.5f);
+            const float botHbT = centerYBot + (bottomCollider.offsetY * scale) - (botHbH * 0.5f);
+            const float botHbR = botHbL + botHbW;
+            const float botHbB = botHbT + botHbH;
+
+            GN_LOG_DEBUG(std::string("POOL BOTTOM spriteTL=(") + std::to_string(x) + "," + std::to_string(bottomToiletY) + ") size=(" +
+                          std::to_string(config.width) + "x" + std::to_string(config.height) + ") scale=" + std::to_string(scale) +
+                          " worldSize=(" + std::to_string(spriteWidth) + "x" + std::to_string(spriteHeight) + ")");
+            GN_LOG_DEBUG(std::string("POOL BOTTOM hitbox LRTB=") +
+                          "L=" + std::to_string(botHbL) +
+                          " R=" + std::to_string(botHbR) +
+                          " T=" + std::to_string(botHbT) +
+                          " B=" + std::to_string(botHbB) +
+                          " size=(" + std::to_string(botHbW) + "x" + std::to_string(botHbH) + ")");
+
+            // Gap diagnostics
+            const float topSpriteBottom = randomTopY + spriteHeight;
+            const float spriteGap = bottomToiletY - topSpriteBottom; // unscaled world px
+            const float topColliderBottom = (randomTopY + spriteHeight) - (30.0f * scale);
+            const float bottomColliderTop = bottomToiletY + (30.0f * scale);
+            const float colliderGap = bottomColliderTop - topColliderBottom; // world px
+
+            GN_LOG_DEBUG(std::string("POOL GAP check: spriteGap=") + std::to_string(spriteGap) +
+                          " (expected=" + std::to_string(fixedGapHeight) + ") spriteGapScaled=" + std::to_string(spriteGap * 1.0f) +
+                          " colliderGap=" + std::to_string(colliderGap) +
+                          " (expectedColliderGapScaled=" + std::to_string(fixedGapHeight + 60.0f * scale) + ")");
+        }
+
+        GN_LOG_DEBUG("Spawned toilet pair with gap: " + config.textureId + "/" + config.bottomTextureId +
+                    " at x=" + std::to_string(x) + ", gap center=" + std::to_string(gapCenterY) +
                     ", gap height=" + std::to_string(gapHeight));
         
         return topToilet; // Return top toilet as primary entity
@@ -1273,8 +1403,8 @@ namespace GameCore {
                     // Generate new random position for top toilet within allowed range (all negative Y)
                     float randomTopY = minTopY + (maxTopY - minTopY) * ((float)rand() / RAND_MAX);
                     
-                    // Use EVEN LARGER gap height for better gameplay with 256px toilets
-                    float fixedGapHeight = 1100.0f; // Further increased for better spacing (was 900.0f)
+                    // Reduced gap height for tighter gameplay: match initial spawn (309)
+                    float fixedGapHeight = 309.0f;
                     
                     // Calculate bottom toilet position: top toilet bottom + fixed gap
                     float bottomToiletY = randomTopY + toiletHeight + fixedGapHeight;
