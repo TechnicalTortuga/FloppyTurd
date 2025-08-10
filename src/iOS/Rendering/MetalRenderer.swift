@@ -79,12 +79,16 @@ public class MetalRenderer {
     // SDF Text pipeline states
     private var sdfTextPipelineState: MTLRenderPipelineState?
     private var sdfTextOutlinePipelineState: MTLRenderPipelineState?
+    private var msdfTextPipelineState: MTLRenderPipelineState?
+    private var msdfTextOutlinePipelineState: MTLRenderPipelineState?
     private var sdfTextShadowPipelineState: MTLRenderPipelineState?
 
     private var vertexBuffer: MTLBuffer?
     private var indexBuffer: MTLBuffer?
     private var uniformBuffer: MTLBuffer?
     private var samplerState: MTLSamplerState?
+    // Linear sampler dedicated to SDF text to avoid aliasing artifacts
+    private var sdfSamplerState: MTLSamplerState?
     private var library: MTLLibrary?
     
     private func log(_ message: String, level: LogLevel = .info) {
@@ -134,9 +138,16 @@ public class MetalRenderer {
     
     // SDF Font Atlas Management
     private var fontAtlas: MTLTexture?
+    private var msdfAtlas: MTLTexture?
     private var fontMetrics: FontMetrics?
     private var glyphMap: [Character: GlyphInfo] = [:]
     private var fontAtlasCache: [String: UIImage] = [:]
+    // Keep the CoreText font so we can measure with exact typographic bounds
+    private var ctFont: CTFont?
+    // Device scale for px<->pt conversion (we render in device pixels)
+    private var deviceScale: CGFloat = UIScreen.main.scale
+    // Cache for rasterized outlined text textures: key -> (texture,sizePx)
+    private var textTextureCache: [String: (texture: MTLTexture, sizePx: CGSize)] = [:]
 
     
     // MARK: - Initialization (@MainActor ensures main thread execution)
@@ -291,18 +302,28 @@ public class MetalRenderer {
         
         // Create SDF text pipeline states
         setupSDFTextPipelines(device: device, library: library, vertexFunction: vertexFunction, vertexDescriptor: vertexDescriptor)
+        // Create MSDF text pipelines if available
+        setupMSDFTextPipelines(device: device, library: library, vertexFunction: vertexFunction, vertexDescriptor: vertexDescriptor)
         
-        // Create sampler state for texture sampling
+        // Create sampler state for texture sampling (sprites/pixel art)
         let samplerDescriptor = MTLSamplerDescriptor()
-        // Use nearest filtering for pixel art textures (prevents blurring on blow-up)
         samplerDescriptor.minFilter = .nearest
         samplerDescriptor.magFilter = .nearest
         samplerDescriptor.mipFilter = .notMipmapped
         samplerDescriptor.sAddressMode = .clampToEdge
         samplerDescriptor.tAddressMode = .clampToEdge
         samplerState = device.makeSamplerState(descriptor: samplerDescriptor)
-        
-        log("Sampler state created successfully", level: .debug)
+
+        // Create a dedicated linear sampler for SDF text to ensure smooth gradients
+        let sdfSamplerDescriptor = MTLSamplerDescriptor()
+        sdfSamplerDescriptor.minFilter = .linear
+        sdfSamplerDescriptor.magFilter = .linear
+        sdfSamplerDescriptor.mipFilter = .notMipmapped
+        sdfSamplerDescriptor.sAddressMode = .clampToEdge
+        sdfSamplerDescriptor.tAddressMode = .clampToEdge
+        sdfSamplerState = device.makeSamplerState(descriptor: sdfSamplerDescriptor)
+
+        log("Sampler states created (nearest for sprites, linear for SDF)", level: .debug)
     }
     
     private func setupSDFTextPipelines(device: MTLDevice, library: MTLLibrary, vertexFunction: MTLFunction, vertexDescriptor: MTLVertexDescriptor) {
@@ -382,6 +403,43 @@ public class MetalRenderer {
         }
         
 
+    }
+
+    private func setupMSDFTextPipelines(device: MTLDevice, library: MTLLibrary, vertexFunction: MTLFunction, vertexDescriptor: MTLVertexDescriptor) {
+        if let msdfFrag = library.makeFunction(name: "msdf_text_fragment") {
+            let desc = MTLRenderPipelineDescriptor()
+            desc.vertexFunction = vertexFunction
+            desc.fragmentFunction = msdfFrag
+            desc.vertexDescriptor = vertexDescriptor
+            desc.colorAttachments[0].pixelFormat = .bgra8Unorm
+            desc.colorAttachments[0].isBlendingEnabled = true
+            desc.colorAttachments[0].rgbBlendOperation = .add
+            desc.colorAttachments[0].alphaBlendOperation = .add
+            desc.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
+            desc.colorAttachments[0].sourceAlphaBlendFactor = .sourceAlpha
+            desc.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
+            desc.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
+            do { msdfTextPipelineState = try device.makeRenderPipelineState(descriptor: desc); log("MSDF text pipeline created", level: .debug) } catch { log("Failed to create MSDF text pipeline: \(error)", level: .error) }
+        }
+        if let msdfOutlineFrag = library.makeFunction(name: "msdf_text_outline_fragment") {
+            let desc = MTLRenderPipelineDescriptor()
+            desc.vertexFunction = vertexFunction
+            desc.fragmentFunction = msdfOutlineFrag
+            desc.vertexDescriptor = vertexDescriptor
+            desc.colorAttachments[0].pixelFormat = .bgra8Unorm
+            desc.colorAttachments[0].isBlendingEnabled = true
+            desc.colorAttachments[0].rgbBlendOperation = .add
+            desc.colorAttachments[0].alphaBlendOperation = .add
+            desc.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
+            desc.colorAttachments[0].sourceAlphaBlendFactor = .sourceAlpha
+            desc.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
+            desc.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
+            do { msdfTextOutlinePipelineState = try device.makeRenderPipelineState(descriptor: desc); log("MSDF outline pipeline created", level: .debug) } catch { log("Failed to create MSDF outline pipeline: \(error)", level: .error) }
+
+        // Try to load MSDF assets after pipelines are ready
+        log("MSDF: tryLoadMSDFAssets() (post-pipeline)", level: .info)
+        tryLoadMSDFAssets()
+        }
     }
     
     private func setupBuffers() {
@@ -688,6 +746,111 @@ public class MetalRenderer {
                         r: Float, g: Float, b: Float, a: Float) {
         // Call the real SDF text rendering function
         drawTextSDF(text, x: x, y: y, fontSize: fontSize, r: r, g: g, b: b, a: a)
+    }
+
+    public func drawTextOutlined(_ text: String, x: Float, y: Float, fontSize: Float,
+                                 textR: Float, textG: Float, textB: Float, textA: Float,
+                                 outlineR: Float, outlineG: Float, outlineB: Float, outlineA: Float,
+                                  outlineWidth: Float) {
+        log("drawTextOutlined: text='\(text)' pos=(\(x),\(y)) fontSize=\(fontSize) outlineWidth=\(outlineWidth)", level: .debug)
+        // Prefer MSDF if atlas and pipeline available
+        if let _ = msdfAtlas, let _ = msdfTextOutlinePipelineState {
+            log("MSDF: using MSDF OUTLINED pipeline", level: .info)
+            return drawTextMSDFOutlined(text,
+                                        x: x, y: y, fontSize: fontSize,
+                                        r: textR, g: textG, b: textB, a: textA,
+                                        outlineR: outlineR, outlineG: outlineG, outlineB: outlineB, outlineA: outlineA,
+                                        outlineWidth: outlineWidth)
+        }
+        guard let fontAtlas = fontAtlas,
+              let fontMetrics = fontMetrics,
+              let device = device,
+              let samplerState = samplerState,
+              let sdfOutlinePipeline = sdfTextOutlinePipelineState,
+              let uniformBuffer = uniformBuffer else {
+            log("drawTextOutlined: Font system or pipeline not initialized", level: .error)
+            return
+        }
+        guard let renderEncoder = ensureRenderEncoder() else {
+            log("drawTextOutlined: Failed to get render encoder", level: .error)
+            return
+        }
+
+        var allVertices: [Float] = []
+        var allIndices: [UInt16] = []
+        var vertexCount: UInt16 = 0
+
+        let scale = fontSize / max(fontMetrics.lineHeight, 1.0)
+        let trackingPx: Float = max(0.0, fontSize * 0.08)
+        // Subpixel baseline centering: start X snapped to half-pixel to reduce rounding drift
+        // exact starting X users requested; let caller control center math
+        var cursorX = x
+        let cursorY = y
+        var currentLineY = cursorY
+        let lineSpacing: Float = 1.6
+        let lineHeight = fontMetrics.lineHeight * scale * lineSpacing
+
+        // tracking already defined above
+        for ch in text {
+            if ch == "\n" { currentLineY += lineHeight; cursorX = x; continue }
+            guard let glyph = glyphMap[ch] else { cursorX += fontSize * 0.5; continue }
+
+            let glyphX = cursorX
+            // Snap baseline to whole pixels to eliminate vertical shimmer
+            let baselineY = floor(currentLineY - fontMetrics.ascender * scale + 0.5)
+            let glyphY = baselineY
+            let glyphWidth = glyph.width * scale
+            let glyphHeight = glyph.height * scale
+
+            let u1 = glyph.atlasX
+            let v1 = 1.0 - glyph.atlasY - glyph.atlasHeight
+            let u2 = glyph.atlasX + glyph.atlasWidth
+            let v2 = 1.0 - glyph.atlasY
+
+            let R = textR, G = textG, B = textB, A = textA
+            let verts: [Float] = [
+                glyphX,              glyphY,               u1, v1, R, G, B, A,
+                glyphX + glyphWidth, glyphY,               u2, v1, R, G, B, A,
+                glyphX + glyphWidth, glyphY + glyphHeight, u2, v2, R, G, B, A,
+                glyphX,              glyphY + glyphHeight, u1, v2, R, G, B, A
+            ]
+            allVertices.append(contentsOf: verts)
+            let inds: [UInt16] = [vertexCount + 0, vertexCount + 1, vertexCount + 2,
+                                  vertexCount + 2, vertexCount + 3, vertexCount + 0]
+            allIndices.append(contentsOf: inds)
+            vertexCount += 4
+            cursorX += glyph.advance * scale + trackingPx
+        }
+
+        guard !allVertices.isEmpty,
+              let batchVB = device.makeBuffer(bytes: allVertices, length: allVertices.count * MemoryLayout<Float>.stride, options: []),
+              let batchIB = device.makeBuffer(bytes: allIndices, length: allIndices.count * MemoryLayout<UInt16>.stride, options: []) else {
+            log("drawTextOutlined: No vertices to draw", level: .error)
+            return
+        }
+
+        // Pass 1: stroke only
+        renderEncoder.setRenderPipelineState(sdfOutlinePipeline)
+        renderEncoder.setVertexBuffer(batchVB, offset: 0, index: 0)
+        renderEncoder.setVertexBuffer(uniformBuffer, offset: 0, index: 1)
+        renderEncoder.setFragmentTexture(fontAtlas, index: 0)
+        renderEncoder.setFragmentSamplerState(sdfSamplerState ?? samplerState, index: 0)
+        var ow = outlineWidth
+        var oc = simd_float4(outlineR, outlineG, outlineB, outlineA)
+        var edgeCenter: Float = 0.5
+        var aaScale: Float = 1.35
+        var strokeOnly: Float = 1.0
+        renderEncoder.setFragmentBytes(&ow, length: MemoryLayout<Float>.stride, index: 0)
+        renderEncoder.setFragmentBytes(&oc, length: MemoryLayout<simd_float4>.stride, index: 1)
+        renderEncoder.setFragmentBytes(&edgeCenter, length: MemoryLayout<Float>.stride, index: 2)
+        renderEncoder.setFragmentBytes(&aaScale, length: MemoryLayout<Float>.stride, index: 3)
+        renderEncoder.setFragmentBytes(&strokeOnly, length: MemoryLayout<Float>.stride, index: 4)
+        renderEncoder.drawIndexedPrimitives(type: .triangle, indexCount: allIndices.count, indexType: .uint16, indexBuffer: batchIB, indexBufferOffset: 0)
+
+        // Pass 2: fill over
+        strokeOnly = 0.0
+        renderEncoder.setFragmentBytes(&strokeOnly, length: MemoryLayout<Float>.stride, index: 4)
+        renderEncoder.drawIndexedPrimitives(type: .triangle, indexCount: allIndices.count, indexType: .uint16, indexBuffer: batchIB, indexBufferOffset: 0)
     }
     
     public func loadTexture(imagePath: String) -> UInt32 {
@@ -1509,12 +1672,14 @@ public class MetalRenderer {
                 
                 // Generate glyph metrics from TTF font
                 if generateGlyphMetricsFromTTF(ctFont: ctFont, atlasWidth: Float(atlasImage.size.width), atlasHeight: Float(atlasImage.size.height)) {
+                    // Base metrics derive from atlas cell height so scaling is consistent
+                    let baseCell = glyphMap.values.first?.height ?? Float(atlasImage.size.height) / 6.0
                     fontMetrics = FontMetrics(
-                        size: fontSize,
-                        lineHeight: fontSize * 1.2,
-                        ascender: fontSize * 0.8,
-                        descender: fontSize * 0.2,
-                        base: fontSize * 0.8,
+                        size: baseCell,
+                        lineHeight: baseCell,
+                        ascender: baseCell * 0.8,
+                        descender: baseCell * 0.2,
+                        base: baseCell * 0.8,
                         atlasWidth: Float(atlasImage.size.width),
                         atlasHeight: Float(atlasImage.size.height)
                     )
@@ -1536,8 +1701,8 @@ public class MetalRenderer {
         // Fallback: Generate SDF atlas from TTF
         log("Pre-generated atlas not found, generating SDF from TTF font", level: .debug)
         
-        // Generate SDF atlas
-        guard let sdfAtlas = generateSDFAtlas(from: ctFont, atlasSize: 512, padding: 8) else {
+        // Generate SDF atlas (stable quality). Larger atlases can be prebuilt and shipped.
+        guard let sdfAtlas = generateSDFAtlas(from: ctFont, atlasSize: 1024, padding: 16) else {
             log("Failed to generate SDF atlas", level: .error)
             return false
         }
@@ -1562,17 +1727,24 @@ public class MetalRenderer {
                 .generateMipmaps: false
             ])
             
+            // Derive real metrics from CTFont to ensure consistent scaling/centering
+            let ascent  = CTFontGetAscent(ctFont)
+            let descent = CTFontGetDescent(ctFont)
+            let leading = CTFontGetLeading(ctFont)
+            let lineHeight = ascent + descent + leading
             fontMetrics = FontMetrics(
-                size: fontSize,
-                lineHeight: fontSize * 1.2,
-                ascender: fontSize * 0.8,
-                descender: fontSize * 0.2,
-                base: fontSize * 0.8,
+                size: Float(lineHeight),
+                lineHeight: Float(lineHeight),
+                ascender: Float(ascent),
+                descender: Float(descent),
+                base: Float(ascent),
                 atlasWidth: Float(sdfAtlas.size.width),
                 atlasHeight: Float(sdfAtlas.size.height)
             )
             
             log("Font loaded successfully with generated SDF atlas for: \(fontName)", level: .debug)
+            // Also attempt to switch to MSDF assets if available (prefer MSDF rendering)
+            tryLoadMSDFAssets()
             return true
             
         } catch {
@@ -1606,6 +1778,7 @@ public class MetalRenderer {
         }
         
         let font = CTFontCreateWithGraphicsFont(cgFont, CGFloat(fontSize), nil, nil)
+        self.ctFont = font
         
         log("Successfully created CTFont from: \(fontURL.lastPathComponent)", level: .debug)
         
@@ -1616,8 +1789,8 @@ public class MetalRenderer {
         let lineHeight = ascent + descent + leading
         
         // Generate SDF atlas
-        let atlasSize = 1024 // 1024x1024 atlas
-        let padding = 4 // Padding between glyphs
+        let atlasSize = 1024 // Keep generation stable; prebuild larger if needed
+        let padding = 16 // Slightly increased padding
         
         guard let atlasImage = generateSDFAtlas(from: font, atlasSize: atlasSize, padding: padding) else {
             log("Failed to generate SDF atlas", level: .error)
@@ -1659,12 +1832,18 @@ public class MetalRenderer {
         )
         
         log("Generated SDF atlas for TTF font: \(atlasSize)x\(atlasSize), \(glyphMap.count) characters", level: .debug)
+        // Try to load optional MSDF assets for this font (PNG + CSV). If present, we'll use MSDF pipelines.
+        tryLoadMSDFAssets()
         return true
     }
     
 
     
     public func drawTextSDF(_ text: String, x: Float, y: Float, fontSize: Float, r: Float, g: Float, b: Float, a: Float) {
+        // Prefer MSDF if atlas and pipelines are available
+        if let _ = msdfAtlas, let _ = msdfTextPipelineState {
+            return drawTextMSDF(text, x: x, y: y, fontSize: fontSize, r: r, g: g, b: b, a: a)
+        }
         guard let fontAtlas = fontAtlas,
               let fontMetrics = fontMetrics,
               let device = device,
@@ -1683,13 +1862,16 @@ public class MetalRenderer {
         var allIndices: [UInt16] = []
         var vertexCount: UInt16 = 0
         
-        let scale = fontSize / fontMetrics.size
+        let scale = fontSize / max(fontMetrics.lineHeight, 1.0)
+        let trackingPx: Float = max(0.0, fontSize * 0.08)
+        // Anchor exactly at requested X; no snapping
         var cursorX = x
         let cursorY = y
         
         // Render text with proper SDF scaling and baseline alignment
         var currentLineY = cursorY
-        let lineHeight = fontMetrics.lineHeight * scale  // Remove artificial Y stretch factor
+        let lineSpacing: Float = 1.6
+        let lineHeight = fontMetrics.lineHeight * scale * lineSpacing
         
         for char in text {
             // Handle line breaks
@@ -1708,7 +1890,7 @@ public class MetalRenderer {
             // Calculate glyph screen position with cell-based positioning
             let glyphX = cursorX  // No bearing offset for cell-centered glyphs
             // For cell-based atlas, use baseline calculation without artificial centering
-            let glyphY = currentLineY - fontMetrics.ascender * scale  // Pure baseline positioning
+            let glyphY = currentLineY - fontMetrics.ascender * scale
             let glyphWidth = glyph.width * scale
             let glyphHeight = glyph.height * scale  // No vertical stretch to ensure accurate positioning
             
@@ -1740,8 +1922,8 @@ public class MetalRenderer {
             allIndices.append(contentsOf: glyphIndices)
             vertexCount += 4
             
-            // Advance cursor with improved character spacing
-            cursorX += glyph.advance * scale + (fontSize * 0.1)  // Use 10% of font size for spacing
+            // Advance cursor using true font advance for proper kerning/spacing
+            cursorX += glyph.advance * scale + trackingPx
         }
         
         // Only render if we have valid characters
@@ -1767,7 +1949,8 @@ public class MetalRenderer {
         renderEncoder.setVertexBuffer(batchVertexBuffer, offset: 0, index: 0)
         renderEncoder.setVertexBuffer(uniformBuffer, offset: 0, index: 1)
         renderEncoder.setFragmentTexture(fontAtlas, index: 0)
-        renderEncoder.setFragmentSamplerState(samplerState, index: 0)
+        // Use linear sampler for SDF text
+        renderEncoder.setFragmentSamplerState(sdfSamplerState ?? samplerState, index: 0)
         
         // Draw all characters in one call
         renderEncoder.drawIndexedPrimitives(type: .triangle, indexCount: allIndices.count, indexType: .uint16, indexBuffer: batchIndexBuffer, indexBufferOffset: 0)
@@ -1778,6 +1961,222 @@ public class MetalRenderer {
         if !allVertices.isEmpty {
             log("Text vertex data - First vertex: [\(allVertices[0]), \(allVertices[1]), \(allVertices[2]), \(allVertices[3]), \(allVertices[4])]", level: .debug)
             log("Font atlas texture size: \(fontAtlas.width)x\(fontAtlas.height), format: \(fontAtlas.pixelFormat)", level: .debug)
+        }
+    }
+
+    private func drawTextMSDF(_ text: String, x: Float, y: Float, fontSize: Float, r: Float, g: Float, b: Float, a: Float) {
+        guard let msdfAtlas = msdfAtlas,
+              let fontMetrics = fontMetrics,
+              let device = device,
+              let renderEncoder = ensureRenderEncoder(),
+              let pipeline = msdfTextPipelineState else {
+            log("drawTextMSDF: Missing resources", level: .error)
+            return
+        }
+        var allVertices: [Float] = []
+        var allIndices: [UInt16] = []
+        var vc: UInt16 = 0
+        let scale = fontSize / max(fontMetrics.lineHeight, 1.0)
+        let trackingPx: Float = max(0.0, fontSize * 0.08)
+        var cursorX = x
+        var currentLineY = y
+        let lineHeight = fontMetrics.lineHeight * scale
+        var loggedFirst = false
+        for ch in text {
+            if ch == "\n" { currentLineY += lineHeight; cursorX = x; continue }
+            guard let glyph = glyphMap[ch] else { cursorX += fontSize * 0.5; continue }
+            let glyphX = cursorX + glyph.bearingX * scale
+            let glyphY = currentLineY - fontMetrics.ascender * scale + glyph.bearingY * scale
+            let gw = glyph.width * scale
+            let gh = glyph.height * scale
+            let u1 = glyph.atlasX
+            // MSDF atlas loaded via UIImage/asset catalog uses top-left origin; do not flip V
+            let v1 = glyph.atlasY
+            let u2 = glyph.atlasX + glyph.atlasWidth
+            let v2 = glyph.atlasY + glyph.atlasHeight
+            let verts: [Float] = [
+                glyphX,       glyphY,       u1, v1, r, g, b, a,
+                glyphX + gw,  glyphY,       u2, v1, r, g, b, a,
+                glyphX + gw,  glyphY + gh,  u2, v2, r, g, b, a,
+                glyphX,       glyphY + gh,  u1, v2, r, g, b, a
+            ]
+            allVertices.append(contentsOf: verts)
+            allIndices.append(contentsOf: [vc+0, vc+1, vc+2, vc+2, vc+3, vc+0])
+            vc += 4
+            cursorX += glyph.advance * scale + trackingPx
+
+            if !loggedFirst {
+                log(String(format: "MSDF draw: first glyph '%@' pos=(%.1f,%.1f) size=(%.1f,%.1f) uv=(%.4f,%.4f)-(%.4f,%.4f)", String(ch), glyphX, glyphY, gw, gh, u1, v1, u2, v2), level: .debug)
+                loggedFirst = true
+            }
+        }
+        guard !allVertices.isEmpty,
+              let vb = device.makeBuffer(bytes: allVertices, length: allVertices.count*MemoryLayout<Float>.stride, options: []),
+              let ib = device.makeBuffer(bytes: allIndices, length: allIndices.count*MemoryLayout<UInt16>.stride, options: []) else { return }
+        renderEncoder.setRenderPipelineState(pipeline)
+        renderEncoder.setVertexBuffer(vb, offset: 0, index: 0)
+        renderEncoder.setVertexBuffer(uniformBuffer, offset: 0, index: 1)
+        renderEncoder.setFragmentTexture(msdfAtlas, index: 0)
+        renderEncoder.setFragmentSamplerState(sdfSamplerState ?? samplerState, index: 0)
+        renderEncoder.drawIndexedPrimitives(type: .triangle, indexCount: allIndices.count, indexType: .uint16, indexBuffer: ib, indexBufferOffset: 0)
+    }
+
+    private func drawTextMSDFOutlined(_ text: String,
+                                      x: Float, y: Float, fontSize: Float,
+                                      r: Float, g: Float, b: Float, a: Float,
+                                      outlineR: Float, outlineG: Float, outlineB: Float, outlineA: Float,
+                                      outlineWidth: Float) {
+        guard let msdfAtlas = msdfAtlas,
+              let fontMetrics = fontMetrics,
+              let device = device,
+              let renderEncoder = ensureRenderEncoder(),
+              let pipeline = msdfTextOutlinePipelineState else {
+            log("drawTextMSDFOutlined: Missing resources", level: .error)
+            return
+        }
+        var verts: [Float] = []
+        var inds: [UInt16] = []
+        var vc: UInt16 = 0
+        let scale = fontSize / max(fontMetrics.lineHeight, 1.0)
+        let trackingPx: Float = max(0.0, fontSize * 0.03) // tighter tracking for MSDF
+        var cursorX = x
+        var currentLineY = y
+        let lineHeight = fontMetrics.lineHeight * scale
+        for ch in text {
+            if ch == "\n" { currentLineY += lineHeight; cursorX = x; continue }
+            guard let glyph = glyphMap[ch] else { cursorX += fontSize * 0.5; continue }
+            let gx = cursorX + glyph.bearingX * scale
+            let gy = currentLineY - fontMetrics.ascender * scale + glyph.bearingY * scale
+            let gw = glyph.width * scale
+            let gh = glyph.height * scale
+            let u1 = glyph.atlasX
+            let v1 = glyph.atlasY
+            let u2 = glyph.atlasX + glyph.atlasWidth
+            let v2 = glyph.atlasY + glyph.atlasHeight
+            verts.append(contentsOf: [
+                gx,     gy,     u1, v1, r, g, b, a,
+                gx+gw,  gy,     u2, v1, r, g, b, a,
+                gx+gw,  gy+gh,  u2, v2, r, g, b, a,
+                gx,     gy+gh,  u1, v2, r, g, b, a
+            ])
+            inds.append(contentsOf: [vc, vc+1, vc+2, vc+2, vc+3, vc])
+            vc += 4
+            cursorX += glyph.advance * scale + trackingPx
+        }
+        guard !verts.isEmpty,
+              let vb = device.makeBuffer(bytes: verts, length: verts.count*MemoryLayout<Float>.stride, options: []),
+              let ib = device.makeBuffer(bytes: inds, length: inds.count*MemoryLayout<UInt16>.stride, options: []) else { return }
+        var ow = outlineWidth
+        var oc = simd_float4(outlineR, outlineG, outlineB, outlineA)
+        var strokeOnly: Float = 1.0
+        renderEncoder.setRenderPipelineState(pipeline)
+        renderEncoder.setVertexBuffer(vb, offset: 0, index: 0)
+        renderEncoder.setVertexBuffer(uniformBuffer, offset: 0, index: 1)
+        renderEncoder.setFragmentTexture(msdfAtlas, index: 0)
+        renderEncoder.setFragmentSamplerState(sdfSamplerState ?? samplerState, index: 0)
+        renderEncoder.setFragmentBytes(&ow, length: MemoryLayout<Float>.stride, index: 0)
+        renderEncoder.setFragmentBytes(&oc, length: MemoryLayout<simd_float4>.stride, index: 1)
+        renderEncoder.setFragmentBytes(&strokeOnly, length: MemoryLayout<Float>.stride, index: 2)
+        renderEncoder.drawIndexedPrimitives(type: .triangle, indexCount: inds.count, indexType: .uint16, indexBuffer: ib, indexBufferOffset: 0)
+        strokeOnly = 0.0
+        renderEncoder.setFragmentBytes(&strokeOnly, length: MemoryLayout<Float>.stride, index: 2)
+        renderEncoder.drawIndexedPrimitives(type: .triangle, indexCount: inds.count, indexType: .uint16, indexBuffer: ib, indexBufferOffset: 0)
+    }
+
+    // MARK: - MSDF Assets Loading (PNG + CSV)
+    private func tryLoadMSDFAssets() {
+        // Try to load from asset catalog first (generated by scripts/generate_asset_catalog.sh)
+        // Names come from that script: "Whacky_Joe_msdf_atlas" (imageset) and "Whacky_Joe_msdf_metrics" (dataset)
+        let atlasAssetName = "Whacky_Joe_msdf_atlas"
+        let metricsAssetName = "Whacky_Joe_msdf_metrics"
+        var loadedFromCatalog = false
+
+        if let atlasImage = UIImage(named: atlasAssetName),
+           let cg = atlasImage.cgImage,
+           let device = device {
+            do {
+                let loader = MTKTextureLoader(device: device)
+                msdfAtlas = try loader.newTexture(cgImage: cg, options: [.SRGB: false, .generateMipmaps: false])
+                log("MSDF: atlas loaded from asset catalog ('\(atlasAssetName)') (\(msdfAtlas?.width ?? 0)x\(msdfAtlas?.height ?? 0))", level: .info)
+                loadedFromCatalog = true
+            } catch {
+                log("MSDF: failed to create texture from asset catalog image: \(error)", level: .error)
+            }
+        } else {
+            log("MSDF: atlas image asset not found: \(atlasAssetName) - will try filesystem fallback", level: .debug)
+        }
+
+        if let dataAsset = NSDataAsset(name: metricsAssetName),
+           let csvString = String(data: dataAsset.data, encoding: .utf8) {
+            parseMSDFCSV(csvString)
+            log("MSDF: metrics loaded from asset catalog ('\(metricsAssetName)')", level: .info)
+        } else {
+            log("MSDF: metrics data asset not found: \(metricsAssetName) - will try filesystem fallback", level: .debug)
+        }
+
+        // Fallback to development filesystem paths if not found in asset catalog (simulator/dev only)
+        if !loadedFromCatalog || glyphMap.isEmpty {
+            guard let device = device else { return }
+            let pngPath = "/Users/aimac/Development/FloppyTurd/src/assets/fonts/msdf/Whacky_Joe/Whacky_Joe_msdf.png"
+            let csvPath = "/Users/aimac/Development/FloppyTurd/src/assets/fonts/msdf/Whacky_Joe/Whacky_Joe_msdf.csv"
+            if let cg = UIImage(contentsOfFile: pngPath)?.cgImage {
+                do {
+                    let loader = MTKTextureLoader(device: device)
+                    msdfAtlas = try loader.newTexture(cgImage: cg, options: [.SRGB: false, .generateMipmaps: false])
+                    log("MSDF: atlas loaded from filesystem (\(msdfAtlas?.width ?? 0)x\(msdfAtlas?.height ?? 0))", level: .info)
+                } catch {
+                    log("MSDF: failed to load PNG from filesystem: \(error)", level: .error)
+                }
+            } else {
+                log("MSDF: filesystem PNG not found: \(pngPath)", level: .debug)
+            }
+            if let csv = try? String(contentsOfFile: csvPath, encoding: .utf8) {
+                parseMSDFCSV(csv)
+                log("MSDF: metrics loaded from filesystem", level: .info)
+            } else {
+                log("MSDF: filesystem CSV not found: \(csvPath)", level: .debug)
+            }
+        }
+    }
+
+    private func parseMSDFCSV(_ csv: String) {
+        var lines = csv.split(whereSeparator: { $0 == "\n" || $0 == "\r" }).map(String.init)
+        if lines.isEmpty { return }
+        if lines[0].lowercased().contains(",char,") { lines.removeFirst() }
+        let atlasW = Float(msdfAtlas?.width ?? 1)
+        let atlasH = Float(msdfAtlas?.height ?? 1)
+        var map: [Character: GlyphInfo] = [:]
+        for line in lines {
+            let cols = line.split(separator: ",")
+            if cols.count < 12 { continue }
+            let chStr = String(cols[2])
+            guard let ch = chStr.first else { continue }
+            let width = Float(cols[3]) ?? 0
+            let height = Float(cols[4]) ?? 0
+            let xoffset = Float(cols[5]) ?? 0
+            let yoffset = Float(cols[6]) ?? 0
+            let xadvance = Float(cols[7]) ?? 0
+            let u = Float(cols[9]) ?? 0
+            let v = Float(cols[10]) ?? 0
+            let atlasX = u / atlasW
+            let atlasY = v / atlasH
+            let atlasWidth = width / atlasW
+            let atlasHeight = height / atlasH
+            map[ch] = GlyphInfo(
+                atlasX: atlasX,
+                atlasY: atlasY,
+                atlasWidth: atlasWidth,
+                atlasHeight: atlasHeight,
+                bearingX: xoffset,
+                bearingY: yoffset,
+                advance: xadvance,
+                width: width,
+                height: height
+            )
+        }
+        if !map.isEmpty {
+            glyphMap = map
+            log("MSDF: glyph map loaded (\(glyphMap.count) glyphs)", level: .debug)
         }
     }
     
@@ -1803,7 +2202,7 @@ public class MetalRenderer {
         log("Generating SDF atlas from TTF font, size: \(atlasSize)x\(atlasSize)", level: .debug)
         
         // First create a high-resolution bitmap to draw glyphs
-        let superSampleFactor = 2  // Moderate supersampling for good quality and performance
+        let superSampleFactor = 6  // Even stronger supersampling to reduce aliasing in SDF
         let highResSize = atlasSize * superSampleFactor
         
         // Create high-res context for drawing glyphs
@@ -1874,20 +2273,9 @@ public class MetalRenderer {
             let cellCenterX = highResX + (cellWidth * CGFloat(superSampleFactor)) / 2.0
             let cellCenterY = highResY + (cellHeight * CGFloat(superSampleFactor)) / 2.0
             
-            // Position glyph at center of cell (with special handling for punctuation)
+            // Position glyph centered within the fixed cell to keep uniform quads; baseline handled at draw time
             let glyphCenterX = cellCenterX - (boundingRect.width * CGFloat(superSampleFactor)) / 2.0
-            
-            // Check if this is a character that should align to baseline (only small bottom-sitting chars)
-            let isBottomAligned = ".,:_".contains(char)  // Only periods, commas, colons, underscores
-            let glyphCenterY: CGFloat
-            if isBottomAligned {
-                // Position small punctuation at top of cell (inverted for Metal coordinates)
-                let cellTop = highResY
-                glyphCenterY = cellTop + (boundingRect.height * CGFloat(superSampleFactor)) + (cellHeight * CGFloat(superSampleFactor) * 0.1) // 10% padding from top
-            } else {
-                // Normal characters (including ! ? [] {} () etc.) remain centered
-                glyphCenterY = cellCenterY - (boundingRect.height * CGFloat(superSampleFactor)) / 2.0
-            }
+            let glyphCenterY = cellCenterY - (boundingRect.height * CGFloat(superSampleFactor)) / 2.0
             
             highResContext.translateBy(x: glyphCenterX - boundingRect.minX * CGFloat(superSampleFactor), 
                                       y: glyphCenterY - boundingRect.minY * CGFloat(superSampleFactor))
@@ -1912,8 +2300,9 @@ public class MetalRenderer {
                 atlasY: Float(currentY) / Float(atlasSize),
                 atlasWidth: Float(cellWidth) / Float(atlasSize),
                 atlasHeight: Float(cellHeight) / Float(atlasSize),
-                bearingX: 0.0,  // No bearing offset for cell-centered glyphs
-                bearingY: 0.0,  // No bearing offset for cell-centered glyphs
+                bearingX: 0.0,
+                bearingY: 0.0,
+                // Use CTFont advance so words render proportionally (non-mono)
                 advance: Float(advance.width),
                 width: Float(cellWidth),  // Use cell width for consistent rendering
                 height: Float(cellHeight) // Use cell height for consistent rendering
@@ -1971,128 +2360,126 @@ public class MetalRenderer {
         return UIImage(cgImage: sdfCGImage)
     }
     
-    // MARK: - SDF Generation Algorithm
-    
-    /// Generates a signed distance field from a high-resolution bitmap
-    /// This implements an efficient distance transform algorithm - O(n) complexity
-    private func generateSignedDistanceField(from pixels: UnsafePointer<UInt8>, 
-                                           width: Int, height: Int, 
-                                           outputWidth: Int, outputHeight: Int,
-                                           spread: Float) -> [UInt8] {
-        
-        log("Generating SDF: input \(width)x\(height), output \(outputWidth)x\(outputHeight), spread \(spread)", level: .debug)
-        
-        // First, downsample the input to output resolution
-        var bitmap = [Bool](repeating: false, count: outputWidth * outputHeight)
-        
+    // MARK: - SDF Generation Algorithm (Exact EDT)
+
+    /// Generates a signed distance field from a high-resolution bitmap using an exact Euclidean Distance Transform (Felzenszwalb & Huttenlocher)
+    private func generateSignedDistanceField(from pixels: UnsafePointer<UInt8>,
+                                             width: Int, height: Int,
+                                             outputWidth: Int, outputHeight: Int,
+                                             spread: Float) -> [UInt8] {
+        log("Generating SDF (EDT): input \(width)x\(height), output \(outputWidth)x\(outputHeight), spread \(spread)", level: .debug)
+
+        // Downsample to target resolution (nearest)
+        var bitmap = [UInt8](repeating: 0, count: outputWidth * outputHeight)
         for y in 0..<outputHeight {
+            let iy = Int(Float(y) * Float(height) / Float(outputHeight))
             for x in 0..<outputWidth {
-                // Map output coordinates to input coordinates
-                let inputX = Int(Float(x) * Float(width) / Float(outputWidth))
-                let inputY = Int(Float(y) * Float(height) / Float(outputHeight))
-                
-                let inputIndex = inputY * width + inputX
-                if inputIndex < width * height {
-                    bitmap[y * outputWidth + x] = pixels[inputIndex] >= 128
-                }
+                let ix = Int(Float(x) * Float(width) / Float(outputWidth))
+                let src = iy * width + ix
+                bitmap[y * outputWidth + x] = pixels[src]
             }
         }
-        
-        // Debug: Check if bitmap has any data
-        let totalTrue = bitmap.filter { $0 }.count
-        let totalFalse = bitmap.filter { !$0 }.count
-        log("Bitmap analysis: \(totalTrue) inside pixels, \(totalFalse) outside pixels", level: .debug)
-        
-        // Generate distance fields for inside and outside
-        let insideDistances = computeDistanceTransform(bitmap: bitmap, width: outputWidth, height: outputHeight, findInside: true)
-        let outsideDistances = computeDistanceTransform(bitmap: bitmap, width: outputWidth, height: outputHeight, findInside: false)
-        
-        // Combine into signed distance field
-        var sdfData = [UInt8](repeating: 127, count: outputWidth * outputHeight)
-        let maxDist = spread / 2.0  // Use half spread as max distance for better range
-        
-        for i in 0..<(outputWidth * outputHeight) {
-            let inside = bitmap[i]
-            
-            // For SDF: inside pixels use distance to outside (negative), outside pixels use distance to inside (positive)
-            let distanceToOpposite = inside ? outsideDistances[i] : insideDistances[i]
-            let signedDistance = inside ? -distanceToOpposite : distanceToOpposite
-            
-            // Normalize to 0-255 range, with 128 = edge (distance 0) to match shader expectations
-            let normalizedDistance = (signedDistance / maxDist) * 128.0 + 128.0
-            let clampedDistance = max(0.0, min(255.0, normalizedDistance))
-            
-            sdfData[i] = UInt8(clampedDistance)
+
+        // Foreground = inside glyph (value >= 128)
+        var insideMask = [Bool](repeating: false, count: outputWidth * outputHeight)
+        for i in 0..<insideMask.count { insideMask[i] = bitmap[i] >= 128 }
+
+        // Compute exact EDT for inside and outside
+        let outsideDT = distanceTransformSquared(mask: insideMask, width: outputWidth, height: outputHeight, targetValue: true)
+        let insideDT  = distanceTransformSquared(mask: insideMask, width: outputWidth, height: outputHeight, targetValue: false)
+
+        // Produce signed distance: outside positive, inside negative
+        var sdf = [UInt8](repeating: 128, count: outputWidth * outputHeight)
+        let maxDist = max(spread, 1.0)
+        for i in 0..<sdf.count {
+            let dOut = sqrtf(outsideDT[i])
+            let dIn  = sqrtf(insideDT[i])
+            // Outside pixels: distance to nearest inside; Inside pixels: negative distance to nearest outside
+            let signed = insideMask[i] ? -dIn : dOut
+            // Normalize to 0..255 with 128 at edge
+            let normalized = (signed / maxDist) * 128.0 + 128.0
+            let clamped = min(255.0, max(0.0, normalized))
+            sdf[i] = UInt8(clamped)
         }
-        
-        // Debug: Check final SDF values
-        let minVal = sdfData.min() ?? 0
-        let maxVal = sdfData.max() ?? 255
-        let avgVal = Int(sdfData.reduce(0) { $0 + Int($1) }) / sdfData.count
-        log("SDF generation completed - Min: \(minVal), Max: \(maxVal), Avg: \(avgVal)", level: .debug)
-        
-        return sdfData
+
+        return sdf
     }
-    
-    /// Efficient distance transform using separable algorithm - O(n) complexity
-    private func computeDistanceTransform(bitmap: [Bool], width: Int, height: Int, findInside: Bool) -> [Float] {
-        var distances = [Float](repeating: Float.greatestFiniteMagnitude, count: width * height)
-        
-        // Initialize distances - 0 for target pixels, infinity for others
+
+    /// Exact 2D squared distance transform using separable 1D transforms (Felzenszwalb & Huttenlocher)
+    private func distanceTransformSquared(mask: [Bool], width: Int, height: Int, targetValue: Bool) -> [Float] {
+        // Prepare f: 0 where pixel == targetValue, INF elsewhere
+        let inf = Float.greatestFiniteMagnitude / 4.0
+        var f = [Float](repeating: inf, count: width * height)
         for i in 0..<(width * height) {
-            if bitmap[i] == findInside {
-                distances[i] = 0.0
-            }
+            f[i] = (mask[i] == targetValue) ? 0.0 : inf
         }
-        
-        // Forward pass - process rows left to right
-        for y in 0..<height {
-            for x in 1..<width {
-                let idx = y * width + x
-                let leftIdx = y * width + (x - 1)
-                distances[idx] = min(distances[idx], distances[leftIdx] + 1.0)
-            }
-        }
-        
-        // Backward pass - process rows right to left
-        for y in 0..<height {
-            for x in stride(from: width - 2, through: 0, by: -1) {
-                let idx = y * width + x
-                let rightIdx = y * width + (x + 1)
-                distances[idx] = min(distances[idx], distances[rightIdx] + 1.0)
-            }
-        }
-        
-        // Forward pass - process columns top to bottom
+
+        // Temporary buffers
+        var d = [Float](repeating: 0.0, count: width * height)
+        var v = [Int](repeating: 0, count: max(width, height))
+        var z = [Float](repeating: 0.0, count: max(width, height) + 1)
+
+        // 1D transform over columns
         for x in 0..<width {
-            for y in 1..<height {
-                let idx = y * width + x
-                let topIdx = (y - 1) * width + x
-                distances[idx] = min(distances[idx], distances[topIdx] + 1.0)
-            }
+            // Gather column into g
+            var g = [Float](repeating: 0.0, count: height)
+            for y in 0..<height { g[y] = f[y * width + x] }
+            let col = dt1D(g, n: height, v: &v, z: &z)
+            for y in 0..<height { d[y * width + x] = col[y] }
         }
-        
-        // Backward pass - process columns bottom to top
-        for x in 0..<width {
-            for y in stride(from: height - 2, through: 0, by: -1) {
-                let idx = y * width + x
-                let bottomIdx = (y + 1) * width + x
-                distances[idx] = min(distances[idx], distances[bottomIdx] + 1.0)
-            }
+
+        // 1D transform over rows
+        for y in 0..<height {
+            // Gather row into g
+            var g = [Float](repeating: 0.0, count: width)
+            for x in 0..<width { g[x] = d[y * width + x] }
+            let row = dt1D(g, n: width, v: &v, z: &z)
+            for x in 0..<width { d[y * width + x] = row[x] }
         }
-        
-        // Convert Manhattan distance to approximate Euclidean distance
-        // This is a good approximation that's much faster than true Euclidean
-        for i in 0..<distances.count {
-            if distances[i] < Float.greatestFiniteMagnitude {
-                // Apply a scaling factor to approximate Euclidean distance
-                distances[i] = distances[i] * 0.8  // Approximate correction factor
-            } else {
-                distances[i] = 64.0  // Max distance for pixels that are very far
-            }
+
+        return d
+    }
+
+    /// 1D squared distance transform (Felzenszwalb & Huttenlocher)
+    private func dt1D(_ f: [Float], n: Int, v: inout [Int], z: inout [Float]) -> [Float] {
+        let inf = Float.greatestFiniteMagnitude / 4.0
+        var k = 0
+        v[0] = 0
+        z[0] = -inf
+        z[1] = inf
+        var d = [Float](repeating: 0.0, count: n)
+
+        func intersect(_ p: Int, _ q: Int) -> Float {
+            // Return x-coordinate of intersection of parabolas
+            // (q^2 - p^2 + f[q] - f[p]) / (2(q - p))
+            let num = (Float(q*q - p*p) + f[q] - f[p])
+            let den = 2.0 * Float(q - p)
+            return num / den
         }
-        
-        return distances
+
+        // Construct lower envelope
+        for q in 1..<n {
+            var s = intersect(v[k], q)
+            while s <= z[k] {
+                k -= 1
+                s = intersect(v[k], q)
+            }
+            k += 1
+            v[k] = q
+            z[k] = s
+            z[k + 1] = Float.greatestFiniteMagnitude / 4.0
+        }
+
+        // Evaluate
+        var k2 = 0
+        for q in 0..<n {
+            while z[k2 + 1] < Float(q) { k2 += 1 }
+            let r = v[k2]
+            let diff = Float(q - r)
+            d[q] = diff * diff + f[r]
+        }
+
+        return d
     }
     // MARK: - Screen Size Query
     
@@ -2377,62 +2764,139 @@ public class MetalRenderer {
     // MARK: - Text Measurement
     
     public func measureText(_ text: String, fontSize: Float) -> (width: Float, height: Float) {
-        guard let fontMetrics = fontMetrics else {
-            log("measureText: Font metrics not available", level: .error)
-            return (width: 0, height: 0)
+        // Prefer CoreText measurement for exact advances/kerning and tight bounds, at requested size
+        if let ctBase = self.ctFont {
+            let sizeInPoints = CGFloat(fontSize) / deviceScale
+            let ctFontSized = CTFontCreateCopyWithAttributes(ctBase, sizeInPoints, nil, nil)
+            let trackingPx: Float = max(0.0, fontSize * 0.08)
+            var maxWidthPx: Float = 0
+            var lineCount: Int = 0
+            // Measure each line separately to add our tracking consistently
+            let lines = text.split(separator: "\n", omittingEmptySubsequences: false)
+            for lineTextSub in lines {
+                let lineText = String(lineTextSub)
+                let attr = [kCTFontAttributeName as NSAttributedString.Key: ctFontSized]
+                let attributed = NSAttributedString(string: lineText, attributes: attr)
+                let line = CTLineCreateWithAttributedString(attributed)
+                let widthPt = CTLineGetTypographicBounds(line, nil, nil, nil)
+                // Add tracking for (glyphs-1). Approximate glyph count by character count for UI strings
+                let glyphCount = max(0, lineText.count - 1)
+                let widthPx = Float(widthPt) * Float(deviceScale) + trackingPx * Float(glyphCount)
+                maxWidthPx = max(maxWidthPx, widthPx)
+                lineCount += 1
+            }
+            // Vertical: use CT font metrics at this size
+            let lineHeightPt = CTFontGetAscent(ctFontSized) + CTFontGetDescent(ctFontSized) + CTFontGetLeading(ctFontSized)
+            let totalHeightPx = Float(lineHeightPt * CGFloat(lineCount) * deviceScale)
+            return (width: maxWidthPx, height: totalHeightPx)
         }
-        
-        let scale = fontSize / fontMetrics.size
+        // Fallback to previous estimate if CT not available
+        guard let fontMetrics = fontMetrics else { return (0, 0) }
+        let scale = fontSize / max(fontMetrics.lineHeight, 1.0)
+        let trackingPx: Float = max(0.0, fontSize * 0.08)
         var maxWidth: Float = 0
         var currentLineWidth: Float = 0
-        var totalHeight: Float = 0
         var lineCount: Int = 1
-        
         for char in text {
-            // Handle line breaks
-            if char == "\n" {
-                maxWidth = max(maxWidth, currentLineWidth)
-                currentLineWidth = 0
-                lineCount += 1
-                continue
-            }
-            
-            guard let glyph = glyphMap[char] else {
-                currentLineWidth += fontSize * 0.5 // Default advance for unknown chars
-                continue
-            }
-            
-            currentLineWidth += glyph.advance * scale + (fontSize * 0.1) // Add character spacing (match drawTextSDF)
+            if char == "\n" { maxWidth = max(maxWidth, currentLineWidth); currentLineWidth = 0; lineCount += 1; continue }
+            guard let glyph = glyphMap[char] else { currentLineWidth += fontSize * 0.5; continue }
+            currentLineWidth += glyph.advance * scale + trackingPx
         }
-        
-        // Check the last line
         maxWidth = max(maxWidth, currentLineWidth)
-        
-        // Remove the last character spacing from the last line
-        if !text.isEmpty && !text.hasSuffix("\n") {
-            maxWidth -= (fontSize * 0.1)
-        }
-        
-        // Calculate total height based on line count
-        let lineHeight = fontMetrics.lineHeight * scale  // Remove artificial Y stretch factor
-        totalHeight = Float(lineCount) * lineHeight
-        
+        if !text.isEmpty && !text.hasSuffix("\n") { maxWidth -= trackingPx }
+        let lineHeight = fontMetrics.lineHeight * scale
+        let totalHeight = Float(lineCount) * lineHeight
         return (width: maxWidth, height: totalHeight)
     }
     
     public func drawTextCentered(_ text: String, x: Float, y: Float, fontSize: Float, r: Float, g: Float, b: Float, a: Float) {
         let textSize = measureText(text, fontSize: fontSize)
-        
-        // Center horizontally around the provided X coordinate
         let centeredX = x - textSize.width * 0.5
-        
-        // Center vertically around the provided Y coordinate
-        // The Y coordinate from UISystem is the center point where text should be centered
-        let centeredY = y - textSize.height * 0.5
-        
-        // Debug: Log text centering calculations
-        log("MetalRenderer: drawTextCentered '\(text)' - Input center (\(x),\(y)), TextSize (\(textSize.width),\(textSize.height)), Final position (\(centeredX),\(centeredY))", level: .debug)
-        
-        drawTextSDF(text, x: centeredX, y: centeredY, fontSize: fontSize, r: r, g: g, b: b, a: a)
+        var baselineY = y - textSize.height * 0.5 // fallback using tight height
+        if msdfAtlas != nil && !glyphMap.isEmpty, let fm = fontMetrics {
+            let scale = fontSize / max(fm.lineHeight, 1.0)
+            var minTop: Float = .greatestFiniteMagnitude
+            var maxBottom: Float = -.greatestFiniteMagnitude
+            for ch in text {
+                if ch == "\n" { continue }
+                guard let g = glyphMap[ch] else { continue }
+                let top = -fm.ascender * scale + g.bearingY * scale
+                let bottom = top + g.height * scale
+                if top < minTop { minTop = top }
+                if bottom > maxBottom { maxBottom = bottom }
+            }
+            if minTop < .greatestFiniteMagnitude && maxBottom > -.greatestFiniteMagnitude {
+                let midY = (minTop + maxBottom) * 0.5
+                baselineY = y - midY
+            }
+        } else if let ctBase = self.ctFont {
+            let sizeInPoints = CGFloat(fontSize) / deviceScale
+            let ctFontSized = CTFontCreateCopyWithAttributes(ctBase, sizeInPoints, nil, nil)
+            let attr = [kCTFontAttributeName as NSAttributedString.Key: ctFontSized]
+            let attributed = NSAttributedString(string: text, attributes: attr)
+            let line = CTLineCreateWithAttributedString(attributed)
+            var overall = CGRect.null
+            let runs = CTLineGetGlyphRuns(line) as! [CTRun]
+            for run in runs {
+                let rb = CTRunGetImageBounds(run, nil, CFRange(location: 0, length: 0))
+                overall = overall.union(rb)
+            }
+            baselineY = Float(CGFloat(y) - overall.midY * deviceScale)
+        }
+        log("drawTextCentered: center=(\(x),\(y)) size=(\(textSize.width),\(textSize.height)) baselineY=\(baselineY)", level: .debug)
+        drawTextSDF(text, x: centeredX, y: baselineY, fontSize: fontSize, r: r, g: g, b: b, a: a)
+    }
+
+    public func drawTextCenteredOutlined(_ text: String, x: Float, y: Float, fontSize: Float,
+                                         textR: Float, textG: Float, textB: Float, textA: Float,
+                                         outlineR: Float, outlineG: Float, outlineB: Float, outlineA: Float,
+                                         outlineWidth: Float) {
+        let textSize = measureText(text, fontSize: fontSize)
+        let centeredX = x - textSize.width * 0.5
+        var baselineY = y - textSize.height * 0.5
+        if msdfAtlas != nil && !glyphMap.isEmpty, let fm = fontMetrics {
+            let scale = fontSize / max(fm.lineHeight, 1.0)
+            var minTop: Float = .greatestFiniteMagnitude
+            var maxBottom: Float = -.greatestFiniteMagnitude
+            for ch in text {
+                if ch == "\n" { continue }
+                guard let g = glyphMap[ch] else { continue }
+                let top = -fm.ascender * scale + g.bearingY * scale
+                let bottom = top + g.height * scale
+                if top < minTop { minTop = top }
+                if bottom > maxBottom { maxBottom = bottom }
+            }
+            if minTop < .greatestFiniteMagnitude && maxBottom > -.greatestFiniteMagnitude {
+                let midY = (minTop + maxBottom) * 0.5
+                baselineY = y - midY
+            }
+        } else if let ctBase = self.ctFont {
+            let sizeInPoints = CGFloat(fontSize) / deviceScale
+            let ctFontSized = CTFontCreateCopyWithAttributes(ctBase, sizeInPoints, nil, nil)
+            let attr = [kCTFontAttributeName as NSAttributedString.Key: ctFontSized]
+            let attributed = NSAttributedString(string: text, attributes: attr)
+            let line = CTLineCreateWithAttributedString(attributed)
+            var overall = CGRect.null
+            let runs = CTLineGetGlyphRuns(line) as! [CTRun]
+            for run in runs {
+                let rb = CTRunGetImageBounds(run, nil, CFRange(location: 0, length: 0))
+                overall = overall.union(rb)
+            }
+            baselineY = Float(CGFloat(y) - overall.midY * deviceScale)
+        }
+        log("drawTextCenteredOutlined: center=(\(x),\(y)) size=(\(textSize.width),\(textSize.height)) baselineY=\(baselineY) outlineWidth=\(outlineWidth)", level: .debug)
+        // Prefer MSDF OUTLINED if available
+        if let _ = msdfAtlas, let _ = msdfTextOutlinePipelineState {
+            log("MSDF: drawTextCentered OUTLINED path", level: .info)
+            return drawTextMSDFOutlined(text,
+                                        x: centeredX, y: baselineY, fontSize: fontSize,
+                                        r: textR, g: textG, b: textB, a: textA,
+                                        outlineR: outlineR, outlineG: outlineG, outlineB: outlineB, outlineA: outlineA,
+                                        outlineWidth: outlineWidth)
+        }
+        drawTextOutlined(text, x: centeredX, y: baselineY, fontSize: fontSize,
+                         textR: textR, textG: textG, textB: textB, textA: textA,
+                         outlineR: outlineR, outlineG: outlineG, outlineB: outlineB, outlineA: outlineA,
+                         outlineWidth: outlineWidth)
     }
 }

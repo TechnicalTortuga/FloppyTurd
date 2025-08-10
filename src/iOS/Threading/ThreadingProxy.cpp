@@ -176,6 +176,50 @@ namespace GameCore {
         cmd.data.a = a;
         s_instance->enqueueRenderCommand(cmd);
     }
+
+    void ThreadingProxy::enqueueDrawTextOutlined(const std::string& text, float x, float y, float fontSize,
+                                                 float textR, float textG, float textB, float textA,
+                                                 float outlineR, float outlineG, float outlineB, float outlineA,
+                                                 float outlineWidth) {
+        if (!s_instance) return;
+        RenderCommand cmd(CommandType::CMD_DRAW_TEXT_OUTLINED);
+        cmd.data.text = text;
+        cmd.data.x = x;
+        cmd.data.y = y;
+        cmd.data.fontSize = fontSize;
+        cmd.data.r = textR;
+        cmd.data.g = textG;
+        cmd.data.b = textB;
+        cmd.data.a = textA;
+        cmd.data.outlineR = outlineR;
+        cmd.data.outlineG = outlineG;
+        cmd.data.outlineB = outlineB;
+        cmd.data.outlineA = outlineA;
+        cmd.data.outlineWidth = outlineWidth;
+        s_instance->enqueueRenderCommand(cmd);
+    }
+
+    void ThreadingProxy::enqueueDrawTextCenteredOutlined(const std::string& text, float x, float y, float fontSize,
+                                                         float textR, float textG, float textB, float textA,
+                                                         float outlineR, float outlineG, float outlineB, float outlineA,
+                                                         float outlineWidth) {
+        if (!s_instance) return;
+        RenderCommand cmd(CommandType::CMD_DRAW_TEXT_CENTERED_OUTLINED);
+        cmd.data.text = text;
+        cmd.data.x = x;
+        cmd.data.y = y;
+        cmd.data.fontSize = fontSize;
+        cmd.data.r = textR;
+        cmd.data.g = textG;
+        cmd.data.b = textB;
+        cmd.data.a = textA;
+        cmd.data.outlineR = outlineR;
+        cmd.data.outlineG = outlineG;
+        cmd.data.outlineB = outlineB;
+        cmd.data.outlineA = outlineA;
+        cmd.data.outlineWidth = outlineWidth;
+        s_instance->enqueueRenderCommand(cmd);
+    }
     
     void ThreadingProxy::enqueueDrawRectangle(float x, float y, float width, float height, float r, float g, float b, float a) {
         if (!s_instance) return;
@@ -615,6 +659,9 @@ namespace GameCore {
         delegates.renderer.drawSpriteScaledWithSource = enqueueDrawSpriteScaledWithSource;
         delegates.renderer.drawText = enqueueDrawText;
         delegates.renderer.drawTextCentered = enqueueDrawTextCentered;
+        // Outlined text
+        delegates.renderer.drawTextOutlined = enqueueDrawTextOutlined;
+        delegates.renderer.drawTextCenteredOutlined = enqueueDrawTextCenteredOutlined;
         delegates.renderer.drawRectangle = enqueueDrawRectangle;
         delegates.renderer.drawCircle = enqueueDrawCircle;
         delegates.renderer.getScreenSize = enqueueGetScreenSize;

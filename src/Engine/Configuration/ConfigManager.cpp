@@ -36,13 +36,20 @@ namespace GameCore {
     }
 
     void ConfigManager::UpdateScreenInfo() {
+        // Prefer enhanced info; do not clobber cached valid info with legacy fallbacks
         if (m_delegates.renderer.getScreenInfo) {
             m_delegates.renderer.getScreenInfo(&m_screenInfo);
             CalculateScaleFactors(); // Recalculate when screen changes
-            GN_LOG_INFO("Screen info updated: " + std::to_string(m_screenInfo.pixelWidth) + "x" + 
+            GN_LOG_INFO("Screen info updated: " + std::to_string(m_screenInfo.pixelWidth) + "x" +
                        std::to_string(m_screenInfo.pixelHeight) + " pixels");
-        } else if (m_delegates.renderer.getScreenSize) {
-            // Fallback to legacy getScreenSize
+            return;
+        }
+        if (m_screenInfo.pixelWidth > 0.0f && m_screenInfo.pixelHeight > 0.0f) {
+            // Keep existing cached values
+            return;
+        }
+        if (m_delegates.renderer.getScreenSize) {
+            // Legacy once if nothing cached
             m_delegates.renderer.getScreenSize(&m_screenInfo.pixelWidth, &m_screenInfo.pixelHeight);
             m_screenInfo.logicalWidth = m_screenInfo.pixelWidth;
             m_screenInfo.logicalHeight = m_screenInfo.pixelHeight;
@@ -50,18 +57,20 @@ namespace GameCore {
             m_screenInfo.isPortrait = m_screenInfo.pixelHeight > m_screenInfo.pixelWidth;
             m_screenInfo.deviceModel = "Unknown";
             CalculateScaleFactors();
-            GN_LOG_WARN("Using legacy screen size detection: " + std::to_string(m_screenInfo.pixelWidth) + "x" + 
+            GN_LOG_WARN("Using legacy screen size detection once: " + std::to_string(m_screenInfo.pixelWidth) + "x" +
                        std::to_string(m_screenInfo.pixelHeight));
-        } else {
-            GN_LOG_ERROR("No screen size detection available! Using default 800x600");
-            m_screenInfo.pixelWidth = 800.0f;
-            m_screenInfo.pixelHeight = 600.0f;
-            m_screenInfo.logicalWidth = 800.0f;
-            m_screenInfo.logicalHeight = 600.0f;
-            m_screenInfo.scaleFactor = 1.0f;
-            m_screenInfo.isPortrait = false;
-            m_screenInfo.deviceModel = "Unknown";
+            return;
         }
+        // Absolute last resort defaults (iPhone 16 portrait) to avoid 800x600 behavior
+        m_screenInfo.pixelWidth = 1179.0f;
+        m_screenInfo.pixelHeight = 2556.0f;
+        m_screenInfo.logicalWidth = m_screenInfo.pixelWidth;
+        m_screenInfo.logicalHeight = m_screenInfo.pixelHeight;
+        m_screenInfo.scaleFactor = 1.0f;
+        m_screenInfo.isPortrait = true;
+        m_screenInfo.deviceModel = "Unknown";
+        CalculateScaleFactors();
+        GN_LOG_WARN("Using hardcoded pixel defaults for screen info (no delegates available)");
     }
 
     float ConfigManager::GetUIScale() const {

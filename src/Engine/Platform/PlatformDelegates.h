@@ -82,7 +82,10 @@ namespace GameCore {
         
         // Enhanced screen and texture info commands
         CMD_GET_SCREEN_INFO = 31,
-        CMD_GET_TEXTURE_METADATA = 32
+        CMD_GET_TEXTURE_METADATA = 32,
+        // Text outline commands
+        CMD_DRAW_TEXT_OUTLINED = 33,
+        CMD_DRAW_TEXT_CENTERED_OUTLINED = 34
     };
     
     // Rendering command data
@@ -95,6 +98,9 @@ namespace GameCore {
         float fontSize = 0.0f;
         float rotation = 0.0f;
         float scaleX = 1.0f, scaleY = 1.0f;
+        // Outline parameters (for outlined text)
+        float outlineR = 0.0f, outlineG = 0.0f, outlineB = 0.0f, outlineA = 1.0f;
+        float outlineWidth = 0.0f; // pixels
         
         // Source rectangle for sprite sheets
         float sourceX = 0.0f, sourceY = 0.0f, sourceWidth = 0.0f, sourceHeight = 0.0f;
@@ -203,6 +209,15 @@ namespace GameCore {
         // Text rendering
         void (*drawText)(const std::string& text, float x, float y, float fontSize, float r, float g, float b, float a);
         void (*drawTextCentered)(const std::string& text, float x, float y, float fontSize, float r, float g, float b, float a);
+        // Outlined text rendering
+        void (*drawTextOutlined)(const std::string& text, float x, float y, float fontSize,
+                                 float textR, float textG, float textB, float textA,
+                                 float outlineR, float outlineG, float outlineB, float outlineA,
+                                 float outlineWidth);
+        void (*drawTextCenteredOutlined)(const std::string& text, float x, float y, float fontSize,
+                                         float textR, float textG, float textB, float textA,
+                                         float outlineR, float outlineG, float outlineB, float outlineA,
+                                         float outlineWidth);
         
         // Primitive rendering
         void (*drawRectangle)(float x, float y, float width, float height, float r, float g, float b, float a);
@@ -219,7 +234,8 @@ namespace GameCore {
         // Initialize to null
         RendererDelegate() : beginFrame(nullptr), endFrame(nullptr), present(nullptr), clearScreen(nullptr),
                            drawSprite(nullptr), drawSpriteScaled(nullptr), drawSpriteScaledCentered(nullptr),
-                           drawText(nullptr), drawRectangle(nullptr), drawCircle(nullptr), 
+                           drawText(nullptr), drawTextCentered(nullptr), drawTextOutlined(nullptr), drawTextCenteredOutlined(nullptr),
+                           drawRectangle(nullptr), drawCircle(nullptr), 
                            getScreenInfo(nullptr), getScreenSize(nullptr), getTextureMetadata(nullptr),
                            platformContext(nullptr) {}
     };

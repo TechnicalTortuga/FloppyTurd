@@ -94,6 +94,30 @@ void InitializePlatformDelegates() {
                 GameCore::ThreadingProxy::enqueueDrawTextCentered(text, x, y, fontSize, r, g, b, a);
             }
         }
+
+        void DrawTextOutlined(const std::string& text, float x, float y, float fontSize,
+                               float textR, float textG, float textB, float textA,
+                               float outlineR, float outlineG, float outlineB, float outlineA,
+                               float outlineWidth) {
+            if (!text.empty()) {
+                GameCore::ThreadingProxy::enqueueDrawTextOutlined(text, x, y, fontSize,
+                                                                  textR, textG, textB, textA,
+                                                                  outlineR, outlineG, outlineB, outlineA,
+                                                                  outlineWidth);
+            }
+        }
+
+        void DrawTextCenteredOutlined(const std::string& text, float x, float y, float fontSize,
+                                      float textR, float textG, float textB, float textA,
+                                      float outlineR, float outlineG, float outlineB, float outlineA,
+                                      float outlineWidth) {
+            if (!text.empty()) {
+                GameCore::ThreadingProxy::enqueueDrawTextCenteredOutlined(text, x, y, fontSize,
+                                                                          textR, textG, textB, textA,
+                                                                          outlineR, outlineG, outlineB, outlineA,
+                                                                          outlineWidth);
+            }
+        }
         
         void DrawRectangle(float x, float y, float width, float height, float r, float g, float b, float a) {
             GameCore::ThreadingProxy::enqueueDrawRectangle(x, y, width, height, r, g, b, a);

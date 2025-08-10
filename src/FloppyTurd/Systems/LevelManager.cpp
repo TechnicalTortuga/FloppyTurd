@@ -385,7 +385,7 @@ namespace GameCore {
         m_ecsSystem->AddComponent<Obstacle>(topToilet, topObstacle);
 
         // Debug overlays for top toilet (uses Hitbox for dimensions)
-        DebugDraw topDebug(true, true, Gnosis::GNColor(0, 255, 0, 255), Gnosis::GNColor(255, 0, 0, 255));
+        DebugDraw topDebug(false, false, Gnosis::GNColor(0, 255, 0, 255), Gnosis::GNColor(255, 0, 0, 255));
         m_ecsSystem->AddComponent<DebugDraw>(topToilet, topDebug);
         
         m_ecsSystem->AddComponent<Transform>(bottomToilet, bottomTransform);
@@ -395,7 +395,7 @@ namespace GameCore {
         m_ecsSystem->AddComponent<Obstacle>(bottomToilet, bottomObstacle);
 
         // Debug overlays for bottom toilet (uses Hitbox for dimensions)
-        DebugDraw bottomDebug(true, true, Gnosis::GNColor(0, 255, 0, 255), Gnosis::GNColor(255, 0, 0, 255));
+        DebugDraw bottomDebug(false, false, Gnosis::GNColor(0, 255, 0, 255), Gnosis::GNColor(255, 0, 0, 255));
         m_ecsSystem->AddComponent<DebugDraw>(bottomToilet, bottomDebug);
         
         // Track both active obstacles
@@ -570,7 +570,7 @@ namespace GameCore {
         m_ecsSystem->AddComponent<Hitbox>(topToilet, topCollider);
         m_ecsSystem->AddComponent<Obstacle>(topToilet, topObstacle);
         // Debug overlays for top toilet (uses Hitbox for dimensions)
-        DebugDraw topDebug2(true, true, Gnosis::GNColor(0, 255, 0, 255), Gnosis::GNColor(255, 0, 0, 255));
+        DebugDraw topDebug2(false, false, Gnosis::GNColor(0, 255, 0, 255), Gnosis::GNColor(255, 0, 0, 255));
         m_ecsSystem->AddComponent<DebugDraw>(topToilet, topDebug2);
         
         m_ecsSystem->AddComponent<Transform>(bottomToilet, bottomTransform);
@@ -579,7 +579,7 @@ namespace GameCore {
         m_ecsSystem->AddComponent<Hitbox>(bottomToilet, bottomCollider);
         m_ecsSystem->AddComponent<Obstacle>(bottomToilet, bottomObstacle);
         // Debug overlays for bottom toilet (uses Hitbox for dimensions)
-        DebugDraw bottomDebug2(true, true, Gnosis::GNColor(0, 255, 0, 255), Gnosis::GNColor(255, 0, 0, 255));
+        DebugDraw bottomDebug2(false, false, Gnosis::GNColor(0, 255, 0, 255), Gnosis::GNColor(255, 0, 0, 255));
         m_ecsSystem->AddComponent<DebugDraw>(bottomToilet, bottomDebug2);
         
         // Track both active obstacles

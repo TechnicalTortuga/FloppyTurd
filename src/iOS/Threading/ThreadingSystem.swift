@@ -194,6 +194,30 @@ class CommandProcessor {
                                          fontSize: data.fontSize,
                                          r: data.r, g: data.g, b: data.b, a: data.a)
             }
+        
+        case .CMD_DRAW_TEXT_OUTLINED:
+            let text = String(data.text)
+            if !text.isEmpty {
+                renderer.drawTextOutlined(text,
+                                          x: data.x,
+                                          y: data.y,
+                                          fontSize: data.fontSize,
+                                          textR: data.r, textG: data.g, textB: data.b, textA: data.a,
+                                          outlineR: data.outlineR, outlineG: data.outlineG, outlineB: data.outlineB, outlineA: data.outlineA,
+                                          outlineWidth: data.outlineWidth)
+            }
+        
+        case .CMD_DRAW_TEXT_CENTERED_OUTLINED:
+            let text = String(data.text)
+            if !text.isEmpty {
+                renderer.drawTextCenteredOutlined(text,
+                                                 x: data.x,
+                                                 y: data.y,
+                                                 fontSize: data.fontSize,
+                                                 textR: data.r, textG: data.g, textB: data.b, textA: data.a,
+                                                 outlineR: data.outlineR, outlineG: data.outlineG, outlineB: data.outlineB, outlineA: data.outlineA,
+                                                 outlineWidth: data.outlineWidth)
+            }
             
         case .CMD_DRAW_RECTANGLE:
             renderer.drawRectangle(x: data.x,

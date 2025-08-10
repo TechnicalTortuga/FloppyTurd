@@ -950,7 +950,7 @@ namespace GameCore {
             
             UIElement uiElement("", "FloppyButtonBlue", "FloppyButtonBlueHover");
             uiElement.buttonText = text;
-            uiElement.fontSize = 96.0f;  // Large text for mobile
+            uiElement.fontSize = 42.0f;  // Final size across the whole main menu
             uiElement.textColor = Gnosis::GNColor(255, 255, 255, 255);  // White text
             uiElement.centerTextHorizontally = true;
             uiElement.centerTextVertically = true;
@@ -1320,7 +1320,7 @@ namespace GameCore {
         leftSprite.layer = 5; // Top layer
         leftSprite.visible = false;
         UIElement leftButton("", "LeftArrow", "LeftArrowHover"); // Remove text, keep arrow sprite
-        leftButton.fontSize = m_isMobile ? 116.0f : 58.0f;
+        leftButton.fontSize = m_isMobile ? 42.0f : 21.0f;
         leftButton.textColor = Gnosis::GNColor(255, 255, 255, 255);
         leftButton.visible = false;
         m_ecsCoordinator->AddComponent<Transform>(m_leftArrowButtonEntity, leftTransform);
@@ -1356,7 +1356,7 @@ namespace GameCore {
         rightSprite.layer = 5; // Top layer
         rightSprite.visible = false;
         UIElement rightButton("", "RightArrow", "RightArrowHover"); // Remove text, keep arrow sprite
-        rightButton.fontSize = m_isMobile ? 116.0f : 58.0f;
+        rightButton.fontSize = m_isMobile ? 42.0f : 21.0f;
         rightButton.textColor = Gnosis::GNColor(255, 255, 255, 255);
         rightButton.visible = false;
         m_ecsCoordinator->AddComponent<Transform>(m_rightArrowButtonEntity, rightTransform);
@@ -1380,7 +1380,7 @@ namespace GameCore {
         
         Transform indicatorTransform(Gnosis::GNVector2(centerX, yPos), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
         UIElement indicatorElement("[Locked!]", "", "");
-        indicatorElement.fontSize = m_isMobile ? 92.0f : 46.0f; // Big red text
+        indicatorElement.fontSize = m_isMobile ? 48.0f : 24.0f; // Smaller to match new menu scale
         indicatorElement.textColor = Gnosis::GNColor(255, 0, 0, 255); // Red text
         indicatorElement.visible = false; // Initially hidden
         
@@ -1476,7 +1476,7 @@ namespace GameCore {
             
             Transform textTransform(Gnosis::GNVector2(textX, textY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
             UIElement textElement(m_levels[i].name, "", "");
-            textElement.fontSize = m_isMobile ? 64.0f : 32.0f;
+            textElement.fontSize = m_isMobile ? 42.0f : 21.0f;
             textElement.textColor = Gnosis::GNColor(255, 255, 255, 255);
             textElement.centerTextHorizontally = true;
             textElement.centerTextVertically = true;
@@ -1519,7 +1519,7 @@ namespace GameCore {
         backSprite.layer = 5; // Top layer
         backSprite.visible = false;
         UIElement backButton("BACK", "FloppyButtonBlue", "FloppyButtonBlueHover");
-        backButton.fontSize = m_isMobile ? 80.0f : 40.0f;
+        backButton.fontSize = m_isMobile ? 42.0f : 21.0f;
         backButton.textColor = Gnosis::GNColor(255, 255, 255, 255);
         backButton.visible = false;
         
@@ -1560,7 +1560,7 @@ namespace GameCore {
         playSprite.layer = 5; // Top layer
         playSprite.visible = false;
         UIElement playButton("PLAY LEVEL", "FloppyButtonBlue", "FloppyButtonBlueHover");
-        playButton.fontSize = m_isMobile ? 68.0f : 34.0f; // Increased slightly for better readability
+        playButton.fontSize = m_isMobile ? 42.0f : 21.0f;
         playButton.textColor = Gnosis::GNColor(255, 255, 255, 255);
         playButton.visible = false;
         

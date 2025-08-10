@@ -272,8 +272,10 @@ namespace GameCore {
                 
                 // Only render if we have a texture ID
                 if (!textureId.empty() && m_platformDelegates.renderer.drawSprite) {
-                    // Render UI directly in screen coordinates (raw pixels for Metal renderer)
+                    // Render UI directly in screen coordinates (PIXELS)
                     Gnosis::GNVector2 screenPos = item.transform->position;
+                    GN_LOG_DEBUG("RenderSystem(UI): entity=" + std::to_string(item.entity) +
+                                  " transformPos=(" + std::to_string(screenPos.x) + "," + std::to_string(screenPos.y) + ")" );
                     // UI should not be affected by camera zoom; use transform scale only
                     float scale = item.transform->scale.x;
                     
@@ -282,7 +284,7 @@ namespace GameCore {
                     if (textureHandle == 0) {
                         GN_LOG_WARN("RenderSystem(UI): Invalid/zero texture handle for id '" + textureId + "' — skipping UI sprite draw");
                     } else {
-                        // Use sprite dimensions if available, otherwise use actual button texture size
+                        // Use sprite dimensions if available, otherwise use default button texture size
                         float width = 90.0f;  // Actual button texture width (90x16 as shown in asset)
                         float height = 16.0f; // Actual button texture height
                         if (item.sprite) {
@@ -290,6 +292,7 @@ namespace GameCore {
                             height = item.sprite->height;
                         }
                         
+                        // Draw centered in PIXEL space if needed; our screenPos is already in pixels
                         m_platformDelegates.renderer.drawSpriteScaled(
                             textureHandle,
                             screenPos.x,
@@ -298,6 +301,7 @@ namespace GameCore {
                             scale,  // Use scale factor, not pixel dimensions
                             item.transform->rotation
                         );
+                        GN_LOG_DEBUG("RenderSystem(UI): drawSpriteScaled at (" + std::to_string(screenPos.x) + "," + std::to_string(screenPos.y) + ") scale=" + std::to_string(scale));
                         GN_LOG_INFO("RenderSystem(UI): Rendered UI sprite '" + textureId + "' at (" + 
                                    std::to_string(screenPos.x) + "," + std::to_string(screenPos.y) + 
                                    ") scale " + std::to_string(scale) + "x" + std::to_string(scale) + 
@@ -376,11 +380,12 @@ namespace GameCore {
 
                 if (ui->centerTextVertically) {
                     if (isTextOnly) {
-                        textY = item.transform->position.y;
+                        textY = item.transform->position.y; // already a center Y for text-only elements
                     } else {
+                        // Pass the true visual center to the centered draw path.
+                        // Vertical centering and baseline alignment are handled in MetalRenderer.
                         const float buttonCenterY = item.transform->position.y + (buttonHeight * 0.5f);
-                        const float visualAdjustment = ui->fontSize * 0.15f; // baseline correction
-                        textY = buttonCenterY + visualAdjustment;
+                        textY = buttonCenterY;
                     }
                 }
 
@@ -389,9 +394,29 @@ namespace GameCore {
                 textY += ui->textOffsetY;
 
                 // Draw using centered or non-centered path in pixel coordinates
-                if (ui->centerTextHorizontally && ui->centerTextVertically && m_platformDelegates.renderer.drawTextCentered) {
+                if (ui->centerTextHorizontally && ui->centerTextVertically && m_platformDelegates.renderer.drawTextCenteredOutlined) {
+                    // Use outlined centered text using the UI element's text color
+                    // For the gameplay pipe counter, make the outline extreme to verify visibility
+                    float outlineWidth = 6.0f;
+                    if (ui->buttonText.size() <= 3) { // heuristic: counters are short strings like "0", "12"
+                        outlineWidth = 10.0f;
+                    }
+                    m_platformDelegates.renderer.drawTextCenteredOutlined(
+                        ui->buttonText, textX, textY, ui->fontSize,
+                        r, g, b, a,
+                        0.0f, 0.0f, 0.0f, 1.0f,
+                        outlineWidth
+                    );
+                } else if (ui->centerTextHorizontally && ui->centerTextVertically && m_platformDelegates.renderer.drawTextCentered) {
                     m_platformDelegates.renderer.drawTextCentered(
                         ui->buttonText, textX, textY, ui->fontSize, r, g, b, a
+                    );
+                } else if (m_platformDelegates.renderer.drawTextOutlined) {
+                    m_platformDelegates.renderer.drawTextOutlined(
+                        ui->buttonText, textX, textY, ui->fontSize,
+                        r, g, b, a,
+                        0.0f, 0.0f, 0.0f, 1.0f,
+                        6.0f
                     );
                 } else if (m_platformDelegates.renderer.drawText) {
                     m_platformDelegates.renderer.drawText(
@@ -586,33 +611,27 @@ namespace GameCore {
     }
 
     void RenderSystem::UpdateScreenInfo() {
+        // Always use enhanced getScreenInfo when available; avoid 800x600 legacy fallback
         if (m_platformDelegates.renderer.getScreenInfo) {
             m_platformDelegates.renderer.getScreenInfo(&m_screenInfo);
             m_screenInfoValid = true;
-            
-            GN_LOG_INFO("Screen info updated: " + 
-                       std::to_string((int)m_screenInfo.logicalWidth) + "x" + 
-                       std::to_string((int)m_screenInfo.logicalHeight) + 
-                       " (" + std::to_string((int)m_screenInfo.pixelWidth) + "x" + 
-                       std::to_string((int)m_screenInfo.pixelHeight) + " pixels)");
-        } else {
-            // Fallback to legacy screen size if available
-            if (m_platformDelegates.renderer.getScreenSize) {
-                m_platformDelegates.renderer.getScreenSize(&m_screenInfo.logicalWidth, &m_screenInfo.logicalHeight);
-                m_screenInfo.pixelWidth = m_screenInfo.logicalWidth;
-                m_screenInfo.pixelHeight = m_screenInfo.logicalHeight;
-                m_screenInfo.scaleFactor = 1.0f;
-                m_screenInfo.isPortrait = m_screenInfo.logicalHeight > m_screenInfo.logicalWidth;
-                m_screenInfo.deviceModel = "Unknown";
-                m_screenInfoValid = true;
-                
-                GN_LOG_WARN("Using legacy screen size: " + 
-                           std::to_string((int)m_screenInfo.logicalWidth) + "x" + 
-                           std::to_string((int)m_screenInfo.logicalHeight));
-            } else {
-                GN_LOG_ERROR("No screen size information available from platform delegates");
-                m_screenInfoValid = false;
-            }
+            GN_LOG_INFO("Screen info updated: " +
+                        std::to_string((int)m_screenInfo.logicalWidth) + "x" +
+                        std::to_string((int)m_screenInfo.logicalHeight) +
+                        " (" + std::to_string((int)m_screenInfo.pixelWidth) + "x" +
+                        std::to_string((int)m_screenInfo.pixelHeight) + " pixels)");
+            return;
+        }
+        // If enhanced info is not available, do NOT override existing valid info with legacy values.
+        if (!m_screenInfoValid && m_platformDelegates.renderer.getScreenSize) {
+            m_platformDelegates.renderer.getScreenSize(&m_screenInfo.logicalWidth, &m_screenInfo.logicalHeight);
+            m_screenInfo.pixelWidth = m_screenInfo.logicalWidth;
+            m_screenInfo.pixelHeight = m_screenInfo.logicalHeight;
+            m_screenInfo.scaleFactor = 1.0f;
+            m_screenInfo.isPortrait = m_screenInfo.logicalHeight > m_screenInfo.logicalWidth;
+            m_screenInfo.deviceModel = "Unknown";
+            m_screenInfoValid = true;
+            GN_LOG_WARN("Legacy screen size used once: " + std::to_string((int)m_screenInfo.logicalWidth) + "x" + std::to_string((int)m_screenInfo.logicalHeight));
         }
     }
 

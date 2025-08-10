@@ -264,8 +264,96 @@ process_all_fonts() {
   done
 }
 
+###############################################################################
+# MSDF font assets (PNG atlas + CSV metrics) → add to asset catalog
+# - PNG goes into an imageset so UIImage(named:) can load it
+# - CSV goes into a dataset so NSDataAsset(name:) can load it
+###############################################################################
+process_msdf_assets() {
+  local base_dir="$RESOURCES_DIR/fonts/msdf"
+  if [ ! -d "$base_dir" ]; then
+    return
+  fi
+
+  echo "Processing MSDF font assets (PNG + CSV) ..."
+
+  # Iterate all PNG atlases
+  find "$base_dir" -type f -name "*.png" | while read png_file; do
+    filename=$(basename "$png_file")               # e.g., Whacky_Joe_msdf.png
+    name_no_ext="${filename%.*}"                   # e.g., Whacky_Joe_msdf
+
+    # We expose the atlas via a distinct imageset name to avoid name collisions
+    imageset_name="${name_no_ext}_atlas"
+
+    # Preserve relative directory (for organization only)
+    rel_path="${png_file#$base_dir/}"
+    rel_dir=$(dirname "$rel_path")                 # e.g., Whacky_Joe
+    if [ "$rel_dir" = "." ]; then
+      category_path="fonts/msdf"
+    else
+      category_path="fonts/msdf/$rel_dir"
+    fi
+
+    mkdir -p "$ASSET_CATALOG_DIR/$category_path/$imageset_name.imageset"
+    cat > "$ASSET_CATALOG_DIR/$category_path/$imageset_name.imageset/Contents.json" << EOF
+{
+  "images" : [
+    {
+      "filename" : "$filename",
+      "idiom" : "universal",
+      "scale" : "1x"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
+EOF
+    cp "$png_file" "$ASSET_CATALOG_DIR/$category_path/$imageset_name.imageset/"
+    echo "Processed MSDF atlas: $category_path/$imageset_name"
+  done
+
+  # Iterate all CSV metric files
+  find "$base_dir" -type f -name "*.csv" | while read csv_file; do
+    filename=$(basename "$csv_file")               # e.g., Whacky_Joe_msdf.csv
+    name_no_ext="${filename%.*}"                   # e.g., Whacky_Joe_msdf
+
+    # Use a distinct dataset name for metrics
+    dataset_name="${name_no_ext}_metrics"
+
+    # Preserve relative directory (for organization only)
+    rel_path="${csv_file#$base_dir/}"
+    rel_dir=$(dirname "$rel_path")
+    if [ "$rel_dir" = "." ]; then
+      category_path="fonts/msdf"
+    else
+      category_path="fonts/msdf/$rel_dir"
+    fi
+
+    mkdir -p "$ASSET_CATALOG_DIR/$category_path/$dataset_name.dataset"
+    cat > "$ASSET_CATALOG_DIR/$category_path/$dataset_name.dataset/Contents.json" << EOF
+{
+  "data" : [
+    {
+      "filename" : "$filename",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
+EOF
+    cp "$csv_file" "$ASSET_CATALOG_DIR/$category_path/$dataset_name.dataset/"
+    echo "Processed MSDF metrics: $category_path/$dataset_name"
+  done
+}
+
 process_all_images
 process_all_audio  
 process_all_fonts
+process_msdf_assets
 
 echo "Asset catalog generation complete at: $ASSET_CATALOG_DIR"

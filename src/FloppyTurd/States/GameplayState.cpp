@@ -395,8 +395,8 @@ namespace GameCore {
             playerHitbox.isTrigger = false;
             m_ecsSystem->AddComponent<Hitbox>(m_playerEntity, playerHitbox);
 
-            // Enable debug overlay for player collider (circle only), high visibility
-            DebugDraw playerDebug(false, true, Gnosis::GNColor(0, 255, 0, 255), Gnosis::GNColor(255, 0, 0, 255));
+            // Debug overlays OFF by default (can be toggled later if needed)
+            DebugDraw playerDebug(false, false, Gnosis::GNColor(0, 255, 0, 255), Gnosis::GNColor(255, 0, 0, 255));
             playerDebug.alpha = 0.35f;
             m_ecsSystem->AddComponent<DebugDraw>(m_playerEntity, playerDebug);
             
@@ -690,17 +690,30 @@ namespace GameCore {
             }
         }
         
-        // Center horizontally using pixel width, position comfortably below notch safe area
-        float centerX = safeLeft + (safeRight - safeLeft) / 2.0f;
-        float pipeCounterY = safeTop + 96.0f;  // Well below notch for visibility
+        // Center horizontally; position ~18% down using full screen pixel height to avoid unit mismatches
+        float screenW = 1179.0f, screenH = 2556.0f;
+        if (m_renderSystem) {
+            const ScreenInfo& si2 = m_renderSystem->GetScreenInfo();
+            screenW = si2.pixelWidth;
+            screenH = si2.pixelHeight;
+        }
+        float centerX = screenW * 0.5f;
+        float pipeCounterY = screenH * 0.10f; // 10% down from top
+        GN_LOG_INFO("CreateUI: screenW=" + std::to_string(screenW) +
+                     " screenH=" + std::to_string(screenH) +
+                     " pipeCounter center=(" + std::to_string(centerX) + "," + std::to_string(pipeCounterY) + ")");
         
         Transform pipeTransform(Gnosis::GNVector2(centerX, pipeCounterY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
         m_ecsSystem->AddComponent<Transform>(m_pipeCounterEntity, pipeTransform);
+        GN_LOG_INFO("CreateUI: added Transform to pipe counter entity " + std::to_string(m_pipeCounterEntity) +
+                    " pos=(" + std::to_string(centerX) + "," + std::to_string(pipeCounterY) + ")");
         
         // Create UIElement for pipe counter (HIGH PRIORITY LAYER for visibility)
         UIElement pipeCounter;
         pipeCounter.buttonText = "0";  // Just the number, no label
-        pipeCounter.fontSize = 96.0f;  // Larger font for clear visibility
+        pipeCounter.fontSize = 120.0f;  // Larger font for clear visibility
+        // Enable outline for pipe counter via renderer delegates
+        // RenderSystem will choose centered outlined path when both center flags are true
         pipeCounter.textColor = Gnosis::GNColor(255, 255, 255, 255);  // White color
         pipeCounter.centerTextHorizontally = true;
         pipeCounter.centerTextVertically = true;
@@ -709,6 +722,7 @@ namespace GameCore {
         pipeCounter.textLayer = 10;     // High UI layer to ensure on-top ordering
         pipeCounter.normalTextureId = "";  // Text-only (no background texture)
         m_ecsSystem->AddComponent<UIElement>(m_pipeCounterEntity, pipeCounter);
+        GN_LOG_INFO("CreateUI: added UIElement to pipe counter entity fontSize=" + std::to_string(pipeCounter.fontSize));
         
         GN_LOG_INFO("Created pipe counter entity " + std::to_string(m_pipeCounterEntity) + " at (" + std::to_string(centerX) + ", " + std::to_string(pipeCounterY) + ") - centered under notch");
     } else {
@@ -738,12 +752,15 @@ namespace GameCore {
         }
         
         // Position in top-right corner with safe margins
-        // Use percentage-based positioning: 95% from left, 12% from top (well below notch)
-        float menuX = screenWidth * 0.95f;      // 95% from left edge (top-right)
-        float menuY = screenHeight * 0.12f;     // 12% from top (safe area)
+        // Move slightly left from the corner and a bit further up using pixel dimensions
+        float menuX = screenWidth * 0.90f;      // 90% from left edge
+        float menuY = screenHeight * 0.05f;     // 5% from top
+        GN_LOG_INFO("CreateUI: menu button target pos=(" + std::to_string(menuX) + "," + std::to_string(menuY) + ")");
         
         Transform menuButtonTransform(Gnosis::GNVector2(menuX, menuY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
         m_ecsSystem->AddComponent<Transform>(m_tempMenuButtonEntity, menuButtonTransform);
+        GN_LOG_INFO("CreateUI: added Transform to menu button entity " + std::to_string(m_tempMenuButtonEntity) +
+                    " pos=(" + std::to_string(menuX) + "," + std::to_string(menuY) + ")");
         
         // Create UIElement for proper text rendering
         UIElement menuButton;
@@ -824,6 +841,41 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             Text* coinsText = m_ecsSystem->GetComponent<Text>(m_coinsTextEntity);
             if (coinsText) {
                 coinsText->text = "Coins: " + std::to_string(m_currentCoins);
+            }
+        }
+
+        // One-shot UI reposition once actual PIXEL screen info is available (avoid 800x600 fallback)
+        if (!m_uiPositionsSynced && m_renderSystem) {
+            const ScreenInfo& si = m_renderSystem->GetScreenInfo();
+            // Heuristic: real iPhone pixel widths are well above 800
+            if (si.pixelWidth >= 1000.0f && si.pixelHeight >= 1000.0f) {
+                // Pipe counter center position (10% down)
+                float centerX = si.pixelWidth * 0.5f;
+                float pipeCounterY = si.pixelHeight * 0.10f;
+                if (m_pipeCounterEntity != 0) {
+                    Transform* t = m_ecsSystem->GetComponent<Transform>(m_pipeCounterEntity);
+                    if (t) {
+                        t->position.x = centerX;
+                        t->position.y = pipeCounterY;
+                    }
+                }
+
+                // Menu button: 90% width, 5% height
+                float menuX = si.pixelWidth * 0.90f;
+                float menuY = si.pixelHeight * 0.05f;
+                if (m_tempMenuButtonEntity != 0) {
+                    Transform* t = m_ecsSystem->GetComponent<Transform>(m_tempMenuButtonEntity);
+                    if (t) {
+                        t->position.x = menuX;
+                        t->position.y = menuY;
+                    }
+                }
+
+                GN_LOG_INFO("UI Repositioned with PIXELS: screenW=" + std::to_string(si.pixelWidth) +
+                            " screenH=" + std::to_string(si.pixelHeight) +
+                            " pipeCounter=(" + std::to_string(centerX) + "," + std::to_string(pipeCounterY) + ")" +
+                            " menuPos=(" + std::to_string(menuX) + "," + std::to_string(menuY) + ")");
+                m_uiPositionsSynced = true;
             }
         }
     }

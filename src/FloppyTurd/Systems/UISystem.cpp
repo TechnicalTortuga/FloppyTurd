@@ -100,21 +100,14 @@ namespace GameCore {
         
         if (uiElement.centerTextVertically) {
             if (isTextOnly) {
-                // For text-only elements, transform.position.y is already the center coordinate
+                // For text-only elements, transform.position.y is already the visual center
                 textY = transform.position.y;
             } else {
-                // For button elements, calculate the visual center Y position for text rendering
-                // Start from the mathematical center of the button
+                // Provide the true center Y of the button; vertical baseline alignment
+                // will be handled in MetalRenderer for centered text paths.
                 float buttonCenterY = transform.position.y + (buttonHeight * 0.5f);
-                
-                // Apply visual correction for SDF font baseline (font-specific adjustment)
-                // Most fonts have their visual center slightly below the mathematical center
-                float visualAdjustment = mobileFontSize * 0.15f;  // 15% of font size down from center
-                textY = buttonCenterY + visualAdjustment;
+                textY = buttonCenterY;
             }
-            
-            // Note: MetalRenderer.drawTextCentered now only handles horizontal centering
-            // All vertical positioning logic is handled here in UISystem
         } else {
             textY = transform.position.y;  // Top-left Y of button or text position
         }
@@ -125,7 +118,7 @@ namespace GameCore {
         
         GN_LOG_DEBUG("UISystem: Text '" + uiElement.buttonText + "' - Button bounds: pos(" + std::to_string(transform.position.x) + "," + std::to_string(transform.position.y) + ") size(" + std::to_string(buttonWidth) + "x" + std::to_string(buttonHeight) + "), Text center: (" + std::to_string(textX) + "," + std::to_string(textY) + "), Font: " + std::to_string(mobileFontSize));
         
-        // Choose appropriate text rendering function based on centering
+        // Choose appropriate text rendering function based on centering (Metal handles baseline from center)
         if (uiElement.centerTextHorizontally && uiElement.centerTextVertically) {
             // Use centered text rendering with improved baseline correction
             GN_LOG_DEBUG("UISystem: Drawing centered text '" + uiElement.buttonText + "' at (" + std::to_string(textX) + "," + std::to_string(textY) + ")");
@@ -349,15 +342,14 @@ namespace GameCore {
     
     // Responsive layout implementation
     void UISystem::UpdateScreenInfo() {
+        // Prefer enhanced info; never clobber valid info with legacy values
         if (m_delegates.renderer.getScreenInfo) {
             m_delegates.renderer.getScreenInfo(&m_screenInfo);
             m_screenInfoValid = true;
-            
-            GN_LOG_INFO("UISystem: Screen info updated: " + 
-                       std::to_string((int)m_screenInfo.logicalWidth) + "x" + 
-                       std::to_string((int)m_screenInfo.logicalHeight));
-        } else if (m_delegates.renderer.getScreenSize) {
-            // Fallback to legacy screen size
+            GN_LOG_INFO("UISystem: Screen info updated (enhanced): " + std::to_string((int)m_screenInfo.pixelWidth) + "x" + std::to_string((int)m_screenInfo.pixelHeight));
+            return;
+        }
+        if (!m_screenInfoValid && m_delegates.renderer.getScreenSize) {
             m_delegates.renderer.getScreenSize(&m_screenInfo.logicalWidth, &m_screenInfo.logicalHeight);
             m_screenInfo.pixelWidth = m_screenInfo.logicalWidth;
             m_screenInfo.pixelHeight = m_screenInfo.logicalHeight;
@@ -365,13 +357,7 @@ namespace GameCore {
             m_screenInfo.isPortrait = m_screenInfo.logicalHeight > m_screenInfo.logicalWidth;
             m_screenInfo.deviceModel = "Unknown";
             m_screenInfoValid = true;
-            
-            GN_LOG_WARN("UISystem: Using legacy screen size: " + 
-                       std::to_string((int)m_screenInfo.logicalWidth) + "x" + 
-                       std::to_string((int)m_screenInfo.logicalHeight));
-        } else {
-            GN_LOG_ERROR("UISystem: No screen size information available");
-            m_screenInfoValid = false;
+            GN_LOG_WARN("UISystem: Legacy screen size used once: " + std::to_string((int)m_screenInfo.logicalWidth) + "x" + std::to_string((int)m_screenInfo.logicalHeight));
         }
     }
     
@@ -434,18 +420,21 @@ namespace GameCore {
             return;
         }
         
-        // Default safe area - can be enhanced with platform-specific notch detection
+        // Default safe area in PIXELS. Always use pixelWidth/pixelHeight for layout calculations.
         left = 0.0f;
         top = 0.0f;
-        right = m_screenInfo.logicalWidth;
-        bottom = m_screenInfo.logicalHeight;
+        right = m_screenInfo.pixelWidth;
+        bottom = m_screenInfo.pixelHeight;
         
 #ifdef PLATFORM_IOS
         // iOS safe area considerations (notch, home indicator, etc.)
         // These values can be refined based on device model
         if (m_screenInfo.deviceModel.find("iPhone") != std::string::npos) {
-            top = 44.0f;  // Status bar / notch area
-            bottom = m_screenInfo.logicalHeight - 34.0f;  // Home indicator area
+            // Convert common safe area insets to pixels using scaleFactor
+            float notchTopPx = 44.0f * m_screenInfo.scaleFactor;
+            float homeIndicatorPx = 34.0f * m_screenInfo.scaleFactor;
+            top = notchTopPx;
+            bottom = m_screenInfo.pixelHeight - homeIndicatorPx;
         }
 #endif
     }
@@ -455,13 +444,11 @@ namespace GameCore {
             return basePosition;
         }
         
-        float scale = GetUIScale();
+        // Use PIXEL dimensions for responsive scaling
         if (isHorizontal) {
-            // Scale horizontal position based on screen width
-            return basePosition * (m_screenInfo.logicalWidth / 393.0f); // iPhone 16 reference
+            return basePosition * (m_screenInfo.pixelWidth / 1179.0f);  // iPhone 16 pixel width reference
         } else {
-            // Scale vertical position based on screen height
-            return basePosition * (m_screenInfo.logicalHeight / 852.0f); // iPhone 16 reference
+            return basePosition * (m_screenInfo.pixelHeight / 2556.0f); // iPhone 16 pixel height reference
         }
     }
     
@@ -470,7 +457,8 @@ namespace GameCore {
             return baseSize;
         }
         
-        return baseSize * GetUIScale();
+        // Scale sizes using pixel height reference for consistency
+        return baseSize * (m_screenInfo.pixelHeight / 2556.0f);
     }
 
 } // namespace GameCore 

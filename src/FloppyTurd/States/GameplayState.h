@@ -126,6 +126,9 @@ namespace GameCore {
         Gnosis::Entity m_pauseMenuEntity;
         Gnosis::Entity m_tempMenuButtonEntity;  // Temporary button to return to main menu
 
+        // Tracks whether we've already repositioned UI based on real pixel dimensions
+        bool m_uiPositionsSynced = false;
+
         // Spawn timers
         float m_obstacleSpawnTimer;
         float m_pickupSpawnTimer;
