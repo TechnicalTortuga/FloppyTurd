@@ -6,6 +6,7 @@
 #include "../Components/GameComponents.h"
 #include "../Systems/SpriteSystem.h"
 #include "../Systems/RenderSystem.h"
+#include "../Game/FloppyTurdGame.h"
 #include <memory>
 
 namespace GameCore {
@@ -69,6 +70,8 @@ namespace GameCore {
         GameCore::PlatformDelegates* m_platformDelegates;  // For system creation
         std::unique_ptr<SpriteSystem> m_spriteSystem;  // For texture dimension queries (rendering disabled)
         std::unique_ptr<RenderSystem> m_renderSystem;  // For screen info access
+        // Cache game instance to avoid repeated extern lookups
+        FloppyTurdGame* m_game = nullptr;
         bool m_finished;
         int m_selectedOption;
         float m_animationTimer;
@@ -109,11 +112,24 @@ namespace GameCore {
         Gnosis::Entity m_masterTrackEntity = 0;
         Gnosis::Entity m_musicTrackEntity = 0;
         Gnosis::Entity m_sfxTrackEntity = 0;
+        // UI shape entities for slider tracks
+        Gnosis::Entity m_masterTrackShape = 0;
+        Gnosis::Entity m_musicTrackShape = 0;
+        Gnosis::Entity m_sfxTrackShape = 0;
+        // Slider text labels on their own row
+        Gnosis::Entity m_masterLabelEntity = 0;
+        Gnosis::Entity m_musicLabelEntity = 0;
+        Gnosis::Entity m_sfxLabelEntity = 0;
         Gnosis::Entity m_optionsTitleEntity = 0;
         Gnosis::Entity m_difficultyTextEntity = 0;
+        Gnosis::Entity m_difficultyValueEntity = 0; // centered value between arrows
         bool m_draggingMaster = false;
         bool m_draggingMusic = false;
         bool m_draggingSFX = false;
+        // Single-knob drag state tracking
+        int m_activeDragKnob = -1;           // -1=none, 0=master, 1=music, 2=sfx
+        float m_dragStartX = 0.0f;           // Touch X when drag started
+        float m_dragKnobStartX = 0.0f;       // Knob X position when drag started
         // Cached slider layout
         float m_optionsSliderX = 0.0f;
         float m_optionsSliderY = 0.0f;

@@ -22,6 +22,8 @@ import os.log
 public protocol TouchInputDelegate: AnyObject {
     func onTouchPress(normalizedPosition: CGPoint, viewSize: CGSize)
     func onTouchRelease(normalizedPosition: CGPoint, viewSize: CGSize)
+    // NEW: continuous move while finger is down
+    func onTouchMove(normalizedPosition: CGPoint, viewSize: CGSize)
 }
 
 // MARK: - Frame-based Input System (Generic)
@@ -93,6 +95,7 @@ public class TouchInputHandler: NSObject, UIGestureRecognizerDelegate {
     private var nextTouchId: Int = 0
     private var touchPositions: [Int: CGPoint] = [:]
     private var touchStates: [Int: TouchState] = [:]
+    private var viewSizeCache: CGSize = .zero
     
     // Gesture recognition
     private var gestureRecognizers: [UIGestureRecognizer] = []
@@ -200,6 +203,13 @@ extension TouchInputHandler {
         tapGesture.delegate = self
         view.addGestureRecognizer(tapGesture)
         gestureRecognizers.append(tapGesture)
+        // Pan gesture for continuous movement
+        let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
+        panGesture.maximumNumberOfTouches = 1
+        panGesture.cancelsTouchesInView = false
+        panGesture.delegate = self
+        view.addGestureRecognizer(panGesture)
+        gestureRecognizers.append(panGesture)
         
         // Swipe gestures
         for direction in [UISwipeGestureRecognizer.Direction.up, .down, .left, .right] {
@@ -229,6 +239,7 @@ extension TouchInputHandler {
         guard !initialized else { return true }
         
         setupGestureRecognizers(for: view)
+        viewSizeCache = view.bounds.size
         
         // Setup Game Controller notifications
         NotificationCenter.default.addObserver(
@@ -329,6 +340,30 @@ extension TouchInputHandler {
             }
         }
     }
+
+    // MARK: - Pan handling
+    @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
+        guard let view = gesture.view else { return }
+        viewSizeCache = view.bounds.size
+        let location = gesture.location(in: view)
+        switch gesture.state {
+        case .began:
+            // handled by tap press path; still set state
+            touchPositions[0] = location
+            touchStates[0] = .pressed
+        case .changed:
+            touchPositions[0] = location
+            // immediate move callback
+            let normalized = CGPoint(x: location.x / max(view.bounds.width, 1), y: location.y / max(view.bounds.height, 1))
+            delegate?.onTouchMove(normalizedPosition: normalized, viewSize: view.bounds.size)
+            touchStates[0] = .down
+        case .ended, .cancelled, .failed:
+            touchPositions[0] = location
+            touchStates[0] = .released
+        default:
+            break
+        }
+    }
     
     // MARK: - Touch Input Methods
     
@@ -417,6 +452,8 @@ extension TouchInputHandler {
     
     public func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?, in view: UIView) {
         log("TouchesBegan: \(touches.count) touches detected", level: .debug)
+        // Keep cached view size up-to-date to avoid bad normalization (width=1)
+        viewSizeCache = view.bounds.size
         for touch in touches {
             let touchId = nextTouchId
             nextTouchId += 1
@@ -449,6 +486,8 @@ extension TouchInputHandler {
     
     public func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?, in view: UIView) {
         log("TouchesMoved: \(touches.count) touches moved", level: .debug)
+        // Keep cached view size up-to-date every move
+        viewSizeCache = view.bounds.size
         for touch in touches {
             guard let touchId = activeTouches[touch] else { continue }
             let position = touch.location(in: view)
@@ -456,6 +495,15 @@ extension TouchInputHandler {
             touchPositions[touchId] = position
             
             log("Touch \(touchId) moved to position (\(position.x), \(position.y))", level: .debug)
+
+            // Immediate move callback for smooth dragging
+            let normalized = CGPoint(
+                x: position.x / max(view.bounds.width, 1),
+                y: position.y / max(view.bounds.height, 1)
+            )
+            delegate?.onTouchMove(normalizedPosition: normalized, viewSize: view.bounds.size)
+            // Maintain Down state during movement
+            touchStates[touchId] = .down
         }
     }
     

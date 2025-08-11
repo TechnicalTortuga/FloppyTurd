@@ -23,11 +23,6 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Systems/../Components/GameComponents.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Systems/../../Engine/Platform/PlatformDelegates.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Systems/RenderSystem.h \
-  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Systems/LevelManager.h \
-  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Systems/../Config/LevelConfig.h \
-  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../../Engine/AssetPaths.h \
-  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../../Engine/Utility/Utils.h \
-  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../../Engine/Utility/../Core/GnosisTypes.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/FloppyTurdGame.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../../Engine/Core/ECS.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../../Engine/Platform/PlatformDelegates.h \
@@ -47,6 +42,11 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/CameraSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/RenderSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/LevelManager.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/../Config/LevelConfig.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/UISystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Config/LevelConfig.h \
-  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../Entities/Player.h
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../Entities/Player.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Systems/LevelManager.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../../Engine/AssetPaths.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../../Engine/Utility/Utils.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../../Engine/Utility/../Core/GnosisTypes.h

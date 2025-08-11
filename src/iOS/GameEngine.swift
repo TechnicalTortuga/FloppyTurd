@@ -425,9 +425,10 @@ public class GameEngine: NSObject, TouchInputDelegate {
             return
         }
         
-        // Transform normalized coordinates to game space
-        let gameX = Float(normalizedPosition.x * 1179.0) // Game width
-        let gameY = Float(normalizedPosition.y * 2556.0) // Game height
+        // Map normalized coordinates to actual device pixel dimensions for 1:1 hit-testing
+        let pixelBounds = UIScreen.main.nativeBounds
+        let gameX = Float(normalizedPosition.x) * Float(pixelBounds.width)
+        let gameY = Float(normalizedPosition.y) * Float(pixelBounds.height)
         
         log("🎯 Touch PRESS: normalized (\(normalizedPosition.x), \(normalizedPosition.y)) -> game coords (\(gameX), \(gameY))", level: .debug)
         
@@ -438,6 +439,22 @@ public class GameEngine: NSObject, TouchInputDelegate {
         cppGame?.HandleInput()
     }
     
+    /// Handle touch move events from TouchInputHandler
+    public func onTouchMove(normalizedPosition: CGPoint, viewSize: CGSize) {
+        guard isRunning && !isPaused else { return }
+        guard cppGame != nil else {
+            log("Cannot handle touch move - C++ game not initialized", level: .warning)
+            return
+        }
+        let pixelBounds = UIScreen.main.nativeBounds
+        let gameX = Float(normalizedPosition.x) * Float(pixelBounds.width)
+        let gameY = Float(normalizedPosition.y) * Float(pixelBounds.height)
+        log("🎯 Touch MOVE: normalized (\(normalizedPosition.x), \(normalizedPosition.y)) -> game coords (\(gameX), \(gameY))", level: .debug)
+        // Update touch state as down without press/release flags
+        GameCore.updateTouchState(gameX, gameY, true, false, false)
+        cppGame?.HandleInput()
+    }
+
     /// Handle touch release events from TouchInputHandler
     public func onTouchRelease(normalizedPosition: CGPoint, viewSize: CGSize) {
         guard isRunning && !isPaused else { return }
@@ -446,9 +463,10 @@ public class GameEngine: NSObject, TouchInputDelegate {
             return
         }
         
-        // Transform normalized coordinates to game space
-        let gameX = Float(normalizedPosition.x * 1179.0) // Game width
-        let gameY = Float(normalizedPosition.y * 2556.0) // Game height
+        // Map normalized coordinates to actual device pixel dimensions for 1:1 hit-testing
+        let pixelBounds = UIScreen.main.nativeBounds
+        let gameX = Float(normalizedPosition.x) * Float(pixelBounds.width)
+        let gameY = Float(normalizedPosition.y) * Float(pixelBounds.height)
         
         log("🎯 Touch RELEASE: normalized (\(normalizedPosition.x), \(normalizedPosition.y)) -> game coords (\(gameX), \(gameY))", level: .debug)
         

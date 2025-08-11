@@ -182,13 +182,18 @@ public class GameViewController: UIViewController {
         // Use GameEngine's TouchInputHandler (GameEngine creates it internally and sets itself as delegate)
         // GameEngine.initialize() must be called before this to ensure TouchInputHandler exists
         touchInputHandler = gameEngine.getTouchInputHandler()
+        if let handler = touchInputHandler {
+            // Ensure the handler is initialized with the MTKView so it knows the correct view size
+            // and installs its own gesture recognizers for continuous move tracking
+            let _ = handler.initialize(with: metalView)
+            log("TouchInputHandler.initialize(with:) called to set view size and gestures", level: .debug)
+        } else {
+            log("TouchInputHandler is nil in setupTouchInput()", level: .warning)
+        }
         
-        // Add gesture recognizers
+        // Add only a tap recognizer here; TouchInputHandler installs its own pan for smooth tracking
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
         metalView.addGestureRecognizer(tapGesture)
-        
-        let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
-        metalView.addGestureRecognizer(panGesture)
         
         log("Touch input setup complete")
     }

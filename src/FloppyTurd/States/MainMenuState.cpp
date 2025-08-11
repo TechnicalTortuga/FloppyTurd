@@ -47,6 +47,10 @@ namespace GameCore {
         , m_fontLoaded(false)
         , m_assetsLoaded(false) {
         
+        // Cache global game pointer once to avoid repeated extern lookups
+        extern FloppyTurdGame* g_Game;
+        m_game = g_Game;
+
         // Detect if we're on a mobile platform
         m_isMobile = IsMobilePlatform();
         
@@ -82,10 +86,9 @@ namespace GameCore {
         m_animationTimer = 0.0f;
         m_assetsLoaded = false;
         
-        // Start playing main menu music using delegate system
-        extern FloppyTurdGame* g_Game;
-        if (g_Game) {
-            const PlatformDelegates& delegates = g_Game->GetPlatformDelegates();
+        // Start playing main menu music using cached game pointer
+        if (m_game) {
+            const PlatformDelegates& delegates = m_game->GetPlatformDelegates();
             // Check if music is cached using new delegate
             if (delegates.asset.isCached) {
                 bool cached = delegates.asset.isCached("FloppyTurdMenu", 1); // 1 = audio type
@@ -99,9 +102,8 @@ namespace GameCore {
         }
         
         // Load the Whacky Joe font for text rendering
-        extern FloppyTurdGame* g_Game;
-        if (g_Game) {
-            const PlatformDelegates& delegates = g_Game->GetPlatformDelegates();
+        if (m_game) {
+            const PlatformDelegates& delegates = m_game->GetPlatformDelegates();
             if (delegates.asset.loadFont) {
                 // For now, just load the font without callback to test
                 delegates.asset.loadFont("fonts/Whacky_Joe", 32, nullptr, nullptr);
@@ -134,9 +136,8 @@ namespace GameCore {
         GN_LOG_INFO("Exiting Main Menu State");
         
         // Stop menu music using delegate system
-        extern FloppyTurdGame* g_Game;
-        if (g_Game) {
-            const PlatformDelegates& delegates = g_Game->GetPlatformDelegates();
+        if (m_game) {
+            const PlatformDelegates& delegates = m_game->GetPlatformDelegates();
             if (delegates.audio.stopMusic) {
                 delegates.audio.stopMusic();
                 GN_LOG_INFO("Stopped main menu music");
@@ -246,9 +247,8 @@ namespace GameCore {
             m_ecsCoordinator->Render();
         }
         
-        // Debug: Draw button bounds rectangles
-        extern FloppyTurdGame* g_Game;
-        if (g_Game && g_Game->GetPlatformDelegates().renderer.drawRectangle) {
+        // Debug: Draw button bounds rectangles using cached delegates
+        if (m_game && m_game->GetPlatformDelegates().renderer.drawRectangle) {
             // Draw debug rectangles for each button
             DrawButtonDebugRectangles();
             
@@ -290,17 +290,20 @@ namespace GameCore {
         GN_LOG_INFO("Options menu shown");
         // Initialize cached overlay and slider geometry once, in pixels
         m_optionsOverlayX = m_screenWidth * 0.10f;
-        m_optionsOverlayY = m_screenHeight * 0.10f;
+        m_optionsOverlayY = m_screenHeight * 0.10f; // 10% from top per request
         m_optionsOverlayW = m_screenWidth * 0.80f;
         m_optionsOverlayH = m_screenHeight * 0.80f;
         m_optionsSliderX = m_optionsOverlayX + 0.08f * m_optionsOverlayW;
-        m_optionsSliderY = m_optionsOverlayY + 0.15f * m_optionsOverlayH;
+        // Start first slider soon after title; use small fixed spacing from overlay top so rows are consistent
+        // First slider block begins a fixed distance below the title to align rows
+        m_optionsSliderY = m_screenHeight * 0.15f;
         m_optionsSliderW = m_optionsOverlayW - 0.16f * m_optionsOverlayW;
-        m_optionsSliderH = 16.0f * m_uiScale;      // knob is 16px base, scaled by global ui scale
-        m_optionsSliderSpacing = 70.0f * m_uiScale;
-        // Create difficulty arrows using existing assets
-        float diffY = m_optionsSliderY + 3 * m_optionsSliderSpacing + 20.0f * m_uiScale;
-        CreateOptionsArrows(m_optionsOverlayX, m_optionsOverlayY, m_optionsOverlayW, m_optionsOverlayH, diffY);
+        // Use pixel dimensions (no arbitrary fractional multipliers)
+        // Keep slider height modest and spacing consistent with rest of menu
+        m_optionsSliderH = m_isMobile ? 20.0f : 10.0f;
+        // Space per group: label (one line) + track + gap
+        m_optionsSliderSpacing = m_isMobile ? 120.0f : 60.0f;
+        // Note: Arrows will be positioned dynamically in CreateOptionsTracksAndLabels based on difficulty section
         // Hide main menu, show options elements
         SetMainMenuVisible(false);
         SetOptionsVisible(true);
@@ -308,6 +311,7 @@ namespace GameCore {
         // Ensure tracks/labels and knobs exist and reset dragging
         CreateOptionsTracksAndLabels();
         m_draggingMaster = m_draggingMusic = m_draggingSFX = false;
+        m_activeDragKnob = -1;  // Reset drag state
         CreateOptionsKnobs();
     }
 
@@ -340,41 +344,75 @@ namespace GameCore {
             if (e == 0) return;
             if (auto s = m_ecsCoordinator->GetComponent<Sprite>(e)) s->visible = visible;
             if (auto ui = m_ecsCoordinator->GetComponent<UIElement>(e)) ui->visible = visible;
+            if (auto shape = m_ecsCoordinator->GetComponent<UIShape>(e)) shape->visible = visible;
         };
+        // Interactive controls
         showEntity(m_optionsLeftArrowEntity);
         showEntity(m_optionsRightArrowEntity);
         showEntity(m_masterKnobEntity);
         showEntity(m_musicKnobEntity);
         showEntity(m_sfxKnobEntity);
         showEntity(m_optionsBackButtonEntity);
+        // Tracks, title, difficulty text/value, and slider labels
+        showEntity(m_masterTrackEntity);
+        showEntity(m_musicTrackEntity);
+        showEntity(m_sfxTrackEntity);
+        showEntity(m_optionsTitleEntity);
+        showEntity(m_difficultyTextEntity);
+        showEntity(m_difficultyValueEntity);
+        showEntity(m_masterLabelEntity);
+        showEntity(m_musicLabelEntity);
+        showEntity(m_sfxLabelEntity);
     }
 
     void MainMenuState::CreateOptionsArrows(float overlayX, float overlayY, float overlayW, float overlayH, float diffY) {
         if (!m_ecsCoordinator) return;
         float scale = m_isMobile ? 10.0f : 5.0f;
+        
+        GN_LOG_INFO("DEBUG: CreateOptionsArrows - screenWidth=" + std::to_string(m_screenWidth) + ", screenHeight=" + std::to_string(m_screenHeight));
+        
         // Left arrow
         if (m_optionsLeftArrowEntity == 0)
             m_optionsLeftArrowEntity = m_ecsCoordinator->CreateEntity();
         m_spriteSystem->LoadTexture("LeftArrow", "LeftArrow.png");
         auto leftMeta = m_spriteSystem->GetTextureDimensions("LeftArrow");
-        float lw = leftMeta.first > 0 ? static_cast<float>(leftMeta.first) : 64.0f;
-        float lh = leftMeta.second > 0 ? static_cast<float>(leftMeta.second) : 64.0f;
-        Transform lt(Gnosis::GNVector2(m_optionsSliderX + 220.0f * m_uiScale, diffY), 0.0f, Gnosis::GNVector2(scale, scale));
+        float lw = leftMeta.first > 0 ? static_cast<float>(leftMeta.first) : 16.0f; // actual 16x16 fallback
+        float lh = leftMeta.second > 0 ? static_cast<float>(leftMeta.second) : 16.0f;
+        // Symmetric margin from screen edges
+        float edgeMargin = m_screenWidth * 0.05f;  // 5% from each edge
+        float leftX = edgeMargin;                   // left button starts at left margin
+        float leftY = diffY - (lh * scale) * 0.5f; // center arrow vertically on baseline
+        Transform lt(Gnosis::GNVector2(leftX, leftY), 0.0f, Gnosis::GNVector2(scale, scale));
         Sprite ls("LeftArrow", lw, lh); ls.layer = 20; ls.visible = true;
         UIElement le("", "LeftArrow", "LeftArrowHover");
+        GN_LOG_INFO("DEBUG: Left arrow - edgeMargin=" + std::to_string(edgeMargin) + 
+                    ", scaledWidth=" + std::to_string(lw * scale) + 
+                    ", finalLeftX=" + std::to_string(leftX) + 
+                    ", finalLeftY=" + std::to_string(leftY));
         if (!m_ecsCoordinator->HasComponent<Transform>(m_optionsLeftArrowEntity)) m_ecsCoordinator->AddComponent<Transform>(m_optionsLeftArrowEntity, lt); else *m_ecsCoordinator->GetComponent<Transform>(m_optionsLeftArrowEntity) = lt;
         if (!m_ecsCoordinator->HasComponent<Sprite>(m_optionsLeftArrowEntity)) m_ecsCoordinator->AddComponent<Sprite>(m_optionsLeftArrowEntity, ls); else *m_ecsCoordinator->GetComponent<Sprite>(m_optionsLeftArrowEntity) = ls;
         if (!m_ecsCoordinator->HasComponent<UIElement>(m_optionsLeftArrowEntity)) m_ecsCoordinator->AddComponent<UIElement>(m_optionsLeftArrowEntity, le); else *m_ecsCoordinator->GetComponent<UIElement>(m_optionsLeftArrowEntity) = le;
+        
         // Right arrow
         if (m_optionsRightArrowEntity == 0)
             m_optionsRightArrowEntity = m_ecsCoordinator->CreateEntity();
         m_spriteSystem->LoadTexture("RightArrow", "RightArrow.png");
         auto rightMeta = m_spriteSystem->GetTextureDimensions("RightArrow");
-        float rw = rightMeta.first > 0 ? static_cast<float>(rightMeta.first) : 64.0f;
-        float rh = rightMeta.second > 0 ? static_cast<float>(rightMeta.second) : 64.0f;
-        Transform rt(Gnosis::GNVector2(m_optionsSliderX + 360.0f * m_uiScale, diffY), 0.0f, Gnosis::GNVector2(scale, scale));
+        float rw = rightMeta.first > 0 ? static_cast<float>(rightMeta.first) : 16.0f; // actual 16x16 fallback
+        float rh = rightMeta.second > 0 ? static_cast<float>(rightMeta.second) : 16.0f;
+        
+        // Right arrow positioned so its RIGHT EDGE is at (screenWidth - edgeMargin)
+        float scaledRW = rw * scale;
+        float rightX = m_screenWidth - edgeMargin - scaledRW; // place left coordinate so right edge matches margin
+        float rightY = diffY - (rh * scale) * 0.5f;           // center arrow vertically on baseline
+        Transform rt(Gnosis::GNVector2(rightX, rightY), 0.0f, Gnosis::GNVector2(scale, scale));
         Sprite rs("RightArrow", rw, rh); rs.layer = 20; rs.visible = true;
         UIElement re("", "RightArrow", "RightArrowHover");
+        
+        GN_LOG_INFO("DEBUG: Right arrow - edgeMargin=" + std::to_string(edgeMargin) +
+                    ", scaledWidth=" + std::to_string(scaledRW) + ", finalRightX=" + std::to_string(rightX) +
+                    ", finalRightY=" + std::to_string(rightY));
+        
         if (!m_ecsCoordinator->HasComponent<Transform>(m_optionsRightArrowEntity)) m_ecsCoordinator->AddComponent<Transform>(m_optionsRightArrowEntity, rt); else *m_ecsCoordinator->GetComponent<Transform>(m_optionsRightArrowEntity) = rt;
         if (!m_ecsCoordinator->HasComponent<Sprite>(m_optionsRightArrowEntity)) m_ecsCoordinator->AddComponent<Sprite>(m_optionsRightArrowEntity, rs); else *m_ecsCoordinator->GetComponent<Sprite>(m_optionsRightArrowEntity) = rs;
         if (!m_ecsCoordinator->HasComponent<UIElement>(m_optionsRightArrowEntity)) m_ecsCoordinator->AddComponent<UIElement>(m_optionsRightArrowEntity, re); else *m_ecsCoordinator->GetComponent<UIElement>(m_optionsRightArrowEntity) = re;
@@ -386,6 +424,7 @@ namespace GameCore {
             if (e == 0) return;
             if (auto s = m_ecsCoordinator->GetComponent<Sprite>(e)) s->visible = false;
             if (auto ui = m_ecsCoordinator->GetComponent<UIElement>(e)) ui->visible = false;
+            if (auto shape = m_ecsCoordinator->GetComponent<UIShape>(e)) shape->visible = false;
         };
         hideEntity(m_optionsLeftArrowEntity);
         hideEntity(m_optionsRightArrowEntity);
@@ -393,6 +432,15 @@ namespace GameCore {
         hideEntity(m_musicKnobEntity);
         hideEntity(m_sfxKnobEntity);
         hideEntity(m_optionsBackButtonEntity);
+        hideEntity(m_masterTrackEntity);
+        hideEntity(m_musicTrackEntity);
+        hideEntity(m_sfxTrackEntity);
+        hideEntity(m_optionsTitleEntity);
+        hideEntity(m_difficultyTextEntity);
+        hideEntity(m_difficultyValueEntity);
+        hideEntity(m_masterLabelEntity);
+        hideEntity(m_musicLabelEntity);
+        hideEntity(m_sfxLabelEntity);
     }
 
     void MainMenuState::CreateOptionsKnobs() {
@@ -426,16 +474,22 @@ namespace GameCore {
             auto dims = m_spriteSystem->GetTextureDimensions("FloppyButtonBlue");
             float tw = dims.first > 0 ? dims.first : 90.0f;
             float th = dims.second > 0 ? dims.second : 16.0f;
-            float buttonScale = 10.0f * m_uiScale / 8.0f; // align with mobile buttons when m_uiScale≈8
+            float buttonScale = (m_isMobile ? 10.0f : 5.0f); // keep standard button size
             auto scaled = GetScaledDimensions(tw, th, buttonScale);
             float backW = scaled.first;
             float backH = scaled.second;
             float backX = m_optionsOverlayX + m_optionsOverlayW * 0.5f - backW * 0.5f;
-            float backY = m_optionsOverlayY + m_optionsOverlayH - backH - 40.0f * m_uiScale;
+            // Move back button further down near the bottom of the options overlay
+            // Lower back button further, consistent with level select layout
+            float backY = m_optionsOverlayY + m_optionsOverlayH - backH - 4.0f * m_uiScale;
             Transform t(Gnosis::GNVector2(backX, backY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
             Sprite s("FloppyButtonBlue", tw, th); s.layer = 22; s.visible = true;
             UIElement ui("BACK", "FloppyButtonBlue", "FloppyButtonBlueHover");
-            ui.fontSize = 60.0f; ui.centerTextHorizontally = true; ui.centerTextVertically = true; ui.visible = true;
+            ui.fontSize = m_isMobile ? 42.0f : 21.0f;
+            ui.textColor = Gnosis::GNColor(255,255,255,255);
+            ui.centerTextHorizontally = true;
+            ui.centerTextVertically = true;
+            ui.visible = true;
             m_ecsCoordinator->AddComponent<Transform>(m_optionsBackButtonEntity, t);
             m_ecsCoordinator->AddComponent<Sprite>(m_optionsBackButtonEntity, s);
             m_ecsCoordinator->AddComponent<UIElement>(m_optionsBackButtonEntity, ui);
@@ -448,23 +502,39 @@ namespace GameCore {
 
     void MainMenuState::UpdateOptionsKnobPositions() {
         if (!m_ecsCoordinator) return;
-        auto setPos = [&](Gnosis::Entity e, float pct, int idx) {
-            if (e == 0) return;
-            Transform* t = m_ecsCoordinator->GetComponent<Transform>(e);
-            Sprite* s = m_ecsCoordinator->GetComponent<Sprite>(e);
+        
+        // Use same spacing values as CreateOptionsTracksAndLabels
+        float currentY = m_screenHeight * 0.18f;
+        float labelTrackGap = 15.0f * m_uiScale;
+        float sectionGap = 25.0f * m_uiScale;
+        
+        auto setKnobPos = [&](Gnosis::Entity knobEntity, float pct, float trackY) {
+            if (knobEntity == 0) return;
+            Transform* t = m_ecsCoordinator->GetComponent<Transform>(knobEntity);
+            Sprite* s = m_ecsCoordinator->GetComponent<Sprite>(knobEntity);
             if (!t || !s) return;
             float x = m_optionsSliderX + pct * m_optionsSliderW - (s->width * t->scale.x) * 0.5f;
-            float y = m_optionsSliderY + idx * m_optionsSliderSpacing - (s->height * t->scale.y - m_optionsSliderH) * 0.5f;
+            float y = trackY + m_optionsSliderH * 0.5f - (s->height * t->scale.y) * 0.5f;  // Center on track
             t->position.x = x;
             t->position.y = y;
         };
+        
+        // Calculate Y positions for each track using same logic as CreateOptionsTracksAndLabels
+        float masterTrackY = currentY + labelTrackGap;
+        currentY = masterTrackY + m_optionsSliderH + sectionGap;
+        
+        float musicTrackY = currentY + labelTrackGap;
+        currentY = musicTrackY + m_optionsSliderH + sectionGap;
+        
+        float sfxTrackY = currentY + labelTrackGap;
 
         float master = GameCore::GetGame()->GetMasterVolume();
         float music = GameCore::GetGame()->GetMusicVolume();
         float sfx = GameCore::GetGame()->GetSFXVolume();
-        setPos(m_masterKnobEntity, master, 0);
-        setPos(m_musicKnobEntity, music, 1);
-        setPos(m_sfxKnobEntity, sfx, 2);
+        
+        setKnobPos(m_masterKnobEntity, master, masterTrackY);
+        setKnobPos(m_musicKnobEntity, music, musicTrackY);
+        setKnobPos(m_sfxKnobEntity, sfx, sfxTrackY);
     }
     
     void MainMenuState::HandleMainMenuInput() {
@@ -542,56 +612,123 @@ namespace GameCore {
     }
 
     void MainMenuState::RenderOptionsMenu() {
-        // No direct draws; Options UI is now entirely ECS-based for proper layering
+        // Draw overlay and slider tracks using rectangles to ensure consistent look
+        const auto& renderer = m_platformDelegates->renderer;
+        if (!renderer.drawRectangle) return;
+
+        // Dimmed background overlay
+        renderer.drawRectangle(m_optionsOverlayX, m_optionsOverlayY,
+                               m_optionsOverlayW, m_optionsOverlayH,
+                               0.05f, 0.05f, 0.10f, 0.85f);
+
+        // Slider tracks
+        const float trackR = 0.10f, trackG = 0.10f, trackB = 0.30f, trackA = 0.95f;
+        for (int i = 0; i < 3; ++i) {
+            float y = m_optionsSliderY + i * m_optionsSliderSpacing;
+            renderer.drawRectangle(m_optionsSliderX, y, m_optionsSliderW, m_optionsSliderH,
+                                   trackR, trackG, trackB, trackA);
+        }
     }
 
     void MainMenuState::HandleOptionsInput() {
         if (!m_platformDelegates) return;
-        if (!m_platformDelegates->input.isPrimaryInputJustPressed) return;
 
-        bool justPressed = m_platformDelegates->input.isPrimaryInputJustPressed();
+        // Read input state every frame; do not early-return on non-justPressed so dragging works
+        bool justPressed = m_platformDelegates->input.isPrimaryInputJustPressed ? m_platformDelegates->input.isPrimaryInputJustPressed() : false;
+        bool inputDown   = m_platformDelegates->input.isPrimaryInputDown        ? m_platformDelegates->input.isPrimaryInputDown()        : false;
+        bool justReleased= m_platformDelegates->input.isPrimaryInputJustReleased? m_platformDelegates->input.isPrimaryInputJustReleased(): false;
         float touchX = 0.0f, touchY = 0.0f;
         if (m_platformDelegates->input.getPrimaryInputPosition) {
             m_platformDelegates->input.getPrimaryInputPosition(&touchX, &touchY);
         }
 
-        bool inputDown = m_platformDelegates->input.isPrimaryInputDown && m_platformDelegates->input.isPrimaryInputDown();
-        bool justReleased = m_platformDelegates->input.isPrimaryInputJustReleased && m_platformDelegates->input.isPrimaryInputJustReleased();
-
         auto clamp01 = [](float v) { return v < 0.0f ? 0.0f : (v > 1.0f ? 1.0f : v); };
-        auto applySliderAtY = [&](int index, float& valueRef, bool& draggingFlag, Gnosis::Entity knobEntity) {
-            float y = m_optionsSliderY + index * m_optionsSliderSpacing;
-            float hitTop = y - 20.0f;
-            float hitBottom = y + m_optionsSliderH + 20.0f;
-            if (justPressed && touchX >= m_optionsSliderX && touchX <= m_optionsSliderX + m_optionsSliderW && touchY >= hitTop && touchY <= hitBottom) {
-                draggingFlag = true;
+        
+        // Calculate track positions using same logic as UpdateOptionsKnobPositions  
+        float currentY = m_screenHeight * 0.18f;
+        float labelTrackGap = 15.0f * m_uiScale;
+        float sectionGap = 25.0f * m_uiScale;
+        
+        float masterTrackY = currentY + labelTrackGap;
+        currentY = masterTrackY + m_optionsSliderH + sectionGap;
+        float musicTrackY = currentY + labelTrackGap;
+        currentY = musicTrackY + m_optionsSliderH + sectionGap;
+        float sfxTrackY = currentY + labelTrackGap;
+        
+        // Precise hitboxes - ONLY where the actual track + knob images are
+        auto applySliderAtTrackY = [&](int index, float& valueRef, bool& draggingFlag, Gnosis::Entity knobEntity, float trackY) {
+            // Precise hitbox - only the track area + small margin for knob
+            float knobSize = 16.0f * m_uiScale;  // Knob is 16px scaled
+            float hitTop = trackY - knobSize * 0.5f;  // Account for knob height above track
+            float hitBottom = trackY + m_optionsSliderH + knobSize * 0.5f;  // Account for knob height below track
+            float hitLeft = m_optionsSliderX - knobSize * 0.5f;  // Account for knob width left of track
+            float hitRight = m_optionsSliderX + m_optionsSliderW + knobSize * 0.5f;  // Account for knob width right of track
+            
+            // Debug hitbox info
+            if (justPressed) {
+                GN_LOG_INFO("DEBUG: Touch at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ") - Knob " + std::to_string(index) + " hitbox: (" + std::to_string(hitLeft) + "-" + std::to_string(hitRight) + ", " + std::to_string(hitTop) + "-" + std::to_string(hitBottom) + ")");
             }
-            if (draggingFlag && inputDown) {
-                float pct = clamp01((touchX - m_optionsSliderX) / m_optionsSliderW);
-                valueRef = pct;
-                // Move knob live while dragging
-                if (knobEntity != 0) {
-                    if (auto t = m_ecsCoordinator->GetComponent<Transform>(knobEntity)) {
-                        if (auto s = m_ecsCoordinator->GetComponent<Sprite>(knobEntity)) {
-                            float x = m_optionsSliderX + pct * m_optionsSliderW - (s->width * t->scale.x) * 0.5f;
-                            float ky = m_optionsSliderY + index * m_optionsSliderSpacing - (s->height * t->scale.y - m_optionsSliderH) * 0.5f;
-                            t->position.x = x;
-                            t->position.y = ky;
+            
+            // State: BEGAN - Initialize drag operation (snap knob to touch position immediately)
+            if (justPressed && touchY >= hitTop && touchY <= hitBottom && touchX >= hitLeft && touchX <= hitRight) {
+                if (m_activeDragKnob == -1) {  // Only start if no active drag (single-touch)
+                    m_activeDragKnob = index;
+                    draggingFlag = true;
+                    // Absolute mapping: set value directly from touch X within slider bounds
+                    float pressedValue = clamp01((touchX - m_optionsSliderX) / m_optionsSliderW);
+                    valueRef = pressedValue;
+                    // Immediate visual feedback at press
+                    if (knobEntity != 0) {
+                        if (auto t = m_ecsCoordinator->GetComponent<Transform>(knobEntity)) {
+                            if (auto s = m_ecsCoordinator->GetComponent<Sprite>(knobEntity)) {
+                                float kx = m_optionsSliderX + pressedValue * m_optionsSliderW - (s->width * t->scale.x) * 0.5f;
+                                float ky = trackY + m_optionsSliderH * 0.5f - (s->height * t->scale.y) * 0.5f;
+                                t->position.x = kx;
+                                t->position.y = ky;
+                                GN_LOG_INFO("DEBUG: Pressed knob " + std::to_string(index) + " -> value=" + std::to_string(pressedValue) + 
+                                            ", pos=(" + std::to_string(kx) + "," + std::to_string(ky) + ")");
+                            }
                         }
                     }
                 }
             }
-            if (draggingFlag && justReleased) {
+            
+            // State: CHANGED - Apply continuous updates (absolute mapping to touch X)
+            if (draggingFlag && m_activeDragKnob == index && inputDown) {
+                // Map touch X to slider value directly
+                float newValue = clamp01((touchX - m_optionsSliderX) / m_optionsSliderW);
+                valueRef = newValue;
+                float newKnobCenterX = m_optionsSliderX + newValue * m_optionsSliderW;
+                GN_LOG_INFO("DEBUG: Dragging knob " + std::to_string(index) + " - touchX=" + std::to_string(touchX) + 
+                            ", newKnobCenterX=" + std::to_string(newKnobCenterX) + ", newValue=" + std::to_string(newValue));
+                
+                // Immediate visual feedback
+                if (knobEntity != 0) {
+                    if (auto t = m_ecsCoordinator->GetComponent<Transform>(knobEntity)) {
+                        if (auto s = m_ecsCoordinator->GetComponent<Sprite>(knobEntity)) {
+                            float kx = newKnobCenterX - (s->width * t->scale.x) * 0.5f;
+                            float ky = trackY + m_optionsSliderH * 0.5f - (s->height * t->scale.y) * 0.5f;
+                            t->position.x = kx;
+                            t->position.y = ky;
+                            GN_LOG_INFO("DEBUG: Updated knob " + std::to_string(index) + " position to (" + std::to_string(kx) + ", " + std::to_string(ky) + ")");
+                        }
+                    }
+                }
+            }
+            
+            // State: ENDED - Clean up drag operation  
+            if (draggingFlag && justReleased && m_activeDragKnob == index) {
                 draggingFlag = false;
+                m_activeDragKnob = -1;  // Reset for next interaction
             }
         };
 
         float master = GameCore::GetGame()->GetMasterVolume();
         float music = GameCore::GetGame()->GetMusicVolume();
         float sfx = GameCore::GetGame()->GetSFXVolume();
-        applySliderAtY(0, master, m_draggingMaster, m_masterKnobEntity);
-        applySliderAtY(1, music, m_draggingMusic, m_musicKnobEntity);
-        applySliderAtY(2, sfx, m_draggingSFX, m_sfxKnobEntity);
+        applySliderAtTrackY(0, master, m_draggingMaster, m_masterKnobEntity, masterTrackY);
+        applySliderAtTrackY(1, music, m_draggingMusic, m_musicKnobEntity, musicTrackY);
+        applySliderAtTrackY(2, sfx, m_draggingSFX, m_sfxKnobEntity, sfxTrackY);
         GameCore::GetGame()->SetMasterVolume(master);
         GameCore::GetGame()->SetMusicVolume(music);
         GameCore::GetGame()->SetSFXVolume(sfx);
@@ -605,30 +742,45 @@ namespace GameCore {
         using GameCore::Difficulty;
         Difficulty current = GameCore::LevelManager::GetGlobalDifficulty();
 
-        // Prefer actual arrow entities if present
+        // Use ONLY actual arrow entity bounds - no fallback hitboxes to avoid overlap
         bool leftHit = false, rightHit = false;
         if (m_optionsLeftArrowEntity != 0) {
             Transform* t = m_ecsCoordinator->GetComponent<Transform>(m_optionsLeftArrowEntity);
             Sprite* s = m_ecsCoordinator->GetComponent<Sprite>(m_optionsLeftArrowEntity);
-            if (t && s && within(t->position.x, t->position.y, s->width * t->scale.x, s->height * t->scale.y)) leftHit = true;
+            // Hit test EXACTLY the image bounds
+            if (t && s && within(t->position.x, t->position.y, s->width * t->scale.x, s->height * t->scale.y)) {
+                leftHit = true;
+            }
         }
         if (m_optionsRightArrowEntity != 0) {
             Transform* t = m_ecsCoordinator->GetComponent<Transform>(m_optionsRightArrowEntity);
             Sprite* s = m_ecsCoordinator->GetComponent<Sprite>(m_optionsRightArrowEntity);
-            if (t && s && within(t->position.x, t->position.y, s->width * t->scale.x, s->height * t->scale.y)) rightHit = true;
+            // Hit test EXACTLY the image bounds  
+            if (t && s && within(t->position.x, t->position.y, s->width * t->scale.x, s->height * t->scale.y)) {
+                rightHit = true;
+            }
+        }
+        // NO FALLBACK - only use exact entity bounds to prevent overlap
+
+        // Debounce difficulty arrow presses using the same timer as level select
+        if (justPressed && (leftHit || rightHit)) {
+            if (m_lastArrowPressTime >= m_arrowDebounceDelay) {
+                if (leftHit) {
+                    int d = static_cast<int>(current); d = std::max(0, d - 1);
+                    GameCore::LevelManager::SetGlobalDifficulty(static_cast<Difficulty>(d));
+                } else if (rightHit) {
+                    int d = static_cast<int>(current); d = std::min(2, d + 1);
+                    GameCore::LevelManager::SetGlobalDifficulty(static_cast<Difficulty>(d));
+                }
+                m_lastArrowPressTime = 0.0f; // reset shared debounce timer
+            }
         }
 
-        // Fallback hit boxes if entities are hidden/not created
-        float diffY = m_optionsSliderY + 3 * m_optionsSliderSpacing + 20.0f * m_uiScale;
-        if (!leftHit)  leftHit  = within(m_optionsSliderX + 220.0f * m_uiScale, diffY, 64.0f * m_uiScale, 64.0f * m_uiScale);
-        if (!rightHit) rightHit = within(m_optionsSliderX + 360.0f * m_uiScale, diffY, 64.0f * m_uiScale, 64.0f * m_uiScale);
-
-        if (leftHit) {
-            int d = static_cast<int>(current); d = std::max(0, d - 1);
-            GameCore::LevelManager::SetGlobalDifficulty(static_cast<Difficulty>(d));
-        } else if (rightHit) {
-            int d = static_cast<int>(current); d = std::min(2, d + 1);
-            GameCore::LevelManager::SetGlobalDifficulty(static_cast<Difficulty>(d));
+        // Update centered difficulty value text after change
+        if (m_difficultyValueEntity != 0) {
+            if (auto ui = m_ecsCoordinator->GetComponent<UIElement>(m_difficultyValueEntity)) {
+                ui->buttonText = GameCore::LevelManager::GetDifficultyName();
+            }
         }
 
         // Back button entity hit test
@@ -663,9 +815,8 @@ namespace GameCore {
                        ", scale=" + std::to_string(screenInfo.scaleFactor));
         } else {
             // Fallback to platform delegates if render system not available
-            extern FloppyTurdGame* g_Game;
-            if (g_Game) {
-                const PlatformDelegates& delegates = g_Game->GetPlatformDelegates();
+            if (m_game) {
+                const PlatformDelegates& delegates = m_game->GetPlatformDelegates();
                 if (delegates.renderer.getScreenInfo) {
                     delegates.renderer.getScreenInfo(&screenInfo);
                     GN_LOG_INFO("Desktop enhanced screen info (delegate): logical=" + 
@@ -817,9 +968,8 @@ namespace GameCore {
                        ", scale=" + std::to_string(screenInfo.scaleFactor));
         } else {
             // Fallback to platform delegates if render system not available
-            extern FloppyTurdGame* g_Game;
-            if (g_Game) {
-                const PlatformDelegates& delegates = g_Game->GetPlatformDelegates();
+            if (m_game) {
+                const PlatformDelegates& delegates = m_game->GetPlatformDelegates();
                 if (delegates.renderer.getScreenInfo) {
                     delegates.renderer.getScreenInfo(&screenInfo);
                     GN_LOG_INFO("Mobile enhanced screen info (delegate): logical=" + 
@@ -1024,10 +1174,9 @@ namespace GameCore {
         int randomFartNumber = dis(gen);
         std::string fartSoundName = "fart" + std::to_string(randomFartNumber);
         
-        // Use delegate system to play sound
-        extern FloppyTurdGame* g_Game;
-        if (g_Game) {
-            const PlatformDelegates& delegates = g_Game->GetPlatformDelegates();
+        // Use delegate system to play sound via cached game pointer
+        if (m_game) {
+            const PlatformDelegates& delegates = m_game->GetPlatformDelegates();
             if (delegates.audio.playSound) {
                 delegates.audio.playSound(fartSoundName.c_str(), 0.8f); // 80% volume
                 GN_LOG_INFO("Playing fart sound: %s.mp3", fartSoundName.c_str());
@@ -1234,7 +1383,7 @@ namespace GameCore {
         // Center buttons horizontally, start at 50% down from top
         float centerX = m_screenWidth / 2.0f;
         float startY = m_screenHeight * 0.50f;  // Start at 50% down from top
-        float buttonSpacing = buttonScaledHeight + 100.0f;  // Spacing between buttons (button height + gap)
+        float buttonSpacing = buttonScaledHeight + 80.0f;  // Tighter spacing
         
         GN_LOG_INFO("📱 Creating mobile buttons: scale=" + std::to_string(buttonScale) + ", size=" + std::to_string(buttonScaledWidth) + "x" + std::to_string(buttonScaledHeight) + ", centerX=" + std::to_string(centerX) + ", startY=" + std::to_string(startY) + ", spacing=" + std::to_string(buttonSpacing));
         
@@ -1280,13 +1429,12 @@ namespace GameCore {
     }
 
     void MainMenuState::DrawButtonDebugRectangles() {
-        extern FloppyTurdGame* g_Game;
-        if (!g_Game || !m_ecsCoordinator) {
+        if (!m_game || !m_ecsCoordinator) {
             GN_LOG_INFO("DrawButtonDebugRectangles: No game or ECS coordinator");
             return;
         }
         
-        const PlatformDelegates& delegates = g_Game->GetPlatformDelegates();
+        const PlatformDelegates& delegates = m_game->GetPlatformDelegates();
         if (!delegates.renderer.drawRectangle) {
             GN_LOG_INFO("DrawButtonDebugRectangles: No drawRectangle delegate");
             return;
@@ -1804,8 +1952,8 @@ namespace GameCore {
         
         m_backButtonEntity = m_ecsCoordinator->CreateEntity();
         float buttonX = m_screenWidth / 2.0f;  // Center horizontally
-        float buttonY = m_screenHeight * 0.9f;  // 90% from top (near bottom)
-        float buttonScale = m_isMobile ? 10.0f : 5.0f;
+        float buttonY = m_screenHeight * 0.93f;  // push lower
+        float buttonScale = m_isMobile ? 8.0f : 4.0f;
         
         // Load texture to get actual dimensions
         m_spriteSystem->LoadTexture("FloppyButtonBlue", "FloppyButtonBlue.png");
@@ -1843,42 +1991,79 @@ namespace GameCore {
         // Title
         if (m_optionsTitleEntity == 0) m_optionsTitleEntity = m_ecsCoordinator->CreateEntity();
         UIElement title("Options", "", "");
-        title.fontSize = 36.0f * m_uiScale; title.textColor = Gnosis::GNColor(255,255,255,255);
+        // Increase title size (3-4x) and place ~10% from top of screen
+        title.fontSize = m_isMobile ? 96.0f : 48.0f;
+        title.textColor = Gnosis::GNColor(255,255,255,255);
         title.centerTextHorizontally = true; title.visible = true;
-        Transform titleT(Gnosis::GNVector2(m_optionsOverlayX + m_optionsOverlayW * 0.5f, m_optionsOverlayY + 40.0f * m_uiScale), 0.0f, Gnosis::GNVector2(1.0f,1.0f));
+        Transform titleT(Gnosis::GNVector2(m_screenWidth * 0.5f, m_screenHeight * 0.10f), 0.0f, Gnosis::GNVector2(1.0f,1.0f));
         if (!m_ecsCoordinator->HasComponent<Transform>(m_optionsTitleEntity)) m_ecsCoordinator->AddComponent<Transform>(m_optionsTitleEntity, titleT); else *m_ecsCoordinator->GetComponent<Transform>(m_optionsTitleEntity) = titleT;
         if (!m_ecsCoordinator->HasComponent<UIElement>(m_optionsTitleEntity)) m_ecsCoordinator->AddComponent<UIElement>(m_optionsTitleEntity, title); else *m_ecsCoordinator->GetComponent<UIElement>(m_optionsTitleEntity) = title;
 
-        // Helper to create a slider track entity
-        auto createTrack = [&](int idx, Gnosis::Entity &outEntity, const char* label){
-            if (outEntity == 0) outEntity = m_ecsCoordinator->CreateEntity();
-            // Use our standard button texture as a slim bar for consistency in layer processing
-            m_spriteSystem->LoadTexture("FloppyButtonBlue", "FloppyButtonBlue.png");
-            auto dims = m_spriteSystem->GetTextureDimensions("FloppyButtonBlue");
-            float tw = dims.first > 0 ? dims.first : 90.0f;
-            float th = dims.second > 0 ? dims.second : 16.0f;
-            // Track scale to match slider width/height (height from optionsSliderH)
-            float scaleX = (m_optionsSliderW / tw);
-            float scaleY = (m_optionsSliderH / th);
-            Transform t(Gnosis::GNVector2(m_optionsSliderX, m_optionsSliderY + idx * m_optionsSliderSpacing), 0.0f, Gnosis::GNVector2(scaleX, scaleY));
-            Sprite s("FloppyButtonBlue", tw, th); s.layer = 20; s.visible = true;
-            UIElement ui(label, "", ""); ui.fontSize = 24.0f * m_uiScale; ui.textColor = Gnosis::GNColor(255,255,255,255); ui.visible = true;
-            if (!m_ecsCoordinator->HasComponent<Transform>(outEntity)) m_ecsCoordinator->AddComponent<Transform>(outEntity, t); else *m_ecsCoordinator->GetComponent<Transform>(outEntity) = t;
-            if (!m_ecsCoordinator->HasComponent<Sprite>(outEntity)) m_ecsCoordinator->AddComponent<Sprite>(outEntity, s); else *m_ecsCoordinator->GetComponent<Sprite>(outEntity) = s;
-            if (!m_ecsCoordinator->HasComponent<UIElement>(outEntity)) m_ecsCoordinator->AddComponent<UIElement>(outEntity, ui); else *m_ecsCoordinator->GetComponent<UIElement>(outEntity) = ui;
+        // Create interleaved label-track pairs with tighter spacing
+        float currentY = m_screenHeight * 0.18f;      // Start Master section a bit further down
+        float labelTrackGap = 15.0f * m_uiScale;      // Smaller gap between label and track  
+        float sectionGap = 25.0f * m_uiScale;         // Much smaller gap between sections
+        
+        auto createLabelTrackPair = [&](Gnosis::Entity& labelEntity, Gnosis::Entity& trackEntity, const char* labelText, float yPos) {
+            // Create label
+            if (labelEntity == 0) labelEntity = m_ecsCoordinator->CreateEntity();
+            UIElement labelUi(labelText, "", "");
+            labelUi.fontSize = m_isMobile ? 36.0f : 18.0f;
+            labelUi.textColor = Gnosis::GNColor(255,255,255,255);
+            labelUi.centerTextHorizontally = false;  // Explicitly left-align
+            labelUi.visible = true;
+            Transform labelT(Gnosis::GNVector2(m_optionsSliderX, yPos), 0.0f, Gnosis::GNVector2(1.0f,1.0f));
+            if (!m_ecsCoordinator->HasComponent<Transform>(labelEntity)) m_ecsCoordinator->AddComponent<Transform>(labelEntity, labelT); else *m_ecsCoordinator->GetComponent<Transform>(labelEntity) = labelT;
+            if (!m_ecsCoordinator->HasComponent<UIElement>(labelEntity)) m_ecsCoordinator->AddComponent<UIElement>(labelEntity, labelUi); else *m_ecsCoordinator->GetComponent<UIElement>(labelEntity) = labelUi;
+            
+            // Create track directly below label
+            float trackY = yPos + labelTrackGap;
+            if (trackEntity == 0) trackEntity = m_ecsCoordinator->CreateEntity();
+            Transform trackT(Gnosis::GNVector2(m_optionsSliderX, trackY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            UIShape trackShape(UIShapeType::Rectangle, m_optionsSliderW, m_optionsSliderH, Gnosis::GNColor(40, 40, 70, 230), 19, true);
+            if (!m_ecsCoordinator->HasComponent<Transform>(trackEntity)) m_ecsCoordinator->AddComponent<Transform>(trackEntity, trackT); else *m_ecsCoordinator->GetComponent<Transform>(trackEntity) = trackT;
+            if (!m_ecsCoordinator->HasComponent<UIShape>(trackEntity)) m_ecsCoordinator->AddComponent<UIShape>(trackEntity, trackShape); else *m_ecsCoordinator->GetComponent<UIShape>(trackEntity) = trackShape;
+            
+            return trackY + m_optionsSliderH + sectionGap;  // Return Y for next section
         };
+        
+        // Create each section: Label -> Track -> Gap
+        currentY = createLabelTrackPair(m_masterLabelEntity, m_masterTrackEntity, "Master", currentY);
+        currentY = createLabelTrackPair(m_musicLabelEntity, m_musicTrackEntity, "Music", currentY);
+        currentY = createLabelTrackPair(m_sfxLabelEntity, m_sfxTrackEntity, "SFX", currentY);
 
-        createTrack(0, m_masterTrackEntity, "Master");
-        createTrack(1, m_musicTrackEntity, "Music");
-        createTrack(2, m_sfxTrackEntity, "SFX");
-
-        // Difficulty label
+        // Position difficulty section at 60% screen height as requested
+        currentY = m_screenHeight * 0.60f;
+        
+        // Difficulty label - positioned exactly like other labels for perfect alignment
         if (m_difficultyTextEntity == 0) m_difficultyTextEntity = m_ecsCoordinator->CreateEntity();
-        float diffY = m_optionsSliderY + 3 * m_optionsSliderSpacing + 20.0f * m_uiScale;
-        UIElement d("Difficulty:", "", ""); d.fontSize = 26.0f * m_uiScale; d.textColor = Gnosis::GNColor(255,255,255,255); d.visible = true;
-        Transform dT(Gnosis::GNVector2(m_optionsSliderX, diffY), 0.0f, Gnosis::GNVector2(1.0f,1.0f));
+        UIElement d("Difficulty:", "", "");
+        d.fontSize = m_isMobile ? 36.0f : 18.0f;  // Match Master/Music/SFX exactly
+        d.textColor = Gnosis::GNColor(255,255,255,255);
+        d.centerTextHorizontally = false;  // Explicitly left-aligned like others
+        d.visible = true;
+        Transform dT(Gnosis::GNVector2(m_optionsSliderX, currentY), 0.0f, Gnosis::GNVector2(1.0f,1.0f));  // Use same X as others
         if (!m_ecsCoordinator->HasComponent<Transform>(m_difficultyTextEntity)) m_ecsCoordinator->AddComponent<Transform>(m_difficultyTextEntity, dT); else *m_ecsCoordinator->GetComponent<Transform>(m_difficultyTextEntity) = dT;
         if (!m_ecsCoordinator->HasComponent<UIElement>(m_difficultyTextEntity)) m_ecsCoordinator->AddComponent<UIElement>(m_difficultyTextEntity, d); else *m_ecsCoordinator->GetComponent<UIElement>(m_difficultyTextEntity) = d;
+
+        // Position arrows first - they determine the baseline
+        float arrowY = currentY + labelTrackGap;
+        
+        // Create difficulty arrows at absolute screen edge positions
+        CreateOptionsArrows(m_optionsOverlayX, m_optionsOverlayY, m_optionsOverlayW, m_optionsOverlayH, arrowY);
+        
+        // Difficulty value centered between arrows at SAME Y level as arrows
+        if (m_difficultyValueEntity == 0) m_difficultyValueEntity = m_ecsCoordinator->CreateEntity();
+        Transform dvT(Gnosis::GNVector2(m_screenWidth * 0.5f, arrowY), 0.0f, Gnosis::GNVector2(1.0f,1.0f));  // Same Y as arrows
+        std::string diffValue = GameCore::LevelManager::GetDifficultyName();
+        UIElement dv(diffValue, "", "");
+        dv.fontSize = m_isMobile ? 32.0f : 16.0f;
+        dv.textColor = Gnosis::GNColor(255,255,255,255);
+        dv.centerTextHorizontally = true;
+        dv.centerTextVertically = true;
+        dv.visible = true;
+        if (!m_ecsCoordinator->HasComponent<Transform>(m_difficultyValueEntity)) m_ecsCoordinator->AddComponent<Transform>(m_difficultyValueEntity, dvT); else *m_ecsCoordinator->GetComponent<Transform>(m_difficultyValueEntity) = dvT;
+        if (!m_ecsCoordinator->HasComponent<UIElement>(m_difficultyValueEntity)) m_ecsCoordinator->AddComponent<UIElement>(m_difficultyValueEntity, dv); else *m_ecsCoordinator->GetComponent<UIElement>(m_difficultyValueEntity) = dv;
     }
     
     void MainMenuState::CreateLevelPlayButton() {
@@ -2068,12 +2253,11 @@ namespace GameCore {
             return;
         }
         
-        extern FloppyTurdGame* g_Game;
-        if (!g_Game) {
+        if (!m_game) {
             return;
         }
         
-        const PlatformDelegates& delegates = g_Game->GetPlatformDelegates();
+        const PlatformDelegates& delegates = m_game->GetPlatformDelegates();
         
         // Handle swipe input
         HandleSwipeInput();
@@ -2177,12 +2361,11 @@ namespace GameCore {
     }
 
     void MainMenuState::HandleSwipeInput() {
-        extern FloppyTurdGame* g_Game;
-        if (!g_Game) {
+        if (!m_game) {
             return;
         }
         
-        const PlatformDelegates& delegates = g_Game->GetPlatformDelegates();
+        const PlatformDelegates& delegates = m_game->GetPlatformDelegates();
         
         // Use the new gesture detection methods
         bool swipeLeft = delegates.input.isSwipeLeftDetected ? delegates.input.isSwipeLeftDetected() : false;
@@ -2552,12 +2735,11 @@ namespace GameCore {
     }
 
     void MainMenuState::DrawLevelSelectDebugInfo() {
-        extern FloppyTurdGame* g_Game;
-        if (!g_Game || !m_ecsCoordinator) {
+        if (!m_game || !m_ecsCoordinator) {
             return;
         }
         
-        const PlatformDelegates& delegates = g_Game->GetPlatformDelegates();
+        const PlatformDelegates& delegates = m_game->GetPlatformDelegates();
         if (!delegates.renderer.drawRectangle) {
             return;
         }

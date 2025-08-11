@@ -65,6 +65,7 @@ namespace GameCore {
             item.transform = transform;
             item.sprite = sprite;
             item.text = nullptr;  // No text for sprite items
+            item.shape = nullptr;
             item.layer = sprite->layer;
             
             // Calculate depth based on position and layer
@@ -98,6 +99,7 @@ namespace GameCore {
             item.transform = transform;
             item.sprite = nullptr;  // No sprite for text
             item.text = text;
+            item.shape = nullptr;
             item.layer = text->layer;
             
             // Calculate depth based on position and layer
@@ -125,6 +127,7 @@ namespace GameCore {
         item.transform = transform;
         item.sprite = sprite; // May be null for text-only UI elements
         item.text = nullptr;  // UI text is handled via UIElement.buttonText
+        item.shape = nullptr;
         item.layer = uiElement->textLayer; // Use textLayer for UI elements
         
         // Calculate depth based on position and layer
@@ -148,12 +151,13 @@ namespace GameCore {
             auto hitbox = m_ecsSystem->GetComponent<Hitbox>(entity);
             if (hitbox) {
                 if (debugDraw->showBounds) {
-                    RenderItem debugItem;
+            RenderItem debugItem;
                     debugItem.entity = entity;
                     debugItem.transform = transform;
                     // Provide sprite so overlay centering uses sprite half-dimensions
                     debugItem.sprite = m_ecsSystem->GetComponent<Sprite>(entity);
                     debugItem.text = nullptr;
+            debugItem.shape = nullptr;
                     debugItem.layer = debugDraw->debugLayer;  // High priority layer
                     debugItem.depth = static_cast<float>(debugItem.layer) * 1000.0f + transform->position.y;
                     debugItem.isDebugBounds = true;
@@ -167,12 +171,13 @@ namespace GameCore {
                 }
 
                 if (debugDraw->showCollider) {
-                    RenderItem debugItem;
+            RenderItem debugItem;
                     debugItem.entity = entity;
                     debugItem.transform = transform;
                     // Provide sprite so overlay centering uses sprite half-dimensions
                     debugItem.sprite = m_ecsSystem->GetComponent<Sprite>(entity);
                     debugItem.text = nullptr;
+            debugItem.shape = nullptr;
                     debugItem.layer = debugDraw->debugLayer;  // High priority layer
                     debugItem.depth = static_cast<float>(debugItem.layer) * 1000.0f + transform->position.y;
                     debugItem.isDebugCollider = true;
@@ -197,7 +202,7 @@ namespace GameCore {
         // Collect UIElement-only entities so they can render buttonText in screen space
         // This ensures UI elements without Sprite/Text still enter the render queue and get layered properly
         auto uiEntities = m_ecsSystem->GetEntitiesWithComponents<Transform, UIElement>();
-        for (Gnosis::Entity entity : uiEntities) {
+    for (Gnosis::Entity entity : uiEntities) {
             auto transform = m_ecsSystem->GetComponent<Transform>(entity);
             auto ui = m_ecsSystem->GetComponent<UIElement>(entity);
 
@@ -205,14 +210,33 @@ namespace GameCore {
                 continue;
             }
 
+        RenderItem item;
+            item.entity = entity;
+            item.transform = transform;
+            item.sprite = nullptr;
+        item.text = nullptr;
+        item.shape = nullptr;
+            item.layer = ui->textLayer; // Use UI text layer for ordering
+            item.depth = static_cast<float>(item.layer) * 1000.0f + transform->position.y;
+
+            m_renderQueue.push_back(item);
+        }
+
+        // Collect UIShape entities (simple rectangles/lines in screen space)
+        auto shapeEntities = m_ecsSystem->GetEntitiesWithComponents<Transform, UIShape>();
+        for (Gnosis::Entity entity : shapeEntities) {
+            auto transform = m_ecsSystem->GetComponent<Transform>(entity);
+            auto shape = m_ecsSystem->GetComponent<UIShape>(entity);
+            if (!transform || !shape || !shape->visible) continue;
+
             RenderItem item;
             item.entity = entity;
             item.transform = transform;
             item.sprite = nullptr;
             item.text = nullptr;
-            item.layer = ui->textLayer; // Use UI text layer for ordering
+            item.shape = shape;
+            item.layer = shape->layer;
             item.depth = static_cast<float>(item.layer) * 1000.0f + transform->position.y;
-
             m_renderQueue.push_back(item);
         }
     }
@@ -429,6 +453,8 @@ namespace GameCore {
         }
     }
 
+    // Consolidated into RenderSingleItem
+
     void RenderSystem::RenderSingleItem(const RenderItem& item) {
         // Debug overlays must take precedence even if a Sprite is present on the item.
         // This allows passing Sprite for centering math without re-rendering the sprite.
@@ -481,6 +507,21 @@ namespace GameCore {
                     r, g, b, a
                 );
             }
+        } else if (item.shape) {
+            // Render UIShape (screen-space)
+            if (!m_platformDelegates.renderer.drawRectangle) return;
+            const float r = item.shape->color.r / 255.0f;
+            const float g = item.shape->color.g / 255.0f;
+            const float b = item.shape->color.b / 255.0f;
+            const float a = item.shape->color.a / 255.0f;
+
+            m_platformDelegates.renderer.drawRectangle(
+                item.transform->position.x,
+                item.transform->position.y,
+                item.shape->width * item.transform->scale.x,
+                item.shape->height * item.transform->scale.y,
+                r, g, b, a
+            );
         } else if (item.text) {
             // Render text - use screen coordinates directly (no world-to-screen transform for UI)
             if (m_platformDelegates.renderer.drawText) {

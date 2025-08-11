@@ -71,6 +71,7 @@ namespace GameCore {
             Transform* transform;
             Sprite* sprite;
             Text* text;
+            UIShape* shape;
             int layer;
             float depth;
             

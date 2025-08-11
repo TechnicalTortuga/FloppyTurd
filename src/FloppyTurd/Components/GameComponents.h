@@ -529,6 +529,42 @@ namespace GameCore {
         {}
     };
 
+    /**
+     * UIShape component - draws simple shapes in screen space on UI layers
+     * Supports rectangles and lines using platform delegate drawRectangle
+     */
+    enum class UIShapeType {
+        Rectangle = 0,
+        Line = 1
+    };
+
+    struct UIShape : public Gnosis::Component {
+        UIShapeType type;
+        float width;            // For Rectangle: width in pixels; For Line: length in pixels
+        float height;           // For Rectangle: height; For Line: thickness
+        Gnosis::GNColor color;  // RGBA color
+        int layer;              // UI layer ordering
+        bool visible;           // Visibility flag
+
+        UIShape()
+            : type(UIShapeType::Rectangle)
+            , width(0.0f)
+            , height(0.0f)
+            , color(40, 40, 70, 230)
+            , layer(20)
+            , visible(true)
+        {}
+
+        UIShape(UIShapeType t, float w, float h, const Gnosis::GNColor& c, int l = 20, bool v = true)
+            : type(t)
+            , width(w)
+            , height(h)
+            , color(c)
+            , layer(l)
+            , visible(v)
+        {}
+    };
+
     struct Bounds {
         float width;
         float height;
@@ -625,6 +661,7 @@ namespace Gnosis {
     using AudioSource = GameCore::AudioSource;
     using UIElement = GameCore::UIElement;
     using Text = GameCore::Text;
+    using UIShape = GameCore::UIShape;
     using Pickup = GameCore::Pickup;
     using RotationRenderer = GameCore::RotationRenderer;
     using ColliderType = GameCore::ColliderType;
