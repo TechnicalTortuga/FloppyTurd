@@ -1,5 +1,7 @@
 #include "MainMenuState.h"
 #include "../../Engine/Platform/PlatformDelegates.h"
+#include "../Systems/LevelManager.h"
+#include <cstdio>
 #include "../../Engine/Core/GNLog.h"
 #include "../../Engine/AssetPaths.h"
 #include "../../Engine/Utility/Utils.h"
@@ -10,7 +12,6 @@
 #include <cmath>
 
 namespace GameCore {
-
     MainMenuState::MainMenuState(Gnosis::ECS* ecsCoordinator, GameCore::PlatformDelegates* platformDelegates)
         : m_ecsCoordinator(ecsCoordinator)
         , m_platformDelegates(platformDelegates)
@@ -115,12 +116,9 @@ namespace GameCore {
             GN_LOG_INFO("❌ Game instance not available for font loading");
         }
         
-        // Create the appropriate layout based on platform
-        if (m_isMobile) {
-            CreateMobileLayout();
-        } else {
-            CreateDesktopLayout();
-        }
+        // Decide UI scale and create layout
+        m_uiScale = m_isMobile ? 8.0f : 1.0f;
+        if (m_isMobile) CreateMobileLayout(); else CreateDesktopLayout();
         
         // Create UI elements (buttons with integrated text)
         CreateUIElements();
@@ -259,6 +257,11 @@ namespace GameCore {
                 DrawLevelSelectDebugInfo();
             }
         }
+
+        // Render Options overlay UI when active
+        if (m_currentMode == MenuMode::OPTIONS) {
+            RenderOptionsMenu();
+        }
     }
 
     void MainMenuState::HandleInput() {
@@ -266,39 +269,215 @@ namespace GameCore {
             return;
         }
         
-        // Get input from platform delegates
-        extern FloppyTurdGame* g_Game;
-        if (!g_Game) {
-            return;
-        }
-        
-        const PlatformDelegates& delegates = g_Game->GetPlatformDelegates();
-        
         // Debug: Check if input delegates are properly set
-        if (!delegates.input.isPrimaryInputJustPressed) {
+        if (!m_platformDelegates->input.isPrimaryInputJustPressed) {
             GN_LOG_ERROR("MainMenuState: isPrimaryInputJustPressed delegate is NULL!");
             return;
         }
         
         // Handle input based on current mode
         if (m_currentMode == MenuMode::MAIN_MENU) {
-            HandleMainMenuInput(delegates);
+            HandleMainMenuInput();
         } else if (m_currentMode == MenuMode::LEVEL_SELECT) {
             HandleLevelSelectInput();
+        } else if (m_currentMode == MenuMode::OPTIONS) {
+            HandleOptionsInput();
         }
     }
+
+    void MainMenuState::ShowOptionsMenu() {
+        m_currentMode = MenuMode::OPTIONS;
+        GN_LOG_INFO("Options menu shown");
+        // Initialize cached overlay and slider geometry once, in pixels
+        m_optionsOverlayX = m_screenWidth * 0.10f;
+        m_optionsOverlayY = m_screenHeight * 0.10f;
+        m_optionsOverlayW = m_screenWidth * 0.80f;
+        m_optionsOverlayH = m_screenHeight * 0.80f;
+        m_optionsSliderX = m_optionsOverlayX + 0.08f * m_optionsOverlayW;
+        m_optionsSliderY = m_optionsOverlayY + 0.15f * m_optionsOverlayH;
+        m_optionsSliderW = m_optionsOverlayW - 0.16f * m_optionsOverlayW;
+        m_optionsSliderH = 16.0f * m_uiScale;      // knob is 16px base, scaled by global ui scale
+        m_optionsSliderSpacing = 70.0f * m_uiScale;
+        // Create difficulty arrows using existing assets
+        float diffY = m_optionsSliderY + 3 * m_optionsSliderSpacing + 20.0f * m_uiScale;
+        CreateOptionsArrows(m_optionsOverlayX, m_optionsOverlayY, m_optionsOverlayW, m_optionsOverlayH, diffY);
+        // Hide main menu, show options elements
+        SetMainMenuVisible(false);
+        SetOptionsVisible(true);
+
+        // Ensure tracks/labels and knobs exist and reset dragging
+        CreateOptionsTracksAndLabels();
+        m_draggingMaster = m_draggingMusic = m_draggingSFX = false;
+        CreateOptionsKnobs();
+    }
+
+    void MainMenuState::HideOptionsMenu() {
+        m_currentMode = MenuMode::MAIN_MENU;
+        GN_LOG_INFO("Options menu hidden");
+        // Hide options UI; show main menu buttons
+        DestroyOptionsUI();
+        SetMainMenuVisible(true);
+    }
+
+    void MainMenuState::SetMainMenuVisible(bool visible) {
+        std::vector<Gnosis::Entity> mainButtons = {m_playButtonEntity, m_optionsButtonEntity, m_quickPlayButtonEntity, m_quitButtonEntity};
+        for (Gnosis::Entity entity : mainButtons) {
+            if (entity != 0) {
+                if (auto s = m_ecsCoordinator->GetComponent<Sprite>(entity)) s->visible = visible;
+                if (auto ui = m_ecsCoordinator->GetComponent<UIElement>(entity)) ui->visible = visible;
+            }
+        }
+        if (m_logoEntity != 0) {
+            if (auto s = m_ecsCoordinator->GetComponent<Sprite>(m_logoEntity)) s->visible = visible;
+        }
+        if (m_fButtonEntity != 0) {
+            if (auto s = m_ecsCoordinator->GetComponent<Sprite>(m_fButtonEntity)) s->visible = visible;
+        }
+    }
+
+    void MainMenuState::SetOptionsVisible(bool visible) {
+        auto showEntity = [&](Gnosis::Entity e){
+            if (e == 0) return;
+            if (auto s = m_ecsCoordinator->GetComponent<Sprite>(e)) s->visible = visible;
+            if (auto ui = m_ecsCoordinator->GetComponent<UIElement>(e)) ui->visible = visible;
+        };
+        showEntity(m_optionsLeftArrowEntity);
+        showEntity(m_optionsRightArrowEntity);
+        showEntity(m_masterKnobEntity);
+        showEntity(m_musicKnobEntity);
+        showEntity(m_sfxKnobEntity);
+        showEntity(m_optionsBackButtonEntity);
+    }
+
+    void MainMenuState::CreateOptionsArrows(float overlayX, float overlayY, float overlayW, float overlayH, float diffY) {
+        if (!m_ecsCoordinator) return;
+        float scale = m_isMobile ? 10.0f : 5.0f;
+        // Left arrow
+        if (m_optionsLeftArrowEntity == 0)
+            m_optionsLeftArrowEntity = m_ecsCoordinator->CreateEntity();
+        m_spriteSystem->LoadTexture("LeftArrow", "LeftArrow.png");
+        auto leftMeta = m_spriteSystem->GetTextureDimensions("LeftArrow");
+        float lw = leftMeta.first > 0 ? static_cast<float>(leftMeta.first) : 64.0f;
+        float lh = leftMeta.second > 0 ? static_cast<float>(leftMeta.second) : 64.0f;
+        Transform lt(Gnosis::GNVector2(m_optionsSliderX + 220.0f * m_uiScale, diffY), 0.0f, Gnosis::GNVector2(scale, scale));
+        Sprite ls("LeftArrow", lw, lh); ls.layer = 20; ls.visible = true;
+        UIElement le("", "LeftArrow", "LeftArrowHover");
+        if (!m_ecsCoordinator->HasComponent<Transform>(m_optionsLeftArrowEntity)) m_ecsCoordinator->AddComponent<Transform>(m_optionsLeftArrowEntity, lt); else *m_ecsCoordinator->GetComponent<Transform>(m_optionsLeftArrowEntity) = lt;
+        if (!m_ecsCoordinator->HasComponent<Sprite>(m_optionsLeftArrowEntity)) m_ecsCoordinator->AddComponent<Sprite>(m_optionsLeftArrowEntity, ls); else *m_ecsCoordinator->GetComponent<Sprite>(m_optionsLeftArrowEntity) = ls;
+        if (!m_ecsCoordinator->HasComponent<UIElement>(m_optionsLeftArrowEntity)) m_ecsCoordinator->AddComponent<UIElement>(m_optionsLeftArrowEntity, le); else *m_ecsCoordinator->GetComponent<UIElement>(m_optionsLeftArrowEntity) = le;
+        // Right arrow
+        if (m_optionsRightArrowEntity == 0)
+            m_optionsRightArrowEntity = m_ecsCoordinator->CreateEntity();
+        m_spriteSystem->LoadTexture("RightArrow", "RightArrow.png");
+        auto rightMeta = m_spriteSystem->GetTextureDimensions("RightArrow");
+        float rw = rightMeta.first > 0 ? static_cast<float>(rightMeta.first) : 64.0f;
+        float rh = rightMeta.second > 0 ? static_cast<float>(rightMeta.second) : 64.0f;
+        Transform rt(Gnosis::GNVector2(m_optionsSliderX + 360.0f * m_uiScale, diffY), 0.0f, Gnosis::GNVector2(scale, scale));
+        Sprite rs("RightArrow", rw, rh); rs.layer = 20; rs.visible = true;
+        UIElement re("", "RightArrow", "RightArrowHover");
+        if (!m_ecsCoordinator->HasComponent<Transform>(m_optionsRightArrowEntity)) m_ecsCoordinator->AddComponent<Transform>(m_optionsRightArrowEntity, rt); else *m_ecsCoordinator->GetComponent<Transform>(m_optionsRightArrowEntity) = rt;
+        if (!m_ecsCoordinator->HasComponent<Sprite>(m_optionsRightArrowEntity)) m_ecsCoordinator->AddComponent<Sprite>(m_optionsRightArrowEntity, rs); else *m_ecsCoordinator->GetComponent<Sprite>(m_optionsRightArrowEntity) = rs;
+        if (!m_ecsCoordinator->HasComponent<UIElement>(m_optionsRightArrowEntity)) m_ecsCoordinator->AddComponent<UIElement>(m_optionsRightArrowEntity, re); else *m_ecsCoordinator->GetComponent<UIElement>(m_optionsRightArrowEntity) = re;
+    }
+
+    void MainMenuState::DestroyOptionsUI() {
+        // Convert to hide-only to avoid dynamic create/destroy during runtime
+        auto hideEntity = [&](Gnosis::Entity e){
+            if (e == 0) return;
+            if (auto s = m_ecsCoordinator->GetComponent<Sprite>(e)) s->visible = false;
+            if (auto ui = m_ecsCoordinator->GetComponent<UIElement>(e)) ui->visible = false;
+        };
+        hideEntity(m_optionsLeftArrowEntity);
+        hideEntity(m_optionsRightArrowEntity);
+        hideEntity(m_masterKnobEntity);
+        hideEntity(m_musicKnobEntity);
+        hideEntity(m_sfxKnobEntity);
+        hideEntity(m_optionsBackButtonEntity);
+    }
+
+    void MainMenuState::CreateOptionsKnobs() {
+        if (!m_ecsCoordinator) return;
+        // Use poophat texture as knob; base size 16x16 px scaled by global ui scale ONLY
+        m_spriteSystem->LoadTexture("poophat", "poophat.png");
+        auto meta = m_spriteSystem->GetTextureDimensions("poophat");
+        float kw = meta.first > 0 ? static_cast<float>(meta.first) : 16.0f;
+        float kh = meta.second > 0 ? static_cast<float>(meta.second) : 16.0f;
+        float scale = m_uiScale;
+
+        auto createKnob = [&](int index, Gnosis::Entity& outEntity) {
+            if (outEntity == 0) outEntity = m_ecsCoordinator->CreateEntity();
+            Transform t(Gnosis::GNVector2(m_optionsSliderX, m_optionsSliderY + index * m_optionsSliderSpacing - (kh * scale - m_optionsSliderH) * 0.5f), 0.0f, Gnosis::GNVector2(scale, scale));
+            Sprite s("poophat", kw, kh); s.layer = 21; s.visible = true;
+            UIElement ui("", "poophat", "poophat");
+            if (!m_ecsCoordinator->HasComponent<Transform>(outEntity)) m_ecsCoordinator->AddComponent<Transform>(outEntity, t); else *m_ecsCoordinator->GetComponent<Transform>(outEntity) = t;
+            if (!m_ecsCoordinator->HasComponent<Sprite>(outEntity)) m_ecsCoordinator->AddComponent<Sprite>(outEntity, s); else *m_ecsCoordinator->GetComponent<Sprite>(outEntity) = s;
+            if (!m_ecsCoordinator->HasComponent<UIElement>(outEntity)) m_ecsCoordinator->AddComponent<UIElement>(outEntity, ui); else *m_ecsCoordinator->GetComponent<UIElement>(outEntity) = ui;
+        };
+
+        createKnob(0, m_masterKnobEntity);
+        createKnob(1, m_musicKnobEntity);
+        createKnob(2, m_sfxKnobEntity);
+        UpdateOptionsKnobPositions();
+
+        // Create back button on FloppyButtonBlue if not existing
+        if (m_optionsBackButtonEntity == 0) {
+            m_optionsBackButtonEntity = m_ecsCoordinator->CreateEntity();
+            m_spriteSystem->LoadTexture("FloppyButtonBlue", "FloppyButtonBlue.png");
+            auto dims = m_spriteSystem->GetTextureDimensions("FloppyButtonBlue");
+            float tw = dims.first > 0 ? dims.first : 90.0f;
+            float th = dims.second > 0 ? dims.second : 16.0f;
+            float buttonScale = 10.0f * m_uiScale / 8.0f; // align with mobile buttons when m_uiScale≈8
+            auto scaled = GetScaledDimensions(tw, th, buttonScale);
+            float backW = scaled.first;
+            float backH = scaled.second;
+            float backX = m_optionsOverlayX + m_optionsOverlayW * 0.5f - backW * 0.5f;
+            float backY = m_optionsOverlayY + m_optionsOverlayH - backH - 40.0f * m_uiScale;
+            Transform t(Gnosis::GNVector2(backX, backY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
+            Sprite s("FloppyButtonBlue", tw, th); s.layer = 22; s.visible = true;
+            UIElement ui("BACK", "FloppyButtonBlue", "FloppyButtonBlueHover");
+            ui.fontSize = 60.0f; ui.centerTextHorizontally = true; ui.centerTextVertically = true; ui.visible = true;
+            m_ecsCoordinator->AddComponent<Transform>(m_optionsBackButtonEntity, t);
+            m_ecsCoordinator->AddComponent<Sprite>(m_optionsBackButtonEntity, s);
+            m_ecsCoordinator->AddComponent<UIElement>(m_optionsBackButtonEntity, ui);
+        } else {
+            // ensure visibility when options open
+            if (auto s = m_ecsCoordinator->GetComponent<Sprite>(m_optionsBackButtonEntity)) s->visible = true;
+            if (auto ui = m_ecsCoordinator->GetComponent<UIElement>(m_optionsBackButtonEntity)) ui->visible = true;
+        }
+    }
+
+    void MainMenuState::UpdateOptionsKnobPositions() {
+        if (!m_ecsCoordinator) return;
+        auto setPos = [&](Gnosis::Entity e, float pct, int idx) {
+            if (e == 0) return;
+            Transform* t = m_ecsCoordinator->GetComponent<Transform>(e);
+            Sprite* s = m_ecsCoordinator->GetComponent<Sprite>(e);
+            if (!t || !s) return;
+            float x = m_optionsSliderX + pct * m_optionsSliderW - (s->width * t->scale.x) * 0.5f;
+            float y = m_optionsSliderY + idx * m_optionsSliderSpacing - (s->height * t->scale.y - m_optionsSliderH) * 0.5f;
+            t->position.x = x;
+            t->position.y = y;
+        };
+
+        float master = GameCore::GetGame()->GetMasterVolume();
+        float music = GameCore::GetGame()->GetMusicVolume();
+        float sfx = GameCore::GetGame()->GetSFXVolume();
+        setPos(m_masterKnobEntity, master, 0);
+        setPos(m_musicKnobEntity, music, 1);
+        setPos(m_sfxKnobEntity, sfx, 2);
+    }
     
-    void MainMenuState::HandleMainMenuInput(const PlatformDelegates& delegates) {
+    void MainMenuState::HandleMainMenuInput() {
         // Handle touch/click input for F button
-        bool inputPressed = delegates.input.isPrimaryInputJustPressed();
+        bool inputPressed = m_platformDelegates->input.isPrimaryInputJustPressed();
         if (inputPressed) {
             GN_LOG_INFO("🎮 MainMenuState: Input detected! Checking F button bounds...");
         }
         
         if (inputPressed) {
             float touchX, touchY;
-            if (delegates.input.getPrimaryInputPosition) {
-                delegates.input.getPrimaryInputPosition(&touchX, &touchY);
+            if (m_platformDelegates->input.getPrimaryInputPosition) {
+                m_platformDelegates->input.getPrimaryInputPosition(&touchX, &touchY);
                 
                 // Check if touch/click is within F button bounds
                 if (m_fButtonEntity != 0) {
@@ -336,6 +515,134 @@ namespace GameCore {
         
         // TODO: Handle menu navigation (up/down arrows) for desktop
         // TODO: Handle selection (enter/space) for menu options
+    }
+
+    static void DrawLabeledSlider(const PlatformDelegates& delegates,
+                                  const char* label,
+                                  float x, float y,
+                                  float width, float height,
+                                  float value01,
+                                  float* outHandleLeft,
+                                  float* outHandleRight) {
+        // Background bar
+        if (delegates.renderer.drawRectangle) {
+            delegates.renderer.drawRectangle(x, y, width, height, 0.2f, 0.2f, 0.2f, 0.8f);
+            // Fill amount
+            float fillWidth = width * value01;
+            delegates.renderer.drawRectangle(x, y, fillWidth, height, 0.1f, 0.6f, 0.2f, 0.9f);
+        }
+        // Label and value
+        if (delegates.renderer.drawText) {
+            char buffer[64];
+            snprintf(buffer, sizeof(buffer), "%s: %d%%", label, (int)(value01 * 100.0f));
+            delegates.renderer.drawText(buffer, x, y - 28.0f, 24.0f, 1, 1, 1, 1);
+        }
+        if (outHandleLeft) *outHandleLeft = x;
+        if (outHandleRight) *outHandleRight = x + width;
+    }
+
+    void MainMenuState::RenderOptionsMenu() {
+        // No direct draws; Options UI is now entirely ECS-based for proper layering
+    }
+
+    void MainMenuState::HandleOptionsInput() {
+        if (!m_platformDelegates) return;
+        if (!m_platformDelegates->input.isPrimaryInputJustPressed) return;
+
+        bool justPressed = m_platformDelegates->input.isPrimaryInputJustPressed();
+        float touchX = 0.0f, touchY = 0.0f;
+        if (m_platformDelegates->input.getPrimaryInputPosition) {
+            m_platformDelegates->input.getPrimaryInputPosition(&touchX, &touchY);
+        }
+
+        bool inputDown = m_platformDelegates->input.isPrimaryInputDown && m_platformDelegates->input.isPrimaryInputDown();
+        bool justReleased = m_platformDelegates->input.isPrimaryInputJustReleased && m_platformDelegates->input.isPrimaryInputJustReleased();
+
+        auto clamp01 = [](float v) { return v < 0.0f ? 0.0f : (v > 1.0f ? 1.0f : v); };
+        auto applySliderAtY = [&](int index, float& valueRef, bool& draggingFlag, Gnosis::Entity knobEntity) {
+            float y = m_optionsSliderY + index * m_optionsSliderSpacing;
+            float hitTop = y - 20.0f;
+            float hitBottom = y + m_optionsSliderH + 20.0f;
+            if (justPressed && touchX >= m_optionsSliderX && touchX <= m_optionsSliderX + m_optionsSliderW && touchY >= hitTop && touchY <= hitBottom) {
+                draggingFlag = true;
+            }
+            if (draggingFlag && inputDown) {
+                float pct = clamp01((touchX - m_optionsSliderX) / m_optionsSliderW);
+                valueRef = pct;
+                // Move knob live while dragging
+                if (knobEntity != 0) {
+                    if (auto t = m_ecsCoordinator->GetComponent<Transform>(knobEntity)) {
+                        if (auto s = m_ecsCoordinator->GetComponent<Sprite>(knobEntity)) {
+                            float x = m_optionsSliderX + pct * m_optionsSliderW - (s->width * t->scale.x) * 0.5f;
+                            float ky = m_optionsSliderY + index * m_optionsSliderSpacing - (s->height * t->scale.y - m_optionsSliderH) * 0.5f;
+                            t->position.x = x;
+                            t->position.y = ky;
+                        }
+                    }
+                }
+            }
+            if (draggingFlag && justReleased) {
+                draggingFlag = false;
+            }
+        };
+
+        float master = GameCore::GetGame()->GetMasterVolume();
+        float music = GameCore::GetGame()->GetMusicVolume();
+        float sfx = GameCore::GetGame()->GetSFXVolume();
+        applySliderAtY(0, master, m_draggingMaster, m_masterKnobEntity);
+        applySliderAtY(1, music, m_draggingMusic, m_musicKnobEntity);
+        applySliderAtY(2, sfx, m_draggingSFX, m_sfxKnobEntity);
+        GameCore::GetGame()->SetMasterVolume(master);
+        GameCore::GetGame()->SetMusicVolume(music);
+        GameCore::GetGame()->SetSFXVolume(sfx);
+        UpdateOptionsKnobPositions();
+
+        // Difficulty arrows and back button hit-tests using cached geometry
+        auto within = [&](float x, float y, float w, float h) {
+            return touchX >= x && touchX <= x + w && touchY >= y && touchY <= y + h;
+        };
+
+        using GameCore::Difficulty;
+        Difficulty current = GameCore::LevelManager::GetGlobalDifficulty();
+
+        // Prefer actual arrow entities if present
+        bool leftHit = false, rightHit = false;
+        if (m_optionsLeftArrowEntity != 0) {
+            Transform* t = m_ecsCoordinator->GetComponent<Transform>(m_optionsLeftArrowEntity);
+            Sprite* s = m_ecsCoordinator->GetComponent<Sprite>(m_optionsLeftArrowEntity);
+            if (t && s && within(t->position.x, t->position.y, s->width * t->scale.x, s->height * t->scale.y)) leftHit = true;
+        }
+        if (m_optionsRightArrowEntity != 0) {
+            Transform* t = m_ecsCoordinator->GetComponent<Transform>(m_optionsRightArrowEntity);
+            Sprite* s = m_ecsCoordinator->GetComponent<Sprite>(m_optionsRightArrowEntity);
+            if (t && s && within(t->position.x, t->position.y, s->width * t->scale.x, s->height * t->scale.y)) rightHit = true;
+        }
+
+        // Fallback hit boxes if entities are hidden/not created
+        float diffY = m_optionsSliderY + 3 * m_optionsSliderSpacing + 20.0f * m_uiScale;
+        if (!leftHit)  leftHit  = within(m_optionsSliderX + 220.0f * m_uiScale, diffY, 64.0f * m_uiScale, 64.0f * m_uiScale);
+        if (!rightHit) rightHit = within(m_optionsSliderX + 360.0f * m_uiScale, diffY, 64.0f * m_uiScale, 64.0f * m_uiScale);
+
+        if (leftHit) {
+            int d = static_cast<int>(current); d = std::max(0, d - 1);
+            GameCore::LevelManager::SetGlobalDifficulty(static_cast<Difficulty>(d));
+        } else if (rightHit) {
+            int d = static_cast<int>(current); d = std::min(2, d + 1);
+            GameCore::LevelManager::SetGlobalDifficulty(static_cast<Difficulty>(d));
+        }
+
+        // Back button entity hit test
+        bool backHit = false;
+        if (m_optionsBackButtonEntity != 0) {
+            if (auto t = m_ecsCoordinator->GetComponent<Transform>(m_optionsBackButtonEntity)) {
+                if (auto s = m_ecsCoordinator->GetComponent<Sprite>(m_optionsBackButtonEntity)) {
+                    if (within(t->position.x, t->position.y, s->width * t->scale.x, s->height * t->scale.y)) backHit = true;
+                }
+            }
+        }
+        if (backHit) {
+            HideOptionsMenu();
+        }
     }
 
     void MainMenuState::CreateDesktopLayout() {
@@ -686,7 +993,7 @@ namespace GameCore {
                 
             case MenuOption::OPTIONS:
                 GN_LOG_INFO("Opening options menu...");
-                // TODO: Transition to options state
+                ShowOptionsMenu();
                 break;
                 
             case MenuOption::QUICK_PLAY:
@@ -697,7 +1004,6 @@ namespace GameCore {
                 
             case MenuOption::QUIT:
                 GN_LOG_INFO("Quitting game...");
-                // TODO: Quit application
                 m_finished = true;
                 break;
                 
@@ -950,7 +1256,7 @@ namespace GameCore {
             
             UIElement uiElement("", "FloppyButtonBlue", "FloppyButtonBlueHover");
             uiElement.buttonText = text;
-            uiElement.fontSize = 42.0f;  // Final size across the whole main menu
+            uiElement.fontSize = 60.0f;  // Increased per request
             uiElement.textColor = Gnosis::GNColor(255, 255, 255, 255);  // White text
             uiElement.centerTextHorizontally = true;
             uiElement.centerTextVertically = true;
@@ -1023,7 +1329,7 @@ namespace GameCore {
 
     void MainMenuState::OnOptionsButtonPressed() {
         GN_LOG_INFO("Options button pressed - transitioning to options menu");
-        OnMenuOptionSelected(MenuOption::OPTIONS);
+        ShowOptionsMenu();
     }
 
     void MainMenuState::OnQuickPlayButtonPressed() {
@@ -1475,7 +1781,9 @@ namespace GameCore {
             float textX = screenCenterX; // Use screen center for proper horizontal centering
             
             Transform textTransform(Gnosis::GNVector2(textX, textY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            // Reintroduce multi-line splitting for level names containing '\n'
             UIElement textElement(m_levels[i].name, "", "");
+            textElement.fontSize = 60.0f;
             textElement.fontSize = m_isMobile ? 42.0f : 21.0f;
             textElement.textColor = Gnosis::GNColor(255, 255, 255, 255);
             textElement.centerTextHorizontally = true;
@@ -1530,6 +1838,49 @@ namespace GameCore {
         GN_LOG_INFO("Created back button");
     }
 
+    void MainMenuState::CreateOptionsTracksAndLabels() {
+        if (!m_ecsCoordinator) return;
+        // Title
+        if (m_optionsTitleEntity == 0) m_optionsTitleEntity = m_ecsCoordinator->CreateEntity();
+        UIElement title("Options", "", "");
+        title.fontSize = 36.0f * m_uiScale; title.textColor = Gnosis::GNColor(255,255,255,255);
+        title.centerTextHorizontally = true; title.visible = true;
+        Transform titleT(Gnosis::GNVector2(m_optionsOverlayX + m_optionsOverlayW * 0.5f, m_optionsOverlayY + 40.0f * m_uiScale), 0.0f, Gnosis::GNVector2(1.0f,1.0f));
+        if (!m_ecsCoordinator->HasComponent<Transform>(m_optionsTitleEntity)) m_ecsCoordinator->AddComponent<Transform>(m_optionsTitleEntity, titleT); else *m_ecsCoordinator->GetComponent<Transform>(m_optionsTitleEntity) = titleT;
+        if (!m_ecsCoordinator->HasComponent<UIElement>(m_optionsTitleEntity)) m_ecsCoordinator->AddComponent<UIElement>(m_optionsTitleEntity, title); else *m_ecsCoordinator->GetComponent<UIElement>(m_optionsTitleEntity) = title;
+
+        // Helper to create a slider track entity
+        auto createTrack = [&](int idx, Gnosis::Entity &outEntity, const char* label){
+            if (outEntity == 0) outEntity = m_ecsCoordinator->CreateEntity();
+            // Use our standard button texture as a slim bar for consistency in layer processing
+            m_spriteSystem->LoadTexture("FloppyButtonBlue", "FloppyButtonBlue.png");
+            auto dims = m_spriteSystem->GetTextureDimensions("FloppyButtonBlue");
+            float tw = dims.first > 0 ? dims.first : 90.0f;
+            float th = dims.second > 0 ? dims.second : 16.0f;
+            // Track scale to match slider width/height (height from optionsSliderH)
+            float scaleX = (m_optionsSliderW / tw);
+            float scaleY = (m_optionsSliderH / th);
+            Transform t(Gnosis::GNVector2(m_optionsSliderX, m_optionsSliderY + idx * m_optionsSliderSpacing), 0.0f, Gnosis::GNVector2(scaleX, scaleY));
+            Sprite s("FloppyButtonBlue", tw, th); s.layer = 20; s.visible = true;
+            UIElement ui(label, "", ""); ui.fontSize = 24.0f * m_uiScale; ui.textColor = Gnosis::GNColor(255,255,255,255); ui.visible = true;
+            if (!m_ecsCoordinator->HasComponent<Transform>(outEntity)) m_ecsCoordinator->AddComponent<Transform>(outEntity, t); else *m_ecsCoordinator->GetComponent<Transform>(outEntity) = t;
+            if (!m_ecsCoordinator->HasComponent<Sprite>(outEntity)) m_ecsCoordinator->AddComponent<Sprite>(outEntity, s); else *m_ecsCoordinator->GetComponent<Sprite>(outEntity) = s;
+            if (!m_ecsCoordinator->HasComponent<UIElement>(outEntity)) m_ecsCoordinator->AddComponent<UIElement>(outEntity, ui); else *m_ecsCoordinator->GetComponent<UIElement>(outEntity) = ui;
+        };
+
+        createTrack(0, m_masterTrackEntity, "Master");
+        createTrack(1, m_musicTrackEntity, "Music");
+        createTrack(2, m_sfxTrackEntity, "SFX");
+
+        // Difficulty label
+        if (m_difficultyTextEntity == 0) m_difficultyTextEntity = m_ecsCoordinator->CreateEntity();
+        float diffY = m_optionsSliderY + 3 * m_optionsSliderSpacing + 20.0f * m_uiScale;
+        UIElement d("Difficulty:", "", ""); d.fontSize = 26.0f * m_uiScale; d.textColor = Gnosis::GNColor(255,255,255,255); d.visible = true;
+        Transform dT(Gnosis::GNVector2(m_optionsSliderX, diffY), 0.0f, Gnosis::GNVector2(1.0f,1.0f));
+        if (!m_ecsCoordinator->HasComponent<Transform>(m_difficultyTextEntity)) m_ecsCoordinator->AddComponent<Transform>(m_difficultyTextEntity, dT); else *m_ecsCoordinator->GetComponent<Transform>(m_difficultyTextEntity) = dT;
+        if (!m_ecsCoordinator->HasComponent<UIElement>(m_difficultyTextEntity)) m_ecsCoordinator->AddComponent<UIElement>(m_difficultyTextEntity, d); else *m_ecsCoordinator->GetComponent<UIElement>(m_difficultyTextEntity) = d;
+    }
+    
     void MainMenuState::CreateLevelPlayButton() {
         if (!m_ecsCoordinator) {
             return;
@@ -1575,7 +1926,7 @@ namespace GameCore {
         GN_LOG_INFO("Showing level select menu");
         m_currentMode = MenuMode::LEVEL_SELECT;
         
-        // Hide main menu elements
+        // Hide main menu elements when OPTIONS is active too
         if (m_logoEntity != 0) {
             Sprite* logoSprite = m_ecsCoordinator->GetComponent<Sprite>(m_logoEntity);
             if (logoSprite) logoSprite->visible = false;

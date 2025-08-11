@@ -25,8 +25,11 @@ public final class AVAudioHandler: NSObject {
     // MARK: - Core Audio Components
     
     private let audioEngine = AVAudioEngine()
-    private let soundPlayerNode = AVAudioPlayerNode()
+    private let soundPlayerNode = AVAudioPlayerNode() // legacy single node
     private let mixerNode = AVAudioMixerNode()
+    private let sfxPoolSize: Int = 8
+    private var sfxNodes: [AVAudioPlayerNode] = []
+    private var sfxRoundRobinIndex: Int = 0
     
     // MARK: - Audio Session
     
@@ -132,6 +135,7 @@ public final class AVAudioHandler: NSObject {
             log("Music file not found: \(fileName)")
             return
         }
+        // Ready to play
         
         // Create player item and player
         let playerItem = AVPlayerItem(url: url)
@@ -199,6 +203,7 @@ public final class AVAudioHandler: NSObject {
     public func setSoundVolume(volume: Float) {
         soundVolume = max(0.0, min(1.0, volume))
         soundPlayerNode.volume = soundVolume
+        for node in sfxNodes { node.volume = soundVolume }
         log("Sound volume set to: \(self.soundVolume)")
     }
     
@@ -239,20 +244,27 @@ public final class AVAudioHandler: NSObject {
     
     private func setupAudioEngine() {
         // Attach nodes to the engine
-        audioEngine.attach(soundPlayerNode)
         audioEngine.attach(mixerNode)
-        
-        // Connect the audio graph
+        // Build SFX pool and connect to mixer
+        sfxNodes = (0..<sfxPoolSize).map { _ in AVAudioPlayerNode() }
+        for node in sfxNodes {
+            audioEngine.attach(node)
+            audioEngine.connect(node, to: mixerNode, format: nil)
+            node.volume = soundVolume
+        }
+        // Keep legacy node connected (not used for playback anymore)
+        audioEngine.attach(soundPlayerNode)
         audioEngine.connect(soundPlayerNode, to: mixerNode, format: nil)
-        audioEngine.connect(mixerNode, to: audioEngine.outputNode, format: nil)
-        
+        // Connect mixer to main mixer
+        audioEngine.connect(mixerNode, to: audioEngine.mainMixerNode, format: nil)
+
         // Set initial volumes
-        soundPlayerNode.volume = soundVolume
-        
+        mixerNode.outputVolume = 1.0
+
         // Prepare the engine
         audioEngine.prepare()
-        
-        log("Audio engine configured")
+
+        log("Audio engine configured (player → mixer → mainMixer)")
     }
     
     private func startEngine() throws {
@@ -369,17 +381,21 @@ public final class AVAudioHandler: NSObject {
     
     private func scheduleSound(_ audioFile: AVAudioFile) {
         log("[AVAudioHandler] Scheduling sound: \(audioFile.url.lastPathComponent)")
-        
-        // Stop any currently playing sound
-        soundPlayerNode.stop()
-        
-        // Schedule the file without completion handler
-        // We don't need to track completion for simple sound effects
-        soundPlayerNode.scheduleFile(audioFile, at: nil)
-        
-        // Start playback
-        soundPlayerNode.play()
-        log("[AVAudioHandler] Sound playing: \(audioFile.url.lastPathComponent)")
+        // Choose an idle node or reuse round-robin
+        var chosen: AVAudioPlayerNode?
+        if let idle = sfxNodes.first(where: { !$0.isPlaying }) {
+            chosen = idle
+        } else if !sfxNodes.isEmpty {
+            let idx = sfxRoundRobinIndex % sfxNodes.count
+            sfxRoundRobinIndex = (sfxRoundRobinIndex + 1) % sfxNodes.count
+            chosen = sfxNodes[idx]
+            chosen?.stop()
+        }
+        guard let node = chosen else { return }
+        node.volume = soundVolume
+        node.scheduleFile(audioFile, at: nil, completionHandler: nil)
+        if !node.isPlaying { node.play() }
+        log("[AVAudioHandler] Sound playing on pool node: \(audioFile.url.lastPathComponent)")
     }
     
     // MARK: - Music Looping

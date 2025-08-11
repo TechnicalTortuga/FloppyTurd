@@ -397,15 +397,15 @@ namespace GameCore {
                 if (ui->centerTextHorizontally && ui->centerTextVertically && m_platformDelegates.renderer.drawTextCenteredOutlined) {
                     // Use outlined centered text using the UI element's text color
                     // For the gameplay pipe counter, make the outline extreme to verify visibility
-                    float outlineWidth = 6.0f;
-                    if (ui->buttonText.size() <= 3) { // heuristic: counters are short strings like "0", "12"
-                        outlineWidth = 10.0f;
-                    }
+                    float outlineWidth = 14.0f; // thicker outline for better readability
+                    // If UIElement provides a specific outline width, prefer it
+                    float uiOutline = outlineWidth;
+                    if (ui->textOutlineWidth > 0.0f) uiOutline = ui->textOutlineWidth;
                     m_platformDelegates.renderer.drawTextCenteredOutlined(
                         ui->buttonText, textX, textY, ui->fontSize,
                         r, g, b, a,
                         0.0f, 0.0f, 0.0f, 1.0f,
-                        outlineWidth
+                        uiOutline
                     );
                 } else if (ui->centerTextHorizontally && ui->centerTextVertically && m_platformDelegates.renderer.drawTextCentered) {
                     m_platformDelegates.renderer.drawTextCentered(

@@ -389,11 +389,29 @@ namespace GameCore {
     void FloppyTurdGame::SetMusicVolume(float volume) {
         m_musicVolume = std::max(0.0f, std::min(1.0f, volume));
         GN_LOG_INFO("Music volume set to: " + std::to_string(m_musicVolume));
+        if (m_platformDelegates.audio.setMusicVolume) {
+            m_platformDelegates.audio.setMusicVolume(m_masterVolume * m_musicVolume);
+        }
     }
 
     void FloppyTurdGame::SetSFXVolume(float volume) {
         m_sfxVolume = std::max(0.0f, std::min(1.0f, volume));
         GN_LOG_INFO("SFX volume set to: " + std::to_string(m_sfxVolume));
+        if (m_platformDelegates.audio.setSFXVolume) {
+            m_platformDelegates.audio.setSFXVolume(m_masterVolume * m_sfxVolume);
+        }
+    }
+
+    void FloppyTurdGame::SetMasterVolume(float volume) {
+        m_masterVolume = std::max(0.0f, std::min(1.0f, volume));
+        GN_LOG_INFO("Master volume set to: " + std::to_string(m_masterVolume));
+        // Re-apply child volumes to platform
+        if (m_platformDelegates.audio.setMusicVolume) {
+            m_platformDelegates.audio.setMusicVolume(m_masterVolume * m_musicVolume);
+        }
+        if (m_platformDelegates.audio.setSFXVolume) {
+            m_platformDelegates.audio.setSFXVolume(m_masterVolume * m_sfxVolume);
+        }
     }
 
     void FloppyTurdGame::UpdateGameStats(const GameStats& stats) {
@@ -531,9 +549,23 @@ namespace GameCore {
         
         std::ifstream file(SETTINGS_FILE_NAME);
         if (file.is_open()) {
-            file >> m_musicVolume >> m_sfxVolume >> m_showDebugInfo;
-            file.close();
-            GN_LOG_INFO("Settings loaded successfully");
+            // Try new format: master music sfx debug
+            file >> m_masterVolume >> m_musicVolume >> m_sfxVolume >> m_showDebugInfo;
+            if (!file.fail()) {
+                file.close();
+                GN_LOG_INFO("Settings loaded successfully (v2)");
+            } else {
+                // Fallback to legacy format: music sfx debug
+                file.clear();
+                file.seekg(0);
+                if (file >> m_musicVolume >> m_sfxVolume >> m_showDebugInfo) {
+                    m_masterVolume = 1.0f;
+                    GN_LOG_INFO("Settings loaded successfully (legacy v1), defaulting masterVolume=1.0");
+                } else {
+                    GN_LOG_WARN("Failed to parse settings file, using defaults");
+                }
+                file.close();
+            }
         } else {
             GN_LOG_INFO("No settings file found, using defaults");
         }
@@ -544,7 +576,7 @@ namespace GameCore {
         
         std::ofstream file(SETTINGS_FILE_NAME);
         if (file.is_open()) {
-            file << m_musicVolume << " " << m_sfxVolume << " " << m_showDebugInfo;
+            file << m_masterVolume << " " << m_musicVolume << " " << m_sfxVolume << " " << m_showDebugInfo;
             file.close();
             GN_LOG_INFO("Settings saved successfully");
         } else {
@@ -564,7 +596,7 @@ namespace GameCore {
         
         // Use platform audio delegate consistently for all platforms
         if (m_platformDelegates.audio.playMusic) {
-            m_platformDelegates.audio.playMusic("FloppyTurdMenu.mp3", m_musicVolume, -1);  // Use stored volume, loop infinitely
+            m_platformDelegates.audio.playMusic("FloppyTurdMenu.mp3", m_masterVolume * m_musicVolume, -1);  // Use stored volume, loop infinitely
             GN_LOG_INFO("Background music started via platform delegate");
         } else {
             GN_LOG_WARN("Audio delegate not available - cannot play background music");
@@ -588,7 +620,7 @@ namespace GameCore {
         
         // Use platform audio delegate to play sound effect
         if (m_platformDelegates.audio.playSound) {
-            m_platformDelegates.audio.playSound(soundName.c_str(), 1.0f);  // Default volume 1.0
+            m_platformDelegates.audio.playSound(soundName.c_str(), m_masterVolume * m_sfxVolume);
             GN_LOG_DEBUG("SFX played via platform delegate: " + soundName);
         } else {
             GN_LOG_WARN("Audio delegate not available - cannot play SFX: " + soundName);

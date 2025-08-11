@@ -458,6 +458,7 @@ namespace GameCore {
         Gnosis::GNColor textColor;
         Gnosis::GNColor textHoverColor;
         int textLayer;  // Layer for text rendering
+        float textOutlineWidth; // Outline width in pixels for raster text
         
         // Text centering properties
         bool centerTextHorizontally;  // Center text horizontally within button bounds
@@ -474,6 +475,7 @@ namespace GameCore {
             , textColor(0, 0, 0, 255)
             , textHoverColor(255, 255, 0, 255)
             , textLayer(10)  // Default to high layer for UI text
+            , textOutlineWidth(0.0f)
             , centerTextHorizontally(true)  // Default to centered text
             , centerTextVertically(true)
             , textOffsetX(0.0f)
@@ -493,6 +495,7 @@ namespace GameCore {
             , textColor(0, 0, 0, 255)
             , textHoverColor(255, 255, 0, 255)
             , textLayer(10)
+            , textOutlineWidth(0.0f)
             , centerTextHorizontally(true)  // Default to centered text
             , centerTextVertically(true)
             , textOffsetX(0.0f)

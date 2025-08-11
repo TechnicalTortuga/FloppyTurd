@@ -314,8 +314,8 @@ EOF
     echo "Processed MSDF atlas: $category_path/$imageset_name"
   done
 
-  # Iterate all CSV metric files
-  find "$base_dir" -type f -name "*.csv" | while read csv_file; do
+  # Iterate all metric files (CSV or JSON)
+  find "$base_dir" -type f \( -name "*.csv" -o -name "*.json" \) | while read csv_file; do
     filename=$(basename "$csv_file")               # e.g., Whacky_Joe_msdf.csv
     name_no_ext="${filename%.*}"                   # e.g., Whacky_Joe_msdf
 
@@ -347,7 +347,7 @@ EOF
 }
 EOF
     cp "$csv_file" "$ASSET_CATALOG_DIR/$category_path/$dataset_name.dataset/"
-    echo "Processed MSDF metrics: $category_path/$dataset_name"
+    echo "Processed MSDF metrics: $category_path/$dataset_name ($filename)"
   done
 }
 

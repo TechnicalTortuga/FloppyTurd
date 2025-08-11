@@ -690,7 +690,7 @@ namespace GameCore {
             }
         }
         
-        // Center horizontally; position ~18% down using full screen pixel height to avoid unit mismatches
+        // Center horizontally; position ~10% down using full screen pixel height to avoid unit mismatches
         float screenW = 1179.0f, screenH = 2556.0f;
         if (m_renderSystem) {
             const ScreenInfo& si2 = m_renderSystem->GetScreenInfo();
@@ -712,6 +712,7 @@ namespace GameCore {
         UIElement pipeCounter;
         pipeCounter.buttonText = "0";  // Just the number, no label
         pipeCounter.fontSize = 120.0f;  // Larger font for clear visibility
+        pipeCounter.textOutlineWidth = 18.0f; // thicker outline for raster path
         // Enable outline for pipe counter via renderer delegates
         // RenderSystem will choose centered outlined path when both center flags are true
         pipeCounter.textColor = Gnosis::GNColor(255, 255, 255, 255);  // White color
@@ -1318,10 +1319,11 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         // Update score (optional)
         m_currentScore += 10; // 10 points per pipe
         
-        // Could add pipe clear sound effect here
-        // if (m_platformDelegates && m_platformDelegates->audio.playSound) {
-        //     m_platformDelegates->audio.playSound("pipe_clear.mp3", 0.6f);
-        // }
+        // Play bubble pop sound when clearing a pipe
+        if (m_platformDelegates && m_platformDelegates->audio.playSound) {
+            // Use dedicated bubble sound from environment sfx
+            m_platformDelegates->audio.playSound("bubble.mp3", 0.7f);
+        }
     }
 
     void GameplayState::DrawDebugRectangles() {

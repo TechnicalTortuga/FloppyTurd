@@ -87,6 +87,8 @@ namespace GameCore {
         // Game settings
         void SetMusicVolume(float volume);
         void SetSFXVolume(float volume);
+        void SetMasterVolume(float volume);
+        float GetMasterVolume() const { return m_masterVolume; }
         float GetMusicVolume() const { return m_musicVolume; }
         float GetSFXVolume() const { return m_sfxVolume; }
 
@@ -125,6 +127,7 @@ namespace GameCore {
         int m_playerCoins;
         float m_musicVolume;
         float m_sfxVolume;
+        float m_masterVolume = 1.0f;
         GameStats m_gameStats;
         
         // Performance tracking

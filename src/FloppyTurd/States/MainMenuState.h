@@ -47,7 +47,8 @@ namespace GameCore {
 
         enum class MenuMode {
             MAIN_MENU,
-            LEVEL_SELECT
+            LEVEL_SELECT,
+            OPTIONS
         };
 
         struct LevelInfo {
@@ -77,6 +78,8 @@ namespace GameCore {
         // Screen dimensions for consistent layout calculations
         float m_screenWidth;
         float m_screenHeight;
+        // Global UI scale (mobile around 8x)
+        float m_uiScale = 1.0f;
         
         // UI Entity storage
         Gnosis::Entity m_backgroundEntity;
@@ -96,6 +99,32 @@ namespace GameCore {
         Gnosis::Entity m_backButtonEntity;
         Gnosis::Entity m_leftArrowButtonEntity;
         Gnosis::Entity m_rightArrowButtonEntity;
+        // Options menu specific UI
+        Gnosis::Entity m_optionsLeftArrowEntity = 0;
+        Gnosis::Entity m_optionsRightArrowEntity = 0;
+        Gnosis::Entity m_masterKnobEntity = 0;
+        Gnosis::Entity m_musicKnobEntity = 0;
+        Gnosis::Entity m_sfxKnobEntity = 0;
+        Gnosis::Entity m_optionsBackButtonEntity = 0;
+        Gnosis::Entity m_masterTrackEntity = 0;
+        Gnosis::Entity m_musicTrackEntity = 0;
+        Gnosis::Entity m_sfxTrackEntity = 0;
+        Gnosis::Entity m_optionsTitleEntity = 0;
+        Gnosis::Entity m_difficultyTextEntity = 0;
+        bool m_draggingMaster = false;
+        bool m_draggingMusic = false;
+        bool m_draggingSFX = false;
+        // Cached slider layout
+        float m_optionsSliderX = 0.0f;
+        float m_optionsSliderY = 0.0f;
+        float m_optionsSliderW = 0.0f;
+        float m_optionsSliderH = 18.0f;
+        float m_optionsSliderSpacing = 70.0f;
+        // Cached options overlay rect
+        float m_optionsOverlayX = 0.0f;
+        float m_optionsOverlayY = 0.0f;
+        float m_optionsOverlayW = 0.0f;
+        float m_optionsOverlayH = 0.0f;
         std::vector<Gnosis::Entity> m_levelPaintingEntities;
         std::vector<Gnosis::Entity> m_levelFrameEntities;
         std::vector<Gnosis::Entity> m_levelTextEntities;
@@ -144,7 +173,8 @@ namespace GameCore {
         // Input handling
         void OnMenuOptionSelected(MenuOption option);
         void OnFButtonPressed();
-        void HandleMainMenuInput(const PlatformDelegates& delegates);
+        void HandleMainMenuInput();
+        void HandleOptionsInput();
         
         // Button click handlers
         void OnPlayButtonPressed();
@@ -176,6 +206,14 @@ namespace GameCore {
         void OnLeftArrowPressed();
         void OnRightArrowPressed();
         void OnLevelSelected(int levelIndex);
+        // Options UI helpers
+        void CreateOptionsArrows(float overlayX, float overlayY, float overlayW, float overlayH, float diffY);
+        void DestroyOptionsUI();
+        void CreateOptionsKnobs();
+        void UpdateOptionsKnobPositions();
+        void SetMainMenuVisible(bool visible);
+        void SetOptionsVisible(bool visible);
+        void CreateOptionsTracksAndLabels();
         void StartSwipe(float startX, float startY);
         void UpdateSwipe(float currentX, float currentY);
         void EndSwipe(float endX, float endY);
@@ -187,6 +225,7 @@ namespace GameCore {
         // Debug functions
         void DrawButtonDebugRectangles();
         void DrawLevelSelectDebugInfo();
+        void RenderOptionsMenu();
         
         // Utility functions
         const char* GetMenuOptionText(int optionIndex) const;
@@ -197,6 +236,10 @@ namespace GameCore {
         void SetupLayout();
         void SetupIOSLayout();
         void SetupDesktopLayout();
+
+        // Options menu helpers
+        void ShowOptionsMenu();
+        void HideOptionsMenu();
     };
 
 } // namespace GameCore
