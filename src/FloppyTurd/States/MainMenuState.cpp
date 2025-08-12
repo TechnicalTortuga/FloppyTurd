@@ -233,6 +233,7 @@ namespace GameCore {
         // Update swipe animation if in level select mode
         if (m_currentMode == MenuMode::LEVEL_SELECT) {
             AnimateSwipe(deltaTime);
+            UpdatePanSnapAnimation(deltaTime);
         }
         
         // Update ECS systems
@@ -627,6 +628,115 @@ namespace GameCore {
             float y = m_optionsSliderY + i * m_optionsSliderSpacing;
             renderer.drawRectangle(m_optionsSliderX, y, m_optionsSliderW, m_optionsSliderH,
                                    trackR, trackG, trackB, trackA);
+        }
+    }
+
+    // Position all level paintings horizontally according to current pan offset, allowing partial on-screen visibility.
+    void MainMenuState::UpdateLevelPanPositions() {
+        float centerX = m_screenWidth / 2.0f;
+        float centerY = m_screenHeight / 2.0f;
+        // Use same dynamic scaling as UpdateLevelVisibility for each painting
+        for (size_t i = 0; i < m_levelPaintingEntities.size(); ++i) {
+            if (m_levelPaintingEntities[i] == 0) continue;
+            Transform* transform = m_ecsCoordinator->GetComponent<Transform>(m_levelPaintingEntities[i]);
+            Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(m_levelPaintingEntities[i]);
+            if (!transform || !sprite || i >= m_levels.size()) continue;
+
+            auto paintingDimensions = m_spriteSystem->GetTextureDimensions(m_levels[i].paintingTexture);
+            float paintingTextureWidth = paintingDimensions.first > 0 ? paintingDimensions.first : 96.0f;
+            float paintingTextureHeight = paintingDimensions.second > 0 ? paintingDimensions.second : 96.0f;
+            float maxWidth = m_screenWidth * 0.8f;
+            float maxHeight = m_screenHeight * 0.4f;
+            float scaleByWidth = maxWidth / paintingTextureWidth;
+            float scaleByHeight = maxHeight / paintingTextureHeight;
+            float dynamicScale = std::min(scaleByWidth, scaleByHeight);
+            auto scaledDimensions = GetScaledDimensions(paintingTextureWidth, paintingTextureHeight, dynamicScale);
+            float paintingWidth = scaledDimensions.first;
+            float paintingHeight = scaledDimensions.second;
+
+            // Compute target center for each index relative to current level index
+            float indexDelta = static_cast<float>(static_cast<int>(i) - m_currentLevelIndex);
+            float targetCenterX = centerX + indexDelta * m_levelSpacing + m_currentOffsetX;
+            float topLeftX = targetCenterX - (paintingWidth * 0.5f);
+            float topLeftY = centerY - (paintingHeight * 0.5f);
+
+            transform->position.x = topLeftX;
+            transform->position.y = topLeftY;
+            transform->scale.x = dynamicScale;
+            transform->scale.y = dynamicScale;
+            sprite->textureId = m_levels[i].paintingTexture;
+
+            // Ensure neighbor paintings are visible while panning/snapping and within a small off-screen buffer
+            if (m_isPanning || m_isSnapping) {
+                // Visible if any part of the painting is within a 20% screen-width buffer on either side
+                bool withinBufferedView = (topLeftX < m_screenWidth * 1.2f) && ((topLeftX + paintingWidth) > -m_screenWidth * 0.2f);
+                sprite->visible = withinBufferedView;
+            }
+
+            // Frames follow painting
+            if (i < m_levelFrameEntities.size() && m_levelFrameEntities[i] != 0) {
+                if (auto frameT = m_ecsCoordinator->GetComponent<Transform>(m_levelFrameEntities[i])) {
+                    if (auto frameS = m_ecsCoordinator->GetComponent<Sprite>(m_levelFrameEntities[i])) {
+                        frameT->position = transform->position;
+                        frameT->scale = transform->scale;
+                        // Mirror painting visibility and only show frame when locked
+                        frameS->visible = sprite->visible && !m_levels[i].isUnlocked;
+                    }
+                }
+            }
+            // Text stays centered above the current/target level
+            if (i < m_levelTextEntities.size() && m_levelTextEntities[i] != 0) {
+                if (auto textT = m_ecsCoordinator->GetComponent<Transform>(m_levelTextEntities[i])) {
+                    if (auto textUI = m_ecsCoordinator->GetComponent<UIElement>(m_levelTextEntities[i])) {
+                        textT->position.x = centerX;
+                        textT->position.y = m_screenHeight * 0.15f;
+                        // During active pan, show neighbor titles when substantially on screen to aid snap preview
+                        if (m_isPanning) {
+                            float visibilityThresholdLeft = 0.1f * m_screenWidth;
+                            float visibilityThresholdRight = 0.9f * m_screenWidth;
+                            float centerLeft = topLeftX + paintingWidth * 0.5f;
+                            bool largelyOnScreen = centerLeft >= visibilityThresholdLeft && centerLeft <= visibilityThresholdRight;
+                            textUI->visible = largelyOnScreen;
+                            if (i < m_levels.size()) {
+                                textUI->buttonText = m_levels[i].name;
+                            }
+                        } else if (m_isSnapping) {
+                            // While snapping, lock the title to the decided target level to prevent flicker
+                            int targetIndex = std::clamp(m_currentLevelIndex + m_pendingIndexDelta, 0, (int)m_levels.size() - 1);
+                            textUI->visible = (i == static_cast<size_t>(targetIndex));
+                            if (i == static_cast<size_t>(targetIndex) && i < m_levels.size()) {
+                                textUI->buttonText = m_levels[i].name;
+                            }
+                        } else {
+                            // Idle (not panning or snapping): only the current level's title
+                            textUI->visible = (i == static_cast<size_t>(m_currentLevelIndex));
+                            if (i == static_cast<size_t>(m_currentLevelIndex) && i < m_levels.size()) {
+                                textUI->buttonText = m_levels[i].name;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Smoothly animate snapping to the target index after release, including seeing neighbor during slide-in
+    void MainMenuState::UpdatePanSnapAnimation(float deltaTime) {
+        if (!m_isSnapping) return;
+        m_snapElapsed += deltaTime;
+        float t = std::min(m_snapElapsed / std::max(m_snapDuration, 0.0001f), 1.0f);
+        // Ease-out cubic
+        float eased = 1.0f - std::pow(1.0f - t, 3.0f);
+        float targetOffset = m_pendingIndexDelta * -m_levelSpacing; // slide content opposite swipe to bring new center in
+        m_currentOffsetX = m_snapStartOffsetX + (targetOffset - m_snapStartOffsetX) * eased;
+        UpdateLevelPanPositions();
+        if (t >= 1.0f) {
+            // Commit index change
+            m_currentLevelIndex = std::clamp(m_currentLevelIndex + m_pendingIndexDelta, 0, (int)m_levels.size() - 1);
+            m_pendingIndexDelta = 0;
+            m_isSnapping = false;
+            m_currentOffsetX = 0.0f;
+            UpdateLevelVisibility();
         }
     }
 
@@ -1248,7 +1358,10 @@ namespace GameCore {
         float centerX = m_screenWidth / 2.0f;
         float buttonY = m_screenHeight * 0.55f; // Position buttons higher up
         float buttonSpacing = 150.0f; // Much more spacing between buttons
-        float buttonScale = 10.0f; // Perfect mobile button size (scale factor fix applied)
+        float buttonScale = 10.0f; // Keep sprite scale at 10x for mobile visuals
+        m_menuButtonScale = buttonScale;
+        // Text size globally controlled; do not derive from sprite scale
+        m_globalUIFontSize = m_isMobile ? 88.0f : (m_buttonFontSize * 5.0f);
         
         // Create Play Button
         m_playButtonEntity = m_ecsCoordinator->CreateEntity();
@@ -1268,7 +1381,7 @@ namespace GameCore {
         playSprite.layer = 2; // Button layer (lower than text)
         playSprite.visible = true;
         UIElement playButton("PLAY", "FloppyButtonBlue", "FloppyButtonBlueHover");
-        playButton.fontSize = 18.0f; // Reduced for better fit in button
+        playButton.fontSize = m_buttonFontSize;
         playButton.textColor = Gnosis::GNColor(255, 255, 255, 255); // White text
         GN_LOG_INFO("Created Play button with text: '%s' (length: %zu)", playButton.buttonText.c_str(), playButton.buttonText.length());
         
@@ -1295,7 +1408,7 @@ namespace GameCore {
         optionsSprite.layer = 2; // Button layer (lower than text)
         optionsSprite.visible = true;
         UIElement optionsButton("OPTIONS", "FloppyButtonBlue", "FloppyButtonBlueHover");
-        optionsButton.fontSize = 18.0f; // Reduced for better fit in button
+        optionsButton.fontSize = m_buttonFontSize;
         optionsButton.textColor = Gnosis::GNColor(255, 255, 255, 255); // White text
         GN_LOG_INFO("Created Options button with text: '%s' (length: %zu)", optionsButton.buttonText.c_str(), optionsButton.buttonText.length());
         
@@ -1322,7 +1435,7 @@ namespace GameCore {
         quickPlaySprite.layer = 2; // Button layer (lower than text)
         quickPlaySprite.visible = true;
         UIElement quickPlayButton("QUICK PLAY", "FloppyButtonBlue", "FloppyButtonBlueHover");
-        quickPlayButton.fontSize = 16.0f; // Reduced significantly to fit longer text
+        quickPlayButton.fontSize = m_buttonFontSize;
         quickPlayButton.textColor = Gnosis::GNColor(255, 255, 255, 255); // White text
         GN_LOG_INFO("Created Quick Play button with text: '%s' (length: %zu)", quickPlayButton.buttonText.c_str(), quickPlayButton.buttonText.length());
         
@@ -1349,7 +1462,7 @@ namespace GameCore {
         quitSprite.layer = 2; // Button layer (lower than text)
         quitSprite.visible = true;
         UIElement quitButton("QUIT", "FloppyButtonBlue", "FloppyButtonBlueHover");
-        quitButton.fontSize = 18.0f; // Reduced for better fit in button
+        quitButton.fontSize = m_buttonFontSize;
         quitButton.textColor = Gnosis::GNColor(255, 255, 255, 255); // White text
         GN_LOG_INFO("Created Quit button with text: '%s' (length: %zu)", quitButton.buttonText.c_str(), quitButton.buttonText.length());
         
@@ -1375,7 +1488,10 @@ namespace GameCore {
         
         // === SIMPLIFIED MOBILE BUTTON POSITIONING === //
         
-        float buttonScale = 10.0f;  // Perfect mobile button size (scale factor fix applied)
+        float buttonScale = 10.0f;  // Keep sprite scale at 10x for mobile visuals
+        m_menuButtonScale = buttonScale;
+        // Text size globally controlled; do not derive from sprite scale
+        m_globalUIFontSize = m_isMobile ? 88.0f : (m_buttonFontSize * 5.0f);
         auto buttonScaledDimensions = GetScaledDimensions(buttonTextureWidth, buttonTextureHeight, buttonScale);
         float buttonScaledWidth = buttonScaledDimensions.first;
         float buttonScaledHeight = buttonScaledDimensions.second;
@@ -1405,7 +1521,7 @@ namespace GameCore {
             
             UIElement uiElement("", "FloppyButtonBlue", "FloppyButtonBlueHover");
             uiElement.buttonText = text;
-            uiElement.fontSize = 60.0f;  // Increased per request
+            uiElement.fontSize = m_globalUIFontSize; // unified text size (144 on mobile)
             uiElement.textColor = Gnosis::GNColor(255, 255, 255, 255);  // White text
             uiElement.centerTextHorizontally = true;
             uiElement.centerTextVertically = true;
@@ -1860,7 +1976,7 @@ namespace GameCore {
         m_levelFrameEntities.clear();
         m_levelTextEntities.clear();
         
-        GN_LOG_INFO("🎨 Creating level paintings: screenCenter=(" + std::to_string(screenCenterX) + "," + std::to_string(screenCenterY) + "), spacing=" + std::to_string(paintingSpacing) + ", scale=" + std::to_string(paintingScale));
+        // Pruned verbose creation log
         
         for (size_t i = 0; i < m_levels.size(); ++i) {
             // All paintings start at center position - UpdateLevelVisibility will handle positioning and visibility
@@ -1892,9 +2008,7 @@ namespace GameCore {
             float manualTopLeftX = paintingCenterX - (paintingScaledWidth / 2.0f);
             float manualTopLeftY = paintingCenterY - (paintingScaledHeight / 2.0f);
             
-            GN_LOG_INFO("🔧 CreateLevelPaintings: painting " + std::to_string(i) + " using MANUAL positioning like UpdateLevelVisibility");
-            GN_LOG_INFO("🔧 centerTarget=(" + std::to_string(paintingCenterX) + "," + std::to_string(paintingCenterY) + "), scaledSize=(" + std::to_string(paintingScaledWidth) + "," + std::to_string(paintingScaledHeight) + "), dynamicScale=" + std::to_string(dynamicScale));
-            GN_LOG_INFO("🔧 manualTopLeft=(" + std::to_string(manualTopLeftX) + "," + std::to_string(manualTopLeftY) + ")");
+            // Pruned placement debug logs
             
             Transform paintingTransform(Gnosis::GNVector2(manualTopLeftX, manualTopLeftY), 0.0f, Gnosis::GNVector2(dynamicScale, dynamicScale));
             Sprite paintingSprite(m_levels[i].paintingTexture, paintingTextureWidth, paintingTextureHeight);
@@ -1904,7 +2018,7 @@ namespace GameCore {
             m_ecsCoordinator->AddComponent<Sprite>(paintingEntity, paintingSprite);
             m_levelPaintingEntities.push_back(paintingEntity);
             
-            GN_LOG_INFO("✅ Created painting " + std::to_string(i) + " '" + m_levels[i].name + "': centerPos=(" + std::to_string(paintingCenterX) + "," + std::to_string(paintingCenterY) + "), topLeft=(" + std::to_string(manualTopLeftX) + "," + std::to_string(manualTopLeftY) + "), size=" + std::to_string(paintingScaledWidth) + "x" + std::to_string(paintingScaledHeight));
+            // Pruned per-painting creation summary
             
             // === Create frame entity for locked levels === //
             Gnosis::Entity frameEntity = m_ecsCoordinator->CreateEntity();
@@ -1929,10 +2043,10 @@ namespace GameCore {
             float textX = screenCenterX; // Use screen center for proper horizontal centering
             
             Transform textTransform(Gnosis::GNVector2(textX, textY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
-            // Reintroduce multi-line splitting for level names containing '\n'
+            // Reintroduce multi-line splitting for level names containing '\n' (handled in renderer)
             UIElement textElement(m_levels[i].name, "", "");
-            textElement.fontSize = 60.0f;
-            textElement.fontSize = m_isMobile ? 42.0f : 21.0f;
+            textElement.fontSize = m_isMobile ? 80.0f : (m_buttonFontSize * 4.5f);
+            textElement.textOutlineWidth = 10.0f; // consistent outline thickness
             textElement.textColor = Gnosis::GNColor(255, 255, 255, 255);
             textElement.centerTextHorizontally = true;
             textElement.centerTextVertically = true;
@@ -1953,7 +2067,9 @@ namespace GameCore {
         m_backButtonEntity = m_ecsCoordinator->CreateEntity();
         float buttonX = m_screenWidth / 2.0f;  // Center horizontally
         float buttonY = m_screenHeight * 0.93f;  // push lower
-        float buttonScale = m_isMobile ? 8.0f : 4.0f;
+        float buttonScale = m_isMobile ? 8.0f : 4.0f; // Keep sprite scales
+        // Global UI text size matches main menu text size
+        m_globalUIFontSize = m_isMobile ? 88.0f : (m_buttonFontSize * 5.0f);
         
         // Load texture to get actual dimensions
         m_spriteSystem->LoadTexture("FloppyButtonBlue", "FloppyButtonBlue.png");
@@ -1975,7 +2091,7 @@ namespace GameCore {
         backSprite.layer = 5; // Top layer
         backSprite.visible = false;
         UIElement backButton("BACK", "FloppyButtonBlue", "FloppyButtonBlueHover");
-        backButton.fontSize = m_isMobile ? 42.0f : 21.0f;
+        backButton.fontSize = m_globalUIFontSize;
         backButton.textColor = Gnosis::GNColor(255, 255, 255, 255);
         backButton.visible = false;
         
@@ -1988,7 +2104,7 @@ namespace GameCore {
 
     void MainMenuState::CreateOptionsTracksAndLabels() {
         if (!m_ecsCoordinator) return;
-        // Title
+        // Title (keep large)
         if (m_optionsTitleEntity == 0) m_optionsTitleEntity = m_ecsCoordinator->CreateEntity();
         UIElement title("Options", "", "");
         // Increase title size (3-4x) and place ~10% from top of screen
@@ -2008,8 +2124,9 @@ namespace GameCore {
             // Create label
             if (labelEntity == 0) labelEntity = m_ecsCoordinator->CreateEntity();
             UIElement labelUi(labelText, "", "");
-            labelUi.fontSize = m_isMobile ? 36.0f : 18.0f;
+            labelUi.fontSize = m_globalUIFontSize; // use global size (88 mobile)
             labelUi.textColor = Gnosis::GNColor(255,255,255,255);
+            labelUi.textOutlineWidth = 10.0f; // match thickness with Difficulty label
             labelUi.centerTextHorizontally = false;  // Explicitly left-align
             labelUi.visible = true;
             Transform labelT(Gnosis::GNVector2(m_optionsSliderX, yPos), 0.0f, Gnosis::GNVector2(1.0f,1.0f));
@@ -2038,8 +2155,9 @@ namespace GameCore {
         // Difficulty label - positioned exactly like other labels for perfect alignment
         if (m_difficultyTextEntity == 0) m_difficultyTextEntity = m_ecsCoordinator->CreateEntity();
         UIElement d("Difficulty:", "", "");
-        d.fontSize = m_isMobile ? 36.0f : 18.0f;  // Match Master/Music/SFX exactly
+        d.fontSize = m_globalUIFontSize;  // Match global UI text size
         d.textColor = Gnosis::GNColor(255,255,255,255);
+        d.textOutlineWidth = 10.0f; // ensure outlined like other labels
         d.centerTextHorizontally = false;  // Explicitly left-aligned like others
         d.visible = true;
         Transform dT(Gnosis::GNVector2(m_optionsSliderX, currentY), 0.0f, Gnosis::GNVector2(1.0f,1.0f));  // Use same X as others
@@ -2057,7 +2175,8 @@ namespace GameCore {
         Transform dvT(Gnosis::GNVector2(m_screenWidth * 0.5f, arrowY), 0.0f, Gnosis::GNVector2(1.0f,1.0f));  // Same Y as arrows
         std::string diffValue = GameCore::LevelManager::GetDifficultyName();
         UIElement dv(diffValue, "", "");
-        dv.fontSize = m_isMobile ? 32.0f : 16.0f;
+        dv.fontSize = m_globalUIFontSize;
+        dv.textOutlineWidth = 10.0f; // match outline thickness
         dv.textColor = Gnosis::GNColor(255,255,255,255);
         dv.centerTextHorizontally = true;
         dv.centerTextVertically = true;
@@ -2096,7 +2215,7 @@ namespace GameCore {
         playSprite.layer = 5; // Top layer
         playSprite.visible = false;
         UIElement playButton("PLAY LEVEL", "FloppyButtonBlue", "FloppyButtonBlueHover");
-        playButton.fontSize = m_isMobile ? 42.0f : 21.0f;
+        playButton.fontSize = m_globalUIFontSize;
         playButton.textColor = Gnosis::GNColor(255, 255, 255, 255);
         playButton.visible = false;
         
@@ -2134,6 +2253,13 @@ namespace GameCore {
         
         // Show level select elements
         UpdateLevelVisibility();
+        // Initialize pan spacing based on current layout (keep pixel values per project rules)
+        float screenCenterX = m_screenWidth / 2.0f;
+        // Estimate spacing as 90% of screen width to give nice overlap hint
+        m_levelSpacing = m_screenWidth * 0.9f;
+        m_currentOffsetX = 0.0f;
+        m_targetOffsetX = 0.0f;
+        m_isPanning = false;
         
         if (m_backButtonEntity != 0) {
             Sprite* backSprite = m_ecsCoordinator->GetComponent<Sprite>(m_backButtonEntity);
@@ -2259,8 +2385,65 @@ namespace GameCore {
         
         const PlatformDelegates& delegates = m_game->GetPlatformDelegates();
         
-        // Handle swipe input
-        HandleSwipeInput();
+        // Handle horizontal pan using primary touch with our unified input
+        bool justPressed = delegates.input.isPrimaryInputJustPressed ? delegates.input.isPrimaryInputJustPressed() : false;
+        bool inputDown   = delegates.input.isPrimaryInputDown        ? delegates.input.isPrimaryInputDown()        : false;
+        bool justReleased= delegates.input.isPrimaryInputJustReleased? delegates.input.isPrimaryInputJustReleased(): false;
+        float touchX = 0.0f, touchY = 0.0f;
+        if (delegates.input.getPrimaryInputPosition) {
+            delegates.input.getPrimaryInputPosition(&touchX, &touchY);
+        }
+
+        // Pan begin: anywhere within the paintings vertical band
+        float bandTop = m_screenHeight * 0.25f;
+        float bandBottom = m_screenHeight * 0.75f;
+        if (justPressed && touchY >= bandTop && touchY <= bandBottom) {
+            m_isPanning = true;
+            m_panStartX = touchX;
+            m_panStartOffsetX = m_currentOffsetX;
+            // Immediately update positions and make neighbors visible when pan begins
+            UpdateLevelPanPositions();
+        }
+        // Pan move
+        if (m_isPanning && inputDown) {
+            float delta = touchX - m_panStartX;
+            m_currentOffsetX = m_panStartOffsetX + delta;
+            // Clamp soft bounds so neighbor exists just off-screen
+            float maxOffset = m_levelSpacing * (m_currentLevelIndex);
+            float minOffset = -m_levelSpacing * ((int)m_levels.size() - 1 - m_currentLevelIndex);
+            m_currentOffsetX = std::max(std::min(m_currentOffsetX, maxOffset + m_levelSpacing * 0.25f), minOffset - m_levelSpacing * 0.25f);
+            UpdateLevelPanPositions();
+        }
+        // Pan end: snap to closest level index and clamp
+        if (m_isPanning && justReleased) {
+            m_isPanning = false;
+            // Determine swipe velocity for multi-level fling
+            float deltaX = touchX - m_panStartX;
+            // Approx velocity proxy: delta; reduce sensitivity so flings need more distance
+            float velocity = deltaX; // pixels; simple proxy
+            int velocitySteps = 0;
+            if (std::abs(velocity) > m_levelSpacing * 1.6f) velocitySteps = 2;
+            else if (std::abs(velocity) > m_levelSpacing * 0.95f) velocitySteps = 1;
+
+            int deltaIndex = (int)std::round(-m_currentOffsetX / std::max(m_levelSpacing, 1.0f));
+            // Add velocity-driven extra steps in swipe direction
+            if (velocitySteps > 0) {
+                int dir = (velocity < 0) ? 1 : -1; // negative deltaX => swiping left to go to next level
+                deltaIndex += dir * velocitySteps;
+            }
+
+            int targetIndex = std::clamp(m_currentLevelIndex + deltaIndex, 0, (int)m_levels.size() - 1);
+            m_pendingIndexDelta = targetIndex - m_currentLevelIndex;
+            // Start snap animation from current offset toward target
+            m_isSnapping = true;
+            m_snapElapsed = 0.0f;
+            m_snapStartOffsetX = m_currentOffsetX;
+            if (m_pendingIndexDelta == 0) {
+                // No movement; just recentre
+                m_isSnapping = true;
+                m_pendingIndexDelta = 0;
+            }
+        }
         
         // Handle button clicks
         bool inputPressed = delegates.input.isPrimaryInputJustPressed();
@@ -2371,8 +2554,7 @@ namespace GameCore {
         bool swipeLeft = delegates.input.isSwipeLeftDetected ? delegates.input.isSwipeLeftDetected() : false;
         bool swipeRight = delegates.input.isSwipeRightDetected ? delegates.input.isSwipeRightDetected() : false;
         
-        GN_LOG_DEBUG("Gesture Input: Left=" + std::to_string(swipeLeft) + 
-                    " Right=" + std::to_string(swipeRight));
+        // Pruned gesture debug spam
         
         if (swipeLeft && m_currentLevelIndex < m_levels.size() - 1) {
             // Swipe left - go to next level
@@ -2465,7 +2647,7 @@ namespace GameCore {
             float centerX = m_screenWidth / 2.0f;
             float centerY = m_screenHeight / 2.0f;
             
-            GN_LOG_DEBUG("🎬 AnimateSwipe: progress=" + std::to_string(progress) + ", centerPos=(" + std::to_string(centerX) + "," + std::to_string(centerY) + ")");
+            // Pruned animation progress log
             
             for (size_t i = 0; i < m_levelPaintingEntities.size(); ++i) {
                 if (m_levelPaintingEntities[i] != 0) {
@@ -2500,7 +2682,7 @@ namespace GameCore {
                             transform->scale.x = dynamicScale;
                             transform->scale.y = dynamicScale;
                             
-                            GN_LOG_DEBUG("🎬 AnimateSwipe: painting " + std::to_string(i) + " positioned at (" + std::to_string(manualTopLeftX) + "," + std::to_string(manualTopLeftY) + ") with scale=" + std::to_string(dynamicScale));
+                            // Pruned per-painting animation log
                         }
                     }
                 }
@@ -2534,14 +2716,13 @@ namespace GameCore {
         float centerX = m_screenWidth / 2.0f;
         float centerY = m_screenHeight / 2.0f;
         
-        GN_LOG_INFO("🎨 UpdateLevelVisibility: SCREEN=" + std::to_string(m_screenWidth) + "x" + std::to_string(m_screenHeight) + 
-                   ", SCREEN_CENTER=(" + std::to_string(centerX) + "," + std::to_string(centerY) + "), currentLevel=" + std::to_string(m_currentLevelIndex));
+        // Pruned verbose logs for steady-state UI updates
         
         for (size_t i = 0; i < m_levelPaintingEntities.size(); ++i) {
             // Only show the current painting - hide all others
             bool shouldBeVisible = (i == m_currentLevelIndex);
             
-            GN_LOG_INFO("🖼️ Painting " + std::to_string(i) + " (" + m_levels[i].name + "): shouldBeVisible=" + std::string(shouldBeVisible ? "YES" : "NO"));
+            // Pruned per-painting visibility spam
             
             // Update painting position, visibility and texture
             if (m_levelPaintingEntities[i] != 0) {
@@ -2551,16 +2732,14 @@ namespace GameCore {
                     // Update visibility first
                     sprite->visible = shouldBeVisible;
                     
-                    // Only position and update texture for the visible painting
+                    // Position visible painting normally; for panning, non-visible items are placed via UpdateLevelPanPositions
                     if (shouldBeVisible && i < m_levels.size()) {
                         // Get actual painting texture dimensions first
                         auto paintingDimensions = m_spriteSystem->GetTextureDimensions(m_levels[i].paintingTexture);
                         float paintingTextureWidth = paintingDimensions.first > 0 ? paintingDimensions.first : 96.0f;  // Correct base size
                         float paintingTextureHeight = paintingDimensions.second > 0 ? paintingDimensions.second : 96.0f; // Correct base size
                         
-                        GN_LOG_INFO("🔍 Texture dimensions for " + m_levels[i].paintingTexture + ": returned=(" + 
-                                   std::to_string(paintingDimensions.first) + "," + std::to_string(paintingDimensions.second) + 
-                                   "), using=(" + std::to_string(paintingTextureWidth) + "," + std::to_string(paintingTextureHeight) + ")");
+                        // Pruned texture dimension spam
                         
                         // Calculate scale that fits screen width with 10% padding on each side
                         float maxWidth = m_screenWidth * 0.8f; // Use 80% of screen width
@@ -2574,21 +2753,16 @@ namespace GameCore {
                         float paintingWidth = scaledDimensions.first;
                         float paintingHeight = scaledDimensions.second;
                         
-                        GN_LOG_INFO("📐 Painting " + std::to_string(i) + " calculations: textureSize(" + 
-                                   std::to_string(paintingTextureWidth) + "," + std::to_string(paintingTextureHeight) + 
-                                   ") -> scaledSize(" + std::to_string(paintingWidth) + "," + std::to_string(paintingHeight) + 
-                                   ") at centerTarget(" + std::to_string(centerX) + "," + std::to_string(centerY) + ")");
+                        // Pruned per-frame calculation logs
                         
                         // MANUAL POSITIONING - bypass CenterObjectAtPosition to test
-                        GN_LOG_INFO("🧪 TESTING: Manual painting positioning without helper functions");
-                        GN_LOG_INFO("🧪 Screen center: (" + std::to_string(centerX) + "," + std::to_string(centerY) + ")");
-                        GN_LOG_INFO("🧪 Painting scaled size: (" + std::to_string(paintingWidth) + "," + std::to_string(paintingHeight) + ")");
+                        // Pruned test logs
                         
                         // Calculate top-left position manually to center the painting
                         float manualTopLeftX = centerX - (paintingWidth / 2.0f);
                         float manualTopLeftY = centerY - (paintingHeight / 2.0f);
                         
-                        GN_LOG_INFO("🧪 Manual calculation: topLeft=(" + std::to_string(manualTopLeftX) + "," + std::to_string(manualTopLeftY) + ") should center painting at (" + std::to_string(centerX) + "," + std::to_string(centerY) + ")");
+                        // Pruned test logs
                         
                         // Set position directly without helper function
                         transform->position.x = manualTopLeftX;
@@ -2598,7 +2772,7 @@ namespace GameCore {
                         transform->scale.x = dynamicScale;
                         transform->scale.y = dynamicScale;
                         
-                        GN_LOG_INFO("🧪 Final transform position set to: (" + std::to_string(transform->position.x) + "," + std::to_string(transform->position.y) + ") with scale: " + std::to_string(dynamicScale));
+                        // Pruned test logs
                         
                         // Update the texture to show the correct level painting
                         sprite->textureId = m_levels[i].paintingTexture;
@@ -2649,6 +2823,11 @@ namespace GameCore {
                 }
             }
         }
+
+        // While panning, position all paintings horizontally with offset and partial visibility
+        if (m_isPanning) {
+            UpdateLevelPanPositions();
+        }
         
         // Update locked indicator visibility and position
         if (m_lockedIndicatorEntity != 0) {
@@ -2665,7 +2844,7 @@ namespace GameCore {
             }
         }
         
-        GN_LOG_INFO("Updated level visibility for current level: " + std::to_string(m_currentLevelIndex + 1));
+        // Pruned visibility summary log
     }
 
     void MainMenuState::CenterCurrentLevel() {

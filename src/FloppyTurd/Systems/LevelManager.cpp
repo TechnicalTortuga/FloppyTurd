@@ -1,8 +1,11 @@
 #include "LevelManager.h"
 #include "../../Engine/Core/GNLog.h"
 #include "../Components/GameComponents.h"
+#include "../../Engine/Assets/TextureManager.h"
 #include <algorithm>
 #include <cmath>
+#include <unordered_map>
+#include <deque>
 
 namespace GameCore {
 
@@ -17,6 +20,7 @@ namespace GameCore {
         , m_obstacleSpawnTimer(0.0f)
         , m_enemySpawnTimer(0.0f)
         , m_pickupSpawnTimer(0.0f)
+        , m_npcSpawnTimer(0.0f)
         , m_lastObstacleX(1000.0f)   // Start obstacles off screen to the right
         , m_lastEnemyX(1200.0f)      // Start enemies further out
         , m_lastPickupX(800.0f)      // Start pickups closer
@@ -59,6 +63,7 @@ namespace GameCore {
         m_obstacleSpawnTimer = 0.0f;
         m_enemySpawnTimer = 0.0f;
         m_pickupSpawnTimer = 0.0f;
+        m_npcSpawnTimer = 0.0f;
         m_lastObstacleX = 1000.0f;
         m_lastEnemyX = 1200.0f;
         m_lastPickupX = 800.0f;
@@ -69,6 +74,15 @@ namespace GameCore {
         // Initialize object pool instead of timer-based spawning
         m_poolInitialized = false;
         InitializeObstaclePool();
+        m_enemyPoolInitialized = false;
+        m_npcPoolInitialized = false;
+        m_pickupPoolInitialized = false;
+        m_projectilePoolInitialized = false;
+        InitializeEnemyPool();
+        InitializeNPCPool();
+        InitializePickupPool();
+        InitializeProjectilePool();
+        // Pickups and projectiles are pooled but may be empty until used
         GN_LOG_INFO("Level " + std::to_string(levelId) + " (" + m_currentLevelConfig.levelName + ") loaded successfully");
         
         return true;
@@ -187,29 +201,312 @@ namespace GameCore {
         }
     }
 
-    void LevelManager::UpdateEnemySpawning(float deltaTime) {
-        if (!m_isLoaded || m_currentLevelConfig.enemies.empty()) {
-            return;
+    void LevelManager::UpdateEnemySpawning(float) { /* disabled; using pool */ }
+
+    // Spawn Janitor NPC periodically (Level 2 only)
+    void LevelManager::UpdateNPCSpawning(float) { /* disabled; using pool */ }
+
+    void LevelManager::InitializeEnemyPool() {
+        if (m_enemyPoolInitialized) return;
+        if (!m_isLoaded || !m_currentLevelConfig.enableEnemies || m_currentLevelConfig.enemies.empty()) return;
+
+        // Limit pool to m_maxActiveEnemies
+        int count = std::min(m_maxActiveEnemies, static_cast<int>(m_currentLevelConfig.enemies.size() * m_maxActiveEnemies));
+        // For Level 2 we only configured ToiletPaperFlap; still create up to 4 entities spaced to the right
+        const EnemyConfig& cfg = m_currentLevelConfig.enemies[0];
+        float screenW = 1179.0f; // Avoid async delegate to prevent dangling pointer crash
+        float startX = screenW + 200.0f;
+        for (int i = 0; i < m_maxActiveEnemies; ++i) {
+            float x = startX + i * m_enemySpacing;
+            float baseY = 900.0f + static_cast<float>((i%2==0? -1:1) * 150);
+            Gnosis::Entity e = SpawnEnemy(cfg, x, baseY);
+            if (e != 0) { m_activeEnemies.push_back(e); m_enemyBaseY[e] = baseY; GN_LOG_DEBUG("Enemy init: ToiletPaper baseY=" + std::to_string(baseY) + ", x=" + std::to_string(x)); }
         }
-        
-        m_enemySpawnTimer += deltaTime;
-        
-        // Check if it's time to spawn a new enemy
-        if (m_enemySpawnTimer >= m_currentLevelConfig.enemySpawnRate) {
-            // Choose a random enemy configuration
-            int enemyIndex = rand() % m_currentLevelConfig.enemies.size();
-            const EnemyConfig& config = m_currentLevelConfig.enemies[enemyIndex];
-            
-            // Calculate spawn position
-            float spawnX = CalculateNextEnemyPosition();
-            float spawnY = 250.0f; // Adjust based on enemy type
-            
-            // Spawn the enemy
-            SpawnEnemy(config, spawnX, spawnY);
-            
-            // Reset timer with some randomness
-            m_enemySpawnTimer = 0.0f;
+        m_enemyPoolInitialized = true;
+    }
+
+    void LevelManager::InitializeNPCPool() {
+        if (m_npcPoolInitialized) return;
+        if (!m_isLoaded || !m_currentLevelConfig.enableNPCs) return;
+        if (m_currentLevelId != 2) { m_npcPoolInitialized = true; return; }
+
+        // Ensure single Janitor entity
+        float screenW = 1179.0f, screenH = 2556.0f; // Use fixed iPhone 16 portrait metrics
+        // Clear any existing NPCs to enforce singleton Janitor
+        for (Gnosis::Entity e : m_activeNPCs) {
+            if (e != 0) { m_ecsSystem->DestroyEntity(e); }
         }
+        m_activeNPCs.clear();
+
+        float janitorHeight = 64.0f * m_currentLevelConfig.baseScale;
+        float spawnX = screenW + 150.0f;
+        // Align to sewer background pixel band: 20px * 5x = 100px above bottom of image band
+        float spawnY = screenH - janitorHeight - 100.0f;
+        GN_LOG_INFO("NPC Janitor init: spawnX=" + std::to_string(spawnX) + ", spawnY=" + std::to_string(spawnY));
+        m_janitorEntity = SpawnNPCJanitor(spawnX, spawnY);
+        if (m_janitorEntity != 0) m_activeNPCs.push_back(m_janitorEntity);
+        m_npcPoolInitialized = true;
+    }
+
+    void LevelManager::InitializePickupPool() {
+        if (m_pickupPoolInitialized) return;
+        if (!m_currentLevelConfig.enablePickups) { m_pickupPoolInitialized = true; return; }
+        // Only create pickups for Level 2 (Sewer) here.
+        if (m_currentLevelId != 2) { m_pickupPoolInitialized = true; return; }
+        // Sewer level: only GoldCoin (+1) and small PooHeart (32x32) as a rare pickup
+        const int coinPoolSize = 12; // enough for two 5-stacks + buffer
+        const int heartPoolSize = 2; // rare
+        float screenW = 1179.0f;
+        float startX = screenW + 100.0f;
+        for (int i = 0; i < coinPoolSize; ++i) {
+            Gnosis::Entity e = SpawnPickup("GoldCoin", startX + i * 40.0f, 200.0f);
+            if (e != 0) m_pickupPool.push_back(e);
+        }
+        for (int i = 0; i < heartPoolSize; ++i) {
+            Gnosis::Entity e = SpawnPickup("PooHeart", startX + i * 60.0f, 300.0f);
+            if (e != 0) m_pickupPool.push_back(e);
+        }
+        m_pickupPoolInitialized = true;
+    }
+
+    void LevelManager::InitializeProjectilePool() {
+        if (m_projectilePoolInitialized) return;
+        // Player projectiles pool (if/when used)
+        // We will allocate placeholders when first shot to avoid cold-start allocation hiccup
+        m_projectilePoolInitialized = true;
+    }
+
+    void LevelManager::UpdatePickupPooling(float, float) {
+        if (!m_pickupPoolInitialized || !m_currentLevelConfig.enablePickups) return;
+        // Ensure we maintain active coin patterns on screen. When a pattern exits, reposition as new pattern.
+        float screenW = 1179.0f;
+        // Build a pickup group on demand if queue is empty
+        if (m_coinPatterns.empty()) {
+            float startX = screenW + 200.0f;
+            float midY = 500.0f;
+            int count = 3 + (rand() % 3); // 3..5
+            SpawnPickupGroup(startX, midY, count);
+        }
+        // For each active pattern, if it leaves screen, respawn to the right as a new pattern
+        float rightmostX = screenW;
+        for (Gnosis::Entity e : m_activePickups) {
+            Transform* t = m_ecsSystem->GetComponent<Transform>(e);
+            if (t && t->position.x > rightmostX) rightmostX = t->position.x;
+        }
+        for (auto& group : m_coinPatterns) {
+            bool groupOff = true;
+            float groupLeft = 1e9f;
+            for (Gnosis::Entity e : group) {
+                Transform* t = m_ecsSystem->GetComponent<Transform>(e);
+                Sprite* s = m_ecsSystem->GetComponent<Sprite>(e);
+                if (!t || !s) continue;
+                float rightEdge = t->position.x + s->width * std::abs(t->scale.x);
+                groupLeft = std::min(groupLeft, t->position.x);
+                if (rightEdge >= 0.0f) { groupOff = false; }
+            }
+            if (groupOff) {
+                // Move this group to the right and re-roll each entity coin/heart in-place
+                float startX = rightmostX + 220.0f;
+                float midY = 420.0f + static_cast<float>((rand()%300) - 150);
+                int newCount = 3 + (rand()%3); // 3..5
+                RerollPickupGroupInPlace(group, startX, midY, newCount);
+                float spacing = 32.0f * m_currentLevelConfig.baseScale * 1.25f;
+                rightmostX = startX + newCount * spacing;
+            }
+        }
+    }
+
+    void LevelManager::SpawnPickupGroup(float startX, float midY, int count) {
+        const float scale = m_currentLevelConfig.baseScale;
+        float spacing = 32.0f * scale * 1.25f;
+        // Reserve a fixed-size group vector once and reuse
+        std::vector<Gnosis::Entity> group;
+        group.reserve(5);
+        int used = 0;
+        size_t poolIdx = 0;
+        while (used < count && poolIdx < m_pickupPool.size()) {
+            Gnosis::Entity e = m_pickupPool[poolIdx++];
+            Transform* t = m_ecsSystem->GetComponent<Transform>(e);
+            Sprite* s = m_ecsSystem->GetComponent<Sprite>(e);
+            Pickup* p = m_ecsSystem->GetComponent<Pickup>(e);
+            if (!t || !s || !p) continue;
+            bool isHeart = (rand()%100) < 10;
+            s->textureId = isHeart ? std::string("PooHeart") : std::string("GoldCoin");
+            p->pickupType = s->textureId;
+            p->value = (s->textureId == "GoldCoin") ? 1 : 0;
+            s->visible = true;
+            p->isActive = true;
+            t->position.x = startX + used * spacing;
+            t->position.y = midY + ((used % 2 == 1) ? -spacing * 0.3f : 0.0f);
+            group.push_back(e);
+            if (std::find(m_activePickups.begin(), m_activePickups.end(), e) == m_activePickups.end()) m_activePickups.push_back(e);
+            used++;
+        }
+        if (!group.empty()) m_coinPatterns.push_back(group);
+    }
+
+    void LevelManager::RerollPickupGroupInPlace(std::vector<Gnosis::Entity>& group, float startX, float midY, int count) {
+        const float scale = m_currentLevelConfig.baseScale;
+        float spacing = 32.0f * scale * 1.25f;
+        // Ensure group has capacity up to 5
+        if (group.capacity() < 5) group.reserve(5);
+        // If group has fewer entities than needed, top up with pool entities
+        size_t poolIdx = 0;
+        while (group.size() < static_cast<size_t>(count) && poolIdx < m_pickupPool.size()) {
+            Gnosis::Entity e = m_pickupPool[poolIdx++];
+            if (std::find(group.begin(), group.end(), e) == group.end()) {
+                group.push_back(e);
+            }
+        }
+        // Configure first 'count' entities; hide the rest if any
+        for (size_t i = 0; i < group.size(); ++i) {
+            Gnosis::Entity e = group[i];
+            Transform* t = m_ecsSystem->GetComponent<Transform>(e);
+            Sprite* s = m_ecsSystem->GetComponent<Sprite>(e);
+            Pickup* p = m_ecsSystem->GetComponent<Pickup>(e);
+            if (!t || !s || !p) continue;
+            if (i < static_cast<size_t>(count)) {
+                bool isHeart = (rand()%100) < 10;
+                s->textureId = isHeart ? std::string("PooHeart") : std::string("GoldCoin");
+                p->pickupType = s->textureId;
+                p->value = (s->textureId == "GoldCoin") ? 1 : 0;
+                s->visible = true;
+                p->isActive = true;
+                t->position.x = startX + static_cast<float>(i) * spacing;
+                t->position.y = midY + ((i % 2 == 1) ? -spacing * 0.3f : 0.0f);
+                if (std::find(m_activePickups.begin(), m_activePickups.end(), e) == m_activePickups.end()) m_activePickups.push_back(e);
+            } else {
+                // Hide unused tail
+                s->visible = false;
+                p->isActive = false;
+            }
+        }
+    }
+
+    // MaybeQueueHeart removed: we now place hearts directly from the pool inline where needed
+
+    void LevelManager::UpdateProjectilePooling(float, float) {
+        if (!m_projectilePoolInitialized) return;
+        // Projectiles will be recycled by PlayerController when lifetime expires; nothing to do here yet
+    }
+
+    void LevelManager::UpdateEnemyPooling(float, float worldScrollDistance) {
+        if (!m_enemyPoolInitialized) return;
+        // Wrap enemies when off-screen left, reusing pool
+        float screenW = 1179.0f;
+        // Find rightmost enemy X
+        float rightmostX = screenW;
+        for (Gnosis::Entity e : m_activeEnemies) {
+            Transform* t = m_ecsSystem->GetComponent<Transform>(e);
+            if (t && t->position.x > rightmostX) rightmostX = t->position.x;
+        }
+        for (Gnosis::Entity e : m_activeEnemies) {
+            Transform* t = m_ecsSystem->GetComponent<Transform>(e);
+            Sprite* s = m_ecsSystem->GetComponent<Sprite>(e);
+            if (!t || !s) continue;
+            float leftEdge = t->position.x;
+            float widthPx = s->width * std::abs(t->scale.x);
+            float rightEdge = leftEdge + widthPx;
+            if (rightEdge < 0.0f) {
+                t->position.x = rightmostX + m_enemySpacing;
+                float baseY = 900.0f + static_cast<float>((rand()%300) - 150);
+                t->position.y = baseY;
+                m_enemyBaseY[e] = baseY;
+                rightmostX = t->position.x;
+                GN_LOG_DEBUG("Enemy wrap: newX=" + std::to_string(t->position.x) + ", baseY=" + std::to_string(baseY));
+            }
+            // Sinusoidal motion around base Y
+            auto it = m_enemyBaseY.find(e);
+            if (it != m_enemyBaseY.end()) {
+                float time = worldScrollDistance * 0.0035f; // tie to scroll for deterministic path
+                float amplitude = 110.0f;
+                t->position.y = it->second + std::sin(time + (t->position.x * 0.004f)) * amplitude;
+                // Log occasionally to verify sinusoid (lightweight)
+                if (((int)worldScrollDistance % 2000) == 0) {
+                    GN_LOG_DEBUG("Enemy sinusoid: x=" + std::to_string(t->position.x) + ", y=" + std::to_string(t->position.y));
+                }
+            }
+        }
+    }
+
+    void LevelManager::UpdateNPCPooling(float, float) {
+        if (!m_npcPoolInitialized || m_janitorEntity == 0) return;
+        // If Janitor goes off-screen left, move him to the right again at ground Y
+        Transform* t = m_ecsSystem->GetComponent<Transform>(m_janitorEntity);
+        Sprite* s = m_ecsSystem->GetComponent<Sprite>(m_janitorEntity);
+        if (!t || !s) return;
+        float screenW = 1179.0f, screenH = 2556.0f;
+        float rightEdge = t->position.x + s->width * std::abs(t->scale.x);
+        if (rightEdge < 0.0f) {
+            float janitorHeight = 64.0f * m_currentLevelConfig.baseScale;
+            t->position.x = screenW + 220.0f;
+            // Align using parallax back layer's scale to match pixel band: 20px * backgroundScale
+            float backScale = (m_currentLevelConfig.backgroundLayers.size() > 1) ? m_currentLevelConfig.backgroundLayers[1].scaleMultiplier : 1.0f;
+            float offsetPx = 20.0f * 5.0f; // Sewer backgrounds scaled by ~5x to screen height
+            t->position.y = screenH - janitorHeight - offsetPx;
+            GN_LOG_INFO("NPC Janitor wrap: newX=" + std::to_string(t->position.x) + ", newY=" + std::to_string(t->position.y));
+            // Reset NPC state on wrap and re-apply state clip
+            NPC* npc = m_ecsSystem->GetComponent<NPC>(m_janitorEntity);
+            if (npc) { npc->state = 0; npc->triggered = false; npc->timer = 0.0f; }
+            StateAnimation* sa2 = m_ecsSystem->GetComponent<StateAnimation>(m_janitorEntity);
+            Sprite* spr = m_ecsSystem->GetComponent<Sprite>(m_janitorEntity);
+            if (sa2 && spr) {
+                const StateAnimation::Clip* clip = sa2->getClip("sweep");
+                if (clip) {
+                    spr->textureId = clip->textureId;
+                    spr->isAnimated = (clip->frameCount > 1);
+                    spr->frameWidth = clip->frameWidth;
+                    spr->frameHeight = clip->frameHeight;
+                    spr->frameCount = clip->frameCount;
+                    spr->frameTime = clip->frameTime;
+                    spr->loop = clip->loop;
+                    spr->currentFrame = 0;
+                }
+                sa2->currentState = "sweep";
+            }
+        }
+    }
+
+    Gnosis::Entity LevelManager::SpawnNPCJanitor(float x, float y) {
+        if (!m_ecsSystem) return 0;
+        Gnosis::Entity npc = m_ecsSystem->CreateEntity();
+        Transform tr(Gnosis::GNVector2(x, y), 0.0f, Gnosis::GNVector2(m_currentLevelConfig.baseScale, m_currentLevelConfig.baseScale));
+        // Start in sweeping loop; swap to surprise when player passes (state machine handled elsewhere)
+        Sprite sp("JanitorSweep", 64.0f, 64.0f);
+        sp.layer = 1; // behind pipes for parallax feel
+        sp.visible = true;
+        sp.isAnimated = true;
+        sp.frameWidth = 64; sp.frameHeight = 64;
+        sp.frameCount = 4;
+        sp.frameTime = 0.08f; // faster sweep
+        sp.currentFrame = 0;
+        // Match parallax back band speed from config (first back layer if available)
+        // Use EXACT back parallax scroll speed (Layer 1 index) so he drifts slower than pipes
+        float janitorSpeed = 60.0f;
+        if (m_currentLevelConfig.backgroundLayers.size() > 1) {
+            janitorSpeed = m_currentLevelConfig.backgroundLayers[1].scrollSpeed;
+        }
+        Physics ph; ph.velocity.x = -janitorSpeed; ph.useGravity = false;
+        Hitbox hb; hb.type = ColliderType::Rectangle; hb.width = 48.0f; hb.height = 48.0f; hb.isTrigger = true; hb.tag = "NPC";
+        NPC npcComp; npcComp.type = "Janitor"; npcComp.state = 0; npcComp.timer = 0.0f; npcComp.triggered = false;
+
+        m_ecsSystem->AddComponent<Transform>(npc, tr);
+        m_ecsSystem->AddComponent<Sprite>(npc, sp);
+        // Attach declarative animation set for state-driven control
+        StateAnimation sa;
+        {
+            StateAnimation::Clip sweep; sweep.textureId = "JanitorSweep"; sweep.frameWidth = 64; sweep.frameHeight = 64; sweep.frameCount = 4; sweep.frameTime = 0.08f; sweep.loop = true;
+            StateAnimation::Clip surprise; surprise.textureId = "JanitorSurprise"; surprise.frameWidth = 64; surprise.frameHeight = 64; surprise.frameCount = 8; surprise.frameTime = 0.09f; surprise.loop = false;
+            sa.clips.push_back({"sweep", sweep});
+            sa.clips.push_back({"surprise", surprise});
+            sa.currentState = "sweep";
+        }
+        m_ecsSystem->AddComponent<StateAnimation>(npc, sa);
+        m_ecsSystem->AddComponent<Physics>(npc, ph);
+        m_ecsSystem->AddComponent<Hitbox>(npc, hb);
+        m_ecsSystem->AddComponent<NPC>(npc, npcComp);
+        m_activeNPCs.push_back(npc);
+        return npc;
     }
 
     void LevelManager::UpdatePickupSpawning(float deltaTime) {
@@ -752,18 +1049,20 @@ namespace GameCore {
             sprite.hasCompleted = false;
             
             GN_LOG_DEBUG("LevelManager: Created animated bird enemy with 4 frames of 32x32");
-        } else if (config.textureId == "RatCopterIdle" || config.textureId == "ToiletPaperFlap") {
+        } else if (config.textureId == "ToiletPaperFlap") {
             // Other animated enemies can be configured similarly
             sprite.isAnimated = true;
-            sprite.frameWidth = static_cast<int>(config.width);
-            sprite.frameHeight = static_cast<int>(config.height);
-            sprite.frameCount = 4; // Default frame count
-            sprite.frameTime = 0.15f; // Default frame time
+            // 8-frame flying animation at 64x64
+            sprite.frameWidth = 64;
+            sprite.frameHeight = 64;
+            sprite.frameCount = 8;
+            sprite.frameTime = 0.12f; // ~8.3 fps
             sprite.currentFrame = 0;
             sprite.currentFrameTime = 0.0f;
             sprite.playing = true;
             sprite.loop = true;
             sprite.hasCompleted = false;
+            // Note: hurt animation (4 frames) can be switched by damage handling code later
         } else {
             // Static enemies
             sprite.isAnimated = false;
@@ -836,29 +1135,25 @@ namespace GameCore {
         sprite.layer = 5; // Pickup layer
         sprite.visible = true;
         
-        // Configure animation for coins - they have 10 frames of 16x16 in horizontal spritesheet (160x16 total)
-        if (type == "BlueCoin" || type == "GoldCoin" || type == "RedCoin") {
-            width = height = 16.0f; // Coins are 16x16
-            sprite.width = width;
-            sprite.height = height;
+        // Sewer: only GoldCoin (counts +1) and small PooHeart 32x32
+        if (type == "GoldCoin") {
+            // Gold coin animation: keep as 10 frames of 16x16 if spritesheet implies; render scaled by baseScale
+            width = height = 16.0f;
+            sprite.width = width; sprite.height = height;
             sprite.isAnimated = true;
-            sprite.frameWidth = 16;
-            sprite.frameHeight = 16; 
-            sprite.frameCount = 10; // 10 frames for coin animation
-            sprite.frameTime = 0.12f; // 120ms per frame for slower, more pleasant coin spinning
+            sprite.frameWidth = 16; sprite.frameHeight = 16; 
+            sprite.frameCount = 10; sprite.frameTime = 0.1f;
             sprite.currentFrame = 0;
             sprite.currentFrameTime = 0.0f;
             sprite.playing = true;
             sprite.loop = true; // Coins loop infinitely
             sprite.hasCompleted = false;
             
-            GN_LOG_DEBUG("LevelManager: Created animated coin " + type + " with 10 frames of 16x16");
+            GN_LOG_DEBUG("LevelManager: Created animated gold coin with 10 frames of 16x16");
         } else if (type == "PooHeart") {
-            width = height = 48.0f; // Hearts are bigger
-            sprite.width = width;
-            sprite.height = height;
-            // PooHeart could be animated too if it has multiple frames
-            sprite.isAnimated = false; // For now, keep hearts static
+            width = height = 32.0f; // Small heart 32x32
+            sprite.width = width; sprite.height = height;
+            sprite.isAnimated = false; // Static heart
         } else {
             // Default pickup configuration
             sprite.isAnimated = false;
@@ -878,7 +1173,7 @@ namespace GameCore {
         // Create pickup component
         Pickup pickupComp;
         pickupComp.pickupType = type;
-        pickupComp.value = (type.find("Coin") != std::string::npos) ? 10 : 1; // Coins worth 10, hearts worth 1
+        pickupComp.value = (type == "GoldCoin") ? 1 : 0; // Only coins add to coin counter
         pickupComp.isActive = true;
         
         // Add components
@@ -967,6 +1262,24 @@ namespace GameCore {
                 ++it;
             }
         }
+
+        // Clean up NPCs
+        for (auto it = m_activeNPCs.begin(); it != m_activeNPCs.end();) {
+            Transform* transform = m_ecsSystem->GetComponent<Transform>(*it);
+            Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(*it);
+            if (transform && sprite) {
+                float scaledWidth = sprite->width * std::abs(transform->scale.x);
+                float rightEdge = transform->position.x + scaledWidth;
+                if (rightEdge < leftBoundary) {
+                    m_ecsSystem->DestroyEntity(*it);
+                    it = m_activeNPCs.erase(it);
+                } else {
+                    ++it;
+                }
+            } else {
+                ++it;
+            }
+        }
     }
 
     bool LevelManager::ValidateLevelId(int levelId) {
@@ -1008,21 +1321,21 @@ namespace GameCore {
             float baseScale = m_currentLevelConfig.baseScale;
             
             // For backgrounds, calculate scale to fit screen height
-            // Determine texture size based on specific texture ID
-            float textureWidth, textureHeight;
-            if (layerConfig.textureId.find("Front") != std::string::npos) {
-                // FrontLayer backgrounds are 2048x480
-                textureWidth = 2048.0f;
-                textureHeight = 480.0f;
-            } else if (layerConfig.textureId.find("Clouds") != std::string::npos) {
-                // Cloud layers are 512x180
-                textureWidth = 512.0f;
-                textureHeight = 180.0f;
-            } else {
-                // Other background layers (Back, Mid) are 1024x480
-                textureWidth = 1024.0f;
-                textureHeight = 480.0f;
+            // Determine texture size directly from platform delegates (no static fallbacks)
+            int tw = 0, th = 0;
+            if (m_platformDelegates.asset.getTextureMetadata) {
+                GameCore::TextureMetadata meta{};
+                if (m_platformDelegates.asset.getTextureMetadata(layerConfig.textureId.c_str(), &meta)) {
+                    tw = meta.width;
+                    th = meta.height;
+                }
             }
+            if (tw <= 0 || th <= 0) {
+                GN_LOG_WARN(std::string("getTextureMetadata unavailable for '") + layerConfig.textureId + "', defaulting 512x512");
+                tw = 512; th = 512;
+            }
+            float textureWidth = static_cast<float>(tw);
+            float textureHeight = static_cast<float>(th);
             
             // Scale to fit iPhone 16 screen height in portrait mode (actual pixels)
             // iPhone 16 Portrait: 1179×2556 actual pixels
@@ -1109,6 +1422,11 @@ namespace GameCore {
                 // Create and add ParallaxInstance component for better management
                 ParallaxInstance instanceComponent(layerConfig.textureId, i, numInstances, scaledWidth);
                 m_ecsSystem->AddComponent<ParallaxInstance>(bgEntity, instanceComponent);
+                // Add optional variant support so the texture can change on wrap
+                if (!layerConfig.variantTextureIds.empty()) {
+                    ParallaxVariants variants(layerConfig.variantTextureIds);
+                    m_ecsSystem->AddComponent<ParallaxVariants>(bgEntity, variants);
+                }
                 GN_LOG_INFO("Added ParallaxInstance component to entity " + std::to_string(bgEntity) + " (instance " + std::to_string(i) + " of " + std::to_string(numInstances) + ")" +
                            " scaledWidth=" + std::to_string(scaledWidth));
                 
@@ -1234,36 +1552,50 @@ namespace GameCore {
 
         GN_LOG_INFO("Initializing obstacle pool for level " + std::to_string(m_currentLevelId));
 
-        // Calculate spacing based on screen width and desired difficulty
-        m_obstacleSpacing = 600.0f; // Closer spacing between toilet pairs for better gameplay
+        // Level 2 patterns can be several tiles wide; use wider base spacing to prevent initial overlaps
+        m_obstacleSpacing = 5200.0f;
         
         // Choose the first obstacle type for the pool (can randomize later)
         const ObstacleConfig& baseConfig = m_currentLevelConfig.obstacles[0];
         
-        // Create initial pool of obstacles - position them off-screen to the right using screen positions
-        // iPhone 16 portrait width is ~1179px, start obstacles at screen position screenWidth + 100
+        // Create initial pool: place patterns back-to-back using each group's actual width, not a fixed spacing
         float screenWidth = 1179.0f;
+        float initialCameraX = 0.0f;
+        float nextWorldX = screenWidth + 100.0f + initialCameraX;
+        const float safeGap = 160.0f; // slight breathing room between groups
         
-        // Get current camera position to convert screen positions to world positions
-        // For initial setup, camera should be at 0, but let's be safe
-        float initialCameraX = 0.0f; // Initial camera position
-        
-        float startScreenX = screenWidth + 100.0f; // Screen position: just off-screen to the right
         for (int i = 0; i < OBSTACLE_POOL_SIZE; i++) {
-            float screenX = startScreenX + (i * m_obstacleSpacing); // Screen position
-            float worldX = screenX + initialCameraX; // Convert to world position
-            
-            GN_LOG_DEBUG("Spawning obstacle " + std::to_string(i) + " at screen X: " + std::to_string(screenX) + ", world X: " + std::to_string(worldX));
-            
-            if (baseConfig.spawnAsPair && !baseConfig.bottomTextureId.empty()) {
-                // Spawn toilet pair using consistent positioning rules
-                // No longer randomize gap height or center - use fixed rules
-                SpawnToiletPairWithGap(baseConfig, worldX, 0.0f, 0.0f); // Parameters ignored, method uses ground rules
+            GN_LOG_DEBUG("Spawning pooled pattern " + std::to_string(i) + " at world X: " + std::to_string(nextWorldX));
+            // Capture the next group id before spawn (spawners increment it once per group)
+            int groupIdBefore = m_nextGroupId;
+            if (m_currentLevelId == 2) {
+                int pattern = rand() % 5;
+                switch (pattern) {
+                    case 0: SpawnSewerPattern_TopOnly(nextWorldX); break;
+                    case 1: SpawnSewerPattern_BottomOnly(nextWorldX); break;
+                    case 2: SpawnSewerPattern_TopAndBottom(nextWorldX); break;
+                    case 3: SpawnSewerPattern_Pyramid3(nextWorldX); break;
+                    default: SpawnSewerPattern_PyramidTop3(nextWorldX); break;
+                }
             } else {
-                // Spawn single obstacle
-                float spawnY = 500.0f; // Default position for single obstacles
-                SpawnObstacle(baseConfig, worldX, spawnY);
+            if (baseConfig.spawnAsPair && !baseConfig.bottomTextureId.empty()) {
+                    SpawnToiletPairWithGap(baseConfig, nextWorldX, 0.0f, 0.0f);
+            } else {
+                    float spawnY = 500.0f;
+                    SpawnObstacle(baseConfig, nextWorldX, spawnY);
+                }
             }
+            // Determine spawned group's width from the leader's Group component
+            int justSpawnedGroupId = groupIdBefore; // spawners incremented m_nextGroupId
+            float spawnedGroupWidth = 600.0f; // fallback
+            for (Gnosis::Entity e : m_activeObstacles) {
+                Group* g = m_ecsSystem->GetComponent<Group>(e);
+                if (g && g->id == justSpawnedGroupId && g->isLeader) {
+                    spawnedGroupWidth = g->groupWidth;
+                    break;
+                }
+            }
+            nextWorldX += spawnedGroupWidth + safeGap;
         }
 
         m_poolInitialized = true;
@@ -1291,10 +1623,420 @@ namespace GameCore {
             }
         }
 
-        // Check each obstacle for wrapping
+        // If we are on Level 2 and using grouped patterns, wrap by group id
+        if (m_currentLevelId == 2) {
+            // Gather leaders by group id
+            std::unordered_map<int, Gnosis::Entity> groupLeaders;
+            for (Gnosis::Entity e : m_activeObstacles) {
+                Group* g = m_ecsSystem->GetComponent<Group>(e);
+                if (g && g->isLeader) {
+                    groupLeaders[g->id] = e;
+                }
+            }
+            for (const auto& [gid, leader] : groupLeaders) {
+                WrapGroupAroundScreen(gid, worldScrollDistance);
+            }
+        } else {
+            // Legacy per-entity wrapping
         for (Gnosis::Entity obstacle : m_activeObstacles) {
             WrapObstacleAroundScreen(obstacle, worldScrollDistance);
+            }
         }
+    }
+
+    void LevelManager::UpdateNPCStates(float deltaTime) {
+        // Simple state: switch to surprise when player passes (x less than player x)
+        // We don't have a player reference here; approximate by switching once when the NPC passes center of screen.
+        const float screenCenterX = 1179.0f * 0.35f; // trigger slightly left of center so it's visible
+        for (Gnosis::Entity e : m_activeNPCs) {
+            NPC* npc = m_ecsSystem->GetComponent<NPC>(e);
+            Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(e);
+            Transform* tr = m_ecsSystem->GetComponent<Transform>(e);
+            if (!npc || !sprite || !tr) continue;
+
+            if (npc->state == 0) {
+                // sweeping -> surprised when the player has presumably passed
+                if (!npc->triggered && tr->position.x < screenCenterX) {
+                    npc->triggered = true;
+                    npc->state = 1;
+                    npc->timer = 0.8f; // show surprise for ~0.8s
+                    // apply surprise clip
+                    StateAnimation* sa = m_ecsSystem->GetComponent<StateAnimation>(e);
+                    if (sa) {
+                        const StateAnimation::Clip* clip = sa->getClip("surprise");
+                        if (clip) {
+                            sprite->textureId = clip->textureId;
+                            sprite->isAnimated = (clip->frameCount > 1);
+                            sprite->frameWidth = clip->frameWidth;
+                            sprite->frameHeight = clip->frameHeight;
+                            sprite->frameCount = clip->frameCount;
+                            sprite->frameTime = clip->frameTime;
+                            sprite->loop = clip->loop;
+                            sprite->currentFrame = 0;
+                        }
+                        sa->currentState = "surprise";
+                    }
+                }
+            } else if (npc->state == 1) {
+                npc->timer -= deltaTime;
+                if (npc->timer <= 0.0f) {
+                    npc->state = 0;
+                    StateAnimation* sa = m_ecsSystem->GetComponent<StateAnimation>(e);
+                    if (sa) {
+                        const StateAnimation::Clip* clip = sa->getClip("sweep");
+                        if (clip) {
+                            sprite->textureId = clip->textureId;
+                            sprite->isAnimated = (clip->frameCount > 1);
+                            sprite->frameWidth = clip->frameWidth;
+                            sprite->frameHeight = clip->frameHeight;
+                            sprite->frameCount = clip->frameCount;
+                            sprite->frameTime = clip->frameTime;
+                            sprite->loop = clip->loop;
+                            sprite->currentFrame = 0;
+                        }
+                        sa->currentState = "sweep";
+                    }
+                }
+            }
+        }
+    }
+
+    void LevelManager::WrapGroupAroundScreen(int groupId, float worldScrollDistance) {
+        if (!m_ecsSystem) return;
+
+        // Find leader and compute group bounds
+        Transform* leaderTransform = nullptr;
+        Sprite* leaderSprite = nullptr;
+        float groupWidth = 0.0f;
+        Gnosis::Entity leaderEntity = 0;
+
+        for (Gnosis::Entity e : m_activeObstacles) {
+            Group* g = m_ecsSystem->GetComponent<Group>(e);
+            if (g && g->id == groupId && g->isLeader) {
+                leaderTransform = m_ecsSystem->GetComponent<Transform>(e);
+                leaderSprite = m_ecsSystem->GetComponent<Sprite>(e);
+                leaderEntity = e;
+                groupWidth = g->groupWidth;
+                break;
+            }
+        }
+        if (!leaderTransform || !leaderSprite) return;
+
+        float scaledWidth = leaderSprite->width * std::abs(leaderTransform->scale.x);
+        // Compute last-member right edge by scanning members of this group
+        float lastMemberRight = leaderTransform->position.x + scaledWidth;
+        for (Gnosis::Entity e : m_activeObstacles) {
+            Group* g = m_ecsSystem->GetComponent<Group>(e);
+            if (g && g->id == groupId) {
+                Transform* t = m_ecsSystem->GetComponent<Transform>(e);
+                Sprite* s = m_ecsSystem->GetComponent<Sprite>(e);
+                if (t && s) {
+                    float w = s->width * std::abs(t->scale.x);
+                    float r = t->position.x + w;
+                    if (r > lastMemberRight) lastMemberRight = r;
+                }
+            }
+        }
+        float screenWidth = 1179.0f;
+
+        if (lastMemberRight < 0.0f) {
+            // Find rightmost leader
+            float rightmostX = screenWidth;
+            for (Gnosis::Entity e : m_activeObstacles) {
+                Group* g = m_ecsSystem->GetComponent<Group>(e);
+                if (g && g->isLeader) {
+                    Transform* t = m_ecsSystem->GetComponent<Transform>(e);
+                    if (t && t->position.x > rightmostX) rightmostX = t->position.x;
+                }
+            }
+
+            // Compute actual group width (leader's groupWidth if present), and place next using that width
+            float groupSpan = groupWidth > 0.0f ? groupWidth : (scaledWidth + 40.0f);
+            float newX = rightmostX + groupSpan;
+            // Move entire group preserving offsets
+            float originY = leaderTransform->position.y; // keep same Y baseline
+            for (Gnosis::Entity e : m_activeObstacles) {
+                Group* g = m_ecsSystem->GetComponent<Group>(e);
+                if (g && g->id == groupId) {
+                    Transform* t = m_ecsSystem->GetComponent<Transform>(e);
+                    if (t) {
+                        t->position.x = newX + (g->isLeader ? 0.0f : g->offsetX);
+                        t->position.y = originY + g->offsetY;
+                    }
+                    Obstacle* o = m_ecsSystem->GetComponent<Obstacle>(e);
+                    if (o) o->pipeCleared = false;
+                }
+            }
+        }
+    }
+
+    // --- Sewer patterns: single-piece formations ---
+    static inline std::string NextSewerColor(int index) {
+        return (index % 2 == 0) ? "TopPipeWide" : "TopPipeWideBlue"; // we will override bottom flag
+    }
+
+    void LevelManager::SpawnSewerPattern_TopOnly(float startX) {
+        const float scale = m_currentLevelConfig.baseScale;
+        // Exact art size 192x64
+        int metaW = 192, metaH = 64;
+        const float pipeW = static_cast<float>(metaW);
+        const float pipeH = static_cast<float>(metaH);
+        const float verticalTopY = 0.0f; // top-aligned
+        const float spacingX = pipeW * scale * 1.6f; // more separation
+
+        int groupId = m_nextGroupId++;
+        // Enforce top-only variants
+        const std::string tex = (rand() % 2 == 0) ? "TopPipeWide" : "TopPipeWideBlue";
+        GN_LOG_DEBUG(std::string("Spawn TopOnly groupId=") + std::to_string(groupId) + 
+                     " tex=" + tex + " startX=" + std::to_string(startX) + " topY=0");
+        Gnosis::Entity e = m_ecsSystem->CreateEntity();
+        Transform tr(Gnosis::GNVector2(startX, verticalTopY), 0.0f, Gnosis::GNVector2(scale, scale));
+        Sprite sp(tex, pipeW, pipeH); sp.layer = 3; sp.visible = true;
+        Physics ph; ph.velocity.x = -m_currentLevelConfig.worldSpeed; ph.useGravity = false;
+        // 6 px inset hitbox
+        Hitbox hb; hb.type = ColliderType::Rectangle; hb.width = pipeW - 12.0f; hb.height = pipeH - 12.0f; hb.offsetX = 0.0f; hb.offsetY = 0.0f; hb.isStatic = false; hb.tag = "obstacle";
+        Obstacle ob; ob.obstacleType = tex; ob.damage = 1; ob.basePosition = tr.position;
+        Group gp; gp.id = groupId; gp.isLeader = true; gp.offsetX = 0.0f; gp.offsetY = 0.0f; gp.groupWidth = pipeW * scale * 1.6f;
+        m_ecsSystem->AddComponent<Transform>(e, tr);
+        m_ecsSystem->AddComponent<Sprite>(e, sp);
+        m_ecsSystem->AddComponent<Physics>(e, ph);
+        m_ecsSystem->AddComponent<Hitbox>(e, hb);
+        m_ecsSystem->AddComponent<Obstacle>(e, ob);
+        // Enable debug collider/bounds visualization for pipes
+        // Debug hitboxes off for production visuals
+        m_ecsSystem->AddComponent<Group>(e, gp);
+        m_activeObstacles.push_back(e);
+    }
+
+    void LevelManager::SpawnSewerPattern_BottomOnly(float startX) {
+        const float scale = m_currentLevelConfig.baseScale;
+        // Exact art size 192x64
+        int metaW = 192, metaH = 64;
+        const float pipeW = static_cast<float>(metaW);
+        const float pipeH = static_cast<float>(metaH);
+        // Anchor from bottom of the screen up
+        float screenH = 2556.0f;
+        const float groundY = screenH - pipeH * scale;
+        const float spacingX = pipeW * scale * 1.6f; // more separation
+
+        int groupId = m_nextGroupId++;
+        // Enforce bottom-only variants
+        const std::string texB = (rand() % 2 == 0) ? "BottomPipeWide" : "BottomPipeWideBlue";
+        GN_LOG_DEBUG(std::string("Spawn BottomOnly groupId=") + std::to_string(groupId) +
+                     " tex=" + texB + " startX=" + std::to_string(startX) + " bottomY=" + std::to_string(groundY));
+        Gnosis::Entity e2 = m_ecsSystem->CreateEntity();
+        Transform tr2(Gnosis::GNVector2(startX, groundY), 0.0f, Gnosis::GNVector2(scale, scale));
+        Sprite sp2(texB, pipeW, pipeH); sp2.layer = 3; sp2.visible = true;
+        Physics ph2; ph2.velocity.x = -m_currentLevelConfig.worldSpeed; ph2.useGravity = false;
+        Hitbox hb2; hb2.type = ColliderType::Rectangle; hb2.width = pipeW - 12.0f; hb2.height = pipeH - 12.0f; hb2.offsetX = 0.0f; hb2.offsetY = 0.0f; hb2.isStatic = false; hb2.tag = "obstacle";
+        Obstacle ob2; ob2.obstacleType = texB; ob2.damage = 1; ob2.basePosition = tr2.position;
+        Group gp2; gp2.id = groupId; gp2.isLeader = true; gp2.offsetX = 0.0f; gp2.offsetY = 0.0f; gp2.groupWidth = pipeW * scale * 1.6f;
+        m_ecsSystem->AddComponent<Transform>(e2, tr2);
+        m_ecsSystem->AddComponent<Sprite>(e2, sp2);
+        m_ecsSystem->AddComponent<Physics>(e2, ph2);
+        m_ecsSystem->AddComponent<Hitbox>(e2, hb2);
+        m_ecsSystem->AddComponent<Obstacle>(e2, ob2);
+        // Debug hitboxes off for production visuals
+        m_ecsSystem->AddComponent<Group>(e2, gp2);
+        m_activeObstacles.push_back(e2);
+    }
+
+    void LevelManager::SpawnSewerPattern_TopAndBottom(float startX) {
+        const float scale = m_currentLevelConfig.baseScale;
+        // Exact art size 192x64
+        int metaW = 192, metaH = 64;
+        const float pipeW = static_cast<float>(metaW);
+        const float pipeH = static_cast<float>(metaH);
+        const float topY = 0.0f; // top-aligned
+        float screenH = 2556.0f;
+        const float bottomY = screenH - pipeH * scale;
+        int groupId = m_nextGroupId++;
+
+        // Top
+        {
+            const std::string texTop = (rand() % 2 == 0) ? "TopPipeWide" : "TopPipeWideBlue"; // top-only
+            GN_LOG_DEBUG(std::string("Spawn TopAndBottom TOP groupId=") + std::to_string(groupId) + 
+                         " tex=" + texTop + " x=" + std::to_string(startX) + " y=" + std::to_string(topY));
+            Gnosis::Entity e = m_ecsSystem->CreateEntity();
+            Transform tr(Gnosis::GNVector2(startX, topY), 0.0f, Gnosis::GNVector2(scale, scale));
+            Sprite sp(texTop, pipeW, pipeH); sp.layer = 3; sp.visible = true;
+            Physics ph; ph.velocity.x = -m_currentLevelConfig.worldSpeed; ph.useGravity = false;
+            Hitbox hb; hb.type = ColliderType::Rectangle; hb.width = pipeW - 12.0f; hb.height = pipeH - 12.0f; hb.isStatic = false; hb.tag = "obstacle";
+            Obstacle ob; ob.obstacleType = texTop; ob.damage = 1; ob.basePosition = tr.position; ob.isTopPart = true;
+            Group gp; gp.id = groupId; gp.isLeader = true; gp.offsetX = 0.0f; gp.offsetY = 0.0f; gp.groupWidth = pipeW * scale * 1.6f;
+            m_ecsSystem->AddComponent<Transform>(e, tr);
+            m_ecsSystem->AddComponent<Sprite>(e, sp);
+            m_ecsSystem->AddComponent<Physics>(e, ph);
+            m_ecsSystem->AddComponent<Hitbox>(e, hb);
+            m_ecsSystem->AddComponent<Obstacle>(e, ob);
+            // Debug hitboxes off for production visuals
+            m_ecsSystem->AddComponent<Group>(e, gp);
+            m_activeObstacles.push_back(e);
+        }
+
+        // Bottom
+        {
+            const std::string texBottom = (rand() % 2 == 0) ? "BottomPipeWide" : "BottomPipeWideBlue"; // bottom-only
+            GN_LOG_DEBUG(std::string("Spawn TopAndBottom BOTTOM groupId=") + std::to_string(groupId) + 
+                         " tex=" + texBottom + " x=" + std::to_string(startX) + " y=" + std::to_string(bottomY));
+            Gnosis::Entity e = m_ecsSystem->CreateEntity();
+            Transform tr(Gnosis::GNVector2(startX, bottomY), 0.0f, Gnosis::GNVector2(scale, scale));
+            Sprite sp(texBottom, pipeW, pipeH); sp.layer = 3; sp.visible = true;
+            Physics ph; ph.velocity.x = -m_currentLevelConfig.worldSpeed; ph.useGravity = false;
+            Hitbox hb; hb.type = ColliderType::Rectangle; hb.width = pipeW - 12.0f; hb.height = pipeH - 12.0f; hb.isStatic = false; hb.tag = "obstacle";
+            Obstacle ob; ob.obstacleType = texBottom; ob.damage = 1; ob.basePosition = tr.position; ob.isTopPart = false;
+            Group gp; gp.id = groupId; gp.isLeader = false; gp.offsetX = 0.0f; gp.offsetY = 0.0f; gp.groupWidth = pipeW * scale * 1.6f;
+            m_ecsSystem->AddComponent<Transform>(e, tr);
+            m_ecsSystem->AddComponent<Sprite>(e, sp);
+            m_ecsSystem->AddComponent<Physics>(e, ph);
+            m_ecsSystem->AddComponent<Hitbox>(e, hb);
+            m_ecsSystem->AddComponent<Obstacle>(e, ob);
+            // Debug hitboxes off for production visuals
+            m_ecsSystem->AddComponent<Group>(e, gp);
+            m_activeObstacles.push_back(e);
+        }
+    }
+
+    void LevelManager::SpawnSewerPattern_Pyramid3(float startX) {
+        // 3-high pyramid: bottom row 3, then 2, then 1; offset slightly right and start near top of bottom row
+        const float scale = m_currentLevelConfig.baseScale;
+        int metaW = 192, metaH = 64;
+        const float pipeW = static_cast<float>(metaW);
+        const float pipeH = static_cast<float>(metaH);
+        const float spacingX = pipeW * scale * 1.15f;
+        // Vertical stacking offsets: lift inner rows so stacked pipes sit "inside" the row below
+        const float spacingY = pipeH * scale * 0.6f;
+        const float row1LiftTop = 12.0f * scale;
+        const float row2LiftTop = 24.0f * scale;
+        const float row1Lift = 12.0f * scale;  // second row +12 px
+        const float row2Lift = 24.0f * scale;  // third row +24 px
+        float screenH = 2556.0f;
+        const float baseY = screenH - pipeH * scale;         // bottom pipes sit on floor
+        const float startYOffset = spacingY * 0.1f;           // start near top of bottom row
+        const float startXOffset = spacingX * 0.5f;           // offset to the right a bit
+        int groupId = m_nextGroupId++;
+
+        auto spawn = [&](float col, int row, int idx){
+            const bool bottom = true;
+            const std::string tex = ((row + static_cast<int>(col)) % 2 == 0) ? (bottom ? "BottomPipeWide" : "TopPipeWide")
+                                                                              : (bottom ? "BottomPipeWideBlue" : "TopPipeWideBlue");
+            float x = startX + startXOffset + col * spacingX;
+            float lift = (row == 1 ? row1Lift : (row == 2 ? row2Lift : 0.0f));
+            float y = (baseY - row * spacingY) + startYOffset - lift;
+            if (!bottom) { GN_LOG_ERROR("Pyramid3 spawn using TOP variant on bottom pyramid! idx=" + std::to_string(idx)); }
+            GN_LOG_DEBUG(std::string("Spawn Pyramid3 groupId=") + std::to_string(groupId) + " idx=" + std::to_string(idx) + 
+                         " tex=" + tex + " x=" + std::to_string(x) + " y=" + std::to_string(y));
+            Gnosis::Entity e = m_ecsSystem->CreateEntity();
+            Transform tr(Gnosis::GNVector2(x, y), 0.0f, Gnosis::GNVector2(scale, scale));
+            Sprite sp(tex, pipeW, pipeH); sp.layer = 3; sp.visible = true;
+            Physics ph; ph.velocity.x = -m_currentLevelConfig.worldSpeed; ph.useGravity = false;
+            Hitbox hb; hb.type = ColliderType::Rectangle; hb.width = pipeW; hb.height = pipeH; hb.isStatic = false; hb.tag = "obstacle";
+            Obstacle ob; ob.obstacleType = tex; ob.damage = 1; ob.basePosition = tr.position;
+            Group gp; gp.id = groupId; gp.isLeader = (idx == 0); gp.offsetX = tr.position.x - startX; gp.offsetY = tr.position.y - baseY; gp.groupWidth = 4 * spacingX;
+            m_ecsSystem->AddComponent<Transform>(e, tr);
+            m_ecsSystem->AddComponent<Sprite>(e, sp);
+            m_ecsSystem->AddComponent<Physics>(e, ph);
+            m_ecsSystem->AddComponent<Hitbox>(e, hb);
+            m_ecsSystem->AddComponent<Obstacle>(e, ob);
+            // Debug hitboxes off for production visuals
+            m_ecsSystem->AddComponent<Group>(e, gp);
+            m_activeObstacles.push_back(e);
+        };
+
+        int idx = 0;
+        for (int c = 0; c < 3; ++c) spawn(static_cast<float>(c), 0, idx++);     // bottom row 3
+        for (int c = 0; c < 2; ++c) spawn(c + 0.5f, 1, idx++);                  // middle 2 centered
+        spawn(1.0f, 2, idx++);                                                  // top 1 centered
+    }
+
+    // Inverted top-origin 3-high pyramid: top row 3 (TopPipe), then 2, then 1, stacking downward
+    void LevelManager::SpawnSewerPattern_PyramidTop3(float startX) {
+        const float scale = m_currentLevelConfig.baseScale;
+        int metaW = 192, metaH = 64;
+        const float pipeW = static_cast<float>(metaW);
+        const float pipeH = static_cast<float>(metaH);
+        const float spacingX = pipeW * scale * 1.15f;
+        const float spacingY = pipeH * scale * 0.6f;
+        const float row1LiftTop = 12.0f * scale;
+        const float row2LiftTop = 24.0f * scale;
+        const float topY = 0.0f; // origin at top
+        int groupId = m_nextGroupId++;
+
+        auto spawnTop = [&](float col, int row, int idx){
+            // Use only top variants for top-origin stacks
+            const std::string tex = ((row + static_cast<int>(col)) % 2 == 0) ? "TopPipeWide" : "TopPipeWideBlue";
+            float x = startX + col * spacingX;
+            float lift = (row == 1 ? row1LiftTop : (row == 2 ? row2LiftTop : 0.0f));
+            float y = topY + row * spacingY - lift; // nudge rows into the pipes visually
+            GN_LOG_DEBUG(std::string("Spawn PyramidTop3 groupId=") + std::to_string(groupId) + " idx=" + std::to_string(idx) + 
+                         " tex=" + tex + " x=" + std::to_string(x) + " y=" + std::to_string(y));
+            Gnosis::Entity e = m_ecsSystem->CreateEntity();
+            Transform tr(Gnosis::GNVector2(x, y), 0.0f, Gnosis::GNVector2(scale, scale));
+            Sprite sp(tex, pipeW, pipeH); sp.layer = 3; sp.visible = true;
+            Physics ph; ph.velocity.x = -m_currentLevelConfig.worldSpeed; ph.useGravity = false;
+            Hitbox hb; hb.type = ColliderType::Rectangle; hb.width = pipeW; hb.height = pipeH; hb.isStatic = false; hb.tag = "obstacle";
+            Obstacle ob; ob.obstacleType = tex; ob.damage = 1; ob.basePosition = tr.position; ob.isTopPart = true;
+            Group gp; gp.id = groupId; gp.isLeader = (idx == 0); gp.offsetX = tr.position.x - startX; gp.offsetY = tr.position.y - topY; gp.groupWidth = 4 * spacingX;
+            m_ecsSystem->AddComponent<Transform>(e, tr);
+            m_ecsSystem->AddComponent<Sprite>(e, sp);
+            m_ecsSystem->AddComponent<Physics>(e, ph);
+            m_ecsSystem->AddComponent<Hitbox>(e, hb);
+            m_ecsSystem->AddComponent<Obstacle>(e, ob);
+            // Debug hitboxes off for production visuals
+            m_ecsSystem->AddComponent<Group>(e, gp);
+            m_activeObstacles.push_back(e);
+        };
+
+        int idx = 0;
+        // top row: 3
+        for (int c = 0; c < 3; ++c) spawnTop(static_cast<float>(c), 0, idx++);
+        // row 1: 2 centered under
+        for (int c = 0; c < 2; ++c) spawnTop(c + 0.5f, 1, idx++);
+        // row 2: 1 centered under
+        spawnTop(1.0f, 2, idx++);
+    }
+
+    void LevelManager::SpawnSewerPattern_Pyramid4(float startX) {
+        // 4-high pyramid (4,3,2,1)
+        const float scale = m_currentLevelConfig.baseScale;
+        int metaW = 192, metaH = 64;
+        const float pipeW = static_cast<float>(metaW);
+        const float pipeH = static_cast<float>(metaH);
+        const float spacingX = pipeW * scale * 1.1f;
+        const float spacingY = pipeH * scale * 0.55f;
+        float screenH = 2556.0f;
+        const float baseY = screenH - pipeH * scale;
+        int groupId = m_nextGroupId++;
+
+        auto spawn = [&](float col, int row, int idx){
+            const bool bottom = row == 0; // bottom row uses bottom variant primarily
+            const std::string tex = ((row + static_cast<int>(col)) % 2 == 0) ? (bottom ? "BottomPipeWide" : "TopPipeWide")
+                                                                             : (bottom ? "BottomPipeWideBlue" : "TopPipeWideBlue");
+            float x = startX + col * spacingX;
+            float y = baseY - row * spacingY;
+            Gnosis::Entity e = m_ecsSystem->CreateEntity();
+            Transform tr(Gnosis::GNVector2(x, y), 0.0f, Gnosis::GNVector2(scale, scale));
+            Sprite sp(tex, pipeW, pipeH); sp.layer = 3; sp.visible = true;
+            Physics ph; ph.velocity.x = -m_currentLevelConfig.worldSpeed; ph.useGravity = false;
+            Hitbox hb; hb.type = ColliderType::Rectangle; hb.width = pipeW - 12.0f; hb.height = pipeH - 12.0f; hb.isStatic = false; hb.tag = "obstacle";
+            Obstacle ob; ob.obstacleType = tex; ob.damage = 1; ob.basePosition = tr.position;
+            Group gp; gp.id = groupId; gp.isLeader = (idx == 0); gp.offsetX = tr.position.x - startX; gp.offsetY = tr.position.y - baseY; gp.groupWidth = 5 * spacingX;
+            m_ecsSystem->AddComponent<Transform>(e, tr);
+            m_ecsSystem->AddComponent<Sprite>(e, sp);
+            m_ecsSystem->AddComponent<Physics>(e, ph);
+            m_ecsSystem->AddComponent<Hitbox>(e, hb);
+            m_ecsSystem->AddComponent<Obstacle>(e, ob);
+            DebugDraw dbg(true, true, Gnosis::GNColor(0,255,0,255), Gnosis::GNColor(255,0,0,255));
+            dbg.alpha = 0.5f; dbg.debugLayer = 18; m_ecsSystem->AddComponent<DebugDraw>(e, dbg);
+            m_ecsSystem->AddComponent<Group>(e, gp);
+            m_activeObstacles.push_back(e);
+        };
+
+        int idx = 0;
+        for (int c = 0; c < 4; ++c) spawn(static_cast<float>(c), 0, idx++);
+        for (int c = 0; c < 3; ++c) spawn(c + 0.5f, 1, idx++);
+        for (int c = 0; c < 2; ++c) spawn(c + 1.0f, 2, idx++);
+        spawn(1.5f, 3, idx++);
     }
 
     void LevelManager::WrapObstacleAroundScreen(Gnosis::Entity obstacle, float worldScrollDistance) {
@@ -1321,7 +2063,7 @@ namespace GameCore {
         // The user reports they disappear when touching the left edge, so trigger earlier
         // Use a more lenient condition that matches what the user observes
         float wrapBuffer = 0.0f; // No buffer - wrap as soon as right edge hits left screen edge
-        bool shouldWrap = (rightEdge < wrapBuffer);
+        bool shouldWrap = (rightEdge <= 0.0f);
 
         GN_LOG_DEBUG("Obstacle wrap check: leftEdge=" + std::to_string(leftEdge) +
                      ", rightEdge=" + std::to_string(rightEdge) +

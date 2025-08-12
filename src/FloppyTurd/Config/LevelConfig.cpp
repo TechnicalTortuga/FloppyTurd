@@ -10,7 +10,10 @@ namespace GameCore {
         config.worldSpeed = SpeedConstants::BASE_WORLD_SPEED;  // Use configurable speed constants
         config.baseScale = 8.0f;  // Keep player scale consistent
         
-        // Disable pickup spawning for Level 1 - focus on core mechanics only
+        // Level 1 feature gates: no enemies, NPCs, or pickups
+        config.enableEnemies = false;
+        config.enableNPCs = false;
+        config.enablePickups = false;
         config.pickupSpawnRate = 0.0f;  // No pickups in Level 1
         
         AddParkLevelLayers(config);
@@ -29,6 +32,10 @@ namespace GameCore {
         config.baseScale = 8.0f;
         config.difficultyMultiplier = 1.2f;
         
+        // Level 2 feature gates
+        config.enableEnemies = true;
+        config.enableNPCs = true;   // Janitor
+        config.enablePickups = true;
         AddSewerLevelLayers(config);
         AddSewerObstacles(config);
         AddSewerEnemies(config);
@@ -45,6 +52,10 @@ namespace GameCore {
         config.baseScale = 8.0f;
         config.difficultyMultiplier = 1.4f;
         
+        // Level 3 gates
+        config.enableEnemies = true;
+        config.enableNPCs = false;
+        config.enablePickups = true;
         AddDesertLevelLayers(config);
         AddDesertObstacles(config);
         AddDesertEnemies(config);
@@ -61,6 +72,9 @@ namespace GameCore {
         config.baseScale = 8.0f;
         config.difficultyMultiplier = 1.6f;
         
+        config.enableEnemies = true;
+        config.enableNPCs = false;
+        config.enablePickups = true;
         AddSnowLevelLayers(config);
         AddSnowObstacles(config);
         AddSnowEnemies(config);
@@ -77,6 +91,9 @@ namespace GameCore {
         config.baseScale = 8.0f;
         config.difficultyMultiplier = 1.8f;
         
+        config.enableEnemies = true;
+        config.enableNPCs = false;
+        config.enablePickups = true;
         AddCastleLevelLayers(config);
         AddCastleObstacles(config);
         AddCastleEnemies(config);
@@ -93,6 +110,9 @@ namespace GameCore {
         config.baseScale = 8.0f;
         config.difficultyMultiplier = 2.0f;
         
+        config.enableEnemies = true;
+        config.enableNPCs = false;
+        config.enablePickups = false; // Boss level: control pickups per design
         AddBossLevelLayers(config);
         AddBossObstacles(config);
         AddBossEnemies(config);
@@ -152,20 +172,21 @@ namespace GameCore {
     }
 
     void LevelConfigFactory::AddSewerLevelLayers(LevelConfig& config) {
-        // Sewer level layers - darker, underground feel
-        float backgroundScale = 2.66f;  // Separate scale for 1024x480 backgrounds
-        
-        config.backgroundLayers.emplace_back("SewerLevelBackground", 50.0f, 0.1f, 0);
+        // Sewer level layers - alternate between four large backgrounds as they wrap
+        // SewerLarge textures are 512x512; scale to fill screen height (2556px)
+        float backgroundScale = 5.0f;  // Approximately 2556/512
+
+        // Front band
+        config.backgroundLayers.emplace_back("SewerLargeA", 90.0f, 0.35f, 1);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
-        
-        config.backgroundLayers.emplace_back("SewerLevelPipes", 75.0f, 0.2f, 1);
+        config.backgroundLayers.back().repeatWidth = 512.0f * backgroundScale;
+        config.backgroundLayers.back().variantTextureIds = {"SewerLargeA", "SewerLargeB", "SewerLargeC", "SewerLargeD"};
+
+        // Back band for depth
+        config.backgroundLayers.emplace_back("SewerLargeB", 60.0f, 0.2f, 0);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
-        
-        config.backgroundLayers.emplace_back("SewerLevelWater", 100.0f, 0.3f, 2);
-        config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
+        config.backgroundLayers.back().repeatWidth = 512.0f * backgroundScale;
+        config.backgroundLayers.back().variantTextureIds = {"SewerLargeA", "SewerLargeB", "SewerLargeC", "SewerLargeD"};
     }
 
     void LevelConfigFactory::AddDesertLevelLayers(LevelConfig& config) {
@@ -255,16 +276,12 @@ namespace GameCore {
     }
 
     void LevelConfigFactory::AddSewerObstacles(LevelConfig& config) {
-        // Level 2: Wide sewer pipes - static (too long to oscillate nicely)
-        // Save oscillation for gold toilets in harder difficulties
-        config.obstacles.emplace_back("TopPipeWide", "BottomPipeWide", 
-                                     80.0f, 180.0f, 160.0f, 2.8f, config.worldSpeed, 
-                                     ToiletBehavior::STATIC, 0.0f, 0.0f);
-        
-        // Add blue variant for variety
-        config.obstacles.emplace_back("TopPipeWideBlue", "BottomPipeWideBlue", 
-                                     80.0f, 180.0f, 160.0f, 3.2f, config.worldSpeed, 
-                                     ToiletBehavior::STATIC, 0.0f, 0.0f);
+        // Level 2: Horizontal sewer segments (exact art size 192x64)
+        config.obstacles.clear();
+        config.obstacles.emplace_back("TopPipeWide", 192.0f, 64.0f, 0.0f, 2.8f, config.worldSpeed, false);
+        config.obstacles.emplace_back("TopPipeWideBlue", 192.0f, 64.0f, 0.0f, 2.8f, config.worldSpeed, false);
+        config.obstacles.emplace_back("BottomPipeWide", 192.0f, 64.0f, 0.0f, 2.8f, config.worldSpeed, false);
+        config.obstacles.emplace_back("BottomPipeWideBlue", 192.0f, 64.0f, 0.0f, 2.8f, config.worldSpeed, false);
     }
 
     void LevelConfigFactory::AddDesertObstacles(LevelConfig& config) {
@@ -340,9 +357,9 @@ namespace GameCore {
     }
 
     void LevelConfigFactory::AddSewerEnemies(LevelConfig& config) {
-        // Sewer creatures
-        config.enemies.emplace_back("RatCopterIdle", 50.0f, 40.0f, 120.0f, 4.5f, 2, "swoop");
-        config.enemies.emplace_back("ToiletPaperFlap", 35.0f, 35.0f, 180.0f, 6.0f, 1, "vertical");
+        // Level 2 should only spawn Toilet Paper enemies
+        config.enemies.clear();
+        config.enemies.emplace_back("ToiletPaperFlap", 64.0f, 64.0f, 180.0f, 5.5f, 1, "horizontal");
     }
 
     void LevelConfigFactory::AddDesertEnemies(LevelConfig& config) {

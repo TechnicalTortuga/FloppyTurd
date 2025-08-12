@@ -193,6 +193,7 @@ public class GameViewController: UIViewController {
         
         // Add only a tap recognizer here; TouchInputHandler installs its own pan for smooth tracking
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
+        tapGesture.cancelsTouchesInView = false
         metalView.addGestureRecognizer(tapGesture)
         
         log("Touch input setup complete")

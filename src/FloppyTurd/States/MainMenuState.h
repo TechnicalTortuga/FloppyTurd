@@ -159,6 +159,24 @@ namespace GameCore {
         SwipeDirection m_swipeDirection;
         float m_targetOffsetX;
         float m_currentOffsetX;
+        // Standard UI font size to match main menu buttons (except the big OPTIONS title)
+        // Base button font size (will be scaled by m_uiScale where rendered)
+        float m_buttonFontSize = 18.0f;
+        // Main menu button scale for sprites (text size is controlled separately)
+        float m_menuButtonScale = 10.0f;
+        // Global UI text size across menus (mobile target now 88)
+        float m_globalUIFontSize = 88.0f;
+        // Horizontal pan state for level select
+        bool m_isPanning = false;
+        float m_panStartX = 0.0f;
+        float m_panStartOffsetX = 0.0f;
+        float m_lastPanX = 0.0f;
+        float m_levelSpacing = 0.0f;
+        bool m_isSnapping = false;
+        float m_snapElapsed = 0.0f;
+        float m_snapDuration = 0.18f;
+        float m_snapStartOffsetX = 0.0f;
+        int m_pendingIndexDelta = 0;
         
         // Button debouncing for level select arrows
         float m_lastArrowPressTime;
@@ -237,6 +255,8 @@ namespace GameCore {
         void AnimateSwipe(float deltaTime);
         void UpdateLevelVisibility();
         void CenterCurrentLevel();
+        void UpdateLevelPanPositions();
+        void UpdatePanSnapAnimation(float deltaTime);
         
         // Debug functions
         void DrawButtonDebugRectangles();

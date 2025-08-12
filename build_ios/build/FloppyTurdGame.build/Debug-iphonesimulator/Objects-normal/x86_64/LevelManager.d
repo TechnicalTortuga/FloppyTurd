@@ -18,4 +18,7 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Core/../Platform/PlatformDelegates.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Core/SystemManager.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Core/../../iOS/Threading/ThreadingProxy.h \
-  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Core/GNLog.h
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Core/GNLog.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Assets/TextureManager.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Assets/../Platform/PlatformDelegates.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Assets/../Core/GNLog.h

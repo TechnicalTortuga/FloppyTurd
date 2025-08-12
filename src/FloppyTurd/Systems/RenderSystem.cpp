@@ -418,34 +418,98 @@ namespace GameCore {
                 textY += ui->textOffsetY;
 
                 // Draw using centered or non-centered path in pixel coordinates
+                // Use the font size as provided by UIElement; do not auto-scale with button transform
+                float effectiveFontSize = ui->fontSize;
                 if (ui->centerTextHorizontally && ui->centerTextVertically && m_platformDelegates.renderer.drawTextCenteredOutlined) {
-                    // Use outlined centered text using the UI element's text color
-                    // For the gameplay pipe counter, make the outline extreme to verify visibility
+                    // Centered outlined multi-line support
                     float outlineWidth = 14.0f; // thicker outline for better readability
-                    // If UIElement provides a specific outline width, prefer it
-                    float uiOutline = outlineWidth;
-                    if (ui->textOutlineWidth > 0.0f) uiOutline = ui->textOutlineWidth;
-                    m_platformDelegates.renderer.drawTextCenteredOutlined(
-                        ui->buttonText, textX, textY, ui->fontSize,
-                        r, g, b, a,
-                        0.0f, 0.0f, 0.0f, 1.0f,
-                        uiOutline
-                    );
+                    float uiOutline = (ui->textOutlineWidth > 0.0f) ? ui->textOutlineWidth : outlineWidth;
+                    std::vector<std::string> lines;
+                    {
+                        std::string s = ui->buttonText;
+                        size_t start = 0;
+                        while (true) {
+                            size_t pos = s.find('\n', start);
+                            if (pos == std::string::npos) { lines.push_back(s.substr(start)); break; }
+                            lines.push_back(s.substr(start, pos - start));
+                            start = pos + 1;
+                        }
+                    }
+                    float lineHeight = effectiveFontSize * 1.1f;
+                    float totalHeight = lineHeight * static_cast<float>(lines.size());
+                    float startY = textY - totalHeight * 0.5f + lineHeight * 0.5f;
+                    for (size_t i = 0; i < lines.size(); ++i) {
+                        float lineY = startY + lineHeight * static_cast<float>(i);
+                        m_platformDelegates.renderer.drawTextCenteredOutlined(
+                            lines[i], textX, lineY, effectiveFontSize,
+                            r, g, b, a,
+                            0.0f, 0.0f, 0.0f, 1.0f,
+                            uiOutline
+                        );
+                    }
                 } else if (ui->centerTextHorizontally && ui->centerTextVertically && m_platformDelegates.renderer.drawTextCentered) {
-                    m_platformDelegates.renderer.drawTextCentered(
-                        ui->buttonText, textX, textY, ui->fontSize, r, g, b, a
-                    );
+                    // Support multi-line center: split on '\n' and stack lines vertically, centered on the anchor
+                    {
+                        float totalHeight = 0.0f;
+                        std::vector<std::string> lines;
+                        {
+                            std::string s = ui->buttonText;
+                            size_t start = 0;
+                            while (true) {
+                                size_t pos = s.find('\n', start);
+                                if (pos == std::string::npos) { lines.push_back(s.substr(start)); break; }
+                                lines.push_back(s.substr(start, pos - start));
+                                start = pos + 1;
+                            }
+                        }
+                        // Measure each line height approximately using font size; MetalRenderer will baseline-correct.
+                        float lineHeight = effectiveFontSize * 1.1f;
+                        totalHeight = lineHeight * static_cast<float>(lines.size());
+                        float startY = textY - totalHeight * 0.5f + lineHeight * 0.5f;
+                        for (size_t i = 0; i < lines.size(); ++i) {
+                            float lineY = startY + lineHeight * static_cast<float>(i);
+                            m_platformDelegates.renderer.drawTextCentered(
+                                lines[i], textX, lineY, effectiveFontSize, r, g, b, a
+                            );
+                        }
+                    }
                 } else if (m_platformDelegates.renderer.drawTextOutlined) {
-                    m_platformDelegates.renderer.drawTextOutlined(
-                        ui->buttonText, textX, textY, ui->fontSize,
-                        r, g, b, a,
-                        0.0f, 0.0f, 0.0f, 1.0f,
-                        6.0f
-                    );
+                    // Left/top anchored multiline support
+                    std::string s = ui->buttonText;
+                    size_t start = 0;
+                    float lineHeight = effectiveFontSize * 1.1f;
+                    float currentY = textY;
+                    // Use UI-provided outline width when available; fallback to 10 for parity with centered path
+                    float uiOutline = (ui->textOutlineWidth > 0.0f) ? ui->textOutlineWidth : 10.0f;
+                    while (true) {
+                        size_t pos = s.find('\n', start);
+                        std::string line = (pos == std::string::npos) ? s.substr(start) : s.substr(start, pos - start);
+                        m_platformDelegates.renderer.drawTextOutlined(
+                            line, textX, currentY, effectiveFontSize,
+                            r, g, b, a,
+                            0.0f, 0.0f, 0.0f, 1.0f,
+                            uiOutline
+                        );
+                        if (pos == std::string::npos) break;
+                        start = pos + 1;
+                        currentY += lineHeight;
+                    }
                 } else if (m_platformDelegates.renderer.drawText) {
-                    m_platformDelegates.renderer.drawText(
-                        ui->buttonText, textX, textY, ui->fontSize, r, g, b, a
-                    );
+                    // Left/top anchored multiline support
+                    std::string s = ui->buttonText;
+                    size_t start = 0;
+                    float lineHeight = effectiveFontSize * 1.1f;
+                    float currentY = textY;
+                    while (true) {
+                        size_t pos = s.find('\n', start);
+                        std::string line = (pos == std::string::npos) ? s.substr(start) : s.substr(start, pos - start);
+                        m_platformDelegates.renderer.drawText(
+                            line, textX, currentY, effectiveFontSize, r, g, b, a
+                        );
+                        if (pos == std::string::npos) break;
+                        start = pos + 1;
+                        currentY += lineHeight;
+                    }
                 } else {
                     GN_LOG_ERROR("RenderSystem: No text drawing delegate available for UIElement text");
                 }

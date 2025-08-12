@@ -462,6 +462,9 @@ static NSString * const ACImageNameTurdletShoot AC_SWIFT_PRIVATE = @"TurdletShoo
 /// The "UpArrow" asset catalog image resource.
 static NSString * const ACImageNameUpArrow AC_SWIFT_PRIVATE = @"UpArrow";
 
+/// The "Whacky_Joe_msdf_atlas" asset catalog image resource.
+static NSString * const ACImageNameWhackyJoeMsdfAtlas AC_SWIFT_PRIVATE = @"Whacky_Joe_msdf_atlas";
+
 /// The "a" asset catalog image resource.
 static NSString * const ACImageNameA AC_SWIFT_PRIVATE = @"a";
 

@@ -6,6 +6,7 @@
 #include "../../Engine/Core/Component.h"
 
 #include <string>
+#include <vector>
 
 namespace GameCore {
 
@@ -350,6 +351,25 @@ namespace GameCore {
     };
 
     /**
+     * Group component - allows treating multiple entities as a single logical group
+     * for spawning, spacing, and recycling (wrapping) purposes.
+     */
+    struct Group : public Gnosis::Component {
+        int id;                 // Unique group identifier
+        bool isLeader;          // True for the first entity in the group (drives wrapping)
+        float offsetX;          // X offset from group origin where this entity should be placed
+        float offsetY;          // Y offset from group origin where this entity should be placed
+        float groupWidth;       // Total width of the group (valid on leader only)
+
+        Group()
+            : id(0)
+            , isLeader(false)
+            , offsetX(0.0f)
+            , offsetY(0.0f)
+            , groupWidth(0.0f) {}
+    };
+
+    /**
      * Camera component - world view and scrolling
      */
     struct Camera : public Gnosis::Component {
@@ -406,6 +426,56 @@ namespace GameCore {
             , totalInstances(total)
             , textureWidth(width)
         {}
+    };
+
+    /**
+     * ParallaxVariants - optional component for background instances that can
+     * swap between multiple textures each time they wrap.
+     */
+    struct ParallaxVariants : public Gnosis::Component {
+        std::vector<std::string> textureIds; // e.g., {"SewerLargeA","SewerLargeB","SewerLargeC","SewerLargeD"}
+
+        ParallaxVariants() = default;
+        explicit ParallaxVariants(const std::vector<std::string>& ids) : textureIds(ids) {}
+    };
+
+    /**
+     * NPC component - lightweight state for simple NPC behaviors (e.g., Janitor).
+     */
+    struct NPC : public Gnosis::Component {
+        std::string type;   // "Janitor"
+        int state;          // 0 = Idle/Sweep, 1 = Surprised
+        float timer;        // state timer (e.g., surprise duration)
+        bool triggered;     // has surprise been triggered by player passing?
+
+        NPC() : state(0), timer(0.0f), triggered(false) {}
+    };
+
+    /**
+     * StateAnimation component - declarative animation set per logical state.
+     * Attach alongside Sprite; systems can switch stateName to drive Sprite fields.
+     */
+    struct StateAnimation : public Gnosis::Component {
+        struct Clip {
+            std::string textureId;
+            int frameWidth = 0;
+            int frameHeight = 0;
+            int frameCount = 1;
+            float frameTime = 0.1f;
+            bool loop = true;
+        };
+
+        // Mapping of state name -> animation clip
+        std::vector<std::pair<std::string, Clip>> clips;
+        std::string currentState;
+
+        // Returns pointer to clip by state or nullptr
+        const Clip* getClip(const std::string& state) const {
+            for (const auto& kv : clips) {
+                if (kv.first == state) return &kv.second;
+            }
+            return nullptr;
+        }
     };
     
     /**

@@ -1,5 +1,6 @@
 #include "CameraSystem.h"
 #include "../../Engine/Core/GNLog.h"
+#include "../Components/GameComponents.h"
 #include <algorithm>
 
 namespace GameCore {
@@ -133,7 +134,18 @@ namespace GameCore {
                     if (transform->position.x <= -instance->textureWidth) {
                         // Move it to the right edge of all instances
                         transform->position.x += totalLayerWidth;
-                        
+
+                        // If this entity supports background variants, swap to a random one on wrap
+                        ParallaxVariants* variants = m_ecsSystem->GetComponent<ParallaxVariants>(entity);
+                        if (variants && !variants->textureIds.empty()) {
+                            const std::string previousId = sprite->textureId;
+                            const int idx = rand() % variants->textureIds.size();
+                            sprite->textureId = variants->textureIds[idx];
+                            if (shouldLog) {
+                                GN_LOG_INFO("CameraSystem: Parallax variant swap '" + previousId + "' -> '" + sprite->textureId + "'");
+                            }
+                        }
+
                         if (shouldLog) {
                             GN_LOG_INFO("CameraSystem: Wrapped parallax layer '" + sprite->textureId + 
                                        "' instance " + std::to_string(instance->instanceIndex) +

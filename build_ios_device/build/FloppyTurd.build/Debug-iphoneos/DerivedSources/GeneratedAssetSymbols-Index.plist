@@ -1530,6 +1530,16 @@
 			<key>catalogPath</key>
 			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
+			<string>ACImageNameWhackyJoeMsdfAtlas</string>
+			<key>relativePath</key>
+			<string>./fonts/msdf/Whacky_Joe/Whacky_Joe_msdf_atlas.imageset</string>
+			<key>swiftSymbol</key>
+			<string>whackyJoeMsdfAtlas</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
+			<key>objcSymbol</key>
 			<string>ACImageNameA</string>
 			<key>relativePath</key>
 			<string>./graphics/ui/hud/a.imageset</string>

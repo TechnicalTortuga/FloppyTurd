@@ -338,6 +338,9 @@ namespace GameCore {
         
         // Create level manager system
         m_levelManager = std::make_unique<LevelManager>(m_ecsSystem);
+        if (m_platformDelegates) {
+            m_levelManager->SetPlatformDelegates(*m_platformDelegates);
+        }
         
         // Load the current level
         if (!m_levelManager->LoadLevel(m_currentLevelId)) {
@@ -398,7 +401,7 @@ namespace GameCore {
             // Debug overlays OFF by default (can be toggled later if needed)
             DebugDraw playerDebug(false, false, Gnosis::GNColor(0, 255, 0, 255), Gnosis::GNColor(255, 0, 0, 255));
             playerDebug.alpha = 0.35f;
-            m_ecsSystem->AddComponent<DebugDraw>(m_playerEntity, playerDebug);
+            // Debug hitboxes off for production visuals
             
             // Add player component
             PlayerComponent playerData;
@@ -407,6 +410,11 @@ namespace GameCore {
             // Set up player controller
             if (m_playerControllerSystem) {
                 m_playerControllerSystem->SetPlayerEntity(m_playerEntity);
+            }
+
+            // Expose player to LevelManager for NPC/enemy behavior and triggers
+            if (m_levelManager) {
+                m_levelManager->SetPlayerEntity(m_playerEntity);
             }
             
             GN_LOG_INFO("Created player entity: " + std::to_string(m_playerEntity));
@@ -891,9 +899,12 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             // Update object pooling (wraps obstacles around screen)
             m_levelManager->UpdateObstaclePooling(deltaTime, worldScrollDistance);
             
-            // Still spawn enemies and pickups using traditional spawning for now
-            m_levelManager->UpdateEnemySpawning(deltaTime);
-            m_levelManager->UpdatePickupSpawning(deltaTime);
+            // Pool-driven updates (no dynamic allocation during gameplay)
+            m_levelManager->UpdateEnemyPooling(deltaTime, worldScrollDistance);
+            m_levelManager->UpdateNPCPooling(deltaTime, worldScrollDistance);
+            m_levelManager->UpdatePickupPooling(deltaTime, worldScrollDistance);
+            // States
+            m_levelManager->UpdateNPCStates(deltaTime);
         }
     }
 

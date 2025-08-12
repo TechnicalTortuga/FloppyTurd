@@ -478,6 +478,9 @@ extension DeveloperToolsSupport.ImageResource {
     /// The "UpArrow" asset catalog image resource.
     static let upArrow = DeveloperToolsSupport.ImageResource(name: "UpArrow", bundle: resourceBundle)
 
+    /// The "Whacky_Joe_msdf_atlas" asset catalog image resource.
+    static let whackyJoeMsdfAtlas = DeveloperToolsSupport.ImageResource(name: "Whacky_Joe_msdf_atlas", bundle: resourceBundle)
+
     /// The "a" asset catalog image resource.
     static let a = DeveloperToolsSupport.ImageResource(name: "a", bundle: resourceBundle)
 

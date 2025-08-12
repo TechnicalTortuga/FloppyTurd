@@ -449,7 +449,6 @@ public class GameEngine: NSObject, TouchInputDelegate {
         let pixelBounds = UIScreen.main.nativeBounds
         let gameX = Float(normalizedPosition.x) * Float(pixelBounds.width)
         let gameY = Float(normalizedPosition.y) * Float(pixelBounds.height)
-        log("🎯 Touch MOVE: normalized (\(normalizedPosition.x), \(normalizedPosition.y)) -> game coords (\(gameX), \(gameY))", level: .debug)
         // Update touch state as down without press/release flags
         GameCore.updateTouchState(gameX, gameY, true, false, false)
         cppGame?.HandleInput()

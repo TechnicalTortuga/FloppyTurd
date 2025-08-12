@@ -63,6 +63,7 @@ namespace GameCore {
         float scaleMultiplier;  // Scale relative to base scale
         bool repeating;         // Whether this layer wraps around
         float repeatWidth;      // Width for wrapping (0 = auto-calculate from texture)
+        std::vector<std::string> variantTextureIds; // Optional variants that can swap on wrap
         
         BackgroundLayer(const std::string& texture, float speed, float layerDepth, int layer = 0)
             : textureId(texture)
@@ -72,6 +73,7 @@ namespace GameCore {
             , scaleMultiplier(1.0f)
             , repeating(true)
             , repeatWidth(0.0f)
+            , variantTextureIds()
         {}
     };
 
@@ -162,6 +164,11 @@ namespace GameCore {
         // Gameplay elements
         std::vector<ObstacleConfig> obstacles;
         std::vector<EnemyConfig> enemies;
+
+        // Feature gates per level
+        bool enableEnemies;
+        bool enableNPCs;
+        bool enablePickups;
         
         // Scaling and camera settings
         float baseScale;            // Base scale factor (originally designed for 320x180)
@@ -194,6 +201,9 @@ namespace GameCore {
             , enemySpawnRate(3.0f)
             , pickupSpawnRate(5.0f)
             , difficultyMultiplier(1.0f)
+            , enableEnemies(true)
+            , enableNPCs(false)
+            , enablePickups(true)
         {}
         
         /**

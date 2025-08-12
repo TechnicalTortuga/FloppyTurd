@@ -200,6 +200,7 @@ extension TouchInputHandler {
     private func setupGestureRecognizers(for view: UIView) {
         // Tap gesture
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTapInternal(_:)))
+        tapGesture.cancelsTouchesInView = false
         tapGesture.delegate = self
         view.addGestureRecognizer(tapGesture)
         gestureRecognizers.append(tapGesture)
@@ -215,6 +216,7 @@ extension TouchInputHandler {
         for direction in [UISwipeGestureRecognizer.Direction.up, .down, .left, .right] {
             let swipeGesture = UISwipeGestureRecognizer(target: self, action: #selector(handleSwipe(_:)))
             swipeGesture.direction = direction
+            swipeGesture.cancelsTouchesInView = false
             swipeGesture.delegate = self
             view.addGestureRecognizer(swipeGesture)
             gestureRecognizers.append(swipeGesture)
@@ -222,12 +224,14 @@ extension TouchInputHandler {
         
         // Pinch gesture
         let pinchGesture = UIPinchGestureRecognizer(target: self, action: #selector(handlePinch(_:)))
+        pinchGesture.cancelsTouchesInView = false
         pinchGesture.delegate = self
         view.addGestureRecognizer(pinchGesture)
         gestureRecognizers.append(pinchGesture)
         
         // Rotation gesture
         let rotationGesture = UIRotationGestureRecognizer(target: self, action: #selector(handleRotation(_:)))
+        rotationGesture.cancelsTouchesInView = false
         rotationGesture.delegate = self
         view.addGestureRecognizer(rotationGesture)
         gestureRecognizers.append(rotationGesture)
@@ -348,7 +352,7 @@ extension TouchInputHandler {
         let location = gesture.location(in: view)
         switch gesture.state {
         case .began:
-            // handled by tap press path; still set state
+            // Begin tracking without emitting release from pan recognizer
             touchPositions[0] = location
             touchStates[0] = .pressed
         case .changed:
@@ -357,9 +361,14 @@ extension TouchInputHandler {
             let normalized = CGPoint(x: location.x / max(view.bounds.width, 1), y: location.y / max(view.bounds.height, 1))
             delegate?.onTouchMove(normalizedPosition: normalized, viewSize: view.bounds.size)
             touchStates[0] = .down
-        case .ended, .cancelled, .failed:
+        case .ended:
+            // Do not set release here; rely on touchesEnded to buffer a proper release event
             touchPositions[0] = location
-            touchStates[0] = .released
+            touchStates[0] = .down
+        case .cancelled, .failed:
+            // Keep touch as down so drag is not cancelled mid-gesture; raw touches will continue
+            touchPositions[0] = location
+            touchStates[0] = .down
         default:
             break
         }

@@ -310,6 +310,18 @@ extension DeveloperToolsSupport.ImageResource {
     /// The "SewerBackgroundRunningWater" asset catalog image resource.
     static let sewerBackgroundRunningWater = DeveloperToolsSupport.ImageResource(name: "SewerBackgroundRunningWater", bundle: resourceBundle)
 
+    /// The "SewerLargeA" asset catalog image resource.
+    static let sewerLargeA = DeveloperToolsSupport.ImageResource(name: "SewerLargeA", bundle: resourceBundle)
+
+    /// The "SewerLargeB" asset catalog image resource.
+    static let sewerLargeB = DeveloperToolsSupport.ImageResource(name: "SewerLargeB", bundle: resourceBundle)
+
+    /// The "SewerLargeC" asset catalog image resource.
+    static let sewerLargeC = DeveloperToolsSupport.ImageResource(name: "SewerLargeC", bundle: resourceBundle)
+
+    /// The "SewerLargeD" asset catalog image resource.
+    static let sewerLargeD = DeveloperToolsSupport.ImageResource(name: "SewerLargeD", bundle: resourceBundle)
+
     /// The "SewerLevelPainting" asset catalog image resource.
     static let sewerLevelPainting = DeveloperToolsSupport.ImageResource(name: "SewerLevelPainting", bundle: resourceBundle)
 

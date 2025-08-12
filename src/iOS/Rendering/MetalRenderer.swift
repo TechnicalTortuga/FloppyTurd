@@ -139,7 +139,8 @@ public class MetalRenderer {
     // Device scale for px<->pt conversion (we render in device pixels)
     private var deviceScale: CGFloat = UIScreen.main.scale
     // Cache for rasterized text textures: key -> (texture,sizePx, ascentPx, padPx)
-    private var textTextureCache: [String: (texture: MTLTexture, sizePx: CGSize, ascentPx: CGFloat, padPx: CGFloat)] = [:]
+    // Cache rasterized text textures AND their registered renderer handle to avoid per-frame register/unregister churn
+    private var textTextureCache: [String: (texture: MTLTexture, sizePx: CGSize, ascentPx: CGFloat, padPx: CGFloat, handle: UInt32)] = [:]
 
     
     // MARK: - Initialization (@MainActor ensures main thread execution)
@@ -612,7 +613,16 @@ public class MetalRenderer {
     
     public func drawText(text: String, x: Float, y: Float, fontSize: Float, 
                         r: Float, g: Float, b: Float, a: Float) {
-        drawTextRaster(text, x: x, y: y, fontSize: fontSize, fill: SIMD4<Float>(r,g,b,a), outline: nil)
+        // Support multi-line with top-left anchor: render each line below the previous
+        // Split on literal backslash-n sequences and real newlines
+        let expanded = text.replacingOccurrences(of: "\\n", with: "\n")
+        let lines = expanded.split(separator: "\n", omittingEmptySubsequences: false)
+        var currentY = y
+        let lineHeight = fontSize * 1.1
+        for line in lines {
+            drawTextRaster(String(line), x: x, y: currentY, fontSize: fontSize, fill: SIMD4<Float>(r,g,b,a), outline: nil)
+            currentY += lineHeight
+        }
     }
 
     public func drawTextOutlined(_ text: String, x: Float, y: Float, fontSize: Float,
@@ -724,6 +734,15 @@ public class MetalRenderer {
     
     public func getHandleStatistics() -> (reused: Int, new: Int, active: Int) {
         return (reused: handleReuseCount, new: newHandleCount, active: textures.count)
+    }
+
+    /// Clear cached text textures and release their handles
+    public func clearTextTextureCache() {
+        for (key, entry) in textTextureCache {
+            if entry.handle != 0 { unregisterTexture(handle: entry.handle) }
+            textTextureCache.removeValue(forKey: key)
+        }
+        log("Text texture cache cleared", level: .info)
     }
     
     // MARK: - Additional Drawing Methods for Threading System
@@ -1456,6 +1475,7 @@ public class MetalRenderer {
         log("Screen Info - Logical: \(logicalWidth)x\(logicalHeight), Pixel: \(pixelWidth)x\(pixelHeight), Scale: \(scaleFactor), Portrait: \(isPortrait), Device: \(deviceModel)", level: .debug)
         
         // Create and return ScreenInfo struct
+        // IMPORTANT: Return by value only. Do not store the pointer passed from C++.
         var screenInfo = GameCore.ScreenInfo()
         screenInfo.logicalWidth = logicalWidth
         screenInfo.logicalHeight = logicalHeight
@@ -1776,10 +1796,10 @@ public class MetalRenderer {
             guard let cg = ctx.makeImage() else { return }
             let loader = MTKTextureLoader(device: device)
             guard let tex = try? loader.newTexture(cgImage: cg, options: [.SRGB: false, .generateMipmaps: false]) else { return }
-            entry = (tex, CGSize(width: w, height: h), ascent * deviceScale, pad)
+            entry = (tex, CGSize(width: w, height: h), ascent * deviceScale, pad, 0)
             textTextureCache[key] = entry
         }
-        guard let cached = entry else { return }
+        guard var cached = entry else { return }
         // Draw textured quad
         let drawX: Float
         let drawY: Float
@@ -1791,9 +1811,13 @@ public class MetalRenderer {
             drawX = x
             drawY = baseline
         }
-        let handle = registerTexture(cached.texture)
-        drawTexture(textureHandle: handle, x: drawX, y: drawY, width: Float(cached.sizePx.width), height: Float(cached.sizePx.height))
-        unregisterTexture(handle: handle)
+        // Register once and reuse the same handle across frames; release handle only on explicit cache clear
+        if cached.handle == 0 || !isHandleValid(cached.handle) {
+            let handle = registerTexture(cached.texture)
+            cached.handle = handle
+            textTextureCache[key] = cached
+        }
+        drawTexture(textureHandle: cached.handle, x: drawX, y: drawY, width: Float(cached.sizePx.width), height: Float(cached.sizePx.height))
     }
     
     public func measureText(_ text: String, fontSize: Float) -> (width: Float, height: Float) {
@@ -1843,24 +1867,34 @@ public class MetalRenderer {
     }
     
     public func drawTextCentered(_ text: String, x: Float, y: Float, fontSize: Float, r: Float, g: Float, b: Float, a: Float) {
-        let measured = measureText(text, fontSize: fontSize)
-        var baselineY = y - measured.height * 0.5
-        if let ctBase = self.ctFont {
-            let sizeInPoints = CGFloat(fontSize) / deviceScale
-            let ctFontSized = CTFontCreateCopyWithAttributes(ctBase, sizeInPoints, nil, nil)
-            let attr = [kCTFontAttributeName as NSAttributedString.Key: ctFontSized]
-            let attributed = NSAttributedString(string: text, attributes: attr)
-            let line = CTLineCreateWithAttributedString(attributed)
-            var overall = CGRect.null
-            let runs = CTLineGetGlyphRuns(line) as! [CTRun]
-            for run in runs {
-                let rb = CTRunGetImageBounds(run, nil, CFRange(location: 0, length: 0))
-                overall = overall.union(rb)
+        // For multi-line center, split and stack around center Y
+        // Split on literal backslash-n sequences and real newlines
+        let expanded = text.replacingOccurrences(of: "\\n", with: "\n")
+        let lines = expanded.split(separator: "\n", omittingEmptySubsequences: false)
+        let lineHeight = fontSize * 1.1
+        let totalHeight = lineHeight * Float(lines.count)
+        var startY = y - totalHeight * 0.5 + lineHeight * 0.5
+        for line in lines {
+            // compute baseline correction for each line via measure
+            let measured = measureText(String(line), fontSize: fontSize)
+            var baselineY = startY - measured.height * 0.5
+            if let ctBase = self.ctFont {
+                let sizeInPoints = CGFloat(fontSize) / deviceScale
+                let ctFontSized = CTFontCreateCopyWithAttributes(ctBase, sizeInPoints, nil, nil)
+                let attr = [kCTFontAttributeName as NSAttributedString.Key: ctFontSized]
+                let attributed = NSAttributedString(string: String(line), attributes: attr)
+                let lineCT = CTLineCreateWithAttributedString(attributed)
+                var overall = CGRect.null
+                let runs = CTLineGetGlyphRuns(lineCT) as! [CTRun]
+                for run in runs {
+                    let rb = CTRunGetImageBounds(run, nil, CFRange(location: 0, length: 0))
+                    overall = overall.union(rb)
+                }
+                baselineY = Float(CGFloat(startY) - overall.midY * deviceScale)
             }
-            baselineY = Float(CGFloat(y) - overall.midY * deviceScale)
+            drawTextRaster(String(line), x: x, y: baselineY, fontSize: fontSize, fill: SIMD4<Float>(r,g,b,a), outline: nil, isCentered: true)
+            startY += lineHeight
         }
-        log("drawTextCentered: center=(\(x),\(y)) size=(\(measured.width),\(measured.height)) baselineY=\(baselineY)", level: .debug)
-        drawTextRaster(text, x: x, y: y, fontSize: fontSize, fill: SIMD4<Float>(r,g,b,a), outline: nil, isCentered: true)
     }
 
     public func drawTextCenteredOutlined(_ text: String, x: Float, y: Float, fontSize: Float,

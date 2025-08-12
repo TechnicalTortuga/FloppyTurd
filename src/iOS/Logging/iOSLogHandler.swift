@@ -70,8 +70,8 @@ actor iOSLogActor {
     private var loggers: [String: OSLog] = [:]
     private var subsystem: String = Bundle.main.bundleIdentifier ?? "FloppyTurd"
     private var consoleFallbackEnabled: Bool = true
-    private var currentLogLevel: LogLevel = .debug
-    private var fileLoggingEnabled: Bool = true  // Enable for debugging UI issues
+    private var currentLogLevel: LogLevel = .info
+    private var fileLoggingEnabled: Bool = false  // Enable for debugging UI issues
     private var logFileURL: URL?
     private var logFileHandle: FileHandle?
     
@@ -333,7 +333,10 @@ public class iOSLogHandler: NSObject, @unchecked Sendable {
     public func initialize() -> Bool {
         Task { @Sendable in
             await logActor.setSubsystem(Bundle.main.bundleIdentifier ?? "FloppyTurd")
+            // Re-enable verbose logging and file capture for debugging
             await logActor.setLogLevel(.debug)
+            await logActor.setFileLogging(true)
+            await logActor.setConsoleFallback(true)
         }
         isInitialized = true
         currentLogLevel = .debug
