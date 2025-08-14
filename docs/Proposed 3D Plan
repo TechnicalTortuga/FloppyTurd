@@ -1,0 +1,227 @@
+High-Level 3D Architecture (Coexisting with 2D)
+Overview
+
+The architecture reuses the core from Floppy Turd: GameCore::FloppyTurdGame (unchanged base), GameCore::GameStateManager, Gnosis::ECS, and Gnosis::SystemManager (orchestrator).
+3D extensions are added modularly, allowing coexistence with 2D systems.
+Key flows: FloppyTurdGame connects to ECS, which orchestrates SystemManager. Systems interact with components and delegates.
+
+Subgraphs and Relationships
+
+Game (C++):
+
+Components: GameCore::FloppyTurdGame, GameCore::GameStateManager, Gnosis::ECS, Gnosis::SystemManager.
+Connections: FloppyTurdGame -> ECS; ECS -> SystemManager.
+
+
+3D Systems (C++):
+
+Systems: GameCore3D::SceneGraphSystem, GameCore3D::RenderSystem3D, GameCore3D::AnimationSystem3D (skeletal), GameCore3D::PhysicsSystem3D, GameCore3D::AudioSystem3D (spatial), GameCore3D::InputSystem3D (FP controls), GameCore3D::NetworkingSystem (multiplayer), GameCore3D::DiagnosticsSystem (perf).
+Connections: SystemManager -> All 3D Systems.
+
+
+3D Components (C++):
+
+Components: Transform3D {position: vec3, rotation: quat, scale: vec3}, Hierarchy {parent: Entity, firstChild, nextSibling}, Camera3D {fov, aspect, near, far, projection}, Light {type, color, intensity, range, angle}, MeshRenderer {mesh, material}, SkinnedMesh {mesh, material, skeleton}, Material {shader, textures, params}, Skybox {cubemap}, PhysicsBody3D {mass, drag, kinematic, velocity: vec3, angularVel: vec3}, Collider3D {box/sphere/capsule/mesh, trigger}, AudioSource3D {soundId, position, volume, falloff, spatialBlend, doppler}, NetworkSync {ownerId, predictionMode, syncFrequency}.
+Connections: SceneGraphSystem -> Transform3D, Hierarchy; RenderSystem3D -> Transform3D, Camera3D, Light, MeshRenderer, SkinnedMesh, Material, Skybox; PhysicsSystem3D -> PhysicsBody3D, Collider3D; AudioSystem3D -> AudioSource3D; NetworkingSystem -> NetworkSync.
+
+
+Platform Delegates (C++):
+
+Delegates: GameCore::PlatformDelegates {Renderer3DDelegate, Input3DDelegate, Audio3DDelegate, AssetDelegate (extended), NetworkDelegate, DiagnosticsDelegate}.
+Connections: RenderSystem3D -> Renderer3DDelegate (3D calls); InputSystem3D -> Input3DDelegate (input); AudioSystem3D -> Audio3DDelegate (audio); NetworkingSystem -> NetworkDelegate (net); DiagnosticsSystem -> DiagnosticsDelegate (diag). Uses C++/Swift Native Interop for iOS bridging.
+
+
+iOS (Swift):
+
+Components: GameEngine (Swift), CommandProcessor (Swift), Metal3DRenderer (Swift), ThreadingProxy (C++) - Optimized for Swift 6 Actors.
+Connections: CommandProcessor -> ThreadingProxy; ThreadingProxy -> Metal3DRenderer (command buffers); GameEngine -> CommandProcessor; GameEngine -> FloppyTurdGame.
+
+
+Raylib 3D (C++):
+
+Components: RaylibRenderer3D.
+Connections: PlatformDelegates -> RaylibRenderer3D (3D calls).
+
+
+
+Renderer3D Abstractions
+Classes and Interfaces
+
+IRenderer3D (C++) (Interface):
+
+Methods: Initialize(), Shutdown(), BeginFrame(), EndFrame(), Present(), SetCamera(camera: CameraParams), SetLights(lights: array<lightparams>), CreateMesh(verts, indices, layout) -> MeshHandle, DestroyMesh(MeshHandle), CreateMaterial(desc) -> MaterialHandle, DestroyMaterial(MaterialHandle), DrawMesh(mesh, transform, material), DrawSkinnedMesh(mesh, transform, material, skeleton), DrawSkybox(cubemap), BatchDraws(buffer: CommandBuffer) // Optimized for hot path.</lightparams>
+
+
+RenderPass (Abstract):
+
+Methods: Execute(ctx).
+
+
+ForwardPass:
+
+Inherits: RenderPass.
+Methods: Execute(ctx).
+
+
+ShadowPass:
+
+Inherits: RenderPass.
+Methods: Execute(ctx).
+
+
+SkyboxPass:
+
+Inherits: RenderPass.
+Methods: Execute(ctx).
+
+
+UIOverlayPass (2D):
+
+Inherits: RenderPass.
+Methods: Execute(ctx).
+
+
+RenderPipeline:
+
+Attributes: passes: vector<RenderPass*>.
+Methods: AddPass(p), ExecuteAll(ctx).
+
+
+Metal3DRenderer (Swift):
+
+Methods: beginFrame(), endFrame(), present(), setCamera(), setLights(), registerMesh(), destroyMesh(), registerMaterial(), destroyMaterial(), drawMesh(), drawSkinnedMesh(), drawSkybox(), batchCommands(buffer) // Direct Metal calls for perf.
+
+
+RaylibRenderer3D (C++):
+
+Methods: BeginFrame(), EndFrame(), Present(), SetCamera(), SetLights(), CreateMesh(), DestroyMesh(), DrawMesh(), DrawSkybox(), BatchDraws(buffer).
+
+
+
+Relationships
+
+Metal3DRenderer and RaylibRenderer3D implement IRenderer3D (via delegates/commands).
+RenderPipeline composes RenderPass (owns vector).
+ForwardPass, ShadowPass, SkyboxPass, UIOverlayPass inherit from RenderPass.
+
+Design Note: Hot path optimized by batching draw commands in ThreadingProxy (e.g., command buffers flushed per frame). For Swift 6, use actors in CommandProcessor for concurrent command queuing without locks.
+3D Components and Systems (Core Fleshed Out)
+Components
+
+GameCore3D::Transform3D: Attributes - position: vec3; rotation: quat; scale: vec3.
+GameCore3D::Hierarchy: Attributes - parent: Entity; firstChild: Entity; nextSibling: Entity.
+GameCore3D::Camera3D: Attributes - fov; aspect; near; far; projection.
+GameCore3D::Light: Attributes - type: enum; color: vec3; intensity: float; range: float; angle: float.
+GameCore3D::MeshRenderer: Attributes - mesh: MeshHandle; material: MaterialHandle.
+GameCore3D::SkinnedMesh: Attributes - mesh; material; skeleton: SkeletonHandle. (Note: Name corrected from proposal for consistency.)
+GameCore3D::Material: Attributes - shader: ShaderHandle; textures: map; params: map.
+GameCore3D::Skybox: Attributes - cubemap: TextureHandle.
+GameCore3D::PhysicsBody3D: Attributes - mass: float; drag: float; kinematic: bool; velocity: vec3; angularVelocity: vec3; gravityScale: float.
+GameCore3D::Collider3D: Attributes - shape: enum; dimensions: vec3; offset: vec3; isTrigger: bool.
+GameCore3D::AudioSource3D: Attributes - soundId: string; volume: float; falloff: float; spatialBlend: float; dopplerLevel: float; loop: bool; playOnStart: bool.
+GameCore3D::NetworkSync: Attributes - ownerId: int; predictionMode: enum; syncFrequency: float; lastSyncTime: float.
+
+Systems
+
+GameCore3D::SceneGraphSystem: Methods - UpdateWorldTransforms().
+GameCore3D::RenderSystem3D: Methods - CollectVisible(), SubmitDraws(batch: bool).
+GameCore3D::AnimationSystem3D: Methods - UpdateSkeletalAnimation().
+GameCore3D::PhysicsSystem3D: Methods - StepSimulation(dt), Raycast(start: vec3, dir: vec3, out: HitInfo), ApplyForce(entity, force: vec3), HandleCollisions(), IntegrateNavMesh().
+GameCore3D::AudioSystem3D: Methods - UpdateListener(cameraPos: vec3, forward: vec3), SubmitSources(), PlaySpatialSound(entity, pos: vec3), SetReverb(params).
+GameCore3D::InputSystem3D: Methods - UpdateFPControls(gyroEnabled: bool), HandleVirtualJoystick(movement: vec2), HandlePanning(rotation: vec2), GetGyroData(outPitch: float&, outYaw: float&).
+GameCore3D::NetworkingSystem: Methods - Connect(serverUrl), Disconnect(), SyncEntities(), ClientPredict(dt), HandlePackets(), RollbackOnMismatch().
+GameCore3D::DiagnosticsSystem: Methods - UpdateMetrics(), GetGPUFrameTime(), GetThermalState(), LogPerfStats(), VisualizeDrawCalls().
+
+Relationships
+
+SceneGraphSystem depends on Transform3D.
+RenderSystem3D depends on Camera3D, Light, MeshRenderer, SkinnedMesh, Skybox.
+PhysicsSystem3D depends on PhysicsBody3D, Collider3D.
+AudioSystem3D depends on AudioSource3D.
+NetworkingSystem depends on NetworkSync.
+InputSystem3D depends on GameCore::InputDelegate (extended from 2D).
+
+Additions to Math Types: GNVector3, GNQuaternion, GNMatrix4.
+Delegates: 3D Extensions (Including Input, Audio, Network, Diagnostics)
+Classes
+
+Renderer3DDelegate (C++ in PlatformDelegates):
+
+Methods: beginFrame(), endFrame(), present(), setCamera(params*), setLights(lights*, count), createMesh(vertexData*, indexData*, layout*, out: MeshHandle*), destroyMesh(MeshHandle), createMaterial(desc*, out: MaterialHandle*), destroyMaterial(MaterialHandle), drawMesh(mesh, transform*, material*), drawSkinnedMesh(mesh, transform*, material*, skeleton*), drawSkybox(cubemap), batchDraws(commands*).
+
+
+Input3DDelegate (C++ in PlatformDelegates):
+
+Methods: getGyroData(pitch*, yaw*), isVirtualJoystickActive(), getJoystickInput(movementX*, movementY*), getPanningInput(rotX*, rotY*), isGyroEnabled().
+
+
+Audio3DDelegate (C++ in PlatformDelegates):
+
+Methods: playSpatialSound(id, pos: vec3, vol, falloff), setListener(pos: vec3, ori: vec3), setReverb(params), getAudioDeviceInfo().
+
+
+AssetDelegate (+3D, extended, C++ in PlatformDelegates):
+
+Methods: loadMesh(path, callback, userData), loadCubeTexture(paths, callback, userData), loadShader3D(vs, fs, callback, userData), loadProceduralAsset(type, params, callback), compressTexture(path, format: enum, callback).
+
+
+NetworkDelegate (C++ in PlatformDelegates):
+
+Methods: connectToServer(url, port), sendPacket(data*, size), receivePackets(buffer*, count*), disconnect(), getLatency() -> float, setPredictionMode(mode: enum).
+
+
+DiagnosticsDelegate (C++ in PlatformDelegates):
+
+Methods: startGPUCapture(), endGPUCapture(), getFrameTime() -> float, getThermalState() -> enum, logMetrics(category, value).
+
+
+ThreadingProxy (+3D, optimized for Swift 6, C++):
+
+Methods: enqueueCreateMesh(...), enqueueDrawMesh(...), enqueueSetCamera(...), getAndClear3DCommands(), enqueueNetworkSync(...), enqueueDiagnosticQuery(...), flushCommandBuffer() // Batched for perf.
+
+
+
+Relationships
+
+All delegates are part of GameCore::PlatformDelegates (C++ with Swift interop).
+iOS flow: GameplayState -> RenderSystem3D -> ThreadingProxy (enqueue 3D commands); CommandProcessor -> ThreadingProxy (pull commands); CommandProcessor -> Metal3DRenderer (execute setCamera, draw, etc.).
+
+iOS 3D Flow (Textual Sequence)
+
+GameplayState (C++) updates and renders, submitting 3D draw commands to RenderSystem3D.
+RenderSystem3D enqueues 3D commands to ThreadingProxy.
+CommandProcessor (Swift) pulls getAndClear3DCommands() from ThreadingProxy.
+CommandProcessor executes on Metal3DRenderer (setCamera, setLights, draw...).
+Metal3DRenderer signals frame done to CommandProcessor.
+
+For multi-threading: Use Swift 6 actors in CommandProcessor for safe concurrent enqueuing; ThreadingProxy batches to minimize cross-thread overhead.
+Coexistence With 2D
+
+Existing 2D systems (RenderSystem, SpriteSystem, UISystem) remain intact.
+UIOverlayPass renders 2D UI over 3D via shared command queue.
+SystemManager updates both 2D and 3D; states opt into either/both.
+
+Migration Outline (Incremental)
+
+Add math types: GNVector3, GNQuaternion, GNMatrix4.
+Add components: Transform3D, Camera3D, Light, MeshRenderer, Material, Skybox, PhysicsBody3D, Collider3D, AudioSource3D, NetworkSync.
+Add systems: SceneGraphSystem, RenderSystem3D (forward-only first), AnimationSystem3D, PhysicsSystem3D, AudioSystem3D, InputSystem3D, NetworkingSystem, DiagnosticsSystem.
+Extend delegates: Renderer3DDelegate, Input3DDelegate, etc., to PlatformDelegates; update ThreadingProxy/CommandProcessor with C++/Swift interop.
+Implement iOS: Metal3DRenderer with forward pass; add spatial audio via AVAudioEngine.
+Implement Raylib: Map subset to RaylibRenderer3D.
+
+This textual UML is now finalized The user is saying: "We will not be using C, only C++, the PlatformDelegate uses C++/Swift Native Interop. Anything else before I stored it that you missed from your textual explanation?"
+This refers to the UML document I created in text form. The user points out a correction: No C, only C++, and PlatformDelegate uses C++/Swift Native Interop.
+In my previous response, I have things like "Renderer3DDelegate (C in PlatformDelegates)" – that's a typo or shorthand; I meant C++.
+I need to check if I missed anything from the textual explanation.
+The date is August 14, 2025, which matches the version.
+Tools are available, but this seems like a straightforward question; no need for tools unless I need to verify something.
+The question is to confirm if anything is missed before storing the UML.
+My response should be the final UML markdown, corrected for C++ only, and mentioning the interop.
+The user says "before I stored it", implying they will store the UML I provided, but ask if I missed anything.
+In the textual explanation, I have all sections: High-Level, Renderer3D, Components and Systems, Delegates, iOS Flow, Coexistence, Migration.
+Seems complete.
+One thing: In the delegates section, I have "Renderer3DDelegate (C in PlatformDelegates)" – change to "C++".
+Similarly for others.
+For Swift interop: Update the description to note C++/Swift Native Interop instead of C.
+In modern Swift, C++ interop is supported.
