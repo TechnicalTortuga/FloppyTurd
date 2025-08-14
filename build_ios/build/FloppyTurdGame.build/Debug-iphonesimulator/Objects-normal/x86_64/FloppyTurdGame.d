@@ -34,6 +34,8 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../Systems/LevelManager.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../Systems/../Config/LevelConfig.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../Systems/PickupSystem.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../Systems/EnemySystem.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../Systems/../../Engine/Core/GNLog.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../Systems/UISystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../Config/LevelConfig.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../Entities/Player.h \

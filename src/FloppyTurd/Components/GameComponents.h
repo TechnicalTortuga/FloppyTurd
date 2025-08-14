@@ -270,12 +270,25 @@ namespace GameCore {
         float speed;
         std::string enemyType;
         bool isActive;
+        // Bobbing & behavior state
+        bool bobbingEnabled;
+        float bobSpeed;       // radians per second
+        float bobAmplitude;   // pixels
+        float bobPhase;       // initial phase offset
+        float baseY;          // anchor Y around which to bob
+        bool hasInitializedBaseY;
         
         Enemy()
             : health(1)
             , damage(1)
             , speed(100.0f)
             , isActive(true)
+            , bobbingEnabled(false)
+            , bobSpeed(2.0f)
+            , bobAmplitude(90.0f)
+            , bobPhase(0.0f)
+            , baseY(0.0f)
+            , hasInitializedBaseY(false)
         {}
     };
     

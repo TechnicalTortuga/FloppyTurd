@@ -346,6 +346,8 @@ namespace GameCore {
         }
         // Create pickup system and pass dependencies
         m_pickupSystem = std::make_unique<PickupSystem>(m_ecsSystem, m_levelManager.get(), m_platformDelegates, &m_currentLevelConfig);
+        // Create enemy system for behaviors (bobbing, states, etc.)
+        m_enemySystem = std::make_unique<EnemySystem>(m_ecsSystem, m_levelManager.get());
         
         // Load the current level (ensure previous entities are torn down)
         m_levelManager->UnloadLevel();
@@ -773,7 +775,7 @@ namespace GameCore {
         m_coinsTextEntity = m_ecsSystem->CreateEntity();
         if (m_coinsTextEntity != 0) {
             float textX = iconX + (32.0f * bagScale) + 8.0f; // bag width + small gap
-            float textY = iconY + (32.0f * bagScale * 0.5f) + 16.0f; // nudge down by 16px
+            float textY = iconY + (32.0f * bagScale * 0.5f) + 24.0f; // nudge down a bit more
             Transform tr(Gnosis::GNVector2(textX, textY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
             m_ecsSystem->AddComponent<Transform>(m_coinsTextEntity, tr);
             // Use UIElement text rendering path
@@ -979,6 +981,9 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             
             // Pool-driven updates (no dynamic allocation during gameplay)
             m_levelManager->UpdateEnemyPooling(deltaTime, worldScrollDistance);
+            if (m_enemySystem) {
+                m_enemySystem->Update(deltaTime);
+            }
             m_levelManager->UpdateNPCPooling(deltaTime, worldScrollDistance);
             // REMOVED: m_levelManager->UpdatePickupPooling - now handled by GameplayState
             

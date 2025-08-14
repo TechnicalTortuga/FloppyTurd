@@ -224,8 +224,10 @@ namespace GameCore {
         const EnemyConfig& cfg = m_currentLevelConfig.enemies[0];
         float screenW = 1179.0f; // Avoid async delegate to prevent dangling pointer crash
         float startX = screenW + 200.0f;
-        for (int i = 0; i < m_maxActiveEnemies; ++i) {
-            float x = startX + i * m_enemySpacing;
+        // Reduce concurrent enemies a bit for sewers
+        int desired = (m_currentLevelId == 2 ? 3 : m_maxActiveEnemies);
+        for (int i = 0; i < desired; ++i) {
+            float x = startX + i * (m_enemySpacing * 1.25f);
             float baseY = 900.0f + static_cast<float>((i%2==0? -1:1) * 150);
             Gnosis::Entity e = SpawnEnemy(cfg, x, baseY);
             if (e != 0) { m_activeEnemies.push_back(e); m_enemyBaseY[e] = baseY; GN_LOG_DEBUG("Enemy init: ToiletPaper baseY=" + std::to_string(baseY) + ", x=" + std::to_string(x)); }
@@ -291,24 +293,20 @@ namespace GameCore {
             float widthPx = s->width * std::abs(t->scale.x);
             float rightEdge = leftEdge + widthPx;
             if (rightEdge < 0.0f) {
-                t->position.x = rightmostX + m_enemySpacing;
+                t->position.x = rightmostX + (m_enemySpacing * 1.25f);
                 float baseY = 900.0f + static_cast<float>((rand()%300) - 150);
                 t->position.y = baseY;
+                // Sync Enemy component's bobbing anchor with new wrap position
+                Enemy* enemyComp = m_ecsSystem->GetComponent<Enemy>(e);
+                if (enemyComp) {
+                    enemyComp->baseY = baseY;
+                    enemyComp->hasInitializedBaseY = true;
+                }
                 m_enemyBaseY[e] = baseY;
                 rightmostX = t->position.x;
                 GN_LOG_DEBUG("Enemy wrap: newX=" + std::to_string(t->position.x) + ", baseY=" + std::to_string(baseY));
             }
-            // Sinusoidal motion around base Y
-            auto it = m_enemyBaseY.find(e);
-            if (it != m_enemyBaseY.end()) {
-                float time = worldScrollDistance * 0.0035f; // tie to scroll for deterministic path
-                float amplitude = 110.0f;
-                t->position.y = it->second + std::sin(time + (t->position.x * 0.004f)) * amplitude;
-                // Log occasionally to verify sinusoid (lightweight)
-                if (((int)worldScrollDistance % 2000) == 0) {
-                    GN_LOG_DEBUG("Enemy sinusoid: x=" + std::to_string(t->position.x) + ", y=" + std::to_string(t->position.y));
-                }
-            }
+            // Y behavior moved to EnemySystem; LevelManager now only wraps enemies
         }
     }
 
@@ -928,7 +926,7 @@ namespace GameCore {
             sprite.frameWidth = 64;
             sprite.frameHeight = 64;
             sprite.frameCount = 8;
-            sprite.frameTime = 0.12f; // ~8.3 fps
+            sprite.frameTime = 0.18f; // slow flapping a tad
             sprite.currentFrame = 0;
             sprite.currentFrameTime = 0.0f;
             sprite.playing = true;
@@ -959,6 +957,22 @@ namespace GameCore {
         enemyComp.health = config.hitPoints;
         enemyComp.enemyType = config.movementPattern;
         enemyComp.isActive = true;
+        // Enable bobbing for horizontal flyers (ToiletPaper)
+        if (config.textureId == "ToiletPaperFlap") {
+            enemyComp.bobbingEnabled = true;
+            // Randomize speed slightly per enemy for desynchronization
+            float speedBase = 1.8f;
+            float speedJitter = (static_cast<float>((rand() % 41) - 20) * 0.02f); // -0.4 .. +0.4
+            enemyComp.bobSpeed = std::max(0.8f, speedBase + speedJitter); // clamp min speed
+
+            // Large amplitude: ~35-43% of screen height so they traverse most of the screen
+            float screenH = 2556.0f;
+            float ampFactor = 0.38f + (static_cast<float>((rand() % 21) - 10) * 0.005f); // 0.33..0.43
+            enemyComp.bobAmplitude = screenH * ampFactor;
+
+            // Random starting phase 0..2π
+            enemyComp.bobPhase = static_cast<float>((rand() % 628)) / 100.0f;
+        }
         
         // Add components
         m_ecsSystem->AddComponent<Transform>(enemy, transform);
@@ -1352,7 +1366,7 @@ namespace GameCore {
                     SpawnObstacle(baseConfig, nextWorldX, spawnY);
                 }
             }
-            // Determine spawned group's width from the leader's Group component
+            // Determine spawned group's width strictly from the leader's Group component
             int justSpawnedGroupId = groupIdBefore; // spawners incremented m_nextGroupId
             float spawnedGroupWidth = 600.0f; // fallback
             for (Gnosis::Entity e : m_activeObstacles) {
@@ -1374,6 +1388,7 @@ namespace GameCore {
                     }
                 }
             }
+            // Anchor next group exactly after this group's width; no pattern-specific extra offset
             nextWorldX += spawnedGroupWidth + safeGap;
         }
 
@@ -2075,7 +2090,7 @@ namespace GameCore {
         float screenH = 2556.0f;
         const float baseY = screenH - pipeH * scale;         // bottom pipes sit on floor
         const float startYOffset = 0.0f;                       // base row sits at exact bottom
-        const float startXOffset = spacingX * 0.5f;           // offset to the right a bit
+        const float startXOffset = 0.0f;                       // start exactly at startX (no half-spacing gap)
         int groupId = m_nextGroupId++;
 
         auto spawn = [&](float col, int row, int idx){
@@ -2151,7 +2166,7 @@ namespace GameCore {
         int groupId = m_nextGroupId++;
 
         auto spawnTop = [&](float col, int row, int idx){
-            // Use only top variants for top-origin stacks
+            // Use only top variants for top-origin stacks; center exactly on startX grid
             const std::string tex = ((row + static_cast<int>(col)) % 2 == 0) ? "TopPipeWide" : "TopPipeWideBlue";
             float x = startX + col * spacingX;
             float lift = (row == 1 ? row1LiftTop : (row == 2 ? row2LiftTop : 0.0f));

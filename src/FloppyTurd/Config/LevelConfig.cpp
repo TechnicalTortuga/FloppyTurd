@@ -358,7 +358,8 @@ namespace GameCore {
     void LevelConfigFactory::AddSewerEnemies(LevelConfig& config) {
         // Level 2 should only spawn Toilet Paper enemies
         config.enemies.clear();
-        config.enemies.emplace_back("ToiletPaperFlap", 64.0f, 64.0f, 180.0f, 5.5f, 1, "horizontal");
+        // Make enemies spawn less frequently and animate a tad slower by default
+        config.enemies.emplace_back("ToiletPaperFlap", 64.0f, 64.0f, 180.0f, 7.0f, 1, "horizontal");
     }
 
     void LevelConfigFactory::AddDesertEnemies(LevelConfig& config) {

@@ -12,6 +12,7 @@
 #include "../Systems/RenderSystem.h"
 #include "../Systems/LevelManager.h"
 #include "../Systems/PickupSystem.h"
+#include "../Systems/EnemySystem.h"
 #include "../Systems/UISystem.h"
 #include "../Config/LevelConfig.h"
 #include <memory>
@@ -88,6 +89,7 @@ namespace GameCore {
         std::unique_ptr<LevelManager> m_levelManager;
         std::unique_ptr<UISystem> m_uiSystem;
         std::unique_ptr<PickupSystem> m_pickupSystem;
+        std::unique_ptr<EnemySystem> m_enemySystem;
 
         // Level configuration
         int m_currentLevelId;
