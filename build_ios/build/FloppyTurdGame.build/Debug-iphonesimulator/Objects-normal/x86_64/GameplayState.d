@@ -29,6 +29,7 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Systems/RenderSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Systems/LevelManager.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Systems/../Config/LevelConfig.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Systems/PickupSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Systems/UISystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Config/LevelConfig.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Components/GameComponents.h

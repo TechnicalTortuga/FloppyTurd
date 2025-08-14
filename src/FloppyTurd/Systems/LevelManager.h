@@ -52,7 +52,7 @@ namespace GameCore {
         // Content spawning (called by systems)
         void UpdateObstacleSpawning(float deltaTime);
         void UpdateEnemySpawning(float deltaTime);
-        void UpdatePickupSpawning(float deltaTime);
+        // REMOVED: UpdatePickupSpawning - now handled by GameplayState
         void UpdateNPCSpawning(float deltaTime);
         void UpdateNPCStates(float deltaTime);
         // Pool-based updates (no dynamic spawns during gameplay)
@@ -64,6 +64,9 @@ namespace GameCore {
         void InitializeObstaclePool();
         void WrapObstacleAroundScreen(Gnosis::Entity obstacle, float worldScrollDistance);
         void WrapGroupAroundScreen(int groupId, float worldScrollDistance);
+        
+        // Group wrap events for GameplayState to consume (lightweight event queue)
+        std::vector<int> ConsumeWrappedGroups();
         
         // Obstacle management
         Gnosis::Entity SpawnObstacle(const ObstacleConfig& config, float x, float y);
@@ -77,6 +80,7 @@ namespace GameCore {
         void SpawnSewerPattern_Pyramid3(float startX);
         void SpawnSewerPattern_PyramidTop3(float startX);
         void SpawnSewerPattern_Pyramid4(float startX);
+        void SpawnSewerPattern_TwoByTwoFunnel(float startX);
         void RemoveObstacle(Gnosis::Entity obstacle);
         std::vector<Gnosis::Entity> GetActiveObstacles() const { return m_activeObstacles; }
         
@@ -86,23 +90,26 @@ namespace GameCore {
         std::vector<Gnosis::Entity> GetActiveEnemies() const { return m_activeEnemies; }
         void InitializeEnemyPool();
         
-        // Pickup management
-        Gnosis::Entity SpawnPickup(const std::string& type, float x, float y);
-        void RemovePickup(Gnosis::Entity pickup);
-        std::vector<Gnosis::Entity> GetActivePickups() const { return m_activePickups; }
+        // Pickup management moved to GameplayState (single source of truth)
         std::vector<Gnosis::Entity> GetActiveNPCs() const { return m_activeNPCs; }
         void InitializeNPCPool();
-        // Sewer pickup patterns
-        void SpawnPickupGroup(float startX, float midY, int count);
-        void RerollPickupGroupInPlace(std::vector<Gnosis::Entity>& group, float startX, float midY, int count);
-        void InitializePickupPool();
+        // REMOVED: SpawnPickupGroup, RerollPickupGroupInPlace - moved to GameplayState
         void InitializeProjectilePool();
-        void UpdatePickupPooling(float deltaTime, float worldScrollDistance);
+        // REMOVED: UpdatePickupPooling - now handled by GameplayState
         void UpdateProjectilePooling(float deltaTime, float worldScrollDistance);
         
         // Cleanup
         void CleanupOffscreenEntities(float leftBoundary);
         Gnosis::Entity SpawnNPCJanitor(float x, float y);
+        
+        // Use shared GroupPattern declared in GameComponents.h
+        using GroupPattern = GameCore::GroupPattern;
+        
+        // Coin system helpers (for GameplayState to use)
+        // REMOVED: AttachCoinsToGroup, RepositionGroupCoins - moved to GameplayState
+        GroupPattern DetectGroupPattern(int groupId) const;  // Now trivial: read from group's pattern
+        std::vector<Gnosis::GNVector2> CalculateCoinPositionsForGroup(int groupId, GroupPattern pattern) const;  // New helper
+        bool IsGroupReadyForCoins(int groupId) const;  // New helper
         
         // Level validation
         static bool ValidateLevelId(int levelId);
@@ -129,8 +136,6 @@ namespace GameCore {
         // Entity tracking
         std::vector<Gnosis::Entity> m_activeObstacles;
         std::vector<Gnosis::Entity> m_activeEnemies;
-        std::vector<Gnosis::Entity> m_activePickups;
-        std::vector<Gnosis::Entity> m_pickupPool;
         std::vector<Gnosis::Entity> m_projectilePool;
         std::vector<Gnosis::Entity> m_activeNPCs;
         std::vector<Gnosis::Entity> m_backgroundEntities;
@@ -140,26 +145,20 @@ namespace GameCore {
         // Spawn timers
         float m_obstacleSpawnTimer;
         float m_enemySpawnTimer;
-        float m_pickupSpawnTimer;
+        // REMOVED: m_pickupSpawnTimer - pickup spawning moved to GameplayState
         float m_npcSpawnTimer;
         int m_maxActiveEnemies = 4; // Limit active enemies (Level 2 uses 4)
         float m_enemySpacing = 450.0f; // Horizontal spacing used when wrapping enemy pool
         bool m_enemyPoolInitialized = false;
         bool m_npcPoolInitialized = false;
-        bool m_pickupPoolInitialized = false;
         bool m_projectilePoolInitialized = false;
+        // REMOVED: m_attachCoinsToGroups - coin attachment moved to GameplayState
         
         // Spawn positions
         float m_lastObstacleX;
         float m_lastEnemyX;
-        float m_lastPickupX;
-        std::deque<std::vector<Gnosis::Entity>> m_coinPatterns; // queued coin groups (3 or 5)
-        std::unordered_map<Gnosis::Entity, float> m_enemyBaseY;
-        std::unordered_map<int, bool> m_groupTopCounted;
-        std::unordered_map<int, bool> m_groupBottomCounted;
-        float m_lastPlayerX = 0.0f;
-        std::unordered_set<Gnosis::Entity> m_countedPipes;
-        int m_pipeCounter = 0;
+        // REMOVED: m_groupCoins - coin tracking moved to GameplayState
+        std::unordered_map<Gnosis::Entity, float> m_enemyBaseY; // Enemy base Y positions
         
         // Object pooling system
         static const int OBSTACLE_POOL_SIZE = 6;  // Pool of 6 obstacles (like old ParkLevel had 5+1)
@@ -167,6 +166,9 @@ namespace GameCore {
         bool m_poolInitialized;
         int m_nextGroupId = 1;                     // Incremental group id for formations
         
+        // Internal event queue for wrapped obstacle groups
+        std::vector<int> m_wrappedGroups;
+
         // Internal methods
         void InitializeProgressionSystem();
         void CreateBackgroundLayers();
@@ -176,7 +178,7 @@ namespace GameCore {
         // Spawning helpers
         float CalculateNextObstaclePosition();
         float CalculateNextEnemyPosition();
-        float CalculateNextPickupPosition();
+        // REMOVED: CalculateNextPickupPosition - pickups handled in GameplayState
         
         // Save/load progression
         void SaveProgression();

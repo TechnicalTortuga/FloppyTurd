@@ -55,7 +55,16 @@ namespace GameCore {
         for (Gnosis::Entity entity : renderableEntities) {
             auto transform = m_ecsSystem->GetComponent<Transform>(entity);
             auto sprite = m_ecsSystem->GetComponent<Sprite>(entity);
-            
+            if (!transform || !sprite) continue;
+            // Respect coin/pickup visibility and active state to avoid rendering collected coins
+            if (!sprite->visible) continue;
+            if (auto pickup = m_ecsSystem->GetComponent<Pickup>(entity)) {
+                if (!pickup->isActive) {
+                    GN_LOG_DEBUG(std::string("RenderSystem: skip inactive pickup id=") + std::to_string(entity));
+                    continue;
+                }
+            }
+
             if (!transform || !sprite || !sprite->visible) {
                 continue;
             }

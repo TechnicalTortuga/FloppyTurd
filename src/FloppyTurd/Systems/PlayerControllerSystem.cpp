@@ -84,7 +84,7 @@ namespace GameCore {
         UpdatePlayerPhysics(deltaTime);
         UpdatePlayerAnimation(deltaTime);
         UpdatePlayerState(deltaTime);
-        HandleCollisions();
+        // Collision with pickups is handled centrally in GameplayState now
     }
 
     void PlayerControllerSystem::HandleTouchInput(float x, float y, bool isJustPressed) {
@@ -538,49 +538,7 @@ namespace GameCore {
     }
 
     void PlayerControllerSystem::HandleCollisions() {
-        if (!m_ecsSystem || m_playerEntity == 0) return;
-
-        Transform* playerTr = m_ecsSystem->GetComponent<Transform>(m_playerEntity);
-        Hitbox* playerHb = m_ecsSystem->GetComponent<Hitbox>(m_playerEntity);
-        if (!playerTr || !playerHb || playerHb->type != ColliderType::Rectangle) return;
-
-        // AABB vs AABB against active pickups only
-        std::vector<Gnosis::Entity> pickups = m_ecsSystem->GetEntitiesWithComponents<Transform, Hitbox, Pickup>();
-        for (Gnosis::Entity e : pickups) {
-            Pickup* p = m_ecsSystem->GetComponent<Pickup>(e);
-            if (!p || !p->isActive) continue;
-            Hitbox* hb = m_ecsSystem->GetComponent<Hitbox>(e);
-            Transform* tr = m_ecsSystem->GetComponent<Transform>(e);
-            if (!hb || !tr || hb->type != ColliderType::Rectangle) continue;
-
-            float pw = playerHb->width;  float ph = playerHb->height;
-            float px = playerTr->position.x; float py = playerTr->position.y;
-            float cw = hb->width; float ch = hb->height;
-            float cx = tr->position.x; float cy = tr->position.y;
-
-            bool overlap = (px < cx + cw && px + pw > cx && py < cy + ch && py + ph > cy);
-            if (overlap) {
-                // Collect: deactivate coin/heart, increment counters
-                p->isActive = false;
-                Sprite* s = m_ecsSystem->GetComponent<Sprite>(e);
-                if (s) s->visible = false;
-                // Increment player HUD counters directly
-                PlayerComponent* player = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity);
-                if (player) {
-                    if (p->pickupType == "GoldCoin") {
-                        player->coins += 1;
-                        player->score += 10;
-                        GN_LOG_INFO("Coin collected: +1 (coins=" + std::to_string(player->coins) + ")");
-                    } else if (p->pickupType == "PooHeart") {
-                        if (player->health < player->maxHealth) player->health += 1;
-                        GN_LOG_INFO("PooHeart collected: health=" + std::to_string(player->health));
-                    }
-                }
-                GN_LOG_DEBUG(std::string("Pickup overlap at ") +
-                             "P(x=" + std::to_string(px) + ",y=" + std::to_string(py) + ") vs C(x=" + std::to_string(cx) + ",y=" + std::to_string(cy) + ") w/h (" +
-                             std::to_string(cw) + "," + std::to_string(ch) + ")");
-            }
-        }
+        // Legacy pickup collision removed; kept as stub for compatibility
     }
 
     void PlayerControllerSystem::SpawnProjectile() {

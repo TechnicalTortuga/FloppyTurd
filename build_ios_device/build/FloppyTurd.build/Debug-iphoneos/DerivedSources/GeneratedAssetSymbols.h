@@ -294,6 +294,18 @@ static NSString * const ACImageNameScoreSmall AC_SWIFT_PRIVATE = @"ScoreSmall";
 /// The "SewerBackgroundRunningWater" asset catalog image resource.
 static NSString * const ACImageNameSewerBackgroundRunningWater AC_SWIFT_PRIVATE = @"SewerBackgroundRunningWater";
 
+/// The "SewerLargeA" asset catalog image resource.
+static NSString * const ACImageNameSewerLargeA AC_SWIFT_PRIVATE = @"SewerLargeA";
+
+/// The "SewerLargeB" asset catalog image resource.
+static NSString * const ACImageNameSewerLargeB AC_SWIFT_PRIVATE = @"SewerLargeB";
+
+/// The "SewerLargeC" asset catalog image resource.
+static NSString * const ACImageNameSewerLargeC AC_SWIFT_PRIVATE = @"SewerLargeC";
+
+/// The "SewerLargeD" asset catalog image resource.
+static NSString * const ACImageNameSewerLargeD AC_SWIFT_PRIVATE = @"SewerLargeD";
+
 /// The "SewerLevelPainting" asset catalog image resource.
 static NSString * const ACImageNameSewerLevelPainting AC_SWIFT_PRIVATE = @"SewerLevelPainting";
 

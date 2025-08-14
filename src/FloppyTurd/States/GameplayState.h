@@ -11,11 +11,13 @@
 #include "../Systems/CameraSystem.h"
 #include "../Systems/RenderSystem.h"
 #include "../Systems/LevelManager.h"
+#include "../Systems/PickupSystem.h"
 #include "../Systems/UISystem.h"
 #include "../Config/LevelConfig.h"
 #include <memory>
 #include <vector>
 #include <map>
+#include <unordered_map>
 
 namespace GameCore {
 
@@ -58,9 +60,10 @@ namespace GameCore {
         void GameOver();
         void LevelComplete();
         
+        // Pickup and coin coordination handled by PickupSystem
+        
         // Score and progression
         int GetCurrentScore() const { return m_currentScore; }
-        int GetCurrentCoins() const { return m_currentCoins; }
         int GetCurrentLives() const { return m_currentLives; }
         
         // Pause menu
@@ -84,6 +87,7 @@ namespace GameCore {
         std::unique_ptr<RenderSystem> m_renderSystem;
         std::unique_ptr<LevelManager> m_levelManager;
         std::unique_ptr<UISystem> m_uiSystem;
+        std::unique_ptr<PickupSystem> m_pickupSystem;
 
         // Level configuration
         int m_currentLevelId;
@@ -94,13 +98,14 @@ namespace GameCore {
         Gnosis::Entity m_cameraEntity;
         std::vector<Gnosis::Entity> m_backgroundEntities;
         std::vector<Gnosis::Entity> m_obstacles;
-        std::vector<Gnosis::Entity> m_pickups;
+        // Moved to PickupSystem: m_pickups, m_pickupIndex
         std::vector<Gnosis::Entity> m_projectiles;
         std::vector<Gnosis::Entity> m_enemies;
+        
+        // Moved to PickupSystem: m_groupCoins
 
         // Game state
         int m_currentScore;
-        int m_currentCoins;
         int m_currentLives;
         float m_gameTime;
         float m_difficultyTimer;
@@ -121,7 +126,8 @@ namespace GameCore {
         // UI elements
         Gnosis::Entity m_scoreTextEntity;
         Gnosis::Entity m_livesTextEntity;
-        Gnosis::Entity m_coinsTextEntity;
+        Gnosis::Entity m_coinsTextEntity;       // Coin counter number (UI)
+        Gnosis::Entity m_coinBagEntity;         // Coin bag icon (32x32)
         Gnosis::Entity m_pipeCounterEntity;     // Pipe counter display under notch
         Gnosis::Entity m_pauseMenuEntity;
         Gnosis::Entity m_tempMenuButtonEntity;  // Temporary button to return to main menu
@@ -157,9 +163,7 @@ namespace GameCore {
         void UpdateSpawning(float deltaTime);
         void UpdateDifficulty(float deltaTime);
         void HandleGameEvents();
-        void SpawnObstacle();
-        void SpawnPickup();
-        void SpawnEnemy();
+        // REMOVED: Legacy spawn methods - replaced with LevelManager pooling and GameplayState coordination
         void CleanupOffscreenEntities();
         void CheckLevelCompletion();
         void SaveGameProgress();

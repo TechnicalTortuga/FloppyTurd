@@ -108,7 +108,7 @@ namespace GameCore {
             "LeftArrow", "RightArrow", "F",
             
             // Common pickup textures
-            "BlueCoin", "GoldCoin", "RedCoin", "PooHeart",
+            "BlueCoin", "GoldCoin", "RedCoin", "PooHeart", "PooHeartBig", "PooHeartRainbow",
             
             // Common enemy textures
             "BirdIdle", "ToiletPaperFlap",

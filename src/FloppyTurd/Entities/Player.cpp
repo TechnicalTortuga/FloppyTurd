@@ -116,10 +116,7 @@ namespace GameCore {
         }
     }
 
-    void Player::CollectCoin(int value) {
-        m_coins += value;
-        m_score += value * 10; // 10 points per coin
-    }
+    // REMOVED: CollectCoin - coin accounting centralized in GameplayState
 
     void Player::EquipHat(FloppyTurd::HatType hat) {
         m_equippedHat = hat;

@@ -148,6 +148,16 @@ namespace GameCore {
     };
 
     /**
+     * @brief Weighted ratio for spawning pickup types per level
+     */
+    struct PickupRatio {
+        std::string pickupType;  // e.g., "GoldCoin", "PooHeart"
+        float weight;            // relative weight; normalized at runtime
+        PickupRatio(const std::string& type = "GoldCoin", float w = 1.0f)
+            : pickupType(type), weight(w) {}
+    };
+
+    /**
      * @brief Level Configuration
      * 
      * Data-driven level configuration instead of inheritance-based levels
@@ -164,6 +174,8 @@ namespace GameCore {
         // Gameplay elements
         std::vector<ObstacleConfig> obstacles;
         std::vector<EnemyConfig> enemies;
+        // Weighted ratios for pickup types spawned with obstacle groups
+        std::vector<PickupRatio> pickupRatios;
 
         // Feature gates per level
         bool enableEnemies;

@@ -3,14 +3,18 @@
 #include "raymath.h"
 #include <string>
 #include <functional>
-#include "LevelManager.h"
-#include "RatCopter.h"  // For our enemy factory lambda
+#include "RatCopter.h"
 #include "ToiletPaper.h"
 #include "AudioManager.h"
 #include "SnowLevel.h"
 #include "BossLevel.h"
 #include "RatKing.h"
 #include "BossHealthBar.h"
+#include "TextureCache.h"
+#include "Coin.h"
+#include "PoopHeart.h"
+#include "SnowballProjectile.h"
+#include <cmath> // For Clamp
 
 struct SkillData {
     std::string name;
@@ -27,7 +31,13 @@ Playing::Playing(Game* game)
 {
     using namespace Resources;
     this->game = game;
-    player = new Player();
+    player = new Player(game);
+
+    if (game->mainMenu) {
+        difficultyIndex = game->mainMenu->GetDifficultyIndex();
+        player->SetInitialHearts(difficultyIndex);
+    }
+
     pauseMenuBackground = LoadTexture(PauseMenuBackground);
     _TurdPointMenu = LoadTexture(TurdPointMenu);
     _TurdPointMenuBorder = LoadTexture(TurdPointMenuBorder);
@@ -35,45 +45,62 @@ Playing::Playing(Game* game)
     SetTextureWrap(_TurdPointMenu, TEXTURE_WRAP_CLAMP);
     Scoreboard = LoadTexture(ScoreBoard);
     _TurdHeart = LoadTexture(TurdHeart);
+    _CoinBag = LoadTexture(coinbagtexture);
     ScoreSound = LoadSound(GotScore);
     SCORE = 0;
+    TOTALSCORE = 0;
+    TOTALCOINS = 0;
 
+    gameOverMusic = new AudioClip(GameOverMusic);
     PreLoadLevels();
-    // Initialize the LevelManager with the first level (index 0) by default.
     SetCurrentLevel(0);
 
-    // Load skill node textures
     skillNodeTextures[0] = LoadTexture(TPMenuButtonLocked);
     skillNodeTextures[1] = LoadTexture(TPMenuButtonAvailable);
     skillNodeTextures[2] = LoadTexture(TPMenuButtonSelected);
     skillNodeTextures[3] = LoadTexture(TPMenuButtonFocused);
 
+    for (int i = 0; i < totalSkillNodes; ++i) skillUnlocked[i] = false;
+    selectedNode = -1;
+    turdPoints = 3;
+
+    gameOverBackground = LoadTexture(GameOverBackground);
+    tryAgainBackground = LoadTexture(TryAgainBackground);
+    deadFloppy = LoadTexture(DeadFloppy);
+    gameOverScore = LoadTexture(GameOverScore);
+
     InitializeSkillNodes();
     InitializeHats();
 
-    // Load button textures
     floppyButtonBlue = LoadTexture(blueButton);
     floppyButtonBlueHover = LoadTexture(blueButtonHover);
+
+    AudioManager::GetInstance().LoadSoundEffect("GotCoin", Resources::GotCoin);
+    AudioManager::GetInstance().LoadSoundEffect("GotHealth", Resources::GotHealth);
+    AudioManager::GetInstance().LoadSoundEffect("GotHealthBig", Resources::GotHealthBig);
+
+    Texture2D rawSnowTexture = LoadTexture(Snowfall);
+    snowOverlay = std::make_unique<SnowOverlay>(rawSnowTexture, 16, 0.15f);
+    SetTextureWrap(rawSnowTexture, TEXTURE_WRAP_CLAMP);
 }
 
 void Playing::InitializeHats()
 {
     using namespace Resources;
 
-    hatFrameNormal = LoadTexture(HatFrameNormal);   // from "resources/ui/HatFrame.png"
+    hatFrameNormal = LoadTexture(HatFrameNormal);
     hatFrameHover = LoadTexture(HatFrameHover);
     hatFrameSelected = LoadTexture(HatFrameSelected);
     hatFrameLocked = LoadTexture(HatFrameLocked);
     hatFrameDenied = LoadTexture(HatFrameDenied);
 
-    // Initialize hats – for now, the CowboyHat is unlocked by default, the others locked.
-    Hat* cowboyHat = new Hat("Cowboy Hat", 
-        CowboyHat, 
-        CowboyHatTurdlet, 
+    Hat* cowboyHat = new Hat("Cowboy Hat",
+        CowboyHat,
+        CowboyHatTurdlet,
         6,
-        CowboyHatTurdletShoot, 
+        CowboyHatTurdletShoot,
         9,
-        CowboyHatTeenage, 
+        CowboyHatTeenage,
         6,
         CowboyHatTeenageShoot,
         8,
@@ -91,10 +118,7 @@ void Playing::InitializeHats()
     hats.push_back(doorag);
     hats.push_back(ballcap);
 
-    for (int i = 4; i < 18; i++) {  // 18 slots total (3 rows of 6)
-        // For locked hats, you could use a placeholder icon or simply an empty texture.
-        // Here we load a placeholder image; alternatively, pass a default Texture2D or a null-like texture.
-        //Texture2D placeholder = LoadTexture("resources/hats/placeholder.png");
+    for (int i = 4; i < 18; i++) {
         hats.push_back(new Hat("Hat " + std::to_string(i + 1), "resources/hats/placeholder.png", LOCKED));
     }
     currentSelectedHat = cowboyHat;
@@ -103,28 +127,46 @@ void Playing::InitializeHats()
 
 void Playing::PreLoadLevels()
 {
+    // Preload level instances to ensure initial construction
     levels.emplace_back(std::make_shared<ParkLevel>());
     levels.emplace_back(std::make_shared<SewerLevel>());
     levels.emplace_back(std::make_shared<DesertLevel>());
     levels.emplace_back(std::make_shared<SnowLevel>());
     levels.emplace_back(std::make_shared<CastleLevel>());
     levels.emplace_back(std::make_shared<BossLevel>());
+
+    // Initialize with default settings
+    for (int i = 0; i < 6; ++i) {
+        levels[i]->SetDifficulty(1); // Default to Regular
+        levels[i]->SetPanSpeed(80.0f); // Default pan speed
+    }
 }
 
 Playing::~Playing()
 {
     UnloadTexture(Scoreboard);
     UnloadTexture(_TurdHeart);
+    UnloadTexture(_CoinBag);
     UnloadSound(ScoreSound);
     UnloadTexture(floppyButtonBlue);
     UnloadTexture(floppyButtonBlueHover);
+    UnloadTexture(gameOverBackground);
+    UnloadTexture(tryAgainBackground);
+    UnloadTexture(deadFloppy);
+    UnloadTexture(gameOverScore);
+    UnloadTexture(pauseMenuBackground);
+
+    delete gameOverMusic;
+    delete bossHealthBar;
 
     for (int i = 0; i < 4; ++i) {
         UnloadTexture(skillNodeTextures[i]);
     }
+    delete player;
 }
 
-void Playing::InitializeSkillNodes() {
+void Playing::InitializeSkillNodes()
+{
     skillNodePositions[0] = { 172, 28 };
     skillNodePositions[1] = { 79, 130 };
     skillNodePositions[2] = { 28, 128 };
@@ -133,24 +175,35 @@ void Playing::InitializeSkillNodes() {
     skillNodePositions[5] = { 120, 184 };
 }
 
-void Playing::UnlockSkill(int nodeIndex) {
-    switch (nodeIndex) {
-    case 0:
-        // Example skill: Increase speed
-        break;
-    case 1:
-        // Example skill: Extra jump (e.g., player->AddJump();)
-        break;
-    default:
-        break;
+void Playing::UnlockSkill(int idx)
+{
+    if (idx < 0 || idx >= totalSkillNodes) return;
+    if (skillUnlocked[idx]) return;
+    if (turdPoints <= 0) return;
+
+    if (idx == 1 && !skillUnlocked[0]) return;
+    if (idx == 3 && !skillUnlocked[1]) return;
+    if (idx == 5 && !skillUnlocked[1]) return;
+
+    turdPoints--;
+    skillUnlocked[idx] = true;
+
+    switch (idx)
+    {
+    case 0: player->EnableShooting(true); break;
+    case 1: player->SetHeartMode(Player::HALVES); break;
+    case 2: player->ChangeForm(1); break;
+    case 3: player->EnableHollowTurds(true); break;
+    case 4: player->ChangeForm(2); break;
+    case 5: player->SetHeartMode(Player::THIRDS); break;
     }
 }
 
 void Playing::OutputHatMenu()
 {
-    const int gridStartX = 50;   // Within your pause menu
+    const int gridStartX = 50;
     const int gridStartY = 50;
-    const int slotWidth = 32;   // Or 64, tweak as needed
+    const int slotWidth = 32;
     const int slotHeight = 32;
     const int spacingX = 4;
     const int spacingY = 4;
@@ -165,17 +218,11 @@ void Playing::OutputHatMenu()
             int x = gridStartX + col * (slotWidth + spacingX);
             int y = gridStartY + row * (slotHeight + spacingY);
 
-            // Choose background frame: normal, hover, or selected.
-            // For simplicity, assume 'backgroundFrame' is hatFrameNormal unless 
-            // you detect the mouse is over it or it's the currently selected hat.
             Texture2D backgroundFrame = hatFrameNormal;
 
-            // If it's the currently selected hat:
             if (currentSelectedHat == hats[index])
                 backgroundFrame = hatFrameSelected;
-            // Or if it's hovered, set backgroundFrame = hatFrameHover; etc.
 
-            // 1) Draw the background frame scaled to our slot
             DrawTexturePro(
                 backgroundFrame,
                 Rectangle{ 0, 0, (float)backgroundFrame.width, (float)backgroundFrame.height },
@@ -185,11 +232,9 @@ void Playing::OutputHatMenu()
                 WHITE
             );
 
-            // 3) Handle clicks
-            //    If you’re using AIGUI_ImageButton, do something like:
             bool clicked = AIGUI_ImageButton(
                 backgroundFrame,
-                backgroundFrame,  // or a real "hover" texture
+                backgroundFrame,
                 x, y,
                 slotWidth, slotHeight,
                 nullptr, 0,
@@ -197,7 +242,6 @@ void Playing::OutputHatMenu()
                 nullptr
             );
 
-            // If locked, we might skip the click logic or show a "denied" frame, etc.
             if (clicked && hats[index]->status == UNLOCKED)
             {
                 currentSelectedHat = hats[index];
@@ -205,7 +249,6 @@ void Playing::OutputHatMenu()
             }
             else if (clicked && hats[index]->status == LOCKED)
             {
-                // Optionally draw a denied frame or show a message
                 DrawTexturePro(
                     hatFrameDenied,
                     Rectangle{ 0, 0, (float)hatFrameDenied.width, (float)hatFrameDenied.height },
@@ -216,16 +259,13 @@ void Playing::OutputHatMenu()
                 );
             }
 
-            // 4) Draw hat icon if unlocked
             if (hats[index]->status == UNLOCKED && hats[index]->icon.id != 0)
             {
-                // Center the hat icon in the frame
                 int iconX = x + (slotWidth - hats[index]->icon.width) / 2;
                 int iconY = y + (slotHeight - hats[index]->icon.height) / 2;
                 DrawTexture(hats[index]->icon, iconX, iconY, WHITE);
             }
 
-            // 2) If locked, overlay the locked frame the same way
             if (hats[index]->status == LOCKED)
             {
                 DrawTexturePro(
@@ -272,7 +312,8 @@ void Playing::DrawPauseMenu()
     }
     topRowX += buttonWidth + buttonSpacing;
 
-    if (AIGUI_ImageButton(floppyButtonBlue, floppyButtonBlueHover,
+    if (AIGUI_ImageButton(
+        floppyButtonBlue, floppyButtonBlueHover,
         topRowX, topRowY,
         buttonWidth, buttonHeight,
         "Hats", 16,
@@ -283,7 +324,8 @@ void Playing::DrawPauseMenu()
     }
     topRowX += buttonWidth + buttonSpacing;
 
-    if (AIGUI_ImageButton(floppyButtonBlue, floppyButtonBlueHover,
+    if (AIGUI_ImageButton(
+        floppyButtonBlue, floppyButtonBlueHover,
         topRowX, topRowY,
         buttonWidth, buttonHeight,
         "Stats", 16,
@@ -294,7 +336,8 @@ void Playing::DrawPauseMenu()
     }
     topRowX += buttonWidth + buttonSpacing;
 
-    if (AIGUI_ImageButton(floppyButtonBlue, floppyButtonBlueHover,
+    if (AIGUI_ImageButton(
+        floppyButtonBlue, floppyButtonBlueHover,
         topRowX, topRowY,
         buttonWidth, buttonHeight,
         "System", 16,
@@ -330,52 +373,65 @@ void Playing::DrawPauseMenu()
 
         DrawTexturePro(
             _TurdPointMenu,
-            Rectangle{ scrollOffset.x, scrollOffset.y, container.width, container.height },
+            Rectangle{ scrollOffset.x, scrollOffset.y, (float)container.width, (float)container.height },
             Rectangle{ container.x, container.y, container.width, container.height },
             Vector2{ 0, 0 },
             0.0f,
             WHITE
         );
 
-        for (int i = 0; i < totalSkillNodes; i++)
+        for (int i = 0; i < totalSkillNodes; ++i)
         {
-            float nodeScreenX = skillNodePositions[i].x - scrollOffset.x + container.x;
-            float nodeScreenY = skillNodePositions[i].y - scrollOffset.y + container.y;
+            float sx = skillNodePositions[i].x - scrollOffset.x + container.x;
+            float sy = skillNodePositions[i].y - scrollOffset.y + container.y;
 
-            bool clicked = AIGUI_ImageButton(
-                skillNodeTextures[skillNodeStates[i] ? 2 : 0],
-                skillNodeTextures[skillNodeStates[i] ? 3 : 1],
-                nodeScreenX, nodeScreenY,
-                32, 32,
-                nullptr,
-                20,
-                WHITE,
-                nullptr
-            );
-            if (clicked)
-            {
-                selectedNode = i;
-            }
+            bool unlocked = skillUnlocked[i];
+            Texture2D def = unlocked ? skillNodeTextures[2] : skillNodeTextures[0];
+            Texture2D hov = unlocked ? skillNodeTextures[3] : skillNodeTextures[1];
+
+            bool clicked = AIGUI_ImageButton(def, hov, sx, sy, 32, 32, nullptr, 0, WHITE, nullptr);
+            if (clicked) selectedNode = i;
         }
+
         EndScissorMode();
 
-        DrawTexturePro(
-            _TurdPointMenuBorder,
-            Rectangle{ 0, 0, container.width, container.height },
-            Rectangle{ container.x, container.y, container.width, container.height },
-            Vector2{ 0, 0 },
-            0.0f,
-            WHITE
-        );
+        const Rectangle info = { 200, 40, (float)_TurdPointInfo.width, (float)_TurdPointInfo.height };
+        DrawTexturePro(_TurdPointInfo,
+            { 0, 0, info.width, info.height }, info,
+            { 0, 0 }, 0.0f, WHITE);
 
-        DrawTexturePro(
-            _TurdPointInfo,
-            Rectangle{ 0, 0,(float)_TurdPointInfo.width,(float)_TurdPointInfo.height },
-            Rectangle{ 200, 40, (float)_TurdPointInfo.width, (float)_TurdPointInfo.height },
-            Vector2{ 0, 0 },
-            0.0f,
-            WHITE
-        );
+        DrawText(TextFormat("Points: %d", turdPoints),
+            info.x + 10, info.y + 10, 14, WHITE);
+
+        if (selectedNode >= 0)
+        {
+            int y = (int)info.y + 30;
+            DrawText(skillNames[selectedNode], info.x + 10, y, 14, YELLOW); y += 16;
+
+            const char* desc = skillDescs[selectedNode];
+            DrawTextEx(GetFontDefault(), desc,
+                { info.x + 10, (float)y }, 14, 0, WHITE); y += 40;
+
+            if (skillUnlocked[selectedNode])
+            {
+                DrawText("Status: UNLOCKED", info.x + 10, y, 14, GREEN);
+            }
+            else
+            {
+                DrawText("Status: LOCKED", info.x + 10, y, 14, RED); y += 20;
+
+                bool canBuy = (turdPoints > 0);
+                if (canBuy)
+                {
+                    if (AIGUI_Button("Unlock", info.x + 10, y, 80, 18))
+                        UnlockSkill(selectedNode);
+                }
+                else
+                {
+                    DrawText("Need more points!", info.x + 10, y, 14, WHITE);
+                }
+            }
+        }
         break;
     }
     case HATS:
@@ -393,10 +449,45 @@ void Playing::DrawPauseMenu()
             WHITE,
             nullptr
         )) {
-            // Reset the main menu music before switching states
+            // Update session records, coins, and level unlocks before exiting
+            auto current = levelManager->GetCurrentLevel();
+            int levelIndex = -1;
+            if (dynamic_cast<ParkLevel*>(current.get())) {
+                levelIndex = 0;
+            }
+            else if (dynamic_cast<SewerLevel*>(current.get())) {
+                levelIndex = 1;
+            }
+            else if (dynamic_cast<DesertLevel*>(current.get())) {
+                levelIndex = 2;
+            }
+            else if (dynamic_cast<SnowLevel*>(current.get())) {
+                levelIndex = 3;
+            }
+            else if (dynamic_cast<CastleLevel*>(current.get())) {
+                levelIndex = 4;
+            }
+            else if (dynamic_cast<BossLevel*>(current.get())) {
+                levelIndex = 5;
+            }
+
+            if (levelIndex >= 0) {
+                UpdateSessionRecord(levelIndex, SCORE);
+            }
+
+            TOTALCOINS += player->GetSessionCoins();
             if (game->mainMenu) {
+                game->mainMenu->UpdateLevelUnlocks(TOTALCOINS, sessionRecords);
                 game->mainMenu->ResetMusic();
             }
+
+            // Reset game state
+            AudioManager::GetInstance().StopMusic();
+            if (currentMusic) currentMusic->Stop();
+            player->Revive();
+            SCORE = 0;
+            player->ResetSessionCoins();
+            isPaused = false;
             game->SetGameState(Game::MAINMENU);
         }
 
@@ -406,100 +497,345 @@ void Playing::DrawPauseMenu()
     }
 }
 
+void Playing::DrawGameOverScreen()
+{
+    const float scale = 2.0f;
+
+    float panelW = (float)(tryAgainBackground.width * scale);
+    float panelH = (float)(tryAgainBackground.height * scale);
+    float panelX = (320.0f - panelW) / 2.0f;
+    float panelY = 180.0f - panelH - 12.0f;
+
+    DrawTexturePro(tryAgainBackground,
+        { 0, 0, (float)tryAgainBackground.width, (float)tryAgainBackground.height },
+        { panelX, panelY, panelW, panelH },
+        { 0, 0 }, 0.0f, WHITE);
+
+    int goBkgX = (int)((320 - gameOverBackground.width) / 2.0f);
+    int goBkgY = (int)(panelY - gameOverBackground.height + 32);
+    DrawTexture(gameOverBackground, goBkgX, goBkgY, WHITE);
+
+    float bob = sinf(gameOverHoverTimer * 2.0f) * 2.0f;
+    int baseY = (int)(panelY - (deadFloppy.height / 2) + 20);
+    int floppyY = std::max(baseY + (int)bob, 0);
+    int floppyX = (int)((320 - deadFloppy.width) / 2.0f);
+    DrawTexture(deadFloppy, floppyX, floppyY, WHITE);
+
+    static const char* poopMessages[] = {
+        "Ahh poop.", "You pooped.", "Oh crap!", "Poop happens.",
+        "Down the drain!", "That stinks.", "Toilet Trouble!", "You flushed!"
+    };
+    static int poopMsgIndex = GetRandomValue(0, (int)(sizeof(poopMessages) / sizeof(char*)) - 1);
+    const char* msg = poopMessages[poopMsgIndex];
+    int msgWidth = MeasureText(msg, 18);
+    float labelW = (float)(msgWidth + 24);
+    float labelH = 26.0f;
+    float labelX = (320.0f - labelW) / 2.0f;
+    float labelY = 6.0f;
+    AIGUI_LabelRounded(msg, labelX, labelY, labelW, labelH, 0.3f, 18, BLACK);
+
+    int btnW = 128, btnH = 22, spacing = 12;
+    int btnY = (int)(panelY + panelH) - btnH - 64;
+    int btnX = (int)(panelX + (panelW - 2 * btnW - spacing) / 2.0f);
+
+    if (AIGUI_ButtonRounded("Try Again", (float)btnX, (float)btnY, (float)btnW, (float)btnH, 0.3f, 24, BLACK)) {
+        AudioManager::GetInstance().StopMusic();
+        if (gameOverMusic) gameOverMusic->Stop();
+
+        int levelIndex = 0;
+        switch (lastLevelType) {
+        case LastLevelType::PARK:   levelIndex = 0; break;
+        case LastLevelType::SEWER:  levelIndex = 1; break;
+        case LastLevelType::DESERT: levelIndex = 2; break;
+        case LastLevelType::SNOW:   levelIndex = 3; break;
+        case LastLevelType::CASTLE: levelIndex = 4; break;
+        case LastLevelType::BOSS:   levelIndex = 5; break;
+        default:                    levelIndex = 0; break;
+        }
+
+        SetCurrentLevel(levelIndex);
+        player->Revive();
+        SCORE = 0;
+
+        GAMEOVER = false;
+        gameOverTriggered = false;
+        turdHasFallenOffScreen = false;
+    }
+
+    if (AIGUI_ButtonRounded("Quit", (float)(btnX + btnW + spacing), (float)btnY, (float)btnW, (float)btnH, 0.3f, 24, BLACK)) {
+        AudioManager::GetInstance().StopMusic();
+        if (gameOverMusic) gameOverMusic->Stop();
+        player->Revive();
+        SCORE = 0;
+
+        GAMEOVER = false;
+        gameOverTriggered = false;
+        turdHasFallenOffScreen = false;
+
+        if (game->mainMenu) game->mainMenu->ResetMusic();
+        game->SetGameState(Game::MAINMENU);
+    }
+
+    float sbScale = 2.0f;
+    float sbW = (float)(gameOverScore.width * sbScale);
+    float sbH = (float)(gameOverScore.height * sbScale);
+    float sbX = (320.0f - sbW) / 2.0f;
+    float sbY = panelY + panelH - sbH + 14.0f;
+
+    DrawTexturePro(gameOverScore,
+        { 0, 0, (float)gameOverScore.width, (float)gameOverScore.height },
+        { sbX, sbY, sbW, sbH },
+        { 0, 0 }, 0.0f, WHITE);
+
+    std::string scoreStr = std::to_string(SCORE);
+    int scoreW = MeasureText(scoreStr.c_str(), 20);
+    Font hdFont = game->GetScaledFont(1.2f);
+    DrawTextEx(hdFont, scoreStr.c_str(), { sbX + (sbW - (float)scoreW) / 2.0f + 20, sbY + (sbH / 2.0f - 12.0f) - 12 }, 24.0f, 1.0f, BLACK);
+
+    std::string coinStr = std::to_string(player->GetSessionCoins());
+    int coinW = MeasureText(coinStr.c_str(), 20);
+    DrawTextEx(hdFont, coinStr.c_str(), { sbX + (sbW - (float)coinW) / 2.0f + 20, sbY + (sbH / 2.0f + 4.0f) }, 24.0f, 1.0f, BLACK);
+}
+
 void Playing::Update()
 {
     deltaTime = GetFrameTime();
 
-    if (!isPaused) {
+    if (!player->isAlive && !gameOverTriggered) {
+        gameOverTriggered = true;
+        turdHasFallenOffScreen = false;
+        GAMEOVER = false;
+
+        auto current = levelManager->GetCurrentLevel();
+        int levelIndex = -1;
+        if (dynamic_cast<ParkLevel*>(current.get())) {
+            lastLevelType = LastLevelType::PARK;
+            levelIndex = 0;
+        }
+        else if (dynamic_cast<SewerLevel*>(current.get())) {
+            lastLevelType = LastLevelType::SEWER;
+            levelIndex = 1;
+        }
+        else if (dynamic_cast<SnowLevel*>(current.get())) {
+            lastLevelType = LastLevelType::SNOW;
+            levelIndex = 3;
+        }
+        else if (dynamic_cast<CastleLevel*>(current.get())) {
+            lastLevelType = LastLevelType::CASTLE;
+            levelIndex = 4;
+        }
+        else if (dynamic_cast<BossLevel*>(current.get())) {
+            lastLevelType = LastLevelType::BOSS;
+            levelIndex = 5;
+        }
+        else if (dynamic_cast<DesertLevel*>(current.get())) {
+            lastLevelType = LastLevelType::DESERT;
+            levelIndex = 2;
+        }
+
+        if (levelIndex >= 0) {
+            UpdateSessionRecord(levelIndex, SCORE);
+        }
+
+        TOTALCOINS += player->GetSessionCoins();
+        if (game->mainMenu) {
+            game->mainMenu->UpdateLevelUnlocks(TOTALCOINS, sessionRecords);
+        }
+
+        if (current) current->StopMusic();
+        AudioManager::GetInstance().StopMusic();
+        gameOverMusic->Stop();
+        gameOverMusic->SetLooping(false);
+        gameOverMusic->Play();
+    }
+
+    if (gameOverTriggered) {
+        player->Update(deltaTime);
+        if (snowOverlay) snowOverlay->Update(deltaTime);
+        gameOverMusic->Update();
+
+        if (!turdHasFallenOffScreen && player->GetPosition().y >= 180) {
+            turdHasFallenOffScreen = true;
+        }
+
+        if (turdHasFallenOffScreen && !GAMEOVER) {
+            GAMEOVER = true;
+        }
+        return;
+    }
+
+    if (!isPaused && !GAMEOVER) {
         if (levelManager) {
+            UpdatePlayerPosition();
             levelManager->Update(deltaTime);
 
-            // Player-vs-level collision logic (already in your code):
             std::shared_ptr<Level> currentLevel = levelManager->GetCurrentLevel();
             if (currentLevel) {
-                if (currentLevel->checkForCollisions(player->GetCircleCenter(), player->GetCircleRadius())) {
+                if (!player->isInvisible && currentLevel->checkForCollisions(player->GetCircleCenter(), player->GetCircleRadius())) {
                     player->PutTheHurtOn(33);
                 }
                 else if (currentLevel->checkForPointGain(player->GetCircleCenter(), player->GetCircleRadius())) {
                     SCORE++;
+                    TOTALSCORE++;
                     PlaySound(ScoreSound);
                 }
+
+                if (auto snowLevel = dynamic_cast<SnowLevel*>(currentLevel.get())) {
+                    for (const auto& enemy : levelManager->GetEnemies()) {
+                        if (auto snowman = dynamic_cast<SnowmanEnemy*>(enemy.get())) {
+                            for (auto* snowball : snowman->GetSnowballs()) {
+                                if (!snowball->IsActive()) continue;
+
+                                if (!player->isInvisible && CheckCollisionCircleRec(
+                                    player->GetCircleCenter(),
+                                    player->GetCircleRadius(),
+                                    snowball->GetHitbox()))
+                                {
+                                    player->PutTheHurtOn(1);
+                                    snowball->Deactivate();
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                auto& pickups = currentLevel->GetPickUps();
+                for (auto it = pickups.begin(); it != pickups.end(); ) {
+                    if (CheckCollisionCircleRec(
+                        player->GetCircleCenter(),
+                        player->GetCircleRadius(),
+                        (*it)->GetHitbox()))
+                    {
+                        (*it)->OnPickup();
+                        if (auto heart = dynamic_cast<PoopHeart*>((*it).get())) {
+                            int healAmount = heart->GetHealAmount();
+                            player->AddHeartSlice(healAmount);
+                            if (healAmount == 9) {
+                                player->ActivateInvisibility(10.0f);
+                            }
+                        }
+                        else if (auto coin = dynamic_cast<Coin*>((*it).get())) {
+                            int coinValue = coin->GetValue();
+                            player->AddCoins(coinValue);
+                        }
+                        it = pickups.erase(it);
+                    }
+                    else {
+                        ++it;
+                    }
+                }
+            }
+            else {
+                std::cerr << "Warning: currentLevel is null in Update!" << std::endl;
             }
         }
         else {
             std::cerr << "Warning: levelManager is null in Update!" << std::endl;
         }
 
-        // Update the player (movement, animation, etc.)
-        player->Update(deltaTime);
+        if (!turdHasFallenOffScreen)
+            player->Update(deltaTime);
 
-        // ─────────────────────────────────────────────────────────
-        // NEW: Projectile-Enemy collision logic & safe erasing
-        // ─────────────────────────────────────────────────────────
+        for (const auto& enemy : levelManager->GetEnemies())
+        {
+            if (auto tp = dynamic_cast<ToiletPaper*>(enemy.get()))
+            {
+                if (!player->isInvisible && CheckCollisionCircleRec(player->GetCircleCenter(), player->GetCircleRadius(), tp->GetHitbox()))
+                {
+                    player->PutTheHurtOn(1);
+                }
+            }
+            else if (auto bird = dynamic_cast<Bird*>(enemy.get()))
+            {
+                if (!player->isInvisible && CheckCollisionCircleRec(player->GetCircleCenter(), player->GetCircleRadius(), bird->GetHitbox()))
+                {
+                    player->PutTheHurtOn(1);
+                }
+            }
+            else if (auto ratCopter = dynamic_cast<RatCopter*>(enemy.get()))
+            {
+                if (!player->isInvisible && CheckCollisionCircleRec(player->GetCircleCenter(), player->GetCircleRadius(), ratCopter->GetHitbox()))
+                {
+                    player->PutTheHurtOn(1);
+                    ratCopter->TakeDamage();
+                }
+            }
+        }
 
-        // 1) Get the player's projectiles by reference (non-const).
         std::vector<Projectile*>& projectiles = player->GetProjectilesNonConst();
-
-        // 2) Access the enemies from LevelManager. (Ensure LevelManager has a public
-        //    GetEnemies() returning a non-const reference to its enemy vector.)
         std::vector<std::shared_ptr<Enemy>>& enemies = levelManager->GetEnemies();
 
-        // 3) Loop over projectiles with an iterator so we can erase safely.
         for (auto projIt = projectiles.begin(); projIt != projectiles.end(); )
         {
             Projectile* proj = *projIt;
             Rectangle projHitbox = proj->GetHitbox();
             bool projectileHit = false;
 
-            // Check collision against each enemy
             for (auto enemyIt = enemies.begin(); enemyIt != enemies.end(); ++enemyIt)
             {
                 if (CheckCollisionRecs(projHitbox, (*enemyIt)->GetHitbox()))
                 {
-                    // If collision: mark the projectile for removal.
                     projectileHit = true;
-
-                    // Example: call a "TakeDamage()" method on the enemy
-                    // to trigger a hurt animation, etc. Or remove the enemy immediately.
                     (*enemyIt)->TakeDamage();
-                    // You can break if you only want each projectile to hit 1 enemy.
                     break;
                 }
             }
 
             if (projectileHit)
             {
-                // If you allocated the projectile with 'new', delete it here.
                 delete proj;
-                // Erase returns the next valid iterator after removal.
                 projIt = projectiles.erase(projIt);
             }
             else
             {
-                // If no collision, just advance.
                 ++projIt;
             }
         }
+
+        if (snowOverlay) snowOverlay->Update(deltaTime);
 
         if (levelManager && dynamic_cast<BossLevel*>(levelManager->GetCurrentLevel().get()))
         {
             BossLevel* bossLevel = dynamic_cast<BossLevel*>(levelManager->GetCurrentLevel().get());
             if (bossLevel)
             {
+                if (bossLevel->IsComplete())
+                {
+                    // Transition to Credits state
+                    AudioManager::GetInstance().StopMusic();
+                    if (currentMusic) currentMusic->Stop();
+                    game->SetGameState(Game::CREDITS);
+                }
+
                 std::shared_ptr<Boss> boss = bossLevel->GetBoss();
                 if (boss && boss->isActive)
                 {
-                    for (auto& projectile : projectiles)  // Assume player has projectiles vector
+                    for (auto projIt = projectiles.begin(); projIt != projectiles.end(); )
                     {
+                        Projectile* projectile = *projIt;
                         Rectangle projHitbox = projectile->GetHitbox();
+                        bool hitBoss = false;
                         for (const auto& bossHitbox : boss->GetHitboxes())
                         {
                             if (CheckCollisionRecs(projHitbox, bossHitbox))
                             {
-                                boss->TakeDamage(10);  // Damage value, adjust as needed
+                                boss->TakeDamage(10);
                                 delete projectile;
-                                projectiles.erase(std::find(projectiles.begin(), projectiles.end(), projectile));
+                                projIt = projectiles.erase(projIt);
+                                hitBoss = true;
                                 break;
+                            }
+                        }
+                        if (!hitBoss) ++projIt;
+                    }
+                    if (std::shared_ptr<RatKing> rk = std::dynamic_pointer_cast<RatKing>(boss))
+                    {
+                        for (auto* tp : rk->GetProjectiles())
+                        {
+                            if (!player->isInvisible && CheckCollisionCircleRec(player->GetCircleCenter(), player->GetCircleRadius(), tp->GetHitbox()))
+                            {
+                                player->PutTheHurtOn(1);
                             }
                         }
                     }
@@ -508,7 +844,6 @@ void Playing::Update()
         }
     }
 
-    // Update music volume (already in your code).
     UpdateMusic();
 }
 
@@ -520,31 +855,46 @@ void Playing::Draw()
     else {
         std::cerr << "Warning: levelManager is null in Draw!" << std::endl;
     }
-    player->Draw();
-    DrawUI();
 
-    if (isPaused) {
-        DrawPauseMenu();
+    if (!gameOverTriggered || !turdHasFallenOffScreen)
+        player->Draw();
+
+    if (snowOverlay && dynamic_cast<SnowLevel*>(levelManager->GetCurrentLevel().get()))
+        snowOverlay->Draw();
+
+    if (GAMEOVER)
+    {
+        DrawGameOverScreen();
+        return;
     }
 
-    // Draw boss health bar if in BossLevel
+    UseHighDefFont(true);
+    DrawUI();
+    UseHighDefFont(false);
+
+    if (isPaused)
+    {
+        DrawPauseMenu();
+        return;
+    }
+
     if (levelManager && dynamic_cast<BossLevel*>(levelManager->GetCurrentLevel().get()))
     {
         BossLevel* bossLevel = dynamic_cast<BossLevel*>(levelManager->GetCurrentLevel().get());
         if (bossLevel)
         {
             std::shared_ptr<Boss> boss = bossLevel->GetBoss();
-            if (boss && boss->isActive)
+            if (boss && boss->isActive && bossHealthBar)
             {
-                static BossHealthBar healthBar(boss.get(), "King of Rats");
-                healthBar.Update(GetFrameTime());
-                healthBar.Draw();
+                bossHealthBar->Update(GetFrameTime());
+                bossHealthBar->Draw();
             }
         }
     }
 }
 
-void Playing::PlayMusic(AudioClip* clip) {
+void Playing::PlayMusic(AudioClip* clip)
+{
     if (currentMusic == clip) {
         UpdateMusic();
         return;
@@ -559,12 +909,15 @@ void Playing::PlayMusic(AudioClip* clip) {
     if (currentMusic) {
         currentMusic->Play();
     }
+    else {
+        TraceLog(LOG_WARNING, "Attempted to play null music clip");
+    }
 }
 
-void Playing::UpdateMusic() {
-    if (currentMusic) {
-        float vol = AudioManager::GetInstance().IsMusicMuted() ? 0.0f :
-            (float)AudioManager::GetInstance().GetMusicVolume() / 10.0f;
+void Playing::UpdateMusic()
+{
+    if (currentMusic && !GAMEOVER) {
+        float vol = AudioManager::GetInstance().IsMusicMuted() ? 0.0f : (float)AudioManager::GetInstance().GetMusicVolume() / 10.0f;
         currentMusic->SetVolume(vol);
         currentMusic->Update();
     }
@@ -584,74 +937,167 @@ void Playing::HandleInput()
     else {
         if (IsKeyPressed(KEY_SPACE)) player->Jump();
         if (IsKeyDown(KEY_F)) player->Shoot();
-        if (IsKeyPressed(KEY_R)) player->Reset();
+        if (IsKeyPressed(KEY_R)) player->Revive();
     }
 }
 
 void Playing::FadeOutMusic(float deltaTime)
 {
-    // Implementation as needed.
 }
 
-void Playing::SetCurrentLevel(int levelIndex) {
-    if (levelIndex >= 0 && levelIndex < levels.size()) {
-        if (levelManager && levelManager->GetCurrentLevel()) {
-            levelManager->GetCurrentLevel()->StopMusic();
-        }
+void Playing::SetCurrentLevel(int levelIndex)
+{
+    if (levelIndex < 0 || levelIndex >= levels.size()) {
+        std::cerr << "Try Again Error: Invalid level index " << levelIndex << std::endl;
+        return;
+    }
 
-        std::shared_ptr<Level> newLevel = levels[levelIndex];
-        // Choose enemy type based on the level.
-        std::function<std::shared_ptr<Enemy>(Vector2)> enemyFactory;
-        // If the level is a SewerLevel, spawn ToiletPaper enemies.
-        if (dynamic_cast<SewerLevel*>(newLevel.get()) != nullptr) {
-            // It's a SewerLevel
-            enemyFactory = [newLevel](Vector2 spawnPos) -> std::shared_ptr<Enemy> {
-                SewerLevel* sewer = dynamic_cast<SewerLevel*>(newLevel.get());
-                float pipeSpeed = sewer->GetPipePanSpeed();  // read the sewer's pan speed
-                return std::make_shared<ToiletPaper>(spawnPos, pipeSpeed);
-                };
-        }
-        else {
-            // Non-sewer level => default speed
-            enemyFactory = [](Vector2 spawnPos) -> std::shared_ptr<Enemy> {
-                float defaultSpeed = 80.0f;  // or any speed you want
-                return std::make_shared<ToiletPaper>(spawnPos, defaultSpeed);
-                };
-        }
+    // Stop current level music
+    if (currentMusic)          // still valid at this point
+    {
+        currentMusic->Stop();  // safe – level not destroyed yet
+        currentMusic = nullptr; // <<< break the alias to avoid a dangling ptr
+    }
 
-        levelManager = std::make_unique<LevelManager>(newLevel);
+    // Create a new instance based on the preloaded level type
+    std::shared_ptr<Level> newLevel;
+    switch (levelIndex) {
+    case 0: newLevel = std::make_shared<ParkLevel>(); break;
+    case 1: newLevel = std::make_shared<SewerLevel>(); break;
+    case 2: newLevel = std::make_shared<DesertLevel>(); break;
+    case 3: newLevel = std::make_shared<SnowLevel>(); break;
+    case 4: newLevel = std::make_shared<CastleLevel>(); break;
+    case 5: newLevel = std::make_shared<BossLevel>(); break;
+    default: newLevel = std::make_shared<ParkLevel>(); break;
+    }
+
+    // Apply current settings to ensure proper initialization
+    if (game->mainMenu) {
+        quickplaySettings = game->mainMenu->GetQuickplaySettings();
+        difficultyIndex = game->mainMenu->GetDifficultyIndex();
+        player->SetInitialHearts(difficultyIndex);
+    }
+
+    levelManager = std::make_unique<LevelManager>(newLevel);
+    levelManager->SetQuickplaySettings(quickplaySettings);
+
+    newLevel->SetDifficulty(difficultyIndex); // Ensure currentMusic is set
+    float panSpeed = 80.0f; // Default Regular
+    switch (difficultyIndex) {
+    case 0: panSpeed = 60.0f; break; // Runny
+    case 2: panSpeed = 120.0f; break; // Rough
+    }
+    newLevel->SetPanSpeed(panSpeed);
+
+    // Handle BossLevel specifics
+    if (BossLevel* bossLevel = dynamic_cast<BossLevel*>(newLevel.get()))
+    {
+        std::shared_ptr<Boss> boss = bossLevel->GetBoss();
+        if (boss)
+        {
+            delete bossHealthBar;
+            bossHealthBar = new BossHealthBar(boss, "King of Rats");
+            TraceLog(LOG_INFO, "[Playing] Created BossHealthBar for initial RatKing");
+        }
+        player->SetMaxHearts(9);
+    }
+
+    // Reset player position and game state
+    player->ResetPosition();
+    if (newLevel->GetAudioClip()) {
         PlayMusic(newLevel->GetAudioClip());
-        isPaused = false;
     }
     else {
-        std::cerr << "Error: Invalid level index " << levelIndex << std::endl;
+        TraceLog(LOG_ERROR, "Failed to set music for level index %d", levelIndex);
     }
+    isPaused = false;
+    SCORE = 0;
+    player->ResetSessionCoins();
 }
 
 void Playing::DrawUI()
 {
+    using namespace Resources;
     using namespace GameSettings;
 
     if (!(levelManager && dynamic_cast<BossLevel*>(levelManager->GetCurrentLevel().get())))
     {
-        // Only draw score and hearts if not in BossLevel
-        DrawTexturePro(Scoreboard, Rectangle{ 0, 0, (float)Scoreboard.width, (float)Scoreboard.height },
-            Rectangle{ 320.0f - Scoreboard.width - 10, 180.0f - Scoreboard.height - 10, (float)Scoreboard.width, (float)Scoreboard.height },
-            Vector2{ 0,0 }, 0.0f, WHITE);
-        DrawText(TextFormat("%i", SCORE), 320 - 50, 180 - 35, 20, WHITE);
+        DrawTexturePro(Scoreboard,
+            { 0, 0, (float)Scoreboard.width, (float)Scoreboard.height },
+            { 320.f - Scoreboard.width - 10, 180.f - Scoreboard.height - 10,
+             (float)Scoreboard.width, (float)Scoreboard.height },
+            { 0, 0 }, 0.f, WHITE);
+        std::string scoreStr = TextFormat("%i", SCORE);
+        Vector2 scoreTextSize = MeasureTextEx(g_AIGUI.defaultFont, scoreStr.c_str(), 20.0f, 1.0f);
+        float scoreTextX = 320.0f - 42.5f - scoreTextSize.x / 2.0f;
+        float scoreTextY = 180.0f - 35.0f;
+        Font fontToUse = IsHighDefFont() ? game->GetScaledFont(1.2f) : g_AIGUI.defaultFont;
+        DrawTextEx(fontToUse, scoreStr.c_str(), { scoreTextX, scoreTextY }, 24.0f, 1.0f, WHITE);
     }
 
-    for (int i = 0; i < player->GetHealth() / 33; i++)
-        DrawTexturePro(_TurdHeart, Rectangle{ 0, 0, (float)_TurdHeart.width, (float)_TurdHeart.height },
-            Rectangle{ 4.0f + (i * 32), 4, (float)_TurdHeart.width, (float)_TurdHeart.height },
-            Vector2{ 0,0 }, 0.0f, WHITE);
+    const int hearts = player->GetTotalHearts();
+    const int slicesPH = player->GetSlicesPerHeart();
+    int live = player->GetSlicesLeft();
+    int ghost = player->GetGhostSlicesLeft();
+
+    for (int h = 0; h < hearts; ++h)
+    {
+        int sliceStart = h * slicesPH;
+        int liveHere = std::max(0, std::min(slicesPH, live - sliceStart));
+        int ghostHere = std::max(0, std::min(slicesPH - liveHere, ghost - sliceStart));
+
+        const char* texPath = nullptr;
+        if (slicesPH == 1)
+        {
+            if (liveHere == 1) texPath = TurdHeartSmall;
+            else texPath = TurdHeart0Half;
+        }
+        else if (slicesPH == 2)
+        {
+            if (liveHere == 2) texPath = TurdHeartSmall;
+            else if (liveHere == 1) texPath = TurdHeart1Half;
+            else if (ghostHere >= 1) texPath = TurdHeart0HalfHollow;
+            else texPath = TurdHeart0Half;
+        }
+        else
+        {
+            if (liveHere == 3) texPath = TurdHeartSmall;
+            else if (liveHere == 2) texPath = TurdHeart2Thirds;
+            else if (liveHere == 1) texPath = TurdHeart1Third;
+            else if (ghostHere >= 1) texPath = TurdHeart0ThirdHollow;
+            else texPath = TurdHeart0ThirdHollow;
+        }
+
+        Texture2D tex = TextureCache::Get(texPath);
+        DrawTexturePro(tex,
+            { 0, 0, (float)tex.width, (float)tex.height },
+            { 4.0f + h * 32.0f, 4.0f, (float)tex.width, (float)tex.height },
+            { 0, 0 }, 0.f, WHITE);
+    }
+
+    float coinBagX = 4.0f;
+    float coinBagY = 4.0f + _TurdHeart.height + 4.0f;
+    DrawTexturePro(_CoinBag,
+        { 0, 0, (float)_CoinBag.width, (float)_CoinBag.height },
+        { coinBagX, coinBagY, (float)_CoinBag.width, (float)_CoinBag.height },
+        { 0, 0 }, 0.f, WHITE);
+    std::string coinStr = TextFormat("%i", player->GetSessionCoins());
+    Vector2 coinTextSize = MeasureTextEx(g_AIGUI.defaultFont, coinStr.c_str(), 20.0f, 1.0f);
+    float coinTextX = coinBagX + _CoinBag.width + 4.0f;
+    float coinTextY = coinBagY + (_CoinBag.height - coinTextSize.y) / 2.0f;
+    Font fontToUse = IsHighDefFont() ? game->GetScaledFont(1.2f) : g_AIGUI.defaultFont;
+    DrawTextEx(fontToUse, coinStr.c_str(), { coinTextX, coinTextY }, 24.0f, 1.0f, WHITE);
 }
 
-void Playing::UpdatePlayerPositionInLevel()
+void Playing::UpdatePlayerPosition()
 {
-    if (levelManager && levelManager->GetCurrentLevel())
-    {
-        //Vector2 playerPos = player->GetPosition();
-        //levelManager->GetCurrentLevel()->SetPlayerPosition(playerPos);
+    if (levelManager)
+        levelManager->SetPlayerPosition(player->GetCircleCenter());
+}
+
+void Playing::UpdateSessionRecord(int levelIndex, int pipesPassed)
+{
+    if (levelIndex >= 0 && levelIndex < 6) {
+        sessionRecords[levelIndex] = std::max(sessionRecords[levelIndex], pipesPassed);
     }
 }

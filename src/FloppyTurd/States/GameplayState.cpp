@@ -2,6 +2,7 @@
 #include "../../Engine/Core/GNLog.h"
 #include "../Components/GameComponents.h"
 #include <algorithm>
+#include <set>
 
 namespace GameCore {
 
@@ -11,7 +12,6 @@ namespace GameCore {
         , m_currentLevelId(levelId)
         , m_currentLevelConfig(LevelConfigFactory::GetLevelConfig(levelId))
         , m_currentScore(0)
-        , m_currentCoins(0)
         , m_currentLives(STARTING_LIVES)
         , m_gameTime(0.0f)
         , m_difficultyTimer(0.0f)
@@ -49,7 +49,6 @@ namespace GameCore {
         
         // Reset game state
         m_currentScore = 0;
-        m_currentCoins = 0;
         m_currentLives = STARTING_LIVES;
         m_gameTime = 0.0f;
         m_difficultyTimer = 0.0f;
@@ -159,6 +158,11 @@ namespace GameCore {
         // Check toilet collisions and pipe clearing
         CheckToiletCollisions();
         
+        // Handle pickups via PickupSystem
+        if (m_pickupSystem) {
+            m_pickupSystem->Update(deltaTime);
+        }
+        
         // Update pipe counter UI
         UpdatePipeCounterUI();
         
@@ -266,7 +270,6 @@ namespace GameCore {
         
         // Reset game state for new level
         m_currentScore = 0;
-        m_currentCoins = 0;
         m_currentLives = STARTING_LIVES;
         m_gameTime = 0.0f;
         m_difficultyTimer = 0.0f;
@@ -341,8 +344,11 @@ namespace GameCore {
         if (m_platformDelegates) {
             m_levelManager->SetPlatformDelegates(*m_platformDelegates);
         }
+        // Create pickup system and pass dependencies
+        m_pickupSystem = std::make_unique<PickupSystem>(m_ecsSystem, m_levelManager.get(), m_platformDelegates, &m_currentLevelConfig);
         
-        // Load the current level
+        // Load the current level (ensure previous entities are torn down)
+        m_levelManager->UnloadLevel();
         if (!m_levelManager->LoadLevel(m_currentLevelId)) {
             GN_LOG_ERROR("Failed to load level " + std::to_string(m_currentLevelId));
         } else {
@@ -416,6 +422,10 @@ namespace GameCore {
             if (m_levelManager) {
                 m_levelManager->SetPlayerEntity(m_playerEntity);
             }
+            if (m_pickupSystem) {
+                m_pickupSystem->SetPlayerEntity(m_playerEntity);
+                m_pickupSystem->SetLevelConfig(&m_currentLevelConfig);
+            }
             
             GN_LOG_INFO("Created player entity: " + std::to_string(m_playerEntity));
         }
@@ -435,6 +445,7 @@ namespace GameCore {
             // Set as main camera for systems
             if (m_cameraSystem) {
                 m_cameraSystem->SetMainCamera(m_cameraEntity);
+                // Keep world scroll speed in sync with difficulty-scaled worldSpeed
                 m_cameraSystem->SetWorldScrollSpeed(m_currentLevelConfig.worldSpeed);
             }
             
@@ -639,13 +650,10 @@ namespace GameCore {
         }
         m_obstacles.clear();
         
-        // Destroy pickups
-        for (Gnosis::Entity entity : m_pickups) {
-            if (entity != 0) {
-                m_ecsSystem->DestroyEntity(entity);
-            }
+        // Destroy pickups via system
+        if (m_pickupSystem) {
+            m_pickupSystem->ClearAll();
         }
-        m_pickups.clear();
         
         // Destroy projectiles
         for (Gnosis::Entity entity : m_projectiles) {
@@ -671,13 +679,13 @@ namespace GameCore {
         return;
     }
     
-    // TODO: Temporarily disable score, lives, coins UI to focus on pipe counter
-    // These will be re-enabled once unified rendering system is implemented
+    // Re-enable coin counter UI with coin bag icon
     m_scoreTextEntity = 0;
     m_livesTextEntity = 0; 
     m_coinsTextEntity = 0;
+    m_coinBagEntity = 0;
     
-    // Create pipe counter text entity - centered under iPhone notch
+    // Create pipe counter text entity - centered under iPhone notch (top display)
     m_pipeCounterEntity = m_ecsSystem->CreateEntity();
     if (m_pipeCounterEntity != 0) {
         // Get safe area information for proper positioning under notch
@@ -698,18 +706,18 @@ namespace GameCore {
             }
         }
         
-        // Center horizontally; position ~10% down using full screen pixel height to avoid unit mismatches
+        // TOP placement (centered, 10% from top)
         float screenW = 1179.0f, screenH = 2556.0f;
         if (m_renderSystem) {
             const ScreenInfo& si2 = m_renderSystem->GetScreenInfo();
             screenW = si2.pixelWidth;
             screenH = si2.pixelHeight;
         }
-        float centerX = screenW * 0.5f;
-        float pipeCounterY = screenH * 0.10f; // 10% down from top
+        float centerX = screenW * 0.50f;        // centered horizontally
+        float pipeCounterY = screenH * 0.10f;   // 10% from top
         GN_LOG_INFO("CreateUI: screenW=" + std::to_string(screenW) +
                      " screenH=" + std::to_string(screenH) +
-                     " pipeCounter center=(" + std::to_string(centerX) + "," + std::to_string(pipeCounterY) + ")");
+                     " pipeCounter pos=(" + std::to_string(centerX) + "," + std::to_string(pipeCounterY) + ") top-center");
         
         Transform pipeTransform(Gnosis::GNVector2(centerX, pipeCounterY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
         m_ecsSystem->AddComponent<Transform>(m_pipeCounterEntity, pipeTransform);
@@ -733,11 +741,57 @@ namespace GameCore {
         m_ecsSystem->AddComponent<UIElement>(m_pipeCounterEntity, pipeCounter);
         GN_LOG_INFO("CreateUI: added UIElement to pipe counter entity fontSize=" + std::to_string(pipeCounter.fontSize));
         
-        GN_LOG_INFO("Created pipe counter entity " + std::to_string(m_pipeCounterEntity) + " at (" + std::to_string(centerX) + ", " + std::to_string(pipeCounterY) + ") - centered under notch");
+        GN_LOG_INFO("Created pipe counter entity " + std::to_string(m_pipeCounterEntity) + " at (" + std::to_string(centerX) + ", " + std::to_string(pipeCounterY) + ") - top-center");
     } else {
         GN_LOG_ERROR("Failed to create pipe counter entity!");
     }
     
+    // Create coin bag icon (32x32) at bottom-left: 10% from left, 10% from bottom
+    {
+        float screenW = 1179.0f, screenH = 2556.0f;
+        if (m_renderSystem) {
+            const ScreenInfo& si = m_renderSystem->GetScreenInfo();
+            screenW = si.pixelWidth;
+            screenH = si.pixelHeight;
+        }
+        float iconX = screenW * 0.10f;
+        float iconY = screenH * 0.85f; // 15% from bottom (pixel Y increases downward)
+        const float bagScale = 8.0f;    // Scale 32x32 coin bag to 256x256
+        m_coinBagEntity = m_ecsSystem->CreateEntity();
+        if (m_coinBagEntity != 0) {
+            Transform tr(Gnosis::GNVector2(iconX, iconY), 0.0f, Gnosis::GNVector2(bagScale, bagScale));
+            m_ecsSystem->AddComponent<Transform>(m_coinBagEntity, tr);
+            UIElement bag;
+            bag.normalTextureId = "CoinBag";
+            bag.visible = true;
+            bag.isEnabled = true;
+            bag.textLayer = 10;
+            m_ecsSystem->AddComponent<UIElement>(m_coinBagEntity, bag);
+            GN_LOG_INFO("Created coin bag icon at (" + std::to_string(iconX) + "," + std::to_string(iconY) + ")");
+        }
+        // Coin number to the right of the bag, vertically centered to it
+        m_coinsTextEntity = m_ecsSystem->CreateEntity();
+        if (m_coinsTextEntity != 0) {
+            float textX = iconX + (32.0f * bagScale) + 8.0f; // bag width + small gap
+            float textY = iconY + (32.0f * bagScale * 0.5f) + 16.0f; // nudge down by 16px
+            Transform tr(Gnosis::GNVector2(textX, textY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            m_ecsSystem->AddComponent<Transform>(m_coinsTextEntity, tr);
+            // Use UIElement text rendering path
+            UIElement ui;
+            ui.buttonText = "0";
+            ui.fontSize = 64.0f; // match pipe counter visual weight but can tune
+            ui.textOutlineWidth = 10.0f;
+            ui.textColor = Gnosis::GNColor(255, 215, 0, 255); // gold
+            ui.centerTextHorizontally = false;
+            ui.centerTextVertically = true; // center on icon
+            ui.visible = true;
+            ui.isEnabled = true;
+            ui.textLayer = 10;
+            m_ecsSystem->AddComponent<UIElement>(m_coinsTextEntity, ui);
+            GN_LOG_INFO("Created coins text at (" + std::to_string(textX) + "," + std::to_string(textY) + ")");
+        }
+    }
+
     // Create temporary menu button using proper UI system
     m_tempMenuButtonEntity = m_ecsSystem->CreateEntity();
     if (m_tempMenuButtonEntity != 0) {
@@ -808,6 +862,10 @@ void GameplayState::DestroyUI() {
         m_ecsSystem->DestroyEntity(m_coinsTextEntity);
         m_coinsTextEntity = 0;
     }
+    if (m_coinBagEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_coinBagEntity);
+        m_coinBagEntity = 0;
+    }
     
     if (m_pipeCounterEntity != 0) {
         m_ecsSystem->DestroyEntity(m_pipeCounterEntity);
@@ -848,8 +906,9 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         
         if (m_coinsTextEntity != 0) {
             Text* coinsText = m_ecsSystem->GetComponent<Text>(m_coinsTextEntity);
-            if (coinsText) {
-                coinsText->text = "Coins: " + std::to_string(m_currentCoins);
+            PlayerComponent* player = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity);
+            if (coinsText && player) {
+                coinsText->text = "Coins: " + std::to_string(player->sessionCoins);
             }
         }
 
@@ -858,14 +917,33 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             const ScreenInfo& si = m_renderSystem->GetScreenInfo();
             // Heuristic: real iPhone pixel widths are well above 800
             if (si.pixelWidth >= 1000.0f && si.pixelHeight >= 1000.0f) {
-                // Pipe counter center position (10% down)
-                float centerX = si.pixelWidth * 0.5f;
+                // Pipe counter top-center placement (10% from top)
+                float centerX = si.pixelWidth * 0.50f;
                 float pipeCounterY = si.pixelHeight * 0.10f;
-                if (m_pipeCounterEntity != 0) {
+        if (m_pipeCounterEntity != 0) {
                     Transform* t = m_ecsSystem->GetComponent<Transform>(m_pipeCounterEntity);
                     if (t) {
                         t->position.x = centerX;
                         t->position.y = pipeCounterY;
+                    }
+                }
+
+                // Reposition coin bag and coins text based on pixel screen size
+                if (m_coinBagEntity != 0) {
+                    Transform* t = m_ecsSystem->GetComponent<Transform>(m_coinBagEntity);
+                    if (t) {
+                        t->position.x = si.pixelWidth * 0.10f;
+                        t->position.y = si.pixelHeight * 0.85f; // 15% from bottom
+                        t->scale.x = 8.0f; // Keep 8x scale after sync
+                        t->scale.y = 8.0f;
+                    }
+                }
+                if (m_coinsTextEntity != 0) {
+                    Transform* t = m_ecsSystem->GetComponent<Transform>(m_coinsTextEntity);
+                    if (t) {
+                        // Text to the right of the scaled bag, vertically centered
+                        t->position.x = (si.pixelWidth * 0.10f) + (32.0f * 8.0f) + 8.0f;
+                        t->position.y = (si.pixelHeight * 0.85f) + (32.0f * 8.0f * 0.5f) + 16.0f; // nudge down by 16px
                     }
                 }
 
@@ -882,7 +960,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
 
                 GN_LOG_INFO("UI Repositioned with PIXELS: screenW=" + std::to_string(si.pixelWidth) +
                             " screenH=" + std::to_string(si.pixelHeight) +
-                            " pipeCounter=(" + std::to_string(centerX) + "," + std::to_string(pipeCounterY) + ")" +
+                            " pipeCounter=(" + std::to_string(centerX) + "," + std::to_string(pipeCounterY) + ") top-center" +
                             " menuPos=(" + std::to_string(menuX) + "," + std::to_string(menuY) + ")");
                 m_uiPositionsSynced = true;
             }
@@ -902,7 +980,10 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             // Pool-driven updates (no dynamic allocation during gameplay)
             m_levelManager->UpdateEnemyPooling(deltaTime, worldScrollDistance);
             m_levelManager->UpdateNPCPooling(deltaTime, worldScrollDistance);
-            m_levelManager->UpdatePickupPooling(deltaTime, worldScrollDistance);
+            // REMOVED: m_levelManager->UpdatePickupPooling - now handled by GameplayState
+            
+            // Pickup logic handled centrally in Update()
+            
             // States
             m_levelManager->UpdateNPCStates(deltaTime);
         }
@@ -916,111 +997,15 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             GN_LOG_INFO("Difficulty increased to: " + std::to_string(m_difficultyLevel));
         }
     }
+    
+    // =======================================================================
+    // NEW: Pickup Coordination Methods (moved from LevelManager)
+    // =======================================================================
+    
+    // Pickup logic moved to PickupSystem
 
     void GameplayState::HandleGameEvents() {
         // Event handling will be implemented in Phase 2
-    }
-
-    void GameplayState::SpawnObstacle() {
-        GN_LOG_INFO("Spawning obstacle");
-        
-        if (!m_ecsSystem) {
-            return;
-        }
-        
-        Gnosis::Entity obstacleEntity = m_ecsSystem->CreateEntity();
-        if (obstacleEntity != 0) {
-            // Position obstacle off-screen to the right
-            Transform obstacleTransform(Gnosis::GNVector2(800.0f, 400.0f), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
-            m_ecsSystem->AddComponent<Transform>(obstacleEntity, obstacleTransform);
-            
-            // Add sprite component (placeholder)
-            Sprite obstacleSprite;
-            obstacleSprite.textureId = ""; // Will be set when we load textures
-            obstacleSprite.width = 64.0f;
-            obstacleSprite.height = 64.0f;
-            obstacleSprite.color = Gnosis::GNColor(255, 0, 0, 255);
-            obstacleSprite.visible = true;
-            obstacleSprite.layer = 1;
-            m_ecsSystem->AddComponent<Sprite>(obstacleEntity, obstacleSprite);
-            
-            // Add hitbox component
-            Hitbox obstacleHitbox;
-            obstacleHitbox.type = ColliderType::Rectangle;
-            obstacleHitbox.width = 64.0f;
-            obstacleHitbox.height = 64.0f;
-            m_ecsSystem->AddComponent<Hitbox>(obstacleEntity, obstacleHitbox);
-            
-            m_obstacles.push_back(obstacleEntity);
-        }
-    }
-
-    void GameplayState::SpawnPickup() {
-        GN_LOG_INFO("Spawning pickup");
-        
-        if (!m_ecsSystem) {
-            return;
-        }
-        
-        Gnosis::Entity pickupEntity = m_ecsSystem->CreateEntity();
-        if (pickupEntity != 0) {
-            // Position pickup off-screen to the right
-            Transform pickupTransform(Gnosis::GNVector2(800.0f, 300.0f), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
-            m_ecsSystem->AddComponent<Transform>(pickupEntity, pickupTransform);
-            
-            // Add sprite component (placeholder)
-            Sprite pickupSprite;
-            pickupSprite.textureId = ""; // Will be set when we load textures
-            pickupSprite.width = 32.0f;
-            pickupSprite.height = 32.0f;
-            pickupSprite.color = Gnosis::GNColor(255, 255, 0, 255);
-            pickupSprite.visible = true;
-            pickupSprite.layer = 1;
-            m_ecsSystem->AddComponent<Sprite>(pickupEntity, pickupSprite);
-            
-            // Add hitbox component
-            Hitbox pickupHitbox;
-            pickupHitbox.type = ColliderType::Rectangle;
-            pickupHitbox.width = 32.0f;
-            pickupHitbox.height = 32.0f;
-            m_ecsSystem->AddComponent<Hitbox>(pickupEntity, pickupHitbox);
-            
-            m_pickups.push_back(pickupEntity);
-        }
-    }
-
-    void GameplayState::SpawnEnemy() {
-        GN_LOG_INFO("Spawning enemy");
-        
-        if (!m_ecsSystem) {
-            return;
-        }
-        
-        Gnosis::Entity enemyEntity = m_ecsSystem->CreateEntity();
-        if (enemyEntity != 0) {
-            // Position enemy off-screen to the right
-            Transform enemyTransform(Gnosis::GNVector2(800.0f, 200.0f), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
-            m_ecsSystem->AddComponent<Transform>(enemyEntity, enemyTransform);
-            
-            // Add sprite component (placeholder)
-            Sprite enemySprite;
-            enemySprite.textureId = ""; // Will be set when we load textures
-            enemySprite.width = 48.0f;
-            enemySprite.height = 48.0f;
-            enemySprite.color = Gnosis::GNColor(0, 255, 0, 255);
-            enemySprite.visible = true;
-            enemySprite.layer = 1;
-            m_ecsSystem->AddComponent<Sprite>(enemyEntity, enemySprite);
-            
-            // Add hitbox component
-            Hitbox enemyHitbox;
-            enemyHitbox.type = ColliderType::Rectangle;
-            enemyHitbox.width = 48.0f;
-            enemyHitbox.height = 48.0f;
-            m_ecsSystem->AddComponent<Hitbox>(enemyEntity, enemyHitbox);
-            
-            m_enemies.push_back(enemyEntity);
-        }
     }
 
     void GameplayState::CleanupOffscreenEntities() {
@@ -1067,8 +1052,10 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
 
     void GameCore::GameplayState::OnCoinCollected(int value) {
         GN_LOG_INFO("Coin collected: " + std::to_string(value));
-        m_currentCoins += value;
-        m_currentScore += value * 10;
+        // Update player session coins; totalCoins handled when persisting between levels
+        if (PlayerComponent* player = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity)) {
+            player->sessionCoins += value;
+        }
     }
 
     void GameCore::GameplayState::OnPickupCollected() {
@@ -1292,23 +1279,44 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 return; // Only process one collision per frame
             }
             
-            // Check if player has passed through a toilet pair (pipe cleared)
-            if (obstacle->pairedEntity != 0 && !obstacle->pipeCleared) {
-                // Check if player has passed the toilet pair horizontally
-                float playerRight = pCenterX + pRadius;
-                if (playerRight > rectX + rectW) {
-                    // Mark both toilets as cleared
-                    obstacle->pipeCleared = true;
-                    
-                    Obstacle* pairedObstacle = m_ecsSystem->GetComponent<Obstacle>(obstacle->pairedEntity);
-                    if (pairedObstacle) {
-                        pairedObstacle->pipeCleared = true;
+                // Increment once per column (X-range) as the player passes its center.
+                // This prevents double count when top and bottom exist at similar X.
+                if (!obstacle->pipeCleared) {
+                    float playerRight = pCenterX + pRadius;
+                    float pipeCenterX = rectX + rectW * 0.5f;
+                    if (playerRight > pipeCenterX) {
+                        // Define a horizontal window for this column using half the pipe width (scaled)
+                        const float columnHalfWidth = rectW * 0.5f;
+                        const float windowMinX = pipeCenterX - columnHalfWidth;
+                        const float windowMaxX = pipeCenterX + columnHalfWidth;
+
+                        // Mark all obstacles within this column window as cleared to dedup
+                        const auto& allObstacles = m_levelManager->GetActiveObstacles();
+                        for (Gnosis::Entity e2 : allObstacles) {
+                            Obstacle* o2 = m_ecsSystem->GetComponent<Obstacle>(e2);
+                            Transform* t2 = m_ecsSystem->GetComponent<Transform>(e2);
+                            Sprite* s2 = m_ecsSystem->GetComponent<Sprite>(e2);
+                            Hitbox* hb2 = m_ecsSystem->GetComponent<Hitbox>(e2);
+                            if (!o2 || !t2 || !s2 || !hb2 || o2->pipeCleared) {
+                                continue;
+                            }
+                            float rectW2 = hb2->width * t2->scale.x;
+                            float spriteHalfW2 = s2->width * t2->scale.x * 0.5f;
+                            float rectCenterX2 = t2->position.x + spriteHalfW2 + (hb2->offsetX * t2->scale.x);
+                            if (rectCenterX2 >= windowMinX && rectCenterX2 <= windowMaxX) {
+                                o2->pipeCleared = true;
+                                // Also clear its explicit pair if any
+                                if (o2->pairedEntity != 0) {
+                                    if (Obstacle* pairedObstacle2 = m_ecsSystem->GetComponent<Obstacle>(o2->pairedEntity)) {
+                                        pairedObstacle2->pipeCleared = true;
+                                    }
+                                }
+                            }
+                        }
+
+                        OnPipeCleared();
                     }
-                    
-                    // Increment pipe counter
-                    OnPipeCleared();
                 }
-            }
         }
     }
     
@@ -1320,6 +1328,14 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         UIElement* pipeCounter = m_ecsSystem->GetComponent<UIElement>(m_pipeCounterEntity);
         if (pipeCounter) {
             pipeCounter->buttonText = std::to_string(m_pipesCleared);  // Just the number
+        }
+        // Update coins UI from player sessionCoins
+        if (m_coinsTextEntity != 0) {
+            UIElement* coinsUi = m_ecsSystem->GetComponent<UIElement>(m_coinsTextEntity);
+            PlayerComponent* player = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity);
+            if (coinsUi && player) {
+                coinsUi->buttonText = std::to_string(player->sessionCoins);
+            }
         }
     }
     

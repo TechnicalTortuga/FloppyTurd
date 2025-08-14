@@ -1,80 +1,148 @@
-The jaggies and glitchy artifacts (which sound like speckled noise, uneven thickness, or irregular dots around the outline edges) you're seeing are likely caused by inconsistencies in how the anti-aliasing (AA) transitions are handled in your MSDF outline shader. Mathematically, this stems from the way the smoothstep functions are parameterized for the stroke calculation, particularly the asymmetric and widened transitions for the inner gate and outer edge. This can lead to mismatched gradients during the subtraction (strokeOuter - innerGate), resulting in alpha values that don't smoothly blend, creating visible discontinuities or over/under-shoot in opacity at certain scales or angles.
+The infinite coin trigger issue (multiple collections per single pickup) and failure to deactivate (coins not disappearing or stopping collisions) stem from a few interconnected problems in the PickupSystem implementation, based on the provided code:
 
-### Mathematical Explanation of the Artifacts
-In MSDF rendering, the signed distance (sd) approximates the distance to the glyph edge in screen space, with sd > 0 inside the glyph, sd = 0 at the edge, and sd < 0 outside. For outlines, you're computing a "ring" around the edge where -outlineWidth < sd < 0 (for an exterior outline). To anti-alias this, you use smoothstep to create gradual transitions instead of hard cuts.
+### Root Causes
+1. **Iteration Bug in `handlePickupCollisions()`**:
+   - The loop uses a forward `while (i < m_activePickups.size())` with conditional `i++` only in the non-collided branch. When a collision is detected, you process it, remove via swap-pop (which shifts elements), but don't increment `i` afterward. This means:
+     - After popping, the new entity at index `i` (the former last element) gets checked immediately in the next iteration without `i++`, potentially re-triggering if it also collides.
+     - If multiple collisions happen in one frame, this can cascade, causing skipped entities or re-processing before deactivation takes effect.
+     - Result: A single coin can trigger multiple times in one frame if the index shift exposes another collidable entity, or if the loop stalls on the same index.
 
-The standard formula for an anti-aliased stroke is approximately:
-- outer = smoothstep(-t - w, -t + w, sd)  // Transition at the outer boundary (-t), where t = outlineWidth scaled to distance space
-- inner = smoothstep(-w, +w, sd)        // Transition at the inner boundary (0)
-- stroke_alpha = clamp(outer - inner, 0, 1)
+2. **Deactivation Not Immediate/Visible**:
+   - You set `p->isActive = false` and `s->visible = false`, but:
+     - If the ECS (`Gnosis::ECS`) doesn't apply component changes until end-of-frame (common in some ECS designs for batching), the check `!p->isActive` might not prevent re-trigger in the same loop.
+     - Visibility (`s->visible = false`) takes effect in rendering (via `RenderSystem` or `SpriteSystem`), but if collisions are checked after render or in a separate pass, coins might visually persist for a frame.
+     - No position reset (e.g., move offscreen as backup) means even if invisible, the hitbox could linger if not skipped via `isActive`.
 
-Here, w is the half-width of the AA band in distance space, typically w ≈ 0.5 * fwidth(sd) for a ~1-pixel transition (more on this below). This ensures the alpha ramps smoothly over ~1 screen pixel, reducing aliasing.
+3. **Missing Integration/Callbacks**:
+   - `OnCoinCollected(int value)` in GameplayState is not called from PickupSystem. In the truncated code, PickupSystem updates `playerComp->sessionCoins` directly but doesn't invoke GameplayState's event handler (which likely handles score, sound, UI updates). If your infinite triggers are logged from `OnCoinCollected`, it might not be called, but over-inflation happens via direct `+=`.
+   - Ensure `m_pickupSystem->SetPlayerEntity(m_playerEntity)` is called in GameplayState::InitializeSystems() or Enter()—without it, collisions skip.
+   - Bobbing (`bobbingTimer` in `Pickup`) isn't updated in PickupSystem; assume it's in SpriteSystem, but if not, positions don't move, potentially prolonging overlaps.
 
-fwidth(sd) approximates the rate of change of sd across one screen pixel (using partial derivatives: abs(dFdx(sd)) + abs(dFdy(sd))). It scales the AA band adaptively—wider for minified text (to avoid aliasing), narrower for magnified text (to avoid blur).
+4. **Group/Wrap Sync**:
+   - Reposition reactivates correctly (`p->isActive = true; s->visible = true;`), but if groups wrap frequently and collisions happen mid-wrap, inactive coins might get repositioned before full deactivation.
+   - `removeGroupIfMissing` destroys entities, but if a group wraps and respawns quickly, old coins might linger in memory.
 
-In your shader:
-- aa = fwidth(sd) * 1.0  // This is a conservative (wide) base AA width due to Metal's fwidth overestimation.
-- strokeOuter uses ±1.5*aa (total band width ~3*aa, overly soft on the outer edge).
-- innerGate uses smoothstep(-0.5*aa, 1.0*aa, sd), which is asymmetric:
-  - Transition starts at -0.5*aa and ends at 1.0*aa (total width 1.5*aa).
-  - Effective center shifted to ~0.25*aa (biased inward), and the ramp slope is inconsistent with the outer.
-- Subtracting these (clamp(strokeOuter - innerGate, 0, 1)) can cause mathematical mismatches:
-  - **Gradient inconsistency**: The smoothstep ramp is a cubic Hermite interpolation (smooth but with specific slope). When subtracting two ramps with different widths, biases, and asymmetries, the resulting alpha derivative (rate of change) can have abrupt jumps or negative values before clamping, leading to speckled overshoot/undershoot in opacity, especially near corners where MSDF channels vary independently.
-  - **Over-wide AA on one side**: The inflated multipliers (1.5*aa, 1.5*aa effective for inner) blur the outline unevenly, but the asymmetry can leave "gaps" in coverage where sd crosses zero, manifesting as jaggies (under-smoothed stairsteps) or noise-like artifacts (speckles from clamp cutting off mismatched ramps).
-  - **Amplified by MSDF specifics**: MSDF's multi-channel median preserves sharp corners better than SDF, but if the AA bands don't align, channel discrepancies (e.g., one channel dominating at a corner) can cause irregular sd values, turning smooth errors into visible glitches. This is worse for outlines, as they extend into negative sd where fields are less accurate. Switching from SDF didn't help because the shader logic has the same root issue.
-  - **Scale sensitivity**: At certain font sizes or zooms, fwidth(sd) may overestimate/underestimate due to texture minification/magnification, exacerbating the mismatch. If glyph padding in the atlas is low, neighboring fields bleed (clamped sampler edges create hard cuts), adding specks.
+5. **General ECS Notes from GameComponents.h**:
+   - `Pickup::isActive` is checked, good.
+   - `Sprite::visible` controls rendering.
+   - No explicit "deactivated" state beyond these—fine, but ensure no other systems (e.g., Physics or ScrollSpeed) move inactive entities.
 
-Jaggies specifically arise when the AA band is effectively too narrow or inconsistent, undersampling the edge transition (Nyquist-like aliasing in the distance field). The "metal filing" glitches sound like high-frequency noise from the clamp operation on mismatched ramps, creating dot-like anomalies where alpha snaps unexpectedly.
+### Fixes
+Implement these changes. I'll provide updated code snippets for PickupSystem.cpp (focus on `handlePickupCollisions()` and `Update()`), plus integration tweaks for GameplayState.cpp. Test with logs to verify (e.g., count triggers per coin).
 
-### Issues in the Loading/Rendering Code
-Your Swift code looks mostly solid, but a few areas could contribute indirectly:
-- **Atlas Loading and Format**: Using .rgba8Unorm is correct for distance data (treats values as linear, no sRGB gamma correction). However, if loading via UIImage (e.g., from fontAtlasCache), and the PNG has an sRGB profile, iOS may implicitly convert to linear when getting pixel data—but if the MSDF generator (e.g., msdfgen) wrote linear values directly, this could distort distances nonlinearly (gamma ≈2.2 compresses mid-tones). This warps sd calculations, causing uneven outlines or specks, especially in MSDF where channels must balance. Confirm your atlas PNG has no color profile (or load raw via ImageIO with kCGImageSourceShouldAllowFloat: true and null colorspace to bypass any conversion).
-- **Sampler State**: sdfSamplerState uses .linear, which is essential for smooth distance gradients. Confirm it's bound for MSDF rendering (not the nearest samplerState).
-- **Glyph Metrics and Padding**: Using fixed 16x6 grid or BMFont parsing is fine, but if the atlas generator didn't add enough padding (typically 3-5 pixels per glyph for MSDF fields), outlines will sample incorrect distances from neighbors, causing artifacts. Increase padding in generation.
-- **Pipeline Pixel Format**: The render target is .bgra8Unorm (non-sRGB), good for composition. Blending is sourceAlpha/oneMinusSourceAlpha, correct for premultiplied alpha.
-- **Rendering Path**: In drawTextMSDFOutlined (assumed based on the call), if you're using single-pass mode (strokeOnlyFlag <=0.5), the composition may amplify glitches. Consider two-pass: render outline first (strokeOnlyFlag=1), then fill over it for better control.
-- **No Kerning/Exact Metrics**: Using CTFont for measurement is good, but if glyph UVs don't account for tight bounds, outlines may clip oddly.
+1. **Fix Iteration in `handlePickupCollisions()`**:
+   - Switch to **reverse iteration** over `m_activePickups` (using `rbegin()/rend()`) for safe removal without index shifts. This is cache-friendly and avoids the `while` bug.
+   - Add a backup: Move position offscreen on deactivation to immediately end overlaps.
+   - Ensure `isActive` check skips early.
 
-No major bugs in code execution or setup— the issues are shader tuning and potential atlas data fidelity.
+   Updated `PickupSystem.cpp::handlePickupCollisions()`:
+   ```
+   void PickupSystem::handlePickupCollisions() {
+       if (!m_ecsSystem || m_activePickups.empty()) return;
 
-### Recommended Fixes
-Update your msdf_text_outline_fragment shader as follows (focus on symmetrizing and standardizing AA widths). This uses a factor of 0.75 for aa (tunes down the conservative fwidth for less blur, but adjust based on testing: higher for less jaggies, lower for sharpness).
+       Transform* playerTransform = m_ecsSystem->GetComponent<Transform>(m_playerEntity);
+       Hitbox* playerHitbox = m_ecsSystem->GetComponent<Hitbox>(m_playerEntity);
+       Sprite* playerSprite = m_ecsSystem->GetComponent<Sprite>(m_playerEntity);
+       PlayerComponent* playerComp = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity);
+       if (!playerTransform || !playerHitbox || !playerSprite || !playerComp) return;
 
-```metal
-fragment float4 msdf_text_outline_fragment(VertexOut in [[stage_in]],
-                                           texture2d<float> msdfTexture [[texture(0)]],
-                                           sampler msdfSampler [[sampler(0)]],
-                                           constant float& outlineWidth [[buffer(0)]],
-                                           constant float4& outlineColor [[buffer(1)]],
-                                           constant float& strokeOnlyFlag [[buffer(2)]]) {
-    float3 s = msdfTexture.sample(msdfSampler, in.texCoord).rgb;
-    float sd = gn_msdf_median3(s.r, s.g, s.b) - 0.5;
-    float px = max(fwidth(sd), 1e-6);
-    float aa = px * 0.75;  // Tune this (0.5-1.5); lower for sharper, higher for smoother/less aliasing
-    float t = outlineWidth * px;
+       float pHalfW = playerSprite->width * playerTransform->scale.x * 0.5f;
+       float pHalfH = playerSprite->height * playerTransform->scale.y * 0.5f;
+       float pCenterX = playerTransform->position.x + pHalfW + (playerHitbox->offsetX * playerTransform->scale.x);
+       float pCenterY = playerTransform->position.y + pHalfH + (playerHitbox->offsetY * playerTransform->scale.y);
+       float pRadius = playerHitbox->radius * ((playerTransform->scale.x + playerTransform->scale.y) * 0.5f);
 
-    // Symmetric, standard-width transitions
-    float outer = smoothstep(-t - aa, -t + aa, sd);
-    float inner = smoothstep(-aa, aa, sd);
-    float strokeA = clamp(outer - inner, 0.0, 1.0);
+       m_collectedThisFrame.clear();
 
-    float4 strokeCol = float4(outlineColor.rgb, outlineColor.a * strokeA);
-    if (strokeOnlyFlag > 0.5) { return strokeCol; }
-    
-    float fillA = smoothstep(-aa, aa, sd);  // Consistent with inner
-    float4 fillCol = float4(in.color.rgb, in.color.a * fillA);
-    
-    // Composition (over operator)
-    float outA = clamp(fillCol.a + strokeCol.a * (1.0 - fillCol.a), 0.0, 1.0);
-    float3 outRGB = (fillCol.rgb * fillCol.a) + (strokeCol.rgb * strokeCol.a * (1.0 - fillCol.a));
-    return float4(outRGB, outA);
-}
-```
+       // Reverse iteration for safe removal (no index shifts)
+       for (auto it = m_activePickups.rbegin(); it != m_activePickups.rend(); ++it) {
+           Gnosis::Entity e = *it;
+           Transform* t = m_ecsSystem->GetComponent<Transform>(e);
+           Sprite* s = m_ecsSystem->GetComponent<Sprite>(e);
+           Pickup* p = m_ecsSystem->GetComponent<Pickup>(e);
+           Hitbox* hb = m_ecsSystem->GetComponent<Hitbox>(e);
+           if (!t || !s || !p || !hb || !p->isActive) continue;  // Skip inactive early
 
-- For the plain fill shader (msdf_text_fragment), align similarly: `float aa = fwidth(sd) * 0.75; float alpha = smoothstep(-aa, aa, sd);`
-- Test at various fontSize and outlineWidth. If artifacts persist, debug by returning visuals (e.g., return float4(sd + 0.5); for raw distance grayscale).
-- If gamma is suspect, temporarily add `s = pow(s, float3(2.2));` before median to linearize (if atlas is gamma-encoded).
-- Regenerate atlas with more padding if needed (msdfgen -padding 4).
-- If two-pass: In Swift, render outline with strokeOnlyFlag=1, then fill with msdf_text_fragment.
+           float scaledW = hb->width * t->scale.x;
+           float scaledH = hb->height * t->scale.y;
+           float centerX = t->position.x + (scaledW * 0.5f);
+           float centerY = t->position.y + (scaledH * 0.5f);
+           float left = centerX - (scaledW * 0.5f);
+           float top = centerY - (scaledH * 0.5f);
 
-This should smooth out the transitions mathematically, eliminating the mismatches. If issues remain, share atlas PNG/.fnt samples or screenshots for deeper analysis.
+           float closestX = std::max(left, std::min(pCenterX, left + scaledW));
+           float closestY = std::max(top, std::min(pCenterY, top + scaledH));
+           float dx = pCenterX - closestX;
+           float dy = pCenterY - closestY;
+           bool collided = (dx * dx + dy * dy) <= (pRadius * pRadius);
+
+           if (!collided || m_collectedThisFrame.count(e)) continue;  // Skip if not collided or already processed
+           m_collectedThisFrame.insert(e);
+
+           GN_LOG_DEBUG("PickupSystem: Collected pickup id=" + std::to_string(e) + ", type=" + p->pickupType);
+
+           // Update player (coins or other effects)
+           if (isCoinType(p->pickupType)) {
+               playerComp->sessionCoins += p->value;
+               // Call GameplayState's handler for score/sound/UI
+               // Assuming GameplayState exposes it or pass ref in constructor; add if needed
+               // m_gameState->OnCoinCollected(p->value);  // If you add GameplayState* m_gameState to PickupSystem
+           } else {
+               // Handle other pickups like PooHeart
+               // m_gameState->OnPickupCollected();
+           }
+
+           // Deactivate IMMEDIATELY
+           p->isActive = false;
+           s->visible = false;
+           // Backup: Move offscreen to end overlap instantly
+           t->position.x = -10000.0f;  // Far left
+
+           // Remove from active list (O(1) swap-pop)
+           auto indexIt = m_pickupIndex.find(e);
+           if (indexIt != m_pickupIndex.end()) {
+               size_t idx = indexIt->second;
+               size_t last = m_activePickups.size() - 1;
+               if (idx != last) {
+                   Gnosis::Entity moved = m_activePickups[last];
+                   m_activePickups[idx] = moved;
+                   m_pickupIndex[moved] = idx;
+               }
+               m_activePickups.pop_back();
+               m_pickupIndex.erase(indexIt);
+           }
+       }
+   }
+   ```
+
+   **Why this fixes it**: Reverse iter allows removal without invalidating iterators/indices. Processes each entity once per frame, skips already collected via set. Deactivation + offscreen move ensures no re-trigger even if ECS delays component sync.
+
+2. **Enhance `Update()` for Better Sync**:
+   - Add pre-reserve to vectors/maps in constructor (e.g., `m_activePickups.reserve(50);`) to avoid reallocs.
+   - Ensure wrap consumption happens after collisions (current order is fine, but log to confirm).
+
+   In PickupSystem constructor (add to .cpp):
+   ```
+   PickupSystem::PickupSystem(/* params */) : /* init */ {
+       m_activePickups.reserve(100);  // Pre-allocate based on max expected pickups
+       m_pickupIndex.reserve(100);
+       m_groupCoins.reserve(20);     // Max groups
+       m_collectedThisFrame.reserve(10);  // Small per-frame
+   }
+   ```
+
+3. **Integration Tweaks in GameplayState.cpp**:
+   - In `InitializeSystems()`: After creating `m_pickupSystem`, set `m_pickupSystem->SetPlayerEntity(m_playerEntity); m_pickupSystem->SetLevelConfig(&m_currentLevelConfig);`
+   - Expose `OnCoinCollected` and `OnPickupCollected` to PickupSystem by passing `this` (GameplayState*) to PickupSystem constructor, then call them in collection.
+     - Add to PickupSystem.h: `GameplayState* m_gameState;` and constructor param.
+     - In collection: `if (m_gameState) m_gameState->OnCoinCollected(p->value);`
+   - In `UpdatePipeCounterUI()`: This updates coins UI—ensure it's called after PickupSystem::Update (current `Update()` calls it after logic, good).
+   - Add log in `OnCoinCollected`: `GN_LOG_INFO("Coin collected: value=" + std::to_string(value) + ", total session=" + std::to_string(player->sessionCoins));` to track over-triggers.
+
+4. **Additional Optimizations/Checks**:
+   - **Bobbing Update**: If not handled elsewhere, add to PickupSystem::Update: Loop over active pickups, update `p->bobbingTimer += deltaTime; t->position.y = baseY + sin(p->bobbingTimer * p->bobbingSpeed) * p->bobbingAmplitude;`
+   - **Destroy on ClearAll**: Good, but add `e = 0;` after destroy to invalidate.
+   - **Test Scenario**: Spawn a single coin group, fly into one coin—log should show one trigger, coin vanishes, sessionCoins +=1, no re-triggers. On wrap, it reappears active.
+   - **If ECS Delays Components**: If `isActive` isn't immediate, add a `std::vector<Gnosis::Entity> toDeactivate;` collect in loop, apply after.
+
+Rebuild and test—the loop fix should eliminate multiples, and offscreen move ensures deactivation. If issues persist, share logs from a collision event.

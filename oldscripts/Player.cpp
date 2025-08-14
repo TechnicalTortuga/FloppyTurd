@@ -1,49 +1,70 @@
 ﻿#include "Player.h"
 #include "SoundManager.h"
 
-Player::Player() {
+Player::Player(Game* g) : game(g) {
     InitSprites();
+    SetHeartMode(WHOLE);
+    SetInitialHearts(1); // Default to Regular difficulty (index 1)
 }
 
 Player::~Player() {
-    // Clean up projectiles
     for (auto& projectile : projectiles) {
         delete projectile;
     }
-    // Delete form 0 sprites
     delete idleSpriteTurdlet;
     delete jumpSpriteTurdlet;
     delete shootSpriteTurdlet;
-    // Delete form 1 sprites
     delete idleSpriteTeen;
     delete jumpSpriteTeen;
     delete shootSpriteTeen;
-    // Delete form 2 sprites
     delete idleSpriteBig;
     delete jumpSpriteBig;
     delete shootSpriteBig;
-    // Delete hurt sprites for all forms
     delete hurtSpriteTurdlet;
     delete hurtSpriteTeen;
     delete hurtSpriteBig;
-
-    // Unload hurt sound
     SoundManager::GetInstance().UnloadSoundClip(hurtSound);
+}
+
+void Player::SetInitialHearts(int difficultyIndex) {
+    // Set initial hearts based on difficulty: 0=Runny, 1=Regular, 2=Rough
+    switch (difficultyIndex) {
+    case 0: // Runny
+        hearts = 3;
+        break;
+    case 1: // Regular
+        hearts = 2;
+        break;
+    case 2: // Rough
+        hearts = 1;
+        break;
+    default:
+        hearts = 2; // Fallback to Regular
+        break;
+    }
+    liveSlices = hearts * (int)heartMode;
+    ghostSlices = 0;
+    SetMaxHearts(9); // Ensure max hearts is 9 for all difficulties
+}
+
+void Player::SetHeartMode(HeartMode mode)
+{
+    if (mode == heartMode) return;
+    int unscaledHeartsLeft = (liveSlices + ghostSlices) / heartMode;
+    heartMode = mode;
+    liveSlices = unscaledHeartsLeft * (int)heartMode;
+    ghostSlices = 0;
 }
 
 void Player::Draw() {
     currentSprite->Draw(pos.x, pos.y);
-
-    // Draw projectiles
     for (auto& projectile : projectiles) {
         projectile->Draw();
     }
-
-    currentSelectedHat->Draw(formLevel, isShooting, hurtBuffer > 0.0f, pos);
+    if (currentSelectedHat) currentSelectedHat->Draw(formLevel, isShooting, hurtBuffer > 0.0f, pos);
 }
 
 void Player::Update(float deltaTime) {
-    // Update current sprite based on player state (only one update call per frame)
     switch (playerstate) {
     case IDLE:
     case JUMPING:
@@ -59,23 +80,19 @@ void Player::Update(float deltaTime) {
         }
         break;
     case DEAD:
-        // Optionally handle dead state
     case HURT:
         currentSprite->Update(deltaTime);
         break;
     }
 
-    // Gravity and position updates
     velocity.y += GRAVITY;
     if (velocity.y > MAXVELOCITY)  velocity.y = MAXVELOCITY;
     if (velocity.y < -MAXVELOCITY) velocity.y = -MAXVELOCITY;
     pos.y += velocity.y;
 
-    // Update collision circle
     circleRadius = 11;
     circleCenter = { pos.x + 32, pos.y + 34 };
 
-    // Boundary checks
     if (circleCenter.y - circleRadius > 320) {
         if (isAlive) {
             PutTheHurtOn(33);
@@ -87,10 +104,8 @@ void Player::Update(float deltaTime) {
         velocity.y = 0;
     }
 
-    // Update sprite position to match player position
     currentSprite->SetPosition(pos.x, pos.y);
 
-    // Update projectiles
     for (size_t i = 0; i < projectiles.size(); ) {
         projectiles[i]->Update(deltaTime);
         if (projectiles[i]->IsOffScreen()) {
@@ -102,25 +117,28 @@ void Player::Update(float deltaTime) {
         }
     }
 
-    // Shooting cooldown
     if (shootTimer > 0.0f) {
         shootTimer -= deltaTime;
     }
 
-    // Update hurt buffer timer if active.
     if (hurtBuffer > 0.0f) {
         hurtBuffer -= deltaTime;
         if (hurtBuffer <= 0.0f) {
-            // Hurt period finished: switch back to normal (jumping) state.
             playerstate = JUMPING;
             ChangeForm(formLevel);
         }
     }
 
-    // Update the hat and sync its animation frame with the player’s sprite
-    currentSelectedHat->Update(deltaTime, formLevel, isShooting, hurtBuffer > 0.0f, pos);
+    if (currentSelectedHat) currentSelectedHat->Update(deltaTime, formLevel, isShooting, hurtBuffer > 0.0f, pos);
     int currentFrame = currentSprite->GetFrameIndex();
-    currentSelectedHat->GetSprite(formLevel, isShooting, hurtBuffer > 0.0f)->SetFrameIndex(currentFrame);
+    if (currentSelectedHat) currentSelectedHat->GetSprite(formLevel, isShooting, hurtBuffer > 0.0f)->SetFrameIndex(currentFrame);
+
+    if (isInvisible) {
+        invisibilityTimer -= deltaTime;
+        if (invisibilityTimer <= 0.0f) {
+            isInvisible = false;
+        }
+    }
 }
 
 float Player::GetCircleRadius() const {
@@ -143,38 +161,53 @@ void Player::SetHat(Hat* hat)
     currentSelectedHat = hat;
 }
 
-void Player::PutTheHurtOn(int DAMAGE) {
-    // Only process damage if not already hurt.
-    if (hurtBuffer > 0.0f)
-        return;
+void Player::PutTheHurtOn(int DAMAGE)
+{
+    if (hurtBuffer > 0.0f || isInvisible) return; // No damage during invincibility
 
-    health -= DAMAGE;
-    // Set hurt buffer duration to 1.0 second.
+    const int slicesToLose = 1;
+    liveSlices = std::max(0, liveSlices - slicesToLose);
+
+    if (liveSlices == 0)
+    {
+        isAlive = false;
+        playerstate = DEAD;
+    }
+
     hurtBuffer = 1.0f;
     playerstate = HURT;
     ChangeForm(formLevel);
-
     SoundManager::GetInstance().PlaySoundClip(hurtSound);
+}
+
+bool Player::SpendCoinsForShoot()
+{
+    const int shootCost = 1; // 1 coin per shot
+    if (sessionCoins >= shootCost) {
+        sessionCoins -= shootCost;
+        if (game && game->playing) {
+            game->playing->TOTALCOINS -= shootCost; // Update total coins when spent
+        }
+        return true;
+    }
+    return false;
 }
 
 void Player::InitSprites() {
     using namespace Resources;
     float playerScale = 1.0f;
-    int idleFrames = 1;   // Replace with actual frame counts
+    int idleFrames = 1;
     int jumpFrames = 6;
     int shootFrames = 8;
 
-    // Form 0: Turdlet
     idleSpriteTurdlet = new Sprite(TurdletIdle, idleFrames, 0.1f, playerScale, pos);
     jumpSpriteTurdlet = new Sprite(TurdletJump, jumpFrames, 0.1f, playerScale, pos);
     shootSpriteTurdlet = new Sprite(TurdletShoot, 5, 0.1f, playerScale, pos);
 
-    // Form 1: Teenage Turd (ensure you add these assets in Resources.h)
     idleSpriteTeen = new Sprite(TeenageTurdIdle, idleFrames, 0.1f, playerScale, pos);
     jumpSpriteTeen = new Sprite(TeenageTurdJump, jumpFrames, 0.1f, playerScale, pos);
     shootSpriteTeen = new Sprite(TeenageTurdShoot, shootFrames, 0.1f, playerScale, pos);
 
-    // Form 2: Big Turd (ensure you add these assets in Resources.h)
     idleSpriteBig = new Sprite(BigTurdIdle, idleFrames, 0.1f, playerScale, pos);
     jumpSpriteBig = new Sprite(BigTurdJump, jumpFrames, 0.1f, playerScale, pos);
     shootSpriteBig = new Sprite(BigTurdShoot, shootFrames, 0.1f, playerScale, pos);
@@ -183,7 +216,6 @@ void Player::InitSprites() {
     hurtSpriteTeen = new Sprite(TeenageTurdHurt, jumpFrames, 0.1f, playerScale, pos);
     hurtSpriteBig = new Sprite(BigTurdHurt, jumpFrames, 0.1f, playerScale, pos);
 
-    // Default form is 0 (Turdlet)
     formLevel = 0;
     ChangeForm(formLevel);
 
@@ -192,11 +224,10 @@ void Player::InitSprites() {
 
 void Player::ChangeForm(int newForm) {
     if (newForm < 0 || newForm > 2)
-        return;  // Ensure valid form levels
+        return;
 
     formLevel = newForm;
 
-    // Switch current sprite based on player's state and form
     switch (formLevel) {
     case 0:
         if (playerstate == IDLE)
@@ -231,7 +262,7 @@ void Player::ChangeForm(int newForm) {
     }
     currentSprite->ResetAnimation();
 
-    if(currentSelectedHat != nullptr)
+    if (currentSelectedHat)
         currentSelectedHat->GetSprite(formLevel, isShooting, hurtBuffer > 0.0f)->ResetAnimation();
 }
 
@@ -240,55 +271,60 @@ void Player::Jump() {
         velocity.y -= JUMPVELOCITY;
 }
 
-void Player::Shoot() {
+void Player::Shoot()
+{
+    if (!shootingUnlocked) return;
     using namespace Resources;
+    if (!isAlive || shootTimer > 0.0f || hurtBuffer > 0.0f) return;
+    if (!SpendCoinsForShoot()) return;
 
-    if (isAlive && shootTimer <= 0.0f && hurtBuffer < 0.0f) {
-        isShooting = true;
-        playerstate = SHOOTING;
-        ChangeForm(formLevel);
+    isShooting = true;
+    playerstate = SHOOTING;
+    ChangeForm(formLevel);
 
-        float projectileScale = 1.0f;
-        float projectileSpeed = 300.0f;
-        const char* projectileSpritePath = nullptr;
+    float projectileScale = 1.0f;
+    float projectileSpeed = 300.0f;
+    const char* spritePath = PoopSmall;
+    if (formLevel == 1) spritePath = PoopMid;
+    else if (formLevel == 2) spritePath = PoopLarge;
 
-        // Choose projectile sprite based on player form
-        switch (formLevel) {
-        case 0:
-            projectileSpritePath = PoopSmall;
-            break;
-        case 1:
-            projectileSpritePath = PoopMid;
-            break;
-        case 2:
-            projectileSpritePath = PoopLarge;
-            break;
-        default:
-            projectileSpritePath = PoopSmall;
-            break;
-        }
-
-        float projectileWidth = 16.0f;
-        float projectileHeight = 16.0f;
-        Vector2 projectilePosition = {
-            pos.x + size.x / 2.0f,
-            pos.y + size.y / 2.0f - projectileHeight / 2.0f
-        };
-        Vector2 direction = { 1.0f, 0.0f };
-
-        Projectile* newProjectile = new Projectile(projectilePosition, direction, projectileSpeed, projectileScale, projectileSpritePath);
-        projectiles.push_back(newProjectile);
-        shootTimer = shootCooldown;
-    }
+    Vector2 spawnPos = { pos.x + size.x / 2.f, pos.y + size.y / 2.f - 8 };
+    Projectile* p = new Projectile(spawnPos, { 1,0 }, projectileSpeed,
+        projectileScale, spritePath);
+    projectiles.push_back(p);
+    shootTimer = shootCooldown;
 }
 
-void Player::Reset() {
+void Player::Revive() {
     playerstate = JUMPING;
     ChangeForm(formLevel);
     health = 100;
     isAlive = true;
     isShooting = false;
+
+    // Reinitialize hearts based on difficulty
+    if (game && game->mainMenu) {
+        SetInitialHearts(game->mainMenu->GetDifficultyIndex());
+    }
+    else {
+        SetInitialHearts(1); // Default to Regular if no MainMenu
+    }
+
+    pos = { 77.0f, 100.0f };
+    velocity = { 0.0f, 0.0f };
+    circleCenter = { pos.x + 32, pos.y + 34 };
+
     currentSprite->ResetAnimation();
+    ResetSessionCoins(); // Reset session coins on revive
+}
+
+void Player::SetHealth(int hp) {
+    health = hp;
+}
+
+void Player::ResetPosition()
+{
+    pos = { 50.0f, 90.0f }; // Safe starting position (center of 320x180 screen vertically)
 }
 
 int Player::GetHealth() {
@@ -301,5 +337,30 @@ const std::vector<Projectile*>& Player::GetProjectiles() const {
 
 std::vector<Projectile*>& Player::GetProjectilesNonConst()
 {
-    return projectiles; // 'projectiles' is the private member in Player
+    return projectiles;
+}
+
+void Player::AddHeartSlice(int amount) {
+    int maxSlices = hearts * (int)heartMode;
+    liveSlices = std::min(liveSlices + amount, maxSlices);
+}
+
+void Player::SetMaxHearts(int max) {
+    hearts = std::min(max, 9);
+    liveSlices = std::min(liveSlices, hearts * (int)heartMode);
+}
+
+void Player::ActivateInvisibility(float duration) {
+    isInvisible = true;
+    invisibilityTimer = duration;
+}
+
+void Player::AddCoins(int amount) {
+    if (!game || !game->playing) return; // Safety check
+    sessionCoins += amount;
+    game->playing->TOTALCOINS += amount; // Update total coins in real-time
+}
+
+void Player::ResetSessionCoins() {
+    sessionCoins = 0;
 }

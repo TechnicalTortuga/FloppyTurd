@@ -970,6 +970,46 @@
 			<key>catalogPath</key>
 			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
+			<string>ACImageNameSewerLargeA</string>
+			<key>relativePath</key>
+			<string>./graphics/environment/backgrounds/sewer/SewerLargeA.imageset</string>
+			<key>swiftSymbol</key>
+			<string>sewerLargeA</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
+			<key>objcSymbol</key>
+			<string>ACImageNameSewerLargeB</string>
+			<key>relativePath</key>
+			<string>./graphics/environment/backgrounds/sewer/SewerLargeB.imageset</string>
+			<key>swiftSymbol</key>
+			<string>sewerLargeB</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
+			<key>objcSymbol</key>
+			<string>ACImageNameSewerLargeC</string>
+			<key>relativePath</key>
+			<string>./graphics/environment/backgrounds/sewer/SewerLargeC.imageset</string>
+			<key>swiftSymbol</key>
+			<string>sewerLargeC</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
+			<key>objcSymbol</key>
+			<string>ACImageNameSewerLargeD</string>
+			<key>relativePath</key>
+			<string>./graphics/environment/backgrounds/sewer/SewerLargeD.imageset</string>
+			<key>swiftSymbol</key>
+			<string>sewerLargeD</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
+			<key>objcSymbol</key>
 			<string>ACImageNameSewerLevelPainting</string>
 			<key>relativePath</key>
 			<string>./graphics/ui/menus/level_select/SewerLevelPainting.imageset</string>

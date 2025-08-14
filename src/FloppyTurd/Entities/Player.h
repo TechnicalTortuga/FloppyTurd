@@ -30,7 +30,7 @@ namespace GameCore {
         void Shoot();
         void TakeDamage(int damage = 1);
         void Heal(int amount = 1);
-        void CollectCoin(int value = 1);
+        // REMOVED: CollectCoin - coin accounting centralized in GameplayState
         
         // Player state
         bool IsAlive() const { return m_health > 0; }

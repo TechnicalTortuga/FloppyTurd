@@ -239,7 +239,8 @@ namespace GameCore {
         int health;
         int maxHealth;
         int score;
-        int coins;
+        int totalCoins;     // lifetime/account coins
+        int sessionCoins;   // coins collected in current level attempt
         float invulnerabilityTimer;
         float shootCooldown;
         HatType equippedHat;
@@ -250,7 +251,8 @@ namespace GameCore {
             : health(3)
             , maxHealth(3)
             , score(0)
-            , coins(0)
+            , totalCoins(0)
+            , sessionCoins(0)
             , invulnerabilityTimer(0.0f)
             , shootCooldown(0.0f)
             , equippedHat(HatType::None)
@@ -350,6 +352,16 @@ namespace GameCore {
         {}
     };
 
+    // Shared group pattern enum so spawners can mark pattern at creation time
+    enum class GroupPattern {
+        TopOnly = 0,
+        BottomOnly,
+        TopAndBottom,
+        PyramidBottom,
+        PyramidTop,
+        TwoFunnel
+    };
+    
     /**
      * Group component - allows treating multiple entities as a single logical group
      * for spawning, spacing, and recycling (wrapping) purposes.
@@ -360,13 +372,15 @@ namespace GameCore {
         float offsetX;          // X offset from group origin where this entity should be placed
         float offsetY;          // Y offset from group origin where this entity should be placed
         float groupWidth;       // Total width of the group (valid on leader only)
+        GroupPattern pattern;   // Spawned pattern type for simplified logic
 
         Group()
             : id(0)
             , isLeader(false)
             , offsetX(0.0f)
             , offsetY(0.0f)
-            , groupWidth(0.0f) {}
+            , groupWidth(0.0f)
+            , pattern(GroupPattern::TopOnly) {}
     };
 
     /**
@@ -426,6 +440,17 @@ namespace GameCore {
             , totalInstances(total)
             , textureWidth(width)
         {}
+    };
+
+    /**
+     * ScrollSpeed component - opt-in per-entity horizontal scroll speed handled by CameraSystem.
+     * If present, CameraSystem will use this absolute pixels-per-second speed for X scrolling
+     * instead of the global world scroll speed. Useful for NPCs or props that should match a
+     * specific parallax band.
+     */
+    struct ScrollSpeed : public Gnosis::Component {
+        float speed;
+        explicit ScrollSpeed(float s = 0.0f) : speed(s) {}
     };
 
     /**
@@ -679,6 +704,7 @@ namespace GameCore {
         float bobbingSpeed;
         float bobbingAmplitude;
         float bobbingTimer;
+        float bobbingBaseY;
         
         Pickup()
             : pickupType("BlueCoin")
@@ -687,6 +713,7 @@ namespace GameCore {
             , bobbingSpeed(2.0f)
             , bobbingAmplitude(5.0f)
             , bobbingTimer(0.0f)
+            , bobbingBaseY(0.0f)
         {}
         
         Pickup(const std::string& type, int val)
@@ -696,6 +723,7 @@ namespace GameCore {
             , bobbingSpeed(2.0f)
             , bobbingAmplitude(5.0f)
             , bobbingTimer(0.0f)
+            , bobbingBaseY(0.0f)
         {}
     };
 

@@ -73,8 +73,12 @@ namespace GameCore {
             
             auto transform = m_ecsSystem->GetComponent<Transform>(entity);
             if (transform) {
-                // Move everything else to the left (simulate world movement)
-                transform->position.x -= m_worldScrollSpeed * deltaTime;
+                // If entity has ScrollSpeed, use that absolute speed. Otherwise use world speed.
+                float speed = m_worldScrollSpeed;
+                if (auto scr = m_ecsSystem->GetComponent<ScrollSpeed>(entity)) {
+                    speed = scr->speed;
+                }
+                transform->position.x -= speed * deltaTime;
             }
         }
     }
@@ -133,7 +137,10 @@ namespace GameCore {
                     // wrap it around to the right side for seamless scrolling
                     if (transform->position.x <= -instance->textureWidth) {
                         // Move it to the right edge of all instances
+                        float prev = transform->position.x;
                         transform->position.x += totalLayerWidth;
+                        // Ensure exact tiling by snapping to integer pixel to avoid drift
+                        transform->position.x = std::round(transform->position.x);
 
                         // If this entity supports background variants, swap to a random one on wrap
                         ParallaxVariants* variants = m_ecsSystem->GetComponent<ParallaxVariants>(entity);

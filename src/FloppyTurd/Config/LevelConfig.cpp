@@ -36,6 +36,10 @@ namespace GameCore {
         config.enableEnemies = true;
         config.enableNPCs = true;   // Janitor
         config.enablePickups = true;
+        // Sewer: only GoldCoin (90%) and PooHeart (10%)
+        config.pickupRatios.clear();
+        config.pickupRatios.emplace_back("GoldCoin", 0.90f);
+        config.pickupRatios.emplace_back("PooHeart", 0.10f);
         AddSewerLevelLayers(config);
         AddSewerObstacles(config);
         AddSewerEnemies(config);
@@ -176,14 +180,9 @@ namespace GameCore {
         // SewerLarge textures are 512x512; scale to fill screen height (2556px)
         float backgroundScale = 5.0f;  // Approximately 2556/512
 
-        // Front band
-        config.backgroundLayers.emplace_back("SewerLargeA", 90.0f, 0.35f, 1);
-        config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 512.0f * backgroundScale;
-        config.backgroundLayers.back().variantTextureIds = {"SewerLargeA", "SewerLargeB", "SewerLargeC", "SewerLargeD"};
-
-        // Back band for depth
-        config.backgroundLayers.emplace_back("SewerLargeB", 60.0f, 0.2f, 0);
+        // Single sewer band (512x512 variants cover the whole screen)
+        float sewerScroll = config.worldSpeed * 0.28f; // slow band; Janitor will match this
+        config.backgroundLayers.emplace_back("SewerLargeA", sewerScroll, 0.35f, 1);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
         config.backgroundLayers.back().repeatWidth = 512.0f * backgroundScale;
         config.backgroundLayers.back().variantTextureIds = {"SewerLargeA", "SewerLargeB", "SewerLargeC", "SewerLargeD"};
