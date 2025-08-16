@@ -307,9 +307,6 @@ extension DeveloperToolsSupport.ImageResource {
     /// The "ScoreSmall" asset catalog image resource.
     static let scoreSmall = DeveloperToolsSupport.ImageResource(name: "ScoreSmall", bundle: resourceBundle)
 
-    /// The "SewerBackgroundRunningWater" asset catalog image resource.
-    static let sewerBackgroundRunningWater = DeveloperToolsSupport.ImageResource(name: "SewerBackgroundRunningWater", bundle: resourceBundle)
-
     /// The "SewerLargeA" asset catalog image resource.
     static let sewerLargeA = DeveloperToolsSupport.ImageResource(name: "SewerLargeA", bundle: resourceBundle)
 
@@ -331,6 +328,9 @@ extension DeveloperToolsSupport.ImageResource {
     /// The "SkillPointInfoBackground" asset catalog image resource.
     static let skillPointInfoBackground = DeveloperToolsSupport.ImageResource(name: "SkillPointInfoBackground", bundle: resourceBundle)
 
+    /// The "SnowLevelBackLayerBackground" asset catalog image resource.
+    static let snowLevelBackLayerBackground = DeveloperToolsSupport.ImageResource(name: "SnowLevelBackLayerBackground", bundle: resourceBundle)
+
     /// The "SnowLevelBackTrees" asset catalog image resource.
     static let snowLevelBackTrees = DeveloperToolsSupport.ImageResource(name: "SnowLevelBackTrees", bundle: resourceBundle)
 
@@ -339,6 +339,9 @@ extension DeveloperToolsSupport.ImageResource {
 
     /// The "SnowLevelFrontTrees" asset catalog image resource.
     static let snowLevelFrontTrees = DeveloperToolsSupport.ImageResource(name: "SnowLevelFrontTrees", bundle: resourceBundle)
+
+    /// The "SnowLevelMidLayerBackground" asset catalog image resource.
+    static let snowLevelMidLayerBackground = DeveloperToolsSupport.ImageResource(name: "SnowLevelMidLayerBackground", bundle: resourceBundle)
 
     /// The "SnowLevelMountains" asset catalog image resource.
     static let snowLevelMountains = DeveloperToolsSupport.ImageResource(name: "SnowLevelMountains", bundle: resourceBundle)

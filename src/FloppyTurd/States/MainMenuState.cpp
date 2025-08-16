@@ -10,6 +10,9 @@
 #include <iostream>
 #include <random>
 #include <cmath>
+// Access shared systems via ECS SystemManager and RenderSystem APIs
+#include "../../Engine/Core/SystemManager.h"
+#include "../Systems/RenderSystem.h"
 
 namespace GameCore {
     MainMenuState::MainMenuState(Gnosis::ECS* ecsCoordinator, GameCore::PlatformDelegates* platformDelegates)
@@ -54,20 +57,8 @@ namespace GameCore {
         // Detect if we're on a mobile platform
         m_isMobile = IsMobilePlatform();
         
-        // Initialize systems once in constructor
-        if (m_platformDelegates) {
-            // Create sprite system for texture dimension queries
-            m_spriteSystem = std::make_unique<SpriteSystem>(m_ecsCoordinator, *m_platformDelegates);
-            GN_LOG_INFO("MainMenuState: SpriteSystem initialized (rendering disabled, used for texture queries only)");
-            if (m_spriteSystem) {
-                m_spriteSystem->SetTextureBasePath("mainmenu/");
-            }
-            
-            // Create render system for screen info access
-            m_renderSystem = std::make_unique<RenderSystem>(m_ecsCoordinator, *m_platformDelegates);
-            
-            GN_LOG_INFO("MainMenuState systems initialized in constructor");
-        } else {
+        // No local systems; use shared RenderSystem via ECS SystemManager throughout
+        if (!m_platformDelegates) {
             GN_LOG_ERROR("MainMenuState: PlatformDelegates is null in constructor!");
         }
         
@@ -116,6 +107,17 @@ namespace GameCore {
             }
         } else {
             GN_LOG_INFO("❌ Game instance not available for font loading");
+        }
+        
+        // Fetch actual screen pixel dimensions from RenderSystem and cache for layout
+        if (m_ecsCoordinator && m_ecsCoordinator->GetSystemManager() && m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+            auto* renderSystem = m_ecsCoordinator->GetSystemManager()->GetRenderSystem();
+            ScreenInfo si = renderSystem->GetScreenInfo();
+            m_screenWidth = static_cast<float>(si.pixelWidth);
+            m_screenHeight = static_cast<float>(si.pixelHeight);
+            GN_LOG_INFO("MainMenuState: ScreenInfo (pixels) = " + std::to_string(si.pixelWidth) + "x" + std::to_string(si.pixelHeight));
+        } else {
+            GN_LOG_WARN("MainMenuState: Could not access RenderSystem; using default screen size " + std::to_string(m_screenWidth) + "x" + std::to_string(m_screenHeight));
         }
         
         // Decide UI scale and create layout
@@ -375,10 +377,15 @@ namespace GameCore {
         // Left arrow
         if (m_optionsLeftArrowEntity == 0)
             m_optionsLeftArrowEntity = m_ecsCoordinator->CreateEntity();
-        m_spriteSystem->LoadTexture("LeftArrow", "LeftArrow.png");
-        auto leftMeta = m_spriteSystem->GetTextureDimensions("LeftArrow");
-        float lw = leftMeta.first > 0 ? static_cast<float>(leftMeta.first) : 16.0f; // actual 16x16 fallback
-        float lh = leftMeta.second > 0 ? static_cast<float>(leftMeta.second) : 16.0f;
+        if (auto* rs = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+            rs->PreloadTexture("LeftArrow");
+        }
+        int lwi = 0, lhi = 0;
+        if (auto* rs = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+            if (!rs->GetTextureSize("LeftArrow", lwi, lhi)) { lwi = 16; lhi = 16; }
+        }
+        float lw = static_cast<float>(lwi);
+        float lh = static_cast<float>(lhi);
         // Symmetric margin from screen edges
         float edgeMargin = m_screenWidth * 0.05f;  // 5% from each edge
         float leftX = edgeMargin;                   // left button starts at left margin
@@ -397,10 +404,15 @@ namespace GameCore {
         // Right arrow
         if (m_optionsRightArrowEntity == 0)
             m_optionsRightArrowEntity = m_ecsCoordinator->CreateEntity();
-        m_spriteSystem->LoadTexture("RightArrow", "RightArrow.png");
-        auto rightMeta = m_spriteSystem->GetTextureDimensions("RightArrow");
-        float rw = rightMeta.first > 0 ? static_cast<float>(rightMeta.first) : 16.0f; // actual 16x16 fallback
-        float rh = rightMeta.second > 0 ? static_cast<float>(rightMeta.second) : 16.0f;
+        if (auto* rs = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+            rs->PreloadTexture("RightArrow");
+        }
+        int rwi = 0, rhi = 0;
+        if (auto* rs = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+            if (!rs->GetTextureSize("RightArrow", rwi, rhi)) { rwi = 16; rhi = 16; }
+        }
+        float rw = static_cast<float>(rwi);
+        float rh = static_cast<float>(rhi);
         
         // Right arrow positioned so its RIGHT EDGE is at (screenWidth - edgeMargin)
         float scaledRW = rw * scale;
@@ -447,10 +459,15 @@ namespace GameCore {
     void MainMenuState::CreateOptionsKnobs() {
         if (!m_ecsCoordinator) return;
         // Use poophat texture as knob; base size 16x16 px scaled by global ui scale ONLY
-        m_spriteSystem->LoadTexture("poophat", "poophat.png");
-        auto meta = m_spriteSystem->GetTextureDimensions("poophat");
-        float kw = meta.first > 0 ? static_cast<float>(meta.first) : 16.0f;
-        float kh = meta.second > 0 ? static_cast<float>(meta.second) : 16.0f;
+        if (auto* rs = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+            rs->PreloadTexture("poophat");
+        }
+        int kwi = 0, khi = 0;
+        if (auto* rs = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+            if (!rs->GetTextureSize("poophat", kwi, khi)) { kwi = 16; khi = 16; }
+        }
+        float kw = static_cast<float>(kwi);
+        float kh = static_cast<float>(khi);
         float scale = m_uiScale;
 
         auto createKnob = [&](int index, Gnosis::Entity& outEntity) {
@@ -471,10 +488,13 @@ namespace GameCore {
         // Create back button on FloppyButtonBlue if not existing
         if (m_optionsBackButtonEntity == 0) {
             m_optionsBackButtonEntity = m_ecsCoordinator->CreateEntity();
-            m_spriteSystem->LoadTexture("FloppyButtonBlue", "FloppyButtonBlue.png");
-            auto dims = m_spriteSystem->GetTextureDimensions("FloppyButtonBlue");
-            float tw = dims.first > 0 ? dims.first : 90.0f;
-            float th = dims.second > 0 ? dims.second : 16.0f;
+            if (auto* rs = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) { rs->PreloadTexture("FloppyButtonBlue"); }
+            int twi = 0, thi = 0;
+            if (auto* rs = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+                if (!rs->GetTextureSize("FloppyButtonBlue", twi, thi)) { twi = 90; thi = 16; }
+            }
+            float tw = static_cast<float>(twi);
+            float th = static_cast<float>(thi);
             float buttonScale = (m_isMobile ? 10.0f : 5.0f); // keep standard button size
             auto scaled = GetScaledDimensions(tw, th, buttonScale);
             float backW = scaled.first;
@@ -641,10 +661,13 @@ namespace GameCore {
             Transform* transform = m_ecsCoordinator->GetComponent<Transform>(m_levelPaintingEntities[i]);
             Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(m_levelPaintingEntities[i]);
             if (!transform || !sprite || i >= m_levels.size()) continue;
-
-            auto paintingDimensions = m_spriteSystem->GetTextureDimensions(m_levels[i].paintingTexture);
-            float paintingTextureWidth = paintingDimensions.first > 0 ? paintingDimensions.first : 96.0f;
-            float paintingTextureHeight = paintingDimensions.second > 0 ? paintingDimensions.second : 96.0f;
+            int pwi = 0, phi = 0;
+            if (auto* rs = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+                rs->PreloadTexture(m_levels[i].paintingTexture);
+                if (!rs->GetTextureSize(m_levels[i].paintingTexture, pwi, phi)) { pwi = 96; phi = 96; }
+            }
+            float paintingTextureWidth = static_cast<float>(pwi);
+            float paintingTextureHeight = static_cast<float>(phi);
             float maxWidth = m_screenWidth * 0.8f;
             float maxHeight = m_screenHeight * 0.4f;
             float scaleByWidth = maxWidth / paintingTextureWidth;
@@ -915,10 +938,11 @@ namespace GameCore {
             return;
         }
         
-        // Get enhanced screen information from render system (like GameplayState)
+        // Get enhanced screen information from shared RenderSystem
         ScreenInfo screenInfo;
-        if (m_renderSystem) {
-            screenInfo = m_renderSystem->GetScreenInfo();
+        if (m_ecsCoordinator && m_ecsCoordinator->GetSystemManager() && m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+            auto* renderSystem = m_ecsCoordinator->GetSystemManager()->GetRenderSystem();
+            screenInfo = renderSystem->GetScreenInfo();
             GN_LOG_INFO("Desktop enhanced screen info: logical=" + 
                        std::to_string(screenInfo.logicalWidth) + "x" + std::to_string(screenInfo.logicalHeight) + 
                        ", pixel=" + std::to_string(screenInfo.pixelWidth) + "x" + std::to_string(screenInfo.pixelHeight) + 
@@ -963,11 +987,17 @@ namespace GameCore {
         // 1. Create Background Entity (MainMenu.png) - FULL SCREEN SCALING
         m_backgroundEntity = m_ecsCoordinator->CreateEntity();
         
-        // Load texture to get actual dimensions
-        m_spriteSystem->LoadTexture("MainMenu", "MainMenu.png");
-        auto bgDimensions = m_spriteSystem->GetTextureDimensions("MainMenu");
-        float textureWidth = bgDimensions.first > 0 ? bgDimensions.first : 320.0f;   // Use actual width or fallback
-        float textureHeight = bgDimensions.second > 0 ? bgDimensions.second : 180.0f; // Use actual height or fallback
+        // Load texture to get actual dimensions using shared RenderSystem
+        int textureW = 0, textureH = 0;
+        if (auto* rs = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+            rs->PreloadTexture("MainMenu");
+            if (!rs->GetTextureSize("MainMenu", textureW, textureH)) {
+                textureW = 320; textureH = 180;
+                GN_LOG_INFO("RenderSystem: size unavailable for 'MainMenu' yet; using fallback 320x180");
+            }
+        }
+        float textureWidth = static_cast<float>(textureW);
+        float textureHeight = static_cast<float>(textureH);
         
         // Calculate scale to fill screen - USE PIXEL DIMENSIONS
         float scaleX = screenInfo.pixelWidth / textureWidth;
@@ -988,11 +1018,17 @@ namespace GameCore {
         // 2. Create Logo Entity (FloppyLogo.png) - Desktop scaling
         m_logoEntity = m_ecsCoordinator->CreateEntity();
         
-        // Load texture to get actual dimensions
-        m_spriteSystem->LoadTexture("FloppyLogo", "FloppyLogo.png");
-        auto logoDimensions = m_spriteSystem->GetTextureDimensions("FloppyLogo");
-        float logoWidth = logoDimensions.first > 0 ? logoDimensions.first : 112.0f;   // Use actual width or fallback
-        float logoHeight = logoDimensions.second > 0 ? logoDimensions.second : 80.0f; // Use actual height or fallback
+        // Load texture to get actual dimensions via RenderSystem
+        int logoW = 0, logoH = 0;
+        if (auto* rs = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+            rs->PreloadTexture("FloppyLogo");
+            if (!rs->GetTextureSize("FloppyLogo", logoW, logoH)) {
+                logoW = 112; logoH = 80;
+                GN_LOG_INFO("RenderSystem: size unavailable for 'FloppyLogo'; using fallback 112x80");
+            }
+        }
+        float logoWidth = static_cast<float>(logoW);
+        float logoHeight = static_cast<float>(logoH);
         float logoScale = 2.0f; // 2x scale for desktop
         
         // Calculate logo position - use same x,y for both logo and F button - USE PIXEL DIMENSIONS
@@ -1019,11 +1055,17 @@ namespace GameCore {
         // 3. Create Interactive F Button Entity (F.png) - Desktop scaling
         m_fButtonEntity = m_ecsCoordinator->CreateEntity();
         
-        // Load texture to get actual dimensions
-        m_spriteSystem->LoadTexture("F", "F.png");
-        auto fButtonDimensions = m_spriteSystem->GetTextureDimensions("F");
-        float fButtonTextureWidth = fButtonDimensions.first > 0 ? fButtonDimensions.first : 28.0f;   // Use actual width or fallback
-        float fButtonTextureHeight = fButtonDimensions.second > 0 ? fButtonDimensions.second : 40.0f; // Use actual height or fallback
+        // Load texture to get actual dimensions via RenderSystem
+        int fW = 0, fH = 0;
+        if (auto* rs = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+            rs->PreloadTexture("F");
+            if (!rs->GetTextureSize("F", fW, fH)) {
+                fW = 28; fH = 40;
+                GN_LOG_INFO("RenderSystem: size unavailable for 'F'; using fallback 28x40");
+            }
+        }
+        float fButtonTextureWidth = static_cast<float>(fW);
+        float fButtonTextureHeight = static_cast<float>(fH);
         
         // Position F button using SAME x,y coordinates as logo for perfect alignment
         float fButtonX = logoX; // Use same X as logo
@@ -1068,10 +1110,11 @@ namespace GameCore {
         // Setup platform-specific layout first
         SetupLayout();
         
-        // Get enhanced screen information from render system (like GameplayState)
+        // Get enhanced screen information from shared RenderSystem (like GameplayState)
         ScreenInfo screenInfo;
-        if (m_renderSystem) {
-            screenInfo = m_renderSystem->GetScreenInfo();
+        if (m_ecsCoordinator && m_ecsCoordinator->GetSystemManager() && m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+            auto* renderSystem = m_ecsCoordinator->GetSystemManager()->GetRenderSystem();
+            screenInfo = renderSystem->GetScreenInfo();
             GN_LOG_INFO("Mobile enhanced screen info: logical=" + 
                        std::to_string(screenInfo.logicalWidth) + "x" + std::to_string(screenInfo.logicalHeight) + 
                        ", pixel=" + std::to_string(screenInfo.pixelWidth) + "x" + std::to_string(screenInfo.pixelHeight) + 
@@ -1115,11 +1158,17 @@ namespace GameCore {
         // 1. Create Background Entity (MainMenuMobile.png) - FULL SCREEN SCALING
         m_backgroundEntity = m_ecsCoordinator->CreateEntity();
         
-        // Load texture to get actual dimensions
-        m_spriteSystem->LoadTexture("MainMenuMobile", "MainMenuMobile.png");
-        auto bgDimensions = m_spriteSystem->GetTextureDimensions("MainMenuMobile");
-        float bgTextureWidth = bgDimensions.first > 0 ? bgDimensions.first : 393.0f;
-        float bgTextureHeight = bgDimensions.second > 0 ? bgDimensions.second : 852.0f;
+        // Load texture to get actual dimensions via RenderSystem
+        int bgW = 0, bgH = 0;
+        if (auto* rs = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+            rs->PreloadTexture("MainMenuMobile");
+            if (!rs->GetTextureSize("MainMenuMobile", bgW, bgH)) {
+                bgW = 393; bgH = 852;
+                GN_LOG_INFO("RenderSystem: size unavailable for 'MainMenuMobile'; using fallback 393x852");
+            }
+        }
+        float bgTextureWidth = static_cast<float>(bgW);
+        float bgTextureHeight = static_cast<float>(bgH);
         
         // Calculate scale to fill screen - USE PIXEL DIMENSIONS
         float bgScaleX = screenInfo.pixelWidth / bgTextureWidth;
@@ -1138,10 +1187,14 @@ namespace GameCore {
         // 2. Create Logo Entity - SIMPLE POSITIONING
         m_logoEntity = m_ecsCoordinator->CreateEntity();
         
-        // Load logo texture dimensions
-        auto logoDimensions = m_spriteSystem->GetTextureDimensions("FloppyLogo");
-        float logoTextureWidth = logoDimensions.first > 0 ? logoDimensions.first : 112.0f;
-        float logoTextureHeight = logoDimensions.second > 0 ? logoDimensions.second : 80.0f;
+        // Load logo texture dimensions via RenderSystem
+        int mLogoW = 0, mLogoH = 0;
+        if (auto* rs = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+            rs->PreloadTexture("FloppyLogo");
+            if (!rs->GetTextureSize("FloppyLogo", mLogoW, mLogoH)) { mLogoW = 112; mLogoH = 80; }
+        }
+        float logoTextureWidth = static_cast<float>(mLogoW);
+        float logoTextureHeight = static_cast<float>(mLogoH);
         
         // Logo positioning: Center horizontally, 20% down from top
         float logoScale = 8.0f;  // Fixed scale for mobile
@@ -1167,10 +1220,14 @@ namespace GameCore {
         // 3. Create F Button Entity - OVERLAID ON LOGO
         m_fButtonEntity = m_ecsCoordinator->CreateEntity();
         
-        // Load F button texture dimensions
-        auto fButtonDimensions = m_spriteSystem->GetTextureDimensions("F");
-        float fButtonTextureWidth = fButtonDimensions.first > 0 ? fButtonDimensions.first : 28.0f;
-        float fButtonTextureHeight = fButtonDimensions.second > 0 ? fButtonDimensions.second : 40.0f;
+        // Load F button texture dimensions via RenderSystem
+        int mFW = 0, mFH = 0;
+        if (auto* rs = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+            rs->PreloadTexture("F");
+            if (!rs->GetTextureSize("F", mFW, mFH)) { mFW = 28; mFH = 40; }
+        }
+        float fButtonTextureWidth = static_cast<float>(mFW);
+        float fButtonTextureHeight = static_cast<float>(mFH);
         
         // F button uses SAME position and scale as logo for perfect overlay
         float fButtonScale = logoScale;  // Match logo scale exactly
@@ -1347,11 +1404,14 @@ namespace GameCore {
             return;
         }
         
-        // Load button texture to get actual dimensions
-        m_spriteSystem->LoadTexture("FloppyButtonBlue", "FloppyButtonBlue.png");
-        auto buttonDimensions = m_spriteSystem->GetTextureDimensions("FloppyButtonBlue");
-        float buttonTextureWidth = buttonDimensions.first > 0 ? buttonDimensions.first : 90.0f;   // Use actual width or fallback
-        float buttonTextureHeight = buttonDimensions.second > 0 ? buttonDimensions.second : 16.0f; // Use actual height or fallback
+        // Load button texture to get actual dimensions via RenderSystem
+        int btnW = 0, btnH = 0;
+        if (auto* rs = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+            rs->PreloadTexture("FloppyButtonBlue");
+            if (!rs->GetTextureSize("FloppyButtonBlue", btnW, btnH)) { btnW = 90; btnH = 16; }
+        }
+        float buttonTextureWidth = static_cast<float>(btnW);
+        float buttonTextureHeight = static_cast<float>(btnH);
         
         GN_LOG_INFO("Button texture dimensions: " + std::to_string(buttonTextureWidth) + "x" + std::to_string(buttonTextureHeight));
         
@@ -1479,10 +1539,14 @@ namespace GameCore {
             return;
         }
         
-        // Load button texture dimensions once
-        auto buttonDimensions = m_spriteSystem->GetTextureDimensions("FloppyButtonBlue");
-        float buttonTextureWidth = buttonDimensions.first > 0 ? buttonDimensions.first : 90.0f;
-        float buttonTextureHeight = buttonDimensions.second > 0 ? buttonDimensions.second : 16.0f;
+        // Load button texture dimensions once via RenderSystem
+        int mBtnW = 0, mBtnH = 0;
+        if (auto* rs = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+            rs->PreloadTexture("FloppyButtonBlue");
+            if (!rs->GetTextureSize("FloppyButtonBlue", mBtnW, mBtnH)) { mBtnW = 90; mBtnH = 16; }
+        }
+        float buttonTextureWidth = static_cast<float>(mBtnW);
+        float buttonTextureHeight = static_cast<float>(mBtnH);
         
         GN_LOG_INFO("Mobile button texture dimensions: " + std::to_string(buttonTextureWidth) + "x" + std::to_string(buttonTextureHeight));
         
@@ -1864,11 +1928,14 @@ namespace GameCore {
         float buttonY = m_screenHeight / 2.0f;     // Center vertically
         float buttonScale = m_isMobile ? 10.0f : 5.0f;  // Perfect mobile button size (scale factor fix applied)
         
-        // Load texture to get actual dimensions
-        m_spriteSystem->LoadTexture("LeftArrow", "LeftArrow.png");
-        auto leftArrowDimensions = m_spriteSystem->GetTextureDimensions("LeftArrow");
-        float leftArrowWidth = leftArrowDimensions.first > 0 ? leftArrowDimensions.first : 16.0f;  // Correct size 16x16
-        float leftArrowHeight = leftArrowDimensions.second > 0 ? leftArrowDimensions.second : 16.0f; // Correct size 16x16
+        // Preload and query actual dimensions via shared RenderSystem
+        int lwi = 0, lhi = 0;
+        if (auto* rs = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+            rs->PreloadTexture("LeftArrow");
+            if (!rs->GetTextureSize("LeftArrow", lwi, lhi)) { lwi = 16; lhi = 16; }
+        }
+        float leftArrowWidth = static_cast<float>(lwi);  // Correct size 16x16
+        float leftArrowHeight = static_cast<float>(lhi); // Correct size 16x16
         
         // Use positioning helper for left arrow
         auto leftButtonScaledDimensions = GetScaledDimensions(leftArrowWidth, leftArrowHeight, buttonScale);
@@ -1900,11 +1967,14 @@ namespace GameCore {
         // Create right arrow button
         m_rightArrowButtonEntity = m_ecsCoordinator->CreateEntity();
         
-        // Load texture to get actual dimensions
-        m_spriteSystem->LoadTexture("RightArrow", "RightArrow.png");
-        auto rightArrowDimensions = m_spriteSystem->GetTextureDimensions("RightArrow");
-        float rightArrowWidth = rightArrowDimensions.first > 0 ? rightArrowDimensions.first : 16.0f;  // Correct size 16x16
-        float rightArrowHeight = rightArrowDimensions.second > 0 ? rightArrowDimensions.second : 16.0f; // Correct size 16x16
+        // Preload and query actual dimensions via shared RenderSystem
+        int rwi = 0, rhi = 0;
+        if (auto* rs = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+            rs->PreloadTexture("RightArrow");
+            if (!rs->GetTextureSize("RightArrow", rwi, rhi)) { rwi = 16; rhi = 16; }
+        }
+        float rightArrowWidth = static_cast<float>(rwi);  // Correct size 16x16
+        float rightArrowHeight = static_cast<float>(rhi); // Correct size 16x16
         
         // Use positioning helper for right arrow - right edge at 2% from right screen edge
         auto rightButtonScaledDimensions = GetScaledDimensions(rightArrowWidth, rightArrowHeight, buttonScale);
@@ -1986,11 +2056,15 @@ namespace GameCore {
             // === Create painting entity === //
             Gnosis::Entity paintingEntity = m_ecsCoordinator->CreateEntity();
             
-            // Load texture to get actual dimensions
-            m_spriteSystem->LoadTexture(m_levels[i].paintingTexture, m_levels[i].paintingTexture + ".png");
-            auto paintingDimensions = m_spriteSystem->GetTextureDimensions(m_levels[i].paintingTexture);
-            float paintingTextureWidth = paintingDimensions.first > 0 ? paintingDimensions.first : 96.0f;  // Correct base size
-            float paintingTextureHeight = paintingDimensions.second > 0 ? paintingDimensions.second : 96.0f; // Correct base size
+            // Query texture size via shared RenderSystem
+            int pW = 0, pH = 0;
+            if (auto* rs = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+                // ensure texture was requested for preload (also done here for safety)
+                rs->PreloadTexture(m_levels[i].paintingTexture);
+                if (!rs->GetTextureSize(m_levels[i].paintingTexture, pW, pH)) { pW = 96; pH = 96; }
+            }
+            float paintingTextureWidth = static_cast<float>(pW);
+            float paintingTextureHeight = static_cast<float>(pH);
             
             // Use SAME dynamic scaling logic as UpdateLevelVisibility to prevent decentering
             float maxWidth = m_screenWidth * 0.8f; // Use 80% of screen width
@@ -2063,167 +2137,180 @@ namespace GameCore {
         if (!m_ecsCoordinator) {
             return;
         }
-        
+        // Create back button entity
         m_backButtonEntity = m_ecsCoordinator->CreateEntity();
-        float buttonX = m_screenWidth / 2.0f;  // Center horizontally
-        float buttonY = m_screenHeight * 0.93f;  // push lower
-        float buttonScale = m_isMobile ? 8.0f : 4.0f; // Keep sprite scales
-        // Global UI text size matches main menu text size
-        m_globalUIFontSize = m_isMobile ? 88.0f : (m_buttonFontSize * 5.0f);
-        
-        // Load texture to get actual dimensions
-        m_spriteSystem->LoadTexture("FloppyButtonBlue", "FloppyButtonBlue.png");
-        auto buttonDimensions = m_spriteSystem->GetTextureDimensions("FloppyButtonBlue");
-        float buttonTextureWidth = buttonDimensions.first > 0 ? buttonDimensions.first : 90.0f;
-        float buttonTextureHeight = buttonDimensions.second > 0 ? buttonDimensions.second : 16.0f;
-        
-        // Use positioning helper for back button
-        auto backButtonScaledDimensions = GetScaledDimensions(buttonTextureWidth, buttonTextureHeight, buttonScale);
-        float backButtonWidth = backButtonScaledDimensions.first;
-        float backButtonHeight = backButtonScaledDimensions.second;
-        
-        Gnosis::GNVector2 backButtonPosition = CenterObjectAtPosition(buttonX, buttonY, backButtonWidth, backButtonHeight);
-        float backButtonTopLeftX = backButtonPosition.x;
-        float backButtonTopLeftY = backButtonPosition.y;
-        
-        Transform backTransform(Gnosis::GNVector2(backButtonTopLeftX, backButtonTopLeftY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
-        Sprite backSprite("FloppyButtonBlue", buttonTextureWidth, buttonTextureHeight);
-        backSprite.layer = 5; // Top layer
-        backSprite.visible = false;
-        UIElement backButton("BACK", "FloppyButtonBlue", "FloppyButtonBlueHover");
-        backButton.fontSize = m_globalUIFontSize;
-        backButton.textColor = Gnosis::GNColor(255, 255, 255, 255);
-        backButton.visible = false;
-        
-        m_ecsCoordinator->AddComponent<Transform>(m_backButtonEntity, backTransform);
-        m_ecsCoordinator->AddComponent<Sprite>(m_backButtonEntity, backSprite);
-        m_ecsCoordinator->AddComponent<UIElement>(m_backButtonEntity, backButton);
-        
-        GN_LOG_INFO("Created back button");
+        float centerX = m_screenWidth * 0.5f;
+        float buttonY = m_screenHeight * 0.93f;  // near bottom
+        float buttonScale = m_isMobile ? 8.0f : 4.0f; // keep sprite scales
+
+        // Query texture via shared RenderSystem
+        int bw = 0, bh = 0;
+        if (auto* rs = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+            rs->PreloadTexture("FloppyButtonBlue");
+            if (!rs->GetTextureSize("FloppyButtonBlue", bw, bh)) { bw = 90; bh = 16; }
+        }
+        float buttonTexW = static_cast<float>(bw);
+        float buttonTexH = static_cast<float>(bh);
+        auto scaled = GetScaledDimensions(buttonTexW, buttonTexH, buttonScale);
+        float btnW = scaled.first;
+        float btnH = scaled.second;
+        float topLeftX = centerX - btnW * 0.5f;
+        float topLeftY = buttonY - btnH * 0.5f;
+
+        Transform t(Gnosis::GNVector2(topLeftX, topLeftY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
+        Sprite s("FloppyButtonBlue", buttonTexW, buttonTexH); s.layer = 5; s.visible = false;
+        UIElement ui("BACK", "FloppyButtonBlue", "FloppyButtonBlueHover");
+        ui.fontSize = m_isMobile ? 42.0f : 21.0f;
+        ui.textColor = Gnosis::GNColor(255, 255, 255, 255);
+        ui.centerTextHorizontally = true;
+        ui.centerTextVertically = true;
+        ui.visible = false;
+
+        m_ecsCoordinator->AddComponent<Transform>(m_backButtonEntity, t);
+        m_ecsCoordinator->AddComponent<Sprite>(m_backButtonEntity, s);
+        m_ecsCoordinator->AddComponent<UIElement>(m_backButtonEntity, ui);
+
+        GN_LOG_INFO("Created back button for level select");
     }
 
-    void MainMenuState::CreateOptionsTracksAndLabels() {
-        if (!m_ecsCoordinator) return;
-        // Title (keep large)
-        if (m_optionsTitleEntity == 0) m_optionsTitleEntity = m_ecsCoordinator->CreateEntity();
-        UIElement title("Options", "", "");
-        // Increase title size (3-4x) and place ~10% from top of screen
-        title.fontSize = m_isMobile ? 96.0f : 48.0f;
-        title.textColor = Gnosis::GNColor(255,255,255,255);
-        title.centerTextHorizontally = true; title.visible = true;
-        Transform titleT(Gnosis::GNVector2(m_screenWidth * 0.5f, m_screenHeight * 0.10f), 0.0f, Gnosis::GNVector2(1.0f,1.0f));
-        if (!m_ecsCoordinator->HasComponent<Transform>(m_optionsTitleEntity)) m_ecsCoordinator->AddComponent<Transform>(m_optionsTitleEntity, titleT); else *m_ecsCoordinator->GetComponent<Transform>(m_optionsTitleEntity) = titleT;
-        if (!m_ecsCoordinator->HasComponent<UIElement>(m_optionsTitleEntity)) m_ecsCoordinator->AddComponent<UIElement>(m_optionsTitleEntity, title); else *m_ecsCoordinator->GetComponent<UIElement>(m_optionsTitleEntity) = title;
-
-        // Create interleaved label-track pairs with tighter spacing
-        float currentY = m_screenHeight * 0.18f;      // Start Master section a bit further down
-        float labelTrackGap = 15.0f * m_uiScale;      // Smaller gap between label and track  
-        float sectionGap = 25.0f * m_uiScale;         // Much smaller gap between sections
-        
-        auto createLabelTrackPair = [&](Gnosis::Entity& labelEntity, Gnosis::Entity& trackEntity, const char* labelText, float yPos) {
-            // Create label
-            if (labelEntity == 0) labelEntity = m_ecsCoordinator->CreateEntity();
-            UIElement labelUi(labelText, "", "");
-            labelUi.fontSize = m_globalUIFontSize; // use global size (88 mobile)
-            labelUi.textColor = Gnosis::GNColor(255,255,255,255);
-            labelUi.textOutlineWidth = 10.0f; // match thickness with Difficulty label
-            labelUi.centerTextHorizontally = false;  // Explicitly left-align
-            labelUi.visible = true;
-            Transform labelT(Gnosis::GNVector2(m_optionsSliderX, yPos), 0.0f, Gnosis::GNVector2(1.0f,1.0f));
-            if (!m_ecsCoordinator->HasComponent<Transform>(labelEntity)) m_ecsCoordinator->AddComponent<Transform>(labelEntity, labelT); else *m_ecsCoordinator->GetComponent<Transform>(labelEntity) = labelT;
-            if (!m_ecsCoordinator->HasComponent<UIElement>(labelEntity)) m_ecsCoordinator->AddComponent<UIElement>(labelEntity, labelUi); else *m_ecsCoordinator->GetComponent<UIElement>(labelEntity) = labelUi;
-            
-            // Create track directly below label
-            float trackY = yPos + labelTrackGap;
-            if (trackEntity == 0) trackEntity = m_ecsCoordinator->CreateEntity();
-            Transform trackT(Gnosis::GNVector2(m_optionsSliderX, trackY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
-            UIShape trackShape(UIShapeType::Rectangle, m_optionsSliderW, m_optionsSliderH, Gnosis::GNColor(40, 40, 70, 230), 19, true);
-            if (!m_ecsCoordinator->HasComponent<Transform>(trackEntity)) m_ecsCoordinator->AddComponent<Transform>(trackEntity, trackT); else *m_ecsCoordinator->GetComponent<Transform>(trackEntity) = trackT;
-            if (!m_ecsCoordinator->HasComponent<UIShape>(trackEntity)) m_ecsCoordinator->AddComponent<UIShape>(trackEntity, trackShape); else *m_ecsCoordinator->GetComponent<UIShape>(trackEntity) = trackShape;
-            
-            return trackY + m_optionsSliderH + sectionGap;  // Return Y for next section
-        };
-        
-        // Create each section: Label -> Track -> Gap
-        currentY = createLabelTrackPair(m_masterLabelEntity, m_masterTrackEntity, "Master", currentY);
-        currentY = createLabelTrackPair(m_musicLabelEntity, m_musicTrackEntity, "Music", currentY);
-        currentY = createLabelTrackPair(m_sfxLabelEntity, m_sfxTrackEntity, "SFX", currentY);
-
-        // Position difficulty section at 60% screen height as requested
-        currentY = m_screenHeight * 0.60f;
-        
-        // Difficulty label - positioned exactly like other labels for perfect alignment
-        if (m_difficultyTextEntity == 0) m_difficultyTextEntity = m_ecsCoordinator->CreateEntity();
-        UIElement d("Difficulty:", "", "");
-        d.fontSize = m_globalUIFontSize;  // Match global UI text size
-        d.textColor = Gnosis::GNColor(255,255,255,255);
-        d.textOutlineWidth = 10.0f; // ensure outlined like other labels
-        d.centerTextHorizontally = false;  // Explicitly left-aligned like others
-        d.visible = true;
-        Transform dT(Gnosis::GNVector2(m_optionsSliderX, currentY), 0.0f, Gnosis::GNVector2(1.0f,1.0f));  // Use same X as others
-        if (!m_ecsCoordinator->HasComponent<Transform>(m_difficultyTextEntity)) m_ecsCoordinator->AddComponent<Transform>(m_difficultyTextEntity, dT); else *m_ecsCoordinator->GetComponent<Transform>(m_difficultyTextEntity) = dT;
-        if (!m_ecsCoordinator->HasComponent<UIElement>(m_difficultyTextEntity)) m_ecsCoordinator->AddComponent<UIElement>(m_difficultyTextEntity, d); else *m_ecsCoordinator->GetComponent<UIElement>(m_difficultyTextEntity) = d;
-
-        // Position arrows first - they determine the baseline
-        float arrowY = currentY + labelTrackGap;
-        
-        // Create difficulty arrows at absolute screen edge positions
-        CreateOptionsArrows(m_optionsOverlayX, m_optionsOverlayY, m_optionsOverlayW, m_optionsOverlayH, arrowY);
-        
-        // Difficulty value centered between arrows at SAME Y level as arrows
-        if (m_difficultyValueEntity == 0) m_difficultyValueEntity = m_ecsCoordinator->CreateEntity();
-        Transform dvT(Gnosis::GNVector2(m_screenWidth * 0.5f, arrowY), 0.0f, Gnosis::GNVector2(1.0f,1.0f));  // Same Y as arrows
-        std::string diffValue = GameCore::LevelManager::GetDifficultyName();
-        UIElement dv(diffValue, "", "");
-        dv.fontSize = m_globalUIFontSize;
-        dv.textOutlineWidth = 10.0f; // match outline thickness
-        dv.textColor = Gnosis::GNColor(255,255,255,255);
-        dv.centerTextHorizontally = true;
-        dv.centerTextVertically = true;
-        dv.visible = true;
-        if (!m_ecsCoordinator->HasComponent<Transform>(m_difficultyValueEntity)) m_ecsCoordinator->AddComponent<Transform>(m_difficultyValueEntity, dvT); else *m_ecsCoordinator->GetComponent<Transform>(m_difficultyValueEntity) = dvT;
-        if (!m_ecsCoordinator->HasComponent<UIElement>(m_difficultyValueEntity)) m_ecsCoordinator->AddComponent<UIElement>(m_difficultyValueEntity, dv); else *m_ecsCoordinator->GetComponent<UIElement>(m_difficultyValueEntity) = dv;
-    }
-    
     void MainMenuState::CreateLevelPlayButton() {
         if (!m_ecsCoordinator) {
             return;
         }
-        
-        m_levelPlayButtonEntity = m_ecsCoordinator->CreateEntity();
-        float buttonX = m_screenWidth / 2.0f;
-        float buttonY = m_screenHeight * 0.8f;
-        float buttonScale = m_isMobile ? 10.0f : 5.0f;
-        
-        // Load texture to get actual dimensions
-        m_spriteSystem->LoadTexture("FloppyButtonBlue", "FloppyButtonBlue.png");
-        auto buttonDimensions = m_spriteSystem->GetTextureDimensions("FloppyButtonBlue");
-        float buttonTextureWidth = buttonDimensions.first > 0 ? buttonDimensions.first : 90.0f;
-        float buttonTextureHeight = buttonDimensions.second > 0 ? buttonDimensions.second : 16.0f;
-        
-        // Use positioning helper for level play button
-        auto playButtonScaledDimensions = GetScaledDimensions(buttonTextureWidth, buttonTextureHeight, buttonScale);
-        float playButtonWidth = playButtonScaledDimensions.first;
-        float playButtonHeight = playButtonScaledDimensions.second;
-        
-        Gnosis::GNVector2 playButtonPosition = CenterObjectAtPosition(buttonX, buttonY, playButtonWidth, playButtonHeight);
-        float playButtonTopLeftX = playButtonPosition.x;
-        float playButtonTopLeftY = playButtonPosition.y;
-        
-        Transform playTransform(Gnosis::GNVector2(playButtonTopLeftX, playButtonTopLeftY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
-        Sprite playSprite("FloppyButtonBlue", buttonTextureWidth, buttonTextureHeight);
-        playSprite.layer = 5; // Top layer
-        playSprite.visible = false;
-        UIElement playButton("PLAY LEVEL", "FloppyButtonBlue", "FloppyButtonBlueHover");
-        playButton.fontSize = m_globalUIFontSize;
-        playButton.textColor = Gnosis::GNColor(255, 255, 255, 255);
-        playButton.visible = false;
-        
-        m_ecsCoordinator->AddComponent<Transform>(m_levelPlayButtonEntity, playTransform);
-        m_ecsCoordinator->AddComponent<Sprite>(m_levelPlayButtonEntity, playSprite);
-        m_ecsCoordinator->AddComponent<UIElement>(m_levelPlayButtonEntity, playButton);
-        
+        // Create or reuse entity
+        if (m_levelPlayButtonEntity == 0) {
+            m_levelPlayButtonEntity = m_ecsCoordinator->CreateEntity();
+        }
+
+        float centerX = m_screenWidth * 0.5f;
+        // Place slightly above the back button
+        float buttonY = m_screenHeight * 0.86f;
+        float buttonScale = m_isMobile ? 8.0f : 4.0f;
+
+        // Query texture via shared RenderSystem
+        int bw = 0, bh = 0;
+        if (auto* rs = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+            rs->PreloadTexture("FloppyButtonBlue");
+            if (!rs->GetTextureSize("FloppyButtonBlue", bw, bh)) { bw = 90; bh = 16; }
+        }
+        float texW = static_cast<float>(bw);
+        float texH = static_cast<float>(bh);
+        auto scaled = GetScaledDimensions(texW, texH, buttonScale);
+        float w = scaled.first;
+        float h = scaled.second;
+        float topLeftX = centerX - w * 0.5f;
+        float topLeftY = buttonY - h * 0.5f;
+
+        Transform t(Gnosis::GNVector2(topLeftX, topLeftY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
+        Sprite s("FloppyButtonBlue", texW, texH); s.layer = 5; s.visible = false;
+        UIElement ui("PLAY LEVEL", "FloppyButtonBlue", "FloppyButtonBlueHover");
+        ui.fontSize = m_isMobile ? 42.0f : 21.0f;
+        ui.textColor = Gnosis::GNColor(255, 255, 255, 255);
+        ui.centerTextHorizontally = true;
+        ui.centerTextVertically = true;
+        ui.visible = false;
+
+        if (!m_ecsCoordinator->HasComponent<Transform>(m_levelPlayButtonEntity)) m_ecsCoordinator->AddComponent<Transform>(m_levelPlayButtonEntity, t); else *m_ecsCoordinator->GetComponent<Transform>(m_levelPlayButtonEntity) = t;
+        if (!m_ecsCoordinator->HasComponent<Sprite>(m_levelPlayButtonEntity)) m_ecsCoordinator->AddComponent<Sprite>(m_levelPlayButtonEntity, s); else *m_ecsCoordinator->GetComponent<Sprite>(m_levelPlayButtonEntity) = s;
+        if (!m_ecsCoordinator->HasComponent<UIElement>(m_levelPlayButtonEntity)) m_ecsCoordinator->AddComponent<UIElement>(m_levelPlayButtonEntity, ui); else *m_ecsCoordinator->GetComponent<UIElement>(m_levelPlayButtonEntity) = ui;
+
         GN_LOG_INFO("Created level play button");
+    }
+
+    void MainMenuState::CreateOptionsTracksAndLabels() {
+        if (!m_ecsCoordinator) return;
+
+        // Title centered at top of overlay
+        if (m_optionsTitleEntity == 0) m_optionsTitleEntity = m_ecsCoordinator->CreateEntity();
+        {
+            float titleX = m_optionsOverlayX + m_optionsOverlayW * 0.5f;
+            float titleY = m_optionsOverlayY + m_optionsOverlayH * 0.06f;
+            Transform t(Gnosis::GNVector2(titleX, titleY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            Sprite s; s.visible = false; s.layer = 4; // text-only
+            UIElement ui("OPTIONS", "", "");
+            ui.fontSize = m_isMobile ? 48.0f : 28.0f;
+            ui.centerTextHorizontally = true;
+            ui.centerTextVertically = true;
+            ui.visible = true;
+            if (!m_ecsCoordinator->HasComponent<Transform>(m_optionsTitleEntity)) m_ecsCoordinator->AddComponent<Transform>(m_optionsTitleEntity, t); else *m_ecsCoordinator->GetComponent<Transform>(m_optionsTitleEntity) = t;
+            if (!m_ecsCoordinator->HasComponent<Sprite>(m_optionsTitleEntity)) m_ecsCoordinator->AddComponent<Sprite>(m_optionsTitleEntity, s); else *m_ecsCoordinator->GetComponent<Sprite>(m_optionsTitleEntity) = s;
+            if (!m_ecsCoordinator->HasComponent<UIElement>(m_optionsTitleEntity)) m_ecsCoordinator->AddComponent<UIElement>(m_optionsTitleEntity, ui); else *m_ecsCoordinator->GetComponent<UIElement>(m_optionsTitleEntity) = ui;
+        }
+
+        // Difficulty row (label centered); arrows added via helper
+        if (m_difficultyTextEntity == 0) m_difficultyTextEntity = m_ecsCoordinator->CreateEntity();
+        if (m_difficultyValueEntity == 0) m_difficultyValueEntity = m_ecsCoordinator->CreateEntity();
+        {
+            float diffY = m_optionsSliderY - (m_optionsSliderSpacing * 0.6f);
+            float centerX = m_optionsOverlayX + m_optionsOverlayW * 0.5f;
+            // Static text "DIFFICULTY"
+            Transform t(Gnosis::GNVector2(centerX, diffY - (m_isMobile ? 24.0f : 12.0f)), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            Sprite s; s.visible = true; s.layer = 4;
+            UIElement ui("DIFFICULTY", "", "");
+            ui.fontSize = m_isMobile ? 36.0f : 18.0f;
+            ui.centerTextHorizontally = true; ui.centerTextVertically = true; ui.visible = true;
+            if (!m_ecsCoordinator->HasComponent<Transform>(m_difficultyTextEntity)) m_ecsCoordinator->AddComponent<Transform>(m_difficultyTextEntity, t); else *m_ecsCoordinator->GetComponent<Transform>(m_difficultyTextEntity) = t;
+            if (!m_ecsCoordinator->HasComponent<Sprite>(m_difficultyTextEntity)) m_ecsCoordinator->AddComponent<Sprite>(m_difficultyTextEntity, s); else *m_ecsCoordinator->GetComponent<Sprite>(m_difficultyTextEntity) = s;
+            if (!m_ecsCoordinator->HasComponent<UIElement>(m_difficultyTextEntity)) m_ecsCoordinator->AddComponent<UIElement>(m_difficultyTextEntity, ui); else *m_ecsCoordinator->GetComponent<UIElement>(m_difficultyTextEntity) = ui;
+
+            // Current difficulty value centered between arrows
+            Transform vt(Gnosis::GNVector2(centerX, diffY + (m_isMobile ? 0.0f : 0.0f)), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            Sprite vs; vs.visible = true; vs.layer = 4;
+            UIElement vei("NORMAL", "", ""); // placeholder value; update elsewhere when arrows pressed
+            vei.fontSize = m_isMobile ? 42.0f : 21.0f;
+            vei.centerTextHorizontally = true; vei.centerTextVertically = true; vei.visible = true;
+            if (!m_ecsCoordinator->HasComponent<Transform>(m_difficultyValueEntity)) m_ecsCoordinator->AddComponent<Transform>(m_difficultyValueEntity, vt); else *m_ecsCoordinator->GetComponent<Transform>(m_difficultyValueEntity) = vt;
+            if (!m_ecsCoordinator->HasComponent<Sprite>(m_difficultyValueEntity)) m_ecsCoordinator->AddComponent<Sprite>(m_difficultyValueEntity, vs); else *m_ecsCoordinator->GetComponent<Sprite>(m_difficultyValueEntity) = vs;
+            if (!m_ecsCoordinator->HasComponent<UIElement>(m_difficultyValueEntity)) m_ecsCoordinator->AddComponent<UIElement>(m_difficultyValueEntity, vei); else *m_ecsCoordinator->GetComponent<UIElement>(m_difficultyValueEntity) = vei;
+
+            // Place arrows around the value
+            CreateOptionsArrows(m_optionsOverlayX, m_optionsOverlayY, m_optionsOverlayW, m_optionsOverlayH, diffY);
+        }
+
+        // Helper to create a slider track rectangle and a label above it
+        auto ensureTrackAndLabel = [&](Gnosis::Entity& trackEntity, Gnosis::Entity& labelEntity, const char* labelText, float trackY){
+            // Track shape entity
+            if (trackEntity == 0) trackEntity = m_ecsCoordinator->CreateEntity();
+            {
+                Transform t(Gnosis::GNVector2(m_optionsSliderX, trackY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+                Sprite s; s.visible = false; s.layer = 3;
+                UIShape shape; shape.visible = true; shape.width = m_optionsSliderW; shape.height = m_optionsSliderH;
+                if (!m_ecsCoordinator->HasComponent<Transform>(trackEntity)) m_ecsCoordinator->AddComponent<Transform>(trackEntity, t); else *m_ecsCoordinator->GetComponent<Transform>(trackEntity) = t;
+                if (!m_ecsCoordinator->HasComponent<Sprite>(trackEntity)) m_ecsCoordinator->AddComponent<Sprite>(trackEntity, s); else *m_ecsCoordinator->GetComponent<Sprite>(trackEntity) = s;
+                if (!m_ecsCoordinator->HasComponent<UIShape>(trackEntity)) m_ecsCoordinator->AddComponent<UIShape>(trackEntity, shape); else *m_ecsCoordinator->GetComponent<UIShape>(trackEntity) = shape;
+            }
+            // Label above track
+            if (labelEntity == 0) labelEntity = m_ecsCoordinator->CreateEntity();
+            {
+                float labelY = trackY - (m_isMobile ? 36.0f : 18.0f);
+                float labelX = m_optionsSliderX;
+                Transform t(Gnosis::GNVector2(labelX, labelY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+                Sprite s; s.visible = true; s.layer = 4;
+                UIElement ui(labelText, "", "");
+                ui.fontSize = m_isMobile ? 36.0f : 18.0f;
+                ui.centerTextHorizontally = false; ui.centerTextVertically = true; ui.visible = true;
+                if (!m_ecsCoordinator->HasComponent<Transform>(labelEntity)) m_ecsCoordinator->AddComponent<Transform>(labelEntity, t); else *m_ecsCoordinator->GetComponent<Transform>(labelEntity) = t;
+                if (!m_ecsCoordinator->HasComponent<Sprite>(labelEntity)) m_ecsCoordinator->AddComponent<Sprite>(labelEntity, s); else *m_ecsCoordinator->GetComponent<Sprite>(labelEntity) = s;
+                if (!m_ecsCoordinator->HasComponent<UIElement>(labelEntity)) m_ecsCoordinator->AddComponent<UIElement>(labelEntity, ui); else *m_ecsCoordinator->GetComponent<UIElement>(labelEntity) = ui;
+            }
+        };
+
+        // Compute track Y positions to match UpdateOptionsKnobPositions()
+        float currentY = m_screenHeight * 0.18f;
+        float labelTrackGap = 15.0f * m_uiScale;
+        float sectionGap = 25.0f * m_uiScale;
+        float masterTrackY = currentY + labelTrackGap;
+        currentY = masterTrackY + m_optionsSliderH + sectionGap;
+        float musicTrackY = currentY + labelTrackGap;
+        currentY = musicTrackY + m_optionsSliderH + sectionGap;
+        float sfxTrackY = currentY + labelTrackGap;
+
+        ensureTrackAndLabel(m_masterTrackEntity, m_masterLabelEntity, "MASTER", masterTrackY);
+        ensureTrackAndLabel(m_musicTrackEntity,  m_musicLabelEntity,  "MUSIC",  musicTrackY);
+        ensureTrackAndLabel(m_sfxTrackEntity,    m_sfxLabelEntity,    "SFX",    sfxTrackY);
+
+        // After creating tracks/labels, ensure knob positions are consistent
+        UpdateOptionsKnobPositions();
     }
 
     void MainMenuState::ShowLevelSelect() {
@@ -2653,44 +2740,43 @@ namespace GameCore {
                 if (m_levelPaintingEntities[i] != 0) {
                     Transform* transform = m_ecsCoordinator->GetComponent<Transform>(m_levelPaintingEntities[i]);
                     if (transform && i < m_levels.size()) {
-                        // Use SAME dynamic scaling logic as UpdateLevelVisibility to prevent decentering
-                        auto paintingDimensions = m_spriteSystem->GetTextureDimensions(m_levels[i].paintingTexture);
-                        float paintingTextureWidth = paintingDimensions.first > 0 ? paintingDimensions.first : 96.0f;  // Correct base size
-                        float paintingTextureHeight = paintingDimensions.second > 0 ? paintingDimensions.second : 96.0f; // Correct base size
-                        
-                        // Use SAME dynamic scaling calculation as UpdateLevelVisibility
-                        float maxWidth = m_screenWidth * 0.8f; // Use 80% of screen width
-                        float maxHeight = m_screenHeight * 0.4f; // Use 40% of screen height for paintings
-                        
+                        // Get painting texture size via RenderSystem
+                        int pwi = 0, phi = 0;
+                        if (auto* rs = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+                            rs->PreloadTexture(m_levels[i].paintingTexture);
+                            if (!rs->GetTextureSize(m_levels[i].paintingTexture, pwi, phi)) { pwi = 96; phi = 96; }
+                        }
+                        float paintingTextureWidth = static_cast<float>(pwi);
+                        float paintingTextureHeight = static_cast<float>(phi);
+
+                        // SAME dynamic scaling calculation as UpdateLevelVisibility
+                        float maxWidth = m_screenWidth * 0.8f;  // 80% of screen width
+                        float maxHeight = m_screenHeight * 0.4f; // 40% of screen height
                         float scaleByWidth = maxWidth / paintingTextureWidth;
                         float scaleByHeight = maxHeight / paintingTextureHeight;
-                        float dynamicScale = std::min(scaleByWidth, scaleByHeight); // Use smaller scale to fit both dimensions
-                        
+                        float dynamicScale = std::min(scaleByWidth, scaleByHeight);
+
                         auto scaledDimensions = GetScaledDimensions(paintingTextureWidth, paintingTextureHeight, dynamicScale);
                         float paintingWidth = scaledDimensions.first;
                         float paintingHeight = scaledDimensions.second;
-                        
-                        // For the current level (i == m_currentLevelIndex), position at screen center
-                        // For other levels, they should be hidden anyway by UpdateLevelVisibility
+
+                        // Position current level at center; others are hidden by UpdateLevelVisibility
                         if (i == m_currentLevelIndex) {
-                            // Use SAME manual positioning logic as UpdateLevelVisibility to prevent decentering
                             float manualTopLeftX = centerX - (paintingWidth / 2.0f);
                             float manualTopLeftY = centerY - (paintingHeight / 2.0f);
-                            
+
                             transform->position.x = manualTopLeftX;
                             transform->position.y = manualTopLeftY;
                             transform->scale.x = dynamicScale;
                             transform->scale.y = dynamicScale;
-                            
-                            // Pruned per-painting animation log
                         }
                     }
                 }
-                
+
+                // Keep frame aligned with painting during animation
                 if (m_levelFrameEntities[i] != 0) {
                     Transform* frameTransform = m_ecsCoordinator->GetComponent<Transform>(m_levelFrameEntities[i]);
                     if (frameTransform && m_levelPaintingEntities[i] != 0) {
-                        // For perfect sync during animation, copy painting's position exactly
                         Transform* paintingTransform = m_ecsCoordinator->GetComponent<Transform>(m_levelPaintingEntities[i]);
                         if (paintingTransform) {
                             frameTransform->position.x = paintingTransform->position.x;
@@ -2699,13 +2785,13 @@ namespace GameCore {
                         }
                     }
                 }
-                
+
+                // Keep text positioned
                 if (m_levelTextEntities[i] != 0) {
-                    Transform* transform = m_ecsCoordinator->GetComponent<Transform>(m_levelTextEntities[i]);
-                    if (transform && i == m_currentLevelIndex) {
-                        // Text stays centered horizontally at screen center for current level
-                        transform->position.x = centerX;
-                        transform->position.y = m_screenHeight * 0.15f; // Keep at top 15% of screen
+                    Transform* textTransform = m_ecsCoordinator->GetComponent<Transform>(m_levelTextEntities[i]);
+                    if (textTransform && i == m_currentLevelIndex) {
+                        textTransform->position.x = centerX;
+                        textTransform->position.y = m_screenHeight * 0.15f; // top 15%
                     }
                 }
             }
@@ -2734,10 +2820,14 @@ namespace GameCore {
                     
                     // Position visible painting normally; for panning, non-visible items are placed via UpdateLevelPanPositions
                     if (shouldBeVisible && i < m_levels.size()) {
-                        // Get actual painting texture dimensions first
-                        auto paintingDimensions = m_spriteSystem->GetTextureDimensions(m_levels[i].paintingTexture);
-                        float paintingTextureWidth = paintingDimensions.first > 0 ? paintingDimensions.first : 96.0f;  // Correct base size
-                        float paintingTextureHeight = paintingDimensions.second > 0 ? paintingDimensions.second : 96.0f; // Correct base size
+                        // Get actual painting texture dimensions first via shared RenderSystem
+                        int pwi = 0, phi = 0;
+                        if (auto* rs = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+                            rs->PreloadTexture(m_levels[i].paintingTexture);
+                            if (!rs->GetTextureSize(m_levels[i].paintingTexture, pwi, phi)) { pwi = 96; phi = 96; }
+                        }
+                        float paintingTextureWidth = static_cast<float>(pwi);  // Correct base size
+                        float paintingTextureHeight = static_cast<float>(phi); // Correct base size
                         
                         // Pruned texture dimension spam
                         

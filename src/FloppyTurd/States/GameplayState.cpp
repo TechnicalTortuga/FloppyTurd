@@ -324,9 +324,6 @@ namespace GameCore {
         // Create sprite system
         m_spriteSystem = std::make_unique<SpriteSystem>(m_ecsSystem, *m_platformDelegates);
         
-        // Set texture base path for asset catalog
-        m_spriteSystem->SetTextureBasePath("turd/");
-        
         // Create player controller system
         m_playerControllerSystem = std::make_unique<PlayerControllerSystem>(m_ecsSystem, m_platformDelegates, m_spriteSystem.get());
         
@@ -335,6 +332,10 @@ namespace GameCore {
         
         // Create unified render system (replaces individual sprite rendering)
         m_renderSystem = std::make_unique<RenderSystem>(m_ecsSystem, *m_platformDelegates);
+        // Set texture base path for asset catalog via shared RenderSystem
+        if (m_renderSystem) {
+            m_renderSystem->SetTextureBasePath("turd/");
+        }
         
         // Create UI system for text and button rendering
         m_uiSystem = std::make_unique<UISystem>(m_ecsSystem, *m_platformDelegates);
@@ -970,22 +971,21 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
     }
 
     void GameplayState::UpdateSpawning(float deltaTime) {
-        // Use LevelManager object pooling system instead of spawning new obstacles
+        // Use new unified ObstacleSystem via LevelManager interface
         if (m_levelManager && m_cameraSystem) {
             // Get world scroll distance for wrapping calculations
             // Camera stays at (0,0), only world objects move, so use world scroll distance directly
             float worldScrollDistance = m_cameraSystem->GetWorldPosition();
             
-            // Update object pooling (wraps obstacles around screen)
-            m_levelManager->UpdateObstaclePooling(deltaTime, worldScrollDistance);
+            // Update obstacles using new ObstacleSystem (no redundant calls)
+            m_levelManager->UpdateObstacleSystem(deltaTime, worldScrollDistance);
             
-            // Pool-driven updates (no dynamic allocation during gameplay)
+            // Update other pooling systems (non-obstacle)
             m_levelManager->UpdateEnemyPooling(deltaTime, worldScrollDistance);
             if (m_enemySystem) {
                 m_enemySystem->Update(deltaTime);
             }
             m_levelManager->UpdateNPCPooling(deltaTime, worldScrollDistance);
-            // REMOVED: m_levelManager->UpdatePickupPooling - now handled by GameplayState
             
             // Pickup logic handled centrally in Update()
             
@@ -1221,7 +1221,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         float pCenterY = playerTransform->position.y + pHalfH + (playerHitbox->offsetY * playerTransform->scale.y);
         float pRadius  = playerHitbox->radius * ((playerTransform->scale.x + playerTransform->scale.y) * 0.5f);
         
-        // Check collision with all active obstacles (toilets)
+        // Check collision with all active obstacles (toilets) via ObstacleSystem
         const auto& activeObstacles = m_levelManager->GetActiveObstacles();
         for (Gnosis::Entity obstacleEntity : activeObstacles) {
             Transform* obstacleTransform = m_ecsSystem->GetComponent<Transform>(obstacleEntity);

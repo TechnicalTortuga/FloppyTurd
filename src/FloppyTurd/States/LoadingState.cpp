@@ -4,15 +4,324 @@
 #include "../../Engine/AssetPaths.h"
 #include "../Components/GameComponents.h"
 #include "../Game/FloppyTurdGame.h"
+#include "../Systems/RenderSystem.h"
 #include <iostream>
 #include <cmath>
+#include <vector>
+#include <string>
 
 namespace GameCore {
 
     // Static constants
-    const float LoadingState::LOADING_DURATION = 3.0f;  // 3 seconds
+    const float LoadingState::MIN_LOADING_DURATION = 1.5f;  // Minimum time to show loading screen (1.5 seconds)
+    const float LoadingState::MAX_LOADING_DURATION = 10.0f; // Maximum time before forcing transition (10 seconds)
     const float LoadingState::ROTATION_SPEED = 360.0f;  // degrees per second
     const float LoadingState::ORBIT_RADIUS = 50.0f;     // pixels from center
+    
+    // List of all game assets to preload
+    namespace {
+        // (Removed unused intermediate asset category vectors)
+
+        // Fonts are loaded separately, no need to check data files
+        
+        // Combine all textures into one vector for loading (names + extensions only)
+        const std::vector<std::string> GAME_TEXTURES = {
+            "a.png",
+            "achievementicon.png",
+            "achievementiconunlocked.png",
+            "ballcap.png",
+            "ballcapbigturdjump.png",
+            "ballcapbigturdshoot.png",
+            "ballcapturdletjump.png",
+            "ballcapturdletshoot.png",
+            "Beret.png",
+            "berethatbigturdjump.png",
+            "berethatbigturdshoot.png",
+            "berethatturdletjump.png",
+            "berethatturdletshoot.png",
+            "BigTurdHurt.png",
+            "BigTurdIdle.png",
+            "BigTurdJump.png",
+            "BigTurdShoot.png",
+            "BirdHurt.png",
+            "BirdIdle.png",
+            "blast_big.png",
+            "blast_small.png",
+            "BlueCoin.png",
+            "BossBarFrame.png",
+            "BossBarHealth.png",
+            "BossBarHurt.png",
+            "BossFloor.png",
+            "BossWalls.png",
+            "BottomPipeWide.png",
+            "BottomPipeWideBlue.png",
+            "BottomToilet.png",
+            "BottomToiletGold-export.png",
+            "BottomToiletGold.png",
+            "BottomToiletSnow.png",
+            "BrickWall.png",
+            "CabinPainting.gif",
+            "CabinPainting.png",
+            "Cacti.png",
+            "CactiA.png",
+            "CactiB.png",
+            "CactiBush.png",
+            "CactiC.png",
+            "CactiD.png",
+            "CactiE.png",
+            "CastleLevelPainting.png",
+            "CoinBag.png",
+            "cowboyhat.png",
+            "cowboyhatbigturd.png",
+            "cowboyhatbigturdjump.png",
+            "cowboyhatbigturdshoot.png",
+            "cowboyhatteenage.png",
+            "cowboyhatteenageshoot.png",
+            "cowboyhatturdlet.png",
+            "cowboyhatturdletjump.png",
+            "cowboyhatturdletshoot.png",
+            "crown.png",
+            "crownhatbigturdjump.png",
+            "crownhatbigturdshoot.png",
+            "crownhatturdletjump.png",
+            "crownhatturdletshoot.png",
+            "DownArrow.png",
+            "EmptyPainting.png",
+            "F.png",
+            "Floppy Poop Large.png",
+            "Floppy Poop Mid.png",
+            "Floppy Poop.png",
+            "FloppyButtonBlue.png",
+            "FloppyButtonBlueHover.png",
+            "FloppyLogo.png",
+            "FloppyTurdCreditsBackground.png",
+            "FloppyTurdMorte.png",
+            "flowerhat.png",
+            "flowerhatbigturdjump.png",
+            "flowerhatbigturdshoot.png",
+            "flowerhatturdletjump.png",
+            "flowerhatturdletshoot.png",
+            "GameOverBackground.png",
+            "GameOverScore.png",
+            "GoldCoin.png",
+            "HatFrame.png",
+            "HatFrameDenied.png",
+            "HatFrameHover.png",
+            "HatFrameLocked.png",
+            "HatFrameSelected.png",
+            "Janitor.png",
+            "JanitorSurprise.png",
+            "JanitorSweep.png",
+            "LeftArrow.png",
+            "LeftArrowHover.png",
+            "Level1BackLayerBackground.png",
+            "Level1Clouds.png",
+            "Level1FrontLayerBackground.png",
+            "Level1MidLayerBackground.png",
+            "Level3BackLayerBackground.png",
+            "Level3FrontLayerBackground.png",
+            "Level3MidLayerBackground.png",
+            "LockedPainting.png",
+            "MainMenu.png",
+            "MainMenuMobile.png",
+            "minusbutton.png",
+            "minusbuttonclicked.png",
+            "minusbuttonhover.png",
+            "mutebutton.png",
+            "mutebuttonclicked.png",
+            "mutebuttonhover.png",
+            "mutebuttonlocked.png",
+            "mutebuttonlockedclicked.png",
+            "mutebuttonlockedhover.png",
+            "Outhouse.png",
+            "OuthouseToilet.png",
+            "PauseMenuBackground.png",
+            "pinwheelbigturdjump.png",
+            "pinwheelbigturdshoot.png",
+            "PinwheelHat.png",
+            "pinwheelturdletjump.png",
+            "pinwheelturdletshoot.png",
+            "plusbutton.png",
+            "plusbuttonclicked.png",
+            "plusbuttonhover.png",
+            "PooHeart.png",
+            "PooHeartBig.png",
+            "PooHeartRainbow.png",
+            "PooHeartRainbowBeam.png",
+            "poophat.ico",
+            "poophat.png",
+            "poophatbigturdjump.png",
+            "poophatbigturdshoot.png",
+            "poophatturdletjump.png",
+            "poophatturdletshoot.png",
+            "RabbitKnightPainting.png",
+            "ramsesbigturdjump.png",
+            "ramsesbigturdshoot.png",
+            "RamsesHat.png",
+            "ramsesturdletjump.png",
+            "ramsesturdletshoot.png",
+            "RatBeachPainting.png",
+            "RatCopterHurt.png",
+            "RatCopterIdle.png",
+            "Ratking.png",
+            "RatkingAimBackArmOnly.png",
+            "RatkingAimTorsoOnly.png",
+            "RatkingAimTossArmOnly.png",
+            "RatkingDeath.png",
+            "RatkingHurt.png",
+            "RatKingPainting.png",
+            "RatkingStatic.png",
+            "RatkingWalk.png",
+            "RedCoin.png",
+            "RightArrow.png",
+            "RightArrowHover.png",
+            "RiverWalkPainting.png",
+            "samuraibigturdjump.png",
+            "samuraibigturdshoot.png",
+            "SamuraiHelmet.png",
+            "samuraiturdletjump.png",
+            "samuraiturdletshoot.png",
+            "Score.png",
+            "ScoreSmall.png",
+            "sdf_atlas.png",
+            "SewerLargeA.png",
+            "SewerLargeB.png",
+            "SewerLargeC.png",
+            "SewerLargeD.png",
+            "SewerLevelPainting.png",
+            "shellhat.png",
+            "shellhatbigturdjump.png",
+            "shellhatbigturdshoot.png",
+            "shellhatturdletjump.png",
+            "shellhatturdletshoot.png",
+            "SkillMenuBorder.png",
+            "SkillPointInfoBackground.png",
+            "Snowball.png",
+            "Snowfall.png",
+            "SnowLevelBackground.png",
+            "SnowLevelBackTrees.png",
+            "SnowLevelFrontTrees.png",
+            "SnowLevelMountains.png",
+            "SnowLevelPainting.png",
+            "SnowLevelTundra.png",
+            "SnowManChad.png",
+            "SnowManChill.png",
+            "SnowManGreen.png",
+            "SnowmanIdle.gif",
+            "SnowManIdle.png",
+            "SnowManThrow.png",
+            "SpartanHelmet.png",
+            "SpikeBall.png",
+            "SpikeBallBase.png",
+            "strawhat.png",
+            "strawhatbigturdjump.png",
+            "strawhatbigturdshoot.png",
+            "strawhatturdletjump.png",
+            "strawhatturdletshoot.png",
+            "TeenageTurdHurt.png",
+            "TeenageTurdIdle.png",
+            "TeenageTurdJump.png",
+            "TeenageTurdShoot.png",
+            "ToiletPaperFlap.png",
+            "ToiletPaperHit.png",
+            "toiletpaperprojectile.png",
+            "tophat.png",
+            "tophatbigturdjump.png",
+            "tophatbigturdshoot.png",
+            "tophatturdletjump.png",
+            "tophatturdletshoot.png",
+            "TopPipeWide.png",
+            "TopPipeWideBlue.png",
+            "TopToilet.png",
+            "TopToiletGold.png",
+            "TopToiletSnow.png",
+            "TryAgainBackground.png",
+            "TurdHeart.png",
+            "TurdHeart0HalfHollow.png",
+            "TurdHeart0HalfHollow1Half.png",
+            "TurdHeart0ThirdHollow.png",
+            "TurdHeart0ThirdHollow1Third.png",
+            "TurdHeart1Half.png",
+            "TurdHeart1HalfHollow.png",
+            "TurdHeart1Third.png",
+            "TurdHeart1ThirdHollow.png",
+            "TurdHeart1ThirdsHollow1Thirds.png",
+            "TurdHeart2Thirds.png",
+            "TurdHeart2ThirdsHollow.png",
+            "TurdHeart2ThirdsHollow2Thirds.png",
+            "TurdHeartHollow.png",
+            "TurdHeartSmall.png",
+            "TurdletHurt.png",
+            "TurdletIdle.png",
+            "TurdletJump.png",
+            "TurdletShoot.png",
+            "TurdPointButton.png",
+            "TurdPointButtonAvailable.png",
+            "TurdPointButtonClaimed.png",
+            "TurdPointButtonFocused.png",
+            "TurdPointMenu.png",
+            "UpArrow.png",
+            "ushanka.png",
+            "ushankabigturdjump.png",
+            "ushankabigturdshoot.png",
+            "ushankaturdletjump.png",
+            "ushankaturdletshoot.png",
+            "volumemeterempty.png",
+            "volumemeterfull.png",
+            "Whacky_Joe_msdf.png",
+            "WhackyJoe_32.png"
+        };
+        
+        // Combine all audio into one vector for loading (names + extensions only)
+        const std::vector<std::string> GAME_SOUNDS = {
+            "BeachLevel.mp3",
+            "BossKill.mp3",
+            "BossLevel.mp3",
+            "BossThemeFast.mp3",
+            "BossThemeLowHealth.mp3",
+            "BossThemeSlow.mp3",
+            "CastleFast.mp3",
+            "CastleLevel.mp3",
+            "CastleSlow.mp3",
+            "DesertFast.mp3",
+            "DesertLevel.mp3",
+            "DesertSlow.mp3",
+            "EndTheme.mp3",
+            "FloppyTurdMenu.mp3",
+            "FloppyTurdMenuAlt.mp3",
+            "MenuFast.mp3",
+            "ParkFast.mp3",
+            "ParkLevel.mp3",
+            "ParkSlow.mp3",
+            "SewerFast.mp3",
+            "SewerLevel.mp3",
+            "SewerSlow.mp3",
+            "SnowFast.mp3",
+            "SnowLevel.mp3",
+            "SnowSlow.mp3",
+            "bubble.mp3",
+            "confirm.mp3",
+            "fart1.mp3",
+            "fart10.mp3",
+            "fart11.mp3",
+            "fart2.mp3",
+            "fart3.mp3",
+            "fart4.mp3",
+            "fart5.mp3",
+            "fart6.mp3",
+            "fart7.mp3",
+            "fart8.mp3",
+            "fart9.mp3",
+            "gameover.mp3",
+            "hurt.mp3",
+            "pickup.mp3",
+            "ratkill.mp3",
+            "RatKingScreech.mp3",
+            "tpkill.mp3",
+            "BigHealthPickup.wav",
+            "SmallHealthPickup.wav"
+        };
+    }
 
     LoadingState::LoadingState(Gnosis::ECS* ecsCoordinator)
         : m_ecsCoordinator(ecsCoordinator)
@@ -22,21 +331,15 @@ namespace GameCore {
     void LoadingState::Enter() {
         GN_LOG_INFO("Entering Loading State");
         m_finished = false;
+        m_assetsLoaded = false;
         m_loadingTimer = 0.0f;
         m_rotationAngle = 0.0f;
         
         // Create the rotating poop hat loading icon
         CreateLoadingEntities();
-
-        // Preload essential assets during loading screen
-        extern GameCore::FloppyTurdGame* g_Game;
-        if (g_Game) {
-            const PlatformDelegates& delegates = g_Game->GetPlatformDelegates();
-            if (delegates.asset.preloadEssentialAssets) {
-                delegates.asset.preloadEssentialAssets();
-                GN_LOG_INFO("Initiated asset preloading during loading screen");
-            }
-        }
+        
+        // Start preloading all assets
+        PreloadAssets();
     }
 
     void LoadingState::Exit() {
@@ -68,8 +371,84 @@ namespace GameCore {
         UpdatePoopHatPosition();
         
         // Check if loading is complete
-        if (m_loadingTimer >= LOADING_DURATION) {
-            m_finished = true;
+        // We need both the minimum loading time to have passed AND all assets to be loaded
+        bool minLoadingTimeElapsed = (m_loadingTimer >= MIN_LOADING_DURATION);
+        
+        // After minimum loading time, check if all assets are loaded
+        if (minLoadingTimeElapsed && !m_assetsLoaded) {
+            m_assetsLoaded = true; // Assume true, will be set to false if any asset is missing
+            
+            extern GameCore::FloppyTurdGame* g_Game;
+            if (g_Game) {
+                const auto& delegates = g_Game->GetPlatformDelegates();
+                // Access RenderSystem via ECS -> SystemManager
+                GameCore::RenderSystem* renderSystem = nullptr;
+                if (m_ecsCoordinator && m_ecsCoordinator->GetSystemManager()) {
+                    renderSystem = m_ecsCoordinator->GetSystemManager()->GetRenderSystem();
+                }
+
+                // Check textures via RenderSystem
+                if (renderSystem) {
+                    for (const auto& texture : GAME_TEXTURES) {
+                        if (!renderSystem->IsTextureLoaded(texture)) {
+                            m_assetsLoaded = false;
+                            GN_LOG_DEBUG("Waiting for texture to load: " + texture);
+                            break;
+                        }
+                    }
+                } else if (delegates.asset.isAssetLoaded) {
+                    // Fallback: platform check (should not be used in normal flow)
+                    for (const auto& texture : GAME_TEXTURES) {
+                        if (!delegates.asset.isAssetLoaded(texture.c_str())) {
+                            m_assetsLoaded = false;
+                            GN_LOG_DEBUG("Waiting for texture to load (fallback): " + texture);
+                            break;
+                        }
+                    }
+                }
+
+                // Check sounds if textures are loaded
+                if (m_assetsLoaded && delegates.asset.isAssetLoaded) {
+                    for (const auto& sound : GAME_SOUNDS) {
+                        if (!delegates.asset.isAssetLoaded(sound.c_str())) {
+                            m_assetsLoaded = false;
+                            GN_LOG_DEBUG("Waiting for sound to load: " + sound);
+                            break;
+                        }
+                    }
+                }
+
+                // Fonts and data files are loaded separately, no need to check them here
+            }
+        }
+        
+        // Finish when minimum time elapsed AND assets loaded, OR when maximum time reached
+        bool maxLoadingTimeElapsed = (m_loadingTimer >= MAX_LOADING_DURATION);
+        if (maxLoadingTimeElapsed && !m_assetsLoaded) {
+            GN_LOG_WARN("Maximum loading time reached, forcing transition despite asset loading failures");
+        }
+        
+        bool wasFinished = m_finished;
+        m_finished = (minLoadingTimeElapsed && m_assetsLoaded) || maxLoadingTimeElapsed;
+        
+        // Log detailed loading state for debugging
+        GN_LOG_DEBUG("[LoadingState] Loading progress: timer=" + std::to_string(m_loadingTimer) + 
+                    ", minElapsed=" + std::to_string(minLoadingTimeElapsed) + 
+                    ", maxElapsed=" + std::to_string(maxLoadingTimeElapsed) + 
+                    ", assetsLoaded=" + std::to_string(m_assetsLoaded) + 
+                    ", finished=" + std::to_string(m_finished));
+                    
+        // Log when state changes from not finished to finished
+        if (!wasFinished && m_finished) {
+            GN_LOG_INFO("[LoadingState] State marked as FINISHED - ready for transition");
+        }
+        
+        // When m_finished is true, the GameStateManager will detect this via IsFinished()
+        // and call HandleStateTransition() which will create and push the MainMenuState
+        
+        // Log loading progress
+        if (m_finished) {
+            GN_LOG_INFO("Loading complete in " + std::to_string(m_loadingTimer) + " seconds");
         }
         
         // Update ECS systems
@@ -79,28 +458,13 @@ namespace GameCore {
     }
 
     void LoadingState::Render() {
-        // Draw debug rectangle at poophat's position and size
+        // No debug rendering - we want a clean loading screen
         if (m_poopHatEntity && m_ecsCoordinator) {
             Gnosis::Entity poopHatEntityId = static_cast<Gnosis::Entity>(reinterpret_cast<uintptr_t>(m_poopHatEntity));
             Transform* transform = m_ecsCoordinator->GetComponent<Transform>(poopHatEntityId);
             Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(poopHatEntityId);
             if (transform && sprite) {
-                float x = transform->position.x - (sprite->width * transform->scale.x) / 2.0f;
-                float y = transform->position.y - (sprite->height * transform->scale.y) / 2.0f;
-                float width = sprite->width * transform->scale.x;
-                float height = sprite->height * transform->scale.y;
-                
-                GN_LOG_DEBUG("[LoadingState] Drawing debug rectangle at (" + std::to_string(x) + ", " + std::to_string(y) + 
-                           ") size (" + std::to_string(width) + "x" + std::to_string(height) + 
-                           ") for sprite '" + sprite->textureId + "'");
-                
-                // REMOVED: Debug rectangle - coordinates are confirmed working
-                // extern GameCore::FloppyTurdGame* g_Game;
-                // if (g_Game && g_Game->GetPlatformDelegates().renderer.drawRectangle) {
-                //     g_Game->GetPlatformDelegates().renderer.drawRectangle(x, y, width, height, 1.0f, 0.0f, 1.0f, 0.5f);
-                // }
-                GN_LOG_DEBUG("[LoadingState] Drawing debug rectangle at (" + std::to_string(x) + ", " + std::to_string(y) + 
-                           ") size (" + std::to_string(width) + "x" + std::to_string(height) + ")");
+                // Rotation is updated in UpdatePoopHatPosition(); no changes here
             } else {
                 GN_LOG_WARN("[LoadingState] Transform or Sprite component missing for poophat entity");
             }
@@ -115,6 +479,67 @@ namespace GameCore {
         } else {
             GN_LOG_WARN("[LoadingState] ECS coordinator is null during render");
         }
+    }
+
+    void LoadingState::PreloadAssets() {
+        extern GameCore::FloppyTurdGame* g_Game;
+        if (!g_Game) {
+            GN_LOG_ERROR("Cannot preload assets: Game instance is null");
+            return;
+        }
+        
+        const auto& delegates = g_Game->GetPlatformDelegates();
+        if (!delegates.asset.loadTexture || !delegates.asset.loadAudio) {
+            GN_LOG_ERROR("Cannot preload assets: Missing required asset loading delegates");
+            return;
+        }
+        
+        GN_LOG_INFO(
+            "Starting preloading of all game assets (" +
+            std::to_string(GAME_TEXTURES.size()) + " textures, " +
+            std::to_string(GAME_SOUNDS.size()) + " sounds)"
+        );
+        
+        // Preload all textures via RenderSystem
+        GameCore::RenderSystem* renderSystem = nullptr;
+        if (m_ecsCoordinator && m_ecsCoordinator->GetSystemManager()) {
+            renderSystem = m_ecsCoordinator->GetSystemManager()->GetRenderSystem();
+        }
+        if (renderSystem) {
+            GN_LOG_INFO("[LoadingState] Delegating texture preload to RenderSystem");
+            renderSystem->PreloadTextures(GAME_TEXTURES);
+        } else {
+            // Fallback to delegates (should not happen in unified architecture)
+            for (const auto& texture : GAME_TEXTURES) {
+                GN_LOG_DEBUG("Preloading texture (fallback): " + texture);
+                delegates.asset.loadTexture(texture.c_str(),
+                    [](GameCore::TextureData* tex, const char* error, void* /*userData*/) {
+                        if (!tex) {
+                            GN_LOG_ERROR("Failed to preload texture: " + std::string(error ? error : "Unknown error"));
+                        }
+                    },
+                    nullptr
+                );
+            }
+        }
+        
+        // Preload all audio
+        for (const auto& sound : GAME_SOUNDS) {
+            GN_LOG_DEBUG("Preloading audio: " + sound);
+            delegates.asset.loadAudio(sound.c_str(),
+                [](void* data, size_t /*size*/, const char* error, void* /*userData*/) {
+                    if (!data) {
+                        GN_LOG_ERROR("Failed to preload audio: " + std::string(error ? error : "Unknown error"));
+                    }
+                },
+                nullptr
+            );
+        }
+
+        // Fonts and data files are loaded separately by the system
+        // No need to preload them here
+        
+        GN_LOG_INFO("Initiated preloading of all game assets");
     }
 
     void LoadingState::HandleInput() {
@@ -139,8 +564,17 @@ namespace GameCore {
         GN_LOG_INFO("[LoadingState] IsEntityValid(" + std::to_string(poopHatEntityId) + "): " + (m_ecsCoordinator && m_ecsCoordinator->IsEntityValid(poopHatEntityId) ? "true" : "false"));
         // Add Transform component (position will be updated in UpdatePoopHatPosition)
         GN_LOG_INFO("[LoadingState] About to add Transform component to entity " + std::to_string(poopHatEntityId));
+        // Initialize position at actual screen center (pixel coordinates)
+        float initCenterX = 1179.0f * 0.5f;
+        float initCenterY = 2556.0f * 0.5f;
+        if (m_ecsCoordinator && m_ecsCoordinator->GetSystemManager() && m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+            auto* rs = m_ecsCoordinator->GetSystemManager()->GetRenderSystem();
+            ScreenInfo si = rs->GetScreenInfo();
+            initCenterX = static_cast<float>(si.pixelWidth) * 0.5f;
+            initCenterY = static_cast<float>(si.pixelHeight) * 0.5f;
+        }
         Transform transform;
-        transform.position = Gnosis::GNVector2(1179.0f / 2.0f, 2556.0f / 2.0f); // Screen center
+        transform.position = Gnosis::GNVector2(initCenterX, initCenterY);
         transform.scale = Gnosis::GNVector2(1.0f, 1.0f);
         m_ecsCoordinator->AddComponent<Transform>(poopHatEntityId, transform);
         GN_LOG_INFO("[LoadingState] Added Transform component to entity " + std::to_string(poopHatEntityId));
@@ -196,40 +630,55 @@ namespace GameCore {
             return;
         }
         
-        // TEMPORARILY DISABLED: Calculate orbital position
-        // float radians = m_rotationAngle * (3.14159f / 180.0f);
+        // Keep rotation angle in degrees for Metal renderer (it converts to radians internally)
+        float rotationDegrees = m_rotationAngle;
         
-        // Get actual screen center coordinates from viewport
-        float centerX = 1179.0f / 2.0f; // Viewport width / 2
-        float centerY = 2556.0f / 2.0f; // Viewport height / 2
+        // Get actual screen center coordinates from RenderSystem ScreenInfo (pixels)
+        float centerX = 400.0f; // Default fallback
+        float centerY = 300.0f; // Default fallback
+        if (m_ecsCoordinator && m_ecsCoordinator->GetSystemManager() && m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+            auto* renderSystem = m_ecsCoordinator->GetSystemManager()->GetRenderSystem();
+            ScreenInfo screenInfo = renderSystem->GetScreenInfo();
+            centerX = static_cast<float>(screenInfo.pixelWidth) * 0.5f;
+            centerY = static_cast<float>(screenInfo.pixelHeight) * 0.5f;
+        }
         
-        // TEMPORARILY CENTERED: Calculate new position
-        // float poopHatX = centerX + cos(radians) * ORBIT_RADIUS;
-        // float poopHatY = centerY + sin(radians) * ORBIT_RADIUS;
-        float poopHatX = centerX;
-        float poopHatY = centerY;
-        
-        // Update the entity's Transform component
+        // Update the entity's Transform component with correct center position and rotation
         Gnosis::Entity poopHatEntityId = static_cast<Gnosis::Entity>(reinterpret_cast<uintptr_t>(m_poopHatEntity));
         
         if (m_ecsCoordinator->IsEntityValid(poopHatEntityId)) {
             Transform* transform = m_ecsCoordinator->GetComponent<Transform>(poopHatEntityId);
             if (transform) {
-                transform->position.x = poopHatX;
-                transform->position.y = poopHatY;
-                transform->rotation = m_rotationAngle; // Apply rotation
+                // Update both position (to correct center) and rotation each frame
+                transform->position.x = centerX;
+                transform->position.y = centerY;
+                transform->rotation = rotationDegrees; // Spin the sprite on its own axis (Metal renderer expects degrees)
             }
         }
         
-        // Log position for debugging (remove in final version)
+        // Log rotation for debugging (remove in final version)
         if (static_cast<int>(m_rotationAngle) % 90 == 0) {
-            GN_LOG_DEBUG("Poop hat position: (" + std::to_string(poopHatX) + ", " + std::to_string(poopHatY) + 
-                        ") at angle " + std::to_string(m_rotationAngle) + "°");
+            GN_LOG_DEBUG("Poop hat spinning at center: (" + std::to_string(centerX) + ", " + std::to_string(centerY) + 
+                        ") rotation angle " + std::to_string(m_rotationAngle) + "°");
         }
     }
 
     float LoadingState::GetLoadingProgress() const {
-        return std::min(m_loadingTimer / LOADING_DURATION, 1.0f);
+        // Progress is either time-based or asset-loading based, whichever is slower
+        float timeProgress = std::min(m_loadingTimer / MIN_LOADING_DURATION, 1.0f);
+        
+        // If we're still in the minimum loading time, just return time-based progress
+        if (m_loadingTimer < MIN_LOADING_DURATION) {
+            return timeProgress * 0.9f; // Cap at 90% until minimum time elapses
+        }
+        
+        // After minimum time, check asset loading progress
+        if (m_assetsLoaded) {
+            return 1.0f; // Fully loaded
+        }
+        
+        // If still loading assets, stay at 90-99%
+        return 0.9f + (timeProgress * 0.1f);
     }
 
 } // namespace GameCore

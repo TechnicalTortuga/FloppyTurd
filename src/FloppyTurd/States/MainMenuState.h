@@ -4,8 +4,6 @@
 #include "GameState.h"
 #include "../../Engine/Platform/PlatformDelegates.h"
 #include "../Components/GameComponents.h"
-#include "../Systems/SpriteSystem.h"
-#include "../Systems/RenderSystem.h"
 #include "../Game/FloppyTurdGame.h"
 #include <memory>
 
@@ -68,8 +66,6 @@ namespace GameCore {
 
         Gnosis::ECS* m_ecsCoordinator;  // Reference to shared ECS coordinator
         GameCore::PlatformDelegates* m_platformDelegates;  // For system creation
-        std::unique_ptr<SpriteSystem> m_spriteSystem;  // For texture dimension queries (rendering disabled)
-        std::unique_ptr<RenderSystem> m_renderSystem;  // For screen info access
         // Cache game instance to avoid repeated extern lookups
         FloppyTurdGame* m_game = nullptr;
         bool m_finished;

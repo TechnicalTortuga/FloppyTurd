@@ -672,7 +672,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameOuthouseToilet</string>
 			<key>relativePath</key>
-			<string>./graphics/environment/structures/buildings/OuthouseToilet.imageset</string>
+			<string>./graphics/environment/structures/toilets/OuthouseToilet.imageset</string>
 			<key>swiftSymbol</key>
 			<string>outhouseToilet</string>
 		</dict>
@@ -960,16 +960,6 @@
 			<key>catalogPath</key>
 			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
-			<string>ACImageNameSewerBackgroundRunningWater</string>
-			<key>relativePath</key>
-			<string>./graphics/environment/backgrounds/sewer/SewerBackgroundRunningWater.imageset</string>
-			<key>swiftSymbol</key>
-			<string>sewerBackgroundRunningWater</string>
-		</dict>
-		<dict>
-			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
-			<key>objcSymbol</key>
 			<string>ACImageNameSewerLargeA</string>
 			<key>relativePath</key>
 			<string>./graphics/environment/backgrounds/sewer/SewerLargeA.imageset</string>
@@ -1040,6 +1030,16 @@
 			<key>catalogPath</key>
 			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
+			<string>ACImageNameSnowLevelBackLayerBackground</string>
+			<key>relativePath</key>
+			<string>./graphics/environment/backgrounds/snow_level/SnowLevelBackLayerBackground.imageset</string>
+			<key>swiftSymbol</key>
+			<string>snowLevelBackLayerBackground</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
+			<key>objcSymbol</key>
 			<string>ACImageNameSnowLevelBackTrees</string>
 			<key>relativePath</key>
 			<string>./graphics/environment/backgrounds/snow_level/SnowLevelBackTrees.imageset</string>
@@ -1065,6 +1065,16 @@
 			<string>./graphics/environment/backgrounds/snow_level/SnowLevelFrontTrees.imageset</string>
 			<key>swiftSymbol</key>
 			<string>snowLevelFrontTrees</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
+			<key>objcSymbol</key>
+			<string>ACImageNameSnowLevelMidLayerBackground</string>
+			<key>relativePath</key>
+			<string>./graphics/environment/backgrounds/snow_level/SnowLevelMidLayerBackground.imageset</string>
+			<key>swiftSymbol</key>
+			<string>snowLevelMidLayerBackground</string>
 		</dict>
 		<dict>
 			<key>catalogPath</key>

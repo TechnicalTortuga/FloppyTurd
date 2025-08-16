@@ -238,7 +238,7 @@ public class MetalRenderer {
         pipelineDescriptor.vertexFunction = vertexFunction
         pipelineDescriptor.fragmentFunction = fragmentFunction
         pipelineDescriptor.vertexDescriptor = vertexDescriptor
-        pipelineDescriptor.colorAttachments[0].pixelFormat = .bgra8Unorm
+        pipelineDescriptor.colorAttachments[0].pixelFormat = .bgra8Unorm_srgb
         
         // Enable blending for transparency support
         pipelineDescriptor.colorAttachments[0].isBlendingEnabled = true
@@ -272,7 +272,7 @@ public class MetalRenderer {
         texturedPipelineDescriptor.vertexFunction = vertexFunction
         texturedPipelineDescriptor.fragmentFunction = texturedFragmentFunction
         texturedPipelineDescriptor.vertexDescriptor = vertexDescriptor
-        texturedPipelineDescriptor.colorAttachments[0].pixelFormat = .bgra8Unorm_srgb  // Match the texture format
+        texturedPipelineDescriptor.colorAttachments[0].pixelFormat = .bgra8Unorm_srgb  // Match MTKView pixel format
         
         // Enable blending for textured rendering (required for sprites with transparency)
         texturedPipelineDescriptor.colorAttachments[0].isBlendingEnabled = true
@@ -369,7 +369,7 @@ public class MetalRenderer {
     public func setMetalView(_ view: MTKView) {
         metalView = view
         view.device = device
-        view.colorPixelFormat = .bgra8Unorm  // Use non-sRGB to avoid double conversion
+        view.colorPixelFormat = .bgra8Unorm_srgb  // Use sRGB and match pipeline formats
         view.clearColor = MTLClearColor(red: 0.0, green: 0.0, blue: 1.0, alpha: 1.0)  // Blue background for debugging
         view.framebufferOnly = false
         view.enableSetNeedsDisplay = false
@@ -411,6 +411,15 @@ public class MetalRenderer {
     public func beginFrame() {
         guard let commandQueue = commandQueue else { return }
         
+        // Guard against cases where the view is not ready to be drawn to. This can happen
+        // during app startup, backgrounding, or other view lifecycle events.
+        guard let _ = metalView?.currentDrawable, let _ = metalView?.currentRenderPassDescriptor else {
+            // Don't create a command buffer if we can't render. The system will
+            // simply skip this frame.
+            log("Metal view is not ready for drawing. Skipping frame.", level: .warning)
+            return
+        }
+
         currentCommandBuffer = commandQueue.makeCommandBuffer()
         currentCommandBuffer?.label = "FloppyTurd Frame Commands"
         
@@ -1038,8 +1047,8 @@ public class MetalRenderer {
         }
         
         // Create a command buffer to copy texture to buffer
-        guard let commandBuffer = commandQueue?.makeCommandBuffer(),
-              let blitEncoder = commandBuffer.makeBlitCommandEncoder() else {
+        guard let blitCommandBuffer = commandQueue?.makeCommandBuffer(),
+              let blitEncoder = blitCommandBuffer.makeBlitCommandEncoder() else {
             log("DEBUG: Failed to create command buffer for texture data dump", level: .error)
             return
         }
@@ -1047,8 +1056,8 @@ public class MetalRenderer {
         blitEncoder.copy(from: texture, sourceSlice: 0, sourceLevel: 0, sourceOrigin: MTLOrigin(x: 0, y: 0, z: 0), sourceSize: MTLSize(width: texture.width, height: texture.height, depth: 1), to: buffer, destinationOffset: 0, destinationBytesPerRow: bytesPerRow, destinationBytesPerImage: bufferSize, options: [])
         blitEncoder.endEncoding()
         
-        commandBuffer.commit()
-        commandBuffer.waitUntilCompleted()
+        blitCommandBuffer.commit()
+        blitCommandBuffer.waitUntilCompleted()
         
         // Read the pixel data
         let pixelData = buffer.contents().bindMemory(to: UInt8.self, capacity: bufferSize)

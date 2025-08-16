@@ -60,6 +60,10 @@ namespace GameCore {
         config.enableEnemies = true;
         config.enableNPCs = false;
         config.enablePickups = true;
+        // Desert: GoldCoin (80%) and PooHeart (20%) - slightly more hearts for harder level
+        config.pickupRatios.clear();
+        config.pickupRatios.emplace_back("GoldCoin", 0.80f);
+        config.pickupRatios.emplace_back("PooHeart", 0.20f);
         AddDesertLevelLayers(config);
         AddDesertObstacles(config);
         AddDesertEnemies(config);
@@ -149,10 +153,12 @@ namespace GameCore {
     }
 
     void LevelConfigFactory::AddParkLevelLayers(LevelConfig& config) {
-        // Background layers from back to front based on new 1024x480 design
+        // Background layers from back to front using new 1024x512 assets
         // Each layer has different scroll speeds for parallax effect
         
-        float backgroundScale = 2.66f;  // Separate scale for 1024x480 backgrounds
+        // Match sewer level behavior: 512px tall textures scaled to fill ~2556px iPhone height (~5x)
+        // Our park textures are 1024x512; horizontally repeat, vertically scale ~5x via transform
+        float backgroundScale = 5.0f;  // Approximately 2556/512
         
         // Back layer - slowest moving (furthest back)
         config.backgroundLayers.emplace_back("Level1BackLayerBackground", 50.0f, 0.1f, 0);
@@ -189,22 +195,22 @@ namespace GameCore {
     }
 
     void LevelConfigFactory::AddDesertLevelLayers(LevelConfig& config) {
-        // Desert level layers - hot, sandy environment
-        float backgroundScale = 2.66f;  // Separate scale for 1024x480 backgrounds
-        
-        config.backgroundLayers.emplace_back("DesertLevelSky", 40.0f, 0.1f, 0);
+        // Level 3 (Desert) background layers using actual asset IDs (1024x512)
+        // Match sewer behavior: scale vertically to ~5x to fill iPhone height, tile horizontally
+        float backgroundScale = 5.0f;  // Approximately 2556/512
+
+        // Back layer - slowest
+        config.backgroundLayers.emplace_back("Level3BackLayerBackground", 50.0f, 0.1f, 0);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
         config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
-        
-        config.backgroundLayers.emplace_back("DesertLevelMountains", 60.0f, 0.2f, 1);
+
+        // Mid layer - medium speed
+        config.backgroundLayers.emplace_back("Level3MidLayerBackground", 90.0f, 0.3f, 1);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
         config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
-        
-        config.backgroundLayers.emplace_back("DesertLevelDunes", 90.0f, 0.3f, 2);
-        config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
-        
-        config.backgroundLayers.emplace_back("DesertLevelCacti", 120.0f, 0.4f, 3);
+
+        // Front layer - fastest (still behind gameplay sprites)
+        config.backgroundLayers.emplace_back("Level3FrontLayerBackground", 130.0f, 0.4f, 2);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
         config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
     }
@@ -285,21 +291,24 @@ namespace GameCore {
 
     void LevelConfigFactory::AddDesertObstacles(LevelConfig& config) {
         // Level 3: Desert level with outhouses and ground hazards
-        // Outhouse is a single bottom obstacle (not a pair) - player flies over it
-        // Uses OuthouseToilet.png which is the toilet part underneath the Outhouse structure
-        config.obstacles.emplace_back("OuthouseToilet", "", 
-                                     90.0f, 160.0f, 0.0f, 2.5f, config.worldSpeed, 
+        // Using actual texture dimensions: Outhouse=64x160, CactiA=64x48
+        
+        // Outhouse - single ground obstacle (actual size: 64x160)
+        // Use small gap height to ensure proper spawning as single obstacle
+        config.obstacles.emplace_back("Outhouse", "", 
+                                     64.0f, 160.0f, 50.0f, 2.5f, config.worldSpeed, 
                                      ToiletBehavior::STATIC, 0.0f, 0.0f);
         
-        // Ground cacti hazards - various sizes, also single bottom obstacles
+        // Ground cacti hazards - using actual texture sizes
+        // Use small gap height to ensure proper spawning as single obstacle
         config.obstacles.emplace_back("CactiA", "", 
-                                     60.0f, 120.0f, 0.0f, 3.5f, config.worldSpeed, 
+                                     64.0f, 48.0f, 50.0f, 3.5f, config.worldSpeed, 
                                      ToiletBehavior::STATIC, 0.0f, 0.0f);
         config.obstacles.emplace_back("CactiB", "", 
-                                     70.0f, 140.0f, 0.0f, 3.0f, config.worldSpeed, 
+                                     64.0f, 48.0f, 50.0f, 3.0f, config.worldSpeed, 
                                      ToiletBehavior::STATIC, 0.0f, 0.0f);
         config.obstacles.emplace_back("CactiC", "", 
-                                     65.0f, 130.0f, 0.0f, 3.2f, config.worldSpeed, 
+                                     64.0f, 48.0f, 50.0f, 3.2f, config.worldSpeed, 
                                      ToiletBehavior::STATIC, 0.0f, 0.0f);
     }
 

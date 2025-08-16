@@ -43,7 +43,7 @@ namespace GameCore {
 
         for (int groupId : currentGroups) {
             if (m_groupCoins.find(groupId) == m_groupCoins.end()) {
-                if (m_levelManager->IsGroupReadyForCoins(groupId)) {
+                if (m_levelManager->GetObstacleSystem()->IsGroupReadyForCoins(groupId)) {
                     spawnCoinsForGroup(groupId);
                 }
             }
@@ -181,10 +181,10 @@ namespace GameCore {
 
     void PickupSystem::spawnCoinsForGroup(int groupId) {
         if (!m_ecsSystem || !m_levelManager || !m_levelConfig) return;
-        if (!m_levelManager->IsGroupReadyForCoins(groupId)) return;
+        if (!m_levelManager->GetObstacleSystem()->IsGroupReadyForCoins(groupId)) return;
 
-        auto pattern = m_levelManager->DetectGroupPattern(groupId);
-        auto positions = m_levelManager->CalculateCoinPositionsForGroup(groupId, pattern);
+        auto pattern = m_levelManager->GetObstacleSystem()->DetectGroupPattern(groupId);
+        auto positions = m_levelManager->GetObstacleSystem()->CalculateCoinPositionsForGroup(groupId, pattern);
 
         std::vector<Gnosis::Entity> coins;
 
@@ -287,8 +287,8 @@ namespace GameCore {
         auto it = m_groupCoins.find(groupId);
         if (!m_ecsSystem || !m_levelManager || it == m_groupCoins.end() || it->second.empty()) return;
 
-        auto pattern = m_levelManager->DetectGroupPattern(groupId);
-        auto newPositions = m_levelManager->CalculateCoinPositionsForGroup(groupId, pattern);
+        auto pattern = m_levelManager->GetObstacleSystem()->DetectGroupPattern(groupId);
+        auto newPositions = m_levelManager->GetObstacleSystem()->CalculateCoinPositionsForGroup(groupId, pattern);
 
         auto& coins = it->second;
         for (size_t i = 0; i < coins.size() && i < newPositions.size(); ++i) {

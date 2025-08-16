@@ -876,8 +876,20 @@ namespace GameCore {
         }
 
         if (textureData && textureData->platformTexture) {
-            system->m_textureCache[context->textureId] = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(textureData->platformTexture));
-            GN_LOG_INFO("RenderSystem: Successfully loaded texture '" + context->textureId + "' (" + std::to_string(textureData->width) + "x" + std::to_string(textureData->height) + ")");
+            bool hadHandle = (system->m_textureCache.find(context->textureId) != system->m_textureCache.end());
+            bool hadDims = (system->m_textureDimensions.find(context->textureId) != system->m_textureDimensions.end());
+
+            uint32_t handle = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(textureData->platformTexture));
+            system->m_textureCache[context->textureId] = handle;
+            system->m_textureDimensions[context->textureId] = {textureData->width, textureData->height};
+
+            GN_LOG_INFO(
+                std::string("RenderSystem: CACHE_STORE id='") + context->textureId +
+                "' handle=" + std::to_string(handle) +
+                " size=" + std::to_string(textureData->width) + "x" + std::to_string(textureData->height) +
+                " first_time=" + std::string((!hadHandle && !hadDims) ? "true" : "false") +
+                " source=" + (context->entity != 0 ? std::string("GetOrLoad(entity=") + std::to_string(context->entity) + ")" : "Preload(LoadTexture)")
+            );
         } else {
             GN_LOG_ERROR("RenderSystem: Failed to load texture '" + context->textureId + "': " + (error ? error : "Unknown error"));
         }
@@ -900,6 +912,11 @@ namespace GameCore {
             GameCore::TextureMetadata meta;
             if (m_platformDelegates.asset.getTextureMetadata(textureId.c_str(), &meta)) {
                 if (meta.isLoaded && meta.platformHandle != 0) {
+                    // Populate caches if available
+                    m_textureCache[textureId] = static_cast<uint32_t>(meta.platformHandle);
+                    if (meta.width > 0 && meta.height > 0) {
+                        m_textureDimensions[textureId] = {meta.width, meta.height};
+                    }
                     return;
                 }
             }
@@ -929,6 +946,85 @@ namespace GameCore {
             },
             ctx
         );
+    }
+
+    // Public unified texture APIs
+    bool RenderSystem::PreloadTexture(const std::string& textureId) {
+        if (textureId.empty()) return false;
+        // If already loaded, nothing to do
+        if (m_textureCache.find(textureId) != m_textureCache.end()) {
+            GN_LOG_DEBUG("RenderSystem: CACHE_HIT PreloadTexture '" + textureId + "'");
+            return true;
+        }
+        // If platform has metadata and it's loaded, populate caches
+        if (m_platformDelegates.asset.getTextureMetadata) {
+            GameCore::TextureMetadata meta;
+            if (m_platformDelegates.asset.getTextureMetadata(textureId.c_str(), &meta) && meta.isLoaded && meta.platformHandle != 0) {
+                m_textureCache[textureId] = static_cast<uint32_t>(meta.platformHandle);
+                if (meta.width > 0 && meta.height > 0) {
+                    m_textureDimensions[textureId] = {meta.width, meta.height};
+                }
+                GN_LOG_DEBUG("RenderSystem: META_POPULATE PreloadTexture '" + textureId + "'");
+                return true;
+            }
+        }
+        // If already pending, just return
+        if (m_pendingTextures.find(textureId) != m_pendingTextures.end()) {
+            GN_LOG_DEBUG("RenderSystem: PENDING PreloadTexture '" + textureId + "'");
+            return false;
+        }
+        // Enqueue load
+        GN_LOG_INFO("RenderSystem: PRELOAD_START '" + textureId + "'");
+        EnsureTextureReady(textureId);
+        return false;
+    }
+
+    void RenderSystem::PreloadTextures(const std::vector<std::string>& textureIds) {
+        for (const auto& id : textureIds) {
+            PreloadTexture(id);
+        }
+    }
+
+    bool RenderSystem::IsTextureLoaded(const std::string& textureId) const {
+        if (textureId.empty()) return false;
+        if (m_textureCache.find(textureId) != m_textureCache.end()) return true;
+        if (m_platformDelegates.asset.getTextureMetadata) {
+            GameCore::TextureMetadata meta;
+            if (m_platformDelegates.asset.getTextureMetadata(textureId.c_str(), &meta)) {
+                return meta.isLoaded && meta.platformHandle != 0;
+            }
+        }
+        return false;
+    }
+
+    uint32_t RenderSystem::GetTextureHandle(const std::string& textureId) const {
+        auto it = m_textureCache.find(textureId);
+        if (it != m_textureCache.end()) return it->second;
+        if (m_platformDelegates.asset.getTextureMetadata) {
+            GameCore::TextureMetadata meta;
+            if (m_platformDelegates.asset.getTextureMetadata(textureId.c_str(), &meta) && meta.isLoaded && meta.platformHandle != 0) {
+                return static_cast<uint32_t>(meta.platformHandle);
+            }
+        }
+        return 0;
+    }
+
+    bool RenderSystem::GetTextureSize(const std::string& textureId, int& outWidth, int& outHeight) const {
+        auto it = m_textureDimensions.find(textureId);
+        if (it != m_textureDimensions.end()) {
+            outWidth = it->second.first;
+            outHeight = it->second.second;
+            return true;
+        }
+        if (m_platformDelegates.asset.getTextureMetadata) {
+            GameCore::TextureMetadata meta;
+            if (m_platformDelegates.asset.getTextureMetadata(textureId.c_str(), &meta) && meta.width > 0 && meta.height > 0) {
+                outWidth = meta.width;
+                outHeight = meta.height;
+                return true;
+            }
+        }
+        return false;
     }
 
 } // namespace GameCore

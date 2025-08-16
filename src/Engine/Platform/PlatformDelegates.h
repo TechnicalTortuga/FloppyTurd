@@ -34,6 +34,71 @@ namespace GameCore {
         
         TextureMetadata() : width(0), height(0), channels(4), format("RGBA8"), 
                            dataSize(0), isLoaded(false), assetPath(""), platformHandle(0) {}
+        
+        // Explicit destructor to ensure proper cleanup
+        ~TextureMetadata() {
+            // No need to free platformHandle here - that's managed by the platform layer
+            // Just ensure we don't leave any dangling references
+            platformHandle = 0;
+        }
+        
+        // Copy constructor
+        TextureMetadata(const TextureMetadata& other) : 
+            width(other.width), 
+            height(other.height),
+            channels(other.channels),
+            format(other.format),
+            dataSize(other.dataSize),
+            isLoaded(other.isLoaded),
+            assetPath(other.assetPath),
+            platformHandle(other.platformHandle) {}
+        
+        // Move constructor
+        TextureMetadata(TextureMetadata&& other) noexcept :
+            width(other.width),
+            height(other.height),
+            channels(other.channels),
+            format(std::move(other.format)),
+            dataSize(other.dataSize),
+            isLoaded(other.isLoaded),
+            assetPath(std::move(other.assetPath)),
+            platformHandle(other.platformHandle) {
+            // Clear the source object's platform handle to prevent double-free
+            other.platformHandle = 0;
+        }
+        
+        // Copy assignment operator
+        TextureMetadata& operator=(const TextureMetadata& other) {
+            if (this != &other) {
+                width = other.width;
+                height = other.height;
+                channels = other.channels;
+                format = other.format;
+                dataSize = other.dataSize;
+                isLoaded = other.isLoaded;
+                assetPath = other.assetPath;
+                platformHandle = other.platformHandle;
+            }
+            return *this;
+        }
+        
+        // Move assignment operator
+        TextureMetadata& operator=(TextureMetadata&& other) noexcept {
+            if (this != &other) {
+                width = other.width;
+                height = other.height;
+                channels = other.channels;
+                format = std::move(other.format);
+                dataSize = other.dataSize;
+                isLoaded = other.isLoaded;
+                assetPath = std::move(other.assetPath);
+                platformHandle = other.platformHandle;
+                
+                // Clear the source object's platform handle
+                other.platformHandle = 0;
+            }
+            return *this;
+        }
     };
 
     // Threading System - Command Queue for Thread-Safe Platform Interop

@@ -4,6 +4,7 @@
 #include "../Config/LevelConfig.h"
 #include "../Components/GameComponents.h"
 #include "../../Engine/Core/ECS.h"
+#include "ObstacleSystem.h"
 #include <memory>
 #include <vector>
 #include <unordered_map>
@@ -50,7 +51,6 @@ namespace GameCore {
         static std::string GetDifficultyName() { return DifficultyToString(s_globalDifficulty); }
         
         // Content spawning (called by systems)
-        void UpdateObstacleSpawning(float deltaTime);
         void UpdateEnemySpawning(float deltaTime);
         // REMOVED: UpdatePickupSpawning - now handled by GameplayState
         void UpdateNPCSpawning(float deltaTime);
@@ -59,30 +59,14 @@ namespace GameCore {
         void UpdateEnemyPooling(float deltaTime, float worldScrollDistance);
         void UpdateNPCPooling(float deltaTime, float worldScrollDistance);
         
-        // New object pooling system
-        void UpdateObstaclePooling(float deltaTime, float worldScrollDistance);
-        void InitializeObstaclePool();
-        void WrapObstacleAroundScreen(Gnosis::Entity obstacle, float worldScrollDistance);
-        void WrapGroupAroundScreen(int groupId, float worldScrollDistance);
-        
-        // Group wrap events for GameplayState to consume (lightweight event queue)
+        // Obstacle system delegation
+        void UpdateObstacleSystem(float deltaTime, float worldScrollDistance);
         std::vector<int> ConsumeWrappedGroups();
+        std::vector<Gnosis::Entity> GetActiveObstacles() const;
         
-        // Obstacle management
-        Gnosis::Entity SpawnObstacle(const ObstacleConfig& config, float x, float y);
-        Gnosis::Entity SpawnToiletPair(const ObstacleConfig& config, float x, float y); // For toilet pairs
-        Gnosis::Entity SpawnToiletPairWithGap(const ObstacleConfig& config, float x, float gapCenterY, float gapHeight); // For toilet pairs with custom gap
-        Gnosis::Entity SpawnSingleObstacle(const ObstacleConfig& config, float x, float y); // For single obstacles
-        // Sewer group spawns (single-piece patterns)
-        void SpawnSewerPattern_TopOnly(float startX);
-        void SpawnSewerPattern_BottomOnly(float startX);
-        void SpawnSewerPattern_TopAndBottom(float startX);
-        void SpawnSewerPattern_Pyramid3(float startX);
-        void SpawnSewerPattern_PyramidTop3(float startX);
-        void SpawnSewerPattern_Pyramid4(float startX);
-        void SpawnSewerPattern_TwoByTwoFunnel(float startX);
-        void RemoveObstacle(Gnosis::Entity obstacle);
-        std::vector<Gnosis::Entity> GetActiveObstacles() const { return m_activeObstacles; }
+        // Obstacle system access
+        ObstacleSystem* GetObstacleSystem() const { return m_obstacleSystem.get(); }
+        std::vector<int> GetAndClearWrappedGroups();
         
         // Enemy management  
         Gnosis::Entity SpawnEnemy(const EnemyConfig& config, float x, float y);
@@ -105,11 +89,8 @@ namespace GameCore {
         // Use shared GroupPattern declared in GameComponents.h
         using GroupPattern = GameCore::GroupPattern;
         
-        // Coin system helpers (for GameplayState to use)
-        // REMOVED: AttachCoinsToGroup, RepositionGroupCoins - moved to GameplayState
-        GroupPattern DetectGroupPattern(int groupId) const;  // Now trivial: read from group's pattern
-        std::vector<Gnosis::GNVector2> CalculateCoinPositionsForGroup(int groupId, GroupPattern pattern) const;  // New helper
-        bool IsGroupReadyForCoins(int groupId) const;  // New helper
+        // REMOVED: Coin system helpers moved to ObstacleSystem
+        GroupPattern DetectGroupPattern(int groupId) const;  // Legacy: read from group's pattern
         
         // Level validation
         static bool ValidateLevelId(int levelId);
@@ -119,6 +100,7 @@ namespace GameCore {
         // Core systems
         Gnosis::ECS* m_ecsSystem;
         GameCore::PlatformDelegates m_platformDelegates;
+        std::unique_ptr<ObstacleSystem> m_obstacleSystem;
         
         // Current level state
         bool m_isLoaded;
@@ -134,7 +116,6 @@ namespace GameCore {
         static Difficulty s_globalDifficulty;
         
         // Entity tracking
-        std::vector<Gnosis::Entity> m_activeObstacles;
         std::vector<Gnosis::Entity> m_activeEnemies;
         std::vector<Gnosis::Entity> m_projectilePool;
         std::vector<Gnosis::Entity> m_activeNPCs;
@@ -143,7 +124,6 @@ namespace GameCore {
         Gnosis::Entity m_janitorEntity = 0; // Ensure single Janitor in Level 2
         
         // Spawn timers
-        float m_obstacleSpawnTimer;
         float m_enemySpawnTimer;
         // REMOVED: m_pickupSpawnTimer - pickup spawning moved to GameplayState
         float m_npcSpawnTimer;
@@ -155,19 +135,11 @@ namespace GameCore {
         // REMOVED: m_attachCoinsToGroups - coin attachment moved to GameplayState
         
         // Spawn positions
-        float m_lastObstacleX;
         float m_lastEnemyX;
         // REMOVED: m_groupCoins - coin tracking moved to GameplayState
         std::unordered_map<Gnosis::Entity, float> m_enemyBaseY; // Enemy base Y positions
         
-        // Object pooling system
-        static const int OBSTACLE_POOL_SIZE = 6;  // Pool of 6 obstacles (like old ParkLevel had 5+1)
-        float m_obstacleSpacing;                   // Distance between obstacles
-        bool m_poolInitialized;
-        int m_nextGroupId = 1;                     // Incremental group id for formations
-        
-        // Internal event queue for wrapped obstacle groups
-        std::vector<int> m_wrappedGroups;
+        // Legacy obstacle pooling removed - now handled by ObstacleSystem
 
         // Internal methods
         void InitializeProgressionSystem();
@@ -176,7 +148,6 @@ namespace GameCore {
         void DestroyAllEntities();
         
         // Spawning helpers
-        float CalculateNextObstaclePosition();
         float CalculateNextEnemyPosition();
         // REMOVED: CalculateNextPickupPosition - pickups handled in GameplayState
         

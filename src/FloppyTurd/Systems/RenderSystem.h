@@ -9,6 +9,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <string>
+#include <utility>
 
 namespace GameCore {
 
@@ -50,6 +51,12 @@ namespace GameCore {
         
         // Texture management (1:1 with SpriteSystem)
         void SetTextureBasePath(const std::string& basePath);
+        // Unified texture preload/query APIs
+        bool PreloadTexture(const std::string& textureId);
+        void PreloadTextures(const std::vector<std::string>& textureIds);
+        bool IsTextureLoaded(const std::string& textureId) const;
+        uint32_t GetTextureHandle(const std::string& textureId) const;
+        bool GetTextureSize(const std::string& textureId, int& outWidth, int& outHeight) const;
         
         // Platform-specific layout setup
         void SetupLayout();  // Calls appropriate platform layout function
@@ -93,6 +100,7 @@ namespace GameCore {
         // Async texture loading state (mirrors SpriteSystem minimal behavior)
         std::unordered_set<std::string> m_pendingTextures;
         std::unordered_map<std::string, uint32_t> m_textureCache;
+        std::unordered_map<std::string, std::pair<int, int>> m_textureDimensions; // width,height
         std::string m_textureBasePath; // Base path for texture loading (mirrors SpriteSystem)
         
         // Helper methods

@@ -291,9 +291,6 @@ static NSString * const ACImageNameScore AC_SWIFT_PRIVATE = @"Score";
 /// The "ScoreSmall" asset catalog image resource.
 static NSString * const ACImageNameScoreSmall AC_SWIFT_PRIVATE = @"ScoreSmall";
 
-/// The "SewerBackgroundRunningWater" asset catalog image resource.
-static NSString * const ACImageNameSewerBackgroundRunningWater AC_SWIFT_PRIVATE = @"SewerBackgroundRunningWater";
-
 /// The "SewerLargeA" asset catalog image resource.
 static NSString * const ACImageNameSewerLargeA AC_SWIFT_PRIVATE = @"SewerLargeA";
 
@@ -315,6 +312,9 @@ static NSString * const ACImageNameSkillMenuBorder AC_SWIFT_PRIVATE = @"SkillMen
 /// The "SkillPointInfoBackground" asset catalog image resource.
 static NSString * const ACImageNameSkillPointInfoBackground AC_SWIFT_PRIVATE = @"SkillPointInfoBackground";
 
+/// The "SnowLevelBackLayerBackground" asset catalog image resource.
+static NSString * const ACImageNameSnowLevelBackLayerBackground AC_SWIFT_PRIVATE = @"SnowLevelBackLayerBackground";
+
 /// The "SnowLevelBackTrees" asset catalog image resource.
 static NSString * const ACImageNameSnowLevelBackTrees AC_SWIFT_PRIVATE = @"SnowLevelBackTrees";
 
@@ -323,6 +323,9 @@ static NSString * const ACImageNameSnowLevelBackground AC_SWIFT_PRIVATE = @"Snow
 
 /// The "SnowLevelFrontTrees" asset catalog image resource.
 static NSString * const ACImageNameSnowLevelFrontTrees AC_SWIFT_PRIVATE = @"SnowLevelFrontTrees";
+
+/// The "SnowLevelMidLayerBackground" asset catalog image resource.
+static NSString * const ACImageNameSnowLevelMidLayerBackground AC_SWIFT_PRIVATE = @"SnowLevelMidLayerBackground";
 
 /// The "SnowLevelMountains" asset catalog image resource.
 static NSString * const ACImageNameSnowLevelMountains AC_SWIFT_PRIVATE = @"SnowLevelMountains";

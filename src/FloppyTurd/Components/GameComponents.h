@@ -370,6 +370,7 @@ namespace GameCore {
         TopOnly = 0,
         BottomOnly,
         TopAndBottom,
+        Ground,           // For desert ground-based obstacles (Outhouse, Cactus)
         PyramidBottom,
         PyramidTop,
         TwoFunnel

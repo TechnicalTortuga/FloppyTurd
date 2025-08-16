@@ -238,7 +238,7 @@ namespace GameCore {
 
         // Clear screen using platform delegates
         if (m_platformDelegates.renderer.clearScreen) {
-            m_platformDelegates.renderer.clearScreen(0.2f, 0.3f, 0.3f, 1.0f); // Dark blue-gray background
+            m_platformDelegates.renderer.clearScreen(0.0f, 0.0f, 0.0f, 1.0f); // Black background
         }
 
         // 1. Render current game state (creates/manages entities for rendering)
