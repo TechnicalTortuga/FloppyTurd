@@ -163,6 +163,8 @@ namespace GameCore {
             m_pickupSystem->Update(deltaTime);
         }
         
+
+        
         // Update pipe counter UI
         UpdatePipeCounterUI();
         
@@ -1221,8 +1223,13 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         float pCenterY = playerTransform->position.y + pHalfH + (playerHitbox->offsetY * playerTransform->scale.y);
         float pRadius  = playerHitbox->radius * ((playerTransform->scale.x + playerTransform->scale.y) * 0.5f);
         
+        GN_LOG_DEBUG("Player hitbox: position=(" + std::to_string(playerTransform->position.x) + "," + std::to_string(playerTransform->position.y) + ") " +
+                    "center=(" + std::to_string(pCenterX) + "," + std::to_string(pCenterY) + ") " +
+                    "radius=" + std::to_string(pRadius));
+        
         // Check collision with all active obstacles (toilets) via ObstacleSystem
         const auto& activeObstacles = m_levelManager->GetActiveObstacles();
+        GN_LOG_DEBUG("Checking collisions with " + std::to_string(activeObstacles.size()) + " active obstacles");
         for (Gnosis::Entity obstacleEntity : activeObstacles) {
             Transform* obstacleTransform = m_ecsSystem->GetComponent<Transform>(obstacleEntity);
             Sprite* obstacleSprite = m_ecsSystem->GetComponent<Sprite>(obstacleEntity);
@@ -1230,10 +1237,15 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             Hitbox* obstacleHitbox = m_ecsSystem->GetComponent<Hitbox>(obstacleEntity);
             
             if (!obstacleTransform || !obstacleSprite || !obstacle || !obstacleHitbox) {
+                if (!obstacleTransform) GN_LOG_DEBUG("Skipping obstacle " + std::to_string(obstacleEntity) + " - no Transform component");
+                else if (!obstacleSprite) GN_LOG_DEBUG("Skipping obstacle " + std::to_string(obstacleEntity) + " - no Sprite component");
+                else if (!obstacle) GN_LOG_DEBUG("Skipping obstacle " + std::to_string(obstacleEntity) + " - no Obstacle component");
+                else if (!obstacleHitbox) GN_LOG_DEBUG("Skipping obstacle " + std::to_string(obstacleEntity) + " - no Hitbox component");
                 continue;
             }
             // Rectangle from Hitbox component (center-based offsets, scaled)
             // Transform position is sprite top-left; add half sprite size to get center
+            GN_LOG_DEBUG("Processing obstacle " + std::to_string(obstacleEntity) + " (" + obstacle->obstacleType + ")");
             float rectW = obstacleHitbox->width * obstacleTransform->scale.x;
             float rectH = obstacleHitbox->height * obstacleTransform->scale.y;
             float spriteHalfW = obstacleSprite ? (obstacleSprite->width * obstacleTransform->scale.x * 0.5f) : 0.0f;
@@ -1242,6 +1254,12 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             float rectCenterY = obstacleTransform->position.y + spriteHalfH + (obstacleHitbox->offsetY * obstacleTransform->scale.y);
             float rectX = rectCenterX - (rectW * 0.5f);
             float rectY = rectCenterY - (rectH * 0.5f);
+            
+            GN_LOG_DEBUG("Obstacle " + std::to_string(obstacleEntity) + " hitbox: " +
+                        "position=(" + std::to_string(obstacleTransform->position.x) + "," + std::to_string(obstacleTransform->position.y) + ") " +
+                        "sprite=(" + std::to_string(obstacleSprite->width) + "," + std::to_string(obstacleSprite->height) + ") " +
+                        "hitbox=(" + std::to_string(obstacleHitbox->width) + "," + std::to_string(obstacleHitbox->offsetX) + "," + std::to_string(obstacleHitbox->offsetY) + ") " +
+                        "rect=(" + std::to_string(rectX) + "," + std::to_string(rectY) + "," + std::to_string(rectW) + "," + std::to_string(rectH) + ")");
 
             // Circle-rectangle intersection
             float closestX = std::max(rectX, std::min(pCenterX, rectX + rectW));
@@ -1249,6 +1267,10 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             float dx = pCenterX - closestX;
             float dy = pCenterY - closestY;
             bool collided = (dx * dx + dy * dy) <= (pRadius * pRadius);
+            
+            GN_LOG_DEBUG("Collision calculation: closest=(" + std::to_string(closestX) + "," + std::to_string(closestY) + ") " +
+                        "distance=(" + std::to_string(dx) + "," + std::to_string(dy) + ") " +
+                        "collided=" + std::to_string(collided));
             
             // Enhanced debug logging
             if (collided) {
@@ -1258,6 +1280,9 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                            ", RectY: " + std::to_string(rectY) + 
                            ", Invulnerable: " + std::to_string(m_invulnerabilityTimer > 0.0f) + 
                            ", Timer: " + std::to_string(m_invulnerabilityTimer));
+            } else {
+                GN_LOG_DEBUG("No collision with obstacle " + std::to_string(obstacleEntity) + 
+                           " (" + obstacle->obstacleType + ") at (" + std::to_string(rectX) + "," + std::to_string(rectY) + ")");
             }
             
             if (collided && m_invulnerabilityTimer <= 0.0f) {
@@ -1284,45 +1309,100 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 return; // Only process one collision per frame
             }
             
-                // Increment once per column (X-range) as the player passes its center.
-                // This prevents double count when top and bottom exist at similar X.
-                if (!obstacle->pipeCleared) {
-                    float playerRight = pCenterX + pRadius;
-                    float pipeCenterX = rectX + rectW * 0.5f;
-                    if (playerRight > pipeCenterX) {
-                        // Define a horizontal window for this column using half the pipe width (scaled)
+            GN_LOG_DEBUG("Pipe clearing check for obstacle " + std::to_string(obstacleEntity) + 
+                        " (" + obstacle->obstacleType + ") - pipeCleared=" + std::to_string(obstacle->pipeCleared));
+            
+            // Calculate pipe clearing variables for this obstacle
+            float playerRight = pCenterX + pRadius;
+            float pipeCenterX = rectX + rectW * 0.5f;
+            
+            // Increment once per column (X-range) as the player passes its center.
+            // This prevents double count when top and bottom exist at similar X.
+            if (!obstacle->pipeCleared) {
+                GN_LOG_DEBUG("Pipe clearing check: obstacle " + std::to_string(obstacleEntity) + 
+                            " (" + obstacle->obstacleType + "), playerRight=" + std::to_string(playerRight) + 
+                            ", pipeCenterX=" + std::to_string(pipeCenterX));
+                
+                if (playerRight > pipeCenterX) {
+                                            // Define a horizontal window for this column using half the pipe width (scaled)
                         const float columnHalfWidth = rectW * 0.5f;
                         const float windowMinX = pipeCenterX - columnHalfWidth;
                         const float windowMaxX = pipeCenterX + columnHalfWidth;
+                        
+                        GN_LOG_DEBUG("Column window calculation: pipeCenterX=" + std::to_string(pipeCenterX) + 
+                                   ", columnHalfWidth=" + std::to_string(columnHalfWidth) + 
+                                   ", window=[" + std::to_string(windowMinX) + "," + std::to_string(windowMaxX) + "]");
 
-                        // Mark all obstacles within this column window as cleared to dedup
+                    // Track if we've cleared any obstacles in this column to avoid double counting
+                    bool clearedAnyInColumn = false;
+
+                                            // Mark all obstacles within this column window as cleared to dedup
                         const auto& allObstacles = m_levelManager->GetActiveObstacles();
+                        GN_LOG_DEBUG("Processing " + std::to_string(allObstacles.size()) + " obstacles for column clearing");
                         for (Gnosis::Entity e2 : allObstacles) {
-                            Obstacle* o2 = m_ecsSystem->GetComponent<Obstacle>(e2);
-                            Transform* t2 = m_ecsSystem->GetComponent<Transform>(e2);
-                            Sprite* s2 = m_ecsSystem->GetComponent<Sprite>(e2);
-                            Hitbox* hb2 = m_ecsSystem->GetComponent<Hitbox>(e2);
-                            if (!o2 || !t2 || !s2 || !hb2 || o2->pipeCleared) {
+                        Obstacle* o2 = m_ecsSystem->GetComponent<Obstacle>(e2);
+                        Transform* t2 = m_ecsSystem->GetComponent<Transform>(e2);
+                        Sprite* s2 = m_ecsSystem->GetComponent<Sprite>(e2);
+                        Hitbox* hb2 = m_ecsSystem->GetComponent<Hitbox>(e2);
+                                                    if (!o2 || !t2 || !s2 || !hb2 || o2->pipeCleared) {
+                                if (!o2) GN_LOG_DEBUG("Skipping obstacle " + std::to_string(e2) + " - no Obstacle component");
+                                else if (!t2) GN_LOG_DEBUG("Skipping obstacle " + std::to_string(e2) + " - no Transform component");
+                                else if (!s2) GN_LOG_DEBUG("Skipping obstacle " + std::to_string(e2) + " - no Sprite component");
+                                else if (!hb2) GN_LOG_DEBUG("Skipping obstacle " + std::to_string(e2) + " - no Hitbox component");
+                                else if (o2->pipeCleared) GN_LOG_DEBUG("Skipping obstacle " + std::to_string(e2) + " - already cleared");
                                 continue;
                             }
-                            float rectW2 = hb2->width * t2->scale.x;
+                                                    float rectW2 = hb2->width * t2->scale.x;
                             float spriteHalfW2 = s2->width * t2->scale.x * 0.5f;
                             float rectCenterX2 = t2->position.x + spriteHalfW2 + (hb2->offsetX * t2->scale.x);
-                            if (rectCenterX2 >= windowMinX && rectCenterX2 <= windowMaxX) {
-                                o2->pipeCleared = true;
-                                // Also clear its explicit pair if any
-                                if (o2->pairedEntity != 0) {
-                                    if (Obstacle* pairedObstacle2 = m_ecsSystem->GetComponent<Obstacle>(o2->pairedEntity)) {
-                                        pairedObstacle2->pipeCleared = true;
-                                    }
+                            GN_LOG_DEBUG("Obstacle " + std::to_string(e2) + " hitbox: rectW=" + std::to_string(rectW2) + 
+                                        ", spriteHalfW=" + std::to_string(spriteHalfW2) + 
+                                        ", rectCenterX=" + std::to_string(rectCenterX2) + 
+                                        ", position.x=" + std::to_string(t2->position.x) + 
+                                        ", offsetX=" + std::to_string(hb2->offsetX * t2->scale.x));
+                        if (rectCenterX2 >= windowMinX && rectCenterX2 <= windowMaxX) {
+                            o2->pipeCleared = true;
+                            clearedAnyInColumn = true;
+                            GN_LOG_DEBUG("Marked obstacle " + std::to_string(e2) + " (" + o2->obstacleType + 
+                                        ") as cleared in column window [" + std::to_string(windowMinX) + "," + std::to_string(windowMaxX) + "]");
+                            // Also clear its explicit pair if any
+                            if (o2->pairedEntity != 0) {
+                                if (Obstacle* pairedObstacle2 = m_ecsSystem->GetComponent<Obstacle>(o2->pairedEntity)) {
+                                    pairedObstacle2->pipeCleared = true;
+                                    GN_LOG_DEBUG("Also marked paired obstacle " + std::to_string(o2->pairedEntity) + " as cleared");
                                 }
                             }
+                        } else {
+                            GN_LOG_DEBUG("Obstacle " + std::to_string(e2) + " (" + o2->obstacleType + 
+                                        ") outside column window [" + std::to_string(windowMinX) + "," + std::to_string(windowMaxX) + 
+                                        "], rectCenterX=" + std::to_string(rectCenterX2));
                         }
-
-                        OnPipeCleared();
                     }
+
+                                            // Only increment pipe counter once per column, not per obstacle
+                        if (clearedAnyInColumn) {
+                            OnPipeCleared();
+                            GN_LOG_INFO("Pipe column cleared at X=" + std::to_string(pipeCenterX) + 
+                                       ", incrementing counter to " + std::to_string(m_pipesCleared + 1));
+                        } else {
+                            GN_LOG_DEBUG("No obstacles cleared in column at X=" + std::to_string(pipeCenterX) + 
+                                        ", pipe counter not incremented");
+                        }
+                        
+                        GN_LOG_DEBUG("Column clearing complete for obstacle " + std::to_string(obstacleEntity) + 
+                                   " at X=" + std::to_string(pipeCenterX) + 
+                                   ", clearedAnyInColumn=" + std::to_string(clearedAnyInColumn));
+                } else {
+                    GN_LOG_DEBUG("Pipe clearing check skipped for obstacle " + std::to_string(obstacleEntity) + 
+                               " (" + obstacle->obstacleType + ") - already cleared");
                 }
+            } else {
+                GN_LOG_DEBUG("Player hasn't passed pipe center yet: playerRight=" + std::to_string(playerRight) + 
+                           ", pipeCenterX=" + std::to_string(pipeCenterX));
+            }
         }
+        
+        GN_LOG_DEBUG("Finished collision detection loop for " + std::to_string(activeObstacles.size()) + " obstacles");
     }
     
     void GameplayState::UpdatePipeCounterUI() {

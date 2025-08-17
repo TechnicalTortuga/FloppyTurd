@@ -57,6 +57,9 @@ namespace GameCore {
         const std::vector<Gnosis::Entity>& GetActiveObstacles() const { return m_activeObstacles; }
         std::vector<int> GetAndClearWrappedGroups();
 
+        // Debug rendering
+        void RenderDebugHitboxes();
+
     private:
         // Pattern implementations
         void SpawnParkPattern_ToiletPair(float x);
@@ -102,6 +105,9 @@ namespace GameCore {
 
         // Level-specific pattern configs
         std::vector<PatternConfig> m_levelPatterns;
+
+        // Debug rendering
+        bool m_debugMode = true;
 
         static constexpr int OBSTACLE_POOL_SIZE = 8;
         static constexpr float SCREEN_WIDTH = 1179.0f;

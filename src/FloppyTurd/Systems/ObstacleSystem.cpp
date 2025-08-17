@@ -50,8 +50,9 @@ namespace GameCore {
                 break;
                 
             case 3: // Desert
-                m_levelPatterns.push_back({PatternType::DESERT_OUTHOUSE, 0.7f, 0.0f});
-                m_levelPatterns.push_back({PatternType::DESERT_CACTUS, 0.3f, 0.0f});
+                m_levelPatterns.push_back({PatternType::DESERT_OUTHOUSE, 1.0f, 0.0f});
+                // Temporarily removed cacti obstacles
+                // m_levelPatterns.push_back({PatternType::DESERT_CACTUS, 0.3f, 0.0f});
                 break;
                 
             default:
@@ -120,9 +121,15 @@ namespace GameCore {
         }
         
         // Handle wrapped groups (for coin system coordination)
-        auto wrappedGroups = GetAndClearWrappedGroups();
+        // Note: Don't clear wrapped groups here - let PickupSystem consume them
+        auto wrappedGroups = m_wrappedGroups; // Copy instead of clear
         for (int groupId : wrappedGroups) {
             WrapGroup(groupId, worldScrollDistance);
+        }
+
+        // Debug rendering for hitboxes
+        if (m_debugMode) {
+            RenderDebugHitboxes();
         }
     }
 
@@ -154,9 +161,10 @@ namespace GameCore {
             case PatternType::DESERT_OUTHOUSE:
                 SpawnDesertPattern_Outhouse(x);
                 break;
-            case PatternType::DESERT_CACTUS:
-                SpawnDesertPattern_Cactus(x);
-                break;
+            // Temporarily removed cacti obstacles
+            // case PatternType::DESERT_CACTUS:
+            //     SpawnDesertPattern_Cactus(x);
+            //     break;
             case PatternType::SEWER_TOP_ONLY:
                 SpawnSewerPattern_TopOnly(x);
                 break;
@@ -205,8 +213,8 @@ namespace GameCore {
         // Generate random position for top toilet within allowed range (all negative Y)
         float randomTopY = minTopY + (maxTopY - minTopY) * ((float)rand() / RAND_MAX);
         
-        // Increased gap for better gameplay
-        float fixedGapHeight = 1024.0f;
+        // Vertical gap within toilet pairs set to 800px
+        float fixedGapHeight = 800.0f;
         
         // Calculate bottom toilet position: top toilet bottom + large fixed gap
         float topToiletY = randomTopY;
@@ -303,9 +311,9 @@ namespace GameCore {
         DebugDraw bottomDebug(false, false, Gnosis::GNColor(0, 255, 0, 255), Gnosis::GNColor(255, 0, 0, 255));
         m_ecsSystem->AddComponent<DebugDraw>(bottomToilet, bottomDebug);
         
-        // Add to group management
-        AddEntityToGroup(topToilet, groupId, true, 0.0f, 0.0f, 65.0f * m_baseScale, GroupPattern::TopAndBottom);
-        AddEntityToGroup(bottomToilet, groupId, false, 0.0f, bottomToiletY - topToiletY, 65.0f * m_baseScale, GroupPattern::TopAndBottom);
+        // Add to group management - balanced horizontal spacing (happy medium between 65 and 130)
+        AddEntityToGroup(topToilet, groupId, true, 0.0f, 0.0f, 95.0f * m_baseScale, GroupPattern::TopAndBottom);
+        AddEntityToGroup(bottomToilet, groupId, false, 0.0f, bottomToiletY - topToiletY, 95.0f * m_baseScale, GroupPattern::TopAndBottom);
         
         // Add to tracking
         m_activeObstacles.push_back(topToilet);
@@ -391,11 +399,11 @@ namespace GameCore {
         
         // Create outhouse entity (solid collision)
         Gnosis::Entity outhouse = CreateOuthouseEntity("Outhouse", x, groundY, m_baseScale, true);
-        AddEntityToGroup(outhouse, groupId, true, 0.0f, 0.0f, outhouseW * m_baseScale, GroupPattern::Ground);
+        AddEntityToGroup(outhouse, groupId, true, 0.0f, 0.0f, (outhouseW * 2.0f) * m_baseScale, GroupPattern::Ground);
         
         // Create toilet entity (trigger only)
         Gnosis::Entity toilet = CreateOuthouseEntity("OuthouseToilet", x, groundY, m_baseScale, false);
-        AddEntityToGroup(toilet, groupId, false, 0.0f, 0.0f, outhouseW * m_baseScale, GroupPattern::Ground);
+        AddEntityToGroup(toilet, groupId, false, 0.0f, 0.0f, (outhouseW * 2.0f) * m_baseScale, GroupPattern::Ground);
         
         // Link entities
         LinkOuthousePair(outhouse, toilet);
@@ -406,6 +414,12 @@ namespace GameCore {
         m_obstacleGroups[groupId] = {outhouse, toilet};
         
         GN_LOG_DEBUG("Spawned desert outhouse at x=" + std::to_string(x) + ", groupId=" + std::to_string(groupId));
+        GN_LOG_DEBUG("Outhouse hitbox: solid collision, width=" + std::to_string((90.0f - 16.0f) * m_baseScale) + 
+                     ", height=" + std::to_string((160.0f - 64.0f) * m_baseScale) + 
+                     ", offsetX=0, offsetY=" + std::to_string(64.0f * m_baseScale));
+        GN_LOG_DEBUG("Toilet hitbox: trigger only, width=" + std::to_string(((90.0f / 2) - 8.0f) * m_baseScale) + 
+                     ", height=" + std::to_string(160.0f * m_baseScale) + 
+                     ", offsetX=" + std::to_string((90.0f / 4 + 4.0f) * m_baseScale) + ", offsetY=0");
     }
 
     void ObstacleSystem::SpawnDesertPattern_Cactus(float x) {
@@ -736,18 +750,18 @@ namespace GameCore {
         Hitbox hitbox;
         hitbox.type = ColliderType::Rectangle;
         if (isSolid) {
-            // Outhouse - solid collision
-            hitbox.width = (90.0f - 16.0f) * scale;
-            hitbox.height = (160.0f - 64.0f) * scale;
-            hitbox.offsetX = 0.0f;
-            hitbox.offsetY = 64.0f * scale;
+            // Outhouse - solid collision (texture is 64x160, not 90x160)
+            hitbox.width = (64.0f - 16.0f);  // 48 pixels wide (64 - 16 for margins)
+            hitbox.height = (160.0f - 32.0f);  // 128 pixels tall (160 - 32 for margins)
+            hitbox.offsetX = -12.0f;  // Moved 4px to the right from previous position (was -16, now -12)
+            hitbox.offsetY = 48.0f;  // Moved down another 32px (was 16, now 48)
             hitbox.isTrigger = false;
         } else {
-            // Toilet - trigger only
-            hitbox.width = ((90.0f / 2) - 8.0f) * scale;
-            hitbox.height = 160.0f * scale;
-            hitbox.offsetX = (90.0f / 4 + 4.0f) * scale;
-            hitbox.offsetY = 0.0f;
+            // Toilet - trigger only, properly centered with the toilet opening
+            hitbox.width = 20.0f;  // Fixed 20px width for the split
+            hitbox.height = 160.0f;  // Full height of texture
+            hitbox.offsetX = -12.0f;  // Moved 4px to the left from previous position (was -8, now -12)
+            hitbox.offsetY = 40.0f;  // Lowered by 40px as requested
             hitbox.isTrigger = true;
         }
         hitbox.isStatic = false;
@@ -761,6 +775,19 @@ namespace GameCore {
         obstacle.basePosition = Gnosis::GNVector2(x, y);
         obstacle.isTopPart = (texture == "Outhouse");
         m_ecsSystem->AddComponent<Obstacle>(entity, obstacle);
+        
+        // DebugDraw - show hitboxes visually
+        DebugDraw debugDraw;
+        debugDraw.showBounds = false;  // Don't show sprite bounds
+        debugDraw.showCollider = true; // Show hitbox colliders
+        if (isSolid) {
+            debugDraw.colliderColor = Gnosis::GNColor(255, 0, 0, 128);  // Red for solid obstacles
+        } else {
+            debugDraw.colliderColor = Gnosis::GNColor(0, 255, 255, 128); // Cyan for trigger obstacles
+        }
+        debugDraw.alpha = 0.6f;
+        debugDraw.debugLayer = 20; // High priority layer
+        m_ecsSystem->AddComponent<DebugDraw>(entity, debugDraw);
         
         return entity;
     }
@@ -845,6 +872,15 @@ namespace GameCore {
         obstacle.basePosition = Gnosis::GNVector2(x, y);
         obstacle.isTopPart = false;
         m_ecsSystem->AddComponent<Obstacle>(entity, obstacle);
+        
+        // DebugDraw - show hitboxes visually
+        DebugDraw debugDraw;
+        debugDraw.showBounds = false;
+        debugDraw.showCollider = true;
+        debugDraw.colliderColor = Gnosis::GNColor(0, 255, 0, 128); // Green for cacti
+        debugDraw.alpha = 0.6f;
+        debugDraw.debugLayer = 20;
+        m_ecsSystem->AddComponent<DebugDraw>(entity, debugDraw);
         
         return entity;
     }
@@ -1316,7 +1352,7 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
             float minTopY = -toiletHeight * 0.8f;
             float maxTopY = -toiletHeight * 0.2f;
             float randomTopY = minTopY + (maxTopY - minTopY) * ((float)rand() / RAND_MAX);
-            float fixedGapHeight = 1024.0f; // Increased gap for better gameplay
+            float fixedGapHeight = 800.0f; // Vertical gap within toilet pairs set to 800px
             
             for (Gnosis::Entity e : m_activeObstacles) {
                 if (!m_ecsSystem->HasComponent<Group>(e) || !m_ecsSystem->HasComponent<Transform>(e) ||
@@ -1375,7 +1411,48 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
                    " (positioned after group " + std::to_string(rightmostGroupId) + 
                    ", groupWidth: " + std::to_string(rightmostGroupWidth) + ")");
         
-        // Group has been wrapped - no additional queuing needed
+        // Mark this group as wrapped for coin repositioning
+        m_wrappedGroups.push_back(groupId);
+    }
+
+    void ObstacleSystem::RenderDebugHitboxes() {
+        if (!m_debugMode) {
+            return;
+        }
+
+        GN_LOG_DEBUG("Rendering debug hitboxes for " + std::to_string(m_activeObstacles.size()) + " obstacles");
+        
+        for (Gnosis::Entity entity : m_activeObstacles) {
+            if (!m_ecsSystem->HasComponent<Transform>(entity) || 
+                !m_ecsSystem->HasComponent<Hitbox>(entity) || 
+                !m_ecsSystem->HasComponent<Obstacle>(entity)) {
+                continue;
+            }
+
+            auto* transform = m_ecsSystem->GetComponent<Transform>(entity);
+            auto* hitbox = m_ecsSystem->GetComponent<Hitbox>(entity);
+            auto* obstacle = m_ecsSystem->GetComponent<Obstacle>(entity);
+            auto* sprite = m_ecsSystem->GetComponent<Sprite>(entity);
+
+            if (!transform || !hitbox || !obstacle) {
+                continue;
+            }
+
+            // Calculate hitbox world position
+            float hitboxX = transform->position.x + (hitbox->offsetX * transform->scale.x);
+            float hitboxY = transform->position.y + (hitbox->offsetY * transform->scale.y);
+            float hitboxW = hitbox->width * transform->scale.x;
+            float hitboxH = hitbox->height * transform->scale.y;
+
+            // Log hitbox information for debugging
+            GN_LOG_DEBUG("Obstacle " + std::to_string(entity) + 
+                        " (" + obstacle->obstacleType + "): " +
+                        "pos=(" + std::to_string(transform->position.x) + "," + std::to_string(transform->position.y) + ") " +
+                        "hitbox=(" + std::to_string(hitboxX) + "," + std::to_string(hitboxY) + "," + 
+                        std::to_string(hitboxW) + "," + std::to_string(hitboxH) + ") " +
+                        "isTrigger=" + std::to_string(hitbox->isTrigger) + 
+                        " pipeCleared=" + std::to_string(obstacle->pipeCleared));
+        }
     }
 
 } // namespace GameCore

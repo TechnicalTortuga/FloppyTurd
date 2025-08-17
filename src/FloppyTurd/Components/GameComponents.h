@@ -398,6 +398,28 @@ namespace GameCore {
     };
 
     /**
+     * GroupGap component - modular spacing system for obstacle groups
+     * This component allows flexible gap management without hardcoded spacing
+     */
+    struct GroupGap : public Gnosis::Component {
+        float gapDistance;      // Extra spacing this group adds (in pixels)
+        bool isSpacingGroup;    // True if this group exists purely for spacing
+        std::string gapType;    // Type of gap: "toilet_spacing", "outhouse_spacing", etc.
+        
+        GroupGap()
+            : gapDistance(0.0f)
+            , isSpacingGroup(false)
+            , gapType("default")
+        {}
+        
+        GroupGap(float distance, bool isSpacing = false, const std::string& type = "default")
+            : gapDistance(distance)
+            , isSpacingGroup(isSpacing)
+            , gapType(type)
+        {}
+    };
+
+    /**
      * Camera component - world view and scrolling
      */
     struct Camera : public Gnosis::Component {
@@ -776,6 +798,8 @@ namespace Gnosis {
     using UIShape = GameCore::UIShape;
     using Pickup = GameCore::Pickup;
     using RotationRenderer = GameCore::RotationRenderer;
+    using Group = GameCore::Group;
+    using GroupGap = GameCore::GroupGap;
     using ColliderType = GameCore::ColliderType;
 }
 

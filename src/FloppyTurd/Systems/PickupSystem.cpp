@@ -290,41 +290,130 @@ namespace GameCore {
         auto pattern = m_levelManager->GetObstacleSystem()->DetectGroupPattern(groupId);
         auto newPositions = m_levelManager->GetObstacleSystem()->CalculateCoinPositionsForGroup(groupId, pattern);
 
+        GN_LOG_DEBUG("PickupSystem::repositionCoinsForGroup: groupId=" + std::to_string(groupId) + 
+                     " coins=" + std::to_string(it->second.size()) + 
+                     " newPositions=" + std::to_string(newPositions.size()));
+
+        // Helper function to re-roll pickup types using current level ratios
+        auto choosePickupType = [this]() -> std::string {
+            if (!m_levelConfig || m_levelConfig->pickupRatios.empty()) {
+                return std::string("GoldCoin");
+            }
+            float total = 0.0f;
+            for (const auto& r : m_levelConfig->pickupRatios) total += (r.weight > 0.0f ? r.weight : 0.0f);
+            if (total <= 0.0f) return std::string("GoldCoin");
+            float roll = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+            float target = roll * total;
+            float accum = 0.0f;
+            for (const auto& r : m_levelConfig->pickupRatios) {
+                float w = (r.weight > 0.0f ? r.weight : 0.0f);
+                accum += w;
+                if (target <= accum) return r.pickupType;
+            }
+            return m_levelConfig->pickupRatios.back().pickupType;
+        };
+
         auto& coins = it->second;
+        
+        // Process all existing coins first - reposition and reactivate
         for (size_t i = 0; i < coins.size() && i < newPositions.size(); ++i) {
             Gnosis::Entity e = coins[i];
             Transform* t = m_ecsSystem->GetComponent<Transform>(e);
             Sprite* s = m_ecsSystem->GetComponent<Sprite>(e);
             Pickup* p = m_ecsSystem->GetComponent<Pickup>(e);
-            if (!t) continue;
+            if (!t || !s || !p) continue;
 
+            // RE-ROLL pickup type for this coin using current level ratios
+            const std::string newType = choosePickupType();
+            const bool wasOriginalCoin = isCoinType(p->pickupType);
+            const bool isNewCoin = isCoinType(newType);
+            
+            // Update pickup component with new type and value
+            p->pickupType = newType;
+            if (newType == "GoldCoin") p->value = 1;
+            else if (newType == "BlueCoin") p->value = 2;
+            else if (newType == "RedCoin") p->value = 5;
+            else p->value = 1;
+
+            // Update sprite for new pickup type
+            if (isNewCoin) {
+                *s = Sprite(newType, 16.0f, 16.0f, 16, 16, 10, 0.1f);
+                s->isAnimated = true;
+                s->playing = true;
+                s->loop = true;
+                // Reset bobbing for coins
+                p->bobbingSpeed = 0.0f;
+                p->bobbingAmplitude = 0.0f;
+            } else {
+                // Hearts are 32x32 static sprites
+                *s = Sprite(newType, 32.0f, 32.0f);
+                s->isAnimated = false;
+                s->playing = false;
+                s->loop = false;
+                // Hearts bob slightly
+                p->bobbingSpeed = 1.5f;
+                p->bobbingAmplitude = 6.0f;
+            }
+            s->color = Gnosis::GNColor(255, 255, 255, 255);
+            s->visible = true;
+            s->layer = 3;
+
+            // Update hitbox for new pickup type
+            Hitbox* hb = m_ecsSystem->GetComponent<Hitbox>(e);
+            if (hb) {
+                hb->width = isNewCoin ? 16.0f : 32.0f;
+                hb->height = isNewCoin ? 16.0f : 32.0f;
+            }
+
+            // Reposition coin
             const float cellBase = 16.0f;
             const float halfCell = cellBase * t->scale.x * 0.5f; // 64px at scale 8
             const auto& np = newPositions[i];
             t->position.x = np.x - halfCell;
             t->position.y = np.y - halfCell;
 
-            // Re-apply heart centering shift relative to cell origin
-            if (p && !isCoinType(p->pickupType)) {
+            // Re-apply heart centering shift relative to cell origin if needed
+            if (!isNewCoin) {
                 float extraHalf = (32.0f - 16.0f) * t->scale.x * 0.5f;
                 t->position.x -= extraHalf;
                 t->position.y -= extraHalf;
             }
 
-            if (s) s->visible = true;
-            if (p) {
-                bool wasInactive = !p->isActive;
-                p->isActive = true;
-                p->bobbingTimer = 0.0f;
-                if (wasInactive) {
-                    m_pickupIndex[e] = m_activePickups.size();
-                    m_activePickups.push_back(e);
+            // COMPLETELY RESET coin state - this is critical for reactivation
+            p->isActive = true;
+            p->bobbingTimer = 0.0f;
+            p->bobbingBaseY = t->position.y;
+
+            // Remove from active tracking if it was there (to avoid duplicates)
+            auto trackingIt = m_pickupIndex.find(e);
+            if (trackingIt != m_pickupIndex.end()) {
+                size_t oldIdx = trackingIt->second;
+                size_t lastIdx = m_activePickups.size() - 1;
+                if (oldIdx < m_activePickups.size() && oldIdx != lastIdx) {
+                    Gnosis::Entity moved = m_activePickups[lastIdx];
+                    m_activePickups[oldIdx] = moved;
+                    m_pickupIndex[moved] = oldIdx;
                 }
-                GN_LOG_DEBUG(std::string("PickupSystem: reactivated id=") + std::to_string(e) +
-                             " group=" + std::to_string(groupId) +
-                             " posX=" + std::to_string(t->position.x));
+                if (!m_activePickups.empty()) {
+                    m_activePickups.pop_back();
+                }
+                m_pickupIndex.erase(trackingIt);
             }
+            
+            // Re-add to active tracking (guarantees fresh tracking)
+            m_pickupIndex[e] = m_activePickups.size();
+            m_activePickups.push_back(e);
+
+            GN_LOG_DEBUG(std::string("PickupSystem: repositioned&rerolled id=") + std::to_string(e) +
+                         " group=" + std::to_string(groupId) +
+                         " newType=" + newType +
+                         " pos=(" + std::to_string(t->position.x) + "," + std::to_string(t->position.y) + ")" +
+                         " active=" + (p->isActive ? "true" : "false") +
+                         " trackingIdx=" + std::to_string(m_pickupIndex[e]));
         }
+
+        GN_LOG_DEBUG("PickupSystem::repositionCoinsForGroup completed: groupId=" + std::to_string(groupId) + 
+                     " activePickups=" + std::to_string(m_activePickups.size()));
     }
 
     void PickupSystem::removeGroupIfMissing(const std::unordered_set<int>& currentGroups) {
