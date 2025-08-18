@@ -321,6 +321,12 @@ static NSString * const ACImageNameSnowLevelBackTrees AC_SWIFT_PRIVATE = @"SnowL
 /// The "SnowLevelBackground" asset catalog image resource.
 static NSString * const ACImageNameSnowLevelBackground AC_SWIFT_PRIVATE = @"SnowLevelBackground";
 
+/// The "SnowLevelFrontLayerBackground" asset catalog image resource.
+static NSString * const ACImageNameSnowLevelFrontLayerBackground AC_SWIFT_PRIVATE = @"SnowLevelFrontLayerBackground";
+
+/// The "SnowLevelFrontLayerTrees" asset catalog image resource.
+static NSString * const ACImageNameSnowLevelFrontLayerTrees AC_SWIFT_PRIVATE = @"SnowLevelFrontLayerTrees";
+
 /// The "SnowLevelFrontTrees" asset catalog image resource.
 static NSString * const ACImageNameSnowLevelFrontTrees AC_SWIFT_PRIVATE = @"SnowLevelFrontTrees";
 

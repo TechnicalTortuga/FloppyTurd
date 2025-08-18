@@ -216,27 +216,26 @@ namespace GameCore {
     }
 
     void LevelConfigFactory::AddSnowLevelLayers(LevelConfig& config) {
-        // Snow level layers
+        // Snow level layers using new snow level assets
         float backgroundScale = 2.66f;  // Separate scale for 1024x480 backgrounds
         
-        config.backgroundLayers.emplace_back("SnowLevelBackground", 50.0f, 0.1f, 0);
+        // Back layer - furthest background
+        config.backgroundLayers.emplace_back("SnowLevelBackLayerBackground", 50.0f, 0.1f, 0);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
         config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
         
-        config.backgroundLayers.emplace_back("SnowLevelMountains", 75.0f, 0.2f, 1);
+        // Mid layer - mountains and middle ground
+        config.backgroundLayers.emplace_back("SnowLevelMidLayerBackground", 75.0f, 0.2f, 1);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
         config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
         
-        config.backgroundLayers.emplace_back("SnowLevelBackTrees", 100.0f, 0.3f, 2);
+        // Front layer - trees and foreground elements (same speed as front trees)
+        config.backgroundLayers.emplace_back("SnowLevelFrontLayerBackground", 150.0f, 0.3f, 2);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
         config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
         
-        config.backgroundLayers.emplace_back("SnowLevelFrontTrees", 150.0f, 0.5f, 3);
-        config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
-        
-        // Add snow particles layer
-        config.backgroundLayers.emplace_back("Snowfall", 25.0f, 0.15f, 1);
+        // Front trees layer - closest to player (same speed as front background)
+        config.backgroundLayers.emplace_back("SnowLevelFrontLayerTrees", 150.0f, 0.5f, 3);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
         config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
     }
@@ -378,9 +377,13 @@ namespace GameCore {
     }
 
     void LevelConfigFactory::AddSnowEnemies(LevelConfig& config) {
-        // Snow creatures
-        config.enemies.emplace_back("SnowManIdle", 60.0f, 80.0f, 100.0f, 4.0f, 3, "horizontal");
-        config.enemies.emplace_back("SnowManThrow", 60.0f, 80.0f, 130.0f, 3.5f, 2, "circular");
+        // Snow creatures - regular snowmen are decorative (64x64 sprites)
+        config.enemies.emplace_back("SnowManChill", 64.0f, 64.0f, 0.0f, 0.0f, 1, "decorative");
+        config.enemies.emplace_back("SnowManGreen", 64.0f, 64.0f, 0.0f, 0.0f, 1, "decorative");
+        config.enemies.emplace_back("SnowManChad", 64.0f, 64.0f, 0.0f, 0.0f, 1, "decorative");
+        
+        // Red snowman is the actual enemy - throws snowballs (64x64 sprite, 6-frame throw animation)
+        config.enemies.emplace_back("SnowManIdle", 64.0f, 64.0f, 0.0f, 3.5f, 3, "snowman_thrower");
     }
 
     void LevelConfigFactory::AddCastleEnemies(LevelConfig& config) {

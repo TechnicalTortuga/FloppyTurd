@@ -251,33 +251,63 @@ namespace GameCore {
         if (m_enemyPoolInitialized) return;
         if (!m_isLoaded || !m_currentLevelConfig.enableEnemies || m_currentLevelConfig.enemies.empty()) return;
 
-        // Limit pool to m_maxActiveEnemies
-        int count = std::min(m_maxActiveEnemies, static_cast<int>(m_currentLevelConfig.enemies.size() * m_maxActiveEnemies));
-        // For Level 2 we only configured ToiletPaperFlap; still create up to 4 entities spaced to the right
-        const EnemyConfig& cfg = m_currentLevelConfig.enemies[0];
+        // Spawn all enemy types for the level
         float screenW = 1179.0f; // Avoid async delegate to prevent dangling pointer crash
         float startX = screenW + 200.0f;
-        // Reduce concurrent enemies a bit for sewers
-        int desired = (m_currentLevelId == 2 ? 3 : m_maxActiveEnemies);
-        for (int i = 0; i < desired; ++i) {
-            float x = startX + i * (m_enemySpacing * 1.25f);
-            float baseY;
-            
-            if (m_currentLevelId == 3) { // Desert level - spread birds more vertically
-                // Spread birds from middle of screen to near top, avoiding the very top
-                float minY = 400.0f; // Middle of screen
-                float maxY = 1200.0f; // Near top but not at very top
-                float range = maxY - minY;
-                baseY = minY + (range * (i + 1)) / (desired + 1); // Even distribution
-            } else { // Other levels - original logic
-                baseY = 900.0f + static_cast<float>((i%2==0? -1:1) * 150);
+        
+        // For snow level (level 4), spawn all snowman types
+        if (m_currentLevelId == 4) {
+            // Spawn decorative snowmen first
+            for (int i = 0; i < 3; ++i) { // Spawn 3 decorative snowmen
+                const EnemyConfig& cfg = m_currentLevelConfig.enemies[i]; // SnowManChill, SnowManGreen, SnowManChad
+                float x = startX + i * 300.0f; // Space them out horizontally
+                float baseY = 900.0f; // Ground level for snowmen
+                
+                Gnosis::Entity e = SpawnEnemy(cfg, x, baseY);
+                if (e != 0) { 
+                    m_activeEnemies.push_back(e); 
+                    m_enemyBaseY[e] = baseY; 
+                    GN_LOG_DEBUG("Snow level enemy init: " + cfg.textureId + " baseY=" + std::to_string(baseY) + ", x=" + std::to_string(x)); 
+                }
             }
             
-            Gnosis::Entity e = SpawnEnemy(cfg, x, baseY);
-            if (e != 0) { 
-                m_activeEnemies.push_back(e); 
-                m_enemyBaseY[e] = baseY; 
-                GN_LOG_DEBUG("Enemy init: " + cfg.textureId + " baseY=" + std::to_string(baseY) + ", x=" + std::to_string(x) + ", level=" + std::to_string(m_currentLevelId)); 
+            // Spawn the red snowman thrower
+            const EnemyConfig& throwerCfg = m_currentLevelConfig.enemies[3]; // SnowManIdle
+            float throwerX = startX + 900.0f; // Further to the right
+            float throwerBaseY = 900.0f;
+            
+            Gnosis::Entity thrower = SpawnEnemy(throwerCfg, throwerX, throwerBaseY);
+            if (thrower != 0) { 
+                m_activeEnemies.push_back(thrower); 
+                m_enemyBaseY[thrower] = throwerBaseY; 
+                GN_LOG_DEBUG("Snow level thrower init: " + throwerCfg.textureId + " baseY=" + std::to_string(throwerBaseY) + ", x=" + std::to_string(throwerX)); 
+            }
+        } else {
+            // Original logic for other levels
+            // For Level 2 we only configured ToiletPaperFlap; still create up to 4 entities spaced to the right
+            const EnemyConfig& cfg = m_currentLevelConfig.enemies[0];
+            // Reduce concurrent enemies a bit for sewers
+            int desired = (m_currentLevelId == 2 ? 3 : m_maxActiveEnemies);
+            for (int i = 0; i < desired; ++i) {
+                float x = startX + i * (m_enemySpacing * 1.25f);
+                float baseY;
+                
+                if (m_currentLevelId == 3) { // Desert level - spread birds more vertically
+                    // Spread birds from middle of screen to near top, avoiding the very top
+                    float minY = 400.0f; // Middle of screen
+                    float maxY = 1200.0f; // Near top but not at very top
+                    float range = maxY - minY;
+                    baseY = minY + (range * (i + 1)) / (desired + 1); // Even distribution
+                } else { // Other levels - original logic
+                    baseY = 900.0f + static_cast<float>((i%2==0? -1:1) * 150);
+                }
+                
+                Gnosis::Entity e = SpawnEnemy(cfg, x, baseY);
+                if (e != 0) { 
+                    m_activeEnemies.push_back(e); 
+                    m_enemyBaseY[e] = baseY; 
+                    GN_LOG_DEBUG("Enemy init: " + cfg.textureId + " baseY=" + std::to_string(baseY) + ", x=" + std::to_string(x) + ", level=" + std::to_string(m_currentLevelId)); 
+                }
             }
         }
         m_enemyPoolInitialized = true;
@@ -342,20 +372,28 @@ namespace GameCore {
             float rightEdge = leftEdge + widthPx;
             if (rightEdge < 0.0f) {
                 t->position.x = rightmostX + (m_enemySpacing * 1.25f);
+                
+                // Get enemy component to check if it should be grounded
+                Enemy* enemyComp = m_ecsSystem->GetComponent<Enemy>(e);
                 float baseY;
                 
-                if (m_currentLevelId == 3) { // Desert level - maintain vertical spread
-                    // Random Y within the desert bird range
+                if (enemyComp && enemyComp->isGrounded) {
+                    // For grounded enemies, calculate proper ground position
+                    // Use the same logic as EnemySystem::GroundEnemy
+                    const float screenHeight = 2556.0f; // iPhone 16 portrait screen height
+                    float enemyHeight = 64.0f * std::abs(t->scale.y); // Snowman height with scale
+                    baseY = screenHeight - enemyHeight;
+                } else if (m_currentLevelId == 3) { // Desert level - maintain vertical spread
+                    // Random Y within the desert bird range for flying enemies
                     float minY = 400.0f;
                     float maxY = 1200.0f;
                     baseY = minY + static_cast<float>(rand() % static_cast<int>(maxY - minY));
-                } else { // Other levels - original logic
+                } else { // Other levels - original logic for non-grounded enemies
                     baseY = 900.0f + static_cast<float>((rand()%300) - 150);
                 }
                 
                 t->position.y = baseY;
                 // Sync Enemy component's bobbing anchor with new wrap position
-                Enemy* enemyComp = m_ecsSystem->GetComponent<Enemy>(e);
                 if (enemyComp) {
                     enemyComp->baseY = baseY;
                     enemyComp->hasInitializedBaseY = true;
@@ -552,7 +590,8 @@ namespace GameCore {
         // Create enemy component
         Enemy enemyComp;
         enemyComp.health = config.hitPoints;
-        enemyComp.enemyType = config.movementPattern;
+        enemyComp.enemyType = config.textureId;  // Store the texture ID as enemy type
+        enemyComp.movementPattern = config.movementPattern;  // Store the movement pattern
         enemyComp.isActive = true;
         // Enable bobbing for horizontal flyers (ToiletPaper)
         if (config.textureId == "ToiletPaperFlap") {

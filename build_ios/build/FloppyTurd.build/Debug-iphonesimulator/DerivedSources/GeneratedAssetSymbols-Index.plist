@@ -1060,6 +1060,26 @@
 			<key>catalogPath</key>
 			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
+			<string>ACImageNameSnowLevelFrontLayerBackground</string>
+			<key>relativePath</key>
+			<string>./graphics/environment/backgrounds/snow_level/SnowLevelFrontLayerBackground.imageset</string>
+			<key>swiftSymbol</key>
+			<string>snowLevelFrontLayerBackground</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
+			<key>objcSymbol</key>
+			<string>ACImageNameSnowLevelFrontLayerTrees</string>
+			<key>relativePath</key>
+			<string>./graphics/environment/backgrounds/snow_level/SnowLevelFrontLayerTrees.imageset</string>
+			<key>swiftSymbol</key>
+			<string>snowLevelFrontLayerTrees</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
+			<key>objcSymbol</key>
 			<string>ACImageNameSnowLevelFrontTrees</string>
 			<key>relativePath</key>
 			<string>./graphics/environment/backgrounds/snow_level/SnowLevelFrontTrees.imageset</string>

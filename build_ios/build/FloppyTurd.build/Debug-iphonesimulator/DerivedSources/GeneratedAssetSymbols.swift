@@ -337,6 +337,12 @@ extension DeveloperToolsSupport.ImageResource {
     /// The "SnowLevelBackground" asset catalog image resource.
     static let snowLevelBackground = DeveloperToolsSupport.ImageResource(name: "SnowLevelBackground", bundle: resourceBundle)
 
+    /// The "SnowLevelFrontLayerBackground" asset catalog image resource.
+    static let snowLevelFrontLayerBackground = DeveloperToolsSupport.ImageResource(name: "SnowLevelFrontLayerBackground", bundle: resourceBundle)
+
+    /// The "SnowLevelFrontLayerTrees" asset catalog image resource.
+    static let snowLevelFrontLayerTrees = DeveloperToolsSupport.ImageResource(name: "SnowLevelFrontLayerTrees", bundle: resourceBundle)
+
     /// The "SnowLevelFrontTrees" asset catalog image resource.
     static let snowLevelFrontTrees = DeveloperToolsSupport.ImageResource(name: "SnowLevelFrontTrees", bundle: resourceBundle)
 

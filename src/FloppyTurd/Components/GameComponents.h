@@ -264,12 +264,31 @@ namespace GameCore {
     /**
      * Enemy component - enemy-specific data
      */
+    /**
+     * Enemy states for different behaviors
+     */
+    enum class EnemyState {
+        Idle = 0,           // Default state
+        Moving,              // Moving around
+        Attacking,           // Attacking/Throwing
+        Hurt,                // Taking damage
+        Dead,                // Dead/Inactive
+        Decorative           // Just for show, no behavior
+    };
+    
     struct Enemy : public Gnosis::Component {
         int health;
         int damage;
         float speed;
         std::string enemyType;
+        std::string movementPattern;  // "horizontal", "vertical", "circular", "swoop", "snowman_thrower", "decorative"
         bool isActive;
+        
+        // State management
+        EnemyState currentState;
+        float stateTimer;           // Time in current state
+        float stateDuration;        // How long to stay in current state
+        
         // Bobbing & behavior state
         bool bobbingEnabled;
         float bobSpeed;       // radians per second
@@ -278,17 +297,64 @@ namespace GameCore {
         float baseY;          // anchor Y around which to bob
         bool hasInitializedBaseY;
         
+        // Movement and positioning
+        Gnosis::GNVector2 spawnPosition;
+        bool isGrounded;           // Whether enemy should be grounded at screen bottom
+        float groundOffset;        // Offset from ground (for enemies that float slightly above)
+        
+        // Snowman thrower specific properties
+        bool isThrower;
+        float throwCooldown;      // Time between throws
+        float throwTimer;         // Current cooldown timer
+        float throwRange;         // Distance at which to start throwing
+        bool isOnScreen;          // Whether enemy is visible on screen
+        bool isThrowing;          // Currently in throw animation
+        float throwAnimationTimer; // Timer for throw animation
+        float throwAnimationDuration; // Duration of throw animation (6 frames)
+        int currentThrowFrame;    // Current frame of throw animation
+        bool hasSpawnedProjectile; // Whether projectile was spawned this throw cycle
+        
+        // Animation support
+        bool isAnimated;
+        int totalFrames;           // Total animation frames
+        float frameDuration;       // Time per frame
+        float animationTimer;      // Current animation time
+        int currentFrame;          // Current animation frame
+        
         Enemy()
             : health(1)
             , damage(1)
             , speed(100.0f)
+            , enemyType("")
+            , movementPattern("horizontal")
             , isActive(true)
+            , currentState(EnemyState::Idle)
+            , stateTimer(0.0f)
+            , stateDuration(0.0f)
             , bobbingEnabled(false)
             , bobSpeed(2.0f)
             , bobAmplitude(90.0f)
             , bobPhase(0.0f)
             , baseY(0.0f)
             , hasInitializedBaseY(false)
+            , spawnPosition(0.0f, 0.0f)
+            , isGrounded(true)
+            , groundOffset(0.0f)
+            , isThrower(false)
+            , throwCooldown(2.0f)
+            , throwTimer(0.0f)
+            , throwRange(400.0f)
+            , isOnScreen(false)
+            , isThrowing(false)
+            , throwAnimationTimer(0.0f)
+            , throwAnimationDuration(0.5f)
+            , currentThrowFrame(0)
+            , hasSpawnedProjectile(false)
+            , isAnimated(false)
+            , totalFrames(1)
+            , frameDuration(0.1f)
+            , animationTimer(0.0f)
+            , currentFrame(0)
         {}
     };
     
@@ -303,12 +369,22 @@ namespace GameCore {
         std::string ownerTag;
         bool piercing;
         
+        // Enemy projectile specific properties
+        bool isEnemyProjectile;
+        Gnosis::GNVector2 direction;
+        float gravity;
+        bool affectedByGravity;
+        
         Projectile()
             : damage(1)
             , speed(300.0f)
             , lifetime(3.0f)
             , currentLifetime(0.0f)
             , piercing(false)
+            , isEnemyProjectile(false)
+            , direction(0.0f, 0.0f)
+            , gravity(0.0f)
+            , affectedByGravity(false)
         {}
     };
     
