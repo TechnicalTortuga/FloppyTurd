@@ -152,6 +152,34 @@ struct MetalMatrixHelpers {
         return finalTranslation * scale * rotation * centerTranslation
     }
     
+    /// Creates a transformation matrix for a sprite with custom pivot point rotation
+    /// - Parameters:
+    ///   - position: Sprite position (x, y)
+    ///   - scale: Sprite scale (x, y)
+    ///   - rotation: Rotation angle in degrees
+    ///   - pivotX: Pivot point X relative to sprite center (in normalized coordinates, -0.5 to 0.5)
+    ///   - pivotY: Pivot point Y relative to sprite center (in normalized coordinates, -0.5 to 0.5)
+    /// - Returns: 4x4 transformation matrix
+    static func spriteTransformMatrixPivoted(position: (x: Float, y: Float), scale: (x: Float, y: Float), rotation: Float, pivotX: Float, pivotY: Float) -> simd_float4x4 {
+        // For rotation around custom pivot point:
+        // 1. Translate to center the sprite at origin
+        // 2. Translate to pivot point
+        // 3. Apply rotation
+        // 4. Apply scale
+        // 5. Translate back from pivot point
+        // 6. Translate to final position
+        
+        let centerTranslation = translationMatrix(x: -0.5, y: -0.5)  // Center the unit quad
+        let pivotTranslation = translationMatrix(x: pivotX, y: pivotY)  // Move to pivot point
+        let rotation = rotationMatrixZ(angleDegrees: rotation)
+        let scale = scaleMatrix(x: scale.x, y: scale.y)
+        let pivotTranslationBack = translationMatrix(x: -pivotX, y: -pivotY)  // Move back from pivot
+        let finalTranslation = translationMatrix(x: position.x, y: position.y)
+        
+        // Combine transformations: finalTranslation * pivotTranslationBack * scale * rotation * pivotTranslation * centerTranslation
+        return finalTranslation * pivotTranslationBack * scale * rotation * pivotTranslation * centerTranslation
+    }
+    
     /// Creates a complete transformation matrix for a 2D texture (no rotation)
     /// - Parameters:
     ///   - position: Texture position (x, y)

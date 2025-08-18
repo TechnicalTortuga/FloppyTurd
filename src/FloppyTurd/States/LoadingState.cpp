@@ -235,6 +235,7 @@ namespace GameCore {
             "TopToilet.png",
             "TopToiletGold.png",
             "TopToiletSnow.png",
+            "TorchPillar.png",
             "TryAgainBackground.png",
             "TurdHeart.png",
             "TurdHeart0HalfHollow.png",
@@ -269,7 +270,11 @@ namespace GameCore {
             "volumemeterempty.png",
             "volumemeterfull.png",
             "Whacky_Joe_msdf.png",
-            "WhackyJoe_32.png"
+            "WhackyJoe_32.png",
+            "castlebacklayerbackground.png",
+            "curtains.png",
+            "castlelevelfloortorch.png",
+            "castlelevelchandelier.png"
         };
         
         // Combine all audio into one vector for loading (names + extensions only)

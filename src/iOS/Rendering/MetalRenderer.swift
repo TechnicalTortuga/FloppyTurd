@@ -1010,6 +1010,68 @@ public class MetalRenderer {
         log("drawSpriteScaledCentered: Rendered sprite \(textureHandle) centered at (\(x), \(y))", level: .debug)
     }
     
+    /// Draw a sprite with custom pivot point rotation (for objects like spike balls rotating from base)
+    public func drawSpriteScaledPivoted(textureHandle: UInt32, x: Float, y: Float, scaleX: Float, scaleY: Float, rotation: Float, pivotX: Float, pivotY: Float) {
+        guard let texture = textures[textureHandle] else {
+            log("drawSpriteScaledPivoted: Invalid sprite handle \(textureHandle)", level: .warning)
+            return
+        }
+        
+        guard let uniformBuffer = uniformBuffer else {
+            log("drawSpriteScaledPivoted: Missing required Metal resources", level: .warning)
+            return
+        }
+        
+        // Check if textured pipeline state is available
+        guard let pipelineState = texturedPipelineState else {
+            log("drawSpriteScaledPivoted: No pipeline state available", level: .warning)
+            return
+        }
+        
+        guard let renderEncoder = ensureRenderEncoder() else {
+            log("drawSpriteScaledPivoted: Failed to get render encoder", level: .error)
+            return
+        }
+        
+        // Calculate sprite dimensions
+        let spriteWidth = Float(texture.width) * scaleX
+        let spriteHeight = Float(texture.height) * scaleY
+        
+        // Use pivot-based sprite transformation matrix
+        let modelMatrix = MetalMatrixHelpers.spriteTransformMatrixPivoted(
+            position: (x: x, y: y),
+            scale: (x: spriteWidth, y: spriteHeight),
+            rotation: rotation,
+            pivotX: pivotX,
+            pivotY: pivotY
+        )
+        
+        // Get current projection matrix
+        let projectionMatrix = uniformBuffer.contents().bindMemory(to: simd_float4x4.self, capacity: 1).pointee
+        
+        // Create MVP matrix
+        let mvpMatrix = projectionMatrix * modelMatrix
+        
+        // Create temporary uniform buffer for this sprite
+        guard let device = device,
+              let tempUniformBuffer = device.makeBuffer(bytes: [mvpMatrix], length: MemoryLayout<simd_float4x4>.stride, options: []) else {
+            log("drawSpriteScaledPivoted: Failed to create temporary uniform buffer", level: .error)
+            return
+        }
+        
+        // Set up render encoder
+        renderEncoder.setRenderPipelineState(pipelineState)
+        renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
+        renderEncoder.setVertexBuffer(tempUniformBuffer, offset: 0, index: 1)
+        renderEncoder.setFragmentTexture(texture, index: 0)
+        renderEncoder.setFragmentSamplerState(samplerState, index: 0)
+        
+        // Draw the sprite
+        renderEncoder.drawIndexedPrimitives(type: .triangle, indexCount: 6, indexType: .uint16, indexBuffer: indexBuffer!, indexBufferOffset: 0)
+        
+        log("drawSpriteScaledPivoted: Rendered sprite \(textureHandle) with pivot at (\(pivotX), \(pivotY))", level: .debug)
+    }
+    
     public func drawCircle(_ x: Float, _ y: Float, _ radius: Float, _ r: Float, _ g: Float, _ b: Float, _ a: Float) {
         drawCircle(x: x, y: y, radius: radius, r: r, g: g, b: b, a: a, segments: 32)
     }

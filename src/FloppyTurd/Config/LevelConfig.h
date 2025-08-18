@@ -132,19 +132,80 @@ namespace GameCore {
     };
 
     /**
-     * @brief Enemy Configuration for each level
+     * @brief Animation clip configuration for StateAnimation
+     */
+    struct AnimationClip {
+        std::string textureId;
+        int frameWidth;
+        int frameHeight;
+        int frameCount;
+        float frameTime;
+        bool loop;
+        
+        AnimationClip(const std::string& texture = "", int fw = 64, int fh = 64, int fc = 1, float ft = 0.16f, bool l = true)
+            : textureId(texture), frameWidth(fw), frameHeight(fh), frameCount(fc), frameTime(ft), loop(l) {}
+    };
+
+    /**
+     * @brief Bobbing/movement behavior configuration
+     */
+    struct BobbingConfig {
+        bool enabled;
+        float speed;
+        float amplitude;
+        float baseSpeed;       // Base bobbing speed
+        float speedJitter;     // Random variance in speed
+        float amplitudeMin;    // Minimum amplitude
+        float amplitudeMax;    // Maximum amplitude
+        float chanceToHover;   // Probability (0-100) to enable bobbing
+        
+        BobbingConfig()
+            : enabled(false), speed(1.0f), amplitude(0.0f), baseSpeed(1.0f), speedJitter(0.0f)
+            , amplitudeMin(0.0f), amplitudeMax(0.0f), chanceToHover(0.0f) {}
+    };
+
+    /**
+     * @brief Enhanced Enemy Configuration with modular support
      */
     struct EnemyConfig {
+        // Basic properties
         std::string textureId;
         float width;
         float height;
         float speed;
         float spawnRate;
         int hitPoints;
-        std::string movementPattern;    // "horizontal", "vertical", "circular", "swoop"
+        std::string movementPattern;
+        int renderLayer;
         
+        // Animation configuration
+        bool isAnimated;
+        int frameWidth;
+        int frameHeight;
+        int frameCount;
+        float frameTime;
+        bool loopAnimation;
+        
+        // StateAnimation support (for multi-state enemies like snowmen)
+        bool useStateAnimation;
+        std::vector<std::pair<std::string, AnimationClip>> animationStates;
+        std::string initialState;
+        
+        // Movement behavior
+        BobbingConfig bobbingConfig;
+        
+        // Constructors
         EnemyConfig(const std::string& texture, float w, float h, float spd, float rate, int hp, const std::string& pattern = "horizontal")
-            : textureId(texture), width(w), height(h), speed(spd), spawnRate(rate), hitPoints(hp), movementPattern(pattern) {}
+            : textureId(texture), width(w), height(h), speed(spd), spawnRate(rate), hitPoints(hp), movementPattern(pattern)
+            , renderLayer(4), isAnimated(false), frameWidth(static_cast<int>(w)), frameHeight(static_cast<int>(h))
+            , frameCount(1), frameTime(0.16f), loopAnimation(true), useStateAnimation(false), initialState("idle") {}
+            
+        // Animated enemy constructor
+        EnemyConfig(const std::string& texture, float w, float h, float spd, float rate, int hp, 
+                   int fw, int fh, int fc, float ft, bool loop = true, const std::string& pattern = "horizontal")
+            : textureId(texture), width(w), height(h), speed(spd), spawnRate(rate), hitPoints(hp), movementPattern(pattern)
+            , renderLayer(4), isAnimated(true), frameWidth(fw), frameHeight(fh)
+            , frameCount(fc), frameTime(ft), loopAnimation(loop), useStateAnimation(false), initialState("idle") {}
     };
 
     /**

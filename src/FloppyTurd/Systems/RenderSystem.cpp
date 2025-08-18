@@ -633,6 +633,7 @@ namespace GameCore {
             } else {
                 // Compute final scale based on sprite frame vs logical size
                 bool usesCenteredRendering = m_ecsSystem->HasComponent<RotationRenderer>(item.entity);
+                bool usesPivotRotation = m_ecsSystem->HasComponent<PivotRotationRenderer>(item.entity);
                 float scaleX = item.sprite->width / item.sprite->frameWidth;
                 float scaleY = item.sprite->height / item.sprite->frameHeight;
                 float finalScaleX = scaleX * item.transform->scale.x * GetCameraScale();
@@ -667,6 +668,50 @@ namespace GameCore {
                         finalScaleY,
                         item.transform->rotation
                     );
+                } else if (usesPivotRotation && m_platformDelegates.renderer.drawSpriteScaledPivoted) {
+                    // Pivot-based rotation rendering using the new pivot function (PRIORITY)
+                    PivotRotationRenderer* pivotRenderer = m_ecsSystem->GetComponent<PivotRotationRenderer>(item.entity);
+                    if (pivotRenderer) {
+                        // Convert pivot from pixel coordinates relative to sprite center to normalized coordinates
+                        // The pivot is in pixels relative to sprite center (e.g., 0, -45 for spike ball)
+                        // We need to convert to normalized coordinates (-0.5 to 0.5) for Metal
+                        float normalizedPivotX = pivotRenderer->pivotX / item.sprite->width;  // Divide by sprite width, not scaled width
+                        float normalizedPivotY = pivotRenderer->pivotY / item.sprite->height; // Divide by sprite height, not scaled height
+                        
+                        // Use the new pivot-based rendering function
+                        m_platformDelegates.renderer.drawSpriteScaledPivoted(
+                            textureHandle,
+                            screenPos.x,
+                            screenPos.y,
+                            finalScaleX,
+                            finalScaleY,
+                            item.transform->rotation,
+                            normalizedPivotX,
+                            normalizedPivotY
+                        );
+                    }
+                } else if (usesPivotRotation && m_platformDelegates.renderer.drawSpriteScaledCentered) {
+                    // Fallback pivot-based rotation rendering (e.g., for spike ball rotating from base)
+                    PivotRotationRenderer* pivotRenderer = m_ecsSystem->GetComponent<PivotRotationRenderer>(item.entity);
+                    if (pivotRenderer) {
+                        // Calculate pivot offset in world space
+                        float pivotOffsetX = pivotRenderer->pivotX * item.transform->scale.x;
+                        float pivotOffsetY = pivotRenderer->pivotY * item.transform->scale.y;
+                        
+                        // Adjust screen position to account for pivot
+                        float adjustedX = screenPos.x - pivotOffsetX;
+                        float adjustedY = screenPos.y - pivotOffsetY;
+                        
+                        // Use centered rendering with adjusted position
+                        m_platformDelegates.renderer.drawSpriteScaledCentered(
+                            textureHandle,
+                            adjustedX,
+                            adjustedY,
+                            finalScaleX,
+                            finalScaleY,
+                            item.transform->rotation
+                        );
+                    }
                 } else if (m_platformDelegates.renderer.drawSpriteScaled) {
                     // Default top-left rendering
                     m_platformDelegates.renderer.drawSpriteScaled(

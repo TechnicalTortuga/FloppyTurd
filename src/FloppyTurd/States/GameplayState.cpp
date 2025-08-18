@@ -1,6 +1,7 @@
 #include "GameplayState.h"
 #include "../../Engine/Core/GNLog.h"
 #include "../Components/GameComponents.h"
+#include "../Config/EnemyConfigs.h"
 #include <algorithm>
 #include <set>
 
@@ -351,6 +352,9 @@ namespace GameCore {
         m_pickupSystem = std::make_unique<PickupSystem>(m_ecsSystem, m_levelManager.get(), m_platformDelegates, &m_currentLevelConfig);
         // Create enemy system for behaviors (bobbing, states, etc.)
         m_enemySystem = std::make_unique<EnemySystem>(m_ecsSystem, m_levelManager.get());
+        
+        // Initialize enemy configuration registry BEFORE loading levels
+        GameCore::EnemyConfigRegistry::Initialize();
         
         // Load the current level (ensure previous entities are torn down)
         m_levelManager->UnloadLevel();

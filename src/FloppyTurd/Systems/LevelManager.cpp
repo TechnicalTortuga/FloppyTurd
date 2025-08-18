@@ -1,6 +1,7 @@
 #include "LevelManager.h"
 #include "../../Engine/Core/GNLog.h"
 #include "../Components/GameComponents.h"
+#include "../Config/EnemyConfigs.h"
 #include <algorithm>
 #include <cmath>
 #include <unordered_map>
@@ -257,30 +258,38 @@ namespace GameCore {
         
         // For snow level (level 4), spawn all snowman types
         if (m_currentLevelId == 4) {
-            // Spawn decorative snowmen first
+            // Spawn decorative snowmen first - GROUND THEM at bottom of screen
+            float screenHeight = 2556.0f; // iPhone 16 portrait height
+            float snowmanHeight = 64.0f; // Snowman sprite height
+            float groundY = screenHeight - snowmanHeight; // Ground level - snowmen bottom edge at screen bottom
+            
             for (int i = 0; i < 3; ++i) { // Spawn 3 decorative snowmen
                 const EnemyConfig& cfg = m_currentLevelConfig.enemies[i]; // SnowManChill, SnowManGreen, SnowManChad
                 float x = startX + i * 300.0f; // Space them out horizontally
-                float baseY = 900.0f; // Ground level for snowmen
+                float baseY = groundY; // Ground level for snowmen
+                
+                GN_LOG_DEBUG("LevelManager: Spawning decorative snowman " + std::to_string(i) + " at x=" + std::to_string(x) + " baseY=" + std::to_string(baseY) + " (groundY=" + std::to_string(groundY) + ")");
                 
                 Gnosis::Entity e = SpawnEnemy(cfg, x, baseY);
                 if (e != 0) { 
                     m_activeEnemies.push_back(e); 
                     m_enemyBaseY[e] = baseY; 
-                    GN_LOG_DEBUG("Snow level enemy init: " + cfg.textureId + " baseY=" + std::to_string(baseY) + ", x=" + std::to_string(x)); 
+                    GN_LOG_DEBUG("Snow level enemy init: " + cfg.textureId + " baseY=" + std::to_string(baseY) + ", x=" + std::to_string(x) + " entity=" + std::to_string(e)); 
                 }
             }
             
             // Spawn the red snowman thrower
             const EnemyConfig& throwerCfg = m_currentLevelConfig.enemies[3]; // SnowManIdle
             float throwerX = startX + 900.0f; // Further to the right
-            float throwerBaseY = 900.0f;
+            float throwerBaseY = groundY; // Same ground level
+            
+            GN_LOG_DEBUG("LevelManager: Spawning red snowman thrower at x=" + std::to_string(throwerX) + " baseY=" + std::to_string(throwerBaseY) + " (groundY=" + std::to_string(groundY) + ")");
             
             Gnosis::Entity thrower = SpawnEnemy(throwerCfg, throwerX, throwerBaseY);
             if (thrower != 0) { 
                 m_activeEnemies.push_back(thrower); 
                 m_enemyBaseY[thrower] = throwerBaseY; 
-                GN_LOG_DEBUG("Snow level thrower init: " + throwerCfg.textureId + " baseY=" + std::to_string(throwerBaseY) + ", x=" + std::to_string(throwerX)); 
+                GN_LOG_DEBUG("Snow level thrower init: " + throwerCfg.textureId + " baseY=" + std::to_string(throwerBaseY) + ", x=" + std::to_string(throwerX) + " entity=" + std::to_string(thrower)); 
             }
         } else {
             // Original logic for other levels
@@ -298,7 +307,13 @@ namespace GameCore {
                     float maxY = 1200.0f; // Near top but not at very top
                     float range = maxY - minY;
                     baseY = minY + (range * (i + 1)) / (desired + 1); // Even distribution
-                } else { // Other levels - original logic
+                } else if (m_currentLevelId == 5) { // Castle level - spread RatCopters across screen
+                    // Spread RatCopters from middle to upper portion of screen
+                    float minY = 600.0f; // Middle of screen
+                    float maxY = 1400.0f; // Upper portion but not at very top
+                    float range = maxY - minY;
+                    baseY = minY + (range * (i + 1)) / (desired + 1); // Even distribution
+                } else { // Other levels - original logic for non-grounded enemies
                     baseY = 900.0f + static_cast<float>((i%2==0? -1:1) * 150);
                 }
                 
@@ -370,7 +385,8 @@ namespace GameCore {
             float leftEdge = t->position.x;
             float widthPx = s->width * std::abs(t->scale.x);
             float rightEdge = leftEdge + widthPx;
-            if (rightEdge < 0.0f) {
+            // Wait until enemy is completely off screen before wrapping (not just touching edge)
+            if (rightEdge < -widthPx) {
                 t->position.x = rightmostX + (m_enemySpacing * 1.25f);
                 
                 // Get enemy component to check if it should be grounded
@@ -387,6 +403,11 @@ namespace GameCore {
                     // Random Y within the desert bird range for flying enemies
                     float minY = 400.0f;
                     float maxY = 1200.0f;
+                    baseY = minY + static_cast<float>(rand() % static_cast<int>(maxY - minY));
+                } else if (m_currentLevelId == 5) { // Castle level - maintain RatCopter vertical spread
+                    // Maintain RatCopter vertical spread when wrapping
+                    float minY = 600.0f;
+                    float maxY = 1400.0f;
                     baseY = minY + static_cast<float>(rand() % static_cast<int>(maxY - minY));
                 } else { // Other levels - original logic for non-grounded enemies
                     baseY = 900.0f + static_cast<float>((rand()%300) - 150);
@@ -526,7 +547,20 @@ namespace GameCore {
             return 0;
         }
 
-        GN_LOG_INFO("Spawning enemy with texture: " + config.textureId);
+        // Ensure enemy config registry is initialized
+        EnemyConfigRegistry::Initialize();
+
+        // Get enhanced configuration from registry
+        GN_LOG_DEBUG("LevelManager: Getting enhanced config for enemy: " + config.textureId);
+        const EnemyConfig& enhancedConfig = EnemyConfigRegistry::GetConfig(config.textureId);
+        GN_LOG_DEBUG("LevelManager: Got enhanced config: " + enhancedConfig.textureId + " (empty: " + (enhancedConfig.textureId.empty() ? "true" : "false") + ")");
+        
+        if (enhancedConfig.textureId.empty()) {
+            GN_LOG_ERROR("No enhanced configuration found for enemy: " + config.textureId);
+            return 0;
+        }
+
+        GN_LOG_INFO("Spawning enemy with texture: " + enhancedConfig.textureId);
         
         Gnosis::Entity enemy = m_ecsSystem->CreateEntity();
         
@@ -534,104 +568,80 @@ namespace GameCore {
         Transform transform(Gnosis::GNVector2(x, y), 0.0f, 
                           Gnosis::GNVector2(m_currentLevelConfig.baseScale, m_currentLevelConfig.baseScale));
         
-        // Create sprite with animation configuration
-        Sprite sprite(config.textureId, config.width, config.height);
-        sprite.layer = 4; // Enemy layer
+        // Create sprite using enhanced configuration
+        Sprite sprite(enhancedConfig.textureId, enhancedConfig.width, enhancedConfig.height);
+        sprite.layer = enhancedConfig.renderLayer;
         sprite.visible = true;
         
-        // Configure animation for specific enemy types
-        if (config.textureId == "BirdIdle") {
-            // Birds have 4 frames of 32x32 in horizontal spritesheet (128x32 total)
-            sprite.isAnimated = true;
-            sprite.frameWidth = 32;
-            sprite.frameHeight = 32;
-            sprite.frameCount = 4; // 4 frames for bird flapping animation
-            sprite.frameTime = 0.16f; // 160ms per frame for slower bird flapping
-            sprite.currentFrame = 0;
-            sprite.currentFrameTime = 0.0f;
-            sprite.playing = true;
-            sprite.loop = true; // Birds loop infinitely
-            sprite.hasCompleted = false;
-            
-            GN_LOG_DEBUG("LevelManager: Created animated bird enemy with 4 frames of 32x32");
-        } else if (config.textureId == "ToiletPaperFlap") {
-            // Other animated enemies can be configured similarly
-            sprite.isAnimated = true;
-            // 8-frame flying animation at 64x64
-            sprite.frameWidth = 64;
-            sprite.frameHeight = 64;
-            sprite.frameCount = 8;
-            sprite.frameTime = 0.18f; // slow flapping a tad
-            sprite.currentFrame = 0;
-            sprite.currentFrameTime = 0.0f;
-            sprite.playing = true;
-            sprite.loop = true;
-            sprite.hasCompleted = false;
-            // Note: hurt animation (4 frames) can be switched by damage handling code later
-        } else {
-            // Static enemies
-            sprite.isAnimated = false;
-            sprite.frameWidth = static_cast<int>(config.width);
-            sprite.frameHeight = static_cast<int>(config.height);
-            sprite.frameCount = 1;
-        }
+        // Configure animation based on enhanced config
+        sprite.isAnimated = enhancedConfig.isAnimated;
+        sprite.frameWidth = enhancedConfig.frameWidth;
+        sprite.frameHeight = enhancedConfig.frameHeight;
+        sprite.frameCount = enhancedConfig.frameCount;
+        sprite.frameTime = enhancedConfig.frameTime;
+        sprite.currentFrame = 0;
+        sprite.currentFrameTime = 0.0f;
+        sprite.playing = enhancedConfig.isAnimated;
+        sprite.loop = enhancedConfig.loopAnimation;
+        sprite.hasCompleted = false;
         
         // Create physics
         Physics physics;
-        physics.velocity.x = -config.speed; // Move left with world
+        physics.velocity.x = -enhancedConfig.speed; // Move left with world
         
         // Create hitbox
         Hitbox collider;
         collider.isStatic = false;
-        collider.width = config.width;
-        collider.height = config.height;
+        collider.width = enhancedConfig.width;
+        collider.height = enhancedConfig.height;
         collider.tag = "Enemy";
         
-        // Create enemy component
+        // Create enemy component with bobbing behavior from config
         Enemy enemyComp;
-        enemyComp.health = config.hitPoints;
-        enemyComp.enemyType = config.textureId;  // Store the texture ID as enemy type
-        enemyComp.movementPattern = config.movementPattern;  // Store the movement pattern
+        enemyComp.health = enhancedConfig.hitPoints;
+        enemyComp.enemyType = enhancedConfig.textureId;
+        enemyComp.movementPattern = enhancedConfig.movementPattern;
         enemyComp.isActive = true;
-        // Enable bobbing for horizontal flyers (ToiletPaper)
-        if (config.textureId == "ToiletPaperFlap") {
-            enemyComp.bobbingEnabled = true;
-            // Randomize speed slightly per enemy for desynchronization
-            float speedBase = 1.8f;
-            float speedJitter = (static_cast<float>((rand() % 41) - 20) * 0.02f); // -0.4 .. +0.4
-            enemyComp.bobSpeed = std::max(0.8f, speedBase + speedJitter); // clamp min speed
-
-            // Large amplitude: ~35-43% of screen height so they traverse most of the screen
-            float screenH = 2556.0f;
-            float ampFactor = 0.38f + (static_cast<float>((rand() % 21) - 10) * 0.005f); // 0.33..0.43
-            enemyComp.bobAmplitude = screenH * ampFactor;
-
-            // Random starting phase 0..2π
-            enemyComp.bobPhase = static_cast<float>((rand() % 628)) / 100.0f;
-        }
-        // Enable subtle hovering for birds (BirdIdle)
-        else if (config.textureId == "BirdIdle") {
-            // Determine if this bird should hover or fly in formation
-            bool shouldHover = (rand() % 100) < 70; // 70% chance to hover, 30% static for echelon formation
+        
+        // Configure bobbing behavior from enhanced config
+        const BobbingConfig& bobConfig = enhancedConfig.bobbingConfig;
+        if (bobConfig.enabled || bobConfig.chanceToHover > 0.0f) {
+            bool enableBobbing = bobConfig.enabled;
             
-            if (shouldHover) {
+            // Handle probabilistic hovering (like birds)
+            if (!enableBobbing && bobConfig.chanceToHover > 0.0f) {
+                enableBobbing = (rand() % 100) < static_cast<int>(bobConfig.chanceToHover);
+            }
+            
+            if (enableBobbing) {
                 enemyComp.bobbingEnabled = true;
-                // Subtle hovering: slower speed than toilet paper
-                float speedBase = 1.2f;
-                float speedJitter = (static_cast<float>((rand() % 21) - 10) * 0.05f); // -0.5 .. +0.5
-                enemyComp.bobSpeed = std::max(0.8f, speedBase + speedJitter);
-
-                // Smaller amplitude for subtle hovering: ~15-30 pixels
-                float hoverAmplitude = 15.0f + (static_cast<float>(rand() % 16)); // 15-30px
-                enemyComp.bobAmplitude = hoverAmplitude;
-
-                // Random starting phase 0..2π for variety
+                
+                // Calculate speed with jitter
+                float speedJitter = bobConfig.speedJitter * (static_cast<float>((rand() % 41) - 20)); // -20 to +20 range
+                enemyComp.bobSpeed = std::max(0.8f, bobConfig.baseSpeed + speedJitter);
+                
+                // Calculate amplitude
+                if (bobConfig.amplitudeMin > 0.0f && bobConfig.amplitudeMax > 0.0f) {
+                    // Range-based amplitude (like birds: 15-30px)
+                    float range = bobConfig.amplitudeMax - bobConfig.amplitudeMin;
+                    enemyComp.bobAmplitude = bobConfig.amplitudeMin + (static_cast<float>(rand()) / RAND_MAX) * range;
+                } else if (bobConfig.amplitudeMin < 1.0f && bobConfig.amplitudeMax < 1.0f) {
+                    // Percentage-based amplitude (like toilet paper: 33-43% of screen)
+                    float screenH = 2556.0f;
+                    float ampFactor = bobConfig.amplitudeMin + (static_cast<float>((rand() % 21) - 10) * 0.005f);
+                    enemyComp.bobAmplitude = screenH * ampFactor;
+                } else {
+                    enemyComp.bobAmplitude = bobConfig.amplitude;
+                }
+                
+                // Random starting phase 0..2π
                 enemyComp.bobPhase = static_cast<float>((rand() % 628)) / 100.0f;
                 
-                GN_LOG_DEBUG("LevelManager: Created hovering bird with amplitude=" + std::to_string(hoverAmplitude) + "px");
+                GN_LOG_DEBUG("LevelManager: Enabled bobbing for " + enhancedConfig.textureId + 
+                           " amplitude=" + std::to_string(enemyComp.bobAmplitude) + "px");
             } else {
                 enemyComp.bobbingEnabled = false;
-                GN_LOG_DEBUG("LevelManager: Created static bird for echelon formation");
+                GN_LOG_DEBUG("LevelManager: Static " + enhancedConfig.textureId + " (no bobbing)");
             }
         }
         
@@ -642,10 +652,36 @@ namespace GameCore {
         m_ecsSystem->AddComponent<Hitbox>(enemy, collider);
         m_ecsSystem->AddComponent<Enemy>(enemy, enemyComp);
         
+        // Add StateAnimation for enemies that use it
+        if (enhancedConfig.useStateAnimation) {
+            StateAnimation sa;
+            sa.currentState = enhancedConfig.initialState;
+            
+            // Add all animation states from enhanced config
+            for (const auto& statePair : enhancedConfig.animationStates) {
+                const std::string& stateName = statePair.first;
+                const AnimationClip& clip = statePair.second;
+                
+                StateAnimation::Clip saClip;
+                saClip.textureId = clip.textureId;
+                saClip.frameWidth = clip.frameWidth;
+                saClip.frameHeight = clip.frameHeight;
+                saClip.frameCount = clip.frameCount;
+                saClip.frameTime = clip.frameTime;
+                saClip.loop = clip.loop;
+                
+                sa.clips.push_back({stateName, saClip});
+            }
+            
+            m_ecsSystem->AddComponent<StateAnimation>(enemy, sa);
+            GN_LOG_DEBUG("LevelManager: Added StateAnimation to " + enhancedConfig.textureId + 
+                        " with " + std::to_string(enhancedConfig.animationStates.size()) + " states");
+        }
+        
         // Track active enemy
         m_activeEnemies.push_back(enemy);
         
-        GN_LOG_DEBUG("Spawned enemy: " + config.textureId + " at (" + std::to_string(x) + ", " + std::to_string(y) + ")");
+        GN_LOG_DEBUG("Spawned enemy: " + enhancedConfig.textureId + " at (" + std::to_string(x) + ", " + std::to_string(y) + ")");
         
         return enemy;
     }
@@ -755,30 +791,30 @@ namespace GameCore {
             // Determine texture size directly from platform delegates (no static fallbacks)
             int tw = 0, th = 0;
             // Prefer renderer metadata (Metal knows actual pixel dimensions), then asset manager.
-            {
-                GameCore::TextureMetadata meta{};
-                bool got = false;
-                if (m_platformDelegates.renderer.getTextureMetadata) {
-                    if (m_platformDelegates.renderer.getTextureMetadata(layerConfig.textureId.c_str(), &meta)) {
-                        tw = meta.width;
-                        th = meta.height;
-                        got = (tw > 0 && th > 0);
-                        if (got) {
-                            GN_LOG_INFO(std::string("Texture metadata (renderer) for '") + layerConfig.textureId +
-                                        "': " + std::to_string(tw) + "x" + std::to_string(th));
-                        }
+            bool got = false;
+            if (m_platformDelegates.renderer.getTextureMetadata) {
+                // Create a persistent TextureMetadata object that won't go out of scope
+                static GameCore::TextureMetadata rendererMeta;
+                if (m_platformDelegates.renderer.getTextureMetadata(layerConfig.textureId.c_str(), &rendererMeta)) {
+                    tw = rendererMeta.width;
+                    th = rendererMeta.height;
+                    got = (tw > 0 && th > 0);
+                    if (got) {
+                        GN_LOG_INFO(std::string("Texture metadata (renderer) for '") + layerConfig.textureId +
+                                    "': " + std::to_string(tw) + "x" + std::to_string(th));
                     }
                 }
-                if (!got && m_platformDelegates.asset.getTextureMetadata) {
-                    GameCore::TextureMetadata metaAsset{};
-                    if (m_platformDelegates.asset.getTextureMetadata(layerConfig.textureId.c_str(), &metaAsset)) {
-                        tw = metaAsset.width;
-                        th = metaAsset.height;
-                        got = (tw > 0 && th > 0);
-                        if (got) {
-                            GN_LOG_INFO(std::string("Texture metadata (asset) for '") + layerConfig.textureId +
-                                        "': " + std::to_string(tw) + "x" + std::to_string(th));
-                        }
+            }
+            if (!got && m_platformDelegates.asset.getTextureMetadata) {
+                // Create a persistent TextureMetadata object that won't go out of scope
+                static GameCore::TextureMetadata assetMeta;
+                if (m_platformDelegates.asset.getTextureMetadata(layerConfig.textureId.c_str(), &assetMeta)) {
+                    tw = assetMeta.width;
+                    th = assetMeta.height;
+                    got = (tw > 0 && th > 0);
+                    if (got) {
+                        GN_LOG_INFO(std::string("Texture metadata (asset) for '") + layerConfig.textureId +
+                                    "': " + std::to_string(tw) + "x" + std::to_string(th));
                     }
                 }
             }

@@ -113,44 +113,45 @@ namespace GameCore {
         CMD_DRAW_SPRITE = 4,
         CMD_DRAW_SPRITE_SCALED = 5,
         CMD_DRAW_SPRITE_SCALED_CENTERED = 6,
-        CMD_DRAW_SPRITE_SCALED_WITH_SOURCE = 7,
-        CMD_DRAW_TEXT = 8,
-        CMD_DRAW_TEXT_CENTERED = 9,
-        CMD_DRAW_RECTANGLE = 10,
-        CMD_DRAW_CIRCLE = 11,
-        CMD_GET_SCREEN_SIZE = 12,
+        CMD_DRAW_SPRITE_SCALED_PIVOTED = 7,
+        CMD_DRAW_SPRITE_SCALED_WITH_SOURCE = 8,
+        CMD_DRAW_TEXT = 9,
+        CMD_DRAW_TEXT_CENTERED = 10,
+        CMD_DRAW_RECTANGLE = 11,
+        CMD_DRAW_CIRCLE = 12,
+        CMD_GET_SCREEN_SIZE = 13,
         
         // Audio commands
-        CMD_PLAY_MUSIC = 13,
-        CMD_STOP_MUSIC = 14,
-        CMD_PLAY_SOUND = 15,
-        CMD_STOP_SOUND = 16,
-        CMD_SET_MUSIC_VOLUME = 17,
-        CMD_SET_SOUND_VOLUME = 18,
+        CMD_PLAY_MUSIC = 14,
+        CMD_STOP_MUSIC = 15,
+        CMD_PLAY_SOUND = 16,
+        CMD_STOP_SOUND = 17,
+        CMD_SET_MUSIC_VOLUME = 18,
+        CMD_SET_SOUND_VOLUME = 19,
         
         // Logging commands
-        CMD_LOG_TRACE = 19,
-        CMD_LOG_DEBUG = 20,
-        CMD_LOG_INFO = 21,
-        CMD_LOG_WARN = 22,
-        CMD_LOG_ERROR = 23,
-        CMD_LOG_FATAL = 24,
+        CMD_LOG_TRACE = 20,
+        CMD_LOG_DEBUG = 21,
+        CMD_LOG_INFO = 22,
+        CMD_LOG_WARN = 23,
+        CMD_LOG_ERROR = 24,
+        CMD_LOG_FATAL = 25,
         
         // Asset loading commands
-        CMD_LOAD_TEXTURE = 25,
-        CMD_LOAD_AUDIO = 26,
-        CMD_LOAD_FONT = 27,
-        CMD_LOAD_DATA = 28,
+        CMD_LOAD_TEXTURE = 26,
+        CMD_LOAD_AUDIO = 27,
+        CMD_LOAD_FONT = 28,
+        CMD_LOAD_DATA = 29,
         // Asset cache management commands
-        CMD_PRELOAD_ESSENTIAL_ASSETS = 29,
-        CMD_IS_CACHED = 30,
+        CMD_PRELOAD_ESSENTIAL_ASSETS = 30,
+        CMD_IS_CACHED = 31,
         
         // Enhanced screen and texture info commands
-        CMD_GET_SCREEN_INFO = 31,
-        CMD_GET_TEXTURE_METADATA = 32,
+        CMD_GET_SCREEN_INFO = 32,
+        CMD_GET_TEXTURE_METADATA = 33,
         // Text outline commands
-        CMD_DRAW_TEXT_OUTLINED = 33,
-        CMD_DRAW_TEXT_CENTERED_OUTLINED = 34
+        CMD_DRAW_TEXT_OUTLINED = 34,
+        CMD_DRAW_TEXT_CENTERED_OUTLINED = 35
     };
     
     // Rendering command data
@@ -163,6 +164,8 @@ namespace GameCore {
         float fontSize = 0.0f;
         float rotation = 0.0f;
         float scaleX = 1.0f, scaleY = 1.0f;
+        // Pivot point for rotation (normalized coordinates, -0.5 to 0.5)
+        float pivotX = 0.0f, pivotY = 0.0f;
         // Outline parameters (for outlined text)
         float outlineR = 0.0f, outlineG = 0.0f, outlineB = 0.0f, outlineA = 1.0f;
         float outlineWidth = 0.0f; // pixels
@@ -269,6 +272,7 @@ namespace GameCore {
         void (*drawSprite)(uint32_t textureHandle, float x, float y, float rotation);
         void (*drawSpriteScaled)(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation);
         void (*drawSpriteScaledCentered)(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation);
+        void (*drawSpriteScaledPivoted)(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation, float pivotX, float pivotY);
         void (*drawSpriteScaledWithSource)(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation, float sourceX, float sourceY, float sourceWidth, float sourceHeight);
         
         // Text rendering
@@ -299,6 +303,8 @@ namespace GameCore {
         // Initialize to null
         RendererDelegate() : beginFrame(nullptr), endFrame(nullptr), present(nullptr), clearScreen(nullptr),
                            drawSprite(nullptr), drawSpriteScaled(nullptr), drawSpriteScaledCentered(nullptr),
+                           drawSpriteScaledPivoted(nullptr),
+                           drawSpriteScaledWithSource(nullptr),
                            drawText(nullptr), drawTextCentered(nullptr), drawTextOutlined(nullptr), drawTextCenteredOutlined(nullptr),
                            drawRectangle(nullptr), drawCircle(nullptr), 
                            getScreenInfo(nullptr), getScreenSize(nullptr), getTextureMetadata(nullptr),

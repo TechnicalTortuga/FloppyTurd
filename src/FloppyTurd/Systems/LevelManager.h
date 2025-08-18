@@ -144,6 +144,7 @@ namespace GameCore {
         // Internal methods
         void InitializeProgressionSystem();
         void CreateBackgroundLayers();
+        void CreateCastleDecorations();
         void DestroyBackgroundLayers();
         void DestroyAllEntities();
         

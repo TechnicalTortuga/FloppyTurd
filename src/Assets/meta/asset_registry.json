@@ -87,7 +87,8 @@
           "level3": "multiple_files", 
           "snow_level": "multiple_files",
           "sewer": "multiple_files",
-          "boss": "multiple_files"
+          "boss": "multiple_files",
+          "castle": "multiple_files"
         },
         "structures": {
           "pipes": "multiple_files",

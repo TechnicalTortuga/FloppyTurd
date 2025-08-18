@@ -1,0 +1,227 @@
+#include "EnemyConfigs.h"
+#include "../../Engine/Core/GNLog.h"
+
+namespace GameCore {
+
+    std::unordered_map<std::string, EnemyConfig> EnemyConfigRegistry::s_enemyConfigs;
+    bool EnemyConfigRegistry::s_initialized = false;
+
+    void EnemyConfigRegistry::Initialize() {
+        if (s_initialized) return;
+        
+        try {
+            GN_LOG_DEBUG("EnemyConfigRegistry: Starting initialization...");
+            // Register all enemy configurations
+            s_enemyConfigs.emplace("BirdIdle", CreateBirdConfig());
+            GN_LOG_DEBUG("EnemyConfigRegistry: Added BirdIdle config");
+            s_enemyConfigs.emplace("ToiletPaperFlap", CreateToiletPaperConfig());
+            GN_LOG_DEBUG("EnemyConfigRegistry: Added ToiletPaperFlap config");
+            s_enemyConfigs.emplace("SnowManChill", CreateSnowManChillConfig());
+            GN_LOG_DEBUG("EnemyConfigRegistry: Added SnowManChill config");
+            s_enemyConfigs.emplace("SnowManGreen", CreateSnowManGreenConfig());
+            GN_LOG_DEBUG("EnemyConfigRegistry: Added SnowManGreen config");
+            s_enemyConfigs.emplace("SnowManChad", CreateSnowManChadConfig());
+            GN_LOG_DEBUG("EnemyConfigRegistry: Added SnowManChad config");
+            s_enemyConfigs.emplace("SnowManIdle", CreateSnowManThrowerConfig());
+            GN_LOG_DEBUG("EnemyConfigRegistry: Added SnowManIdle config");
+            s_enemyConfigs.emplace("RatCopterIdle", CreateRatCopterConfig());
+            GN_LOG_DEBUG("EnemyConfigRegistry: Added RatCopterIdle config");
+            
+            s_initialized = true;
+            GN_LOG_INFO("EnemyConfigRegistry: Initialized " + std::to_string(s_enemyConfigs.size()) + " enemy configurations");
+        } catch (const std::exception& e) {
+            GN_LOG_ERROR("EnemyConfigRegistry: Exception during initialization: " + std::string(e.what()));
+            s_initialized = false;
+        } catch (...) {
+            GN_LOG_ERROR("EnemyConfigRegistry: Unknown exception during initialization");
+            s_initialized = false;
+        }
+    }
+
+    const EnemyConfig& EnemyConfigRegistry::GetConfig(const std::string& textureId) {
+        try {
+            Initialize(); // Ensure initialized
+            
+            auto it = s_enemyConfigs.find(textureId);
+            if (it != s_enemyConfigs.end()) {
+                return it->second;
+            }
+            
+            GN_LOG_ERROR("EnemyConfigRegistry: Configuration not found for enemy: " + textureId);
+            static EnemyConfig defaultConfig("", 64.0f, 64.0f, 150.0f, 3.0f, 1, 64, 64, 1, 0.16f, true, "horizontal");
+            return defaultConfig;
+        } catch (const std::exception& e) {
+            GN_LOG_ERROR("EnemyConfigRegistry: Exception in GetConfig: " + std::string(e.what()));
+            static EnemyConfig defaultConfig("", 64.0f, 64.0f, 150.0f, 3.0f, 1, 64, 64, 1, 0.16f, true, "horizontal");
+            return defaultConfig;
+        } catch (...) {
+            GN_LOG_ERROR("EnemyConfigRegistry: Unknown exception in GetConfig");
+            static EnemyConfig defaultConfig("", 64.0f, 64.0f, 150.0f, 3.0f, 1, 64, 64, 1, 0.16f, true, "horizontal");
+            return defaultConfig;
+        }
+    }
+
+    bool EnemyConfigRegistry::HasConfig(const std::string& textureId) {
+        try {
+            Initialize();
+            return s_enemyConfigs.find(textureId) != s_enemyConfigs.end();
+        } catch (const std::exception& e) {
+            GN_LOG_ERROR("EnemyConfigRegistry: Exception in HasConfig: " + std::string(e.what()));
+            return false;
+        } catch (...) {
+            GN_LOG_ERROR("EnemyConfigRegistry: Unknown exception in HasConfig");
+            return false;
+        }
+    }
+
+    std::vector<EnemyConfig> EnemyConfigRegistry::GetConfigsForLevel(int levelId) {
+        Initialize();
+        std::vector<EnemyConfig> configs;
+        
+        try {
+            switch (levelId) {
+                case 2: // Sewer level
+                    if (HasConfig("ToiletPaperFlap")) {
+                        configs.push_back(GetConfig("ToiletPaperFlap"));
+                    }
+                    break;
+                case 3: // Desert level
+                    if (HasConfig("BirdIdle")) {
+                        configs.push_back(GetConfig("BirdIdle"));
+                    }
+                    break;
+                case 4: // Snow level
+                    if (HasConfig("SnowManChill")) {
+                        configs.push_back(GetConfig("SnowManChill"));
+                    }
+                    if (HasConfig("SnowManGreen")) {
+                        configs.push_back(GetConfig("SnowManGreen"));
+                    }
+                    if (HasConfig("SnowManChad")) {
+                        configs.push_back(GetConfig("SnowManChad"));
+                    }
+                    if (HasConfig("SnowManIdle")) {
+                        configs.push_back(GetConfig("SnowManIdle"));
+                    }
+                    break;
+                case 5: // Castle level
+                    if (HasConfig("RatCopterIdle")) {
+                        configs.push_back(GetConfig("RatCopterIdle"));
+                    }
+                    break;
+                default:
+                    // Other levels may not have enemies or use default configurations
+                    break;
+            }
+        } catch (const std::exception& e) {
+            GN_LOG_ERROR("EnemyConfigRegistry: Exception in GetConfigsForLevel: " + std::string(e.what()));
+        } catch (...) {
+            GN_LOG_ERROR("EnemyConfigRegistry: Unknown exception in GetConfigsForLevel");
+        }
+        
+        return configs;
+    }
+
+    EnemyConfig EnemyConfigRegistry::CreateBirdConfig() {
+        // Birds have 4 frames of 32x32 in horizontal spritesheet (128x32 total)
+        // Use the individual frame size (32x32) for the sprite, not the total spritesheet width
+        EnemyConfig config("BirdIdle", 32.0f, 32.0f, 150.0f, 3.0f, 1, 32, 32, 4, 0.16f, true, "horizontal");
+        
+        // Subtle hovering behavior: 70% chance to hover, 30% static for echelon formation
+        config.bobbingConfig.enabled = false; // Will be enabled probabilistically in spawn
+        config.bobbingConfig.chanceToHover = 70.0f;
+        config.bobbingConfig.baseSpeed = 1.2f;
+        config.bobbingConfig.speedJitter = 0.05f; // -0.5 to +0.5 range
+        config.bobbingConfig.amplitudeMin = 15.0f;
+        config.bobbingConfig.amplitudeMax = 30.0f;
+        
+        return config;
+    }
+
+    EnemyConfig EnemyConfigRegistry::CreateToiletPaperConfig() {
+        // 8-frame flying animation at 64x64
+        EnemyConfig config("ToiletPaperFlap", 64.0f, 64.0f, 150.0f, 3.0f, 1, 64, 64, 8, 0.18f, true, "horizontal");
+        
+        // Large amplitude bobbing for traversing most of the screen
+        config.bobbingConfig.enabled = true;
+        config.bobbingConfig.baseSpeed = 1.8f;
+        config.bobbingConfig.speedJitter = 0.02f; // -0.4 to +0.4 range
+        config.bobbingConfig.amplitudeMin = 0.33f; // 33% of screen height
+        config.bobbingConfig.amplitudeMax = 0.43f; // 43% of screen height
+        
+        return config;
+    }
+
+    EnemyConfig EnemyConfigRegistry::CreateSnowManChillConfig() {
+        // Static decorative snowman - NO bobbing
+        EnemyConfig config("SnowManChill", 64.0f, 64.0f, 150.0f, 3.0f, 1, 64, 64, 1, 0.16f, true, "decorative");
+        
+        // Explicitly disable bobbing for static snowmen
+        config.bobbingConfig.enabled = false;
+        config.bobbingConfig.baseSpeed = 0.0f;
+        config.bobbingConfig.amplitudeMin = 0.0f;
+        config.bobbingConfig.amplitudeMax = 0.0f;
+        
+        return config;
+    }
+
+    EnemyConfig EnemyConfigRegistry::CreateSnowManGreenConfig() {
+        // Static decorative snowman - NO bobbing
+        EnemyConfig config("SnowManGreen", 64.0f, 64.0f, 150.0f, 3.0f, 1, 64, 64, 1, 0.16f, true, "decorative");
+        
+        // Explicitly disable bobbing for static snowmen
+        config.bobbingConfig.enabled = false;
+        config.bobbingConfig.baseSpeed = 0.0f;
+        config.bobbingConfig.amplitudeMin = 0.0f;
+        config.bobbingConfig.amplitudeMax = 0.0f;
+        
+        return config;
+    }
+
+    EnemyConfig EnemyConfigRegistry::CreateSnowManChadConfig() {
+        // Static decorative snowman - NO bobbing
+        EnemyConfig config("SnowManChad", 64.0f, 64.0f, 150.0f, 3.0f, 1, 64, 64, 1, 0.16f, true, "decorative");
+        
+        // Explicitly disable bobbing for static snowmen
+        config.bobbingConfig.enabled = false;
+        config.bobbingConfig.baseSpeed = 0.0f;
+        config.bobbingConfig.amplitudeMin = 0.0f;
+        config.bobbingConfig.amplitudeMax = 0.0f;
+        
+        return config;
+    }
+
+    EnemyConfig EnemyConfigRegistry::CreateSnowManThrowerConfig() {
+        // Snowman thrower with StateAnimation (idle/throw states)
+        EnemyConfig config("SnowManIdle", 64.0f, 64.0f, 150.0f, 3.0f, 1, 64, 64, 1, 0.25f, true, "snowman_thrower");
+        
+        // Enable StateAnimation
+        config.useStateAnimation = true;
+        config.initialState = "idle";
+        
+        // Configure animation states
+        // Idle is just 1 frame (static), throw is 6 frames
+        AnimationClip idleClip("SnowManIdle", 64, 64, 1, 0.25f, true);
+        AnimationClip throwClip("SnowManThrow", 64, 64, 6, 0.15f, false);
+        
+        config.animationStates.push_back({"idle", idleClip});
+        config.animationStates.push_back({"throw", throwClip});
+        
+        return config;
+    }
+
+    EnemyConfig EnemyConfigRegistry::CreateRatCopterConfig() {
+        // RatCopter flying enemy - 64x64 sprite with flying behavior
+        EnemyConfig config("RatCopterIdle", 64.0f, 64.0f, 160.0f, 4.0f, 1, 64, 64, 1, 0.20f, true, "flying");
+        
+        // Enable bobbing for flying behavior
+        config.bobbingConfig.enabled = true;
+        config.bobbingConfig.baseSpeed = 1.5f;
+        config.bobbingConfig.speedJitter = 0.03f; // -0.6 to +0.6 range
+        config.bobbingConfig.amplitudeMin = 20.0f;
+        config.bobbingConfig.amplitudeMax = 40.0f;
+        
+        return config;
+    }
+
+} // namespace GameCore

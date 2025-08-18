@@ -55,6 +55,15 @@ namespace GameCore {
                 // m_levelPatterns.push_back({PatternType::DESERT_CACTUS, 0.3f, 0.0f});
                 break;
                 
+            case 4: // Snow
+                m_levelPatterns.push_back({PatternType::SNOW_TOILET_PAIR, 1.0f, 0.0f});
+                break;
+                
+            case 5: // Castle
+                m_levelPatterns.push_back({PatternType::CASTLE_GOLD_TOILET_PAIR, 1.0f, 2000.0f});
+                // Note: Decorative elements are now spawned as part of toilet group spawning
+                break;
+                
             default:
                 m_levelPatterns.push_back({PatternType::PARK_TOILET_PAIR, 1.0f, 0.0f});
                 break;
@@ -75,14 +84,23 @@ namespace GameCore {
         for (int i = 0; i < OBSTACLE_POOL_SIZE; i++) {
             int groupIdBefore = m_nextGroupId;
             
+            GN_LOG_INFO("Castle level: Spawning pattern " + std::to_string(i) + " at x=" + std::to_string(nextWorldX));
             SpawnRandomPatternForLevel(levelId, nextWorldX);
             
-            // Calculate next position from group width
-            float groupWidth = CalculateGroupWidth(groupIdBefore);
-            if (groupWidth <= 0.0f) {
-                groupWidth = 600.0f; // Fallback
+            // Calculate next position - use proper spacing for castle level
+            if (levelId == 5) { // Castle level
+                // Castle level uses 2000px gaps between toilet groups
+                float oldX = nextWorldX;
+                nextWorldX += 2000.0f;
+                GN_LOG_INFO("Castle level: Added 2000px spacing: " + std::to_string(oldX) + " -> " + std::to_string(nextWorldX));
+            } else {
+                // Other levels use group width
+                float groupWidth = CalculateGroupWidth(groupIdBefore);
+                if (groupWidth <= 0.0f) {
+                    groupWidth = 600.0f; // Fallback
+                }
+                nextWorldX += groupWidth;
             }
-            nextWorldX += groupWidth;
         }
 
         m_initialized = true;
@@ -137,6 +155,14 @@ namespace GameCore {
             WrapGroup(groupId, worldScrollDistance);
         }
 
+        // Update obstacle oscillation (for snow toilets and gold toilets)
+        UpdateObstacleOscillation(deltaTime);
+        
+        // Update spike ball rotations for castle level
+        if (m_currentLevelId == 5 && !m_spikeBallRotationSpeeds.empty()) {
+            UpdateSpikeBallRotations(deltaTime);
+        }
+
         // Update cactus system for desert level
         if (m_currentLevelId == 3 && m_cactusPoolInitialized) {
             UpdateCactusAnimation(deltaTime);
@@ -170,6 +196,7 @@ namespace GameCore {
         m_levelPatterns.clear();
         m_cactusPool.clear();
         m_cactusTypes.clear();
+        m_spikeBallRotationSpeeds.clear();
         
         m_nextGroupId = 1;
         m_initialized = false;
@@ -207,6 +234,12 @@ namespace GameCore {
                 break;
             case PatternType::SEWER_TWO_BY_TWO_FUNNEL:
                 SpawnSewerPattern_TwoByTwoFunnel(x);
+                break;
+            case PatternType::SNOW_TOILET_PAIR:
+                SpawnSnowPattern_ToiletPair(x);
+                break;
+            case PatternType::CASTLE_GOLD_TOILET_PAIR:
+                SpawnCastlePattern_GoldToiletPair(x);
                 break;
         }
     }
@@ -1560,8 +1593,21 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
             }
         }
         
-        // Position new group exactly after rightmost group with NO GAP (safeGap = 0.0f)
-        float newX = rightmostOriginX + rightmostGroupWidth;
+        // Position new group with proper gap for castle level
+        float newX;
+        if (m_currentLevelId == 5) { // Castle level
+            // Castle level: position at the end of the gap, not after the toilet width
+            // Initial spawn uses 2000px gaps, so wrapping should match that
+            // rightmostOriginX is the toilet's X position, so we add 2000px to get to the end of the gap
+            newX = rightmostOriginX + 2000.0f;
+            GN_LOG_INFO("Castle level wrapping: rightmostOriginX=" + std::to_string(rightmostOriginX) + 
+                       ", rightmostGroupWidth=" + std::to_string(rightmostGroupWidth) + 
+                       ", newX=" + std::to_string(newX) + 
+                       ", positioned at end of 2000px gap (not after toilet width)");
+        } else {
+            // Other levels: position exactly after rightmost group with NO GAP
+            newX = rightmostOriginX + rightmostGroupWidth;
+        }
         
         // Handle level-specific positioning logic within the group
         if (m_currentLevelId == 1 && groupPattern == GroupPattern::TopAndBottom) {
@@ -1585,6 +1631,8 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
                 if (group->id == groupId) {
                     // Calculate relative offset from leader
                     float relativeOffsetX = group->offsetX - leaderBaseOffsetX;
+                    
+                    // Park level only has toilets - no castle decorations
                     transform->position.x = newX + relativeOffsetX;
                     
                     // Set Y positions based on toilet type
@@ -1596,6 +1644,45 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
                     
                     // Reset obstacle state
                     obstacle->pipeCleared = false;
+                }
+            }
+        } else if (m_currentLevelId == 5 && groupPattern == GroupPattern::TopAndBottom) {
+            // Castle level: Handle gold toilet pairs with centerpiece decorations
+            float toiletHeight = 180.0f * m_baseScale;
+            float minTopY = -toiletHeight * 1.2f;
+            float maxTopY = -toiletHeight * 0.6f;
+            float randomTopY = minTopY + (maxTopY - minTopY) * ((float)rand() / RAND_MAX);
+            float fixedGapHeight = 700.0f;
+            const float gapWidth = 2000.0f; // Same gap as spawning
+            
+            for (Gnosis::Entity e : m_activeObstacles) {
+                if (!m_ecsSystem->HasComponent<Group>(e) || !m_ecsSystem->HasComponent<Transform>(e)) {
+                    continue;
+                }
+                
+                auto* group = m_ecsSystem->GetComponent<Group>(e);
+                auto* transform = m_ecsSystem->GetComponent<Transform>(e);
+                
+                if (group->id == groupId) {
+                    // Calculate relative offset from leader
+                    float relativeOffsetX = group->offsetX - leaderBaseOffsetX;
+                    
+                    // Castle level: Use relative offset positioning like Desert level for consistency
+                    // This maintains the exact relative positions of all group members
+                    transform->position.x = newX + relativeOffsetX;
+                    
+                    // Set Y positions based on toilet type
+                    if (m_ecsSystem->HasComponent<Obstacle>(e)) {
+                        auto* obstacle = m_ecsSystem->GetComponent<Obstacle>(e);
+                        if (obstacle->isTopPart) {
+                            transform->position.y = randomTopY;
+                        } else {
+                            transform->position.y = randomTopY + toiletHeight + fixedGapHeight;
+                        }
+                        
+                        // Reset obstacle state
+                        obstacle->pipeCleared = false;
+                    }
                 }
             }
         } else {
@@ -1611,6 +1698,8 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
                 if (group->id == groupId) {
                     // Calculate relative offset from leader
                     float relativeOffsetX = group->offsetX - leaderBaseOffsetX;
+                    
+                    // Park level only has toilets - no castle decorations
                     transform->position.x = newX + relativeOffsetX;
                     
                     // Y positioning is maintained from original spawning
@@ -1961,6 +2050,709 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
                     // Fallback to default positioning - use the smallest cactus height as default
                     float groundY = SCREEN_HEIGHT - (64.0f * m_baseScale); // Smallest cactus height
                     transform->position.y = groundY;
+                }
+            }
+        }
+    }
+
+    void ObstacleSystem::SpawnSnowPattern_ToiletPair(float x) {
+        // Create oscillating snow toilet pair with vertical movement for timing challenge
+        float screenHeight = 2556.0f; // iPhone 16 portrait height
+        float toiletHeight = 190.0f * m_baseScale; // Scaled toilet height
+        
+        // Position top toilet higher than normal park toilets for oscillation room
+        float minTopY = -toiletHeight * 1.2f; // Higher up to allow oscillation
+        float maxTopY = -toiletHeight * 0.6f; // Still above screen but with room to move
+        
+        // Generate random position for top toilet within allowed range
+        float randomTopY = minTopY + (maxTopY - minTopY) * ((float)rand() / RAND_MAX);
+        
+        // Fixed gap height between toilets (maintained during oscillation)
+        float fixedGapHeight = 800.0f;
+        
+        // Calculate bottom toilet position
+        float topToiletY = randomTopY;
+        float bottomToiletY = randomTopY + toiletHeight + fixedGapHeight;
+        
+        int groupId = m_nextGroupId++;
+        
+        // Create top snow toilet with oscillation
+        Gnosis::Entity topToilet = m_ecsSystem->CreateEntity();
+        
+        Transform topTransform(Gnosis::GNVector2(x, topToiletY), 0.0f, 
+                              Gnosis::GNVector2(m_baseScale, m_baseScale));
+        
+        Sprite topSprite("TopToiletSnow", 65.0f, 190.0f);  // Use snow texture!
+        topSprite.layer = 3;
+        topSprite.visible = true;
+        
+        Physics topPhysics;
+        topPhysics.velocity.x = -m_worldSpeed;
+        topPhysics.useGravity = false;
+        
+        Hitbox topCollider;
+        topCollider.type = ColliderType::Rectangle;
+        const float TRIM_TOP = 30.0f;
+        topCollider.width = 20.0f;
+        topCollider.height = 190.0f - TRIM_TOP;
+        topCollider.offsetY = TRIM_TOP * 0.5f; // Center-based offset
+        topCollider.isStatic = false;
+        topCollider.tag = "Obstacle";
+        
+        // Add oscillation behavior - this is the key snow level feature!
+        Obstacle topObstacle;
+        topObstacle.damage = 1;
+        topObstacle.isDestructible = false;
+        topObstacle.health = 1;
+        topObstacle.behavior = static_cast<int>(ToiletBehavior::OSCILLATE_VERTICAL);
+        topObstacle.oscillationSpeed = 1.8f;  // Moderate speed for timing challenge  
+        topObstacle.oscillationRange = 80.0f; // Good range for player timing
+        topObstacle.oscillationTimer = 0.0f;
+        topObstacle.basePosition = Gnosis::GNVector2(x, topToiletY);
+        topObstacle.isTopPart = true;
+        
+        m_ecsSystem->AddComponent<Transform>(topToilet, topTransform);
+        m_ecsSystem->AddComponent<Sprite>(topToilet, topSprite);
+        m_ecsSystem->AddComponent<Physics>(topToilet, topPhysics);
+        m_ecsSystem->AddComponent<Hitbox>(topToilet, topCollider);
+        m_ecsSystem->AddComponent<Obstacle>(topToilet, topObstacle);
+        
+        // Create bottom snow toilet with same oscillation (linked movement)
+        Gnosis::Entity bottomToilet = m_ecsSystem->CreateEntity();
+        
+        Transform bottomTransform(Gnosis::GNVector2(x, bottomToiletY), 0.0f, 
+                                 Gnosis::GNVector2(m_baseScale, m_baseScale));
+        
+        Sprite bottomSprite("BottomToiletSnow", 65.0f, 190.0f);  // Use snow texture!
+        bottomSprite.layer = 3;
+        bottomSprite.visible = true;
+        
+        Physics bottomPhysics;
+        bottomPhysics.velocity.x = -m_worldSpeed;
+        bottomPhysics.useGravity = false;
+        
+        Hitbox bottomCollider;
+        bottomCollider.type = ColliderType::Rectangle;
+        const float TRIM_BOTTOM = 30.0f;
+        bottomCollider.width = 20.0f;
+        bottomCollider.height = 190.0f - TRIM_BOTTOM;
+        bottomCollider.offsetY = -TRIM_BOTTOM * 0.5f; // Center-based offset
+        bottomCollider.isStatic = false;
+        bottomCollider.tag = "Obstacle";
+        
+        // Add same oscillation behavior - pair moves together
+        Obstacle bottomObstacle;
+        bottomObstacle.damage = 1;
+        bottomObstacle.isDestructible = false;
+        bottomObstacle.health = 1;
+        bottomObstacle.behavior = static_cast<int>(ToiletBehavior::OSCILLATE_VERTICAL);
+        bottomObstacle.oscillationSpeed = 1.8f;  // Same speed as top
+        bottomObstacle.oscillationRange = 80.0f; // Same range as top
+        bottomObstacle.oscillationTimer = 0.0f;  // Same starting phase
+        bottomObstacle.basePosition = Gnosis::GNVector2(x, bottomToiletY);
+        bottomObstacle.isTopPart = false;
+        bottomObstacle.pairedEntity = topToilet; // Link to top toilet
+        
+        m_ecsSystem->AddComponent<Transform>(bottomToilet, bottomTransform);
+        m_ecsSystem->AddComponent<Sprite>(bottomToilet, bottomSprite);
+        m_ecsSystem->AddComponent<Physics>(bottomToilet, bottomPhysics);
+        m_ecsSystem->AddComponent<Hitbox>(bottomToilet, bottomCollider);
+        m_ecsSystem->AddComponent<Obstacle>(bottomToilet, bottomObstacle);
+        
+        // Link the pair for synchronized movement
+        topObstacle.pairedEntity = bottomToilet;
+        m_ecsSystem->GetComponent<Obstacle>(topToilet)->pairedEntity = bottomToilet;
+        
+        // Add both to the same group for coordinated spawning/wrapping
+        float groupWidth = 65.0f * m_baseScale; // Width of toilet
+        AddEntityToGroup(topToilet, groupId, true, 0.0f, 0.0f, groupWidth, GroupPattern::TopAndBottom);
+        AddEntityToGroup(bottomToilet, groupId, false, 0.0f, fixedGapHeight + toiletHeight, groupWidth, GroupPattern::TopAndBottom);
+        
+        // Add GroupGap component to ensure proper spacing between groups
+        GroupGap groupGap(1500.0f, false, "castle_toilet_spacing");
+        m_ecsSystem->AddComponent<GroupGap>(topToilet, groupGap);
+        
+        // Track obstacles for management
+        m_activeObstacles.push_back(topToilet);
+        m_activeObstacles.push_back(bottomToilet);
+        
+        GN_LOG_INFO("Spawned oscillating snow toilet pair at x=" + std::to_string(x) + " with group " + std::to_string(groupId));
+    }
+
+    void ObstacleSystem::UpdateObstacleOscillation(float deltaTime) {
+        if (!m_ecsSystem) return;
+        
+        // Update oscillation for all obstacles with oscillation behavior
+        for (Gnosis::Entity entity : m_activeObstacles) {
+            if (!m_ecsSystem->HasComponent<Obstacle>(entity) || !m_ecsSystem->HasComponent<Transform>(entity)) {
+                continue;
+            }
+            
+            Obstacle* obstacle = m_ecsSystem->GetComponent<Obstacle>(entity);
+            Transform* transform = m_ecsSystem->GetComponent<Transform>(entity);
+            
+            if (!obstacle || !transform) continue;
+            
+            // Only update oscillating obstacles
+            if (obstacle->behavior == static_cast<int>(ToiletBehavior::OSCILLATE_VERTICAL)) {
+                // Update oscillation timer
+                obstacle->oscillationTimer += deltaTime;
+                
+                // Calculate vertical offset using sine wave
+                float offsetY = std::sin(obstacle->oscillationTimer * obstacle->oscillationSpeed) * obstacle->oscillationRange;
+                
+                // Apply oscillation to position (basePosition.y + offset)
+                transform->position.y = obstacle->basePosition.y + offsetY;
+                
+                // For toilet pairs, sync the paired entity's oscillation
+                if (obstacle->pairedEntity != 0 && m_ecsSystem->IsEntityValid(obstacle->pairedEntity)) {
+                    Obstacle* pairedObstacle = m_ecsSystem->GetComponent<Obstacle>(obstacle->pairedEntity);
+                    Transform* pairedTransform = m_ecsSystem->GetComponent<Transform>(obstacle->pairedEntity);
+                    
+                    if (pairedObstacle && pairedTransform) {
+                        // Sync oscillation timer for synchronized movement
+                        pairedObstacle->oscillationTimer = obstacle->oscillationTimer;
+                        
+                        // Apply same oscillation to paired entity
+                        float pairedOffsetY = std::sin(pairedObstacle->oscillationTimer * pairedObstacle->oscillationSpeed) * pairedObstacle->oscillationRange;
+                        pairedTransform->position.y = pairedObstacle->basePosition.y + pairedOffsetY;
+                    }
+                }
+            }
+            else if (obstacle->behavior == static_cast<int>(ToiletBehavior::OSCILLATE_HORIZONTAL)) {
+                // Update horizontal oscillation for sewer pipes (future enhancement)
+                obstacle->oscillationTimer += deltaTime;
+                float offsetX = std::sin(obstacle->oscillationTimer * obstacle->oscillationSpeed) * obstacle->oscillationRange;
+                transform->position.x = obstacle->basePosition.x + offsetX;
+                
+                // Sync paired entity if exists
+                if (obstacle->pairedEntity != 0 && m_ecsSystem->IsEntityValid(obstacle->pairedEntity)) {
+                    Obstacle* pairedObstacle = m_ecsSystem->GetComponent<Obstacle>(obstacle->pairedEntity);
+                    Transform* pairedTransform = m_ecsSystem->GetComponent<Transform>(obstacle->pairedEntity);
+                    
+                    if (pairedObstacle && pairedTransform) {
+                        pairedObstacle->oscillationTimer = obstacle->oscillationTimer;
+                        float pairedOffsetX = std::sin(pairedObstacle->oscillationTimer * pairedObstacle->oscillationSpeed) * pairedObstacle->oscillationRange;
+                        pairedTransform->position.x = pairedObstacle->basePosition.x + pairedOffsetX;
+                    }
+                }
+            }
+        }
+    }
+
+    void ObstacleSystem::SpawnCastlePattern_GoldToiletPair(float x) {
+        // Create oscillating gold toilet pair with vertical movement for castle level
+        float screenHeight = 2556.0f; // iPhone 16 portrait height
+        float toiletHeight = 180.0f * m_baseScale; // Scaled toilet height
+        
+        // Position top toilet higher than normal for oscillation room
+        float minTopY = -toiletHeight * 1.2f; // Higher up to allow oscillation
+        float maxTopY = -toiletHeight * 0.6f; // Still above screen but with room to move
+        
+        // Generate random position for top toilet within allowed range
+        float randomTopY = minTopY + (maxTopY - minTopY) * ((float)rand() / RAND_MAX);
+        
+        // Fixed gap height between toilets (maintained during oscillation)
+        float fixedGapHeight = 700.0f;
+        
+        // Calculate bottom toilet position
+        float topToiletY = randomTopY;
+        float bottomToiletY = randomTopY + toiletHeight + fixedGapHeight;
+        
+        int groupId = m_nextGroupId++;
+        
+        // Create top gold toilet with oscillation
+        Gnosis::Entity topToilet = m_ecsSystem->CreateEntity();
+        
+        Transform topTransform(Gnosis::GNVector2(x, topToiletY), 0.0f, 
+                              Gnosis::GNVector2(m_baseScale, m_baseScale));
+        
+        Sprite topSprite("TopToiletGold", 65.0f, 180.0f);  // Use gold texture!
+        topSprite.layer = 3;
+        topSprite.visible = true;
+        
+        Physics topPhysics;
+        topPhysics.velocity.x = -m_worldSpeed;
+        topPhysics.useGravity = false;
+        
+        Hitbox topCollider;
+        topCollider.type = ColliderType::Rectangle;
+        const float TRIM_TOP = 30.0f;
+        topCollider.width = 20.0f;
+        topCollider.height = 180.0f - TRIM_TOP;
+        topCollider.offsetY = TRIM_TOP * 0.5f; // Center-based offset
+        topCollider.isStatic = false;
+        topCollider.tag = "Obstacle";
+        
+        // Add oscillation behavior for castle level challenge
+        Obstacle topObstacle;
+        topObstacle.damage = 1;
+        topObstacle.isDestructible = false;
+        topObstacle.health = 1;
+        topObstacle.behavior = static_cast<int>(ToiletBehavior::OSCILLATE_VERTICAL);
+        topObstacle.oscillationSpeed = 2.0f;  // Castle level speed
+        topObstacle.oscillationRange = 60.0f; // Castle level range
+        topObstacle.oscillationTimer = 0.0f;
+        topObstacle.basePosition = Gnosis::GNVector2(x, topToiletY);
+        topObstacle.isTopPart = true;
+        
+        m_ecsSystem->AddComponent<Transform>(topToilet, topTransform);
+        m_ecsSystem->AddComponent<Sprite>(topToilet, topSprite);
+        m_ecsSystem->AddComponent<Physics>(topToilet, topPhysics);
+        m_ecsSystem->AddComponent<Hitbox>(topToilet, topCollider);
+        m_ecsSystem->AddComponent<Obstacle>(topToilet, topObstacle);
+        
+        // Create bottom gold toilet with same oscillation (linked movement)
+        Gnosis::Entity bottomToilet = m_ecsSystem->CreateEntity();
+        
+        Transform bottomTransform(Gnosis::GNVector2(x, bottomToiletY), 0.0f, 
+                                 Gnosis::GNVector2(m_baseScale, m_baseScale));
+        
+        Sprite bottomSprite("BottomToiletGold", 65.0f, 180.0f);  // Use gold texture!
+        bottomSprite.layer = 3;
+        bottomSprite.visible = true;
+        
+        Physics bottomPhysics;
+        bottomPhysics.velocity.x = -m_worldSpeed;
+        bottomPhysics.useGravity = false;
+        
+        Hitbox bottomCollider;
+        bottomCollider.type = ColliderType::Rectangle;
+        const float TRIM_BOTTOM = 30.0f;
+        bottomCollider.width = 20.0f;
+        bottomCollider.height = 180.0f - TRIM_BOTTOM;
+        bottomCollider.offsetY = -TRIM_BOTTOM * 0.5f; // Center-based offset
+        bottomCollider.isStatic = false;
+        bottomCollider.tag = "Obstacle";
+        
+        // Add same oscillation behavior - pair moves together
+        Obstacle bottomObstacle;
+        bottomObstacle.damage = 1;
+        bottomObstacle.isDestructible = false;
+        bottomObstacle.health = 1;
+        bottomObstacle.behavior = static_cast<int>(ToiletBehavior::OSCILLATE_VERTICAL);
+        bottomObstacle.oscillationSpeed = 2.0f;  // Same speed as top
+        bottomObstacle.oscillationRange = 60.0f; // Same range as top
+        bottomObstacle.oscillationTimer = 0.0f;  // Same starting phase
+        bottomObstacle.basePosition = Gnosis::GNVector2(x, bottomToiletY);
+        bottomObstacle.isTopPart = false;
+        bottomObstacle.pairedEntity = topToilet; // Link to top toilet
+        
+        m_ecsSystem->AddComponent<Transform>(bottomToilet, bottomTransform);
+        m_ecsSystem->AddComponent<Sprite>(bottomToilet, bottomSprite);
+        m_ecsSystem->AddComponent<Physics>(bottomToilet, bottomPhysics);
+        m_ecsSystem->AddComponent<Hitbox>(bottomToilet, bottomCollider);
+        m_ecsSystem->AddComponent<Obstacle>(bottomToilet, bottomObstacle);
+        
+        // Link the pair for synchronized movement
+        topObstacle.pairedEntity = bottomToilet;
+        m_ecsSystem->GetComponent<Obstacle>(topToilet)->pairedEntity = bottomToilet;
+        
+        // Add both to the same group for coordinated spawning/wrapping
+        float groupWidth = 65.0f * m_baseScale; // Width of toilet
+        AddEntityToGroup(topToilet, groupId, true, 0.0f, 0.0f, groupWidth, GroupPattern::TopAndBottom);
+        AddEntityToGroup(bottomToilet, groupId, false, 0.0f, fixedGapHeight + toiletHeight, groupWidth, GroupPattern::TopAndBottom);
+        
+        // Add GroupGap component to ensure proper spacing between groups
+        const float gapWidth = 2000.0f; // Much larger gap between toilet groups for proper centerpiece positioning
+        GroupGap groupGap(gapWidth, false, "castle_toilet_spacing");
+        m_ecsSystem->AddComponent<GroupGap>(topToilet, groupGap);
+        
+        // Track obstacles for management
+        m_activeObstacles.push_back(topToilet);
+        m_activeObstacles.push_back(bottomToilet);
+        
+        // Spawn decorative elements positioned relative to this toilet group
+        // Floor torches: positioned to left and right of toilet group
+        // Account for actual texture content (remove 16px padding from sprite dimensions)
+        float actualToiletWidth = (65.0f - 16.0f) * m_baseScale; // Actual toilet width without padding
+        float leftTorchX = x - 80.0f; // Push left torch further left
+        float rightTorchX = x + actualToiletWidth + 80.0f; // Push right torch further right
+        
+        // Calculate offsetX values relative to the toilet group leader (x)
+        float leftTorchOffsetX = -80.0f; // 80px left of toilet
+        float rightTorchOffsetX = actualToiletWidth + 80.0f; // 80px right of toilet
+        
+        // Spawn floor torches on either side of the toilet
+        SpawnCastleFloorTorch(leftTorchX, groupId, leftTorchOffsetX);
+        SpawnCastleFloorTorch(rightTorchX, groupId, rightTorchOffsetX);
+        
+        // Calculate positions for centerpieces in the gap between toilet groups
+        // The gap is 2000px wide, starting from the current toilet group
+        // Centerpiece: positioned in the middle of the gap, moved 128px left for proper texture centering
+        float gapStartX = x; // Start of current gap (current toilet position)
+        float gapEndX = x + gapWidth; // End of current gap (next toilet position)
+        float centerX = gapStartX + (gapWidth * 0.5f) - 16.0f - 128.0f; // Center of gap, moved 128px left
+        
+        // Chandeliers: positioned symmetrically around the centerpiece
+        // Left chandelier: 400px to the left of centerpiece + 128px compensation for centerpiece movement
+        float leftChandelierX = centerX - 400.0f + 128.0f;
+        // Right chandelier: 400px to the right of centerpiece + 256px adjustment + 128px compensation
+        float rightChandelierX = centerX + 400.0f + 256.0f + 128.0f;
+        
+        // Calculate offsetX values for chandeliers (compensated for centerpiece movement)
+        float leftChandelierOffsetX = (gapWidth * 0.5f) - 400.0f - 16.0f + 128.0f; // 728px from toilet
+        float rightChandelierOffsetX = (gapWidth * 0.5f) + 400.0f + 256.0f - 16.0f + 128.0f; // 1784px from toilet
+        
+        // Spawn chandeliers symmetrically around the centerpiece
+        SpawnCastleChandelier(leftChandelierX, groupId, leftChandelierOffsetX);
+        SpawnCastleChandelier(rightChandelierX, groupId, rightChandelierOffsetX);
+        
+        // Calculate offsetX for centerpiece (moved 128px left for proper texture centering)
+        float centerpieceOffsetX = (gapWidth * 0.5f) - 16.0f - 128.0f; // 872px from toilet (center of gap, moved left)
+        
+        // Spawn centerpiece in center of the gap - randomly choose between:
+        // 1. Torch pillar, 2. Decorative painting, 3. Spike ball obstacle
+        static int centerCounter = 0;
+        int centerpieceType = centerCounter % 3; // 3 different centerpiece types
+        
+        switch (centerpieceType) {
+            case 0:
+                SpawnCastleTorchPillar(centerX, groupId, centerpieceOffsetX);
+                break;
+            case 1:
+                SpawnCastleDecorativePainting(centerX, groupId, centerpieceOffsetX);
+                break;
+            case 2:
+                SpawnCastleSpikeBall(centerX, groupId, centerpieceOffsetX);
+                break;
+        }
+        centerCounter++;
+        
+        GN_LOG_INFO("Spawned oscillating gold toilet pair at x=" + std::to_string(x) + " with group " + std::to_string(groupId));
+    }
+
+
+
+    void ObstacleSystem::SpawnCastleTorchPillar(float x, int groupId, float offsetX) {
+        // Create animated torch pillar (4-frame spritesheet, 96x512 frames)
+        float screenHeight = 2556.0f; // iPhone 16 portrait height
+        float pillarHeight = 512.0f * m_baseScale; // Full height spritesheet
+        
+        // Position the torch pillar at the passed X position (in gap between toilets)
+        float centerY = screenHeight / 2.0f; // Center vertically
+        float pillarY = centerY - (pillarHeight / 2.0f); // Position pillar centered
+        
+        Gnosis::Entity torchPillar = m_ecsSystem->CreateEntity();
+        
+        Transform transform(Gnosis::GNVector2(x, pillarY), 0.0f, 
+                           Gnosis::GNVector2(m_baseScale, m_baseScale));
+        
+        // Animated sprite with 4 frames - properly configured for spritesheet
+        Sprite sprite("TorchPillar", 96.0f, 512.0f);
+        sprite.layer = 2; // Behind game objects
+        sprite.visible = true;
+        sprite.isAnimated = true;
+        sprite.frameCount = 4; // 4-frame animation
+        sprite.frameWidth = 96; // Each frame is 96px wide
+        sprite.frameHeight = 512; // Full height
+        sprite.currentFrame = 0;
+        sprite.currentFrameTime = 0.0f;
+        sprite.frameTime = 0.15f; // Faster animation to avoid flickering
+        sprite.playing = true;
+        sprite.loop = true;
+        
+        Physics physics;
+        physics.velocity.x = -m_worldSpeed;
+        physics.useGravity = false;
+        
+        // No hitbox - purely decorative
+        // No Obstacle component - purely decorative
+        
+        m_ecsSystem->AddComponent<Transform>(torchPillar, transform);
+        m_ecsSystem->AddComponent<Sprite>(torchPillar, sprite);
+        m_ecsSystem->AddComponent<Physics>(torchPillar, physics);
+        
+        // Add to group for management
+        float groupWidth = 96.0f * m_baseScale;
+        AddEntityToGroup(torchPillar, groupId, false, offsetX, 0.0f, groupWidth, GroupPattern::Decorative);
+        
+        // Track for management
+        m_activeObstacles.push_back(torchPillar);
+        
+        GN_LOG_INFO("Spawned castle torch pillar at x=" + std::to_string(x) + " y=" + std::to_string(centerY) + " with group " + std::to_string(groupId));
+    }
+
+    void ObstacleSystem::SpawnCastleChandelier(float x, int groupId, float offsetX) {
+        // Create animated chandelier (32x34 sprite) - positioned to touch top of screen
+        float chandelierY = 0.0f; // Touch top of screen
+        
+        Gnosis::Entity chandelier = m_ecsSystem->CreateEntity();
+        
+        Transform transform(Gnosis::GNVector2(x, chandelierY), 0.0f, 
+                           Gnosis::GNVector2(m_baseScale, m_baseScale));
+        
+        // Animated sprite
+        Sprite sprite("castlelevelchandelier", 32.0f, 34.0f);
+        sprite.layer = 3; // Above game objects
+        sprite.visible = true;
+        sprite.isAnimated = true;
+        sprite.frameCount = 4; // Assume 4-frame animation
+        sprite.frameWidth = 32; // Each frame is 32px wide
+        sprite.frameHeight = 34; // Height
+        sprite.currentFrame = 0;
+        sprite.currentFrameTime = 0.0f;
+        sprite.frameTime = 0.4f; // Animation speed
+        sprite.playing = true;
+        sprite.loop = true;
+        
+        Physics physics;
+        physics.velocity.x = -m_worldSpeed;
+        physics.useGravity = false;
+        
+        // No hitbox - purely decorative
+        // No Obstacle component - purely decorative
+        
+        m_ecsSystem->AddComponent<Transform>(chandelier, transform);
+        m_ecsSystem->AddComponent<Sprite>(chandelier, sprite);
+        m_ecsSystem->AddComponent<Physics>(chandelier, physics);
+        
+        // Add to group for management
+        float groupWidth = 32.0f * m_baseScale;
+        AddEntityToGroup(chandelier, groupId, false, offsetX, 0.0f, groupWidth, GroupPattern::Decorative);
+        
+        // Track for management
+        m_activeObstacles.push_back(chandelier);
+        
+        GN_LOG_INFO("Spawned castle chandelier at x=" + std::to_string(x) + " with group " + std::to_string(groupId));
+    }
+
+    void ObstacleSystem::SpawnCastleFloorTorch(float x, int groupId, float offsetX) {
+        // Create animated floor torch (20x64 sprite)
+        float screenHeight = 2556.0f; // iPhone 16 portrait height
+        float torchHeight = 64.0f * m_baseScale;
+        float torchY = screenHeight - torchHeight; // Ground at bottom
+        
+        Gnosis::Entity floorTorch = m_ecsSystem->CreateEntity();
+        
+        Transform transform(Gnosis::GNVector2(x, torchY), 0.0f, 
+                           Gnosis::GNVector2(m_baseScale, m_baseScale));
+        
+        // Animated sprite
+        Sprite sprite("castlelevelfloortorch", 20.0f, 64.0f);
+        sprite.layer = 3; // Above game objects
+        sprite.visible = true;
+        sprite.isAnimated = true;
+        sprite.frameCount = 4; // Assume 4-frame animation
+        sprite.frameWidth = 20; // Each frame is 20px wide
+        sprite.frameHeight = 64; // Height
+        sprite.currentFrame = 0;
+        sprite.currentFrameTime = 0.0f;
+        sprite.frameTime = 0.3f; // Animation speed
+        sprite.playing = true;
+        sprite.loop = true;
+        
+        Physics physics;
+        physics.velocity.x = -m_worldSpeed;
+        physics.useGravity = false;
+        
+        // No hitbox - purely decorative
+        // No Obstacle component - purely decorative
+        
+        m_ecsSystem->AddComponent<Transform>(floorTorch, transform);
+        m_ecsSystem->AddComponent<Sprite>(floorTorch, sprite);
+        m_ecsSystem->AddComponent<Physics>(floorTorch, physics);
+        
+        // Add to group for management
+        float groupWidth = 20.0f * m_baseScale;
+        AddEntityToGroup(floorTorch, groupId, false, offsetX, 0.0f, groupWidth, GroupPattern::Decorative);
+        
+        // Track for management
+        m_activeObstacles.push_back(floorTorch);
+        
+        GN_LOG_INFO("Spawned castle floor torch at x=" + std::to_string(x) + " with group " + std::to_string(groupId));
+    }
+
+    void ObstacleSystem::SpawnCastleDecorativePainting(float x, int groupId, float offsetX) {
+        // Create decorative painting (96x96 sprite) - positioned in center between toilet groups
+        float screenHeight = 2556.0f; // iPhone 16 portrait height
+        float paintingHeight = 96.0f * 6.0f; // 6x scaling to make paintings prominent
+        float paintingY = (screenHeight - paintingHeight) / 2.0f; // Center vertically
+        
+        Gnosis::Entity painting = m_ecsSystem->CreateEntity();
+        
+        Transform transform(Gnosis::GNVector2(x, paintingY), 0.0f, 
+                           Gnosis::GNVector2(6.0f, 6.0f)); // 6x scaling to make paintings prominent
+        
+        // Static sprite (paintings don't animate)
+        Sprite sprite("RabbitKnightPainting", 96.0f, 96.0f); // Use actual 96x96 dimensions
+        sprite.layer = 2; // Behind game objects
+        sprite.visible = true;
+        sprite.isAnimated = false;
+        
+        Physics physics;
+        physics.velocity.x = -m_worldSpeed;
+        physics.useGravity = false;
+        
+        // No hitbox - purely decorative
+        // No Obstacle component - purely decorative
+        
+        m_ecsSystem->AddComponent<Transform>(painting, transform);
+        m_ecsSystem->AddComponent<Sprite>(painting, sprite);
+        m_ecsSystem->AddComponent<Physics>(painting, physics);
+        
+        // Add to group for management
+        float groupWidth = 96.0f * 6.0f; // Scaled width (6x scaling)
+        AddEntityToGroup(painting, groupId, false, offsetX, 0.0f, groupWidth, GroupPattern::Decorative);
+        
+        // Track for management
+        m_activeObstacles.push_back(painting);
+        
+        GN_LOG_INFO("Spawned castle decorative painting at x=" + std::to_string(x) + " with group " + std::to_string(groupId));
+    }
+    
+    void ObstacleSystem::SpawnCastleSpikeBall(float x, int groupId, float offsetX) {
+        // Create rotating spike ball obstacle with base - positioned in gap between toilet groups
+        float screenHeight = 2556.0f; // iPhone 16 portrait height
+        float spikeBallHeight = 90.0f * m_baseScale; // 90px spike ball height
+        float baseHeight = 10.0f * m_baseScale; // Base is actually 10x10 pixels
+        
+        // Position the spike ball at the passed X position (in gap between toilets)
+        // Center Y should be screenHeight / 2, which is 2556 / 2 = 1278
+        float centerY = screenHeight / 2.0f; // This should be 1278
+        float baseY = centerY; // Base at center Y
+        
+        // Position the spike ball so its pivot point (32,0) - the top where it connects to base - is at base center
+        // The spike ball sprite is 64x90, so its pivot point (32,0) is at the top center
+        // We want this pivot point to be at the base center, so position the spike ball accordingly
+        // Account for scaling: pivot point is 45 pixels from sprite center, so offset by 45 * scale
+        float pivotOffsetY = 45.0f * m_baseScale;
+        float spikeBallY = baseY - pivotOffsetY; // Position so pivot point (32,0) is at base center
+        
+        // Add X offset to center horizontally with the base (base is 10x10, so center is at x + 5*scale)
+        float baseCenterX = x + (5.0f * m_baseScale); // Base center X position
+        float spikeBallX = baseCenterX; // Position spike ball at base center X
+        
+        // Debug: Let's log the actual values to see what's happening
+        GN_LOG_INFO("Spike ball positioning - screenHeight: " + std::to_string(screenHeight) + 
+                   ", centerY: " + std::to_string(centerY) + 
+                   ", baseY: " + std::to_string(baseY) + 
+                   ", pivotOffsetY: " + std::to_string(pivotOffsetY) + 
+                   ", spikeBallY: " + std::to_string(spikeBallY) + 
+                   ", baseCenterX: " + std::to_string(baseCenterX) + 
+                   ", spikeBallX: " + std::to_string(spikeBallX) + 
+                   ", m_baseScale: " + std::to_string(m_baseScale) + 
+                   ", base sprite dimensions: 10x10, spike ball sprite dimensions: 64x90");
+        
+        // Create the base first
+        Gnosis::Entity base = m_ecsSystem->CreateEntity();
+        
+        Transform baseTransform(Gnosis::GNVector2(baseCenterX, baseY), 0.0f, 
+                              Gnosis::GNVector2(m_baseScale, m_baseScale));
+        
+        Sprite baseSprite("SpikeBallBase", 10.0f, 10.0f); // Base is actually 10x10 pixels
+        baseSprite.layer = 2; // Behind game objects
+        baseSprite.visible = true;
+        baseSprite.isAnimated = false;
+        
+        Physics basePhysics;
+        basePhysics.velocity.x = -m_worldSpeed;
+        basePhysics.useGravity = false;
+        
+        // Base has no hitbox - just decorative
+        m_ecsSystem->AddComponent<Transform>(base, baseTransform);
+        m_ecsSystem->AddComponent<Sprite>(base, baseSprite);
+        m_ecsSystem->AddComponent<Physics>(base, basePhysics);
+        
+        GN_LOG_INFO("Created base entity at position (" + std::to_string(baseTransform.position.x) + ", " + std::to_string(baseTransform.position.y) + ") with scale " + std::to_string(baseTransform.scale.x));
+        
+        // Now create the rotating spike ball
+        Gnosis::Entity spikeBall = m_ecsSystem->CreateEntity();
+        
+        Transform spikeBallTransform(Gnosis::GNVector2(spikeBallX, spikeBallY), 0.0f, 
+                                   Gnosis::GNVector2(m_baseScale, m_baseScale));
+        
+        Sprite spikeBallSprite("SpikeBall", 64.0f, 90.0f); // Use actual 64x90 dimensions
+        spikeBallSprite.layer = 3; // Above game objects
+        spikeBallSprite.visible = true;
+        spikeBallSprite.isAnimated = false;
+        
+        Physics spikeBallPhysics;
+        spikeBallPhysics.velocity.x = -m_worldSpeed;
+        spikeBallPhysics.useGravity = false;
+        
+        // Spike ball has hitbox and obstacle component for damage
+        Hitbox hitbox;
+        hitbox.type = ColliderType::Circle; // Use circular hitbox
+        hitbox.radius = 8.0f * m_baseScale; // 8px radius as specified
+        hitbox.width = 16.0f * m_baseScale; // 8px radius * 2 = 16px diameter
+        hitbox.height = 16.0f * m_baseScale; // 8px radius * 2 = 16px diameter
+        hitbox.offsetX = 32.0f * m_baseScale; // Center of 64px width
+        hitbox.offsetY = 70.0f * m_baseScale; // 70px from top of 90px height
+        
+        Obstacle obstacle;
+        obstacle.damage = 1;
+        obstacle.isDestructible = false;
+        obstacle.behavior = 0; // STATIC = 0 (no oscillation)
+        obstacle.oscillationSpeed = 0.0f; // No oscillation
+        obstacle.oscillationRange = 0.0f; // No oscillation
+        obstacle.oscillationTimer = 0.0f; // No oscillation
+        
+        m_ecsSystem->AddComponent<Transform>(spikeBall, spikeBallTransform);
+        m_ecsSystem->AddComponent<Sprite>(spikeBall, spikeBallSprite);
+        m_ecsSystem->AddComponent<Physics>(spikeBall, spikeBallPhysics);
+        m_ecsSystem->AddComponent<Hitbox>(spikeBall, hitbox);
+        m_ecsSystem->AddComponent<Obstacle>(spikeBall, obstacle);
+        
+        GN_LOG_INFO("Created spike ball entity at position (" + std::to_string(spikeBallTransform.position.x) + ", " + std::to_string(spikeBallTransform.position.y) + ") with scale " + std::to_string(spikeBallTransform.scale.x));
+        
+        // Add pivot rotation renderer for spinning animation around base center
+        // The spike ball is positioned so its pivot point (32,0) is at the base center
+        // We want it to rotate around this pivot point, not around its sprite center
+        // Pivot offset (0, 45) makes it rotate around the top of the sprite (32,0) where the chain connects
+        // This is the correct offset for spinning from the chain, not from the ball
+        PivotRotationRenderer pivotRenderer(true, 0.0f, 45.0f, 180.0f);
+        m_ecsSystem->AddComponent<PivotRotationRenderer>(spikeBall, pivotRenderer);
+        
+        // Remove the old rotation renderer since we're using pivot-based rotation now
+        // RotationRenderer rotationRenderer(true);
+        // m_ecsSystem->AddComponent<RotationRenderer>(spikeBall, rotationRenderer);
+        
+        // Add both to group for management
+        float groupWidth = 64.0f * m_baseScale; // Use spike ball width for group
+        AddEntityToGroup(base, groupId, false, offsetX, 0.0f, groupWidth, GroupPattern::Decorative);
+        AddEntityToGroup(spikeBall, groupId, false, offsetX, 0.0f, groupWidth, GroupPattern::Decorative);
+        
+        // Track for management
+        m_activeObstacles.push_back(base);
+        m_activeObstacles.push_back(spikeBall);
+        
+        // Store rotation speed for animation (will be updated in UpdateObstacles)
+        m_spikeBallRotationSpeeds[spikeBall] = 180.0f; // Slower: 180 degrees per second (1/2 rotation per second)
+        
+        GN_LOG_INFO("Spawned castle spike ball obstacle at x=" + std::to_string(x) + " y=" + std::to_string(centerY) + " with group " + std::to_string(groupId));
+    }
+
+    void ObstacleSystem::UpdateSpikeBallRotations(float deltaTime) {
+        // Update rotation for all spike balls using PivotRotationRenderer
+        for (auto& [entity, rotationSpeed] : m_spikeBallRotationSpeeds) {
+            Transform* transform = m_ecsSystem->GetComponent<Transform>(entity);
+            PivotRotationRenderer* pivotRenderer = m_ecsSystem->GetComponent<PivotRotationRenderer>(entity);
+            
+            if (transform && pivotRenderer) {
+                // Use the rotation speed from the PivotRotationRenderer component
+                float speed = pivotRenderer->rotationSpeed;
+                
+                // Convert rotation speed from degrees per second to degrees per frame
+                float rotationDelta = speed * deltaTime;
+                float oldRotation = transform->rotation;
+                transform->rotation += rotationDelta;
+                
+                // Keep rotation in reasonable bounds (like loading guy does)
+                if (transform->rotation >= 360.0f) {
+                    transform->rotation -= 360.0f;
+                }
+                
+                // Debug logging for first few frames
+                static int debugFrameCount = 0;
+                if (debugFrameCount < 10) {
+                    GN_LOG_INFO("Spike ball pivot rotation: entity=" + std::to_string(entity) + 
+                               ", oldRotation=" + std::to_string(oldRotation) + 
+                               ", newRotation=" + std::to_string(transform->rotation) + 
+                               ", delta=" + std::to_string(rotationDelta) + 
+                               ", speed=" + std::to_string(speed) + 
+                               ", pivot=(" + std::to_string(pivotRenderer->pivotX) + "," + std::to_string(pivotRenderer->pivotY) + ")");
+                    debugFrameCount++;
                 }
             }
         }

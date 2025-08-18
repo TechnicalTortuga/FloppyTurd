@@ -161,6 +161,18 @@ class CommandProcessor {
                                                 rotation: data.rotation)
             }
             
+        case .CMD_DRAW_SPRITE_SCALED_PIVOTED:
+            if data.textureHandle != 0 {
+                renderer.drawSpriteScaledPivoted(textureHandle: data.textureHandle,
+                                                x: data.x,
+                                                y: data.y,
+                                                scaleX: data.scaleX,
+                                                scaleY: data.scaleY,
+                                                rotation: data.rotation,
+                                                pivotX: data.pivotX,
+                                                pivotY: data.pivotY)
+            }
+            
         case .CMD_DRAW_SPRITE_SCALED_WITH_SOURCE:
             if data.textureHandle != 0 {
                 renderer.drawSpriteScaledWithSource(textureHandle: data.textureHandle,

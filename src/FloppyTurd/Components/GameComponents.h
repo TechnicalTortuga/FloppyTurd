@@ -449,7 +449,8 @@ namespace GameCore {
         Ground,           // For desert ground-based obstacles (Outhouse, Cactus)
         PyramidBottom,
         PyramidTop,
-        TwoFunnel
+        TwoFunnel,
+        Decorative        // For castle decorative elements (torch pillars, chandeliers, floor torches)
     };
     
     /**
@@ -852,6 +853,24 @@ namespace GameCore {
         {}
     };
 
+    /**
+     * PivotRotationRenderer component - supports rotation around custom pivot points
+     * This allows sprites to rotate around specific points (like spike ball rotating from its base)
+     */
+    struct PivotRotationRenderer : public Gnosis::Component {
+        bool enabled;
+        float pivotX;        // Pivot point X relative to sprite center (in pixels)
+        float pivotY;        // Pivot point Y relative to sprite center (in pixels)
+        float rotationSpeed; // Rotation speed in degrees per second
+        
+        PivotRotationRenderer(bool isEnabled = true, float px = 0.0f, float py = 0.0f, float speed = 0.0f)
+            : enabled(isEnabled)
+            , pivotX(px)
+            , pivotY(py)
+            , rotationSpeed(speed)
+        {}
+    };
+
 } // namespace GameCore
 
 // Bring GameCore components into Gnosis namespace for easier access
@@ -874,6 +893,7 @@ namespace Gnosis {
     using UIShape = GameCore::UIShape;
     using Pickup = GameCore::Pickup;
     using RotationRenderer = GameCore::RotationRenderer;
+    using PivotRotationRenderer = GameCore::PivotRotationRenderer;
     using Group = GameCore::Group;
     using GroupGap = GameCore::GroupGap;
     using ColliderType = GameCore::ColliderType;

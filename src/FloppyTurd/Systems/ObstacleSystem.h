@@ -18,7 +18,10 @@ namespace GameCore {
         SEWER_TOP_AND_BOTTOM,
         SEWER_PYRAMID_3,
         SEWER_PYRAMID_TOP_3,
-        SEWER_TWO_BY_TWO_FUNNEL
+        SEWER_TWO_BY_TWO_FUNNEL,
+        SNOW_TOILET_PAIR,
+        CASTLE_GOLD_TOILET_PAIR,
+        CASTLE_DECORATIVE
     };
 
     struct PatternConfig {
@@ -72,6 +75,9 @@ namespace GameCore {
         void SpawnSewerPattern_Pyramid3(float x);
         void SpawnSewerPattern_PyramidTop3(float x);
         void SpawnSewerPattern_TwoByTwoFunnel(float x);
+        void SpawnSnowPattern_ToiletPair(float x);
+        void SpawnCastlePattern_GoldToiletPair(float x);
+        void SpawnCastlePattern_Decorative(float x);
 
         // Entity creation helpers
         Gnosis::Entity CreateToiletEntity(const std::string& texture, float x, float y, float scale, bool isTop);
@@ -79,11 +85,24 @@ namespace GameCore {
         Gnosis::Entity CreateSewerPipeEntity(const std::string& texture, float x, float y, float scale, bool isTop);
         Gnosis::Entity CreateCactusEntity(const std::string& texture, float x, float y, float scale, bool isDancing = false, float width = 64.0f, float height = 90.0f);
         
+        // Castle decorative element helpers
+        void SpawnCastleTorchPillar(float x, int groupId, float offsetX);
+        void SpawnCastleChandelier(float x, int groupId, float offsetX);
+        void SpawnCastleFloorTorch(float x, int groupId, float offsetX);
+        void SpawnCastleDecorativePainting(float x, int groupId, float offsetX);
+        void SpawnCastleSpikeBall(float x, int groupId, float offsetX);
+        
         // Cactus system
         void InitializeCactusSystem();
         void SpawnCactusPool(float startX);
         void UpdateCactusAnimation(float deltaTime);
         void WrapCactusPool(float worldScrollDistance);
+        
+        // Spike ball rotation system
+        void UpdateSpikeBallRotations(float deltaTime);
+        
+        // Obstacle oscillation system
+        void UpdateObstacleOscillation(float deltaTime);
 
         // Group management
         void AddEntityToGroup(Gnosis::Entity entity, int groupId, bool isLeader, 
@@ -127,7 +146,10 @@ namespace GameCore {
         std::map<Gnosis::Entity, const CactusType*> m_cactusTypeMap; // Track cactus types for proper positioning
         bool m_cactusPoolInitialized = false;
 
-        // Debug rendering
+        // Spike ball rotation system data
+        std::map<Gnosis::Entity, float> m_spikeBallRotationSpeeds;
+        
+        // Debug system data
         bool m_debugMode = false;
 
         static constexpr int OBSTACLE_POOL_SIZE = 8;

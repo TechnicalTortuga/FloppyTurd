@@ -34,12 +34,15 @@ void EnemySystem::UpdateEnemyStates(float deltaTime) {
 
         // Initialize enemy if needed
         if (!enemy->hasInitializedBaseY) {
-            // Ground the enemy first
-            GroundEnemy(enemy, transform);
+            GN_LOG_DEBUG("EnemySystem: Initializing enemy at x=" + std::to_string(transform->position.x) + " y=" + std::to_string(transform->position.y) + " with movementPattern=" + enemy->movementPattern);
             
+            // For enemies spawned by LevelManager, use the position that was already set
+            // Don't call GroundEnemy during initialization - respect LevelManager's positioning
             enemy->baseY = transform->position.y;
             enemy->spawnPosition = transform->position;
             enemy->hasInitializedBaseY = true;
+            
+            GN_LOG_DEBUG("EnemySystem: Using LevelManager position - baseY=" + std::to_string(enemy->baseY) + " spawnPosition.y=" + std::to_string(enemy->spawnPosition.y) + " current position.y=" + std::to_string(transform->position.y));
             
             // Initialize enemy behavior based on movement pattern
             InitializeEnemyBehavior(enemy, enemy->movementPattern);
@@ -80,15 +83,28 @@ void EnemySystem::UpdateEnemyMovement(float deltaTime) {
         if (enemy->bobbingEnabled) {
             float bobOffset = std::sin(enemy->bobPhase + m_time * enemy->bobSpeed) * enemy->bobAmplitude;
             transform->position.y = enemy->baseY + bobOffset;
+            GN_LOG_DEBUG("EnemySystem: Applied bobbing - baseY=" + std::to_string(enemy->baseY) + " bobOffset=" + std::to_string(bobOffset) + " final y=" + std::to_string(transform->position.y));
+        } else {
+            // Log if position has changed from baseY (shouldn't happen for static enemies)
+            if (std::abs(transform->position.y - enemy->baseY) > 0.1f) {
+                GN_LOG_DEBUG("EnemySystem: Position mismatch detected - baseY=" + std::to_string(enemy->baseY) + " current y=" + std::to_string(transform->position.y) + " at x=" + std::to_string(transform->position.x));
+            }
         }
-        
-        // For grounded enemies, ensure they stay at the correct ground level
-        // but don't override bobbing movement
-        if (enemy->isGrounded && !enemy->bobbingEnabled) {
-            GroundEnemy(enemy, transform);
+        // Handle screen wrapping for moving enemies
+        if (enemy->movementPattern == "horizontal" || enemy->movementPattern == "snowman_thrower") {
+            // Check if enemy is off-screen to the left
+            if (transform->position.x < -100.0f) {
+                // Wrap to the right side of the screen
+                transform->position.x = 1279.0f + 100.0f; // iPhone 16 width + buffer
+                GN_LOG_DEBUG("EnemySystem: Wrapped enemy to right side at x=" + std::to_string(transform->position.x));
+            }
+            // Check if enemy is off-screen to the right
+            else if (transform->position.x > 1379.0f) {
+                // Wrap to the left side of the screen
+                transform->position.x = -100.0f;
+                GN_LOG_DEBUG("EnemySystem: Wrapped enemy to left side at x=" + std::to_string(transform->position.x));
+            }
         }
-
-
     }
 }
 
@@ -139,20 +155,70 @@ void EnemySystem::UpdateSnowmanThrower(float deltaTime, Gnosis::Entity enemy, En
         enemyComp->throwTimer = 0.0f;
     }
     
-    // Only throw when on screen and not already throwing
+    // Only throw when on screen, not already throwing, and player is within range
     if (enemyComp->isOnScreen && !enemyComp->isThrowing && enemyComp->currentState != EnemyState::Attacking) {
-        enemyComp->throwTimer += deltaTime;
+        // Check player proximity - only throw when player is close enough
+        bool playerInRange = false;
+        if (m_levelManager) {
+            // Get the actual player entity from LevelManager
+            Gnosis::Entity playerEntity = m_levelManager->GetPlayerEntity();
+            if (playerEntity != 0) {
+                Transform* playerTransform = m_ecsSystem->GetComponent<Transform>(playerEntity);
+                if (playerTransform) {
+                    float distance = std::abs(transform->position.x - playerTransform->position.x);
+                    if (distance <= enemyComp->throwRange) {
+                        playerInRange = true;
+                        GN_LOG_DEBUG("Snowman thrower: player in range! Distance=" + std::to_string(distance) + ", throwRange=" + std::to_string(enemyComp->throwRange));
+                    }
+                }
+            }
+        }
         
-        // Check if it's time to throw
-        if (enemyComp->throwTimer >= enemyComp->throwCooldown) {
+        // If no player found in range, use a fallback check based on screen position
+        if (!playerInRange) {
+            // Assume player is around screen center (X=600) for fallback
+            float distance = std::abs(transform->position.x - 600.0f);
+            playerInRange = (distance <= enemyComp->throwRange);
+            if (playerInRange) {
+                GN_LOG_DEBUG("Snowman thrower: using fallback distance check. Distance=" + std::to_string(distance) + ", throwRange=" + std::to_string(enemyComp->throwRange));
+            }
+        }
+        
+        if (playerInRange) {
+            enemyComp->throwTimer += deltaTime;
+            
+            // Check if it's time to throw
+            if (enemyComp->throwTimer >= enemyComp->throwCooldown) {
             // Start throw animation
             enemyComp->isThrowing = true;
             enemyComp->currentThrowFrame = 0;
             enemyComp->throwAnimationTimer = 0.0f;
             ChangeEnemyState(enemyComp, EnemyState::Attacking, enemyComp->throwAnimationDuration);
             
+            // Switch to throw state using StateAnimation
+            StateAnimation* sa = m_ecsSystem->GetComponent<StateAnimation>(enemy);
+            Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(enemy);
+            if (sa && sprite) {
+                const StateAnimation::Clip* throwClip = sa->getClip("throw");
+                if (throwClip) {
+                    sa->currentState = "throw";
+                    sprite->textureId = throwClip->textureId;
+                    sprite->isAnimated = (throwClip->frameCount > 1);
+                    sprite->frameWidth = throwClip->frameWidth;
+                    sprite->frameHeight = throwClip->frameHeight;
+                    sprite->frameCount = throwClip->frameCount;
+                    sprite->frameTime = throwClip->frameTime;
+                    sprite->loop = throwClip->loop;
+                    sprite->currentFrame = 0;
+                    sprite->currentFrameTime = 0.0f;
+                    sprite->playing = true;
+                    sprite->hasCompleted = false;
+                }
+            }
+            
             // Reset throw timer
             enemyComp->throwTimer = 0.0f;
+        }
         }
     }
     
@@ -174,6 +240,13 @@ void EnemySystem::UpdateSnowmanThrower(float deltaTime, Gnosis::Entity enemy, En
         if (enemyComp->throwAnimationTimer >= enemyComp->throwAnimationDuration) {
             enemyComp->isThrowing = false;
             enemyComp->hasSpawnedProjectile = false;
+            
+            // Switch back to idle texture when throw completes
+            Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(enemy);
+            if (sprite && sprite->textureId == "SnowManThrow") {
+                sprite->textureId = "SnowManIdle";  // Revert to idle texture
+            }
+            
             ChangeEnemyState(enemyComp, EnemyState::Idle, 0.0f);
         }
     }
@@ -273,8 +346,9 @@ void EnemySystem::UpdateEnemyProjectiles(float deltaTime) {
         transform->position += physics->velocity * deltaTime;
         
         // Check if projectile is off screen
-        if (transform->position.x < -100.0f || transform->position.x > 900.0f || 
-            transform->position.y < -100.0f || transform->position.y > 600.0f) {
+        // Use proper screen bounds for iPhone 16 (1179x2556)
+        if (transform->position.x < -100.0f || transform->position.x > 1279.0f || 
+            transform->position.y < -100.0f || transform->position.y > 2656.0f) {
             // Mark for cleanup
             m_ecsSystem->DestroyEntity(projectile);
             continue;
@@ -317,11 +391,9 @@ void EnemySystem::InitializeEnemyBehavior(Enemy* enemy, const std::string& movem
         enemy->groundOffset = 0.0f;
         
     } else if (movementPattern == "horizontal") {
-        // Basic horizontal moving enemies
+        // Basic horizontal moving enemies - RESPECT bobbing config from EnemyConfig
         enemy->currentState = EnemyState::Moving;
-        enemy->bobbingEnabled = true;
-        enemy->bobSpeed = 2.0f;
-        enemy->bobAmplitude = 30.0f;
+        // Don't override bobbing settings - let EnemyConfig control this
         enemy->isGrounded = true;
         enemy->groundOffset = 10.0f; // Float slightly above ground
         
@@ -353,21 +425,50 @@ void EnemySystem::InitializeEnemyBehavior(Enemy* enemy, const std::string& movem
 void EnemySystem::GroundEnemy(Enemy* enemy, Transform* transform) {
     if (!enemy->isGrounded) return;
     
-    // For side-scrolling games, enemies should be grounded at the bottom of the screen
-    // Use the actual iPhone 16 screen height minus the sprite height
-    const float screenHeight = 2556.0f; // iPhone 16 portrait screen height
+    // If the enemy already has a valid baseY set by LevelManager, don't override it
+    // This prevents conflicts between initial positioning and grounding
+    if (enemy->hasInitializedBaseY && enemy->baseY > 0.0f) {
+        // Just ensure the current position matches the baseY
+        GN_LOG_DEBUG("GroundEnemy: Using existing baseY=" + std::to_string(enemy->baseY) + " for enemy at x=" + std::to_string(transform->position.x));
+        transform->position.y = enemy->baseY;
+        return;
+    }
     
-    // Get the sprite component to calculate actual height with scale
-    // For snowmen, use 64x64 sprite dimensions, but consider scale
-    float enemyHeight = 64.0f * std::abs(transform->scale.y); // Snowman height with scale
+    // For enemies that don't have a baseY set by LevelManager, calculate it
+    // But be careful not to double-subtract the sprite height!
+    const float screenHeight = 2556.0f;
     
-    float groundY = screenHeight - enemyHeight;
+    // Get actual sprite height from the sprite component
+    float enemyHeight = 64.0f; // Default fallback
+    if (m_ecsSystem) {
+        // Find the entity that has this transform to get its sprite
+        const auto enemies = m_levelManager->GetActiveEnemies();
+        for (Gnosis::Entity e : enemies) {
+            Transform* enemyTransform = m_ecsSystem->GetComponent<Transform>(e);
+            if (enemyTransform == transform) {
+                Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(e);
+                if (sprite) {
+                    enemyHeight = sprite->height * std::abs(transform->scale.y);
+                }
+                break;
+            }
+        }
+    }
+    
+    // Calculate ground position: place enemy so its bottom edge touches the ground level
+    // For enemies spawned by LevelManager, the baseY is the actual ground level (2556)
+    // We need to subtract the enemy height to position the bottom edge at ground level
+    float finalY = enemy->baseY - enemyHeight - enemy->groundOffset;
+    
+    GN_LOG_DEBUG("GroundEnemy: Calculated finalY=" + std::to_string(finalY) + " (baseY=" + std::to_string(enemy->baseY) + " - enemyHeight=" + std::to_string(enemyHeight) + " - groundOffset=" + std::to_string(enemy->groundOffset) + ") for enemy at x=" + std::to_string(transform->position.x));
     
     // Update base Y position for bobbing calculations
-    enemy->baseY = groundY;
+    enemy->baseY = finalY;
     
     // Set current position to ground
-    transform->position.y = groundY;
+    transform->position.y = finalY;
+    
+    GN_LOG_DEBUG("GroundEnemy: Set enemy position.y=" + std::to_string(transform->position.y) + " and baseY=" + std::to_string(enemy->baseY));
 }
 
 } // namespace GameCore

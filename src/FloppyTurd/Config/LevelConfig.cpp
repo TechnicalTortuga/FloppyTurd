@@ -242,20 +242,23 @@ namespace GameCore {
 
     void LevelConfigFactory::AddCastleLevelLayers(LevelConfig& config) {
         // Castle level layers - more gothic/dungeon feel
-        float backgroundScale = 2.66f;  // Separate scale for 1024x480 backgrounds
+        // Using new castle assets with proper layering from back to front
+        // Scale to fit iPhone 16 screen height in portrait mode (actual pixels)
+        // iPhone 16 Portrait: 1179×2556 actual pixels
+        float backgroundScale = 5.0f;  // Approximately 2556/512 for 1024x512 assets
         
-        config.backgroundLayers.emplace_back("castlelevelbackgroundwall", 50.0f, 0.1f, 0);
+        // Back layer - castle background (all elements scroll at same speed - no parallax)
+        config.backgroundLayers.emplace_back("castlebacklayerbackground", 200.0f, 1.0f, 0);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
         config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
         
-        config.backgroundLayers.emplace_back("castlelevelfloorceiling", 100.0f, 0.3f, 1);
+        // Mid layer - curtains (same speed as background - no parallax)
+        config.backgroundLayers.emplace_back("curtains", 200.0f, 1.0f, 1);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
         config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
         
-        // Add atmospheric elements
-        config.backgroundLayers.emplace_back("curtains", 75.0f, 0.2f, 2);
-        config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
+        // Note: Paintings, chandeliers, floor torches, and torch pillars are now handled by ObstacleSystem
+        // as decorative obstacles rather than background layers to support proper positioning and animation
     }
 
     void LevelConfigFactory::AddBossLevelLayers(LevelConfig& config) {
@@ -263,7 +266,7 @@ namespace GameCore {
         AddCastleLevelLayers(config);
         
         // Add dramatic boss-specific elements
-        float backgroundScale = 2.66f;  // Separate scale for 1024x480 backgrounds
+        float backgroundScale = 5.0f;  // Use same scale as castle level for consistency
         config.backgroundLayers.emplace_back("BossBackground", 30.0f, 0.05f, 0);
         config.backgroundLayers.back().scaleMultiplier = 1.2f; // Slightly larger for dramatic effect
         config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
@@ -333,21 +336,24 @@ namespace GameCore {
 
     void LevelConfigFactory::AddCastleObstacles(LevelConfig& config) {
         // Level 5: Castle/dungeon obstacles
-        // Standard brick wall pairs (like toilets but made of bricks)
-        config.obstacles.emplace_back("TorchPillar", "", 
-                                     100.0f, 180.0f, 0.0f, 2.2f, config.worldSpeed, 
-                                     ToiletBehavior::STATIC, 0.0f, 0.0f);
+        // Gold toilets with oscillation behavior (like snow level) - increased spacing
+        config.obstacles.emplace_back("TopToiletGold", "BottomToiletGold", 
+                                     65.0f, 180.0f, 200.0f, 4.0f, config.worldSpeed, 
+                                     ToiletBehavior::OSCILLATE_VERTICAL, 2.0f, 60.0f);
+        
+        // Note: Torch pillars, chandeliers, floor torches, and paintings are now handled by ObstacleSystem
+        // as decorative obstacles with proper group positioning to avoid accumulating offsets
         
         // Spike ball hazards - ground obstacles
         config.obstacles.emplace_back("SpikeBall", "", 
                                      70.0f, 70.0f, 0.0f, 3.5f, config.worldSpeed, 
                                      ToiletBehavior::STATIC, 0.0f, 0.0f);
                                      
-        // Add oscillating gold toilets for variety and "Rough" difficulty
+        // Add more oscillating gold toilets for variety and "Rough" difficulty
         if (config.currentDifficulty == Difficulty::Rough) {
             config.obstacles.emplace_back("TopToiletGold", "BottomToiletGold", 
-                                         65.0f, 180.0f, 140.0f, 3.0f, config.worldSpeed, 
-                                         ToiletBehavior::OSCILLATE_VERTICAL, 2.0f, 60.0f);
+                                         65.0f, 180.0f, 200.0f, 4.5f, config.worldSpeed, 
+                                         ToiletBehavior::OSCILLATE_VERTICAL, 2.5f, 70.0f);
         }
     }
 
@@ -387,9 +393,8 @@ namespace GameCore {
     }
 
     void LevelConfigFactory::AddCastleEnemies(LevelConfig& config) {
-        // Castle/dungeon enemies - birds with proper frame size
-        config.enemies.emplace_back("BirdIdle", 32.0f, 32.0f, 140.0f, 3.8f, 2, "swoop");
-        config.enemies.emplace_back("ToiletPaperFlap", 35.0f, 35.0f, 200.0f, 4.2f, 1, "vertical");
+        // Castle/dungeon enemies - only RatCopters with better positioning
+        config.enemies.emplace_back("RatCopterIdle", 64.0f, 64.0f, 200.0f, 4.5f, 1, "flying");
     }
 
     void LevelConfigFactory::AddBossEnemies(LevelConfig& config) {
