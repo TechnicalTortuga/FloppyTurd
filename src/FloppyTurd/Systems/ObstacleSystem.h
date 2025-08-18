@@ -59,6 +59,7 @@ namespace GameCore {
 
         // Debug rendering
         void RenderDebugHitboxes();
+        void RemoveAllDebugDraws();
 
     private:
         // Pattern implementations
@@ -76,7 +77,13 @@ namespace GameCore {
         Gnosis::Entity CreateToiletEntity(const std::string& texture, float x, float y, float scale, bool isTop);
         Gnosis::Entity CreateOuthouseEntity(const std::string& texture, float x, float y, float scale, bool isSolid);
         Gnosis::Entity CreateSewerPipeEntity(const std::string& texture, float x, float y, float scale, bool isTop);
-        Gnosis::Entity CreateCactusEntity(const std::string& texture, float x, float y, float scale);
+        Gnosis::Entity CreateCactusEntity(const std::string& texture, float x, float y, float scale, bool isDancing = false, float width = 64.0f, float height = 90.0f);
+        
+        // Cactus system
+        void InitializeCactusSystem();
+        void SpawnCactusPool(float startX);
+        void UpdateCactusAnimation(float deltaTime);
+        void WrapCactusPool(float worldScrollDistance);
 
         // Group management
         void AddEntityToGroup(Gnosis::Entity entity, int groupId, bool isLeader, 
@@ -106,10 +113,25 @@ namespace GameCore {
         // Level-specific pattern configs
         std::vector<PatternConfig> m_levelPatterns;
 
+        // Cactus system
+        struct CactusType {
+            std::string texture;
+            float width;
+            float height;
+            float weight;
+            bool isDancing;
+            float animationSpeed;
+        };
+        std::vector<CactusType> m_cactusTypes;
+        std::vector<Gnosis::Entity> m_cactusPool;
+        std::map<Gnosis::Entity, const CactusType*> m_cactusTypeMap; // Track cactus types for proper positioning
+        bool m_cactusPoolInitialized = false;
+
         // Debug rendering
-        bool m_debugMode = true;
+        bool m_debugMode = false;
 
         static constexpr int OBSTACLE_POOL_SIZE = 8;
+        static constexpr int CACTUS_POOL_SIZE = 16;
         static constexpr float SCREEN_WIDTH = 1179.0f;
         static constexpr float SCREEN_HEIGHT = 2556.0f;
     };

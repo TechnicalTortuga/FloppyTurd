@@ -51,8 +51,11 @@ namespace GameCore {
 
         // 3) Consume wrap events and reposition/reactivate coins
         for (int wrapped : m_levelManager->ConsumeWrappedGroups()) {
+            GN_LOG_DEBUG("PickupSystem: Repositioning coins for wrapped group " + std::to_string(wrapped));
             repositionCoinsForGroup(wrapped);
         }
+        
+
 
         // 4) Remove coin groups that no longer exist
         removeGroupIfMissing(currentGroups);
@@ -292,7 +295,14 @@ namespace GameCore {
 
         GN_LOG_DEBUG("PickupSystem::repositionCoinsForGroup: groupId=" + std::to_string(groupId) + 
                      " coins=" + std::to_string(it->second.size()) + 
-                     " newPositions=" + std::to_string(newPositions.size()));
+                     " newPositions=" + std::to_string(newPositions.size()) + 
+                     " pattern=" + std::to_string(static_cast<int>(pattern)));
+        
+        // Log the actual new positions for debugging
+        for (size_t i = 0; i < newPositions.size(); ++i) {
+            GN_LOG_DEBUG("PickupSystem::repositionCoinsForGroup: newPosition[" + std::to_string(i) + "] = (" + 
+                         std::to_string(newPositions[i].x) + ", " + std::to_string(newPositions[i].y) + ")");
+        }
 
         // Helper function to re-roll pickup types using current level ratios
         auto choosePickupType = [this]() -> std::string {

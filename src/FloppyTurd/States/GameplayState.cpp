@@ -1361,16 +1361,21 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                                         ", position.x=" + std::to_string(t2->position.x) + 
                                         ", offsetX=" + std::to_string(hb2->offsetX * t2->scale.x));
                         if (rectCenterX2 >= windowMinX && rectCenterX2 <= windowMaxX) {
-                            o2->pipeCleared = true;
-                            clearedAnyInColumn = true;
-                            GN_LOG_DEBUG("Marked obstacle " + std::to_string(e2) + " (" + o2->obstacleType + 
-                                        ") as cleared in column window [" + std::to_string(windowMinX) + "," + std::to_string(windowMaxX) + "]");
-                            // Also clear its explicit pair if any
-                            if (o2->pairedEntity != 0) {
-                                if (Obstacle* pairedObstacle2 = m_ecsSystem->GetComponent<Obstacle>(o2->pairedEntity)) {
-                                    pairedObstacle2->pipeCleared = true;
-                                    GN_LOG_DEBUG("Also marked paired obstacle " + std::to_string(o2->pairedEntity) + " as cleared");
+                            // Only count actual pipes, not brick walls
+                            if (o2->obstacleType != "BrickWall") {
+                                o2->pipeCleared = true;
+                                clearedAnyInColumn = true;
+                                GN_LOG_DEBUG("Marked obstacle " + std::to_string(e2) + " (" + o2->obstacleType + 
+                                            ") as cleared in column window [" + std::to_string(windowMinX) + "," + std::to_string(windowMaxX) + "]");
+                                // Also clear its explicit pair if any
+                                if (o2->pairedEntity != 0) {
+                                    if (Obstacle* pairedObstacle2 = m_ecsSystem->GetComponent<Obstacle>(o2->pairedEntity)) {
+                                        pairedObstacle2->pipeCleared = true;
+                                        GN_LOG_DEBUG("Also marked paired obstacle " + std::to_string(o2->pairedEntity) + " as cleared");
+                                    }
                                 }
+                            } else {
+                                GN_LOG_DEBUG("Skipping brick wall " + std::to_string(e2) + " - not a pipe");
                             }
                         } else {
                             GN_LOG_DEBUG("Obstacle " + std::to_string(e2) + " (" + o2->obstacleType + 

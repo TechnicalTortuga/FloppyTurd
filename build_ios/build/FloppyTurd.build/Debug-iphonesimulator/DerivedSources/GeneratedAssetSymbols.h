@@ -564,6 +564,15 @@ static NSString * const ACImageNameCrownhatturdletjump AC_SWIFT_PRIVATE = @"crow
 /// The "crownhatturdletshoot" asset catalog image resource.
 static NSString * const ACImageNameCrownhatturdletshoot AC_SWIFT_PRIVATE = @"crownhatturdletshoot";
 
+/// The "dancingcacti" asset catalog image resource.
+static NSString * const ACImageNameDancingcacti AC_SWIFT_PRIVATE = @"dancingcacti";
+
+/// The "dancingcacticowboy" asset catalog image resource.
+static NSString * const ACImageNameDancingcacticowboy AC_SWIFT_PRIVATE = @"dancingcacticowboy";
+
+/// The "dancingcactismall" asset catalog image resource.
+static NSString * const ACImageNameDancingcactismall AC_SWIFT_PRIVATE = @"dancingcactismall";
+
 /// The "dooragbigturdjump" asset catalog image resource.
 static NSString * const ACImageNameDooragbigturdjump AC_SWIFT_PRIVATE = @"dooragbigturdjump";
 

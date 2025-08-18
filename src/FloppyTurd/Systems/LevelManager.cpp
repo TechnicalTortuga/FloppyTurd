@@ -261,9 +261,24 @@ namespace GameCore {
         int desired = (m_currentLevelId == 2 ? 3 : m_maxActiveEnemies);
         for (int i = 0; i < desired; ++i) {
             float x = startX + i * (m_enemySpacing * 1.25f);
-            float baseY = 900.0f + static_cast<float>((i%2==0? -1:1) * 150);
+            float baseY;
+            
+            if (m_currentLevelId == 3) { // Desert level - spread birds more vertically
+                // Spread birds from middle of screen to near top, avoiding the very top
+                float minY = 400.0f; // Middle of screen
+                float maxY = 1200.0f; // Near top but not at very top
+                float range = maxY - minY;
+                baseY = minY + (range * (i + 1)) / (desired + 1); // Even distribution
+            } else { // Other levels - original logic
+                baseY = 900.0f + static_cast<float>((i%2==0? -1:1) * 150);
+            }
+            
             Gnosis::Entity e = SpawnEnemy(cfg, x, baseY);
-            if (e != 0) { m_activeEnemies.push_back(e); m_enemyBaseY[e] = baseY; GN_LOG_DEBUG("Enemy init: ToiletPaper baseY=" + std::to_string(baseY) + ", x=" + std::to_string(x)); }
+            if (e != 0) { 
+                m_activeEnemies.push_back(e); 
+                m_enemyBaseY[e] = baseY; 
+                GN_LOG_DEBUG("Enemy init: " + cfg.textureId + " baseY=" + std::to_string(baseY) + ", x=" + std::to_string(x) + ", level=" + std::to_string(m_currentLevelId)); 
+            }
         }
         m_enemyPoolInitialized = true;
     }
@@ -327,7 +342,17 @@ namespace GameCore {
             float rightEdge = leftEdge + widthPx;
             if (rightEdge < 0.0f) {
                 t->position.x = rightmostX + (m_enemySpacing * 1.25f);
-                float baseY = 900.0f + static_cast<float>((rand()%300) - 150);
+                float baseY;
+                
+                if (m_currentLevelId == 3) { // Desert level - maintain vertical spread
+                    // Random Y within the desert bird range
+                    float minY = 400.0f;
+                    float maxY = 1200.0f;
+                    baseY = minY + static_cast<float>(rand() % static_cast<int>(maxY - minY));
+                } else { // Other levels - original logic
+                    baseY = 900.0f + static_cast<float>((rand()%300) - 150);
+                }
+                
                 t->position.y = baseY;
                 // Sync Enemy component's bobbing anchor with new wrap position
                 Enemy* enemyComp = m_ecsSystem->GetComponent<Enemy>(e);
@@ -337,7 +362,7 @@ namespace GameCore {
                 }
                 m_enemyBaseY[e] = baseY;
                 rightmostX = t->position.x;
-                GN_LOG_DEBUG("Enemy wrap: newX=" + std::to_string(t->position.x) + ", baseY=" + std::to_string(baseY));
+                GN_LOG_DEBUG("Enemy wrap: newX=" + std::to_string(t->position.x) + ", baseY=" + std::to_string(baseY) + ", level=" + std::to_string(m_currentLevelId));
             }
             // Y behavior moved to EnemySystem; LevelManager now only wraps enemies
         }
@@ -544,6 +569,31 @@ namespace GameCore {
 
             // Random starting phase 0..2π
             enemyComp.bobPhase = static_cast<float>((rand() % 628)) / 100.0f;
+        }
+        // Enable subtle hovering for birds (BirdIdle)
+        else if (config.textureId == "BirdIdle") {
+            // Determine if this bird should hover or fly in formation
+            bool shouldHover = (rand() % 100) < 70; // 70% chance to hover, 30% static for echelon formation
+            
+            if (shouldHover) {
+                enemyComp.bobbingEnabled = true;
+                // Subtle hovering: slower speed than toilet paper
+                float speedBase = 1.2f;
+                float speedJitter = (static_cast<float>((rand() % 21) - 10) * 0.05f); // -0.5 .. +0.5
+                enemyComp.bobSpeed = std::max(0.8f, speedBase + speedJitter);
+
+                // Smaller amplitude for subtle hovering: ~15-30 pixels
+                float hoverAmplitude = 15.0f + (static_cast<float>(rand() % 16)); // 15-30px
+                enemyComp.bobAmplitude = hoverAmplitude;
+
+                // Random starting phase 0..2π for variety
+                enemyComp.bobPhase = static_cast<float>((rand() % 628)) / 100.0f;
+                
+                GN_LOG_DEBUG("LevelManager: Created hovering bird with amplitude=" + std::to_string(hoverAmplitude) + "px");
+            } else {
+                enemyComp.bobbingEnabled = false;
+                GN_LOG_DEBUG("LevelManager: Created static bird for echelon formation");
+            }
         }
         
         // Add components

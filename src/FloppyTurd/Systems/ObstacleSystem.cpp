@@ -7,7 +7,7 @@
 namespace GameCore {
 
     ObstacleSystem::ObstacleSystem(Gnosis::ECS* ecsSystem) 
-        : m_ecsSystem(ecsSystem), m_initialized(false), m_currentLevelId(0), m_nextGroupId(1), m_baseScale(1.0f) {
+        : m_ecsSystem(ecsSystem), m_initialized(false), m_currentLevelId(0), m_nextGroupId(1), m_baseScale(1.0f), m_debugMode(false) {
         GN_LOG_INFO("ObstacleSystem created");
     }
 
@@ -58,6 +58,16 @@ namespace GameCore {
             default:
                 m_levelPatterns.push_back({PatternType::PARK_TOILET_PAIR, 1.0f, 0.0f});
                 break;
+        }
+
+        // Initialize cactus system for desert level
+        if (levelId == 3) { // Desert level
+            InitializeCactusSystem();
+        }
+
+        // Remove any existing debug components if debug mode is disabled
+        if (!m_debugMode) {
+            RemoveAllDebugDraws();
         }
 
         // Create initial obstacle pool
@@ -127,6 +137,12 @@ namespace GameCore {
             WrapGroup(groupId, worldScrollDistance);
         }
 
+        // Update cactus system for desert level
+        if (m_currentLevelId == 3 && m_cactusPoolInitialized) {
+            UpdateCactusAnimation(deltaTime);
+            WrapCactusPool(worldScrollDistance);
+        }
+
         // Debug rendering for hitboxes
         if (m_debugMode) {
             RenderDebugHitboxes();
@@ -142,13 +158,22 @@ namespace GameCore {
             m_ecsSystem->DestroyEntity(entity);
         }
 
+        // Clean up cactus pool
+        for (Gnosis::Entity entity : m_cactusPool) {
+            m_ecsSystem->DestroyEntity(entity);
+        }
+        m_cactusTypeMap.clear();
+
         m_activeObstacles.clear();
         m_obstacleGroups.clear();
         m_wrappedGroups.clear();
         m_levelPatterns.clear();
+        m_cactusPool.clear();
+        m_cactusTypes.clear();
         
         m_nextGroupId = 1;
         m_initialized = false;
+        m_cactusPoolInitialized = false;
         
         GN_LOG_INFO("ObstacleSystem cleaned up");
     }
@@ -298,8 +323,10 @@ namespace GameCore {
         m_ecsSystem->AddComponent<Obstacle>(topToilet, topObstacle);
         
         // Debug overlays for top toilet (uses Hitbox for dimensions)
-        DebugDraw topDebug(false, false, Gnosis::GNColor(0, 255, 0, 255), Gnosis::GNColor(255, 0, 0, 255));
-        m_ecsSystem->AddComponent<DebugDraw>(topToilet, topDebug);
+        if (m_debugMode) {
+            DebugDraw topDebug(false, false, Gnosis::GNColor(0, 255, 0, 255), Gnosis::GNColor(255, 0, 0, 255));
+            m_ecsSystem->AddComponent<DebugDraw>(topToilet, topDebug);
+        }
         
         m_ecsSystem->AddComponent<Transform>(bottomToilet, bottomTransform);
         m_ecsSystem->AddComponent<Sprite>(bottomToilet, bottomSprite);
@@ -308,8 +335,10 @@ namespace GameCore {
         m_ecsSystem->AddComponent<Obstacle>(bottomToilet, bottomObstacle);
         
         // Debug overlays for bottom toilet (uses Hitbox for dimensions)
-        DebugDraw bottomDebug(false, false, Gnosis::GNColor(0, 255, 0, 255), Gnosis::GNColor(255, 0, 0, 255));
-        m_ecsSystem->AddComponent<DebugDraw>(bottomToilet, bottomDebug);
+        if (m_debugMode) {
+            DebugDraw bottomDebug(false, false, Gnosis::GNColor(0, 255, 0, 255), Gnosis::GNColor(255, 0, 0, 255));
+            m_ecsSystem->AddComponent<DebugDraw>(bottomToilet, bottomDebug);
+        }
         
         // Add to group management - balanced horizontal spacing (happy medium between 65 and 130)
         AddEntityToGroup(topToilet, groupId, true, 0.0f, 0.0f, 95.0f * m_baseScale, GroupPattern::TopAndBottom);
@@ -405,6 +434,72 @@ namespace GameCore {
         Gnosis::Entity toilet = CreateOuthouseEntity("OuthouseToilet", x, groundY, m_baseScale, false);
         AddEntityToGroup(toilet, groupId, false, 0.0f, 0.0f, (outhouseW * 2.0f) * m_baseScale, GroupPattern::Ground);
         
+        // Create brick wall between outhouse and toilet for duck-under challenge
+        // Position it in the middle of the group, extending from top of screen
+        const float brickWallW = 18.0f; // Brick wall hitbox width - narrow for precise collision
+        const float brickWallH = 128.0f; // Brick wall height - extends from top
+        
+        // Calculate the center position between outhouses
+        // The outhouse is at x, and we want the brick wall centered in the gap
+        // We need to find the actual gap between outhouse groups
+        const float outhouseRightEdge = x + (outhouseW * m_baseScale);
+        const float gapWidth = 400.0f; // Estimated gap between outhouse groups - increased for better spacing
+                        const float brickWallX = outhouseRightEdge + (gapWidth * 0.5f) - (32.0f * m_baseScale * 0.5f); // Center visual sprite in gap, moved 32px right from previous position
+        const float brickWallY = 0.0f; // Start from top of screen
+        
+        Gnosis::Entity brickWall = m_ecsSystem->CreateEntity();
+        if (brickWall != 0) {
+            Transform brickTransform(Gnosis::GNVector2(brickWallX, brickWallY), 0.0f, 
+                                   Gnosis::GNVector2(m_baseScale, m_baseScale));
+            m_ecsSystem->AddComponent<Transform>(brickWall, brickTransform);
+            
+            Sprite brickSprite("BrickWall", 64.0f, brickWallH); // Visual sprite width 64, height from hitbox
+            brickSprite.layer = 3;
+            brickSprite.visible = true;
+            m_ecsSystem->AddComponent<Sprite>(brickWall, brickSprite);
+            
+            Physics brickPhysics;
+            brickPhysics.velocity.x = -m_worldSpeed;
+            brickPhysics.useGravity = false;
+            m_ecsSystem->AddComponent<Physics>(brickWall, brickPhysics);
+            
+            Hitbox brickCollider;
+            brickCollider.type = ColliderType::Rectangle;
+            brickCollider.width = brickWallW;
+            brickCollider.height = brickWallH;
+            // Position the 18-pixel hitbox on the actual brick wall texture
+            // Need negative offset to move hitbox left onto the texture
+            brickCollider.offsetX = -18.0f; // Move hitbox left to align with texture
+            brickCollider.offsetY = 0.0f;
+            brickCollider.isStatic = false;
+            brickCollider.isTrigger = false;
+            brickCollider.tag = "obstacle";
+            m_ecsSystem->AddComponent<Hitbox>(brickWall, brickCollider);
+            
+            Obstacle brickObstacle;
+            brickObstacle.obstacleType = "BrickWall";
+            brickObstacle.damage = 1;
+            brickObstacle.basePosition = Gnosis::GNVector2(brickWallX, brickWallY);
+            m_ecsSystem->AddComponent<Obstacle>(brickWall, brickObstacle);
+            
+            // Add debug drawing for brick wall hitbox
+            if (m_debugMode) {
+                DebugDraw debugDraw;
+                debugDraw.showBounds = false;
+                debugDraw.showCollider = true;
+                debugDraw.colliderColor = Gnosis::GNColor(255, 0, 255, 255); // Magenta for brick wall
+                debugDraw.alpha = 0.5f;
+                m_ecsSystem->AddComponent<DebugDraw>(brickWall, debugDraw);
+            }
+            
+            // Add to group and tracking
+            AddEntityToGroup(brickWall, groupId, true, 0.0f, 0.0f, 64.0f * m_baseScale, GroupPattern::Ground); // Use visual sprite width for group
+            m_activeObstacles.push_back(brickWall);
+            m_obstacleGroups[groupId].push_back(brickWall);
+            
+            GN_LOG_DEBUG("Spawned brick wall at x=" + std::to_string(brickWallX) + ", y=" + std::to_string(brickWallY));
+        }
+        
         // Link entities
         LinkOuthousePair(outhouse, toilet);
         
@@ -432,7 +527,7 @@ namespace GameCore {
         
         int groupId = m_nextGroupId++;
         
-        Gnosis::Entity cactus = CreateCactusEntity(cactusType, x, groundY, m_baseScale);
+        Gnosis::Entity cactus = CreateCactusEntity(cactusType, x, groundY, m_baseScale, false);
         AddEntityToGroup(cactus, groupId, true, 0.0f, 0.0f, cactusW * m_baseScale, GroupPattern::Ground);
         
         // Add to tracking
@@ -776,18 +871,20 @@ namespace GameCore {
         obstacle.isTopPart = (texture == "Outhouse");
         m_ecsSystem->AddComponent<Obstacle>(entity, obstacle);
         
-        // DebugDraw - show hitboxes visually
-        DebugDraw debugDraw;
-        debugDraw.showBounds = false;  // Don't show sprite bounds
-        debugDraw.showCollider = true; // Show hitbox colliders
-        if (isSolid) {
-            debugDraw.colliderColor = Gnosis::GNColor(255, 0, 0, 128);  // Red for solid obstacles
-        } else {
-            debugDraw.colliderColor = Gnosis::GNColor(0, 255, 255, 128); // Cyan for trigger obstacles
-        }
-        debugDraw.alpha = 0.6f;
-        debugDraw.debugLayer = 20; // High priority layer
-        m_ecsSystem->AddComponent<DebugDraw>(entity, debugDraw);
+                        // DebugDraw - show hitboxes visually (only when debug mode is on)
+                if (m_debugMode) {
+                    DebugDraw debugDraw;
+                    debugDraw.showBounds = false;  // Don't show sprite bounds
+                    debugDraw.showCollider = true; // Show hitbox colliders
+                    if (isSolid) {
+                        debugDraw.colliderColor = Gnosis::GNColor(255, 0, 0, 128);  // Red for solid obstacles
+                    } else {
+                        debugDraw.colliderColor = Gnosis::GNColor(0, 255, 255, 128); // Cyan for trigger obstacles
+                    }
+                    debugDraw.alpha = 0.6f;
+                    debugDraw.debugLayer = 20; // High priority layer
+                    m_ecsSystem->AddComponent<DebugDraw>(entity, debugDraw);
+                }
         
         return entity;
     }
@@ -834,17 +931,39 @@ namespace GameCore {
         return entity;
     }
 
-    Gnosis::Entity ObstacleSystem::CreateCactusEntity(const std::string& texture, float x, float y, float scale) {
+    Gnosis::Entity ObstacleSystem::CreateCactusEntity(const std::string& texture, float x, float y, float scale, bool isDancing, float width, float height) {
         Gnosis::Entity entity = m_ecsSystem->CreateEntity();
         
-        // Transform
+        // Use the dimensions passed from the cactus type
+        // No need to hardcode dimensions anymore
+        
+        // Transform - use the y parameter that was calculated correctly in SpawnCactusPool
+        // Use the proper scale (8.0f) for pixel art visibility on screen
         Transform transform(Gnosis::GNVector2(x, y), 0.0f, Gnosis::GNVector2(scale, scale));
         m_ecsSystem->AddComponent<Transform>(entity, transform);
         
+        GN_LOG_DEBUG("Cactus Transform: x=" + std::to_string(x) + ", y=" + std::to_string(y) + ", scale=" + std::to_string(scale));
+        
         // Sprite
-        Sprite sprite(texture, 64.0f, 48.0f);
-        sprite.layer = 3;
+        Sprite sprite(texture, width, height);
+        sprite.layer = 5; // Higher layer than outhouses for forward positioning
         sprite.visible = true;
+        
+        // Set up animation for dancing cacti
+        if (isDancing) {
+            sprite.isAnimated = true;
+            sprite.frameCount = 8; // 8-frame animation
+            sprite.frameWidth = static_cast<int>(width); // Each frame is the full width (64 pixels)
+            sprite.frameHeight = static_cast<int>(height); // Height stays the same
+            sprite.currentFrame = 0;
+            sprite.currentFrameTime = 0.0f; // Initialize frame time
+            sprite.frameTime = 0.4f; // Slower animation to match music better (0.4s per frame)
+            sprite.playing = true;
+            sprite.loop = true;
+            
+            GN_LOG_DEBUG("Created dancing cactus: " + texture + " with " + std::to_string(sprite.frameCount) + " frames, frameWidth=" + std::to_string(sprite.frameWidth) + ", frameHeight=" + std::to_string(sprite.frameHeight) + ", total width=" + std::to_string(width) + ", height=" + std::to_string(height));
+        }
+        
         m_ecsSystem->AddComponent<Sprite>(entity, sprite);
         
         // Physics
@@ -853,34 +972,31 @@ namespace GameCore {
         physics.useGravity = false;
         m_ecsSystem->AddComponent<Physics>(entity, physics);
         
-        // Hitbox
+        // Hitbox - smaller than visual for better gameplay
         Hitbox hitbox;
         hitbox.type = ColliderType::Rectangle;
-        hitbox.width = 64.0f;
-        hitbox.height = 48.0f;
-        hitbox.offsetX = 0.0f;
-        hitbox.offsetY = 0.0f;
+        hitbox.width = width * 0.6f; // 60% of visual width
+        hitbox.height = height * 0.7f; // 70% of visual height
+        hitbox.offsetX = (width - hitbox.width) * 0.5f; // Center hitbox
+        hitbox.offsetY = (height - hitbox.height) * 0.5f; // Center hitbox
         hitbox.isStatic = false;
         hitbox.isTrigger = false;
         hitbox.tag = "obstacle";
         m_ecsSystem->AddComponent<Hitbox>(entity, hitbox);
         
-        // Obstacle
-        Obstacle obstacle;
-        obstacle.obstacleType = texture;
-        obstacle.damage = 1;
-        obstacle.basePosition = Gnosis::GNVector2(x, y);
-        obstacle.isTopPart = false;
-        m_ecsSystem->AddComponent<Obstacle>(entity, obstacle);
+        // Cacti are decorative and don't count as obstacles/pipes
+        // No Obstacle component needed
         
-        // DebugDraw - show hitboxes visually
-        DebugDraw debugDraw;
-        debugDraw.showBounds = false;
-        debugDraw.showCollider = true;
-        debugDraw.colliderColor = Gnosis::GNColor(0, 255, 0, 128); // Green for cacti
-        debugDraw.alpha = 0.6f;
-        debugDraw.debugLayer = 20;
-        m_ecsSystem->AddComponent<DebugDraw>(entity, debugDraw);
+        // DebugDraw - show hitboxes visually (only when debug mode is on)
+        if (m_debugMode) {
+            DebugDraw debugDraw;
+            debugDraw.showBounds = false;
+            debugDraw.showCollider = true;
+            debugDraw.colliderColor = Gnosis::GNColor(0, 255, 0, 128); // Green for cacti
+            debugDraw.alpha = 0.6f;
+            debugDraw.debugLayer = 20;
+            m_ecsSystem->AddComponent<DebugDraw>(entity, debugDraw);
+        }
         
         return entity;
     }
@@ -1011,6 +1127,8 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         return result;
     }
 
+
+
     std::vector<Gnosis::GNVector2> ObstacleSystem::CalculateCoinPositionsForGroup(int groupId, GroupPattern pattern) const {
         std::vector<Gnosis::GNVector2> positions;
         
@@ -1078,24 +1196,77 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
             float left = minX + horizontalMargin;
             float right = maxX - horizontalMargin;
             if (!(left < right)) return;
+            
+            // Ensure minimum spacing between coins (8px * scale)
+            const float minSpacing = 8.0f * m_baseScale;
             float spacing = (right - left) / static_cast<float>(coinsPerStripe);
-            for (int i = 0; i < coinsPerStripe; ++i) {
+            int actualCoinsToPlace = coinsPerStripe;
+            
+            if (spacing < minSpacing) {
+                // Reduce number of coins to maintain minimum spacing
+                actualCoinsToPlace = std::max(1, static_cast<int>((right - left) / minSpacing));
+                spacing = (right - left) / static_cast<float>(actualCoinsToPlace);
+                GN_LOG_DEBUG("ObstacleSystem::emitStripe reduced coins from " + std::to_string(coinsPerStripe) + " to " + std::to_string(actualCoinsToPlace) + " to maintain minimum spacing");
+            }
+            
+            for (int i = 0; i < actualCoinsToPlace; ++i) {
                 float x = left + spacing * (i + 0.5f);
                 positions.emplace_back(x, y);
             }
-            GN_LOG_DEBUG("ObstacleSystem::emitStripe y=" + std::to_string(y) + " left=" + std::to_string(left) + " right=" + std::to_string(right));
+            GN_LOG_DEBUG("ObstacleSystem::emitStripe y=" + std::to_string(y) + " left=" + std::to_string(left) + " right=" + std::to_string(right) + " actualCoins=" + std::to_string(actualCoinsToPlace));
         };
 
         auto emitStripeInRange = [&](float y, float rangeMin, float rangeMax) {
             float left = rangeMin + horizontalMargin;
             float right = rangeMax - horizontalMargin;
             if (!(left < right)) return;
+            
+            // Ensure minimum spacing between coins (8px * scale)
+            const float minSpacing = 8.0f * m_baseScale;
             float spacing = (right - left) / static_cast<float>(coinsPerStripe);
-            for (int i = 0; i < coinsPerStripe; ++i) {
+            int actualCoinsToPlace = coinsPerStripe;
+            
+            if (spacing < minSpacing) {
+                // Reduce number of coins to maintain minimum spacing
+                actualCoinsToPlace = std::max(1, static_cast<int>((right - left) / minSpacing));
+                spacing = (right - left) / static_cast<float>(actualCoinsToPlace);
+                GN_LOG_DEBUG("ObstacleSystem::emitStripeInRange reduced coins from " + std::to_string(coinsPerStripe) + " to " + std::to_string(actualCoinsToPlace) + " to maintain minimum spacing");
+            }
+            
+            GN_LOG_DEBUG("ObstacleSystem::emitStripeInRange calculation: rangeMin=" + std::to_string(rangeMin) + ", rangeMax=" + std::to_string(rangeMax) + ", horizontalMargin=" + std::to_string(horizontalMargin) + ", left=" + std::to_string(left) + ", right=" + std::to_string(right) + ", spacing=" + std::to_string(spacing) + ", actualCoins=" + std::to_string(actualCoinsToPlace));
+            for (int i = 0; i < actualCoinsToPlace; ++i) {
                 float x = left + spacing * (i + 0.5f);
                 positions.emplace_back(x, y);
+                GN_LOG_DEBUG("ObstacleSystem::emitStripeInRange coin " + std::to_string(i) + " at x=" + std::to_string(x) + ", y=" + std::to_string(y));
             }
             GN_LOG_DEBUG("ObstacleSystem::emitStripeInRange y=" + std::to_string(y) + " left=" + std::to_string(left) + " right=" + std::to_string(right));
+        };
+        
+        // Special emit function for Ground pattern that doesn't add horizontal margin
+        auto emitGroundStripe = [&](float y, float rangeMin, float rangeMax) {
+            float left = rangeMin;  // No horizontal margin - already included in range calculation
+            float right = rangeMax;
+            if (!(left < right)) return;
+            
+            // Ensure minimum spacing between coins (8px * scale)
+            const float minSpacing = 8.0f * m_baseScale;
+            float spacing = (right - left) / static_cast<float>(coinsPerStripe);
+            int actualCoinsToPlace = coinsPerStripe;
+            
+            if (spacing < minSpacing) {
+                // Reduce number of coins to maintain minimum spacing
+                actualCoinsToPlace = std::max(1, static_cast<int>((right - left) / minSpacing));
+                spacing = (right - left) / static_cast<float>(actualCoinsToPlace);
+                GN_LOG_DEBUG("ObstacleSystem::emitGroundStripe reduced coins from " + std::to_string(coinsPerStripe) + " to " + std::to_string(actualCoinsToPlace) + " to maintain minimum spacing");
+            }
+            
+            GN_LOG_DEBUG("ObstacleSystem::emitGroundStripe calculation: rangeMin=" + std::to_string(rangeMin) + ", rangeMax=" + std::to_string(rangeMax) + ", left=" + std::to_string(left) + ", right=" + std::to_string(right) + ", spacing=" + std::to_string(spacing) + ", actualCoins=" + std::to_string(actualCoinsToPlace));
+            for (int i = 0; i < actualCoinsToPlace; ++i) {
+                float x = left + spacing * (i + 0.5f);
+                positions.emplace_back(x, y);
+                GN_LOG_DEBUG("ObstacleSystem::emitGroundStripe coin " + std::to_string(i) + " at x=" + std::to_string(x) + ", y=" + std::to_string(y));
+            }
+            GN_LOG_DEBUG("ObstacleSystem::emitGroundStripe y=" + std::to_string(y) + " left=" + std::to_string(left) + " right=" + std::to_string(right));
         };
 
         switch (pattern) {
@@ -1127,19 +1298,60 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
                 break;
             }
             case GroupPattern::Ground: {
-                // Ground obstacles: place coins above the obstacle at a safe height
+                // Ground obstacles: place coins starting from the right edge of the outhouse, 
+                // spreading evenly across the gap until the next group starts
+                std::pair<float, float> currentGroupBounds; // (leftEdge, rightEdge)
                 float groundObstacleTop = std::numeric_limits<float>::max();
+                bool foundCurrentGroup = false;
+                
+                GN_LOG_DEBUG("ObstacleSystem::Ground coin spawning - m_activeObstacles.size=" + std::to_string(m_activeObstacles.size()) + ", groupId=" + std::to_string(groupId));
+                
+                // First, find the current group's outhouse bounds
                 for (Gnosis::Entity e : m_activeObstacles) {
                     Group* g = m_ecsSystem->GetComponent<Group>(e);
                     if (!g || g->id != groupId) continue;
                     Transform* t = m_ecsSystem->GetComponent<Transform>(e);
-                    if (!t) continue;
-                    groundObstacleTop = std::min(groundObstacleTop, t->position.y);
+                    Sprite* s = m_ecsSystem->GetComponent<Sprite>(e);
+                    if (!t || !s) continue;
+                    
+                    GN_LOG_DEBUG("ObstacleSystem::Ground found obstacle in group " + std::to_string(groupId) + " at x=" + std::to_string(t->position.x) + ", y=" + std::to_string(t->position.y) + ", sprite=" + s->textureId);
+                    
+                    // Only consider outhouses for coin positioning, not brick walls
+                    // Brick walls are at Y=0, outhouses are at Y=1276
+                    if (s->textureId == "Outhouse" || s->textureId == "OuthouseToilet") {
+                        const float scaledW = s->width * std::abs(t->scale.x);
+                        currentGroupBounds = std::make_pair(t->position.x, t->position.x + scaledW);
+                        groundObstacleTop = std::min(groundObstacleTop, t->position.y);
+                        foundCurrentGroup = true;
+                        break; // Only need one outhouse per group
+                    }
                 }
-                if (groundObstacleTop != std::numeric_limits<float>::max()) {
-                    float coinY = groundObstacleTop - verticalPad; // Place coins above ground obstacles
-                    emitStripe(coinY);
-                    GN_LOG_DEBUG("ObstacleSystem::Ground stripe y=" + std::to_string(coinY) + " above ground obstacle");
+                
+                if (foundCurrentGroup && groundObstacleTop != std::numeric_limits<float>::max()) {
+                    // Start coins 72px from the left edge of the outhouse (64px outhouse width + 8px margin)
+                    float coinStartX = currentGroupBounds.first + (72.0f * m_baseScale);
+                    
+                    // Use CONSISTENT gap distance for reliable spacing - never use next group detection for Ground pattern
+                    const float standardGap = 800.0f; // Increased gap to eliminate coin overlap
+                    float coinEndX = coinStartX + standardGap;
+                    
+                    GN_LOG_DEBUG("ObstacleSystem::Ground using CONSISTENT standardGap=" + std::to_string(standardGap) + " (increased to 800.0f)");
+                    
+                    float coinRange = coinEndX - coinStartX;
+                    
+                    GN_LOG_DEBUG("ObstacleSystem::Ground coin range: start=" + std::to_string(coinStartX) + ", end=" + std::to_string(coinEndX) + ", range=" + std::to_string(coinRange) + ", groupId=" + std::to_string(groupId));
+                    GN_LOG_DEBUG("ObstacleSystem::Ground coin calculation details: outhouseLeftEdge=" + std::to_string(currentGroupBounds.first) + ", using CONSISTENT standardGap, 72px offset applied");
+                    
+                    if (coinRange > 100.0f) { // Always true with standardGap, but keeping safety check
+                        // Place coins in this range, evenly spread
+                        float coinY = groundObstacleTop + 600.0f; // Place coins halfway down the outhouse (higher Y = lower on screen)
+                        GN_LOG_DEBUG("ObstacleSystem::Ground spawning coins at y=" + std::to_string(coinY) + " in range [" + std::to_string(coinStartX) + "," + std::to_string(coinEndX) + "] with range=" + std::to_string(coinRange));
+                        emitGroundStripe(coinY, coinStartX, coinEndX);
+                    } else {
+                        GN_LOG_DEBUG("ObstacleSystem::Ground coin range too small: " + std::to_string(coinRange));
+                    }
+                } else {
+                    GN_LOG_DEBUG("ObstacleSystem::Ground no coins spawned: groundObstacleTop=" + std::to_string(groundObstacleTop) + ", foundCurrentGroup=" + std::to_string(foundCurrentGroup));
                 }
                 break;
             }
@@ -1289,6 +1501,9 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
 
 
     void ObstacleSystem::WrapGroupAroundScreen(int groupId, float worldScrollDistance) {
+        GN_LOG_DEBUG("ObstacleSystem::WrapGroupAroundScreen: Called for group " + std::to_string(groupId) + 
+                   " with worldScrollDistance=" + std::to_string(worldScrollDistance));
+        
         // Find all entities in this group and check if the leader needs wrapping
         Gnosis::Entity leaderEntity = 0;
         float leaderBaseOffsetX = 0.0f;
@@ -1309,8 +1524,11 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
                 groupPattern = group->pattern;
                 
                 // Check if leader has moved off-screen (left side)
+                GN_LOG_DEBUG("ObstacleSystem::WrapGroupAroundScreen: Checking group " + std::to_string(groupId) + 
+                           " leader at x=" + std::to_string(transform->position.x) + " (threshold: -200.0f)");
                 if (transform->position.x < -200.0f) {
                     needsWrapping = true;
+                    GN_LOG_DEBUG("ObstacleSystem::WrapGroupAroundScreen: Group " + std::to_string(groupId) + " needs wrapping!");
                 }
                 break;
             }
@@ -1398,10 +1616,93 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
                     // Y positioning is maintained from original spawning
                     // (Sewer pipes keep their top/bottom Y, Desert outhouses keep their stack Y)
                     
-                    // Reset obstacle state
+                    // Reset obstacle state (but not for brick walls - they're not pipes)
                     if (m_ecsSystem->HasComponent<Obstacle>(e)) {
                         auto* obstacle = m_ecsSystem->GetComponent<Obstacle>(e);
-                        obstacle->pipeCleared = false;
+                        if (obstacle->obstacleType != "BrickWall") {
+                            obstacle->pipeCleared = false;
+                        }
+                    }
+                }
+            }
+            
+            // For Desert level, ensure brick walls maintain proper positioning relative to outhouses
+            if (m_currentLevelId == 3 && groupPattern == GroupPattern::Ground) {
+                // Find the outhouse in this group to recalculate brick wall position
+                Gnosis::Entity outhouse = 0;
+                for (Gnosis::Entity e : m_activeObstacles) {
+                    if (!m_ecsSystem->HasComponent<Group>(e) || !m_ecsSystem->HasComponent<Sprite>(e)) {
+                        continue;
+                    }
+                    
+                    auto* group = m_ecsSystem->GetComponent<Group>(e);
+                    auto* sprite = m_ecsSystem->GetComponent<Sprite>(e);
+                    
+                    if (group->id == groupId && (sprite->textureId == "Outhouse" || sprite->textureId == "OuthouseToilet")) {
+                        outhouse = e;
+                        break;
+                    }
+                }
+                
+                if (outhouse != 0) {
+                    auto* outhouseTransform = m_ecsSystem->GetComponent<Transform>(outhouse);
+                    auto* outhouseSprite = m_ecsSystem->GetComponent<Sprite>(outhouse);
+                    
+                    if (outhouseTransform && outhouseSprite) {
+                        // Recalculate brick wall position to be centered between current and next outhouse group
+                        const float outhouseW = 90.0f;
+                        const float currentOuthouseRightEdge = outhouseTransform->position.x + (outhouseW * m_baseScale);
+                        
+                        // Find the next outhouse group to the right to calculate the center of the gap
+                        float nextOuthouseLeftEdge = std::numeric_limits<float>::max();
+                        for (Gnosis::Entity e2 : m_activeObstacles) {
+                            if (!m_ecsSystem->HasComponent<Group>(e2) || !m_ecsSystem->HasComponent<Sprite>(e2)) {
+                                continue;
+                            }
+                            
+                            auto* group2 = m_ecsSystem->GetComponent<Group>(e2);
+                            auto* sprite2 = m_ecsSystem->GetComponent<Sprite>(e2);
+                            
+                            if (group2->id > groupId && (sprite2->textureId == "Outhouse" || sprite2->textureId == "OuthouseToilet")) {
+                                auto* transform2 = m_ecsSystem->GetComponent<Transform>(e2);
+                                if (transform2 && transform2->position.x > currentOuthouseRightEdge) {
+                                    nextOuthouseLeftEdge = transform2->position.x;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        // If we found a next outhouse, center the brick wall in that gap
+                        // Otherwise, use the fallback positioning
+                        float brickWallX;
+                        if (nextOuthouseLeftEdge != std::numeric_limits<float>::max()) {
+                            // Center between current outhouse right edge and next outhouse left edge
+                            float gapCenter = currentOuthouseRightEdge + (nextOuthouseLeftEdge - currentOuthouseRightEdge) * 0.5f;
+                            // Push brick wall 32px * scale to the right from center (moved 16px right)
+                            brickWallX = gapCenter + (32.0f * m_baseScale) - (64.0f * m_baseScale * 0.5f);
+                        } else {
+                            // Fallback: use the original gap calculation + 32px * scale offset (moved 16px right)
+                            brickWallX = currentOuthouseRightEdge + 200.0f + (32.0f * m_baseScale) - (64.0f * m_baseScale * 0.5f);
+                        }
+                        
+                        // Find and reposition the brick wall in this group
+                        for (Gnosis::Entity e : m_activeObstacles) {
+                            if (!m_ecsSystem->HasComponent<Group>(e) || !m_ecsSystem->HasComponent<Obstacle>(e)) {
+                                continue;
+                            }
+                            
+                            auto* group = m_ecsSystem->GetComponent<Group>(e);
+                            auto* obstacle = m_ecsSystem->GetComponent<Obstacle>(e);
+                            
+                            if (group->id == groupId && obstacle->obstacleType == "BrickWall") {
+                                auto* transform = m_ecsSystem->GetComponent<Transform>(e);
+                                if (transform) {
+                                    transform->position.x = brickWallX;
+                                    GN_LOG_DEBUG("Repositioned brick wall to x=" + std::to_string(brickWallX) + " for wrapped group " + std::to_string(groupId));
+                                }
+                                break;
+                            }
+                        }
                     }
                 }
             }
@@ -1413,6 +1714,11 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         
         // Mark this group as wrapped for coin repositioning
         m_wrappedGroups.push_back(groupId);
+        
+        // For Desert level, ensure coins are repositioned after obstacle wrapping is complete
+        if (m_currentLevelId == 3 && groupPattern == GroupPattern::Ground) {
+            GN_LOG_DEBUG("Desert level group " + std::to_string(groupId) + " wrapped - coins will be repositioned after obstacle positioning is complete");
+        }
     }
 
     void ObstacleSystem::RenderDebugHitboxes() {
@@ -1449,9 +1755,214 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
                         " (" + obstacle->obstacleType + "): " +
                         "pos=(" + std::to_string(transform->position.x) + "," + std::to_string(transform->position.y) + ") " +
                         "hitbox=(" + std::to_string(hitboxX) + "," + std::to_string(hitboxY) + "," + 
-                        std::to_string(hitboxW) + "," + std::to_string(hitboxH) + ") " +
+                        std::to_string(hitboxW) + "," + std::to_string(hitboxY) + ") " +
                         "isTrigger=" + std::to_string(hitbox->isTrigger) + 
                         " pipeCleared=" + std::to_string(obstacle->pipeCleared));
+        }
+    }
+
+    void ObstacleSystem::RemoveAllDebugDraws() {
+        if (!m_ecsSystem) {
+            return;
+        }
+
+        // Remove DebugDraw components from all active obstacles
+        for (Gnosis::Entity entity : m_activeObstacles) {
+            if (m_ecsSystem->HasComponent<DebugDraw>(entity)) {
+                m_ecsSystem->RemoveComponent<DebugDraw>(entity);
+            }
+        }
+
+        // Remove DebugDraw components from cactus pool
+        for (Gnosis::Entity entity : m_cactusPool) {
+            if (m_ecsSystem->HasComponent<DebugDraw>(entity)) {
+                m_ecsSystem->RemoveComponent<DebugDraw>(entity);
+            }
+        }
+
+        GN_LOG_INFO("Removed all DebugDraw components");
+    }
+
+    void ObstacleSystem::InitializeCactusSystem() {
+        if (m_cactusPoolInitialized) {
+            return;
+        }
+
+        // Clear any existing cactus pool
+        for (Gnosis::Entity entity : m_cactusPool) {
+            if (m_ecsSystem->HasComponent<Transform>(entity)) {
+                m_ecsSystem->DestroyEntity(entity);
+            }
+        }
+        m_cactusPool.clear();
+
+        // Define cactus types with correct dimensions and weights
+        m_cactusTypes.clear();
+        
+        // Dancing cacti (these are sprite sheets with 8 frames each)
+        // Use individual frame dimensions (64x90, 64x64) instead of full sprite sheet dimensions
+        GN_LOG_DEBUG("Adding dancing cactus type: dancingcacti (64x90, 8 frames)");
+        m_cactusTypes.push_back({"dancingcacti", 64.0f, 90.0f, 3.0f, true, 0.5f}); // Regular dancing cactus - individual frame is 64x90
+        
+        GN_LOG_DEBUG("Adding dancing cactus type: dancingcacticowboy (64x90, 8 frames)");
+        m_cactusTypes.push_back({"dancingcacticowboy", 64.0f, 90.0f, 1.0f, true, 0.4f}); // Rare cowboy cactus - individual frame is 64x90
+        
+        GN_LOG_DEBUG("Adding dancing cactus type: dancingcactismall (64x64, 8 frames)");
+        m_cactusTypes.push_back({"dancingcactismall", 64.0f, 64.0f, 2.0f, true, 0.6f}); // Small dancing cactus - individual frame is 64x64
+        
+        // Individual cacti - now active alongside dancing cacti
+        m_cactusTypes.push_back({"CactiA", 64.0f, 48.0f, 2.5f, false, 0.0f}); // 64x48
+        m_cactusTypes.push_back({"CactiB", 32.0f, 32.0f, 2.5f, false, 0.0f}); // 32x32
+        m_cactusTypes.push_back({"CactiC", 64.0f, 80.0f, 2.5f, false, 0.0f}); // 64x80
+        m_cactusTypes.push_back({"CactiD", 64.0f, 80.0f, 2.0f, false, 0.0f}); // 64x80
+        m_cactusTypes.push_back({"CactiE", 64.0f, 80.0f, 2.0f, false, 0.0f}); // 64x80
+        m_cactusTypes.push_back({"CactiBush", 16.0f, 16.0f, 1.5f, false, 0.0f}); // 16x16 - small decorative
+
+        // Create the cactus pool
+        SpawnCactusPool(SCREEN_WIDTH + 100.0f);
+        
+        m_cactusPoolInitialized = true;
+        GN_LOG_INFO("Cactus system initialized with " + std::to_string(m_cactusPool.size()) + " cacti");
+    }
+
+    void ObstacleSystem::SpawnCactusPool(float startX) {
+        float currentX = startX;
+        float groundY = SCREEN_HEIGHT - 200.0f; // Will be calculated per cactus type
+        
+        // Create 16 cacti in a pool
+        for (int i = 0; i < CACTUS_POOL_SIZE; i++) {
+            // Select random cactus type based on weights
+            float totalWeight = 0.0f;
+            for (const auto& cactusType : m_cactusTypes) {
+                totalWeight += cactusType.weight;
+            }
+            
+            float randomValue = static_cast<float>(rand()) / RAND_MAX * totalWeight;
+            float currentWeight = 0.0f;
+            const CactusType* selectedType = nullptr;
+            
+            for (const auto& cactusType : m_cactusTypes) {
+                currentWeight += cactusType.weight;
+                if (randomValue <= currentWeight) {
+                    selectedType = &cactusType;
+                    break;
+                }
+            }
+            
+            if (!selectedType) {
+                selectedType = &m_cactusTypes[0]; // Fallback
+            }
+
+            // Calculate position with increased spacing and less overlap
+            float spacing = 200.0f + (rand() % 300); // 200-500px spacing (increased from 100-300)
+            float overlap = (rand() % 2) * 10.0f; // 0 or 10px overlap (reduced from 0, 20, or 40)
+            currentX += spacing - overlap;
+            
+            // Cacti are always grounded at the same level
+            // Calculate ground position: screen bottom - (cactus height * m_baseScale)
+            float finalY = SCREEN_HEIGHT - (selectedType->height * m_baseScale);
+            
+            GN_LOG_DEBUG("Cactus positioning: height=" + std::to_string(selectedType->height) + ", m_baseScale=" + std::to_string(m_baseScale) + ", finalY=" + std::to_string(finalY) + ", SCREEN_HEIGHT=" + std::to_string(SCREEN_HEIGHT));
+            
+            // Create cactus entity
+            Gnosis::Entity cactus = CreateCactusEntity(
+                selectedType->texture, 
+                currentX, 
+                finalY, 
+                m_baseScale, // Use the proper 8.0f scale for pixel art visibility
+                selectedType->isDancing,
+                selectedType->width,  // Pass actual width
+                selectedType->height  // Pass actual height
+            );
+            
+            GN_LOG_DEBUG("Spawned cactus: " + selectedType->texture + " at x=" + std::to_string(currentX) + ", y=" + std::to_string(finalY) + ", scale=" + std::to_string(m_baseScale) + ", isDancing=" + (selectedType->isDancing ? "true" : "false"));
+            
+            m_cactusPool.push_back(cactus);
+            m_cactusTypeMap[cactus] = selectedType; // Store cactus type for proper positioning
+            
+            // Add to active obstacles for rendering
+            m_activeObstacles.push_back(cactus);
+        }
+    }
+
+    void ObstacleSystem::UpdateCactusAnimation(float deltaTime) {
+        static int frameCount = 0;
+        frameCount++;
+        
+        for (Gnosis::Entity cactus : m_cactusPool) {
+            if (!m_ecsSystem->HasComponent<Sprite>(cactus)) {
+                continue;
+            }
+            
+            auto* sprite = m_ecsSystem->GetComponent<Sprite>(cactus);
+            
+            // Update animation for dancing cacti
+            if (sprite->isAnimated && sprite->playing) {
+                sprite->currentFrameTime += deltaTime;
+                if (sprite->currentFrameTime >= sprite->frameTime) {
+                    sprite->currentFrameTime = 0.0f;
+                    sprite->currentFrame++;
+                    if (sprite->currentFrame >= sprite->frameCount) {
+                        if (sprite->loop) {
+                            sprite->currentFrame = 0;
+                        } else {
+                            sprite->playing = false;
+                            sprite->hasCompleted = true;
+                        }
+                    }
+                    
+                    // Log animation updates every 60 frames (about once per second)
+                    if (frameCount % 60 == 0) {
+                        GN_LOG_DEBUG("Dancing cactus animation: frame=" + std::to_string(sprite->currentFrame) + ", currentFrameTime=" + std::to_string(sprite->currentFrameTime));
+                    }
+                }
+            }
+        }
+    }
+
+    void ObstacleSystem::WrapCactusPool(float worldScrollDistance) {
+        // Check if any cacti are off-screen and need wrapping
+        for (Gnosis::Entity cactus : m_cactusPool) {
+            if (!m_ecsSystem->HasComponent<Transform>(cactus) || !m_ecsSystem->HasComponent<Sprite>(cactus)) {
+                continue;
+            }
+            
+            auto* transform = m_ecsSystem->GetComponent<Transform>(cactus);
+            auto* sprite = m_ecsSystem->GetComponent<Sprite>(cactus);
+            
+            // If cactus is off-screen to the left, wrap it to the right
+            if (transform->position.x + sprite->width * transform->scale.x < -100.0f) {
+                // Find the rightmost cactus
+                float rightmostX = -std::numeric_limits<float>::max();
+                for (Gnosis::Entity otherCactus : m_cactusPool) {
+                    if (m_ecsSystem->HasComponent<Transform>(otherCactus) && m_ecsSystem->HasComponent<Sprite>(otherCactus)) {
+                        auto* otherTransform = m_ecsSystem->GetComponent<Transform>(otherCactus);
+                        auto* otherSprite = m_ecsSystem->GetComponent<Sprite>(otherCactus);
+                        float otherRight = otherTransform->position.x + otherSprite->width * otherTransform->scale.x;
+                        if (otherRight > rightmostX) {
+                            rightmostX = otherRight;
+                        }
+                    }
+                }
+                
+                // Position this cactus to the right of the rightmost one
+                float spacing = 100.0f + (rand() % 200); // 100-300px spacing
+                transform->position.x = rightmostX + spacing;
+                
+                // Cacti are always grounded at the same level
+                // Use the stored cactus type for proper ground positioning
+                auto it = m_cactusTypeMap.find(cactus);
+                if (it != m_cactusTypeMap.end()) {
+                    const CactusType* cactusType = it->second;
+                    // Calculate proper ground position: screen bottom - (cactus height * scale)
+                    float groundY = SCREEN_HEIGHT - (cactusType->height * m_baseScale);
+                    transform->position.y = groundY;
+                } else {
+                    // Fallback to default positioning - use the smallest cactus height as default
+                    float groundY = SCREEN_HEIGHT - (64.0f * m_baseScale); // Smallest cactus height
+                    transform->position.y = groundY;
+                }
+            }
         }
     }
 

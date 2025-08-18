@@ -65,14 +65,14 @@ namespace GameCore {
         hitbox.isTrigger = false;
         m_ecsSystem->AddComponent<FloppyTurd::Hitbox>(m_entity, hitbox);
         
-        // Add DebugDraw component to show player hitbox
-        FloppyTurd::DebugDraw debugDraw;
-        debugDraw.showBounds = false;
-        debugDraw.showCollider = true;
-        debugDraw.colliderColor = Gnosis::GNColor(0, 0, 255, 128); // Blue for player
-        debugDraw.alpha = 0.8f;
-        debugDraw.debugLayer = 20;
-        m_ecsSystem->AddComponent<FloppyTurd::DebugDraw>(m_entity, debugDraw);
+        // Add DebugDraw component to show player hitbox (disabled for now)
+        // FloppyTurd::DebugDraw debugDraw;
+        // debugDraw.showBounds = false;
+        // debugDraw.showCollider = true;
+        // debugDraw.colliderColor = Gnosis::GNColor(0, 0, 255, 128); // Blue for player
+        // debugDraw.alpha = 0.8f;
+        // debugDraw.debugLayer = 20;
+        // m_ecsSystem->AddComponent<FloppyTurd::DebugDraw>(m_entity, debugDraw);
     }
 
     void Player::Shutdown() {

@@ -580,6 +580,15 @@ extension DeveloperToolsSupport.ImageResource {
     /// The "crownhatturdletshoot" asset catalog image resource.
     static let crownhatturdletshoot = DeveloperToolsSupport.ImageResource(name: "crownhatturdletshoot", bundle: resourceBundle)
 
+    /// The "dancingcacti" asset catalog image resource.
+    static let dancingcacti = DeveloperToolsSupport.ImageResource(name: "dancingcacti", bundle: resourceBundle)
+
+    /// The "dancingcacticowboy" asset catalog image resource.
+    static let dancingcacticowboy = DeveloperToolsSupport.ImageResource(name: "dancingcacticowboy", bundle: resourceBundle)
+
+    /// The "dancingcactismall" asset catalog image resource.
+    static let dancingcactismall = DeveloperToolsSupport.ImageResource(name: "dancingcactismall", bundle: resourceBundle)
+
     /// The "dooragbigturdjump" asset catalog image resource.
     static let dooragbigturdjump = DeveloperToolsSupport.ImageResource(name: "dooragbigturdjump", bundle: resourceBundle)
 

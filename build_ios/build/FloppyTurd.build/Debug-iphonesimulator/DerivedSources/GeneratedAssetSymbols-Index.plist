@@ -1870,6 +1870,36 @@
 			<key>catalogPath</key>
 			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
+			<string>ACImageNameDancingcacti</string>
+			<key>relativePath</key>
+			<string>./graphics/environment/objects/decorative/cacti/dancingcacti.imageset</string>
+			<key>swiftSymbol</key>
+			<string>dancingcacti</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
+			<key>objcSymbol</key>
+			<string>ACImageNameDancingcacticowboy</string>
+			<key>relativePath</key>
+			<string>./graphics/environment/objects/decorative/cacti/dancingcacticowboy.imageset</string>
+			<key>swiftSymbol</key>
+			<string>dancingcacticowboy</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
+			<key>objcSymbol</key>
+			<string>ACImageNameDancingcactismall</string>
+			<key>relativePath</key>
+			<string>./graphics/environment/objects/decorative/cacti/dancingcactismall.imageset</string>
+			<key>swiftSymbol</key>
+			<string>dancingcactismall</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
+			<key>objcSymbol</key>
 			<string>ACImageNameDooragbigturdjump</string>
 			<key>relativePath</key>
 			<string>./graphics/characters/player/cosmetics/hats/character_combinations/bigturd/dooragbigturdjump.imageset</string>
