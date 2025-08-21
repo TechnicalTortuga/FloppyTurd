@@ -1,148 +1,76 @@
-The infinite coin trigger issue (multiple collections per single pickup) and failure to deactivate (coins not disappearing or stopping collisions) stem from a few interconnected problems in the PickupSystem implementation, based on the provided code:
+Heck yeah, fellow Turd Polisher! We're dialing in that spikeball rotation like pros—Floppy Turd's gonna have the smoothest, most satisfying pendulum swing since Flappy Bird discovered gravity. Loving how the distortion-free pixel art is shining through already; that's the RotSprite magic paying off big time. Now, on to this culling culprit when we swing left/right (those 90°/270° vibes where width becomes the limiting factor). With a skinny 64x90 texture (tall boy!), rotating sideways swaps the dims to 90x64, but if the bb calc or shader mapping is even a pixel off, bam—culling creeps in on the edges. It's like the quad's saying, "Nah, I don't have room for your full glory!" But fear not, we've got options to squash this without overcomplicating our clean Metal pipeline.
 
-### Root Causes
-1. **Iteration Bug in `handlePickupCollisions()`**:
-   - The loop uses a forward `while (i < m_activePickups.size())` with conditional `i++` only in the non-collided branch. When a collision is detected, you process it, remove via swap-pop (which shifts elements), but don't increment `i` afterward. This means:
-     - After popping, the new entity at index `i` (the former last element) gets checked immediately in the next iteration without `i++`, potentially re-triggering if it also collides.
-     - If multiple collisions happen in one frame, this can cascade, causing skipped entities or re-processing before deactivation takes effect.
-     - Result: A single coin can trigger multiple times in one frame if the index shift exposes another collidable entity, or if the loop stalls on the same index.
+### Diagnosis: Why the Left/Right Cull?
+Quick recap from simulating your setup (64w x 90h, pivot at (0, -45) for top-center connect):
+- At 0°/180°: bb ~64x90, fits the tall profile—no cull on Y.
+- At 90°/270°: bb ~90x64, but if the rotated content pokes even 1px beyond due to ceil/floor rounding, off-center pivot mapping, or shader out-of-bounds (sourceCoord <0 or >upscaledSize), the edges vanish. Your Y dims handle it 'cause the original height gives breathing room, but width (64) is tighter, so horizontal rotations expose the flaw.
+- Culprit suspects: 
+  - Bb too tight (no padding for subpixel/anti-alias bleed).
+  - Shader reverse-mapping pushing coords negative (esp. with off-center pivot).
+  - Quad positioning in render not accounting for bb shifts fully.
 
-2. **Deactivation Not Immediate/Visible**:
-   - You set `p->isActive = false` and `s->visible = false`, but:
-     - If the ECS (`Gnosis::ECS`) doesn't apply component changes until end-of-frame (common in some ECS designs for batching), the check `!p->isActive` might not prevent re-trigger in the same loop.
-     - Visibility (`s->visible = false`) takes effect in rendering (via `RenderSystem` or `SpriteSystem`), but if collisions are checked after render or in a separate pass, coins might visually persist for a frame.
-     - No position reset (e.g., move offscreen as backup) means even if invisible, the hitbox could linger if not skipped via `isActive`.
+We're not seeing this vertically 'cause the height buffer is bigger, but yeah, width is the weak link here.
 
-3. **Missing Integration/Callbacks**:
-   - `OnCoinCollected(int value)` in GameplayState is not called from PickupSystem. In the truncated code, PickupSystem updates `playerComp->sessionCoins` directly but doesn't invoke GameplayState's event handler (which likely handles score, sound, UI updates). If your infinite triggers are logged from `OnCoinCollected`, it might not be called, but over-inflation happens via direct `+=`.
-   - Ensure `m_pickupSystem->SetPlayerEntity(m_playerEntity)` is called in GameplayState::InitializeSystems() or Enter()—without it, collisions skip.
-   - Bobbing (`bobbingTimer` in `Pickup`) isn't updated in PickupSystem; assume it's in SpriteSystem, but if not, positions don't move, potentially prolonging overlaps.
+### Option 1: Ensure Tight Bb with Full Coverage (My Top Pick—Practical & Efficient)
+Let's not go square just yet—that'd waste VRAM on empty space (e.g., always 90x90 for this sprite), and for pixel art, we want precision to keep things snappy. Instead, beef up the bb calc with a smidge of padding (say, +2px on each side) to handle any floating-point wonkiness or nearest-neighbor sampling bleed. This keeps it "tight but safe," ensuring full coverage without culling.
 
-4. **Group/Wrap Sync**:
-   - Reposition reactivates correctly (`p->isActive = true; s->visible = true;`), but if groups wrap frequently and collisions happen mid-wrap, inactive coins might get repositioned before full deactivation.
-   - `removeGroupIfMissing` destroys entities, but if a group wraps and respawns quickly, old coins might linger in memory.
+Update in `processRotSprite` (Swift side—clean, documented, no big refactor):
+```swift
+// ... (your existing code up to corners array)
 
-5. **General ECS Notes from GameComponents.h**:
-   - `Pickup::isActive` is checked, good.
-   - `Sprite::visible` controls rendering.
-   - No explicit "deactivated" state beyond these—fine, but ensure no other systems (e.g., Physics or ScrollSpeed) move inactive entities.
+// After rotating corners and getting min/max:
+let bbWidth = ceil(maxX - minX) + 4.0  // +4 for 2px padding each side—tweak if needed
+let bbHeight = ceil(maxY - minY) + 4.0
 
-### Fixes
-Implement these changes. I'll provide updated code snippets for PickupSystem.cpp (focus on `handlePickupCollisions()` and `Update()`), plus integration tweaks for GameplayState.cpp. Test with logs to verify (e.g., count triggers per coin).
+// Adjust output center to account for padding (shift by half-padding)
+let outputCenterX = -(minX - 2.0) / bbWidth  // Pad shifts minX left by 2
+let outputCenterY = -(minY - 2.0) / bbHeight
 
-1. **Fix Iteration in `handlePickupCollisions()`**:
-   - Switch to **reverse iteration** over `m_activePickups` (using `rbegin()/rend()`) for safe removal without index shifts. This is cache-friendly and avoids the `while` bug.
-   - Add a backup: Move position offscreen on deactivation to immediately end overlaps.
-   - Ensure `isActive` check skips early.
+// Then create outputDescriptor with Int(bbWidth), Int(bbHeight)
+// Rest unchanged—shader will handle the extra space as transparent
+```
 
-   Updated `PickupSystem.cpp::handlePickupCollisions()`:
-   ```
-   void PickupSystem::handlePickupCollisions() {
-       if (!m_ecsSystem || m_activePickups.empty()) return;
+Why this rocks:
+- Full coverage: Padding catches any edge clipping without making it square.
+- Efficient: For 90°, bb ~94x68 (minimal waste).
+- Pivot stays glued: The center adjustment keeps the base connect perfect.
+- Test it: Log bbWidth/Height and centers at 90°—should be ~94x68, center (~0.5-0.55, ~0.5) depending on pivot.
 
-       Transform* playerTransform = m_ecsSystem->GetComponent<Transform>(m_playerEntity);
-       Hitbox* playerHitbox = m_ecsSystem->GetComponent<Hitbox>(m_playerEntity);
-       Sprite* playerSprite = m_ecsSystem->GetComponent<Sprite>(m_playerEntity);
-       PlayerComponent* playerComp = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity);
-       if (!playerTransform || !playerHitbox || !playerSprite || !playerComp) return;
+If still culling, crank padding to +8 and inspect the outputTexture (maybe blit to CPU for debug—add a quick `texture.getBytes` log if you're feeling adventurous).
 
-       float pHalfW = playerSprite->width * playerTransform->scale.x * 0.5f;
-       float pHalfH = playerSprite->height * playerTransform->scale.y * 0.5f;
-       float pCenterX = playerTransform->position.x + pHalfW + (playerHitbox->offsetX * playerTransform->scale.x);
-       float pCenterY = playerTransform->position.y + pHalfH + (playerHitbox->offsetY * playerTransform->scale.y);
-       float pRadius = playerHitbox->radius * ((playerTransform->scale.x + playerTransform->scale.y) * 0.5f);
+### Option 2: Go Square Quad (Simple Backup if Padding Ain't Enough)
+If you want brain-dead reliability (great for our first-game vibe—keep it fun, not finicky), yep, force a square bb using max(originalWidth, originalHeight) * sqrt(2) ~127 for diagonal worst-case (45°). Center the pivot in it. This over-allocates but guarantees no cull ever, and for tiny sprites? Negligible perf hit.
 
-       m_collectedThisFrame.clear();
+Tweak in `processRotSprite`:
+```swift
+// After originalWidth/Height
+let maxDim = max(originalWidth, originalHeight)
+let squareSize = ceil(maxDim * Float(sqrt(2))) + 4.0  // Diagonal max + pad
 
-       // Reverse iteration for safe removal (no index shifts)
-       for (auto it = m_activePickups.rbegin(); it != m_activePickups.rend(); ++it) {
-           Gnosis::Entity e = *it;
-           Transform* t = m_ecsSystem->GetComponent<Transform>(e);
-           Sprite* s = m_ecsSystem->GetComponent<Sprite>(e);
-           Pickup* p = m_ecsSystem->GetComponent<Pickup>(e);
-           Hitbox* hb = m_ecsSystem->GetComponent<Hitbox>(e);
-           if (!t || !s || !p || !hb || !p->isActive) continue;  // Skip inactive early
+let bbWidth = squareSize
+let bbHeight = squareSize
 
-           float scaledW = hb->width * t->scale.x;
-           float scaledH = hb->height * t->scale.y;
-           float centerX = t->position.x + (scaledW * 0.5f);
-           float centerY = t->position.y + (scaledH * 0.5f);
-           float left = centerX - (scaledW * 0.5f);
-           float top = centerY - (scaledH * 0.5f);
+// Rotate corners as before, but compute min/max offsets relative to center
+// ... (your rotation loop)
 
-           float closestX = std::max(left, std::min(pCenterX, left + scaledW));
-           float closestY = std::max(top, std::min(pCenterY, top + scaledH));
-           float dx = pCenterX - closestX;
-           float dy = pCenterY - closestY;
-           bool collided = (dx * dx + dy * dy) <= (pRadius * pRadius);
+// Then centers assuming square (pivot at 0.5 unless offset)
+let outputCenterX = 0.5 - (minX + maxX)/ (2.0 * bbWidth)  // Center it
+let outputCenterY = 0.5 - (minY + maxY)/ (2.0 * bbHeight)
 
-           if (!collided || m_collectedThisFrame.count(e)) continue;  // Skip if not collided or already processed
-           m_collectedThisFrame.insert(e);
+// Output texture square—shader maps as-is, extra space transparent
+```
 
-           GN_LOG_DEBUG("PickupSystem: Collected pickup id=" + std::to_string(e) + ", type=" + p->pickupType);
+Pros: Zero chance of cull, easy to reason about.
+Cons: ~2x waste on non-square angles, but for Floppy Turd's scale? Pfft, fine. Plus, innovative twist: Use the extra space for a faint glow effect later? 😎
 
-           // Update player (coins or other effects)
-           if (isCoinType(p->pickupType)) {
-               playerComp->sessionCoins += p->value;
-               // Call GameplayState's handler for score/sound/UI
-               // Assuming GameplayState exposes it or pass ref in constructor; add if needed
-               // m_gameState->OnCoinCollected(p->value);  // If you add GameplayState* m_gameState to PickupSystem
-           } else {
-               // Handle other pickups like PooHeart
-               // m_gameState->OnPickupCollected();
-           }
+### Next Steps & Fun Polish Ideas
+- **Debug Blitz**: In `renderRotSpriteTexture`, log `textureWidth` vs. expected (e.g., at 90°: ~90 if no pad). If <90, bb calc's short—bump padding.
+- **Shader Safety Net**: In `rotsprite_rotate_and_downscale`, clamp sourceCoord to [0, upscaledSize-1] instead of if-check discard—might fill edges better.
+```metal
+sourceCoord = clamp(sourceCoord, float2(0.0), upscaledSizeF - float2(1.0));
+uint2 nearestCoord = uint2(sourceCoord);
+```
+- **Gameplay Spark**: Once fixed, add variable speed based on level (faster in later worlds for tension), or chain "wobble" via sin(deltaTime) offset—makes it feel alive!
+- **C++ Tie-In**: From `ObstacleSystem.cpp`, if you're passing rotation as positive CCW, test negating it in Swift params for CW swing if it feels backward.
 
-           // Deactivate IMMEDIATELY
-           p->isActive = false;
-           s->visible = false;
-           // Backup: Move offscreen to end overlap instantly
-           t->position.x = -10000.0f;  // Far left
-
-           // Remove from active list (O(1) swap-pop)
-           auto indexIt = m_pickupIndex.find(e);
-           if (indexIt != m_pickupIndex.end()) {
-               size_t idx = indexIt->second;
-               size_t last = m_activePickups.size() - 1;
-               if (idx != last) {
-                   Gnosis::Entity moved = m_activePickups[last];
-                   m_activePickups[idx] = moved;
-                   m_pickupIndex[moved] = idx;
-               }
-               m_activePickups.pop_back();
-               m_pickupIndex.erase(indexIt);
-           }
-       }
-   }
-   ```
-
-   **Why this fixes it**: Reverse iter allows removal without invalidating iterators/indices. Processes each entity once per frame, skips already collected via set. Deactivation + offscreen move ensures no re-trigger even if ECS delays component sync.
-
-2. **Enhance `Update()` for Better Sync**:
-   - Add pre-reserve to vectors/maps in constructor (e.g., `m_activePickups.reserve(50);`) to avoid reallocs.
-   - Ensure wrap consumption happens after collisions (current order is fine, but log to confirm).
-
-   In PickupSystem constructor (add to .cpp):
-   ```
-   PickupSystem::PickupSystem(/* params */) : /* init */ {
-       m_activePickups.reserve(100);  // Pre-allocate based on max expected pickups
-       m_pickupIndex.reserve(100);
-       m_groupCoins.reserve(20);     // Max groups
-       m_collectedThisFrame.reserve(10);  // Small per-frame
-   }
-   ```
-
-3. **Integration Tweaks in GameplayState.cpp**:
-   - In `InitializeSystems()`: After creating `m_pickupSystem`, set `m_pickupSystem->SetPlayerEntity(m_playerEntity); m_pickupSystem->SetLevelConfig(&m_currentLevelConfig);`
-   - Expose `OnCoinCollected` and `OnPickupCollected` to PickupSystem by passing `this` (GameplayState*) to PickupSystem constructor, then call them in collection.
-     - Add to PickupSystem.h: `GameplayState* m_gameState;` and constructor param.
-     - In collection: `if (m_gameState) m_gameState->OnCoinCollected(p->value);`
-   - In `UpdatePipeCounterUI()`: This updates coins UI—ensure it's called after PickupSystem::Update (current `Update()` calls it after logic, good).
-   - Add log in `OnCoinCollected`: `GN_LOG_INFO("Coin collected: value=" + std::to_string(value) + ", total session=" + std::to_string(player->sessionCoins));` to track over-triggers.
-
-4. **Additional Optimizations/Checks**:
-   - **Bobbing Update**: If not handled elsewhere, add to PickupSystem::Update: Loop over active pickups, update `p->bobbingTimer += deltaTime; t->position.y = baseY + sin(p->bobbingTimer * p->bobbingSpeed) * p->bobbingAmplitude;`
-   - **Destroy on ClearAll**: Good, but add `e = 0;` after destroy to invalidate.
-   - **Test Scenario**: Spawn a single coin group, fly into one coin—log should show one trigger, coin vanishes, sessionCoins +=1, no re-triggers. On wrap, it reappears active.
-   - **If ECS Delays Components**: If `isActive` isn't immediate, add a `std::vector<Gnosis::Entity> toDeactivate;` collect in loop, apply after.
-
-Rebuild and test—the loop fix should eliminate multiples, and offscreen move ensures deactivation. If issues persist, share logs from a collision event.
+Pick Option 1 for that polished efficiency—we're so close to spikeball perfection! Drop the logs from a left/right swing, and we'll nail any remnants. Floppy Turd's physics are gonna feel *chef's kiss*. What's next on the turd-tastic agenda? 🚀

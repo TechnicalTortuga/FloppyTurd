@@ -84,6 +84,7 @@ namespace GameCore {
         
         // Cleanup
         void CleanupOffscreenEntities(float leftBoundary);
+        void DestroyAllEntities();  // Make public for GameplayState access
         Gnosis::Entity SpawnNPCJanitor(float x, float y);
         
         // Use shared GroupPattern declared in GameComponents.h
@@ -146,7 +147,6 @@ namespace GameCore {
         void CreateBackgroundLayers();
         void CreateCastleDecorations();
         void DestroyBackgroundLayers();
-        void DestroyAllEntities();
         
         // Spawning helpers
         float CalculateNextEnemyPosition();

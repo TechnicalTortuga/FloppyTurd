@@ -30,15 +30,15 @@ namespace GameCore {
     // CONFIGURABLE SPEED CONSTANTS - Easy to adjust from header
     namespace SpeedConstants {
         // Base world speeds for normal difficulty (user requested higher defaults)
-        static constexpr float BASE_WORLD_SPEED = 180.0f;        // Increased from 100.0f
-        static constexpr float BASE_BACKGROUND_SPEED = 120.0f;    // Background scrolling
-        static constexpr float BASE_OBSTACLE_SPEED = 180.0f;     // Obstacle movement
-        static constexpr float BASE_ENEMY_SPEED = 150.0f;        // Enemy movement
+        static constexpr float BASE_WORLD_SPEED = 500.0f;        // Increased from 300.0f for much faster gameplay
+        static constexpr float BASE_BACKGROUND_SPEED = 350.0f;    // Background scrolling (increased from 200.0f)
+        static constexpr float BASE_OBSTACLE_SPEED = 500.0f;     // Obstacle movement (increased from 300.0f)
+        static constexpr float BASE_ENEMY_SPEED = 400.0f;        // Enemy movement (increased from 250.0f)
         
         // Difficulty multipliers (user requested: current speed perfect for easy)
-        static constexpr float RUNNY_MULTIPLIER = 0.8f;    // 80% speed (slightly slower than current)
+        static constexpr float RUNNY_MULTIPLIER = 0.5f;    // 50% speed (much slower for easy mode)
         static constexpr float REGULAR_MULTIPLIER = 1.0f;  // 100% speed (new higher base)
-        static constexpr float ROUGH_MULTIPLIER = 1.5f;    // 150% speed (really fast)
+        static constexpr float ROUGH_MULTIPLIER = 2.0f;    // 200% speed (insanely fast!)
     }
     
     inline float GetDifficultyMultiplier(Difficulty diff) {

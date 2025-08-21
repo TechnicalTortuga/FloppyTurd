@@ -4,6 +4,7 @@
 // Use forward declarations and proper includes to avoid circular dependencies
 #include "../../Engine/Core/GnosisTypes.h"
 #include "../../Engine/Core/Component.h"
+#include "../Config/LevelConfig.h"
 
 #include <string>
 #include <vector>
@@ -235,17 +236,36 @@ namespace GameCore {
     /**
      * Player component - player-specific data
      */
+    /**
+     * Heart modes for different slice granularity
+     */
+    enum class HeartMode {
+        WHOLE = 1,   // Each heart = 1 slice (normal hearts)
+        HALVES = 2,  // Each heart = 2 slices (heart halves)
+        THIRDS = 3   // Each heart = 3 slices (heart thirds)
+    };
+
+
+
     struct PlayerComponent : public Gnosis::Component {
-        int health;
-        int maxHealth;
+        int health;                    // Current health slices
+        int maxHealth;                 // Maximum health slices
         int score;
-        int totalCoins;     // lifetime/account coins
-        int sessionCoins;   // coins collected in current level attempt
+        int totalCoins;               // lifetime/account coins
+        int sessionCoins;             // coins collected in current level attempt
         float invulnerabilityTimer;
         float shootCooldown;
         HatType equippedHat;
         bool canDoubleJump;
         bool hasUsedDoubleJump;
+        
+        // Heart system
+        int hearts;                   // Number of heart containers (visual)
+        HeartMode heartMode;          // How many slices per heart
+        int liveSlices;               // Current living slices
+        int ghostSlices;              // "Borrowed" slices (for hollow turds skill)
+        bool hollowTurds;             // Hollow turds skill enabled
+        GameCore::Difficulty difficulty;        // Current difficulty setting
         
         PlayerComponent()
             : health(3)
@@ -258,6 +278,53 @@ namespace GameCore {
             , equippedHat(HatType::None)
             , canDoubleJump(false)
             , hasUsedDoubleJump(false)
+            , hearts(2)
+            , heartMode(HeartMode::WHOLE)
+            , liveSlices(2)
+            , ghostSlices(0)
+            , hollowTurds(false)
+            , difficulty(GameCore::Difficulty::Regular)
+        {}
+    };
+    
+    /**
+     * Heart UI component - displays player hearts in a vertical column
+     */
+    struct HeartUI : public Gnosis::Component {
+        float x, y;                   // Base position for heart column
+        float heartSpacing;           // Vertical spacing between hearts
+        float scale;                  // UI scale factor
+        bool visible;                 // Whether to render hearts
+        
+        HeartUI()
+            : x(0.0f)
+            , y(0.0f)
+            , heartSpacing(40.0f)     // 40 pixels between hearts
+            , scale(1.0f)
+            , visible(true)
+        {}
+    };
+    
+    /**
+     * Game Over UI component - manages game over screen state and animations
+     */
+    struct GameOverUI : public Gnosis::Component {
+        bool isActive;                // Whether game over screen is showing
+        bool playerHasFallen;         // Whether player has finished falling
+        float fallingTimer;           // Timer for player falling animation
+        float hoverTimer;             // Timer for morte sprite hovering
+        float stingerTimer;           // Timer for game over stinger delay
+        bool stingerPlayed;           // Whether stinger has been played
+        std::string deathMessage;     // Random death message to display
+        
+        GameOverUI()
+            : isActive(false)
+            , playerHasFallen(false)
+            , fallingTimer(0.0f)
+            , hoverTimer(0.0f)
+            , stingerTimer(0.0f)
+            , stingerPlayed(false)
+            , deathMessage("")
         {}
     };
     

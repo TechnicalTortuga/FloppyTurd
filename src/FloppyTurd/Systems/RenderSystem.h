@@ -94,6 +94,8 @@ namespace GameCore {
             // Circle support
             bool debugIsCircle = false;
             float debugRadius = 0.0f;
+            // Absolute positioning (ignore sprite center offset)
+            bool debugAbsolutePos = false;
         };
         
         std::vector<RenderItem> m_renderQueue;

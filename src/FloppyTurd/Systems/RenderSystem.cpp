@@ -65,6 +65,18 @@ namespace GameCore {
                 }
             }
 
+            // CULLING: Only render sprites that are on-screen or near-screen
+            // This dramatically improves performance by not rendering off-screen obstacles
+            // IMPORTANT: Only cull objects on the right side, not objects scrolling left
+            float screenWidth = m_screenInfoValid ? m_screenInfo.pixelWidth : 1179.0f;
+            float cullMargin = 200.0f; // Extra margin to avoid pop-in
+            float entityScreenX = WorldToScreen(transform->position).x;
+            
+            // Skip if entity is too far off-screen to the RIGHT only
+            if (entityScreenX > screenWidth + cullMargin) {
+                continue;
+            }
+
             if (!transform || !sprite || !sprite->visible) {
                 continue;
             }
@@ -100,6 +112,18 @@ namespace GameCore {
             
             if (!transform || !text || !text->visible) {
                 GN_LOG_INFO("RenderSystem: Skipping text entity " + std::to_string(entity) + " - missing components or not visible");
+                continue;
+            }
+            
+            // CULLING: Only render text that is on-screen or near-screen
+            // This improves performance by not rendering off-screen text
+            // IMPORTANT: Only cull objects on the right side, not objects scrolling left
+            float screenWidth = m_screenInfoValid ? m_screenInfo.pixelWidth : 1179.0f;
+            float cullMargin = 200.0f; // Extra margin to avoid pop-in
+            float entityScreenX = WorldToScreen(transform->position).x;
+            
+            // Skip if entity is too far off-screen to the RIGHT only
+            if (entityScreenX > screenWidth + cullMargin) {
                 continue;
             }
             
@@ -148,6 +172,9 @@ namespace GameCore {
 
         // Collect all entities with DebugDraw components for debug overlays
         auto debugEntities = m_ecsSystem->GetEntitiesWithComponents<Transform, DebugDraw>();
+        GN_LOG_DEBUG("RenderSystem: Found " + std::to_string(debugEntities.size()) + " debug entities");
+        
+        int debugEntitiesRendered = 0;
         for (Gnosis::Entity entity : debugEntities) {
             auto transform = m_ecsSystem->GetComponent<Transform>(entity);
             auto debugDraw = m_ecsSystem->GetComponent<DebugDraw>(entity);
@@ -155,6 +182,21 @@ namespace GameCore {
             if (!transform || !debugDraw) {
                 continue;
             }
+            
+            // CULLING: For debug entities, use much more lenient culling to allow debugging off-screen hitboxes
+            // This allows us to see debug hitboxes even when entities are off-screen for debugging purposes
+            float screenWidth = m_screenInfoValid ? m_screenInfo.pixelWidth : 1179.0f;
+            float debugCullMargin = 10000.0f; // Much larger margin for debug entities (10x normal)
+            float entityScreenX = WorldToScreen(transform->position).x;
+            
+            // Skip if entity is extremely far off-screen to the RIGHT only (very lenient for debug)
+            if (entityScreenX > screenWidth + debugCullMargin) {
+                GN_LOG_DEBUG("RenderSystem: Culling debug entity " + std::to_string(entity) + " at screen X " + std::to_string(entityScreenX) + " (extreme right cull)");
+                continue;
+            }
+            
+            GN_LOG_DEBUG("RenderSystem: Rendering debug entity " + std::to_string(entity) + " at screen X " + std::to_string(entityScreenX));
+            debugEntitiesRendered++;
             
             // Add debug rectangles as render items using Hitbox (unified)
             auto hitbox = m_ecsSystem->GetComponent<Hitbox>(entity);
@@ -176,6 +218,15 @@ namespace GameCore {
                     debugItem.debugHeight = hitbox->height;
                     debugItem.debugOffsetX = hitbox->offsetX;
                     debugItem.debugOffsetY = hitbox->offsetY;
+                    
+                    // Log when adding spike ball debug items
+                    auto obstacle = m_ecsSystem->GetComponent<Obstacle>(entity);
+                    if (obstacle && obstacle->obstacleType == "SpikeBall") {
+                        GN_LOG_DEBUG("RenderSystem: Adding spike ball debug bounds to render queue - entity " + std::to_string(entity) + 
+                                   " at pos (" + std::to_string(transform->position.x) + ", " + std::to_string(transform->position.y) + 
+                                   ") size (" + std::to_string(hitbox->width) + ", " + std::to_string(hitbox->height) + ")");
+                    }
+                    
                     m_renderQueue.push_back(debugItem);
                 }
 
@@ -194,6 +245,13 @@ namespace GameCore {
                     debugItem.debugAlpha = debugDraw->alpha;
                     debugItem.debugOffsetX = hitbox->offsetX;
                     debugItem.debugOffsetY = hitbox->offsetY;
+                    
+                    // Check if this is a spikeball - use absolute positioning for spikeballs
+                    auto obstacle = m_ecsSystem->GetComponent<Obstacle>(entity);
+                    if (obstacle && obstacle->obstacleType == "SpikeBall") {
+                        debugItem.debugAbsolutePos = true;  // Use absolute world coordinates for spikeballs
+                    }
+                    
                     // Circle vs rectangle collider visualization
                     if (hitbox->type == GameCore::ColliderType::Circle) {
                         debugItem.debugIsCircle = true;
@@ -203,10 +261,21 @@ namespace GameCore {
                         debugItem.debugWidth = hitbox->width;
                         debugItem.debugHeight = hitbox->height;
                     }
+                    
+                    // Log when adding spike ball debug items  
+                    if (obstacle && obstacle->obstacleType == "SpikeBall") {
+                        GN_LOG_DEBUG("RenderSystem: Adding spike ball debug collider to render queue - entity " + std::to_string(entity) + 
+                                   " at pos (" + std::to_string(transform->position.x) + ", " + std::to_string(transform->position.y) + 
+                                   ") type " + (hitbox->type == GameCore::ColliderType::Circle ? "Circle" : "Rectangle") +
+                                   ") ABSOLUTE_POS_MODE");
+                    }
+                    
                     m_renderQueue.push_back(debugItem);
                 }
             }
         }
+        
+        GN_LOG_DEBUG("RenderSystem: Debug rendering summary - " + std::to_string(debugEntitiesRendered) + " of " + std::to_string(debugEntities.size()) + " debug entities rendered");
 
         // Collect UIElement-only entities so they can render buttonText in screen space
         // This ensures UI elements without Sprite/Text still enter the render queue and get layered properly
@@ -545,15 +614,24 @@ namespace GameCore {
             float height = item.debugHeight * sy;
             float radius = item.debugRadius * ((sx + sy) * 0.5f);
 
-            // Use CENTER-based offsets to match Hitbox semantics; add sprite half-dimensions if provided
-            float spriteHalfW = 0.0f;
-            float spriteHalfH = 0.0f;
-            if (item.sprite) {
-                spriteHalfW = (item.sprite->width * sx) * 0.5f;
-                spriteHalfH = (item.sprite->height * sy) * 0.5f;
+            // Calculate center position based on positioning mode
+            float centerX, centerY;
+            
+            if (item.debugAbsolutePos) {
+                // ABSOLUTE POSITIONING: Use transform position + offset directly (no sprite center adjustment)
+                centerX = screenPosTopLeft.x + (item.debugOffsetX * sx);
+                centerY = screenPosTopLeft.y + (item.debugOffsetY * sy);
+            } else {
+                // RELATIVE POSITIONING: Use CENTER-based offsets to match Hitbox semantics; add sprite half-dimensions if provided
+                float spriteHalfW = 0.0f;
+                float spriteHalfH = 0.0f;
+                if (item.sprite) {
+                    spriteHalfW = (item.sprite->width * sx) * 0.5f;
+                    spriteHalfH = (item.sprite->height * sy) * 0.5f;
+                }
+                centerX = screenPosTopLeft.x + spriteHalfW + (item.debugOffsetX * sx);
+                centerY = screenPosTopLeft.y + spriteHalfH + (item.debugOffsetY * sy);
             }
-            float centerX = screenPosTopLeft.x + spriteHalfW + (item.debugOffsetX * sx);
-            float centerY = screenPosTopLeft.y + spriteHalfH + (item.debugOffsetY * sy);
             float debugX = centerX - (width * 0.5f);
             float debugY = centerY - (height * 0.5f);
 
@@ -634,6 +712,24 @@ namespace GameCore {
                 // Compute final scale based on sprite frame vs logical size
                 bool usesCenteredRendering = m_ecsSystem->HasComponent<RotationRenderer>(item.entity);
                 bool usesPivotRotation = m_ecsSystem->HasComponent<PivotRotationRenderer>(item.entity);
+                
+                // Debug: Log when we have a PivotRotationRenderer
+                if (usesPivotRotation) {
+                    PivotRotationRenderer* pivotRenderer = m_ecsSystem->GetComponent<PivotRotationRenderer>(item.entity);
+                    if (pivotRenderer) {
+                        GN_LOG_DEBUG("RenderSystem: Entity " + std::to_string(item.entity) + " has PivotRotationRenderer with pivot (" + 
+                                   std::to_string(pivotRenderer->pivotX) + ", " + std::to_string(pivotRenderer->pivotY) + ")");
+                    }
+                }
+                
+                // Debug: Log when we have a PivotRotationRenderer
+                if (usesPivotRotation) {
+                    PivotRotationRenderer* pivotRenderer = m_ecsSystem->GetComponent<PivotRotationRenderer>(item.entity);
+                    if (pivotRenderer) {
+                        GN_LOG_DEBUG("RenderSystem: Entity " + std::to_string(item.entity) + " has PivotRotationRenderer with pivot (" + 
+                                   std::to_string(pivotRenderer->pivotX) + ", " + std::to_string(pivotRenderer->pivotY) + ")");
+                    }
+                }
                 float scaleX = item.sprite->width / item.sprite->frameWidth;
                 float scaleY = item.sprite->height / item.sprite->frameHeight;
                 float finalScaleX = scaleX * item.transform->scale.x * GetCameraScale();
@@ -672,11 +768,11 @@ namespace GameCore {
                     // Pivot-based rotation rendering using the new pivot function (PRIORITY)
                     PivotRotationRenderer* pivotRenderer = m_ecsSystem->GetComponent<PivotRotationRenderer>(item.entity);
                     if (pivotRenderer) {
-                        // Convert pivot from pixel coordinates relative to sprite center to normalized coordinates
-                        // The pivot is in pixels relative to sprite center (e.g., 0, -45 for spike ball)
-                        // We need to convert to normalized coordinates (-0.5 to 0.5) for Metal
-                        float normalizedPivotX = pivotRenderer->pivotX / item.sprite->width;  // Divide by sprite width, not scaled width
-                        float normalizedPivotY = pivotRenderer->pivotY / item.sprite->height; // Divide by sprite height, not scaled height
+                        // Pass pivot coordinates as sprite-relative pixels (no conversion here)
+                        // Pivot values are in pixels relative to sprite center (e.g., 0, -45 for spikeball chain connection)
+                        // MetalRenderer will handle all coordinate conversions in one place
+                        float pivotPixelX = pivotRenderer->pivotX;  // Keep as center-relative pixels
+                        float pivotPixelY = pivotRenderer->pivotY;  // Keep as center-relative pixels
                         
                         // Use the new pivot-based rendering function
                         m_platformDelegates.renderer.drawSpriteScaledPivoted(
@@ -686,8 +782,8 @@ namespace GameCore {
                             finalScaleX,
                             finalScaleY,
                             item.transform->rotation,
-                            normalizedPivotX,
-                            normalizedPivotY
+                            pivotPixelX,
+                            pivotPixelY
                         );
                     }
                 } else if (usesPivotRotation && m_platformDelegates.renderer.drawSpriteScaledCentered) {

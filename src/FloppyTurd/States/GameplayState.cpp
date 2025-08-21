@@ -2,6 +2,7 @@
 #include "../../Engine/Core/GNLog.h"
 #include "../Components/GameComponents.h"
 #include "../Config/EnemyConfigs.h"
+#include "../../Engine/Utility/Utils.h"
 #include <algorithm>
 #include <set>
 
@@ -21,9 +22,10 @@ namespace GameCore {
         , m_invulnerabilityTimer(0.0f)
         , m_pipesCleared(0)
         , m_finished(false)
-        , m_isPaused(false)
         , m_levelCompleted(false)
-        , m_gameOver(false)
+        , m_currentSubState(GameplaySubState::Playing)
+        , m_gameOverTimer(0.0f)
+        , m_morteFloatOffset(0.0f)
         , m_obstacleSpawnTimer(0.0f)
         , m_pickupSpawnTimer(0.0f)
         , m_enemySpawnTimer(0.0f)
@@ -58,9 +60,8 @@ namespace GameCore {
         m_invulnerabilityTimer = 0.0f;
         m_pipesCleared = 0;
         m_finished = false;
-        m_isPaused = false;
         m_levelCompleted = false;
-        m_gameOver = false;
+
         
         // Reset spawn timers
         m_obstacleSpawnTimer = 0.0f;
@@ -91,6 +92,11 @@ namespace GameCore {
         // Save game progress
         SaveGameProgress();
         
+        // Clean up game over UI if active
+        if (m_currentSubState == GameplaySubState::GameOver) {
+            DestroyGameOverUI();
+        }
+        
         // Clean up entities
         DestroyGameEntities();
         DestroyUI();
@@ -99,22 +105,21 @@ namespace GameCore {
     }
 
     void GameplayState::Pause() {
-        GN_LOG_INFO("Pausing GameplayState");
-        m_isPaused = true;
+        TriggerPause();
     }
 
     void GameplayState::Resume() {
-        GN_LOG_INFO("Resuming GameplayState");
-        m_isPaused = false;
+        TriggerResume();
     }
 
     void GameplayState::Update(float deltaTime) {
-        if (m_isPaused) {
-            return;
-        }
+        // Handle different sub-states
+        UpdateSubState(deltaTime);
         
-        // Update game time
-        m_gameTime += deltaTime;
+        // Only update game time when playing, but allow physics during game over for falling
+        if (m_currentSubState == GameplaySubState::Playing) {
+            // Update game time
+            m_gameTime += deltaTime;
         
         // Update input delay timer
         m_inputDelayTimer += deltaTime;
@@ -130,20 +135,11 @@ namespace GameCore {
             }
         }
         
-        // Handle input only after delay period to prevent auto-shooting
-        if (m_inputDelayTimer >= INPUT_DELAY_TIME) {
-            HandleInput();
-        }
-        
-        // Update systems
-        if (m_spriteSystem) {
-            m_spriteSystem->Update(deltaTime);
-        }
-        
-        if (m_playerControllerSystem) {
-            m_playerControllerSystem->Update(deltaTime);
-        }
-        
+            // Handle input only after delay period to prevent auto-shooting
+            if (m_inputDelayTimer >= INPUT_DELAY_TIME) {
+                HandleInput();
+            }
+            
         if (m_cameraSystem) {
             m_cameraSystem->Update(deltaTime);
         }
@@ -153,10 +149,18 @@ namespace GameCore {
             m_uiSystem->Update(deltaTime);
         }
         
+        // Update heart system for health display (only when playing)
+        if (m_heartSystem && m_currentSubState == GameplaySubState::Playing) {
+            m_heartSystem->Update(deltaTime);
+        }
+        
         // Update game logic
         UpdateGameLogic(deltaTime);
         
-        // Check toilet collisions and pipe clearing
+        // Update spawning FIRST (this calculates SpikeBall hitbox rotations)
+        UpdateSpawning(deltaTime);
+        
+        // Check toilet collisions and pipe clearing (after hitbox updates)
         CheckToiletCollisions();
         
         // Handle pickups via PickupSystem
@@ -169,9 +173,6 @@ namespace GameCore {
         // Update pipe counter UI
         UpdatePipeCounterUI();
         
-        // Update spawning
-        UpdateSpawning(deltaTime);
-        
         // Update difficulty
         UpdateDifficulty(deltaTime);
         
@@ -181,8 +182,77 @@ namespace GameCore {
         // Clean up offscreen entities
         CleanupOffscreenEntities();
         
-        // Check level completion
-        CheckLevelCompletion();
+            // Check level completion
+            CheckLevelCompletion();
+        } // End of Playing sub-state
+        
+        // Update essential systems regardless of sub-state (needed for physics during falling)
+        if (m_spriteSystem) {
+            m_spriteSystem->Update(deltaTime);
+        }
+        
+        // PlayerControllerSystem updates player physics - essential for falling during game over
+        if (m_playerControllerSystem) {
+            m_playerControllerSystem->Update(deltaTime);
+        }
+    }
+
+    void GameplayState::UpdateSubState(float deltaTime) {
+        switch (m_currentSubState) {
+            case GameplaySubState::Playing:
+                // Check if player reached 0 hearts
+                if (m_heartSystem && m_playerEntity != 0) {
+                    PlayerComponent* player = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity);
+                    if (player) {
+                        GN_LOG_INFO("Player hearts: " + std::to_string(player->hearts) + 
+                                   ", Live slices: " + std::to_string(player->liveSlices));
+                        if (player->liveSlices <= 0) {
+                            GN_LOG_INFO("Player has 0 live slices - triggering game over!");
+                            TriggerGameOver();
+                        }
+                    }
+                }
+                break;
+                
+            case GameplaySubState::Paused:
+                // Game is paused, no updates needed
+                break;
+                
+            case GameplaySubState::GameOver:
+                // Update game over sequence - check if player has fallen off screen
+                m_gameOverTimer += deltaTime;
+                
+                // Check if player has fallen completely off screen
+                if (!HasPlayerFallenOffScreen()) {
+                    // Player is still falling, don't show UI yet
+                    GN_LOG_INFO("Player still falling... waiting for complete fall off screen");
+                    break;
+                }
+                
+                // Player has fallen off screen, show game over UI if not already shown
+                if (m_gameOverBackgroundEntity == 0) {
+                    GN_LOG_INFO("Player has fallen off screen - creating game over UI");
+                    
+                    // Stop background music (stinger already played when hearts reached 0)
+                    if (m_platformDelegates && m_platformDelegates->audio.stopMusic) {
+                        m_platformDelegates->audio.stopMusic();
+                    }
+                    
+                    // Hide all regular UI elements
+                    HideRegularUI();
+                    
+                    // Create game over UI
+                    CreateGameOverUI();
+                    
+                    GN_LOG_INFO("Game over UI created successfully");
+                } else {
+                    GN_LOG_INFO("Game over UI already exists, skipping creation");
+                }
+                
+                UpdateMorteFloating(deltaTime);
+                HandleGameOverInput();
+                break;
+        }
     }
 
     void GameplayState::Render() {
@@ -196,8 +266,14 @@ namespace GameCore {
     }
 
     void GameplayState::HandleInput() {
-        if (m_isPaused) {
+        if (m_currentSubState == GameplaySubState::Paused) {
             // Handle pause menu input
+            return;
+        }
+        
+        if (m_currentSubState == GameplaySubState::GameOver) {
+            // No input allowed during game over falling sequence
+            // Input will be handled by HandleGameOverInput once UI is shown
             return;
         }
         
@@ -280,7 +356,7 @@ namespace GameCore {
         m_playerAlive = true;
         m_invulnerabilityTimer = 0.0f;
         m_levelCompleted = false;
-        m_gameOver = false;
+
         
         // Reset spawn timers
         m_obstacleSpawnTimer = 0.0f;
@@ -295,7 +371,7 @@ namespace GameCore {
 
     void GameplayState::GameOver() {
         GN_LOG_INFO("Game Over!");
-        m_gameOver = true;
+
         m_playerAlive = false;
         SaveGameProgress();
     }
@@ -307,10 +383,10 @@ namespace GameCore {
     }
 
     void GameplayState::TogglePause() {
-        if (m_isPaused) {
-            Resume();
-        } else {
-            Pause();
+        if (m_currentSubState == GameplaySubState::Paused) {
+            TriggerResume();
+        } else if (m_currentSubState == GameplaySubState::Playing) {
+            TriggerPause();
         }
     }
 
@@ -352,6 +428,9 @@ namespace GameCore {
         m_pickupSystem = std::make_unique<PickupSystem>(m_ecsSystem, m_levelManager.get(), m_platformDelegates, &m_currentLevelConfig);
         // Create enemy system for behaviors (bobbing, states, etc.)
         m_enemySystem = std::make_unique<EnemySystem>(m_ecsSystem, m_levelManager.get());
+        
+        // Create heart system for health display and management
+        m_heartSystem = std::make_unique<HeartSystem>(m_ecsSystem, *m_platformDelegates);
         
         // Initialize enemy configuration registry BEFORE loading levels
         GameCore::EnemyConfigRegistry::Initialize();
@@ -421,6 +500,13 @@ namespace GameCore {
             // Add player component
             PlayerComponent playerData;
             m_ecsSystem->AddComponent<PlayerComponent>(m_playerEntity, playerData);
+            
+            // Initialize player hearts based on current difficulty (but don't update UI yet)
+            if (m_heartSystem) {
+                Difficulty currentDifficulty = LevelManager::GetGlobalDifficulty();
+                m_heartSystem->InitializePlayerHearts(m_playerEntity, currentDifficulty);
+                GN_LOG_INFO("Player hearts initialized for difficulty: " + DifficultyToString(currentDifficulty));
+            }
             
             // Set up player controller
             if (m_playerControllerSystem) {
@@ -848,6 +934,33 @@ namespace GameCore {
         
         GN_LOG_INFO("Created temporary menu button with UIElement at (" + std::to_string(menuX) + ", " + std::to_string(menuY) + ")");
     }
+    
+    // Create heart UI - positioned at same X as coin bag, starting from menu button Y position  
+    if (m_heartSystem) {
+        float screenWidth = 1179.0f;
+        float screenHeight = 2556.0f;
+        if (m_renderSystem) {
+            const ScreenInfo& si = m_renderSystem->GetScreenInfo();
+            screenWidth = si.pixelWidth;
+            screenHeight = si.pixelHeight;
+        }
+        
+        // Position hearts at same X as coin bag (10% from left), starting 25% from top
+        float heartX = screenWidth * 0.10f;   // Same X as coin bag 
+        float heartY = screenHeight * 0.25f;  // 25% from top (below pipe counter)
+        
+        m_heartUIEntity = m_heartSystem->CreateHeartUI(heartX, heartY);
+        if (m_heartUIEntity != Gnosis::INVALID_ENTITY) {
+            GN_LOG_INFO("Created heart UI at (" + std::to_string(heartX) + ", " + std::to_string(heartY) + ")");
+            
+            // Set initial heart count and visibility based on difficulty (one-time setup)
+            Difficulty currentDifficulty = LevelManager::GetGlobalDifficulty();
+            m_heartSystem->UpdateHeartCountForDifficulty(m_playerEntity, currentDifficulty);
+            GN_LOG_INFO("Set initial heart count for difficulty");
+        } else {
+            GN_LOG_ERROR("Failed to create heart UI");
+        }
+    }
 }
 
 void GameplayState::DestroyUI() {
@@ -889,6 +1002,16 @@ void GameplayState::DestroyUI() {
     if (m_tempMenuButtonEntity != 0) {
         m_ecsSystem->DestroyEntity(m_tempMenuButtonEntity);
         m_tempMenuButtonEntity = 0;
+    }
+    
+    if (m_heartUIEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_heartUIEntity);
+        m_heartUIEntity = 0;
+    }
+    
+    // Clean up all heart system entities
+    if (m_heartSystem) {
+        m_heartSystem->DestroyAllHeartUI();
     }
 }
 
@@ -1049,16 +1172,31 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
     }
 
     void GameCore::GameplayState::OnPlayerHurt(int damage) {
-        // DEBUG: Disable damage/life reduction during collision tuning
-        GN_LOG_INFO("Player hurt (debug mode - no life reduction): " + std::to_string(damage));
+        GN_LOG_INFO("Player hurt with damage: " + std::to_string(damage));
         m_invulnerabilityTimer = 2.0f; // keep invulnerability to avoid spam
-        // Intentionally do NOT decrement lives or trigger death here
+        
+        // Damage the heart system
+        if (m_heartSystem && m_playerEntity != 0) {
+            PlayerComponent* player = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity);
+            if (player) {
+                // Remove heart slices based on damage (typically 1 slice per damage)
+                int slicesToRemove = damage;
+                m_heartSystem->RemoveHeartSlices(m_playerEntity, slicesToRemove);
+                
+                GN_LOG_INFO("Removed " + std::to_string(slicesToRemove) + " heart slices. Current slices: " + std::to_string(player->liveSlices));
+                
+                // Check if player is dead (this will be handled by UpdateSubState)
+                if (player->liveSlices <= 0) {
+                    GN_LOG_INFO("Player has no heart slices remaining - death will be handled by game over system");
+                }
+            }
+        }
     }
 
     void GameCore::GameplayState::OnPlayerDeath() {
         GN_LOG_INFO("Player died");
         m_playerAlive = false;
-        GameOver();
+        // Death is now handled by the heart system and UpdateSubState
     }
 
     void GameCore::GameplayState::OnCoinCollected(int value) {
@@ -1234,6 +1372,9 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         // Check collision with all active obstacles (toilets) via ObstacleSystem
         const auto& activeObstacles = m_levelManager->GetActiveObstacles();
         GN_LOG_DEBUG("Checking collisions with " + std::to_string(activeObstacles.size()) + " active obstacles");
+        
+        bool playerHitThisFrame = false; // Track if player was hit this frame
+        
         for (Gnosis::Entity obstacleEntity : activeObstacles) {
             Transform* obstacleTransform = m_ecsSystem->GetComponent<Transform>(obstacleEntity);
             Sprite* obstacleSprite = m_ecsSystem->GetComponent<Sprite>(obstacleEntity);
@@ -1247,9 +1388,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 else if (!obstacleHitbox) GN_LOG_DEBUG("Skipping obstacle " + std::to_string(obstacleEntity) + " - no Hitbox component");
                 continue;
             }
-            // Rectangle from Hitbox component (center-based offsets, scaled)
-            // Transform position is sprite top-left; add half sprite size to get center
-            GN_LOG_DEBUG("Processing obstacle " + std::to_string(obstacleEntity) + " (" + obstacle->obstacleType + ")");
+            // Calculate rectangle bounds (needed for both collision and pipe clearing)
             float rectW = obstacleHitbox->width * obstacleTransform->scale.x;
             float rectH = obstacleHitbox->height * obstacleTransform->scale.y;
             float spriteHalfW = obstacleSprite ? (obstacleSprite->width * obstacleTransform->scale.x * 0.5f) : 0.0f;
@@ -1259,58 +1398,92 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             float rectX = rectCenterX - (rectW * 0.5f);
             float rectY = rectCenterY - (rectH * 0.5f);
             
-            GN_LOG_DEBUG("Obstacle " + std::to_string(obstacleEntity) + " hitbox: " +
-                        "position=(" + std::to_string(obstacleTransform->position.x) + "," + std::to_string(obstacleTransform->position.y) + ") " +
-                        "sprite=(" + std::to_string(obstacleSprite->width) + "," + std::to_string(obstacleSprite->height) + ") " +
-                        "hitbox=(" + std::to_string(obstacleHitbox->width) + "," + std::to_string(obstacleHitbox->offsetX) + "," + std::to_string(obstacleHitbox->offsetY) + ") " +
-                        "rect=(" + std::to_string(rectX) + "," + std::to_string(rectY) + "," + std::to_string(rectW) + "," + std::to_string(rectH) + ")");
-
-            // Circle-rectangle intersection
-            float closestX = std::max(rectX, std::min(pCenterX, rectX + rectW));
-            float closestY = std::max(rectY, std::min(pCenterY, rectY + rectH));
-            float dx = pCenterX - closestX;
-            float dy = pCenterY - closestY;
-            bool collided = (dx * dx + dy * dy) <= (pRadius * pRadius);
+            // Check collision based on obstacle hitbox type
+            GN_LOG_INFO("COLLISION DEBUG: Processing obstacle " + std::to_string(obstacleEntity) + " (" + obstacle->obstacleType + ") hitboxType=" + std::to_string(static_cast<int>(obstacleHitbox->type)));
             
-            GN_LOG_DEBUG("Collision calculation: closest=(" + std::to_string(closestX) + "," + std::to_string(closestY) + ") " +
-                        "distance=(" + std::to_string(dx) + "," + std::to_string(dy) + ") " +
-                        "collided=" + std::to_string(collided));
+            bool collided = false;
+            
+            if (obstacleHitbox->type == ColliderType::Circle) {
+                // Circle-Circle collision (e.g., player vs spike ball)
+                float oCenterX, oCenterY;
+                
+                // Special handling for SpikeBalls - use BASE entity for positioning
+                if (obstacle->obstacleType == "SpikeBall" && m_levelManager && m_levelManager->GetObstacleSystem()) {
+                    Gnosis::Entity baseEntity = m_levelManager->GetObstacleSystem()->GetSpikeBallBaseEntity(obstacleEntity);
+                    if (baseEntity != 0) {
+                        Transform* baseTransform = m_ecsSystem->GetComponent<Transform>(baseEntity);
+                        if (baseTransform) {
+                            // Calculate BASE center (base uses top-left positioning)
+                            float baseCenterX = baseTransform->position.x + (5.0f * baseTransform->scale.x);
+                            float baseCenterY = baseTransform->position.y + (5.0f * baseTransform->scale.y);
+                            
+                            // Apply hitbox offset (which contains rotation calculation)
+                            oCenterX = baseCenterX + (obstacleHitbox->offsetX * baseTransform->scale.x);
+                            oCenterY = baseCenterY + (obstacleHitbox->offsetY * baseTransform->scale.y);
+                            
+                            GN_LOG_INFO("SPIKEBALL BASE COLLISION: baseCenter=(" + std::to_string(baseCenterX) + "," + std::to_string(baseCenterY) + ") " +
+                                       "hitboxOffset=(" + std::to_string(obstacleHitbox->offsetX) + "," + std::to_string(obstacleHitbox->offsetY) + ") " +
+                                       "finalCenter=(" + std::to_string(oCenterX) + "," + std::to_string(oCenterY) + ")");
+                        } else {
+                            // Fallback to normal calculation if base transform not found
+                            oCenterX = rectCenterX;
+                            oCenterY = rectCenterY;
+                            GN_LOG_INFO("SpikeBall base transform not found, using fallback positioning");
+                        }
+                    } else {
+                        // Fallback to normal calculation if base entity not found  
+                        oCenterX = rectCenterX;
+                        oCenterY = rectCenterY;
+                        GN_LOG_INFO("SpikeBall base entity not found, using fallback positioning");
+                    }
+                } else {
+                    // Normal circle entities use standard center calculation
+                    oCenterX = rectCenterX;
+                    oCenterY = rectCenterY;
+                }
+                
+                float oRadius = obstacleHitbox->radius * ((obstacleTransform->scale.x + obstacleTransform->scale.y) * 0.5f);
+                
+                float dx = pCenterX - oCenterX;
+                float dy = pCenterY - oCenterY;
+                float distanceSquared = dx * dx + dy * dy;
+                float radiusSum = pRadius + oRadius;
+                collided = distanceSquared <= (radiusSum * radiusSum);
+                
+                GN_LOG_INFO("SPIKE BALL COLLISION: pCenter=(" + std::to_string(pCenterX) + "," + std::to_string(pCenterY) + ") " +
+                           "oCenter=(" + std::to_string(oCenterX) + "," + std::to_string(oCenterY) + ") " +
+                           "pRadius=" + std::to_string(pRadius) + " oRadius=" + std::to_string(oRadius) + " " +
+                           "distance=" + std::to_string(std::sqrt(distanceSquared)) + " radiusSum=" + std::to_string(radiusSum) + " collided=" + std::to_string(collided));
+            } else {
+                // Circle-Rectangle collision (e.g., player vs toilet)
+                float closestX = std::max(rectX, std::min(pCenterX, rectX + rectW));
+                float closestY = std::max(rectY, std::min(pCenterY, rectY + rectH));
+                float dx = pCenterX - closestX;
+                float dy = pCenterY - closestY;
+                collided = (dx * dx + dy * dy) <= (pRadius * pRadius);
+                
+                GN_LOG_DEBUG("Circle-Rectangle: rect=(" + std::to_string(rectX) + "," + std::to_string(rectY) + "," + std::to_string(rectW) + "," + std::to_string(rectH) + ") " +
+                           "closest=(" + std::to_string(closestX) + "," + std::to_string(closestY) + ") collided=" + std::to_string(collided));
+            }
             
             // Enhanced debug logging
             if (collided) {
-                GN_LOG_INFO("Collision check - Entity: " + std::to_string(obstacleEntity) + 
-                           ", IsTop: " + std::to_string(obstacle->isTopPart) + 
-                           ", RectX: " + std::to_string(rectX) + 
-                           ", RectY: " + std::to_string(rectY) + 
-                           ", Invulnerable: " + std::to_string(m_invulnerabilityTimer > 0.0f) + 
-                           ", Timer: " + std::to_string(m_invulnerabilityTimer));
+                GN_LOG_INFO("COLLISION DETECTED! Entity: " + std::to_string(obstacleEntity) + 
+                           " Type: " + obstacle->obstacleType + 
+                           " HitboxType: " + std::to_string(static_cast<int>(obstacleHitbox->type)) + 
+                           " Invulnerable: " + std::to_string(m_invulnerabilityTimer > 0.0f) + 
+                           " Timer: " + std::to_string(m_invulnerabilityTimer));
             } else {
                 GN_LOG_DEBUG("No collision with obstacle " + std::to_string(obstacleEntity) + 
-                           " (" + obstacle->obstacleType + ") at (" + std::to_string(rectX) + "," + std::to_string(rectY) + ")");
+                           " (" + obstacle->obstacleType + ") type=" + std::to_string(static_cast<int>(obstacleHitbox->type)));
             }
             
             if (collided && m_invulnerabilityTimer <= 0.0f) {
                 // Collision detected and player is not invulnerable!
-                GN_LOG_INFO("Toilet collision detected! Player hurt.");
-                
-                // Set invulnerability timer to prevent repeated hits
-                m_invulnerabilityTimer = 1.0f;  // 1 second invulnerability
-                
-                // Play hurt sound effect
-                if (m_platformDelegates && m_platformDelegates->audio.playSound) {
-                    m_platformDelegates->audio.playSound("hurt.mp3", 0.8f);  // 80% volume
-                }
-                
-                // Trigger hurt state through PlayerControllerSystem - it will handle the animation and return to idle automatically
-                if (m_playerControllerSystem) {
-                    m_playerControllerSystem->PlayHurtAnimation();
-                }
-                
-                // Call the existing hurt handler for consistency
-                OnPlayerHurt(1);
-                
-                GN_LOG_INFO("Player hurt - invulnerable for 1 second, PlayerControllerSystem managing hurt animation");
-                return; // Only process one collision per frame
+                GN_LOG_INFO("*** COLLISION DETECTED! *** Entity: " + std::to_string(obstacleEntity) + " Type: " + obstacle->obstacleType + " HitboxType: " + std::to_string(static_cast<int>(obstacleHitbox->type)));
+                playerHitThisFrame = true; // Mark that player was hit, but continue processing other obstacles
+            } else if (collided) {
+                GN_LOG_INFO("Collision detected but player invulnerable. Entity: " + std::to_string(obstacleEntity) + " Type: " + obstacle->obstacleType + " Timer: " + std::to_string(m_invulnerabilityTimer));
             }
             
             GN_LOG_DEBUG("Pipe clearing check for obstacle " + std::to_string(obstacleEntity) + 
@@ -1411,6 +1584,29 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             }
         }
         
+        // Handle hurt effects after processing all obstacles (allows pipe clearing to complete first)
+        if (playerHitThisFrame) {
+            GN_LOG_INFO("Player hurt this frame! Applying hurt effects after processing all obstacles");
+            
+            // Set invulnerability timer to prevent repeated hits
+            m_invulnerabilityTimer = 1.0f;  // 1 second invulnerability
+            
+            // Play hurt sound effect
+            if (m_platformDelegates && m_platformDelegates->audio.playSound) {
+                m_platformDelegates->audio.playSound("hurt.mp3", 0.8f);  // 80% volume
+            }
+            
+            // Trigger hurt state through PlayerControllerSystem - it will handle the animation and return to idle automatically
+            if (m_playerControllerSystem) {
+                m_playerControllerSystem->PlayHurtAnimation();
+            }
+            
+            // Call the existing hurt handler for consistency
+            OnPlayerHurt(1);
+            
+            GN_LOG_INFO("Player hurt - invulnerable for 1 second, PlayerControllerSystem managing hurt animation");
+        }
+        
         GN_LOG_DEBUG("Finished collision detection loop for " + std::to_string(activeObstacles.size()) + " obstacles");
     }
     
@@ -1470,6 +1666,575 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
 
         // Debug rectangles are now handled by RenderSystem via DebugDraw components.
         // Legacy manual rectangles removed to prevent duplicates and mismatches.
+    }
+
+    void GameplayState::TriggerGameOver() {
+        if (m_currentSubState != GameplaySubState::Playing) {
+            return; // Already in game over or paused
+        }
+        
+        GN_LOG_INFO("Game Over triggered - player reached 0 hearts, starting fall sequence");
+        m_currentSubState = GameplaySubState::GameOver;
+        m_gameOverTimer = 0.0f;
+        m_morteFloatOffset = 0.0f;
+        
+        // Set player as not alive in PlayerControllerSystem to prevent position reset
+        if (m_playerControllerSystem) {
+            m_playerControllerSystem->SetPlayerAlive(false);
+        }
+        
+        // Give dead player initial downward velocity so they can actually fall
+        if (m_playerEntity != 0 && m_ecsSystem) {
+            Physics* playerPhysics = m_ecsSystem->GetComponent<Physics>(m_playerEntity);
+            if (playerPhysics) {
+                playerPhysics->velocity.y = 100.0f; // Initial downward velocity to start falling
+                GN_LOG_INFO("Set dead player initial downward velocity: " + std::to_string(playerPhysics->velocity.y));
+            }
+        }
+        
+        // Immediately hide hearts when player dies
+        if (m_heartSystem && m_playerEntity != 0) {
+            m_heartSystem->UpdateHeartVisibility(m_playerEntity);
+        }
+        
+        // Play gameover stinger immediately
+        if (m_platformDelegates && m_platformDelegates->audio.playSound) {
+            m_platformDelegates->audio.playSound("gameover.mp3", 1.0f);
+        }
+        
+        // Player will fall naturally due to physics, input will be locked
+        // UI will be shown when player falls completely off screen
+        GN_LOG_INFO("Player falling... Input locked. UI will appear when player falls off screen");
+    }
+
+    void GameplayState::TriggerPause() {
+        if (m_currentSubState == GameplaySubState::Playing) {
+            m_currentSubState = GameplaySubState::Paused;
+            GN_LOG_INFO("Game paused");
+        }
+    }
+
+    void GameplayState::TriggerResume() {
+        if (m_currentSubState == GameplaySubState::Paused) {
+            m_currentSubState = GameplaySubState::Playing;
+            GN_LOG_INFO("Game resumed");
+        }
+    }
+
+    void GameplayState::CreateGameOverUI() {
+        if (!m_ecsSystem) {
+            return;
+        }
+        
+        // Get screen dimensions - use render system instead of creating local ScreenInfo objects
+        float screenWidth = 1179.0f;  // Default iPhone 16 width
+        float screenHeight = 2556.0f; // Default iPhone 16 height
+        
+        // Try to get actual screen info from render system if available
+        if (m_renderSystem) {
+            const GameCore::ScreenInfo& renderScreenInfo = m_renderSystem->GetScreenInfo();
+            screenWidth = static_cast<float>(renderScreenInfo.pixelWidth);
+            screenHeight = static_cast<float>(renderScreenInfo.pixelHeight);
+        }
+        
+        // Create game over background (light from heaven) - start at top and stretch to full width
+        m_gameOverBackgroundEntity = m_ecsSystem->CreateEntity();
+        if (m_gameOverBackgroundEntity != Gnosis::INVALID_ENTITY) {
+            // Calculate scale to stretch width to screen width while maintaining aspect ratio
+            float backgroundScale = screenWidth / 256.0f; // 256 is texture width
+            
+            // Position at top center of screen
+            Transform bgTransform(Gnosis::GNVector2(screenWidth * 0.5f, 0.0f), 0.0f, Gnosis::GNVector2(backgroundScale, backgroundScale));
+            m_ecsSystem->AddComponent<Transform>(m_gameOverBackgroundEntity, bgTransform);
+            
+            // Create background sprite (like main menu) - THIS IS THE KEY DIFFERENCE!
+            Sprite bgSprite("GameOverBackground", 256, 256); // Use actual texture dimensions
+            bgSprite.layer = 100; // Background layer (lowest priority)
+            bgSprite.visible = true;
+            m_ecsSystem->AddComponent<Sprite>(m_gameOverBackgroundEntity, bgSprite);
+            
+            GN_LOG_INFO("Created game over background at top with scale: " + std::to_string(backgroundScale));
+        }
+        
+        // Create morte sprite (floating above score) - use proper centering
+        m_morteEntity = m_ecsSystem->CreateEntity();
+        if (m_morteEntity != Gnosis::INVALID_ENTITY) {
+            float morteScale = 6.0f;
+            float morteWidth = 64.0f * morteScale;
+            float morteHeight = 64.0f * morteScale;
+            
+            // Use CenterObjectAtPosition like main menu for proper centering
+            Gnosis::GNVector2 mortePosition = CenterObjectAtPosition(screenWidth * 0.5f, screenHeight * 0.35f, morteWidth, morteHeight);
+            
+            Transform morteTransform(Gnosis::GNVector2(mortePosition.x, mortePosition.y), 0.0f, Gnosis::GNVector2(morteScale, morteScale));
+            m_ecsSystem->AddComponent<Transform>(m_morteEntity, morteTransform);
+            
+            // Create morte sprite (like main menu) - THIS IS THE KEY DIFFERENCE!
+            Sprite morteSprite("FloppyTurdMorte", 64, 64); // Use actual texture dimensions
+            morteSprite.layer = 102; // Above background, below text
+            morteSprite.visible = true;
+            m_ecsSystem->AddComponent<Sprite>(m_morteEntity, morteSprite);
+            
+            GN_LOG_INFO("Created morte sprite at centered position: (" + std::to_string(mortePosition.x) + ", " + std::to_string(mortePosition.y) + ")");
+        }
+        
+        // Create score display with pipes and coins - use proper centering and fix newlines
+        m_gameOverScoreEntity = m_ecsSystem->CreateEntity();
+        if (m_gameOverScoreEntity != Gnosis::INVALID_ENTITY) {
+            float scoreScale = 6.0f;
+            float scoreWidth = 256.0f * scoreScale; // Approximate scoreboard width
+            float scoreHeight = 128.0f * scoreScale; // Approximate scoreboard height
+            
+            // Use CenterObjectAtPosition like main menu for proper centering
+            Gnosis::GNVector2 scorePosition = CenterObjectAtPosition(screenWidth * 0.5f, screenHeight * 0.55f, scoreWidth, scoreHeight);
+            
+            Transform scoreTransform(Gnosis::GNVector2(scorePosition.x, scorePosition.y), 0.0f, Gnosis::GNVector2(scoreScale, scoreScale));
+            m_ecsSystem->AddComponent<Transform>(m_gameOverScoreEntity, scoreTransform);
+            
+            // Get player stats for comprehensive score display
+            PlayerComponent* player = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity);
+            int totalCoins = player ? player->sessionCoins : 0;
+            
+            UIElement scoreUI;
+            // Fix newlines - use \n not \\n for proper line breaks
+            scoreUI.buttonText = "Score: " + std::to_string(m_currentScore) + 
+                               "\nPipes: " + std::to_string(m_pipesCleared) + 
+                               "\nCoins: " + std::to_string(totalCoins);
+            scoreUI.textColor = Gnosis::GNColor(255, 255, 255, 255); // White text
+            scoreUI.visible = true;
+            scoreUI.isEnabled = true;
+            scoreUI.textLayer = 101; // Lower than morte, higher than background
+            scoreUI.normalTextureId = "GameOverScore"; // Use correct asset catalog name
+            scoreUI.fontSize = 28.0f; // Larger text for better visibility
+            scoreUI.centerTextHorizontally = true;
+            scoreUI.centerTextVertically = true;
+            m_ecsSystem->AddComponent<UIElement>(m_gameOverScoreEntity, scoreUI);
+            
+            GN_LOG_INFO("Created game over score at centered position: (" + std::to_string(scorePosition.x) + ", " + std::to_string(scorePosition.y) + ")");
+        }
+        
+        // Create death message (centered at top)
+        m_deathMessageEntity = m_ecsSystem->CreateEntity();
+        if (m_deathMessageEntity != Gnosis::INVALID_ENTITY) {
+            // Center the message properly like the pipe counter
+            float messageX = screenWidth * 0.5f;  // Center horizontally
+            float messageY = screenHeight * 0.20f; // 20% from top (raised higher)
+            Transform messageTransform(Gnosis::GNVector2(messageX, messageY), 0.0f, Gnosis::GNVector2(8.0f, 8.0f));
+            m_ecsSystem->AddComponent<Transform>(m_deathMessageEntity, messageTransform);
+            
+            UIElement messageUI;
+            messageUI.buttonText = GetRandomDeathMessage();
+            messageUI.textColor = Gnosis::GNColor(255, 255, 255, 255); // White text
+            messageUI.visible = true;
+            messageUI.isEnabled = true;
+            messageUI.textLayer = 104; // Highest priority for death message
+            messageUI.fontSize = 56.0f; // Increased font size for better visibility
+            messageUI.centerTextHorizontally = true;
+            messageUI.centerTextVertically = true;
+            messageUI.textOutlineWidth = 8.0f; // Add outline for better visibility
+            messageUI.normalTextureId = ""; // Text-only, no background texture
+            m_ecsSystem->AddComponent<UIElement>(m_deathMessageEntity, messageUI);
+            
+            GN_LOG_INFO("Created death message: " + messageUI.buttonText + " at (" + std::to_string(messageX) + ", " + std::to_string(messageY) + ") with font size: " + std::to_string(messageUI.fontSize));
+        }
+        
+        // Create Try Again button - use proper centering and main menu font size
+        m_tryAgainButtonEntity = m_ecsSystem->CreateEntity();
+        if (m_tryAgainButtonEntity != Gnosis::INVALID_ENTITY) {
+            float buttonScale = 10.0f; // Match main menu button scale
+            float buttonWidth = 90.0f * buttonScale; // 90 is texture width
+            float buttonHeight = 16.0f * buttonScale; // 16 is texture height
+            
+            // Use CenterObjectAtPosition like main menu for proper centering
+            Gnosis::GNVector2 tryAgainPosition = CenterObjectAtPosition(screenWidth * 0.5f, screenHeight * 0.8f, buttonWidth, buttonHeight);
+            
+            Transform tryAgainTransform(Gnosis::GNVector2(tryAgainPosition.x, tryAgainPosition.y), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
+            m_ecsSystem->AddComponent<Transform>(m_tryAgainButtonEntity, tryAgainTransform);
+            
+            // Create button sprite (like main menu) - THIS IS THE KEY DIFFERENCE!
+            Sprite tryAgainSprite("FloppyButtonBlue", 90, 16); // Use actual texture dimensions
+            tryAgainSprite.layer = 103; // Button layer (higher priority)
+            tryAgainSprite.visible = true;
+            m_ecsSystem->AddComponent<Sprite>(m_tryAgainButtonEntity, tryAgainSprite);
+            
+            UIElement tryAgainUI;
+            tryAgainUI.buttonText = "Try Again";
+            tryAgainUI.textColor = Gnosis::GNColor(255, 255, 255, 255); // White text
+            tryAgainUI.visible = true;
+            tryAgainUI.isEnabled = true;
+            tryAgainUI.textLayer = 104; // Text layer (higher than sprite)
+            tryAgainUI.normalTextureId = "FloppyButtonBlue"; // Use the asset catalog name
+            tryAgainUI.fontSize = 18.0f; // Match main menu button font size
+            tryAgainUI.centerTextHorizontally = true;
+            tryAgainUI.centerTextVertically = true;
+            // Ensure the button texture is properly set
+            tryAgainUI.isHovered = false;
+            tryAgainUI.isPressed = false;
+            m_ecsSystem->AddComponent<UIElement>(m_tryAgainButtonEntity, tryAgainUI);
+            
+            GN_LOG_INFO("Created Try Again button at centered position: (" + std::to_string(tryAgainPosition.x) + ", " + std::to_string(tryAgainPosition.y) + ") with scale: " + std::to_string(buttonScale));
+        }
+        
+        // Create Quit button - use proper centering and main menu font size
+        m_quitButtonEntity = m_ecsSystem->CreateEntity();
+        if (m_quitButtonEntity != Gnosis::INVALID_ENTITY) {
+            float buttonScale = 10.0f; // Match main menu button scale
+            float buttonWidth = 90.0f * buttonScale; // 90 is texture width
+            float buttonHeight = 16.0f * buttonScale; // 16 is texture height
+            
+            // Use CenterObjectAtPosition like main menu for proper centering
+            Gnosis::GNVector2 quitPosition = CenterObjectAtPosition(screenWidth * 0.5f, screenHeight * 0.9f, buttonWidth, buttonHeight);
+            
+            Transform quitTransform(Gnosis::GNVector2(quitPosition.x, quitPosition.y), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
+            m_ecsSystem->AddComponent<Transform>(m_quitButtonEntity, quitTransform);
+            
+            // Create button sprite (like main menu) - THIS IS THE KEY DIFFERENCE!
+            Sprite quitSprite("FloppyButtonBlue", 90, 16); // Use actual texture dimensions
+            quitSprite.layer = 103; // Button layer (higher priority)
+            quitSprite.visible = true;
+            m_ecsSystem->AddComponent<Sprite>(m_quitButtonEntity, quitSprite);
+            
+            UIElement quitUI;
+            quitUI.buttonText = "Quit";
+            quitUI.textColor = Gnosis::GNColor(255, 255, 255, 255); // White text
+            quitUI.visible = true;
+            quitUI.isEnabled = true;
+            quitUI.textLayer = 104; // Text layer (higher than sprite)
+            quitUI.normalTextureId = "FloppyButtonBlue"; // Use the asset catalog name
+            quitUI.fontSize = 18.0f; // Match main menu button font size
+            quitUI.centerTextHorizontally = true;
+            quitUI.centerTextVertically = true;
+            // Ensure the button texture is properly set
+            quitUI.isHovered = false;
+            quitUI.isPressed = false;
+            m_ecsSystem->AddComponent<UIElement>(m_quitButtonEntity, quitUI);
+            
+            GN_LOG_INFO("Created Quit button at centered position: (" + std::to_string(quitPosition.x) + ", " + std::to_string(quitPosition.y) + ") with scale: " + std::to_string(buttonScale));
+        }
+    }
+
+    void GameplayState::DestroyGameOverUI() {
+        if (!m_ecsSystem) {
+            return;
+        }
+        
+        if (m_gameOverBackgroundEntity != 0) {
+            m_ecsSystem->DestroyEntity(m_gameOverBackgroundEntity);
+            m_gameOverBackgroundEntity = 0;
+        }
+        
+        if (m_morteEntity != 0) {
+            m_ecsSystem->DestroyEntity(m_morteEntity);
+            m_morteEntity = 0;
+        }
+        
+        if (m_gameOverScoreEntity != 0) {
+            m_ecsSystem->DestroyEntity(m_gameOverScoreEntity);
+            m_gameOverScoreEntity = 0;
+        }
+        
+        if (m_deathMessageEntity != 0) {
+            m_ecsSystem->DestroyEntity(m_deathMessageEntity);
+            m_deathMessageEntity = 0;
+        }
+        
+        if (m_tryAgainButtonEntity != 0) {
+            m_ecsSystem->DestroyEntity(m_tryAgainButtonEntity);
+            m_tryAgainButtonEntity = 0;
+        }
+        
+        if (m_quitButtonEntity != 0) {
+            m_ecsSystem->DestroyEntity(m_quitButtonEntity);
+            m_quitButtonEntity = 0;
+        }
+        
+        GN_LOG_INFO("Game over UI destroyed");
+    }
+
+    void GameplayState::UpdateMorteFloating(float deltaTime) {
+        if (m_morteEntity == 0 || !m_ecsSystem) {
+            return;
+        }
+        
+        // Gentle hovering animation in place
+        m_morteFloatOffset += deltaTime * 1.5f; // Slower, gentler movement
+        float floatY = sin(m_morteFloatOffset) * 8.0f; // Smaller movement range (8 pixels up/down)
+        
+        Transform* morteTransform = m_ecsSystem->GetComponent<Transform>(m_morteEntity);
+        if (morteTransform) {
+            // Get screen info for base position - use render system instead of creating local objects
+            float baseY = 1022.4f; // Default iPhone 16 height * 0.4f
+            
+            // Try to get actual screen info from render system if available
+            if (m_renderSystem) {
+                const GameCore::ScreenInfo& renderScreenInfo = m_renderSystem->GetScreenInfo();
+                baseY = static_cast<float>(renderScreenInfo.pixelHeight) * 0.4f;
+            }
+            
+            morteTransform->position.y = baseY + floatY;
+        }
+    }
+
+    void GameplayState::HandleGameOverInput() {
+        // Check for touch input on game over buttons
+        if (!m_platformDelegates || !m_platformDelegates->input.isPrimaryInputJustPressed) {
+            return;
+        }
+        
+        // Check if primary input was just pressed
+        if (m_platformDelegates->input.isPrimaryInputJustPressed()) {
+            float touchX, touchY;
+            m_platformDelegates->input.getPrimaryInputPosition(&touchX, &touchY);
+            
+            // Check Try Again button
+            if (m_tryAgainButtonEntity != 0) {
+                Transform* tryAgainTransform = m_ecsSystem->GetComponent<Transform>(m_tryAgainButtonEntity);
+                if (tryAgainTransform) {
+                    // Larger hit area for better touch detection
+                    float buttonWidth = 300.0f;  // Larger width for button
+                    float buttonHeight = 120.0f; // Larger height for button
+                    
+                    float buttonLeft = tryAgainTransform->position.x - (buttonWidth / 2.0f);
+                    float buttonRight = tryAgainTransform->position.x + (buttonWidth / 2.0f);
+                    float buttonTop = tryAgainTransform->position.y - (buttonHeight / 2.0f);
+                    float buttonBottom = tryAgainTransform->position.y + (buttonHeight / 2.0f);
+                    
+                    GN_LOG_INFO("Try Again button hit area: (" + std::to_string(buttonLeft) + ", " + std::to_string(buttonTop) + 
+                               ") to (" + std::to_string(buttonRight) + ", " + std::to_string(buttonBottom) + ")");
+                    GN_LOG_INFO("Touch position: (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
+                    
+                    if (touchX >= buttonLeft && touchX <= buttonRight && 
+                        touchY >= buttonTop && touchY <= buttonBottom) {
+                        GN_LOG_INFO("Try Again button clicked!");
+                        TryAgain();
+                        return;
+                    }
+                }
+            }
+            
+            // Check Quit button
+            if (m_quitButtonEntity != 0) {
+                Transform* quitTransform = m_ecsSystem->GetComponent<Transform>(m_quitButtonEntity);
+                if (quitTransform) {
+                    // Larger hit area for better touch detection
+                    float buttonWidth = 300.0f;  // Larger width for button
+                    float buttonHeight = 120.0f; // Larger height for button
+                    
+                    float buttonLeft = quitTransform->position.x - (buttonWidth / 2.0f);
+                    float buttonRight = quitTransform->position.x + (buttonWidth / 2.0f);
+                    float buttonTop = quitTransform->position.y - (buttonHeight / 2.0f);
+                    float buttonBottom = quitTransform->position.y + (buttonHeight / 2.0f);
+                    
+                    GN_LOG_INFO("Quit button hit area: (" + std::to_string(buttonLeft) + ", " + std::to_string(buttonTop) + 
+                               ") to (" + std::to_string(buttonRight) + ", " + std::to_string(buttonBottom) + ")");
+                    GN_LOG_INFO("Touch position: (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
+                    
+                    if (touchX >= buttonLeft && touchX <= buttonRight && 
+                        touchY >= buttonTop && touchY <= buttonBottom) {
+                        GN_LOG_INFO("Quit button clicked!");
+                        QuitToMainMenu();
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    void GameplayState::TryAgain() {
+        GN_LOG_INFO("Player chose to try again");
+        
+        // Reset player state
+        if (m_playerControllerSystem) {
+            m_playerControllerSystem->SetPlayerAlive(true);
+        }
+        
+        // Reset player health and hearts
+        if (m_heartSystem && m_playerEntity != 0) {
+            Difficulty currentDifficulty = LevelManager::GetGlobalDifficulty();
+            m_heartSystem->UpdateHeartCountForDifficulty(m_playerEntity, currentDifficulty);
+        }
+        
+        // Reset player position and physics
+        if (m_playerEntity != 0) {
+            Transform* playerTransform = m_ecsSystem->GetComponent<Transform>(m_playerEntity);
+            Physics* playerPhysics = m_ecsSystem->GetComponent<Physics>(m_playerEntity);
+            
+            if (playerTransform && playerPhysics) {
+                // Reset to starting position
+                playerTransform->position = Gnosis::GNVector2(400.0f, 639.0f);
+                playerPhysics->velocity = Gnosis::GNVector2(0.0f, 0.0f);
+                playerPhysics->acceleration = Gnosis::GNVector2(0.0f, 0.0f);
+            }
+        }
+        
+        // Reset game state
+        m_currentScore = 0;
+        m_pipesCleared = 0;
+        m_gameTime = 0.0f;
+        m_difficultyTimer = 0.0f;
+        m_difficultyLevel = 1.0f;
+        m_playerAlive = true;
+        m_invulnerabilityTimer = 0.0f;
+        
+        // Reset spawn timers
+        m_obstacleSpawnTimer = 0.0f;
+        m_pickupSpawnTimer = 0.0f;
+        m_enemySpawnTimer = 0.0f;
+        
+        // Clear any existing obstacles/enemies/pickups
+        if (m_levelManager) {
+            m_levelManager->DestroyAllEntities();
+        }
+        
+        // Clear pickups
+        if (m_pickupSystem) {
+            m_pickupSystem->ClearAll();
+        }
+        
+        // Clear obstacles (ObstacleSystem cleanup is handled by LevelManager::DestroyAllEntities)
+        
+        // Reset camera world position (simple reset)
+        if (m_cameraSystem) {
+            // Reset world scroll position to 0
+            // Note: CameraSystem doesn't have a ResetCamera method, so we'll just let it continue from current position
+        }
+        
+        // Start level music again
+        StartLevelMusic();
+        
+        // Clean up and show UI
+        DestroyGameOverUI();
+        ShowRegularUI();
+        m_currentSubState = GameplaySubState::Playing;
+        
+        GN_LOG_INFO("Level restarted successfully");
+    }
+
+    void GameplayState::QuitToMainMenu() {
+        GN_LOG_INFO("Player chose to quit to main menu");
+        DestroyGameOverUI();
+        ReturnToMainMenu();
+    }
+
+    std::string GameplayState::GetRandomDeathMessage() {
+        static const std::vector<std::string> deathMessages = {
+            "You got flushed!",
+            "Down the drain!",
+            "That was crappy!",
+            "Toilet trouble!",
+            "Plumber needed!",
+            "What a stinker!",
+            "Sewage overflow!",
+            "Pipe dream ended!",
+            "Flushed with failure!",
+            "Bog standard death!"
+        };
+        
+        // Simple random selection (not cryptographically secure, but fine for game)
+        int randomIndex = rand() % deathMessages.size();
+        return deathMessages[randomIndex];
+    }
+
+    bool GameplayState::HasPlayerFallenOffScreen() {
+        if (m_playerEntity == 0 || !m_ecsSystem) {
+            GN_LOG_INFO("HasPlayerFallenOffScreen: No player entity or ECS system");
+            return true; // If no player, consider fallen
+        }
+        
+        Transform* playerTransform = m_ecsSystem->GetComponent<Transform>(m_playerEntity);
+        if (!playerTransform) {
+            GN_LOG_INFO("HasPlayerFallenOffScreen: No player transform component");
+            return true; // If no transform, consider fallen
+        }
+        
+        // Get screen dimensions using the render system instead of platform delegates
+        float screenBottom = 2556.0f; // Default fallback
+        if (m_renderSystem) {
+            const GameCore::ScreenInfo& screenInfo = m_renderSystem->GetScreenInfo();
+            screenBottom = static_cast<float>(screenInfo.pixelHeight);
+        }
+        
+        // Player sprite is 64x64 pixels, but we need to account for the actual scale
+        // Get the player's actual scale from the transform
+        float playerHeight = 64.0f * playerTransform->scale.y; // Account for actual scale
+        
+        // Player has fallen off screen if their bottom edge is below screen bottom
+        // Bottom edge = center Y + half height
+        bool hasFallen = (playerTransform->position.y + (playerHeight / 2.0f)) > screenBottom;
+        
+        // TEMPORARY DEBUG: Force player to actually fall off screen
+        // Only consider fallen if player is significantly below screen (not just at edge)
+        hasFallen = (playerTransform->position.y + (playerHeight / 2.0f)) > (screenBottom + 100.0f);
+        
+        GN_LOG_INFO("HasPlayerFallenOffScreen: Player Y=" + std::to_string(playerTransform->position.y) + 
+                   ", Scale=" + std::to_string(playerTransform->scale.y) +
+                   ", Height=" + std::to_string(playerHeight) +
+                   ", Bottom edge=" + std::to_string(playerTransform->position.y + (playerHeight / 2.0f)) +
+                   ", Screen height=" + std::to_string(screenBottom) +
+                   ", Threshold=" + std::to_string(screenBottom + 100.0f) +
+                   ", Has fallen=" + std::string(hasFallen ? "YES" : "NO"));
+        
+        if (hasFallen) {
+            GN_LOG_INFO("HasPlayerFallenOffScreen: Player has fallen off screen!");
+        } else {
+            GN_LOG_INFO("HasPlayerFallenOffScreen: Player still on screen, waiting for fall...");
+        }
+        
+        return hasFallen;
+    }
+
+    void GameplayState::HideRegularUI() {
+        // Hide all regular gameplay UI elements
+        std::vector<Gnosis::Entity*> uiElements = {
+            &m_scoreTextEntity,
+            &m_livesTextEntity,
+            &m_coinsTextEntity,
+            &m_coinBagEntity,
+            &m_pipeCounterEntity,
+            &m_tempMenuButtonEntity,
+            &m_heartUIEntity
+        };
+        
+        for (Gnosis::Entity* entityPtr : uiElements) {
+            if (entityPtr && *entityPtr != 0 && m_ecsSystem) {
+                UIElement* ui = m_ecsSystem->GetComponent<UIElement>(*entityPtr);
+                if (ui) {
+                    ui->visible = false;
+                }
+            }
+        }
+        
+        // Also hide all individual heart entities
+        if (m_heartSystem) {
+            // The heart system should handle hiding its own entities
+            // We could add a method to HeartSystem to hide hearts, but they should already be invisible when dead
+        }
+        
+        GN_LOG_INFO("Hidden all regular UI elements for game over");
+    }
+
+    void GameplayState::ShowRegularUI() {
+        // Show all regular gameplay UI elements
+        std::vector<Gnosis::Entity*> uiElements = {
+            &m_scoreTextEntity,
+            &m_livesTextEntity,
+            &m_coinsTextEntity,
+            &m_coinBagEntity,
+            &m_pipeCounterEntity,
+            &m_tempMenuButtonEntity,
+            &m_heartUIEntity
+        };
+        
+        for (Gnosis::Entity* entityPtr : uiElements) {
+            if (entityPtr && *entityPtr != 0 && m_ecsSystem) {
+                UIElement* ui = m_ecsSystem->GetComponent<UIElement>(*entityPtr);
+                if (ui) {
+                    ui->visible = true;
+                }
+            }
+        }
+        
+        GN_LOG_INFO("Shown all regular UI elements");
     }
 
 } // namespace GameCore

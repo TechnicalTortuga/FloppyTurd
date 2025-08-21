@@ -14,6 +14,7 @@
 #include "../Systems/PickupSystem.h"
 #include "../Systems/EnemySystem.h"
 #include "../Systems/UISystem.h"
+#include "../Systems/HeartSystem.h"
 #include "../Config/LevelConfig.h"
 #include <memory>
 #include <vector>
@@ -69,7 +70,7 @@ namespace GameCore {
         
         // Pause menu
         void TogglePause();
-        bool IsPaused() const { return m_isPaused; }
+        bool IsPaused() const { return m_currentSubState == GameplaySubState::Paused; }
         
         // Platform-specific layout functions
         void SetupLayout();
@@ -90,6 +91,7 @@ namespace GameCore {
         std::unique_ptr<UISystem> m_uiSystem;
         std::unique_ptr<PickupSystem> m_pickupSystem;
         std::unique_ptr<EnemySystem> m_enemySystem;
+        std::unique_ptr<HeartSystem> m_heartSystem;
 
         // Level configuration
         int m_currentLevelId;
@@ -121,9 +123,17 @@ namespace GameCore {
         
         // Game flow
         bool m_finished;
-        bool m_isPaused;
         bool m_levelCompleted;
-        bool m_gameOver;
+        
+        // Gameplay sub-states
+        enum class GameplaySubState {
+            Playing,    // Normal gameplay
+            Paused,     // Game is paused
+            GameOver    // Game over sequence active
+        };
+        GameplaySubState m_currentSubState;
+        float m_gameOverTimer;          // Timer for game over sequence timing
+        float m_morteFloatOffset;       // Floating animation for morte sprite
         
         // UI elements
         Gnosis::Entity m_scoreTextEntity;
@@ -133,6 +143,15 @@ namespace GameCore {
         Gnosis::Entity m_pipeCounterEntity;     // Pipe counter display under notch
         Gnosis::Entity m_pauseMenuEntity;
         Gnosis::Entity m_tempMenuButtonEntity;  // Temporary button to return to main menu
+        Gnosis::Entity m_heartUIEntity;         // Heart UI display entity
+        
+        // Game over UI elements
+        Gnosis::Entity m_gameOverBackgroundEntity;   // Light from heaven background
+        Gnosis::Entity m_morteEntity;                 // FloppyTurdMorte floating sprite
+        Gnosis::Entity m_gameOverScoreEntity;        // Score display
+        Gnosis::Entity m_deathMessageEntity;         // Funny death message text
+        Gnosis::Entity m_tryAgainButtonEntity;       // Try again button
+        Gnosis::Entity m_quitButtonEntity;           // Quit to main menu button
 
         // Tracks whether we've already repositioned UI based on real pixel dimensions
         bool m_uiPositionsSynced = false;
@@ -185,6 +204,24 @@ namespace GameCore {
         // Event handlers
         void OnPlayerJump();
         void OnPlayerShoot();
+        
+        // Sub-state management methods
+        void UpdateSubState(float deltaTime);
+        void TriggerGameOver();
+        void TriggerPause();
+        void TriggerResume();
+        
+        // Game over methods
+        void CreateGameOverUI();
+        void DestroyGameOverUI();
+        void HideRegularUI();
+        void ShowRegularUI();
+        bool HasPlayerFallenOffScreen();
+        void UpdateMorteFloating(float deltaTime);
+        void HandleGameOverInput();
+        void TryAgain();
+        void QuitToMainMenu();
+        std::string GetRandomDeathMessage();
         void OnPlayerHurt(int damage);
         void OnPlayerDeath();
         void OnCoinCollected(int value);

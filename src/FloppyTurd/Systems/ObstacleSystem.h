@@ -20,8 +20,7 @@ namespace GameCore {
         SEWER_PYRAMID_TOP_3,
         SEWER_TWO_BY_TWO_FUNNEL,
         SNOW_TOILET_PAIR,
-        CASTLE_GOLD_TOILET_PAIR,
-        CASTLE_DECORATIVE
+        CASTLE_GOLD_TOILET_PAIR
     };
 
     struct PatternConfig {
@@ -60,6 +59,9 @@ namespace GameCore {
         const std::vector<Gnosis::Entity>& GetActiveObstacles() const { return m_activeObstacles; }
         std::vector<int> GetAndClearWrappedGroups();
 
+        // SpikeBall utilities
+        Gnosis::Entity GetSpikeBallBaseEntity(Gnosis::Entity spikeBallEntity) const;
+
         // Debug rendering
         void RenderDebugHitboxes();
         void RemoveAllDebugDraws();
@@ -77,7 +79,6 @@ namespace GameCore {
         void SpawnSewerPattern_TwoByTwoFunnel(float x);
         void SpawnSnowPattern_ToiletPair(float x);
         void SpawnCastlePattern_GoldToiletPair(float x);
-        void SpawnCastlePattern_Decorative(float x);
 
         // Entity creation helpers
         Gnosis::Entity CreateToiletEntity(const std::string& texture, float x, float y, float scale, bool isTop);
@@ -148,11 +149,12 @@ namespace GameCore {
 
         // Spike ball rotation system data
         std::map<Gnosis::Entity, float> m_spikeBallRotationSpeeds;
+        std::map<Gnosis::Entity, Gnosis::Entity> m_spikeBallToBase; // Track which base belongs to which spike ball
         
         // Debug system data
-        bool m_debugMode = false;
+        bool m_debugMode = true;
 
-        static constexpr int OBSTACLE_POOL_SIZE = 8;
+        static constexpr int OBSTACLE_POOL_SIZE = 32;
         static constexpr int CACTUS_POOL_SIZE = 16;
         static constexpr float SCREEN_WIDTH = 1179.0f;
         static constexpr float SCREEN_HEIGHT = 2556.0f;

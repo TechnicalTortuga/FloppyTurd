@@ -38,8 +38,8 @@ namespace GameCore {
     }
 
     void PlayerControllerSystem::Update(float deltaTime) {
-        if (!m_playerAlive || m_playerEntity == 0) {
-            return;
+        if (m_playerEntity == 0) {
+            return; // Only return if no player entity, not if player is dead
         }
 
         // DEBUG: Show flag states at start of update - LOG ALWAYS for debugging
@@ -392,6 +392,11 @@ namespace GameCore {
         GN_LOG_INFO("Player reset for enhanced Flappy Bird mode - state machine and physics reset to IDLE");
     }
 
+    void PlayerControllerSystem::SetPlayerAlive(bool alive) {
+        m_playerAlive = alive;
+        GN_LOG_INFO("PlayerControllerSystem: Player alive state set to " + std::string(alive ? "true" : "false"));
+    }
+
     void PlayerControllerSystem::UpdatePlayerPhysics(float deltaTime) {
         if (m_playerEntity == 0) {
             return;
@@ -432,6 +437,11 @@ namespace GameCore {
                 physics->acceleration.y = GRAVITY_DOWN;
                 GN_LOG_TRACE("Applying descending gravity: " + std::to_string(GRAVITY_DOWN));
             }
+        } else {
+            // DEBUG: Check if gravity is disabled for dead players
+            if (!m_playerAlive) {
+                GN_LOG_WARN("Dead player has useGravity = false - this might prevent falling!");
+            }
         }
         
         // Update velocity with enhanced gravity
@@ -449,6 +459,13 @@ namespace GameCore {
         // Update position (only Y position changes for the player)
         transform->position.y += physics->velocity.y * deltaTime;
         
+        // DEBUG: Log player physics state during game over
+        if (!m_playerAlive) {
+            GN_LOG_INFO("Dead player physics - Y: " + std::to_string(transform->position.y) + 
+                       ", Velocity: " + std::to_string(physics->velocity.y) + 
+                       ", Delta: " + std::to_string(deltaTime));
+        }
+        
         // Keep player at a fixed horizontal position (configurable for optimal gameplay visibility)
         transform->position.x = PLAYER_X_POSITION;
         
@@ -459,21 +476,32 @@ namespace GameCore {
         // Only reset when player is completely off screen below (entire sprite past bottom)
         if (transform->position.y > SCREEN_HEIGHT + playerHeight) {
             // Player is completely off screen below - trigger damage and reset position
-            GN_LOG_INFO("Player completely off screen below - resetting position");
-            transform->position.y = TOP_SPAWN_Y;
-            physics->velocity.y = 0.0f;
-            m_isAscending = false;
-            m_jumpButtonHeld = false;
-            m_jumpHoldTime = 0.0f;
-            // TODO: Trigger damage event
+            if (m_playerAlive) {
+                GN_LOG_INFO("Player completely off screen below - resetting position");
+                transform->position.y = TOP_SPAWN_Y;
+                physics->velocity.y = 0.0f;
+                m_isAscending = false;
+                m_jumpButtonHeld = false;
+                m_jumpHoldTime = 0.0f;
+                // TODO: Trigger damage event
+            } else {
+                GN_LOG_INFO("Player is dead and off screen - not resetting position");
+            }
         }
         
-        // Check if player hits top of screen
+        // Check if player hits top of screen - only apply ceiling collision when alive
         if (transform->position.y <= 0.0f) {
-            transform->position.y = 0.0f;
-            physics->velocity.y = 0.0f;
-            m_isAscending = false;
-            GN_LOG_INFO("Player hit ceiling");
+            if (m_playerAlive) {
+                transform->position.y = 0.0f;
+                physics->velocity.y = 0.0f;
+                m_isAscending = false;
+                GN_LOG_INFO("Player hit ceiling - alive player stopped");
+            } else {
+                // Dead player can fall through ceiling - just prevent them from going above screen
+                transform->position.y = 0.0f;
+                // Don't reset velocity - let them fall naturally
+                GN_LOG_INFO("Player hit ceiling - dead player continues falling");
+            }
         }
         
         // Store current velocity for next frame's direction detection

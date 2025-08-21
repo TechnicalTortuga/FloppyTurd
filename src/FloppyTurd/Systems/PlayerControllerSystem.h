@@ -50,6 +50,7 @@ namespace GameCore {
         void ChangePlayerAnimation(const std::string& animationName);
         void TransitionToState(PlayerAnimationState newState);
         void ResetPlayer();
+        void SetPlayerAlive(bool alive);
 
         // Getters
         Gnosis::Entity GetPlayerEntity() const { return m_playerEntity; }

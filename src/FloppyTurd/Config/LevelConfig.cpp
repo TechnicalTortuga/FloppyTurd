@@ -28,7 +28,7 @@ namespace GameCore {
         
         // Set level-specific properties  
         config.musicTrack = "Sewer";       // Base name for difficulty variants
-        config.worldSpeed = 220.0f;  // Slightly faster
+        config.worldSpeed = SpeedConstants::BASE_WORLD_SPEED;  // Use configurable speed constants
         config.baseScale = 8.0f;
         config.difficultyMultiplier = 1.2f;
         
@@ -52,7 +52,7 @@ namespace GameCore {
         
         // Set level-specific properties
         config.musicTrack = "Desert";      // Base name for difficulty variants
-        config.worldSpeed = 240.0f;  // Faster pace
+        config.worldSpeed = SpeedConstants::BASE_WORLD_SPEED;  // Use configurable speed constants
         config.baseScale = 8.0f;
         config.difficultyMultiplier = 1.4f;
         
@@ -76,7 +76,7 @@ namespace GameCore {
         
         // Set level-specific properties
         config.musicTrack = "Snow";        // Base name for difficulty variants
-        config.worldSpeed = 260.0f;  // Even faster
+        config.worldSpeed = SpeedConstants::BASE_WORLD_SPEED;  // Use configurable speed constants
         config.baseScale = 8.0f;
         config.difficultyMultiplier = 1.6f;
         
@@ -95,7 +95,7 @@ namespace GameCore {
         
         // Set level-specific properties
         config.musicTrack = "Castle";      // Base name for difficulty variants
-        config.worldSpeed = 280.0f;  // High speed
+        config.worldSpeed = SpeedConstants::BASE_WORLD_SPEED;  // Use configurable speed constants
         config.baseScale = 8.0f;
         config.difficultyMultiplier = 1.8f;
         
@@ -112,9 +112,9 @@ namespace GameCore {
     LevelConfig LevelConfigFactory::CreateLevel6Config() {
         LevelConfig config(6, "Curtains for Crap");
         
-        // Set boss level properties
+        // Boss level properties
         config.musicTrack = "Boss";        // Base name for difficulty variants
-        config.worldSpeed = 150.0f;  // Slower for boss fight
+        config.worldSpeed = SpeedConstants::BASE_WORLD_SPEED;  // Use configurable speed constants
         config.baseScale = 8.0f;
         config.difficultyMultiplier = 2.0f;
         

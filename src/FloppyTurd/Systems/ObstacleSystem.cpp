@@ -7,7 +7,7 @@
 namespace GameCore {
 
     ObstacleSystem::ObstacleSystem(Gnosis::ECS* ecsSystem) 
-        : m_ecsSystem(ecsSystem), m_initialized(false), m_currentLevelId(0), m_nextGroupId(1), m_baseScale(1.0f), m_debugMode(false) {
+        : m_ecsSystem(ecsSystem), m_initialized(false), m_currentLevelId(0), m_nextGroupId(1), m_baseScale(1.0f), m_debugMode(true) {
         GN_LOG_INFO("ObstacleSystem created");
     }
 
@@ -213,10 +213,9 @@ namespace GameCore {
             case PatternType::DESERT_OUTHOUSE:
                 SpawnDesertPattern_Outhouse(x);
                 break;
-            // Temporarily removed cacti obstacles
-            // case PatternType::DESERT_CACTUS:
-            //     SpawnDesertPattern_Cactus(x);
-            //     break;
+            case PatternType::DESERT_CACTUS:
+                SpawnDesertPattern_Cactus(x);
+                break;
             case PatternType::SEWER_TOP_ONLY:
                 SpawnSewerPattern_TopOnly(x);
                 break;
@@ -296,12 +295,11 @@ namespace GameCore {
         
         Hitbox topCollider;
         topCollider.type = ColliderType::Rectangle;
-        // Center-based: trim 30px from bottom; offset center up by 15 so collider top aligns with sprite top
-        const float TRIM_TOP = 30.0f;
+        // Consistent hitbox configuration: 20px width, 226px height, starts 25px down from top
         topCollider.width = 20.0f;
-        topCollider.height = 190.0f - TRIM_TOP;
+        topCollider.height = 226.0f;
         topCollider.offsetX = 0.0f;
-        topCollider.offsetY = -(TRIM_TOP * 0.5f);
+        topCollider.offsetY = 25.0f;
         topCollider.isStatic = false;
         topCollider.isTrigger = false;
         topCollider.tag = "obstacle";
@@ -328,12 +326,11 @@ namespace GameCore {
         
         Hitbox bottomCollider;
         bottomCollider.type = ColliderType::Rectangle;
-        // Center-based: start 30px down; offset center down by 15 so collider top = sprite top + 30
-        const float TRIM_BOTTOM = 30.0f;
+        // Consistent hitbox configuration with other toilet types
         bottomCollider.width = 20.0f;
-        bottomCollider.height = 190.0f - TRIM_BOTTOM;
+        bottomCollider.height = 226.0f; // Fixed height: from 30px down to bottom (256px)
         bottomCollider.offsetX = 0.0f;
-        bottomCollider.offsetY = +(TRIM_BOTTOM * 0.5f);
+        bottomCollider.offsetY = 55.0f; // Start 55px from the top (scaled to 440px at scale 8)
         bottomCollider.isStatic = false;
         bottomCollider.isTrigger = false;
         bottomCollider.tag = "obstacle";
@@ -836,9 +833,9 @@ namespace GameCore {
         Hitbox hitbox;
         hitbox.type = ColliderType::Rectangle;
         hitbox.width = 20.0f;
-        hitbox.height = 190.0f - 30.0f; // Trim 30px
+        hitbox.height = 226.0f; // Fixed height: consistent with other toilet types
         hitbox.offsetX = 0.0f;
-        hitbox.offsetY = isTop ? -(30.0f * 0.5f) : +(30.0f * 0.5f);
+        hitbox.offsetY = isTop ? 25.0f : 55.0f; // Consistent positioning: top=25px, bottom=55px
         hitbox.isStatic = false;
         hitbox.isTrigger = false;
         hitbox.tag = "obstacle";
@@ -1671,17 +1668,23 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
                     // This maintains the exact relative positions of all group members
                     transform->position.x = newX + relativeOffsetX;
                     
-                    // Set Y positions based on toilet type
+                    // Set Y positions based on toilet type - but NOT for non-toilet obstacles
                     if (m_ecsSystem->HasComponent<Obstacle>(e)) {
                         auto* obstacle = m_ecsSystem->GetComponent<Obstacle>(e);
-                        if (obstacle->isTopPart) {
-                            transform->position.y = randomTopY;
-                        } else {
-                            transform->position.y = randomTopY + toiletHeight + fixedGapHeight;
-                        }
                         
-                        // Reset obstacle state
-                        obstacle->pipeCleared = false;
+                        // Only reposition toilets, not other obstacle types like spike balls
+                        if (obstacle->obstacleType == "TopToilet" || obstacle->obstacleType == "BottomToilet" || 
+                            obstacle->obstacleType == "GoldToiletTop" || obstacle->obstacleType == "GoldToiletBottom") {
+                            if (obstacle->isTopPart) {
+                                transform->position.y = randomTopY;
+                            } else {
+                                transform->position.y = randomTopY + toiletHeight + fixedGapHeight;
+                            }
+                            
+                            // Reset obstacle state
+                            obstacle->pipeCleared = false;
+                        }
+                        // Non-toilet obstacles (spike balls, etc.) keep their original Y positions
                     }
                 }
             }
@@ -1812,11 +1815,13 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
 
     void ObstacleSystem::RenderDebugHitboxes() {
         if (!m_debugMode) {
+            GN_LOG_DEBUG("RenderDebugHitboxes: Debug mode disabled, skipping");
             return;
         }
 
-        GN_LOG_DEBUG("Rendering debug hitboxes for " + std::to_string(m_activeObstacles.size()) + " obstacles");
+        GN_LOG_DEBUG("RenderDebugHitboxes: Debug mode enabled, processing " + std::to_string(m_activeObstacles.size()) + " obstacles");
         
+        int debugEntitiesFound = 0;
         for (Gnosis::Entity entity : m_activeObstacles) {
             if (!m_ecsSystem->HasComponent<Transform>(entity) || 
                 !m_ecsSystem->HasComponent<Hitbox>(entity) || 
@@ -1833,9 +1838,43 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
                 continue;
             }
 
+            // Check if this entity has DebugDraw component
+            if (m_ecsSystem->HasComponent<DebugDraw>(entity)) {
+                debugEntitiesFound++;
+                GN_LOG_DEBUG("RenderDebugHitboxes: Found debug entity " + std::to_string(entity) + " (" + obstacle->obstacleType + ")");
+            }
+
             // Calculate hitbox world position
-            float hitboxX = transform->position.x + (hitbox->offsetX * transform->scale.x);
-            float hitboxY = transform->position.y + (hitbox->offsetY * transform->scale.y);
+            float hitboxX, hitboxY;
+            
+            // Check if this is a spike ball (has PivotRotationRenderer) - use base center positioning
+            if (m_ecsSystem->HasComponent<PivotRotationRenderer>(entity)) {
+                // For spike balls, calculate world position relative to base center
+                auto baseIt = m_spikeBallToBase.find(entity);
+                if (baseIt != m_spikeBallToBase.end()) {
+                    Transform* baseTransform = m_ecsSystem->GetComponent<Transform>(baseIt->second);
+                                            if (baseTransform) {
+                            // Use base center + hitbox offset for world position
+                            float baseCenterX = baseTransform->position.x + (5.0f * baseTransform->scale.x);
+                            float baseCenterY = baseTransform->position.y + (5.0f * baseTransform->scale.y);
+                        hitboxX = baseCenterX + hitbox->offsetX;
+                        hitboxY = baseCenterY + hitbox->offsetY;
+                    } else {
+                        // Fallback to spike ball transform if base not found
+                        hitboxX = transform->position.x + hitbox->offsetX;
+                        hitboxY = transform->position.y + hitbox->offsetY;
+                    }
+                } else {
+                    // Fallback to spike ball transform if no base relationship found
+                    hitboxX = transform->position.x + hitbox->offsetX;
+                    hitboxY = transform->position.y + hitbox->offsetY;
+                }
+            } else {
+                // Normal entities use standard top-left based positioning
+                hitboxX = transform->position.x + (hitbox->offsetX * transform->scale.x);
+                hitboxY = transform->position.y + (hitbox->offsetY * transform->scale.y);
+            }
+            
             float hitboxW = hitbox->width * transform->scale.x;
             float hitboxH = hitbox->height * transform->scale.y;
 
@@ -1848,6 +1887,8 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
                         "isTrigger=" + std::to_string(hitbox->isTrigger) + 
                         " pipeCleared=" + std::to_string(obstacle->pipeCleared));
         }
+        
+        GN_LOG_DEBUG("RenderDebugHitboxes: Found " + std::to_string(debugEntitiesFound) + " entities with DebugDraw components");
     }
 
     void ObstacleSystem::RemoveAllDebugDraws() {
@@ -2092,10 +2133,10 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         
         Hitbox topCollider;
         topCollider.type = ColliderType::Rectangle;
-        const float TRIM_TOP = 30.0f;
+        // Consistent hitbox configuration with other toilet types
         topCollider.width = 20.0f;
-        topCollider.height = 190.0f - TRIM_TOP;
-        topCollider.offsetY = TRIM_TOP * 0.5f; // Center-based offset
+        topCollider.height = 226.0f; // Fixed height: from top (0) to 226px down
+        topCollider.offsetY = 25.0f; // Start 25px down from the top (scaled to 200px at scale 8)
         topCollider.isStatic = false;
         topCollider.tag = "Obstacle";
         
@@ -2133,10 +2174,10 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         
         Hitbox bottomCollider;
         bottomCollider.type = ColliderType::Rectangle;
-        const float TRIM_BOTTOM = 30.0f;
+        // Consistent hitbox configuration with other toilet types
         bottomCollider.width = 20.0f;
-        bottomCollider.height = 190.0f - TRIM_BOTTOM;
-        bottomCollider.offsetY = -TRIM_BOTTOM * 0.5f; // Center-based offset
+        bottomCollider.height = 226.0f; // Fixed height: from 30px down to bottom (256px)
+        bottomCollider.offsetY = 55.0f; // Start 55px from the top (scaled to 440px at scale 8)
         bottomCollider.isStatic = false;
         bottomCollider.tag = "Obstacle";
         
@@ -2279,8 +2320,8 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         topCollider.type = ColliderType::Rectangle;
         const float TRIM_TOP = 30.0f;
         topCollider.width = 20.0f;
-        topCollider.height = 180.0f - TRIM_TOP;
-        topCollider.offsetY = TRIM_TOP * 0.5f; // Center-based offset
+        topCollider.height = 226.0f; // Fixed height: from top (0) to 226px down
+        topCollider.offsetY = 25.0f; // Start 25px down from the top (scaled to 200px at scale 8)
         topCollider.isStatic = false;
         topCollider.tag = "Obstacle";
         
@@ -2302,6 +2343,16 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         m_ecsSystem->AddComponent<Hitbox>(topToilet, topCollider);
         m_ecsSystem->AddComponent<Obstacle>(topToilet, topObstacle);
         
+        // Add debug drawing for top gold toilet hitbox
+        DebugDraw topDebugDraw;
+        topDebugDraw.showBounds = true;
+        topDebugDraw.showCollider = true;
+        topDebugDraw.colliderColor = Gnosis::GNColor(255, 215, 0, 255); // Gold for gold toilet
+        topDebugDraw.boundsColor = Gnosis::GNColor(0, 255, 0, 255);     // Green for bounds
+        topDebugDraw.alpha = 0.8f;
+        topDebugDraw.debugLayer = 18;
+        m_ecsSystem->AddComponent<DebugDraw>(topToilet, topDebugDraw);
+        
         // Create bottom gold toilet with same oscillation (linked movement)
         Gnosis::Entity bottomToilet = m_ecsSystem->CreateEntity();
         
@@ -2320,8 +2371,8 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         bottomCollider.type = ColliderType::Rectangle;
         const float TRIM_BOTTOM = 30.0f;
         bottomCollider.width = 20.0f;
-        bottomCollider.height = 180.0f - TRIM_BOTTOM;
-        bottomCollider.offsetY = -TRIM_BOTTOM * 0.5f; // Center-based offset
+        bottomCollider.height = 226.0f; // Fixed height: from 30px down to bottom (256px)
+        bottomCollider.offsetY = 55.0f; // Start 55px from the top (scaled to 440px at scale 8)
         bottomCollider.isStatic = false;
         bottomCollider.tag = "Obstacle";
         
@@ -2343,6 +2394,16 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         m_ecsSystem->AddComponent<Physics>(bottomToilet, bottomPhysics);
         m_ecsSystem->AddComponent<Hitbox>(bottomToilet, bottomCollider);
         m_ecsSystem->AddComponent<Obstacle>(bottomToilet, bottomObstacle);
+        
+        // Add debug drawing for bottom gold toilet hitbox
+        DebugDraw bottomDebugDraw;
+        bottomDebugDraw.showBounds = true;
+        bottomDebugDraw.showCollider = true;
+        bottomDebugDraw.colliderColor = Gnosis::GNColor(255, 215, 0, 255); // Gold for gold toilet
+        bottomDebugDraw.boundsColor = Gnosis::GNColor(0, 255, 0, 255);     // Green for bounds
+        bottomDebugDraw.alpha = 0.8f;
+        bottomDebugDraw.debugLayer = 18;
+        m_ecsSystem->AddComponent<DebugDraw>(bottomToilet, bottomDebugDraw);
         
         // Link the pair for synchronized movement
         topObstacle.pairedEntity = bottomToilet;
@@ -2612,22 +2673,15 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         float centerY = screenHeight / 2.0f; // This should be 1278
         float baseY = centerY; // Base at center Y
         
-        // Position the spike ball so its pivot point (32,0) - the top where it connects to base - is at base center
-        // The spike ball sprite is 64x90, so its pivot point (32,0) is at the top center
-        // We want this pivot point to be at the base center, so position the spike ball accordingly
-        // Account for scaling: pivot point is 45 pixels from sprite center, so offset by 45 * scale
-        float pivotOffsetY = 45.0f * m_baseScale;
-        float spikeBallY = baseY - pivotOffsetY; // Position so pivot point (32,0) is at base center
-        
-        // Add X offset to center horizontally with the base (base is 10x10, so center is at x + 5*scale)
-        float baseCenterX = x + (5.0f * m_baseScale); // Base center X position
-        float spikeBallX = baseCenterX; // Position spike ball at base center X
-        
-        // Debug: Let's log the actual values to see what's happening
+        // Position the spike ball entity at the base center
+        // This is where the collision detection expects the entity to be
+        // The rendering system will handle the visual offset using the pivot
+        float baseCenterX = x + (5.0f * m_baseScale); // Base center X position  
+        float spikeBallX = baseCenterX; 
+        float spikeBallY = baseY;
         GN_LOG_INFO("Spike ball positioning - screenHeight: " + std::to_string(screenHeight) + 
                    ", centerY: " + std::to_string(centerY) + 
                    ", baseY: " + std::to_string(baseY) + 
-                   ", pivotOffsetY: " + std::to_string(pivotOffsetY) + 
                    ", spikeBallY: " + std::to_string(spikeBallY) + 
                    ", baseCenterX: " + std::to_string(baseCenterX) + 
                    ", spikeBallX: " + std::to_string(spikeBallX) + 
@@ -2637,7 +2691,10 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         // Create the base first
         Gnosis::Entity base = m_ecsSystem->CreateEntity();
         
-        Transform baseTransform(Gnosis::GNVector2(baseCenterX, baseY), 0.0f, 
+        // Base uses top-left positioning, so offset by half size to center it at baseCenterX, baseY
+        float baseTopLeftX = baseCenterX - (5.0f * m_baseScale); // Half width offset
+        float baseTopLeftY = baseY - (5.0f * m_baseScale);       // Half height offset
+        Transform baseTransform(Gnosis::GNVector2(baseTopLeftX, baseTopLeftY), 0.0f, 
                               Gnosis::GNVector2(m_baseScale, m_baseScale));
         
         Sprite baseSprite("SpikeBallBase", 10.0f, 10.0f); // Base is actually 10x10 pixels
@@ -2654,6 +2711,8 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         m_ecsSystem->AddComponent<Sprite>(base, baseSprite);
         m_ecsSystem->AddComponent<Physics>(base, basePhysics);
         
+        GN_LOG_INFO("DEBUG TEST: Base top-left at (" + std::to_string(baseTopLeftX) + ", " + std::to_string(baseTopLeftY) + ")");
+        GN_LOG_INFO("DEBUG TEST: Base center should be at (" + std::to_string(baseCenterX) + ", " + std::to_string(baseY) + ")");
         GN_LOG_INFO("Created base entity at position (" + std::to_string(baseTransform.position.x) + ", " + std::to_string(baseTransform.position.y) + ") with scale " + std::to_string(baseTransform.scale.x));
         
         // Now create the rotating spike ball
@@ -2673,20 +2732,34 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         
         // Spike ball has hitbox and obstacle component for damage
         Hitbox hitbox;
-        hitbox.type = ColliderType::Circle; // Use circular hitbox
-        hitbox.radius = 8.0f * m_baseScale; // 8px radius as specified
-        hitbox.width = 16.0f * m_baseScale; // 8px radius * 2 = 16px diameter
-        hitbox.height = 16.0f * m_baseScale; // 8px radius * 2 = 16px diameter
-        hitbox.offsetX = 32.0f * m_baseScale; // Center of 64px width
-        hitbox.offsetY = 70.0f * m_baseScale; // 70px from top of 90px height
+        hitbox.type = ColliderType::Circle; // Use circular hitbox to match spike ball shape
+        hitbox.radius = 1.0f * m_baseScale; // 1px radius = 8px diameter when scaled (actual spike ball collision size)
+        
+        // Set hitbox to rotate around base center using relative offset from spikeball
+        // Initial position: spikeball is 70 pixels above base, so hitbox needs -70Y offset to reach base
+        float hitboxPivotX = 0.0f;   // No horizontal offset (centered)
+        float hitboxPivotY = -70.0f; // 70 pixels down from spikeball to base center
+        
+        // Apply initial rotation with 180-degree phase shift (entity starts at some rotation angle)
+        float initialRotation = 0.0f; // Will be set by the update function immediately
+        float rotationRadians = (initialRotation + 180.0f) * (M_PI / 180.0f);
+        float rotatedOffsetX = hitboxPivotX * cos(rotationRadians) + hitboxPivotY * sin(rotationRadians);
+        float rotatedOffsetY = -hitboxPivotX * sin(rotationRadians) + hitboxPivotY * cos(rotationRadians);
+        
+        hitbox.offsetX = rotatedOffsetX;  // Initial rotated offset
+        hitbox.offsetY = rotatedOffsetY;  // Initial rotated offset
+        
+        GN_LOG_INFO("SpikeBall created with rotating hitbox: initial_offset=(" + std::to_string(rotatedOffsetX) + ", " + std::to_string(rotatedOffsetY) + ")");
         
         Obstacle obstacle;
+        obstacle.obstacleType = "SpikeBall"; // Set type to distinguish from toilets
         obstacle.damage = 1;
         obstacle.isDestructible = false;
         obstacle.behavior = 0; // STATIC = 0 (no oscillation)
         obstacle.oscillationSpeed = 0.0f; // No oscillation
         obstacle.oscillationRange = 0.0f; // No oscillation
         obstacle.oscillationTimer = 0.0f; // No oscillation
+        obstacle.basePosition = Gnosis::GNVector2(spikeBallX, spikeBallY); // Store original position
         
         m_ecsSystem->AddComponent<Transform>(spikeBall, spikeBallTransform);
         m_ecsSystem->AddComponent<Sprite>(spikeBall, spikeBallSprite);
@@ -2694,24 +2767,63 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         m_ecsSystem->AddComponent<Hitbox>(spikeBall, hitbox);
         m_ecsSystem->AddComponent<Obstacle>(spikeBall, obstacle);
         
+        // Debug drawing for spike ball hitbox disabled (RotSprite working perfectly!)
+        // DebugDraw debugDraw;
+        // debugDraw.showBounds = true;  
+        // debugDraw.showCollider = true;
+        // debugDraw.colliderColor = Gnosis::GNColor(255, 255, 0, 255); // Yellow for spike ball
+        // debugDraw.boundsColor = Gnosis::GNColor(0, 255, 0, 255);     // Green for bounds
+        // debugDraw.alpha = 0.8f;
+        // debugDraw.debugLayer = 18; 
+        // m_ecsSystem->AddComponent<DebugDraw>(spikeBall, debugDraw);
+        GN_LOG_INFO("Spike ball created without debug hitboxes (RotSprite system working perfectly!)");
+        
+        // Verify all components were added correctly
+        GN_LOG_INFO("DEBUG: Spike ball " + std::to_string(spikeBall) + " components:");
+        GN_LOG_INFO("  - Transform: " + std::string(m_ecsSystem->HasComponent<Transform>(spikeBall) ? "YES" : "NO"));
+        GN_LOG_INFO("  - Sprite: " + std::string(m_ecsSystem->HasComponent<Sprite>(spikeBall) ? "YES" : "NO"));
+        GN_LOG_INFO("  - Hitbox: " + std::string(m_ecsSystem->HasComponent<Hitbox>(spikeBall) ? "YES" : "NO"));
+        GN_LOG_INFO("  - Obstacle: " + std::string(m_ecsSystem->HasComponent<Obstacle>(spikeBall) ? "YES" : "NO"));
+        GN_LOG_INFO("  - DebugDraw: DISABLED (No longer needed - RotSprite perfected!)");
+        GN_LOG_INFO("  - PivotRotationRenderer: " + std::string(m_ecsSystem->HasComponent<PivotRotationRenderer>(spikeBall) ? "YES" : "NO"));
+        
+        GN_LOG_INFO("DEBUG TEST: Spike ball center at (" + std::to_string(spikeBallX) + ", " + std::to_string(spikeBallY) + ")");
+        GN_LOG_INFO("DEBUG TEST: Both base center and spike ball center should be at SAME coordinates!");
+        
+        // Calculate and log actual hitbox world position
+        float hitboxWorldX = spikeBallX + hitbox.offsetX;  // offsetX is already scaled
+        float hitboxWorldY = spikeBallY + hitbox.offsetY;  // offsetY is already scaled
+        GN_LOG_INFO("DEBUG HITBOX: Spike ball hitbox center at (" + std::to_string(hitboxWorldX) + ", " + std::to_string(hitboxWorldY) + ")");
+        GN_LOG_INFO("DEBUG HITBOX: Hitbox radius: " + std::to_string(hitbox.radius) + " (should be 64 scaled pixels)");
+        
         GN_LOG_INFO("Created spike ball entity at position (" + std::to_string(spikeBallTransform.position.x) + ", " + std::to_string(spikeBallTransform.position.y) + ") with scale " + std::to_string(spikeBallTransform.scale.x));
         
-        // Add pivot rotation renderer for spinning animation around base center
-        // The spike ball is positioned so its pivot point (32,0) is at the base center
-        // We want it to rotate around this pivot point, not around its sprite center
-        // Pivot offset (0, 45) makes it rotate around the top of the sprite (32,0) where the chain connects
-        // This is the correct offset for spinning from the chain, not from the ball
-        PivotRotationRenderer pivotRenderer(true, 0.0f, 45.0f, 180.0f);
+                    // Add pivot rotation renderer for spinning animation around base center
+            // The spikeball sprite is 64x90, chain connection is at (32,0) in sprite coordinates
+                    // Sprite center is at (32,45), so pivot offset from center is (0, -45)  
+        // This positions the chain connection (top of sprite) at the base center
+        PivotRotationRenderer pivotRenderer(true, 0.0f, -45.0f, 180.0f);
+        
+        // CRITICAL: Add component and verify it was added
         m_ecsSystem->AddComponent<PivotRotationRenderer>(spikeBall, pivotRenderer);
+        
+        // Verify the component was actually added
+        if (m_ecsSystem->HasComponent<PivotRotationRenderer>(spikeBall)) {
+            GN_LOG_INFO("SUCCESS: PivotRotationRenderer added to spike ball " + std::to_string(spikeBall));
+        } else {
+            GN_LOG_ERROR("CRITICAL ERROR: PivotRotationRenderer component missing from spike ball " + std::to_string(spikeBall));
+        }
         
         // Remove the old rotation renderer since we're using pivot-based rotation now
         // RotationRenderer rotationRenderer(true);
         // m_ecsSystem->AddComponent<RotationRenderer>(spikeBall, rotationRenderer);
         
-        // Add both to group for management
+        // Add both to group for management - different offsetX values and patterns
         float groupWidth = 64.0f * m_baseScale; // Use spike ball width for group
-        AddEntityToGroup(base, groupId, false, offsetX, 0.0f, groupWidth, GroupPattern::Decorative);
-        AddEntityToGroup(spikeBall, groupId, false, offsetX, 0.0f, groupWidth, GroupPattern::Decorative);
+        float baseOffsetX = offsetX - (5.0f * m_baseScale); // Base top-left position
+        float spikeBallOffsetX = offsetX; // Spike ball center position
+        AddEntityToGroup(base, groupId, false, baseOffsetX, 0.0f, groupWidth, GroupPattern::Decorative); // Base is decorative
+        AddEntityToGroup(spikeBall, groupId, false, spikeBallOffsetX, 0.0f, groupWidth, GroupPattern::TopAndBottom); // Spike ball is real obstacle
         
         // Track for management
         m_activeObstacles.push_back(base);
@@ -2719,6 +2831,9 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         
         // Store rotation speed for animation (will be updated in UpdateObstacles)
         m_spikeBallRotationSpeeds[spikeBall] = 180.0f; // Slower: 180 degrees per second (1/2 rotation per second)
+        
+        // Store the relationship between spike ball and base for hitbox positioning
+        m_spikeBallToBase[spikeBall] = base;
         
         GN_LOG_INFO("Spawned castle spike ball obstacle at x=" + std::to_string(x) + " y=" + std::to_string(centerY) + " with group " + std::to_string(groupId));
     }
@@ -2728,8 +2843,9 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         for (auto& [entity, rotationSpeed] : m_spikeBallRotationSpeeds) {
             Transform* transform = m_ecsSystem->GetComponent<Transform>(entity);
             PivotRotationRenderer* pivotRenderer = m_ecsSystem->GetComponent<PivotRotationRenderer>(entity);
+            Hitbox* hitbox = m_ecsSystem->GetComponent<Hitbox>(entity);
             
-            if (transform && pivotRenderer) {
+            if (transform && pivotRenderer && hitbox) {
                 // Use the rotation speed from the PivotRotationRenderer component
                 float speed = pivotRenderer->rotationSpeed;
                 
@@ -2743,19 +2859,120 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
                     transform->rotation -= 360.0f;
                 }
                 
-                // Debug logging for first few frames
-                static int debugFrameCount = 0;
-                if (debugFrameCount < 10) {
-                    GN_LOG_INFO("Spike ball pivot rotation: entity=" + std::to_string(entity) + 
-                               ", oldRotation=" + std::to_string(oldRotation) + 
-                               ", newRotation=" + std::to_string(transform->rotation) + 
-                               ", delta=" + std::to_string(rotationDelta) + 
-                               ", speed=" + std::to_string(speed) + 
-                               ", pivot=(" + std::to_string(pivotRenderer->pivotX) + "," + std::to_string(pivotRenderer->pivotY) + ")");
-                    debugFrameCount++;
+                // Get the actual base position from the stored relationship
+                auto baseIt = m_spikeBallToBase.find(entity);
+                if (baseIt != m_spikeBallToBase.end()) {
+                    Gnosis::Entity baseEntity = baseIt->second;
+                    Transform* baseTransform = m_ecsSystem->GetComponent<Transform>(baseEntity);
+                    
+                    if (baseTransform) {
+                        // Base center is our origin (0, 0) for the circle
+                        // Base Transform.position is top-left, so we need to calculate the center
+                        float baseCenterX = baseTransform->position.x + (5.0f * baseTransform->scale.x);
+                        float baseCenterY = baseTransform->position.y + (5.0f * baseTransform->scale.y);
+                        
+                        // REFACTORED APPROACH: Use absolute positioning mode with rotation
+                        // Calculate where the hitbox should be positioned relative to the spikeball center
+                        // The spikeball rotates around the base, so we need to calculate the inverse offset
+                        
+                        // Spikeball is 70 pixels above the base center (in sprite coordinates)
+                        // Hitbox should be 70 pixels below the spikeball center to reach the base
+                        float pivotOffsetX = 0.0f;   // No horizontal offset (centered)
+                        float pivotOffsetY = -70.0f; // 70 pixels down from spikeball to base center
+                        
+                        // Apply rotation to the offset vector with 180-degree phase shift
+                        float rotationRadians = (transform->rotation + 180.0f) * (M_PI / 180.0f);
+                        float rotatedOffsetX = pivotOffsetX * cos(rotationRadians) + pivotOffsetY * sin(rotationRadians);
+                        float rotatedOffsetY = -pivotOffsetX * sin(rotationRadians) + pivotOffsetY * cos(rotationRadians);
+                        
+                        hitbox->offsetX = rotatedOffsetX;  // Rotated offset from spikeball to hitbox
+                        hitbox->offsetY = rotatedOffsetY;  // Rotated offset from spikeball to hitbox
+                        
+                        // === COMPREHENSIVE COORDINATE DEBUGGING ===
+                        GN_LOG_INFO("=== SPIKEBALL COORDINATE ANALYSIS ===");
+
+                        // 1. Log actual base transform details
+                        GN_LOG_INFO("BASE TRANSFORM: position=(" + std::to_string(baseTransform->position.x) + ", " + std::to_string(baseTransform->position.y) + "), scale=(" + std::to_string(baseTransform->scale.x) + ", " + std::to_string(baseTransform->scale.y) + ")");
+
+                        // 2. Calculate what SHOULD be the center if position is top-left
+                        float calculatedCenterX = baseTransform->position.x + (5.0f * baseTransform->scale.x);
+                        float calculatedCenterY = baseTransform->position.y + (5.0f * baseTransform->scale.y);
+                        GN_LOG_INFO("CALCULATED CENTER (if top-left): (" + std::to_string(calculatedCenterX) + ", " + std::to_string(calculatedCenterY) + ")");
+
+                        // 3. Log what we're currently using as center
+                        GN_LOG_INFO("CURRENT CENTER (what code uses): (" + std::to_string(baseCenterX) + ", " + std::to_string(baseCenterY) + ")");
+
+                        // 4. Log spike ball transform details
+                        GN_LOG_INFO("SPIKEBALL TRANSFORM: position=(" + std::to_string(transform->position.x) + ", " + std::to_string(transform->position.y) + "), scale=(" + std::to_string(transform->scale.x) + ", " + std::to_string(transform->scale.y) + "), rotation=" + std::to_string(transform->rotation));
+
+                        // 5. Log PivotRotationRenderer details
+                        GN_LOG_INFO("PIVOT RENDERER: pivotX=" + std::to_string(pivotRenderer->pivotX) + ", pivotY=" + std::to_string(pivotRenderer->pivotY) + ", speed=" + std::to_string(pivotRenderer->rotationSpeed));
+
+                        // 6. Log the calculated visual pivot point (where SpikeBall should visually rotate)
+                        float visualPivotX = transform->position.x + (pivotRenderer->pivotX * transform->scale.x);
+                        float visualPivotY = transform->position.y + (pivotRenderer->pivotY * transform->scale.y);
+                        GN_LOG_INFO("VISUAL PIVOT POINT: (" + std::to_string(visualPivotX) + ", " + std::to_string(visualPivotY) + ")");
+
+                        // 7. Log hitbox calculation step by step
+                        GN_LOG_INFO("HITBOX CALCULATION (WITH ROTATION + 180° SHIFT):");
+                        GN_LOG_INFO("  - Spikeball rotation: " + std::to_string(transform->rotation) + "° (+ 180° phase shift)");
+                        GN_LOG_INFO("  - Base pivot offset: (" + std::to_string(pivotOffsetX) + ", " + std::to_string(pivotOffsetY) + ")");
+                        GN_LOG_INFO("  - Rotated hitbox offset: (" + std::to_string(rotatedOffsetX) + ", " + std::to_string(rotatedOffsetY) + ")");
+                        GN_LOG_INFO("  - Base center: (" + std::to_string(baseCenterX) + ", " + std::to_string(baseCenterY) + ")");
+                        GN_LOG_INFO("  - Using absolute positioning mode in renderer");
+                    }
+                }
+                
+                // Debug logging for hitbox positioning
+                // Calculate the actual world position where the hitbox will be rendered
+                // This should be base center + hitbox offset, since we're calculating the hitbox purely from base coordinates
+                if (baseIt != m_spikeBallToBase.end()) {
+                    Transform* baseTransform = m_ecsSystem->GetComponent<Transform>(baseIt->second);
+                    if (baseTransform) {
+                        // Calculate the actual base center (not top-left position)
+                        float baseCenterX = baseTransform->position.x + (5.0f * baseTransform->scale.x);
+                        float baseCenterY = baseTransform->position.y + (5.0f * baseTransform->scale.y);
+                        
+                        // Hitbox position in absolute mode is spikeball position + offset
+                        float hitboxWorldX = transform->position.x + hitbox->offsetX;
+                        float hitboxWorldY = transform->position.y + hitbox->offsetY;
+                        
+                        // 8. Log final hitbox world position
+                        GN_LOG_INFO("FINAL HITBOX WORLD POS: (" + std::to_string(hitboxWorldX) + ", " + std::to_string(hitboxWorldY) + ")");
+                        GN_LOG_INFO("HITBOX SHOULD NOW ROTATE AROUND BASE CENTER");
+
+                        // 9. Calculate distance from base to hitbox (should be 0)
+                        float distanceFromBaseToHitbox = sqrt(pow(hitboxWorldX - baseCenterX, 2) + pow(hitboxWorldY - baseCenterY, 2));
+                        GN_LOG_INFO("DISTANCE BASE-TO-HITBOX: " + std::to_string(distanceFromBaseToHitbox));
+                        GN_LOG_INFO("EXPECTED DISTANCE: 0.0 pixels (hitbox at base center)");
+                        
+                        // Also calculate distance from visual pivot (need to recalculate since we're in different scope)
+                        Transform* spikeBallTransform = m_ecsSystem->GetComponent<Transform>(entity);
+                        PivotRotationRenderer* spikeBallPivot = m_ecsSystem->GetComponent<PivotRotationRenderer>(entity);
+                        if (spikeBallTransform && spikeBallPivot) {
+                            float visualPivotX = spikeBallTransform->position.x + (spikeBallPivot->pivotX * spikeBallTransform->scale.x);
+                            float visualPivotY = spikeBallTransform->position.y + (spikeBallPivot->pivotY * spikeBallTransform->scale.y);
+                            float distanceFromVisualPivotToHitbox = sqrt(pow(hitboxWorldX - visualPivotX, 2) + pow(hitboxWorldY - visualPivotY, 2));
+                            GN_LOG_INFO("DISTANCE VISUAL-PIVOT-TO-HITBOX: " + std::to_string(distanceFromVisualPivotToHitbox));
+                        }
+
+                        GN_LOG_INFO("=== END COORDINATE ANALYSIS ===");
+                    } else {
+                        GN_LOG_INFO("SpikeBall Hitbox: Base transform not found for entity " + std::to_string(entity));
+                    }
+                } else {
+                    GN_LOG_INFO("SpikeBall Hitbox: No base relationship found for entity " + std::to_string(entity));
                 }
             }
         }
+    }
+
+    Gnosis::Entity ObstacleSystem::GetSpikeBallBaseEntity(Gnosis::Entity spikeBallEntity) const {
+        auto it = m_spikeBallToBase.find(spikeBallEntity);
+        if (it != m_spikeBallToBase.end()) {
+            return it->second;
+        }
+        return 0; // Return 0 if not found (invalid entity)
     }
 
 } // namespace GameCore

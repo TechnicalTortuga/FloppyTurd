@@ -15,6 +15,30 @@ import CoreText
 import simd
 import GameCorePlatform
 
+// MARK: - RotSprite Data Structures
+
+/// RotSprite processing parameters - matches the Metal shader structure
+struct RotSpriteParams {
+    var rotationAngle: Float
+    var originalSize: SIMD2<UInt32>
+    var upscaledSize: SIMD2<UInt32>
+    var rotationCenter: SIMD2<Float>   // For output bb
+    var inputCenter: SIMD2<Float>      // For input upscaled
+    var colorThreshold: Float
+    
+    init(rotationDegrees: Float, originalWidth: UInt32, originalHeight: UInt32, 
+         inputCenterX: Float = 0.5, inputCenterY: Float = 0.5,
+         outputCenterX: Float = 0.5, outputCenterY: Float = 0.5,
+         threshold: Float = 0.1) {
+        self.rotationAngle = rotationDegrees * Float.pi / 180.0
+        self.originalSize = SIMD2(originalWidth, originalHeight)
+        self.upscaledSize = SIMD2(originalWidth * 8, originalHeight * 8)
+        self.inputCenter = SIMD2(inputCenterX, inputCenterY)
+        self.rotationCenter = SIMD2(outputCenterX, outputCenterY)
+        self.colorThreshold = threshold
+    }
+}
+
 // MARK: - SDF Font Data Structures
 
 struct GlyphInfo {
@@ -74,7 +98,19 @@ public class MetalRenderer {
     private var commandQueue: MTLCommandQueue?
     private var renderPipelineState: MTLRenderPipelineState?
     private var texturedPipelineState: MTLRenderPipelineState?
-
+    
+    // MARK: - RotSprite Compute Pipeline Infrastructure
+    private var rotspriteUpscaleComputePipeline: MTLComputePipelineState?
+    private var rotspriteRotateComputePipeline: MTLComputePipelineState?
+    private var rotspriteRestoreComputePipeline: MTLComputePipelineState?
+    
+    // RotSprite texture buffers (texture pool for intermediate processing)
+    private var rotspriteTexturePool: [MTLTexture] = []
+    private var rotspriteMaxTextureSize: Int = 1024  // Maximum texture size for pooling
+    
+    // RotSprite processed texture cache (cache results for frequently rotated sprites)
+    private var rotspriteTextureCache: [String: MTLTexture] = [:]
+    private var rotspriteCacheMaxSize: Int = 50  // Maximum cached textures
     
     // Text is rasterized via CoreText; no GPU text pipelines needed
 
@@ -295,6 +331,9 @@ public class MetalRenderer {
         
         // No SDF/MSDF pipelines needed for raster text
         
+        // MARK: - RotSprite Compute Pipeline Setup
+        setupRotSpriteComputePipelines()
+        
         // Create sampler state for texture sampling (sprites/pixel art)
         let samplerDescriptor = MTLSamplerDescriptor()
         samplerDescriptor.minFilter = .nearest
@@ -305,6 +344,56 @@ public class MetalRenderer {
         samplerState = device.makeSamplerState(descriptor: samplerDescriptor)
         
         log("Sampler states created (nearest for sprites)", level: .debug)
+    }
+    
+    // MARK: - RotSprite Compute Pipeline Setup
+    
+    /// Set up the RotSprite compute pipelines for high-quality pixel art rotation
+    private func setupRotSpriteComputePipelines() {
+        guard let device = device, let library = library else {
+            log("Cannot setup RotSprite pipelines: device or library is nil", level: .error)
+            return
+        }
+        
+        log("🎨 Setting up RotSprite compute pipelines for pixel-perfect rotation", level: .info)
+        
+        // Create compute pipeline for Scale2x upscaling
+        do {
+            guard let upscaleFunction = library.makeFunction(name: "rotsprite_scale2x_upscale") else {
+                log("Failed to create RotSprite upscale function", level: .error)
+                return
+            }
+            rotspriteUpscaleComputePipeline = try device.makeComputePipelineState(function: upscaleFunction)
+            log("RotSprite upscale compute pipeline created successfully", level: .debug)
+        } catch {
+            log("Failed to create RotSprite upscale compute pipeline: \(error)", level: .error)
+        }
+        
+        // Create compute pipeline for rotation and downscaling
+        do {
+            guard let rotateFunction = library.makeFunction(name: "rotsprite_rotate_and_downscale") else {
+                log("Failed to create RotSprite rotate function", level: .error)
+                return
+            }
+            rotspriteRotateComputePipeline = try device.makeComputePipelineState(function: rotateFunction)
+            log("RotSprite rotate compute pipeline created successfully", level: .debug)
+        } catch {
+            log("Failed to create RotSprite rotate compute pipeline: \(error)", level: .error)
+        }
+        
+        // Create compute pipeline for detail restoration (optional, for Phase 5)
+        do {
+            guard let restoreFunction = library.makeFunction(name: "rotsprite_restore_details") else {
+                log("Failed to create RotSprite restore function", level: .error)
+                return
+            }
+            rotspriteRestoreComputePipeline = try device.makeComputePipelineState(function: restoreFunction)
+            log("RotSprite restore compute pipeline created successfully", level: .debug)
+        } catch {
+            log("Failed to create RotSprite restore compute pipeline: \(error)", level: .error)
+        }
+        
+        log("✅ RotSprite compute pipelines setup complete", level: .info)
     }
     
     private func setupSDFTextPipelines(device: MTLDevice, library: MTLLibrary, vertexFunction: MTLFunction, vertexDescriptor: MTLVertexDescriptor) {}
@@ -357,6 +446,14 @@ public class MetalRenderer {
         samplerState = nil
         renderPipelineState = nil
         texturedPipelineState = nil
+        
+        // Clean up RotSprite resources
+        rotspriteUpscaleComputePipeline = nil
+        rotspriteRotateComputePipeline = nil
+        rotspriteRestoreComputePipeline = nil
+        rotspriteTexturePool.removeAll()
+        rotspriteTextureCache.removeAll()
+        
         library = nil
         commandQueue = nil
         device = nil
@@ -1011,25 +1108,66 @@ public class MetalRenderer {
     }
     
     /// Draw a sprite with custom pivot point rotation (for objects like spike balls rotating from base)
+    /// Automatically uses RotSprite algorithm for high-quality pixel art rotation when available
     public func drawSpriteScaledPivoted(textureHandle: UInt32, x: Float, y: Float, scaleX: Float, scaleY: Float, rotation: Float, pivotX: Float, pivotY: Float) {
+        log("drawSpriteScaledPivoted: textureId=\(textureHandle), position=(\(x), \(y)), scale=(\(scaleX), \(scaleY)), rotation=\(rotation), pivot=(\(pivotX), \(pivotY))", level: .debug)
         guard let texture = textures[textureHandle] else {
             log("drawSpriteScaledPivoted: Invalid sprite handle \(textureHandle)", level: .warning)
             return
         }
         
+        log("drawSpriteScaledPivoted: texture \(textureHandle) (\(texture.width)x\(texture.height)), rotation: \(rotation)°, pivot: (\(pivotX), \(pivotY))", level: .debug)
+        
+        // Check if we should use RotSprite for high-quality rotation
+        let shouldUseRotSprite = abs(rotation) > 0.1 && // Only for significant rotation
+                               rotspriteUpscaleComputePipeline != nil && // RotSprite available
+                               rotspriteRotateComputePipeline != nil &&
+                               texture.width <= 256 && texture.height <= 256 // Reasonable size for RotSprite
+        
+        if shouldUseRotSprite {
+            log("drawSpriteScaledPivoted: Using RotSprite for high-quality rotation (\(rotation)°)", level: .debug)
+            drawSpriteRotSpriteInternal(texture: texture, textureHandle: textureHandle, x: x, y: y, scaleX: scaleX, scaleY: scaleY, rotation: rotation, pivotX: pivotX, pivotY: pivotY)
+            return
+        }
+        
+        // Standard matrix-based rotation for small rotations or when RotSprite is unavailable
+        log("drawSpriteScaledPivoted: Using standard matrix rotation (\(rotation)°)", level: .debug)
+        drawSpriteStandardPivoted(texture: texture, textureHandle: textureHandle, x: x, y: y, scaleX: scaleX, scaleY: scaleY, rotation: rotation, pivotX: pivotX, pivotY: pivotY)
+    }
+    
+    /// Internal RotSprite rendering implementation
+    private func drawSpriteRotSpriteInternal(texture: MTLTexture, textureHandle: UInt32, x: Float, y: Float, scaleX: Float, scaleY: Float, rotation: Float, pivotX: Float, pivotY: Float) {
+        // TODO: Re-implement caching to store both texture and rotation center
+        // For now, disable caching to focus on getting the algorithm working
+        // let cacheKey = "\(textureHandle)_\(rotation)"
+        
+        // Apply RotSprite algorithm with pivot point
+        // CRITICAL: Process texture at 1x scale (raw dimensions), apply entity scale during rendering
+        if let rotSpriteResult = processRotSprite(texture: texture, rotation: rotation, pivotX: pivotX, pivotY: pivotY) {
+            log("drawSpriteScaledPivoted: Generated new RotSprite texture", level: .debug)
+            // Apply the original scale during rendering
+            renderRotSpriteTexture(rotSpriteResult.texture, at: (x: x, y: y), scale: (x: scaleX, y: scaleY), rotationCenter: rotSpriteResult.rotationCenter)
+        } else {
+            log("drawSpriteScaledPivoted: RotSprite processing failed, falling back to standard rotation", level: .warning)
+            drawSpriteStandardPivoted(texture: texture, textureHandle: textureHandle, x: x, y: y, scaleX: scaleX, scaleY: scaleY, rotation: rotation, pivotX: pivotX, pivotY: pivotY)
+        }
+    }
+    
+    /// Standard matrix-based pivoted rotation implementation
+    private func drawSpriteStandardPivoted(texture: MTLTexture, textureHandle: UInt32, x: Float, y: Float, scaleX: Float, scaleY: Float, rotation: Float, pivotX: Float, pivotY: Float) {
         guard let uniformBuffer = uniformBuffer else {
-            log("drawSpriteScaledPivoted: Missing required Metal resources", level: .warning)
+            log("drawSpriteStandardPivoted: Missing required Metal resources", level: .warning)
             return
         }
         
         // Check if textured pipeline state is available
         guard let pipelineState = texturedPipelineState else {
-            log("drawSpriteScaledPivoted: No pipeline state available", level: .warning)
+            log("drawSpriteStandardPivoted: No pipeline state available", level: .warning)
             return
         }
         
         guard let renderEncoder = ensureRenderEncoder() else {
-            log("drawSpriteScaledPivoted: Failed to get render encoder", level: .error)
+            log("drawSpriteStandardPivoted: Failed to get render encoder", level: .error)
             return
         }
         
@@ -1055,7 +1193,7 @@ public class MetalRenderer {
         // Create temporary uniform buffer for this sprite
         guard let device = device,
               let tempUniformBuffer = device.makeBuffer(bytes: [mvpMatrix], length: MemoryLayout<simd_float4x4>.stride, options: []) else {
-            log("drawSpriteScaledPivoted: Failed to create temporary uniform buffer", level: .error)
+            log("drawSpriteStandardPivoted: Failed to create temporary uniform buffer", level: .error)
             return
         }
         
@@ -1069,8 +1207,10 @@ public class MetalRenderer {
         // Draw the sprite
         renderEncoder.drawIndexedPrimitives(type: .triangle, indexCount: 6, indexType: .uint16, indexBuffer: indexBuffer!, indexBufferOffset: 0)
         
-        log("drawSpriteScaledPivoted: Rendered sprite \(textureHandle) with pivot at (\(pivotX), \(pivotY))", level: .debug)
+        log("drawSpriteStandardPivoted: Rendered sprite \(textureHandle) with pivot at (\(pivotX), \(pivotY))", level: .debug)
     }
+    
+
     
     public func drawCircle(_ x: Float, _ y: Float, _ radius: Float, _ r: Float, _ g: Float, _ b: Float, _ a: Float) {
         drawCircle(x: x, y: y, radius: radius, r: r, g: g, b: b, a: a, segments: 32)
@@ -1996,5 +2136,225 @@ public class MetalRenderer {
                        fill: SIMD4<Float>(textR, textG, textB, textA),
                        outline: (color: SIMD4<Float>(outlineR, outlineG, outlineB, outlineA), widthPx: outlineWidth),
                        isCentered: true)
+    }
+    
+    // MARK: - RotSprite Implementation
+    
+    /// Process a texture using the RotSprite algorithm for high-quality rotation
+    private func processRotSprite(texture: MTLTexture, rotation: Float, pivotX: Float, pivotY: Float) -> (texture: MTLTexture, rotationCenter: SIMD2<Float>)? {
+        log("🔥 ROTSPRITE CALLED: rotation=\(rotation)°, pivot=(\(pivotX), \(pivotY))", level: .info)
+        
+        guard let device = device,
+              let commandQueue = commandQueue,
+              let upscalePipeline = rotspriteUpscaleComputePipeline,
+              let rotatePipeline = rotspriteRotateComputePipeline else {
+            return nil
+        }
+        
+        let originalWidth = Float(texture.width)
+        let originalHeight = Float(texture.height)
+        
+        // Normalized pivot offsets (no extra flip—keep sign for direction)
+        // Assuming pivotY negative for above center (towards smaller Y, top)
+        let normalizedPivotX = pivotX / originalWidth
+        let normalizedPivotY = pivotY / originalHeight  // Key fix: No '-', so -45/90 = -0.5 for top
+        
+        // Input center for upscaled (pivot position normalized, 0=top-left Y)
+        let inputCenterX = 0.5 + normalizedPivotX
+        let inputCenterY = 0.5 + normalizedPivotY  // For top pivot: 0.5 - 0.5 = 0 (top)
+        
+        // Square Quad approach: Calculate maximum distance from pivot to any corner
+        // This ensures we have enough space regardless of rotation angle
+        let halfWidth = originalWidth / 2.0
+        let halfHeight = originalHeight / 2.0
+        let corners: [simd_float2] = [
+            simd_float2(-halfWidth - pivotX, -halfHeight - pivotY),  // Top-left relative to pivot
+            simd_float2(halfWidth - pivotX, -halfHeight - pivotY),   // Top-right
+            simd_float2(halfWidth - pivotX, halfHeight - pivotY),    // Bottom-right
+            simd_float2(-halfWidth - pivotX, halfHeight - pivotY)    // Bottom-left
+        ]
+        
+        // Find maximum distance from pivot (0,0) to any corner
+        var maxDistanceFromPivot: Float = 0.0
+        for corner in corners {
+            let distance = sqrt(corner.x * corner.x + corner.y * corner.y)
+            maxDistanceFromPivot = max(maxDistanceFromPivot, distance)
+        }
+        
+        // Square size needs to fit a circle with radius = maxDistanceFromPivot
+        let squareSize = ceil(maxDistanceFromPivot * 2.0 + 4.0) // Add small buffer for safety
+        
+        let bbWidth = squareSize
+        let bbHeight = squareSize
+        
+        // For square approach: pivot is always at the center of the square
+        // Since the square is sized to contain the maximum possible rotation
+        let outputCenterX: Float = 0.5  // Center of square
+        let outputCenterY: Float = 0.5  // Center of square
+        
+        // DEBUG: Log square quad calculations
+        log("🔥 SQUARE QUAD: rotation=\(rotation)°, original=(\(originalWidth)x\(originalHeight))", level: .info)
+        log("🔥 SQUARE QUAD: pivot=(\(pivotX), \(pivotY)), maxDistance=\(maxDistanceFromPivot)", level: .info)
+        log("🔥 SQUARE QUAD: squareSize=\(squareSize), output center (\(outputCenterX), \(outputCenterY))", level: .info)
+        
+        // Create params with separate centers
+        let params = RotSpriteParams(
+            rotationDegrees: rotation,
+            originalWidth: UInt32(originalWidth),
+            originalHeight: UInt32(originalHeight),
+            inputCenterX: inputCenterX,
+            inputCenterY: inputCenterY,
+            outputCenterX: outputCenterX,
+            outputCenterY: outputCenterY
+        )
+        
+        log("RotSprite: Processing \(texture.width)x\(texture.height), pivot (\(pivotX), \(pivotY)), rotation \(rotation)°", level: .debug)
+        log("RotSprite: Bounding box (\(bbWidth)x\(bbHeight)), output center (\(outputCenterX), \(outputCenterY))", level: .debug)
+        
+        // Create upscaled texture
+        let upscaledSize = SIMD2<UInt32>(UInt32(originalWidth) * 8, UInt32(originalHeight) * 8)
+        let upscaledDescriptor = MTLTextureDescriptor.texture2DDescriptor(
+            pixelFormat: texture.pixelFormat,
+            width: Int(upscaledSize.x),
+            height: Int(upscaledSize.y),
+            mipmapped: false
+        )
+        upscaledDescriptor.usage = [.shaderRead, .shaderWrite]
+        
+        guard let upscaledTexture = device.makeTexture(descriptor: upscaledDescriptor) else {
+            log("processRotSprite: Failed to create upscaled texture", level: .error)
+            return nil
+        }
+        
+        // Output texture at DOWNSCALED bb size
+        let outputDescriptor = MTLTextureDescriptor.texture2DDescriptor(
+            pixelFormat: texture.pixelFormat,
+            width: Int(bbWidth),
+            height: Int(bbHeight),
+            mipmapped: false
+        )
+        outputDescriptor.usage = [.shaderRead, .shaderWrite]
+        
+        guard let outputTexture = device.makeTexture(descriptor: outputDescriptor) else {
+            log("processRotSprite: Failed to create output texture", level: .error)
+            return nil
+        }
+        
+        // Create command buffer
+        guard let commandBuffer = commandQueue.makeCommandBuffer(),
+              let computeEncoder = commandBuffer.makeComputeCommandEncoder() else {
+            log("processRotSprite: Failed to create command buffer or compute encoder", level: .error)
+            return nil
+        }
+        
+        // Create parameter buffer
+        guard let paramBuffer = device.makeBuffer(bytes: [params], length: MemoryLayout<RotSpriteParams>.stride, options: []) else {
+            log("processRotSprite: Failed to create parameter buffer", level: .error)
+            return nil
+        }
+        
+        // Phase 1: Scale2x upscaling
+        computeEncoder.setComputePipelineState(upscalePipeline)
+        computeEncoder.setTexture(texture, index: 0)  // Input
+        computeEncoder.setTexture(upscaledTexture, index: 1)  // Output
+        computeEncoder.setBuffer(paramBuffer, offset: 0, index: 0)
+        
+        let upscaleThreadsPerGroup = MTLSize(width: 8, height: 8, depth: 1)
+        let upscaleThreadGroups = MTLSize(
+            width: (Int(upscaledSize.x) + upscaleThreadsPerGroup.width - 1) / upscaleThreadsPerGroup.width,
+            height: (Int(upscaledSize.y) + upscaleThreadsPerGroup.height - 1) / upscaleThreadsPerGroup.height,
+            depth: 1
+        )
+        
+        computeEncoder.dispatchThreadgroups(upscaleThreadGroups, threadsPerThreadgroup: upscaleThreadsPerGroup)
+        
+        // Phase 2: Rotate and downscale
+        computeEncoder.setComputePipelineState(rotatePipeline)
+        computeEncoder.setTexture(upscaledTexture, index: 0)  // Input
+        computeEncoder.setTexture(outputTexture, index: 1)     // Output
+        computeEncoder.setBuffer(paramBuffer, offset: 0, index: 0)
+        
+        let rotateThreadsPerGroup = MTLSize(width: 8, height: 8, depth: 1)
+        let rotateThreadGroups = MTLSize(
+            width: (Int(bbWidth) + rotateThreadsPerGroup.width - 1) / rotateThreadsPerGroup.width,
+            height: (Int(bbHeight) + rotateThreadsPerGroup.height - 1) / rotateThreadsPerGroup.height,
+            depth: 1
+        )
+        
+        computeEncoder.dispatchThreadgroups(rotateThreadGroups, threadsPerThreadgroup: rotateThreadsPerGroup)
+        
+        // Commit and wait
+        computeEncoder.endEncoding()
+        commandBuffer.commit()
+        commandBuffer.waitUntilCompleted()
+        
+        if commandBuffer.error != nil {
+            log("processRotSprite: RotSprite compute failed: \(commandBuffer.error!.localizedDescription)", level: .error)
+            return nil
+        }
+        
+        log("processRotSprite: Successfully processed texture \(texture.width)x\(texture.height) with rotation \(rotation)°", level: .debug)
+        return (texture: outputTexture, rotationCenter: SIMD2(outputCenterX, outputCenterY))
+    }
+    
+    /// Render a RotSprite-processed texture using standard sprite rendering
+    private func renderRotSpriteTexture(_ texture: MTLTexture, at position: (x: Float, y: Float), scale: (x: Float, y: Float), rotationCenter: SIMD2<Float>) {
+        // Note: Assuming 'position' is the world position of the PIVOT (base center). If it's sprite center, adjust accordingly.
+        
+        guard let uniformBuffer = uniformBuffer else {
+            log("renderRotSpriteTexture: Missing required Metal resources", level: .warning)
+            return
+        }
+        
+        guard let pipelineState = texturedPipelineState else {
+            log("renderRotSpriteTexture: No pipeline state available", level: .warning)
+            return
+        }
+        
+        guard let renderEncoder = ensureRenderEncoder() else {
+            log("renderRotSpriteTexture: Failed to get render encoder", level: .error)
+            return
+        }
+        
+        let textureWidth = Float(texture.width)
+        let textureHeight = Float(texture.height)
+        let spriteWidth = textureWidth * scale.x  // Now correct bb size * scale
+        let spriteHeight = textureHeight * scale.y
+        
+        // Adjust top-left position so pivot is at 'position'
+        let adjustedPosX = position.x - rotationCenter.x * spriteWidth
+        let adjustedPosY = position.y - rotationCenter.y * spriteHeight  // Assuming Y positive down
+        
+        // Use basic top-left transform (no rotation on quad)
+        let modelMatrix = MetalMatrixHelpers.spriteTransformMatrix(
+            position: (x: adjustedPosX, y: adjustedPosY),
+            scale: (x: spriteWidth, y: spriteHeight),
+            rotation: 0.0
+        )
+        
+        // Get current projection matrix
+        let projectionMatrix = uniformBuffer.contents().bindMemory(to: simd_float4x4.self, capacity: 1).pointee
+        
+        // Create MVP matrix
+        let mvpMatrix = projectionMatrix * modelMatrix
+        
+        // Create temporary uniform buffer for this sprite
+        guard let device = device,
+              let tempUniformBuffer = device.makeBuffer(bytes: [mvpMatrix], length: MemoryLayout<simd_float4x4>.stride, options: []) else {
+            log("renderRotSpriteTexture: Failed to create temporary uniform buffer", level: .error)
+            return
+        }
+        
+        // Set up render encoder with standard vertex buffer
+        renderEncoder.setRenderPipelineState(pipelineState)
+        renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
+        renderEncoder.setVertexBuffer(tempUniformBuffer, offset: 0, index: 1)
+        renderEncoder.setFragmentTexture(texture, index: 0)
+        renderEncoder.setFragmentSamplerState(samplerState, index: 0)
+        
+        // Draw the sprite
+        renderEncoder.drawIndexedPrimitives(type: .triangle, indexCount: 6, indexType: .uint16, indexBuffer: indexBuffer!, indexBufferOffset: 0)
+        
+        log("Rendered RotSprite: bb (\(textureWidth)x\(textureHeight)), adjusted pos (\(adjustedPosX),\(adjustedPosY)), pivot at (\(position.x),\(position.y))", level: .debug)
     }
 }
