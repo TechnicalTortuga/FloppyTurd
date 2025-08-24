@@ -5,6 +5,7 @@
 #include "../../Engine/Utility/Utils.h"
 #include <algorithm>
 #include <set>
+#include "../Game/FloppyTurdGame.h"
 
 namespace GameCore {
 
@@ -30,6 +31,10 @@ namespace GameCore {
         , m_pickupSpawnTimer(0.0f)
         , m_enemySpawnTimer(0.0f)
         , m_inputDelayTimer(0.0f)
+        , m_currentPauseTab(3)  // Default to SYSTEM tab
+        , m_lastSettingsButtonPressTime(0.0f)
+        , m_settingsButtonDebounceDelay(0.3f)  // 300ms debounce delay
+        , m_pauseMenuCreated(false)
     {
         GN_LOG_INFO("GameplayState created for level: " + std::to_string(levelId) + " (" + m_currentLevelConfig.levelName + ")");
     }
@@ -101,6 +106,9 @@ namespace GameCore {
         DestroyGameEntities();
         DestroyUI();
         
+        // Clean up pause menu system
+        DestroyPauseMenu();
+        
         GN_LOG_INFO("GameplayState exited");
     }
 
@@ -113,6 +121,9 @@ namespace GameCore {
     }
 
     void GameplayState::Update(float deltaTime) {
+        // Update settings button debounce timer
+        m_lastSettingsButtonPressTime += deltaTime;
+        
         // Handle different sub-states
         UpdateSubState(deltaTime);
         
@@ -140,7 +151,10 @@ namespace GameCore {
                 HandleInput();
             }
             
-        if (m_cameraSystem) {
+            // Always handle settings button input (pause menu) regardless of delay
+            HandleSettingsButtonInput();
+            
+        if (m_cameraSystem && m_currentSubState != GameplaySubState::Paused) {
             m_cameraSystem->Update(deltaTime);
         }
         
@@ -187,14 +201,16 @@ namespace GameCore {
         } // End of Playing sub-state
         
         // Update essential systems regardless of sub-state (needed for physics during falling)
-        if (m_spriteSystem) {
+        if (m_spriteSystem && m_currentSubState != GameplaySubState::Paused) {
             m_spriteSystem->Update(deltaTime);
         }
         
-        // PlayerControllerSystem updates player physics - essential for falling during game over
-        if (m_playerControllerSystem) {
+        // PlayerControllerSystem updates player physics - only when not paused
+        if (m_playerControllerSystem && m_currentSubState != GameplaySubState::Paused) {
             m_playerControllerSystem->Update(deltaTime);
         }
+        
+
     }
 
     void GameplayState::UpdateSubState(float deltaTime) {
@@ -265,63 +281,172 @@ namespace GameCore {
         DrawDebugRectangles();
     }
 
-    void GameplayState::HandleInput() {
-        if (m_currentSubState == GameplaySubState::Paused) {
-            // Handle pause menu input
+    void GameplayState::HandleSettingsButtonInput() {
+        // Only handle settings button input (no other gameplay input)
+        if (m_currentSubState == GameplaySubState::GameOver) {
+            return; // No input during game over
+        }
+        
+        if (!m_platformDelegates) {
             return;
         }
         
+        // Check for touch input on settings button only
+        if (m_platformDelegates->input.getTouchCount && m_platformDelegates->input.getTouchPosition &&
+            m_platformDelegates->input.isTouchJustPressed) {
+            
+            if (m_platformDelegates->input.isTouchJustPressed()) {
+                int touchCount = m_platformDelegates->input.getTouchCount();
+                for (int i = 0; i < touchCount; i++) {
+                    float x, y;
+                    m_platformDelegates->input.getTouchPosition(i, &x, &y);
+                    CheckSettingsButtonClick(x, y);
+                }
+            }
+        }
+    }
+
+    void GameplayState::HandleInput() {
         if (m_currentSubState == GameplaySubState::GameOver) {
             // No input allowed during game over falling sequence
             // Input will be handled by HandleGameOverInput once UI is shown
             return;
         }
-        
+
+        // Settings button should be clickable in both Playing and Paused states
+        // So we don't return early for Paused state
+
         // Debug: Check platform delegates
         if (!m_platformDelegates) {
             GN_LOG_ERROR("GameplayState: m_platformDelegates is NULL!");
             return;
         }
-        
+
         GN_LOG_DEBUG("GameplayState: Platform delegates available, checking input functions...");
-        
+
         // Handle gameplay input
         if (m_playerControllerSystem && m_platformDelegates) {
             // Check for touch input with proper state tracking
             if (m_platformDelegates->input.getTouchCount && m_platformDelegates->input.getTouchPosition &&
                 m_platformDelegates->input.isTouchJustPressed && m_platformDelegates->input.isTouchJustReleased) {
-                
-                // Handle touch press events
+
+                // --- PAUSE MENU SLIDER LOGIC (only when paused and system tab is active) ---
+                if (m_currentSubState == GameplaySubState::Paused && m_currentPauseTab == 3) {
+                    int touchCount = m_platformDelegates->input.getTouchCount();
+                    for (int i = 0; i < touchCount; i++) {
+                        float touchX, touchY;
+                        m_platformDelegates->input.getTouchPosition(i, &touchX, &touchY);
+
+                        // Slider geometry
+                        float knobSize = 32.0f;
+                        float musicTrackY = m_sliderY;
+                        float sfxTrackY = m_sliderY + m_sliderSpacing;
+
+                        // MUSIC SLIDER HITTEST
+                        float musicKnobCenterX = m_sliderX + GameCore::GetGame()->GetMusicVolume() * m_sliderW;
+                        float musicKnobLeft = musicKnobCenterX - knobSize * 0.5f;
+                        float musicKnobRight = musicKnobCenterX + knobSize * 0.5f;
+                        float musicKnobTop = musicTrackY + m_sliderH * 0.5f - knobSize * 0.5f;
+                        float musicKnobBottom = musicKnobTop + knobSize;
+
+                        // SFX SLIDER HITTEST
+                        float sfxKnobCenterX = m_sliderX + GameCore::GetGame()->GetSFXVolume() * m_sliderW;
+                        float sfxKnobLeft = sfxKnobCenterX - knobSize * 0.5f;
+                        float sfxKnobRight = sfxKnobCenterX + knobSize * 0.5f;
+                        float sfxKnobTop = sfxTrackY + m_sliderH * 0.5f - knobSize * 0.5f;
+                        float sfxKnobBottom = sfxKnobTop + knobSize;
+
+                        // Touch pressed
+                        if (m_platformDelegates->input.isTouchJustPressed()) {
+                            // Music knob
+                            if (touchX >= musicKnobLeft && touchX <= musicKnobRight &&
+                                touchY >= musicKnobTop && touchY <= musicKnobBottom) {
+                                m_activeDragKnob = 0;
+                                m_draggingMusic = true;
+                                m_dragStartX = touchX;
+                                m_dragKnobStartX = musicKnobCenterX;
+                            }
+                            // SFX knob
+                            else if (touchX >= sfxKnobLeft && touchX <= sfxKnobRight &&
+                                     touchY >= sfxKnobTop && touchY <= sfxKnobBottom) {
+                                m_activeDragKnob = 1;
+                                m_draggingSFX = true;
+                                m_dragStartX = touchX;
+                                m_dragKnobStartX = sfxKnobCenterX;
+                            }
+                        }
+
+                        // Touch moved (drag)
+                        bool inputDown = true; // For now, assume always down if pressed
+                        if (inputDown) {
+                            if (m_draggingMusic && m_activeDragKnob == 0) {
+                                float newValue = (touchX - m_sliderX) / m_sliderW;
+                                if (newValue < 0.0f) newValue = 0.0f;
+                                if (newValue > 1.0f) newValue = 1.0f;
+                                GameCore::GetGame()->SetMusicVolume(newValue);
+                                // Move knob visually
+                                if (m_musicKnobEntity != 0) {
+                                    if (auto t = m_ecsSystem->GetComponent<Transform>(m_musicKnobEntity)) {
+                                        t->position.x = m_sliderX + newValue * m_sliderW - knobSize * 0.5f;
+                                    }
+                                }
+                            }
+                            if (m_draggingSFX && m_activeDragKnob == 1) {
+                                float newValue = (touchX - m_sliderX) / m_sliderW;
+                                if (newValue < 0.0f) newValue = 0.0f;
+                                if (newValue > 1.0f) newValue = 1.0f;
+                                GameCore::GetGame()->SetSFXVolume(newValue);
+                                // Move knob visually
+                                if (m_sfxKnobEntity != 0) {
+                                    if (auto t = m_ecsSystem->GetComponent<Transform>(m_sfxKnobEntity)) {
+                                        t->position.x = m_sliderX + newValue * m_sliderW - knobSize * 0.5f;
+                                    }
+                                }
+                            }
+                        }
+
+                        // Touch released
+                        if (m_platformDelegates->input.isTouchJustReleased()) {
+                            m_draggingMusic = false;
+                            m_draggingSFX = false;
+                            m_activeDragKnob = -1;
+                        }
+                    }
+                }
+
+                // Handle touch press events (gameplay and pause menu)
                 if (m_platformDelegates->input.isTouchJustPressed()) {
                     int touchCount = m_platformDelegates->input.getTouchCount();
                     GN_LOG_INFO("Touch PRESSED! Count: " + std::to_string(touchCount));
-                    
+
                     for (int i = 0; i < touchCount; i++) {
                         float x, y;
                         m_platformDelegates->input.getTouchPosition(i, &x, &y);
-                        
+
                         GN_LOG_INFO("Touch " + std::to_string(i) + " PRESSED at (" + std::to_string(x) + ", " + std::to_string(y) + ")");
-                    
-                        // Check for menu button click first
-                        CheckMenuButtonClick(x, y);
-                    
+
+                        // Handle pause menu input if we're paused
+                        if (m_currentSubState == GameplaySubState::Paused) {
+                            HandlePauseMenuInput(x, y);
+                        }
+
                         // Send touch press event
                         m_playerControllerSystem->HandleTouchInput(x, y, true);
                     }
                 }
-                
+
                 // Handle touch release events
                 if (m_platformDelegates->input.isTouchJustReleased()) {
                     GN_LOG_INFO("Touch RELEASED!");
-                    
+
                     // Send touch release event with last known position
                     float x = 0.0f, y = 0.0f;
                     if (m_platformDelegates->input.getTouchCount() > 0) {
                         m_platformDelegates->input.getTouchPosition(0, &x, &y);
                     }
-                    
+
                     GN_LOG_INFO("Touch RELEASED at (" + std::to_string(x) + ", " + std::to_string(y) + ")");
-                    
+
                     // Send touch release event
                     m_playerControllerSystem->HandleTouchInput(x, y, false);
                 }
@@ -508,10 +633,12 @@ namespace GameCore {
                 GN_LOG_INFO("Player hearts initialized for difficulty: " + DifficultyToString(currentDifficulty));
             }
             
-            // Set up player controller
-            if (m_playerControllerSystem) {
-                m_playerControllerSystem->SetPlayerEntity(m_playerEntity);
-            }
+                    // Set up player controller
+        if (m_playerControllerSystem) {
+            m_playerControllerSystem->SetPlayerEntity(m_playerEntity);
+            // Ensure player controller knows the player is alive
+            m_playerControllerSystem->SetPlayerAlive(true);
+        }
 
             // Expose player to LevelManager for NPC/enemy behavior and triggers
             if (m_levelManager) {
@@ -768,7 +895,7 @@ namespace GameCore {
     }
 
     void GameplayState::CreateUI() {
-    GN_LOG_INFO("Creating UI elements - SIMPLIFIED for pipe counter only");
+        GN_LOG_INFO("Creating UI elements - SIMPLIFIED for pipe counter only");
     
     if (!m_ecsSystem) {
         return;
@@ -887,56 +1014,14 @@ namespace GameCore {
         }
     }
 
-    // Create temporary menu button using proper UI system
-    m_tempMenuButtonEntity = m_ecsSystem->CreateEntity();
-    if (m_tempMenuButtonEntity != 0) {
-        // Calculate proper top-right position using actual pixel dimensions from ScreenInfo
-        float screenWidth = 1179.0f;
-        float screenHeight = 2556.0f;
-        if (m_renderSystem) {
-            const ScreenInfo& si = m_renderSystem->GetScreenInfo();
-            screenWidth = si.pixelWidth;
-            screenHeight = si.pixelHeight;
-        }
-        
-        // Get screen dimensions from render system for debugging
-        if (m_renderSystem) {
-            const ScreenInfo& screenInfo = m_renderSystem->GetScreenInfo();
-            GN_LOG_INFO("Render system dimensions: " + std::to_string(screenInfo.pixelWidth) + "x" + std::to_string(screenInfo.pixelHeight));
-            GN_LOG_INFO("Using actual device dimensions: " + std::to_string(screenWidth) + "x" + std::to_string(screenHeight));
-            
-            // For now, use hardcoded iPhone 16 dimensions since render system gives scaled values
-            // TODO: Get actual device dimensions from platform layer
-        }
-        
-        // Position in top-right corner with safe margins
-        // Move slightly left from the corner and a bit further up using pixel dimensions
-        float menuX = screenWidth * 0.90f;      // 90% from left edge
-        float menuY = screenHeight * 0.05f;     // 5% from top
-        GN_LOG_INFO("CreateUI: menu button target pos=(" + std::to_string(menuX) + "," + std::to_string(menuY) + ")");
-        
-        Transform menuButtonTransform(Gnosis::GNVector2(menuX, menuY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
-        m_ecsSystem->AddComponent<Transform>(m_tempMenuButtonEntity, menuButtonTransform);
-        GN_LOG_INFO("CreateUI: added Transform to menu button entity " + std::to_string(m_tempMenuButtonEntity) +
-                    " pos=(" + std::to_string(menuX) + "," + std::to_string(menuY) + ")");
-        
-        // Create UIElement for proper text rendering
-        UIElement menuButton;
-        menuButton.buttonText = "[MENU]";
-        menuButton.fontSize = 24.0f;
-        menuButton.textColor = Gnosis::GNColor(255, 100, 100, 255);  // Red color for visibility
-        menuButton.centerTextHorizontally = true;
-        menuButton.centerTextVertically = true;
-        menuButton.visible = true;
-        menuButton.isEnabled = true;
-        menuButton.normalTextureId = "";  // Text-only button (no background texture)
-        m_ecsSystem->AddComponent<UIElement>(m_tempMenuButtonEntity, menuButton);
-        
-        GN_LOG_INFO("Created temporary menu button with UIElement at (" + std::to_string(menuX) + ", " + std::to_string(menuY) + ")");
-    }
+    // Create settings button for pause menu
+    CreateSettingsButton();
     
-    // Create heart UI - positioned at same X as coin bag, starting from menu button Y position  
-    if (m_heartSystem) {
+    // Create pause menu system
+    CreatePauseMenu();
+    
+    // Create heart UI - only if it doesn't already exist (for initial game start)
+    if (m_heartSystem && m_heartUIEntity == 0) {
         float screenWidth = 1179.0f;
         float screenHeight = 2556.0f;
         if (m_renderSystem) {
@@ -945,14 +1030,12 @@ namespace GameCore {
             screenHeight = si.pixelHeight;
         }
         
-        // Position hearts at same X as coin bag (10% from left), starting 25% from top
+        // Position hearts at same X as coin bag (10% from left), just below pipe counter
         float heartX = screenWidth * 0.10f;   // Same X as coin bag 
-        float heartY = screenHeight * 0.25f;  // 25% from top (below pipe counter)
-        
+        float heartY = screenHeight * 0.12f;  // 12% from top (just below pipe counter)
         m_heartUIEntity = m_heartSystem->CreateHeartUI(heartX, heartY);
         if (m_heartUIEntity != Gnosis::INVALID_ENTITY) {
             GN_LOG_INFO("Created heart UI at (" + std::to_string(heartX) + ", " + std::to_string(heartY) + ")");
-            
             // Set initial heart count and visibility based on difficulty (one-time setup)
             Difficulty currentDifficulty = LevelManager::GetGlobalDifficulty();
             m_heartSystem->UpdateHeartCountForDifficulty(m_playerEntity, currentDifficulty);
@@ -960,26 +1043,120 @@ namespace GameCore {
         } else {
             GN_LOG_ERROR("Failed to create heart UI");
         }
+    } else if (m_heartSystem && m_heartUIEntity != 0) {
+        GN_LOG_INFO("Heart UI already exists - skipping creation for restart scenario");
     }
 }
 
+void GameplayState::CreatePauseMenu() {
+    // Only create entities if they don't already exist
+    if (m_pauseMenuBackgroundEntity == 0) {
+        CreatePauseMenuBackground();
+    }
+    
+    if (m_pauseMenuRibbonEntity == 0) {
+        CreatePauseMenuRibbon();
+    }
+
+    // Create all tab content upfront - no visibility management here
+    CreateSkillsTab();
+    CreateHatsTab();
+    CreateStatsTab();
+    CreateSystemTab();
+    
+    // Initially show the default tab (SYSTEM)
+    ShowTabContent(m_currentPauseTab);
+}
+
+void GameplayState::DestroyPauseMenu() {
+    // Destroy all pause menu related entities
+    if (m_pauseMenuBackgroundEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_pauseMenuBackgroundEntity);
+        m_pauseMenuBackgroundEntity = 0;
+    }
+    for (auto btn : m_ribbonButtons) {
+        if (btn != 0) m_ecsSystem->DestroyEntity(btn);
+    }
+    m_ribbonButtons.clear();
+    if (m_pauseMenuContentEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_pauseMenuContentEntity);
+        m_pauseMenuContentEntity = 0;
+    }
+    
+    // System tab specific entities
+    if (m_mainMenuButtonEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_mainMenuButtonEntity);
+        m_mainMenuButtonEntity = 0;
+    }
+    
+    // Audio slider entities
+    if (m_musicTrackEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_musicTrackEntity);
+        m_musicTrackEntity = 0;
+    }
+    if (m_musicLabelEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_musicLabelEntity);
+        m_musicLabelEntity = 0;
+    }
+    if (m_musicKnobEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_musicKnobEntity);
+        m_musicKnobEntity = 0;
+    }
+    if (m_sfxTrackEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_sfxTrackEntity);
+        m_sfxTrackEntity = 0;
+    }
+    if (m_sfxLabelEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_sfxLabelEntity);
+        m_sfxLabelEntity = 0;
+    }
+    if (m_sfxKnobEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_sfxKnobEntity);
+        m_sfxKnobEntity = 0;
+    }
+    
+    // Tab content entities
+    if (m_skillsContentEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_skillsContentEntity);
+        m_skillsContentEntity = 0;
+    }
+    if (m_hatsContentEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_hatsContentEntity);
+        m_hatsContentEntity = 0;
+    }
+    if (m_statsContentEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_statsContentEntity);
+        m_statsContentEntity = 0;
+    }
+}
+
+void GameplayState::SwitchPauseTab(int tabIdx) {
+    GN_LOG_INFO("Switching to pause tab: " + std::to_string(tabIdx));
+    
+    // Update current tab
+    m_currentPauseTab = tabIdx;
+    
+    // Show the selected tab content (all entities already exist, just manage visibility)
+    ShowTabContent(tabIdx);
+}
+ 
 void GameplayState::DestroyUI() {
     GN_LOG_INFO("Destroying UI elements");
-    
+
     if (!m_ecsSystem) {
         return;
     }
-    
+
     if (m_scoreTextEntity != 0) {
         m_ecsSystem->DestroyEntity(m_scoreTextEntity);
         m_scoreTextEntity = 0;
     }
-    
+
     if (m_livesTextEntity != 0) {
         m_ecsSystem->DestroyEntity(m_livesTextEntity);
         m_livesTextEntity = 0;
     }
-    
+
     if (m_coinsTextEntity != 0) {
         m_ecsSystem->DestroyEntity(m_coinsTextEntity);
         m_coinsTextEntity = 0;
@@ -988,27 +1165,35 @@ void GameplayState::DestroyUI() {
         m_ecsSystem->DestroyEntity(m_coinBagEntity);
         m_coinBagEntity = 0;
     }
-    
+
     if (m_pipeCounterEntity != 0) {
         m_ecsSystem->DestroyEntity(m_pipeCounterEntity);
         m_pipeCounterEntity = 0;
     }
-    
+
     if (m_pauseMenuEntity != 0) {
         m_ecsSystem->DestroyEntity(m_pauseMenuEntity);
         m_pauseMenuEntity = 0;
     }
-    
+
+    // Destroy pause menu system
+    DestroyPauseMenu();
+
+    if (m_settingsButtonEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_settingsButtonEntity);
+        m_settingsButtonEntity = 0;
+    }
+
     if (m_tempMenuButtonEntity != 0) {
         m_ecsSystem->DestroyEntity(m_tempMenuButtonEntity);
         m_tempMenuButtonEntity = 0;
     }
-    
+
     if (m_heartUIEntity != 0) {
         m_ecsSystem->DestroyEntity(m_heartUIEntity);
         m_heartUIEntity = 0;
     }
-    
+
     // Clean up all heart system entities
     if (m_heartSystem) {
         m_heartSystem->DestroyAllHeartUI();
@@ -1052,7 +1237,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 // Pipe counter top-center placement (10% from top)
                 float centerX = si.pixelWidth * 0.50f;
                 float pipeCounterY = si.pixelHeight * 0.10f;
-        if (m_pipeCounterEntity != 0) {
+                if (m_pipeCounterEntity != 0) {
                     Transform* t = m_ecsSystem->GetComponent<Transform>(m_pipeCounterEntity);
                     if (t) {
                         t->position.x = centerX;
@@ -1079,14 +1264,16 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                     }
                 }
 
-                // Menu button: 90% width, 5% height
-                float menuX = si.pixelWidth * 0.90f;
+                // Settings button: 85% width, 5% height (moved left to avoid clipping)
+                float menuX = si.pixelWidth * 0.85f;
                 float menuY = si.pixelHeight * 0.05f;
-                if (m_tempMenuButtonEntity != 0) {
-                    Transform* t = m_ecsSystem->GetComponent<Transform>(m_tempMenuButtonEntity);
+                if (m_settingsButtonEntity != 0) {
+                    Transform* t = m_ecsSystem->GetComponent<Transform>(m_settingsButtonEntity);
                     if (t) {
                         t->position.x = menuX;
                         t->position.y = menuY;
+                        t->scale.x = 8.0f; // Keep 8x scale after sync
+                        t->scale.y = 8.0f;
                     }
                 }
 
@@ -1095,6 +1282,43 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                             " pipeCounter=(" + std::to_string(centerX) + "," + std::to_string(pipeCounterY) + ") top-center" +
                             " menuPos=(" + std::to_string(menuX) + "," + std::to_string(menuY) + ")");
                 m_uiPositionsSynced = true;
+            }
+        }
+        
+        // Periodically attempt to update screen info from iOS to get real iPhone dimensions
+        static float screenInfoUpdateTimer = 0.0f;
+        screenInfoUpdateTimer += deltaTime;
+        if (screenInfoUpdateTimer >= 0.5f && m_renderSystem) { // Check every 500ms
+            screenInfoUpdateTimer = 0.0f;
+            const ScreenInfo& siBeforeUpdate = m_renderSystem->GetScreenInfo();
+            m_renderSystem->UpdateScreenInfo(); // Force async screen info update
+            const ScreenInfo& siAfterUpdate = m_renderSystem->GetScreenInfo();
+            
+            // Log if dimensions actually changed (async update completed)
+            if (siBeforeUpdate.pixelWidth != siAfterUpdate.pixelWidth || siBeforeUpdate.pixelHeight != siAfterUpdate.pixelHeight) {
+                GN_LOG_INFO("PAUSE MENU DEBUG: Screen dimensions updated from " + 
+                           std::to_string((int)siBeforeUpdate.pixelWidth) + "x" + std::to_string((int)siBeforeUpdate.pixelHeight) + 
+                           " to " + std::to_string((int)siAfterUpdate.pixelWidth) + "x" + std::to_string((int)siAfterUpdate.pixelHeight));
+            }
+        }
+        
+        // Attempt pause menu creation if not yet created and we have valid screen dimensions
+        if (!m_pauseMenuCreated && m_renderSystem && m_currentSubState == GameplaySubState::Paused) {
+            const ScreenInfo& si = m_renderSystem->GetScreenInfo();
+            // Check if we have valid iPhone screen dimensions (not fallback values)
+            if (si.pixelWidth >= 1000.0f && si.pixelHeight >= 1000.0f) {
+                GN_LOG_INFO("PAUSE MENU DEBUG: Valid screen dimensions now available, creating pause menu");
+                CreatePauseMenu();
+            } else {
+                // Log current dimensions for debugging
+                static float debugTimer = 0.0f;
+                debugTimer += deltaTime;
+                if (debugTimer >= 2.0f) { // Log every 2 seconds while waiting
+                    debugTimer = 0.0f;
+                    GN_LOG_WARN("PAUSE MENU DEBUG: Still waiting for valid dimensions. Current: " + 
+                               std::to_string((int)si.pixelWidth) + "x" + std::to_string((int)si.pixelHeight) + 
+                               " (Expected: iPhone portrait like 1179x2556)");
+                }
             }
         }
     }
@@ -1149,7 +1373,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         }
     }
 
-    void GameCore::GameplayState::CheckLevelCompletion() {
+    void GameplayState::CheckLevelCompletion() {
         // Level completion logic will be implemented in Phase 3
         // For now, just check if player is still alive
         if (!m_playerAlive && m_currentLives <= 0) {
@@ -1157,21 +1381,21 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         }
     }
 
-    void GameCore::GameplayState::SaveGameProgress() {
+    void GameplayState::SaveGameProgress() {
         GN_LOG_INFO("Saving game progress");
         // Save logic will be implemented in Phase 4
     }
 
     // Event handler implementations (will be expanded in Phase 2)
-    void GameCore::GameplayState::OnPlayerJump() {
+    void GameplayState::OnPlayerJump() {
         GN_LOG_INFO("Player jumped");
     }
 
-    void GameCore::GameplayState::OnPlayerShoot() {
+    void GameplayState::OnPlayerShoot() {
         GN_LOG_INFO("Player shot");
     }
 
-    void GameCore::GameplayState::OnPlayerHurt(int damage) {
+    void GameplayState::OnPlayerHurt(int damage) {
         GN_LOG_INFO("Player hurt with damage: " + std::to_string(damage));
         m_invulnerabilityTimer = 2.0f; // keep invulnerability to avoid spam
         
@@ -1193,13 +1417,13 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         }
     }
 
-    void GameCore::GameplayState::OnPlayerDeath() {
+    void GameplayState::OnPlayerDeath() {
         GN_LOG_INFO("Player died");
         m_playerAlive = false;
         // Death is now handled by the heart system and UpdateSubState
     }
 
-    void GameCore::GameplayState::OnCoinCollected(int value) {
+    void GameplayState::OnCoinCollected(int value) {
         GN_LOG_INFO("Coin collected: " + std::to_string(value));
         // Update player session coins; totalCoins handled when persisting between levels
         if (PlayerComponent* player = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity)) {
@@ -1207,19 +1431,19 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         }
     }
 
-    void GameCore::GameplayState::OnPickupCollected() {
+    void GameplayState::OnPickupCollected() {
         GN_LOG_INFO("Pickup collected");
         m_currentScore += 50;
     }
 
-    void GameCore::GameplayState::OnObstacleHit() {
+    void GameplayState::OnObstacleHit() {
         GN_LOG_INFO("Obstacle hit");
         if (m_invulnerabilityTimer <= 0.0f) {
             OnPlayerHurt(1);
         }
     }
 
-    void GameCore::GameplayState::OnEnemyDefeated() {
+    void GameplayState::OnEnemyDefeated() {
         GN_LOG_INFO("Enemy defeated!");
         // Handle enemy defeat logic
     }
@@ -1697,6 +1921,14 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             m_heartSystem->UpdateHeartVisibility(m_playerEntity);
         }
         
+        // Hide settings button during game over
+        if (m_settingsButtonEntity != 0 && m_ecsSystem) {
+            UIElement* settingsUI = m_ecsSystem->GetComponent<UIElement>(m_settingsButtonEntity);
+            if (settingsUI) {
+                settingsUI->visible = false;
+            }
+        }
+        
         // Play gameover stinger immediately
         if (m_platformDelegates && m_platformDelegates->audio.playSound) {
             m_platformDelegates->audio.playSound("gameover.mp3", 1.0f);
@@ -1741,19 +1973,21 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         m_gameOverBackgroundEntity = m_ecsSystem->CreateEntity();
         if (m_gameOverBackgroundEntity != Gnosis::INVALID_ENTITY) {
             // Calculate scale to stretch width to screen width while maintaining aspect ratio
-            float backgroundScale = screenWidth / 256.0f; // 256 is texture width
+            float backgroundScale = screenWidth / 64.0f; // 64 is actual texture width
             
-            // Position at top center of screen
-            Transform bgTransform(Gnosis::GNVector2(screenWidth * 0.5f, 0.0f), 0.0f, Gnosis::GNVector2(backgroundScale, backgroundScale));
+            // Position at top-left corner (0,0) and stretch to full width
+            // The sprite's origin is at center, so we need to offset by half the scaled width
+            float scaledWidth = 64.0f * backgroundScale;
+            Transform bgTransform(Gnosis::GNVector2(0.0f, 0.0f), 0.0f, Gnosis::GNVector2(backgroundScale, backgroundScale));
             m_ecsSystem->AddComponent<Transform>(m_gameOverBackgroundEntity, bgTransform);
             
             // Create background sprite (like main menu) - THIS IS THE KEY DIFFERENCE!
-            Sprite bgSprite("GameOverBackground", 256, 256); // Use actual texture dimensions
+            Sprite bgSprite("GameOverBackground", 64, 64); // Use actual texture dimensions
             bgSprite.layer = 100; // Background layer (lowest priority)
             bgSprite.visible = true;
             m_ecsSystem->AddComponent<Sprite>(m_gameOverBackgroundEntity, bgSprite);
             
-            GN_LOG_INFO("Created game over background at top with scale: " + std::to_string(backgroundScale));
+            GN_LOG_INFO("Created game over background at top with scale: " + std::to_string(backgroundScale) + ", position: (" + std::to_string(screenWidth * 0.5f) + ", 0.0f), scaled width: " + std::to_string(scaledWidth));
         }
         
         // Create morte sprite (floating above score) - use proper centering
@@ -1763,8 +1997,8 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             float morteWidth = 64.0f * morteScale;
             float morteHeight = 64.0f * morteScale;
             
-            // Use CenterObjectAtPosition like main menu for proper centering
-            Gnosis::GNVector2 mortePosition = CenterObjectAtPosition(screenWidth * 0.5f, screenHeight * 0.35f, morteWidth, morteHeight);
+            // Position morte sprite at 30% from top
+            Gnosis::GNVector2 mortePosition = CenterObjectAtPosition(screenWidth * 0.5f, screenHeight * 0.30f, morteWidth, morteHeight);
             
             Transform morteTransform(Gnosis::GNVector2(mortePosition.x, mortePosition.y), 0.0f, Gnosis::GNVector2(morteScale, morteScale));
             m_ecsSystem->AddComponent<Transform>(m_morteEntity, morteTransform);
@@ -1781,12 +2015,13 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         // Create score display with pipes and coins - use proper centering and fix newlines
         m_gameOverScoreEntity = m_ecsSystem->CreateEntity();
         if (m_gameOverScoreEntity != Gnosis::INVALID_ENTITY) {
-            float scoreScale = 6.0f;
-            float scoreWidth = 256.0f * scoreScale; // Approximate scoreboard width
-            float scoreHeight = 128.0f * scoreScale; // Approximate scoreboard height
+            // Calculate scale to make scoreboard 80% of screen width while maintaining 1:1 pixel ratio
+            float scoreScale = (screenWidth * 0.8f) / 64.0f; // 80% of screen width / texture width
+            float scoreWidth = 64.0f * scoreScale; // This will be 80% of screen width
+            float scoreHeight = 32.0f * scoreScale; // Height scales proportionally
             
-            // Use CenterObjectAtPosition like main menu for proper centering
-            Gnosis::GNVector2 scorePosition = CenterObjectAtPosition(screenWidth * 0.5f, screenHeight * 0.55f, scoreWidth, scoreHeight);
+            // Position score display lower on screen (around 60% from top)
+            Gnosis::GNVector2 scorePosition = CenterObjectAtPosition(screenWidth * 0.5f, screenHeight * 0.6f, scoreWidth, scoreHeight);
             
             Transform scoreTransform(Gnosis::GNVector2(scorePosition.x, scorePosition.y), 0.0f, Gnosis::GNVector2(scoreScale, scoreScale));
             m_ecsSystem->AddComponent<Transform>(m_gameOverScoreEntity, scoreTransform);
@@ -1796,29 +2031,30 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             int totalCoins = player ? player->sessionCoins : 0;
             
             UIElement scoreUI;
-            // Fix newlines - use \n not \\n for proper line breaks
-            scoreUI.buttonText = "Score: " + std::to_string(m_currentScore) + 
-                               "\nPipes: " + std::to_string(m_pipesCleared) + 
-                               "\nCoins: " + std::to_string(totalCoins);
+            // Fix newlines - use \n not \\n for proper line breaks, add extra spacing
+            scoreUI.buttonText = "Pipes: " + std::to_string(m_pipesCleared) + 
+                               "\n\nCoins: " + std::to_string(totalCoins);
             scoreUI.textColor = Gnosis::GNColor(255, 255, 255, 255); // White text
             scoreUI.visible = true;
             scoreUI.isEnabled = true;
             scoreUI.textLayer = 101; // Lower than morte, higher than background
             scoreUI.normalTextureId = "GameOverScore"; // Use correct asset catalog name
-            scoreUI.fontSize = 28.0f; // Larger text for better visibility
+            scoreUI.fontSize = 80.0f; // Use button font size for better visibility
             scoreUI.centerTextHorizontally = true;
             scoreUI.centerTextVertically = true;
+            scoreUI.textOffsetX = -128.0f; // Move text 128 pixels to the left
+            scoreUI.textOffsetY = 128.0f;  // Move text 128 pixels down
             m_ecsSystem->AddComponent<UIElement>(m_gameOverScoreEntity, scoreUI);
             
-            GN_LOG_INFO("Created game over score at centered position: (" + std::to_string(scorePosition.x) + ", " + std::to_string(scorePosition.y) + ")");
+            GN_LOG_INFO("Created game over score at centered position: (" + std::to_string(scorePosition.x) + ", " + std::to_string(scorePosition.y) + ") with scale: " + std::to_string(scoreScale) + ", dimensions: " + std::to_string(scoreWidth) + "x" + std::to_string(scoreHeight));
         }
         
         // Create death message (centered at top)
         m_deathMessageEntity = m_ecsSystem->CreateEntity();
         if (m_deathMessageEntity != Gnosis::INVALID_ENTITY) {
-            // Center the message properly like the pipe counter
+            // Position death message below the morte sprite (around 25% from top)
             float messageX = screenWidth * 0.5f;  // Center horizontally
-            float messageY = screenHeight * 0.20f; // 20% from top (raised higher)
+            float messageY = screenHeight * 0.25f; // 25% from top (below morte sprite)
             Transform messageTransform(Gnosis::GNVector2(messageX, messageY), 0.0f, Gnosis::GNVector2(8.0f, 8.0f));
             m_ecsSystem->AddComponent<Transform>(m_deathMessageEntity, messageTransform);
             
@@ -1828,7 +2064,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             messageUI.visible = true;
             messageUI.isEnabled = true;
             messageUI.textLayer = 104; // Highest priority for death message
-            messageUI.fontSize = 56.0f; // Increased font size for better visibility
+            messageUI.fontSize = 80.0f; // Use raw font size value (not scaled)
             messageUI.centerTextHorizontally = true;
             messageUI.centerTextVertically = true;
             messageUI.textOutlineWidth = 8.0f; // Add outline for better visibility
@@ -1864,13 +2100,21 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             tryAgainUI.isEnabled = true;
             tryAgainUI.textLayer = 104; // Text layer (higher than sprite)
             tryAgainUI.normalTextureId = "FloppyButtonBlue"; // Use the asset catalog name
-            tryAgainUI.fontSize = 18.0f; // Match main menu button font size
+            tryAgainUI.fontSize = 80.0f; // Much larger font size for better visibility
             tryAgainUI.centerTextHorizontally = true;
             tryAgainUI.centerTextVertically = true;
             // Ensure the button texture is properly set
             tryAgainUI.isHovered = false;
             tryAgainUI.isPressed = false;
             m_ecsSystem->AddComponent<UIElement>(m_tryAgainButtonEntity, tryAgainUI);
+            
+            // Add hitbox for accurate input detection covering the entire button area
+            Hitbox buttonHitbox;
+            buttonHitbox.width = buttonWidth;  // This is already scaled (buttonWidth = 90.0f * buttonScale)
+            buttonHitbox.height = buttonHeight; // This is already scaled (buttonHeight = 16.0f * buttonScale)
+            buttonHitbox.offsetX = 0.0f;
+            buttonHitbox.offsetY = 0.0f;
+            m_ecsSystem->AddComponent<Hitbox>(m_tryAgainButtonEntity, buttonHitbox);
             
             GN_LOG_INFO("Created Try Again button at centered position: (" + std::to_string(tryAgainPosition.x) + ", " + std::to_string(tryAgainPosition.y) + ") with scale: " + std::to_string(buttonScale));
         }
@@ -1901,13 +2145,21 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             quitUI.isEnabled = true;
             quitUI.textLayer = 104; // Text layer (higher than sprite)
             quitUI.normalTextureId = "FloppyButtonBlue"; // Use the asset catalog name
-            quitUI.fontSize = 18.0f; // Match main menu button font size
+            quitUI.fontSize = 80.0f; // Much larger font size for better visibility
             quitUI.centerTextHorizontally = true;
             quitUI.centerTextVertically = true;
             // Ensure the button texture is properly set
             quitUI.isHovered = false;
             quitUI.isPressed = false;
             m_ecsSystem->AddComponent<UIElement>(m_quitButtonEntity, quitUI);
+            
+            // Add hitbox for accurate input detection covering the entire button area
+            Hitbox buttonHitbox;
+            buttonHitbox.width = buttonWidth;  // This is already scaled (buttonWidth = 90.0f * buttonScale)
+            buttonHitbox.height = buttonHeight; // This is already scaled (buttonHeight = 16.0f * buttonScale)
+            buttonHitbox.offsetX = 0.0f;
+            buttonHitbox.offsetY = 0.0f;
+            m_ecsSystem->AddComponent<Hitbox>(m_quitButtonEntity, buttonHitbox);
             
             GN_LOG_INFO("Created Quit button at centered position: (" + std::to_string(quitPosition.x) + ", " + std::to_string(quitPosition.y) + ") with scale: " + std::to_string(buttonScale));
         }
@@ -1963,12 +2215,12 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         Transform* morteTransform = m_ecsSystem->GetComponent<Transform>(m_morteEntity);
         if (morteTransform) {
             // Get screen info for base position - use render system instead of creating local objects
-            float baseY = 1022.4f; // Default iPhone 16 height * 0.4f
+            float baseY = 1022.4f; // Default iPhone 16 height * 0.30f (30% from top)
             
             // Try to get actual screen info from render system if available
             if (m_renderSystem) {
                 const GameCore::ScreenInfo& renderScreenInfo = m_renderSystem->GetScreenInfo();
-                baseY = static_cast<float>(renderScreenInfo.pixelHeight) * 0.4f;
+                baseY = static_cast<float>(renderScreenInfo.pixelHeight) * 0.30f; // 30% from top as intended
             }
             
             morteTransform->position.y = baseY + floatY;
@@ -1990,14 +2242,14 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             if (m_tryAgainButtonEntity != 0) {
                 Transform* tryAgainTransform = m_ecsSystem->GetComponent<Transform>(m_tryAgainButtonEntity);
                 if (tryAgainTransform) {
-                    // Larger hit area for better touch detection
-                    float buttonWidth = 300.0f;  // Larger width for button
-                    float buttonHeight = 120.0f; // Larger height for button
+                    // Use actual button dimensions with 80% scaling for better touch detection (like main menu)
+                    float buttonWidth = 90.0f * tryAgainTransform->scale.x * 0.8f;  // 80% of actual button texture size
+                    float buttonHeight = 16.0f * tryAgainTransform->scale.y * 0.8f; // 80% of actual button texture size
                     
-                    float buttonLeft = tryAgainTransform->position.x - (buttonWidth / 2.0f);
-                    float buttonRight = tryAgainTransform->position.x + (buttonWidth / 2.0f);
-                    float buttonTop = tryAgainTransform->position.y - (buttonHeight / 2.0f);
-                    float buttonBottom = tryAgainTransform->position.y + (buttonHeight / 2.0f);
+                    float buttonLeft = tryAgainTransform->position.x;
+                    float buttonRight = tryAgainTransform->position.x + buttonWidth;
+                    float buttonTop = tryAgainTransform->position.y;
+                    float buttonBottom = tryAgainTransform->position.y + buttonHeight;
                     
                     GN_LOG_INFO("Try Again button hit area: (" + std::to_string(buttonLeft) + ", " + std::to_string(buttonTop) + 
                                ") to (" + std::to_string(buttonRight) + ", " + std::to_string(buttonBottom) + ")");
@@ -2016,14 +2268,14 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             if (m_quitButtonEntity != 0) {
                 Transform* quitTransform = m_ecsSystem->GetComponent<Transform>(m_quitButtonEntity);
                 if (quitTransform) {
-                    // Larger hit area for better touch detection
-                    float buttonWidth = 300.0f;  // Larger width for button
-                    float buttonHeight = 120.0f; // Larger height for button
+                    // Use actual button dimensions with 80% scaling for better touch detection (like main menu)
+                    float buttonWidth = 90.0f * quitTransform->scale.x * 0.8f;  // 80% of actual button texture size
+                    float buttonHeight = 16.0f * quitTransform->scale.y * 0.8f; // 80% of actual button texture size
                     
-                    float buttonLeft = quitTransform->position.x - (buttonWidth / 2.0f);
-                    float buttonRight = quitTransform->position.x + (buttonWidth / 2.0f);
-                    float buttonTop = quitTransform->position.y - (buttonHeight / 2.0f);
-                    float buttonBottom = quitTransform->position.y + (buttonHeight / 2.0f);
+                    float buttonLeft = quitTransform->position.x;
+                    float buttonRight = quitTransform->position.x + buttonWidth;
+                    float buttonTop = quitTransform->position.y;
+                    float buttonBottom = quitTransform->position.y + buttonHeight;
                     
                     GN_LOG_INFO("Quit button hit area: (" + std::to_string(buttonLeft) + ", " + std::to_string(buttonTop) + 
                                ") to (" + std::to_string(buttonRight) + ", " + std::to_string(buttonBottom) + ")");
@@ -2041,49 +2293,25 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
     }
 
     void GameplayState::TryAgain() {
-        GN_LOG_INFO("Player chose to try again");
+        GN_LOG_INFO("Player chose to try again - completely reloading level");
         
-        // Reset player state
-        if (m_playerControllerSystem) {
-            m_playerControllerSystem->SetPlayerAlive(true);
+        // Clean up game over UI first
+        DestroyGameOverUI();
+        
+        // Stop the stinger sound effect to prevent it from bleeding/stacking
+        if (m_platformDelegates && m_platformDelegates->audio.stopSound) {
+            m_platformDelegates->audio.stopSound("gameover.mp3");
+            GN_LOG_INFO("Stopped specific stinger sound effect: gameover.mp3");
         }
         
-        // Reset player health and hearts
-        if (m_heartSystem && m_playerEntity != 0) {
-            Difficulty currentDifficulty = LevelManager::GetGlobalDifficulty();
-            m_heartSystem->UpdateHeartCountForDifficulty(m_playerEntity, currentDifficulty);
-        }
-        
-        // Reset player position and physics
-        if (m_playerEntity != 0) {
-            Transform* playerTransform = m_ecsSystem->GetComponent<Transform>(m_playerEntity);
-            Physics* playerPhysics = m_ecsSystem->GetComponent<Physics>(m_playerEntity);
-            
-            if (playerTransform && playerPhysics) {
-                // Reset to starting position
-                playerTransform->position = Gnosis::GNVector2(400.0f, 639.0f);
-                playerPhysics->velocity = Gnosis::GNVector2(0.0f, 0.0f);
-                playerPhysics->acceleration = Gnosis::GNVector2(0.0f, 0.0f);
-            }
-        }
-        
-        // Reset game state
-        m_currentScore = 0;
-        m_pipesCleared = 0;
-        m_gameTime = 0.0f;
-        m_difficultyTimer = 0.0f;
-        m_difficultyLevel = 1.0f;
-        m_playerAlive = true;
-        m_invulnerabilityTimer = 0.0f;
-        
-        // Reset spawn timers
-        m_obstacleSpawnTimer = 0.0f;
-        m_pickupSpawnTimer = 0.0f;
-        m_enemySpawnTimer = 0.0f;
-        
-        // Clear any existing obstacles/enemies/pickups
+        // Clear obstacles and other entities, but KEEP the player entity
         if (m_levelManager) {
-            m_levelManager->DestroyAllEntities();
+            // Clean up obstacle system without destroying the player
+            if (m_levelManager->GetObstacleSystem()) {
+                m_levelManager->GetObstacleSystem()->Cleanup();
+                // Reinitialize the obstacle system for the current level
+                m_levelManager->GetObstacleSystem()->InitializeForLevel(m_levelManager->GetCurrentLevelId(), m_levelManager->GetCurrentLevelConfig());
+            }
         }
         
         // Clear pickups
@@ -2091,27 +2319,128 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             m_pickupSystem->ClearAll();
         }
         
-        // Clear obstacles (ObstacleSystem cleanup is handled by LevelManager::DestroyAllEntities)
+        // Reset game state variables
+        m_currentScore = 0;
+        m_pipesCleared = 0;
+        m_gameTime = 0.0f;
+        m_difficultyTimer = 0.0f;
+        m_difficultyLevel = 1.0f;
+        m_playerAlive = true;
+        m_invulnerabilityTimer = 0.0f;
+        m_obstacleSpawnTimer = 0.0f;
+        m_pickupSpawnTimer = 0.0f;
+        m_enemySpawnTimer = 0.0f;
+        m_inputDelayTimer = 0.0f;
         
-        // Reset camera world position (simple reset)
+        // Keep the existing player entity - don't reset to 0
+        // m_playerEntity stays the same
+        
+        // Reset camera system to ensure proper scroll speed for fresh level
         if (m_cameraSystem) {
-            // Reset world scroll position to 0
-            // Note: CameraSystem doesn't have a ResetCamera method, so we'll just let it continue from current position
+            // Reset to the level's intended world speed to ensure consistency
+            m_cameraSystem->SetWorldScrollSpeed(m_currentLevelConfig.worldSpeed);
+            GN_LOG_INFO("Reset camera scroll speed to: " + std::to_string(m_currentLevelConfig.worldSpeed));
         }
+        
+        // Reset the existing player entity in place (don't recreate)
+        if (m_playerEntity != 0) {
+            ResetPlayerEntity();
+            GN_LOG_INFO("TryAgain: Player entity reset in place: " + std::to_string(m_playerEntity));
+        }
+        
+                        // Background layers are managed by LevelManager - no need to recreate here
+                GN_LOG_INFO("TryAgain: Background layers managed by LevelManager");
+        
+        // Recreate UI
+        CreateUI();
+        GN_LOG_INFO("TryAgain: UI recreated");
+        
+        // Heart system was already reset in ResetPlayerEntity() - no need to reset again
         
         // Start level music again
         StartLevelMusic();
         
-        // Clean up and show UI
-        DestroyGameOverUI();
+        // Show regular UI and return to playing state
         ShowRegularUI();
         m_currentSubState = GameplaySubState::Playing;
         
-        GN_LOG_INFO("Level restarted successfully");
+        GN_LOG_INFO("Level completely reloaded successfully");
+    }
+
+    void GameplayState::ResetPlayerEntity() {
+        if (m_playerEntity == 0 || !m_ecsSystem) {
+            GN_LOG_ERROR("ResetPlayerEntity: No valid player entity or ECS system");
+            return;
+        }
+        
+        GN_LOG_INFO("Resetting player entity " + std::to_string(m_playerEntity) + " in place");
+        
+        // Reset player transform to starting position
+        Transform* playerTransform = m_ecsSystem->GetComponent<Transform>(m_playerEntity);
+        if (playerTransform) {
+            playerTransform->position = Gnosis::GNVector2(400.0f, 639.0f);
+            playerTransform->rotation = 0.0f;
+            playerTransform->scale = Gnosis::GNVector2(m_currentLevelConfig.baseScale, m_currentLevelConfig.baseScale);
+            GN_LOG_INFO("Reset player transform to starting position");
+        }
+        
+        // Reset player physics
+        Physics* playerPhysics = m_ecsSystem->GetComponent<Physics>(m_playerEntity);
+        if (playerPhysics) {
+            playerPhysics->velocity = Gnosis::GNVector2(0.0f, 0.0f);
+            playerPhysics->useGravity = true;
+            playerPhysics->mass = 1.0f;
+            playerPhysics->drag = 0.98f;
+            GN_LOG_INFO("Reset player physics");
+        }
+        
+        // Reset player component (health, hearts, etc.)
+        PlayerComponent* player = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity);
+        if (player) {
+            // Reset to default state
+            player->sessionCoins = 0;
+            player->totalCoins = 0;
+            player->score = 0;
+            player->invulnerabilityTimer = 0.0f;
+            player->shootCooldown = 0.0f;
+            
+            // Reset heart-related fields to default values to force UpdateHeartCountForDifficulty to work
+            player->ghostSlices = 0;
+            player->hollowTurds = false;
+            player->heartMode = GameCore::HeartMode::WHOLE;
+            player->hearts = 0;        // Force to 0 so UpdateHeartCountForDifficulty doesn't early return
+            player->liveSlices = 0;    // Force to 0 so it gets properly reset
+            player->maxHealth = 0;     // Force to 0 so it gets properly reset
+            player->health = 0;        // Force to 0 so it gets properly reset
+            
+            GN_LOG_INFO("Reset player component including heart fields");
+        }
+        
+        // Reset player controller system
+        if (m_playerControllerSystem) {
+            m_playerControllerSystem->SetPlayerAlive(true);
+            GN_LOG_INFO("Reset player controller system");
+        }
+        
+        // Reset heart system for the existing player entity
+        if (m_heartSystem) {
+            Difficulty currentDifficulty = LevelManager::GetGlobalDifficulty();
+            m_heartSystem->UpdateHeartCountForDifficulty(m_playerEntity, currentDifficulty);
+            GN_LOG_INFO("Reset heart system for existing player");
+        }
+        
+        GN_LOG_INFO("Player entity reset successfully");
     }
 
     void GameplayState::QuitToMainMenu() {
         GN_LOG_INFO("Player chose to quit to main menu");
+        
+        // Stop the stinger sound effect to prevent it from bleeding/stacking
+        if (m_platformDelegates && m_platformDelegates->audio.stopSound) {
+            m_platformDelegates->audio.stopSound("gameover.mp3");
+            GN_LOG_INFO("Stopped specific stinger sound effect: gameover.mp3");
+        }
+        
         DestroyGameOverUI();
         ReturnToMainMenu();
     }
@@ -2127,7 +2456,12 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             "Sewage overflow!",
             "Pipe dream ended!",
             "Flushed with failure!",
-            "Bog standard death!"
+            "Oh poop!",
+            "Turd's in Trouble!",
+            "Bummer!",
+            "What a fiasco!",
+            "Holy crap!",
+            "Clogged up!",
         };
         
         // Simple random selection (not cryptographically secure, but fine for game)
@@ -2184,14 +2518,13 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
     }
 
     void GameplayState::HideRegularUI() {
-        // Hide all regular gameplay UI elements
+        // Hide all regular gameplay UI elements (except settings button - it should stay visible)
         std::vector<Gnosis::Entity*> uiElements = {
             &m_scoreTextEntity,
             &m_livesTextEntity,
             &m_coinsTextEntity,
             &m_coinBagEntity,
             &m_pipeCounterEntity,
-            &m_tempMenuButtonEntity,
             &m_heartUIEntity
         };
         
@@ -2206,22 +2539,21 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         
         // Also hide all individual heart entities
         if (m_heartSystem) {
-            // The heart system should handle hiding its own entities
-            // We could add a method to HeartSystem to hide hearts, but they should already be invisible when dead
+            // Call the heart system to hide all heart entities
+            m_heartSystem->HideAllHearts();
         }
         
         GN_LOG_INFO("Hidden all regular UI elements for game over");
     }
 
     void GameplayState::ShowRegularUI() {
-        // Show all regular gameplay UI elements
+        // Show all regular gameplay UI elements (except settings button - it should stay visible)
         std::vector<Gnosis::Entity*> uiElements = {
             &m_scoreTextEntity,
             &m_livesTextEntity,
             &m_coinsTextEntity,
             &m_coinBagEntity,
             &m_pipeCounterEntity,
-            &m_tempMenuButtonEntity,
             &m_heartUIEntity
         };
         
@@ -2234,7 +2566,1233 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             }
         }
         
+        // Also show all individual heart entities
+        if (m_heartSystem) {
+            // Call the heart system to show current active heart entities
+            m_heartSystem->ShowAllHearts();
+        }
+        
         GN_LOG_INFO("Shown all regular UI elements");
     }
+
+
+
+
+
+    void GameplayState::ShowPauseMenu() {
+        GN_LOG_INFO("Showing pause menu");
+        
+        // Hide regular UI elements (pipe counter, hearts, coin bag, coin counter)
+        HideRegularUI();
+        
+        // Show pause menu background
+        if (m_pauseMenuBackgroundEntity != 0 && m_ecsSystem) {
+            UIElement* bgUI = m_ecsSystem->GetComponent<UIElement>(m_pauseMenuBackgroundEntity);
+            if (bgUI) {
+                bgUI->visible = true;
+            }
+            
+            // Also show the Sprite component for proper rendering
+            Sprite* bgSprite = m_ecsSystem->GetComponent<Sprite>(m_pauseMenuBackgroundEntity);
+            if (bgSprite) {
+                bgSprite->visible = true;
+            }
+        }
+        
+        // Show pause menu ribbon
+        if (m_pauseMenuRibbonEntity != 0 && m_ecsSystem) {
+            UIElement* ribbonUI = m_ecsSystem->GetComponent<UIElement>(m_pauseMenuRibbonEntity);
+            if (ribbonUI) {
+                ribbonUI->visible = true;
+            }
+        }
+        
+        // Show ribbon buttons
+        for (Gnosis::Entity& buttonEntity : m_ribbonButtons) {
+            if (buttonEntity != 0 && m_ecsSystem) {
+                UIElement* buttonUI = m_ecsSystem->GetComponent<UIElement>(buttonEntity);
+                if (buttonUI) {
+                    buttonUI->visible = true;
+                }
+                
+                // Also show the Sprite component for proper rendering
+                Sprite* buttonSprite = m_ecsSystem->GetComponent<Sprite>(buttonEntity);
+                if (buttonSprite) {
+                    buttonSprite->visible = true;
+                }
+            }
+        }
+        
+        // Show current tab content
+        ShowCurrentTabContent();
+        
+        GN_LOG_INFO("Pause menu shown");
+    }
+
+    void GameplayState::HidePauseMenu() {
+        GN_LOG_INFO("Hiding pause menu");
+        
+        // Hide pause menu background
+        if (m_pauseMenuBackgroundEntity != 0 && m_ecsSystem) {
+            UIElement* bgUI = m_ecsSystem->GetComponent<UIElement>(m_pauseMenuBackgroundEntity);
+            if (bgUI) {
+                bgUI->visible = false;
+            }
+            
+            // Also hide the Sprite component
+            Sprite* bgSprite = m_ecsSystem->GetComponent<Sprite>(m_pauseMenuBackgroundEntity);
+            if (bgSprite) {
+                bgSprite->visible = false;
+            }
+        }
+        
+        // Hide pause menu ribbon
+        if (m_pauseMenuRibbonEntity != 0 && m_ecsSystem) {
+            UIElement* ribbonUI = m_ecsSystem->GetComponent<UIElement>(m_pauseMenuRibbonEntity);
+            if (ribbonUI) {
+                ribbonUI->visible = false;
+            }
+        }
+        
+        // Hide ribbon buttons
+        for (Gnosis::Entity& buttonEntity : m_ribbonButtons) {
+            if (buttonEntity != 0 && m_ecsSystem) {
+                UIElement* buttonUI = m_ecsSystem->GetComponent<UIElement>(buttonEntity);
+                if (buttonUI) {
+                    buttonUI->visible = false;
+                }
+                
+                // Also hide the Sprite component
+                Sprite* buttonSprite = m_ecsSystem->GetComponent<Sprite>(buttonEntity);
+                if (buttonSprite) {
+                    buttonSprite->visible = false;
+                }
+            }
+        }
+        
+        // Hide all tab content
+        HideAllTabContent();
+        
+        // Show regular UI elements again (pipe counter, hearts, coin bag, coin counter)
+        ShowRegularUI();
+        
+        GN_LOG_INFO("Pause menu hidden");
+    }
+
+    void GameplayState::CreateSettingsButton() {
+        GN_LOG_INFO("Creating settings button");
+        
+        m_settingsButtonEntity = m_ecsSystem->CreateEntity();
+        if (m_settingsButtonEntity != 0) {
+            // Get screen dimensions
+            float screenWidth = 1179.0f;  // Default iPhone 16 width
+            float screenHeight = 2556.0f; // Default iPhone 16 height
+            
+            if (m_renderSystem) {
+                const ScreenInfo& si = m_renderSystem->GetScreenInfo();
+                screenWidth = si.pixelWidth;
+                screenHeight = si.pixelHeight;
+            }
+            
+            // Position in top-right corner in screen space (moved left to avoid clipping)
+            // The button should stay fixed on screen, so position it at a fixed screen coordinate
+            float buttonX = screenWidth * 0.85f;      // 85% from left edge (was 90%, moved left 5%)
+            float buttonY = screenHeight * 0.05f;     // 5% from top
+            
+            // Scale the button to 8x like other UI elements
+            float buttonScale = 8.0f;
+            
+            // Position at fixed screen coordinates (this will be updated when UI is repositioned)
+            Transform buttonTransform(Gnosis::GNVector2(buttonX, buttonY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
+            m_ecsSystem->AddComponent<Transform>(m_settingsButtonEntity, buttonTransform);
+            
+            // Create UIElement using settingsbutton.png - this keeps it fixed on screen like coin bag
+            UIElement buttonUI;
+            buttonUI.normalTextureId = "settingsbutton";
+            buttonUI.visible = true;
+            buttonUI.isEnabled = true;
+            buttonUI.textLayer = 10; // Same layer as other UI elements
+            m_ecsSystem->AddComponent<UIElement>(m_settingsButtonEntity, buttonUI);
+            
+            GN_LOG_INFO("Created settings button at (" + std::to_string(buttonX) + ", " + std::to_string(buttonY) + ") with scale " + std::to_string(buttonScale));
+        }
+    }
+
+    void GameplayState::CreatePauseMenuBackground() {
+        GN_LOG_INFO("Creating pause menu background");
+        
+        m_pauseMenuBackgroundEntity = m_ecsSystem->CreateEntity();
+        if (m_pauseMenuBackgroundEntity != 0) {
+            // Get screen dimensions
+            float screenWidth = 1179.0f;  // Default iPhone 16 width
+            float screenHeight = 2556.0f; // Default iPhone 16 height
+            
+            if (m_renderSystem) {
+                const ScreenInfo& si = m_renderSystem->GetScreenInfo();
+                screenWidth = si.pixelWidth;
+                screenHeight = si.pixelHeight;
+                GN_LOG_INFO("PAUSE MENU DEBUG: Using actual screen dimensions: " + std::to_string(screenWidth) + "x" + std::to_string(screenHeight));
+                
+                // Check if we have valid iPhone screen dimensions (not fallback 800x600)
+                if (screenWidth < 1000 || screenHeight < 1000) {
+                    GN_LOG_WARN("PAUSE MENU DEBUG: Invalid screen dimensions detected - delaying pause menu creation");
+                    GN_LOG_WARN("PAUSE MENU DEBUG: Expected iPhone portrait dimensions like 1179x2556, Got: " + std::to_string(screenWidth) + "x" + std::to_string(screenHeight));
+                    GN_LOG_WARN("PAUSE MENU DEBUG: Pause menu will be created when valid screen dimensions are available");
+                    
+                    // Mark pause menu as not created and return early
+                    m_pauseMenuCreated = false;
+                    return;
+                }
+            } else {
+                GN_LOG_WARN("PAUSE MENU DEBUG: No render system available - delaying pause menu creation");
+                m_pauseMenuCreated = false;
+                return;
+            }
+            
+            // Use PauseMenuBackgroundMobile.png (160x300) with 7x scaling
+            float bgScale = 7.0f;
+            float textureWidth = 160.0f;   // Original texture width
+            float textureHeight = 300.0f;  // Original texture height
+            
+            // SCALE FIRST, then center: Calculate final rendered dimensions, then center those
+            float scaledWidth = textureWidth * bgScale;   // 160 * 7 = 1120
+            float scaledHeight = textureHeight * bgScale; // 300 * 7 = 2100
+            float centerX = screenWidth * 0.5f;
+            float centerY = screenHeight * 0.5f;
+            // Lower the background slightly on the Y axis so the settings button is not covered
+            Gnosis::GNVector2 bgPosition = CenterObjectAtPosition(centerX, centerY + 32.0f, scaledWidth, scaledHeight);
+            
+            GN_LOG_INFO("PAUSE MENU DEBUG: Screen center target: (" + std::to_string(centerX) + ", " + std::to_string(centerY) + ")");
+            GN_LOG_INFO("PAUSE MENU DEBUG: Original texture: " + std::to_string(textureWidth) + "x" + std::to_string(textureHeight) + " at " + std::to_string(bgScale) + "x scale");
+            GN_LOG_INFO("PAUSE MENU DEBUG: Final rendered size: " + std::to_string(scaledWidth) + "x" + std::to_string(scaledHeight));
+            GN_LOG_INFO("PAUSE MENU DEBUG: Calculated top-left position: (" + std::to_string(bgPosition.x) + ", " + std::to_string(bgPosition.y) + ")");
+            
+            Transform bgTransform(Gnosis::GNVector2(bgPosition.x, bgPosition.y), 0.0f, Gnosis::GNVector2(bgScale, bgScale));
+            m_ecsSystem->AddComponent<Transform>(m_pauseMenuBackgroundEntity, bgTransform);
+            
+            // Create UIElement for pause menu background - this keeps it fixed on screen
+            UIElement bgUI;
+            bgUI.normalTextureId = "PauseMenuBackgroundMobile";
+            bgUI.visible = false; // Initially hidden
+            bgUI.isEnabled = true;
+            bgUI.textLayer = 80; // Above regular UI, below critical controls
+            m_ecsSystem->AddComponent<UIElement>(m_pauseMenuBackgroundEntity, bgUI);
+            
+            // Add Sprite component so RenderSystem can get correct dimensions (160x300)
+            // This is crucial for proper centering - RenderSystem uses Sprite dimensions for UIElement textures
+            Sprite bgSprite("PauseMenuBackgroundMobile", 160, 300);
+            bgSprite.layer = 80; // Match updated textLayer
+            bgSprite.visible = false; // Initially hidden
+            m_ecsSystem->AddComponent<Sprite>(m_pauseMenuBackgroundEntity, bgSprite);
+            
+            GN_LOG_INFO("Created pause menu background at position (" + std::to_string(bgPosition.x) + ", " + std::to_string(bgPosition.y) + ") with scale " + std::to_string(bgScale) + " (size: " + std::to_string(textureWidth * bgScale) + "x" + std::to_string(textureHeight * bgScale) + ")");
+            GN_LOG_INFO("Background will be centered at screen center (" + std::to_string(screenWidth * 0.5f) + ", " + std::to_string(screenHeight * 0.5f) + ")");
+        }
+    }
+
+    void GameplayState::CreatePauseMenuRibbon() {
+        GN_LOG_INFO("Creating pause menu ribbon");
+        
+        m_pauseMenuRibbonEntity = m_ecsSystem->CreateEntity();
+        if (m_pauseMenuRibbonEntity != 0) {
+            // Get screen dimensions
+            float screenWidth = 1179.0f;  // Default iPhone 16 width
+            float screenHeight = 2556.0f; // Default iPhone 16 height
+            
+            if (m_renderSystem) {
+                const ScreenInfo& si = m_renderSystem->GetScreenInfo();
+                screenWidth = si.pixelWidth;
+                screenHeight = si.pixelHeight;
+            }
+            
+            // Position ribbon at top of screen
+            float ribbonX = 0.0f; // Start at left edge
+            float ribbonY = screenHeight * 0.15f; // 15% from top
+            
+            Transform ribbonTransform(Gnosis::GNVector2(ribbonX, ribbonY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            m_ecsSystem->AddComponent<Transform>(m_pauseMenuRibbonEntity, ribbonTransform);
+            
+            // Create UIElement for ribbon (invisible, just for positioning)
+            UIElement ribbonUI;
+            ribbonUI.visible = false; // Initially hidden
+            ribbonUI.isEnabled = true;
+            ribbonUI.textLayer = 45; // Above background, below other UI
+            m_ecsSystem->AddComponent<UIElement>(m_pauseMenuRibbonEntity, ribbonUI);
+            
+            // Create ribbon buttons
+            CreateRibbonButtons();
+            
+            GN_LOG_INFO("Created pause menu ribbon at (" + std::to_string(ribbonX) + ", " + std::to_string(ribbonY) + ")");
+        }
+    }
+
+    void GameplayState::CreateRibbonButtons() {
+        GN_LOG_INFO("Creating ribbon buttons");
+        
+        // Get screen dimensions
+        float screenWidth = 1179.0f;  // Default iPhone 16 width
+        float screenHeight = 2556.0f; // Default iPhone 16 height
+        
+        if (m_renderSystem) {
+            const ScreenInfo& si = m_renderSystem->GetScreenInfo();
+            screenWidth = si.pixelWidth;
+            screenHeight = si.pixelHeight;
+        }
+        
+        // Button labels
+        const char* buttonLabels[] = {"SKILLS", "HATS", "STATS", "SYSTEM"};
+        
+        // Calculate button positions - vertical tabs on left side
+        // Calculate button width based on scale and texture size
+        float buttonScale = 6.0f;
+        float buttonWidth = 64.0f * buttonScale;
+        float buttonHeight = buttonWidth * 0.82f; // Even less spacing, tighter grouping
+        float bgScale = 6.0f;
+        float bgHeight = 300.0f * bgScale;
+        float bgTop = (screenHeight - bgHeight) * 0.5f;
+        int numButtons = 4;
+        float startY = bgTop + buttonWidth * 0.18f; // Skills button higher
+        float buttonX = -0.40f * buttonWidth; // Offset further left (40%)
+        
+        buttonHeight = buttonWidth * 0.62f; // 25% closer than before
+        for (int i = 0; i < 4; i++) {
+            Gnosis::Entity buttonEntity = m_ecsSystem->CreateEntity();
+            if (buttonEntity != 0) {
+                // Vertical positioning like tabs
+                float buttonY = startY + i * buttonHeight;
+
+                Transform buttonTransform(Gnosis::GNVector2(buttonX, buttonY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
+                m_ecsSystem->AddComponent<Transform>(buttonEntity, buttonTransform);
+
+                // Create UI element using PauseMenuRibbonButton.png
+                UIElement buttonUI;
+                buttonUI.normalTextureId = "PauseMenuRibbonButton";
+                buttonUI.buttonText = buttonLabels[i];
+                buttonUI.fontSize = 38.0f; // Lowered font size just a bit more
+                buttonUI.textColor = Gnosis::GNColor(255, 255, 255, 255); // White text
+                buttonUI.centerTextHorizontally = false; // We'll left-align with padding
+                buttonUI.centerTextVertically = true;
+                buttonUI.textLayer = 85; // Above background, below settings button
+                buttonUI.textOffsetX = buttonWidth * 0.42f; // Move text further right so it's fully visible
+                buttonUI.textOffsetY = 8.0f; // Lower text by 8px for better vertical alignment
+                buttonUI.visible = false; // Initially hidden
+                m_ecsSystem->AddComponent<UIElement>(buttonEntity, buttonUI);
+
+                // Add Sprite component for proper rendering
+                Sprite buttonSprite("PauseMenuRibbonButton", 64, 21);
+                buttonSprite.layer = 85; // Match textLayer
+                buttonSprite.visible = false; // Initially hidden
+                m_ecsSystem->AddComponent<Sprite>(buttonEntity, buttonSprite);
+
+                m_ribbonButtons.push_back(buttonEntity);
+
+                GN_LOG_INFO("Created ribbon button '" + std::string(buttonLabels[i]) + "' at (" + std::to_string(buttonX) + ", " + std::to_string(buttonY) + ") as vertical tab");
+            }
+        }
+        
+        GN_LOG_INFO("Created " + std::to_string(m_ribbonButtons.size()) + " ribbon buttons");
+    }
+
+    void GameplayState::CreatePauseMenuContent() {
+        GN_LOG_INFO("Creating pause menu content area");
+        
+        m_pauseMenuContentEntity = m_ecsSystem->CreateEntity();
+        if (m_pauseMenuContentEntity != 0) {
+            // Get screen dimensions
+            float screenWidth = 1179.0f;  // Default iPhone 16 width
+            float screenHeight = 2556.0f; // Default iPhone 16 height
+            
+            if (m_renderSystem) {
+                const ScreenInfo& si = m_renderSystem->GetScreenInfo();
+                screenWidth = si.pixelWidth;
+                screenHeight = si.pixelHeight;
+            }
+            
+            // Position content area below ribbon
+            float contentX = screenWidth * 0.5f; // Center horizontally
+            float contentY = screenHeight * 0.45f; // Below ribbon
+            
+            Transform contentTransform(Gnosis::GNVector2(contentX, contentY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            m_ecsSystem->AddComponent<Transform>(m_pauseMenuContentEntity, contentTransform);
+            
+            // Create content sprite (invisible, just for positioning)
+            Sprite contentSprite; // No texture, just for positioning
+            contentSprite.layer = 85; // Above pause menu background (80)
+            contentSprite.visible = false; // Initially hidden
+            m_ecsSystem->AddComponent<Sprite>(m_pauseMenuContentEntity, contentSprite);
+            
+            // Create tab content
+            CreateSystemTab();
+            
+            GN_LOG_INFO("Created pause menu content area at (" + std::to_string(contentX) + ", " + std::to_string(contentY) + ")");
+        }
+    }
+
+    void GameplayState::CreateSkillsTab() {
+        GN_LOG_INFO("Creating skills tab content");
+        
+        // Get screen dimensions
+        float screenWidth = 1179.0f;  // Default iPhone 16 width
+        float screenHeight = 2556.0f; // Default iPhone 16 height
+        
+        if (m_renderSystem) {
+            const ScreenInfo& si = m_renderSystem->GetScreenInfo();
+            screenWidth = si.pixelWidth;
+            screenHeight = si.pixelHeight;
+        }
+        
+        // Create content entity for skills tab
+        if (m_skillsContentEntity == 0) {
+            m_skillsContentEntity = m_ecsSystem->CreateEntity();
+            float contentX = screenWidth * 0.5f;
+            float contentY = screenHeight * 0.45f;
+            
+            Transform contentTransform(Gnosis::GNVector2(contentX, contentY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            m_ecsSystem->AddComponent<Transform>(m_skillsContentEntity, contentTransform);
+            
+            UIElement contentElem;
+            contentElem.buttonText = "Skills Coming Soon";
+            contentElem.fontSize = 40.0f;
+            contentElem.textColor = Gnosis::GNColor(255, 255, 255, 255);
+            contentElem.centerTextHorizontally = true;
+            contentElem.centerTextVertically = true;
+            contentElem.visible = false; // Initially hidden
+            contentElem.isEnabled = true;
+            contentElem.textLayer = 22;
+            m_ecsSystem->AddComponent<UIElement>(m_skillsContentEntity, contentElem);
+            
+            // Add Sprite component for proper rendering
+            Sprite contentSprite;
+            contentSprite.layer = 22;
+            contentSprite.visible = false;
+            m_ecsSystem->AddComponent<Sprite>(m_skillsContentEntity, contentSprite);
+        }
+        
+        GN_LOG_INFO("Created skills tab content");
+    }
+
+    void GameplayState::CreateHatsTab() {
+        GN_LOG_INFO("Creating hats tab content");
+        
+        // Get screen dimensions
+        float screenWidth = 1179.0f;  // Default iPhone 16 width
+        float screenHeight = 2556.0f; // Default iPhone 16 height
+        
+        if (m_renderSystem) {
+            const ScreenInfo& si = m_renderSystem->GetScreenInfo();
+            screenWidth = si.pixelWidth;
+            screenHeight = si.pixelHeight;
+        }
+        
+        // Create content entity for hats tab
+        if (m_hatsContentEntity == 0) {
+            m_hatsContentEntity = m_ecsSystem->CreateEntity();
+            float contentX = screenWidth * 0.5f;
+            float contentY = screenHeight * 0.45f;
+            
+            Transform contentTransform(Gnosis::GNVector2(contentX, contentY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            m_ecsSystem->AddComponent<Transform>(m_hatsContentEntity, contentTransform);
+            
+            UIElement contentElem;
+            contentElem.buttonText = "Hats Coming Soon";
+            contentElem.fontSize = 40.0f;
+            contentElem.textColor = Gnosis::GNColor(255, 255, 255, 255);
+            contentElem.centerTextHorizontally = true;
+            contentElem.centerTextVertically = true;
+            contentElem.visible = false; // Initially hidden
+            contentElem.isEnabled = true;
+            contentElem.textLayer = 22;
+            m_ecsSystem->AddComponent<UIElement>(m_hatsContentEntity, contentElem);
+            
+            // Add Sprite component for proper rendering
+            Sprite contentSprite;
+            contentSprite.layer = 22;
+            contentSprite.visible = false;
+            m_ecsSystem->AddComponent<Sprite>(m_hatsContentEntity, contentSprite);
+        }
+        
+        GN_LOG_INFO("Created hats tab content");
+    }
+
+    void GameplayState::CreateStatsTab() {
+        GN_LOG_INFO("Creating stats tab content");
+        
+        // Get screen dimensions
+        float screenWidth = 1179.0f;  // Default iPhone 16 width
+        float screenHeight = 2556.0f; // Default iPhone 16 height
+        
+        if (m_renderSystem) {
+            const ScreenInfo& si = m_renderSystem->GetScreenInfo();
+            screenWidth = si.pixelWidth;
+            screenHeight = si.pixelHeight;
+        }
+        
+        // Create content entity for stats tab
+        if (m_statsContentEntity == 0) {
+            m_statsContentEntity = m_ecsSystem->CreateEntity();
+            float contentX = screenWidth * 0.5f;
+            float contentY = screenHeight * 0.45f;
+            
+            Transform contentTransform(Gnosis::GNVector2(contentX, contentY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            m_ecsSystem->AddComponent<Transform>(m_statsContentEntity, contentTransform);
+            
+            UIElement contentElem;
+            contentElem.buttonText = "Stats Coming Soon";
+            contentElem.fontSize = 40.0f;
+            contentElem.textColor = Gnosis::GNColor(255, 255, 255, 255);
+            contentElem.centerTextHorizontally = true;
+            contentElem.centerTextVertically = true;
+            contentElem.visible = false; // Initially hidden
+            contentElem.isEnabled = true;
+            contentElem.textLayer = 22;
+            m_ecsSystem->AddComponent<UIElement>(m_statsContentEntity, contentElem);
+            
+            // Add Sprite component for proper rendering
+            Sprite contentSprite;
+            contentSprite.layer = 22;
+            contentSprite.visible = false;
+            m_ecsSystem->AddComponent<Sprite>(m_statsContentEntity, contentSprite);
+        }
+        
+        GN_LOG_INFO("Created stats tab content");
+    }
+
+    void GameplayState::CreateSystemTab() {
+        GN_LOG_INFO("Creating system tab content");
+        
+        // Get screen dimensions
+        float screenWidth = 1179.0f;  // Default iPhone 16 width
+        float screenHeight = 2556.0f; // Default iPhone 16 height
+        
+        if (m_renderSystem) {
+            const ScreenInfo& si = m_renderSystem->GetScreenInfo();
+            screenWidth = si.pixelWidth;
+            screenHeight = si.pixelHeight;
+        }
+        
+        // Create main menu button
+        if (m_mainMenuButtonEntity == 0) {
+            m_mainMenuButtonEntity = m_ecsSystem->CreateEntity();
+            float buttonX = screenWidth * 0.5f; // Center horizontally
+            float buttonY = screenHeight * 0.60f + 48.0f; // Lowered a bit
+            
+            Transform buttonTransform(Gnosis::GNVector2(buttonX, buttonY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            m_ecsSystem->AddComponent<Transform>(m_mainMenuButtonEntity, buttonTransform);
+            
+            // Create sprite using FloppyButtonBlue
+            Sprite buttonSprite("FloppyButtonBlue", 64, 64); // Assuming 64x64 texture
+            buttonSprite.layer = 86; // Above pause menu background (80)
+            buttonSprite.visible = false; // Initially hidden
+            m_ecsSystem->AddComponent<Sprite>(m_mainMenuButtonEntity, buttonSprite);
+            
+            // Create UI element for button text
+            UIElement buttonUI;
+            buttonUI.buttonText = "MAIN MENU";
+            buttonUI.fontSize = 62.0f; // Lowered font size
+            buttonUI.textColor = Gnosis::GNColor(255, 255, 255, 255); // White text
+            buttonUI.centerTextHorizontally = true;
+            buttonUI.centerTextVertically = true;
+            buttonUI.textLayer = 87; // Above pause menu background and sprites
+            buttonUI.visible = false; // Initially hidden
+            m_ecsSystem->AddComponent<UIElement>(m_mainMenuButtonEntity, buttonUI);
+            
+            GN_LOG_INFO("Created main menu button at (" + std::to_string(buttonX) + ", " + std::to_string(buttonY) + ")");
+        }
+        
+        // Create audio slider entities
+        CreateAudioSliders();
+        
+        GN_LOG_INFO("Created system tab content");
+    }
+
+    void GameplayState::CreateAudioSliders() {
+        GN_LOG_INFO("Creating audio sliders");
+        
+        // Get screen dimensions
+        float screenW = 1179.0f, screenH = 2556.0f;
+        if (m_renderSystem) {
+            const ScreenInfo& si = m_renderSystem->GetScreenInfo();
+            screenW = si.pixelWidth;
+            screenH = si.pixelHeight;
+        }
+        
+        float bgW = screenW * 0.8f;
+        float bgH = screenH * 0.7f;
+        float bgX = (screenW - bgW) * 0.5f;
+        float bgY = (screenH - bgH) * 0.18f;
+
+        // Slider layout (match MainMenuState)
+        m_sliderX = bgX + 0.12f * bgW;
+        m_sliderY = bgY + 0.18f * bgH;
+        m_sliderW = bgW - 0.24f * bgW;
+        m_sliderH = 18.0f;
+        m_sliderSpacing = 70.0f;
+
+        // MUSIC SLIDER
+        float musicTrackY = m_sliderY;
+        float sfxTrackY = m_sliderY + m_sliderSpacing;
+
+        // Track entity for music
+        if (m_musicTrackEntity == 0) {
+            m_musicTrackEntity = m_ecsSystem->CreateEntity();
+            Transform t(Gnosis::GNVector2(m_sliderX, musicTrackY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            Sprite s; s.visible = false; s.layer = 3;
+            UIShape shape; shape.visible = false; shape.width = m_sliderW; shape.height = m_sliderH;
+            UIElement ui; ui.visible = false; ui.textLayer = 3; ui.isEnabled = true;
+            m_ecsSystem->AddComponent<Transform>(m_musicTrackEntity, t);
+            m_ecsSystem->AddComponent<Sprite>(m_musicTrackEntity, s);
+            m_ecsSystem->AddComponent<UIShape>(m_musicTrackEntity, shape);
+            m_ecsSystem->AddComponent<UIElement>(m_musicTrackEntity, ui);
+        }
+        
+        // Label entity for music
+        if (m_musicLabelEntity == 0) {
+            m_musicLabelEntity = m_ecsSystem->CreateEntity();
+            float labelY = musicTrackY - 28.0f;
+            float labelX = m_sliderX;
+            Transform t(Gnosis::GNVector2(labelX, labelY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            Sprite s; s.visible = false; s.layer = 4;
+            UIElement ui("MUSIC", "", "");
+            ui.fontSize = 32.0f;
+            ui.textColor = Gnosis::GNColor(255, 255, 255, 255);
+            ui.centerTextHorizontally = false; ui.centerTextVertically = true; ui.visible = false; ui.textLayer = 4;
+            m_ecsSystem->AddComponent<Transform>(m_musicLabelEntity, t);
+            m_ecsSystem->AddComponent<Sprite>(m_musicLabelEntity, s);
+            m_ecsSystem->AddComponent<UIElement>(m_musicLabelEntity, ui);
+        }
+        
+        // Knob entity for music
+        if (m_musicKnobEntity == 0) {
+            m_musicKnobEntity = m_ecsSystem->CreateEntity();
+            float knobSize = 32.0f;
+            float knobX = m_sliderX + GameCore::GetGame()->GetMusicVolume() * m_sliderW - knobSize * 0.5f;
+            float knobY = musicTrackY + m_sliderH * 0.5f - knobSize * 0.5f;
+            Transform t(Gnosis::GNVector2(knobX, knobY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            Sprite s("poophat", knobSize, knobSize); s.layer = 21; s.visible = false;
+            UIElement ui("", "poophat", "poophat");
+            ui.visible = false; ui.textLayer = 21; ui.isEnabled = true;
+            m_ecsSystem->AddComponent<Transform>(m_musicKnobEntity, t);
+            m_ecsSystem->AddComponent<Sprite>(m_musicKnobEntity, s);
+            m_ecsSystem->AddComponent<UIElement>(m_musicKnobEntity, ui);
+        }
+
+        // SFX SLIDER
+        // Track entity for sfx
+        if (m_sfxTrackEntity == 0) {
+            m_sfxTrackEntity = m_ecsSystem->CreateEntity();
+            Transform t(Gnosis::GNVector2(m_sliderX, sfxTrackY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            Sprite s; s.visible = false; s.layer = 3;
+            UIShape shape; shape.visible = false; shape.width = m_sliderW; shape.height = m_sliderH;
+            UIElement ui; ui.visible = false; ui.textLayer = 3; ui.isEnabled = true;
+            m_ecsSystem->AddComponent<Transform>(m_sfxTrackEntity, t);
+            m_ecsSystem->AddComponent<Sprite>(m_sfxTrackEntity, s);
+            m_ecsSystem->AddComponent<UIShape>(m_sfxTrackEntity, shape);
+            m_ecsSystem->AddComponent<UIElement>(m_sfxTrackEntity, ui);
+        }
+        
+        // Label entity for sfx
+        if (m_sfxLabelEntity == 0) {
+            m_sfxLabelEntity = m_ecsSystem->CreateEntity();
+            float labelY = sfxTrackY - 28.0f;
+            float labelX = m_sliderX;
+            Transform t(Gnosis::GNVector2(labelX, labelY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            Sprite s; s.visible = false; s.layer = 4;
+            UIElement ui("SFX", "", "");
+            ui.fontSize = 32.0f;
+            ui.textColor = Gnosis::GNColor(255, 255, 255, 255);
+            ui.centerTextHorizontally = false; ui.centerTextVertically = true; ui.visible = false; ui.textLayer = 4;
+            m_ecsSystem->AddComponent<Transform>(m_sfxLabelEntity, t);
+            m_ecsSystem->AddComponent<Sprite>(m_sfxLabelEntity, s);
+            m_ecsSystem->AddComponent<UIElement>(m_sfxLabelEntity, ui);
+        }
+        
+        // Knob entity for sfx
+        if (m_sfxKnobEntity == 0) {
+            m_sfxKnobEntity = m_ecsSystem->CreateEntity();
+            float knobSize = 32.0f;
+            float knobX = m_sliderX + GameCore::GetGame()->GetSFXVolume() * m_sliderW - knobSize * 0.5f;
+            float knobY = sfxTrackY + m_sliderH * 0.5f - knobSize * 0.5f;
+            Transform t(Gnosis::GNVector2(knobX, knobY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            Sprite s("poophat", knobSize, knobSize); s.layer = 21; s.visible = false;
+            UIElement ui("", "poophat", "poophat");
+            ui.visible = false; ui.textLayer = 21; ui.isEnabled = true;
+            m_ecsSystem->AddComponent<Transform>(m_sfxKnobEntity, t);
+            m_ecsSystem->AddComponent<Sprite>(m_sfxKnobEntity, s);
+            m_ecsSystem->AddComponent<UIElement>(m_sfxKnobEntity, ui);
+        }
+        
+        GN_LOG_INFO("Created audio sliders");
+    }
+
+    void GameplayState::ShowTabContent(int tabIndex) {
+        // Hide all tab content first
+        HideAllTabContent();
+        
+        // Show the specified tab content
+        switch (tabIndex) {
+            case 0: // SKILLS
+                ShowSkillsTab();
+                break;
+                
+            case 1: // HATS
+                ShowHatsTab();
+                break;
+                
+            case 2: // STATS
+                ShowStatsTab();
+                break;
+                
+            case 3: // SYSTEM
+                ShowSystemTab();
+                break;
+                
+            default:
+                GN_LOG_WARN("Unknown tab index: " + std::to_string(tabIndex));
+                break;
+        }
+    }
+
+    void GameplayState::ShowCurrentTabContent() {
+        ShowTabContent(m_currentPauseTab);
+    }
+
+    void GameplayState::ShowSkillsTab() {
+        GN_LOG_INFO("Showing skills tab");
+        
+        if (m_skillsContentEntity != 0 && m_ecsSystem) {
+            Sprite* contentSprite = m_ecsSystem->GetComponent<Sprite>(m_skillsContentEntity);
+            if (contentSprite) {
+                contentSprite->visible = true;
+            }
+            UIElement* contentUI = m_ecsSystem->GetComponent<UIElement>(m_skillsContentEntity);
+            if (contentUI) {
+                contentUI->visible = true;
+            }
+        }
+    }
+
+    void GameplayState::ShowHatsTab() {
+        GN_LOG_INFO("Showing hats tab");
+        
+        if (m_hatsContentEntity != 0 && m_ecsSystem) {
+            Sprite* contentSprite = m_ecsSystem->GetComponent<Sprite>(m_hatsContentEntity);
+            if (contentSprite) {
+                contentSprite->visible = true;
+            }
+            UIElement* contentUI = m_ecsSystem->GetComponent<UIElement>(m_hatsContentEntity);
+            if (contentUI) {
+                contentUI->visible = true;
+            }
+        }
+    }
+
+    void GameplayState::ShowStatsTab() {
+        GN_LOG_INFO("Showing stats tab");
+        
+        if (m_statsContentEntity != 0 && m_ecsSystem) {
+            Sprite* contentSprite = m_ecsSystem->GetComponent<Sprite>(m_statsContentEntity);
+            if (contentSprite) {
+                contentSprite->visible = true;
+            }
+            UIElement* contentUI = m_ecsSystem->GetComponent<UIElement>(m_statsContentEntity);
+            if (contentUI) {
+                contentUI->visible = true;
+            }
+        }
+    }
+
+    void GameplayState::ShowSystemTab() {
+        GN_LOG_INFO("Showing system tab");
+        
+        // Show system tab entities
+        if (m_mainMenuButtonEntity != 0 && m_ecsSystem) {
+            Sprite* buttonSprite = m_ecsSystem->GetComponent<Sprite>(m_mainMenuButtonEntity);
+            if (buttonSprite) {
+                buttonSprite->visible = true;
+            }
+            
+            UIElement* buttonUI = m_ecsSystem->GetComponent<UIElement>(m_mainMenuButtonEntity);
+            if (buttonUI) {
+                buttonUI->visible = true;
+            }
+        }
+        
+        // Show audio slider entities if they exist
+        if (m_musicKnobEntity != 0 && m_ecsSystem) {
+            Sprite* musicKnob = m_ecsSystem->GetComponent<Sprite>(m_musicKnobEntity);
+            if (musicKnob) {
+                musicKnob->visible = true;
+            }
+            UIElement* musicKnobUI = m_ecsSystem->GetComponent<UIElement>(m_musicKnobEntity);
+            if (musicKnobUI) {
+                musicKnobUI->visible = true;
+            }
+        }
+        
+        if (m_sfxKnobEntity != 0 && m_ecsSystem) {
+            Sprite* sfxKnob = m_ecsSystem->GetComponent<Sprite>(m_sfxKnobEntity);
+            if (sfxKnob) {
+                sfxKnob->visible = true;
+            }
+            UIElement* sfxKnobUI = m_ecsSystem->GetComponent<UIElement>(m_sfxKnobEntity);
+            if (sfxKnobUI) {
+                sfxKnobUI->visible = true;
+            }
+        }
+        
+        // Show slider tracks and labels
+        if (m_musicTrackEntity != 0 && m_ecsSystem) {
+            UIShape* musicTrack = m_ecsSystem->GetComponent<UIShape>(m_musicTrackEntity);
+            if (musicTrack) {
+                musicTrack->visible = true;
+            }
+            UIElement* musicTrackUI = m_ecsSystem->GetComponent<UIElement>(m_musicTrackEntity);
+            if (musicTrackUI) {
+                musicTrackUI->visible = true;
+            }
+        }
+        
+        if (m_sfxTrackEntity != 0 && m_ecsSystem) {
+            UIShape* sfxTrack = m_ecsSystem->GetComponent<UIShape>(m_sfxTrackEntity);
+            if (sfxTrack) {
+                sfxTrack->visible = true;
+            }
+            UIElement* sfxTrackUI = m_ecsSystem->GetComponent<UIElement>(m_sfxTrackEntity);
+            if (sfxTrackUI) {
+                sfxTrackUI->visible = true;
+            }
+        }
+        
+        if (m_musicLabelEntity != 0 && m_ecsSystem) {
+            Sprite* musicLabel = m_ecsSystem->GetComponent<Sprite>(m_musicLabelEntity);
+            if (musicLabel) {
+                musicLabel->visible = true;
+            }
+            UIElement* musicLabelUI = m_ecsSystem->GetComponent<UIElement>(m_musicLabelEntity);
+            if (musicLabelUI) {
+                musicLabelUI->visible = true;
+            }
+        }
+        
+        if (m_sfxLabelEntity != 0 && m_ecsSystem) {
+            Sprite* sfxLabel = m_ecsSystem->GetComponent<Sprite>(m_sfxLabelEntity);
+            if (sfxLabel) {
+                sfxLabel->visible = true;
+            }
+            UIElement* sfxLabelUI = m_ecsSystem->GetComponent<UIElement>(m_sfxLabelEntity);
+            if (sfxLabelUI) {
+                sfxLabelUI->visible = true;
+            }
+        }
+        
+        // Show content entity if it exists
+        if (m_pauseMenuContentEntity != 0 && m_ecsSystem) {
+            Sprite* contentSprite = m_ecsSystem->GetComponent<Sprite>(m_pauseMenuContentEntity);
+            if (contentSprite) {
+                contentSprite->visible = true;
+            }
+            UIElement* contentUI = m_ecsSystem->GetComponent<UIElement>(m_pauseMenuContentEntity);
+            if (contentUI) {
+                contentUI->visible = true;
+            }
+        }
+    }
+
+    void GameplayState::HideAllTabContent() {
+        GN_LOG_INFO("Hiding all tab content");
+        
+        // Hide system tab entities
+        if (m_mainMenuButtonEntity != 0 && m_ecsSystem) {
+            Sprite* buttonSprite = m_ecsSystem->GetComponent<Sprite>(m_mainMenuButtonEntity);
+            if (buttonSprite) {
+                buttonSprite->visible = false;
+            }
+            
+            UIElement* buttonUI = m_ecsSystem->GetComponent<UIElement>(m_mainMenuButtonEntity);
+            if (buttonUI) {
+                buttonUI->visible = false;
+            }
+        }
+        
+        // Hide audio slider entities if they exist
+        if (m_musicKnobEntity != 0 && m_ecsSystem) {
+            Sprite* musicKnob = m_ecsSystem->GetComponent<Sprite>(m_musicKnobEntity);
+            if (musicKnob) {
+                musicKnob->visible = false;
+            }
+            UIElement* musicKnobUI = m_ecsSystem->GetComponent<UIElement>(m_musicKnobEntity);
+            if (musicKnobUI) {
+                musicKnobUI->visible = false;
+            }
+        }
+        
+        if (m_sfxKnobEntity != 0 && m_ecsSystem) {
+            Sprite* sfxKnob = m_ecsSystem->GetComponent<Sprite>(m_sfxKnobEntity);
+            if (sfxKnob) {
+                sfxKnob->visible = false;
+            }
+            UIElement* sfxKnobUI = m_ecsSystem->GetComponent<UIElement>(m_sfxKnobEntity);
+            if (sfxKnobUI) {
+                sfxKnobUI->visible = false;
+            }
+        }
+        
+        // Hide slider tracks and labels
+        if (m_musicTrackEntity != 0 && m_ecsSystem) {
+            UIShape* musicTrack = m_ecsSystem->GetComponent<UIShape>(m_musicTrackEntity);
+            if (musicTrack) {
+                musicTrack->visible = false;
+            }
+            UIElement* musicTrackUI = m_ecsSystem->GetComponent<UIElement>(m_musicTrackEntity);
+            if (musicTrackUI) {
+                musicTrackUI->visible = false;
+            }
+        }
+        
+        if (m_sfxTrackEntity != 0 && m_ecsSystem) {
+            UIShape* sfxTrack = m_ecsSystem->GetComponent<UIShape>(m_sfxTrackEntity);
+            if (sfxTrack) {
+                sfxTrack->visible = false;
+            }
+            UIElement* sfxTrackUI = m_ecsSystem->GetComponent<UIElement>(m_sfxTrackEntity);
+            if (sfxTrackUI) {
+                sfxTrackUI->visible = false;
+            }
+        }
+        
+        if (m_musicLabelEntity != 0 && m_ecsSystem) {
+            Sprite* musicLabel = m_ecsSystem->GetComponent<Sprite>(m_musicLabelEntity);
+            if (musicLabel) {
+                musicLabel->visible = false;
+            }
+            UIElement* musicLabelUI = m_ecsSystem->GetComponent<UIElement>(m_musicLabelEntity);
+            if (musicLabelUI) {
+                musicLabelUI->visible = false;
+            }
+        }
+        
+        if (m_sfxLabelEntity != 0 && m_ecsSystem) {
+            Sprite* sfxLabel = m_ecsSystem->GetComponent<Sprite>(m_sfxLabelEntity);
+            if (sfxLabel) {
+                sfxLabel->visible = false;
+            }
+            UIElement* sfxLabelUI = m_ecsSystem->GetComponent<UIElement>(m_sfxLabelEntity);
+            if (sfxLabelUI) {
+                sfxLabelUI->visible = false;
+            }
+        }
+        
+        // Hide tab content entities
+        if (m_skillsContentEntity != 0 && m_ecsSystem) {
+            Sprite* contentSprite = m_ecsSystem->GetComponent<Sprite>(m_skillsContentEntity);
+            if (contentSprite) {
+                contentSprite->visible = false;
+            }
+            UIElement* contentUI = m_ecsSystem->GetComponent<UIElement>(m_skillsContentEntity);
+            if (contentUI) {
+                contentUI->visible = false;
+            }
+        }
+        
+        if (m_hatsContentEntity != 0 && m_ecsSystem) {
+            Sprite* contentSprite = m_ecsSystem->GetComponent<Sprite>(m_hatsContentEntity);
+            if (contentSprite) {
+                contentSprite->visible = false;
+            }
+            UIElement* contentUI = m_ecsSystem->GetComponent<UIElement>(m_hatsContentEntity);
+            if (contentUI) {
+                contentUI->visible = false;
+            }
+        }
+        
+        if (m_statsContentEntity != 0 && m_ecsSystem) {
+            Sprite* contentSprite = m_ecsSystem->GetComponent<Sprite>(m_statsContentEntity);
+            if (contentSprite) {
+                contentSprite->visible = false;
+            }
+            UIElement* contentUI = m_ecsSystem->GetComponent<UIElement>(m_statsContentEntity);
+            if (contentUI) {
+                contentUI->visible = false;
+            }
+        }
+        
+        // Hide content entity if it exists (legacy)
+        if (m_pauseMenuContentEntity != 0 && m_ecsSystem) {
+            Sprite* contentSprite = m_ecsSystem->GetComponent<Sprite>(m_pauseMenuContentEntity);
+            if (contentSprite) {
+                contentSprite->visible = false;
+            }
+            UIElement* contentUI = m_ecsSystem->GetComponent<UIElement>(m_pauseMenuContentEntity);
+            if (contentUI) {
+                contentUI->visible = false;
+            }
+        }
+    }
+
+    void GameplayState::CheckSettingsButtonClick(float touchX, float touchY) {
+        GN_LOG_INFO("CheckSettingsButtonClick: touch at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
+        
+        if (m_settingsButtonEntity == 0) {
+            GN_LOG_WARN("CheckSettingsButtonClick: No settings button exists");
+            return; // No settings button exists
+        }
+        
+        if (!m_ecsSystem) {
+            GN_LOG_WARN("CheckSettingsButtonClick: ECS system is null");
+            return;
+        }
+        
+        // Get button transform for collision detection
+        auto transform = m_ecsSystem->GetComponent<Transform>(m_settingsButtonEntity);
+        
+        if (!transform) {
+            GN_LOG_WARN("CheckSettingsButtonClick: No transform component found for settings button");
+            return;
+        }
+        
+        GN_LOG_INFO("CheckSettingsButtonClick: Button transform at (" + std::to_string(transform->position.x) + ", " + std::to_string(transform->position.y) + ") scale (" + std::to_string(transform->scale.x) + ", " + std::to_string(transform->scale.y) + ")");
+        
+        // Simple collision detection (assuming 64x64 button)
+        float buttonWidth = 64.0f * transform->scale.x;
+        float buttonHeight = 64.0f * transform->scale.y;
+        float buttonLeft = transform->position.x - (buttonWidth * 0.5f);
+        float buttonRight = transform->position.x + (buttonWidth * 0.5f);
+        float buttonTop = transform->position.y - (buttonHeight * 0.5f);
+        float buttonBottom = transform->position.y + (buttonHeight * 0.5f);
+        
+        if (touchX >= buttonLeft && touchX <= buttonRight &&
+            touchY >= buttonTop && touchY <= buttonBottom) {
+            
+            // Check debounce timer to prevent rapid clicking
+            if (m_lastSettingsButtonPressTime < m_settingsButtonDebounceDelay) {
+                GN_LOG_INFO("Settings button debounced - too soon since last press");
+                return;
+            }
+
+            // Dynamically calculate clickable area based on current scale
+            float buttonScale = transform->scale.x;
+            float buttonWidth = 64.0f * buttonScale;
+            float buttonHeightPx = 64.0f * buttonScale;
+            float buttonLeft = transform->position.x;
+            float buttonTop = transform->position.y;
+            float buttonRight = buttonLeft + buttonWidth;
+            float buttonBottom = buttonTop + buttonHeightPx;
+
+            // If touch is within the button area, allow click
+            if (!(touchX >= buttonLeft && touchX <= buttonRight &&
+                  touchY >= buttonTop && touchY <= buttonBottom)) {
+                // If we're in pause menu, allow clicks outside the button after debounce
+                if (m_currentSubState == GameplaySubState::Paused &&
+                    m_lastSettingsButtonPressTime >= m_settingsButtonDebounceDelay) {
+                    GN_LOG_INFO("Pause menu: Click outside settings button allowed after debounce");
+                    // You can add logic here for dismissing the pause menu or other actions
+                }
+                return;
+            }
+            
+            if (m_currentSubState == GameplaySubState::Playing) {
+                GN_LOG_INFO("Settings button clicked! Opening pause menu.");
+                TriggerPause();
+                ShowPauseMenu();
+                // Reset debounce timer
+                m_lastSettingsButtonPressTime = 0.0f;
+            } else if (m_currentSubState == GameplaySubState::Paused) {
+                GN_LOG_INFO("Settings button clicked! Closing pause menu.");
+                HidePauseMenu();
+                TriggerResume();
+                // Reset debounce timer
+                m_lastSettingsButtonPressTime = 0.0f;
+            }
+        }
+    }
+
+    void GameplayState::HandlePauseMenuInput(float touchX, float touchY) {
+        GN_LOG_INFO("Handling pause menu input at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
+        
+        // Check ribbon button clicks first
+        HandlePauseMenuRibbonClick(touchX, touchY);
+
+        // Check if tap is in the settings button area (always allow settings button click)
+        if (IsTapInSettingsButtonArea(touchX, touchY)) {
+            GN_LOG_INFO("Tap is in settings button area from pause menu - handling settings button click");
+            CheckSettingsButtonClick(touchX, touchY);
+            return;
+        }
+
+        // Check content area clicks
+        HandlePauseMenuContentClick(touchX, touchY);
+        
+        // Check if user tapped outside menu area to close it
+        if (IsTapOutsideMenuArea(touchX, touchY)) {
+            GN_LOG_INFO("Tap outside menu area detected - closing pause menu");
+            HidePauseMenu();
+            TriggerResume();
+        }
+    }
+
+    void GameplayState::HandlePauseMenuRibbonClick(float touchX, float touchY) {
+        // Get screen dimensions
+        float screenWidth = 1179.0f;  // Default iPhone 16 width
+        float screenHeight = 2556.0f; // Default iPhone 16 height
+        
+        if (m_renderSystem) {
+            const ScreenInfo& si = m_renderSystem->GetScreenInfo();
+            screenWidth = si.pixelWidth;
+            screenHeight = si.pixelHeight;
+        }
+        
+        // Calculate button positions
+        float buttonWidth = screenWidth / 4.0f; // Divide screen into 4 equal sections
+        float buttonY = screenHeight * 0.15f; // Same Y as ribbon
+        
+        // Check which button was clicked
+        for (int i = 0; i < 4; i++) {
+            float buttonX = (i * buttonWidth) + (buttonWidth * 0.5f); // Center of section
+            
+            // Simple collision detection
+            float buttonLeft = buttonX - 32.0f; // Assuming 64x64 button
+            float buttonRight = buttonX + 32.0f;
+            float buttonTop = buttonY - 32.0f;
+            float buttonBottom = buttonY + 32.0f;
+            
+            if (touchX >= buttonLeft && touchX <= buttonRight &&
+                touchY >= buttonTop && touchY <= buttonBottom) {
+                GN_LOG_INFO("Ribbon button " + std::to_string(i) + " clicked!");
+                SwitchPauseTab(i);
+                return;
+            }
+        }
+    }
+
+    void GameplayState::HandlePauseMenuContentClick(float touchX, float touchY) {
+        // Handle clicks in the content area based on current tab
+        switch (m_currentPauseTab) {
+            case 3: // SYSTEM tab
+                HandleSystemTabClick(touchX, touchY);
+                break;
+                
+            default:
+                // Other tabs not implemented yet
+                break;
+        }
+    }
+
+    void GameplayState::HandleSystemTabClick(float touchX, float touchY) {
+        // Check main menu button click
+        if (m_mainMenuButtonEntity != 0 && m_ecsSystem) {
+            auto transform = m_ecsSystem->GetComponent<Transform>(m_mainMenuButtonEntity);
+            if (transform) {
+                // Simple collision detection (assuming 64x64 button)
+                float buttonWidth = 64.0f * transform->scale.x;
+                float buttonHeight = 64.0f * transform->scale.y;
+                float buttonLeft = transform->position.x - (buttonWidth * 0.5f);
+                float buttonRight = transform->position.x + (buttonWidth * 0.5f);
+                float buttonTop = transform->position.y - (buttonHeight * 0.5f);
+                float buttonBottom = transform->position.y + (buttonHeight * 0.5f);
+                
+                if (touchX >= buttonLeft && touchX <= buttonRight &&
+                    touchY >= buttonTop && touchY <= buttonBottom) {
+                    GN_LOG_INFO("Main menu button clicked! Returning to main menu.");
+                    ReturnToMainMenu();
+                    return;
+                }
+            }
+        }
+        
+        // TODO: Handle audio slider clicks when implemented
+    }
+
+    bool GameplayState::IsTapOutsideMenuArea(float touchX, float touchY) {
+        // Get screen dimensions
+        float screenWidth = 1179.0f;  // Default iPhone 16 width
+        float screenHeight = 2556.0f; // Default iPhone 16 height
+        
+        if (m_renderSystem) {
+            const ScreenInfo& si = m_renderSystem->GetScreenInfo();
+            screenWidth = si.pixelWidth;
+            screenHeight = si.pixelHeight;
+        }
+        
+        // Define menu area bounds to match the actual pause menu background dimensions
+        // Background: 160x300 scaled 6x = 960x1800 pixels, centered on iPhone screen
+        float originalWidth = 160.0f;   // Original texture width
+        float originalHeight = 300.0f;  // Original texture height
+        float bgScale = 7.0f;
+        
+        // SCALE FIRST, then center: Use same logic as background creation
+        float scaledWidth = originalWidth * bgScale;   // 160 * 6 = 960
+        float scaledHeight = originalHeight * bgScale; // 300 * 6 = 1800
+        Gnosis::GNVector2 bgPosition = CenterObjectAtPosition(screenWidth * 0.5f, screenHeight * 0.5f, scaledWidth, scaledHeight);
+        float menuLeft = bgPosition.x;
+        float menuRight = bgPosition.x + scaledWidth;
+        float menuTop = bgPosition.y;
+        float menuBottom = bgPosition.y + scaledHeight;
+        
+        // Only consider taps outside the top, right, and bottom as "outside"
+        bool outsideMenu = (touchX > menuRight || touchY < menuTop || touchY > menuBottom);
+        
+        // EXCLUDE the settings button area from "outside menu" check
+        if (IsTapInSettingsButtonArea(touchX, touchY)) {
+            GN_LOG_INFO("Tap is in settings button area - not outside menu");
+            return false;
+        }
+
+        // For debug log: recalculate settings button bounds here
+        float settingsButtonX = screenWidth * 0.85f;
+        float settingsButtonY = screenHeight * 0.05f;
+        float buttonScale = 8.0f;
+        if (m_settingsButtonEntity != 0 && m_ecsSystem) {
+            Transform* t = m_ecsSystem->GetComponent<Transform>(m_settingsButtonEntity);
+            if (t) {
+                buttonScale = t->scale.x;
+            }
+        }
+        float buttonSize = 64.0f * buttonScale;
+        // Expand clickable area by 10px padding
+        float padding = 10.0f;
+        float buttonLeft = settingsButtonX - (buttonSize * 0.5f) - padding;
+        float buttonRight = settingsButtonX + (buttonSize * 0.5f) + padding;
+        float buttonTop = settingsButtonY - (buttonSize * 0.5f) - padding;
+        float buttonBottom = settingsButtonY + (buttonSize * 0.5f) + padding;
+
+        GN_LOG_INFO("Tap at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + 
+                   ") - Menu bounds: (" + std::to_string(menuLeft) + ", " + std::to_string(menuTop) + 
+                   ") to (" + std::to_string(menuRight) + ", " + std::to_string(menuBottom) + 
+                   ") - Settings button: (" + std::to_string(buttonLeft) + ", " + std::to_string(buttonTop) + 
+                   ") to (" + std::to_string(buttonRight) + ", " + std::to_string(buttonBottom) + 
+                   ") - Outside: " + std::string(outsideMenu ? "YES" : "NO"));
+
+        return outsideMenu;
+    }
+
+    // Helper to check if tap is in settings button area (shared logic)
+    bool GameplayState::IsTapInSettingsButtonArea(float touchX, float touchY) {
+        // Get screen dimensions
+        float screenWidth = 1179.0f;
+        float screenHeight = 2556.0f;
+        if (m_renderSystem) {
+            const ScreenInfo& si = m_renderSystem->GetScreenInfo();
+            screenWidth = si.pixelWidth;
+            screenHeight = si.pixelHeight;
+        }
+        float settingsButtonX = screenWidth * 0.85f;
+        float settingsButtonY = screenHeight * 0.05f;
+        float buttonScale = 8.0f;
+        if (m_settingsButtonEntity != 0 && m_ecsSystem) {
+            Transform* t = m_ecsSystem->GetComponent<Transform>(m_settingsButtonEntity);
+            if (t) {
+                buttonScale = t->scale.x;
+            }
+        }
+        float buttonSize = 64.0f * buttonScale;
+        float buttonLeft = settingsButtonX - (buttonSize * 0.5f);
+        float buttonRight = settingsButtonX + (buttonSize * 0.5f);
+        float buttonTop = settingsButtonY - (buttonSize * 0.5f);
+        float buttonBottom = settingsButtonY + (buttonSize * 0.5f);
+        return (touchX >= buttonLeft && touchX <= buttonRight &&
+                touchY >= buttonTop && touchY <= buttonBottom);
+    }
+
+
 
 } // namespace GameCore

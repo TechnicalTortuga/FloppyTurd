@@ -158,8 +158,9 @@ void InitializePlatformDelegates() {
             GameCore::ThreadingProxy::enqueuePlaySound(soundName, volume);
         }
         
-        void StopSound() {
-            GameCore::ThreadingProxy::enqueueStopSound();
+        void StopSound(const char* soundName) {
+            if (!soundName) return;
+            GameCore::ThreadingProxy::enqueueStopSound(soundName);
         }
         
         void SetMusicVolume(float volume) {

@@ -411,6 +411,72 @@ namespace GameCore {
         GN_LOG_INFO("HeartSystem: Successfully updated hearts for difficulty change without reallocation");
     }
 
+    void HeartSystem::HideAllHearts() {
+        if (!m_ecsCoordinator) {
+            return;
+        }
+        
+        GN_LOG_INFO("HeartSystem::HideAllHearts: Hiding all heart entities");
+        
+        // Hide all allocated heart entities
+        for (int i = 0; i < m_allocatedHearts; ++i) {
+            if (m_heartEntities[i] != Gnosis::INVALID_ENTITY) {
+                UIElement* heartUI = m_ecsCoordinator->GetComponent<UIElement>(m_heartEntities[i]);
+                if (heartUI) {
+                    heartUI->visible = false;
+                }
+            }
+        }
+        
+        GN_LOG_INFO("HeartSystem::HideAllHearts: Hidden " + std::to_string(m_allocatedHearts) + " heart entities");
+    }
+
+    void HeartSystem::ShowAllHearts() {
+        if (!m_ecsCoordinator) {
+            return;
+        }
+        
+        GN_LOG_INFO("HeartSystem::ShowAllHearts: Showing current active heart entities");
+        
+        // Get the current player to determine how many hearts to show
+        auto playerEntities = m_ecsCoordinator->GetEntitiesWithComponents<PlayerComponent>();
+        if (playerEntities.empty()) {
+            GN_LOG_WARN("HeartSystem::ShowAllHearts: No player found, cannot determine heart count");
+            return;
+        }
+        
+        Gnosis::Entity playerEntity = playerEntities[0]; // Assume first player
+        PlayerComponent* player = m_ecsCoordinator->GetComponent<PlayerComponent>(playerEntity);
+        if (!player) {
+            GN_LOG_ERROR("HeartSystem::ShowAllHearts: Player component not found");
+            return;
+        }
+        
+        // Show only the current active hearts (not all possible hearts)
+        for (int i = 0; i < m_allocatedHearts; ++i) {
+            if (m_heartEntities[i] != Gnosis::INVALID_ENTITY) {
+                UIElement* heartUI = m_ecsCoordinator->GetComponent<UIElement>(m_heartEntities[i]);
+                if (heartUI) {
+                    // Only show hearts up to the player's current heart count
+                    if (i < player->hearts) {
+                        heartUI->visible = true;
+                        
+                        // Update the texture to match current health state
+                        std::string textureName = GetHeartTexture(player->heartMode, i, 
+                                                                player->hearts, player->liveSlices, 
+                                                                player->maxHealth);
+                        heartUI->normalTextureId = textureName;
+                    } else {
+                        // Hide hearts beyond current count
+                        heartUI->visible = false;
+                    }
+                }
+            }
+        }
+        
+        GN_LOG_INFO("HeartSystem::ShowAllHearts: Shown " + std::to_string(player->hearts) + " active heart entities");
+    }
+
 
 
 } // namespace GameCore

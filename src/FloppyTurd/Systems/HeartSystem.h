@@ -110,6 +110,16 @@ namespace GameCore {
          */
         void UpdateHeartVisibility(Gnosis::Entity playerEntity);
         
+        /**
+         * Hide all heart entities (for pause menu)
+         */
+        void HideAllHearts();
+        
+        /**
+         * Show only the current active heart entities (for resume from pause)
+         */
+        void ShowAllHearts();
+        
     private:
         /**
          * Calculate heart container count for difficulty

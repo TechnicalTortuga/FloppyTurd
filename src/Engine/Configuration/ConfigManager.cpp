@@ -223,4 +223,17 @@ namespace GameCore {
         }
     }
 
+    void ConfigManager::SetScreenInfoDirect(const ScreenInfo& screenInfo) {
+        m_screenInfo = screenInfo;
+        CalculateScaleFactors();
+        
+        GN_LOG_INFO("ConfigManager: Screen info set directly - " + 
+                   std::to_string((int)m_screenInfo.pixelWidth) + "x" + 
+                   std::to_string((int)m_screenInfo.pixelHeight) + " pixels, " +
+                   std::to_string(m_screenInfo.logicalWidth) + "x" + 
+                   std::to_string(m_screenInfo.logicalHeight) + " logical, " +
+                   "scale: " + std::to_string(m_screenInfo.scaleFactor) + 
+                   ", portrait: " + (m_screenInfo.isPortrait ? "true" : "false"));
+    }
+
 } // namespace GameCore

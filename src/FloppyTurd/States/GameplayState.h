@@ -50,7 +50,8 @@ namespace GameCore {
         // State updates
         void Update(float deltaTime) override;
         void Render() override;
-        void HandleInput() override;
+        void HandleSettingsButtonInput();
+    void HandleInput() override;
 
         // State queries
         bool IsFinished() const override { return m_finished; }
@@ -145,6 +146,64 @@ namespace GameCore {
         Gnosis::Entity m_tempMenuButtonEntity;  // Temporary button to return to main menu
         Gnosis::Entity m_heartUIEntity;         // Heart UI display entity
         
+        // Pause menu system
+        Gnosis::Entity m_settingsButtonEntity;  // Settings button (replaces [MENU] button)
+        Gnosis::Entity m_pauseMenuBackgroundEntity; // Pause menu background overlay
+        Gnosis::Entity m_pauseMenuRibbonEntity;     // Ribbon containing tab buttons
+        std::vector<Gnosis::Entity> m_ribbonButtons; // SKILLS, HATS, STATS, SYSTEM buttons
+        Gnosis::Entity m_pauseMenuContentEntity;     // Content area for current tab
+        int m_currentPauseTab;                       // Current active tab (0=SKILLS, 1=HATS, 2=STATS, 3=SYSTEM)
+        // Settings button debouncing
+        float m_lastSettingsButtonPressTime;
+        float m_settingsButtonDebounceDelay;
+        
+        // Pause menu creation state
+        bool m_pauseMenuCreated;
+
+        // Pause menu tab content management
+        void ShowPauseMenuTab(int tabIndex);
+        void DestroyPauseMenuTabContent();
+        void CreateSystemTabContent();
+        void CreateSkillsTabContent();
+        void CreateHatsTabContent();
+        void CreateStatsTabContent();
+
+        // Pause menu tab content entities
+        Gnosis::Entity m_systemTabEntity;       // System tab content (audio + main menu)
+        Gnosis::Entity m_mainMenuButtonEntity;  // Main menu button in system tab
+        Gnosis::Entity m_placeholderLabelEntity; // Placeholder label for non-system tabs
+        
+        // Individual tab content entities
+        Gnosis::Entity m_skillsContentEntity;   // Skills tab content
+        Gnosis::Entity m_hatsContentEntity;     // Hats tab content
+        Gnosis::Entity m_statsContentEntity;    // Stats tab content
+
+        // Audio slider UI entities (matching MainMenuState style)
+        Gnosis::Entity m_musicKnobEntity = 0;
+        Gnosis::Entity m_sfxKnobEntity = 0;
+        Gnosis::Entity m_musicTrackEntity = 0;
+        Gnosis::Entity m_sfxTrackEntity = 0;
+        Gnosis::Entity m_musicLabelEntity = 0;
+        Gnosis::Entity m_sfxLabelEntity = 0;
+
+        // Slider drag state
+        bool m_draggingMusic = false;
+        bool m_draggingSFX = false;
+        int m_activeDragKnob = -1; // -1=none, 0=music, 1=sfx
+        float m_dragStartX = 0.0f;
+        float m_dragKnobStartX = 0.0f;
+
+        // Cached slider layout
+        float m_sliderX = 0.0f;
+        float m_sliderY = 0.0f;
+        float m_sliderW = 0.0f;
+        float m_sliderH = 18.0f;
+        float m_sliderSpacing = 70.0f;
+
+        // Current slider values (0.0-1.0)
+        float m_musicSliderValue = 1.0f;
+        float m_sfxSliderValue = 1.0f;
+        
         // Game over UI elements
         Gnosis::Entity m_gameOverBackgroundEntity;   // Light from heaven background
         Gnosis::Entity m_morteEntity;                 // FloppyTurdMorte floating sprite
@@ -178,6 +237,10 @@ namespace GameCore {
         void CreateGameEntities();
         void CreateBackgroundLayers();
         void DestroyGameEntities();
+
+        // Pause menu tab switching (call when ribbon button pressed)
+        void OnPauseMenuTabSelected(int tabIndex);
+    void ResetPlayerEntity();
         void CreateUI();
         void DestroyUI();
         void UpdateGameLogic(float deltaTime);
@@ -228,6 +291,37 @@ namespace GameCore {
         void OnPickupCollected();
         void OnObstacleHit();
         void OnEnemyDefeated();
+        
+        // Pause menu methods
+        void CreatePauseMenu();
+        void DestroyPauseMenu();
+        void ShowPauseMenu();
+        void HidePauseMenu();
+        void CreateSettingsButton();
+        void CreatePauseMenuBackground();
+        void CreatePauseMenuRibbon();
+        void CreatePauseMenuContent();
+        void CreateRibbonButtons();
+        void CreateSystemTab();
+        void CreateSkillsTab();
+        void CreateHatsTab();
+        void CreateStatsTab();
+        void CreateAudioSliders();
+        void SwitchPauseTab(int tabIndex);
+        void ShowTabContent(int tabIndex);
+        void ShowCurrentTabContent();
+        void ShowSystemTab();
+        void ShowSkillsTab();
+        void ShowHatsTab();
+        void ShowStatsTab();
+        void HideAllTabContent();
+        void CheckSettingsButtonClick(float touchX, float touchY);
+        void HandlePauseMenuInput(float touchX, float touchY);
+        void HandlePauseMenuRibbonClick(float touchX, float touchY);
+        void HandlePauseMenuContentClick(float touchX, float touchY);
+        void HandleSystemTabClick(float touchX, float touchY);
+        bool IsTapOutsideMenuArea(float touchX, float touchY);
+        bool IsTapInSettingsButtonArea(float touchX, float touchY);
         
         // Menu navigation (for pause menu integration later)
         void ReturnToMainMenu();  // Function to connect to pause menu later

@@ -27,6 +27,8 @@ namespace GameCore {
         // Screen configuration - NO MORE HARDCODED DIMENSIONS!
         const ScreenInfo& GetCurrentScreenInfo() const { return m_screenInfo; }
         void UpdateScreenInfo(); // Call when orientation changes or resolution changes
+        void InitializeScreenInfoDirect(); // Direct initialization using Swift CXX interop
+        void SetScreenInfoDirect(const ScreenInfo& screenInfo); // Set screen info directly from Swift
         
         // Dynamic scaling factors based on screen size and device type
         float GetUIScale() const;           // UI element scaling

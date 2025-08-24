@@ -1,5 +1,6 @@
 #include "RenderSystem.h"
 #include "../../Engine/Core/GNLog.h"
+#include "../../Engine/Configuration/ConfigManager.h"
 #include <algorithm>
 
 namespace GameCore {
@@ -866,18 +867,34 @@ namespace GameCore {
     }
 
     void RenderSystem::UpdateScreenInfo() {
-        // Always use enhanced getScreenInfo when available; avoid 800x600 legacy fallback
-        if (m_platformDelegates.renderer.getScreenInfo) {
-            m_platformDelegates.renderer.getScreenInfo(&m_screenInfo);
+        // Use ConfigManager as primary source for screen info (set directly from Swift at startup)
+        const ScreenInfo& configScreenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+        
+        // Check if ConfigManager has valid screen info
+        if (configScreenInfo.pixelWidth > 0 && configScreenInfo.pixelHeight > 0) {
+            m_screenInfo = configScreenInfo;
             m_screenInfoValid = true;
-            GN_LOG_INFO("Screen info updated: " +
+            GN_LOG_INFO("Screen info updated from ConfigManager: " +
                         std::to_string((int)m_screenInfo.logicalWidth) + "x" +
                         std::to_string((int)m_screenInfo.logicalHeight) +
                         " (" + std::to_string((int)m_screenInfo.pixelWidth) + "x" +
                         std::to_string((int)m_screenInfo.pixelHeight) + " pixels)");
             return;
         }
-        // If enhanced info is not available, do NOT override existing valid info with legacy values.
+        
+        // Fallback to delegates only if ConfigManager doesn't have valid info
+        if (m_platformDelegates.renderer.getScreenInfo) {
+            m_platformDelegates.renderer.getScreenInfo(&m_screenInfo);
+            m_screenInfoValid = true;
+            GN_LOG_INFO("Screen info updated from delegates: " +
+                        std::to_string((int)m_screenInfo.logicalWidth) + "x" +
+                        std::to_string((int)m_screenInfo.logicalHeight) +
+                        " (" + std::to_string((int)m_screenInfo.pixelWidth) + "x" +
+                        std::to_string((int)m_screenInfo.pixelHeight) + " pixels)");
+            return;
+        }
+        
+        // Legacy fallback
         if (!m_screenInfoValid && m_platformDelegates.renderer.getScreenSize) {
             m_platformDelegates.renderer.getScreenSize(&m_screenInfo.logicalWidth, &m_screenInfo.logicalHeight);
             m_screenInfo.pixelWidth = m_screenInfo.logicalWidth;

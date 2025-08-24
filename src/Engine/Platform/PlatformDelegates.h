@@ -365,7 +365,7 @@ namespace GameCore {
     struct AudioDelegate {
         // Sound effects
         void (*playSound)(const char* soundName, float volume);
-        void (*stopSound)();
+        void (*stopSound)(const char* soundName);  // Stop specific sound by name
         
         // Background music
         void (*playMusic)(const char* musicName, float volume, int loopCount);

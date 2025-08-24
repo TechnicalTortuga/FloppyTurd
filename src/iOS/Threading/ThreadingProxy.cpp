@@ -1,5 +1,6 @@
 #include "ThreadingProxy.h"
 #include "../../Engine/Core/GNLog.h"
+#include "../../Engine/Configuration/ConfigManager.h"
 #include <cstring>
 
 // Import Swift module for direct interop calls
@@ -309,9 +310,10 @@ namespace GameCore {
         s_instance->enqueueAudioCommand(cmd);
     }
     
-    void ThreadingProxy::enqueueStopSound() {
+    void ThreadingProxy::enqueueStopSound(const char* soundName) {
         if (!s_instance) return;
         AudioCommand cmd(CommandType::CMD_STOP_SOUND);
+        cmd.data.audioFileName = std::string(soundName);
         s_instance->enqueueAudioCommand(cmd);
     }
     
@@ -855,6 +857,21 @@ void LogToThreadingProxy(const char* message, const char* category, int level) {
         case 4: ThreadingProxy::enqueueLogError(message, category); break;
         case 5: ThreadingProxy::enqueueLogFatal(message, category); break;
     }
+}
+
+// Swift CXX Interop Implementation
+void setScreenInfoDirect(const ScreenInfo& screenInfo) {
+    GN_LOG_INFO("setScreenInfoDirect: Receiving screen info from Swift - " +
+                std::to_string((int)screenInfo.pixelWidth) + "x" + 
+                std::to_string((int)screenInfo.pixelHeight) + " pixels, " +
+                std::to_string(screenInfo.logicalWidth) + "x" + 
+                std::to_string(screenInfo.logicalHeight) + " logical");
+    
+    // Set screen info directly on ConfigManager
+    auto& configManager = ConfigManager::Instance();
+    configManager.SetScreenInfoDirect(screenInfo);
+    
+    GN_LOG_INFO("setScreenInfoDirect: Screen info updated successfully");
 }
 
 } // namespace GameCore

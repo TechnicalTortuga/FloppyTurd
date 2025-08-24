@@ -77,7 +77,7 @@ message(STATUS "PLATFORM_DESKTOP: ${PLATFORM_DESKTOP}")
 if(PLATFORM_IOS)
     # Swift/C++ interoperability settings - keep this minimal
     set(CMAKE_Swift_FLAGS "-cxx-interoperability-mode=default -swift-version 6.0")
-    
+
     # Include paths for iOS
     include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Core
@@ -111,10 +111,12 @@ if(PLATFORM_IOS)
         "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Core/*.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Platform/*.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Platform/*.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Configuration/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Configuration/*.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Utility/*.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Utility/*.h"
     )
-    
+
     # Remove any Raylib sources from FLOPPYTURD_CPP_SOURCES for iOS
     list(FILTER FLOPPYTURD_CPP_SOURCES EXCLUDE REGEX ".*Raylib/.*")
     list(FILTER FLOPPYTURD_CPP_SOURCES EXCLUDE REGEX ".*RaylibPlatformImpl.*")
@@ -126,6 +128,7 @@ if(PLATFORM_IOS)
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Events
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Platform
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Assets
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Configuration
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Utility
         ${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Config
     )
@@ -202,7 +205,7 @@ if(PLATFORM_IOS)
         "${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/Threading/*.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/Assets/*.h"
     )
-    
+
     file(GLOB_RECURSE IOS_SWIFT_SOURCES
         "${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/*.swift"
         "${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/Assets/*.swift"
@@ -234,14 +237,14 @@ else()
         "${CMAKE_CURRENT_SOURCE_DIR}/src/Raylib/Rendering/*.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/src/Raylib/Rendering/*.h"
     )
-    
+
     # Combine sources for Desktop (WITH RAYLIB)
     set(ALL_SOURCES
         ${ENGINE_CORE_SOURCES}
         ${RAYLIB_SOURCES}
         ${GAME_SOURCES}
     )
-    
+
     message(STATUS "Desktop sources collected (including Raylib)")
 endif()
 
@@ -252,13 +255,13 @@ endif()
 if(PLATFORM_IOS)
     # Create iOS app bundle
     add_executable(FloppyTurd MACOSX_BUNDLE ${IOS_SWIFT_SOURCES} ${IOS_CPP_SOURCES})
-    
+
     # Link the C++ game library to the main app and set up proper dependencies
     target_link_libraries(FloppyTurd PRIVATE FloppyTurdGame)
-    
+
     # Add explicit dependency to ensure FloppyTurdGame is built first
     add_dependencies(FloppyTurd FloppyTurdGame)
-    
+
     # iOS-specific include directories (add Engine for module.modulemap)
     target_include_directories(FloppyTurd PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Core
@@ -289,7 +292,7 @@ if(PLATFORM_IOS)
     set_target_properties(FloppyTurd PROPERTIES
         HEADER_SEARCH_PATHS "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine"
     )
-    
+
     # iOS Framework dependencies (NO RAYLIB)
     target_link_libraries(FloppyTurd PRIVATE
         "-framework Foundation"
@@ -311,7 +314,7 @@ if(PLATFORM_IOS)
 else()
     # Create desktop executable
     add_executable(FloppyTurd ${ALL_SOURCES})
-    
+
     # Desktop-specific include directories
     target_include_directories(FloppyTurd PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Core
@@ -325,7 +328,7 @@ else()
         ${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Game
         ${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/States
     )
-    
+
     # Desktop dependencies (WITH RAYLIB)
     target_link_libraries(FloppyTurd PRIVATE raylib)
 endif()
@@ -378,35 +381,35 @@ if(PLATFORM_IOS)
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Debug-iphonesimulator"
         ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Debug-iphonesimulator"
     )
-    
+
     # Swift/C++ interop compiler options
     target_compile_options(FloppyTurd PRIVATE
         $<$<COMPILE_LANGUAGE:Swift>:-cxx-interoperability-mode=default>
         $<$<COMPILE_LANGUAGE:Swift>:-swift-version 6.0>
         $<$<COMPILE_LANGUAGE:CXX>:-std=c++20>
     )
-    
+
     # Link the game library to the main target
     if(TARGET FloppyTurdGame)
         target_link_libraries(FloppyTurd PRIVATE FloppyTurdGame)
     endif()
 endif()
 
-# Set properties for the game library target if it exists  
+# Set properties for the game library target if it exists
 if(TARGET FloppyTurdGame)
     target_compile_definitions(FloppyTurdGame PRIVATE ${COMMON_COMPILE_DEFINITIONS})
-    
+
     # C++ specific compiler options for the game library
     target_compile_options(FloppyTurdGame PRIVATE
         $<$<COMPILE_LANGUAGE:CXX>:-std=c++20>
     )
-    
+
     # Set C++ standard properties for the game library
     set_target_properties(FloppyTurdGame PROPERTIES
         CXX_STANDARD 20
         CXX_STANDARD_REQUIRED ON
     )
-    
+
     if(PLATFORM_IOS)
         # Swift 6.0 specific settings for the game library
         set_target_properties(FloppyTurdGame PROPERTIES
@@ -427,24 +430,24 @@ if(PLATFORM_IOS)
         COMMENT "Generating asset catalog from resources"
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
-    
+
     # Explicitly include the Assets.xcassets directory in the app bundle
     set_source_files_properties(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Assets.xcassets
         PROPERTIES
         MACOSX_PACKAGE_LOCATION "Resources"
     )
-    
+
     # Add the Assets.xcassets directory to the target
     target_sources(FloppyTurd PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Assets.xcassets
     )
-    
+
     # Set the ASSETCATALOG_COMPILER_APPICON_NAME if not set
     set_target_properties(FloppyTurd PROPERTIES
         ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon"
     )
-    
+
     # Explicitly add font files to bundle for iOS font registration (from new assets directory)
     # This makes .fnt files accessible via Bundle.main.path() calls
     file(GLOB FONT_FNT_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/assets/fonts/bitmap/*.fnt")
@@ -456,7 +459,7 @@ if(PLATFORM_IOS)
         set_source_files_properties(${FONT_FILE} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
         target_sources(FloppyTurd PRIVATE ${FONT_FILE})
     endforeach()
-    
+
     # Also add .ttf files for completeness
     file(GLOB FONT_TTF_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/assets/fonts/bitmap/*.ttf")
     file(GLOB FONT_TTF_FILES2 "${CMAKE_CURRENT_SOURCE_DIR}/src/assets/fonts/truetype/*.ttf")
@@ -467,7 +470,7 @@ if(PLATFORM_IOS)
         set_source_files_properties(${FONT_FILE} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
         target_sources(FloppyTurd PRIVATE ${FONT_FILE})
     endforeach()
-    
+
     # Also try adding fonts to a fonts subdirectory in the bundle
     file(GLOB FONT_ALL_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/assets/fonts/*/*")
     foreach(FONT_FILE ${FONT_ALL_FILES})

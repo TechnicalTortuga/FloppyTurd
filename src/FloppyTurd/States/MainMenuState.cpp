@@ -506,7 +506,7 @@ namespace GameCore {
             Transform t(Gnosis::GNVector2(backX, backY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
             Sprite s("FloppyButtonBlue", tw, th); s.layer = 22; s.visible = true;
             UIElement ui("BACK", "FloppyButtonBlue", "FloppyButtonBlueHover");
-            ui.fontSize = m_isMobile ? 42.0f : 21.0f;
+            ui.fontSize = m_isMobile ? 54.0f : 32.0f; // Increased font size
             ui.textColor = Gnosis::GNColor(255,255,255,255);
             ui.centerTextHorizontally = true;
             ui.centerTextVertically = true;
@@ -2228,7 +2228,8 @@ namespace GameCore {
             Transform t(Gnosis::GNVector2(titleX, titleY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
             Sprite s; s.visible = false; s.layer = 4; // text-only
             UIElement ui("OPTIONS", "", "");
-            ui.fontSize = m_isMobile ? 48.0f : 28.0f;
+            ui.fontSize = m_isMobile ? 72.0f : 42.0f; // Increased font size
+            ui.textColor = Gnosis::GNColor(255, 255, 255, 255); // White text
             ui.centerTextHorizontally = true;
             ui.centerTextVertically = true;
             ui.visible = true;
@@ -2241,30 +2242,34 @@ namespace GameCore {
         if (m_difficultyTextEntity == 0) m_difficultyTextEntity = m_ecsCoordinator->CreateEntity();
         if (m_difficultyValueEntity == 0) m_difficultyValueEntity = m_ecsCoordinator->CreateEntity();
         {
-            float diffY = m_optionsSliderY - (m_optionsSliderSpacing * 0.6f);
+            // Position difficulty section below SFX slider with proper spacing
+            float diffLabelY = m_screenHeight * 0.60f; // Label at 60% down
+            float diffValueY = m_screenHeight * 0.70f; // Value at 70% down
             float centerX = m_optionsOverlayX + m_optionsOverlayW * 0.5f;
             // Static text "DIFFICULTY"
-            Transform t(Gnosis::GNVector2(centerX, diffY - (m_isMobile ? 24.0f : 12.0f)), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            Transform t(Gnosis::GNVector2(centerX, diffLabelY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
             Sprite s; s.visible = true; s.layer = 4;
             UIElement ui("DIFFICULTY", "", "");
-            ui.fontSize = m_isMobile ? 36.0f : 18.0f;
+            ui.fontSize = m_isMobile ? 54.0f : 32.0f; // Increased font size
+            ui.textColor = Gnosis::GNColor(255, 255, 255, 255); // White text
             ui.centerTextHorizontally = true; ui.centerTextVertically = true; ui.visible = true;
             if (!m_ecsCoordinator->HasComponent<Transform>(m_difficultyTextEntity)) m_ecsCoordinator->AddComponent<Transform>(m_difficultyTextEntity, t); else *m_ecsCoordinator->GetComponent<Transform>(m_difficultyTextEntity) = t;
             if (!m_ecsCoordinator->HasComponent<Sprite>(m_difficultyTextEntity)) m_ecsCoordinator->AddComponent<Sprite>(m_difficultyTextEntity, s); else *m_ecsCoordinator->GetComponent<Sprite>(m_difficultyTextEntity) = s;
             if (!m_ecsCoordinator->HasComponent<UIElement>(m_difficultyTextEntity)) m_ecsCoordinator->AddComponent<UIElement>(m_difficultyTextEntity, ui); else *m_ecsCoordinator->GetComponent<UIElement>(m_difficultyTextEntity) = ui;
 
             // Current difficulty value centered between arrows
-            Transform vt(Gnosis::GNVector2(centerX, diffY + (m_isMobile ? 0.0f : 0.0f)), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            Transform vt(Gnosis::GNVector2(centerX, diffValueY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
             Sprite vs; vs.visible = true; vs.layer = 4;
             UIElement vei("NORMAL", "", ""); // placeholder value; update elsewhere when arrows pressed
-            vei.fontSize = m_isMobile ? 42.0f : 21.0f;
+            vei.fontSize = m_isMobile ? 60.0f : 36.0f; // Increased font size
+            vei.textColor = Gnosis::GNColor(255, 255, 255, 255); // White text
             vei.centerTextHorizontally = true; vei.centerTextVertically = true; vei.visible = true;
             if (!m_ecsCoordinator->HasComponent<Transform>(m_difficultyValueEntity)) m_ecsCoordinator->AddComponent<Transform>(m_difficultyValueEntity, vt); else *m_ecsCoordinator->GetComponent<Transform>(m_difficultyValueEntity) = vt;
             if (!m_ecsCoordinator->HasComponent<Sprite>(m_difficultyValueEntity)) m_ecsCoordinator->AddComponent<Sprite>(m_difficultyValueEntity, vs); else *m_ecsCoordinator->GetComponent<Sprite>(m_difficultyValueEntity) = vs;
             if (!m_ecsCoordinator->HasComponent<UIElement>(m_difficultyValueEntity)) m_ecsCoordinator->AddComponent<UIElement>(m_difficultyValueEntity, vei); else *m_ecsCoordinator->GetComponent<UIElement>(m_difficultyValueEntity) = vei;
 
             // Place arrows around the value
-            CreateOptionsArrows(m_optionsOverlayX, m_optionsOverlayY, m_optionsOverlayW, m_optionsOverlayH, diffY);
+            CreateOptionsArrows(m_optionsOverlayX, m_optionsOverlayY, m_optionsOverlayW, m_optionsOverlayH, diffValueY);
         }
 
         // Helper to create a slider track rectangle and a label above it
@@ -2287,7 +2292,8 @@ namespace GameCore {
                 Transform t(Gnosis::GNVector2(labelX, labelY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
                 Sprite s; s.visible = true; s.layer = 4;
                 UIElement ui(labelText, "", "");
-                ui.fontSize = m_isMobile ? 36.0f : 18.0f;
+                ui.fontSize = m_isMobile ? 54.0f : 32.0f; // Increased font size
+                ui.textColor = Gnosis::GNColor(255, 255, 255, 255); // White text
                 ui.centerTextHorizontally = false; ui.centerTextVertically = true; ui.visible = true;
                 if (!m_ecsCoordinator->HasComponent<Transform>(labelEntity)) m_ecsCoordinator->AddComponent<Transform>(labelEntity, t); else *m_ecsCoordinator->GetComponent<Transform>(labelEntity) = t;
                 if (!m_ecsCoordinator->HasComponent<Sprite>(labelEntity)) m_ecsCoordinator->AddComponent<Sprite>(labelEntity, s); else *m_ecsCoordinator->GetComponent<Sprite>(labelEntity) = s;

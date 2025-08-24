@@ -189,9 +189,26 @@ public final class AVAudioHandler: NSObject {
         log("Music stopped")
     }
     
-    public func stopSound() {
+    public func stopSound(_ soundName: String? = nil) {
+        if let soundName = soundName {
+            // Stop specific sound by name
+            log("Stopping specific sound: \(soundName)")
+            // For now, stop all sounds since we need to implement per-sound tracking
+            // TODO: Implement per-sound tracking to stop only specific sounds
+            stopAllSounds()
+        } else {
+            // Stop all sounds (legacy behavior)
+            log("Stopping all sounds")
+            stopAllSounds()
+        }
+    }
+    
+    private func stopAllSounds() {
         soundPlayerNode.stop()
-        log("Sound stopped")
+        for node in sfxNodes {
+            node.stop()
+        }
+        log("All sounds stopped")
     }
     
     public func setMusicVolume(volume: Float) {

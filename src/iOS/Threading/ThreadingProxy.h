@@ -63,7 +63,7 @@ namespace GameCore {
         static void enqueuePlayMusic(const char* musicName, float volume, int loopCount);
         static void enqueueStopMusic();
         static void enqueuePlaySound(const char* soundName, float volume);
-        static void enqueueStopSound();
+        static void enqueueStopSound(const char* soundName);
         static void enqueueSetMusicVolume(float volume);
         static void enqueueSetSoundVolume(float volume);
         
@@ -190,4 +190,8 @@ namespace GameCore {
     void updateTouchState(float x, float y, bool isDown, bool justPressed, bool justReleased);
     void updateGestureState(bool swipeLeft, bool swipeRight, bool swipeUp, bool swipeDown);
     void resetInputFrameState();
+    
+    // Swift CXX Interop Function Declarations
+    // Modern Swift functions that can be called directly from C++
+    void setScreenInfoDirect(const ScreenInfo& screenInfo);
 }
