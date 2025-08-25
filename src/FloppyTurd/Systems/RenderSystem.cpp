@@ -412,6 +412,37 @@ namespace GameCore {
                     }
                 }
             }
+            
+            // Render UIShape components in screen space (for UI rectangles, tracks, etc.)
+            if (item.shape) {
+                if (!m_platformDelegates.renderer.drawRectangle) {
+                    GN_LOG_WARN("RenderSystem: drawRectangle delegate is null for entity " + std::to_string(item.entity));
+                    continue;
+                }
+                
+                // Convert color from 0-255 to 0.0-1.0 range
+                const float r = item.shape->color.r / 255.0f;
+                const float g = item.shape->color.g / 255.0f;
+                const float b = item.shape->color.b / 255.0f;
+                const float a = item.shape->color.a / 255.0f;
+
+                // Render UIShape directly in screen coordinates (no camera transformation)
+                m_platformDelegates.renderer.drawRectangle(
+                    item.transform->position.x,
+                    item.transform->position.y,
+                    item.shape->width * item.transform->scale.x,
+                    item.shape->height * item.transform->scale.y,
+                    r, g, b, a
+                );
+                
+                GN_LOG_DEBUG("RenderSystem(UI): Rendered UIShape at (" + 
+                           std::to_string(item.transform->position.x) + ", " + 
+                           std::to_string(item.transform->position.y) + ") size (" +
+                           std::to_string(item.shape->width * item.transform->scale.x) + "x" +
+                           std::to_string(item.shape->height * item.transform->scale.y) + ") layer " +
+                           std::to_string(item.layer));
+            }
+            
             // Render Text components (UI text like scores, pipe counter) - check this FIRST
             if (item.text) {
                 if (!m_platformDelegates.renderer.drawText) {

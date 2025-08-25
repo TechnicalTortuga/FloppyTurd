@@ -434,10 +434,31 @@ namespace GameCore {
                         m_playerControllerSystem->HandleTouchInput(x, y, true);
                     }
                 }
+                
+                // Handle touch drag events for audio sliders
+                if (m_platformDelegates->input.getTouchCount() > 0) {
+                    float x, y;
+                    m_platformDelegates->input.getTouchPosition(0, &x, &y);
+                    
+                    // Handle knob dragging if we're in the pause menu
+                    if (m_currentSubState == GameplaySubState::Paused && 
+                        (m_draggingMaster || m_draggingMusic || m_draggingSFX)) {
+                        HandleKnobDrag(x, y);
+                    }
+                }
 
                 // Handle touch release events
                 if (m_platformDelegates->input.isTouchJustReleased()) {
                     GN_LOG_INFO("Touch RELEASED!");
+
+                    // Stop knob dragging
+                    if (m_draggingMaster || m_draggingMusic || m_draggingSFX) {
+                        GN_LOG_INFO("Stopping knob drag");
+                        m_draggingMaster = false;
+                        m_draggingMusic = false;
+                        m_draggingSFX = false;
+                        m_activeDragKnob = -1;
+                    }
 
                     // Send touch release event with last known position
                     float x = 0.0f, y = 0.0f;
@@ -1064,8 +1085,8 @@ void GameplayState::CreatePauseMenu() {
     CreateStatsTab();
     CreateSystemTab();
     
-    // Initially show the default tab (SYSTEM)
-    ShowTabContent(m_currentPauseTab);
+    // DON'T show any tab content yet - wait until pause menu is actually opened
+    // ShowTabContent(m_currentPauseTab);
 }
 
 void GameplayState::DestroyPauseMenu() {
@@ -1090,6 +1111,18 @@ void GameplayState::DestroyPauseMenu() {
     }
     
     // Audio slider entities
+    if (m_masterTrackEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_masterTrackEntity);
+        m_masterTrackEntity = 0;
+    }
+    if (m_masterLabelEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_masterLabelEntity);
+        m_masterLabelEntity = 0;
+    }
+    if (m_masterKnobEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_masterKnobEntity);
+        m_masterKnobEntity = 0;
+    }
     if (m_musicTrackEntity != 0) {
         m_ecsSystem->DestroyEntity(m_musicTrackEntity);
         m_musicTrackEntity = 0;
@@ -2958,12 +2991,12 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             contentElem.centerTextVertically = true;
             contentElem.visible = false; // Initially hidden
             contentElem.isEnabled = true;
-            contentElem.textLayer = 22;
+            contentElem.textLayer = 90; // Above pause menu background (80) and tracks (81-83)
             m_ecsSystem->AddComponent<UIElement>(m_skillsContentEntity, contentElem);
             
             // Add Sprite component for proper rendering
             Sprite contentSprite;
-            contentSprite.layer = 22;
+            contentSprite.layer = 90; // Match UIElement textLayer
             contentSprite.visible = false;
             m_ecsSystem->AddComponent<Sprite>(m_skillsContentEntity, contentSprite);
         }
@@ -3001,12 +3034,12 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             contentElem.centerTextVertically = true;
             contentElem.visible = false; // Initially hidden
             contentElem.isEnabled = true;
-            contentElem.textLayer = 22;
+            contentElem.textLayer = 90; // Above pause menu background (80) and tracks (81-83)
             m_ecsSystem->AddComponent<UIElement>(m_hatsContentEntity, contentElem);
             
             // Add Sprite component for proper rendering
             Sprite contentSprite;
-            contentSprite.layer = 22;
+            contentSprite.layer = 90; // Match UIElement textLayer
             contentSprite.visible = false;
             m_ecsSystem->AddComponent<Sprite>(m_hatsContentEntity, contentSprite);
         }
@@ -3044,12 +3077,12 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             contentElem.centerTextVertically = true;
             contentElem.visible = false; // Initially hidden
             contentElem.isEnabled = true;
-            contentElem.textLayer = 22;
+            contentElem.textLayer = 90; // Above pause menu background (80) and tracks (81-83)
             m_ecsSystem->AddComponent<UIElement>(m_statsContentEntity, contentElem);
             
             // Add Sprite component for proper rendering
             Sprite contentSprite;
-            contentSprite.layer = 22;
+            contentSprite.layer = 90; // Match UIElement textLayer
             contentSprite.visible = false;
             m_ecsSystem->AddComponent<Sprite>(m_statsContentEntity, contentSprite);
         }
@@ -3073,19 +3106,21 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         // Create main menu button
         if (m_mainMenuButtonEntity == 0) {
             m_mainMenuButtonEntity = m_ecsSystem->CreateEntity();
-            float buttonX = screenWidth * 0.5f; // Center horizontally
-            float buttonY = screenHeight * 0.60f + 48.0f; // Lowered a bit
+            float buttonX = screenWidth * 0.5f - 256.0f; // Center horizontally (accounting for 8x scaling of 64x64 texture)
+            float buttonY = screenHeight * 0.80f - 256.0f; // Position at 80% down screen (accounting for 8x scaling)
             
-            Transform buttonTransform(Gnosis::GNVector2(buttonX, buttonY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            Transform buttonTransform(Gnosis::GNVector2(buttonX, buttonY), 0.0f, Gnosis::GNVector2(8.0f, 8.0f)); // 8x scaling for larger button
             m_ecsSystem->AddComponent<Transform>(m_mainMenuButtonEntity, buttonTransform);
             
             // Create sprite using FloppyButtonBlue
             Sprite buttonSprite("FloppyButtonBlue", 64, 64); // Assuming 64x64 texture
             buttonSprite.layer = 86; // Above pause menu background (80)
             buttonSprite.visible = false; // Initially hidden
+            GN_LOG_INFO("Creating Main Menu button sprite: FloppyButtonBlue, 64x64, layer " + std::to_string(buttonSprite.layer) + 
+                       " at (" + std::to_string(buttonX) + ", " + std::to_string(buttonY) + ")");
             m_ecsSystem->AddComponent<Sprite>(m_mainMenuButtonEntity, buttonSprite);
             
-            // Create UI element for button text
+            // Create UI element for button text and sprite
             UIElement buttonUI;
             buttonUI.buttonText = "MAIN MENU";
             buttonUI.fontSize = 62.0f; // Lowered font size
@@ -3094,6 +3129,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             buttonUI.centerTextVertically = true;
             buttonUI.textLayer = 87; // Above pause menu background and sprites
             buttonUI.visible = false; // Initially hidden
+            buttonUI.normalTextureId = "FloppyButtonBlue"; // Set texture for button sprite
             m_ecsSystem->AddComponent<UIElement>(m_mainMenuButtonEntity, buttonUI);
             
             GN_LOG_INFO("Created main menu button at (" + std::to_string(buttonX) + ", " + std::to_string(buttonY) + ")");
@@ -3121,26 +3157,98 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         float bgX = (screenW - bgW) * 0.5f;
         float bgY = (screenH - bgH) * 0.18f;
 
-        // Slider layout (match MainMenuState)
+        // Slider layout (spread out better, not squished at top)
         m_sliderX = bgX + 0.12f * bgW;
-        m_sliderY = bgY + 0.18f * bgH;
+        m_sliderY = bgY + 0.20f * bgH; // Start even lower to spread out more
         m_sliderW = bgW - 0.24f * bgW;
         m_sliderH = 18.0f;
-        m_sliderSpacing = 70.0f;
+        m_sliderSpacing = 160.0f; // Much more spacing between sliders
 
-        // MUSIC SLIDER
-        float musicTrackY = m_sliderY;
-        float sfxTrackY = m_sliderY + m_sliderSpacing;
+        // MASTER SLIDER (first)
+        float masterTrackY = m_sliderY + 9.0f; // Center track with knob (knob is at trackY + 9 - 16)
+        float musicTrackY = m_sliderY + m_sliderSpacing + 9.0f; // Center track with knob
+        float sfxTrackY = m_sliderY + m_sliderSpacing * 2 + 9.0f; // Center track with knob
 
-        // Track entity for music
+        // MASTER TRACK - Use UIShape for proper rendering
+        if (m_masterTrackEntity == 0) {
+            m_masterTrackEntity = m_ecsSystem->CreateEntity();
+            Transform t(Gnosis::GNVector2(m_sliderX, masterTrackY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            
+            // Use UIShape for tracks - this should render properly
+            UIShape shape; 
+            shape.visible = false; 
+            shape.width = m_sliderW; 
+            shape.height = m_sliderH;
+            shape.color = Gnosis::GNColor(255, 255, 255, 255); // White color to make tracks very visible
+            shape.layer = 83; // Below knob (85) but above background (80)
+            
+            // Add UIElement component to ensure screen-space rendering (in front of pause menu)
+            UIElement ui; 
+            ui.visible = false; 
+            ui.textLayer = 83; // Match UIShape layer for consistent layering
+            ui.isEnabled = true;
+            // Don't set any texture IDs - this ensures it's not treated as a UI sprite
+            
+            // Add debug logging for track creation
+            GN_LOG_INFO("Creating MASTER track UIShape: " + std::to_string(m_sliderW) + "x" + std::to_string(m_sliderH) + 
+                       " at (" + std::to_string(m_sliderX) + ", " + std::to_string(masterTrackY) + ") layer " + std::to_string(shape.layer) + 
+                       " entity=" + std::to_string(m_masterTrackEntity));
+            
+            m_ecsSystem->AddComponent<Transform>(m_masterTrackEntity, t);
+            m_ecsSystem->AddComponent<UIShape>(m_masterTrackEntity, shape);
+            m_ecsSystem->AddComponent<UIElement>(m_masterTrackEntity, ui);
+        }
+        
+        // MASTER LABEL
+        if (m_masterLabelEntity == 0) {
+            m_masterLabelEntity = m_ecsSystem->CreateEntity();
+            float labelY = masterTrackY - 28.0f;
+            float labelX = m_sliderX;
+            Transform t(Gnosis::GNVector2(labelX, labelY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            UIElement ui("MASTER", "", "");
+            ui.fontSize = 32.0f;
+            ui.textColor = Gnosis::GNColor(255, 255, 255, 255);
+            ui.centerTextHorizontally = false; ui.centerTextVertically = true; ui.visible = false; ui.textLayer = 84;
+            m_ecsSystem->AddComponent<Transform>(m_masterLabelEntity, t);
+            m_ecsSystem->AddComponent<UIElement>(m_masterLabelEntity, ui);
+        }
+        
+        // MASTER KNOB
+        if (m_masterKnobEntity == 0) {
+            m_masterKnobEntity = m_ecsSystem->CreateEntity();
+            float knobSize = 32.0f;
+            float knobX = m_sliderX + GameCore::GetGame()->GetMasterVolume() * m_sliderW - knobSize * 0.5f;
+            float knobY = masterTrackY + m_sliderH * 0.5f - knobSize * 0.5f;
+            Transform t(Gnosis::GNVector2(knobX, knobY), 0.0f, Gnosis::GNVector2(6.0f, 6.0f)); // 6x scaling like main menu
+            Sprite s("poophat", knobSize, knobSize); s.layer = 85; s.visible = false;
+            UIElement ui("", "poophat", "poophat");
+            ui.visible = false; ui.textLayer = 85; ui.isEnabled = true;
+            m_ecsSystem->AddComponent<Transform>(m_masterKnobEntity, t);
+            m_ecsSystem->AddComponent<Sprite>(m_masterKnobEntity, s);
+            m_ecsSystem->AddComponent<UIElement>(m_masterKnobEntity, ui);
+        }
+
+        // Track entity for music - Use UIShape for proper rendering
         if (m_musicTrackEntity == 0) {
             m_musicTrackEntity = m_ecsSystem->CreateEntity();
             Transform t(Gnosis::GNVector2(m_sliderX, musicTrackY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
-            Sprite s; s.visible = false; s.layer = 3;
-            UIShape shape; shape.visible = false; shape.width = m_sliderW; shape.height = m_sliderH;
-            UIElement ui; ui.visible = false; ui.textLayer = 3; ui.isEnabled = true;
+            
+            // Use UIShape for tracks - this should render properly
+            UIShape shape; 
+            shape.visible = false; 
+            shape.width = m_sliderW; 
+            shape.height = m_sliderH;
+            shape.color = Gnosis::GNColor(255, 255, 255, 255); // White color to make tracks very visible
+            shape.layer = 81; // Above pause menu background (80) but below other UI elements
+            
+            // Add UIElement component to ensure screen-space rendering (in front of pause menu)
+            UIElement ui; 
+            ui.visible = false; 
+            ui.textLayer = 81; // Match UIShape layer for consistent layering
+            ui.isEnabled = true;
+            // Don't set any texture IDs - this ensures it's not treated as a UI sprite
+            
             m_ecsSystem->AddComponent<Transform>(m_musicTrackEntity, t);
-            m_ecsSystem->AddComponent<Sprite>(m_musicTrackEntity, s);
             m_ecsSystem->AddComponent<UIShape>(m_musicTrackEntity, shape);
             m_ecsSystem->AddComponent<UIElement>(m_musicTrackEntity, ui);
         }
@@ -3151,13 +3259,11 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             float labelY = musicTrackY - 28.0f;
             float labelX = m_sliderX;
             Transform t(Gnosis::GNVector2(labelX, labelY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
-            Sprite s; s.visible = false; s.layer = 4;
             UIElement ui("MUSIC", "", "");
             ui.fontSize = 32.0f;
             ui.textColor = Gnosis::GNColor(255, 255, 255, 255);
-            ui.centerTextHorizontally = false; ui.centerTextVertically = true; ui.visible = false; ui.textLayer = 4;
+            ui.centerTextHorizontally = false; ui.centerTextVertically = true; ui.visible = false; ui.textLayer = 84;
             m_ecsSystem->AddComponent<Transform>(m_musicLabelEntity, t);
-            m_ecsSystem->AddComponent<Sprite>(m_musicLabelEntity, s);
             m_ecsSystem->AddComponent<UIElement>(m_musicLabelEntity, ui);
         }
         
@@ -3167,25 +3273,37 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             float knobSize = 32.0f;
             float knobX = m_sliderX + GameCore::GetGame()->GetMusicVolume() * m_sliderW - knobSize * 0.5f;
             float knobY = musicTrackY + m_sliderH * 0.5f - knobSize * 0.5f;
-            Transform t(Gnosis::GNVector2(knobX, knobY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
-            Sprite s("poophat", knobSize, knobSize); s.layer = 21; s.visible = false;
+            Transform t(Gnosis::GNVector2(knobX, knobY), 0.0f, Gnosis::GNVector2(6.0f, 6.0f)); // 6x scaling like main menu
+            Sprite s("poophat", knobSize, knobSize); s.layer = 85; s.visible = false;
             UIElement ui("", "poophat", "poophat");
-            ui.visible = false; ui.textLayer = 21; ui.isEnabled = true;
+            ui.visible = false; ui.textLayer = 85; ui.isEnabled = true;
             m_ecsSystem->AddComponent<Transform>(m_musicKnobEntity, t);
             m_ecsSystem->AddComponent<Sprite>(m_musicKnobEntity, s);
             m_ecsSystem->AddComponent<UIElement>(m_musicKnobEntity, ui);
         }
 
         // SFX SLIDER
-        // Track entity for sfx
+        // Track entity for sfx - Use UIShape for proper rendering
         if (m_sfxTrackEntity == 0) {
             m_sfxTrackEntity = m_ecsSystem->CreateEntity();
             Transform t(Gnosis::GNVector2(m_sliderX, sfxTrackY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
-            Sprite s; s.visible = false; s.layer = 3;
-            UIShape shape; shape.visible = false; shape.width = m_sliderW; shape.height = m_sliderH;
-            UIElement ui; ui.visible = false; ui.textLayer = 3; ui.isEnabled = true;
+            
+            // Use UIShape for tracks - this should render properly
+            UIShape shape; 
+            shape.visible = false; 
+            shape.width = m_sliderW; 
+            shape.height = m_sliderH;
+            shape.color = Gnosis::GNColor(255, 255, 255, 255); // White color to make tracks very visible
+            shape.layer = 81; // Above pause menu background (80) but below other UI elements
+            
+            // Add UIElement component to ensure screen-space rendering (in front of pause menu)
+            UIElement ui; 
+            ui.visible = false; 
+            ui.textLayer = 81; // Match UIShape layer for consistent layering
+            ui.isEnabled = true;
+            // Don't set any texture IDs - this ensures it's not treated as a UI sprite
+            
             m_ecsSystem->AddComponent<Transform>(m_sfxTrackEntity, t);
-            m_ecsSystem->AddComponent<Sprite>(m_sfxTrackEntity, s);
             m_ecsSystem->AddComponent<UIShape>(m_sfxTrackEntity, shape);
             m_ecsSystem->AddComponent<UIElement>(m_sfxTrackEntity, ui);
         }
@@ -3196,13 +3314,11 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             float labelY = sfxTrackY - 28.0f;
             float labelX = m_sliderX;
             Transform t(Gnosis::GNVector2(labelX, labelY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
-            Sprite s; s.visible = false; s.layer = 4;
             UIElement ui("SFX", "", "");
             ui.fontSize = 32.0f;
             ui.textColor = Gnosis::GNColor(255, 255, 255, 255);
-            ui.centerTextHorizontally = false; ui.centerTextVertically = true; ui.visible = false; ui.textLayer = 4;
+            ui.centerTextHorizontally = false; ui.centerTextVertically = true; ui.visible = false; ui.textLayer = 84;
             m_ecsSystem->AddComponent<Transform>(m_sfxLabelEntity, t);
-            m_ecsSystem->AddComponent<Sprite>(m_sfxLabelEntity, s);
             m_ecsSystem->AddComponent<UIElement>(m_sfxLabelEntity, ui);
         }
         
@@ -3212,37 +3328,43 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             float knobSize = 32.0f;
             float knobX = m_sliderX + GameCore::GetGame()->GetSFXVolume() * m_sliderW - knobSize * 0.5f;
             float knobY = sfxTrackY + m_sliderH * 0.5f - knobSize * 0.5f;
-            Transform t(Gnosis::GNVector2(knobX, knobY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
-            Sprite s("poophat", knobSize, knobSize); s.layer = 21; s.visible = false;
+            Transform t(Gnosis::GNVector2(knobX, knobY), 0.0f, Gnosis::GNVector2(6.0f, 6.0f)); // 6x scaling like main menu
+            Sprite s("poophat", knobSize, knobSize); s.layer = 85; s.visible = false;
             UIElement ui("", "poophat", "poophat");
-            ui.visible = false; ui.textLayer = 21; ui.isEnabled = true;
+            ui.visible = false; ui.textLayer = 85; ui.isEnabled = true;
             m_ecsSystem->AddComponent<Transform>(m_sfxKnobEntity, t);
             m_ecsSystem->AddComponent<Sprite>(m_sfxKnobEntity, s);
             m_ecsSystem->AddComponent<UIElement>(m_sfxKnobEntity, ui);
         }
         
-        GN_LOG_INFO("Created audio sliders");
+        GN_LOG_INFO("Created audio sliders with MASTER, MUSIC, and SFX controls");
     }
 
     void GameplayState::ShowTabContent(int tabIndex) {
+        GN_LOG_INFO("ShowTabContent called with tab index: " + std::to_string(tabIndex));
+        
         // Hide all tab content first
         HideAllTabContent();
         
         // Show the specified tab content
         switch (tabIndex) {
             case 0: // SKILLS
+                GN_LOG_INFO("Showing SKILLS tab");
                 ShowSkillsTab();
                 break;
                 
             case 1: // HATS
+                GN_LOG_INFO("Showing HATS tab");
                 ShowHatsTab();
                 break;
                 
             case 2: // STATS
+                GN_LOG_INFO("Showing STATS tab");
                 ShowStatsTab();
                 break;
                 
             case 3: // SYSTEM
+                GN_LOG_INFO("Showing SYSTEM tab");
                 ShowSystemTab();
                 break;
                 
@@ -3317,6 +3439,37 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             }
         }
         
+        // Show MASTER volume controls
+        if (m_masterKnobEntity != 0 && m_ecsSystem) {
+            Sprite* masterKnob = m_ecsSystem->GetComponent<Sprite>(m_masterKnobEntity);
+            if (masterKnob) {
+                masterKnob->visible = true;
+            }
+            UIElement* masterKnobUI = m_ecsSystem->GetComponent<UIElement>(m_masterKnobEntity);
+            if (masterKnobUI) {
+                masterKnobUI->visible = true;
+            }
+        }
+        
+        if (m_masterTrackEntity != 0 && m_ecsSystem) {
+            UIShape* masterTrack = m_ecsSystem->GetComponent<UIShape>(m_masterTrackEntity);
+            if (masterTrack) {
+                masterTrack->visible = true;
+                GN_LOG_INFO("Made MASTER track visible");
+            }
+            UIElement* masterTrackUI = m_ecsSystem->GetComponent<UIElement>(m_masterTrackEntity);
+            if (masterTrackUI) {
+                masterTrackUI->visible = true;
+            }
+        }
+        
+        if (m_masterLabelEntity != 0 && m_ecsSystem) {
+            UIElement* masterLabelUI = m_ecsSystem->GetComponent<UIElement>(m_masterLabelEntity);
+            if (masterLabelUI) {
+                masterLabelUI->visible = true;
+            }
+        }
+        
         // Show audio slider entities if they exist
         if (m_musicKnobEntity != 0 && m_ecsSystem) {
             Sprite* musicKnob = m_ecsSystem->GetComponent<Sprite>(m_musicKnobEntity);
@@ -3345,6 +3498,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             UIShape* musicTrack = m_ecsSystem->GetComponent<UIShape>(m_musicTrackEntity);
             if (musicTrack) {
                 musicTrack->visible = true;
+                GN_LOG_INFO("Made MUSIC track visible");
             }
             UIElement* musicTrackUI = m_ecsSystem->GetComponent<UIElement>(m_musicTrackEntity);
             if (musicTrackUI) {
@@ -3356,6 +3510,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             UIShape* sfxTrack = m_ecsSystem->GetComponent<UIShape>(m_sfxTrackEntity);
             if (sfxTrack) {
                 sfxTrack->visible = true;
+                GN_LOG_INFO("Made SFX track visible");
             }
             UIElement* sfxTrackUI = m_ecsSystem->GetComponent<UIElement>(m_sfxTrackEntity);
             if (sfxTrackUI) {
@@ -3364,10 +3519,6 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         }
         
         if (m_musicLabelEntity != 0 && m_ecsSystem) {
-            Sprite* musicLabel = m_ecsSystem->GetComponent<Sprite>(m_musicLabelEntity);
-            if (musicLabel) {
-                musicLabel->visible = true;
-            }
             UIElement* musicLabelUI = m_ecsSystem->GetComponent<UIElement>(m_musicLabelEntity);
             if (musicLabelUI) {
                 musicLabelUI->visible = true;
@@ -3375,27 +3526,13 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         }
         
         if (m_sfxLabelEntity != 0 && m_ecsSystem) {
-            Sprite* sfxLabel = m_ecsSystem->GetComponent<Sprite>(m_sfxLabelEntity);
-            if (sfxLabel) {
-                sfxLabel->visible = true;
-            }
             UIElement* sfxLabelUI = m_ecsSystem->GetComponent<UIElement>(m_sfxLabelEntity);
             if (sfxLabelUI) {
                 sfxLabelUI->visible = true;
             }
         }
         
-        // Show content entity if it exists
-        if (m_pauseMenuContentEntity != 0 && m_ecsSystem) {
-            Sprite* contentSprite = m_ecsSystem->GetComponent<Sprite>(m_pauseMenuContentEntity);
-            if (contentSprite) {
-                contentSprite->visible = true;
-            }
-            UIElement* contentUI = m_ecsSystem->GetComponent<UIElement>(m_pauseMenuContentEntity);
-            if (contentUI) {
-                contentUI->visible = true;
-            }
-        }
+
     }
 
     void GameplayState::HideAllTabContent() {
@@ -3411,6 +3548,36 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             UIElement* buttonUI = m_ecsSystem->GetComponent<UIElement>(m_mainMenuButtonEntity);
             if (buttonUI) {
                 buttonUI->visible = false;
+            }
+        }
+        
+        // Hide MASTER volume controls
+        if (m_masterKnobEntity != 0 && m_ecsSystem) {
+            Sprite* masterKnob = m_ecsSystem->GetComponent<Sprite>(m_masterKnobEntity);
+            if (masterKnob) {
+                masterKnob->visible = false;
+            }
+            UIElement* masterKnobUI = m_ecsSystem->GetComponent<UIElement>(m_masterKnobEntity);
+            if (masterKnobUI) {
+                masterKnobUI->visible = false;
+            }
+        }
+        
+        if (m_masterTrackEntity != 0 && m_ecsSystem) {
+            UIShape* masterTrack = m_ecsSystem->GetComponent<UIShape>(m_masterTrackEntity);
+            if (masterTrack) {
+                masterTrack->visible = false;
+            }
+            UIElement* masterTrackUI = m_ecsSystem->GetComponent<UIElement>(m_masterTrackEntity);
+            if (masterTrackUI) {
+                masterTrackUI->visible = false;
+            }
+        }
+        
+        if (m_masterLabelEntity != 0 && m_ecsSystem) {
+            UIElement* masterLabelUI = m_ecsSystem->GetComponent<UIElement>(m_masterLabelEntity);
+            if (masterLabelUI) {
+                masterLabelUI->visible = false;
             }
         }
         
@@ -3461,10 +3628,6 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         }
         
         if (m_musicLabelEntity != 0 && m_ecsSystem) {
-            Sprite* musicLabel = m_ecsSystem->GetComponent<Sprite>(m_musicLabelEntity);
-            if (musicLabel) {
-                musicLabel->visible = false;
-            }
             UIElement* musicLabelUI = m_ecsSystem->GetComponent<UIElement>(m_musicLabelEntity);
             if (musicLabelUI) {
                 musicLabelUI->visible = false;
@@ -3472,10 +3635,6 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         }
         
         if (m_sfxLabelEntity != 0 && m_ecsSystem) {
-            Sprite* sfxLabel = m_ecsSystem->GetComponent<Sprite>(m_sfxLabelEntity);
-            if (sfxLabel) {
-                sfxLabel->visible = false;
-            }
             UIElement* sfxLabelUI = m_ecsSystem->GetComponent<UIElement>(m_sfxLabelEntity);
             if (sfxLabelUI) {
                 sfxLabelUI->visible = false;
@@ -3607,10 +3766,13 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
     }
 
     void GameplayState::HandlePauseMenuInput(float touchX, float touchY) {
-        GN_LOG_INFO("Handling pause menu input at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
+        GN_LOG_INFO("HandlePauseMenuInput called with touch at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
         
-        // Check ribbon button clicks first
-        HandlePauseMenuRibbonClick(touchX, touchY);
+        // Check ribbon button clicks first (these are global, not per-tab)
+        GN_LOG_INFO("Checking ribbon button clicks...");
+        if (HandlePauseMenuRibbonClick(touchX, touchY)) {
+            return; // Ribbon button was clicked, don't process other input
+        }
 
         // Check if tap is in the settings button area (always allow settings button click)
         if (IsTapInSettingsButtonArea(touchX, touchY)) {
@@ -3619,7 +3781,8 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             return;
         }
 
-        // Check content area clicks
+        // Check content area clicks based on current tab
+        GN_LOG_INFO("Checking content area clicks for tab " + std::to_string(m_currentPauseTab) + "...");
         HandlePauseMenuContentClick(touchX, touchY);
         
         // Check if user tapped outside menu area to close it
@@ -3630,7 +3793,9 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         }
     }
 
-    void GameplayState::HandlePauseMenuRibbonClick(float touchX, float touchY) {
+    bool GameplayState::HandlePauseMenuRibbonClick(float touchX, float touchY) {
+        GN_LOG_INFO("HandlePauseMenuRibbonClick called with touch at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
+        
         // Get screen dimensions
         float screenWidth = 1179.0f;  // Default iPhone 16 width
         float screenHeight = 2556.0f; // Default iPhone 16 height
@@ -3641,27 +3806,38 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             screenHeight = si.pixelHeight;
         }
         
-        // Calculate button positions
-        float buttonWidth = screenWidth / 4.0f; // Divide screen into 4 equal sections
-        float buttonY = screenHeight * 0.15f; // Same Y as ribbon
+        GN_LOG_INFO("Screen dimensions: " + std::to_string(screenWidth) + "x" + std::to_string(screenHeight));
+        
+        // Calculate button positions - these are VERTICAL buttons on the LEFT side
+        float buttonX = screenWidth * 0.15f; // Left side, 15% from left edge
+        float buttonHeight = 64.0f; // Button height
+        float buttonSpacing = 80.0f; // Spacing between buttons
+        float startY = screenHeight * 0.35f; // Start 35% down from top (was 25%, too high)
+        
+        GN_LOG_INFO("Button layout - buttonX: " + std::to_string(buttonX) + ", startY: " + std::to_string(startY) + ", spacing: " + std::to_string(buttonSpacing));
         
         // Check which button was clicked
         for (int i = 0; i < 4; i++) {
-            float buttonX = (i * buttonWidth) + (buttonWidth * 0.5f); // Center of section
+            float buttonY = startY + (i * buttonSpacing);
             
-            // Simple collision detection
-            float buttonLeft = buttonX - 32.0f; // Assuming 64x64 button
+            // Simple collision detection for vertical buttons
+            float buttonLeft = buttonX - 32.0f; // 64x64 button centered
             float buttonRight = buttonX + 32.0f;
-            float buttonTop = buttonY - 32.0f;
-            float buttonBottom = buttonY + 32.0f;
+            float buttonTop = buttonY - buttonHeight * 0.5f;
+            float buttonBottom = buttonY + buttonHeight * 0.5f;
+            
+            GN_LOG_INFO("Button " + std::to_string(i) + " bounds: L=" + std::to_string(buttonLeft) + " R=" + std::to_string(buttonRight) + " T=" + std::to_string(buttonTop) + " B=" + std::to_string(buttonBottom));
             
             if (touchX >= buttonLeft && touchX <= buttonRight &&
                 touchY >= buttonTop && touchY <= buttonBottom) {
                 GN_LOG_INFO("Ribbon button " + std::to_string(i) + " clicked!");
                 SwitchPauseTab(i);
-                return;
+                return true;
             }
         }
+        
+        GN_LOG_INFO("No ribbon button clicked - touch outside all button bounds");
+        return false;
     }
 
     void GameplayState::HandlePauseMenuContentClick(float touchX, float touchY) {
@@ -3699,7 +3875,96 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             }
         }
         
-        // TODO: Handle audio slider clicks when implemented
+        // Handle audio slider knob clicks
+        GN_LOG_INFO("Checking audio slider knob clicks...");
+        
+        // Check MASTER knob
+        if (m_masterKnobEntity != 0 && m_ecsSystem) {
+            auto transform = m_ecsSystem->GetComponent<Transform>(m_masterKnobEntity);
+            if (transform) {
+                // Use exact button dimensions: 32x32 scaled by 6x = 192x192
+                // But use the actual sprite size from the component
+                auto sprite = m_ecsSystem->GetComponent<Sprite>(m_masterKnobEntity);
+                float knobWidth = sprite ? sprite->width * transform->scale.x : 32.0f * transform->scale.x;
+                float knobHeight = sprite ? sprite->height * transform->scale.y : 32.0f * transform->scale.y;
+                
+                float knobLeft = transform->position.x - (knobWidth * 0.5f);
+                float knobRight = transform->position.x + (knobWidth * 0.5f);
+                float knobTop = transform->position.y - (knobHeight * 0.5f);
+                float knobBottom = transform->position.y + (knobHeight * 0.5f);
+                
+                GN_LOG_INFO("MASTER knob bounds: L=" + std::to_string(knobLeft) + " R=" + std::to_string(knobRight) + 
+                           " T=" + std::to_string(knobTop) + " B=" + std::to_string(knobBottom) + 
+                           " Size=" + std::to_string(knobWidth) + "x" + std::to_string(knobHeight) + 
+                           " Sprite size=" + std::to_string(sprite ? sprite->width : 0) + "x" + std::to_string(sprite ? sprite->height : 0));
+                
+                if (touchX >= knobLeft && touchX <= knobRight &&
+                    touchY >= knobTop && touchY <= knobBottom) {
+                    GN_LOG_INFO("MASTER knob clicked! Starting drag...");
+                    m_draggingMaster = true;
+                    m_activeDragKnob = 0;
+                    m_dragStartX = touchX;
+                    m_dragKnobStartX = transform->position.x;
+                    return;
+                }
+            }
+        }
+        
+        // Check MUSIC knob
+        if (m_musicKnobEntity != 0 && m_ecsSystem) {
+            auto transform = m_ecsSystem->GetComponent<Transform>(m_musicKnobEntity);
+            if (transform) {
+                // Use exact button dimensions: 32x32 scaled by 6x = 192x192
+                float knobWidth = 32.0f * transform->scale.x;  // 32 * 6 = 192
+                float knobHeight = 32.0f * transform->scale.y; // 32 * 6 = 192
+                float knobLeft = transform->position.x - (knobWidth * 0.5f);
+                float knobRight = transform->position.x + (knobWidth * 0.5f);
+                float knobTop = transform->position.y - (knobHeight * 0.5f);
+                float knobBottom = transform->position.y + (knobHeight * 0.5f);
+                
+                GN_LOG_INFO("MUSIC knob bounds: L=" + std::to_string(knobLeft) + " R=" + std::to_string(knobRight) + 
+                           " T=" + std::to_string(knobTop) + " B=" + std::to_string(knobBottom) + 
+                           " Size=" + std::to_string(knobWidth) + "x" + std::to_string(knobHeight));
+                
+                if (touchX >= knobLeft && touchX <= knobRight &&
+                    touchY >= knobTop && touchY <= knobBottom) {
+                    GN_LOG_INFO("MUSIC knob clicked! Starting drag...");
+                    m_draggingMusic = true;
+                    m_activeDragKnob = 1;
+                    m_dragStartX = touchX;
+                    m_dragKnobStartX = transform->position.x;
+                    return;
+                }
+            }
+        }
+        
+        // Check SFX knob
+        if (m_sfxKnobEntity != 0 && m_ecsSystem) {
+            auto transform = m_ecsSystem->GetComponent<Transform>(m_sfxKnobEntity);
+            if (transform) {
+                // Use exact button dimensions: 32x32 scaled by 6x = 192x192
+                float knobWidth = 32.0f * transform->scale.x;  // 32 * 6 = 192
+                float knobHeight = 32.0f * transform->scale.y; // 32 * 6 = 192
+                float knobLeft = transform->position.x - (knobWidth * 0.5f);
+                float knobRight = transform->position.x + (knobWidth * 0.5f);
+                float knobTop = transform->position.y - (knobHeight * 0.5f);
+                float knobBottom = transform->position.y + (knobHeight * 0.5f);
+                
+                GN_LOG_INFO("SFX knob bounds: L=" + std::to_string(knobLeft) + " R=" + std::to_string(knobRight) + 
+                           " T=" + std::to_string(knobTop) + " B=" + std::to_string(knobBottom) + 
+                           " Size=" + std::to_string(knobWidth) + "x" + std::to_string(knobHeight));
+                
+                if (touchX >= knobLeft && touchX <= knobRight &&
+                    touchY >= knobTop && touchY <= knobBottom) {
+                    GN_LOG_INFO("SFX knob clicked! Starting drag...");
+                    m_draggingSFX = true;
+                    m_activeDragKnob = 2;
+                    m_dragStartX = touchX;
+                    m_dragKnobStartX = transform->position.x;
+                    return;
+                }
+            }
+        }
     }
 
     bool GameplayState::IsTapOutsideMenuArea(float touchX, float touchY) {
@@ -3791,6 +4056,76 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         float buttonBottom = settingsButtonY + (buttonSize * 0.5f);
         return (touchX >= buttonLeft && touchX <= buttonRight &&
                 touchY >= buttonTop && touchY <= buttonBottom);
+    }
+    
+    void GameplayState::HandleKnobDrag(float touchX, float touchY) {
+        GN_LOG_INFO("Handling knob drag at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
+        
+        if (m_activeDragKnob == -1) return;
+        
+        // Calculate drag distance
+        float dragDeltaX = touchX - m_dragStartX;
+        float newKnobX = m_dragKnobStartX + dragDeltaX;
+        
+        // Clamp to slider bounds
+        float sliderLeft = m_sliderX;
+        float sliderRight = m_sliderX + m_sliderW;
+        float knobSize = 32.0f * 6.0f; // 6x scaling
+        float knobHalfSize = knobSize * 0.5f;
+        
+        newKnobX = std::max(sliderLeft + knobHalfSize, std::min(sliderRight - knobHalfSize, newKnobX));
+        
+        // Calculate volume value (0.0 to 1.0)
+        float volumeValue = (newKnobX - (sliderLeft + knobHalfSize)) / (m_sliderW - knobSize);
+        volumeValue = std::max(0.0f, std::min(1.0f, volumeValue));
+        
+        // Update the appropriate knob and volume
+        switch (m_activeDragKnob) {
+            case 0: // MASTER
+                if (m_masterKnobEntity != 0 && m_ecsSystem) {
+                    auto transform = m_ecsSystem->GetComponent<Transform>(m_masterKnobEntity);
+                    if (transform) {
+                        transform->position.x = newKnobX;
+                        m_masterSliderValue = volumeValue;
+                        // Actually update the game's master volume
+                        if (GameCore::GetGame()) {
+                            GameCore::GetGame()->SetMasterVolume(volumeValue);
+                        }
+                        GN_LOG_INFO("Updated MASTER volume to: " + std::to_string(volumeValue));
+                    }
+                }
+                break;
+                
+            case 1: // MUSIC
+                if (m_musicKnobEntity != 0 && m_ecsSystem) {
+                    auto transform = m_ecsSystem->GetComponent<Transform>(m_musicKnobEntity);
+                    if (transform) {
+                        transform->position.x = newKnobX;
+                        m_musicSliderValue = volumeValue;
+                        // Actually update the game's music volume
+                        if (GameCore::GetGame()) {
+                            GameCore::GetGame()->SetMusicVolume(volumeValue);
+                        }
+                        GN_LOG_INFO("Updated MUSIC volume to: " + std::to_string(volumeValue));
+                    }
+                }
+                break;
+                
+            case 2: // SFX
+                if (m_sfxKnobEntity != 0 && m_ecsSystem) {
+                    auto transform = m_ecsSystem->GetComponent<Transform>(m_sfxKnobEntity);
+                    if (transform) {
+                        transform->position.x = newKnobX;
+                        m_sfxSliderValue = volumeValue;
+                        // Actually update the game's SFX volume
+                        if (GameCore::GetGame()) {
+                            GameCore::GetGame()->SetSFXVolume(volumeValue);
+                        }
+                        GN_LOG_INFO("Updated SFX volume to: " + std::to_string(volumeValue));
+                    }
+                }
+                break;
+        }
     }
 
 

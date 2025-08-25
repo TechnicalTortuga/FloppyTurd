@@ -179,6 +179,9 @@ namespace GameCore {
         Gnosis::Entity m_statsContentEntity;    // Stats tab content
 
         // Audio slider UI entities (matching MainMenuState style)
+        Gnosis::Entity m_masterKnobEntity = 0;
+        Gnosis::Entity m_masterTrackEntity = 0;
+        Gnosis::Entity m_masterLabelEntity = 0;
         Gnosis::Entity m_musicKnobEntity = 0;
         Gnosis::Entity m_sfxKnobEntity = 0;
         Gnosis::Entity m_musicTrackEntity = 0;
@@ -187,9 +190,10 @@ namespace GameCore {
         Gnosis::Entity m_sfxLabelEntity = 0;
 
         // Slider drag state
+        bool m_draggingMaster = false;
         bool m_draggingMusic = false;
         bool m_draggingSFX = false;
-        int m_activeDragKnob = -1; // -1=none, 0=music, 1=sfx
+        int m_activeDragKnob = -1; // -1=none, 0=master, 1=music, 2=sfx
         float m_dragStartX = 0.0f;
         float m_dragKnobStartX = 0.0f;
 
@@ -201,6 +205,7 @@ namespace GameCore {
         float m_sliderSpacing = 70.0f;
 
         // Current slider values (0.0-1.0)
+        float m_masterSliderValue = 1.0f;
         float m_musicSliderValue = 1.0f;
         float m_sfxSliderValue = 1.0f;
         
@@ -317,9 +322,10 @@ namespace GameCore {
         void HideAllTabContent();
         void CheckSettingsButtonClick(float touchX, float touchY);
         void HandlePauseMenuInput(float touchX, float touchY);
-        void HandlePauseMenuRibbonClick(float touchX, float touchY);
+        bool HandlePauseMenuRibbonClick(float touchX, float touchY);
         void HandlePauseMenuContentClick(float touchX, float touchY);
         void HandleSystemTabClick(float touchX, float touchY);
+        void HandleKnobDrag(float touchX, float touchY);
         bool IsTapOutsideMenuArea(float touchX, float touchY);
         bool IsTapInSettingsButtonArea(float touchX, float touchY);
         
