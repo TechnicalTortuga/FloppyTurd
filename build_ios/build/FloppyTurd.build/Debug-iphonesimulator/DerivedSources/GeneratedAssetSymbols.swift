@@ -73,9 +73,6 @@ extension DeveloperToolsSupport.ImageResource {
     /// The "BottomToiletGold" asset catalog image resource.
     static let bottomToiletGold = DeveloperToolsSupport.ImageResource(name: "BottomToiletGold", bundle: resourceBundle)
 
-    /// The "BottomToiletGold-export" asset catalog image resource.
-    static let bottomToiletGoldExport = DeveloperToolsSupport.ImageResource(name: "BottomToiletGold-export", bundle: resourceBundle)
-
     /// The "BottomToiletSnow" asset catalog image resource.
     static let bottomToiletSnow = DeveloperToolsSupport.ImageResource(name: "BottomToiletSnow", bundle: resourceBundle)
 
@@ -337,32 +334,17 @@ extension DeveloperToolsSupport.ImageResource {
     /// The "SnowLevelBackLayerBackground" asset catalog image resource.
     static let snowLevelBackLayerBackground = DeveloperToolsSupport.ImageResource(name: "SnowLevelBackLayerBackground", bundle: resourceBundle)
 
-    /// The "SnowLevelBackTrees" asset catalog image resource.
-    static let snowLevelBackTrees = DeveloperToolsSupport.ImageResource(name: "SnowLevelBackTrees", bundle: resourceBundle)
-
-    /// The "SnowLevelBackground" asset catalog image resource.
-    static let snowLevelBackground = DeveloperToolsSupport.ImageResource(name: "SnowLevelBackground", bundle: resourceBundle)
-
     /// The "SnowLevelFrontLayerBackground" asset catalog image resource.
     static let snowLevelFrontLayerBackground = DeveloperToolsSupport.ImageResource(name: "SnowLevelFrontLayerBackground", bundle: resourceBundle)
 
     /// The "SnowLevelFrontLayerTrees" asset catalog image resource.
     static let snowLevelFrontLayerTrees = DeveloperToolsSupport.ImageResource(name: "SnowLevelFrontLayerTrees", bundle: resourceBundle)
 
-    /// The "SnowLevelFrontTrees" asset catalog image resource.
-    static let snowLevelFrontTrees = DeveloperToolsSupport.ImageResource(name: "SnowLevelFrontTrees", bundle: resourceBundle)
-
     /// The "SnowLevelMidLayerBackground" asset catalog image resource.
     static let snowLevelMidLayerBackground = DeveloperToolsSupport.ImageResource(name: "SnowLevelMidLayerBackground", bundle: resourceBundle)
 
-    /// The "SnowLevelMountains" asset catalog image resource.
-    static let snowLevelMountains = DeveloperToolsSupport.ImageResource(name: "SnowLevelMountains", bundle: resourceBundle)
-
     /// The "SnowLevelPainting" asset catalog image resource.
     static let snowLevelPainting = DeveloperToolsSupport.ImageResource(name: "SnowLevelPainting", bundle: resourceBundle)
-
-    /// The "SnowLevelTundra" asset catalog image resource.
-    static let snowLevelTundra = DeveloperToolsSupport.ImageResource(name: "SnowLevelTundra", bundle: resourceBundle)
 
     /// The "SnowManChad" asset catalog image resource.
     static let snowManChad = DeveloperToolsSupport.ImageResource(name: "SnowManChad", bundle: resourceBundle)

@@ -14,7 +14,7 @@ namespace GameCore {
 
     // Static constants
     const float LoadingState::MIN_LOADING_DURATION = 1.5f;  // Minimum time to show loading screen (1.5 seconds)
-    const float LoadingState::MAX_LOADING_DURATION = 10.0f; // Maximum time before forcing transition (10 seconds)
+    const float LoadingState::MAX_LOADING_DURATION = 3.0f;  // Maximum time before forcing transition (3 seconds)
     const float LoadingState::ROTATION_SPEED = 360.0f;  // degrees per second
     const float LoadingState::ORBIT_RADIUS = 50.0f;     // pixels from center
     

@@ -333,13 +333,26 @@ public class iOSLogHandler: NSObject, @unchecked Sendable {
     public func initialize() -> Bool {
         Task { @Sendable in
             await logActor.setSubsystem(Bundle.main.bundleIdentifier ?? "FloppyTurd")
-            // Re-enable verbose logging and file capture for debugging
-            await logActor.setLogLevel(.debug)
-            await logActor.setFileLogging(true)
-            await logActor.setConsoleFallback(true)
+            
+            // Detect if running on device vs simulator for different logging levels
+            #if targetEnvironment(simulator)
+                // Simulator: Full debug logging
+                await logActor.setLogLevel(.debug)
+                await logActor.setFileLogging(true)
+                await logActor.setConsoleFallback(true)
+            #else
+                // Device: Reduced logging for performance
+                await logActor.setLogLevel(.warning)  // Only warnings and above
+                await logActor.setFileLogging(false)  // No file logging on device
+                await logActor.setConsoleFallback(false)  // No console fallback for performance
+            #endif
         }
         isInitialized = true
-        currentLogLevel = .debug
+        #if targetEnvironment(simulator)
+            currentLogLevel = .debug
+        #else
+            currentLogLevel = .warning
+        #endif
         return true
     }
     

@@ -12,6 +12,7 @@
 #include <thread>
 #include <memory>
 #include <algorithm>
+#include <map>
 
 #ifdef PLATFORM_IOS
 #include "../../Engine/Platform/iOSPlatformImpl.h"
@@ -45,9 +46,11 @@ namespace GameCore {
         , m_fpsTimer(0.0f)
         , m_currentFPS(0.0f)
         , m_showDebugInfo(false)
+        , m_levelUnlockSoundTimer(0.0f)
+        , m_pendingPartyHorn(false)
     {
         // Initialize game stats
-        m_gameStats = {0, 0, 0, 0, 0, 0.0f, 0, 0};
+        m_gameStats = {0, 0, 0, 0, 0, 0, 0, 0.0f, 0, 0};
         
         GN_LOG_INFO("Game instance created");
     }
@@ -224,6 +227,20 @@ namespace GameCore {
         if (m_showDebugInfo) {
             UpdateDebugInfo(deltaTime);
         }
+
+        // 5. Update level unlock sound timer
+        if (m_pendingPartyHorn) {
+            m_levelUnlockSoundTimer += deltaTime;
+            GN_LOG_DEBUG("⏰ Party horn timer: " + std::to_string(m_levelUnlockSoundTimer) + "s / 1.0s");
+
+            if (m_levelUnlockSoundTimer >= 1.0f) { // 1 second delay
+                GN_LOG_INFO("🎊 Timer reached 1 second - playing partyhorn!");
+                PlaySFX("partyhorn");
+                m_pendingPartyHorn = false;
+                m_levelUnlockSoundTimer = 0.0f;
+                GN_LOG_INFO("✅ Party horn sequence completed");
+            }
+        }
     }
 
     void FloppyTurdGame::Render() {
@@ -356,15 +373,26 @@ namespace GameCore {
 
     // Data management
     void FloppyTurdGame::SaveGameData() {
-        GN_LOG_INFO("Saving game data...");
-        
+        GN_LOG_INFO("💰 Saving game data... Player coins: " + std::to_string(m_playerCoins));
+
         std::ofstream file(SAVE_FILE_NAME, std::ios::binary);
         if (file.is_open()) {
+            // Save basic game data
             file.write(reinterpret_cast<const char*>(&m_highScore), sizeof(m_highScore));
             file.write(reinterpret_cast<const char*>(&m_playerCoins), sizeof(m_playerCoins));
             file.write(reinterpret_cast<const char*>(&m_gameStats), sizeof(m_gameStats));
+
+            // Save only essential level data (no requirements)
+            for (int levelId = 1; levelId <= MAX_LEVELS; ++levelId) {
+                LevelSaveData saveData;
+                saveData.highScore = m_levelStats[levelId].highScore;
+                saveData.bestCoins = m_levelStats[levelId].bestCoins;
+                saveData.unlocked = m_levelStats[levelId].unlocked;
+                file.write(reinterpret_cast<const char*>(&saveData), sizeof(LevelSaveData));
+            }
+
             file.close();
-            GN_LOG_INFO("Game data saved successfully");
+            GN_LOG_INFO("Game data saved successfully (requirements not saved)");
         } else {
             GN_LOG_ERROR("Failed to save game data");
         }
@@ -372,17 +400,53 @@ namespace GameCore {
 
     void FloppyTurdGame::LoadGameData() {
         GN_LOG_INFO("Loading game data...");
-        
+
+        // Log initial level 2 stats before loading
+        GN_LOG_INFO("📊 BEFORE LoadGameData - Level 2 stats: unlockReq=" + std::to_string(m_levelStats[2].unlockRequirement) +
+                   ", coinReq=" + std::to_string(m_levelStats[2].coinRequirement) + ", unlocked=" + std::to_string(m_levelStats[2].unlocked));
+
         std::ifstream file(SAVE_FILE_NAME, std::ios::binary);
         if (file.is_open()) {
+            // Load basic game data
             file.read(reinterpret_cast<char*>(&m_highScore), sizeof(m_highScore));
+            int oldCoins = m_playerCoins; // Store old value for logging
             file.read(reinterpret_cast<char*>(&m_playerCoins), sizeof(m_playerCoins));
             file.read(reinterpret_cast<char*>(&m_gameStats), sizeof(m_gameStats));
+            GN_LOG_INFO("💰 LOADED COINS: " + std::to_string(oldCoins) + " → " + std::to_string(m_playerCoins));
+
+            // Initialize level stats with default requirements first
+            for (int levelId = 1; levelId <= MAX_LEVELS; ++levelId) {
+                SetDefaultUnlockRequirements(levelId, m_levelStats[levelId]);
+            }
+
+            // Log level 2 stats after setting defaults
+            GN_LOG_INFO("📊 AFTER setting defaults - Level 2 stats: unlockReq=" + std::to_string(m_levelStats[2].unlockRequirement) +
+                       ", coinReq=" + std::to_string(m_levelStats[2].coinRequirement) + ", unlocked=" + std::to_string(m_levelStats[2].unlocked));
+
+            // Load only essential level data (override with saved progress)
+            for (int levelId = 1; levelId <= MAX_LEVELS; ++levelId) {
+                LevelSaveData saveData;
+                file.read(reinterpret_cast<char*>(&saveData), sizeof(LevelSaveData));
+
+                // Keep the requirements set above, only load essential data
+                m_levelStats[levelId].highScore = saveData.highScore;
+                m_levelStats[levelId].bestCoins = saveData.bestCoins;
+                m_levelStats[levelId].unlocked = saveData.unlocked;
+            }
+
             file.close();
-            GN_LOG_INFO("Game data loaded successfully");
+            GN_LOG_INFO("Game data loaded successfully - requirements set at runtime");
+
+            // Log final level 2 stats after loading from save file
+            GN_LOG_INFO("📊 FINAL after loading from save file - Level 2 stats: unlockReq=" + std::to_string(m_levelStats[2].unlockRequirement) +
+                       ", coinReq=" + std::to_string(m_levelStats[2].coinRequirement) + ", unlocked=" + std::to_string(m_levelStats[2].unlocked));
         } else {
             GN_LOG_INFO("No save file found, using defaults");
             ResetGameData();
+
+            // Log final level 2 stats after reset
+            GN_LOG_INFO("📊 FINAL after reset - Level 2 stats: unlockReq=" + std::to_string(m_levelStats[2].unlockRequirement) +
+                       ", coinReq=" + std::to_string(m_levelStats[2].coinRequirement) + ", unlocked=" + std::to_string(m_levelStats[2].unlocked));
         }
     }
 
@@ -511,7 +575,10 @@ namespace GameCore {
         }
         else if (strcmp(stateName, "Gameplay") == 0) {
             // Handle gameplay state transitions (game over, level complete, etc.)
-            // For now, return to main menu
+            // Save game data when returning from gameplay to ensure coins are persisted
+            GN_LOG_INFO("Saving game data before transitioning from Gameplay to MainMenu");
+            SaveGameData();
+
             auto mainMenuState = std::make_unique<MainMenuState>(m_ecsSystem.get(), &m_platformDelegates);
             m_stateManager->ChangeState(std::move(mainMenuState));
             GN_LOG_INFO("Gameplay finished - returned to MainMenuState");
@@ -585,9 +652,24 @@ namespace GameCore {
     }
 
     void FloppyTurdGame::ResetGameData() {
+        GN_LOG_INFO("🔄 ResetGameData called - resetting to defaults");
         m_highScore = 0;
         m_playerCoins = 0;
-        m_gameStats = {0, 0, 0, 0, 0, 0.0f, 0, 0};
+        m_gameStats = {0, 0, 0, 0, 0, 0, 0, 0.0f, 0, 0};
+
+        // Initialize level stats with default values
+        for (int levelId = 1; levelId <= MAX_LEVELS; ++levelId) {
+            LevelStats& stats = m_levelStats[levelId];
+            stats.highScore = 0;
+            stats.bestCoins = 0;
+            stats.unlocked = (levelId == 1); // Only first level unlocked by default
+            SetDefaultUnlockRequirements(levelId, stats);
+        }
+
+        // Explicitly ensure level 2 has 0 requirements for debug testing
+        m_levelStats[2].unlockRequirement = 0;
+        m_levelStats[2].coinRequirement = 0;
+
         GN_LOG_INFO("Game data reset to defaults");
     }
 
@@ -616,14 +698,15 @@ namespace GameCore {
     }
 
     void FloppyTurdGame::PlaySFX(const std::string& soundName) {
-        GN_LOG_DEBUG("Playing SFX: " + soundName);
-        
+        GN_LOG_INFO("🎵 PlaySFX called with: '" + soundName + "'");
+
         // Use platform audio delegate to play sound effect
         if (m_platformDelegates.audio.playSound) {
+            GN_LOG_INFO("🔊 Calling platform delegate to play: '" + soundName + "'");
             m_platformDelegates.audio.playSound(soundName.c_str(), m_masterVolume * m_sfxVolume);
-            GN_LOG_DEBUG("SFX played via platform delegate: " + soundName);
+            GN_LOG_INFO("✅ SFX request sent to platform: '" + soundName + "'");
         } else {
-            GN_LOG_WARN("Audio delegate not available - cannot play SFX: " + soundName);
+            GN_LOG_ERROR("❌ Audio delegate not available - cannot play SFX: '" + soundName + "'");
         }
     }
 
@@ -648,6 +731,251 @@ namespace GameCore {
     }
 
     // SetSwiftComponents removed - Swift components managed entirely on Swift side
+
+    // Level-based high scores and unlocking system
+    const FloppyTurdGame::LevelStats& FloppyTurdGame::GetLevelStats(int levelId) const {
+        static const LevelStats defaultStats = {0, 0, false, 0, 0};
+        if (levelId >= 1 && levelId <= MAX_LEVELS) {
+            // FORCE level 2 to always have 0 requirements for debug testing
+            if (levelId == 2) {
+                const_cast<LevelStats&>(m_levelStats[2]).unlockRequirement = 0;
+                const_cast<LevelStats&>(m_levelStats[2]).coinRequirement = 0;
+            }
+
+            return m_levelStats[levelId];
+        }
+        return defaultStats;
+    }
+
+    void FloppyTurdGame::UpdateLevelStats(int levelId, const LevelStats& stats) {
+        if (levelId >= 1 && levelId <= MAX_LEVELS) {
+            m_levelStats[levelId] = stats;
+            SaveGameData();
+            GN_LOG_INFO("Updated level " + std::to_string(levelId) + " stats");
+        }
+    }
+
+    bool FloppyTurdGame::IsLevelUnlocked(int levelId) const {
+        if (levelId == 1) return true; // First level always unlocked
+        if (levelId >= 2 && levelId <= MAX_LEVELS) {
+            return m_levelStats[levelId].unlocked;
+        }
+        return false;
+    }
+
+    void FloppyTurdGame::UnlockLevel(int levelId) {
+        GN_LOG_INFO("🏆 UnlockLevel called for level " + std::to_string(levelId));
+
+        if (levelId >= 1 && levelId <= MAX_LEVELS) {
+            m_levelStats[levelId].unlocked = true;
+            SaveGameData();
+
+            // Play level unlock sound effects
+            GN_LOG_INFO("🎉 Unlocked level " + std::to_string(levelId) + " - playing sound effects!");
+            GN_LOG_INFO("🔊 Playing balloonpop sound...");
+            PlaySFX("balloonpop");
+            GN_LOG_INFO("✅ PlaySFX(balloonpop) called");
+
+            // Schedule party horn sound to play after 1 second delay
+            GN_LOG_INFO("⏰ Scheduling partyhorn sound to play in 1 second...");
+            m_pendingPartyHorn = true;
+            m_levelUnlockSoundTimer = 0.0f;
+            GN_LOG_INFO("✅ Party horn scheduled - m_pendingPartyHorn=true, timer=0.0f");
+
+            GN_LOG_INFO("✅ Level " + std::to_string(levelId) + " unlocked successfully!");
+        } else {
+            GN_LOG_WARN("⚠️ Invalid level ID: " + std::to_string(levelId));
+        }
+    }
+
+    int FloppyTurdGame::GetLevelHighScore(int levelId) const {
+        if (levelId >= 1 && levelId <= MAX_LEVELS) {
+            return m_levelStats[levelId].highScore;
+        }
+        return 0;
+    }
+
+    void FloppyTurdGame::UpdateLevelHighScore(int levelId, int score, int coins) {
+        if (levelId >= 1 && levelId <= MAX_LEVELS) {
+            // Update existing stats
+            if (score > m_levelStats[levelId].highScore) {
+                m_levelStats[levelId].highScore = score;
+                GN_LOG_INFO("New high score for level " + std::to_string(levelId) + ": " + std::to_string(score));
+            }
+            if (coins > m_levelStats[levelId].bestCoins) {
+                m_levelStats[levelId].bestCoins = coins;
+            }
+
+            // Check if this level completion unlocks the next level
+            CheckLevelUnlock(levelId, score, coins);
+
+            SaveGameData();
+        }
+    }
+
+    void FloppyTurdGame::SetDefaultUnlockRequirements(int levelId, LevelStats& stats) {
+        // Set unlock requirements based on level progression
+        int oldUnlockReq = stats.unlockRequirement;
+        int oldCoinReq = stats.coinRequirement;
+
+        GN_LOG_INFO("🎯 SetDefaultUnlockRequirements CALLED for level " + std::to_string(levelId) +
+                   " - BEFORE: unlockReq=" + std::to_string(oldUnlockReq) + ", coinReq=" + std::to_string(oldCoinReq));
+
+        switch (levelId) {
+            case 1: // Park - always unlocked
+                stats.unlocked = true;
+                stats.unlockRequirement = 0;
+                stats.coinRequirement = 0;
+                break;
+            case 2: // Sewer - TEMPORARILY SET TO 0 PIPES FOR TESTING
+                stats.unlockRequirement = 0; // pipes from Park (level 1) - TEMP: 0 for testing
+                stats.coinRequirement = 0;
+                GN_LOG_INFO("🎯 LEVEL 2: Setting unlockRequirement to 0 for debug testing!");
+                break;
+            case 3: // Desert - 50 pipes from Sewer + 100 coins
+                stats.unlockRequirement = 50; // pipes from Sewer (level 2)
+                stats.coinRequirement = 100;
+                break;
+            case 4: // Snow - 50 pipes from Desert + 250 coins
+                stats.unlockRequirement = 50; // pipes from Desert (level 3)
+                stats.coinRequirement = 250;
+                break;
+            case 5: // Castle - 50 pipes from Snow + 500 coins
+                stats.unlockRequirement = 50; // pipes from Snow (level 4)
+                stats.coinRequirement = 500;
+                break;
+            case 6: // Boss - 50 pipes from Castle + 1000 coins
+                stats.unlockRequirement = 50; // pipes from Castle (level 5)
+                stats.coinRequirement = 1000;
+                break;
+            default:
+                stats.unlockRequirement = 0;
+                stats.coinRequirement = 0;
+                break;
+        }
+
+        if (oldUnlockReq != stats.unlockRequirement || oldCoinReq != stats.coinRequirement) {
+            GN_LOG_INFO("🎯 SetDefaultUnlockRequirements: Level " + std::to_string(levelId) +
+                       " requirements changed from (" + std::to_string(oldUnlockReq) + ", " + std::to_string(oldCoinReq) +
+                       ") to (" + std::to_string(stats.unlockRequirement) + ", " + std::to_string(stats.coinRequirement) + ")");
+        } else {
+            GN_LOG_INFO("🎯 SetDefaultUnlockRequirements: Level " + std::to_string(levelId) +
+                       " requirements unchanged (" + std::to_string(stats.unlockRequirement) + ", " + std::to_string(stats.coinRequirement) + ")");
+        }
+    }
+
+    bool FloppyTurdGame::CanUnlockLevel(int levelId, std::string& failureMessage) {
+        GN_LOG_INFO("🔍 CanUnlockLevel called for level " + std::to_string(levelId));
+
+        if (levelId < 2 || levelId > MAX_LEVELS) {
+            failureMessage = "Invalid level";
+            GN_LOG_INFO("❌ Invalid level ID: " + std::to_string(levelId));
+            return false;
+        }
+
+        const LevelStats& levelStats = m_levelStats[levelId];
+
+        // FORCE level 2 to have 0 requirements for debug testing
+        int effectiveUnlockRequirement = levelStats.unlockRequirement;
+        int effectiveCoinRequirement = levelStats.coinRequirement;
+        if (levelId == 2) {
+            effectiveUnlockRequirement = 0;
+            effectiveCoinRequirement = 0;
+            GN_LOG_INFO("🎯 LEVEL 2 DEBUG: Original requirements were pipes=" + std::to_string(levelStats.unlockRequirement) + ", coins=" + std::to_string(levelStats.coinRequirement));
+            GN_LOG_INFO("🎯 LEVEL 2 DEBUG: FORCED to effective requirements: pipes=0, coins=0");
+        }
+
+        GN_LOG_INFO("📊 Level " + std::to_string(levelId) + " requirements: pipes=" + std::to_string(effectiveUnlockRequirement) + ", coins=" + std::to_string(effectiveCoinRequirement));
+
+        // Check pipe requirement if it exists
+        GN_LOG_INFO("🔍 Checking pipe requirement: effectiveUnlockRequirement=" + std::to_string(effectiveUnlockRequirement) + " (level " + std::to_string(levelId) + ")");
+        if (effectiveUnlockRequirement > 0) {
+            GN_LOG_INFO("⚠️ Pipe requirement check triggered for level " + std::to_string(levelId));
+            // Get the high score from the required previous level
+            int requiredLevelId;
+            if (levelId == 2) {
+                requiredLevelId = 1; // Sewer requires pipes from Park (level 1)
+            } else if (levelId == 3) {
+                requiredLevelId = 2; // Desert requires pipes from Sewer (level 2)
+            } else if (levelId == 4) {
+                requiredLevelId = 3; // Snow requires pipes from Desert (level 3)
+            } else if (levelId == 5) {
+                requiredLevelId = 4; // Castle requires pipes from Snow (level 4)
+            } else if (levelId == 6) {
+                requiredLevelId = 5; // Boss requires pipes from Castle (level 5)
+            } else {
+                requiredLevelId = levelId - 1;
+            }
+
+            int prevLevelHighScore = GetLevelHighScore(requiredLevelId);
+            GN_LOG_INFO("🎯 Checking pipes: need " + std::to_string(effectiveUnlockRequirement) + " from level " + std::to_string(requiredLevelId) + ", current high score: " + std::to_string(prevLevelHighScore));
+
+            if (prevLevelHighScore < effectiveUnlockRequirement) {
+                failureMessage = "Need " + std::to_string(effectiveUnlockRequirement) + " pipes from previous level";
+                GN_LOG_INFO("❌ Pipe requirement not met: " + failureMessage);
+                return false;
+            }
+            GN_LOG_INFO("✅ Pipe requirement met!");
+        } else {
+            GN_LOG_INFO("ℹ️ No pipe requirement for this level");
+        }
+
+        // Check coin requirement if it exists
+        GN_LOG_INFO("🔍 Checking coin requirement: effectiveCoinRequirement=" + std::to_string(effectiveCoinRequirement) + " (level " + std::to_string(levelId) + ")");
+        if (effectiveCoinRequirement > 0) {
+            GN_LOG_INFO("⚠️ Coin requirement check triggered for level " + std::to_string(levelId));
+            GN_LOG_INFO("💰 Checking coins: need " + std::to_string(effectiveCoinRequirement) + ", current coins: " + std::to_string(m_playerCoins));
+            if (m_playerCoins < effectiveCoinRequirement) {
+                failureMessage = "Need " + std::to_string(effectiveCoinRequirement) + " coins";
+                GN_LOG_INFO("❌ Coin requirement not met: " + failureMessage);
+                return false;
+            }
+            GN_LOG_INFO("✅ Coin requirement met!");
+        } else {
+            GN_LOG_INFO("ℹ️ No coin requirement for this level");
+        }
+
+        GN_LOG_INFO("🎉 All requirements met for level " + std::to_string(levelId));
+        GN_LOG_INFO("✅ CanUnlockLevel returning TRUE for level " + std::to_string(levelId));
+        return true;
+    }
+
+    bool FloppyTurdGame::TryUnlockLevel(int levelId) {
+        GN_LOG_INFO("🔓 TryUnlockLevel called for level " + std::to_string(levelId));
+
+        std::string failureMessage;
+        if (!CanUnlockLevel(levelId, failureMessage)) {
+            GN_LOG_INFO("❌ Cannot unlock level " + std::to_string(levelId) + ": " + failureMessage);
+            return false;
+        }
+
+        GN_LOG_INFO("✅ Requirements met for level " + std::to_string(levelId));
+
+        const LevelStats& levelStats = m_levelStats[levelId];
+
+        // FORCE level 2 to have 0 requirements for debug testing
+        int effectiveCoinRequirement = levelStats.coinRequirement;
+        if (levelId == 2) {
+            effectiveCoinRequirement = 0;
+        }
+
+        // Deduct coins if required
+        if (effectiveCoinRequirement > 0) {
+            SpendCoins(effectiveCoinRequirement);
+            GN_LOG_INFO("💰 Spent " + std::to_string(effectiveCoinRequirement) + " coins to unlock level " + std::to_string(levelId));
+        }
+
+        // Unlock the level
+        UnlockLevel(levelId);
+        GN_LOG_INFO("🎉 Successfully unlocked level " + std::to_string(levelId) + " via manual unlock button!");
+        return true;
+    }
+
+    void FloppyTurdGame::CheckLevelUnlock(int completedLevelId, int score, int coins) {
+        // This method is now deprecated - levels are only unlocked manually via unlock button
+        // Keeping the method for potential future use but removing automatic unlock logic
+        GN_LOG_DEBUG("CheckLevelUnlock called but automatic unlocking is disabled - use manual unlock button instead");
+    }
 
     // Global utility functions
     FloppyTurdGame* GetGame() {

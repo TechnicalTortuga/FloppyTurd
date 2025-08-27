@@ -22,6 +22,7 @@ namespace GameCore {
         , m_playerAlive(true)
         , m_invulnerabilityTimer(0.0f)
         , m_pipesCleared(0)
+        , m_sessionCoinsCollected(0)
         , m_finished(false)
         , m_levelCompleted(false)
         , m_currentSubState(GameplaySubState::Playing)
@@ -64,6 +65,7 @@ namespace GameCore {
         m_playerAlive = true;
         m_invulnerabilityTimer = 0.0f;
         m_pipesCleared = 0;
+        m_sessionCoinsCollected = 0; // Reset session coins at start of session
         m_finished = false;
         m_levelCompleted = false;
 
@@ -186,6 +188,7 @@ namespace GameCore {
         
         // Update pipe counter UI
         UpdatePipeCounterUI();
+        UpdateCoinCounterUI();
         
         // Update difficulty
         UpdateDifficulty(deltaTime);
@@ -525,6 +528,16 @@ namespace GameCore {
     void GameplayState::LevelComplete() {
         GN_LOG_INFO("Level Complete!");
         m_levelCompleted = true;
+
+        // Update level high score and check for unlocks
+        if (GameCore::GetGame()) {
+            // Get session coins from PlayerComponent
+            PlayerComponent* player = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity);
+            int sessionCoins = player ? player->sessionCoins : 0;
+
+            GameCore::GetGame()->UpdateLevelHighScore(m_currentLevelId, m_pipesCleared, sessionCoins);
+        }
+
         SaveGameProgress();
     }
 
@@ -1161,6 +1174,41 @@ void GameplayState::DestroyPauseMenu() {
         m_ecsSystem->DestroyEntity(m_statsContentEntity);
         m_statsContentEntity = 0;
     }
+    if (m_statsBackgroundEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_statsBackgroundEntity);
+        m_statsBackgroundEntity = 0;
+    }
+    
+    // Destroy individual stat entities
+    if (m_totalPipesTextEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_totalPipesTextEntity);
+        m_totalPipesTextEntity = 0;
+    }
+    if (m_totalFlopsTextEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_totalFlopsTextEntity);
+        m_totalFlopsTextEntity = 0;
+    }
+    if (m_totalCoinsTextEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_totalCoinsTextEntity);
+        m_totalCoinsTextEntity = 0;
+    }
+
+    if (m_enemiesKilledTextEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_enemiesKilledTextEntity);
+        m_enemiesKilledTextEntity = 0;
+    }
+    if (m_currentSessionTextEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_currentSessionTextEntity);
+        m_currentSessionTextEntity = 0;
+    }
+
+    // Destroy level high score entities
+    for (Gnosis::Entity entity : m_levelHighScoreEntities) {
+        if (entity != 0) {
+            m_ecsSystem->DestroyEntity(entity);
+        }
+    }
+    m_levelHighScoreEntities.clear();
 }
 
 void GameplayState::SwitchPauseTab(int tabIdx) {
@@ -1458,10 +1506,43 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
 
     void GameplayState::OnCoinCollected(int value) {
         GN_LOG_INFO("Coin collected: " + std::to_string(value));
-        // Update player session coins; totalCoins handled when persisting between levels
+
+        // Log current coin counts BEFORE collection
+        int beforePlayerCoins = GameCore::GetGame()->GetPlayerCoins();
+        GN_LOG_INFO("💰 BEFORE coin collection - m_playerCoins: " + std::to_string(beforePlayerCoins));
+
+        // Update session coin counter
+        m_sessionCoinsCollected += value;
+
+        // Update coin counter UI (HUD)
+        UpdateCoinCounterUI();
+
+        // Refresh stats display if stats tab is visible
+        if (m_currentPauseTab == 2) {
+            RefreshStatsDisplay();
+        }
+
+        // Update player session coins
         if (PlayerComponent* player = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity)) {
             player->sessionCoins += value;
+            GN_LOG_INFO("💰 Updated PlayerComponent::sessionCoins to: " + std::to_string(player->sessionCoins));
         }
+
+        // Update lifetime total coins in GameStats
+        GameCore::FloppyTurdGame::GameStats gameStats = GameCore::GetGame()->GetGameStats();
+        gameStats.totalCoinsCollected += value;
+        GameCore::GetGame()->UpdateGameStats(gameStats);
+        GN_LOG_INFO("💰 Updated GameStats::totalCoinsCollected to: " + std::to_string(gameStats.totalCoinsCollected));
+
+        // Also update player coins to keep systems synchronized
+        GameCore::GetGame()->AddCoins(value);
+
+        // Log current coin counts AFTER collection
+        int afterPlayerCoins = GameCore::GetGame()->GetPlayerCoins();
+        GN_LOG_INFO("💰 AFTER coin collection - m_playerCoins: " + std::to_string(afterPlayerCoins) + " (added " + std::to_string(value) + ")");
+
+        GameCore::GetGame()->SaveGameData();
+        GN_LOG_INFO("💰 Game data saved after coin collection");
     }
 
     void GameplayState::OnPickupCollected() {
@@ -1876,13 +1957,18 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         if (pipeCounter) {
             pipeCounter->buttonText = std::to_string(m_pipesCleared);  // Just the number
         }
-        // Update coins UI from player sessionCoins
-        if (m_coinsTextEntity != 0) {
-            UIElement* coinsUi = m_ecsSystem->GetComponent<UIElement>(m_coinsTextEntity);
+    }
+
+    void GameplayState::UpdateCoinCounterUI() {
+        if (m_coinsTextEntity == 0 || !m_ecsSystem) {
+            return;
+        }
+        UIElement* coinsUi = m_ecsSystem->GetComponent<UIElement>(m_coinsTextEntity);
+        if (coinsUi) {
+            // Read from PlayerComponent::sessionCoins instead of m_sessionCoinsCollected
             PlayerComponent* player = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity);
-            if (coinsUi && player) {
-                coinsUi->buttonText = std::to_string(player->sessionCoins);
-            }
+            int coinCount = player ? player->sessionCoins : 0;
+            coinsUi->buttonText = std::to_string(coinCount);
         }
     }
     
@@ -1929,8 +2015,20 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         if (m_currentSubState != GameplaySubState::Playing) {
             return; // Already in game over or paused
         }
-        
+
         GN_LOG_INFO("Game Over triggered - player reached 0 hearts, starting fall sequence");
+
+        // Update level high score with current session progress before death
+        if (GameCore::GetGame()) {
+            PlayerComponent* player = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity);
+            int sessionCoins = player ? player->sessionCoins : 0;
+
+            GameCore::GetGame()->UpdateLevelHighScore(m_currentLevelId, m_pipesCleared, sessionCoins);
+            GN_LOG_INFO("Updated level " + std::to_string(m_currentLevelId) + " high score: " + std::to_string(m_pipesCleared) + " pipes, " + std::to_string(sessionCoins) + " coins");
+        }
+
+        // Increment death counter for stats tracking
+        IncrementDeathCounter();
         m_currentSubState = GameplaySubState::GameOver;
         m_gameOverTimer = 0.0f;
         m_morteFloatOffset = 0.0f;
@@ -2615,6 +2713,9 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
     void GameplayState::ShowPauseMenu() {
         GN_LOG_INFO("Showing pause menu");
         
+        // Update game stats with current session data (efficient polling approach)
+        UpdateGameStatsFromSession();
+        
         // Hide regular UI elements (pipe counter, hearts, coin bag, coin counter)
         HideRegularUI();
         
@@ -2919,7 +3020,10 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
 
                 m_ribbonButtons.push_back(buttonEntity);
 
-                GN_LOG_INFO("Created ribbon button '" + std::string(buttonLabels[i]) + "' at (" + std::to_string(buttonX) + ", " + std::to_string(buttonY) + ") as vertical tab");
+                GN_LOG_INFO("Created ribbon button '" + std::string(buttonLabels[i]) + "' at (" + std::to_string(buttonX) + ", " + std::to_string(buttonY) + 
+                           ") as vertical tab - scale: " + std::to_string(buttonScale) + 
+                           ", size: " + std::to_string(buttonWidth) + "x" + std::to_string(buttonHeight) + 
+                           ", text offset: (" + std::to_string(buttonUI.textOffsetX) + ", " + std::to_string(buttonUI.textOffsetY) + ")");
             }
         }
         
@@ -3060,33 +3164,243 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             screenHeight = si.pixelHeight;
         }
         
-        // Create content entity for stats tab
-        if (m_statsContentEntity == 0) {
-            m_statsContentEntity = m_ecsSystem->CreateEntity();
-            float contentX = screenWidth * 0.5f;
-            float contentY = screenHeight * 0.45f;
+        // Calculate 70% of the pause menu background dimensions
+        // Pause menu: 160x300 texture at 7x scale = 1120x2100
+        float pauseMenuWidth = 1120.0f;
+        float pauseMenuHeight = 2100.0f;
+        float bgWidth = pauseMenuWidth * 0.7f;   // 784
+        float bgHeight = pauseMenuHeight * 0.7f; // 1470
+        
+        // Calculate layout positions
+        float centerX = screenWidth * 0.5f;
+        float centerY = screenHeight * 0.5f + 32.0f;
+        
+        // Create black rectangle background for stats tab (70% of pause menu background size)
+        if (m_statsBackgroundEntity == 0) {
+            m_statsBackgroundEntity = m_ecsSystem->CreateEntity();
             
-            Transform contentTransform(Gnosis::GNVector2(contentX, contentY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
-            m_ecsSystem->AddComponent<Transform>(m_statsContentEntity, contentTransform);
+            // Center position with same offset as pause menu (+32 Y offset)
+            Gnosis::GNVector2 bgPosition = CenterObjectAtPosition(centerX, centerY, bgWidth, bgHeight);
             
-            UIElement contentElem;
-            contentElem.buttonText = "Stats Coming Soon";
-            contentElem.fontSize = 40.0f;
-            contentElem.textColor = Gnosis::GNColor(255, 255, 255, 255);
-            contentElem.centerTextHorizontally = true;
-            contentElem.centerTextVertically = true;
-            contentElem.visible = false; // Initially hidden
-            contentElem.isEnabled = true;
-            contentElem.textLayer = 90; // Above pause menu background (80) and tracks (81-83)
-            m_ecsSystem->AddComponent<UIElement>(m_statsContentEntity, contentElem);
+            Transform bgTransform(bgPosition, 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            m_ecsSystem->AddComponent<Transform>(m_statsBackgroundEntity, bgTransform);
             
-            // Add Sprite component for proper rendering
-            Sprite contentSprite;
-            contentSprite.layer = 90; // Match UIElement textLayer
-            contentSprite.visible = false;
-            m_ecsSystem->AddComponent<Sprite>(m_statsContentEntity, contentSprite);
+            // Create black rectangle with slight transparency
+            UIShape bgShape;
+            bgShape.type = UIShapeType::Rectangle;
+            bgShape.width = bgWidth;
+            bgShape.height = bgHeight;
+            bgShape.color = Gnosis::GNColor(0, 0, 0, 200); // Black with ~78% opacity (200/255)
+            bgShape.visible = false; // Initially hidden
+            bgShape.layer = 82; // Above pause menu background (80) but below content (90)
+            m_ecsSystem->AddComponent<UIShape>(m_statsBackgroundEntity, bgShape);
+            
+            // Add UIElement component for proper visibility management
+            UIElement bgElement;
+            bgElement.visible = false; // Initially hidden
+            bgElement.isEnabled = true;
+            bgElement.textLayer = 82; // Match UIShape layer
+            m_ecsSystem->AddComponent<UIElement>(m_statsBackgroundEntity, bgElement);
+            
+            GN_LOG_INFO("Created stats background rectangle at (" + std::to_string(bgPosition.x) + ", " + std::to_string(bgPosition.y) + ") size " + std::to_string(bgWidth) + "x" + std::to_string(bgHeight));
         }
         
+        // Get stats data from the game
+        const GameCore::FloppyTurdGame::GameStats* gameStats = nullptr;
+        if (GameCore::GetGame()) {
+            gameStats = &GameCore::GetGame()->GetGameStats();
+        }
+        
+        // Start from top of rectangle and work down
+        float startY = centerY - (bgHeight * 0.4f); // Start near top of rectangle
+        float lineSpacing = 80.0f; // Space between stats
+        float fontSize = 32.0f;
+        
+        // Create individual stat text entities
+        
+        // 1. Current Session Pipes (always available from m_pipesCleared)
+        if (m_currentSessionTextEntity == 0) {
+            m_currentSessionTextEntity = m_ecsSystem->CreateEntity();
+            Transform transform(Gnosis::GNVector2(centerX, startY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            m_ecsSystem->AddComponent<Transform>(m_currentSessionTextEntity, transform);
+            
+            UIElement uiElem;
+            uiElem.buttonText = "Session Pipes: " + std::to_string(m_pipesCleared);
+            uiElem.fontSize = fontSize;
+            uiElem.textColor = Gnosis::GNColor(255, 255, 255, 255);
+            uiElem.centerTextHorizontally = true;
+            uiElem.visible = false;
+            uiElem.isEnabled = true;
+            uiElem.textLayer = 90;
+            m_ecsSystem->AddComponent<UIElement>(m_currentSessionTextEntity, uiElem);
+            
+            Sprite sprite;
+            sprite.layer = 90;
+            sprite.visible = false;
+            m_ecsSystem->AddComponent<Sprite>(m_currentSessionTextEntity, sprite);
+        }
+        
+        // 2. Session Coins Collected
+        if (m_sessionCoinsTextEntity == 0) {
+            m_sessionCoinsTextEntity = m_ecsSystem->CreateEntity();
+            Transform transform(Gnosis::GNVector2(centerX, startY + lineSpacing), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            m_ecsSystem->AddComponent<Transform>(m_sessionCoinsTextEntity, transform);
+            
+            UIElement uiElem;
+            uiElem.buttonText = "Session Coins: " + std::to_string(m_sessionCoinsCollected);
+            uiElem.fontSize = fontSize;
+            uiElem.textColor = Gnosis::GNColor(255, 255, 100, 255); // Light gold for session coins
+            uiElem.centerTextHorizontally = true;
+            uiElem.visible = false;
+            uiElem.isEnabled = true;
+            uiElem.textLayer = 90;
+            m_ecsSystem->AddComponent<UIElement>(m_sessionCoinsTextEntity, uiElem);
+            
+            Sprite sprite;
+            sprite.layer = 90;
+            sprite.visible = false;
+            m_ecsSystem->AddComponent<Sprite>(m_sessionCoinsTextEntity, sprite);
+        }
+        
+        // 3. Total Coins Collected
+        if (m_totalCoinsTextEntity == 0) {
+            m_totalCoinsTextEntity = m_ecsSystem->CreateEntity();
+            Transform transform(Gnosis::GNVector2(centerX, startY + lineSpacing * 2), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            m_ecsSystem->AddComponent<Transform>(m_totalCoinsTextEntity, transform);
+            
+            UIElement uiElem;
+            int totalCoins = gameStats ? gameStats->totalCoinsCollected : (GameCore::GetGame() ? GameCore::GetGame()->GetPlayerCoins() : 0);
+            uiElem.buttonText = "Total Coins: " + std::to_string(totalCoins);
+            uiElem.fontSize = fontSize;
+            uiElem.textColor = Gnosis::GNColor(255, 215, 0, 255); // Gold color for coins
+            uiElem.centerTextHorizontally = true;
+            uiElem.visible = false;
+            uiElem.isEnabled = true;
+            uiElem.textLayer = 90;
+            m_ecsSystem->AddComponent<UIElement>(m_totalCoinsTextEntity, uiElem);
+            
+            Sprite sprite;
+            sprite.layer = 90;
+            sprite.visible = false;
+            m_ecsSystem->AddComponent<Sprite>(m_totalCoinsTextEntity, sprite);
+        }
+        
+        // 4. Total Games Played (Flops)
+        if (m_totalFlopsTextEntity == 0) {
+            m_totalFlopsTextEntity = m_ecsSystem->CreateEntity();
+            Transform transform(Gnosis::GNVector2(centerX, startY + lineSpacing * 3), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            m_ecsSystem->AddComponent<Transform>(m_totalFlopsTextEntity, transform);
+            
+            UIElement uiElem;
+            int totalFlops = gameStats ? gameStats->totalGamesPlayed : 0;
+            uiElem.buttonText = "Total Flops: " + std::to_string(totalFlops);
+            uiElem.fontSize = fontSize;
+            uiElem.textColor = Gnosis::GNColor(255, 100, 100, 255); // Light red for deaths
+            uiElem.centerTextHorizontally = true;
+            uiElem.visible = false;
+            uiElem.isEnabled = true;
+            uiElem.textLayer = 90;
+            m_ecsSystem->AddComponent<UIElement>(m_totalFlopsTextEntity, uiElem);
+            
+            Sprite sprite;
+            sprite.layer = 90;
+            sprite.visible = false;
+            m_ecsSystem->AddComponent<Sprite>(m_totalFlopsTextEntity, sprite);
+        }
+        
+        // 5. Total Enemies Killed
+        if (m_enemiesKilledTextEntity == 0) {
+            m_enemiesKilledTextEntity = m_ecsSystem->CreateEntity();
+            Transform transform(Gnosis::GNVector2(centerX, startY + lineSpacing * 4), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            m_ecsSystem->AddComponent<Transform>(m_enemiesKilledTextEntity, transform);
+            
+            UIElement uiElem;
+            int enemiesKilled = gameStats ? gameStats->totalEnemiesKilled : 0;
+            uiElem.buttonText = "Enemies Defeated: " + std::to_string(enemiesKilled);
+            uiElem.fontSize = fontSize;
+            uiElem.textColor = Gnosis::GNColor(150, 255, 150, 255); // Light green for victories
+            uiElem.centerTextHorizontally = true;
+            uiElem.visible = false;
+            uiElem.isEnabled = true;
+            uiElem.textLayer = 90;
+            m_ecsSystem->AddComponent<UIElement>(m_enemiesKilledTextEntity, uiElem);
+            
+            Sprite sprite;
+            sprite.layer = 90;
+            sprite.visible = false;
+            m_ecsSystem->AddComponent<Sprite>(m_enemiesKilledTextEntity, sprite);
+        }
+
+        // 5. Total Pipes (using total score as approximation for now)
+        if (m_totalPipesTextEntity == 0) {
+            m_totalPipesTextEntity = m_ecsSystem->CreateEntity();
+            // Position Total Pipes at lineSpacing * 5
+            Transform transform(Gnosis::GNVector2(centerX, startY + lineSpacing * 5), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            m_ecsSystem->AddComponent<Transform>(m_totalPipesTextEntity, transform);
+            
+            UIElement uiElem;
+            // Approximate total pipes from total score (if available)
+            int totalPipes = gameStats ? (gameStats->totalScore / 10) : 0; // Assuming 10 points per pipe
+            uiElem.buttonText = "Total Pipes: " + std::to_string(totalPipes + m_pipesCleared);
+            uiElem.fontSize = fontSize;
+            uiElem.textColor = Gnosis::GNColor(150, 150, 255, 255); // Light blue for pipes
+            uiElem.centerTextHorizontally = true;
+            uiElem.visible = false;
+            uiElem.isEnabled = true;
+            uiElem.textLayer = 90;
+            m_ecsSystem->AddComponent<UIElement>(m_totalPipesTextEntity, uiElem);
+            
+            Sprite sprite;
+            sprite.layer = 90;
+            sprite.visible = false;
+            m_ecsSystem->AddComponent<Sprite>(m_totalPipesTextEntity, sprite);
+        }
+
+        // 7. Level High Scores
+        for (int levelId = 1; levelId <= 6; ++levelId) {
+            if (levelId >= m_levelHighScoreEntities.size()) {
+                m_levelHighScoreEntities.resize(levelId + 1, 0);
+            }
+
+            if (m_levelHighScoreEntities[levelId] == 0) {
+                m_levelHighScoreEntities[levelId] = m_ecsSystem->CreateEntity();
+
+                // Position each level high score below the previous one
+                float levelY = startY + lineSpacing * (6 + levelId - 1);
+                Transform transform(Gnosis::GNVector2(centerX, levelY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+                m_ecsSystem->AddComponent<Transform>(m_levelHighScoreEntities[levelId], transform);
+
+                // Get level name and high score
+                std::string levelName;
+                switch (levelId) {
+                    case 1: levelName = "Sewer"; break;
+                    case 2: levelName = "Park"; break;
+                    case 3: levelName = "Desert"; break;
+                    case 4: levelName = "Snow"; break;
+                    case 5: levelName = "Castle"; break;
+                    case 6: levelName = "Boss"; break;
+                    default: levelName = "Level " + std::to_string(levelId); break;
+                }
+
+                int levelHighScore = GameCore::GetGame() ? GameCore::GetGame()->GetLevelHighScore(levelId) : 0;
+
+                UIElement uiElem;
+                uiElem.buttonText = levelName + ": " + std::to_string(levelHighScore) + " pipes";
+                uiElem.fontSize = fontSize;
+                uiElem.textColor = Gnosis::GNColor(255, 200, 100, 255); // Gold/orange for level scores
+                uiElem.centerTextHorizontally = true;
+                uiElem.visible = false;
+                uiElem.isEnabled = true;
+                uiElem.textLayer = 90;
+                m_ecsSystem->AddComponent<UIElement>(m_levelHighScoreEntities[levelId], uiElem);
+
+                Sprite sprite;
+                sprite.layer = 90;
+                sprite.visible = false;
+                m_ecsSystem->AddComponent<Sprite>(m_levelHighScoreEntities[levelId], sprite);
+            }
+        }
+
         GN_LOG_INFO("Created stats tab content");
     }
 
@@ -3106,33 +3420,69 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         // Create main menu button
         if (m_mainMenuButtonEntity == 0) {
             m_mainMenuButtonEntity = m_ecsSystem->CreateEntity();
-            float buttonX = screenWidth * 0.5f - 256.0f; // Center horizontally (accounting for 8x scaling of 64x64 texture)
-            float buttonY = screenHeight * 0.80f - 256.0f; // Position at 80% down screen (accounting for 8x scaling)
             
-            Transform buttonTransform(Gnosis::GNVector2(buttonX, buttonY), 0.0f, Gnosis::GNVector2(8.0f, 8.0f)); // 8x scaling for larger button
+            // Calculate center position for systems tab area
+            float bgW = screenWidth * 0.8f;
+            float bgH = screenHeight * 0.7f;
+            float bgX = (screenWidth - bgW) * 0.5f;
+            float bgY = (screenHeight - bgH) * 0.18f;
+            
+            // Position button in center of entire screen (not just tab area)
+            float buttonCenterX = screenWidth * 0.5f; // Center horizontally on screen
+            float buttonCenterY = screenHeight * 0.75f; // Position at 75% down screen (lower)
+            
+            // Use larger scale for main menu size (10x scaling for 900x160 button)
+            float buttonScale = 10.0f;
+            float buttonWidth = 90.0f * buttonScale;  // 900 pixels (like working buttons)
+            float buttonHeight = 16.0f * buttonScale; // 160 pixels (like working buttons)
+            
+            // Use positioning helper to center button (EXACT same pattern as main menu buttons)
+            Gnosis::GNVector2 buttonPosition = GameCore::CenterObjectAtPosition(buttonCenterX, buttonCenterY, buttonWidth, buttonHeight);
+            float buttonX = buttonPosition.x;  // This is the TOP-LEFT X position for the sprite
+            float buttonY = buttonPosition.y;  // This is the TOP-LEFT Y position for the sprite
+            
+            // Log the calculated positions for debugging
+            GN_LOG_INFO("Screen dimensions - width: " + std::to_string(screenWidth) + ", height: " + std::to_string(screenHeight));
+            GN_LOG_INFO("Main menu button center - buttonCenterX: " + std::to_string(buttonCenterX) + ", buttonCenterY: " + std::to_string(buttonCenterY));
+            GN_LOG_INFO("Main menu button top-left - buttonX: " + std::to_string(buttonX) + ", buttonY: " + std::to_string(buttonY));
+            GN_LOG_INFO("Main menu button dimensions - width: " + std::to_string(buttonWidth) + ", height: " + std::to_string(buttonHeight));
+            GN_LOG_INFO("Main menu button expected text center - textCenterX: " + std::to_string(buttonX + buttonWidth * 0.5f) + ", textCenterY: " + std::to_string(buttonY + buttonHeight * 0.5f));
+            GN_LOG_INFO("Main menu button sprite position: (" + std::to_string(buttonX) + ", " + std::to_string(buttonY) + ")");
+            
+            Transform buttonTransform(Gnosis::GNVector2(buttonX, buttonY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
             m_ecsSystem->AddComponent<Transform>(m_mainMenuButtonEntity, buttonTransform);
             
-            // Create sprite using FloppyButtonBlue
-            Sprite buttonSprite("FloppyButtonBlue", 64, 64); // Assuming 64x64 texture
-            buttonSprite.layer = 86; // Above pause menu background (80)
+            // Create sprite using FloppyButtonBlue.png (full filename for proper texture loading)
+            // Use actual texture dimensions like working buttons (90x16, not 64x64)
+            Sprite buttonSprite("FloppyButtonBlue.png", 90, 16); // Use actual texture dimensions like working buttons
+            buttonSprite.layer = 90; // High layer above everything (pause menu background is 80)
             buttonSprite.visible = false; // Initially hidden
             GN_LOG_INFO("Creating Main Menu button sprite: FloppyButtonBlue, 64x64, layer " + std::to_string(buttonSprite.layer) + 
-                       " at (" + std::to_string(buttonX) + ", " + std::to_string(buttonY) + ")");
+                       " at center (" + std::to_string(buttonCenterX) + ", " + std::to_string(buttonCenterY) + ") with scale " + std::to_string(buttonScale));
             m_ecsSystem->AddComponent<Sprite>(m_mainMenuButtonEntity, buttonSprite);
             
-            // Create UI element for button text and sprite
-            UIElement buttonUI;
-            buttonUI.buttonText = "MAIN MENU";
+            // Create UI element for button text - use EXACT same pattern as main menu buttons
+            UIElement buttonUI("MAIN MENU", "FloppyButtonBlue", "FloppyButtonBlueHover");
             buttonUI.fontSize = 62.0f; // Lowered font size
             buttonUI.textColor = Gnosis::GNColor(255, 255, 255, 255); // White text
             buttonUI.centerTextHorizontally = true;
             buttonUI.centerTextVertically = true;
-            buttonUI.textLayer = 87; // Above pause menu background and sprites
+            buttonUI.textLayer = 90; // Same layer as button sprite for proper alignment
             buttonUI.visible = false; // Initially hidden
-            buttonUI.normalTextureId = "FloppyButtonBlue"; // Set texture for button sprite
+            // NO OFFSET - text should be perfectly centered as requested
+            buttonUI.textOffsetX = 0.0f;  // No horizontal offset for perfect centering
+            buttonUI.textOffsetY = 0.0f;  // No vertical offset for perfect centering
+            
+            // Add debug logging for button creation
+            GN_LOG_INFO("Main menu button UI created - text: '" + std::string(buttonUI.buttonText) + 
+                       "', font size: " + std::to_string(buttonUI.fontSize) + 
+                       ", text layer: " + std::to_string(buttonUI.textLayer));
+            
+            // Add UIElement to the SAME entity as the sprite (like main menu buttons)
             m_ecsSystem->AddComponent<UIElement>(m_mainMenuButtonEntity, buttonUI);
             
-            GN_LOG_INFO("Created main menu button at (" + std::to_string(buttonX) + ", " + std::to_string(buttonY) + ")");
+            GN_LOG_INFO("Created main menu button at (" + std::to_string(buttonX) + ", " + std::to_string(buttonY) + 
+                       ") with scale " + std::to_string(buttonScale) + " (button size: " + std::to_string(64 * buttonScale) + "x" + std::to_string(64 * buttonScale) + ")");
         }
         
         // Create audio slider entities
@@ -3157,39 +3507,42 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         float bgX = (screenW - bgW) * 0.5f;
         float bgY = (screenH - bgH) * 0.18f;
 
-        // Slider layout (spread out better, not squished at top)
-        m_sliderX = bgX + 0.12f * bgW;
-        m_sliderY = bgY + 0.20f * bgH; // Start even lower to spread out more
-        m_sliderW = bgW - 0.24f * bgW;
-        m_sliderH = 18.0f;
-        m_sliderSpacing = 160.0f; // Much more spacing between sliders
+        // Mobile detection like MainMenuState - iPhone typically has width < height in portrait
+        bool isMobile = (screenW < screenH) && (screenH > 1000);
+        m_uiScale = isMobile ? 8.0f : 1.0f;  // Store as member variable
+        GN_LOG_INFO("Mobile detection: isMobile=" + std::to_string(isMobile) + ", uiScale=" + std::to_string(m_uiScale) + 
+                   " (screen: " + std::to_string(screenW) + "x" + std::to_string(screenH) + ")");
 
-        // MASTER SLIDER (first)
-        float masterTrackY = m_sliderY + 9.0f; // Center track with knob (knob is at trackY + 9 - 16)
-        float musicTrackY = m_sliderY + m_sliderSpacing + 9.0f; // Center track with knob
-        float sfxTrackY = m_sliderY + m_sliderSpacing * 2 + 9.0f; // Center track with knob
+        // Slider layout (spread out better, not squished at top)
+        // Adjust slider positioning to account for knob size and hitbox - move further right
+        m_sliderX = bgX + 0.20f * bgW + 32.0f; // Start further right (20% + 32px) to avoid tab buttons
+        m_sliderY = bgY + 0.35f * bgH; // Start much lower to move everything down
+        m_sliderW = bgW - 0.40f * bgW - 64.0f; // Reduce width proportionally to account for rightward movement
+        m_sliderH = 18.0f;
+        m_sliderSpacing = 320.0f; // Much more spacing between slider groups for better separation
+
+        // MASTER SLIDER (first) - Center tracks vertically with knobs
+        float masterTrackY = m_sliderY + 9.0f; // Track Y position
+        float musicTrackY = m_sliderY + m_sliderSpacing + 9.0f; // Track Y position
+        float sfxTrackY = m_sliderY + m_sliderSpacing * 2 + 9.0f; // Track Y position
 
         // MASTER TRACK - Use UIShape for proper rendering
         if (m_masterTrackEntity == 0) {
             m_masterTrackEntity = m_ecsSystem->CreateEntity();
             Transform t(Gnosis::GNVector2(m_sliderX, masterTrackY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
             
-            // Use UIShape for tracks - this should render properly
             UIShape shape; 
             shape.visible = false; 
             shape.width = m_sliderW; 
             shape.height = m_sliderH;
-            shape.color = Gnosis::GNColor(255, 255, 255, 255); // White color to make tracks very visible
+            shape.color = Gnosis::GNColor(128, 128, 128, 255); // Gray color like main menu options
             shape.layer = 83; // Below knob (85) but above background (80)
             
-            // Add UIElement component to ensure screen-space rendering (in front of pause menu)
             UIElement ui; 
             ui.visible = false; 
             ui.textLayer = 83; // Match UIShape layer for consistent layering
             ui.isEnabled = true;
-            // Don't set any texture IDs - this ensures it's not treated as a UI sprite
             
-            // Add debug logging for track creation
             GN_LOG_INFO("Creating MASTER track UIShape: " + std::to_string(m_sliderW) + "x" + std::to_string(m_sliderH) + 
                        " at (" + std::to_string(m_sliderX) + ", " + std::to_string(masterTrackY) + ") layer " + std::to_string(shape.layer) + 
                        " entity=" + std::to_string(m_masterTrackEntity));
@@ -3202,11 +3555,11 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         // MASTER LABEL
         if (m_masterLabelEntity == 0) {
             m_masterLabelEntity = m_ecsSystem->CreateEntity();
-            float labelY = masterTrackY - 28.0f;
+            float labelY = masterTrackY - 160.0f; // Even more spacing between label and track for better symmetry
             float labelX = m_sliderX;
             Transform t(Gnosis::GNVector2(labelX, labelY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
             UIElement ui("MASTER", "", "");
-            ui.fontSize = 32.0f;
+            ui.fontSize = 42.0f; // Increased font size for better readability
             ui.textColor = Gnosis::GNColor(255, 255, 255, 255);
             ui.centerTextHorizontally = false; ui.centerTextVertically = true; ui.visible = false; ui.textLayer = 84;
             m_ecsSystem->AddComponent<Transform>(m_masterLabelEntity, t);
@@ -3216,37 +3569,57 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         // MASTER KNOB
         if (m_masterKnobEntity == 0) {
             m_masterKnobEntity = m_ecsSystem->CreateEntity();
-            float knobSize = 32.0f;
-            float knobX = m_sliderX + GameCore::GetGame()->GetMasterVolume() * m_sliderW - knobSize * 0.5f;
-            float knobY = masterTrackY + m_sliderH * 0.5f - knobSize * 0.5f;
-            Transform t(Gnosis::GNVector2(knobX, knobY), 0.0f, Gnosis::GNVector2(6.0f, 6.0f)); // 6x scaling like main menu
-            Sprite s("poophat", knobSize, knobSize); s.layer = 85; s.visible = false;
+            // Use MainMenuState knob sizing approach - consistent UI scaling
+            float knobSize = 16.0f * m_uiScale;  // Same as MainMenuState
+            float scale = m_uiScale;  // Use UI scale instead of hardcoded 6.0f
+            float scaledKnobSize = knobSize;
+            
+            // Clamp volume value to 0.0-1.0 range like Options menu
+            float masterVolume = std::max(0.0f, std::min(1.0f, GameCore::GetGame()->GetMasterVolume()));
+            
+            // Position knob to use full track range - knob edges align with track boundaries
+            // At 0%: knob left edge aligns with track start, at 100%: knob right edge aligns with track end
+            float knobCenterX = m_sliderX + (scaledKnobSize * 0.5f) + masterVolume * (m_sliderW - scaledKnobSize);
+            float knobX = knobCenterX - (scaledKnobSize * 0.5f);
+            float knobY = masterTrackY + m_sliderH * 0.5f - (scaledKnobSize * 0.5f);
+            
+            Transform t(Gnosis::GNVector2(knobX, knobY), 0.0f, Gnosis::GNVector2(scale, scale));
+            Sprite s("poophat", 16, 16); s.layer = 85; s.visible = false;
             UIElement ui("", "poophat", "poophat");
             ui.visible = false; ui.textLayer = 85; ui.isEnabled = true;
             m_ecsSystem->AddComponent<Transform>(m_masterKnobEntity, t);
             m_ecsSystem->AddComponent<Sprite>(m_masterKnobEntity, s);
             m_ecsSystem->AddComponent<UIElement>(m_masterKnobEntity, ui);
+            
+            // Debug: Log knob positioning and hitbox
+            float knobCenterY = knobY + (scaledKnobSize * 0.5f);  // Convert top-left to center Y
+            float hitboxLeft = knobCenterX - (scaledKnobSize * 0.5f);
+            float hitboxRight = knobCenterX + (scaledKnobSize * 0.5f);
+            float hitboxTop = knobCenterY - (scaledKnobSize * 0.5f);
+            float hitboxBottom = knobCenterY + (scaledKnobSize * 0.5f);
+            GN_LOG_INFO("MASTER knob: pos=(" + std::to_string(knobX) + ", " + std::to_string(knobY) + 
+                       "), hitbox=(" + std::to_string(hitboxLeft) + "-" + std::to_string(hitboxRight) + 
+                       ", " + std::to_string(hitboxTop) + "-" + std::to_string(hitboxBottom) + 
+                       "), track=(" + std::to_string(m_sliderX) + "-" + std::to_string(m_sliderX + m_sliderW) + 
+                       ", " + std::to_string(masterTrackY) + "-" + std::to_string(masterTrackY + m_sliderH) + ")");
         }
 
-        // Track entity for music - Use UIShape for proper rendering
+        // MUSIC TRACK - Use UIShape for proper rendering
         if (m_musicTrackEntity == 0) {
             m_musicTrackEntity = m_ecsSystem->CreateEntity();
             Transform t(Gnosis::GNVector2(m_sliderX, musicTrackY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
             
-            // Use UIShape for tracks - this should render properly
             UIShape shape; 
             shape.visible = false; 
             shape.width = m_sliderW; 
             shape.height = m_sliderH;
-            shape.color = Gnosis::GNColor(255, 255, 255, 255); // White color to make tracks very visible
-            shape.layer = 81; // Above pause menu background (80) but below other UI elements
+            shape.color = Gnosis::GNColor(128, 128, 128, 255); // Gray color like main menu options
+            shape.layer = 83; // Below knob (85) but above background (80)
             
-            // Add UIElement component to ensure screen-space rendering (in front of pause menu)
             UIElement ui; 
             ui.visible = false; 
-            ui.textLayer = 81; // Match UIShape layer for consistent layering
+            ui.textLayer = 83; // Match UIShape layer for consistent layering
             ui.isEnabled = true;
-            // Don't set any texture IDs - this ensures it's not treated as a UI sprite
             
             m_ecsSystem->AddComponent<Transform>(m_musicTrackEntity, t);
             m_ecsSystem->AddComponent<UIShape>(m_musicTrackEntity, shape);
@@ -3256,11 +3629,11 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         // Label entity for music
         if (m_musicLabelEntity == 0) {
             m_musicLabelEntity = m_ecsSystem->CreateEntity();
-            float labelY = musicTrackY - 28.0f;
+            float labelY = musicTrackY - 160.0f; // Even more spacing between label and track for better symmetry
             float labelX = m_sliderX;
             Transform t(Gnosis::GNVector2(labelX, labelY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
             UIElement ui("MUSIC", "", "");
-            ui.fontSize = 32.0f;
+            ui.fontSize = 42.0f; // Increased font size for better readability
             ui.textColor = Gnosis::GNColor(255, 255, 255, 255);
             ui.centerTextHorizontally = false; ui.centerTextVertically = true; ui.visible = false; ui.textLayer = 84;
             m_ecsSystem->AddComponent<Transform>(m_musicLabelEntity, t);
@@ -3270,38 +3643,57 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         // Knob entity for music
         if (m_musicKnobEntity == 0) {
             m_musicKnobEntity = m_ecsSystem->CreateEntity();
-            float knobSize = 32.0f;
-            float knobX = m_sliderX + GameCore::GetGame()->GetMusicVolume() * m_sliderW - knobSize * 0.5f;
-            float knobY = musicTrackY + m_sliderH * 0.5f - knobSize * 0.5f;
-            Transform t(Gnosis::GNVector2(knobX, knobY), 0.0f, Gnosis::GNVector2(6.0f, 6.0f)); // 6x scaling like main menu
-            Sprite s("poophat", knobSize, knobSize); s.layer = 85; s.visible = false;
+            // Use MainMenuState knob sizing approach - consistent UI scaling
+            float knobSize = 16.0f * m_uiScale;  // Same as MainMenuState
+            float scale = m_uiScale;  // Use UI scale instead of hardcoded 6.0f
+            float scaledKnobSize = knobSize;
+            
+            // Clamp volume value to 0.0-1.0 range like Options menu
+            float musicVolume = std::max(0.0f, std::min(1.0f, GameCore::GetGame()->GetMusicVolume()));
+            
+            // Position knob to use full track range - knob edges align with track boundaries
+            // At 0%: knob left edge aligns with track start, at 100%: knob right edge aligns with track end
+            float knobCenterX = m_sliderX + (scaledKnobSize * 0.5f) + musicVolume * (m_sliderW - scaledKnobSize);
+            float knobX = knobCenterX - (scaledKnobSize * 0.5f);
+            float knobY = musicTrackY + m_sliderH * 0.5f - (scaledKnobSize * 0.5f);
+            
+            Transform t(Gnosis::GNVector2(knobX, knobY), 0.0f, Gnosis::GNVector2(scale, scale));
+            Sprite s("poophat", 16, 16); s.layer = 85; s.visible = false;
             UIElement ui("", "poophat", "poophat");
             ui.visible = false; ui.textLayer = 85; ui.isEnabled = true;
             m_ecsSystem->AddComponent<Transform>(m_musicKnobEntity, t);
             m_ecsSystem->AddComponent<Sprite>(m_musicKnobEntity, s);
             m_ecsSystem->AddComponent<UIElement>(m_musicKnobEntity, ui);
+            
+            // Debug: Log knob positioning and hitbox
+            float knobCenterY = knobY + (scaledKnobSize * 0.5f);  // Convert top-left to center Y
+            float hitboxLeft = knobCenterX - (scaledKnobSize * 0.5f);
+            float hitboxRight = knobCenterX + (scaledKnobSize * 0.5f);
+            float hitboxTop = knobCenterY - (scaledKnobSize * 0.5f);
+            float hitboxBottom = knobCenterY + (scaledKnobSize * 0.5f);
+            GN_LOG_INFO("MUSIC knob: pos=(" + std::to_string(knobX) + ", " + std::to_string(knobY) + 
+                       "), hitbox=(" + std::to_string(hitboxLeft) + "-" + std::to_string(hitboxRight) + 
+                       ", " + std::to_string(hitboxTop) + "-" + std::to_string(hitboxBottom) + 
+                       "), track=(" + std::to_string(m_sliderX) + "-" + std::to_string(m_sliderX + m_sliderW) + 
+                       ", " + std::to_string(musicTrackY) + "-" + std::to_string(musicTrackY + m_sliderH) + ")");
         }
 
-        // SFX SLIDER
-        // Track entity for sfx - Use UIShape for proper rendering
+        // SFX TRACK - Use UIShape for proper rendering
         if (m_sfxTrackEntity == 0) {
             m_sfxTrackEntity = m_ecsSystem->CreateEntity();
             Transform t(Gnosis::GNVector2(m_sliderX, sfxTrackY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
             
-            // Use UIShape for tracks - this should render properly
             UIShape shape; 
             shape.visible = false; 
             shape.width = m_sliderW; 
             shape.height = m_sliderH;
-            shape.color = Gnosis::GNColor(255, 255, 255, 255); // White color to make tracks very visible
-            shape.layer = 81; // Above pause menu background (80) but below other UI elements
+            shape.color = Gnosis::GNColor(128, 128, 128, 255); // Gray color like main menu options
+            shape.layer = 83; // Below knob (85) but above background (80)
             
-            // Add UIElement component to ensure screen-space rendering (in front of pause menu)
             UIElement ui; 
             ui.visible = false; 
-            ui.textLayer = 81; // Match UIShape layer for consistent layering
+            ui.textLayer = 83; // Match UIShape layer for consistent layering
             ui.isEnabled = true;
-            // Don't set any texture IDs - this ensures it's not treated as a UI sprite
             
             m_ecsSystem->AddComponent<Transform>(m_sfxTrackEntity, t);
             m_ecsSystem->AddComponent<UIShape>(m_sfxTrackEntity, shape);
@@ -3311,11 +3703,11 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         // Label entity for sfx
         if (m_sfxLabelEntity == 0) {
             m_sfxLabelEntity = m_ecsSystem->CreateEntity();
-            float labelY = sfxTrackY - 28.0f;
+            float labelY = sfxTrackY - 160.0f; // Even more spacing between label and track for better symmetry
             float labelX = m_sliderX;
             Transform t(Gnosis::GNVector2(labelX, labelY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
             UIElement ui("SFX", "", "");
-            ui.fontSize = 32.0f;
+            ui.fontSize = 42.0f; // Increased font size for better readability
             ui.textColor = Gnosis::GNColor(255, 255, 255, 255);
             ui.centerTextHorizontally = false; ui.centerTextVertically = true; ui.visible = false; ui.textLayer = 84;
             m_ecsSystem->AddComponent<Transform>(m_sfxLabelEntity, t);
@@ -3325,20 +3717,178 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         // Knob entity for sfx
         if (m_sfxKnobEntity == 0) {
             m_sfxKnobEntity = m_ecsSystem->CreateEntity();
-            float knobSize = 32.0f;
-            float knobX = m_sliderX + GameCore::GetGame()->GetSFXVolume() * m_sliderW - knobSize * 0.5f;
-            float knobY = sfxTrackY + m_sliderH * 0.5f - knobSize * 0.5f;
-            Transform t(Gnosis::GNVector2(knobX, knobY), 0.0f, Gnosis::GNVector2(6.0f, 6.0f)); // 6x scaling like main menu
-            Sprite s("poophat", knobSize, knobSize); s.layer = 85; s.visible = false;
+            // Use MainMenuState knob sizing approach - consistent UI scaling
+            float knobSize = 16.0f * m_uiScale;  // Same as MainMenuState
+            float scale = m_uiScale;  // Use UI scale instead of hardcoded 6.0f
+            float scaledKnobSize = knobSize;
+            
+            // Clamp volume value to 0.0-1.0 range like Options menu
+            float sfxVolume = std::max(0.0f, std::min(1.0f, GameCore::GetGame()->GetSFXVolume()));
+            
+            // Position knob to use full track range - knob edges align with track boundaries
+            // At 0%: knob left edge aligns with track start, at 100%: knob right edge aligns with track end
+            float knobCenterX = m_sliderX + (scaledKnobSize * 0.5f) + sfxVolume * (m_sliderW - scaledKnobSize);
+            float knobX = knobCenterX - (scaledKnobSize * 0.5f);
+            float knobY = sfxTrackY + m_sliderH * 0.5f - (scaledKnobSize * 0.5f);
+            
+            Transform t(Gnosis::GNVector2(knobX, knobY), 0.0f, Gnosis::GNVector2(scale, scale));
+            Sprite s("poophat", 16, 16); s.layer = 85; s.visible = false;
             UIElement ui("", "poophat", "poophat");
             ui.visible = false; ui.textLayer = 85; ui.isEnabled = true;
             m_ecsSystem->AddComponent<Transform>(m_sfxKnobEntity, t);
             m_ecsSystem->AddComponent<Sprite>(m_sfxKnobEntity, s);
             m_ecsSystem->AddComponent<UIElement>(m_sfxKnobEntity, ui);
+            
+            // Debug: Log knob positioning and hitbox
+            float knobCenterY = knobY + (scaledKnobSize * 0.5f);  // Convert top-left to center Y
+            float hitboxLeft = knobCenterX - (scaledKnobSize * 0.5f);
+            float hitboxRight = knobCenterX + (scaledKnobSize * 0.5f);
+            float hitboxTop = knobCenterY - (scaledKnobSize * 0.5f);
+            float hitboxBottom = knobCenterY + (scaledKnobSize * 0.5f);
+            GN_LOG_INFO("SFX knob: pos=(" + std::to_string(knobX) + ", " + std::to_string(knobY) + 
+                       "), hitbox=(" + std::to_string(hitboxLeft) + "-" + std::to_string(hitboxRight) + 
+                       ", " + std::to_string(hitboxTop) + "-" + std::to_string(hitboxBottom) + 
+                       "), track=(" + std::to_string(m_sliderX) + "-" + std::to_string(m_sliderX + m_sliderW) + 
+                       ", " + std::to_string(sfxTrackY) + "-" + std::to_string(sfxTrackY + m_sliderH) + ")");
         }
         
-        GN_LOG_INFO("Created audio sliders with MASTER, MUSIC, and SFX controls");
+        GN_LOG_INFO("Created audio sliders with Options menu pattern");
+        
+        // Debug hitboxes disabled for cleaner UI
+        // CreateDebugHitboxRectangles();
     }
+
+    void GameplayState::CreateDebugHitboxRectangles() {
+        // Create debug rectangles to visualize knob hitboxes
+        // These will be rendered by the RenderSystem as UIShape components
+        
+        // Create debug rectangles for each knob hitbox
+        for (int i = 0; i < 3; ++i) {
+            Gnosis::Entity debugEntity = m_ecsSystem->CreateEntity();
+            
+            float trackY = m_sliderY + i * m_sliderSpacing + 9.0f;
+            float knobSize = 16.0f;
+            float scale = 6.0f;
+            float scaledKnobSize = knobSize * scale;
+            
+            // Get the actual volume value for this slider
+            float volume = 0.0f;
+            switch (i) {
+                case 0: volume = GameCore::GetGame()->GetMasterVolume(); break;
+                case 1: volume = GameCore::GetGame()->GetMusicVolume(); break;
+                case 2: volume = GameCore::GetGame()->GetSFXVolume(); break;
+            }
+            
+            // Clamp volume value to 0.0-1.0 range
+            volume = std::max(0.0f, std::min(1.0f, volume));
+            
+            // Calculate hitbox dimensions (larger than knob for better touch response)
+            float hitboxWidth = scaledKnobSize * 2.0f;  // 2x knob size for larger hitbox
+            float hitboxHeight = scaledKnobSize * 2.0f; // 2x knob size for larger hitbox
+            
+            // Position hitbox exactly where the knob's touch area is (like the actual knob positioning)
+            float knobX = m_sliderX + volume * m_sliderW;
+            float knobY = trackY + m_sliderH * 0.5f - (scaledKnobSize * 0.5f);
+            
+            // Position debug hitbox at the knob's actual position
+            float hitboxX = knobX - (hitboxWidth * 0.5f);
+            float hitboxY = knobY - (hitboxHeight * 0.5f);
+            
+            Transform t(Gnosis::GNVector2(hitboxX, hitboxY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            
+            // Create red debug rectangle
+            UIShape shape;
+            shape.visible = false; // Start hidden, will be shown when needed
+            shape.width = hitboxWidth;
+            shape.height = hitboxHeight;
+            shape.color = Gnosis::GNColor(255, 0, 0, 128); // Red with 50% alpha
+            shape.layer = 90; // Above everything for debugging
+            
+            UIElement ui;
+            ui.visible = false;
+            ui.textLayer = 90;
+            ui.isEnabled = true;
+            
+            m_ecsSystem->AddComponent<Transform>(debugEntity, t);
+            m_ecsSystem->AddComponent<UIShape>(debugEntity, shape);
+            m_ecsSystem->AddComponent<UIElement>(debugEntity, ui);
+            
+            // Store debug entity for later visibility management
+            m_debugHitboxEntities.push_back(debugEntity);
+            
+            GN_LOG_INFO("Created debug hitbox " + std::to_string(i) + ": " + std::to_string(hitboxWidth) + "x" + std::to_string(hitboxHeight) + 
+                       " at (" + std::to_string(hitboxX) + ", " + std::to_string(hitboxY) + 
+                       ") for knob at (" + std::to_string(knobX) + ", " + std::to_string(hitboxY) + 
+                       ") with volume " + std::to_string(volume));
+        }
+    }
+
+    void GameplayState::ShowDebugHitboxes(bool show) {
+        // Show/hide debug hitbox rectangles
+        for (auto entity : m_debugHitboxEntities) {
+            if (auto shape = m_ecsSystem->GetComponent<UIShape>(entity)) {
+                shape->visible = show;
+            }
+            if (auto ui = m_ecsSystem->GetComponent<UIElement>(entity)) {
+                ui->visible = show;
+            }
+        }
+        GN_LOG_INFO("Debug hitboxes " + std::string(show ? "shown" : "hidden"));
+    }
+
+    void GameplayState::UpdateDebugHitboxPositions() {
+        // Update debug hitbox positions to match current knob positions
+        if (m_debugHitboxEntities.size() != 3) {
+            return; // Not enough debug entities
+        }
+        
+        for (int i = 0; i < 3; ++i) {
+            if (i >= m_debugHitboxEntities.size()) break;
+            
+            Gnosis::Entity debugEntity = m_debugHitboxEntities[i];
+            if (debugEntity == 0) continue;
+            
+            float trackY = m_sliderY + i * m_sliderSpacing + 9.0f;
+            float knobSize = 16.0f;
+            float scale = 6.0f;
+            float scaledKnobSize = knobSize * scale;
+            
+            // Get the actual volume value for this slider
+            float volume = 0.0f;
+            switch (i) {
+                case 0: volume = GameCore::GetGame()->GetMasterVolume(); break;
+                case 1: volume = GameCore::GetGame()->GetMusicVolume(); break;
+                case 2: volume = GameCore::GetGame()->GetSFXVolume(); break;
+            }
+            
+            // Clamp volume value to 0.0-1.0 range
+            volume = std::max(0.0f, std::min(1.0f, volume));
+            
+            // Calculate hitbox dimensions (larger than knob for better touch response)
+            float hitboxWidth = scaledKnobSize * 2.0f;  // 2x knob size for larger hitbox
+            float hitboxHeight = scaledKnobSize * 2.0f; // 2x knob size for larger hitbox
+            
+            // Position hitbox exactly where the knob's touch area is (like the actual knob positioning)
+            float knobX = m_sliderX + volume * m_sliderW;
+            float knobY = trackY + m_sliderH * 0.5f - (scaledKnobSize * 0.5f);
+            
+            // Position debug hitbox at the knob's actual position
+            float hitboxX = knobX - (hitboxWidth * 0.5f);
+            float hitboxY = knobY - (hitboxHeight * 0.5f);
+            
+            // Update the debug entity's transform
+            if (auto transform = m_ecsSystem->GetComponent<Transform>(debugEntity)) {
+                transform->position.x = hitboxX;
+                transform->position.y = hitboxY;
+            }
+            
+            GN_LOG_DEBUG("Updated debug hitbox " + std::to_string(i) + " to (" + std::to_string(hitboxX) + ", " + std::to_string(hitboxY) + 
+                         ") for knob at (" + std::to_string(knobX) + ", " + std::to_string(knobY) + 
+                         ") with volume " + std::to_string(volume));
+        }
+    }
+
+
 
     void GameplayState::ShowTabContent(int tabIndex) {
         GN_LOG_INFO("ShowTabContent called with tab index: " + std::to_string(tabIndex));
@@ -3411,14 +3961,42 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
     void GameplayState::ShowStatsTab() {
         GN_LOG_INFO("Showing stats tab");
         
-        if (m_statsContentEntity != 0 && m_ecsSystem) {
-            Sprite* contentSprite = m_ecsSystem->GetComponent<Sprite>(m_statsContentEntity);
-            if (contentSprite) {
-                contentSprite->visible = true;
+        // Refresh stats display with latest values every time stats tab is shown
+        RefreshStatsDisplay();
+        
+        // Show stats background rectangle
+        if (m_statsBackgroundEntity != 0 && m_ecsSystem) {
+            UIShape* bgShape = m_ecsSystem->GetComponent<UIShape>(m_statsBackgroundEntity);
+            if (bgShape) {
+                bgShape->visible = true;
             }
-            UIElement* contentUI = m_ecsSystem->GetComponent<UIElement>(m_statsContentEntity);
-            if (contentUI) {
-                contentUI->visible = true;
+            UIElement* bgUI = m_ecsSystem->GetComponent<UIElement>(m_statsBackgroundEntity);
+            if (bgUI) {
+                bgUI->visible = true;
+            }
+        }
+        
+        // Show all individual stat entities
+        std::vector<Gnosis::Entity> statEntities = {
+            m_currentSessionTextEntity,
+            m_sessionCoinsTextEntity,
+            m_totalCoinsTextEntity,
+            m_totalFlopsTextEntity,
+            m_enemiesKilledTextEntity,
+
+            m_totalPipesTextEntity
+        };
+        
+        for (Gnosis::Entity entity : statEntities) {
+            if (entity != 0 && m_ecsSystem) {
+                Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(entity);
+                if (sprite) {
+                    sprite->visible = true;
+                }
+                UIElement* uiElement = m_ecsSystem->GetComponent<UIElement>(entity);
+                if (uiElement) {
+                    uiElement->visible = true;
+                }
             }
         }
     }
@@ -3432,10 +4010,14 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             if (buttonSprite) {
                 buttonSprite->visible = true;
             }
-            
+        }
+        
+        // Show main menu button UI element
+        if (m_mainMenuButtonEntity != 0 && m_ecsSystem) {
             UIElement* buttonUI = m_ecsSystem->GetComponent<UIElement>(m_mainMenuButtonEntity);
             if (buttonUI) {
                 buttonUI->visible = true;
+                GN_LOG_INFO("Made main menu button UI visible");
             }
         }
         
@@ -3532,7 +4114,9 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             }
         }
         
-
+        // Debug hitboxes disabled for cleaner UI
+        // ShowDebugHitboxes(true);
+        // UpdateDebugHitboxPositions(); // Ensure hitboxes match current knob positions
     }
 
     void GameplayState::HideAllTabContent() {
@@ -3544,10 +4128,14 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             if (buttonSprite) {
                 buttonSprite->visible = false;
             }
-            
+        }
+        
+        // Hide main menu button UI element
+        if (m_mainMenuButtonEntity != 0 && m_ecsSystem) {
             UIElement* buttonUI = m_ecsSystem->GetComponent<UIElement>(m_mainMenuButtonEntity);
             if (buttonUI) {
                 buttonUI->visible = false;
+                GN_LOG_INFO("Made main menu button UI invisible");
             }
         }
         
@@ -3675,6 +4263,42 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             }
         }
         
+        // Hide stats background rectangle
+        if (m_statsBackgroundEntity != 0 && m_ecsSystem) {
+            UIShape* bgShape = m_ecsSystem->GetComponent<UIShape>(m_statsBackgroundEntity);
+            if (bgShape) {
+                bgShape->visible = false;
+            }
+            UIElement* bgUI = m_ecsSystem->GetComponent<UIElement>(m_statsBackgroundEntity);
+            if (bgUI) {
+                bgUI->visible = false;
+            }
+        }
+        
+        // Hide all individual stat entities
+        std::vector<Gnosis::Entity> statEntities = {
+            m_currentSessionTextEntity,
+            m_sessionCoinsTextEntity, // Ensure session coins is included
+            m_totalCoinsTextEntity,
+            m_totalFlopsTextEntity,
+            m_enemiesKilledTextEntity,
+
+            m_totalPipesTextEntity
+        };
+        
+        for (Gnosis::Entity entity : statEntities) {
+            if (entity != 0 && m_ecsSystem) {
+                Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(entity);
+                if (sprite) {
+                    sprite->visible = false;
+                }
+                UIElement* uiElement = m_ecsSystem->GetComponent<UIElement>(entity);
+                if (uiElement) {
+                    uiElement->visible = false;
+                }
+            }
+        }
+        
         // Hide content entity if it exists (legacy)
         if (m_pauseMenuContentEntity != 0 && m_ecsSystem) {
             Sprite* contentSprite = m_ecsSystem->GetComponent<Sprite>(m_pauseMenuContentEntity);
@@ -3686,6 +4310,9 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 contentUI->visible = false;
             }
         }
+        
+        // Hide debug hitboxes
+        ShowDebugHitboxes(false);
     }
 
     void GameplayState::CheckSettingsButtonClick(float touchX, float touchY) {
@@ -3768,6 +4395,16 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
     void GameplayState::HandlePauseMenuInput(float touchX, float touchY) {
         GN_LOG_INFO("HandlePauseMenuInput called with touch at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
         
+        // Get screen dimensions for context
+        float screenWidth = 1179.0f, screenHeight = 2556.0f;
+        if (m_renderSystem) {
+            const ScreenInfo& si = m_renderSystem->GetScreenInfo();
+            screenWidth = si.pixelWidth;
+            screenHeight = si.pixelHeight;
+        }
+        GN_LOG_INFO("Screen dimensions: " + std::to_string(screenWidth) + "x" + std::to_string(screenHeight) + 
+                   " - Touch coordinates: (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
+        
         // Check ribbon button clicks first (these are global, not per-tab)
         GN_LOG_INFO("Checking ribbon button clicks...");
         if (HandlePauseMenuRibbonClick(touchX, touchY)) {
@@ -3808,25 +4445,36 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         
         GN_LOG_INFO("Screen dimensions: " + std::to_string(screenWidth) + "x" + std::to_string(screenHeight));
         
-        // Calculate button positions - these are VERTICAL buttons on the LEFT side
-        float buttonX = screenWidth * 0.15f; // Left side, 15% from left edge
-        float buttonHeight = 64.0f; // Button height
-        float buttonSpacing = 80.0f; // Spacing between buttons
-        float startY = screenHeight * 0.35f; // Start 35% down from top (was 25%, too high)
+        // Calculate button positions - MUST MATCH CreateRibbonButtons() logic exactly
+        float buttonScale = 6.0f;
+        float buttonWidth = 64.0f * buttonScale;
+        float buttonHeight = buttonWidth * 0.62f; // Match the 0.62f ratio from CreateRibbonButtons
+        float bgScale = 6.0f;
+        float bgHeight = 300.0f * bgScale;
+        float bgTop = (screenHeight - bgHeight) * 0.5f;
+        float startY = bgTop + buttonWidth * 0.18f; // Skills button higher
+        float buttonX = -0.40f * buttonWidth; // Offset further left (40%) - MUST MATCH CreateRibbonButtons
         
-        GN_LOG_INFO("Button layout - buttonX: " + std::to_string(buttonX) + ", startY: " + std::to_string(startY) + ", spacing: " + std::to_string(buttonSpacing));
+        GN_LOG_INFO("Button layout - buttonX: " + std::to_string(buttonX) + ", startY: " + std::to_string(startY) + 
+                   ", buttonWidth: " + std::to_string(buttonWidth) + ", buttonHeight: " + std::to_string(buttonHeight));
         
         // Check which button was clicked
         for (int i = 0; i < 4; i++) {
-            float buttonY = startY + (i * buttonSpacing);
+            float buttonY = startY + i * buttonHeight;
             
-            // Simple collision detection for vertical buttons
-            float buttonLeft = buttonX - 32.0f; // 64x64 button centered
-            float buttonRight = buttonX + 32.0f;
-            float buttonTop = buttonY - buttonHeight * 0.5f;
-            float buttonBottom = buttonY + buttonHeight * 0.5f;
+            // Collision detection using much wider hitbox for easier tapping
+            float hitboxWidth = buttonWidth * 2.4f;  // 140% wider hitbox (2x the previous 1.2f)
+            float hitboxHeight = buttonHeight * 2.4f; // 140% taller hitbox (2x the previous 1.2f)
+            float buttonLeft = buttonX - (hitboxWidth * 0.5f);
+            float buttonRight = buttonX + (hitboxWidth * 0.5f);
+            float buttonTop = buttonY - (hitboxHeight * 0.5f);
+            float buttonBottom = buttonY + (hitboxHeight * 0.5f);
             
-            GN_LOG_INFO("Button " + std::to_string(i) + " bounds: L=" + std::to_string(buttonLeft) + " R=" + std::to_string(buttonRight) + " T=" + std::to_string(buttonTop) + " B=" + std::to_string(buttonBottom));
+            GN_LOG_INFO("Button " + std::to_string(i) + " bounds: L=" + std::to_string(buttonLeft) + " R=" + std::to_string(buttonRight) + 
+                       " T=" + std::to_string(buttonTop) + " B=" + std::to_string(buttonBottom) + 
+                       " Center: (" + std::to_string(buttonX) + ", " + std::to_string(buttonY) + 
+                       ") Hitbox: " + std::to_string(hitboxWidth) + "x" + std::to_string(hitboxHeight) + 
+                       " (expanded from " + std::to_string(buttonWidth) + "x" + std::to_string(buttonHeight) + ")");
             
             if (touchX >= buttonLeft && touchX <= buttonRight &&
                 touchY >= buttonTop && touchY <= buttonBottom) {
@@ -3858,13 +4506,28 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         if (m_mainMenuButtonEntity != 0 && m_ecsSystem) {
             auto transform = m_ecsSystem->GetComponent<Transform>(m_mainMenuButtonEntity);
             if (transform) {
-                // Simple collision detection (assuming 64x64 button)
+                // Use proper button dimensions (64x64 scaled by transform scale)
                 float buttonWidth = 64.0f * transform->scale.x;
                 float buttonHeight = 64.0f * transform->scale.y;
-                float buttonLeft = transform->position.x - (buttonWidth * 0.5f);
-                float buttonRight = transform->position.x + (buttonWidth * 0.5f);
-                float buttonTop = transform->position.y - (buttonHeight * 0.5f);
-                float buttonBottom = transform->position.y + (buttonHeight * 0.5f);
+                
+                // The transform position is now the top-left corner (due to CenterObjectAtPosition)
+                // So we need to calculate the center for hitbox detection
+                float buttonCenterX = transform->position.x + (buttonWidth * 0.5f);
+                float buttonCenterY = transform->position.y + (buttonHeight * 0.5f);
+                
+                float buttonLeft = buttonCenterX - (buttonWidth * 0.5f);
+                float buttonRight = buttonCenterX + (buttonWidth * 0.5f);
+                float buttonTop = buttonCenterY - (buttonHeight * 0.5f);
+                float buttonBottom = buttonCenterY + (buttonHeight * 0.5f);
+                
+                // Add debug logging for main menu button hitbox
+                GN_LOG_INFO("Main menu button hitbox - Transform pos: (" + std::to_string(transform->position.x) + ", " + std::to_string(transform->position.y) + 
+                           "), Center: (" + std::to_string(buttonCenterX) + ", " + std::to_string(buttonCenterY) + 
+                           "), Size: " + std::to_string(buttonWidth) + "x" + std::to_string(buttonHeight) + 
+                           ", Scale: (" + std::to_string(transform->scale.x) + ", " + std::to_string(transform->scale.y) + ")");
+                GN_LOG_INFO("Main menu button bounds: L=" + std::to_string(buttonLeft) + " R=" + std::to_string(buttonRight) + 
+                           " T=" + std::to_string(buttonTop) + " B=" + std::to_string(buttonBottom) + 
+                           " Touch: (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
                 
                 if (touchX >= buttonLeft && touchX <= buttonRight &&
                     touchY >= buttonTop && touchY <= buttonBottom) {
@@ -3875,10 +4538,10 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             }
         }
         
-        // Handle audio slider knob clicks
-        GN_LOG_INFO("Checking audio slider knob clicks...");
+        // Handle audio slider knob clicks AND track clicks for much wider hitbox
+        GN_LOG_INFO("Checking audio slider knob clicks and track clicks...");
         
-        // Check MASTER knob
+        // Check MASTER knob and track (much wider hitbox)
         if (m_masterKnobEntity != 0 && m_ecsSystem) {
             auto transform = m_ecsSystem->GetComponent<Transform>(m_masterKnobEntity);
             if (transform) {
@@ -3888,10 +4551,13 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 float knobWidth = sprite ? sprite->width * transform->scale.x : 32.0f * transform->scale.x;
                 float knobHeight = sprite ? sprite->height * transform->scale.y : 32.0f * transform->scale.y;
                 
-                float knobLeft = transform->position.x - (knobWidth * 0.5f);
-                float knobRight = transform->position.x + (knobWidth * 0.5f);
-                float knobTop = transform->position.y - (knobHeight * 0.5f);
-                float knobBottom = transform->position.y + (knobHeight * 0.5f);
+                // Convert top-left transform position to center position
+                float knobCenterX = transform->position.x + (knobWidth * 0.5f);
+                float knobCenterY = transform->position.y + (knobHeight * 0.5f);
+                float knobLeft = knobCenterX - (knobWidth * 0.5f);
+                float knobRight = knobCenterX + (knobWidth * 0.5f);
+                float knobTop = knobCenterY - (knobHeight * 0.5f);
+                float knobBottom = knobCenterY + (knobHeight * 0.5f);
                 
                 GN_LOG_INFO("MASTER knob bounds: L=" + std::to_string(knobLeft) + " R=" + std::to_string(knobRight) + 
                            " T=" + std::to_string(knobTop) + " B=" + std::to_string(knobBottom) + 
@@ -3904,9 +4570,11 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                     m_draggingMaster = true;
                     m_activeDragKnob = 0;
                     m_dragStartX = touchX;
-                    m_dragKnobStartX = transform->position.x;
+                    m_dragKnobStartX = knobCenterX;
                     return;
                 }
+                
+
             }
         }
         
@@ -3917,10 +4585,13 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 // Use exact button dimensions: 32x32 scaled by 6x = 192x192
                 float knobWidth = 32.0f * transform->scale.x;  // 32 * 6 = 192
                 float knobHeight = 32.0f * transform->scale.y; // 32 * 6 = 192
-                float knobLeft = transform->position.x - (knobWidth * 0.5f);
-                float knobRight = transform->position.x + (knobWidth * 0.5f);
-                float knobTop = transform->position.y - (knobHeight * 0.5f);
-                float knobBottom = transform->position.y + (knobHeight * 0.5f);
+                // Convert top-left transform position to center position
+                float knobCenterX = transform->position.x + (knobWidth * 0.5f);
+                float knobCenterY = transform->position.y + (knobHeight * 0.5f);
+                float knobLeft = knobCenterX - (knobWidth * 0.5f);
+                float knobRight = knobCenterX + (knobWidth * 0.5f);
+                float knobTop = knobCenterY - (knobHeight * 0.5f);
+                float knobBottom = knobCenterY + (knobHeight * 0.5f);
                 
                 GN_LOG_INFO("MUSIC knob bounds: L=" + std::to_string(knobLeft) + " R=" + std::to_string(knobRight) + 
                            " T=" + std::to_string(knobTop) + " B=" + std::to_string(knobBottom) + 
@@ -3932,7 +4603,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                     m_draggingMusic = true;
                     m_activeDragKnob = 1;
                     m_dragStartX = touchX;
-                    m_dragKnobStartX = transform->position.x;
+                    m_dragKnobStartX = knobCenterX;
                     return;
                 }
             }
@@ -3945,10 +4616,13 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 // Use exact button dimensions: 32x32 scaled by 6x = 192x192
                 float knobWidth = 32.0f * transform->scale.x;  // 32 * 6 = 192
                 float knobHeight = 32.0f * transform->scale.y; // 32 * 6 = 192
-                float knobLeft = transform->position.x - (knobWidth * 0.5f);
-                float knobRight = transform->position.x + (knobWidth * 0.5f);
-                float knobTop = transform->position.y - (knobHeight * 0.5f);
-                float knobBottom = transform->position.y + (knobHeight * 0.5f);
+                // Convert top-left transform position to center position
+                float knobCenterX = transform->position.x + (knobWidth * 0.5f);
+                float knobCenterY = transform->position.y + (knobHeight * 0.5f);
+                float knobLeft = knobCenterX - (knobWidth * 0.5f);
+                float knobRight = knobCenterX + (knobWidth * 0.5f);
+                float knobTop = knobCenterY - (knobHeight * 0.5f);
+                float knobBottom = knobCenterY + (knobHeight * 0.5f);
                 
                 GN_LOG_INFO("SFX knob bounds: L=" + std::to_string(knobLeft) + " R=" + std::to_string(knobRight) + 
                            " T=" + std::to_string(knobTop) + " B=" + std::to_string(knobBottom) + 
@@ -3960,7 +4634,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                     m_draggingSFX = true;
                     m_activeDragKnob = 2;
                     m_dragStartX = touchX;
-                    m_dragKnobStartX = transform->position.x;
+                    m_dragKnobStartX = knobCenterX;
                     return;
                 }
             }
@@ -4070,14 +4744,22 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         // Clamp to slider bounds
         float sliderLeft = m_sliderX;
         float sliderRight = m_sliderX + m_sliderW;
-        float knobSize = 32.0f * 6.0f; // 6x scaling
+        float knobSize = 16.0f * m_uiScale; // Use consistent UI scaling like MainMenuState
         float knobHalfSize = knobSize * 0.5f;
         
         newKnobX = std::max(sliderLeft + knobHalfSize, std::min(sliderRight - knobHalfSize, newKnobX));
         
-        // Calculate volume value (0.0 to 1.0)
-        float volumeValue = (newKnobX - (sliderLeft + knobHalfSize)) / (m_sliderW - knobSize);
+        // Calculate volume value (0.0 to 1.0) using MainMenu approach
+        // Map knob center position directly to slider range (like MainMenu does with touch)
+        float volumeValue = (newKnobX - sliderLeft - knobHalfSize) / (m_sliderW - knobSize);
         volumeValue = std::max(0.0f, std::min(1.0f, volumeValue));
+        
+        // Debug: Log drag calculations
+        GN_LOG_INFO("DRAG DEBUG: touchX=" + std::to_string(touchX) + 
+                   ", newKnobX=" + std::to_string(newKnobX) + 
+                   ", volumeValue=" + std::to_string(volumeValue) + 
+                   ", knobTopLeft=" + std::to_string(newKnobX - knobHalfSize) + 
+                   ", track=[" + std::to_string(sliderLeft) + "-" + std::to_string(sliderRight) + "]");
         
         // Update the appropriate knob and volume
         switch (m_activeDragKnob) {
@@ -4085,47 +4767,216 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 if (m_masterKnobEntity != 0 && m_ecsSystem) {
                     auto transform = m_ecsSystem->GetComponent<Transform>(m_masterKnobEntity);
                     if (transform) {
-                        transform->position.x = newKnobX;
+                        transform->position.x = newKnobX - knobHalfSize;
                         m_masterSliderValue = volumeValue;
                         // Actually update the game's master volume
                         if (GameCore::GetGame()) {
                             GameCore::GetGame()->SetMasterVolume(volumeValue);
                         }
-                        GN_LOG_INFO("Updated MASTER volume to: " + std::to_string(volumeValue));
+                        // Debug: Log detailed knob position after update
+                        float knobCenterX = transform->position.x + knobHalfSize;
+                        float knobCenterY = transform->position.y + knobHalfSize;
+                        GN_LOG_INFO("Updated MASTER volume to: " + std::to_string(volumeValue) + 
+                                   " | knobCenter=(" + std::to_string(knobCenterX) + "," + std::to_string(knobCenterY) + 
+                                   ") | hitbox=[" + std::to_string(knobCenterX - knobHalfSize) + "-" + 
+                                   std::to_string(knobCenterX + knobHalfSize) + "]");
                     }
                 }
+                // Update debug hitbox to match new knob position
+                UpdateDebugHitboxPositions();
                 break;
                 
             case 1: // MUSIC
                 if (m_musicKnobEntity != 0 && m_ecsSystem) {
                     auto transform = m_ecsSystem->GetComponent<Transform>(m_musicKnobEntity);
                     if (transform) {
-                        transform->position.x = newKnobX;
+                        transform->position.x = newKnobX - knobHalfSize;
                         m_musicSliderValue = volumeValue;
                         // Actually update the game's music volume
                         if (GameCore::GetGame()) {
                             GameCore::GetGame()->SetMusicVolume(volumeValue);
                         }
-                        GN_LOG_INFO("Updated MUSIC volume to: " + std::to_string(volumeValue));
+                        // Debug: Log detailed knob position after update
+                        float knobCenterX = transform->position.x + knobHalfSize;
+                        float knobCenterY = transform->position.y + knobHalfSize;
+                        GN_LOG_INFO("Updated MUSIC volume to: " + std::to_string(volumeValue) + 
+                                   " | knobCenter=(" + std::to_string(knobCenterX) + "," + std::to_string(knobCenterY) + 
+                                   ") | hitbox=[" + std::to_string(knobCenterX - knobHalfSize) + "-" + 
+                                   std::to_string(knobCenterX + knobHalfSize) + "]");
                     }
                 }
+                // Update debug hitbox to match new knob position
+                UpdateDebugHitboxPositions();
                 break;
                 
             case 2: // SFX
                 if (m_sfxKnobEntity != 0 && m_ecsSystem) {
                     auto transform = m_ecsSystem->GetComponent<Transform>(m_sfxKnobEntity);
                     if (transform) {
-                        transform->position.x = newKnobX;
+                        transform->position.x = newKnobX - knobHalfSize;
                         m_sfxSliderValue = volumeValue;
                         // Actually update the game's SFX volume
                         if (GameCore::GetGame()) {
                             GameCore::GetGame()->SetSFXVolume(volumeValue);
                         }
-                        GN_LOG_INFO("Updated SFX volume to: " + std::to_string(volumeValue));
+                        // Debug: Log detailed knob position after update
+                        float knobCenterX = transform->position.x + knobHalfSize;
+                        float knobCenterY = transform->position.y + knobHalfSize;
+                        GN_LOG_INFO("Updated SFX volume to: " + std::to_string(volumeValue) + 
+                                   " | knobCenter=(" + std::to_string(knobCenterX) + "," + std::to_string(knobCenterY) + 
+                                   ") | hitbox=[" + std::to_string(knobCenterX - knobHalfSize) + "-" + 
+                                   std::to_string(knobCenterX + knobHalfSize) + "]");
                     }
                 }
+                // Update debug hitbox to match new knob position
+                UpdateDebugHitboxPositions();
                 break;
         }
+    }
+    
+    // Stats management methods
+    void GameplayState::UpdateGameStatsFromSession() {
+        GN_LOG_INFO("Updating game stats from current session");
+        
+        if (!GameCore::GetGame()) {
+            GN_LOG_WARN("No game instance available for stats update");
+            return;
+        }
+        
+        // Get current game stats
+        GameCore::FloppyTurdGame::GameStats currentStats = GameCore::GetGame()->GetGameStats();
+        
+        // Update total pipes cleared with current session pipes
+        currentStats.totalPipesCleared += m_pipesCleared;
+        
+        // Update the game stats
+        GameCore::GetGame()->UpdateGameStats(currentStats);
+        
+        GN_LOG_INFO("Updated stats: totalPipesCleared=" + std::to_string(currentStats.totalPipesCleared) + 
+                   " (added " + std::to_string(m_pipesCleared) + " from session)");
+    }
+    
+    void GameplayState::RefreshStatsDisplay() {
+        GN_LOG_INFO("Refreshing stats display");
+        
+        // Get latest stats data
+        const GameCore::FloppyTurdGame::GameStats* gameStats = nullptr;
+        if (GameCore::GetGame()) {
+            gameStats = &GameCore::GetGame()->GetGameStats();
+        }
+        
+        // Update each stat entity with current values
+        if (m_currentSessionTextEntity != 0 && m_ecsSystem) {
+            UIElement* uiElem = m_ecsSystem->GetComponent<UIElement>(m_currentSessionTextEntity);
+            if (uiElem) {
+                uiElem->buttonText = "Session Pipes: " + std::to_string(m_pipesCleared);
+            }
+        }
+        
+        if (m_sessionCoinsTextEntity != 0 && m_ecsSystem) {
+            UIElement* uiElem = m_ecsSystem->GetComponent<UIElement>(m_sessionCoinsTextEntity);
+            if (uiElem) {
+                // Read from PlayerComponent::sessionCoins instead of m_sessionCoinsCollected
+                PlayerComponent* player = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity);
+                int sessionCoins = player ? player->sessionCoins : 0;
+                uiElem->buttonText = "Session Coins: " + std::to_string(sessionCoins);
+            }
+        }
+        
+        if (m_totalCoinsTextEntity != 0 && m_ecsSystem) {
+            UIElement* uiElem = m_ecsSystem->GetComponent<UIElement>(m_totalCoinsTextEntity);
+            if (uiElem) {
+                // Use player's current coin count, not lifetime collected total
+                int totalCoins = GameCore::GetGame() ? GameCore::GetGame()->GetPlayerCoins() : 0;
+                uiElem->buttonText = "Total Coins: " + std::to_string(totalCoins);
+            }
+        }
+        
+        if (m_totalFlopsTextEntity != 0 && m_ecsSystem) {
+            UIElement* uiElem = m_ecsSystem->GetComponent<UIElement>(m_totalFlopsTextEntity);
+            if (uiElem) {
+                int totalFlops = gameStats ? gameStats->totalDeaths : 0;
+                uiElem->buttonText = "Total Flops: " + std::to_string(totalFlops);
+            }
+        }
+        
+        if (m_enemiesKilledTextEntity != 0 && m_ecsSystem) {
+            UIElement* uiElem = m_ecsSystem->GetComponent<UIElement>(m_enemiesKilledTextEntity);
+            if (uiElem) {
+                int enemiesKilled = gameStats ? gameStats->totalEnemiesKilled : 0;
+                uiElem->buttonText = "Enemies Defeated: " + std::to_string(enemiesKilled);
+            }
+        }
+
+        if (m_totalPipesTextEntity != 0 && m_ecsSystem) {
+            UIElement* uiElem = m_ecsSystem->GetComponent<UIElement>(m_totalPipesTextEntity);
+            if (uiElem) {
+                int totalPipes = gameStats ? gameStats->totalPipesCleared : 0;
+                uiElem->buttonText = "Total Pipes: " + std::to_string(totalPipes);
+            }
+        }
+
+        // Add level high score display
+        if (GameCore::GetGame()) {
+            int levelHighScore = GameCore::GetGame()->GetLevelHighScore(m_currentLevelId);
+            if (levelHighScore > 0) {
+                // For now, display as part of total pipes text or create a new field
+                // Let's add it to the total pipes display
+                if (m_totalPipesTextEntity != 0 && m_ecsSystem) {
+                    UIElement* uiElem = m_ecsSystem->GetComponent<UIElement>(m_totalPipesTextEntity);
+                    if (uiElem) {
+                        int totalPipes = gameStats ? gameStats->totalPipesCleared : 0;
+                        uiElem->buttonText = "Total Pipes: " + std::to_string(totalPipes) +
+                                           "\nLevel Best: " + std::to_string(levelHighScore);
+                    }
+                }
+            }
+        }
+
+        // Update level high score displays
+        for (size_t i = 1; i < m_levelHighScoreEntities.size() && i <= 6; ++i) {
+            if (m_levelHighScoreEntities[i] != 0 && m_ecsSystem) {
+                UIElement* uiElem = m_ecsSystem->GetComponent<UIElement>(m_levelHighScoreEntities[i]);
+                if (uiElem && GameCore::GetGame()) {
+                    // Get level name and high score
+                    std::string levelName;
+                    switch (i) {
+                        case 1: levelName = "Sewer"; break;
+                        case 2: levelName = "Park"; break;
+                        case 3: levelName = "Desert"; break;
+                        case 4: levelName = "Snow"; break;
+                        case 5: levelName = "Castle"; break;
+                        case 6: levelName = "Boss"; break;
+                        default: levelName = "Level " + std::to_string(i); break;
+                    }
+
+                    int levelHighScore = GameCore::GetGame()->GetLevelHighScore(i);
+                    uiElem->buttonText = levelName + ": " + std::to_string(levelHighScore) + " pipes";
+                }
+            }
+        }
+
+        GN_LOG_INFO("Stats display refreshed with current values");
+    }
+    
+    void GameplayState::IncrementDeathCounter() {
+        GN_LOG_INFO("Incrementing death counter");
+        
+        if (!GameCore::GetGame()) {
+            GN_LOG_WARN("No game instance available for death counter increment");
+            return;
+        }
+        
+        // Get current game stats
+        GameCore::FloppyTurdGame::GameStats currentStats = GameCore::GetGame()->GetGameStats();
+        
+        // Increment death count
+        currentStats.totalDeaths++;
+        
+        // Update the game stats
+        GameCore::GetGame()->UpdateGameStats(currentStats);
+        
+        GN_LOG_INFO("Death counter incremented to: " + std::to_string(currentStats.totalDeaths));
     }
 
 

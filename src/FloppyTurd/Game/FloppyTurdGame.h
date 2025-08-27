@@ -97,17 +97,49 @@ namespace GameCore {
             int totalGamesPlayed;
             int totalScore;
             int totalCoinsCollected;
+            int totalDeaths;            // Total number of deaths/flops
+            int totalPipesCleared;      // Total pipes cleared across all sessions
             int totalJumps;
             int totalEnemiesKilled;
             float totalPlayTime;
             int currentStreak;
             int bestStreak;
         };
+
+        // Level-based high scores and unlock requirements
+        struct LevelStats {
+            int highScore;              // Best pipes cleared for this level
+            int bestCoins;              // Best coins collected for this level
+            bool unlocked;              // Whether this level is unlocked
+            int unlockRequirement;      // Pipes required to unlock next level (runtime only)
+            int coinRequirement;        // Coins required to unlock next level (runtime only)
+        };
+
+        // Save data structure - only essential persistent data
+        struct LevelSaveData {
+            int highScore;              // Best pipes cleared for this level
+            int bestCoins;              // Best coins collected for this level
+            bool unlocked;              // Whether this level is unlocked
+        };
         
         const GameStats& GetGameStats() const { return m_gameStats; }
         void UpdateGameStats(const GameStats& stats);
 
+        // Level-based high scores and unlocking
+        const LevelStats& GetLevelStats(int levelId) const;
+        void UpdateLevelStats(int levelId, const LevelStats& stats);
+        bool IsLevelUnlocked(int levelId) const;
+        void UnlockLevel(int levelId);
+        int GetLevelHighScore(int levelId) const;
+        void UpdateLevelHighScore(int levelId, int score, int coins);
+        bool CanUnlockLevel(int levelId, std::string& failureMessage);
+        bool TryUnlockLevel(int levelId);
+        void PlaySFX(const std::string& soundName);
+
     private:
+        // Helper methods for level system
+        void SetDefaultUnlockRequirements(int levelId, LevelStats& stats);
+        void CheckLevelUnlock(int completedLevelId, int score, int coins);
         // Core systems
         std::unique_ptr<Gnosis::ECS> m_ecsSystem;
         std::unique_ptr<GameStateManager> m_stateManager;
@@ -129,6 +161,14 @@ namespace GameCore {
         float m_sfxVolume;
         float m_masterVolume = 1.0f;
         GameStats m_gameStats;
+
+        // Level-based data (fixed array for levels 1-6)
+        static const int MAX_LEVELS = 6;
+        LevelStats m_levelStats[MAX_LEVELS + 1]; // Index 1-6 for levels
+
+        // Level unlock sound effect timer
+        float m_levelUnlockSoundTimer;
+        bool m_pendingPartyHorn;
         
         // Performance tracking
         float m_frameTime;
@@ -164,7 +204,6 @@ namespace GameCore {
         // Audio management
         void PlayBackgroundMusic();
         void StopBackgroundMusic();
-        void PlaySFX(const std::string& soundName);
         
         // Resource management
         void LoadGameResources();

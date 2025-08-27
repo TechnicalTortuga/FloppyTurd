@@ -47,6 +47,8 @@ namespace GameCore {
         , m_currentOffsetX(0.0f)
         , m_lastArrowPressTime(0.0f)
         , m_arrowDebounceDelay(0.3f)  // 300ms debounce delay
+        , m_lastUnlockPressTime(0.0f)
+        , m_unlockDebounceDelay(1.0f)  // 1 second debounce delay for unlock buttons
         , m_fontLoaded(false)
         , m_assetsLoaded(false) {
         
@@ -201,7 +203,19 @@ namespace GameCore {
                     m_ecsCoordinator->DestroyEntity(entity);
                 }
             }
-            
+
+            for (Gnosis::Entity entity : m_unlockButtonEntities) {
+                if (entity != 0) {
+                    m_ecsCoordinator->DestroyEntity(entity);
+                }
+            }
+
+            for (Gnosis::Entity entity : m_requirementTextEntities) {
+                if (entity != 0) {
+                    m_ecsCoordinator->DestroyEntity(entity);
+                }
+            }
+
             if (m_lockedIndicatorEntity != 0) {
                 m_ecsCoordinator->DestroyEntity(m_lockedIndicatorEntity);
             }
@@ -225,6 +239,9 @@ namespace GameCore {
         
         // Update arrow button debounce timer
         m_lastArrowPressTime += deltaTime;
+
+        // Update unlock button debounce timer
+        m_lastUnlockPressTime += deltaTime;
         
         // Update menu animations (logo bobbing, button highlights, etc.)
         UpdateMenuAnimations(deltaTime);
@@ -1884,18 +1901,33 @@ namespace GameCore {
 
     // Level Select Implementation
     void MainMenuState::InitializeLevels() {
+        // Debug: Show current coin count at startup
+        if (GameCore::GetGame()) {
+            int currentCoins = GameCore::GetGame()->GetPlayerCoins();
+            GameCore::FloppyTurdGame::GameStats gameStats = GameCore::GetGame()->GetGameStats();
+            GN_LOG_INFO("💰 MAIN MENU STARTUP - GetPlayerCoins(): " + std::to_string(currentCoins) + " coins");
+            GN_LOG_INFO("💰 MAIN MENU STARTUP - GameStats.totalCoinsCollected: " + std::to_string(gameStats.totalCoinsCollected) + " coins");
+        }
+
         m_levels.clear();
-        
-        // Add all levels with their painting textures
-        m_levels.push_back({"A Flop in the Park", "ParkLevelPainting", "LockedPainting", true, 1});      // Park is unlocked
-        m_levels.push_back({"Home Sweet Home", "SewerLevelPainting", "LockedPainting", true, 2});        // Sewer UNLOCKED for testing
-        m_levels.push_back({"The Good, The Bad,\nand the Stinky", "DesertLevelPainting", "LockedPainting", true, 3}); // Desert UNLOCKED for testing
-        m_levels.push_back({"Polar Pandemonium", "SnowLevelPainting", "LockedPainting", true, 4});       // Snow UNLOCKED for testing
-        m_levels.push_back({"Dung in the Dungeon", "CastleLevelPainting", "LockedPainting", true, 5});   // Castle UNLOCKED for testing
-        m_levels.push_back({"Curtains for Crap", "RatKingPainting", "LockedPainting", true, 6});        // Boss UNLOCKED for testing
-        
+
+        // Add all levels with their painting textures and unlock status from game
+        bool level1Unlocked = GameCore::GetGame() ? GameCore::GetGame()->IsLevelUnlocked(1) : true;
+        bool level2Unlocked = GameCore::GetGame() ? GameCore::GetGame()->IsLevelUnlocked(2) : false;
+        bool level3Unlocked = GameCore::GetGame() ? GameCore::GetGame()->IsLevelUnlocked(3) : false;
+        bool level4Unlocked = GameCore::GetGame() ? GameCore::GetGame()->IsLevelUnlocked(4) : false;
+        bool level5Unlocked = GameCore::GetGame() ? GameCore::GetGame()->IsLevelUnlocked(5) : false;
+        bool level6Unlocked = GameCore::GetGame() ? GameCore::GetGame()->IsLevelUnlocked(6) : false;
+
+        m_levels.push_back({"A Flop in the Park", "ParkLevelPainting", "LockedPainting", level1Unlocked, 1});
+        m_levels.push_back({"Home Sweet Home", "SewerLevelPainting", "LockedPainting", level2Unlocked, 2});
+        m_levels.push_back({"The Good, The Bad,\nand the Stinky", "DesertLevelPainting", "LockedPainting", level3Unlocked, 3});
+        m_levels.push_back({"Polar Pandemonium", "SnowLevelPainting", "LockedPainting", level4Unlocked, 4});
+        m_levels.push_back({"Dung in the Dungeon", "CastleLevelPainting", "LockedPainting", level5Unlocked, 5});
+        m_levels.push_back({"Curtains for Crap", "RatKingPainting", "LockedPainting", level6Unlocked, 6});
+
         m_currentLevelIndex = 0;
-        GN_LOG_INFO("Initialized " + std::to_string(m_levels.size()) + " levels");
+        GN_LOG_INFO("Initialized " + std::to_string(m_levels.size()) + " levels with game unlock status");
     }
 
     void MainMenuState::CreateLevelSelectLayout() {
@@ -2045,6 +2077,8 @@ namespace GameCore {
         m_levelPaintingEntities.clear();
         m_levelFrameEntities.clear();
         m_levelTextEntities.clear();
+        m_unlockButtonEntities.clear();
+        m_requirementTextEntities.clear();
         
         // Pruned verbose creation log
         
@@ -2111,16 +2145,25 @@ namespace GameCore {
             
             // === Create level name text entity === //
             Gnosis::Entity textEntity = m_ecsCoordinator->CreateEntity();
-            
+
             // Position text at top of screen, centered horizontally on screen (not painting)
             float textY = m_screenHeight * 0.15f; // 15% down from top
             float textX = screenCenterX; // Use screen center for proper horizontal centering
-            
+
             Transform textTransform(Gnosis::GNVector2(textX, textY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
-            // Reintroduce multi-line splitting for level names containing '\n' (handled in renderer)
-            UIElement textElement(m_levels[i].name, "", "");
-            textElement.fontSize = m_isMobile ? 80.0f : (m_buttonFontSize * 4.5f);
-            textElement.textOutlineWidth = 10.0f; // consistent outline thickness
+
+            // Create level display text with high score if available
+            std::string displayText = m_levels[i].name;
+            if (GameCore::GetGame()) {
+                int highScore = GameCore::GetGame()->GetLevelHighScore(m_levels[i].levelNumber);
+                if (highScore > 0) {
+                    displayText += "\nBest: " + std::to_string(highScore) + " pipes";
+                }
+            }
+
+            UIElement textElement(displayText, "", "");
+            textElement.fontSize = m_isMobile ? 70.0f : (m_buttonFontSize * 4.0f); // Slightly smaller to fit high score
+            textElement.textOutlineWidth = 8.0f; // consistent outline thickness
             textElement.textColor = Gnosis::GNColor(255, 255, 255, 255);
             textElement.centerTextHorizontally = true;
             textElement.centerTextVertically = true;
@@ -2128,9 +2171,391 @@ namespace GameCore {
             m_ecsCoordinator->AddComponent<Transform>(textEntity, textTransform);
             m_ecsCoordinator->AddComponent<UIElement>(textEntity, textElement);
             m_levelTextEntities.push_back(textEntity);
+
+            // === Create unlock button and requirements for locked levels === //
+            if (!m_levels[i].isUnlocked && GameCore::GetGame()) {
+                // Create unlock button
+                Gnosis::Entity unlockButtonEntity = m_ecsCoordinator->CreateEntity();
+
+                // Position button directly below the current level painting using actual runtime dimensions
+                float buttonScale = m_isMobile ? 8.0f : 6.0f; // Original button size
+
+                // Get the actual current painting's position and dimensions
+                float paintingBottomY = m_screenHeight / 2.0f; // Default fallback
+                if (m_currentLevelIndex < m_levelPaintingEntities.size() && m_levelPaintingEntities[m_currentLevelIndex] != 0) {
+                    if (auto* paintingTransform = m_ecsCoordinator->GetComponent<Transform>(m_levelPaintingEntities[m_currentLevelIndex])) {
+                        // Get the painting's actual dimensions by querying the texture size and scale
+                        int pwi = 96, phi = 96; // Default fallback
+                        if (auto* rs = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+                            rs->GetTextureSize(m_levels[m_currentLevelIndex].paintingTexture, pwi, phi);
+                        }
+                        auto scaledDimensions = GetScaledDimensions(pwi, phi, paintingTransform->scale.x);
+                        float paintingHeight = scaledDimensions.second;
+
+                        // Calculate the bottom of the painting
+                        paintingBottomY = paintingTransform->position.y + paintingHeight;
+                    }
+                }
+
+                // Position button below the painting with proper spacing
+                float buttonY = paintingBottomY + 89.0f; // 89px gap below painting (raised slightly)
+
+                // Get button texture dimensions
+                int btnW = 90, btnH = 16;
+                if (auto* rs = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+                    rs->PreloadTexture("FloppyButtonBlue");
+                    rs->GetTextureSize("FloppyButtonBlue", btnW, btnH);
+                }
+
+                auto buttonScaledDimensions = GetScaledDimensions(btnW, btnH, buttonScale);
+                float buttonWidth = buttonScaledDimensions.first;
+                float buttonHeight = buttonScaledDimensions.second;
+
+                Gnosis::GNVector2 buttonPosition = CenterObjectAtPosition(textX, buttonY, buttonWidth, buttonHeight);
+
+                Transform buttonTransform(Gnosis::GNVector2(buttonPosition.x, buttonPosition.y), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
+                Sprite buttonSprite("FloppyButtonBlue", btnW, btnH);
+                buttonSprite.layer = 3;
+                buttonSprite.visible = false;
+
+                UIElement buttonElement("UNLOCK", "FloppyButtonBlue", "FloppyButtonBlueHover");
+                buttonElement.fontSize = m_buttonFontSize;
+                buttonElement.textColor = Gnosis::GNColor(255, 255, 255, 255);
+                buttonElement.centerTextHorizontally = true;
+                buttonElement.centerTextVertically = true;
+                buttonElement.visible = false;
+
+                m_ecsCoordinator->AddComponent<Transform>(unlockButtonEntity, buttonTransform);
+                m_ecsCoordinator->AddComponent<Sprite>(unlockButtonEntity, buttonSprite);
+                m_ecsCoordinator->AddComponent<UIElement>(unlockButtonEntity, buttonElement);
+                m_unlockButtonEntities.push_back(unlockButtonEntity);
+
+                // Create requirements text below the button
+                Gnosis::Entity reqTextEntity = m_ecsCoordinator->CreateEntity();
+
+                float reqTextY = buttonY + buttonHeight / 2.0f + 99.0f; // Position below the button (drop full button height + 64px more spacing)
+                Transform reqTextTransform(Gnosis::GNVector2(textX, reqTextY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+
+                // Get level stats to show requirements
+                const auto& levelStats = GameCore::GetGame()->GetLevelStats(m_levels[i].levelNumber);
+
+                // FORCE level 2 to show 0 requirements in UI for debug testing
+                auto displayStats = levelStats; // Create a copy we can modify
+                if (m_levels[i].levelNumber == 2) {
+                    const_cast<int&>(displayStats.unlockRequirement) = 0;
+                    const_cast<int&>(displayStats.coinRequirement) = 0;
+                    printf("🔧 DEBUG: UI Display - Level 2 FORCED to show 0/0 requirements!\n");
+                    fflush(stdout);
+                }
+
+                if (m_levels[i].levelNumber == 2) {  // Debug level 2 specifically
+                    GN_LOG_INFO("🎨 MainMenuState: Level 2 stats from GetLevelStats - unlockRequirement=" + std::to_string(displayStats.unlockRequirement) +
+                               ", coinRequirement=" + std::to_string(displayStats.coinRequirement) +
+                               ", unlocked=" + std::to_string(displayStats.unlocked));
+                }
+
+                // Get current progress
+                int currentCoins = GameCore::GetGame() ? GameCore::GetGame()->GetPlayerCoins() : 0;
+                GN_LOG_INFO("💰 LEVEL " + std::to_string(i) + " REQUIREMENTS - currentCoins: " + std::to_string(currentCoins) + ", coinRequirement: " + std::to_string(displayStats.coinRequirement));
+                if (currentCoins >= displayStats.coinRequirement && displayStats.coinRequirement > 0) {
+                    GN_LOG_INFO("💰 LEVEL " + std::to_string(i) + " - COIN REQUIREMENT MET!");
+                } else if (displayStats.coinRequirement > 0) {
+                    GN_LOG_INFO("💰 LEVEL " + std::to_string(i) + " - COIN REQUIREMENT NOT MET (" + std::to_string(currentCoins) + "/" + std::to_string(displayStats.coinRequirement) + ")");
+                }
+                int prevLevelHighScore = 0;
+                std::string prevLevelName = "Previous Level";
+
+                if (displayStats.unlockRequirement > 0 && GameCore::GetGame()) {
+                    // Get the high score from the required previous level
+                    int requiredLevelId;
+                    if (m_levels[i].levelNumber == 2) {
+                        requiredLevelId = 1; // Sewer requires pipes from Park (level 1)
+                    } else if (m_levels[i].levelNumber == 3) {
+                        requiredLevelId = 2; // Desert requires pipes from Sewer (level 2)
+                    } else if (m_levels[i].levelNumber == 4) {
+                        requiredLevelId = 3; // Snow requires pipes from Desert (level 3)
+                    } else if (m_levels[i].levelNumber == 5) {
+                        requiredLevelId = 4; // Castle requires pipes from Snow (level 4)
+                    } else if (m_levels[i].levelNumber == 6) {
+                        requiredLevelId = 5; // Boss requires pipes from Castle (level 5)
+                    } else {
+                        requiredLevelId = m_levels[i].levelNumber - 1;
+                    }
+
+                    prevLevelHighScore = GameCore::GetGame()->GetLevelHighScore(requiredLevelId);
+
+                    // Find the level name for the required level
+                    for (size_t j = 0; j < m_levels.size(); ++j) {
+                        if (m_levels[j].levelNumber == requiredLevelId) {
+                            prevLevelName = m_levels[j].name;
+                            break;
+                        }
+                    }
+                }
+
+                std::string requirementsText;
+
+                if (displayStats.coinRequirement > 0 && displayStats.unlockRequirement > 0) {
+                    // Both pipes and coins required (later levels)
+                    requirementsText = std::to_string(prevLevelHighScore) + "/" + std::to_string(displayStats.unlockRequirement) + " pipes from\n'" + prevLevelName + "'\n" +
+                                     std::to_string(currentCoins) + "/" + std::to_string(displayStats.coinRequirement) + " coins";
+                } else if (displayStats.coinRequirement > 0) {
+                    // Only coins required
+                    requirementsText = std::to_string(currentCoins) + "/" + std::to_string(displayStats.coinRequirement) + " coins";
+                } else if (displayStats.unlockRequirement > 0) {
+                    // Only pipes required
+                    requirementsText = std::to_string(prevLevelHighScore) + "/" + std::to_string(displayStats.unlockRequirement) + " pipes from\n'" + prevLevelName + "'";
+                }
+
+                UIElement reqTextElement(requirementsText, "", "");
+                reqTextElement.fontSize = m_isMobile ? 40.0f : (m_buttonFontSize * 2.5f); // Lowered font size
+                reqTextElement.textOutlineWidth = 6.0f;
+                reqTextElement.textColor = Gnosis::GNColor(200, 200, 200, 255); // Light gray
+                reqTextElement.centerTextHorizontally = true;
+                reqTextElement.centerTextVertically = true;
+                reqTextElement.visible = false;
+
+                m_ecsCoordinator->AddComponent<Transform>(reqTextEntity, reqTextTransform);
+                m_ecsCoordinator->AddComponent<UIElement>(reqTextEntity, reqTextElement);
+                m_requirementTextEntities.push_back(reqTextEntity);
+            } else {
+                // For unlocked levels, add placeholder entities to maintain vector indices
+                m_unlockButtonEntities.push_back(0);
+                m_requirementTextEntities.push_back(0);
+            }
         }
         
         GN_LOG_INFO("✅ Created %zu level paintings with simplified centered positioning", m_levels.size());
+    }
+
+    void MainMenuState::RefreshLevelDisplay() {
+        GN_LOG_INFO("🚨🚨🚨 REFRESH_LEVEL_DISPLAY_CALLED 🚨🚨🚨");
+        GN_LOG_INFO("🔄 RefreshLevelDisplay: STARTED - processing " + std::to_string(m_levels.size()) + " levels");
+        GN_LOG_INFO("🔄 RefreshLevelDisplay: m_requirementTextEntities size = " + std::to_string(m_requirementTextEntities.size()));
+
+        // Update level unlock status from game
+        for (size_t i = 0; i < m_levels.size(); ++i) {
+            bool currentUnlockStatus = m_levels[i].isUnlocked;
+            bool gameUnlockStatus = GameCore::GetGame() ? GameCore::GetGame()->IsLevelUnlocked(m_levels[i].levelNumber) : false;
+
+            // Update unlock status if it changed
+            if (currentUnlockStatus != gameUnlockStatus) {
+                m_levels[i].isUnlocked = gameUnlockStatus;
+
+                // Update locked frame visibility
+                if (i < m_levelFrameEntities.size()) {
+                    Gnosis::Entity frameEntity = m_levelFrameEntities[i];
+                    if (frameEntity != 0 && m_ecsCoordinator) {
+                        Sprite* frameSprite = m_ecsCoordinator->GetComponent<Sprite>(frameEntity);
+                        if (frameSprite) {
+                            frameSprite->visible = !gameUnlockStatus;
+                        }
+                    }
+                }
+
+                // Update unlock button and requirement text visibility
+                UpdateUnlockButtonVisibility(i, gameUnlockStatus);
+            }
+
+            // Update level text with current high score
+            if (i < m_levelTextEntities.size()) {
+                Gnosis::Entity textEntity = m_levelTextEntities[i];
+                if (textEntity != 0 && m_ecsCoordinator) {
+                    UIElement* textElement = m_ecsCoordinator->GetComponent<UIElement>(textEntity);
+                    if (textElement) {
+                        std::string displayText = m_levels[i].name;
+                        if (GameCore::GetGame()) {
+                            int highScore = GameCore::GetGame()->GetLevelHighScore(m_levels[i].levelNumber);
+                            if (highScore > 0) {
+                                displayText += "\nBest: " + std::to_string(highScore) + " pipes";
+                            }
+                        }
+                        textElement->buttonText = displayText;
+                    }
+                }
+            }
+
+            // Update requirements text with current progress
+            if (m_levels[i].levelNumber == 2) {  // Debug level 2 specifically
+                GN_LOG_INFO("🔄 RefreshLevelDisplay: Level 2 - checking requirement text entity. Array size: " + std::to_string(m_requirementTextEntities.size()) +
+                           ", index: " + std::to_string(i) + ", entity: " + std::to_string(i < m_requirementTextEntities.size() ? m_requirementTextEntities[i] : 0) +
+                           ", isUnlocked: " + std::to_string(m_levels[i].isUnlocked));
+            }
+
+            if (i < m_requirementTextEntities.size() && m_requirementTextEntities[i] != 0) {
+                Gnosis::Entity reqTextEntity = m_requirementTextEntities[i];
+                if (reqTextEntity != 0 && m_ecsCoordinator && !m_levels[i].isUnlocked) {
+                    UIElement* reqTextElement = m_ecsCoordinator->GetComponent<UIElement>(reqTextEntity);
+                    if (reqTextElement && GameCore::GetGame()) {
+                        const auto& levelStats = GameCore::GetGame()->GetLevelStats(m_levels[i].levelNumber);
+
+                        // FORCE level 2 to show 0 requirements in UI for debug testing
+                        auto displayStats = levelStats; // Create a copy we can modify
+                        if (m_levels[i].levelNumber == 2) {
+                            const_cast<int&>(displayStats.unlockRequirement) = 0;
+                            const_cast<int&>(displayStats.coinRequirement) = 0;
+                            GN_LOG_INFO("🔄 RefreshLevelDisplay: Level 2 FORCED to show unlockRequirement=0, coinRequirement=0 in UI");
+                        }
+
+                        if (m_levels[i].levelNumber == 2) {  // Debug level 2 specifically during refresh
+                            GN_LOG_INFO("🔄 RefreshLevelDisplay: Level 2 stats from GetLevelStats - unlockRequirement=" + std::to_string(displayStats.unlockRequirement) +
+                                       ", coinRequirement=" + std::to_string(displayStats.coinRequirement) +
+                                       ", unlocked=" + std::to_string(displayStats.unlocked));
+                        }
+
+                        // Get current progress
+                        int currentCoins = GameCore::GetGame()->GetPlayerCoins();
+                        GN_LOG_INFO("🔄 REFRESH LEVEL " + std::to_string(i) + " - Current coins: " + std::to_string(currentCoins) + ", coinRequirement: " + std::to_string(displayStats.coinRequirement));
+                        int prevLevelHighScore = 0;
+                        std::string prevLevelName = "Previous Level";
+
+                        if (displayStats.unlockRequirement > 0 && GameCore::GetGame()) {
+                            // Get the high score from the required previous level
+                            int requiredLevelId;
+                            if (m_levels[i].levelNumber == 2) {
+                                requiredLevelId = 1; // Sewer requires pipes from Park (level 1)
+                            } else if (m_levels[i].levelNumber == 3) {
+                                requiredLevelId = 2; // Desert requires pipes from Sewer (level 2)
+                            } else if (m_levels[i].levelNumber == 4) {
+                                requiredLevelId = 3; // Snow requires pipes from Desert (level 3)
+                            } else if (m_levels[i].levelNumber == 5) {
+                                requiredLevelId = 4; // Castle requires pipes from Snow (level 4)
+                            } else if (m_levels[i].levelNumber == 6) {
+                                requiredLevelId = 5; // Boss requires pipes from Castle (level 5)
+                            } else {
+                                requiredLevelId = m_levels[i].levelNumber - 1;
+                            }
+
+                            prevLevelHighScore = GameCore::GetGame()->GetLevelHighScore(requiredLevelId);
+
+                            // Find the level name for the required level
+                            for (size_t j = 0; j < m_levels.size(); ++j) {
+                                if (m_levels[j].levelNumber == requiredLevelId) {
+                                    prevLevelName = m_levels[j].name;
+                                    break;
+                                }
+                            }
+                        }
+
+                        std::string requirementsText;
+
+                        if (displayStats.coinRequirement > 0 && displayStats.unlockRequirement > 0) {
+                            // Both pipes and coins required (later levels)
+                            requirementsText = std::to_string(prevLevelHighScore) + "/" + std::to_string(displayStats.unlockRequirement) + " pipes from\n'" + prevLevelName + "'\n" +
+                                             std::to_string(currentCoins) + "/" + std::to_string(displayStats.coinRequirement) + " coins";
+                        } else if (displayStats.coinRequirement > 0) {
+                            // Only coins required
+                            requirementsText = std::to_string(currentCoins) + "/" + std::to_string(displayStats.coinRequirement) + " coins";
+                        } else if (displayStats.unlockRequirement > 0) {
+                            // Only pipes required
+                            requirementsText = std::to_string(prevLevelHighScore) + "/" + std::to_string(displayStats.unlockRequirement) + " pipes from\n'" + prevLevelName + "'";
+                        }
+
+                        reqTextElement->buttonText = requirementsText;
+                    }
+                }
+            }
+        }
+
+        GN_LOG_INFO("Refreshed level display with updated unlock status and high scores");
+    }
+
+    void MainMenuState::UpdateUnlockButtonVisibility(size_t levelIndex, bool isUnlocked) {
+        // Hide/show unlock button and requirements text based on unlock status
+        if (levelIndex < m_unlockButtonEntities.size() && m_unlockButtonEntities[levelIndex] != 0) {
+            if (m_ecsCoordinator) {
+                Sprite* buttonSprite = m_ecsCoordinator->GetComponent<Sprite>(m_unlockButtonEntities[levelIndex]);
+                UIElement* buttonElement = m_ecsCoordinator->GetComponent<UIElement>(m_unlockButtonEntities[levelIndex]);
+                if (buttonSprite) buttonSprite->visible = !isUnlocked;
+                if (buttonElement) buttonElement->visible = !isUnlocked;
+            }
+        }
+
+        if (levelIndex < m_requirementTextEntities.size() && m_requirementTextEntities[levelIndex] != 0) {
+            if (m_ecsCoordinator) {
+                UIElement* reqTextElement = m_ecsCoordinator->GetComponent<UIElement>(m_requirementTextEntities[levelIndex]);
+                if (reqTextElement) reqTextElement->visible = !isUnlocked;
+            }
+        }
+    }
+
+    void MainMenuState::OnUnlockButtonPressed(int levelNumber) {
+        GN_LOG_INFO("🎮 OnUnlockButtonPressed called for level " + std::to_string(levelNumber));
+
+        // Check debounce timer
+        if (m_lastUnlockPressTime < m_unlockDebounceDelay) {
+            GN_LOG_INFO("🚫 Unlock button debounced - too soon since last press");
+            return;
+        }
+
+        // Reset debounce timer
+        m_lastUnlockPressTime = 0.0f;
+        GN_LOG_INFO("✅ Unlock button debounce passed");
+
+        if (!GameCore::GetGame()) {
+            GN_LOG_ERROR("❌ GameCore::GetGame() returned null!");
+            return;
+        }
+
+        GN_LOG_INFO("🔓 Attempting to unlock level " + std::to_string(levelNumber));
+
+        // Try to unlock the level using the new unified unlock system
+        bool unlockResult = GameCore::GetGame()->TryUnlockLevel(levelNumber);
+
+        if (unlockResult) {
+            GN_LOG_INFO("✅ TryUnlockLevel returned true for level " + std::to_string(levelNumber));
+
+            // Find the level index and immediately update the frame sprite for visual feedback
+            for (size_t i = 0; i < m_levels.size(); ++i) {
+                if (m_levels[i].levelNumber == levelNumber) {
+                    m_levels[i].isUnlocked = true;
+
+                    // Immediately update the frame sprite to hide the locked overlay
+                    if (i < m_levelFrameEntities.size() && m_levelFrameEntities[i] != 0 && m_ecsCoordinator) {
+                        Sprite* frameSprite = m_ecsCoordinator->GetComponent<Sprite>(m_levelFrameEntities[i]);
+                        if (frameSprite) {
+                            frameSprite->visible = false;
+                            GN_LOG_INFO("🎨 Immediately updated frame sprite for level " + std::to_string(levelNumber));
+                        }
+                    }
+
+                    UpdateUnlockButtonVisibility(i, true);
+                    GN_LOG_INFO("📱 Updated UI for level " + std::to_string(levelNumber));
+                    break;
+                }
+            }
+
+            // Update the UI to reflect the change
+            RefreshLevelDisplay();
+            GN_LOG_INFO("🎨 Refreshed level display after unlock");
+
+        } else {
+            // Play denied sound effect ONLY if the button is visible (not already unlocked)
+            GN_LOG_INFO("❌ TryUnlockLevel returned false for level " + std::to_string(levelNumber));
+
+            // Check if the unlock button is visible for this level
+            bool buttonIsVisible = false;
+            for (size_t i = 0; i < m_levels.size(); ++i) {
+                if (m_levels[i].levelNumber == levelNumber) {
+                    if (i < m_unlockButtonEntities.size() && m_unlockButtonEntities[i] != 0 && m_ecsCoordinator) {
+                        Sprite* buttonSprite = m_ecsCoordinator->GetComponent<Sprite>(m_unlockButtonEntities[i]);
+                        if (buttonSprite && buttonSprite->visible) {
+                            buttonIsVisible = true;
+                        }
+                    }
+                    break;
+                }
+            }
+
+            if (buttonIsVisible) {
+                GN_LOG_INFO("🔊 Playing denied sound effect (unlock failed)");
+                if (GameCore::GetGame()) {
+                    GameCore::GetGame()->PlaySFX("denied");
+                }
+            } else {
+                GN_LOG_INFO("🔇 Not playing partyhorn sound effect (already unlocked)");
+            }
+        }
     }
 
     void MainMenuState::CreateBackButton() {
@@ -2322,7 +2747,10 @@ namespace GameCore {
     void MainMenuState::ShowLevelSelect() {
         GN_LOG_INFO("Showing level select menu");
         m_currentMode = MenuMode::LEVEL_SELECT;
-        
+
+        // Refresh level unlock status and high scores before showing
+        RefreshLevelDisplay();
+
         // Hide main menu elements when OPTIONS is active too
         if (m_logoEntity != 0) {
             Sprite* logoSprite = m_ecsCoordinator->GetComponent<Sprite>(m_logoEntity);
@@ -2430,7 +2858,24 @@ namespace GameCore {
                 if (uiElement) uiElement->visible = false;
             }
         }
-        
+
+        // Hide unlock buttons and requirement text
+        for (Gnosis::Entity entity : m_unlockButtonEntities) {
+            if (entity != 0) {
+                Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(entity);
+                UIElement* uiElement = m_ecsCoordinator->GetComponent<UIElement>(entity);
+                if (sprite) sprite->visible = false;
+                if (uiElement) uiElement->visible = false;
+            }
+        }
+
+        for (Gnosis::Entity entity : m_requirementTextEntities) {
+            if (entity != 0) {
+                UIElement* uiElement = m_ecsCoordinator->GetComponent<UIElement>(entity);
+                if (uiElement) uiElement->visible = false;
+            }
+        }
+
         if (m_backButtonEntity != 0) {
             Sprite* backSprite = m_ecsCoordinator->GetComponent<Sprite>(m_backButtonEntity);
             UIElement* backElement = m_ecsCoordinator->GetComponent<UIElement>(m_backButtonEntity);
@@ -2571,7 +3016,7 @@ namespace GameCore {
                 if (m_levelPlayButtonEntity != 0) {
                     Transform* transform = m_ecsCoordinator->GetComponent<Transform>(m_levelPlayButtonEntity);
                     Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(m_levelPlayButtonEntity);
-                    
+
                     if (transform && sprite) {
                         // Button is now positioned at top-left, so collision detection uses top-left based bounds
                         float buttonWidth = sprite->width * transform->scale.x;
@@ -2580,11 +3025,34 @@ namespace GameCore {
                         float buttonRight = transform->position.x + buttonWidth;
                         float buttonTop = transform->position.y;
                         float buttonBottom = transform->position.y + buttonHeight;
-                        
+
                         if (touchX >= buttonLeft && touchX <= buttonRight &&
                             touchY >= buttonTop && touchY <= buttonBottom) {
                             OnLevelPlayButtonPressed();
                             return;
+                        }
+                    }
+                }
+
+                // Check unlock buttons for locked levels
+                for (size_t i = 0; i < m_unlockButtonEntities.size(); ++i) {
+                    if (m_unlockButtonEntities[i] != 0 && !m_levels[i].isUnlocked) {
+                        Transform* transform = m_ecsCoordinator->GetComponent<Transform>(m_unlockButtonEntities[i]);
+                        Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(m_unlockButtonEntities[i]);
+
+                        if (transform && sprite) {
+                            float buttonWidth = sprite->width * transform->scale.x;
+                            float buttonHeight = sprite->height * transform->scale.y;
+                            float buttonLeft = transform->position.x;
+                            float buttonRight = transform->position.x + buttonWidth;
+                            float buttonTop = transform->position.y;
+                            float buttonBottom = transform->position.y + buttonHeight;
+
+                            if (touchX >= buttonLeft && touchX <= buttonRight &&
+                                touchY >= buttonTop && touchY <= buttonBottom) {
+                                OnUnlockButtonPressed(m_levels[i].levelNumber);
+                                return;
+                            }
                         }
                     }
                 }
@@ -2904,18 +3372,38 @@ namespace GameCore {
                 if (transform && uiElement) {
                     // Update visibility first
                     uiElement->visible = shouldBeVisible;
-                    
+
                     // Only position and update text for visible level
                     if (shouldBeVisible) {
                         // Center the text horizontally at the painting position
                         transform->position.x = centerX;
                         transform->position.y = m_screenHeight * 0.15f; // Keep at top 15% of screen
-                        
+
                         // Update the text to show the correct level name
                         if (i < m_levels.size()) {
                             uiElement->buttonText = m_levels[i].name;
                         }
                     }
+                }
+            }
+
+            // Update unlock button and requirements visibility
+            if (m_unlockButtonEntities[i] != 0) {
+                Sprite* buttonSprite = m_ecsCoordinator->GetComponent<Sprite>(m_unlockButtonEntities[i]);
+                UIElement* buttonElement = m_ecsCoordinator->GetComponent<UIElement>(m_unlockButtonEntities[i]);
+                if (buttonSprite && buttonElement) {
+                    // Show unlock button only for visible AND locked levels
+                    bool showUnlockButton = shouldBeVisible && !m_levels[i].isUnlocked;
+                    buttonSprite->visible = showUnlockButton;
+                    buttonElement->visible = showUnlockButton;
+                }
+            }
+
+            if (m_requirementTextEntities[i] != 0) {
+                UIElement* reqTextElement = m_ecsCoordinator->GetComponent<UIElement>(m_requirementTextEntities[i]);
+                if (reqTextElement) {
+                    // Show requirements text only for visible AND locked levels
+                    reqTextElement->visible = shouldBeVisible && !m_levels[i].isUnlocked;
                 }
             }
         }

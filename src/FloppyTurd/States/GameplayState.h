@@ -120,6 +120,7 @@ namespace GameCore {
         bool m_playerAlive;
         float m_invulnerabilityTimer;
         int m_pipesCleared;                     // Number of pipes passed through
+        int m_sessionCoinsCollected;            // Coins collected in current session
         // Hurt state is now managed by PlayerControllerSystem
         
         // Game flow
@@ -171,12 +172,26 @@ namespace GameCore {
         // Pause menu tab content entities
         Gnosis::Entity m_systemTabEntity;       // System tab content (audio + main menu)
         Gnosis::Entity m_mainMenuButtonEntity;  // Main menu button in system tab
+
         Gnosis::Entity m_placeholderLabelEntity; // Placeholder label for non-system tabs
         
         // Individual tab content entities
         Gnosis::Entity m_skillsContentEntity;   // Skills tab content
         Gnosis::Entity m_hatsContentEntity;     // Hats tab content
         Gnosis::Entity m_statsContentEntity;    // Stats tab content
+        Gnosis::Entity m_statsBackgroundEntity; // Stats tab black background rectangle
+        
+        // Individual stats display entities
+        Gnosis::Entity m_totalPipesTextEntity;     // Total pipes cleared across all games
+        Gnosis::Entity m_totalFlopsTextEntity;     // Total deaths/flops
+        Gnosis::Entity m_totalCoinsTextEntity;     // Total coins collected
+        Gnosis::Entity m_sessionCoinsTextEntity;   // Session coins collected
+
+        Gnosis::Entity m_enemiesKilledTextEntity;  // Total enemies killed
+        Gnosis::Entity m_currentSessionTextEntity; // Current session pipes
+
+        // Level high score display entities
+        std::vector<Gnosis::Entity> m_levelHighScoreEntities;
 
         // Audio slider UI entities (matching MainMenuState style)
         Gnosis::Entity m_masterKnobEntity = 0;
@@ -203,11 +218,15 @@ namespace GameCore {
         float m_sliderW = 0.0f;
         float m_sliderH = 18.0f;
         float m_sliderSpacing = 70.0f;
+        float m_uiScale = 1.0f;  // UI scaling factor for consistent sizing
 
         // Current slider values (0.0-1.0)
         float m_masterSliderValue = 1.0f;
         float m_musicSliderValue = 1.0f;
         float m_sfxSliderValue = 1.0f;
+        
+        // Debug hitbox visualization entities
+        std::vector<Gnosis::Entity> m_debugHitboxEntities;
         
         // Game over UI elements
         Gnosis::Entity m_gameOverBackgroundEntity;   // Light from heaven background
@@ -260,6 +279,7 @@ namespace GameCore {
         // Collision and pipe tracking
         void CheckToiletCollisions();
         void UpdatePipeCounterUI();
+        void UpdateCoinCounterUI();
         void OnPipeCleared();
         
         // Debug rendering
@@ -312,6 +332,9 @@ namespace GameCore {
         void CreateHatsTab();
         void CreateStatsTab();
         void CreateAudioSliders();
+        void CreateDebugHitboxRectangles();
+        void UpdateDebugHitboxPositions();
+        void ShowDebugHitboxes(bool show);
         void SwitchPauseTab(int tabIndex);
         void ShowTabContent(int tabIndex);
         void ShowCurrentTabContent();
@@ -320,6 +343,11 @@ namespace GameCore {
         void ShowHatsTab();
         void ShowStatsTab();
         void HideAllTabContent();
+        
+        // Stats management
+        void UpdateGameStatsFromSession();    // Update game stats with current session data
+        void RefreshStatsDisplay();           // Refresh the stats text entities with current values
+        void IncrementDeathCounter();         // Increment death counter when player dies
         void CheckSettingsButtonClick(float touchX, float touchY);
         void HandlePauseMenuInput(float touchX, float touchY);
         bool HandlePauseMenuRibbonClick(float touchX, float touchY);

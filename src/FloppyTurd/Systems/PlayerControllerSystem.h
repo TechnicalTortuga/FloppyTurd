@@ -116,7 +116,7 @@ namespace GameCore {
         // Enhanced Jump Physics Constants (adjusted for snappier feel based on user feedback)
         static constexpr float JUMP_FORCE = 2400.0f;         // INCREASED: Stronger jump impulse for more dramatic jumps
         static constexpr float GRAVITY_UP = 2000.0f;          // INCREASED: More gravity while ascending for less floaty feel
-        static constexpr float GRAVITY_DOWN = 4800.0f;        // INCREASED: Much heavier gravity while falling for faster drop
+        static constexpr float GRAVITY_DOWN = 7200.0f;        // FURTHER INCREASED: Even heavier gravity while falling for very fast, satisfying drops
         static constexpr float TERMINAL_VELOCITY = 1800.0f;   // INCREASED: Higher maximum falling speed for faster descent
         static constexpr float AUTO_JUMP_THRESHOLD = 0.2f;    // Auto-jump after 200ms (1/5 second) of holding
         static constexpr float VARIABLE_JUMP_THRESHOLD = 0.8f; // Extended time window for variable jump height

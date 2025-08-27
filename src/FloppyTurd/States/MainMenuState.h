@@ -34,6 +34,9 @@ namespace GameCore {
         
         // Level selection
         int GetSelectedLevelIndex() const { return m_selectedLevelIndex; }
+        void RefreshLevelDisplay();
+        void UpdateUnlockButtonVisibility(size_t levelIndex, bool isUnlocked);
+        void OnUnlockButtonPressed(int levelNumber);
 
     private:
         enum class MenuOption {
@@ -140,6 +143,8 @@ namespace GameCore {
         std::vector<Gnosis::Entity> m_levelPaintingEntities;
         std::vector<Gnosis::Entity> m_levelFrameEntities;
         std::vector<Gnosis::Entity> m_levelTextEntities;
+        std::vector<Gnosis::Entity> m_unlockButtonEntities;
+        std::vector<Gnosis::Entity> m_requirementTextEntities;
         Gnosis::Entity m_lockedIndicatorEntity; // Single [Locked!] indicator that moves around
         Gnosis::Entity m_levelPlayButtonEntity;
         
@@ -157,7 +162,7 @@ namespace GameCore {
         float m_currentOffsetX;
         // Standard UI font size to match main menu buttons (except the big OPTIONS title)
         // Base button font size (will be scaled by m_uiScale where rendered)
-        float m_buttonFontSize = 18.0f;
+        float m_buttonFontSize = 28.0f;
         // Main menu button scale for sprites (text size is controlled separately)
         float m_menuButtonScale = 10.0f;
         // Global UI text size across menus (mobile target now 88)
@@ -177,6 +182,10 @@ namespace GameCore {
         // Button debouncing for level select arrows
         float m_lastArrowPressTime;
         float m_arrowDebounceDelay;
+
+        // Button debouncing for unlock buttons
+        float m_lastUnlockPressTime;
+        float m_unlockDebounceDelay;
         
         // Font loading state
         bool m_fontLoaded;
