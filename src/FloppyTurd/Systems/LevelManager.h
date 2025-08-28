@@ -33,6 +33,7 @@ namespace GameCore {
         bool LoadLevel(int levelId);
         void UnloadLevel();
         void ResetLevel();
+        void ResetBackgroundPositions();
         bool IsLevelLoaded() const { return m_isLoaded; }
         
         // Current level info

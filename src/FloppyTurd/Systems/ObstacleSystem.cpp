@@ -835,7 +835,7 @@ namespace GameCore {
         hitbox.width = 20.0f;
         hitbox.height = 226.0f; // Fixed height: consistent with other toilet types
         hitbox.offsetX = 0.0f;
-        hitbox.offsetY = isTop ? 25.0f : 55.0f; // Consistent positioning: top=25px, bottom=55px
+        hitbox.offsetY = isTop ? (25.0f - 8.0f * scale) : 55.0f; // Top toilet hitbox moved up by 8px*scale, bottom=55px
         hitbox.isStatic = false;
         hitbox.isTrigger = false;
         hitbox.tag = "obstacle";

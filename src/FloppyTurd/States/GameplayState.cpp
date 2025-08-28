@@ -514,6 +514,16 @@ namespace GameCore {
         m_invulnerabilityTimer = 0.0f;
         m_levelCompleted = false;
 
+        // Reset camera system world position for fresh start
+        if (m_cameraSystem) {
+            m_cameraSystem->ResetForNewGame();
+        }
+
+        // Reset background positions to initial state
+        if (m_levelManager) {
+            m_levelManager->ResetBackgroundPositions();
+        }
+
         
         // Reset spawn timers
         m_obstacleSpawnTimer = 0.0f;
@@ -2512,11 +2522,17 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         // Keep the existing player entity - don't reset to 0
         // m_playerEntity stays the same
         
-        // Reset camera system to ensure proper scroll speed for fresh level
+        // Reset camera system to ensure proper scroll speed and position for fresh level
         if (m_cameraSystem) {
-            // Reset to the level's intended world speed to ensure consistency
+            // Reset both world position and scroll speed for complete reset
+            m_cameraSystem->ResetForNewGame();
             m_cameraSystem->SetWorldScrollSpeed(m_currentLevelConfig.worldSpeed);
             GN_LOG_INFO("Reset camera scroll speed to: " + std::to_string(m_currentLevelConfig.worldSpeed));
+        }
+
+        // Reset background positions to initial state
+        if (m_levelManager) {
+            m_levelManager->ResetBackgroundPositions();
         }
         
         // Reset the existing player entity in place (don't recreate)

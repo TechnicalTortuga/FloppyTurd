@@ -153,109 +153,106 @@ namespace GameCore {
     }
 
     void LevelConfigFactory::AddParkLevelLayers(LevelConfig& config) {
-        // Background layers from back to front using new 1024x512 assets
+        // Background layers from back to front using 1024x512 assets
         // Each layer has different scroll speeds for parallax effect
-        
-        // Match sewer level behavior: 512px tall textures scaled to fill ~2556px iPhone height (~5x)
-        // Our park textures are 1024x512; horizontally repeat, vertically scale ~5x via transform
-        float backgroundScale = 5.0f;  // Approximately 2556/512
-        
+
+        // Consistent scaling: 1024x512 textures scaled to fill iPhone 16 height (2556px)
+        // The LevelManager calculates heightScale = 2556/512 ≈ 5.0 automatically
+        // scaleMultiplier should be 1.0 (no additional scaling needed)
+
         // Back layer - slowest moving (furthest back)
         config.backgroundLayers.emplace_back("Level1BackLayerBackground", 50.0f, 0.1f, 0);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
-        
-        // Mid layer - medium speed
+        config.backgroundLayers.back().repeatWidth = 1024.0f * 5.0f; // 5x scale for 512px -> 2560px
+
+                // Mid layer - medium speed
         config.backgroundLayers.emplace_back("Level1MidLayerBackground", 100.0f, 0.3f, 1);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
-        
+        config.backgroundLayers.back().repeatWidth = 1024.0f * 5.0f; // 5x scale for 512px -> 2560px
+
         // Clouds - independent movement
         config.backgroundLayers.emplace_back("Level1Clouds", 75.0f, 0.2f, 1);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
-        
+        config.backgroundLayers.back().repeatWidth = 1024.0f * 5.0f; // 5x scale for 512px -> 2560px
+
         // Front layer - fastest moving (closest to player, behind game objects)
         config.backgroundLayers.emplace_back("Level1FrontLayerBackground", 150.0f, 0.5f, 2);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
+        config.backgroundLayers.back().repeatWidth = 2048.0f * 5.0f; // 5x scale for 2048px -> 10240px
     }
 
     void LevelConfigFactory::AddSewerLevelLayers(LevelConfig& config) {
-        // Sewer level layers - alternate between four large backgrounds as they wrap
+        // Sewer level layers - alternate between four 512x512 backgrounds as they wrap
         // SewerLarge textures are 512x512; scale to fill screen height (2556px)
-        float backgroundScale = 5.0f;  // Approximately 2556/512
 
         // Single sewer band (512x512 variants cover the whole screen)
+        // IMPORTANT: All sewer variants MUST be exactly 512x512 for proper wrapping
         float sewerScroll = config.worldSpeed * 0.28f; // slow band; Janitor will match this
         config.backgroundLayers.emplace_back("SewerLargeA", sewerScroll, 0.35f, 1);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 512.0f * backgroundScale;
+        // Use exact scaled width for seamless wrapping (512 * 5 = 2560, but actual scale is ~4.99)
+        config.backgroundLayers.back().repeatWidth = 512.0f * 4.99f; // Match actual scaled width: 2554.88px
+        // All sewer variants must be identical size for seamless wrapping
         config.backgroundLayers.back().variantTextureIds = {"SewerLargeA", "SewerLargeB", "SewerLargeC", "SewerLargeD"};
     }
 
     void LevelConfigFactory::AddDesertLevelLayers(LevelConfig& config) {
-        // Level 3 (Desert) background layers using actual asset IDs (1024x512)
-        // Match sewer behavior: scale vertically to ~5x to fill iPhone height, tile horizontally
-        float backgroundScale = 5.0f;  // Approximately 2556/512
+        // Level 3 (Desert) background layers using 1024x512 assets
+        // Scale vertically to fill iPhone height, tile horizontally
 
         // Back layer - slowest
         config.backgroundLayers.emplace_back("Level3BackLayerBackground", 50.0f, 0.1f, 0);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
+        config.backgroundLayers.back().repeatWidth = 1024.0f * 5.0f; // 5x scale for 512px -> 2560px
 
         // Mid layer - medium speed
         config.backgroundLayers.emplace_back("Level3MidLayerBackground", 90.0f, 0.3f, 1);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
+        config.backgroundLayers.back().repeatWidth = 1024.0f * 5.0f; // 5x scale for 512px -> 2560px
 
         // Front layer - fastest (still behind gameplay sprites)
         config.backgroundLayers.emplace_back("Level3FrontLayerBackground", 130.0f, 0.4f, 2);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
+        config.backgroundLayers.back().repeatWidth = 1024.0f * 5.0f; // 5x scale for 512px -> 2560px
     }
 
-    void LevelConfigFactory::AddSnowLevelLayers(LevelConfig& config) {
-        // Snow level layers using new snow level assets
-        float backgroundScale = 2.66f;  // Separate scale for 1024x480 backgrounds
-        
+        void LevelConfigFactory::AddSnowLevelLayers(LevelConfig& config) {
+        // Snow level layers using 1024x512 assets (consistent with other levels)
+
         // Back layer - furthest background
         config.backgroundLayers.emplace_back("SnowLevelBackLayerBackground", 50.0f, 0.1f, 0);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
-        
+        config.backgroundLayers.back().repeatWidth = 1024.0f * 5.0f; // 5x scale for 512px -> 2560px
+
         // Mid layer - mountains and middle ground
         config.backgroundLayers.emplace_back("SnowLevelMidLayerBackground", 75.0f, 0.2f, 1);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
-        
+        config.backgroundLayers.back().repeatWidth = 1024.0f * 5.0f; // 5x scale for 512px -> 2560px
+
         // Front layer - trees and foreground elements (same speed as front trees)
         config.backgroundLayers.emplace_back("SnowLevelFrontLayerBackground", 150.0f, 0.3f, 2);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
-        
+        config.backgroundLayers.back().repeatWidth = 1024.0f * 5.0f; // 5x scale for 512px -> 2560px
+
         // Front trees layer - closest to player (same speed as front background)
         config.backgroundLayers.emplace_back("SnowLevelFrontLayerTrees", 150.0f, 0.5f, 3);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
+        config.backgroundLayers.back().repeatWidth = 1024.0f * 5.0f; // 5x scale for 512px -> 2560px
     }
 
     void LevelConfigFactory::AddCastleLevelLayers(LevelConfig& config) {
-        // Castle level layers - more gothic/dungeon feel
-        // Using new castle assets with proper layering from back to front
-        // Scale to fit iPhone 16 screen height in portrait mode (actual pixels)
-        // iPhone 16 Portrait: 1179×2556 actual pixels
-        float backgroundScale = 5.0f;  // Approximately 2556/512 for 1024x512 assets
-        
+        // Castle level layers using 1024x512 assets
+        // Scale to fill iPhone 16 screen height (2556px)
+
         // Back layer - castle background (all elements scroll at same speed - no parallax)
         config.backgroundLayers.emplace_back("castlebacklayerbackground", 200.0f, 1.0f, 0);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
-        
+        config.backgroundLayers.back().repeatWidth = 1024.0f * 5.0f; // 5x scale for 512px -> 2560px
+
         // Mid layer - curtains (same speed as background - no parallax)
         config.backgroundLayers.emplace_back("curtains", 200.0f, 1.0f, 1);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
-        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
+        config.backgroundLayers.back().repeatWidth = 1024.0f * 5.0f; // 5x scale for 512px -> 2560px
         
         // Note: Paintings, chandeliers, floor torches, and torch pillars are now handled by ObstacleSystem
         // as decorative obstacles rather than background layers to support proper positioning and animation
@@ -264,12 +261,11 @@ namespace GameCore {
     void LevelConfigFactory::AddBossLevelLayers(LevelConfig& config) {
         // Boss level uses enhanced castle layers
         AddCastleLevelLayers(config);
-        
+
         // Add dramatic boss-specific elements
-        float backgroundScale = 5.0f;  // Use same scale as castle level for consistency
         config.backgroundLayers.emplace_back("BossBackground", 30.0f, 0.05f, 0);
-        config.backgroundLayers.back().scaleMultiplier = 1.2f; // Slightly larger for dramatic effect
-        config.backgroundLayers.back().repeatWidth = 1024.0f * backgroundScale;
+        config.backgroundLayers.back().scaleMultiplier = 1.0f; // Use consistent scaling
+        config.backgroundLayers.back().repeatWidth = 1024.0f * 5.0f; // 5x scale for 512px -> 2560px
     }
 
     // OBSTACLE CONFIGURATIONS

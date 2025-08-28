@@ -26,6 +26,7 @@ namespace GameCore {
         void SetMainCamera(Gnosis::Entity cameraEntity);
         void UpdateWorldScrolling(float deltaTime);
         void UpdateParallaxLayers(float deltaTime);
+        void ResetForNewGame();
 
         // Getters
         Gnosis::Entity GetMainCamera() const { return m_mainCamera; }

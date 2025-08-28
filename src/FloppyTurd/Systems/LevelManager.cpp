@@ -157,12 +157,52 @@ namespace GameCore {
         if (!m_isLoaded) {
             return;
         }
-        
+
         int levelId = m_currentLevelId;
         UnloadLevel();
         LoadLevel(levelId);
-        
+
         GN_LOG_INFO("Level " + std::to_string(levelId) + " reset");
+    }
+
+    void LevelManager::ResetBackgroundPositions() {
+        if (!m_isLoaded) {
+            return;
+        }
+
+        // Reset all parallax background positions to their initial state
+        auto parallaxEntities = m_ecsSystem->GetEntitiesWithComponents<Transform, Sprite, Parallax, ParallaxInstance>();
+        int resetCount = 0;
+
+        for (Gnosis::Entity entity : parallaxEntities) {
+            auto transform = m_ecsSystem->GetComponent<Transform>(entity);
+            auto instance = m_ecsSystem->GetComponent<ParallaxInstance>(entity);
+            auto sprite = m_ecsSystem->GetComponent<Sprite>(entity);
+
+            if (transform && instance && sprite && instance->textureWidth > 0.0f) {
+                // Reset to initial pixel-perfect position based on instance index
+                // Use the same calculation as in CreateBackgroundLayers
+                int pixelScaledWidth = static_cast<int>(std::round(instance->textureWidth));
+                int pixelX = instance->instanceIndex * pixelScaledWidth;
+
+                // Ensure pixel-perfect positioning with no sub-pixel artifacts
+                transform->position.x = static_cast<float>(pixelX);
+                transform->position.y = 0.0f; // Reset Y position as well (exact pixel boundary)
+
+                // Also reset to initial texture variant if this is a sewer level
+                if (sprite->textureId.find("Sewer") != std::string::npos && instance->instanceIndex == 0) {
+                    sprite->textureId = "SewerLargeA"; // Reset to first variant
+                }
+
+                resetCount++;
+                GN_LOG_INFO("Reset background entity " + std::to_string(entity) +
+                           " (instance " + std::to_string(instance->instanceIndex) + ") to x=" +
+                           std::to_string(transform->position.x));
+            }
+        }
+
+        GN_LOG_INFO("Background positions reset for level " + std::to_string(m_currentLevelId) +
+                   " - reset " + std::to_string(resetCount) + " entities");
     }
 
     std::string LevelManager::GetCurrentLevelName() const {
@@ -811,17 +851,32 @@ namespace GameCore {
                 }
             }
             if (tw <= 0 || th <= 0) {
-                // Default texture dimensions based on level type
-                // Sewer levels use 512x512, all other levels use 1024x512
-                bool isSewerLevel = (layerConfig.textureId.find("Sewer") != std::string::npos);
-                if (isSewerLevel) {
-                    tw = 512; th = 512;
-                    GN_LOG_WARN(std::string("getTextureMetadata failed for '") + layerConfig.textureId +
-                                "' via renderer and asset delegates; defaulting to sewer size 512x512");
+                // Default texture dimensions based on specific texture names
+                // Handle special cases first, then fall back to general rules
+                // Handle Park level (Level 1) backgrounds with proper dimensions
+                if (layerConfig.textureId.find("Level1") != std::string::npos) {
+                    if (layerConfig.textureId == "Level1FrontLayerBackground") {
+                        tw = 2048; th = 512; // Park front layer is 2048x512
+                        GN_LOG_WARN(std::string("getTextureMetadata failed for '") + layerConfig.textureId +
+                                    "' via renderer and asset delegates; defaulting to park front layer size 2048x512");
+                    } else {
+                        // Park back and mid layers should be 1024x512 to match scaling
+                        tw = 1024; th = 512;
+                        GN_LOG_WARN(std::string("getTextureMetadata failed for '") + layerConfig.textureId +
+                                    "' via renderer and asset delegates; defaulting to park layer size 1024x512");
+                    }
                 } else {
-                    tw = 1024; th = 512;
-                    GN_LOG_WARN(std::string("getTextureMetadata failed for '") + layerConfig.textureId +
-                                "' via renderer and asset delegates; defaulting to standard size 1024x512");
+                    // General fallback: Sewer levels use 512x512, all other levels use 1024x512
+                    bool isSewerLevel = (layerConfig.textureId.find("Sewer") != std::string::npos);
+                    if (isSewerLevel) {
+                        tw = 512; th = 512;
+                        GN_LOG_WARN(std::string("getTextureMetadata failed for '") + layerConfig.textureId +
+                                    "' via renderer and asset delegates; defaulting to sewer size 512x512");
+                    } else {
+                        tw = 1024; th = 512;
+                        GN_LOG_WARN(std::string("getTextureMetadata failed for '") + layerConfig.textureId +
+                                    "' via renderer and asset delegates; defaulting to standard size 1024x512");
+                    }
                 }
             }
             float textureWidth = static_cast<float>(tw);
@@ -829,27 +884,42 @@ namespace GameCore {
             
             // Scale to fit iPhone 16 screen height in portrait mode (actual pixels)
             // iPhone 16 Portrait: 1179×2556 actual pixels
-            float screenHeight = 2556.0f; // iPhone 16 portrait pixel height
+            const float screenHeight = 2556.0f; // iPhone 16 portrait pixel height
             float heightScale = screenHeight / textureHeight; // Scale to fill screen height
             float finalScale = heightScale * layerConfig.scaleMultiplier;
-            
-            GN_LOG_INFO("Texture '" + layerConfig.textureId + "': width=" + std::to_string(textureWidth) + 
-                       ", height=" + std::to_string(textureHeight) + 
-                       ", heightScale=" + std::to_string(heightScale) + 
+
+            // Ensure pixel-perfect scaling by rounding to prevent sub-pixel artifacts
+            finalScale = std::round(finalScale * 100.0f) / 100.0f; // Round to 2 decimal places for precision
+
+            GN_LOG_INFO("Texture '" + layerConfig.textureId + "': width=" + std::to_string(textureWidth) +
+                       ", height=" + std::to_string(textureHeight) +
+                       ", heightScale=" + std::to_string(heightScale) +
                        ", scaleMultiplier=" + std::to_string(layerConfig.scaleMultiplier) +
-                       ", finalScale=" + std::to_string(finalScale));
-            
+                       ", finalScale=" + std::to_string(finalScale) + " (pixel-perfect)");
+
             // Scaled dimensions (actual rendered size after Transform scaling)
-            float scaledWidth = textureWidth * finalScale;
-            float scaledHeight = textureHeight * finalScale;
+            // Use pixel-perfect calculations to prevent gaps and artifacts
+            float scaledWidth = std::round(textureWidth * finalScale);
+            float scaledHeight = std::round(textureHeight * finalScale);
             
             // Calculate number of instances needed for seamless wrapping
             // Use screen width + 2 extra instances for smooth scrolling
             float screenWidth = 1179.0f; // iPhone 16 portrait pixel width
             int numInstances = static_cast<int>(std::ceil(screenWidth / scaledWidth)) + 2;
-            
+
             // Ensure minimum of 3 instances for proper wrapping
             numInstances = std::max(numInstances, 3);
+
+            // Special handling for Sewer level - create optimal instance count
+            bool isSewerLevel = (layerConfig.textureId.find("Sewer") != std::string::npos);
+            if (isSewerLevel) {
+                // Create 6 instances for Sewer level (enough for seamless wrapping)
+                // This gives us 6 * 2555px = ~15,330px coverage with proper overlap
+                numInstances = 6;
+                GN_LOG_INFO("🚽 SEWER LEVEL: Using " + std::to_string(numInstances) +
+                           " instances for seamless wrapping (coverage: " +
+                           std::to_string(numInstances * static_cast<int>(scaledWidth)) + "px)");
+            }
             
             GN_LOG_INFO("Layer calculations: textureWidth=" + std::to_string(textureWidth) + 
                        ", finalScale=" + std::to_string(finalScale) + 
@@ -860,30 +930,46 @@ namespace GameCore {
             float repeatWidth = layerConfig.repeatWidth > 0 ? layerConfig.repeatWidth : scaledWidth;
             
             // For initial positioning, we want instances to be placed touching each other
-            // Use the actual scaled texture width for positioning
-            float positionSpacing = scaledWidth;
-            
+            // Use pure integer arithmetic to prevent any floating point precision issues
+            int pixelScaledWidth = static_cast<int>(std::round(scaledWidth));
+
+            // Special debug logging for Sewer level
+            if (isSewerLevel) {
+                GN_LOG_INFO("🚽 SEWER BACKGROUND: texture='" + layerConfig.textureId + "' textureWidth=" +
+                           std::to_string(textureWidth) + " scaledWidth=" + std::to_string(scaledWidth) +
+                           " pixelScaledWidth=" + std::to_string(pixelScaledWidth) +
+                           " screenWidth=" + std::to_string(screenWidth) +
+                           " numInstances=" + std::to_string(numInstances));
+            }
+
             int layerEntitiesCreated = 0;
-            
+
             // Create multiple instances for this layer
             for (int i = 0; i < numInstances; i++) {
                 GN_LOG_INFO("Creating instance " + std::to_string(i) + " of " + std::to_string(numInstances));
-                
+
                 Gnosis::Entity bgEntity = m_ecsSystem->CreateEntity();
                 if (bgEntity == 0) {
                     GN_LOG_ERROR("Failed to create entity for instance " + std::to_string(i));
                     continue;
                 }
-                
+
                 GN_LOG_INFO("Successfully created entity " + std::to_string(bgEntity) + " for instance " + std::to_string(i));
-                
-                // Position instances side by side for seamless wrapping
-                // Start first instance at x=0, others follow consecutively using texture width
-                float xPos = i * positionSpacing;
+
+                // Position instances using pure integer arithmetic for pixel-perfect alignment
+                // Each instance is placed exactly adjacent to the previous one
+                int pixelX = i * pixelScaledWidth;
+                float xPos = static_cast<float>(pixelX);
                 float yPos = 0.0f; // Position at top of screen for top-left rendering
-                
-                GN_LOG_INFO("Positioning entity " + std::to_string(bgEntity) + " at (" + std::to_string(xPos) + ", " + std::to_string(yPos) + ")");
-                
+
+                if (isSewerLevel) {
+                    GN_LOG_INFO("🚽 SEWER INSTANCE " + std::to_string(i) + "/" + std::to_string(numInstances) +
+                               ": entity=" + std::to_string(bgEntity) + " xPos=" + std::to_string(xPos) +
+                               " pixelX=" + std::to_string(pixelX) + " pixelScaledWidth=" + std::to_string(pixelScaledWidth));
+                } else {
+                    GN_LOG_INFO("Positioning entity " + std::to_string(bgEntity) + " at pixel-perfect (" + std::to_string(xPos) + ", " + std::to_string(yPos) + ") - instance " + std::to_string(i) + " of " + std::to_string(pixelScaledWidth) + "px width");
+                }
+
                 // Create and add Transform component
                 // Apply the final scaling through Transform component
                 Transform bgTransform(Gnosis::GNVector2(xPos, yPos), 0.0f, Gnosis::GNVector2(finalScale, finalScale));
@@ -924,11 +1010,11 @@ namespace GameCore {
                 layerEntitiesCreated++;
                 totalEntitiesCreated++;
                 
-                GN_LOG_INFO("✓ Successfully created background layer '" + layerConfig.textureId + 
+                GN_LOG_INFO("✓ Successfully created background layer '" + layerConfig.textureId +
                            "' instance " + std::to_string(i) + " (entity " + std::to_string(bgEntity) + ")" +
                            " at (" + std::to_string(xPos) + ", " + std::to_string(yPos) + ")" +
                            " with scale " + std::to_string(finalScale) +
-                           " positionSpacing " + std::to_string(positionSpacing) +
+                           " pixelScaledWidth " + std::to_string(pixelScaledWidth) +
                            " repeatWidth " + std::to_string(repeatWidth) +
                            " scaledWidth " + std::to_string(scaledWidth) +
                            " on render layer " + std::to_string(layerConfig.renderLayer));

@@ -989,13 +989,21 @@ public class MetalRenderer {
         let spriteWidth = sourceWidth * scaleX
         let spriteHeight = sourceHeight * scaleY
         
-        // Calculate UV coordinates for the source rectangle
+        // Calculate pixel-perfect UV coordinates for the source rectangle
+        // This prevents bleeding artifacts between adjacent textures in atlas
         let textureWidth = Float(texture.width)
         let textureHeight = Float(texture.height)
-        let u0 = sourceX / textureWidth
-        let v0 = sourceY / textureHeight
-        let u1 = (sourceX + sourceWidth) / textureWidth
-        let v1 = (sourceY + sourceHeight) / textureHeight
+
+        // For pixel-perfect rendering, we need UV coordinates to align exactly with texel centers
+        // Use half-pixel offset to ensure proper sampling
+        let halfPixelU = 0.5 / textureWidth
+        let halfPixelV = 0.5 / textureHeight
+
+        // Calculate UV coordinates that align to texel centers
+        let u0 = max(0.0, min(1.0, (sourceX / textureWidth) + halfPixelU))
+        let v0 = max(0.0, min(1.0, (sourceY / textureHeight) + halfPixelV))
+        let u1 = max(0.0, min(1.0, ((sourceX + sourceWidth) / textureWidth) - halfPixelU))
+        let v1 = max(0.0, min(1.0, ((sourceY + sourceHeight) / textureHeight) - halfPixelV))
         
         log("🖼️ Drawing sprite with source rect: texture \(textureHandle), source (\(sourceX),\(sourceY),\(sourceWidth)x\(sourceHeight)), UV (\(u0),\(v0)) to (\(u1),\(v1)), screen \(spriteWidth)x\(spriteHeight), pos (\(x),\(y))", level: .debug)
         

@@ -61,7 +61,7 @@ namespace GameCore {
         // Add Hitbox component (circle)
         FloppyTurd::Hitbox hitbox;
         hitbox.type = FloppyTurd::ColliderType::Circle;
-        hitbox.radius = 16.0f; // Legacy radius pre-scaling; adjust if needed
+        hitbox.radius = 14.0f; // Reduced by 2px from legacy radius of 16.0f
         hitbox.isTrigger = false;
         m_ecsSystem->AddComponent<FloppyTurd::Hitbox>(m_entity, hitbox);
         
