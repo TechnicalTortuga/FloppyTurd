@@ -15,6 +15,7 @@
 #include "../Systems/EnemySystem.h"
 #include "../Systems/UISystem.h"
 #include "../Systems/HeartSystem.h"
+#include "../Systems/ProjectileSystem.h"
 #include "../Config/LevelConfig.h"
 #include <memory>
 #include <vector>
@@ -93,6 +94,7 @@ namespace GameCore {
         std::unique_ptr<PickupSystem> m_pickupSystem;
         std::unique_ptr<EnemySystem> m_enemySystem;
         std::unique_ptr<HeartSystem> m_heartSystem;
+        std::unique_ptr<ProjectileSystem> m_projectileSystem;
 
         // Level configuration
         int m_currentLevelId;
@@ -104,7 +106,7 @@ namespace GameCore {
         std::vector<Gnosis::Entity> m_backgroundEntities;
         std::vector<Gnosis::Entity> m_obstacles;
         // Moved to PickupSystem: m_pickups, m_pickupIndex
-        std::vector<Gnosis::Entity> m_projectiles;
+        // Projectiles now managed by ProjectileSystem: m_projectiles
         std::vector<Gnosis::Entity> m_enemies;
         
         // Moved to PickupSystem: m_groupCoins

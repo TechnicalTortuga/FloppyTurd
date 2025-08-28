@@ -78,9 +78,8 @@ namespace GameCore {
         std::vector<Gnosis::Entity> GetActiveNPCs() const { return m_activeNPCs; }
         void InitializeNPCPool();
         // REMOVED: SpawnPickupGroup, RerollPickupGroupInPlace - moved to GameplayState
-        void InitializeProjectilePool();
-        // REMOVED: UpdatePickupPooling - now handled by GameplayState
-        void UpdateProjectilePooling(float deltaTime, float worldScrollDistance);
+        void OnProjectileSystemReady(); // Called when ProjectileSystem is initialized
+        // REMOVED: InitializeProjectilePool/UpdateProjectilePooling - now handled by ProjectileSystem
         
         // Cleanup
         void CleanupOffscreenEntities(float leftBoundary);
@@ -118,7 +117,7 @@ namespace GameCore {
         
         // Entity tracking
         std::vector<Gnosis::Entity> m_activeEnemies;
-        std::vector<Gnosis::Entity> m_projectilePool;
+        // REMOVED: m_projectilePool - now handled by ProjectileSystem
         std::vector<Gnosis::Entity> m_activeNPCs;
         std::vector<Gnosis::Entity> m_backgroundEntities;
         Gnosis::Entity m_playerEntity = 0;
@@ -132,7 +131,7 @@ namespace GameCore {
         float m_enemySpacing = 450.0f; // Horizontal spacing used when wrapping enemy pool
         bool m_enemyPoolInitialized = false;
         bool m_npcPoolInitialized = false;
-        bool m_projectilePoolInitialized = false;
+        // REMOVED: m_projectilePoolInitialized - projectile pooling now handled by ProjectileSystem
         // REMOVED: m_attachCoinsToGroups - coin attachment moved to GameplayState
         
         // Spawn positions

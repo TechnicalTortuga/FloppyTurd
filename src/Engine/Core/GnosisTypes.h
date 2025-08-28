@@ -235,7 +235,8 @@ namespace Gnosis {
         SPIKEBALL,
         BOSS,
         BIRD,
-        TOILET_PAPER
+        TOILET_PAPER,
+        RAT_KING
     };
     
     enum class HatType {
@@ -250,7 +251,8 @@ namespace Gnosis {
     enum class ProjectileType {
         TOILET_PAPER,
         SNOWBALL,
-        POOP_BALL
+        POOP_BALL,
+        LARGE_POOP_BALL  // For big turd form
     };
     
     enum class PlayerState {

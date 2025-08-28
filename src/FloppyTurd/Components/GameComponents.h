@@ -425,6 +425,12 @@ namespace GameCore {
         {}
     };
     
+    // Using Gnosis types to avoid tedious namespace prefixes
+using Gnosis::ProjectileType;
+using Gnosis::GNVector2;
+using Gnosis::GNColor;
+using Gnosis::Entity;
+
     /**
      * Projectile component - projectile behavior
      */
@@ -435,13 +441,21 @@ namespace GameCore {
         float currentLifetime;
         std::string ownerTag;
         bool piercing;
-        
+
         // Enemy projectile specific properties
         bool isEnemyProjectile;
         Gnosis::GNVector2 direction;
         float gravity;
         bool affectedByGravity;
-        
+
+        // Pool management and sprite properties
+        ProjectileType projectileType;
+        bool isActive;
+        GNVector2 spawnPosition;
+        std::string spriteAssetName;
+
+        // Animation is handled by SpriteSystem
+
         Projectile()
             : damage(1)
             , speed(300.0f)
@@ -449,9 +463,12 @@ namespace GameCore {
             , currentLifetime(0.0f)
             , piercing(false)
             , isEnemyProjectile(false)
-            , direction(0.0f, 0.0f)
+            , direction(GNVector2(0.0f, 0.0f))
             , gravity(0.0f)
             , affectedByGravity(false)
+            , projectileType(ProjectileType::POOP_BALL)
+            , isActive(false)
+            , spawnPosition(GNVector2(0.0f, 0.0f))
         {}
     };
     

@@ -2,11 +2,18 @@
 #include <cmath>
 #include <algorithm>
 
+// Use shorter type names
+using Gnosis::ECS;
+using Gnosis::EnemyType;
+using GameCore::Entity;
+using GameCore::GNVector2;
+
 namespace GameCore {
 
-EnemySystem::EnemySystem(Gnosis::ECS* ecsSystem, LevelManager* levelManager)
+EnemySystem::EnemySystem(ECS* ecsSystem, LevelManager* levelManager, ProjectileSystem* projectileSystem)
     : m_ecsSystem(ecsSystem)
     , m_levelManager(levelManager)
+    , m_projectileSystem(projectileSystem)
     , m_time(0.0f) {}
 
 void EnemySystem::Update(float deltaTime) {
@@ -17,17 +24,13 @@ void EnemySystem::Update(float deltaTime) {
     UpdateEnemyStates(deltaTime);
     UpdateEnemyMovement(deltaTime);
     UpdateEnemyAnimations(deltaTime);
-    
-    // Update enemy projectiles
-    UpdateEnemyProjectiles(deltaTime);
-    
-    // Clean up expired projectiles
-    CleanupProjectiles();
+
+    // Projectile management is now handled by ProjectileSystem
 }
 
 void EnemySystem::UpdateEnemyStates(float deltaTime) {
     const auto enemies = m_levelManager->GetActiveEnemies();
-    for (Gnosis::Entity e : enemies) {
+    for (Entity e : enemies) {
         Transform* transform = m_ecsSystem->GetComponent<Transform>(e);
         Enemy* enemy = m_ecsSystem->GetComponent<Enemy>(e);
         if (!transform || !enemy || !enemy->isActive) continue;
@@ -71,7 +74,7 @@ void EnemySystem::UpdateEnemyStates(float deltaTime) {
 
 void EnemySystem::UpdateEnemyMovement(float deltaTime) {
     const auto enemies = m_levelManager->GetActiveEnemies();
-    for (Gnosis::Entity e : enemies) {
+    for (Entity e : enemies) {
         Transform* transform = m_ecsSystem->GetComponent<Transform>(e);
         Enemy* enemy = m_ecsSystem->GetComponent<Enemy>(e);
         if (!transform || !enemy || !enemy->isActive) continue;
@@ -110,7 +113,7 @@ void EnemySystem::UpdateEnemyMovement(float deltaTime) {
 
 void EnemySystem::UpdateEnemyAnimations(float deltaTime) {
     const auto enemies = m_levelManager->GetActiveEnemies();
-    for (Gnosis::Entity e : enemies) {
+    for (Entity e : enemies) {
         Transform* transform = m_ecsSystem->GetComponent<Transform>(e);
         Enemy* enemy = m_ecsSystem->GetComponent<Enemy>(e);
         if (!transform || !enemy || !enemy->isActive) continue;
@@ -145,7 +148,7 @@ void EnemySystem::UpdateEnemyAnimations(float deltaTime) {
     }
 }
 
-void EnemySystem::UpdateSnowmanThrower(float deltaTime, Gnosis::Entity enemy, Enemy* enemyComp, Transform* transform) {
+void EnemySystem::UpdateSnowmanThrower(float deltaTime, Entity enemy, Enemy* enemyComp, Transform* transform) {
     // Check if enemy is on screen
     bool wasOnScreen = enemyComp->isOnScreen;
     enemyComp->isOnScreen = IsEnemyOnScreen(transform);
@@ -161,7 +164,7 @@ void EnemySystem::UpdateSnowmanThrower(float deltaTime, Gnosis::Entity enemy, En
         bool playerInRange = false;
         if (m_levelManager) {
             // Get the actual player entity from LevelManager
-            Gnosis::Entity playerEntity = m_levelManager->GetPlayerEntity();
+            Entity playerEntity = m_levelManager->GetPlayerEntity();
             if (playerEntity != 0) {
                 Transform* playerTransform = m_ecsSystem->GetComponent<Transform>(playerEntity);
                 if (playerTransform) {
@@ -265,106 +268,58 @@ void EnemySystem::ChangeEnemyState(Enemy* enemy, EnemyState newState, float dura
     enemy->stateDuration = duration;
 }
 
-void EnemySystem::SpawnEnemyProjectile(Gnosis::Entity enemy, const Enemy* enemyComp, const Transform* transform) {
-    // Create snowball projectile
-    Gnosis::Entity projectile = m_ecsSystem->CreateEntity();
-    
-    // Add projectile component
-    Projectile projComp;
-    projComp.damage = enemyComp->damage;
-    projComp.speed = 200.0f; // Snowball speed
-    projComp.lifetime = 5.0f;
-    projComp.isEnemyProjectile = true;
-    projComp.affectedByGravity = true;
-    projComp.gravity = 200.0f; // Snowball falls with gravity
-    
-    // Calculate direction towards player (simplified - can be enhanced)
-    projComp.direction = Gnosis::GNVector2(-1.0f, -0.3f); // Left and slightly down
-    
-    m_ecsSystem->AddComponent<Projectile>(projectile, projComp);
-    
-    // Add transform component
-    Transform projTransform;
-    projTransform.position = transform->position;
-    projTransform.position.x -= 30.0f; // Offset from enemy
-    projTransform.position.y += 20.0f; // Launch from upper body area
-    
-    m_ecsSystem->AddComponent<Transform>(projectile, projTransform);
-    
-    // Add sprite component for snowball with proper animation
-    Sprite projSprite;
-    projSprite.textureId = "Snowball"; // Use existing snowball texture
-    projSprite.width = 32.0f;
-    projSprite.height = 32.0f;
-    projSprite.layer = 5; // Above background, below UI
-    projSprite.isAnimated = true;
-    projSprite.frameWidth = 32;  // 32x32 frame size
-    projSprite.frameHeight = 32;
-    projSprite.frameCount = 4; // 4-frame snowball animation
-    projSprite.currentFrame = 0;
-    projSprite.frameTime = 0.1f; // 0.1 seconds per frame
-    projSprite.playing = true;
-    projSprite.loop = true;
-    
-    m_ecsSystem->AddComponent<Sprite>(projectile, projSprite);
-    
-    // Add physics component for movement
-    Physics projPhysics;
-    projPhysics.velocity = projComp.direction * projComp.speed;
-    projPhysics.useGravity = projComp.affectedByGravity;
-    
-    m_ecsSystem->AddComponent<Physics>(projectile, projPhysics);
-    
-    // Store projectile reference
-    m_enemyProjectiles.push_back(projectile);
-}
+void EnemySystem::SpawnEnemyProjectile(Entity enemy, const Enemy* enemyComp, const Transform* transform) {
+    if (!m_projectileSystem) {
+        GN_LOG_WARN("Cannot spawn enemy projectile - ProjectileSystem not available");
+        return;
+    }
 
-void EnemySystem::UpdateEnemyProjectiles(float deltaTime) {
-    for (auto it = m_enemyProjectiles.begin(); it != m_enemyProjectiles.end(); ++it) {
-        Gnosis::Entity projectile = *it;
-        
-        Transform* transform = m_ecsSystem->GetComponent<Transform>(projectile);
-        Projectile* projComp = m_ecsSystem->GetComponent<Projectile>(projectile);
-        Physics* physics = m_ecsSystem->GetComponent<Physics>(projectile);
-        
-        if (!transform || !projComp || !physics) continue;
-        
-        // Update lifetime
-        projComp->currentLifetime += deltaTime;
-        if (projComp->currentLifetime >= projComp->lifetime) {
-            // Mark for cleanup
-            m_ecsSystem->DestroyEntity(projectile);
-            continue;
-        }
-        
-        // Apply gravity if enabled
-        if (projComp->affectedByGravity) {
-            physics->velocity.y += projComp->gravity * deltaTime;
-        }
-        
-        // Update position
-        transform->position += physics->velocity * deltaTime;
-        
-        // Check if projectile is off screen
-        // Use proper screen bounds for iPhone 16 (1179x2556)
-        if (transform->position.x < -100.0f || transform->position.x > 1279.0f || 
-            transform->position.y < -100.0f || transform->position.y > 2656.0f) {
-            // Mark for cleanup
-            m_ecsSystem->DestroyEntity(projectile);
-            continue;
-        }
+    // Determine projectile type based on enemy movement pattern
+    ProjectileType projectileType;
+    if (enemyComp->movementPattern == "snowman_thrower") {
+        projectileType = ProjectileType::SNOWBALL;
+    } else if (enemyComp->movementPattern == "rat_king") {
+        projectileType = ProjectileType::TOILET_PAPER;
+    } else {
+        // Other enemy types don't spawn projectiles
+        return;
+    }
+
+    // Calculate spawn position (offset from enemy)
+    GNVector2 spawnPosition = transform->position;
+    spawnPosition.x -= 30.0f; // Offset from enemy
+    spawnPosition.y += 20.0f; // Launch from upper body area
+
+    // Calculate projectile direction (towards player, simplified)
+    GNVector2 direction(-1.0f, -0.3f); // Left and slightly down
+
+    // Spawn projectile using the ProjectileSystem
+    Entity projectileEntity = m_projectileSystem->SpawnEnemyProjectile(
+        spawnPosition,
+        direction,
+        projectileType,
+        enemyComp->damage
+    );
+
+    if (projectileEntity != 0) {
+        GN_LOG_INFO("Enemy %d spawned projectile entity: %d at position (%.1f, %.1f)",
+                   enemy, projectileEntity, spawnPosition.x, spawnPosition.y);
+    } else {
+        GN_LOG_WARN("Failed to spawn enemy projectile - no available projectiles in pool");
     }
 }
 
+void EnemySystem::UpdateEnemyProjectiles(float deltaTime) {
+    // Projectile updating is now handled by ProjectileSystem
+    // This method is kept for compatibility but does nothing
+}
+
 void EnemySystem::CleanupProjectiles() {
-    // Remove destroyed projectiles from our list
-    m_enemyProjectiles.erase(
-        std::remove_if(m_enemyProjectiles.begin(), m_enemyProjectiles.end(),
-            [this](Gnosis::Entity entity) {
-                return !m_ecsSystem->IsEntityValid(entity);
-            }),
-        m_enemyProjectiles.end()
-    );
+    // Projectile cleanup is now handled by ProjectileSystem
+    // This method is kept for compatibility but does nothing
+
+    // Clear our projectile tracking list since we no longer manage projectiles directly
+    m_enemyProjectiles.clear();
 }
 
 void EnemySystem::InitializeEnemyBehavior(Enemy* enemy, const std::string& movementPattern) {
@@ -443,7 +398,7 @@ void EnemySystem::GroundEnemy(Enemy* enemy, Transform* transform) {
     if (m_ecsSystem) {
         // Find the entity that has this transform to get its sprite
         const auto enemies = m_levelManager->GetActiveEnemies();
-        for (Gnosis::Entity e : enemies) {
+        for (Entity e : enemies) {
             Transform* enemyTransform = m_ecsSystem->GetComponent<Transform>(e);
             if (enemyTransform == transform) {
                 Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(e);

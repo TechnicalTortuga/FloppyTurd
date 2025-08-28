@@ -105,7 +105,7 @@ namespace GameCore {
         // Initialize other entity pools
         m_enemyPoolInitialized = false;
         m_npcPoolInitialized = false;
-        m_projectilePoolInitialized = false;
+        // Projectile system initialization is now handled by GameplayState
         
         GN_LOG_INFO("Initializing enemy pool for level " + std::to_string(levelId));
         InitializeEnemyPool();
@@ -115,9 +115,8 @@ namespace GameCore {
         InitializeNPCPool();
         GN_LOG_INFO("NPC pool initialized for level " + std::to_string(levelId));
         
-        GN_LOG_INFO("Initializing projectile pool for level " + std::to_string(levelId));
-        InitializeProjectilePool();
-        GN_LOG_INFO("Projectile pool initialized for level " + std::to_string(levelId));
+        GN_LOG_INFO("Projectile system ready for level " + std::to_string(levelId));
+        // ProjectileSystem is now initialized separately in GameplayState
         
         // Pickups and projectiles are pooled but may be empty until used
         GN_LOG_INFO("Level " + std::to_string(levelId) + " (" + m_currentLevelConfig.levelName + ") loaded successfully");
@@ -146,7 +145,7 @@ namespace GameCore {
         m_currentLevelConfig = LevelConfig(0, "");
         m_enemyPoolInitialized = false;
         m_npcPoolInitialized = false;
-        m_projectilePoolInitialized = false;
+        // Projectile system initialization is now handled by GameplayState
         m_enemySpawnTimer = 0.0f;
         m_npcSpawnTimer = 0.0f;
         m_lastEnemyX = 0.0f;
@@ -355,17 +354,10 @@ namespace GameCore {
     // Pickups now handled in GameplayState; no pickup pool
     // void LevelManager::InitializePickupPool() {}
 
-    void LevelManager::InitializeProjectilePool() {
-        if (m_projectilePoolInitialized) return;
-        // Player projectiles pool (if/when used)
-        // We will allocate placeholders when first shot to avoid cold-start allocation hiccup
-        m_projectilePoolInitialized = true;
-    }
-
-
-    void LevelManager::UpdateProjectilePooling(float, float) {
-        if (!m_projectilePoolInitialized) return;
-        // Projectiles will be recycled by PlayerController when lifetime expires; nothing to do here yet
+    void LevelManager::OnProjectileSystemReady() {
+        GN_LOG_INFO("LevelManager notified that ProjectileSystem is ready");
+        // ProjectileSystem handles all projectile pooling and management
+        // LevelManager no longer needs to manage projectile pools directly
     }
 
     void LevelManager::UpdateEnemyPooling(float, float worldScrollDistance) {

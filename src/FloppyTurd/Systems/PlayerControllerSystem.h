@@ -5,6 +5,7 @@
 #include "../Components/GameComponents.h"
 #include "../../Engine/Platform/PlatformDelegates.h"
 #include "SpriteSystem.h"
+#include "ProjectileSystem.h"
 #include <memory>
 
 namespace GameCore {
@@ -32,7 +33,7 @@ namespace GameCore {
      */
     class PlayerControllerSystem {
     public:
-        PlayerControllerSystem(Gnosis::ECS* ecsSystem, GameCore::PlatformDelegates* platformDelegates, SpriteSystem* spriteSystem);
+        PlayerControllerSystem(Gnosis::ECS* ecsSystem, GameCore::PlatformDelegates* platformDelegates, SpriteSystem* spriteSystem, ProjectileSystem* projectileSystem);
         ~PlayerControllerSystem();
 
         // Main update method
@@ -63,6 +64,9 @@ namespace GameCore {
         void PlayShootAnimation();
         void PlayHurtAnimation();
 
+        // Input delay management
+        void ResetInputDelay(float delaySeconds = 0.4f);
+
     private:
         // Constants
         static constexpr float PLAYER_X_POSITION = 300.0f;  // Configurable player X position for optimal gameplay visibility
@@ -71,6 +75,7 @@ namespace GameCore {
         Gnosis::ECS* m_ecsSystem;
         GameCore::PlatformDelegates* m_platformDelegates;
         SpriteSystem* m_spriteSystem;
+        ProjectileSystem* m_projectileSystem;
         
         Gnosis::Entity m_playerEntity;
         bool m_playerAlive;
@@ -80,6 +85,7 @@ namespace GameCore {
         bool m_shootPressed;
         float m_jumpCooldown;
         float m_shootCooldown;
+        float m_inputDelayTimer; // Prevents accidental shooting at game start
         
         // Touch state tracking to prevent input cascading
         bool m_touchActive;

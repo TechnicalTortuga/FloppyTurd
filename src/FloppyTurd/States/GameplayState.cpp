@@ -69,6 +69,11 @@ namespace GameCore {
         m_finished = false;
         m_levelCompleted = false;
 
+        // Reset player input delay to prevent accidental shooting at game start
+        if (m_playerControllerSystem) {
+            m_playerControllerSystem->ResetInputDelay(0.4f);
+        }
+
         
         // Reset spawn timers
         m_obstacleSpawnTimer = 0.0f;
@@ -183,9 +188,12 @@ namespace GameCore {
         if (m_pickupSystem) {
             m_pickupSystem->Update(deltaTime);
         }
-        
 
-        
+        // Update projectiles via ProjectileSystem
+        if (m_projectileSystem) {
+            m_projectileSystem->Update(deltaTime);
+        }
+
         // Update pipe counter UI
         UpdatePipeCounterUI();
         UpdateCoinCounterUI();
@@ -561,9 +569,18 @@ namespace GameCore {
         
         // Create sprite system
         m_spriteSystem = std::make_unique<SpriteSystem>(m_ecsSystem, *m_platformDelegates);
-        
+
+        // Create projectile system
+        m_projectileSystem = std::make_unique<ProjectileSystem>(m_ecsSystem);
+        m_projectileSystem->Initialize();
+
+        // Notify LevelManager that ProjectileSystem is ready
+        if (m_levelManager) {
+            m_levelManager->OnProjectileSystemReady();
+        }
+
         // Create player controller system
-        m_playerControllerSystem = std::make_unique<PlayerControllerSystem>(m_ecsSystem, m_platformDelegates, m_spriteSystem.get());
+        m_playerControllerSystem = std::make_unique<PlayerControllerSystem>(m_ecsSystem, m_platformDelegates, m_spriteSystem.get(), m_projectileSystem.get());
         
         // Create camera system
         m_cameraSystem = std::make_unique<CameraSystem>(m_ecsSystem);
@@ -592,7 +609,7 @@ namespace GameCore {
         });
         
         // Create enemy system for behaviors (bobbing, states, etc.)
-        m_enemySystem = std::make_unique<EnemySystem>(m_ecsSystem, m_levelManager.get());
+        m_enemySystem = std::make_unique<EnemySystem>(m_ecsSystem, m_levelManager.get(), m_projectileSystem.get());
         
         // Create heart system for health display and management
         m_heartSystem = std::make_unique<HeartSystem>(m_ecsSystem, *m_platformDelegates);
@@ -917,13 +934,10 @@ namespace GameCore {
             m_pickupSystem->ClearAll();
         }
         
-        // Destroy projectiles
-        for (Gnosis::Entity entity : m_projectiles) {
-            if (entity != 0) {
-                m_ecsSystem->DestroyEntity(entity);
-            }
+        // Destroy projectiles via ProjectileSystem
+        if (m_projectileSystem) {
+            m_projectileSystem->Cleanup();
         }
-        m_projectiles.clear();
         
         // Destroy enemies
         for (Gnosis::Entity entity : m_enemies) {
@@ -2471,7 +2485,17 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         if (m_pickupSystem) {
             m_pickupSystem->ClearAll();
         }
-        
+
+        // Reset projectile system
+        if (m_projectileSystem) {
+            m_projectileSystem->ResetForNewGame();
+        }
+
+        // Reset player input delay to prevent accidental shooting
+        if (m_playerControllerSystem) {
+            m_playerControllerSystem->ResetInputDelay(0.4f);
+        }
+
         // Reset game state variables
         m_currentScore = 0;
         m_pipesCleared = 0;

@@ -5,16 +5,18 @@
 
 namespace GameCore {
 
-    PlayerControllerSystem::PlayerControllerSystem(Gnosis::ECS* ecsSystem, GameCore::PlatformDelegates* platformDelegates, SpriteSystem* spriteSystem)
+    PlayerControllerSystem::PlayerControllerSystem(Gnosis::ECS* ecsSystem, GameCore::PlatformDelegates* platformDelegates, SpriteSystem* spriteSystem, ProjectileSystem* projectileSystem)
         : m_ecsSystem(ecsSystem)
         , m_platformDelegates(platformDelegates)
         , m_spriteSystem(spriteSystem)
+        , m_projectileSystem(projectileSystem)
         , m_playerEntity(0)
         , m_playerAlive(true)
         , m_jumpPressed(false)
         , m_shootPressed(false)
         , m_jumpCooldown(0.0f)
         , m_shootCooldown(0.0f)
+        , m_inputDelayTimer(0.0f)
         , m_isGrounded(true)
         , m_currentState(PlayerAnimationState::IDLE)
         , m_previousState(PlayerAnimationState::IDLE)
@@ -51,6 +53,15 @@ namespace GameCore {
         }
         if (m_shootCooldown > 0.0f) {
             m_shootCooldown -= deltaTime;
+        }
+
+        // Update input delay timer (prevents accidental shooting at game start)
+        if (m_inputDelayTimer > 0.0f) {
+            m_inputDelayTimer -= deltaTime;
+            if (m_inputDelayTimer <= 0.0f) {
+                m_inputDelayTimer = 0.0f;
+                GN_LOG_INFO("Input delay timer expired - shooting now enabled");
+            }
         }
 
         // Update variable jump mechanics - handle hold time and auto-jump
@@ -121,7 +132,7 @@ namespace GameCore {
             
             if (y > (screenHeight - shootZoneHeight)) {
                 // Bottom area - shoot immediately on press
-                GN_LOG_INFO("Shoot zone pressed!");
+                GN_LOG_INFO("Shoot zone pressed at y=" + std::to_string(y) + "! Calling HandleShootInput...");
                 HandleShootInput();
                 m_touchSession.active = false; // Shooting doesn't use hold mechanics
             } else {
@@ -232,19 +243,28 @@ namespace GameCore {
     }
 
     void PlayerControllerSystem::HandleShootInput() {
+        GN_LOG_INFO("HandleShootInput called!");
         if (!m_playerAlive || m_shootCooldown > 0.0f) {
-            GN_LOG_DEBUG("Shoot input ignored - alive=" + std::to_string(m_playerAlive) + 
+            GN_LOG_DEBUG("Shoot input ignored - alive=" + std::to_string(m_playerAlive) +
                         ", cooldown=" + std::to_string(m_shootCooldown));
             return;
         }
-        
+
+        GN_LOG_INFO("Shooting conditions met, spawning projectile...");
+
+        // Check if we're in the input delay period (prevent accidental shooting at game start)
+        if (m_inputDelayTimer > 0.0f) {
+            GN_LOG_DEBUG("Shoot input ignored - in input delay period (%.2fs remaining)", m_inputDelayTimer);
+            return;
+        }
+
         // Set shoot cooldown and spawn projectile - this happens ONCE per input
         m_shootCooldown = SHOOT_COOLDOWN;
         SpawnProjectile();
-        
+
         // ONLY transition to SHOOTING state if we actually shot (passed cooldown check)
         TransitionToState(PlayerAnimationState::SHOOTING);
-        
+
         GN_LOG_INFO("Player shot projectile - transitioned to SHOOTING state");
     }
 
@@ -570,7 +590,7 @@ namespace GameCore {
     }
 
     void PlayerControllerSystem::SpawnProjectile() {
-        if (m_playerEntity == 0) {
+        if (m_playerEntity == 0 || !m_projectileSystem) {
             return;
         }
 
@@ -579,43 +599,33 @@ namespace GameCore {
             return;
         }
 
-        // Create projectile entity
-        Gnosis::Entity projectileEntity = m_ecsSystem->CreateEntity();
-        
-        // Add transform component
-        Transform projectileTransform(playerTransform->position + Gnosis::GNVector2(50.0f, 0.0f), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
-        m_ecsSystem->AddComponent<Transform>(projectileEntity, projectileTransform);
-        
-        // Add physics component
-        Physics projectilePhysics;
-        projectilePhysics.velocity = Gnosis::GNVector2(300.0f, 0.0f); // Move right
-        projectilePhysics.useGravity = false;
-        m_ecsSystem->AddComponent<Physics>(projectileEntity, projectilePhysics);
-        
-        // Add sprite component (placeholder)
-        Sprite projectileSprite("projectile", 16.0f, 16.0f);
-        projectileSprite.color = Gnosis::GNColor(255, 255, 0, 255); // Yellow
-        m_ecsSystem->AddComponent<Sprite>(projectileEntity, projectileSprite);
-        
-        // Add hitbox component
-        Hitbox projectileHitbox;
-        projectileHitbox.type = ColliderType::Circle;
-        projectileHitbox.radius = 8.0f;
-        projectileHitbox.tag = "projectile";
-        m_ecsSystem->AddComponent<Hitbox>(projectileEntity, projectileHitbox);
-        
-        // Add projectile component
-        Projectile projectileData;
-        projectileData.damage = 1;
-        projectileData.speed = 300.0f;
-        projectileData.lifetime = 3.0f;
-        m_ecsSystem->AddComponent<Projectile>(projectileEntity, projectileData);
-        
-        // Add lifetime component
-        Lifetime lifetime(3.0f);
-        m_ecsSystem->AddComponent<Lifetime>(projectileEntity, lifetime);
-        
-        GN_LOG_INFO("Spawned projectile entity: %d", projectileEntity);
+        // Determine projectile type based on player form (for now, use Floppy Poop)
+        // TODO: Make this configurable based on player form/state
+        ProjectileType projectileType = ProjectileType::POOP_BALL;
+
+        // Calculate spawn position (from player's mouth position, accounting for scale)
+        Sprite* playerSprite = m_ecsSystem->GetComponent<Sprite>(m_playerEntity);
+        float playerScale = playerTransform->scale.x; // Assuming uniform scaling
+        float scaledOffsetX = 42.0f * playerScale;
+        float scaledOffsetY = 32.0f * playerScale;
+        GNVector2 spawnPosition = playerTransform->position + GNVector2(scaledOffsetX, scaledOffsetY);
+
+        // Calculate projectile direction (right-facing for now)
+        GNVector2 direction(1.0f, 0.0f); // Move right
+
+        // Spawn projectile using the ProjectileSystem
+        Entity projectileEntity = m_projectileSystem->SpawnPlayerProjectile(
+            spawnPosition,
+            direction,
+            projectileType
+        );
+
+        if (projectileEntity != 0) {
+            GN_LOG_INFO("Player spawned projectile entity: %d at position (%.1f, %.1f)",
+                       projectileEntity, spawnPosition.x, spawnPosition.y);
+        } else {
+            GN_LOG_WARN("Failed to spawn player projectile - no available projectiles in pool");
+        }
     }
 
     void PlayerControllerSystem::PlayIdleAnimation() {
@@ -632,6 +642,11 @@ namespace GameCore {
 
     void PlayerControllerSystem::PlayHurtAnimation() {
         TransitionToState(PlayerAnimationState::HURT);
+    }
+
+    void PlayerControllerSystem::ResetInputDelay(float delaySeconds) {
+        m_inputDelayTimer = delaySeconds;
+        GN_LOG_INFO("Input delay timer reset to %.2fs", delaySeconds);
     }
 
 } // namespace GameCore 
