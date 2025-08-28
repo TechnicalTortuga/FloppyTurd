@@ -139,7 +139,15 @@ namespace GameCore {
                              " active=" + (p->isActive ? "true" : "false") +
                              " visible=" + (s->visible ? "true" : "false"));
 
-                playerComp->sessionCoins += (p->pickupType == "GoldCoin" ? 1 : p->value);
+                // Call callback function instead of directly modifying sessionCoins
+                int coinValue = (p->pickupType == "GoldCoin" ? 1 : p->value);
+                if (m_coinCollectedCallback) {
+                    m_coinCollectedCallback(coinValue);
+                } else {
+                    // Fallback: direct modification if callback not set
+                    playerComp->sessionCoins += coinValue;
+                }
+                
                 if (m_platformDelegates && m_platformDelegates->audio.playSound) {
                     m_platformDelegates->audio.playSound("pickup.mp3", 0.6f);
                 }

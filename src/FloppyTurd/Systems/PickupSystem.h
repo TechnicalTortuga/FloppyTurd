@@ -10,6 +10,7 @@
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
+#include <functional>
 
 namespace GameCore {
 
@@ -22,6 +23,9 @@ namespace GameCore {
      */
     class PickupSystem {
     public:
+        // Callback function type for coin collection
+        using CoinCollectedCallback = std::function<void(int)>;
+        
         PickupSystem(Gnosis::ECS* ecsSystem,
                      LevelManager* levelManager,
                      GameCore::PlatformDelegates* platformDelegates,
@@ -34,6 +38,7 @@ namespace GameCore {
 
         void SetPlayerEntity(Gnosis::Entity player) { m_playerEntity = player; }
         void SetLevelConfig(const LevelConfig* cfg) { m_levelConfig = cfg; }
+        void SetCoinCollectedCallback(CoinCollectedCallback callback) { m_coinCollectedCallback = callback; }
 
         // Main per-frame update: spawns for new groups, handles collisions, wraps
         void Update(float deltaTime);
@@ -48,6 +53,7 @@ namespace GameCore {
         GameCore::PlatformDelegates* m_platformDelegates;
         const LevelConfig* m_levelConfig;
         Gnosis::Entity m_playerEntity;
+        CoinCollectedCallback m_coinCollectedCallback;
 
         // Active pickup tracking for O(1) removal
         std::vector<Gnosis::Entity> m_activePickups;

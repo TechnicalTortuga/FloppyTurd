@@ -585,6 +585,12 @@ namespace GameCore {
         }
         // Create pickup system and pass dependencies
         m_pickupSystem = std::make_unique<PickupSystem>(m_ecsSystem, m_levelManager.get(), m_platformDelegates, &m_currentLevelConfig);
+        
+        // Set up coin collection callback to connect PickupSystem to OnCoinCollected
+        m_pickupSystem->SetCoinCollectedCallback([this](int value) {
+            this->OnCoinCollected(value);
+        });
+        
         // Create enemy system for behaviors (bobbing, states, etc.)
         m_enemySystem = std::make_unique<EnemySystem>(m_ecsSystem, m_levelManager.get());
         
@@ -1534,8 +1540,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         GameCore::GetGame()->UpdateGameStats(gameStats);
         GN_LOG_INFO("💰 Updated GameStats::totalCoinsCollected to: " + std::to_string(gameStats.totalCoinsCollected));
 
-        // Also update player coins to keep systems synchronized
-        GameCore::GetGame()->AddCoins(value);
+        // REMOVED: Don't add to total coins immediately - will be transferred on finality events only
 
         // Log current coin counts AFTER collection
         int afterPlayerCoins = GameCore::GetGame()->GetPlayerCoins();
@@ -1565,6 +1570,16 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
     // Menu navigation functions
     void GameplayState::ReturnToMainMenu() {
         GN_LOG_INFO("Returning to main menu from gameplay");
+        
+        // FINALITY EVENT: Transfer session coins to total when returning to menu
+        // (Will be 0 if coming from game over, preventing double-adding)
+        PlayerComponent* player = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity);
+        if (player && player->sessionCoins > 0) {
+            GameCore::GetGame()->AddCoins(player->sessionCoins);
+            GameCore::GetGame()->SaveGameData();
+            GN_LOG_INFO("💰 Menu return finality: Added " + std::to_string(player->sessionCoins) + " session coins to total");
+        }
+        
         m_finished = true;  // This will trigger state transition back to main menu
     }
     
@@ -2025,6 +2040,13 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
 
             GameCore::GetGame()->UpdateLevelHighScore(m_currentLevelId, m_pipesCleared, sessionCoins);
             GN_LOG_INFO("Updated level " + std::to_string(m_currentLevelId) + " high score: " + std::to_string(m_pipesCleared) + " pipes, " + std::to_string(sessionCoins) + " coins");
+            
+            // FINALITY EVENT: Transfer session coins to total on death
+            if (sessionCoins > 0) {
+                GameCore::GetGame()->AddCoins(sessionCoins);
+                GameCore::GetGame()->SaveGameData();
+                GN_LOG_INFO("💰 Death finality: Added " + std::to_string(sessionCoins) + " session coins to total");
+            }
         }
 
         // Increment death counter for stats tracking
@@ -2570,6 +2592,14 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         if (m_platformDelegates && m_platformDelegates->audio.stopSound) {
             m_platformDelegates->audio.stopSound("gameover.mp3");
             GN_LOG_INFO("Stopped specific stinger sound effect: gameover.mp3");
+        }
+        
+        // Clear sessionCoins before calling ReturnToMainMenu to prevent double-adding
+        // (coins were already added to total in TriggerGameOver)
+        PlayerComponent* player = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity);
+        if (player) {
+            player->sessionCoins = 0;
+            GN_LOG_INFO("💰 Cleared sessionCoins to prevent double-adding when quitting to main menu");
         }
         
         DestroyGameOverUI();

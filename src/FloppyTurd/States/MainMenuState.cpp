@@ -232,6 +232,12 @@ namespace GameCore {
     void MainMenuState::Resume() {
         // Resume main menu
         GN_LOG_INFO("Main Menu State resumed");
+
+        // Refresh level display to update coin counts and unlock status after returning from gameplay
+        if (m_currentMode == MenuMode::LEVEL_SELECT) {
+            RefreshLevelDisplay();
+            GN_LOG_INFO("🔄 Refreshed level display on resume - Level 2 should now show 0/0 requirements");
+        }
     }
 
     void MainMenuState::Update(float deltaTime) {
@@ -2239,14 +2245,8 @@ namespace GameCore {
                 // Get level stats to show requirements
                 const auto& levelStats = GameCore::GetGame()->GetLevelStats(m_levels[i].levelNumber);
 
-                // FORCE level 2 to show 0 requirements in UI for debug testing
-                auto displayStats = levelStats; // Create a copy we can modify
-                if (m_levels[i].levelNumber == 2) {
-                    const_cast<int&>(displayStats.unlockRequirement) = 0;
-                    const_cast<int&>(displayStats.coinRequirement) = 0;
-                    printf("🔧 DEBUG: UI Display - Level 2 FORCED to show 0/0 requirements!\n");
-                    fflush(stdout);
-                }
+                // Level 2 requirements are now permanently set to 0 in SetDefaultUnlockRequirements
+                auto displayStats = levelStats; // Use the level stats as-is
 
                 if (m_levels[i].levelNumber == 2) {  // Debug level 2 specifically
                     GN_LOG_INFO("🎨 MainMenuState: Level 2 stats from GetLevelStats - unlockRequirement=" + std::to_string(displayStats.unlockRequirement) +
@@ -2389,13 +2389,8 @@ namespace GameCore {
                     if (reqTextElement && GameCore::GetGame()) {
                         const auto& levelStats = GameCore::GetGame()->GetLevelStats(m_levels[i].levelNumber);
 
-                        // FORCE level 2 to show 0 requirements in UI for debug testing
-                        auto displayStats = levelStats; // Create a copy we can modify
-                        if (m_levels[i].levelNumber == 2) {
-                            const_cast<int&>(displayStats.unlockRequirement) = 0;
-                            const_cast<int&>(displayStats.coinRequirement) = 0;
-                            GN_LOG_INFO("🔄 RefreshLevelDisplay: Level 2 FORCED to show unlockRequirement=0, coinRequirement=0 in UI");
-                        }
+                        // Level 2 requirements are now permanently set to 0 in SetDefaultUnlockRequirements
+                        auto displayStats = levelStats; // Use the level stats as-is
 
                         if (m_levels[i].levelNumber == 2) {  // Debug level 2 specifically during refresh
                             GN_LOG_INFO("🔄 RefreshLevelDisplay: Level 2 stats from GetLevelStats - unlockRequirement=" + std::to_string(displayStats.unlockRequirement) +
@@ -2530,30 +2525,13 @@ namespace GameCore {
             GN_LOG_INFO("🎨 Refreshed level display after unlock");
 
         } else {
-            // Play denied sound effect ONLY if the button is visible (not already unlocked)
+            // SIMPLIFIED: Always play denied sound since OnUnlockButtonPressed 
+            // is only called from visible button clicks
             GN_LOG_INFO("❌ TryUnlockLevel returned false for level " + std::to_string(levelNumber));
-
-            // Check if the unlock button is visible for this level
-            bool buttonIsVisible = false;
-            for (size_t i = 0; i < m_levels.size(); ++i) {
-                if (m_levels[i].levelNumber == levelNumber) {
-                    if (i < m_unlockButtonEntities.size() && m_unlockButtonEntities[i] != 0 && m_ecsCoordinator) {
-                        Sprite* buttonSprite = m_ecsCoordinator->GetComponent<Sprite>(m_unlockButtonEntities[i]);
-                        if (buttonSprite && buttonSprite->visible) {
-                            buttonIsVisible = true;
-                        }
-                    }
-                    break;
-                }
-            }
-
-            if (buttonIsVisible) {
-                GN_LOG_INFO("🔊 Playing denied sound effect (unlock failed)");
-                if (GameCore::GetGame()) {
-                    GameCore::GetGame()->PlaySFX("denied");
-                }
-            } else {
-                GN_LOG_INFO("🔇 Not playing partyhorn sound effect (already unlocked)");
+            GN_LOG_INFO("🔊 Playing denied sound effect (unlock failed)");
+            
+            if (GameCore::GetGame()) {
+                GameCore::GetGame()->PlaySFX("denied");
             }
         }
     }
@@ -3035,24 +3013,32 @@ namespace GameCore {
                 }
 
                 // Check unlock buttons for locked levels
-                for (size_t i = 0; i < m_unlockButtonEntities.size(); ++i) {
-                    if (m_unlockButtonEntities[i] != 0 && !m_levels[i].isUnlocked) {
-                        Transform* transform = m_ecsCoordinator->GetComponent<Transform>(m_unlockButtonEntities[i]);
-                        Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(m_unlockButtonEntities[i]);
+                GN_LOG_INFO("🎯 CURRENT LEVEL: m_currentLevelIndex=" + std::to_string(m_currentLevelIndex) + 
+                           " (Level " + std::to_string(m_currentLevelIndex + 1) + ")");
+                           
+                // SIMPLIFIED: Only check unlock button for current level
+                if (m_currentLevelIndex < m_unlockButtonEntities.size() && 
+                    m_unlockButtonEntities[m_currentLevelIndex] != 0 && 
+                    !m_levels[m_currentLevelIndex].isUnlocked) {
+                    
+                    Transform* transform = m_ecsCoordinator->GetComponent<Transform>(m_unlockButtonEntities[m_currentLevelIndex]);
+                    Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(m_unlockButtonEntities[m_currentLevelIndex]);
+                    
+                    if (transform && sprite && sprite->visible) {
+                        float buttonWidth = sprite->width * transform->scale.x;
+                        float buttonHeight = sprite->height * transform->scale.y;
+                        float buttonLeft = transform->position.x;
+                        float buttonRight = transform->position.x + buttonWidth;
+                        float buttonTop = transform->position.y;
+                        float buttonBottom = transform->position.y + buttonHeight;
 
-                        if (transform && sprite) {
-                            float buttonWidth = sprite->width * transform->scale.x;
-                            float buttonHeight = sprite->height * transform->scale.y;
-                            float buttonLeft = transform->position.x;
-                            float buttonRight = transform->position.x + buttonWidth;
-                            float buttonTop = transform->position.y;
-                            float buttonBottom = transform->position.y + buttonHeight;
-
-                            if (touchX >= buttonLeft && touchX <= buttonRight &&
-                                touchY >= buttonTop && touchY <= buttonBottom) {
-                                OnUnlockButtonPressed(m_levels[i].levelNumber);
-                                return;
-                            }
+                        if (touchX >= buttonLeft && touchX <= buttonRight &&
+                            touchY >= buttonTop && touchY <= buttonBottom) {
+                            // Always pass the CURRENT level number, not array index
+                            int currentLevelNumber = m_levels[m_currentLevelIndex].levelNumber;
+                            GN_LOG_INFO("🎯 UNLOCK CLICKED: Current level " + std::to_string(currentLevelNumber));
+                            OnUnlockButtonPressed(currentLevelNumber);
+                            return;
                         }
                     }
                 }
@@ -3453,7 +3439,7 @@ namespace GameCore {
         
         if (m_currentLevelIndex > 0) {
             m_currentLevelIndex--;
-            GN_LOG_INFO("Left arrow pressed - moved to level " + std::to_string(m_currentLevelIndex + 1));
+            GN_LOG_INFO("⬅️ Left arrow pressed - moved to level " + std::to_string(m_currentLevelIndex + 1) + " (index " + std::to_string(m_currentLevelIndex) + ")");
             
             // Use UpdateLevelVisibility directly instead of animation to prevent decentering
             UpdateLevelVisibility();
@@ -3471,7 +3457,7 @@ namespace GameCore {
         
         if (m_currentLevelIndex < m_levels.size() - 1) {
             m_currentLevelIndex++;
-            GN_LOG_INFO("Right arrow pressed - moved to level " + std::to_string(m_currentLevelIndex + 1));
+            GN_LOG_INFO("➡️ Right arrow pressed - moved to level " + std::to_string(m_currentLevelIndex + 1) + " (index " + std::to_string(m_currentLevelIndex) + ")");
             
             // Use UpdateLevelVisibility directly instead of animation to prevent decentering
             UpdateLevelVisibility();

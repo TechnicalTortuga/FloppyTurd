@@ -827,10 +827,10 @@ namespace GameCore {
                 stats.unlockRequirement = 0;
                 stats.coinRequirement = 0;
                 break;
-            case 2: // Sewer - TEMPORARILY SET TO 0 PIPES FOR TESTING
-                stats.unlockRequirement = 0; // pipes from Park (level 1) - TEMP: 0 for testing
-                stats.coinRequirement = 0;
-                GN_LOG_INFO("🎯 LEVEL 2: Setting unlockRequirement to 0 for debug testing!");
+            case 2: // Sewer - FORCE TO 0 REQUIREMENTS FOR DEBUG TESTING
+                stats.unlockRequirement = 0; // pipes from Park (level 1) - FORCED: 0 for testing
+                stats.coinRequirement = 0;   // coins - FORCED: 0 for testing
+                GN_LOG_INFO("🎯 LEVEL 2: FORCED unlockRequirement=0, coinRequirement=0 for debug testing!");
                 break;
             case 3: // Desert - 50 pipes from Sewer + 100 coins
                 stats.unlockRequirement = 50; // pipes from Sewer (level 2)
