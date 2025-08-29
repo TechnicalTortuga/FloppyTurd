@@ -14,11 +14,13 @@ namespace GameCore {
     {
         GN_LOG_INFO("RenderSystem initialized with unified rendering");
         m_renderQueue.reserve(1000); // Pre-allocate for performance
-        
+
         // Initialize screen info
         UpdateScreenInfo();
         SetupLayout();
     }
+
+
 
     RenderSystem::~RenderSystem() {
         GN_LOG_INFO("RenderSystem destroyed");
@@ -1072,6 +1074,9 @@ namespace GameCore {
             system->m_textureCache[context->textureId] = handle;
             system->m_textureDimensions[context->textureId] = {textureData->width, textureData->height};
 
+            // 🎯 NEW: Update our synchronous metadata cache
+            system->UpdateCacheFromAsyncResult(context->textureId, handle, textureData->width, textureData->height);
+
             GN_LOG_INFO(
                 std::string("RenderSystem: CACHE_STORE id='") + context->textureId +
                 "' handle=" + std::to_string(handle) +
@@ -1214,6 +1219,35 @@ namespace GameCore {
             }
         }
         return false;
+    }
+
+    // 🎯 NEW: Synchronous texture metadata cache implementation
+    bool RenderSystem::GetCachedTextureInfo(const std::string& textureId, int& width, int& height) {
+        auto it = m_textureMetadataCache.find(textureId);
+        if (it != m_textureMetadataCache.end() && it->second.isLoaded) {
+            width = it->second.width;
+            height = it->second.height;
+            GN_LOG_INFO("📊 Cache hit: " + textureId + " = " + std::to_string(width) + "x" + std::to_string(height));
+            return true;
+        }
+
+        GN_LOG_DEBUG("🔍 Cache miss for: " + textureId);
+        return false;
+    }
+
+    void RenderSystem::UpdateCacheFromAsyncResult(const std::string& textureId, uint32_t handle, int width, int height) {
+        CachedTextureInfo info;
+        info.handle = handle;
+        info.width = width;
+        info.height = height;
+        info.isLoaded = (width > 0 && height > 0);
+        info.assetPath = textureId;
+
+        m_textureMetadataCache[textureId] = info;
+
+        GN_LOG_INFO("✅ Cached texture metadata: " + textureId + " = " +
+                   std::to_string(width) + "x" + std::to_string(height) +
+                   " (handle: " + std::to_string(handle) + ")");
     }
 
 } // namespace GameCore

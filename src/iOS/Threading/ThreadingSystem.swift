@@ -123,7 +123,7 @@ class CommandProcessor {
             return
         }
 
-        let data = command.data  // Flattened data structure
+        var data = command.data  // Flattened data structure
 
         switch commandType {
         case .CMD_BEGIN_FRAME:
@@ -279,10 +279,9 @@ class CommandProcessor {
 
         case .CMD_GET_TEXTURE_METADATA:
             let textureId = String(data.textureId)
-            if let metadataPtr = data.textureMetadata {
-                if let metadata = renderer.getTextureMetadata(textureId: textureId) {
-                    metadataPtr.pointee = metadata
-                }
+            if let metadata = renderer.getTextureMetadata(textureId: textureId) {
+                // Update the owned TextureMetadata in the command data
+                data.textureMetadata = metadata
             }
 
         default:

@@ -595,11 +595,12 @@ namespace GameCore {
         // Create camera system
         m_cameraSystem = std::make_unique<CameraSystem>(m_ecsSystem);
         
-        // Create unified render system (replaces individual sprite rendering)
-        m_renderSystem = std::make_unique<RenderSystem>(m_ecsSystem, *m_platformDelegates);
-        // Set texture base path for asset catalog via shared RenderSystem
-        if (m_renderSystem) {
-            m_renderSystem->SetTextureBasePath("turd/");
+        // 🎯 NEW: Get the existing RenderSystem from SystemManager instead of creating a new one
+        if (m_ecsSystem && m_ecsSystem->GetSystemManager()) {
+            m_renderSystem = m_ecsSystem->GetSystemManager()->GetRenderSystem();
+            GN_LOG_INFO("GameplayState: Using existing RenderSystem from SystemManager");
+        } else {
+            GN_LOG_ERROR("❌ GameplayState: Could not get RenderSystem from SystemManager!");
         }
         
         // Create UI system for text and button rendering
@@ -609,6 +610,11 @@ namespace GameCore {
         m_levelManager = std::make_unique<LevelManager>(m_ecsSystem);
         if (m_platformDelegates) {
             m_levelManager->SetPlatformDelegates(*m_platformDelegates);
+        }
+
+        // 🎯 NEW: Set RenderSystem reference for texture metadata cache access
+        if (m_renderSystem) {
+            m_levelManager->SetRenderSystem(m_renderSystem);
         }
         // Create pickup system and pass dependencies
         m_pickupSystem = std::make_unique<PickupSystem>(m_ecsSystem, m_levelManager.get(), m_platformDelegates, &m_currentLevelConfig);

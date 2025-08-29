@@ -282,7 +282,8 @@ namespace GameCore {
         if (!s_instance) return;
         RenderCommand cmd(CommandType::CMD_GET_TEXTURE_METADATA);
         cmd.data.textureId = textureId;
-        cmd.data.textureMetadata = metadata;
+        // Copy the metadata into the command's owned object
+        cmd.data.textureMetadata = *metadata;
         s_instance->enqueueRenderCommand(cmd);
     }
     
@@ -712,6 +713,9 @@ namespace GameCore {
         // Configure asset cache management delegates
         delegates.asset.preloadEssentialAssets = enqueuePreloadEssentialAssets;
         delegates.asset.isCached = enqueueIsCached;
+
+        // Configure asset texture metadata delegate (USES SAME FUNCTION AS RENDERER)
+        delegates.asset.getTextureMetadata = getTextureMetadataDelegate;
         
         // Configure input delegates to handle touch input
         delegates.input.getPrimaryInputPosition = getPrimaryInputPosition;

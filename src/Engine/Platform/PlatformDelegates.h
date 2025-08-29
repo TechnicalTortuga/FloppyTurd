@@ -182,7 +182,7 @@ namespace GameCore {
         // Enhanced screen and texture info fields
         ScreenInfo* screenInfo = nullptr;      // For CMD_GET_SCREEN_INFO
         std::string textureId;                 // For CMD_GET_TEXTURE_METADATA
-        TextureMetadata* textureMetadata = nullptr; // For CMD_GET_TEXTURE_METADATA
+        TextureMetadata textureMetadata;       // For CMD_GET_TEXTURE_METADATA - OWNED by command
     };
     
     // Audio command data

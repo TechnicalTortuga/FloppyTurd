@@ -104,13 +104,13 @@ namespace GameCore {
             GN_LOG_INFO("=== BASIC PARALLAX: Found " + std::to_string(basicParallaxEntities.size()) + " basic parallax entities ===");
         }
 
-        // SYNCHRONIZED BACKGROUND MOVEMENT BY LAYER
-        // Group backgrounds by render layer and move all in same layer together
-        // This prevents gaps and ensures perfect alignment within each layer
+        // 🎯 SYNCHRONIZED LAYER-BASED BACKGROUND MOVEMENT
+        // Move ALL backgrounds in the SAME LAYER together to prevent gaps
+        // This ensures perfect alignment and eliminates the glitchy gaps
         std::map<int, std::vector<Gnosis::Entity>> layerEntities;
         std::map<int, float> layerMovementDeltas;
 
-        // First pass: group entities by render layer and calculate movement deltas
+        // First pass: Group entities by render layer and calculate movement deltas
         for (Gnosis::Entity entity : parallaxEntities) {
             auto sprite = m_ecsSystem->GetComponent<Sprite>(entity);
             auto parallax = m_ecsSystem->GetComponent<Parallax>(entity);
@@ -119,26 +119,27 @@ namespace GameCore {
                 int renderLayer = sprite->layer;
                 layerEntities[renderLayer].push_back(entity);
 
-                // Calculate movement delta for this layer (all entities in same layer use same speed)
+                // Calculate movement delta for this layer (all entities use same speed)
                 if (layerMovementDeltas.find(renderLayer) == layerMovementDeltas.end()) {
                     layerMovementDeltas[renderLayer] = parallax->scrollSpeed * deltaTime;
                 }
             }
         }
 
-        // Second pass: apply synchronized movement to all backgrounds in each layer
+        // Second pass: Apply SYNCHRONOUS movement to all backgrounds in each layer
         for (const auto& layerPair : layerEntities) {
             int renderLayer = layerPair.first;
             const auto& entities = layerPair.second;
             float movementDelta = layerMovementDeltas[renderLayer];
 
-            if (!entities.empty()) {
+            if (!entities.empty() && movementDelta != 0.0f) {
                 if (shouldLog) {
-                    GN_LOG_INFO("🎨 SYNCHRONIZED LAYER " + std::to_string(renderLayer) +
-                               " MOVEMENT: Moving " + std::to_string(entities.size()) +
-                               " backgrounds by " + std::to_string(movementDelta) + " pixels");
+                    GN_LOG_INFO("🎨 LAYER " + std::to_string(renderLayer) + " SYNC: " +
+                               std::to_string(entities.size()) + " backgrounds, " +
+                               "delta=" + std::to_string(movementDelta) + "px");
                 }
 
+                // 🔄 Move ALL backgrounds in this layer simultaneously
                 for (Gnosis::Entity layerEntity : entities) {
                     auto transform = m_ecsSystem->GetComponent<Transform>(layerEntity);
                     if (transform) {
@@ -157,9 +158,9 @@ namespace GameCore {
             
             if (transform && sprite && parallax && instance && parallax->autoScroll) {
                 if (shouldLog) {
-                    GN_LOG_INFO("Entity " + std::to_string(entity) + " texture '" + sprite->textureId + 
+                    GN_LOG_INFO("Entity " + std::to_string(entity) + " texture '" + sprite->textureId +
                                "' instance " + std::to_string(instance->instanceIndex) + "/" + std::to_string(instance->totalInstances) +
-                               " at x=" + std::to_string(transform->position.x) + 
+                               " at x=" + std::to_string(transform->position.x) +
                                " y=" + std::to_string(transform->position.y) +
                                " scale=" + std::to_string(transform->scale.x) +
                                " textureWidth=" + std::to_string(instance->textureWidth) +
@@ -167,16 +168,9 @@ namespace GameCore {
                                " autoScroll=" + (parallax->autoScroll ? "true" : "false") +
                                " visible=" + (sprite->visible ? "true" : "false"));
                 }
-                
-                // Move background based on its scroll speed
-                float oldX = transform->position.x;
-                transform->position.x -= parallax->scrollSpeed * deltaTime;
-                
-                if (shouldLog) {
-                    GN_LOG_INFO("Entity " + std::to_string(entity) + " moved from x=" + std::to_string(oldX) + 
-                               " to x=" + std::to_string(transform->position.x) + 
-                               " (delta=" + std::to_string(parallax->scrollSpeed * deltaTime) + ")");
-                }
+
+                // 🎯 REMOVED: Individual movement - now handled by SYNCHRONIZED layer movement above
+                // This prevents double movement and "catching up" behavior
                 
                 // Pure integer arithmetic seamless wrapping logic for continuous scrolling
                 if (instance->textureWidth > 0.0f) {
@@ -198,26 +192,58 @@ namespace GameCore {
                     // When an instance moves completely off-screen to the left,
                     // wrap it around to the right side for seamless scrolling
                     if (currentPixelX <= -texturePixelWidth) {
-                        // Calculate the exact pixel position for seamless wrapping
-                        // Move to the rightmost position of all instances (exact pixel boundary)
-                        int rightmostPixelX = currentPixelX + totalLayerPixelWidth;
+                        // 🎯 PRECISE WRAPPING: Find the exact position where the rightmost segment ends
+                        // This prevents gaps from accumulating due to floating point precision errors
 
-                        // Additional safeguard: ensure we're exactly at a texture boundary
-                        // This prevents any sub-pixel drift that could cause gaps
-                        int boundaryOffset = rightmostPixelX % texturePixelWidth;
-                        if (boundaryOffset != 0) {
-                            // Snap to the nearest texture boundary
-                            rightmostPixelX -= boundaryOffset;
-                            if (shouldLog) {
-                                GN_LOG_INFO("CameraSystem: Corrected boundary offset " + std::to_string(boundaryOffset) +
-                                           " for seamless wrapping");
+                        // Find the current rightmost segment in this layer
+                        int rightmostSegmentEnd = INT_MIN;
+                        Gnosis::Entity rightmostEntity = 0;
+
+                        // Search through all entities in the same layer to find the rightmost one
+                        for (Gnosis::Entity otherEntity : parallaxEntities) {
+                            auto otherTransform = m_ecsSystem->GetComponent<Transform>(otherEntity);
+                            auto otherSprite = m_ecsSystem->GetComponent<Sprite>(otherEntity);
+                            auto otherInstance = m_ecsSystem->GetComponent<ParallaxInstance>(otherEntity);
+
+                            if (otherTransform && otherSprite && otherInstance &&
+                                otherSprite->layer == sprite->layer &&
+                                otherEntity != entity) { // Don't include ourselves
+
+                                int otherRightEdge = static_cast<int>(std::round(otherTransform->position.x + otherInstance->textureWidth));
+                                if (otherRightEdge > rightmostSegmentEnd) {
+                                    rightmostSegmentEnd = otherRightEdge;
+                                    rightmostEntity = otherEntity;
+                                }
                             }
                         }
 
-                        // Final safeguard: ensure the position is exactly on a pixel boundary
-                        // This eliminates any remaining sub-pixel artifacts
-                        transform->position.x = static_cast<float>(rightmostPixelX);
-                        transform->position.y = std::round(transform->position.y); // Also snap Y for consistency
+                        // If we found a rightmost segment, position exactly where it ends
+                        if (rightmostEntity != 0) {
+                            transform->position.x = static_cast<float>(rightmostSegmentEnd);
+
+                            if (isSewerLevel && shouldLog) {
+                                GN_LOG_INFO("🚽 PRECISE SEWER WRAP: '" + sprite->textureId +
+                                           "' wrapped to x=" + std::to_string(transform->position.x) +
+                                           " (rightmost segment ends at " + std::to_string(rightmostSegmentEnd) + ")");
+                            }
+                        } else {
+                            // Fallback: use the old calculation if we can't find other segments
+                            // This should rarely happen but provides safety
+                            int rightmostPixelX = currentPixelX + totalLayerPixelWidth;
+                            int boundaryOffset = rightmostPixelX % texturePixelWidth;
+                            if (boundaryOffset != 0) {
+                                rightmostPixelX -= boundaryOffset;
+                            }
+                            transform->position.x = static_cast<float>(rightmostPixelX);
+
+                            if (shouldLog) {
+                                GN_LOG_INFO("⚠️ FALLBACK WRAP: No other segments found, using calculated position " +
+                                           std::to_string(transform->position.x));
+                            }
+                        }
+
+                        // Ensure Y position is also pixel-perfect
+                        transform->position.y = std::round(transform->position.y);
 
                         // If this entity supports background variants, swap to a random one on wrap
                         ParallaxVariants* variants = m_ecsSystem->GetComponent<ParallaxVariants>(entity);
@@ -242,7 +268,7 @@ namespace GameCore {
                                 GN_LOG_INFO("🚽 SEWER WRAPPED: '" + sprite->textureId +
                                            "' instance " + std::to_string(instance->instanceIndex) +
                                            " to x=" + std::to_string(transform->position.x) +
-                                           " (from " + std::to_string(currentPixelX) + " to " + std::to_string(rightmostPixelX) + ")");
+                                           " (from " + std::to_string(currentPixelX) + ")");
                             } else {
                                 GN_LOG_INFO("CameraSystem: Wrapped parallax layer '" + sprite->textureId +
                                            "' instance " + std::to_string(instance->instanceIndex) +

@@ -88,7 +88,7 @@ namespace GameCore {
         std::unique_ptr<SpriteSystem> m_spriteSystem;
         std::unique_ptr<PlayerControllerSystem> m_playerControllerSystem;
         std::unique_ptr<CameraSystem> m_cameraSystem;
-        std::unique_ptr<RenderSystem> m_renderSystem;
+        RenderSystem* m_renderSystem;  // 🎯 NEW: Borrowed from SystemManager, not owned
         std::unique_ptr<LevelManager> m_levelManager;
         std::unique_ptr<UISystem> m_uiSystem;
         std::unique_ptr<PickupSystem> m_pickupSystem;

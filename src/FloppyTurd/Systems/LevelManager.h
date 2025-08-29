@@ -5,6 +5,7 @@
 #include "../Components/GameComponents.h"
 #include "../../Engine/Core/ECS.h"
 #include "ObstacleSystem.h"
+#include "RenderSystem.h"  // 🎯 NEW: Include full RenderSystem header
 #include <memory>
 #include <vector>
 #include <unordered_map>
@@ -56,6 +57,9 @@ namespace GameCore {
         // REMOVED: UpdatePickupSpawning - now handled by GameplayState
         void UpdateNPCSpawning(float deltaTime);
         void UpdateNPCStates(float deltaTime);
+
+        // 🎯 NEW: Set RenderSystem reference for cache access
+        void SetRenderSystem(RenderSystem* renderSystem);
         // Pool-based updates (no dynamic spawns during gameplay)
         void UpdateEnemyPooling(float deltaTime, float worldScrollDistance);
         void UpdateNPCPooling(float deltaTime, float worldScrollDistance);
@@ -123,6 +127,9 @@ namespace GameCore {
         std::vector<Gnosis::Entity> m_backgroundEntities;
         Gnosis::Entity m_playerEntity = 0;
         Gnosis::Entity m_janitorEntity = 0; // Ensure single Janitor in Level 2
+
+        // 🎯 NEW: RenderSystem reference for synchronous texture metadata cache
+        RenderSystem* m_renderSystem;
         
         // Spawn timers
         float m_enemySpawnTimer;
@@ -147,6 +154,9 @@ namespace GameCore {
         void CreateBackgroundLayers();
         void CreateCastleDecorations();
         void DestroyBackgroundLayers();
+
+        // Texture metadata helper
+        bool GetTextureDimensions(const std::string& textureId, int& width, int& height);
         
         // Spawning helpers
         float CalculateNextEnemyPosition();

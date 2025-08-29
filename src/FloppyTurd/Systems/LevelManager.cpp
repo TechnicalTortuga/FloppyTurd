@@ -17,6 +17,7 @@ namespace GameCore {
 
     LevelManager::LevelManager(Gnosis::ECS* ecsSystem)
         : m_ecsSystem(ecsSystem)
+        , m_renderSystem(nullptr)  // 🎯 NEW: Initialize RenderSystem reference
         , m_isLoaded(false)
         , m_currentLevelId(0)
         , m_currentLevelConfig(0, "")
@@ -466,11 +467,18 @@ namespace GameCore {
         Sprite* s = m_ecsSystem->GetComponent<Sprite>(m_janitorEntity);
         if (!t || !s) return;
 
-        // Continuously match Janitor speed to the sewer background band speed
-        // via CameraSystem-controlled ScrollSpeed component.
-        float targetSpeed = m_currentLevelConfig.worldSpeed * 0.35f;
+        // Continuously match Janitor speed to the actual sewer background speed
+        // Find the real sewer background speed dynamically
+        float targetSpeed = 0.0f;
         for (const auto& layer : m_currentLevelConfig.backgroundLayers) {
-            if (layer.scrollSpeed > targetSpeed) targetSpeed = layer.scrollSpeed;
+            if (layer.textureId.find("Sewer") != std::string::npos) {
+                targetSpeed = layer.scrollSpeed;
+                break;
+            }
+        }
+        // Fallback if no sewer layer found
+        if (targetSpeed == 0.0f) {
+            targetSpeed = m_currentLevelConfig.worldSpeed * 0.28f;
         }
         if (!m_ecsSystem->HasComponent<ScrollSpeed>(m_janitorEntity)) {
             m_ecsSystem->AddComponent<ScrollSpeed>(m_janitorEntity, ScrollSpeed(targetSpeed));
@@ -488,13 +496,25 @@ namespace GameCore {
             float offsetPx = 20.0f * 5.0f;
             t->position.y = screenH - janitorHeight - offsetPx;
             GN_LOG_INFO("NPC Janitor wrap: newX=" + std::to_string(t->position.x) + ", newY=" + std::to_string(t->position.y));
-            // Re-apply speed on wrap in case difficulty changed; use fastest parallax speed
-            float targetSpeed = m_currentLevelConfig.worldSpeed * 0.65f;
+            // Re-apply ScrollSpeed on wrap to match actual sewer background speed
+            // Find the real sewer background speed dynamically
+            float targetSpeed = 0.0f;
             for (const auto& layer : m_currentLevelConfig.backgroundLayers) {
-                if (layer.scrollSpeed > targetSpeed) targetSpeed = layer.scrollSpeed;
+                if (layer.textureId.find("Sewer") != std::string::npos) {
+                    targetSpeed = layer.scrollSpeed;
+                    break;
+                }
             }
-            Physics* phComp = m_ecsSystem->GetComponent<Physics>(m_janitorEntity);
-            if (phComp) phComp->velocity.x = -targetSpeed;
+            // Fallback if no sewer layer found
+            if (targetSpeed == 0.0f) {
+                targetSpeed = m_currentLevelConfig.worldSpeed * 0.28f;
+            }
+            if (!m_ecsSystem->HasComponent<ScrollSpeed>(m_janitorEntity)) {
+                m_ecsSystem->AddComponent<ScrollSpeed>(m_janitorEntity, ScrollSpeed(targetSpeed));
+            } else {
+                auto scr = m_ecsSystem->GetComponent<ScrollSpeed>(m_janitorEntity);
+                scr->speed = targetSpeed;
+            }
             // Reset NPC state on wrap and re-apply state clip
             NPC* npc = m_ecsSystem->GetComponent<NPC>(m_janitorEntity);
             if (npc) { npc->state = 0; npc->triggered = false; npc->timer = 0.0f; }
@@ -533,9 +553,17 @@ namespace GameCore {
         sp.currentFrame = 0;
         sp.playing = true;
         // Attach ScrollSpeed so CameraSystem moves the Janitor with the sewer background speed
-        float janitorSpeed = m_currentLevelConfig.worldSpeed * 0.35f;
+        // Find the actual sewer background speed (not assuming 0.28f multiplier)
+        float janitorSpeed = 0.0f;
         for (const auto& layer : m_currentLevelConfig.backgroundLayers) {
-            if (layer.scrollSpeed > janitorSpeed) janitorSpeed = layer.scrollSpeed;
+            if (layer.textureId.find("Sewer") != std::string::npos) {
+                janitorSpeed = layer.scrollSpeed;
+                break; // Found sewer layer, use its speed
+            }
+        }
+        // Fallback if no sewer layer found
+        if (janitorSpeed == 0.0f) {
+            janitorSpeed = m_currentLevelConfig.worldSpeed * 0.28f; // Original fallback
         }
         Physics ph; ph.velocity.x = 0.0f; ph.useGravity = false;
         Hitbox hb; hb.type = ColliderType::Rectangle; hb.width = 48.0f; hb.height = 48.0f; hb.isTrigger = true; hb.tag = "NPC";
@@ -556,6 +584,8 @@ namespace GameCore {
         m_ecsSystem->AddComponent<Physics>(npc, ph);
         m_ecsSystem->AddComponent<Hitbox>(npc, hb);
         m_ecsSystem->AddComponent<NPC>(npc, npcComp);
+        // Add ScrollSpeed component for CameraSystem to move the Janitor
+        m_ecsSystem->AddComponent<ScrollSpeed>(npc, ScrollSpeed(janitorSpeed));
         m_activeNPCs.push_back(npc);
         return npc;
     }
@@ -800,232 +830,152 @@ namespace GameCore {
     }
 
     void LevelManager::CreateBackgroundLayers() {
+        GN_LOG_INFO("🎨 CREATING BACKGROUND LAYERS WITH METADATA-DRIVEN SYSTEM");
+
         if (!m_ecsSystem) {
+            GN_LOG_ERROR("❌ ECS system not available for background creation");
             return;
         }
-        
+
         DestroyBackgroundLayers(); // Clean up any existing layers
-        
-        GN_LOG_INFO("=== LEVELMANAGER: Starting background layer creation ===");
-        GN_LOG_INFO("Number of layer configs: " + std::to_string(m_currentLevelConfig.backgroundLayers.size()));
-        
-        int totalEntitiesCreated = 0;
-        
-        for (size_t layerIdx = 0; layerIdx < m_currentLevelConfig.backgroundLayers.size(); layerIdx++) {
-            const BackgroundLayer& layerConfig = m_currentLevelConfig.backgroundLayers[layerIdx];
-            
-            GN_LOG_INFO("--- Creating layer " + std::to_string(layerIdx) + ": '" + layerConfig.textureId + "' ---");
-            
-            // Calculate scaling and positioning
-            float baseScale = m_currentLevelConfig.baseScale;
-            
-            // For backgrounds, calculate scale to fit screen height
-            // Determine texture size directly from platform delegates (no static fallbacks)
-            int tw = 0, th = 0;
-            // Prefer renderer metadata (Metal knows actual pixel dimensions), then asset manager.
-            bool got = false;
-            if (m_platformDelegates.renderer.getTextureMetadata) {
-                // Create a persistent TextureMetadata object that won't go out of scope
-                static GameCore::TextureMetadata rendererMeta;
-                if (m_platformDelegates.renderer.getTextureMetadata(layerConfig.textureId.c_str(), &rendererMeta)) {
-                    tw = rendererMeta.width;
-                    th = rendererMeta.height;
-                    got = (tw > 0 && th > 0);
-                    if (got) {
-                        GN_LOG_INFO(std::string("Texture metadata (renderer) for '") + layerConfig.textureId +
-                                    "': " + std::to_string(tw) + "x" + std::to_string(th));
-                    }
-                }
-            }
-            if (!got && m_platformDelegates.asset.getTextureMetadata) {
-                // Create a persistent TextureMetadata object that won't go out of scope
-                static GameCore::TextureMetadata assetMeta;
-                if (m_platformDelegates.asset.getTextureMetadata(layerConfig.textureId.c_str(), &assetMeta)) {
-                    tw = assetMeta.width;
-                    th = assetMeta.height;
-                    got = (tw > 0 && th > 0);
-                    if (got) {
-                        GN_LOG_INFO(std::string("Texture metadata (asset) for '") + layerConfig.textureId +
-                                    "': " + std::to_string(tw) + "x" + std::to_string(th));
-                    }
-                }
-            }
-            if (tw <= 0 || th <= 0) {
-                // Default texture dimensions based on specific texture names
-                // Handle special cases first, then fall back to general rules
-                // Handle Park level (Level 1) backgrounds with proper dimensions
-                if (layerConfig.textureId.find("Level1") != std::string::npos) {
-                    if (layerConfig.textureId == "Level1FrontLayerBackground") {
-                        tw = 2048; th = 512; // Park front layer is 2048x512
-                        GN_LOG_WARN(std::string("getTextureMetadata failed for '") + layerConfig.textureId +
-                                    "' via renderer and asset delegates; defaulting to park front layer size 2048x512");
-                    } else {
-                        // Park back and mid layers should be 1024x512 to match scaling
-                        tw = 1024; th = 512;
-                        GN_LOG_WARN(std::string("getTextureMetadata failed for '") + layerConfig.textureId +
-                                    "' via renderer and asset delegates; defaulting to park layer size 1024x512");
-                    }
-                } else {
-                    // General fallback: Sewer levels use 512x512, all other levels use 1024x512
-                    bool isSewerLevel = (layerConfig.textureId.find("Sewer") != std::string::npos);
-                    if (isSewerLevel) {
-                        tw = 512; th = 512;
-                        GN_LOG_WARN(std::string("getTextureMetadata failed for '") + layerConfig.textureId +
-                                    "' via renderer and asset delegates; defaulting to sewer size 512x512");
-                    } else {
-                        tw = 1024; th = 512;
-                        GN_LOG_WARN(std::string("getTextureMetadata failed for '") + layerConfig.textureId +
-                                    "' via renderer and asset delegates; defaulting to standard size 1024x512");
-                    }
-                }
-            }
-            float textureWidth = static_cast<float>(tw);
-            float textureHeight = static_cast<float>(th);
-            
-            // Scale to fit iPhone 16 screen height in portrait mode (actual pixels)
-            // iPhone 16 Portrait: 1179×2556 actual pixels
-            const float screenHeight = 2556.0f; // iPhone 16 portrait pixel height
-            float heightScale = screenHeight / textureHeight; // Scale to fill screen height
-            float finalScale = heightScale * layerConfig.scaleMultiplier;
 
-            // Ensure pixel-perfect scaling by rounding to prevent sub-pixel artifacts
-            finalScale = std::round(finalScale * 100.0f) / 100.0f; // Round to 2 decimal places for precision
+        for (const auto& layerConfig : m_currentLevelConfig.backgroundLayers) {
+            GN_LOG_INFO("📋 Processing layer: '" + layerConfig.textureId + "'");
 
-            GN_LOG_INFO("Texture '" + layerConfig.textureId + "': width=" + std::to_string(textureWidth) +
-                       ", height=" + std::to_string(textureHeight) +
-                       ", heightScale=" + std::to_string(heightScale) +
-                       ", scaleMultiplier=" + std::to_string(layerConfig.scaleMultiplier) +
-                       ", finalScale=" + std::to_string(finalScale) + " (pixel-perfect)");
-
-            // Scaled dimensions (actual rendered size after Transform scaling)
-            // Use pixel-perfect calculations to prevent gaps and artifacts
-            float scaledWidth = std::round(textureWidth * finalScale);
-            float scaledHeight = std::round(textureHeight * finalScale);
-            
-            // Calculate number of instances needed for seamless wrapping
-            // Use screen width + 2 extra instances for smooth scrolling
-            float screenWidth = 1179.0f; // iPhone 16 portrait pixel width
-            int numInstances = static_cast<int>(std::ceil(screenWidth / scaledWidth)) + 2;
-
-            // Ensure minimum of 3 instances for proper wrapping
-            numInstances = std::max(numInstances, 3);
-
-            // Special handling for Sewer level - create optimal instance count
-            bool isSewerLevel = (layerConfig.textureId.find("Sewer") != std::string::npos);
-            if (isSewerLevel) {
-                // Create 6 instances for Sewer level (enough for seamless wrapping)
-                // This gives us 6 * 2555px = ~15,330px coverage with proper overlap
-                numInstances = 6;
-                GN_LOG_INFO("🚽 SEWER LEVEL: Using " + std::to_string(numInstances) +
-                           " instances for seamless wrapping (coverage: " +
-                           std::to_string(numInstances * static_cast<int>(scaledWidth)) + "px)");
-            }
-            
-            GN_LOG_INFO("Layer calculations: textureWidth=" + std::to_string(textureWidth) + 
-                       ", finalScale=" + std::to_string(finalScale) + 
-                       ", scaledWidth=" + std::to_string(scaledWidth) + 
-                       ", scaledHeight=" + std::to_string(scaledHeight) + 
-                       ", numInstances=" + std::to_string(numInstances));
-            
-            float repeatWidth = layerConfig.repeatWidth > 0 ? layerConfig.repeatWidth : scaledWidth;
-            
-            // For initial positioning, we want instances to be placed touching each other
-            // Use pure integer arithmetic to prevent any floating point precision issues
-            int pixelScaledWidth = static_cast<int>(std::round(scaledWidth));
-
-            // Special debug logging for Sewer level
-            if (isSewerLevel) {
-                GN_LOG_INFO("🚽 SEWER BACKGROUND: texture='" + layerConfig.textureId + "' textureWidth=" +
-                           std::to_string(textureWidth) + " scaledWidth=" + std::to_string(scaledWidth) +
-                           " pixelScaledWidth=" + std::to_string(pixelScaledWidth) +
-                           " screenWidth=" + std::to_string(screenWidth) +
-                           " numInstances=" + std::to_string(numInstances));
+            // 🎯 STEP 1: Get actual texture dimensions from metadata system
+            int textureWidth, textureHeight;
+            if (!GetTextureDimensions(layerConfig.textureId, textureWidth, textureHeight)) {
+                // 🚨 REAL FAILURE: Skip this layer entirely rather than guess
+                GN_LOG_ERROR("💥 SKIPPING background layer due to metadata failure: " + layerConfig.textureId);
+                GN_LOG_ERROR("💥 This indicates a critical asset management issue");
+                continue; // Skip this layer - don't create broken backgrounds
             }
 
-            int layerEntitiesCreated = 0;
+            GN_LOG_INFO("📐 Texture dimensions: " + std::to_string(textureWidth) + "x" + std::to_string(textureHeight));
 
-            // Create multiple instances for this layer
-            for (int i = 0; i < numInstances; i++) {
-                GN_LOG_INFO("Creating instance " + std::to_string(i) + " of " + std::to_string(numInstances));
+            // 🎯 STEP 2: Calculate scaling using simple mathematics
+            const float screenHeight = 2556.0f; // iPhone 16 portrait height
+            float scale = screenHeight / static_cast<float>(textureHeight);
+            scale = std::round(scale * 100.0f) / 100.0f; // Pixel-perfect rounding
 
+            float scaledWidth = static_cast<float>(textureWidth) * scale;
+            float scaledHeight = static_cast<float>(textureHeight) * scale;
+
+            GN_LOG_INFO("🔢 Scaling: screen=" + std::to_string(screenHeight) +
+                       " texture=" + std::to_string(textureHeight) +
+                       " scale=" + std::to_string(scale) +
+                       " result=" + std::to_string(scaledWidth) + "x" + std::to_string(scaledHeight));
+
+            // 🎯 STEP 3: Calculate optimal instance count mathematically
+            // Use dynamic screen width and precise calculation for seamless wrapping
+            const float screenWidth = 1179.0f; // iPhone 16 portrait width
+            // Calculate exactly how many instances needed for seamless wrapping
+            // Add 2 extra instances for safety margin to prevent gaps during movement
+            int instancesNeeded = static_cast<int>(std::ceil((screenWidth * 2.0f) / scaledWidth));
+            instancesNeeded = std::max(instancesNeeded, 5); // Minimum for seamless wrapping
+
+            GN_LOG_INFO("🔄 Instances: screen=" + std::to_string(screenWidth) +
+                       " scaledWidth=" + std::to_string(scaledWidth) +
+                       " needed=" + std::to_string(instancesNeeded));
+
+            // 🎯 STEP 4: Create instances with PURE INTEGER positioning (no floating point errors)
+            for (int i = 0; i < instancesNeeded; ++i) {
+                // Use integer arithmetic to prevent floating point precision errors
+                // Convert scaledWidth to integer for pixel-perfect positioning
+                int scaledWidthInt = static_cast<int>(std::round(scaledWidth));
+                int xPosInt = i * scaledWidthInt;
+                float xPos = static_cast<float>(xPosInt);
+                float yPos = 0.0f;
+
+                GN_LOG_INFO("📍 Instance " + std::to_string(i) + ": x=" + std::to_string(xPos) +
+                           " (int:" + std::to_string(xPosInt) + ", scaledWidthInt:" + std::to_string(scaledWidthInt) + ")");
+
+                // Create entity with calculated position
                 Gnosis::Entity bgEntity = m_ecsSystem->CreateEntity();
                 if (bgEntity == 0) {
-                    GN_LOG_ERROR("Failed to create entity for instance " + std::to_string(i));
+                    GN_LOG_ERROR("❌ Failed to create background entity");
                     continue;
                 }
 
-                GN_LOG_INFO("Successfully created entity " + std::to_string(bgEntity) + " for instance " + std::to_string(i));
+                // Transform: Position and scale
+                Transform transform(Gnosis::GNVector2(xPos, yPos), 0.0f, Gnosis::GNVector2(scale, scale));
+                m_ecsSystem->AddComponent<Transform>(bgEntity, transform);
 
-                // Position instances using pure integer arithmetic for pixel-perfect alignment
-                // Each instance is placed exactly adjacent to the previous one
-                int pixelX = i * pixelScaledWidth;
-                float xPos = static_cast<float>(pixelX);
-                float yPos = 0.0f; // Position at top of screen for top-left rendering
+                // Sprite: Use actual texture dimensions
+                Sprite sprite(layerConfig.textureId, static_cast<float>(textureWidth), static_cast<float>(textureHeight));
+                sprite.layer = layerConfig.renderLayer;
+                sprite.visible = true;
+                m_ecsSystem->AddComponent<Sprite>(bgEntity, sprite);
 
-                if (isSewerLevel) {
-                    GN_LOG_INFO("🚽 SEWER INSTANCE " + std::to_string(i) + "/" + std::to_string(numInstances) +
-                               ": entity=" + std::to_string(bgEntity) + " xPos=" + std::to_string(xPos) +
-                               " pixelX=" + std::to_string(pixelX) + " pixelScaledWidth=" + std::to_string(pixelScaledWidth));
-                } else {
-                    GN_LOG_INFO("Positioning entity " + std::to_string(bgEntity) + " at pixel-perfect (" + std::to_string(xPos) + ", " + std::to_string(yPos) + ") - instance " + std::to_string(i) + " of " + std::to_string(pixelScaledWidth) + "px width");
-                }
+                // Parallax: Use integer scaled width for pixel-perfect wrapping
+                Parallax parallax;
+                parallax.scrollSpeed = layerConfig.scrollSpeed;
+                parallax.repeatWidth = static_cast<float>(scaledWidthInt); // Integer-based for precision
+                parallax.autoScroll = true;
+                m_ecsSystem->AddComponent<Parallax>(bgEntity, parallax);
 
-                // Create and add Transform component
-                // Apply the final scaling through Transform component
-                Transform bgTransform(Gnosis::GNVector2(xPos, yPos), 0.0f, Gnosis::GNVector2(finalScale, finalScale));
-                m_ecsSystem->AddComponent<Transform>(bgEntity, bgTransform);
-                GN_LOG_INFO("Added Transform component to entity " + std::to_string(bgEntity) + " at (" + std::to_string(xPos) + ", " + std::to_string(yPos) + ") with scale=" + std::to_string(finalScale));
-                
-                // Create and add Sprite component
-                // Use the original texture dimensions, scaling is handled by Transform
-                Sprite bgSprite(layerConfig.textureId, textureWidth, textureHeight);
-                bgSprite.color = Gnosis::GNColor(255, 255, 255, 255);
-                bgSprite.visible = true;
-                bgSprite.layer = layerConfig.renderLayer;
-                m_ecsSystem->AddComponent<Sprite>(bgEntity, bgSprite);
-                GN_LOG_INFO("Added Sprite component to entity " + std::to_string(bgEntity) + " with texture '" + layerConfig.textureId + "'" +
-                           " textureSize=(" + std::to_string(textureWidth) + "x" + std::to_string(textureHeight) + ")" +
-                           " finalScale=" + std::to_string(finalScale) + " scaledSize=(" + std::to_string(scaledWidth) + "x" + std::to_string(scaledHeight) + ")");
-                
-                // Create and add Parallax component
-                Parallax parallaxComponent;
-                parallaxComponent.scrollSpeed = layerConfig.scrollSpeed;
-                parallaxComponent.repeatWidth = repeatWidth;
-                parallaxComponent.autoScroll = true;
-                m_ecsSystem->AddComponent<Parallax>(bgEntity, parallaxComponent);
-                GN_LOG_INFO("Added Parallax component to entity " + std::to_string(bgEntity) + " with scrollSpeed=" + std::to_string(layerConfig.scrollSpeed));
-                
-                // Create and add ParallaxInstance component for better management
-                ParallaxInstance instanceComponent(layerConfig.textureId, i, numInstances, scaledWidth);
-                m_ecsSystem->AddComponent<ParallaxInstance>(bgEntity, instanceComponent);
-                // Add optional variant support so the texture can change on wrap
+                // ParallaxInstance: Track position in layer with integer dimensions
+                ParallaxInstance instance(layerConfig.textureId, i, instancesNeeded, static_cast<float>(scaledWidthInt));
+                m_ecsSystem->AddComponent<ParallaxInstance>(bgEntity, instance);
+
+                // Variants: If this layer has texture variations
                 if (!layerConfig.variantTextureIds.empty()) {
                     ParallaxVariants variants(layerConfig.variantTextureIds);
                     m_ecsSystem->AddComponent<ParallaxVariants>(bgEntity, variants);
                 }
-                GN_LOG_INFO("Added ParallaxInstance component to entity " + std::to_string(bgEntity) + " (instance " + std::to_string(i) + " of " + std::to_string(numInstances) + ")" +
-                           " scaledWidth=" + std::to_string(scaledWidth));
-                
-                m_backgroundEntities.push_back(bgEntity);
-                layerEntitiesCreated++;
-                totalEntitiesCreated++;
-                
-                GN_LOG_INFO("✓ Successfully created background layer '" + layerConfig.textureId +
-                           "' instance " + std::to_string(i) + " (entity " + std::to_string(bgEntity) + ")" +
-                           " at (" + std::to_string(xPos) + ", " + std::to_string(yPos) + ")" +
-                           " with scale " + std::to_string(finalScale) +
-                           " pixelScaledWidth " + std::to_string(pixelScaledWidth) +
-                           " repeatWidth " + std::to_string(repeatWidth) +
-                           " scaledWidth " + std::to_string(scaledWidth) +
-                           " on render layer " + std::to_string(layerConfig.renderLayer));
+
+                m_backgroundEntities.push_back(bgEntity);                GN_LOG_INFO("✅ Created background entity " + std::to_string(bgEntity) +
+                           " at (" + std::to_string(xPos) + ", " + std::to_string(yPos) + ")");
             }
-            
-            GN_LOG_INFO("Created " + std::to_string(layerEntitiesCreated) + " entities for layer '" + layerConfig.textureId + "'");
         }
-        
-        GN_LOG_INFO("=== LEVELMANAGER COMPLETE: Created " + std::to_string(totalEntitiesCreated) + " total background entities ===");
-        GN_LOG_INFO("Expected entities: " + std::to_string(m_currentLevelConfig.backgroundLayers.size()) + " layers × 3+ instances = " + std::to_string(m_currentLevelConfig.backgroundLayers.size() * 3) + "+ entities");
-        GN_LOG_INFO("Actual entities in vector: " + std::to_string(m_backgroundEntities.size()));
+
+        GN_LOG_INFO("🎉 Background creation complete - " + std::to_string(m_backgroundEntities.size()) + " entities created");
+    }
+
+    // 🎯 NEW: Robust texture dimension retrieval with cache-first approach
+    bool LevelManager::GetTextureDimensions(const std::string& textureId, int& width, int& height) {
+        // 🎯 FIRST: Try synchronous cache (fastest, most reliable)
+        if (m_renderSystem && m_renderSystem->GetCachedTextureInfo(textureId, width, height)) {
+            return true; // ✅ Cache hit - instant success
+        }
+
+        // 🎯 SECOND: Try delegates as fallback (for non-preloaded textures)
+        TextureMetadata meta;
+
+        // Try renderer delegate first (most direct)
+        if (m_platformDelegates.renderer.getTextureMetadata &&
+            m_platformDelegates.renderer.getTextureMetadata(textureId.c_str(), &meta) &&
+            meta.width > 0 && meta.height > 0) {
+            width = meta.width;
+            height = meta.height;
+            GN_LOG_INFO("📊 Texture metadata (renderer fallback): " + textureId + " = " +
+                       std::to_string(width) + "x" + std::to_string(height));
+            return true;
+        }
+
+        // Try asset delegate (last resort)
+        if (m_platformDelegates.asset.getTextureMetadata &&
+            m_platformDelegates.asset.getTextureMetadata(textureId.c_str(), &meta) &&
+            meta.width > 0 && meta.height > 0) {
+            width = meta.width;
+            height = meta.height;
+            GN_LOG_INFO("📊 Texture metadata (asset fallback): " + textureId + " = " +
+                       std::to_string(width) + "x" + std::to_string(height));
+            return true;
+        }
+
+        // 🚨 FAILURE: No metadata available - this is a real problem
+        GN_LOG_ERROR("❌ CRITICAL: No texture metadata available for: " + textureId);
+        GN_LOG_ERROR("💥 This texture should have been preloaded in LoadingState!");
+        GN_LOG_ERROR("💥 Cache miss - RenderSystem: " + std::string(m_renderSystem ? "AVAILABLE" : "NULL"));
+        std::string rendererStatus = m_platformDelegates.renderer.getTextureMetadata ? "YES" : "NO";
+        std::string assetStatus = m_platformDelegates.asset.getTextureMetadata ? "YES" : "NO";
+        std::string delegateStatus = "💥 Delegates available - Renderer: " + rendererStatus +
+                                    ", Asset: " + assetStatus;
+        GN_LOG_ERROR(delegateStatus);
+
+        width = height = 0;
+        return false;
     }
 
     void LevelManager::DestroyBackgroundLayers() {
@@ -1209,5 +1159,11 @@ namespace GameCore {
     // REMOVED: SpawnSewerPattern_Pyramid4 - now handled by ObstacleSystem
 
     // REMOVED: WrapObstacleAroundScreen - now handled by ObstacleSystem
+
+    // 🎯 NEW: Set RenderSystem reference for cache access
+    void LevelManager::SetRenderSystem(RenderSystem* renderSystem) {
+        m_renderSystem = renderSystem;
+        GN_LOG_INFO("LevelManager: RenderSystem reference set for texture metadata cache access");
+    }
 
 } // namespace GameCore

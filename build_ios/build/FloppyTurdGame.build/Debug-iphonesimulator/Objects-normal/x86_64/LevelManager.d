@@ -20,5 +20,7 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Core/SystemManager.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Core/../../iOS/Threading/ThreadingProxy.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ObstacleSystem.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/RenderSystem.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Platform/PlatformDelegates.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Core/GNLog.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Config/EnemyConfigs.h

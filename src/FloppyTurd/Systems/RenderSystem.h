@@ -57,8 +57,12 @@ namespace GameCore {
         bool IsTextureLoaded(const std::string& textureId) const;
         uint32_t GetTextureHandle(const std::string& textureId) const;
         bool GetTextureSize(const std::string& textureId, int& outWidth, int& outHeight) const;
+
+        // 🎯 NEW: Synchronous texture metadata cache API
+        bool GetCachedTextureInfo(const std::string& textureId, int& width, int& height);
+        void UpdateCacheFromAsyncResult(const std::string& textureId, uint32_t handle, int width, int height);
         
-        // Platform-specific layout setup
+         // Platform-specific layout setup
         void SetupLayout();  // Calls appropriate platform layout function
 
     private:
@@ -104,6 +108,16 @@ namespace GameCore {
         std::unordered_map<std::string, uint32_t> m_textureCache;
         std::unordered_map<std::string, std::pair<int, int>> m_textureDimensions; // width,height
         std::string m_textureBasePath; // Base path for texture loading (mirrors SpriteSystem)
+
+        // 🎯 NEW: Synchronous texture metadata cache
+        struct CachedTextureInfo {
+            uint32_t handle;
+            int width;
+            int height;
+            bool isLoaded;
+            std::string assetPath;
+        };
+        std::unordered_map<std::string, CachedTextureInfo> m_textureMetadataCache;
         
         // Helper methods
         void CollectRenderItems();
