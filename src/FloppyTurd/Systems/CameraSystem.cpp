@@ -10,13 +10,16 @@ namespace GameCore {
         , m_mainCamera(0)
         , m_worldScrollSpeed(DEFAULT_SCROLL_SPEED)
         , m_worldPosition(0.0f)
+        , m_worldPositionFixed(0)
+        , m_worldScrollSpeedFixed(FloatToFixed(DEFAULT_SCROLL_SPEED))
     {
-        GN_LOG_INFO("CameraSystem initialized");
+        GN_LOG_INFO("CameraSystem initialized with fixed-point arithmetic for sub-pixel perfect scrolling");
     }
 
     void CameraSystem::ResetForNewGame() {
         m_worldPosition = 0.0f;
-        GN_LOG_INFO("CameraSystem reset for new game - world position reset to 0");
+        m_worldPositionFixed = 0;
+        GN_LOG_INFO("CameraSystem reset for new game - world position reset to 0 (both float and fixed-point)");
     }
 
     CameraSystem::~CameraSystem() {
@@ -41,8 +44,13 @@ namespace GameCore {
     }
 
     void CameraSystem::UpdateWorldScrolling(float deltaTime) {
-        // Update world position (this represents how far the world has scrolled)
-        m_worldPosition += m_worldScrollSpeed * deltaTime;
+        // 🎯 FIXED-POINT ARITHMETIC: Eliminate sub-pixel precision errors
+        // Convert deltaTime to fixed-point and update using integer arithmetic
+        int64_t deltaTimeFixed = FloatToFixed(deltaTime);
+        m_worldPositionFixed += (m_worldScrollSpeedFixed * deltaTimeFixed) >> 16;  // Multiply and shift back
+        
+        // Update legacy float position for compatibility (derived from fixed-point)
+        m_worldPosition = FixedToFloat(m_worldPositionFixed);
         
         // Camera stays stationary at (0,0) for side-scrolling games
         // Only track world scroll distance, don't move the camera
@@ -139,11 +147,17 @@ namespace GameCore {
                                "delta=" + std::to_string(movementDelta) + "px");
                 }
 
-                // 🔄 Move ALL backgrounds in this layer simultaneously
+                // 🔄 Move ALL backgrounds in this layer simultaneously using PIXEL-PERFECT positioning
                 for (Gnosis::Entity layerEntity : entities) {
                     auto transform = m_ecsSystem->GetComponent<Transform>(layerEntity);
                     if (transform) {
-                        transform->position.x -= movementDelta;
+                        // 🎯 PIXEL-PERFECT: Use fixed-point arithmetic for movement
+                        int64_t currentPosFixed = FloatToFixed(transform->position.x);
+                        int64_t movementFixed = FloatToFixed(movementDelta);
+                        currentPosFixed -= movementFixed;
+                        
+                        // Snap to exact pixel boundary - eliminates sub-pixel flickering
+                        transform->position.x = static_cast<float>(FixedToInt(currentPosFixed));
                     }
                 }
             }
@@ -217,33 +231,34 @@ namespace GameCore {
                             }
                         }
 
-                        // If we found a rightmost segment, position exactly where it ends
+                        // 🎯 PIXEL-PERFECT WRAPPING: Use integer arithmetic to eliminate gaps
                         if (rightmostEntity != 0) {
+                            // Snap to exact pixel boundary using fixed-point arithmetic
                             transform->position.x = static_cast<float>(rightmostSegmentEnd);
 
                             if (isSewerLevel && shouldLog) {
-                                GN_LOG_INFO("🚽 PRECISE SEWER WRAP: '" + sprite->textureId +
+                                GN_LOG_INFO("🚽 PIXEL-PERFECT SEWER WRAP: '" + sprite->textureId +
                                            "' wrapped to x=" + std::to_string(transform->position.x) +
                                            " (rightmost segment ends at " + std::to_string(rightmostSegmentEnd) + ")");
                             }
                         } else {
-                            // Fallback: use the old calculation if we can't find other segments
-                            // This should rarely happen but provides safety
+                            // Fallback: use pixel-perfect calculation
                             int rightmostPixelX = currentPixelX + totalLayerPixelWidth;
                             int boundaryOffset = rightmostPixelX % texturePixelWidth;
                             if (boundaryOffset != 0) {
                                 rightmostPixelX -= boundaryOffset;
                             }
+                            // Ensure exact pixel positioning
                             transform->position.x = static_cast<float>(rightmostPixelX);
 
                             if (shouldLog) {
-                                GN_LOG_INFO("⚠️ FALLBACK WRAP: No other segments found, using calculated position " +
-                                           std::to_string(transform->position.x));
+                                GN_LOG_INFO("🎯 PIXEL-PERFECT FALLBACK WRAP: Calculated position " +
+                                           std::to_string(transform->position.x) + " (no sub-pixel error)");
                             }
                         }
 
-                        // Ensure Y position is also pixel-perfect
-                        transform->position.y = std::round(transform->position.y);
+                        // Ensure Y position is also pixel-perfect (snap to integer pixels)
+                        transform->position.y = static_cast<float>(static_cast<int>(std::round(transform->position.y)));
 
                         // If this entity supports background variants, swap to a random one on wrap
                         ParallaxVariants* variants = m_ecsSystem->GetComponent<ParallaxVariants>(entity);

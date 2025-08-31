@@ -5,12 +5,14 @@
 
 namespace GameCore {
 
-    PlayerControllerSystem::PlayerControllerSystem(Gnosis::ECS* ecsSystem, GameCore::PlatformDelegates* platformDelegates, SpriteSystem* spriteSystem, ProjectileSystem* projectileSystem)
+    PlayerControllerSystem::PlayerControllerSystem(Gnosis::ECS* ecsSystem, GameCore::PlatformDelegates* platformDelegates, SpriteSystem* spriteSystem, ProjectileSystem* projectileSystem, HatsSystem* hatsSystem)
         : m_ecsSystem(ecsSystem)
         , m_platformDelegates(platformDelegates)
         , m_spriteSystem(spriteSystem)
         , m_projectileSystem(projectileSystem)
+        , m_hatsSystem(hatsSystem)
         , m_playerEntity(0)
+        , m_hatSpriteEntity(0)
         , m_playerAlive(true)
         , m_jumpPressed(false)
         , m_shootPressed(false)
@@ -36,6 +38,11 @@ namespace GameCore {
     }
 
     PlayerControllerSystem::~PlayerControllerSystem() {
+        // Clean up hat sprite entity
+        if (m_hatSpriteEntity != 0 && m_ecsSystem) {
+            m_ecsSystem->DestroyEntity(m_hatSpriteEntity);
+            m_hatSpriteEntity = 0;
+        }
         GN_LOG_INFO("PlayerControllerSystem destroyed");
     }
 
@@ -95,6 +102,10 @@ namespace GameCore {
         UpdatePlayerPhysics(deltaTime);
         UpdatePlayerAnimation(deltaTime);
         UpdatePlayerState(deltaTime);
+
+        // Update hat sprite position to follow player
+        UpdateHatSpritePosition();
+
         // Collision with pickups is handled centrally in GameplayState now
     }
 
@@ -271,69 +282,152 @@ namespace GameCore {
     void PlayerControllerSystem::SetPlayerEntity(Gnosis::Entity playerEntity) {
         m_playerEntity = playerEntity;
         GN_LOG_INFO("Player entity set: %d", playerEntity);
+
+        // Create hat sprite entity when player entity is set
+        if (playerEntity != 0) {
+            CreateHatSprite();
+        }
+    }
+
+    std::string PlayerControllerSystem::GetHatAdjustedTextureName(const std::string& baseAnimationName) {
+        // Get the equipped hat index from HatsSystem
+        if (!m_hatsSystem) {
+            GN_LOG_DEBUG("PlayerController: No hats system available, using base animation: %s", baseAnimationName.c_str());
+            return baseAnimationName; // No hats system, use base animation
+        }
+
+        int equippedHatIndex = m_hatsSystem->GetEquippedHatIndex();
+        if (equippedHatIndex < 0) {
+            GN_LOG_DEBUG("PlayerController: No hat equipped (index: %d), using base animation: %s", equippedHatIndex, baseAnimationName.c_str());
+            return baseAnimationName; // No hat equipped, use base animation
+        }
+
+        // Get hat data to determine the correct texture
+        const auto* hatData = m_hatsSystem->GetHatData(equippedHatIndex);
+        if (!hatData) {
+            GN_LOG_WARN("PlayerController: Invalid hat data for equipped hat index: %d, using base animation: %s", equippedHatIndex, baseAnimationName.c_str());
+            return baseAnimationName; // Invalid hat data, use base animation
+        }
+
+        GN_LOG_DEBUG("PlayerController: Hat equipped - index: %d, name: %s", equippedHatIndex, hatData->name.c_str());
+
+        // Determine which texture to use based on animation type
+        std::string selectedTexture;
+        if (baseAnimationName == "TurdletIdle") {
+            selectedTexture = hatData->turdletIdlePath;
+            GN_LOG_DEBUG("PlayerController: TurdletIdle -> using turdletIdlePath: '%s'", selectedTexture.c_str());
+        } else if (baseAnimationName == "TurdletJump") {
+            selectedTexture = hatData->turdletJumpPath;
+            GN_LOG_DEBUG("PlayerController: TurdletJump -> using turdletJumpPath: '%s'", selectedTexture.c_str());
+        } else if (baseAnimationName == "TurdletShoot") {
+            selectedTexture = hatData->turdletShootPath;
+            GN_LOG_DEBUG("PlayerController: TurdletShoot -> using turdletShootPath: '%s'", selectedTexture.c_str());
+        } else if (baseAnimationName == "TurdletHurt") {
+            selectedTexture = hatData->turdletJumpPath; // Hurt uses jump animation
+            GN_LOG_DEBUG("PlayerController: TurdletHurt -> using turdletJumpPath: '%s'", selectedTexture.c_str());
+        } else if (baseAnimationName == "TeenIdle") {
+            selectedTexture = hatData->teenageIdlePath;
+            GN_LOG_DEBUG("PlayerController: TeenIdle -> using teenageIdlePath: '%s'", selectedTexture.c_str());
+        } else if (baseAnimationName == "TeenJump") {
+            selectedTexture = hatData->teenageJumpPath;
+            GN_LOG_DEBUG("PlayerController: TeenJump -> using teenageJumpPath: '%s'", selectedTexture.c_str());
+        } else if (baseAnimationName == "TeenShoot") {
+            selectedTexture = hatData->teenageShootPath;
+            GN_LOG_DEBUG("PlayerController: TeenShoot -> using teenageShootPath: '%s'", selectedTexture.c_str());
+        } else if (baseAnimationName == "BigIdle") {
+            selectedTexture = hatData->bigTurdIdlePath;
+            GN_LOG_DEBUG("PlayerController: BigIdle -> using bigTurdIdlePath: '%s'", selectedTexture.c_str());
+        } else if (baseAnimationName == "BigJump") {
+            selectedTexture = hatData->bigTurdJumpPath;
+            GN_LOG_DEBUG("PlayerController: BigJump -> using bigTurdJumpPath: '%s'", selectedTexture.c_str());
+        } else if (baseAnimationName == "BigShoot") {
+            selectedTexture = hatData->bigTurdShootPath;
+            GN_LOG_DEBUG("PlayerController: BigShoot -> using bigTurdShootPath: '%s'", selectedTexture.c_str());
+        } else {
+            // Unknown animation, return base name
+            GN_LOG_WARN("PlayerController: Unknown animation '%s', using base animation", baseAnimationName.c_str());
+            return baseAnimationName;
+        }
+
+        // Check if the selected texture is empty
+        if (selectedTexture.empty()) {
+            GN_LOG_WARN("PlayerController: Selected texture is empty for animation '%s' and hat '%s', using base animation",
+                       baseAnimationName.c_str(), hatData->name.c_str());
+            return baseAnimationName;
+        }
+
+        GN_LOG_INFO("PlayerController: Using hat texture '%s' for animation '%s'",
+                   selectedTexture.c_str(), baseAnimationName.c_str());
+        return selectedTexture;
     }
 
     void PlayerControllerSystem::ChangePlayerAnimation(const std::string& animationName) {
         if (m_spriteSystem && m_playerEntity != 0) {
             Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(m_playerEntity);
             if (sprite) {
-                // ALWAYS restart animation - no more logic gates
-                sprite->textureId = animationName;
-                sprite->playing = true;
+                // Set base player texture (without hat)
+                std::string baseTextureName;
+
+                // Map animation names to base textures
+                if (animationName == "TurdletIdle") {
+                    baseTextureName = "TurdletIdle";
+                } else if (animationName == "TurdletJump") {
+                    baseTextureName = "TurdletJump";
+                } else if (animationName == "TurdletShoot") {
+                    baseTextureName = "TurdletShoot";
+                } else if (animationName == "TurdletHurt") {
+                    baseTextureName = "TurdletHurt";
+                } else {
+                    baseTextureName = "TurdletIdle"; // Default fallback
+                }
+
+                std::string oldTexture = sprite->textureId;
+
+                // Configure animation properties based on type FIRST
+                if (animationName == "TurdletIdle") {
+                    // Idle should be single frame, not animated
+                    sprite->frameCount = 1;
+                    sprite->isAnimated = false;
+                    sprite->playing = false;
+                    sprite->loop = false;
+                    sprite->frameTime = 0.1f; // Not used for idle, but set anyway
+                } else if (animationName == "TurdletJump") {
+                    sprite->frameCount = 6;
+                    sprite->isAnimated = true;
+                    sprite->playing = true;
+                    sprite->loop = false;
+                    sprite->frameTime = 0.08f;
+                } else if (animationName == "TurdletShoot") {
+                    sprite->frameCount = 6;
+                    sprite->isAnimated = true;
+                    sprite->playing = true;
+                    sprite->loop = false;
+                    sprite->frameTime = 0.1f;
+                } else if (animationName == "TurdletHurt") {
+                    sprite->frameCount = 6;
+                    sprite->isAnimated = true;
+                    sprite->playing = true;
+                    sprite->loop = false;
+                    sprite->frameTime = 0.12f;
+                }
+
+                // Set base player texture (no hat) AFTER configuration
+                sprite->textureId = baseTextureName;
                 sprite->currentFrame = 0;
                 sprite->currentFrameTime = 0.0f;
                 sprite->hasCompleted = false; // Reset completion flag
-                
-                GN_LOG_DEBUG("PlayerController: Force starting animation: " + animationName + " at frame 0");
-                
-                // Store current sprite dimensions to maintain consistency
-                float currentWidth = sprite->width;
-                float currentHeight = sprite->height;
-                
-                // Update frame count and animation properties based on animation type
-                if (animationName == "TurdletIdle") {
-                    // Single-frame idle pose
-                    sprite->frameCount = 1;
-                    sprite->frameWidth = 64;  // 64x64 frames
-                    sprite->frameHeight = 64;
-                    sprite->frameTime = 0.15f;
-                    sprite->isAnimated = false; // idle should not advance frames
-                    sprite->playing = false;
-                    sprite->loop = false;
-                } else if (animationName == "TurdletJump") {
-                    // Jump animation (assumes 64x64 frames laid out horizontally)
-                    sprite->frameCount = 6;
-                    sprite->frameWidth = 64;
-                    sprite->frameHeight = 64;
-                    sprite->frameTime = 0.08f;
-                    sprite->isAnimated = true;
-                    sprite->playing = true;
-                    sprite->loop = false; // play once
-                } else if (animationName == "TurdletShoot") {
-                    // Shoot animation (assumes 64x64 frames laid out horizontally)
-                    sprite->frameCount = 6;
-                    sprite->frameWidth = 64;
-                    sprite->frameHeight = 64;
-                    sprite->frameTime = 0.1f;
-                    sprite->isAnimated = true;
-                    sprite->playing = true;
-                    sprite->loop = false; // play once
-                } else if (animationName == "TurdletHurt") {
-                    // Hurt animation (assumes 64x64 frames laid out horizontally)
-                    sprite->frameCount = 6;
-                    sprite->frameWidth = 64;
-                    sprite->frameHeight = 64;
-                    sprite->frameTime = 0.12f;
-                    sprite->isAnimated = true;
-                    sprite->playing = true;
-                    sprite->loop = false; // Don't loop - play once and stop
-                }
-                
-                // Maintain consistent sprite dimensions across all animations
-                sprite->width = currentWidth;
-                sprite->height = currentHeight;
-                
-                GN_LOG_INFO("Changed animation to '" + animationName + "' with " + std::to_string(sprite->frameCount) + " frames, isAnimated=" + std::to_string(sprite->isAnimated) + ", playing=" + std::to_string(sprite->playing) + ", frameTime=" + std::to_string(sprite->frameTime));
+
+                GN_LOG_INFO("PlayerController: Changed base animation to '%s' (texture: '%s' -> '%s')",
+                           animationName.c_str(), oldTexture.c_str(), baseTextureName.c_str());
+
+                // Update hat sprite if equipped
+                UpdateHatSpriteTexture(animationName);
+
+                GN_LOG_DEBUG("PlayerController: Animation configured - frameCount: %d, isAnimated: %d, playing: %d",
+                           sprite->frameCount, sprite->isAnimated, sprite->playing);
+
+                GN_LOG_INFO("PlayerController: Changed animation to '%s' with %d frames, isAnimated=%d, playing=%d",
+                           animationName.c_str(), sprite->frameCount, sprite->isAnimated, sprite->playing);
             }
         }
     }
@@ -647,6 +741,169 @@ namespace GameCore {
     void PlayerControllerSystem::ResetInputDelay(float delaySeconds) {
         m_inputDelayTimer = delaySeconds;
         GN_LOG_INFO("Input delay timer reset to %.2fs", delaySeconds);
+    }
+
+    void PlayerControllerSystem::CreateHatSprite() {
+        if (m_hatSpriteEntity != 0) {
+            // Hat sprite already exists - clean it up first
+            GN_LOG_WARN("PlayerController: Hat sprite already exists (entity %d), cleaning up before creating new one", m_hatSpriteEntity);
+            HideHatSprite();
+            if (m_ecsSystem) {
+                m_ecsSystem->DestroyEntity(m_hatSpriteEntity);
+            }
+            m_hatSpriteEntity = 0;
+        }
+
+        if (m_playerEntity == 0 || !m_ecsSystem) {
+            return;
+        }
+
+        // Create hat sprite entity
+        m_hatSpriteEntity = m_ecsSystem->CreateEntity();
+
+        // Get player transform for positioning
+        Transform* playerTransform = m_ecsSystem->GetComponent<Transform>(m_playerEntity);
+        if (!playerTransform) {
+            return;
+        }
+
+        // Create hat transform (same position as player)
+        Transform hatTransform = *playerTransform;
+        m_ecsSystem->AddComponent<Transform>(m_hatSpriteEntity, hatTransform);
+
+        // Create hat sprite with placeholder texture initially
+        Sprite hatSprite("TurdletIdle", 64.0f, 64.0f, 64, 64, 1, 0.1f);
+        hatSprite.color = Gnosis::GNColor(255, 255, 255, 255);
+        hatSprite.visible = false; // Initially hidden
+        hatSprite.layer = 5; // Above player layer (4) so it renders on top
+        hatSprite.isAnimated = false;
+        hatSprite.playing = false;
+        hatSprite.loop = false;
+        hatSprite.frameCount = 1;
+        hatSprite.currentFrame = 0;
+        hatSprite.currentFrameTime = 0.0f;
+        hatSprite.hasCompleted = false;
+
+        m_ecsSystem->AddComponent<Sprite>(m_hatSpriteEntity, hatSprite);
+
+        GN_LOG_INFO("PlayerController: Created hat sprite entity %d", m_hatSpriteEntity);
+    }
+
+    void PlayerControllerSystem::UpdateHatSpritePosition() {
+        if (m_hatSpriteEntity == 0 || m_playerEntity == 0 || !m_ecsSystem) {
+            return;
+        }
+
+        // Copy player's position to hat sprite
+        Transform* playerTransform = m_ecsSystem->GetComponent<Transform>(m_playerEntity);
+        Transform* hatTransform = m_ecsSystem->GetComponent<Transform>(m_hatSpriteEntity);
+
+        if (playerTransform && hatTransform) {
+            hatTransform->position = playerTransform->position;
+            hatTransform->rotation = playerTransform->rotation;
+            hatTransform->scale = playerTransform->scale;
+        }
+    }
+
+    void PlayerControllerSystem::UpdateHatSpriteTexture(const std::string& animationName) {
+        if (m_hatSpriteEntity == 0 || !m_ecsSystem || !m_hatsSystem) {
+            return;
+        }
+
+        int equippedHatIndex = m_hatsSystem->GetEquippedHatIndex();
+        if (equippedHatIndex < 0) {
+            // No hat equipped, hide hat sprite
+            HideHatSprite();
+            return;
+        }
+
+        // Get hat data
+        const auto* hatData = m_hatsSystem->GetHatData(equippedHatIndex);
+        if (!hatData) {
+            HideHatSprite();
+            return;
+        }
+
+        // Get appropriate hat texture for this animation
+        std::string hatTexture = GetHatAdjustedTextureName(animationName);
+        if (hatTexture.empty() || hatTexture == animationName) {
+            // No specific hat texture, hide hat sprite
+            HideHatSprite();
+            return;
+        }
+
+        // Update hat sprite texture
+        Sprite* hatSprite = m_ecsSystem->GetComponent<Sprite>(m_hatSpriteEntity);
+        if (hatSprite) {
+            hatSprite->textureId = hatTexture;
+            hatSprite->visible = true;
+
+            // Configure hat sprite animation properties
+            if (animationName == "TurdletIdle") {
+                // For idle, use single frame (first frame of texture)
+                hatSprite->frameCount = 1;
+                hatSprite->isAnimated = false;
+                hatSprite->playing = false;
+                hatSprite->loop = false;
+                hatSprite->frameTime = 0.1f; // Not used for idle
+                GN_LOG_DEBUG("PlayerController: Hat sprite configured for IDLE - texture: %s, frameCount: %d, isAnimated: %d, playing: %d",
+                           hatTexture.c_str(), hatSprite->frameCount, hatSprite->isAnimated, hatSprite->playing);
+            } else if (animationName == "TurdletJump") {
+                // For jump, use full 6-frame animation
+                hatSprite->frameCount = 6;
+                hatSprite->isAnimated = true;
+                hatSprite->playing = true;
+                hatSprite->loop = false;
+                hatSprite->frameTime = 0.08f;
+                GN_LOG_DEBUG("PlayerController: Hat sprite configured for JUMP - texture: %s, frameCount: %d, isAnimated: %d, playing: %d",
+                           hatTexture.c_str(), hatSprite->frameCount, hatSprite->isAnimated, hatSprite->playing);
+            } else if (animationName == "TurdletShoot") {
+                // For shoot, use full 6-frame animation
+                hatSprite->frameCount = 6;
+                hatSprite->isAnimated = true;
+                hatSprite->playing = true;
+                hatSprite->loop = false;
+                hatSprite->frameTime = 0.1f;
+                GN_LOG_DEBUG("PlayerController: Hat sprite configured for SHOOT - texture: %s, frameCount: %d, isAnimated: %d, playing: %d",
+                           hatTexture.c_str(), hatSprite->frameCount, hatSprite->isAnimated, hatSprite->playing);
+            } else if (animationName == "TurdletHurt") {
+                // For hurt, use full 6-frame animation
+                hatSprite->frameCount = 6;
+                hatSprite->isAnimated = true;
+                hatSprite->playing = true;
+                hatSprite->loop = false;
+                hatSprite->frameTime = 0.12f;
+                GN_LOG_DEBUG("PlayerController: Hat sprite configured for HURT - texture: %s, frameCount: %d, isAnimated: %d, playing: %d",
+                           hatTexture.c_str(), hatSprite->frameCount, hatSprite->isAnimated, hatSprite->playing);
+            }
+
+            hatSprite->currentFrame = 0;
+            hatSprite->currentFrameTime = 0.0f;
+            hatSprite->hasCompleted = false;
+
+            GN_LOG_INFO("PlayerController: Updated hat sprite texture to '%s' for animation '%s'",
+                       hatTexture.c_str(), animationName.c_str());
+        }
+    }
+
+    void PlayerControllerSystem::HideHatSprite() {
+        if (m_hatSpriteEntity != 0 && m_ecsSystem) {
+            Sprite* hatSprite = m_ecsSystem->GetComponent<Sprite>(m_hatSpriteEntity);
+            if (hatSprite) {
+                hatSprite->visible = false;
+                GN_LOG_DEBUG("PlayerController: Hidden hat sprite");
+            }
+        }
+    }
+
+    void PlayerControllerSystem::ShowHatSprite() {
+        if (m_hatSpriteEntity != 0 && m_ecsSystem) {
+            Sprite* hatSprite = m_ecsSystem->GetComponent<Sprite>(m_hatSpriteEntity);
+            if (hatSprite) {
+                hatSprite->visible = true;
+                GN_LOG_DEBUG("PlayerController: Shown hat sprite");
+            }
+        }
     }
 
 } // namespace GameCore 

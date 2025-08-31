@@ -118,6 +118,7 @@ public class MetalRenderer {
     private var indexBuffer: MTLBuffer?
     private var uniformBuffer: MTLBuffer?
     private var samplerState: MTLSamplerState?
+    private var parallaxSamplerState: MTLSamplerState?  // Specialized sampler for parallax backgrounds
     // No SDF/MSDF samplers
     private var library: MTLLibrary?
     
@@ -343,7 +344,17 @@ public class MetalRenderer {
         samplerDescriptor.tAddressMode = .clampToEdge
         samplerState = device.makeSamplerState(descriptor: samplerDescriptor)
         
-        log("Sampler states created (nearest for sprites)", level: .debug)
+        // Create specialized parallax sampler for sub-pixel perfect scrolling
+        let parallaxSamplerDescriptor = MTLSamplerDescriptor()
+        parallaxSamplerDescriptor.minFilter = .nearest
+        parallaxSamplerDescriptor.magFilter = .nearest  
+        parallaxSamplerDescriptor.mipFilter = .notMipmapped
+        parallaxSamplerDescriptor.sAddressMode = .repeat  // Allow seamless wrapping for parallax
+        parallaxSamplerDescriptor.tAddressMode = .clampToEdge
+        parallaxSamplerDescriptor.normalizedCoordinates = true  // Use normalized coordinates for precision
+        parallaxSamplerState = device.makeSamplerState(descriptor: parallaxSamplerDescriptor)
+        
+        log("Sampler states created (nearest for sprites, specialized parallax)", level: .debug)
     }
     
     // MARK: - RotSprite Compute Pipeline Setup
@@ -444,6 +455,7 @@ public class MetalRenderer {
         indexBuffer = nil
         uniformBuffer = nil
         samplerState = nil
+        parallaxSamplerState = nil
         renderPipelineState = nil
         texturedPipelineState = nil
         
@@ -2364,5 +2376,133 @@ public class MetalRenderer {
         renderEncoder.drawIndexedPrimitives(type: .triangle, indexCount: 6, indexType: .uint16, indexBuffer: indexBuffer!, indexBufferOffset: 0)
         
         log("Rendered RotSprite: bb (\(textureWidth)x\(textureHeight)), adjusted pos (\(adjustedPosX),\(adjustedPosY)), pivot at (\(position.x),\(position.y))", level: .debug)
+    }
+    
+    // MARK: - Pixel-Perfect Parallax Rendering Pipeline
+    
+    /// Snap UV coordinates to texel centers to eliminate sub-pixel sampling artifacts
+    /// This ensures UV coordinates align exactly with pixel boundaries
+    private func snapUVToTexelCenter(_ uv: Float, textureSize: Float) -> Float {
+        return floor(uv * textureSize + 0.5) / textureSize
+    }
+    
+    /// Snap position to pixel boundaries to eliminate sub-pixel positioning
+    /// This ensures sprites are rendered at exact pixel locations
+    private func snapToPixelBoundary(_ position: Float) -> Float {
+        return floor(position + 0.5)
+    }
+    
+    /// Create pixel-perfect vertex data with snapped UV coordinates
+    /// Position snapping happens in the transformation matrix, not vertex data
+    private func createPixelPerfectVertices(x: Float, y: Float, width: Float, height: Float, 
+                                          textureWidth: Float, textureHeight: Float,
+                                          sourceX: Float = 0.0, sourceY: Float = 0.0,
+                                          sourceWidth: Float? = nil, sourceHeight: Float? = nil) -> [Float] {
+        // Calculate UV coordinates for source rectangle or full texture
+        let actualSourceWidth = sourceWidth ?? textureWidth
+        let actualSourceHeight = sourceHeight ?? textureHeight
+        
+        // Calculate pixel-perfect UV coordinates
+        let u0 = snapUVToTexelCenter(sourceX / textureWidth, textureSize: textureWidth)
+        let v0 = snapUVToTexelCenter(sourceY / textureHeight, textureSize: textureHeight)
+        let u1 = snapUVToTexelCenter((sourceX + actualSourceWidth) / textureWidth, textureSize: textureWidth)
+        let v1 = snapUVToTexelCenter((sourceY + actualSourceHeight) / textureHeight, textureSize: textureHeight)
+        
+        // Create vertices with snapped positions and UV coordinates
+        return [
+            // Position (x, y), TexCoord (u, v), Color (r, g, b, a)
+            0.0, 1.0, u0, v1, 1.0, 1.0, 1.0, 1.0,   // Bottom-left
+            1.0, 1.0, u1, v1, 1.0, 1.0, 1.0, 1.0,   // Bottom-right
+            1.0, 0.0, u1, v0, 1.0, 1.0, 1.0, 1.0,   // Top-right
+            0.0, 0.0, u0, v0, 1.0, 1.0, 1.0, 1.0    // Top-left
+        ]
+    }
+    
+    /// Specialized parallax sprite rendering with pixel-perfect positioning and UV snapping
+    /// This eliminates sub-pixel flickering in scrolling backgrounds
+    public func drawParallaxSprite(textureHandle: UInt32, x: Float, y: Float, scaleX: Float, scaleY: Float, 
+                                  rotation: Float = 0.0, sourceX: Float = 0.0, sourceY: Float = 0.0,
+                                  sourceWidth: Float? = nil, sourceHeight: Float? = nil) {
+        guard let texture = textures[textureHandle] else {
+            log("drawParallaxSprite: Invalid texture handle \(textureHandle)", level: .warning)
+            return
+        }
+        
+        guard let device = device,
+              let uniformBuffer = uniformBuffer,
+              let parallaxSamplerState = parallaxSamplerState,
+              let pipelineState = texturedPipelineState else {
+            log("drawParallaxSprite: Missing required Metal resources", level: .warning)
+            return
+        }
+        
+        guard let renderEncoder = ensureRenderEncoder() else {
+            log("drawParallaxSprite: Failed to get render encoder", level: .error)
+            return
+        }
+        
+        // Calculate snapped sprite dimensions
+        let spriteWidth = floor(Float(texture.width) * scaleX + 0.5)
+        let spriteHeight = floor(Float(texture.height) * scaleY + 0.5)
+        
+        // Use integer-only positioning for the transformation matrix
+        let snapX = snapToPixelBoundary(x)
+        let snapY = snapToPixelBoundary(y)
+        
+        // Create transformation matrix with snapped position
+        let modelMatrix = MetalMatrixHelpers.spriteTransformMatrix(
+            position: (x: snapX, y: snapY),
+            scale: (x: spriteWidth, y: spriteHeight),
+            rotation: rotation
+        )
+        
+        // Get current projection matrix and create MVP
+        let projectionMatrix = uniformBuffer.contents().bindMemory(to: simd_float4x4.self, capacity: 1).pointee
+        let mvpMatrix = projectionMatrix * modelMatrix
+        
+        // Create temporary uniform buffer
+        guard let tempUniformBuffer = device.makeBuffer(bytes: [mvpMatrix], length: MemoryLayout<simd_float4x4>.stride, options: []) else {
+            log("drawParallaxSprite: Failed to create temporary uniform buffer", level: .error)
+            return
+        }
+        
+        // Create pixel-perfect vertex buffer with UV snapping
+        let textureWidth = Float(texture.width)
+        let textureHeight = Float(texture.height)
+        let vertices = createPixelPerfectVertices(
+            x: snapX, y: snapY, width: spriteWidth, height: spriteHeight,
+            textureWidth: textureWidth, textureHeight: textureHeight,
+            sourceX: sourceX, sourceY: sourceY,
+            sourceWidth: sourceWidth, sourceHeight: sourceHeight
+        )
+        
+        guard let parallaxVertexBuffer = device.makeBuffer(bytes: vertices, length: vertices.count * MemoryLayout<Float>.stride, options: []) else {
+            log("drawParallaxSprite: Failed to create parallax vertex buffer", level: .error)
+            return
+        }
+        
+        // Set up render encoder with specialized parallax sampler
+        renderEncoder.setRenderPipelineState(pipelineState)
+        renderEncoder.setVertexBuffer(parallaxVertexBuffer, offset: 0, index: 0)
+        renderEncoder.setVertexBuffer(tempUniformBuffer, offset: 0, index: 1)
+        renderEncoder.setFragmentTexture(texture, index: 0)
+        renderEncoder.setFragmentSamplerState(parallaxSamplerState, index: 0)  // Use parallax sampler
+        
+        // Draw the parallax sprite
+        renderEncoder.drawIndexedPrimitives(type: .triangle, indexCount: 6, indexType: .uint16, indexBuffer: indexBuffer!, indexBufferOffset: 0)
+        
+        log("drawParallaxSprite: Rendered parallax sprite \(textureHandle) at snapped position (\(snapX), \(snapY)) size (\(spriteWidth), \(spriteHeight))", level: .debug)
+    }
+    
+    /// Specialized integer-position sprite rendering for backgrounds
+    /// Forces all positioning to exact pixel boundaries
+    public func drawBackgroundSprite(textureHandle: UInt32, pixelX: Int, pixelY: Int, pixelWidth: Int, pixelHeight: Int) {
+        drawParallaxSprite(
+            textureHandle: textureHandle,
+            x: Float(pixelX), y: Float(pixelY),
+            scaleX: Float(pixelWidth) / Float(textures[textureHandle]?.width ?? 1),
+            scaleY: Float(pixelHeight) / Float(textures[textureHandle]?.height ?? 1),
+            rotation: 0.0
+        )
     }
 }

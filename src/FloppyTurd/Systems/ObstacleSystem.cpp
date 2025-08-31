@@ -295,11 +295,11 @@ namespace GameCore {
         
         Hitbox topCollider;
         topCollider.type = ColliderType::Rectangle;
-        // Consistent hitbox configuration: 20px width, 226px height, starts 25px down from top
+        // Consistent hitbox configuration: 20px width, 226px height, starts 15px down from top (visually lower)
         topCollider.width = 20.0f;
         topCollider.height = 226.0f;
         topCollider.offsetX = 0.0f;
-        topCollider.offsetY = 25.0f;
+        topCollider.offsetY = 15.0f; // Visually lower from 25.0f to 15.0f (added 5px back)
         topCollider.isStatic = false;
         topCollider.isTrigger = false;
         topCollider.tag = "obstacle";
@@ -352,11 +352,7 @@ namespace GameCore {
         m_ecsSystem->AddComponent<Hitbox>(topToilet, topCollider);
         m_ecsSystem->AddComponent<Obstacle>(topToilet, topObstacle);
         
-        // Debug overlays for top toilet (uses Hitbox for dimensions)
-        if (m_debugMode) {
-            DebugDraw topDebug(false, false, Gnosis::GNColor(0, 255, 0, 255), Gnosis::GNColor(255, 0, 0, 255));
-            m_ecsSystem->AddComponent<DebugDraw>(topToilet, topDebug);
-        }
+
         
         m_ecsSystem->AddComponent<Transform>(bottomToilet, bottomTransform);
         m_ecsSystem->AddComponent<Sprite>(bottomToilet, bottomSprite);
@@ -901,8 +897,8 @@ namespace GameCore {
         obstacle.isTopPart = (texture == "Outhouse");
         m_ecsSystem->AddComponent<Obstacle>(entity, obstacle);
         
-                        // DebugDraw - show hitboxes visually (only when debug mode is on)
-                if (m_debugMode) {
+                        // DebugDraw - show hitboxes visually (disabled for desert level)
+                if (m_debugMode && m_currentLevelId != 3) { // Disable debug drawing for desert level
                     DebugDraw debugDraw;
                     debugDraw.showBounds = false;  // Don't show sprite bounds
                     debugDraw.showCollider = true; // Show hitbox colliders
@@ -2136,7 +2132,7 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         // Consistent hitbox configuration with other toilet types
         topCollider.width = 20.0f;
         topCollider.height = 226.0f; // Fixed height: from top (0) to 226px down
-        topCollider.offsetY = 25.0f; // Start 25px down from the top (scaled to 200px at scale 8)
+        topCollider.offsetY = 15.0f; // Start 15px down from the top (scaled to 120px at scale 8) - visually lower
         topCollider.isStatic = false;
         topCollider.tag = "Obstacle";
         
@@ -2157,7 +2153,9 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         m_ecsSystem->AddComponent<Physics>(topToilet, topPhysics);
         m_ecsSystem->AddComponent<Hitbox>(topToilet, topCollider);
         m_ecsSystem->AddComponent<Obstacle>(topToilet, topObstacle);
-        
+
+
+
         // Create bottom snow toilet with same oscillation (linked movement)
         Gnosis::Entity bottomToilet = m_ecsSystem->CreateEntity();
         
@@ -2321,7 +2319,7 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         const float TRIM_TOP = 30.0f;
         topCollider.width = 20.0f;
         topCollider.height = 226.0f; // Fixed height: from top (0) to 226px down
-        topCollider.offsetY = 25.0f; // Start 25px down from the top (scaled to 200px at scale 8)
+        topCollider.offsetY = 15.0f; // Start 15px down from the top (scaled to 120px at scale 8) - visually lower
         topCollider.isStatic = false;
         topCollider.tag = "Obstacle";
         
@@ -2343,15 +2341,7 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         m_ecsSystem->AddComponent<Hitbox>(topToilet, topCollider);
         m_ecsSystem->AddComponent<Obstacle>(topToilet, topObstacle);
         
-        // Add debug drawing for top gold toilet hitbox
-        DebugDraw topDebugDraw;
-        topDebugDraw.showBounds = true;
-        topDebugDraw.showCollider = true;
-        topDebugDraw.colliderColor = Gnosis::GNColor(255, 215, 0, 255); // Gold for gold toilet
-        topDebugDraw.boundsColor = Gnosis::GNColor(0, 255, 0, 255);     // Green for bounds
-        topDebugDraw.alpha = 0.8f;
-        topDebugDraw.debugLayer = 18;
-        m_ecsSystem->AddComponent<DebugDraw>(topToilet, topDebugDraw);
+
         
         // Create bottom gold toilet with same oscillation (linked movement)
         Gnosis::Entity bottomToilet = m_ecsSystem->CreateEntity();

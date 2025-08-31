@@ -6,6 +6,7 @@
 #include "../../Engine/Platform/PlatformDelegates.h"
 #include "SpriteSystem.h"
 #include "ProjectileSystem.h"
+#include "HatsSystem.h"
 #include <memory>
 
 namespace GameCore {
@@ -33,7 +34,7 @@ namespace GameCore {
      */
     class PlayerControllerSystem {
     public:
-        PlayerControllerSystem(Gnosis::ECS* ecsSystem, GameCore::PlatformDelegates* platformDelegates, SpriteSystem* spriteSystem, ProjectileSystem* projectileSystem);
+        PlayerControllerSystem(Gnosis::ECS* ecsSystem, GameCore::PlatformDelegates* platformDelegates, SpriteSystem* spriteSystem, ProjectileSystem* projectileSystem, HatsSystem* hatsSystem);
         ~PlayerControllerSystem();
 
         // Main update method
@@ -64,18 +65,30 @@ namespace GameCore {
         void PlayShootAnimation();
         void PlayHurtAnimation();
 
+        // Hat integration
+        std::string GetHatAdjustedTextureName(const std::string& baseAnimationName);
+
         // Input delay management
         void ResetInputDelay(float delaySeconds = 0.4f);
 
     private:
         // Constants
         static constexpr float PLAYER_X_POSITION = 300.0f;  // Configurable player X position for optimal gameplay visibility
-        
+
         // Core systems
         Gnosis::ECS* m_ecsSystem;
+
+        // Hat sprite management
+        Gnosis::Entity m_hatSpriteEntity;
+        void CreateHatSprite();
+        void UpdateHatSpritePosition();
+        void UpdateHatSpriteTexture(const std::string& animationName);
+        void HideHatSprite();
+        void ShowHatSprite();
         GameCore::PlatformDelegates* m_platformDelegates;
         SpriteSystem* m_spriteSystem;
         ProjectileSystem* m_projectileSystem;
+        HatsSystem* m_hatsSystem;
         
         Gnosis::Entity m_playerEntity;
         bool m_playerAlive;

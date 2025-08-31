@@ -23,11 +23,17 @@ namespace Gnosis {
         std::unique_ptr<ComponentManager> componentManager;
         std::unique_ptr<EventManager> eventManager;
         std::unique_ptr<SystemManager> systemManager;
-        
+
         bool initialized;
+
+        // Screen dimensions (set by RenderSystem, accessible by all systems)
+        float screenWidth;
+        float screenHeight;
+        float logicalWidth;
+        float logicalHeight;
         
     public:
-        ECS() : initialized(false) {}
+        ECS() : initialized(false), screenWidth(0), screenHeight(0), logicalWidth(0), logicalHeight(0) {}
         
         ~ECS() {
             Shutdown();
@@ -303,7 +309,38 @@ namespace Gnosis {
             
             return result;
         }
-        
+
+        // Screen Dimension Management (accessible by all systems)
+
+        /**
+         * Set screen dimensions (called by RenderSystem)
+         */
+        void SetScreenDimensions(float width, float height, float logicalW, float logicalH) {
+            screenWidth = width;
+            screenHeight = height;
+            logicalWidth = logicalW;
+            logicalHeight = logicalH;
+        }
+
+        /**
+         * Get screen width in pixels
+         */
+        float GetScreenWidth() const { return screenWidth; }
+
+        /**
+         * Get screen height in pixels
+         */
+        float GetScreenHeight() const { return screenHeight; }
+
+        /**
+         * Get logical screen width
+         */
+        float GetLogicalWidth() const { return logicalWidth; }
+
+        /**
+         * Get logical screen height
+         */
+        float GetLogicalHeight() const { return logicalHeight; }
 
     };
     

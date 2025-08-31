@@ -16,6 +16,7 @@
 #include "../Systems/UISystem.h"
 #include "../Systems/HeartSystem.h"
 #include "../Systems/ProjectileSystem.h"
+#include "../Systems/HatsSystem.h"
 #include "../Config/LevelConfig.h"
 #include <memory>
 #include <vector>
@@ -95,6 +96,7 @@ namespace GameCore {
         std::unique_ptr<EnemySystem> m_enemySystem;
         std::unique_ptr<HeartSystem> m_heartSystem;
         std::unique_ptr<ProjectileSystem> m_projectileSystem;
+        std::unique_ptr<HatsSystem> m_hatsSystem;
 
         // Level configuration
         int m_currentLevelId;
@@ -153,12 +155,17 @@ namespace GameCore {
         Gnosis::Entity m_settingsButtonEntity;  // Settings button (replaces [MENU] button)
         Gnosis::Entity m_pauseMenuBackgroundEntity; // Pause menu background overlay
         Gnosis::Entity m_pauseMenuRibbonEntity;     // Ribbon containing tab buttons
+        bool m_hatsGridCreated;                       // Prevent duplicate hats grid creation
         std::vector<Gnosis::Entity> m_ribbonButtons; // SKILLS, HATS, STATS, SYSTEM buttons
         Gnosis::Entity m_pauseMenuContentEntity;     // Content area for current tab
         int m_currentPauseTab;                       // Current active tab (0=SKILLS, 1=HATS, 2=STATS, 3=SYSTEM)
         // Settings button debouncing
         float m_lastSettingsButtonPressTime;
         float m_settingsButtonDebounceDelay;
+
+        // Action button debouncing
+        float m_lastActionButtonPressTime;
+        float m_actionButtonDebounceDelay;
         
         // Pause menu creation state
         bool m_pauseMenuCreated;
@@ -170,6 +177,17 @@ namespace GameCore {
         void CreateSkillsTabContent();
         void CreateHatsTabContent();
         void CreateStatsTabContent();
+
+        // Hats tab interaction
+        void HandleHatsTabClick(float touchX, float touchY);
+        void HandleHatsButtonClicks(float touchX, float touchY, float centerX, float buttonY);
+        void HandleHatPurchase();
+        void HandleHatEquip();
+        void ScheduleDelayedSound(float delaySeconds);
+
+        // Coin management helpers
+        int GetCurrentPlayerCoins() const;
+        void DeductPlayerCoins(int amount);
 
         // Pause menu tab content entities
         Gnosis::Entity m_systemTabEntity;       // System tab content (audio + main menu)
@@ -226,7 +244,11 @@ namespace GameCore {
         float m_masterSliderValue = 1.0f;
         float m_musicSliderValue = 1.0f;
         float m_sfxSliderValue = 1.0f;
-        
+
+        // Delayed sound system for ooo sounds
+        float m_delayedSoundTime = 0.0f;
+        std::string m_delayedSoundName;
+
         // Debug hitbox visualization entities
         std::vector<Gnosis::Entity> m_debugHitboxEntities;
         

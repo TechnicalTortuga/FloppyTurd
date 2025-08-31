@@ -481,6 +481,15 @@ if(PLATFORM_IOS)
         endif()
     endforeach()
 
+    # Add hat assets to bundle for iOS
+    file(GLOB HAT_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/assets/hats/*.png")
+    message(STATUS "Found hat files: ${HAT_FILES}")
+    foreach(HAT_FILE ${HAT_FILES})
+        message(STATUS "Adding hat file to bundle: ${HAT_FILE}")
+        set_source_files_properties(${HAT_FILE} PROPERTIES MACOSX_PACKAGE_LOCATION Resources/hats)
+        target_sources(FloppyTurd PRIVATE ${HAT_FILE})
+    endforeach()
+
     # Metal shaders
     file(GLOB METAL_SHADERS "${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/Shaders/*.metal")
     foreach(SHADER ${METAL_SHADERS})

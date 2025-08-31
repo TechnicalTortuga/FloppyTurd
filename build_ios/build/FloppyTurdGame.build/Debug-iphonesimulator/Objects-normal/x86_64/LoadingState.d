@@ -37,6 +37,7 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/../../Engine/Platform/PlatformDelegates.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/PlayerControllerSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/ProjectileSystem.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/HatsSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/CameraSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/RenderSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/LevelManager.h \

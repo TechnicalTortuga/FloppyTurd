@@ -164,6 +164,33 @@ namespace GameCore {
         s_instance->enqueueRenderCommand(cmd);
     }
     
+    void ThreadingProxy::enqueueDrawParallaxSprite(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation, float sourceX, float sourceY, float sourceWidth, float sourceHeight) {
+        if (!s_instance) return;
+        RenderCommand cmd(CommandType::CMD_DRAW_PARALLAX_SPRITE);
+        cmd.data.textureHandle = textureHandle;
+        cmd.data.x = x;
+        cmd.data.y = y;
+        cmd.data.scaleX = scaleX;
+        cmd.data.scaleY = scaleY;
+        cmd.data.rotation = rotation;
+        cmd.data.sourceX = sourceX;
+        cmd.data.sourceY = sourceY;
+        cmd.data.sourceWidth = sourceWidth;
+        cmd.data.sourceHeight = sourceHeight;
+        s_instance->enqueueRenderCommand(cmd);
+    }
+    
+    void ThreadingProxy::enqueueDrawBackgroundSprite(uint32_t textureHandle, int pixelX, int pixelY, int pixelWidth, int pixelHeight) {
+        if (!s_instance) return;
+        RenderCommand cmd(CommandType::CMD_DRAW_BACKGROUND_SPRITE);
+        cmd.data.textureHandle = textureHandle;
+        cmd.data.x = static_cast<float>(pixelX);
+        cmd.data.y = static_cast<float>(pixelY);
+        cmd.data.width = static_cast<float>(pixelWidth);
+        cmd.data.height = static_cast<float>(pixelHeight);
+        s_instance->enqueueRenderCommand(cmd);
+    }
+    
     void ThreadingProxy::enqueueDrawText(const std::string& text, float x, float y, float fontSize, float r, float g, float b, float a) {
         if (!s_instance) return;
         RenderCommand cmd(CommandType::CMD_DRAW_TEXT);

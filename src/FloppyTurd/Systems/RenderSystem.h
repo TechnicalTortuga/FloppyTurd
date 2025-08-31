@@ -48,6 +48,12 @@ namespace GameCore {
         void UpdateScreenInfo(); // Call when screen changes (rotation, etc.)
         float GetDynamicScale() const;
         float GetUIScale() const;
+
+        // Direct screen dimension accessors (most commonly used)
+        float GetScreenWidth() const { return m_screenInfo.pixelWidth; }
+        float GetScreenHeight() const { return m_screenInfo.pixelHeight; }
+        float GetLogicalWidth() const { return m_screenInfo.logicalWidth; }
+        float GetLogicalHeight() const { return m_screenInfo.logicalHeight; }
         
         // Texture management (1:1 with SpriteSystem)
         void SetTextureBasePath(const std::string& basePath);

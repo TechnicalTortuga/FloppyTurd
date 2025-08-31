@@ -145,19 +145,27 @@ namespace GameCore {
             GN_LOG_INFO("RenderSystem: Added text entity " + std::to_string(entity) + " to render queue at layer " + std::to_string(text->layer));
         }
         
-    // Collect all entities with UIElement components (buttons, UI sprites)
+        // Collect all entities with UIElement components (buttons, UI sprites)
     auto uiElementEntities = m_ecsSystem->GetEntitiesWithComponents<Transform, UIElement>();
     GN_LOG_INFO("RenderSystem: Found " + std::to_string(uiElementEntities.size()) + " UI entities");
-    
+
+    int hatsEntitiesFound = 0;
     for (Gnosis::Entity entity : uiElementEntities) {
         auto transform = m_ecsSystem->GetComponent<Transform>(entity);
         auto uiElement = m_ecsSystem->GetComponent<UIElement>(entity);
         auto sprite = m_ecsSystem->GetComponent<Sprite>(entity); // UI elements may have sprites
-        
+
         if (!transform || !uiElement || !uiElement->visible) {
             continue;
         }
-        
+
+        // Count hats-related entities (layers 84-86)
+        if (uiElement->textLayer >= 84 && uiElement->textLayer <= 86) {
+            hatsEntitiesFound++;
+            bool spriteVisible = sprite ? sprite->visible : false;
+            GN_LOG_INFO("RenderSystem: Found hats UI entity " + std::to_string(entity) + " at layer " + std::to_string(uiElement->textLayer) + " with sprite: " + (sprite ? (sprite->textureId.empty() ? "no texture" : sprite->textureId) : "no sprite") + ", sprite.visible=" + std::to_string(spriteVisible) + ", uiElement.visible=" + std::to_string(uiElement->visible));
+        }
+
         RenderItem item;
         item.entity = entity;
         item.transform = transform;
@@ -165,13 +173,15 @@ namespace GameCore {
         item.text = nullptr;  // UI text is handled via UIElement.buttonText
         item.shape = nullptr;
         item.layer = uiElement->textLayer; // Use textLayer for UI elements
-        
+
         // Calculate depth based on position and layer
         item.depth = static_cast<float>(item.layer) * 1000.0f + transform->position.y;
-        
+
         m_renderQueue.push_back(item);
         GN_LOG_INFO("RenderSystem: Added UI entity " + std::to_string(entity) + " to render queue at layer " + std::to_string(uiElement->textLayer));
     }
+
+    GN_LOG_INFO("RenderSystem: Found " + std::to_string(hatsEntitiesFound) + " hats-related UI entities (layers 84-86)");
 
         // Collect all entities with DebugDraw components for debug overlays
         auto debugEntities = m_ecsSystem->GetEntitiesWithComponents<Transform, DebugDraw>();
@@ -769,8 +779,19 @@ namespace GameCore {
                 float finalScaleX = scaleX * item.transform->scale.x * GetCameraScale();
                 float finalScaleY = scaleY * item.transform->scale.y * GetCameraScale();
 
-                // If animated and we have a with-source delegate, render the correct frame sub-rect
-                if (item.sprite->isAnimated && m_platformDelegates.renderer.drawSpriteScaledWithSource) {
+                // Check if we need to render a sub-rect (animated OR spritesheet with multiple frames)
+                bool needsSourceRect = item.sprite->isAnimated;
+                if (!needsSourceRect) {
+                    // Even if not animated, check if texture is a spritesheet by comparing dimensions
+                    int textureWidth, textureHeight;
+                    if (GetCachedTextureInfo(item.sprite->textureId, textureWidth, textureHeight)) {
+                        // If texture width is larger than frame width, it's likely a spritesheet
+                        needsSourceRect = (textureWidth > item.sprite->frameWidth);
+                    }
+                }
+
+                // If we need source rect rendering and have the delegate, render the correct frame sub-rect
+                if (needsSourceRect && m_platformDelegates.renderer.drawSpriteScaledWithSource) {
                     int safeFrameCount = item.sprite->frameCount > 0 ? item.sprite->frameCount : 1;
                     int currentFrame = item.sprite->currentFrame % safeFrameCount;
                     int frameX = currentFrame * static_cast<int>(item.sprite->frameWidth);
@@ -912,6 +933,12 @@ namespace GameCore {
                         std::to_string((int)m_screenInfo.logicalHeight) +
                         " (" + std::to_string((int)m_screenInfo.pixelWidth) + "x" +
                         std::to_string((int)m_screenInfo.pixelHeight) + " pixels)");
+
+            // Update ECS with screen dimensions so all systems can access them
+            if (m_ecsSystem) {
+                m_ecsSystem->SetScreenDimensions(m_screenInfo.pixelWidth, m_screenInfo.pixelHeight,
+                                               m_screenInfo.logicalWidth, m_screenInfo.logicalHeight);
+            }
             return;
         }
         
@@ -924,6 +951,12 @@ namespace GameCore {
                         std::to_string((int)m_screenInfo.logicalHeight) +
                         " (" + std::to_string((int)m_screenInfo.pixelWidth) + "x" +
                         std::to_string((int)m_screenInfo.pixelHeight) + " pixels)");
+
+            // Update ECS with screen dimensions so all systems can access them
+            if (m_ecsSystem) {
+                m_ecsSystem->SetScreenDimensions(m_screenInfo.pixelWidth, m_screenInfo.pixelHeight,
+                                               m_screenInfo.logicalWidth, m_screenInfo.logicalHeight);
+            }
             return;
         }
         

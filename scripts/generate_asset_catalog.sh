@@ -141,7 +141,7 @@ process_all_images() {
   if [ ! -d "$base_dir" ]; then
     return
   fi
-  
+
   echo "Processing all graphics directories and subdirectories..."
   find "$base_dir" -type f \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" \) | while read img_file; do
     # Get relative path from graphics directory
@@ -150,17 +150,17 @@ process_all_images() {
     dir_path=$(dirname "$rel_path")
     filename=$(basename "$img_file")
     name="${filename%.*}"
-    
+
     # Create full category path preserving directory structure
     if [ "$dir_path" = "." ]; then
       category_path="graphics"
     else
       category_path="graphics/$dir_path"
     fi
-    
+
     # Create asset catalog directory structure
     mkdir -p "$ASSET_CATALOG_DIR/$category_path/$name.imageset"
-    
+
     # Create Contents.json
     cat > "$ASSET_CATALOG_DIR/$category_path/$name.imageset/Contents.json" << EOF
 {
@@ -177,7 +177,7 @@ process_all_images() {
   }
 }
 EOF
-    
+
     # Copy image file
     cp "$img_file" "$ASSET_CATALOG_DIR/$category_path/$name.imageset/"
     echo "Processed graphics: $category_path/$name"

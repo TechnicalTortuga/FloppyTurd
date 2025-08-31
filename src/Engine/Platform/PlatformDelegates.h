@@ -115,6 +115,8 @@ namespace GameCore {
         CMD_DRAW_SPRITE_SCALED_CENTERED = 6,
         CMD_DRAW_SPRITE_SCALED_PIVOTED = 7,
         CMD_DRAW_SPRITE_SCALED_WITH_SOURCE = 8,
+        CMD_DRAW_PARALLAX_SPRITE = 36,           // Pixel-perfect parallax rendering
+        CMD_DRAW_BACKGROUND_SPRITE = 37,         // Integer-position background rendering
         CMD_DRAW_TEXT = 9,
         CMD_DRAW_TEXT_CENTERED = 10,
         CMD_DRAW_RECTANGLE = 11,
@@ -275,6 +277,10 @@ namespace GameCore {
         void (*drawSpriteScaledPivoted)(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation, float pivotX, float pivotY);
         void (*drawSpriteScaledWithSource)(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation, float sourceX, float sourceY, float sourceWidth, float sourceHeight);
         
+        // Pixel-perfect parallax rendering functions
+        void (*drawParallaxSprite)(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation, float sourceX, float sourceY, float sourceWidth, float sourceHeight);
+        void (*drawBackgroundSprite)(uint32_t textureHandle, int pixelX, int pixelY, int pixelWidth, int pixelHeight);
+        
         // Text rendering
         void (*drawText)(const std::string& text, float x, float y, float fontSize, float r, float g, float b, float a);
         void (*drawTextCentered)(const std::string& text, float x, float y, float fontSize, float r, float g, float b, float a);
@@ -305,6 +311,7 @@ namespace GameCore {
                            drawSprite(nullptr), drawSpriteScaled(nullptr), drawSpriteScaledCentered(nullptr),
                            drawSpriteScaledPivoted(nullptr),
                            drawSpriteScaledWithSource(nullptr),
+                           drawParallaxSprite(nullptr), drawBackgroundSprite(nullptr),
                            drawText(nullptr), drawTextCentered(nullptr), drawTextOutlined(nullptr), drawTextCenteredOutlined(nullptr),
                            drawRectangle(nullptr), drawCircle(nullptr), 
                            getScreenInfo(nullptr), getScreenSize(nullptr), getTextureMetadata(nullptr),

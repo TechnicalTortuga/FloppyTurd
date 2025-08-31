@@ -35,7 +35,10 @@ namespace GameCore {
         , m_currentPauseTab(3)  // Default to SYSTEM tab
         , m_lastSettingsButtonPressTime(0.0f)
         , m_settingsButtonDebounceDelay(0.3f)  // 300ms debounce delay
+        , m_lastActionButtonPressTime(0.0f)
+        , m_actionButtonDebounceDelay(0.5f)  // 500ms debounce delay for action button
         , m_pauseMenuCreated(false)
+        , m_hatsGridCreated(false)
     {
         GN_LOG_INFO("GameplayState created for level: " + std::to_string(levelId) + " (" + m_currentLevelConfig.levelName + ")");
     }
@@ -128,8 +131,9 @@ namespace GameCore {
     }
 
     void GameplayState::Update(float deltaTime) {
-        // Update settings button debounce timer
+        // Update button debounce timers
         m_lastSettingsButtonPressTime += deltaTime;
+        m_lastActionButtonPressTime += deltaTime;
         
         // Handle different sub-states
         UpdateSubState(deltaTime);
@@ -141,7 +145,28 @@ namespace GameCore {
         
         // Update input delay timer
         m_inputDelayTimer += deltaTime;
-        
+
+        // Handle delayed sound playback (for ooo sounds after balloonpop)
+        if (m_delayedSoundTime > 0.0f) {
+            m_delayedSoundTime -= deltaTime;
+            GN_LOG_DEBUG("⏰ Delayed sound timer: " + std::to_string(m_delayedSoundTime) + " seconds remaining for '" + m_delayedSoundName + "'");
+            if (m_delayedSoundTime <= 0.0f) {
+                // Time to play the delayed sound
+                if (GameCore::GetGame() && !m_delayedSoundName.empty()) {
+                    GN_LOG_INFO("🎵 Playing delayed ooo sound: '" + m_delayedSoundName + "'");
+                    GN_LOG_INFO("🎵 Calling GameCore::GetGame()->PlaySFX('" + m_delayedSoundName + "')");
+                    GameCore::GetGame()->PlaySFX(m_delayedSoundName);
+                    GN_LOG_INFO("✅ Delayed PlaySFX('" + m_delayedSoundName + "') completed");
+                } else {
+                    GN_LOG_ERROR("❌ Cannot play delayed sound - Game null or sound name empty");
+                }
+                // Reset the delayed sound
+                m_delayedSoundName.clear();
+                m_delayedSoundTime = 0.0f;
+                GN_LOG_INFO("🔄 Delayed sound system reset");
+            }
+        }
+
         // PlayerControllerSystem now handles hurt state transitions automatically
         // No manual hurt state management needed
         
@@ -584,13 +609,16 @@ namespace GameCore {
         m_projectileSystem = std::make_unique<ProjectileSystem>(m_ecsSystem);
         m_projectileSystem->Initialize();
 
+        // Create hats system for cosmetics management (MUST be before PlayerControllerSystem)
+        m_hatsSystem = std::make_unique<HatsSystem>(m_ecsSystem, *m_platformDelegates);
+
         // Notify LevelManager that ProjectileSystem is ready
         if (m_levelManager) {
             m_levelManager->OnProjectileSystemReady();
         }
 
         // Create player controller system
-        m_playerControllerSystem = std::make_unique<PlayerControllerSystem>(m_ecsSystem, m_platformDelegates, m_spriteSystem.get(), m_projectileSystem.get());
+        m_playerControllerSystem = std::make_unique<PlayerControllerSystem>(m_ecsSystem, m_platformDelegates, m_spriteSystem.get(), m_projectileSystem.get(), m_hatsSystem.get());
         
         // Create camera system
         m_cameraSystem = std::make_unique<CameraSystem>(m_ecsSystem);
@@ -670,13 +698,23 @@ namespace GameCore {
             playerSprite.color = Gnosis::GNColor(255, 255, 255, 255);
             playerSprite.visible = true;
             playerSprite.layer = 4; // Player layer (above backgrounds, below effects)
+
+            // Set up sprite for animation support
+            playerSprite.isAnimated = true;  // Enable animation support
+            playerSprite.playing = true;     // Start playing
+            playerSprite.loop = true;        // Loop animations by default
+            playerSprite.currentFrame = 0;
+            playerSprite.currentFrameTime = 0.0f;
+            playerSprite.hasCompleted = false;
+
+            GN_LOG_INFO("Player sprite created with texture: " + playerSprite.textureId + ", animated: " + std::to_string(playerSprite.isAnimated));
             m_ecsSystem->AddComponent<Sprite>(m_playerEntity, playerSprite);
             
             // Add physics component
             Physics playerPhysics;
             playerPhysics.useGravity = true;
             playerPhysics.mass = 1.0f;
-            playerPhysics.drag = 0.98f;
+            playerPhysics.drag = 0.95f;
             m_ecsSystem->AddComponent<Physics>(m_playerEntity, playerPhysics);
             
             // Add hitbox component (circle)
@@ -695,8 +733,17 @@ namespace GameCore {
             playerDebug.alpha = 0.35f;
             // Debug hitboxes off for production visuals
             
-            // Add player component
+            // Add player component with current coin count from game stats
             PlayerComponent playerData;
+
+            // Initialize player with current total coins from game stats
+            if (GameCore::GetGame()) {
+                playerData.totalCoins = GameCore::GetGame()->GetGameStats().totalCoinsCollected;
+                GN_LOG_INFO("Initialized player with " + std::to_string(playerData.totalCoins) + " total coins from game stats");
+            } else {
+                GN_LOG_WARN("GameCore::GetGame() returned null - player initialized with 0 coins");
+            }
+
             m_ecsSystem->AddComponent<PlayerComponent>(m_playerEntity, playerData);
             
             // Initialize player hearts based on current difficulty (but don't update UI yet)
@@ -1046,7 +1093,7 @@ namespace GameCore {
             screenW = si.pixelWidth;
             screenH = si.pixelHeight;
         }
-        float iconX = screenW * 0.10f;
+        float iconX = screenW * 0.05f;
         float iconY = screenH * 0.85f; // 15% from bottom (pixel Y increases downward)
         const float bagScale = 8.0f;    // Scale 32x32 coin bag to 256x256
         m_coinBagEntity = m_ecsSystem->CreateEntity();
@@ -1100,8 +1147,8 @@ namespace GameCore {
             screenHeight = si.pixelHeight;
         }
         
-        // Position hearts at same X as coin bag (10% from left), just below pipe counter
-        float heartX = screenWidth * 0.10f;   // Same X as coin bag 
+        // Position hearts at same X as coin bag (5% from left), just below pipe counter
+        float heartX = screenWidth * 0.05f;   // Same X as coin bag 
         float heartY = screenHeight * 0.12f;  // 12% from top (just below pipe counter)
         m_heartUIEntity = m_heartSystem->CreateHeartUI(heartX, heartY);
         if (m_heartUIEntity != Gnosis::INVALID_ENTITY) {
@@ -1130,7 +1177,7 @@ void GameplayState::CreatePauseMenu() {
 
     // Create all tab content upfront - no visibility management here
     CreateSkillsTab();
-    CreateHatsTab();
+    CreateHatsTab(); // Create hats tab content once, like Systems tab
     CreateStatsTab();
     CreateSystemTab();
     
@@ -3186,45 +3233,62 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
 
     void GameplayState::CreateHatsTab() {
         GN_LOG_INFO("Creating hats tab content");
-        
+
+        // Prevent duplicate hats grid creation
+        if (m_hatsGridCreated) {
+            GN_LOG_INFO("Hats grid already created, skipping duplicate creation");
+            return;
+        }
+
         // Get screen dimensions
         float screenWidth = 1179.0f;  // Default iPhone 16 width
         float screenHeight = 2556.0f; // Default iPhone 16 height
-        
+
         if (m_renderSystem) {
             const ScreenInfo& si = m_renderSystem->GetScreenInfo();
             screenWidth = si.pixelWidth;
             screenHeight = si.pixelHeight;
         }
-        
-        // Create content entity for hats tab
-        if (m_hatsContentEntity == 0) {
-            m_hatsContentEntity = m_ecsSystem->CreateEntity();
-            float contentX = screenWidth * 0.5f;
-            float contentY = screenHeight * 0.45f;
-            
-            Transform contentTransform(Gnosis::GNVector2(contentX, contentY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
-            m_ecsSystem->AddComponent<Transform>(m_hatsContentEntity, contentTransform);
-            
-            UIElement contentElem;
-            contentElem.buttonText = "Hats Coming Soon";
-            contentElem.fontSize = 40.0f;
-            contentElem.textColor = Gnosis::GNColor(255, 255, 255, 255);
-            contentElem.centerTextHorizontally = true;
-            contentElem.centerTextVertically = true;
-            contentElem.visible = false; // Initially hidden
-            contentElem.isEnabled = true;
-            contentElem.textLayer = 90; // Above pause menu background (80) and tracks (81-83)
-            m_ecsSystem->AddComponent<UIElement>(m_hatsContentEntity, contentElem);
-            
-            // Add Sprite component for proper rendering
-            Sprite contentSprite;
-            contentSprite.layer = 90; // Match UIElement textLayer
-            contentSprite.visible = false;
-            m_ecsSystem->AddComponent<Sprite>(m_hatsContentEntity, contentSprite);
+
+        // Calculate grid dimensions (3x5 grid)
+        float gridWidth = screenWidth * 0.7f;   // 70% of screen width
+        float gridHeight = screenHeight * 0.4f; // 40% of screen height
+        float centerX = screenWidth * 0.5f;
+        float centerY = screenHeight * 0.45f;
+
+        // Use HatsSystem to create the hats grid
+        if (m_hatsSystem) {
+            m_hatsSystem->CreateHatsGrid(centerX, centerY, gridWidth, gridHeight);
+            m_hatsGridCreated = true;  // Mark as created to prevent duplicates
+            GN_LOG_INFO("Hats grid created successfully");
+        } else {
+            GN_LOG_ERROR("HatsSystem not initialized!");
+            // Fallback to old implementation
+            if (m_hatsContentEntity == 0) {
+                m_hatsContentEntity = m_ecsSystem->CreateEntity();
+                float contentX = screenWidth * 0.5f;
+                float contentY = screenHeight * 0.45f;
+
+                Transform contentTransform(Gnosis::GNVector2(contentX, contentY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+                m_ecsSystem->AddComponent<Transform>(m_hatsContentEntity, contentTransform);
+
+                UIElement contentElem;
+                contentElem.buttonText = "Hats Coming Soon";
+                contentElem.fontSize = 40.0f;
+                contentElem.textColor = Gnosis::GNColor(255, 255, 255, 255);
+                contentElem.centerTextHorizontally = true;
+                contentElem.centerTextVertically = true;
+                contentElem.visible = false; // Initially hidden
+                contentElem.isEnabled = true;
+                contentElem.textLayer = 90;
+                m_ecsSystem->AddComponent<UIElement>(m_hatsContentEntity, contentElem);
+
+                Sprite contentSprite;
+                contentSprite.layer = 90;
+                contentSprite.visible = false;
+                m_ecsSystem->AddComponent<Sprite>(m_hatsContentEntity, contentSprite);
+            }
         }
-        
-        GN_LOG_INFO("Created hats tab content");
     }
 
     void GameplayState::CreateStatsTab() {
@@ -4021,7 +4085,16 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
 
     void GameplayState::ShowHatsTab() {
         GN_LOG_INFO("Showing hats tab");
-        
+
+        // Show the HatsSystem UI elements (already created in CreateHatsTab)
+        if (m_hatsSystem) {
+            m_hatsSystem->ShowUI();
+            GN_LOG_INFO("HatsSystem UI shown successfully");
+        } else {
+            GN_LOG_ERROR("HatsSystem not available to show UI");
+        }
+
+        // Show the old fallback content (in case HatsSystem fails)
         if (m_hatsContentEntity != 0 && m_ecsSystem) {
             Sprite* contentSprite = m_ecsSystem->GetComponent<Sprite>(m_hatsContentEntity);
             if (contentSprite) {
@@ -4317,6 +4390,12 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             }
         }
         
+        // Hide HatsSystem UI elements
+        if (m_hatsSystem) {
+            m_hatsSystem->HideUI();
+            GN_LOG_INFO("HatsSystem UI hidden successfully");
+        }
+
         if (m_hatsContentEntity != 0 && m_ecsSystem) {
             Sprite* contentSprite = m_ecsSystem->GetComponent<Sprite>(m_hatsContentEntity);
             if (contentSprite) {
@@ -4327,7 +4406,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 contentUI->visible = false;
             }
         }
-        
+
         if (m_statsContentEntity != 0 && m_ecsSystem) {
             Sprite* contentSprite = m_ecsSystem->GetComponent<Sprite>(m_statsContentEntity);
             if (contentSprite) {
@@ -4530,31 +4609,32 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         float bgTop = (screenHeight - bgHeight) * 0.5f;
         float startY = bgTop + buttonWidth * 0.18f; // Skills button higher
         float buttonX = -0.40f * buttonWidth; // Offset further left (40%) - MUST MATCH CreateRibbonButtons
-        
-        GN_LOG_INFO("Button layout - buttonX: " + std::to_string(buttonX) + ", startY: " + std::to_string(startY) + 
+
+        GN_LOG_INFO("Ribbon button hitbox calculation - screen: " + std::to_string(screenWidth) + "x" + std::to_string(screenHeight) +
+                   ", buttonX: " + std::to_string(buttonX) + ", startY: " + std::to_string(startY) +
                    ", buttonWidth: " + std::to_string(buttonWidth) + ", buttonHeight: " + std::to_string(buttonHeight));
-        
+
         // Check which button was clicked
         for (int i = 0; i < 4; i++) {
             float buttonY = startY + i * buttonHeight;
-            
-            // Collision detection using much wider hitbox for easier tapping
-            float hitboxWidth = buttonWidth * 2.4f;  // 140% wider hitbox (2x the previous 1.2f)
-            float hitboxHeight = buttonHeight * 2.4f; // 140% taller hitbox (2x the previous 1.2f)
+
+            // Reduced hitbox expansion to prevent overlapping - use 1.5x instead of 2.4x
+            float hitboxWidth = buttonWidth * 1.5f;  // 50% wider hitbox
+            float hitboxHeight = buttonHeight * 1.5f; // 50% taller hitbox
             float buttonLeft = buttonX - (hitboxWidth * 0.5f);
             float buttonRight = buttonX + (hitboxWidth * 0.5f);
             float buttonTop = buttonY - (hitboxHeight * 0.5f);
             float buttonBottom = buttonY + (hitboxHeight * 0.5f);
-            
-            GN_LOG_INFO("Button " + std::to_string(i) + " bounds: L=" + std::to_string(buttonLeft) + " R=" + std::to_string(buttonRight) + 
-                       " T=" + std::to_string(buttonTop) + " B=" + std::to_string(buttonBottom) + 
-                       " Center: (" + std::to_string(buttonX) + ", " + std::to_string(buttonY) + 
-                       ") Hitbox: " + std::to_string(hitboxWidth) + "x" + std::to_string(hitboxHeight) + 
-                       " (expanded from " + std::to_string(buttonWidth) + "x" + std::to_string(buttonHeight) + ")");
-            
+
+            GN_LOG_INFO("Ribbon button " + std::to_string(i) + " bounds: L=" + std::to_string(buttonLeft) + " R=" + std::to_string(buttonRight) +
+                       " T=" + std::to_string(buttonTop) + " B=" + std::to_string(buttonBottom) +
+                       " Center: (" + std::to_string(buttonX) + ", " + std::to_string(buttonY) + ")" +
+                       " Hitbox: " + std::to_string(hitboxWidth) + "x" + std::to_string(hitboxHeight) +
+                       " (actual button: " + std::to_string(buttonWidth) + "x" + std::to_string(buttonHeight) + ")");
+
             if (touchX >= buttonLeft && touchX <= buttonRight &&
                 touchY >= buttonTop && touchY <= buttonBottom) {
-                GN_LOG_INFO("Ribbon button " + std::to_string(i) + " clicked!");
+                GN_LOG_INFO("Ribbon button " + std::to_string(i) + " clicked at touch (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")!");
                 SwitchPauseTab(i);
                 return true;
             }
@@ -4567,10 +4647,14 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
     void GameplayState::HandlePauseMenuContentClick(float touchX, float touchY) {
         // Handle clicks in the content area based on current tab
         switch (m_currentPauseTab) {
+            case 1: // HATS tab
+                HandleHatsTabClick(touchX, touchY);
+                break;
+
             case 3: // SYSTEM tab
                 HandleSystemTabClick(touchX, touchY);
                 break;
-                
+
             default:
                 // Other tabs not implemented yet
                 break;
@@ -4807,6 +4891,339 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         return (touchX >= buttonLeft && touchX <= buttonRight &&
                 touchY >= buttonTop && touchY <= buttonBottom);
     }
+
+    void GameplayState::HandleHatsTabClick(float touchX, float touchY) {
+        GN_LOG_INFO("🎯 HandleHatsTabClick called with touch at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
+        GN_LOG_INFO("🎯 Current substate: " + std::to_string(static_cast<int>(m_currentSubState)));
+        GN_LOG_INFO("🎯 Current pause tab: " + std::to_string(m_currentPauseTab));
+
+        if (!m_hatsSystem) {
+            GN_LOG_ERROR("HatsSystem not available for handling clicks");
+            return;
+        }
+
+        // Get screen dimensions for grid layout calculation
+        float screenWidth = 1179.0f, screenHeight = 2556.0f;
+        if (m_renderSystem) {
+            const ScreenInfo& si = m_renderSystem->GetScreenInfo();
+            screenWidth = si.pixelWidth;
+            screenHeight = si.pixelHeight;
+        }
+
+        // Calculate grid dimensions (same as in HatsSystem - 5 rows, 3 columns)
+        float gridWidth = screenWidth * 0.7f;
+        float gridHeight = screenHeight * 0.4f;
+        float centerX = screenWidth * 0.5f;
+        float centerY = screenHeight * 0.45f;
+
+        GN_LOG_INFO("Hats click detection - screen: " + std::to_string(screenWidth) + "x" + std::to_string(screenHeight) +
+                   ", grid: " + std::to_string(gridWidth) + "x" + std::to_string(gridHeight) +
+                   ", center: (" + std::to_string(centerX) + ", " + std::to_string(centerY) + ")" +
+                   ", touch: (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
+
+        // Calculate grid positions to determine which hat was clicked (5 rows, 3 columns)
+        float cellWidth = gridWidth / 3;  // 3 columns
+        float cellHeight = gridHeight / 5; // 5 rows
+        float startX = centerX - gridWidth * 0.5f + cellWidth * 0.5f;
+        float startY = centerY - gridHeight * 0.5f + cellHeight * 0.5f;
+
+        GN_LOG_INFO("Hats grid layout - cell: " + std::to_string(cellWidth) + "x" + std::to_string(cellHeight) +
+                   ", start: (" + std::to_string(startX) + ", " + std::to_string(startY) + ")");
+
+        // Check for buy/equip button clicks FIRST (before grid bounds check)
+        // The action button is positioned below the grid, so we need to check it regardless of grid bounds
+        HandleHatsButtonClicks(touchX, touchY, centerX, centerY + gridHeight * 0.75f);
+
+        // Check if click is within grid bounds
+        float gridLeft = centerX - gridWidth * 0.5f;
+        float gridRight = centerX + gridWidth * 0.5f;
+        float gridTop = centerY - gridHeight * 0.5f;
+        float gridBottom = centerY + gridHeight * 0.5f;
+
+        GN_LOG_INFO("Hats grid bounds - L:" + std::to_string(gridLeft) + " R:" + std::to_string(gridRight) +
+                   " T:" + std::to_string(gridTop) + " B:" + std::to_string(gridBottom));
+
+        if (touchX < gridLeft || touchX > gridRight || touchY < gridTop || touchY > gridBottom) {
+            GN_LOG_INFO("Click outside hats grid bounds - touch: (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ") - action button already checked");
+            return;
+        }
+
+        // Determine which cell was clicked (5 rows, 3 columns)
+        int col = static_cast<int>((touchX - (centerX - gridWidth * 0.5f)) / cellWidth);
+        int row = static_cast<int>((touchY - (centerY - gridHeight * 0.5f)) / cellHeight);
+
+        // Clamp to valid range
+        col = std::max(0, std::min(col, 2)); // 3 columns (0-2)
+        row = std::max(0, std::min(row, 4)); // 5 rows (0-4)
+
+        int hatIndex = row * 3 + col; // 3 columns per row
+
+        GN_LOG_INFO("Hats click calculation - touch: (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")" +
+                   " -> row:" + std::to_string(row) + " col:" + std::to_string(col) + " hatIndex:" + std::to_string(hatIndex));
+
+        GN_LOG_INFO("Hat grid click detected - Row: " + std::to_string(row) + ", Col: " + std::to_string(col) + ", HatIndex: " + std::to_string(hatIndex));
+
+        // Select the hat
+        if (hatIndex < m_hatsSystem->GetHatCount()) {
+            m_hatsSystem->SelectHat(hatIndex);
+            GN_LOG_INFO("Selected hat at index " + std::to_string(hatIndex));
+        }
+    }
+
+    void GameplayState::HandleHatsButtonClicks(float touchX, float touchY, float centerX, float buttonY) {
+        GN_LOG_INFO("🔥 HandleHatsButtonClicks CALLED at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
+        GN_LOG_INFO("🔥 HandleHatsButtonClicks - centerX: " + std::to_string(centerX) + ", buttonY: " + std::to_string(buttonY));
+
+        if (!m_hatsSystem) {
+            GN_LOG_ERROR("❌ HandleHatsButtonClicks - HatsSystem is null!");
+            return;
+        }
+
+        // Get the action button entity from the hats system
+        auto actionButtonEntity = m_hatsSystem->GetActionButtonEntity();
+        GN_LOG_INFO("Action button entity ID: " + std::to_string(actionButtonEntity));
+
+        if (actionButtonEntity == 0) {
+            GN_LOG_ERROR("❌ No action button entity available from HatsSystem!");
+            return;
+        }
+
+        // Get button position and size from the entity
+        auto transform = m_ecsSystem->GetComponent<Transform>(actionButtonEntity);
+        auto uiElement = m_ecsSystem->GetComponent<UIElement>(actionButtonEntity);
+
+        GN_LOG_INFO("Action button transform: " + std::string(transform ? "valid" : "null"));
+        GN_LOG_INFO("Action button UI element: " + std::string(uiElement ? "valid" : "null"));
+
+        if (!transform || !uiElement) {
+            GN_LOG_ERROR("❌ Action button components missing - transform: " + std::to_string(!!transform) + ", uiElement: " + std::to_string(!!uiElement));
+            return;
+        }
+
+        if (!uiElement->visible) {
+            GN_LOG_WARN("⚠️ Action button is not visible");
+            return;
+        }
+
+        if (!uiElement->isEnabled) {
+            GN_LOG_WARN("⚠️ Action button is not enabled");
+            return;
+        }
+
+        GN_LOG_INFO("Action button position: (" + std::to_string(transform->position.x) + ", " + std::to_string(transform->position.y) + ")");
+        GN_LOG_INFO("Action button scale: (" + std::to_string(transform->scale.x) + ", " + std::to_string(transform->scale.y) + ")");
+        GN_LOG_INFO("Action button text: '" + uiElement->buttonText + "'");
+
+        // Calculate button bounds based on transform and UI element
+        float buttonWidth = 90.0f * transform->scale.x;  // Based on button sprite size
+        float buttonHeight = 16.0f * transform->scale.y;
+        GN_LOG_INFO("🔥 Button calculation - sprite size: 90x16, scale: (" + std::to_string(transform->scale.x) + ", " + std::to_string(transform->scale.y) + ")");
+        GN_LOG_INFO("🔥 Button calculation - calculated size: " + std::to_string(buttonWidth) + "x" + std::to_string(buttonHeight));
+
+        // Transform position is TOP-LEFT corner, so bounds are:
+        float buttonLeft = transform->position.x;
+        float buttonRight = transform->position.x + buttonWidth;
+        float buttonTop = transform->position.y;
+        float buttonBottom = transform->position.y + buttonHeight;
+
+        GN_LOG_INFO("🔥 Button bounds calculation:");
+        GN_LOG_INFO("🔥   Transform position (top-left): (" + std::to_string(transform->position.x) + ", " + std::to_string(transform->position.y) + ")");
+        GN_LOG_INFO("🔥   Button bounds: Left=" + std::to_string(buttonLeft) + ", Right=" + std::to_string(buttonRight) +
+                   ", Top=" + std::to_string(buttonTop) + ", Bottom=" + std::to_string(buttonBottom));
+        GN_LOG_INFO("🔥   Touch coordinates: (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
+
+        // Check if touch is within button bounds
+        bool inXRange = (touchX >= buttonLeft && touchX <= buttonRight);
+        bool inYRange = (touchY >= buttonTop && touchY <= buttonBottom);
+        GN_LOG_INFO("🔥 Touch range check - X in range: " + std::string(inXRange ? "YES" : "NO") +
+                   " (" + std::to_string(touchX) + " >= " + std::to_string(buttonLeft) + " && " +
+                   std::to_string(touchX) + " <= " + std::to_string(buttonRight) + ")");
+        GN_LOG_INFO("🔥 Touch range check - Y in range: " + std::string(inYRange ? "YES" : "NO") +
+                   " (" + std::to_string(touchY) + " >= " + std::to_string(buttonTop) + " && " +
+                   std::to_string(touchY) + " <= " + std::to_string(buttonBottom) + ")");
+
+        if (touchX >= buttonLeft && touchX <= buttonRight && touchY >= buttonTop && touchY <= buttonBottom) {
+            // Check debounce timer to prevent rapid clicking
+            if (m_lastActionButtonPressTime < m_actionButtonDebounceDelay) {
+                GN_LOG_INFO("Action button debounced - too soon since last press (%.2fs remaining)", m_actionButtonDebounceDelay - m_lastActionButtonPressTime);
+                return;
+            }
+
+            GN_LOG_INFO("✅ ACTION BUTTON CLICKED with text: '" + uiElement->buttonText + "'");
+
+            // Reset debounce timer
+            m_lastActionButtonPressTime = 0.0f;
+
+            // Handle button action based on current text
+            if (uiElement->buttonText == "Buy") {
+                GN_LOG_INFO("🎯 Calling HandleHatPurchase()");
+                HandleHatPurchase();
+            } else if (uiElement->buttonText == "Equip") {
+                GN_LOG_INFO("🎯 Calling HandleHatEquip()");
+                HandleHatEquip();
+            } else if (uiElement->buttonText == "Equipped") {
+                GN_LOG_INFO("Hat is already equipped - no action needed");
+            } else {
+                GN_LOG_WARN("Unknown button text: '" + uiElement->buttonText + "'");
+            }
+        } else {
+            GN_LOG_INFO("❌ Touch outside button bounds");
+        }
+    }
+
+    void GameplayState::HandleHatPurchase() {
+        int playerCoins = GetCurrentPlayerCoins();
+        int hatCost = m_hatsSystem->GetSelectedHatCost();
+
+        GN_LOG_INFO("Attempting to buy hat - Player coins: " + std::to_string(playerCoins) + ", Hat cost: " + std::to_string(hatCost));
+
+        if (playerCoins >= hatCost) {
+            // Play balloonpop sound immediately
+            if (GameCore::GetGame()) {
+                GN_LOG_INFO("🎈 Playing balloonpop sound for hat purchase...");
+                GN_LOG_INFO("🎵 Calling GameCore::GetGame()->PlaySFX('balloonpop')");
+                GameCore::GetGame()->PlaySFX("balloonpop");
+                GN_LOG_INFO("✅ PlaySFX('balloonpop') completed");
+
+                // Schedule ooo sound to play 1 second later
+                GN_LOG_INFO("⏰ Scheduling delayed ooo sound in 1.0 seconds");
+                ScheduleDelayedSound(1.0f);
+            } else {
+                GN_LOG_ERROR("❌ GameCore::GetGame() returned null!");
+            }
+
+            // Purchase successful - deduct coins and unlock hat
+            if (m_hatsSystem->BuySelectedHat(playerCoins)) {
+                DeductPlayerCoins(hatCost);
+                GN_LOG_INFO("✅ Hat purchased successfully");
+            } else {
+                GN_LOG_ERROR("❌ BuySelectedHat returned false despite sufficient coins");
+            }
+        } else {
+            // Not enough coins - play denied sound
+            if (GameCore::GetGame()) {
+                GN_LOG_INFO("❌ Insufficient coins - playing denied sound...");
+                GN_LOG_INFO("🎵 Calling GameCore::GetGame()->PlaySFX('denied')");
+                GameCore::GetGame()->PlaySFX("denied");
+                GN_LOG_INFO("✅ PlaySFX('denied') completed");
+            } else {
+                GN_LOG_ERROR("❌ GameCore::GetGame() returned null for denied sound!");
+            }
+            GN_LOG_INFO("❌ Hat purchase failed - insufficient coins");
+        }
+    }
+
+    void GameplayState::HandleHatEquip() {
+        GN_LOG_INFO("Equipping selected hat...");
+
+        // Get the currently equipped hat before equipping the new one
+        int oldEquippedHat = m_hatsSystem->GetEquippedHatIndex();
+
+        // Equip the selected hat
+        m_hatsSystem->EquipSelectedHat();
+
+        // Get the newly equipped hat
+        int newEquippedHat = m_hatsSystem->GetEquippedHatIndex();
+
+        GN_LOG_INFO("✅ Hat equipped successfully - changed from hat %d to hat %d", oldEquippedHat, newEquippedHat);
+
+        // If the equipped hat actually changed, update the hat sprite immediately
+        if (oldEquippedHat != newEquippedHat && newEquippedHat >= 0) {
+            if (m_playerControllerSystem) {
+                GN_LOG_INFO("🎨 Updating hat sprite to show newly equipped hat (old: %d, new: %d)", oldEquippedHat, newEquippedHat);
+
+                // Force the player to refresh their current animation (this will update the hat sprite)
+                m_playerControllerSystem->PlayIdleAnimation();
+            } else {
+                GN_LOG_WARN("❌ Cannot update hat sprite - PlayerControllerSystem not available");
+            }
+        } else if (newEquippedHat < 0) {
+            // No hat equipped, hide hat sprite
+            if (m_playerControllerSystem) {
+                // The UpdateHatSpriteTexture method will handle hiding the sprite when no hat is equipped
+                m_playerControllerSystem->PlayIdleAnimation();
+            }
+        }
+    }
+
+    void GameplayState::ScheduleDelayedSound(float delaySeconds) {
+        // Select random ooo sound (1-7)
+        int randomIndex = (rand() % 7) + 1; // Random number 1-7
+        std::string oooSoundName = "ooo" + std::to_string(randomIndex);
+
+        GN_LOG_INFO("🎵 Scheduling delayed ooo sound: '" + oooSoundName + "' in " + std::to_string(delaySeconds) + " seconds");
+
+        // Store the delayed sound request for the update loop to handle
+        m_delayedSoundTime = delaySeconds;
+        m_delayedSoundName = oooSoundName;
+    }
+
+    int GameplayState::GetCurrentPlayerCoins() const {
+        // Always use the most current coin count from game stats
+        if (GameCore::GetGame()) {
+            int gameStatsCoins = GameCore::GetGame()->GetGameStats().totalCoinsCollected;
+            GN_LOG_DEBUG("Using current game stats totalCoinsCollected: " + std::to_string(gameStatsCoins));
+
+            // Also update PlayerComponent to stay in sync
+            if (m_playerEntity != 0 && m_ecsSystem) {
+                auto player = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity);
+                if (player && player->totalCoins != gameStatsCoins) {
+                    GN_LOG_INFO("Syncing PlayerComponent totalCoins from " + std::to_string(player->totalCoins) + " to " + std::to_string(gameStatsCoins));
+                    player->totalCoins = gameStatsCoins;
+                }
+            }
+
+            return gameStatsCoins;
+        }
+
+        // Fallback to PlayerComponent if game stats not available
+        if (m_playerEntity != 0 && m_ecsSystem) {
+            auto player = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity);
+            if (player) {
+                GN_LOG_DEBUG("Fallback to PlayerComponent totalCoins: " + std::to_string(player->totalCoins));
+                return player->totalCoins;
+            } else {
+                GN_LOG_WARN("PlayerComponent not found on player entity");
+            }
+        } else {
+            GN_LOG_WARN("Player entity not available: entity=" + std::to_string(m_playerEntity) + ", ecs=" + std::string(m_ecsSystem ? "valid" : "null"));
+        }
+
+        GN_LOG_WARN("Could not retrieve player coins - returning 0");
+        return 0;
+    }
+
+    void GameplayState::DeductPlayerCoins(int amount) {
+        if (amount <= 0) return;
+
+        GN_LOG_INFO("Deducting " + std::to_string(amount) + " coins from total coin count");
+
+        // Always update game stats first (this is the authoritative source)
+        if (GameCore::GetGame()) {
+            const auto& currentStats = GameCore::GetGame()->GetGameStats();
+            if (currentStats.totalCoinsCollected >= amount) {
+                GameCore::FloppyTurdGame::GameStats updatedStats = currentStats; // Make a copy to modify
+                updatedStats.totalCoinsCollected -= amount;
+                GameCore::GetGame()->UpdateGameStats(updatedStats);
+                GN_LOG_INFO("💰 Updated game stats: deducted " + std::to_string(amount) + " coins, remaining: " + std::to_string(updatedStats.totalCoinsCollected));
+
+                // Sync PlayerComponent with updated game stats
+                if (m_playerEntity != 0 && m_ecsSystem) {
+                    auto player = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity);
+                    if (player) {
+                        player->totalCoins = updatedStats.totalCoinsCollected;
+                        GN_LOG_INFO("Synced PlayerComponent totalCoins to: " + std::to_string(player->totalCoins));
+                    }
+                }
+            } else {
+                GN_LOG_ERROR("❌ Not enough coins to deduct " + std::to_string(amount) + " (have: " + std::to_string(currentStats.totalCoinsCollected) + ")");
+            }
+        } else {
+            GN_LOG_ERROR("❌ Cannot deduct coins - GameCore::GetGame() returned null");
+        }
+    }
+
+
     
     void GameplayState::HandleKnobDrag(float touchX, float touchY) {
         GN_LOG_INFO("Handling knob drag at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
