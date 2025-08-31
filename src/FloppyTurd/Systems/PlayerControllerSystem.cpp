@@ -5,12 +5,13 @@
 
 namespace GameCore {
 
-    PlayerControllerSystem::PlayerControllerSystem(Gnosis::ECS* ecsSystem, GameCore::PlatformDelegates* platformDelegates, SpriteSystem* spriteSystem, ProjectileSystem* projectileSystem, HatsSystem* hatsSystem)
+    PlayerControllerSystem::PlayerControllerSystem(Gnosis::ECS* ecsSystem, GameCore::PlatformDelegates* platformDelegates, SpriteSystem* spriteSystem, ProjectileSystem* projectileSystem, HatsSystem* hatsSystem, SkillSystem* skillSystem)
         : m_ecsSystem(ecsSystem)
         , m_platformDelegates(platformDelegates)
         , m_spriteSystem(spriteSystem)
         , m_projectileSystem(projectileSystem)
         , m_hatsSystem(hatsSystem)
+        , m_skillSystem(skillSystem)
         , m_playerEntity(0)
         , m_hatSpriteEntity(0)
         , m_playerAlive(true)
@@ -105,6 +106,11 @@ namespace GameCore {
 
         // Update hat sprite position to follow player
         UpdateHatSpritePosition();
+
+        // Update skill effects
+        if (m_skillSystem) {
+            m_skillSystem->UpdateSkillEffects(deltaTime, m_playerEntity);
+        }
 
         // Collision with pickups is handled centrally in GameplayState now
     }

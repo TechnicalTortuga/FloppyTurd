@@ -37,6 +37,8 @@ namespace GameCore {
         , m_settingsButtonDebounceDelay(0.3f)  // 300ms debounce delay
         , m_lastActionButtonPressTime(0.0f)
         , m_actionButtonDebounceDelay(0.5f)  // 500ms debounce delay for action button
+        , m_lastSkillButtonPressTime(0.0f)
+        , m_skillButtonDebounceDelay(0.3f)  // 300ms debounce delay for skill buttons
         , m_pauseMenuCreated(false)
         , m_hatsGridCreated(false)
     {
@@ -134,6 +136,7 @@ namespace GameCore {
         // Update button debounce timers
         m_lastSettingsButtonPressTime += deltaTime;
         m_lastActionButtonPressTime += deltaTime;
+        m_lastSkillButtonPressTime += deltaTime;
         
         // Handle different sub-states
         UpdateSubState(deltaTime);
@@ -612,13 +615,16 @@ namespace GameCore {
         // Create hats system for cosmetics management (MUST be before PlayerControllerSystem)
         m_hatsSystem = std::make_unique<HatsSystem>(m_ecsSystem, *m_platformDelegates);
 
+        // Create skill system for managing player skills
+        m_skillSystem = std::make_unique<SkillSystem>(m_ecsSystem);
+
         // Notify LevelManager that ProjectileSystem is ready
         if (m_levelManager) {
             m_levelManager->OnProjectileSystemReady();
         }
 
         // Create player controller system
-        m_playerControllerSystem = std::make_unique<PlayerControllerSystem>(m_ecsSystem, m_platformDelegates, m_spriteSystem.get(), m_projectileSystem.get(), m_hatsSystem.get());
+        m_playerControllerSystem = std::make_unique<PlayerControllerSystem>(m_ecsSystem, m_platformDelegates, m_spriteSystem.get(), m_projectileSystem.get(), m_hatsSystem.get(), m_skillSystem.get());
         
         // Create camera system
         m_cameraSystem = std::make_unique<CameraSystem>(m_ecsSystem);
@@ -1023,6 +1029,46 @@ namespace GameCore {
     m_livesTextEntity = 0; 
     m_coinsTextEntity = 0;
     m_coinBagEntity = 0;
+
+    // Initialize pause menu entity references
+    m_pauseMenuBackgroundEntity = 0;
+    m_pauseMenuRibbonEntity = 0;
+    m_pauseMenuContentEntity = 0;
+    m_mainMenuButtonEntity = 0;
+
+    // Initialize skill tab entities
+    m_skillsContentEntity = 0;
+    m_skillsBackgroundEntity = 0;
+    m_skillsTitleEntity = 0;
+    m_skillsNameEntity = 0;
+    m_skillsDescriptionEntity = 0;
+    m_skillsCostEntity = 0;
+    m_skillsUnlockButtonEntity = 0;
+    m_skillsLeftArrowEntity = 0;
+    m_skillsRightArrowEntity = 0;
+
+    // Initialize tab title entities
+    m_hatsTitleEntity = 0;
+    m_statsTitleEntity = 0;
+    m_systemTitleEntity = 0;
+
+    // Initialize hats background entity
+    m_hatsBackgroundEntity = 0;
+
+    // Initialize other tab entities
+    m_hatsContentEntity = 0;
+    m_statsContentEntity = 0;
+    m_statsBackgroundEntity = 0;
+
+    // Initialize skill menu state
+    m_currentSkillIndex = 0;
+    m_availableSkills = {
+        GameCore::SkillType::HalfHearts,
+        GameCore::SkillType::ThirdHearts,
+        GameCore::SkillType::CoinMagnet,
+        GameCore::SkillType::HeartMagnet,
+        GameCore::SkillType::CoinSafetyNet
+    };
     
     // Create pipe counter text entity - centered under iPhone notch (top display)
     m_pipeCounterEntity = m_ecsSystem->CreateEntity();
@@ -1248,6 +1294,54 @@ void GameplayState::DestroyPauseMenu() {
     if (m_skillsContentEntity != 0) {
         m_ecsSystem->DestroyEntity(m_skillsContentEntity);
         m_skillsContentEntity = 0;
+    }
+    if (m_skillsBackgroundEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_skillsBackgroundEntity);
+        m_skillsBackgroundEntity = 0;
+    }
+    if (m_skillsTitleEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_skillsTitleEntity);
+        m_skillsTitleEntity = 0;
+    }
+    if (m_hatsTitleEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_hatsTitleEntity);
+        m_hatsTitleEntity = 0;
+    }
+    if (m_hatsBackgroundEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_hatsBackgroundEntity);
+        m_hatsBackgroundEntity = 0;
+    }
+    if (m_statsTitleEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_statsTitleEntity);
+        m_statsTitleEntity = 0;
+    }
+    if (m_systemTitleEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_systemTitleEntity);
+        m_systemTitleEntity = 0;
+    }
+    if (m_skillsNameEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_skillsNameEntity);
+        m_skillsNameEntity = 0;
+    }
+    if (m_skillsDescriptionEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_skillsDescriptionEntity);
+        m_skillsDescriptionEntity = 0;
+    }
+    if (m_skillsCostEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_skillsCostEntity);
+        m_skillsCostEntity = 0;
+    }
+    if (m_skillsUnlockButtonEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_skillsUnlockButtonEntity);
+        m_skillsUnlockButtonEntity = 0;
+    }
+    if (m_skillsLeftArrowEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_skillsLeftArrowEntity);
+        m_skillsLeftArrowEntity = 0;
+    }
+    if (m_skillsRightArrowEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_skillsRightArrowEntity);
+        m_skillsRightArrowEntity = 0;
     }
     if (m_hatsContentEntity != 0) {
         m_ecsSystem->DestroyEntity(m_hatsContentEntity);
@@ -1573,9 +1667,17 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 
                 GN_LOG_INFO("Removed " + std::to_string(slicesToRemove) + " heart slices. Current slices: " + std::to_string(player->liveSlices));
                 
-                // Check if player is dead (this will be handled by UpdateSubState)
+                // Check if player is dead - try coin safety net first
                 if (player->liveSlices <= 0) {
+                    // Try to activate coin safety net if available
+                    if (m_skillSystem && m_skillSystem->TryActivateCoinSafetyNet(m_playerEntity)) {
+                        GN_LOG_INFO("Coin safety net activated! Player saved from death");
+                        // Update player's session coins in the UI
+                        // TODO: Implement UpdateCoinsDisplay when coin UI is available
+                        return; // Don't process death
+                    } else {
                     GN_LOG_INFO("Player has no heart slices remaining - death will be handled by game over system");
+                    }
                 }
             }
         }
@@ -3201,44 +3303,555 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             screenHeight = si.pixelHeight;
         }
         
-        // Create content entity for skills tab
-        if (m_skillsContentEntity == 0) {
-            m_skillsContentEntity = m_ecsSystem->CreateEntity();
-            float contentX = screenWidth * 0.5f;
-            float contentY = screenHeight * 0.45f;
-            
-            Transform contentTransform(Gnosis::GNVector2(contentX, contentY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
-            m_ecsSystem->AddComponent<Transform>(m_skillsContentEntity, contentTransform);
-            
-            UIElement contentElem;
-            contentElem.buttonText = "Skills Coming Soon";
-            contentElem.fontSize = 40.0f;
-            contentElem.textColor = Gnosis::GNColor(255, 255, 255, 255);
-            contentElem.centerTextHorizontally = true;
-            contentElem.centerTextVertically = true;
-            contentElem.visible = false; // Initially hidden
-            contentElem.isEnabled = true;
-            contentElem.textLayer = 90; // Above pause menu background (80) and tracks (81-83)
-            m_ecsSystem->AddComponent<UIElement>(m_skillsContentEntity, contentElem);
-            
-            // Add Sprite component for proper rendering
-            Sprite contentSprite;
-            contentSprite.layer = 90; // Match UIElement textLayer
-            contentSprite.visible = false;
-            m_ecsSystem->AddComponent<Sprite>(m_skillsContentEntity, contentSprite);
+        // Create black background like stats tab (EXACT same dimensions and positioning)
+        if (m_skillsBackgroundEntity == 0) {
+            m_skillsBackgroundEntity = m_ecsSystem->CreateEntity();
+
+            // Calculate 70% of the pause menu background dimensions (EXACT same as stats tab)
+            float pauseMenuWidth = 1120.0f;
+            float pauseMenuHeight = 2100.0f;
+            float bgWidth = pauseMenuWidth * 0.7f;   // 784 (same as stats)
+            float bgHeight = pauseMenuHeight * 0.7f; // 1470 (same as stats)
+
+            // Calculate layout positions (EXACT same as stats tab)
+            float centerX = screenWidth * 0.5f;
+            float centerY = screenHeight * 0.5f + 32.0f;
+
+            // Center position with same offset as pause menu (+32 Y offset)
+            Gnosis::GNVector2 bgPosition = GameCore::CenterObjectAtPosition(centerX, centerY, bgWidth, bgHeight);
+
+            Transform bgTransform(bgPosition, 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            m_ecsSystem->AddComponent<Transform>(m_skillsBackgroundEntity, bgTransform);
+
+            // Create black rectangle with slight transparency (EXACT same as stats tab)
+            UIShape bgShape;
+            bgShape.type = UIShapeType::Rectangle;
+            bgShape.width = bgWidth;
+            bgShape.height = bgHeight;
+            bgShape.color = Gnosis::GNColor(0, 0, 0, 200); // Black with ~78% opacity (200/255)
+            bgShape.visible = false; // Initially hidden
+            bgShape.layer = 82; // Above pause menu background (80) but below content (90)
+            m_ecsSystem->AddComponent<UIShape>(m_skillsBackgroundEntity, bgShape);
+
+            // Add UIElement component for proper visibility management
+            UIElement bgElement;
+            bgElement.visible = false; // Initially hidden
+            bgElement.isEnabled = true;
+            bgElement.textLayer = 82; // Match UIShape layer
+            m_ecsSystem->AddComponent<UIElement>(m_skillsBackgroundEntity, bgElement);
+        }
+
+        // Create "Skills" title text at the very top of the pause menu
+        if (m_skillsTitleEntity == 0) {
+            m_skillsTitleEntity = m_ecsSystem->CreateEntity();
+
+            // Position at the top center of the screen (like other tab titles)
+            float titleX = screenWidth * 0.5f;
+            float titleY = screenHeight * 0.15f; // Near the top
+
+            Transform titleTransform(Gnosis::GNVector2(titleX, titleY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            m_ecsSystem->AddComponent<Transform>(m_skillsTitleEntity, titleTransform);
+
+            UIElement titleElem;
+            titleElem.buttonText = "Skills";
+            titleElem.fontSize = 72.0f; // Large title font
+            titleElem.textColor = Gnosis::GNColor(255, 255, 255, 255);
+            titleElem.centerTextHorizontally = true;
+            titleElem.centerTextVertically = true;
+            titleElem.visible = false;
+            titleElem.isEnabled = true;
+            titleElem.textLayer = 90;
+            m_ecsSystem->AddComponent<UIElement>(m_skillsTitleEntity, titleElem);
+
+            Sprite titleSprite;
+            titleSprite.layer = 90;
+            titleSprite.visible = false;
+            m_ecsSystem->AddComponent<Sprite>(m_skillsTitleEntity, titleSprite);
+        }
+
+        // Create skill name text (positioned relative to the black background)
+        if (m_skillsNameEntity == 0) {
+            m_skillsNameEntity = m_ecsSystem->CreateEntity();
+
+            // Position within the black background area
+            float bgX = GameCore::CenterObjectAtPosition(screenWidth * 0.5f, screenHeight * 0.5f + 32.0f, 1120.0f * 0.7f, 2100.0f * 0.7f).x;
+            float bgY = GameCore::CenterObjectAtPosition(screenWidth * 0.5f, screenHeight * 0.5f + 32.0f, 1120.0f * 0.7f, 2100.0f * 0.7f).y;
+            float bgWidth = 1120.0f * 0.7f;
+
+            float nameX = bgX + bgWidth * 0.5f; // Center within background
+            float nameY = bgY + 150.0f; // Near the top of the background
+
+            Transform nameTransform(Gnosis::GNVector2(nameX, nameY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            m_ecsSystem->AddComponent<Transform>(m_skillsNameEntity, nameTransform);
+
+            UIElement nameElem;
+            nameElem.buttonText = "Select a Skill";
+            nameElem.fontSize = 48.0f;
+            nameElem.textColor = Gnosis::GNColor(255, 255, 255, 255);
+            nameElem.centerTextHorizontally = true;
+            nameElem.centerTextVertically = true;
+            nameElem.visible = false;
+            nameElem.isEnabled = true;
+            nameElem.textLayer = 90;
+            m_ecsSystem->AddComponent<UIElement>(m_skillsNameEntity, nameElem);
+
+            Sprite nameSprite;
+            nameSprite.layer = 90;
+            nameSprite.visible = false;
+            m_ecsSystem->AddComponent<Sprite>(m_skillsNameEntity, nameSprite);
+        }
+
+        // Create skill description text
+        if (m_skillsDescriptionEntity == 0) {
+            m_skillsDescriptionEntity = m_ecsSystem->CreateEntity();
+
+            float bgX = GameCore::CenterObjectAtPosition(screenWidth * 0.5f, screenHeight * 0.5f + 32.0f, 1120.0f * 0.7f, 2100.0f * 0.7f).x;
+            float bgY = GameCore::CenterObjectAtPosition(screenWidth * 0.5f, screenHeight * 0.5f + 32.0f, 1120.0f * 0.7f, 2100.0f * 0.7f).y;
+            float bgWidth = 1120.0f * 0.7f;
+
+            float descX = bgX + bgWidth * 0.5f; // Center within background
+            float descY = bgY + 250.0f; // Below the name
+
+            Transform descTransform(Gnosis::GNVector2(descX, descY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            m_ecsSystem->AddComponent<Transform>(m_skillsDescriptionEntity, descTransform);
+
+            UIElement descElem;
+            descElem.buttonText = "Choose a skill to unlock";
+            descElem.fontSize = 32.0f;
+            descElem.textColor = Gnosis::GNColor(200, 200, 200, 255);
+            descElem.centerTextHorizontally = true;
+            descElem.centerTextVertically = true;
+            descElem.visible = false;
+            descElem.isEnabled = true;
+            descElem.textLayer = 90;
+            m_ecsSystem->AddComponent<UIElement>(m_skillsDescriptionEntity, descElem);
+
+            Sprite descSprite;
+            descSprite.layer = 90;
+            descSprite.visible = false;
+            m_ecsSystem->AddComponent<Sprite>(m_skillsDescriptionEntity, descSprite);
+        }
+
+        // Create cost text
+        if (m_skillsCostEntity == 0) {
+            m_skillsCostEntity = m_ecsSystem->CreateEntity();
+
+            float bgX = GameCore::CenterObjectAtPosition(screenWidth * 0.5f, screenHeight * 0.5f + 32.0f, 1120.0f * 0.7f, 2100.0f * 0.7f).x;
+            float bgY = GameCore::CenterObjectAtPosition(screenWidth * 0.5f, screenHeight * 0.5f + 32.0f, 1120.0f * 0.7f, 2100.0f * 0.7f).y;
+            float bgWidth = 1120.0f * 0.7f;
+
+            // Position cost text just above the unlock button
+            float unlockButtonY = screenHeight * 0.75f;
+            float costY = unlockButtonY - 200.0f; // 200 pixels above unlock button (between arrows and button)
+            float costX = screenWidth * 0.5f; // Center horizontally on screen
+
+            Transform costTransform(Gnosis::GNVector2(costX, costY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            m_ecsSystem->AddComponent<Transform>(m_skillsCostEntity, costTransform);
+
+            UIElement costElem;
+            costElem.buttonText = "Cost: 0 coins";
+            costElem.fontSize = 36.0f;
+            costElem.textColor = Gnosis::GNColor(255, 215, 0, 255); // Gold color
+            costElem.centerTextHorizontally = true;
+            costElem.centerTextVertically = true;
+            costElem.visible = false;
+            costElem.isEnabled = true;
+            costElem.textLayer = 90;
+            m_ecsSystem->AddComponent<UIElement>(m_skillsCostEntity, costElem);
+
+            Sprite costSprite;
+            costSprite.layer = 90;
+            costSprite.visible = false;
+            m_ecsSystem->AddComponent<Sprite>(m_skillsCostEntity, costSprite);
+        }
+
+        // Create unlock button (positioned like main menu button in system tab)
+        if (m_skillsUnlockButtonEntity == 0) {
+            m_skillsUnlockButtonEntity = m_ecsSystem->CreateEntity();
+
+            // Position like main menu button (same area as hats/main menu button)
+            float buttonCenterX = screenWidth * 0.5f; // Center horizontally on screen
+            float buttonCenterY = screenHeight * 0.75f; // Position at 75% down screen (lower)
+
+            // Use proper button scale (10x scaling for 900x160 button like main menu)
+            float buttonScale = 10.0f;
+            float buttonWidth = 90.0f * buttonScale;  // 900 pixels
+            float buttonHeight = 16.0f * buttonScale; // 160 pixels
+
+            // Use positioning helper to center button
+            Gnosis::GNVector2 buttonPosition = GameCore::CenterObjectAtPosition(buttonCenterX, buttonCenterY, buttonWidth, buttonHeight);
+            float buttonX = buttonPosition.x;
+            float buttonY = buttonPosition.y;
+
+            Transform buttonTransform(Gnosis::GNVector2(buttonX, buttonY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
+            m_ecsSystem->AddComponent<Transform>(m_skillsUnlockButtonEntity, buttonTransform);
+
+            // Create sprite using FloppyButtonBlue.png
+            Sprite buttonSprite("FloppyButtonBlue.png", 90, 16);
+            buttonSprite.layer = 90;
+            buttonSprite.visible = false;
+            m_ecsSystem->AddComponent<Sprite>(m_skillsUnlockButtonEntity, buttonSprite);
+
+            // Create UI element with proper textures
+            UIElement buttonElem("BUY", "FloppyButtonBlue", "FloppyButtonBlueHover");
+            buttonElem.fontSize = 62.0f;
+            buttonElem.textColor = Gnosis::GNColor(255, 255, 255, 255);
+            buttonElem.centerTextHorizontally = true;
+            buttonElem.centerTextVertically = true;
+            buttonElem.textLayer = 91;
+            buttonElem.visible = false;
+            buttonElem.isEnabled = true;
+            buttonElem.normalTextureId = "FloppyButtonBlue"; // Set normal texture ID
+            m_ecsSystem->AddComponent<UIElement>(m_skillsUnlockButtonEntity, buttonElem);
+        }
+
+        // Create left arrow button (small, positioned within black background)
+        if (m_skillsLeftArrowEntity == 0) {
+            m_skillsLeftArrowEntity = m_ecsSystem->CreateEntity();
+
+            // Position within the black background area
+            float bgX = GameCore::CenterObjectAtPosition(screenWidth * 0.5f, screenHeight * 0.5f + 32.0f, 1120.0f * 0.7f, 2100.0f * 0.7f).x;
+            float bgY = GameCore::CenterObjectAtPosition(screenWidth * 0.5f, screenHeight * 0.5f + 32.0f, 1120.0f * 0.7f, 2100.0f * 0.7f).y;
+            float bgWidth = 1120.0f * 0.7f;
+
+            // Position arrows with edges aligned at 20% and 80% marks for true symmetry
+            float unlockButtonY = screenHeight * 0.75f;
+            float costY = unlockButtonY - 200.0f; // Cost text Y position
+            float arrowY = costY; // Same Y as cost text for perfect centering
+            float arrowScale = 6.0f; // Increased scale for better visibility
+            float arrowSize = 16.0f * arrowScale; // 96 pixels total size (16x16 * 6)
+            // Left arrow's left edge at 20% mark
+            float arrowX = screenWidth * 0.20f; // 20% from left edge
+
+            Transform arrowTransform(Gnosis::GNVector2(arrowX, arrowY), 0.0f,
+                                   Gnosis::GNVector2(arrowScale, arrowScale));
+            m_ecsSystem->AddComponent<Transform>(m_skillsLeftArrowEntity, arrowTransform);
+
+            Sprite arrowSprite;
+            arrowSprite.textureId = "LeftArrow";
+            arrowSprite.width = 16.0f;  // Base texture size (16x16)
+            arrowSprite.height = 16.0f; // Base texture size (16x16)
+            arrowSprite.layer = 90;
+            arrowSprite.visible = false;
+            m_ecsSystem->AddComponent<Sprite>(m_skillsLeftArrowEntity, arrowSprite);
+
+            // Add UIElement for proper rendering
+            UIElement arrowUI("", "LeftArrow", "LeftArrow", "LeftArrow");
+            arrowUI.visible = false;
+            arrowUI.isEnabled = true;
+            arrowUI.textLayer = 90;
+            arrowUI.normalTextureId = "LeftArrow"; // Set normal texture ID
+            m_ecsSystem->AddComponent<UIElement>(m_skillsLeftArrowEntity, arrowUI);
+        }
+
+        // Create right arrow button (small, positioned within black background)
+        if (m_skillsRightArrowEntity == 0) {
+            m_skillsRightArrowEntity = m_ecsSystem->CreateEntity();
+
+            // Position within the black background area
+            float bgX = GameCore::CenterObjectAtPosition(screenWidth * 0.5f, screenHeight * 0.5f + 32.0f, 1120.0f * 0.7f, 2100.0f * 0.7f).x;
+            float bgY = GameCore::CenterObjectAtPosition(screenWidth * 0.5f, screenHeight * 0.5f + 32.0f, 1120.0f * 0.7f, 2100.0f * 0.7f).y;
+            float bgWidth = 1120.0f * 0.7f;
+
+            // Position arrows with edges aligned at 20% and 80% marks for true symmetry
+            float unlockButtonY = screenHeight * 0.75f;
+            float costY = unlockButtonY - 200.0f; // Cost text Y position
+            float arrowY = costY; // Same Y as cost text for perfect centering
+            float arrowScale = 6.0f; // Increased scale for better visibility
+            float arrowSize = 16.0f * arrowScale; // 96 pixels total size (16x16 * 6)
+            // Right arrow's right edge at 80% mark (so left edge at 80% - button width)
+            float arrowX = screenWidth * 0.80f - arrowSize; // 80% minus button width
+
+            Transform arrowTransform(Gnosis::GNVector2(arrowX, arrowY), 0.0f,
+                                   Gnosis::GNVector2(arrowScale, arrowScale));
+            m_ecsSystem->AddComponent<Transform>(m_skillsRightArrowEntity, arrowTransform);
+
+            Sprite arrowSprite;
+            arrowSprite.textureId = "RightArrow";
+            arrowSprite.width = 16.0f;  // Base texture size (16x16)
+            arrowSprite.height = 16.0f; // Base texture size (16x16)
+            arrowSprite.layer = 90;
+            arrowSprite.visible = false;
+            m_ecsSystem->AddComponent<Sprite>(m_skillsRightArrowEntity, arrowSprite);
+
+            // Add UIElement for proper rendering
+            UIElement arrowUI("", "RightArrow", "RightArrow", "RightArrow");
+            arrowUI.visible = false;
+            arrowUI.isEnabled = true;
+            arrowUI.textLayer = 90;
+            arrowUI.normalTextureId = "RightArrow"; // Set normal texture ID
+            m_ecsSystem->AddComponent<UIElement>(m_skillsRightArrowEntity, arrowUI);
         }
         
         GN_LOG_INFO("Created skills tab content");
     }
 
-    void GameplayState::CreateHatsTab() {
-        GN_LOG_INFO("Creating hats tab content");
-
-        // Prevent duplicate hats grid creation
-        if (m_hatsGridCreated) {
-            GN_LOG_INFO("Hats grid already created, skipping duplicate creation");
+    void GameplayState::UpdateSkillDisplay() {
+        if (!m_skillSystem || m_availableSkills.empty()) {
             return;
         }
+
+        // Ensure current index is valid
+        if (m_currentSkillIndex < 0) {
+            m_currentSkillIndex = m_availableSkills.size() - 1;
+        } else if (m_currentSkillIndex >= static_cast<int>(m_availableSkills.size())) {
+            m_currentSkillIndex = 0;
+        }
+
+        GameCore::SkillType currentSkill = m_availableSkills[m_currentSkillIndex];
+
+        // Update skill name
+        if (m_skillsNameEntity != 0) {
+            auto* nameElem = m_ecsSystem->GetComponent<UIElement>(m_skillsNameEntity);
+            if (nameElem) {
+                nameElem->buttonText = m_skillSystem->GetSkillDisplayName(currentSkill);
+            }
+        }
+
+        // Update skill description
+        if (m_skillsDescriptionEntity != 0) {
+            auto* descElem = m_ecsSystem->GetComponent<UIElement>(m_skillsDescriptionEntity);
+            if (descElem) {
+                descElem->buttonText = m_skillSystem->GetSkillDescription(currentSkill);
+            }
+        }
+
+        // Update cost and button state
+        if (m_skillsCostEntity != 0 && m_skillsUnlockButtonEntity != 0) {
+            auto* costElem = m_ecsSystem->GetComponent<UIElement>(m_skillsCostEntity);
+            auto* buttonElem = m_ecsSystem->GetComponent<UIElement>(m_skillsUnlockButtonEntity);
+
+            if (costElem && buttonElem) {
+                bool isUnlocked = m_skillSystem->IsSkillUnlocked(currentSkill);
+                int cost = m_skillSystem->GetSkillCost(currentSkill);
+
+                if (isUnlocked) {
+                    costElem->buttonText = "UNLOCKED";
+                    costElem->textColor = Gnosis::GNColor(0, 255, 0, 255); // Green
+                    buttonElem->buttonText = "UNLOCKED";
+                    buttonElem->isEnabled = false;
+                } else {
+                    costElem->buttonText = "Cost: " + std::to_string(cost) + " coins";
+                    costElem->textColor = Gnosis::GNColor(255, 215, 0, 255); // Gold
+
+                    // Get player coins to check if affordable
+                    int playerCoins = 0;
+                    if (m_playerEntity != 0) {
+                        auto* playerComp = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity);
+                        if (playerComp) {
+                            playerCoins = playerComp->sessionCoins;
+                        }
+                    }
+
+                    if (playerCoins >= cost) {
+                        buttonElem->buttonText = "UNLOCK";
+                        buttonElem->isEnabled = true;
+                    } else {
+                        buttonElem->buttonText = "BUY";
+                        buttonElem->isEnabled = false;
+                    }
+                }
+            }
+        }
+    }
+
+    void GameplayState::HandleSkillLeftArrow() {
+        // Check debounce timer to prevent rapid clicking
+        if (m_lastSkillButtonPressTime < m_skillButtonDebounceDelay) {
+            GN_LOG_INFO("Skill left arrow debounced - too soon since last press");
+            return;
+        }
+
+        m_currentSkillIndex--;
+        UpdateSkillDisplay();
+
+        // Reset debounce timer
+        m_lastSkillButtonPressTime = 0.0f;
+    }
+
+    void GameplayState::HandleSkillRightArrow() {
+        // Check debounce timer to prevent rapid clicking
+        if (m_lastSkillButtonPressTime < m_skillButtonDebounceDelay) {
+            GN_LOG_INFO("Skill right arrow debounced - too soon since last press");
+            return;
+        }
+
+        m_currentSkillIndex++;
+        UpdateSkillDisplay();
+
+        // Reset debounce timer
+        m_lastSkillButtonPressTime = 0.0f;
+    }
+
+    void GameplayState::HandleSkillUnlock() {
+        if (!m_skillSystem || m_availableSkills.empty()) {
+            return;
+        }
+
+        // Check debounce timer to prevent rapid clicking
+        if (m_lastSkillButtonPressTime < m_skillButtonDebounceDelay) {
+            GN_LOG_INFO("Skill unlock button debounced - too soon since last press (%.2fs remaining)",
+                       m_skillButtonDebounceDelay - m_lastSkillButtonPressTime);
+            return;
+        }
+
+        GameCore::SkillType currentSkill = m_availableSkills[m_currentSkillIndex];
+
+        if (m_skillSystem->IsSkillUnlocked(currentSkill)) {
+            return; // Already unlocked
+        }
+
+        // Get player coins
+        int playerCoins = 0;
+        if (m_playerEntity != 0) {
+            auto* playerComp = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity);
+            if (playerComp) {
+                playerCoins = playerComp->sessionCoins;
+            }
+        }
+
+        // Try to unlock the skill
+        if (m_skillSystem->UnlockSkill(currentSkill, playerCoins)) {
+            GN_LOG_INFO("Skill unlocked successfully: " + m_skillSystem->GetSkillDisplayName(currentSkill));
+
+            // Update player's session coins
+            if (m_playerEntity != 0) {
+                auto* playerComp = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity);
+                if (playerComp) {
+                    playerComp->sessionCoins = playerCoins;
+                }
+            }
+
+            // Update coins display
+            // TODO: Implement UpdateCoinsDisplay when coin UI is available
+
+            // Update skill display
+            UpdateSkillDisplay();
+
+            // Apply skill effects immediately if it's a passive skill
+            if (currentSkill == GameCore::SkillType::HalfHearts ||
+                currentSkill == GameCore::SkillType::ThirdHearts) {
+                m_skillSystem->ApplyHeartModeUpgrade(currentSkill, m_playerEntity);
+            }
+
+            // Play unlock sound
+            if (GameCore::GetGame()) {
+                GN_LOG_INFO("🎵 Playing kaching sound for skill unlock");
+                GameCore::GetGame()->PlaySFX("kaching");
+            }
+        } else {
+            GN_LOG_WARN("Failed to unlock skill: " + m_skillSystem->GetSkillDisplayName(currentSkill));
+
+            // Play denied sound when unlock fails (insufficient coins)
+            if (GameCore::GetGame()) {
+                GN_LOG_INFO("🎵 Playing denied sound - insufficient coins");
+                GameCore::GetGame()->PlaySFX("denied");
+            }
+        }
+
+        // Reset debounce timer
+        m_lastSkillButtonPressTime = 0.0f;
+    }
+
+    void GameplayState::HandleSkillsTabClick(float touchX, float touchY) {
+        GN_LOG_INFO("HandleSkillsTabClick called with touch at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
+
+        // Check left arrow click
+        if (m_skillsLeftArrowEntity != 0 && m_ecsSystem) {
+            auto transform = m_ecsSystem->GetComponent<Transform>(m_skillsLeftArrowEntity);
+            auto sprite = m_ecsSystem->GetComponent<Sprite>(m_skillsLeftArrowEntity);
+            if (transform) {
+                // Use the same approach as working hat buttons - transform position is TOP-LEFT corner
+                float arrowScale = transform->scale.x;
+                float arrowWidth = sprite ? sprite->width * arrowScale : 16.0f * arrowScale;
+                float arrowHeight = sprite ? sprite->height * arrowScale : 16.0f * arrowScale;
+
+                // Transform position is TOP-LEFT corner, so bounds are:
+                float arrowLeft = transform->position.x;
+                float arrowRight = transform->position.x + arrowWidth;
+                float arrowTop = transform->position.y;
+                float arrowBottom = transform->position.y + arrowHeight;
+
+                GN_LOG_INFO("🎯 Left arrow hitbox: pos=(" + std::to_string(transform->position.x) + "," + std::to_string(transform->position.y) +
+                           ") size=" + std::to_string(arrowWidth) + "x" + std::to_string(arrowHeight));
+                GN_LOG_INFO("🎯 Left arrow bounds: L=" + std::to_string(arrowLeft) + " R=" + std::to_string(arrowRight) +
+                           " T=" + std::to_string(arrowTop) + " B=" + std::to_string(arrowBottom));
+                GN_LOG_INFO("🎯 Touch coords: (" + std::to_string(touchX) + "," + std::to_string(touchY) + ")");
+
+                if (touchX >= arrowLeft && touchX <= arrowRight &&
+                    touchY >= arrowTop && touchY <= arrowBottom) {
+                    GN_LOG_INFO("✅ Left arrow clicked - navigating to previous skill");
+                    HandleSkillLeftArrow();
+                    return;
+                }
+            }
+        }
+
+        // Check right arrow click
+        if (m_skillsRightArrowEntity != 0 && m_ecsSystem) {
+            auto transform = m_ecsSystem->GetComponent<Transform>(m_skillsRightArrowEntity);
+            auto sprite = m_ecsSystem->GetComponent<Sprite>(m_skillsRightArrowEntity);
+            if (transform) {
+                // Use the same approach as working hat buttons - transform position is TOP-LEFT corner
+                float arrowScale = transform->scale.x;
+                float arrowWidth = sprite ? sprite->width * arrowScale : 16.0f * arrowScale;
+                float arrowHeight = sprite ? sprite->height * arrowScale : 16.0f * arrowScale;
+
+                // Transform position is TOP-LEFT corner, so bounds are:
+                float arrowLeft = transform->position.x;
+                float arrowRight = transform->position.x + arrowWidth;
+                float arrowTop = transform->position.y;
+                float arrowBottom = transform->position.y + arrowHeight;
+
+                GN_LOG_INFO("🎯 Right arrow hitbox: pos=(" + std::to_string(transform->position.x) + "," + std::to_string(transform->position.y) +
+                           ") size=" + std::to_string(arrowWidth) + "x" + std::to_string(arrowHeight));
+                GN_LOG_INFO("🎯 Right arrow bounds: L=" + std::to_string(arrowLeft) + " R=" + std::to_string(arrowRight) +
+                           " T=" + std::to_string(arrowTop) + " B=" + std::to_string(arrowBottom));
+                GN_LOG_INFO("🎯 Touch coords: (" + std::to_string(touchX) + "," + std::to_string(touchY) + ")");
+
+                if (touchX >= arrowLeft && touchX <= arrowRight &&
+                    touchY >= arrowTop && touchY <= arrowBottom) {
+                    GN_LOG_INFO("✅ Right arrow clicked - navigating to next skill");
+                    HandleSkillRightArrow();
+                    return;
+                }
+            }
+        }
+
+        // Check unlock button click
+        if (m_skillsUnlockButtonEntity != 0 && m_ecsSystem) {
+            auto transform = m_ecsSystem->GetComponent<Transform>(m_skillsUnlockButtonEntity);
+            auto sprite = m_ecsSystem->GetComponent<Sprite>(m_skillsUnlockButtonEntity);
+            if (transform) {
+                // Use the same approach as working hat buttons - transform position is TOP-LEFT corner
+                float buttonScale = transform->scale.x;
+                float buttonWidth = sprite ? sprite->width * buttonScale : 90.0f * buttonScale;
+                float buttonHeight = sprite ? sprite->height * buttonScale : 16.0f * buttonScale;
+
+                // Transform position is TOP-LEFT corner, so bounds are:
+                float buttonLeft = transform->position.x;
+                float buttonRight = transform->position.x + buttonWidth;
+                float buttonTop = transform->position.y;
+                float buttonBottom = transform->position.y + buttonHeight;
+
+                GN_LOG_INFO("🎯 Unlock button hitbox: pos=(" + std::to_string(transform->position.x) + "," + std::to_string(transform->position.y) +
+                           ") size=" + std::to_string(buttonWidth) + "x" + std::to_string(buttonHeight));
+                GN_LOG_INFO("🎯 Unlock button bounds: L=" + std::to_string(buttonLeft) + " R=" + std::to_string(buttonRight) +
+                           " T=" + std::to_string(buttonTop) + " B=" + std::to_string(buttonBottom));
+                GN_LOG_INFO("🎯 Touch coords: (" + std::to_string(touchX) + "," + std::to_string(touchY) + ")");
+
+                if (touchX >= buttonLeft && touchX <= buttonRight &&
+                    touchY >= buttonTop && touchY <= buttonBottom) {
+                    GN_LOG_INFO("✅ Unlock button clicked");
+                    HandleSkillUnlock();
+                    return;
+                }
+            }
+        }
+    }
+
+    void GameplayState::CreateHatsTab() {
+        GN_LOG_INFO("Creating hats tab content");
 
         // Get screen dimensions
         float screenWidth = 1179.0f;  // Default iPhone 16 width
@@ -3248,6 +3861,64 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             const ScreenInfo& si = m_renderSystem->GetScreenInfo();
             screenWidth = si.pixelWidth;
             screenHeight = si.pixelHeight;
+        }
+
+        // Create black background for hats tab (same as skills tab)
+        if (m_hatsBackgroundEntity == 0) {
+            m_hatsBackgroundEntity = m_ecsSystem->CreateEntity();
+
+            // Use same dimensions as skills background (70% of pause menu background)
+            float bgX = GameCore::CenterObjectAtPosition(screenWidth * 0.5f, screenHeight * 0.5f + 32.0f, 1120.0f * 0.7f, 2100.0f * 0.7f).x;
+            float bgY = GameCore::CenterObjectAtPosition(screenWidth * 0.5f, screenHeight * 0.5f + 32.0f, 1120.0f * 0.7f, 2100.0f * 0.7f).y;
+
+            Transform bgTransform(Gnosis::GNVector2(bgX, bgY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            m_ecsSystem->AddComponent<Transform>(m_hatsBackgroundEntity, bgTransform);
+
+            // Create black rectangle background
+            GameCore::UIShapeType shapeType = GameCore::UIShapeType::Rectangle;
+            GameCore::UIShape backgroundShape(shapeType, 1120.0f * 0.7f, 2100.0f * 0.7f, Gnosis::GNColor(0, 0, 0, 180)); // Semi-transparent black
+            backgroundShape.visible = false;
+            m_ecsSystem->AddComponent<GameCore::UIShape>(m_hatsBackgroundEntity, backgroundShape);
+
+            UIElement bgElement;
+            bgElement.visible = false;
+            bgElement.isEnabled = false; // Background shouldn't be interactive
+            bgElement.textLayer = 85; // Below UI elements but above game elements
+            m_ecsSystem->AddComponent<UIElement>(m_hatsBackgroundEntity, bgElement);
+        }
+
+        // Create "Hats" title text at the very top of the pause menu
+        if (m_hatsTitleEntity == 0) {
+            m_hatsTitleEntity = m_ecsSystem->CreateEntity();
+
+            // Position at the top center of the screen (like other tab titles)
+            float titleX = screenWidth * 0.5f;
+            float titleY = screenHeight * 0.15f; // Near the top
+
+            Transform titleTransform(Gnosis::GNVector2(titleX, titleY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            m_ecsSystem->AddComponent<Transform>(m_hatsTitleEntity, titleTransform);
+
+            UIElement titleElem;
+            titleElem.buttonText = "Hats";
+            titleElem.fontSize = 72.0f; // Large title font
+            titleElem.textColor = Gnosis::GNColor(255, 255, 255, 255);
+            titleElem.centerTextHorizontally = true;
+            titleElem.centerTextVertically = true;
+            titleElem.visible = false;
+            titleElem.isEnabled = true;
+            titleElem.textLayer = 90;
+            m_ecsSystem->AddComponent<UIElement>(m_hatsTitleEntity, titleElem);
+
+            Sprite titleSprite;
+            titleSprite.layer = 90;
+            titleSprite.visible = false;
+            m_ecsSystem->AddComponent<Sprite>(m_hatsTitleEntity, titleSprite);
+        }
+
+        // Prevent duplicate hats grid creation
+        if (m_hatsGridCreated) {
+            GN_LOG_INFO("Hats grid already created, skipping duplicate creation");
+            return;
         }
 
         // Calculate grid dimensions (3x5 grid)
@@ -3293,15 +3964,43 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
 
     void GameplayState::CreateStatsTab() {
         GN_LOG_INFO("Creating stats tab content");
-        
+
         // Get screen dimensions
         float screenWidth = 1179.0f;  // Default iPhone 16 width
         float screenHeight = 2556.0f; // Default iPhone 16 height
-        
+
         if (m_renderSystem) {
             const ScreenInfo& si = m_renderSystem->GetScreenInfo();
             screenWidth = si.pixelWidth;
             screenHeight = si.pixelHeight;
+        }
+
+        // Create "Stats" title text at the very top of the pause menu
+        if (m_statsTitleEntity == 0) {
+            m_statsTitleEntity = m_ecsSystem->CreateEntity();
+
+            // Position at the top center of the screen (like other tab titles)
+            float titleX = screenWidth * 0.5f;
+            float titleY = screenHeight * 0.15f; // Near the top
+
+            Transform titleTransform(Gnosis::GNVector2(titleX, titleY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            m_ecsSystem->AddComponent<Transform>(m_statsTitleEntity, titleTransform);
+
+            UIElement titleElem;
+            titleElem.buttonText = "Stats";
+            titleElem.fontSize = 72.0f; // Large title font
+            titleElem.textColor = Gnosis::GNColor(255, 255, 255, 255);
+            titleElem.centerTextHorizontally = true;
+            titleElem.centerTextVertically = true;
+            titleElem.visible = false;
+            titleElem.isEnabled = true;
+            titleElem.textLayer = 90;
+            m_ecsSystem->AddComponent<UIElement>(m_statsTitleEntity, titleElem);
+
+            Sprite titleSprite;
+            titleSprite.layer = 90;
+            titleSprite.visible = false;
+            m_ecsSystem->AddComponent<Sprite>(m_statsTitleEntity, titleSprite);
         }
         
         // Calculate 70% of the pause menu background dimensions
@@ -3546,15 +4245,43 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
 
     void GameplayState::CreateSystemTab() {
         GN_LOG_INFO("Creating system tab content");
-        
+
         // Get screen dimensions
         float screenWidth = 1179.0f;  // Default iPhone 16 width
         float screenHeight = 2556.0f; // Default iPhone 16 height
-        
+
         if (m_renderSystem) {
             const ScreenInfo& si = m_renderSystem->GetScreenInfo();
             screenWidth = si.pixelWidth;
             screenHeight = si.pixelHeight;
+        }
+
+        // Create "System" title text at the very top of the pause menu
+        if (m_systemTitleEntity == 0) {
+            m_systemTitleEntity = m_ecsSystem->CreateEntity();
+
+            // Position at the top center of the screen (like other tab titles)
+            float titleX = screenWidth * 0.5f;
+            float titleY = screenHeight * 0.15f; // Near the top
+
+            Transform titleTransform(Gnosis::GNVector2(titleX, titleY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            m_ecsSystem->AddComponent<Transform>(m_systemTitleEntity, titleTransform);
+
+            UIElement titleElem;
+            titleElem.buttonText = "System";
+            titleElem.fontSize = 72.0f; // Large title font
+            titleElem.textColor = Gnosis::GNColor(255, 255, 255, 255);
+            titleElem.centerTextHorizontally = true;
+            titleElem.centerTextVertically = true;
+            titleElem.visible = false;
+            titleElem.isEnabled = true;
+            titleElem.textLayer = 90;
+            m_ecsSystem->AddComponent<UIElement>(m_systemTitleEntity, titleElem);
+
+            Sprite titleSprite;
+            titleSprite.layer = 90;
+            titleSprite.visible = false;
+            m_ecsSystem->AddComponent<Sprite>(m_systemTitleEntity, titleSprite);
         }
         
         // Create main menu button
@@ -4071,20 +4798,144 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
     void GameplayState::ShowSkillsTab() {
         GN_LOG_INFO("Showing skills tab");
         
-        if (m_skillsContentEntity != 0 && m_ecsSystem) {
-            Sprite* contentSprite = m_ecsSystem->GetComponent<Sprite>(m_skillsContentEntity);
-            if (contentSprite) {
-                contentSprite->visible = true;
+        // Show skills title
+        if (m_skillsTitleEntity != 0 && m_ecsSystem) {
+            Sprite* titleSprite = m_ecsSystem->GetComponent<Sprite>(m_skillsTitleEntity);
+            if (titleSprite) {
+                titleSprite->visible = true;
             }
-            UIElement* contentUI = m_ecsSystem->GetComponent<UIElement>(m_skillsContentEntity);
-            if (contentUI) {
-                contentUI->visible = true;
+            UIElement* titleUI = m_ecsSystem->GetComponent<UIElement>(m_skillsTitleEntity);
+            if (titleUI) {
+                titleUI->visible = true;
             }
         }
+
+        // Show skills background
+        if (m_skillsBackgroundEntity != 0 && m_ecsSystem) {
+            UIShape* bgShape = m_ecsSystem->GetComponent<UIShape>(m_skillsBackgroundEntity);
+            if (bgShape) {
+                bgShape->visible = true;
+            }
+            UIElement* bgUI = m_ecsSystem->GetComponent<UIElement>(m_skillsBackgroundEntity);
+            if (bgUI) {
+                bgUI->visible = true;
+            }
+        }
+
+        // Show skills title text
+        if (m_skillsTitleEntity != 0 && m_ecsSystem) {
+            Sprite* titleSprite = m_ecsSystem->GetComponent<Sprite>(m_skillsTitleEntity);
+            if (titleSprite) {
+                titleSprite->visible = true;
+            }
+            UIElement* titleUI = m_ecsSystem->GetComponent<UIElement>(m_skillsTitleEntity);
+            if (titleUI) {
+                titleUI->visible = true;
+            }
+        }
+
+        // Show skill name text
+        if (m_skillsNameEntity != 0 && m_ecsSystem) {
+            Sprite* nameSprite = m_ecsSystem->GetComponent<Sprite>(m_skillsNameEntity);
+            if (nameSprite) {
+                nameSprite->visible = true;
+            }
+            UIElement* nameUI = m_ecsSystem->GetComponent<UIElement>(m_skillsNameEntity);
+            if (nameUI) {
+                nameUI->visible = true;
+            }
+        }
+
+        // Show skill description text
+        if (m_skillsDescriptionEntity != 0 && m_ecsSystem) {
+            Sprite* descSprite = m_ecsSystem->GetComponent<Sprite>(m_skillsDescriptionEntity);
+            if (descSprite) {
+                descSprite->visible = true;
+            }
+            UIElement* descUI = m_ecsSystem->GetComponent<UIElement>(m_skillsDescriptionEntity);
+            if (descUI) {
+                descUI->visible = true;
+            }
+        }
+
+        // Show skill cost text
+        if (m_skillsCostEntity != 0 && m_ecsSystem) {
+            Sprite* costSprite = m_ecsSystem->GetComponent<Sprite>(m_skillsCostEntity);
+            if (costSprite) {
+                costSprite->visible = true;
+            }
+            UIElement* costUI = m_ecsSystem->GetComponent<UIElement>(m_skillsCostEntity);
+            if (costUI) {
+                costUI->visible = true;
+            }
+        }
+
+        // Show unlock button
+        if (m_skillsUnlockButtonEntity != 0 && m_ecsSystem) {
+            Sprite* buttonSprite = m_ecsSystem->GetComponent<Sprite>(m_skillsUnlockButtonEntity);
+            if (buttonSprite) {
+                buttonSprite->visible = true;
+            }
+            UIElement* buttonUI = m_ecsSystem->GetComponent<UIElement>(m_skillsUnlockButtonEntity);
+            if (buttonUI) {
+                buttonUI->visible = true;
+            }
+        }
+
+        // Show left arrow
+        if (m_skillsLeftArrowEntity != 0 && m_ecsSystem) {
+            Sprite* arrowSprite = m_ecsSystem->GetComponent<Sprite>(m_skillsLeftArrowEntity);
+            if (arrowSprite) {
+                arrowSprite->visible = true;
+            }
+            UIElement* arrowUI = m_ecsSystem->GetComponent<UIElement>(m_skillsLeftArrowEntity);
+            if (arrowUI) {
+                arrowUI->visible = true;
+            }
+        }
+
+        // Show right arrow
+        if (m_skillsRightArrowEntity != 0 && m_ecsSystem) {
+            Sprite* arrowSprite = m_ecsSystem->GetComponent<Sprite>(m_skillsRightArrowEntity);
+            if (arrowSprite) {
+                arrowSprite->visible = true;
+            }
+            UIElement* arrowUI = m_ecsSystem->GetComponent<UIElement>(m_skillsRightArrowEntity);
+            if (arrowUI) {
+                arrowUI->visible = true;
+            }
+        }
+
+        // Update the skill display with current information
+        UpdateSkillDisplay();
     }
 
     void GameplayState::ShowHatsTab() {
         GN_LOG_INFO("Showing hats tab");
+
+        // Show hats background
+        if (m_hatsBackgroundEntity != 0 && m_ecsSystem) {
+            GameCore::UIShape* bgShape = m_ecsSystem->GetComponent<GameCore::UIShape>(m_hatsBackgroundEntity);
+            if (bgShape) {
+                bgShape->visible = true;
+            }
+            UIElement* bgUI = m_ecsSystem->GetComponent<UIElement>(m_hatsBackgroundEntity);
+            if (bgUI) {
+                bgUI->visible = true;
+            }
+        }
+
+        // Show hats title
+        if (m_hatsTitleEntity != 0 && m_ecsSystem) {
+            Sprite* titleSprite = m_ecsSystem->GetComponent<Sprite>(m_hatsTitleEntity);
+            if (titleSprite) {
+                titleSprite->visible = true;
+            }
+            UIElement* titleUI = m_ecsSystem->GetComponent<UIElement>(m_hatsTitleEntity);
+            if (titleUI) {
+                titleUI->visible = true;
+            }
+        }
 
         // Show the HatsSystem UI elements (already created in CreateHatsTab)
         if (m_hatsSystem) {
@@ -4109,10 +4960,32 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
 
     void GameplayState::ShowStatsTab() {
         GN_LOG_INFO("Showing stats tab");
+
+        // Show stats title
+        if (m_statsTitleEntity != 0 && m_ecsSystem) {
+            Sprite* titleSprite = m_ecsSystem->GetComponent<Sprite>(m_statsTitleEntity);
+            if (titleSprite) {
+                titleSprite->visible = true;
+            }
+            UIElement* titleUI = m_ecsSystem->GetComponent<UIElement>(m_statsTitleEntity);
+            if (titleUI) {
+                titleUI->visible = true;
+            }
+        }
         
         // Refresh stats display with latest values every time stats tab is shown
         RefreshStatsDisplay();
-        
+
+        // Get screen dimensions
+        float screenWidth = 1179.0f;  // Default iPhone 16 width
+        float screenHeight = 2556.0f; // Default iPhone 16 height
+
+        if (m_renderSystem) {
+            const ScreenInfo& si = m_renderSystem->GetScreenInfo();
+            screenWidth = si.pixelWidth;
+            screenHeight = si.pixelHeight;
+        }
+
         // Show stats background rectangle
         if (m_statsBackgroundEntity != 0 && m_ecsSystem) {
             UIShape* bgShape = m_ecsSystem->GetComponent<UIShape>(m_statsBackgroundEntity);
@@ -4152,6 +5025,18 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
 
     void GameplayState::ShowSystemTab() {
         GN_LOG_INFO("Showing system tab");
+
+        // Show system title
+        if (m_systemTitleEntity != 0 && m_ecsSystem) {
+            Sprite* titleSprite = m_ecsSystem->GetComponent<Sprite>(m_systemTitleEntity);
+            if (titleSprite) {
+                titleSprite->visible = true;
+            }
+            UIElement* titleUI = m_ecsSystem->GetComponent<UIElement>(m_systemTitleEntity);
+            if (titleUI) {
+                titleUI->visible = true;
+            }
+        }
         
         // Show system tab entities
         if (m_mainMenuButtonEntity != 0 && m_ecsSystem) {
@@ -4378,7 +5263,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             }
         }
         
-        // Hide tab content entities
+        // Hide skills tab entities
         if (m_skillsContentEntity != 0 && m_ecsSystem) {
             Sprite* contentSprite = m_ecsSystem->GetComponent<Sprite>(m_skillsContentEntity);
             if (contentSprite) {
@@ -4389,11 +5274,148 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 contentUI->visible = false;
             }
         }
+
+        // Hide skills background
+        if (m_skillsBackgroundEntity != 0 && m_ecsSystem) {
+            UIShape* bgShape = m_ecsSystem->GetComponent<UIShape>(m_skillsBackgroundEntity);
+            if (bgShape) {
+                bgShape->visible = false;
+            }
+        }
+
+        // Hide all tab title text
+        if (m_skillsTitleEntity != 0 && m_ecsSystem) {
+            Sprite* titleSprite = m_ecsSystem->GetComponent<Sprite>(m_skillsTitleEntity);
+            if (titleSprite) {
+                titleSprite->visible = false;
+            }
+            UIElement* titleUI = m_ecsSystem->GetComponent<UIElement>(m_skillsTitleEntity);
+            if (titleUI) {
+                titleUI->visible = false;
+            }
+        }
+
+        if (m_hatsTitleEntity != 0 && m_ecsSystem) {
+            Sprite* titleSprite = m_ecsSystem->GetComponent<Sprite>(m_hatsTitleEntity);
+            if (titleSprite) {
+                titleSprite->visible = false;
+            }
+            UIElement* titleUI = m_ecsSystem->GetComponent<UIElement>(m_hatsTitleEntity);
+            if (titleUI) {
+                titleUI->visible = false;
+            }
+        }
+
+        if (m_statsTitleEntity != 0 && m_ecsSystem) {
+            Sprite* titleSprite = m_ecsSystem->GetComponent<Sprite>(m_statsTitleEntity);
+            if (titleSprite) {
+                titleSprite->visible = false;
+            }
+            UIElement* titleUI = m_ecsSystem->GetComponent<UIElement>(m_statsTitleEntity);
+            if (titleUI) {
+                titleUI->visible = false;
+            }
+        }
+
+        if (m_systemTitleEntity != 0 && m_ecsSystem) {
+            Sprite* titleSprite = m_ecsSystem->GetComponent<Sprite>(m_systemTitleEntity);
+            if (titleSprite) {
+                titleSprite->visible = false;
+            }
+            UIElement* titleUI = m_ecsSystem->GetComponent<UIElement>(m_systemTitleEntity);
+            if (titleUI) {
+                titleUI->visible = false;
+            }
+        }
+
+        // Hide skill name text
+        if (m_skillsNameEntity != 0 && m_ecsSystem) {
+            Sprite* nameSprite = m_ecsSystem->GetComponent<Sprite>(m_skillsNameEntity);
+            if (nameSprite) {
+                nameSprite->visible = false;
+            }
+            UIElement* nameUI = m_ecsSystem->GetComponent<UIElement>(m_skillsNameEntity);
+            if (nameUI) {
+                nameUI->visible = false;
+            }
+        }
+
+        // Hide skill description text
+        if (m_skillsDescriptionEntity != 0 && m_ecsSystem) {
+            Sprite* descSprite = m_ecsSystem->GetComponent<Sprite>(m_skillsDescriptionEntity);
+            if (descSprite) {
+                descSprite->visible = false;
+            }
+            UIElement* descUI = m_ecsSystem->GetComponent<UIElement>(m_skillsDescriptionEntity);
+            if (descUI) {
+                descUI->visible = false;
+            }
+        }
+
+        // Hide skill cost text
+        if (m_skillsCostEntity != 0 && m_ecsSystem) {
+            Sprite* costSprite = m_ecsSystem->GetComponent<Sprite>(m_skillsCostEntity);
+            if (costSprite) {
+                costSprite->visible = false;
+            }
+            UIElement* costUI = m_ecsSystem->GetComponent<UIElement>(m_skillsCostEntity);
+            if (costUI) {
+                costUI->visible = false;
+            }
+        }
+
+        // Hide unlock button
+        if (m_skillsUnlockButtonEntity != 0 && m_ecsSystem) {
+            Sprite* buttonSprite = m_ecsSystem->GetComponent<Sprite>(m_skillsUnlockButtonEntity);
+            if (buttonSprite) {
+                buttonSprite->visible = false;
+            }
+            UIElement* buttonUI = m_ecsSystem->GetComponent<UIElement>(m_skillsUnlockButtonEntity);
+            if (buttonUI) {
+                buttonUI->visible = false;
+            }
+        }
+
+        // Hide left arrow
+        if (m_skillsLeftArrowEntity != 0 && m_ecsSystem) {
+            Sprite* arrowSprite = m_ecsSystem->GetComponent<Sprite>(m_skillsLeftArrowEntity);
+            if (arrowSprite) {
+                arrowSprite->visible = false;
+            }
+            UIElement* arrowUI = m_ecsSystem->GetComponent<UIElement>(m_skillsLeftArrowEntity);
+            if (arrowUI) {
+                arrowUI->visible = false;
+            }
+        }
+
+        // Hide right arrow
+        if (m_skillsRightArrowEntity != 0 && m_ecsSystem) {
+            Sprite* arrowSprite = m_ecsSystem->GetComponent<Sprite>(m_skillsRightArrowEntity);
+            if (arrowSprite) {
+                arrowSprite->visible = false;
+            }
+            UIElement* arrowUI = m_ecsSystem->GetComponent<UIElement>(m_skillsRightArrowEntity);
+            if (arrowUI) {
+                arrowUI->visible = false;
+            }
+        }
         
         // Hide HatsSystem UI elements
         if (m_hatsSystem) {
             m_hatsSystem->HideUI();
             GN_LOG_INFO("HatsSystem UI hidden successfully");
+        }
+
+        // Hide hats background
+        if (m_hatsBackgroundEntity != 0 && m_ecsSystem) {
+            GameCore::UIShape* bgShape = m_ecsSystem->GetComponent<GameCore::UIShape>(m_hatsBackgroundEntity);
+            if (bgShape) {
+                bgShape->visible = false;
+            }
+            UIElement* bgUI = m_ecsSystem->GetComponent<UIElement>(m_hatsBackgroundEntity);
+            if (bgUI) {
+                bgUI->visible = false;
+            }
         }
 
         if (m_hatsContentEntity != 0 && m_ecsSystem) {
@@ -4647,6 +5669,10 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
     void GameplayState::HandlePauseMenuContentClick(float touchX, float touchY) {
         // Handle clicks in the content area based on current tab
         switch (m_currentPauseTab) {
+            case 0: // SKILLS tab
+                HandleSkillsTabClick(touchX, touchY);
+                break;
+
             case 1: // HATS tab
                 HandleHatsTabClick(touchX, touchY);
                 break;

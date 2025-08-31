@@ -26,12 +26,12 @@ namespace GameCore {
     };
     
     enum class SkillType {
-        DoubleJump = 0,
-        Shield,
-        SpeedBoost,
-        RapidFire,
-        Magnet,
-        TimeSlowdown
+        // Skills from old system
+        HalfHearts = 0,     // Upgrade to half-heart precision
+        ThirdHearts,        // Upgrade to third-heart precision (requires HalfHearts)
+        CoinMagnet,         // Attracts coins automatically
+        HeartMagnet,        // Attracts hearts automatically
+        CoinSafetyNet       // Prevents death if you have coins (once per level)
     };
     
     enum class ColliderType {

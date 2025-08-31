@@ -17,6 +17,7 @@
 #include "../Systems/HeartSystem.h"
 #include "../Systems/ProjectileSystem.h"
 #include "../Systems/HatsSystem.h"
+#include "../Systems/SkillSystem.h"
 #include "../Config/LevelConfig.h"
 #include <memory>
 #include <vector>
@@ -97,6 +98,7 @@ namespace GameCore {
         std::unique_ptr<HeartSystem> m_heartSystem;
         std::unique_ptr<ProjectileSystem> m_projectileSystem;
         std::unique_ptr<HatsSystem> m_hatsSystem;
+        std::unique_ptr<SkillSystem> m_skillSystem;
 
         // Level configuration
         int m_currentLevelId;
@@ -166,7 +168,11 @@ namespace GameCore {
         // Action button debouncing
         float m_lastActionButtonPressTime;
         float m_actionButtonDebounceDelay;
-        
+
+        // Skills tab button debouncing
+        float m_lastSkillButtonPressTime;
+        float m_skillButtonDebounceDelay;
+
         // Pause menu creation state
         bool m_pauseMenuCreated;
 
@@ -197,7 +203,30 @@ namespace GameCore {
         
         // Individual tab content entities
         Gnosis::Entity m_skillsContentEntity;   // Skills tab content
+        Gnosis::Entity m_skillsBackgroundEntity; // Skills tab black background
+        Gnosis::Entity m_skillsTitleEntity;       // Skills tab title text
+        Gnosis::Entity m_hatsTitleEntity;         // Hats tab title text
+        Gnosis::Entity m_statsTitleEntity;        // Stats tab title text
+        Gnosis::Entity m_systemTitleEntity;       // System tab title text
+        Gnosis::Entity m_skillsNameEntity;       // Skills tab name text
+        Gnosis::Entity m_skillsDescriptionEntity; // Skills tab description text
+        Gnosis::Entity m_skillsCostEntity;        // Skills tab cost text
+        Gnosis::Entity m_skillsUnlockButtonEntity; // Skills tab unlock button
+        Gnosis::Entity m_skillsLeftArrowEntity;   // Skills tab left arrow
+        Gnosis::Entity m_skillsRightArrowEntity;  // Skills tab right arrow
+
+        // Skill menu state
+        int m_currentSkillIndex;                   // Current skill being displayed (0-4)
+        std::vector<GameCore::SkillType> m_availableSkills; // List of available skills
+
+        // Skill menu functions
+        void UpdateSkillDisplay();
+        void HandleSkillLeftArrow();
+        void HandleSkillRightArrow();
+        void HandleSkillUnlock();
+        void HandleSkillsTabClick(float touchX, float touchY);
         Gnosis::Entity m_hatsContentEntity;     // Hats tab content
+        Gnosis::Entity m_hatsBackgroundEntity;   // Hats tab black background
         Gnosis::Entity m_statsContentEntity;    // Stats tab content
         Gnosis::Entity m_statsBackgroundEntity; // Stats tab black background rectangle
         

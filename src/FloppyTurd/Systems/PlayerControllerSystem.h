@@ -7,6 +7,7 @@
 #include "SpriteSystem.h"
 #include "ProjectileSystem.h"
 #include "HatsSystem.h"
+#include "SkillSystem.h"
 #include <memory>
 
 namespace GameCore {
@@ -34,7 +35,7 @@ namespace GameCore {
      */
     class PlayerControllerSystem {
     public:
-        PlayerControllerSystem(Gnosis::ECS* ecsSystem, GameCore::PlatformDelegates* platformDelegates, SpriteSystem* spriteSystem, ProjectileSystem* projectileSystem, HatsSystem* hatsSystem);
+        PlayerControllerSystem(Gnosis::ECS* ecsSystem, GameCore::PlatformDelegates* platformDelegates, SpriteSystem* spriteSystem, ProjectileSystem* projectileSystem, HatsSystem* hatsSystem, SkillSystem* skillSystem);
         ~PlayerControllerSystem();
 
         // Main update method
@@ -89,6 +90,7 @@ namespace GameCore {
         SpriteSystem* m_spriteSystem;
         ProjectileSystem* m_projectileSystem;
         HatsSystem* m_hatsSystem;
+        SkillSystem* m_skillSystem;
         
         Gnosis::Entity m_playerEntity;
         bool m_playerAlive;
