@@ -45,6 +45,8 @@ namespace GameCore {
             "BigTurdShoot.png",
             "BirdHurt.png",
             "BirdIdle.png",
+            "BossLevelBackgroundMobile.png",
+            "BossLevelPillarMobile.png",
             "blast_big.png",
             "blast_small.png",
             "BlueCoin.png",

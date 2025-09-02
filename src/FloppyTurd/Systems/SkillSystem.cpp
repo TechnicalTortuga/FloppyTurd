@@ -1,4 +1,5 @@
 #include "SkillSystem.h"
+#include "PickupSystem.h"
 #include "../../Engine/Core/ECS.h"
 #include "../Components/GameComponents.h"
 #include <algorithm>
@@ -8,6 +9,7 @@ namespace GameCore {
 
     SkillSystem::SkillSystem(Gnosis::ECS* ecsSystem)
         : m_ecsSystem(ecsSystem)
+        , m_pickupSystem(nullptr)
         , m_coinSafetyNetUsedThisLevel(false)
     {
         InitializeSkillDefinitions();
@@ -29,24 +31,24 @@ namespace GameCore {
     {
         // Skills from old system
         m_skills.emplace(SkillType::HalfHearts, SkillDefinition(
-            SkillType::HalfHearts, "Half Hearts", "Show half-heart damage\nfor finer health tracking", 300, {}
+            SkillType::HalfHearts, "Half Hearts", "Show half-heart damage\nfor finer health tracking", 5, {}
         ));
 
         m_skills.emplace(SkillType::ThirdHearts, SkillDefinition(
-            SkillType::ThirdHearts, "Third Hearts", "Show third-heart damage\nRequires: Half Hearts", 500,
+            SkillType::ThirdHearts, "Third Hearts", "Show third-heart damage\nRequires: Half Hearts", 5,
             {SkillType::HalfHearts}
         ));
 
         m_skills.emplace(SkillType::CoinMagnet, SkillDefinition(
-            SkillType::CoinMagnet, "Coin Magnet", "Automatically attract\nnearby coins to player", 400, {}
+            SkillType::CoinMagnet, "Coin Magnet", "Automatically attract\nnearby coins to player", 5, {}
         ));
 
         m_skills.emplace(SkillType::HeartMagnet, SkillDefinition(
-            SkillType::HeartMagnet, "Heart Magnet", "Automatically attract\nnearby hearts to player", 450, {}
+            SkillType::HeartMagnet, "Heart Magnet", "Automatically attract\nnearby hearts to player", 5, {}
         ));
 
         m_skills.emplace(SkillType::CoinSafetyNet, SkillDefinition(
-            SkillType::CoinSafetyNet, "Coin Safety Net", "Sacrifice all coins\nto prevent death\n(once per level)", 600, {}
+            SkillType::CoinSafetyNet, "Coin Safety Net", "Sacrifice all coins\nto prevent death\n(once per level)", 5, {}
         ));
     }
 
@@ -142,13 +144,16 @@ namespace GameCore {
         // Apply passive skill effects
         ApplyPassiveSkillEffects(playerEntity);
 
-        // Update magnet effects
-        if (IsSkillActive(SkillType::CoinMagnet)) {
-            UpdateCoinMagnet(deltaTime, playerEntity);
-        }
+        // Update magnet effects via PickupSystem
+        if (m_pickupSystem) {
+            bool coinMagnetActive = IsSkillActive(SkillType::CoinMagnet);
+            bool heartMagnetActive = IsSkillActive(SkillType::HeartMagnet);
 
-        if (IsSkillActive(SkillType::HeartMagnet)) {
-            UpdateHeartMagnet(deltaTime, playerEntity);
+            m_pickupSystem->SetCoinMagnetEnabled(coinMagnetActive);
+            m_pickupSystem->SetHeartMagnetEnabled(heartMagnetActive);
+
+            GN_LOG_DEBUG("SkillSystem: Updated magnet effects - coinMagnet=" + std::to_string(coinMagnetActive) +
+                         " heartMagnet=" + std::to_string(heartMagnetActive));
         }
     }
 
@@ -202,63 +207,61 @@ namespace GameCore {
         playerComp->ghostSlices = 0;
     }
 
-    void SkillSystem::UpdateCoinMagnet(float deltaTime, Gnosis::Entity playerEntity)
-    {
-        UpdateMagnetEffect(deltaTime, playerEntity, "BlueCoin", COIN_MAGNET_RANGE);
-    }
 
-    void SkillSystem::UpdateHeartMagnet(float deltaTime, Gnosis::Entity playerEntity)
-    {
-        UpdateMagnetEffect(deltaTime, playerEntity, "PoopHeart", HEART_MAGNET_RANGE);
-    }
-
-    void SkillSystem::UpdateMagnetEffect(float deltaTime, Gnosis::Entity playerEntity,
-                                       const std::string& pickupType, float range)
-    {
-        if (!m_ecsSystem->IsEntityValid(playerEntity)) {
-            return;
-        }
-
-        auto* playerTransform = m_ecsSystem->GetComponent<Gnosis::Transform>(playerEntity);
-        if (!playerTransform) {
-            return;
-        }
-
-        // TODO: Implement magnet effect using proper ECS query methods
-        // The current ECS system doesn't support template-based component queries
-        // This would need to be implemented when the ECS system provides proper query methods
-
-        // For now, we'll skip the magnet implementation to avoid compilation errors
-        // The magnet skills will be functional once the ECS query system is available
-    }
 
     bool SkillSystem::TryActivateCoinSafetyNet(Gnosis::Entity playerEntity)
     {
+        GN_LOG_INFO("=== COIN SAFETY NET CHECK ===");
+        GN_LOG_INFO("Skill active: " + std::to_string(IsSkillActive(SkillType::CoinSafetyNet)));
+        GN_LOG_INFO("Already used this level: " + std::to_string(m_coinSafetyNetUsedThisLevel));
+
         if (!IsSkillActive(SkillType::CoinSafetyNet) || m_coinSafetyNetUsedThisLevel) {
+            GN_LOG_INFO("Coin safety net cannot activate - not active or already used");
             return false;
         }
 
         if (!m_ecsSystem->IsEntityValid(playerEntity)) {
+            GN_LOG_INFO("Coin safety net cannot activate - invalid player entity");
             return false;
         }
 
         auto* playerComp = m_ecsSystem->GetComponent<PlayerComponent>(playerEntity);
         if (!playerComp) {
+            GN_LOG_INFO("Coin safety net cannot activate - no player component");
             return false;
         }
+
+        GN_LOG_INFO("Player coins before safety net: " + std::to_string(playerComp->sessionCoins));
+        GN_LOG_INFO("Player live slices before safety net: " + std::to_string(playerComp->liveSlices));
+        GN_LOG_INFO("Player ghost slices before safety net: " + std::to_string(playerComp->ghostSlices));
 
         // Check if player has any coins to sacrifice
         if (playerComp->sessionCoins <= 0) {
+            GN_LOG_INFO("Coin safety net cannot activate - no coins to sacrifice");
             return false;
         }
 
+        GN_LOG_INFO("=== ACTIVATING COIN SAFETY NET ===");
         // Sacrifice all session coins and restore 1 heart slice
+        int coinsBefore = playerComp->sessionCoins;
         playerComp->sessionCoins = 0;
+        int liveSlicesBefore = playerComp->liveSlices;
         playerComp->liveSlices = std::min(playerComp->liveSlices + 1,
                                          playerComp->hearts * static_cast<int>(playerComp->heartMode));
 
+        GN_LOG_INFO("Coins spent: " + std::to_string(coinsBefore) + " -> 0");
+        GN_LOG_INFO("Live slices restored: " + std::to_string(liveSlicesBefore) + " -> " + std::to_string(playerComp->liveSlices));
+
         m_coinSafetyNetUsedThisLevel = true;
+        GN_LOG_INFO("Coin safety net activated successfully!");
         return true;
+    }
+
+    void SkillSystem::ResetForNewLevel()
+    {
+        // Reset the coin safety net flag so it can be used again
+        m_coinSafetyNetUsedThisLevel = false;
+        GN_LOG_INFO("Coin safety net reset for new level");
     }
 
     void SkillSystem::ApplyPassiveSkillEffects(Gnosis::Entity playerEntity)

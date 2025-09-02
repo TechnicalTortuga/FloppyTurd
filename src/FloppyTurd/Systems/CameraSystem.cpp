@@ -147,17 +147,26 @@ namespace GameCore {
                                "delta=" + std::to_string(movementDelta) + "px");
                 }
 
-                // 🔄 Move ALL backgrounds in this layer simultaneously using PIXEL-PERFECT positioning
+                // 🔄 Move backgrounds in this layer simultaneously using PIXEL-PERFECT positioning
+                // But only move entities that have autoScroll enabled
                 for (Gnosis::Entity layerEntity : entities) {
                     auto transform = m_ecsSystem->GetComponent<Transform>(layerEntity);
-                    if (transform) {
-                        // 🎯 PIXEL-PERFECT: Use fixed-point arithmetic for movement
-                        int64_t currentPosFixed = FloatToFixed(transform->position.x);
-                        int64_t movementFixed = FloatToFixed(movementDelta);
-                        currentPosFixed -= movementFixed;
-                        
-                        // Snap to exact pixel boundary - eliminates sub-pixel flickering
-                        transform->position.x = static_cast<float>(FixedToInt(currentPosFixed));
+                    auto parallax = m_ecsSystem->GetComponent<Parallax>(layerEntity);
+
+                    // Only move if autoScroll is enabled (for boss level, this should be false)
+                    if (transform && parallax) {
+                        GN_LOG_DEBUG("CameraSystem: Entity " + std::to_string(layerEntity) +
+                                   " parallax autoScroll=" + (parallax->autoScroll ? "true" : "false") +
+                                   " scrollSpeed=" + std::to_string(parallax->scrollSpeed));
+                        if (parallax->autoScroll) {
+                            // 🎯 PIXEL-PERFECT: Use fixed-point arithmetic for movement
+                            int64_t currentPosFixed = FloatToFixed(transform->position.x);
+                            int64_t movementFixed = FloatToFixed(movementDelta);
+                            currentPosFixed -= movementFixed;
+
+                            // Snap to exact pixel boundary - eliminates sub-pixel flickering
+                            transform->position.x = static_cast<float>(FixedToInt(currentPosFixed));
+                        }
                     }
                 }
             }

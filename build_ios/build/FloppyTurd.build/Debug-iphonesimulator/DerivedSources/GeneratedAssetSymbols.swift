@@ -58,6 +58,12 @@ extension DeveloperToolsSupport.ImageResource {
     /// The "BossFloor" asset catalog image resource.
     static let bossFloor = DeveloperToolsSupport.ImageResource(name: "BossFloor", bundle: resourceBundle)
 
+    /// The "BossLevelBackgroundMobile" asset catalog image resource.
+    static let bossLevelBackgroundMobile = DeveloperToolsSupport.ImageResource(name: "BossLevelBackgroundMobile", bundle: resourceBundle)
+
+    /// The "BossLevelPillarMobile" asset catalog image resource.
+    static let bossLevelPillarMobile = DeveloperToolsSupport.ImageResource(name: "BossLevelPillarMobile", bundle: resourceBundle)
+
     /// The "BossWalls" asset catalog image resource.
     static let bossWalls = DeveloperToolsSupport.ImageResource(name: "BossWalls", bundle: resourceBundle)
 

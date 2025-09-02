@@ -130,6 +130,26 @@
 			<key>catalogPath</key>
 			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
+			<string>ACImageNameBossLevelBackgroundMobile</string>
+			<key>relativePath</key>
+			<string>./graphics/environment/backgrounds/boss/BossLevelBackgroundMobile.imageset</string>
+			<key>swiftSymbol</key>
+			<string>bossLevelBackgroundMobile</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
+			<key>objcSymbol</key>
+			<string>ACImageNameBossLevelPillarMobile</string>
+			<key>relativePath</key>
+			<string>./graphics/environment/backgrounds/boss/BossLevelPillarMobile.imageset</string>
+			<key>swiftSymbol</key>
+			<string>bossLevelPillarMobile</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
+			<key>objcSymbol</key>
 			<string>ACImageNameBossWalls</string>
 			<key>relativePath</key>
 			<string>./graphics/environment/backgrounds/boss/BossWalls.imageset</string>

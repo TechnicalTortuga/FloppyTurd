@@ -222,6 +222,25 @@ namespace GameCore {
             m_projectileSystem->Update(deltaTime);
         }
 
+        // Update boss system (level 6 only)
+        if (m_bossSystem && m_currentLevelId == 6) {
+            // Set player position for boss aiming
+            if (m_playerEntity != 0 && m_ecsSystem) {
+                Transform* playerTransform = m_ecsSystem->GetComponent<Transform>(m_playerEntity);
+                if (playerTransform) {
+                    GNVector2 playerPos = {playerTransform->position.x, playerTransform->position.y};
+                    m_bossSystem->SetPlayerPosition(playerPos);
+                }
+            }
+
+            m_bossSystem->Update(deltaTime);
+        }
+
+        // Update boss health bar (level 6 only)
+        if (m_bossHealthBar && m_currentLevelId == 6) {
+            m_bossHealthBar->Update(deltaTime);
+        }
+
         // Update pipe counter UI
         UpdatePipeCounterUI();
         UpdateCoinCounterUI();
@@ -315,7 +334,9 @@ namespace GameCore {
         // Remove direct m_renderSystem->Render() call to prevent duplicate rendering
         
         // UI rendering is now handled by RenderSystem; avoid calling UISystem::Render() to prevent duplication
-        
+
+        // Boss health bar UI entities are automatically rendered by RenderSystem
+
         // Draw debug rectangles overlay (after world/UI render so they appear on top)
         DrawDebugRectangles();
     }
@@ -552,7 +573,11 @@ namespace GameCore {
             m_levelManager->ResetBackgroundPositions();
         }
 
-        
+        // Reset skill system for new level (safety net, etc.)
+        if (m_skillSystem) {
+            m_skillSystem->ResetForNewLevel();
+        }
+
         // Reset spawn timers
         m_obstacleSpawnTimer = 0.0f;
         m_pickupSpawnTimer = 0.0f;
@@ -624,7 +649,7 @@ namespace GameCore {
         }
 
         // Create player controller system
-        m_playerControllerSystem = std::make_unique<PlayerControllerSystem>(m_ecsSystem, m_platformDelegates, m_spriteSystem.get(), m_projectileSystem.get(), m_hatsSystem.get(), m_skillSystem.get());
+        m_playerControllerSystem = std::make_unique<PlayerControllerSystem>(m_ecsSystem, m_platformDelegates, m_spriteSystem.get(), m_projectileSystem.get(), m_hatsSystem.get(), m_skillSystem.get(), m_currentLevelId);
         
         // Create camera system
         m_cameraSystem = std::make_unique<CameraSystem>(m_ecsSystem);
@@ -646,6 +671,13 @@ namespace GameCore {
             m_levelManager->SetPlatformDelegates(*m_platformDelegates);
         }
 
+        // Create boss systems (only for level 6)
+        if (m_currentLevelId == 6) {
+            m_bossSystem = std::make_unique<BossSystem>((ECS*)m_ecsSystem, m_levelManager.get(), m_projectileSystem.get(), m_platformDelegates);
+            m_bossHealthBar = std::make_unique<BossHealthBar>(m_bossSystem.get(), "Rat King", m_ecsSystem);
+            GN_LOG_INFO("Boss systems initialized for level 6");
+        }
+
         // 🎯 NEW: Set RenderSystem reference for texture metadata cache access
         if (m_renderSystem) {
             m_levelManager->SetRenderSystem(m_renderSystem);
@@ -653,10 +685,19 @@ namespace GameCore {
         // Create pickup system and pass dependencies
         m_pickupSystem = std::make_unique<PickupSystem>(m_ecsSystem, m_levelManager.get(), m_platformDelegates, &m_currentLevelConfig);
         
-        // Set up coin collection callback to connect PickupSystem to OnCoinCollected
+        // Set up collection callbacks to connect PickupSystem to collection handlers
         m_pickupSystem->SetCoinCollectedCallback([this](int value) {
             this->OnCoinCollected(value);
         });
+
+        m_pickupSystem->SetHeartCollectedCallback([this](int healAmount) {
+            this->OnHeartCollected(healAmount);
+        });
+
+        // Connect SkillSystem to PickupSystem for magnet effects
+        if (m_skillSystem) {
+            m_skillSystem->SetPickupSystem(m_pickupSystem.get());
+        }
         
         // Create enemy system for behaviors (bobbing, states, etc.)
         m_enemySystem = std::make_unique<EnemySystem>(m_ecsSystem, m_levelManager.get(), m_projectileSystem.get());
@@ -673,6 +714,11 @@ namespace GameCore {
             GN_LOG_ERROR("Failed to load level " + std::to_string(m_currentLevelId));
         } else {
             GN_LOG_INFO("Level " + std::to_string(m_currentLevelId) + " loaded successfully");
+        }
+
+        // Initialize boss system for level 6
+        if (m_currentLevelId == 6 && m_bossSystem) {
+            m_bossSystem->InitializeForLevel();
         }
         
         GN_LOG_INFO("Gameplay systems initialized successfully");
@@ -695,7 +741,17 @@ namespace GameCore {
             // Add basic components to player (positioned by PlayerControllerSystem)
             // Use level's base scale for consistent sizing
             float playerScale = m_currentLevelConfig.baseScale;
-            Transform playerTransform(Gnosis::GNVector2(400.0f, 639.0f), 0.0f, Gnosis::GNVector2(playerScale, playerScale));
+
+            // Get screen dimensions for player positioning
+            float screenWidth = 1179.0f;
+            if (m_renderSystem) {
+                const ScreenInfo& si = m_renderSystem->GetScreenInfo();
+                screenWidth = si.pixelWidth;
+            }
+
+            // Position player based on level - boss level uses 20% from left for shooting layout, other levels center
+            float playerX = (m_currentLevelId == 6) ? (screenWidth * 0.2f) : (screenWidth * 0.5f);
+            Transform playerTransform(Gnosis::GNVector2(playerX, 639.0f), 0.0f, Gnosis::GNVector2(playerScale, playerScale));
             m_ecsSystem->AddComponent<Transform>(m_playerEntity, playerTransform);
             
             // Add sprite component with Turdlet idle animation (use existing playerScale)
@@ -735,9 +791,16 @@ namespace GameCore {
             m_ecsSystem->AddComponent<Hitbox>(m_playerEntity, playerHitbox);
 
             // Debug overlays OFF by default (can be toggled later if needed)
-            DebugDraw playerDebug(false, false, Gnosis::GNColor(0, 255, 0, 255), Gnosis::GNColor(255, 0, 0, 255));
-            playerDebug.alpha = 0.35f;
-            // Debug hitboxes off for production visuals
+            // Only add debug draw if debug mode is enabled (check current level)
+            bool enablePlayerDebug = (m_currentLevelId != 6); // Disable for boss level
+            if (enablePlayerDebug) {
+                DebugDraw playerDebug(false, false, Gnosis::GNColor(0, 255, 0, 255), Gnosis::GNColor(255, 0, 0, 255));
+                playerDebug.alpha = 0.35f;
+                m_ecsSystem->AddComponent<DebugDraw>(m_playerEntity, playerDebug);
+                GN_LOG_DEBUG("Player debug draw enabled for level " + std::to_string(m_currentLevelId));
+            } else {
+                GN_LOG_DEBUG("Player debug draw disabled for boss level " + std::to_string(m_currentLevelId));
+            }
             
             // Add player component with current coin count from game stats
             PlayerComponent playerData;
@@ -849,6 +912,10 @@ namespace GameCore {
                 // Cloud layers are 512x180
                 textureWidth = 512.0f;
                 textureHeight = 180.0f;
+            } else if (layerConfig.textureId.find("BossLevelBackgroundMobile") != std::string::npos) {
+                // Boss level background is 384x512 (portrait)
+                textureWidth = 384.0f;
+                textureHeight = 512.0f;
             } else {
                 // Other background layers (Back, Mid) are 1024x480
                 textureWidth = 1024.0f;
@@ -874,10 +941,18 @@ namespace GameCore {
             // Calculate number of instances needed for seamless wrapping
             // Use screen width + 2 extra instances for smooth scrolling
             float screenWidth = 1179.0f; // iPhone 16 portrait pixel width
-            int numInstances = static_cast<int>(std::ceil(screenWidth / scaledWidth)) + 2;
-            
-            // Ensure minimum of 3 instances for proper wrapping
-            numInstances = std::max(numInstances, 3);
+
+            // For static backgrounds (scrollSpeed = 0), only need 1 instance
+            int numInstances;
+            if (layerConfig.scrollSpeed == 0.0f) {
+                numInstances = 1; // Static background - no need for multiple instances
+                GN_LOG_INFO("Static background detected (scrollSpeed=0), using 1 instance");
+            } else {
+                numInstances = static_cast<int>(std::ceil(screenWidth / scaledWidth)) + 2;
+                // Ensure minimum of 3 instances for proper wrapping on scrolling backgrounds
+                numInstances = std::max(numInstances, 3);
+                GN_LOG_INFO("Scrolling background detected, using " + std::to_string(numInstances) + " instances for seamless wrapping");
+            }
             
             GN_LOG_INFO("Layer calculations: textureWidth=" + std::to_string(textureWidth) + 
                        ", finalScale=" + std::to_string(finalScale) + 
@@ -932,9 +1007,20 @@ namespace GameCore {
                 Parallax parallaxComponent;
                 parallaxComponent.scrollSpeed = layerConfig.scrollSpeed;
                 parallaxComponent.repeatWidth = repeatWidth;
-                parallaxComponent.autoScroll = true;
-                m_ecsSystem->AddComponent<Parallax>(bgEntity, parallaxComponent);
-                GN_LOG_INFO("Added Parallax component to entity " + std::to_string(bgEntity) + " with scrollSpeed=" + std::to_string(layerConfig.scrollSpeed));
+                // For boss level (level 6), completely disable parallax scrolling
+                if (m_currentLevelId == 6) {
+                    // Don't add parallax component at all for boss level - static background
+                    GN_LOG_INFO("Boss level: Skipping parallax component for static background - entity " +
+                               std::to_string(bgEntity) + " for level " + std::to_string(m_currentLevelId));
+                } else {
+                    parallaxComponent.autoScroll = true;
+                    parallaxComponent.scrollSpeed = layerConfig.scrollSpeed;
+                    m_ecsSystem->AddComponent<Parallax>(bgEntity, parallaxComponent);
+                    GN_LOG_INFO("Added Parallax component to entity " + std::to_string(bgEntity) +
+                               " with scrollSpeed=" + std::to_string(parallaxComponent.scrollSpeed) +
+                               " autoScroll=" + (parallaxComponent.autoScroll ? "true" : "false") +
+                               " for level " + std::to_string(m_currentLevelId));
+                }
                 
                 // Create and add ParallaxInstance component for better management
                 ParallaxInstance instanceComponent(layerConfig.textureId, i, numInstances, scaledWidth);
@@ -1139,7 +1225,7 @@ namespace GameCore {
             screenW = si.pixelWidth;
             screenH = si.pixelHeight;
         }
-        float iconX = screenW * 0.05f;
+                   float iconX = screenW * 0.01f; // Move coin bag from 2% to 1% from left edge
         float iconY = screenH * 0.85f; // 15% from bottom (pixel Y increases downward)
         const float bagScale = 8.0f;    // Scale 32x32 coin bag to 256x256
         m_coinBagEntity = m_ecsSystem->CreateEntity();
@@ -1193,8 +1279,8 @@ namespace GameCore {
             screenHeight = si.pixelHeight;
         }
         
-        // Position hearts at same X as coin bag (5% from left), just below pipe counter
-        float heartX = screenWidth * 0.05f;   // Same X as coin bag 
+        // Position hearts at 2% from left edge (tighter positioning), just below pipe counter
+        float heartX = screenWidth * 0.02f;   // Move hearts from 5% to 2% from left edge 
         float heartY = screenHeight * 0.12f;  // 12% from top (just below pipe counter)
         m_heartUIEntity = m_heartSystem->CreateHeartUI(heartX, heartY);
         if (m_heartUIEntity != Gnosis::INVALID_ENTITY) {
@@ -1492,22 +1578,34 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             const ScreenInfo& si = m_renderSystem->GetScreenInfo();
             // Heuristic: real iPhone pixel widths are well above 800
             if (si.pixelWidth >= 1000.0f && si.pixelHeight >= 1000.0f) {
-                // Pipe counter top-center placement (10% from top)
+                // Pipe counter top-center placement (10% from top) - HIDE in boss level (6)
                 float centerX = si.pixelWidth * 0.50f;
                 float pipeCounterY = si.pixelHeight * 0.10f;
-                if (m_pipeCounterEntity != 0) {
-                    Transform* t = m_ecsSystem->GetComponent<Transform>(m_pipeCounterEntity);
-                    if (t) {
-                        t->position.x = centerX;
-                        t->position.y = pipeCounterY;
+
+                if (m_currentLevelId != 6) { // Show pipe counter in non-boss levels
+                    if (m_pipeCounterEntity != 0) {
+                        Transform* t = m_ecsSystem->GetComponent<Transform>(m_pipeCounterEntity);
+                        if (t) {
+                            t->position.x = centerX;
+                            t->position.y = pipeCounterY;
+                        }
+                    }
+                } else {
+                    // Hide pipe counter completely in boss level by moving it off-screen
+                    if (m_pipeCounterEntity != 0) {
+                        Transform* t = m_ecsSystem->GetComponent<Transform>(m_pipeCounterEntity);
+                        if (t) {
+                            t->position.x = -1000.0f; // Move off-screen
+                            t->position.y = -1000.0f;
+                        }
                     }
                 }
 
-                // Reposition coin bag and coins text based on pixel screen size
+                // Reposition coin bag and coins text based on pixel screen size - moved to 1% from left
                 if (m_coinBagEntity != 0) {
                     Transform* t = m_ecsSystem->GetComponent<Transform>(m_coinBagEntity);
                     if (t) {
-                        t->position.x = si.pixelWidth * 0.10f;
+                        t->position.x = si.pixelWidth * 0.01f; // Move from 2% to 1% from left
                         t->position.y = si.pixelHeight * 0.85f; // 15% from bottom
                         t->scale.x = 8.0f; // Keep 8x scale after sync
                         t->scale.y = 8.0f;
@@ -1517,7 +1615,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                     Transform* t = m_ecsSystem->GetComponent<Transform>(m_coinsTextEntity);
                     if (t) {
                         // Text to the right of the scaled bag, vertically centered
-                        t->position.x = (si.pixelWidth * 0.10f) + (32.0f * 8.0f) + 8.0f;
+                        t->position.x = (si.pixelWidth * 0.01f) + (32.0f * 8.0f) + 8.0f; // Use 1% position
                         t->position.y = (si.pixelHeight * 0.85f) + (32.0f * 8.0f * 0.5f) + 16.0f; // nudge down by 16px
                     }
                 }
@@ -1668,15 +1766,21 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 GN_LOG_INFO("Removed " + std::to_string(slicesToRemove) + " heart slices. Current slices: " + std::to_string(player->liveSlices));
                 
                 // Check if player is dead - try coin safety net first
+                GN_LOG_INFO("Player damage check - live slices: " + std::to_string(player->liveSlices) +
+                           ", ghost slices: " + std::to_string(player->ghostSlices) +
+                           ", total hearts: " + std::to_string(player->hearts) +
+                           ", heart mode: " + std::to_string(static_cast<int>(player->heartMode)));
+
                 if (player->liveSlices <= 0) {
+                    GN_LOG_INFO("Player reached 0 live slices - attempting coin safety net");
                     // Try to activate coin safety net if available
                     if (m_skillSystem && m_skillSystem->TryActivateCoinSafetyNet(m_playerEntity)) {
                         GN_LOG_INFO("Coin safety net activated! Player saved from death");
-                        // Update player's session coins in the UI
-                        // TODO: Implement UpdateCoinsDisplay when coin UI is available
+                        // Update the coin counter UI to reflect that all coins were spent
+                        UpdateCoinCounterUI();
                         return; // Don't process death
                     } else {
-                    GN_LOG_INFO("Player has no heart slices remaining - death will be handled by game over system");
+                        GN_LOG_INFO("Coin safety net failed or not available - player will die");
                     }
                 }
             }
@@ -1717,16 +1821,26 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         GameCore::FloppyTurdGame::GameStats gameStats = GameCore::GetGame()->GetGameStats();
         gameStats.totalCoinsCollected += value;
         GameCore::GetGame()->UpdateGameStats(gameStats);
-        GN_LOG_INFO("💰 Updated GameStats::totalCoinsCollected to: " + std::to_string(gameStats.totalCoinsCollected));
+    }
 
-        // REMOVED: Don't add to total coins immediately - will be transferred on finality events only
+    void GameplayState::OnHeartCollected(int healAmount) {
+        GN_LOG_INFO("Heart collected: " + std::to_string(healAmount) + " slices");
 
-        // Log current coin counts AFTER collection
-        int afterPlayerCoins = GameCore::GetGame()->GetPlayerCoins();
-        GN_LOG_INFO("💰 AFTER coin collection - m_playerCoins: " + std::to_string(afterPlayerCoins) + " (added " + std::to_string(value) + ")");
+        // Heal the player using the heart system
+        if (m_heartSystem && m_playerEntity != 0) {
+            GN_LOG_INFO("Adding " + std::to_string(healAmount) + " heart slices via HeartSystem");
+            m_heartSystem->AddHeartSlices(m_playerEntity, healAmount);
 
-        GameCore::GetGame()->SaveGameData();
-        GN_LOG_INFO("💰 Game data saved after coin collection");
+            // Log current heart state after healing
+            auto* playerComp = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity);
+            if (playerComp) {
+                int currentSlices = m_heartSystem->GetCurrentSlices(m_playerEntity);
+                int maxSlices = m_heartSystem->GetMaxSlices(m_playerEntity);
+                GN_LOG_INFO("Heart slices after healing: " + std::to_string(currentSlices) + "/" + std::to_string(maxSlices));
+            }
+        } else {
+            GN_LOG_ERROR("Heart collected but HeartSystem not available or player entity invalid");
+        }
     }
 
     void GameplayState::OnPickupCollected() {

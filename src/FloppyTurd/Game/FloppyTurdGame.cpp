@@ -844,9 +844,9 @@ namespace GameCore {
                 stats.unlockRequirement = 50; // pipes from Snow (level 4)
                 stats.coinRequirement = 500;
                 break;
-            case 6: // Boss - 50 pipes from Castle + 1000 coins
-                stats.unlockRequirement = 50; // pipes from Castle (level 5)
-                stats.coinRequirement = 1000;
+            case 6: // Boss - 0 pipes from Castle + 0 coins (for testing)
+                stats.unlockRequirement = 0; // pipes from Castle (level 5) - SET TO 0 FOR TESTING
+                stats.coinRequirement = 0;   // coins - SET TO 0 FOR TESTING
                 break;
             default:
                 stats.unlockRequirement = 0;

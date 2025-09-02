@@ -37,6 +37,7 @@ namespace GameCore {
         static EnemyConfig CreateSnowManChadConfig();
         static EnemyConfig CreateSnowManThrowerConfig();
         static EnemyConfig CreateRatCopterConfig();
+        static EnemyConfig CreateRatKingConfig();
     };
 
 } // namespace GameCore

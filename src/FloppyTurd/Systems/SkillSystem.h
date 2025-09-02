@@ -9,6 +9,9 @@
 
 namespace GameCore {
 
+    // Forward declaration for PickupSystem
+    class PickupSystem;
+
     /**
      * SkillDefinition - Defines a skill's properties
      */
@@ -29,12 +32,15 @@ namespace GameCore {
 
     /**
      * SkillSystem - Manages skill unlocking, activation, and effects
-     * Integrates with PlayerControllerSystem to apply skill effects
+     * Integrates with PlayerControllerSystem and PickupSystem to apply skill effects
      */
     class SkillSystem {
     public:
         SkillSystem(Gnosis::ECS* ecsSystem);
         ~SkillSystem();
+
+        // Integration with other systems
+        void SetPickupSystem(PickupSystem* pickupSystem) { m_pickupSystem = pickupSystem; }
 
         // Skill management
         void InitializeSkills();
@@ -54,12 +60,13 @@ namespace GameCore {
         void ApplyHeartModeUpgrade(SkillType skill, Gnosis::Entity playerEntity);
         void SetHeartMode(Gnosis::Entity playerEntity, HeartMode mode);
 
-        // Magnet effects
-        void UpdateCoinMagnet(float deltaTime, Gnosis::Entity playerEntity);
-        void UpdateHeartMagnet(float deltaTime, Gnosis::Entity playerEntity);
+
 
         // Safety net
         bool TryActivateCoinSafetyNet(Gnosis::Entity playerEntity);
+
+        // Reset
+        void ResetForNewLevel();
 
         // Save/Load
         void SaveSkillProgress();
@@ -72,22 +79,16 @@ namespace GameCore {
 
     private:
         Gnosis::ECS* m_ecsSystem;
+        PickupSystem* m_pickupSystem;
 
         // Skill definitions and state
         std::map<SkillType, SkillDefinition> m_skills;
-
-        // Magnet effect constants
-        static constexpr float COIN_MAGNET_RANGE = 150.0f;
-        static constexpr float HEART_MAGNET_RANGE = 200.0f;
-        static constexpr float MAGNET_SPEED = 300.0f;
 
         // Safety net state
         bool m_coinSafetyNetUsedThisLevel;
 
         // Helper methods
         void InitializeSkillDefinitions();
-        void UpdateMagnetEffect(float deltaTime, Gnosis::Entity playerEntity,
-                               const std::string& pickupType, float range);
         bool HasPrerequisites(SkillType skill) const;
         void ApplyPassiveSkillEffects(Gnosis::Entity playerEntity);
     };

@@ -5,7 +5,7 @@
 
 namespace GameCore {
 
-    PlayerControllerSystem::PlayerControllerSystem(Gnosis::ECS* ecsSystem, GameCore::PlatformDelegates* platformDelegates, SpriteSystem* spriteSystem, ProjectileSystem* projectileSystem, HatsSystem* hatsSystem, SkillSystem* skillSystem)
+    PlayerControllerSystem::PlayerControllerSystem(Gnosis::ECS* ecsSystem, GameCore::PlatformDelegates* platformDelegates, SpriteSystem* spriteSystem, ProjectileSystem* projectileSystem, HatsSystem* hatsSystem, SkillSystem* skillSystem, int currentLevelId)
         : m_ecsSystem(ecsSystem)
         , m_platformDelegates(platformDelegates)
         , m_spriteSystem(spriteSystem)
@@ -15,6 +15,7 @@ namespace GameCore {
         , m_playerEntity(0)
         , m_hatSpriteEntity(0)
         , m_playerAlive(true)
+        , m_currentLevelId(currentLevelId)
         , m_jumpPressed(false)
         , m_shootPressed(false)
         , m_jumpCooldown(0.0f)
@@ -586,8 +587,16 @@ namespace GameCore {
                        ", Delta: " + std::to_string(deltaTime));
         }
         
-        // Keep player at a fixed horizontal position (configurable for optimal gameplay visibility)
-        transform->position.x = PLAYER_X_POSITION;
+        // Keep player at a fixed horizontal position based on level
+        // Boss level (6): position at 100px from left edge
+        // Other levels: use standard PLAYER_X_POSITION (centered)
+        if (m_currentLevelId == 6) {
+            // Boss level - position at 100px from left edge
+            transform->position.x = 100.0f;
+        } else {
+            // Normal levels - use standard centered position
+            transform->position.x = PLAYER_X_POSITION;
+        }
         
         // Get player sprite to calculate actual size for proper boundary checking
         Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(m_playerEntity);

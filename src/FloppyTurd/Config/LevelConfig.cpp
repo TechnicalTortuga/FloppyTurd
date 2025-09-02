@@ -17,7 +17,6 @@ namespace GameCore {
         config.pickupSpawnRate = 0.0f;  // No pickups in Level 1
         
         AddParkLevelLayers(config);
-        AddParkObstacles(config);
         // No enemies or pickups for Level 1 - focus on core mechanics
         
         return config;
@@ -41,7 +40,6 @@ namespace GameCore {
         config.pickupRatios.emplace_back("GoldCoin", 0.90f);
         config.pickupRatios.emplace_back("PooHeart", 0.10f);
         AddSewerLevelLayers(config);
-        AddSewerObstacles(config);
         AddSewerEnemies(config);
         
         return config;
@@ -65,7 +63,6 @@ namespace GameCore {
         config.pickupRatios.emplace_back("GoldCoin", 0.80f);
         config.pickupRatios.emplace_back("PooHeart", 0.20f);
         AddDesertLevelLayers(config);
-        AddDesertObstacles(config);
         AddDesertEnemies(config);
         
         return config;
@@ -84,7 +81,6 @@ namespace GameCore {
         config.enableNPCs = false;
         config.enablePickups = true;
         AddSnowLevelLayers(config);
-        AddSnowObstacles(config);
         AddSnowEnemies(config);
         
         return config;
@@ -103,7 +99,6 @@ namespace GameCore {
         config.enableNPCs = false;
         config.enablePickups = true;
         AddCastleLevelLayers(config);
-        AddCastleObstacles(config);
         AddCastleEnemies(config);
         
         return config;
@@ -111,10 +106,10 @@ namespace GameCore {
 
     LevelConfig LevelConfigFactory::CreateLevel6Config() {
         LevelConfig config(6, "Curtains for Crap");
-        
+
         // Boss level properties
         config.musicTrack = "Boss";        // Base name for difficulty variants
-        config.worldSpeed = SpeedConstants::BASE_WORLD_SPEED;  // Use configurable speed constants
+        config.worldSpeed = 0.0f;          // Boss level: static background, no world movement
         config.baseScale = 8.0f;
         config.difficultyMultiplier = 2.0f;
         
@@ -122,7 +117,6 @@ namespace GameCore {
         config.enableNPCs = false;
         config.enablePickups = false; // Boss level: control pickups per design
         AddBossLevelLayers(config);
-        AddBossObstacles(config);
         AddBossEnemies(config);
         
         return config;
@@ -233,104 +227,26 @@ namespace GameCore {
     }
 
     void LevelConfigFactory::AddBossLevelLayers(LevelConfig& config) {
-        // Boss level uses enhanced castle layers
-        AddCastleLevelLayers(config);
-
-        // Add dramatic boss-specific elements
-        config.backgroundLayers.emplace_back("BossBackground", 30.0f, 0.05f, 0);
+        // Boss level with static background - no parallax scrolling (consistent with other levels)
+        config.backgroundLayers.emplace_back("BossLevelBackgroundMobile.png", 0.0f, 0.0f, 0);
         config.backgroundLayers.back().scaleMultiplier = 1.0f; // Use consistent scaling
-        config.backgroundLayers.back().repeatWidth = 1024.0f * 5.0f; // 5x scale for 512px -> 2560px
+        // For static boss level, don't set repeatWidth to avoid multiple instances
+        // config.backgroundLayers.back().repeatWidth = 384.0f * 5.0f; // Commented out for static background
+
+        // Note: Animated pillar is handled as a decorative obstacle in ObstacleSystem::AddBossLevelDecorations()
+        // This allows for proper 7-frame animation support
     }
 
-    // OBSTACLE CONFIGURATIONS
-    void LevelConfigFactory::AddParkObstacles(LevelConfig& config) {
-        // Level 1: Basic toilet pairs - simple static obstacles for park level
-        // Using actual toilet assets with appropriate gap size for gameplay
-        // Updated to match actual sprite dimensions: 64x256 pixels
-        config.obstacles.emplace_back("TopToilet", "BottomToilet", 
-                                     64.0f, 256.0f, 200.0f, 3.0f, config.worldSpeed, 
-                                     ToiletBehavior::STATIC, 0.0f, 0.0f);
-    }
 
-    void LevelConfigFactory::AddSewerObstacles(LevelConfig& config) {
-        // Level 2: Horizontal sewer segments (exact art size 192x64)
-        config.obstacles.clear();
-        config.obstacles.emplace_back("TopPipeWide", 192.0f, 64.0f, 0.0f, 2.8f, config.worldSpeed, false);
-        config.obstacles.emplace_back("TopPipeWideBlue", 192.0f, 64.0f, 0.0f, 2.8f, config.worldSpeed, false);
-        config.obstacles.emplace_back("BottomPipeWide", 192.0f, 64.0f, 0.0f, 2.8f, config.worldSpeed, false);
-        config.obstacles.emplace_back("BottomPipeWideBlue", 192.0f, 64.0f, 0.0f, 2.8f, config.worldSpeed, false);
-    }
 
-    void LevelConfigFactory::AddDesertObstacles(LevelConfig& config) {
-        // Level 3: Desert level with outhouses and ground hazards
-        // Using actual texture dimensions: Outhouse=64x160, CactiA=64x48
-        
-        // Outhouse - single ground obstacle (actual size: 64x160)
-        // Use small gap height to ensure proper spawning as single obstacle
-        config.obstacles.emplace_back("Outhouse", "", 
-                                     64.0f, 160.0f, 50.0f, 2.5f, config.worldSpeed, 
-                                     ToiletBehavior::STATIC, 0.0f, 0.0f);
-        
-        // Ground cacti hazards - using actual texture sizes
-        // Use small gap height to ensure proper spawning as single obstacle
-        config.obstacles.emplace_back("CactiA", "", 
-                                     64.0f, 48.0f, 50.0f, 3.5f, config.worldSpeed, 
-                                     ToiletBehavior::STATIC, 0.0f, 0.0f);
-        config.obstacles.emplace_back("CactiB", "", 
-                                     64.0f, 48.0f, 50.0f, 3.0f, config.worldSpeed, 
-                                     ToiletBehavior::STATIC, 0.0f, 0.0f);
-        config.obstacles.emplace_back("CactiC", "", 
-                                     64.0f, 48.0f, 50.0f, 3.2f, config.worldSpeed, 
-                                     ToiletBehavior::STATIC, 0.0f, 0.0f);
-    }
 
-    void LevelConfigFactory::AddSnowObstacles(LevelConfig& config) {
-        // Level 4: Snow level with ice toilets
-        // Basic snow toilets for all difficulties
-        config.obstacles.emplace_back("TopToiletSnow", "BottomToiletSnow", 
-                                     65.0f, 190.0f, 170.0f, 2.8f, config.worldSpeed, 
-                                     ToiletBehavior::STATIC, 0.0f, 0.0f);
-        
-        // Add oscillating gold toilets for "Rough" difficulty
-        if (config.currentDifficulty == Difficulty::Rough) {
-            config.obstacles.emplace_back("TopToiletGold", "BottomToiletGold", 
-                                         65.0f, 190.0f, 160.0f, 3.5f, config.worldSpeed, 
-                                         ToiletBehavior::OSCILLATE_VERTICAL, 1.5f, 50.0f);
-        }
-        
-        // Single snowball obstacles for ground hazards
-        config.obstacles.emplace_back("Snowball", "", 
-                                     80.0f, 80.0f, 0.0f, 4.0f, config.worldSpeed, 
-                                     ToiletBehavior::STATIC, 0.0f, 0.0f);
-    }
 
-    void LevelConfigFactory::AddCastleObstacles(LevelConfig& config) {
-        // Level 5: Castle/dungeon obstacles
-        // Gold toilets with oscillation behavior (like snow level) - increased spacing
-        config.obstacles.emplace_back("TopToiletGold", "BottomToiletGold", 
-                                     65.0f, 180.0f, 200.0f, 4.0f, config.worldSpeed, 
-                                     ToiletBehavior::OSCILLATE_VERTICAL, 2.0f, 60.0f);
-        
-        // Note: Torch pillars, chandeliers, floor torches, and paintings are now handled by ObstacleSystem
-        // as decorative obstacles with proper group positioning to avoid accumulating offsets
-        
-        // Spike ball hazards - ground obstacles
-        config.obstacles.emplace_back("SpikeBall", "", 
-                                     70.0f, 70.0f, 0.0f, 3.5f, config.worldSpeed, 
-                                     ToiletBehavior::STATIC, 0.0f, 0.0f);
-                                     
-        // Add more oscillating gold toilets for variety and "Rough" difficulty
-        if (config.currentDifficulty == Difficulty::Rough) {
-            config.obstacles.emplace_back("TopToiletGold", "BottomToiletGold", 
-                                         65.0f, 180.0f, 200.0f, 4.5f, config.worldSpeed, 
-                                         ToiletBehavior::OSCILLATE_VERTICAL, 2.5f, 70.0f);
-        }
-    }
 
-    void LevelConfigFactory::AddBossObstacles(LevelConfig& config) {
-        // Boss-specific obstacles - fewer but more challenging
-        config.obstacles.emplace_back("BossWall", 120.0f, 200.0f, 120.0f, 4.0f, config.worldSpeed * 0.8f, true);
-    }
+
+
+
+
+
 
     // ENEMY CONFIGURATIONS
     void LevelConfigFactory::AddParkEnemies(LevelConfig& config) {
@@ -343,34 +259,36 @@ namespace GameCore {
         // Level 2 should only spawn Toilet Paper enemies
         config.enemies.clear();
         // Make enemies spawn less frequently and animate a tad slower by default
-        config.enemies.emplace_back("ToiletPaperFlap", 64.0f, 64.0f, 180.0f, 7.0f, 1, "horizontal");
+        config.enemies.emplace_back("ToiletPaperFlap", 64.0f, 64.0f, 6.0f, 180.0f, 7.0f, 1, "horizontal");
     }
 
     void LevelConfigFactory::AddDesertEnemies(LevelConfig& config) {
         // Desert wildlife - birds with proper frame size
-        config.enemies.emplace_back("BirdIdle", 32.0f, 32.0f, 160.0f, 4.8f, 1, "horizontal");
+        config.enemies.emplace_back("BirdIdle", 32.0f, 32.0f, 6.0f, 160.0f, 4.8f, 1, "horizontal");
         // Could add desert-specific enemies like vultures or scorpions
     }
 
     void LevelConfigFactory::AddSnowEnemies(LevelConfig& config) {
         // Snow creatures - regular snowmen are decorative (64x64 sprites)
-        config.enemies.emplace_back("SnowManChill", 64.0f, 64.0f, 0.0f, 0.0f, 1, "decorative");
-        config.enemies.emplace_back("SnowManGreen", 64.0f, 64.0f, 0.0f, 0.0f, 1, "decorative");
-        config.enemies.emplace_back("SnowManChad", 64.0f, 64.0f, 0.0f, 0.0f, 1, "decorative");
+        config.enemies.emplace_back("SnowManChill", 64.0f, 64.0f, 6.0f, 0.0f, 0.0f, 1, "decorative");
+        config.enemies.emplace_back("SnowManGreen", 64.0f, 64.0f, 6.0f, 0.0f, 0.0f, 1, "decorative");
+        config.enemies.emplace_back("SnowManChad", 64.0f, 64.0f, 6.0f, 0.0f, 0.0f, 1, "decorative");
         
         // Red snowman is the actual enemy - throws snowballs (64x64 sprite, 6-frame throw animation)
-        config.enemies.emplace_back("SnowManIdle", 64.0f, 64.0f, 0.0f, 3.5f, 3, "snowman_thrower");
+        config.enemies.emplace_back("SnowManIdle", 64.0f, 64.0f, 6.0f, 0.0f, 3.5f, 3, "snowman_thrower");
     }
 
     void LevelConfigFactory::AddCastleEnemies(LevelConfig& config) {
         // Castle/dungeon enemies - only RatCopters with better positioning
-        config.enemies.emplace_back("RatCopterIdle", 64.0f, 64.0f, 200.0f, 4.5f, 1, "flying");
+        config.enemies.emplace_back("RatCopterIdle", 64.0f, 64.0f, 6.0f, 200.0f, 4.5f, 1, "flying");
     }
 
     void LevelConfigFactory::AddBossEnemies(LevelConfig& config) {
-        // Boss enemy - Rat King
-        config.enemies.emplace_back("Ratking", 120.0f, 150.0f, 80.0f, 8.0f, 20, "boss_pattern");
-        config.enemies.emplace_back("RatkingDeath", 120.0f, 150.0f, 0.0f, 0.0f, 1, "death");
+        // Boss enemy - Rat King (128x128 frame dimensions, 5x scale)
+        config.enemies.emplace_back("Ratking", 128.0f, 128.0f, 6.0f, 80.0f, 1.0f, 20, "boss_pattern");
+        config.enemies.emplace_back("RatkingDeath", 128.0f, 128.0f, 6.0f, 0.0f, 0.0f, 1, "death");
+
+        // Note: Pillar is now handled as a decorative obstacle in ObstacleSystem::AddBossLevelDecorations()
     }
 
 } // namespace GameCore

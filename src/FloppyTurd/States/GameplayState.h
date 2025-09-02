@@ -18,6 +18,8 @@
 #include "../Systems/ProjectileSystem.h"
 #include "../Systems/HatsSystem.h"
 #include "../Systems/SkillSystem.h"
+#include "../Systems/BossSystem.h"
+#include "../Systems/BossHealthBar.h"
 #include "../Config/LevelConfig.h"
 #include <memory>
 #include <vector>
@@ -99,6 +101,10 @@ namespace GameCore {
         std::unique_ptr<ProjectileSystem> m_projectileSystem;
         std::unique_ptr<HatsSystem> m_hatsSystem;
         std::unique_ptr<SkillSystem> m_skillSystem;
+
+        // Boss systems (level 6 only)
+        std::unique_ptr<BossSystem> m_bossSystem;
+        std::unique_ptr<BossHealthBar> m_bossHealthBar;
 
         // Level configuration
         int m_currentLevelId;
@@ -366,6 +372,7 @@ namespace GameCore {
         void OnPlayerHurt(int damage);
         void OnPlayerDeath();
         void OnCoinCollected(int value);
+        void OnHeartCollected(int healAmount);
         void OnPickupCollected();
         void OnObstacleHit();
         void OnEnemyDefeated();

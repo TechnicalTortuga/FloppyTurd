@@ -23,9 +23,10 @@ namespace GameCore {
      */
     class PickupSystem {
     public:
-        // Callback function type for coin collection
+        // Callback function types for collection
         using CoinCollectedCallback = std::function<void(int)>;
-        
+        using HeartCollectedCallback = std::function<void(int)>;
+
         PickupSystem(Gnosis::ECS* ecsSystem,
                      LevelManager* levelManager,
                      GameCore::PlatformDelegates* platformDelegates,
@@ -34,11 +35,18 @@ namespace GameCore {
             , m_levelManager(levelManager)
             , m_platformDelegates(platformDelegates)
             , m_levelConfig(levelConfig)
-            , m_playerEntity(0) {}
+            , m_playerEntity(0)
+            , m_coinMagnetEnabled(false)
+            , m_heartMagnetEnabled(false) {}
 
         void SetPlayerEntity(Gnosis::Entity player) { m_playerEntity = player; }
         void SetLevelConfig(const LevelConfig* cfg) { m_levelConfig = cfg; }
         void SetCoinCollectedCallback(CoinCollectedCallback callback) { m_coinCollectedCallback = callback; }
+        void SetHeartCollectedCallback(HeartCollectedCallback callback) { m_heartCollectedCallback = callback; }
+
+        // Magnet effect controls
+        void SetCoinMagnetEnabled(bool enabled) { m_coinMagnetEnabled = enabled; }
+        void SetHeartMagnetEnabled(bool enabled) { m_heartMagnetEnabled = enabled; }
 
         // Main per-frame update: spawns for new groups, handles collisions, wraps
         void Update(float deltaTime);
@@ -54,6 +62,7 @@ namespace GameCore {
         const LevelConfig* m_levelConfig;
         Gnosis::Entity m_playerEntity;
         CoinCollectedCallback m_coinCollectedCallback;
+        HeartCollectedCallback m_heartCollectedCallback;
 
         // Active pickup tracking for O(1) removal
         std::vector<Gnosis::Entity> m_activePickups;
@@ -63,11 +72,19 @@ namespace GameCore {
         // Per-frame gate to avoid double-processing same pickup
         std::unordered_set<Gnosis::Entity> m_collectedThisFrame;
 
+        // Magnet effect state
+        bool m_coinMagnetEnabled;
+        bool m_heartMagnetEnabled;
+        static constexpr float COIN_MAGNET_RANGE = 300.0f;  // Much larger range
+        static constexpr float HEART_MAGNET_RANGE = 350.0f; // Much larger range
+        static constexpr float MAGNET_SPEED = 600.0f;       // Balanced speed
+
         // Internal helpers
         void handlePickupCollisions();
         void spawnCoinsForGroup(int groupId);
         void repositionCoinsForGroup(int groupId);
         void removeGroupIfMissing(const std::unordered_set<int>& currentGroups);
+        void applyMagnetEffects(float deltaTime);
 
         // Utility
         inline bool isCoinType(const std::string& type) const {

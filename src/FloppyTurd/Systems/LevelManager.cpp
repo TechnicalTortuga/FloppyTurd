@@ -102,6 +102,8 @@ namespace GameCore {
         GN_LOG_INFO("Initializing ObstacleSystem for level " + std::to_string(levelId));
         m_obstacleSystem->InitializeForLevel(levelId, m_currentLevelConfig);
         GN_LOG_INFO("ObstacleSystem initialized successfully for level " + std::to_string(levelId));
+
+
         
         // Initialize other entity pools
         m_enemyPoolInitialized = false;
@@ -331,6 +333,36 @@ namespace GameCore {
                 m_enemyBaseY[thrower] = throwerBaseY; 
                 GN_LOG_DEBUG("Snow level thrower init: " + throwerCfg.textureId + " baseY=" + std::to_string(throwerBaseY) + ", x=" + std::to_string(throwerX) + " entity=" + std::to_string(thrower)); 
             }
+        } else if (m_currentLevelId == 6) { // Boss level - special positioning
+                       // Position Rat King on the actual floor in the boss level background
+           float screenHeight = 2556.0f;
+           float ratKingScale = 6.0f; // Rat King scale - back to 6x
+           float backgroundScale = 5.0f; // Mobile background scale
+           float ratKingHeight = 128.0f * ratKingScale; // 128px base * 6.0x scale
+           // Position Rat King with floor at 32px up from bottom * background scale for isometric effect
+           float floorFromBottom = 32.0f * backgroundScale; // 32px * 5.0 = 160px from bottom
+           float ratKingY = screenHeight - floorFromBottom - ratKingHeight; // Position feet on the floor
+
+           // Position Rat King at 3/4 across screen width (shooting level layout)
+           // Clamp to ensure he never goes left of center (50% of screen width)
+           float screenWidth = 1179.0f;
+           float targetX = screenWidth * 0.75f; // Target position at 3/4 screen width
+           float centerX = screenWidth * 0.5f; // Center of screen
+           float ratKingX = std::max(centerX, targetX); // Ensure never left of center
+
+            // Spawn Rat King
+            if (m_currentLevelConfig.enemies.size() > 0) {
+                const EnemyConfig& ratKingCfg = m_currentLevelConfig.enemies[0]; // Ratking
+                Gnosis::Entity ratKingEntity = SpawnEnemy(ratKingCfg, ratKingX, ratKingY);
+                if (ratKingEntity != 0) {
+                    m_activeEnemies.push_back(ratKingEntity);
+                    m_enemyBaseY[ratKingEntity] = ratKingY;
+                    GN_LOG_INFO("Boss level Rat King spawned: x=" + std::to_string(ratKingX) + ", y=" + std::to_string(ratKingY));
+                }
+            }
+
+            // Note: Pillar is now handled as a decorative obstacle in ObstacleSystem::AddBossLevelDecorations()
+            // This ensures proper animation and positioning as a decorative element rather than an enemy
         } else {
             // Original logic for other levels
             // For Level 2 we only configured ToiletPaperFlap; still create up to 4 entities spaced to the right
@@ -626,9 +658,9 @@ namespace GameCore {
         
         Gnosis::Entity enemy = m_ecsSystem->CreateEntity();
         
-        // Create transform
-        Transform transform(Gnosis::GNVector2(x, y), 0.0f, 
-                          Gnosis::GNVector2(m_currentLevelConfig.baseScale, m_currentLevelConfig.baseScale));
+        // Create transform using enemy-specific scale
+        Transform transform(Gnosis::GNVector2(x, y), 0.0f,
+                          Gnosis::GNVector2(enhancedConfig.scale, enhancedConfig.scale));
         
         // Create sprite using enhanced configuration
         Sprite sprite(enhancedConfig.textureId, enhancedConfig.width, enhancedConfig.height);
@@ -908,11 +940,17 @@ namespace GameCore {
                 m_ecsSystem->AddComponent<Sprite>(bgEntity, sprite);
 
                 // Parallax: Use integer scaled width for pixel-perfect wrapping
-                Parallax parallax;
-                parallax.scrollSpeed = layerConfig.scrollSpeed;
-                parallax.repeatWidth = static_cast<float>(scaledWidthInt); // Integer-based for precision
-                parallax.autoScroll = true;
-                m_ecsSystem->AddComponent<Parallax>(bgEntity, parallax);
+                // Skip parallax for boss level (level 6) to keep background static
+                if (m_currentLevelId != 6) {
+                    Parallax parallax;
+                    parallax.scrollSpeed = layerConfig.scrollSpeed;
+                    parallax.repeatWidth = static_cast<float>(scaledWidthInt); // Integer-based for precision
+                    parallax.autoScroll = true;
+                    m_ecsSystem->AddComponent<Parallax>(bgEntity, parallax);
+                    GN_LOG_INFO("Added Parallax component to background entity for level " + std::to_string(m_currentLevelId));
+                } else {
+                    GN_LOG_INFO("Skipped Parallax component for boss level (static background) - level " + std::to_string(m_currentLevelId));
+                }
 
                 // ParallaxInstance: Track position in layer with integer dimensions
                 ParallaxInstance instance(layerConfig.textureId, i, instancesNeeded, static_cast<float>(scaledWidthInt));

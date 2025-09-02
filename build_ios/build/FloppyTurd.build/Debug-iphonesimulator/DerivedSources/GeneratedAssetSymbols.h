@@ -42,6 +42,12 @@ static NSString * const ACImageNameBossBarHurt AC_SWIFT_PRIVATE = @"BossBarHurt"
 /// The "BossFloor" asset catalog image resource.
 static NSString * const ACImageNameBossFloor AC_SWIFT_PRIVATE = @"BossFloor";
 
+/// The "BossLevelBackgroundMobile" asset catalog image resource.
+static NSString * const ACImageNameBossLevelBackgroundMobile AC_SWIFT_PRIVATE = @"BossLevelBackgroundMobile";
+
+/// The "BossLevelPillarMobile" asset catalog image resource.
+static NSString * const ACImageNameBossLevelPillarMobile AC_SWIFT_PRIVATE = @"BossLevelPillarMobile";
+
 /// The "BossWalls" asset catalog image resource.
 static NSString * const ACImageNameBossWalls AC_SWIFT_PRIVATE = @"BossWalls";
 

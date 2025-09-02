@@ -31,7 +31,12 @@ namespace GameCore {
             }
         }
 
-        // 2) Discover groups currently active and spawn coins for new ones
+        // 2) Apply magnet effects if enabled
+        if (m_coinMagnetEnabled || m_heartMagnetEnabled) {
+            applyMagnetEffects(deltaTime);
+        }
+
+        // 3) Discover groups currently active and spawn coins for new ones
         const auto& activeObstacles = m_levelManager->GetActiveObstacles();
         std::unordered_set<int> currentGroups;
         for (Gnosis::Entity obstacle : activeObstacles) {
@@ -161,8 +166,27 @@ namespace GameCore {
                              " active=" + (p->isActive ? "true" : "false") +
                              " visible=" + (s->visible ? "true" : "false"));
 
+                // Play appropriate heart sound based on type
+                std::string soundFile = "SmallHealthPickup.wav"; // Default to small
+                int healAmount = 1; // Default heal amount
+
+                if (p->pickupType == "PooHeartBig") {
+                    soundFile = "BigHealthPickup.wav";
+                    healAmount = 3; // Big hearts heal 3 slices like in old system
+                } else if (p->pickupType == "PooHeart") {
+                    soundFile = "SmallHealthPickup.wav";
+                    healAmount = 1; // Small hearts heal 1 slice
+                }
+
                 if (m_platformDelegates && m_platformDelegates->audio.playSound) {
-                    m_platformDelegates->audio.playSound("pickup.mp3", 0.7f);
+                    m_platformDelegates->audio.playSound(soundFile.c_str(), 0.8f);
+                }
+
+                // Call heart collection callback to actually heal the player
+                if (m_heartCollectedCallback) {
+                    m_heartCollectedCallback(healAmount);
+                } else {
+                    GN_LOG_INFO("PickupSystem: Heart collected but no callback set - healAmount=" + std::to_string(healAmount));
                 }
             }
 
@@ -459,8 +483,81 @@ namespace GameCore {
             } else {
                 ++it;
             }
+            }
+}
+
+void PickupSystem::applyMagnetEffects(float deltaTime) {
+    if (!m_ecsSystem || m_playerEntity == 0) {
+        return;
+    }
+
+    auto* playerTransform = m_ecsSystem->GetComponent<Gnosis::Transform>(m_playerEntity);
+    auto* playerHitbox = m_ecsSystem->GetComponent<Hitbox>(m_playerEntity);
+    auto* playerSprite = m_ecsSystem->GetComponent<Sprite>(m_playerEntity);
+    if (!playerTransform || !playerHitbox || !playerSprite) {
+        return;
+    }
+
+    // Calculate player's actual center position (same as collision detection)
+    float pHalfW = playerSprite->width * playerTransform->scale.x * 0.5f;
+    float pHalfH = playerSprite->height * playerTransform->scale.y * 0.5f;
+    float playerCenterX = playerTransform->position.x + pHalfW + (playerHitbox->offsetX * playerTransform->scale.x);
+    float playerCenterY = playerTransform->position.y + pHalfH + (playerHitbox->offsetY * playerTransform->scale.y);
+
+    GN_LOG_DEBUG("PickupSystem::applyMagnetEffects - coinMagnet=" + std::to_string(m_coinMagnetEnabled) +
+                 " heartMagnet=" + std::to_string(m_heartMagnetEnabled));
+
+    for (Gnosis::Entity e : m_activePickups) {
+        auto* pickupComp = m_ecsSystem->GetComponent<Pickup>(e);
+        auto* transform = m_ecsSystem->GetComponent<Gnosis::Transform>(e);
+
+        if (!pickupComp || !transform || !pickupComp->isActive) {
+            continue;
+        }
+
+        bool isCoin = isCoinType(pickupComp->pickupType);
+        bool isHeart = pickupComp->pickupType == "PooHeart" || pickupComp->pickupType == "PooHeartBig";
+
+        // Check if magnet is enabled for this pickup type
+        bool magnetEnabled = (isCoin && m_coinMagnetEnabled) || (isHeart && m_heartMagnetEnabled);
+        if (!magnetEnabled) {
+            continue;
+        }
+
+        // Calculate distance to player's center position
+        float dx = playerCenterX - transform->position.x;
+        float dy = playerCenterY - transform->position.y;
+        float distance = std::sqrt(dx * dx + dy * dy);
+
+        // Check if within magnet range
+        float range = isCoin ? COIN_MAGNET_RANGE : HEART_MAGNET_RANGE;
+        if (distance <= range && distance > 1.0f) { // Very small minimum distance
+            // Calculate direction from pickup to player (normalized)
+            float dirX = dx / distance;
+            float dirY = dy / distance;
+
+            // Calculate pull strength - stronger when closer, but more consistent
+            float distanceRatio = distance / range; // 0 = very close, 1 = at max range
+            float strengthMultiplier = 1.0f + (1.0f - distanceRatio) * 2.0f; // 1x to 3x multiplier
+
+            // Apply consistent magnet movement
+            float magnetStrength = MAGNET_SPEED * deltaTime * strengthMultiplier;
+
+            // Move pickup toward player
+            transform->position.x += dirX * magnetStrength;
+            transform->position.y += dirY * magnetStrength;
+
+            // Debug logging (only for coins to avoid spam)
+            if (isCoin && pickupComp->pickupType == "GoldCoin") {
+                GN_LOG_DEBUG("Coin Magnet: " + pickupComp->pickupType +
+                             " distance=" + std::to_string(distance) +
+                             " multiplier=" + std::to_string(strengthMultiplier) +
+                             " move=(" + std::to_string(dirX * magnetStrength) + ", " +
+                             std::to_string(dirY * magnetStrength) + ")");
+            }
         }
     }
+}
 
 } // namespace GameCore
 

@@ -31,6 +31,14 @@ namespace GameCore {
         m_baseScale = config.baseScale;
         m_worldSpeed = config.worldSpeed;
 
+        // Disable debug mode for boss level to remove unwanted debug rectangles
+        if (levelId == 6) {
+            m_debugMode = false;
+            // Force remove ALL DebugDraw components for boss level
+            RemoveAllDebugDraws();
+            GN_LOG_INFO("Boss level: Debug mode disabled and all DebugDraw components removed");
+        }
+
         GN_LOG_INFO("Initializing ObstacleSystem for level " + std::to_string(levelId));
 
         // Setup level-specific patterns
@@ -63,7 +71,12 @@ namespace GameCore {
                 m_levelPatterns.push_back({PatternType::CASTLE_GOLD_TOILET_PAIR, 1.0f, 2000.0f});
                 // Note: Decorative elements are now spawned as part of toilet group spawning
                 break;
-                
+
+            case 6: // Boss level - no obstacles
+                // Boss level has no procedural obstacle patterns
+                AddBossLevelDecorations();
+                break;
+
             default:
                 m_levelPatterns.push_back({PatternType::PARK_TOILET_PAIR, 1.0f, 0.0f});
                 break;
@@ -2385,15 +2398,20 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         m_ecsSystem->AddComponent<Hitbox>(bottomToilet, bottomCollider);
         m_ecsSystem->AddComponent<Obstacle>(bottomToilet, bottomObstacle);
         
-        // Add debug drawing for bottom gold toilet hitbox
-        DebugDraw bottomDebugDraw;
-        bottomDebugDraw.showBounds = true;
-        bottomDebugDraw.showCollider = true;
-        bottomDebugDraw.colliderColor = Gnosis::GNColor(255, 215, 0, 255); // Gold for gold toilet
-        bottomDebugDraw.boundsColor = Gnosis::GNColor(0, 255, 0, 255);     // Green for bounds
-        bottomDebugDraw.alpha = 0.8f;
-        bottomDebugDraw.debugLayer = 18;
-        m_ecsSystem->AddComponent<DebugDraw>(bottomToilet, bottomDebugDraw);
+        // Add debug drawing for bottom gold toilet hitbox (only when debug mode is enabled)
+        if (m_debugMode) {
+            DebugDraw bottomDebugDraw;
+            bottomDebugDraw.showBounds = true;
+            bottomDebugDraw.showCollider = true;
+            bottomDebugDraw.colliderColor = Gnosis::GNColor(255, 215, 0, 255); // Gold for gold toilet
+            bottomDebugDraw.boundsColor = Gnosis::GNColor(0, 255, 0, 255);     // Green for bounds
+            bottomDebugDraw.alpha = 0.8f;
+            bottomDebugDraw.debugLayer = 18;
+            m_ecsSystem->AddComponent<DebugDraw>(bottomToilet, bottomDebugDraw);
+            GN_LOG_DEBUG("Gold toilet debug draw enabled");
+        } else {
+            GN_LOG_DEBUG("Gold toilet debug draw disabled (debug mode off)");
+        }
         
         // Link the pair for synchronized movement
         topObstacle.pairedEntity = bottomToilet;
@@ -2964,5 +2982,91 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         }
         return 0; // Return 0 if not found (invalid entity)
     }
+
+void ObstacleSystem::AddBossLevelDecorations() {
+    // Create the animated pillar in the center of the boss level
+    // The pillar is 384x512 pixels with 7-frame animation and should start at y=0
+    // Scale 5.0x as requested - user will adjust spritesheet to fit screen
+    float screenWidth = 1179.0f;
+    float pillarScale = 5.0f; // Return to 5.0x scale as requested
+    float pillarWidth = 384.0f * pillarScale;
+    float pillarX = (screenWidth - pillarWidth) / 2.0f; // Center horizontally
+    float pillarY = 0.0f; // Start at y=0 as requested
+
+    GN_LOG_INFO("Creating boss level pillar with 7-frame animation at x=" + std::to_string(pillarX) + ", y=" + std::to_string(pillarY) + ", scale=" + std::to_string(pillarScale));
+
+    // Create pillar entity with proper 7-frame animation setup
+    Gnosis::Entity pillar = m_ecsSystem->CreateEntity();
+
+    Transform pillarTransform(Gnosis::GNVector2(pillarX, pillarY), 0.0f,
+                             Gnosis::GNVector2(pillarScale, pillarScale));
+    m_ecsSystem->AddComponent<Transform>(pillar, pillarTransform);
+
+    // Create sprite following the dancing cacti pattern exactly
+    // Use individual frame dimensions (384x512) instead of full sprite sheet dimensions
+    Sprite pillarSprite("BossLevelPillarMobile", 384.0f, 512.0f); // Individual frame dimensions
+    pillarSprite.layer = 2; // Background layer (lower than Rat King and player)
+    pillarSprite.visible = true;
+
+    // Set up animation for pillar (following dancing cacti pattern)
+    pillarSprite.isAnimated = true;
+    pillarSprite.frameCount = 7; // 7-frame animation
+    pillarSprite.frameWidth = static_cast<int>(384.0f); // Each frame is 384 pixels wide
+    pillarSprite.frameHeight = static_cast<int>(512.0f); // Each frame is 512 pixels tall
+    pillarSprite.currentFrame = 0;
+    pillarSprite.currentFrameTime = 0.0f; // Initialize frame time
+    pillarSprite.frameTime = 0.15f; // Animation speed
+    pillarSprite.playing = true;
+    pillarSprite.loop = true;
+
+    GN_LOG_DEBUG("Created boss pillar: BossLevelPillarMobile with " + std::to_string(pillarSprite.frameCount) + " frames, frameWidth=" + std::to_string(pillarSprite.frameWidth) + ", frameHeight=" + std::to_string(pillarSprite.frameHeight));
+
+    m_ecsSystem->AddComponent<Sprite>(pillar, pillarSprite);
+
+    // Physics (static, no movement for boss level pillar)
+    Physics pillarPhysics;
+    pillarPhysics.velocity.x = 0.0f; // Static - no movement like dancing cacti
+    pillarPhysics.velocity.y = 0.0f; // No vertical movement
+    pillarPhysics.useGravity = false;
+    pillarPhysics.mass = 0.0f; // Static object
+    pillarPhysics.drag = 1.0f; // No drag for static object
+    m_ecsSystem->AddComponent<Physics>(pillar, pillarPhysics);
+
+    // No hitbox for decorative pillar - it should not interact with anything
+
+    // Add obstacle component
+    Obstacle pillarObstacle;
+    pillarObstacle.obstacleType = "BossLevelPillarMobile";
+    pillarObstacle.damage = 0; // Decorative, no damage
+    pillarObstacle.basePosition = Gnosis::GNVector2(pillarX, pillarY);
+    m_ecsSystem->AddComponent<Obstacle>(pillar, pillarObstacle);
+
+    if (pillar != 0) {
+        m_activeObstacles.push_back(pillar);
+
+        // Remove any DebugDraw components that might have been added automatically
+        if (m_ecsSystem->HasComponent<DebugDraw>(pillar)) {
+            m_ecsSystem->RemoveComponent<DebugDraw>(pillar);
+            GN_LOG_INFO("Removed DebugDraw component from boss pillar entity " + std::to_string(pillar));
+        }
+
+        // Verify the sprite was created correctly
+        Sprite* pillarSprite = m_ecsSystem->GetComponent<Sprite>(pillar);
+        if (pillarSprite) {
+            GN_LOG_INFO("Boss level pillar created successfully - entity=" + std::to_string(pillar) +
+                       ", textureId=" + pillarSprite->textureId +
+                       ", visible=" + std::to_string(pillarSprite->visible) +
+                       ", isAnimated=" + std::to_string(pillarSprite->isAnimated) +
+                       ", frameCount=" + std::to_string(pillarSprite->frameCount));
+        } else {
+            GN_LOG_ERROR("Boss level pillar sprite component not found after creation!");
+        }
+
+        GN_LOG_INFO("Boss level pillar created at x=" + std::to_string(pillarX) + ", y=" + std::to_string(pillarY) +
+                   " with 7-frame animation and scale " + std::to_string(pillarScale));
+    } else {
+        GN_LOG_ERROR("Failed to create boss level pillar entity!");
+    }
+}
 
 } // namespace GameCore

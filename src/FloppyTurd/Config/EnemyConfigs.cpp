@@ -26,6 +26,8 @@ namespace GameCore {
             GN_LOG_DEBUG("EnemyConfigRegistry: Added SnowManIdle config");
             s_enemyConfigs.emplace("RatCopterIdle", CreateRatCopterConfig());
             GN_LOG_DEBUG("EnemyConfigRegistry: Added RatCopterIdle config");
+            s_enemyConfigs.emplace("Ratking", CreateRatKingConfig());
+            GN_LOG_DEBUG("EnemyConfigRegistry: Added Ratking config");
             
             s_initialized = true;
             GN_LOG_INFO("EnemyConfigRegistry: Initialized " + std::to_string(s_enemyConfigs.size()) + " enemy configurations");
@@ -125,7 +127,7 @@ namespace GameCore {
     EnemyConfig EnemyConfigRegistry::CreateBirdConfig() {
         // Birds have 4 frames of 32x32 in horizontal spritesheet (128x32 total)
         // Use the individual frame size (32x32) for the sprite, not the total spritesheet width
-        EnemyConfig config("BirdIdle", 32.0f, 32.0f, 150.0f, 3.0f, 1, 32, 32, 4, 0.16f, true, "horizontal");
+        EnemyConfig config("BirdIdle", 32.0f, 32.0f, 6.0f, 150.0f, 3.0f, 1, 32, 32, 4, 0.16f, true, "horizontal");
         
         // Subtle hovering behavior: 70% chance to hover, 30% static for echelon formation
         config.bobbingConfig.enabled = false; // Will be enabled probabilistically in spawn
@@ -140,7 +142,7 @@ namespace GameCore {
 
     EnemyConfig EnemyConfigRegistry::CreateToiletPaperConfig() {
         // 8-frame flying animation at 64x64
-        EnemyConfig config("ToiletPaperFlap", 64.0f, 64.0f, 150.0f, 3.0f, 1, 64, 64, 8, 0.18f, true, "horizontal");
+        EnemyConfig config("ToiletPaperFlap", 64.0f, 64.0f, 6.0f, 150.0f, 3.0f, 1, 64, 64, 8, 0.18f, true, "horizontal");
         
         // Large amplitude bobbing for traversing most of the screen
         config.bobbingConfig.enabled = true;
@@ -154,7 +156,7 @@ namespace GameCore {
 
     EnemyConfig EnemyConfigRegistry::CreateSnowManChillConfig() {
         // Static decorative snowman - NO bobbing
-        EnemyConfig config("SnowManChill", 64.0f, 64.0f, 150.0f, 3.0f, 1, 64, 64, 1, 0.16f, true, "decorative");
+        EnemyConfig config("SnowManChill", 64.0f, 64.0f, 6.0f, 150.0f, 3.0f, 1, 64, 64, 1, 0.16f, true, "decorative");
         
         // Explicitly disable bobbing for static snowmen
         config.bobbingConfig.enabled = false;
@@ -167,7 +169,7 @@ namespace GameCore {
 
     EnemyConfig EnemyConfigRegistry::CreateSnowManGreenConfig() {
         // Static decorative snowman - NO bobbing
-        EnemyConfig config("SnowManGreen", 64.0f, 64.0f, 150.0f, 3.0f, 1, 64, 64, 1, 0.16f, true, "decorative");
+        EnemyConfig config("SnowManGreen", 64.0f, 64.0f, 6.0f, 150.0f, 3.0f, 1, 64, 64, 1, 0.16f, true, "decorative");
         
         // Explicitly disable bobbing for static snowmen
         config.bobbingConfig.enabled = false;
@@ -180,7 +182,7 @@ namespace GameCore {
 
     EnemyConfig EnemyConfigRegistry::CreateSnowManChadConfig() {
         // Static decorative snowman - NO bobbing
-        EnemyConfig config("SnowManChad", 64.0f, 64.0f, 150.0f, 3.0f, 1, 64, 64, 1, 0.16f, true, "decorative");
+        EnemyConfig config("SnowManChad", 64.0f, 64.0f, 6.0f, 150.0f, 3.0f, 1, 64, 64, 1, 0.16f, true, "decorative");
         
         // Explicitly disable bobbing for static snowmen
         config.bobbingConfig.enabled = false;
@@ -193,7 +195,7 @@ namespace GameCore {
 
     EnemyConfig EnemyConfigRegistry::CreateSnowManThrowerConfig() {
         // Snowman thrower with StateAnimation (idle/throw states)
-        EnemyConfig config("SnowManIdle", 64.0f, 64.0f, 150.0f, 3.0f, 1, 64, 64, 1, 0.25f, true, "snowman_thrower");
+        EnemyConfig config("SnowManIdle", 64.0f, 64.0f, 6.0f, 150.0f, 3.0f, 1, 64, 64, 1, 0.25f, true, "snowman_thrower");
         
         // Enable StateAnimation
         config.useStateAnimation = true;
@@ -212,15 +214,43 @@ namespace GameCore {
 
     EnemyConfig EnemyConfigRegistry::CreateRatCopterConfig() {
         // RatCopter flying enemy - 64x64 sprite with flying behavior
-        EnemyConfig config("RatCopterIdle", 64.0f, 64.0f, 160.0f, 4.0f, 1, 64, 64, 1, 0.20f, true, "flying");
-        
+        EnemyConfig config("RatCopterIdle", 64.0f, 64.0f, 6.0f, 160.0f, 4.0f, 1, 64, 64, 1, 0.20f, true, "flying");
+
         // Enable bobbing for flying behavior
         config.bobbingConfig.enabled = true;
         config.bobbingConfig.baseSpeed = 1.5f;
         config.bobbingConfig.speedJitter = 0.03f; // -0.6 to +0.6 range
         config.bobbingConfig.amplitudeMin = 20.0f;
         config.bobbingConfig.amplitudeMax = 40.0f;
-        
+
+        return config;
+    }
+
+    EnemyConfig EnemyConfigRegistry::CreateRatKingConfig() {
+        // Rat King Boss - 128x128 sprite with complex boss behavior
+                           EnemyConfig config("Ratking", 128.0f, 128.0f, 6.0f, 100.0f, 1.0f, 20, 128, 128, 1, 0.16f, true, "boss_idle");
+
+        // Boss-specific properties
+        config.hitPoints = 20;  // Boss has 20 HP
+
+    
+        // Animation states for Rat King
+        AnimationClip idleClip("Ratking", 128, 128, 1, 0.25f, true);                    // Single frame idle
+        AnimationClip walkClip("RatkingWalk", 128, 128, 8, 0.12f, true);               // 8 frame walking
+        AnimationClip hurtClip("RatkingHurt", 128, 128, 6, 0.15f, false);              // 6 frame hurt
+        AnimationClip deathClip("RatkingDeath", 128, 128, 6, 0.20f, false);            // 6 frame death
+        AnimationClip torsoClip("RatkingTorsoOnly", 128, 128, 7, 0.16f, false);        // 7 frame torso aiming
+        AnimationClip backArmClip("RatkingBackArmOnly", 128, 128, 7, 0.16f, false);   // 7 frame back arm aiming
+        AnimationClip tossArmClip("RatkingTossArmOnly", 128, 128, 7, 0.16f, false);   // 7 frame toss arm
+
+        config.animationStates.push_back({"idle", idleClip});
+        config.animationStates.push_back({"walking", walkClip});
+        config.animationStates.push_back({"hurt", hurtClip});
+        config.animationStates.push_back({"death", deathClip});
+        config.animationStates.push_back({"aiming_torso", torsoClip});
+        config.animationStates.push_back({"aiming_back_arm", backArmClip});
+        config.animationStates.push_back({"throwing", tossArmClip});
+
         return config;
     }
 

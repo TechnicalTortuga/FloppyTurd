@@ -66,6 +66,9 @@ namespace GameCore {
         void RenderDebugHitboxes();
         void RemoveAllDebugDraws();
 
+        // Boss level decorations
+        void AddBossLevelDecorations();
+
     private:
         // Pattern implementations
         void SpawnParkPattern_ToiletPair(float x);

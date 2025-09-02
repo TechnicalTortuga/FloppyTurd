@@ -172,6 +172,7 @@ namespace GameCore {
         std::string textureId;
         float width;
         float height;
+        float scale;
         float speed;
         float spawnRate;
         int hitPoints;
@@ -195,15 +196,15 @@ namespace GameCore {
         BobbingConfig bobbingConfig;
         
         // Constructors
-        EnemyConfig(const std::string& texture, float w, float h, float spd, float rate, int hp, const std::string& pattern = "horizontal")
-            : textureId(texture), width(w), height(h), speed(spd), spawnRate(rate), hitPoints(hp), movementPattern(pattern)
+        EnemyConfig(const std::string& texture, float w, float h, float scl, float spd, float rate, int hp, const std::string& pattern = "horizontal")
+            : textureId(texture), width(w), height(h), scale(scl), speed(spd), spawnRate(rate), hitPoints(hp), movementPattern(pattern)
             , renderLayer(4), isAnimated(false), frameWidth(static_cast<int>(w)), frameHeight(static_cast<int>(h))
             , frameCount(1), frameTime(0.16f), loopAnimation(true), useStateAnimation(false), initialState("idle") {}
-            
+
         // Animated enemy constructor
-        EnemyConfig(const std::string& texture, float w, float h, float spd, float rate, int hp, 
+        EnemyConfig(const std::string& texture, float w, float h, float scl, float spd, float rate, int hp,
                    int fw, int fh, int fc, float ft, bool loop = true, const std::string& pattern = "horizontal")
-            : textureId(texture), width(w), height(h), speed(spd), spawnRate(rate), hitPoints(hp), movementPattern(pattern)
+            : textureId(texture), width(w), height(h), scale(scl), speed(spd), spawnRate(rate), hitPoints(hp), movementPattern(pattern)
             , renderLayer(4), isAnimated(true), frameWidth(fw), frameHeight(fh)
             , frameCount(fc), frameTime(ft), loopAnimation(loop), useStateAnimation(false), initialState("idle") {}
     };
@@ -372,13 +373,7 @@ namespace GameCore {
         static void AddCastleLevelLayers(LevelConfig& config);
         static void AddBossLevelLayers(LevelConfig& config);
         
-        // Obstacle configuration helpers
-        static void AddParkObstacles(LevelConfig& config);
-        static void AddSewerObstacles(LevelConfig& config);
-        static void AddDesertObstacles(LevelConfig& config);
-        static void AddSnowObstacles(LevelConfig& config);
-        static void AddCastleObstacles(LevelConfig& config);
-        static void AddBossObstacles(LevelConfig& config);
+        // Obstacle configuration handled by ObstacleSystem patterns
         
         // Enemy configuration helpers
         static void AddParkEnemies(LevelConfig& config);

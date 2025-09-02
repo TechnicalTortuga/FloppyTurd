@@ -48,6 +48,39 @@ namespace Gnosis {
             return GNVector2(0.0f, 0.0f);
         }
     };
+
+    // ============================================================================
+    // Math Utility Functions
+    // ============================================================================
+
+    inline GNVector2 Vector2Subtract(const GNVector2& a, const GNVector2& b) {
+        return GNVector2(a.x - b.x, a.y - b.y);
+    }
+
+    inline GNVector2 Vector2Add(const GNVector2& a, const GNVector2& b) {
+        return GNVector2(a.x + b.x, a.y + b.y);
+    }
+
+    inline GNVector2 Vector2Scale(const GNVector2& v, float scale) {
+        return GNVector2(v.x * scale, v.y * scale);
+    }
+
+    inline float Clamp(float value, float min, float max) {
+        if (value < min) return min;
+        if (value > max) return max;
+        return value;
+    }
+
+    inline int Clamp(int value, int min, int max) {
+        if (value < min) return min;
+        if (value > max) return max;
+        return value;
+    }
+
+    inline float SmoothAngleLerp(float current, float target, float amount) {
+        float diff = std::fmod((target - current + 540.0f), 360.0f) - 180.0f;
+        return current + diff * amount;
+    }
     
     struct GNColor {
         uint8_t r, g, b, a;
@@ -389,4 +422,6 @@ namespace Gnosis {
     const float PI = 3.14159265359f;
     const float DEG_TO_RAD = PI / 180.0f;
     const float RAD_TO_DEG = 180.0f / PI;
+    const float DEG2RAD = DEG_TO_RAD;
+    const float RAD2DEG = RAD_TO_DEG;
 }
