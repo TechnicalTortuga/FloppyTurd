@@ -227,8 +227,8 @@ namespace GameCore {
     }
 
     EnemyConfig EnemyConfigRegistry::CreateRatKingConfig() {
-        // Rat King Boss - 128x128 sprite with complex boss behavior
-                           EnemyConfig config("Ratking", 128.0f, 128.0f, 6.0f, 100.0f, 1.0f, 20, 128, 128, 1, 0.16f, true, "boss_idle");
+            // Rat King Boss - 128x128 sprite with complex boss behavior
+    EnemyConfig config("Ratking", 128.0f, 128.0f, 8.0f, 100.0f, 1.0f, 20, 128, 128, 1, 0.16f, true, "boss_idle");
 
         // Boss-specific properties
         config.hitPoints = 20;  // Boss has 20 HP

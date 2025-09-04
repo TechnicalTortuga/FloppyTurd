@@ -243,6 +243,7 @@ namespace GameCore {
         bool enableEnemies;
         bool enableNPCs;
         bool enablePickups;
+        bool shootingEnabled;  // Whether shooting mechanics are enabled for this level
         
         // Scaling and camera settings
         float baseScale;            // Base scale factor (originally designed for 320x180)
@@ -278,6 +279,7 @@ namespace GameCore {
             , enableEnemies(true)
             , enableNPCs(false)
             , enablePickups(true)
+            , shootingEnabled(true)  // Default to enabled for most levels
         {}
         
         /**

@@ -56,6 +56,7 @@ public:
     void InitializeForLevel();
     void Update(float deltaTime);
     void HandleDamage(int damage);
+    void UpdateScreenDimensions(float width, float height);
 
     // State management
     RatKingState GetCurrentState() const { return currentState; }
@@ -97,12 +98,14 @@ private:
     int health = 20;
     int maxHealth = 20;
     bool isActive = false;
-    float scale = 6.0f;  // 6.0x scale for 128px -> 768px
+    float scale = 8.0f;  // 8.0x scale for 128px -> 1024px (matches player scale)
 
-    // Movement boundaries (from old system)
+    // Movement boundaries - will be set dynamically based on screen dimensions
     float walkRangeMin = 100.0f;
     float walkRangeMax = 220.0f;
     float walkSpeed = 20.0f;
+    float screenWidth = 1179.0f;  // iPhone 16 width, will be updated dynamically
+    float screenHeight = 2556.0f; // iPhone 16 height, will be updated dynamically
 
     // State timers
     float idleTimer = 0.0f;
@@ -115,6 +118,9 @@ private:
     int hurtBuffer = 0;
     bool hasFlashedHurt = false;
     float hurtFlashTimer = 0.0f;
+
+    // Walking destination for purposeful movement
+    float m_walkDestination = 0.0f;
 
     // Minion spawning
     int nextMinionHealthThreshold = 16;  // 80% of 20 HP
@@ -131,6 +137,7 @@ private:
     // Helper functions
     void CreateBodyPartEntities();
     void UpdateSprites(float deltaTime);
+    void UpdateArmRotations();
     void SpawnProjectile();
     void SpawnMinionWave(int count);
     void UpdateLockOnIndicator();

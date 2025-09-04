@@ -41,6 +41,7 @@ namespace GameCore {
         , m_skillButtonDebounceDelay(0.3f)  // 300ms debounce delay for skill buttons
         , m_pauseMenuCreated(false)
         , m_hatsGridCreated(false)
+        , m_shootingZoneEntity(0)
     {
         GN_LOG_INFO("GameplayState created for level: " + std::to_string(levelId) + " (" + m_currentLevelConfig.levelName + ")");
     }
@@ -227,7 +228,16 @@ namespace GameCore {
             // Set player position for boss aiming
             if (m_playerEntity != 0 && m_ecsSystem) {
                 Transform* playerTransform = m_ecsSystem->GetComponent<Transform>(m_playerEntity);
-                if (playerTransform) {
+                Hitbox* playerHitbox = m_ecsSystem->GetComponent<Hitbox>(m_playerEntity);
+                if (playerTransform && playerHitbox) {
+                    // Use player center position for more accurate aiming
+                    GNVector2 playerCenter = {
+                        playerTransform->position.x + playerHitbox->offsetX + (playerHitbox->width / 2.0f),
+                        playerTransform->position.y + playerHitbox->offsetY + (playerHitbox->height / 2.0f)
+                    };
+                    m_bossSystem->SetPlayerPosition(playerCenter);
+                } else if (playerTransform) {
+                    // Fallback to transform position if no hitbox
                     GNVector2 playerPos = {playerTransform->position.x, playerTransform->position.y};
                     m_bossSystem->SetPlayerPosition(playerPos);
                 }
@@ -483,15 +493,23 @@ namespace GameCore {
                         float x, y;
                         m_platformDelegates->input.getTouchPosition(i, &x, &y);
 
-                        GN_LOG_INFO("Touch " + std::to_string(i) + " PRESSED at (" + std::to_string(x) + ", " + std::to_string(y) + ")");
+                        GN_LOG_INFO("Touch " + std::to_string(i) + " PRESSED at PIXEL (" + std::to_string(x) + ", " + std::to_string(y) + ")");
+
+                        // Normalize coordinates to 0.0-1.0 range for PlayerControllerSystem
+                        float screenWidth = 1179.0f;  // iPhone 16 width
+                        float screenHeight = 2556.0f; // iPhone 16 height
+                        float normalizedX = x / screenWidth;
+                        float normalizedY = y / screenHeight;
+
+                        GN_LOG_INFO("Normalized coordinates: (" + std::to_string(normalizedX) + ", " + std::to_string(normalizedY) + ")");
 
                         // Handle pause menu input if we're paused
                         if (m_currentSubState == GameplaySubState::Paused) {
                             HandlePauseMenuInput(x, y);
                         }
 
-                        // Send touch press event
-                        m_playerControllerSystem->HandleTouchInput(x, y, true);
+                        // Send touch press event with normalized coordinates
+                        m_playerControllerSystem->HandleTouchInput(normalizedX, normalizedY, true);
                     }
                 }
                 
@@ -526,10 +544,18 @@ namespace GameCore {
                         m_platformDelegates->input.getTouchPosition(0, &x, &y);
                     }
 
-                    GN_LOG_INFO("Touch RELEASED at (" + std::to_string(x) + ", " + std::to_string(y) + ")");
+                    GN_LOG_INFO("Touch RELEASED at PIXEL (" + std::to_string(x) + ", " + std::to_string(y) + ")");
 
-                    // Send touch release event
-                    m_playerControllerSystem->HandleTouchInput(x, y, false);
+                    // Normalize coordinates to 0.0-1.0 range for PlayerControllerSystem
+                    float screenWidth = 1179.0f;  // iPhone 16 width
+                    float screenHeight = 2556.0f; // iPhone 16 height
+                    float normalizedX = x / screenWidth;
+                    float normalizedY = y / screenHeight;
+
+                    GN_LOG_INFO("Normalized release coordinates: (" + std::to_string(normalizedX) + ", " + std::to_string(normalizedY) + ")");
+
+                    // Send touch release event with normalized coordinates
+                    m_playerControllerSystem->HandleTouchInput(normalizedX, normalizedY, false);
                 }
             } else {
                 GN_LOG_WARN("Touch input functions not available!");
@@ -548,11 +574,44 @@ namespace GameCore {
     void GameplayState::SetLevel(int levelId) {
         GN_LOG_INFO("Setting level to: " + std::to_string(levelId));
         m_currentLevelId = levelId;
-        
+
         // Load level configuration
         m_currentLevelConfig = LevelConfigFactory::GetLevelConfig(levelId);
         GN_LOG_INFO("Loaded configuration for: " + m_currentLevelConfig.levelName);
-        
+
+        // Show/hide shooting zone visual indicator based on level
+        GN_LOG_INFO("SetLevel: Checking shooting zone visibility for level " + std::to_string(m_currentLevelId));
+        GN_LOG_INFO("SetLevel: shootingEnabled = " + std::to_string(m_currentLevelConfig.shootingEnabled));
+        GN_LOG_INFO("SetLevel: m_shootingZoneEntity = " + std::to_string(m_shootingZoneEntity));
+
+        if (m_shootingZoneEntity != 0 && m_ecsSystem) {
+            GN_LOG_INFO("SetLevel: Entity exists, getting components...");
+            auto uiElement = m_ecsSystem->GetComponent<UIElement>(m_shootingZoneEntity);
+            auto uiShape = m_ecsSystem->GetComponent<UIShape>(m_shootingZoneEntity);
+            bool shouldBeVisible = m_currentLevelConfig.shootingEnabled;
+
+            GN_LOG_INFO("SetLevel: uiElement found = " + std::to_string(uiElement != nullptr));
+            GN_LOG_INFO("SetLevel: uiShape found = " + std::to_string(uiShape != nullptr));
+            GN_LOG_INFO("SetLevel: shouldBeVisible = " + std::to_string(shouldBeVisible));
+
+            if (uiElement) {
+                uiElement->visible = shouldBeVisible;
+                GN_LOG_INFO("SetLevel: Set UIElement visible = " + std::to_string(shouldBeVisible));
+            } else {
+                GN_LOG_ERROR("SetLevel: UIElement component not found!");
+            }
+            if (uiShape) {
+                uiShape->visible = shouldBeVisible;
+                GN_LOG_INFO("SetLevel: Set UIShape visible = " + std::to_string(shouldBeVisible));
+            } else {
+                GN_LOG_ERROR("SetLevel: UIShape component not found!");
+            }
+
+            GN_LOG_INFO("Shooting zone visibility set to " + std::to_string(shouldBeVisible) + " for level " + std::to_string(m_currentLevelId));
+        } else {
+            GN_LOG_ERROR("SetLevel: Shooting zone entity is 0 or ECS system is null!");
+        }
+
         // Reset game state for new level
         m_currentScore = 0;
         m_currentLives = STARTING_LIVES;
@@ -649,7 +708,7 @@ namespace GameCore {
         }
 
         // Create player controller system
-        m_playerControllerSystem = std::make_unique<PlayerControllerSystem>(m_ecsSystem, m_platformDelegates, m_spriteSystem.get(), m_projectileSystem.get(), m_hatsSystem.get(), m_skillSystem.get(), m_currentLevelId);
+        m_playerControllerSystem = std::make_unique<PlayerControllerSystem>(m_ecsSystem, m_platformDelegates, m_spriteSystem.get(), m_projectileSystem.get(), m_hatsSystem.get(), m_skillSystem.get(), m_currentLevelId, &m_currentLevelConfig);
         
         // Create camera system
         m_cameraSystem = std::make_unique<CameraSystem>(m_ecsSystem);
@@ -674,6 +733,16 @@ namespace GameCore {
         // Create boss systems (only for level 6)
         if (m_currentLevelId == 6) {
             m_bossSystem = std::make_unique<BossSystem>((ECS*)m_ecsSystem, m_levelManager.get(), m_projectileSystem.get(), m_platformDelegates);
+
+            // Update BossSystem with current screen dimensions once during initialization
+            if (m_renderSystem) {
+                const ScreenInfo& screenInfo = m_renderSystem->GetScreenInfo();
+                if (screenInfo.pixelWidth > 0 && screenInfo.pixelHeight > 0) {
+                    m_bossSystem->UpdateScreenDimensions(screenInfo.pixelWidth, screenInfo.pixelHeight);
+                    GN_LOG_INFO("BossSystem initialized with screen dimensions: " + std::to_string((int)screenInfo.pixelWidth) + "x" + std::to_string((int)screenInfo.pixelHeight));
+                }
+            }
+
             m_bossHealthBar = std::make_unique<BossHealthBar>(m_bossSystem.get(), "Rat King", m_ecsSystem);
             GN_LOG_INFO("Boss systems initialized for level 6");
         }
@@ -749,8 +818,8 @@ namespace GameCore {
                 screenWidth = si.pixelWidth;
             }
 
-            // Position player based on level - boss level uses 20% from left for shooting layout, other levels center
-            float playerX = (m_currentLevelId == 6) ? (screenWidth * 0.2f) : (screenWidth * 0.5f);
+            // Position player based on level - boss level uses 25px from left for better spacing, other levels center
+            float playerX = (m_currentLevelId == 6) ? 25.0f : (screenWidth * 0.5f);
             Transform playerTransform(Gnosis::GNVector2(playerX, 639.0f), 0.0f, Gnosis::GNVector2(playerScale, playerScale));
             m_ecsSystem->AddComponent<Transform>(m_playerEntity, playerTransform);
             
@@ -1112,9 +1181,10 @@ namespace GameCore {
     
     // Re-enable coin counter UI with coin bag icon
     m_scoreTextEntity = 0;
-    m_livesTextEntity = 0; 
+    m_livesTextEntity = 0;
     m_coinsTextEntity = 0;
     m_coinBagEntity = 0;
+    m_shootingZoneEntity = 0;
 
     // Initialize pause menu entity references
     m_pauseMenuBackgroundEntity = 0;
@@ -1260,6 +1330,110 @@ namespace GameCore {
             ui.textLayer = 10;
             m_ecsSystem->AddComponent<UIElement>(m_coinsTextEntity, ui);
             GN_LOG_INFO("Created coins text at (" + std::to_string(textX) + "," + std::to_string(textY) + ")");
+        }
+    }
+
+    // Create shooting zone visual indicator (always created, visibility controlled by level)
+    m_shootingZoneEntity = m_ecsSystem->CreateEntity();
+    if (m_shootingZoneEntity != 0) {
+        // Get actual screen dimensions from render system
+        float screenWidth = 1179.0f;  // Default iPhone 16 width
+        float screenHeight = 2556.0f; // Default iPhone 16 height
+        if (m_renderSystem) {
+            const ScreenInfo& screenInfo = m_renderSystem->GetScreenInfo();
+            if (screenInfo.pixelWidth > 0 && screenInfo.pixelHeight > 0) {
+                screenWidth = screenInfo.pixelWidth;
+                screenHeight = screenInfo.pixelHeight;
+                GN_LOG_INFO("Shooting zone: Using actual screen dimensions: " + std::to_string((int)screenWidth) + "x" + std::to_string((int)screenHeight));
+            }
+        }
+
+        // Calculate shooting zone position relative to coin bag and counter
+        float coinBagX = screenWidth * 0.01f; // 1% from left (same as coin bag)
+        float coinBagY = screenHeight * 0.85f; // 15% from bottom (same as coin bag)
+        float coinBagScale = 8.0f; // Same scale as coin bag
+        float coinBagHeight = 32.0f * coinBagScale; // 256.0f
+        float coinBagWidth = 32.0f * coinBagScale; // 256.0f (coin bag width, not height)
+
+        // Coin counter position: right of coin bag + 8px gap
+        float coinCounterX = coinBagX + coinBagWidth + 8.0f;
+        // Estimate coin counter width (rough estimate based on "Coins: 999" text at font size 64)
+        float estimatedCoinCounterWidth = 200.0f; // Rough estimate for coin counter text width
+        float coinCounterRightX = coinCounterX + estimatedCoinCounterWidth;
+
+        // Position shooting zone: 80% from top for top edge, 15% height coverage
+        float shootingZoneTopY = screenHeight * 0.80f; // 80% from top
+        float shootingZoneBottomY = screenHeight * 0.95f; // 95% from top (5% from bottom)
+        float shootingZoneHeight = shootingZoneBottomY - shootingZoneTopY;
+
+        // Position to the right of coin counter (not coin bag)
+        float shootingZoneLeftX = coinCounterRightX + 8.0f; // Same 8px gap from coin counter
+        float shootingZoneRightX = screenWidth * 0.95f; // 5% from right edge
+
+        // Calculate final dimensions and position
+        float shootZoneWidth = shootingZoneRightX - shootingZoneLeftX;
+        float shootZoneHeight = shootingZoneHeight; // Already calculated above
+        float shootZoneStartX = shootingZoneLeftX;
+        float shootZoneStartY = shootingZoneTopY;
+
+        GN_LOG_INFO("Shooting zone positioned above coinbag:");
+        GN_LOG_INFO("  Coin bag at: (" + std::to_string(coinBagX) + ", " + std::to_string(coinBagY) + ") height: " + std::to_string(coinBagHeight));
+        GN_LOG_INFO("  Coin counter at: " + std::to_string(coinCounterX));
+        GN_LOG_INFO("  Shooting zone: (" + std::to_string(shootZoneStartX) + ", " + std::to_string(shootZoneStartY) + ") size (" + std::to_string(shootZoneWidth) + "x" + std::to_string(shootZoneHeight) + ")");
+
+        // Create transform component (position in pixel screen space)
+        Transform shootingZoneTransform;
+        shootingZoneTransform.position = Gnosis::GNVector2(shootZoneStartX, shootZoneStartY);
+        shootingZoneTransform.scale = Gnosis::GNVector2(1.0f, 1.0f);
+        shootingZoneTransform.rotation = 0.0f;
+        m_ecsSystem->AddComponent<Transform>(m_shootingZoneEntity, shootingZoneTransform);
+
+        // Create UIElement for the visual indicator (same pattern as coin bag)
+        UIElement shootingZoneIndicator;
+        shootingZoneIndicator.buttonText = "";  // No text, just visual
+        shootingZoneIndicator.fontSize = 1.0f;  // Minimal
+        shootingZoneIndicator.textColor = Gnosis::GNColor(128, 128, 128, 64); // Semi-transparent gray
+        shootingZoneIndicator.centerTextHorizontally = false;
+
+        shootingZoneIndicator.centerTextVertically = false;
+        shootingZoneIndicator.visible = false; // Will be set correctly below
+        shootingZoneIndicator.isEnabled = true;
+        shootingZoneIndicator.textLayer = 10; // Same layer as coin bag and pipe counter
+        shootingZoneIndicator.normalTextureId = ""; // No texture, just use background color
+        m_ecsSystem->AddComponent<UIElement>(m_shootingZoneEntity, shootingZoneIndicator);
+
+        // Create UIShape component for the actual rectangle rendering
+        UIShape shootingZoneShape;
+        shootingZoneShape.width = shootZoneWidth;  // Pixel width
+        shootingZoneShape.height = shootZoneHeight; // Pixel height
+        shootingZoneShape.color = Gnosis::GNColor(128, 128, 128, 64); // Semi-transparent gray
+        shootingZoneShape.layer = 10; // Same layer as coin bag and pipe counter (top UI layer)
+        shootingZoneShape.visible = false; // Will be set correctly below
+        m_ecsSystem->AddComponent<UIShape>(m_shootingZoneEntity, shootingZoneShape);
+
+
+        GN_LOG_INFO("Created shooting zone entity " + std::to_string(m_shootingZoneEntity) + " with UIElement and UIShape");
+
+        // Immediately apply the current level's shooting zone visibility
+        if (m_shootingZoneEntity != 0 && m_ecsSystem) {
+            auto uiElement = m_ecsSystem->GetComponent<UIElement>(m_shootingZoneEntity);
+            auto uiShape = m_ecsSystem->GetComponent<UIShape>(m_shootingZoneEntity);
+            bool shouldBeVisible = m_currentLevelConfig.shootingEnabled;
+
+            GN_LOG_INFO("CreateUI: Applying shooting zone visibility for level " + std::to_string(m_currentLevelId) + " - shootingEnabled=" + std::to_string(shouldBeVisible));
+
+            if (uiElement) {
+                uiElement->visible = shouldBeVisible;
+                GN_LOG_INFO("CreateUI: Set UIElement visible = " + std::to_string(shouldBeVisible));
+            } else {
+                GN_LOG_ERROR("CreateUI: UIElement component not found!");
+            }
+            if (uiShape) {
+                uiShape->visible = shouldBeVisible;
+                GN_LOG_INFO("CreateUI: Set UIShape visible = " + std::to_string(shouldBeVisible));
+            } else {
+                GN_LOG_ERROR("CreateUI: UIShape component not found!");
+            }
         }
     }
 
@@ -1513,6 +1687,11 @@ void GameplayState::DestroyUI() {
     if (m_pipeCounterEntity != 0) {
         m_ecsSystem->DestroyEntity(m_pipeCounterEntity);
         m_pipeCounterEntity = 0;
+    }
+
+    if (m_shootingZoneEntity != 0) {
+        m_ecsSystem->DestroyEntity(m_shootingZoneEntity);
+        m_shootingZoneEntity = 0;
     }
 
     if (m_pauseMenuEntity != 0) {
@@ -2995,7 +3174,8 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             &m_coinsTextEntity,
             &m_coinBagEntity,
             &m_pipeCounterEntity,
-            &m_heartUIEntity
+            &m_heartUIEntity,
+            &m_shootingZoneEntity
         };
         
         for (Gnosis::Entity* entityPtr : uiElements) {
@@ -3026,6 +3206,22 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             &m_pipeCounterEntity,
             &m_heartUIEntity
         };
+
+        // Handle shooting zone separately - only show if enabled for current level
+        if (m_shootingZoneEntity != 0 && m_ecsSystem) {
+            auto uiElement = m_ecsSystem->GetComponent<UIElement>(m_shootingZoneEntity);
+            auto uiShape = m_ecsSystem->GetComponent<UIShape>(m_shootingZoneEntity);
+            bool shouldBeVisible = m_currentLevelConfig.shootingEnabled;
+
+            if (uiElement) {
+                uiElement->visible = shouldBeVisible;
+            }
+            if (uiShape) {
+                uiShape->visible = shouldBeVisible;
+            }
+
+            GN_LOG_INFO("ShowRegularUI: Shooting zone visibility set to " + std::to_string(shouldBeVisible) + " for level " + std::to_string(m_currentLevelId));
+        }
         
         for (Gnosis::Entity* entityPtr : uiElements) {
             if (entityPtr && *entityPtr != 0 && m_ecsSystem) {
@@ -6611,6 +6807,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         
         GN_LOG_INFO("Death counter incremented to: " + std::to_string(currentStats.totalDeaths));
     }
+
 
 
 

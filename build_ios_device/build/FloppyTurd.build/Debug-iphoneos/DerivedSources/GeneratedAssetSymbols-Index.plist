@@ -130,6 +130,26 @@
 			<key>catalogPath</key>
 			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
+			<string>ACImageNameBossLevelBackgroundMobile</string>
+			<key>relativePath</key>
+			<string>./graphics/environment/backgrounds/boss/BossLevelBackgroundMobile.imageset</string>
+			<key>swiftSymbol</key>
+			<string>bossLevelBackgroundMobile</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
+			<key>objcSymbol</key>
+			<string>ACImageNameBossLevelPillarMobile</string>
+			<key>relativePath</key>
+			<string>./graphics/environment/backgrounds/boss/BossLevelPillarMobile.imageset</string>
+			<key>swiftSymbol</key>
+			<string>bossLevelPillarMobile</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
+			<key>objcSymbol</key>
 			<string>ACImageNameBossWalls</string>
 			<key>relativePath</key>
 			<string>./graphics/environment/backgrounds/boss/BossWalls.imageset</string>
@@ -175,16 +195,6 @@
 			<string>./graphics/environment/structures/toilets/BottomToiletGold.imageset</string>
 			<key>swiftSymbol</key>
 			<string>bottomToiletGold</string>
-		</dict>
-		<dict>
-			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
-			<key>objcSymbol</key>
-			<string>ACImageNameBottomToiletGoldExport</string>
-			<key>relativePath</key>
-			<string>./graphics/environment/structures/toilets/BottomToiletGold-export.imageset</string>
-			<key>swiftSymbol</key>
-			<string>bottomToiletGoldExport</string>
 		</dict>
 		<dict>
 			<key>catalogPath</key>
@@ -672,7 +682,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameOuthouseToilet</string>
 			<key>relativePath</key>
-			<string>./graphics/environment/structures/buildings/OuthouseToilet.imageset</string>
+			<string>./graphics/environment/structures/toilets/OuthouseToilet.imageset</string>
 			<key>swiftSymbol</key>
 			<string>outhouseToilet</string>
 		</dict>
@@ -695,6 +705,26 @@
 			<string>./graphics/ui/hud/PauseMenuBackground.imageset</string>
 			<key>swiftSymbol</key>
 			<string>pauseMenuBackground</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
+			<key>objcSymbol</key>
+			<string>ACImageNamePauseMenuBackgroundMobile</string>
+			<key>relativePath</key>
+			<string>./graphics/ui/hud/PauseMenuBackgroundMobile.imageset</string>
+			<key>swiftSymbol</key>
+			<string>pauseMenuBackgroundMobile</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
+			<key>objcSymbol</key>
+			<string>ACImageNamePauseMenuRibbonButton</string>
+			<key>relativePath</key>
+			<string>./graphics/ui/hud/PauseMenuRibbonButton.imageset</string>
+			<key>swiftSymbol</key>
+			<string>pauseMenuRibbonButton</string>
 		</dict>
 		<dict>
 			<key>catalogPath</key>
@@ -960,16 +990,6 @@
 			<key>catalogPath</key>
 			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
-			<string>ACImageNameSewerBackgroundRunningWater</string>
-			<key>relativePath</key>
-			<string>./graphics/environment/backgrounds/sewer/SewerBackgroundRunningWater.imageset</string>
-			<key>swiftSymbol</key>
-			<string>sewerBackgroundRunningWater</string>
-		</dict>
-		<dict>
-			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
-			<key>objcSymbol</key>
 			<string>ACImageNameSewerLargeA</string>
 			<key>relativePath</key>
 			<string>./graphics/environment/backgrounds/sewer/SewerLargeA.imageset</string>
@@ -1040,41 +1060,41 @@
 			<key>catalogPath</key>
 			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
-			<string>ACImageNameSnowLevelBackTrees</string>
+			<string>ACImageNameSnowLevelBackLayerBackground</string>
 			<key>relativePath</key>
-			<string>./graphics/environment/backgrounds/snow_level/SnowLevelBackTrees.imageset</string>
+			<string>./graphics/environment/backgrounds/snow_level/SnowLevelBackLayerBackground.imageset</string>
 			<key>swiftSymbol</key>
-			<string>snowLevelBackTrees</string>
+			<string>snowLevelBackLayerBackground</string>
 		</dict>
 		<dict>
 			<key>catalogPath</key>
 			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
-			<string>ACImageNameSnowLevelBackground</string>
+			<string>ACImageNameSnowLevelFrontLayerBackground</string>
 			<key>relativePath</key>
-			<string>./graphics/environment/backgrounds/snow_level/SnowLevelBackground.imageset</string>
+			<string>./graphics/environment/backgrounds/snow_level/SnowLevelFrontLayerBackground.imageset</string>
 			<key>swiftSymbol</key>
-			<string>snowLevelBackground</string>
+			<string>snowLevelFrontLayerBackground</string>
 		</dict>
 		<dict>
 			<key>catalogPath</key>
 			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
-			<string>ACImageNameSnowLevelFrontTrees</string>
+			<string>ACImageNameSnowLevelFrontLayerTrees</string>
 			<key>relativePath</key>
-			<string>./graphics/environment/backgrounds/snow_level/SnowLevelFrontTrees.imageset</string>
+			<string>./graphics/environment/backgrounds/snow_level/SnowLevelFrontLayerTrees.imageset</string>
 			<key>swiftSymbol</key>
-			<string>snowLevelFrontTrees</string>
+			<string>snowLevelFrontLayerTrees</string>
 		</dict>
 		<dict>
 			<key>catalogPath</key>
 			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
-			<string>ACImageNameSnowLevelMountains</string>
+			<string>ACImageNameSnowLevelMidLayerBackground</string>
 			<key>relativePath</key>
-			<string>./graphics/environment/backgrounds/snow_level/SnowLevelMountains.imageset</string>
+			<string>./graphics/environment/backgrounds/snow_level/SnowLevelMidLayerBackground.imageset</string>
 			<key>swiftSymbol</key>
-			<string>snowLevelMountains</string>
+			<string>snowLevelMidLayerBackground</string>
 		</dict>
 		<dict>
 			<key>catalogPath</key>
@@ -1085,16 +1105,6 @@
 			<string>./graphics/ui/menus/level_select/SnowLevelPainting.imageset</string>
 			<key>swiftSymbol</key>
 			<string>snowLevelPainting</string>
-		</dict>
-		<dict>
-			<key>catalogPath</key>
-			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
-			<key>objcSymbol</key>
-			<string>ACImageNameSnowLevelTundra</string>
-			<key>relativePath</key>
-			<string>./graphics/environment/backgrounds/snow_level/SnowLevelTundra.imageset</string>
-			<key>swiftSymbol</key>
-			<string>snowLevelTundra</string>
 		</dict>
 		<dict>
 			<key>catalogPath</key>
@@ -1305,6 +1315,16 @@
 			<string>./graphics/environment/structures/toilets/TopToiletSnow.imageset</string>
 			<key>swiftSymbol</key>
 			<string>topToiletSnow</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
+			<key>objcSymbol</key>
+			<string>ACImageNameTorchPillar</string>
+			<key>relativePath</key>
+			<string>./graphics/environment/backgrounds/castle/TorchPillar.imageset</string>
+			<key>swiftSymbol</key>
+			<string>torchPillar</string>
 		</dict>
 		<dict>
 			<key>catalogPath</key>
@@ -1720,6 +1740,36 @@
 			<key>catalogPath</key>
 			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
+			<string>ACImageNameCastlebacklayerbackground</string>
+			<key>relativePath</key>
+			<string>./graphics/environment/backgrounds/castle/castlebacklayerbackground.imageset</string>
+			<key>swiftSymbol</key>
+			<string>castlebacklayerbackground</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
+			<key>objcSymbol</key>
+			<string>ACImageNameCastlelevelchandelier</string>
+			<key>relativePath</key>
+			<string>./graphics/environment/backgrounds/castle/castlelevelchandelier.imageset</string>
+			<key>swiftSymbol</key>
+			<string>castlelevelchandelier</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
+			<key>objcSymbol</key>
+			<string>ACImageNameCastlelevelfloortorch</string>
+			<key>relativePath</key>
+			<string>./graphics/environment/backgrounds/castle/castlelevelfloortorch.imageset</string>
+			<key>swiftSymbol</key>
+			<string>castlelevelfloortorch</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
+			<key>objcSymbol</key>
 			<string>ACImageNameCowboyhat</string>
 			<key>relativePath</key>
 			<string>./graphics/characters/player/cosmetics/hats/base_hats/cowboyhat.imageset</string>
@@ -1855,6 +1905,46 @@
 			<string>./graphics/characters/player/cosmetics/hats/character_combinations/turdlet/crownhatturdletshoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>crownhatturdletshoot</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
+			<key>objcSymbol</key>
+			<string>ACImageNameCurtains</string>
+			<key>relativePath</key>
+			<string>./graphics/environment/backgrounds/castle/curtains.imageset</string>
+			<key>swiftSymbol</key>
+			<string>curtains</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
+			<key>objcSymbol</key>
+			<string>ACImageNameDancingcacti</string>
+			<key>relativePath</key>
+			<string>./graphics/environment/objects/decorative/cacti/dancingcacti.imageset</string>
+			<key>swiftSymbol</key>
+			<string>dancingcacti</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
+			<key>objcSymbol</key>
+			<string>ACImageNameDancingcacticowboy</string>
+			<key>relativePath</key>
+			<string>./graphics/environment/objects/decorative/cacti/dancingcacticowboy.imageset</string>
+			<key>swiftSymbol</key>
+			<string>dancingcacticowboy</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
+			<key>objcSymbol</key>
+			<string>ACImageNameDancingcactismall</string>
+			<key>relativePath</key>
+			<string>./graphics/environment/objects/decorative/cacti/dancingcactismall.imageset</string>
+			<key>swiftSymbol</key>
+			<string>dancingcactismall</string>
 		</dict>
 		<dict>
 			<key>catalogPath</key>
@@ -2245,6 +2335,26 @@
 			<string>./graphics/characters/player/cosmetics/hats/character_combinations/turdlet/samuraiturdletshoot.imageset</string>
 			<key>swiftSymbol</key>
 			<string>samuraiturdletshoot</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
+			<key>objcSymbol</key>
+			<string>ACImageNameSettingsbutton</string>
+			<key>relativePath</key>
+			<string>./graphics/ui/hud/settingsbutton.imageset</string>
+			<key>swiftSymbol</key>
+			<string>settingsbutton</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
+			<key>objcSymbol</key>
+			<string>ACImageNameSettingsbuttonclicked</string>
+			<key>relativePath</key>
+			<string>./graphics/ui/hud/settingsbuttonclicked.imageset</string>
+			<key>swiftSymbol</key>
+			<string>settingsbuttonclicked</string>
 		</dict>
 		<dict>
 			<key>catalogPath</key>

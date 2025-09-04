@@ -66,6 +66,33 @@ void BossSystem::InitializeForLevel() {
             GN_LOG_INFO("BossSystem: Found Rat King entity " + std::to_string(bossEntity) +
                        " at initial position (" + std::to_string(position.x) + ", " + std::to_string(position.y) + ")");
 
+            // Set screen-aware walk boundaries
+            // Rat King should walk between center screen (50%) and screen edge
+            // Player has left side (0-50%) for jumping, boss has right side (50-100%)
+
+            // Boundary calculations for top-left positioned sprite
+            // Sprite is 128x128 pixels scaled 8x = 1024x1024 pixels rendered
+            float ratKingSpriteWidth = 128.0f * scale; // 1024px rendered width
+            float ratKingSpriteHeight = 128.0f * scale; // 1024px rendered height
+
+            // For top-left positioning: boundaries based on sprite position
+            // Increase separation from player (25px) by using 65% instead of 50% for min boundary
+            float minBoundaryX = screenWidth * 0.65f; // 65% of screen (772px on 1179px screen)
+
+            // Calculate boundaries for the sprite's top-left position
+            // Add 128px margin to the right boundary to utilize the full range
+            walkRangeMin = minBoundaryX - (ratKingSpriteWidth / 2.0f); // Left boundary with more separation
+            walkRangeMax = screenWidth - ratKingSpriteWidth + 128.0f; // Right boundary with 128px margin
+
+            // Don't override LevelManager's spawn position during initialization
+            // Only apply boundary clamping during movement in HandleWalking
+            GN_LOG_INFO("BossSystem: Walk boundaries set - Min: " + std::to_string(walkRangeMin) +
+                       ", Max: " + std::to_string(walkRangeMax) +
+                       ", SpriteWidth: " + std::to_string(ratKingSpriteWidth) +
+                       ", Keeping LevelManager position: " + std::to_string(position.x));
+
+
+
             // Create additional sprite entities for multi-sprite animation
             CreateBodyPartEntities();
 
@@ -108,6 +135,11 @@ void BossSystem::Update(float deltaTime) {
         case RatKingState::DEATH: HandleDeath(deltaTime); break;
     }
 
+    // Update arm rotations every frame during aiming state for smooth tracking
+    if (currentState == RatKingState::AIMING) {
+        UpdateArmRotations();
+    }
+
     // Update sprites
     UpdateSprites(deltaTime);
 
@@ -122,6 +154,12 @@ void BossSystem::Update(float deltaTime) {
     }
 
     GN_LOG_DEBUG("BossSystem: Update completed - health=" + std::to_string(health) + "/" + std::to_string(maxHealth));
+}
+
+void BossSystem::UpdateScreenDimensions(float width, float height) {
+    screenWidth = width;
+    screenHeight = height;
+    GN_LOG_INFO("BossSystem: Updated screen dimensions - Width: " + std::to_string(screenWidth) + ", Height: " + std::to_string(screenHeight));
 }
 
 void BossSystem::HandleDamage(int damage) {
@@ -161,39 +199,65 @@ void BossSystem::HandleDamage(int damage) {
 
 void BossSystem::HandleIdle(float deltaTime) {
     idleTimer += deltaTime;
-    if (idleTimer > 2.0f) {
+    if (idleTimer > 0.5f) {  // Temporarily reduced from 2.0f to 0.5f for faster testing
         idleTimer = 0.0f;
-        // Randomly choose walking direction or aiming
-        if (rand() % 2 == 0) {
-            ChangeState(RatKingState::WALKING_LEFT);
-        } else {
+        // Choose walking destination or aiming
+        if (rand() % 3 != 0) {
+            // 2/3 chance to aim (temporarily increased for testing)
             ChangeState(RatKingState::AIMING);
+        } else {
+            // 2/3 chance to walk to a specific destination
+            // Choose either left boundary or right boundary as destination
+            float currentX = position.x;
+            float distanceToLeft = abs(currentX - walkRangeMin);
+            float distanceToRight = abs(currentX - walkRangeMax);
+
+            if (distanceToLeft < distanceToRight) {
+                // Closer to left, so walk to right
+                m_walkDestination = walkRangeMax;
+                ChangeState(RatKingState::WALKING_RIGHT);
+            } else {
+                // Closer to right or equidistant, walk to left
+                m_walkDestination = walkRangeMin;
+                ChangeState(RatKingState::WALKING_LEFT);
+            }
         }
     }
 }
 
 void BossSystem::HandleWalking(float deltaTime) {
-    static float dir = 1.0f;
+    // Move towards the destination
+    float direction = (m_walkDestination > position.x) ? 1.0f : -1.0f;
 
-    // Update position based on walking direction
-    if (currentState == RatKingState::WALKING_LEFT) {
-        position.x -= walkSpeed * deltaTime;
-        if (position.x < walkRangeMin) {
-            position.x = walkRangeMin;
-            ChangeState(RatKingState::WALKING_RIGHT);
-        }
-    } else { // WALKING_RIGHT
-        position.x += walkSpeed * deltaTime;
-        if (position.x > walkRangeMax) {
-            position.x = walkRangeMax;
-            ChangeState(RatKingState::IDLE);
-        }
-    }
+    // Update position towards destination
+    position.x += direction * walkSpeed * deltaTime;
 
-    walkTimer += deltaTime;
-    if (walkTimer > 3.0f) {
+    // Check if we've reached the destination (within tolerance)
+    float distanceToDestination = abs(position.x - m_walkDestination);
+    if (distanceToDestination < 5.0f) { // Within 5 pixels of destination
+        position.x = m_walkDestination; // Snap to exact position
         walkTimer = 0.0f;
         ChangeState(RatKingState::IDLE);
+        GN_LOG_DEBUG("BossSystem: Reached walk destination at " + std::to_string(m_walkDestination));
+    }
+
+    // Safety check - if we somehow go beyond boundaries, clamp them
+    if (position.x < walkRangeMin) {
+        position.x = walkRangeMin;
+        walkTimer = 0.0f;
+        ChangeState(RatKingState::IDLE);
+    } else if (position.x > walkRangeMax) {
+        position.x = walkRangeMax;
+        walkTimer = 0.0f;
+        ChangeState(RatKingState::IDLE);
+    }
+
+    // Update walk timer as fallback (in case destination is never reached due to floating point issues)
+    walkTimer += deltaTime;
+    if (walkTimer > 5.0f) { // Increased timeout for purposeful walking
+        walkTimer = 0.0f;
+        ChangeState(RatKingState::IDLE);
+        GN_LOG_DEBUG("BossSystem: Walk timeout reached, returning to idle");
     }
 
     // Update entity position - only update X for walking movement, preserve Y from LevelManager
@@ -220,6 +284,10 @@ void BossSystem::HandleAiming(float deltaTime) {
 
     aimingData.aimTimer += deltaTime;
 
+    GN_LOG_DEBUG("BossSystem: HandleAiming - timer=" + std::to_string(aimingData.aimTimer) +
+                 "/" + std::to_string(aimingData.aimDuration) +
+                 ", deltaTime=" + std::to_string(deltaTime));
+
     // Update shoulder position for arm rotation
     aimingData.shoulderPivot = GetShoulderPosition();
 
@@ -232,6 +300,7 @@ void BossSystem::HandleAiming(float deltaTime) {
 
     // Check for lock-on completion
     if (aimingData.aimTimer >= aimingData.aimDuration) {
+        GN_LOG_INFO("BossSystem: Aiming complete - transitioning to THROWING, final angle=" + std::to_string(aimingData.currentArmAngle));
         aimingData.hasLockedOn = true;
         aimingData.lockOnAngle = aimingData.currentArmAngle;
         ChangeState(RatKingState::THROWING);
@@ -242,7 +311,7 @@ void BossSystem::HandleThrowing(float deltaTime) {
     // Animation updates are handled by SpriteSystem
     // We just need to check for projectile spawning and animation completion
 
-    // Spawn projectile on frame 6 of the 7-frame animation
+    // Spawn projectile on frame 5 of the 7-frame animation (0-based, so frame 6)
     if (bossEntity != 0 && !hasFiredProjectile) {
         Sprite* torsoSprite = m_ecsSystem->GetComponent<Sprite>(bossEntity);
         if (torsoSprite && torsoSprite->currentFrame >= 5) {  // Frame 6 (0-based)
@@ -254,7 +323,7 @@ void BossSystem::HandleThrowing(float deltaTime) {
     // Check if animation completed (frame 6 of 7-frame animation)
     if (bossEntity != 0) {
         Sprite* torsoSprite = m_ecsSystem->GetComponent<Sprite>(bossEntity);
-        if (torsoSprite && torsoSprite->currentFrame >= 6) {  // Animation completed
+        if (torsoSprite && torsoSprite->currentFrame >= 6) {  // Animation completed (frame 7, 0-based)
             hasFiredProjectile = false;
             ChangeState(RatKingState::IDLE);
         }
@@ -312,6 +381,24 @@ void BossSystem::ChangeState(RatKingState newState) {
             aimingData.aimTimer = 0.0f;
             aimingData.hasLockedOn = false;
             aimingData.currentArmAngle = 180.0f;  // Start facing down
+
+            // Debug: Check arm sprite visibility after setting
+            if (backArmEntity != 0) {
+                Sprite* backSprite = m_ecsSystem->GetComponent<Sprite>(backArmEntity);
+                if (backSprite) {
+                    GN_LOG_DEBUG("BossSystem: AIMING - Back arm sprite visible=" + std::to_string(backSprite->visible) +
+                                ", textureId=" + backSprite->textureId +
+                                ", currentFrame=" + std::to_string(backSprite->currentFrame));
+                }
+            }
+            if (frontArmEntity != 0) {
+                Sprite* frontSprite = m_ecsSystem->GetComponent<Sprite>(frontArmEntity);
+                if (frontSprite) {
+                    GN_LOG_DEBUG("BossSystem: AIMING - Front arm sprite visible=" + std::to_string(frontSprite->visible) +
+                                ", textureId=" + frontSprite->textureId +
+                                ", currentFrame=" + std::to_string(frontSprite->currentFrame));
+                }
+            }
             break;
 
         case RatKingState::THROWING:
@@ -321,6 +408,33 @@ void BossSystem::ChangeState(RatKingState newState) {
             // Show arm sprites for throwing
             SetArmSpriteVisibility(true, true);
             hasFiredProjectile = false;  // Reset projectile flag
+
+            // Ensure torso sprite is playing for throwing animation
+            if (bossEntity != 0) {
+                Sprite* torsoSprite = m_ecsSystem->GetComponent<Sprite>(bossEntity);
+                if (torsoSprite) {
+                    torsoSprite->playing = true;
+                    torsoSprite->currentFrame = 0;  // Start from beginning
+                }
+            }
+
+            // Debug: Check arm sprite visibility after setting
+            if (backArmEntity != 0) {
+                Sprite* backSprite = m_ecsSystem->GetComponent<Sprite>(backArmEntity);
+                if (backSprite) {
+                    GN_LOG_DEBUG("BossSystem: THROWING - Back arm sprite visible=" + std::to_string(backSprite->visible) +
+                                ", textureId=" + backSprite->textureId +
+                                ", currentFrame=" + std::to_string(backSprite->currentFrame));
+                }
+            }
+            if (frontArmEntity != 0) {
+                Sprite* frontSprite = m_ecsSystem->GetComponent<Sprite>(frontArmEntity);
+                if (frontSprite) {
+                    GN_LOG_DEBUG("BossSystem: THROWING - Front arm sprite visible=" + std::to_string(frontSprite->visible) +
+                                ", textureId=" + frontSprite->textureId +
+                                ", currentFrame=" + std::to_string(frontSprite->currentFrame));
+                }
+            }
             break;
 
         case RatKingState::HURT:
@@ -363,11 +477,22 @@ void BossSystem::SpawnProjectile() {
     if (!m_projectileSystem) return;
 
     GNVector2 shoulder = GetShoulderPosition();
-    float angle = aimingData.lockOnAngle;
-    GNVector2 direction = {cosf(angle), sinf(angle)};
-    Gnosis::GNVector2 spawnPos = Gnosis::Vector2Add(shoulder, Gnosis::Vector2Scale(direction, 40.0f)); // Offset from shoulder
+    // Use the current arm angle instead of the lock-on angle to ensure projectiles aim at current player position
+    float angleRad = aimingData.currentArmAngle * Gnosis::DEG2RAD; // Convert to radians for cos/sin
+    GNVector2 direction = {cosf(angleRad), sinf(angleRad)};
 
-    // Spawn toilet paper projectile
+    // Normalize the direction vector
+    float length = sqrtf(direction.x * direction.x + direction.y * direction.y);
+    if (length > 0.0f) {
+        direction.x /= length;
+        direction.y /= length;
+    }
+
+    // Spawn from shoulder with smaller offset (like old system)
+    Gnosis::GNVector2 spawnOffset = {-40.0f, 0.0f}; // Offset to the left from shoulder
+    Gnosis::GNVector2 spawnPos = Gnosis::Vector2Add(shoulder, spawnOffset);
+
+    // Spawn toilet paper projectile with proper speed
     Entity projectile = m_projectileSystem->SpawnEnemyProjectile(
         GNVector2(spawnPos.x, spawnPos.y),
         GNVector2(direction.x, direction.y),
@@ -376,15 +501,31 @@ void BossSystem::SpawnProjectile() {
     );
 
     if (projectile != 0) {
+        // Set projectile speed by modifying its physics component
+        Physics* physics = m_ecsSystem->GetComponent<Physics>(projectile);
+        if (physics) {
+            physics->velocity = direction * 300.0f; // Faster speed for better gameplay
+        }
+
         GN_LOG_INFO("Rat King spawned toilet paper projectile at angle: " +
-                   std::to_string(aimingData.lockOnAngle * Gnosis::RAD2DEG) + " degrees");
+                   std::to_string(aimingData.currentArmAngle) + " degrees, velocity: (" +
+                   std::to_string(direction.x * 300.0f) + ", " + std::to_string(direction.y * 300.0f) + ")");
     }
 
     // Dual projectile at low health (below 20%)
     if (health <= 4) {
-        float offset = Gnosis::DEG2RAD * (rand() % 21 - 10); // Random value between -10 and 10
-        GNVector2 dualDirection = {cosf(angle + offset), sinf(angle + offset)};
-        Gnosis::GNVector2 dualSpawnPos = Gnosis::Vector2Add(shoulder, Gnosis::Vector2Scale(dualDirection, 40.0f));
+        float offsetRad = Gnosis::DEG2RAD * (rand() % 21 - 10); // Random value between -10 and 10 degrees
+        float dualAngleRad = angleRad + offsetRad;
+        GNVector2 dualDirection = {cosf(dualAngleRad), sinf(dualAngleRad)};
+
+        // Normalize dual direction
+        length = sqrtf(dualDirection.x * dualDirection.x + dualDirection.y * dualDirection.y);
+        if (length > 0.0f) {
+            dualDirection.x /= length;
+            dualDirection.y /= length;
+        }
+
+        Gnosis::GNVector2 dualSpawnPos = Gnosis::Vector2Add(shoulder, spawnOffset);
 
         Entity dualProjectile = m_projectileSystem->SpawnEnemyProjectile(
             GNVector2(dualSpawnPos.x, dualSpawnPos.y),
@@ -394,7 +535,14 @@ void BossSystem::SpawnProjectile() {
         );
 
         if (dualProjectile != 0) {
-            GN_LOG_INFO("Rat King spawned dual toilet paper projectile");
+            // Set dual projectile speed
+            Physics* dualPhysics = m_ecsSystem->GetComponent<Physics>(dualProjectile);
+            if (dualPhysics) {
+                dualPhysics->velocity = dualDirection * 300.0f;
+            }
+
+            GN_LOG_INFO("Rat King spawned dual toilet paper projectile at angle: " +
+                       std::to_string((angleRad + offsetRad) * Gnosis::RAD2DEG) + " degrees");
         }
     }
 }
@@ -486,20 +634,46 @@ void BossSystem::CreateBodyPartEntities() {
     backArmEntity = m_ecsSystem->CreateEntity();
     Transform backArmTransform = *bossTransform; // Same position as boss
     m_ecsSystem->AddComponent<Transform>(backArmEntity, backArmTransform);
-    Sprite backArmSprite("RatkingBackArmOnly", 128.0f, 128.0f);
+    Sprite backArmSprite("RatkingAimBackArmOnly", 128.0f, 128.0f);
     backArmSprite.layer = 4; // Behind torso
     backArmSprite.visible = false;
     m_ecsSystem->AddComponent<Sprite>(backArmEntity, backArmSprite);
+
+    // Add PivotRotationRenderer with manual control enabled
+    // This allows us to set Transform.rotation directly without automatic rotation
+    PivotRotationRenderer backArmPivot(true, 0.0f, 0.0f, 0.0f, true); // manual=true
+    m_ecsSystem->AddComponent<PivotRotationRenderer>(backArmEntity, backArmPivot);
+
+    // Verify component was added
+    if (m_ecsSystem->HasComponent<PivotRotationRenderer>(backArmEntity)) {
+        GN_LOG_INFO("BossSystem: ✅ Back arm PivotRotationRenderer component added successfully");
+    } else {
+        GN_LOG_ERROR("BossSystem: ❌ Failed to add PivotRotationRenderer to back arm!");
+    }
+
     GN_LOG_INFO("BossSystem: Created back arm entity " + std::to_string(backArmEntity));
 
     // Create front arm entity
     frontArmEntity = m_ecsSystem->CreateEntity();
     Transform frontArmTransform = *bossTransform; // Same position as boss
     m_ecsSystem->AddComponent<Transform>(frontArmEntity, frontArmTransform);
-    Sprite frontArmSprite("RatkingTossArmOnly", 128.0f, 128.0f);
+    Sprite frontArmSprite("RatkingAimTossArmOnly", 128.0f, 128.0f);
     frontArmSprite.layer = 6; // In front of torso
     frontArmSprite.visible = false;
     m_ecsSystem->AddComponent<Sprite>(frontArmEntity, frontArmSprite);
+
+    // Add PivotRotationRenderer with manual control enabled
+    // This allows us to set Transform.rotation directly without automatic rotation
+    PivotRotationRenderer frontArmPivot(true, 0.0f, 0.0f, 0.0f, true); // manual=true
+    m_ecsSystem->AddComponent<PivotRotationRenderer>(frontArmEntity, frontArmPivot);
+
+    // Verify component was added
+    if (m_ecsSystem->HasComponent<PivotRotationRenderer>(frontArmEntity)) {
+        GN_LOG_INFO("BossSystem: ✅ Front arm PivotRotationRenderer component added successfully");
+    } else {
+        GN_LOG_ERROR("BossSystem: ❌ Failed to add PivotRotationRenderer to front arm!");
+    }
+
     GN_LOG_INFO("BossSystem: Created front arm entity " + std::to_string(frontArmEntity));
 
     GN_LOG_INFO("BossSystem: All body part entities created");
@@ -524,18 +698,18 @@ void BossSystem::LoadSprites() {
     sprites.walkSprite->visible = false;
     sprites.walkSprite->layer = 5;
 
-    sprites.torsoSprite = new Sprite("RatkingTorsoOnly", 128.0f, 128.0f, 128, 128, 7, 0.16f);
+    sprites.torsoSprite = new Sprite("RatkingAimTorsoOnly", 128.0f, 128.0f, 128, 128, 7, 0.16f);
     sprites.torsoSprite->loop = false;
     sprites.torsoSprite->visible = false;
     sprites.torsoSprite->layer = 5;
 
     // Load sprites for arms (these will be used by the arm entities)
-    sprites.backArmSprite = new Sprite("RatkingBackArmOnly", 128.0f, 128.0f, 128, 128, 7, 0.16f);
+    sprites.backArmSprite = new Sprite("RatkingAimBackArmOnly", 128.0f, 128.0f, 128, 128, 7, 0.16f);
     sprites.backArmSprite->loop = false;
     sprites.backArmSprite->visible = false;
     sprites.backArmSprite->layer = 4;
 
-    sprites.frontArmSprite = new Sprite("RatkingTossArmOnly", 128.0f, 128.0f, 128, 128, 7, 0.16f);
+    sprites.frontArmSprite = new Sprite("RatkingAimTossArmOnly", 128.0f, 128.0f, 128, 128, 7, 0.16f);
     sprites.frontArmSprite->loop = false;
     sprites.frontArmSprite->visible = false;
     sprites.frontArmSprite->layer = 6;
@@ -616,6 +790,69 @@ void BossSystem::SetCurrentSprite(Sprite* sprite) {
     }
 }
 
+void BossSystem::UpdateArmRotations() {
+    if (currentState != RatKingState::AIMING) return;
+
+    GNVector2 shoulder = GetShoulderPosition();
+
+    // Calculate angle to player (same as in HandleAiming)
+    Gnosis::GNVector2 toPlayer = Gnosis::Vector2Subtract(aimingData.playerPosition, shoulder);
+    float targetAngle = atan2(toPlayer.y, toPlayer.x) * Gnosis::RAD2DEG;
+    targetAngle = Gnosis::Clamp(targetAngle, 120.0f, 240.0f); // Limit aiming range
+
+    // Smooth angle interpolation (same as in HandleAiming)
+    float oldAngle = aimingData.currentArmAngle;
+    aimingData.currentArmAngle = Gnosis::SmoothAngleLerp(aimingData.currentArmAngle, targetAngle, 0.016f * 4.0f);
+
+    GN_LOG_DEBUG("BossSystem: UpdateArmRotations - playerPos=(" + std::to_string(aimingData.playerPosition.x) + "," + std::to_string(aimingData.playerPosition.y) +
+                 "), shoulder=(" + std::to_string(shoulder.x) + "," + std::to_string(shoulder.y) +
+                 "), targetAngle=" + std::to_string(targetAngle) +
+                 "), currentAngle=" + std::to_string(aimingData.currentArmAngle) +
+                 "), oldAngle=" + std::to_string(oldAngle));
+
+    // Apply rotation to back arm using PivotRotationRenderer (same as spike balls)
+    if (backArmEntity != 0) {
+        Transform* backArmTransform = m_ecsSystem->GetComponent<Transform>(backArmEntity);
+        PivotRotationRenderer* backPivotRenderer = m_ecsSystem->GetComponent<PivotRotationRenderer>(backArmEntity);
+        if (backArmTransform && backPivotRenderer) {
+            // Set the rotation directly on the transform for immediate aiming (like spike balls do)
+            float oldRotation = backArmTransform->rotation;
+            backArmTransform->rotation = aimingData.currentArmAngle;
+            // Manual control is enabled, so we don't need to set rotationSpeed
+            // The rotation comes directly from Transform.rotation
+            GN_LOG_DEBUG("BossSystem: Set back arm rotation from " + std::to_string(oldRotation) + "° to " + std::to_string(aimingData.currentArmAngle) + "°");
+            GN_LOG_DEBUG("BossSystem: Back arm transform position: (" + std::to_string(backArmTransform->position.x) + ", " + std::to_string(backArmTransform->position.y) + ")");
+        } else {
+            GN_LOG_ERROR("BossSystem: Back arm transform or pivot renderer component missing!");
+            if (!backArmTransform) GN_LOG_ERROR("BossSystem: Back arm Transform component is null!");
+            if (!backPivotRenderer) GN_LOG_ERROR("BossSystem: Back arm PivotRotationRenderer component is null!");
+        }
+    } else {
+        GN_LOG_ERROR("BossSystem: Back arm entity is 0!");
+    }
+
+    // Apply rotation to front arm using PivotRotationRenderer (same as spike balls)
+    if (frontArmEntity != 0) {
+        Transform* frontArmTransform = m_ecsSystem->GetComponent<Transform>(frontArmEntity);
+        PivotRotationRenderer* frontPivotRenderer = m_ecsSystem->GetComponent<PivotRotationRenderer>(frontArmEntity);
+        if (frontArmTransform && frontPivotRenderer) {
+            // Set the rotation directly on the transform for immediate aiming (like spike balls do)
+            float oldRotation = frontArmTransform->rotation;
+            frontArmTransform->rotation = aimingData.currentArmAngle;
+            // Manual control is enabled, so we don't need to set rotationSpeed
+            // The rotation comes directly from Transform.rotation
+            GN_LOG_DEBUG("BossSystem: Set front arm rotation from " + std::to_string(oldRotation) + "° to " + std::to_string(aimingData.currentArmAngle) + "°");
+            GN_LOG_DEBUG("BossSystem: Front arm transform position: (" + std::to_string(frontArmTransform->position.x) + ", " + std::to_string(frontArmTransform->position.y) + ")");
+        } else {
+            GN_LOG_ERROR("BossSystem: Front arm transform or pivot renderer component missing!");
+            if (!frontArmTransform) GN_LOG_ERROR("BossSystem: Front arm Transform component is null!");
+            if (!frontPivotRenderer) GN_LOG_ERROR("BossSystem: Front arm PivotRotationRenderer component is null!");
+        }
+    } else {
+        GN_LOG_ERROR("BossSystem: Front arm entity is 0!");
+    }
+}
+
 void BossSystem::SetArmSpriteVisibility(bool showBackArm, bool showFrontArm) {
     if (!m_ecsSystem) {
         GN_LOG_ERROR("BossSystem: SetArmSpriteVisibility called with null m_ecsSystem!");
@@ -625,7 +862,9 @@ void BossSystem::SetArmSpriteVisibility(bool showBackArm, bool showFrontArm) {
     GN_LOG_DEBUG("BossSystem: SetArmSpriteVisibility - backArm=" + std::to_string(showBackArm) +
                 ", frontArm=" + std::to_string(showFrontArm) +
                 ", backArmEntity=" + std::to_string(backArmEntity) +
-                ", frontArmEntity=" + std::to_string(frontArmEntity));
+                ", frontArmEntity=" + std::to_string(frontArmEntity) +
+                ", sprites.backArmSprite=" + std::to_string(sprites.backArmSprite != nullptr) +
+                ", sprites.frontArmSprite=" + std::to_string(sprites.frontArmSprite != nullptr));
 
     // Set back arm visibility
     if (backArmEntity != 0) {
@@ -635,9 +874,16 @@ void BossSystem::SetArmSpriteVisibility(bool showBackArm, bool showFrontArm) {
             if (showBackArm && sprites.backArmSprite) {
                 *backArmSprite = *sprites.backArmSprite;
                 backArmSprite->Reset();
-                GN_LOG_DEBUG("BossSystem: Copied back arm sprite properties");
+                // Ensure visibility is set correctly after copying template properties
+                backArmSprite->visible = true;
+                GN_LOG_DEBUG("BossSystem: Copied back arm sprite properties - textureId=" + backArmSprite->textureId +
+                            ", visible=" + std::to_string(backArmSprite->visible) +
+                            ", isAnimated=" + std::to_string(backArmSprite->isAnimated));
+            } else {
+                backArmSprite->visible = false;
             }
-            backArmSprite->visible = showBackArm;
+            GN_LOG_DEBUG("BossSystem: Set back arm visible=" + std::to_string(showBackArm) +
+                        ", final textureId=" + backArmSprite->textureId);
 
             // Update back arm transform position
             Transform* backArmTransform = m_ecsSystem->GetComponent<Transform>(backArmEntity);
@@ -663,9 +909,16 @@ void BossSystem::SetArmSpriteVisibility(bool showBackArm, bool showFrontArm) {
             if (showFrontArm && sprites.frontArmSprite) {
                 *frontArmSprite = *sprites.frontArmSprite;
                 frontArmSprite->Reset();
-                GN_LOG_DEBUG("BossSystem: Copied front arm sprite properties");
+                // Ensure visibility is set correctly after copying template properties
+                frontArmSprite->visible = true;
+                GN_LOG_DEBUG("BossSystem: Copied front arm sprite properties - textureId=" + frontArmSprite->textureId +
+                            ", visible=" + std::to_string(frontArmSprite->visible) +
+                            ", isAnimated=" + std::to_string(frontArmSprite->isAnimated));
+            } else {
+                frontArmSprite->visible = false;
             }
-            frontArmSprite->visible = showFrontArm;
+            GN_LOG_DEBUG("BossSystem: Set front arm visible=" + std::to_string(showFrontArm) +
+                        ", final textureId=" + frontArmSprite->textureId);
 
             // Update front arm transform position
             Transform* frontArmTransform = m_ecsSystem->GetComponent<Transform>(frontArmEntity);
@@ -757,17 +1010,24 @@ void BossSystem::UpdateSprites(float deltaTime) {
     // Update arm sprite positions and hurt flashing
     switch (currentState) {
         case RatKingState::AIMING:
-        case RatKingState::THROWING:
-            // Update positions for arm sprites
+            // During AIMING: Freeze all sprites on frame 0 and handle rotation
+            if (bossEntity != 0) {
+                Sprite* torsoSprite = m_ecsSystem->GetComponent<Sprite>(bossEntity);
+                if (torsoSprite) {
+                    torsoSprite->currentFrame = 0;  // Freeze on first frame
+                    torsoSprite->playing = false;    // Stop automatic animation
+                }
+            }
+
+            // Update positions for arm sprites and freeze them
             if (backArmEntity != 0) {
                 Sprite* backArmSprite = m_ecsSystem->GetComponent<Sprite>(backArmEntity);
-                if (backArmSprite) {
-                    // Update back arm transform position
-                    Transform* backArmTransform = m_ecsSystem->GetComponent<Transform>(backArmEntity);
-                    if (backArmTransform) {
-                        backArmTransform->position.x = position.x;
-                        backArmTransform->position.y = position.y;
-                    }
+                Transform* backArmTransform = m_ecsSystem->GetComponent<Transform>(backArmEntity);
+                if (backArmSprite && backArmTransform) {
+                    backArmSprite->currentFrame = 0;  // Freeze on first frame
+                    backArmSprite->playing = false;    // Stop automatic animation
+                    backArmTransform->position.x = position.x;
+                    backArmTransform->position.y = position.y;
 
                     // Apply hurt flashing to arm sprites too
                     if (IsHurtFlashing()) {
@@ -784,13 +1044,12 @@ void BossSystem::UpdateSprites(float deltaTime) {
 
             if (frontArmEntity != 0) {
                 Sprite* frontArmSprite = m_ecsSystem->GetComponent<Sprite>(frontArmEntity);
-                if (frontArmSprite) {
-                    // Update front arm transform position
-                    Transform* frontArmTransform = m_ecsSystem->GetComponent<Transform>(frontArmEntity);
-                    if (frontArmTransform) {
-                        frontArmTransform->position.x = position.x;
-                        frontArmTransform->position.y = position.y;
-                    }
+                Transform* frontArmTransform = m_ecsSystem->GetComponent<Transform>(frontArmEntity);
+                if (frontArmSprite && frontArmTransform) {
+                    frontArmSprite->currentFrame = 0;  // Freeze on first frame
+                    frontArmSprite->playing = false;    // Stop automatic animation
+                    frontArmTransform->position.x = position.x;
+                    frontArmTransform->position.y = position.y;
 
                     // Apply hurt flashing to arm sprites too
                     if (IsHurtFlashing()) {
@@ -805,7 +1064,63 @@ void BossSystem::UpdateSprites(float deltaTime) {
                 }
             }
 
-            // Sync arm frames with torso if in aiming/throwing state
+            // Arm rotations are now updated every frame in the main Update() method
+            break;
+
+        case RatKingState::THROWING:
+            // During THROWING: Let animations play normally
+            // Update positions for arm sprites
+            if (backArmEntity != 0) {
+                Sprite* backArmSprite = m_ecsSystem->GetComponent<Sprite>(backArmEntity);
+                Transform* backArmTransform = m_ecsSystem->GetComponent<Transform>(backArmEntity);
+                if (backArmSprite && backArmTransform) {
+                    // Start animation if not already playing
+                    if (!backArmSprite->playing) {
+                        backArmSprite->playing = true;
+                        backArmSprite->currentFrame = 0;  // Reset to start
+                    }
+                    backArmTransform->position.x = position.x;
+                    backArmTransform->position.y = position.y;
+
+                    // Apply hurt flashing to arm sprites too
+                    if (IsHurtFlashing()) {
+                        backArmSprite->color.r = 255;
+                        backArmSprite->color.g = 200;
+                        backArmSprite->color.b = 200;
+                    } else {
+                        backArmSprite->color.r = 255;
+                        backArmSprite->color.g = 255;
+                        backArmSprite->color.b = 255;
+                    }
+                }
+            }
+
+            if (frontArmEntity != 0) {
+                Sprite* frontArmSprite = m_ecsSystem->GetComponent<Sprite>(frontArmEntity);
+                Transform* frontArmTransform = m_ecsSystem->GetComponent<Transform>(frontArmEntity);
+                if (frontArmSprite && frontArmTransform) {
+                    // Start animation if not already playing
+                    if (!frontArmSprite->playing) {
+                        frontArmSprite->playing = true;
+                        frontArmSprite->currentFrame = 0;  // Reset to start
+                    }
+                    frontArmTransform->position.x = position.x;
+                    frontArmTransform->position.y = position.y;
+
+                    // Apply hurt flashing to arm sprites too
+                    if (IsHurtFlashing()) {
+                        frontArmSprite->color.r = 255;
+                        frontArmSprite->color.g = 200;
+                        frontArmSprite->color.b = 200;
+                    } else {
+                        frontArmSprite->color.r = 255;
+                        frontArmSprite->color.g = 255;
+                        frontArmSprite->color.b = 255;
+                    }
+                }
+            }
+
+            // Sync arm frames with torso if in throwing state
             if (bossEntity != 0 && backArmEntity != 0 && frontArmEntity != 0) {
                 Sprite* torsoSprite = m_ecsSystem->GetComponent<Sprite>(bossEntity);
                 Sprite* backArmSprite = m_ecsSystem->GetComponent<Sprite>(backArmEntity);

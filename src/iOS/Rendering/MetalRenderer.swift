@@ -1069,6 +1069,8 @@ public class MetalRenderer {
     
     /// Draw a sprite with centered positioning (for rotation and special effects)
     public func drawSpriteScaledCentered(textureHandle: UInt32, x: Float, y: Float, scaleX: Float, scaleY: Float, rotation: Float) {
+        log("drawSpriteScaledCentered: texture=\(textureHandle), pos=(\(x), \(y)), scale=(\(scaleX), \(scaleY)), rotation=\(rotation)°", level: .debug)
+
         guard let texture = textures[textureHandle] else {
             log("drawSpriteScaledCentered: Invalid sprite handle \(textureHandle)", level: .warning)
             return
@@ -1139,7 +1141,8 @@ public class MetalRenderer {
         log("drawSpriteScaledPivoted: texture \(textureHandle) (\(texture.width)x\(texture.height)), rotation: \(rotation)°, pivot: (\(pivotX), \(pivotY))", level: .debug)
         
         // Check if we should use RotSprite for high-quality rotation
-        let shouldUseRotSprite = abs(rotation) > 0.1 && // Only for significant rotation
+        // For pivot-based rotation, always use RotSprite when available (better quality for articulated objects)
+        let shouldUseRotSprite = (abs(rotation) > 0.1 || abs(pivotX) > 0.1 || abs(pivotY) > 0.1) && // Significant rotation OR pivot offset
                                rotspriteUpscaleComputePipeline != nil && // RotSprite available
                                rotspriteRotateComputePipeline != nil &&
                                texture.width <= 256 && texture.height <= 256 // Reasonable size for RotSprite

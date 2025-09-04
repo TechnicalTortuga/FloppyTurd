@@ -336,9 +336,9 @@ public class iOSLogHandler: NSObject, @unchecked Sendable {
             
             // Detect if running on device vs simulator for different logging levels
             #if targetEnvironment(simulator)
-                // Simulator: Full debug logging
+                // Simulator: Enable full debug logging with file dumping for development
                 await logActor.setLogLevel(.debug)
-                await logActor.setFileLogging(true)
+                await logActor.setFileLogging(true)   // Enable file logging for debugging
                 await logActor.setConsoleFallback(true)
             #else
                 // Device: Reduced logging for performance
@@ -349,7 +349,8 @@ public class iOSLogHandler: NSObject, @unchecked Sendable {
         }
         isInitialized = true
         #if targetEnvironment(simulator)
-            currentLogLevel = .debug
+
+            currentLogLevel = .warning
         #else
             currentLogLevel = .warning
         #endif

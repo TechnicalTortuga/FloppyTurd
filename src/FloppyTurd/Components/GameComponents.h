@@ -945,13 +945,15 @@ using Gnosis::Entity;
         bool enabled;
         float pivotX;        // Pivot point X relative to sprite center (in pixels)
         float pivotY;        // Pivot point Y relative to sprite center (in pixels)
-        float rotationSpeed; // Rotation speed in degrees per second
-        
-        PivotRotationRenderer(bool isEnabled = true, float px = 0.0f, float py = 0.0f, float speed = 0.0f)
+        float rotationSpeed; // Rotation speed in degrees per second (0 = manual control)
+        bool manualControl;  // If true, use Transform.rotation directly instead of automatic rotation
+
+        PivotRotationRenderer(bool isEnabled = true, float px = 0.0f, float py = 0.0f, float speed = 0.0f, bool manual = false)
             : enabled(isEnabled)
             , pivotX(px)
             , pivotY(py)
             , rotationSpeed(speed)
+            , manualControl(manual)
         {}
     };
 

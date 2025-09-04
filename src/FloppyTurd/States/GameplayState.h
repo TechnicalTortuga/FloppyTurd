@@ -155,6 +155,7 @@ namespace GameCore {
         Gnosis::Entity m_coinsTextEntity;       // Coin counter number (UI)
         Gnosis::Entity m_coinBagEntity;         // Coin bag icon (32x32)
         Gnosis::Entity m_pipeCounterEntity;     // Pipe counter display under notch
+        Gnosis::Entity m_shootingZoneEntity;    // Shooting zone visual indicator
         Gnosis::Entity m_pauseMenuEntity;
         Gnosis::Entity m_tempMenuButtonEntity;  // Temporary button to return to main menu
         Gnosis::Entity m_heartUIEntity;         // Heart UI display entity
@@ -294,6 +295,7 @@ namespace GameCore {
         Gnosis::Entity m_deathMessageEntity;         // Funny death message text
         Gnosis::Entity m_tryAgainButtonEntity;       // Try again button
         Gnosis::Entity m_quitButtonEntity;           // Quit to main menu button
+
 
         // Tracks whether we've already repositioned UI based on real pixel dimensions
         bool m_uiPositionsSynced = false;

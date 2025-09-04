@@ -10,10 +10,11 @@ namespace GameCore {
         config.worldSpeed = SpeedConstants::BASE_WORLD_SPEED;  // Use configurable speed constants
         config.baseScale = 8.0f;  // Keep player scale consistent
         
-        // Level 1 feature gates: no enemies, NPCs, or pickups
+        // Level 1 feature gates: no enemies, NPCs, pickups, or shooting
         config.enableEnemies = false;
         config.enableNPCs = false;
         config.enablePickups = false;
+        config.shootingEnabled = false;  // Park level has no shooting mechanics
         config.pickupSpawnRate = 0.0f;  // No pickups in Level 1
         
         AddParkLevelLayers(config);
@@ -284,9 +285,9 @@ namespace GameCore {
     }
 
     void LevelConfigFactory::AddBossEnemies(LevelConfig& config) {
-        // Boss enemy - Rat King (128x128 frame dimensions, 5x scale)
-        config.enemies.emplace_back("Ratking", 128.0f, 128.0f, 6.0f, 80.0f, 1.0f, 20, "boss_pattern");
-        config.enemies.emplace_back("RatkingDeath", 128.0f, 128.0f, 6.0f, 0.0f, 0.0f, 1, "death");
+        // Boss enemy - Rat King (128x128 frame dimensions, 8x scale to match player)
+        config.enemies.emplace_back("Ratking", 128.0f, 128.0f, 8.0f, 80.0f, 1.0f, 20, "boss_pattern");
+        config.enemies.emplace_back("RatkingDeath", 128.0f, 128.0f, 8.0f, 0.0f, 0.0f, 1, "death");
 
         // Note: Pillar is now handled as a decorative obstacle in ObstacleSystem::AddBossLevelDecorations()
     }

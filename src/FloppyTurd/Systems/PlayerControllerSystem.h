@@ -35,7 +35,7 @@ namespace GameCore {
      */
     class PlayerControllerSystem {
     public:
-        PlayerControllerSystem(Gnosis::ECS* ecsSystem, GameCore::PlatformDelegates* platformDelegates, SpriteSystem* spriteSystem, ProjectileSystem* projectileSystem, HatsSystem* hatsSystem, SkillSystem* skillSystem, int currentLevelId = 1);
+        PlayerControllerSystem(Gnosis::ECS* ecsSystem, GameCore::PlatformDelegates* platformDelegates, SpriteSystem* spriteSystem, ProjectileSystem* projectileSystem, HatsSystem* hatsSystem, SkillSystem* skillSystem, int currentLevelId = 1, const LevelConfig* levelConfig = nullptr);
         ~PlayerControllerSystem();
 
         // Main update method
@@ -95,6 +95,7 @@ namespace GameCore {
         Gnosis::Entity m_playerEntity;
         bool m_playerAlive;
         int m_currentLevelId;
+        const LevelConfig* m_levelConfig;
 
         // Input state
         bool m_jumpPressed;

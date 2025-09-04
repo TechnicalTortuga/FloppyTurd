@@ -58,6 +58,12 @@ extension DeveloperToolsSupport.ImageResource {
     /// The "BossFloor" asset catalog image resource.
     static let bossFloor = DeveloperToolsSupport.ImageResource(name: "BossFloor", bundle: resourceBundle)
 
+    /// The "BossLevelBackgroundMobile" asset catalog image resource.
+    static let bossLevelBackgroundMobile = DeveloperToolsSupport.ImageResource(name: "BossLevelBackgroundMobile", bundle: resourceBundle)
+
+    /// The "BossLevelPillarMobile" asset catalog image resource.
+    static let bossLevelPillarMobile = DeveloperToolsSupport.ImageResource(name: "BossLevelPillarMobile", bundle: resourceBundle)
+
     /// The "BossWalls" asset catalog image resource.
     static let bossWalls = DeveloperToolsSupport.ImageResource(name: "BossWalls", bundle: resourceBundle)
 
@@ -72,9 +78,6 @@ extension DeveloperToolsSupport.ImageResource {
 
     /// The "BottomToiletGold" asset catalog image resource.
     static let bottomToiletGold = DeveloperToolsSupport.ImageResource(name: "BottomToiletGold", bundle: resourceBundle)
-
-    /// The "BottomToiletGold-export" asset catalog image resource.
-    static let bottomToiletGoldExport = DeveloperToolsSupport.ImageResource(name: "BottomToiletGold-export", bundle: resourceBundle)
 
     /// The "BottomToiletSnow" asset catalog image resource.
     static let bottomToiletSnow = DeveloperToolsSupport.ImageResource(name: "BottomToiletSnow", bundle: resourceBundle)
@@ -229,6 +232,12 @@ extension DeveloperToolsSupport.ImageResource {
     /// The "PauseMenuBackground" asset catalog image resource.
     static let pauseMenuBackground = DeveloperToolsSupport.ImageResource(name: "PauseMenuBackground", bundle: resourceBundle)
 
+    /// The "PauseMenuBackgroundMobile" asset catalog image resource.
+    static let pauseMenuBackgroundMobile = DeveloperToolsSupport.ImageResource(name: "PauseMenuBackgroundMobile", bundle: resourceBundle)
+
+    /// The "PauseMenuRibbonButton" asset catalog image resource.
+    static let pauseMenuRibbonButton = DeveloperToolsSupport.ImageResource(name: "PauseMenuRibbonButton", bundle: resourceBundle)
+
     /// The "PinwheelHat" asset catalog image resource.
     static let pinwheelHat = DeveloperToolsSupport.ImageResource(name: "PinwheelHat", bundle: resourceBundle)
 
@@ -307,9 +316,6 @@ extension DeveloperToolsSupport.ImageResource {
     /// The "ScoreSmall" asset catalog image resource.
     static let scoreSmall = DeveloperToolsSupport.ImageResource(name: "ScoreSmall", bundle: resourceBundle)
 
-    /// The "SewerBackgroundRunningWater" asset catalog image resource.
-    static let sewerBackgroundRunningWater = DeveloperToolsSupport.ImageResource(name: "SewerBackgroundRunningWater", bundle: resourceBundle)
-
     /// The "SewerLargeA" asset catalog image resource.
     static let sewerLargeA = DeveloperToolsSupport.ImageResource(name: "SewerLargeA", bundle: resourceBundle)
 
@@ -331,23 +337,20 @@ extension DeveloperToolsSupport.ImageResource {
     /// The "SkillPointInfoBackground" asset catalog image resource.
     static let skillPointInfoBackground = DeveloperToolsSupport.ImageResource(name: "SkillPointInfoBackground", bundle: resourceBundle)
 
-    /// The "SnowLevelBackTrees" asset catalog image resource.
-    static let snowLevelBackTrees = DeveloperToolsSupport.ImageResource(name: "SnowLevelBackTrees", bundle: resourceBundle)
+    /// The "SnowLevelBackLayerBackground" asset catalog image resource.
+    static let snowLevelBackLayerBackground = DeveloperToolsSupport.ImageResource(name: "SnowLevelBackLayerBackground", bundle: resourceBundle)
 
-    /// The "SnowLevelBackground" asset catalog image resource.
-    static let snowLevelBackground = DeveloperToolsSupport.ImageResource(name: "SnowLevelBackground", bundle: resourceBundle)
+    /// The "SnowLevelFrontLayerBackground" asset catalog image resource.
+    static let snowLevelFrontLayerBackground = DeveloperToolsSupport.ImageResource(name: "SnowLevelFrontLayerBackground", bundle: resourceBundle)
 
-    /// The "SnowLevelFrontTrees" asset catalog image resource.
-    static let snowLevelFrontTrees = DeveloperToolsSupport.ImageResource(name: "SnowLevelFrontTrees", bundle: resourceBundle)
+    /// The "SnowLevelFrontLayerTrees" asset catalog image resource.
+    static let snowLevelFrontLayerTrees = DeveloperToolsSupport.ImageResource(name: "SnowLevelFrontLayerTrees", bundle: resourceBundle)
 
-    /// The "SnowLevelMountains" asset catalog image resource.
-    static let snowLevelMountains = DeveloperToolsSupport.ImageResource(name: "SnowLevelMountains", bundle: resourceBundle)
+    /// The "SnowLevelMidLayerBackground" asset catalog image resource.
+    static let snowLevelMidLayerBackground = DeveloperToolsSupport.ImageResource(name: "SnowLevelMidLayerBackground", bundle: resourceBundle)
 
     /// The "SnowLevelPainting" asset catalog image resource.
     static let snowLevelPainting = DeveloperToolsSupport.ImageResource(name: "SnowLevelPainting", bundle: resourceBundle)
-
-    /// The "SnowLevelTundra" asset catalog image resource.
-    static let snowLevelTundra = DeveloperToolsSupport.ImageResource(name: "SnowLevelTundra", bundle: resourceBundle)
 
     /// The "SnowManChad" asset catalog image resource.
     static let snowManChad = DeveloperToolsSupport.ImageResource(name: "SnowManChad", bundle: resourceBundle)
@@ -411,6 +414,9 @@ extension DeveloperToolsSupport.ImageResource {
 
     /// The "TopToiletSnow" asset catalog image resource.
     static let topToiletSnow = DeveloperToolsSupport.ImageResource(name: "TopToiletSnow", bundle: resourceBundle)
+
+    /// The "TorchPillar" asset catalog image resource.
+    static let torchPillar = DeveloperToolsSupport.ImageResource(name: "TorchPillar", bundle: resourceBundle)
 
     /// The "TryAgainBackground" asset catalog image resource.
     static let tryAgainBackground = DeveloperToolsSupport.ImageResource(name: "TryAgainBackground", bundle: resourceBundle)
@@ -535,6 +541,15 @@ extension DeveloperToolsSupport.ImageResource {
     /// The "blast_small" asset catalog image resource.
     static let blastSmall = DeveloperToolsSupport.ImageResource(name: "blast_small", bundle: resourceBundle)
 
+    /// The "castlebacklayerbackground" asset catalog image resource.
+    static let castlebacklayerbackground = DeveloperToolsSupport.ImageResource(name: "castlebacklayerbackground", bundle: resourceBundle)
+
+    /// The "castlelevelchandelier" asset catalog image resource.
+    static let castlelevelchandelier = DeveloperToolsSupport.ImageResource(name: "castlelevelchandelier", bundle: resourceBundle)
+
+    /// The "castlelevelfloortorch" asset catalog image resource.
+    static let castlelevelfloortorch = DeveloperToolsSupport.ImageResource(name: "castlelevelfloortorch", bundle: resourceBundle)
+
     /// The "cowboyhat" asset catalog image resource.
     static let cowboyhat = DeveloperToolsSupport.ImageResource(name: "cowboyhat", bundle: resourceBundle)
 
@@ -576,6 +591,18 @@ extension DeveloperToolsSupport.ImageResource {
 
     /// The "crownhatturdletshoot" asset catalog image resource.
     static let crownhatturdletshoot = DeveloperToolsSupport.ImageResource(name: "crownhatturdletshoot", bundle: resourceBundle)
+
+    /// The "curtains" asset catalog image resource.
+    static let curtains = DeveloperToolsSupport.ImageResource(name: "curtains", bundle: resourceBundle)
+
+    /// The "dancingcacti" asset catalog image resource.
+    static let dancingcacti = DeveloperToolsSupport.ImageResource(name: "dancingcacti", bundle: resourceBundle)
+
+    /// The "dancingcacticowboy" asset catalog image resource.
+    static let dancingcacticowboy = DeveloperToolsSupport.ImageResource(name: "dancingcacticowboy", bundle: resourceBundle)
+
+    /// The "dancingcactismall" asset catalog image resource.
+    static let dancingcactismall = DeveloperToolsSupport.ImageResource(name: "dancingcactismall", bundle: resourceBundle)
 
     /// The "dooragbigturdjump" asset catalog image resource.
     static let dooragbigturdjump = DeveloperToolsSupport.ImageResource(name: "dooragbigturdjump", bundle: resourceBundle)
@@ -693,6 +720,12 @@ extension DeveloperToolsSupport.ImageResource {
 
     /// The "samuraiturdletshoot" asset catalog image resource.
     static let samuraiturdletshoot = DeveloperToolsSupport.ImageResource(name: "samuraiturdletshoot", bundle: resourceBundle)
+
+    /// The "settingsbutton" asset catalog image resource.
+    static let settingsbutton = DeveloperToolsSupport.ImageResource(name: "settingsbutton", bundle: resourceBundle)
+
+    /// The "settingsbuttonclicked" asset catalog image resource.
+    static let settingsbuttonclicked = DeveloperToolsSupport.ImageResource(name: "settingsbuttonclicked", bundle: resourceBundle)
 
     /// The "shellhat" asset catalog image resource.
     static let shellhat = DeveloperToolsSupport.ImageResource(name: "shellhat", bundle: resourceBundle)

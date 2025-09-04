@@ -263,7 +263,7 @@ namespace GameCore {
         }
 
         // Calculate heart positioning
-        const float heartScale = 8.0f; // Scale to match other UI elements
+        const float heartScale = 6.0f; // Reduced scale for smaller hearts
         const float heartTextureHeight = 24.0f; // TurdHeartSmall is 24x24 pixels
         const float scaledHeartHeight = heartTextureHeight * heartScale;
         const float pixelGap = 4.0f * heartScale; // 4px gap scaled to match hearts

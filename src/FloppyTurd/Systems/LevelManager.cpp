@@ -334,30 +334,54 @@ namespace GameCore {
                 GN_LOG_DEBUG("Snow level thrower init: " + throwerCfg.textureId + " baseY=" + std::to_string(throwerBaseY) + ", x=" + std::to_string(throwerX) + " entity=" + std::to_string(thrower)); 
             }
         } else if (m_currentLevelId == 6) { // Boss level - special positioning
-                       // Position Rat King on the actual floor in the boss level background
-           float screenHeight = 2556.0f;
-           float ratKingScale = 6.0f; // Rat King scale - back to 6x
-           float backgroundScale = 5.0f; // Mobile background scale
-           float ratKingHeight = 128.0f * ratKingScale; // 128px base * 6.0x scale
-           // Position Rat King with floor at 32px up from bottom * background scale for isometric effect
-           float floorFromBottom = 32.0f * backgroundScale; // 32px * 5.0 = 160px from bottom
-           float ratKingY = screenHeight - floorFromBottom - ratKingHeight; // Position feet on the floor
+            // Get actual screen dimensions from render system
+           float screenWidth = 1179.0f; // Default fallback
+           float screenHeight = 2556.0f; // Default fallback
 
-           // Position Rat King at 3/4 across screen width (shooting level layout)
-           // Clamp to ensure he never goes left of center (50% of screen width)
-           float screenWidth = 1179.0f;
-           float targetX = screenWidth * 0.75f; // Target position at 3/4 screen width
-           float centerX = screenWidth * 0.5f; // Center of screen
-           float ratKingX = std::max(centerX, targetX); // Ensure never left of center
+           if (m_renderSystem) {
+               const ScreenInfo& si = m_renderSystem->GetScreenInfo();
+               screenWidth = si.pixelWidth;
+               screenHeight = si.pixelHeight;
+               GN_LOG_INFO("Boss level: Using dynamic screen dimensions - Width: " + std::to_string(screenWidth) + ", Height: " + std::to_string(screenHeight));
+           } else {
+               GN_LOG_WARN("Boss level: RenderSystem not available, using fallback dimensions");
+           }
+
+           float ratKingScale = 8.0f; // Rat King scale - match player scale for consistency
+           float backgroundScale = 5.0f; // Mobile background scale
+           float ratKingHeight = 128.0f * ratKingScale; // 128px base * 8.0x scale
+           // Position Rat King with floor at 32px up from bottom * background scale for isometric effect
+           // Subtract 20px extra spacing (4 * 5 scale) to raise the floor position
+           float floorFromBottom = (32.0f - 4.0f) * backgroundScale; // (32px - 4px) * 5.0 = 140px from bottom
+
+           // Position Rat King accounting for Metal renderer using TOP-LEFT positioning
+           // Metal renderer treats transform position as top-left corner, not center!
+           // Sprite is 128x128 pixels scaled 8x = 1024x1024 pixels rendered
+           float ratKingSpriteWidth = 128.0f * ratKingScale; // 1024px rendered width
+           float ratKingSpriteHeight = 128.0f * ratKingScale; // 1024px rendered height
+
+           // For top-left positioning: position to utilize the full 128px margin
+           float desiredCenterX = screenWidth - (ratKingSpriteWidth / 2.0f) + 64.0f; // Center with 128px margin (half)
+           float desiredCenterY = screenHeight - floorFromBottom - (ratKingSpriteHeight / 2.0f); // Center Y position
+
+           float ratKingX = desiredCenterX - (ratKingSpriteWidth / 2.0f); // Top-left X position
+           float ratKingY = desiredCenterY - (ratKingSpriteHeight / 2.0f); // Top-left Y position
+
+           GN_LOG_INFO("Boss level positioning: DesiredCenterX=" + std::to_string(desiredCenterX) +
+                       ", SpriteWidth=" + std::to_string(ratKingSpriteWidth) +
+                       ", SpriteHeight=" + std::to_string(ratKingSpriteHeight) +
+                       ", TopLeftX=" + std::to_string(ratKingX) +
+                       ", TopLeftY=" + std::to_string(ratKingY));
 
             // Spawn Rat King
             if (m_currentLevelConfig.enemies.size() > 0) {
-                const EnemyConfig& ratKingCfg = m_currentLevelConfig.enemies[0]; // Ratking
+                EnemyConfig ratKingCfg = m_currentLevelConfig.enemies[0]; // Ratking - make a copy so we can modify it
+                ratKingCfg.scale = ratKingScale; // Apply our calculated 8.0x scale (matches player)
                 Gnosis::Entity ratKingEntity = SpawnEnemy(ratKingCfg, ratKingX, ratKingY);
                 if (ratKingEntity != 0) {
                     m_activeEnemies.push_back(ratKingEntity);
                     m_enemyBaseY[ratKingEntity] = ratKingY;
-                    GN_LOG_INFO("Boss level Rat King spawned: x=" + std::to_string(ratKingX) + ", y=" + std::to_string(ratKingY));
+                    GN_LOG_INFO("Boss level Rat King spawned: x=" + std::to_string(ratKingX) + ", y=" + std::to_string(ratKingY) + ", scale=" + std::to_string(ratKingScale));
                 }
             }
 

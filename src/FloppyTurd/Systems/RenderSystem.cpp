@@ -427,6 +427,7 @@ namespace GameCore {
             
             // Render UIShape components in screen space (for UI rectangles, tracks, etc.)
             if (item.shape) {
+                GN_LOG_DEBUG("RenderSystem: Processing UIShape entity " + std::to_string(item.entity) + " visible=" + std::to_string(item.shape->visible) + " layer=" + std::to_string(item.shape->layer));
                 if (!m_platformDelegates.renderer.drawRectangle) {
                     GN_LOG_WARN("RenderSystem: drawRectangle delegate is null for entity " + std::to_string(item.entity));
                     continue;
@@ -756,24 +757,24 @@ namespace GameCore {
                 // Compute final scale based on sprite frame vs logical size
                 bool usesCenteredRendering = m_ecsSystem->HasComponent<RotationRenderer>(item.entity);
                 bool usesPivotRotation = m_ecsSystem->HasComponent<PivotRotationRenderer>(item.entity);
-                
-                // Debug: Log when we have a PivotRotationRenderer
+
+                // Debug: Log rotation component detection
+                if (usesCenteredRendering) {
+                    GN_LOG_DEBUG("RenderSystem: Entity " + std::to_string(item.entity) + " has RotationRenderer (centered) - rotation: " +
+                               std::to_string(item.transform->rotation) + "°");
+                }
                 if (usesPivotRotation) {
                     PivotRotationRenderer* pivotRenderer = m_ecsSystem->GetComponent<PivotRotationRenderer>(item.entity);
                     if (pivotRenderer) {
-                        GN_LOG_DEBUG("RenderSystem: Entity " + std::to_string(item.entity) + " has PivotRotationRenderer with pivot (" + 
-                                   std::to_string(pivotRenderer->pivotX) + ", " + std::to_string(pivotRenderer->pivotY) + ")");
+                        GN_LOG_DEBUG("RenderSystem: Entity " + std::to_string(item.entity) + " has PivotRotationRenderer with pivot (" +
+                                   std::to_string(pivotRenderer->pivotX) + ", " + std::to_string(pivotRenderer->pivotY) +
+                                   "), speed: " + std::to_string(pivotRenderer->rotationSpeed) +
+                                   "), manual: " + std::to_string(pivotRenderer->manualControl) +
+                                   ", rotation: " + std::to_string(item.transform->rotation) + "°");
                     }
                 }
                 
-                // Debug: Log when we have a PivotRotationRenderer
-                if (usesPivotRotation) {
-                    PivotRotationRenderer* pivotRenderer = m_ecsSystem->GetComponent<PivotRotationRenderer>(item.entity);
-                    if (pivotRenderer) {
-                        GN_LOG_DEBUG("RenderSystem: Entity " + std::to_string(item.entity) + " has PivotRotationRenderer with pivot (" + 
-                                   std::to_string(pivotRenderer->pivotX) + ", " + std::to_string(pivotRenderer->pivotY) + ")");
-                    }
-                }
+
                 float scaleX = item.sprite->width / item.sprite->frameWidth;
                 float scaleY = item.sprite->height / item.sprite->frameHeight;
                 float finalScaleX = scaleX * item.transform->scale.x * GetCameraScale();
@@ -821,6 +822,7 @@ namespace GameCore {
                     );
                 } else if (usesPivotRotation && m_platformDelegates.renderer.drawSpriteScaledPivoted) {
                     // Pivot-based rotation rendering using the new pivot function (PRIORITY)
+                    GN_LOG_DEBUG("RenderSystem: Using drawSpriteScaledPivoted for entity " + std::to_string(item.entity));
                     PivotRotationRenderer* pivotRenderer = m_ecsSystem->GetComponent<PivotRotationRenderer>(item.entity);
                     if (pivotRenderer) {
                         // Pass pivot coordinates as sprite-relative pixels (no conversion here)
@@ -828,7 +830,7 @@ namespace GameCore {
                         // MetalRenderer will handle all coordinate conversions in one place
                         float pivotPixelX = pivotRenderer->pivotX;  // Keep as center-relative pixels
                         float pivotPixelY = pivotRenderer->pivotY;  // Keep as center-relative pixels
-                        
+
                         // Use the new pivot-based rendering function
                         m_platformDelegates.renderer.drawSpriteScaledPivoted(
                             textureHandle,
@@ -843,16 +845,17 @@ namespace GameCore {
                     }
                 } else if (usesPivotRotation && m_platformDelegates.renderer.drawSpriteScaledCentered) {
                     // Fallback pivot-based rotation rendering (e.g., for spike ball rotating from base)
+                    GN_LOG_DEBUG("RenderSystem: Using drawSpriteScaledCentered (fallback) for entity " + std::to_string(item.entity));
                     PivotRotationRenderer* pivotRenderer = m_ecsSystem->GetComponent<PivotRotationRenderer>(item.entity);
                     if (pivotRenderer) {
                         // Calculate pivot offset in world space
                         float pivotOffsetX = pivotRenderer->pivotX * item.transform->scale.x;
                         float pivotOffsetY = pivotRenderer->pivotY * item.transform->scale.y;
-                        
+
                         // Adjust screen position to account for pivot
                         float adjustedX = screenPos.x - pivotOffsetX;
                         float adjustedY = screenPos.y - pivotOffsetY;
-                        
+
                         // Use centered rendering with adjusted position
                         m_platformDelegates.renderer.drawSpriteScaledCentered(
                             textureHandle,
@@ -865,6 +868,7 @@ namespace GameCore {
                     }
                 } else if (m_platformDelegates.renderer.drawSpriteScaled) {
                     // Default top-left rendering
+                    GN_LOG_WARN("RenderSystem: Using basic drawSpriteScaled (no rotation) for entity " + std::to_string(item.entity) + " - rotation: " + std::to_string(item.transform->rotation) + "°");
                     m_platformDelegates.renderer.drawSpriteScaled(
                         textureHandle,
                         screenPos.x,
