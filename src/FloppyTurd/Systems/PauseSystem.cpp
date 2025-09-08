@@ -1,0 +1,3343 @@
+#include "PauseSystem.h"
+#include "../../Engine/Utility/Utils.h"
+#include "../../Engine/Core/GNLog.h"
+#include "../Components/GameComponents.h"
+#include "../Game/FloppyTurdGame.h"
+#include <algorithm>
+#include <set>
+
+namespace GameCore {
+
+    PauseSystem::PauseSystem(Gnosis::ECS* ecsCoordinator, const GameCore::PlatformDelegates& delegates, GameplayState* gameplayState)
+        : m_ecsCoordinator(ecsCoordinator)
+        , m_platformDelegates(delegates)
+        , m_gameplayState(gameplayState)
+        , m_isVisible(false)
+        , m_isCreated(false)
+        , m_currentTab(PauseMenuTab::SYSTEM)
+        , m_screenWidth(1179.0f)
+        , m_screenHeight(2556.0f)
+        , m_pauseMenuEntity(0)
+        , m_pauseMenuBackgroundEntity(0)
+        , m_pauseMenuRibbonEntity(0)
+        , m_pauseMenuContentEntity(0)
+        , m_systemTitleEntity(0)
+        , m_skillsTitleEntity(0)
+        , m_hatsTitleEntity(0)
+        , m_statsTitleEntity(0)
+        , m_skillsContentEntity(0)
+        , m_hatsContentEntity(0)
+        , m_mainMenuButtonEntity(0)
+        , m_draggingMaster(false)
+        , m_draggingMusic(false)
+        , m_draggingSFX(false)
+        , m_activeDragKnob(-1)
+        , m_dragStartX(0.0f)
+        , m_dragKnobStartX(0.0f)
+        , m_sliderX(0.0f)
+        , m_sliderY(0.0f)
+        , m_sliderW(0.0f)
+        , m_sliderH(0.0f)
+        , m_sliderSpacing(0.0f)
+        , m_draggedKnobEntity(0)
+        , m_dragOffsetX(0.0f)
+        , m_masterSliderValue(1.0f)
+        , m_musicSliderValue(1.0f)
+        , m_sfxSliderValue(1.0f)
+        , m_currentSkillIndex(0)
+        , m_availableSkills()
+        , m_skillSystem(nullptr)
+        , m_hatsSystem(nullptr)
+        , m_playerCoins(0)
+        , m_playerEntity(0)
+        , m_sessionPipes(0)
+        , m_sessionCoins(0)
+        , m_totalCoins(0)
+        , m_grossTotalCoins(0)
+        , m_totalFlops(0)
+        , m_enemiesKilled(0)
+        , m_totalPipes(0)
+        , m_lastSkillButtonPressTime(0.0f)
+        , m_skillButtonDebounceDelay(0.3f)
+        , m_lastActionButtonPressTime(0.0f)
+        , m_actionButtonDebounceDelay(0.5f)
+        , m_lastRibbonButtonPressTime(0.0f)
+        , m_ribbonButtonDebounceDelay(0.3f)
+        , m_lastSettingsButtonPressTime(0.0f)
+        , m_settingsButtonDebounceDelay(0.3f)
+        , m_currentSessionTextEntity(0)
+        , m_sessionCoinsTextEntity(0)
+        , m_totalCoinsTextEntity(0)
+        , m_totalFlopsTextEntity(0)
+        , m_enemiesKilledTextEntity(0)
+        , m_totalPipesTextEntity(0)
+        , m_hatsBackgroundEntity(0)
+        , m_hatsActionButtonEntity(0)
+        , m_hatsCostDisplayEntity(0)
+    {
+        GN_LOG_INFO("PauseSystem created");
+
+        // Initialize skill system data from GameplayState
+        if (m_gameplayState) {
+            // Get skill system and hats system from GameplayState using getter methods
+            m_skillSystem = m_gameplayState->GetSkillSystem();
+            m_hatsSystem = m_gameplayState->GetHatsSystem();
+
+        // Initialize available skills
+        m_availableSkills = {
+            GameCore::SkillType::HalfHearts,
+            GameCore::SkillType::ThirdHearts,
+            GameCore::SkillType::CoinMagnet,
+            GameCore::SkillType::HeartMagnet,
+            GameCore::SkillType::CoinSafetyNet
+        };
+
+            // Get player entity and coins
+            m_playerEntity = m_gameplayState->GetPlayerEntity();
+            if (m_playerEntity != 0 && m_ecsCoordinator) {
+                auto* playerComp = m_ecsCoordinator->GetComponent<PlayerComponent>(m_playerEntity);
+                if (playerComp) {
+                    // Combine both session and total coins for purchasing
+                    m_playerCoins = playerComp->sessionCoins + playerComp->totalCoins;
+                }
+            }
+
+            GN_LOG_INFO("PauseSystem: Initialized skill system data - player entity: " + std::to_string(m_playerEntity) +
+                       ", skill system: " + (m_skillSystem ? "available" : "null") +
+                       ", hats system: " + (m_hatsSystem ? "available" : "null"));
+        } else {
+            GN_LOG_ERROR("PauseSystem: GameplayState is null, cannot initialize skill system data");
+        }
+    }
+
+    PauseSystem::~PauseSystem() {
+        GN_LOG_INFO("PauseSystem destroyed");
+        Cleanup();
+    }
+
+    void PauseSystem::UpdateScreenDimensions(float width, float height) {
+        // Only update if dimensions actually changed (prevents unnecessary updates)
+        if (m_screenWidth != width || m_screenHeight != height) {
+            GN_LOG_INFO("PauseSystem: Screen dimensions updated from " + std::to_string((int)m_screenWidth) + "x" + std::to_string((int)m_screenHeight) +
+                       " to " + std::to_string(width) + "x" + std::to_string(height));
+
+        m_screenWidth = width;
+        m_screenHeight = height;
+
+            // If pause menu is already created and visible, we might need to reposition elements
+            // But for now, just log the change - entities will be repositioned on next show
+        }
+    }
+
+    void PauseSystem::UpdateSkillData(int currentSkillIndex, const std::vector<GameCore::SkillType>& availableSkills,
+                                     SkillSystem* skillSystem, int playerCoins, Entity playerEntity) {
+        m_currentSkillIndex = currentSkillIndex;
+        m_availableSkills = availableSkills;
+        m_skillSystem = skillSystem;
+        m_playerCoins = playerCoins;
+        m_playerEntity = playerEntity;
+        GN_LOG_INFO("PauseSystem: Skill data updated - index: " + std::to_string(currentSkillIndex) +
+                   ", skills: " + std::to_string(availableSkills.size()) + ", coins: " + std::to_string(playerCoins));
+    }
+
+    void PauseSystem::UpdateStatsData(int sessionPipes, int sessionCoins, int totalCoins, int grossTotalCoins, int totalFlops,
+                                     int enemiesKilled, int totalPipes) {
+        m_sessionPipes = sessionPipes;
+        m_sessionCoins = sessionCoins;
+        m_totalCoins = totalCoins;
+        m_grossTotalCoins = grossTotalCoins;
+        m_totalFlops = totalFlops;
+        m_enemiesKilled = enemiesKilled;
+        m_totalPipes = totalPipes;
+        GN_LOG_INFO("PauseSystem: Stats data updated - session pipes: " + std::to_string(sessionPipes) +
+                   ", total coins: " + std::to_string(totalCoins) + ", gross total: " + std::to_string(grossTotalCoins));
+    }
+
+    void PauseSystem::Initialize() {
+        GN_LOG_INFO("PauseSystem: Initializing pause menu system");
+
+        if (m_isCreated) {
+            GN_LOG_INFO("PauseSystem: Already initialized, skipping");
+            return;
+        }
+
+        // Create all pause menu entities upfront
+        CreatePauseMenu();
+        m_isCreated = true;
+
+        GN_LOG_INFO("PauseSystem: Initialization complete");
+    }
+
+    void PauseSystem::Update(float deltaTime) {
+        if (!m_isVisible) {
+            return;
+        }
+
+        // Update button debounce timers
+        m_lastSkillButtonPressTime += deltaTime;
+        m_lastActionButtonPressTime += deltaTime;
+        m_lastRibbonButtonPressTime += deltaTime;
+        m_lastSettingsButtonPressTime += deltaTime;
+
+        // Update any animated elements in the pause menu
+        // For now, this is minimal as pause menu is mostly static
+    }
+
+    void PauseSystem::HandleInput(float touchX, float touchY) {
+        GN_LOG_INFO("🚀 PauseSystem::HandleInput called with (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
+
+        if (!m_isVisible) {
+            GN_LOG_INFO("PauseSystem: Not visible, ignoring input at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
+            GN_LOG_INFO("🚨 PauseSystem is not visible! Cannot process input.");
+            return;
+        }
+
+        GN_LOG_INFO("✅ PauseSystem is visible, processing input at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
+
+        GN_LOG_INFO("PauseSystem: Handling input at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ") - VISIBLE AND ACTIVE");
+
+        // Handle pause menu input (this includes settings button detection)
+        HandlePauseMenuInput(touchX, touchY);
+    }
+
+    void PauseSystem::Show() {
+        if (!m_isCreated) {
+            Initialize();
+        }
+
+        GN_LOG_INFO("PauseSystem: Showing pause menu");
+        m_isVisible = true;
+
+        // Reset debounce timers when showing pause menu to prevent immediate clicks
+        m_lastRibbonButtonPressTime = 0.0f;
+        m_lastSettingsButtonPressTime = 0.0f;
+
+        // Show pause menu background
+        ShowPauseMenu();
+    }
+
+    void PauseSystem::Hide() {
+        GN_LOG_INFO("PauseSystem: Hiding pause menu");
+        m_isVisible = false;
+
+        // Hide pause menu
+        HidePauseMenu();
+    }
+
+    void PauseSystem::SwitchToTab(PauseMenuTab tab) {
+        GN_LOG_INFO("PauseSystem: Switching to tab " + std::to_string(static_cast<int>(tab)));
+        m_currentTab = tab;
+        ShowTabContent(tab);
+    }
+
+    void PauseSystem::Cleanup() {
+        GN_LOG_INFO("PauseSystem: Cleaning up pause menu entities");
+
+        // Destroy all pause menu entities
+        if (m_pauseMenuBackgroundEntity != 0 && m_ecsCoordinator) {
+            m_ecsCoordinator->DestroyEntity(m_pauseMenuBackgroundEntity);
+            m_pauseMenuBackgroundEntity = 0;
+        }
+
+        if (m_pauseMenuRibbonEntity != 0 && m_ecsCoordinator) {
+            m_ecsCoordinator->DestroyEntity(m_pauseMenuRibbonEntity);
+            m_pauseMenuRibbonEntity = 0;
+        }
+
+        if (m_pauseMenuContentEntity != 0 && m_ecsCoordinator) {
+            m_ecsCoordinator->DestroyEntity(m_pauseMenuContentEntity);
+            m_pauseMenuContentEntity = 0;
+        }
+
+        // Clean up ribbon buttons
+        for (auto& button : m_ribbonButtons) {
+            if (button != 0 && m_ecsCoordinator) {
+                m_ecsCoordinator->DestroyEntity(button);
+            }
+        }
+        m_ribbonButtons.clear();
+
+        m_isCreated = false;
+        m_isVisible = false;
+
+        GN_LOG_INFO("PauseSystem: Cleanup complete");
+    }
+
+    // Placeholder implementations - these will be filled in as we extract methods from GameplayState
+    void PauseSystem::CreatePauseMenu() {
+        GN_LOG_INFO("PauseSystem: Creating pause menu entities");
+        CreatePauseMenuBackground();
+        CreatePauseMenuRibbon();
+        CreatePauseMenuContent();
+    }
+
+    void PauseSystem::CreatePauseMenuBackground() {
+        GN_LOG_INFO("PauseSystem: Creating pause menu background");
+
+        m_pauseMenuBackgroundEntity = m_ecsCoordinator->CreateEntity();
+        if (m_pauseMenuBackgroundEntity != 0) {
+            GN_LOG_INFO("PAUSE MENU DEBUG: Using cached screen dimensions: " + std::to_string((int)m_screenWidth) + "x" + std::to_string((int)m_screenHeight));
+
+            // Check if we have valid iPhone screen dimensions (not fallback 800x600)
+            if (m_screenWidth < 1000 || m_screenHeight < 1000) {
+                GN_LOG_WARN("PAUSE MENU DEBUG: Invalid screen dimensions detected - delaying pause menu creation");
+                GN_LOG_WARN("PAUSE MENU DEBUG: Expected iPhone portrait dimensions like 1179x2556, Got: " + std::to_string((int)m_screenWidth) + "x" + std::to_string((int)m_screenHeight));
+                GN_LOG_WARN("PAUSE MENU DEBUG: Pause menu will be created when valid screen dimensions are available");
+
+                // Mark pause menu as not created and return early
+                m_isCreated = false;
+                return;
+            }
+        } else {
+            GN_LOG_WARN("PAUSE MENU DEBUG: Entity creation failed");
+            m_isCreated = false;
+            return;
+        }
+
+        // Use PauseMenuBackgroundMobile.png (160x300) with 7x scaling
+        float bgScale = 7.0f;
+        float textureWidth = 160.0f;   // Original texture width
+        float textureHeight = 300.0f;  // Original texture height
+
+        // SCALE FIRST, then center: Calculate final rendered dimensions, then center those
+        float scaledWidth = textureWidth * bgScale;   // 160 * 7 = 1120
+        float scaledHeight = textureHeight * bgScale; // 300 * 7 = 2100
+        float centerX = m_screenWidth * 0.5f;
+        float centerY = m_screenHeight * 0.5f;
+        // Lower the background slightly on the Y axis so the settings button is not covered
+        GNVector2 bgPosition = CenterObjectAtPosition(centerX, centerY + 32.0f, scaledWidth, scaledHeight);
+
+        GN_LOG_INFO("PAUSE MENU DEBUG: Screen center target: (" + std::to_string(centerX) + ", " + std::to_string(centerY) + ")");
+        GN_LOG_INFO("PAUSE MENU DEBUG: Original texture: " + std::to_string(textureWidth) + "x" + std::to_string(textureHeight) + " at " + std::to_string(bgScale) + "x scale");
+        GN_LOG_INFO("PAUSE MENU DEBUG: Final rendered size: " + std::to_string(scaledWidth) + "x" + std::to_string(scaledHeight));
+        GN_LOG_INFO("PAUSE MENU DEBUG: Calculated top-left position: (" + std::to_string(bgPosition.x) + ", " + std::to_string(bgPosition.y) + ")");
+
+        Transform bgTransform(GNVector2(bgPosition.x, bgPosition.y), 0.0f, GNVector2(bgScale, bgScale));
+        m_ecsCoordinator->AddComponent<Transform>(m_pauseMenuBackgroundEntity, bgTransform);
+
+        // Create UIElement for pause menu background - this keeps it fixed on screen
+        UIElement bgUI;
+        bgUI.normalTextureId = "PauseMenuBackgroundMobile";
+        bgUI.visible = false; // Initially hidden
+        bgUI.isEnabled = true;
+        bgUI.textLayer = 80; // Above regular UI, below critical controls
+        m_ecsCoordinator->AddComponent<UIElement>(m_pauseMenuBackgroundEntity, bgUI);
+
+        // Add Sprite component so RenderSystem can get correct dimensions (160x300)
+        // This is crucial for proper centering - RenderSystem uses Sprite dimensions for UIElement textures
+        Sprite bgSprite("PauseMenuBackgroundMobile", 160, 300);
+        bgSprite.layer = 80; // Match updated textLayer
+        bgSprite.visible = false; // Initially hidden
+        m_ecsCoordinator->AddComponent<Sprite>(m_pauseMenuBackgroundEntity, bgSprite);
+
+        GN_LOG_INFO("PauseSystem: Created pause menu background at position (" + std::to_string(bgPosition.x) + ", " + std::to_string(bgPosition.y) + ") with scale " + std::to_string(bgScale) + " (size: " + std::to_string(textureWidth * bgScale) + "x" + std::to_string(textureHeight * bgScale) + ")");
+        GN_LOG_INFO("PauseSystem: Background will be centered at screen center (" + std::to_string(m_screenWidth * 0.5f) + ", " + std::to_string(m_screenHeight * 0.5f) + ")");
+    }
+
+    void PauseSystem::CreatePauseMenuRibbon() {
+        GN_LOG_INFO("PauseSystem: Creating pause menu ribbon");
+
+        m_pauseMenuRibbonEntity = m_ecsCoordinator->CreateEntity();
+        if (m_pauseMenuRibbonEntity != 0) {
+            // Position ribbon at top of screen
+            float ribbonX = 0.0f; // Start at left edge
+            float ribbonY = m_screenHeight * 0.15f; // 15% from top
+
+            Transform ribbonTransform(GNVector2(ribbonX, ribbonY), 0.0f, GNVector2(1.0f, 1.0f));
+            m_ecsCoordinator->AddComponent<Transform>(m_pauseMenuRibbonEntity, ribbonTransform);
+
+            // Create UIElement for ribbon (invisible, just for positioning)
+            UIElement ribbonUI;
+            ribbonUI.visible = false; // Initially hidden
+            ribbonUI.isEnabled = true;
+            ribbonUI.textLayer = 45; // Above background, below other UI
+            m_ecsCoordinator->AddComponent<UIElement>(m_pauseMenuRibbonEntity, ribbonUI);
+
+            // Create ribbon buttons
+            CreateRibbonButtons();
+
+            GN_LOG_INFO("PauseSystem: Created pause menu ribbon at (" + std::to_string(ribbonX) + ", " + std::to_string(ribbonY) + ")");
+        }
+    }
+
+    void PauseSystem::CreateRibbonButtons() {
+        GN_LOG_INFO("PauseSystem: Creating ribbon buttons - screen: " + std::to_string((int)m_screenWidth) + "x" + std::to_string((int)m_screenHeight));
+
+        // Button labels
+        const char* buttonLabels[] = {"SKILLS", "HATS", "STATS", "SYSTEM"};
+
+        // Calculate button positions - vertical tabs on left side
+        // Calculate button width based on scale and texture size
+        float buttonScale = 6.0f;
+        float buttonWidth = 64.0f * buttonScale;
+        float buttonHeight = buttonWidth * 0.62f; // Match the 0.62f ratio from CreateRibbonButtons
+        float bgScale = 6.0f;
+        float bgHeight = 300.0f * bgScale;
+        float bgTop = (m_screenHeight - bgHeight) * 0.5f;
+        int numButtons = 4;
+        float startY = bgTop + buttonWidth * 0.18f; // Skills button higher
+        float buttonX = -0.40f * buttonWidth; // Offset further left (40%) - matches original
+
+        GN_LOG_INFO("PauseSystem: CREATE RIBBON BUTTONS - Screen: " + std::to_string((int)m_screenWidth) + "x" + std::to_string((int)m_screenHeight) +
+                   ", bgTop: " + std::to_string(bgTop) + ", startY: " + std::to_string(startY) +
+                   ", buttonX: " + std::to_string(buttonX) + ", buttonWidth: " + std::to_string(buttonWidth) +
+                   ", buttonHeight: " + std::to_string(buttonHeight));
+
+        buttonHeight = buttonWidth * 0.62f; // 25% closer than before
+        for (int i = 0; i < 4; i++) {
+            Entity buttonEntity = m_ecsCoordinator->CreateEntity();
+            if (buttonEntity != 0) {
+                // Vertical positioning like tabs - original positioning
+                float buttonY = startY + i * buttonHeight;
+
+                Transform buttonTransform(GNVector2(buttonX, buttonY), 0.0f, GNVector2(buttonScale, buttonScale));
+                m_ecsCoordinator->AddComponent<Transform>(buttonEntity, buttonTransform);
+
+                // Create UI element using PauseMenuRibbonButton.png
+                UIElement buttonUI;
+                buttonUI.normalTextureId = "PauseMenuRibbonButton";
+                buttonUI.buttonText = buttonLabels[i];
+                buttonUI.fontSize = 38.0f; // Lowered font size just a bit more
+                buttonUI.textColor = GNColor(255, 255, 255, 255); // White text
+                buttonUI.centerTextHorizontally = false; // We'll left-align with padding
+                buttonUI.centerTextVertically = true;
+                buttonUI.textLayer = 95; // Above all content including skills text
+                buttonUI.textOffsetX = buttonWidth * 0.42f; // Move text further right so it's fully visible
+                buttonUI.textOffsetY = 8.0f; // Lower text by 8px for better vertical alignment
+                buttonUI.visible = false; // Initially hidden
+                m_ecsCoordinator->AddComponent<UIElement>(buttonEntity, buttonUI);
+
+                // Add Sprite component for proper rendering
+                Sprite buttonSprite("PauseMenuRibbonButton", 64, 21);
+                buttonSprite.layer = 95; // Match textLayer
+                buttonSprite.visible = false; // Initially hiddenould
+                m_ecsCoordinator->AddComponent<Sprite>(buttonEntity, buttonSprite);
+
+                m_ribbonButtons.push_back(buttonEntity);
+
+                GN_LOG_INFO("PauseSystem: Created ribbon button '" + std::string(buttonLabels[i]) + "' at (" + std::to_string(buttonX) + ", " + std::to_string(buttonY) +
+                           ") as vertical tab - scale: " + std::to_string(buttonScale) +
+                           ", size: " + std::to_string(buttonWidth) + "x" + std::to_string(buttonHeight) +
+                           ", text offset: (" + std::to_string(buttonUI.textOffsetX) + ", " + std::to_string(buttonUI.textOffsetY) + ")");
+            }
+        }
+
+        GN_LOG_INFO("PauseSystem: Created " + std::to_string(m_ribbonButtons.size()) + " ribbon buttons");
+    }
+
+    void PauseSystem::CreatePauseMenuContent() {
+        GN_LOG_INFO("PauseSystem: Creating pause menu content area");
+
+        m_pauseMenuContentEntity = m_ecsCoordinator->CreateEntity();
+        if (m_pauseMenuContentEntity != 0) {
+            // Position content area below ribbon
+            float contentX = m_screenWidth * 0.5f; // Center horizontally
+            float contentY = m_screenHeight * 0.45f; // Below ribbon
+
+            Transform contentTransform(GNVector2(contentX, contentY), 0.0f, GNVector2(1.0f, 1.0f));
+            m_ecsCoordinator->AddComponent<Transform>(m_pauseMenuContentEntity, contentTransform);
+
+            // Create content sprite (invisible, just for positioning)
+            Sprite contentSprite; // No texture, just for positioning
+            contentSprite.layer = 85; // Above pause menu background (80)
+            contentSprite.visible = false; // Initially hidden
+            m_ecsCoordinator->AddComponent<Sprite>(m_pauseMenuContentEntity, contentSprite);
+
+            // Create tab content - create ALL tabs upfront
+            CreateSystemTab();
+            CreateSkillsTab();
+            CreateHatsTab();
+            CreateStatsTab();
+
+            GN_LOG_INFO("PauseSystem: Created pause menu content area at (" + std::to_string(contentX) + ", " + std::to_string(contentY) + ")");
+        }
+    }
+
+    void PauseSystem::CreateSystemTab() {
+        GN_LOG_INFO("PauseSystem: Creating system tab");
+
+        // Create "System" title text at the very top of the pause menu
+        if (m_systemTitleEntity == 0) {
+            m_systemTitleEntity = m_ecsCoordinator->CreateEntity();
+
+            // Position at the top center of the screen (like other tab titles)
+            float titleX = m_screenWidth * 0.5f;
+            float titleY = m_screenHeight * 0.15f; // Near the top
+
+            Transform titleTransform(GNVector2(titleX, titleY), 0.0f, GNVector2(1.0f, 1.0f));
+            m_ecsCoordinator->AddComponent<Transform>(m_systemTitleEntity, titleTransform);
+
+            UIElement titleElem;
+            titleElem.buttonText = "System";
+            titleElem.fontSize = 72.0f; // Large title font
+            titleElem.textColor = GNColor(255, 255, 255, 255);
+            titleElem.centerTextHorizontally = true;
+            titleElem.centerTextVertically = true;
+            titleElem.visible = false;
+            titleElem.isEnabled = true;
+            titleElem.textLayer = 90;
+            m_ecsCoordinator->AddComponent<UIElement>(m_systemTitleEntity, titleElem);
+
+            Sprite titleSprite;
+            titleSprite.layer = 90;
+            titleSprite.visible = false;
+            m_ecsCoordinator->AddComponent<Sprite>(m_systemTitleEntity, titleSprite);
+        }
+
+        // Create main menu button - EXACT same pattern as original
+        GN_LOG_INFO("PauseSystem: Creating main menu button - screen: " + std::to_string((int)m_screenWidth) + "x" + std::to_string((int)m_screenHeight));
+        if (m_mainMenuButtonEntity == 0) {
+            m_mainMenuButtonEntity = m_ecsCoordinator->CreateEntity();
+            GN_LOG_INFO("PauseSystem: Created main menu button entity: " + std::to_string(m_mainMenuButtonEntity));
+
+            // Calculate center position for systems tab area (EXACT same as original)
+            float bgW = m_screenWidth * 0.8f;
+            float bgH = m_screenHeight * 0.7f;
+            float bgX = (m_screenWidth - bgW) * 0.5f;
+            float bgY = (m_screenHeight - bgH) * 0.18f;
+
+            // Position button in center of entire screen (not just tab area)
+            float buttonCenterX = m_screenWidth * 0.5f; // Center horizontally on screen
+            float buttonCenterY = m_screenHeight * 0.75f; // Position at 75% down screen (lower)
+
+            // Use larger scale for main menu size (10x scaling for 900x160 button)
+            float buttonScale = 10.0f;
+            float buttonWidth = 90.0f * buttonScale;  // 900 pixels (like working buttons)
+            float buttonHeight = 16.0f * buttonScale; // 160 pixels (like working buttons)
+
+            // Use positioning helper to center button (EXACT same pattern as main menu buttons)
+            GNVector2 buttonPosition = CenterObjectAtPosition(buttonCenterX, buttonCenterY, buttonWidth, buttonHeight);
+            float buttonX = buttonPosition.x;  // This is the TOP-LEFT X position for the sprite
+            float buttonY = buttonPosition.y;  // This is the TOP-LEFT Y position for the sprite
+
+            // Log the calculated positions for debugging
+            GN_LOG_INFO("PauseSystem: Screen dimensions - width: " + std::to_string(m_screenWidth) + ", height: " + std::to_string(m_screenHeight));
+            GN_LOG_INFO("PauseSystem: Main menu button center - buttonCenterX: " + std::to_string(buttonCenterX) + ", buttonCenterY: " + std::to_string(buttonCenterY));
+            GN_LOG_INFO("PauseSystem: Main menu button top-left - buttonX: " + std::to_string(buttonX) + ", buttonY: " + std::to_string(buttonY));
+            GN_LOG_INFO("PauseSystem: Main menu button dimensions - width: " + std::to_string(buttonWidth) + ", height: " + std::to_string(buttonHeight));
+            GN_LOG_INFO("PauseSystem: Main menu button expected text center - textCenterX: " + std::to_string(buttonX + buttonWidth * 0.5f) + ", textCenterY: " + std::to_string(buttonY + buttonHeight * 0.5f));
+            GN_LOG_INFO("PauseSystem: Main menu button sprite position: (" + std::to_string(buttonX) + ", " + std::to_string(buttonY) + ")");
+
+            Transform buttonTransform(GNVector2(buttonX, buttonY), 0.0f, GNVector2(buttonScale, buttonScale));
+            m_ecsCoordinator->AddComponent<Transform>(m_mainMenuButtonEntity, buttonTransform);
+
+            // Create sprite using FloppyButtonBlue.png (full filename for proper texture loading)
+            // Use actual texture dimensions like working buttons (90x16, not 64x64)
+            Sprite buttonSprite("FloppyButtonBlue.png", 90, 16); // Use actual texture dimensions like working buttons
+            buttonSprite.layer = 90; // High layer above everything (pause menu background is 80)
+            buttonSprite.visible = false; // Initially hidden
+            GN_LOG_INFO("PauseSystem: Creating Main Menu button sprite: FloppyButtonBlue, 90x16, layer " + std::to_string(buttonSprite.layer) +
+                       " at center (" + std::to_string(buttonCenterX) + ", " + std::to_string(buttonCenterY) + ") with scale " + std::to_string(buttonScale));
+            m_ecsCoordinator->AddComponent<Sprite>(m_mainMenuButtonEntity, buttonSprite);
+
+            // Create UI element for button text - use EXACT same pattern as main menu buttons
+            UIElement buttonUI("MAIN MENU", "FloppyButtonBlue", "FloppyButtonBlueHover");
+            buttonUI.fontSize = 62.0f; // Lowered font size
+            buttonUI.textColor = GNColor(255, 255, 255, 255); // White text
+            buttonUI.centerTextHorizontally = true;
+            buttonUI.centerTextVertically = true;
+            buttonUI.textLayer = 90; // Same layer as button sprite for proper alignment
+            buttonUI.visible = false; // Initially hidden
+            // NO OFFSET - text should be perfectly centered as requested
+            buttonUI.textOffsetX = 0.0f;  // No horizontal offset for perfect centering
+            buttonUI.textOffsetY = 0.0f;  // No vertical offset for perfect centering
+
+            // Add debug logging for button creation
+            GN_LOG_INFO("PauseSystem: Main menu button UI created - text: '" + std::string(buttonUI.buttonText) +
+                       "', font size: " + std::to_string(buttonUI.fontSize) +
+                       ", position: (" + std::to_string(buttonX) + ", " + std::to_string(buttonY) + ")");
+
+            m_ecsCoordinator->AddComponent<UIElement>(m_mainMenuButtonEntity, buttonUI);
+        }
+
+        // Create audio sliders
+        CreateAudioSliders();
+
+        GN_LOG_INFO("PauseSystem: System tab created");
+    }
+
+    void PauseSystem::CreateSkillsTab() {
+        GN_LOG_INFO("PauseSystem: Creating skills tab");
+
+        // Create "Skills" title text at the very top of the pause menu
+        if (m_skillsTitleEntity == 0) {
+            m_skillsTitleEntity = m_ecsCoordinator->CreateEntity();
+
+            // Position at the top center of the screen (like other tab titles)
+            float titleX = m_screenWidth * 0.5f;
+            float titleY = m_screenHeight * 0.15f; // Near the top
+
+            Transform titleTransform(GNVector2(titleX, titleY), 0.0f, GNVector2(1.0f, 1.0f));
+            m_ecsCoordinator->AddComponent<Transform>(m_skillsTitleEntity, titleTransform);
+
+            UIElement titleElem;
+            titleElem.buttonText = "Skills";
+            titleElem.fontSize = 72.0f; // Large title font
+            titleElem.textColor = GNColor(255, 255, 255, 255);
+            titleElem.centerTextHorizontally = true;
+            titleElem.centerTextVertically = true;
+            titleElem.visible = false;
+            titleElem.isEnabled = true;
+            titleElem.textLayer = 90;
+            m_ecsCoordinator->AddComponent<UIElement>(m_skillsTitleEntity, titleElem);
+
+            Sprite titleSprite;
+            titleSprite.layer = 90;
+            titleSprite.visible = false;
+            m_ecsCoordinator->AddComponent<Sprite>(m_skillsTitleEntity, titleSprite);
+        }
+
+        // Create black background like stats tab (EXACT same dimensions and positioning)
+        if (m_skillsBackgroundEntity == 0) {
+            m_skillsBackgroundEntity = m_ecsCoordinator->CreateEntity();
+
+            // Calculate 70% of the pause menu background dimensions (EXACT same as stats tab)
+            float pauseMenuWidth = 1120.0f;
+            float pauseMenuHeight = 2100.0f;
+            float bgWidth = pauseMenuWidth * 0.7f;   // 784 (same as stats)
+            float bgHeight = pauseMenuHeight * 0.7f; // 1470 (same as stats)
+
+            // Calculate layout positions (EXACT same as stats tab)
+            float centerX = m_screenWidth * 0.5f;
+            float centerY = m_screenHeight * 0.5f + 32.0f;
+
+            // Center position with same offset as pause menu (+32 Y offset)
+            GNVector2 bgPosition = CenterObjectAtPosition(centerX, centerY, bgWidth, bgHeight);
+
+            Transform bgTransform(bgPosition, 0.0f, GNVector2(1.0f, 1.0f));
+            m_ecsCoordinator->AddComponent<Transform>(m_skillsBackgroundEntity, bgTransform);
+
+            // Create black rectangle with slight transparency (EXACT same as stats tab)
+            UIShape bgShape;
+            bgShape.type = UIShapeType::Rectangle;
+            bgShape.width = bgWidth;
+            bgShape.height = bgHeight;
+            bgShape.color = GNColor(0, 0, 0, 200); // Black with ~78% opacity (200/255)
+            bgShape.visible = false; // Initially hidden
+            bgShape.layer = 81; // Above pause menu background (80) but below skills text (80)
+            m_ecsCoordinator->AddComponent<UIShape>(m_skillsBackgroundEntity, bgShape);
+
+            // Add UIElement component for proper visibility management
+            UIElement bgElement;
+            bgElement.visible = false; // Initially hidden
+            bgElement.isEnabled = true;
+            bgElement.textLayer = 81; // Match UIShape layer
+            m_ecsCoordinator->AddComponent<UIElement>(m_skillsBackgroundEntity, bgElement);
+
+            Sprite bgSprite;
+            bgSprite.layer = 81; // Match textLayer
+            bgSprite.visible = false;
+            m_ecsCoordinator->AddComponent<Sprite>(m_skillsBackgroundEntity, bgSprite);
+        }
+
+        // Create skill name text (positioned relative to the black background)
+        if (m_skillsNameEntity == 0) {
+            m_skillsNameEntity = m_ecsCoordinator->CreateEntity();
+
+            // Position within the black background area
+            float bgX = CenterObjectAtPosition(m_screenWidth * 0.5f, m_screenHeight * 0.5f + 32.0f, 1120.0f * 0.7f, 2100.0f * 0.7f).x;
+            float bgWidth = 1120.0f * 0.7f;
+
+            float nameX = bgX + bgWidth * 0.5f; // Center within background
+            float nameY = CenterObjectAtPosition(m_screenWidth * 0.5f, m_screenHeight * 0.5f + 32.0f, 1120.0f * 0.7f, 2100.0f * 0.7f).y + 150.0f; // Near the top of the background
+
+            Transform nameTransform(GNVector2(nameX, nameY), 0.0f, GNVector2(1.0f, 1.0f));
+            m_ecsCoordinator->AddComponent<Transform>(m_skillsNameEntity, nameTransform);
+
+            UIElement nameElem;
+            nameElem.buttonText = "Select a Skill";
+            nameElem.fontSize = 48.0f;
+            nameElem.textColor = GNColor(255, 255, 255, 255);
+            nameElem.centerTextHorizontally = true;
+            nameElem.centerTextVertically = true;
+            nameElem.visible = false;
+            nameElem.isEnabled = true;
+            nameElem.textLayer = 82;
+            m_ecsCoordinator->AddComponent<UIElement>(m_skillsNameEntity, nameElem);
+
+            Sprite nameSprite;
+            nameSprite.layer = 82;
+            nameSprite.visible = false;
+            m_ecsCoordinator->AddComponent<Sprite>(m_skillsNameEntity, nameSprite);
+        }
+
+        // Create skill description text
+        if (m_skillsDescriptionEntity == 0) {
+            m_skillsDescriptionEntity = m_ecsCoordinator->CreateEntity();
+
+            // Position within the black background area
+            float bgX = CenterObjectAtPosition(m_screenWidth * 0.5f, m_screenHeight * 0.5f + 32.0f, 1120.0f * 0.7f, 2100.0f * 0.7f).x;
+            float bgY = CenterObjectAtPosition(m_screenWidth * 0.5f, m_screenHeight * 0.5f + 32.0f, 1120.0f * 0.7f, 2100.0f * 0.7f).y;
+            float bgWidth = 1120.0f * 0.7f;
+
+            float descX = bgX + bgWidth * 0.5f; // Center within background
+            float descY = bgY + 300.0f; // Below name text
+
+            Transform descTransform(GNVector2(descX, descY), 0.0f, GNVector2(1.0f, 1.0f));
+            m_ecsCoordinator->AddComponent<Transform>(m_skillsDescriptionEntity, descTransform);
+
+            UIElement descElem;
+            descElem.buttonText = "Choose a skill to unlock";
+            descElem.fontSize = 32.0f;
+            descElem.textColor = GNColor(255, 255, 255, 255);
+            descElem.centerTextHorizontally = true;
+            descElem.centerTextVertically = true;
+            descElem.visible = false;
+            descElem.isEnabled = true;
+            descElem.textLayer = 82;
+            m_ecsCoordinator->AddComponent<UIElement>(m_skillsDescriptionEntity, descElem);
+
+            Sprite descSprite;
+            descSprite.layer = 82;
+            descSprite.visible = false;
+            m_ecsCoordinator->AddComponent<Sprite>(m_skillsDescriptionEntity, descSprite);
+        }
+
+        // Create cost text
+        if (m_skillsCostEntity == 0) {
+            m_skillsCostEntity = m_ecsCoordinator->CreateEntity();
+
+            // Position cost text just above the unlock button
+            float unlockButtonY = m_screenHeight * 0.75f;
+            float costY = unlockButtonY - 200.0f; // 200 pixels above unlock button (between arrows and button)
+            float costX = m_screenWidth * 0.5f; // Center horizontally on screen
+
+            Transform costTransform(GNVector2(costX, costY), 0.0f, GNVector2(1.0f, 1.0f));
+            m_ecsCoordinator->AddComponent<Transform>(m_skillsCostEntity, costTransform);
+
+            UIElement costElem;
+            costElem.buttonText = "Cost: 0 coins";
+            costElem.fontSize = 36.0f;
+            costElem.textColor = GNColor(255, 215, 0, 255); // Gold color
+            costElem.centerTextHorizontally = true;
+            costElem.centerTextVertically = true;
+            costElem.visible = false;
+            costElem.isEnabled = true;
+            costElem.textLayer = 82;
+            m_ecsCoordinator->AddComponent<UIElement>(m_skillsCostEntity, costElem);
+
+            Sprite costSprite;
+            costSprite.layer = 82;
+            costSprite.visible = false;
+            m_ecsCoordinator->AddComponent<Sprite>(m_skillsCostEntity, costSprite);
+        }
+
+        // Create unlock button (positioned like main menu button in system tab)
+        if (m_skillsUnlockButtonEntity == 0) {
+            m_skillsUnlockButtonEntity = m_ecsCoordinator->CreateEntity();
+
+            // Position like main menu button (same area as hats/main menu button)
+            float buttonCenterX = m_screenWidth * 0.5f; // Center horizontally on screen
+            float buttonCenterY = m_screenHeight * 0.75f; // Position at 75% down screen (lower)
+
+            // Use proper button scale (10x scaling for 900x160 button like main menu)
+            float buttonScale = 10.0f;
+            float buttonWidth = 90.0f * buttonScale;  // 900 pixels
+            float buttonHeight = 16.0f * buttonScale; // 160 pixels
+
+            // Use positioning helper to center button
+            GNVector2 buttonPosition = CenterObjectAtPosition(buttonCenterX, buttonCenterY, buttonWidth, buttonHeight);
+            float buttonX = buttonPosition.x;
+            float buttonY = buttonPosition.y;
+
+            Transform buttonTransform(GNVector2(buttonX, buttonY), 0.0f, GNVector2(buttonScale, buttonScale));
+            m_ecsCoordinator->AddComponent<Transform>(m_skillsUnlockButtonEntity, buttonTransform);
+
+            // Create sprite using FloppyButtonBlue.png
+            Sprite buttonSprite("FloppyButtonBlue.png", 90, 16);
+            buttonSprite.layer = 90;
+            buttonSprite.visible = false;
+            m_ecsCoordinator->AddComponent<Sprite>(m_skillsUnlockButtonEntity, buttonSprite);
+
+            // Create UI element with proper textures
+            UIElement buttonElem("BUY", "FloppyButtonBlue", "FloppyButtonBlueHover");
+            buttonElem.fontSize = 62.0f;
+            buttonElem.textColor = GNColor(255, 255, 255, 255);
+            buttonElem.centerTextHorizontally = true;
+            buttonElem.centerTextVertically = true;
+            buttonElem.textLayer = 91;
+            buttonElem.visible = false;
+            buttonElem.isEnabled = true;
+            buttonElem.normalTextureId = "FloppyButtonBlue"; // Set normal texture ID
+            m_ecsCoordinator->AddComponent<UIElement>(m_skillsUnlockButtonEntity, buttonElem);
+        }
+
+        // Create left arrow button (small, positioned within black background)
+        if (m_skillsLeftArrowEntity == 0) {
+            m_skillsLeftArrowEntity = m_ecsCoordinator->CreateEntity();
+
+            // Position arrows with edges aligned at 20% and 80% marks for true symmetry
+            float unlockButtonY = m_screenHeight * 0.75f;
+            float costY = unlockButtonY - 200.0f; // Cost text Y position
+            float arrowY = costY; // Same Y as cost text for perfect centering
+            float arrowScale = 6.0f; // Increased scale for better visibility
+            float arrowSize = 16.0f * arrowScale; // 96 pixels total size (16x16 * 6)
+            // Left arrow's left edge at 20% mark
+            float arrowX = m_screenWidth * 0.20f; // 20% from left edge
+
+            Transform arrowTransform(GNVector2(arrowX, arrowY), 0.0f, GNVector2(arrowScale, arrowScale));
+            m_ecsCoordinator->AddComponent<Transform>(m_skillsLeftArrowEntity, arrowTransform);
+
+            Sprite arrowSprite;
+            arrowSprite.textureId = "LeftArrow";
+            arrowSprite.width = 16.0f;  // Base texture size (16x16)
+            arrowSprite.height = 16.0f; // Base texture size (16x16)
+            arrowSprite.layer = 90;
+            arrowSprite.visible = false;
+            m_ecsCoordinator->AddComponent<Sprite>(m_skillsLeftArrowEntity, arrowSprite);
+
+            // Add UIElement for proper rendering
+            UIElement arrowUI("", "LeftArrow", "LeftArrowHover", "LeftArrow");
+            arrowUI.visible = false;
+            arrowUI.isEnabled = true;
+            arrowUI.textLayer = 90;
+            arrowUI.normalTextureId = "LeftArrow"; // Set normal texture ID
+            m_ecsCoordinator->AddComponent<UIElement>(m_skillsLeftArrowEntity, arrowUI);
+        }
+
+        // Create right arrow button (small, positioned within black background)
+        if (m_skillsRightArrowEntity == 0) {
+            m_skillsRightArrowEntity = m_ecsCoordinator->CreateEntity();
+
+            // Position arrows with edges aligned at 20% and 80% marks for true symmetry
+            float unlockButtonY = m_screenHeight * 0.75f;
+            float costY = unlockButtonY - 200.0f; // Cost text Y position
+            float arrowY = costY; // Same Y as cost text for perfect centering
+            float arrowScale = 6.0f; // Increased scale for better visibility
+            float arrowSize = 16.0f * arrowScale; // 96 pixels total size (16x16 * 6)
+            // Right arrow's right edge at 80% mark (so left edge at 80% - button width)
+            float arrowX = m_screenWidth * 0.80f - arrowSize; // 80% minus button width
+
+            Transform arrowTransform(GNVector2(arrowX, arrowY), 0.0f, GNVector2(arrowScale, arrowScale));
+            m_ecsCoordinator->AddComponent<Transform>(m_skillsRightArrowEntity, arrowTransform);
+
+            Sprite arrowSprite;
+            arrowSprite.textureId = "RightArrow";
+            arrowSprite.width = 16.0f;  // Base texture size (16x16)
+            arrowSprite.height = 16.0f; // Base texture size (16x16)
+            arrowSprite.layer = 90;
+            arrowSprite.visible = false;
+            m_ecsCoordinator->AddComponent<Sprite>(m_skillsRightArrowEntity, arrowSprite);
+
+            // Add UIElement for proper rendering
+            UIElement arrowUI("", "RightArrow", "RightArrowHover", "RightArrow");
+            arrowUI.visible = false;
+            arrowUI.isEnabled = true;
+            arrowUI.textLayer = 90;
+            arrowUI.normalTextureId = "RightArrow"; // Set normal texture ID
+            m_ecsCoordinator->AddComponent<UIElement>(m_skillsRightArrowEntity, arrowUI);
+        }
+
+        GN_LOG_INFO("PauseSystem: Skills tab created");
+    }
+
+    void PauseSystem::CreateHatsTab() {
+        GN_LOG_INFO("PauseSystem: Creating hats tab");
+
+        // Create "Hats" title text at the very top of the pause menu
+        if (m_hatsTitleEntity == 0) {
+            m_hatsTitleEntity = m_ecsCoordinator->CreateEntity();
+
+            // Position at the top center of the screen (like other tab titles)
+            float titleX = m_screenWidth * 0.5f;
+            float titleY = m_screenHeight * 0.15f; // Near the top
+
+            Transform titleTransform(GNVector2(titleX, titleY), 0.0f, GNVector2(1.0f, 1.0f));
+            m_ecsCoordinator->AddComponent<Transform>(m_hatsTitleEntity, titleTransform);
+
+            UIElement titleElem;
+            titleElem.buttonText = "Hats";
+            titleElem.fontSize = 72.0f; // Large title font
+            titleElem.textColor = GNColor(255, 255, 255, 255);
+            titleElem.centerTextHorizontally = true;
+            titleElem.centerTextVertically = true;
+            titleElem.visible = false;
+            titleElem.isEnabled = true;
+            titleElem.textLayer = 90;
+            m_ecsCoordinator->AddComponent<UIElement>(m_hatsTitleEntity, titleElem);
+
+            Sprite titleSprite;
+            titleSprite.layer = 90;
+            titleSprite.visible = false;
+            m_ecsCoordinator->AddComponent<Sprite>(m_hatsTitleEntity, titleSprite);
+        }
+
+        // Create black background for hats tab (same as skills tab)
+        if (m_hatsBackgroundEntity == 0) {
+            m_hatsBackgroundEntity = m_ecsCoordinator->CreateEntity();
+
+            // Use same dimensions as skills background (70% of pause menu background)
+            float bgX = CenterObjectAtPosition(m_screenWidth * 0.5f, m_screenHeight * 0.5f + 32.0f, 1120.0f * 0.7f, 2100.0f * 0.7f).x;
+            float bgY = CenterObjectAtPosition(m_screenWidth * 0.5f, m_screenHeight * 0.5f + 32.0f, 1120.0f * 0.7f, 2100.0f * 0.7f).y;
+
+            Transform bgTransform(GNVector2(bgX, bgY), 0.0f, GNVector2(1.0f, 1.0f));
+            m_ecsCoordinator->AddComponent<Transform>(m_hatsBackgroundEntity, bgTransform);
+
+            // Create black rectangle background
+            GameCore::UIShape backgroundShape(GameCore::UIShapeType::Rectangle, 1120.0f * 0.7f, 2100.0f * 0.7f, GNColor(0, 0, 0, 180)); // Semi-transparent black
+            backgroundShape.visible = false;
+            backgroundShape.layer = 82; // Above pause menu background (80) but below content (90)
+            m_ecsCoordinator->AddComponent<GameCore::UIShape>(m_hatsBackgroundEntity, backgroundShape);
+
+            UIElement bgElement;
+            bgElement.visible = false;
+            bgElement.isEnabled = false; // Background shouldn't be interactive
+            bgElement.textLayer = 79; // Match UIShape layer
+            m_ecsCoordinator->AddComponent<UIElement>(m_hatsBackgroundEntity, bgElement);
+
+            Sprite bgSprite;
+            bgSprite.layer = 79; // Match textLayer
+            bgSprite.visible = false;
+            m_ecsCoordinator->AddComponent<Sprite>(m_hatsBackgroundEntity, bgSprite);
+        }
+
+        // Calculate grid dimensions (3x5 grid) - EXACT same as original
+        float gridWidth = m_screenWidth * 0.7f;   // 70% of screen width
+        float gridHeight = m_screenHeight * 0.4f; // 40% of screen height
+        float centerX = m_screenWidth * 0.5f;
+        float centerY = m_screenHeight * 0.45f;
+
+        // Create hats grid UI elements directly in PauseSystem (like original implementation)
+        // HatsSystem provides data, PauseSystem manages UI
+        CreateHatsGridUI(centerX, centerY, gridWidth, gridHeight);
+
+        // Create hat action button (Buy/Equip)
+        CreateHatActionButton();
+
+        // Create hat cost display
+        CreateHatCostDisplay();
+
+        GN_LOG_INFO("PauseSystem: Hats tab created with proper background and grid positioning");
+    }
+
+    void PauseSystem::CreateHatsGridUI(float centerX, float centerY, float gridWidth, float gridHeight)
+    {
+        GN_LOG_INFO("PauseSystem: Creating hats grid UI at center (" + std::to_string(centerX) + ", " + std::to_string(centerY) + ")");
+
+        if (!m_hatsSystem) {
+            GN_LOG_WARN("PauseSystem: HatsSystem not available for grid creation");
+            return;
+        }
+
+        // Calculate grid layout (5 rows, 3 columns like original)
+        const int GRID_ROWS = 5;
+        const int GRID_COLS = 3;
+        const int MAX_HATS = GRID_ROWS * GRID_COLS;
+
+        // Calculate positions for each hat in the grid
+        std::vector<GNVector2> positions;
+        float cellWidth = gridWidth / GRID_COLS;
+        float cellHeight = gridHeight / GRID_ROWS;
+
+        for (int row = 0; row < GRID_ROWS; ++row) {
+            for (int col = 0; col < GRID_COLS; ++col) {
+                float x = centerX - (gridWidth * 0.5f) + (col * cellWidth) + (cellWidth * 0.5f);
+                float y = centerY - (gridHeight * 0.5f) + (row * cellHeight) + (cellHeight * 0.5f);
+                positions.push_back(GNVector2(x, y));
+            }
+        }
+
+        // Create hat frame and icon entities - MATCH ORIGINAL HATS SYSTEM LOGIC
+        int hatCount = m_hatsSystem->GetHatCount();
+        for (int i = 0; i < std::min(hatCount, MAX_HATS) && i < (int)positions.size(); ++i) {
+            float x = positions[i].x;
+            float y = positions[i].y;
+
+            // Get hat data
+            auto hatData = m_hatsSystem->GetHatData(i);
+            if (!hatData) continue;
+
+            // Create frame entity - MATCH ORIGINAL LOGIC
+            auto frameEntity = m_ecsCoordinator->CreateEntity();
+
+            // Use UI transform for screen-space positioning with 6x scale (like original)
+            // Use CenterObjectAtPosition for proper centering of frame
+            float frameWidth = 32.0f * 1.2f * 6.0f;  // 32x32 texture * 1.2 scale factor * 6 UI scale
+            float frameHeight = 32.0f * 1.2f * 6.0f;
+            GNVector2 framePosition = CenterObjectAtPosition(x, y, frameWidth, frameHeight);
+            Transform frameTransform(framePosition, 0.0f, GNVector2(6.0f, 6.0f));
+            m_ecsCoordinator->AddComponent<Transform>(frameEntity, frameTransform);
+
+            // Determine frame texture based on hat status and selection (like original)
+            std::string frameTextureId;
+            if (i == m_hatsSystem->GetSelectedHatIndex()) {
+                frameTextureId = "HatFrameHover.png"; // Use hover texture for selected hat
+            } else if (i == m_hatsSystem->GetEquippedHatIndex()) {
+                frameTextureId = "HatFrameHover.png"; // Use hover texture for equipped hat
+            } else {
+                frameTextureId = "HatFrame.png"; // Use normal frame texture for all others
+            }
+
+            Sprite frameSprite(frameTextureId, 32.0f * 1.2f, 32.0f * 1.2f); // Match original 1.2x scale factor
+            frameSprite.layer = 90; // Behind icons (91) but above Systems tab (89 and below)
+            frameSprite.visible = false; // Start invisible, will be shown when tab is activated
+            m_ecsCoordinator->AddComponent<Sprite>(frameEntity, frameSprite);
+
+            // Create UI element for the frame (following working Systems tab pattern)
+            UIElement frameElement;
+            frameElement.buttonText = ""; // No text for frames
+            frameElement.fontSize = 0.0f;
+            frameElement.visible = false; // Start invisible, will be shown when tab is activated
+            frameElement.isEnabled = true;
+            frameElement.textLayer = 90; // Match sprite layer
+            frameElement.normalTextureId = frameTextureId; // Add normal texture ID for frame
+            m_ecsCoordinator->AddComponent<UIElement>(frameEntity, frameElement);
+
+            // Store frame entity for later access
+            if ((int)m_hatFrameEntities.size() <= i) {
+                m_hatFrameEntities.resize(i + 1);
+            }
+            m_hatFrameEntities[i] = frameEntity;
+
+            // Create icon entity - MATCH ORIGINAL LOGIC
+            auto iconEntity = m_ecsCoordinator->CreateEntity();
+
+            // Use UI transform for screen-space positioning with 6x scale
+            // Fix icon centering - icons are 16x16 content inside 32x32 texture, in top-left quadrant
+            // Offset by half the icon content size (8px * scale) to center the 16x16 content
+            GNVector2 baseCenterPoint = CenterObjectAtPosition(x, y, 32.0f * 6.0f, 32.0f * 6.0f);
+            // Adjust for 16x16 icon content being in top-left quadrant by offsetting by 8px * scale
+            float iconOffset = 8.0f * 6.0f; // Half of 16px icon content size * 6x scale
+            GNVector2 centerPoint(baseCenterPoint.x + iconOffset, baseCenterPoint.y + iconOffset);
+            Transform iconTransform(centerPoint, 0.0f, GNVector2(6.0f, 6.0f));
+            m_ecsCoordinator->AddComponent<Transform>(iconEntity, iconTransform);
+
+            // Create sprite for the hat icon FIRST (following working Systems tab pattern)
+            Sprite iconSprite(hatData->iconPath, 32.0f, 32.0f);
+            iconSprite.layer = 91; // ABOVE regular frames (90) to avoid layer conflicts
+            iconSprite.visible = false; // Start invisible, will be shown when tab is activated
+            m_ecsCoordinator->AddComponent<Sprite>(iconEntity, iconSprite);
+
+            // Add UI element component to make this screen-space (following working Systems tab pattern)
+            UIElement iconElement;
+            iconElement.visible = false; // Start invisible, will be shown when tab is activated
+            iconElement.isEnabled = false; // Not interactive
+            iconElement.textLayer = 91; // ABOVE Systems tab (90) to avoid layer conflicts
+            iconElement.normalTextureId = hatData->iconPath; // Add normal texture ID for hat icon
+            m_ecsCoordinator->AddComponent<UIElement>(iconEntity, iconElement);
+
+            // Store icon entity
+            if ((int)m_hatIconEntities.size() <= i) {
+                m_hatIconEntities.resize(i + 1);
+            }
+            m_hatIconEntities[i] = iconEntity;
+
+            // Create locked overlay frame if hat is locked - MATCH ORIGINAL LOGIC
+            if (hatData->status == HatStatus::LOCKED) {
+                GN_LOG_INFO("PauseSystem: Creating locked overlay frame for locked hat '" + hatData->name + "'");
+
+                // Create locked frame entity at same position with higher layer
+                auto lockedFrameEntity = m_ecsCoordinator->CreateEntity();
+                float lockedFrameWidth = 32.0f * 1.2f * 6.0f;
+                float lockedFrameHeight = 32.0f * 1.2f * 6.0f;
+                GNVector2 lockedFramePosition = CenterObjectAtPosition(x, y, lockedFrameWidth, lockedFrameHeight);
+                Transform lockedFrameTransform(lockedFramePosition, 0.0f, GNVector2(6.0f, 6.0f));
+                m_ecsCoordinator->AddComponent<Transform>(lockedFrameEntity, lockedFrameTransform);
+
+                Sprite lockedFrameSprite("HatFrameLocked.png", 32.0f * 1.2f, 32.0f * 1.2f);
+                lockedFrameSprite.layer = 93; // ABOVE regular frames (92) so lock overlay is on top
+                lockedFrameSprite.visible = false; // Start invisible, will be shown when tab is activated
+                m_ecsCoordinator->AddComponent<Sprite>(lockedFrameEntity, lockedFrameSprite);
+
+                UIElement lockedFrameElement;
+                lockedFrameElement.buttonText = ""; // No text for frames
+                lockedFrameElement.fontSize = 0.0f;
+                lockedFrameElement.visible = false; // Start invisible, will be shown when tab is activated
+                lockedFrameElement.isEnabled = true;
+                lockedFrameElement.textLayer = 92; // Match sprite layer
+                lockedFrameElement.normalTextureId = "HatFrameLocked.png";
+                m_ecsCoordinator->AddComponent<UIElement>(lockedFrameEntity, lockedFrameElement);
+
+                // Store the locked frame entity for later management
+                if ((int)m_lockedFrameEntities.size() <= i) {
+                    m_lockedFrameEntities.resize(i + 1);
+                }
+                m_lockedFrameEntities[i] = lockedFrameEntity;
+
+                GN_LOG_INFO("PauseSystem: Created locked frame overlay entity for hat '" + hatData->name + "' (index " + std::to_string(i) + ")");
+            }
+
+            GN_LOG_INFO("PauseSystem: Created hat " + std::to_string(i) + " '" + hatData->name + "' at position (" +
+                       std::to_string(x) + ", " + std::to_string(y) + ") with frame texture '" + frameTextureId + "'");
+        }
+
+        GN_LOG_INFO("PauseSystem: Created hats grid with " + std::to_string(m_hatFrameEntities.size()) + " frames");
+    }
+
+    void PauseSystem::CreateHatActionButton()
+    {
+        GN_LOG_INFO("PauseSystem: Creating hat action button");
+
+        if (m_hatsActionButtonEntity == 0) {
+            m_hatsActionButtonEntity = m_ecsCoordinator->CreateEntity();
+
+            // Position below the grid (same as main menu button)
+            float buttonCenterX = m_screenWidth * 0.5f; // Center horizontally on screen
+            float buttonCenterY = m_screenHeight * 0.75f; // Position at 75% down screen (same as main menu)
+
+            // Use same scale as main menu button (10x scaling for 900x160 button)
+            float buttonScale = 10.0f;
+            float buttonWidth = 90.0f * buttonScale;  // 900 pixels (like working buttons)
+            float buttonHeight = 16.0f * buttonScale; // 160 pixels (like working buttons)
+
+            // Use positioning helper to center button (EXACT same pattern as main menu buttons)
+            GNVector2 buttonPosition = CenterObjectAtPosition(buttonCenterX, buttonCenterY, buttonWidth, buttonHeight);
+            float buttonX = buttonPosition.x;  // This is the TOP-LEFT X position for the sprite
+            float buttonY = buttonPosition.y;  // This is the TOP-LEFT Y position for the sprite
+
+            Transform buttonTransform(GNVector2(buttonX, buttonY), 0.0f, GNVector2(buttonScale, buttonScale));
+            m_ecsCoordinator->AddComponent<Transform>(m_hatsActionButtonEntity, buttonTransform);
+
+            // Create sprite using same pattern as main menu button
+            Sprite buttonSprite("FloppyButtonBlue.png", 90, 16); // Use actual texture dimensions
+            buttonSprite.layer = 91; // Above main menu button layer
+            buttonSprite.visible = false;
+            m_ecsCoordinator->AddComponent<Sprite>(m_hatsActionButtonEntity, buttonSprite);
+
+            // Create UI element with same pattern as main menu button
+            UIElement buttonElement("Nothing Selected", "FloppyButtonBlue", "FloppyButtonBlueHover");
+            buttonElement.fontSize = 62.0f; // Same font size as main menu button
+            buttonElement.textColor = GNColor(150, 150, 150, 255); // Gray for no selection
+            buttonElement.centerTextHorizontally = true;
+            buttonElement.centerTextVertically = true;
+            buttonElement.textLayer = 91; // Same layer as button sprite
+            buttonElement.visible = false;
+            buttonElement.isEnabled = false;
+            buttonElement.normalTextureId = "FloppyButtonBlue"; // Add texture ID
+            buttonElement.textOffsetX = 0.0f;  // No horizontal offset for perfect centering
+            buttonElement.textOffsetY = 0.0f;  // No vertical offset for perfect centering
+            m_ecsCoordinator->AddComponent<UIElement>(m_hatsActionButtonEntity, buttonElement);
+
+            GN_LOG_INFO("PauseSystem: Created hat action button at top-left (" + std::to_string(buttonX) + ", " + std::to_string(buttonY) + ") with scale " + std::to_string(buttonScale));
+        }
+    }
+
+    void PauseSystem::CreateHatCostDisplay()
+    {
+        GN_LOG_INFO("PauseSystem: Creating hat cost display");
+
+        if (m_hatsCostDisplayEntity == 0) {
+            m_hatsCostDisplayEntity = m_ecsCoordinator->CreateEntity();
+
+            // Position above the action button
+            float textX = m_screenWidth * 0.5f;
+            float textY = m_screenHeight * 0.70f; // Above the button
+
+            Transform textTransform(GNVector2(textX, textY), 0.0f, GNVector2(1.0f, 1.0f));
+            m_ecsCoordinator->AddComponent<Transform>(m_hatsCostDisplayEntity, textTransform);
+
+            UIElement textElement("Select a hat to see cost", "");
+            textElement.visible = false;
+            textElement.isEnabled = false;
+            textElement.textLayer = 90;
+            textElement.fontSize = 32.0f;
+            textElement.centerTextHorizontally = true;
+            textElement.textColor = GNColor(255, 255, 255, 255);
+            m_ecsCoordinator->AddComponent<UIElement>(m_hatsCostDisplayEntity, textElement);
+
+            Sprite textSprite;
+            textSprite.layer = 90;
+            textSprite.visible = false;
+            m_ecsCoordinator->AddComponent<Sprite>(m_hatsCostDisplayEntity, textSprite);
+
+            GN_LOG_INFO("PauseSystem: Created hat cost display at (" + std::to_string(textX) + ", " + std::to_string(textY) + ")");
+        }
+    }
+
+    void PauseSystem::UpdateHatDisplay()
+    {
+        if (!m_hatsSystem) return;
+
+        // Sync player coins to ensure we have the latest coin count
+        SyncPlayerCoins();
+
+        int selectedHatIndex = m_hatsSystem->GetSelectedHatIndex();
+
+        // Update cost display and action button
+        if (selectedHatIndex < 0 || selectedHatIndex >= m_hatsSystem->GetHatCount()) {
+            // No hat selected
+            if (m_hatsCostDisplayEntity != 0 && m_ecsCoordinator) {
+                UIElement* costElement = m_ecsCoordinator->GetComponent<UIElement>(m_hatsCostDisplayEntity);
+                if (costElement) {
+                    costElement->buttonText = "Select a hat to see cost";
+                    costElement->textColor = GNColor(255, 255, 255, 255);
+                }
+            }
+
+            if (m_hatsActionButtonEntity != 0 && m_ecsCoordinator) {
+                UIElement* actionElement = m_ecsCoordinator->GetComponent<UIElement>(m_hatsActionButtonEntity);
+                if (actionElement) {
+                    actionElement->buttonText = "Nothing Selected";
+                    actionElement->isEnabled = false;
+                    actionElement->textColor = GNColor(150, 150, 150, 255); // Gray for no selection
+                }
+            }
+        } else {
+            // Hat selected - show cost and action
+            auto hatData = m_hatsSystem->GetHatData(selectedHatIndex);
+            if (hatData) {
+                if (m_hatsCostDisplayEntity != 0 && m_ecsCoordinator) {
+                    UIElement* costElement = m_ecsCoordinator->GetComponent<UIElement>(m_hatsCostDisplayEntity);
+                    if (costElement) {
+                        if (m_hatsSystem->IsHatUnlocked(selectedHatIndex)) {
+                            costElement->buttonText = hatData->name + " - Unlocked";
+                            costElement->textColor = GNColor(100, 255, 100, 255); // Green for unlocked
+                        } else {
+                            costElement->buttonText = hatData->name + " - Cost: " + std::to_string(hatData->cost) + " coins";
+                            costElement->textColor = GNColor(255, 255, 100, 255); // Yellow for locked
+                        }
+                    }
+                }
+
+                if (m_hatsActionButtonEntity != 0 && m_ecsCoordinator) {
+                    UIElement* actionElement = m_ecsCoordinator->GetComponent<UIElement>(m_hatsActionButtonEntity);
+                    if (actionElement) {
+                        if (m_hatsSystem->IsHatUnlocked(selectedHatIndex)) {
+                            if (selectedHatIndex == m_hatsSystem->GetEquippedHatIndex()) {
+                                actionElement->buttonText = "EQUIPPED";
+                                actionElement->isEnabled = false;
+                                actionElement->textColor = GNColor(100, 255, 100, 255); // Green for equipped
+                            } else {
+                                actionElement->buttonText = "Equip";
+                                actionElement->isEnabled = true;
+                                actionElement->textColor = GNColor(255, 255, 255, 255);
+                            }
+                        } else {
+                            if (m_playerCoins >= hatData->cost) {
+                                actionElement->buttonText = "Buy";
+                                actionElement->isEnabled = true;
+                                actionElement->textColor = GNColor(255, 255, 255, 255);
+                            } else {
+                                actionElement->buttonText = "Not enough coins";
+                                actionElement->isEnabled = true; // Keep enabled so denied sound can play
+                                actionElement->textColor = GNColor(255, 100, 100, 255); // Red for insufficient coins
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Update frame visuals
+        UpdateHatFrameVisuals();
+    }
+
+    void PauseSystem::SyncPlayerCoins()
+    {
+        // Sync player coins from ECS component to ensure we have the latest coin count
+        // Combine both session coins and total coins for purchasing
+        if (m_playerEntity != 0 && m_ecsCoordinator) {
+            auto* playerComp = m_ecsCoordinator->GetComponent<PlayerComponent>(m_playerEntity);
+            if (playerComp) {
+                int oldCoins = m_playerCoins;
+                m_playerCoins = playerComp->sessionCoins + playerComp->totalCoins;
+                GN_LOG_INFO("PauseSystem: Synced player coins (session: " + std::to_string(playerComp->sessionCoins) +
+                           ", total: " + std::to_string(playerComp->totalCoins) +
+                           ", combined: " + std::to_string(m_playerCoins) +
+                           ", old: " + std::to_string(oldCoins) + ")");
+            } else {
+                GN_LOG_ERROR("PauseSystem: Failed to get player component for coin sync!");
+            }
+        } else {
+            GN_LOG_ERROR("PauseSystem: Cannot sync coins - playerEntity: " + std::to_string(m_playerEntity) +
+                        ", ecsCoordinator: " + (m_ecsCoordinator ? "valid" : "null"));
+        }
+    }
+
+    void PauseSystem::UpdateHatFrameVisuals()
+    {
+        if (!m_hatsSystem) return;
+
+        // Update all frame textures based on current selection and equipped state
+        for (size_t i = 0; i < m_hatFrameEntities.size(); ++i) {
+            auto frameEntity = m_hatFrameEntities[i];
+            if (frameEntity != 0 && m_ecsCoordinator) {
+                auto* sprite = m_ecsCoordinator->GetComponent<Sprite>(frameEntity);
+                auto* uiElement = m_ecsCoordinator->GetComponent<UIElement>(frameEntity);
+
+                if (sprite && uiElement) {
+                    std::string frameTextureId;
+                    if (i == (size_t)m_hatsSystem->GetSelectedHatIndex()) {
+                        frameTextureId = "HatFrameHover.png"; // Use hover texture for selected hat
+                    } else if (i == (size_t)m_hatsSystem->GetEquippedHatIndex()) {
+                        frameTextureId = "HatFrameHover.png"; // Use hover texture for equipped hat
+                    } else {
+                        frameTextureId = "HatFrame.png"; // Use normal frame texture for all others
+                    }
+
+                    // Update both sprite and UI element textures
+                    sprite->textureId = frameTextureId;
+                    uiElement->normalTextureId = frameTextureId;
+
+                    GN_LOG_INFO("PauseSystem: Updated frame " + std::to_string(i) + " texture to '" + frameTextureId + "'");
+                }
+            }
+        }
+    }
+
+    void PauseSystem::CreateStatsTab() {
+        GN_LOG_INFO("PauseSystem: Creating stats tab");
+
+        // Create "Stats" title text at the very top of the pause menu
+        if (m_statsTitleEntity == 0) {
+            m_statsTitleEntity = m_ecsCoordinator->CreateEntity();
+
+            // Position at the top center of the screen (like other tab titles)
+            float titleX = m_screenWidth * 0.5f;
+            float titleY = m_screenHeight * 0.15f; // Near the top
+
+            Transform titleTransform(GNVector2(titleX, titleY), 0.0f, GNVector2(1.0f, 1.0f));
+            m_ecsCoordinator->AddComponent<Transform>(m_statsTitleEntity, titleTransform);
+
+            UIElement titleElem;
+            titleElem.buttonText = "Stats";
+            titleElem.fontSize = 72.0f; // Large title font
+            titleElem.textColor = GNColor(255, 255, 255, 255);
+            titleElem.centerTextHorizontally = true;
+            titleElem.centerTextVertically = true;
+            titleElem.visible = false;
+            titleElem.isEnabled = true;
+            titleElem.textLayer = 90;
+            m_ecsCoordinator->AddComponent<UIElement>(m_statsTitleEntity, titleElem);
+
+            Sprite titleSprite;
+            titleSprite.layer = 90;
+            titleSprite.visible = false;
+            m_ecsCoordinator->AddComponent<Sprite>(m_statsTitleEntity, titleSprite);
+        }
+
+        // Calculate 70% of the pause menu background dimensions
+        // Pause menu: 160x300 texture at 7x scale = 1120x2100
+        float pauseMenuWidth = 1120.0f;
+        float pauseMenuHeight = 2100.0f;
+        float bgWidth = pauseMenuWidth * 0.7f;   // 784
+        float bgHeight = pauseMenuHeight * 0.7f; // 1470
+
+        // Calculate layout positions
+        float centerX = m_screenWidth * 0.5f;
+        float centerY = m_screenHeight * 0.5f + 32.0f;
+
+        // Create black rectangle background for stats tab (70% of pause menu background size)
+        if (m_statsBackgroundEntity == 0) {
+            m_statsBackgroundEntity = m_ecsCoordinator->CreateEntity();
+
+            // Center position with same offset as pause menu (+32 Y offset)
+            GNVector2 bgPosition = CenterObjectAtPosition(centerX, centerY, bgWidth, bgHeight);
+
+            Transform bgTransform(bgPosition, 0.0f, GNVector2(1.0f, 1.0f));
+            m_ecsCoordinator->AddComponent<Transform>(m_statsBackgroundEntity, bgTransform);
+
+            // Create black rectangle with slight transparency
+            UIShape bgShape;
+            bgShape.type = UIShapeType::Rectangle;
+            bgShape.width = bgWidth;
+            bgShape.height = bgHeight;
+            bgShape.color = GNColor(0, 0, 0, 200); // Black with ~78% opacity (200/255)
+            bgShape.visible = false; // Initially hidden
+            bgShape.layer = 82; // Above pause menu background (80) but below content (90)
+            m_ecsCoordinator->AddComponent<UIShape>(m_statsBackgroundEntity, bgShape);
+
+            // Add UIElement component for proper visibility management
+            UIElement bgElement;
+            bgElement.visible = false; // Initially hidden
+            bgElement.isEnabled = true;
+            bgElement.textLayer = 79; // Match UIShape layer
+            m_ecsCoordinator->AddComponent<UIElement>(m_statsBackgroundEntity, bgElement);
+
+            GN_LOG_INFO("PauseSystem: Created stats background rectangle at (" + std::to_string(bgPosition.x) + ", " + std::to_string(bgPosition.y) + ") size " + std::to_string(bgWidth) + "x" + std::to_string(bgHeight));
+        }
+
+        // Start from top of rectangle and work down
+        float startY = centerY - (bgHeight * 0.4f); // Start near top of rectangle
+        float lineSpacing = 80.0f; // Space between stats
+        float fontSize = 32.0f;
+
+        // Create individual stat text entities
+        // 1. Current Session Pipes
+        if (m_currentSessionTextEntity == 0) {
+            m_currentSessionTextEntity = m_ecsCoordinator->CreateEntity();
+            Transform transform(GNVector2(centerX, startY), 0.0f, GNVector2(1.0f, 1.0f));
+            m_ecsCoordinator->AddComponent<Transform>(m_currentSessionTextEntity, transform);
+
+            UIElement uiElem;
+            uiElem.buttonText = "Session Pipes: 0"; // Will be updated when shown
+            uiElem.fontSize = fontSize;
+            uiElem.textColor = GNColor(255, 255, 255, 255);
+            uiElem.centerTextHorizontally = true;
+            uiElem.visible = false;
+            uiElem.isEnabled = true;
+            uiElem.textLayer = 90;
+            m_ecsCoordinator->AddComponent<UIElement>(m_currentSessionTextEntity, uiElem);
+        }
+
+        // 2. Session Coins
+        if (m_sessionCoinsTextEntity == 0) {
+            m_sessionCoinsTextEntity = m_ecsCoordinator->CreateEntity();
+            Transform transform(GNVector2(centerX, startY + lineSpacing), 0.0f, GNVector2(1.0f, 1.0f));
+            m_ecsCoordinator->AddComponent<Transform>(m_sessionCoinsTextEntity, transform);
+
+            UIElement uiElem;
+            uiElem.buttonText = "Session Coins: 0"; // Will be updated when shown
+            uiElem.fontSize = fontSize;
+            uiElem.textColor = GNColor(255, 255, 100, 255); // Light gold for session coins
+            uiElem.centerTextHorizontally = true;
+            uiElem.visible = false;
+            uiElem.isEnabled = true;
+            uiElem.textLayer = 90;
+            m_ecsCoordinator->AddComponent<UIElement>(m_sessionCoinsTextEntity, uiElem);
+        }
+
+        // 3. Total Coins
+        if (m_totalCoinsTextEntity == 0) {
+            m_totalCoinsTextEntity = m_ecsCoordinator->CreateEntity();
+            Transform transform(GNVector2(centerX, startY + lineSpacing * 2), 0.0f, GNVector2(1.0f, 1.0f));
+            m_ecsCoordinator->AddComponent<Transform>(m_totalCoinsTextEntity, transform);
+
+            UIElement uiElem;
+            uiElem.buttonText = "Current Total Coins: 0"; // Will be updated when shown (total spendable coins: stored + session)
+            uiElem.fontSize = fontSize;
+            uiElem.textColor = GNColor(255, 215, 0, 255); // Gold color for coins
+            uiElem.centerTextHorizontally = true;
+            uiElem.visible = false;
+            uiElem.isEnabled = true;
+            uiElem.textLayer = 90;
+            m_ecsCoordinator->AddComponent<UIElement>(m_totalCoinsTextEntity, uiElem);
+        }
+
+        // 4. Gross Total Coins
+        if (m_grossTotalCoinsTextEntity == 0) {
+            m_grossTotalCoinsTextEntity = m_ecsCoordinator->CreateEntity();
+            Transform transform(GNVector2(centerX, startY + lineSpacing * 3), 0.0f, GNVector2(1.0f, 1.0f));
+            m_ecsCoordinator->AddComponent<Transform>(m_grossTotalCoinsTextEntity, transform);
+
+            UIElement uiElem;
+            uiElem.buttonText = "Gross Total Coins: 0"; // Will be updated when shown (lifetime accumulation)
+            uiElem.fontSize = fontSize;
+            uiElem.textColor = GNColor(200, 255, 200, 255); // Light gold-green for lifetime record
+            uiElem.centerTextHorizontally = true;
+            uiElem.visible = false;
+            uiElem.isEnabled = true;
+            uiElem.textLayer = 90;
+            m_ecsCoordinator->AddComponent<UIElement>(m_grossTotalCoinsTextEntity, uiElem);
+        }
+
+        // 5. Total Flops
+        if (m_totalFlopsTextEntity == 0) {
+            m_totalFlopsTextEntity = m_ecsCoordinator->CreateEntity();
+            Transform transform(GNVector2(centerX, startY + lineSpacing * 4), 0.0f, GNVector2(1.0f, 1.0f));
+            m_ecsCoordinator->AddComponent<Transform>(m_totalFlopsTextEntity, transform);
+
+            UIElement uiElem;
+            uiElem.buttonText = "Total Flops: 0"; // Will be updated when shown
+            uiElem.fontSize = fontSize;
+            uiElem.textColor = GNColor(150, 255, 150, 255); // Light green for victories
+            uiElem.centerTextHorizontally = true;
+            uiElem.visible = false;
+            uiElem.isEnabled = true;
+            uiElem.textLayer = 90;
+            m_ecsCoordinator->AddComponent<UIElement>(m_totalFlopsTextEntity, uiElem);
+        }
+
+        // 6. Enemies Killed
+        if (m_enemiesKilledTextEntity == 0) {
+            m_enemiesKilledTextEntity = m_ecsCoordinator->CreateEntity();
+            Transform transform(GNVector2(centerX, startY + lineSpacing * 5), 0.0f, GNVector2(1.0f, 1.0f));
+            m_ecsCoordinator->AddComponent<Transform>(m_enemiesKilledTextEntity, transform);
+
+            UIElement uiElem;
+            uiElem.buttonText = "Enemies Killed: 0"; // Will be updated when shown
+            uiElem.fontSize = fontSize;
+            uiElem.textColor = GNColor(255, 100, 100, 255); // Light red for deaths
+            uiElem.centerTextHorizontally = true;
+            uiElem.visible = false;
+            uiElem.isEnabled = true;
+            uiElem.textLayer = 90;
+            m_ecsCoordinator->AddComponent<UIElement>(m_enemiesKilledTextEntity, uiElem);
+        }
+
+        // 7. Total Pipes
+        if (m_totalPipesTextEntity == 0) {
+            m_totalPipesTextEntity = m_ecsCoordinator->CreateEntity();
+            Transform transform(GNVector2(centerX, startY + lineSpacing * 6), 0.0f, GNVector2(1.0f, 1.0f));
+            m_ecsCoordinator->AddComponent<Transform>(m_totalPipesTextEntity, transform);
+
+            UIElement uiElem;
+            uiElem.buttonText = "Total Pipes: 0"; // Will be updated when shown
+            uiElem.fontSize = fontSize;
+            uiElem.textColor = GNColor(150, 150, 255, 255); // Light blue for pipes
+            uiElem.centerTextHorizontally = true;
+            uiElem.visible = false;
+            uiElem.isEnabled = true;
+            uiElem.textLayer = 90;
+            m_ecsCoordinator->AddComponent<UIElement>(m_totalPipesTextEntity, uiElem);
+        }
+
+        GN_LOG_INFO("PauseSystem: Created stats tab content");
+    }
+
+    void PauseSystem::CreateAudioSliders() {
+        GN_LOG_INFO("PauseSystem: Creating audio sliders");
+
+        // Calculate background area (EXACT same as original)
+        float bgW = m_screenWidth * 0.8f;
+        float bgH = m_screenHeight * 0.7f;
+        float bgX = (m_screenWidth - bgW) * 0.5f;
+        float bgY = (m_screenHeight - bgH) * 0.18f;
+
+        // Mobile detection like MainMenuState - iPhone typically has width < height in portrait
+        bool isMobile = (m_screenWidth < m_screenHeight) && (m_screenHeight > 1000);
+        float uiScale = isMobile ? 8.0f : 1.0f;  // Store as local variable
+        GN_LOG_INFO("PauseSystem: Mobile detection: isMobile=" + std::to_string(isMobile) + ", uiScale=" + std::to_string(uiScale) +
+                   " (screen: " + std::to_string(m_screenWidth) + "x" + std::to_string(m_screenHeight) + ")");
+
+        // Slider layout (spread out better, not squished at top) - EXACT same as original
+        // Adjust slider positioning to account for knob size and hitbox - move further right
+        m_sliderX = bgX + 0.20f * bgW + 32.0f; // Start further right (20% + 32px) to avoid tab buttons
+        m_sliderY = bgY + 0.35f * bgH; // Start much lower to move everything down
+        m_sliderW = bgW - 0.40f * bgW - 64.0f; // Reduce width proportionally to account for rightward movement
+        m_sliderH = 18.0f;
+        m_sliderSpacing = 320.0f; // Much more spacing between slider groups for better separation
+
+        // MASTER SLIDER (first) - Center tracks vertically with knobs
+        float masterTrackY = m_sliderY + 9.0f; // Track Y position
+        float musicTrackY = m_sliderY + m_sliderSpacing + 9.0f; // Track Y position
+        float sfxTrackY = m_sliderY + m_sliderSpacing * 2 + 9.0f; // Track Y position
+
+        // MASTER TRACK - Use UIShape for proper rendering (EXACT same as original)
+        if (m_masterTrackEntity == 0) {
+            m_masterTrackEntity = m_ecsCoordinator->CreateEntity();
+            Transform t(GNVector2(m_sliderX, masterTrackY), 0.0f, GNVector2(1.0f, 1.0f));
+
+            UIShape shape;
+            shape.visible = false;
+            shape.width = m_sliderW;
+            shape.height = m_sliderH;
+            shape.color = GNColor(128, 128, 128, 255); // Gray color like main menu options
+            shape.layer = 83; // Below knob (85) but above background (80)
+
+            UIElement ui;
+            ui.visible = false;
+            ui.textLayer = 83; // Match UIShape layer for consistent layering
+            ui.isEnabled = true;
+
+            GN_LOG_INFO("PauseSystem: Creating MASTER track UIShape: " + std::to_string(m_sliderW) + "x" + std::to_string(m_sliderH) +
+                       " at (" + std::to_string(m_sliderX) + ", " + std::to_string(masterTrackY) + ") layer " + std::to_string(shape.layer) +
+                       " entity=" + std::to_string(m_masterTrackEntity));
+
+            m_ecsCoordinator->AddComponent<Transform>(m_masterTrackEntity, t);
+            m_ecsCoordinator->AddComponent<UIShape>(m_masterTrackEntity, shape);
+            m_ecsCoordinator->AddComponent<UIElement>(m_masterTrackEntity, ui);
+        }
+
+        // MASTER LABEL
+        if (m_masterLabelEntity == 0) {
+            m_masterLabelEntity = m_ecsCoordinator->CreateEntity();
+            float labelY = masterTrackY - 160.0f; // Even more spacing between label and track for better symmetry
+            float labelX = m_sliderX;
+            Transform t(GNVector2(labelX, labelY), 0.0f, GNVector2(1.0f, 1.0f));
+            UIElement ui("MASTER", "", "");
+            ui.fontSize = 42.0f; // Increased font size for better readability
+            ui.textColor = GNColor(255, 255, 255, 255);
+            ui.centerTextHorizontally = false; ui.centerTextVertically = true; ui.visible = false; ui.textLayer = 84;
+            m_ecsCoordinator->AddComponent<Transform>(m_masterLabelEntity, t);
+            m_ecsCoordinator->AddComponent<UIElement>(m_masterLabelEntity, ui);
+        }
+
+        // MASTER KNOB
+        if (m_masterKnobEntity == 0) {
+            m_masterKnobEntity = m_ecsCoordinator->CreateEntity();
+            // Use MainMenuState knob sizing approach - consistent UI scaling
+            float knobSize = 16.0f * uiScale;  // Same as MainMenuState
+            float scale = uiScale;  // Use UI scale instead of hardcoded 6.0f
+            float scaledKnobSize = knobSize;
+
+            // Clamp volume value to 0.0-1.0 range like Options menu
+            float masterVolume = std::max(0.0f, std::min(1.0f, m_masterSliderValue));
+
+            // Position knob to use full track range - knob edges align with track boundaries
+            // At 0%: knob left edge aligns with track start, at 100%: knob right edge aligns with track end
+            float knobCenterX = m_sliderX + (scaledKnobSize * 0.5f) + masterVolume * (m_sliderW - scaledKnobSize);
+            float knobX = knobCenterX - (scaledKnobSize * 0.5f);
+            float knobY = masterTrackY + m_sliderH * 0.5f - (scaledKnobSize * 0.5f);
+
+            Transform t(GNVector2(knobX, knobY), 0.0f, GNVector2(scale, scale));
+            Sprite s("poophat", 16, 16); s.layer = 85; s.visible = false;
+            UIElement ui("", "poophat", "poophat");
+            ui.visible = false; ui.textLayer = 85; ui.isEnabled = true;
+            m_ecsCoordinator->AddComponent<Transform>(m_masterKnobEntity, t);
+            m_ecsCoordinator->AddComponent<Sprite>(m_masterKnobEntity, s);
+            m_ecsCoordinator->AddComponent<UIElement>(m_masterKnobEntity, ui);
+        }
+
+        // MUSIC TRACK - Use UIShape for proper rendering (EXACT same as original)
+        if (m_musicTrackEntity == 0) {
+            m_musicTrackEntity = m_ecsCoordinator->CreateEntity();
+            Transform t(GNVector2(m_sliderX, musicTrackY), 0.0f, GNVector2(1.0f, 1.0f));
+
+            UIShape shape;
+            shape.visible = false;
+            shape.width = m_sliderW;
+            shape.height = m_sliderH;
+            shape.color = GNColor(128, 128, 128, 255); // Gray color like main menu options
+            shape.layer = 83; // Below knob (85) but above background (80)
+
+            UIElement ui;
+            ui.visible = false;
+            ui.textLayer = 83; // Match UIShape layer for consistent layering
+            ui.isEnabled = true;
+
+            GN_LOG_INFO("PauseSystem: Creating MUSIC track UIShape: " + std::to_string(m_sliderW) + "x" + std::to_string(m_sliderH) +
+                       " at (" + std::to_string(m_sliderX) + ", " + std::to_string(musicTrackY) + ") layer " + std::to_string(shape.layer) +
+                       " entity=" + std::to_string(m_musicTrackEntity));
+
+            m_ecsCoordinator->AddComponent<Transform>(m_musicTrackEntity, t);
+            m_ecsCoordinator->AddComponent<UIShape>(m_musicTrackEntity, shape);
+            m_ecsCoordinator->AddComponent<UIElement>(m_musicTrackEntity, ui);
+        }
+
+        // MUSIC LABEL
+        if (m_musicLabelEntity == 0) {
+            m_musicLabelEntity = m_ecsCoordinator->CreateEntity();
+            float labelY = musicTrackY - 160.0f; // Even more spacing between label and track for better symmetry
+            float labelX = m_sliderX;
+            Transform t(GNVector2(labelX, labelY), 0.0f, GNVector2(1.0f, 1.0f));
+            UIElement ui("MUSIC", "", "");
+            ui.fontSize = 42.0f; // Increased font size for better readability
+            ui.textColor = GNColor(255, 255, 255, 255);
+            ui.centerTextHorizontally = false; ui.centerTextVertically = true; ui.visible = false; ui.textLayer = 84;
+            m_ecsCoordinator->AddComponent<Transform>(m_musicLabelEntity, t);
+            m_ecsCoordinator->AddComponent<UIElement>(m_musicLabelEntity, ui);
+        }
+
+        // MUSIC KNOB
+        if (m_musicKnobEntity == 0) {
+            m_musicKnobEntity = m_ecsCoordinator->CreateEntity();
+            // Use MainMenuState knob sizing approach - consistent UI scaling
+            float knobSize = 16.0f * uiScale;  // Same as MainMenuState
+            float scale = uiScale;  // Use UI scale instead of hardcoded 6.0f
+            float scaledKnobSize = knobSize;
+
+            // Clamp volume value to 0.0-1.0 range like Options menu
+            float musicVolume = std::max(0.0f, std::min(1.0f, m_musicSliderValue));
+
+            // Position knob to use full track range - knob edges align with track boundaries
+            // At 0%: knob left edge aligns with track start, at 100%: knob right edge aligns with track end
+            float knobCenterX = m_sliderX + (scaledKnobSize * 0.5f) + musicVolume * (m_sliderW - scaledKnobSize);
+            float knobX = knobCenterX - (scaledKnobSize * 0.5f);
+            float knobY = musicTrackY + m_sliderH * 0.5f - (scaledKnobSize * 0.5f);
+
+            Transform t(GNVector2(knobX, knobY), 0.0f, GNVector2(scale, scale));
+            Sprite s("poophat", 16, 16); s.layer = 85; s.visible = false;
+            UIElement ui("", "poophat", "poophat");
+            ui.visible = false; ui.textLayer = 85; ui.isEnabled = true;
+            m_ecsCoordinator->AddComponent<Transform>(m_musicKnobEntity, t);
+            m_ecsCoordinator->AddComponent<Sprite>(m_musicKnobEntity, s);
+            m_ecsCoordinator->AddComponent<UIElement>(m_musicKnobEntity, ui);
+        }
+
+        // SFX TRACK - Use UIShape for proper rendering (EXACT same as original)
+        if (m_sfxTrackEntity == 0) {
+            m_sfxTrackEntity = m_ecsCoordinator->CreateEntity();
+            Transform t(GNVector2(m_sliderX, sfxTrackY), 0.0f, GNVector2(1.0f, 1.0f));
+
+            UIShape shape;
+            shape.visible = false;
+            shape.width = m_sliderW;
+            shape.height = m_sliderH;
+            shape.color = GNColor(128, 128, 128, 255); // Gray color like main menu options
+            shape.layer = 83; // Below knob (85) but above background (80)
+
+            UIElement ui;
+            ui.visible = false;
+            ui.textLayer = 83; // Match UIShape layer for consistent layering
+            ui.isEnabled = true;
+
+            GN_LOG_INFO("PauseSystem: Creating SFX track UIShape: " + std::to_string(m_sliderW) + "x" + std::to_string(m_sliderH) +
+                       " at (" + std::to_string(m_sliderX) + ", " + std::to_string(sfxTrackY) + ") layer " + std::to_string(shape.layer) +
+                       " entity=" + std::to_string(m_sfxTrackEntity));
+
+            m_ecsCoordinator->AddComponent<Transform>(m_sfxTrackEntity, t);
+            m_ecsCoordinator->AddComponent<UIShape>(m_sfxTrackEntity, shape);
+            m_ecsCoordinator->AddComponent<UIElement>(m_sfxTrackEntity, ui);
+        }
+
+        // SFX LABEL
+        if (m_sfxLabelEntity == 0) {
+            m_sfxLabelEntity = m_ecsCoordinator->CreateEntity();
+            float labelY = sfxTrackY - 160.0f; // Even more spacing between label and track for better symmetry
+            float labelX = m_sliderX;
+            Transform t(GNVector2(labelX, labelY), 0.0f, GNVector2(1.0f, 1.0f));
+            UIElement ui("SFX", "", "");
+            ui.fontSize = 42.0f; // Increased font size for better readability
+            ui.textColor = GNColor(255, 255, 255, 255);
+            ui.centerTextHorizontally = false; ui.centerTextVertically = true; ui.visible = false; ui.textLayer = 84;
+            m_ecsCoordinator->AddComponent<Transform>(m_sfxLabelEntity, t);
+            m_ecsCoordinator->AddComponent<UIElement>(m_sfxLabelEntity, ui);
+        }
+
+        // SFX KNOB
+        if (m_sfxKnobEntity == 0) {
+            m_sfxKnobEntity = m_ecsCoordinator->CreateEntity();
+            // Use MainMenuState knob sizing approach - consistent UI scaling
+            float knobSize = 16.0f * uiScale;  // Same as MainMenuState
+            float scale = uiScale;  // Use UI scale instead of hardcoded 6.0f
+            float scaledKnobSize = knobSize;
+
+            // Clamp volume value to 0.0-1.0 range like Options menu
+            float sfxVolume = std::max(0.0f, std::min(1.0f, m_sfxSliderValue));
+
+            // Position knob to use full track range - knob edges align with track boundaries
+            // At 0%: knob left edge aligns with track start, at 100%: knob right edge aligns with track end
+            float knobCenterX = m_sliderX + (scaledKnobSize * 0.5f) + sfxVolume * (m_sliderW - scaledKnobSize);
+            float knobX = knobCenterX - (scaledKnobSize * 0.5f);
+            float knobY = sfxTrackY + m_sliderH * 0.5f - (scaledKnobSize * 0.5f);
+
+            Transform t(GNVector2(knobX, knobY), 0.0f, GNVector2(scale, scale));
+            Sprite s("poophat", 16, 16); s.layer = 85; s.visible = false;
+            UIElement ui("", "poophat", "poophat");
+            ui.visible = false; ui.textLayer = 85; ui.isEnabled = true;
+            m_ecsCoordinator->AddComponent<Transform>(m_sfxKnobEntity, t);
+            m_ecsCoordinator->AddComponent<Sprite>(m_sfxKnobEntity, s);
+            m_ecsCoordinator->AddComponent<UIElement>(m_sfxKnobEntity, ui);
+        }
+
+        GN_LOG_INFO("PauseSystem: Audio sliders created");
+    }
+
+    void PauseSystem::ShowPauseMenu() {
+        GN_LOG_INFO("PauseSystem: Showing pause menu");
+
+        // Show pause menu background
+        if (m_pauseMenuBackgroundEntity != 0 && m_ecsCoordinator) {
+            UIElement* bgUI = m_ecsCoordinator->GetComponent<UIElement>(m_pauseMenuBackgroundEntity);
+            if (bgUI) {
+                bgUI->visible = true;
+            }
+
+            // Also show the Sprite component for proper rendering
+            Sprite* bgSprite = m_ecsCoordinator->GetComponent<Sprite>(m_pauseMenuBackgroundEntity);
+            if (bgSprite) {
+                bgSprite->visible = true;
+            }
+        }
+
+        // Show pause menu ribbon
+        if (m_pauseMenuRibbonEntity != 0 && m_ecsCoordinator) {
+            UIElement* ribbonUI = m_ecsCoordinator->GetComponent<UIElement>(m_pauseMenuRibbonEntity);
+            if (ribbonUI) {
+                ribbonUI->visible = true;
+            }
+        }
+
+        // Show ribbon buttons
+        for (Entity& buttonEntity : m_ribbonButtons) {
+            if (buttonEntity != 0 && m_ecsCoordinator) {
+                UIElement* buttonUI = m_ecsCoordinator->GetComponent<UIElement>(buttonEntity);
+                if (buttonUI) {
+                    buttonUI->visible = true;
+                }
+
+                // Also show the Sprite component for proper rendering
+                Sprite* buttonSprite = m_ecsCoordinator->GetComponent<Sprite>(buttonEntity);
+                if (buttonSprite) {
+                    buttonSprite->visible = true;
+                }
+            }
+        }
+
+        // Show current tab content
+        ShowTabContent(m_currentTab);
+
+        // Initialize slider values from current audio settings
+        if (GameCore::GetGame()) {
+            m_masterSliderValue = GameCore::GetGame()->GetMasterVolume();
+            m_musicSliderValue = GameCore::GetGame()->GetMusicVolume();
+            m_sfxSliderValue = GameCore::GetGame()->GetSFXVolume();
+            GN_LOG_INFO("PauseSystem: Initialized slider values - Master: " + std::to_string(m_masterSliderValue) +
+                       ", Music: " + std::to_string(m_musicSliderValue) + ", SFX: " + std::to_string(m_sfxSliderValue));
+        }
+
+        GN_LOG_INFO("PauseSystem: Pause menu shown");
+    }
+
+    void PauseSystem::HidePauseMenu() {
+        GN_LOG_INFO("PauseSystem: Hiding pause menu");
+
+        // Hide pause menu background
+        if (m_pauseMenuBackgroundEntity != 0 && m_ecsCoordinator) {
+            UIElement* bgUI = m_ecsCoordinator->GetComponent<UIElement>(m_pauseMenuBackgroundEntity);
+            if (bgUI) {
+                bgUI->visible = false;
+            }
+
+            // Also hide the Sprite component
+            Sprite* bgSprite = m_ecsCoordinator->GetComponent<Sprite>(m_pauseMenuBackgroundEntity);
+            if (bgSprite) {
+                bgSprite->visible = false;
+            }
+        }
+
+        // Hide pause menu ribbon
+        if (m_pauseMenuRibbonEntity != 0 && m_ecsCoordinator) {
+            UIElement* ribbonUI = m_ecsCoordinator->GetComponent<UIElement>(m_pauseMenuRibbonEntity);
+            if (ribbonUI) {
+                ribbonUI->visible = false;
+            }
+        }
+
+        // Hide ribbon buttons
+        for (Entity& buttonEntity : m_ribbonButtons) {
+            if (buttonEntity != 0 && m_ecsCoordinator) {
+                UIElement* buttonUI = m_ecsCoordinator->GetComponent<UIElement>(buttonEntity);
+                if (buttonUI) {
+                    buttonUI->visible = false;
+                }
+
+                // Also hide the Sprite component
+                Sprite* buttonSprite = m_ecsCoordinator->GetComponent<Sprite>(buttonEntity);
+                if (buttonSprite) {
+                    buttonSprite->visible = false;
+                }
+            }
+        }
+
+        // Hide all tab content
+        HideAllTabContent();
+
+        GN_LOG_INFO("PauseSystem: Pause menu hidden");
+    }
+
+    void PauseSystem::ShowTabContent(PauseMenuTab tab) {
+        GN_LOG_INFO("PauseSystem: Showing tab content for tab " + std::to_string(static_cast<int>(tab)));
+        HideAllTabContent();
+
+        switch (tab) {
+            case PauseMenuTab::SYSTEM:
+                ShowSystemTab();
+                break;
+            case PauseMenuTab::SKILLS:
+                ShowSkillsTab();
+                break;
+            case PauseMenuTab::HATS:
+                ShowHatsTab();
+                break;
+            case PauseMenuTab::STATS:
+                ShowStatsTab();
+                break;
+        }
+    }
+
+    void PauseSystem::HideAllTabContent() {
+        GN_LOG_INFO("PauseSystem: Hiding all tab content");
+
+        // Helper lambda to hide UI element and sprite components
+        auto hideEntity = [this](Entity entity) {
+            if (entity != 0 && m_ecsCoordinator) {
+                // Hide UIElement component
+                UIElement* uiElement = m_ecsCoordinator->GetComponent<UIElement>(entity);
+                if (uiElement) {
+                    uiElement->visible = false;
+                }
+
+                // Hide Sprite component
+                Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(entity);
+                if (sprite) {
+                    sprite->visible = false;
+                }
+
+                // Hide UIShape component (for backgrounds and tracks)
+                UIShape* shape = m_ecsCoordinator->GetComponent<UIShape>(entity);
+                if (shape) {
+                    shape->visible = false;
+                    GN_LOG_INFO("PauseSystem: Hiding UIShape component");
+                }
+            }
+        };
+
+        // Hide system tab entities
+        hideEntity(m_systemTitleEntity);
+        hideEntity(m_mainMenuButtonEntity);
+        hideEntity(m_masterKnobEntity);
+        hideEntity(m_masterTrackEntity);
+        hideEntity(m_masterLabelEntity);
+        hideEntity(m_musicKnobEntity);
+        hideEntity(m_musicTrackEntity);
+        hideEntity(m_musicLabelEntity);
+        hideEntity(m_sfxKnobEntity);
+        hideEntity(m_sfxTrackEntity);
+        hideEntity(m_sfxLabelEntity);
+
+        // Hide skills tab entities
+        hideEntity(m_skillsBackgroundEntity);
+        hideEntity(m_skillsTitleEntity);
+        hideEntity(m_skillsContentEntity);
+        hideEntity(m_skillsNameEntity);
+        hideEntity(m_skillsDescriptionEntity);
+        hideEntity(m_skillsCostEntity);
+        hideEntity(m_skillsUnlockButtonEntity);
+        hideEntity(m_skillsLeftArrowEntity);
+        hideEntity(m_skillsRightArrowEntity);
+
+        // Hide hats tab entities
+        hideEntity(m_hatsBackgroundEntity);
+        hideEntity(m_hatsTitleEntity);
+        hideEntity(m_hatsContentEntity);
+
+        // Hide hats grid UI elements
+        for (auto frameEntity : m_hatFrameEntities) {
+            if (frameEntity != 0 && m_ecsCoordinator) {
+                Sprite* frameSprite = m_ecsCoordinator->GetComponent<Sprite>(frameEntity);
+                if (frameSprite) frameSprite->visible = false;
+                UIElement* frameUI = m_ecsCoordinator->GetComponent<UIElement>(frameEntity);
+                if (frameUI) frameUI->visible = false;
+            }
+        }
+
+        for (auto iconEntity : m_hatIconEntities) {
+            if (iconEntity != 0 && m_ecsCoordinator) {
+                Sprite* iconSprite = m_ecsCoordinator->GetComponent<Sprite>(iconEntity);
+                if (iconSprite) iconSprite->visible = false;
+                UIElement* iconUI = m_ecsCoordinator->GetComponent<UIElement>(iconEntity);
+                if (iconUI) iconUI->visible = false;
+            }
+        }
+
+        // Hide all locked frame entities
+        for (auto lockedFrameEntity : m_lockedFrameEntities) {
+            if (lockedFrameEntity != 0 && m_ecsCoordinator) {
+                Sprite* lockedFrameSprite = m_ecsCoordinator->GetComponent<Sprite>(lockedFrameEntity);
+                if (lockedFrameSprite) lockedFrameSprite->visible = false;
+                UIElement* lockedFrameUI = m_ecsCoordinator->GetComponent<UIElement>(lockedFrameEntity);
+                if (lockedFrameUI) lockedFrameUI->visible = false;
+            }
+        }
+
+        // Hide action button and cost display
+        if (m_hatsActionButtonEntity != 0 && m_ecsCoordinator) {
+            Sprite* buttonSprite = m_ecsCoordinator->GetComponent<Sprite>(m_hatsActionButtonEntity);
+            if (buttonSprite) buttonSprite->visible = false;
+            UIElement* buttonUI = m_ecsCoordinator->GetComponent<UIElement>(m_hatsActionButtonEntity);
+            if (buttonUI) buttonUI->visible = false;
+        }
+
+        if (m_hatsCostDisplayEntity != 0 && m_ecsCoordinator) {
+            Sprite* costSprite = m_ecsCoordinator->GetComponent<Sprite>(m_hatsCostDisplayEntity);
+            if (costSprite) costSprite->visible = false;
+            UIElement* costUI = m_ecsCoordinator->GetComponent<UIElement>(m_hatsCostDisplayEntity);
+            if (costUI) costUI->visible = false;
+        }
+
+        // Hide stats tab entities
+        hideEntity(m_statsBackgroundEntity);
+        hideEntity(m_statsTitleEntity);
+        hideEntity(m_currentSessionTextEntity);
+        hideEntity(m_sessionCoinsTextEntity);
+        hideEntity(m_totalCoinsTextEntity);
+        hideEntity(m_grossTotalCoinsTextEntity);
+        hideEntity(m_totalFlopsTextEntity);
+        hideEntity(m_enemiesKilledTextEntity);
+        hideEntity(m_totalPipesTextEntity);
+
+        GN_LOG_INFO("PauseSystem: All tab content hidden");
+    }
+
+    void PauseSystem::ShowSystemTab() {
+        GN_LOG_INFO("PauseSystem: Showing system tab");
+
+        // Show system title
+        if (m_systemTitleEntity != 0 && m_ecsCoordinator) {
+            Sprite* titleSprite = m_ecsCoordinator->GetComponent<Sprite>(m_systemTitleEntity);
+            if (titleSprite) {
+                titleSprite->visible = true;
+            }
+            UIElement* titleUI = m_ecsCoordinator->GetComponent<UIElement>(m_systemTitleEntity);
+            if (titleUI) {
+                titleUI->visible = true;
+            }
+        }
+
+        // Show system tab entities
+        if (m_mainMenuButtonEntity != 0 && m_ecsCoordinator) {
+            Sprite* buttonSprite = m_ecsCoordinator->GetComponent<Sprite>(m_mainMenuButtonEntity);
+            if (buttonSprite) {
+                buttonSprite->visible = true;
+            }
+        }
+
+        // Show main menu button UI element
+        if (m_mainMenuButtonEntity != 0 && m_ecsCoordinator) {
+            UIElement* buttonUI = m_ecsCoordinator->GetComponent<UIElement>(m_mainMenuButtonEntity);
+            if (buttonUI) {
+                buttonUI->visible = true;
+                GN_LOG_INFO("PauseSystem: Made main menu button UI visible");
+            }
+        }
+
+        // Show MASTER volume controls
+        if (m_masterKnobEntity != 0 && m_ecsCoordinator) {
+            Sprite* masterKnob = m_ecsCoordinator->GetComponent<Sprite>(m_masterKnobEntity);
+            if (masterKnob) {
+                masterKnob->visible = true;
+            }
+            UIElement* masterKnobUI = m_ecsCoordinator->GetComponent<UIElement>(m_masterKnobEntity);
+            if (masterKnobUI) {
+                masterKnobUI->visible = true;
+            }
+        }
+
+        if (m_masterTrackEntity != 0 && m_ecsCoordinator) {
+            UIShape* masterTrack = m_ecsCoordinator->GetComponent<UIShape>(m_masterTrackEntity);
+            if (masterTrack) {
+                masterTrack->visible = true;
+                GN_LOG_INFO("PauseSystem: Made MASTER track visible");
+            }
+            UIElement* masterTrackUI = m_ecsCoordinator->GetComponent<UIElement>(m_masterTrackEntity);
+            if (masterTrackUI) {
+                masterTrackUI->visible = true;
+            }
+        }
+
+        if (m_masterLabelEntity != 0 && m_ecsCoordinator) {
+            UIElement* masterLabelUI = m_ecsCoordinator->GetComponent<UIElement>(m_masterLabelEntity);
+            if (masterLabelUI) {
+                masterLabelUI->visible = true;
+            }
+        }
+
+        // Show audio slider entities if they exist
+        if (m_musicKnobEntity != 0 && m_ecsCoordinator) {
+            Sprite* musicKnob = m_ecsCoordinator->GetComponent<Sprite>(m_musicKnobEntity);
+            if (musicKnob) {
+                musicKnob->visible = true;
+            }
+            UIElement* musicKnobUI = m_ecsCoordinator->GetComponent<UIElement>(m_musicKnobEntity);
+            if (musicKnobUI) {
+                musicKnobUI->visible = true;
+            }
+        }
+
+        if (m_sfxKnobEntity != 0 && m_ecsCoordinator) {
+            Sprite* sfxKnob = m_ecsCoordinator->GetComponent<Sprite>(m_sfxKnobEntity);
+            if (sfxKnob) {
+                sfxKnob->visible = true;
+            }
+            UIElement* sfxKnobUI = m_ecsCoordinator->GetComponent<UIElement>(m_sfxKnobEntity);
+            if (sfxKnobUI) {
+                sfxKnobUI->visible = true;
+            }
+        }
+
+        // Show slider tracks and labels
+        if (m_musicTrackEntity != 0 && m_ecsCoordinator) {
+            UIShape* musicTrack = m_ecsCoordinator->GetComponent<UIShape>(m_musicTrackEntity);
+            if (musicTrack) {
+                musicTrack->visible = true;
+                GN_LOG_INFO("PauseSystem: Made MUSIC track visible");
+            }
+            UIElement* musicTrackUI = m_ecsCoordinator->GetComponent<UIElement>(m_musicTrackEntity);
+            if (musicTrackUI) {
+                musicTrackUI->visible = true;
+            }
+        }
+
+        if (m_sfxTrackEntity != 0 && m_ecsCoordinator) {
+            UIShape* sfxTrack = m_ecsCoordinator->GetComponent<UIShape>(m_sfxTrackEntity);
+            if (sfxTrack) {
+                sfxTrack->visible = true;
+                GN_LOG_INFO("PauseSystem: Made SFX track visible");
+            }
+            UIElement* sfxTrackUI = m_ecsCoordinator->GetComponent<UIElement>(m_sfxTrackEntity);
+            if (sfxTrackUI) {
+                sfxTrackUI->visible = true;
+            }
+        }
+
+        if (m_musicLabelEntity != 0 && m_ecsCoordinator) {
+            UIElement* musicLabelUI = m_ecsCoordinator->GetComponent<UIElement>(m_musicLabelEntity);
+            if (musicLabelUI) {
+                musicLabelUI->visible = true;
+            }
+        }
+
+        if (m_sfxLabelEntity != 0 && m_ecsCoordinator) {
+            UIElement* sfxLabelUI = m_ecsCoordinator->GetComponent<UIElement>(m_sfxLabelEntity);
+            if (sfxLabelUI) {
+                sfxLabelUI->visible = true;
+            }
+        }
+
+        GN_LOG_INFO("PauseSystem: System tab shown");
+    }
+
+    void PauseSystem::ShowSkillsTab() {
+        GN_LOG_INFO("PauseSystem: Showing skills tab");
+
+        // Show skills title
+        if (m_skillsTitleEntity != 0 && m_ecsCoordinator) {
+            Sprite* titleSprite = m_ecsCoordinator->GetComponent<Sprite>(m_skillsTitleEntity);
+            if (titleSprite) {
+                titleSprite->visible = true;
+            }
+            UIElement* titleUI = m_ecsCoordinator->GetComponent<UIElement>(m_skillsTitleEntity);
+            if (titleUI) {
+                titleUI->visible = true;
+            }
+        }
+
+        // Show skills background
+        if (m_skillsBackgroundEntity != 0 && m_ecsCoordinator) {
+            UIShape* bgShape = m_ecsCoordinator->GetComponent<UIShape>(m_skillsBackgroundEntity);
+            if (bgShape) {
+                bgShape->visible = true;
+                GN_LOG_INFO("PauseSystem: Skills background shape shown - layer " + std::to_string(bgShape->layer));
+            }
+            UIElement* bgUI = m_ecsCoordinator->GetComponent<UIElement>(m_skillsBackgroundEntity);
+            if (bgUI) {
+                bgUI->visible = true;
+                GN_LOG_INFO("PauseSystem: Skills background UI shown - layer " + std::to_string(bgUI->textLayer));
+            }
+        }
+
+        // Show skills content
+        if (m_skillsContentEntity != 0 && m_ecsCoordinator) {
+            Sprite* contentSprite = m_ecsCoordinator->GetComponent<Sprite>(m_skillsContentEntity);
+            if (contentSprite) {
+                contentSprite->visible = true;
+            }
+            UIElement* contentUI = m_ecsCoordinator->GetComponent<UIElement>(m_skillsContentEntity);
+            if (contentUI) {
+                contentUI->visible = true;
+            }
+        }
+
+        // Show skill name text
+        if (m_skillsNameEntity != 0 && m_ecsCoordinator) {
+            Sprite* nameSprite = m_ecsCoordinator->GetComponent<Sprite>(m_skillsNameEntity);
+            if (nameSprite) {
+                nameSprite->visible = true;
+            }
+            UIElement* nameUI = m_ecsCoordinator->GetComponent<UIElement>(m_skillsNameEntity);
+            if (nameUI) {
+                nameUI->visible = true;
+            }
+        }
+
+        // Show skill description text
+        if (m_skillsDescriptionEntity != 0 && m_ecsCoordinator) {
+            Sprite* descSprite = m_ecsCoordinator->GetComponent<Sprite>(m_skillsDescriptionEntity);
+            if (descSprite) {
+                descSprite->visible = true;
+            }
+            UIElement* descUI = m_ecsCoordinator->GetComponent<UIElement>(m_skillsDescriptionEntity);
+            if (descUI) {
+                descUI->visible = true;
+            }
+        }
+
+        // Show skill cost text
+        if (m_skillsCostEntity != 0 && m_ecsCoordinator) {
+            Sprite* costSprite = m_ecsCoordinator->GetComponent<Sprite>(m_skillsCostEntity);
+            if (costSprite) {
+                costSprite->visible = true;
+            }
+            UIElement* costUI = m_ecsCoordinator->GetComponent<UIElement>(m_skillsCostEntity);
+            if (costUI) {
+                costUI->visible = true;
+            }
+        }
+
+        // Show unlock button
+        if (m_skillsUnlockButtonEntity != 0 && m_ecsCoordinator) {
+            Sprite* buttonSprite = m_ecsCoordinator->GetComponent<Sprite>(m_skillsUnlockButtonEntity);
+            if (buttonSprite) {
+                buttonSprite->visible = true;
+            }
+            UIElement* buttonUI = m_ecsCoordinator->GetComponent<UIElement>(m_skillsUnlockButtonEntity);
+            if (buttonUI) {
+                buttonUI->visible = true;
+            }
+        }
+
+        // Show left arrow
+        if (m_skillsLeftArrowEntity != 0 && m_ecsCoordinator) {
+            Sprite* arrowSprite = m_ecsCoordinator->GetComponent<Sprite>(m_skillsLeftArrowEntity);
+            if (arrowSprite) {
+                arrowSprite->visible = true;
+            }
+            UIElement* arrowUI = m_ecsCoordinator->GetComponent<UIElement>(m_skillsLeftArrowEntity);
+            if (arrowUI) {
+                arrowUI->visible = true;
+            }
+        }
+
+        // Show right arrow
+        if (m_skillsRightArrowEntity != 0 && m_ecsCoordinator) {
+            Sprite* arrowSprite = m_ecsCoordinator->GetComponent<Sprite>(m_skillsRightArrowEntity);
+            if (arrowSprite) {
+                arrowSprite->visible = true;
+            }
+            UIElement* arrowUI = m_ecsCoordinator->GetComponent<UIElement>(m_skillsRightArrowEntity);
+            if (arrowUI) {
+                arrowUI->visible = true;
+            }
+        }
+
+        // Update the skill display with current information
+        UpdateSkillDisplay(m_currentSkillIndex, m_availableSkills, m_skillSystem, 0, m_playerEntity);
+
+        GN_LOG_INFO("PauseSystem: Skills tab shown");
+    }
+
+    void PauseSystem::ShowHatsTab() {
+        GN_LOG_INFO("PauseSystem: Showing hats tab");
+
+        // Show hats background
+        if (m_hatsBackgroundEntity != 0 && m_ecsCoordinator) {
+            GameCore::UIShape* bgShape = m_ecsCoordinator->GetComponent<GameCore::UIShape>(m_hatsBackgroundEntity);
+            if (bgShape) {
+                bgShape->visible = true;
+            }
+            UIElement* bgUI = m_ecsCoordinator->GetComponent<UIElement>(m_hatsBackgroundEntity);
+            if (bgUI) {
+                bgUI->visible = true;
+            }
+        }
+
+        // Show hats title
+        if (m_hatsTitleEntity != 0 && m_ecsCoordinator) {
+            Sprite* titleSprite = m_ecsCoordinator->GetComponent<Sprite>(m_hatsTitleEntity);
+            if (titleSprite) {
+                titleSprite->visible = true;
+            }
+            UIElement* titleUI = m_ecsCoordinator->GetComponent<UIElement>(m_hatsTitleEntity);
+            if (titleUI) {
+                titleUI->visible = true;
+            }
+        }
+
+        // Show hats grid UI elements created by PauseSystem
+        GN_LOG_INFO("PauseSystem: Showing hats grid UI elements");
+
+        // Show all hat frames and icons
+        for (auto frameEntity : m_hatFrameEntities) {
+            if (frameEntity != 0 && m_ecsCoordinator) {
+                Sprite* frameSprite = m_ecsCoordinator->GetComponent<Sprite>(frameEntity);
+                if (frameSprite) frameSprite->visible = true;
+                UIElement* frameUI = m_ecsCoordinator->GetComponent<UIElement>(frameEntity);
+                if (frameUI) frameUI->visible = true;
+            }
+        }
+
+        for (auto iconEntity : m_hatIconEntities) {
+            if (iconEntity != 0 && m_ecsCoordinator) {
+                Sprite* iconSprite = m_ecsCoordinator->GetComponent<Sprite>(iconEntity);
+                if (iconSprite) iconSprite->visible = true;
+                UIElement* iconUI = m_ecsCoordinator->GetComponent<UIElement>(iconEntity);
+                if (iconUI) iconUI->visible = true;
+            }
+        }
+
+        // Show all locked frame entities
+        for (auto lockedFrameEntity : m_lockedFrameEntities) {
+            if (lockedFrameEntity != 0 && m_ecsCoordinator) {
+                Sprite* lockedFrameSprite = m_ecsCoordinator->GetComponent<Sprite>(lockedFrameEntity);
+                if (lockedFrameSprite) lockedFrameSprite->visible = true;
+                UIElement* lockedFrameUI = m_ecsCoordinator->GetComponent<UIElement>(lockedFrameEntity);
+                if (lockedFrameUI) lockedFrameUI->visible = true;
+            }
+        }
+
+        // Show action button and cost display
+        if (m_hatsActionButtonEntity != 0 && m_ecsCoordinator) {
+            Sprite* buttonSprite = m_ecsCoordinator->GetComponent<Sprite>(m_hatsActionButtonEntity);
+            if (buttonSprite) buttonSprite->visible = true;
+            UIElement* buttonUI = m_ecsCoordinator->GetComponent<UIElement>(m_hatsActionButtonEntity);
+            if (buttonUI) buttonUI->visible = true;
+        }
+
+        if (m_hatsCostDisplayEntity != 0 && m_ecsCoordinator) {
+            Sprite* costSprite = m_ecsCoordinator->GetComponent<Sprite>(m_hatsCostDisplayEntity);
+            if (costSprite) costSprite->visible = true;
+            UIElement* costUI = m_ecsCoordinator->GetComponent<UIElement>(m_hatsCostDisplayEntity);
+            if (costUI) costUI->visible = true;
+        }
+
+        // Update hat display with current state
+        UpdateHatDisplay();
+
+        // NOTE: Removed UpdateSkillDisplayFromCurrentState() call as it was causing
+        // skill entities to show in hats tab. Skill display should only update when
+        // actually on the skills tab.
+
+        GN_LOG_INFO("PauseSystem: Hats tab shown");
+    }
+
+    void PauseSystem::ShowStatsTab() {
+        GN_LOG_INFO("PauseSystem: Showing stats tab");
+
+        // Show title
+        if (m_statsTitleEntity != 0 && m_ecsCoordinator) {
+            UIElement* titleUI = m_ecsCoordinator->GetComponent<UIElement>(m_statsTitleEntity);
+            if (titleUI) titleUI->visible = true;
+
+            Sprite* titleSprite = m_ecsCoordinator->GetComponent<Sprite>(m_statsTitleEntity);
+            if (titleSprite) titleSprite->visible = true;
+        }
+
+        // Show background
+        if (m_statsBackgroundEntity != 0 && m_ecsCoordinator) {
+            UIShape* bgShape = m_ecsCoordinator->GetComponent<UIShape>(m_statsBackgroundEntity);
+            if (bgShape) bgShape->visible = true;
+
+            UIElement* bgUI = m_ecsCoordinator->GetComponent<UIElement>(m_statsBackgroundEntity);
+            if (bgUI) bgUI->visible = true;
+        }
+
+        // Update and show stats
+        RefreshStatsDisplay(m_sessionPipes, m_sessionCoins, m_totalCoins, m_grossTotalCoins, m_totalFlops, m_enemiesKilled, m_totalPipes);
+
+        GN_LOG_INFO("PauseSystem: Stats tab shown");
+    }
+
+    void PauseSystem::HandlePauseMenuInput(float touchX, float touchY) {
+        GN_LOG_INFO("PauseSystem: Handling pause menu input at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
+
+        // Use cached screen dimensions
+        GN_LOG_INFO("PauseSystem: Screen dimensions: " + std::to_string((int)m_screenWidth) + "x" + std::to_string((int)m_screenHeight) +
+                   " - Touch coordinates: (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
+
+        // Check ribbon button clicks first (these are global, not per-tab)
+        GN_LOG_INFO("PauseSystem: Checking ribbon button clicks at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")...");
+        if (HandlePauseMenuRibbonClick(touchX, touchY)) {
+            // Reset ribbon button debounce timer
+            m_lastRibbonButtonPressTime = 0.0f;
+            GN_LOG_INFO("PauseSystem: Ribbon button was clicked - switching tabs");
+            return; // Ribbon button was clicked, don't process other input
+        }
+
+        // Settings button is handled directly by GameplayState, not by PauseSystem
+        // This matches the original implementation where CheckSettingsButtonClick
+        // is called from both normal gameplay and pause menu input
+
+        // Check content area clicks based on current tab
+        GN_LOG_INFO("PauseSystem: Checking content area clicks for tab " + std::to_string(static_cast<int>(m_currentTab)));
+        HandlePauseMenuContentClick(touchX, touchY);
+
+        // Note: Tap outside menu area is now handled by GameplayState to avoid conflicts
+    }
+
+    void PauseSystem::HandlePauseMenuContentClick(float touchX, float touchY) {
+        GN_LOG_INFO("PauseSystem: Handling content click at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
+
+        // Route to appropriate tab handler based on current tab
+        switch (m_currentTab) {
+            case PauseMenuTab::SYSTEM:
+                HandleSystemTabClick(touchX, touchY);
+                break;
+            case PauseMenuTab::SKILLS:
+                HandleSkillsTabClick(touchX, touchY);
+                break;
+            case PauseMenuTab::HATS:
+                HandleHatsTabClick(touchX, touchY);
+                break;
+            case PauseMenuTab::STATS:
+                HandleStatsTabClick(touchX, touchY);
+                break;
+        }
+    }
+
+    bool PauseSystem::HandlePauseMenuRibbonClick(float touchX, float touchY) {
+        GN_LOG_INFO("PauseSystem: Handling ribbon click at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
+
+        // Check debounce timer to prevent rapid clicking
+        if (m_lastRibbonButtonPressTime < m_ribbonButtonDebounceDelay) {
+            GN_LOG_INFO("PauseSystem: Ribbon button debounced - timer: " + std::to_string(m_lastRibbonButtonPressTime) +
+                       ", delay: " + std::to_string(m_ribbonButtonDebounceDelay));
+            return false;
+        }
+
+        // Use cached screen dimensions (same as used for button creation)
+        GN_LOG_INFO("PauseSystem: Using cached screen dimensions: " + std::to_string((int)m_screenWidth) + "x" + std::to_string((int)m_screenHeight));
+
+        // Calculate button positions - MUST MATCH CreateRibbonButtons() logic exactly
+        float buttonScale = 6.0f;
+        float buttonWidth = 64.0f * buttonScale;
+        float buttonHeight = buttonWidth * 0.62f; // Match the 0.62f ratio from CreateRibbonButtons
+        float bgScale = 6.0f;
+        float bgHeight = 300.0f * bgScale;
+        float bgTop = (m_screenHeight - bgHeight) * 0.5f;
+        float startY = bgTop + buttonWidth * 0.18f; // Skills button higher
+        float buttonX = -0.40f * buttonWidth; // Offset further left (40%) - MUST MATCH CreateRibbonButtons
+
+        GN_LOG_INFO("PauseSystem: Ribbon button hitbox calculation - screen: " + std::to_string((int)m_screenWidth) + "x" + std::to_string((int)m_screenHeight) +
+                   ", buttonX: " + std::to_string(buttonX) + ", startY: " + std::to_string(startY) +
+                   ", buttonWidth: " + std::to_string(buttonWidth) + ", buttonHeight: " + std::to_string(buttonHeight) +
+                   ", TOUCH at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
+
+        // Check which button was clicked (0=SKILLS, 1=HATS, 2=STATS, 3=SYSTEM)
+        GN_LOG_INFO("PauseSystem: Checking " + std::to_string(m_ribbonButtons.size()) + " ribbon buttons, current screen: " + std::to_string((int)m_screenWidth) + "x" + std::to_string((int)m_screenHeight));
+
+        if (m_ribbonButtons.empty()) {
+            GN_LOG_ERROR("PauseSystem: No ribbon buttons found! Cannot detect clicks.");
+            return false;
+        }
+        for (int i = 0; i < 4 && i < m_ribbonButtons.size(); i++) {
+            GN_LOG_INFO("PauseSystem: Checking ribbon button " + std::to_string(i) + " (entity: " + std::to_string(m_ribbonButtons[i]) + ")");
+            float buttonY = startY + i * buttonHeight;
+
+            // Hitbox covers exactly the button area (no expansion)
+            float buttonLeft = buttonX;
+            float buttonRight = buttonX + buttonWidth;
+            float buttonTop = buttonY;
+            float buttonBottom = buttonY + buttonHeight;
+
+            GN_LOG_INFO("PauseSystem: Ribbon button " + std::to_string(i) + " bounds: L=" + std::to_string(buttonLeft) +
+                       " R=" + std::to_string(buttonRight) + " T=" + std::to_string(buttonTop) + " B=" + std::to_string(buttonBottom) +
+                       " Position: (" + std::to_string(buttonX) + ", " + std::to_string(buttonY) + ")" +
+                       " Sprite: " + std::to_string(buttonWidth) + "x" + std::to_string(buttonHeight));
+
+            if (touchX >= buttonLeft && touchX <= buttonRight && touchY >= buttonTop && touchY <= buttonBottom) {
+                GN_LOG_INFO("PauseSystem: RIBBON BUTTON " + std::to_string(i) + " CLICKED at (" +
+                           std::to_string(touchX) + ", " + std::to_string(touchY) + ") in bounds (" +
+                           std::to_string(buttonLeft) + ", " + std::to_string(buttonTop) + ") to (" +
+                           std::to_string(buttonRight) + ", " + std::to_string(buttonBottom) + ")");
+
+                // Switch to the appropriate tab
+                PauseMenuTab newTab;
+                switch (i) {
+                    case 0: newTab = PauseMenuTab::SKILLS; break;
+                    case 1: newTab = PauseMenuTab::HATS; break;
+                    case 2: newTab = PauseMenuTab::STATS; break;
+                    case 3: newTab = PauseMenuTab::SYSTEM; break;
+                    default: newTab = PauseMenuTab::SYSTEM; break;
+                }
+
+                SwitchToTab(newTab);
+                return true;
+            }
+        }
+
+        GN_LOG_INFO("PauseSystem: No ribbon button clicked - touch outside all button bounds");
+        return false;
+    }
+
+    void PauseSystem::HandleSystemTabClick(float touchX, float touchY) {
+        GN_LOG_INFO("PauseSystem: Handling system tab click at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
+
+        // Check main menu button click
+        if (m_mainMenuButtonEntity != 0 && m_ecsCoordinator) {
+            auto* transform = m_ecsCoordinator->GetComponent<Transform>(m_mainMenuButtonEntity);
+            if (transform) {
+                // Use proper button dimensions (64x64 scaled by transform scale)
+                float buttonWidth = 64.0f * transform->scale.x;
+                float buttonHeight = 64.0f * transform->scale.y;
+
+                // The transform position is now the top-left corner (due to CenterObjectAtPosition)
+                // So we need to calculate the center for hitbox detection
+                float buttonCenterX = transform->position.x + (buttonWidth * 0.5f);
+                float buttonCenterY = transform->position.y + (buttonHeight * 0.5f);
+
+                float buttonLeft = buttonCenterX - (buttonWidth * 0.5f);
+                float buttonRight = buttonCenterX + (buttonWidth * 0.5f);
+                float buttonTop = buttonCenterY - (buttonHeight * 0.5f);
+                float buttonBottom = buttonCenterY + (buttonHeight * 0.5f);
+
+                // Add debug logging for main menu button hitbox
+                GN_LOG_INFO("PauseSystem: Main menu button hitbox - Transform pos: (" + std::to_string(transform->position.x) + ", " + std::to_string(transform->position.y) +
+                           "), Center: (" + std::to_string(buttonCenterX) + ", " + std::to_string(buttonCenterY) +
+                           "), Size: " + std::to_string(buttonWidth) + "x" + std::to_string(buttonHeight) +
+                           ", Scale: (" + std::to_string(transform->scale.x) + ", " + std::to_string(transform->scale.y) + ")");
+                GN_LOG_INFO("PauseSystem: Main menu button bounds: L=" + std::to_string(buttonLeft) + " R=" + std::to_string(buttonRight) +
+                           " T=" + std::to_string(buttonTop) + " B=" + std::to_string(buttonBottom) +
+                           " Touch: (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
+
+                if (touchX >= buttonLeft && touchX <= buttonRight &&
+                    touchY >= buttonTop && touchY <= buttonBottom) {
+                    GN_LOG_INFO("PauseSystem: Main Menu button clicked at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ") - triggering transition to main menu");
+                    // Hide the pause menu UI first
+                    this->Hide();
+                    // Call ReturnToMainMenu to trigger state transition (matches original implementation)
+                    if (m_gameplayState) {
+                        m_gameplayState->ReturnToMainMenu();
+                    }
+                    return;
+                }
+            }
+        }
+
+        // Check for audio slider knob clicks/drags
+        HandleKnobDrag(touchX, touchY);
+
+        GN_LOG_INFO("PauseSystem: System tab click handled");
+    }
+
+    void PauseSystem::HandleSkillsTabClick(float touchX, float touchY) {
+        GN_LOG_INFO("PauseSystem: Handling skills tab click at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
+
+        // Handle skill unlock button clicks
+        if (m_skillsUnlockButtonEntity != 0 && m_ecsCoordinator) {
+            auto* transform = m_ecsCoordinator->GetComponent<Transform>(m_skillsUnlockButtonEntity);
+            if (transform) {
+                float buttonX = transform->position.x;
+                float buttonY = transform->position.y;
+                float buttonWidth = 90.0f * transform->scale.x;  // 90x16 base size * scale
+                float buttonHeight = 16.0f * transform->scale.y;
+
+                GN_LOG_INFO("PauseSystem: Checking skills unlock button hitbox - touch(" + std::to_string(touchX) + "," + std::to_string(touchY) +
+                           ") vs button(" + std::to_string(buttonX) + "," + std::to_string(buttonY) + "," +
+                           std::to_string(buttonWidth) + "," + std::to_string(buttonHeight) + ")");
+
+                // Use top-left positioning like original implementation
+                if (touchX >= buttonX && touchX <= buttonX + buttonWidth &&
+                    touchY >= buttonY && touchY <= buttonY + buttonHeight) {
+                    // Check debounce timer
+                    if (m_lastSkillButtonPressTime < m_skillButtonDebounceDelay) {
+                        GN_LOG_INFO("PauseSystem: Skill unlock button debounced - too soon since last press");
+                        return;
+                    }
+
+                    GN_LOG_INFO("PauseSystem: Skill unlock button clicked");
+
+                    // Sync player coins to ensure we have the latest coin count
+                    SyncPlayerCoins();
+
+                    // Check if player has enough coins before attempting unlock
+                    if (!m_availableSkills.empty()) {
+                        int validIndex = m_currentSkillIndex;
+                        if (validIndex < 0) validIndex = m_availableSkills.size() - 1;
+                        if (validIndex >= static_cast<int>(m_availableSkills.size())) validIndex = 0;
+
+                        GameCore::SkillType currentSkill = m_availableSkills[validIndex];
+                        int cost = m_skillSystem ? m_skillSystem->GetSkillCost(currentSkill) : 0;
+
+                        if (m_playerCoins < cost) {
+                            // Play denied sound for insufficient coins
+                            if (GameCore::GetGame()) {
+                                GN_LOG_INFO("🎵 Playing denied sound - insufficient coins for skill unlock");
+                                GameCore::GetGame()->PlaySFX("denied");
+                            }
+                            // Reset debounce timer even for failed attempts
+                            m_lastSkillButtonPressTime = 0.0f;
+                            return;
+                        }
+                    }
+
+                    HandleSkillUnlock(m_currentSkillIndex, m_availableSkills, m_skillSystem, m_playerCoins, m_playerEntity);
+                    return;
+                }
+            }
+        }
+
+        // Handle left arrow clicks
+        if (m_skillsLeftArrowEntity != 0 && m_ecsCoordinator) {
+            auto* transform = m_ecsCoordinator->GetComponent<Transform>(m_skillsLeftArrowEntity);
+            if (transform) {
+                float arrowX = transform->position.x;
+                float arrowY = transform->position.y;
+                float arrowSize = 16.0f * transform->scale.x; // 16x16 base size * scale (96px with 6x scale)
+
+                // Use top-left positioning like original implementation
+                if (touchX >= arrowX && touchX <= arrowX + arrowSize &&
+                    touchY >= arrowY && touchY <= arrowY + arrowSize) {
+                    GN_LOG_INFO("PauseSystem: Skills left arrow clicked");
+                    HandleSkillLeftArrow(m_currentSkillIndex, m_availableSkills);
+                    return;
+                }
+            }
+        }
+
+        // Handle right arrow clicks
+        if (m_skillsRightArrowEntity != 0 && m_ecsCoordinator) {
+            auto* transform = m_ecsCoordinator->GetComponent<Transform>(m_skillsRightArrowEntity);
+            if (transform) {
+                float arrowX = transform->position.x;
+                float arrowY = transform->position.y;
+                float arrowSize = 16.0f * transform->scale.x; // 16x16 base size * scale (96px with 6x scale)
+
+                // Use top-left positioning like original implementation
+                if (touchX >= arrowX && touchX <= arrowX + arrowSize &&
+                    touchY >= arrowY && touchY <= arrowY + arrowSize) {
+                    GN_LOG_INFO("PauseSystem: Skills right arrow clicked");
+                    HandleSkillRightArrow(m_currentSkillIndex, m_availableSkills);
+                    return;
+                }
+            }
+        }
+
+        GN_LOG_INFO("PauseSystem: Skills tab click handled - no specific element clicked");
+    }
+
+    void PauseSystem::HandleHatsTabClick(float touchX, float touchY) {
+        GN_LOG_INFO("PauseSystem: Handling hats tab click at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
+
+        // Handle hat frame clicks for selection
+        if (m_hatsSystem && m_ecsCoordinator) {
+            int hatCount = m_hatsSystem->GetHatCount();
+            GN_LOG_INFO("PauseSystem: Checking " + std::to_string(hatCount) + " hat frames for click detection");
+
+            for (size_t i = 0; i < m_hatFrameEntities.size() && i < (size_t)hatCount; ++i) {
+                auto frameEntity = m_hatFrameEntities[i];
+                if (frameEntity != 0) {
+                    auto* transform = m_ecsCoordinator->GetComponent<Transform>(frameEntity);
+                    if (transform) {
+                        float frameX = transform->position.x;
+                        float frameY = transform->position.y;
+
+                        // Check if touch is within frame bounds (top-left positioning)
+                        // Use 32x32 base dimensions scaled by 6x = 192x192 total
+                        float actualFrameWidth = 32.0f * transform->scale.x;   // 32x32 * 6 = 192px
+                        float actualFrameHeight = 32.0f * transform->scale.y; // 32x32 * 6 = 192px
+
+                        GN_LOG_INFO("PauseSystem: Checking hat frame " + std::to_string(i) + " hitbox - touch(" + std::to_string(touchX) + "," + std::to_string(touchY) +
+                                   ") vs frame(" + std::to_string(frameX) + "," + std::to_string(frameY) + "," +
+                                   std::to_string(actualFrameWidth) + "," + std::to_string(actualFrameHeight) + ")");
+
+                        if (touchX >= frameX && touchX <= frameX + actualFrameWidth &&
+                            touchY >= frameY && touchY <= frameY + actualFrameHeight) {
+                            GN_LOG_INFO("PauseSystem: Hat frame " + std::to_string(i) + " clicked - selecting hat");
+                            m_hatsSystem->SelectHat((int)i);
+                            UpdateHatDisplay();
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Handle action button clicks
+        if (m_hatsActionButtonEntity != 0 && m_ecsCoordinator) {
+            auto* transform = m_ecsCoordinator->GetComponent<Transform>(m_hatsActionButtonEntity);
+            auto* uiElement = m_ecsCoordinator->GetComponent<UIElement>(m_hatsActionButtonEntity);
+
+            if (transform && uiElement && uiElement->visible && uiElement->isEnabled) {
+                // Check debounce timer to prevent rapid clicking
+                if (m_lastActionButtonPressTime < m_actionButtonDebounceDelay) {
+                    GN_LOG_INFO("PauseSystem: Hat action button debounced - too soon since last press");
+                    return;
+                }
+                // Get button dimensions and position correctly
+                float buttonX = transform->position.x;
+                float buttonY = transform->position.y;
+                float buttonWidth = 90.0f * transform->scale.x;  // 90x16 base size * scale
+                float buttonHeight = 16.0f * transform->scale.y;
+
+                GN_LOG_INFO("PauseSystem: Checking hat button hitbox - touch(" + std::to_string(touchX) + "," + std::to_string(touchY) +
+                           ") vs button(" + std::to_string(buttonX) + "," + std::to_string(buttonY) + "," +
+                           std::to_string(buttonWidth) + "," + std::to_string(buttonHeight) + ")");
+
+                // Use top-left positioning like original implementation
+                if (touchX >= buttonX && touchX <= buttonX + buttonWidth &&
+                    touchY >= buttonY && touchY <= buttonY + buttonHeight) {
+                    GN_LOG_INFO("PauseSystem: Hats action button clicked");
+
+                    // Sync player coins to ensure we have the latest coin count
+                    SyncPlayerCoins();
+
+                    int selectedHatIndex = m_hatsSystem->GetSelectedHatIndex();
+                    if (selectedHatIndex >= 0) {
+                        // Check if hat is locked and try to buy it
+                        if (!m_hatsSystem->IsHatUnlocked(selectedHatIndex)) {
+                            auto hatData = m_hatsSystem->GetHatData(selectedHatIndex);
+                            if (hatData && m_playerCoins >= hatData->cost) {
+                                if (m_hatsSystem->BuySelectedHat(m_playerCoins)) {
+                                    // NEW LOGIC: Use ALL session coins first, then stored coins
+                                    if (m_playerEntity != 0 && m_ecsCoordinator) {
+                                        auto* playerComp = m_ecsCoordinator->GetComponent<PlayerComponent>(m_playerEntity);
+                                        if (playerComp) {
+                                            int cost = hatData->cost;
+                                            int remainingCost = cost;
+
+                                            // Step 1: Use ALL available session coins first
+                                            if (playerComp->sessionCoins > 0) {
+                                                int sessionDeduction = std::min(remainingCost, playerComp->sessionCoins);
+                                                playerComp->sessionCoins -= sessionDeduction;
+                                                remainingCost -= sessionDeduction;
+                                                GN_LOG_INFO("PauseSystem: Used " + std::to_string(sessionDeduction) + " session coins. Remaining cost: " + std::to_string(remainingCost));
+                                            }
+
+                                            // Step 2: Use stored coins for remaining cost
+                                            if (remainingCost > 0 && playerComp->totalCoins > 0) {
+                                                int storedDeduction = std::min(remainingCost, playerComp->totalCoins);
+                                                playerComp->totalCoins -= storedDeduction;
+                                                remainingCost -= storedDeduction;
+                                                GN_LOG_INFO("PauseSystem: Used " + std::to_string(storedDeduction) + " stored coins. Remaining cost: " + std::to_string(remainingCost));
+                                            }
+
+                                            // Step 3: Update GameStats stored coins
+                                            if (GameCore::GetGame()) {
+                                                GameCore::FloppyTurdGame::GameStats gameStats = GameCore::GetGame()->GetGameStats();
+                                                gameStats.storedCoins = playerComp->totalCoins;
+                                                GameCore::GetGame()->UpdateGameStats(gameStats);
+                                            }
+
+                                            // Verify purchase was successful (remainingCost should be 0)
+                                            if (remainingCost == 0) {
+                                                GN_LOG_INFO("PauseSystem: Hat purchase successful - sessionCoins: " + std::to_string(playerComp->sessionCoins) + ", totalCoins: " + std::to_string(playerComp->totalCoins));
+                                            } else {
+                                                GN_LOG_ERROR("PauseSystem: Hat purchase incomplete - " + std::to_string(remainingCost) + " cost remaining!");
+                                            }
+
+                                            // Update our cached total
+                                            m_playerCoins = playerComp->sessionCoins + playerComp->totalCoins;
+                                        }
+                                    }
+                                    GN_LOG_INFO("PauseSystem: Hat purchased successfully - playing kaching");
+                                    // Play kaching sound for successful purchase
+                                    if (GameCore::GetGame()) {
+                                        GameCore::GetGame()->PlaySFX("kaching");
+                                    }
+                                    UpdateHatDisplay();
+
+                                    // UPDATE DISPLAYS: Refresh all relevant displays with new coin totals after purchase
+                                    if (m_playerEntity != 0 && m_ecsCoordinator) {
+                                        auto* playerComp = m_ecsCoordinator->GetComponent<PlayerComponent>(m_playerEntity);
+                                        if (playerComp) {
+                                            // Get updated total spendable coins (stored + session) and gross total
+                                            int updatedTotalSpendable = playerComp->totalCoins + playerComp->sessionCoins;
+                                            int updatedGrossTotal = 0;
+                                            if (GameCore::GetGame()) {
+                                                updatedGrossTotal = GameCore::GetGame()->GetGameStats().totalCoinsCollected;
+                                            }
+
+                                            // Update pause system stats data with current session coins
+                                            int updatedSessionCoins = playerComp->sessionCoins;
+                                            GN_LOG_INFO("📊 Post-purchase data update - totalSpendable: " + std::to_string(updatedTotalSpendable) + ", sessionCoins: " + std::to_string(updatedSessionCoins) + ", grossTotal: " + std::to_string(updatedGrossTotal));
+                                            UpdateStatsData(m_sessionPipes, updatedSessionCoins, updatedTotalSpendable, updatedGrossTotal, m_totalFlops, m_enemiesKilled, m_totalPipes);
+
+                                            // Refresh the current tab display immediately
+                                            if (m_currentTab == PauseMenuTab::STATS) {
+                                                RefreshStatsDisplay(m_sessionPipes, updatedSessionCoins, updatedTotalSpendable, updatedGrossTotal, m_totalFlops, m_enemiesKilled, m_totalPipes);
+                                            } else if (m_currentTab == PauseMenuTab::HATS) {
+                                                // Update hat display to show new coin count
+                                                UpdateHatDisplay();
+                                            }
+                                        }
+                                    }
+                                }
+                            } else {
+                                // Play denied sound for insufficient coins
+                                if (GameCore::GetGame()) {
+                                    GN_LOG_INFO("🎵 Playing denied sound - insufficient coins for hat");
+                                    GameCore::GetGame()->PlaySFX("denied");
+                                }
+                            }
+                        } else {
+                            // Hat is unlocked, equip it
+                            m_hatsSystem->EquipSelectedHat();
+                            GN_LOG_INFO("PauseSystem: Hat equipped");
+                            UpdateHatDisplay();
+                        }
+                    }
+                    // Reset debounce timer
+                    m_lastActionButtonPressTime = 0.0f;
+                    return;
+                }
+            }
+        }
+
+        GN_LOG_INFO("PauseSystem: Hats tab click handled - no hat frame or button clicked");
+    }
+
+    void PauseSystem::HandleStatsTabClick(float touchX, float touchY) {
+        GN_LOG_INFO("PauseSystem: Handling stats tab click at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
+        // Stats tab is currently just for display - no interactive elements
+        GN_LOG_INFO("PauseSystem: Stats tab click handled - no interactive elements");
+    }
+
+    void PauseSystem::HandleKnobDrag(float touchX, float touchY) {
+        GN_LOG_INFO("PauseSystem: Handling knob drag at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
+
+        // Check if we're already dragging a knob
+        if (m_draggedKnobEntity != 0) {
+            // Update the dragged knob position
+            if (m_ecsCoordinator) {
+                auto* transform = m_ecsCoordinator->GetComponent<Transform>(m_draggedKnobEntity);
+                if (transform) {
+                    // Constrain the knob to the slider track
+                    float newX = std::max(m_sliderX, std::min(m_sliderX + m_sliderW, touchX));
+                    transform->position.x = newX;
+
+                    // Update slider value based on knob position
+                    float normalizedValue = (newX - m_sliderX) / m_sliderW;
+                    normalizedValue = std::max(0.0f, std::min(1.0f, normalizedValue));
+
+                    // Apply to audio system
+                    if (m_draggedKnobEntity == m_masterKnobEntity) {
+                        m_masterSliderValue = normalizedValue;
+                        if (GameCore::GetGame()) {
+                            GameCore::GetGame()->SetMasterVolume(normalizedValue);
+                            GN_LOG_INFO("PauseSystem: Set master volume to " + std::to_string(normalizedValue));
+                        }
+                    } else if (m_draggedKnobEntity == m_musicKnobEntity) {
+                        m_musicSliderValue = normalizedValue;
+                        if (GameCore::GetGame()) {
+                            GameCore::GetGame()->SetMusicVolume(normalizedValue);
+                            GN_LOG_INFO("PauseSystem: Set music volume to " + std::to_string(normalizedValue));
+                        }
+                    } else if (m_draggedKnobEntity == m_sfxKnobEntity) {
+                        m_sfxSliderValue = normalizedValue;
+                        if (GameCore::GetGame()) {
+                            GameCore::GetGame()->SetSFXVolume(normalizedValue);
+                            GN_LOG_INFO("PauseSystem: Set SFX volume to " + std::to_string(normalizedValue));
+                        }
+                    }
+
+                    GN_LOG_INFO("PauseSystem: Dragged knob to position (" + std::to_string(newX) + ", " + std::to_string(transform->position.y) + ") - Value: " + std::to_string(normalizedValue));
+                }
+            }
+            return;
+        }
+
+        // Check MASTER knob first (EXACT same logic as original)
+        if (m_masterKnobEntity != 0 && m_ecsCoordinator) {
+            auto transform = m_ecsCoordinator->GetComponent<Transform>(m_masterKnobEntity);
+                if (transform) {
+                // Use exact button dimensions: 16x16 scaled by uiScale (default 8.0) = 128x128
+                // But use the actual sprite size from the component
+                auto sprite = m_ecsCoordinator->GetComponent<Sprite>(m_masterKnobEntity);
+                float knobWidth = sprite ? sprite->width * transform->scale.x : 16.0f * transform->scale.x;
+                float knobHeight = sprite ? sprite->height * transform->scale.y : 16.0f * transform->scale.y;
+
+                // Convert top-left transform position to center position
+                float knobCenterX = transform->position.x + (knobWidth * 0.5f);
+                float knobCenterY = transform->position.y + (knobHeight * 0.5f);
+                float knobLeft = knobCenterX - (knobWidth * 0.5f);
+                float knobRight = knobCenterX + (knobWidth * 0.5f);
+                float knobTop = knobCenterY - (knobHeight * 0.5f);
+                float knobBottom = knobCenterY + (knobHeight * 0.5f);
+
+                GN_LOG_INFO("PauseSystem: MASTER knob bounds: L=" + std::to_string(knobLeft) + " R=" + std::to_string(knobRight) +
+                           " T=" + std::to_string(knobTop) + " B=" + std::to_string(knobBottom) +
+                           " Size=" + std::to_string(knobWidth) + "x" + std::to_string(knobHeight) +
+                           " Sprite size=" + std::to_string(sprite ? sprite->width : 0) + "x" + std::to_string(sprite ? sprite->height : 0));
+
+                if (touchX >= knobLeft && touchX <= knobRight &&
+                    touchY >= knobTop && touchY <= knobBottom) {
+                    GN_LOG_INFO("PauseSystem: MASTER knob clicked! Starting drag...");
+                    m_draggingMaster = true;
+                    m_activeDragKnob = 0;
+                    m_dragStartX = touchX;
+                    m_dragKnobStartX = knobCenterX;
+                    m_draggedKnobEntity = m_masterKnobEntity;
+                    m_dragOffsetX = touchX - knobCenterX;
+                    return;
+                }
+            }
+        }
+
+        // Check MUSIC knob
+        if (m_musicKnobEntity != 0 && m_ecsCoordinator) {
+            auto transform = m_ecsCoordinator->GetComponent<Transform>(m_musicKnobEntity);
+            if (transform) {
+                // Use exact button dimensions: 16x16 scaled by uiScale
+                auto sprite = m_ecsCoordinator->GetComponent<Sprite>(m_musicKnobEntity);
+                float knobWidth = sprite ? sprite->width * transform->scale.x : 16.0f * transform->scale.x;
+                float knobHeight = sprite ? sprite->height * transform->scale.y : 16.0f * transform->scale.y;
+
+                // Convert top-left transform position to center position
+                float knobCenterX = transform->position.x + (knobWidth * 0.5f);
+                float knobCenterY = transform->position.y + (knobHeight * 0.5f);
+                float knobLeft = knobCenterX - (knobWidth * 0.5f);
+                float knobRight = knobCenterX + (knobWidth * 0.5f);
+                float knobTop = knobCenterY - (knobHeight * 0.5f);
+                float knobBottom = knobCenterY + (knobHeight * 0.5f);
+
+                GN_LOG_INFO("PauseSystem: MUSIC knob bounds: L=" + std::to_string(knobLeft) + " R=" + std::to_string(knobRight) +
+                           " T=" + std::to_string(knobTop) + " B=" + std::to_string(knobBottom) +
+                           " Size=" + std::to_string(knobWidth) + "x" + std::to_string(knobHeight));
+
+                if (touchX >= knobLeft && touchX <= knobRight &&
+                    touchY >= knobTop && touchY <= knobBottom) {
+                    GN_LOG_INFO("PauseSystem: MUSIC knob clicked! Starting drag...");
+                    m_draggingMusic = true;
+                    m_activeDragKnob = 1;
+                    m_dragStartX = touchX;
+                    m_dragKnobStartX = knobCenterX;
+                    m_draggedKnobEntity = m_musicKnobEntity;
+                    m_dragOffsetX = touchX - knobCenterX;
+                        return;
+                    }
+            }
+        }
+
+        // Check SFX knob
+        if (m_sfxKnobEntity != 0 && m_ecsCoordinator) {
+            auto transform = m_ecsCoordinator->GetComponent<Transform>(m_sfxKnobEntity);
+            if (transform) {
+                // Use exact button dimensions: 16x16 scaled by uiScale
+                auto sprite = m_ecsCoordinator->GetComponent<Sprite>(m_sfxKnobEntity);
+                float knobWidth = sprite ? sprite->width * transform->scale.x : 16.0f * transform->scale.x;
+                float knobHeight = sprite ? sprite->height * transform->scale.y : 16.0f * transform->scale.y;
+
+                // Convert top-left transform position to center position
+                float knobCenterX = transform->position.x + (knobWidth * 0.5f);
+                float knobCenterY = transform->position.y + (knobHeight * 0.5f);
+                float knobLeft = knobCenterX - (knobWidth * 0.5f);
+                float knobRight = knobCenterX + (knobWidth * 0.5f);
+                float knobTop = knobCenterY - (knobHeight * 0.5f);
+                float knobBottom = knobCenterY + (knobHeight * 0.5f);
+
+                GN_LOG_INFO("PauseSystem: SFX knob bounds: L=" + std::to_string(knobLeft) + " R=" + std::to_string(knobRight) +
+                           " T=" + std::to_string(knobTop) + " B=" + std::to_string(knobBottom) +
+                           " Size=" + std::to_string(knobWidth) + "x" + std::to_string(knobHeight));
+
+                if (touchX >= knobLeft && touchX <= knobRight &&
+                    touchY >= knobTop && touchY <= knobBottom) {
+                    GN_LOG_INFO("PauseSystem: SFX knob clicked! Starting drag...");
+                    m_draggingSFX = true;
+                    m_activeDragKnob = 2;
+                    m_dragStartX = touchX;
+                    m_dragKnobStartX = knobCenterX;
+                    m_draggedKnobEntity = m_sfxKnobEntity;
+                    m_dragOffsetX = touchX - knobCenterX;
+                    return;
+                }
+            }
+        }
+
+        GN_LOG_INFO("PauseSystem: No knob clicked for dragging");
+    }
+
+    void PauseSystem::StopDragging() {
+        GN_LOG_INFO("PauseSystem: Stopping all dragging");
+
+        m_draggingMaster = false;
+        m_draggingMusic = false;
+        m_draggingSFX = false;
+        m_activeDragKnob = -1;
+        m_draggedKnobEntity = 0;
+        m_dragOffsetX = 0.0f;
+    }
+
+    void PauseSystem::UpdateSkillDisplay(int currentSkillIndex, const std::vector<GameCore::SkillType>& availableSkills,
+                                       SkillSystem* skillSystem, int /*unused*/, Entity playerEntity) {
+        GN_LOG_INFO("PauseSystem: Updating skill display with external data");
+
+        if (!skillSystem || availableSkills.empty()) {
+            GN_LOG_WARN("PauseSystem: Cannot update skill display - missing skill system or no skills available");
+            return;
+        }
+
+        // Ensure current index is valid
+        int validIndex = currentSkillIndex;
+        if (validIndex < 0) {
+            validIndex = availableSkills.size() - 1;
+        } else if (validIndex >= static_cast<int>(availableSkills.size())) {
+            validIndex = 0;
+        }
+
+        GameCore::SkillType currentSkill = availableSkills[validIndex];
+
+        // Update skill name
+        if (m_skillsNameEntity != 0 && m_ecsCoordinator) {
+            UIElement* nameElem = m_ecsCoordinator->GetComponent<UIElement>(m_skillsNameEntity);
+            if (nameElem) {
+                nameElem->buttonText = skillSystem->GetSkillDisplayName(currentSkill);
+                nameElem->visible = true;
+            }
+        }
+
+        // Update skill description
+        if (m_skillsDescriptionEntity != 0 && m_ecsCoordinator) {
+            UIElement* descElem = m_ecsCoordinator->GetComponent<UIElement>(m_skillsDescriptionEntity);
+            if (descElem) {
+                descElem->buttonText = skillSystem->GetSkillDescription(currentSkill);
+                descElem->visible = true;
+            }
+        }
+
+        // Update cost and button state
+        if (m_skillsCostEntity != 0 && m_skillsUnlockButtonEntity != 0 && m_ecsCoordinator) {
+            UIElement* costElem = m_ecsCoordinator->GetComponent<UIElement>(m_skillsCostEntity);
+            UIElement* buttonElem = m_ecsCoordinator->GetComponent<UIElement>(m_skillsUnlockButtonEntity);
+
+            if (costElem && buttonElem) {
+                // Sync player coins to ensure we have the latest coin count
+                SyncPlayerCoins();
+
+                bool isUnlocked = skillSystem->IsSkillUnlocked(currentSkill);
+                int cost = skillSystem->GetSkillCost(currentSkill);
+
+                if (isUnlocked) {
+                    costElem->buttonText = "UNLOCKED";
+                    costElem->textColor = GNColor(0, 255, 0, 255); // Green
+                    buttonElem->buttonText = "UNLOCKED";
+                    buttonElem->isEnabled = false;
+                } else {
+                    costElem->buttonText = "Cost: " + std::to_string(cost) + " coins";
+                    costElem->textColor = GNColor(255, 215, 0, 255); // Gold
+
+                    GN_LOG_INFO("PauseSystem: Skill coin check - playerCoins: " + std::to_string(m_playerCoins) + ", cost: " + std::to_string(cost));
+                    if (m_playerCoins >= cost) {
+                        buttonElem->buttonText = "BUY";
+                        buttonElem->isEnabled = true;
+                        buttonElem->textColor = GNColor(255, 255, 255, 255); // White for sufficient coins
+                        GN_LOG_INFO("PauseSystem: Skill button set to BUY");
+                    } else {
+                        buttonElem->buttonText = "Not enough coins";
+                        buttonElem->isEnabled = false;
+                        buttonElem->textColor = GNColor(255, 100, 100, 255); // Red for insufficient coins - match hats tab
+                        costElem->textColor = GNColor(255, 100, 100, 255); // Red cost text when insufficient coins
+                        GN_LOG_INFO("PauseSystem: Skill button set to NOT ENOUGH COINS");
+                    }
+                }
+
+                costElem->visible = true;
+                buttonElem->visible = true;
+            }
+        }
+
+        GN_LOG_INFO("PauseSystem: Skill display updated for skill: " + skillSystem->GetSkillDisplayName(currentSkill));
+    }
+
+    void PauseSystem::UpdateSkillDisplayFromCurrentState() {
+        GN_LOG_INFO("PauseSystem: Updating skill display from current state");
+        // Sync player coins to ensure we have the latest coin count
+        SyncPlayerCoins();
+        UpdateSkillDisplay(m_currentSkillIndex, m_availableSkills, m_skillSystem, 0, m_playerEntity);
+    }
+
+    void PauseSystem::HandleSkillLeftArrow(int& currentSkillIndex, const std::vector<GameCore::SkillType>& availableSkills) {
+        GN_LOG_INFO("PauseSystem: Handling skill left arrow");
+
+        // Check debounce timer to prevent rapid clicking
+        if (m_lastSkillButtonPressTime < m_skillButtonDebounceDelay) {
+            GN_LOG_INFO("PauseSystem: Skill left arrow debounced - too soon since last press");
+            return;
+        }
+
+        if (availableSkills.empty()) {
+            GN_LOG_WARN("PauseSystem: Cannot navigate skills - no skills available");
+            return;
+        }
+
+        // Navigate to previous skill
+        currentSkillIndex--;
+        if (currentSkillIndex < 0) {
+            currentSkillIndex = availableSkills.size() - 1;
+        }
+
+        // Update skill display
+        UpdateSkillDisplay(currentSkillIndex, availableSkills, m_skillSystem, 0, m_playerEntity);
+
+        // Reset debounce timer
+        m_lastSkillButtonPressTime = 0.0f;
+
+        GN_LOG_INFO("PauseSystem: Navigated to previous skill (index: " + std::to_string(currentSkillIndex) + ")");
+    }
+
+    void PauseSystem::HandleSkillRightArrow(int& currentSkillIndex, const std::vector<GameCore::SkillType>& availableSkills) {
+        GN_LOG_INFO("PauseSystem: Handling skill right arrow");
+
+        // Check debounce timer to prevent rapid clicking
+        if (m_lastSkillButtonPressTime < m_skillButtonDebounceDelay) {
+            GN_LOG_INFO("PauseSystem: Skill right arrow debounced - too soon since last press");
+            return;
+        }
+
+        if (availableSkills.empty()) {
+            GN_LOG_WARN("PauseSystem: Cannot navigate skills - no skills available");
+            return;
+        }
+
+        // Navigate to next skill
+        currentSkillIndex++;
+        if (currentSkillIndex >= static_cast<int>(availableSkills.size())) {
+            currentSkillIndex = 0;
+        }
+
+        // Update skill display
+        UpdateSkillDisplay(currentSkillIndex, availableSkills, m_skillSystem, 0, m_playerEntity);
+
+        // Reset debounce timer
+        m_lastSkillButtonPressTime = 0.0f;
+
+        GN_LOG_INFO("PauseSystem: Navigated to next skill (index: " + std::to_string(currentSkillIndex) + ")");
+    }
+
+    void PauseSystem::HandleSkillUnlock(int currentSkillIndex, const std::vector<GameCore::SkillType>& availableSkills,
+                                       SkillSystem* skillSystem, int& playerCoins, Entity playerEntity) {
+        GN_LOG_INFO("PauseSystem: Handling skill unlock");
+
+        // Check debounce timer to prevent rapid clicking
+        if (m_lastSkillButtonPressTime < m_skillButtonDebounceDelay) {
+            GN_LOG_INFO("PauseSystem: Skill unlock button debounced - too soon since last press");
+            return;
+        }
+
+        if (!skillSystem || availableSkills.empty()) {
+            GN_LOG_WARN("PauseSystem: Cannot unlock skill - missing skill system or no skills available");
+            return;
+        }
+
+        // Ensure current index is valid
+        int validIndex = currentSkillIndex;
+        if (validIndex < 0) {
+            validIndex = availableSkills.size() - 1;
+        } else if (validIndex >= static_cast<int>(availableSkills.size())) {
+            validIndex = 0;
+        }
+
+        GameCore::SkillType currentSkill = availableSkills[validIndex];
+
+        if (skillSystem->IsSkillUnlocked(currentSkill)) {
+            GN_LOG_INFO("PauseSystem: Skill already unlocked: " + skillSystem->GetSkillDisplayName(currentSkill));
+            return; // Already unlocked
+        }
+
+        // Try to unlock the skill
+        if (skillSystem->UnlockSkill(currentSkill, playerCoins)) {
+            GN_LOG_INFO("PauseSystem: Skill unlocked successfully: " + skillSystem->GetSkillDisplayName(currentSkill));
+
+            // Deduct coins from player - properly deduct from stored coins first
+            int cost = skillSystem->GetSkillCost(currentSkill);
+            if (playerEntity != 0 && m_ecsCoordinator) {
+                auto* playerComp = m_ecsCoordinator->GetComponent<PlayerComponent>(playerEntity);
+                if (playerComp) {
+                    int remainingCost = cost;
+
+                    // NEW LOGIC: Use ALL session coins first, then stored coins
+                    // Step 1: Use ALL available session coins first
+                    if (playerComp->sessionCoins > 0) {
+                        int sessionDeduction = std::min(remainingCost, playerComp->sessionCoins);
+                        playerComp->sessionCoins -= sessionDeduction;
+                        remainingCost -= sessionDeduction;
+                        GN_LOG_INFO("PauseSystem: Used " + std::to_string(sessionDeduction) + " session coins for skill. Remaining cost: " + std::to_string(remainingCost));
+                    }
+
+                    // Step 2: Use stored coins for remaining cost
+                    if (remainingCost > 0 && playerComp->totalCoins > 0) {
+                        int storedDeduction = std::min(remainingCost, playerComp->totalCoins);
+                        playerComp->totalCoins -= storedDeduction;
+                        remainingCost -= storedDeduction;
+                        GN_LOG_INFO("PauseSystem: Used " + std::to_string(storedDeduction) + " stored coins for skill. Remaining cost: " + std::to_string(remainingCost));
+                    }
+
+                    // Step 3: Update GameStats stored coins
+                    if (GameCore::GetGame()) {
+                        GameCore::FloppyTurdGame::GameStats gameStats = GameCore::GetGame()->GetGameStats();
+                        gameStats.storedCoins = playerComp->totalCoins;
+                        GameCore::GetGame()->UpdateGameStats(gameStats);
+                    }
+
+                    // Verify purchase was successful (remainingCost should be 0)
+                    if (remainingCost == 0) {
+                        GN_LOG_INFO("PauseSystem: Skill purchase successful - sessionCoins: " + std::to_string(playerComp->sessionCoins) + ", totalCoins: " + std::to_string(playerComp->totalCoins));
+                    } else {
+                        GN_LOG_ERROR("PauseSystem: Skill purchase incomplete - " + std::to_string(remainingCost) + " cost remaining!");
+                    }
+
+                    // Update the local playerCoins variable for consistency
+                    playerCoins = playerComp->sessionCoins + playerComp->totalCoins;
+                    // Update our cached total
+                    m_playerCoins = playerCoins;
+                }
+            }
+
+            // Play unlock sound
+            if (GameCore::GetGame()) {
+                GN_LOG_INFO("🎵 Playing kaching sound for skill unlock");
+                GameCore::GetGame()->PlaySFX("kaching");
+            }
+
+            // UPDATE DISPLAYS: Refresh all relevant displays with new coin totals after purchase
+            if (playerEntity != 0 && m_ecsCoordinator) {
+                auto* playerComp = m_ecsCoordinator->GetComponent<PlayerComponent>(playerEntity);
+                if (playerComp) {
+                    // Get updated total spendable coins (stored + session) and gross total
+                    int updatedTotalSpendable = playerComp->totalCoins + playerComp->sessionCoins;
+                    int updatedGrossTotal = 0;
+                    if (GameCore::GetGame()) {
+                        updatedGrossTotal = GameCore::GetGame()->GetGameStats().totalCoinsCollected;
+                    }
+
+                    // Update pause system stats data with current session coins
+                    int updatedSessionCoins = playerComp->sessionCoins;
+                    GN_LOG_INFO("📊 Post-skill-purchase data update - totalSpendable: " + std::to_string(updatedTotalSpendable) + ", sessionCoins: " + std::to_string(updatedSessionCoins) + ", grossTotal: " + std::to_string(updatedGrossTotal));
+                    UpdateStatsData(m_sessionPipes, updatedSessionCoins, updatedTotalSpendable, updatedGrossTotal, m_totalFlops, m_enemiesKilled, m_totalPipes);
+
+                    // Refresh the current tab display immediately
+                    if (m_currentTab == PauseMenuTab::STATS) {
+                        RefreshStatsDisplay(m_sessionPipes, updatedSessionCoins, updatedTotalSpendable, updatedGrossTotal, m_totalFlops, m_enemiesKilled, m_totalPipes);
+                    } else if (m_currentTab == PauseMenuTab::SKILLS) {
+                        // Update skill display to show new coin count and unlock status
+                        UpdateSkillDisplay(m_currentSkillIndex, m_availableSkills, m_skillSystem, playerComp->sessionCoins + playerComp->totalCoins, playerEntity);
+                    }
+                }
+            }
+
+            // Display update is now handled above with the new coin totals
+        } else {
+            GN_LOG_WARN("PauseSystem: Failed to unlock skill: " + skillSystem->GetSkillDisplayName(currentSkill));
+
+            // Play denied sound when unlock fails (insufficient coins)
+            if (GameCore::GetGame()) {
+                GN_LOG_INFO("🎵 Playing denied sound - insufficient coins");
+                GameCore::GetGame()->PlaySFX("denied");
+            }
+        }
+
+        // Reset debounce timer
+        m_lastSkillButtonPressTime = 0.0f;
+    }
+
+    void PauseSystem::UpdateGameStatsFromSession(int sessionPipes, int sessionCoins, int totalCoins, int grossTotalCoins, int totalFlops,
+                                               int enemiesKilled, int totalPipes) {
+        GN_LOG_INFO("PauseSystem: Updating game stats from session");
+        GN_LOG_INFO("PauseSystem: Session data - Pipes: " + std::to_string(sessionPipes) +
+                   ", Coins: " + std::to_string(sessionCoins) + ", Total Coins: " + std::to_string(totalCoins) +
+                   ", Flops: " + std::to_string(totalFlops) + ", Enemies: " + std::to_string(enemiesKilled) +
+                   ", Total Pipes: " + std::to_string(totalPipes));
+
+        RefreshStatsDisplay(sessionPipes, sessionCoins, totalCoins, grossTotalCoins, totalFlops, enemiesKilled, totalPipes);
+    }
+
+    void PauseSystem::RefreshStatsDisplay(int sessionPipes, int sessionCoins, int totalCoins, int grossTotalCoins, int totalFlops,
+                                         int enemiesKilled, int totalPipes) {
+        GN_LOG_INFO("PauseSystem: Refreshing stats display with real data");
+
+        // Update each stat entity with current values
+        if (m_currentSessionTextEntity != 0 && m_ecsCoordinator) {
+            UIElement* uiElem = m_ecsCoordinator->GetComponent<UIElement>(m_currentSessionTextEntity);
+            if (uiElem) {
+                uiElem->buttonText = "Session Pipes: " + std::to_string(sessionPipes);
+                uiElem->visible = true;
+            }
+        }
+
+        if (m_sessionCoinsTextEntity != 0 && m_ecsCoordinator) {
+            UIElement* uiElem = m_ecsCoordinator->GetComponent<UIElement>(m_sessionCoinsTextEntity);
+            if (uiElem) {
+                uiElem->buttonText = "Session Coins: " + std::to_string(sessionCoins);
+                uiElem->visible = true;
+            }
+        }
+
+        if (m_totalCoinsTextEntity != 0 && m_ecsCoordinator) {
+            UIElement* uiElem = m_ecsCoordinator->GetComponent<UIElement>(m_totalCoinsTextEntity);
+            if (uiElem) {
+                // Show total spendable coins (stored + session)
+                uiElem->buttonText = "Current Total Coins: " + std::to_string(totalCoins);
+                uiElem->visible = true;
+                GN_LOG_INFO("💰 Display - Current Total (spendable): " + std::to_string(totalCoins));
+            }
+        }
+
+        if (m_grossTotalCoinsTextEntity != 0 && m_ecsCoordinator) {
+            UIElement* uiElem = m_ecsCoordinator->GetComponent<UIElement>(m_grossTotalCoinsTextEntity);
+            if (uiElem) {
+                uiElem->buttonText = "Gross Total Coins: " + std::to_string(grossTotalCoins);
+                uiElem->visible = true;
+                GN_LOG_INFO("💰 Display - Gross Total: " + std::to_string(grossTotalCoins));
+            }
+        }
+
+        if (m_totalFlopsTextEntity != 0 && m_ecsCoordinator) {
+            UIElement* uiElem = m_ecsCoordinator->GetComponent<UIElement>(m_totalFlopsTextEntity);
+            if (uiElem) {
+                uiElem->buttonText = "Total Flops: " + std::to_string(totalFlops);
+                uiElem->visible = true;
+            }
+        }
+
+        if (m_enemiesKilledTextEntity != 0 && m_ecsCoordinator) {
+            UIElement* uiElem = m_ecsCoordinator->GetComponent<UIElement>(m_enemiesKilledTextEntity);
+            if (uiElem) {
+                uiElem->buttonText = "Enemies Defeated: " + std::to_string(enemiesKilled);
+                uiElem->visible = true;
+            }
+        }
+
+        if (m_totalPipesTextEntity != 0 && m_ecsCoordinator) {
+            UIElement* uiElem = m_ecsCoordinator->GetComponent<UIElement>(m_totalPipesTextEntity);
+            if (uiElem) {
+                uiElem->buttonText = "Total Pipes: " + std::to_string(totalPipes);
+                uiElem->visible = true;
+            }
+        }
+
+        GN_LOG_INFO("PauseSystem: Stats display refreshed with real data");
+    }
+
+    void PauseSystem::IncrementDeathCounter() {
+        GN_LOG_INFO("PauseSystem: Incrementing death counter");
+
+        if (!GameCore::GetGame()) {
+            GN_LOG_WARN("PauseSystem: No game instance available for death counter increment");
+            return;
+        }
+
+        // Get current game stats
+        GameCore::FloppyTurdGame::GameStats currentStats = GameCore::GetGame()->GetGameStats();
+
+        // Increment death count
+        currentStats.totalDeaths++;
+
+        // Update the game stats
+        GameCore::GetGame()->UpdateGameStats(currentStats);
+
+        GN_LOG_INFO("PauseSystem: Death counter incremented to: " + std::to_string(currentStats.totalDeaths));
+    }
+
+    bool PauseSystem::IsTapOutsideMenuArea(float touchX, float touchY) const {
+        GN_LOG_INFO("PauseSystem: Checking if tap is outside menu area");
+
+        // Define menu area bounds to match the actual pause menu background dimensions
+        // Background: 160x300 scaled 7x = 1120x2100 pixels, centered on screen
+        float originalWidth = 160.0f;   // Original texture width
+        float originalHeight = 300.0f;  // Original texture height
+        float bgScale = 7.0f;
+
+        // SCALE FIRST, then center: Use same logic as background creation
+        float scaledWidth = originalWidth * bgScale;   // 160 * 7 = 1120
+        float scaledHeight = originalHeight * bgScale; // 300 * 7 = 2100
+        GNVector2 bgPosition = CenterObjectAtPosition(m_screenWidth * 0.5f, m_screenHeight * 0.5f + 32.0f, scaledWidth, scaledHeight);
+        float menuLeft = bgPosition.x;
+        float menuRight = bgPosition.x + scaledWidth;
+        float menuTop = bgPosition.y;
+        float menuBottom = bgPosition.y + scaledHeight;
+
+        // Only consider taps outside the RIGHT, TOP, and BOTTOM as "outside"
+        // EXCLUDE the LEFT side to prevent accidental clicks on ribbon buttons from exiting
+        bool outsideMenu = (touchX > menuRight || touchY < menuTop || touchY > menuBottom);
+
+        // EXCLUDE the settings button area from "outside menu" check
+        if (IsTapInSettingsButtonArea(touchX, touchY)) {
+            GN_LOG_INFO("PauseSystem: Tap is in settings button area - not outside menu");
+            return false;
+        }
+
+        GN_LOG_INFO("PauseSystem: Menu bounds: (" + std::to_string(menuLeft) + ", " + std::to_string(menuTop) + ") to (" +
+                   std::to_string(menuRight) + ", " + std::to_string(menuBottom) + ") - Touch: (" +
+                   std::to_string(touchX) + ", " + std::to_string(touchY) + ") - Outside: " + std::to_string(outsideMenu) +
+                   " (only checking right/top/bottom, left side is protected)");
+
+        return outsideMenu;
+    }
+
+    bool PauseSystem::IsTapInSettingsButtonArea(float touchX, float touchY) const {
+        GN_LOG_INFO("PauseSystem: Checking if tap is in settings button area");
+
+        // Calculate settings button position (matches original GameplayState logic)
+        float settingsButtonX = m_screenWidth * 0.85f;
+        float settingsButtonY = m_screenHeight * 0.05f;
+        float buttonScale = 8.0f; // Matches original scale
+        float buttonSize = 64.0f * buttonScale;
+
+        float buttonLeft = settingsButtonX - (buttonSize * 0.5f);
+        float buttonRight = settingsButtonX + (buttonSize * 0.5f);
+        float buttonTop = settingsButtonY - (buttonSize * 0.5f);
+        float buttonBottom = settingsButtonY + (buttonSize * 0.5f);
+
+        bool isInArea = (touchX >= buttonLeft && touchX <= buttonRight &&
+                        touchY >= buttonTop && touchY <= buttonBottom);
+
+        GN_LOG_INFO("PauseSystem: Settings button bounds: (" + std::to_string(buttonLeft) + ", " + std::to_string(buttonTop) +
+                   ") to (" + std::to_string(buttonRight) + ", " + std::to_string(buttonBottom) +
+                   ") - Touch: (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ") - In area: " + std::to_string(isInArea));
+
+        return isInArea;
+    }
+
+
+} // namespace GameCore

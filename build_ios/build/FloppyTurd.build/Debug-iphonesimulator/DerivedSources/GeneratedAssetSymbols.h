@@ -30,6 +30,9 @@ static NSString * const ACImageNameBirdIdle AC_SWIFT_PRIVATE = @"BirdIdle";
 /// The "BlueCoin" asset catalog image resource.
 static NSString * const ACImageNameBlueCoin AC_SWIFT_PRIVATE = @"BlueCoin";
 
+/// The "BossBackground" asset catalog image resource.
+static NSString * const ACImageNameBossBackground AC_SWIFT_PRIVATE = @"BossBackground";
+
 /// The "BossBarFrame" asset catalog image resource.
 static NSString * const ACImageNameBossBarFrame AC_SWIFT_PRIVATE = @"BossBarFrame";
 
@@ -492,6 +495,9 @@ static NSString * const ACImageNameAchievementicon AC_SWIFT_PRIVATE = @"achievem
 /// The "achievementiconunlocked" asset catalog image resource.
 static NSString * const ACImageNameAchievementiconunlocked AC_SWIFT_PRIVATE = @"achievementiconunlocked";
 
+/// The "arrowsturning" asset catalog image resource.
+static NSString * const ACImageNameArrowsturning AC_SWIFT_PRIVATE = @"arrowsturning";
+
 /// The "ballcap" asset catalog image resource.
 static NSString * const ACImageNameBallcap AC_SWIFT_PRIVATE = @"ballcap";
 
@@ -524,6 +530,9 @@ static NSString * const ACImageNameBlastBig AC_SWIFT_PRIVATE = @"blast_big";
 
 /// The "blast_small" asset catalog image resource.
 static NSString * const ACImageNameBlastSmall AC_SWIFT_PRIVATE = @"blast_small";
+
+/// The "bosspillar" asset catalog image resource.
+static NSString * const ACImageNameBosspillar AC_SWIFT_PRIVATE = @"bosspillar";
 
 /// The "castlebacklayerbackground" asset catalog image resource.
 static NSString * const ACImageNameCastlebacklayerbackground AC_SWIFT_PRIVATE = @"castlebacklayerbackground";

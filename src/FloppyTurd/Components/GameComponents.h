@@ -251,7 +251,8 @@ namespace GameCore {
         int health;                    // Current health slices
         int maxHealth;                 // Maximum health slices
         int score;
-        int totalCoins;               // lifetime/account coins
+        int totalCoins;               // stored coins between sessions (spendable)
+        int grossTotalCoins;          // lifetime accumulation (never spent, just record)
         int sessionCoins;             // coins collected in current level attempt
         float invulnerabilityTimer;
         float shootCooldown;
@@ -272,6 +273,7 @@ namespace GameCore {
             , maxHealth(3)
             , score(0)
             , totalCoins(0)
+            , grossTotalCoins(0)
             , sessionCoins(0)
             , invulnerabilityTimer(0.0f)
             , shootCooldown(0.0f)

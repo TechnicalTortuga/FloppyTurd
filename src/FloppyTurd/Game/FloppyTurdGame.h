@@ -76,9 +76,15 @@ namespace GameCore {
         void SaveGameData();
         void LoadGameData();
         int GetHighScore() const { return m_highScore; }
-        int GetPlayerCoins() const { return m_playerCoins; }
-        void AddCoins(int amount) { m_playerCoins += amount; }
-        void SpendCoins(int amount) { m_playerCoins -= amount; }
+        int GetPlayerCoins() const { return m_gameStats.storedCoins; } // Return stored coins instead of legacy value
+        void AddCoins(int amount) {
+            m_gameStats.storedCoins += amount;
+            m_gameStats.totalCoinsCollected += amount; // Also update gross total
+        }
+        void SpendCoins(int amount) {
+            m_gameStats.storedCoins -= amount;
+            // Note: gross total doesn't decrease when spending
+        }
 
         // System access
         Gnosis::ECS* GetECS() const { return m_ecsSystem.get(); }
@@ -97,6 +103,7 @@ namespace GameCore {
             int totalGamesPlayed;
             int totalScore;
             int totalCoinsCollected;
+            int storedCoins;            // Coins stored between sessions (spendable)
             int totalDeaths;            // Total number of deaths/flops
             int totalPipesCleared;      // Total pipes cleared across all sessions
             int totalJumps;

@@ -53,6 +53,9 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/../Systems/LevelManager.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/../Systems/ProjectileSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/BossHealthBar.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/PauseSystem.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/../Systems/SkillSystem.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/../Systems/HatsSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Config/LevelConfig.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../Entities/Player.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Systems/RenderSystem.h

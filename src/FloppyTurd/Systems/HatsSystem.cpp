@@ -318,6 +318,7 @@ namespace GameCore {
         UpdateCostDisplay();
     }
 
+
     bool HatsSystem::BuySelectedHat(int playerCoins)
     {
         if (m_selectedHatIndex < 0 || m_selectedHatIndex >= m_hats.size()) return false;
@@ -590,15 +591,16 @@ namespace GameCore {
                     costElement->buttonText = "Select a hat to see cost";
                 }
             }
-            // Hide action button
+            // Show action button with "Nothing Selected" text
             if (m_actionButtonEntity != 0 && m_ecsCoordinator) {
                 UIElement* actionElement = m_ecsCoordinator->GetComponent<UIElement>(m_actionButtonEntity);
                 if (actionElement) {
-                    actionElement->visible = false;
-                    actionElement->buttonText = "";
+                    actionElement->visible = true;
+                    actionElement->buttonText = "Nothing Selected";
+                    actionElement->textColor = Gnosis::GNColor(150, 150, 150, 255); // Gray for no selection
                 }
                 Sprite* actionSprite = m_ecsCoordinator->GetComponent<Sprite>(m_actionButtonEntity);
-                if (actionSprite) actionSprite->visible = false;
+                if (actionSprite) actionSprite->visible = true;
             }
             return;
         }

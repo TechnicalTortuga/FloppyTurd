@@ -20,6 +20,7 @@
 #include "../Systems/SkillSystem.h"
 #include "../Systems/BossSystem.h"
 #include "../Systems/BossHealthBar.h"
+#include "../Systems/PauseSystem.h"
 #include "../Config/LevelConfig.h"
 #include <memory>
 #include <vector>
@@ -77,6 +78,7 @@ namespace GameCore {
         // Pause menu
         void TogglePause();
         bool IsPaused() const { return m_currentSubState == GameplaySubState::Paused; }
+        void ReturnToMainMenu();
         
         // Platform-specific layout functions
         void SetupLayout();
@@ -106,6 +108,13 @@ namespace GameCore {
         std::unique_ptr<BossSystem> m_bossSystem;
         std::unique_ptr<BossHealthBar> m_bossHealthBar;
 
+        // Pause system (handles all pause menu functionality)
+        std::unique_ptr<PauseSystem> m_pauseSystem;
+
+        // Cached screen dimensions (eliminate 40+ repeated GetScreenInfo() calls)
+        float m_cachedScreenWidth;
+        float m_cachedScreenHeight;
+
         // Level configuration
         int m_currentLevelId;
         LevelConfig m_currentLevelConfig;
@@ -118,8 +127,6 @@ namespace GameCore {
         // Moved to PickupSystem: m_pickups, m_pickupIndex
         // Projectiles now managed by ProjectileSystem: m_projectiles
         std::vector<Gnosis::Entity> m_enemies;
-        
-        // Moved to PickupSystem: m_groupCoins
 
         // Game state
         int m_currentScore;
@@ -156,134 +163,25 @@ namespace GameCore {
         Gnosis::Entity m_coinBagEntity;         // Coin bag icon (32x32)
         Gnosis::Entity m_pipeCounterEntity;     // Pipe counter display under notch
         Gnosis::Entity m_shootingZoneEntity;    // Shooting zone visual indicator
-        Gnosis::Entity m_pauseMenuEntity;
-        Gnosis::Entity m_tempMenuButtonEntity;  // Temporary button to return to main menu
         Gnosis::Entity m_heartUIEntity;         // Heart UI display entity
         
         // Pause menu system
         Gnosis::Entity m_settingsButtonEntity;  // Settings button (replaces [MENU] button)
-        Gnosis::Entity m_pauseMenuBackgroundEntity; // Pause menu background overlay
-        Gnosis::Entity m_pauseMenuRibbonEntity;     // Ribbon containing tab buttons
-        bool m_hatsGridCreated;                       // Prevent duplicate hats grid creation
-        std::vector<Gnosis::Entity> m_ribbonButtons; // SKILLS, HATS, STATS, SYSTEM buttons
-        Gnosis::Entity m_pauseMenuContentEntity;     // Content area for current tab
-        int m_currentPauseTab;                       // Current active tab (0=SKILLS, 1=HATS, 2=STATS, 3=SYSTEM)
         // Settings button debouncing
         float m_lastSettingsButtonPressTime;
         float m_settingsButtonDebounceDelay;
-
-        // Action button debouncing
-        float m_lastActionButtonPressTime;
-        float m_actionButtonDebounceDelay;
-
-        // Skills tab button debouncing
-        float m_lastSkillButtonPressTime;
-        float m_skillButtonDebounceDelay;
-
-        // Pause menu creation state
-        bool m_pauseMenuCreated;
-
-        // Pause menu tab content management
-        void ShowPauseMenuTab(int tabIndex);
-        void DestroyPauseMenuTabContent();
-        void CreateSystemTabContent();
-        void CreateSkillsTabContent();
-        void CreateHatsTabContent();
-        void CreateStatsTabContent();
-
-        // Hats tab interaction
-        void HandleHatsTabClick(float touchX, float touchY);
-        void HandleHatsButtonClicks(float touchX, float touchY, float centerX, float buttonY);
-        void HandleHatPurchase();
-        void HandleHatEquip();
-        void ScheduleDelayedSound(float delaySeconds);
 
         // Coin management helpers
         int GetCurrentPlayerCoins() const;
         void DeductPlayerCoins(int amount);
 
-        // Pause menu tab content entities
-        Gnosis::Entity m_systemTabEntity;       // System tab content (audio + main menu)
-        Gnosis::Entity m_mainMenuButtonEntity;  // Main menu button in system tab
+    public:
+        // System access for PauseSystem
+        SkillSystem* GetSkillSystem() { return m_skillSystem.get(); }
+        HatsSystem* GetHatsSystem() { return m_hatsSystem.get(); }
+        Gnosis::Entity GetPlayerEntity() const { return m_playerEntity; }
 
-        Gnosis::Entity m_placeholderLabelEntity; // Placeholder label for non-system tabs
-        
-        // Individual tab content entities
-        Gnosis::Entity m_skillsContentEntity;   // Skills tab content
-        Gnosis::Entity m_skillsBackgroundEntity; // Skills tab black background
-        Gnosis::Entity m_skillsTitleEntity;       // Skills tab title text
-        Gnosis::Entity m_hatsTitleEntity;         // Hats tab title text
-        Gnosis::Entity m_statsTitleEntity;        // Stats tab title text
-        Gnosis::Entity m_systemTitleEntity;       // System tab title text
-        Gnosis::Entity m_skillsNameEntity;       // Skills tab name text
-        Gnosis::Entity m_skillsDescriptionEntity; // Skills tab description text
-        Gnosis::Entity m_skillsCostEntity;        // Skills tab cost text
-        Gnosis::Entity m_skillsUnlockButtonEntity; // Skills tab unlock button
-        Gnosis::Entity m_skillsLeftArrowEntity;   // Skills tab left arrow
-        Gnosis::Entity m_skillsRightArrowEntity;  // Skills tab right arrow
-
-        // Skill menu state
-        int m_currentSkillIndex;                   // Current skill being displayed (0-4)
-        std::vector<GameCore::SkillType> m_availableSkills; // List of available skills
-
-        // Skill menu functions
-        void UpdateSkillDisplay();
-        void HandleSkillLeftArrow();
-        void HandleSkillRightArrow();
-        void HandleSkillUnlock();
-        void HandleSkillsTabClick(float touchX, float touchY);
-        Gnosis::Entity m_hatsContentEntity;     // Hats tab content
-        Gnosis::Entity m_hatsBackgroundEntity;   // Hats tab black background
-        Gnosis::Entity m_statsContentEntity;    // Stats tab content
-        Gnosis::Entity m_statsBackgroundEntity; // Stats tab black background rectangle
-        
-        // Individual stats display entities
-        Gnosis::Entity m_totalPipesTextEntity;     // Total pipes cleared across all games
-        Gnosis::Entity m_totalFlopsTextEntity;     // Total deaths/flops
-        Gnosis::Entity m_totalCoinsTextEntity;     // Total coins collected
-        Gnosis::Entity m_sessionCoinsTextEntity;   // Session coins collected
-
-        Gnosis::Entity m_enemiesKilledTextEntity;  // Total enemies killed
-        Gnosis::Entity m_currentSessionTextEntity; // Current session pipes
-
-        // Level high score display entities
-        std::vector<Gnosis::Entity> m_levelHighScoreEntities;
-
-        // Audio slider UI entities (matching MainMenuState style)
-        Gnosis::Entity m_masterKnobEntity = 0;
-        Gnosis::Entity m_masterTrackEntity = 0;
-        Gnosis::Entity m_masterLabelEntity = 0;
-        Gnosis::Entity m_musicKnobEntity = 0;
-        Gnosis::Entity m_sfxKnobEntity = 0;
-        Gnosis::Entity m_musicTrackEntity = 0;
-        Gnosis::Entity m_sfxTrackEntity = 0;
-        Gnosis::Entity m_musicLabelEntity = 0;
-        Gnosis::Entity m_sfxLabelEntity = 0;
-
-        // Slider drag state
-        bool m_draggingMaster = false;
-        bool m_draggingMusic = false;
-        bool m_draggingSFX = false;
-        int m_activeDragKnob = -1; // -1=none, 0=master, 1=music, 2=sfx
-        float m_dragStartX = 0.0f;
-        float m_dragKnobStartX = 0.0f;
-
-        // Cached slider layout
-        float m_sliderX = 0.0f;
-        float m_sliderY = 0.0f;
-        float m_sliderW = 0.0f;
-        float m_sliderH = 18.0f;
-        float m_sliderSpacing = 70.0f;
         float m_uiScale = 1.0f;  // UI scaling factor for consistent sizing
-
-        // Current slider values (0.0-1.0)
-        float m_masterSliderValue = 1.0f;
-        float m_musicSliderValue = 1.0f;
-        float m_sfxSliderValue = 1.0f;
-
-        // Delayed sound system for ooo sounds
-        float m_delayedSoundTime = 0.0f;
-        std::string m_delayedSoundName;
 
         // Debug hitbox visualization entities
         std::vector<Gnosis::Entity> m_debugHitboxEntities;
@@ -295,7 +193,6 @@ namespace GameCore {
         Gnosis::Entity m_deathMessageEntity;         // Funny death message text
         Gnosis::Entity m_tryAgainButtonEntity;       // Try again button
         Gnosis::Entity m_quitButtonEntity;           // Quit to main menu button
-
 
         // Tracks whether we've already repositioned UI based on real pixel dimensions
         bool m_uiPositionsSynced = false;
@@ -323,9 +220,15 @@ namespace GameCore {
         void CreateBackgroundLayers();
         void DestroyGameEntities();
 
-        // Pause menu tab switching (call when ribbon button pressed)
-        void OnPauseMenuTabSelected(int tabIndex);
-    void ResetPlayerEntity();
+        // Screen dimension caching (eliminates 40+ repeated GetScreenInfo() calls)
+        void CacheScreenDimensions();
+
+        // Coordinate conversion helpers (eliminates duplicate normalization code)
+        void NormalizeCoordinates(float pixelX, float pixelY, float& outNormalizedX, float& outNormalizedY);
+        void DenormalizeCoordinates(float normalizedX, float normalizedY, float& outPixelX, float& outPixelY);
+        Gnosis::GNVector2 CenterObjectAtPosition(float centerX, float centerY, float width, float height);
+
+        void ResetPlayerEntity();
         void CreateUI();
         void DestroyUI();
         void UpdateGameLogic(float deltaTime);
@@ -380,48 +283,18 @@ namespace GameCore {
         void OnEnemyDefeated();
         
         // Pause menu methods
-        void CreatePauseMenu();
-        void DestroyPauseMenu();
         void ShowPauseMenu();
         void HidePauseMenu();
         void CreateSettingsButton();
-        void CreatePauseMenuBackground();
-        void CreatePauseMenuRibbon();
-        void CreatePauseMenuContent();
-        void CreateRibbonButtons();
-        void CreateSystemTab();
-        void CreateSkillsTab();
-        void CreateHatsTab();
-        void CreateStatsTab();
-        void CreateAudioSliders();
-        void CreateDebugHitboxRectangles();
-        void UpdateDebugHitboxPositions();
-        void ShowDebugHitboxes(bool show);
-        void SwitchPauseTab(int tabIndex);
-        void ShowTabContent(int tabIndex);
-        void ShowCurrentTabContent();
-        void ShowSystemTab();
-        void ShowSkillsTab();
-        void ShowHatsTab();
-        void ShowStatsTab();
-        void HideAllTabContent();
         
         // Stats management
-        void UpdateGameStatsFromSession();    // Update game stats with current session data
-        void RefreshStatsDisplay();           // Refresh the stats text entities with current values
         void IncrementDeathCounter();         // Increment death counter when player dies
         void CheckSettingsButtonClick(float touchX, float touchY);
-        void HandlePauseMenuInput(float touchX, float touchY);
-        bool HandlePauseMenuRibbonClick(float touchX, float touchY);
-        void HandlePauseMenuContentClick(float touchX, float touchY);
-        void HandleSystemTabClick(float touchX, float touchY);
-        void HandleKnobDrag(float touchX, float touchY);
-        bool IsTapOutsideMenuArea(float touchX, float touchY);
-        bool IsTapInSettingsButtonArea(float touchX, float touchY);
         
-        // Menu navigation (for pause menu integration later)
-        void ReturnToMainMenu();  // Function to connect to pause menu later
-        void CheckMenuButtonClick(float touchX, float touchY);
+
+        // Input helpers
+        bool IsTapInSettingsButtonArea(float touchX, float touchY);
+        bool IsTapOutsideMenuArea(float touchX, float touchY);
     };
 
 } // namespace GameCore

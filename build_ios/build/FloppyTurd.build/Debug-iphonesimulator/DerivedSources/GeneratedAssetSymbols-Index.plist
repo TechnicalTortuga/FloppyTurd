@@ -90,6 +90,16 @@
 			<key>catalogPath</key>
 			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
+			<string>ACImageNameBossBackground</string>
+			<key>relativePath</key>
+			<string>./graphics/environment/backgrounds/boss/BossBackground.imageset</string>
+			<key>swiftSymbol</key>
+			<string>bossBackground</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
+			<key>objcSymbol</key>
 			<string>ACImageNameBossBarFrame</string>
 			<key>relativePath</key>
 			<string>./graphics/ui/hud/BossBarFrame.imageset</string>
@@ -1630,6 +1640,16 @@
 			<key>catalogPath</key>
 			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
+			<string>ACImageNameArrowsturning</string>
+			<key>relativePath</key>
+			<string>./graphics/ui/hud/arrowsturning.imageset</string>
+			<key>swiftSymbol</key>
+			<string>arrowsturning</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
+			<key>objcSymbol</key>
 			<string>ACImageNameBallcap</string>
 			<key>relativePath</key>
 			<string>./graphics/characters/player/cosmetics/hats/base_hats/ballcap.imageset</string>
@@ -1735,6 +1755,16 @@
 			<string>./graphics/vfx/explosions/blast_small.imageset</string>
 			<key>swiftSymbol</key>
 			<string>blastSmall</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
+			<key>objcSymbol</key>
+			<string>ACImageNameBosspillar</string>
+			<key>relativePath</key>
+			<string>./graphics/environment/backgrounds/boss/bosspillar.imageset</string>
+			<key>swiftSymbol</key>
+			<string>bosspillar</string>
 		</dict>
 		<dict>
 			<key>catalogPath</key>

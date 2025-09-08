@@ -50,8 +50,8 @@ namespace GameCore {
         , m_pendingPartyHorn(false)
     {
         // Initialize game stats
-        m_gameStats = {0, 0, 0, 0, 0, 0, 0, 0.0f, 0, 0};
-        
+        m_gameStats = {0, 0, 0, 0, 0, 0, 0, 0, 0.0f, 0, 0};
+
         GN_LOG_INFO("Game instance created");
     }
 
@@ -379,7 +379,7 @@ namespace GameCore {
         if (file.is_open()) {
             // Save basic game data
             file.write(reinterpret_cast<const char*>(&m_highScore), sizeof(m_highScore));
-            file.write(reinterpret_cast<const char*>(&m_playerCoins), sizeof(m_playerCoins));
+            // Note: m_playerCoins removed from save (now uses storedCoins from GameStats)
             file.write(reinterpret_cast<const char*>(&m_gameStats), sizeof(m_gameStats));
 
             // Save only essential level data (no requirements)
@@ -409,10 +409,9 @@ namespace GameCore {
         if (file.is_open()) {
             // Load basic game data
             file.read(reinterpret_cast<char*>(&m_highScore), sizeof(m_highScore));
-            int oldCoins = m_playerCoins; // Store old value for logging
-            file.read(reinterpret_cast<char*>(&m_playerCoins), sizeof(m_playerCoins));
+            // Note: m_playerCoins no longer loaded (now uses storedCoins from GameStats)
             file.read(reinterpret_cast<char*>(&m_gameStats), sizeof(m_gameStats));
-            GN_LOG_INFO("💰 LOADED COINS: " + std::to_string(oldCoins) + " → " + std::to_string(m_playerCoins));
+            GN_LOG_INFO("💰 LOADED STORED COINS: " + std::to_string(m_gameStats.storedCoins));
 
             // Initialize level stats with default requirements first
             for (int levelId = 1; levelId <= MAX_LEVELS; ++levelId) {
@@ -655,7 +654,7 @@ namespace GameCore {
         GN_LOG_INFO("🔄 ResetGameData called - resetting to defaults");
         m_highScore = 0;
         m_playerCoins = 0;
-        m_gameStats = {0, 0, 0, 0, 0, 0, 0, 0.0f, 0, 0};
+        m_gameStats = {0, 0, 0, 0, 0, 0, 0, 0, 0.0f, 0, 0};
 
         // Initialize level stats with default values
         for (int levelId = 1; levelId <= MAX_LEVELS; ++levelId) {
@@ -924,8 +923,8 @@ namespace GameCore {
         GN_LOG_INFO("🔍 Checking coin requirement: effectiveCoinRequirement=" + std::to_string(effectiveCoinRequirement) + " (level " + std::to_string(levelId) + ")");
         if (effectiveCoinRequirement > 0) {
             GN_LOG_INFO("⚠️ Coin requirement check triggered for level " + std::to_string(levelId));
-            GN_LOG_INFO("💰 Checking coins: need " + std::to_string(effectiveCoinRequirement) + ", current coins: " + std::to_string(m_playerCoins));
-            if (m_playerCoins < effectiveCoinRequirement) {
+            GN_LOG_INFO("💰 Checking stored coins: need " + std::to_string(effectiveCoinRequirement) + ", current stored coins: " + std::to_string(m_gameStats.storedCoins));
+            if (m_gameStats.storedCoins < effectiveCoinRequirement) {
                 failureMessage = "Need " + std::to_string(effectiveCoinRequirement) + " coins";
                 GN_LOG_INFO("❌ Coin requirement not met: " + failureMessage);
                 return false;
@@ -961,8 +960,9 @@ namespace GameCore {
 
         // Deduct coins if required
         if (effectiveCoinRequirement > 0) {
-            SpendCoins(effectiveCoinRequirement);
-            GN_LOG_INFO("💰 Spent " + std::to_string(effectiveCoinRequirement) + " coins to unlock level " + std::to_string(levelId));
+            // Spend stored coins for level unlocking
+            m_gameStats.storedCoins -= effectiveCoinRequirement;
+            GN_LOG_INFO("💰 Spent " + std::to_string(effectiveCoinRequirement) + " stored coins to unlock level " + std::to_string(levelId));
         }
 
         // Unlock the level

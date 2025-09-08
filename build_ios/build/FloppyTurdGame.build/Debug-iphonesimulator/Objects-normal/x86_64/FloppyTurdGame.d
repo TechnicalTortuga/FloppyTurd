@@ -47,6 +47,9 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../Systems/../Systems/LevelManager.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../Systems/../Systems/ProjectileSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../Systems/BossHealthBar.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../Systems/PauseSystem.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../Systems/../Systems/SkillSystem.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../Systems/../Systems/HatsSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../Config/LevelConfig.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../Entities/Player.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/LoadingState.h \

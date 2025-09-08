@@ -63,8 +63,7 @@ namespace GameCore {
             return false;
         }
 
-        // Deduct coins
-        playerCoins -= it->second.coinCost;
+        // Mark skill as unlocked (coin deduction handled by PauseSystem)
         it->second.isUnlocked = true;
 
         // Auto-activate passive skills

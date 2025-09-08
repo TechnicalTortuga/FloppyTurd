@@ -46,6 +46,9 @@ extension DeveloperToolsSupport.ImageResource {
     /// The "BlueCoin" asset catalog image resource.
     static let blueCoin = DeveloperToolsSupport.ImageResource(name: "BlueCoin", bundle: resourceBundle)
 
+    /// The "BossBackground" asset catalog image resource.
+    static let bossBackground = DeveloperToolsSupport.ImageResource(name: "BossBackground", bundle: resourceBundle)
+
     /// The "BossBarFrame" asset catalog image resource.
     static let bossBarFrame = DeveloperToolsSupport.ImageResource(name: "BossBarFrame", bundle: resourceBundle)
 
@@ -508,6 +511,9 @@ extension DeveloperToolsSupport.ImageResource {
     /// The "achievementiconunlocked" asset catalog image resource.
     static let achievementiconunlocked = DeveloperToolsSupport.ImageResource(name: "achievementiconunlocked", bundle: resourceBundle)
 
+    /// The "arrowsturning" asset catalog image resource.
+    static let arrowsturning = DeveloperToolsSupport.ImageResource(name: "arrowsturning", bundle: resourceBundle)
+
     /// The "ballcap" asset catalog image resource.
     static let ballcap = DeveloperToolsSupport.ImageResource(name: "ballcap", bundle: resourceBundle)
 
@@ -540,6 +546,9 @@ extension DeveloperToolsSupport.ImageResource {
 
     /// The "blast_small" asset catalog image resource.
     static let blastSmall = DeveloperToolsSupport.ImageResource(name: "blast_small", bundle: resourceBundle)
+
+    /// The "bosspillar" asset catalog image resource.
+    static let bosspillar = DeveloperToolsSupport.ImageResource(name: "bosspillar", bundle: resourceBundle)
 
     /// The "castlebacklayerbackground" asset catalog image resource.
     static let castlebacklayerbackground = DeveloperToolsSupport.ImageResource(name: "castlebacklayerbackground", bundle: resourceBundle)

@@ -9,21 +9,21 @@
 /* Begin PBXAggregateTarget section */
 		5B099B38C254862E8781CD94 /* ALL_BUILD */ = {
 			isa = PBXAggregateTarget;
-			buildConfigurationList = A0F26185DEAE4B38AD72A620 /* Build configuration list for PBXAggregateTarget "ALL_BUILD" */;
+			buildConfigurationList = E0FE662622BE4686AE4BE086 /* Build configuration list for PBXAggregateTarget "ALL_BUILD" */;
 			buildPhases = (
 				A216752C45B5C62AEA2A9DDC /* Generate CMakeFiles/ALL_BUILD */,
 			);
 			dependencies = (
-				282EF47865314D42B54BEF8A /* PBXTargetDependency */,
-				7F57A6C38A9844A78FBACFB3 /* PBXTargetDependency */,
-				011D3C1E30C3428DB6727AD4 /* PBXTargetDependency */,
+				0FB065487F8B4769BDAA6AE3 /* PBXTargetDependency */,
+				66661859262E481DBB69B531 /* PBXTargetDependency */,
+				C903C2CA7251432EA657F659 /* PBXTargetDependency */,
 			);
 			name = ALL_BUILD;
 			productName = ALL_BUILD;
 		};
 		D9EF5759F53BF46D2676F7EB /* ZERO_CHECK */ = {
 			isa = PBXAggregateTarget;
-			buildConfigurationList = 489F05EEC8B34F4092D2D399 /* Build configuration list for PBXAggregateTarget "ZERO_CHECK" */;
+			buildConfigurationList = A276166029334ACA8A0FEA74 /* Build configuration list for PBXAggregateTarget "ZERO_CHECK" */;
 			buildPhases = (
 				1F83846D7A70552451548AF3 /* Generate CMakeFiles/ZERO_CHECK */,
 			);
@@ -35,117 +35,119 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
-		078DFCBC721148E3BA8D7AE6 /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/System.h */ = {isa = PBXBuildFile; fileRef = 3B6999D15DB247AF90FF863B /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/System.h */; };
-		135AD883B6F84F31916BD6D7 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/RenderSystem.h */ = {isa = PBXBuildFile; fileRef = 53392D64E26C4CEFA82F7905 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/RenderSystem.h */; };
-		15816EAA9701452C8256AEFE /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PlayerControllerSystem.cpp */ = {isa = PBXBuildFile; fileRef = B8BB64899511478FB148DCFB /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PlayerControllerSystem.cpp */; };
-		15B6E229EAEB43798A8E4C53 /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/GNLog.cpp */ = {isa = PBXBuildFile; fileRef = 2B4B76B865524407A86C8413 /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/GNLog.cpp */; };
-		1ADAC466F0D043A097EFA62B /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/FloppyTurdGame.cpp */ = {isa = PBXBuildFile; fileRef = 4A049EAF33964A18BFDF5F88 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/FloppyTurdGame.cpp */; };
-		1D0B37201B5E4128895754FB /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/GameplayState.cpp */ = {isa = PBXBuildFile; fileRef = F685103382004B7887F0324B /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/GameplayState.cpp */; };
-		1E412BD3897F472796906535 /* /Users/aimac/Development/FloppyTurd/src/Engine/Platform/PlatformDelegates.h */ = {isa = PBXBuildFile; fileRef = A610F684882E4631A6DE8B12 /* /Users/aimac/Development/FloppyTurd/src/Engine/Platform/PlatformDelegates.h */; };
-		232B264B0C564A2BB4DD5E90 /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/GNLog.h */ = {isa = PBXBuildFile; fileRef = 48CC950DF33D485FB7D58D5D /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/GNLog.h */; };
-		23555D44D2FB417BAF144312 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/MainMenuState.cpp */ = {isa = PBXBuildFile; fileRef = B2915FA1ABC342C0B5C957FB /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/MainMenuState.cpp */; };
-		245388452905436BB193C9D0 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/LevelManager.cpp */ = {isa = PBXBuildFile; fileRef = CA2546B056A345A383352FF8 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/LevelManager.cpp */; };
-		27952F3D69184983B8B26F06 /* /Users/aimac/Development/FloppyTurd/src/Engine/Configuration/ConfigManager.cpp */ = {isa = PBXBuildFile; fileRef = 357CDB857F4340EF99629295 /* /Users/aimac/Development/FloppyTurd/src/Engine/Configuration/ConfigManager.cpp */; };
-		280807F3558A4FB0B3D10BDE /* /Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/FloppyTurdGame.dir/Info.plist */ = {isa = PBXBuildFile; fileRef = B3F012CC312B4CFABF5DEFCD /* /Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/FloppyTurdGame.dir/Info.plist */; };
-		2847AD89C221468DA7EBF455 /* /Users/aimac/Development/FloppyTurd/src/iOS/Shaders/Shaders2D.metal */ = {isa = PBXBuildFile; fileRef = A26A18097B1347A3A0FAEA4C /* /Users/aimac/Development/FloppyTurd/src/iOS/Shaders/Shaders2D.metal */; };
-		2D845E7E35D2415DB3542485 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/UISystem.h */ = {isa = PBXBuildFile; fileRef = EF8F3C14AC824F598D018C4D /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/UISystem.h */; };
-		328DB5BD7287474FAF3CF0F6 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PlayerControllerSystem.h */ = {isa = PBXBuildFile; fileRef = 8FF3A032DF5B45E4BA2226F9 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PlayerControllerSystem.h */; };
-		33D4192689984C59A51EA212 /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/ECS.h */ = {isa = PBXBuildFile; fileRef = 88B38CE3B6E7477AB584F1AF /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/ECS.h */; };
-		36476F9859DF4B3484F45509 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/LoadingState.cpp */ = {isa = PBXBuildFile; fileRef = 15F7DB83F2334FCAB52A74DE /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/LoadingState.cpp */; };
-		375D19BDCC96437D947F78B4 /* /Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/FloppyTurd.dir/Info.plist */ = {isa = PBXBuildFile; fileRef = 16B877AA62D74396BDC53002 /* /Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/FloppyTurd.dir/Info.plist */; };
-		390076EC39F24314B8BCE919 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/FloppyTurdGame.h */ = {isa = PBXBuildFile; fileRef = DA113BB7506C4CC3AE8A91C6 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/FloppyTurdGame.h */; };
-		3AE895F3635F47998855B5D5 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/msdf/.DS_Store */ = {isa = PBXBuildFile; fileRef = D323780B21CB43C1ADF15A49 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/msdf/.DS_Store */; };
-		48D2AE3227904E6D8F223969 /* /Users/aimac/Development/FloppyTurd/src/iOS/AppDelegate.swift */ = {isa = PBXBuildFile; fileRef = 6050FC50344245FC91430C47 /* /Users/aimac/Development/FloppyTurd/src/iOS/AppDelegate.swift */; };
-		49CC1654F03A47B3B924AFF6 /* /Users/aimac/Development/FloppyTurd/CMakeLists.txt */ = {isa = PBXBuildFile; fileRef = 6931FF055DD34AA39F5DBB83 /* /Users/aimac/Development/FloppyTurd/CMakeLists.txt */; };
-		4D61C833C9884B1DB45C53F4 /* /Users/aimac/Development/FloppyTurd/src/iOS/Rendering/MetalMatrixHelpers.swift */ = {isa = PBXBuildFile; fileRef = 7EFF3939A5874B1F9200B0C0 /* /Users/aimac/Development/FloppyTurd/src/iOS/Rendering/MetalMatrixHelpers.swift */; };
-		51F0FF9518B9469DA123D7FE /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/SpriteSystem.h */ = {isa = PBXBuildFile; fileRef = 9DE4942927834194A7D1DF47 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/SpriteSystem.h */; };
-		54F6A4B98ECA4AADAC555507 /* /Users/aimac/Development/FloppyTurd/src/Engine/Platform/iOSPlatformImpl.h */ = {isa = PBXBuildFile; fileRef = B5038CA2D9F14A80A33B42AB /* /Users/aimac/Development/FloppyTurd/src/Engine/Platform/iOSPlatformImpl.h */; };
-		55B3977F57F140BE83DB27C2 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/bitmap/WhackyJoe_32.png */ = {isa = PBXBuildFile; fileRef = D2160CD95BFE469389429F48 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/bitmap/WhackyJoe_32.png */; };
-		55D9DB119482419BADFFF11F /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/LoadingState.h */ = {isa = PBXBuildFile; fileRef = D10A7229881441E5B0709084 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/LoadingState.h */; };
-		5C7CDE1839834BD49110652A /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ObstacleSystem.h */ = {isa = PBXBuildFile; fileRef = 1F8549CD5BA145CBA4060115 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ObstacleSystem.h */; };
-		6287727D56794D3BB5C8FDBA /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/LevelManager.h */ = {isa = PBXBuildFile; fileRef = 886CA0E73DC748F09F058BC6 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/LevelManager.h */; };
-		64AA042075EF4846B9624E84 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/bitmap/Whacky_Joe.fnt */ = {isa = PBXBuildFile; fileRef = 828A72E0CCF34C87BEEA19D3 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/bitmap/Whacky_Joe.fnt */; };
-		6C6E8CC8D53A42DDB2474F7A /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PickupSystem.cpp */ = {isa = PBXBuildFile; fileRef = BE6625E205DE4761BA8C5E6A /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PickupSystem.cpp */; };
-		70665ACB8B4B476AAF5E770B /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/HatsSystem.cpp */ = {isa = PBXBuildFile; fileRef = 68A3777FB11E4901BFB6062F /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/HatsSystem.cpp */; };
-		7331E857598D42B19B9298A0 /* /Users/aimac/Development/FloppyTurd/src/iOS/Rendering/MetalRenderer.swift */ = {isa = PBXBuildFile; fileRef = A39A727EF15044F18DA96FE7 /* /Users/aimac/Development/FloppyTurd/src/iOS/Rendering/MetalRenderer.swift */; };
-		740E9F925C10461EB8B2709D /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/BossHealthBar.cpp */ = {isa = PBXBuildFile; fileRef = 80C4FB72D5434A92819312DD /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/BossHealthBar.cpp */; };
-		74E364C81AB84E6585040BB4 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/MainMenuState.h */ = {isa = PBXBuildFile; fileRef = 0CDD52634B4841BBB3CF361C /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/MainMenuState.h */; };
-		751FE2FD4EB24A329769D231 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/ProjectileSpriteConfig.cpp */ = {isa = PBXBuildFile; fileRef = 4381BCBAEE554BCC9E7834F5 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/ProjectileSpriteConfig.cpp */; };
-		76914402243845AB9E8CFC71 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/EnemyConfigs.h */ = {isa = PBXBuildFile; fileRef = C829E488A8EC4737AE7DE4D9 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/EnemyConfigs.h */; };
-		77074641F5BD4BA29776DB3A /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ProjectileSystem.cpp */ = {isa = PBXBuildFile; fileRef = B3626A487253493386CCD9BD /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ProjectileSystem.cpp */; };
-		780792DD44244AC1802461ED /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/HeartSystem.h */ = {isa = PBXBuildFile; fileRef = D4697FAA3ECB44D986D995EF /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/HeartSystem.h */; };
-		7870D23513B34A36ABBFA9EA /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/RenderSystem.cpp */ = {isa = PBXBuildFile; fileRef = 2DC67B6FFC0E4DEDAA6E9E2A /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/RenderSystem.cpp */; };
-		7EFC8C11D6644691B0C0E1C0 /* /Users/aimac/Development/FloppyTurd/src/iOS/Input/TouchInputHandler.swift */ = {isa = PBXBuildFile; fileRef = D4D2553098184350857073B7 /* /Users/aimac/Development/FloppyTurd/src/iOS/Input/TouchInputHandler.swift */; };
-		81EAAC72ED5B4A7EA6CC5040 /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/SystemManager.h */ = {isa = PBXBuildFile; fileRef = BAFF0441834640E787AD8053 /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/SystemManager.h */; };
-		861BF6947A634FF5AE7E9BB5 /* /Users/aimac/Development/FloppyTurd/src/Engine/Configuration/ConfigManager.h */ = {isa = PBXBuildFile; fileRef = 0F398561BE6345B19F18371A /* /Users/aimac/Development/FloppyTurd/src/Engine/Configuration/ConfigManager.h */; };
-		868F6631F9D9476E8690AE17 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ObstacleSystem.cpp */ = {isa = PBXBuildFile; fileRef = 5558B63B175D478FA0BC1AB8 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ObstacleSystem.cpp */; };
-		8B428CC07737469D820C046B /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/EnemySystem.cpp */ = {isa = PBXBuildFile; fileRef = 3F1D2237EFF54C4C970CE9E9 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/EnemySystem.cpp */; };
-		8E03D71724074EAA990F262D /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/BossHealthBar.h */ = {isa = PBXBuildFile; fileRef = 5ACD7C0EF3C245AFBF2D275B /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/BossHealthBar.h */; };
-		8E817AE25BB441F68AB370A2 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/GameState.h */ = {isa = PBXBuildFile; fileRef = 9161CEC265284532ACA5C29F /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/GameState.h */; };
-		90A7F8ED90754EA59FDF668E /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/HeartSystem.cpp */ = {isa = PBXBuildFile; fileRef = 9B91D3F334AE4DE7948732A6 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/HeartSystem.cpp */; };
-		93CA82CC85184AD49654431E /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/BossSystem.cpp */ = {isa = PBXBuildFile; fileRef = 9F3EB81F114F4FF6B6BAECB6 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/BossSystem.cpp */; };
-		93FC2D470D124AFC8311CBC1 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/CameraSystem.h */ = {isa = PBXBuildFile; fileRef = AC4E007F9774474B8D228547 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/CameraSystem.h */; };
-		9703E458473E4311824B5F28 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/SkillSystem.cpp */ = {isa = PBXBuildFile; fileRef = E1538C8E6BD84020B434E400 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/SkillSystem.cpp */; };
-		9BCFD69E19614E369B0E5043 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/HatsSystem.h */ = {isa = PBXBuildFile; fileRef = 144C31A11FCB43D289048B91 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/HatsSystem.h */; };
-		9D7E56F625B041C6BDDED16A /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/SkillSystem.h */ = {isa = PBXBuildFile; fileRef = BC106FCBC506455DADB33224 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/SkillSystem.h */; };
-		9E3088C2B4D24C9B993C641D /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/GameplayState.h */ = {isa = PBXBuildFile; fileRef = 8683CFD87F0A43BFAF20CD03 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/GameplayState.h */; };
-		A3F4C3EA87584856AC82ACF9 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/UISystem.cpp */ = {isa = PBXBuildFile; fileRef = 1D61DAE209404ADCA7325E92 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/UISystem.cpp */; };
-		A7BED72DCB3A45398E09AC84 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/ProjectileSpriteConfig.h */ = {isa = PBXBuildFile; fileRef = 00EFA8A7A2DA4BE9911FCFC4 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/ProjectileSpriteConfig.h */; };
-		AE923AEFF7DF46A5AACC8510 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/LevelConfig.cpp */ = {isa = PBXBuildFile; fileRef = 5117653E18B8414FBCD610B2 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/LevelConfig.cpp */; };
-		B517275B86F4424692F7E7D9 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/GameStateManager.cpp */ = {isa = PBXBuildFile; fileRef = 709C73CA7E45478083AF5AED /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/GameStateManager.cpp */; };
-		B7790734A6E04F67944E79CB /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/GnosisTypes.h */ = {isa = PBXBuildFile; fileRef = C9345F32ACF94B149777DAA3 /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/GnosisTypes.h */; };
-		B7E28DD46785401EAAFE751D /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/LevelConfig.h */ = {isa = PBXBuildFile; fileRef = 05187D71E76E49B49C6E1E3C /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/LevelConfig.h */; };
-		B9A015D1591649C8A1E51FC6 /* /Users/aimac/Development/FloppyTurd/src/iOS/Threading/ThreadingProxy.cpp */ = {isa = PBXBuildFile; fileRef = 4FED9C1922A743F197076B14 /* /Users/aimac/Development/FloppyTurd/src/iOS/Threading/ThreadingProxy.cpp */; };
-		B9AD4DFC1A02439EBF6CBC81 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/SpriteSystem.cpp */ = {isa = PBXBuildFile; fileRef = 1B3F7AE813DB41DCA3B8F8AA /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/SpriteSystem.cpp */; };
-		B9B1C39D1A8748A4A441F568 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ProjectileSystem.h */ = {isa = PBXBuildFile; fileRef = 3AE8085B7E294879A65019E6 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ProjectileSystem.h */; };
-		C03C41370870436F91342737 /* /Users/aimac/Development/FloppyTurd/src/iOS/Logging/iOSLogHandler.swift */ = {isa = PBXBuildFile; fileRef = 6AE858C222F64A6882C8959A /* /Users/aimac/Development/FloppyTurd/src/iOS/Logging/iOSLogHandler.swift */; };
-		C348DABA20334D58A58D616A /* /Users/aimac/Development/FloppyTurd/src/Engine/Utility/Utils.h */ = {isa = PBXBuildFile; fileRef = 70BEAF69B48E49BD8B04885C /* /Users/aimac/Development/FloppyTurd/src/Engine/Utility/Utils.h */; };
-		C48B5772224E415AA48D8CEB /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/CameraSystem.cpp */ = {isa = PBXBuildFile; fileRef = 9FAA7BFE2D8E4689BA0851A9 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/CameraSystem.cpp */; };
-		C5BA1D3BB5A84ECEB7845F4D /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/Entity.h */ = {isa = PBXBuildFile; fileRef = 18067B891DAE4AD289FC51D0 /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/Entity.h */; };
-		C622F462473E4CFA8D67B6CE /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/Component.h */ = {isa = PBXBuildFile; fileRef = 7E732BDC6BA440F8919D1C98 /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/Component.h */; };
-		C8635D2237714B909BB0E7EE /* /Users/aimac/Development/FloppyTurd/src/iOS/Shaders/RotSprite.metal */ = {isa = PBXBuildFile; fileRef = 4F0BBED3ACC4445C9B4953B9 /* /Users/aimac/Development/FloppyTurd/src/iOS/Shaders/RotSprite.metal */; };
-		CA2BFD273F604FB7B88B3669 /* /Users/aimac/Development/FloppyTurd/src/iOS/Assets/AssetManager.swift */ = {isa = PBXBuildFile; fileRef = 44E93F4100C84E7A8EE1E977 /* /Users/aimac/Development/FloppyTurd/src/iOS/Assets/AssetManager.swift */; };
-		CB1DDDFBE4214408B5389D52 /* /Users/aimac/Development/FloppyTurd/src/iOS/Threading/ThreadingSystem.swift */ = {isa = PBXBuildFile; fileRef = 87BFFE28A8004E03A00F3C9D /* /Users/aimac/Development/FloppyTurd/src/iOS/Threading/ThreadingSystem.swift */; };
-		D170EF1AB9BF40DD8F4CE12C /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/BossSystem.h */ = {isa = PBXBuildFile; fileRef = 899267324BD649F4B852CFAA /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/BossSystem.h */; };
-		D7268CB90D71424691788F04 /* /Users/aimac/Development/FloppyTurd/src/iOS/GameEngine.swift */ = {isa = PBXBuildFile; fileRef = 65FF721330834DC482C66BFE /* /Users/aimac/Development/FloppyTurd/src/iOS/GameEngine.swift */; };
-		D7CC79DE21AA41B08DD08D9B /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PickupSystem.h */ = {isa = PBXBuildFile; fileRef = D103C8EEABAA4F90AA78D7AC /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PickupSystem.h */; };
-		D8EFE515F56240828ECC4ECB /* /Users/aimac/Development/FloppyTurd/src/Engine/Utility/Utils.cpp */ = {isa = PBXBuildFile; fileRef = B1832587E1624353ADD0F85B /* /Users/aimac/Development/FloppyTurd/src/Engine/Utility/Utils.cpp */; };
-		D99E6864F1E54D6EABEA4596 /* /Users/aimac/Development/FloppyTurd/src/iOS/Audio/AVAudioHandler.swift */ = {isa = PBXBuildFile; fileRef = 7BB15DA5D6704002A98EB91F /* /Users/aimac/Development/FloppyTurd/src/iOS/Audio/AVAudioHandler.swift */; };
-		DE6F771A98224311B1F897E2 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/bitmap/Whacky_Joe.ttf */ = {isa = PBXBuildFile; fileRef = DE8B1E4FABA0434FB5995210 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/bitmap/Whacky_Joe.ttf */; };
-		E1DAC35CCE4A4800B00BFE15 /* /Users/aimac/Development/FloppyTurd/src/Engine/Platform/iOSPlatformImpl.cpp */ = {isa = PBXBuildFile; fileRef = D332008DA7634104B3B280D7 /* /Users/aimac/Development/FloppyTurd/src/Engine/Platform/iOSPlatformImpl.cpp */; };
-		E67338C3BCC74CB6AE8CB71B /* /Users/aimac/Development/FloppyTurd/src/iOS/Threading/ThreadingProxy.h */ = {isa = PBXBuildFile; fileRef = 6247605222784779B91BBD78 /* /Users/aimac/Development/FloppyTurd/src/iOS/Threading/ThreadingProxy.h */; };
-		E8AF668117704A618607012F /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/EnemyConfigs.cpp */ = {isa = PBXBuildFile; fileRef = F19A1005DB784DCCA36D5F7F /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/EnemyConfigs.cpp */; };
-		EB482DF96B774832AF1DCD99 /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/SystemManager.cpp */ = {isa = PBXBuildFile; fileRef = 50A51E64DBC24633B9170110 /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/SystemManager.cpp */; };
-		F1BBACD8E6CD40E9BEA75267 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/EnemySystem.h */ = {isa = PBXBuildFile; fileRef = 9961A0E128D84C0D8319BEF4 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/EnemySystem.h */; };
-		F7136032AEBD4AF18C1B6C8B /* /Users/aimac/Development/FloppyTurd/src/Assets.xcassets */ = {isa = PBXBuildFile; fileRef = 76A35ABFEB3B425BB6EACFDF /* /Users/aimac/Development/FloppyTurd/src/Assets.xcassets */; };
-		FB58A914C1764410986025C1 /* /Users/aimac/Development/FloppyTurd/src/iOS/GameViewController.swift */ = {isa = PBXBuildFile; fileRef = 113748ABE070468DA89A8FDA /* /Users/aimac/Development/FloppyTurd/src/iOS/GameViewController.swift */; };
-		FCB6BAA521014A23A7C02C01 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/msdf/charset_ascii.txt */ = {isa = PBXBuildFile; fileRef = 34F68C2A81064B23B097E491 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/msdf/charset_ascii.txt */; };
-		FF89A56092E9439EBD6FBBC0 /* /Users/aimac/Development/FloppyTurd/CMakeLists.txt */ = {isa = PBXBuildFile; fileRef = 3ECDB3539B3D406C924FCF83 /* /Users/aimac/Development/FloppyTurd/CMakeLists.txt */; };
+		00521C7EF6314E958121B66C /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/EnemyConfigs.h */ = {isa = PBXBuildFile; fileRef = E0A0BC482D4D4A1CB5108AFF /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/EnemyConfigs.h */; };
+		010D62072F87455984D98A39 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/UISystem.cpp */ = {isa = PBXBuildFile; fileRef = 79AAF5254F684BCDA30CB9D4 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/UISystem.cpp */; };
+		0424B1503AFA49249CB08F96 /* /Users/aimac/Development/FloppyTurd/src/iOS/Audio/AVAudioHandler.swift */ = {isa = PBXBuildFile; fileRef = 2D086050C7AB4BBC94F43E40 /* /Users/aimac/Development/FloppyTurd/src/iOS/Audio/AVAudioHandler.swift */; };
+		12D8A60343F442A8949EB309 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/ProjectileSpriteConfig.h */ = {isa = PBXBuildFile; fileRef = 9EE09F63CF2B435E9ED7401D /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/ProjectileSpriteConfig.h */; };
+		14D8B298429F437CAFD3C7DB /* /Users/aimac/Development/FloppyTurd/src/iOS/Threading/ThreadingProxy.cpp */ = {isa = PBXBuildFile; fileRef = 25B0F8DB6D1F4FD085FA4D8E /* /Users/aimac/Development/FloppyTurd/src/iOS/Threading/ThreadingProxy.cpp */; };
+		1643D84D5DDA4D1CBE804E24 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/SpriteSystem.h */ = {isa = PBXBuildFile; fileRef = 37A1C70F1A82486CA08756F0 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/SpriteSystem.h */; };
+		19F9776DE6954451846FB899 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/HatsSystem.cpp */ = {isa = PBXBuildFile; fileRef = BD73EC4A09F54B69BBE4797B /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/HatsSystem.cpp */; };
+		1C56683B662F4494817FC8C3 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/MainMenuState.cpp */ = {isa = PBXBuildFile; fileRef = 2D88914E9BF74B559470B989 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/MainMenuState.cpp */; };
+		1D81A381065B4767AFC3DE2E /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ProjectileSystem.h */ = {isa = PBXBuildFile; fileRef = 2ACCA0BCB70747A7863A27FF /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ProjectileSystem.h */; };
+		1FB4C775058F44AD9914FBFE /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/HeartSystem.cpp */ = {isa = PBXBuildFile; fileRef = EE9013A9BC384B48B570FA26 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/HeartSystem.cpp */; };
+		2066623A62BD43AD9566F9DD /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/SpriteSystem.cpp */ = {isa = PBXBuildFile; fileRef = 83070281F67149939FC84E91 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/SpriteSystem.cpp */; };
+		2305F30F3FB94EFBA4AE3271 /* /Users/aimac/Development/FloppyTurd/src/iOS/Logging/iOSLogHandler.swift */ = {isa = PBXBuildFile; fileRef = 005AAD124119434CA3252681 /* /Users/aimac/Development/FloppyTurd/src/iOS/Logging/iOSLogHandler.swift */; };
+		2C24AA008DEC4AAE854D67B7 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/ProjectileSpriteConfig.cpp */ = {isa = PBXBuildFile; fileRef = D9944904FFF34F8CB105D499 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/ProjectileSpriteConfig.cpp */; };
+		2CE37901ECE74B0AB7441E63 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/BossHealthBar.h */ = {isa = PBXBuildFile; fileRef = AEA07391A0784B3F91F13635 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/BossHealthBar.h */; };
+		2DF72C4BED1F43528D8ECAEF /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/LevelManager.h */ = {isa = PBXBuildFile; fileRef = 396054EC476542998DD45448 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/LevelManager.h */; };
+		324018AA56EA4E519DEE1A7D /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/LoadingState.cpp */ = {isa = PBXBuildFile; fileRef = 46E935F6B477475FB30E275F /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/LoadingState.cpp */; };
+		39C9EAA790BF493395267D93 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/BossSystem.cpp */ = {isa = PBXBuildFile; fileRef = 60FBB36A1A6946C79FDE84B0 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/BossSystem.cpp */; };
+		3FA32AC8F5044CB6B91EA41B /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/GameState.h */ = {isa = PBXBuildFile; fileRef = 4D4CF63C1C624AB682F3DF66 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/GameState.h */; };
+		437330A1187E4F78B6196230 /* /Users/aimac/Development/FloppyTurd/src/Engine/Platform/PlatformDelegates.h */ = {isa = PBXBuildFile; fileRef = CD916B53C1F641D2A81D5440 /* /Users/aimac/Development/FloppyTurd/src/Engine/Platform/PlatformDelegates.h */; };
+		442617B7381D48778DE598C2 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/LoadingState.h */ = {isa = PBXBuildFile; fileRef = CCBE9E77D03F4691AF19B9AA /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/LoadingState.h */; };
+		44A23E9DA0C54F6E979B617F /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/FloppyTurdGame.h */ = {isa = PBXBuildFile; fileRef = D71EA5B38C1848918D55DCBA /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/FloppyTurdGame.h */; };
+		46445AED699545349937B63F /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/RenderSystem.h */ = {isa = PBXBuildFile; fileRef = B6491D23751E44DBBC7D0A5B /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/RenderSystem.h */; };
+		46D8BC02CAF84C36897DDF2C /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PauseSystem.cpp */ = {isa = PBXBuildFile; fileRef = C18121B9340F442C8DC083D1 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PauseSystem.cpp */; };
+		4AC6EB6714D543A4AF1E58E4 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/EnemyConfigs.cpp */ = {isa = PBXBuildFile; fileRef = 40570F4791BB434B9F0655FA /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/EnemyConfigs.cpp */; };
+		4AFA2CA84E244FF191B8A0F6 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/RenderSystem.cpp */ = {isa = PBXBuildFile; fileRef = 7E06DD96EB7B473489CEDEEE /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/RenderSystem.cpp */; };
+		500B24AD37A14C3DBB6B0A48 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/BossSystem.h */ = {isa = PBXBuildFile; fileRef = 568D148DC4904BE7A588277B /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/BossSystem.h */; };
+		527367F9925F4BBCB602AE54 /* /Users/aimac/Development/FloppyTurd/src/iOS/Rendering/MetalMatrixHelpers.swift */ = {isa = PBXBuildFile; fileRef = F4A98945C6C24DF7AB0787B5 /* /Users/aimac/Development/FloppyTurd/src/iOS/Rendering/MetalMatrixHelpers.swift */; };
+		5299AB0D094C47638BBD79CB /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/LevelConfig.h */ = {isa = PBXBuildFile; fileRef = F5506B5E8C0C46C6A1C6EBF0 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/LevelConfig.h */; };
+		598F69277EF34D338AC5DC2A /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/GNLog.h */ = {isa = PBXBuildFile; fileRef = B0BC13F91A8C42C4AAF33F04 /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/GNLog.h */; };
+		59A6C2B1F984480E9ABA76D0 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/bitmap/Whacky_Joe.ttf */ = {isa = PBXBuildFile; fileRef = C690E84522894318A98C3A86 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/bitmap/Whacky_Joe.ttf */; };
+		5E339F4F8F9C4C1DB61BC02A /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/GameplayState.cpp */ = {isa = PBXBuildFile; fileRef = 1DDE24FBC4504752BF5CA131 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/GameplayState.cpp */; };
+		5F64BDB1EFC94913967588FD /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/Entity.h */ = {isa = PBXBuildFile; fileRef = 7D306E3196134A0CA7A296BB /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/Entity.h */; };
+		5F72D47B4C6F4E5882C81848 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/CameraSystem.cpp */ = {isa = PBXBuildFile; fileRef = EF6151291E1544A79BF3DA1E /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/CameraSystem.cpp */; };
+		63860027DBB844B1A6B0667C /* /Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/FloppyTurd.dir/Info.plist */ = {isa = PBXBuildFile; fileRef = 43EF2C87558140029B5A0CD2 /* /Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/FloppyTurd.dir/Info.plist */; };
+		64072A4AC87D40E688F63EB5 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/MainMenuState.h */ = {isa = PBXBuildFile; fileRef = BA8F4857D3344BF2BEAC976D /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/MainMenuState.h */; };
+		69E474E5ACEF414C877103DE /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/SystemManager.cpp */ = {isa = PBXBuildFile; fileRef = 772BD4945AF24A5381B83E5F /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/SystemManager.cpp */; };
+		6E15213E44134024A4C346EA /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/msdf/.DS_Store */ = {isa = PBXBuildFile; fileRef = 05E2B9E0878B4F03B418FB80 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/msdf/.DS_Store */; };
+		6FEC77B7208C42C992052AFA /* /Users/aimac/Development/FloppyTurd/src/iOS/Input/TouchInputHandler.swift */ = {isa = PBXBuildFile; fileRef = 0B9FE68ED30247858ECBD384 /* /Users/aimac/Development/FloppyTurd/src/iOS/Input/TouchInputHandler.swift */; };
+		7EE483A9B338405DA93B2A2C /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ObstacleSystem.h */ = {isa = PBXBuildFile; fileRef = 1D5914ABE8BA46F5B0B65178 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ObstacleSystem.h */; };
+		821AECD1ABF74F8EAB897205 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/GameStateManager.cpp */ = {isa = PBXBuildFile; fileRef = B0B5AECC38224DD8AFAFF56F /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/GameStateManager.cpp */; };
+		87B2C2329F854FDBA7875794 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/EnemySystem.cpp */ = {isa = PBXBuildFile; fileRef = 14B4529C06784E03892A7358 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/EnemySystem.cpp */; };
+		87DC01181B354C8B97CC1CA3 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/BossHealthBar.cpp */ = {isa = PBXBuildFile; fileRef = 1C028B58586145A4962EB738 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/BossHealthBar.cpp */; };
+		892C15002F7D4B8391742E23 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/SkillSystem.h */ = {isa = PBXBuildFile; fileRef = B8AA018BEBCE456C849A08AC /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/SkillSystem.h */; };
+		8F3FEA3659384B368A0C1505 /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/SystemManager.h */ = {isa = PBXBuildFile; fileRef = B1DE29AC5D654B228342C97F /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/SystemManager.h */; };
+		970056597210434085D88E97 /* /Users/aimac/Development/FloppyTurd/src/Engine/Utility/Utils.cpp */ = {isa = PBXBuildFile; fileRef = 2B4362B3C2BB4FA8BA97ECA7 /* /Users/aimac/Development/FloppyTurd/src/Engine/Utility/Utils.cpp */; };
+		9C305D8A6A7143F7BDC34585 /* /Users/aimac/Development/FloppyTurd/src/iOS/Rendering/MetalRenderer.swift */ = {isa = PBXBuildFile; fileRef = E2F73BE7DB324F8B849BB10C /* /Users/aimac/Development/FloppyTurd/src/iOS/Rendering/MetalRenderer.swift */; };
+		9EA6037F49CD43B3A5F8719C /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/System.h */ = {isa = PBXBuildFile; fileRef = 33E2C370276448F5B054CCD7 /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/System.h */; };
+		9F1FA1159B134945B50E2B0C /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/FloppyTurdGame.cpp */ = {isa = PBXBuildFile; fileRef = DA58AF2BA05849C18C82EDEE /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/FloppyTurdGame.cpp */; };
+		A03251BBDCB444F6B132321E /* /Users/aimac/Development/FloppyTurd/src/Engine/Configuration/ConfigManager.cpp */ = {isa = PBXBuildFile; fileRef = 0E2F0FD24462400085684691 /* /Users/aimac/Development/FloppyTurd/src/Engine/Configuration/ConfigManager.cpp */; };
+		A56271ECCEC6497C9EAEF919 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/UISystem.h */ = {isa = PBXBuildFile; fileRef = 56A3E3D1640147288B5C2BDE /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/UISystem.h */; };
+		A7148D45125C49C4B0F2003D /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/GameplayState.h */ = {isa = PBXBuildFile; fileRef = 5CA114E21ED9429FA2CF5A14 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/GameplayState.h */; };
+		AC2CC9CF671B414B81B3D974 /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/Component.h */ = {isa = PBXBuildFile; fileRef = 472226E53785415B9FAA90DF /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/Component.h */; };
+		AC3C1924B0A84DF39329A5CC /* /Users/aimac/Development/FloppyTurd/src/Engine/Utility/Utils.h */ = {isa = PBXBuildFile; fileRef = 28C0DA7A2A5141E680BCD799 /* /Users/aimac/Development/FloppyTurd/src/Engine/Utility/Utils.h */; };
+		AE15A7D7D62947CFB7EBB13D /* /Users/aimac/Development/FloppyTurd/src/iOS/Shaders/RotSprite.metal */ = {isa = PBXBuildFile; fileRef = 1E5AFF6DDED0405FAB8BBD8B /* /Users/aimac/Development/FloppyTurd/src/iOS/Shaders/RotSprite.metal */; };
+		AE4A1F2A2D7B40309ABB23B5 /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/ECS.h */ = {isa = PBXBuildFile; fileRef = 5EBBFE4FD0F14CF19CDE4A3F /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/ECS.h */; };
+		AF634BA6C2DB4ED9BB08A14E /* /Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/FloppyTurdGame.dir/Info.plist */ = {isa = PBXBuildFile; fileRef = 8C5C8111784A43C692BA18AA /* /Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/FloppyTurdGame.dir/Info.plist */; };
+		B70282FEF34B41868E135743 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ObstacleSystem.cpp */ = {isa = PBXBuildFile; fileRef = F0DF2B1F580B49DBA9E8ECF1 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ObstacleSystem.cpp */; };
+		B758C937AE1F4D29BDCE6F8B /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/GNLog.cpp */ = {isa = PBXBuildFile; fileRef = 940587A2F3834E96B19CB1F1 /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/GNLog.cpp */; };
+		B88CFE7DAA0B46BEAF22EEF5 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PickupSystem.h */ = {isa = PBXBuildFile; fileRef = 694F1E1C5B534A2AB52AD46F /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PickupSystem.h */; };
+		B909982D721144FD86CB653A /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/SkillSystem.cpp */ = {isa = PBXBuildFile; fileRef = 4F700CCDE01D41DA9461044E /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/SkillSystem.cpp */; };
+		B9ACAA4134B54CCC8602F33A /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PlayerControllerSystem.cpp */ = {isa = PBXBuildFile; fileRef = 5BA436ED36DB4C91BBA2771B /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PlayerControllerSystem.cpp */; };
+		BAA4256207D44D3D9DADCC38 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/LevelManager.cpp */ = {isa = PBXBuildFile; fileRef = 056A53E42371440EA0857ED4 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/LevelManager.cpp */; };
+		BB716A65F4A043A98E4866A5 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/LevelConfig.cpp */ = {isa = PBXBuildFile; fileRef = 1E2B2B49FB604C5C83CF22B1 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/LevelConfig.cpp */; };
+		BBF44A8F293247C7AE9D1058 /* /Users/aimac/Development/FloppyTurd/CMakeLists.txt */ = {isa = PBXBuildFile; fileRef = DF91809EE841444F96900FD3 /* /Users/aimac/Development/FloppyTurd/CMakeLists.txt */; };
+		BDD0F9475C7B4EC797B278C5 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PauseSystem.h */ = {isa = PBXBuildFile; fileRef = E462000764FC4D329A02E8E9 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PauseSystem.h */; };
+		C1B17096849A4FE1940AAF53 /* /Users/aimac/Development/FloppyTurd/src/iOS/AppDelegate.swift */ = {isa = PBXBuildFile; fileRef = 8A60AA1A53074A65814F1FDC /* /Users/aimac/Development/FloppyTurd/src/iOS/AppDelegate.swift */; };
+		C464A73D3A7D4E6A9111977B /* /Users/aimac/Development/FloppyTurd/src/iOS/Threading/ThreadingSystem.swift */ = {isa = PBXBuildFile; fileRef = BAC83F8AB0234E95922BCF99 /* /Users/aimac/Development/FloppyTurd/src/iOS/Threading/ThreadingSystem.swift */; };
+		C56C97F6E99C42BBAE343259 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/msdf/charset_ascii.txt */ = {isa = PBXBuildFile; fileRef = C55009B6DEAB4B6D9FA3F3AB /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/msdf/charset_ascii.txt */; };
+		C767DFDCE3DE4C00A38BE535 /* /Users/aimac/Development/FloppyTurd/src/iOS/Shaders/Shaders2D.metal */ = {isa = PBXBuildFile; fileRef = A688BC84204B431D918AC1EB /* /Users/aimac/Development/FloppyTurd/src/iOS/Shaders/Shaders2D.metal */; };
+		C7F4DD85E8D84B119E84A1E0 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/bitmap/WhackyJoe_32.png */ = {isa = PBXBuildFile; fileRef = 1A08A1FFDBFE4277B7EBF21B /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/bitmap/WhackyJoe_32.png */; };
+		C8310DEC12904D54B20CEA88 /* /Users/aimac/Development/FloppyTurd/src/iOS/GameEngine.swift */ = {isa = PBXBuildFile; fileRef = 7750363B5D7842728A9B51F3 /* /Users/aimac/Development/FloppyTurd/src/iOS/GameEngine.swift */; };
+		C97541AE2208451F862D258C /* /Users/aimac/Development/FloppyTurd/src/iOS/Assets/AssetManager.swift */ = {isa = PBXBuildFile; fileRef = 6A233740191E4F6AB5AAD559 /* /Users/aimac/Development/FloppyTurd/src/iOS/Assets/AssetManager.swift */; };
+		C9FF273EDEA84518A215102F /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/HeartSystem.h */ = {isa = PBXBuildFile; fileRef = D2A3C3AF5D8D4AEC80CE38B5 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/HeartSystem.h */; };
+		CC9DAFF69A794E918D7AC66A /* /Users/aimac/Development/FloppyTurd/src/Engine/Platform/iOSPlatformImpl.cpp */ = {isa = PBXBuildFile; fileRef = 0F85E9DF4C3748C5A47E33FD /* /Users/aimac/Development/FloppyTurd/src/Engine/Platform/iOSPlatformImpl.cpp */; };
+		CDA60A3C696E46E3A77472B5 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/CameraSystem.h */ = {isa = PBXBuildFile; fileRef = D609D7AAC1A247AC9B0F948E /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/CameraSystem.h */; };
+		CEE109729AF746E69824F263 /* /Users/aimac/Development/FloppyTurd/src/iOS/GameViewController.swift */ = {isa = PBXBuildFile; fileRef = 32CCC010789B4BC78DD0C5AA /* /Users/aimac/Development/FloppyTurd/src/iOS/GameViewController.swift */; };
+		D27F3167960F46E082F184B2 /* /Users/aimac/Development/FloppyTurd/src/Engine/Platform/iOSPlatformImpl.h */ = {isa = PBXBuildFile; fileRef = 4CFD1BF64BFC48D385B6A1F7 /* /Users/aimac/Development/FloppyTurd/src/Engine/Platform/iOSPlatformImpl.h */; };
+		D40B5ECBD07A485A80250EBE /* /Users/aimac/Development/FloppyTurd/CMakeLists.txt */ = {isa = PBXBuildFile; fileRef = 2B2C485DCFB249B58B756EAA /* /Users/aimac/Development/FloppyTurd/CMakeLists.txt */; };
+		D78F9A5CF06549119DB73AA3 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PlayerControllerSystem.h */ = {isa = PBXBuildFile; fileRef = 96ADCAB2EE204B338304E4DA /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PlayerControllerSystem.h */; };
+		D91CA4E06D4A4CC8A019C685 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ProjectileSystem.cpp */ = {isa = PBXBuildFile; fileRef = B9E09A3F73E941BB88357283 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ProjectileSystem.cpp */; };
+		DFA8465DB67C4992B21226A4 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PickupSystem.cpp */ = {isa = PBXBuildFile; fileRef = D0BEC4E43EB540FC95A6DE3A /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PickupSystem.cpp */; };
+		E1C6B5CE57E544149BCCF439 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/EnemySystem.h */ = {isa = PBXBuildFile; fileRef = 615D6824021A46EA977801E3 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/EnemySystem.h */; };
+		E4B8B731F26140089A0F55A3 /* /Users/aimac/Development/FloppyTurd/src/Engine/Configuration/ConfigManager.h */ = {isa = PBXBuildFile; fileRef = 084C6E6314EE4FF7A45E229B /* /Users/aimac/Development/FloppyTurd/src/Engine/Configuration/ConfigManager.h */; };
+		E5420EC829BA453CAEADFB3F /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/HatsSystem.h */ = {isa = PBXBuildFile; fileRef = 3206CFACF5264B6C921B5E6B /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/HatsSystem.h */; };
+		F4C60AFE92564F4688B37866 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/bitmap/Whacky_Joe.fnt */ = {isa = PBXBuildFile; fileRef = AC2BFEBCB06B4A9D9E72BE97 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/bitmap/Whacky_Joe.fnt */; };
+		F5C5567A5BD340AD830D4695 /* /Users/aimac/Development/FloppyTurd/src/Assets.xcassets */ = {isa = PBXBuildFile; fileRef = DB1DFD3D9327470681D94A96 /* /Users/aimac/Development/FloppyTurd/src/Assets.xcassets */; };
+		F6FF00F6465F4244BCEBBA2D /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/GnosisTypes.h */ = {isa = PBXBuildFile; fileRef = 92DC39609BCB4449A24BF79C /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/GnosisTypes.h */; };
+		FFF50C1E484E43B2ACCC1504 /* /Users/aimac/Development/FloppyTurd/src/iOS/Threading/ThreadingProxy.h */ = {isa = PBXBuildFile; fileRef = 45F8F7902BF34E398BBEBD89 /* /Users/aimac/Development/FloppyTurd/src/iOS/Threading/ThreadingProxy.h */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXBuildStyle section */
-		1BE169BC90324FF98DA26A4D /* RelWithDebInfo */ = {
-			isa = PBXBuildStyle;
-			buildSettings = {
-				COPY_PHASE_STRIP = NO;
-			};
-			name = RelWithDebInfo;
-		};
-		8D834F3E70504243B4BFECF1 /* MinSizeRel */ = {
-			isa = PBXBuildStyle;
-			buildSettings = {
-				COPY_PHASE_STRIP = NO;
-			};
-			name = MinSizeRel;
-		};
-		CAD3F0469F4C4470B31D95F3 /* Debug */ = {
+		2CB418907433482BB85F34BE /* Debug */ = {
 			isa = PBXBuildStyle;
 			buildSettings = {
 				COPY_PHASE_STRIP = NO;
 			};
 			name = Debug;
 		};
-		FDC244AB40A84109B69D9723 /* Release */ = {
+		744DBF075131414AA2622CC0 /* MinSizeRel */ = {
+			isa = PBXBuildStyle;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+			};
+			name = MinSizeRel;
+		};
+		D81B07BA3F3A4A8ABB37845E /* RelWithDebInfo */ = {
+			isa = PBXBuildStyle;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+			};
+			name = RelWithDebInfo;
+		};
+		E53C8F0683AB4F6594828095 /* Release */ = {
 			isa = PBXBuildStyle;
 			buildSettings = {
 				COPY_PHASE_STRIP = NO;
@@ -155,44 +157,44 @@
 /* End PBXBuildStyle section */
 
 /* Begin PBXContainerItemProxy section */
-		141E3D85AD2E4115803970CC /* PBXContainerItemProxy */ = {
+		064D2021CE85478BB9E6FAF5 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 1234ED269BF74908B12B84D6 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 0DE0C202AEDEA1EE745377B5;
-			remoteInfo = FloppyTurdGame;
-		};
-		185AC9C9B06A496E8D6EC32E /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 1234ED269BF74908B12B84D6 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 0DE0C202AEDEA1EE745377B5;
-			remoteInfo = FloppyTurdGame;
-		};
-		823088A77322462FA21E0C10 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 1234ED269BF74908B12B84D6 /* Project object */;
+			containerPortal = 3A6442CC62E5486AAEA9995E /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = D9EF5759F53BF46D2676F7EB;
 			remoteInfo = ZERO_CHECK;
 		};
-		8557A6AB051C4AC58F1CD850 /* PBXContainerItemProxy */ = {
+		113A1DD120B743C2911E1EC5 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 1234ED269BF74908B12B84D6 /* Project object */;
+			containerPortal = 3A6442CC62E5486AAEA9995E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D9EF5759F53BF46D2676F7EB;
+			remoteInfo = ZERO_CHECK;
+		};
+		3814776A11F74F5C94F91542 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3A6442CC62E5486AAEA9995E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0DE0C202AEDEA1EE745377B5;
+			remoteInfo = FloppyTurdGame;
+		};
+		513974ACB4DC46EAA1F086DD /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3A6442CC62E5486AAEA9995E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0DE0C202AEDEA1EE745377B5;
+			remoteInfo = FloppyTurdGame;
+		};
+		B17EB54659AE454387B0AF0D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3A6442CC62E5486AAEA9995E /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 8EFA9AA7BA22AECA1336F161;
 			remoteInfo = FloppyTurd;
 		};
-		AA85BB0260C14D7DBCB40971 /* PBXContainerItemProxy */ = {
+		D723310076EC4E6DA87B3DBA /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 1234ED269BF74908B12B84D6 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = D9EF5759F53BF46D2676F7EB;
-			remoteInfo = ZERO_CHECK;
-		};
-		DB66F013D7CA4D09A3B74AC3 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 1234ED269BF74908B12B84D6 /* Project object */;
+			containerPortal = 3A6442CC62E5486AAEA9995E /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = D9EF5759F53BF46D2676F7EB;
 			remoteInfo = ZERO_CHECK;
@@ -200,106 +202,108 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		00EFA8A7A2DA4BE9911FCFC4 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/ProjectileSpriteConfig.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ProjectileSpriteConfig.h; path = src/FloppyTurd/Config/ProjectileSpriteConfig.h; sourceTree = SOURCE_ROOT; };
-		05187D71E76E49B49C6E1E3C /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/LevelConfig.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = LevelConfig.h; path = src/FloppyTurd/Config/LevelConfig.h; sourceTree = SOURCE_ROOT; };
-		0CDD52634B4841BBB3CF361C /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/MainMenuState.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = MainMenuState.h; path = src/FloppyTurd/States/MainMenuState.h; sourceTree = SOURCE_ROOT; };
-		0F398561BE6345B19F18371A /* /Users/aimac/Development/FloppyTurd/src/Engine/Configuration/ConfigManager.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ConfigManager.h; path = src/Engine/Configuration/ConfigManager.h; sourceTree = SOURCE_ROOT; };
-		113748ABE070468DA89A8FDA /* /Users/aimac/Development/FloppyTurd/src/iOS/GameViewController.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; fileEncoding = 4; name = GameViewController.swift; path = src/iOS/GameViewController.swift; sourceTree = SOURCE_ROOT; };
-		144C31A11FCB43D289048B91 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/HatsSystem.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = HatsSystem.h; path = src/FloppyTurd/Systems/HatsSystem.h; sourceTree = SOURCE_ROOT; };
-		15F7DB83F2334FCAB52A74DE /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/LoadingState.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = LoadingState.cpp; path = src/FloppyTurd/States/LoadingState.cpp; sourceTree = SOURCE_ROOT; };
-		16B877AA62D74396BDC53002 /* /Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/FloppyTurd.dir/Info.plist */ = {isa = PBXFileReference; explicitFileType = sourcecode.text.plist; fileEncoding = 4; name = Info.plist; path = build_ios/CMakeFiles/FloppyTurd.dir/Info.plist; sourceTree = SOURCE_ROOT; };
-		18067B891DAE4AD289FC51D0 /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/Entity.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = Entity.h; path = src/Engine/Core/Entity.h; sourceTree = SOURCE_ROOT; };
-		1B3F7AE813DB41DCA3B8F8AA /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/SpriteSystem.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = SpriteSystem.cpp; path = src/FloppyTurd/Systems/SpriteSystem.cpp; sourceTree = SOURCE_ROOT; };
-		1D61DAE209404ADCA7325E92 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/UISystem.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = UISystem.cpp; path = src/FloppyTurd/Systems/UISystem.cpp; sourceTree = SOURCE_ROOT; };
-		1F8549CD5BA145CBA4060115 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ObstacleSystem.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ObstacleSystem.h; path = src/FloppyTurd/Systems/ObstacleSystem.h; sourceTree = SOURCE_ROOT; };
-		2B4B76B865524407A86C8413 /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/GNLog.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = GNLog.cpp; path = src/Engine/Core/GNLog.cpp; sourceTree = SOURCE_ROOT; };
-		2DC67B6FFC0E4DEDAA6E9E2A /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/RenderSystem.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = RenderSystem.cpp; path = src/FloppyTurd/Systems/RenderSystem.cpp; sourceTree = SOURCE_ROOT; };
-		34F68C2A81064B23B097E491 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/msdf/charset_ascii.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = charset_ascii.txt; path = src/assets/fonts/msdf/charset_ascii.txt; sourceTree = SOURCE_ROOT; };
-		357CDB857F4340EF99629295 /* /Users/aimac/Development/FloppyTurd/src/Engine/Configuration/ConfigManager.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = ConfigManager.cpp; path = src/Engine/Configuration/ConfigManager.cpp; sourceTree = SOURCE_ROOT; };
-		3AE8085B7E294879A65019E6 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ProjectileSystem.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ProjectileSystem.h; path = src/FloppyTurd/Systems/ProjectileSystem.h; sourceTree = SOURCE_ROOT; };
-		3B6999D15DB247AF90FF863B /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/System.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = System.h; path = src/Engine/Core/System.h; sourceTree = SOURCE_ROOT; };
-		3ECDB3539B3D406C924FCF83 /* /Users/aimac/Development/FloppyTurd/CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = CMakeLists.txt; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
-		3F1D2237EFF54C4C970CE9E9 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/EnemySystem.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = EnemySystem.cpp; path = src/FloppyTurd/Systems/EnemySystem.cpp; sourceTree = SOURCE_ROOT; };
-		4381BCBAEE554BCC9E7834F5 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/ProjectileSpriteConfig.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = ProjectileSpriteConfig.cpp; path = src/FloppyTurd/Config/ProjectileSpriteConfig.cpp; sourceTree = SOURCE_ROOT; };
-		44E93F4100C84E7A8EE1E977 /* /Users/aimac/Development/FloppyTurd/src/iOS/Assets/AssetManager.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; fileEncoding = 4; name = AssetManager.swift; path = src/iOS/Assets/AssetManager.swift; sourceTree = SOURCE_ROOT; };
-		48CC950DF33D485FB7D58D5D /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/GNLog.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = GNLog.h; path = src/Engine/Core/GNLog.h; sourceTree = SOURCE_ROOT; };
-		4A049EAF33964A18BFDF5F88 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/FloppyTurdGame.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = FloppyTurdGame.cpp; path = src/FloppyTurd/Game/FloppyTurdGame.cpp; sourceTree = SOURCE_ROOT; };
-		4F0BBED3ACC4445C9B4953B9 /* /Users/aimac/Development/FloppyTurd/src/iOS/Shaders/RotSprite.metal */ = {isa = PBXFileReference; explicitFileType = sourcecode.metal; fileEncoding = 4; name = RotSprite.metal; path = src/iOS/Shaders/RotSprite.metal; sourceTree = SOURCE_ROOT; };
-		4FED9C1922A743F197076B14 /* /Users/aimac/Development/FloppyTurd/src/iOS/Threading/ThreadingProxy.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = ThreadingProxy.cpp; path = src/iOS/Threading/ThreadingProxy.cpp; sourceTree = SOURCE_ROOT; };
-		50A51E64DBC24633B9170110 /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/SystemManager.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = SystemManager.cpp; path = src/Engine/Core/SystemManager.cpp; sourceTree = SOURCE_ROOT; };
-		5117653E18B8414FBCD610B2 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/LevelConfig.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = LevelConfig.cpp; path = src/FloppyTurd/Config/LevelConfig.cpp; sourceTree = SOURCE_ROOT; };
-		53392D64E26C4CEFA82F7905 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/RenderSystem.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = RenderSystem.h; path = src/FloppyTurd/Systems/RenderSystem.h; sourceTree = SOURCE_ROOT; };
-		5558B63B175D478FA0BC1AB8 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ObstacleSystem.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = ObstacleSystem.cpp; path = src/FloppyTurd/Systems/ObstacleSystem.cpp; sourceTree = SOURCE_ROOT; };
-		5ACD7C0EF3C245AFBF2D275B /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/BossHealthBar.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = BossHealthBar.h; path = src/FloppyTurd/Systems/BossHealthBar.h; sourceTree = SOURCE_ROOT; };
-		6050FC50344245FC91430C47 /* /Users/aimac/Development/FloppyTurd/src/iOS/AppDelegate.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; fileEncoding = 4; name = AppDelegate.swift; path = src/iOS/AppDelegate.swift; sourceTree = SOURCE_ROOT; };
-		6247605222784779B91BBD78 /* /Users/aimac/Development/FloppyTurd/src/iOS/Threading/ThreadingProxy.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ThreadingProxy.h; path = src/iOS/Threading/ThreadingProxy.h; sourceTree = SOURCE_ROOT; };
-		65FF721330834DC482C66BFE /* /Users/aimac/Development/FloppyTurd/src/iOS/GameEngine.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; fileEncoding = 4; name = GameEngine.swift; path = src/iOS/GameEngine.swift; sourceTree = SOURCE_ROOT; };
-		68A3777FB11E4901BFB6062F /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/HatsSystem.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = HatsSystem.cpp; path = src/FloppyTurd/Systems/HatsSystem.cpp; sourceTree = SOURCE_ROOT; };
-		6931FF055DD34AA39F5DBB83 /* /Users/aimac/Development/FloppyTurd/CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = CMakeLists.txt; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
-		6AE858C222F64A6882C8959A /* /Users/aimac/Development/FloppyTurd/src/iOS/Logging/iOSLogHandler.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; fileEncoding = 4; name = iOSLogHandler.swift; path = src/iOS/Logging/iOSLogHandler.swift; sourceTree = SOURCE_ROOT; };
-		709C73CA7E45478083AF5AED /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/GameStateManager.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = GameStateManager.cpp; path = src/FloppyTurd/States/GameStateManager.cpp; sourceTree = SOURCE_ROOT; };
-		70BEAF69B48E49BD8B04885C /* /Users/aimac/Development/FloppyTurd/src/Engine/Utility/Utils.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = Utils.h; path = src/Engine/Utility/Utils.h; sourceTree = SOURCE_ROOT; };
-		76A35ABFEB3B425BB6EACFDF /* /Users/aimac/Development/FloppyTurd/src/Assets.xcassets */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = src/Assets.xcassets; sourceTree = SOURCE_ROOT; };
-		7BB15DA5D6704002A98EB91F /* /Users/aimac/Development/FloppyTurd/src/iOS/Audio/AVAudioHandler.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; fileEncoding = 4; name = AVAudioHandler.swift; path = src/iOS/Audio/AVAudioHandler.swift; sourceTree = SOURCE_ROOT; };
-		7E732BDC6BA440F8919D1C98 /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/Component.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = Component.h; path = src/Engine/Core/Component.h; sourceTree = SOURCE_ROOT; };
-		7EFF3939A5874B1F9200B0C0 /* /Users/aimac/Development/FloppyTurd/src/iOS/Rendering/MetalMatrixHelpers.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; fileEncoding = 4; name = MetalMatrixHelpers.swift; path = src/iOS/Rendering/MetalMatrixHelpers.swift; sourceTree = SOURCE_ROOT; };
-		80C4FB72D5434A92819312DD /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/BossHealthBar.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = BossHealthBar.cpp; path = src/FloppyTurd/Systems/BossHealthBar.cpp; sourceTree = SOURCE_ROOT; };
-		828A72E0CCF34C87BEEA19D3 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/bitmap/Whacky_Joe.fnt */ = {isa = PBXFileReference; explicitFileType = default; fileEncoding = 4; name = Whacky_Joe.fnt; path = src/assets/fonts/bitmap/Whacky_Joe.fnt; sourceTree = SOURCE_ROOT; };
-		8683CFD87F0A43BFAF20CD03 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/GameplayState.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = GameplayState.h; path = src/FloppyTurd/States/GameplayState.h; sourceTree = SOURCE_ROOT; };
-		87BFFE28A8004E03A00F3C9D /* /Users/aimac/Development/FloppyTurd/src/iOS/Threading/ThreadingSystem.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; fileEncoding = 4; name = ThreadingSystem.swift; path = src/iOS/Threading/ThreadingSystem.swift; sourceTree = SOURCE_ROOT; };
-		886CA0E73DC748F09F058BC6 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/LevelManager.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = LevelManager.h; path = src/FloppyTurd/Systems/LevelManager.h; sourceTree = SOURCE_ROOT; };
-		88B38CE3B6E7477AB584F1AF /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/ECS.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ECS.h; path = src/Engine/Core/ECS.h; sourceTree = SOURCE_ROOT; };
-		899267324BD649F4B852CFAA /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/BossSystem.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = BossSystem.h; path = src/FloppyTurd/Systems/BossSystem.h; sourceTree = SOURCE_ROOT; };
-		8FF3A032DF5B45E4BA2226F9 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PlayerControllerSystem.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = PlayerControllerSystem.h; path = src/FloppyTurd/Systems/PlayerControllerSystem.h; sourceTree = SOURCE_ROOT; };
-		9161CEC265284532ACA5C29F /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/GameState.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = GameState.h; path = src/FloppyTurd/States/GameState.h; sourceTree = SOURCE_ROOT; };
-		9961A0E128D84C0D8319BEF4 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/EnemySystem.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = EnemySystem.h; path = src/FloppyTurd/Systems/EnemySystem.h; sourceTree = SOURCE_ROOT; };
-		9B91D3F334AE4DE7948732A6 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/HeartSystem.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = HeartSystem.cpp; path = src/FloppyTurd/Systems/HeartSystem.cpp; sourceTree = SOURCE_ROOT; };
-		9DE4942927834194A7D1DF47 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/SpriteSystem.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = SpriteSystem.h; path = src/FloppyTurd/Systems/SpriteSystem.h; sourceTree = SOURCE_ROOT; };
-		9F3EB81F114F4FF6B6BAECB6 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/BossSystem.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = BossSystem.cpp; path = src/FloppyTurd/Systems/BossSystem.cpp; sourceTree = SOURCE_ROOT; };
-		9FAA7BFE2D8E4689BA0851A9 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/CameraSystem.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = CameraSystem.cpp; path = src/FloppyTurd/Systems/CameraSystem.cpp; sourceTree = SOURCE_ROOT; };
-		A26A18097B1347A3A0FAEA4C /* /Users/aimac/Development/FloppyTurd/src/iOS/Shaders/Shaders2D.metal */ = {isa = PBXFileReference; explicitFileType = sourcecode.metal; fileEncoding = 4; name = Shaders2D.metal; path = src/iOS/Shaders/Shaders2D.metal; sourceTree = SOURCE_ROOT; };
-		A39A727EF15044F18DA96FE7 /* /Users/aimac/Development/FloppyTurd/src/iOS/Rendering/MetalRenderer.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; fileEncoding = 4; name = MetalRenderer.swift; path = src/iOS/Rendering/MetalRenderer.swift; sourceTree = SOURCE_ROOT; };
-		A610F684882E4631A6DE8B12 /* /Users/aimac/Development/FloppyTurd/src/Engine/Platform/PlatformDelegates.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = PlatformDelegates.h; path = src/Engine/Platform/PlatformDelegates.h; sourceTree = SOURCE_ROOT; };
-		AC4E007F9774474B8D228547 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/CameraSystem.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = CameraSystem.h; path = src/FloppyTurd/Systems/CameraSystem.h; sourceTree = SOURCE_ROOT; };
-		B1832587E1624353ADD0F85B /* /Users/aimac/Development/FloppyTurd/src/Engine/Utility/Utils.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Utils.cpp; path = src/Engine/Utility/Utils.cpp; sourceTree = SOURCE_ROOT; };
-		B2915FA1ABC342C0B5C957FB /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/MainMenuState.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = MainMenuState.cpp; path = src/FloppyTurd/States/MainMenuState.cpp; sourceTree = SOURCE_ROOT; };
-		B3626A487253493386CCD9BD /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ProjectileSystem.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = ProjectileSystem.cpp; path = src/FloppyTurd/Systems/ProjectileSystem.cpp; sourceTree = SOURCE_ROOT; };
-		B3F012CC312B4CFABF5DEFCD /* /Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/FloppyTurdGame.dir/Info.plist */ = {isa = PBXFileReference; explicitFileType = sourcecode.text.plist; fileEncoding = 4; name = Info.plist; path = build_ios/CMakeFiles/FloppyTurdGame.dir/Info.plist; sourceTree = SOURCE_ROOT; };
-		B5038CA2D9F14A80A33B42AB /* /Users/aimac/Development/FloppyTurd/src/Engine/Platform/iOSPlatformImpl.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = iOSPlatformImpl.h; path = src/Engine/Platform/iOSPlatformImpl.h; sourceTree = SOURCE_ROOT; };
-		B8BB64899511478FB148DCFB /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PlayerControllerSystem.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = PlayerControllerSystem.cpp; path = src/FloppyTurd/Systems/PlayerControllerSystem.cpp; sourceTree = SOURCE_ROOT; };
-		BAFF0441834640E787AD8053 /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/SystemManager.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = SystemManager.h; path = src/Engine/Core/SystemManager.h; sourceTree = SOURCE_ROOT; };
-		BB6B3D9B989F4C73A19C41EE /* FloppyTurd */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; path = FloppyTurd; sourceTree = BUILT_PRODUCTS_DIR; };
-		BC106FCBC506455DADB33224 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/SkillSystem.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = SkillSystem.h; path = src/FloppyTurd/Systems/SkillSystem.h; sourceTree = SOURCE_ROOT; };
-		BE6625E205DE4761BA8C5E6A /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PickupSystem.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = PickupSystem.cpp; path = src/FloppyTurd/Systems/PickupSystem.cpp; sourceTree = SOURCE_ROOT; };
-		C829E488A8EC4737AE7DE4D9 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/EnemyConfigs.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = EnemyConfigs.h; path = src/FloppyTurd/Config/EnemyConfigs.h; sourceTree = SOURCE_ROOT; };
-		C9345F32ACF94B149777DAA3 /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/GnosisTypes.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = GnosisTypes.h; path = src/Engine/Core/GnosisTypes.h; sourceTree = SOURCE_ROOT; };
-		CA2546B056A345A383352FF8 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/LevelManager.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = LevelManager.cpp; path = src/FloppyTurd/Systems/LevelManager.cpp; sourceTree = SOURCE_ROOT; };
-		D103C8EEABAA4F90AA78D7AC /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PickupSystem.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = PickupSystem.h; path = src/FloppyTurd/Systems/PickupSystem.h; sourceTree = SOURCE_ROOT; };
-		D10A7229881441E5B0709084 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/LoadingState.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = LoadingState.h; path = src/FloppyTurd/States/LoadingState.h; sourceTree = SOURCE_ROOT; };
-		D2160CD95BFE469389429F48 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/bitmap/WhackyJoe_32.png */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = image; name = WhackyJoe_32.png; path = src/assets/fonts/bitmap/WhackyJoe_32.png; sourceTree = SOURCE_ROOT; };
-		D323780B21CB43C1ADF15A49 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/msdf/.DS_Store */ = {isa = PBXFileReference; explicitFileType = default; fileEncoding = 4; name = .DS_Store; path = src/assets/fonts/msdf/.DS_Store; sourceTree = SOURCE_ROOT; };
-		D332008DA7634104B3B280D7 /* /Users/aimac/Development/FloppyTurd/src/Engine/Platform/iOSPlatformImpl.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = iOSPlatformImpl.cpp; path = src/Engine/Platform/iOSPlatformImpl.cpp; sourceTree = SOURCE_ROOT; };
-		D4697FAA3ECB44D986D995EF /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/HeartSystem.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = HeartSystem.h; path = src/FloppyTurd/Systems/HeartSystem.h; sourceTree = SOURCE_ROOT; };
-		D4D2553098184350857073B7 /* /Users/aimac/Development/FloppyTurd/src/iOS/Input/TouchInputHandler.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; fileEncoding = 4; name = TouchInputHandler.swift; path = src/iOS/Input/TouchInputHandler.swift; sourceTree = SOURCE_ROOT; };
-		DA113BB7506C4CC3AE8A91C6 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/FloppyTurdGame.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = FloppyTurdGame.h; path = src/FloppyTurd/Game/FloppyTurdGame.h; sourceTree = SOURCE_ROOT; };
-		DE8B1E4FABA0434FB5995210 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/bitmap/Whacky_Joe.ttf */ = {isa = PBXFileReference; explicitFileType = default; fileEncoding = 4; name = Whacky_Joe.ttf; path = src/assets/fonts/bitmap/Whacky_Joe.ttf; sourceTree = SOURCE_ROOT; };
-		E1538C8E6BD84020B434E400 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/SkillSystem.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = SkillSystem.cpp; path = src/FloppyTurd/Systems/SkillSystem.cpp; sourceTree = SOURCE_ROOT; };
-		EA38097FE584476E873CD17D /* /Users/aimac/Development/FloppyTurd/CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = CMakeLists.txt; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
-		EF8F3C14AC824F598D018C4D /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/UISystem.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = UISystem.h; path = src/FloppyTurd/Systems/UISystem.h; sourceTree = SOURCE_ROOT; };
-		F19A1005DB784DCCA36D5F7F /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/EnemyConfigs.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = EnemyConfigs.cpp; path = src/FloppyTurd/Config/EnemyConfigs.cpp; sourceTree = SOURCE_ROOT; };
-		F37BF480A4AB4AF88D11BA39 /* FloppyTurdGame */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libFloppyTurdGame.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		F685103382004B7887F0324B /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/GameplayState.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = GameplayState.cpp; path = src/FloppyTurd/States/GameplayState.cpp; sourceTree = SOURCE_ROOT; };
+		005AAD124119434CA3252681 /* /Users/aimac/Development/FloppyTurd/src/iOS/Logging/iOSLogHandler.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; fileEncoding = 4; name = iOSLogHandler.swift; path = src/iOS/Logging/iOSLogHandler.swift; sourceTree = SOURCE_ROOT; };
+		056A53E42371440EA0857ED4 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/LevelManager.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = LevelManager.cpp; path = src/FloppyTurd/Systems/LevelManager.cpp; sourceTree = SOURCE_ROOT; };
+		05E2B9E0878B4F03B418FB80 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/msdf/.DS_Store */ = {isa = PBXFileReference; explicitFileType = default; fileEncoding = 4; name = .DS_Store; path = src/assets/fonts/msdf/.DS_Store; sourceTree = SOURCE_ROOT; };
+		084C6E6314EE4FF7A45E229B /* /Users/aimac/Development/FloppyTurd/src/Engine/Configuration/ConfigManager.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ConfigManager.h; path = src/Engine/Configuration/ConfigManager.h; sourceTree = SOURCE_ROOT; };
+		0B9FE68ED30247858ECBD384 /* /Users/aimac/Development/FloppyTurd/src/iOS/Input/TouchInputHandler.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; fileEncoding = 4; name = TouchInputHandler.swift; path = src/iOS/Input/TouchInputHandler.swift; sourceTree = SOURCE_ROOT; };
+		0E2F0FD24462400085684691 /* /Users/aimac/Development/FloppyTurd/src/Engine/Configuration/ConfigManager.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = ConfigManager.cpp; path = src/Engine/Configuration/ConfigManager.cpp; sourceTree = SOURCE_ROOT; };
+		0F85E9DF4C3748C5A47E33FD /* /Users/aimac/Development/FloppyTurd/src/Engine/Platform/iOSPlatformImpl.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = iOSPlatformImpl.cpp; path = src/Engine/Platform/iOSPlatformImpl.cpp; sourceTree = SOURCE_ROOT; };
+		14B4529C06784E03892A7358 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/EnemySystem.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = EnemySystem.cpp; path = src/FloppyTurd/Systems/EnemySystem.cpp; sourceTree = SOURCE_ROOT; };
+		1A08A1FFDBFE4277B7EBF21B /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/bitmap/WhackyJoe_32.png */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = image; name = WhackyJoe_32.png; path = src/assets/fonts/bitmap/WhackyJoe_32.png; sourceTree = SOURCE_ROOT; };
+		1C028B58586145A4962EB738 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/BossHealthBar.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = BossHealthBar.cpp; path = src/FloppyTurd/Systems/BossHealthBar.cpp; sourceTree = SOURCE_ROOT; };
+		1D5914ABE8BA46F5B0B65178 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ObstacleSystem.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ObstacleSystem.h; path = src/FloppyTurd/Systems/ObstacleSystem.h; sourceTree = SOURCE_ROOT; };
+		1DDE24FBC4504752BF5CA131 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/GameplayState.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = GameplayState.cpp; path = src/FloppyTurd/States/GameplayState.cpp; sourceTree = SOURCE_ROOT; };
+		1E2B2B49FB604C5C83CF22B1 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/LevelConfig.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = LevelConfig.cpp; path = src/FloppyTurd/Config/LevelConfig.cpp; sourceTree = SOURCE_ROOT; };
+		1E5AFF6DDED0405FAB8BBD8B /* /Users/aimac/Development/FloppyTurd/src/iOS/Shaders/RotSprite.metal */ = {isa = PBXFileReference; explicitFileType = sourcecode.metal; fileEncoding = 4; name = RotSprite.metal; path = src/iOS/Shaders/RotSprite.metal; sourceTree = SOURCE_ROOT; };
+		25B0F8DB6D1F4FD085FA4D8E /* /Users/aimac/Development/FloppyTurd/src/iOS/Threading/ThreadingProxy.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = ThreadingProxy.cpp; path = src/iOS/Threading/ThreadingProxy.cpp; sourceTree = SOURCE_ROOT; };
+		28C0DA7A2A5141E680BCD799 /* /Users/aimac/Development/FloppyTurd/src/Engine/Utility/Utils.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = Utils.h; path = src/Engine/Utility/Utils.h; sourceTree = SOURCE_ROOT; };
+		2ACCA0BCB70747A7863A27FF /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ProjectileSystem.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ProjectileSystem.h; path = src/FloppyTurd/Systems/ProjectileSystem.h; sourceTree = SOURCE_ROOT; };
+		2B2C485DCFB249B58B756EAA /* /Users/aimac/Development/FloppyTurd/CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = CMakeLists.txt; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
+		2B4362B3C2BB4FA8BA97ECA7 /* /Users/aimac/Development/FloppyTurd/src/Engine/Utility/Utils.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = Utils.cpp; path = src/Engine/Utility/Utils.cpp; sourceTree = SOURCE_ROOT; };
+		2D086050C7AB4BBC94F43E40 /* /Users/aimac/Development/FloppyTurd/src/iOS/Audio/AVAudioHandler.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; fileEncoding = 4; name = AVAudioHandler.swift; path = src/iOS/Audio/AVAudioHandler.swift; sourceTree = SOURCE_ROOT; };
+		2D88914E9BF74B559470B989 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/MainMenuState.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = MainMenuState.cpp; path = src/FloppyTurd/States/MainMenuState.cpp; sourceTree = SOURCE_ROOT; };
+		3206CFACF5264B6C921B5E6B /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/HatsSystem.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = HatsSystem.h; path = src/FloppyTurd/Systems/HatsSystem.h; sourceTree = SOURCE_ROOT; };
+		32CCC010789B4BC78DD0C5AA /* /Users/aimac/Development/FloppyTurd/src/iOS/GameViewController.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; fileEncoding = 4; name = GameViewController.swift; path = src/iOS/GameViewController.swift; sourceTree = SOURCE_ROOT; };
+		33E2C370276448F5B054CCD7 /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/System.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = System.h; path = src/Engine/Core/System.h; sourceTree = SOURCE_ROOT; };
+		37A1C70F1A82486CA08756F0 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/SpriteSystem.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = SpriteSystem.h; path = src/FloppyTurd/Systems/SpriteSystem.h; sourceTree = SOURCE_ROOT; };
+		396054EC476542998DD45448 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/LevelManager.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = LevelManager.h; path = src/FloppyTurd/Systems/LevelManager.h; sourceTree = SOURCE_ROOT; };
+		40570F4791BB434B9F0655FA /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/EnemyConfigs.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = EnemyConfigs.cpp; path = src/FloppyTurd/Config/EnemyConfigs.cpp; sourceTree = SOURCE_ROOT; };
+		43EF2C87558140029B5A0CD2 /* /Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/FloppyTurd.dir/Info.plist */ = {isa = PBXFileReference; explicitFileType = sourcecode.text.plist; fileEncoding = 4; name = Info.plist; path = build_ios/CMakeFiles/FloppyTurd.dir/Info.plist; sourceTree = SOURCE_ROOT; };
+		45F8F7902BF34E398BBEBD89 /* /Users/aimac/Development/FloppyTurd/src/iOS/Threading/ThreadingProxy.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ThreadingProxy.h; path = src/iOS/Threading/ThreadingProxy.h; sourceTree = SOURCE_ROOT; };
+		46E935F6B477475FB30E275F /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/LoadingState.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = LoadingState.cpp; path = src/FloppyTurd/States/LoadingState.cpp; sourceTree = SOURCE_ROOT; };
+		472226E53785415B9FAA90DF /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/Component.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = Component.h; path = src/Engine/Core/Component.h; sourceTree = SOURCE_ROOT; };
+		4CFD1BF64BFC48D385B6A1F7 /* /Users/aimac/Development/FloppyTurd/src/Engine/Platform/iOSPlatformImpl.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = iOSPlatformImpl.h; path = src/Engine/Platform/iOSPlatformImpl.h; sourceTree = SOURCE_ROOT; };
+		4D019B364F4F43D09183F1B7 /* FloppyTurd */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; path = FloppyTurd; sourceTree = BUILT_PRODUCTS_DIR; };
+		4D4CF63C1C624AB682F3DF66 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/GameState.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = GameState.h; path = src/FloppyTurd/States/GameState.h; sourceTree = SOURCE_ROOT; };
+		4F700CCDE01D41DA9461044E /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/SkillSystem.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = SkillSystem.cpp; path = src/FloppyTurd/Systems/SkillSystem.cpp; sourceTree = SOURCE_ROOT; };
+		568D148DC4904BE7A588277B /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/BossSystem.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = BossSystem.h; path = src/FloppyTurd/Systems/BossSystem.h; sourceTree = SOURCE_ROOT; };
+		56A3E3D1640147288B5C2BDE /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/UISystem.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = UISystem.h; path = src/FloppyTurd/Systems/UISystem.h; sourceTree = SOURCE_ROOT; };
+		5BA436ED36DB4C91BBA2771B /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PlayerControllerSystem.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = PlayerControllerSystem.cpp; path = src/FloppyTurd/Systems/PlayerControllerSystem.cpp; sourceTree = SOURCE_ROOT; };
+		5CA114E21ED9429FA2CF5A14 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/GameplayState.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = GameplayState.h; path = src/FloppyTurd/States/GameplayState.h; sourceTree = SOURCE_ROOT; };
+		5EBBFE4FD0F14CF19CDE4A3F /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/ECS.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ECS.h; path = src/Engine/Core/ECS.h; sourceTree = SOURCE_ROOT; };
+		60FBB36A1A6946C79FDE84B0 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/BossSystem.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = BossSystem.cpp; path = src/FloppyTurd/Systems/BossSystem.cpp; sourceTree = SOURCE_ROOT; };
+		615D6824021A46EA977801E3 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/EnemySystem.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = EnemySystem.h; path = src/FloppyTurd/Systems/EnemySystem.h; sourceTree = SOURCE_ROOT; };
+		694F1E1C5B534A2AB52AD46F /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PickupSystem.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = PickupSystem.h; path = src/FloppyTurd/Systems/PickupSystem.h; sourceTree = SOURCE_ROOT; };
+		6A233740191E4F6AB5AAD559 /* /Users/aimac/Development/FloppyTurd/src/iOS/Assets/AssetManager.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; fileEncoding = 4; name = AssetManager.swift; path = src/iOS/Assets/AssetManager.swift; sourceTree = SOURCE_ROOT; };
+		772BD4945AF24A5381B83E5F /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/SystemManager.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = SystemManager.cpp; path = src/Engine/Core/SystemManager.cpp; sourceTree = SOURCE_ROOT; };
+		7750363B5D7842728A9B51F3 /* /Users/aimac/Development/FloppyTurd/src/iOS/GameEngine.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; fileEncoding = 4; name = GameEngine.swift; path = src/iOS/GameEngine.swift; sourceTree = SOURCE_ROOT; };
+		79AAF5254F684BCDA30CB9D4 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/UISystem.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = UISystem.cpp; path = src/FloppyTurd/Systems/UISystem.cpp; sourceTree = SOURCE_ROOT; };
+		7D306E3196134A0CA7A296BB /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/Entity.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = Entity.h; path = src/Engine/Core/Entity.h; sourceTree = SOURCE_ROOT; };
+		7E06DD96EB7B473489CEDEEE /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/RenderSystem.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = RenderSystem.cpp; path = src/FloppyTurd/Systems/RenderSystem.cpp; sourceTree = SOURCE_ROOT; };
+		83070281F67149939FC84E91 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/SpriteSystem.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = SpriteSystem.cpp; path = src/FloppyTurd/Systems/SpriteSystem.cpp; sourceTree = SOURCE_ROOT; };
+		8A60AA1A53074A65814F1FDC /* /Users/aimac/Development/FloppyTurd/src/iOS/AppDelegate.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; fileEncoding = 4; name = AppDelegate.swift; path = src/iOS/AppDelegate.swift; sourceTree = SOURCE_ROOT; };
+		8C5C8111784A43C692BA18AA /* /Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/FloppyTurdGame.dir/Info.plist */ = {isa = PBXFileReference; explicitFileType = sourcecode.text.plist; fileEncoding = 4; name = Info.plist; path = build_ios/CMakeFiles/FloppyTurdGame.dir/Info.plist; sourceTree = SOURCE_ROOT; };
+		92DC39609BCB4449A24BF79C /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/GnosisTypes.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = GnosisTypes.h; path = src/Engine/Core/GnosisTypes.h; sourceTree = SOURCE_ROOT; };
+		940587A2F3834E96B19CB1F1 /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/GNLog.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = GNLog.cpp; path = src/Engine/Core/GNLog.cpp; sourceTree = SOURCE_ROOT; };
+		96ADCAB2EE204B338304E4DA /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PlayerControllerSystem.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = PlayerControllerSystem.h; path = src/FloppyTurd/Systems/PlayerControllerSystem.h; sourceTree = SOURCE_ROOT; };
+		9EE09F63CF2B435E9ED7401D /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/ProjectileSpriteConfig.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = ProjectileSpriteConfig.h; path = src/FloppyTurd/Config/ProjectileSpriteConfig.h; sourceTree = SOURCE_ROOT; };
+		A316764BCC83467B89BFFA1D /* FloppyTurdGame */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libFloppyTurdGame.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		A688BC84204B431D918AC1EB /* /Users/aimac/Development/FloppyTurd/src/iOS/Shaders/Shaders2D.metal */ = {isa = PBXFileReference; explicitFileType = sourcecode.metal; fileEncoding = 4; name = Shaders2D.metal; path = src/iOS/Shaders/Shaders2D.metal; sourceTree = SOURCE_ROOT; };
+		AC2BFEBCB06B4A9D9E72BE97 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/bitmap/Whacky_Joe.fnt */ = {isa = PBXFileReference; explicitFileType = default; fileEncoding = 4; name = Whacky_Joe.fnt; path = src/assets/fonts/bitmap/Whacky_Joe.fnt; sourceTree = SOURCE_ROOT; };
+		AEA07391A0784B3F91F13635 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/BossHealthBar.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = BossHealthBar.h; path = src/FloppyTurd/Systems/BossHealthBar.h; sourceTree = SOURCE_ROOT; };
+		B0B5AECC38224DD8AFAFF56F /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/GameStateManager.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = GameStateManager.cpp; path = src/FloppyTurd/States/GameStateManager.cpp; sourceTree = SOURCE_ROOT; };
+		B0BC13F91A8C42C4AAF33F04 /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/GNLog.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = GNLog.h; path = src/Engine/Core/GNLog.h; sourceTree = SOURCE_ROOT; };
+		B1DE29AC5D654B228342C97F /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/SystemManager.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = SystemManager.h; path = src/Engine/Core/SystemManager.h; sourceTree = SOURCE_ROOT; };
+		B6491D23751E44DBBC7D0A5B /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/RenderSystem.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = RenderSystem.h; path = src/FloppyTurd/Systems/RenderSystem.h; sourceTree = SOURCE_ROOT; };
+		B8AA018BEBCE456C849A08AC /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/SkillSystem.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = SkillSystem.h; path = src/FloppyTurd/Systems/SkillSystem.h; sourceTree = SOURCE_ROOT; };
+		B9E09A3F73E941BB88357283 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ProjectileSystem.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = ProjectileSystem.cpp; path = src/FloppyTurd/Systems/ProjectileSystem.cpp; sourceTree = SOURCE_ROOT; };
+		BA8F4857D3344BF2BEAC976D /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/MainMenuState.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = MainMenuState.h; path = src/FloppyTurd/States/MainMenuState.h; sourceTree = SOURCE_ROOT; };
+		BAC83F8AB0234E95922BCF99 /* /Users/aimac/Development/FloppyTurd/src/iOS/Threading/ThreadingSystem.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; fileEncoding = 4; name = ThreadingSystem.swift; path = src/iOS/Threading/ThreadingSystem.swift; sourceTree = SOURCE_ROOT; };
+		BD73EC4A09F54B69BBE4797B /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/HatsSystem.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = HatsSystem.cpp; path = src/FloppyTurd/Systems/HatsSystem.cpp; sourceTree = SOURCE_ROOT; };
+		C18121B9340F442C8DC083D1 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PauseSystem.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = PauseSystem.cpp; path = src/FloppyTurd/Systems/PauseSystem.cpp; sourceTree = SOURCE_ROOT; };
+		C55009B6DEAB4B6D9FA3F3AB /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/msdf/charset_ascii.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = charset_ascii.txt; path = src/assets/fonts/msdf/charset_ascii.txt; sourceTree = SOURCE_ROOT; };
+		C690E84522894318A98C3A86 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/bitmap/Whacky_Joe.ttf */ = {isa = PBXFileReference; explicitFileType = default; fileEncoding = 4; name = Whacky_Joe.ttf; path = src/assets/fonts/bitmap/Whacky_Joe.ttf; sourceTree = SOURCE_ROOT; };
+		CCBE9E77D03F4691AF19B9AA /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/LoadingState.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = LoadingState.h; path = src/FloppyTurd/States/LoadingState.h; sourceTree = SOURCE_ROOT; };
+		CD916B53C1F641D2A81D5440 /* /Users/aimac/Development/FloppyTurd/src/Engine/Platform/PlatformDelegates.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = PlatformDelegates.h; path = src/Engine/Platform/PlatformDelegates.h; sourceTree = SOURCE_ROOT; };
+		D0BEC4E43EB540FC95A6DE3A /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PickupSystem.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = PickupSystem.cpp; path = src/FloppyTurd/Systems/PickupSystem.cpp; sourceTree = SOURCE_ROOT; };
+		D2A3C3AF5D8D4AEC80CE38B5 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/HeartSystem.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = HeartSystem.h; path = src/FloppyTurd/Systems/HeartSystem.h; sourceTree = SOURCE_ROOT; };
+		D609D7AAC1A247AC9B0F948E /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/CameraSystem.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = CameraSystem.h; path = src/FloppyTurd/Systems/CameraSystem.h; sourceTree = SOURCE_ROOT; };
+		D71EA5B38C1848918D55DCBA /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/FloppyTurdGame.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = FloppyTurdGame.h; path = src/FloppyTurd/Game/FloppyTurdGame.h; sourceTree = SOURCE_ROOT; };
+		D9944904FFF34F8CB105D499 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/ProjectileSpriteConfig.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = ProjectileSpriteConfig.cpp; path = src/FloppyTurd/Config/ProjectileSpriteConfig.cpp; sourceTree = SOURCE_ROOT; };
+		DA58AF2BA05849C18C82EDEE /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/FloppyTurdGame.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = FloppyTurdGame.cpp; path = src/FloppyTurd/Game/FloppyTurdGame.cpp; sourceTree = SOURCE_ROOT; };
+		DB1DFD3D9327470681D94A96 /* /Users/aimac/Development/FloppyTurd/src/Assets.xcassets */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = src/Assets.xcassets; sourceTree = SOURCE_ROOT; };
+		DF91809EE841444F96900FD3 /* /Users/aimac/Development/FloppyTurd/CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = CMakeLists.txt; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
+		E0A0BC482D4D4A1CB5108AFF /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/EnemyConfigs.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = EnemyConfigs.h; path = src/FloppyTurd/Config/EnemyConfigs.h; sourceTree = SOURCE_ROOT; };
+		E2F73BE7DB324F8B849BB10C /* /Users/aimac/Development/FloppyTurd/src/iOS/Rendering/MetalRenderer.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; fileEncoding = 4; name = MetalRenderer.swift; path = src/iOS/Rendering/MetalRenderer.swift; sourceTree = SOURCE_ROOT; };
+		E462000764FC4D329A02E8E9 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PauseSystem.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = PauseSystem.h; path = src/FloppyTurd/Systems/PauseSystem.h; sourceTree = SOURCE_ROOT; };
+		EE9013A9BC384B48B570FA26 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/HeartSystem.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = HeartSystem.cpp; path = src/FloppyTurd/Systems/HeartSystem.cpp; sourceTree = SOURCE_ROOT; };
+		EF6151291E1544A79BF3DA1E /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/CameraSystem.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = CameraSystem.cpp; path = src/FloppyTurd/Systems/CameraSystem.cpp; sourceTree = SOURCE_ROOT; };
+		F0DF2B1F580B49DBA9E8ECF1 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ObstacleSystem.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = ObstacleSystem.cpp; path = src/FloppyTurd/Systems/ObstacleSystem.cpp; sourceTree = SOURCE_ROOT; };
+		F4A98945C6C24DF7AB0787B5 /* /Users/aimac/Development/FloppyTurd/src/iOS/Rendering/MetalMatrixHelpers.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; fileEncoding = 4; name = MetalMatrixHelpers.swift; path = src/iOS/Rendering/MetalMatrixHelpers.swift; sourceTree = SOURCE_ROOT; };
+		F5506B5E8C0C46C6A1C6EBF0 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/LevelConfig.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = LevelConfig.h; path = src/FloppyTurd/Config/LevelConfig.h; sourceTree = SOURCE_ROOT; };
+		F8F12319F79C4E1191CD7912 /* /Users/aimac/Development/FloppyTurd/CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = CMakeLists.txt; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		2B97BE06AD5E4A18B5F1F628 /* Frameworks */ = {
+		9280F269BB7D41F7A6BCE56D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		8288CA54E73F4633B04A80EF /* Frameworks */ = {
+		FF03E0018C2548818265795E /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -309,203 +313,205 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		18DB37E4056049B1AC576DA1 /* Source Files */ = {
+		04FEBE21218A4B1FB8DC7F7A /* FloppyTurd */ = {
 			isa = PBXGroup;
 			children = (
-				357CDB857F4340EF99629295 /* /Users/aimac/Development/FloppyTurd/src/Engine/Configuration/ConfigManager.cpp */,
-				2B4B76B865524407A86C8413 /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/GNLog.cpp */,
-				50A51E64DBC24633B9170110 /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/SystemManager.cpp */,
-				D332008DA7634104B3B280D7 /* /Users/aimac/Development/FloppyTurd/src/Engine/Platform/iOSPlatformImpl.cpp */,
-				B1832587E1624353ADD0F85B /* /Users/aimac/Development/FloppyTurd/src/Engine/Utility/Utils.cpp */,
-				F19A1005DB784DCCA36D5F7F /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/EnemyConfigs.cpp */,
-				5117653E18B8414FBCD610B2 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/LevelConfig.cpp */,
-				4381BCBAEE554BCC9E7834F5 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/ProjectileSpriteConfig.cpp */,
-				4A049EAF33964A18BFDF5F88 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/FloppyTurdGame.cpp */,
-				709C73CA7E45478083AF5AED /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/GameStateManager.cpp */,
-				F685103382004B7887F0324B /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/GameplayState.cpp */,
-				15F7DB83F2334FCAB52A74DE /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/LoadingState.cpp */,
-				B2915FA1ABC342C0B5C957FB /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/MainMenuState.cpp */,
-				80C4FB72D5434A92819312DD /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/BossHealthBar.cpp */,
-				9F3EB81F114F4FF6B6BAECB6 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/BossSystem.cpp */,
-				9FAA7BFE2D8E4689BA0851A9 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/CameraSystem.cpp */,
-				3F1D2237EFF54C4C970CE9E9 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/EnemySystem.cpp */,
-				68A3777FB11E4901BFB6062F /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/HatsSystem.cpp */,
-				9B91D3F334AE4DE7948732A6 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/HeartSystem.cpp */,
-				CA2546B056A345A383352FF8 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/LevelManager.cpp */,
-				5558B63B175D478FA0BC1AB8 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ObstacleSystem.cpp */,
-				BE6625E205DE4761BA8C5E6A /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PickupSystem.cpp */,
-				B8BB64899511478FB148DCFB /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PlayerControllerSystem.cpp */,
-				B3626A487253493386CCD9BD /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ProjectileSystem.cpp */,
-				2DC67B6FFC0E4DEDAA6E9E2A /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/RenderSystem.cpp */,
-				E1538C8E6BD84020B434E400 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/SkillSystem.cpp */,
-				1B3F7AE813DB41DCA3B8F8AA /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/SpriteSystem.cpp */,
-				1D61DAE209404ADCA7325E92 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/UISystem.cpp */,
-			);
-			name = "Source Files";
-			sourceTree = "<group>";
-		};
-		44FBD54D4F22440F8CD65CFB /* Resources */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Resources;
-			sourceTree = "<group>";
-		};
-		533906D686DC444EA4CBC6BC /* FloppyTurd */ = {
-			isa = PBXGroup;
-			children = (
-				D216D3BB50D24FDBB3FD4C1E /* Source Files */,
-				695B4E744F964CC1BC727CAA /* Header Files */,
-				E06BA6F0CE0D45E49A6C7A30 /* Resources */,
-				6931FF055DD34AA39F5DBB83 /* /Users/aimac/Development/FloppyTurd/CMakeLists.txt */,
-				828A72E0CCF34C87BEEA19D3 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/bitmap/Whacky_Joe.fnt */,
-				DE8B1E4FABA0434FB5995210 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/bitmap/Whacky_Joe.ttf */,
-				D323780B21CB43C1ADF15A49 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/msdf/.DS_Store */,
-				34F68C2A81064B23B097E491 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/msdf/charset_ascii.txt */,
-				6050FC50344245FC91430C47 /* /Users/aimac/Development/FloppyTurd/src/iOS/AppDelegate.swift */,
-				44E93F4100C84E7A8EE1E977 /* /Users/aimac/Development/FloppyTurd/src/iOS/Assets/AssetManager.swift */,
-				7BB15DA5D6704002A98EB91F /* /Users/aimac/Development/FloppyTurd/src/iOS/Audio/AVAudioHandler.swift */,
-				65FF721330834DC482C66BFE /* /Users/aimac/Development/FloppyTurd/src/iOS/GameEngine.swift */,
-				113748ABE070468DA89A8FDA /* /Users/aimac/Development/FloppyTurd/src/iOS/GameViewController.swift */,
-				D4D2553098184350857073B7 /* /Users/aimac/Development/FloppyTurd/src/iOS/Input/TouchInputHandler.swift */,
-				6AE858C222F64A6882C8959A /* /Users/aimac/Development/FloppyTurd/src/iOS/Logging/iOSLogHandler.swift */,
-				7EFF3939A5874B1F9200B0C0 /* /Users/aimac/Development/FloppyTurd/src/iOS/Rendering/MetalMatrixHelpers.swift */,
-				A39A727EF15044F18DA96FE7 /* /Users/aimac/Development/FloppyTurd/src/iOS/Rendering/MetalRenderer.swift */,
-				4F0BBED3ACC4445C9B4953B9 /* /Users/aimac/Development/FloppyTurd/src/iOS/Shaders/RotSprite.metal */,
-				A26A18097B1347A3A0FAEA4C /* /Users/aimac/Development/FloppyTurd/src/iOS/Shaders/Shaders2D.metal */,
-				87BFFE28A8004E03A00F3C9D /* /Users/aimac/Development/FloppyTurd/src/iOS/Threading/ThreadingSystem.swift */,
+				CDBDBE57272143C3B0A67A02 /* Source Files */,
+				24F5888144124217A2AF789E /* Header Files */,
+				58CE20B90C3C44EBB8C007DD /* Resources */,
+				DF91809EE841444F96900FD3 /* /Users/aimac/Development/FloppyTurd/CMakeLists.txt */,
+				AC2BFEBCB06B4A9D9E72BE97 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/bitmap/Whacky_Joe.fnt */,
+				C690E84522894318A98C3A86 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/bitmap/Whacky_Joe.ttf */,
+				05E2B9E0878B4F03B418FB80 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/msdf/.DS_Store */,
+				C55009B6DEAB4B6D9FA3F3AB /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/msdf/charset_ascii.txt */,
+				8A60AA1A53074A65814F1FDC /* /Users/aimac/Development/FloppyTurd/src/iOS/AppDelegate.swift */,
+				6A233740191E4F6AB5AAD559 /* /Users/aimac/Development/FloppyTurd/src/iOS/Assets/AssetManager.swift */,
+				2D086050C7AB4BBC94F43E40 /* /Users/aimac/Development/FloppyTurd/src/iOS/Audio/AVAudioHandler.swift */,
+				7750363B5D7842728A9B51F3 /* /Users/aimac/Development/FloppyTurd/src/iOS/GameEngine.swift */,
+				32CCC010789B4BC78DD0C5AA /* /Users/aimac/Development/FloppyTurd/src/iOS/GameViewController.swift */,
+				0B9FE68ED30247858ECBD384 /* /Users/aimac/Development/FloppyTurd/src/iOS/Input/TouchInputHandler.swift */,
+				005AAD124119434CA3252681 /* /Users/aimac/Development/FloppyTurd/src/iOS/Logging/iOSLogHandler.swift */,
+				F4A98945C6C24DF7AB0787B5 /* /Users/aimac/Development/FloppyTurd/src/iOS/Rendering/MetalMatrixHelpers.swift */,
+				E2F73BE7DB324F8B849BB10C /* /Users/aimac/Development/FloppyTurd/src/iOS/Rendering/MetalRenderer.swift */,
+				1E5AFF6DDED0405FAB8BBD8B /* /Users/aimac/Development/FloppyTurd/src/iOS/Shaders/RotSprite.metal */,
+				A688BC84204B431D918AC1EB /* /Users/aimac/Development/FloppyTurd/src/iOS/Shaders/Shaders2D.metal */,
+				BAC83F8AB0234E95922BCF99 /* /Users/aimac/Development/FloppyTurd/src/iOS/Threading/ThreadingSystem.swift */,
 			);
 			name = FloppyTurd;
 			sourceTree = "<group>";
 		};
-		695B4E744F964CC1BC727CAA /* Header Files */ = {
+		089864EB2256443A81C2FCC6 /* Header Files */ = {
 			isa = PBXGroup;
 			children = (
-				6247605222784779B91BBD78 /* /Users/aimac/Development/FloppyTurd/src/iOS/Threading/ThreadingProxy.h */,
+				084C6E6314EE4FF7A45E229B /* /Users/aimac/Development/FloppyTurd/src/Engine/Configuration/ConfigManager.h */,
+				472226E53785415B9FAA90DF /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/Component.h */,
+				5EBBFE4FD0F14CF19CDE4A3F /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/ECS.h */,
+				7D306E3196134A0CA7A296BB /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/Entity.h */,
+				B0BC13F91A8C42C4AAF33F04 /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/GNLog.h */,
+				92DC39609BCB4449A24BF79C /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/GnosisTypes.h */,
+				33E2C370276448F5B054CCD7 /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/System.h */,
+				B1DE29AC5D654B228342C97F /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/SystemManager.h */,
+				CD916B53C1F641D2A81D5440 /* /Users/aimac/Development/FloppyTurd/src/Engine/Platform/PlatformDelegates.h */,
+				4CFD1BF64BFC48D385B6A1F7 /* /Users/aimac/Development/FloppyTurd/src/Engine/Platform/iOSPlatformImpl.h */,
+				28C0DA7A2A5141E680BCD799 /* /Users/aimac/Development/FloppyTurd/src/Engine/Utility/Utils.h */,
+				E0A0BC482D4D4A1CB5108AFF /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/EnemyConfigs.h */,
+				F5506B5E8C0C46C6A1C6EBF0 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/LevelConfig.h */,
+				9EE09F63CF2B435E9ED7401D /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/ProjectileSpriteConfig.h */,
+				D71EA5B38C1848918D55DCBA /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/FloppyTurdGame.h */,
+				4D4CF63C1C624AB682F3DF66 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/GameState.h */,
+				5CA114E21ED9429FA2CF5A14 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/GameplayState.h */,
+				CCBE9E77D03F4691AF19B9AA /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/LoadingState.h */,
+				BA8F4857D3344BF2BEAC976D /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/MainMenuState.h */,
+				AEA07391A0784B3F91F13635 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/BossHealthBar.h */,
+				568D148DC4904BE7A588277B /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/BossSystem.h */,
+				D609D7AAC1A247AC9B0F948E /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/CameraSystem.h */,
+				615D6824021A46EA977801E3 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/EnemySystem.h */,
+				3206CFACF5264B6C921B5E6B /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/HatsSystem.h */,
+				D2A3C3AF5D8D4AEC80CE38B5 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/HeartSystem.h */,
+				396054EC476542998DD45448 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/LevelManager.h */,
+				1D5914ABE8BA46F5B0B65178 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ObstacleSystem.h */,
+				E462000764FC4D329A02E8E9 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PauseSystem.h */,
+				694F1E1C5B534A2AB52AD46F /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PickupSystem.h */,
+				96ADCAB2EE204B338304E4DA /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PlayerControllerSystem.h */,
+				2ACCA0BCB70747A7863A27FF /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ProjectileSystem.h */,
+				B6491D23751E44DBBC7D0A5B /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/RenderSystem.h */,
+				B8AA018BEBCE456C849A08AC /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/SkillSystem.h */,
+				37A1C70F1A82486CA08756F0 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/SpriteSystem.h */,
+				56A3E3D1640147288B5C2BDE /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/UISystem.h */,
 			);
 			name = "Header Files";
 			sourceTree = "<group>";
 		};
-		70CD5C3A89E04F00A82CD7B2 /* CMake Rules */ = {
+		1CF094E3CC1D41A8A3043178 /* FloppyTurdGame */ = {
+			isa = PBXGroup;
+			children = (
+				6D20DB5AAAC24066B99B4C43 /* Source Files */,
+				089864EB2256443A81C2FCC6 /* Header Files */,
+				8C2D75B4C86A48DFBCE48D1A /* Resources */,
+				2B2C485DCFB249B58B756EAA /* /Users/aimac/Development/FloppyTurd/CMakeLists.txt */,
+			);
+			name = FloppyTurdGame;
+			sourceTree = "<group>";
+		};
+		24F5888144124217A2AF789E /* Header Files */ = {
+			isa = PBXGroup;
+			children = (
+				45F8F7902BF34E398BBEBD89 /* /Users/aimac/Development/FloppyTurd/src/iOS/Threading/ThreadingProxy.h */,
+			);
+			name = "Header Files";
+			sourceTree = "<group>";
+		};
+		2AACC4EC378A4D62914588FE /* ALL_BUILD */ = {
+			isa = PBXGroup;
+			children = (
+				44DEAB1BE3774B919C34400E /* CMake Rules */,
+				F8F12319F79C4E1191CD7912 /* /Users/aimac/Development/FloppyTurd/CMakeLists.txt */,
+			);
+			name = ALL_BUILD;
+			sourceTree = "<group>";
+		};
+		30E952CB62F74683ACBD05A6 = {
+			isa = PBXGroup;
+			children = (
+				1CF094E3CC1D41A8A3043178 /* FloppyTurdGame */,
+				04FEBE21218A4B1FB8DC7F7A /* FloppyTurd */,
+				2AACC4EC378A4D62914588FE /* ALL_BUILD */,
+				63F004C2A9D748A9A3DEACC0 /* Products */,
+				838048C64B1A49E190F72A07 /* Frameworks */,
+				D9E3E7E055A743C0BE0FF77A /* Resources */,
+			);
+			sourceTree = "<group>";
+		};
+		44DEAB1BE3774B919C34400E /* CMake Rules */ = {
 			isa = PBXGroup;
 			children = (
 			);
 			name = "CMake Rules";
 			sourceTree = "<group>";
 		};
-		94665B43E5B94405B929963E /* FloppyTurdGame */ = {
+		58CE20B90C3C44EBB8C007DD /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				18DB37E4056049B1AC576DA1 /* Source Files */,
-				EFAFD8ABE7BC4089AA87895F /* Header Files */,
-				95C56B3EB8E24CE0946C54DD /* Resources */,
-				3ECDB3539B3D406C924FCF83 /* /Users/aimac/Development/FloppyTurd/CMakeLists.txt */,
-			);
-			name = FloppyTurdGame;
-			sourceTree = "<group>";
-		};
-		95C56B3EB8E24CE0946C54DD /* Resources */ = {
-			isa = PBXGroup;
-			children = (
-				B3F012CC312B4CFABF5DEFCD /* /Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/FloppyTurdGame.dir/Info.plist */,
+				43EF2C87558140029B5A0CD2 /* /Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/FloppyTurd.dir/Info.plist */,
+				DB1DFD3D9327470681D94A96 /* /Users/aimac/Development/FloppyTurd/src/Assets.xcassets */,
+				1A08A1FFDBFE4277B7EBF21B /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/bitmap/WhackyJoe_32.png */,
 			);
 			name = Resources;
 			sourceTree = "<group>";
 		};
-		96E452614D2541D2B0FD14FA /* Frameworks */ = {
+		63F004C2A9D748A9A3DEACC0 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				4D019B364F4F43D09183F1B7 /* FloppyTurd */,
+				A316764BCC83467B89BFFA1D /* FloppyTurdGame */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		6D20DB5AAAC24066B99B4C43 /* Source Files */ = {
+			isa = PBXGroup;
+			children = (
+				0E2F0FD24462400085684691 /* /Users/aimac/Development/FloppyTurd/src/Engine/Configuration/ConfigManager.cpp */,
+				940587A2F3834E96B19CB1F1 /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/GNLog.cpp */,
+				772BD4945AF24A5381B83E5F /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/SystemManager.cpp */,
+				0F85E9DF4C3748C5A47E33FD /* /Users/aimac/Development/FloppyTurd/src/Engine/Platform/iOSPlatformImpl.cpp */,
+				2B4362B3C2BB4FA8BA97ECA7 /* /Users/aimac/Development/FloppyTurd/src/Engine/Utility/Utils.cpp */,
+				40570F4791BB434B9F0655FA /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/EnemyConfigs.cpp */,
+				1E2B2B49FB604C5C83CF22B1 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/LevelConfig.cpp */,
+				D9944904FFF34F8CB105D499 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/ProjectileSpriteConfig.cpp */,
+				DA58AF2BA05849C18C82EDEE /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/FloppyTurdGame.cpp */,
+				B0B5AECC38224DD8AFAFF56F /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/GameStateManager.cpp */,
+				1DDE24FBC4504752BF5CA131 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/GameplayState.cpp */,
+				46E935F6B477475FB30E275F /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/LoadingState.cpp */,
+				2D88914E9BF74B559470B989 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/MainMenuState.cpp */,
+				1C028B58586145A4962EB738 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/BossHealthBar.cpp */,
+				60FBB36A1A6946C79FDE84B0 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/BossSystem.cpp */,
+				EF6151291E1544A79BF3DA1E /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/CameraSystem.cpp */,
+				14B4529C06784E03892A7358 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/EnemySystem.cpp */,
+				BD73EC4A09F54B69BBE4797B /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/HatsSystem.cpp */,
+				EE9013A9BC384B48B570FA26 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/HeartSystem.cpp */,
+				056A53E42371440EA0857ED4 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/LevelManager.cpp */,
+				F0DF2B1F580B49DBA9E8ECF1 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ObstacleSystem.cpp */,
+				C18121B9340F442C8DC083D1 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PauseSystem.cpp */,
+				D0BEC4E43EB540FC95A6DE3A /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PickupSystem.cpp */,
+				5BA436ED36DB4C91BBA2771B /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PlayerControllerSystem.cpp */,
+				B9E09A3F73E941BB88357283 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ProjectileSystem.cpp */,
+				7E06DD96EB7B473489CEDEEE /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/RenderSystem.cpp */,
+				4F700CCDE01D41DA9461044E /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/SkillSystem.cpp */,
+				83070281F67149939FC84E91 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/SpriteSystem.cpp */,
+				79AAF5254F684BCDA30CB9D4 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/UISystem.cpp */,
+			);
+			name = "Source Files";
+			sourceTree = "<group>";
+		};
+		838048C64B1A49E190F72A07 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		B1ECBF1B95C64A54B45D67E3 /* ALL_BUILD */ = {
+		8C2D75B4C86A48DFBCE48D1A /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				70CD5C3A89E04F00A82CD7B2 /* CMake Rules */,
-				EA38097FE584476E873CD17D /* /Users/aimac/Development/FloppyTurd/CMakeLists.txt */,
-			);
-			name = ALL_BUILD;
-			sourceTree = "<group>";
-		};
-		BC1C82D3CA0D415DAF0A726F /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				BB6B3D9B989F4C73A19C41EE /* FloppyTurd */,
-				F37BF480A4AB4AF88D11BA39 /* FloppyTurdGame */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		D216D3BB50D24FDBB3FD4C1E /* Source Files */ = {
-			isa = PBXGroup;
-			children = (
-				4FED9C1922A743F197076B14 /* /Users/aimac/Development/FloppyTurd/src/iOS/Threading/ThreadingProxy.cpp */,
-			);
-			name = "Source Files";
-			sourceTree = "<group>";
-		};
-		E06BA6F0CE0D45E49A6C7A30 /* Resources */ = {
-			isa = PBXGroup;
-			children = (
-				16B877AA62D74396BDC53002 /* /Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/FloppyTurd.dir/Info.plist */,
-				76A35ABFEB3B425BB6EACFDF /* /Users/aimac/Development/FloppyTurd/src/Assets.xcassets */,
-				D2160CD95BFE469389429F48 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/bitmap/WhackyJoe_32.png */,
+				8C5C8111784A43C692BA18AA /* /Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/FloppyTurdGame.dir/Info.plist */,
 			);
 			name = Resources;
 			sourceTree = "<group>";
 		};
-		E6DABC17C23A4F7F9B292F6D = {
+		CDBDBE57272143C3B0A67A02 /* Source Files */ = {
 			isa = PBXGroup;
 			children = (
-				94665B43E5B94405B929963E /* FloppyTurdGame */,
-				533906D686DC444EA4CBC6BC /* FloppyTurd */,
-				B1ECBF1B95C64A54B45D67E3 /* ALL_BUILD */,
-				BC1C82D3CA0D415DAF0A726F /* Products */,
-				96E452614D2541D2B0FD14FA /* Frameworks */,
-				44FBD54D4F22440F8CD65CFB /* Resources */,
+				25B0F8DB6D1F4FD085FA4D8E /* /Users/aimac/Development/FloppyTurd/src/iOS/Threading/ThreadingProxy.cpp */,
 			);
+			name = "Source Files";
 			sourceTree = "<group>";
 		};
-		EFAFD8ABE7BC4089AA87895F /* Header Files */ = {
+		D9E3E7E055A743C0BE0FF77A /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				0F398561BE6345B19F18371A /* /Users/aimac/Development/FloppyTurd/src/Engine/Configuration/ConfigManager.h */,
-				7E732BDC6BA440F8919D1C98 /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/Component.h */,
-				88B38CE3B6E7477AB584F1AF /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/ECS.h */,
-				18067B891DAE4AD289FC51D0 /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/Entity.h */,
-				48CC950DF33D485FB7D58D5D /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/GNLog.h */,
-				C9345F32ACF94B149777DAA3 /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/GnosisTypes.h */,
-				3B6999D15DB247AF90FF863B /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/System.h */,
-				BAFF0441834640E787AD8053 /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/SystemManager.h */,
-				A610F684882E4631A6DE8B12 /* /Users/aimac/Development/FloppyTurd/src/Engine/Platform/PlatformDelegates.h */,
-				B5038CA2D9F14A80A33B42AB /* /Users/aimac/Development/FloppyTurd/src/Engine/Platform/iOSPlatformImpl.h */,
-				70BEAF69B48E49BD8B04885C /* /Users/aimac/Development/FloppyTurd/src/Engine/Utility/Utils.h */,
-				C829E488A8EC4737AE7DE4D9 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/EnemyConfigs.h */,
-				05187D71E76E49B49C6E1E3C /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/LevelConfig.h */,
-				00EFA8A7A2DA4BE9911FCFC4 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/ProjectileSpriteConfig.h */,
-				DA113BB7506C4CC3AE8A91C6 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/FloppyTurdGame.h */,
-				9161CEC265284532ACA5C29F /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/GameState.h */,
-				8683CFD87F0A43BFAF20CD03 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/GameplayState.h */,
-				D10A7229881441E5B0709084 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/LoadingState.h */,
-				0CDD52634B4841BBB3CF361C /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/MainMenuState.h */,
-				5ACD7C0EF3C245AFBF2D275B /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/BossHealthBar.h */,
-				899267324BD649F4B852CFAA /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/BossSystem.h */,
-				AC4E007F9774474B8D228547 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/CameraSystem.h */,
-				9961A0E128D84C0D8319BEF4 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/EnemySystem.h */,
-				144C31A11FCB43D289048B91 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/HatsSystem.h */,
-				D4697FAA3ECB44D986D995EF /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/HeartSystem.h */,
-				886CA0E73DC748F09F058BC6 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/LevelManager.h */,
-				1F8549CD5BA145CBA4060115 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ObstacleSystem.h */,
-				D103C8EEABAA4F90AA78D7AC /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PickupSystem.h */,
-				8FF3A032DF5B45E4BA2226F9 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PlayerControllerSystem.h */,
-				3AE8085B7E294879A65019E6 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ProjectileSystem.h */,
-				53392D64E26C4CEFA82F7905 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/RenderSystem.h */,
-				BC106FCBC506455DADB33224 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/SkillSystem.h */,
-				9DE4942927834194A7D1DF47 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/SpriteSystem.h */,
-				EF8F3C14AC824F598D018C4D /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/UISystem.h */,
 			);
-			name = "Header Files";
+			name = Resources;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -513,63 +519,63 @@
 /* Begin PBXNativeTarget section */
 		0DE0C202AEDEA1EE745377B5 /* FloppyTurdGame */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 35B3B328AA8C4F288FDA54AD /* Build configuration list for PBXNativeTarget "FloppyTurdGame" */;
+			buildConfigurationList = BD0B6DD549C04DFDBF4228BF /* Build configuration list for PBXNativeTarget "FloppyTurdGame" */;
 			buildPhases = (
-				BD5E18F3531E4EAD8CD0D3FA /* Sources */,
-				2B97BE06AD5E4A18B5F1F628 /* Frameworks */,
+				4C14869A10814B2595985079 /* Sources */,
+				FF03E0018C2548818265795E /* Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				2C81B40D01E54DF9B19F5C06 /* PBXTargetDependency */,
+				38CD833181AE4349A6DBEA17 /* PBXTargetDependency */,
 			);
 			name = FloppyTurdGame;
 			productName = FloppyTurdGame;
-			productReference = F37BF480A4AB4AF88D11BA39 /* FloppyTurdGame */;
+			productReference = A316764BCC83467B89BFFA1D /* FloppyTurdGame */;
 			productType = "com.apple.product-type.library.static";
 		};
 		8EFA9AA7BA22AECA1336F161 /* FloppyTurd */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 09732BB576034B94A940FD2C /* Build configuration list for PBXNativeTarget "FloppyTurd" */;
+			buildConfigurationList = 52A0526BC9C243C59BB8E06C /* Build configuration list for PBXNativeTarget "FloppyTurd" */;
 			buildPhases = (
 				3B65F119560F08E4C38CD92B /* CMake PreBuild Rules */,
-				0D3B96C1BC504069AF30043A /* Resources */,
-				32A43F1283434ADDBDA569B7 /* Copy files */,
-				F24F6559F7E84606B8D78D12 /* Sources */,
-				8288CA54E73F4633B04A80EF /* Frameworks */,
+				2C72B8F672C946AA89B6417B /* Resources */,
+				117C30CE469148D7A60A76E5 /* Copy files */,
+				4E5CE8E969364FFF95EC5A32 /* Sources */,
+				9280F269BB7D41F7A6BCE56D /* Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				24EE9240267B4B59880B454A /* PBXTargetDependency */,
-				26D06C61B276419B865DE161 /* PBXTargetDependency */,
+				1FBEA4363A094C9A89D8001F /* PBXTargetDependency */,
+				73753380BBAB4232A61DBF43 /* PBXTargetDependency */,
 			);
 			name = FloppyTurd;
 			productName = FloppyTurd;
-			productReference = BB6B3D9B989F4C73A19C41EE /* FloppyTurd */;
+			productReference = 4D019B364F4F43D09183F1B7 /* FloppyTurd */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		1234ED269BF74908B12B84D6 /* Project object */ = {
+		3A6442CC62E5486AAEA9995E /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1620;
 			};
-			buildConfigurationList = 56416D56A42C464784972CA3 /* Build configuration list for PBXProject "FloppyTurd" */;
+			buildConfigurationList = 3CEA2D2981A44A2EAFD2D207 /* Build configuration list for PBXProject "FloppyTurd" */;
 			buildSettings = {
 			};
 			buildStyles = (
-				CAD3F0469F4C4470B31D95F3 /* Debug */,
-				FDC244AB40A84109B69D9723 /* Release */,
-				8D834F3E70504243B4BFECF1 /* MinSizeRel */,
-				1BE169BC90324FF98DA26A4D /* RelWithDebInfo */,
+				2CB418907433482BB85F34BE /* Debug */,
+				E53C8F0683AB4F6594828095 /* Release */,
+				744DBF075131414AA2622CC0 /* MinSizeRel */,
+				D81B07BA3F3A4A8ABB37845E /* RelWithDebInfo */,
 			);
 			compatibilityVersion = "Xcode 3.2";
 			hasScannedForEncodings = 0;
-			mainGroup = E6DABC17C23A4F7F9B292F6D;
+			mainGroup = 30E952CB62F74683ACBD05A6;
 			projectDirPath = /Users/aimac/Development/FloppyTurd;
 			projectRoot = "";
 			targets = (
@@ -712,258 +718,127 @@ fi
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXResourcesBuildPhase section */
-		0D3B96C1BC504069AF30043A /* Resources */ = {
+		2C72B8F672C946AA89B6417B /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F7136032AEBD4AF18C1B6C8B /* /Users/aimac/Development/FloppyTurd/src/Assets.xcassets */,
-				C8635D2237714B909BB0E7EE /* /Users/aimac/Development/FloppyTurd/src/iOS/Shaders/RotSprite.metal */,
-				2847AD89C221468DA7EBF455 /* /Users/aimac/Development/FloppyTurd/src/iOS/Shaders/Shaders2D.metal */,
+				F5C5567A5BD340AD830D4695 /* /Users/aimac/Development/FloppyTurd/src/Assets.xcassets */,
+				AE15A7D7D62947CFB7EBB13D /* /Users/aimac/Development/FloppyTurd/src/iOS/Shaders/RotSprite.metal */,
+				C767DFDCE3DE4C00A38BE535 /* /Users/aimac/Development/FloppyTurd/src/iOS/Shaders/Shaders2D.metal */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		BD5E18F3531E4EAD8CD0D3FA /* Sources */ = {
+		4C14869A10814B2595985079 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				27952F3D69184983B8B26F06 /* /Users/aimac/Development/FloppyTurd/src/Engine/Configuration/ConfigManager.cpp */,
-				15B6E229EAEB43798A8E4C53 /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/GNLog.cpp */,
-				EB482DF96B774832AF1DCD99 /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/SystemManager.cpp */,
-				E1DAC35CCE4A4800B00BFE15 /* /Users/aimac/Development/FloppyTurd/src/Engine/Platform/iOSPlatformImpl.cpp */,
-				D8EFE515F56240828ECC4ECB /* /Users/aimac/Development/FloppyTurd/src/Engine/Utility/Utils.cpp */,
-				E8AF668117704A618607012F /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/EnemyConfigs.cpp */,
-				AE923AEFF7DF46A5AACC8510 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/LevelConfig.cpp */,
-				751FE2FD4EB24A329769D231 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/ProjectileSpriteConfig.cpp */,
-				1ADAC466F0D043A097EFA62B /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/FloppyTurdGame.cpp */,
-				B517275B86F4424692F7E7D9 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/GameStateManager.cpp */,
-				1D0B37201B5E4128895754FB /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/GameplayState.cpp */,
-				36476F9859DF4B3484F45509 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/LoadingState.cpp */,
-				23555D44D2FB417BAF144312 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/MainMenuState.cpp */,
-				740E9F925C10461EB8B2709D /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/BossHealthBar.cpp */,
-				93CA82CC85184AD49654431E /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/BossSystem.cpp */,
-				C48B5772224E415AA48D8CEB /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/CameraSystem.cpp */,
-				8B428CC07737469D820C046B /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/EnemySystem.cpp */,
-				70665ACB8B4B476AAF5E770B /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/HatsSystem.cpp */,
-				90A7F8ED90754EA59FDF668E /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/HeartSystem.cpp */,
-				245388452905436BB193C9D0 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/LevelManager.cpp */,
-				868F6631F9D9476E8690AE17 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ObstacleSystem.cpp */,
-				6C6E8CC8D53A42DDB2474F7A /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PickupSystem.cpp */,
-				15816EAA9701452C8256AEFE /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PlayerControllerSystem.cpp */,
-				77074641F5BD4BA29776DB3A /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ProjectileSystem.cpp */,
-				7870D23513B34A36ABBFA9EA /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/RenderSystem.cpp */,
-				9703E458473E4311824B5F28 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/SkillSystem.cpp */,
-				B9AD4DFC1A02439EBF6CBC81 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/SpriteSystem.cpp */,
-				A3F4C3EA87584856AC82ACF9 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/UISystem.cpp */,
+				A03251BBDCB444F6B132321E /* /Users/aimac/Development/FloppyTurd/src/Engine/Configuration/ConfigManager.cpp */,
+				B758C937AE1F4D29BDCE6F8B /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/GNLog.cpp */,
+				69E474E5ACEF414C877103DE /* /Users/aimac/Development/FloppyTurd/src/Engine/Core/SystemManager.cpp */,
+				CC9DAFF69A794E918D7AC66A /* /Users/aimac/Development/FloppyTurd/src/Engine/Platform/iOSPlatformImpl.cpp */,
+				970056597210434085D88E97 /* /Users/aimac/Development/FloppyTurd/src/Engine/Utility/Utils.cpp */,
+				4AC6EB6714D543A4AF1E58E4 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/EnemyConfigs.cpp */,
+				BB716A65F4A043A98E4866A5 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/LevelConfig.cpp */,
+				2C24AA008DEC4AAE854D67B7 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config/ProjectileSpriteConfig.cpp */,
+				9F1FA1159B134945B50E2B0C /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/FloppyTurdGame.cpp */,
+				821AECD1ABF74F8EAB897205 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/GameStateManager.cpp */,
+				5E339F4F8F9C4C1DB61BC02A /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/GameplayState.cpp */,
+				324018AA56EA4E519DEE1A7D /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/LoadingState.cpp */,
+				1C56683B662F4494817FC8C3 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/MainMenuState.cpp */,
+				87DC01181B354C8B97CC1CA3 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/BossHealthBar.cpp */,
+				39C9EAA790BF493395267D93 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/BossSystem.cpp */,
+				5F72D47B4C6F4E5882C81848 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/CameraSystem.cpp */,
+				87B2C2329F854FDBA7875794 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/EnemySystem.cpp */,
+				19F9776DE6954451846FB899 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/HatsSystem.cpp */,
+				1FB4C775058F44AD9914FBFE /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/HeartSystem.cpp */,
+				BAA4256207D44D3D9DADCC38 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/LevelManager.cpp */,
+				B70282FEF34B41868E135743 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ObstacleSystem.cpp */,
+				46D8BC02CAF84C36897DDF2C /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PauseSystem.cpp */,
+				DFA8465DB67C4992B21226A4 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PickupSystem.cpp */,
+				B9ACAA4134B54CCC8602F33A /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PlayerControllerSystem.cpp */,
+				D91CA4E06D4A4CC8A019C685 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ProjectileSystem.cpp */,
+				4AFA2CA84E244FF191B8A0F6 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/RenderSystem.cpp */,
+				B909982D721144FD86CB653A /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/SkillSystem.cpp */,
+				2066623A62BD43AD9566F9DD /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/SpriteSystem.cpp */,
+				010D62072F87455984D98A39 /* /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/UISystem.cpp */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		F24F6559F7E84606B8D78D12 /* Sources */ = {
+		4E5CE8E969364FFF95EC5A32 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				48D2AE3227904E6D8F223969 /* /Users/aimac/Development/FloppyTurd/src/iOS/AppDelegate.swift */,
-				CA2BFD273F604FB7B88B3669 /* /Users/aimac/Development/FloppyTurd/src/iOS/Assets/AssetManager.swift */,
-				D99E6864F1E54D6EABEA4596 /* /Users/aimac/Development/FloppyTurd/src/iOS/Audio/AVAudioHandler.swift */,
-				D7268CB90D71424691788F04 /* /Users/aimac/Development/FloppyTurd/src/iOS/GameEngine.swift */,
-				FB58A914C1764410986025C1 /* /Users/aimac/Development/FloppyTurd/src/iOS/GameViewController.swift */,
-				7EFC8C11D6644691B0C0E1C0 /* /Users/aimac/Development/FloppyTurd/src/iOS/Input/TouchInputHandler.swift */,
-				C03C41370870436F91342737 /* /Users/aimac/Development/FloppyTurd/src/iOS/Logging/iOSLogHandler.swift */,
-				4D61C833C9884B1DB45C53F4 /* /Users/aimac/Development/FloppyTurd/src/iOS/Rendering/MetalMatrixHelpers.swift */,
-				7331E857598D42B19B9298A0 /* /Users/aimac/Development/FloppyTurd/src/iOS/Rendering/MetalRenderer.swift */,
-				B9A015D1591649C8A1E51FC6 /* /Users/aimac/Development/FloppyTurd/src/iOS/Threading/ThreadingProxy.cpp */,
-				CB1DDDFBE4214408B5389D52 /* /Users/aimac/Development/FloppyTurd/src/iOS/Threading/ThreadingSystem.swift */,
+				C1B17096849A4FE1940AAF53 /* /Users/aimac/Development/FloppyTurd/src/iOS/AppDelegate.swift */,
+				C97541AE2208451F862D258C /* /Users/aimac/Development/FloppyTurd/src/iOS/Assets/AssetManager.swift */,
+				0424B1503AFA49249CB08F96 /* /Users/aimac/Development/FloppyTurd/src/iOS/Audio/AVAudioHandler.swift */,
+				C8310DEC12904D54B20CEA88 /* /Users/aimac/Development/FloppyTurd/src/iOS/GameEngine.swift */,
+				CEE109729AF746E69824F263 /* /Users/aimac/Development/FloppyTurd/src/iOS/GameViewController.swift */,
+				6FEC77B7208C42C992052AFA /* /Users/aimac/Development/FloppyTurd/src/iOS/Input/TouchInputHandler.swift */,
+				2305F30F3FB94EFBA4AE3271 /* /Users/aimac/Development/FloppyTurd/src/iOS/Logging/iOSLogHandler.swift */,
+				527367F9925F4BBCB602AE54 /* /Users/aimac/Development/FloppyTurd/src/iOS/Rendering/MetalMatrixHelpers.swift */,
+				9C305D8A6A7143F7BDC34585 /* /Users/aimac/Development/FloppyTurd/src/iOS/Rendering/MetalRenderer.swift */,
+				14D8B298429F437CAFD3C7DB /* /Users/aimac/Development/FloppyTurd/src/iOS/Threading/ThreadingProxy.cpp */,
+				C464A73D3A7D4E6A9111977B /* /Users/aimac/Development/FloppyTurd/src/iOS/Threading/ThreadingSystem.swift */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		32A43F1283434ADDBDA569B7 /* Copy files */ = {
+		117C30CE469148D7A60A76E5 /* Copy files */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = fonts;
 			dstSubfolderSpec = 7;
 			files = (
-				55B3977F57F140BE83DB27C2 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/bitmap/WhackyJoe_32.png */,
-				64AA042075EF4846B9624E84 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/bitmap/Whacky_Joe.fnt */,
-				DE6F771A98224311B1F897E2 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/bitmap/Whacky_Joe.ttf */,
-				3AE895F3635F47998855B5D5 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/msdf/.DS_Store */,
-				FCB6BAA521014A23A7C02C01 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/msdf/charset_ascii.txt */,
+				C7F4DD85E8D84B119E84A1E0 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/bitmap/WhackyJoe_32.png */,
+				F4C60AFE92564F4688B37866 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/bitmap/Whacky_Joe.fnt */,
+				59A6C2B1F984480E9ABA76D0 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/bitmap/Whacky_Joe.ttf */,
+				6E15213E44134024A4C346EA /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/msdf/.DS_Store */,
+				C56C97F6E99C42BBAE343259 /* /Users/aimac/Development/FloppyTurd/src/assets/fonts/msdf/charset_ascii.txt */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		011D3C1E30C3428DB6727AD4 /* PBXTargetDependency */ = {
+		0FB065487F8B4769BDAA6AE3 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = D9EF5759F53BF46D2676F7EB /* ZERO_CHECK */;
-			targetProxy = DB66F013D7CA4D09A3B74AC3 /* PBXContainerItemProxy */;
+			targetProxy = 113A1DD120B743C2911E1EC5 /* PBXContainerItemProxy */;
 		};
-		24EE9240267B4B59880B454A /* PBXTargetDependency */ = {
+		1FBEA4363A094C9A89D8001F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D9EF5759F53BF46D2676F7EB /* ZERO_CHECK */;
+			targetProxy = D723310076EC4E6DA87B3DBA /* PBXContainerItemProxy */;
+		};
+		38CD833181AE4349A6DBEA17 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D9EF5759F53BF46D2676F7EB /* ZERO_CHECK */;
+			targetProxy = 064D2021CE85478BB9E6FAF5 /* PBXContainerItemProxy */;
+		};
+		66661859262E481DBB69B531 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 0DE0C202AEDEA1EE745377B5 /* FloppyTurdGame */;
-			targetProxy = 141E3D85AD2E4115803970CC /* PBXContainerItemProxy */;
+			targetProxy = 513974ACB4DC46EAA1F086DD /* PBXContainerItemProxy */;
 		};
-		26D06C61B276419B865DE161 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = D9EF5759F53BF46D2676F7EB /* ZERO_CHECK */;
-			targetProxy = AA85BB0260C14D7DBCB40971 /* PBXContainerItemProxy */;
-		};
-		282EF47865314D42B54BEF8A /* PBXTargetDependency */ = {
+		73753380BBAB4232A61DBF43 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 0DE0C202AEDEA1EE745377B5 /* FloppyTurdGame */;
-			targetProxy = 185AC9C9B06A496E8D6EC32E /* PBXContainerItemProxy */;
+			targetProxy = 3814776A11F74F5C94F91542 /* PBXContainerItemProxy */;
 		};
-		2C81B40D01E54DF9B19F5C06 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = D9EF5759F53BF46D2676F7EB /* ZERO_CHECK */;
-			targetProxy = 823088A77322462FA21E0C10 /* PBXContainerItemProxy */;
-		};
-		7F57A6C38A9844A78FBACFB3 /* PBXTargetDependency */ = {
+		C903C2CA7251432EA657F659 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 8EFA9AA7BA22AECA1336F161 /* FloppyTurd */;
-			targetProxy = 8557A6AB051C4AC58F1CD850 /* PBXContainerItemProxy */;
+			targetProxy = B17EB54659AE454387B0AF0D /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		04715A1FCC94471D983DBA26 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ARCHS = x86_64;
-				"ARCHS[sdk=iphonesimulator*]" = x86_64;
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_ENABLE_OBJC_ARC = YES;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				ENABLE_BITCODE = NO;
-				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
-				SDKROOT = /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.2.sdk;
-				SWIFT_COMPILATION_MODE = wholemodule;
-				SWIFT_VERSION = 6.0;
-				SYMROOT = /Users/aimac/Development/FloppyTurd/build_ios/build;
-				"VALID_ARCHS[sdk=iphonesimulator*]" = x86_64;
-			};
-			name = Release;
-		};
-		0DD19D1957434CFB81CB4E25 /* MinSizeRel */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ARCHS = x86_64;
-				"ARCHS[sdk=iphonesimulator*]" = x86_64;
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_ENABLE_OBJC_ARC = YES;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				ENABLE_BITCODE = NO;
-				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
-				SDKROOT = /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.2.sdk;
-				SWIFT_COMPILATION_MODE = wholemodule;
-				SWIFT_VERSION = 6.0;
-				SYMROOT = /Users/aimac/Development/FloppyTurd/build_ios/build;
-				"VALID_ARCHS[sdk=iphonesimulator*]" = x86_64;
-			};
-			name = MinSizeRel;
-		};
-		255D69B8CEA4467C81C2A263 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				COMBINE_HIDPI_IMAGES = YES;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
-				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				INSTALL_PATH = "";
-				OTHER_LDFLAGS = ("","$(inherited)");
-				OTHER_REZFLAGS = "";
-				PRODUCT_NAME = ALL_BUILD;
-				SECTORDER_FLAGS = "";
-				USE_HEADERMAP = NO;
-				WARNING_CFLAGS = ("$(inherited)");
-			};
-			name = Debug;
-		};
-		2D1E3C98307841C996F9A922 /* RelWithDebInfo */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				COMBINE_HIDPI_IMAGES = YES;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
-				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				INSTALL_PATH = "";
-				OTHER_LDFLAGS = ("","$(inherited)");
-				OTHER_REZFLAGS = "";
-				PRODUCT_NAME = ZERO_CHECK;
-				SECTORDER_FLAGS = "";
-				USE_HEADERMAP = NO;
-				WARNING_CFLAGS = ("$(inherited)");
-			};
-			name = RelWithDebInfo;
-		};
-		3C60F2E97843465DA3C5C170 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				COMBINE_HIDPI_IMAGES = YES;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
-				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				INSTALL_PATH = "";
-				OTHER_LDFLAGS = ("","$(inherited)");
-				OTHER_REZFLAGS = "";
-				PRODUCT_NAME = ZERO_CHECK;
-				SECTORDER_FLAGS = "";
-				USE_HEADERMAP = NO;
-				WARNING_CFLAGS = ("$(inherited)");
-			};
-			name = Debug;
-		};
-		60444D40123846C5945DC4E3 /* MinSizeRel */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = x86_64;
-				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_MODULE_DEBUGGING = YES;
-				COMBINE_HIDPI_IMAGES = YES;
-				CONFIGURATION_BUILD_DIR = "/Users/aimac/Development/FloppyTurd/build_ios/MinSizeRel${EFFECTIVE_PLATFORM_NAME}";
-				EXECUTABLE_PREFIX = lib;
-				EXECUTABLE_SUFFIX = .a;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
-				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
-				GCC_OPTIMIZATION_LEVEL = s;
-				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","'PLATFORM_IOS=1'","'PLATFORM_MOBILE=1'",__APPLE__,"'TARGET_OS_IOS=1'",SWIFT_CPP_INTEROP_ENABLED,"$(inherited)");
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				HEADER_SEARCH_PATHS = (/Users/aimac/Development/FloppyTurd/src/Engine/Core,/Users/aimac/Development/FloppyTurd/src/Engine/Events,/Users/aimac/Development/FloppyTurd/src/Engine/Platform,/Users/aimac/Development/FloppyTurd/src/Engine/Input,/Users/aimac/Development/FloppyTurd/src/Engine/Assets,/Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game,/Users/aimac/Development/FloppyTurd/src/Engine,/Users/aimac/Development/FloppyTurd/src/Engine/Configuration,/Users/aimac/Development/FloppyTurd/src/Engine/Utility,/Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config,"$(inherited)");
-				INSTALL_PATH = "";
-				LIBRARY_STYLE = STATIC;
-				ONLY_ACTIVE_ARCH = NO;
-				OTHER_CPLUSPLUSFLAGS = "    -DNDEBUG '-std=c++20' '-std=c++20' ";
-				OTHER_LIBTOOLFLAGS = ("");
-				OTHER_REZFLAGS = "";
-				PRODUCT_NAME = FloppyTurdGame;
-				SECTORDER_FLAGS = "";
-				SWIFT_VERSION = 6.0;
-				TARGET_TEMP_DIR = "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurdGame.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
-				USE_HEADERMAP = NO;
-				WARNING_CFLAGS = ("$(inherited)");
-			};
-			name = MinSizeRel;
-		};
-		6EA8659D4A5141D5A9BBCC19 /* Release */ = {
+		02F2445845D846EF8FE9C318 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -1010,54 +885,39 @@ fi
 			};
 			name = Release;
 		};
-		7147E54504E5448AB52C5358 /* RelWithDebInfo */ = {
+		1BC9B4C90B7546F78843123C /* RelWithDebInfo */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ARCHS = x86_64;
-				BUNDLE_VERSION = 1.0.0;
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_MODULE_DEBUGGING = YES;
-				CODE_SIGNING_ALLOWED = YES;
-				CODE_SIGNING_REQUIRED = YES;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CONFIGURATION_BUILD_DIR = "/Users/aimac/Development/FloppyTurd/build_ios/Debug-iphonesimulator/RelWithDebInfo";
-				DEVELOPMENT_TEAM = 86886N72J8;
-				EXECUTABLE_PREFIX = "";
-				EXECUTABLE_SUFFIX = "";
+				CONFIGURATION_BUILD_DIR = "/Users/aimac/Development/FloppyTurd/build_ios/RelWithDebInfo${EFFECTIVE_PLATFORM_NAME}";
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
-				GCC_OPTIMIZATION_LEVEL = 1;
+				GCC_OPTIMIZATION_LEVEL = 2;
 				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","'PLATFORM_IOS=1'","'PLATFORM_MOBILE=1'",__APPLE__,"'TARGET_OS_IOS=1'",SWIFT_CPP_INTEROP_ENABLED,"$(inherited)");
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				HEADER_SEARCH_PATHS = (/Users/aimac/Development/FloppyTurd/src/Engine/Core,/Users/aimac/Development/FloppyTurd/src/Engine/Events,/Users/aimac/Development/FloppyTurd/src/Engine/Platform,/Users/aimac/Development/FloppyTurd/src/Engine/Input,/Users/aimac/Development/FloppyTurd/src/Engine/Assets,/Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game,/Users/aimac/Development/FloppyTurd/src/Engine,/Users/aimac/Development/FloppyTurd/src/iOS,/Users/aimac/Development/FloppyTurd/src/iOS/Audio,/Users/aimac/Development/FloppyTurd/src/iOS/Input,/Users/aimac/Development/FloppyTurd/src/iOS/Logging,/Users/aimac/Development/FloppyTurd/src/iOS/Rendering,/Users/aimac/Development/FloppyTurd/src/iOS/Threading,/Users/aimac/Development/FloppyTurd/src/FloppyTurd,/Users/aimac/Development/FloppyTurd/src/FloppyTurd/Components,/Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config,/Users/aimac/Development/FloppyTurd/src/FloppyTurd/Entities,/Users/aimac/Development/FloppyTurd/src/FloppyTurd/States,/Users/aimac/Development/FloppyTurd/src/Engine/Configuration,/Users/aimac/Development/FloppyTurd/src/Engine/Utility,"$(inherited)");
-				INFOPLIST_FILE = /Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/FloppyTurd.dir/Info.plist;
+				HEADER_SEARCH_PATHS = (/Users/aimac/Development/FloppyTurd/src/Engine/Core,/Users/aimac/Development/FloppyTurd/src/Engine/Events,/Users/aimac/Development/FloppyTurd/src/Engine/Platform,/Users/aimac/Development/FloppyTurd/src/Engine/Input,/Users/aimac/Development/FloppyTurd/src/Engine/Assets,/Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game,/Users/aimac/Development/FloppyTurd/src/Engine,/Users/aimac/Development/FloppyTurd/src/Engine/Configuration,/Users/aimac/Development/FloppyTurd/src/Engine/Utility,/Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config,"$(inherited)");
 				INSTALL_PATH = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LIBRARY_STYLE = STATIC;
 				ONLY_ACTIVE_ARCH = NO;
-				OTHER_CPLUSPLUSFLAGS = "       -DNDEBUG '-std=c++20' '-std=c++20' -Wall -Wextra -Wno-deprecated-declarations ";
-				OTHER_LDFLAGS = ("","/Users/aimac/Development/FloppyTurd/build_ios/RelWithDebInfo${EFFECTIVE_PLATFORM_NAME}/libFloppyTurdGame.a","-framework Foundation","-framework UIKit","-framework Metal","-framework MetalKit","-framework MetalPerformanceShaders","-framework QuartzCore","-framework CoreGraphics","-framework CoreText","-framework CoreAudio","-framework AudioToolbox","-framework AVFoundation","-framework GameController","-framework CoreHaptics","-framework ImageIO","-framework MobileCoreServices","/Users/aimac/Development/FloppyTurd/build_ios/RelWithDebInfo${EFFECTIVE_PLATFORM_NAME}/libFloppyTurdGame.a","$(inherited)");
+				OTHER_CPLUSPLUSFLAGS = "       -DNDEBUG '-std=c++20' '-std=c++20' ";
+				OTHER_LIBTOOLFLAGS = ("");
 				OTHER_REZFLAGS = "";
-				OTHER_SWIFT_FLAGS = ("-cxx-interoperability-mode=default -swift-version 6.0       -swift-version 6.0 '-cxx-interoperability-mode=default' -swift-version '6.0' -warnings-as-errors ","$(inherited)");
-				PRODUCT_BUNDLE_IDENTIFIER = com.floppyturd.engine;
-				PRODUCT_NAME = FloppyTurd;
+				PRODUCT_NAME = FloppyTurdGame;
 				SECTORDER_FLAGS = "";
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = (PLATFORM_IOS,PLATFORM_MOBILE,__APPLE__,TARGET_OS_IOS,SWIFT_CPP_INTEROP_ENABLED,"$(inherited)");
-				SWIFT_INCLUDE_PATHS = (/Users/aimac/Development/FloppyTurd/src/Engine/Core,/Users/aimac/Development/FloppyTurd/src/Engine/Events,/Users/aimac/Development/FloppyTurd/src/Engine/Platform,/Users/aimac/Development/FloppyTurd/src/Engine/Input,/Users/aimac/Development/FloppyTurd/src/Engine/Assets,/Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game,/Users/aimac/Development/FloppyTurd/src/Engine,/Users/aimac/Development/FloppyTurd/src/iOS,/Users/aimac/Development/FloppyTurd/src/iOS/Audio,/Users/aimac/Development/FloppyTurd/src/iOS/Input,/Users/aimac/Development/FloppyTurd/src/iOS/Logging,/Users/aimac/Development/FloppyTurd/src/iOS/Rendering,/Users/aimac/Development/FloppyTurd/src/iOS/Threading,/Users/aimac/Development/FloppyTurd/src/FloppyTurd,/Users/aimac/Development/FloppyTurd/src/FloppyTurd/Components,/Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config,/Users/aimac/Development/FloppyTurd/src/FloppyTurd/Entities,/Users/aimac/Development/FloppyTurd/src/FloppyTurd/States,/Users/aimac/Development/FloppyTurd/src/Engine/Configuration,/Users/aimac/Development/FloppyTurd/src/Engine/Utility,"$(inherited)");
-				SWIFT_OBJC_INTERFACE_HEADER_NAME = "FloppyTurd-Swift.h";
 				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TARGET_TEMP_DIR = "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
-				UI_REQUIRED_DEVICE_CAPABILITIES = arm64;
-				UI_SUPPORTED_INTERFACE_ORIENTATIONS = "UIInterfaceOrientationPortrait;UIInterfaceOrientationLandscapeLeft;UIInterfaceOrientationLandscapeRight";
+				TARGET_TEMP_DIR = "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurdGame.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
 				USE_HEADERMAP = NO;
 				WARNING_CFLAGS = ("$(inherited)");
 			};
 			name = RelWithDebInfo;
 		};
-		72DCD71A025444AD81C21643 /* Release */ = {
+		2140FC8DA7BB4CC683390BBC /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -1077,7 +937,7 @@ fi
 			};
 			name = Release;
 		};
-		7A594C6A701D4A7E8E1459EB /* Release */ = {
+		232E4091770142EDAC7FA4C5 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -1097,59 +957,27 @@ fi
 			};
 			name = Release;
 		};
-		A4684860F7D44C018F782161 /* Release */ = {
+		3244053C26F14342BB9E5D0A /* MinSizeRel */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = x86_64;
-				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_MODULE_DEBUGGING = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				CONFIGURATION_BUILD_DIR = "/Users/aimac/Development/FloppyTurd/build_ios/Release${EFFECTIVE_PLATFORM_NAME}";
-				EXECUTABLE_PREFIX = lib;
-				EXECUTABLE_SUFFIX = .a;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
-				GCC_OPTIMIZATION_LEVEL = 3;
-				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","'PLATFORM_IOS=1'","'PLATFORM_MOBILE=1'",__APPLE__,"'TARGET_OS_IOS=1'",SWIFT_CPP_INTEROP_ENABLED,"$(inherited)");
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				HEADER_SEARCH_PATHS = (/Users/aimac/Development/FloppyTurd/src/Engine/Core,/Users/aimac/Development/FloppyTurd/src/Engine/Events,/Users/aimac/Development/FloppyTurd/src/Engine/Platform,/Users/aimac/Development/FloppyTurd/src/Engine/Input,/Users/aimac/Development/FloppyTurd/src/Engine/Assets,/Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game,/Users/aimac/Development/FloppyTurd/src/Engine,/Users/aimac/Development/FloppyTurd/src/Engine/Configuration,/Users/aimac/Development/FloppyTurd/src/Engine/Utility,/Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config,"$(inherited)");
 				INSTALL_PATH = "";
-				LIBRARY_STYLE = STATIC;
-				ONLY_ACTIVE_ARCH = NO;
-				OTHER_CPLUSPLUSFLAGS = "    -DNDEBUG '-std=c++20' '-std=c++20' ";
-				OTHER_LIBTOOLFLAGS = ("");
+				OTHER_LDFLAGS = ("","$(inherited)");
 				OTHER_REZFLAGS = "";
-				PRODUCT_NAME = FloppyTurdGame;
+				PRODUCT_NAME = ZERO_CHECK;
 				SECTORDER_FLAGS = "";
-				SWIFT_VERSION = 6.0;
-				TARGET_TEMP_DIR = "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurdGame.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
 				USE_HEADERMAP = NO;
 				WARNING_CFLAGS = ("$(inherited)");
 			};
-			name = Release;
+			name = MinSizeRel;
 		};
-		A6D48525366B4B3DA2249EBD /* RelWithDebInfo */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ARCHS = x86_64;
-				"ARCHS[sdk=iphonesimulator*]" = x86_64;
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_ENABLE_OBJC_ARC = YES;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				ENABLE_BITCODE = NO;
-				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
-				SDKROOT = /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.2.sdk;
-				SWIFT_COMPILATION_MODE = wholemodule;
-				SWIFT_VERSION = 6.0;
-				SYMROOT = /Users/aimac/Development/FloppyTurd/build_ios/build;
-				"VALID_ARCHS[sdk=iphonesimulator*]" = x86_64;
-			};
-			name = RelWithDebInfo;
-		};
-		B5E423C2FDA846EEA0EB5E2A /* Debug */ = {
+		336C9AAA0072408AA570613E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -1196,78 +1024,7 @@ fi
 			};
 			name = Debug;
 		};
-		C69D5AE03488411EABEB6DC4 /* MinSizeRel */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				COMBINE_HIDPI_IMAGES = YES;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
-				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				INSTALL_PATH = "";
-				OTHER_LDFLAGS = ("","$(inherited)");
-				OTHER_REZFLAGS = "";
-				PRODUCT_NAME = ZERO_CHECK;
-				SECTORDER_FLAGS = "";
-				USE_HEADERMAP = NO;
-				WARNING_CFLAGS = ("$(inherited)");
-			};
-			name = MinSizeRel;
-		};
-		C7AFA620BCE04A319DA20F2A /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ARCHS = x86_64;
-				"ARCHS[sdk=iphonesimulator*]" = x86_64;
-				CLANG_CXX_LIBRARY = "libc++";
-				CLANG_ENABLE_OBJC_ARC = YES;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGNING_REQUIRED = NO;
-				ENABLE_BITCODE = NO;
-				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
-				SDKROOT = /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.2.sdk;
-				SWIFT_VERSION = 6.0;
-				SYMROOT = /Users/aimac/Development/FloppyTurd/build_ios/build;
-				"VALID_ARCHS[sdk=iphonesimulator*]" = x86_64;
-			};
-			name = Debug;
-		};
-		D28265CAB221439896D356C3 /* RelWithDebInfo */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = x86_64;
-				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_MODULE_DEBUGGING = YES;
-				COMBINE_HIDPI_IMAGES = YES;
-				CONFIGURATION_BUILD_DIR = "/Users/aimac/Development/FloppyTurd/build_ios/RelWithDebInfo${EFFECTIVE_PLATFORM_NAME}";
-				EXECUTABLE_PREFIX = lib;
-				EXECUTABLE_SUFFIX = .a;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
-				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
-				GCC_OPTIMIZATION_LEVEL = 2;
-				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","'PLATFORM_IOS=1'","'PLATFORM_MOBILE=1'",__APPLE__,"'TARGET_OS_IOS=1'",SWIFT_CPP_INTEROP_ENABLED,"$(inherited)");
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				HEADER_SEARCH_PATHS = (/Users/aimac/Development/FloppyTurd/src/Engine/Core,/Users/aimac/Development/FloppyTurd/src/Engine/Events,/Users/aimac/Development/FloppyTurd/src/Engine/Platform,/Users/aimac/Development/FloppyTurd/src/Engine/Input,/Users/aimac/Development/FloppyTurd/src/Engine/Assets,/Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game,/Users/aimac/Development/FloppyTurd/src/Engine,/Users/aimac/Development/FloppyTurd/src/Engine/Configuration,/Users/aimac/Development/FloppyTurd/src/Engine/Utility,/Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config,"$(inherited)");
-				INSTALL_PATH = "";
-				LIBRARY_STYLE = STATIC;
-				ONLY_ACTIVE_ARCH = NO;
-				OTHER_CPLUSPLUSFLAGS = "       -DNDEBUG '-std=c++20' '-std=c++20' ";
-				OTHER_LIBTOOLFLAGS = ("");
-				OTHER_REZFLAGS = "";
-				PRODUCT_NAME = FloppyTurdGame;
-				SECTORDER_FLAGS = "";
-				SWIFT_VERSION = 6.0;
-				TARGET_TEMP_DIR = "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurdGame.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
-				USE_HEADERMAP = NO;
-				WARNING_CFLAGS = ("$(inherited)");
-			};
-			name = RelWithDebInfo;
-		};
-		E7E5F1D3622946D583AF5E28 /* MinSizeRel */ = {
+		3889301B02834DD7990599A9 /* MinSizeRel */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -1287,7 +1044,262 @@ fi
 			};
 			name = MinSizeRel;
 		};
-		E98A6E0AAB2A4D5E90297D42 /* MinSizeRel */ = {
+		3A72C03E038840658D339BFF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = x86_64;
+				"ARCHS[sdk=iphonesimulator*]" = x86_64;
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				ENABLE_BITCODE = NO;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				SDKROOT = /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.2.sdk;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 6.0;
+				SYMROOT = /Users/aimac/Development/FloppyTurd/build_ios/build;
+				"VALID_ARCHS[sdk=iphonesimulator*]" = x86_64;
+			};
+			name = Release;
+		};
+		55EE0697A04943E7A8CC9558 /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = x86_64;
+				"ARCHS[sdk=iphonesimulator*]" = x86_64;
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				ENABLE_BITCODE = NO;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				SDKROOT = /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.2.sdk;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 6.0;
+				SYMROOT = /Users/aimac/Development/FloppyTurd/build_ios/build;
+				"VALID_ARCHS[sdk=iphonesimulator*]" = x86_64;
+			};
+			name = RelWithDebInfo;
+		};
+		55FB14E3EFB64F398F390119 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ALL_BUILD;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Debug;
+		};
+		618B6B68344B4C8C9BB3CB20 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = x86_64;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_MODULE_DEBUGGING = YES;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "/Users/aimac/Development/FloppyTurd/build_ios/Release${EFFECTIVE_PLATFORM_NAME}";
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","'PLATFORM_IOS=1'","'PLATFORM_MOBILE=1'",__APPLE__,"'TARGET_OS_IOS=1'",SWIFT_CPP_INTEROP_ENABLED,"$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/Users/aimac/Development/FloppyTurd/src/Engine/Core,/Users/aimac/Development/FloppyTurd/src/Engine/Events,/Users/aimac/Development/FloppyTurd/src/Engine/Platform,/Users/aimac/Development/FloppyTurd/src/Engine/Input,/Users/aimac/Development/FloppyTurd/src/Engine/Assets,/Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game,/Users/aimac/Development/FloppyTurd/src/Engine,/Users/aimac/Development/FloppyTurd/src/Engine/Configuration,/Users/aimac/Development/FloppyTurd/src/Engine/Utility,/Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config,"$(inherited)");
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CPLUSPLUSFLAGS = "    -DNDEBUG '-std=c++20' '-std=c++20' ";
+				OTHER_LIBTOOLFLAGS = ("");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = FloppyTurdGame;
+				SECTORDER_FLAGS = "";
+				SWIFT_VERSION = 6.0;
+				TARGET_TEMP_DIR = "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurdGame.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Release;
+		};
+		6C8A44CF3EB6470AA2ED9157 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = x86_64;
+				"ARCHS[sdk=iphonesimulator*]" = x86_64;
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				ENABLE_BITCODE = NO;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				SDKROOT = /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.2.sdk;
+				SWIFT_VERSION = 6.0;
+				SYMROOT = /Users/aimac/Development/FloppyTurd/build_ios/build;
+				"VALID_ARCHS[sdk=iphonesimulator*]" = x86_64;
+			};
+			name = Debug;
+		};
+		705650F713C54BE095E8C66F /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = x86_64;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_MODULE_DEBUGGING = YES;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "/Users/aimac/Development/FloppyTurd/build_ios/MinSizeRel${EFFECTIVE_PLATFORM_NAME}";
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","'PLATFORM_IOS=1'","'PLATFORM_MOBILE=1'",__APPLE__,"'TARGET_OS_IOS=1'",SWIFT_CPP_INTEROP_ENABLED,"$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/Users/aimac/Development/FloppyTurd/src/Engine/Core,/Users/aimac/Development/FloppyTurd/src/Engine/Events,/Users/aimac/Development/FloppyTurd/src/Engine/Platform,/Users/aimac/Development/FloppyTurd/src/Engine/Input,/Users/aimac/Development/FloppyTurd/src/Engine/Assets,/Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game,/Users/aimac/Development/FloppyTurd/src/Engine,/Users/aimac/Development/FloppyTurd/src/Engine/Configuration,/Users/aimac/Development/FloppyTurd/src/Engine/Utility,/Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config,"$(inherited)");
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CPLUSPLUSFLAGS = "    -DNDEBUG '-std=c++20' '-std=c++20' ";
+				OTHER_LIBTOOLFLAGS = ("");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = FloppyTurdGame;
+				SECTORDER_FLAGS = "";
+				SWIFT_VERSION = 6.0;
+				TARGET_TEMP_DIR = "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurdGame.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = MinSizeRel;
+		};
+		90C0C27868114DFBB79F2CF6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = x86_64;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_MODULE_DEBUGGING = YES;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "/Users/aimac/Development/FloppyTurd/build_ios/Debug${EFFECTIVE_PLATFORM_NAME}";
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","'DEBUG=1'","'_DEBUG=1'","'PLATFORM_IOS=1'","'PLATFORM_MOBILE=1'",__APPLE__,"'TARGET_OS_IOS=1'",SWIFT_CPP_INTEROP_ENABLED,"$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				HEADER_SEARCH_PATHS = (/Users/aimac/Development/FloppyTurd/src/Engine/Core,/Users/aimac/Development/FloppyTurd/src/Engine/Events,/Users/aimac/Development/FloppyTurd/src/Engine/Platform,/Users/aimac/Development/FloppyTurd/src/Engine/Input,/Users/aimac/Development/FloppyTurd/src/Engine/Assets,/Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game,/Users/aimac/Development/FloppyTurd/src/Engine,/Users/aimac/Development/FloppyTurd/src/Engine/Configuration,/Users/aimac/Development/FloppyTurd/src/Engine/Utility,/Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config,"$(inherited)");
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CPLUSPLUSFLAGS = "   '-std=c++20' '-std=c++20' ";
+				OTHER_LIBTOOLFLAGS = ("");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = FloppyTurdGame;
+				SECTORDER_FLAGS = "";
+				SWIFT_VERSION = 6.0;
+				TARGET_TEMP_DIR = "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurdGame.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Debug;
+		};
+		98A03D149BF0459F83C35A76 /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ZERO_CHECK;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = RelWithDebInfo;
+		};
+		A7ACB59BF931403BA0731134 /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ALL_BUILD;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = RelWithDebInfo;
+		};
+		B3F7680C172E49EFA891561E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ZERO_CHECK;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Debug;
+		};
+		BA0AEEBB9E734624B318AB82 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = x86_64;
+				"ARCHS[sdk=iphonesimulator*]" = x86_64;
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				ENABLE_BITCODE = NO;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				SDKROOT = /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.2.sdk;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 6.0;
+				SYMROOT = /Users/aimac/Development/FloppyTurd/build_ios/build;
+				"VALID_ARCHS[sdk=iphonesimulator*]" = x86_64;
+			};
+			name = MinSizeRel;
+		};
+		EF8CDADCEB754F97BC3C960B /* MinSizeRel */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -1334,53 +1346,48 @@ fi
 			};
 			name = MinSizeRel;
 		};
-		EDED788F7D8B4B22B5A7E7A2 /* Debug */ = {
+		FAF9025401BD48149EC9528A /* RelWithDebInfo */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ARCHS = x86_64;
+				BUNDLE_VERSION = 1.0.0;
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_MODULE_DEBUGGING = YES;
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGNING_REQUIRED = YES;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CONFIGURATION_BUILD_DIR = "/Users/aimac/Development/FloppyTurd/build_ios/Debug${EFFECTIVE_PLATFORM_NAME}";
-				EXECUTABLE_PREFIX = lib;
-				EXECUTABLE_SUFFIX = .a;
+				CONFIGURATION_BUILD_DIR = "/Users/aimac/Development/FloppyTurd/build_ios/Debug-iphonesimulator/RelWithDebInfo";
+				DEVELOPMENT_TEAM = 86886N72J8;
+				EXECUTABLE_PREFIX = "";
+				EXECUTABLE_SUFFIX = "";
 				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","'DEBUG=1'","'_DEBUG=1'","'PLATFORM_IOS=1'","'PLATFORM_MOBILE=1'",__APPLE__,"'TARGET_OS_IOS=1'",SWIFT_CPP_INTEROP_ENABLED,"$(inherited)");
+				GCC_OPTIMIZATION_LEVEL = 1;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","'PLATFORM_IOS=1'","'PLATFORM_MOBILE=1'",__APPLE__,"'TARGET_OS_IOS=1'",SWIFT_CPP_INTEROP_ENABLED,"$(inherited)");
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				HEADER_SEARCH_PATHS = (/Users/aimac/Development/FloppyTurd/src/Engine/Core,/Users/aimac/Development/FloppyTurd/src/Engine/Events,/Users/aimac/Development/FloppyTurd/src/Engine/Platform,/Users/aimac/Development/FloppyTurd/src/Engine/Input,/Users/aimac/Development/FloppyTurd/src/Engine/Assets,/Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game,/Users/aimac/Development/FloppyTurd/src/Engine,/Users/aimac/Development/FloppyTurd/src/Engine/Configuration,/Users/aimac/Development/FloppyTurd/src/Engine/Utility,/Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config,"$(inherited)");
+				HEADER_SEARCH_PATHS = (/Users/aimac/Development/FloppyTurd/src/Engine/Core,/Users/aimac/Development/FloppyTurd/src/Engine/Events,/Users/aimac/Development/FloppyTurd/src/Engine/Platform,/Users/aimac/Development/FloppyTurd/src/Engine/Input,/Users/aimac/Development/FloppyTurd/src/Engine/Assets,/Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game,/Users/aimac/Development/FloppyTurd/src/Engine,/Users/aimac/Development/FloppyTurd/src/iOS,/Users/aimac/Development/FloppyTurd/src/iOS/Audio,/Users/aimac/Development/FloppyTurd/src/iOS/Input,/Users/aimac/Development/FloppyTurd/src/iOS/Logging,/Users/aimac/Development/FloppyTurd/src/iOS/Rendering,/Users/aimac/Development/FloppyTurd/src/iOS/Threading,/Users/aimac/Development/FloppyTurd/src/FloppyTurd,/Users/aimac/Development/FloppyTurd/src/FloppyTurd/Components,/Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config,/Users/aimac/Development/FloppyTurd/src/FloppyTurd/Entities,/Users/aimac/Development/FloppyTurd/src/FloppyTurd/States,/Users/aimac/Development/FloppyTurd/src/Engine/Configuration,/Users/aimac/Development/FloppyTurd/src/Engine/Utility,"$(inherited)");
+				INFOPLIST_FILE = /Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/FloppyTurd.dir/Info.plist;
 				INSTALL_PATH = "";
-				LIBRARY_STYLE = STATIC;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				ONLY_ACTIVE_ARCH = NO;
-				OTHER_CPLUSPLUSFLAGS = "   '-std=c++20' '-std=c++20' ";
-				OTHER_LIBTOOLFLAGS = ("");
+				OTHER_CPLUSPLUSFLAGS = "       -DNDEBUG '-std=c++20' '-std=c++20' -Wall -Wextra -Wno-deprecated-declarations ";
+				OTHER_LDFLAGS = ("","/Users/aimac/Development/FloppyTurd/build_ios/RelWithDebInfo${EFFECTIVE_PLATFORM_NAME}/libFloppyTurdGame.a","-framework Foundation","-framework UIKit","-framework Metal","-framework MetalKit","-framework MetalPerformanceShaders","-framework QuartzCore","-framework CoreGraphics","-framework CoreText","-framework CoreAudio","-framework AudioToolbox","-framework AVFoundation","-framework GameController","-framework CoreHaptics","-framework ImageIO","-framework MobileCoreServices","/Users/aimac/Development/FloppyTurd/build_ios/RelWithDebInfo${EFFECTIVE_PLATFORM_NAME}/libFloppyTurdGame.a","$(inherited)");
 				OTHER_REZFLAGS = "";
-				PRODUCT_NAME = FloppyTurdGame;
+				OTHER_SWIFT_FLAGS = ("-cxx-interoperability-mode=default -swift-version 6.0       -swift-version 6.0 '-cxx-interoperability-mode=default' -swift-version '6.0' -warnings-as-errors ","$(inherited)");
+				PRODUCT_BUNDLE_IDENTIFIER = com.floppyturd.engine;
+				PRODUCT_NAME = FloppyTurd;
 				SECTORDER_FLAGS = "";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = (PLATFORM_IOS,PLATFORM_MOBILE,__APPLE__,TARGET_OS_IOS,SWIFT_CPP_INTEROP_ENABLED,"$(inherited)");
+				SWIFT_INCLUDE_PATHS = (/Users/aimac/Development/FloppyTurd/src/Engine/Core,/Users/aimac/Development/FloppyTurd/src/Engine/Events,/Users/aimac/Development/FloppyTurd/src/Engine/Platform,/Users/aimac/Development/FloppyTurd/src/Engine/Input,/Users/aimac/Development/FloppyTurd/src/Engine/Assets,/Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game,/Users/aimac/Development/FloppyTurd/src/Engine,/Users/aimac/Development/FloppyTurd/src/iOS,/Users/aimac/Development/FloppyTurd/src/iOS/Audio,/Users/aimac/Development/FloppyTurd/src/iOS/Input,/Users/aimac/Development/FloppyTurd/src/iOS/Logging,/Users/aimac/Development/FloppyTurd/src/iOS/Rendering,/Users/aimac/Development/FloppyTurd/src/iOS/Threading,/Users/aimac/Development/FloppyTurd/src/FloppyTurd,/Users/aimac/Development/FloppyTurd/src/FloppyTurd/Components,/Users/aimac/Development/FloppyTurd/src/FloppyTurd/Config,/Users/aimac/Development/FloppyTurd/src/FloppyTurd/Entities,/Users/aimac/Development/FloppyTurd/src/FloppyTurd/States,/Users/aimac/Development/FloppyTurd/src/Engine/Configuration,/Users/aimac/Development/FloppyTurd/src/Engine/Utility,"$(inherited)");
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "FloppyTurd-Swift.h";
 				SWIFT_VERSION = 6.0;
-				TARGET_TEMP_DIR = "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurdGame.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
-				USE_HEADERMAP = NO;
-				WARNING_CFLAGS = ("$(inherited)");
-			};
-			name = Debug;
-		};
-		EF0063CFA0414785807339EA /* RelWithDebInfo */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				COMBINE_HIDPI_IMAGES = YES;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
-				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				INSTALL_PATH = "";
-				OTHER_LDFLAGS = ("","$(inherited)");
-				OTHER_REZFLAGS = "";
-				PRODUCT_NAME = ALL_BUILD;
-				SECTORDER_FLAGS = "";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGET_TEMP_DIR = "/Users/aimac/Development/FloppyTurd/build_ios/build/FloppyTurd.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				UI_REQUIRED_DEVICE_CAPABILITIES = arm64;
+				UI_SUPPORTED_INTERFACE_ORIENTATIONS = "UIInterfaceOrientationPortrait;UIInterfaceOrientationLandscapeLeft;UIInterfaceOrientationLandscapeRight";
 				USE_HEADERMAP = NO;
 				WARNING_CFLAGS = ("$(inherited)");
 			};
@@ -1389,62 +1396,62 @@ fi
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		09732BB576034B94A940FD2C /* Build configuration list for PBXNativeTarget "FloppyTurd" */ = {
+		3CEA2D2981A44A2EAFD2D207 /* Build configuration list for PBXProject "FloppyTurd" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				B5E423C2FDA846EEA0EB5E2A /* Debug */,
-				6EA8659D4A5141D5A9BBCC19 /* Release */,
-				E98A6E0AAB2A4D5E90297D42 /* MinSizeRel */,
-				7147E54504E5448AB52C5358 /* RelWithDebInfo */,
+				6C8A44CF3EB6470AA2ED9157 /* Debug */,
+				3A72C03E038840658D339BFF /* Release */,
+				BA0AEEBB9E734624B318AB82 /* MinSizeRel */,
+				55EE0697A04943E7A8CC9558 /* RelWithDebInfo */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		35B3B328AA8C4F288FDA54AD /* Build configuration list for PBXNativeTarget "FloppyTurdGame" */ = {
+		52A0526BC9C243C59BB8E06C /* Build configuration list for PBXNativeTarget "FloppyTurd" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				EDED788F7D8B4B22B5A7E7A2 /* Debug */,
-				A4684860F7D44C018F782161 /* Release */,
-				60444D40123846C5945DC4E3 /* MinSizeRel */,
-				D28265CAB221439896D356C3 /* RelWithDebInfo */,
+				336C9AAA0072408AA570613E /* Debug */,
+				02F2445845D846EF8FE9C318 /* Release */,
+				EF8CDADCEB754F97BC3C960B /* MinSizeRel */,
+				FAF9025401BD48149EC9528A /* RelWithDebInfo */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		489F05EEC8B34F4092D2D399 /* Build configuration list for PBXAggregateTarget "ZERO_CHECK" */ = {
+		A276166029334ACA8A0FEA74 /* Build configuration list for PBXAggregateTarget "ZERO_CHECK" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				3C60F2E97843465DA3C5C170 /* Debug */,
-				7A594C6A701D4A7E8E1459EB /* Release */,
-				C69D5AE03488411EABEB6DC4 /* MinSizeRel */,
-				2D1E3C98307841C996F9A922 /* RelWithDebInfo */,
+				B3F7680C172E49EFA891561E /* Debug */,
+				232E4091770142EDAC7FA4C5 /* Release */,
+				3244053C26F14342BB9E5D0A /* MinSizeRel */,
+				98A03D149BF0459F83C35A76 /* RelWithDebInfo */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		56416D56A42C464784972CA3 /* Build configuration list for PBXProject "FloppyTurd" */ = {
+		BD0B6DD549C04DFDBF4228BF /* Build configuration list for PBXNativeTarget "FloppyTurdGame" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				C7AFA620BCE04A319DA20F2A /* Debug */,
-				04715A1FCC94471D983DBA26 /* Release */,
-				0DD19D1957434CFB81CB4E25 /* MinSizeRel */,
-				A6D48525366B4B3DA2249EBD /* RelWithDebInfo */,
+				90C0C27868114DFBB79F2CF6 /* Debug */,
+				618B6B68344B4C8C9BB3CB20 /* Release */,
+				705650F713C54BE095E8C66F /* MinSizeRel */,
+				1BC9B4C90B7546F78843123C /* RelWithDebInfo */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		A0F26185DEAE4B38AD72A620 /* Build configuration list for PBXAggregateTarget "ALL_BUILD" */ = {
+		E0FE662622BE4686AE4BE086 /* Build configuration list for PBXAggregateTarget "ALL_BUILD" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				255D69B8CEA4467C81C2A263 /* Debug */,
-				72DCD71A025444AD81C21643 /* Release */,
-				E7E5F1D3622946D583AF5E28 /* MinSizeRel */,
-				EF0063CFA0414785807339EA /* RelWithDebInfo */,
+				55FB14E3EFB64F398F390119 /* Debug */,
+				2140FC8DA7BB4CC683390BBC /* Release */,
+				3889301B02834DD7990599A9 /* MinSizeRel */,
+				A7ACB59BF931403BA0731134 /* RelWithDebInfo */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
 	};
-	rootObject = 1234ED269BF74908B12B84D6 /* Project object */;
+	rootObject = 3A6442CC62E5486AAEA9995E /* Project object */;
 }
