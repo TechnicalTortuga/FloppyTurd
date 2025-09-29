@@ -714,6 +714,9 @@ static NSString * const ACImageNameSamuraiturdletjump AC_SWIFT_PRIVATE = @"samur
 /// The "samuraiturdletshoot" asset catalog image resource.
 static NSString * const ACImageNameSamuraiturdletshoot AC_SWIFT_PRIVATE = @"samuraiturdletshoot";
 
+/// The "screenCurtains" asset catalog image resource.
+static NSString * const ACImageNameScreenCurtains AC_SWIFT_PRIVATE = @"screenCurtains";
+
 /// The "settingsbutton" asset catalog image resource.
 static NSString * const ACImageNameSettingsbutton AC_SWIFT_PRIVATE = @"settingsbutton";
 

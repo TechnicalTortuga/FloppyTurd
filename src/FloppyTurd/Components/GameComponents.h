@@ -753,6 +753,7 @@ using Gnosis::Entity;
         Gnosis::GNColor textHoverColor;
         int textLayer;  // Layer for text rendering
         float textOutlineWidth; // Outline width in pixels for raster text
+
         
         // Text centering properties
         bool centerTextHorizontally;  // Center text horizontally within button bounds

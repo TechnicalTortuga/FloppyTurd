@@ -1,6 +1,7 @@
 #include "ThreadingProxy.h"
 #include "../../Engine/Core/GNLog.h"
 #include "../../Engine/Configuration/ConfigManager.h"
+#include "../../FloppyTurd/Input/InputManager.h"
 #include <cstring>
 
 // Import Swift module for direct interop calls
@@ -313,6 +314,30 @@ namespace GameCore {
         cmd.data.textureMetadata = *metadata;
         s_instance->enqueueRenderCommand(cmd);
     }
+
+    void ThreadingProxy::enqueueLockOrientation() {
+        if (!s_instance) return;
+        RenderCommand cmd(CommandType::CMD_LOCK_ORIENTATION);
+        s_instance->enqueueRenderCommand(cmd);
+    }
+
+    void ThreadingProxy::enqueueUnlockOrientation() {
+        if (!s_instance) return;
+        RenderCommand cmd(CommandType::CMD_UNLOCK_ORIENTATION);
+        s_instance->enqueueRenderCommand(cmd);
+    }
+
+    void ThreadingProxy::enqueueLockToPortrait() {
+        if (!s_instance) return;
+        RenderCommand cmd(CommandType::CMD_LOCK_TO_PORTRAIT);
+        s_instance->enqueueRenderCommand(cmd);
+    }
+
+    void ThreadingProxy::enqueueLockToLandscape() {
+        if (!s_instance) return;
+        RenderCommand cmd(CommandType::CMD_LOCK_TO_LANDSCAPE);
+        s_instance->enqueueRenderCommand(cmd);
+    }
     
     // Audio command implementations
     void ThreadingProxy::enqueuePlayMusic(const char* musicName, float volume, int loopCount) {
@@ -518,24 +543,23 @@ namespace GameCore {
     // Touch input delegate implementations
     int ThreadingProxy::getTouchCount() {
         if (!s_instance) return 0;
-        // For now, return 1 if touch is down, 0 otherwise
-        // This can be expanded later for multi-touch support
-        int count = s_instance->m_isTouchDown ? 1 : 0;
+        int count = static_cast<int>(s_instance->m_touchData.size());
         if (count > 0) {
             GN_LOG_DEBUG("ThreadingProxy: getTouchCount() = %d", count);
         }
         return count;
     }
-    
+
     void ThreadingProxy::getTouchPosition(int touchIndex, float* x, float* y) {
-        if (!s_instance || touchIndex != 0) {
+        if (!s_instance || touchIndex < 0 || touchIndex >= static_cast<int>(s_instance->m_touchData.size())) {
             if (x) *x = 0.0f;
             if (y) *y = 0.0f;
             return;
         }
-        if (x) *x = s_instance->m_lastTouchX;
-        if (y) *y = s_instance->m_lastTouchY;
-        GN_LOG_DEBUG("ThreadingProxy: getTouchPosition(%d) = (%f, %f)", touchIndex, s_instance->m_lastTouchX, s_instance->m_lastTouchY);
+        const auto& touch = s_instance->m_touchData[touchIndex];
+        if (x) *x = touch.x;  // Normalized coordinates
+        if (y) *y = touch.y;  // Normalized coordinates
+        GN_LOG_DEBUG("ThreadingProxy: getTouchPosition(%d) = (%f, %f)", touchIndex, touch.x, touch.y);
     }
     
     bool ThreadingProxy::isTouchDown() {
@@ -571,14 +595,65 @@ namespace GameCore {
     
     void ThreadingProxy::updateTouchState(float x, float y, bool isDown, bool justPressed, bool justReleased) {
         if (!s_instance) return;
+
+        GN_LOG_INFO("🔗 ThreadingProxy: Touch update - pos(" + std::to_string(x) + ", " + std::to_string(y) + 
+                    ") down=" + std::to_string(isDown) + " pressed=" + std::to_string(justPressed) + 
+                    " released=" + std::to_string(justReleased));
+
+        // Store touch state for delegate-based access by InputManager
+        // NOTE: x,y are PIXEL coordinates from Swift, not normalized!
         s_instance->m_lastTouchX = x;
         s_instance->m_lastTouchY = y;
         s_instance->m_isTouchDown = isDown;
         s_instance->m_isTouchJustPressed = justPressed;
         s_instance->m_isTouchJustReleased = justReleased;
-        
+
+        // Store touch data in a format that can be accessed by delegates
+        // Clear existing touches and add the current one
+        s_instance->m_touchData.clear();
+        if (isDown || justPressed || justReleased) {
+            GameCore::TouchData touchData;
+            touchData.touchId = 0;  // Single touch for now
+
+            // Swift already sends device pixel coordinates, no scaling needed
+            auto& configManager = GameCore::ConfigManager::Instance();
+            const GameCore::ScreenInfo& screenInfo = configManager.GetCurrentScreenInfo();
+
+            // Swift coordinates are already in device pixels - use directly
+            float deviceX = x;
+            float deviceY = y;
+
+            // Store pixel coordinates directly (no normalization)
+            touchData.x = deviceX;  // Pixel X coordinate
+            touchData.y = deviceY;  // Pixel Y coordinate
+            touchData.rawX = deviceX;  // Device pixel X
+            touchData.rawY = deviceY;  // Device pixel Y
+
+            // Determine touch state
+            if (justPressed) {
+                touchData.state = GameCore::TouchState::PRESSED;
+            } else if (justReleased) {
+                touchData.state = GameCore::TouchState::RELEASED;
+            } else if (isDown) {
+                touchData.state = GameCore::TouchState::HELD;
+            } else {
+                touchData.state = GameCore::TouchState::NONE;
+            }
+
+            touchData.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::system_clock::now().time_since_epoch()).count();
+
+            s_instance->m_touchData.push_back(touchData);
+
+            GN_LOG_INFO("🔗 ThreadingProxy: Touch data stored - pixel(" + std::to_string(touchData.x) +
+                        ", " + std::to_string(touchData.y) + ") state=" + std::to_string((int)touchData.state) +
+                        " [PIXEL COORDS DIRECT]");
+        } else {
+            GN_LOG_INFO("🔗 ThreadingProxy: Touch data cleared - no active touch");
+        }
+
         if (justPressed) {
-            GN_LOG_INFO("🔥 ThreadingProxy: updateTouchState() - TOUCH PRESSED at (%f, %f)", x, y);
+            GN_LOG_INFO("🔥 ThreadingProxy: TOUCH PRESSED at (" + std::to_string(x) + ", " + std::to_string(y) + ") pixels");
         }
     }
     

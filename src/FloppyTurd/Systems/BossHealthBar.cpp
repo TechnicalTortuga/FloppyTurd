@@ -2,6 +2,7 @@
 #include "BossSystem.h"
 #include "../../Engine/Platform/PlatformDelegates.h"
 #include <cmath>
+#include <chrono>
 
 namespace GameCore {
 
@@ -24,7 +25,7 @@ BossHealthBar::~BossHealthBar() {
         if (m_healthFillEntity != 0) m_ecsSystem->DestroyEntity(m_healthFillEntity);
         if (m_hurtEffectEntity != 0) m_ecsSystem->DestroyEntity(m_hurtEffectEntity);
         if (m_bossNameEntity != 0) m_ecsSystem->DestroyEntity(m_bossNameEntity);
-        if (m_healthTextEntity != 0) m_ecsSystem->DestroyEntity(m_healthTextEntity);
+        // Health text entity removed as requested
     }
     GN_LOG_INFO("BossHealthBar destroyed");
 }
@@ -32,62 +33,77 @@ BossHealthBar::~BossHealthBar() {
 void BossHealthBar::CreateUIEntities() {
     if (!m_ecsSystem) return;
 
-    // Create background rectangle entity
+    // Get current screen dimensions for dynamic positioning
+    float screenWidth = 1179.0f;  // Default iPhone 16 width
+    float screenHeight = 2556.0f; // Default iPhone 16 height
+
+    // Calculate dynamic positions - adjust for landscape mode
+    bool isLandscape = (screenWidth > screenHeight);
+    float barX;
+    if (isLandscape) {
+        // Landscape mode: move boss bar to the right to avoid UI overlap
+        barX = screenWidth * 0.50f;  // 50% from left in landscape
+    } else {
+        // Portrait mode: original positioning
+        barX = screenWidth * 0.25f;  // 25% from left for better positioning
+    }
+    float barY = screenHeight * BAR_TOP_OFFSET;
+    float nameY = screenHeight * NAME_OFFSET;
+    float scale = 8.0f;  // 8x scale for proper visibility
+
+    GN_LOG_INFO("BossHealthBar positioning: screen(" + std::to_string((int)screenWidth) + "x" + std::to_string((int)screenHeight) +
+               "), isLandscape=" + std::to_string(isLandscape) + ", barX=" + std::to_string(barX));
+
+    // Create frame texture entity (background)
     m_backgroundEntity = m_ecsSystem->CreateEntity();
-    Transform bgTransform(Gnosis::GNVector2(BAR_X - BAR_WIDTH/2.0f, BAR_Y), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
-    m_ecsSystem->AddComponent<Transform>(m_backgroundEntity, bgTransform);
+    Transform frameTransform(Gnosis::GNVector2(barX, barY), 0.0f, Gnosis::GNVector2(scale, scale));
+    m_ecsSystem->AddComponent<Transform>(m_backgroundEntity, frameTransform);
 
-    UIShape bgShape(UIShapeType::Rectangle, BAR_WIDTH, BAR_HEIGHT, Gnosis::GNColor(40, 40, 70, 230), 15);
-    bgShape.visible = false; // Initially hidden
-    m_ecsSystem->AddComponent<UIShape>(m_backgroundEntity, bgShape);
+    UIElement frameElement("", "");
+    frameElement.normalTextureId = FRAME_TEXTURE_ID;
+    frameElement.visible = false; // Initially hidden
+    frameElement.textLayer = 15;
+    m_ecsSystem->AddComponent<UIElement>(m_backgroundEntity, frameElement);
 
-    // Create health fill entity
+    // Create health fill texture entity
     m_healthFillEntity = m_ecsSystem->CreateEntity();
-    Transform fillTransform(Gnosis::GNVector2(BAR_X - BAR_WIDTH/2.0f, BAR_Y), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
-    m_ecsSystem->AddComponent<Transform>(m_healthFillEntity, fillTransform);
+    Transform healthTransform(Gnosis::GNVector2(barX, barY), 0.0f, Gnosis::GNVector2(scale, scale));
+    m_ecsSystem->AddComponent<Transform>(m_healthFillEntity, healthTransform);
 
-    UIShape fillShape(UIShapeType::Rectangle, BAR_WIDTH, BAR_HEIGHT, Gnosis::GNColor(20, 128, 20, 255), 16);
-    fillShape.visible = false; // Initially hidden
-    m_ecsSystem->AddComponent<UIShape>(m_healthFillEntity, fillShape);
+    UIElement healthElement("", "");
+    healthElement.normalTextureId = "BossBarHealth"; // Pre-colored red texture
+    healthElement.visible = false; // Initially hidden
+    healthElement.textLayer = 16;
+    m_ecsSystem->AddComponent<UIElement>(m_healthFillEntity, healthElement);
 
-    // Create hurt effect entity
+    // Create hurt effect texture entity
     m_hurtEffectEntity = m_ecsSystem->CreateEntity();
-    Transform hurtTransform(Gnosis::GNVector2(BAR_X - BAR_WIDTH/2.0f, BAR_Y), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+    Transform hurtTransform(Gnosis::GNVector2(barX, barY), 0.0f, Gnosis::GNVector2(scale, scale));
     m_ecsSystem->AddComponent<Transform>(m_hurtEffectEntity, hurtTransform);
 
-    UIShape hurtShape(UIShapeType::Rectangle, BAR_WIDTH, BAR_HEIGHT, Gnosis::GNColor(128, 20, 20, 128), 17);
-    hurtShape.visible = false; // Initially hidden
-    m_ecsSystem->AddComponent<UIShape>(m_hurtEffectEntity, hurtShape);
+    UIElement hurtElement("", "");
+    hurtElement.normalTextureId = "BossBarHurt"; // Pre-colored white texture
+    hurtElement.visible = false; // Initially hidden
+    hurtElement.textLayer = 17;
+    m_ecsSystem->AddComponent<UIElement>(m_hurtEffectEntity, hurtElement);
 
-    // Create boss name text entity
+    // Create boss name text entity (positioned relative to scaled bar)
     m_bossNameEntity = m_ecsSystem->CreateEntity();
-    Transform nameTransform(Gnosis::GNVector2(BAR_X, NAME_Y), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+    Transform nameTransform(Gnosis::GNVector2(barX + (ORIGINAL_WIDTH * scale * 0.1f), nameY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
     m_ecsSystem->AddComponent<Transform>(m_bossNameEntity, nameTransform);
 
     UIElement nameElement(m_bossName, "");
-    nameElement.fontSize = TEXT_SCALE;
-    nameElement.textColor = Gnosis::GNColor(255, 255, 255, 255);
-    nameElement.centerTextHorizontally = true;
-    nameElement.centerTextVertically = true;
+    nameElement.fontSize = 88.0f; // Same as Main Menu global UI font size for mobile
+    nameElement.textColor = Gnosis::GNColor(255, 215, 0, 255); // Gold color like old implementation
+    nameElement.centerTextHorizontally = false; // Left-aligned like old implementation
+    nameElement.centerTextVertically = false;
     nameElement.textLayer = 18;
     nameElement.visible = false; // Initially hidden
     m_ecsSystem->AddComponent<UIElement>(m_bossNameEntity, nameElement);
 
-    // Create health text entity
-    m_healthTextEntity = m_ecsSystem->CreateEntity();
-    Transform textTransform(Gnosis::GNVector2(BAR_X, BAR_Y + BAR_HEIGHT + 20.0f), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
-    m_ecsSystem->AddComponent<Transform>(m_healthTextEntity, textTransform);
+    // Health percentage text removed as requested
 
-    UIElement textElement("100%", "");
-    textElement.fontSize = TEXT_SCALE * 0.8f;
-    textElement.textColor = Gnosis::GNColor(255, 255, 255, 255);
-    textElement.centerTextHorizontally = true;
-    textElement.centerTextVertically = true;
-    textElement.textLayer = 18;
-    textElement.visible = false; // Initially hidden
-    m_ecsSystem->AddComponent<UIElement>(m_healthTextEntity, textElement);
-
-    GN_LOG_INFO("BossHealthBar UI entities created");
+    GN_LOG_INFO("BossHealthBar UI entities created with texture-based design (matching old implementation)");
 }
 
 void BossHealthBar::Update(float deltaTime) {
@@ -132,10 +148,7 @@ void BossHealthBar::SetVisible(bool visible) {
         if (nameElement) nameElement->visible = visible;
     }
 
-    if (m_healthTextEntity != 0) {
-        UIElement* textElement = m_ecsSystem->GetComponent<UIElement>(m_healthTextEntity);
-        if (textElement) textElement->visible = visible;
-    }
+    // Health percentage text removed as requested
 }
 
 void BossHealthBar::UpdateUIEntities() {
@@ -143,34 +156,30 @@ void BossHealthBar::UpdateUIEntities() {
 
     bool shouldBeVisible = IsVisible();
 
-    // Update health fill width
+    // Update background visibility (always visible when boss bar is shown)
+    if (m_backgroundEntity != 0) {
+        UIElement* frameElement = m_ecsSystem->GetComponent<UIElement>(m_backgroundEntity);
+        if (frameElement) frameElement->visible = shouldBeVisible;
+    }
+
+    // Update health fill - BossBarHealth texture is already red
     if (m_healthFillEntity != 0) {
-        UIShape* fillShape = m_ecsSystem->GetComponent<UIShape>(m_healthFillEntity);
-        if (fillShape) {
-            fillShape->width = BAR_WIDTH * m_currentHealthPercent;
-            fillShape->visible = shouldBeVisible;
+        UIElement* healthElement = m_ecsSystem->GetComponent<UIElement>(m_healthFillEntity);
+        if (healthElement) {
+            healthElement->visible = shouldBeVisible && (m_currentHealthPercent > 0.0f);
         }
     }
 
-    // Update hurt effect
+    // Update damage effect - BossBarHurt texture is already white
     if (m_hurtEffectEntity != 0) {
-        UIShape* hurtShape = m_ecsSystem->GetComponent<UIShape>(m_hurtEffectEntity);
-        if (hurtShape) {
-            if (m_hurtFadeTimer > 0.0f && shouldBeVisible) {
-                hurtShape->visible = true;
-                hurtShape->width = BAR_WIDTH * m_shadowHealthPercent;
-                float fadeAlpha = (m_hurtFadeTimer / HURT_FADE_DURATION) * 128.0f;  // Max 128 alpha
-                hurtShape->color.a = static_cast<unsigned char>(fadeAlpha);
+        UIElement* hurtElement = m_ecsSystem->GetComponent<UIElement>(m_hurtEffectEntity);
+        if (hurtElement) {
+            if (m_hurtFadeTimer > 0.0f && shouldBeVisible && m_shadowHealthPercent > m_currentHealthPercent) {
+                hurtElement->visible = true;
             } else {
-                hurtShape->visible = false;
+                hurtElement->visible = false;
             }
         }
-    }
-
-    // Update background visibility
-    if (m_backgroundEntity != 0) {
-        UIShape* bgShape = m_ecsSystem->GetComponent<UIShape>(m_backgroundEntity);
-        if (bgShape) bgShape->visible = shouldBeVisible;
     }
 
     // Update boss name visibility
@@ -179,15 +188,7 @@ void BossHealthBar::UpdateUIEntities() {
         if (nameElement) nameElement->visible = shouldBeVisible;
     }
 
-    // Update health text
-    if (m_healthTextEntity != 0) {
-        UIElement* textElement = m_ecsSystem->GetComponent<UIElement>(m_healthTextEntity);
-        if (textElement) {
-            int healthPercentInt = static_cast<int>(m_currentHealthPercent * 100.0f);
-            textElement->buttonText = std::to_string(healthPercentInt) + "%";
-            textElement->visible = shouldBeVisible;
-        }
-    }
+    // Health percentage text removed as requested
 }
 
 bool BossHealthBar::IsVisible() const {

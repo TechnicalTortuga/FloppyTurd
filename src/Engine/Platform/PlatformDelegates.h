@@ -122,7 +122,13 @@ namespace GameCore {
         CMD_DRAW_RECTANGLE = 11,
         CMD_DRAW_CIRCLE = 12,
         CMD_GET_SCREEN_SIZE = 13,
-        
+        CMD_GET_SCREEN_INFO = 38,
+        CMD_GET_TEXTURE_METADATA = 39,
+        CMD_LOCK_ORIENTATION = 40,
+        CMD_UNLOCK_ORIENTATION = 41,
+        CMD_LOCK_TO_PORTRAIT = 42,
+        CMD_LOCK_TO_LANDSCAPE = 43,
+
         // Audio commands
         CMD_PLAY_MUSIC = 14,
         CMD_STOP_MUSIC = 15,
@@ -148,9 +154,7 @@ namespace GameCore {
         CMD_PRELOAD_ESSENTIAL_ASSETS = 30,
         CMD_IS_CACHED = 31,
         
-        // Enhanced screen and texture info commands
-        CMD_GET_SCREEN_INFO = 32,
-        CMD_GET_TEXTURE_METADATA = 33,
+        // Enhanced screen and texture info commands - moved to main section
         // Text outline commands
         CMD_DRAW_TEXT_OUTLINED = 34,
         CMD_DRAW_TEXT_CENTERED_OUTLINED = 35
@@ -302,6 +306,12 @@ namespace GameCore {
         void (*getScreenInfo)(ScreenInfo* info);        // NEW: Get comprehensive screen info
         void (*getScreenSize)(float* width, float* height); // Legacy support
         bool (*getTextureMetadata)(const char* textureId, TextureMetadata* metadata); // NEW: Dynamic texture info
+
+        // Orientation control (iOS specific)
+        void (*lockOrientation)();                       // Lock current orientation
+        void (*unlockOrientation)();                     // Allow orientation changes
+        void (*lockToPortrait)();                        // Lock to portrait only
+        void (*lockToLandscape)();                       // Lock to landscape only
         
         // Platform-specific context (iOS: Swift objects, Raylib: global state)
         void* platformContext;
@@ -313,8 +323,10 @@ namespace GameCore {
                            drawSpriteScaledWithSource(nullptr),
                            drawParallaxSprite(nullptr), drawBackgroundSprite(nullptr),
                            drawText(nullptr), drawTextCentered(nullptr), drawTextOutlined(nullptr), drawTextCenteredOutlined(nullptr),
-                           drawRectangle(nullptr), drawCircle(nullptr), 
+                           drawRectangle(nullptr), drawCircle(nullptr),
                            getScreenInfo(nullptr), getScreenSize(nullptr), getTextureMetadata(nullptr),
+                           lockOrientation(nullptr), unlockOrientation(nullptr),
+                           lockToPortrait(nullptr), lockToLandscape(nullptr),
                            platformContext(nullptr) {}
     };
 

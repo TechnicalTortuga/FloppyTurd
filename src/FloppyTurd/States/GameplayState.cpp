@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <set>
 #include "../Game/FloppyTurdGame.h"
+#include "../../Engine/Configuration/ConfigManager.h"
+#include "../Input/InputManager.h"
 
 namespace GameCore {
 
@@ -37,6 +39,8 @@ namespace GameCore {
         , m_lastSettingsButtonPressTime(0.0f)
         , m_settingsButtonDebounceDelay(0.3f)  // 300ms debounce delay
         , m_shootingZoneEntity(0)
+        , m_debugButtonRect(0)
+        , m_debugShootingZoneRect(0)
     {
         GN_LOG_INFO("GameplayState created for level: " + std::to_string(levelId) + " (" + m_currentLevelConfig.levelName + ")");
     }
@@ -51,16 +55,24 @@ namespace GameCore {
         // Initialize systems (will be implemented in Phase 2)
         InitializeSystems();
 
+        // InputManager singleton is initialized by FloppyTurdGame
+
         // Cache screen dimensions once (eliminates 40+ repeated GetScreenInfo() calls)
         CacheScreenDimensions();
+
+        // Register callback for screen info updates (orientation changes)
+        RegisterScreenInfoCallback();
         
         // Create game entities
         CreateGameEntities();
         
-        // Create UI
-        CreateUI();
-        
-        // Reset game state
+    // Create UI
+    CreateUI();
+
+    // Ensure UI is positioned correctly for current orientation (critical for Boss level landscape)
+    UpdateUILayoutForOrientation();
+
+    // Reset game state
         m_currentScore = 0;
         m_currentLives = STARTING_LIVES;
         m_gameTime = 0.0f;
@@ -147,9 +159,52 @@ namespace GameCore {
     }
 
     void GameplayState::Update(float deltaTime) {
+        // Update InputManager singleton (handles all input processing)
+        InputManager* inputManager = InputManager::GetInstance();
+        if (inputManager) {
+            inputManager->Update(deltaTime);
+        }
+
         // Update button debounce timers
         m_lastSettingsButtonPressTime += deltaTime;
-        
+
+        // BACKUP: Poll for orientation changes since callback system may not work reliably
+        static bool s_lastOrientationBackup = IsLandscapeMode();
+        bool currentOrientationBackup = IsLandscapeMode();
+        if (currentOrientationBackup != s_lastOrientationBackup) {
+            std::string fromOrient = s_lastOrientationBackup ? "landscape" : "portrait";
+            std::string toOrient = currentOrientationBackup ? "landscape" : "portrait";
+            GN_LOG_INFO("🔄 BACKUP: Orientation change detected: " + fromOrient + " → " + toOrient + " - repositioning UI");
+
+            // Update cached screen dimensions
+            if (m_renderSystem) {
+                const ScreenInfo& screenInfo = m_renderSystem->GetScreenInfo();
+                m_cachedScreenWidth = screenInfo.pixelWidth;
+                m_cachedScreenHeight = screenInfo.pixelHeight;
+
+                GN_LOG_INFO("Updated cached screen dimensions: " +
+                           std::to_string((int)m_cachedScreenWidth) + "x" +
+                           std::to_string((int)m_cachedScreenHeight));
+            }
+
+            // Reposition UI elements for new orientation
+            UpdateUILayoutForOrientation();
+
+            // Update boss system if active
+            if (m_bossSystem && m_currentLevelId == 6) { // Level 6 is boss level
+                m_bossSystem->UpdateScreenDimensions(m_cachedScreenWidth, m_cachedScreenHeight);
+                GN_LOG_INFO("Updated boss system screen dimensions");
+            }
+
+            // Update pause system
+            if (m_pauseSystem) {
+                m_pauseSystem->UpdateScreenDimensions(m_cachedScreenWidth, m_cachedScreenHeight);
+                GN_LOG_INFO("Updated pause system screen dimensions");
+            }
+
+            s_lastOrientationBackup = currentOrientationBackup;
+        }
+
         // Handle different sub-states
         UpdateSubState(deltaTime);
         
@@ -349,22 +404,35 @@ namespace GameCore {
         if (m_currentSubState == GameplaySubState::GameOver) {
             return; // No input during game over
         }
-        
-        if (!m_platformDelegates) {
+
+        // Don't handle settings button when paused - pause system handles it
+        if (m_currentSubState == GameplaySubState::Paused) {
             return;
         }
-        
-        // Check for touch input on settings button only (but not when paused - pause system handles it)
-        if (m_currentSubState != GameplaySubState::Paused &&
-            m_platformDelegates->input.getTouchCount && m_platformDelegates->input.getTouchPosition &&
-            m_platformDelegates->input.isTouchJustPressed) {
 
-            if (m_platformDelegates->input.isTouchJustPressed()) {
-                int touchCount = m_platformDelegates->input.getTouchCount();
-                for (int i = 0; i < touchCount; i++) {
-                    float x, y;
-                    m_platformDelegates->input.getTouchPosition(i, &x, &y);
-                    CheckSettingsButtonClick(x, y);
+        // Get InputManager singleton
+        InputManager* inputManager = InputManager::GetInstance();
+        if (!inputManager) return;
+
+        // Check for any active touches and see if they hit the settings button
+        // Don't rely on the PAUSE action zone since it's in the wrong location
+        auto touches = inputManager->GetActiveTouches();
+        for (const auto& touch : touches) {
+            if (touch.state == TouchState::PRESSED || touch.state == TouchState::RELEASED) {
+                // Use pixel coordinates directly (already converted by InputManager)
+                float pixelX = touch.rawX;
+                float pixelY = touch.rawY;
+
+                // Debug logging for settings button input
+                GN_LOG_INFO("Settings button check: pixel coords (" + std::to_string(pixelX) + ", " + std::to_string(pixelY) +
+                           ") Level: " + std::to_string(m_currentLevelId) +
+                           " Boss: " + std::to_string(m_currentLevelId == 6) +
+                           " Landscape: " + std::to_string(inputManager->IsLandscapeOrientation()));
+
+                // Check if this touch hits the settings button
+                if (CheckSettingsButtonClick(pixelX, pixelY)) {
+                    // Settings button was clicked, don't check other touches
+                    break;
                 }
             }
         }
@@ -377,129 +445,120 @@ namespace GameCore {
             return;
         }
 
-        // Settings button should be clickable in both Playing and Paused states
-        // So we don't return early for Paused state
-
-        // Debug: Check platform delegates
-        if (!m_platformDelegates) {
-            GN_LOG_ERROR("GameplayState: m_platformDelegates is NULL!");
+        // Check if InputManager singleton is available
+        InputManager* inputManager = InputManager::GetInstance();
+        if (!inputManager) {
+            GN_LOG_ERROR("GameplayState: InputManager singleton is NULL!");
             return;
         }
 
-        GN_LOG_DEBUG("GameplayState: Platform delegates available, checking input functions...");
+        // Handle settings button input (works in both Playing and Paused states)
+        HandleSettingsButtonInput();
+
+        // Handle pause menu input if we're paused
+        if (m_currentSubState == GameplaySubState::Paused) {
+            HandlePauseMenuInput();
+            return; // Don't process gameplay input when paused
+        }
 
         // Handle gameplay input
-        if (m_playerControllerSystem && m_platformDelegates) {
-            // Check for touch input with proper state tracking
-            if (m_platformDelegates->input.getTouchCount && m_platformDelegates->input.getTouchPosition &&
-                m_platformDelegates->input.isTouchJustPressed && m_platformDelegates->input.isTouchJustReleased) {
+        HandleGameplayInput();
+    }
 
-                // --- PAUSE MENU SLIDER LOGIC (only when paused and system tab is active) ---
 
-                // Handle touch press events (gameplay and pause menu)
-                if (m_platformDelegates->input.isTouchJustPressed()) {
-                    int touchCount = m_platformDelegates->input.getTouchCount();
-                    GN_LOG_INFO("Touch PRESSED! Count: " + std::to_string(touchCount));
+    void GameplayState::HandlePauseMenuInput() {
+        GN_LOG_INFO("🎮 In paused state, processing pause menu input");
 
-                    for (int i = 0; i < touchCount; i++) {
-                        float x, y;
-                        m_platformDelegates->input.getTouchPosition(i, &x, &y);
+        // Get InputManager singleton
+        InputManager* inputManager = InputManager::GetInstance();
+        if (!inputManager) return;
 
-                        GN_LOG_INFO("Touch " + std::to_string(i) + " PRESSED at PIXEL (" + std::to_string(x) + ", " + std::to_string(y) + ")");
+        // Get active touches for pause menu processing
+        auto touches = inputManager->GetActiveTouches();
 
-                        // Normalize coordinates to 0.0-1.0 range for PlayerControllerSystem
-                        // Using helper method with cached screen dimensions
-                        float normalizedX, normalizedY;
-                        NormalizeCoordinates(x, y, normalizedX, normalizedY);
+        for (const auto& touch : touches) {
+            if (touch.state == TouchState::PRESSED || touch.state == TouchState::HELD || touch.state == TouchState::RELEASED) {
+                // Convert to pixel coordinates for pause menu
+                float pixelX, pixelY;
+                inputManager->NormalizedToScreen(touch.x, touch.y, pixelX, pixelY);
 
-                        GN_LOG_INFO("Normalized coordinates: (" + std::to_string(normalizedX) + ", " + std::to_string(normalizedY) + ")");
+                std::string stateStr = (touch.state == TouchState::PRESSED) ? "PRESSED" :
+                                      (touch.state == TouchState::HELD) ? "HELD" : "RELEASED";
+                GN_LOG_INFO("🎮 Pause menu " + stateStr + " touch at (" + std::to_string(pixelX) + ", " + std::to_string(pixelY) + ")");
 
-                        // Handle pause menu input if we're paused
-                        GN_LOG_INFO("🎮 Checking pause state - current substate: " +
-                                   std::to_string(static_cast<int>(m_currentSubState)));
-                        if (m_currentSubState == GameplaySubState::Paused) {
-                            GN_LOG_INFO("🎮 In paused state, processing pause menu input at (" +
-                                       std::to_string(x) + ", " + std::to_string(y) + ")");
-                            // Always check settings button first (matches original implementation)
-                            if (IsTapInSettingsButtonArea(x, y)) {
-                                GN_LOG_INFO("Settings button tapped from pause menu - handling directly");
-                                CheckSettingsButtonClick(x, y);
-                                return; // Settings button was clicked, don't process other pause menu input
-                            }
-
-                            // Delegate other pause menu interactions to PauseSystem
-                            GN_LOG_INFO("Delegating input to PauseSystem at (" + std::to_string(x) + ", " + std::to_string(y) + ")");
-                            if (m_pauseSystem) {
-                                m_pauseSystem->HandleInput(x, y);
-
-                                // Check if user tapped outside menu area to close it (original implementation)
-                                if (IsTapOutsideMenuArea(x, y)) {
-                                    GN_LOG_INFO("Tap outside menu area detected - closing pause menu");
-                                    m_pauseSystem->Hide();
-                                    TriggerResume();
-                                    return; // Menu closed, don't process other input
-                                }
-                            } else {
-                                GN_LOG_ERROR("PauseSystem not available for input handling");
-                            }
-                        }
-
-                        // Send touch press event with normalized coordinates
-                        m_playerControllerSystem->HandleTouchInput(normalizedX, normalizedY, true);
-                    }
-                }
-                
-                // Handle touch drag events for audio sliders
-                if (m_platformDelegates->input.getTouchCount() > 0) {
-                    float x, y;
-                    m_platformDelegates->input.getTouchPosition(0, &x, &y);
-                    
-                    // Handle knob dragging if we're in the pause menu
-                    if (m_currentSubState == GameplaySubState::Paused && m_pauseSystem && m_pauseSystem->IsDragging()) {
-                        m_pauseSystem->HandleInput(x, y); // Handle dragging through PauseSystem
-
+                // For PRESSED touches, check settings button first
+                if (touch.state == TouchState::PRESSED) {
+                    if (CheckSettingsButtonClick(pixelX, pixelY)) {
+                        GN_LOG_INFO("Settings button tapped from pause menu - handling directly");
+                        return; // Settings button was clicked, don't process other pause menu input
                     }
                 }
 
-                // Handle touch release events
-                if (m_platformDelegates->input.isTouchJustReleased()) {
-                    GN_LOG_INFO("Touch RELEASED!");
+                // Delegate pause menu interactions to PauseSystem for all touch states
+                if (m_pauseSystem) {
+                    m_pauseSystem->HandleInput(pixelX, pixelY, touch.state);
 
-                    // Stop knob dragging
-                    if (m_pauseSystem && m_pauseSystem->IsDragging()) {
-                        GN_LOG_INFO("Stopping knob drag");
-                        m_pauseSystem->StopDragging();
+                    // Check if user tapped outside menu area to close it (original implementation)
+                    if (IsTapOutsideMenuArea(pixelX, pixelY)) {
+                        GN_LOG_INFO("Tap outside menu area detected - closing pause menu");
+                        m_pauseSystem->Hide();
+                        TriggerResume();
+                        return; // Menu closed, don't process other input
                     }
-
-                    // Send touch release event with last known position
-                    float x = 0.0f, y = 0.0f;
-                    if (m_platformDelegates->input.getTouchCount() > 0) {
-                        m_platformDelegates->input.getTouchPosition(0, &x, &y);
-                    }
-
-                    GN_LOG_INFO("Touch RELEASED at PIXEL (" + std::to_string(x) + ", " + std::to_string(y) + ")");
-
-                    // Normalize coordinates to 0.0-1.0 range for PlayerControllerSystem
-                    // Using helper method with cached screen dimensions
-                    float normalizedX, normalizedY;
-                    NormalizeCoordinates(x, y, normalizedX, normalizedY);
-
-                    GN_LOG_INFO("Normalized release coordinates: (" + std::to_string(normalizedX) + ", " + std::to_string(normalizedY) + ")");
-
-                    // Send touch release event with normalized coordinates
-                    m_playerControllerSystem->HandleTouchInput(normalizedX, normalizedY, false);
+                } else {
+                    GN_LOG_ERROR("PauseSystem not available for input handling");
                 }
-            } else {
-                GN_LOG_WARN("Touch input functions not available!");
-                GN_LOG_DEBUG("GameplayState: getTouchCount = " + std::string(m_platformDelegates->input.getTouchCount ? "available" : "NULL"));
-                GN_LOG_DEBUG("GameplayState: getTouchPosition = " + std::string(m_platformDelegates->input.getTouchPosition ? "available" : "NULL"));
-                GN_LOG_DEBUG("GameplayState: isTouchJustPressed = " + std::string(m_platformDelegates->input.isTouchJustPressed ? "available" : "NULL"));
-                GN_LOG_DEBUG("GameplayState: isTouchJustReleased = " + std::string(m_platformDelegates->input.isTouchJustReleased ? "available" : "NULL"));
             }
-        } else {
-            GN_LOG_WARN("PlayerControllerSystem or PlatformDelegates is null!");
-            GN_LOG_DEBUG("GameplayState: m_playerControllerSystem = " + std::string(m_playerControllerSystem ? "available" : "NULL"));
-            GN_LOG_DEBUG("GameplayState: m_platformDelegates = " + std::string(m_platformDelegates ? "available" : "NULL"));
+        }
+    }
+
+    void GameplayState::HandleGameplayInput() {
+        // Handle gameplay input using InputManager
+        if (!m_playerControllerSystem) {
+            return;
+        }
+
+        // Get InputManager singleton
+        InputManager* inputManager = InputManager::GetInstance();
+        if (!inputManager) return;
+
+        // Get active touches from InputManager
+        auto touches = inputManager->GetActiveTouches();
+
+        for (const auto& touch : touches) {
+            if (touch.state == TouchState::PRESSED) {
+                // Send touch press event to PlayerControllerSystem
+                GN_LOG_INFO("🎮 Sending touch press to PlayerControllerSystem: (" +
+                           std::to_string(touch.x) + ", " + std::to_string(touch.y) + ")");
+                m_playerControllerSystem->HandleTouchInput(touch.x, touch.y, true);
+            } else if (touch.state == TouchState::RELEASED) {
+                // Send touch release event to PlayerControllerSystem
+                GN_LOG_INFO("🎮 Sending touch release to PlayerControllerSystem: (" +
+                           std::to_string(touch.x) + ", " + std::to_string(touch.y) + ")");
+                m_playerControllerSystem->HandleTouchInput(touch.x, touch.y, false);
+            }
+        }
+
+        // Handle touch dragging for pause menu sliders (if dragging)
+        if (m_currentSubState == GameplaySubState::Paused && m_pauseSystem && m_pauseSystem->IsDragging()) {
+            for (const auto& touch : touches) {
+                if (touch.state == TouchState::HELD) {
+                    float pixelX, pixelY;
+                    inputManager->NormalizedToScreen(touch.x, touch.y, pixelX, pixelY);
+                    m_pauseSystem->HandleInput(pixelX, pixelY);
+                }
+            }
+        }
+
+        // Handle touch release for stopping dragging
+        if (m_pauseSystem && m_pauseSystem->IsDragging()) {
+            for (const auto& touch : touches) {
+                if (touch.state == TouchState::RELEASED) {
+                    GN_LOG_INFO("Stopping knob drag");
+                    m_pauseSystem->StopDragging();
+                    break; // Only need to stop dragging once
+                }
+            }
         }
     }
 
@@ -507,9 +566,28 @@ namespace GameCore {
         GN_LOG_INFO("Setting level to: " + std::to_string(levelId));
         m_currentLevelId = levelId;
 
+        // Update RenderSystem with current level ID
+        if (m_renderSystem) {
+            m_renderSystem->SetCurrentLevelId(levelId);
+        }
+
         // Load level configuration
         m_currentLevelConfig = LevelConfigFactory::GetLevelConfig(levelId);
         GN_LOG_INFO("Loaded configuration for: " + m_currentLevelConfig.levelName);
+
+        // Set orientation lock based on level
+        if (m_platformDelegates && m_platformDelegates->renderer.lockToLandscape && m_platformDelegates->renderer.lockToPortrait) {
+            if (levelId == 6) { // Boss level - landscape only
+                GN_LOG_INFO("Boss level detected - locking to landscape orientation");
+                m_platformDelegates->renderer.lockToLandscape();
+            } else {
+                // Other levels - allow all orientations for now (could be refined per level)
+                GN_LOG_INFO("Non-boss level - unlocking orientation");
+                if (m_platformDelegates->renderer.unlockOrientation) {
+                    m_platformDelegates->renderer.unlockOrientation();
+                }
+            }
+        }
 
         // Show/hide shooting zone visual indicator based on level
         GN_LOG_INFO("SetLevel: Checking shooting zone visibility for level " + std::to_string(m_currentLevelId));
@@ -647,6 +725,11 @@ namespace GameCore {
 
         // Create player controller system
         m_playerControllerSystem = std::make_unique<PlayerControllerSystem>(m_ecsSystem, m_platformDelegates, m_spriteSystem.get(), m_projectileSystem.get(), m_hatsSystem.get(), m_skillSystem.get(), m_currentLevelId, &m_currentLevelConfig);
+
+        // Set RenderSystem reference for screen dimension access
+        if (m_renderSystem) {
+            m_playerControllerSystem->SetRenderSystem(m_renderSystem);
+        }
         
         // Create camera system
         m_cameraSystem = std::make_unique<CameraSystem>(m_ecsSystem);
@@ -655,6 +738,14 @@ namespace GameCore {
         if (m_ecsSystem && m_ecsSystem->GetSystemManager()) {
             m_renderSystem = m_ecsSystem->GetSystemManager()->GetRenderSystem();
             GN_LOG_INFO("GameplayState: Using existing RenderSystem from SystemManager");
+            
+            // CRITICAL: Set current level ID immediately to prevent crash during transitions
+            if (m_renderSystem) {
+                m_renderSystem->SetCurrentLevelId(m_currentLevelId);
+                // Force screen info update to handle boss level orientation requirements
+                m_renderSystem->UpdateScreenInfo();
+                GN_LOG_INFO("GameplayState: Set RenderSystem level ID to " + std::to_string(m_currentLevelId) + " and updated screen info");
+            }
         } else {
             GN_LOG_ERROR("❌ GameplayState: Could not get RenderSystem from SystemManager!");
         }
@@ -755,13 +846,92 @@ namespace GameCore {
         }
 
         GN_LOG_INFO("Screen dimensions cached - all future dimension access will use cached values instead of repeated GetScreenInfo() calls");
+
+        // UI layout will be updated after CreateUI() is called
+    }
+
+    void GameplayState::RegisterScreenInfoCallback() {
+        GN_LOG_INFO("Registering screen info update callback for orientation changes");
+
+        // Store initial orientation state
+        bool lastOrientation = IsLandscapeMode();
+
+        // Register callback with ConfigManager to handle orientation changes
+        auto& configManager = ConfigManager::Instance();
+        configManager.SetScreenInfoUpdateCallback([this, lastOrientation, &configManager]() mutable {
+            // Safety check: ensure this object and render system are still valid
+            if (!this || !m_renderSystem) {
+                GN_LOG_WARN("Screen info callback called on invalid GameplayState object");
+                return;
+            }
+
+            // Get current orientation
+            bool currentOrientation = IsLandscapeMode();
+
+            // Only reposition if orientation actually changed
+            if (currentOrientation != lastOrientation) {
+                std::string fromOrient = lastOrientation ? "landscape" : "portrait";
+                std::string toOrient = currentOrientation ? "landscape" : "portrait";
+                GN_LOG_INFO("🎯 Orientation change detected: " + fromOrient + " → " + toOrient + " - repositioning UI");
+
+                // Update cached screen dimensions
+                if (m_renderSystem) {
+                    const ScreenInfo& screenInfo = m_renderSystem->GetScreenInfo();
+                    m_cachedScreenWidth = screenInfo.pixelWidth;
+                    m_cachedScreenHeight = screenInfo.pixelHeight;
+
+                    GN_LOG_INFO("Updated cached screen dimensions: " +
+                               std::to_string((int)m_cachedScreenWidth) + "x" +
+                               std::to_string((int)m_cachedScreenHeight));
+                }
+
+                // Reposition UI elements for new orientation (one-time operation)
+                UpdateUILayoutForOrientation();
+
+                // Update boss system if active
+                if (m_bossSystem && m_currentLevelId == 6) { // Level 6 is boss level
+                    m_bossSystem->UpdateScreenDimensions(m_cachedScreenWidth, m_cachedScreenHeight);
+                    GN_LOG_INFO("Updated boss system screen dimensions");
+                }
+
+                // Update pause system
+                if (m_pauseSystem) {
+                    m_pauseSystem->UpdateScreenDimensions(m_cachedScreenWidth, m_cachedScreenHeight);
+                    GN_LOG_INFO("Updated pause system screen dimensions");
+                }
+
+                // Update PlayerControllerSystem screen dimensions for shooting zone calculations
+                if (m_playerControllerSystem) {
+                    // This ensures shooting zone boundaries are recalculated with new dimensions
+                    GN_LOG_INFO("Orientation change: PlayerControllerSystem should recalculate shooting zones");
+                }
+
+                // Update last orientation state
+                lastOrientation = currentOrientation;
+                GN_LOG_INFO("UI repositioning complete for new orientation");
+            }
+        });
+
+        GN_LOG_INFO("Screen info update callback registered successfully");
     }
 
     void GameplayState::NormalizeCoordinates(float pixelX, float pixelY, float& outNormalizedX, float& outNormalizedY) {
-        // Normalize pixel coordinates to 0.0-1.0 range using cached screen dimensions
-        // This eliminates duplicate normalization code throughout the file
-        outNormalizedX = pixelX / m_cachedScreenWidth;
-        outNormalizedY = pixelY / m_cachedScreenHeight;
+        // CRITICAL FIX: Use real-time screen dimensions instead of cached ones
+        // This ensures input coordinates are normalized correctly even during orientation changes
+        if (m_renderSystem) {
+            const ScreenInfo& screenInfo = m_renderSystem->GetScreenInfo();
+            outNormalizedX = pixelX / screenInfo.pixelWidth;
+            outNormalizedY = pixelY / screenInfo.pixelHeight;
+
+            // Update cached dimensions to stay in sync
+            m_cachedScreenWidth = screenInfo.pixelWidth;
+            m_cachedScreenHeight = screenInfo.pixelHeight;
+        } else {
+            // Fallback to cached dimensions if render system unavailable
+            GN_LOG_WARN("NormalizeCoordinates: RenderSystem unavailable, using cached dimensions");
+            outNormalizedX = pixelX / m_cachedScreenWidth;
+            outNormalizedY = pixelY / m_cachedScreenHeight;
+        }
     }
 
     // Additional coordinate conversion helpers
@@ -793,8 +963,8 @@ namespace GameCore {
             // Use level's base scale for consistent sizing
             float playerScale = m_currentLevelConfig.baseScale;
 
-            // Position player based on level - boss level uses 25px from left for better spacing, other levels center
-            float playerX = (m_currentLevelId == 6) ? 25.0f : (m_cachedScreenWidth * 0.5f);
+            // Position player based on level - boss level uses more spacing to avoid UI overlap, other levels center
+            float playerX = (m_currentLevelId == 6) ? (m_cachedScreenWidth * 0.15f) : (m_cachedScreenWidth * 0.5f);
             Transform playerTransform(Gnosis::GNVector2(playerX, 639.0f), 0.0f, Gnosis::GNVector2(playerScale, playerScale));
             m_ecsSystem->AddComponent<Transform>(m_playerEntity, playerTransform);
             
@@ -1276,9 +1446,9 @@ namespace GameCore {
         float estimatedCoinCounterWidth = 200.0f; // Rough estimate for coin counter text width
         float coinCounterRightX = coinCounterX + estimatedCoinCounterWidth;
 
-        // Position shooting zone: 80% from top for top edge, 15% height coverage
-            float shootingZoneTopY = m_cachedScreenHeight * 0.80f; // 80% from top
-            float shootingZoneBottomY = m_cachedScreenHeight * 0.95f; // 95% from top (5% from bottom)
+        // Position shooting zone: percentage-based positioning (lowered)
+        float shootingZoneTopY = m_cachedScreenHeight * 0.75f; // 75% from top (lowered)
+        float shootingZoneBottomY = m_cachedScreenHeight * 0.90f; // 90% from top (lowered)
         float shootingZoneHeight = shootingZoneBottomY - shootingZoneTopY;
 
         // Position to the right of coin counter (not coin bag)
@@ -1350,10 +1520,15 @@ namespace GameCore {
                 GN_LOG_ERROR("CreateUI: UIShape component not found!");
             }
         }
+
+        // Create debug rectangle for shooting zone
+        CreateDebugShootingZoneRectangle();
     }
 
     // Create settings button for pause menu
     CreateSettingsButton();
+
+    // Create debug rectangle for shooting zone (after shooting zone is created in CreateUI)
     
     // Create pause menu system
     if (m_pauseSystem && !m_pauseSystem->IsVisible()) {
@@ -1362,8 +1537,8 @@ namespace GameCore {
     
     // Create heart UI - only if it doesn't already exist (for initial game start)
     if (m_heartSystem && m_heartUIEntity == 0) {
-        // Position hearts at 2% from left edge (tighter positioning), just below pipe counter
-            float heartX = m_cachedScreenWidth * 0.02f;   // Move hearts from 5% to 2% from left edge
+        // Position hearts to hug left side of screen, just below pipe counter
+            float heartX = m_cachedScreenWidth * 0.01f;   // 1% from left edge to hug the left side
             float heartY = m_cachedScreenHeight * 0.12f;  // 12% from top (just below pipe counter)
         m_heartUIEntity = m_heartSystem->CreateHeartUI(heartX, heartY);
         if (m_heartUIEntity != Gnosis::INVALID_ENTITY) {
@@ -1793,15 +1968,132 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         m_finished = true;  // This will trigger state transition back to main menu
     }
 
+    void GameplayState::CreateDebugButtonRectangle() {
+        GN_LOG_INFO("Creating debug button rectangle");
+
+        // Create a red rectangle to visualize button collision bounds
+        m_debugButtonRect = m_ecsSystem->CreateEntity();
+        if (m_debugButtonRect != 0) {
+            // Initial position will be updated when bounds are calculated
+            Transform rectTransform(Gnosis::GNVector2(0.0f, 0.0f), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            m_ecsSystem->AddComponent<Transform>(m_debugButtonRect, rectTransform);
+
+            // Create red rectangle shape
+            UIShape rectShape(UIShapeType::Rectangle, 128.0f, 128.0f, Gnosis::GNColor(255, 0, 0, 128)); // Semi-transparent red
+            rectShape.layer = 20; // High layer to appear on top
+            rectShape.visible = true;
+            m_ecsSystem->AddComponent<UIShape>(m_debugButtonRect, rectShape);
+
+            UIElement rectUI;
+            rectUI.visible = true;
+            rectUI.textLayer = 20;
+            m_ecsSystem->AddComponent<UIElement>(m_debugButtonRect, rectUI);
+
+            GN_LOG_INFO("Created debug button rectangle entity " + std::to_string(m_debugButtonRect));
+        }
+    }
+
+    void GameplayState::UpdateDebugButtonRectangle(float left, float top, float right, float bottom) {
+        if (m_debugButtonRect == 0 || !m_ecsSystem) return;
+
+        // Position at the button bounds center
+        float rectCenterX = (left + right) / 2.0f;
+        float rectCenterY = (top + bottom) / 2.0f;
+        float rectWidth = right - left;
+        float rectHeight = bottom - top;
+
+        // Update transform
+        auto rectTransform = m_ecsSystem->GetComponent<Transform>(m_debugButtonRect);
+        if (rectTransform) {
+            rectTransform->position = Gnosis::GNVector2(rectCenterX, rectCenterY);
+        }
+
+        // Update shape dimensions
+        auto uiShape = m_ecsSystem->GetComponent<UIShape>(m_debugButtonRect);
+        if (uiShape) {
+            uiShape->width = rectWidth;
+            uiShape->height = rectHeight;
+        }
+
+        GN_LOG_INFO("Updated debug button rectangle: center(" + std::to_string(rectCenterX) + "," + std::to_string(rectCenterY) +
+                   ") size(" + std::to_string(rectWidth) + "x" + std::to_string(rectHeight) + ")");
+    }
+
+    void GameplayState::CreateDebugShootingZoneRectangle() {
+        GN_LOG_INFO("Creating debug shooting zone rectangle");
+
+        // Create a blue rectangle to visualize shooting zone collision bounds
+        m_debugShootingZoneRect = m_ecsSystem->CreateEntity();
+        if (m_debugShootingZoneRect != 0) {
+            // Initial position will be updated when bounds are calculated
+            Transform rectTransform(Gnosis::GNVector2(0.0f, 0.0f), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            m_ecsSystem->AddComponent<Transform>(m_debugShootingZoneRect, rectTransform);
+
+            // Create blue rectangle shape
+            UIShape rectShape(UIShapeType::Rectangle, 100.0f, 100.0f, Gnosis::GNColor(0, 0, 255, 128)); // Semi-transparent blue
+            rectShape.layer = 19; // High layer to appear on top but below button debug
+            rectShape.visible = true;
+            m_ecsSystem->AddComponent<UIShape>(m_debugShootingZoneRect, rectShape);
+
+            UIElement rectUI;
+            rectUI.visible = true;
+            rectUI.textLayer = 19;
+            m_ecsSystem->AddComponent<UIElement>(m_debugShootingZoneRect, rectUI);
+
+            GN_LOG_INFO("Created debug shooting zone rectangle entity " + std::to_string(m_debugShootingZoneRect));
+        }
+    }
+
+    void GameplayState::UpdateDebugShootingZoneRectangle(float left, float top, float right, float bottom) {
+        if (m_debugShootingZoneRect == 0 || !m_ecsSystem) return;
+
+        // Position at the shooting zone bounds center
+        float zoneCenterX = (left + right) / 2.0f;
+        float zoneCenterY = (top + bottom) / 2.0f;
+        float zoneWidth = right - left;
+        float zoneHeight = bottom - top;
+
+        // Update transform
+        auto zoneTransform = m_ecsSystem->GetComponent<Transform>(m_debugShootingZoneRect);
+        if (zoneTransform) {
+            zoneTransform->position = Gnosis::GNVector2(zoneCenterX, zoneCenterY);
+        }
+
+        // Update shape dimensions
+        auto uiShape = m_ecsSystem->GetComponent<UIShape>(m_debugShootingZoneRect);
+        if (uiShape) {
+            uiShape->width = zoneWidth;
+            uiShape->height = zoneHeight;
+        }
+
+        GN_LOG_INFO("Updated debug shooting zone rectangle: center(" + std::to_string(zoneCenterX) + "," + std::to_string(zoneCenterY) +
+                   ") size(" + std::to_string(zoneWidth) + "x" + std::to_string(zoneHeight) + ")");
+    }
+
     void GameplayState::CreateSettingsButton() {
         GN_LOG_INFO("Creating settings button");
 
         m_settingsButtonEntity = m_ecsSystem->CreateEntity();
         if (m_settingsButtonEntity != 0) {
-            // Position in top-right corner in screen space (moved left to avoid clipping)
-            // The button should stay fixed on screen, so position it at a fixed screen coordinate
-            float buttonX = m_cachedScreenWidth * 0.85f;      // 85% from left edge (was 90%, moved left 5%)
-            float buttonY = m_cachedScreenHeight * 0.05f;     // 5% from top
+            // Position in top-right corner in screen space, accounting for orientation
+            bool isLandscape = IsLandscapeMode();
+            float buttonX, buttonY;
+
+            if (isLandscape) {
+                // Use landscape-specific positioning constants
+                buttonX = m_cachedScreenWidth * LANDSCAPE_SETTINGS_X;
+                buttonY = m_cachedScreenHeight * LANDSCAPE_SETTINGS_Y;
+            } else {
+                // Portrait mode: top-right corner
+                buttonX = m_cachedScreenWidth * PORTRAIT_SETTINGS_X;
+                buttonY = m_cachedScreenHeight * PORTRAIT_SETTINGS_Y;
+            }
+
+            GN_LOG_INFO("Settings button position - landscape: " + std::to_string(isLandscape) +
+                       ", pos: (" + std::to_string(buttonX) + ", " + std::to_string(buttonY) + ")" +
+                       ", screen: " + std::to_string((int)m_cachedScreenWidth) + "x" + std::to_string((int)m_cachedScreenHeight) +
+                       ", constants: X=" + std::to_string(isLandscape ? LANDSCAPE_SETTINGS_X : PORTRAIT_SETTINGS_X) +
+                       ", Y=" + std::to_string(isLandscape ? LANDSCAPE_SETTINGS_Y : PORTRAIT_SETTINGS_Y));
 
             // Scale the button to 8x like other UI elements
             float buttonScale = 8.0f;
@@ -1809,6 +2101,13 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             // Position at fixed screen coordinates (this will be updated when UI is repositioned)
             Transform buttonTransform(Gnosis::GNVector2(buttonX, buttonY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
             m_ecsSystem->AddComponent<Transform>(m_settingsButtonEntity, buttonTransform);
+
+            // Create Sprite component with actual texture dimensions
+            Sprite buttonSprite;
+            buttonSprite.textureId = "settingsbutton";
+            buttonSprite.width = 16.0f;  // Actual texture width
+            buttonSprite.height = 16.0f; // Actual texture height
+            m_ecsSystem->AddComponent<Sprite>(m_settingsButtonEntity, buttonSprite);
 
             // Create UIElement using settingsbutton.png - this keeps it fixed on screen like coin bag
             UIElement buttonUI;
@@ -1818,7 +2117,21 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             buttonUI.textLayer = 10; // Same layer as other UI elements
             m_ecsSystem->AddComponent<UIElement>(m_settingsButtonEntity, buttonUI);
 
-            GN_LOG_INFO("Created settings button at (" + std::to_string(buttonX) + ", " + std::to_string(buttonY) + ") with scale " + std::to_string(buttonScale));
+            // Create bounds component matching the scaled sprite dimensions for proper hitbox detection
+            float scaledWidth = buttonSprite.width * buttonScale;
+            float scaledHeight = buttonSprite.height * buttonScale;
+            Bounds buttonBounds(scaledWidth, scaledHeight, 0.0f, 0.0f, false); // Centered bounds
+            m_ecsSystem->AddComponent<Bounds>(m_settingsButtonEntity, buttonBounds);
+
+            GN_LOG_INFO("Created settings button at (" + std::to_string(buttonX) + ", " + std::to_string(buttonY) + ") with scale " + std::to_string(buttonScale) +
+                       " and bounds " + std::to_string(scaledWidth) + "x" + std::to_string(scaledHeight));
+
+            // FORCE repositioning after creation to ensure correct positioning
+            GN_LOG_INFO("Forcing settings button repositioning after creation");
+            UpdateUILayoutForOrientation();
+
+            // DEBUG: Create a red rectangle to visualize button collision bounds
+            CreateDebugButtonRectangle();
         }
     }
 
@@ -1837,7 +2150,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         }
     }
 
-    void GameCore::GameplayState::StartLevelMusic() {
+    void GameplayState::StartLevelMusic() {
         GN_LOG_INFO("Starting level music for level: " + std::to_string(m_currentLevelId));
         
         if (!m_platformDelegates || !m_platformDelegates->audio.playMusic) {
@@ -1871,7 +2184,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         GN_LOG_INFO("Level music started: " + musicFile);
     }
 
-    void GameCore::GameplayState::StopLevelMusic() {
+    void GameplayState::StopLevelMusic() {
         GN_LOG_INFO("Stopping level music");
         
         if (!m_platformDelegates || !m_platformDelegates->audio.stopMusic) {
@@ -1912,18 +2225,289 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
     
     void GameplayState::SetupDesktopLayout() {
         GN_LOG_INFO("GameplayState: Setting up desktop layout");
-        
-        // Get dynamic screen info from render system  
+
+        // Get dynamic screen info from render system
         if (m_renderSystem) {
             const ScreenInfo& screenInfo = m_renderSystem->GetScreenInfo();
             float dynamicScale = m_renderSystem->GetDynamicScale();
-            
-            GN_LOG_INFO("GameplayState: Desktop layout - Screen: " + 
-                       std::to_string((int)screenInfo.logicalWidth) + "x" + 
-                       std::to_string((int)screenInfo.logicalHeight) + 
+
+            GN_LOG_INFO("GameplayState: Desktop layout - Screen: " +
+                       std::to_string((int)screenInfo.logicalWidth) + "x" +
+                       std::to_string((int)screenInfo.logicalHeight) +
                        ", Scale: " + std::to_string(dynamicScale));
-            
+
             // Desktop-specific gameplay layout adjustments can go here
+        }
+    }
+
+    // Orientation-specific UI management implementation
+    bool GameplayState::IsLandscapeMode() const {
+        if (!m_renderSystem) {
+            return false; // Default to portrait if no render system
+        }
+        const ScreenInfo& screenInfo = m_renderSystem->GetScreenInfo();
+        return !screenInfo.isPortrait;
+    }
+
+    void GameplayState::UpdateUILayoutForOrientation() {
+        GN_LOG_INFO("GameplayState: Updating UI layout for orientation change");
+
+        // Get current screen info for debugging
+        if (m_renderSystem) {
+            const ScreenInfo& screenInfo = m_renderSystem->GetScreenInfo();
+            GN_LOG_INFO("GameplayState: Current screen dimensions: " + std::to_string(screenInfo.pixelWidth) + "x" +
+                       std::to_string(screenInfo.pixelHeight) + ", isPortrait: " + std::to_string(screenInfo.isPortrait));
+        }
+
+        if (IsLandscapeMode()) {
+            GN_LOG_INFO("GameplayState: Repositioning UI for LANDSCAPE mode");
+            RepositionUIElementsLandscape();
+        } else {
+            GN_LOG_INFO("GameplayState: Repositioning UI for PORTRAIT mode");
+            RepositionUIElementsPortrait();
+        }
+
+        std::string orientationStr = IsLandscapeMode() ? "landscape" : "portrait";
+        GN_LOG_INFO("GameplayState: UI layout updated for " + orientationStr + " mode");
+    }
+
+    void GameplayState::RepositionUIElementsLandscape() {
+        GN_LOG_INFO("GameplayState: Repositioning UI elements for landscape mode");
+
+        if (!m_renderSystem) {
+            return;
+        }
+
+        const ScreenInfo& screenInfo = m_renderSystem->GetScreenInfo();
+        float screenW = screenInfo.pixelWidth;
+        float screenH = screenInfo.pixelHeight;
+        
+        // Rescale and reposition backgrounds for landscape orientation
+        RescaleBackgroundsForOrientation(true, screenW, screenH);
+
+        // Reposition settings button
+        if (m_settingsButtonEntity != 0 && m_ecsSystem) {
+            Transform* transform = m_ecsSystem->GetComponent<Transform>(m_settingsButtonEntity);
+            if (transform) {
+                float buttonX = screenW * LANDSCAPE_SETTINGS_X;
+                float buttonY = screenH * LANDSCAPE_SETTINGS_Y;
+                GN_LOG_INFO("Repositioning settings button - screen: " + std::to_string((int)screenW) + "x" + std::to_string((int)screenH) +
+                           ", constants: X=" + std::to_string(LANDSCAPE_SETTINGS_X) + ", Y=" + std::to_string(LANDSCAPE_SETTINGS_Y) +
+                           ", calculated pos: (" + std::to_string(buttonX) + ", " + std::to_string(buttonY) + ")" +
+                           ", current pos: (" + std::to_string(transform->position.x) + ", " + std::to_string(transform->position.y) + ")");
+                transform->position = Gnosis::GNVector2(buttonX, buttonY);
+                GN_LOG_INFO("Repositioned settings button to landscape position: (" +
+                           std::to_string(buttonX) + ", " + std::to_string(buttonY) + ")");
+            }
+        }
+
+        // Reposition coin bag and coins text
+        if (m_coinBagEntity != 0 && m_ecsSystem) {
+            Transform* bagTransform = m_ecsSystem->GetComponent<Transform>(m_coinBagEntity);
+            if (bagTransform) {
+                float bagX = screenW * LANDSCAPE_COINBAG_X;
+                float bagY = screenH * LANDSCAPE_COINBAG_Y;
+                bagTransform->position = Gnosis::GNVector2(bagX, bagY);
+                GN_LOG_INFO("Repositioned coin bag to landscape position: (" +
+                           std::to_string(bagX) + ", " + std::to_string(bagY) + ")");
+
+                // Reposition coins text relative to coin bag
+                if (m_coinsTextEntity != 0) {
+                    Transform* textTransform = m_ecsSystem->GetComponent<Transform>(m_coinsTextEntity);
+                    if (textTransform) {
+                        const float bagScale = 8.0f;
+                        float textX = bagX + (32.0f * bagScale) + 8.0f;
+                        float textY = bagY + (32.0f * bagScale * 0.5f) + 24.0f;
+                        textTransform->position = Gnosis::GNVector2(textX, textY);
+                        GN_LOG_INFO("Repositioned coins text to landscape position: (" +
+                                   std::to_string(textX) + ", " + std::to_string(textY) + ")");
+                    }
+                }
+            }
+        }
+
+        // Reposition pipe counter
+        if (m_pipeCounterEntity != 0 && m_ecsSystem) {
+            Transform* pipeTransform = m_ecsSystem->GetComponent<Transform>(m_pipeCounterEntity);
+            if (pipeTransform) {
+                float centerX = screenW * 0.50f;
+                float pipeY = screenH * LANDSCAPE_PIPE_Y;
+                pipeTransform->position = Gnosis::GNVector2(centerX, pipeY);
+                GN_LOG_INFO("Repositioned pipe counter to landscape position: (" +
+                           std::to_string(centerX) + ", " + std::to_string(pipeY) + ")");
+            }
+        }
+
+        // Reposition shooting zone
+        if (m_shootingZoneEntity != 0 && m_ecsSystem) {
+            // Recalculate shooting zone position for landscape
+            float coinBagX = screenW * LANDSCAPE_COINBAG_X;
+            float coinBagY = screenH * LANDSCAPE_COINBAG_Y;
+            const float bagScale = 8.0f;
+            float coinBagHeight = 32.0f * bagScale;
+            float coinBagWidth = 32.0f * bagScale;
+
+            // Coin counter position: right of coin bag + 8px gap
+            float coinCounterX = coinBagX + coinBagWidth + 8.0f;
+            // Estimate coin counter width
+            float estimatedCoinCounterWidth = 200.0f;
+            float coinCounterRightX = coinCounterX + estimatedCoinCounterWidth;
+
+            // Shooting zone position - percentage-based positioning for landscape (much lower)
+            float shootingZoneTopY = screenH * 0.75f; // 75% from top in landscape (much lower)
+            float shootingZoneBottomY = screenH * 0.90f; // 90% from top in landscape (much lower)
+            float shootingZoneHeight = shootingZoneBottomY - shootingZoneTopY;
+            float shootingZoneLeftX = coinCounterRightX + 8.0f;
+            float shootingZoneRightX = screenW * 0.95f;
+            float shootZoneWidth = shootingZoneRightX - shootingZoneLeftX;
+            float shootZoneStartX = shootingZoneLeftX;
+            float shootZoneStartY = shootingZoneTopY;
+
+            Transform* zoneTransform = m_ecsSystem->GetComponent<Transform>(m_shootingZoneEntity);
+            if (zoneTransform) {
+                zoneTransform->position = Gnosis::GNVector2(shootZoneStartX, shootZoneStartY);
+            }
+
+            // Update UIShape dimensions
+            UIShape* uiShape = m_ecsSystem->GetComponent<UIShape>(m_shootingZoneEntity);
+            if (uiShape) {
+                uiShape->width = shootZoneWidth;
+                uiShape->height = shootingZoneHeight;
+            }
+
+            GN_LOG_INFO("Repositioned shooting zone for landscape: (" +
+                       std::to_string(shootZoneStartX) + ", " + std::to_string(shootZoneStartY) +
+                       ") size (" + std::to_string(shootZoneWidth) + "x" + std::to_string(shootingZoneHeight) + ")");
+
+            // Update debug shooting zone rectangle
+            UpdateDebugShootingZoneRectangle(shootingZoneLeftX, shootingZoneTopY, shootingZoneRightX, shootingZoneBottomY);
+        }
+
+        // Update heart system positioning
+        if (m_heartSystem && m_heartUIEntity != Gnosis::INVALID_ENTITY) {
+            float heartX = screenW * LANDSCAPE_COINBAG_X; // Same X as coin bag
+            float heartY = screenH * LANDSCAPE_SETTINGS_Y; // Start from settings button level
+            m_heartSystem->UpdateHeartUIPositioning(m_heartUIEntity, heartX, heartY);
+        }
+    }
+
+    void GameplayState::RepositionUIElementsPortrait() {
+        GN_LOG_INFO("GameplayState: Repositioning UI elements for portrait mode");
+
+        if (!m_renderSystem) {
+            return;
+        }
+
+        const ScreenInfo& screenInfo = m_renderSystem->GetScreenInfo();
+        float screenW = screenInfo.pixelWidth;
+        float screenH = screenInfo.pixelHeight;
+        
+        // Rescale and reposition backgrounds for portrait orientation
+        RescaleBackgroundsForOrientation(false, screenW, screenH);
+
+        // Reposition settings button to portrait position
+        if (m_settingsButtonEntity != 0 && m_ecsSystem) {
+            Transform* transform = m_ecsSystem->GetComponent<Transform>(m_settingsButtonEntity);
+            if (transform) {
+                float buttonX = screenW * PORTRAIT_SETTINGS_X;
+                float buttonY = screenH * PORTRAIT_SETTINGS_Y;
+                GN_LOG_INFO("Repositioning settings button to portrait - screen: " + std::to_string((int)screenW) + "x" + std::to_string((int)screenH) +
+                           ", constants: X=" + std::to_string(PORTRAIT_SETTINGS_X) + ", Y=" + std::to_string(PORTRAIT_SETTINGS_Y) +
+                           ", calculated pos: (" + std::to_string(buttonX) + ", " + std::to_string(buttonY) + ")" +
+                           ", current pos: (" + std::to_string(transform->position.x) + ", " + std::to_string(transform->position.y) + ")");
+                transform->position = Gnosis::GNVector2(buttonX, buttonY);
+                GN_LOG_INFO("Repositioned settings button to portrait position: (" +
+                           std::to_string(buttonX) + ", " + std::to_string(buttonY) + ")");
+            }
+        }
+
+        // Reposition coin bag and coins text to portrait position
+        if (m_coinBagEntity != 0 && m_ecsSystem) {
+            Transform* bagTransform = m_ecsSystem->GetComponent<Transform>(m_coinBagEntity);
+            if (bagTransform) {
+                float bagX = screenW * PORTRAIT_COINBAG_X;
+                float bagY = screenH * PORTRAIT_COINBAG_Y;
+                bagTransform->position = Gnosis::GNVector2(bagX, bagY);
+                GN_LOG_INFO("Repositioned coin bag to portrait position: (" +
+                           std::to_string(bagX) + ", " + std::to_string(bagY) + ")");
+
+                // Reposition coins text relative to coin bag
+                if (m_coinsTextEntity != 0) {
+                    Transform* textTransform = m_ecsSystem->GetComponent<Transform>(m_coinsTextEntity);
+                    if (textTransform) {
+                        const float bagScale = 8.0f;
+                        float textX = bagX + (32.0f * bagScale) + 8.0f;
+                        float textY = bagY + (32.0f * bagScale * 0.5f) + 24.0f;
+                        textTransform->position = Gnosis::GNVector2(textX, textY);
+                        GN_LOG_INFO("Repositioned coins text to portrait position: (" +
+                                   std::to_string(textX) + ", " + std::to_string(textY) + ")");
+                    }
+                }
+            }
+        }
+
+        // Reposition pipe counter to portrait position
+        if (m_pipeCounterEntity != 0 && m_ecsSystem) {
+            Transform* pipeTransform = m_ecsSystem->GetComponent<Transform>(m_pipeCounterEntity);
+            if (pipeTransform) {
+                float centerX = screenW * 0.50f;
+                float pipeY = screenH * PORTRAIT_PIPE_Y;
+                pipeTransform->position = Gnosis::GNVector2(centerX, pipeY);
+                GN_LOG_INFO("Repositioned pipe counter to portrait position: (" +
+                           std::to_string(centerX) + ", " + std::to_string(pipeY) + ")");
+            }
+        }
+
+        // Reposition shooting zone to portrait position
+        if (m_shootingZoneEntity != 0 && m_ecsSystem) {
+            // Recalculate shooting zone position for portrait
+            float coinBagX = screenW * PORTRAIT_COINBAG_X;
+            float coinBagY = screenH * PORTRAIT_COINBAG_Y;
+            const float bagScale = 8.0f;
+            float coinBagHeight = 32.0f * bagScale;
+            float coinBagWidth = 32.0f * bagScale;
+
+            // Coin counter position: right of coin bag + 8px gap
+            float coinCounterX = coinBagX + coinBagWidth + 8.0f;
+            // Estimate coin counter width
+            float estimatedCoinCounterWidth = 200.0f;
+            float coinCounterRightX = coinCounterX + estimatedCoinCounterWidth;
+
+            // Shooting zone position - percentage-based positioning for portrait (lowered)
+            float shootingZoneTopY = screenH * 0.75f; // 75% from top in portrait (lowered)
+            float shootingZoneBottomY = screenH * 0.90f; // 90% from top in portrait (lowered)
+            float shootingZoneHeight = shootingZoneBottomY - shootingZoneTopY;
+            float shootingZoneLeftX = coinCounterRightX + 8.0f;
+            float shootingZoneRightX = screenW * 0.95f;
+            float shootingZoneWidth = shootingZoneRightX - shootingZoneLeftX;
+            float shootingZoneStartX = shootingZoneLeftX;
+            float shootingZoneStartY = shootingZoneTopY;
+
+            Transform* zoneTransform = m_ecsSystem->GetComponent<Transform>(m_shootingZoneEntity);
+            if (zoneTransform) {
+                zoneTransform->position = Gnosis::GNVector2(shootingZoneStartX, shootingZoneStartY);
+            }
+
+            // Update UIShape dimensions
+            UIShape* uiShape = m_ecsSystem->GetComponent<UIShape>(m_shootingZoneEntity);
+            if (uiShape) {
+                uiShape->width = shootingZoneWidth;
+                uiShape->height = shootingZoneHeight;
+            }
+
+            GN_LOG_INFO("Repositioned shooting zone for portrait: (" +
+                       std::to_string(shootingZoneStartX) + ", " + std::to_string(shootingZoneStartY) +
+                       ") size (" + std::to_string(shootingZoneWidth) + "x" + std::to_string(shootingZoneHeight) + ")");
+
+            // Update debug shooting zone rectangle
+            UpdateDebugShootingZoneRectangle(shootingZoneLeftX, shootingZoneTopY, shootingZoneRightX, shootingZoneBottomY);
+        }
+
+        // Update heart system positioning
+        if (m_heartSystem && m_heartUIEntity != Gnosis::INVALID_ENTITY) {
+            float heartX = screenW * PORTRAIT_COINBAG_X; // Same X as coin bag
+            float heartY = screenH * PORTRAIT_SETTINGS_Y; // Start from settings button level
+            m_heartSystem->UpdateHeartUIPositioning(m_heartUIEntity, heartX, heartY);
         }
     }
     
@@ -2814,7 +3398,18 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         // Reset player transform to starting position
         Transform* playerTransform = m_ecsSystem->GetComponent<Transform>(m_playerEntity);
         if (playerTransform) {
-            playerTransform->position = Gnosis::GNVector2(400.0f, 639.0f);
+            // Set player starting position based on level and orientation
+            float startX;
+            if (m_currentLevelId == 6) {
+                // Boss level: use percentage-based positioning to avoid UI overlap
+                startX = m_cachedScreenWidth * BOSS_PLAYER_X_PERCENT;
+            } else {
+                // Other levels: use existing positioning logic
+                startX = IsLandscapeMode() ?
+                    (PORTRAIT_PLAYER_START_X + LANDSCAPE_PLAYER_OFFSET_X) : PORTRAIT_PLAYER_START_X;
+            }
+            float startY = PORTRAIT_PLAYER_START_Y;
+            playerTransform->position = Gnosis::GNVector2(startX, startY);
             playerTransform->rotation = 0.0f;
             playerTransform->scale = Gnosis::GNVector2(m_currentLevelConfig.baseScale, m_currentLevelConfig.baseScale);
             GN_LOG_INFO("Reset player transform to starting position");
@@ -3036,67 +3631,86 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         GN_LOG_INFO("Shown all regular UI elements");
     }
 
-    void GameplayState::CheckSettingsButtonClick(float touchX, float touchY) {
+    bool GameplayState::CheckSettingsButtonClick(float touchX, float touchY) {
         GN_LOG_INFO("CheckSettingsButtonClick: touch at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
-        
+
         if (m_settingsButtonEntity == 0) {
             GN_LOG_WARN("CheckSettingsButtonClick: No settings button exists");
-            return; // No settings button exists
+            return false; // No settings button exists
         }
-        
+
         if (!m_ecsSystem) {
             GN_LOG_WARN("CheckSettingsButtonClick: ECS system is null");
-            return;
+            return false;
         }
-        
+
         // Get button transform for collision detection
         auto transform = m_ecsSystem->GetComponent<Transform>(m_settingsButtonEntity);
-        
+
         if (!transform) {
             GN_LOG_WARN("CheckSettingsButtonClick: No transform component found for settings button");
-            return;
+            return false;
         }
-        
-        GN_LOG_INFO("CheckSettingsButtonClick: Button transform at (" + std::to_string(transform->position.x) + ", " + std::to_string(transform->position.y) + ") scale (" + std::to_string(transform->scale.x) + ", " + std::to_string(transform->scale.y) + ")");
-        
-        // Simple collision detection (assuming 64x64 button)
-        float buttonWidth = 64.0f * transform->scale.x;
-        float buttonHeight = 64.0f * transform->scale.y;
+
+        GN_LOG_INFO("CheckSettingsButtonClick: Entity " + std::to_string(m_settingsButtonEntity) + " transform at (" + std::to_string(transform->position.x) + ", " + std::to_string(transform->position.y) + ") scale (" + std::to_string(transform->scale.x) + ", " + std::to_string(transform->scale.y) + ") - should be at (2300.4, 94.32) for landscape");
+
+        // Use Bounds component for proper centered collision detection
+        auto bounds = m_ecsSystem->GetComponent<Bounds>(m_settingsButtonEntity);
+
+        float buttonWidth, buttonHeight;
+        if (bounds) {
+            buttonWidth = bounds->width;
+            buttonHeight = bounds->height;
+            GN_LOG_INFO("Using Bounds component: width=" + std::to_string(buttonWidth) + ", height=" + std::to_string(buttonHeight));
+        } else {
+            // Fallback: use sprite dimensions with scale
+            auto sprite = m_ecsSystem->GetComponent<Sprite>(m_settingsButtonEntity);
+            float buttonScale = transform->scale.x;
+            if (sprite) {
+                buttonWidth = sprite->width * buttonScale;
+                buttonHeight = sprite->height * buttonScale;
+                GN_LOG_INFO("Using Sprite fallback: sprite.width=" + std::to_string(sprite->width) + ", scale=" + std::to_string(buttonScale) + ", calculated width=" + std::to_string(buttonWidth));
+            } else {
+                buttonWidth = buttonHeight = 16.0f * buttonScale;
+                GN_LOG_INFO("Using hardcoded fallback: width=" + std::to_string(buttonWidth));
+            }
+        }
+
+        // Settings button uses centered positioning (transform.position is center)
         float buttonLeft = transform->position.x - (buttonWidth * 0.5f);
         float buttonRight = transform->position.x + (buttonWidth * 0.5f);
         float buttonTop = transform->position.y - (buttonHeight * 0.5f);
         float buttonBottom = transform->position.y + (buttonHeight * 0.5f);
-        
+
+        GN_LOG_INFO("Calculated bounds: center=(" + std::to_string(transform->position.x) + "," + std::to_string(transform->position.y) +
+                   ") size=(" + std::to_string(buttonWidth) + "x" + std::to_string(buttonHeight) + ") -> bounds=(" +
+                   std::to_string(buttonLeft) + "," + std::to_string(buttonTop) + "," + std::to_string(buttonRight) + "," + std::to_string(buttonBottom) + ")");
+
+        // Update debug rectangle position to match current collision bounds
+        UpdateDebugButtonRectangle(buttonLeft, buttonTop, buttonRight, buttonBottom);
+
+        GN_LOG_INFO("Settings button collision check: touch(" + std::to_string(touchX) + "," + std::to_string(touchY) +
+                   ") vs button bounds(" + std::to_string(buttonLeft) + "," + std::to_string(buttonTop) + "," +
+                   std::to_string(buttonRight) + "," + std::to_string(buttonBottom) + ") [16x16 texture at " +
+                   std::to_string(transform->scale.x) + "x scale] landscape=" + std::to_string(IsLandscapeMode()) + " boss=" + std::to_string(m_currentLevelId == 6));
+
+        // Debug: Check if touch is close to button for landscape mode debugging
+        if (IsLandscapeMode() && m_currentLevelId == 6) {
+            float distanceX = std::abs(touchX - transform->position.x);
+            float distanceY = std::abs(touchY - transform->position.y);
+            GN_LOG_INFO("Landscape boss level - Touch distance from button center: " + std::to_string(distanceX) + "," + std::to_string(distanceY) +
+                       " (button size: " + std::to_string(buttonWidth) + "x" + std::to_string(buttonHeight) + ")");
+        }
+
         if (touchX >= buttonLeft && touchX <= buttonRight &&
             touchY >= buttonTop && touchY <= buttonBottom) {
-            
+
             // Check debounce timer to prevent rapid clicking
             if (m_lastSettingsButtonPressTime < m_settingsButtonDebounceDelay) {
                 GN_LOG_INFO("Settings button debounced - too soon since last press");
-                return;
+                return false;
             }
 
-            // Dynamically calculate clickable area based on current scale
-            float buttonScale = transform->scale.x;
-            float buttonWidth = 64.0f * buttonScale;
-            float buttonHeightPx = 64.0f * buttonScale;
-            float buttonLeft = transform->position.x;
-            float buttonTop = transform->position.y;
-            float buttonRight = buttonLeft + buttonWidth;
-            float buttonBottom = buttonTop + buttonHeightPx;
-
-            // If touch is within the button area, allow click
-            if (!(touchX >= buttonLeft && touchX <= buttonRight &&
-                  touchY >= buttonTop && touchY <= buttonBottom)) {
-                // If we're in pause menu, allow clicks outside the button after debounce
-                if (m_currentSubState == GameplaySubState::Paused &&
-                    m_lastSettingsButtonPressTime >= m_settingsButtonDebounceDelay) {
-                    GN_LOG_INFO("Pause menu: Click outside settings button allowed after debounce");
-                    // You can add logic here for dismissing the pause menu or other actions
-                }
-                return;
-            }
-            
         if (m_currentSubState == GameplaySubState::Playing) {
             GN_LOG_INFO("Settings button clicked! Opening pause menu.");
             TriggerPause();
@@ -3122,6 +3736,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             }
             // Reset debounce timer
             m_lastSettingsButtonPressTime = 0.0f;
+            return true;
         } else if (m_currentSubState == GameplaySubState::Paused) {
             GN_LOG_INFO("Settings button clicked! Closing pause menu.");
             if (m_pauseSystem) {
@@ -3132,7 +3747,10 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             TriggerResume();
             // Reset debounce timer
             m_lastSettingsButtonPressTime = 0.0f;
+            return true;
         }
+
+        return false; // Button not clicked
     } // End of CheckSettingsButtonClick
 
 
@@ -3140,30 +3758,47 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
 
 // Function definitions outside the class
 bool GameplayState::IsTapInSettingsButtonArea(float touchX, float touchY) {
-    // Get screen dimensions
-    float screenWidth = 1179.0f;
-    float screenHeight = 2556.0f;
-    if (m_renderSystem) {
-        const ScreenInfo& si = m_renderSystem->GetScreenInfo();
-        screenWidth = si.pixelWidth;
-        screenHeight = si.pixelHeight;
-    }
-    float settingsButtonX = screenWidth * 0.85f;
-    float settingsButtonY = screenHeight * 0.05f;
-    float buttonScale = 8.0f;
+    // Get the actual settings button position from its Transform component
+    // This ensures we check the correct area regardless of orientation
     if (m_settingsButtonEntity != 0 && m_ecsSystem) {
         Transform* t = m_ecsSystem->GetComponent<Transform>(m_settingsButtonEntity);
         if (t) {
-            buttonScale = t->scale.x;
+            // Get actual sprite dimensions for collision detection
+            auto sprite = m_ecsSystem->GetComponent<Sprite>(m_settingsButtonEntity);
+            float buttonScale = t->scale.x;
+
+            float buttonWidth, buttonHeight;
+            if (sprite) {
+                buttonWidth = sprite->width * buttonScale;
+                buttonHeight = sprite->height * buttonScale;
+            } else {
+                // Fallback to assumed dimensions if sprite not found
+                buttonWidth = buttonHeight = 16.0f * buttonScale;
+            }
+
+            float buttonX = t->position.x;
+            float buttonY = t->position.y;
+
+            // Settings button uses top-left positioning
+            float buttonLeft = buttonX;
+            float buttonRight = buttonX + buttonWidth;
+            float buttonTop = buttonY;
+            float buttonBottom = buttonY + buttonHeight;
+
+            GN_LOG_INFO("Settings button area check: touch(" + std::to_string(touchX) + "," + std::to_string(touchY) +
+                       ") vs button(" + std::to_string(buttonLeft) + "," + std::to_string(buttonTop) + "," +
+                       std::to_string(buttonRight) + "," + std::to_string(buttonBottom) +
+                       "), sprite size=" + std::to_string(buttonWidth) + "x" + std::to_string(buttonHeight));
+
+            return (touchX >= buttonLeft && touchX <= buttonRight &&
+                    touchY >= buttonTop && touchY <= buttonBottom);
+        } else {
+            GN_LOG_WARN("IsTapInSettingsButtonArea: No Transform component found for settings button");
         }
+    } else {
+        GN_LOG_WARN("IsTapInSettingsButtonArea: Settings button entity not available");
     }
-    float buttonSize = 64.0f * buttonScale;
-    float buttonLeft = settingsButtonX - (buttonSize * 0.5f);
-    float buttonRight = settingsButtonX + (buttonSize * 0.5f);
-    float buttonTop = settingsButtonY - (buttonSize * 0.5f);
-    float buttonBottom = settingsButtonY + (buttonSize * 0.5f);
-    return (touchX >= buttonLeft && touchX <= buttonRight &&
-            touchY >= buttonTop && touchY <= buttonBottom);
+    return false;
 }
 
 bool GameplayState::IsTapOutsideMenuArea(float touchX, float touchY) {
@@ -3213,6 +3848,127 @@ bool GameplayState::IsTapOutsideMenuArea(float touchX, float touchY) {
                std::string(outsideMenu ? "YES" : "NO"));
 
     return outsideMenu;
+}
+
+void GameplayState::RescaleBackgroundsForOrientation(bool isLandscape, float screenWidth, float screenHeight) {
+    GN_LOG_INFO("RescaleBackgroundsForOrientation: " + std::string(isLandscape ? "landscape" : "portrait") + 
+               " (" + std::to_string((int)screenWidth) + "x" + std::to_string((int)screenHeight) + ")");
+    
+    if (!m_ecsSystem || !m_levelManager) {
+        GN_LOG_WARN("RescaleBackgroundsForOrientation: Missing ECS system or level manager");
+        return;
+    }
+    
+    // Get all background entities with parallax components
+    auto backgroundEntities = m_ecsSystem->GetEntitiesWithComponents<Transform, Sprite, Parallax>();
+    
+    for (Gnosis::Entity entity : backgroundEntities) {
+        auto transform = m_ecsSystem->GetComponent<Transform>(entity);
+        auto sprite = m_ecsSystem->GetComponent<Sprite>(entity);
+        
+        if (!transform || !sprite) continue;
+        
+        // Determine original texture dimensions based on texture ID
+        float textureWidth, textureHeight;
+        if (sprite->textureId.find("BossLevelBackgroundMobile") != std::string::npos) {
+            // Boss level background is 384x512 (portrait)
+            textureWidth = 384.0f;
+            textureHeight = 512.0f;
+        } else if (sprite->textureId.find("Front") != std::string::npos) {
+            // FrontLayer backgrounds are 2048x480
+            textureWidth = 2048.0f;
+            textureHeight = 480.0f;
+        } else if (sprite->textureId.find("Clouds") != std::string::npos) {
+            // Cloud layers are 512x180
+            textureWidth = 512.0f;
+            textureHeight = 180.0f;
+        } else {
+            // Other background layers (Back, Mid) are 1024x480
+            textureWidth = 1024.0f;
+            textureHeight = 480.0f;
+        }
+        
+        // Calculate new scale to fit screen
+        float heightScale = screenHeight / textureHeight;
+        float widthScale = screenWidth / textureWidth;
+        
+        // For boss level, use different scaling strategy for landscape vs portrait
+        if (sprite->textureId.find("BossLevelBackgroundMobile") != std::string::npos) {
+            if (isLandscape) {
+                // In landscape, scale to fill width and crop height if necessary
+                float scale = widthScale;
+                transform->scale = Gnosis::GNVector2(scale, scale);
+                // Center vertically
+                float scaledHeight = textureHeight * scale;
+                transform->position.y = (screenHeight - scaledHeight) * 0.5f;
+                transform->position.x = 0.0f;
+            } else {
+                // In portrait, scale to fit height
+                float scale = heightScale;
+                transform->scale = Gnosis::GNVector2(scale, scale);
+                // Center horizontally  
+                float scaledWidth = textureWidth * scale;
+                transform->position.x = (screenWidth - scaledWidth) * 0.5f;
+                transform->position.y = 0.0f;
+            }
+        } else {
+            // For other backgrounds, always scale to fit height
+            float scale = heightScale;
+            transform->scale = Gnosis::GNVector2(scale, scale);
+            
+            // Update parallax repeat width for new scaling
+            auto parallax = m_ecsSystem->GetComponent<Parallax>(entity);
+            if (parallax) {
+                parallax->repeatWidth = textureWidth * scale;
+            }
+        }
+        
+        GN_LOG_INFO("Rescaled background '" + sprite->textureId + "' to scale " + 
+                   std::to_string(transform->scale.x) + " at position (" + 
+                   std::to_string(transform->position.x) + ", " + 
+                   std::to_string(transform->position.y) + ")");
+    }
+    
+    // Also handle static boss background entities (without parallax)
+    auto staticBackgrounds = m_ecsSystem->GetEntitiesWithComponents<Transform, Sprite>();
+    for (Gnosis::Entity entity : staticBackgrounds) {
+        // Skip if this entity has parallax (already handled above)
+        if (m_ecsSystem->HasComponent<Parallax>(entity)) continue;
+        
+        auto transform = m_ecsSystem->GetComponent<Transform>(entity);
+        auto sprite = m_ecsSystem->GetComponent<Sprite>(entity);
+        
+        if (!transform || !sprite) continue;
+        
+        // Only process boss level background
+        if (sprite->textureId.find("BossLevelBackgroundMobile") != std::string::npos) {
+            float textureWidth = 384.0f;
+            float textureHeight = 512.0f;
+            
+            float heightScale = screenHeight / textureHeight;
+            float widthScale = screenWidth / textureWidth;
+            
+            if (isLandscape) {
+                // Scale to fill width in landscape
+                float scale = widthScale;
+                transform->scale = Gnosis::GNVector2(scale, scale);
+                float scaledHeight = textureHeight * scale;
+                transform->position.y = (screenHeight - scaledHeight) * 0.5f;
+                transform->position.x = 0.0f;
+            } else {
+                // Scale to fit height in portrait
+                float scale = heightScale;
+                transform->scale = Gnosis::GNVector2(scale, scale);
+                float scaledWidth = textureWidth * scale;
+                transform->position.x = (screenWidth - scaledWidth) * 0.5f;
+                transform->position.y = 0.0f;
+            }
+            
+            GN_LOG_INFO("Rescaled static boss background to scale " + std::to_string(transform->scale.x) + 
+                       " at position (" + std::to_string(transform->position.x) + ", " + 
+                       std::to_string(transform->position.y) + ")");
+        }
+    }
 }
 
 } // namespace GameCore

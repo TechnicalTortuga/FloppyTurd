@@ -38,8 +38,8 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/ProjectileSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/HatsSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/SkillSystem.h \
-  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/CameraSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/RenderSystem.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/CameraSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/LevelManager.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/../Config/LevelConfig.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/ObstacleSystem.h \
@@ -55,10 +55,14 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/PauseSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/../Systems/SkillSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/../Systems/HatsSystem.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/../Input/InputManager.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/../Input/../../Engine/Core/ECS.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/../Input/../../Engine/Platform/PlatformDelegates.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Config/LevelConfig.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../Entities/Player.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Systems/LevelManager.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../../Engine/AssetPaths.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../../Engine/Utility/Utils.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../../Engine/Utility/../Core/GnosisTypes.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Input/InputManager.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Systems/RenderSystem.h

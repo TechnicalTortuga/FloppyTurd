@@ -7,6 +7,7 @@
 #include "../../Engine/Utility/Utils.h"
 #include "../Components/GameComponents.h"
 #include "../Game/FloppyTurdGame.h"
+#include "../Input/InputManager.h"
 #include <iostream>
 #include <random>
 #include <cmath>
@@ -78,6 +79,14 @@ namespace GameCore {
         m_selectedOption = 0;
         m_animationTimer = 0.0f;
         m_assetsLoaded = false;
+
+        // Lock to portrait orientation for main menu
+        if (m_platformDelegates && m_platformDelegates->renderer.lockToPortrait) {
+            GN_LOG_INFO("Main Menu - locking to portrait orientation");
+            m_platformDelegates->renderer.lockToPortrait();
+        }
+
+        // InputManager singleton should be initialized by FloppyTurdGame
         
         // Start playing main menu music using cached game pointer
         if (m_game) {
@@ -138,6 +147,12 @@ namespace GameCore {
 
     void MainMenuState::Exit() {
         GN_LOG_INFO("Exiting Main Menu State");
+        
+        // Unlock orientation when leaving main menu (gameplay will set its own)
+        if (m_platformDelegates && m_platformDelegates->renderer.unlockOrientation) {
+            GN_LOG_INFO("Main Menu Exit - unlocking orientation");
+            m_platformDelegates->renderer.unlockOrientation();
+        }
         
         // Stop menu music using delegate system
         if (m_game) {
@@ -241,6 +256,12 @@ namespace GameCore {
     }
 
     void MainMenuState::Update(float deltaTime) {
+        // Update InputManager singleton
+        InputManager* inputManager = InputManager::GetInstance();
+        if (inputManager) {
+            inputManager->Update(deltaTime);
+        }
+
         m_animationTimer += deltaTime;
         
         // Update arrow button debounce timer
@@ -248,7 +269,10 @@ namespace GameCore {
 
         // Update unlock button debounce timer
         m_lastUnlockPressTime += deltaTime;
-        
+
+        // Check for orientation changes and recreate layout if needed
+        CheckForOrientationChange();
+
         // Update menu animations (logo bobbing, button highlights, etc.)
         UpdateMenuAnimations(deltaTime);
         
@@ -264,6 +288,38 @@ namespace GameCore {
         // Update ECS systems
         if (m_ecsCoordinator) {
             m_ecsCoordinator->Update(deltaTime);
+        }
+    }
+
+    void MainMenuState::CheckForOrientationChange() {
+        // Check if screen dimensions have changed (orientation change)
+        if (m_ecsCoordinator && m_ecsCoordinator->GetSystemManager() && m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+            auto* renderSystem = m_ecsCoordinator->GetSystemManager()->GetRenderSystem();
+            ScreenInfo currentScreenInfo = renderSystem->GetScreenInfo();
+            float currentWidth = static_cast<float>(currentScreenInfo.pixelWidth);
+            float currentHeight = static_cast<float>(currentScreenInfo.pixelHeight);
+
+            // Check if screen dimensions have changed (orientation change)
+            if (currentWidth != m_screenWidth || currentHeight != m_screenHeight) {
+                GN_LOG_INFO("MainMenuState: Screen dimensions changed from " +
+                           std::to_string((int)m_screenWidth) + "x" + std::to_string((int)m_screenHeight) + " to " +
+                           std::to_string((int)currentWidth) + "x" + std::to_string((int)currentHeight) +
+                           " - recreating layout");
+
+                // Update stored dimensions
+                m_screenWidth = currentWidth;
+                m_screenHeight = currentHeight;
+
+                // Recreate the entire layout for the new orientation
+                if (m_isMobile) {
+                    CreateMobileLayout();
+                } else {
+                    CreateDesktopLayout();
+                }
+
+                // Recreate UI elements
+                CreateUIElements();
+            }
         }
     }
 
@@ -294,13 +350,17 @@ namespace GameCore {
         if (!m_ecsCoordinator || !m_assetsLoaded) {
             return;
         }
-        
-        // Debug: Check if input delegates are properly set
-        if (!m_platformDelegates->input.isPrimaryInputJustPressed) {
-            GN_LOG_ERROR("MainMenuState: isPrimaryInputJustPressed delegate is NULL!");
+
+        // Check if InputManager singleton is available
+        InputManager* inputManager = InputManager::GetInstance();
+        if (!inputManager) {
+            GN_LOG_ERROR("🎮 MainMenuState: InputManager singleton is NULL!");
             return;
         }
-        
+
+        GN_LOG_INFO("🎮 MainMenuState: HandleInput() called - frame " + std::to_string(inputManager->GetCurrentFrameNumber()) +
+                    " mode=" + std::to_string((int)m_currentMode));
+
         // Handle input based on current mode
         if (m_currentMode == MenuMode::MAIN_MENU) {
             HandleMainMenuInput();
@@ -582,22 +642,37 @@ namespace GameCore {
     }
     
     void MainMenuState::HandleMainMenuInput() {
-        // Handle touch/click input for F button
-        bool inputPressed = m_platformDelegates->input.isPrimaryInputJustPressed();
-        if (inputPressed) {
-            GN_LOG_INFO("🎮 MainMenuState: Input detected! Checking F button bounds...");
+        // Get InputManager singleton
+        InputManager* inputManager = InputManager::GetInstance();
+        if (!inputManager) {
+            GN_LOG_ERROR("🎮 MainMenuState: InputManager singleton is NULL!");
+            return;
         }
-        
-        if (inputPressed) {
-            float touchX, touchY;
-            if (m_platformDelegates->input.getPrimaryInputPosition) {
-                m_platformDelegates->input.getPrimaryInputPosition(&touchX, &touchY);
-                
-                // Check if touch/click is within F button bounds
+
+        // Get active touches from InputManager
+        auto touches = inputManager->GetActiveTouches();
+        GN_LOG_INFO("🎮 MainMenuState: Processing " + std::to_string(touches.size()) + " touches");
+
+        for (const auto& touch : touches) {
+            GN_LOG_INFO("🎯 MainMenuState: Touch " + std::to_string(touch.touchId) + 
+                        " state=" + std::to_string((int)touch.state) + 
+                        " norm(" + std::to_string(touch.x) + ", " + std::to_string(touch.y) + 
+                        ") pixel(" + std::to_string(touch.rawX) + ", " + std::to_string(touch.rawY) + ")");
+
+            if (touch.state == TouchState::PRESSED || touch.state == TouchState::RELEASED) {
+                // TouchData.rawX/rawY are already in pixel coordinates
+                float pixelX = touch.rawX;
+                float pixelY = touch.rawY;
+
+                std::string stateStr = (touch.state == TouchState::PRESSED) ? "PRESSED" : "RELEASED";
+                GN_LOG_INFO("🎮 MainMenuState: Processing " + stateStr + " touch at pixel(" +
+                           std::to_string(pixelX) + ", " + std::to_string(pixelY) + ")");
+
+                // Check if touch is within F button bounds
                 if (m_fButtonEntity != 0) {
                     Transform* fButtonTransform = m_ecsCoordinator->GetComponent<Transform>(m_fButtonEntity);
                     Sprite* fButtonSprite = m_ecsCoordinator->GetComponent<Sprite>(m_fButtonEntity);
-                    
+
                     if (fButtonTransform && fButtonSprite) {
                         // F button is now positioned at top-left, so collision detection uses top-left based bounds
                         float buttonWidth = fButtonSprite->width * fButtonTransform->scale.x;
@@ -606,27 +681,53 @@ namespace GameCore {
                         float buttonRight = fButtonTransform->position.x + buttonWidth;
                         float buttonTop = fButtonTransform->position.y;
                         float buttonBottom = fButtonTransform->position.y + buttonHeight;
-                        
-                        // Check if touch is within bounds
-                        GN_LOG_INFO("🎯 MainMenuState: Touch at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + 
-                                   "), F button bounds: L=" + std::to_string(buttonLeft) + " R=" + std::to_string(buttonRight) + 
-                                   " T=" + std::to_string(buttonTop) + " B=" + std::to_string(buttonBottom));
-                        
-                        if (touchX >= buttonLeft && touchX <= buttonRight &&
-                            touchY >= buttonTop && touchY <= buttonBottom) {
-                            GN_LOG_INFO("🎉 MainMenuState: F BUTTON HIT! Playing fart sound...");
-                            OnFButtonPressed();
+
+                        // Get current screen dimensions for logging
+                        float currentScreenHeight = m_screenHeight;
+                        if (auto* renderSystem = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+                            ScreenInfo screenInfo = renderSystem->GetScreenInfo();
+                            currentScreenHeight = static_cast<float>(screenInfo.pixelHeight);
+                        }
+
+                        bool xInBounds = pixelX >= buttonLeft && pixelX <= buttonRight;
+                        bool yInBounds = pixelY >= buttonTop && pixelY <= buttonBottom;
+
+                        GN_LOG_INFO("🎯 F Button bounds check: xInBounds=" + std::string(xInBounds ? "true" : "false") +
+                                   " yInBounds=" + std::string(yInBounds ? "true" : "false"));
+
+                        if (xInBounds && yInBounds) {
+                            if (touch.state == TouchState::PRESSED) {
+                                GN_LOG_INFO("🎉 MainMenuState: F BUTTON PRESSED - setting visual state");
+                                // Just set visual state on press, action on release
+                                UIElement* uiElement = m_ecsCoordinator->GetComponent<UIElement>(m_fButtonEntity);
+                                if (uiElement) {
+                                    uiElement->isPressed = true;
+                                    uiElement->isHovered = true;
+                                    UpdateButtonSprite(m_fButtonEntity, *uiElement);
+                                }
+                            } else if (touch.state == TouchState::RELEASED) {
+                                GN_LOG_INFO("🎉 MainMenuState: F BUTTON RELEASED - playing fart sound!");
+                                OnFButtonPressed();
+                                // Reset visual state
+                                UIElement* uiElement = m_ecsCoordinator->GetComponent<UIElement>(m_fButtonEntity);
+                                if (uiElement) {
+                                    uiElement->isPressed = false;
+                                    uiElement->isHovered = false;
+                                    UpdateButtonSprite(m_fButtonEntity, *uiElement);
+                                }
+                            }
                         } else {
                             GN_LOG_INFO("❌ MainMenuState: Touch missed F button");
-                            
-                            // Check menu buttons
-                            CheckMenuButtonClicks(touchX, touchY);
+                            // Only check menu buttons if touch is released (to avoid triggering on press)
+                            if (touch.state == TouchState::RELEASED) {
+                                CheckMenuButtonClicks(pixelX, pixelY);
+                            }
                         }
                     }
                 }
             }
         }
-        
+
         // TODO: Handle menu navigation (up/down arrows) for desktop
         // TODO: Handle selection (enter/space) for menu options
     }
@@ -1124,15 +1225,27 @@ namespace GameCore {
 
     void MainMenuState::CreateMobileLayout() {
         GN_LOG_INFO("Creating mobile main menu layout");
-        
+
         if (!m_ecsCoordinator) {
             GN_LOG_ERROR("ECS coordinator is null in CreateMobileLayout");
             return;
         }
-        
+
         // Setup platform-specific layout first
         SetupLayout();
-        
+
+        // Clear any existing button entities to prevent duplicates
+        if (m_playButtonEntity != 0) m_ecsCoordinator->DestroyEntity(m_playButtonEntity);
+        if (m_optionsButtonEntity != 0) m_ecsCoordinator->DestroyEntity(m_optionsButtonEntity);
+        if (m_quickPlayButtonEntity != 0) m_ecsCoordinator->DestroyEntity(m_quickPlayButtonEntity);
+        if (m_quitButtonEntity != 0) m_ecsCoordinator->DestroyEntity(m_quitButtonEntity);
+
+        // Reset entity IDs
+        m_playButtonEntity = 0;
+        m_optionsButtonEntity = 0;
+        m_quickPlayButtonEntity = 0;
+        m_quitButtonEntity = 0;
+
         // Get enhanced screen information from shared RenderSystem (like GameplayState)
         ScreenInfo screenInfo;
         if (m_ecsCoordinator && m_ecsCoordinator->GetSystemManager() && m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
@@ -1292,12 +1405,17 @@ namespace GameCore {
                 // Create a gentle floating effect
                 float logoFloat = sin(m_animationTimer * 1.5f) * 8.0f; // 8 pixel float amplitude
                 
+                // Get current screen dimensions from render system (not cached values)
+                float currentScreenHeight = m_screenHeight;
+                if (auto* renderSystem = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+                    ScreenInfo screenInfo = renderSystem->GetScreenInfo();
+                    currentScreenHeight = static_cast<float>(screenInfo.pixelHeight);
+                }
+
                 // Update logo Y position (preserve original Y + float offset)
                 // Use the SAME calculation as in CreateMobileLayout for consistency
-                float originalLogoY = m_screenHeight * 0.15f; // 15% from top (matches CreateMobileLayout)
+                float originalLogoY = currentScreenHeight * 0.15f; // 15% from top (matches CreateMobileLayout)
                 logoTransform->position.y = originalLogoY + logoFloat;
-                
-                GN_LOG_INFO("🌊 Logo animation: originalY=" + std::to_string(originalLogoY) + ", float=" + std::to_string(logoFloat) + ", finalY=" + std::to_string(logoTransform->position.y));
             }
         }
         
@@ -1307,7 +1425,15 @@ namespace GameCore {
             if (fButtonTransform) {
                 // Make F button follow logo's floating animation exactly
                 float logoFloat = sin(m_animationTimer * 1.5f) * 8.0f; // Same float as logo
-                float originalLogoY = m_screenHeight * 0.15f; // Same Y calculation as logo
+
+                // Get current screen dimensions from render system (not cached values)
+                float currentScreenHeight = m_screenHeight;
+                if (auto* renderSystem = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+                    ScreenInfo screenInfo = renderSystem->GetScreenInfo();
+                    currentScreenHeight = static_cast<float>(screenInfo.pixelHeight);
+                }
+
+                float originalLogoY = currentScreenHeight * 0.15f; // Same Y calculation as logo
                 fButtonTransform->position.y = originalLogoY + logoFloat; // Follow logo's Y position exactly
                 
                 // Create a subtle pulsing scale effect - use consistent 8x scale for mobile
@@ -1315,8 +1441,6 @@ namespace GameCore {
                 float pulseScale = baseScale + sin(m_animationTimer * 2.5f) * 0.3f;
                 fButtonTransform->scale.x = pulseScale;
                 fButtonTransform->scale.y = pulseScale;
-                
-                GN_LOG_INFO("🔄 F Button follows logo: Y=" + std::to_string(fButtonTransform->position.y) + ", scale=" + std::to_string(pulseScale));
             }
         }
     }
@@ -1574,7 +1698,7 @@ namespace GameCore {
         GN_LOG_INFO("Mobile button texture dimensions: " + std::to_string(buttonTextureWidth) + "x" + std::to_string(buttonTextureHeight));
         
         // === SIMPLIFIED MOBILE BUTTON POSITIONING === //
-        
+
         float buttonScale = 10.0f;  // Keep sprite scale at 10x for mobile visuals
         m_menuButtonScale = buttonScale;
         // Text size globally controlled; do not derive from sprite scale
@@ -1582,30 +1706,43 @@ namespace GameCore {
         auto buttonScaledDimensions = GetScaledDimensions(buttonTextureWidth, buttonTextureHeight, buttonScale);
         float buttonScaledWidth = buttonScaledDimensions.first;
         float buttonScaledHeight = buttonScaledDimensions.second;
+
+        // Determine orientation - buttons should remain vertically stacked and centered in both orientations
+        bool isLandscape = (m_screenWidth > m_screenHeight);
+
+        float startY, buttonSpacing;
+        if (isLandscape) {
+            // Landscape mode: same vertical stacking but adjust spacing for taller screen
+            startY = m_screenHeight * 0.50f;  // Start at 50% down from top
+            buttonSpacing = buttonScaledHeight + 60.0f;  // Slightly tighter vertical spacing for landscape
+            GN_LOG_INFO("📱 Creating landscape mobile buttons (vertical stack): screen=" + std::to_string((int)m_screenWidth) + "x" + std::to_string((int)m_screenHeight));
+        } else {
+            // Portrait mode: vertical stacking with standard spacing
+            startY = m_screenHeight * 0.50f;  // Start at 50% down from top
+            buttonSpacing = buttonScaledHeight + 80.0f;  // Vertical spacing
+            GN_LOG_INFO("📱 Creating portrait mobile buttons: screen=" + std::to_string((int)m_screenWidth) + "x" + std::to_string((int)m_screenHeight));
+        }
         
-        // Center buttons horizontally, start at 50% down from top
-        float centerX = m_screenWidth / 2.0f;
-        float startY = m_screenHeight * 0.50f;  // Start at 50% down from top
-        float buttonSpacing = buttonScaledHeight + 80.0f;  // Tighter spacing
-        
-        GN_LOG_INFO("📱 Creating mobile buttons: scale=" + std::to_string(buttonScale) + ", size=" + std::to_string(buttonScaledWidth) + "x" + std::to_string(buttonScaledHeight) + ", centerX=" + std::to_string(centerX) + ", startY=" + std::to_string(startY) + ", spacing=" + std::to_string(buttonSpacing));
+        GN_LOG_INFO("📱 Creating mobile buttons: scale=" + std::to_string(buttonScale) + ", size=" + std::to_string(buttonScaledWidth) + "x" + std::to_string(buttonScaledHeight) + ", startY=" + std::to_string(startY) + ", spacing=" + std::to_string(buttonSpacing));
         
         // Helper lambda for creating buttons with consistent positioning
         auto createButton = [&](Gnosis::Entity& entity, const std::string& text, int buttonIndex) {
             entity = m_ecsCoordinator->CreateEntity();
-            
-            // Calculate button position using positioning helper
-            float buttonCenterY = startY + (buttonIndex * buttonSpacing);
-            Gnosis::GNVector2 buttonPosition = CenterObjectHorizontally(m_screenWidth, buttonCenterY, 
-                                                                       buttonScaledWidth, buttonScaledHeight);
+
+            // Always use vertical stacking with horizontal centering for both orientations
+            float buttonCenterX = m_screenWidth / 2.0f;  // Always center horizontally
+            float buttonCenterY = startY + (buttonIndex * buttonSpacing);  // Vertical stacking
+
+            // Use CenterObjectAtPosition to get the correct top-left coordinates
+            auto buttonPosition = CenterObjectAtPosition(buttonCenterX, buttonCenterY, buttonScaledWidth, buttonScaledHeight);
             float buttonX = buttonPosition.x;
             float buttonY = buttonPosition.y;
-            
+
             Transform transform(Gnosis::GNVector2(buttonX, buttonY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
             Sprite sprite("FloppyButtonBlue", buttonTextureWidth, buttonTextureHeight);
             sprite.layer = 2;
             sprite.visible = true;
-            
+
             UIElement uiElement("", "FloppyButtonBlue", "FloppyButtonBlueHover");
             uiElement.buttonText = text;
             uiElement.fontSize = m_globalUIFontSize; // unified text size (144 on mobile)
@@ -1614,11 +1751,11 @@ namespace GameCore {
             uiElement.centerTextVertically = true;
             // NO OFFSET - text should be perfectly centered as requested
             uiElement.textOffsetY = 0.0f;  // No offset for perfect centering
-            
+
             m_ecsCoordinator->AddComponent<Transform>(entity, transform);
             m_ecsCoordinator->AddComponent<Sprite>(entity, sprite);
             m_ecsCoordinator->AddComponent<UIElement>(entity, uiElement);
-            
+
             GN_LOG_INFO("✅ Created '" + text + "' button at (" + std::to_string(buttonX) + "," + std::to_string(buttonY) + ")");
         };
         
@@ -1698,6 +1835,8 @@ namespace GameCore {
             return;
         }
         
+        GN_LOG_INFO("🎯 CheckMenuButtonClicks: Touch at pixel(" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
+        
         // Reset all button states first
         ResetAllButtonStates();
         
@@ -1708,30 +1847,38 @@ namespace GameCore {
             UIElement* uiElement = m_ecsCoordinator->GetComponent<UIElement>(m_playButtonEntity);
             
             if (transform && sprite && uiElement) {
-                // Button is now positioned at top-left, so collision detection uses top-left based bounds
-                float buttonWidth = 64.0f * transform->scale.x * 0.8f; // 80% of actual button texture size
-                float buttonHeight = 16.0f * transform->scale.y * 0.8f; // 80% of actual button texture size
+                // Use actual sprite dimensions instead of hardcoded values
+                float buttonWidth = sprite->width * transform->scale.x;
+                float buttonHeight = sprite->height * transform->scale.y;
                 float buttonLeft = transform->position.x;
                 float buttonRight = transform->position.x + buttonWidth;
                 float buttonTop = transform->position.y;
                 float buttonBottom = transform->position.y + buttonHeight;
                 
-                // Debug logging for button bounds
-                GN_LOG_INFO("🎯 PLAY Button - Touch at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + 
-                           "), bounds: L=" + std::to_string(buttonLeft) + " R=" + std::to_string(buttonRight) + 
-                           " T=" + std::to_string(buttonTop) + " B=" + std::to_string(buttonBottom) + 
-                           " (size: " + std::to_string(buttonWidth) + "x" + std::to_string(buttonHeight) + 
-                           ", scale: " + std::to_string(transform->scale.x) + "x" + std::to_string(transform->scale.y) + ")");
+                GN_LOG_INFO("🎯 BEFORE COLLISION: PLAY Button - spriteSize(" + std::to_string(sprite->width) + "x" + std::to_string(sprite->height) + 
+                           ") scale(" + std::to_string(transform->scale.x) + "x" + std::to_string(transform->scale.y) + 
+                           ") pos(" + std::to_string(transform->position.x) + ", " + std::to_string(transform->position.y) + ")");
                 
-                if (touchX >= buttonLeft && touchX <= buttonRight &&
-                    touchY >= buttonTop && touchY <= buttonBottom) {
-                    GN_LOG_INFO("🎮 MainMenuState: PLAY BUTTON HIT!");
-                    // Set button to pressed state for visual feedback
-                    uiElement->isPressed = true;
-                    uiElement->isHovered = true;
-                    UpdateButtonSprite(m_playButtonEntity, *uiElement);
+                GN_LOG_INFO("🎯 BEFORE COLLISION: PLAY Button bounds - L=" + std::to_string(buttonLeft) + " R=" + std::to_string(buttonRight) + 
+                           " T=" + std::to_string(buttonTop) + " B=" + std::to_string(buttonBottom) + 
+                           " size=" + std::to_string(buttonWidth) + "x" + std::to_string(buttonHeight));
+                
+                bool xInBounds = (touchX >= buttonLeft && touchX <= buttonRight);
+                bool yInBounds = (touchY >= buttonTop && touchY <= buttonBottom);
+                
+                GN_LOG_INFO("🎯 COLLISION TEST: PLAY Button - xInBounds=" + std::string(xInBounds ? "TRUE" : "FALSE") + 
+                           " yInBounds=" + std::string(yInBounds ? "TRUE" : "FALSE"));
+                
+                if (xInBounds && yInBounds) {
+                    GN_LOG_INFO("🎮 AFTER COLLISION: PLAY BUTTON HIT! Calling OnPlayButtonPressed()");
+                    // Trigger action and immediately reset visual state
                     OnPlayButtonPressed();
+                    uiElement->isPressed = false;
+                    uiElement->isHovered = false;
+                    UpdateButtonSprite(m_playButtonEntity, *uiElement);
                     return;
+                } else {
+                    GN_LOG_INFO("❌ AFTER COLLISION: PLAY Button missed");
                 }
             }
         }
@@ -1743,30 +1890,38 @@ namespace GameCore {
             UIElement* uiElement = m_ecsCoordinator->GetComponent<UIElement>(m_optionsButtonEntity);
             
             if (transform && sprite && uiElement) {
-                // Button is now positioned at top-left, so collision detection uses top-left based bounds
-                float buttonWidth = 64.0f * transform->scale.x * 0.8f; // 80% of actual button texture size
-                float buttonHeight = 16.0f * transform->scale.y * 0.8f; // 80% of actual button texture size
+                // Use actual sprite dimensions instead of hardcoded values
+                float buttonWidth = sprite->width * transform->scale.x;
+                float buttonHeight = sprite->height * transform->scale.y;
                 float buttonLeft = transform->position.x;
                 float buttonRight = transform->position.x + buttonWidth;
                 float buttonTop = transform->position.y;
                 float buttonBottom = transform->position.y + buttonHeight;
                 
-                // Debug logging for button bounds
-                GN_LOG_INFO("🎯 OPTIONS Button - Touch at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + 
-                           "), bounds: L=" + std::to_string(buttonLeft) + " R=" + std::to_string(buttonRight) + 
-                           " T=" + std::to_string(buttonTop) + " B=" + std::to_string(buttonBottom) + 
-                           " (size: " + std::to_string(buttonWidth) + "x" + std::to_string(buttonHeight) + 
-                           ", scale: " + std::to_string(transform->scale.x) + "x" + std::to_string(transform->scale.y) + ")");
+                GN_LOG_INFO("🎯 BEFORE COLLISION: OPTIONS Button - spriteSize(" + std::to_string(sprite->width) + "x" + std::to_string(sprite->height) + 
+                           ") scale(" + std::to_string(transform->scale.x) + "x" + std::to_string(transform->scale.y) + 
+                           ") pos(" + std::to_string(transform->position.x) + ", " + std::to_string(transform->position.y) + ")");
                 
-                if (touchX >= buttonLeft && touchX <= buttonRight &&
-                    touchY >= buttonTop && touchY <= buttonBottom) {
-                    GN_LOG_INFO("🎮 MainMenuState: OPTIONS BUTTON HIT!");
-                    // Set button to pressed state for visual feedback
-                    uiElement->isPressed = true;
-                    uiElement->isHovered = true;
-                    UpdateButtonSprite(m_optionsButtonEntity, *uiElement);
+                GN_LOG_INFO("🎯 BEFORE COLLISION: OPTIONS Button bounds - L=" + std::to_string(buttonLeft) + " R=" + std::to_string(buttonRight) + 
+                           " T=" + std::to_string(buttonTop) + " B=" + std::to_string(buttonBottom) + 
+                           " size=" + std::to_string(buttonWidth) + "x" + std::to_string(buttonHeight));
+                
+                bool xInBounds = (touchX >= buttonLeft && touchX <= buttonRight);
+                bool yInBounds = (touchY >= buttonTop && touchY <= buttonBottom);
+                
+                GN_LOG_INFO("🎯 COLLISION TEST: OPTIONS Button - xInBounds=" + std::string(xInBounds ? "TRUE" : "FALSE") + 
+                           " yInBounds=" + std::string(yInBounds ? "TRUE" : "FALSE"));
+                
+                if (xInBounds && yInBounds) {
+                    GN_LOG_INFO("🎮 AFTER COLLISION: OPTIONS BUTTON HIT! Calling OnOptionsButtonPressed()");
+                    // Trigger action and immediately reset visual state
                     OnOptionsButtonPressed();
+                    uiElement->isPressed = false;
+                    uiElement->isHovered = false;
+                    UpdateButtonSprite(m_optionsButtonEntity, *uiElement);
                     return;
+                } else {
+                    GN_LOG_INFO("❌ AFTER COLLISION: OPTIONS Button missed");
                 }
             }
         }
@@ -1796,11 +1951,11 @@ namespace GameCore {
                 if (touchX >= buttonLeft && touchX <= buttonRight &&
                     touchY >= buttonTop && touchY <= buttonBottom) {
                     GN_LOG_INFO("🎮 MainMenuState: QUICK PLAY BUTTON HIT!");
-                    // Set button to pressed state for visual feedback
-                    uiElement->isPressed = true;
-                    uiElement->isHovered = true;
-                    UpdateButtonSprite(m_quickPlayButtonEntity, *uiElement);
+                    // Trigger action and immediately reset visual state
                     OnQuickPlayButtonPressed();
+                    uiElement->isPressed = false;
+                    uiElement->isHovered = false;
+                    UpdateButtonSprite(m_quickPlayButtonEntity, *uiElement);
                     return;
                 }
             }
@@ -1831,11 +1986,11 @@ namespace GameCore {
                 if (touchX >= buttonLeft && touchX <= buttonRight &&
                     touchY >= buttonTop && touchY <= buttonBottom) {
                     GN_LOG_INFO("🎮 MainMenuState: QUIT BUTTON HIT!");
-                    // Set button to pressed state for visual feedback
-                    uiElement->isPressed = true;
-                    uiElement->isHovered = true;
-                    UpdateButtonSprite(m_quitButtonEntity, *uiElement);
+                    // Trigger action and immediately reset visual state
                     OnQuitButtonPressed();
+                    uiElement->isPressed = false;
+                    uiElement->isHovered = false;
+                    UpdateButtonSprite(m_quitButtonEntity, *uiElement);
                     return;
                 }
             }

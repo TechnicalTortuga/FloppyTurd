@@ -342,6 +342,7 @@ SWIFT_CLASS("_TtC10FloppyTurd11AppDelegate")
 - (void)applicationWillEnterForeground:(UIApplication * _Nonnull)application;
 - (void)applicationDidBecomeActive:(UIApplication * _Nonnull)application;
 - (void)applicationWillTerminate:(UIApplication * _Nonnull)application;
+- (UIInterfaceOrientationMask)application:(UIApplication * _Nonnull)application supportedInterfaceOrientationsForWindow:(UIWindow * _Nullable)window SWIFT_WARN_UNUSED_RESULT;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 
@@ -374,11 +375,15 @@ SWIFT_CLASS("_TtC10FloppyTurd18GameViewController")
 @end
 
 @class MTKView;
+@protocol UIViewControllerTransitionCoordinator;
 @class UITouch;
 @class UIEvent;
 
 @interface GameViewController (SWIFT_EXTENSION(FloppyTurd)) <MTKViewDelegate>
 - (void)mtkView:(MTKView * _Nonnull)view drawableSizeWillChange:(CGSize)size;
+@property (nonatomic, readonly) UIInterfaceOrientationMask supportedInterfaceOrientations;
+@property (nonatomic, readonly) BOOL shouldAutorotate;
+- (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id <UIViewControllerTransitionCoordinator> _Nonnull)coordinator;
 - (void)drawInMTKView:(MTKView * _Nonnull)view;
 - (void)touchesBegan:(NSSet<UITouch *> * _Nonnull)touches withEvent:(UIEvent * _Nullable)event;
 - (void)touchesMoved:(NSSet<UITouch *> * _Nonnull)touches withEvent:(UIEvent * _Nullable)event;

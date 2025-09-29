@@ -29,6 +29,10 @@ namespace GameCore {
         void UpdateScreenInfo(); // Call when orientation changes or resolution changes
         void InitializeScreenInfoDirect(); // Direct initialization using Swift CXX interop
         void SetScreenInfoDirect(const ScreenInfo& screenInfo); // Set screen info directly from Swift
+
+        // Callback mechanism for automatic updates
+        using ScreenInfoUpdateCallback = std::function<void()>;
+        void SetScreenInfoUpdateCallback(ScreenInfoUpdateCallback callback);
         
         // Dynamic scaling factors based on screen size and device type
         float GetUIScale() const;           // UI element scaling
@@ -66,7 +70,10 @@ namespace GameCore {
         ScreenInfo m_screenInfo;
         Platform m_platform = Platform::Unknown;
         PlatformDelegates m_delegates;
-        
+
+        // Callback for automatic screen info updates
+        ScreenInfoUpdateCallback m_screenInfoUpdateCallback;
+
         // Dynamic scaling factors
         std::unordered_map<std::string, float> m_scaleFactors;
         

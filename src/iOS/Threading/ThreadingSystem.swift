@@ -32,6 +32,9 @@ class CommandProcessor {
     /// Audio manager for executing audio commands
     private var audioManager: AVAudioHandler?
 
+    /// Game view controller for handling orientation changes
+    private weak var gameViewController: GameViewController?
+
     // MARK: - Private Logging
 
     private func log(_ message: String, level: LogLevel = .info) {
@@ -74,6 +77,12 @@ class CommandProcessor {
     func setAudioManager(_ manager: AVAudioHandler) {
         audioManager = manager
         log("[CommandProcessor] Audio manager set - instance: \(ObjectIdentifier(manager))")
+    }
+
+    /// Set the game view controller for orientation command execution
+    func setGameViewController(_ controller: GameViewController) {
+        gameViewController = controller
+        log("[CommandProcessor] Game view controller set - orientation commands enabled")
     }
 
     /// Process all pending commands from the queue
@@ -282,6 +291,54 @@ class CommandProcessor {
             if let metadata = renderer.getTextureMetadata(textureId: textureId) {
                 // Update the owned TextureMetadata in the command data
                 data.textureMetadata = metadata
+            }
+
+        case .CMD_LOCK_ORIENTATION:
+            Task { @MainActor in
+                if let gameViewController = gameViewController {
+                    gameViewController.lockOrientation()
+                    log("[CommandProcessor] Orientation locked successfully")
+                } else {
+                    log(
+                        "[CommandProcessor] ERROR: Cannot lock orientation - GameViewController not available",
+                        level: .error)
+                }
+            }
+
+        case .CMD_UNLOCK_ORIENTATION:
+            Task { @MainActor in
+                if let gameViewController = gameViewController {
+                    gameViewController.unlockOrientation()
+                    log("[CommandProcessor] Orientation unlocked successfully")
+                } else {
+                    log(
+                        "[CommandProcessor] ERROR: Cannot unlock orientation - GameViewController not available",
+                        level: .error)
+                }
+            }
+
+        case .CMD_LOCK_TO_PORTRAIT:
+            Task { @MainActor in
+                if let gameViewController = gameViewController {
+                    gameViewController.lockToPortrait()
+                    log("[CommandProcessor] Orientation locked to portrait successfully")
+                } else {
+                    log(
+                        "[CommandProcessor] ERROR: Cannot lock to portrait - GameViewController not available",
+                        level: .error)
+                }
+            }
+
+        case .CMD_LOCK_TO_LANDSCAPE:
+            Task { @MainActor in
+                if let gameViewController = gameViewController {
+                    gameViewController.lockToLandscape()
+                    log("[CommandProcessor] Orientation locked to landscape successfully")
+                } else {
+                    log(
+                        "[CommandProcessor] ERROR: Cannot lock to landscape - GameViewController not available",
+                        level: .error)
+                }
             }
 
         default:
@@ -599,4 +656,3 @@ class CommandProcessor {
         }
     }
 }
-

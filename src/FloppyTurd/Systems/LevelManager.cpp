@@ -896,7 +896,7 @@ namespace GameCore {
         DestroyBackgroundLayers(); // Clean up any existing layers
 
         for (const auto& layerConfig : m_currentLevelConfig.backgroundLayers) {
-            GN_LOG_INFO("📋 Processing layer: '" + layerConfig.textureId + "'");
+            GN_LOG_INFO("📋 Processing layer: '" + layerConfig.textureId + "' (level: " + std::to_string(m_currentLevelId) + ")");
 
             // 🎯 STEP 1: Get actual texture dimensions from metadata system
             int textureWidth, textureHeight;
@@ -909,28 +909,64 @@ namespace GameCore {
 
             GN_LOG_INFO("📐 Texture dimensions: " + std::to_string(textureWidth) + "x" + std::to_string(textureHeight));
 
-            // 🎯 STEP 2: Calculate scaling using simple mathematics
-            const float screenHeight = 2556.0f; // iPhone 16 portrait height
-            float scale = screenHeight / static_cast<float>(textureHeight);
+            // 🎯 STEP 2: Calculate scaling using dynamic screen dimensions
+            float scale;
+            float effectiveScreenWidth, effectiveScreenHeight;
+
+            // Get actual screen dimensions from render system
+            if (m_renderSystem) {
+                const ScreenInfo& screenInfo = m_renderSystem->GetScreenInfo();
+                effectiveScreenWidth = screenInfo.pixelWidth;
+                effectiveScreenHeight = screenInfo.pixelHeight;
+
+                // Check if we're actually in landscape mode (width > height)
+                bool isActuallyLandscape = (effectiveScreenWidth > effectiveScreenHeight);
+
+                GN_LOG_INFO("📱 Screen dimensions: " + std::to_string((int)effectiveScreenWidth) + "x" + std::to_string((int)effectiveScreenHeight) +
+                           " (orientation: " + (isActuallyLandscape ? "landscape" : "portrait") + ")");
+
+                if ((m_currentLevelConfig.forceLandscape && isActuallyLandscape) || isActuallyLandscape) {
+                    // Landscape mode with width priority scaling
+                    scale = effectiveScreenWidth / static_cast<float>(textureWidth);
+                    GN_LOG_INFO("🌅 Landscape scaling: screen=" + std::to_string(effectiveScreenWidth) +
+                               " texture=" + std::to_string(textureWidth) + " scale=" + std::to_string(scale));
+                } else {
+                    // Standard portrait mode scaling
+                    scale = effectiveScreenHeight / static_cast<float>(textureHeight);
+                    GN_LOG_INFO("📱 Portrait scaling: screen=" + std::to_string(effectiveScreenHeight) +
+                               " texture=" + std::to_string(textureHeight) + " scale=" + std::to_string(scale));
+                }
+            } else {
+                // Fallback to hardcoded dimensions if render system not available
+                GN_LOG_WARN("⚠️ Render system not available, using fallback dimensions");
+                effectiveScreenWidth = 1179.0f;
+                effectiveScreenHeight = 2556.0f;
+
+                if (m_currentLevelConfig.forceLandscape && m_currentLevelConfig.widthPriorityScaling) {
+                    scale = effectiveScreenWidth / m_currentLevelConfig.landscapeWidth;
+                } else {
+                    scale = effectiveScreenHeight / static_cast<float>(textureHeight);
+                }
+            }
             scale = std::round(scale * 100.0f) / 100.0f; // Pixel-perfect rounding
 
             float scaledWidth = static_cast<float>(textureWidth) * scale;
             float scaledHeight = static_cast<float>(textureHeight) * scale;
 
-            GN_LOG_INFO("🔢 Scaling: screen=" + std::to_string(screenHeight) +
-                       " texture=" + std::to_string(textureHeight) +
+            GN_LOG_INFO("🔢 Scaling: screen=" + std::to_string(effectiveScreenWidth) + "x" + std::to_string(effectiveScreenHeight) +
+                       " texture=" + std::to_string(textureWidth) + "x" + std::to_string(textureHeight) +
                        " scale=" + std::to_string(scale) +
                        " result=" + std::to_string(scaledWidth) + "x" + std::to_string(scaledHeight));
 
-            // 🎯 STEP 3: Calculate optimal instance count mathematically
-            // Use dynamic screen width and precise calculation for seamless wrapping
-            const float screenWidth = 1179.0f; // iPhone 16 portrait width
+            // 🎯 STEP 3: Calculate optimal instance count using the screen dimensions we already determined
+            // Use the effectiveScreenWidth and effectiveScreenHeight from above
+
             // Calculate exactly how many instances needed for seamless wrapping
             // Add 2 extra instances for safety margin to prevent gaps during movement
-            int instancesNeeded = static_cast<int>(std::ceil((screenWidth * 2.0f) / scaledWidth));
+            int instancesNeeded = static_cast<int>(std::ceil((effectiveScreenWidth * 2.0f) / scaledWidth));
             instancesNeeded = std::max(instancesNeeded, 5); // Minimum for seamless wrapping
 
-            GN_LOG_INFO("🔄 Instances: screen=" + std::to_string(screenWidth) +
+            GN_LOG_INFO("🔄 Instances: screen=" + std::to_string(effectiveScreenWidth) +
                        " scaledWidth=" + std::to_string(scaledWidth) +
                        " needed=" + std::to_string(instancesNeeded));
 
@@ -953,8 +989,47 @@ namespace GameCore {
                     continue;
                 }
 
+                // Special positioning for boss floor and screen curtains
+                float finalXPos = xPos;
+                float finalYPos = yPos;
+
+                // Apply precise Y offset for boss floor to ensure visibility on screen
+                if (layerConfig.textureId == "BossFloor.png") {
+                    // Calculate offset to ensure floor is visible on screen
+                    // Boss floor is 320x180 scaled like other backgrounds, but needs to be positioned properly
+
+                    // Get screen dimensions for proper positioning
+                    float screenHeight = effectiveScreenHeight;
+
+                    // Position floor so it's visible at the bottom of the screen
+                    // Subtract offset from screen height to move it up from the very bottom
+                    float floorOffset = screenHeight * 0.15f + 300.0f; // 15% from bottom + 300px additional offset
+
+                    finalYPos = screenHeight - floorOffset;
+
+                    GN_LOG_INFO("Boss floor positioned for screen visibility: 15% offset + 300px = " +
+                               std::to_string(floorOffset) + "px total, finalY=" + std::to_string(finalYPos) +
+                               ", screenHeight=" + std::to_string(screenHeight));
+                }
+
+                if (layerConfig.textureId == "screenCurtains.png" && effectiveScreenWidth > effectiveScreenHeight) {
+                    // In landscape mode, position screen curtains on left and right sides
+                    if (i == 0) {
+                        // Left curtain
+                        finalXPos = -scaledWidth * 0.25f; // Position left curtain off-screen to the left
+                    } else if (i == instancesNeeded - 1) {
+                        // Right curtain
+                        finalXPos = effectiveScreenWidth - scaledWidth * 0.75f; // Position right curtain off-screen to the right
+                    } else {
+                        // Skip middle instances for curtains
+                        m_ecsSystem->DestroyEntity(bgEntity);
+                        continue;
+                    }
+                    GN_LOG_INFO("🎭 Positioning screen curtain at: (" + std::to_string(finalXPos) + ", " + std::to_string(finalYPos) + ") for landscape mode");
+                }
+
                 // Transform: Position and scale
-                Transform transform(Gnosis::GNVector2(xPos, yPos), 0.0f, Gnosis::GNVector2(scale, scale));
+                Transform transform(Gnosis::GNVector2(finalXPos, finalYPos), 0.0f, Gnosis::GNVector2(scale, scale));
                 m_ecsSystem->AddComponent<Transform>(bgEntity, transform);
 
                 // Sprite: Use actual texture dimensions

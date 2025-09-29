@@ -74,7 +74,7 @@ private:
     Entity m_healthFillEntity = 0;
     Entity m_hurtEffectEntity = 0;
     Entity m_bossNameEntity = 0;
-    Entity m_healthTextEntity = 0;
+    // m_healthTextEntity removed as requested
 
     // Display properties
     const char* m_bossName;
@@ -83,18 +83,16 @@ private:
     float m_hurtFadeTimer = 0.0f;
     const float HURT_FADE_DURATION = 0.75f;
 
-    // Position and size (iPhone 16 portrait coordinates)
-    const float BAR_WIDTH = 600.0f;
-    const float BAR_HEIGHT = 40.0f;
-    const float BAR_X = 589.5f;  // Center of screen
-    const float BAR_Y = 200.0f;  // Near top of screen
-    const float NAME_Y = BAR_Y - 60.0f;  // Above the bar
+    // Position and size - dynamic based on screen dimensions (matches old design)
+    static constexpr float BAR_TOP_OFFSET = 0.02f;     // 2% from top (raised from 5%)
+    static constexpr float NAME_OFFSET = 0.05f;        // 5% from top for name (raised from 8%)
+    const int ORIGINAL_WIDTH = 160;                    // Original texture width
+    const int ORIGINAL_HEIGHT = 32;                    // Original texture height
 
-    // Colors
-    const float HEALTH_COLOR[4] = {0.2f, 0.8f, 0.2f, 1.0f};      // Green
-    const float HURT_COLOR[4] = {0.8f, 0.2f, 0.2f, 1.0f};        // Red
-    const float BACKGROUND_COLOR[4] = {0.3f, 0.3f, 0.3f, 0.8f};  // Dark gray
-    const float BORDER_COLOR[4] = {0.8f, 0.8f, 0.8f, 1.0f};      // Light gray
+    // Texture IDs for boss bar components (matching old design)
+    const char* FRAME_TEXTURE_ID = "BossBarFrame";
+    const char* HEALTH_TEXTURE_ID = "BossBarHealth";
+    const char* HURT_TEXTURE_ID = "BossBarHurt";
 
     // Text properties
     const float TEXT_SCALE = 2.0f;

@@ -254,7 +254,13 @@ namespace GameCore {
         float gravity;
         float terminalVelocity;
         float jumpForce;
-        
+
+        // Landscape mode settings (for boss level)
+        bool forceLandscape;              // Whether this level requires landscape orientation
+        float landscapeWidth;             // Base width for landscape mode (320 for boss level)
+        float landscapeHeight;            // Base height for landscape mode (180 for boss level)
+        bool widthPriorityScaling;        // Scale width to fit screen, height maintains aspect ratio
+
         // Spawn rates and difficulty
         float obstacleSpawnRate;
         float enemySpawnRate;
@@ -272,6 +278,10 @@ namespace GameCore {
             , gravity(980.0f)
             , terminalVelocity(500.0f)
             , jumpForce(300.0f)
+            , forceLandscape(false)     // Default to portrait mode
+            , landscapeWidth(320.0f)    // Boss level landscape width
+            , landscapeHeight(180.0f)   // Boss level landscape height
+            , widthPriorityScaling(true) // Width takes priority for scaling
             , obstacleSpawnRate(2.0f)
             , enemySpawnRate(3.0f)
             , pickupSpawnRate(5.0f)

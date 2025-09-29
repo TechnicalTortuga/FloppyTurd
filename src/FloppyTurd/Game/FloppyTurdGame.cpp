@@ -1,6 +1,9 @@
 #include "FloppyTurdGame.h"
 #include "../States/LoadingState.h"
 #include "../States/MainMenuState.h"
+#include "../States/ScreenPromptState.h"
+#include "../Config/LevelConfig.h"
+#include "../Input/InputManager.h"
 #include "../../Engine/Core/GNLog.h"
 #include "../../Engine/Platform/PlatformDelegates.h"
 #ifdef PLATFORM_IOS
@@ -48,6 +51,7 @@ namespace GameCore {
         , m_showDebugInfo(false)
         , m_levelUnlockSoundTimer(0.0f)
         , m_pendingPartyHorn(false)
+        , m_pendingLandscapeLevelId(0)
     {
         // Initialize game stats
         m_gameStats = {0, 0, 0, 0, 0, 0, 0, 0, 0.0f, 0, 0};
@@ -69,11 +73,16 @@ namespace GameCore {
         }
         
         GN_LOG_INFO("Initializing Floppy Turd Game...");
-        
+
         // Initialize platform using existing implementations
         #ifdef PLATFORM_IOS
         iOSPlatform::SetupDelegates(m_platformDelegates);
         GN_LOG_INFO("iOS platform delegates configured");
+
+        // For iOS: Initialize InputManager early (after platform delegates but before ECS)
+        // This ensures touch input is ready for Swift interop
+        InputManager::InitializeInstance(nullptr, &m_platformDelegates);
+        GN_LOG_INFO("InputManager singleton initialized (iOS - early)");
         #else
         RaylibPlatform::SetupDelegates(m_platformDelegates);
         if (!RaylibPlatform::Initialize(800, 600, "Floppy Turd")) {
@@ -81,8 +90,12 @@ namespace GameCore {
             return false;
         }
         GN_LOG_INFO("Desktop platform initialized");
+
+        // For Desktop: Initialize InputManager after Raylib is set up
+        InputManager::InitializeInstance(nullptr, &m_platformDelegates);
+        GN_LOG_INFO("InputManager singleton initialized (Desktop)");
         #endif
-        
+
         // Validate delegates
         if (!m_platformDelegates.IsValid()) {
             GN_LOG_ERROR("Platform delegates not properly configured");
@@ -94,6 +107,21 @@ namespace GameCore {
             GN_LOG_ERROR("Failed to initialize ECS system");
             return false;
         }
+
+        // Update InputManager with ECS system now that it's available
+        #ifdef PLATFORM_IOS
+        // For iOS: Update the existing InputManager instance with ECS
+        if (InputManager::GetInstance()) {
+            InputManager::GetInstance()->SetECSSystem(m_ecsSystem.get());
+            GN_LOG_INFO("InputManager singleton updated with ECS system (iOS)");
+        }
+        #else
+        // For Desktop: Update the existing InputManager instance with ECS
+        if (InputManager::GetInstance()) {
+            InputManager::GetInstance()->SetECSSystem(m_ecsSystem.get());
+            GN_LOG_INFO("InputManager singleton updated with ECS system (Desktop)");
+        }
+        #endif
 
         // Platform-specific system initialization (using delegates)
         #ifdef PLATFORM_IOS
@@ -157,6 +185,10 @@ namespace GameCore {
         if (m_ecsSystem) {
             m_ecsSystem.reset();
         }
+
+        // Destroy InputManager singleton
+        InputManager::DestroyInstance();
+        GN_LOG_INFO("InputManager singleton destroyed");
 
         m_initialized = false;
         
@@ -562,14 +594,50 @@ namespace GameCore {
             if (mainMenu && mainMenu->GetSelectedLevelIndex() >= 0) {
                 // Transition to gameplay with selected level
                 int selectedLevel = mainMenu->GetSelectedLevelIndex();
-                auto gameplayState = std::make_unique<GameplayState>(m_ecsSystem.get(), &m_platformDelegates, selectedLevel);
-                m_stateManager->ChangeState(std::move(gameplayState));
-                GN_LOG_INFO("Transitioned to GameplayState with level: " + std::to_string(selectedLevel));
+
+                // Check if level requires landscape mode
+                LevelConfig levelConfig = LevelConfigFactory::GetLevelConfig(selectedLevel);
+                if (levelConfig.forceLandscape) {
+                    // Show screen prompt - this will be the active state until landscape is detected
+                    auto screenPrompt = std::make_unique<ScreenPromptState>(m_ecsSystem.get(), &m_platformDelegates);
+                    m_stateManager->ChangeState(std::move(screenPrompt));
+                    GN_LOG_INFO("Showing screen prompt for landscape-required level: " + std::to_string(selectedLevel));
+
+                    // Store the level info for when ScreenPromptState finishes
+                    // The ScreenPromptState will create and push the GameplayState when ready
+                    m_pendingLandscapeLevelId = selectedLevel;
+                } else {
+                    // Normal level - direct transition to gameplay
+                    auto gameplayState = std::make_unique<GameplayState>(m_ecsSystem.get(), &m_platformDelegates, selectedLevel);
+                    m_stateManager->ChangeState(std::move(gameplayState));
+                    GN_LOG_INFO("Transitioned to GameplayState with level: " + std::to_string(selectedLevel));
+                }
             } else {
                 // Return to main menu (no level selected)
                 auto mainMenuState = std::make_unique<MainMenuState>(m_ecsSystem.get(), &m_platformDelegates);
                 m_stateManager->ChangeState(std::move(mainMenuState));
                 GN_LOG_INFO("Returned to MainMenuState");
+            }
+        }
+        else if (strcmp(stateName, "ScreenPrompt") == 0) {
+            // Handle screen prompt state finishing (landscape mode detected)
+            if (m_pendingLandscapeLevelId > 0) {
+                GN_LOG_INFO("ScreenPrompt finished - IMMEDIATELY locking to landscape orientation for boss level: " + std::to_string(m_pendingLandscapeLevelId));
+
+                // LOCK ORIENTATION IMMEDIATELY BEFORE CREATING GAMEPLAY STATE to prevent rotation during transition
+                if (m_platformDelegates.renderer.lockToLandscape) {
+                    m_platformDelegates.renderer.lockToLandscape();
+                    GN_LOG_INFO("Orientation locked to landscape before GameplayState creation");
+                }
+
+                auto gameplayState = std::make_unique<GameplayState>(m_ecsSystem.get(), &m_platformDelegates, m_pendingLandscapeLevelId);
+                m_stateManager->ChangeState(std::move(gameplayState));
+                m_pendingLandscapeLevelId = 0; // Clear the pending level
+            } else {
+                // No pending landscape level, return to main menu
+                GN_LOG_WARN("ScreenPrompt finished but no pending landscape level found");
+                auto mainMenuState = std::make_unique<MainMenuState>(m_ecsSystem.get(), &m_platformDelegates);
+                m_stateManager->ChangeState(std::move(mainMenuState));
             }
         }
         else if (strcmp(stateName, "Gameplay") == 0) {
@@ -975,6 +1043,19 @@ namespace GameCore {
         // This method is now deprecated - levels are only unlocked manually via unlock button
         // Keeping the method for potential future use but removing automatic unlock logic
         GN_LOG_DEBUG("CheckLevelUnlock called but automatic unlocking is disabled - use manual unlock button instead");
+    }
+
+    // MARK: - Screen Info Update for Swift Interop
+
+    void FloppyTurdGame::UpdateScreenInfo(const ScreenInfo& screenInfo) {
+        // Update the singleton ConfigManager with new screen information
+        auto& configManager = ConfigManager::Instance();
+        configManager.SetScreenInfoDirect(screenInfo);
+
+        GN_LOG_INFO("ConfigManager screen info updated from Swift: " +
+                   std::to_string(screenInfo.pixelWidth) + "x" +
+                   std::to_string(screenInfo.pixelHeight) + ", portrait: " +
+                   (screenInfo.isPortrait ? "true" : "false"));
     }
 
     // Global utility functions

@@ -57,7 +57,9 @@ namespace GameCore {
         void Update(float deltaTime) override;
         void Render() override;
         void HandleSettingsButtonInput();
-    void HandleInput() override;
+        void HandlePauseMenuInput();
+        void HandleGameplayInput();
+        void HandleInput() override;
 
         // State queries
         bool IsFinished() const override { return m_finished; }
@@ -85,11 +87,25 @@ namespace GameCore {
         void SetupIOSLayout();
         void SetupDesktopLayout();
 
+        // Orientation-specific UI management
+        bool IsLandscapeMode() const;
+        void UpdateUILayoutForOrientation();
+        void RepositionUIElementsLandscape();
+        void RepositionUIElementsPortrait();
+        void RescaleBackgroundsForOrientation(bool isLandscape, float screenWidth, float screenHeight);
+        void RegisterScreenInfoCallback();
+
+        // Debug visualization
+        void CreateDebugButtonRectangle();
+        void UpdateDebugButtonRectangle(float left, float top, float right, float bottom);
+        void CreateDebugShootingZoneRectangle();
+        void UpdateDebugShootingZoneRectangle(float left, float top, float right, float bottom);
+
     private:
         // Core systems
         Gnosis::ECS* m_ecsSystem;
         GameCore::PlatformDelegates* m_platformDelegates;
-        
+
         // Game systems
         std::unique_ptr<SpriteSystem> m_spriteSystem;
         std::unique_ptr<PlayerControllerSystem> m_playerControllerSystem;
@@ -167,6 +183,10 @@ namespace GameCore {
         
         // Pause menu system
         Gnosis::Entity m_settingsButtonEntity;  // Settings button (replaces [MENU] button)
+
+        // Debug visualization entities
+        Gnosis::Entity m_debugButtonRect;       // Red rectangle showing button collision bounds
+        Gnosis::Entity m_debugShootingZoneRect; // Blue rectangle showing shooting zone collision bounds
         // Settings button debouncing
         float m_lastSettingsButtonPressTime;
         float m_settingsButtonDebounceDelay;
@@ -213,6 +233,24 @@ namespace GameCore {
         static constexpr float DIFFICULTY_INCREASE_INTERVAL = 30.0f;
         static constexpr float MAX_DIFFICULTY_LEVEL = 10.0f;
         static constexpr int STARTING_LIVES = 3;
+
+        // Orientation-specific UI positioning constants (Portrait mode - current implementation)
+        static constexpr float PORTRAIT_SETTINGS_X = 0.85f;    // 85% from left
+        static constexpr float PORTRAIT_SETTINGS_Y = 0.05f;    // 5% from top
+        static constexpr float PORTRAIT_COINBAG_X = 0.01f;     // 1% from left
+        static constexpr float PORTRAIT_COINBAG_Y = 0.70f;     // 30% from bottom (raised 10% more)
+        static constexpr float PORTRAIT_PIPE_Y = 0.10f;        // 10% from top
+        static constexpr float PORTRAIT_PLAYER_START_X = 400.0f;
+        static constexpr float PORTRAIT_PLAYER_START_Y = 639.0f;
+        static constexpr float BOSS_PLAYER_X_PERCENT = 0.15f;  // 15% from left for boss level to avoid UI overlap
+
+        // Orientation-specific UI positioning constants (Landscape mode - new)
+        static constexpr float LANDSCAPE_SETTINGS_X = 0.90f;   // 90% from left (further right in landscape)
+        static constexpr float LANDSCAPE_SETTINGS_Y = 0.08f;   // Slightly lower (8% from top)
+        static constexpr float LANDSCAPE_COINBAG_X = 0.01f;    // 1% from left (even further left to avoid player overlap)
+        static constexpr float LANDSCAPE_COINBAG_Y = 0.55f;    // 45% from bottom (raised 10% more)
+        static constexpr float LANDSCAPE_PIPE_Y = 0.12f;       // Slightly lower (12% from top)
+        static constexpr float LANDSCAPE_PLAYER_OFFSET_X = 320.0f; // Moved further right (~150px)
 
         // Private methods
         void InitializeSystems();
@@ -289,7 +327,7 @@ namespace GameCore {
         
         // Stats management
         void IncrementDeathCounter();         // Increment death counter when player dies
-        void CheckSettingsButtonClick(float touchX, float touchY);
+        bool CheckSettingsButtonClick(float touchX, float touchY);
         
 
         // Input helpers

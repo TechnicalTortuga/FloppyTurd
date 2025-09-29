@@ -107,6 +107,8 @@ if(PLATFORM_IOS)
         "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Systems/*.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Config/*.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Config/*.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Input/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Input/*.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Core/*.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Core/*.h"
         "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Platform/*.cpp"
@@ -123,6 +125,7 @@ if(PLATFORM_IOS)
     add_library(FloppyTurdGame STATIC ${FLOPPYTURD_CPP_SOURCES})
     target_include_directories(FloppyTurdGame PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Game
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Input
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Core
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Events

@@ -113,13 +113,20 @@ namespace GameCore {
         config.worldSpeed = 0.0f;          // Boss level: static background, no world movement
         config.baseScale = 8.0f;
         config.difficultyMultiplier = 2.0f;
-        
+
+        // Enable landscape mode for boss level
+        config.forceLandscape = true;      // Boss level requires landscape orientation
+        config.landscapeWidth = 320.0f;    // 320x180 base dimensions
+        config.landscapeHeight = 180.0f;
+        config.widthPriorityScaling = true; // Width stretches to fit screen
+
         config.enableEnemies = true;
         config.enableNPCs = false;
         config.enablePickups = false; // Boss level: control pickups per design
+        config.shootingEnabled = true; // Boss level should have shooting enabled
         AddBossLevelLayers(config);
         AddBossEnemies(config);
-        
+
         return config;
     }
 
@@ -228,14 +235,30 @@ namespace GameCore {
     }
 
     void LevelConfigFactory::AddBossLevelLayers(LevelConfig& config) {
-        // Boss level with static background - no parallax scrolling (consistent with other levels)
-        config.backgroundLayers.emplace_back("BossLevelBackgroundMobile.png", 0.0f, 0.0f, 0);
-        config.backgroundLayers.back().scaleMultiplier = 1.0f; // Use consistent scaling
-        // For static boss level, don't set repeatWidth to avoid multiple instances
-        // config.backgroundLayers.back().repeatWidth = 384.0f * 5.0f; // Commented out for static background
+        // Boss level with static background - layered from bottom up as specified:
+        // 1. Boss Background (bottom layer)
+        // 2. Boss floor / boss walls / pillar (middle layer)
+        // 3. Screen curtains (top layer)
 
-        // Note: Animated pillar is handled as a decorative obstacle in ObstacleSystem::AddBossLevelDecorations()
-        // This allows for proper 7-frame animation support
+        // Layer 0: Boss Background (bottom)
+        // Use mobile-specific background for better landscape support
+        config.backgroundLayers.emplace_back("BossLevelBackgroundMobile.png", 0.0f, 0.0f, 0);
+        config.backgroundLayers.back().scaleMultiplier = 1.0f; // Will be scaled to fit landscape mode
+
+        // Layer 1: Boss Floor (middle) - precise positioning handled by LevelManager
+        config.backgroundLayers.emplace_back("BossFloor.png", 0.0f, 0.0f, 1); // Precise offset calculated by LevelManager
+        config.backgroundLayers.back().scaleMultiplier = 1.0f;
+
+        // Layer 2: Boss Walls (middle)
+        config.backgroundLayers.emplace_back("BossWalls.png", 0.0f, 0.0f, 2);
+        config.backgroundLayers.back().scaleMultiplier = 1.0f;
+
+        // Layer 3: Screen Curtains (top) - position on sides for landscape
+        config.backgroundLayers.emplace_back("screenCurtains.png", 0.0f, 0.0f, 3);
+        config.backgroundLayers.back().scaleMultiplier = 1.0f;
+
+        // Note: Animated pillar (15 frames) will be handled as a separate animated entity
+        // since it needs proper animation support beyond static background layers
     }
 
 

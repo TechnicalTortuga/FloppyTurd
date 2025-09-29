@@ -90,6 +90,12 @@ namespace GameCore {
         Gnosis::ECS* GetECS() const { return m_ecsSystem.get(); }
         const PlatformDelegates& GetPlatformDelegates() const { return m_platformDelegates; }
 
+        // Screen info update for Swift interop
+        void UpdateScreenInfo(const ScreenInfo& screenInfo);
+
+        // Landscape mode support
+        int GetPendingLandscapeLevelId() const { return m_pendingLandscapeLevelId; }
+
         // Game settings
         void SetMusicVolume(float volume);
         void SetSFXVolume(float volume);
@@ -143,6 +149,9 @@ namespace GameCore {
         bool TryUnlockLevel(int levelId);
         void PlaySFX(const std::string& soundName);
 
+        // ConfigManager access for Swift interop
+        void UpdateConfigManagerScreenInfo(const ScreenInfo& screenInfo);
+
     private:
         // Helper methods for level system
         void SetDefaultUnlockRequirements(int levelId, LevelStats& stats);
@@ -176,6 +185,9 @@ namespace GameCore {
         // Level unlock sound effect timer
         float m_levelUnlockSoundTimer;
         bool m_pendingPartyHorn;
+
+        // Landscape mode support
+        int m_pendingLandscapeLevelId;
         
         // Performance tracking
         float m_frameTime;

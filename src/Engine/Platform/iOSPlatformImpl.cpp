@@ -49,6 +49,12 @@ void InitializePlatformDelegates() {
             delegates.renderer.getScreenInfo = GameCore::iOSPlatform::GetScreenInfo;
             delegates.renderer.getScreenSize = GameCore::iOSPlatform::GetScreenSize;
 
+            // Orientation control delegates
+            delegates.renderer.lockOrientation = GameCore::iOSPlatform::LockOrientation;
+            delegates.renderer.unlockOrientation = GameCore::iOSPlatform::UnlockOrientation;
+            delegates.renderer.lockToPortrait = GameCore::iOSPlatform::LockToPortrait;
+            delegates.renderer.lockToLandscape = GameCore::iOSPlatform::LockToLandscape;
+
             GameCore::ThreadingProxy::enqueueLogInfo("iOS platform delegates configured successfully", "PLATFORM");
         }
         
@@ -143,6 +149,26 @@ void InitializePlatformDelegates() {
             if (screenInfo) {
                 GameCore::ThreadingProxy::enqueueGetScreenInfo(screenInfo);
             }
+        }
+
+        void LockOrientation() {
+            // Enqueue orientation lock command to Swift side
+            GameCore::ThreadingProxy::enqueueLockOrientation();
+        }
+
+        void UnlockOrientation() {
+            // Enqueue orientation unlock command to Swift side
+            GameCore::ThreadingProxy::enqueueUnlockOrientation();
+        }
+
+        void LockToPortrait() {
+            // Enqueue lock to portrait command to Swift side
+            GameCore::ThreadingProxy::enqueueLockToPortrait();
+        }
+
+        void LockToLandscape() {
+            // Enqueue lock to landscape command to Swift side
+            GameCore::ThreadingProxy::enqueueLockToLandscape();
         }
         
         // Audio implementations (using ThreadingProxy static methods)

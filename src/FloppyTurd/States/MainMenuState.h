@@ -281,6 +281,9 @@ namespace GameCore {
         // Options menu helpers
         void ShowOptionsMenu();
         void HideOptionsMenu();
+
+        // Orientation change handling
+        void CheckForOrientationChange();
     };
 
 } // namespace GameCore

@@ -23,6 +23,9 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Systems/../Components/GameComponents.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Systems/HatsSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Systems/../../Engine/Platform/PlatformDelegates.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Input/InputManager.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Input/../../Engine/Core/ECS.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Input/../../Engine/Platform/PlatformDelegates.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Utility/Utils.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Utility/../Core/GnosisTypes.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Game/FloppyTurdGame.h \
@@ -44,8 +47,8 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Game/../States/../Systems/ProjectileSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Game/../States/../Systems/HatsSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Game/../States/../Systems/SkillSystem.h \
-  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Game/../States/../Systems/CameraSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Game/../States/../Systems/RenderSystem.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Game/../States/../Systems/CameraSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Game/../States/../Systems/LevelManager.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Game/../States/../Systems/../Config/LevelConfig.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Game/../States/../Systems/ObstacleSystem.h \

@@ -34,6 +34,10 @@ namespace GameCore {
         void DrawCircle(float x, float y, float radius, float r, float g, float b, float a);
         void GetScreenSize(float* width, float* height);
         void GetScreenInfo(ScreenInfo* screenInfo);
+        void LockOrientation();
+        void UnlockOrientation();
+        void LockToPortrait();
+        void LockToLandscape();
         
         // Input functions that call Swift TouchInputHandler directly
         bool IsActionPressed(int action);

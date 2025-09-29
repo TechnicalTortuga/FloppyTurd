@@ -730,6 +730,9 @@ extension DeveloperToolsSupport.ImageResource {
     /// The "samuraiturdletshoot" asset catalog image resource.
     static let samuraiturdletshoot = DeveloperToolsSupport.ImageResource(name: "samuraiturdletshoot", bundle: resourceBundle)
 
+    /// The "screenCurtains" asset catalog image resource.
+    static let screenCurtains = DeveloperToolsSupport.ImageResource(name: "screenCurtains", bundle: resourceBundle)
+
     /// The "settingsbutton" asset catalog image resource.
     static let settingsbutton = DeveloperToolsSupport.ImageResource(name: "settingsbutton", bundle: resourceBundle)
 

@@ -5,6 +5,7 @@
 #include "../Components/GameComponents.h"
 #include "../Systems/SkillSystem.h"
 #include "../Systems/HatsSystem.h"
+#include "../Input/InputManager.h"
 #include <vector>
 #include <string>
 
@@ -35,7 +36,7 @@ namespace GameCore {
         // Core lifecycle
         void Initialize();
         void Update(float deltaTime);
-        void HandleInput(float touchX, float touchY);
+        void HandleInput(float touchX, float touchY, TouchState touchState = TouchState::PRESSED);
         void Cleanup();
 
         // Menu state management
@@ -49,6 +50,9 @@ namespace GameCore {
 
         // Screen dimension updates (called when screen size changes)
         void UpdateScreenDimensions(float width, float height);
+
+        // Orientation helpers
+        bool IsLandscapeMode() const;
 
         // Data update methods (called by GameplayState)
         void UpdateSkillData(int currentSkillIndex, const std::vector<GameCore::SkillType>& availableSkills,
@@ -65,12 +69,15 @@ namespace GameCore {
         void ShowPauseMenu();
         void HidePauseMenu();
         void HandlePauseMenuInput(float touchX, float touchY);
-        void HandleKnobDrag(float touchX, float touchY);
+        void HandleKnobDrag(float touchX, float touchY, TouchState touchState);
         void StopKnobDrag();
         bool IsKnobDragging() const;
         void HandlePauseMenuContentClick(float touchX, float touchY);
 
     private:
+        // Helper function for consistent button collision detection
+        bool IsTouchInButtonBounds(float touchX, float touchY, Entity buttonEntity, bool isCentered = false);
+
         // Core system dependencies
         Gnosis::ECS* m_ecsCoordinator;
         const GameCore::PlatformDelegates& m_platformDelegates;

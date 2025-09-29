@@ -7,6 +7,7 @@ namespace GameCore {
 
     PlayerControllerSystem::PlayerControllerSystem(Gnosis::ECS* ecsSystem, GameCore::PlatformDelegates* platformDelegates, SpriteSystem* spriteSystem, ProjectileSystem* projectileSystem, HatsSystem* hatsSystem, SkillSystem* skillSystem, int currentLevelId, const LevelConfig* levelConfig)
         : m_ecsSystem(ecsSystem)
+        , m_renderSystem(nullptr)
         , m_platformDelegates(platformDelegates)
         , m_spriteSystem(spriteSystem)
         , m_projectileSystem(projectileSystem)
@@ -118,7 +119,8 @@ namespace GameCore {
     }
 
     void PlayerControllerSystem::HandleTouchInput(float x, float y, bool isJustPressed) {
-        GN_LOG_INFO("PlayerControllerSystem::HandleTouchInput called with (" + std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(isJustPressed) + ")");
+        GN_LOG_INFO("PlayerControllerSystem::HandleTouchInput called with (" + std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(isJustPressed) +
+                   ") level: " + std::to_string(m_currentLevelId) + " boss: " + std::to_string(m_currentLevelId == 6));
 
         if (!m_playerAlive) {
             GN_LOG_WARN("Input ignored - player not alive");
@@ -143,48 +145,132 @@ namespace GameCore {
             m_touchSession.startX = x;
             m_touchSession.startY = y;
 
-            // Check if shooting is enabled for this level
-            bool shootingEnabled = m_levelConfig ? m_levelConfig->shootingEnabled : (m_currentLevelId != 1);
-            if (!shootingEnabled) {
-                // LEVEL WITH NO SHOOTING: Whole screen is jump zone
-                GN_LOG_INFO("Level " + std::to_string(m_currentLevelId) + " has no shooting - whole screen jump zone!");
-                m_jumpButtonHeld = true;
-                m_jumpHoldTime = 0.0f;
-            } else {
-                // OTHER LEVELS: Use adjusted shooting zone in bottom right
+                // Check if shooting is enabled for this level
+                bool shootingEnabled = m_levelConfig ? m_levelConfig->shootingEnabled : (m_currentLevelId != 1);
+                GN_LOG_INFO("PlayerController: Shooting enabled check - level: " + std::to_string(m_currentLevelId) +
+                           ", shootingEnabled: " + std::to_string(shootingEnabled) +
+                           ", levelConfig exists: " + std::to_string(m_levelConfig != nullptr) +
+                           ", config shootingEnabled: " + std::to_string(m_levelConfig ? m_levelConfig->shootingEnabled : false));
+
+                if (!shootingEnabled) {
+                    // LEVEL WITH NO SHOOTING: Whole screen is jump zone
+                    GN_LOG_INFO("Level " + std::to_string(m_currentLevelId) + " has no shooting - whole screen jump zone!");
+                    m_jumpButtonHeld = true;
+                    m_jumpHoldTime = 0.0f;
+                } else {
+                    // OTHER LEVELS: Use adjusted shooting zone in bottom right
+                    GN_LOG_INFO("Level " + std::to_string(m_currentLevelId) + " has shooting enabled - using shooting zone");
                 // Use normalized coordinates (0.0 to 1.0)
                 GN_LOG_INFO("Other level - Touch press at normalized (" + std::to_string(x) + ", " + std::to_string(y) + ")");
 
                 // DEBUG: Check coordinate range
                 GN_LOG_INFO("DEBUG: Coordinate range check - x=" + std::to_string(x) + " (0.0-1.0?), y=" + std::to_string(y) + " (0.0-1.0?)");
 
-                // Calculate shooting zone boundaries to match visual rectangle (in normalized coordinates)
-                // Coin bag dimensions (normalized)
-                float coinBagXNorm = 0.01f; // 1% from left
-                float coinBagScale = 8.0f;
-                float coinBagWidthNorm = (32.0f * coinBagScale) / 1179.0f; // Approximate screen width for normalization
-                float coinBagHeightNorm = (32.0f * coinBagScale) / 2556.0f; // Approximate screen height for normalization
+                // Calculate shooting zone boundaries dynamically based on screen dimensions
+                // CRITICAL FIX: Use ECS screen dimensions instead of platform delegates
+                float screenWidth, screenHeight;
+                bool screenDimensionsValid = false;
+                
+                // Use RenderSystem screen dimensions directly (same as GameplayState) for consistency
+                if (m_renderSystem) {
+                    const ScreenInfo& screenInfo = m_renderSystem->GetScreenInfo();
+                    screenWidth = screenInfo.pixelWidth;
+                    screenHeight = screenInfo.pixelHeight;
+                    screenDimensionsValid = (screenWidth > 0 && screenHeight > 0);
+                    GN_LOG_INFO("PlayerController: Using RenderSystem screen dimensions: " +
+                               std::to_string((int)screenWidth) + "x" + std::to_string((int)screenHeight) +
+                               " valid=" + std::to_string(screenDimensionsValid));
+                } else if (m_ecsSystem) {
+                    // Fallback to ECS dimensions
+                    screenWidth = m_ecsSystem->GetScreenWidth();
+                    screenHeight = m_ecsSystem->GetScreenHeight();
+                    screenDimensionsValid = (screenWidth > 0 && screenHeight > 0);
+                    GN_LOG_INFO("PlayerController: Using ECS screen dimensions (fallback): " +
+                               std::to_string((int)screenWidth) + "x" + std::to_string((int)screenHeight) +
+                               " valid=" + std::to_string(screenDimensionsValid));
+                }
+                
+                if (!screenDimensionsValid) {
+                    // Fallback to platform delegates only if ECS fails
+                    screenWidth = 1179.0f; // Default fallback
+                    screenHeight = 2556.0f; // Default fallback
+                    ScreenInfo screenInfo;
+                    
+                    if (m_platformDelegates && m_platformDelegates->renderer.getScreenInfo) {
+                        m_platformDelegates->renderer.getScreenInfo(&screenInfo);
+                        screenWidth = screenInfo.pixelWidth;
+                        screenHeight = screenInfo.pixelHeight;
+                        GN_LOG_INFO("PlayerController: Using platform delegate screen dimensions: " +
+                                   std::to_string((int)screenWidth) + "x" + std::to_string((int)screenHeight));
+                    } else {
+                        GN_LOG_WARN("PlayerController: Using hardcoded fallback screen dimensions: 1179x2556");
+                    }
+                }
+                
+                // Create screenInfo for orientation detection
+                ScreenInfo screenInfo;
+                screenInfo.pixelWidth = screenWidth;
+                screenInfo.pixelHeight = screenHeight;
+                screenInfo.isPortrait = (screenWidth < screenHeight);
 
-                // Coin counter position (normalized)
-                float coinCounterXNorm = coinBagXNorm + coinBagWidthNorm + (8.0f / 1179.0f);
-                float estimatedCoinCounterWidthNorm = 200.0f / 1179.0f; // Estimated text width
-                float coinCounterRightXNorm = coinCounterXNorm + estimatedCoinCounterWidthNorm;
+                // Determine if we're in landscape mode using the same method as other systems
+                // This ensures consistency with ScreenInfo.isPortrait from MetalRenderer
+                bool isLandscape = (screenInfo.pixelWidth > screenInfo.pixelHeight);
+                GN_LOG_INFO("PlayerController: Orientation detection - pixelWidth: " + std::to_string(screenInfo.pixelWidth) +
+                           ", pixelHeight: " + std::to_string(screenInfo.pixelHeight) +
+                           ", isLandscape: " + std::to_string(isLandscape) +
+                           ", isPortrait flag: " + std::to_string(screenInfo.isPortrait) +
+                           ", level: " + std::to_string(m_currentLevelId));
 
-                // Shooting zone boundaries (normalized)
-                float shootingZoneLeftXNorm = coinCounterRightXNorm + (8.0f / 1179.0f); // Same gap from coin counter
-                float shootingZoneTopYNorm = 0.80f; // 80% from top
-                float shootingZoneBottomYNorm = 0.95f; // 95% from top (5% from bottom)
-                float shootingZoneRightXNorm = 0.95f; // 5% from right edge
+                // Shooting zone boundaries (pixel-based) - must match GameplayState positioning exactly
+                // Use orientation-specific positioning that matches GameplayState RepositionUIElements functions
+                float shootingZoneLeftX, shootingZoneTopY, shootingZoneBottomY, shootingZoneRightX;
+                
+                // EXACT SAME CALCULATIONS as GameplayState::CreateUI() and RepositionUIElements*()
+                // Use the exact same constants and positioning logic
+                const float COINBAG_X_PERCENT = 0.01f; // Both portrait and landscape use 0.01f
+                const float PORTRAIT_COINBAG_Y_PERCENT = 0.70f;
+                const float LANDSCAPE_COINBAG_Y_PERCENT = 0.55f;
+                const float COINBAG_SCALE = 8.0f;
+                const float COINBAG_WIDTH = 32.0f * COINBAG_SCALE;
+                const float COUNTER_GAP = 8.0f;
+                const float ESTIMATED_COUNTER_WIDTH = 200.0f;
+                const float SHOOTING_ZONE_TOP_PERCENT = 0.75f; // Exact same as GameplayState
+                const float SHOOTING_ZONE_BOTTOM_PERCENT = 0.90f; // Exact same as GameplayState
+                const float SHOOTING_ZONE_RIGHT_PERCENT = 0.95f; // Exact same as GameplayState
 
-                GN_LOG_INFO("SHOOTING ZONE BOUNDARIES:");
+                float coinBagX = screenWidth * COINBAG_X_PERCENT;
+                float coinBagY = screenHeight * (isLandscape ? LANDSCAPE_COINBAG_Y_PERCENT : PORTRAIT_COINBAG_Y_PERCENT);
+                float coinCounterX = coinBagX + COINBAG_WIDTH + COUNTER_GAP;
+                float coinCounterRightX = coinCounterX + ESTIMATED_COUNTER_WIDTH;
+
+                shootingZoneLeftX = coinCounterRightX + COUNTER_GAP; // Exact same 8.0f gap
+                shootingZoneTopY = screenHeight * SHOOTING_ZONE_TOP_PERCENT;
+                shootingZoneBottomY = screenHeight * SHOOTING_ZONE_BOTTOM_PERCENT;
+                shootingZoneRightX = screenWidth * SHOOTING_ZONE_RIGHT_PERCENT;
+
+                // Convert to normalized coordinates for comparison
+                float shootingZoneLeftXNorm = shootingZoneLeftX / screenWidth;
+                float shootingZoneTopYNorm = shootingZoneTopY / screenHeight;
+                float shootingZoneRightXNorm = shootingZoneRightX / screenWidth;
+                float shootingZoneBottomYNorm = shootingZoneBottomY / screenHeight;
+
+                GN_LOG_INFO("SHOOTING ZONE BOUNDARIES (" + std::string(isLandscape ? "LANDSCAPE" : "PORTRAIT") + "):");
                 GN_LOG_INFO("  Left: " + std::to_string(shootingZoneLeftXNorm) + ", Right: " + std::to_string(shootingZoneRightXNorm));
                 GN_LOG_INFO("  Top: " + std::to_string(shootingZoneTopYNorm) + ", Bottom: " + std::to_string(shootingZoneBottomYNorm));
                 GN_LOG_INFO("  Touch at: (" + std::to_string(x) + ", " + std::to_string(y) + ")");
+                GN_LOG_INFO("  Pixel boundaries - Left: " + std::to_string(shootingZoneLeftX) + ", Right: " + std::to_string(shootingZoneRightX) +
+                           ", Top: " + std::to_string(shootingZoneTopY) + ", Bottom: " + std::to_string(shootingZoneBottomY));
 
                 // Check if touch is within shooting zone boundaries
                 bool inShootZone = (x >= shootingZoneLeftXNorm) && (x <= shootingZoneRightXNorm) &&
                                   (y >= shootingZoneTopYNorm) && (y <= shootingZoneBottomYNorm);
-                GN_LOG_INFO("SHOOT ZONE RESULT: " + std::to_string(inShootZone));
+
+                GN_LOG_INFO("SHOOT ZONE CHECK: touch(" + std::to_string(x) + "," + std::to_string(y) + ") vs zone(" +
+                           std::to_string(shootingZoneLeftXNorm) + "," + std::to_string(shootingZoneTopYNorm) + "," +
+                           std::to_string(shootingZoneRightXNorm) + "," + std::to_string(shootingZoneBottomYNorm) + ") = " +
+                           std::to_string(inShootZone) + " (level: " + std::to_string(m_currentLevelId) + ")");
+
 
                 if (inShootZone) {
                     // Bottom right area - shoot immediately on press
@@ -624,11 +710,15 @@ namespace GameCore {
         }
         
         // Keep player at a fixed horizontal position based on level
-        // Boss level (6): position at 25px from left edge for better spacing
+        // Boss level (6): position at percentage from left edge to avoid UI overlap
         // Other levels: use standard PLAYER_X_POSITION (centered)
         if (m_currentLevelId == 6) {
-            // Boss level - position at 25px from left edge
-            transform->position.x = 25.0f;
+            // Boss level - position at 15% from left edge to avoid UI overlap
+            float screenWidth = 1179.0f; // Default, will be updated by screen info
+            if (m_ecsSystem) {
+                screenWidth = m_ecsSystem->GetScreenWidth();
+            }
+            transform->position.x = screenWidth * 0.15f;
         } else {
             // Normal levels - use standard centered position
             transform->position.x = PLAYER_X_POSITION;

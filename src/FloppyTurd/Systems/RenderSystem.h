@@ -49,6 +49,10 @@ namespace GameCore {
         float GetDynamicScale() const;
         float GetUIScale() const;
 
+        // Level information
+        void SetCurrentLevelId(int levelId) { m_currentLevelId = levelId; }
+        int GetCurrentLevelId() const { return m_currentLevelId; }
+
         // Direct screen dimension accessors (most commonly used)
         float GetScreenWidth() const { return m_screenInfo.pixelWidth; }
         float GetScreenHeight() const { return m_screenInfo.pixelHeight; }
@@ -81,6 +85,7 @@ namespace GameCore {
         // Dynamic screen information
         ScreenInfo m_screenInfo;
         bool m_screenInfoValid;
+        int m_currentLevelId;
         
         // Render data structures
         struct RenderItem {

@@ -1,6 +1,7 @@
 #include "ConfigManager.h"
 #include <algorithm>
 #include <cmath>
+#include <functional>
 
 namespace GameCore {
 
@@ -42,6 +43,13 @@ namespace GameCore {
             CalculateScaleFactors(); // Recalculate when screen changes
             GN_LOG_INFO("Screen info updated: " + std::to_string(m_screenInfo.pixelWidth) + "x" +
                        std::to_string(m_screenInfo.pixelHeight) + " pixels");
+
+            // Trigger callback if set (for automatic updates)
+            if (m_screenInfoUpdateCallback) {
+                m_screenInfoUpdateCallback();
+                GN_LOG_DEBUG("Screen info update callback triggered");
+            }
+
             return;
         }
         if (m_screenInfo.pixelWidth > 0.0f && m_screenInfo.pixelHeight > 0.0f) {
@@ -71,6 +79,11 @@ namespace GameCore {
         m_screenInfo.deviceModel = "Unknown";
         CalculateScaleFactors();
         GN_LOG_WARN("Using hardcoded pixel defaults for screen info (no delegates available)");
+    }
+
+    void ConfigManager::SetScreenInfoUpdateCallback(ScreenInfoUpdateCallback callback) {
+        m_screenInfoUpdateCallback = callback;
+        GN_LOG_DEBUG("Screen info update callback set");
     }
 
     float ConfigManager::GetUIScale() const {
@@ -226,14 +239,21 @@ namespace GameCore {
     void ConfigManager::SetScreenInfoDirect(const ScreenInfo& screenInfo) {
         m_screenInfo = screenInfo;
         CalculateScaleFactors();
-        
-        GN_LOG_INFO("ConfigManager: Screen info set directly - " + 
-                   std::to_string((int)m_screenInfo.pixelWidth) + "x" + 
+
+        GN_LOG_INFO("ConfigManager: Screen info set directly - " +
+                   std::to_string((int)m_screenInfo.pixelWidth) + "x" +
                    std::to_string((int)m_screenInfo.pixelHeight) + " pixels, " +
-                   std::to_string(m_screenInfo.logicalWidth) + "x" + 
+                   std::to_string(m_screenInfo.logicalWidth) + "x" +
                    std::to_string(m_screenInfo.logicalHeight) + " logical, " +
-                   "scale: " + std::to_string(m_screenInfo.scaleFactor) + 
+                   "scale: " + std::to_string(m_screenInfo.scaleFactor) +
                    ", portrait: " + (m_screenInfo.isPortrait ? "true" : "false"));
+
+        // CRITICAL FIX: Trigger callback for orientation changes
+        // This ensures GameplayState gets notified of screen info changes
+        if (m_screenInfoUpdateCallback) {
+            m_screenInfoUpdateCallback();
+            GN_LOG_INFO("Screen info update callback triggered for orientation change");
+        }
     }
 
 } // namespace GameCore

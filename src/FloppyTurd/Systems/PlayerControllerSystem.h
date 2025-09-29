@@ -8,6 +8,7 @@
 #include "ProjectileSystem.h"
 #include "HatsSystem.h"
 #include "SkillSystem.h"
+#include "RenderSystem.h"
 #include <memory>
 
 namespace GameCore {
@@ -36,6 +37,9 @@ namespace GameCore {
     class PlayerControllerSystem {
     public:
         PlayerControllerSystem(Gnosis::ECS* ecsSystem, GameCore::PlatformDelegates* platformDelegates, SpriteSystem* spriteSystem, ProjectileSystem* projectileSystem, HatsSystem* hatsSystem, SkillSystem* skillSystem, int currentLevelId = 1, const LevelConfig* levelConfig = nullptr);
+
+        // Set RenderSystem reference for screen dimension access
+        void SetRenderSystem(RenderSystem* renderSystem) { m_renderSystem = renderSystem; }
         ~PlayerControllerSystem();
 
         // Main update method
@@ -78,6 +82,7 @@ namespace GameCore {
 
         // Core systems
         Gnosis::ECS* m_ecsSystem;
+        RenderSystem* m_renderSystem;
 
         // Hat sprite management
         Gnosis::Entity m_hatSpriteEntity;

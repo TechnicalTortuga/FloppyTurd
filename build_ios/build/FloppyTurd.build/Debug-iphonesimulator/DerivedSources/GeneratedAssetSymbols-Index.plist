@@ -2370,6 +2370,16 @@
 			<key>catalogPath</key>
 			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
+			<string>ACImageNameScreenCurtains</string>
+			<key>relativePath</key>
+			<string>./graphics/environment/backgrounds/boss/screenCurtains.imageset</string>
+			<key>swiftSymbol</key>
+			<string>screenCurtains</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
+			<key>objcSymbol</key>
 			<string>ACImageNameSettingsbutton</string>
 			<key>relativePath</key>
 			<string>./graphics/ui/hud/settingsbutton.imageset</string>

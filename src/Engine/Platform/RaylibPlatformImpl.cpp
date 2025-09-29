@@ -87,6 +87,7 @@ namespace FloppyTurd {
             delegates.renderer.clearScreen = ClearScreen;
             delegates.renderer.drawSprite = DrawSprite;
             delegates.renderer.drawSpriteScaled = DrawSpriteScaled;
+            delegates.renderer.drawSpriteScaledTinted = DrawSpriteScaledTinted;
             delegates.renderer.drawText = DrawText;
             delegates.renderer.drawRectangle = DrawRectangle;
             delegates.renderer.drawCircle = DrawCircle;
@@ -184,6 +185,11 @@ namespace FloppyTurd {
         void DrawSpriteScaled(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation) {
             Sprite& spriteRef = *reinterpret_cast<Sprite*>(textureHandle);
             DrawSpriteScaledInternal(spriteRef, x, y, scaleX, scaleY, rotation);
+        }
+
+        void DrawSpriteScaledTinted(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation, uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
+            Sprite& spriteRef = *reinterpret_cast<Sprite*>(textureHandle);
+            DrawSpriteScaledTintedInternal(spriteRef, x, y, scaleX, scaleY, rotation, r, g, b, a);
         }
         
         void DrawText(const std::string& text, float x, float y, float fontSize, float r, float g, float b, float a) {

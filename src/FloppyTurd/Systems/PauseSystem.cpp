@@ -115,6 +115,16 @@ namespace GameCore {
         Cleanup();
     }
 
+    // Orientation helpers
+    bool PauseSystem::IsLandscapeMode() const {
+        // Check if we have a gameplay state reference and use its orientation detection
+        if (m_gameplayState) {
+            return m_gameplayState->IsLandscapeMode();
+        }
+        // Fallback: check screen dimensions directly
+        return m_screenWidth > m_screenHeight;
+    }
+
     void PauseSystem::UpdateScreenDimensions(float width, float height) {
         // Only update if dimensions actually changed (prevents unnecessary updates)
         if (m_screenWidth != width || m_screenHeight != height) {
@@ -183,7 +193,7 @@ namespace GameCore {
         // For now, this is minimal as pause menu is mostly static
     }
 
-    void PauseSystem::HandleInput(float touchX, float touchY) {
+    void PauseSystem::HandleInput(float touchX, float touchY, TouchState touchState) {
         GN_LOG_INFO("🚀 PauseSystem::HandleInput called with (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
 
         if (!m_isVisible) {
@@ -192,9 +202,21 @@ namespace GameCore {
             return;
         }
 
-        GN_LOG_INFO("✅ PauseSystem is visible, processing input at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
+        std::string stateStr = (touchState == TouchState::PRESSED) ? "PRESSED" :
+                              (touchState == TouchState::HELD) ? "HELD" : "RELEASED";
+        GN_LOG_INFO("✅ PauseSystem is visible, processing " + stateStr + " input at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
 
-        GN_LOG_INFO("PauseSystem: Handling input at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ") - VISIBLE AND ACTIVE");
+        // Handle knob dragging for all touch states (needed for continuous dragging)
+        if (m_currentTab == PauseMenuTab::SYSTEM) {
+            HandleKnobDrag(touchX, touchY, touchState);
+        }
+
+        // Only process clicks on PRESSED state
+        if (touchState != TouchState::PRESSED) {
+            return;
+        }
+
+        GN_LOG_INFO("PauseSystem: Handling PRESSED input at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ") - VISIBLE AND ACTIVE");
 
         // Handle pause menu input (this includes settings button detection)
         HandlePauseMenuInput(touchX, touchY);
@@ -294,10 +316,29 @@ namespace GameCore {
             return;
         }
 
-        // Use PauseMenuBackgroundMobile.png (160x300) with 7x scaling
-        float bgScale = 7.0f;
-        float textureWidth = 160.0f;   // Original texture width
-        float textureHeight = 300.0f;  // Original texture height
+        // Choose texture based on orientation
+        std::string bgTextureId;
+        float bgScale;
+        float textureWidth, textureHeight;
+
+        if (IsLandscapeMode()) {
+            // Landscape mode: use the regular background (which is rotated 90 degrees)
+            bgTextureId = "PauseMenuBackground"; // Use the rotated background
+            bgScale = 7.0f;  // May need adjustment for landscape
+            // Swap dimensions since texture is rotated 90 degrees
+            textureWidth = 300.0f;  // Was 160, now 300 (rotated)
+            textureHeight = 160.0f; // Was 300, now 160 (rotated)
+            GN_LOG_INFO("PauseSystem: Using landscape pause menu background (rotated 90 degrees) - dimensions: " +
+                       std::to_string(textureWidth) + "x" + std::to_string(textureHeight));
+        } else {
+            // Portrait mode: use existing mobile background
+            bgTextureId = "PauseMenuBackgroundMobile";
+            bgScale = 7.0f;
+            textureWidth = 160.0f;
+            textureHeight = 300.0f;
+            GN_LOG_INFO("PauseSystem: Using portrait pause menu background - dimensions: " +
+                       std::to_string(textureWidth) + "x" + std::to_string(textureHeight));
+        }
 
         // SCALE FIRST, then center: Calculate final rendered dimensions, then center those
         float scaledWidth = textureWidth * bgScale;   // 160 * 7 = 1120
@@ -317,15 +358,15 @@ namespace GameCore {
 
         // Create UIElement for pause menu background - this keeps it fixed on screen
         UIElement bgUI;
-        bgUI.normalTextureId = "PauseMenuBackgroundMobile";
+        bgUI.normalTextureId = bgTextureId;
         bgUI.visible = false; // Initially hidden
         bgUI.isEnabled = true;
         bgUI.textLayer = 80; // Above regular UI, below critical controls
         m_ecsCoordinator->AddComponent<UIElement>(m_pauseMenuBackgroundEntity, bgUI);
 
-        // Add Sprite component so RenderSystem can get correct dimensions (160x300)
+        // Add Sprite component so RenderSystem can get correct dimensions
         // This is crucial for proper centering - RenderSystem uses Sprite dimensions for UIElement textures
-        Sprite bgSprite("PauseMenuBackgroundMobile", 160, 300);
+        Sprite bgSprite(bgTextureId, (int)textureWidth, (int)textureHeight);
         bgSprite.layer = 80; // Match updated textLayer
         bgSprite.visible = false; // Initially hidden
         m_ecsCoordinator->AddComponent<Sprite>(m_pauseMenuBackgroundEntity, bgSprite);
@@ -361,64 +402,128 @@ namespace GameCore {
     }
 
     void PauseSystem::CreateRibbonButtons() {
-        GN_LOG_INFO("PauseSystem: Creating ribbon buttons - screen: " + std::to_string((int)m_screenWidth) + "x" + std::to_string((int)m_screenHeight));
+        GN_LOG_INFO("PauseSystem: Creating ribbon buttons - screen: " + std::to_string((int)m_screenWidth) + "x" + std::to_string((int)m_screenHeight) +
+                   ", landscape mode: " + std::to_string(IsLandscapeMode()));
 
         // Button labels
         const char* buttonLabels[] = {"SKILLS", "HATS", "STATS", "SYSTEM"};
 
-        // Calculate button positions - vertical tabs on left side
-        // Calculate button width based on scale and texture size
+        // Calculate button dimensions based on orientation
         float buttonScale = 6.0f;
-        float buttonWidth = 64.0f * buttonScale;
-        float buttonHeight = buttonWidth * 0.62f; // Match the 0.62f ratio from CreateRibbonButtons
+        int numButtons = 4;
+
+        if (IsLandscapeMode()) {
+            // Landscape mode: horizontal layout across top with FloppyButtonBlue
+            GN_LOG_INFO("PauseSystem: Creating landscape mode buttons (horizontal layout)");
+
+            // Get actual texture dimensions from RenderSystem
+            int texWidth = 90, texHeight = 16; // Default FloppyButtonBlue dimensions
+            if (auto* rs = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+                rs->PreloadTexture("FloppyButtonBlue");
+                if (!rs->GetTextureSize("FloppyButtonBlue", texWidth, texHeight)) {
+                    texWidth = 90; texHeight = 16; // Fallback
+                }
+            }
+
+            float buttonWidth = static_cast<float>(texWidth) * buttonScale;
+            float buttonHeight = static_cast<float>(texHeight) * buttonScale;
+
+            // Position buttons horizontally across the top
+            float totalWidth = buttonWidth * numButtons;
+            float spacing = (m_screenWidth - totalWidth) / (numButtons + 1); // Even spacing
+            float startY = m_screenHeight * 0.08f; // 8% from top
+
+            GN_LOG_INFO("PauseSystem: Landscape buttons - totalWidth: " + std::to_string(totalWidth) +
+                       ", spacing: " + std::to_string(spacing) + ", startY: " + std::to_string(startY));
+
+            for (int i = 0; i < numButtons; i++) {
+                Entity buttonEntity = m_ecsCoordinator->CreateEntity();
+                if (buttonEntity != 0) {
+                    // Horizontal positioning across top
+                    float buttonX = spacing + (i * (buttonWidth + spacing));
+                    float buttonY = startY;
+
+                    Transform buttonTransform(GNVector2(buttonX, buttonY), 0.0f, GNVector2(buttonScale, buttonScale));
+                    m_ecsCoordinator->AddComponent<Transform>(buttonEntity, buttonTransform);
+
+                    // Create UI element with FloppyButtonBlue
+                    UIElement buttonUI;
+                    buttonUI.normalTextureId = "FloppyButtonBlue";
+                    buttonUI.buttonText = buttonLabels[i];
+                    buttonUI.fontSize = 28.0f; // Slightly smaller font for better fit
+                    buttonUI.textColor = GNColor(255, 255, 255, 255); // White text
+                    buttonUI.centerTextHorizontally = true;
+                    buttonUI.centerTextVertically = true;
+                    buttonUI.textLayer = 95; // Above all content
+                    buttonUI.textOffsetX = 0.0f; // Ensure no horizontal offset
+                    buttonUI.textOffsetY = 0.0f; // No vertical offset for proper centering
+                    buttonUI.visible = false; // Initially hidden
+                    m_ecsCoordinator->AddComponent<UIElement>(buttonEntity, buttonUI);
+
+                    // Add Sprite component
+                    Sprite buttonSprite("FloppyButtonBlue", texWidth, texHeight);
+                    buttonSprite.layer = 95; // Match textLayer
+                    buttonSprite.visible = false; // Initially hidden
+                    m_ecsCoordinator->AddComponent<Sprite>(buttonEntity, buttonSprite);
+
+                    m_ribbonButtons.push_back(buttonEntity);
+
+                    GN_LOG_INFO("PauseSystem: Created landscape button '" + std::string(buttonLabels[i]) +
+                               "' at (" + std::to_string(buttonX) + ", " + std::to_string(buttonY) +
+                               ") - size: " + std::to_string(buttonWidth) + "x" + std::to_string(buttonHeight));
+                }
+            }
+        } else {
+            // Portrait mode: vertical ribbon layout on left side
+            GN_LOG_INFO("PauseSystem: Creating portrait mode ribbon buttons (vertical layout)");
+
+            float buttonWidth = 64.0f * buttonScale;
+            float buttonHeight = buttonWidth * 0.62f; // Match ribbon button aspect ratio
+
         float bgScale = 6.0f;
         float bgHeight = 300.0f * bgScale;
         float bgTop = (m_screenHeight - bgHeight) * 0.5f;
-        int numButtons = 4;
         float startY = bgTop + buttonWidth * 0.18f; // Skills button higher
         float buttonX = -0.40f * buttonWidth; // Offset further left (40%) - matches original
 
-        GN_LOG_INFO("PauseSystem: CREATE RIBBON BUTTONS - Screen: " + std::to_string((int)m_screenWidth) + "x" + std::to_string((int)m_screenHeight) +
-                   ", bgTop: " + std::to_string(bgTop) + ", startY: " + std::to_string(startY) +
-                   ", buttonX: " + std::to_string(buttonX) + ", buttonWidth: " + std::to_string(buttonWidth) +
-                   ", buttonHeight: " + std::to_string(buttonHeight));
-
-        buttonHeight = buttonWidth * 0.62f; // 25% closer than before
-        for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < numButtons; i++) {
             Entity buttonEntity = m_ecsCoordinator->CreateEntity();
             if (buttonEntity != 0) {
                 // Vertical positioning like tabs - original positioning
                 float buttonY = startY + i * buttonHeight;
 
-                Transform buttonTransform(GNVector2(buttonX, buttonY), 0.0f, GNVector2(buttonScale, buttonScale));
+                // Calculate scale based on orientation to maintain proper aspect ratio
+                    float scaleX = buttonWidth / 64.0f;
+                    float scaleY = buttonHeight / 21.0f;
+                Transform buttonTransform(GNVector2(buttonX, buttonY), 0.0f, GNVector2(scaleX, scaleY));
                 m_ecsCoordinator->AddComponent<Transform>(buttonEntity, buttonTransform);
 
-                // Create UI element using PauseMenuRibbonButton.png
-                UIElement buttonUI;
-                buttonUI.normalTextureId = "PauseMenuRibbonButton";
-                buttonUI.buttonText = buttonLabels[i];
-                buttonUI.fontSize = 38.0f; // Lowered font size just a bit more
-                buttonUI.textColor = GNColor(255, 255, 255, 255); // White text
-                buttonUI.centerTextHorizontally = false; // We'll left-align with padding
-                buttonUI.centerTextVertically = true;
-                buttonUI.textLayer = 95; // Above all content including skills text
-                buttonUI.textOffsetX = buttonWidth * 0.42f; // Move text further right so it's fully visible
-                buttonUI.textOffsetY = 8.0f; // Lower text by 8px for better vertical alignment
-                buttonUI.visible = false; // Initially hidden
+                    // Create UI element with ribbon button
+                    UIElement buttonUI;
+                    buttonUI.normalTextureId = "PauseMenuRibbonButton";
+                    buttonUI.buttonText = buttonLabels[i];
+                    buttonUI.fontSize = 38.0f;
+                    buttonUI.textColor = GNColor(255, 255, 255, 255); // White text
+                    buttonUI.centerTextHorizontally = false; // Left-align text for ribbons
+                    buttonUI.centerTextVertically = true; // Center vertically
+                    buttonUI.textLayer = 95; // Above all content
+                    buttonUI.textOffsetX = buttonWidth * 0.42f; // Original left offset
+                    buttonUI.textOffsetY = -48.0f; // Shift text up 48 pixels for proper centering
+                    buttonUI.visible = false; // Initially hidden
                 m_ecsCoordinator->AddComponent<UIElement>(buttonEntity, buttonUI);
 
-                // Add Sprite component for proper rendering
-                Sprite buttonSprite("PauseMenuRibbonButton", 64, 21);
+                    // Add Sprite component
+                    Sprite buttonSprite("PauseMenuRibbonButton", 64, 21);
                 buttonSprite.layer = 95; // Match textLayer
-                buttonSprite.visible = false; // Initially hiddenould
+                    buttonSprite.visible = false; // Initially hidden
                 m_ecsCoordinator->AddComponent<Sprite>(buttonEntity, buttonSprite);
 
                 m_ribbonButtons.push_back(buttonEntity);
 
-                GN_LOG_INFO("PauseSystem: Created ribbon button '" + std::string(buttonLabels[i]) + "' at (" + std::to_string(buttonX) + ", " + std::to_string(buttonY) +
-                           ") as vertical tab - scale: " + std::to_string(buttonScale) +
-                           ", size: " + std::to_string(buttonWidth) + "x" + std::to_string(buttonHeight) +
-                           ", text offset: (" + std::to_string(buttonUI.textOffsetX) + ", " + std::to_string(buttonUI.textOffsetY) + ")");
+                    GN_LOG_INFO("PauseSystem: Created portrait ribbon button '" + std::string(buttonLabels[i]) +
+                               "' at (" + std::to_string(buttonX) + ", " + std::to_string(buttonY) +
+                               ") - size: " + std::to_string(buttonWidth) + "x" + std::to_string(buttonHeight));
+                }
             }
         }
 
@@ -2361,47 +2466,34 @@ namespace GameCore {
 
         // Calculate button positions - MUST MATCH CreateRibbonButtons() logic exactly
         float buttonScale = 6.0f;
-        float buttonWidth = 64.0f * buttonScale;
-        float buttonHeight = buttonWidth * 0.62f; // Match the 0.62f ratio from CreateRibbonButtons
-        float bgScale = 6.0f;
-        float bgHeight = 300.0f * bgScale;
-        float bgTop = (m_screenHeight - bgHeight) * 0.5f;
-        float startY = bgTop + buttonWidth * 0.18f; // Skills button higher
-        float buttonX = -0.40f * buttonWidth; // Offset further left (40%) - MUST MATCH CreateRibbonButtons
+        float buttonWidth, buttonHeight;
 
-        GN_LOG_INFO("PauseSystem: Ribbon button hitbox calculation - screen: " + std::to_string((int)m_screenWidth) + "x" + std::to_string((int)m_screenHeight) +
-                   ", buttonX: " + std::to_string(buttonX) + ", startY: " + std::to_string(startY) +
-                   ", buttonWidth: " + std::to_string(buttonWidth) + ", buttonHeight: " + std::to_string(buttonHeight) +
-                   ", TOUCH at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
+        if (IsLandscapeMode()) {
+            // Landscape mode: use FloppyButtonBlue dimensions (90x16)
+            buttonWidth = 90.0f * buttonScale;
+            buttonHeight = 16.0f * buttonScale;
+        } else {
+            // Portrait mode: use ribbon button dimensions (64x21)
+            buttonWidth = 64.0f * buttonScale;
+            buttonHeight = buttonWidth * 0.62f; // Match ribbon button aspect ratio
+        }
 
-        // Check which button was clicked (0=SKILLS, 1=HATS, 2=STATS, 3=SYSTEM)
-        GN_LOG_INFO("PauseSystem: Checking " + std::to_string(m_ribbonButtons.size()) + " ribbon buttons, current screen: " + std::to_string((int)m_screenWidth) + "x" + std::to_string((int)m_screenHeight));
+        // Check ribbon buttons using actual sprite positions (like main menu)
+        GN_LOG_INFO("PauseSystem: Checking " + std::to_string(m_ribbonButtons.size()) + " ribbon buttons using sprite-based collision");
 
         if (m_ribbonButtons.empty()) {
             GN_LOG_ERROR("PauseSystem: No ribbon buttons found! Cannot detect clicks.");
             return false;
         }
-        for (int i = 0; i < 4 && i < m_ribbonButtons.size(); i++) {
-            GN_LOG_INFO("PauseSystem: Checking ribbon button " + std::to_string(i) + " (entity: " + std::to_string(m_ribbonButtons[i]) + ")");
-            float buttonY = startY + i * buttonHeight;
 
-            // Hitbox covers exactly the button area (no expansion)
-            float buttonLeft = buttonX;
-            float buttonRight = buttonX + buttonWidth;
-            float buttonTop = buttonY;
-            float buttonBottom = buttonY + buttonHeight;
 
-            GN_LOG_INFO("PauseSystem: Ribbon button " + std::to_string(i) + " bounds: L=" + std::to_string(buttonLeft) +
-                       " R=" + std::to_string(buttonRight) + " T=" + std::to_string(buttonTop) + " B=" + std::to_string(buttonBottom) +
-                       " Position: (" + std::to_string(buttonX) + ", " + std::to_string(buttonY) + ")" +
-                       " Sprite: " + std::to_string(buttonWidth) + "x" + std::to_string(buttonHeight));
+        for (int i = 0; i < m_ribbonButtons.size(); i++) {
+            Entity buttonEntity = m_ribbonButtons[i];
+            if (buttonEntity == 0) continue;
 
-            if (touchX >= buttonLeft && touchX <= buttonRight && touchY >= buttonTop && touchY <= buttonBottom) {
-                GN_LOG_INFO("PauseSystem: RIBBON BUTTON " + std::to_string(i) + " CLICKED at (" +
-                           std::to_string(touchX) + ", " + std::to_string(touchY) + ") in bounds (" +
-                           std::to_string(buttonLeft) + ", " + std::to_string(buttonTop) + ") to (" +
-                           std::to_string(buttonRight) + ", " + std::to_string(buttonBottom) + ")");
-
+            // Ribbon buttons are top-left positioned at their transform positions
+            if (IsTouchInButtonBounds(touchX, touchY, buttonEntity, false)) {
+                GN_LOG_INFO("PauseSystem: Ribbon button " + std::to_string(i) + " clicked");
                 // Switch to the appropriate tab
                 PauseMenuTab newTab;
                 switch (i) {
@@ -2411,10 +2503,10 @@ namespace GameCore {
                     case 3: newTab = PauseMenuTab::SYSTEM; break;
                     default: newTab = PauseMenuTab::SYSTEM; break;
                 }
-
                 SwitchToTab(newTab);
                 return true;
             }
+
         }
 
         GN_LOG_INFO("PauseSystem: No ribbon button clicked - touch outside all button bounds");
@@ -2424,49 +2516,22 @@ namespace GameCore {
     void PauseSystem::HandleSystemTabClick(float touchX, float touchY) {
         GN_LOG_INFO("PauseSystem: Handling system tab click at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
 
-        // Check main menu button click
-        if (m_mainMenuButtonEntity != 0 && m_ecsCoordinator) {
-            auto* transform = m_ecsCoordinator->GetComponent<Transform>(m_mainMenuButtonEntity);
-            if (transform) {
-                // Use proper button dimensions (64x64 scaled by transform scale)
-                float buttonWidth = 64.0f * transform->scale.x;
-                float buttonHeight = 64.0f * transform->scale.y;
-
-                // The transform position is now the top-left corner (due to CenterObjectAtPosition)
-                // So we need to calculate the center for hitbox detection
-                float buttonCenterX = transform->position.x + (buttonWidth * 0.5f);
-                float buttonCenterY = transform->position.y + (buttonHeight * 0.5f);
-
-                float buttonLeft = buttonCenterX - (buttonWidth * 0.5f);
-                float buttonRight = buttonCenterX + (buttonWidth * 0.5f);
-                float buttonTop = buttonCenterY - (buttonHeight * 0.5f);
-                float buttonBottom = buttonCenterY + (buttonHeight * 0.5f);
-
-                // Add debug logging for main menu button hitbox
-                GN_LOG_INFO("PauseSystem: Main menu button hitbox - Transform pos: (" + std::to_string(transform->position.x) + ", " + std::to_string(transform->position.y) +
-                           "), Center: (" + std::to_string(buttonCenterX) + ", " + std::to_string(buttonCenterY) +
-                           "), Size: " + std::to_string(buttonWidth) + "x" + std::to_string(buttonHeight) +
-                           ", Scale: (" + std::to_string(transform->scale.x) + ", " + std::to_string(transform->scale.y) + ")");
-                GN_LOG_INFO("PauseSystem: Main menu button bounds: L=" + std::to_string(buttonLeft) + " R=" + std::to_string(buttonRight) +
-                           " T=" + std::to_string(buttonTop) + " B=" + std::to_string(buttonBottom) +
-                           " Touch: (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
-
-                if (touchX >= buttonLeft && touchX <= buttonRight &&
-                    touchY >= buttonTop && touchY <= buttonBottom) {
-                    GN_LOG_INFO("PauseSystem: Main Menu button clicked at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ") - triggering transition to main menu");
-                    // Hide the pause menu UI first
-                    this->Hide();
-                    // Call ReturnToMainMenu to trigger state transition (matches original implementation)
-                    if (m_gameplayState) {
-                        m_gameplayState->ReturnToMainMenu();
-                    }
-                    return;
+        // Check main menu button click (top-left positioned)
+        if (m_mainMenuButtonEntity != 0) {
+            if (IsTouchInButtonBounds(touchX, touchY, m_mainMenuButtonEntity, false)) {
+                GN_LOG_INFO("PauseSystem: Main Menu button clicked at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ") - triggering transition to main menu");
+                // Hide the pause menu UI first
+                this->Hide();
+                // Call ReturnToMainMenu to trigger state transition (matches original implementation)
+                if (m_gameplayState) {
+                    m_gameplayState->ReturnToMainMenu();
                 }
+                return;
             }
         }
 
         // Check for audio slider knob clicks/drags
-        HandleKnobDrag(touchX, touchY);
+        HandleKnobDrag(touchX, touchY, TouchState::PRESSED);
 
         GN_LOG_INFO("PauseSystem: System tab click handled");
     }
@@ -2474,93 +2539,61 @@ namespace GameCore {
     void PauseSystem::HandleSkillsTabClick(float touchX, float touchY) {
         GN_LOG_INFO("PauseSystem: Handling skills tab click at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
 
-        // Handle skill unlock button clicks
-        if (m_skillsUnlockButtonEntity != 0 && m_ecsCoordinator) {
-            auto* transform = m_ecsCoordinator->GetComponent<Transform>(m_skillsUnlockButtonEntity);
-            if (transform) {
-                float buttonX = transform->position.x;
-                float buttonY = transform->position.y;
-                float buttonWidth = 90.0f * transform->scale.x;  // 90x16 base size * scale
-                float buttonHeight = 16.0f * transform->scale.y;
+        // Handle skill unlock button clicks (top-left positioned)
+        if (m_skillsUnlockButtonEntity != 0) {
+            if (IsTouchInButtonBounds(touchX, touchY, m_skillsUnlockButtonEntity, false)) {
+                // Check debounce timer
+                if (m_lastSkillButtonPressTime < m_skillButtonDebounceDelay) {
+                    GN_LOG_INFO("PauseSystem: Skill unlock button debounced - too soon since last press");
+                    return;
+                }
 
-                GN_LOG_INFO("PauseSystem: Checking skills unlock button hitbox - touch(" + std::to_string(touchX) + "," + std::to_string(touchY) +
-                           ") vs button(" + std::to_string(buttonX) + "," + std::to_string(buttonY) + "," +
-                           std::to_string(buttonWidth) + "," + std::to_string(buttonHeight) + ")");
+                GN_LOG_INFO("PauseSystem: Skill unlock button clicked");
 
-                // Use top-left positioning like original implementation
-                if (touchX >= buttonX && touchX <= buttonX + buttonWidth &&
-                    touchY >= buttonY && touchY <= buttonY + buttonHeight) {
-                    // Check debounce timer
-                    if (m_lastSkillButtonPressTime < m_skillButtonDebounceDelay) {
-                        GN_LOG_INFO("PauseSystem: Skill unlock button debounced - too soon since last press");
+                // Sync player coins to ensure we have the latest coin count
+                SyncPlayerCoins();
+
+                // Check if player has enough coins before attempting unlock
+                if (!m_availableSkills.empty()) {
+                    int validIndex = m_currentSkillIndex;
+                    if (validIndex < 0) validIndex = m_availableSkills.size() - 1;
+                    if (validIndex >= static_cast<int>(m_availableSkills.size())) validIndex = 0;
+
+                    GameCore::SkillType currentSkill = m_availableSkills[validIndex];
+                    int cost = m_skillSystem ? m_skillSystem->GetSkillCost(currentSkill) : 0;
+
+                    if (m_playerCoins < cost) {
+                        // Play denied sound for insufficient coins
+                        if (GameCore::GetGame()) {
+                            GN_LOG_INFO("🎵 Playing denied sound - insufficient coins for skill unlock");
+                            GameCore::GetGame()->PlaySFX("denied");
+                        }
+                        // Reset debounce timer even for failed attempts
+                        m_lastSkillButtonPressTime = 0.0f;
                         return;
                     }
-
-                    GN_LOG_INFO("PauseSystem: Skill unlock button clicked");
-
-                    // Sync player coins to ensure we have the latest coin count
-                    SyncPlayerCoins();
-
-                    // Check if player has enough coins before attempting unlock
-                    if (!m_availableSkills.empty()) {
-                        int validIndex = m_currentSkillIndex;
-                        if (validIndex < 0) validIndex = m_availableSkills.size() - 1;
-                        if (validIndex >= static_cast<int>(m_availableSkills.size())) validIndex = 0;
-
-                        GameCore::SkillType currentSkill = m_availableSkills[validIndex];
-                        int cost = m_skillSystem ? m_skillSystem->GetSkillCost(currentSkill) : 0;
-
-                        if (m_playerCoins < cost) {
-                            // Play denied sound for insufficient coins
-                            if (GameCore::GetGame()) {
-                                GN_LOG_INFO("🎵 Playing denied sound - insufficient coins for skill unlock");
-                                GameCore::GetGame()->PlaySFX("denied");
-                            }
-                            // Reset debounce timer even for failed attempts
-                            m_lastSkillButtonPressTime = 0.0f;
-                            return;
-                        }
-                    }
-
-                    HandleSkillUnlock(m_currentSkillIndex, m_availableSkills, m_skillSystem, m_playerCoins, m_playerEntity);
-                    return;
                 }
+
+                HandleSkillUnlock(m_currentSkillIndex, m_availableSkills, m_skillSystem, m_playerCoins, m_playerEntity);
+                return;
             }
         }
 
-        // Handle left arrow clicks
-        if (m_skillsLeftArrowEntity != 0 && m_ecsCoordinator) {
-            auto* transform = m_ecsCoordinator->GetComponent<Transform>(m_skillsLeftArrowEntity);
-            if (transform) {
-                float arrowX = transform->position.x;
-                float arrowY = transform->position.y;
-                float arrowSize = 16.0f * transform->scale.x; // 16x16 base size * scale (96px with 6x scale)
-
-                // Use top-left positioning like original implementation
-                if (touchX >= arrowX && touchX <= arrowX + arrowSize &&
-                    touchY >= arrowY && touchY <= arrowY + arrowSize) {
-                    GN_LOG_INFO("PauseSystem: Skills left arrow clicked");
-                    HandleSkillLeftArrow(m_currentSkillIndex, m_availableSkills);
-                    return;
-                }
+        // Handle left arrow clicks (centered positioned)
+        if (m_skillsLeftArrowEntity != 0) {
+            if (IsTouchInButtonBounds(touchX, touchY, m_skillsLeftArrowEntity, true)) {
+                GN_LOG_INFO("PauseSystem: Skills left arrow clicked");
+                HandleSkillLeftArrow(m_currentSkillIndex, m_availableSkills);
+                return;
             }
         }
 
-        // Handle right arrow clicks
-        if (m_skillsRightArrowEntity != 0 && m_ecsCoordinator) {
-            auto* transform = m_ecsCoordinator->GetComponent<Transform>(m_skillsRightArrowEntity);
-            if (transform) {
-                float arrowX = transform->position.x;
-                float arrowY = transform->position.y;
-                float arrowSize = 16.0f * transform->scale.x; // 16x16 base size * scale (96px with 6x scale)
-
-                // Use top-left positioning like original implementation
-                if (touchX >= arrowX && touchX <= arrowX + arrowSize &&
-                    touchY >= arrowY && touchY <= arrowY + arrowSize) {
-                    GN_LOG_INFO("PauseSystem: Skills right arrow clicked");
-                    HandleSkillRightArrow(m_currentSkillIndex, m_availableSkills);
-                    return;
-                }
+        // Handle right arrow clicks (centered positioned)
+        if (m_skillsRightArrowEntity != 0) {
+            if (IsTouchInButtonBounds(touchX, touchY, m_skillsRightArrowEntity, true)) {
+                GN_LOG_INFO("PauseSystem: Skills right arrow clicked");
+                HandleSkillRightArrow(m_currentSkillIndex, m_availableSkills);
+                return;
             }
         }
 
@@ -2578,56 +2611,29 @@ namespace GameCore {
             for (size_t i = 0; i < m_hatFrameEntities.size() && i < (size_t)hatCount; ++i) {
                 auto frameEntity = m_hatFrameEntities[i];
                 if (frameEntity != 0) {
-                    auto* transform = m_ecsCoordinator->GetComponent<Transform>(frameEntity);
-                    if (transform) {
-                        float frameX = transform->position.x;
-                        float frameY = transform->position.y;
-
-                        // Check if touch is within frame bounds (top-left positioning)
-                        // Use 32x32 base dimensions scaled by 6x = 192x192 total
-                        float actualFrameWidth = 32.0f * transform->scale.x;   // 32x32 * 6 = 192px
-                        float actualFrameHeight = 32.0f * transform->scale.y; // 32x32 * 6 = 192px
-
-                        GN_LOG_INFO("PauseSystem: Checking hat frame " + std::to_string(i) + " hitbox - touch(" + std::to_string(touchX) + "," + std::to_string(touchY) +
-                                   ") vs frame(" + std::to_string(frameX) + "," + std::to_string(frameY) + "," +
-                                   std::to_string(actualFrameWidth) + "," + std::to_string(actualFrameHeight) + ")");
-
-                        if (touchX >= frameX && touchX <= frameX + actualFrameWidth &&
-                            touchY >= frameY && touchY <= frameY + actualFrameHeight) {
-                            GN_LOG_INFO("PauseSystem: Hat frame " + std::to_string(i) + " clicked - selecting hat");
-                            m_hatsSystem->SelectHat((int)i);
-                            UpdateHatDisplay();
-                            return;
-                        }
+            // Hat frames are top-left positioned
+            if (IsTouchInButtonBounds(touchX, touchY, frameEntity, false)) {
+                        GN_LOG_INFO("PauseSystem: Hat frame " + std::to_string(i) + " clicked - selecting hat");
+                        m_hatsSystem->SelectHat((int)i);
+                        UpdateHatDisplay();
+                        return;
                     }
                 }
             }
         }
 
-        // Handle action button clicks
+        // Handle action button clicks (top-left positioned)
         if (m_hatsActionButtonEntity != 0 && m_ecsCoordinator) {
-            auto* transform = m_ecsCoordinator->GetComponent<Transform>(m_hatsActionButtonEntity);
             auto* uiElement = m_ecsCoordinator->GetComponent<UIElement>(m_hatsActionButtonEntity);
 
-            if (transform && uiElement && uiElement->visible && uiElement->isEnabled) {
+            if (uiElement && uiElement->visible && uiElement->isEnabled) {
                 // Check debounce timer to prevent rapid clicking
                 if (m_lastActionButtonPressTime < m_actionButtonDebounceDelay) {
                     GN_LOG_INFO("PauseSystem: Hat action button debounced - too soon since last press");
                     return;
                 }
-                // Get button dimensions and position correctly
-                float buttonX = transform->position.x;
-                float buttonY = transform->position.y;
-                float buttonWidth = 90.0f * transform->scale.x;  // 90x16 base size * scale
-                float buttonHeight = 16.0f * transform->scale.y;
 
-                GN_LOG_INFO("PauseSystem: Checking hat button hitbox - touch(" + std::to_string(touchX) + "," + std::to_string(touchY) +
-                           ") vs button(" + std::to_string(buttonX) + "," + std::to_string(buttonY) + "," +
-                           std::to_string(buttonWidth) + "," + std::to_string(buttonHeight) + ")");
-
-                // Use top-left positioning like original implementation
-                if (touchX >= buttonX && touchX <= buttonX + buttonWidth &&
-                    touchY >= buttonY && touchY <= buttonY + buttonHeight) {
+                if (IsTouchInButtonBounds(touchX, touchY, m_hatsActionButtonEntity, false)) {
                     GN_LOG_INFO("PauseSystem: Hats action button clicked");
 
                     // Sync player coins to ensure we have the latest coin count
@@ -2744,10 +2750,144 @@ namespace GameCore {
         GN_LOG_INFO("PauseSystem: Stats tab click handled - no interactive elements");
     }
 
-    void PauseSystem::HandleKnobDrag(float touchX, float touchY) {
+    void PauseSystem::HandleKnobDrag(float touchX, float touchY, TouchState touchState) {
         GN_LOG_INFO("PauseSystem: Handling knob drag at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
 
-        // Check if we're already dragging a knob
+        // Handle RELEASED state to stop dragging
+        if (touchState == TouchState::RELEASED) {
+            if (m_draggedKnobEntity != 0) {
+                GN_LOG_INFO("PauseSystem: RELEASED - stopping drag of knob entity " + std::to_string(m_draggedKnobEntity));
+                StopDragging();
+            }
+            return;
+        }
+
+        // First check if touch is within slider track bounds (only allow knob interaction within tracks)
+        bool inTrackBounds = false;
+        if (touchX >= m_sliderX && touchX <= m_sliderX + m_sliderW) {
+            // Check if touch is near any of the three tracks (master, music, sfx)
+            float masterTrackY = m_sliderY + 9.0f;
+            float musicTrackY = m_sliderY + m_sliderSpacing + 9.0f;
+            float sfxTrackY = m_sliderY + m_sliderSpacing * 2 + 9.0f;
+
+            // Add some vertical padding around each track
+            float trackPadding = 30.0f;
+
+            if ((touchY >= masterTrackY - trackPadding && touchY <= masterTrackY + m_sliderH + trackPadding) ||
+                (touchY >= musicTrackY - trackPadding && touchY <= musicTrackY + m_sliderH + trackPadding) ||
+                (touchY >= sfxTrackY - trackPadding && touchY <= sfxTrackY + m_sliderH + trackPadding)) {
+                inTrackBounds = true;
+                GN_LOG_INFO("PauseSystem: Touch is within slider track bounds");
+            }
+        }
+
+        if (!inTrackBounds) {
+            GN_LOG_INFO("PauseSystem: Touch is outside slider track bounds - ignoring knob interaction");
+            return;
+        }
+
+        // Check if touch is on any knob (allow switching between knobs)
+        bool knobTouched = false;
+        Entity touchedKnob = 0;
+
+        // Check MASTER knob
+        if (m_masterKnobEntity != 0 && m_ecsCoordinator) {
+            auto transform = m_ecsCoordinator->GetComponent<Transform>(m_masterKnobEntity);
+            if (transform) {
+                auto sprite = m_ecsCoordinator->GetComponent<Sprite>(m_masterKnobEntity);
+                float knobWidth = sprite ? sprite->width * transform->scale.x : 16.0f * transform->scale.x;
+                float knobHeight = sprite ? sprite->height * transform->scale.y : 16.0f * transform->scale.y;
+
+                float knobCenterX = transform->position.x + (knobWidth * 0.5f);
+                float knobCenterY = transform->position.y + (knobHeight * 0.5f);
+                float knobLeft = knobCenterX - (knobWidth * 0.5f);
+                float knobRight = knobCenterX + (knobWidth * 0.5f);
+                float knobTop = knobCenterY - (knobHeight * 0.5f);
+                float knobBottom = knobCenterY + (knobHeight * 0.5f);
+
+                if (touchX >= knobLeft && touchX <= knobRight &&
+                    touchY >= knobTop && touchY <= knobBottom) {
+                    knobTouched = true;
+                    touchedKnob = m_masterKnobEntity;
+                    GN_LOG_INFO("PauseSystem: MASTER knob touched");
+                }
+            }
+        }
+
+        // Check MUSIC knob
+        if (!knobTouched && m_musicKnobEntity != 0 && m_ecsCoordinator) {
+            auto transform = m_ecsCoordinator->GetComponent<Transform>(m_musicKnobEntity);
+            if (transform) {
+                auto sprite = m_ecsCoordinator->GetComponent<Sprite>(m_musicKnobEntity);
+                float knobWidth = sprite ? sprite->width * transform->scale.x : 16.0f * transform->scale.x;
+                float knobHeight = sprite ? sprite->height * transform->scale.y : 16.0f * transform->scale.y;
+
+                float knobCenterX = transform->position.x + (knobWidth * 0.5f);
+                float knobCenterY = transform->position.y + (knobHeight * 0.5f);
+                float knobLeft = knobCenterX - (knobWidth * 0.5f);
+                float knobRight = knobCenterX + (knobWidth * 0.5f);
+                float knobTop = knobCenterY - (knobHeight * 0.5f);
+                float knobBottom = knobCenterY + (knobHeight * 0.5f);
+
+                if (touchX >= knobLeft && touchX <= knobRight &&
+                    touchY >= knobTop && touchY <= knobBottom) {
+                    knobTouched = true;
+                    touchedKnob = m_musicKnobEntity;
+                    GN_LOG_INFO("PauseSystem: MUSIC knob touched");
+                }
+            }
+        }
+
+        // Check SFX knob
+        if (!knobTouched && m_sfxKnobEntity != 0 && m_ecsCoordinator) {
+            auto transform = m_ecsCoordinator->GetComponent<Transform>(m_sfxKnobEntity);
+            if (transform) {
+                auto sprite = m_ecsCoordinator->GetComponent<Sprite>(m_sfxKnobEntity);
+                float knobWidth = sprite ? sprite->width * transform->scale.x : 16.0f * transform->scale.x;
+                float knobHeight = sprite ? sprite->height * transform->scale.y : 16.0f * transform->scale.y;
+
+                float knobCenterX = transform->position.x + (knobWidth * 0.5f);
+                float knobCenterY = transform->position.y + (knobHeight * 0.5f);
+                float knobLeft = knobCenterX - (knobWidth * 0.5f);
+                float knobRight = knobCenterX + (knobWidth * 0.5f);
+                float knobTop = knobCenterY - (knobHeight * 0.5f);
+                float knobBottom = knobCenterY + (knobHeight * 0.5f);
+
+                if (touchX >= knobLeft && touchX <= knobRight &&
+                    touchY >= knobTop && touchY <= knobBottom) {
+                    knobTouched = true;
+                    touchedKnob = m_sfxKnobEntity;
+                    GN_LOG_INFO("PauseSystem: SFX knob touched");
+                }
+            }
+        }
+
+        // Now handle the touch result
+        if (knobTouched) {
+            // If we're already dragging a different knob, stop it first
+            if (m_draggedKnobEntity != 0 && m_draggedKnobEntity != touchedKnob) {
+                GN_LOG_INFO("PauseSystem: Switching from knob " + std::to_string(m_draggedKnobEntity) + " to " + std::to_string(touchedKnob));
+                StopDragging();
+            }
+
+            // Start dragging the touched knob
+            m_draggedKnobEntity = touchedKnob;
+            if (touchedKnob == m_masterKnobEntity) {
+                m_draggingMaster = true;
+                m_activeDragKnob = 0;
+            } else if (touchedKnob == m_musicKnobEntity) {
+                m_draggingMusic = true;
+                m_activeDragKnob = 1;
+            } else if (touchedKnob == m_sfxKnobEntity) {
+                m_draggingSFX = true;
+                m_activeDragKnob = 2;
+            }
+
+            GN_LOG_INFO("PauseSystem: Started dragging knob " + std::to_string(touchedKnob));
+            return;
+        }
+
+        // If we're already dragging a knob, update its position
         if (m_draggedKnobEntity != 0) {
             // Update the dragged knob position
             if (m_ecsCoordinator) {
@@ -2783,114 +2923,6 @@ namespace GameCore {
                     }
 
                     GN_LOG_INFO("PauseSystem: Dragged knob to position (" + std::to_string(newX) + ", " + std::to_string(transform->position.y) + ") - Value: " + std::to_string(normalizedValue));
-                }
-            }
-            return;
-        }
-
-        // Check MASTER knob first (EXACT same logic as original)
-        if (m_masterKnobEntity != 0 && m_ecsCoordinator) {
-            auto transform = m_ecsCoordinator->GetComponent<Transform>(m_masterKnobEntity);
-                if (transform) {
-                // Use exact button dimensions: 16x16 scaled by uiScale (default 8.0) = 128x128
-                // But use the actual sprite size from the component
-                auto sprite = m_ecsCoordinator->GetComponent<Sprite>(m_masterKnobEntity);
-                float knobWidth = sprite ? sprite->width * transform->scale.x : 16.0f * transform->scale.x;
-                float knobHeight = sprite ? sprite->height * transform->scale.y : 16.0f * transform->scale.y;
-
-                // Convert top-left transform position to center position
-                float knobCenterX = transform->position.x + (knobWidth * 0.5f);
-                float knobCenterY = transform->position.y + (knobHeight * 0.5f);
-                float knobLeft = knobCenterX - (knobWidth * 0.5f);
-                float knobRight = knobCenterX + (knobWidth * 0.5f);
-                float knobTop = knobCenterY - (knobHeight * 0.5f);
-                float knobBottom = knobCenterY + (knobHeight * 0.5f);
-
-                GN_LOG_INFO("PauseSystem: MASTER knob bounds: L=" + std::to_string(knobLeft) + " R=" + std::to_string(knobRight) +
-                           " T=" + std::to_string(knobTop) + " B=" + std::to_string(knobBottom) +
-                           " Size=" + std::to_string(knobWidth) + "x" + std::to_string(knobHeight) +
-                           " Sprite size=" + std::to_string(sprite ? sprite->width : 0) + "x" + std::to_string(sprite ? sprite->height : 0));
-
-                if (touchX >= knobLeft && touchX <= knobRight &&
-                    touchY >= knobTop && touchY <= knobBottom) {
-                    GN_LOG_INFO("PauseSystem: MASTER knob clicked! Starting drag...");
-                    m_draggingMaster = true;
-                    m_activeDragKnob = 0;
-                    m_dragStartX = touchX;
-                    m_dragKnobStartX = knobCenterX;
-                    m_draggedKnobEntity = m_masterKnobEntity;
-                    m_dragOffsetX = touchX - knobCenterX;
-                    return;
-                }
-            }
-        }
-
-        // Check MUSIC knob
-        if (m_musicKnobEntity != 0 && m_ecsCoordinator) {
-            auto transform = m_ecsCoordinator->GetComponent<Transform>(m_musicKnobEntity);
-            if (transform) {
-                // Use exact button dimensions: 16x16 scaled by uiScale
-                auto sprite = m_ecsCoordinator->GetComponent<Sprite>(m_musicKnobEntity);
-                float knobWidth = sprite ? sprite->width * transform->scale.x : 16.0f * transform->scale.x;
-                float knobHeight = sprite ? sprite->height * transform->scale.y : 16.0f * transform->scale.y;
-
-                // Convert top-left transform position to center position
-                float knobCenterX = transform->position.x + (knobWidth * 0.5f);
-                float knobCenterY = transform->position.y + (knobHeight * 0.5f);
-                float knobLeft = knobCenterX - (knobWidth * 0.5f);
-                float knobRight = knobCenterX + (knobWidth * 0.5f);
-                float knobTop = knobCenterY - (knobHeight * 0.5f);
-                float knobBottom = knobCenterY + (knobHeight * 0.5f);
-
-                GN_LOG_INFO("PauseSystem: MUSIC knob bounds: L=" + std::to_string(knobLeft) + " R=" + std::to_string(knobRight) +
-                           " T=" + std::to_string(knobTop) + " B=" + std::to_string(knobBottom) +
-                           " Size=" + std::to_string(knobWidth) + "x" + std::to_string(knobHeight));
-
-                if (touchX >= knobLeft && touchX <= knobRight &&
-                    touchY >= knobTop && touchY <= knobBottom) {
-                    GN_LOG_INFO("PauseSystem: MUSIC knob clicked! Starting drag...");
-                    m_draggingMusic = true;
-                    m_activeDragKnob = 1;
-                    m_dragStartX = touchX;
-                    m_dragKnobStartX = knobCenterX;
-                    m_draggedKnobEntity = m_musicKnobEntity;
-                    m_dragOffsetX = touchX - knobCenterX;
-                        return;
-                    }
-            }
-        }
-
-        // Check SFX knob
-        if (m_sfxKnobEntity != 0 && m_ecsCoordinator) {
-            auto transform = m_ecsCoordinator->GetComponent<Transform>(m_sfxKnobEntity);
-            if (transform) {
-                // Use exact button dimensions: 16x16 scaled by uiScale
-                auto sprite = m_ecsCoordinator->GetComponent<Sprite>(m_sfxKnobEntity);
-                float knobWidth = sprite ? sprite->width * transform->scale.x : 16.0f * transform->scale.x;
-                float knobHeight = sprite ? sprite->height * transform->scale.y : 16.0f * transform->scale.y;
-
-                // Convert top-left transform position to center position
-                float knobCenterX = transform->position.x + (knobWidth * 0.5f);
-                float knobCenterY = transform->position.y + (knobHeight * 0.5f);
-                float knobLeft = knobCenterX - (knobWidth * 0.5f);
-                float knobRight = knobCenterX + (knobWidth * 0.5f);
-                float knobTop = knobCenterY - (knobHeight * 0.5f);
-                float knobBottom = knobCenterY + (knobHeight * 0.5f);
-
-                GN_LOG_INFO("PauseSystem: SFX knob bounds: L=" + std::to_string(knobLeft) + " R=" + std::to_string(knobRight) +
-                           " T=" + std::to_string(knobTop) + " B=" + std::to_string(knobBottom) +
-                           " Size=" + std::to_string(knobWidth) + "x" + std::to_string(knobHeight));
-
-                if (touchX >= knobLeft && touchX <= knobRight &&
-                    touchY >= knobTop && touchY <= knobBottom) {
-                    GN_LOG_INFO("PauseSystem: SFX knob clicked! Starting drag...");
-                    m_draggingSFX = true;
-                    m_activeDragKnob = 2;
-                    m_dragStartX = touchX;
-                    m_dragKnobStartX = knobCenterX;
-                    m_draggedKnobEntity = m_sfxKnobEntity;
-                    m_dragOffsetX = touchX - knobCenterX;
-                    return;
                 }
             }
         }
@@ -3299,7 +3331,9 @@ namespace GameCore {
 
         // Only consider taps outside the RIGHT, TOP, and BOTTOM as "outside"
         // EXCLUDE the LEFT side to prevent accidental clicks on ribbon buttons from exiting
-        bool outsideMenu = (touchX > menuRight || touchY < menuTop || touchY > menuBottom);
+        // Move the top boundary up slightly to make it easier to tap outside
+        float adjustedMenuTop = menuTop - 50.0f; // Move top boundary up by 50 pixels
+        bool outsideMenu = (touchX > menuRight || touchY < adjustedMenuTop || touchY > menuBottom);
 
         // EXCLUDE the settings button area from "outside menu" check
         if (IsTapInSettingsButtonArea(touchX, touchY)) {
@@ -3308,9 +3342,9 @@ namespace GameCore {
         }
 
         GN_LOG_INFO("PauseSystem: Menu bounds: (" + std::to_string(menuLeft) + ", " + std::to_string(menuTop) + ") to (" +
-                   std::to_string(menuRight) + ", " + std::to_string(menuBottom) + ") - Touch: (" +
-                   std::to_string(touchX) + ", " + std::to_string(touchY) + ") - Outside: " + std::to_string(outsideMenu) +
-                   " (only checking right/top/bottom, left side is protected)");
+                   std::to_string(menuRight) + ", " + std::to_string(menuBottom) + ") - Adjusted top: " + std::to_string(adjustedMenuTop) +
+                   " - Touch: (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ") - Outside: " + std::to_string(outsideMenu) +
+                   " (only checking right/adjusted-top/bottom, left side is protected)");
 
         return outsideMenu;
     }
@@ -3318,26 +3352,57 @@ namespace GameCore {
     bool PauseSystem::IsTapInSettingsButtonArea(float touchX, float touchY) const {
         GN_LOG_INFO("PauseSystem: Checking if tap is in settings button area");
 
-        // Calculate settings button position (matches original GameplayState logic)
-        float settingsButtonX = m_screenWidth * 0.85f;
-        float settingsButtonY = m_screenHeight * 0.05f;
-        float buttonScale = 8.0f; // Matches original scale
-        float buttonSize = 64.0f * buttonScale;
-
-        float buttonLeft = settingsButtonX - (buttonSize * 0.5f);
-        float buttonRight = settingsButtonX + (buttonSize * 0.5f);
-        float buttonTop = settingsButtonY - (buttonSize * 0.5f);
-        float buttonBottom = settingsButtonY + (buttonSize * 0.5f);
-
-        bool isInArea = (touchX >= buttonLeft && touchX <= buttonRight &&
-                        touchY >= buttonTop && touchY <= buttonBottom);
-
-        GN_LOG_INFO("PauseSystem: Settings button bounds: (" + std::to_string(buttonLeft) + ", " + std::to_string(buttonTop) +
-                   ") to (" + std::to_string(buttonRight) + ", " + std::to_string(buttonBottom) +
-                   ") - Touch: (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ") - In area: " + std::to_string(isInArea));
-
+        // Delegate to GameplayState's version which uses the actual button position
+        // This ensures we check the correct area regardless of orientation
+        if (m_gameplayState) {
+            bool isInArea = m_gameplayState->IsTapInSettingsButtonArea(touchX, touchY);
+            GN_LOG_INFO("PauseSystem: Delegating to GameplayState - result: " + std::to_string(isInArea));
         return isInArea;
+        } else {
+            GN_LOG_WARN("PauseSystem: No GameplayState reference available for settings button check");
+            return false;
+        }
     }
 
+
+// Helper function for consistent button collision detection
+bool PauseSystem::IsTouchInButtonBounds(float touchX, float touchY, Entity buttonEntity, bool isCentered) {
+    if (buttonEntity == 0 || !m_ecsCoordinator) {
+        return false;
+    }
+
+    auto transform = m_ecsCoordinator->GetComponent<Transform>(buttonEntity);
+    auto sprite = m_ecsCoordinator->GetComponent<Sprite>(buttonEntity);
+
+    if (!transform || !sprite) {
+        return false;
+    }
+
+    float scaleX = transform->scale.x;
+    float scaleY = transform->scale.y;
+    float width = sprite->width * scaleX;
+    float height = sprite->height * scaleY;
+
+    float left, top;
+
+    if (isCentered) {
+        // Centered positioning: transform position is center
+        left = transform->position.x - (width * 0.5f);
+        top = transform->position.y - (height * 0.5f);
+    } else {
+        // Top-left positioning: transform position is top-left corner
+        left = transform->position.x;
+        top = transform->position.y;
+    }
+
+    float right = left + width;
+    float bottom = top + height;
+
+    GN_LOG_INFO("PauseSystem: Button bounds check - touch(" + std::to_string(touchX) + "," + std::to_string(touchY) +
+               ") vs bounds(" + std::to_string(left) + "," + std::to_string(top) + "," +
+               std::to_string(right) + "," + std::to_string(bottom) + ") [centered=" + std::to_string(isCentered) + "]");
+
+    return (touchX >= left && touchX <= right && touchY >= top && touchY <= bottom);
+}
 
 } // namespace GameCore

@@ -22,5 +22,6 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ProjectileSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/HatsSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/SkillSystem.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/RenderSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Utility/Utils.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Utility/../Core/GnosisTypes.h

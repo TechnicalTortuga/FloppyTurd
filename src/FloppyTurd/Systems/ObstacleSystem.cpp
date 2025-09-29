@@ -2985,41 +2985,40 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
 
 void ObstacleSystem::AddBossLevelDecorations() {
     // Create the animated pillar in the center of the boss level
-    // The pillar is 384x512 pixels with 7-frame animation and should start at y=0
-    // Scale 5.0x as requested - user will adjust spritesheet to fit screen
-    float screenWidth = 1179.0f;
-    float pillarScale = 5.0f; // Return to 5.0x scale as requested
-    float pillarWidth = 384.0f * pillarScale;
+    // The pillar is 320x180 pixels with 15-frame animation (landscape mode)
+    // Scale to fit landscape dimensions with width priority
+    float screenWidth = 2556.0f; // Landscape width (portrait height becomes landscape width)
+    float pillarScale = screenWidth / 320.0f; // Scale to fit 320px base width to full screen width
+    float pillarWidth = 320.0f * pillarScale;
     float pillarX = (screenWidth - pillarWidth) / 2.0f; // Center horizontally
     float pillarY = 0.0f; // Start at y=0 as requested
 
-    GN_LOG_INFO("Creating boss level pillar with 7-frame animation at x=" + std::to_string(pillarX) + ", y=" + std::to_string(pillarY) + ", scale=" + std::to_string(pillarScale));
+    GN_LOG_INFO("Creating boss level pillar with 15-frame animation at x=" + std::to_string(pillarX) + ", y=" + std::to_string(pillarY) + ", scale=" + std::to_string(pillarScale));
 
-    // Create pillar entity with proper 7-frame animation setup
+    // Create pillar entity with proper 15-frame animation setup
     Gnosis::Entity pillar = m_ecsSystem->CreateEntity();
 
     Transform pillarTransform(Gnosis::GNVector2(pillarX, pillarY), 0.0f,
                              Gnosis::GNVector2(pillarScale, pillarScale));
     m_ecsSystem->AddComponent<Transform>(pillar, pillarTransform);
 
-    // Create sprite following the dancing cacti pattern exactly
-    // Use individual frame dimensions (384x512) instead of full sprite sheet dimensions
-    Sprite pillarSprite("BossLevelPillarMobile", 384.0f, 512.0f); // Individual frame dimensions
-    pillarSprite.layer = 2; // Background layer (lower than Rat King and player)
+    // Create sprite for 15-frame pillar animation
+    Sprite pillarSprite("bosspillar", 320.0f, 180.0f); // Individual frame dimensions (320x180)
+    pillarSprite.layer = 2; // Background layer (between boss walls and screen curtains)
     pillarSprite.visible = true;
 
-    // Set up animation for pillar (following dancing cacti pattern)
+    // Set up animation for pillar (15-frame animation)
     pillarSprite.isAnimated = true;
-    pillarSprite.frameCount = 7; // 7-frame animation
-    pillarSprite.frameWidth = static_cast<int>(384.0f); // Each frame is 384 pixels wide
-    pillarSprite.frameHeight = static_cast<int>(512.0f); // Each frame is 512 pixels tall
+    pillarSprite.frameCount = 15; // 15-frame animation
+    pillarSprite.frameWidth = static_cast<int>(320.0f); // Each frame is 320 pixels wide
+    pillarSprite.frameHeight = static_cast<int>(180.0f); // Each frame is 180 pixels tall
     pillarSprite.currentFrame = 0;
     pillarSprite.currentFrameTime = 0.0f; // Initialize frame time
-    pillarSprite.frameTime = 0.15f; // Animation speed
+    pillarSprite.frameTime = 0.12f; // Animation speed (slightly faster than old 7-frame)
     pillarSprite.playing = true;
     pillarSprite.loop = true;
 
-    GN_LOG_DEBUG("Created boss pillar: BossLevelPillarMobile with " + std::to_string(pillarSprite.frameCount) + " frames, frameWidth=" + std::to_string(pillarSprite.frameWidth) + ", frameHeight=" + std::to_string(pillarSprite.frameHeight));
+    GN_LOG_DEBUG("Created boss pillar: bosspillar with " + std::to_string(pillarSprite.frameCount) + " frames, frameWidth=" + std::to_string(pillarSprite.frameWidth) + ", frameHeight=" + std::to_string(pillarSprite.frameHeight));
 
     m_ecsSystem->AddComponent<Sprite>(pillar, pillarSprite);
 

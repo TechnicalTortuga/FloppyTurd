@@ -11,6 +11,7 @@ namespace GameCore {
         , m_activeCamera(0)
         , m_useRenderLayers(true)
         , m_screenInfoValid(false)
+        , m_currentLevelId(1)  // Default to level 1
     {
         GN_LOG_INFO("RenderSystem initialized with unified rendering");
         m_renderQueue.reserve(1000); // Pre-allocate for performance
@@ -407,7 +408,7 @@ namespace GameCore {
                             height = item.sprite->height;
                         }
                         
-                        // Draw centered in PIXEL space if needed; our screenPos is already in pixels
+                        // Draw the texture using the regular drawing function
                         m_platformDelegates.renderer.drawSpriteScaled(
                             textureHandle,
                             screenPos.x,
@@ -940,12 +941,32 @@ namespace GameCore {
 
             // Update ECS with screen dimensions so all systems can access them
             if (m_ecsSystem) {
-                m_ecsSystem->SetScreenDimensions(m_screenInfo.pixelWidth, m_screenInfo.pixelHeight,
-                                               m_screenInfo.logicalWidth, m_screenInfo.logicalHeight);
+                // Check if current level requires landscape mode
+                bool forceLandscape = false;
+                if (m_currentLevelId == 6) { // Boss level
+                    forceLandscape = true;
+                }
+
+                // For landscape mode, swap dimensions to match rotated screen
+                float effectivePixelWidth = m_screenInfo.pixelWidth;
+                float effectivePixelHeight = m_screenInfo.pixelHeight;
+                float effectiveLogicalWidth = m_screenInfo.logicalWidth;
+                float effectiveLogicalHeight = m_screenInfo.logicalHeight;
+
+                if (forceLandscape && m_screenInfo.pixelWidth < m_screenInfo.pixelHeight) {
+                    // Device is in portrait but level requires landscape - swap dimensions
+                    effectivePixelWidth = m_screenInfo.pixelHeight;
+                    effectivePixelHeight = m_screenInfo.pixelWidth;
+                    effectiveLogicalWidth = m_screenInfo.logicalHeight;
+                    effectiveLogicalHeight = m_screenInfo.logicalWidth;
+                }
+
+                m_ecsSystem->SetScreenDimensions(effectivePixelWidth, effectivePixelHeight,
+                                               effectiveLogicalWidth, effectiveLogicalHeight);
             }
             return;
         }
-        
+
         // Fallback to delegates only if ConfigManager doesn't have valid info
         if (m_platformDelegates.renderer.getScreenInfo) {
             m_platformDelegates.renderer.getScreenInfo(&m_screenInfo);
@@ -958,8 +979,28 @@ namespace GameCore {
 
             // Update ECS with screen dimensions so all systems can access them
             if (m_ecsSystem) {
-                m_ecsSystem->SetScreenDimensions(m_screenInfo.pixelWidth, m_screenInfo.pixelHeight,
-                                               m_screenInfo.logicalWidth, m_screenInfo.logicalHeight);
+                // Check if current level requires landscape mode
+                bool forceLandscape = false;
+                if (m_currentLevelId == 6) { // Boss level
+                    forceLandscape = true;
+                }
+
+                // For landscape mode, swap dimensions to match rotated screen
+                float effectivePixelWidth = m_screenInfo.pixelWidth;
+                float effectivePixelHeight = m_screenInfo.pixelHeight;
+                float effectiveLogicalWidth = m_screenInfo.logicalWidth;
+                float effectiveLogicalHeight = m_screenInfo.logicalHeight;
+
+                if (forceLandscape && m_screenInfo.pixelWidth < m_screenInfo.pixelHeight) {
+                    // Device is in portrait but level requires landscape - swap dimensions
+                    effectivePixelWidth = m_screenInfo.pixelHeight;
+                    effectivePixelHeight = m_screenInfo.pixelWidth;
+                    effectiveLogicalWidth = m_screenInfo.logicalHeight;
+                    effectiveLogicalHeight = m_screenInfo.logicalWidth;
+                }
+
+                m_ecsSystem->SetScreenDimensions(effectivePixelWidth, effectivePixelHeight,
+                                               effectiveLogicalWidth, effectiveLogicalHeight);
             }
             return;
         }

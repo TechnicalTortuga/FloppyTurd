@@ -40,7 +40,7 @@ public class GameEngine: NSObject, TouchInputDelegate {
     private var commandProcessor: CommandProcessor?
 
     // C++ Game Engine instance
-    private var cppGame: GameCoreGame.GameCore.FloppyTurdGame?
+    public var cppGame: GameCoreGame.GameCore.FloppyTurdGame?
 
     // GNLog integration - Direct SwiftLog (like ThreadingSystem)
     private func log(_ message: String, level: LogLevel = .info) {
@@ -310,6 +310,12 @@ public class GameEngine: NSObject, TouchInputDelegate {
         // }
     }
 
+    /// Set the game view controller for orientation commands
+    public func setGameViewController(_ controller: GameViewController) {
+        commandProcessor?.setGameViewController(controller)
+        log("Game view controller set", level: .debug)
+    }
+
     /// Get the touch input handler for the game
     public func getTouchInputHandler() -> TouchInputHandler? {
         return touchInputHandler
@@ -425,20 +431,28 @@ public class GameEngine: NSObject, TouchInputDelegate {
     // MARK: - TouchInputDelegate Implementation
 
     /// Handle touch press events from TouchInputHandler
-    public func onTouchPress(normalizedPosition: CGPoint, viewSize: CGSize) {
+    public func onTouchPress(pixelPosition: CGPoint, screenSize: CGSize) {
         guard isRunning && !isPaused else { return }
         guard cppGame != nil else {
             log("Cannot handle touch press - C++ game not initialized", level: .warning)
             return
         }
 
-        // Map normalized coordinates to actual device pixel dimensions for 1:1 hit-testing
-        let pixelBounds = UIScreen.main.nativeBounds
-        let gameX = Float(normalizedPosition.x) * Float(pixelBounds.width)
-        let gameY = Float(normalizedPosition.y) * Float(pixelBounds.height)
+        // Coordinates are already in pixel space from TouchInputHandler
+        let gameX = Float(pixelPosition.x)
+        let gameY = Float(pixelPosition.y)
+
+        // Get current orientation for logging
+        let orientation: UIInterfaceOrientation
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+            orientation = windowScene.interfaceOrientation
+        } else {
+            orientation = .portrait
+        }
+        let orientationStr = orientation == .portrait ? "portrait" : "landscape"
 
         log(
-            "🎯 Touch PRESS: normalized (\(normalizedPosition.x), \(normalizedPosition.y)) -> game coords (\(gameX), \(gameY))",
+            "🎯 Touch PRESS [PIXEL COORDS]: pixel (\(pixelPosition.x), \(pixelPosition.y)) screenSize (\(screenSize.width)x\(screenSize.height)) [\(orientationStr)]",
             level: .debug)
 
         // Update touch state in ThreadingProxy for C++ side to access
@@ -449,35 +463,45 @@ public class GameEngine: NSObject, TouchInputDelegate {
     }
 
     /// Handle touch move events from TouchInputHandler
-    public func onTouchMove(normalizedPosition: CGPoint, viewSize: CGSize) {
+    public func onTouchMove(pixelPosition: CGPoint, screenSize: CGSize) {
         guard isRunning && !isPaused else { return }
         guard cppGame != nil else {
             log("Cannot handle touch move - C++ game not initialized", level: .warning)
             return
         }
-        let pixelBounds = UIScreen.main.nativeBounds
-        let gameX = Float(normalizedPosition.x) * Float(pixelBounds.width)
-        let gameY = Float(normalizedPosition.y) * Float(pixelBounds.height)
+
+        // Coordinates are already in pixel space from TouchInputHandler
+        let gameX = Float(pixelPosition.x)
+        let gameY = Float(pixelPosition.y)
+
         // Update touch state as down without press/release flags
         GameCore.updateTouchState(gameX, gameY, true, false, false)
         cppGame?.HandleInput()
     }
 
     /// Handle touch release events from TouchInputHandler
-    public func onTouchRelease(normalizedPosition: CGPoint, viewSize: CGSize) {
+    public func onTouchRelease(pixelPosition: CGPoint, screenSize: CGSize) {
         guard isRunning && !isPaused else { return }
         guard cppGame != nil else {
             log("Cannot handle touch release - C++ game not initialized", level: .warning)
             return
         }
 
-        // Map normalized coordinates to actual device pixel dimensions for 1:1 hit-testing
-        let pixelBounds = UIScreen.main.nativeBounds
-        let gameX = Float(normalizedPosition.x) * Float(pixelBounds.width)
-        let gameY = Float(normalizedPosition.y) * Float(pixelBounds.height)
+        // Coordinates are already in pixel space from TouchInputHandler
+        let gameX = Float(pixelPosition.x)
+        let gameY = Float(pixelPosition.y)
+
+        // Get current orientation for logging
+        let orientation: UIInterfaceOrientation
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+            orientation = windowScene.interfaceOrientation
+        } else {
+            orientation = .portrait
+        }
+        let orientationStr = orientation == .portrait ? "portrait" : "landscape"
 
         log(
-            "🎯 Touch RELEASE: normalized (\(normalizedPosition.x), \(normalizedPosition.y)) -> game coords (\(gameX), \(gameY))",
+            "🎯 Touch RELEASE [PIXEL COORDS]: pixel (\(pixelPosition.x), \(pixelPosition.y)) screenSize (\(screenSize.width)x\(screenSize.height)) [\(orientationStr)]",
             level: .debug)
 
         // Update touch state in ThreadingProxy for C++ side to access
@@ -509,10 +533,6 @@ public class GameEngine: NSObject, TouchInputDelegate {
                 + "\(screenInfo.logicalWidth)x\(screenInfo.logicalHeight) logical")
     }
 
-    public func updateScreenInfo() {
-        // Call this when orientation changes or screen properties change
-        setupScreenInfo()
-    }
 }
 
 // MARK: - C++ Integration Notes

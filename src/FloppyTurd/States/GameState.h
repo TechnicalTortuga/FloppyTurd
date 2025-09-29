@@ -75,6 +75,13 @@ namespace GameCore {
     // PlayingState moved to dedicated GameplayState.h/cpp files
 
     /**
+     * @brief Forward declaration for ScreenPromptState
+     *
+     * The full class definition is in ScreenPromptState.h
+     */
+    class ScreenPromptState;
+
+    /**
      * @brief Paused State
      */
     class PausedState : public GameState {

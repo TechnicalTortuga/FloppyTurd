@@ -5,6 +5,11 @@
 #include <memory>
 #include "../../Engine/Platform/PlatformDelegates.h"
 
+// Forward declaration for TouchData
+namespace GameCore {
+    struct TouchData;
+}
+
 namespace GameCore {
     
     /**
@@ -61,6 +66,10 @@ namespace GameCore {
         static void enqueueGetScreenSize(float* width, float* height);
         static void enqueueGetScreenInfo(ScreenInfo* screenInfo);
         static void enqueueGetTextureMetadata(const char* textureId, TextureMetadata* metadata);
+        static void enqueueLockOrientation();
+        static void enqueueUnlockOrientation();
+        static void enqueueLockToPortrait();
+        static void enqueueLockToLandscape();
         
         // Audio commands
         static void enqueuePlayMusic(const char* musicName, float volume, int loopCount);
@@ -153,6 +162,7 @@ namespace GameCore {
         bool m_isTouchDown = false;
         bool m_isTouchJustPressed = false;
         bool m_isTouchJustReleased = false;
+        std::vector<GameCore::TouchData> m_touchData;
         
         // Gesture input state
         bool m_isSwipeLeftDetected = false;

@@ -29,8 +29,8 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Systems/ProjectileSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Systems/HatsSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Systems/SkillSystem.h \
-  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Systems/CameraSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Systems/RenderSystem.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Systems/CameraSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Systems/LevelManager.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Systems/../Config/LevelConfig.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Systems/ObstacleSystem.h \
@@ -46,6 +46,9 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Systems/PauseSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Systems/../Systems/SkillSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Systems/../Systems/HatsSystem.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Systems/../Input/InputManager.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Systems/../Input/../../Engine/Core/ECS.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Systems/../Input/../../Engine/Platform/PlatformDelegates.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Config/LevelConfig.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Components/GameComponents.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Config/EnemyConfigs.h \
@@ -56,4 +59,8 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../../Engine/Platform/PlatformDelegates.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/GameState.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/GameplayState.h \
-  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../Entities/Player.h
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../Entities/Player.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../../Engine/Configuration/ConfigManager.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../../Engine/Configuration/../Platform/PlatformDelegates.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../../Engine/Configuration/../Core/GNLog.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Input/InputManager.h
