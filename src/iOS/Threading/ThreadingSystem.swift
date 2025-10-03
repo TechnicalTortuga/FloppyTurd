@@ -318,27 +318,23 @@ class CommandProcessor {
             }
 
         case .CMD_LOCK_TO_PORTRAIT:
-            Task { @MainActor in
-                if let gameViewController = gameViewController {
-                    gameViewController.lockToPortrait()
-                    log("[CommandProcessor] Orientation locked to portrait successfully")
-                } else {
-                    log(
-                        "[CommandProcessor] ERROR: Cannot lock to portrait - GameViewController not available",
-                        level: .error)
-                }
+            if let gameViewController = gameViewController {
+                gameViewController.lockToPortrait()
+                log("[CommandProcessor] Orientation locked to portrait successfully")
+            } else {
+                log(
+                    "[CommandProcessor] ERROR: Cannot lock to portrait - GameViewController not available",
+                    level: .error)
             }
 
         case .CMD_LOCK_TO_LANDSCAPE:
-            Task { @MainActor in
-                if let gameViewController = gameViewController {
-                    gameViewController.lockToLandscape()
-                    log("[CommandProcessor] Orientation locked to landscape successfully")
-                } else {
-                    log(
-                        "[CommandProcessor] ERROR: Cannot lock to landscape - GameViewController not available",
-                        level: .error)
-                }
+            if let gameViewController = gameViewController {
+                gameViewController.lockToLandscape()
+                log("[CommandProcessor] Orientation locked to landscape successfully")
+            } else {
+                log(
+                    "[CommandProcessor] ERROR: Cannot lock to landscape - GameViewController not available",
+                    level: .error)
             }
 
         default:

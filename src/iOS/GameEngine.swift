@@ -38,6 +38,7 @@ public class GameEngine: NSObject, TouchInputDelegate {
     private var touchInputHandler: TouchInputHandler?
     private var audioManager: AVAudioHandler?
     private var commandProcessor: CommandProcessor?
+    private var gameViewController: GameViewController?
 
     // C++ Game Engine instance
     public var cppGame: GameCoreGame.GameCore.FloppyTurdGame?
@@ -139,7 +140,11 @@ public class GameEngine: NSObject, TouchInputDelegate {
 
         log("Swift components already created - ready to initialize C++ game")
 
-        // Set up screen info before initializing C++ game
+        // Portrait lock is now handled by AppDelegate at launch
+        // Just ensure screen info is set up correctly
+        log("Setting up screen info (portrait lock already handled by AppDelegate)")
+
+        // Set up screen info
         setupScreenInfo()
 
         // Now initialize the C++ game
@@ -312,6 +317,7 @@ public class GameEngine: NSObject, TouchInputDelegate {
 
     /// Set the game view controller for orientation commands
     public func setGameViewController(_ controller: GameViewController) {
+        gameViewController = controller
         commandProcessor?.setGameViewController(controller)
         log("Game view controller set", level: .debug)
     }

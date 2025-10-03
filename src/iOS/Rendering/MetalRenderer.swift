@@ -1924,46 +1924,66 @@ public class MetalRenderer {
     // MARK: - Enhanced Screen Information
 
     public func getScreenInfo() -> GameCore.ScreenInfo {
-        // Get the main screen for device information
-        let mainScreen = UIScreen.main
+        // CRITICAL FIX: Use MTKView drawable size for actual rendered dimensions
+        // UIScreen.nativeBounds always returns portrait dimensions regardless of orientation
+        // MTKView.drawableSize gives us the actual current render target dimensions
+        var pixelWidth: Float
+        var pixelHeight: Float
+        var logicalWidth: Float
+        var logicalHeight: Float
+        var scaleFactor: Float
 
-        // Get logical bounds (in points)
-        let logicalBounds = mainScreen.bounds
-        let logicalWidth = Float(logicalBounds.width)
-        let logicalHeight = Float(logicalBounds.height)
+        if let metalView = metalView {
+            // Use MTKView drawable size for accurate current dimensions
+            let drawableSize = metalView.drawableSize
+            pixelWidth = Float(drawableSize.width)
+            pixelHeight = Float(drawableSize.height)
 
-        // Get pixel bounds (native scale)
-        let pixelBounds = mainScreen.nativeBounds
-        let pixelWidth = Float(pixelBounds.width)
-        let pixelHeight = Float(pixelBounds.height)
+            // Get logical size from view bounds
+            let viewBounds = metalView.bounds
+            logicalWidth = Float(viewBounds.width)
+            logicalHeight = Float(viewBounds.height)
 
-        // Calculate scale factor
-        let scaleFactor = Float(mainScreen.nativeScale)
+            // Calculate scale from ratio
+            scaleFactor = Float(UIScreen.main.nativeScale)
 
-        // Determine orientation using device orientation, not just pixel dimensions
-        // This is important for iOS Simulator where screen dimensions don't change on rotation
-        let deviceOrientation = UIDevice.current.orientation
+            log(
+                "Using MTKView dimensions - Drawable: \(pixelWidth)x\(pixelHeight), Bounds: \(logicalWidth)x\(logicalHeight)",
+                level: .debug)
+        } else {
+            // Fallback to UIScreen if metalView not set yet
+            let mainScreen = UIScreen.main
+            let logicalBounds = mainScreen.bounds
+            logicalWidth = Float(logicalBounds.width)
+            logicalHeight = Float(logicalBounds.height)
 
-        // IMPROVED: Use viewport dimensions as primary indicator for iOS Simulator
-        // In simulator, viewport dimensions change when rotating, even if nativeBounds don't
-        let viewportWidth = Float(viewportSize.width)
-        let viewportHeight = Float(viewportSize.height)
-        let isPortraitByViewport = viewportHeight > viewportWidth
+            // Use current window scene orientation instead of nativeBounds
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+                let interfaceOrientation = windowScene.interfaceOrientation
+                let nativeBounds = mainScreen.nativeBounds
 
-        // Use device orientation if available, otherwise fallback to viewport dimensions
-        let isPortrait =
-            (deviceOrientation != .unknown) ? deviceOrientation.isPortrait : isPortraitByViewport
+                if interfaceOrientation.isPortrait {
+                    // Portrait: use native bounds as-is
+                    pixelWidth = Float(nativeBounds.width)
+                    pixelHeight = Float(nativeBounds.height)
+                } else {
+                    // Landscape: swap dimensions
+                    pixelWidth = Float(nativeBounds.height)
+                    pixelHeight = Float(nativeBounds.width)
+                }
+            } else {
+                // Last resort fallback
+                let nativeBounds = mainScreen.nativeBounds
+                pixelWidth = Float(nativeBounds.width)
+                pixelHeight = Float(nativeBounds.height)
+            }
 
-        log(
-            "Orientation Debug - Device: \(deviceOrientation.rawValue), Viewport: \(viewportWidth)x\(viewportHeight) (\(isPortraitByViewport ? "portrait" : "landscape")), Final: \(isPortrait ? "portrait" : "landscape")",
-            level: .debug)
+            scaleFactor = Float(mainScreen.nativeScale)
+            log("Using UIScreen fallback - Pixel: \(pixelWidth)x\(pixelHeight)", level: .warning)
+        }
 
         // Get device model (simplified)
         let deviceModel = getDeviceModel()
-
-        log(
-            "Screen Info - Logical: \(logicalWidth)x\(logicalHeight), Pixel: \(pixelWidth)x\(pixelHeight), Scale: \(scaleFactor), Portrait: \(isPortrait), Device Orientation: \(deviceOrientation.rawValue), Device: \(deviceModel)",
-            level: .debug)
 
         // Create and return ScreenInfo struct
         // IMPORTANT: Return by value only. Do not store the pointer passed from C++.
@@ -1971,24 +1991,39 @@ public class MetalRenderer {
         screenInfo.logicalWidth = logicalWidth
         screenInfo.logicalHeight = logicalHeight
 
-        // CRITICAL FIX: Swap dimensions for landscape mode to ensure proper centering
-        if !isPortrait {
-            // In landscape, ensure width > height for proper UI calculations
-            screenInfo.pixelWidth = max(pixelWidth, pixelHeight)
-            screenInfo.pixelHeight = min(pixelWidth, pixelHeight)
-            log(
-                "Landscape mode: Swapped dimensions from \(pixelWidth)x\(pixelHeight) to \(screenInfo.pixelWidth)x\(screenInfo.pixelHeight)",
-                level: .info)
-        } else {
-            screenInfo.pixelWidth = pixelWidth
-            screenInfo.pixelHeight = pixelHeight
-        }
+        // CRITICAL FIX: Use MTKView drawable size EXACTLY as-is
+        // MTKView already gives us the correct dimensions for the current orientation
+        // DO NOT swap or adjust dimensions - this causes the double-update bug
+        screenInfo.pixelWidth = pixelWidth
+        screenInfo.pixelHeight = pixelHeight
+
+        // Determine orientation from actual drawable dimensions
+        // This is the ground truth - if height > width, we're in portrait
+        screenInfo.isPortrait = pixelHeight > pixelWidth
 
         screenInfo.scaleFactor = scaleFactor
-        screenInfo.isPortrait = isPortrait
         screenInfo.deviceModel = std.string(deviceModel)
 
+        log(
+            "ScreenInfo: \(Int(pixelWidth))x\(Int(pixelHeight)), portrait: \(screenInfo.isPortrait)",
+            level: .info)
+
         return screenInfo
+    }
+
+    /// Force an immediate screen info update and push to C++ ConfigManager
+    /// Call this after orientation changes to ensure dimensions are refreshed
+    public func updateScreenInfo() {
+        let screenInfo = getScreenInfo()
+
+        log(
+            "Forcing screen info update: \(screenInfo.pixelWidth)x\(screenInfo.pixelHeight), portrait: \(screenInfo.isPortrait)",
+            level: .info)
+
+        // Push updated screen info to C++ ConfigManager
+        GameCorePlatform.GameCore.setScreenInfoDirect(screenInfo)
+
+        log("Screen info pushed to C++ ConfigManager", level: .debug)
     }
 
     private func getDeviceModel() -> String {

@@ -7,6 +7,7 @@
 //  Handles Metal rendering, touch input, and game lifecycle
 //
 
+import GameCorePlatform  // For ScreenInfo C++ interop
 import Metal
 import MetalKit
 import UIKit
@@ -139,6 +140,17 @@ public class GameViewController: UIViewController {
             metalView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             metalView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
+
+        // CRITICAL FIX: Force MTKView drawable size to portrait immediately
+        // This ensures correct dimensions even if view.bounds is landscape at init
+        let scale = UIScreen.main.nativeScale
+        let portraitWidth = min(view.bounds.width, view.bounds.height) * scale
+        let portraitHeight = max(view.bounds.width, view.bounds.height) * scale
+
+        metalView.drawableSize = CGSize(width: portraitWidth, height: portraitHeight)
+        log(
+            "✅ Forced MTKView drawable size to portrait: \(portraitWidth)x\(portraitHeight)",
+            level: .info)
 
         log("Metal view setup complete")
     }
@@ -302,25 +314,38 @@ public class GameViewController: UIViewController {
 extension GameViewController: MTKViewDelegate {
 
     public func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
-        log("Metal view size changed to \(size) - POTENTIAL ORIENTATION CHANGE", level: .info)
+        log(
+            "🔄 MTKView size changed to \(Int(size.width))x\(Int(size.height)) - SINGLE SOURCE OF TRUTH",
+            level: .info)
+
+        // Update renderer viewport size
         metalRenderer?.updateViewportSize(width: Float(size.width), height: Float(size.height))
 
-        // CRITICAL FIX: Update ConfigManager with fresh screen info when orientation changes
-        // This ensures ScreenPromptState gets the updated screen information immediately
+        // THIS IS THE ONLY PLACE WE UPDATE CONFIGMANAGER DIMENSIONS
+        // This ensures we never have stale/predicted dimensions, only real MTKView size
         if let renderer = metalRenderer {
-            let screenInfo = renderer.getScreenInfo()
+            var screenInfo = renderer.getScreenInfo()
+
+            // Clear orientation changing flag - rotation is complete
+            screenInfo.isOrientationChanging = false
+
+            // Update dimensions with actual MTKView drawable size (ground truth)
+            screenInfo.pixelWidth = Float(size.width)
+            screenInfo.pixelHeight = Float(size.height)
+
+            // Determine actual orientation from MTKView size (ground truth)
+            let actualIsPortrait = size.height > size.width
+            screenInfo.isPortrait = actualIsPortrait
+
             log(
-                "Orientation change detected: \(screenInfo.pixelWidth)x\(screenInfo.pixelHeight), portrait: \(screenInfo.isPortrait)",
+                "✅ MTKView rotation complete: \(Int(screenInfo.pixelWidth))x\(Int(screenInfo.pixelHeight)), "
+                    + "portrait: \(screenInfo.isPortrait)",
                 level: .info)
 
-            // Update ConfigManager through the C++ game engine
+            // Update ConfigManager with final dimensions (orientation lock is set synchronously)
             gameEngine?.cppGame?.UpdateScreenInfo(screenInfo)
-            log(
-                "ConfigManager updated via C++ game engine - ScreenPromptState should reposition UI now",
-                level: .info)
+            log("✅ ConfigManager updated with correct dimensions", level: .info)
         }
-
-        log("Viewport size updated", level: .debug)
     }
 
     // MARK: - Orientation Control
@@ -344,6 +369,9 @@ extension GameViewController: MTKViewDelegate {
         lockedOrientation = .all
         log("Orientation unlocked", level: .info)
 
+        // SYNCHRONOUSLY update ConfigManager to unlock orientation
+        updateOrientationLockState(.UNLOCKED)
+
         // Notify system of orientation support changes
         setNeedsUpdateOfSupportedInterfaceOrientations()
         navigationController?.setNeedsUpdateOfSupportedInterfaceOrientations()
@@ -355,27 +383,32 @@ extension GameViewController: MTKViewDelegate {
         lockedOrientation = [.portrait, .portraitUpsideDown]
         log("Orientation locked to portrait only", level: .info)
 
+        // SYNCHRONOUSLY update ConfigManager with portrait lock
+        updateOrientationLockState(.PORTRAIT)
+
         // Modern iOS orientation handling with proper API calls
         setNeedsUpdateOfSupportedInterfaceOrientations()
         navigationController?.setNeedsUpdateOfSupportedInterfaceOrientations()
 
-        // Force orientation change if needed
+        // Request iOS to rotate to portrait
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
-            if windowScene.interfaceOrientation.isLandscape {
-                // Request portrait orientation with proper error handling
-                Task { @MainActor in
-                    if let windowScene = UIApplication.shared.connectedScenes.first
-                        as? UIWindowScene
-                    {
-                        windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: .portrait)) {
-                            error in
-                            self.log(
-                                "Orientation lock to portrait failed: \(error.localizedDescription)",
-                                level: .error)
-                        }
+            log(
+                "Current orientation: \(windowScene.interfaceOrientation.rawValue), requesting portrait",
+                level: .info)
+
+            // Request portrait orientation with proper error handling
+            Task { @MainActor in
+                if let windowScene = UIApplication.shared.connectedScenes.first
+                    as? UIWindowScene
+                {
+                    windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: .portrait)) {
+                        error in
                         self.log(
-                            "Successfully requested orientation lock to portrait", level: .info)
+                            "Orientation lock to portrait failed: \(error.localizedDescription)",
+                            level: .error)
                     }
+                    self.log(
+                        "Successfully requested orientation lock to portrait", level: .info)
                 }
             }
         }
@@ -387,28 +420,33 @@ extension GameViewController: MTKViewDelegate {
         lockedOrientation = [.landscapeLeft, .landscapeRight]
         log("Orientation locked to landscape only", level: .info)
 
+        // SYNCHRONOUSLY update ConfigManager with landscape lock
+        updateOrientationLockState(.LANDSCAPE)
+
         // Modern iOS orientation handling with proper API calls
         setNeedsUpdateOfSupportedInterfaceOrientations()
         navigationController?.setNeedsUpdateOfSupportedInterfaceOrientations()
 
-        // Force orientation change if needed
+        // Request iOS to rotate to landscape
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
-            if windowScene.interfaceOrientation.isPortrait {
-                // Request landscape orientation with proper error handling
-                Task { @MainActor in
-                    if let windowScene = UIApplication.shared.connectedScenes.first
-                        as? UIWindowScene
-                    {
-                        windowScene.requestGeometryUpdate(
-                            .iOS(interfaceOrientations: .landscapeLeft)
-                        ) { error in
-                            self.log(
-                                "Orientation lock to landscape failed: \(error.localizedDescription)",
-                                level: .error)
-                        }
+            log(
+                "Current orientation: \(windowScene.interfaceOrientation.rawValue), requesting landscape",
+                level: .info)
+
+            // Request landscape orientation with proper error handling
+            Task { @MainActor in
+                if let windowScene = UIApplication.shared.connectedScenes.first
+                    as? UIWindowScene
+                {
+                    windowScene.requestGeometryUpdate(
+                        .iOS(interfaceOrientations: .landscapeLeft)
+                    ) { error in
                         self.log(
-                            "Successfully requested orientation lock to landscape", level: .info)
+                            "Orientation lock to landscape failed: \(error.localizedDescription)",
+                            level: .error)
                     }
+                    self.log(
+                        "Successfully requested orientation lock to landscape", level: .info)
                 }
             }
         }
@@ -425,6 +463,23 @@ extension GameViewController: MTKViewDelegate {
         return !orientationLocked
     }
 
+    /// Synchronously update ConfigManager with orientation lock state
+    /// This ensures the C++ side knows about orientation locks immediately
+    private func updateOrientationLockState(
+        _ lockState: GameCorePlatform.GameCore.ScreenInfo.OrientationLock
+    ) {
+        if let renderer = metalRenderer {
+            var screenInfo = renderer.getScreenInfo()
+            screenInfo.orientationLock = lockState
+
+            let lockStr = lockState == .PORTRAIT ? "PORTRAIT" : lockState == .LANDSCAPE ? "LANDSCAPE" : "UNLOCKED"
+            log("🔒 Orientation lock applied synchronously: \(lockStr)", level: .info)
+
+            // Update ConfigManager immediately with the orientation lock
+            gameEngine?.cppGame?.UpdateScreenInfo(screenInfo)
+        }
+    }
+
     // MARK: - Orientation Handling
 
     override public func viewWillTransition(
@@ -432,25 +487,18 @@ extension GameViewController: MTKViewDelegate {
     ) {
         super.viewWillTransition(to: size, with: coordinator)
 
-        log("View will transition to size: \(size)")
+        let orientation = size.width > size.height ? "landscape" : "portrait"
+        log(
+            "🔄 viewWillTransition: Rotation to \(orientation) (\(Int(size.width))x\(Int(size.height))) starting",
+            level: .info)
 
-        // Update screen info when view transitions (orientation change)
+        // DO NOT update ConfigManager here - mtkView(_:drawableSizeWillChange:) will handle it
+        // This prevents double updates and ensures we only use real MTKView dimensions
+
         coordinator.animate(alongsideTransition: { _ in
-            // This is called during the animation
+            self.log("🔄 Rotation animation in progress...", level: .debug)
         }) { _ in
-            // This is called after the transition completes
-            DispatchQueue.main.async {
-                // Force MetalRenderer to update screen info after orientation change
-                if let renderer = self.metalRenderer {
-                    let screenInfo = renderer.getScreenInfo()
-                    self.log(
-                        "Orientation changed - New screen info: \(screenInfo.pixelWidth)x\(screenInfo.pixelHeight), portrait: \(screenInfo.isPortrait)",
-                        level: .info)
-
-                    // ConfigManager is automatically updated when MetalRenderer updates its screen info
-                }
-                self.log("View transition completed", level: .debug)
-            }
+            self.log("✅ Rotation animation finished - MTKView will update size next", level: .info)
         }
     }
 

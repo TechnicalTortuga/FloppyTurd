@@ -127,6 +127,9 @@ void BossHealthBar::Update(float deltaTime) {
 void BossHealthBar::SetVisible(bool visible) {
     if (!m_ecsSystem) return;
 
+    // Track manual visibility changes (for pause menu)
+    m_manuallyHidden = !visible;
+
     // Set visibility for all UI entities
     if (m_backgroundEntity != 0) {
         UIShape* bgShape = m_ecsSystem->GetComponent<UIShape>(m_backgroundEntity);
@@ -192,6 +195,10 @@ void BossHealthBar::UpdateUIEntities() {
 }
 
 bool BossHealthBar::IsVisible() const {
+    // Respect manual hiding (for pause menu) even if boss is active
+    if (m_manuallyHidden) {
+        return false;
+    }
     return m_bossSystem && m_bossSystem->IsActive() && m_bossSystem->GetHealth() > 0;
 }
 

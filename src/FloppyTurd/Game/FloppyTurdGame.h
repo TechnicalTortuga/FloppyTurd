@@ -188,6 +188,7 @@ namespace GameCore {
 
         // Landscape mode support
         int m_pendingLandscapeLevelId;
+        std::string m_pendingTransitionTarget;
         
         // Performance tracking
         float m_frameTime;

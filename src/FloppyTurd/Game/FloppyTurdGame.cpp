@@ -2,6 +2,7 @@
 #include "../States/LoadingState.h"
 #include "../States/MainMenuState.h"
 #include "../States/ScreenPromptState.h"
+#include "../States/TransitionState.h"
 #include "../Config/LevelConfig.h"
 #include "../Input/InputManager.h"
 #include "../../Engine/Core/GNLog.h"
@@ -620,8 +621,9 @@ namespace GameCore {
             }
         }
         else if (strcmp(stateName, "ScreenPrompt") == 0) {
-            // Handle screen prompt state finishing (landscape mode detected)
+            // Handle screen prompt state finishing
             if (m_pendingLandscapeLevelId > 0) {
+                // ScreenPrompt finished - entering landscape mode for boss level
                 GN_LOG_INFO("ScreenPrompt finished - IMMEDIATELY locking to landscape orientation for boss level: " + std::to_string(m_pendingLandscapeLevelId));
 
                 // LOCK ORIENTATION IMMEDIATELY BEFORE CREATING GAMEPLAY STATE to prevent rotation during transition
@@ -633,9 +635,20 @@ namespace GameCore {
                 auto gameplayState = std::make_unique<GameplayState>(m_ecsSystem.get(), &m_platformDelegates, m_pendingLandscapeLevelId);
                 m_stateManager->ChangeState(std::move(gameplayState));
                 m_pendingLandscapeLevelId = 0; // Clear the pending level
+            } else if (!m_pendingTransitionTarget.empty()) {
+                // ScreenPrompt finished - exiting landscape mode, go directly to target state
+                GN_LOG_INFO("ScreenPrompt finished - going directly to: " + m_pendingTransitionTarget);
+
+                if (m_pendingTransitionTarget == "MainMenu") {
+                    // Go directly to MainMenuState - ScreenPromptState already provides transition
+                    auto mainMenuState = std::make_unique<MainMenuState>(m_ecsSystem.get(), &m_platformDelegates);
+                    m_stateManager->ChangeState(std::move(mainMenuState));
+                }
+
+                m_pendingTransitionTarget.clear(); // Clear the pending target
             } else {
-                // No pending landscape level, return to main menu
-                GN_LOG_WARN("ScreenPrompt finished but no pending landscape level found");
+                // No pending state, return to main menu
+                GN_LOG_WARN("ScreenPrompt finished but no pending state found");
                 auto mainMenuState = std::make_unique<MainMenuState>(m_ecsSystem.get(), &m_platformDelegates);
                 m_stateManager->ChangeState(std::move(mainMenuState));
             }
@@ -643,12 +656,53 @@ namespace GameCore {
         else if (strcmp(stateName, "Gameplay") == 0) {
             // Handle gameplay state transitions (game over, level complete, etc.)
             // Save game data when returning from gameplay to ensure coins are persisted
-            GN_LOG_INFO("Saving game data before transitioning from Gameplay to MainMenu");
+            GN_LOG_INFO("Saving game data before transitioning from Gameplay");
             SaveGameData();
 
+            // Check if we're exiting from a landscape level (boss level)
+            GameplayState* gameplay = dynamic_cast<GameplayState*>(finishedState);
+            if (gameplay) {
+                int levelId = gameplay->GetCurrentLevelId();
+                LevelConfig levelConfig = LevelConfigFactory::GetLevelConfig(levelId);
+                
+                if (levelConfig.forceLandscape) {
+                    // Exiting landscape level - unlock orientation first so user can rotate
+                    GN_LOG_INFO("Exiting landscape level " + std::to_string(levelId) + " - unlocking orientation for manual rotation");
+                    if (m_platformDelegates.renderer.unlockOrientation) {
+                        m_platformDelegates.renderer.unlockOrientation();
+                        GN_LOG_INFO("Orientation unlocked - user can now rotate manually");
+                    }
+
+                    // Use ScreenPromptState to wait for portrait rotation
+                    GN_LOG_INFO("Creating ScreenPromptState to wait for portrait rotation");
+                    auto screenPrompt = std::make_unique<ScreenPromptState>(m_ecsSystem.get(), &m_platformDelegates, false); // false = wait for portrait
+
+                    // Store the transition target for when ScreenPromptState finishes
+                    m_pendingTransitionTarget = "MainMenu";
+
+                    m_stateManager->ChangeState(std::move(screenPrompt));
+                    return;
+                }
+            }
+
+            // Normal portrait level - direct transition to main menu
             auto mainMenuState = std::make_unique<MainMenuState>(m_ecsSystem.get(), &m_platformDelegates);
             m_stateManager->ChangeState(std::move(mainMenuState));
             GN_LOG_INFO("Gameplay finished - returned to MainMenuState");
+        }
+        else if (strcmp(stateName, "Transition") == 0) {
+            // Handle transition state finishing
+            TransitionState* transition = dynamic_cast<TransitionState*>(finishedState);
+            if (transition) {
+                const char* targetState = transition->GetTargetStateName();
+                GN_LOG_INFO("TransitionState finished - transitioning to: " + std::string(targetState));
+                
+                if (strcmp(targetState, "MainMenu") == 0) {
+                    auto mainMenuState = std::make_unique<MainMenuState>(m_ecsSystem.get(), &m_platformDelegates);
+                    m_stateManager->ChangeState(std::move(mainMenuState));
+                    GN_LOG_INFO("Transitioned to MainMenuState after orientation change");
+                }
+            }
         }
         else {
             GN_LOG_WARN("Unknown state transition from: %s", stateName);

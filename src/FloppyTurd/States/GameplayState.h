@@ -71,6 +71,9 @@ namespace GameCore {
         void GameOver();
         void LevelComplete();
         
+        // Level info
+        int GetCurrentLevelId() const { return m_currentLevelId; }
+        
         // Pickup and coin coordination handled by PickupSystem
         
         // Score and progression
@@ -90,6 +93,7 @@ namespace GameCore {
         // Orientation-specific UI management
         bool IsLandscapeMode() const;
         void UpdateUILayoutForOrientation();
+        void RepositionSettingsButtonForPauseMenu(bool isPauseMenuActive);
         void RepositionUIElementsLandscape();
         void RepositionUIElementsPortrait();
         void RescaleBackgroundsForOrientation(bool isLandscape, float screenWidth, float screenHeight);
@@ -244,9 +248,9 @@ namespace GameCore {
         static constexpr float PORTRAIT_PLAYER_START_Y = 639.0f;
         static constexpr float BOSS_PLAYER_X_PERCENT = 0.15f;  // 15% from left for boss level to avoid UI overlap
 
-        // Orientation-specific UI positioning constants (Landscape mode - new)
-        static constexpr float LANDSCAPE_SETTINGS_X = 0.90f;   // 90% from left (further right in landscape)
-        static constexpr float LANDSCAPE_SETTINGS_Y = 0.08f;   // Slightly lower (8% from top)
+    // Orientation-specific UI positioning constants (Landscape mode - new)
+    static constexpr float LANDSCAPE_SETTINGS_X = 0.95f;   // 95% from left (further right in landscape)
+    static constexpr float LANDSCAPE_SETTINGS_Y = 0.08f;   // Slightly lower (8% from top)
         static constexpr float LANDSCAPE_COINBAG_X = 0.01f;    // 1% from left (even further left to avoid player overlap)
         static constexpr float LANDSCAPE_COINBAG_Y = 0.55f;    // 45% from bottom (raised 10% more)
         static constexpr float LANDSCAPE_PIPE_Y = 0.12f;       // Slightly lower (12% from top)

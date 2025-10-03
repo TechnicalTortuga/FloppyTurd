@@ -14,7 +14,7 @@ namespace GameCore {
         config.enableEnemies = false;
         config.enableNPCs = false;
         config.enablePickups = false;
-        config.shootingEnabled = false;  // Park level has no shooting mechanics
+        config.shootingEnabled = true;  // Enable shooting by default
         config.pickupSpawnRate = 0.0f;  // No pickups in Level 1
         
         AddParkLevelLayers(config);

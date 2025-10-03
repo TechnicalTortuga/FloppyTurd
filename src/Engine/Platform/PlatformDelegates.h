@@ -16,9 +16,19 @@ namespace GameCore {
         bool isPortrait;         // Orientation flag
         std::string deviceModel; // For device-specific optimizations
         
+        // ORIENTATION LOCK STATE - Single source of truth for C++ code
+        enum class OrientationLock {
+            UNLOCKED = 0,        // Free rotation allowed
+            PORTRAIT = 1,        // Locked to portrait
+            LANDSCAPE = 2        // Locked to landscape
+        };
+        OrientationLock orientationLock;  // Current orientation lock state
+        bool isOrientationChanging;       // True during MTKView rotation animations
+        
         ScreenInfo() : pixelWidth(800.0f), pixelHeight(600.0f), 
                       logicalWidth(800.0f), logicalHeight(600.0f),
-                      scaleFactor(1.0f), isPortrait(false), deviceModel("Unknown") {}
+                      scaleFactor(1.0f), isPortrait(false), deviceModel("Unknown"),
+                      orientationLock(OrientationLock::UNLOCKED), isOrientationChanging(false) {}
     };
 
     // Enhanced Texture Metadata for Dynamic Asset Management

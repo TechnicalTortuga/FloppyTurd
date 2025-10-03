@@ -58,11 +58,11 @@ namespace GameCore {
         , m_enemiesKilled(0)
         , m_totalPipes(0)
         , m_lastSkillButtonPressTime(0.0f)
-        , m_skillButtonDebounceDelay(0.3f)
+        , m_skillButtonDebounceDelay(0.1f)
         , m_lastActionButtonPressTime(0.0f)
         , m_actionButtonDebounceDelay(0.5f)
         , m_lastRibbonButtonPressTime(0.0f)
-        , m_ribbonButtonDebounceDelay(0.3f)
+        , m_ribbonButtonDebounceDelay(0.1f)
         , m_lastSettingsButtonPressTime(0.0f)
         , m_settingsButtonDebounceDelay(0.3f)
         , m_currentSessionTextEntity(0)
@@ -450,7 +450,7 @@ namespace GameCore {
                     UIElement buttonUI;
                     buttonUI.normalTextureId = "FloppyButtonBlue";
                     buttonUI.buttonText = buttonLabels[i];
-                    buttonUI.fontSize = 28.0f; // Slightly smaller font for better fit
+                    buttonUI.fontSize = 36.0f; // Increased font size for better visibility in landscape
                     buttonUI.textColor = GNColor(255, 255, 255, 255); // White text
                     buttonUI.centerTextHorizontally = true;
                     buttonUI.centerTextVertically = true;
@@ -465,6 +465,10 @@ namespace GameCore {
                     buttonSprite.layer = 95; // Match textLayer
                     buttonSprite.visible = false; // Initially hidden
                     m_ecsCoordinator->AddComponent<Sprite>(buttonEntity, buttonSprite);
+
+                    // Add Bounds component for proper collision detection
+                    Bounds buttonBounds(buttonWidth, buttonHeight, 0.0f, 0.0f, false); // Top-left aligned
+                    m_ecsCoordinator->AddComponent<Bounds>(buttonEntity, buttonBounds);
 
                     m_ribbonButtons.push_back(buttonEntity);
 
@@ -518,6 +522,10 @@ namespace GameCore {
                     buttonSprite.visible = false; // Initially hidden
                 m_ecsCoordinator->AddComponent<Sprite>(buttonEntity, buttonSprite);
 
+                    // Add Bounds component for proper collision detection
+                    Bounds buttonBounds(buttonWidth, buttonHeight, 0.0f, 0.0f, false); // Top-left aligned
+                    m_ecsCoordinator->AddComponent<Bounds>(buttonEntity, buttonBounds);
+
                 m_ribbonButtons.push_back(buttonEntity);
 
                     GN_LOG_INFO("PauseSystem: Created portrait ribbon button '" + std::string(buttonLabels[i]) +
@@ -567,7 +575,12 @@ namespace GameCore {
 
             // Position at the top center of the screen (like other tab titles)
             float titleX = m_screenWidth * 0.5f;
-            float titleY = m_screenHeight * 0.15f; // Near the top
+            float titleY;
+            if (IsLandscapeMode()) {
+                titleY = m_screenHeight * 0.22f; // Lower in landscape to account for tab buttons
+            } else {
+                titleY = m_screenHeight * 0.15f; // Near the top
+            }
 
             Transform titleTransform(GNVector2(titleX, titleY), 0.0f, GNVector2(1.0f, 1.0f));
             m_ecsCoordinator->AddComponent<Transform>(m_systemTitleEntity, titleTransform);
@@ -603,7 +616,12 @@ namespace GameCore {
 
             // Position button in center of entire screen (not just tab area)
             float buttonCenterX = m_screenWidth * 0.5f; // Center horizontally on screen
-            float buttonCenterY = m_screenHeight * 0.75f; // Position at 75% down screen (lower)
+            float buttonCenterY;
+            if (IsLandscapeMode()) {
+                buttonCenterY = m_screenHeight * 0.90f; // Match skill/hat button position
+            } else {
+                buttonCenterY = m_screenHeight * 0.75f; // Position at 75% down screen (lower)
+            }
 
             // Use larger scale for main menu size (10x scaling for 900x160 button)
             float buttonScale = 10.0f;
@@ -670,7 +688,12 @@ namespace GameCore {
 
             // Position at the top center of the screen (like other tab titles)
             float titleX = m_screenWidth * 0.5f;
-            float titleY = m_screenHeight * 0.15f; // Near the top
+            float titleY;
+            if (IsLandscapeMode()) {
+                titleY = m_screenHeight * 0.22f; // Lower in landscape to account for tab buttons
+            } else {
+                titleY = m_screenHeight * 0.15f; // Near the top
+            }
 
             Transform titleTransform(GNVector2(titleX, titleY), 0.0f, GNVector2(1.0f, 1.0f));
             m_ecsCoordinator->AddComponent<Transform>(m_skillsTitleEntity, titleTransform);
@@ -692,15 +715,20 @@ namespace GameCore {
             m_ecsCoordinator->AddComponent<Sprite>(m_skillsTitleEntity, titleSprite);
         }
 
-        // Create black background like stats tab (EXACT same dimensions and positioning)
+        // Create black background like stats tab (adjusted for orientation)
         if (m_skillsBackgroundEntity == 0) {
             m_skillsBackgroundEntity = m_ecsCoordinator->CreateEntity();
 
-            // Calculate 70% of the pause menu background dimensions (EXACT same as stats tab)
-            float pauseMenuWidth = 1120.0f;
-            float pauseMenuHeight = 2100.0f;
-            float bgWidth = pauseMenuWidth * 0.7f;   // 784 (same as stats)
-            float bgHeight = pauseMenuHeight * 0.7f; // 1470 (same as stats)
+            float bgWidth, bgHeight;
+            if (IsLandscapeMode()) {
+                // Landscape mode: horizontally dominant (wider than tall)
+                bgWidth = 1470.0f;  // Wider
+                bgHeight = 784.0f;  // Shorter
+            } else {
+                // Portrait mode: original dimensions
+                bgWidth = 784.0f;   // Standard width
+                bgHeight = 1470.0f; // Taller
+            }
 
             // Calculate layout positions (EXACT same as stats tab)
             float centerX = m_screenWidth * 0.5f;
@@ -739,12 +767,26 @@ namespace GameCore {
         if (m_skillsNameEntity == 0) {
             m_skillsNameEntity = m_ecsCoordinator->CreateEntity();
 
-            // Position within the black background area
-            float bgX = CenterObjectAtPosition(m_screenWidth * 0.5f, m_screenHeight * 0.5f + 32.0f, 1120.0f * 0.7f, 2100.0f * 0.7f).x;
-            float bgWidth = 1120.0f * 0.7f;
+            // Position within the black background area (adjusted for landscape)
+            float bgWidth, bgHeight;
+            if (IsLandscapeMode()) {
+                bgWidth = 1470.0f;
+                bgHeight = 784.0f;
+            } else {
+                bgWidth = 1120.0f * 0.7f;
+                bgHeight = 2100.0f * 0.7f;
+            }
+
+            float bgX = CenterObjectAtPosition(m_screenWidth * 0.5f, m_screenHeight * 0.5f + 32.0f, bgWidth, bgHeight).x;
+            float bgY = CenterObjectAtPosition(m_screenWidth * 0.5f, m_screenHeight * 0.5f + 32.0f, bgWidth, bgHeight).y;
 
             float nameX = bgX + bgWidth * 0.5f; // Center within background
-            float nameY = CenterObjectAtPosition(m_screenWidth * 0.5f, m_screenHeight * 0.5f + 32.0f, 1120.0f * 0.7f, 2100.0f * 0.7f).y + 150.0f; // Near the top of the background
+            float nameY;
+            if (IsLandscapeMode()) {
+                nameY = bgY + bgHeight * 0.3f; // Lower in landscape (30% down from background top)
+            } else {
+                nameY = bgY + 150.0f; // Near the top of the background
+            }
 
             Transform nameTransform(GNVector2(nameX, nameY), 0.0f, GNVector2(1.0f, 1.0f));
             m_ecsCoordinator->AddComponent<Transform>(m_skillsNameEntity, nameTransform);
@@ -770,13 +812,26 @@ namespace GameCore {
         if (m_skillsDescriptionEntity == 0) {
             m_skillsDescriptionEntity = m_ecsCoordinator->CreateEntity();
 
-            // Position within the black background area
-            float bgX = CenterObjectAtPosition(m_screenWidth * 0.5f, m_screenHeight * 0.5f + 32.0f, 1120.0f * 0.7f, 2100.0f * 0.7f).x;
-            float bgY = CenterObjectAtPosition(m_screenWidth * 0.5f, m_screenHeight * 0.5f + 32.0f, 1120.0f * 0.7f, 2100.0f * 0.7f).y;
-            float bgWidth = 1120.0f * 0.7f;
+            // Position within the black background area (adjusted for landscape)
+            float bgWidth, bgHeight;
+            if (IsLandscapeMode()) {
+                bgWidth = 1470.0f;
+                bgHeight = 784.0f;
+            } else {
+                bgWidth = 1120.0f * 0.7f;
+                bgHeight = 2100.0f * 0.7f;
+            }
+
+            float bgX = CenterObjectAtPosition(m_screenWidth * 0.5f, m_screenHeight * 0.5f + 32.0f, bgWidth, bgHeight).x;
+            float bgY = CenterObjectAtPosition(m_screenWidth * 0.5f, m_screenHeight * 0.5f + 32.0f, bgWidth, bgHeight).y;
 
             float descX = bgX + bgWidth * 0.5f; // Center within background
-            float descY = bgY + 300.0f; // Below name text
+            float descY;
+            if (IsLandscapeMode()) {
+                descY = bgY + bgHeight * 0.5f; // Center vertically in landscape
+            } else {
+                descY = bgY + 300.0f; // Below name text
+            }
 
             Transform descTransform(GNVector2(descX, descY), 0.0f, GNVector2(1.0f, 1.0f));
             m_ecsCoordinator->AddComponent<Transform>(m_skillsDescriptionEntity, descTransform);
@@ -803,8 +858,13 @@ namespace GameCore {
             m_skillsCostEntity = m_ecsCoordinator->CreateEntity();
 
             // Position cost text just above the unlock button
-            float unlockButtonY = m_screenHeight * 0.75f;
-            float costY = unlockButtonY - 200.0f; // 200 pixels above unlock button (between arrows and button)
+            float unlockButtonY;
+            if (IsLandscapeMode()) {
+                unlockButtonY = m_screenHeight * 0.85f; // Lower in landscape
+            } else {
+                unlockButtonY = m_screenHeight * 0.75f;
+            }
+            float costY = unlockButtonY - 150.0f; // Closer to button in landscape
             float costX = m_screenWidth * 0.5f; // Center horizontally on screen
 
             Transform costTransform(GNVector2(costX, costY), 0.0f, GNVector2(1.0f, 1.0f));
@@ -833,9 +893,14 @@ namespace GameCore {
 
             // Position like main menu button (same area as hats/main menu button)
             float buttonCenterX = m_screenWidth * 0.5f; // Center horizontally on screen
-            float buttonCenterY = m_screenHeight * 0.75f; // Position at 75% down screen (lower)
+            float buttonCenterY;
+            if (IsLandscapeMode()) {
+                buttonCenterY = m_screenHeight * 0.90f; // Bring up slightly to meet main menu button in middle
+            } else {
+                buttonCenterY = m_screenHeight * 0.75f; // Position at 75% down screen (lower)
+            }
 
-            // Use proper button scale (10x scaling for 900x160 button like main menu)
+            // Use same scale as other bottom buttons (10x scaling for 900x160 button)
             float buttonScale = 10.0f;
             float buttonWidth = 90.0f * buttonScale;  // 900 pixels
             float buttonHeight = 16.0f * buttonScale; // 160 pixels
@@ -872,15 +937,22 @@ namespace GameCore {
             m_skillsLeftArrowEntity = m_ecsCoordinator->CreateEntity();
 
             // Position arrows with edges aligned at 20% and 80% marks for true symmetry
-            float unlockButtonY = m_screenHeight * 0.75f;
-            float costY = unlockButtonY - 200.0f; // Cost text Y position
+            float unlockButtonY, costOffset;
+            if (IsLandscapeMode()) {
+                unlockButtonY = m_screenHeight * 0.85f;
+                costOffset = 150.0f; // Closer in landscape
+            } else {
+                unlockButtonY = m_screenHeight * 0.75f;
+                costOffset = 200.0f; // Original spacing
+            }
+            float costY = unlockButtonY - costOffset; // Cost text Y position
             float arrowY = costY; // Same Y as cost text for perfect centering
-            float arrowScale = 6.0f; // Increased scale for better visibility
-            float arrowSize = 16.0f * arrowScale; // 96 pixels total size (16x16 * 6)
+            float arrowScale = 8.0f; // Increased scale for better visibility
+            float arrowSize = 16.0f * arrowScale; // 128 pixels total size (16x16 * 8)
             // Left arrow's left edge at 20% mark
             float arrowX = m_screenWidth * 0.20f; // 20% from left edge
 
-            Transform arrowTransform(GNVector2(arrowX, arrowY), 0.0f, GNVector2(arrowScale, arrowScale));
+            Transform arrowTransform(GNVector2(arrowX, arrowY), 0.0f, GNVector2(8.0f, 8.0f)); // Scale 8 for consistency
             m_ecsCoordinator->AddComponent<Transform>(m_skillsLeftArrowEntity, arrowTransform);
 
             Sprite arrowSprite;
@@ -905,11 +977,18 @@ namespace GameCore {
             m_skillsRightArrowEntity = m_ecsCoordinator->CreateEntity();
 
             // Position arrows with edges aligned at 20% and 80% marks for true symmetry
-            float unlockButtonY = m_screenHeight * 0.75f;
-            float costY = unlockButtonY - 200.0f; // Cost text Y position
+            float unlockButtonY, costOffset;
+            if (IsLandscapeMode()) {
+                unlockButtonY = m_screenHeight * 0.85f;
+                costOffset = 150.0f; // Closer in landscape
+            } else {
+                unlockButtonY = m_screenHeight * 0.75f;
+                costOffset = 200.0f; // Original spacing
+            }
+            float costY = unlockButtonY - costOffset; // Cost text Y position
             float arrowY = costY; // Same Y as cost text for perfect centering
-            float arrowScale = 6.0f; // Increased scale for better visibility
-            float arrowSize = 16.0f * arrowScale; // 96 pixels total size (16x16 * 6)
+            float arrowScale = 8.0f; // Increased scale for better visibility
+            float arrowSize = 16.0f * arrowScale; // 128 pixels total size (16x16 * 8)
             // Right arrow's right edge at 80% mark (so left edge at 80% - button width)
             float arrowX = m_screenWidth * 0.80f - arrowSize; // 80% minus button width
 
@@ -945,7 +1024,12 @@ namespace GameCore {
 
             // Position at the top center of the screen (like other tab titles)
             float titleX = m_screenWidth * 0.5f;
-            float titleY = m_screenHeight * 0.15f; // Near the top
+            float titleY;
+            if (IsLandscapeMode()) {
+                titleY = m_screenHeight * 0.22f; // Lower in landscape to account for tab buttons
+            } else {
+                titleY = m_screenHeight * 0.15f; // Near the top
+            }
 
             Transform titleTransform(GNVector2(titleX, titleY), 0.0f, GNVector2(1.0f, 1.0f));
             m_ecsCoordinator->AddComponent<Transform>(m_hatsTitleEntity, titleTransform);
@@ -971,15 +1055,26 @@ namespace GameCore {
         if (m_hatsBackgroundEntity == 0) {
             m_hatsBackgroundEntity = m_ecsCoordinator->CreateEntity();
 
-            // Use same dimensions as skills background (70% of pause menu background)
-            float bgX = CenterObjectAtPosition(m_screenWidth * 0.5f, m_screenHeight * 0.5f + 32.0f, 1120.0f * 0.7f, 2100.0f * 0.7f).x;
-            float bgY = CenterObjectAtPosition(m_screenWidth * 0.5f, m_screenHeight * 0.5f + 32.0f, 1120.0f * 0.7f, 2100.0f * 0.7f).y;
+            // Calculate dimensions based on orientation
+            float bgWidth, bgHeight;
+            if (IsLandscapeMode()) {
+                // Landscape mode: horizontally dominant (wider than tall)
+                bgWidth = 1470.0f;  // Wider
+                bgHeight = 784.0f;  // Shorter
+            } else {
+                // Portrait mode: original dimensions
+                bgWidth = 1120.0f * 0.7f;   // 784
+                bgHeight = 2100.0f * 0.7f;  // 1470
+            }
+
+            float bgX = CenterObjectAtPosition(m_screenWidth * 0.5f, m_screenHeight * 0.5f + 32.0f, bgWidth, bgHeight).x;
+            float bgY = CenterObjectAtPosition(m_screenWidth * 0.5f, m_screenHeight * 0.5f + 32.0f, bgWidth, bgHeight).y;
 
             Transform bgTransform(GNVector2(bgX, bgY), 0.0f, GNVector2(1.0f, 1.0f));
             m_ecsCoordinator->AddComponent<Transform>(m_hatsBackgroundEntity, bgTransform);
 
             // Create black rectangle background
-            GameCore::UIShape backgroundShape(GameCore::UIShapeType::Rectangle, 1120.0f * 0.7f, 2100.0f * 0.7f, GNColor(0, 0, 0, 180)); // Semi-transparent black
+            GameCore::UIShape backgroundShape(GameCore::UIShapeType::Rectangle, bgWidth, bgHeight, GNColor(0, 0, 0, 180)); // Semi-transparent black
             backgroundShape.visible = false;
             backgroundShape.layer = 82; // Above pause menu background (80) but below content (90)
             m_ecsCoordinator->AddComponent<GameCore::UIShape>(m_hatsBackgroundEntity, backgroundShape);
@@ -996,11 +1091,18 @@ namespace GameCore {
             m_ecsCoordinator->AddComponent<Sprite>(m_hatsBackgroundEntity, bgSprite);
         }
 
-        // Calculate grid dimensions (3x5 grid) - EXACT same as original
-        float gridWidth = m_screenWidth * 0.7f;   // 70% of screen width
-        float gridHeight = m_screenHeight * 0.4f; // 40% of screen height
+        // Calculate grid dimensions (3x5 grid) - adjusted for better spacing
+        float gridWidth, gridHeight, centerY;
+        if (IsLandscapeMode()) {
+            gridWidth = m_screenWidth * 0.75f;   // Wider in landscape (75% of screen width)
+            gridHeight = m_screenHeight * 0.35f; // Shorter in landscape (35% of screen height)
+            centerY = m_screenHeight * 0.4f;     // Position higher in landscape (40% down)
+        } else {
+            gridWidth = m_screenWidth * 0.7f;   // 70% of screen width
+            gridHeight = m_screenHeight * 0.4f; // 40% of screen height
+            centerY = m_screenHeight * 0.45f;   // 45% down
+        }
         float centerX = m_screenWidth * 0.5f;
-        float centerY = m_screenHeight * 0.45f;
 
         // Create hats grid UI elements directly in PauseSystem (like original implementation)
         // HatsSystem provides data, PauseSystem manages UI
@@ -1024,20 +1126,37 @@ namespace GameCore {
             return;
         }
 
-        // Calculate grid layout (5 rows, 3 columns like original)
-        const int GRID_ROWS = 5;
-        const int GRID_COLS = 3;
+        // Calculate grid layout (adjusted for orientation)
+        int GRID_ROWS, GRID_COLS;
+        if (IsLandscapeMode()) {
+            GRID_ROWS = 3;  // Landscape: 3 rows
+            GRID_COLS = 5;  // Landscape: 5 columns
+        } else {
+            GRID_ROWS = 5;  // Portrait: 5 rows
+            GRID_COLS = 3;  // Portrait: 3 columns
+        }
         const int MAX_HATS = GRID_ROWS * GRID_COLS;
 
-        // Calculate positions for each hat in the grid
+        // Calculate positions for each hat in the grid with better spacing
         std::vector<GNVector2> positions;
-        float cellWidth = gridWidth / GRID_COLS;
-        float cellHeight = gridHeight / GRID_ROWS;
+        float padding = IsLandscapeMode() ? 110.0f : 30.0f; // Extra padding in landscape for maximum vertical separation between hat frames
+        float availableWidth = gridWidth - (padding * (GRID_COLS - 1));
+        float availableHeight = gridHeight - (padding * (GRID_ROWS - 1));
+        float cellWidth = availableWidth / GRID_COLS;
+        float cellHeight = availableHeight / GRID_ROWS;
+
+        // Start grid lower to avoid overlap with labels and provide more vertical spacing
+        float gridStartY;
+        if (IsLandscapeMode()) {
+            gridStartY = centerY - (gridHeight * 0.2f) + 16.0f; // Start even lower in landscape for better spacing, plus extra 16px
+        } else {
+            gridStartY = centerY - (gridHeight * 0.4f); // Original positioning in portrait
+        }
 
         for (int row = 0; row < GRID_ROWS; ++row) {
             for (int col = 0; col < GRID_COLS; ++col) {
-                float x = centerX - (gridWidth * 0.5f) + (col * cellWidth) + (cellWidth * 0.5f);
-                float y = centerY - (gridHeight * 0.5f) + (row * cellHeight) + (cellHeight * 0.5f);
+                float x = centerX - (gridWidth * 0.5f) + (col * (cellWidth + padding)) + (cellWidth * 0.5f);
+                float y = gridStartY + (row * (cellHeight + padding)) + (cellHeight * 0.5f);
                 positions.push_back(GNVector2(x, y));
             }
         }
@@ -1178,7 +1297,12 @@ namespace GameCore {
 
             // Position below the grid (same as main menu button)
             float buttonCenterX = m_screenWidth * 0.5f; // Center horizontally on screen
-            float buttonCenterY = m_screenHeight * 0.75f; // Position at 75% down screen (same as main menu)
+            float buttonCenterY;
+            if (IsLandscapeMode()) {
+                buttonCenterY = m_screenHeight * 0.90f; // Bring up slightly to meet main menu button in middle
+            } else {
+                buttonCenterY = m_screenHeight * 0.75f; // Position at 75% down screen (same as main menu)
+            }
 
             // Use same scale as main menu button (10x scaling for 900x160 button)
             float buttonScale = 10.0f;
@@ -1224,9 +1348,14 @@ namespace GameCore {
         if (m_hatsCostDisplayEntity == 0) {
             m_hatsCostDisplayEntity = m_ecsCoordinator->CreateEntity();
 
-            // Position above the action button
+            // Position above the action button - lower it more for better spacing
             float textX = m_screenWidth * 0.5f;
-            float textY = m_screenHeight * 0.70f; // Above the button
+            float textY;
+            if (IsLandscapeMode()) {
+                textY = m_screenHeight * 0.80f; // Higher up (less low) for better visual balance
+            } else {
+                textY = m_screenHeight * 0.70f; // Above the button
+            }
 
             Transform textTransform(GNVector2(textX, textY), 0.0f, GNVector2(1.0f, 1.0f));
             m_ecsCoordinator->AddComponent<Transform>(m_hatsCostDisplayEntity, textTransform);
@@ -1389,7 +1518,12 @@ namespace GameCore {
 
             // Position at the top center of the screen (like other tab titles)
             float titleX = m_screenWidth * 0.5f;
-            float titleY = m_screenHeight * 0.15f; // Near the top
+            float titleY;
+            if (IsLandscapeMode()) {
+                titleY = m_screenHeight * 0.22f; // Lower in landscape to account for tab buttons
+            } else {
+                titleY = m_screenHeight * 0.15f; // Near the top
+            }
 
             Transform titleTransform(GNVector2(titleX, titleY), 0.0f, GNVector2(1.0f, 1.0f));
             m_ecsCoordinator->AddComponent<Transform>(m_statsTitleEntity, titleTransform);
@@ -1411,12 +1545,17 @@ namespace GameCore {
             m_ecsCoordinator->AddComponent<Sprite>(m_statsTitleEntity, titleSprite);
         }
 
-        // Calculate 70% of the pause menu background dimensions
-        // Pause menu: 160x300 texture at 7x scale = 1120x2100
-        float pauseMenuWidth = 1120.0f;
-        float pauseMenuHeight = 2100.0f;
-        float bgWidth = pauseMenuWidth * 0.7f;   // 784
-        float bgHeight = pauseMenuHeight * 0.7f; // 1470
+        // Calculate dimensions based on orientation
+        float bgWidth, bgHeight;
+        if (IsLandscapeMode()) {
+            // Landscape mode: horizontally dominant (wider than tall)
+            bgWidth = 1470.0f;  // Wider
+            bgHeight = 784.0f;  // Shorter
+        } else {
+            // Portrait mode: original dimensions (70% of pause menu)
+            bgWidth = 1120.0f * 0.7f;   // 784
+            bgHeight = 2100.0f * 0.7f;  // 1470
+        }
 
         // Calculate layout positions
         float centerX = m_screenWidth * 0.5f;
@@ -1452,8 +1591,13 @@ namespace GameCore {
             GN_LOG_INFO("PauseSystem: Created stats background rectangle at (" + std::to_string(bgPosition.x) + ", " + std::to_string(bgPosition.y) + ") size " + std::to_string(bgWidth) + "x" + std::to_string(bgHeight));
         }
 
-        // Start from top of rectangle and work down
-        float startY = centerY - (bgHeight * 0.4f); // Start near top of rectangle
+        // Start from top of rectangle and work down - adjust for landscape to avoid label overlap
+        float startY;
+        if (IsLandscapeMode()) {
+            startY = centerY - (bgHeight * 0.25f); // Start lower in landscape to avoid "Stats" label
+        } else {
+            startY = centerY - (bgHeight * 0.4f); // Start near top of rectangle in portrait
+        }
         float lineSpacing = 80.0f; // Space between stats
         float fontSize = 32.0f;
 
@@ -1591,17 +1735,29 @@ namespace GameCore {
 
         // Mobile detection like MainMenuState - iPhone typically has width < height in portrait
         bool isMobile = (m_screenWidth < m_screenHeight) && (m_screenHeight > 1000);
-        float uiScale = isMobile ? 8.0f : 1.0f;  // Store as local variable
+        float baseUiScale = isMobile ? 8.0f : 1.0f;  // Store as local variable
+        // Use scale of 8 for knobs, even larger for better visibility
+        float uiScale = 8.0f;
         GN_LOG_INFO("PauseSystem: Mobile detection: isMobile=" + std::to_string(isMobile) + ", uiScale=" + std::to_string(uiScale) +
                    " (screen: " + std::to_string(m_screenWidth) + "x" + std::to_string(m_screenHeight) + ")");
 
-        // Slider layout (spread out better, not squished at top) - EXACT same as original
-        // Adjust slider positioning to account for knob size and hitbox - move further right
-        m_sliderX = bgX + 0.20f * bgW + 32.0f; // Start further right (20% + 32px) to avoid tab buttons
-        m_sliderY = bgY + 0.35f * bgH; // Start much lower to move everything down
-        m_sliderW = bgW - 0.40f * bgW - 64.0f; // Reduce width proportionally to account for rightward movement
+        // Slider layout (adjusted for landscape mode)
+        float sliderStartY;
+        if (IsLandscapeMode()) {
+            // Landscape: start lower than Systems tab label, even more condensed for main menu button
+            m_sliderX = bgX + 0.15f * bgW + 16.0f; // Start further right (15% + 16px)
+            sliderStartY = bgY + 0.45f * bgH; // Start lower to be below Systems tab label
+            m_sliderW = bgW - 0.30f * bgW - 32.0f; // Reduce width for landscape
+            m_sliderSpacing = 200.0f; // Even more condensed spacing for landscape to fit main menu button
+        } else {
+            // Portrait: original positioning
+            m_sliderX = bgX + 0.20f * bgW + 32.0f; // Start further right (20% + 32px) to avoid tab buttons
+            sliderStartY = bgY + 0.35f * bgH; // Start much lower to move everything down
+            m_sliderW = bgW - 0.40f * bgW - 64.0f; // Reduce width proportionally to account for rightward movement
+            m_sliderSpacing = 320.0f; // Much more spacing between slider groups for better separation
+        }
+        m_sliderY = sliderStartY;
         m_sliderH = 18.0f;
-        m_sliderSpacing = 320.0f; // Much more spacing between slider groups for better separation
 
         // MASTER SLIDER (first) - Center tracks vertically with knobs
         float masterTrackY = m_sliderY + 9.0f; // Track Y position
@@ -1637,11 +1793,17 @@ namespace GameCore {
         // MASTER LABEL
         if (m_masterLabelEntity == 0) {
             m_masterLabelEntity = m_ecsCoordinator->CreateEntity();
-            float labelY = masterTrackY - 160.0f; // Even more spacing between label and track for better symmetry
-            float labelX = m_sliderX;
+            float labelSpacing;
+            if (IsLandscapeMode()) {
+                labelSpacing = 120.0f; // Condensed spacing in landscape
+            } else {
+                labelSpacing = 160.0f; // Even more spacing between label and track for better symmetry
+            }
+            float labelY = masterTrackY - labelSpacing;
+            float labelX = m_sliderX - 200.0f; // Move labels left to give more room for knobs
             Transform t(GNVector2(labelX, labelY), 0.0f, GNVector2(1.0f, 1.0f));
             UIElement ui("MASTER", "", "");
-            ui.fontSize = 42.0f; // Increased font size for better readability
+            ui.fontSize = IsLandscapeMode() ? 38.0f : 42.0f; // Slightly smaller in landscape
             ui.textColor = GNColor(255, 255, 255, 255);
             ui.centerTextHorizontally = false; ui.centerTextVertically = true; ui.visible = false; ui.textLayer = 84;
             m_ecsCoordinator->AddComponent<Transform>(m_masterLabelEntity, t);
@@ -1659,8 +1821,8 @@ namespace GameCore {
             // Clamp volume value to 0.0-1.0 range like Options menu
             float masterVolume = std::max(0.0f, std::min(1.0f, m_masterSliderValue));
 
-            // Position knob to use full track range - knob edges align with track boundaries
-            // At 0%: knob left edge aligns with track start, at 100%: knob right edge aligns with track end
+            // Position knob to use full track range - knob centers move within track boundaries
+            // At 0%: knob center at track start + half knob, at 100%: knob center at track end - half knob
             float knobCenterX = m_sliderX + (scaledKnobSize * 0.5f) + masterVolume * (m_sliderW - scaledKnobSize);
             float knobX = knobCenterX - (scaledKnobSize * 0.5f);
             float knobY = masterTrackY + m_sliderH * 0.5f - (scaledKnobSize * 0.5f);
@@ -1703,11 +1865,12 @@ namespace GameCore {
         // MUSIC LABEL
         if (m_musicLabelEntity == 0) {
             m_musicLabelEntity = m_ecsCoordinator->CreateEntity();
-            float labelY = musicTrackY - 160.0f; // Even more spacing between label and track for better symmetry
-            float labelX = m_sliderX;
+            float labelSpacing = IsLandscapeMode() ? 120.0f : 160.0f; // Condensed spacing in landscape
+            float labelY = musicTrackY - labelSpacing;
+            float labelX = m_sliderX - 200.0f; // Move labels left to give more room for knobs
             Transform t(GNVector2(labelX, labelY), 0.0f, GNVector2(1.0f, 1.0f));
             UIElement ui("MUSIC", "", "");
-            ui.fontSize = 42.0f; // Increased font size for better readability
+            ui.fontSize = IsLandscapeMode() ? 38.0f : 42.0f; // Slightly smaller in landscape
             ui.textColor = GNColor(255, 255, 255, 255);
             ui.centerTextHorizontally = false; ui.centerTextVertically = true; ui.visible = false; ui.textLayer = 84;
             m_ecsCoordinator->AddComponent<Transform>(m_musicLabelEntity, t);
@@ -1769,11 +1932,12 @@ namespace GameCore {
         // SFX LABEL
         if (m_sfxLabelEntity == 0) {
             m_sfxLabelEntity = m_ecsCoordinator->CreateEntity();
-            float labelY = sfxTrackY - 160.0f; // Even more spacing between label and track for better symmetry
-            float labelX = m_sliderX;
+            float labelSpacing = IsLandscapeMode() ? 120.0f : 160.0f; // Condensed spacing in landscape
+            float labelY = sfxTrackY - labelSpacing;
+            float labelX = m_sliderX - 200.0f; // Move labels left to give more room for knobs
             Transform t(GNVector2(labelX, labelY), 0.0f, GNVector2(1.0f, 1.0f));
             UIElement ui("SFX", "", "");
-            ui.fontSize = 42.0f; // Increased font size for better readability
+            ui.fontSize = IsLandscapeMode() ? 38.0f : 42.0f; // Slightly smaller in landscape
             ui.textColor = GNColor(255, 255, 255, 255);
             ui.centerTextHorizontally = false; ui.centerTextVertically = true; ui.visible = false; ui.textLayer = 84;
             m_ecsCoordinator->AddComponent<Transform>(m_sfxLabelEntity, t);
@@ -2579,18 +2743,18 @@ namespace GameCore {
             }
         }
 
-        // Handle left arrow clicks (centered positioned)
+        // Handle left arrow clicks (top-left positioned)
         if (m_skillsLeftArrowEntity != 0) {
-            if (IsTouchInButtonBounds(touchX, touchY, m_skillsLeftArrowEntity, true)) {
+            if (IsTouchInButtonBounds(touchX, touchY, m_skillsLeftArrowEntity, false)) {
                 GN_LOG_INFO("PauseSystem: Skills left arrow clicked");
                 HandleSkillLeftArrow(m_currentSkillIndex, m_availableSkills);
                 return;
             }
         }
 
-        // Handle right arrow clicks (centered positioned)
+        // Handle right arrow clicks (top-left positioned)
         if (m_skillsRightArrowEntity != 0) {
-            if (IsTouchInButtonBounds(touchX, touchY, m_skillsRightArrowEntity, true)) {
+            if (IsTouchInButtonBounds(touchX, touchY, m_skillsRightArrowEntity, false)) {
                 GN_LOG_INFO("PauseSystem: Skills right arrow clicked");
                 HandleSkillRightArrow(m_currentSkillIndex, m_availableSkills);
                 return;
@@ -2893,12 +3057,19 @@ namespace GameCore {
             if (m_ecsCoordinator) {
                 auto* transform = m_ecsCoordinator->GetComponent<Transform>(m_draggedKnobEntity);
                 if (transform) {
-                    // Constrain the knob to the slider track
-                    float newX = std::max(m_sliderX, std::min(m_sliderX + m_sliderW, touchX));
-                    transform->position.x = newX;
+                    // Knob size for proper centering
+                    float knobSize = 16.0f * 8.0f; // 128px
 
-                    // Update slider value based on knob position
-                    float normalizedValue = (newX - m_sliderX) / m_sliderW;
+                    // Constrain the knob center to the slider track bounds
+                    float knobCenterMin = m_sliderX + (knobSize * 0.5f);
+                    float knobCenterMax = m_sliderX + m_sliderW - (knobSize * 0.5f);
+                    float knobCenterX = std::max(knobCenterMin, std::min(knobCenterMax, touchX));
+
+                    // Position the knob so its center is at the touch position
+                    transform->position.x = knobCenterX - (knobSize * 0.5f);
+
+                    // Update slider value based on knob center position
+                    float normalizedValue = (knobCenterX - (m_sliderX + knobSize * 0.5f)) / (m_sliderW - knobSize);
                     normalizedValue = std::max(0.0f, std::min(1.0f, normalizedValue));
 
                     // Apply to audio system
@@ -2922,7 +3093,7 @@ namespace GameCore {
                         }
                     }
 
-                    GN_LOG_INFO("PauseSystem: Dragged knob to position (" + std::to_string(newX) + ", " + std::to_string(transform->position.y) + ") - Value: " + std::to_string(normalizedValue));
+                    GN_LOG_INFO("PauseSystem: Dragged knob to position (" + std::to_string(transform->position.x) + ", " + std::to_string(transform->position.y) + ") - Value: " + std::to_string(normalizedValue));
                 }
             }
         }
@@ -3315,25 +3486,59 @@ namespace GameCore {
         GN_LOG_INFO("PauseSystem: Checking if tap is outside menu area");
 
         // Define menu area bounds to match the actual pause menu background dimensions
-        // Background: 160x300 scaled 7x = 1120x2100 pixels, centered on screen
-        float originalWidth = 160.0f;   // Original texture width
-        float originalHeight = 300.0f;  // Original texture height
-        float bgScale = 7.0f;
+        float originalWidth, originalHeight, bgScale;
+
+        if (IsLandscapeMode()) {
+            // Landscape mode: background is rotated 90 degrees (300x160 scaled 7x = 2100x1120)
+            originalWidth = 300.0f;   // Rotated: was 160, now 300
+            originalHeight = 160.0f;  // Rotated: was 300, now 160
+            bgScale = 7.0f;
+        } else {
+            // Portrait mode: 160x300 scaled 7x = 1120x2100
+            originalWidth = 160.0f;   // Original texture width
+            originalHeight = 300.0f;  // Original texture height
+            bgScale = 7.0f;
+        }
 
         // SCALE FIRST, then center: Use same logic as background creation
-        float scaledWidth = originalWidth * bgScale;   // 160 * 7 = 1120
-        float scaledHeight = originalHeight * bgScale; // 300 * 7 = 2100
+        float scaledWidth = originalWidth * bgScale;
+        float scaledHeight = originalHeight * bgScale;
         GNVector2 bgPosition = CenterObjectAtPosition(m_screenWidth * 0.5f, m_screenHeight * 0.5f + 32.0f, scaledWidth, scaledHeight);
         float menuLeft = bgPosition.x;
         float menuRight = bgPosition.x + scaledWidth;
         float menuTop = bgPosition.y;
         float menuBottom = bgPosition.y + scaledHeight;
 
-        // Only consider taps outside the RIGHT, TOP, and BOTTOM as "outside"
-        // EXCLUDE the LEFT side to prevent accidental clicks on ribbon buttons from exiting
-        // Move the top boundary up slightly to make it easier to tap outside
-        float adjustedMenuTop = menuTop - 50.0f; // Move top boundary up by 50 pixels
-        bool outsideMenu = (touchX > menuRight || touchY < adjustedMenuTop || touchY > menuBottom);
+        // For landscape mode: exclude the top margin where tab buttons are located
+        float topMarginExclusion = 0.0f;
+        if (IsLandscapeMode()) {
+            // Tab buttons are positioned at 8% from top, with height of ~96 pixels (16*6)
+            // Add some padding around them
+            topMarginExclusion = m_screenHeight * 0.08f + 120.0f; // Exclude top 8% + 120px padding
+        }
+
+        // Use actual background dimensions to determine what's outside the menu
+        // Calculate the actual background bounds that are visible
+        float bgWidth, bgHeight;
+        if (IsLandscapeMode()) {
+            // Landscape: background is rotated 90 degrees (300x160 scaled 7x = 2100x1120)
+            bgWidth = 300.0f * 7.0f;   // 2100 pixels wide
+            bgHeight = 160.0f * 7.0f;  // 1120 pixels tall
+        } else {
+            // Portrait: 160x300 scaled 7x = 1120x2100
+            bgWidth = 160.0f * 7.0f;   // 1120 pixels wide
+            bgHeight = 300.0f * 7.0f;  // 2100 pixels tall
+        }
+
+        // Calculate actual background bounds (centered on screen)
+        float bgLeft = (m_screenWidth - bgWidth) * 0.5f;
+        float bgRight = bgLeft + bgWidth;
+        float bgTop = (m_screenHeight - bgHeight) * 0.5f + 32.0f;
+        float bgBottom = bgTop + bgHeight;
+
+        // DISABLED: No tap outside logic - only settings button can close menu in landscape
+        // This prevents accidental closes while allowing deliberate settings button closes
+        bool outsideMenu = false;
 
         // EXCLUDE the settings button area from "outside menu" check
         if (IsTapInSettingsButtonArea(touchX, touchY)) {
@@ -3341,10 +3546,9 @@ namespace GameCore {
             return false;
         }
 
-        GN_LOG_INFO("PauseSystem: Menu bounds: (" + std::to_string(menuLeft) + ", " + std::to_string(menuTop) + ") to (" +
-                   std::to_string(menuRight) + ", " + std::to_string(menuBottom) + ") - Adjusted top: " + std::to_string(adjustedMenuTop) +
-                   " - Touch: (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ") - Outside: " + std::to_string(outsideMenu) +
-                   " (only checking right/adjusted-top/bottom, left side is protected)");
+        GN_LOG_INFO("PauseSystem: Tap outside check - Touch: (" + std::to_string(touchX) + ", " + std::to_string(touchY) +
+                   ") - Outside: " + std::to_string(outsideMenu) +
+                   " (closes if x < 200 or x > 2300)");
 
         return outsideMenu;
     }

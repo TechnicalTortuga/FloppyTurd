@@ -15,12 +15,12 @@ namespace GameCore {
     /**
      * @brief Screen Rotation Prompt State
      *
-     * Shows a black screen with white text asking the player to rotate to landscape mode
-     * for levels that require landscape orientation (like the boss level)
+     * Shows a black screen with white text asking the player to rotate to the specified orientation
+     * (landscape for entering boss level, portrait for exiting boss level)
      */
     class ScreenPromptState : public GameState {
     public:
-        ScreenPromptState(Gnosis::ECS* ecsSystem, GameCore::PlatformDelegates* platformDelegates);
+        ScreenPromptState(Gnosis::ECS* ecsSystem, GameCore::PlatformDelegates* platformDelegates, bool waitForLandscape = true);
         ~ScreenPromptState() override;
 
         void Enter() override;
@@ -49,6 +49,7 @@ namespace GameCore {
         bool m_uiInitialized;
         float m_landscapeDetectedTime;
         bool m_hasSeenPortrait;
+        bool m_waitForLandscape;  // true = wait for landscape (entering boss), false = wait for portrait (exiting boss)
 
         // Screen info tracking for orientation changes
         bool m_currentOrientation;

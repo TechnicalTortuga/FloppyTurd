@@ -37,7 +37,7 @@ namespace GameCore {
         , m_enemySpawnTimer(0.0f)
         , m_inputDelayTimer(0.0f)
         , m_lastSettingsButtonPressTime(0.0f)
-        , m_settingsButtonDebounceDelay(0.3f)  // 300ms debounce delay
+        , m_settingsButtonDebounceDelay(0.1f)  // 100ms debounce delay for better responsiveness
         , m_shootingZoneEntity(0)
         , m_debugButtonRect(0)
         , m_debugShootingZoneRect(0)
@@ -126,10 +126,13 @@ namespace GameCore {
 
     void GameplayState::Exit() {
         GN_LOG_INFO("Exiting GameplayState");
-        
+
+        // NOTE: Orientation handling is now done by ScreenPromptState
+        // Don't automatically lock orientation here - let ScreenPromptState handle it
+
         // Stop level music
         StopLevelMusic();
-        
+
         // Save game progress
         SaveGameProgress();
         
@@ -172,37 +175,44 @@ namespace GameCore {
         static bool s_lastOrientationBackup = IsLandscapeMode();
         bool currentOrientationBackup = IsLandscapeMode();
         if (currentOrientationBackup != s_lastOrientationBackup) {
-            std::string fromOrient = s_lastOrientationBackup ? "landscape" : "portrait";
-            std::string toOrient = currentOrientationBackup ? "landscape" : "portrait";
-            GN_LOG_INFO("🔄 BACKUP: Orientation change detected: " + fromOrient + " → " + toOrient + " - repositioning UI");
-
-            // Update cached screen dimensions
+            // Get screen info to check if rotation is complete
             if (m_renderSystem) {
                 const ScreenInfo& screenInfo = m_renderSystem->GetScreenInfo();
-                m_cachedScreenWidth = screenInfo.pixelWidth;
-                m_cachedScreenHeight = screenInfo.pixelHeight;
+                
+                // CRITICAL: Only reposition if rotation is complete (MTKView has updated)
+                if (!screenInfo.isOrientationChanging) {
+                    std::string fromOrient = s_lastOrientationBackup ? "landscape" : "portrait";
+                    std::string toOrient = currentOrientationBackup ? "landscape" : "portrait";
+                    GN_LOG_INFO("🔄 BACKUP: Orientation change COMPLETE: " + fromOrient + " → " + toOrient + " - repositioning UI");
 
-                GN_LOG_INFO("Updated cached screen dimensions: " +
-                           std::to_string((int)m_cachedScreenWidth) + "x" +
-                           std::to_string((int)m_cachedScreenHeight));
+                    // Update cached screen dimensions
+                    m_cachedScreenWidth = screenInfo.pixelWidth;
+                    m_cachedScreenHeight = screenInfo.pixelHeight;
+
+                    GN_LOG_INFO("Updated cached screen dimensions: " +
+                               std::to_string((int)m_cachedScreenWidth) + "x" +
+                               std::to_string((int)m_cachedScreenHeight));
+
+                    // Reposition UI elements for new orientation
+                    UpdateUILayoutForOrientation();
+
+                    // Update boss system if active
+                    if (m_bossSystem && m_currentLevelId == 6) { // Level 6 is boss level
+                        m_bossSystem->UpdateScreenDimensions(m_cachedScreenWidth, m_cachedScreenHeight);
+                        GN_LOG_INFO("Updated boss system screen dimensions");
+                    }
+
+                    // Update pause system
+                    if (m_pauseSystem) {
+                        m_pauseSystem->UpdateScreenDimensions(m_cachedScreenWidth, m_cachedScreenHeight);
+                        GN_LOG_INFO("Updated pause system screen dimensions");
+                    }
+
+                    s_lastOrientationBackup = currentOrientationBackup;
+                } else {
+                    GN_LOG_INFO("🔒 BACKUP: Orientation change in progress, waiting for MTKView to complete rotation");
+                }
             }
-
-            // Reposition UI elements for new orientation
-            UpdateUILayoutForOrientation();
-
-            // Update boss system if active
-            if (m_bossSystem && m_currentLevelId == 6) { // Level 6 is boss level
-                m_bossSystem->UpdateScreenDimensions(m_cachedScreenWidth, m_cachedScreenHeight);
-                GN_LOG_INFO("Updated boss system screen dimensions");
-            }
-
-            // Update pause system
-            if (m_pauseSystem) {
-                m_pauseSystem->UpdateScreenDimensions(m_cachedScreenWidth, m_cachedScreenHeight);
-                GN_LOG_INFO("Updated pause system screen dimensions");
-            }
-
-            s_lastOrientationBackup = currentOrientationBackup;
         }
 
         // Handle different sub-states
@@ -396,7 +406,7 @@ namespace GameCore {
         // Boss health bar UI entities are automatically rendered by RenderSystem
 
         // Draw debug rectangles overlay (after world/UI render so they appear on top)
-        DrawDebugRectangles();
+        // DrawDebugRectangles(); // Disabled for production
     }
 
     void GameplayState::HandleSettingsButtonInput() {
@@ -581,11 +591,9 @@ namespace GameCore {
                 GN_LOG_INFO("Boss level detected - locking to landscape orientation");
                 m_platformDelegates->renderer.lockToLandscape();
             } else {
-                // Other levels - allow all orientations for now (could be refined per level)
-                GN_LOG_INFO("Non-boss level - unlocking orientation");
-                if (m_platformDelegates->renderer.unlockOrientation) {
-                    m_platformDelegates->renderer.unlockOrientation();
-                }
+                // Other levels - force portrait mode
+                GN_LOG_INFO("Non-boss level - locking to portrait orientation");
+                m_platformDelegates->renderer.lockToPortrait();
             }
         }
 
@@ -865,25 +873,31 @@ namespace GameCore {
                 return;
             }
 
+            // Get current screen info including orientation lock state
+            const ScreenInfo& screenInfo = m_renderSystem->GetScreenInfo();
+            
+            // CRITICAL: Ignore updates while orientation is still changing (before MTKView rotation completes)
+            if (screenInfo.isOrientationChanging) {
+                GN_LOG_INFO("🔒 Ignoring screen info update - orientation still changing (waiting for MTKView)");
+                return;
+            }
+
             // Get current orientation
             bool currentOrientation = IsLandscapeMode();
 
-            // Only reposition if orientation actually changed
+            // Only reposition if orientation actually changed AND rotation is complete
             if (currentOrientation != lastOrientation) {
                 std::string fromOrient = lastOrientation ? "landscape" : "portrait";
                 std::string toOrient = currentOrientation ? "landscape" : "portrait";
-                GN_LOG_INFO("🎯 Orientation change detected: " + fromOrient + " → " + toOrient + " - repositioning UI");
+                GN_LOG_INFO("🎯 Orientation change COMPLETE: " + fromOrient + " → " + toOrient + " - repositioning UI");
 
                 // Update cached screen dimensions
-                if (m_renderSystem) {
-                    const ScreenInfo& screenInfo = m_renderSystem->GetScreenInfo();
-                    m_cachedScreenWidth = screenInfo.pixelWidth;
-                    m_cachedScreenHeight = screenInfo.pixelHeight;
+                m_cachedScreenWidth = screenInfo.pixelWidth;
+                m_cachedScreenHeight = screenInfo.pixelHeight;
 
-                    GN_LOG_INFO("Updated cached screen dimensions: " +
-                               std::to_string((int)m_cachedScreenWidth) + "x" +
-                               std::to_string((int)m_cachedScreenHeight));
-                }
+                GN_LOG_INFO("Updated cached screen dimensions: " +
+                           std::to_string((int)m_cachedScreenWidth) + "x" +
+                           std::to_string((int)m_cachedScreenHeight));
 
                 // Reposition UI elements for new orientation (one-time operation)
                 UpdateUILayoutForOrientation();
@@ -1522,7 +1536,7 @@ namespace GameCore {
         }
 
         // Create debug rectangle for shooting zone
-        CreateDebugShootingZoneRectangle();
+        // CreateDebugShootingZoneRectangle(); // Disabled for production
     }
 
     // Create settings button for pause menu
@@ -2131,7 +2145,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             UpdateUILayoutForOrientation();
 
             // DEBUG: Create a red rectangle to visualize button collision bounds
-            CreateDebugButtonRectangle();
+            // CreateDebugButtonRectangle(); // Disabled for production
         }
     }
 
@@ -2380,7 +2394,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                        ") size (" + std::to_string(shootZoneWidth) + "x" + std::to_string(shootingZoneHeight) + ")");
 
             // Update debug shooting zone rectangle
-            UpdateDebugShootingZoneRectangle(shootingZoneLeftX, shootingZoneTopY, shootingZoneRightX, shootingZoneBottomY);
+            // UpdateDebugShootingZoneRectangle(shootingZoneLeftX, shootingZoneTopY, shootingZoneRightX, shootingZoneBottomY); // Disabled for production
         }
 
         // Update heart system positioning
@@ -2389,6 +2403,63 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             float heartY = screenH * LANDSCAPE_SETTINGS_Y; // Start from settings button level
             m_heartSystem->UpdateHeartUIPositioning(m_heartUIEntity, heartX, heartY);
         }
+    }
+
+    void GameplayState::RepositionSettingsButtonForPauseMenu(bool isPauseMenuActive) {
+        GN_LOG_INFO("GameplayState: Repositioning settings button for pause menu - active: " + std::to_string(isPauseMenuActive));
+
+        if (m_settingsButtonEntity == 0 || !m_ecsSystem) {
+            GN_LOG_WARN("RepositionSettingsButtonForPauseMenu: Settings button entity not available");
+            return;
+        }
+
+        Transform* transform = m_ecsSystem->GetComponent<Transform>(m_settingsButtonEntity);
+        if (!transform) {
+            GN_LOG_WARN("RepositionSettingsButtonForPauseMenu: Settings button transform not found");
+            return;
+        }
+
+        float buttonScale = 8.0f;
+        float buttonWidth = 16.0f * buttonScale;
+        float buttonHeight = 16.0f * buttonScale;
+
+        float buttonX, buttonY;
+
+        if (isPauseMenuActive) {
+            // Move settings button to bottom right when pause menu is active (in iPhone curve area)
+            buttonX = m_cachedScreenWidth - buttonWidth - 10.0f;  // 10px from right edge (further right)
+            buttonY = m_cachedScreenHeight - buttonHeight - 10.0f; // 10px from bottom edge (in curve area)
+            GN_LOG_INFO("RepositionSettingsButtonForPauseMenu: Moving to bottom right (" +
+                       std::to_string(buttonX) + ", " + std::to_string(buttonY) + ")");
+        } else {
+            // Restore to normal gameplay position
+            if (IsLandscapeMode()) {
+                buttonX = m_cachedScreenWidth * LANDSCAPE_SETTINGS_X;
+                buttonY = m_cachedScreenHeight * LANDSCAPE_SETTINGS_Y;
+            } else {
+                buttonX = m_cachedScreenWidth * PORTRAIT_SETTINGS_X;
+                buttonY = m_cachedScreenHeight * PORTRAIT_SETTINGS_Y;
+            }
+            GN_LOG_INFO("RepositionSettingsButtonForPauseMenu: Restoring to normal position (" +
+                       std::to_string(buttonX) + ", " + std::to_string(buttonY) + ")");
+        }
+
+        // Use CenterObjectAtPosition to properly center the button
+        GNVector2 buttonPosition = CenterObjectAtPosition(buttonX, buttonY, buttonWidth, buttonHeight);
+        transform->position = buttonPosition;
+
+        // Update bounds for collision detection
+        Bounds* bounds = m_ecsSystem->GetComponent<Bounds>(m_settingsButtonEntity);
+        if (bounds) {
+            bounds->width = buttonWidth;
+            bounds->height = buttonHeight;
+        }
+
+        GN_LOG_INFO("RepositionSettingsButtonForPauseMenu: Settings button repositioned to (" +
+                   std::to_string(buttonPosition.x) + ", " + std::to_string(buttonPosition.y) + ")");
+
+        // Update debug rectangle if it exists
+        // UpdateDebugButtonRectangle(buttonPosition.x, buttonPosition.y, buttonPosition.x + buttonWidth, buttonPosition.y + buttonHeight); // Disabled for production
     }
 
     void GameplayState::RepositionUIElementsPortrait() {
@@ -2500,7 +2571,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                        ") size (" + std::to_string(shootingZoneWidth) + "x" + std::to_string(shootingZoneHeight) + ")");
 
             // Update debug shooting zone rectangle
-            UpdateDebugShootingZoneRectangle(shootingZoneLeftX, shootingZoneTopY, shootingZoneRightX, shootingZoneBottomY);
+            // UpdateDebugShootingZoneRectangle(shootingZoneLeftX, shootingZoneTopY, shootingZoneRightX, shootingZoneBottomY); // Disabled for production
         }
 
         // Update heart system positioning
@@ -3582,8 +3653,13 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             // Call the heart system to hide all heart entities
             m_heartSystem->HideAllHearts();
         }
-        
-        GN_LOG_INFO("Hidden all regular UI elements for game over");
+
+        // Hide boss health bar if it exists
+        if (m_bossHealthBar) {
+            m_bossHealthBar->SetVisible(false);
+        }
+
+        GN_LOG_INFO("Hidden all regular UI elements for pause menu");
     }
 
     void GameplayState::ShowRegularUI() {
@@ -3627,7 +3703,12 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             // Call the heart system to show current active heart entities
             m_heartSystem->ShowAllHearts();
         }
-        
+
+        // Show boss health bar if it exists and we're in boss level
+        if (m_bossHealthBar && m_currentLevelId == 6) {
+            m_bossHealthBar->SetVisible(true);
+        }
+
         GN_LOG_INFO("Shown all regular UI elements");
     }
 
@@ -3676,18 +3757,18 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             }
         }
 
-        // Settings button uses centered positioning (transform.position is center)
-        float buttonLeft = transform->position.x - (buttonWidth * 0.5f);
-        float buttonRight = transform->position.x + (buttonWidth * 0.5f);
-        float buttonTop = transform->position.y - (buttonHeight * 0.5f);
-        float buttonBottom = transform->position.y + (buttonHeight * 0.5f);
+        // Settings button uses top-left positioning (transform.position is top-left corner)
+        float buttonLeft = transform->position.x;
+        float buttonTop = transform->position.y;
+        float buttonRight = buttonLeft + buttonWidth;
+        float buttonBottom = buttonTop + buttonHeight;
 
         GN_LOG_INFO("Calculated bounds: center=(" + std::to_string(transform->position.x) + "," + std::to_string(transform->position.y) +
                    ") size=(" + std::to_string(buttonWidth) + "x" + std::to_string(buttonHeight) + ") -> bounds=(" +
                    std::to_string(buttonLeft) + "," + std::to_string(buttonTop) + "," + std::to_string(buttonRight) + "," + std::to_string(buttonBottom) + ")");
 
         // Update debug rectangle position to match current collision bounds
-        UpdateDebugButtonRectangle(buttonLeft, buttonTop, buttonRight, buttonBottom);
+        // UpdateDebugButtonRectangle(buttonLeft, buttonTop, buttonRight, buttonBottom); // Disabled for production
 
         GN_LOG_INFO("Settings button collision check: touch(" + std::to_string(touchX) + "," + std::to_string(touchY) +
                    ") vs button bounds(" + std::to_string(buttonLeft) + "," + std::to_string(buttonTop) + "," +
@@ -3713,12 +3794,15 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
 
         if (m_currentSubState == GameplaySubState::Playing) {
             GN_LOG_INFO("Settings button clicked! Opening pause menu.");
+
             TriggerPause();
             // Hide regular UI before showing pause menu
             HideRegularUI();
 
             // Update pause system with latest stats before showing
             if (m_pauseSystem) {
+                GN_LOG_INFO("🎮 PauseSystem exists, updating stats and showing menu");
+
                 // Get total spendable coins (stored + session)
                 int totalSpendableCoins = 0;
                 if (PlayerComponent* player = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity)) {
@@ -3732,7 +3816,15 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
 
                 m_pauseSystem->UpdateStatsData(m_pipesCleared, m_sessionCoinsCollected, totalSpendableCoins, grossTotalCoins, GameCore::GetGame()->GetGameStats().totalDeaths, GameCore::GetGame()->GetGameStats().totalEnemiesKilled, GameCore::GetGame()->GetGameStats().totalPipesCleared);
 
+                GN_LOG_INFO("🎮 Calling PauseSystem::Show()");
                 m_pauseSystem->Show();
+                GN_LOG_INFO("🎮 PauseSystem::Show() completed");
+
+                // Move settings button to bottom right AFTER pause menu is shown
+                RepositionSettingsButtonForPauseMenu(true);
+                GN_LOG_INFO("🎮 Settings button repositioned for pause menu");
+            } else {
+                GN_LOG_ERROR("🎮 PauseSystem is null!");
             }
             // Reset debounce timer
             m_lastSettingsButtonPressTime = 0.0f;
@@ -3742,6 +3834,8 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             if (m_pauseSystem) {
                 m_pauseSystem->Hide();
             }
+            // Restore settings button to original position
+            RepositionSettingsButtonForPauseMenu(false);
             // Show regular UI after hiding pause menu
             ShowRegularUI();
             TriggerResume();
@@ -3763,27 +3857,34 @@ bool GameplayState::IsTapInSettingsButtonArea(float touchX, float touchY) {
     if (m_settingsButtonEntity != 0 && m_ecsSystem) {
         Transform* t = m_ecsSystem->GetComponent<Transform>(m_settingsButtonEntity);
         if (t) {
-            // Get actual sprite dimensions for collision detection
-            auto sprite = m_ecsSystem->GetComponent<Sprite>(m_settingsButtonEntity);
-            float buttonScale = t->scale.x;
+            // Use Bounds component for proper centered collision detection (same as CheckSettingsButtonClick)
+            auto bounds = m_ecsSystem->GetComponent<Bounds>(m_settingsButtonEntity);
 
             float buttonWidth, buttonHeight;
-            if (sprite) {
-                buttonWidth = sprite->width * buttonScale;
-                buttonHeight = sprite->height * buttonScale;
+            if (bounds) {
+                buttonWidth = bounds->width;
+                buttonHeight = bounds->height;
+                GN_LOG_INFO("IsTapInSettingsButtonArea: Using Bounds component: width=" + std::to_string(buttonWidth) + ", height=" + std::to_string(buttonHeight));
             } else {
-                // Fallback to assumed dimensions if sprite not found
-                buttonWidth = buttonHeight = 16.0f * buttonScale;
+                // Fallback: use sprite dimensions with scale
+                auto sprite = m_ecsSystem->GetComponent<Sprite>(m_settingsButtonEntity);
+                float buttonScale = t->scale.x;
+                if (sprite) {
+                    buttonWidth = sprite->width * buttonScale;
+                    buttonHeight = sprite->height * buttonScale;
+                    GN_LOG_INFO("IsTapInSettingsButtonArea: Using Sprite fallback: sprite.width=" + std::to_string(sprite->width) + ", scale=" + std::to_string(buttonScale) + ", calculated width=" + std::to_string(buttonWidth));
+                } else {
+                    // Fallback to assumed dimensions if sprite not found
+                    buttonWidth = buttonHeight = 16.0f * buttonScale;
+                    GN_LOG_INFO("IsTapInSettingsButtonArea: Using hardcoded fallback: width=" + std::to_string(buttonWidth));
+                }
             }
 
-            float buttonX = t->position.x;
-            float buttonY = t->position.y;
-
-            // Settings button uses top-left positioning
-            float buttonLeft = buttonX;
-            float buttonRight = buttonX + buttonWidth;
-            float buttonTop = buttonY;
-            float buttonBottom = buttonY + buttonHeight;
+            // Settings button uses top-left positioning (transform.position is top-left corner)
+            float buttonLeft = t->position.x;
+            float buttonTop = t->position.y;
+            float buttonRight = buttonLeft + buttonWidth;
+            float buttonBottom = buttonTop + buttonHeight;
 
             GN_LOG_INFO("Settings button area check: touch(" + std::to_string(touchX) + "," + std::to_string(touchY) +
                        ") vs button(" + std::to_string(buttonLeft) + "," + std::to_string(buttonTop) + "," +
@@ -3832,9 +3933,9 @@ bool GameplayState::IsTapOutsideMenuArea(float touchX, float touchY) {
     float menuTop = centerY - (scaledHeight * 0.5f);
     float menuBottom = centerY + (scaledHeight * 0.5f);
 
-    // Only consider taps outside the top, right, and bottom as "outside"
-    // Left side is intentionally excluded to allow ribbon button interactions
-    bool outsideMenu = (touchX > menuRight || touchY < menuTop || touchY > menuBottom);
+    // DISABLED: No tap outside logic - only settings button can close menu
+    // This prevents accidental closes while allowing deliberate settings button closes
+    bool outsideMenu = false;
 
     // EXCLUDE the settings button area from "outside menu" check
     if (IsTapInSettingsButtonArea(touchX, touchY)) {

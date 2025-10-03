@@ -69,12 +69,14 @@ namespace GameCore {
 
         Gnosis::ECS* m_ecsCoordinator;  // Reference to shared ECS coordinator
         GameCore::PlatformDelegates* m_platformDelegates;  // For system creation
+        GameCore::RenderSystem* m_renderSystem;  // Cached render system reference
         // Cache game instance to avoid repeated extern lookups
         FloppyTurdGame* m_game = nullptr;
         bool m_finished;
         int m_selectedOption;
         float m_animationTimer;
         bool m_isMobile;
+        bool m_uiInitialized = false;
         MenuMode m_currentMode;
         
         // Screen dimensions for consistent layout calculations

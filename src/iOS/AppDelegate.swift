@@ -40,8 +40,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
         // Create and set root view controller
         let gameViewController = GameViewController()
+
         window?.rootViewController = gameViewController
         window?.makeKeyAndVisible()
+
+        // CRITICAL: Force portrait orientation AFTER window is visible and viewDidLoad has completed
+        // This ensures metalRenderer is initialized before attempting orientation lock
+        logger.info("Window made visible, now locking to portrait orientation")
+        gameViewController.lockToPortrait()
+        logger.info("Locked to portrait orientation after window setup")
 
         // Enable device orientation monitoring
         UIDevice.current.beginGeneratingDeviceOrientationNotifications()

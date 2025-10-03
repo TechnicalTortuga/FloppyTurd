@@ -11,6 +11,8 @@
 #include <iostream>
 #include <random>
 #include <cmath>
+#include <thread>
+#include <chrono>
 // Access shared systems via ECS SystemManager and RenderSystem APIs
 #include "../../Engine/Core/SystemManager.h"
 #include "../Systems/RenderSystem.h"
@@ -19,6 +21,7 @@ namespace GameCore {
     MainMenuState::MainMenuState(Gnosis::ECS* ecsCoordinator, GameCore::PlatformDelegates* platformDelegates)
         : m_ecsCoordinator(ecsCoordinator)
         , m_platformDelegates(platformDelegates)
+        , m_renderSystem(nullptr)
         , m_finished(false)
         , m_selectedOption(0)
         , m_animationTimer(0.0f)
@@ -53,13 +56,18 @@ namespace GameCore {
         , m_fontLoaded(false)
         , m_assetsLoaded(false) {
         
+        // Cache RenderSystem reference at construction time (only once)
+        if (m_ecsCoordinator && m_ecsCoordinator->GetSystemManager()) {
+            m_renderSystem = m_ecsCoordinator->GetSystemManager()->GetRenderSystem();
+        }
+
         // Cache global game pointer once to avoid repeated extern lookups
         extern FloppyTurdGame* g_Game;
         m_game = g_Game;
 
         // Detect if we're on a mobile platform
         m_isMobile = IsMobilePlatform();
-        
+
         // No local systems; use shared RenderSystem via ECS SystemManager throughout
         if (!m_platformDelegates) {
             GN_LOG_ERROR("MainMenuState: PlatformDelegates is null in constructor!");
@@ -80,11 +88,27 @@ namespace GameCore {
         m_animationTimer = 0.0f;
         m_assetsLoaded = false;
 
-        // Lock to portrait orientation for main menu
-        if (m_platformDelegates && m_platformDelegates->renderer.lockToPortrait) {
-            GN_LOG_INFO("Main Menu - locking to portrait orientation");
-            m_platformDelegates->renderer.lockToPortrait();
+        // Read current screen dimensions - ensure RenderSystem is up to date first
+        if (m_renderSystem) {
+            // Ensure RenderSystem has latest screen info from ConfigManager
+            m_renderSystem->UpdateScreenInfo();
+
+            ScreenInfo si = m_renderSystem->GetScreenInfo();
+            m_screenWidth = static_cast<float>(si.pixelWidth);
+            m_screenHeight = static_cast<float>(si.pixelHeight);
+            GN_LOG_INFO("Main Menu - initial screen dimensions: " +
+                       std::to_string((int)m_screenWidth) + "x" + std::to_string((int)m_screenHeight) +
+                       " (portrait: " + std::string(si.isPortrait ? "true" : "false") + ")");
+        } else {
+            // No render system available - this is a critical error
+            GN_LOG_ERROR("Main Menu - no render system available! Cannot initialize UI without screen dimensions");
+            m_screenWidth = 0.0f;
+            m_screenHeight = 0.0f;
+            return; // Don't initialize UI
         }
+
+        // Don't lock orientation here - ScreenPromptState should have already done it
+        GN_LOG_INFO("Main Menu - assuming orientation already locked by ScreenPromptState");
 
         // InputManager singleton should be initialized by FloppyTurdGame
         
@@ -120,10 +144,9 @@ namespace GameCore {
             GN_LOG_INFO("❌ Game instance not available for font loading");
         }
         
-        // Fetch actual screen pixel dimensions from RenderSystem and cache for layout
-        if (m_ecsCoordinator && m_ecsCoordinator->GetSystemManager() && m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
-            auto* renderSystem = m_ecsCoordinator->GetSystemManager()->GetRenderSystem();
-            ScreenInfo si = renderSystem->GetScreenInfo();
+        // Fetch screen dimensions (RenderSystem cached in constructor)
+        if (m_renderSystem) {
+            ScreenInfo si = m_renderSystem->GetScreenInfo();
             m_screenWidth = static_cast<float>(si.pixelWidth);
             m_screenHeight = static_cast<float>(si.pixelHeight);
             GN_LOG_INFO("MainMenuState: ScreenInfo (pixels) = " + std::to_string(si.pixelWidth) + "x" + std::to_string(si.pixelHeight));
@@ -140,8 +163,9 @@ namespace GameCore {
         
         // Create level select layout (hidden initially)
         CreateLevelSelectLayout();
-        
+
         m_assetsLoaded = true;
+        m_uiInitialized = true;
         GN_LOG_INFO("Main Menu State fully initialized");
     }
 
@@ -260,6 +284,49 @@ namespace GameCore {
         InputManager* inputManager = InputManager::GetInstance();
         if (inputManager) {
             inputManager->Update(deltaTime);
+        }
+
+        // SAFETY NET: Check if screen dimensions changed and recreate layout if needed
+        // This catches cases where orientation changed after UI was created
+        if (m_renderSystem) {
+            ScreenInfo currentScreenInfo = m_renderSystem->GetScreenInfo();
+            float currentWidth = static_cast<float>(currentScreenInfo.pixelWidth);
+            float currentHeight = static_cast<float>(currentScreenInfo.pixelHeight);
+
+            // Check if dimensions changed significantly (not just by a few pixels)
+            // Also handle the initial update from Enter()'s default values
+            bool dimensionsChanged = std::abs(currentWidth - m_screenWidth) > 10.0f ||
+                                   std::abs(currentHeight - m_screenHeight) > 10.0f;
+
+            if (dimensionsChanged || !m_uiInitialized) {
+                if (dimensionsChanged) {
+                    GN_LOG_INFO("🔄 Main Menu: Screen dimensions changed during runtime!");
+                    GN_LOG_INFO("   Old: " + std::to_string((int)m_screenWidth) + "x" + std::to_string((int)m_screenHeight));
+                } else {
+                    GN_LOG_INFO("📐 Main Menu: Reading final screen dimensions in Update()");
+                }
+                GN_LOG_INFO("   New: " + std::to_string((int)currentWidth) + "x" + std::to_string((int)currentHeight) +
+                           " (portrait: " + std::string(currentScreenInfo.isPortrait ? "true" : "false") + ")");
+
+                // Update stored dimensions
+                m_screenWidth = currentWidth;
+                m_screenHeight = currentHeight;
+
+                // Recreate mobile layout
+                if (m_isMobile) {
+                    CreateMobileLayout();
+                } else {
+                    CreateDesktopLayout();
+                }
+                
+                // Recreate UI elements with new layout
+                CreateUIElements();
+                
+                // Recreate level select layout
+                CreateLevelSelectLayout();
+                
+                GN_LOG_INFO("✅ Main Menu: UI recreated for new screen dimensions");
+            }
         }
 
         m_animationTimer += deltaTime;

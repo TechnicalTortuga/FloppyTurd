@@ -64,6 +64,7 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../../Engine/Configuration/../Platform/PlatformDelegates.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../../Engine/Configuration/../Core/GNLog.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../../Engine/Core/GNLog.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/TransitionState.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../Config/LevelConfig.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../Input/InputManager.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../../iOS/Threading/ThreadingProxy.h \

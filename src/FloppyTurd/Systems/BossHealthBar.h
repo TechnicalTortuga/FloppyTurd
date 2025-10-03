@@ -82,6 +82,7 @@ private:
     float m_shadowHealthPercent = 1.0f;  // For hurt effect fade
     float m_hurtFadeTimer = 0.0f;
     const float HURT_FADE_DURATION = 0.75f;
+    bool m_manuallyHidden = false;  // Track if manually hidden (for pause menu)
 
     // Position and size - dynamic based on screen dimensions (matches old design)
     static constexpr float BAR_TOP_OFFSET = 0.02f;     // 2% from top (raised from 5%)

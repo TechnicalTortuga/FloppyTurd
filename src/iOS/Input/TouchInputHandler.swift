@@ -543,6 +543,18 @@ extension TouchInputHandler {
                 "🔥 TouchInputHandler: touchesBegan() - buffering touch PRESS at (\(position.x), \(position.y))",
                 level: .debug)
 
+            // Call delegate immediately for responsive input
+            let screenScale = UIScreen.main.scale
+            let pixelPosition = CGPoint(
+                x: position.x * screenScale,
+                y: position.y * screenScale
+            )
+            let screenSize = CGSize(
+                width: viewSize.width * screenScale,
+                height: viewSize.height * screenScale
+            )
+            delegate?.onTouchPress(pixelPosition: pixelPosition, screenSize: screenSize)
+
             // Buffer touch press event for frame-based processing
             let touchEvent = TouchInputEvent(
                 position: position,
@@ -602,6 +614,18 @@ extension TouchInputHandler {
             log(
                 "🔥 TouchInputHandler: touchesEnded() - buffering touch RELEASE at (\(position.x), \(position.y))",
                 level: .debug)
+
+            // Call delegate immediately for responsive input
+            let screenScale = UIScreen.main.scale
+            let pixelPosition = CGPoint(
+                x: position.x * screenScale,
+                y: position.y * screenScale
+            )
+            let screenSize = CGSize(
+                width: viewSize.width * screenScale,
+                height: viewSize.height * screenScale
+            )
+            delegate?.onTouchRelease(pixelPosition: pixelPosition, screenSize: screenSize)
 
             let touchEvent = TouchInputEvent(
                 position: position,

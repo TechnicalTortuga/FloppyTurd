@@ -4,7 +4,7 @@
 
 namespace GameCore {
 
-    ScreenPromptState::ScreenPromptState(Gnosis::ECS* ecsSystem, GameCore::PlatformDelegates* platformDelegates)
+    ScreenPromptState::ScreenPromptState(Gnosis::ECS* ecsSystem, GameCore::PlatformDelegates* platformDelegates, bool waitForLandscape)
         : m_ecsSystem(ecsSystem)
         , m_platformDelegates(platformDelegates)
         , m_finished(false)
@@ -17,7 +17,8 @@ namespace GameCore {
         , m_uiInitialized(false)
         , m_landscapeDetectedTime(0.0f)
         , m_hasSeenPortrait(false)
-        , m_currentOrientation(true)  // Start with portrait assumption
+        , m_waitForLandscape(waitForLandscape)
+        , m_currentOrientation(waitForLandscape ? true : false)  // Start with opposite of target orientation
         , m_currentScreenWidth(1179.0f)
         , m_currentScreenHeight(2556.0f)
     {
@@ -58,13 +59,29 @@ namespace GameCore {
                    initialScreenInfo.isPortrait ? "true" : "false",
                    initialScreenInfo.deviceModel.c_str());
 
-        if (!initialScreenInfo.isPortrait) {
-            GN_LOG_WARN("⚠️  ScreenPromptState: Device already in LANDSCAPE mode on entry!");
-            GN_LOG_WARN("   Forcing portrait mode requirement - will wait for actual rotation gesture");
-            // Force a reset of landscape detection to require actual rotation
-            m_landscapeDetectedTime = 0.0f;
+        std::string targetOrientation = m_waitForLandscape ? "LANDSCAPE" : "PORTRAIT";
+        std::string currentOrientation = initialScreenInfo.isPortrait ? "PORTRAIT" : "LANDSCAPE";
+
+        GN_LOG_INFO("ScreenPromptState: Waiting for " + targetOrientation + " orientation (currently " + currentOrientation + ")");
+
+        if (m_waitForLandscape) {
+            // Waiting for landscape - should start in portrait
+            if (!initialScreenInfo.isPortrait) {
+                GN_LOG_WARN("⚠️  ScreenPromptState: Device already in LANDSCAPE mode but waiting for landscape!");
+                GN_LOG_WARN("   Forcing landscape mode requirement - will wait for actual rotation gesture");
+                // Reset detection to require actual rotation
+                m_landscapeDetectedTime = 0.0f;
+            } else {
+                GN_LOG_INFO("✅ ScreenPromptState: Device correctly in PORTRAIT mode - will wait for landscape rotation");
+            }
         } else {
-            GN_LOG_INFO("✅ ScreenPromptState: Device correctly in PORTRAIT mode - will wait for landscape rotation");
+            // Waiting for portrait - should start in landscape
+            if (initialScreenInfo.isPortrait) {
+                GN_LOG_WARN("⚠️  ScreenPromptState: Device already in PORTRAIT mode but waiting for portrait!");
+                GN_LOG_WARN("   Forcing portrait mode requirement - will wait for actual rotation gesture");
+            } else {
+                GN_LOG_INFO("✅ ScreenPromptState: Device correctly in LANDSCAPE mode - will wait for portrait rotation");
+            }
         }
 
         // Note: ScreenPromptState uses polling approach for orientation detection
@@ -282,73 +299,136 @@ namespace GameCore {
             lastPixelHeight = screenInfo.pixelHeight;
         }
 
-        // Simplified orientation detection logic
-        // We want to detect when device actually rotates to landscape
-        if (screenInfo.isPortrait) {
-            // Device is in portrait mode
-            m_hasSeenPortrait = true;
+        if (m_waitForLandscape) {
+            // Waiting for landscape rotation (entering boss level)
+            if (screenInfo.isPortrait) {
+                // Device is in portrait mode
+                m_hasSeenPortrait = true;
 
-            // Reset landscape detection if we were in landscape
-            if (m_landscapeDetectedTime > 0.0f) {
-                GN_LOG_INFO("🔄 Device rotated back to PORTRAIT - resetting landscape detection");
-                m_landscapeDetectedTime = 0.0f;
-            }
+                // Reset landscape detection if we were in landscape
+                if (m_landscapeDetectedTime > 0.0f) {
+                    GN_LOG_INFO("🔄 Device rotated back to PORTRAIT - resetting landscape detection");
+                    m_landscapeDetectedTime = 0.0f;
+                }
 
-            // Only log occasionally to reduce spam
-            static float lastPortraitLog = -1.0f;
-            if (lastPortraitLog == -1.0f || (m_displayTime - lastPortraitLog) >= 1.0f) {
-                std::string portraitMsg = std::string("📱 PORTRAIT MODE - Waiting for landscape rotation (") +
-                                        std::to_string(m_displayTime) + "s elapsed)";
-                GN_LOG_INFO(portraitMsg.c_str());
-                lastPortraitLog = m_displayTime;
-            }
-        } else {
-            // Device is in landscape mode
-            // Only proceed if we've seen portrait first and enough time has passed for stability
-            if (m_hasSeenPortrait && m_displayTime > 0.5f) {
-                if (m_landscapeDetectedTime == 0.0f) {
-                    // First time detecting landscape - start the timer
-                    m_landscapeDetectedTime = m_displayTime;
-                    GN_LOG_INFO("🎯 LANDSCAPE DETECTED! Starting 2-second confirmation countdown");
-                    std::string dimsMsg = std::string("   📐 Screen dimensions: ") +
-                                        std::to_string(static_cast<int>(screenInfo.pixelWidth)) + " x " +
-                                        std::to_string(static_cast<int>(screenInfo.pixelHeight)) + " pixels";
-                    GN_LOG_INFO(dimsMsg.c_str());
-                    std::string timerMsg = std::string("   ⏱️  Timer started at: ") +
-                                         std::to_string(m_displayTime) + " seconds";
-                    GN_LOG_INFO(timerMsg.c_str());
-                } else {
-                    // Check if 2 seconds have passed since landscape was first detected
-                    float timeSinceLandscapeDetected = m_displayTime - m_landscapeDetectedTime;
-                    if (timeSinceLandscapeDetected >= 2.0f) {
-                        std::string confirmMsg = std::string("🎮 LANDSCAPE CONFIRMED! Starting boss level (") +
-                                               std::to_string(m_displayTime) + " seconds total)";
-                        GN_LOG_INFO(confirmMsg.c_str());
-                        m_finished = true; // This will trigger state transition in FloppyTurdGame
-                    } else {
-                        // Log progress occasionally
-                        static float lastProgressLog = -1.0f;
-                        if (lastProgressLog == -1.0f || (m_displayTime - lastProgressLog) >= 0.5f) {
-                            std::string progressMsg = std::string("⏳ LANDSCAPE DETECTED - Confirming for ") +
-                                                    std::to_string(2.0f - timeSinceLandscapeDetected) + " more seconds (" +
-                                                    std::to_string(timeSinceLandscapeDetected) + "/2.0)";
-                            GN_LOG_INFO(progressMsg.c_str());
-                            lastProgressLog = m_displayTime;
-                        }
-                    }
+                // Only log occasionally to reduce spam
+                static float lastPortraitLog = -1.0f;
+                if (lastPortraitLog == -1.0f || (m_displayTime - lastPortraitLog) >= 1.0f) {
+                    std::string portraitMsg = std::string("📱 PORTRAIT MODE - Waiting for landscape rotation (") +
+                                            std::to_string(m_displayTime) + "s elapsed)";
+                    GN_LOG_INFO(portraitMsg.c_str());
+                    lastPortraitLog = m_displayTime;
                 }
             } else {
-                // Log why we're not proceeding with landscape detection
-                static float lastIgnoreLog = -1.0f;
-                if (lastIgnoreLog == -1.0f || (m_displayTime - lastIgnoreLog) >= 1.0f) {
-                    if (!m_hasSeenPortrait) {
-                        GN_LOG_INFO("🚫 LANDSCAPE DETECTED BUT IGNORING - Need to see portrait mode first");
+                // Device is in landscape mode
+                // Only proceed if we've seen portrait first and enough time has passed for stability
+                if (m_hasSeenPortrait && m_displayTime > 0.5f) {
+                    if (m_landscapeDetectedTime == 0.0f) {
+                        // First time detecting landscape - start the timer
+                        m_landscapeDetectedTime = m_displayTime;
+                        GN_LOG_INFO("🎯 LANDSCAPE DETECTED! Starting 2-second confirmation countdown");
+                        std::string dimsMsg = std::string("   📐 Screen dimensions: ") +
+                                            std::to_string(static_cast<int>(screenInfo.pixelWidth)) + " x " +
+                                            std::to_string(static_cast<int>(screenInfo.pixelHeight)) + " pixels";
+                        GN_LOG_INFO(dimsMsg.c_str());
+                        std::string timerMsg = std::string("   ⏱️  Timer started at: ") +
+                                             std::to_string(m_displayTime) + " seconds";
+                        GN_LOG_INFO(timerMsg.c_str());
                     } else {
-                        std::string earlyMsg = std::string("🚫 LANDSCAPE DETECTED BUT IGNORING - Too early (") +
-                                              std::to_string(m_displayTime) + "s < 0.5s)";
-                        GN_LOG_INFO(earlyMsg.c_str());
+                        // Check if 2 seconds have passed since landscape was first detected
+                        float timeSinceLandscapeDetected = m_displayTime - m_landscapeDetectedTime;
+                        if (timeSinceLandscapeDetected >= 2.0f) {
+                            std::string confirmMsg = std::string("🎮 LANDSCAPE CONFIRMED! Starting boss level (") +
+                                                   std::to_string(m_displayTime) + " seconds total)";
+                            GN_LOG_INFO(confirmMsg.c_str());
+                            m_finished = true; // This will trigger state transition in FloppyTurdGame
+                        } else {
+                            // Log progress occasionally
+                            static float lastProgressLog = -1.0f;
+                            if (lastProgressLog == -1.0f || (m_displayTime - lastProgressLog) >= 0.5f) {
+                                std::string progressMsg = std::string("⏳ LANDSCAPE DETECTED - Confirming for ") +
+                                                        std::to_string(2.0f - timeSinceLandscapeDetected) + " more seconds (" +
+                                                        std::to_string(timeSinceLandscapeDetected) + "/2.0)";
+                                GN_LOG_INFO(progressMsg.c_str());
+                                lastProgressLog = m_displayTime;
+                            }
+                        }
                     }
-                    lastIgnoreLog = m_displayTime;
+                } else {
+                    // Log why we're not proceeding with landscape detection
+                    static float lastIgnoreLog = -1.0f;
+                    if (lastIgnoreLog == -1.0f || (m_displayTime - lastIgnoreLog) >= 1.0f) {
+                        if (!m_hasSeenPortrait) {
+                            GN_LOG_INFO("🚫 LANDSCAPE DETECTED BUT IGNORING - Need to see portrait mode first");
+                        } else {
+                            std::string earlyMsg = std::string("🚫 LANDSCAPE DETECTED BUT IGNORING - Too early (") +
+                                                  std::to_string(m_displayTime) + "s < 0.5s)";
+                            GN_LOG_INFO(earlyMsg.c_str());
+                        }
+                        lastIgnoreLog = m_displayTime;
+                    }
+                }
+            }
+        } else {
+            // Waiting for portrait rotation (exiting boss level)
+            if (!screenInfo.isPortrait) {
+                // Device is in landscape mode
+                // Reset portrait detection if we were in portrait
+                if (m_landscapeDetectedTime > 0.0f) {
+                    GN_LOG_INFO("🔄 Device rotated back to LANDSCAPE - resetting portrait detection");
+                    m_landscapeDetectedTime = 0.0f;
+                }
+
+                // Only log occasionally to reduce spam
+                static float lastLandscapeLog = -1.0f;
+                if (lastLandscapeLog == -1.0f || (m_displayTime - lastLandscapeLog) >= 1.0f) {
+                    std::string landscapeMsg = std::string("📱 LANDSCAPE MODE - Waiting for portrait rotation (") +
+                                             std::to_string(m_displayTime) + "s elapsed)";
+                    GN_LOG_INFO(landscapeMsg.c_str());
+                    lastLandscapeLog = m_displayTime;
+                }
+            } else {
+                // Device is in portrait mode
+                // Only proceed if we've seen landscape first and enough time has passed for stability
+                if (m_displayTime > 0.5f) {
+                    if (m_landscapeDetectedTime == 0.0f) {
+                        // First time detecting portrait - start the timer (reuse landscape timer variable)
+                        m_landscapeDetectedTime = m_displayTime;
+                        GN_LOG_INFO("🎯 PORTRAIT DETECTED! Starting quick transition");
+                        std::string dimsMsg = std::string("   📐 Screen dimensions: ") +
+                                            std::to_string(static_cast<int>(screenInfo.pixelWidth)) + " x " +
+                                            std::to_string(static_cast<int>(screenInfo.pixelHeight)) + " pixels";
+                        GN_LOG_INFO(dimsMsg.c_str());
+                        std::string timerMsg = std::string("   ⏱️  Timer started at: ") +
+                                             std::to_string(m_displayTime) + " seconds";
+                        GN_LOG_INFO(timerMsg.c_str());
+                    } else {
+                        // Quick transition - only wait 0.5 seconds for portrait
+                        float timeSincePortraitDetected = m_displayTime - m_landscapeDetectedTime;
+                        if (timeSincePortraitDetected >= 0.5f) {
+                            std::string confirmMsg = std::string("🎮 PORTRAIT CONFIRMED! Returning to main menu (") +
+                                                   std::to_string(m_displayTime) + " seconds total)";
+                            GN_LOG_INFO(confirmMsg.c_str());
+
+                            // Lock orientation to portrait before finishing
+                            if (m_platformDelegates && m_platformDelegates->renderer.lockToPortrait) {
+                                GN_LOG_INFO("ScreenPromptState: Locking orientation to portrait");
+                                m_platformDelegates->renderer.lockToPortrait();
+                            }
+
+                            m_finished = true; // This will trigger state transition in FloppyTurdGame
+                        } else {
+                            // Log progress occasionally
+                            static float lastProgressLog = -1.0f;
+                            if (lastProgressLog == -1.0f || (m_displayTime - lastProgressLog) >= 0.2f) {
+                                std::string progressMsg = std::string("⏳ PORTRAIT DETECTED - Confirming for ") +
+                                                        std::to_string(0.5f - timeSincePortraitDetected) + " more seconds (" +
+                                                        std::to_string(timeSincePortraitDetected) + "/0.5)";
+                                GN_LOG_INFO(progressMsg.c_str());
+                                lastProgressLog = m_displayTime;
+                            }
+                        }
+                    }
                 }
             }
         }
