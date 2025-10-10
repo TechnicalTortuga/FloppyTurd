@@ -521,15 +521,15 @@ namespace GameCore {
             brickObstacle.basePosition = Gnosis::GNVector2(brickWallX, brickWallY);
             m_ecsSystem->AddComponent<Obstacle>(brickWall, brickObstacle);
             
-            // Add debug drawing for brick wall hitbox
-            if (m_debugMode) {
-                DebugDraw debugDraw;
-                debugDraw.showBounds = false;
-                debugDraw.showCollider = true;
-                debugDraw.colliderColor = Gnosis::GNColor(255, 0, 255, 255); // Magenta for brick wall
-                debugDraw.alpha = 0.5f;
-                m_ecsSystem->AddComponent<DebugDraw>(brickWall, debugDraw);
-            }
+            // DebugDraw DISABLED for brick walls per user request
+            // if (m_debugMode) {
+            //     DebugDraw debugDraw;
+            //     debugDraw.showBounds = false;
+            //     debugDraw.showCollider = true;
+            //     debugDraw.colliderColor = Gnosis::GNColor(255, 0, 255, 255); // Magenta for brick wall
+            //     debugDraw.alpha = 0.5f;
+            //     m_ecsSystem->AddComponent<DebugDraw>(brickWall, debugDraw);
+            // }
             
             // Add to group and tracking
             AddEntityToGroup(brickWall, groupId, true, 0.0f, 0.0f, 64.0f * m_baseScale, GroupPattern::Ground); // Use visual sprite width for group
@@ -910,8 +910,8 @@ namespace GameCore {
         obstacle.isTopPart = (texture == "Outhouse");
         m_ecsSystem->AddComponent<Obstacle>(entity, obstacle);
         
-                        // DebugDraw - show hitboxes visually (disabled for desert level)
-                if (m_debugMode && m_currentLevelId != 3) { // Disable debug drawing for desert level
+                        // DebugDraw - show hitboxes visually (disabled for desert and castle levels)
+                if (m_debugMode && m_currentLevelId != 3 && m_currentLevelId != 5) { // Disable debug drawing for desert and castle levels
                     DebugDraw debugDraw;
                     debugDraw.showBounds = false;  // Don't show sprite bounds
                     debugDraw.showCollider = true; // Show hitbox colliders
@@ -1026,16 +1026,16 @@ namespace GameCore {
         // Cacti are decorative and don't count as obstacles/pipes
         // No Obstacle component needed
         
-        // DebugDraw - show hitboxes visually (only when debug mode is on)
-        if (m_debugMode) {
-            DebugDraw debugDraw;
-            debugDraw.showBounds = false;
-            debugDraw.showCollider = true;
-            debugDraw.colliderColor = Gnosis::GNColor(0, 255, 0, 128); // Green for cacti
-            debugDraw.alpha = 0.6f;
-            debugDraw.debugLayer = 20;
-            m_ecsSystem->AddComponent<DebugDraw>(entity, debugDraw);
-        }
+        // DebugDraw DISABLED for cacti per user request
+        // if (m_debugMode) {
+        //     DebugDraw debugDraw;
+        //     debugDraw.showBounds = false;
+        //     debugDraw.showCollider = true;
+        //     debugDraw.colliderColor = Gnosis::GNColor(0, 255, 0, 128); // Green for cacti
+        //     debugDraw.alpha = 0.6f;
+        //     debugDraw.debugLayer = 20;
+        //     m_ecsSystem->AddComponent<DebugDraw>(entity, debugDraw);
+        // }
         
         return entity;
     }

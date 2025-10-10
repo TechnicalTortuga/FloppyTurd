@@ -18,7 +18,7 @@
 #include "../Systems/RenderSystem.h"
 
 namespace GameCore {
-    MainMenuState::MainMenuState(Gnosis::ECS* ecsCoordinator, GameCore::PlatformDelegates* platformDelegates)
+    MainMenuState::MainMenuState(Gnosis::ECS* ecsCoordinator, PlatformDelegates* platformDelegates)
         : m_ecsCoordinator(ecsCoordinator)
         , m_platformDelegates(platformDelegates)
         , m_renderSystem(nullptr)

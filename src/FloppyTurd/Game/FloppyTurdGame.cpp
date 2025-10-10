@@ -877,11 +877,15 @@ namespace GameCore {
     }
 
     bool FloppyTurdGame::IsLevelUnlocked(int levelId) const {
-        if (levelId == 1) return true; // First level always unlocked
-        if (levelId >= 2 && levelId <= MAX_LEVELS) {
-            return m_levelStats[levelId].unlocked;
-        }
-        return false;
+        // DEBUG: ALL LEVELS UNLOCKED FOR TESTING
+        return true;
+        
+        // Original logic (commented out for testing):
+        // if (levelId == 1) return true; // First level always unlocked
+        // if (levelId >= 2 && levelId <= MAX_LEVELS) {
+        //     return m_levelStats[levelId].unlocked;
+        // }
+        // return false;
     }
 
     void FloppyTurdGame::UnlockLevel(int levelId) {

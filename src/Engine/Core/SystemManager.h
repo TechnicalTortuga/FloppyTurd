@@ -17,6 +17,7 @@ namespace GameCore {
 }
 
 namespace Gnosis {
+    using GameCore::PlatformDelegates;
 
     /**
      * SystemManager - Manages all ECS systems
@@ -34,7 +35,7 @@ namespace Gnosis {
      */
     class SystemManager {
     public:
-        explicit SystemManager(ECS* ecsCoordinator, const GameCore::PlatformDelegates& delegates);
+        explicit SystemManager(ECS* ecsCoordinator, const PlatformDelegates& delegates);
         ~SystemManager();
 
         // Lifecycle
@@ -53,7 +54,7 @@ namespace Gnosis {
 
     private:
         ECS* m_ecsCoordinator;
-        const GameCore::PlatformDelegates& m_delegates;
+        const PlatformDelegates& m_delegates;
         bool m_initialized;
 
         // Systems (in update order)

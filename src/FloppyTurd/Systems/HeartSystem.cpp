@@ -5,7 +5,7 @@
 
 namespace GameCore {
 
-    HeartSystem::HeartSystem(Gnosis::ECS* ecsCoordinator, const GameCore::PlatformDelegates& delegates)
+    HeartSystem::HeartSystem(Gnosis::ECS* ecsCoordinator, const PlatformDelegates& delegates)
     : m_ecsCoordinator(ecsCoordinator)
     , m_delegates(delegates)
     , m_screenInfoValid(false)

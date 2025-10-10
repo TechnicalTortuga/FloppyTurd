@@ -27,5 +27,7 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Systems/ObstacleSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Systems/RenderSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Systems/../../Engine/Platform/PlatformDelegates.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Systems/../../Engine/Utility/FrameProfiler.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Systems/../../Engine/Utility/../Core/GNLog.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Systems/ProjectileSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Platform/PlatformDelegates.h

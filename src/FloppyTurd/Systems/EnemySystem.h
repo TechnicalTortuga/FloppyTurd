@@ -27,10 +27,13 @@ namespace GameCore {
         ProjectileSystem* m_projectileSystem;
         float m_time;
         
-        // Enemy behavior methods
-        void UpdateEnemyStates(float deltaTime);
-        void UpdateEnemyMovement(float deltaTime);
-        void UpdateEnemyAnimations(float deltaTime);
+        // Single-pass ECS pattern: process individual enemy components
+        void ProcessEnemyState(float deltaTime, Entity e, Enemy* enemy, Sprite* sprite);
+        void ProcessEnemyMovement(float deltaTime, Enemy* enemy, Transform* transform);
+        void ProcessEnemyAnimation(float deltaTime, Enemy* enemy, Sprite* sprite, StateAnimation* stateAnim);
+        void ProcessEnemyCollision(Entity e, Enemy* enemy, Transform* transform, Hitbox* hitbox, Sprite* sprite, StateAnimation* stateAnim, const std::vector<Gnosis::Entity>& activeProjectiles);
+        
+        // Special enemy behaviors
         void UpdateSnowmanThrower(float deltaTime, Entity enemy, Enemy* enemyComp, Transform* transform);
 
         // Helper methods

@@ -21,7 +21,7 @@ namespace GameCore {
     class HeartSystem {
     private:
         Gnosis::ECS* m_ecsCoordinator;
-        GameCore::PlatformDelegates m_delegates;
+        PlatformDelegates m_delegates;
         
         // Heart texture names for different states
         std::vector<std::string> m_heartTextureNames;
@@ -36,7 +36,7 @@ namespace GameCore {
         int m_allocatedHearts;      // Number of hearts currently allocated
         
     public:
-        HeartSystem(Gnosis::ECS* ecsCoordinator, const GameCore::PlatformDelegates& delegates);
+        HeartSystem(Gnosis::ECS* ecsCoordinator, const PlatformDelegates& delegates);
         
         /**
          * Update heart system (called every frame)

@@ -1,4 +1,5 @@
 #include "EnemySystem.h"
+#include "../../Engine/Configuration/ConfigManager.h"
 #include <cmath>
 #include <algorithm>
 
@@ -17,132 +18,56 @@ EnemySystem::EnemySystem(ECS* ecsSystem, LevelManager* levelManager, ProjectileS
     , m_time(0.0f) {}
 
 void EnemySystem::Update(float deltaTime) {
-    if (!m_ecsSystem || !m_levelManager) return;
+    if (!m_ecsSystem || !m_levelManager || !m_projectileSystem) {
+        GN_LOG_DEBUG("EnemySystem: Update skipped - missing systems");
+        return;
+    }
     m_time += deltaTime;
 
-    // Update all enemy behaviors
-    UpdateEnemyStates(deltaTime);
-    UpdateEnemyMovement(deltaTime);
-    UpdateEnemyAnimations(deltaTime);
+    // PHASE 2 OPTIMIZATION: Single-Pass ECS Pattern
+    // Instead of iterating 5 times through enemies, iterate ONCE and process all components
+    // Before: 5 loops × 10 enemies = 50 iterations per frame
+    // After:  1 loop × 10 enemies = 10 iterations per frame (80% reduction!)
+    const auto& activeEnemies = m_levelManager->GetActiveEnemies();
+    const auto& activeProjectiles = m_projectileSystem->GetActivePlayerProjectiles();
 
-    // Projectile management is now handled by ProjectileSystem
-}
-
-void EnemySystem::UpdateEnemyStates(float deltaTime) {
-    const auto enemies = m_levelManager->GetActiveEnemies();
-    for (Entity e : enemies) {
-        Transform* transform = m_ecsSystem->GetComponent<Transform>(e);
-        Enemy* enemy = m_ecsSystem->GetComponent<Enemy>(e);
-        if (!transform || !enemy || !enemy->isActive) continue;
-
-        // Initialize enemy if needed
-        if (!enemy->hasInitializedBaseY) {
-            GN_LOG_DEBUG("EnemySystem: Initializing enemy at x=" + std::to_string(transform->position.x) + " y=" + std::to_string(transform->position.y) + " with movementPattern=" + enemy->movementPattern);
-            
-            // For enemies spawned by LevelManager, use the position that was already set
-            // Don't call GroundEnemy during initialization - respect LevelManager's positioning
-            enemy->baseY = transform->position.y;
-            enemy->spawnPosition = transform->position;
-            enemy->hasInitializedBaseY = true;
-            
-            GN_LOG_DEBUG("EnemySystem: Using LevelManager position - baseY=" + std::to_string(enemy->baseY) + " spawnPosition.y=" + std::to_string(enemy->spawnPosition.y) + " current position.y=" + std::to_string(transform->position.y));
-            
-            // Initialize enemy behavior based on movement pattern
-            InitializeEnemyBehavior(enemy, enemy->movementPattern);
-        }
-
-        // Update state timer
-        enemy->stateTimer += deltaTime;
-        
-        // Check if state should change
-        if (enemy->stateDuration > 0.0f && enemy->stateTimer >= enemy->stateDuration) {
-            // Return to idle after state duration
-            ChangeEnemyState(enemy, EnemyState::Idle);
-        }
-
-        // Handle specific enemy types
-        if (enemy->movementPattern == "snowman_thrower") {
-            UpdateSnowmanThrower(deltaTime, e, enemy, transform);
-        }
-        
-        // Handle decorative enemies (no behavior)
-        if (enemy->movementPattern == "decorative") {
-            enemy->currentState = EnemyState::Decorative;
-        }
+    // Log collision opportunities
+    static int frameCount = 0;
+    frameCount++;
+    if (activeEnemies.size() > 0 && activeProjectiles.size() > 0) {
+        GN_LOG_INFO("Frame " + std::to_string(frameCount) + " COLLISION CHECK - " + std::to_string(activeEnemies.size()) + " enemies, " + 
+                     std::to_string(activeProjectiles.size()) + " projectiles");
     }
-}
 
-void EnemySystem::UpdateEnemyMovement(float deltaTime) {
-    const auto enemies = m_levelManager->GetActiveEnemies();
-    for (Entity e : enemies) {
-        Transform* transform = m_ecsSystem->GetComponent<Transform>(e);
-        Enemy* enemy = m_ecsSystem->GetComponent<Enemy>(e);
+    // SINGLE PASS: Process each enemy completely before moving to the next
+    for (Entity enemyEntity : activeEnemies) {
+        // Fetch all components ONCE per enemy (not 5 times like before)
+        Transform* transform = m_ecsSystem->GetComponent<Transform>(enemyEntity);
+        Enemy* enemy = m_ecsSystem->GetComponent<Enemy>(enemyEntity);
+        Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(enemyEntity);
+        StateAnimation* stateAnim = m_ecsSystem->GetComponent<StateAnimation>(enemyEntity);
+        Hitbox* hitbox = m_ecsSystem->GetComponent<Hitbox>(enemyEntity);
+        
         if (!transform || !enemy || !enemy->isActive) continue;
 
-        // Skip decorative enemies
-        if (enemy->currentState == EnemyState::Decorative) continue;
-
-        // Handle bobbing movement while maintaining grounding
-        if (enemy->bobbingEnabled) {
-            float bobOffset = std::sin(enemy->bobPhase + m_time * enemy->bobSpeed) * enemy->bobAmplitude;
-            transform->position.y = enemy->baseY + bobOffset;
-            GN_LOG_DEBUG("EnemySystem: Applied bobbing - baseY=" + std::to_string(enemy->baseY) + " bobOffset=" + std::to_string(bobOffset) + " final y=" + std::to_string(transform->position.y));
-        } else {
-            // Log if position has changed from baseY (shouldn't happen for static enemies)
-            if (std::abs(transform->position.y - enemy->baseY) > 0.1f) {
-                GN_LOG_DEBUG("EnemySystem: Position mismatch detected - baseY=" + std::to_string(enemy->baseY) + " current y=" + std::to_string(transform->position.y) + " at x=" + std::to_string(transform->position.x));
-            }
-        }
-        // Handle screen wrapping for moving enemies
-        if (enemy->movementPattern == "horizontal" || enemy->movementPattern == "snowman_thrower") {
-            // Check if enemy is off-screen to the left
-            if (transform->position.x < -100.0f) {
-                // Wrap to the right side of the screen
-                transform->position.x = 1279.0f + 100.0f; // iPhone 16 width + buffer
-                GN_LOG_DEBUG("EnemySystem: Wrapped enemy to right side at x=" + std::to_string(transform->position.x));
-            }
-            // Check if enemy is off-screen to the right
-            else if (transform->position.x > 1379.0f) {
-                // Wrap to the left side of the screen
-                transform->position.x = -100.0f;
-                GN_LOG_DEBUG("EnemySystem: Wrapped enemy to left side at x=" + std::to_string(transform->position.x));
-            }
-        }
-    }
-}
-
-void EnemySystem::UpdateEnemyAnimations(float deltaTime) {
-    const auto enemies = m_levelManager->GetActiveEnemies();
-    for (Entity e : enemies) {
-        Transform* transform = m_ecsSystem->GetComponent<Transform>(e);
-        Enemy* enemy = m_ecsSystem->GetComponent<Enemy>(e);
-        if (!transform || !enemy || !enemy->isActive) continue;
-
-        // Update animation timer
-        if (enemy->isAnimated) {
-            enemy->animationTimer += deltaTime;
-            
-            // Update frame
-            if (enemy->animationTimer >= enemy->frameDuration) {
-                enemy->currentFrame = (enemy->currentFrame + 1) % enemy->totalFrames;
-                enemy->animationTimer = 0.0f;
-            }
-        }
-
-        // Handle throw animation for snowman thrower
-        if (enemy->isThrowing && enemy->isThrower) {
-            enemy->throwAnimationTimer += deltaTime;
-            
-            // Update throw frame (6 frames total)
-            if (enemy->throwAnimationTimer >= enemy->throwAnimationDuration / 6.0f) {
-                enemy->currentThrowFrame = (enemy->currentThrowFrame + 1) % 6;
-                enemy->throwAnimationTimer = 0.0f;
-                
-                // If throw animation is complete, return to idle
-                if (enemy->currentThrowFrame == 0) {
-                    enemy->isThrowing = false;
-                    ChangeEnemyState(enemy, EnemyState::Idle);
-                }
+        // Process all updates for this enemy in sequence:
+        // 1. Update state (hurt timer, state transitions, initialization)
+        ProcessEnemyState(deltaTime, enemyEntity, enemy, sprite);
+        
+        // If enemy was returned to pool during state update, skip further processing
+        if (!enemy->isActive) continue;
+        
+        // 2. Update movement (physics, bobbing, wrapping)
+        ProcessEnemyMovement(deltaTime, enemy, transform);
+        
+        // 3. Update animation (state-based switching, frame advancement)
+        ProcessEnemyAnimation(deltaTime, enemy, sprite, stateAnim);
+        
+        // 4. Check collisions (only if not in hurt state and not decorative)
+        if (enemy->currentState != EnemyState::Hurt && enemy->currentState != EnemyState::Decorative) {
+            // Only log if there are projectiles to check
+            if (activeProjectiles.size() > 0) {
+                ProcessEnemyCollision(enemyEntity, enemy, transform, hitbox, sprite, stateAnim, activeProjectiles);
             }
         }
     }
@@ -339,11 +264,14 @@ void EnemySystem::InitializeEnemyBehavior(Enemy* enemy, const std::string& movem
         enemy->throwAnimationDuration = 0.6f; // Total throw animation time (6 frames * 0.1s)
         
     } else if (movementPattern == "decorative") {
-        // Decorative enemies (like other snowmen) - no behavior
+        // Decorative enemies (like Chill, Green, Chad snowmen) - passive, no attacks
+        // They move with world scroll but don't attack or bob
         enemy->currentState = EnemyState::Decorative;
-        enemy->isActive = false; // Don't process them in update loops
+        enemy->isActive = true; // KEEP THEM ACTIVE so they render!
         enemy->isGrounded = true;
         enemy->groundOffset = 0.0f;
+        enemy->bobbingEnabled = false; // No vertical movement
+        enemy->speed = enemy->speed; // Use config speed for horizontal scrolling (typically same as world speed)
         
     } else if (movementPattern == "horizontal") {
         // Basic horizontal moving enemies - RESPECT bobbing config from EnemyConfig
@@ -390,8 +318,9 @@ void EnemySystem::GroundEnemy(Enemy* enemy, Transform* transform) {
     }
     
     // For enemies that don't have a baseY set by LevelManager, calculate it
-    // But be careful not to double-subtract the sprite height!
-    const float screenHeight = 2556.0f;
+    // Use ConfigManager for device-agnostic screen height
+    const ScreenInfo& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+    const float screenHeight = screenInfo.pixelHeight;
     
     // Get actual sprite height from the sprite component
     float enemyHeight = 64.0f; // Default fallback
@@ -426,6 +355,264 @@ void EnemySystem::GroundEnemy(Enemy* enemy, Transform* transform) {
     GN_LOG_DEBUG("GroundEnemy: Set enemy position.y=" + std::to_string(transform->position.y) + " and baseY=" + std::to_string(enemy->baseY));
 }
 
+// ============================================================================
+// PHASE 2: Single-Pass ECS Helper Methods
+// These methods process individual enemy components instead of looping
+// ============================================================================
+
+void EnemySystem::ProcessEnemyState(float deltaTime, Entity e, Enemy* enemy, Sprite* sprite) {
+    // Get transform for initialization (only fetched if needed)
+    Transform* transform = nullptr;
+    
+    // Initialize enemy if needed
+    if (!enemy->hasInitializedBaseY) {
+        transform = m_ecsSystem->GetComponent<Transform>(e);
+        if (!transform) return;
+        
+        GN_LOG_DEBUG("EnemySystem: Initializing enemy at x=" + std::to_string(transform->position.x) + 
+                     " y=" + std::to_string(transform->position.y) + " with movementPattern=" + enemy->movementPattern);
+        
+        enemy->baseY = transform->position.y;
+        enemy->spawnPosition = transform->position;
+        enemy->hasInitializedBaseY = true;
+        
+        GN_LOG_DEBUG("EnemySystem: Using LevelManager position - baseY=" + std::to_string(enemy->baseY) + 
+                     " spawnPosition.y=" + std::to_string(enemy->spawnPosition.y) + 
+                     " current position.y=" + std::to_string(transform->position.y));
+        
+        InitializeEnemyBehavior(enemy, enemy->movementPattern);
+    }
+
+    // Update state timer
+    enemy->stateTimer += deltaTime;
+
+    // Handle hurt state timer - check if animation has actually completed
+    if (enemy->currentState == EnemyState::Hurt) {
+        enemy->hurtTimer -= deltaTime;
+        
+        bool animationCompleted = false;
+        
+        if (sprite) {
+            // Animation is complete if hasCompleted flag is set OR timer elapsed
+            animationCompleted = sprite->hasCompleted || (enemy->hurtTimer <= 0.0f);
+            
+            if (!animationCompleted && sprite->hasCompleted) {
+                GN_LOG_INFO("Enemy " + std::to_string(e) + " hurt animation hasCompleted=true");
+            }
+        } else {
+            // No sprite component - use timer fallback
+            animationCompleted = (enemy->hurtTimer <= 0.0f);
+        }
+        
+        if (animationCompleted) {
+            // Hurt animation completed - return enemy to inactive pool for reuse
+            if (m_levelManager) {
+                m_levelManager->ReturnEnemyToPool(e);
+            }
+            GN_LOG_INFO("Enemy " + std::to_string(e) + " hurt animation completed, returned to inactive pool");
+        }
+    }
+
+    // Check if state should change
+    if (enemy->stateDuration > 0.0f && enemy->stateTimer >= enemy->stateDuration) {
+        // Return to idle after state duration
+        ChangeEnemyState(enemy, EnemyState::Idle);
+    }
+}
+
+void EnemySystem::ProcessEnemyMovement(float deltaTime, Enemy* enemy, Transform* transform) {
+    if (!enemy || !transform) return;
+
+    // Get screen info for device-agnostic dimensions
+    const ScreenInfo& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+
+    // SPECIAL CASE: RatCopter "flying" pattern (hover + beeline)
+    if (enemy->movementPattern == "flying") {
+        // Hovering phase: Move left slowly while staying in vertical bounds
+        if (transform->position.x > screenInfo.pixelWidth * 0.75f) {
+            // Still hovering - move left slowly
+            transform->position.x -= (enemy->speed * 0.4f) * deltaTime; // 40% speed for hover
+            
+            // Apply bobbing for hover effect
+            if (enemy->bobbingEnabled) {
+                float bobOffset = std::sin(m_time * enemy->bobSpeed) * enemy->bobAmplitude;
+                transform->position.y = enemy->baseY + bobOffset;
+                
+                // Constrain Y to safe bounds (padding from top and bottom)
+                const float topPadding = 100.0f;
+                const float bottomPadding = 100.0f;
+                const float minY = topPadding;
+                const float maxY = screenInfo.pixelHeight - bottomPadding;
+                transform->position.y = std::max(minY, std::min(maxY, transform->position.y));
+            }
+        } else {
+            // Beeline phase: Reached 75% screen trigger - shoot toward player!
+            // For now, just move faster and straight (player tracking can be added later)
+            transform->position.x -= (enemy->speed * 1.5f) * deltaTime; // 150% speed for beeline
+            // Y stays constant during beeline (locked onto target Y from hover)
+        }
+    } else {
+        // Standard horizontal movement for other enemy types
+        transform->position.x -= enemy->speed * deltaTime;
+
+        // Vertical movement - bobbing/sinusoidal if enabled
+        if (enemy->bobbingEnabled) {
+            // Calculate bobbing offset using sine wave
+            float bobOffset = std::sin(m_time * enemy->bobSpeed) * enemy->bobAmplitude;
+            transform->position.y = enemy->baseY + bobOffset;
+        }
+    }
+
+    // Screen wrapping (if enemy goes off left side, wrap to right)
+    const float wrapBuffer = 200.0f;
+    if (transform->position.x < -wrapBuffer) {
+        // Wrap to right side
+        transform->position.x = screenInfo.pixelWidth + (wrapBuffer / 2.0f);
+    }
+}
+
+void EnemySystem::ProcessEnemyAnimation(float deltaTime, Enemy* enemy, Sprite* sprite, StateAnimation* stateAnim) {
+    if (!enemy || !sprite) return;
+
+    // If enemy uses StateAnimation, check for state changes
+    if (stateAnim && !stateAnim->clips.empty()) {
+        std::string desiredState = "idle"; // Default state
+        
+        // Map EnemyState to animation state string
+        switch (enemy->currentState) {
+            case EnemyState::Hurt:
+                desiredState = "hurt";
+                break;
+            case EnemyState::Attacking:
+                desiredState = "attack";
+                break;
+            case EnemyState::Idle:
+            default:
+                desiredState = "idle";
+                break;
+        }
+        
+        // Only update sprite properties if state changed (prevents interference with SpriteSystem)
+        if (stateAnim->currentState != desiredState) {
+            // Find the animation clip for the new state using getClip helper
+            const StateAnimation::Clip* currentClip = stateAnim->getClip(desiredState);
+            
+            if (currentClip) {
+                stateAnim->currentState = desiredState;
+                
+                GN_LOG_INFO("EnemySystem: State changed for enemy - switching from '" + 
+                           sprite->textureId + "' to '" + currentClip->textureId + "'");
+                
+                // Update sprite to match the new animation clip
+                sprite->textureId = currentClip->textureId;
+                sprite->frameWidth = currentClip->frameWidth;
+                sprite->frameHeight = currentClip->frameHeight;
+                sprite->frameCount = currentClip->frameCount;
+                sprite->frameTime = currentClip->frameTime;
+                sprite->loop = currentClip->loop;
+                sprite->isAnimated = (currentClip->frameCount > 1);
+                sprite->playing = true;
+                sprite->currentFrame = 0; // Reset to first frame on state change
+                sprite->currentFrameTime = 0.0f;
+            } else {
+                GN_LOG_WARN("EnemySystem: No animation clip found for state '" + desiredState + "'");
+            }
+        }
+    }
+}
+
+void EnemySystem::ProcessEnemyCollision(Entity e, Enemy* enemy, Transform* transform, Hitbox* hitbox,
+                                       Sprite* sprite, StateAnimation* stateAnim,
+                                       const std::vector<Gnosis::Entity>& activeProjectiles) {
+    if (!enemy || !transform || !hitbox) return;
+    if (enemy->currentState == EnemyState::Hurt) return; // Already hurt
+    
+    // DEBUG: Log first enemy's collision check details
+    static bool loggedOnce = false;
+    if (!loggedOnce && activeProjectiles.size() > 0) {
+        GN_LOG_INFO("ProcessEnemyCollision: Enemy " + std::to_string(e) + 
+                   " at (" + std::to_string(transform->position.x) + "," + std::to_string(transform->position.y) + 
+                   ") radius=" + std::to_string(hitbox->radius) + 
+                   " checking " + std::to_string(activeProjectiles.size()) + " projectiles");
+        loggedOnce = true;
+    }
+    
+    // Check collision with each projectile
+    for (Entity projEntity : activeProjectiles) {
+        Transform* projTransform = m_ecsSystem->GetComponent<Transform>(projEntity);
+        Hitbox* projHitbox = m_ecsSystem->GetComponent<Hitbox>(projEntity);
+        Projectile* proj = m_ecsSystem->GetComponent<Projectile>(projEntity);
+        
+        if (!projTransform || !projHitbox || !proj || !proj->isActive) continue;
+        
+        // DEBUG: Log first projectile check
+        if (!loggedOnce) {
+            GN_LOG_INFO("  Checking projectile " + std::to_string(projEntity) + 
+                       " at (" + std::to_string(projTransform->position.x) + "," + std::to_string(projTransform->position.y) + 
+                       ") radius=" + std::to_string(projHitbox->radius));
+        }
+        
+        // Simple circle-circle collision for now
+        bool collision = false;
+        if (hitbox->type == ColliderType::Circle && projHitbox->type == ColliderType::Circle) {
+            float dx = transform->position.x - projTransform->position.x;
+            float dy = transform->position.y - projTransform->position.y;
+            float distance = std::sqrt(dx * dx + dy * dy);
+            float combinedRadius = hitbox->radius + projHitbox->radius;
+            collision = (distance < combinedRadius);
+            
+            if (!loggedOnce) {
+                GN_LOG_INFO("    dx=" + std::to_string(dx) + " dy=" + std::to_string(dy) + 
+                           " distance=" + std::to_string(distance) + " combinedRadius=" + std::to_string(combinedRadius) + 
+                           " collision=" + std::to_string(collision));
+            }
+        }
+        
+        if (collision) {
+            GN_LOG_INFO("Projectile-Enemy collision detected! Projectile: " + std::to_string(projEntity) + 
+                       " Enemy: " + std::to_string(e));
+            
+            // Damage the enemy
+            enemy->health -= proj->damage;
+            
+            // Deactivate the projectile
+            proj->isActive = false;
+            
+            if (enemy->health <= 0) {
+                // Enemy defeated - switch to hurt state, animation will play before pool return
+                enemy->currentState = EnemyState::Hurt;
+                
+                float hurtDuration = 0.6f; // Default
+                
+                // Use already-fetched sprite and stateAnim (no more GetComponent calls!)
+                if (stateAnim && sprite) {
+                    // Find hurt animation clip to get accurate duration
+                    const StateAnimation::Clip* hurtClip = stateAnim->getClip("hurt");
+                    if (hurtClip) {
+                        hurtDuration = hurtClip->frameCount * hurtClip->frameTime + 0.1f; // Small buffer
+                    }
+                    
+                    // CRITICAL: Reset hasCompleted flag so animation plays from start
+                    sprite->hasCompleted = false;
+                }
+                
+                enemy->hurtTimer = hurtDuration;
+                
+                GN_LOG_INFO("Enemy " + std::to_string(e) + " defeated - switching to hurt animation");
+            } else {
+                // Enemy took damage but not defeated - brief hurt state
+                enemy->currentState = EnemyState::Hurt;
+                enemy->hurtTimer = 0.3f; // Brief hurt flash
+                
+                // Use already-fetched sprite (no GetComponent call!)
+                if (sprite) {
+                    sprite->hasCompleted = false;
+                }
+            }
+            
+            break; // Only process one collision per enemy per frame
+        }
+    }
+}
+
 } // namespace GameCore
-
-

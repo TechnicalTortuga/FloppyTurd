@@ -2,6 +2,7 @@
 #include "../../Engine/Core/GNLog.h"
 #include "../Components/GameComponents.h"
 #include "../Config/EnemyConfigs.h"
+#include "../../Engine/Configuration/ConfigManager.h"
 #include <algorithm>
 #include <cmath>
 #include <unordered_map>
@@ -220,17 +221,21 @@ namespace GameCore {
             return false;
         }
         
-        // Level 1 is always unlocked
-        if (levelId == 1) {
+        // DEBUG: ALL LEVELS UNLOCKED FOR TESTING
             return true;
-        }
         
-        // Check if previous level is completed
-        if (levelId > 1 && levelId <= GetMaxLevelId()) {
-            return m_levelCompleted[levelId - 2]; // Previous level completed
-        }
-        
-        return false;
+        // Original unlock logic (commented out for testing):
+        // Level 1 is always unlocked
+        // if (levelId == 1) {
+        //     return true;
+        // }
+        // 
+        // // Check if previous level is completed
+        // if (levelId > 1 && levelId <= GetMaxLevelId()) {
+        //     return m_levelCompleted[levelId - 2]; // Previous level completed
+        // }
+        // 
+        // return false;
     }
 
     void LevelManager::UnlockLevel(int levelId) {
@@ -294,135 +299,144 @@ namespace GameCore {
         if (m_enemyPoolInitialized) return;
         if (!m_isLoaded || !m_currentLevelConfig.enableEnemies || m_currentLevelConfig.enemies.empty()) return;
 
-        // Spawn all enemy types for the level
-        float screenW = 1179.0f; // Avoid async delegate to prevent dangling pointer crash
-        float startX = screenW + 200.0f;
-        
-        // For snow level (level 4), spawn all snowman types
-        if (m_currentLevelId == 4) {
-            // Spawn decorative snowmen first - GROUND THEM at bottom of screen
-            float screenHeight = 2556.0f; // iPhone 16 portrait height
-            float snowmanHeight = 64.0f; // Snowman sprite height
-            float groundY = screenHeight - snowmanHeight; // Ground level - snowmen bottom edge at screen bottom
+        GN_LOG_INFO("LevelManager: Initializing enemy pool with " + std::to_string(MAX_ENEMY_POOL_SIZE) + " enemies using level configs");
+
+        // Create enemy pool using the actual enemy configs for this level
+        int enemiesPerType = MAX_ENEMY_POOL_SIZE / m_currentLevelConfig.enemies.size();
+        int remainder = MAX_ENEMY_POOL_SIZE % m_currentLevelConfig.enemies.size();
+        int enemyIndex = 0;
+
+        for (size_t configIndex = 0; configIndex < m_currentLevelConfig.enemies.size(); ++configIndex) {
+            const EnemyConfig& config = m_currentLevelConfig.enemies[configIndex];
             
-            for (int i = 0; i < 3; ++i) { // Spawn 3 decorative snowmen
-                const EnemyConfig& cfg = m_currentLevelConfig.enemies[i]; // SnowManChill, SnowManGreen, SnowManChad
-                float x = startX + i * 300.0f; // Space them out horizontally
-                float baseY = groundY; // Ground level for snowmen
+            // Skip boss enemies - they're handled separately by BossSystem
+            if (config.movementPattern == "boss_idle" || 
+                config.textureId == "Ratking" || 
+                config.textureId == "RatKing") {
+                GN_LOG_INFO("LevelManager: Skipping boss enemy '" + config.textureId + "' - handled by BossSystem");
+                continue;
+            }
+            
+            int countForThisType = enemiesPerType + (configIndex < remainder ? 1 : 0);
+
+            GN_LOG_DEBUG("LevelManager: Creating " + std::to_string(countForThisType) + " enemies of type " + config.textureId);
+
+            for (int i = 0; i < countForThisType && enemyIndex < MAX_ENEMY_POOL_SIZE; ++i) {
+                Gnosis::Entity enemy = m_ecsSystem->CreateEntity();
+
+                // Add all required components but keep inactive
+                Transform transform(Gnosis::GNVector2(-1000.0f, -1000.0f), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+                m_ecsSystem->AddComponent<Transform>(enemy, transform);
+
+                // Add sprite using the actual enemy config - use animated constructor
+                Sprite sprite(config.textureId, config.width, config.height, config.frameWidth, config.frameHeight, config.frameCount, config.frameTime);
+                sprite.loop = config.loopAnimation;
+                sprite.color = GNColor(255, 255, 255, 0); // Invisible initially
+                sprite.visible = false; // Explicitly invisible for inactive enemies
+                sprite.layer = 2; // Enemy layer (above backgrounds, below player)
+                m_ecsSystem->AddComponent<Sprite>(enemy, sprite);
+
+                // Add enemy component (inactive)
+                Enemy enemyComp;
+                enemyComp.isActive = false;
+                enemyComp.health = config.hitPoints;
+                enemyComp.enemyType = config.textureId;
+                enemyComp.movementPattern = config.movementPattern;
+                m_ecsSystem->AddComponent<Enemy>(enemy, enemyComp);
+
+                // Add physics component
+                Physics physics;
+                physics.velocity = Gnosis::GNVector2(0.0f, 0.0f);
+                physics.useGravity = false;
+                m_ecsSystem->AddComponent<Physics>(enemy, physics);
+
+                // Add hitbox using enemy config dimensions
+                Hitbox hitbox;
+                hitbox.type = ColliderType::Circle; // Default to circle for now
+                hitbox.radius = config.width * 0.4f; // Rough approximation based on sprite size
+                m_ecsSystem->AddComponent<Hitbox>(enemy, hitbox);
+
+                // Add StateAnimation if the config uses it
+                GN_LOG_DEBUG("LevelManager: Config " + config.textureId + " useStateAnimation=" + std::to_string(config.useStateAnimation) + 
+                            " animationStates.size=" + std::to_string(config.animationStates.size()));
                 
-                GN_LOG_DEBUG("LevelManager: Spawning decorative snowman " + std::to_string(i) + " at x=" + std::to_string(x) + " baseY=" + std::to_string(baseY) + " (groundY=" + std::to_string(groundY) + ")");
-                
-                Gnosis::Entity e = SpawnEnemy(cfg, x, baseY);
-                if (e != 0) { 
-                    m_activeEnemies.push_back(e); 
-                    m_enemyBaseY[e] = baseY; 
-                    GN_LOG_DEBUG("Snow level enemy init: " + cfg.textureId + " baseY=" + std::to_string(baseY) + ", x=" + std::to_string(x) + " entity=" + std::to_string(e)); 
-                }
-            }
-            
-            // Spawn the red snowman thrower
-            const EnemyConfig& throwerCfg = m_currentLevelConfig.enemies[3]; // SnowManIdle
-            float throwerX = startX + 900.0f; // Further to the right
-            float throwerBaseY = groundY; // Same ground level
-            
-            GN_LOG_DEBUG("LevelManager: Spawning red snowman thrower at x=" + std::to_string(throwerX) + " baseY=" + std::to_string(throwerBaseY) + " (groundY=" + std::to_string(groundY) + ")");
-            
-            Gnosis::Entity thrower = SpawnEnemy(throwerCfg, throwerX, throwerBaseY);
-            if (thrower != 0) { 
-                m_activeEnemies.push_back(thrower); 
-                m_enemyBaseY[thrower] = throwerBaseY; 
-                GN_LOG_DEBUG("Snow level thrower init: " + throwerCfg.textureId + " baseY=" + std::to_string(throwerBaseY) + ", x=" + std::to_string(throwerX) + " entity=" + std::to_string(thrower)); 
-            }
-        } else if (m_currentLevelId == 6) { // Boss level - special positioning
-            // Get actual screen dimensions from render system
-           float screenWidth = 1179.0f; // Default fallback
-           float screenHeight = 2556.0f; // Default fallback
+                if (config.useStateAnimation) {
+                    StateAnimation sa;
+                    sa.currentState = config.initialState;
 
-           if (m_renderSystem) {
-               const ScreenInfo& si = m_renderSystem->GetScreenInfo();
-               screenWidth = si.pixelWidth;
-               screenHeight = si.pixelHeight;
-               GN_LOG_INFO("Boss level: Using dynamic screen dimensions - Width: " + std::to_string(screenWidth) + ", Height: " + std::to_string(screenHeight));
-           } else {
-               GN_LOG_WARN("Boss level: RenderSystem not available, using fallback dimensions");
-           }
+                    // Add all animation states from config
+                    for (const auto& statePair : config.animationStates) {
+                        const std::string& stateName = statePair.first;
+                        const AnimationClip& clip = statePair.second;
 
-           float ratKingScale = 8.0f; // Rat King scale - match player scale for consistency
-           float backgroundScale = 5.0f; // Mobile background scale
-           float ratKingHeight = 128.0f * ratKingScale; // 128px base * 8.0x scale
-           // Position Rat King with floor at 32px up from bottom * background scale for isometric effect
-           // Subtract 20px extra spacing (4 * 5 scale) to raise the floor position
-           float floorFromBottom = (32.0f - 4.0f) * backgroundScale; // (32px - 4px) * 5.0 = 140px from bottom
+                        StateAnimation::Clip saClip;
+                        saClip.textureId = clip.textureId;
+                        saClip.frameWidth = clip.frameWidth;
+                        saClip.frameHeight = clip.frameHeight;
+                        saClip.frameCount = clip.frameCount;
+                        saClip.frameTime = clip.frameTime;
+                        saClip.loop = clip.loop;
 
-           // Position Rat King accounting for Metal renderer using TOP-LEFT positioning
-           // Metal renderer treats transform position as top-left corner, not center!
-           // Sprite is 128x128 pixels scaled 8x = 1024x1024 pixels rendered
-           float ratKingSpriteWidth = 128.0f * ratKingScale; // 1024px rendered width
-           float ratKingSpriteHeight = 128.0f * ratKingScale; // 1024px rendered height
+                        sa.clips.push_back({stateName, saClip});
+                        GN_LOG_DEBUG("LevelManager: Added clip '" + stateName + "' -> '" + clip.textureId + "' with " + std::to_string(clip.frameCount) + " frames");
+                    }
 
-           // For top-left positioning: position to utilize the full 128px margin
-           float desiredCenterX = screenWidth - (ratKingSpriteWidth / 2.0f) + 64.0f; // Center with 128px margin (half)
-           float desiredCenterY = screenHeight - floorFromBottom - (ratKingSpriteHeight / 2.0f); // Center Y position
-
-           float ratKingX = desiredCenterX - (ratKingSpriteWidth / 2.0f); // Top-left X position
-           float ratKingY = desiredCenterY - (ratKingSpriteHeight / 2.0f); // Top-left Y position
-
-           GN_LOG_INFO("Boss level positioning: DesiredCenterX=" + std::to_string(desiredCenterX) +
-                       ", SpriteWidth=" + std::to_string(ratKingSpriteWidth) +
-                       ", SpriteHeight=" + std::to_string(ratKingSpriteHeight) +
-                       ", TopLeftX=" + std::to_string(ratKingX) +
-                       ", TopLeftY=" + std::to_string(ratKingY));
-
-            // Spawn Rat King
-            if (m_currentLevelConfig.enemies.size() > 0) {
-                EnemyConfig ratKingCfg = m_currentLevelConfig.enemies[0]; // Ratking - make a copy so we can modify it
-                ratKingCfg.scale = ratKingScale; // Apply our calculated 8.0x scale (matches player)
-                Gnosis::Entity ratKingEntity = SpawnEnemy(ratKingCfg, ratKingX, ratKingY);
-                if (ratKingEntity != 0) {
-                    m_activeEnemies.push_back(ratKingEntity);
-                    m_enemyBaseY[ratKingEntity] = ratKingY;
-                    GN_LOG_INFO("Boss level Rat King spawned: x=" + std::to_string(ratKingX) + ", y=" + std::to_string(ratKingY) + ", scale=" + std::to_string(ratKingScale));
-                }
-            }
-
-            // Note: Pillar is now handled as a decorative obstacle in ObstacleSystem::AddBossLevelDecorations()
-            // This ensures proper animation and positioning as a decorative element rather than an enemy
+                    m_ecsSystem->AddComponent<StateAnimation>(enemy, sa);
+                    GN_LOG_INFO("LevelManager: Added StateAnimation to pooled enemy " + config.textureId + " with " + std::to_string(sa.clips.size()) + " clips");
         } else {
-            // Original logic for other levels
-            // For Level 2 we only configured ToiletPaperFlap; still create up to 4 entities spaced to the right
-            const EnemyConfig& cfg = m_currentLevelConfig.enemies[0];
-            // Reduce concurrent enemies a bit for sewers
-            int desired = (m_currentLevelId == 2 ? 3 : m_maxActiveEnemies);
-            for (int i = 0; i < desired; ++i) {
-                float x = startX + i * (m_enemySpacing * 1.25f);
-                float baseY;
-                
-                if (m_currentLevelId == 3) { // Desert level - spread birds more vertically
-                    // Spread birds from middle of screen to near top, avoiding the very top
-                    float minY = 400.0f; // Middle of screen
-                    float maxY = 1200.0f; // Near top but not at very top
-                    float range = maxY - minY;
-                    baseY = minY + (range * (i + 1)) / (desired + 1); // Even distribution
-                } else if (m_currentLevelId == 5) { // Castle level - spread RatCopters across screen
-                    // Spread RatCopters from middle to upper portion of screen
-                    float minY = 600.0f; // Middle of screen
-                    float maxY = 1400.0f; // Upper portion but not at very top
-                    float range = maxY - minY;
-                    baseY = minY + (range * (i + 1)) / (desired + 1); // Even distribution
-                } else { // Other levels - original logic for non-grounded enemies
-                    baseY = 900.0f + static_cast<float>((i%2==0? -1:1) * 150);
+                    GN_LOG_WARN("LevelManager: Config " + config.textureId + " has useStateAnimation=false, skipping StateAnimation component");
                 }
-                
-                Gnosis::Entity e = SpawnEnemy(cfg, x, baseY);
-                if (e != 0) { 
-                    m_activeEnemies.push_back(e); 
-                    m_enemyBaseY[e] = baseY; 
-                    GN_LOG_DEBUG("Enemy init: " + cfg.textureId + " baseY=" + std::to_string(baseY) + ", x=" + std::to_string(x) + ", level=" + std::to_string(m_currentLevelId)); 
-                }
+
+                // Add to pool
+                m_enemyPool.allEnemies.push_back(enemy);
+                m_enemyPool.inactiveEnemies.push_back(enemy);
+
+                GN_LOG_DEBUG("LevelManager: Created pooled enemy entity " + std::to_string(enemy) + " of type " + config.textureId);
+                enemyIndex++;
             }
         }
+
+        GN_LOG_INFO("LevelManager: Enemy pool initialized with " + std::to_string(m_enemyPool.allEnemies.size()) + " enemies");
+
+        // Special handling for boss level (Level 6)
+        if (m_currentLevelId == 6) {
+            // Spawn the Rat King boss separately (not from pool)
+            const EnemyConfig* bossConfig = nullptr;
+            for (const auto& config : m_currentLevelConfig.enemies) {
+                if (config.movementPattern == "boss_idle" || 
+                    config.textureId == "Ratking" || 
+                    config.textureId == "RatKing") {
+                    bossConfig = &config;
+                    break;
+                }
+            }
+            
+            if (bossConfig) {
+                // Get screen dimensions using ConfigManager (landscape mode for boss level)
+                const ScreenInfo& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+                
+                // Spawn boss on the right side of the screen, GROUNDED
+                // Position for 128x128 sprite at 8x scale (1024px total) in landscape
+                float bossX = screenInfo.pixelWidth * 0.70f; // 70% from left
+                
+                // GROUND THE RAT KING: floor + his height up from bottom
+                float ratKingHeight = 128.0f * bossConfig->scale; // 128px sprite * 8x scale = 1024px
+                float bossY = screenInfo.pixelHeight - ratKingHeight; // Ground him!
+                
+                Gnosis::Entity bossEntity = SpawnBossEnemy(*bossConfig, bossX, bossY);
+                GN_LOG_INFO("LevelManager: Spawned Rat King boss entity " + std::to_string(bossEntity) + 
+                           " at (" + std::to_string(bossX) + ", " + std::to_string(bossY) + ")");
+            } else {
+                GN_LOG_ERROR("LevelManager: Boss level 6 has no boss config!");
+            }
+        } else {
+            // Spawn initial enemies based on level requirements (using pool for non-boss levels)
+            SpawnInitialEnemies();
+        }
+
         m_enemyPoolInitialized = true;
     }
+
 
     void LevelManager::InitializeNPCPool() {
         if (m_npcPoolInitialized) return;
@@ -826,21 +840,34 @@ namespace GameCore {
     void LevelManager::CleanupOffscreenEntities(float leftBoundary) {
         // REMOVED: Legacy obstacle cleanup - now handled by ObstacleSystem
         
-        // Clean up enemies that have moved off screen
+        // Clean up enemies that have moved off screen or are inactive
         // FIXED: Use right edge of entity for proper cleanup, like toilet logic
         for (auto it = m_activeEnemies.begin(); it != m_activeEnemies.end();) {
             Transform* transform = m_ecsSystem->GetComponent<Transform>(*it);
             Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(*it);
-            if (transform && sprite) {
+            Enemy* enemy = m_ecsSystem->GetComponent<Enemy>(*it);
+
+            bool shouldRemove = false;
+
+            // Check if enemy is inactive (defeated)
+            if (enemy && !enemy->isActive) {
+                shouldRemove = true;
+                GN_LOG_DEBUG("LevelManager: Removing inactive enemy " + std::to_string(*it));
+            }
+            // Check if enemy has moved off screen
+            else if (transform && sprite) {
                 // Calculate right edge of enemy for proper cleanup
                 float scaledWidth = sprite->width * std::abs(transform->scale.x);
                 float rightEdge = transform->position.x + scaledWidth;
                 if (rightEdge < leftBoundary) {
+                    shouldRemove = true;
+                    GN_LOG_DEBUG("LevelManager: Removing offscreen enemy " + std::to_string(*it) + " (rightEdge=" + std::to_string(rightEdge) + " < leftBoundary=" + std::to_string(leftBoundary) + ")");
+                }
+            }
+
+            if (shouldRemove) {
                     m_ecsSystem->DestroyEntity(*it);
                     it = m_activeEnemies.erase(it);
-                } else {
-                    ++it;
-                }
             } else {
                 ++it;
             }
@@ -879,6 +906,11 @@ namespace GameCore {
         
         // Level 1 is always unlocked
         m_unlockedLevels[0] = true;
+
+        // DEBUG: Unlock all levels for testing
+        for (int i = 0; i < maxLevels; ++i) {
+            m_unlockedLevels[i] = true;
+        }
         
         LoadProgression();
         
@@ -1301,6 +1333,317 @@ namespace GameCore {
     void LevelManager::SetRenderSystem(RenderSystem* renderSystem) {
         m_renderSystem = renderSystem;
         GN_LOG_INFO("LevelManager: RenderSystem reference set for texture metadata cache access");
+    }
+
+    // Enemy pooling system implementation
+    Gnosis::Entity LevelManager::GetInactiveEnemy() {
+        if (m_enemyPool.inactiveEnemies.empty()) {
+            GN_LOG_WARN("LevelManager: No inactive enemies available in pool");
+            return 0;
+        }
+
+        Gnosis::Entity enemy = m_enemyPool.inactiveEnemies.back();
+        m_enemyPool.inactiveEnemies.pop_back();
+        return enemy;
+    }
+
+    void LevelManager::ReturnEnemyToPool(Gnosis::Entity enemy) {
+        if (!enemy) return;
+
+        // Reset enemy state
+        Enemy* enemyComp = m_ecsSystem->GetComponent<Enemy>(enemy);
+        if (enemyComp) {
+            enemyComp->isActive = false;
+            enemyComp->currentState = EnemyState::Idle;
+            enemyComp->hurtTimer = 0.0f;
+            enemyComp->stateTimer = 0.0f;
+            enemyComp->stateDuration = 0.0f;
+
+            // Reset health to config value
+            for (const auto& config : m_currentLevelConfig.enemies) {
+                if (config.textureId == enemyComp->enemyType) {
+                    enemyComp->health = config.hitPoints;
+                    break;
+                }
+            }
+        }
+
+        // Reset transform to offscreen
+        Transform* transform = m_ecsSystem->GetComponent<Transform>(enemy);
+        if (transform) {
+            transform->position = Gnosis::GNVector2(-1000.0f, -1000.0f);
+        }
+
+        // Reset sprite visibility
+        Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(enemy);
+        if (sprite) {
+            sprite->color = GNColor(255, 255, 255, 0); // Invisible
+            sprite->visible = false; // Explicitly invisible for inactive enemies
+        }
+
+        // Reset physics
+        Physics* physics = m_ecsSystem->GetComponent<Physics>(enemy);
+        if (physics) {
+            physics->velocity = Gnosis::GNVector2(0.0f, 0.0f);
+        }
+
+        // Reset StateAnimation if present
+        StateAnimation* sa = m_ecsSystem->GetComponent<StateAnimation>(enemy);
+        if (sa) {
+            // Find the initial state from config
+            for (const auto& config : m_currentLevelConfig.enemies) {
+                if (config.textureId == enemyComp->enemyType && config.useStateAnimation) {
+                    sa->currentState = config.initialState;
+                    break;
+                }
+            }
+        }
+
+        // Return to inactive pool (all enemies can be reused)
+        m_enemyPool.inactiveEnemies.push_back(enemy);
+
+        // Remove from active enemies list
+        auto activeIt = std::find(m_activeEnemies.begin(), m_activeEnemies.end(), enemy);
+        if (activeIt != m_activeEnemies.end()) {
+            m_activeEnemies.erase(activeIt);
+        }
+
+        GN_LOG_DEBUG("LevelManager: Returned enemy " + std::to_string(enemy) + " to inactive pool");
+    }
+
+
+    void LevelManager::SpawnInitialEnemies() {
+        GN_LOG_INFO("LevelManager: Spawning initial enemies from pool");
+
+        if (m_enemyPool.inactiveEnemies.empty()) {
+            GN_LOG_WARN("LevelManager: No inactive enemies available to spawn");
+            return;
+        }
+
+        // Get screen dimensions using ConfigManager
+        const ScreenInfo& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+
+        // Spawn up to 5 enemies from the inactive pool (increased for better variety)
+        int maxSpawns = std::min(5, (int)m_enemyPool.inactiveEnemies.size());
+        
+        GN_LOG_INFO("LevelManager: Will spawn " + std::to_string(maxSpawns) + " enemies from " + 
+                   std::to_string(m_enemyPool.inactiveEnemies.size()) + " available");
+
+        for (int i = 0; i < maxSpawns; ++i) {
+            Gnosis::Entity enemy = GetInactiveEnemy();
+            if (!enemy) break;
+
+            // Get the enemy's config from its component
+            Enemy* enemyComp = m_ecsSystem->GetComponent<Enemy>(enemy);
+            if (!enemyComp) {
+                GN_LOG_ERROR("LevelManager: Spawned enemy has no Enemy component!");
+                continue;
+            }
+
+            // Find the matching config for this enemy type
+            const EnemyConfig* matchingConfig = nullptr;
+            for (const auto& config : m_currentLevelConfig.enemies) {
+                if (config.textureId == enemyComp->enemyType) {
+                    matchingConfig = &config;
+                    break;
+                }
+            }
+
+            if (!matchingConfig) {
+                GN_LOG_ERROR("LevelManager: Could not find config for enemy type: " + enemyComp->enemyType);
+                continue;
+            }
+
+            // Position enemies offscreen to the right with MAXIMUM spacing for debugging
+            float x = screenInfo.pixelWidth + 400.0f + (i * 1200.0f); // HUGE spacing: 1200 pixels apart!
+            
+            // Calculate Y position based on enemy type
+            float y;
+            if (enemyComp->enemyType == "BirdIdle" || enemyComp->enemyType.find("Bird") != std::string::npos) {
+                // Birds spawn higher (flying enemies)
+                y = screenInfo.pixelHeight * 0.15f + (i * 150.0f);
+            } else if (enemyComp->enemyType.find("SnowMan") != std::string::npos || 
+                       enemyComp->enemyType.find("Snowman") != std::string::npos) {
+                // GROUND SNOWMEN: Position at EXACT ground level
+                // Snowmen are 64px tall sprites, scaled up
+                float snowmanHeight = matchingConfig->frameHeight * matchingConfig->scale;
+                y = screenInfo.pixelHeight - snowmanHeight;
+                GN_LOG_INFO("LevelManager: Grounding snowman '" + enemyComp->enemyType + "' at y=" + std::to_string(y) + 
+                           " (screenHeight=" + std::to_string(screenInfo.pixelHeight) + 
+                           ", spriteHeight=" + std::to_string(snowmanHeight) + 
+                           ", frameHeight=" + std::to_string(matchingConfig->frameHeight) + 
+                           ", scale=" + std::to_string(matchingConfig->scale) + ")");
+            } else {
+                // Other flying enemies
+                y = screenInfo.pixelHeight * 0.3f + (i * 200.0f);
+            }
+
+            // Activate and position the enemy with its matching config
+            SpawnEnemyWithConfig(enemy, *matchingConfig, x, y);
+            
+            GN_LOG_INFO("LevelManager: Spawned enemy type '" + enemyComp->enemyType + "' at (" + 
+                       std::to_string(x) + ", " + std::to_string(y) + ")");
+        }
+    }
+
+    void LevelManager::SpawnEnemyWithConfig(Gnosis::Entity enemy, const EnemyConfig& config, float x, float y) {
+        // Update transform
+        Transform* transform = m_ecsSystem->GetComponent<Transform>(enemy);
+        if (transform) {
+            transform->position = Gnosis::GNVector2(x, y);
+            transform->scale = Gnosis::GNVector2(config.scale, config.scale);
+        }
+
+        // Update sprite
+        Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(enemy);
+        if (sprite) {
+            sprite->textureId = config.textureId;
+            sprite->width = config.width;
+            sprite->height = config.height;
+            sprite->frameWidth = config.frameWidth;
+            sprite->frameHeight = config.frameHeight;
+            sprite->frameCount = config.frameCount;
+            sprite->frameTime = config.frameTime;
+            sprite->loop = config.loopAnimation;
+            sprite->isAnimated = (config.frameCount > 1);
+            sprite->playing = true; // CRITICAL: Start playing animation (just like Janitor and Player)
+            sprite->currentFrame = 0;
+            sprite->currentFrameTime = 0.0f;
+            sprite->color = GNColor(255, 255, 255, 255); // Visible
+            sprite->visible = true; // Explicitly visible for active enemies
+        }
+
+        // Update enemy component
+        Enemy* enemyComp = m_ecsSystem->GetComponent<Enemy>(enemy);
+        if (enemyComp) {
+            enemyComp->isActive = true;
+            enemyComp->health = config.hitPoints;
+            enemyComp->enemyType = config.textureId;
+            enemyComp->movementPattern = config.movementPattern;
+            enemyComp->currentState = EnemyState::Idle;
+            
+            // Apply bobbing configuration from EnemyConfig
+            if (config.bobbingConfig.enabled) {
+                enemyComp->bobbingEnabled = true;
+                enemyComp->bobSpeed = config.bobbingConfig.baseSpeed;
+                // Calculate amplitude based on screen height percentage
+                float screenHeight = 2556.0f; // iPhone 16 portrait
+                enemyComp->bobAmplitude = screenHeight * config.bobbingConfig.amplitudeMin; // Use min for now
+                enemyComp->bobPhase = 0.0f; // Start at 0 phase
+            }
+        }
+
+        // Update hitbox based on config
+        Hitbox* hitbox = m_ecsSystem->GetComponent<Hitbox>(enemy);
+        if (hitbox) {
+            hitbox->radius = config.width * 0.4f; // Rough approximation
+        }
+
+        // Initialize StateAnimation if present and apply initial animation clip
+        StateAnimation* sa = m_ecsSystem->GetComponent<StateAnimation>(enemy);
+        if (sa && sprite) {
+            sa->currentState = config.initialState;
+            GN_LOG_INFO("LevelManager: Enemy " + std::to_string(enemy) + " has StateAnimation with " + 
+                       std::to_string(sa->clips.size()) + " clips, initial state: '" + config.initialState + "'");
+            
+            // Apply the initial animation clip immediately
+            const StateAnimation::Clip* initialClip = sa->getClip(sa->currentState);
+            if (initialClip) {
+                sprite->textureId = initialClip->textureId;
+                sprite->frameWidth = initialClip->frameWidth;
+                sprite->frameHeight = initialClip->frameHeight;
+                sprite->frameCount = initialClip->frameCount;
+                sprite->frameTime = initialClip->frameTime;
+                sprite->loop = initialClip->loop;
+                sprite->isAnimated = (initialClip->frameCount > 1);
+                sprite->playing = true;
+                sprite->currentFrame = 0;
+                sprite->currentFrameTime = 0.0f;
+                
+                GN_LOG_INFO("LevelManager: Applied initial animation clip '" + initialClip->textureId + 
+                           "' with " + std::to_string(initialClip->frameCount) + " frames to enemy " + std::to_string(enemy));
+            } else {
+                GN_LOG_ERROR("LevelManager: Failed to find clip for initial state '" + config.initialState + "' on enemy " + std::to_string(enemy));
+            }
+        } else {
+            if (!sa) {
+                GN_LOG_INFO("LevelManager: Enemy " + std::to_string(enemy) + " has NO StateAnimation component");
+            }
+        }
+
+        // Add to active enemies
+        m_activeEnemies.push_back(enemy);
+        m_enemyBaseY[enemy] = y;
+
+        GN_LOG_INFO("LevelManager: Spawned enemy " + std::to_string(enemy) + " of type " + config.textureId + " at (" + std::to_string(x) + ", " + std::to_string(y) + ")");
+    }
+
+    Gnosis::Entity LevelManager::SpawnBossEnemy(const EnemyConfig& config, float x, float y) {
+        GN_LOG_INFO("LevelManager: Spawning BOSS enemy '" + config.textureId + "' at (" + std::to_string(x) + ", " + std::to_string(y) + ")");
+        
+        // Create a NEW entity for the boss (not from pool!)
+        Gnosis::Entity bossEntity = m_ecsSystem->CreateEntity();
+        
+        // Add Transform component
+        Transform transform(Gnosis::GNVector2(x, y), 0.0f, Gnosis::GNVector2(config.scale, config.scale));
+        m_ecsSystem->AddComponent<Transform>(bossEntity, transform);
+        
+        // Add Sprite component with animation properties from config
+        Sprite sprite(config.textureId, static_cast<float>(config.frameWidth), static_cast<float>(config.frameHeight));
+        sprite.frameWidth = config.frameWidth;
+        sprite.frameHeight = config.frameHeight;
+        sprite.frameCount = config.frameCount;
+        sprite.frameTime = config.frameTime;
+        sprite.currentFrame = 0;
+        sprite.currentFrameTime = 0.0f;
+        sprite.loop = config.loopAnimation;
+        sprite.isAnimated = (config.frameCount > 1);
+        sprite.playing = true;
+        sprite.visible = true;
+        sprite.color = GNColor(255, 255, 255, 255);
+        sprite.layer = 2; // Foreground layer
+        m_ecsSystem->AddComponent<Sprite>(bossEntity, sprite);
+        
+        // Add Enemy component
+        Enemy enemy;
+        enemy.enemyType = config.textureId;
+        enemy.health = config.hitPoints;
+        enemy.isActive = true;
+        enemy.currentState = EnemyState::Idle;
+        enemy.hurtTimer = 0.0f;
+        enemy.baseY = y;
+        enemy.movementPattern = config.movementPattern;
+        enemy.speed = config.speed;
+        enemy.stateTimer = 0.0f;
+        enemy.stateDuration = 2.0f;
+        enemy.bobbingEnabled = false;
+        enemy.bobSpeed = 0.0f;
+        enemy.bobAmplitude = 0.0f;
+        enemy.bobPhase = 0.0f;
+        enemy.hasInitializedBaseY = true;
+        enemy.isGrounded = false;
+        m_ecsSystem->AddComponent<Enemy>(bossEntity, enemy);
+        
+        // Add Hitbox component (boss uses circle hitbox typically)
+        Hitbox hitbox;
+        hitbox.type = ColliderType::Circle;
+        hitbox.radius = 64.0f * config.scale; // Reasonable boss hitbox size
+        hitbox.offsetX = 0.0f;
+        hitbox.offsetY = 0.0f;
+        hitbox.isStatic = false;
+        hitbox.isTrigger = false;
+        hitbox.tag = "enemy";
+        m_ecsSystem->AddComponent<Hitbox>(bossEntity, hitbox);
+        
+        // Don't use StateAnimation for boss - BossSystem handles its own states
+        // Just use the basic sprite animation from config
+        
+        // Add to active enemies (so BossSystem can find it)
+        m_activeEnemies.push_back(bossEntity);
+        m_enemyBaseY[bossEntity] = y;
+        
+        GN_LOG_INFO("LevelManager: Boss enemy " + std::to_string(bossEntity) + " spawned successfully!");
+        return bossEntity;
     }
 
 } // namespace GameCore

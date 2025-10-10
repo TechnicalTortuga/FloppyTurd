@@ -4,12 +4,6 @@
 #include "../Components/GameComponents.h"
 #include <vector>
 
-// Use shorter type names from GameComponents.h
-using GameCore::ProjectileType;
-using GameCore::GNVector2;
-using GameCore::GNColor;
-using GameCore::Entity;
-
 namespace GameCore {
 
     /**
@@ -50,6 +44,9 @@ namespace GameCore {
         int GetActivePlayerProjectileCount() const;
         int GetActiveEnemyProjectileCount() const;
         int GetTotalPoolSize() const;
+
+        // Collision detection access
+        const std::vector<Entity>& GetActivePlayerProjectiles() const { return m_playerProjectiles.activeProjectiles; }
 
     private:
         Gnosis::ECS* m_ecsSystem;

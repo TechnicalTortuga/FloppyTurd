@@ -11,7 +11,7 @@ namespace Gnosis {
     // Define the static member variable for Component type IDs
     size_t Component::nextTypeId = 0;
 
-    SystemManager::SystemManager(ECS* ecsCoordinator, const GameCore::PlatformDelegates& delegates)
+    SystemManager::SystemManager(ECS* ecsCoordinator, const PlatformDelegates& delegates)
         : m_ecsCoordinator(ecsCoordinator)
         , m_delegates(delegates)
         , m_initialized(false)

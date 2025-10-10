@@ -16,16 +16,16 @@ namespace GameCore {
 
 
 void InitializePlatformDelegates() {
-    static GameCore::PlatformDelegates delegates;
-    GameCore::iOSPlatform::SetupDelegates(delegates);
-    GameCore::g_platformDelegates = &delegates;
+    static PlatformDelegates delegates;
+    iOSPlatform::SetupDelegates(delegates);
+    g_platformDelegates = &delegates;
 }
 
     namespace iOSPlatform {
         // Asset cache management delegate implementations
         // Note: Removed redundant wrapper functions - delegates now point directly to ThreadingProxy
         
-        void SetupDelegates(GameCore::PlatformDelegates& delegates) {
+        void SetupDelegates(PlatformDelegates& delegates) {
             // Use ThreadingProxy for logging instead of GNLog
             GameCore::ThreadingProxy::enqueueLogInfo("Initializing iOS platform delegates...", "PLATFORM");
 

@@ -3,7 +3,7 @@
 
 namespace GameCore {
 
-    TransitionState::TransitionState(Gnosis::ECS* ecsSystem, GameCore::PlatformDelegates* platformDelegates, const char* targetStateName)
+    TransitionState::TransitionState(Gnosis::ECS* ecsSystem, PlatformDelegates* platformDelegates, const char* targetStateName)
         : m_ecsSystem(ecsSystem)
         , m_platformDelegates(platformDelegates)
         , m_finished(false)

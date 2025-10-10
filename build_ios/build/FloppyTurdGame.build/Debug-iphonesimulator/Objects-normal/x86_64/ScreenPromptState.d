@@ -27,6 +27,8 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../../Engine/Core/GnosisTypes.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../../Engine/Core/ECS.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../../Engine/Platform/PlatformDelegates.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../../Engine/Utility/FrameProfiler.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../../Engine/Utility/../Core/GNLog.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Entities/Player.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Entities/../../Engine/Core/GnosisTypes.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Entities/../Components/GameComponents.h \
@@ -39,6 +41,7 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/HatsSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/SkillSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/RenderSystem.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/../../Engine/Utility/FrameProfiler.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/CameraSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/LevelManager.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/States/../Game/../States/../Systems/../Config/LevelConfig.h \

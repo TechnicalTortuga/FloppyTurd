@@ -20,7 +20,7 @@ namespace GameCore {
      */
     class SpriteSystem {
     public:
-        explicit SpriteSystem(Gnosis::ECS* ecsCoordinator, const GameCore::PlatformDelegates& delegates);
+        explicit SpriteSystem(Gnosis::ECS* ecsCoordinator, const PlatformDelegates& delegates);
         ~SpriteSystem() = default;
 
         // Update and render all sprites
@@ -35,7 +35,7 @@ namespace GameCore {
 
     private:
         Gnosis::ECS* m_ecsCoordinator;
-        const GameCore::PlatformDelegates& m_delegates;
+        const PlatformDelegates& m_delegates;
         
         Gnosis::GNRectangle CalculateSourceRect(const Sprite& sprite) const;
         bool IsEntityVisible(Gnosis::Entity entity) const;

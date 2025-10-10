@@ -22,5 +22,10 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ObstacleSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/RenderSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Platform/PlatformDelegates.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Utility/FrameProfiler.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Utility/../Core/GNLog.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Core/GNLog.h \
-  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Config/EnemyConfigs.h
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Config/EnemyConfigs.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Configuration/ConfigManager.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Configuration/../Platform/PlatformDelegates.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Configuration/../Core/GNLog.h

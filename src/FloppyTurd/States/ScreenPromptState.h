@@ -20,7 +20,7 @@ namespace GameCore {
      */
     class ScreenPromptState : public GameState {
     public:
-        ScreenPromptState(Gnosis::ECS* ecsSystem, GameCore::PlatformDelegates* platformDelegates, bool waitForLandscape = true);
+        ScreenPromptState(Gnosis::ECS* ecsSystem, PlatformDelegates* platformDelegates, bool waitForLandscape = true);
         ~ScreenPromptState() override;
 
         void Enter() override;
@@ -37,7 +37,7 @@ namespace GameCore {
 
     private:
         Gnosis::ECS* m_ecsSystem;
-        GameCore::PlatformDelegates* m_platformDelegates;
+        PlatformDelegates* m_platformDelegates;
         FloppyTurdGame* m_game;
         bool m_finished;
         float m_displayTime;

@@ -10,7 +10,7 @@ namespace GameCore {
     // Used when transitioning from landscape to portrait (boss -> main menu)
     class TransitionState : public GameState {
     public:
-        TransitionState(Gnosis::ECS* ecsSystem, GameCore::PlatformDelegates* platformDelegates, const char* targetStateName);
+        TransitionState(Gnosis::ECS* ecsSystem, PlatformDelegates* platformDelegates, const char* targetStateName);
         ~TransitionState();
 
         // State interface
@@ -23,12 +23,12 @@ namespace GameCore {
         void HandleInput() override;
         const char* GetStateName() const override { return "Transition"; }
 
-        bool IsFinished() const { return m_finished; }
+        bool IsFinished() const override { return m_finished; }
         const char* GetTargetStateName() const { return m_targetStateName; }
 
     private:
         Gnosis::ECS* m_ecsSystem;
-        GameCore::PlatformDelegates* m_platformDelegates;
+        PlatformDelegates* m_platformDelegates;
         bool m_finished;
         float m_timer;
         const char* m_targetStateName;  // Where to transition to after delay

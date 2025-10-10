@@ -20,4 +20,6 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/Engine/Core/../../FloppyTurd/Systems/../Components/../Config/LevelConfig.h \
   /Users/aimac/Development/FloppyTurd/src/Engine/Core/../../FloppyTurd/Systems/../../Engine/Platform/PlatformDelegates.h \
   /Users/aimac/Development/FloppyTurd/src/Engine/Core/../../FloppyTurd/Systems/UISystem.h \
-  /Users/aimac/Development/FloppyTurd/src/Engine/Core/../../FloppyTurd/Systems/RenderSystem.h
+  /Users/aimac/Development/FloppyTurd/src/Engine/Core/../../FloppyTurd/Systems/RenderSystem.h \
+  /Users/aimac/Development/FloppyTurd/src/Engine/Core/../../FloppyTurd/Systems/../../Engine/Utility/FrameProfiler.h \
+  /Users/aimac/Development/FloppyTurd/src/Engine/Core/../../FloppyTurd/Systems/../../Engine/Utility/../Core/GNLog.h

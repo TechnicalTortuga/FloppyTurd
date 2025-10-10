@@ -8,6 +8,7 @@
 
 #include <string>
 #include <vector>
+#include <cstdint>
 
 namespace GameCore {
 
@@ -26,7 +27,6 @@ namespace GameCore {
     };
     
     enum class SkillType {
-        // Skills from old system
         HalfHearts = 0,     // Upgrade to half-heart precision
         ThirdHearts,        // Upgrade to third-heart precision (requires HalfHearts)
         CoinMagnet,         // Attracts coins automatically
@@ -96,7 +96,7 @@ namespace GameCore {
         Gnosis::GNColor color;
         bool visible;
         int layer;
-        
+
         // Animation support
         bool isAnimated;
         int frameWidth;          // Width of each frame in the sprite sheet
@@ -108,10 +108,16 @@ namespace GameCore {
         bool loop;               // Should animation loop?
         bool playing;            // Is animation currently playing?
         bool hasCompleted;       // Has animation completed at least once?
+
+        // Cached rendering data
+        uint32_t cachedTextureHandle;
+        bool textureHandleValid;
+        std::string cachedTextureId;
         
         // Static sprite constructor
         Sprite()
-            : width(32.0f)
+            : textureId()
+            , width(32.0f)
             , height(32.0f)
             , color(255, 255, 255, 255)
             , visible(true)
@@ -126,6 +132,9 @@ namespace GameCore {
             , loop(true)
             , playing(false)
             , hasCompleted(false)
+            , cachedTextureHandle(0)
+            , textureHandleValid(false)
+            , cachedTextureId()
         {}
         
         // Static sprite constructor with texture
@@ -146,6 +155,9 @@ namespace GameCore {
             , loop(true)
             , playing(false)
             , hasCompleted(false)
+            , cachedTextureHandle(0)
+            , textureHandleValid(false)
+            , cachedTextureId()
         {}
         
         // Animated sprite constructor
@@ -166,6 +178,9 @@ namespace GameCore {
             , loop(true)
             , playing(true)
             , hasCompleted(false)
+            , cachedTextureHandle(0)
+            , textureHandleValid(false)
+            , cachedTextureId()
         {}
         
         // Animation control methods
@@ -334,23 +349,58 @@ namespace GameCore {
      * Enemy component - enemy-specific data
      */
     /**
+     * Enemy type - WHAT the enemy is (not HOW it behaves)
+     */
+    enum class EnemyType {
+        Unknown = 0,
+        ToiletPaper,        // Sewer level - bouncing toilet paper
+        Bird,               // Desert level - flying birds
+        SnowManChill,       // Snow level - decorative snowman
+        SnowManGreen,       // Snow level - decorative snowman
+        SnowManChad,        // Snow level - decorative snowman
+        SnowManThrower,     // Snow level - red snowman that throws
+        RatCopter,          // Castle level - flying rat copters
+        RatKing             // Boss level - Rat King boss
+    };
+
+    /**
+     * Enemy movement behavior - HOW the enemy moves
+     */
+    enum class EnemyMovementType {
+        Static = 0,         // Doesn't move (decorative)
+        Horizontal,         // Moves horizontally
+        Vertical,           // Moves vertically
+        Sinusoidal,         // Sine wave pattern
+        Flying,             // Flying behavior (hover + beeline for RatCopters)
+        Swooping,           // Swoop pattern (birds)
+        Boss                // Boss movement (handled by BossSystem)
+    };
+
+    /**
      * Enemy states for different behaviors
      */
     enum class EnemyState {
         Idle = 0,           // Default state
-        Moving,              // Moving around
-        Attacking,           // Attacking/Throwing
-        Hurt,                // Taking damage
-        Dead,                // Dead/Inactive
-        Decorative           // Just for show, no behavior
+        Moving,             // Moving around
+        Attacking,          // Attacking/Throwing
+        Hurt,               // Taking damage
+        Dead,               // Dead/Inactive
+        Decorative          // Just for show, no behavior
     };
     
     struct Enemy : public Gnosis::Component {
         int health;
         int damage;
         float speed;
-        std::string enemyType;
-        std::string movementPattern;  // "horizontal", "vertical", "circular", "swoop", "snowman_thrower", "decorative"
+        
+        // NEW: Proper typed fields
+        EnemyType type;
+        EnemyMovementType movementType;
+        
+        // LEGACY: Keep for backward compatibility during transition
+        std::string enemyType;          // TODO: Remove after full refactor
+        std::string movementPattern;     // TODO: Remove after full refactor
+        
         bool isActive;
         
         // State management
@@ -389,6 +439,9 @@ namespace GameCore {
         float frameDuration;       // Time per frame
         float animationTimer;      // Current animation time
         int currentFrame;          // Current animation frame
+
+        // Hurt state support
+        float hurtTimer;           // Timer for hurt state duration
         
         Enemy()
             : health(1)
@@ -424,6 +477,7 @@ namespace GameCore {
             , frameDuration(0.1f)
             , animationTimer(0.0f)
             , currentFrame(0)
+            , hurtTimer(0.0f)
         {}
     };
     

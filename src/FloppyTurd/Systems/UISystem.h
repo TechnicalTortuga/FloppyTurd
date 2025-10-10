@@ -16,14 +16,14 @@ namespace GameCore {
     class UISystem {
     private:
         Gnosis::ECS* m_ecsCoordinator;
-        GameCore::PlatformDelegates m_delegates;
+        PlatformDelegates m_delegates;
         
         // Dynamic screen information
         ScreenInfo m_screenInfo;
         bool m_screenInfoValid;
         
     public:
-        UISystem(Gnosis::ECS* ecsCoordinator, const GameCore::PlatformDelegates& delegates);
+        UISystem(Gnosis::ECS* ecsCoordinator, const PlatformDelegates& delegates);
         
         /**
          * Update UI system (called every frame)

@@ -4,7 +4,7 @@
 
 namespace GameCore {
 
-    SpriteSystem::SpriteSystem(Gnosis::ECS* ecsCoordinator, const GameCore::PlatformDelegates& delegates)
+    SpriteSystem::SpriteSystem(Gnosis::ECS* ecsCoordinator, const PlatformDelegates& delegates)
         : m_ecsCoordinator(ecsCoordinator)
         , m_delegates(delegates)
     {

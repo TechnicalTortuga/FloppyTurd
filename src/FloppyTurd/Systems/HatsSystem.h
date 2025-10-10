@@ -70,7 +70,7 @@ namespace GameCore {
      */
     class HatsSystem {
     public:
-        HatsSystem(Gnosis::ECS* ecsCoordinator, const GameCore::PlatformDelegates& delegates);
+        HatsSystem(Gnosis::ECS* ecsCoordinator, const PlatformDelegates& delegates);
         ~HatsSystem();
 
         // Core functionality
@@ -110,8 +110,8 @@ namespace GameCore {
     private:
         // Core system dependencies
         Gnosis::ECS* m_ecsCoordinator;
-        const GameCore::PlatformDelegates& m_platformDelegates;
-        GameCore::PlatformDelegates m_delegates;
+        const PlatformDelegates& m_platformDelegates;
+        PlatformDelegates m_delegates;
 
         // Hat data and state
         std::vector<HatData> m_hats;

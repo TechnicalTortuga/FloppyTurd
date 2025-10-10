@@ -1,4 +1,5 @@
 #include "LevelConfig.h"
+#include "EnemyConfigs.h"
 
 namespace GameCore {
 
@@ -208,27 +209,27 @@ namespace GameCore {
         // No more hardcoded values - everything calculated from actual texture dimensions
 
         // Back layer - furthest background
-        config.backgroundLayers.emplace_back("SnowLevelBackLayerBackground", 50.0f, 0.1f, 0);
+        config.backgroundLayers.emplace_back("SnowLevelBackLayerBackground.png", 50.0f, 0.1f, 0);
 
         // Mid layer - mountains and middle ground
-        config.backgroundLayers.emplace_back("SnowLevelMidLayerBackground", 75.0f, 0.2f, 1);
+        config.backgroundLayers.emplace_back("SnowLevelMidLayerBackground.png", 75.0f, 0.2f, 1);
 
         // Front layer - trees and foreground elements
-        config.backgroundLayers.emplace_back("SnowLevelFrontLayerBackground", 150.0f, 0.3f, 2);
+        config.backgroundLayers.emplace_back("SnowLevelFrontLayerBackground.png", 150.0f, 0.3f, 2);
 
         // Front trees layer - closest to player
-        config.backgroundLayers.emplace_back("SnowLevelFrontLayerTrees", 150.0f, 0.5f, 3);
+        config.backgroundLayers.emplace_back("SnowLevelFrontLayerTrees.png", 150.0f, 0.5f, 3);
     }
 
     void LevelConfigFactory::AddCastleLevelLayers(LevelConfig& config) {
         // 🎯 SIMPLIFIED: Castle level with automatic scaling and positioning
         // No more hardcoded values - everything calculated from actual texture dimensions
 
-        // Back layer - castle background (all elements scroll at same speed - no parallax)
-        config.backgroundLayers.emplace_back("castlebacklayerbackground", 200.0f, 1.0f, 0);
+        // Back layer - castle background
+        config.backgroundLayers.emplace_back("castlebacklayerbackground.png", 200.0f, 1.0f, 0);
 
-        // Mid layer - curtains (same speed as background - no parallax)
-        config.backgroundLayers.emplace_back("curtains", 200.0f, 1.0f, 1);
+        // Front layer - curtains (slightly faster parallax to separate from background, higher render layer)
+        config.backgroundLayers.emplace_back("curtains.png", 200.0f, 1.05f, 2);
 
         // Note: Paintings, chandeliers, floor torches, and torch pillars are now handled by ObstacleSystem
         // as decorative obstacles rather than background layers to support proper positioning and animation
@@ -282,35 +283,58 @@ namespace GameCore {
     void LevelConfigFactory::AddSewerEnemies(LevelConfig& config) {
         // Level 2 should only spawn Toilet Paper enemies
         config.enemies.clear();
-        // Make enemies spawn less frequently and animate a tad slower by default
-        config.enemies.emplace_back("ToiletPaperFlap", 64.0f, 64.0f, 6.0f, 180.0f, 7.0f, 1, "horizontal");
+        // Use EnemyConfigRegistry to get properly configured enemies
+        if (EnemyConfigRegistry::HasConfig("ToiletPaperFlap")) {
+            config.enemies.push_back(EnemyConfigRegistry::GetConfig("ToiletPaperFlap"));
+        }
     }
 
     void LevelConfigFactory::AddDesertEnemies(LevelConfig& config) {
         // Desert wildlife - birds with proper frame size
-        config.enemies.emplace_back("BirdIdle", 32.0f, 32.0f, 6.0f, 160.0f, 4.8f, 1, "horizontal");
+        config.enemies.clear();
+        // Use EnemyConfigRegistry to get properly configured enemies
+        if (EnemyConfigRegistry::HasConfig("BirdIdle")) {
+            config.enemies.push_back(EnemyConfigRegistry::GetConfig("BirdIdle"));
+        }
         // Could add desert-specific enemies like vultures or scorpions
     }
 
     void LevelConfigFactory::AddSnowEnemies(LevelConfig& config) {
         // Snow creatures - regular snowmen are decorative (64x64 sprites)
-        config.enemies.emplace_back("SnowManChill", 64.0f, 64.0f, 6.0f, 0.0f, 0.0f, 1, "decorative");
-        config.enemies.emplace_back("SnowManGreen", 64.0f, 64.0f, 6.0f, 0.0f, 0.0f, 1, "decorative");
-        config.enemies.emplace_back("SnowManChad", 64.0f, 64.0f, 6.0f, 0.0f, 0.0f, 1, "decorative");
-        
+        config.enemies.clear();
+        // Use EnemyConfigRegistry to get properly configured enemies
+        if (EnemyConfigRegistry::HasConfig("SnowManChill")) {
+            config.enemies.push_back(EnemyConfigRegistry::GetConfig("SnowManChill"));
+        }
+        if (EnemyConfigRegistry::HasConfig("SnowManGreen")) {
+            config.enemies.push_back(EnemyConfigRegistry::GetConfig("SnowManGreen"));
+        }
+        if (EnemyConfigRegistry::HasConfig("SnowManChad")) {
+            config.enemies.push_back(EnemyConfigRegistry::GetConfig("SnowManChad"));
+        }
         // Red snowman is the actual enemy - throws snowballs (64x64 sprite, 6-frame throw animation)
-        config.enemies.emplace_back("SnowManIdle", 64.0f, 64.0f, 6.0f, 0.0f, 3.5f, 3, "snowman_thrower");
+        if (EnemyConfigRegistry::HasConfig("SnowManIdle")) {
+            config.enemies.push_back(EnemyConfigRegistry::GetConfig("SnowManIdle"));
+        }
     }
 
     void LevelConfigFactory::AddCastleEnemies(LevelConfig& config) {
         // Castle/dungeon enemies - only RatCopters with better positioning
-        config.enemies.emplace_back("RatCopterIdle", 64.0f, 64.0f, 6.0f, 200.0f, 4.5f, 1, "flying");
+        config.enemies.clear();
+        // Use EnemyConfigRegistry to get properly configured enemies
+        if (EnemyConfigRegistry::HasConfig("RatCopterIdle")) {
+            config.enemies.push_back(EnemyConfigRegistry::GetConfig("RatCopterIdle"));
+        }
     }
 
     void LevelConfigFactory::AddBossEnemies(LevelConfig& config) {
         // Boss enemy - Rat King (128x128 frame dimensions, 8x scale to match player)
-        config.enemies.emplace_back("Ratking", 128.0f, 128.0f, 8.0f, 80.0f, 1.0f, 20, "boss_pattern");
-        config.enemies.emplace_back("RatkingDeath", 128.0f, 128.0f, 8.0f, 0.0f, 0.0f, 1, "death");
+        config.enemies.clear();
+        // Use EnemyConfigRegistry to get properly configured enemies
+        if (EnemyConfigRegistry::HasConfig("Ratking")) {
+            config.enemies.push_back(EnemyConfigRegistry::GetConfig("Ratking"));
+        }
+        // Note: RatkingDeath is a state animation, not a separate enemy entity
 
         // Note: Pillar is now handled as a decorative obstacle in ObstacleSystem::AddBossLevelDecorations()
     }

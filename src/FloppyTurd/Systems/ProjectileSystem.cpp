@@ -27,6 +27,12 @@ namespace GameCore {
             return;
         }
 
+        // Only log when we have active projectiles (avoid spam)
+        if (m_playerProjectiles.activeProjectiles.size() > 0 || m_enemyProjectiles.activeProjectiles.size() > 0) {
+            GN_LOG_INFO("ProjectileSystem::Update - Active player: " + std::to_string(m_playerProjectiles.activeProjectiles.size()) +
+                        ", Active enemy: " + std::to_string(m_enemyProjectiles.activeProjectiles.size()));
+        }
+
         UpdateActiveProjectiles(deltaTime);
     }
 

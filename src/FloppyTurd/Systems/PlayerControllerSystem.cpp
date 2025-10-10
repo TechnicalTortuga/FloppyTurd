@@ -5,7 +5,7 @@
 
 namespace GameCore {
 
-    PlayerControllerSystem::PlayerControllerSystem(Gnosis::ECS* ecsSystem, GameCore::PlatformDelegates* platformDelegates, SpriteSystem* spriteSystem, ProjectileSystem* projectileSystem, HatsSystem* hatsSystem, SkillSystem* skillSystem, int currentLevelId, const LevelConfig* levelConfig)
+    PlayerControllerSystem::PlayerControllerSystem(Gnosis::ECS* ecsSystem, PlatformDelegates* platformDelegates, SpriteSystem* spriteSystem, ProjectileSystem* projectileSystem, HatsSystem* hatsSystem, SkillSystem* skillSystem, int currentLevelId, const LevelConfig* levelConfig)
         : m_ecsSystem(ecsSystem)
         , m_renderSystem(nullptr)
         , m_platformDelegates(platformDelegates)

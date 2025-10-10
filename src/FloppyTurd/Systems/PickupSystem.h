@@ -29,7 +29,7 @@ namespace GameCore {
 
         PickupSystem(Gnosis::ECS* ecsSystem,
                      LevelManager* levelManager,
-                     GameCore::PlatformDelegates* platformDelegates,
+                     PlatformDelegates* platformDelegates,
                      const LevelConfig* levelConfig)
             : m_ecsSystem(ecsSystem)
             , m_levelManager(levelManager)
@@ -58,7 +58,7 @@ namespace GameCore {
         // Dependencies
         Gnosis::ECS* m_ecsSystem;
         LevelManager* m_levelManager;
-        GameCore::PlatformDelegates* m_platformDelegates;
+        PlatformDelegates* m_platformDelegates;
         const LevelConfig* m_levelConfig;
         Gnosis::Entity m_playerEntity;
         CoinCollectedCallback m_coinCollectedCallback;

@@ -14,6 +14,8 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Core/../Platform/PlatformDelegates.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Core/SystemManager.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Platform/PlatformDelegates.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Utility/FrameProfiler.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Utility/../Core/GNLog.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Components/GameComponents.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Components/../../Engine/Core/GnosisTypes.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Components/../../Engine/Core/Component.h \

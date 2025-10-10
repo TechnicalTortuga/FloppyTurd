@@ -30,7 +30,7 @@ namespace GameCore {
      */
     class PauseSystem {
     public:
-        PauseSystem(Gnosis::ECS* ecsCoordinator, const GameCore::PlatformDelegates& delegates, GameplayState* gameplayState);
+        PauseSystem(Gnosis::ECS* ecsCoordinator, const PlatformDelegates& delegates, GameplayState* gameplayState);
         ~PauseSystem();
 
         // Core lifecycle
@@ -80,7 +80,7 @@ namespace GameCore {
 
         // Core system dependencies
         Gnosis::ECS* m_ecsCoordinator;
-        const GameCore::PlatformDelegates& m_platformDelegates;
+        const PlatformDelegates& m_platformDelegates;
         GameplayState* m_gameplayState;
 
         // Helper methods

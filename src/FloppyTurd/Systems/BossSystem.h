@@ -50,7 +50,7 @@ struct AimingData {
 
 class BossSystem {
 public:
-    BossSystem(Gnosis::ECS* ecsSystem, LevelManager* levelManager, ProjectileSystem* projectileSystem, GameCore::PlatformDelegates* platformDelegates = nullptr);
+    BossSystem(Gnosis::ECS* ecsSystem, LevelManager* levelManager, ProjectileSystem* projectileSystem, PlatformDelegates* platformDelegates = nullptr);
     ~BossSystem();
 
     void InitializeForLevel();
@@ -75,13 +75,12 @@ public:
     // Visual effects data
     const std::vector<LockOnDot>& GetLockOnDots() const { return aimingData.lockOnDots; }
     bool IsHurtFlashing() const { return currentState == RatKingState::HURT && hurtFlashTimer < 0.6f; }
-
 private:
     // Core systems
     Gnosis::ECS* m_ecsSystem = nullptr;
     LevelManager* m_levelManager = nullptr;
     ProjectileSystem* m_projectileSystem = nullptr;
-    GameCore::PlatformDelegates* m_platformDelegates = nullptr;
+    PlatformDelegates* m_platformDelegates = nullptr;
 
     // Boss entities and state
     Entity bossEntity = 0;        // Main torso entity

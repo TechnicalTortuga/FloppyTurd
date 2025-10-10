@@ -3,6 +3,7 @@
 
 #include "../../Engine/Core/ECS.h"
 #include "../../Engine/Platform/PlatformDelegates.h"
+#include "../../Engine/Utility/FrameProfiler.h"
 #include "../Components/GameComponents.h"
 #include <vector>
 #include <map>
@@ -26,7 +27,7 @@ namespace GameCore {
      */
     class RenderSystem {
     public:
-        RenderSystem(Gnosis::ECS* ecsSystem, const GameCore::PlatformDelegates& platformDelegates);
+        RenderSystem(Gnosis::ECS* ecsSystem, const PlatformDelegates& platformDelegates);
         ~RenderSystem();
 
         // Main render method
@@ -53,6 +54,20 @@ namespace GameCore {
         void SetCurrentLevelId(int levelId) { m_currentLevelId = levelId; }
         int GetCurrentLevelId() const { return m_currentLevelId; }
 
+        // Render cache invalidation
+        void MarkRenderCacheDirty();
+        void SetRenderDebugLogging(bool enabled) { m_renderDebugLogging = enabled; }
+        bool IsRenderDebugLoggingEnabled() const { return m_renderDebugLogging; }
+        
+        // FPS Counter
+        void ToggleFPS() { m_showFPS = !m_showFPS; }
+        bool IsFPSShown() const { return m_showFPS; }
+        float GetCurrentFPS() const { return m_currentFPS; }
+        
+        // Profiling controls
+        void SetProfilingEnabled(bool enabled);
+        bool IsProfilingEnabled() const { return m_profilingEnabled; }
+
         // Direct screen dimension accessors (most commonly used)
         float GetScreenWidth() const { return m_screenInfo.pixelWidth; }
         float GetScreenHeight() const { return m_screenInfo.pixelHeight; }
@@ -77,7 +92,7 @@ namespace GameCore {
 
     private:
         Gnosis::ECS* m_ecsSystem;
-        const GameCore::PlatformDelegates& m_platformDelegates;
+        const PlatformDelegates& m_platformDelegates;
         
         Gnosis::Entity m_activeCamera;
         bool m_useRenderLayers;
@@ -130,11 +145,22 @@ namespace GameCore {
         };
         std::unordered_map<std::string, CachedTextureInfo> m_textureMetadataCache;
         
+        // FPS tracking
+        bool m_showFPS = true;  // Show by default for debugging
+        float m_currentFPS = 60.0f;
+        float m_frameTimeAccum = 0.0f;
+        int m_frameCount = 0;
+        
+        // Profiling
+        Gnosis::FrameProfiler m_frameProfiler;
+        bool m_profilingEnabled = false;
+        
         // Helper methods
         void CollectRenderItems();
         void SortRenderQueue();
         void RenderWorldSpace();
         void RenderSingleItem(const RenderItem& item);
+        void RebuildRenderCaches();
 
         // Texture load helpers
         // 1:1 with SpriteSystem flow
@@ -146,23 +172,23 @@ namespace GameCore {
             std::string textureId;
             RenderSystem* system;
             Gnosis::Entity entity;
+
             TextureLoadContext(const std::string& id, RenderSystem* sys, Gnosis::Entity e)
                 : textureId(id), system(sys), entity(e) {}
+
             // Overload preserved for legacy call sites (unused by new path)
             TextureLoadContext(const std::string& id, RenderSystem* sys)
                 : textureId(id), system(sys), entity() {}
         };
-        
+
         // Dynamic layout helpers
         void SetupIOSLayout();
         void SetupDesktopLayout();
         void CalculateDynamicScaling();
-        
-        // World-to-screen transformation
         Gnosis::GNVector2 WorldToScreen(const Gnosis::GNVector2& worldPos);
         float GetCameraScale() const;
         Gnosis::GNVector2 GetCameraPosition() const;
-        
+
         // Constants
         static constexpr int MAX_RENDER_LAYERS = 10;
         static constexpr int BACKGROUND_LAYER_START = 0;
@@ -170,6 +196,25 @@ namespace GameCore {
         static constexpr int GAME_OBJECT_LAYER = 3;
         static constexpr int PLAYER_LAYER = 4;
         static constexpr int EFFECT_LAYER_START = 5;
+
+        // Cached entity sets (rebuilt only when dirty)
+        std::vector<Gnosis::Entity> m_cachedSpriteEntities;
+        std::vector<Gnosis::Entity> m_cachedTextEntities;
+        std::vector<Gnosis::Entity> m_cachedUIEntities;
+        std::vector<Gnosis::Entity> m_cachedDebugEntities;
+        std::vector<Gnosis::Entity> m_cachedShapeEntities;
+
+        bool m_renderCacheDirty = true;
+        size_t m_cachedEntityCount = 0;
+        bool m_renderDebugLogging = false;
+
+        // Component version tracking for automatic cache invalidation
+        size_t m_cachedTransformVersion = 0;
+        size_t m_cachedSpriteVersion = 0;
+        size_t m_cachedTextVersion = 0;
+        size_t m_cachedUIElementVersion = 0;
+        size_t m_cachedDebugDrawVersion = 0;
+        size_t m_cachedUIShapeVersion = 0;
     };
 
 } // namespace GameCore

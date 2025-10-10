@@ -148,6 +148,19 @@ public class MetalRenderer {
     private var currentCommandBuffer: MTLCommandBuffer?
     private var currentRenderPassDescriptor: MTLRenderPassDescriptor?
     private var currentRenderEncoder: MTLRenderCommandEncoder?  // FIX: Track the single render encoder
+    
+    // MARK: - Performance Profiling
+    private struct TimingStats {
+        var totalMs: Double = 0.0
+        var maxMs: Double = 0.0
+        var callCount: Int = 0
+    }
+    
+    private var profilingEnabled: Bool = true  // Enable by default for debugging
+    private var frameCount: Int = 0
+    private var timingStats: [String: TimingStats] = [:]
+    private var lastFlushTime: CFAbsoluteTime = CFAbsoluteTimeGetCurrent()
+    private var sectionStartTime: CFAbsoluteTime = 0
     private var currentDrawable: CAMetalDrawable?
     private var viewportSize: CGSize = CGSize.zero
     private var clearColor: MTLClearColor = MTLClearColor(
@@ -547,9 +560,56 @@ public class MetalRenderer {
         print("🔧 Updated projection matrix for viewport \(width)x\(height)")
         log("Updated projection matrix for viewport \(width)x\(height)", level: .debug)
     }
+    
+    // MARK: - Profiling Methods
+    
+    private func startTiming(_ section: String) {
+        guard profilingEnabled else { return }
+        sectionStartTime = CFAbsoluteTimeGetCurrent()
+    }
+    
+    private func endTiming(_ section: String) {
+        guard profilingEnabled else { return }
+        let duration = (CFAbsoluteTimeGetCurrent() - sectionStartTime) * 1000.0  // Convert to ms
+        
+        var stats = timingStats[section] ?? TimingStats()
+        stats.totalMs += duration
+        stats.maxMs = max(stats.maxMs, duration)
+        stats.callCount += 1
+        timingStats[section] = stats
+    }
+    
+    private func flushTimings() {
+        guard profilingEnabled else { return }
+        
+        let now = CFAbsoluteTimeGetCurrent()
+        if now - lastFlushTime >= 1.0 {  // Flush every ~1 second
+            var output = "[MetalProfiler] frames=\(frameCount)"
+            
+            for (name, stats) in timingStats.sorted(by: { $0.key < $1.key }) {
+                let avgMs = stats.callCount > 0 ? stats.totalMs / Double(stats.callCount) : 0.0
+                output += " | \(name) avg=\(String(format: "%.3f", avgMs))ms"
+                output += " max=\(String(format: "%.3f", stats.maxMs))ms"
+                output += " calls=\(stats.callCount)"
+            }
+            
+            log(output, level: .info)
+            
+            // Reset stats
+            timingStats.removeAll()
+            frameCount = 0
+            lastFlushTime = now
+        }
+    }
 
     public func beginFrame() {
-        guard let commandQueue = commandQueue else { return }
+        frameCount += 1
+        startTiming("BeginFrame")
+        
+        guard let commandQueue = commandQueue else { 
+            endTiming("BeginFrame")
+            return 
+        }
 
         // Guard against cases where the view is not ready to be drawn to. This can happen
         // during app startup, backgrounding, or other view lifecycle events.
@@ -558,6 +618,7 @@ public class MetalRenderer {
             // Don't create a command buffer if we can't render. The system will
             // simply skip this frame.
             log("Metal view is not ready for drawing. Skipping frame.", level: .warning)
+            endTiming("BeginFrame")
             return
         }
 
@@ -573,16 +634,20 @@ public class MetalRenderer {
 
         // FIX: Do NOT create render encoder here - wait until first draw call
         currentRenderEncoder = nil
+        endTiming("BeginFrame")
     }
 
     public func endFrame() {
+        startTiming("EndFrame")
         // FIX: End the render encoder if it exists
         currentRenderEncoder?.endEncoding()
         currentRenderEncoder = nil
         log("endFrame() called - render encoder ended", level: .debug)
+        endTiming("EndFrame")
     }
 
     public func present() {
+        startTiming("Present")
         // Proper commit/present order: present THEN commit
         if let drawable = currentDrawable {
             currentCommandBuffer?.present(drawable)
@@ -592,6 +657,10 @@ public class MetalRenderer {
         currentDrawable = nil
         currentRenderPassDescriptor = nil
         log("Frame presented successfully", level: .debug)
+        endTiming("Present")
+        
+        // Flush profiling stats periodically
+        flushTimings()
     }
 
     public func setViewport(x: Float, y: Float, width: Float, height: Float) {
@@ -948,6 +1017,9 @@ public class MetalRenderer {
     public func drawSpriteScaled(
         textureHandle: UInt32, x: Float, y: Float, scaleX: Float, scaleY: Float, rotation: Float
     ) {
+        startTiming("DrawSpriteScaled")
+        defer { endTiming("DrawSpriteScaled") }
+        
         guard let texture = textures[textureHandle] else {
             log("drawSpriteScaled: Invalid sprite handle \(textureHandle)", level: .warning)
             return
@@ -2289,6 +2361,9 @@ public class MetalRenderer {
         outline: (color: SIMD4<Float>, widthPx: Float)?,
         isCentered: Bool = false
     ) {
+        startTiming("DrawTextRaster")
+        defer { endTiming("DrawTextRaster") }
+        
         guard let device = device, let ctBase = self.ctFont else { return }
         let sizeInPoints = CGFloat(fontSize) / deviceScale
         let ctFontSized = CTFontCreateCopyWithAttributes(ctBase, sizeInPoints, nil, nil)

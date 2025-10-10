@@ -22,8 +22,8 @@ namespace GameCore {
     class LevelManager {
     public:
         explicit LevelManager(Gnosis::ECS* ecsSystem);
-        void SetPlatformDelegates(const GameCore::PlatformDelegates& delegates) { m_platformDelegates = delegates; }
-        const GameCore::PlatformDelegates& GetPlatformDelegates() const { return m_platformDelegates; }
+        void SetPlatformDelegates(const PlatformDelegates& delegates) { m_platformDelegates = delegates; }
+        const PlatformDelegates& GetPlatformDelegates() const { return m_platformDelegates; }
         ~LevelManager();
 
         // Player reference (used by NPC/enemy behaviors)
@@ -73,11 +73,30 @@ namespace GameCore {
         ObstacleSystem* GetObstacleSystem() const { return m_obstacleSystem.get(); }
         std::vector<int> GetAndClearWrappedGroups();
         
-        // Enemy management  
+        // Enemy management
         Gnosis::Entity SpawnEnemy(const EnemyConfig& config, float x, float y);
         void RemoveEnemy(Gnosis::Entity enemy);
         std::vector<Gnosis::Entity> GetActiveEnemies() const { return m_activeEnemies; }
         void InitializeEnemyPool();
+
+        // Enemy pooling system
+        struct EnemyPool {
+            std::vector<Gnosis::Entity> allEnemies;           // All pre-allocated enemies
+            std::vector<Gnosis::Entity> activeEnemies;        // Currently active/spawned
+            std::vector<Gnosis::Entity> inactiveEnemies;      // Available for respawning
+        };
+
+        // Pool management
+        Gnosis::Entity GetInactiveEnemy();
+        void ReturnEnemyToPool(Gnosis::Entity enemy);
+        int GetAvailableEnemyCount() const { return static_cast<int>(m_enemyPool.inactiveEnemies.size()); }
+
+        // Initial spawning
+        void SpawnInitialEnemies();
+        void SpawnEnemyWithConfig(Gnosis::Entity enemy, const EnemyConfig& config, float x, float y);
+        
+        // Boss spawning (outside regular pool)
+        Gnosis::Entity SpawnBossEnemy(const EnemyConfig& config, float x, float y);
         
         // Pickup management moved to GameplayState (single source of truth)
         std::vector<Gnosis::Entity> GetActiveNPCs() const { return m_activeNPCs; }
@@ -104,7 +123,7 @@ namespace GameCore {
     private:
         // Core systems
         Gnosis::ECS* m_ecsSystem;
-        GameCore::PlatformDelegates m_platformDelegates;
+        PlatformDelegates m_platformDelegates;
         std::unique_ptr<ObstacleSystem> m_obstacleSystem;
         
         // Current level state
@@ -121,7 +140,8 @@ namespace GameCore {
         static Difficulty s_globalDifficulty;
         
         // Entity tracking
-        std::vector<Gnosis::Entity> m_activeEnemies;
+        EnemyPool m_enemyPool;  // Enemy pooling system
+        std::vector<Gnosis::Entity> m_activeEnemies;  // Legacy compatibility
         // REMOVED: m_projectilePool - now handled by ProjectileSystem
         std::vector<Gnosis::Entity> m_activeNPCs;
         std::vector<Gnosis::Entity> m_backgroundEntities;
@@ -135,7 +155,8 @@ namespace GameCore {
         float m_enemySpawnTimer;
         // REMOVED: m_pickupSpawnTimer - pickup spawning moved to GameplayState
         float m_npcSpawnTimer;
-        int m_maxActiveEnemies = 4; // Limit active enemies (Level 2 uses 4)
+        static constexpr int MAX_ENEMY_POOL_SIZE = 16; // Total enemies in pool (increased for better variety)
+        int m_maxActiveEnemies = 4; // Limit active enemies (can be increased with pooling)
         float m_enemySpacing = 450.0f; // Horizontal spacing used when wrapping enemy pool
         bool m_enemyPoolInitialized = false;
         bool m_npcPoolInitialized = false;

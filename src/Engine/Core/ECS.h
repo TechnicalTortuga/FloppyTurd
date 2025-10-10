@@ -42,7 +42,7 @@ namespace Gnosis {
         /**
          * Initialize the ECS system
          */
-        void Initialize(const GameCore::PlatformDelegates& delegates) {
+        void Initialize(const PlatformDelegates& delegates) {
             if (initialized) {
                 return;
             }
@@ -308,6 +308,14 @@ namespace Gnosis {
             }
             
             return result;
+        }
+
+        template<typename T>
+        size_t GetComponentVersion() const {
+            if (!initialized || !componentManager) {
+                return 0;
+            }
+            return componentManager->GetComponentVersion<T>();
         }
 
         // Screen Dimension Management (accessible by all systems)

@@ -7,7 +7,7 @@
 
 namespace GameCore {
 
-BossSystem::BossSystem(Gnosis::ECS* ecsSystem, LevelManager* levelManager, ProjectileSystem* projectileSystem, GameCore::PlatformDelegates* platformDelegates)
+BossSystem::BossSystem(Gnosis::ECS* ecsSystem, LevelManager* levelManager, ProjectileSystem* projectileSystem, PlatformDelegates* platformDelegates)
     : m_ecsSystem(ecsSystem)
     , m_levelManager(levelManager)
     , m_projectileSystem(projectileSystem)
@@ -67,22 +67,22 @@ void BossSystem::InitializeForLevel() {
                        " at initial position (" + std::to_string(position.x) + ", " + std::to_string(position.y) + ")");
 
             // Set screen-aware walk boundaries
-            // Rat King should walk between center screen (50%) and screen edge
-            // Player has left side (0-50%) for jumping, boss has right side (50-100%)
-
+            // User Requirements:
+            // - Left edge of Rat King can't go less than 50% of screen
+            // - Right edge of Rat King (position + width) shouldn't exceed screen edge
+            
             // Boundary calculations for top-left positioned sprite
             // Sprite is 128x128 pixels scaled 8x = 1024x1024 pixels rendered
             float ratKingSpriteWidth = 128.0f * scale; // 1024px rendered width
             float ratKingSpriteHeight = 128.0f * scale; // 1024px rendered height
 
-            // For top-left positioning: boundaries based on sprite position
-            // Increase separation from player (25px) by using 65% instead of 50% for min boundary
-            float minBoundaryX = screenWidth * 0.65f; // 65% of screen (772px on 1179px screen)
-
-            // Calculate boundaries for the sprite's top-left position
-            // Add 128px margin to the right boundary to utilize the full range
-            walkRangeMin = minBoundaryX - (ratKingSpriteWidth / 2.0f); // Left boundary with more separation
-            walkRangeMax = screenWidth - ratKingSpriteWidth + 128.0f; // Right boundary with 128px margin
+            // Left boundary: left edge at 50% screen
+            walkRangeMin = screenWidth * 0.5f; // Left edge of sprite at 50% screen
+            
+            // Right boundary: right edge at screen edge
+            // position.x + width = screenWidth
+            // position.x = screenWidth - width
+            walkRangeMax = screenWidth - ratKingSpriteWidth; // Right edge touches screen edge
 
             // Don't override LevelManager's spawn position during initialization
             // Only apply boundary clamping during movement in HandleWalking

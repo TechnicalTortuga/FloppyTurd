@@ -160,6 +160,7 @@ namespace Gnosis {
         
         // Component arrays for each component type
         std::unordered_map<std::size_t, std::unique_ptr<IComponentArray> > componentArrays;
+        std::unordered_map<std::size_t, size_t> componentTypeVersions;
         
         // Entity signatures (which components each entity has)
         std::unordered_map<Entity, ComponentSignature> entitySignatures;
@@ -198,12 +199,18 @@ namespace Gnosis {
         template<typename T>
         void AddComponent(Entity entity, T component) {
             GN_LOG_INFO(std::string("[ComponentManager] Adding component ") + typeid(T).name() + " to entity " + std::to_string(entity));
-            GetComponentArray<T>()->AddComponent(entity, component);
+            ComponentArray<T>* array = GetComponentArray<T>();
+            bool wasPresent = array->HasComponent(entity);
+            array->AddComponent(entity, component);
             
             // Update entity signature
             std::size_t typeId = Component::GetComponentTypeId<T>();
             entitySignatures[entity].set(typeId);
             GN_LOG_INFO(std::string("[ComponentManager] Added component ") + typeid(T).name() + " to entity " + std::to_string(entity));
+
+            if (!wasPresent) {
+                componentTypeVersions[typeId]++;
+            }
         }
         
         /**
@@ -211,11 +218,17 @@ namespace Gnosis {
          */
         template<typename T>
         void RemoveComponent(Entity entity) {
-            GetComponentArray<T>()->RemoveComponent(entity);
+            ComponentArray<T>* array = GetComponentArray<T>();
+            bool wasPresent = array->HasComponent(entity);
+            array->RemoveComponent(entity);
             
             // Update entity signature
             std::size_t typeId = Component::GetComponentTypeId<T>();
             entitySignatures[entity].reset(typeId);
+
+            if (wasPresent) {
+                componentTypeVersions[typeId]++;
+            }
         }
         
         /**
@@ -285,13 +298,30 @@ namespace Gnosis {
          * Called when an entity is destroyed to clean up its components
          */
         void EntityDestroyed(Entity entity) {
+            auto signatureIt = entitySignatures.find(entity);
+            ComponentSignature existingSignature;
+            if (signatureIt != entitySignatures.end()) {
+                existingSignature = signatureIt->second;
+            }
+
             // Remove from all component arrays
             for (auto& pair : componentArrays) {
                 pair.second->EntityDestroyed(entity);
             }
             
+            // Bump versions for components that were present
+            if (signatureIt != entitySignatures.end()) {
+                for (std::size_t bit = 0; bit < existingSignature.size(); ++bit) {
+                    if (existingSignature.test(bit)) {
+                        componentTypeVersions[bit]++;
+                    }
+                }
+            }
+
             // Remove signature
-            entitySignatures.erase(entity);
+            if (signatureIt != entitySignatures.end()) {
+                entitySignatures.erase(signatureIt);
+            }
         }
         
         /**
@@ -309,6 +339,19 @@ namespace Gnosis {
         void Clear() {
             componentArrays.clear();
             entitySignatures.clear();
+            componentTypeVersions.clear();
+        }
+
+        template<typename T>
+        size_t GetComponentVersion() const {
+            std::size_t typeId = Component::GetComponentTypeId<T>();
+            auto it = componentTypeVersions.find(typeId);
+            return it != componentTypeVersions.end() ? it->second : 0;
+        }
+
+        size_t GetComponentVersionByTypeId(std::size_t typeId) const {
+            auto it = componentTypeVersions.find(typeId);
+            return it != componentTypeVersions.end() ? it->second : 0;
         }
     };
     

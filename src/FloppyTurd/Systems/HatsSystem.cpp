@@ -7,7 +7,7 @@
 
 namespace GameCore {
 
-    HatsSystem::HatsSystem(Gnosis::ECS* ecsCoordinator, const GameCore::PlatformDelegates& delegates)
+    HatsSystem::HatsSystem(Gnosis::ECS* ecsCoordinator, const PlatformDelegates& delegates)
         : m_ecsCoordinator(ecsCoordinator)
         , m_platformDelegates(delegates)
         , m_costDisplayEntity(0)

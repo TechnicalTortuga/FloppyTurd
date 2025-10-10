@@ -2,16 +2,28 @@
 #include "../../Engine/Core/GNLog.h"
 #include "../../Engine/Configuration/ConfigManager.h"
 #include <algorithm>
+#include <chrono>
 
 namespace GameCore {
 
-    RenderSystem::RenderSystem(Gnosis::ECS* ecsSystem, const GameCore::PlatformDelegates& platformDelegates)
+    RenderSystem::RenderSystem(Gnosis::ECS* ecsSystem, const PlatformDelegates& platformDelegates)
         : m_ecsSystem(ecsSystem)
         , m_platformDelegates(platformDelegates)
         , m_activeCamera(0)
         , m_useRenderLayers(true)
         , m_screenInfoValid(false)
         , m_currentLevelId(1)  // Default to level 1
+        , m_renderCacheDirty(true)
+        , m_cachedEntityCount(0)
+        , m_renderDebugLogging(false)
+        , m_cachedTransformVersion(0)
+        , m_cachedSpriteVersion(0)
+        , m_cachedTextVersion(0)
+        , m_cachedUIElementVersion(0)
+        , m_cachedDebugDrawVersion(0)
+        , m_cachedUIShapeVersion(0)
+        , m_frameProfiler("RenderSystem")
+        , m_profilingEnabled(false)
     {
         GN_LOG_INFO("RenderSystem initialized with unified rendering");
         m_renderQueue.reserve(1000); // Pre-allocate for performance
@@ -19,6 +31,9 @@ namespace GameCore {
         // Initialize screen info
         UpdateScreenInfo();
         SetupLayout();
+        
+        // Enable profiling by default to investigate performance issues
+        SetProfilingEnabled(true);
     }
 
 
@@ -26,26 +41,89 @@ namespace GameCore {
     RenderSystem::~RenderSystem() {
         GN_LOG_INFO("RenderSystem destroyed");
     }
+    
+    void RenderSystem::SetProfilingEnabled(bool enabled) {
+        m_profilingEnabled = enabled;
+        m_frameProfiler.SetEnabled(enabled);
+        GN_LOG_INFO("RenderSystem profiling " + std::string(enabled ? "enabled" : "disabled"));
+    }
 
     void RenderSystem::Render() {
+        m_frameProfiler.BeginFrame();
+        
         if (!m_ecsSystem) {
+            m_frameProfiler.EndFrame();
             return;
         }
 
+        // Track FPS using system time
+        m_frameProfiler.StartSection("FPSTracking");
+        static auto lastTime = std::chrono::steady_clock::now();
+        auto currentTime = std::chrono::steady_clock::now();
+        float deltaTime = std::chrono::duration<float>(currentTime - lastTime).count();
+        lastTime = currentTime;
+        
+        m_frameTimeAccum += deltaTime;
+        m_frameCount++;
+        
+        // Update FPS display every 10 frames for stability
+        static float displayedFrameTime = 0.016f;
+        if (m_frameCount >= 10) {
+            displayedFrameTime = m_frameTimeAccum / 10.0f;
+            m_currentFPS = 1.0f / displayedFrameTime;
+            m_frameTimeAccum = 0.0f;
+            m_frameCount = 0;
+        }
+        m_frameProfiler.EndSection("FPSTracking");
+
         // Clear render queue
+        m_frameProfiler.StartSection("ClearQueue");
         m_renderQueue.clear();
+        m_frameProfiler.EndSection("ClearQueue");
         
         // Collect all renderable items
+        m_frameProfiler.StartSection("CollectRenderItems");
         CollectRenderItems();
+        m_frameProfiler.EndSection("CollectRenderItems");
         
         // Sort by layer and depth
+        m_frameProfiler.StartSection("SortRenderQueue");
         SortRenderQueue();
+        m_frameProfiler.EndSection("SortRenderQueue");
         
         // Render world space items (backgrounds, game objects, player)
+        m_frameProfiler.StartSection("RenderWorldSpace");
         RenderWorldSpace();
+        m_frameProfiler.EndSection("RenderWorldSpace");
         
         // Render screen space items (UI)
+        m_frameProfiler.StartSection("RenderScreenSpace");
         RenderScreenSpace();
+        m_frameProfiler.EndSection("RenderScreenSpace");
+        
+        // Render FPS counter on top of everything
+        m_frameProfiler.StartSection("DrawFPS");
+        if (m_showFPS && m_platformDelegates.renderer.drawText) {
+            char fpsText[64];
+            snprintf(fpsText, sizeof(fpsText), "FPS: %.1f (%.1fms)", m_currentFPS, displayedFrameTime * 1000.0f);
+            
+            // Color code based on FPS
+            uint8_t r, g, b;
+            if (m_currentFPS >= 55.0f) {
+                r = 0; g = 255; b = 0; // Green
+            } else if (m_currentFPS >= 45.0f) {
+                r = 255; g = 255; b = 0; // Yellow
+            } else if (m_currentFPS >= 30.0f) {
+                r = 255; g = 165; b = 0; // Orange
+            } else {
+                r = 255; g = 0; b = 0; // Red
+            }
+            
+            m_platformDelegates.renderer.drawText(fpsText, 10.0f, 40.0f, 24.0f, r, g, b, 255);
+        }
+        m_frameProfiler.EndSection("DrawFPS");
+        
+        m_frameProfiler.EndFrame();
     }
 
     void RenderSystem::SetActiveCamera(Gnosis::Entity cameraEntity) {
@@ -54,272 +132,211 @@ namespace GameCore {
     }
 
     void RenderSystem::CollectRenderItems() {
-        // Collect all entities with Transform and Sprite components
-        auto renderableEntities = m_ecsSystem->GetEntitiesWithComponents<Transform, Sprite>();
-        for (Gnosis::Entity entity : renderableEntities) {
+        if (!m_ecsSystem) {
+            return;
+        }
+
+        size_t transformVersion = m_ecsSystem->GetComponentVersion<Transform>();
+        size_t spriteVersion = m_ecsSystem->GetComponentVersion<Sprite>();
+        size_t textVersion = m_ecsSystem->GetComponentVersion<Text>();
+        size_t uiElementVersion = m_ecsSystem->GetComponentVersion<UIElement>();
+        size_t debugDrawVersion = m_ecsSystem->GetComponentVersion<DebugDraw>();
+        size_t uiShapeVersion = m_ecsSystem->GetComponentVersion<UIShape>();
+
+        bool versionChanged =
+            transformVersion != m_cachedTransformVersion ||
+            spriteVersion != m_cachedSpriteVersion ||
+            textVersion != m_cachedTextVersion ||
+            uiElementVersion != m_cachedUIElementVersion ||
+            debugDrawVersion != m_cachedDebugDrawVersion ||
+            uiShapeVersion != m_cachedUIShapeVersion;
+
+        if (versionChanged) {
+            m_renderCacheDirty = true;
+        }
+
+        size_t totalEntities = m_ecsSystem->GetEntityCount();
+        if (totalEntities != m_cachedEntityCount) {
+            m_renderCacheDirty = true;
+        }
+
+        if (m_renderCacheDirty) {
+            RebuildRenderCaches();
+            m_renderCacheDirty = false;
+
+            m_cachedTransformVersion = transformVersion;
+            m_cachedSpriteVersion = spriteVersion;
+            m_cachedTextVersion = textVersion;
+            m_cachedUIElementVersion = uiElementVersion;
+            m_cachedDebugDrawVersion = debugDrawVersion;
+            m_cachedUIShapeVersion = uiShapeVersion;
+            m_cachedEntityCount = totalEntities;
+        }
+
+        // World-space sprites
+        for (Gnosis::Entity entity : m_cachedSpriteEntities) {
             auto transform = m_ecsSystem->GetComponent<Transform>(entity);
             auto sprite = m_ecsSystem->GetComponent<Sprite>(entity);
-            if (!transform || !sprite) continue;
-            // Respect coin/pickup visibility and active state to avoid rendering collected coins
-            if (!sprite->visible) continue;
-            if (auto pickup = m_ecsSystem->GetComponent<Pickup>(entity)) {
-                if (!pickup->isActive) {
-                    GN_LOG_DEBUG(std::string("RenderSystem: skip inactive pickup id=") + std::to_string(entity));
-                    continue;
-                }
+            if (!transform || !sprite || !sprite->visible) {
+                continue;
             }
 
-            // CULLING: Only render sprites that are on-screen or near-screen
-            // This dramatically improves performance by not rendering off-screen obstacles
-            // IMPORTANT: Only cull objects on the right side, not objects scrolling left
+            // Invalidate cached handle if texture changed
+            if (sprite->textureHandleValid && sprite->cachedTextureId != sprite->textureId) {
+                sprite->textureHandleValid = false;
+                sprite->cachedTextureHandle = 0;
+            }
+
+            if (auto pickup = m_ecsSystem->GetComponent<Pickup>(entity); pickup && !pickup->isActive) {
+                continue;
+            }
+
             float screenWidth = m_screenInfoValid ? m_screenInfo.pixelWidth : 1179.0f;
-            float cullMargin = 200.0f; // Extra margin to avoid pop-in
+            float cullMargin = 200.0f;
             float entityScreenX = WorldToScreen(transform->position).x;
-            
-            // Skip if entity is too far off-screen to the RIGHT only
             if (entityScreenX > screenWidth + cullMargin) {
                 continue;
             }
 
-            if (!transform || !sprite || !sprite->visible) {
-                continue;
-            }
-            
             RenderItem item;
             item.entity = entity;
             item.transform = transform;
             item.sprite = sprite;
-            item.text = nullptr;  // No text for sprite items
+            item.text = nullptr;
             item.shape = nullptr;
             item.layer = sprite->layer;
-            
-            // Calculate depth based on position and layer
-            // Higher layers are rendered on top, within layers Y position determines depth
             item.depth = static_cast<float>(item.layer) * 1000.0f + transform->position.y;
-            
+
+            if (m_renderDebugLogging) {
+                if (auto enemy = m_ecsSystem->GetComponent<Enemy>(entity)) {
+                    GN_LOG_DEBUG("RenderSystem: Enqueue enemy entity " + std::to_string(entity) +
+                                 " at (" + std::to_string(transform->position.x) + ", " +
+                                 std::to_string(transform->position.y) + ") texture='" + sprite->textureId + "'");
+                }
+            }
+
             m_renderQueue.push_back(item);
         }
-        
-        // Collect all entities with Transform and Text components
-        auto textEntities = m_ecsSystem->GetEntitiesWithComponents<Transform, Text>();
-        GN_LOG_INFO("RenderSystem: Found " + std::to_string(textEntities.size()) + " text entities");
-        
-        for (Gnosis::Entity entity : textEntities) {
+
+        // Screen-space text elements
+        for (Gnosis::Entity entity : m_cachedTextEntities) {
             auto transform = m_ecsSystem->GetComponent<Transform>(entity);
             auto text = m_ecsSystem->GetComponent<Text>(entity);
-            
-            GN_LOG_INFO("RenderSystem: Text entity " + std::to_string(entity) + 
-                       " - transform=" + (transform ? "yes" : "no") + 
-                       ", text=" + (text ? "yes" : "no") + 
-                       ", visible=" + (text ? std::to_string(text->visible) : "N/A") +
-                       ", content='" + (text ? text->text : "N/A") + "'");
-            
             if (!transform || !text || !text->visible) {
-                GN_LOG_INFO("RenderSystem: Skipping text entity " + std::to_string(entity) + " - missing components or not visible");
                 continue;
             }
-            
-            // CULLING: Only render text that is on-screen or near-screen
-            // This improves performance by not rendering off-screen text
-            // IMPORTANT: Only cull objects on the right side, not objects scrolling left
+
             float screenWidth = m_screenInfoValid ? m_screenInfo.pixelWidth : 1179.0f;
-            float cullMargin = 200.0f; // Extra margin to avoid pop-in
+            float cullMargin = 200.0f;
             float entityScreenX = WorldToScreen(transform->position).x;
-            
-            // Skip if entity is too far off-screen to the RIGHT only
             if (entityScreenX > screenWidth + cullMargin) {
                 continue;
             }
-            
+
             RenderItem item;
             item.entity = entity;
             item.transform = transform;
-            item.sprite = nullptr;  // No sprite for text
+            item.sprite = nullptr;
             item.text = text;
             item.shape = nullptr;
             item.layer = text->layer;
-            
-            // Calculate depth based on position and layer
             item.depth = static_cast<float>(item.layer) * 1000.0f + transform->position.y;
-            
             m_renderQueue.push_back(item);
-            GN_LOG_INFO("RenderSystem: Added text entity " + std::to_string(entity) + " to render queue at layer " + std::to_string(text->layer));
-        }
-        
-        // Collect all entities with UIElement components (buttons, UI sprites)
-    auto uiElementEntities = m_ecsSystem->GetEntitiesWithComponents<Transform, UIElement>();
-    GN_LOG_INFO("RenderSystem: Found " + std::to_string(uiElementEntities.size()) + " UI entities");
-
-    int hatsEntitiesFound = 0;
-    for (Gnosis::Entity entity : uiElementEntities) {
-        auto transform = m_ecsSystem->GetComponent<Transform>(entity);
-        auto uiElement = m_ecsSystem->GetComponent<UIElement>(entity);
-        auto sprite = m_ecsSystem->GetComponent<Sprite>(entity); // UI elements may have sprites
-
-        if (!transform || !uiElement || !uiElement->visible) {
-            continue;
         }
 
-        // Count hats-related entities (layers 84-86)
-        if (uiElement->textLayer >= 84 && uiElement->textLayer <= 86) {
-            hatsEntitiesFound++;
-            bool spriteVisible = sprite ? sprite->visible : false;
-            GN_LOG_INFO("RenderSystem: Found hats UI entity " + std::to_string(entity) + " at layer " + std::to_string(uiElement->textLayer) + " with sprite: " + (sprite ? (sprite->textureId.empty() ? "no texture" : sprite->textureId) : "no sprite") + ", sprite.visible=" + std::to_string(spriteVisible) + ", uiElement.visible=" + std::to_string(uiElement->visible));
+        // UI elements (screen space)
+        for (Gnosis::Entity entity : m_cachedUIEntities) {
+            auto transform = m_ecsSystem->GetComponent<Transform>(entity);
+            auto uiElement = m_ecsSystem->GetComponent<UIElement>(entity);
+            if (!transform || !uiElement || !uiElement->visible) {
+                continue;
+            }
+
+            RenderItem item;
+            item.entity = entity;
+            item.transform = transform;
+            item.sprite = m_ecsSystem->GetComponent<Sprite>(entity);
+            item.text = nullptr;
+            item.shape = nullptr;
+            item.layer = uiElement->textLayer;
+            item.depth = static_cast<float>(item.layer) * 1000.0f + transform->position.y;
+            m_renderQueue.push_back(item);
         }
 
-        RenderItem item;
-        item.entity = entity;
-        item.transform = transform;
-        item.sprite = sprite; // May be null for text-only UI elements
-        item.text = nullptr;  // UI text is handled via UIElement.buttonText
-        item.shape = nullptr;
-        item.layer = uiElement->textLayer; // Use textLayer for UI elements
-
-        // Calculate depth based on position and layer
-        item.depth = static_cast<float>(item.layer) * 1000.0f + transform->position.y;
-
-        m_renderQueue.push_back(item);
-        GN_LOG_INFO("RenderSystem: Added UI entity " + std::to_string(entity) + " to render queue at layer " + std::to_string(uiElement->textLayer));
-    }
-
-    GN_LOG_INFO("RenderSystem: Found " + std::to_string(hatsEntitiesFound) + " hats-related UI entities (layers 84-86)");
-
-        // Collect all entities with DebugDraw components for debug overlays
-        auto debugEntities = m_ecsSystem->GetEntitiesWithComponents<Transform, DebugDraw>();
-        GN_LOG_DEBUG("RenderSystem: Found " + std::to_string(debugEntities.size()) + " debug entities");
-        
-        int debugEntitiesRendered = 0;
-        for (Gnosis::Entity entity : debugEntities) {
+        // Debug overlays
+        for (Gnosis::Entity entity : m_cachedDebugEntities) {
             auto transform = m_ecsSystem->GetComponent<Transform>(entity);
             auto debugDraw = m_ecsSystem->GetComponent<DebugDraw>(entity);
-            
             if (!transform || !debugDraw) {
                 continue;
             }
-            
-            // CULLING: For debug entities, use much more lenient culling to allow debugging off-screen hitboxes
-            // This allows us to see debug hitboxes even when entities are off-screen for debugging purposes
+
             float screenWidth = m_screenInfoValid ? m_screenInfo.pixelWidth : 1179.0f;
-            float debugCullMargin = 10000.0f; // Much larger margin for debug entities (10x normal)
+            float debugCullMargin = 10000.0f;
             float entityScreenX = WorldToScreen(transform->position).x;
-            
-            // Skip if entity is extremely far off-screen to the RIGHT only (very lenient for debug)
             if (entityScreenX > screenWidth + debugCullMargin) {
-                GN_LOG_DEBUG("RenderSystem: Culling debug entity " + std::to_string(entity) + " at screen X " + std::to_string(entityScreenX) + " (extreme right cull)");
                 continue;
             }
-            
-            GN_LOG_DEBUG("RenderSystem: Rendering debug entity " + std::to_string(entity) + " at screen X " + std::to_string(entityScreenX));
-            debugEntitiesRendered++;
-            
-            // Add debug rectangles as render items using Hitbox (unified)
+
             auto hitbox = m_ecsSystem->GetComponent<Hitbox>(entity);
-            if (hitbox) {
-                if (debugDraw->showBounds) {
-            RenderItem debugItem;
-                    debugItem.entity = entity;
-                    debugItem.transform = transform;
-                    // Provide sprite so overlay centering uses sprite half-dimensions
-                    debugItem.sprite = m_ecsSystem->GetComponent<Sprite>(entity);
-                    debugItem.text = nullptr;
-            debugItem.shape = nullptr;
-                    debugItem.layer = debugDraw->debugLayer;  // High priority layer
-                    debugItem.depth = static_cast<float>(debugItem.layer) * 1000.0f + transform->position.y;
-                    debugItem.isDebugBounds = true;
-                    debugItem.debugColor = debugDraw->boundsColor;
-                    debugItem.debugAlpha = debugDraw->alpha;
-                    debugItem.debugWidth = hitbox->width;
-                    debugItem.debugHeight = hitbox->height;
-                    debugItem.debugOffsetX = hitbox->offsetX;
-                    debugItem.debugOffsetY = hitbox->offsetY;
-                    
-                    // Log when adding spike ball debug items
-                    auto obstacle = m_ecsSystem->GetComponent<Obstacle>(entity);
-                    if (obstacle && obstacle->obstacleType == "SpikeBall") {
-                        GN_LOG_DEBUG("RenderSystem: Adding spike ball debug bounds to render queue - entity " + std::to_string(entity) + 
-                                   " at pos (" + std::to_string(transform->position.x) + ", " + std::to_string(transform->position.y) + 
-                                   ") size (" + std::to_string(hitbox->width) + ", " + std::to_string(hitbox->height) + ")");
-                    }
-                    
-                    m_renderQueue.push_back(debugItem);
-                }
-
-                if (debugDraw->showCollider) {
-            RenderItem debugItem;
-                    debugItem.entity = entity;
-                    debugItem.transform = transform;
-                    // Provide sprite so overlay centering uses sprite half-dimensions
-                    debugItem.sprite = m_ecsSystem->GetComponent<Sprite>(entity);
-                    debugItem.text = nullptr;
-            debugItem.shape = nullptr;
-                    debugItem.layer = debugDraw->debugLayer;  // High priority layer
-                    debugItem.depth = static_cast<float>(debugItem.layer) * 1000.0f + transform->position.y;
-                    debugItem.isDebugCollider = true;
-                    debugItem.debugColor = debugDraw->colliderColor;
-                    debugItem.debugAlpha = debugDraw->alpha;
-                    debugItem.debugOffsetX = hitbox->offsetX;
-                    debugItem.debugOffsetY = hitbox->offsetY;
-                    
-                    // Check if this is a spikeball - use absolute positioning for spikeballs
-                    auto obstacle = m_ecsSystem->GetComponent<Obstacle>(entity);
-                    if (obstacle && obstacle->obstacleType == "SpikeBall") {
-                        debugItem.debugAbsolutePos = true;  // Use absolute world coordinates for spikeballs
-                    }
-                    
-                    // Circle vs rectangle collider visualization
-                    if (hitbox->type == GameCore::ColliderType::Circle) {
-                        debugItem.debugIsCircle = true;
-                        debugItem.debugRadius = hitbox->radius;
-                    } else {
-                        debugItem.debugIsCircle = false;
-                        debugItem.debugWidth = hitbox->width;
-                        debugItem.debugHeight = hitbox->height;
-                    }
-                    
-                    // Log when adding spike ball debug items  
-                    if (obstacle && obstacle->obstacleType == "SpikeBall") {
-                        GN_LOG_DEBUG("RenderSystem: Adding spike ball debug collider to render queue - entity " + std::to_string(entity) + 
-                                   " at pos (" + std::to_string(transform->position.x) + ", " + std::to_string(transform->position.y) + 
-                                   ") type " + (hitbox->type == GameCore::ColliderType::Circle ? "Circle" : "Rectangle") +
-                                   ") ABSOLUTE_POS_MODE");
-                    }
-                    
-                    m_renderQueue.push_back(debugItem);
-                }
-            }
-        }
-        
-        GN_LOG_DEBUG("RenderSystem: Debug rendering summary - " + std::to_string(debugEntitiesRendered) + " of " + std::to_string(debugEntities.size()) + " debug entities rendered");
-
-        // Collect UIElement-only entities so they can render buttonText in screen space
-        // This ensures UI elements without Sprite/Text still enter the render queue and get layered properly
-        auto uiEntities = m_ecsSystem->GetEntitiesWithComponents<Transform, UIElement>();
-    for (Gnosis::Entity entity : uiEntities) {
-            auto transform = m_ecsSystem->GetComponent<Transform>(entity);
-            auto ui = m_ecsSystem->GetComponent<UIElement>(entity);
-
-            if (!transform || !ui || !ui->visible) {
+            if (!hitbox) {
                 continue;
             }
 
-        RenderItem item;
-            item.entity = entity;
-            item.transform = transform;
-            item.sprite = nullptr;
-        item.text = nullptr;
-        item.shape = nullptr;
-            item.layer = ui->textLayer; // Use UI text layer for ordering
-            item.depth = static_cast<float>(item.layer) * 1000.0f + transform->position.y;
+            if (debugDraw->showBounds) {
+                RenderItem boundsItem;
+                boundsItem.entity = entity;
+                boundsItem.transform = transform;
+                boundsItem.sprite = m_ecsSystem->GetComponent<Sprite>(entity);
+                boundsItem.text = nullptr;
+                boundsItem.shape = nullptr;
+                boundsItem.layer = debugDraw->debugLayer;
+                boundsItem.depth = static_cast<float>(boundsItem.layer) * 1000.0f + transform->position.y;
+                boundsItem.isDebugBounds = true;
+                boundsItem.debugColor = debugDraw->boundsColor;
+                boundsItem.debugAlpha = debugDraw->alpha;
+                boundsItem.debugWidth = hitbox->width;
+                boundsItem.debugHeight = hitbox->height;
+                boundsItem.debugOffsetX = hitbox->offsetX;
+                boundsItem.debugOffsetY = hitbox->offsetY;
+                m_renderQueue.push_back(boundsItem);
+            }
 
-            m_renderQueue.push_back(item);
+            if (debugDraw->showCollider) {
+                RenderItem colliderItem;
+                colliderItem.entity = entity;
+                colliderItem.transform = transform;
+                colliderItem.sprite = m_ecsSystem->GetComponent<Sprite>(entity);
+                colliderItem.text = nullptr;
+                colliderItem.shape = nullptr;
+                colliderItem.layer = debugDraw->debugLayer;
+                colliderItem.depth = static_cast<float>(colliderItem.layer) * 1000.0f + transform->position.y;
+                colliderItem.isDebugCollider = true;
+                colliderItem.debugColor = debugDraw->colliderColor;
+                colliderItem.debugAlpha = debugDraw->alpha;
+                colliderItem.debugOffsetX = hitbox->offsetX;
+                colliderItem.debugOffsetY = hitbox->offsetY;
+                if (hitbox->type == GameCore::ColliderType::Circle) {
+                    colliderItem.debugIsCircle = true;
+                    colliderItem.debugRadius = hitbox->radius;
+                } else {
+                    colliderItem.debugWidth = hitbox->width;
+                    colliderItem.debugHeight = hitbox->height;
+                }
+                if (auto obstacle = m_ecsSystem->GetComponent<Obstacle>(entity); obstacle && obstacle->obstacleType == "SpikeBall") {
+                    colliderItem.debugAbsolutePos = true;
+                }
+                m_renderQueue.push_back(colliderItem);
+            }
         }
 
-        // Collect UIShape entities (simple rectangles/lines in screen space)
-        auto shapeEntities = m_ecsSystem->GetEntitiesWithComponents<Transform, UIShape>();
-        for (Gnosis::Entity entity : shapeEntities) {
+        // UI shapes (screen space primitives)
+        for (Gnosis::Entity entity : m_cachedShapeEntities) {
             auto transform = m_ecsSystem->GetComponent<Transform>(entity);
             auto shape = m_ecsSystem->GetComponent<UIShape>(entity);
-            if (!transform || !shape || !shape->visible) continue;
+            if (!transform || !shape || !shape->visible) {
+                continue;
+            }
 
             RenderItem item;
             item.entity = entity;
@@ -330,6 +347,35 @@ namespace GameCore {
             item.layer = shape->layer;
             item.depth = static_cast<float>(item.layer) * 1000.0f + transform->position.y;
             m_renderQueue.push_back(item);
+        }
+    }
+
+    void RenderSystem::MarkRenderCacheDirty() {
+        m_renderCacheDirty = true;
+    }
+
+    void RenderSystem::RebuildRenderCaches() {
+        if (!m_ecsSystem) {
+            m_cachedSpriteEntities.clear();
+            m_cachedTextEntities.clear();
+            m_cachedUIEntities.clear();
+            m_cachedDebugEntities.clear();
+            m_cachedShapeEntities.clear();
+            return;
+        }
+
+        m_cachedSpriteEntities = m_ecsSystem->GetEntitiesWithComponents<Transform, Sprite>();
+        m_cachedTextEntities = m_ecsSystem->GetEntitiesWithComponents<Transform, Text>();
+        m_cachedUIEntities = m_ecsSystem->GetEntitiesWithComponents<Transform, UIElement>();
+        m_cachedDebugEntities = m_ecsSystem->GetEntitiesWithComponents<Transform, DebugDraw>();
+        m_cachedShapeEntities = m_ecsSystem->GetEntitiesWithComponents<Transform, UIShape>();
+
+        if (m_renderDebugLogging) {
+            GN_LOG_DEBUG("RenderSystem: Cache rebuild sprites=" + std::to_string(m_cachedSpriteEntities.size()) +
+                         " text=" + std::to_string(m_cachedTextEntities.size()) +
+                         " ui=" + std::to_string(m_cachedUIEntities.size()) +
+                         " debug=" + std::to_string(m_cachedDebugEntities.size()) +
+                         " shapes=" + std::to_string(m_cachedShapeEntities.size()));
         }
     }
 
@@ -390,16 +436,12 @@ namespace GameCore {
                 if (!textureId.empty() && m_platformDelegates.renderer.drawSprite) {
                     // Render UI directly in screen coordinates (PIXELS)
                     Gnosis::GNVector2 screenPos = item.transform->position;
-                    GN_LOG_DEBUG("RenderSystem(UI): entity=" + std::to_string(item.entity) +
-                                  " transformPos=(" + std::to_string(screenPos.x) + "," + std::to_string(screenPos.y) + ")" );
                     // UI should not be affected by camera zoom; use transform scale only
                     float scale = item.transform->scale.x;
                     
                     // Load texture from UIElement component (not Sprite component)
                     uint32_t textureHandle = GetOrLoadTexture(textureId, item.entity);
-                    if (textureHandle == 0) {
-                        GN_LOG_WARN("RenderSystem(UI): Invalid/zero texture handle for id '" + textureId + "' — skipping UI sprite draw");
-                    } else {
+                    if (textureHandle != 0) {
                         // Use sprite dimensions if available, otherwise use default button texture size
                         float width = 90.0f;  // Actual button texture width (90x16 as shown in asset)
                         float height = 16.0f; // Actual button texture height
@@ -417,23 +459,12 @@ namespace GameCore {
                             scale,  // Use scale factor, not pixel dimensions
                             item.transform->rotation
                         );
-                        GN_LOG_DEBUG("RenderSystem(UI): drawSpriteScaled at (" + std::to_string(screenPos.x) + "," + std::to_string(screenPos.y) + ") scale=" + std::to_string(scale));
-                        GN_LOG_INFO("RenderSystem(UI): Rendered UI sprite '" + textureId + "' at (" + 
-                                   std::to_string(screenPos.x) + "," + std::to_string(screenPos.y) + 
-                                   ") scale " + std::to_string(scale) + "x" + std::to_string(scale) + 
-                                   " (texture: " + std::to_string(width) + "x" + std::to_string(height) + ")");
                     }
                 }
             }
             
             // Render UIShape components in screen space (for UI rectangles, tracks, etc.)
-            if (item.shape) {
-                GN_LOG_DEBUG("RenderSystem: Processing UIShape entity " + std::to_string(item.entity) + " visible=" + std::to_string(item.shape->visible) + " layer=" + std::to_string(item.shape->layer));
-                if (!m_platformDelegates.renderer.drawRectangle) {
-                    GN_LOG_WARN("RenderSystem: drawRectangle delegate is null for entity " + std::to_string(item.entity));
-                    continue;
-                }
-                
+            if (item.shape && m_platformDelegates.renderer.drawRectangle) {
                 // Convert color from 0-255 to 0.0-1.0 range
                 const float r = item.shape->color.r / 255.0f;
                 const float g = item.shape->color.g / 255.0f;
@@ -448,31 +479,14 @@ namespace GameCore {
                     item.shape->height * item.transform->scale.y,
                     r, g, b, a
                 );
-                
-                GN_LOG_DEBUG("RenderSystem(UI): Rendered UIShape at (" + 
-                           std::to_string(item.transform->position.x) + ", " + 
-                           std::to_string(item.transform->position.y) + ") size (" +
-                           std::to_string(item.shape->width * item.transform->scale.x) + "x" +
-                           std::to_string(item.shape->height * item.transform->scale.y) + ") layer " +
-                           std::to_string(item.layer));
             }
             
             // Render Text components (UI text like scores, pipe counter) - check this FIRST
-            if (item.text) {
-                if (!m_platformDelegates.renderer.drawText) {
-                    GN_LOG_ERROR("RenderSystem: drawText delegate is null for entity " + std::to_string(item.entity));
-                    continue;
-                }
-                
+            if (item.text && m_platformDelegates.renderer.drawText) {
                 float r = item.text->color.r / 255.0f;
                 float g = item.text->color.g / 255.0f;
                 float b = item.text->color.b / 255.0f;
                 float a = item.text->color.a / 255.0f;
-                
-                GN_LOG_INFO("RenderSystem: Drawing text '" + item.text->text + "' at (" + 
-                           std::to_string(item.transform->position.x) + ", " + 
-                           std::to_string(item.transform->position.y) + ") with color (" +
-                           std::to_string(r) + ", " + std::to_string(g) + ", " + std::to_string(b) + ", " + std::to_string(a) + ")");
                 
                 m_platformDelegates.renderer.drawText(
                     item.text->text,
@@ -503,8 +517,9 @@ namespace GameCore {
                     a = ui->textColor.a / 255.0f;
                 }
 
+                // Skip invisible text
                 if (a < 0.01f) {
-                    GN_LOG_ERROR("RenderSystem: UI text alpha is very low (" + std::to_string(a) + ") - text may be invisible!");
+                    continue;
                 }
 
                 // Determine button bounds if a Sprite is attached
@@ -750,11 +765,30 @@ namespace GameCore {
                 }
             }
             
-            // 1:1 with SpriteSystem: resolve via local cache/loading
-            uint32_t textureHandle = GetOrLoadTexture(item.sprite->textureId, item.entity);
+            // Resolve or reuse cached texture handle
+            uint32_t textureHandle = 0;
+            if (item.sprite->textureHandleValid && item.sprite->cachedTextureHandle != 0) {
+                textureHandle = item.sprite->cachedTextureHandle;
+            } else {
+                textureHandle = GetOrLoadTexture(item.sprite->textureId, item.entity);
+                if (textureHandle != 0) {
+                    item.sprite->cachedTextureHandle = textureHandle;
+                    item.sprite->textureHandleValid = true;
+                    item.sprite->cachedTextureId = item.sprite->textureId;
+                }
+            }
             if (textureHandle == 0) {
                 GN_LOG_WARN("RenderSystem: Invalid/zero texture handle for id '" + item.sprite->textureId + "' — skipping sprite draw");
+                // Debug: Log enemy texture failures
+                if (auto enemy = m_ecsSystem->GetComponent<Enemy>(item.entity)) {
+                    GN_LOG_ERROR("RenderSystem: Failed to load texture '" + item.sprite->textureId + "' for enemy " + std::to_string(item.entity));
+                }
             } else {
+                if (m_renderDebugLogging) {
+                    if (auto enemy = m_ecsSystem->GetComponent<Enemy>(item.entity)) {
+                        GN_LOG_DEBUG("RenderSystem: Using texture '" + item.sprite->textureId + "' (handle=" + std::to_string(textureHandle) + ") for enemy " + std::to_string(item.entity));
+                    }
+                }
                 // Compute final scale based on sprite frame vs logical size
                 bool usesCenteredRendering = m_ecsSystem->HasComponent<RotationRenderer>(item.entity);
                 bool usesPivotRotation = m_ecsSystem->HasComponent<PivotRotationRenderer>(item.entity);
@@ -798,6 +832,15 @@ namespace GameCore {
                     int currentFrame = item.sprite->currentFrame % safeFrameCount;
                     int frameX = currentFrame * static_cast<int>(item.sprite->frameWidth);
                     int frameY = 0;
+
+                    // Debug: Log enemy drawing attempts with source rect
+                    if (auto enemy = m_ecsSystem->GetComponent<Enemy>(item.entity)) {
+                        GN_LOG_INFO("RenderSystem: DRAWING enemy (WITH SOURCE) " + std::to_string(item.entity) + 
+                                   " at screen pos (" + std::to_string(screenPos.x) + "," + std::to_string(screenPos.y) + 
+                                   ") scale (" + std::to_string(finalScaleX) + "," + std::to_string(finalScaleY) + 
+                                   ") texture '" + item.sprite->textureId + "' handle=" + std::to_string(textureHandle) +
+                                   " frame=" + std::to_string(currentFrame) + "/" + std::to_string(safeFrameCount));
+                    }
 
                     m_platformDelegates.renderer.drawSpriteScaledWithSource(
                         textureHandle,
@@ -870,6 +913,15 @@ namespace GameCore {
                 } else if (m_platformDelegates.renderer.drawSpriteScaled) {
                     // Default top-left rendering
                     GN_LOG_WARN("RenderSystem: Using basic drawSpriteScaled (no rotation) for entity " + std::to_string(item.entity) + " - rotation: " + std::to_string(item.transform->rotation) + "°");
+
+                    // Debug: Log enemy drawing attempts
+                    if (auto enemy = m_ecsSystem->GetComponent<Enemy>(item.entity)) {
+                        GN_LOG_INFO("RenderSystem: DRAWING enemy " + std::to_string(item.entity) + " at screen pos (" +
+                                   std::to_string(screenPos.x) + "," + std::to_string(screenPos.y) + ") scale (" +
+                                   std::to_string(finalScaleX) + "," + std::to_string(finalScaleY) + ") texture '" +
+                                   item.sprite->textureId + "' handle=" + std::to_string(textureHandle));
+                    }
+
                     m_platformDelegates.renderer.drawSpriteScaled(
                         textureHandle,
                         screenPos.x,
@@ -1097,6 +1149,13 @@ namespace GameCore {
         }
         auto it = m_textureCache.find(textureId);
         if (it != m_textureCache.end()) {
+            if (entity != 0 && m_ecsSystem && m_ecsSystem->IsEntityValid(entity)) {
+                if (auto sprite = m_ecsSystem->GetComponent<Sprite>(entity)) {
+                    sprite->cachedTextureHandle = it->second;
+                    sprite->textureHandleValid = true;
+                    sprite->cachedTextureId = textureId;
+                }
+            }
             return it->second;
         }
         if (m_pendingTextures.find(textureId) != m_pendingTextures.end()) {
@@ -1154,6 +1213,15 @@ namespace GameCore {
 
             // 🎯 NEW: Update our synchronous metadata cache
             system->UpdateCacheFromAsyncResult(context->textureId, handle, textureData->width, textureData->height);
+
+            // Populate sprite cache if entity still exists
+            if (context->entity != 0 && system->m_ecsSystem && system->m_ecsSystem->IsEntityValid(context->entity)) {
+                if (auto sprite = system->m_ecsSystem->GetComponent<Sprite>(context->entity)) {
+                    sprite->cachedTextureHandle = handle;
+                    sprite->textureHandleValid = true;
+                    sprite->cachedTextureId = context->textureId;
+                }
+            }
 
             GN_LOG_INFO(
                 std::string("RenderSystem: CACHE_STORE id='") + context->textureId +

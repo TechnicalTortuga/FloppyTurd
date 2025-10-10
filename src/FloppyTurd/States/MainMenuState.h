@@ -17,7 +17,7 @@ namespace GameCore {
      */
     class MainMenuState : public GameState {
     public:
-        MainMenuState(Gnosis::ECS* ecsCoordinator, GameCore::PlatformDelegates* platformDelegates);
+        MainMenuState(Gnosis::ECS* ecsCoordinator, PlatformDelegates* platformDelegates);
         ~MainMenuState() override;
 
         void Enter() override;
@@ -68,7 +68,7 @@ namespace GameCore {
         };
 
         Gnosis::ECS* m_ecsCoordinator;  // Reference to shared ECS coordinator
-        GameCore::PlatformDelegates* m_platformDelegates;  // For system creation
+        PlatformDelegates* m_platformDelegates;  // For system creation
         GameCore::RenderSystem* m_renderSystem;  // Cached render system reference
         // Cache game instance to avoid repeated extern lookups
         FloppyTurdGame* m_game = nullptr;

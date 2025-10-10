@@ -3,6 +3,12 @@
 
 namespace GameCore {
 
+    const float Player::JUMP_FORCE = 300.0f;
+    const float Player::GRAVITY = 980.0f;
+    const float Player::MAX_FALL_SPEED = 500.0f;
+    const float Player::INVULNERABILITY_DURATION = 2.0f;
+    const float Player::SHOOT_COOLDOWN_DURATION = 0.3f;
+
     Player::Player() 
         : m_entity(Gnosis::INVALID_ENTITY)
         , m_ecsSystem(nullptr)
@@ -12,14 +18,8 @@ namespace GameCore {
         , m_coins(0)
         , m_invulnerabilityTimer(0.0f)
         , m_shootCooldown(0.0f)
-        , m_equippedHat(GameCore::HatType::None)
-    {
-        // Initialize skill states
-        m_skills[GameCore::SkillType::DoubleJump] = {false, 0.0f, 5.0f};
-        m_skills[GameCore::SkillType::Shield] = {false, 0.0f, 10.0f};
-        m_skills[GameCore::SkillType::SpeedBoost] = {false, 0.0f, 8.0f};
-        m_skills[GameCore::SkillType::RapidFire] = {false, 0.0f, 12.0f};
-    }
+        , m_equippedHat(HatType::None)
+    {}
 
     Player::~Player() {
         Shutdown();
@@ -127,50 +127,18 @@ namespace GameCore {
 
     // REMOVED: CollectCoin - coin accounting centralized in GameplayState
 
-    void Player::EquipHat(FloppyTurd::HatType hat) {
+    void Player::EquipHat(HatType hat) {
         m_equippedHat = hat;
         // TODO: Apply hat effects
     }
 
     void Player::UnequipHat() {
-        m_equippedHat = FloppyTurd::HatType::None;
+        m_equippedHat = HatType::None;
         // TODO: Remove hat effects
     }
 
-    void Player::ActivateSkill(FloppyTurd::SkillType skill) {
-        auto it = m_skills.find(skill);
-        if (it == m_skills.end() || it->second.cooldown > 0.0f) {
-            return;
-        }
-        
-        switch (skill) {
-            case FloppyTurd::SkillType::DoubleJump:
-                ActivateDoubleJump();
-                break;
-            case FloppyTurd::SkillType::Shield:
-                ActivateShield();
-                break;
-            case FloppyTurd::SkillType::SpeedBoost:
-                ActivateSpeedBoost();
-                break;
-            case FloppyTurd::SkillType::RapidFire:
-                ActivateRapidFire();
-                break;
-        }
-    }
-
-    bool Player::IsSkillActive(FloppyTurd::SkillType skill) const {
-        auto it = m_skills.find(skill);
-        return it != m_skills.end() && it->second.active;
-    }
-
-    float Player::GetSkillCooldown(FloppyTurd::SkillType skill) const {
-        auto it = m_skills.find(skill);
-        return it != m_skills.end() ? it->second.cooldown : 0.0f;
-    }
-
     Gnosis::GNVector2 Player::GetPosition() const {
-        if (!m_ecsSystem || m_entity == Gnosis::INVALID_ENTITY) {
+{{ ... }}
             return {0.0f, 0.0f};
         }
         
@@ -211,7 +179,6 @@ namespace GameCore {
 
     void Player::Update(float deltaTime) {
         UpdateTimers(deltaTime);
-        UpdateSkills(deltaTime);
         ApplyGravity(deltaTime);
         ClampVelocity();
     }
@@ -223,21 +190,6 @@ namespace GameCore {
         
         if (m_shootCooldown > 0.0f) {
             m_shootCooldown -= deltaTime;
-        }
-    }
-
-    void Player::UpdateSkills(float deltaTime) {
-        for (auto& [skillType, skillState] : m_skills) {
-            if (skillState.active) {
-                skillState.duration -= deltaTime;
-                if (skillState.duration <= 0.0f) {
-                    DeactivateSkill(skillType);
-                }
-            }
-            
-            if (skillState.cooldown > 0.0f) {
-                skillState.cooldown -= deltaTime;
-            }
         }
     }
 
@@ -263,51 +215,6 @@ namespace GameCore {
                 physics->velocity.y = MAX_FALL_SPEED;
             }
         }
-    }
-
-    void Player::ActivateDoubleJump() {
-        auto& skill = m_skills[FloppyTurd::SkillType::DoubleJump];
-        skill.active = true;
-        skill.duration = 5.0f;
-        skill.cooldown = 5.0f;
-    }
-
-    void Player::ActivateShield() {
-        auto& skill = m_skills[FloppyTurd::SkillType::Shield];
-        skill.active = true;
-        skill.duration = 3.0f;
-        skill.cooldown = 10.0f;
-        
-        // Make player invulnerable
-        m_invulnerabilityTimer = skill.duration;
-    }
-
-    void Player::ActivateSpeedBoost() {
-        auto& skill = m_skills[FloppyTurd::SkillType::SpeedBoost];
-        skill.active = true;
-        skill.duration = 4.0f;
-        skill.cooldown = 8.0f;
-        
-        // TODO: Increase movement speed
-    }
-
-    void Player::ActivateRapidFire() {
-        auto& skill = m_skills[FloppyTurd::SkillType::RapidFire];
-        skill.active = true;
-        skill.duration = 6.0f;
-        skill.cooldown = 12.0f;
-        
-        // TODO: Reduce shoot cooldown
-    }
-
-    void Player::DeactivateSkill(FloppyTurd::SkillType skill) {
-        auto it = m_skills.find(skill);
-        if (it != m_skills.end()) {
-            it->second.active = false;
-            it->second.duration = 0.0f;
-        }
-        
-        // TODO: Remove skill effects
     }
 
 } // namespace GameCore

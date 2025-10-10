@@ -4,7 +4,7 @@
 
 namespace GameCore {
 
-    ScreenPromptState::ScreenPromptState(Gnosis::ECS* ecsSystem, GameCore::PlatformDelegates* platformDelegates, bool waitForLandscape)
+    ScreenPromptState::ScreenPromptState(Gnosis::ECS* ecsSystem, PlatformDelegates* platformDelegates, bool waitForLandscape)
         : m_ecsSystem(ecsSystem)
         , m_platformDelegates(platformDelegates)
         , m_finished(false)

@@ -36,7 +36,7 @@ namespace GameCore {
      */
     class PlayerControllerSystem {
     public:
-        PlayerControllerSystem(Gnosis::ECS* ecsSystem, GameCore::PlatformDelegates* platformDelegates, SpriteSystem* spriteSystem, ProjectileSystem* projectileSystem, HatsSystem* hatsSystem, SkillSystem* skillSystem, int currentLevelId = 1, const LevelConfig* levelConfig = nullptr);
+        PlayerControllerSystem(Gnosis::ECS* ecsSystem, PlatformDelegates* platformDelegates, SpriteSystem* spriteSystem, ProjectileSystem* projectileSystem, HatsSystem* hatsSystem, SkillSystem* skillSystem, int currentLevelId = 1, const LevelConfig* levelConfig = nullptr);
 
         // Set RenderSystem reference for screen dimension access
         void SetRenderSystem(RenderSystem* renderSystem) { m_renderSystem = renderSystem; }
@@ -91,7 +91,7 @@ namespace GameCore {
         void UpdateHatSpriteTexture(const std::string& animationName);
         void HideHatSprite();
         void ShowHatSprite();
-        GameCore::PlatformDelegates* m_platformDelegates;
+        PlatformDelegates* m_platformDelegates;
         SpriteSystem* m_spriteSystem;
         ProjectileSystem* m_projectileSystem;
         HatsSystem* m_hatsSystem;

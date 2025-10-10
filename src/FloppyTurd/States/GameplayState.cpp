@@ -11,7 +11,7 @@
 
 namespace GameCore {
 
-    GameplayState::GameplayState(Gnosis::ECS* ecsSystem, GameCore::PlatformDelegates* platformDelegates, int levelId)
+    GameplayState::GameplayState(Gnosis::ECS* ecsSystem, PlatformDelegates* platformDelegates, int levelId)
         : m_ecsSystem(ecsSystem)
         , m_platformDelegates(platformDelegates)
         , m_currentLevelId(levelId)
@@ -32,6 +32,8 @@ namespace GameCore {
         , m_currentSubState(GameplaySubState::Playing)
         , m_gameOverTimer(0.0f)
         , m_morteFloatOffset(0.0f)
+        , m_frameProfiler("GameplayState")
+        , m_profilingEnabled(false)
         , m_obstacleSpawnTimer(0.0f)
         , m_pickupSpawnTimer(0.0f)
         , m_enemySpawnTimer(0.0f)
@@ -47,6 +49,11 @@ namespace GameCore {
 
     GameplayState::~GameplayState() {
         GN_LOG_INFO("GameplayState destroyed");
+        
+        // CRITICAL: Clear the ConfigManager callback to prevent crash on orientation change
+        // If we don't do this, ConfigManager will try to call our methods after we're destroyed!
+        ConfigManager::Instance().SetScreenInfoUpdateCallback(nullptr);
+        GN_LOG_INFO("GameplayState: Cleared ConfigManager callback");
     }
 
     void GameplayState::Enter() {
@@ -54,6 +61,9 @@ namespace GameCore {
         
         // Initialize systems (will be implemented in Phase 2)
         InitializeSystems();
+
+        // TEMP: Enable gameplay frame profiling for performance investigation
+        SetProfilingEnabled(true);
 
         // InputManager singleton is initialized by FloppyTurdGame
 
@@ -161,12 +171,22 @@ namespace GameCore {
         TriggerResume();
     }
 
+    void GameplayState::SetProfilingEnabled(bool enabled) {
+        m_profilingEnabled = enabled;
+        m_frameProfiler.SetEnabled(enabled);
+        GN_LOG_INFO(std::string("GameplayState profiling ") + (enabled ? "enabled" : "disabled"));
+    }
+
     void GameplayState::Update(float deltaTime) {
+        m_frameProfiler.BeginFrame();
+
         // Update InputManager singleton (handles all input processing)
+        m_frameProfiler.StartSection("InputManager");
         InputManager* inputManager = InputManager::GetInstance();
         if (inputManager) {
             inputManager->Update(deltaTime);
         }
+        m_frameProfiler.EndSection("InputManager");
 
         // Update button debounce timers
         m_lastSettingsButtonPressTime += deltaTime;
@@ -216,7 +236,9 @@ namespace GameCore {
         }
 
         // Handle different sub-states
+        m_frameProfiler.StartSection("UpdateSubState");
         UpdateSubState(deltaTime);
+        m_frameProfiler.EndSection("UpdateSubState");
         
         // Only update game time when playing, but allow physics during game over for falling
         if (m_currentSubState == GameplaySubState::Playing) {
@@ -236,104 +258,150 @@ namespace GameCore {
                 GN_LOG_INFO("Player invulnerability ended");
             }
         }
-        
-            // Handle input only after delay period to prevent auto-shooting
+
             if (m_inputDelayTimer >= INPUT_DELAY_TIME) {
+                m_frameProfiler.StartSection("HandleInput");
                 HandleInput();
+                m_frameProfiler.EndSection("HandleInput");
             }
-            
+
             // Always handle settings button input (pause menu) regardless of delay
+            m_frameProfiler.StartSection("HandleSettingsButtonInput");
             HandleSettingsButtonInput();
-            
-        if (m_cameraSystem && m_currentSubState != GameplaySubState::Paused) {
-            m_cameraSystem->Update(deltaTime);
-        }
-        
-        // Update UI system for menu button rendering
-        if (m_uiSystem) {
-            m_uiSystem->Update(deltaTime);
-        }
-        
-        // Update heart system for health display (only when playing)
-        if (m_heartSystem && m_currentSubState == GameplaySubState::Playing) {
-            m_heartSystem->Update(deltaTime);
-        }
-        
-        // Update game logic
-        UpdateGameLogic(deltaTime);
-        
-        // Update spawning FIRST (this calculates SpikeBall hitbox rotations)
-        UpdateSpawning(deltaTime);
-        
-        // Check toilet collisions and pipe clearing (after hitbox updates)
-        CheckToiletCollisions();
-        
-        // Handle pickups via PickupSystem
-        if (m_pickupSystem) {
-            m_pickupSystem->Update(deltaTime);
-        }
+            m_frameProfiler.EndSection("HandleSettingsButtonInput");
 
-        // Update projectiles via ProjectileSystem
-        if (m_projectileSystem) {
-            m_projectileSystem->Update(deltaTime);
-        }
-
-        // Update boss system (level 6 only)
-        if (m_bossSystem && m_currentLevelId == 6) {
-            // Set player position for boss aiming
-            if (m_playerEntity != 0 && m_ecsSystem) {
-                Transform* playerTransform = m_ecsSystem->GetComponent<Transform>(m_playerEntity);
-                Hitbox* playerHitbox = m_ecsSystem->GetComponent<Hitbox>(m_playerEntity);
-                if (playerTransform && playerHitbox) {
-                    // Use player center position for more accurate aiming
-                    GNVector2 playerCenter = {
-                        playerTransform->position.x + playerHitbox->offsetX + (playerHitbox->width / 2.0f),
-                        playerTransform->position.y + playerHitbox->offsetY + (playerHitbox->height / 2.0f)
-                    };
-                    m_bossSystem->SetPlayerPosition(playerCenter);
-                } else if (playerTransform) {
-                    // Fallback to transform position if no hitbox
-                    GNVector2 playerPos = {playerTransform->position.x, playerTransform->position.y};
-                    m_bossSystem->SetPlayerPosition(playerPos);
-                }
+            if (m_cameraSystem && m_currentSubState != GameplaySubState::Paused) {
+                m_frameProfiler.StartSection("CameraSystem");
+                m_cameraSystem->Update(deltaTime);
+                m_frameProfiler.EndSection("CameraSystem");
             }
 
-            m_bossSystem->Update(deltaTime);
-        }
+            // Update UI system for menu button rendering
+            if (m_uiSystem) {
+                m_frameProfiler.StartSection("UISystem");
+                m_uiSystem->Update(deltaTime);
+                m_frameProfiler.EndSection("UISystem");
+            }
 
-        // Update boss health bar (level 6 only)
-        if (m_bossHealthBar && m_currentLevelId == 6) {
-            m_bossHealthBar->Update(deltaTime);
-        }
+            // Update heart system for health display (only when playing)
+            if (m_heartSystem && m_currentSubState == GameplaySubState::Playing) {
+                m_frameProfiler.StartSection("HeartSystem");
+                m_heartSystem->Update(deltaTime);
+                m_frameProfiler.EndSection("HeartSystem");
+            }
 
-        // Update pipe counter UI
-        UpdatePipeCounterUI();
-        UpdateCoinCounterUI();
-        
-        // Update difficulty
-        UpdateDifficulty(deltaTime);
-        
-        // Handle game events
-        HandleGameEvents();
-        
-        // Clean up offscreen entities
-        CleanupOffscreenEntities();
-        
+            // Update game logic
+            m_frameProfiler.StartSection("UpdateGameLogic");
+            UpdateGameLogic(deltaTime);
+            m_frameProfiler.EndSection("UpdateGameLogic");
+
+            // Update spawning FIRST (this calculates SpikeBall hitbox rotations)
+            m_frameProfiler.StartSection("UpdateSpawning");
+            UpdateSpawning(deltaTime);
+            m_frameProfiler.EndSection("UpdateSpawning");
+
+            // Check toilet collisions and pipe clearing (after hitbox updates)
+            m_frameProfiler.StartSection("CheckToiletCollisions");
+            CheckToiletCollisions();
+            m_frameProfiler.EndSection("CheckToiletCollisions");
+
+            // Handle pickups via PickupSystem
+            if (m_pickupSystem) {
+                m_frameProfiler.StartSection("PickupSystem");
+                m_pickupSystem->Update(deltaTime);
+                m_frameProfiler.EndSection("PickupSystem");
+            }
+
+            // Update projectiles via ProjectileSystem
+            if (m_projectileSystem) {
+                m_frameProfiler.StartSection("ProjectileSystem");
+                m_projectileSystem->Update(deltaTime);
+                m_frameProfiler.EndSection("ProjectileSystem");
+            }
+
+            // Update enemy system (AFTER projectiles so collision detection has current projectile list)
+            if (m_enemySystem) {
+                m_frameProfiler.StartSection("EnemySystem");
+                m_enemySystem->Update(deltaTime);
+                m_frameProfiler.EndSection("EnemySystem");
+            }
+
+            // Update boss system (level 6 only)
+            if (m_bossSystem && m_currentLevelId == 6) {
+                // Set player position for boss aiming
+                if (m_playerEntity != 0 && m_ecsSystem) {
+                    Transform* playerTransform = m_ecsSystem->GetComponent<Transform>(m_playerEntity);
+                    Hitbox* playerHitbox = m_ecsSystem->GetComponent<Hitbox>(m_playerEntity);
+                    if (playerTransform && playerHitbox) {
+                        // Use player center position for more accurate aiming
+                        GNVector2 playerCenter = {
+                            playerTransform->position.x + playerHitbox->offsetX + (playerHitbox->width / 2.0f),
+                            playerTransform->position.y + playerHitbox->offsetY + (playerHitbox->height / 2.0f)
+                        };
+                        m_bossSystem->SetPlayerPosition(playerCenter);
+                    } else if (playerTransform) {
+                        // Fallback to transform position if no hitbox
+                        GNVector2 playerPos = {playerTransform->position.x, playerTransform->position.y};
+                        m_bossSystem->SetPlayerPosition(playerPos);
+                    }
+                }
+
+                m_frameProfiler.StartSection("BossSystem");
+                m_bossSystem->Update(deltaTime);
+                m_frameProfiler.EndSection("BossSystem");
+            }
+
+            // Update boss health bar (level 6 only)
+            if (m_bossHealthBar && m_currentLevelId == 6) {
+                m_frameProfiler.StartSection("BossHealthBar");
+                m_bossHealthBar->Update(deltaTime);
+                m_frameProfiler.EndSection("BossHealthBar");
+            }
+
+            // Update pipe counter UI
+            m_frameProfiler.StartSection("UpdatePipeCounterUI");
+            UpdatePipeCounterUI();
+            m_frameProfiler.EndSection("UpdatePipeCounterUI");
+            m_frameProfiler.StartSection("UpdateCoinCounterUI");
+            UpdateCoinCounterUI();
+            m_frameProfiler.EndSection("UpdateCoinCounterUI");
+
+            // Update difficulty
+            m_frameProfiler.StartSection("UpdateDifficulty");
+            UpdateDifficulty(deltaTime);
+            m_frameProfiler.EndSection("UpdateDifficulty");
+
+            // Handle game events
+            m_frameProfiler.StartSection("HandleGameEvents");
+            HandleGameEvents();
+            m_frameProfiler.EndSection("HandleGameEvents");
+
+            // Clean up offscreen entities
+            m_frameProfiler.StartSection("CleanupOffscreenEntities");
+            CleanupOffscreenEntities();
+            m_frameProfiler.EndSection("CleanupOffscreenEntities");
+
             // Check level completion
-        CheckLevelCompletion();
+            m_frameProfiler.StartSection("CheckLevelCompletion");
+            CheckLevelCompletion();
+            m_frameProfiler.EndSection("CheckLevelCompletion");
         } // End of Playing sub-state
         
         // Update essential systems regardless of sub-state (needed for physics during falling)
         if (m_spriteSystem && m_currentSubState != GameplaySubState::Paused) {
+            m_frameProfiler.StartSection("SpriteSystem");
             m_spriteSystem->Update(deltaTime);
+            m_frameProfiler.EndSection("SpriteSystem");
         }
         
         // PlayerControllerSystem updates player physics - only when not paused
         if (m_playerControllerSystem && m_currentSubState != GameplaySubState::Paused) {
+            m_frameProfiler.StartSection("PlayerControllerSystem");
             m_playerControllerSystem->Update(deltaTime);
+            m_frameProfiler.EndSection("PlayerControllerSystem");
         }
         
-
+        m_frameProfiler.EndFrame();
     }
 
     void GameplayState::UpdateSubState(float deltaTime) {
@@ -1777,9 +1845,9 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             
             // Update other pooling systems (non-obstacle)
             m_levelManager->UpdateEnemyPooling(deltaTime, worldScrollDistance);
-            if (m_enemySystem) {
-                m_enemySystem->Update(deltaTime);
-            }
+            // NOTE: EnemySystem::Update() is now called AFTER ProjectileSystem::Update() 
+            // (see line 286-289) to ensure collision detection has access to current projectile list
+
             m_levelManager->UpdateNPCPooling(deltaTime, worldScrollDistance);
             
             // Pickup logic handled centrally in Update()

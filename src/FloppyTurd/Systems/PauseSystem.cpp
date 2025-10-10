@@ -8,7 +8,7 @@
 
 namespace GameCore {
 
-    PauseSystem::PauseSystem(Gnosis::ECS* ecsCoordinator, const GameCore::PlatformDelegates& delegates, GameplayState* gameplayState)
+    PauseSystem::PauseSystem(Gnosis::ECS* ecsCoordinator, const PlatformDelegates& delegates, GameplayState* gameplayState)
         : m_ecsCoordinator(ecsCoordinator)
         , m_platformDelegates(delegates)
         , m_gameplayState(gameplayState)

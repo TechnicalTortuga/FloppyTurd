@@ -14,7 +14,11 @@ namespace GameCore {
             // Register all enemy configurations
             s_enemyConfigs.emplace("BirdIdle", CreateBirdConfig());
             GN_LOG_DEBUG("EnemyConfigRegistry: Added BirdIdle config");
-            s_enemyConfigs.emplace("ToiletPaperFlap", CreateToiletPaperConfig());
+            
+            auto toiletPaperConfig = CreateToiletPaperConfig();
+            GN_LOG_INFO("EnemyConfigRegistry: ToiletPaper config created - useStateAnimation=" + std::to_string(toiletPaperConfig.useStateAnimation) + 
+                       " animationStates.size=" + std::to_string(toiletPaperConfig.animationStates.size()));
+            s_enemyConfigs.emplace("ToiletPaperFlap", toiletPaperConfig);
             GN_LOG_DEBUG("EnemyConfigRegistry: Added ToiletPaperFlap config");
             s_enemyConfigs.emplace("SnowManChill", CreateSnowManChillConfig());
             GN_LOG_DEBUG("EnemyConfigRegistry: Added SnowManChill config");
@@ -128,7 +132,19 @@ namespace GameCore {
         // Birds have 4 frames of 32x32 in horizontal spritesheet (128x32 total)
         // Use the individual frame size (32x32) for the sprite, not the total spritesheet width
         EnemyConfig config("BirdIdle", 32.0f, 32.0f, 6.0f, 150.0f, 3.0f, 1, 32, 32, 4, 0.16f, true, "horizontal");
-        
+
+        // Enable StateAnimation for idle/hurt states
+        config.useStateAnimation = true;
+        config.initialState = "idle";
+
+        // Configure animation states
+        // Idle is 4 frames, hurt is 4 frames (0.4 seconds total)
+        AnimationClip idleClip("BirdIdle", 32, 32, 4, 0.16f, true);
+        AnimationClip hurtClip("BirdHurt", 32, 32, 4, 0.1f, false);
+
+        config.animationStates.push_back({"idle", idleClip});
+        config.animationStates.push_back({"hurt", hurtClip});
+
         // Subtle hovering behavior: 70% chance to hover, 30% static for echelon formation
         config.bobbingConfig.enabled = false; // Will be enabled probabilistically in spawn
         config.bobbingConfig.chanceToHover = 70.0f;
@@ -136,21 +152,32 @@ namespace GameCore {
         config.bobbingConfig.speedJitter = 0.05f; // -0.5 to +0.5 range
         config.bobbingConfig.amplitudeMin = 15.0f;
         config.bobbingConfig.amplitudeMax = 30.0f;
-        
+
         return config;
     }
 
     EnemyConfig EnemyConfigRegistry::CreateToiletPaperConfig() {
-        // 8-frame flying animation at 64x64
-        EnemyConfig config("ToiletPaperFlap", 64.0f, 64.0f, 6.0f, 150.0f, 3.0f, 1, 64, 64, 8, 0.18f, true, "horizontal");
-        
+        // 4-frame flying animation at 64x64 (ToiletPaperFlap sheet has 4 frames)
+        // SLOWED DOWN: 25.0f for more deliberate movement
+        EnemyConfig config("ToiletPaperFlap", 64.0f, 64.0f, 6.0f, 25.0f, 3.0f, 1, 64, 64, 4, 0.30f, true, "horizontal");
+
+        // Enable StateAnimation for idle/hurt states
+        config.useStateAnimation = true;
+        config.initialState = "idle";
+
+        // Configure animation states - separate spritesheets for idle and hurt
+        AnimationClip idleClip("ToiletPaperFlap", 64, 64, 4, 0.30f, true);   // 4 frames for idle (300ms per frame - SLOWER)
+        AnimationClip hurtClip("ToiletPaperHit", 64, 64, 4, 0.15f, false);   // 4 frames for hurt (150ms per frame = 0.6s total, fast but visible)
+        config.animationStates.push_back({"idle", idleClip});
+        config.animationStates.push_back({"hurt", hurtClip});
+
         // Large amplitude bobbing for traversing most of the screen
         config.bobbingConfig.enabled = true;
         config.bobbingConfig.baseSpeed = 1.8f;
         config.bobbingConfig.speedJitter = 0.02f; // -0.4 to +0.4 range
         config.bobbingConfig.amplitudeMin = 0.33f; // 33% of screen height
         config.bobbingConfig.amplitudeMax = 0.43f; // 43% of screen height
-        
+
         return config;
     }
 
@@ -213,8 +240,21 @@ namespace GameCore {
     }
 
     EnemyConfig EnemyConfigRegistry::CreateRatCopterConfig() {
-        // RatCopter flying enemy - 64x64 sprite with flying behavior
-        EnemyConfig config("RatCopterIdle", 64.0f, 64.0f, 6.0f, 160.0f, 4.0f, 1, 64, 64, 1, 0.20f, true, "flying");
+        // RatCopter flying enemy - 32x32 sprite with 6 frames, flying behavior
+        // DEBUG: Reduced speed from 160.0f to 60.0f for debugging
+        EnemyConfig config("RatCopterIdle", 32.0f, 32.0f, 6.0f, 60.0f, 4.0f, 1, 32, 32, 6, 0.20f, true, "flying");
+
+        // Enable StateAnimation for idle/hurt states
+        config.useStateAnimation = true;
+        config.initialState = "idle";
+
+        // Configure animation states
+        // Idle is 6 frames, hurt is 6 frames (0.5 seconds total) - 32x32 frames
+        AnimationClip idleClip("RatCopterIdle", 32, 32, 6, 0.20f, true);
+        AnimationClip hurtClip("RatCopterHurt", 32, 32, 6, 0.083f, false);
+
+        config.animationStates.push_back({"idle", idleClip});
+        config.animationStates.push_back({"hurt", hurtClip});
 
         // Enable bobbing for flying behavior
         config.bobbingConfig.enabled = true;

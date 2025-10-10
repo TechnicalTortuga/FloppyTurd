@@ -5,6 +5,7 @@
 #include "../../Engine/Core/ECS.h"
 #include "../../Engine/Platform/PlatformDelegates.h"
 #include "GameState.h"
+#include "../../Engine/Utility/FrameProfiler.h"
 #include "../Entities/Player.h"
 #include "../Systems/SpriteSystem.h"
 #include "../Systems/PlayerControllerSystem.h"
@@ -44,7 +45,7 @@ namespace GameCore {
      */
     class GameplayState : public GameState {
     public:
-        GameplayState(Gnosis::ECS* ecsSystem, GameCore::PlatformDelegates* platformDelegates, int levelId = 0);
+        GameplayState(Gnosis::ECS* ecsSystem, PlatformDelegates* platformDelegates, int levelId = 0);
         ~GameplayState() override;
 
         // State lifecycle
@@ -60,6 +61,10 @@ namespace GameCore {
         void HandlePauseMenuInput();
         void HandleGameplayInput();
         void HandleInput() override;
+
+        // Profiling controls
+        void SetProfilingEnabled(bool enabled);
+        bool IsProfilingEnabled() const { return m_profilingEnabled; }
 
         // State queries
         bool IsFinished() const override { return m_finished; }
@@ -108,7 +113,7 @@ namespace GameCore {
     private:
         // Core systems
         Gnosis::ECS* m_ecsSystem;
-        GameCore::PlatformDelegates* m_platformDelegates;
+        PlatformDelegates* m_platformDelegates;
 
         // Game systems
         std::unique_ptr<SpriteSystem> m_spriteSystem;
@@ -169,21 +174,25 @@ namespace GameCore {
         // Gameplay sub-states
         enum class GameplaySubState {
             Playing,    // Normal gameplay
-            Paused,     // Game is paused
+            Paused,     // Pause menu active
             GameOver    // Game over sequence active
         };
         GameplaySubState m_currentSubState;
         float m_gameOverTimer;          // Timer for game over sequence timing
         float m_morteFloatOffset;       // Floating animation for morte sprite
-        
+
+        // Profiling
+        Gnosis::FrameProfiler m_frameProfiler;
+        bool m_profilingEnabled = false;
+
         // UI elements
         Gnosis::Entity m_scoreTextEntity;
         Gnosis::Entity m_livesTextEntity;
         Gnosis::Entity m_coinsTextEntity;       // Coin counter number (UI)
         Gnosis::Entity m_coinBagEntity;         // Coin bag icon (32x32)
-        Gnosis::Entity m_pipeCounterEntity;     // Pipe counter display under notch
         Gnosis::Entity m_shootingZoneEntity;    // Shooting zone visual indicator
         Gnosis::Entity m_heartUIEntity;         // Heart UI display entity
+        Gnosis::Entity m_pipeCounterEntity;     // Pipe counter UI element
         
         // Pause menu system
         Gnosis::Entity m_settingsButtonEntity;  // Settings button (replaces [MENU] button)

@@ -22,4 +22,6 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Config/LevelConfig.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/LevelManager.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ObstacleSystem.h \
-  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/RenderSystem.h
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/RenderSystem.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Utility/FrameProfiler.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Utility/../Core/GNLog.h
