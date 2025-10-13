@@ -283,7 +283,7 @@ namespace GameCore {
         void CreateUI();
         void DestroyUI();
         void UpdateGameLogic(float deltaTime);
-        void UpdateSpawning(float deltaTime);
+        void UpdateObjectPools(float deltaTime);
         void UpdateDifficulty(float deltaTime);
         void HandleGameEvents();
         // REMOVED: Legacy spawn methods - replaced with LevelManager pooling and GameplayState coordination

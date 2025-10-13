@@ -125,39 +125,35 @@ namespace GameCore {
             return;
         }
         
-        // Check if any group leader is off-screen and needs wrapping
+        // PERFORMANCE FIX: Check if any group leader is off-screen and needs wrapping
+        // Use m_obstacleGroups hash map instead of O(N²) nested iteration
         std::unordered_map<int, Gnosis::Entity> groupLeaders;
         for (Gnosis::Entity e : m_activeObstacles) {
-            if (!m_ecsSystem->HasComponent<Group>(e) || !m_ecsSystem->HasComponent<Transform>(e) || !m_ecsSystem->HasComponent<Sprite>(e)) {
-                continue;
-            }
-            
             auto* group = m_ecsSystem->GetComponent<Group>(e);
-            auto* transform = m_ecsSystem->GetComponent<Transform>(e);
-            auto* sprite = m_ecsSystem->GetComponent<Sprite>(e);
+            if (!group || !group->isLeader) continue;
             
-            if (group->isLeader) {
-                groupLeaders[group->id] = e;
-                
-                // Check if group is off-screen using the actual group's rightmost member
-                float lastMemberRight = transform->position.x + sprite->width * std::abs(transform->scale.x);
-                for (Gnosis::Entity member : m_activeObstacles) {
-                    auto* memberGroup = m_ecsSystem->GetComponent<Group>(member);
-                    if (memberGroup && memberGroup->id == group->id) {
-                        auto* memberTransform = m_ecsSystem->GetComponent<Transform>(member);
-                        auto* memberSprite = m_ecsSystem->GetComponent<Sprite>(member);
-                        if (memberTransform && memberSprite) {
-                            float memberRight = memberTransform->position.x + memberSprite->width * std::abs(memberTransform->scale.x);
-                            if (memberRight > lastMemberRight) {
-                                lastMemberRight = memberRight;
-                            }
-                        }
+            groupLeaders[group->id] = e;
+            
+            // OPTIMIZED: Use m_obstacleGroups to directly access group members instead of nested loop
+            auto groupIt = m_obstacleGroups.find(group->id);
+            if (groupIt == m_obstacleGroups.end()) continue;
+            
+            // Find rightmost member in this group
+            float lastMemberRight = -std::numeric_limits<float>::infinity();
+            for (Gnosis::Entity member : groupIt->second) {
+                auto* memberTransform = m_ecsSystem->GetComponent<Transform>(member);
+                auto* memberSprite = m_ecsSystem->GetComponent<Sprite>(member);
+                if (memberTransform && memberSprite) {
+                    float memberRight = memberTransform->position.x + memberSprite->width * std::abs(memberTransform->scale.x);
+                    if (memberRight > lastMemberRight) {
+                        lastMemberRight = memberRight;
                     }
                 }
-                
-                if (lastMemberRight < 0.0f) {
-                    WrapGroupAroundScreen(group->id, worldScrollDistance);
-                }
+            }
+            
+            // Wrap group if rightmost member is off-screen
+            if (lastMemberRight < 0.0f) {
+                WrapGroupAroundScreen(group->id, worldScrollDistance);
             }
         }
         
@@ -1245,14 +1241,16 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
                 // Reduce number of coins to maintain minimum spacing
                 actualCoinsToPlace = std::max(1, static_cast<int>((right - left) / minSpacing));
                 spacing = (right - left) / static_cast<float>(actualCoinsToPlace);
-                GN_LOG_DEBUG("ObstacleSystem::emitStripe reduced coins from " + std::to_string(coinsPerStripe) + " to " + std::to_string(actualCoinsToPlace) + " to maintain minimum spacing");
+                // Performance: Disabled coin spawning debug logging
+                // GN_LOG_DEBUG("ObstacleSystem::emitStripe reduced coins from " + std::to_string(coinsPerStripe) + " to " + std::to_string(actualCoinsToPlace) + " to maintain minimum spacing");
             }
             
             for (int i = 0; i < actualCoinsToPlace; ++i) {
                 float x = left + spacing * (i + 0.5f);
                 positions.emplace_back(x, y);
             }
-            GN_LOG_DEBUG("ObstacleSystem::emitStripe y=" + std::to_string(y) + " left=" + std::to_string(left) + " right=" + std::to_string(right) + " actualCoins=" + std::to_string(actualCoinsToPlace));
+            // Performance: Disabled coin spawning debug logging
+            // GN_LOG_DEBUG("ObstacleSystem::emitStripe y=" + std::to_string(y) + " left=" + std::to_string(left) + " right=" + std::to_string(right) + " actualCoins=" + std::to_string(actualCoinsToPlace));
         };
 
         auto emitStripeInRange = [&](float y, float rangeMin, float rangeMax) {
@@ -1269,16 +1267,20 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
                 // Reduce number of coins to maintain minimum spacing
                 actualCoinsToPlace = std::max(1, static_cast<int>((right - left) / minSpacing));
                 spacing = (right - left) / static_cast<float>(actualCoinsToPlace);
-                GN_LOG_DEBUG("ObstacleSystem::emitStripeInRange reduced coins from " + std::to_string(coinsPerStripe) + " to " + std::to_string(actualCoinsToPlace) + " to maintain minimum spacing");
+                // Performance: Disabled coin spawning debug logging
+                // GN_LOG_DEBUG("ObstacleSystem::emitStripeInRange reduced coins from " + std::to_string(coinsPerStripe) + " to " + std::to_string(actualCoinsToPlace) + " to maintain minimum spacing");
             }
             
-            GN_LOG_DEBUG("ObstacleSystem::emitStripeInRange calculation: rangeMin=" + std::to_string(rangeMin) + ", rangeMax=" + std::to_string(rangeMax) + ", horizontalMargin=" + std::to_string(horizontalMargin) + ", left=" + std::to_string(left) + ", right=" + std::to_string(right) + ", spacing=" + std::to_string(spacing) + ", actualCoins=" + std::to_string(actualCoinsToPlace));
+            // Performance: Disabled coin spawning debug logging
+            // GN_LOG_DEBUG("ObstacleSystem::emitStripeInRange calculation: rangeMin=" + std::to_string(rangeMin) + ", rangeMax=" + std::to_string(rangeMax) + ", horizontalMargin=" + std::to_string(horizontalMargin) + ", left=" + std::to_string(left) + ", right=" + std::to_string(right) + ", spacing=" + std::to_string(spacing) + ", actualCoins=" + std::to_string(actualCoinsToPlace));
             for (int i = 0; i < actualCoinsToPlace; ++i) {
                 float x = left + spacing * (i + 0.5f);
                 positions.emplace_back(x, y);
-                GN_LOG_DEBUG("ObstacleSystem::emitStripeInRange coin " + std::to_string(i) + " at x=" + std::to_string(x) + ", y=" + std::to_string(y));
+                // Performance: Disabled per-coin debug logging
+                // GN_LOG_DEBUG("ObstacleSystem::emitStripeInRange coin " + std::to_string(i) + " at x=" + std::to_string(x) + ", y=" + std::to_string(y));
             }
-            GN_LOG_DEBUG("ObstacleSystem::emitStripeInRange y=" + std::to_string(y) + " left=" + std::to_string(left) + " right=" + std::to_string(right));
+            // Performance: Disabled coin spawning debug logging
+            // GN_LOG_DEBUG("ObstacleSystem::emitStripeInRange y=" + std::to_string(y) + " left=" + std::to_string(left) + " right=" + std::to_string(right));
         };
         
         // Special emit function for Ground pattern that doesn't add horizontal margin
@@ -1296,16 +1298,20 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
                 // Reduce number of coins to maintain minimum spacing
                 actualCoinsToPlace = std::max(1, static_cast<int>((right - left) / minSpacing));
                 spacing = (right - left) / static_cast<float>(actualCoinsToPlace);
-                GN_LOG_DEBUG("ObstacleSystem::emitGroundStripe reduced coins from " + std::to_string(coinsPerStripe) + " to " + std::to_string(actualCoinsToPlace) + " to maintain minimum spacing");
+                // Performance: Disabled coin spawning debug logging
+                // GN_LOG_DEBUG("ObstacleSystem::emitGroundStripe reduced coins from " + std::to_string(coinsPerStripe) + " to " + std::to_string(actualCoinsToPlace) + " to maintain minimum spacing");
             }
             
-            GN_LOG_DEBUG("ObstacleSystem::emitGroundStripe calculation: rangeMin=" + std::to_string(rangeMin) + ", rangeMax=" + std::to_string(rangeMax) + ", left=" + std::to_string(left) + ", right=" + std::to_string(right) + ", spacing=" + std::to_string(spacing) + ", actualCoins=" + std::to_string(actualCoinsToPlace));
+            // Performance: Disabled coin spawning debug logging
+            // GN_LOG_DEBUG("ObstacleSystem::emitGroundStripe calculation: rangeMin=" + std::to_string(rangeMin) + ", rangeMax=" + std::to_string(rangeMax) + ", left=" + std::to_string(left) + ", right=" + std::to_string(right) + ", spacing=" + std::to_string(spacing) + ", actualCoins=" + std::to_string(actualCoinsToPlace));
             for (int i = 0; i < actualCoinsToPlace; ++i) {
                 float x = left + spacing * (i + 0.5f);
                 positions.emplace_back(x, y);
-                GN_LOG_DEBUG("ObstacleSystem::emitGroundStripe coin " + std::to_string(i) + " at x=" + std::to_string(x) + ", y=" + std::to_string(y));
+                // Performance: Disabled per-coin debug logging
+                // GN_LOG_DEBUG("ObstacleSystem::emitGroundStripe coin " + std::to_string(i) + " at x=" + std::to_string(x) + ", y=" + std::to_string(y));
             }
-            GN_LOG_DEBUG("ObstacleSystem::emitGroundStripe y=" + std::to_string(y) + " left=" + std::to_string(left) + " right=" + std::to_string(right));
+            // Performance: Disabled coin spawning debug logging
+            // GN_LOG_DEBUG("ObstacleSystem::emitGroundStripe y=" + std::to_string(y) + " left=" + std::to_string(left) + " right=" + std::to_string(right));
         };
 
         switch (pattern) {
@@ -1314,7 +1320,8 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
                     ? (topBandBottomEdge + verticalPad)
                     : (bottomBandTopEdge > std::numeric_limits<float>::lowest() ? bottomBandTopEdge - verticalPad : 400.0f);
                 if (topMinX < topMaxX) emitStripeInRange(y, topMinX, topMaxX); else emitStripe(y);
-                GN_LOG_DEBUG("ObstacleSystem::TopOnly stripe y=" + std::to_string(y) + " span=[" + std::to_string(topMinX) + "," + std::to_string(topMaxX) + "]");
+                // Performance: Disabled coin spawning debug logging
+                // GN_LOG_DEBUG("ObstacleSystem::TopOnly stripe y=" + std::to_string(y) + " span=[" + std::to_string(topMinX) + "," + std::to_string(topMaxX) + "]");
                 break;
             }
             case GroupPattern::BottomOnly: {
@@ -1322,7 +1329,8 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
                     ? (bottomBandTopEdge - verticalPad)
                     : (topBandBottomEdge < std::numeric_limits<float>::max() ? topBandBottomEdge + verticalPad : 400.0f);
                 if (bottomMinX < bottomMaxX) emitStripeInRange(y, bottomMinX, bottomMaxX); else emitStripe(y);
-                GN_LOG_DEBUG("ObstacleSystem::BottomOnly stripe y=" + std::to_string(y) + " span=[" + std::to_string(bottomMinX) + "," + std::to_string(bottomMaxX) + "]");
+                // Performance: Disabled coin spawning debug logging
+                // GN_LOG_DEBUG("ObstacleSystem::BottomOnly stripe y=" + std::to_string(y) + " span=[" + std::to_string(bottomMinX) + "," + std::to_string(bottomMaxX) + "]");
                 break;
             }
             case GroupPattern::TopAndBottom: {
@@ -1333,7 +1341,8 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
                 if (bottomBandTopEdge != std::numeric_limits<float>::lowest()) {
                     if (bottomMinX < bottomMaxX) emitStripeInRange(bottomBandTopEdge - verticalPad, bottomMinX, bottomMaxX);
                 }
-                GN_LOG_DEBUG("ObstacleSystem::TopAndBottom top stripe below y=" + std::to_string(topBandBottomEdge + verticalPad) + " bottom stripe above y=" + std::to_string(bottomBandTopEdge - verticalPad));
+                // Performance: Disabled coin spawning debug logging
+                // GN_LOG_DEBUG("ObstacleSystem::TopAndBottom top stripe below y=" + std::to_string(topBandBottomEdge + verticalPad) + " bottom stripe above y=" + std::to_string(bottomBandTopEdge - verticalPad));
                 break;
             }
             case GroupPattern::Ground: {
@@ -1343,7 +1352,8 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
                 float groundObstacleTop = std::numeric_limits<float>::max();
                 bool foundCurrentGroup = false;
                 
-                GN_LOG_DEBUG("ObstacleSystem::Ground coin spawning - m_activeObstacles.size=" + std::to_string(m_activeObstacles.size()) + ", groupId=" + std::to_string(groupId));
+                // Performance: Disabled coin spawning debug logging
+                // GN_LOG_DEBUG("ObstacleSystem::Ground coin spawning - m_activeObstacles.size=" + std::to_string(m_activeObstacles.size()) + ", groupId=" + std::to_string(groupId));
                 
                 // First, find the current group's outhouse bounds
                 for (Gnosis::Entity e : m_activeObstacles) {
@@ -1353,7 +1363,8 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
                     Sprite* s = m_ecsSystem->GetComponent<Sprite>(e);
                     if (!t || !s) continue;
                     
-                    GN_LOG_DEBUG("ObstacleSystem::Ground found obstacle in group " + std::to_string(groupId) + " at x=" + std::to_string(t->position.x) + ", y=" + std::to_string(t->position.y) + ", sprite=" + s->textureId);
+                    // Performance: Disabled coin spawning debug logging
+                    // GN_LOG_DEBUG("ObstacleSystem::Ground found obstacle in group " + std::to_string(groupId) + " at x=" + std::to_string(t->position.x) + ", y=" + std::to_string(t->position.y) + ", sprite=" + s->textureId);
                     
                     // Only consider outhouses for coin positioning, not brick walls
                     // Brick walls are at Y=0, outhouses are at Y=1276
@@ -1374,23 +1385,28 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
                     const float standardGap = 800.0f; // Increased gap to eliminate coin overlap
                     float coinEndX = coinStartX + standardGap;
                     
-                    GN_LOG_DEBUG("ObstacleSystem::Ground using CONSISTENT standardGap=" + std::to_string(standardGap) + " (increased to 800.0f)");
+                    // Performance: Disabled coin spawning debug logging
+                    // GN_LOG_DEBUG("ObstacleSystem::Ground using CONSISTENT standardGap=" + std::to_string(standardGap) + " (increased to 800.0f)");
                     
                     float coinRange = coinEndX - coinStartX;
                     
-                    GN_LOG_DEBUG("ObstacleSystem::Ground coin range: start=" + std::to_string(coinStartX) + ", end=" + std::to_string(coinEndX) + ", range=" + std::to_string(coinRange) + ", groupId=" + std::to_string(groupId));
-                    GN_LOG_DEBUG("ObstacleSystem::Ground coin calculation details: outhouseLeftEdge=" + std::to_string(currentGroupBounds.first) + ", using CONSISTENT standardGap, 72px offset applied");
+                    // Performance: Disabled coin spawning debug logging
+                    // GN_LOG_DEBUG("ObstacleSystem::Ground coin range: start=" + std::to_string(coinStartX) + ", end=" + std::to_string(coinEndX) + ", range=" + std::to_string(coinRange) + ", groupId=" + std::to_string(groupId));
+                    // GN_LOG_DEBUG("ObstacleSystem::Ground coin calculation details: outhouseLeftEdge=" + std::to_string(currentGroupBounds.first) + ", using CONSISTENT standardGap, 72px offset applied");
                     
                     if (coinRange > 100.0f) { // Always true with standardGap, but keeping safety check
                         // Place coins in this range, evenly spread
                         float coinY = groundObstacleTop + 600.0f; // Place coins halfway down the outhouse (higher Y = lower on screen)
-                        GN_LOG_DEBUG("ObstacleSystem::Ground spawning coins at y=" + std::to_string(coinY) + " in range [" + std::to_string(coinStartX) + "," + std::to_string(coinEndX) + "] with range=" + std::to_string(coinRange));
+                        // Performance: Disabled coin spawning debug logging
+                        // GN_LOG_DEBUG("ObstacleSystem::Ground spawning coins at y=" + std::to_string(coinY) + " in range [" + std::to_string(coinStartX) + "," + std::to_string(coinEndX) + "] with range=" + std::to_string(coinRange));
                         emitGroundStripe(coinY, coinStartX, coinEndX);
                     } else {
-                        GN_LOG_DEBUG("ObstacleSystem::Ground coin range too small: " + std::to_string(coinRange));
+                        // Performance: Disabled coin spawning debug logging
+                        // GN_LOG_DEBUG("ObstacleSystem::Ground coin range too small: " + std::to_string(coinRange));
                     }
                 } else {
-                    GN_LOG_DEBUG("ObstacleSystem::Ground no coins spawned: groundObstacleTop=" + std::to_string(groundObstacleTop) + ", foundCurrentGroup=" + std::to_string(foundCurrentGroup));
+                    // Performance: Disabled coin spawning debug logging
+                    // GN_LOG_DEBUG("ObstacleSystem::Ground no coins spawned: groundObstacleTop=" + std::to_string(groundObstacleTop) + ", foundCurrentGroup=" + std::to_string(foundCurrentGroup));
                 }
                 break;
             }
@@ -1824,11 +1840,13 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
 
     void ObstacleSystem::RenderDebugHitboxes() {
         if (!m_debugMode) {
-            GN_LOG_DEBUG("RenderDebugHitboxes: Debug mode disabled, skipping");
+            // Performance: Disabled per-frame debug logging
+            // GN_LOG_DEBUG("RenderDebugHitboxes: Debug mode disabled, skipping");
             return;
         }
 
-        GN_LOG_DEBUG("RenderDebugHitboxes: Debug mode enabled, processing " + std::to_string(m_activeObstacles.size()) + " obstacles");
+        // Performance: Disabled per-frame debug logging
+        // GN_LOG_DEBUG("RenderDebugHitboxes: Debug mode enabled, processing " + std::to_string(m_activeObstacles.size()) + " obstacles");
         
         int debugEntitiesFound = 0;
         for (Gnosis::Entity entity : m_activeObstacles) {
@@ -1850,7 +1868,8 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
             // Check if this entity has DebugDraw component
             if (m_ecsSystem->HasComponent<DebugDraw>(entity)) {
                 debugEntitiesFound++;
-                GN_LOG_DEBUG("RenderDebugHitboxes: Found debug entity " + std::to_string(entity) + " (" + obstacle->obstacleType + ")");
+                // Performance: Disabled per-obstacle debug logging
+                // GN_LOG_DEBUG("RenderDebugHitboxes: Found debug entity " + std::to_string(entity) + " (" + obstacle->obstacleType + ")");
             }
 
             // Calculate hitbox world position
@@ -1887,17 +1906,18 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
             float hitboxW = hitbox->width * transform->scale.x;
             float hitboxH = hitbox->height * transform->scale.y;
 
-            // Log hitbox information for debugging
-            GN_LOG_DEBUG("Obstacle " + std::to_string(entity) + 
-                        " (" + obstacle->obstacleType + "): " +
-                        "pos=(" + std::to_string(transform->position.x) + "," + std::to_string(transform->position.y) + ") " +
-                        "hitbox=(" + std::to_string(hitboxX) + "," + std::to_string(hitboxY) + "," + 
-                        std::to_string(hitboxW) + "," + std::to_string(hitboxY) + ") " +
-                        "isTrigger=" + std::to_string(hitbox->isTrigger) + 
-                        " pipeCleared=" + std::to_string(obstacle->pipeCleared));
+            // Performance: CRITICAL - Disabled per-obstacle per-frame debug logging (was creating 6000-9000 logs/sec!)
+            // GN_LOG_DEBUG("Obstacle " + std::to_string(entity) + 
+            //             " (" + obstacle->obstacleType + "): " +
+            //             "pos=(" + std::to_string(transform->position.x) + "," + std::to_string(transform->position.y) + ") " +
+            //             "hitbox=(" + std::to_string(hitboxX) + "," + std::to_string(hitboxY) + "," + 
+            //             std::to_string(hitboxW) + "," + std::to_string(hitboxY) + ") " +
+            //             "isTrigger=" + std::to_string(hitbox->isTrigger) + 
+            //             " pipeCleared=" + std::to_string(obstacle->pipeCleared));
         }
         
-        GN_LOG_DEBUG("RenderDebugHitboxes: Found " + std::to_string(debugEntitiesFound) + " entities with DebugDraw components");
+        // Performance: Disabled per-frame debug logging
+        // GN_LOG_DEBUG("RenderDebugHitboxes: Found " + std::to_string(debugEntitiesFound) + " entities with DebugDraw components");
     }
 
     void ObstacleSystem::RemoveAllDebugDraws() {

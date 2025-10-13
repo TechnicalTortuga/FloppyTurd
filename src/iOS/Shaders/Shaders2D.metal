@@ -76,3 +76,73 @@ fragment float4 fragment_debug(VertexOut in [[stage_in]]) {
 
 
 // MSDF/SDF shader paths removed — raster text is used now
+
+// ==============================================================================
+// GPU INSTANCED SPRITE RENDERING
+// ==============================================================================
+
+// Per-instance sprite data (96 bytes per sprite)
+struct SpriteInstanceData {
+    float4x4 modelMatrix;      // Transform (position, scale, rotation) - 64 bytes
+    float4 uvRect;             // (u0, v0, u1, v1) for sprite sheets - 16 bytes
+    float4 color;              // Tint/alpha (r, g, b, a) - 16 bytes
+};
+
+// Shared frame-level uniforms
+struct FrameUniforms {
+    float4x4 projectionMatrix;  // Orthographic projection - 64 bytes
+};
+
+// Vertex input for instanced rendering (simple quad)
+struct InstancedVertexIn {
+    float2 position [[attribute(0)]];   // Local quad position (0-1)
+    float2 texCoord [[attribute(1)]];   // Base texture coordinates (0-1)
+};
+
+// Vertex output for instanced rendering
+struct InstancedVertexOut {
+    float4 position [[position]];
+    float2 texCoord;
+    float4 color;
+};
+
+// Instanced vertex shader
+vertex InstancedVertexOut spriteVertexInstanced(
+    InstancedVertexIn in [[stage_in]],
+    constant FrameUniforms& frameUniforms [[buffer(1)]],
+    constant SpriteInstanceData* instances [[buffer(2)]],
+    uint instanceID [[instance_id]])
+{
+    // Get this sprite's instance data
+    SpriteInstanceData instance = instances[instanceID];
+    
+    // Transform vertex position by instance's model matrix
+    float4 worldPosition = instance.modelMatrix * float4(in.position, 0.0, 1.0);
+    
+    // Project to clip space
+    float4 clipPosition = frameUniforms.projectionMatrix * worldPosition;
+    
+    // Calculate UV coordinates from sprite sheet
+    // Mix between uvRect.xy (top-left) and uvRect.zw (bottom-right) based on texCoord
+    float2 uv = mix(instance.uvRect.xy, instance.uvRect.zw, in.texCoord);
+    
+    // Output
+    InstancedVertexOut out;
+    out.position = clipPosition;
+    out.texCoord = uv;
+    out.color = instance.color;
+    return out;
+}
+
+// Instanced fragment shader
+fragment float4 spriteFragmentInstanced(
+    InstancedVertexOut in [[stage_in]],
+    texture2d<float> texture [[texture(0)]],
+    sampler textureSampler [[sampler(0)]])
+{
+    // Sample texture
+    float4 texColor = texture.sample(textureSampler, in.texCoord);
+    
+    // Apply tint/alpha
+    return texColor * in.color;
+}

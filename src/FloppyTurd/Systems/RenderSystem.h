@@ -7,6 +7,7 @@
 #include "../Components/GameComponents.h"
 #include <vector>
 #include <map>
+#include <set>
 #include <unordered_set>
 #include <unordered_map>
 #include <string>
@@ -129,6 +130,12 @@ namespace GameCore {
         };
         
         std::vector<RenderItem> m_renderQueue;
+        std::set<int> m_currentFrameLayers; // Reusable layer set for batching (avoids per-frame allocation)
+        
+        // Reusable batching containers (cleared/reused each frame to avoid allocation)
+        std::map<int, std::unordered_map<uint32_t, std::vector<const RenderItem*>>> m_layeredBatches;
+        std::map<int, std::vector<const RenderItem*>> m_layeredNonBatchable;
+        
         // Async texture loading state (mirrors SpriteSystem minimal behavior)
         std::unordered_set<std::string> m_pendingTextures;
         std::unordered_map<std::string, uint32_t> m_textureCache;
@@ -161,6 +168,9 @@ namespace GameCore {
         void RenderWorldSpace();
         void RenderSingleItem(const RenderItem& item);
         void RebuildRenderCaches();
+        
+        // Batch rendering helper
+        void RenderSpriteBatch(uint32_t textureHandle, const std::vector<const RenderItem*>& items);
 
         // Texture load helpers
         // 1:1 with SpriteSystem flow

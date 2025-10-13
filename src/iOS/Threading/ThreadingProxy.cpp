@@ -165,6 +165,15 @@ namespace GameCore {
         s_instance->enqueueRenderCommand(cmd);
     }
     
+    void ThreadingProxy::enqueueDrawSpriteBatch(const std::vector<SpriteBatchData>& sprites) {
+        if (!s_instance) return;
+        if (sprites.empty()) return;  // Don't enqueue empty batches
+        
+        RenderCommand cmd(CommandType::CMD_DRAW_SPRITE_BATCH);
+        cmd.data.batchData = sprites;  // Copy the vector
+        s_instance->enqueueRenderCommand(cmd);
+    }
+    
     void ThreadingProxy::enqueueDrawParallaxSprite(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation, float sourceX, float sourceY, float sourceWidth, float sourceHeight) {
         if (!s_instance) return;
         RenderCommand cmd(CommandType::CMD_DRAW_PARALLAX_SPRITE);
@@ -777,6 +786,7 @@ namespace GameCore {
         delegates.renderer.drawSpriteScaledCentered = enqueueDrawSpriteScaledCentered;
         delegates.renderer.drawSpriteScaledPivoted = enqueueDrawSpriteScaledPivoted;
         delegates.renderer.drawSpriteScaledWithSource = enqueueDrawSpriteScaledWithSource;
+        delegates.renderer.drawSpriteBatch = enqueueDrawSpriteBatch;  // Batch rendering
         delegates.renderer.drawText = enqueueDrawText;
         delegates.renderer.drawTextCentered = enqueueDrawTextCentered;
         // Outlined text

@@ -10,7 +10,7 @@ namespace GameCore {
             return;
         }
 
-        GN_LOG_DEBUG("PickupSystem::Update begin - active=" + std::to_string(m_activePickups.size()));
+        // GN_LOG_DEBUG("PickupSystem::Update begin - active=" + std::to_string(m_activePickups.size()));
 
         // 1) Handle collisions (deactivate and remove from active list immediately)
         handlePickupCollisions();
@@ -56,7 +56,7 @@ namespace GameCore {
 
         // 3) Consume wrap events and reposition/reactivate coins
         for (int wrapped : m_levelManager->ConsumeWrappedGroups()) {
-            GN_LOG_DEBUG("PickupSystem: Repositioning coins for wrapped group " + std::to_string(wrapped));
+            // GN_LOG_DEBUG("PickupSystem: Repositioning coins for wrapped group " + std::to_string(wrapped));
             repositionCoinsForGroup(wrapped);
         }
         
@@ -65,7 +65,7 @@ namespace GameCore {
         // 4) Remove coin groups that no longer exist
         removeGroupIfMissing(currentGroups);
 
-        GN_LOG_DEBUG("PickupSystem::Update end - active=" + std::to_string(m_activePickups.size()));
+        // GN_LOG_DEBUG("PickupSystem::Update end - active=" + std::to_string(m_activePickups.size()));
     }
 
     void PickupSystem::ClearAll() {
@@ -128,21 +128,22 @@ namespace GameCore {
             }
             m_collectedThisFrame.insert(e);
 
-            GN_LOG_DEBUG(std::string("PickupSystem: collided id=") + std::to_string(e) +
-                         " type=" + p->pickupType +
-                         " active=true visible=" + (s->visible ? "true" : "false"));
+            // Performance: Commented out expensive debug logging
+            // GN_LOG_DEBUG(std::string("PickupSystem: collided id=") + std::to_string(e) +
+            //              " type=" + p->pickupType +
+            //              " active=true visible=" + (s->visible ? "true" : "false"));
 
             // Award effects
             if (isCoinType(p->pickupType)) {
-                // Log RIGHT before playing sound to track which entity is retriggering
-                std::string idxStr = "n/a";
-                auto idxIt = m_pickupIndex.find(e);
-                if (idxIt != m_pickupIndex.end()) idxStr = std::to_string(idxIt->second);
-                GN_LOG_DEBUG(std::string("PickupSystem: willPlaySound id=") + std::to_string(e) +
-                             " type=" + p->pickupType +
-                             " idx=" + idxStr +
-                             " active=" + (p->isActive ? "true" : "false") +
-                             " visible=" + (s->visible ? "true" : "false"));
+                // Performance: Commented out expensive debug logging
+                // std::string idxStr = "n/a";
+                // auto idxIt = m_pickupIndex.find(e);
+                // if (idxIt != m_pickupIndex.end()) idxStr = std::to_string(idxIt->second);
+                // GN_LOG_DEBUG(std::string("PickupSystem: willPlaySound id=") + std::to_string(e) +
+                //              " type=" + p->pickupType +
+                //              " idx=" + idxStr +
+                //              " active=" + (p->isActive ? "true" : "false") +
+                //              " visible=" + (s->visible ? "true" : "false"));
 
                 // Call callback function instead of directly modifying sessionCoins
                 int coinValue = (p->pickupType == "GoldCoin" ? 1 : p->value);
@@ -157,14 +158,15 @@ namespace GameCore {
                     m_platformDelegates->audio.playSound("pickup.mp3", 0.6f);
                 }
             } else {
-                std::string idxStr = "n/a";
-                auto idxIt = m_pickupIndex.find(e);
-                if (idxIt != m_pickupIndex.end()) idxStr = std::to_string(idxIt->second);
-                GN_LOG_DEBUG(std::string("PickupSystem: willPlaySound id=") + std::to_string(e) +
-                             " type=" + p->pickupType +
-                             " idx=" + idxStr +
-                             " active=" + (p->isActive ? "true" : "false") +
-                             " visible=" + (s->visible ? "true" : "false"));
+                // Performance: Commented out expensive debug logging
+                // std::string idxStr = "n/a";
+                // auto idxIt = m_pickupIndex.find(e);
+                // if (idxIt != m_pickupIndex.end()) idxStr = std::to_string(idxIt->second);
+                // GN_LOG_DEBUG(std::string("PickupSystem: willPlaySound id=") + std::to_string(e) +
+                //              " type=" + p->pickupType +
+                //              " idx=" + idxStr +
+                //              " active=" + (p->isActive ? "true" : "false") +
+                //              " visible=" + (s->visible ? "true" : "false"));
 
                 // Play appropriate heart sound based on type
                 std::string soundFile = "SmallHealthPickup.wav"; // Default to small
@@ -194,9 +196,10 @@ namespace GameCore {
             p->isActive = false;
             s->visible = false;
 
-            GN_LOG_DEBUG(std::string("PickupSystem: deactivated id=") + std::to_string(e) +
-                         " active=" + (p->isActive ? "true" : "false") +
-                         " visible=" + (s->visible ? "true" : "false"));
+            // Performance: Commented out expensive debug logging
+            // GN_LOG_DEBUG(std::string("PickupSystem: deactivated id=") + std::to_string(e) +
+            //              " active=" + (p->isActive ? "true" : "false") +
+            //              " visible=" + (s->visible ? "true" : "false"));
 
             // Remove from active list via swap/pop at the CURRENT iteration index i
             // This guarantees we remove the exact pickup we just collided with
@@ -208,7 +211,7 @@ namespace GameCore {
             }
             m_activePickups.pop_back();
             m_pickupIndex.erase(e);
-            GN_LOG_DEBUG(std::string("PickupSystem: removed from active list id=") + std::to_string(e));
+            // GN_LOG_DEBUG(std::string("PickupSystem: removed from active list id=") + std::to_string(e));
 
             // Note: do not increment i; a new element may have been swapped into index i
         }
@@ -325,16 +328,17 @@ namespace GameCore {
         auto pattern = m_levelManager->GetObstacleSystem()->DetectGroupPattern(groupId);
         auto newPositions = m_levelManager->GetObstacleSystem()->CalculateCoinPositionsForGroup(groupId, pattern);
 
-        GN_LOG_DEBUG("PickupSystem::repositionCoinsForGroup: groupId=" + std::to_string(groupId) + 
-                     " coins=" + std::to_string(it->second.size()) + 
-                     " newPositions=" + std::to_string(newPositions.size()) + 
-                     " pattern=" + std::to_string(static_cast<int>(pattern)));
+        // Performance: Commented out expensive reposition logging
+        // GN_LOG_DEBUG("PickupSystem::repositionCoinsForGroup: groupId=" + std::to_string(groupId) + 
+        //              " coins=" + std::to_string(it->second.size()) + 
+        //              " newPositions=" + std::to_string(newPositions.size()) + 
+        //              " pattern=" + std::to_string(static_cast<int>(pattern)));
         
         // Log the actual new positions for debugging
-        for (size_t i = 0; i < newPositions.size(); ++i) {
-            GN_LOG_DEBUG("PickupSystem::repositionCoinsForGroup: newPosition[" + std::to_string(i) + "] = (" + 
-                         std::to_string(newPositions[i].x) + ", " + std::to_string(newPositions[i].y) + ")");
-        }
+        // for (size_t i = 0; i < newPositions.size(); ++i) {
+        //     GN_LOG_DEBUG("PickupSystem::repositionCoinsForGroup: newPosition[" + std::to_string(i) + "] = (" + 
+        //                  std::to_string(newPositions[i].x) + ", " + std::to_string(newPositions[i].y) + ")");
+        // }
 
         // Helper function to re-roll pickup types using current level ratios
         auto choosePickupType = [this]() -> std::string {
@@ -446,16 +450,18 @@ namespace GameCore {
             m_pickupIndex[e] = m_activePickups.size();
             m_activePickups.push_back(e);
 
-            GN_LOG_DEBUG(std::string("PickupSystem: repositioned&rerolled id=") + std::to_string(e) +
-                         " group=" + std::to_string(groupId) +
-                         " newType=" + newType +
-                         " pos=(" + std::to_string(t->position.x) + "," + std::to_string(t->position.y) + ")" +
-                         " active=" + (p->isActive ? "true" : "false") +
-                         " trackingIdx=" + std::to_string(m_pickupIndex[e]));
+            // Performance: Commented out expensive per-pickup reposition logging
+            // GN_LOG_DEBUG(std::string("PickupSystem: repositioned&rerolled id=") + std::to_string(e) +
+            //              " group=" + std::to_string(groupId) +
+            //              " newType=" + newType +
+            //              " pos=(" + std::to_string(t->position.x) + "," + std::to_string(t->position.y) + ")" +
+            //              " active=" + (p->isActive ? "true" : "false") +
+            //              " trackingIdx=" + std::to_string(m_pickupIndex[e]));
         }
 
-        GN_LOG_DEBUG("PickupSystem::repositionCoinsForGroup completed: groupId=" + std::to_string(groupId) + 
-                     " activePickups=" + std::to_string(m_activePickups.size()));
+        // Performance: Commented out expensive reposition logging
+        // GN_LOG_DEBUG("PickupSystem::repositionCoinsForGroup completed: groupId=" + std::to_string(groupId) + 
+        //              " activePickups=" + std::to_string(m_activePickups.size()));
     }
 
     void PickupSystem::removeGroupIfMissing(const std::unordered_set<int>& currentGroups) {
@@ -504,8 +510,9 @@ void PickupSystem::applyMagnetEffects(float deltaTime) {
     float playerCenterX = playerTransform->position.x + pHalfW + (playerHitbox->offsetX * playerTransform->scale.x);
     float playerCenterY = playerTransform->position.y + pHalfH + (playerHitbox->offsetY * playerTransform->scale.y);
 
-    GN_LOG_DEBUG("PickupSystem::applyMagnetEffects - coinMagnet=" + std::to_string(m_coinMagnetEnabled) +
-                 " heartMagnet=" + std::to_string(m_heartMagnetEnabled));
+    // Performance: Commented out per-frame debug logging
+    // GN_LOG_DEBUG("PickupSystem::applyMagnetEffects - coinMagnet=" + std::to_string(m_coinMagnetEnabled) +
+    //              " heartMagnet=" + std::to_string(m_heartMagnetEnabled));
 
     for (Gnosis::Entity e : m_activePickups) {
         auto* pickupComp = m_ecsSystem->GetComponent<Pickup>(e);
@@ -549,11 +556,12 @@ void PickupSystem::applyMagnetEffects(float deltaTime) {
 
             // Debug logging (only for coins to avoid spam)
             if (isCoin && pickupComp->pickupType == "GoldCoin") {
-                GN_LOG_DEBUG("Coin Magnet: " + pickupComp->pickupType +
-                             " distance=" + std::to_string(distance) +
-                             " multiplier=" + std::to_string(strengthMultiplier) +
-                             " move=(" + std::to_string(dirX * magnetStrength) + ", " +
-                             std::to_string(dirY * magnetStrength) + ")");
+                // Performance: Commented out expensive per-pickup debug logging
+                // GN_LOG_DEBUG("Coin Magnet: " + pickupComp->pickupType +
+                //              " distance=" + std::to_string(distance) +
+                //              " multiplier=" + std::to_string(strengthMultiplier) +
+                //              " move=(" + std::to_string(dirX * magnetStrength) + ", " +
+                //              std::to_string(dirY * magnetStrength) + ")");
             }
         }
     }

@@ -167,7 +167,23 @@ namespace GameCore {
         // Enhanced screen and texture info commands - moved to main section
         // Text outline commands
         CMD_DRAW_TEXT_OUTLINED = 34,
-        CMD_DRAW_TEXT_CENTERED_OUTLINED = 35
+        CMD_DRAW_TEXT_CENTERED_OUTLINED = 35,
+        
+        // Batch rendering commands
+        CMD_DRAW_SPRITE_BATCH = 44
+    };
+    
+    // Batch rendering data structure (must be defined before RenderCommandData uses it)
+    struct SpriteBatchData {
+        uint32_t textureHandle;
+        float x, y;
+        float scaleX, scaleY;
+        float rotation;
+        float sourceX, sourceY, sourceWidth, sourceHeight;  // For sprite sheets
+        
+        SpriteBatchData() 
+            : textureHandle(0), x(0), y(0), scaleX(1), scaleY(1), rotation(0),
+              sourceX(0), sourceY(0), sourceWidth(0), sourceHeight(0) {}
     };
     
     // Rendering command data
@@ -199,6 +215,9 @@ namespace GameCore {
         ScreenInfo* screenInfo = nullptr;      // For CMD_GET_SCREEN_INFO
         std::string textureId;                 // For CMD_GET_TEXTURE_METADATA
         TextureMetadata textureMetadata;       // For CMD_GET_TEXTURE_METADATA - OWNED by command
+        
+        // Batch rendering data
+        std::vector<SpriteBatchData> batchData;  // For CMD_DRAW_SPRITE_BATCH
     };
     
     // Audio command data
@@ -291,6 +310,10 @@ namespace GameCore {
         void (*drawSpriteScaledPivoted)(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation, float pivotX, float pivotY);
         void (*drawSpriteScaledWithSource)(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation, float sourceX, float sourceY, float sourceWidth, float sourceHeight);
         
+        // Batch rendering - draw multiple sprites with same texture in one call
+        // NOTE: std::vector automatically bridges to Swift RandomAccessCollection
+        void (*drawSpriteBatch)(const std::vector<SpriteBatchData>& sprites);
+        
         // Pixel-perfect parallax rendering functions
         void (*drawParallaxSprite)(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation, float sourceX, float sourceY, float sourceWidth, float sourceHeight);
         void (*drawBackgroundSprite)(uint32_t textureHandle, int pixelX, int pixelY, int pixelWidth, int pixelHeight);
@@ -331,6 +354,7 @@ namespace GameCore {
                            drawSprite(nullptr), drawSpriteScaled(nullptr), drawSpriteScaledCentered(nullptr),
                            drawSpriteScaledPivoted(nullptr),
                            drawSpriteScaledWithSource(nullptr),
+                           drawSpriteBatch(nullptr),
                            drawParallaxSprite(nullptr), drawBackgroundSprite(nullptr),
                            drawText(nullptr), drawTextCentered(nullptr), drawTextOutlined(nullptr), drawTextCenteredOutlined(nullptr),
                            drawRectangle(nullptr), drawCircle(nullptr),

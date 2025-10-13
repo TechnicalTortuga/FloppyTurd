@@ -205,6 +205,13 @@ class CommandProcessor {
                     sourceWidth: data.sourceWidth,
                     sourceHeight: data.sourceHeight)
             }
+        
+        case .CMD_DRAW_SPRITE_BATCH:
+            // std::vector<SpriteBatchData> auto-bridges to Swift as RandomAccessCollection
+            let batchData = data.batchData
+            if !batchData.isEmpty {
+                renderer.drawSpriteBatch(batchData)
+            }
 
         case .CMD_DRAW_TEXT:
             let text = String(data.text)

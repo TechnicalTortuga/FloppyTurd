@@ -173,6 +173,32 @@ namespace GameCore {
             m_cachedEntityCount = totalEntities;
         }
 
+        // PERFORMANCE: Fast world-space camera bounds for early rejection
+        Gnosis::GNVector2 cameraPos(0.0f, 0.0f);
+        if (m_activeCamera != 0) {
+            if (auto* camTransform = m_ecsSystem->GetComponent<Transform>(m_activeCamera)) {
+                cameraPos = camTransform->position;
+            }
+        }
+        
+        float screenWidth = m_screenInfoValid ? m_screenInfo.pixelWidth : 1179.0f;
+        float screenHeight = m_screenInfoValid ? m_screenInfo.pixelHeight : 2556.0f;
+        float cameraScale = GetCameraScale();
+        
+        // Calculate world-space visible area (camera's view in world coordinates)
+        float worldScreenWidth = screenWidth / cameraScale;
+        float worldScreenHeight = screenHeight / cameraScale;
+        
+        // ADAPTIVE CULLING: Margins scale with screen size to prevent pop-in/pop-out
+        // Industry standard: 1-2x screen dimension for smooth culling in scrolling games
+        float horizontalMargin = worldScreenWidth * 0.5f;  // 50% of screen width on each side
+        float verticalMargin = worldScreenHeight * 0.3f;    // 30% of screen height (less vertical scrolling)
+        
+        float worldViewLeft = cameraPos.x - horizontalMargin;
+        float worldViewRight = cameraPos.x + worldScreenWidth + horizontalMargin;
+        float worldViewTop = cameraPos.y - verticalMargin;
+        float worldViewBottom = cameraPos.y + worldScreenHeight + verticalMargin;
+
         // World-space sprites
         for (Gnosis::Entity entity : m_cachedSpriteEntities) {
             auto transform = m_ecsSystem->GetComponent<Transform>(entity);
@@ -191,11 +217,32 @@ namespace GameCore {
                 continue;
             }
 
-            float screenWidth = m_screenInfoValid ? m_screenInfo.pixelWidth : 1179.0f;
-            float cullMargin = 200.0f;
-            float entityScreenX = WorldToScreen(transform->position).x;
-            if (entityScreenX > screenWidth + cullMargin) {
-                continue;
+            // SMART CULLING: Special handling for different sprite types
+            // Background layers (0-1) and UI layers (100+) should never be culled
+            bool isBackground = (sprite->layer <= 1);
+            bool isUI = (sprite->layer >= 100);
+            bool neverCull = isBackground || isUI;
+            
+            if (!neverCull) {
+                // PERFORMANCE: Fast world-space AABB culling (avoids expensive WorldToScreen transform)
+                // Calculate sprite bounds in world space using CENTER-based positioning
+                float spriteWorldWidth = sprite->frameWidth * transform->scale.x;
+                float spriteWorldHeight = sprite->frameHeight * transform->scale.y;
+                
+                // Sprite bounds (assuming top-left origin, which is standard for 2D engines)
+                float spriteWorldLeft = transform->position.x;
+                float spriteWorldRight = transform->position.x + spriteWorldWidth;
+                float spriteWorldTop = transform->position.y;
+                float spriteWorldBottom = transform->position.y + spriteWorldHeight;
+                
+                // Early reject ONLY if sprite is completely outside the extended view frustum
+                // This AABB test is conservative - if ANY part overlaps, we render it
+                if (spriteWorldRight < worldViewLeft ||
+                    spriteWorldLeft > worldViewRight ||
+                    spriteWorldBottom < worldViewTop ||
+                    spriteWorldTop > worldViewBottom) {
+                    continue;  // Sprite is completely outside view - safe to cull
+                }
             }
 
             RenderItem item;
@@ -218,7 +265,7 @@ namespace GameCore {
             m_renderQueue.push_back(item);
         }
 
-        // Screen-space text elements
+        // Screen-space text elements (typically very few, so fast culling is sufficient)
         for (Gnosis::Entity entity : m_cachedTextEntities) {
             auto transform = m_ecsSystem->GetComponent<Transform>(entity);
             auto text = m_ecsSystem->GetComponent<Text>(entity);
@@ -226,10 +273,8 @@ namespace GameCore {
                 continue;
             }
 
-            float screenWidth = m_screenInfoValid ? m_screenInfo.pixelWidth : 1179.0f;
-            float cullMargin = 200.0f;
-            float entityScreenX = WorldToScreen(transform->position).x;
-            if (entityScreenX > screenWidth + cullMargin) {
+            // PERFORMANCE: Simple world-space X culling (text is typically UI, doesn't need precise culling)
+            if (transform->position.x > worldViewRight) {
                 continue;
             }
 
@@ -271,10 +316,9 @@ namespace GameCore {
                 continue;
             }
 
-            float screenWidth = m_screenInfoValid ? m_screenInfo.pixelWidth : 1179.0f;
-            float debugCullMargin = 10000.0f;
-            float entityScreenX = WorldToScreen(transform->position).x;
-            if (entityScreenX > screenWidth + debugCullMargin) {
+            // PERFORMANCE: Fast world-space culling for debug overlays
+            float debugCullMargin = 1500.0f;  // Very generous margin for debug
+            if (transform->position.x > worldViewRight + debugCullMargin) {
                 continue;
             }
 
@@ -395,20 +439,157 @@ namespace GameCore {
     }
 
     void RenderSystem::RenderWorldSpace() {
-        // Render all world space items
+        // IMPORTANT: m_renderQueue is already sorted by layer (line 390-396)
+        // We must preserve layer order while batching!
+        
+        // Clear and reuse member variables to avoid per-frame allocations
+        // This prevents 60 heap allocations per second of complex nested containers
+        for (auto& [layer, batches] : m_layeredBatches) {
+            for (auto& [handle, items] : batches) {
+                items.clear(); // Clear vectors but keep capacity
+            }
+        }
+        for (auto& [layer, items] : m_layeredNonBatchable) {
+            items.clear(); // Clear vectors but keep capacity
+        }
+        // Note: we don't clear the maps themselves to preserve allocations
+        
+        // Collect and group world-space items, preserving layer order
         for (const RenderItem& item : m_renderQueue) {
             // Skip UI elements (they're rendered in screen space)
             if (m_ecsSystem->HasComponent<UIElement>(item.entity)) {
                 continue;
             }
-
-            // If this is a sprite but drawSprite is unavailable, skip just this item
-            if (item.sprite && !m_platformDelegates.renderer.drawSprite) {
-                continue;
+            
+            // Group sprites by texture handle for batching
+            if (item.sprite && !item.isDebugBounds && !item.isDebugCollider) {
+                // Check if sprite uses special rendering that breaks batching
+                bool usesCenteredRendering = m_ecsSystem->HasComponent<RotationRenderer>(item.entity);
+                bool usesPivotRotation = m_ecsSystem->HasComponent<PivotRotationRenderer>(item.entity);
+                
+                // Only special rendering modes need individual draws
+                // Animated sprites CAN be batched - GPU instancing handles per-sprite UVs
+                if (usesCenteredRendering || usesPivotRotation) {
+                    // IMPORTANT: Still need to ensure texture is loaded for non-batchable sprites!
+                    if (!item.sprite->textureHandleValid || item.sprite->cachedTextureHandle == 0) {
+                        uint32_t textureHandle = GetOrLoadTexture(item.sprite->textureId, item.entity);
+                        if (textureHandle != 0) {
+                            item.sprite->cachedTextureHandle = textureHandle;
+                            item.sprite->textureHandleValid = true;
+                            item.sprite->cachedTextureId = item.sprite->textureId;
+                        }
+                    }
+                    
+                    // Render individually - these need special rendering
+                    int layer = item.sprite->layer;
+                    m_layeredNonBatchable[layer].push_back(&item);
+                    continue;
+                }
+                
+                // CRITICAL: Ensure texture is loaded and cached BEFORE batching
+                uint32_t textureHandle = 0;
+                if (item.sprite->textureHandleValid && item.sprite->cachedTextureHandle != 0) {
+                    // Already cached
+                    textureHandle = item.sprite->cachedTextureHandle;
+                } else {
+                    // Load and cache texture NOW (not during rendering)
+                    textureHandle = GetOrLoadTexture(item.sprite->textureId, item.entity);
+                    if (textureHandle != 0) {
+                        item.sprite->cachedTextureHandle = textureHandle;
+                        item.sprite->textureHandleValid = true;
+                        item.sprite->cachedTextureId = item.sprite->textureId;
+                    }
+                }
+                
+                if (textureHandle != 0) {
+                    // Sprite has valid texture - add to layer-specific batch
+                    int layer = item.sprite->layer;
+                    size_t batchSizeBefore = m_layeredBatches[layer][textureHandle].size();
+                    m_layeredBatches[layer][textureHandle].push_back(&item);
+                    
+                    // DEBUG: Log every sprite addition to see batching in action
+                    static int logCounter = 0;
+                    if (++logCounter % 120 == 0) {
+                        GN_LOG_INFO("🔧 Adding sprite '" + item.sprite->textureId + 
+                                   "' handle=" + std::to_string(textureHandle) + 
+                                   " layer=" + std::to_string(layer) +
+                                   " batchSize=" + std::to_string(batchSizeBefore) + "→" + std::to_string(batchSizeBefore + 1));
+                    }
+                } else {
+                    // Failed to load texture - skip this sprite
+                    GN_LOG_WARN("RenderSystem: Failed to load texture '" + item.sprite->textureId + "' for batching - skipping sprite");
+                }
             }
-
-            // Debug rectangles and text have their own delegate checks inside RenderSingleItem
-            RenderSingleItem(item);
+            // Debug items rendered individually
+            else if (item.isDebugBounds || item.isDebugCollider) {
+                int layer = item.layer;
+                m_layeredNonBatchable[layer].push_back(&item);
+            }
+        }
+        
+        // Render batches BY LAYER (preserves correct draw order!)
+        if (m_platformDelegates.renderer.drawSpriteBatch) {
+            // DEBUG: Batch summary logs ENABLED for debugging
+            static int logFrameCounter = 0;
+            bool shouldLog = (++logFrameCounter % 60 == 0); // Log every 60 frames
+            
+            // Build complete layer set (union of both batches and non-batchable)
+            // Clear and reuse member variable to avoid per-frame allocation
+            m_currentFrameLayers.clear();
+            for (const auto& [layer, _] : m_layeredBatches) {
+                m_currentFrameLayers.insert(layer);
+            }
+            for (const auto& [layer, _] : m_layeredNonBatchable) {
+                m_currentFrameLayers.insert(layer);
+            }
+            
+            // Render each layer in order
+            for (int layer : m_currentFrameLayers) {
+                // Render batches for this layer (if any)
+                auto batchIt = m_layeredBatches.find(layer);
+                if (batchIt != m_layeredBatches.end()) {
+                    if (shouldLog) {
+                        GN_LOG_INFO("  Layer " + std::to_string(layer) + ": " + std::to_string(batchIt->second.size()) + " batches");
+                    }
+                    
+                    for (const auto& [textureHandle, items] : batchIt->second) {
+                        if (!items.empty()) {
+                            if (shouldLog) {
+                                std::string textureId = items[0]->sprite ? items[0]->sprite->textureId : "unknown";
+                                GN_LOG_INFO("    Batch: '" + textureId + "' (handle=" + std::to_string(textureHandle) + 
+                                           "), " + std::to_string(items.size()) + " sprites");
+                            }
+                            RenderSpriteBatch(textureHandle, items);
+                        }
+                    }
+                }
+                
+                // Render non-batchable items for this layer (if any)
+                auto nonBatchIt = m_layeredNonBatchable.find(layer);
+                if (nonBatchIt != m_layeredNonBatchable.end()) {
+                    // Render without logging (logs disabled for performance)
+                    for (const RenderItem* item : nonBatchIt->second) {
+                        RenderSingleItem(*item);
+                    }
+                }
+            }
+        }
+        // Fallback: Render individually if batching not available
+        else {
+            for (const auto& [layer, batches] : m_layeredBatches) {
+                for (const auto& [textureHandle, items] : batches) {
+                    for (const RenderItem* item : items) {
+                        RenderSingleItem(*item);
+                    }
+                }
+                
+                auto nonBatchIt = m_layeredNonBatchable.find(layer);
+                if (nonBatchIt != m_layeredNonBatchable.end()) {
+                    for (const RenderItem* item : nonBatchIt->second) {
+                        RenderSingleItem(*item);
+                    }
+                }
+            }
         }
     }
 
@@ -793,19 +974,20 @@ namespace GameCore {
                 bool usesCenteredRendering = m_ecsSystem->HasComponent<RotationRenderer>(item.entity);
                 bool usesPivotRotation = m_ecsSystem->HasComponent<PivotRotationRenderer>(item.entity);
 
-                // Debug: Log rotation component detection
-                if (usesCenteredRendering) {
-                    GN_LOG_DEBUG("RenderSystem: Entity " + std::to_string(item.entity) + " has RotationRenderer (centered) - rotation: " +
-                               std::to_string(item.transform->rotation) + "°");
-                }
+                // Performance: Disabled per-frame rotation component logging
+                // if (usesCenteredRendering) {
+                //     GN_LOG_DEBUG("RenderSystem: Entity " + std::to_string(item.entity) + " has RotationRenderer (centered) - rotation: " +
+                //                std::to_string(item.transform->rotation) + "°");
+                // }
                 if (usesPivotRotation) {
                     PivotRotationRenderer* pivotRenderer = m_ecsSystem->GetComponent<PivotRotationRenderer>(item.entity);
                     if (pivotRenderer) {
-                        GN_LOG_DEBUG("RenderSystem: Entity " + std::to_string(item.entity) + " has PivotRotationRenderer with pivot (" +
-                                   std::to_string(pivotRenderer->pivotX) + ", " + std::to_string(pivotRenderer->pivotY) +
-                                   "), speed: " + std::to_string(pivotRenderer->rotationSpeed) +
-                                   "), manual: " + std::to_string(pivotRenderer->manualControl) +
-                                   ", rotation: " + std::to_string(item.transform->rotation) + "°");
+                        // Performance: Disabled per-frame pivot rotation logging
+                        // GN_LOG_DEBUG("RenderSystem: Entity " + std::to_string(item.entity) + " has PivotRotationRenderer with pivot (" +
+                        //            std::to_string(pivotRenderer->pivotX) + ", " + std::to_string(pivotRenderer->pivotY) +
+                        //            "), speed: " + std::to_string(pivotRenderer->rotationSpeed) +
+                        //            "), manual: " + std::to_string(pivotRenderer->manualControl) +
+                        //            ", rotation: " + std::to_string(item.transform->rotation) + "°");
                     }
                 }
                 
@@ -830,8 +1012,22 @@ namespace GameCore {
                 if (needsSourceRect && m_platformDelegates.renderer.drawSpriteScaledWithSource) {
                     int safeFrameCount = item.sprite->frameCount > 0 ? item.sprite->frameCount : 1;
                     int currentFrame = item.sprite->currentFrame % safeFrameCount;
-                    int frameX = currentFrame * static_cast<int>(item.sprite->frameWidth);
-                    int frameY = 0;
+                    
+                    // CRITICAL FIX: Use ACTUAL texture dimensions for proper frame calculation
+                    int textureWidth = static_cast<int>(item.sprite->width);
+                    int textureHeight = static_cast<int>(item.sprite->height);
+                    auto dimIt = m_textureDimensions.find(item.sprite->textureId);
+                    if (dimIt != m_textureDimensions.end()) {
+                        textureWidth = dimIt->second.first;
+                        textureHeight = dimIt->second.second;
+                    }
+                    
+                    // Calculate frame position based on texture layout (horizontal or vertical)
+                    int framesPerRow = textureWidth / item.sprite->frameWidth;
+                    if (framesPerRow <= 0) framesPerRow = 1;
+                    
+                    int frameX = (currentFrame % framesPerRow) * static_cast<int>(item.sprite->frameWidth);
+                    int frameY = (currentFrame / framesPerRow) * static_cast<int>(item.sprite->frameHeight);
 
                     // Debug: Log enemy drawing attempts with source rect
                     if (auto enemy = m_ecsSystem->GetComponent<Enemy>(item.entity)) {
@@ -839,7 +1035,9 @@ namespace GameCore {
                                    " at screen pos (" + std::to_string(screenPos.x) + "," + std::to_string(screenPos.y) + 
                                    ") scale (" + std::to_string(finalScaleX) + "," + std::to_string(finalScaleY) + 
                                    ") texture '" + item.sprite->textureId + "' handle=" + std::to_string(textureHandle) +
-                                   " frame=" + std::to_string(currentFrame) + "/" + std::to_string(safeFrameCount));
+                                   " frame=" + std::to_string(currentFrame) + "/" + std::to_string(safeFrameCount) +
+                                   " tex=" + std::to_string(textureWidth) + "x" + std::to_string(textureHeight) +
+                                   " rect=(" + std::to_string(frameX) + "," + std::to_string(frameY) + ")");
                     }
 
                     m_platformDelegates.renderer.drawSpriteScaledWithSource(
@@ -1365,6 +1563,95 @@ namespace GameCore {
             }
         }
         return false;
+    }
+
+    void RenderSystem::RenderSpriteBatch(uint32_t textureHandle, const std::vector<const RenderItem*>& items) {
+        if (items.empty()) return;
+        
+        // Build batch data from render items
+        std::vector<GameCore::SpriteBatchData> batchData;
+        batchData.reserve(items.size());
+        
+        for (const RenderItem* item : items) {
+            GameCore::SpriteBatchData data;
+            data.textureHandle = textureHandle;
+            
+            // World to screen transform
+            Gnosis::GNVector2 screenPos = WorldToScreen(item->transform->position);
+            data.x = screenPos.x;
+            data.y = screenPos.y;
+            
+            // Scale: Send the MULTIPLIER, not final pixel size
+            // MetalRenderer will multiply this by texture dimensions
+            // Formula matches RenderSingleItem's finalScale calculation
+            float cameraScale = GetCameraScale();
+            float scaleX = item->sprite->width / static_cast<float>(item->sprite->frameWidth);
+            float scaleY = item->sprite->height / static_cast<float>(item->sprite->frameHeight);
+            data.scaleX = scaleX * item->transform->scale.x * cameraScale;
+            data.scaleY = scaleY * item->transform->scale.y * cameraScale;
+            
+            // Rotation
+            data.rotation = item->transform->rotation;
+            
+            // Source rect (for sprite sheets/animations)
+            if (item->sprite->isAnimated && item->sprite->frameCount > 1) {
+                // CRITICAL FIX: Use ACTUAL texture dimensions from cache, not sprite->width/height
+                // sprite->width/height may be set to frame size instead of texture size
+                int textureWidth = static_cast<int>(item->sprite->width);
+                int textureHeight = static_cast<int>(item->sprite->height);
+                
+                // Try to get actual texture dimensions from cache
+                auto dimIt = m_textureDimensions.find(item->sprite->textureId);
+                if (dimIt != m_textureDimensions.end()) {
+                    textureWidth = dimIt->second.first;
+                    textureHeight = dimIt->second.second;
+                }
+                
+                // Calculate source rect from current frame using ACTUAL texture dimensions
+                int framesPerRow = textureWidth / item->sprite->frameWidth;
+                if (framesPerRow > 0) {
+                    int frameX = (item->sprite->currentFrame % framesPerRow) * item->sprite->frameWidth;
+                    int frameY = (item->sprite->currentFrame / framesPerRow) * item->sprite->frameHeight;
+                    data.sourceX = static_cast<float>(frameX);
+                    data.sourceY = static_cast<float>(frameY);
+                    data.sourceWidth = static_cast<float>(item->sprite->frameWidth);
+                    data.sourceHeight = static_cast<float>(item->sprite->frameHeight);
+                    
+                    // DEBUG: Log animation frame data periodically
+                    static int animLogCounter = 0;
+                    if (++animLogCounter % 120 == 0) {
+                        GN_LOG_INFO("🎬 ANIM: '" + item->sprite->textureId + 
+                                   "' frame=" + std::to_string(item->sprite->currentFrame) + 
+                                   "/" + std::to_string(item->sprite->frameCount) +
+                                   " tex=" + std::to_string(textureWidth) + "x" + std::to_string(textureHeight) +
+                                   " sourceRect=(" + std::to_string(static_cast<int>(data.sourceX)) + "," + 
+                                   std::to_string(static_cast<int>(data.sourceY)) + "," +
+                                   std::to_string(static_cast<int>(data.sourceWidth)) + "," +
+                                   std::to_string(static_cast<int>(data.sourceHeight)) + ")");
+                    }
+                } else {
+                    // Full texture if calculation fails
+                    data.sourceX = 0;
+                    data.sourceY = 0;
+                    data.sourceWidth = 0;  // 0 means use full texture
+                    data.sourceHeight = 0;
+                    GN_LOG_WARN("RenderSystem: Animation sprite '" + item->sprite->textureId + 
+                               "' has invalid framesPerRow (texWidth=" + std::to_string(textureWidth) + 
+                               " frameWidth=" + std::to_string(item->sprite->frameWidth) + ")");
+                }
+            } else {
+                // Use full texture for non-animated sprites
+                data.sourceX = 0;
+                data.sourceY = 0;
+                data.sourceWidth = 0;  // 0 means use full texture
+                data.sourceHeight = 0;
+            }
+            
+            batchData.push_back(data);
+        }
+        
+        // Single draw call for entire batch!
+        m_platformDelegates.renderer.drawSpriteBatch(batchData);
     }
 
     // 🎯 NEW: Synchronous texture metadata cache implementation

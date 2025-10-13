@@ -48,6 +48,11 @@ namespace GameCore {
         static void enqueueDrawSpriteScaledCentered(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation);
         static void enqueueDrawSpriteScaledPivoted(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation, float pivotX, float pivotY);
         static void enqueueDrawSpriteScaledWithSource(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation, float sourceX, float sourceY, float sourceWidth, float sourceHeight);
+        
+        // Batch rendering - draw multiple sprites with same texture in one call
+        // NOTE: std::vector auto-bridges to Swift RandomAccessCollection
+        static void enqueueDrawSpriteBatch(const std::vector<SpriteBatchData>& sprites);
+        
         // Pixel-perfect parallax rendering functions
         static void enqueueDrawParallaxSprite(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation, float sourceX, float sourceY, float sourceWidth, float sourceHeight);
         static void enqueueDrawBackgroundSprite(uint32_t textureHandle, int pixelX, int pixelY, int pixelWidth, int pixelHeight);

@@ -106,7 +106,8 @@ namespace GameCore {
                 }
             }
             
-            GN_LOG_DEBUG("Animation frame advanced: currentFrame=" + std::to_string(sprite->currentFrame) + ", frameCount=" + std::to_string(sprite->frameCount) + ", playing=" + std::to_string(sprite->playing));
+            // Performance: Disabled per-frame animation logging
+            // GN_LOG_DEBUG("Animation frame advanced: currentFrame=" + std::to_string(sprite->currentFrame) + ", frameCount=" + std::to_string(sprite->frameCount) + ", playing=" + std::to_string(sprite->playing));
         }
     }
 
