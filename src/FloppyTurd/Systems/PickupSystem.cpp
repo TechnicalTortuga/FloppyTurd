@@ -272,7 +272,7 @@ namespace GameCore {
             }
             sprite.color = Gnosis::GNColor(255, 255, 255, 255);
             sprite.visible = true;
-            sprite.layer = 3;
+            sprite.layer = 5; // Layer 5 to render pickups ABOVE snowmen (layer 3) and player (layer 4)
             m_ecsSystem->AddComponent<Sprite>(e, sprite);
 
             Pickup pickup;

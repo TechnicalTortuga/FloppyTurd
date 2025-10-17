@@ -60,6 +60,11 @@ void EnemySystem::Update(float deltaTime) {
         // 2. Update movement (physics, bobbing, wrapping)
         ProcessEnemyMovement(deltaTime, enemy, transform);
         
+        // 2.5. Update snowman thrower behavior (if applicable)
+        if (enemy->movementPattern == "snowman_thrower" && enemy->isThrower) {
+            UpdateSnowmanThrower(deltaTime, enemyEntity, enemy, transform);
+        }
+        
         // 3. Update animation (state-based switching, frame advancement)
         ProcessEnemyAnimation(deltaTime, enemy, sprite, stateAnim);
         
@@ -78,122 +83,356 @@ void EnemySystem::UpdateSnowmanThrower(float deltaTime, Entity enemy, Enemy* ene
     bool wasOnScreen = enemyComp->isOnScreen;
     enemyComp->isOnScreen = IsEnemyOnScreen(transform);
     
-    // If just came on screen, start throw timer
-    if (enemyComp->isOnScreen && !wasOnScreen) {
-        enemyComp->throwTimer = 0.0f;
+    // CRITICAL: Update flip state EVERY FRAME based on position vs player
+    // This ensures flip happens immediately when snowman passes player
+    Entity playerEntity = m_levelManager ? m_levelManager->GetPlayerEntity() : 0;
+    if (playerEntity != 0) {
+        Transform* playerTransform = m_ecsSystem->GetComponent<Transform>(playerEntity);
+        if (playerTransform) {
+            float snowmanX = transform->position.x;
+            float playerX = playerTransform->position.x;
+            bool wasFlipped = enemyComp->isFacingRight;
+            
+            // Update flip state based on position
+            if (snowmanX < playerX) {
+                enemyComp->isFacingRight = true;  // Passed player, face RIGHT
+            } else {
+                enemyComp->isFacingRight = false; // Haven't passed yet, face LEFT
+            }
+            
+            // Apply flip to scale if changed
+            if (wasFlipped != enemyComp->isFacingRight) {
+                transform->scale.x = enemyComp->isFacingRight ? -std::abs(transform->scale.x) : std::abs(transform->scale.x);
+                GN_LOG_INFO("[CONTINUOUS FLIP] Snowman " + std::to_string(enemy) + 
+                           " flipped from " + std::string(wasFlipped ? "RIGHT" : "LEFT") + 
+                           " to " + std::string(enemyComp->isFacingRight ? "RIGHT" : "LEFT") + 
+                           " at x=" + std::to_string(snowmanX) + " (player at " + std::to_string(playerX) + ")");
+            }
+        }
     }
     
-    // Only throw when on screen, not already throwing, and player is within range
-    if (enemyComp->isOnScreen && !enemyComp->isThrowing && enemyComp->currentState != EnemyState::Attacking) {
-        // Check player proximity - only throw when player is close enough
-        bool playerInRange = false;
+    // Update throw cooldown timer
+    if (enemyComp->throwTimer > 0.0f) {
+        enemyComp->throwTimer -= deltaTime;
+    }
+    
+    // Check if snowman should start throwing
+    // Wait until snowman is FULLY on screen before first throw
+    const ScreenInfo& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+    const float SPRITE_WIDTH = 384.0f; // Snowman sprite width (64px * 6 scale)
+    const float FULLY_ON_SCREEN = screenInfo.pixelWidth - SPRITE_WIDTH; // Fully visible
+    
+    bool canThrow = (enemyComp->throwTimer <= 0.0f); // Cooldown must be finished
+    bool isFullyOnScreen = (transform->position.x <= FULLY_ON_SCREEN);
+    bool shouldStartThrowing = !enemyComp->isThrowing && !enemyComp->hasThrownOnScreenEntry && canThrow && isFullyOnScreen;
+
+    if (shouldStartThrowing) {
+        // CRITICAL: Set flip state BEFORE starting throw animation based on player position
+        Entity playerEntity = m_levelManager ? m_levelManager->GetPlayerEntity() : 0;
+        if (playerEntity != 0) {
+            Transform* playerTransform = m_ecsSystem->GetComponent<Transform>(playerEntity);
+            if (playerTransform) {
+                // CRITICAL: Flip ONLY when snowman X crosses to LEFT of player X
+                // Snowman scrolls from right to left, so it starts at higher X than player
+                float snowmanX = transform->position.x;
+                float playerX = playerTransform->position.x;
+                
+                // Store previous flip state to detect changes
+                bool wasFlipped = enemyComp->isFacingRight;
+                
+                // If snowman has passed player (scrolled to the left of player)
+                // Simple X comparison: snowman.x < player.x means snowman is to the LEFT
+                bool hasPassedPlayer = (snowmanX < playerX);
+                
+                GN_LOG_INFO("[INITIAL FLIP CHECK] snowmanX=" + std::to_string(snowmanX) + 
+                           ", playerX=" + std::to_string(playerX) + 
+                           ", hasPassedPlayer=" + std::to_string(hasPassedPlayer) + 
+                           ", wasFlipped=" + std::to_string(wasFlipped) + 
+                           ", currentScale.x=" + std::to_string(transform->scale.x));
+                
+                if (hasPassedPlayer) {
+                    // Snowman has passed player - turn around (face RIGHT)
+                    enemyComp->isFacingRight = true;
+                } else {
+                    // Snowman hasn't reached player yet - face LEFT (default)
+                    enemyComp->isFacingRight = false;
+                }
+                
+                // Apply the flip to scale
+                // Metal renderer uses abs(scale) for positioning and flips via UV
+                // So NO position compensation is needed!
+                float oldScaleX = transform->scale.x;
+                transform->scale.x = enemyComp->isFacingRight ? -std::abs(transform->scale.x) : std::abs(transform->scale.x);
+                
+                if (wasFlipped != enemyComp->isFacingRight) {
+                    GN_LOG_INFO("[FLIP APPLIED] Changed from " + std::string(wasFlipped ? "RIGHT" : "LEFT") + 
+                               " to " + std::string(enemyComp->isFacingRight ? "RIGHT" : "LEFT") + 
+                               " at x=" + std::to_string(transform->position.x) + 
+                               ", scale.x changed from " + std::to_string(oldScaleX) + 
+                               " to " + std::to_string(transform->scale.x));
+                }
+                
+                GN_LOG_INFO("[SNOWMAN] Initial throw - snowmanX=" + std::to_string(snowmanX) + 
+                           ", playerX=" + std::to_string(playerX) + 
+                           ", isFacingRight=" + std::to_string(enemyComp->isFacingRight));
+            }
+        }
+        
+        enemyComp->isThrowing = true;
+        enemyComp->currentThrowFrame = 0;
+        enemyComp->throwAnimationTimer = 0.0f;
+        enemyComp->hasThrownOnScreenEntry = true;
+        this->ChangeEnemyState(enemyComp, EnemyState::Attacking, enemyComp->throwAnimationDuration);
+
+        GN_LOG_INFO("[SNOWMAN] Red snowman " + std::to_string(enemy) + " started throwing - position x=" + std::to_string(transform->position.x));
+
+        // CRITICAL: Switch to throw animation using StateAnimation
+        StateAnimation* sa = m_ecsSystem->GetComponent<StateAnimation>(enemy);
+        Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(enemy);
+        if (sa && sprite) {
+            const StateAnimation::Clip* throwClip = sa->getClip("throw");
+            if (throwClip) {
+                // Update StateAnimation state
+                sa->currentState = "throw";
+                
+                // CRITICAL: Update sprite to match throw animation
+                sprite->textureId = throwClip->textureId;
+                sprite->isAnimated = (throwClip->frameCount > 1);
+                sprite->frameWidth = throwClip->frameWidth;
+                sprite->frameHeight = throwClip->frameHeight;
+                sprite->frameCount = throwClip->frameCount;
+                sprite->frameTime = throwClip->frameTime;
+                sprite->loop = false; // Don't loop throw animation!
+                sprite->currentFrame = 0;
+                sprite->currentFrameTime = 0.0f;
+                sprite->playing = true;
+                sprite->hasCompleted = false;
+                
+                // PRESERVE flip state during animation switch
+                transform->scale.x = enemyComp->isFacingRight ? -std::abs(transform->scale.x) : std::abs(transform->scale.x);
+                
+                GN_LOG_INFO("[SNOWMAN] Switched to THROW texture: " + sprite->textureId + 
+                           ", frames=" + std::to_string(sprite->frameCount) + 
+                           ", loop=false, playing=true");
+            } else {
+                GN_LOG_ERROR("[SNOWMAN] No 'throw' clip found in StateAnimation!");
+            }
+        } else {
+            GN_LOG_ERROR("[SNOWMAN] Missing StateAnimation or Sprite component!");
+        }
+    }
+
+    // Handle player proximity for additional throws (when turning around, etc.)
+    // This triggers the "turn around and throw" behavior when player passes the snowman
+    bool canCheckProximity = enemyComp->isOnScreen && !enemyComp->isThrowing && enemyComp->currentState != EnemyState::Attacking;
+    
+    if (canCheckProximity) {
+        Entity playerEntity = 0;
+
         if (m_levelManager) {
-            // Get the actual player entity from LevelManager
-            Entity playerEntity = m_levelManager->GetPlayerEntity();
+            playerEntity = m_levelManager->GetPlayerEntity();
+
             if (playerEntity != 0) {
                 Transform* playerTransform = m_ecsSystem->GetComponent<Transform>(playerEntity);
                 if (playerTransform) {
-                    float distance = std::abs(transform->position.x - playerTransform->position.x);
-                    if (distance <= enemyComp->throwRange) {
-                        playerInRange = true;
-                        GN_LOG_DEBUG("Snowman thrower: player in range! Distance=" + std::to_string(distance) + ", throwRange=" + std::to_string(enemyComp->throwRange));
+                    // Use player CENTER for comparison (64x64 sprite, add 32)
+                    float playerCenterX = playerTransform->position.x + 32.0f;
+                    float snowmanCenterX = transform->position.x + 32.0f;
+                    float horizontalOffset = snowmanCenterX - playerCenterX;
+
+                    // Screen width is 1170px, player is typically around x=500-600px
+                    // When snowman enters from right edge (x=1170+), it should start throwing immediately
+                    const float rightThrowRange = 2000.0f; // Very large range - throw as soon as on screen from right
+                    const float leftThrowRange = 800.0f;   // Behind player range for turn-around throw
+
+                    // Throw in two scenarios:
+                    // 1. AHEAD of player (entering from right side): horizontalOffset > 0
+                    // 2. BEHIND player (leaving left side): horizontalOffset < 0 (turn around and throw once more)
+                    bool inRightRange = (horizontalOffset > 0 && horizontalOffset <= rightThrowRange);
+                    bool inLeftRange = (horizontalOffset < 0 && horizontalOffset >= -leftThrowRange);
+                    bool cooledDown = (enemyComp->throwTimer <= 0.0f); // Must wait for cooldown
+                    
+                    // DEBUG: Log proximity checks
+                    static int logCounter = 0;
+                    if (++logCounter % 60 == 0) { // Log every 60 frames to avoid spam
+                        GN_LOG_INFO("[SNOWMAN PROXIMITY] centerOffset=" + std::to_string(horizontalOffset) + 
+                                   ", inRight=" + std::to_string(inRightRange) + 
+                                   ", inLeft=" + std::to_string(inLeftRange) +
+                                   ", cooledDown=" + std::to_string(cooledDown));
                     }
+                    
+                    if ((inRightRange || inLeftRange) && cooledDown) {
+                        
+                        // Store previous flip state to detect changes
+                        bool wasFlipped = enemyComp->isFacingRight;
+                        
+                        // CRITICAL: Flip ONLY when snowman X crosses to LEFT of player X
+                        float snowmanX = transform->position.x;
+                        float playerX = playerTransform->position.x;
+                        
+                        if (snowmanX < playerX) {
+                            // Snowman has passed player - turn around (face RIGHT)
+                            enemyComp->isFacingRight = true;
+                        } else {
+                            // Snowman is still approaching - face LEFT (default)
+                            enemyComp->isFacingRight = false;
+                        }
+                        
+                        // Apply the flip to scale
+                        // Metal renderer uses abs(scale) for positioning, so no compensation needed
+                        transform->scale.x = enemyComp->isFacingRight ? -std::abs(transform->scale.x) : std::abs(transform->scale.x);
+                        
+                        if (wasFlipped != enemyComp->isFacingRight) {
+                            GN_LOG_INFO("[PROXIMITY FLIP] Changed from " + std::string(wasFlipped ? "RIGHT" : "LEFT") + 
+                                       " to " + std::string(enemyComp->isFacingRight ? "RIGHT" : "LEFT") + 
+                                       " at x=" + std::to_string(transform->position.x));
+                        }
+                        
+                        // Don't throw if snowman is about to leave screen
+                        // Only throw if still well within screen bounds
+                        const float MIN_SCREEN_X = 200.0f; // Don't throw if closer than 200px to left edge
+                        if (transform->position.x > MIN_SCREEN_X) {
+                            // Start throw animation (flip state will be preserved)
+                            enemyComp->isThrowing = true;
+                            enemyComp->currentThrowFrame = 0;
+                            enemyComp->throwAnimationTimer = 0.0f;
+                            this->ChangeEnemyState(enemyComp, EnemyState::Attacking, enemyComp->throwAnimationDuration);
+                        }
+                        else {
+                            GN_LOG_INFO("[SNOWMAN] Skipped proximity throw - too close to left edge (x=" + 
+                                       std::to_string(transform->position.x) + ")");
+                        }
+
+                        std::string direction = (horizontalOffset > 0) ? "AHEAD (entering right)" : "BEHIND (leaving left, TURNING AROUND)";
+                        GN_LOG_INFO("[SNOWMAN] Additional throw triggered by player proximity - " + direction +
+                                   " - Player at x=" + std::to_string(playerTransform->position.x) +
+                                   ", enemy at x=" + std::to_string(transform->position.x) +
+                                   ", horizontalOffset=" + std::to_string(horizontalOffset) + "px" +
+                                   ", isFacingRight=" + std::to_string(enemyComp->isFacingRight));
+                        
+                        // CRITICAL: Switch to throw animation for proximity throw too!
+                        StateAnimation* sa = m_ecsSystem->GetComponent<StateAnimation>(enemy);
+                        Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(enemy);
+                        if (sa && sprite) {
+                            const StateAnimation::Clip* throwClip = sa->getClip("throw");
+                            if (throwClip) {
+                                sa->currentState = "throw";
+                                sprite->textureId = throwClip->textureId;
+                                sprite->isAnimated = (throwClip->frameCount > 1);
+                                sprite->frameWidth = throwClip->frameWidth;
+                                sprite->frameHeight = throwClip->frameHeight;
+                                sprite->frameCount = throwClip->frameCount;
+                                sprite->frameTime = throwClip->frameTime;
+                                sprite->loop = false;
+                                sprite->currentFrame = 0;
+                                sprite->currentFrameTime = 0.0f;
+                                sprite->playing = true;
+                                sprite->hasCompleted = false;
+                                transform->scale.x = enemyComp->isFacingRight ? -std::abs(transform->scale.x) : std::abs(transform->scale.x);
+                                
+                                GN_LOG_INFO("[SNOWMAN PROXIMITY] Switched to THROW texture: " + sprite->textureId);
+                            }
+                        }
+                    }
+                } else {
+                    GN_LOG_WARN("[SNOWMAN] Player entity " + std::to_string(playerEntity) + " has NO Transform component!");
+                }
+            } else {
+                static bool loggedOnce = false;
+                if (!loggedOnce) {
+                    GN_LOG_WARN("[SNOWMAN] No player entity available from LevelManager!");
+                    loggedOnce = true;
                 }
             }
-        }
-        
-        // If no player found in range, use a fallback check based on screen position
-        if (!playerInRange) {
-            // Assume player is around screen center (X=600) for fallback
-            float distance = std::abs(transform->position.x - 600.0f);
-            playerInRange = (distance <= enemyComp->throwRange);
-            if (playerInRange) {
-                GN_LOG_DEBUG("Snowman thrower: using fallback distance check. Distance=" + std::to_string(distance) + ", throwRange=" + std::to_string(enemyComp->throwRange));
-            }
-        }
-        
-        if (playerInRange) {
-            enemyComp->throwTimer += deltaTime;
-            
-            // Check if it's time to throw
-            if (enemyComp->throwTimer >= enemyComp->throwCooldown) {
-            // Start throw animation
-            enemyComp->isThrowing = true;
-            enemyComp->currentThrowFrame = 0;
-            enemyComp->throwAnimationTimer = 0.0f;
-            ChangeEnemyState(enemyComp, EnemyState::Attacking, enemyComp->throwAnimationDuration);
-            
-            // Switch to throw state using StateAnimation
-            StateAnimation* sa = m_ecsSystem->GetComponent<StateAnimation>(enemy);
-            Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(enemy);
-            if (sa && sprite) {
-                const StateAnimation::Clip* throwClip = sa->getClip("throw");
-                if (throwClip) {
-                    sa->currentState = "throw";
-                    sprite->textureId = throwClip->textureId;
-                    sprite->isAnimated = (throwClip->frameCount > 1);
-                    sprite->frameWidth = throwClip->frameWidth;
-                    sprite->frameHeight = throwClip->frameHeight;
-                    sprite->frameCount = throwClip->frameCount;
-                    sprite->frameTime = throwClip->frameTime;
-                    sprite->loop = throwClip->loop;
-                    sprite->currentFrame = 0;
-                    sprite->currentFrameTime = 0.0f;
-                    sprite->playing = true;
-                    sprite->hasCompleted = false;
-                }
-            }
-            
-            // Reset throw timer
-            enemyComp->throwTimer = 0.0f;
-        }
+        } else {
+            GN_LOG_ERROR("[SNOWMAN] LevelManager is NULL! Cannot check player range.");
         }
     }
-    
+
     // Handle throw animation and projectile spawning
     if (enemyComp->isThrowing && enemyComp->currentState == EnemyState::Attacking) {
         enemyComp->throwAnimationTimer += deltaTime;
-        
-        // Update throw animation frame
-        int frameIndex = static_cast<int>(enemyComp->throwAnimationTimer / enemyComp->frameDuration);
+
+        // Update throw animation frame (using 0.12s per frame like old script)
+        int frameIndex = static_cast<int>(enemyComp->throwAnimationTimer / 0.12f);
         enemyComp->currentThrowFrame = std::min(frameIndex, enemyComp->totalFrames - 1);
         
-        // Spawn projectile at frame 3 (middle of throw animation)
-        if (enemyComp->currentThrowFrame == 3 && !enemyComp->hasSpawnedProjectile) {
-            SpawnEnemyProjectile(enemy, enemyComp, transform);
+        // Spawn projectile on FRAME 4 (like old script line 64) when snowball leaves hand
+        const int THROW_RELEASE_FRAME = 4; // Frame where snowball leaves hand
+        if (enemyComp->currentThrowFrame == THROW_RELEASE_FRAME && !enemyComp->hasSpawnedProjectile) {
+            GN_LOG_INFO("[SNOWMAN] Frame " + std::to_string(THROW_RELEASE_FRAME) + " (RELEASE)! Spawning projectile... timer=" + 
+                       std::to_string(enemyComp->throwAnimationTimer));
+            this->SpawnEnemyProjectile(enemy, enemyComp, transform);
             enemyComp->hasSpawnedProjectile = true;
+            GN_LOG_INFO("[SNOWMAN] Projectile spawned at RELEASE frame, hasSpawnedProjectile=true");
         }
         
         // Complete throw animation
         if (enemyComp->throwAnimationTimer >= enemyComp->throwAnimationDuration) {
+            GN_LOG_INFO("[SNOWMAN] Throw animation COMPLETE - switching to idle (timer=" + 
+                       std::to_string(enemyComp->throwAnimationTimer) + " >= " + 
+                       std::to_string(enemyComp->throwAnimationDuration) + ")");
+            
+            // CRITICAL: Set cooldown timer WHEN ANIMATION COMPLETES (tied to animation)
+            enemyComp->throwTimer = enemyComp->throwCooldown; // Start cooldown (e.g., 2.0s)
             enemyComp->isThrowing = false;
             enemyComp->hasSpawnedProjectile = false;
             
-            // Switch back to idle texture when throw completes
+            // Switch back to idle texture when throw completes (preserving flip state)
             Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(enemy);
-            if (sprite && sprite->textureId == "SnowManThrow") {
-                sprite->textureId = "SnowManIdle";  // Revert to idle texture
+            StateAnimation* sa = m_ecsSystem->GetComponent<StateAnimation>(enemy);
+            if (sprite && sa) {
+                const StateAnimation::Clip* idleClip = sa->getClip("idle");
+                if (idleClip) {
+                    // Update StateAnimation state
+                    sa->currentState = "idle";
+                    
+                    // Update sprite to match idle animation
+                    sprite->textureId = idleClip->textureId;
+                    sprite->isAnimated = (idleClip->frameCount > 1);
+                    sprite->frameWidth = idleClip->frameWidth;
+                    sprite->frameHeight = idleClip->frameHeight;
+                    sprite->frameCount = idleClip->frameCount;
+                    sprite->frameTime = idleClip->frameTime;
+                    sprite->loop = true; // Idle loops!
+                    sprite->currentFrame = 0;
+                    sprite->currentFrameTime = 0.0f;
+                    sprite->playing = true;
+                    sprite->hasCompleted = false;
+                    
+                    // PRESERVE flip state during animation switch
+                    transform->scale.x = enemyComp->isFacingRight ? -std::abs(transform->scale.x) : std::abs(transform->scale.x);
+                    
+                    GN_LOG_INFO("[SNOWMAN] Switched to IDLE texture: " + sprite->textureId + 
+                               ", cooldown=" + std::to_string(enemyComp->throwCooldown) + "s");
+                }
             }
             
-            ChangeEnemyState(enemyComp, EnemyState::Idle, 0.0f);
+            this->ChangeEnemyState(enemyComp, EnemyState::Idle, 0.0f);
         }
     }
 }
 
 bool EnemySystem::IsEnemyOnScreen(const Transform* transform) {
-    // Simple on-screen check - can be expanded based on camera system
-    // For snow level, enemies should be considered "on screen" when they're visible
-    // Use wider bounds to ensure snowmen can throw when player approaches
-    return transform->position.x >= -200.0f && transform->position.x <= 1200.0f;
+    // On-screen check with extended bounds to align with wrap buffer
+    // EXTENDED: Use 400px left buffer to match wrapping logic
+    const ScreenInfo& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+    const float leftBound = -400.0f; // Extended buffer to match wrap threshold
+    const float rightBound = screenInfo.pixelWidth + 200.0f; // Allow some right buffer
+    
+    if (!transform) return false;
+    return (transform->position.x >= leftBound && transform->position.x <= rightBound);
 }
 
 void EnemySystem::ChangeEnemyState(Enemy* enemy, EnemyState newState, float duration) {
+    if (!enemy) return;
     enemy->currentState = newState;
     enemy->stateTimer = 0.0f;
     enemy->stateDuration = duration;
 }
 
 void EnemySystem::SpawnEnemyProjectile(Entity enemy, const Enemy* enemyComp, const Transform* transform) {
+    if (!enemyComp || !transform || !m_projectileSystem) return;
     if (!m_projectileSystem) {
         GN_LOG_WARN("Cannot spawn enemy projectile - ProjectileSystem not available");
         return;
@@ -210,25 +449,148 @@ void EnemySystem::SpawnEnemyProjectile(Entity enemy, const Enemy* enemyComp, con
         return;
     }
 
-    // Calculate spawn position (offset from enemy)
-    GNVector2 spawnPosition = transform->position;
-    spawnPosition.x -= 30.0f; // Offset from enemy
-    spawnPosition.y += 20.0f; // Launch from upper body area
+    // SNAPSHOT: Get player CENTER position at THIS EXACT FRAME (flash frame targeting)
+    Entity playerEntity = m_levelManager ? m_levelManager->GetPlayerEntity() : 0;
+    GNVector2 playerSnapshotPos(0.0f, 0.0f);
+    bool hasValidPlayerPos = false;
+    
+    if (playerEntity != 0) {
+        Transform* playerTransform = m_ecsSystem->GetComponent<Transform>(playerEntity);
+        Sprite* playerSprite = m_ecsSystem->GetComponent<Sprite>(playerEntity);
+        if (playerTransform && playerSprite) {
+            // CRITICAL: Use CENTER of player sprite, not top-left!
+            // Player sprite is 64x64, position is top-left, so add 32 to both X and Y
+            const float playerHalfWidth = 32.0f;  // 64/2
+            const float playerHalfHeight = 32.0f; // 64/2
+            playerSnapshotPos.x = playerTransform->position.x + playerHalfWidth;
+            playerSnapshotPos.y = playerTransform->position.y + playerHalfHeight;
+            hasValidPlayerPos = true;
+            
+            GN_LOG_INFO("[PROJECTILE] Player CENTER snapshot: (" + std::to_string(playerSnapshotPos.x) + 
+                       ", " + std::to_string(playerSnapshotPos.y) + ") [top-left was (" + 
+                       std::to_string(playerTransform->position.x) + ", " + 
+                       std::to_string(playerTransform->position.y) + ")]");
+        }
+    }
 
-    // Calculate projectile direction (towards player, simplified)
-    GNVector2 direction(-1.0f, -0.3f); // Left and slightly down
+    // Calculate spawn position (offset from snowman, accounting for flip direction)
+    GNVector2 snowmanPos = transform->position;
+    
+    // Spawn in FRONT of snowman based on facing direction
+    // If facing LEFT (normal): spawn to LEFT (in front) → negative offset
+    // If facing RIGHT (flipped): spawn to RIGHT (in front) → positive offset
+    float xOffset = enemyComp->isFacingRight ? 50.0f : -50.0f;
+    float yOffset = 100.0f; // Spawn below snowman (hand position, +Y = down)
+    GNVector2 spawnPosition(snowmanPos.x + xOffset, snowmanPos.y + yOffset);
+    
+    // MULTI-FRAME ANALYSIS: Log frame-by-frame data
+    static int frameCounter = 0;
+    frameCounter++;
+    
+    GN_LOG_INFO("[FRAME " + std::to_string(frameCounter) + "] Snowman pos=(" + 
+               std::to_string(snowmanPos.x) + ", " + std::to_string(snowmanPos.y) + 
+               "), facing=" + std::string(enemyComp->isFacingRight ? "RIGHT" : "LEFT") + 
+               ", spawn=(" + std::to_string(spawnPosition.x) + ", " + std::to_string(spawnPosition.y) + ")");
+
+    // Calculate direction using simple normalization (like old snowman script)
+    GNVector2 finalDirection(-300.0f, 0.0f); // Default: throw left horizontally
+    
+    if (hasValidPlayerPos) {
+        // Calculate delta vector
+        float dx = playerSnapshotPos.x - spawnPosition.x;
+        float dy = playerSnapshotPos.y - spawnPosition.y;
+        
+        // NO VERTICAL REJECTION - throw at any angle!
+        // User wants leading shots even when player is directly above
+        {
+            // BALLISTIC TRAJECTORY: Make apex reach player's Y position
+            // Coordinate system: +Y = DOWN (Metal/iOS standard)
+            // VARIABLE GRAVITY TIERS: Use different gravity for different speeds
+            // Higher gravity = faster movement through SAME arc (no overshooting!)
+            
+            // Choose gravity tier randomly (3 tiers for variety)
+            int speedTier = rand() % 3; // 0, 1, or 2
+            float gravity;
+            
+            if (speedTier == 0) {
+                gravity = 350.0f;  // Normal speed
+            } else if (speedTier == 1) {
+                gravity = 450.0f;  // Faster (28% quicker)
+            } else {
+                gravity = 550.0f;  // Very fast (57% quicker)
+            }
+            
+            GN_LOG_INFO("[SNOWBALL SPEED TIER] Tier=" + std::to_string(speedTier) + 
+                       ", gravity=" + std::to_string(gravity));
+            
+            // Vertical distance (player Y - spawn Y)
+            // If player ABOVE spawn: dy is negative (player has smaller Y value)
+            // If player BELOW spawn: dy is positive (player has larger Y value)
+            // +Y is DOWN, so negative dy means we need to go UP
+            
+            // Time to reach player's Y (apex):
+            // If going upward (negative dy): v_y must be negative initially
+            // Physics: v_final = v_initial + g*t, at apex v_final = 0
+            // So: 0 = v_y + g*t → t = -v_y / g
+            // Also: dy = v_y*t + 0.5*g*t²
+            
+            float timeToApex;
+            float v_y;
+            
+            if (dy < 0) {
+                // Player is ABOVE spawn (smaller Y value)
+                // Need to go UP (negative velocity in +Y=down system)
+                // Calculate initial upward velocity to reach player Y
+                // Using: v² = 2*g*distance
+                v_y = -std::sqrt(2.0f * gravity * std::abs(dy));
+                timeToApex = std::abs(v_y) / gravity;
+            } else {
+                // Player is BELOW spawn (larger Y value)
+                // Just aim downward, gravity will help
+                timeToApex = std::sqrt(2.0f * dy / gravity);
+                v_y = 0.0f; // Start with zero, gravity will accelerate down
+            }
+            
+            // Horizontal velocity to reach player X at the same time
+            float v_x = dx / timeToApex;
+            
+            // NO speed multiplier - arc shape stays exactly the same
+            // Faster movement is achieved by higher gravity (350 vs 200)
+            // This makes the snowball move faster along the SAME trajectory
+            finalDirection.x = v_x;
+            finalDirection.y = v_y;
+            
+            GN_LOG_INFO("[SNOWBALL TRAJECTORY] gravity=" + std::to_string(gravity) + 
+                       ", timeToApex=" + std::to_string(timeToApex) + "s" +
+                       ", velocity=(" + std::to_string(finalDirection.x) + "," + 
+                       std::to_string(finalDirection.y) + ")");
+            
+            // Calculate angle for logging
+            float angle = std::atan2(dy, dx) * 180.0f / 3.14159f;
+            
+            GN_LOG_INFO("[FRAME " + std::to_string(frameCounter) + " BALLISTIC] dx=" + std::to_string(dx) + 
+                       ", dy=" + std::to_string(dy) + 
+                       ", timeToApex=" + std::to_string(timeToApex) + "s" +
+                       ", angle=" + std::to_string(angle) + "°" +
+                       ", velocity=(" + std::to_string(finalDirection.x) + ", " + 
+                       std::to_string(finalDirection.y) + ")" +
+                       " [APEX at player Y=" + std::to_string(playerSnapshotPos.y) + "]");
+        }
+    } else {
+        GN_LOG_WARN("[PROJECTILE] No valid player position, using default direction");
+    }
 
     // Spawn projectile using the ProjectileSystem
     Entity projectileEntity = m_projectileSystem->SpawnEnemyProjectile(
         spawnPosition,
-        direction,
+        finalDirection,
         projectileType,
         enemyComp->damage
     );
 
     if (projectileEntity != 0) {
-        GN_LOG_INFO("Enemy %d spawned projectile entity: %d at position (%.1f, %.1f)",
-                   enemy, projectileEntity, spawnPosition.x, spawnPosition.y);
+        GN_LOG_INFO("Enemy " + std::to_string(enemy) + " spawned projectile " + std::to_string(projectileEntity) + 
+                   " at (" + std::to_string(spawnPosition.x) + ", " + std::to_string(spawnPosition.y) + ")");
     } else {
         GN_LOG_WARN("Failed to spawn enemy projectile - no available projectiles in pool");
     }
@@ -253,15 +615,15 @@ void EnemySystem::InitializeEnemyBehavior(Enemy* enemy, const std::string& movem
         enemy->isThrower = true;
         enemy->isAnimated = true;
         enemy->totalFrames = 6; // 6-frame throw animation
-        enemy->frameDuration = 0.1f; // 0.1 seconds per frame
+        enemy->frameDuration = 0.12f; // 0.12 seconds per frame (match old script)
         enemy->throwCooldown = 2.0f; // 2 seconds between throws
         enemy->throwRange = 400.0f; // Start throwing when player is within 400 pixels
         enemy->currentState = EnemyState::Idle;
         enemy->isGrounded = true;
         enemy->groundOffset = 0.0f; // Snowmen sit directly on ground
         
-        // Set up throw animation timing
-        enemy->throwAnimationDuration = 0.6f; // Total throw animation time (6 frames * 0.1s)
+        // Set up throw animation timing (0.72s total like old script)
+        enemy->throwAnimationDuration = 0.72f; // Total throw animation time (6 frames * 0.12s)
         
     } else if (movementPattern == "decorative") {
         // Decorative enemies (like Chill, Green, Chad snowmen) - passive, no attacks
@@ -416,7 +778,7 @@ void EnemySystem::ProcessEnemyState(float deltaTime, Entity e, Enemy* enemy, Spr
     // Check if state should change
     if (enemy->stateDuration > 0.0f && enemy->stateTimer >= enemy->stateDuration) {
         // Return to idle after state duration
-        ChangeEnemyState(enemy, EnemyState::Idle);
+        this->ChangeEnemyState(enemy, EnemyState::Idle);
     }
 }
 
@@ -453,7 +815,10 @@ void EnemySystem::ProcessEnemyMovement(float deltaTime, Enemy* enemy, Transform*
         }
     } else {
         // Standard horizontal movement for other enemy types
-        transform->position.x -= enemy->speed * deltaTime;
+        // FIXED: Only apply speed if enemy has speed > 0 (snowmen have speed=0 and move with world scroll only)
+        if (enemy->speed > 0.0f) {
+            transform->position.x -= enemy->speed * deltaTime;
+        }
 
         // Vertical movement - bobbing/sinusoidal if enabled
         if (enemy->bobbingEnabled) {
@@ -464,10 +829,12 @@ void EnemySystem::ProcessEnemyMovement(float deltaTime, Enemy* enemy, Transform*
     }
 
     // Screen wrapping (if enemy goes off left side, wrap to right)
-    const float wrapBuffer = 200.0f;
+    // EXTENDED: 400px buffer to align with obstacle wrapping and prevent early culling
+    const float wrapBuffer = 400.0f;
     if (transform->position.x < -wrapBuffer) {
-        // Wrap to right side
-        transform->position.x = screenInfo.pixelWidth + (wrapBuffer / 2.0f);
+        // Wrap to right side with extended buffer
+        transform->position.x = screenInfo.pixelWidth + 650.0f; // Position well off-screen right
+        GN_LOG_DEBUG("EnemySystem: Wrapped enemy to x=" + std::to_string(transform->position.x) + " (extended 400px buffer)");
     }
 }
 

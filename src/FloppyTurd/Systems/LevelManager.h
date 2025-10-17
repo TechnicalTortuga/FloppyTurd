@@ -98,6 +98,9 @@ namespace GameCore {
         // Boss spawning (outside regular pool)
         Gnosis::Entity SpawnBossEnemy(const EnemyConfig& config, float x, float y);
         
+        // Enemy reset for level retry
+        void ResetEnemiesForRetry();
+        
         // Pickup management moved to GameplayState (single source of truth)
         std::vector<Gnosis::Entity> GetActiveNPCs() const { return m_activeNPCs; }
         void InitializeNPCPool();

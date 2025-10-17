@@ -432,6 +432,8 @@ namespace GameCore {
         float throwAnimationDuration; // Duration of throw animation (6 frames)
         int currentThrowFrame;    // Current frame of throw animation
         bool hasSpawnedProjectile; // Whether projectile was spawned this throw cycle
+        bool hasThrownOnScreenEntry; // Whether snowman has thrown when first entering screen
+        bool isFacingRight;       // Sprite flip state (false = facing left/normal, true = facing right/flipped)
         
         // Animation support
         bool isAnimated;
@@ -463,7 +465,7 @@ namespace GameCore {
             , isGrounded(true)
             , groundOffset(0.0f)
             , isThrower(false)
-            , throwCooldown(2.0f)
+            , throwCooldown(1.0f)
             , throwTimer(0.0f)
             , throwRange(400.0f)
             , isOnScreen(false)
@@ -472,6 +474,8 @@ namespace GameCore {
             , throwAnimationDuration(0.5f)
             , currentThrowFrame(0)
             , hasSpawnedProjectile(false)
+            , hasThrownOnScreenEntry(false)
+            , isFacingRight(false)
             , isAnimated(false)
             , totalFrames(1)
             , frameDuration(0.1f)
@@ -502,6 +506,8 @@ using Gnosis::Entity;
         bool isEnemyProjectile;
         Gnosis::GNVector2 direction;
         float gravity;
+        float postApexGravity;  // Heavier gravity after passing apex
+        bool hasPassedApex;     // Track if snowball passed its highest point
         bool affectedByGravity;
 
         // Pool management and sprite properties
@@ -590,7 +596,8 @@ using Gnosis::Entity;
         PyramidBottom,
         PyramidTop,
         TwoFunnel,
-        Decorative        // For castle decorative elements (torch pillars, chandeliers, floor torches)
+        Decorative,       // For castle decorative elements (torch pillars, chandeliers, floor torches)
+        SnowScreenEdges   // For snow level - coins at TOP and BOTTOM of screen (not relative to pipes)
     };
     
     /**
@@ -664,11 +671,13 @@ using Gnosis::Entity;
         float scrollSpeed;
         float repeatWidth;
         bool autoScroll;
+        float segmentGap;       // Gap in pixels between segments when wrapping (0 = no gap, tight positioning)
         
         Parallax()
             : scrollSpeed(50.0f)
             , repeatWidth(800.0f)
             , autoScroll(true)
+            , segmentGap(0.0f)  // Default: no gap for backward compatibility
         {}
     };
 

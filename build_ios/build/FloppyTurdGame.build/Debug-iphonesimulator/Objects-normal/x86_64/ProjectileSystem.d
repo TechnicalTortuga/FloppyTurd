@@ -19,4 +19,7 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Components/../Config/LevelConfig.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Config/ProjectileSpriteConfig.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Config/../../Engine/Core/ECS.h \
-  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Config/../Components/GameComponents.h
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Config/../Components/GameComponents.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Configuration/ConfigManager.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Configuration/../Platform/PlatformDelegates.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Configuration/../Core/GNLog.h

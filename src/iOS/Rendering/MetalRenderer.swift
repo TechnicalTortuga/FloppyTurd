@@ -1168,17 +1168,40 @@ public class MetalRenderer {
             return
         }
 
-        // Calculate sprite dimensions
-        let spriteWidth = Float(texture.width) * scaleX
-        let spriteHeight = Float(texture.height) * scaleY
+        // Handle sprite flipping via UV coordinates instead of negative scale
+        // This prevents position jumping when flipping sprites
+        let flipHorizontal = scaleX < 0
+        let flipVertical = scaleY < 0
+
+        // Calculate sprite dimensions (always positive for matrix calculations)
+        let absScaleX = abs(scaleX)
+        let absScaleY = abs(scaleY)
+        let spriteWidth = Float(texture.width) * absScaleX
+        let spriteHeight = Float(texture.height) * absScaleY
+        
+        // DEBUG: Log flip state for all sprites with negative scale
+        if flipHorizontal {
+            log("🔄 FLIP DETECTED [drawSpriteScaled]: handle=\(textureHandle), scaleX=\(scaleX), flipH=\(flipHorizontal), pos=(\(x),\(y))", level: .info)
+        }
+
+        // Calculate UV coordinates with flipping support
+        var u0: Float = 0.0, v0: Float = 0.0, u1: Float = 1.0, v1: Float = 1.0
+
+        if flipHorizontal {
+            u0 = 1.0; u1 = 0.0  // Flip U coordinates for horizontal flip
+            log("🔄 UV FLIP: u0=\(u0), u1=\(u1) (swapped for horizontal flip)", level: .info)
+        }
+        if flipVertical {
+            v0 = 1.0; v1 = 0.0  // Flip V coordinates for vertical flip
+        }
 
         // Enhanced debug logging for texture rendering
         // log(
-        //     "🖼️ Drawing sprite \(textureHandle): texture \(texture.width)x\(texture.height), screen \(spriteWidth)x\(spriteHeight), pos (\(x),\(y)), rot \(rotation)°",
+        //     "🖼️ Drawing sprite \(textureHandle): texture \(texture.width)x\(texture.height), screen \(spriteWidth)x\(spriteHeight), pos (\(x),\(y)), rot \(rotation)°, flip(H:\(flipHorizontal), V:\(flipVertical))",
         //     level: .debug)
         log("drawSpriteScaled: Texture pixel format: \(texture.pixelFormat)", level: .debug)
         log(
-            "drawSpriteScaled: UV coordinates: (0,0) to (1,1) - full texture coverage",
+            "drawSpriteScaled: UV coordinates: (\(u0),\(v0)) to (\(u1),\(v1)) - \(flipHorizontal ? "H-flipped" : "normal") texture coverage",
             level: .debug)
 
         // DEBUG: Dump actual pixel data for 16x16 texture
@@ -1197,9 +1220,17 @@ public class MetalRenderer {
             }
         }
 
+        // NO position adjustment needed!
+        // UV coordinate flipping handles the mirroring while keeping the quad at the same position
+        // The quad vertices stay at the same screen coords, only the texture mapping changes
+        if flipHorizontal {
+            log("🔄 FLIP: Using UV flip only (no position adjustment) at x=\(x)", level: .info)
+        }
+        
         // Use helper function to create sprite transformation matrix (top-left positioning)
+        // Use absolute scale values to prevent negative scaling artifacts
         let modelMatrix = MetalMatrixHelpers.spriteTransformMatrix(
-            position: (x: x, y: y),
+            position: (x: x, y: y),  // Use ORIGINAL position
             scale: (x: spriteWidth, y: spriteHeight),
             rotation: rotation
         )
@@ -1227,9 +1258,38 @@ public class MetalRenderer {
             return
         }
 
+        // Create custom vertex buffer with flipped UV coordinates if needed
+        let customVertexBuffer: MTLBuffer?
+        if flipHorizontal || flipVertical {
+            // Create vertex buffer with flipped UV coordinates
+            // Use normalized positions (0-1) like the default vertex buffer
+            let vertices: [Float] = [
+                // Position (x, y), TexCoord (u, v), Color (r, g, b, a)
+                0.0, 1.0, u0, v1, 1.0, 1.0, 1.0, 1.0,  // Bottom-left
+                1.0, 1.0, u1, v1, 1.0, 1.0, 1.0, 1.0,  // Bottom-right
+                1.0, 0.0, u1, v0, 1.0, 1.0, 1.0, 1.0,  // Top-right
+                0.0, 0.0, u0, v0, 1.0, 1.0, 1.0, 1.0,  // Top-left
+            ]
+
+            customVertexBuffer = device.makeBuffer(
+                bytes: vertices,
+                length: vertices.count * MemoryLayout<Float>.stride,
+                options: []
+            )
+        } else {
+            customVertexBuffer = nil  // Use default vertex buffer
+        }
+        
+        // DEBUG: Confirm which vertex buffer is being used
+        if flipHorizontal && customVertexBuffer != nil {
+            log("✅ USING CUSTOM FLIPPED VERTEX BUFFER [drawSpriteScaled] for handle \(textureHandle)", level: .info)
+        } else if flipHorizontal && customVertexBuffer == nil {
+            log("❌ FLIP FAILED [drawSpriteScaled]: customVertexBuffer is NIL despite flipHorizontal=true!", level: .error)
+        }
+
         // Set up render encoder
         renderEncoder.setRenderPipelineState(pipelineState)
-        renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
+        renderEncoder.setVertexBuffer(customVertexBuffer ?? vertexBuffer, offset: 0, index: 0)
         renderEncoder.setVertexBuffer(tempUniformBuffer, offset: 0, index: 1)
         renderEncoder.setFragmentTexture(texture, index: 0)
         renderEncoder.setFragmentSamplerState(samplerState, index: 0)
@@ -1397,13 +1457,42 @@ public class MetalRenderer {
             return
         }
 
-        // Calculate sprite dimensions
-        let spriteWidth = Float(texture.width) * scaleX
-        let spriteHeight = Float(texture.height) * scaleY
+        // Handle sprite flipping via UV coordinates instead of negative scale
+        // This prevents position jumping when flipping sprites
+        let flipHorizontal = scaleX < 0
+        let flipVertical = scaleY < 0
 
+        // Calculate sprite dimensions (always positive for matrix calculations)
+        let absScaleX = abs(scaleX)
+        let absScaleY = abs(scaleY)
+        let spriteWidth = Float(texture.width) * absScaleX
+        let spriteHeight = Float(texture.height) * absScaleY
+        
+        // DEBUG: Log flip state for all sprites with negative scale
+        if flipHorizontal {
+            log("🔄 FLIP DETECTED [drawSpriteScaledCentered]: handle=\(textureHandle), scaleX=\(scaleX), pos=(\(x),\(y))", level: .info)
+        }
+
+        // Calculate UV coordinates with flipping support
+        var u0: Float = 0.0, v0: Float = 0.0, u1: Float = 1.0, v1: Float = 1.0
+
+        if flipHorizontal {
+            u0 = 1.0; u1 = 0.0  // Flip U coordinates for horizontal flip
+        }
+        if flipVertical {
+            v0 = 1.0; v1 = 0.0  // Flip V coordinates for vertical flip
+        }
+
+        // NO position adjustment needed!
+        // UV coordinate flipping handles the mirroring while keeping the quad at the same position
+        if flipHorizontal {
+            log("🔄 FLIP [Centered]: Using UV flip only (no position adjustment) at x=\(x)", level: .info)
+        }
+        
         // Use centered sprite transformation matrix (with centering)
+        // Use absolute scale values to prevent negative scaling artifacts
         let modelMatrix = MetalMatrixHelpers.spriteTransformMatrixCentered(
-            position: (x: x, y: y),
+            position: (x: x, y: y),  // Use ORIGINAL position
             scale: (x: spriteWidth, y: spriteHeight),
             rotation: rotation
         )
@@ -1427,9 +1516,39 @@ public class MetalRenderer {
             return
         }
 
+        // Create custom vertex buffer with flipped UV coordinates if needed
+        // For centered sprites, UV coordinates are the same as standard sprites
+        let customVertexBuffer: MTLBuffer?
+        if flipHorizontal || flipVertical {
+            // Create vertex buffer with flipped UV coordinates
+            // Use normalized positions (0-1) like the default vertex buffer
+            let vertices: [Float] = [
+                // Position (x, y), TexCoord (u, v), Color (r, g, b, a)
+                0.0, 1.0, u0, v1, 1.0, 1.0, 1.0, 1.0,  // Bottom-left
+                1.0, 1.0, u1, v1, 1.0, 1.0, 1.0, 1.0,  // Bottom-right
+                1.0, 0.0, u1, v0, 1.0, 1.0, 1.0, 1.0,  // Top-right
+                0.0, 0.0, u0, v0, 1.0, 1.0, 1.0, 1.0,  // Top-left
+            ]
+
+            customVertexBuffer = device.makeBuffer(
+                bytes: vertices,
+                length: vertices.count * MemoryLayout<Float>.stride,
+                options: []
+            )
+        } else {
+            customVertexBuffer = nil  // Use default vertex buffer
+        }
+        
+        // DEBUG: Confirm which vertex buffer is being used
+        if flipHorizontal && customVertexBuffer != nil {
+            log("✅ USING CUSTOM FLIPPED VERTEX BUFFER [drawSpriteScaledCentered] for handle \(textureHandle)", level: .info)
+        } else if flipHorizontal && customVertexBuffer == nil {
+            log("❌ FLIP FAILED [drawSpriteScaledCentered]: customVertexBuffer is NIL despite flipHorizontal=true!", level: .error)
+        }
+
         // Set up render encoder
         renderEncoder.setRenderPipelineState(pipelineState)
-        renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
+        renderEncoder.setVertexBuffer(customVertexBuffer ?? vertexBuffer, offset: 0, index: 0)
         renderEncoder.setVertexBuffer(tempUniformBuffer, offset: 0, index: 1)
         renderEncoder.setFragmentTexture(texture, index: 0)
         renderEncoder.setFragmentSamplerState(samplerState, index: 0)
@@ -1528,47 +1647,75 @@ public class MetalRenderer {
         
         for (i, sprite) in sprites.prefix(spritesToDraw).enumerated() {
             let bufferIndex = writeOffset + i  // CRITICAL: Write at offset, not i!
-            // Calculate sprite dimensions
+            
+            // CRITICAL: Detect horizontal flip from negative scale
+            let flipHorizontal = sprite.scaleX < 0
+            let flipVertical = sprite.scaleY < 0
+            
+            // Calculate sprite dimensions using ABSOLUTE scale values
+            let absScaleX = abs(sprite.scaleX)
+            let absScaleY = abs(sprite.scaleY)
+            
             let spriteWidth: Float
             let spriteHeight: Float
             if sprite.sourceWidth > 0 && sprite.sourceHeight > 0 {
                 // Animated/sprite sheet: scale by FRAME size
-                spriteWidth = sprite.sourceWidth * sprite.scaleX
-                spriteHeight = sprite.sourceHeight * sprite.scaleY
+                spriteWidth = sprite.sourceWidth * absScaleX
+                spriteHeight = sprite.sourceHeight * absScaleY
             } else {
                 // Static sprite: scale by full texture size
-                spriteWidth = Float(texture.width) * sprite.scaleX
-                spriteHeight = Float(texture.height) * sprite.scaleY
+                spriteWidth = Float(texture.width) * absScaleX
+                spriteHeight = Float(texture.height) * absScaleY
             }
             
-            // Build model matrix
+            // NO position adjustment needed!
+            // UV coordinate flipping handles the mirroring while keeping the quad at the same position
+            // The quad vertices stay at the same screen coords, only the texture mapping changes
+            
+            // Build model matrix with ORIGINAL position (no adjustment)
             let modelMatrix = MetalMatrixHelpers.spriteTransformMatrix(
                 position: (x: sprite.x, y: sprite.y),
                 scale: (x: spriteWidth, y: spriteHeight),
                 rotation: sprite.rotation
             )
             
-            // Calculate UV rectangle for sprite sheet
-            let uvRect: SIMD4<Float>
+            // Calculate UV rectangle for sprite sheet with flip support
+            var uvRect: SIMD4<Float>
             if sprite.sourceWidth > 0 && sprite.sourceHeight > 0 {
                 let texWidth = Float(texture.width)
                 let texHeight = Float(texture.height)
                 
                 // CRITICAL FIX: Add half-pixel offset for pixel-perfect sprite sheet sampling
-                // This prevents bleeding artifacts between adjacent frames in animations
-                // Matches the technique used in drawSpriteScaledWithSource (line 1297-1304)
                 let halfPixelU = 0.5 / texWidth
                 let halfPixelV = 0.5 / texHeight
                 
-                let u0 = max(0.0, min(1.0, (sprite.sourceX / texWidth) + halfPixelU))
-                let v0 = max(0.0, min(1.0, (sprite.sourceY / texHeight) + halfPixelV))
-                let u1 = max(0.0, min(1.0, ((sprite.sourceX + sprite.sourceWidth) / texWidth) - halfPixelU))
-                let v1 = max(0.0, min(1.0, ((sprite.sourceY + sprite.sourceHeight) / texHeight) - halfPixelV))
+                var u0 = max(0.0, min(1.0, (sprite.sourceX / texWidth) + halfPixelU))
+                var v0 = max(0.0, min(1.0, (sprite.sourceY / texHeight) + halfPixelV))
+                var u1 = max(0.0, min(1.0, ((sprite.sourceX + sprite.sourceWidth) / texWidth) - halfPixelU))
+                var v1 = max(0.0, min(1.0, ((sprite.sourceY + sprite.sourceHeight) / texHeight) - halfPixelV))
+                
+                // CRITICAL: Flip UV coordinates if needed
+                if flipHorizontal {
+                    swap(&u0, &u1)  // Swap U coordinates for horizontal flip
+                }
+                if flipVertical {
+                    swap(&v0, &v1)  // Swap V coordinates for vertical flip
+                }
                 
                 uvRect = SIMD4<Float>(u0, v0, u1, v1)
             } else {
-                // Full texture
-                uvRect = SIMD4<Float>(0, 0, 1, 1)
+                // Full texture with flip support
+                var u0: Float = 0.0, v0: Float = 0.0
+                var u1: Float = 1.0, v1: Float = 1.0
+                
+                if flipHorizontal {
+                    swap(&u0, &u1)
+                }
+                if flipVertical {
+                    swap(&v0, &v1)
+                }
+                
+                uvRect = SIMD4<Float>(u0, v0, u1, v1)
             }
             
             // Fill instance data at offset position (CRITICAL FIX)

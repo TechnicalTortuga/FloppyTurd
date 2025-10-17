@@ -222,17 +222,23 @@ namespace GameCore {
                         int rightmostSegmentEnd = INT_MIN;
                         Gnosis::Entity rightmostEntity = 0;
 
-                        // Search through all entities in the same layer to find the rightmost one
+                        // Search through all entities in the same TEXTURE GROUP (layerId) to find the rightmost one
+                        // 🎯 CRITICAL: Must match layerId (texture), not sprite->layer (render layer)
+                        // Different textures can share the same render layer!
                         for (Gnosis::Entity otherEntity : parallaxEntities) {
                             auto otherTransform = m_ecsSystem->GetComponent<Transform>(otherEntity);
                             auto otherSprite = m_ecsSystem->GetComponent<Sprite>(otherEntity);
                             auto otherInstance = m_ecsSystem->GetComponent<ParallaxInstance>(otherEntity);
 
                             if (otherTransform && otherSprite && otherInstance &&
-                                otherSprite->layer == sprite->layer &&
+                                otherInstance->layerId == instance->layerId && // Same texture group
                                 otherEntity != entity) { // Don't include ourselves
 
-                                int otherRightEdge = static_cast<int>(std::round(otherTransform->position.x + otherInstance->textureWidth));
+                                // 🎯 PURE INTEGER ARITHMETIC: Convert to ints first to avoid float precision errors
+                                int otherPosInt = static_cast<int>(std::round(otherTransform->position.x));
+                                int otherWidthInt = static_cast<int>(std::round(otherInstance->textureWidth));
+                                int otherRightEdge = otherPosInt + otherWidthInt;
+                                
                                 if (otherRightEdge > rightmostSegmentEnd) {
                                     rightmostSegmentEnd = otherRightEdge;
                                     rightmostEntity = otherEntity;
@@ -241,14 +247,21 @@ namespace GameCore {
                         }
 
                         // 🎯 PIXEL-PERFECT WRAPPING: Use integer arithmetic to eliminate gaps
+                        // Apply segment gap if configured (for castle curtains, etc.)
+                        int segmentGapInt = static_cast<int>(std::round(parallax->segmentGap));
+                        
                         if (rightmostEntity != 0) {
-                            // Snap to exact pixel boundary using fixed-point arithmetic
-                            transform->position.x = static_cast<float>(rightmostSegmentEnd);
+                            // Snap to exact pixel boundary and add segment gap
+                            transform->position.x = static_cast<float>(rightmostSegmentEnd + segmentGapInt);
 
                             if (isSewerLevel && shouldLog) {
                                 GN_LOG_INFO("🚽 PIXEL-PERFECT SEWER WRAP: '" + sprite->textureId +
                                            "' wrapped to x=" + std::to_string(transform->position.x) +
-                                           " (rightmost segment ends at " + std::to_string(rightmostSegmentEnd) + ")");
+                                           " (rightmost segment ends at " + std::to_string(rightmostSegmentEnd) + 
+                                           " + gap " + std::to_string(segmentGapInt) + ")");
+                            } else if (segmentGapInt > 0 && shouldLog) {
+                                GN_LOG_INFO("🎭 SEGMENT GAP APPLIED: '" + sprite->textureId +
+                                           "' wrapped with " + std::to_string(segmentGapInt) + "px gap");
                             }
                         } else {
                             // Fallback: use pixel-perfect calculation

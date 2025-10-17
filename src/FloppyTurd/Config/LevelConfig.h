@@ -63,6 +63,7 @@ namespace GameCore {
         float scaleMultiplier;  // Scale relative to base scale
         bool repeating;         // Whether this layer wraps around
         float repeatWidth;      // Width for wrapping (0 = auto-calculate from texture)
+        float segmentGap;       // Gap in pixels between segments (0 = tight, use for castle curtains)
         std::vector<std::string> variantTextureIds; // Optional variants that can swap on wrap
         
         BackgroundLayer(const std::string& texture, float speed, float layerDepth, int layer = 0)
@@ -73,6 +74,7 @@ namespace GameCore {
             , scaleMultiplier(1.0f)
             , repeating(true)
             , repeatWidth(0.0f)
+            , segmentGap(0.0f)  // Default: no gap
             , variantTextureIds()
         {}
     };

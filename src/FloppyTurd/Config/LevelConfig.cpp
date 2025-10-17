@@ -82,6 +82,12 @@ namespace GameCore {
         config.enableEnemies = true;
         config.enableNPCs = false;
         config.enablePickups = true;
+        
+        // Pickup ratios: 70% gold coins, 20% hearts, 10% blue coins
+        config.pickupRatios.push_back(PickupRatio("GoldCoin", 0.7f));
+        config.pickupRatios.push_back(PickupRatio("PooHeart", 0.2f));
+        config.pickupRatios.push_back(PickupRatio("BlueCoin", 0.1f));
+        
         AddSnowLevelLayers(config);
         AddSnowEnemies(config);
         
@@ -172,8 +178,8 @@ namespace GameCore {
         // Mid layer - medium speed
         config.backgroundLayers.emplace_back("Level1MidLayerBackground.png", 100.0f, 0.3f, 1);
 
-        // Clouds - independent movement
-        config.backgroundLayers.emplace_back("Level1Clouds.png", 75.0f, 0.2f, 1);
+        // Clouds - independent movement (adjusted to layer 0 to avoid overlap with mid layer)
+        config.backgroundLayers.emplace_back("Level1Clouds.png", 75.0f, 0.2f, 0);
 
         // Front layer - fastest moving (closest to player, behind game objects)
         config.backgroundLayers.emplace_back("Level1FrontLayerBackground.png", 150.0f, 0.5f, 2);
@@ -214,11 +220,11 @@ namespace GameCore {
         // Mid layer - mountains and middle ground
         config.backgroundLayers.emplace_back("SnowLevelMidLayerBackground.png", 75.0f, 0.2f, 1);
 
-        // Front layer - trees and foreground elements
+        // Front layer - trees and foreground elements  
         config.backgroundLayers.emplace_back("SnowLevelFrontLayerBackground.png", 150.0f, 0.3f, 2);
 
-        // Front trees layer - closest to player
-        config.backgroundLayers.emplace_back("SnowLevelFrontLayerTrees.png", 150.0f, 0.5f, 3);
+        // Front trees layer - behind pipes/obstacles (layer 3), same layer as front background
+        config.backgroundLayers.emplace_back("SnowLevelFrontLayerTrees.png", 150.0f, 0.5f, 2);
     }
 
     void LevelConfigFactory::AddCastleLevelLayers(LevelConfig& config) {
@@ -228,8 +234,12 @@ namespace GameCore {
         // Back layer - castle background
         config.backgroundLayers.emplace_back("castlebacklayerbackground.png", 200.0f, 1.0f, 0);
 
-        // Front layer - curtains (slightly faster parallax to separate from background, higher render layer)
+        // Front layer - curtains with programmatic gaps to show castle background
         config.backgroundLayers.emplace_back("curtains.png", 200.0f, 1.05f, 2);
+        
+        // Set segment gap to create spacing between curtain segments
+        // This reveals the castle background behind without changing scroll speed
+        config.backgroundLayers.back().segmentGap = 512.0f; // Full segment width gap (adjust as needed)
 
         // Note: Paintings, chandeliers, floor torches, and torch pillars are now handled by ObstacleSystem
         // as decorative obstacles rather than background layers to support proper positioning and animation

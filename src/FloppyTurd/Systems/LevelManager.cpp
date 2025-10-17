@@ -5,6 +5,7 @@
 #include "../../Engine/Configuration/ConfigManager.h"
 #include <algorithm>
 #include <cmath>
+#include <random>
 #include <unordered_map>
 #include <deque>
 #include <map>
@@ -301,10 +302,32 @@ namespace GameCore {
 
         GN_LOG_INFO("LevelManager: Initializing enemy pool with " + std::to_string(MAX_ENEMY_POOL_SIZE) + " enemies using level configs");
 
-        // Create enemy pool using the actual enemy configs for this level
+        // Create enemy pool with custom ratios for snow level
+        int enemyIndex = 0;
+        
+        // Snow level (4) uses custom spawn ratios: 15% red thrower, 85% decoratives
+        bool isSnowLevel = (m_currentLevelId == 4);
+        std::unordered_map<std::string, int> snowRatios;
+        if (isSnowLevel) {
+            // Calculate counts for snow level: guarantee at least two throwers
+            int throwerCount = std::max(2, static_cast<int>(MAX_ENEMY_POOL_SIZE * 0.15f));
+            int decorativeTotal = MAX_ENEMY_POOL_SIZE - throwerCount;
+            int decorativeEach = decorativeTotal / 3; // Split remaining among 3 decoratives
+            
+            snowRatios["SnowManIdle"] = throwerCount;  // Red thrower - rare!
+            snowRatios["SnowManChill"] = decorativeEach;
+            snowRatios["SnowManGreen"] = decorativeEach;
+            snowRatios["SnowManChad"] = decorativeTotal - (decorativeEach * 2); // Get remainder
+            
+            GN_LOG_INFO("Snow level spawn ratios: Thrower=" + std::to_string(throwerCount) + 
+                       ", Chill=" + std::to_string(snowRatios["SnowManChill"]) +
+                       ", Green=" + std::to_string(snowRatios["SnowManGreen"]) +
+                       ", Chad=" + std::to_string(snowRatios["SnowManChad"]));
+        }
+        
+        // Default: equal distribution for non-snow levels
         int enemiesPerType = MAX_ENEMY_POOL_SIZE / m_currentLevelConfig.enemies.size();
         int remainder = MAX_ENEMY_POOL_SIZE % m_currentLevelConfig.enemies.size();
-        int enemyIndex = 0;
 
         for (size_t configIndex = 0; configIndex < m_currentLevelConfig.enemies.size(); ++configIndex) {
             const EnemyConfig& config = m_currentLevelConfig.enemies[configIndex];
@@ -317,10 +340,20 @@ namespace GameCore {
                 continue;
             }
             
-            int countForThisType = enemiesPerType + (configIndex < remainder ? 1 : 0);
+            // Determine count for this enemy type
+            int countForThisType;
+            if (isSnowLevel && snowRatios.find(config.textureId) != snowRatios.end()) {
+                // Use custom ratio for snow level
+                countForThisType = snowRatios[config.textureId];
+            } else {
+                // Default equal distribution
+                countForThisType = enemiesPerType + (configIndex < remainder ? 1 : 0);
+            }
 
             GN_LOG_DEBUG("LevelManager: Creating " + std::to_string(countForThisType) + " enemies of type " + config.textureId);
 
+            GN_LOG_INFO("[POOL] Creating " + std::to_string(countForThisType) + " enemies of type '" + config.textureId + "'");
+            
             for (int i = 0; i < countForThisType && enemyIndex < MAX_ENEMY_POOL_SIZE; ++i) {
                 Gnosis::Entity enemy = m_ecsSystem->CreateEntity();
 
@@ -333,7 +366,7 @@ namespace GameCore {
                 sprite.loop = config.loopAnimation;
                 sprite.color = GNColor(255, 255, 255, 0); // Invisible initially
                 sprite.visible = false; // Explicitly invisible for inactive enemies
-                sprite.layer = 2; // Enemy layer (above backgrounds, below player)
+                sprite.layer = 4; // Enemy layer (above pipes/obstacles layer 3, below player layer 5)
                 m_ecsSystem->AddComponent<Sprite>(enemy, sprite);
 
                 // Add enemy component (inactive)
@@ -342,6 +375,13 @@ namespace GameCore {
                 enemyComp.health = config.hitPoints;
                 enemyComp.enemyType = config.textureId;
                 enemyComp.movementPattern = config.movementPattern;
+                
+                // CRITICAL: Set isThrower flag for snowman throwers
+                if (config.movementPattern == "snowman_thrower") {
+                    enemyComp.isThrower = true;
+                    GN_LOG_INFO("[POOL] Set isThrower=true for " + config.textureId);
+                }
+                
                 m_ecsSystem->AddComponent<Enemy>(enemy, enemyComp);
 
                 // Add physics component
@@ -383,24 +423,19 @@ namespace GameCore {
 
                     m_ecsSystem->AddComponent<StateAnimation>(enemy, sa);
                     GN_LOG_INFO("LevelManager: Added StateAnimation to pooled enemy " + config.textureId + " with " + std::to_string(sa.clips.size()) + " clips");
-        } else {
+                } else {
                     GN_LOG_WARN("LevelManager: Config " + config.textureId + " has useStateAnimation=false, skipping StateAnimation component");
                 }
 
                 // Add to pool
-                m_enemyPool.allEnemies.push_back(enemy);
                 m_enemyPool.inactiveEnemies.push_back(enemy);
-
-                GN_LOG_DEBUG("LevelManager: Created pooled enemy entity " + std::to_string(enemy) + " of type " + config.textureId);
                 enemyIndex++;
             }
         }
-
-        GN_LOG_INFO("LevelManager: Enemy pool initialized with " + std::to_string(m_enemyPool.allEnemies.size()) + " enemies");
-
-        // Special handling for boss level (Level 6)
+        
+        // Boss level (level 6) spawning
         if (m_currentLevelId == 6) {
-            // Spawn the Rat King boss separately (not from pool)
+            // Find boss config
             const EnemyConfig* bossConfig = nullptr;
             for (const auto& config : m_currentLevelConfig.enemies) {
                 if (config.movementPattern == "boss_idle" || 
@@ -430,6 +465,40 @@ namespace GameCore {
                 GN_LOG_ERROR("LevelManager: Boss level 6 has no boss config!");
             }
         } else {
+            // CRITICAL: Shuffle enemy pool for variety (avoid always spawning same types)
+            std::random_device rd;
+            std::mt19937 rng(rd());
+
+            if (isSnowLevel) {
+                std::vector<Gnosis::Entity> throwerEntities;
+                throwerEntities.reserve(m_enemyPool.inactiveEnemies.size());
+
+                // Extract throwers so we can guarantee they spawn first
+                for (auto it = m_enemyPool.inactiveEnemies.begin(); it != m_enemyPool.inactiveEnemies.end();) {
+                    Enemy* enemyComp = m_ecsSystem->GetComponent<Enemy>(*it);
+                    bool isThrower = enemyComp && (enemyComp->enemyType == "SnowManIdle" || enemyComp->movementPattern == "snowman_thrower");
+                    if (isThrower) {
+                        throwerEntities.push_back(*it);
+                        it = m_enemyPool.inactiveEnemies.erase(it);
+                    } else {
+                        ++it;
+                    }
+                }
+
+                std::shuffle(m_enemyPool.inactiveEnemies.begin(), m_enemyPool.inactiveEnemies.end(), rng);
+
+                // Append throwers to the end so pop_back() returns them first
+                for (Gnosis::Entity thrower : throwerEntities) {
+                    m_enemyPool.inactiveEnemies.push_back(thrower);
+                }
+
+                GN_LOG_INFO("LevelManager: Shuffled snow pool (" + std::to_string(m_enemyPool.inactiveEnemies.size()) +
+                           ") and promoted " + std::to_string(throwerEntities.size()) + " throwers for guaranteed early spawns");
+            } else {
+                std::shuffle(m_enemyPool.inactiveEnemies.begin(), m_enemyPool.inactiveEnemies.end(), rng);
+                GN_LOG_INFO("LevelManager: Shuffled enemy pool for variety");
+            }
+            
             // Spawn initial enemies based on level requirements (using pool for non-boss levels)
             SpawnInitialEnemies();
         }
@@ -488,8 +557,8 @@ namespace GameCore {
             float leftEdge = t->position.x;
             float widthPx = s->width * std::abs(t->scale.x);
             float rightEdge = leftEdge + widthPx;
-            // Wait until enemy is completely off screen before wrapping (not just touching edge)
-            if (rightEdge < -widthPx) {
+            // Wrap when enemy goes off screen left (right edge goes negative)
+            if (rightEdge < 0.0f) {
                 t->position.x = rightmostX + (m_enemySpacing * 1.25f);
                 
                 // Get enemy component to check if it should be grounded
@@ -497,11 +566,22 @@ namespace GameCore {
                 float baseY;
                 
                 if (enemyComp && enemyComp->isGrounded) {
-                    // For grounded enemies, calculate proper ground position
-                    // Use the same logic as EnemySystem::GroundEnemy
-                    const float screenHeight = 2556.0f; // iPhone 16 portrait screen height
-                    float enemyHeight = 64.0f * std::abs(t->scale.y); // Snowman height with scale
-                    baseY = screenHeight - enemyHeight;
+                    // CRITICAL: Use EXACT spawn formula - NO baseY manipulation!
+                    // From initial spawn (line 1595-1602):
+                    // y = screenInfo.pixelHeight - scaledSpriteHeight + rawSpriteHeight;
+                    const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+                    
+                    float rawSpriteHeight = s->frameHeight;  // 64px
+                    float scaledSpriteHeight = s->height * std::abs(t->scale.y);  // 384px for snowmen
+                    
+                    // EXACT SPAWN FORMULA - do NOT change!
+                    baseY = screenInfo.pixelHeight - scaledSpriteHeight + rawSpriteHeight;
+                    
+                    GN_LOG_INFO("[WRAP_GROUND] Snowman " + std::to_string(e) + 
+                               " using SPAWN FORMULA: Y=" + std::to_string(baseY) + 
+                               " (screenH=" + std::to_string(screenInfo.pixelHeight) + 
+                               " - scaledH=" + std::to_string(scaledSpriteHeight) + 
+                               " + rawH=" + std::to_string(rawSpriteHeight) + ")");
                 } else if (m_currentLevelId == 3) { // Desert level - maintain vertical spread
                     // Random Y within the desert bird range for flying enemies
                     float minY = 400.0f;
@@ -521,6 +601,48 @@ namespace GameCore {
                 if (enemyComp) {
                     enemyComp->baseY = baseY;
                     enemyComp->hasInitializedBaseY = true;
+                    
+                    // CRITICAL: Reset throw state when wrapping so snowmen can throw again
+                    if (enemyComp->isThrower) {
+                        enemyComp->hasThrownOnScreenEntry = false; // Allow throwing again
+                        enemyComp->isThrowing = false;
+                        enemyComp->hasSpawnedProjectile = false;
+                        enemyComp->throwAnimationTimer = 0.0f;
+                        enemyComp->currentThrowFrame = 0;
+                        enemyComp->isOnScreen = false;
+                        enemyComp->currentState = EnemyState::Idle;
+                        
+                        // Reset flip state to default (facing left)
+                        t->scale.x = std::abs(t->scale.x);
+                        enemyComp->isFacingRight = false;
+                        
+                        // CRITICAL: Ensure sprite is visible after wrap
+                        s->visible = true;
+                        s->color.a = 255; // Full opacity
+                        
+                        GN_LOG_INFO("[ENEMY_WRAP] Reset throw state for snowman " + std::to_string(e) + 
+                                   ", scale.x=" + std::to_string(t->scale.x) + 
+                                   ", visible=" + std::to_string(s->visible));
+                        
+                        // Reset to idle animation
+                        StateAnimation* sa = m_ecsSystem->GetComponent<StateAnimation>(e);
+                        if (sa) {
+                            sa->currentState = "idle";
+                            const StateAnimation::Clip* idleClip = sa->getClip("idle");
+                            if (idleClip) {
+                                s->textureId = idleClip->textureId;
+                                s->frameWidth = idleClip->frameWidth;
+                                s->frameHeight = idleClip->frameHeight;
+                                s->frameCount = idleClip->frameCount;
+                                s->frameTime = idleClip->frameTime;
+                                s->loop = idleClip->loop;
+                                s->isAnimated = (idleClip->frameCount > 1);
+                                s->playing = true;
+                                s->currentFrame = 0;
+                                s->currentFrameTime = 0.0f;
+                            }
+                        }
+                    }
                 }
                 m_enemyBaseY[e] = baseY;
                 rightmostX = t->position.x;
@@ -1003,11 +1125,15 @@ namespace GameCore {
                        " needed=" + std::to_string(instancesNeeded));
 
             // 🎯 STEP 4: Create instances with PURE INTEGER positioning (no floating point errors)
+            // Apply segment gap if configured (for castle curtains, etc.)
+            int gapInt = static_cast<int>(std::round(layerConfig.segmentGap));
+            
             for (int i = 0; i < instancesNeeded; ++i) {
                 // Use integer arithmetic to prevent floating point precision errors
                 // Convert scaledWidth to integer for pixel-perfect positioning
                 int scaledWidthInt = static_cast<int>(std::round(scaledWidth));
-                int xPosInt = i * scaledWidthInt;
+                // Apply segment gap: each segment is positioned at (width + gap) * index
+                int xPosInt = i * (scaledWidthInt + gapInt);
                 float xPos = static_cast<float>(xPosInt);
                 float yPos = 0.0f;
 
@@ -1060,8 +1186,12 @@ namespace GameCore {
                     GN_LOG_INFO("🎭 Positioning screen curtain at: (" + std::to_string(finalXPos) + ", " + std::to_string(finalYPos) + ") for landscape mode");
                 }
 
+                // 🎯 PIXEL-PERFECT SCALE: Adjust scale so rendered width EXACTLY matches integer positioning
+                // This prevents sub-pixel gaps/overlaps between segments
+                float pixelPerfectScale = static_cast<float>(scaledWidthInt) / static_cast<float>(textureWidth);
+                
                 // Transform: Position and scale
-                Transform transform(Gnosis::GNVector2(finalXPos, finalYPos), 0.0f, Gnosis::GNVector2(scale, scale));
+                Transform transform(Gnosis::GNVector2(finalXPos, finalYPos), 0.0f, Gnosis::GNVector2(pixelPerfectScale, pixelPerfectScale));
                 m_ecsSystem->AddComponent<Transform>(bgEntity, transform);
 
                 // Sprite: Use actual texture dimensions
@@ -1077,8 +1207,10 @@ namespace GameCore {
                     parallax.scrollSpeed = layerConfig.scrollSpeed;
                     parallax.repeatWidth = static_cast<float>(scaledWidthInt); // Integer-based for precision
                     parallax.autoScroll = true;
+                    parallax.segmentGap = layerConfig.segmentGap; // Apply gap from config
                     m_ecsSystem->AddComponent<Parallax>(bgEntity, parallax);
-                    GN_LOG_INFO("Added Parallax component to background entity for level " + std::to_string(m_currentLevelId));
+                    GN_LOG_INFO("Added Parallax component to background entity for level " + std::to_string(m_currentLevelId) +
+                               " with segmentGap=" + std::to_string(parallax.segmentGap));
                 } else {
                     GN_LOG_INFO("Skipped Parallax component for boss level (static background) - level " + std::to_string(m_currentLevelId));
                 }
@@ -1454,8 +1586,8 @@ namespace GameCore {
                 continue;
             }
 
-            // Position enemies offscreen to the right with MAXIMUM spacing for debugging
-            float x = screenInfo.pixelWidth + 400.0f + (i * 1200.0f); // HUGE spacing: 1200 pixels apart!
+            // Position enemies offscreen to the right with generous spacing
+            float x = screenInfo.pixelWidth + 650.0f + (i * 800.0f); // 800px spacing - prevents overlap
             
             // Calculate Y position based on enemy type
             float y;
@@ -1464,15 +1596,23 @@ namespace GameCore {
                 y = screenInfo.pixelHeight * 0.15f + (i * 150.0f);
             } else if (enemyComp->enemyType.find("SnowMan") != std::string::npos || 
                        enemyComp->enemyType.find("Snowman") != std::string::npos) {
-                // GROUND SNOWMEN: Position at EXACT ground level
-                // Snowmen are 64px tall sprites, scaled up
-                float snowmanHeight = matchingConfig->frameHeight * matchingConfig->scale;
-                y = screenInfo.pixelHeight - snowmanHeight;
-                GN_LOG_INFO("LevelManager: Grounding snowman '" + enemyComp->enemyType + "' at y=" + std::to_string(y) + 
-                           " (screenHeight=" + std::to_string(screenInfo.pixelHeight) + 
-                           ", spriteHeight=" + std::to_string(snowmanHeight) + 
-                           ", frameHeight=" + std::to_string(matchingConfig->frameHeight) + 
-                           ", scale=" + std::to_string(matchingConfig->scale) + ")");
+                // GROUND SNOWMEN: Position at EXACT ground level with bottom alignment
+                // Snowmen are 64px tall sprites, scaled by matchingConfig->scale (6.0x = 384px)
+                float rawSpriteHeight = matchingConfig->frameHeight;  // 64px
+                float scaledSpriteHeight = rawSpriteHeight * matchingConfig->scale;  // 64 * 6.0 = 384px
+                
+                // Rendering anchor is offset by raw sprite height, so push the top-left further down by +rawSpriteHeight
+                // This ensures the visual bottom edge touches the ground exactly.
+                y = screenInfo.pixelHeight - scaledSpriteHeight + rawSpriteHeight;
+                
+                float visualBottomEdge = y + scaledSpriteHeight - rawSpriteHeight; // Actual rendered bottom considering anchor
+                
+                GN_LOG_INFO("[SNOWMAN_POS] Grounding '" + enemyComp->enemyType + "' at Y=" + std::to_string(y) + 
+                           " | screenH=" + std::to_string(screenInfo.pixelHeight) + 
+                           ", rawH=" + std::to_string(rawSpriteHeight) + "px" +
+                           ", scale=" + std::to_string(matchingConfig->scale) + "x" +
+                           ", scaledH=" + std::to_string(scaledSpriteHeight) + "px" +
+                           ", visualBottom=" + std::to_string(visualBottomEdge) + "px (GROUND expectation)");
             } else {
                 // Other flying enemies
                 y = screenInfo.pixelHeight * 0.3f + (i * 200.0f);
@@ -1521,7 +1661,25 @@ namespace GameCore {
             enemyComp->enemyType = config.textureId;
             enemyComp->movementPattern = config.movementPattern;
             enemyComp->currentState = EnemyState::Idle;
-            
+            enemyComp->speed = config.speed;
+
+            bool isSnowmanType = (enemyComp->enemyType.find("SnowMan") != std::string::npos ||
+                                  enemyComp->enemyType.find("Snowman") != std::string::npos);
+            if (isSnowmanType) {
+                // FIXED: Snowmen should NOT have additional speed - they move with world scroll only
+                enemyComp->speed = 0.0f; // No additional movement speed
+                GN_LOG_INFO("[SNOWMAN_SPEED] Set '" + enemyComp->enemyType + "' speed=0 (moves with world scroll only, worldSpeed=" + 
+                           std::to_string(m_currentLevelConfig.worldSpeed) + ")");
+                
+                // CRITICAL: Initialize throw animation parameters for snowman throwers
+                if (enemyComp->isThrower && enemyComp->movementPattern == "snowman_thrower") {
+                    enemyComp->totalFrames = 6;  // 6-frame throw animation
+                    enemyComp->frameDuration = 0.12f;  // 0.12s per frame (match old script line 17)
+                    enemyComp->throwAnimationDuration = enemyComp->totalFrames * enemyComp->frameDuration; // 0.72s total
+                    GN_LOG_INFO("[SNOWMAN_INIT] Set throw animation: totalFrames=6, frameDuration=0.12s, duration=0.72s");
+                }
+            }
+
             // Apply bobbing configuration from EnemyConfig
             if (config.bobbingConfig.enabled) {
                 enemyComp->bobbingEnabled = true;
@@ -1574,6 +1732,13 @@ namespace GameCore {
         // Add to active enemies
         m_activeEnemies.push_back(enemy);
         m_enemyBaseY[enemy] = y;
+        
+        // CRITICAL: Set enemy's baseY for movement system (enemyComp already defined above)
+        if (enemyComp) {
+            enemyComp->baseY = y;
+            enemyComp->hasInitializedBaseY = true;
+            GN_LOG_INFO("[SPAWN] Set enemy baseY=" + std::to_string(y) + " for " + config.textureId);
+        }
 
         GN_LOG_INFO("LevelManager: Spawned enemy " + std::to_string(enemy) + " of type " + config.textureId + " at (" + std::to_string(x) + ", " + std::to_string(y) + ")");
     }
@@ -1644,6 +1809,71 @@ namespace GameCore {
         
         GN_LOG_INFO("LevelManager: Boss enemy " + std::to_string(bossEntity) + " spawned successfully!");
         return bossEntity;
+    }
+
+    void LevelManager::ResetEnemiesForRetry() {
+        GN_LOG_INFO("[RESET] Resetting all enemies for level retry...");
+
+        // Get screen dimensions for positioning
+        const ScreenInfo& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+
+        // Reset all active enemies - keep them VISIBLE and scrolling like obstacles
+        // CRITICAL: Space them out horizontally, do NOT stack them!
+        const float ENEMY_SPACING = 800.0f; // Generous spacing between enemies
+        int enemyIndex = 0;
+        
+        for (Entity enemy : m_activeEnemies) {
+            Enemy* enemyComp = m_ecsSystem->GetComponent<Enemy>(enemy);
+            Transform* transform = m_ecsSystem->GetComponent<Transform>(enemy);
+            Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(enemy);
+
+            if (enemyComp && transform) {
+                // Position offscreen to the right with proper spacing (like initial spawn)
+                float offsetX = screenInfo.pixelWidth + 650.0f + (enemyIndex * ENEMY_SPACING);
+                transform->position.x = offsetX;
+                
+                // CRITICAL: DO NOT CHANGE Y POSITION - preserve grounded/flying state!
+                // The Y position is already correct from initial spawn
+                // DO NOT touch transform->position.y or enemyComp->baseY!
+                
+                // Reset flip state to default (facing left)
+                transform->scale.x = std::abs(transform->scale.x);
+                enemyComp->isFacingRight = false;
+
+                // Reset enemy state but KEEP ACTIVE AND VISIBLE
+                enemyComp->isActive = true;
+                enemyComp->throwTimer = 0.0f;
+                enemyComp->isThrowing = false;
+                enemyComp->hasSpawnedProjectile = false;
+                enemyComp->isOnScreen = false;
+                enemyComp->hasThrownOnScreenEntry = false;
+                enemyComp->currentState = EnemyState::Idle;
+                enemyComp->stateTimer = 0.0f;
+                enemyComp->throwAnimationTimer = 0.0f;
+                enemyComp->currentThrowFrame = 0;
+
+                GN_LOG_INFO("[RESET] Reset enemy " + std::to_string(enemy) + " #" + std::to_string(enemyIndex) +
+                           " - positioned at (" + std::to_string(transform->position.x) + ", " + 
+                           std::to_string(transform->position.y) + "), Y PRESERVED, VISIBLE and ACTIVE");
+                
+                enemyIndex++;
+            }
+            
+            // Keep sprites VISIBLE and PLAYING - enemies scroll naturally like obstacles
+            if (sprite) {
+                sprite->visible = true; // Keep visible!
+                sprite->color.a = 255; // Full opacity
+                // Reset animation to idle state but keep playing
+                sprite->currentFrame = 0;
+                sprite->currentFrameTime = 0.0f;
+                sprite->playing = true; // Keep playing!
+            }
+        }
+        
+        int enemyCount = static_cast<int>(m_activeEnemies.size());
+
+        GN_LOG_INFO("[RESET] All " + std::to_string(enemyCount) + " enemies reset with " + 
+                   std::to_string(ENEMY_SPACING) + "px spacing - Y positions PRESERVED, kept VISIBLE and ACTIVE");
     }
 
 } // namespace GameCore

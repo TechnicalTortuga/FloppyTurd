@@ -64,7 +64,8 @@ namespace GameCore {
                 break;
                 
             case 4: // Snow
-                m_levelPatterns.push_back({PatternType::SNOW_TOILET_PAIR, 1.0f, 0.0f});
+                // HORIZONTAL spacing between toilet pairs: 1800px for ample coin room
+                m_levelPatterns.push_back({PatternType::SNOW_TOILET_PAIR, 1.0f, 1800.0f});
                 break;
                 
             case 5: // Castle
@@ -97,11 +98,16 @@ namespace GameCore {
         for (int i = 0; i < OBSTACLE_POOL_SIZE; i++) {
             int groupIdBefore = m_nextGroupId;
             
-            GN_LOG_INFO("Castle level: Spawning pattern " + std::to_string(i) + " at x=" + std::to_string(nextWorldX));
+            GN_LOG_INFO("Level " + std::to_string(levelId) + ": Spawning pattern " + std::to_string(i) + " at x=" + std::to_string(nextWorldX));
             SpawnRandomPatternForLevel(levelId, nextWorldX);
             
-            // Calculate next position - use proper spacing for castle level
-            if (levelId == 5) { // Castle level
+            // Calculate next position - use proper spacing for snow and castle levels
+            if (levelId == 4) { // Snow level
+                // Snow level uses 1500px gaps between toilet groups for comfortable navigation
+                float oldX = nextWorldX;
+                nextWorldX += 1500.0f;
+                GN_LOG_INFO("Snow level: Added 1500px spacing: " + std::to_string(oldX) + " -> " + std::to_string(nextWorldX));
+            } else if (levelId == 5) { // Castle level
                 // Castle level uses 2000px gaps between toilet groups
                 float oldX = nextWorldX;
                 nextWorldX += 2000.0f;
@@ -1232,17 +1238,19 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
             float right = maxX - horizontalMargin;
             if (!(left < right)) return;
             
-            // Ensure minimum spacing between coins (8px * scale)
-            const float minSpacing = 8.0f * m_baseScale;
+            // Ensure minimum spacing between coins (widened for better spread without reducing coin count)
+            const float preferredMinSpacing = 32.0f * m_baseScale; // Widened from 8.0f to 24.0f (192px at 8x scale)
+            const float absoluteMinSpacing = 8.0f * m_baseScale;   // Fallback minimum to prevent overlap
             float spacing = (right - left) / static_cast<float>(coinsPerStripe);
             int actualCoinsToPlace = coinsPerStripe;
-            
-            if (spacing < minSpacing) {
-                // Reduce number of coins to maintain minimum spacing
-                actualCoinsToPlace = std::max(1, static_cast<int>((right - left) / minSpacing));
-                spacing = (right - left) / static_cast<float>(actualCoinsToPlace);
+
+            if (spacing < preferredMinSpacing) {
+                // Instead of reducing coin count, allow tighter spacing down to absolute minimum
+                // This maintains coin count while still preventing severe overlap
+                spacing = std::max(absoluteMinSpacing, spacing);
+                actualCoinsToPlace = coinsPerStripe; // Keep all coins, just tighter spacing if needed
                 // Performance: Disabled coin spawning debug logging
-                // GN_LOG_DEBUG("ObstacleSystem::emitStripe reduced coins from " + std::to_string(coinsPerStripe) + " to " + std::to_string(actualCoinsToPlace) + " to maintain minimum spacing");
+                // GN_LOG_DEBUG("ObstacleSystem::emitStripe using tighter spacing (" + std::to_string(spacing) + ") to maintain " + std::to_string(actualCoinsToPlace) + " coins");
             }
             
             for (int i = 0; i < actualCoinsToPlace; ++i) {
@@ -1258,17 +1266,19 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
             float right = rangeMax - horizontalMargin;
             if (!(left < right)) return;
             
-            // Ensure minimum spacing between coins (8px * scale)
-            const float minSpacing = 8.0f * m_baseScale;
+            // Ensure minimum spacing between coins (widened for better spread without reducing coin count)
+            const float preferredMinSpacing = 48.0f * m_baseScale; // Increased from 32.0f to 48.0f (384px at 8x scale)
+            const float absoluteMinSpacing = 16.0f * m_baseScale;  // Increased from 8.0f to 16.0f (128px at 8x scale)
             float spacing = (right - left) / static_cast<float>(coinsPerStripe);
             int actualCoinsToPlace = coinsPerStripe;
-            
-            if (spacing < minSpacing) {
-                // Reduce number of coins to maintain minimum spacing
-                actualCoinsToPlace = std::max(1, static_cast<int>((right - left) / minSpacing));
-                spacing = (right - left) / static_cast<float>(actualCoinsToPlace);
+
+            if (spacing < preferredMinSpacing) {
+                // Instead of reducing coin count, allow tighter spacing down to absolute minimum
+                // This maintains coin count while still preventing severe overlap
+                spacing = std::max(absoluteMinSpacing, spacing);
+                actualCoinsToPlace = coinsPerStripe; // Keep all coins, just tighter spacing if needed
                 // Performance: Disabled coin spawning debug logging
-                // GN_LOG_DEBUG("ObstacleSystem::emitStripeInRange reduced coins from " + std::to_string(coinsPerStripe) + " to " + std::to_string(actualCoinsToPlace) + " to maintain minimum spacing");
+                // GN_LOG_DEBUG("ObstacleSystem::emitStripeInRange using tighter spacing (" + std::to_string(spacing) + ") to maintain " + std::to_string(actualCoinsToPlace) + " coins");
             }
             
             // Performance: Disabled coin spawning debug logging
@@ -1289,17 +1299,19 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
             float right = rangeMax;
             if (!(left < right)) return;
             
-            // Ensure minimum spacing between coins (8px * scale)
-            const float minSpacing = 8.0f * m_baseScale;
+            // Ensure minimum spacing between coins (widened for better spread without reducing coin count)
+            const float preferredMinSpacing = 32.0f * m_baseScale; // Widened from 8.0f to 24.0f (192px at 8x scale)
+            const float absoluteMinSpacing = 8.0f * m_baseScale;   // Fallback minimum to prevent overlap
             float spacing = (right - left) / static_cast<float>(coinsPerStripe);
             int actualCoinsToPlace = coinsPerStripe;
-            
-            if (spacing < minSpacing) {
-                // Reduce number of coins to maintain minimum spacing
-                actualCoinsToPlace = std::max(1, static_cast<int>((right - left) / minSpacing));
-                spacing = (right - left) / static_cast<float>(actualCoinsToPlace);
+
+            if (spacing < preferredMinSpacing) {
+                // Instead of reducing coin count, allow tighter spacing down to absolute minimum
+                // This maintains coin count while still preventing severe overlap
+                spacing = std::max(absoluteMinSpacing, spacing);
+                actualCoinsToPlace = coinsPerStripe; // Keep all coins, just tighter spacing if needed
                 // Performance: Disabled coin spawning debug logging
-                // GN_LOG_DEBUG("ObstacleSystem::emitGroundStripe reduced coins from " + std::to_string(coinsPerStripe) + " to " + std::to_string(actualCoinsToPlace) + " to maintain minimum spacing");
+                // GN_LOG_DEBUG("ObstacleSystem::emitGroundStripe using tighter spacing (" + std::to_string(spacing) + ") to maintain " + std::to_string(actualCoinsToPlace) + " coins");
             }
             
             // Performance: Disabled coin spawning debug logging
@@ -1335,14 +1347,41 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
             }
             case GroupPattern::TopAndBottom: {
                 // Two stripes: one below top band and one above bottom band, each within its own band span
+                // Used by: Park (Level 1), Sewer (Level 2), Snow (Level 4), Castle (Level 5)
+                float topStripeY = 0.0f;
+                float bottomStripeY = 0.0f;
+                
+                // Only enable verbose logging for Snow and Castle levels (wide gaps)
+                bool verboseLogging = (m_currentLevelId == 4 || m_currentLevelId == 5);
+                
                 if (topBandBottomEdge != std::numeric_limits<float>::max()) {
-                    if (topMinX < topMaxX) emitStripeInRange(topBandBottomEdge + verticalPad, topMinX, topMaxX);
+                    topStripeY = topBandBottomEdge + verticalPad;
+                    if (topMinX < topMaxX) {
+                        emitStripeInRange(topStripeY, topMinX, topMaxX);
+                        if (verboseLogging) {
+                            GN_LOG_INFO("ObstacleSystem::TopAndBottom [Level " + std::to_string(m_currentLevelId) + "] TOP coin row at Y=" + std::to_string(topStripeY) + 
+                                       " (topBandBottom=" + std::to_string(topBandBottomEdge) + " + verticalPad=" + std::to_string(verticalPad) + 
+                                       "), X span=[" + std::to_string(topMinX) + " to " + std::to_string(topMaxX) + "]");
+                        }
+                    }
                 }
                 if (bottomBandTopEdge != std::numeric_limits<float>::lowest()) {
-                    if (bottomMinX < bottomMaxX) emitStripeInRange(bottomBandTopEdge - verticalPad, bottomMinX, bottomMaxX);
+                    bottomStripeY = bottomBandTopEdge - verticalPad;
+                    if (bottomMinX < bottomMaxX) {
+                        emitStripeInRange(bottomStripeY, bottomMinX, bottomMaxX);
+                        if (verboseLogging) {
+                            GN_LOG_INFO("ObstacleSystem::TopAndBottom [Level " + std::to_string(m_currentLevelId) + "] BOTTOM coin row at Y=" + std::to_string(bottomStripeY) + 
+                                       " (bottomBandTop=" + std::to_string(bottomBandTopEdge) + " - verticalPad=" + std::to_string(verticalPad) + 
+                                       "), X span=[" + std::to_string(bottomMinX) + " to " + std::to_string(bottomMaxX) + "]");
+                        }
+                    }
                 }
-                // Performance: Disabled coin spawning debug logging
-                // GN_LOG_DEBUG("ObstacleSystem::TopAndBottom top stripe below y=" + std::to_string(topBandBottomEdge + verticalPad) + " bottom stripe above y=" + std::to_string(bottomBandTopEdge - verticalPad));
+                
+                if (verboseLogging) {
+                    GN_LOG_INFO("ObstacleSystem::TopAndBottom [Level " + std::to_string(m_currentLevelId) + "] SUMMARY for groupId=" + std::to_string(groupId) + 
+                               ": TOP row Y=" + std::to_string(topStripeY) + ", BOTTOM row Y=" + std::to_string(bottomStripeY) + 
+                               ", GAP=" + std::to_string(bottomStripeY - topStripeY) + "px, total coins=" + std::to_string(positions.size()));
+                }
                 break;
             }
             case GroupPattern::Ground: {
@@ -1407,6 +1446,42 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
                 } else {
                     // Performance: Disabled coin spawning debug logging
                     // GN_LOG_DEBUG("ObstacleSystem::Ground no coins spawned: groundObstacleTop=" + std::to_string(groundObstacleTop) + ", foundCurrentGroup=" + std::to_string(foundCurrentGroup));
+                }
+                break;
+            }
+            case GroupPattern::SnowScreenEdges: {
+                // SNOW LEVEL UNIQUE PATTERN: Coins at TOP and BOTTOM of screen, horizontally aligned with pipe obstacles
+                // This creates two horizontal coin rows: one hugging the top screen edge, one hugging the bottom
+                const float screenHeight = 2556.0f; // iPhone 16 portrait height
+                const float topScreenY = 200.0f;  // Near top of screen (with safe area padding)
+                const float bottomScreenY = screenHeight - 250.0f;  // Near bottom of screen (Y=2306, closer to bottom)
+                
+                // Coins should be centered BETWEEN obstacles (in the gap AFTER current toilet pair)
+                // Position coins in the CENTER of the gap that follows this toilet pair
+                // Gap is 900px for tight but fair obstacle spacing
+                const float gapSize = 900.0f; // Reduced for tighter gameplay
+                float coinCenterX = maxX + (gapSize / 2.0f);  // Position in gap AFTER obstacles
+                
+                // DEBUG: Log the obstacle bounds and center calculation
+                GN_LOG_INFO("Snow coin positioning: minX=" + std::to_string(minX) + ", maxX=" + std::to_string(maxX) + 
+                           ", coinCenterX=" + std::to_string(coinCenterX) + " (maxX + " + std::to_string(gapSize/2.0f) + "px)");
+                
+                // INCREASED: Wider stripe for better coin distribution (350px expansion on each side)
+                float coinHalfWidth = ((maxX - minX) / 2.0f) + 350.0f; // Increased from 100px to 350px
+                float coinMinX = coinCenterX - coinHalfWidth;
+                float coinMaxX = coinCenterX + coinHalfWidth;
+                
+                if (coinMinX < coinMaxX) {
+                    GN_LOG_INFO("ObstacleSystem::SnowScreenEdges [Snow Level] 🪙 TOP row at Y=" + std::to_string(topScreenY) + 
+                               ", BOTTOM row at Y=" + std::to_string(bottomScreenY) + 
+                               ", X span CENTERED+WIDENED=[" + std::to_string(coinMinX) + " to " + std::to_string(coinMaxX) + 
+                               "], total width=" + std::to_string(coinMaxX - coinMinX) + "px");
+                    
+                    emitStripeInRange(topScreenY, coinMinX, coinMaxX);       // Top screen edge
+                    emitStripeInRange(bottomScreenY, coinMinX, coinMaxX);    // Bottom screen edge
+                    
+                    GN_LOG_INFO("ObstacleSystem::SnowScreenEdges spawned " + std::to_string(positions.size()) + 
+                               " total coins (2 rows of 5) for groupId=" + std::to_string(groupId));
                 }
                 break;
             }
@@ -1615,17 +1690,22 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
             }
         }
         
-        // Position new group with proper gap for castle level
+        // Position new group with proper gap for snow and castle levels
         float newX;
-        if (m_currentLevelId == 5) { // Castle level
-            // Castle level: position at the end of the gap, not after the toilet width
-            // Initial spawn uses 2000px gaps, so wrapping should match that
-            // rightmostOriginX is the toilet's X position, so we add 2000px to get to the end of the gap
+        if (m_currentLevelId == 4) {
+            // Snow level: 900px gap AFTER the toilet for tighter gameplay
+            newX = rightmostOriginX + 900.0f;
+            GN_LOG_INFO("Snow level wrapping: rightmostOriginX=" + std::to_string(rightmostOriginX) + 
+                       ", rightmostGroupWidth=" + std::to_string(rightmostGroupWidth) + 
+                       ", newX=" + std::to_string(newX) + 
+                       ", positioned at end of 900px gap");
+        } else if (m_currentLevelId == 5) {
+            // Castle level: 2000px gap AFTER the toilet
             newX = rightmostOriginX + 2000.0f;
             GN_LOG_INFO("Castle level wrapping: rightmostOriginX=" + std::to_string(rightmostOriginX) + 
                        ", rightmostGroupWidth=" + std::to_string(rightmostGroupWidth) + 
                        ", newX=" + std::to_string(newX) + 
-                       ", positioned at end of 2000px gap (not after toilet width)");
+                       ", positioned at end of 2000px gap");
         } else {
             // Other levels: position exactly after rightmost group with NO GAP
             newX = rightmostOriginX + rightmostGroupWidth;
@@ -2138,7 +2218,7 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         float randomTopY = minTopY + (maxTopY - minTopY) * ((float)rand() / RAND_MAX);
         
         // Fixed gap height between toilets (maintained during oscillation)
-        float fixedGapHeight = 800.0f;
+        float fixedGapHeight = 800.0f;  // Standard gap for gameplay
         
         // Calculate bottom toilet position
         float topToiletY = randomTopY;
@@ -2236,19 +2316,24 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         m_ecsSystem->GetComponent<Obstacle>(topToilet)->pairedEntity = bottomToilet;
         
         // Add both to the same group for coordinated spawning/wrapping
+        // Use UNIQUE SnowScreenEdges pattern so coins spawn at screen edges, not relative to pipes
         float groupWidth = 65.0f * m_baseScale; // Width of toilet
-        AddEntityToGroup(topToilet, groupId, true, 0.0f, 0.0f, groupWidth, GroupPattern::TopAndBottom);
-        AddEntityToGroup(bottomToilet, groupId, false, 0.0f, fixedGapHeight + toiletHeight, groupWidth, GroupPattern::TopAndBottom);
+        AddEntityToGroup(topToilet, groupId, true, 0.0f, 0.0f, groupWidth, GroupPattern::SnowScreenEdges);
+        AddEntityToGroup(bottomToilet, groupId, false, 0.0f, fixedGapHeight + toiletHeight, groupWidth, GroupPattern::SnowScreenEdges);
         
-        // Add GroupGap component to ensure proper spacing between groups
-        GroupGap groupGap(1500.0f, false, "castle_toilet_spacing");
+        // Add GroupGap component to ensure proper HORIZONTAL spacing between groups
+        // ADJUSTED: 900px gap for tighter gameplay
+        GroupGap groupGap(900.0f, false, "snow_toilet_spacing");
         m_ecsSystem->AddComponent<GroupGap>(topToilet, groupGap);
+        
+        GN_LOG_INFO("Snow toilet pair: Applied 900px horizontal gap for group " + std::to_string(groupId));
         
         // Track obstacles for management
         m_activeObstacles.push_back(topToilet);
         m_activeObstacles.push_back(bottomToilet);
         
-        GN_LOG_INFO("Spawned oscillating snow toilet pair at x=" + std::to_string(x) + " with group " + std::to_string(groupId));
+        GN_LOG_INFO("Spawned oscillating snow toilet pair at x=" + std::to_string(x) + " with group " + std::to_string(groupId) + 
+                   " - VERTICAL gap=" + std::to_string(fixedGapHeight) + "px, topY=" + std::to_string(topToiletY) + ", bottomY=" + std::to_string(bottomToiletY));
     }
 
     void ObstacleSystem::UpdateObstacleOscillation(float deltaTime) {

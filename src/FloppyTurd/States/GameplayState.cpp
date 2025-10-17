@@ -716,9 +716,48 @@ namespace GameCore {
         m_invulnerabilityTimer = 0.0f;
         m_levelCompleted = false;
 
+        // CRITICAL: Reset player position and physics for fresh start
+        if (m_playerEntity != 0) {
+            Transform* playerTransform = m_ecsSystem->GetComponent<Transform>(m_playerEntity);
+            Physics* playerPhysics = m_ecsSystem->GetComponent<Physics>(m_playerEntity);
+            
+            if (playerTransform) {
+                // Reset to starting position (left side of screen, vertically centered)
+                playerTransform->position.x = 300.0f;
+                playerTransform->position.y = 1278.0f; // Screen center-ish
+                GN_LOG_INFO("[RESET] Player position reset to (" + 
+                           std::to_string(playerTransform->position.x) + ", " + 
+                           std::to_string(playerTransform->position.y) + ")");
+            }
+            
+            if (playerPhysics) {
+                // Reset velocity
+                playerPhysics->velocity = Gnosis::GNVector2(0.0f, 0.0f);
+                GN_LOG_INFO("[RESET] Player velocity reset to zero");
+            }
+        }
+        
         // Reset camera system world position for fresh start
         if (m_cameraSystem) {
             m_cameraSystem->ResetForNewGame();
+        }
+        
+        // CRITICAL: Reset all entities for fresh spawning
+        if (m_levelManager) {
+            m_levelManager->ResetEnemiesForRetry();
+            GN_LOG_INFO("[RESET] Enemy positions reset for level retry");
+        }
+        
+        // Reset obstacles for clean level start
+        if (m_levelManager && m_levelManager->GetObstacleSystem()) {
+            m_levelManager->GetObstacleSystem()->Cleanup();
+            GN_LOG_INFO("[RESET] Obstacles cleared for level retry");
+        }
+        
+        // Clear all pickups for fresh spawning
+        if (m_pickupSystem) {
+            m_pickupSystem->ClearAll();
+            GN_LOG_INFO("[RESET] Pickups cleared for level retry");
         }
 
         // Reset background positions to initial state
@@ -3398,6 +3437,12 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             m_pickupSystem->ClearAll();
         }
 
+        // Reset enemies for retry
+        if (m_levelManager) {
+            m_levelManager->ResetEnemiesForRetry();
+            GN_LOG_INFO("[RESET] Enemies reset for level retry");
+        }
+
         // Reset projectile system
         if (m_projectileSystem) {
             m_projectileSystem->ResetForNewGame();
@@ -3980,6 +4025,14 @@ void GameplayState::RescaleBackgroundsForOrientation(bool isLandscape, float scr
         return;
     }
     
+    // 🎯 DISABLED: This rescaling breaks LevelManager's pixel-perfect positioning
+    // LevelManager already calculates optimal scale using actual texture dimensions
+    // This code was using incorrect hardcoded dimensions and overriding the correct scale
+    
+    GN_LOG_INFO("⚠️ Background rescaling DISABLED - LevelManager handles pixel-perfect scaling");
+    return;
+    
+    /* LEGACY CODE - DO NOT USE
     // Get all background entities with parallax components
     auto backgroundEntities = m_ecsSystem->GetEntitiesWithComponents<Transform, Sprite, Parallax>();
     
@@ -4085,11 +4138,10 @@ void GameplayState::RescaleBackgroundsForOrientation(bool isLandscape, float scr
                 transform->position.y = 0.0f;
             }
             
-            GN_LOG_INFO("Rescaled static boss background to scale " + std::to_string(transform->scale.x) + 
-                       " at position (" + std::to_string(transform->position.x) + ", " + 
-                       std::to_string(transform->position.y) + ")");
+            GN_LOG_INFO("Rescaled boss static background to scale " + std::to_string(transform->scale.x));
         }
     }
+    END LEGACY CODE */
 }
 
 } // namespace GameCore
