@@ -536,36 +536,38 @@ namespace GameCore {
         Hitbox* hitbox = m_ecsSystem->GetComponent<Hitbox>(projectile);
         if (hitbox) {
             hitbox->type = ColliderType::Circle;
-            // CRITICAL: Sprite is PRE-SCALED, so offset must be half of SCALED sprite dimensions
-            // (Not frame dimensions, since sprite.width/height are already scaled)
-            hitbox->offsetX = sprite->width / 2.0f;
-            hitbox->offsetY = sprite->height / 2.0f;
+            // CRITICAL: Offset MUST be 0 since sprite is PRE-SCALED
+            // Collision math adds: position + spriteHalf + (offset * scale)
+            // Since sprite is already scaled to final size, offset would double-count
+            // Player hitbox also uses offset=0 for the same reason
+            hitbox->offsetX = 0.0f;
+            hitbox->offsetY = 0.0f;
             
-            // CRITICAL: Sprite dimensions are PRE-SCALED (e.g., 32px * 8 = 256px stored in sprite.width)
-            // but Transform.scale is 1.0, so radius must ALSO be pre-scaled!
-            // Radius should be ~40-50% of sprite radius for good collision feel
+            // Store UNSCALED radius - the actual radius in the base sprite asset
+            // TP sprite: 32x32px with ~10px radius circle
+            // Snowball sprite: 32x32px with ~14px radius circle  
+            // Poop sprite: 16x16px with ~7px radius circle
+            // Collision math will apply Transform.scale to get effective radius
             switch (projectileType) {
                 case ProjectileType::TOILET_PAPER:
-                    // TP: 32px * 8 = 256px sprite, radius = 100px (~39% of sprite size, feels accurate)
-                    hitbox->radius = 100.0f;
+                    hitbox->radius = 10.0f;
                     break;
                 case ProjectileType::SNOWBALL:
-                    // Snowball: 32px * 9 = 288px sprite, radius = 130px (~45% of sprite size)
-                    hitbox->radius = 130.0f;
+                    hitbox->radius = 14.0f;
                     break;
                 case ProjectileType::POOP_BALL:
                 case ProjectileType::LARGE_POOP_BALL:
                 default:
-                    // Player poop: 16px * 8 = 128px sprite, radius = 55px (~43% of sprite size)
-                    hitbox->radius = 55.0f;
+                    hitbox->radius = 7.0f;
                     break;
             }
             
             GN_LOG_INFO("✅ HITBOX CONFIGURED for projectile type " + std::to_string(static_cast<int>(projectileType)) +
-                       ": radius=" + std::to_string(hitbox->radius) + " (PRE-SCALED - Transform.scale=1.0)" +
-                       ", offset=(" + std::to_string(hitbox->offsetX) + "," + std::to_string(hitbox->offsetY) + ")" +
-                       " spriteSize=" + std::to_string(sprite->width) + "x" + std::to_string(sprite->height) +
-                       " frameSize=" + std::to_string(config.frameWidth) + "x" + std::to_string(config.frameHeight));
+                       ": radius=" + std::to_string(hitbox->radius) + "px (PRE-SCALED to match rendered size)" +
+                       ", offset=(" + std::to_string(hitbox->offsetX) + "," + std::to_string(hitbox->offsetY) + ") [MUST BE 0]" +
+                       ", spriteSize=" + std::to_string(sprite->width) + "x" + std::to_string(sprite->height) +
+                       ", frameSize=" + std::to_string(config.frameWidth) + "x" + std::to_string(config.frameHeight) +
+                       ", Transform.scale=1.0 (fixed)");
         }
 
         GN_LOG_INFO("Configured sprite for projectile type " + std::to_string(static_cast<int>(projectileType)) +

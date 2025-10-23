@@ -599,18 +599,20 @@ void BossSystem::SpawnProjectile() {
 
     GNVector2 shoulder = GetShoulderPosition();
     
-    // Calculate direction vector directly (like RatCopter - more accurate than angle reconstruction)
-    Gnosis::GNVector2 toPlayer = Gnosis::Vector2Subtract(aimingData.playerPosition, shoulder);
+    // Calculate launch position (hand location, lowered by 16*scale) - MUST MATCH lock-on dots!
+    Gnosis::GNVector2 handLoc = { shoulder.x - (40.0f * scale), shoulder.y + (16.0f * scale) };
+    
+    // FIXED: Use the SAME target adjustment as lock-on dots for accurate aiming
+    // Offset target 8px*scale higher for better visual accuracy (matches UpdateLockOnIndicator line 759)
+    Gnosis::GNVector2 adjustedTarget = {aimingData.playerPosition.x, aimingData.playerPosition.y - (8.0f * scale)};
+    Gnosis::GNVector2 toPlayer = Gnosis::Vector2Subtract(adjustedTarget, handLoc);
     float length = sqrtf(toPlayer.x * toPlayer.x + toPlayer.y * toPlayer.y);
     GNVector2 direction = {toPlayer.x / length, toPlayer.y / length};
     
     // Log the angle for debugging (convert direction back to angle)
     float angleRad = atan2(direction.y, direction.x);
 
-    // Match old system: hand location is 40 pixels left of shoulder (scaled), then offset 20 pixels in throw direction
-    // Old code: Vector2 handLoc = { shoulder.x - 40, shoulder.y };
-    //           Vector2 spawn = Vector2Add(handLoc, Vector2Scale(dir, 20.0f));
-    Gnosis::GNVector2 handLoc = { shoulder.x - (40.0f * scale), shoulder.y + (16.0f * scale) };
+    // Spawn position: hand location offset 20 pixels in throw direction (same as lock-on dots)
     Gnosis::GNVector2 directionOffset = Gnosis::Vector2Scale(direction, 20.0f * scale);
     Gnosis::GNVector2 spawnPos = Gnosis::Vector2Add(handLoc, directionOffset);
 
@@ -623,10 +625,10 @@ void BossSystem::SpawnProjectile() {
     );
 
     if (projectile != 0) {
-        // Set projectile speed by modifying its physics component
+        // FIXED: Increased projectile speed from 500.0f to 1000.0f for faster, more accurate projectiles
         Physics* physics = m_ecsSystem->GetComponent<Physics>(projectile);
         if (physics) {
-            physics->velocity = direction * 500.0f; // Fast speed to reach player
+            physics->velocity = direction * 1000.0f; // Doubled speed for faster, more accurate aiming
         }
 
         GN_LOG_INFO("Rat King spawned toilet paper projectile at angle: " +
@@ -634,8 +636,9 @@ void BossSystem::SpawnProjectile() {
                    ", direction: (" + std::to_string(direction.x) + ", " + std::to_string(direction.y) +
                    "), shoulder: (" + std::to_string(shoulder.x) + ", " + std::to_string(shoulder.y) +
                    "), handLoc: (" + std::to_string(handLoc.x) + ", " + std::to_string(handLoc.y) +
+                   "), adjustedTarget: (" + std::to_string(adjustedTarget.x) + ", " + std::to_string(adjustedTarget.y) +
                    "), spawn: (" + std::to_string(spawnPos.x) + ", " + std::to_string(spawnPos.y) +
-                   "), velocity: (" + std::to_string(direction.x * 500.0f) + ", " + std::to_string(direction.y * 500.0f) + ")");
+                   "), velocity: (" + std::to_string(direction.x * 1000.0f) + ", " + std::to_string(direction.y * 1000.0f) + ")");
     }
 
     // Dual projectile at low health (below 20%)
@@ -663,10 +666,10 @@ void BossSystem::SpawnProjectile() {
         );
 
         if (dualProjectile != 0) {
-            // Set dual projectile speed
+            // Set dual projectile speed (also increased to 1000.0f)
             Physics* dualPhysics = m_ecsSystem->GetComponent<Physics>(dualProjectile);
             if (dualPhysics) {
-                dualPhysics->velocity = dualDirection * 500.0f;
+                dualPhysics->velocity = dualDirection * 1000.0f;
             }
 
             GN_LOG_INFO("Rat King spawned dual toilet paper projectile at angle: " +

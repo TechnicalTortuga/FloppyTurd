@@ -1700,8 +1700,8 @@ namespace GameCore {
         float estimatedCoinCounterWidth = 200.0f; // Rough estimate for coin counter text width
         float coinCounterRightX = coinCounterX + estimatedCoinCounterWidth;
 
-        // Position shooting zone: percentage-based positioning (85%-95% from top)
-        float shootingZoneTopY = m_cachedScreenHeight * 0.85f; // 85% from top
+        // Position shooting zone: percentage-based positioning (80%-95% from top) - MUST MATCH PlayerControllerSystem
+        float shootingZoneTopY = m_cachedScreenHeight * 0.80f; // 80% from top
         float shootingZoneBottomY = m_cachedScreenHeight * 0.95f; // 95% from top
         float shootingZoneHeight = shootingZoneBottomY - shootingZoneTopY;
 
@@ -2619,8 +2619,8 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             float estimatedCoinCounterWidth = 200.0f;
             float coinCounterRightX = coinCounterX + estimatedCoinCounterWidth;
 
-            // Shooting zone position - percentage-based positioning for landscape (85%-95%)
-            float shootingZoneTopY = screenH * 0.85f; // 85% from top in landscape
+            // Shooting zone position - percentage-based positioning for landscape (80%-95%) - MUST MATCH PlayerControllerSystem
+            float shootingZoneTopY = screenH * 0.80f; // 80% from top in landscape
             float shootingZoneBottomY = screenH * 0.95f; // 95% from top in landscape
             float shootingZoneHeight = shootingZoneBottomY - shootingZoneTopY;
             float shootingZoneLeftX = coinCounterRightX + 8.0f;
@@ -2804,8 +2804,8 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             float estimatedCoinCounterWidth = 200.0f;
             float coinCounterRightX = coinCounterX + estimatedCoinCounterWidth;
 
-            // Shooting zone position - percentage-based positioning for portrait (85%-95%)
-            float shootingZoneTopY = screenH * 0.85f; // 85% from top in portrait
+            // Shooting zone position - percentage-based positioning for portrait (80%-95%) - MUST MATCH PlayerControllerSystem
+            float shootingZoneTopY = screenH * 0.80f; // 80% from top in portrait
             float shootingZoneBottomY = screenH * 0.95f; // 95% from top in portrait
             float shootingZoneHeight = shootingZoneBottomY - shootingZoneTopY;
             float shootingZoneLeftX = coinCounterRightX + 8.0f;
