@@ -17,7 +17,6 @@ namespace GameCore {
 
 #include "../States/GameState.h"
 #include "../States/GameplayState.h"
-#include "../Entities/Player.h"
 #include <memory>
 
 namespace GameCore {
@@ -189,6 +188,8 @@ namespace GameCore {
         // Landscape mode support
         int m_pendingLandscapeLevelId;
         std::string m_pendingTransitionTarget;
+        bool m_enteredViaQuickplay;  // Track if user entered via Quickplay
+        int m_lastPlayedLevelId;     // Track the last level played (for return navigation)
         
         // Performance tracking
         float m_frameTime;

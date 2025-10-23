@@ -296,6 +296,18 @@ namespace GameCore {
     // Spawn Janitor NPC periodically (Level 2 only)
     void LevelManager::UpdateNPCSpawning(float) { /* disabled; using pool */ }
 
+    Gnosis::GNVector2 LevelManager::GetPlayerPosition() const {
+        if (m_playerEntity != 0) {
+            Transform* playerTransform = m_ecsSystem->GetComponent<Transform>(m_playerEntity);
+            if (playerTransform) {
+                return playerTransform->position;
+            }
+        }
+        // Fallback: return center of screen if player not found
+        const ScreenInfo& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+        return Gnosis::GNVector2(screenInfo.pixelWidth * 0.5f, screenInfo.pixelHeight * 0.5f);
+    }
+
     void LevelManager::InitializeEnemyPool() {
         if (m_enemyPoolInitialized) return;
         if (!m_isLoaded || !m_currentLevelConfig.enableEnemies || m_currentLevelConfig.enemies.empty()) return;
@@ -452,7 +464,8 @@ namespace GameCore {
                 
                 // Spawn boss on the right side of the screen, GROUNDED
                 // Position for 128x128 sprite at 8x scale (1024px total) in landscape
-                float bossX = screenInfo.pixelWidth * 0.70f; // 70% from left
+                // Shift left by 32 * scale (was too far left at 128, adjusting back)
+                float bossX = (screenInfo.pixelWidth * 0.70f) - (32.0f * bossConfig->scale);
                 
                 // GROUND THE RAT KING: floor + his height up from bottom
                 float ratKingHeight = 128.0f * bossConfig->scale; // 128px sprite * 8x scale = 1024px
@@ -513,7 +526,8 @@ namespace GameCore {
         if (m_currentLevelId != 2) { m_npcPoolInitialized = true; return; }
 
         // Ensure single Janitor entity
-        float screenW = 1179.0f, screenH = 2556.0f; // Use fixed iPhone 16 portrait metrics
+        const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+        float screenW = screenInfo.pixelWidth, screenH = screenInfo.pixelHeight;
         // Clear any existing NPCs to enforce singleton Janitor
         for (Gnosis::Entity e : m_activeNPCs) {
             if (e != 0) { m_ecsSystem->DestroyEntity(e); }
@@ -542,8 +556,115 @@ namespace GameCore {
 
     void LevelManager::UpdateEnemyPooling(float, float worldScrollDistance) {
         if (!m_enemyPoolInitialized) return;
+        
+        // CRITICAL FIX: Respawn enemies from inactive pool if active count is low
+        // This handles enemies that were killed/returned to pool
+        const int initialEnemyCount = m_currentLevelConfig.enemies.size() > 0 ? static_cast<int>(m_currentLevelConfig.enemies.size()) : 3;
+        while (m_activeEnemies.size() < static_cast<size_t>(initialEnemyCount) && !m_enemyPool.inactiveEnemies.empty()) {
+            // Get an inactive enemy from the pool
+            Gnosis::Entity enemy = GetInactiveEnemy();
+            if (!enemy) break;
+            
+            // Reactivate and reposition the enemy
+            Enemy* enemyComp = m_ecsSystem->GetComponent<Enemy>(enemy);
+            Transform* transform = m_ecsSystem->GetComponent<Transform>(enemy);
+            Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(enemy);
+            
+            if (enemyComp && transform && sprite) {
+                // Find rightmost active enemy position
+                float rightmostX = ConfigManager::Instance().GetCurrentScreenInfo().pixelWidth;
+                for (Gnosis::Entity e : m_activeEnemies) {
+                    Transform* t = m_ecsSystem->GetComponent<Transform>(e);
+                    if (t && t->position.x > rightmostX) rightmostX = t->position.x;
+                }
+                
+                // Position offscreen right with spacing
+                transform->position.x = rightmostX + (m_enemySpacing * 1.25f);
+                
+                // Calculate Y position based on enemy type and level
+                float baseY;
+                if (m_currentLevelId == 2) { // Sewer - toilet paper
+                    baseY = ConfigManager::Instance().GetCurrentScreenInfo().pixelHeight * 0.3125f;
+                } else if (m_currentLevelId == 3) { // Desert - birds in top half
+                    float minY = ConfigManager::Instance().GetCurrentScreenInfo().pixelHeight * 0.15f;
+                    float maxY = ConfigManager::Instance().GetCurrentScreenInfo().pixelHeight * 0.45f;
+                    baseY = minY + static_cast<float>(rand() % static_cast<int>(maxY - minY));
+                } else if (m_currentLevelId == 5 || m_currentLevelId == 6) { // Castle (5) or Boss (6) - RatCopters
+                    // LANDSCAPE-AWARE: Boss level (6) is landscape, Castle level (5) is portrait
+                    // Level 5 (Castle, Portrait): 30%-50% of 2556 = 766-1278 (middle band)
+                    // Level 6 (Boss, Landscape): 50%-70% of 1179 = 589-825 (adjusted for lower height)
+                    const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+                    float minY = screenInfo.pixelHeight * (screenInfo.isPortrait ? 0.30f : 0.50f);
+                    float maxY = screenInfo.pixelHeight * (screenInfo.isPortrait ? 0.50f : 0.70f);
+                    baseY = minY + static_cast<float>(rand() % static_cast<int>(maxY - minY));
+                    GN_LOG_INFO("[RAT_WRAP] RatCopter wrap L" + std::to_string(m_currentLevelId) + ": screenH=" + std::to_string(screenInfo.pixelHeight) + 
+                               ", isPortrait=" + std::to_string(screenInfo.isPortrait) + 
+                               ", Y=" + std::to_string(baseY) + " (" + std::to_string((baseY/screenInfo.pixelHeight)*100.0f) + "%)");
+                } else if (enemyComp->isGrounded) { // Snowmen
+                    float rawSpriteHeight = sprite->frameHeight;
+                    float scaledSpriteHeight = sprite->height * std::abs(transform->scale.y);
+                    baseY = ConfigManager::Instance().GetCurrentScreenInfo().pixelHeight - scaledSpriteHeight + rawSpriteHeight;
+                } else {
+                    baseY = 900.0f + static_cast<float>((rand()%300) - 150);
+                }
+                
+                transform->position.y = baseY;
+                enemyComp->baseY = baseY;
+                enemyComp->hasInitializedBaseY = true;
+                enemyComp->isActive = true;
+                enemyComp->currentState = EnemyState::Idle;
+                
+                // Reset flying enemy state (RatCopters, Birds)
+                if (enemyComp->movementPattern == "flying" || enemyComp->movementPattern == "horizontal") {
+                    enemyComp->currentState = (enemyComp->movementPattern == "flying") ? EnemyState::FlyIn : EnemyState::Moving;
+                    enemyComp->isGrounded = false; // CRITICAL: Ensure flying enemies don't get grounded
+                    enemyComp->hoverTimer = 0.0f;
+                    enemyComp->hasLockedDirection = false;
+                    enemyComp->pullbackTimer = 0.0f;
+                    enemyComp->targetDirection = Gnosis::GNVector2(0.0f, 0.0f);
+                    enemyComp->pullbackVector = Gnosis::GNVector2(0.0f, 0.0f);
+                    enemyComp->beelineSpeed = 0.0f;
+                    
+                    GN_LOG_INFO("[ENEMY_RESPAWN] Reset flying/horizontal enemy " + enemyComp->enemyType + " isGrounded=false, pattern=" + enemyComp->movementPattern);
+                }
+                
+                // Make sprite visible and reset animation
+                sprite->visible = true;
+                sprite->color.a = 255;
+                sprite->currentFrame = 0;
+                sprite->currentFrameTime = 0.0f;
+                sprite->hasCompleted = false;
+                sprite->playing = true;
+                
+                // Reset to idle animation for StateAnimation enemies
+                StateAnimation* sa = m_ecsSystem->GetComponent<StateAnimation>(enemy);
+                if (sa && enemyComp) {
+                    for (const auto& config : m_currentLevelConfig.enemies) {
+                        if (config.textureId == enemyComp->enemyType && config.useStateAnimation) {
+                            const StateAnimation::Clip* idleClip = sa->getClip(config.initialState);
+                            if (idleClip) {
+                                sprite->textureId = idleClip->textureId;
+                                sprite->frameWidth = idleClip->frameWidth;
+                                sprite->frameHeight = idleClip->frameHeight;
+                                sprite->frameCount = idleClip->frameCount;
+                                sprite->frameTime = idleClip->frameTime;
+                                sprite->loop = idleClip->loop;
+                            }
+                            break;
+                        }
+                    }
+                }
+                
+                // Add to active enemies
+                m_activeEnemies.push_back(enemy);
+                
+                GN_LOG_INFO("[ENEMY_RESPAWN] Respawned " + enemyComp->enemyType + " from pool at X=" + std::to_string(transform->position.x) + ", Y=" + std::to_string(baseY));
+            }
+        }
+        
         // Wrap enemies when off-screen left, reusing pool
-        float screenW = 1179.0f;
+        const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+        float screenW = screenInfo.pixelWidth;
         // Find rightmost enemy X
         float rightmostX = screenW;
         for (Gnosis::Entity e : m_activeEnemies) {
@@ -565,7 +686,13 @@ namespace GameCore {
                 Enemy* enemyComp = m_ecsSystem->GetComponent<Enemy>(e);
                 float baseY;
                 
-                if (enemyComp && enemyComp->isGrounded) {
+                // Check level FIRST before checking isGrounded to avoid applying ground offset to toilet paper
+                if (m_currentLevelId == 2) { // Sewer level - toilet paper centered at 31.25% for 1/8 to 1/2 screen bobbing
+                    // Center at 31.25% (5/16) of screen so amplitude of 18.75% reaches 1/8 min and 1/2 max
+                    const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+                    baseY = screenInfo.pixelHeight * 0.3125f;
+                    GN_LOG_DEBUG("[WRAP_SEWER] Toilet paper wrapped to center Y=" + std::to_string(baseY) + " (screenH=" + std::to_string(screenInfo.pixelHeight) + ")");
+                } else if (enemyComp && enemyComp->isGrounded) {
                     // CRITICAL: Use EXACT spawn formula - NO baseY manipulation!
                     // From initial spawn (line 1595-1602):
                     // y = screenInfo.pixelHeight - scaledSpriteHeight + rawSpriteHeight;
@@ -582,16 +709,24 @@ namespace GameCore {
                                " (screenH=" + std::to_string(screenInfo.pixelHeight) + 
                                " - scaledH=" + std::to_string(scaledSpriteHeight) + 
                                " + rawH=" + std::to_string(rawSpriteHeight) + ")");
-                } else if (m_currentLevelId == 3) { // Desert level - maintain vertical spread
-                    // Random Y within the desert bird range for flying enemies
-                    float minY = 400.0f;
-                    float maxY = 1200.0f;
+                } else if (m_currentLevelId == 3) { // Desert level - birds only in top half
+                    // Random Y within top half of screen (15% to 45% range) for birds
+                    const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+                    float minY = screenInfo.pixelHeight * 0.15f;
+                    float maxY = screenInfo.pixelHeight * 0.45f;
                     baseY = minY + static_cast<float>(rand() % static_cast<int>(maxY - minY));
-                } else if (m_currentLevelId == 5) { // Castle level - maintain RatCopter vertical spread
-                    // Maintain RatCopter vertical spread when wrapping
-                    float minY = 600.0f;
-                    float maxY = 1400.0f;
+                } else if (m_currentLevelId == 5 || m_currentLevelId == 6) { // Castle (5) or Boss (6) - RatCopters
+                    // LANDSCAPE-AWARE: Boss level (6) is landscape, Castle level (5) is portrait
+                    // Level 5 (Castle, Portrait): 30%-50% of 2556 = 766-1278 (middle band)
+                    // Level 6 (Boss, Landscape): 50%-70% of 1179 = 589-825 (adjusted for lower height)
+                    const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+                    float minY = screenInfo.pixelHeight * (screenInfo.isPortrait ? 0.30f : 0.50f);
+                    float maxY = screenInfo.pixelHeight * (screenInfo.isPortrait ? 0.50f : 0.70f);
                     baseY = minY + static_cast<float>(rand() % static_cast<int>(maxY - minY));
+                    GN_LOG_INFO("[RAT_WRAP_FULL] RatCopter " + std::to_string(e) + " wrapped L" + std::to_string(m_currentLevelId) + ": screenH=" + 
+                               std::to_string(screenInfo.pixelHeight) + ", isPortrait=" + 
+                               std::to_string(screenInfo.isPortrait) + ", Y=" + std::to_string(baseY) + 
+                               " (" + std::to_string((baseY/screenInfo.pixelHeight)*100.0f) + "%)");
                 } else { // Other levels - original logic for non-grounded enemies
                     baseY = 900.0f + static_cast<float>((rand()%300) - 150);
                 }
@@ -601,6 +736,11 @@ namespace GameCore {
                 if (enemyComp) {
                     enemyComp->baseY = baseY;
                     enemyComp->hasInitializedBaseY = true;
+                    
+                    // Randomize bobPhase on wrap for maximum variation
+                    if (enemyComp->bobbingEnabled) {
+                        enemyComp->bobPhase = (static_cast<float>(rand()) / static_cast<float>(RAND_MAX)) * 6.28318530718f;
+                    }
                     
                     // CRITICAL: Reset throw state when wrapping so snowmen can throw again
                     if (enemyComp->isThrower) {
@@ -643,6 +783,27 @@ namespace GameCore {
                             }
                         }
                     }
+                    
+                    // CRITICAL: Reset flying enemy state when wrapping (RatCopters, Birds)
+                    if (enemyComp->movementPattern == "flying" || enemyComp->movementPattern == "horizontal") {
+                        enemyComp->currentState = (enemyComp->movementPattern == "flying") ? EnemyState::FlyIn : EnemyState::Moving;
+                        enemyComp->isGrounded = false; // CRITICAL: Keep flying/horizontal enemies airborne
+                        enemyComp->hoverTimer = 0.0f;
+                        enemyComp->hasLockedDirection = false;
+                        enemyComp->pullbackTimer = 0.0f;
+                        enemyComp->targetDirection = Gnosis::GNVector2(0.0f, 0.0f);
+                        enemyComp->pullbackVector = Gnosis::GNVector2(0.0f, 0.0f);
+                        enemyComp->baseY = baseY;  // CRITICAL: Update baseY to new wrap position
+                        enemyComp->beelineSpeed = 0.0f;  // Reset beeline speed
+                        
+                        // Reset sprite animation to idle
+                        s->currentFrame = 0;
+                        s->currentFrameTime = 0.0f;
+                        s->hasCompleted = false;
+                        s->playing = true;
+                        
+                        GN_LOG_INFO("[FLYING_ENEMY_WRAP] " + enemyComp->enemyType + " wrapped: isGrounded=false, pattern=" + enemyComp->movementPattern + ", pos=(" + std::to_string(t->position.x) + "," + std::to_string(baseY) + ")");
+                    }
                 }
                 m_enemyBaseY[e] = baseY;
                 rightmostX = t->position.x;
@@ -679,7 +840,8 @@ namespace GameCore {
             scr->speed = targetSpeed;
         }
         // Remove direct per-frame velocity movement to avoid double scroll; CameraSystem now moves him.
-        float screenW = 1179.0f, screenH = 2556.0f;
+        const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+        float screenW = screenInfo.pixelWidth, screenH = screenInfo.pixelHeight;
         float rightEdge = t->position.x + s->width * std::abs(t->scale.x);
         if (rightEdge < 0.0f) {
             float janitorHeight = 64.0f * m_currentLevelConfig.baseScale;
@@ -736,7 +898,7 @@ namespace GameCore {
         Transform tr(Gnosis::GNVector2(x, y), 0.0f, Gnosis::GNVector2(m_currentLevelConfig.baseScale, m_currentLevelConfig.baseScale));
         // Start in sweeping loop; swap to surprise when player passes (state machine handled elsewhere)
         Sprite sp("JanitorSweep", 64.0f, 64.0f);
-        sp.layer = 1; // behind pipes for parallax feel
+        sp.layer = 2; // Above background (layer 1) but behind sewer pipes (layers 3-5)
         sp.visible = true;
         sp.isAnimated = true;
         sp.frameWidth = 64; sp.frameHeight = 64;
@@ -767,7 +929,7 @@ namespace GameCore {
         StateAnimation sa;
         {
             StateAnimation::Clip sweep; sweep.textureId = "JanitorSweep"; sweep.frameWidth = 64; sweep.frameHeight = 64; sweep.frameCount = 4; sweep.frameTime = 0.3f; sweep.loop = true;
-            StateAnimation::Clip surprise; surprise.textureId = "JanitorSurprise"; surprise.frameWidth = 64; surprise.frameHeight = 64; surprise.frameCount = 8; surprise.frameTime = 0.3f; surprise.loop = false;
+            StateAnimation::Clip surprise; surprise.textureId = "JanitorSurprise"; surprise.frameWidth = 64; surprise.frameHeight = 64; surprise.frameCount = 8; surprise.frameTime = 0.12f; surprise.loop = false;
             sa.clips.push_back({"sweep", sweep});
             sa.clips.push_back({"surprise", surprise});
             sa.currentState = "sweep";
@@ -843,11 +1005,15 @@ namespace GameCore {
         Physics physics;
         physics.velocity.x = -enhancedConfig.speed; // Move left with world
         
-        // Create hitbox
+        // Create hitbox - use CIRCLE for better precision and smaller hit area
         Hitbox collider;
+        collider.type = ColliderType::Circle;
         collider.isStatic = false;
-        collider.width = enhancedConfig.width;
-        collider.height = enhancedConfig.height;
+        // Use 40% of the smaller dimension for a tight, fair hitbox
+        float smallerDim = std::min(enhancedConfig.width, enhancedConfig.height);
+        collider.radius = smallerDim * 0.4f; // Tighter hitbox (40% of smaller dimension)
+        collider.offsetX = 0.0f; // Centered
+        collider.offsetY = 0.0f; // Centered
         collider.tag = "Enemy";
         
         // Create enemy component with bobbing behavior from config
@@ -880,16 +1046,18 @@ namespace GameCore {
                     float range = bobConfig.amplitudeMax - bobConfig.amplitudeMin;
                     enemyComp.bobAmplitude = bobConfig.amplitudeMin + (static_cast<float>(rand()) / RAND_MAX) * range;
                 } else if (bobConfig.amplitudeMin < 1.0f && bobConfig.amplitudeMax < 1.0f) {
-                    // Percentage-based amplitude (like toilet paper: 33-43% of screen)
-                    float screenH = 2556.0f;
+                    // Percentage-based amplitude (like toilet paper)
+                    const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+                    float screenH = screenInfo.pixelHeight;
                     float ampFactor = bobConfig.amplitudeMin + (static_cast<float>((rand() % 21) - 10) * 0.005f);
                     enemyComp.bobAmplitude = screenH * ampFactor;
                 } else {
                     enemyComp.bobAmplitude = bobConfig.amplitude;
                 }
                 
-                // Random starting phase 0..2π
-                enemyComp.bobPhase = static_cast<float>((rand() % 628)) / 100.0f;
+                // Random starting phase 0..2π with better distribution
+                // Use full float range for maximum variation
+                enemyComp.bobPhase = (static_cast<float>(rand()) / static_cast<float>(RAND_MAX)) * 6.28318530718f;
                 
                 GN_LOG_DEBUG("LevelManager: Enabled bobbing for " + enhancedConfig.textureId + 
                            " amplitude=" + std::to_string(enemyComp.bobAmplitude) + "px");
@@ -1349,7 +1517,8 @@ namespace GameCore {
     void LevelManager::UpdateNPCStates(float deltaTime) {
         // Simple state: switch to surprise when player passes (x less than player x)
         // We don't have a player reference here; approximate by switching once when the NPC passes center of screen.
-        const float screenCenterX = 1179.0f * 0.5f; // fallback if player transform unavailable
+        const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+        const float screenCenterX = screenInfo.pixelWidth * 0.5f; // fallback if player transform unavailable
         for (Gnosis::Entity e : m_activeNPCs) {
             NPC* npc = m_ecsSystem->GetComponent<NPC>(e);
             Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(e);
@@ -1388,7 +1557,10 @@ namespace GameCore {
                             sprite->frameTime = clip->frameTime;
                             sprite->loop = clip->loop;
                             sprite->currentFrame = 0;
+                            sprite->currentFrameTime = 0.0f; // Reset frame timer
                             sprite->playing = true;
+                            sprite->visible = true; // Ensure visible
+                            GN_LOG_INFO("Janitor triggered surprise animation");
                         }
                         sa->currentState = "surprise";
                     }
@@ -1409,10 +1581,12 @@ namespace GameCore {
                             sprite->frameTime = clip->frameTime;
                             sprite->loop = clip->loop;
                             sprite->currentFrame = 0;
+                            sprite->currentFrameTime = 0.0f; // Reset frame timer
+                            sprite->playing = true;
+                            sprite->visible = true; // Ensure visible
+                            GN_LOG_INFO("Janitor returned to sweep animation");
                         }
                         sa->currentState = "sweep";
-                        // Ensure sweep resumes playing
-                        sprite->playing = true;
                     }
                 }
             }
@@ -1506,11 +1680,16 @@ namespace GameCore {
             transform->position = Gnosis::GNVector2(-1000.0f, -1000.0f);
         }
 
-        // Reset sprite visibility
+        // Reset sprite visibility and animation state
         Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(enemy);
         if (sprite) {
             sprite->color = GNColor(255, 255, 255, 0); // Invisible
             sprite->visible = false; // Explicitly invisible for inactive enemies
+            // CRITICAL: Reset animation frame to prevent ghostly stuck animations
+            sprite->currentFrame = 0;
+            sprite->currentFrameTime = 0.0f;
+            sprite->hasCompleted = false;
+            sprite->playing = false; // Stop playing until respawned
         }
 
         // Reset physics
@@ -1519,13 +1698,28 @@ namespace GameCore {
             physics->velocity = Gnosis::GNVector2(0.0f, 0.0f);
         }
 
-        // Reset StateAnimation if present
+        // Reset StateAnimation if present - MUST reset sprite texture to idle animation
         StateAnimation* sa = m_ecsSystem->GetComponent<StateAnimation>(enemy);
-        if (sa) {
+        if (sa && sprite && enemyComp) {
             // Find the initial state from config
             for (const auto& config : m_currentLevelConfig.enemies) {
                 if (config.textureId == enemyComp->enemyType && config.useStateAnimation) {
                     sa->currentState = config.initialState;
+                    
+                    // CRITICAL: Reset sprite to idle animation to prevent ghostly stuck frames
+                    const StateAnimation::Clip* idleClip = sa->getClip(config.initialState);
+                    if (idleClip) {
+                        sprite->textureId = idleClip->textureId;
+                        sprite->frameWidth = idleClip->frameWidth;
+                        sprite->frameHeight = idleClip->frameHeight;
+                        sprite->frameCount = idleClip->frameCount;
+                        sprite->frameTime = idleClip->frameTime;
+                        sprite->loop = idleClip->loop;
+                        sprite->currentFrame = 0;
+                        sprite->currentFrameTime = 0.0f;
+                        sprite->hasCompleted = false;
+                        GN_LOG_DEBUG("ReturnEnemyToPool: Reset " + enemyComp->enemyType + " to idle animation: " + idleClip->textureId);
+                    }
                     break;
                 }
             }
@@ -1587,14 +1781,32 @@ namespace GameCore {
             }
 
             // Position enemies offscreen to the right with generous spacing
-            float x = screenInfo.pixelWidth + 650.0f + (i * 800.0f); // 800px spacing - prevents overlap
+            float x = screenInfo.pixelWidth + 650.0f + (i * 1200.0f); // 1200px spacing - better visibility and separation
             
             // Calculate Y position based on enemy type
             float y;
-            if (enemyComp->enemyType == "BirdIdle" || enemyComp->enemyType.find("Bird") != std::string::npos) {
-                // Birds spawn higher (flying enemies)
-                y = screenInfo.pixelHeight * 0.15f + (i * 150.0f);
-            } else if (enemyComp->enemyType.find("SnowMan") != std::string::npos || 
+            if (enemyComp->enemyType == "ToiletPaperFlap" || m_currentLevelId == 2) {
+                // Toilet paper (sewer level) - spawn centered at 31.25% (5/16) for 1/8 to 1/2 bobbing
+                y = screenInfo.pixelHeight * 0.3125f;
+            } else if (enemyComp->enemyType == "BirdIdle" || enemyComp->enemyType.find("Bird") != std::string::npos) {
+                // Birds spawn only in top half of screen (15% to 45% range) in echelon formation
+                float minY = screenInfo.pixelHeight * 0.15f;
+                float maxY = screenInfo.pixelHeight * 0.45f;
+                y = minY + static_cast<float>(rand() % static_cast<int>(maxY - minY));
+            } else if (enemyComp->enemyType == "RatCopterIdle" || enemyComp->movementPattern == "flying") {
+                // LANDSCAPE-AWARE: Boss level is landscape (2556x1179), adjust Y band accordingly
+                // In portrait: 30%-50% of 2556 = 766-1278 (middle band)
+                // In landscape: 50%-70% of 1179 = 589-825 (adjusted middle-lower band for landscape)
+                float minY = screenInfo.pixelHeight * (screenInfo.isPortrait ? 0.30f : 0.50f);
+                float maxY = screenInfo.pixelHeight * (screenInfo.isPortrait ? 0.50f : 0.70f);
+                y = minY + static_cast<float>(rand() % static_cast<int>(maxY - minY));
+                GN_LOG_INFO("[RATCOPTER_SPAWN] ScreenHeight=" + std::to_string(screenInfo.pixelHeight) + 
+                           ", isPortrait=" + std::to_string(screenInfo.isPortrait) + 
+                           ", MinY=" + std::to_string(minY) + " (" + std::to_string((minY/screenInfo.pixelHeight)*100.0f) + "%), " +
+                           "MaxY=" + std::to_string(maxY) + " (" + std::to_string((maxY/screenInfo.pixelHeight)*100.0f) + "%)");
+                GN_LOG_INFO("[RATCOPTER_SPAWN] Positioned at Y=" + std::to_string(y) + 
+                           " (" + std::to_string((y/screenInfo.pixelHeight)*100.0f) + "% of screen)");
+            } else if (enemyComp->enemyType.find("SnowMan") != std::string::npos ||
                        enemyComp->enemyType.find("Snowman") != std::string::npos) {
                 // GROUND SNOWMEN: Position at EXACT ground level with bottom alignment
                 // Snowmen are 64px tall sprites, scaled by matchingConfig->scale (6.0x = 384px)
@@ -1685,9 +1897,29 @@ namespace GameCore {
                 enemyComp->bobbingEnabled = true;
                 enemyComp->bobSpeed = config.bobbingConfig.baseSpeed;
                 // Calculate amplitude based on screen height percentage
-                float screenHeight = 2556.0f; // iPhone 16 portrait
+                const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+                float screenHeight = screenInfo.pixelHeight;
                 enemyComp->bobAmplitude = screenHeight * config.bobbingConfig.amplitudeMin; // Use min for now
-                enemyComp->bobPhase = 0.0f; // Start at 0 phase
+                // Random starting phase 0..2π with better distribution for variation
+                enemyComp->bobPhase = (static_cast<float>(rand()) / static_cast<float>(RAND_MAX)) * 6.28318530718f;
+            }
+            
+            // RATCOPTER: Initialize with FlyIn state for proper behavior state machine
+            if (config.movementPattern == "flying") {
+                enemyComp->currentState = EnemyState::FlyIn;
+                enemyComp->hoverTimer = 0.0f;
+                enemyComp->hasLockedDirection = false;
+                enemyComp->pullbackTimer = 0.0f;
+                enemyComp->beelineSpeed = 150.0f;
+                enemyComp->baseY = y;  // Initialize baseY
+                enemyComp->bobPhase = (static_cast<float>(rand()) / static_cast<float>(RAND_MAX)) * 6.28318530718f;  // Random phase
+                GN_LOG_INFO("[RATCOPTER_INIT] ===== SPAWN =====");
+                GN_LOG_INFO("[RATCOPTER_INIT] Pos=(" + std::to_string(x) + "," + std::to_string(y) + 
+                           "), BaseY=" + std::to_string(y) + ", State=FLY_IN");
+                GN_LOG_INFO("[RATCOPTER_INIT] Speed=" + std::to_string(config.speed) + 
+                           ", BobAmplitude=" + std::to_string(enemyComp->bobAmplitude) + 
+                           ", BobSpeed=" + std::to_string(enemyComp->bobSpeed));
+                GN_LOG_INFO("[RATCOPTER_INIT] =================");
             }
         }
 
@@ -1832,9 +2064,35 @@ namespace GameCore {
                 float offsetX = screenInfo.pixelWidth + 650.0f + (enemyIndex * ENEMY_SPACING);
                 transform->position.x = offsetX;
                 
-                // CRITICAL: DO NOT CHANGE Y POSITION - preserve grounded/flying state!
-                // The Y position is already correct from initial spawn
-                // DO NOT touch transform->position.y or enemyComp->baseY!
+                // CRITICAL: Recalculate Y position for flying enemies to prevent top-of-screen spawn
+                // Grounded enemies can preserve Y, but flying enemies need proper Y range
+                if (enemyComp->movementPattern == "flying") {
+                    float newY;
+                    if (m_currentLevelId == 5 || m_currentLevelId == 6) {
+                        // LANDSCAPE-AWARE: Boss level (6) is landscape, Castle level (5) is portrait
+                        // Level 5 (Castle, Portrait): 30%-50% of 2556 = 766-1278
+                        // Level 6 (Boss, Landscape): 50%-70% of 1179 = 589-825
+                        float minY = screenInfo.pixelHeight * (screenInfo.isPortrait ? 0.30f : 0.50f);
+                        float maxY = screenInfo.pixelHeight * (screenInfo.isPortrait ? 0.50f : 0.70f);
+                        newY = minY + static_cast<float>(rand() % static_cast<int>(maxY - minY));
+                        GN_LOG_INFO("[RESET] RatCopter " + std::to_string(enemy) + " repositioned L" + std::to_string(m_currentLevelId) + ": screenH=" + 
+                                   std::to_string(screenInfo.pixelHeight) + ", isPortrait=" + 
+                                   std::to_string(screenInfo.isPortrait) + ", Y=" + std::to_string(newY) + 
+                                   " (" + std::to_string((newY/screenInfo.pixelHeight)*100.0f) + "% band)");
+                    } else if (m_currentLevelId == 3) {
+                        // Desert level - Birds in top half (15%-45%)
+                        float minY = screenInfo.pixelHeight * 0.15f;
+                        float maxY = screenInfo.pixelHeight * 0.45f;
+                        newY = minY + static_cast<float>(rand() % static_cast<int>(maxY - minY));
+                        GN_LOG_INFO("[RESET] Bird " + std::to_string(enemy) + " repositioned to Y=" + std::to_string(newY) + " (15%-45% band)");
+                    } else {
+                        newY = 900.0f + static_cast<float>((rand()%300) - 150);
+                    }
+                    transform->position.y = newY;
+                    enemyComp->baseY = newY;
+                    enemyComp->isGrounded = false; // CRITICAL: Ensure flying enemies stay airborne
+                }
+                // Other enemy types preserve their Y position
                 
                 // Reset flip state to default (facing left)
                 transform->scale.x = std::abs(transform->scale.x);
@@ -1847,10 +2105,25 @@ namespace GameCore {
                 enemyComp->hasSpawnedProjectile = false;
                 enemyComp->isOnScreen = false;
                 enemyComp->hasThrownOnScreenEntry = false;
-                enemyComp->currentState = EnemyState::Idle;
                 enemyComp->stateTimer = 0.0f;
                 enemyComp->throwAnimationTimer = 0.0f;
                 enemyComp->currentThrowFrame = 0;
+                
+                // CRITICAL: Reset movement pattern specific flags for flying enemies
+                // Reset enemy state based on movement pattern
+                if (enemyComp->movementPattern == "flying" || enemyComp->movementPattern == "horizontal") {
+                    enemyComp->currentState = (enemyComp->movementPattern == "flying") ? EnemyState::FlyIn : EnemyState::Moving;
+                    enemyComp->isGrounded = false; // CRITICAL: Ensure flying/horizontal enemies are NOT grounded!
+                    enemyComp->hoverTimer = 0.0f;
+                    enemyComp->hasLockedDirection = false;
+                    enemyComp->pullbackTimer = 0.0f;
+                    enemyComp->beelineSpeed = 0.0f;
+                    enemyComp->targetDirection = Gnosis::GNVector2(0.0f, 0.0f);
+                    enemyComp->pullbackVector = Gnosis::GNVector2(0.0f, 0.0f);
+                    GN_LOG_INFO("[RESET] Flying/horizontal enemy " + enemyComp->enemyType + " " + std::to_string(enemy) + " reset, isGrounded=false, pattern=" + enemyComp->movementPattern);
+                } else {
+                    enemyComp->currentState = EnemyState::Idle;
+                }
 
                 GN_LOG_INFO("[RESET] Reset enemy " + std::to_string(enemy) + " #" + std::to_string(enemyIndex) +
                            " - positioned at (" + std::to_string(transform->position.x) + ", " + 
@@ -1866,7 +2139,28 @@ namespace GameCore {
                 // Reset animation to idle state but keep playing
                 sprite->currentFrame = 0;
                 sprite->currentFrameTime = 0.0f;
+                sprite->hasCompleted = false;
                 sprite->playing = true; // Keep playing!
+                
+                // Reset to idle animation for StateAnimation enemies
+                StateAnimation* sa = m_ecsSystem->GetComponent<StateAnimation>(enemy);
+                if (sa && enemyComp) {
+                    for (const auto& config : m_currentLevelConfig.enemies) {
+                        if (config.textureId == enemyComp->enemyType && config.useStateAnimation) {
+                            sa->currentState = config.initialState;
+                            const StateAnimation::Clip* idleClip = sa->getClip(config.initialState);
+                            if (idleClip) {
+                                sprite->textureId = idleClip->textureId;
+                                sprite->frameWidth = idleClip->frameWidth;
+                                sprite->frameHeight = idleClip->frameHeight;
+                                sprite->frameCount = idleClip->frameCount;
+                                sprite->frameTime = idleClip->frameTime;
+                                sprite->loop = idleClip->loop;
+                            }
+                            break;
+                        }
+                    }
+                }
             }
         }
         

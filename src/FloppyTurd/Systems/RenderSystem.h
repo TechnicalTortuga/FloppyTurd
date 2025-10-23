@@ -14,6 +14,8 @@
 #include <utility>
 
 namespace GameCore {
+    // Forward declarations
+    class OverlaySystem;
 
     /**
      * @brief Unified Render System
@@ -44,6 +46,10 @@ namespace GameCore {
 
         // Screen space rendering (for UI)
         void RenderScreenSpace();
+        
+        // Overlay rendering (between world and UI)
+        void RenderOverlays();
+        void SetOverlaySystem(OverlaySystem* overlaySystem) { m_overlaySystem = overlaySystem; }
         
         // Dynamic screen information
         const ScreenInfo& GetScreenInfo() const { return m_screenInfo; }
@@ -141,6 +147,9 @@ namespace GameCore {
         std::unordered_map<std::string, uint32_t> m_textureCache;
         std::unordered_map<std::string, std::pair<int, int>> m_textureDimensions; // width,height
         std::string m_textureBasePath; // Base path for texture loading (mirrors SpriteSystem)
+        
+        // Overlay system reference for rendering overlays between world and UI
+        OverlaySystem* m_overlaySystem = nullptr;
 
         // 🎯 NEW: Synchronous texture metadata cache
         struct CachedTextureInfo {

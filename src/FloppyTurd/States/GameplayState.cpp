@@ -27,11 +27,14 @@ namespace GameCore {
         , m_invulnerabilityTimer(0.0f)
         , m_pipesCleared(0)
         , m_sessionCoinsCollected(0)
+        , m_pipeIncrementCooldown(0.0f)
         , m_finished(false)
         , m_levelCompleted(false)
         , m_currentSubState(GameplaySubState::Playing)
         , m_gameOverTimer(0.0f)
         , m_morteFloatOffset(0.0f)
+        , m_pipesLabelEntity(0)
+        , m_coinsLabelEntity(0)
         , m_frameProfiler("GameplayState")
         , m_profilingEnabled(false)
         , m_obstacleSpawnTimer(0.0f)
@@ -49,6 +52,13 @@ namespace GameCore {
 
     GameplayState::~GameplayState() {
         GN_LOG_INFO("GameplayState destroyed");
+        
+        // CRITICAL: Disconnect OverlaySystem from RenderSystem before it's destroyed
+        // This prevents dangling pointer bugs where MainMenuState tries to render deleted overlay
+        if (m_renderSystem && m_overlaySystem) {
+            m_renderSystem->SetOverlaySystem(nullptr);
+            GN_LOG_INFO("GameplayState: Disconnected OverlaySystem from RenderSystem");
+        }
         
         // CRITICAL: Clear the ConfigManager callback to prevent crash on orientation change
         // If we don't do this, ConfigManager will try to call our methods after we're destroyed!
@@ -92,6 +102,7 @@ namespace GameCore {
         m_invulnerabilityTimer = 0.0f;
         m_pipesCleared = 0;
         m_sessionCoinsCollected = 0; // Reset session coins at start of session
+        m_pipeIncrementCooldown = 0.0f;
         m_finished = false;
         m_levelCompleted = false;
 
@@ -188,6 +199,11 @@ namespace GameCore {
         }
         m_frameProfiler.EndSection("InputManager");
 
+        // Update overlay system (snowfall animation, etc.)
+        if (m_overlaySystem) {
+            m_overlaySystem->Update(deltaTime);
+        }
+        
         // Update button debounce timers
         m_lastSettingsButtonPressTime += deltaTime;
 
@@ -331,16 +347,33 @@ namespace GameCore {
                 // Set player position for boss aiming
                 if (m_playerEntity != 0 && m_ecsSystem) {
                     Transform* playerTransform = m_ecsSystem->GetComponent<Transform>(m_playerEntity);
+                    // Calculate player center using sprite dimensions (player uses circle hitbox, no width/height)
+                    Sprite* playerSprite = m_ecsSystem->GetComponent<Sprite>(m_playerEntity);
                     Hitbox* playerHitbox = m_ecsSystem->GetComponent<Hitbox>(m_playerEntity);
-                    if (playerTransform && playerHitbox) {
-                        // Use player center position for more accurate aiming
+                    if (playerTransform && playerSprite && playerHitbox) {
+                        // ADJUSTED TARGET: Split the difference between sprite center and hitbox center
+                        // Old calculation was: position + halfWidth/Height (sprite center only)
+                        // Hitbox center is: position + halfWidth/Height + offset
+                        // Target is now: AVERAGE of both for better aiming accuracy
+                        float halfWidth = (playerSprite->width * playerTransform->scale.x) / 2.0f;
+                        float halfHeight = (playerSprite->height * playerTransform->scale.y) / 2.0f;
+                        
+                        // Sprite center (old way)
+                        float spriteCenterX = playerTransform->position.x + halfWidth;
+                        float spriteCenterY = playerTransform->position.y + halfHeight;
+                        
+                        // Hitbox center (includes offset)
+                        float hitboxCenterX = spriteCenterX + (playerHitbox->offsetX * playerTransform->scale.x);
+                        float hitboxCenterY = spriteCenterY + (playerHitbox->offsetY * playerTransform->scale.y);
+                        
+                        // Split the difference - aim between sprite center and hitbox center
                         GNVector2 playerCenter = {
-                            playerTransform->position.x + playerHitbox->offsetX + (playerHitbox->width / 2.0f),
-                            playerTransform->position.y + playerHitbox->offsetY + (playerHitbox->height / 2.0f)
+                            (spriteCenterX + hitboxCenterX) * 0.5f,
+                            (spriteCenterY + hitboxCenterY) * 0.5f
                         };
                         m_bossSystem->SetPlayerPosition(playerCenter);
                     } else if (playerTransform) {
-                        // Fallback to transform position if no hitbox
+                        // Fallback to transform position if no sprite
                         GNVector2 playerPos = {playerTransform->position.x, playerTransform->position.y};
                         m_bossSystem->SetPlayerPosition(playerPos);
                     }
@@ -356,6 +389,68 @@ namespace GameCore {
                 m_frameProfiler.StartSection("BossHealthBar");
                 m_bossHealthBar->Update(deltaTime);
                 m_frameProfiler.EndSection("BossHealthBar");
+            }
+
+            // Check player projectile collisions with boss (level 6 only)
+            if (m_bossSystem && m_projectileSystem && m_currentLevelId == 6 && m_bossSystem->IsActive()) {
+                m_frameProfiler.StartSection("BossProjectileCollision");
+                
+                const auto& activeProjectiles = m_projectileSystem->GetActivePlayerProjectiles();
+                GNVector2 bossPosition = m_bossSystem->GetPosition();
+                
+                // Boss hitbox center calculation matching old scripts:
+                // Old: { position.x + 32, position.y + 32, scaledWidth, scaledHeight } at scale 1.0
+                // With current scale: offset = (32 * scale) + (128 * scale / 2) = (32 * scale) + (64 * scale)
+                float bossScale = m_bossSystem->GetScale();
+                float hitboxOffset = (32.0f * bossScale) + (128.0f * bossScale * 0.5f);
+                float bossCenterX = bossPosition.x + hitboxOffset;
+                float bossCenterY = bossPosition.y + hitboxOffset;
+                
+                // Boss hitbox radius (half of 1024px)
+                float bossHitboxRadius = 512.0f;
+                
+                for (Entity projEntity : activeProjectiles) {
+                    Transform* projTransform = m_ecsSystem->GetComponent<Transform>(projEntity);
+                    Hitbox* projHitbox = m_ecsSystem->GetComponent<Hitbox>(projEntity);
+                    Projectile* proj = m_ecsSystem->GetComponent<Projectile>(projEntity);
+                    
+                    if (!projTransform || !projHitbox || !proj || !proj->isActive) continue;
+                    
+                    // Calculate projectile center accounting for sprite dimensions and hitbox offsets
+                    Sprite* projSprite = m_ecsSystem->GetComponent<Sprite>(projEntity);
+                    float spriteHalfWidth = projSprite ? (projSprite->width * projTransform->scale.x) * 0.5f : 0.0f;
+                    float spriteHalfHeight = projSprite ? (projSprite->height * projTransform->scale.y) * 0.5f : 0.0f;
+                    
+                    // Position is top-left, so add half sprite dimensions plus hitbox offset to get true center
+                    float projCenterX = projTransform->position.x + spriteHalfWidth + (projHitbox->offsetX * projTransform->scale.x);
+                    float projCenterY = projTransform->position.y + spriteHalfHeight + (projHitbox->offsetY * projTransform->scale.y);
+                    
+                    // Calculate distance to boss center (using adjusted center position)
+                    float dx = bossCenterX - projCenterX;
+                    float dy = bossCenterY - projCenterY;
+                    float distance = std::sqrt(dx * dx + dy * dy);
+                    
+                    // Scale projectile hitbox
+                    float scaledProjRadius = projHitbox->radius * ((std::abs(projTransform->scale.x) + std::abs(projTransform->scale.y)) * 0.5f);
+                    float combinedRadius = bossHitboxRadius + scaledProjRadius;
+                    
+                    // Check collision
+                    if (distance < combinedRadius) {
+                        GN_LOG_INFO("[BOSS_COLLISION] Player projectile HIT Rat King! Projectile: " + std::to_string(projEntity) + 
+                                   " distance: " + std::to_string(distance) + " < " + std::to_string(combinedRadius));
+                        
+                        // Damage the boss
+                        m_bossSystem->HandleDamage(proj->damage);
+                        
+                        // Deactivate the projectile
+                        proj->isActive = false;
+                        
+                        GN_LOG_INFO("[BOSS_COLLISION] Boss health now: " + std::to_string(m_bossSystem->GetHealth()) + 
+                                   "/" + std::to_string(m_bossSystem->GetMaxHealth()));
+                    }
+                }
+                
+                m_frameProfiler.EndSection("BossProjectileCollision");
             }
 
             // Update pipe counter UI
@@ -702,6 +797,7 @@ namespace GameCore {
         m_currentScore = 0;
         m_pipesCleared = 0;
         m_sessionCoinsCollected = 0; // Reset session progress for new level
+        m_pipeIncrementCooldown = 0.0f;
         m_currentLives = STARTING_LIVES;
 
         // Reset player session coins for new level
@@ -826,6 +922,17 @@ namespace GameCore {
         // Create projectile system
         m_projectileSystem = std::make_unique<ProjectileSystem>(m_ecsSystem);
         m_projectileSystem->Initialize();
+        
+        // Create overlay system for snowfall and other effects
+        m_overlaySystem = std::make_unique<OverlaySystem>(m_ecsSystem);
+        m_overlaySystem->SetPlatformDelegates(*m_platformDelegates);
+        m_overlaySystem->Initialize();
+        
+        // Enable snowfall for snow level (level 4)
+        if (m_currentLevelId == 4) {
+            m_overlaySystem->EnableSnowfall(true);
+            m_overlaySystem->SetSnowfallAnimSpeed(12.0f); // 12 FPS animation
+        }
 
         // Create hats system for cosmetics management (MUST be before PlayerControllerSystem)
         m_hatsSystem = std::make_unique<HatsSystem>(m_ecsSystem, *m_platformDelegates);
@@ -894,6 +1001,10 @@ namespace GameCore {
         // 🎯 NEW: Set RenderSystem reference for texture metadata cache access
         if (m_renderSystem) {
             m_levelManager->SetRenderSystem(m_renderSystem);
+            
+            // Wire up OverlaySystem to RenderSystem for overlay rendering
+            m_renderSystem->SetOverlaySystem(m_overlaySystem.get());
+            GN_LOG_INFO("OverlaySystem connected to RenderSystem");
         }
         // Create pickup system and pass dependencies
         m_pickupSystem = std::make_unique<PickupSystem>(m_ecsSystem, m_levelManager.get(), m_platformDelegates, &m_currentLevelConfig);
@@ -914,6 +1025,7 @@ namespace GameCore {
         
         // Create enemy system for behaviors (bobbing, states, etc.)
         m_enemySystem = std::make_unique<EnemySystem>(m_ecsSystem, m_levelManager.get(), m_projectileSystem.get());
+        
         
         // Create heart system for health display and management
         m_heartSystem = std::make_unique<HeartSystem>(m_ecsSystem, *m_platformDelegates);
@@ -1094,7 +1206,7 @@ namespace GameCore {
             Sprite playerSprite("TurdletIdle", 64.0f, 64.0f, 64, 64, 1, 0.1f);
             playerSprite.color = Gnosis::GNColor(255, 255, 255, 255);
             playerSprite.visible = true;
-            playerSprite.layer = 4; // Player layer (above backgrounds, below effects)
+            playerSprite.layer = 6; // Player layer (above obstacles which are layers 3-5)
 
             // Set up sprite for animation support
             playerSprite.isAnimated = true;  // Enable animation support
@@ -1429,6 +1541,13 @@ namespace GameCore {
             }
         }
         m_enemies.clear();
+        
+        // Destroy boss system entities (level 6 cleanup)
+        if (m_bossSystem) {
+            GN_LOG_INFO("Destroying boss system and Rat King entities");
+            m_bossSystem.reset();  // This will call ~BossSystem() which cleans up arm entities
+            m_bossHealthBar.reset();
+        }
     }
 
     void GameplayState::CreateUI() {
@@ -1506,19 +1625,25 @@ namespace GameCore {
         GN_LOG_ERROR("Failed to create pipe counter entity!");
     }
     
-    // Create coin bag icon (32x32) at bottom-left: 10% from left, 10% from bottom
+    // Create coin bag icon (32x32) at bottom-left - HIDE IN LEVEL 1
+    if (m_currentLevelId != 1) {
         float screenW = 1179.0f, screenH = 2556.0f;
         if (m_renderSystem) {
             const ScreenInfo& si = m_renderSystem->GetScreenInfo();
             screenW = si.pixelWidth;
             screenH = si.pixelHeight;
         }
-                   float iconX = screenW * 0.01f; // Move coin bag from 2% to 1% from left edge
-        float iconY = screenH * 0.85f; // 15% from bottom (pixel Y increases downward)
+                   const float iconX = screenW * 0.01f; // Move coin bag from 2% to 1% from left edge
+        const float iconY = screenH * 0.87f; // 87% from top (13% from bottom)
         const float bagScale = 8.0f;    // Scale 32x32 coin bag to 256x256
+        
+        // Store initial positions for reset consistency (DO NOT let these be overwritten later)
+        m_coinBagInitialX = iconX;
+        m_coinBagInitialY = iconY;
+        
         m_coinBagEntity = m_ecsSystem->CreateEntity();
         if (m_coinBagEntity != 0) {
-            Transform tr(Gnosis::GNVector2(iconX, iconY), 0.0f, Gnosis::GNVector2(bagScale, bagScale));
+            Transform tr(Gnosis::GNVector2(m_coinBagInitialX, m_coinBagInitialY), 0.0f, Gnosis::GNVector2(bagScale, bagScale));
             m_ecsSystem->AddComponent<Transform>(m_coinBagEntity, tr);
             UIElement bag;
             bag.normalTextureId = "CoinBag";
@@ -1531,9 +1656,14 @@ namespace GameCore {
         // Coin number to the right of the bag, vertically centered to it
         m_coinsTextEntity = m_ecsSystem->CreateEntity();
         if (m_coinsTextEntity != 0) {
-            float textX = iconX + (32.0f * bagScale) + 8.0f; // bag width + small gap
-            float textY = iconY + (32.0f * bagScale * 0.5f) + 24.0f; // nudge down a bit more
-            Transform tr(Gnosis::GNVector2(textX, textY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            const float textX = m_coinBagInitialX + (32.0f * bagScale) + 8.0f; // bag width + small gap
+            const float textY = m_coinBagInitialY + (32.0f * bagScale * 0.5f) + 24.0f; // nudge down a bit more
+            
+            // Store initial coin text position for reset consistency
+            m_coinsTextInitialX = textX;
+            m_coinsTextInitialY = textY;
+            
+            Transform tr(Gnosis::GNVector2(m_coinsTextInitialX, m_coinsTextInitialY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
             m_ecsSystem->AddComponent<Transform>(m_coinsTextEntity, tr);
             // Use UIElement text rendering path
             UIElement ui;
@@ -1548,6 +1678,9 @@ namespace GameCore {
             ui.textLayer = 10;
             m_ecsSystem->AddComponent<UIElement>(m_coinsTextEntity, ui);
             GN_LOG_INFO("Created coins text at (" + std::to_string(textX) + "," + std::to_string(textY) + ")");
+        }
+    } else {
+        GN_LOG_INFO("Skipped coin counter for Level 1 (coins disabled)");
     }
 
     // Create shooting zone visual indicator (always created, visibility controlled by level)
@@ -1567,9 +1700,9 @@ namespace GameCore {
         float estimatedCoinCounterWidth = 200.0f; // Rough estimate for coin counter text width
         float coinCounterRightX = coinCounterX + estimatedCoinCounterWidth;
 
-        // Position shooting zone: percentage-based positioning (lowered)
-        float shootingZoneTopY = m_cachedScreenHeight * 0.75f; // 75% from top (lowered)
-        float shootingZoneBottomY = m_cachedScreenHeight * 0.90f; // 90% from top (lowered)
+        // Position shooting zone: percentage-based positioning (85%-95% from top)
+        float shootingZoneTopY = m_cachedScreenHeight * 0.85f; // 85% from top
+        float shootingZoneBottomY = m_cachedScreenHeight * 0.95f; // 95% from top
         float shootingZoneHeight = shootingZoneBottomY - shootingZoneTopY;
 
         // Position to the right of coin counter (not coin bag)
@@ -1684,6 +1817,12 @@ void GameplayState::DestroyUI() {
     if (!m_ecsSystem) {
         return;
     }
+    
+    // Reset initial position trackers when destroying UI
+    m_coinBagInitialX = 0.0f;
+    m_coinBagInitialY = 0.0f;
+    m_coinsTextInitialX = 0.0f;
+    m_coinsTextInitialY = 0.0f;
 
     if (m_scoreTextEntity != 0) {
         m_ecsSystem->DestroyEntity(m_scoreTextEntity);
@@ -1741,6 +1880,11 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             m_invulnerabilityTimer -= deltaTime;
         }
         
+        // Update pipe increment cooldown timer
+        if (m_pipeIncrementCooldown > 0.0f) {
+            m_pipeIncrementCooldown -= deltaTime;
+        }
+        
         // Update UI text
         if (m_scoreTextEntity != 0) {
             Text* scoreText = m_ecsSystem->GetComponent<Text>(m_scoreTextEntity);
@@ -1792,24 +1936,18 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                     }
                 }
 
-                // Reposition coin bag and coins text based on pixel screen size - moved to 1% from left
+                // DO NOT reposition coin bag here - let orientation-specific repositioning handle it
+                // UpdateUILayoutForOrientation() is called when orientation changes
+                // Resetting to initial values here breaks landscape positioning
                 if (m_coinBagEntity != 0) {
                     Transform* t = m_ecsSystem->GetComponent<Transform>(m_coinBagEntity);
                     if (t) {
-                        t->position.x = si.pixelWidth * 0.01f; // Move from 2% to 1% from left
-                        t->position.y = si.pixelHeight * 0.85f; // 15% from bottom
-                        t->scale.x = 8.0f; // Keep 8x scale after sync
+                        // Only maintain scale, don't override position
+                        t->scale.x = 8.0f;
                         t->scale.y = 8.0f;
                     }
                 }
-                if (m_coinsTextEntity != 0) {
-                    Transform* t = m_ecsSystem->GetComponent<Transform>(m_coinsTextEntity);
-                    if (t) {
-                        // Text to the right of the scaled bag, vertically centered
-                        t->position.x = (si.pixelWidth * 0.01f) + (32.0f * 8.0f) + 8.0f; // Use 1% position
-                        t->position.y = (si.pixelHeight * 0.85f) + (32.0f * 8.0f * 0.5f) + 16.0f; // nudge down by 16px
-                    }
-                }
+                // Coin text position is relative to coin bag, so don't override it either
 
                 // Settings button: 85% width, 5% height (moved left to avoid clipping)
                 float menuX = si.pixelWidth * 0.85f;
@@ -2422,13 +2560,17 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             }
         }
 
-        // Reposition coin bag and coins text
-        if (m_coinBagEntity != 0 && m_ecsSystem) {
-            Transform* bagTransform = m_ecsSystem->GetComponent<Transform>(m_coinBagEntity);
-            if (bagTransform) {
-                float bagX = screenW * LANDSCAPE_COINBAG_X;
-                float bagY = screenH * LANDSCAPE_COINBAG_Y;
-                bagTransform->position = Gnosis::GNVector2(bagX, bagY);
+        // Reposition coin bag and coins text using stored initial positions to ensure consistency
+    if (m_coinBagEntity != 0 && m_ecsSystem) {
+        Transform* bagTransform = m_ecsSystem->GetComponent<Transform>(m_coinBagEntity);
+        if (bagTransform) {
+            float bagX = screenW * LANDSCAPE_COINBAG_X;
+            float bagY = screenH * LANDSCAPE_COINBAG_Y;
+                
+            // DO NOT update stored positions - keep original from CreateUI
+            // Just reposition the entity
+                
+            bagTransform->position = Gnosis::GNVector2(bagX, bagY);
                 GN_LOG_INFO("Repositioned coin bag to landscape position: (" +
                            std::to_string(bagX) + ", " + std::to_string(bagY) + ")");
 
@@ -2439,6 +2581,9 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                         const float bagScale = 8.0f;
                         float textX = bagX + (32.0f * bagScale) + 8.0f;
                         float textY = bagY + (32.0f * bagScale * 0.5f) + 24.0f;
+                        
+                        // DO NOT update stored positions - keep original from CreateUI
+                        
                         textTransform->position = Gnosis::GNVector2(textX, textY);
                         GN_LOG_INFO("Repositioned coins text to landscape position: (" +
                                    std::to_string(textX) + ", " + std::to_string(textY) + ")");
@@ -2474,9 +2619,9 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             float estimatedCoinCounterWidth = 200.0f;
             float coinCounterRightX = coinCounterX + estimatedCoinCounterWidth;
 
-            // Shooting zone position - percentage-based positioning for landscape (much lower)
-            float shootingZoneTopY = screenH * 0.75f; // 75% from top in landscape (much lower)
-            float shootingZoneBottomY = screenH * 0.90f; // 90% from top in landscape (much lower)
+            // Shooting zone position - percentage-based positioning for landscape (85%-95%)
+            float shootingZoneTopY = screenH * 0.85f; // 85% from top in landscape
+            float shootingZoneBottomY = screenH * 0.95f; // 95% from top in landscape
             float shootingZoneHeight = shootingZoneBottomY - shootingZoneTopY;
             float shootingZoneLeftX = coinCounterRightX + 8.0f;
             float shootingZoneRightX = screenW * 0.95f;
@@ -2600,12 +2745,17 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         }
 
         // Reposition coin bag and coins text to portrait position
-        if (m_coinBagEntity != 0 && m_ecsSystem) {
-            Transform* bagTransform = m_ecsSystem->GetComponent<Transform>(m_coinBagEntity);
-            if (bagTransform) {
-                float bagX = screenW * PORTRAIT_COINBAG_X;
-                float bagY = screenH * PORTRAIT_COINBAG_Y;
-                bagTransform->position = Gnosis::GNVector2(bagX, bagY);
+        // Reposition coin bag and coins text using stored initial positions to ensure consistency
+    if (m_coinBagEntity != 0 && m_ecsSystem) {
+        Transform* bagTransform = m_ecsSystem->GetComponent<Transform>(m_coinBagEntity);
+        if (bagTransform) {
+            float bagX = screenW * PORTRAIT_COINBAG_X;
+            float bagY = screenH * PORTRAIT_COINBAG_Y;
+                
+            // DO NOT update stored positions - keep original from CreateUI
+            // Just reposition the entity
+                
+            bagTransform->position = Gnosis::GNVector2(bagX, bagY);
                 GN_LOG_INFO("Repositioned coin bag to portrait position: (" +
                            std::to_string(bagX) + ", " + std::to_string(bagY) + ")");
 
@@ -2616,6 +2766,9 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                         const float bagScale = 8.0f;
                         float textX = bagX + (32.0f * bagScale) + 8.0f;
                         float textY = bagY + (32.0f * bagScale * 0.5f) + 24.0f;
+                        
+                        // DO NOT update stored positions - keep original from CreateUI
+                        
                         textTransform->position = Gnosis::GNVector2(textX, textY);
                         GN_LOG_INFO("Repositioned coins text to portrait position: (" +
                                    std::to_string(textX) + ", " + std::to_string(textY) + ")");
@@ -2651,9 +2804,9 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             float estimatedCoinCounterWidth = 200.0f;
             float coinCounterRightX = coinCounterX + estimatedCoinCounterWidth;
 
-            // Shooting zone position - percentage-based positioning for portrait (lowered)
-            float shootingZoneTopY = screenH * 0.75f; // 75% from top in portrait (lowered)
-            float shootingZoneBottomY = screenH * 0.90f; // 90% from top in portrait (lowered)
+            // Shooting zone position - percentage-based positioning for portrait (85%-95%)
+            float shootingZoneTopY = screenH * 0.85f; // 85% from top in portrait
+            float shootingZoneBottomY = screenH * 0.95f; // 95% from top in portrait
             float shootingZoneHeight = shootingZoneBottomY - shootingZoneTopY;
             float shootingZoneLeftX = coinCounterRightX + 8.0f;
             float shootingZoneRightX = screenW * 0.95f;
@@ -2852,9 +3005,6 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 //             ", pipeCenterX=" + std::to_string(pipeCenterX));
                 
                 if (playerRight > pipeCenterX) {
-                    // PERFORMANCE FIX: Simplified pipe clearing - just mark THIS obstacle and its pair
-                    // No need to iterate through all obstacles to find column neighbors
-                    
                     // Mark this obstacle as cleared
                     if (obstacle->obstacleType != "BrickWall") {
                         obstacle->pipeCleared = true;
@@ -2866,9 +3016,15 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                             }
                         }
                         
-                        // Increment pipe counter (one count per obstacle, pairs handled via pairedEntity)
-                        OnPipeCleared();
-                        GN_LOG_INFO("Pipe cleared at X=" + std::to_string(pipeCenterX));
+                        // Use cooldown-based approach: only increment if cooldown expired
+                        // This prevents stacked sewer pipes from counting multiple times (100ms = 0.1s cooldown)
+                        if (m_pipeIncrementCooldown <= 0.0f) {
+                            OnPipeCleared();
+                            m_pipeIncrementCooldown = 0.1f; // 100ms cooldown before next increment allowed
+                            GN_LOG_INFO("Pipe cleared at X=" + std::to_string(pipeCenterX) + " (cooldown reset)");
+                        } else {
+                            GN_LOG_INFO("Pipe cleared at X=" + std::to_string(pipeCenterX) + " (cooldown active, skipping increment)");
+                        }
                     }
                 }
             } else {
@@ -2878,9 +3034,182 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             }
         }
         
-        // Handle hurt effects after processing all obstacles (allows pipe clearing to complete first)
+        // Performance: Disabled per-frame collision loop summary logging
+        // GN_LOG_DEBUG("Finished collision detection loop for " + std::to_string(activeObstacles.size()) + " obstacles");
+        
+        // Check snowball/TP collisions with player (circle vs circle)
+        if (m_projectileSystem && !playerHitThisFrame && m_invulnerabilityTimer <= 0.0f) {
+            const auto& enemyProjectiles = m_projectileSystem->GetActiveEnemyProjectiles();
+            
+            // Debug counter for periodic logging
+            static int tpCollisionCheckCounter = 0;
+            bool shouldLogThisFrame = (++tpCollisionCheckCounter % 30 == 0); // Log every 30 frames
+            
+            if (playerTransform && playerHitbox && playerSprite) {
+                // Calculate player center (reuse from above)
+                
+                if (shouldLogThisFrame && enemyProjectiles.size() > 0) {
+                    GN_LOG_INFO("[TP_CHECK] Checking " + std::to_string(enemyProjectiles.size()) + " enemy projectiles vs player at (" + 
+                               std::to_string(pCenterX) + "," + std::to_string(pCenterY) + ") radius=" + std::to_string(pRadius));
+                }
+                
+                for (Entity projectile : enemyProjectiles) {
+                    Transform* projTransform = m_ecsSystem->GetComponent<Transform>(projectile);
+                    Hitbox* projHitbox = m_ecsSystem->GetComponent<Hitbox>(projectile);
+                    Projectile* projData = m_ecsSystem->GetComponent<Projectile>(projectile);
+                    
+                    if (projTransform && projHitbox && projData && projData->isActive) {
+                        // Calculate projectile center - CONSISTENT with player/enemy calculations
+                        // Position is top-left, so: center = position + spriteHalfDimensions + (offset * scale)
+                        Sprite* projSprite = m_ecsSystem->GetComponent<Sprite>(projectile);
+                        float projHalfW = projSprite ? (projSprite->width * projTransform->scale.x * 0.5f) : 0.0f;
+                        float projHalfH = projSprite ? (projSprite->height * projTransform->scale.y * 0.5f) : 0.0f;
+                        float projCenterX = projTransform->position.x + projHalfW + (projHitbox->offsetX * projTransform->scale.x);
+                        float projCenterY = projTransform->position.y + projHalfH + (projHitbox->offsetY * projTransform->scale.y);
+                        
+                        // Calculate radius with scale applied
+                        float projRadius = projHitbox->radius * ((projTransform->scale.x + projTransform->scale.y) * 0.5f);
+                        
+                        // Circle-circle collision
+                        float dx = pCenterX - projCenterX;
+                        float dy = pCenterY - projCenterY;
+                        float distanceSquared = dx * dx + dy * dy;
+                        float distance = std::sqrt(distanceSquared);
+                        float combinedRadius = pRadius + projRadius;
+                        
+                        // Log detailed collision info periodically
+                        if (shouldLogThisFrame && distance < 300.0f) { // Only log if within 300px
+                            GN_LOG_INFO("[TP_COLLISION_DETAIL] Proj@(" + std::to_string(projTransform->position.x) + "," + std::to_string(projTransform->position.y) + 
+                                       ") sprite=" + std::to_string(projSprite ? projSprite->width : 0) + "x" + std::to_string(projSprite ? projSprite->height : 0) +
+                                       " scale=" + std::to_string(projTransform->scale.x) + 
+                                       " offset=(" + std::to_string(projHitbox->offsetX) + "," + std::to_string(projHitbox->offsetY) + ")" +
+                                       " radius=" + std::to_string(projHitbox->radius) + " (unscaled)");
+                            GN_LOG_INFO("[TP_COLLISION_CALC] projHalfW=" + std::to_string(projHalfW) + " projHalfH=" + std::to_string(projHalfH) +
+                                       " projCenter=(" + std::to_string(projCenterX) + "," + std::to_string(projCenterY) + ")" +
+                                       " projRadius=" + std::to_string(projRadius) + " (scaled)");
+                            GN_LOG_INFO("[TP_COLLISION_TEST] distance=" + std::to_string(distance) + 
+                                       " combinedRadius=" + std::to_string(combinedRadius) + 
+                                       " collision=" + std::to_string(distanceSquared <= (combinedRadius * combinedRadius)));
+                        }
+                        
+                        if (distanceSquared <= (combinedRadius * combinedRadius)) {
+                            GN_LOG_INFO("*** TP COLLISION DETECTED! *** distance=" + std::to_string(distance) + 
+                                       ", combinedRadius=" + std::to_string(combinedRadius) +
+                                       ", playerCenter=(" + std::to_string(pCenterX) + "," + std::to_string(pCenterY) + ")" +
+                                       ", projCenter=(" + std::to_string(projCenterX) + "," + std::to_string(projCenterY) + ")" +
+                                       ", playerRadius=" + std::to_string(pRadius) + ", projRadius=" + std::to_string(projRadius));
+                            playerHitThisFrame = true;
+                            
+                            // Mark projectile as inactive (ProjectileSystem will clean it up)
+                            projData->isActive = false;
+                            break; // Only one hit per frame
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Check enemy collisions with player (circle vs circle) - exclude snowmen
+        if (m_levelManager && !playerHitThisFrame && m_invulnerabilityTimer <= 0.0f) {
+            const auto& activeEnemies = m_levelManager->GetActiveEnemies();
+            
+            // DEBUG: Log collision check start
+            static int collisionCheckCounter = 0;
+            if (collisionCheckCounter++ % 60 == 0) {
+                GN_LOG_INFO("[ENEMY_COLLISION_CHECK] Checking " + std::to_string(activeEnemies.size()) + 
+                           " enemies, player at (" + std::to_string(pCenterX) + "," + std::to_string(pCenterY) + 
+                           "), radius=" + std::to_string(pRadius));
+            }
+            
+            if (playerTransform && playerHitbox && playerSprite) {
+                int enemyIndex = 0;
+                for (Entity enemy : activeEnemies) {
+                    Enemy* enemyComp = m_ecsSystem->GetComponent<Enemy>(enemy);
+                    Transform* enemyTransform = m_ecsSystem->GetComponent<Transform>(enemy);
+                    Hitbox* enemyHitbox = m_ecsSystem->GetComponent<Hitbox>(enemy);
+                    Sprite* enemySprite = m_ecsSystem->GetComponent<Sprite>(enemy);
+                    
+                    if (!enemyComp || !enemyTransform || !enemyHitbox || !enemySprite) {
+                        GN_LOG_WARN("[ENEMY_COLLISION_CHECK] Enemy " + std::to_string(enemyIndex) + " missing components");
+                        enemyIndex++;
+                        continue;
+                    }
+                    if (!enemyComp->isActive) {
+                        enemyIndex++;
+                        continue;
+                    }
+                    
+                    // Skip ALL snowmen - they don't hurt on contact and can't be killed by player touch
+                    // (only SnowmanThrower's snowballs hurt, decorative snowmen are just scenery)
+                    bool isSnowman = (enemyComp->enemyType.find("SnowMan") != std::string::npos || 
+                                     enemyComp->enemyType.find("Snowman") != std::string::npos);
+                    if (isSnowman) {
+                        enemyIndex++;
+                        continue;
+                    }
+                    
+                    // Skip Rat King boss - player shouldn't take damage from touching the boss itself
+                    // (boss projectiles will still damage the player)
+                    bool isRatKing = (enemyComp->enemyType == "Ratking");
+                    if (isRatKing) {
+                        enemyIndex++;
+                        continue;
+                    }
+                    
+                    // Calculate enemy center position
+                    float enemyHalfW = enemySprite->width * enemyTransform->scale.x * 0.5f;
+                    float enemyHalfH = enemySprite->height * enemyTransform->scale.y * 0.5f;
+                    float enemyCenterX = enemyTransform->position.x + enemyHalfW + (enemyHitbox->offsetX * enemyTransform->scale.x);
+                    float enemyCenterY = enemyTransform->position.y + enemyHalfH + (enemyHitbox->offsetY * enemyTransform->scale.y);
+                    float enemyRadius = enemyHitbox->radius * ((enemyTransform->scale.x + enemyTransform->scale.y) * 0.5f);
+                    
+                    // Circle-circle collision
+                    float dx = pCenterX - enemyCenterX;
+                    float dy = pCenterY - enemyCenterY;
+                    float distance = std::sqrt(dx * dx + dy * dy);
+                    float distanceSquared = dx * dx + dy * dy;
+                    float combinedRadius = pRadius + enemyRadius;
+                    
+                    // DEBUG: Log near misses (within 200px)
+                    if (distance < 200.0f && collisionCheckCounter % 30 == 0) {
+                        GN_LOG_INFO("[ENEMY_COLLISION_CHECK] Near miss: Enemy " + enemyComp->enemyType + 
+                                   " at (" + std::to_string(enemyCenterX) + "," + std::to_string(enemyCenterY) + 
+                                   "), distance=" + std::to_string(distance) + 
+                                   ", combinedRadius=" + std::to_string(combinedRadius) + 
+                                   ", enemyRadius=" + std::to_string(enemyRadius));
+                    }
+                    
+                    if (distanceSquared <= (combinedRadius * combinedRadius)) {
+                        GN_LOG_INFO("*** ENEMY COLLISION DETECTED! *** Enemy: " + enemyComp->enemyType + 
+                                   " Pattern: " + enemyComp->movementPattern + 
+                                   " distance=" + std::to_string(distance) + 
+                                   ", combinedRadius=" + std::to_string(combinedRadius) +
+                                   ", playerCenter=(" + std::to_string(pCenterX) + "," + std::to_string(pCenterY) + ")" +
+                                   ", enemyCenter=(" + std::to_string(enemyCenterX) + "," + std::to_string(enemyCenterY) + ")");
+                        playerHitThisFrame = true;
+                        
+                        // Damage the enemy (they also get hurt when touching player)
+                        enemyComp->health -= 1;
+                        
+                        if (enemyComp->health <= 0) {
+                            // Enemy defeated - mark as hurt, will be cleaned up by EnemySystem
+                            enemyComp->currentState = EnemyState::Hurt;
+                            enemyComp->hurtTimer = 0.6f;
+                            
+                            GN_LOG_INFO("[PLAYER_ENEMY_COLLISION] Enemy " + enemyComp->enemyType + " defeated");
+                        }
+                        
+                        break; // Only one hit per frame
+                    }
+                    
+                    enemyIndex++;
+                }
+            }
+        }
+        
+        // Handle hurt effects after processing ALL collisions (obstacles + snowballs + enemies)
         if (playerHitThisFrame) {
-            GN_LOG_INFO("Player hurt this frame! Applying hurt effects after processing all obstacles");
+            GN_LOG_INFO("Player hurt this frame! Applying hurt effects after processing all collisions");
             
             // Set invulnerability timer to prevent repeated hits
             m_invulnerabilityTimer = 1.0f;  // 1 second invulnerability
@@ -2900,9 +3229,6 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             
             GN_LOG_INFO("Player hurt - invulnerable for 1 second, PlayerControllerSystem managing hurt animation");
         }
-        
-        // Performance: Disabled per-frame collision loop summary logging
-        // GN_LOG_DEBUG("Finished collision detection loop for " + std::to_string(activeObstacles.size()) + " obstacles");
     }
     
     void GameplayState::UpdatePipeCounterUI() {
@@ -3025,6 +3351,12 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             }
         }
 
+        // Clear all active projectiles to prevent hits during game over screen
+        if (m_projectileSystem) {
+            m_projectileSystem->ResetForNewGame();
+            GN_LOG_INFO("Cleared all projectiles on game over");
+        }
+
         // Increment death counter for stats tracking
         IncrementDeathCounter();
         m_currentSubState = GameplaySubState::GameOver;
@@ -3087,113 +3419,398 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             return;
         }
         
-        // Create game over background (light from heaven) - start at top and stretch to full width
-        m_gameOverBackgroundEntity = m_ecsSystem->CreateEntity();
-        if (m_gameOverBackgroundEntity != Gnosis::INVALID_ENTITY) {
-            // Calculate scale to stretch width to screen width while maintaining aspect ratio
-            float backgroundScale = m_cachedScreenWidth / 64.0f; // 64 is actual texture width
-            
-            // Position at top-left corner (0,0) and stretch to full width
-            // The sprite's origin is at center, so we need to offset by half the scaled width
-            float scaledWidth = 64.0f * backgroundScale;
-            Transform bgTransform(Gnosis::GNVector2(0.0f, 0.0f), 0.0f, Gnosis::GNVector2(backgroundScale, backgroundScale));
-            m_ecsSystem->AddComponent<Transform>(m_gameOverBackgroundEntity, bgTransform);
-            
-            // Create background sprite (like main menu) - THIS IS THE KEY DIFFERENCE!
-            Sprite bgSprite("GameOverBackground", 64, 64); // Use actual texture dimensions
-            bgSprite.layer = 100; // Background layer (lowest priority)
-            bgSprite.visible = true;
-            m_ecsSystem->AddComponent<Sprite>(m_gameOverBackgroundEntity, bgSprite);
-            
-            GN_LOG_INFO("Created game over background at top with scale: " + std::to_string(backgroundScale) + ", position: (" + std::to_string(m_cachedScreenWidth * 0.5f) + ", 0.0f), scaled width: " + std::to_string(scaledWidth));
+        // Explicitly hide boss health bar during game over
+        if (m_bossHealthBar) {
+            m_bossHealthBar->SetVisible(false);
+            GN_LOG_INFO("Boss health bar explicitly hidden for game over screen");
         }
         
-        // Create morte sprite (floating above score) - use proper centering
-        m_morteEntity = m_ecsSystem->CreateEntity();
-        if (m_morteEntity != Gnosis::INVALID_ENTITY) {
-            float morteScale = 6.0f;
-            float morteWidth = 64.0f * morteScale;
-            float morteHeight = 64.0f * morteScale;
-            
-            // Position morte sprite at 30% from top
-            Gnosis::GNVector2 mortePosition = CenterObjectAtPosition(m_cachedScreenWidth * 0.5f, m_cachedScreenHeight * 0.30f, morteWidth, morteHeight);
-            
-            Transform morteTransform(Gnosis::GNVector2(mortePosition.x, mortePosition.y), 0.0f, Gnosis::GNVector2(morteScale, morteScale));
-            m_ecsSystem->AddComponent<Transform>(m_morteEntity, morteTransform);
-            
-            // Create morte sprite (like main menu) - THIS IS THE KEY DIFFERENCE!
-            Sprite morteSprite("FloppyTurdMorte", 64, 64); // Use actual texture dimensions
-            morteSprite.layer = 102; // Above background, below text
-            morteSprite.visible = true;
-            m_ecsSystem->AddComponent<Sprite>(m_morteEntity, morteSprite);
-            
-            GN_LOG_INFO("Created morte sprite at centered position: (" + std::to_string(mortePosition.x) + ", " + std::to_string(mortePosition.y) + ")");
-        }
+        // Check if landscape mode
+        bool isLandscape = IsLandscapeMode();
         
-        // Create score display with pipes and coins - use proper centering and fix newlines
-        m_gameOverScoreEntity = m_ecsSystem->CreateEntity();
-        if (m_gameOverScoreEntity != Gnosis::INVALID_ENTITY) {
-            // Calculate scale to make scoreboard 80% of screen width while maintaining 1:1 pixel ratio
-            float scoreScale = (m_cachedScreenWidth * 0.8f) / 64.0f; // 80% of screen width / texture width
-            float scoreWidth = 64.0f * scoreScale; // This will be 80% of screen width
-            float scoreHeight = 32.0f * scoreScale; // Height scales proportionally
+        if (isLandscape) {
+            // LANDSCAPE LAYOUT: Dead turd on left, scoreboard + buttons on right
             
-            // Position score display lower on screen (around 60% from top)
-            Gnosis::GNVector2 scorePosition = CenterObjectAtPosition(m_cachedScreenWidth * 0.5f, m_cachedScreenHeight * 0.6f, scoreWidth, scoreHeight);
+            // Create game over background - LEFT HALF ONLY (starts from left edge)
+            m_gameOverBackgroundEntity = m_ecsSystem->CreateEntity();
+            if (m_gameOverBackgroundEntity != Gnosis::INVALID_ENTITY) {
+                // Scale to cover left half of screen, positioned from left edge
+                float backgroundScale = (m_cachedScreenWidth * 0.5f) / 64.0f;
+                float bgX = 0.0f;  // Start from left edge
+                Transform bgTransform(Gnosis::GNVector2(bgX, 0.0f), 0.0f, Gnosis::GNVector2(backgroundScale, backgroundScale));
+                m_ecsSystem->AddComponent<Transform>(m_gameOverBackgroundEntity, bgTransform);
+                
+                Sprite bgSprite("GameOverBackground", 64, 64);
+                bgSprite.layer = 100;
+                bgSprite.visible = true;
+                m_ecsSystem->AddComponent<Sprite>(m_gameOverBackgroundEntity, bgSprite);
+            }
             
-            Transform scoreTransform(Gnosis::GNVector2(scorePosition.x, scorePosition.y), 0.0f, Gnosis::GNVector2(scoreScale, scoreScale));
-            m_ecsSystem->AddComponent<Transform>(m_gameOverScoreEntity, scoreTransform);
+            // Create morte sprite (floating on LEFT side)
+            m_morteEntity = m_ecsSystem->CreateEntity();
+            if (m_morteEntity != Gnosis::INVALID_ENTITY) {
+                float morteScale = 6.0f;
+                float morteWidth = 64.0f * morteScale;
+                float morteHeight = 64.0f * morteScale;
+                
+                // Position morte on left side, vertically centered
+                Gnosis::GNVector2 mortePosition = CenterObjectAtPosition(m_cachedScreenWidth * 0.25f, m_cachedScreenHeight * 0.5f, morteWidth, morteHeight);
+                
+                Transform morteTransform(Gnosis::GNVector2(mortePosition.x, mortePosition.y), 0.0f, Gnosis::GNVector2(morteScale, morteScale));
+                m_ecsSystem->AddComponent<Transform>(m_morteEntity, morteTransform);
+                
+                Sprite morteSprite("FloppyTurdMorte", 64, 64);
+                morteSprite.layer = 102;
+                morteSprite.visible = true;
+                m_ecsSystem->AddComponent<Sprite>(m_morteEntity, morteSprite);
+                
+                GN_LOG_INFO("Created morte sprite (landscape) at: (" + std::to_string(mortePosition.x) + ", " + std::to_string(mortePosition.y) + ")");
+            }
             
-            // Get player stats for comprehensive score display
-            PlayerComponent* player = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity);
-            int totalCoins = player ? player->sessionCoins : 0;
+            // Create score display background on RIGHT side
+            m_gameOverScoreEntity = m_ecsSystem->CreateEntity();
+            if (m_gameOverScoreEntity != Gnosis::INVALID_ENTITY) {
+                float scoreScale = (m_cachedScreenWidth * 0.35f) / 64.0f; // Smaller in landscape
+                float scoreWidth = 64.0f * scoreScale;
+                float scoreHeight = 32.0f * scoreScale;
+                
+                // Position on right side, upper area
+                Gnosis::GNVector2 scorePosition = CenterObjectAtPosition(m_cachedScreenWidth * 0.70f, m_cachedScreenHeight * 0.30f, scoreWidth, scoreHeight);
+                
+                Transform scoreTransform(Gnosis::GNVector2(scorePosition.x, scorePosition.y), 0.0f, Gnosis::GNVector2(scoreScale, scoreScale));
+                m_ecsSystem->AddComponent<Transform>(m_gameOverScoreEntity, scoreTransform);
+                
+                UIElement scoreUI;
+                scoreUI.buttonText = "";
+                scoreUI.textColor = Gnosis::GNColor(255, 255, 255, 255);
+                scoreUI.visible = true;
+                scoreUI.isEnabled = true;
+                scoreUI.textLayer = 101;
+                scoreUI.normalTextureId = "GameOverScore";
+                scoreUI.fontSize = 60.0f; // Smaller font for landscape
+                scoreUI.centerTextHorizontally = true;
+                scoreUI.centerTextVertically = true;
+                m_ecsSystem->AddComponent<UIElement>(m_gameOverScoreEntity, scoreUI);
+                
+                GN_LOG_INFO("Created game over score (landscape) at: (" + std::to_string(scorePosition.x) + ", " + std::to_string(scorePosition.y) + ")");
+            }
             
-            UIElement scoreUI;
-            // Fix newlines - use \n not \\n for proper line breaks, add extra spacing
-            scoreUI.buttonText = "Pipes: " + std::to_string(m_pipesCleared) + 
-                               "\n\nCoins: " + std::to_string(totalCoins);
-            scoreUI.textColor = Gnosis::GNColor(255, 255, 255, 255); // White text
-            scoreUI.visible = true;
-            scoreUI.isEnabled = true;
-            scoreUI.textLayer = 101; // Lower than morte, higher than background
-            scoreUI.normalTextureId = "GameOverScore"; // Use correct asset catalog name
-            scoreUI.fontSize = 80.0f; // Use button font size for better visibility
-            scoreUI.centerTextHorizontally = true;
-            scoreUI.centerTextVertically = true;
-            scoreUI.textOffsetX = -128.0f; // Move text 128 pixels to the left
-            scoreUI.textOffsetY = 128.0f;  // Move text 128 pixels down
-            m_ecsSystem->AddComponent<UIElement>(m_gameOverScoreEntity, scoreUI);
+            // Pipes label on right side (moved up 16px)
+            m_pipesLabelEntity = m_ecsSystem->CreateEntity();
+            if (m_pipesLabelEntity != Gnosis::INVALID_ENTITY) {
+                float pipesX = m_cachedScreenWidth * 0.70f;
+                float pipesY = m_cachedScreenHeight * 0.30f - 76.0f; // Moved up 16px
+                Transform pipesTransform(Gnosis::GNVector2(pipesX, pipesY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+                m_ecsSystem->AddComponent<Transform>(m_pipesLabelEntity, pipesTransform);
+                
+                UIElement pipesUI;
+                pipesUI.buttonText = "Pipes: " + std::to_string(m_pipesCleared);
+                pipesUI.textColor = Gnosis::GNColor(255, 255, 255, 255);
+                pipesUI.visible = true;
+                pipesUI.isEnabled = true;
+                pipesUI.textLayer = 102;
+                pipesUI.fontSize = 60.0f;
+                pipesUI.centerTextHorizontally = true;
+                pipesUI.textOutlineWidth = 6.0f;
+                pipesUI.normalTextureId = "";
+                m_ecsSystem->AddComponent<UIElement>(m_pipesLabelEntity, pipesUI);
+            }
             
-            GN_LOG_INFO("Created game over score at centered position: (" + std::to_string(scorePosition.x) + ", " + std::to_string(scorePosition.y) + ") with scale: " + std::to_string(scoreScale) + ", dimensions: " + std::to_string(scoreWidth) + "x" + std::to_string(scoreHeight));
-        }
-        
-        // Create death message (centered at top)
-        m_deathMessageEntity = m_ecsSystem->CreateEntity();
-        if (m_deathMessageEntity != Gnosis::INVALID_ENTITY) {
-            // Position death message below the morte sprite (around 25% from top)
-            float messageX = m_cachedScreenWidth * 0.5f;  // Center horizontally
-            float messageY = m_cachedScreenHeight * 0.25f; // 25% from top (below morte sprite)
-            Transform messageTransform(Gnosis::GNVector2(messageX, messageY), 0.0f, Gnosis::GNVector2(8.0f, 8.0f));
-            m_ecsSystem->AddComponent<Transform>(m_deathMessageEntity, messageTransform);
+            // Coins label on right side (moved down 16px)
+            m_coinsLabelEntity = m_ecsSystem->CreateEntity();
+            if (m_coinsLabelEntity != Gnosis::INVALID_ENTITY) {
+                PlayerComponent* player = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity);
+                int totalCoins = player ? player->sessionCoins : 0;
+                
+                float coinsX = m_cachedScreenWidth * 0.70f;
+                float coinsY = m_cachedScreenHeight * 0.30f + 56.0f; // Moved down 16px
+                Transform coinsTransform(Gnosis::GNVector2(coinsX, coinsY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+                m_ecsSystem->AddComponent<Transform>(m_coinsLabelEntity, coinsTransform);
+                
+                UIElement coinsUI;
+                coinsUI.buttonText = "Coins: " + std::to_string(totalCoins);
+                coinsUI.textColor = Gnosis::GNColor(255, 255, 255, 255);
+                coinsUI.visible = true;
+                coinsUI.isEnabled = true;
+                coinsUI.textLayer = 102;
+                coinsUI.fontSize = 60.0f;
+                coinsUI.centerTextHorizontally = true;
+                coinsUI.textOutlineWidth = 6.0f;
+                coinsUI.normalTextureId = "";
+                m_ecsSystem->AddComponent<UIElement>(m_coinsLabelEntity, coinsUI);
+            }
             
-            UIElement messageUI;
-            messageUI.buttonText = GetRandomDeathMessage();
-            messageUI.textColor = Gnosis::GNColor(255, 255, 255, 255); // White text
-            messageUI.visible = true;
-            messageUI.isEnabled = true;
-            messageUI.textLayer = 104; // Highest priority for death message
-            messageUI.fontSize = 80.0f; // Use raw font size value (not scaled)
-            messageUI.centerTextHorizontally = true;
-            messageUI.centerTextVertically = true;
-            messageUI.textOutlineWidth = 8.0f; // Add outline for better visibility
-            messageUI.normalTextureId = ""; // Text-only, no background texture
-            m_ecsSystem->AddComponent<UIElement>(m_deathMessageEntity, messageUI);
+            // Death message at top LEFT (above morte)
+            m_deathMessageEntity = m_ecsSystem->CreateEntity();
+            if (m_deathMessageEntity != Gnosis::INVALID_ENTITY) {
+                float messageX = m_cachedScreenWidth * 0.25f; // Left side with morte
+                float messageY = m_cachedScreenHeight * 0.15f;
+                Transform messageTransform(Gnosis::GNVector2(messageX, messageY), 0.0f, Gnosis::GNVector2(6.0f, 6.0f));
+                m_ecsSystem->AddComponent<Transform>(m_deathMessageEntity, messageTransform);
+                
+                UIElement messageUI;
+                messageUI.buttonText = GetRandomDeathMessage();
+                messageUI.textColor = Gnosis::GNColor(255, 255, 255, 255);
+                messageUI.visible = true;
+                messageUI.isEnabled = true;
+                messageUI.textLayer = 104;
+                messageUI.fontSize = 60.0f;
+                messageUI.centerTextHorizontally = true;
+                messageUI.centerTextVertically = true;
+                messageUI.textOutlineWidth = 6.0f;
+                messageUI.normalTextureId = "";
+                m_ecsSystem->AddComponent<UIElement>(m_deathMessageEntity, messageUI);
+            }
             
-            GN_LOG_INFO("Created death message: " + messageUI.buttonText + " at (" + std::to_string(messageX) + ", " + std::to_string(messageY) + ") with font size: " + std::to_string(messageUI.fontSize));
-        }
-        
-        // Create Try Again button - use proper centering and main menu font size
-        m_tryAgainButtonEntity = m_ecsSystem->CreateEntity();
+            // Try Again button (RIGHT side, bigger buttons)
+            m_tryAgainButtonEntity = m_ecsSystem->CreateEntity();
+            if (m_tryAgainButtonEntity != Gnosis::INVALID_ENTITY) {
+                float buttonScale = 7.0f; // Even bigger
+                float buttonWidth = 90.0f * buttonScale;
+                float buttonHeight = 16.0f * buttonScale;
+                
+                Gnosis::GNVector2 tryAgainPosition = CenterObjectAtPosition(
+                    m_cachedScreenWidth * 0.70f, 
+                    m_cachedScreenHeight * 0.65f, 
+                    buttonWidth, 
+                    buttonHeight
+                );
+                
+                Transform tryAgainTransform(tryAgainPosition, 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
+                m_ecsSystem->AddComponent<Transform>(m_tryAgainButtonEntity, tryAgainTransform);
+                
+                Sprite tryAgainSprite("FloppyButtonBlue", 90, 16);
+                tryAgainSprite.layer = 103;
+                tryAgainSprite.visible = true;
+                m_ecsSystem->AddComponent<Sprite>(m_tryAgainButtonEntity, tryAgainSprite);
+                
+                UIElement tryAgainUI;
+                tryAgainUI.buttonText = "Try Again";
+                tryAgainUI.textColor = Gnosis::GNColor(255, 255, 255, 255);
+                tryAgainUI.visible = true;
+                tryAgainUI.isEnabled = true;
+                tryAgainUI.textLayer = 104;
+                tryAgainUI.normalTextureId = "FloppyButtonBlue";
+                tryAgainUI.fontSize = 60.0f;
+                tryAgainUI.centerTextHorizontally = true;
+                tryAgainUI.centerTextVertically = true;
+                tryAgainUI.isHovered = false;
+                tryAgainUI.isPressed = false;
+                m_ecsSystem->AddComponent<UIElement>(m_tryAgainButtonEntity, tryAgainUI);
+                
+                Hitbox buttonHitbox;
+                buttonHitbox.width = buttonWidth;
+                buttonHitbox.height = buttonHeight;
+                buttonHitbox.offsetX = 0.0f;
+                buttonHitbox.offsetY = 0.0f;
+                m_ecsSystem->AddComponent<Hitbox>(m_tryAgainButtonEntity, buttonHitbox);
+                
+                GN_LOG_INFO("Created Try Again button (landscape) at: (" + std::to_string(tryAgainPosition.x) + ", " + std::to_string(tryAgainPosition.y) + ")");
+            }
+            
+            // Quit button (RIGHT side, bigger buttons)
+            m_quitButtonEntity = m_ecsSystem->CreateEntity();
+            if (m_quitButtonEntity != Gnosis::INVALID_ENTITY) {
+                float buttonScale = 7.0f; // Even bigger
+                float buttonWidth = 90.0f * buttonScale;
+                float buttonHeight = 16.0f * buttonScale;
+                
+                Gnosis::GNVector2 quitPosition = CenterObjectAtPosition(
+                    m_cachedScreenWidth * 0.70f, 
+                    m_cachedScreenHeight * 0.80f, 
+                    buttonWidth, 
+                    buttonHeight
+                );
+                
+                Transform quitTransform(quitPosition, 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
+                m_ecsSystem->AddComponent<Transform>(m_quitButtonEntity, quitTransform);
+                
+                Sprite quitSprite("FloppyButtonBlue", 90, 16);
+                quitSprite.layer = 103;
+                quitSprite.visible = true;
+                m_ecsSystem->AddComponent<Sprite>(m_quitButtonEntity, quitSprite);
+                
+                UIElement quitUI;
+                quitUI.buttonText = "Quit";
+                quitUI.textColor = Gnosis::GNColor(255, 255, 255, 255);
+                quitUI.visible = true;
+                quitUI.isEnabled = true;
+                quitUI.textLayer = 104;
+                quitUI.normalTextureId = "FloppyButtonBlue";
+                quitUI.fontSize = 60.0f;
+                quitUI.centerTextHorizontally = true;
+                quitUI.centerTextVertically = true;
+                quitUI.isHovered = false;
+                quitUI.isPressed = false;
+                m_ecsSystem->AddComponent<UIElement>(m_quitButtonEntity, quitUI);
+                
+                Hitbox buttonHitbox;
+                buttonHitbox.width = buttonWidth;
+                buttonHitbox.height = buttonHeight;
+                buttonHitbox.offsetX = 0.0f;
+                buttonHitbox.offsetY = 0.0f;
+                m_ecsSystem->AddComponent<Hitbox>(m_quitButtonEntity, buttonHitbox);
+                
+                GN_LOG_INFO("Created Quit button (landscape) at: (" + std::to_string(quitPosition.x) + ", " + std::to_string(quitPosition.y) + ")");
+            }
+            
+        } else {
+            // PORTRAIT LAYOUT (original)
+            
+            // Create game over background (light from heaven) - start at top and stretch to full width
+            m_gameOverBackgroundEntity = m_ecsSystem->CreateEntity();
+            if (m_gameOverBackgroundEntity != Gnosis::INVALID_ENTITY) {
+                // Calculate scale to stretch width to screen width while maintaining aspect ratio
+                float backgroundScale = m_cachedScreenWidth / 64.0f; // 64 is actual texture width
+                
+                // Position at top-left corner (0,0) and stretch to full width
+                // The sprite's origin is at center, so we need to offset by half the scaled width
+                float scaledWidth = 64.0f * backgroundScale;
+                Transform bgTransform(Gnosis::GNVector2(0.0f, 0.0f), 0.0f, Gnosis::GNVector2(backgroundScale, backgroundScale));
+                m_ecsSystem->AddComponent<Transform>(m_gameOverBackgroundEntity, bgTransform);
+                
+                // Create background sprite (like main menu) - THIS IS THE KEY DIFFERENCE!
+                Sprite bgSprite("GameOverBackground", 64, 64); // Use actual texture dimensions
+                bgSprite.layer = 100; // Background layer (lowest priority)
+                bgSprite.visible = true;
+                m_ecsSystem->AddComponent<Sprite>(m_gameOverBackgroundEntity, bgSprite);
+                
+                GN_LOG_INFO("Created game over background at top with scale: " + std::to_string(backgroundScale) + ", position: (" + std::to_string(m_cachedScreenWidth * 0.5f) + ", 0.0f), scaled width: " + std::to_string(scaledWidth));
+            }
+            
+            // Create morte sprite (floating above score) - use proper centering
+            m_morteEntity = m_ecsSystem->CreateEntity();
+            if (m_morteEntity != Gnosis::INVALID_ENTITY) {
+                float morteScale = 6.0f;
+                float morteWidth = 64.0f * morteScale;
+                float morteHeight = 64.0f * morteScale;
+                
+                // Position morte sprite at 30% from top
+                Gnosis::GNVector2 mortePosition = CenterObjectAtPosition(m_cachedScreenWidth * 0.5f, m_cachedScreenHeight * 0.30f, morteWidth, morteHeight);
+                
+                Transform morteTransform(Gnosis::GNVector2(mortePosition.x, mortePosition.y), 0.0f, Gnosis::GNVector2(morteScale, morteScale));
+                m_ecsSystem->AddComponent<Transform>(m_morteEntity, morteTransform);
+                
+                // Create morte sprite (like main menu) - THIS IS THE KEY DIFFERENCE!
+                Sprite morteSprite("FloppyTurdMorte", 64, 64); // Use actual texture dimensions
+                morteSprite.layer = 102; // Above background, below text
+                morteSprite.visible = true;
+                m_ecsSystem->AddComponent<Sprite>(m_morteEntity, morteSprite);
+                
+                GN_LOG_INFO("Created morte sprite at centered position: (" + std::to_string(mortePosition.x) + ", " + std::to_string(mortePosition.y) + ")");
+            }
+            
+            // Create score display background - use proper centering
+            m_gameOverScoreEntity = m_ecsSystem->CreateEntity();
+            if (m_gameOverScoreEntity != Gnosis::INVALID_ENTITY) {
+                // Calculate scale to make scoreboard 80% of screen width while maintaining 1:1 pixel ratio
+                float scoreScale = (m_cachedScreenWidth * 0.8f) / 64.0f; // 80% of screen width / texture width
+                float scoreWidth = 64.0f * scoreScale; // This will be 80% of screen width
+                float scoreHeight = 32.0f * scoreScale; // Height scales proportionally
+                
+                // Position score display lower on screen (around 60% from top)
+                Gnosis::GNVector2 scorePosition = CenterObjectAtPosition(m_cachedScreenWidth * 0.5f, m_cachedScreenHeight * 0.6f, scoreWidth, scoreHeight);
+                
+                Transform scoreTransform(Gnosis::GNVector2(scorePosition.x, scorePosition.y), 0.0f, Gnosis::GNVector2(scoreScale, scoreScale));
+                m_ecsSystem->AddComponent<Transform>(m_gameOverScoreEntity, scoreTransform);
+                
+                UIElement scoreUI;
+                scoreUI.buttonText = ""; // No text on background
+                scoreUI.textColor = Gnosis::GNColor(255, 255, 255, 255); // White text
+                scoreUI.visible = true;
+                scoreUI.isEnabled = true;
+                scoreUI.textLayer = 101; // Lower than morte, higher than background
+                scoreUI.normalTextureId = "GameOverScore"; // Use correct asset catalog name
+                scoreUI.fontSize = 80.0f;
+                scoreUI.centerTextHorizontally = true;
+                scoreUI.centerTextVertically = true;
+                m_ecsSystem->AddComponent<UIElement>(m_gameOverScoreEntity, scoreUI);
+                
+                GN_LOG_INFO("Created game over score background at centered position: (" + std::to_string(scorePosition.x) + ", " + std::to_string(scorePosition.y) + ") with scale: " + std::to_string(scoreScale) + ", dimensions: " + std::to_string(scoreWidth) + "x" + std::to_string(scoreHeight));
+            }
+            
+            // Create separate "Pipes:" label entity
+            m_pipesLabelEntity = m_ecsSystem->CreateEntity();
+            if (m_pipesLabelEntity != Gnosis::INVALID_ENTITY) {
+                // Get player stats
+                PlayerComponent* player = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity);
+                
+                // Position above center of scoreboard, shifted 32px to the right
+                float pipesX = (m_cachedScreenWidth * 0.5f) + 32.0f;
+                float pipesY = m_cachedScreenHeight * 0.6f - 100.0f; // 100px above center
+                Transform pipesTransform(Gnosis::GNVector2(pipesX, pipesY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+                m_ecsSystem->AddComponent<Transform>(m_pipesLabelEntity, pipesTransform);
+                
+                UIElement pipesUI;
+                pipesUI.buttonText = "Pipes: " + std::to_string(m_pipesCleared);
+                pipesUI.textColor = Gnosis::GNColor(255, 255, 255, 255); // White text
+                pipesUI.visible = true;
+                pipesUI.isEnabled = true;
+                pipesUI.textLayer = 102; // Above scoreboard background
+                pipesUI.fontSize = 80.0f;
+                pipesUI.centerTextHorizontally = true;
+                pipesUI.textOutlineWidth = 8.0f; // Add outline for visibility
+                pipesUI.normalTextureId = ""; // Text-only
+                m_ecsSystem->AddComponent<UIElement>(m_pipesLabelEntity, pipesUI);
+                
+                GN_LOG_INFO("Created Pipes label at: (" + std::to_string(pipesX) + ", " + std::to_string(pipesY) + ")");
+            }
+            
+            // Create separate "Coins:" label entity
+            m_coinsLabelEntity = m_ecsSystem->CreateEntity();
+            if (m_coinsLabelEntity != Gnosis::INVALID_ENTITY) {
+                // Get player stats
+                PlayerComponent* player = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity);
+                int totalCoins = player ? player->sessionCoins : 0;
+                
+                // Position below center of scoreboard, shifted 32px right and 48px lower (was 64, moved up 16px)
+                float coinsX = (m_cachedScreenWidth * 0.5f) + 32.0f;
+                float coinsY = (m_cachedScreenHeight * 0.6f + 50.0f) + 48.0f; // 50px below center + 48px lower
+                Transform coinsTransform(Gnosis::GNVector2(coinsX, coinsY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+                m_ecsSystem->AddComponent<Transform>(m_coinsLabelEntity, coinsTransform);
+                
+                UIElement coinsUI;
+                coinsUI.buttonText = "Coins: " + std::to_string(totalCoins);
+                coinsUI.textColor = Gnosis::GNColor(255, 255, 255, 255); // White text
+                coinsUI.visible = true;
+                coinsUI.isEnabled = true;
+                coinsUI.textLayer = 102; // Above scoreboard background
+                coinsUI.fontSize = 80.0f;
+                coinsUI.centerTextHorizontally = true;
+                coinsUI.textOutlineWidth = 8.0f; // Add outline for visibility
+                coinsUI.normalTextureId = ""; // Text-only
+                m_ecsSystem->AddComponent<UIElement>(m_coinsLabelEntity, coinsUI);
+                
+                GN_LOG_INFO("Created Coins label at: (" + std::to_string(coinsX) + ", " + std::to_string(coinsY) + ")");
+            }
+            
+            // Create death message (centered at top)
+            m_deathMessageEntity = m_ecsSystem->CreateEntity();
+            if (m_deathMessageEntity != Gnosis::INVALID_ENTITY) {
+                // Position death message below the morte sprite (around 25% from top)
+                float messageX = m_cachedScreenWidth * 0.5f;  // Center horizontally
+                float messageY = m_cachedScreenHeight * 0.25f; // 25% from top (below morte sprite)
+                Transform messageTransform(Gnosis::GNVector2(messageX, messageY), 0.0f, Gnosis::GNVector2(8.0f, 8.0f));
+                m_ecsSystem->AddComponent<Transform>(m_deathMessageEntity, messageTransform);
+                
+                UIElement messageUI;
+                messageUI.buttonText = GetRandomDeathMessage();
+                messageUI.textColor = Gnosis::GNColor(255, 255, 255, 255); // White text
+                messageUI.visible = true;
+                messageUI.isEnabled = true;
+                messageUI.textLayer = 104; // Highest priority for death message
+                messageUI.fontSize = 80.0f; // Use raw font size value (not scaled)
+                messageUI.centerTextHorizontally = true;
+                messageUI.centerTextVertically = true;
+                messageUI.textOutlineWidth = 8.0f; // Add outline for better visibility
+                messageUI.normalTextureId = ""; // Text-only, no background texture
+                m_ecsSystem->AddComponent<UIElement>(m_deathMessageEntity, messageUI);
+                
+                GN_LOG_INFO("Created death message: " + messageUI.buttonText + " at (" + std::to_string(messageX) + ", " + std::to_string(messageY) + ") with font size: " + std::to_string(messageUI.fontSize));
+            }
+            
+            // Create Try Again button (PORTRAIT) - use proper centering and main menu font size
+            m_tryAgainButtonEntity = m_ecsSystem->CreateEntity();
         if (m_tryAgainButtonEntity != Gnosis::INVALID_ENTITY) {
             float buttonScale = 10.0f; // Match main menu button scale
             float buttonWidth = 90.0f * buttonScale; // 90 is texture width
@@ -3235,10 +3852,10 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             m_ecsSystem->AddComponent<Hitbox>(m_tryAgainButtonEntity, buttonHitbox);
             
             GN_LOG_INFO("Created Try Again button at centered position: (" + std::to_string(tryAgainPosition.x) + ", " + std::to_string(tryAgainPosition.y) + ") with scale: " + std::to_string(buttonScale));
-        }
-        
-        // Create Quit button - use proper centering and main menu font size
-        m_quitButtonEntity = m_ecsSystem->CreateEntity();
+            }
+            
+            // Create Quit button (PORTRAIT) - use proper centering and main menu font size
+            m_quitButtonEntity = m_ecsSystem->CreateEntity();
         if (m_quitButtonEntity != Gnosis::INVALID_ENTITY) {
             float buttonScale = 10.0f; // Match main menu button scale
             float buttonWidth = 90.0f * buttonScale; // 90 is texture width
@@ -3280,6 +3897,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             m_ecsSystem->AddComponent<Hitbox>(m_quitButtonEntity, buttonHitbox);
             
             GN_LOG_INFO("Created Quit button at centered position: (" + std::to_string(quitPosition.x) + ", " + std::to_string(quitPosition.y) + ") with scale: " + std::to_string(buttonScale));
+            }
         }
     }
 
@@ -3302,7 +3920,17 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             m_ecsSystem->DestroyEntity(m_gameOverScoreEntity);
             m_gameOverScoreEntity = 0;
         }
-        
+    
+        if (m_pipesLabelEntity != 0) {
+            m_ecsSystem->DestroyEntity(m_pipesLabelEntity);
+            m_pipesLabelEntity = 0;
+        }
+    
+        if (m_coinsLabelEntity != 0) {
+            m_ecsSystem->DestroyEntity(m_coinsLabelEntity);
+            m_coinsLabelEntity = 0;
+        }
+    
         if (m_deathMessageEntity != 0) {
             m_ecsSystem->DestroyEntity(m_deathMessageEntity);
             m_deathMessageEntity = 0;
@@ -3492,9 +4120,39 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                         // Background layers are managed by LevelManager - no need to recreate here
                 GN_LOG_INFO("TryAgain: Background layers managed by LevelManager");
         
-        // Recreate UI
-        CreateUI();
-        GN_LOG_INFO("TryAgain: UI recreated");
+        // Reset UI counter values without destroying/recreating entities
+        UpdatePipeCounterUI();
+        UpdateCoinCounterUI();
+        
+        // Restore coin bag using orientation-aware positioning (NOT hardcoded 0.87f)
+        if (m_coinBagEntity != 0 && m_ecsSystem && m_renderSystem) {
+            const ScreenInfo& si = m_renderSystem->GetScreenInfo();
+            bool isLandscape = !si.isPortrait;
+            
+            float bagX = si.pixelWidth * (isLandscape ? LANDSCAPE_COINBAG_X : PORTRAIT_COINBAG_X);
+            float bagY = si.pixelHeight * (isLandscape ? LANDSCAPE_COINBAG_Y : PORTRAIT_COINBAG_Y);
+            
+            Transform* bagTransform = m_ecsSystem->GetComponent<Transform>(m_coinBagEntity);
+            if (bagTransform) {
+                bagTransform->position = Gnosis::GNVector2(bagX, bagY);
+                GN_LOG_INFO("TryAgain: Reset coin bag to orientation-aware position: (" + 
+                           std::to_string(bagX) + ", " + std::to_string(bagY) + ") landscape=" + std::to_string(isLandscape));
+            }
+            
+            // Reset coin text relative to coin bag position
+            if (m_coinsTextEntity != 0) {
+                const float bagScale = 8.0f;
+                float textX = bagX + (32.0f * bagScale) + 8.0f;
+                float textY = bagY + (32.0f * bagScale * 0.5f) + 24.0f;
+                Transform* textTransform = m_ecsSystem->GetComponent<Transform>(m_coinsTextEntity);
+                if (textTransform) {
+                    textTransform->position = Gnosis::GNVector2(textX, textY);
+                    GN_LOG_INFO("TryAgain: Reset coins text to correct position: (" + 
+                               std::to_string(textX) + ", " + std::to_string(textY) + ")");
+                }
+            }
+        }
+        GN_LOG_INFO("TryAgain: UI values and positions reset");
         
         // Heart system was already reset in ResetPlayerEntity() - no need to reset again
         
@@ -3728,14 +4386,15 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
     }
 
     void GameplayState::ShowRegularUI() {
-        // Show all regular gameplay UI elements (except settings button - it should stay visible)
+        // Show all regular gameplay UI elements including settings button
         std::vector<Gnosis::Entity*> uiElements = {
             &m_scoreTextEntity,
             &m_livesTextEntity,
             &m_coinsTextEntity,
             &m_coinBagEntity,
             &m_pipeCounterEntity,
-            &m_heartUIEntity
+            &m_heartUIEntity,
+            &m_settingsButtonEntity
         };
 
         // Handle shooting zone separately - only show if enabled for current level

@@ -48,6 +48,8 @@ namespace GameCore {
         static void enqueueDrawSpriteScaledCentered(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation);
         static void enqueueDrawSpriteScaledPivoted(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation, float pivotX, float pivotY);
         static void enqueueDrawSpriteScaledWithSource(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation, float sourceX, float sourceY, float sourceWidth, float sourceHeight);
+        static void enqueueDrawSpriteScaledWithSourceCentered(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation, float sourceX, float sourceY, float sourceWidth, float sourceHeight);
+        static void enqueueDrawSpriteScaledWithSourcePivoted(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation, float pivotX, float pivotY, float sourceX, float sourceY, float sourceWidth, float sourceHeight);
         
         // Batch rendering - draw multiple sprites with same texture in one call
         // NOTE: std::vector auto-bridges to Swift RandomAccessCollection
@@ -68,6 +70,7 @@ namespace GameCore {
                                                     float outlineWidth);
         static void enqueueDrawRectangle(float x, float y, float width, float height, float r, float g, float b, float a);
         static void enqueueDrawCircle(float x, float y, float radius, float r, float g, float b, float a);
+        static void enqueueDrawFilledCircle(float x, float y, float radius, float r, float g, float b, float a);
         static void enqueueGetScreenSize(float* width, float* height);
         static void enqueueGetScreenInfo(ScreenInfo* screenInfo);
         static void enqueueGetTextureMetadata(const char* textureId, TextureMetadata* metadata);

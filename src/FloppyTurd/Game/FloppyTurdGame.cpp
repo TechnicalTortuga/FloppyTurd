@@ -53,6 +53,8 @@ namespace GameCore {
         , m_levelUnlockSoundTimer(0.0f)
         , m_pendingPartyHorn(false)
         , m_pendingLandscapeLevelId(0)
+        , m_enteredViaQuickplay(false)
+        , m_lastPlayedLevelId(0)
     {
         // Initialize game stats
         m_gameStats = {0, 0, 0, 0, 0, 0, 0, 0, 0.0f, 0, 0};
@@ -595,6 +597,11 @@ namespace GameCore {
             if (mainMenu && mainMenu->GetSelectedLevelIndex() >= 0) {
                 // Transition to gameplay with selected level
                 int selectedLevel = mainMenu->GetSelectedLevelIndex();
+                
+                // Store Quickplay flag and level for when we return
+                m_enteredViaQuickplay = mainMenu->GetEnteredViaQuickplay();
+                m_lastPlayedLevelId = selectedLevel;
+                GN_LOG_INFO("Starting level " + std::to_string(selectedLevel) + " - Quickplay: " + std::string(m_enteredViaQuickplay ? "YES" : "NO"));
 
                 // Check if level requires landscape mode
                 LevelConfig levelConfig = LevelConfigFactory::GetLevelConfig(selectedLevel);
@@ -641,7 +648,26 @@ namespace GameCore {
 
                 if (m_pendingTransitionTarget == "MainMenu") {
                     // Go directly to MainMenuState - ScreenPromptState already provides transition
+                    // Check if we should return to level select or main menu (Quickplay)
+                    GN_LOG_INFO("Creating MainMenuState (from landscape) - Quickplay: " + std::string(m_enteredViaQuickplay ? "YES" : "NO"));
                     auto mainMenuState = std::make_unique<MainMenuState>(m_ecsSystem.get(), &m_platformDelegates);
+                    
+                    if (m_enteredViaQuickplay) {
+                        // Quickplay mode - return to main menu
+                        GN_LOG_INFO("Returning to MAIN MENU from Quickplay (landscape level)");
+                        // Leave mode as MAIN_MENU (default)
+                    } else {
+                        // Normal level select - use last played level ID
+                        if (m_lastPlayedLevelId > 0) {
+                            mainMenuState->SetStartingMenuMode(MainMenuState::MenuMode::LEVEL_SELECT);
+                            mainMenuState->SetReturnToLevel(m_lastPlayedLevelId);
+                            GN_LOG_INFO("Returned to LEVEL SELECT from landscape level " + std::to_string(m_lastPlayedLevelId));
+                        }
+                    }
+                    
+                    // Reset Quickplay flag
+                    m_enteredViaQuickplay = false;
+                    
                     m_stateManager->ChangeState(std::move(mainMenuState));
                 }
 
@@ -685,10 +711,31 @@ namespace GameCore {
                 }
             }
 
-            // Normal portrait level - direct transition to main menu
+            // Normal portrait level - check if Quickplay or normal level select
+            GN_LOG_INFO("Creating MainMenuState (from portrait level) - Quickplay: " + std::string(m_enteredViaQuickplay ? "YES" : "NO"));
             auto mainMenuState = std::make_unique<MainMenuState>(m_ecsSystem.get(), &m_platformDelegates);
+            
+            // Get level info from gameplay
+            if (gameplay) {
+                int levelId = gameplay->GetCurrentLevelId();
+                
+                if (m_enteredViaQuickplay) {
+                    // Quickplay mode - return to main menu (don't set level select mode)
+                    GN_LOG_INFO("Returning to MAIN MENU from Quickplay");
+                    // Leave mode as MAIN_MENU (default)
+                } else {
+                    // Normal level select - return to level select screen with the level we came from
+                    mainMenuState->SetStartingMenuMode(MainMenuState::MenuMode::LEVEL_SELECT);
+                    mainMenuState->SetReturnToLevel(levelId);
+                    GN_LOG_INFO("Returning to LEVEL SELECT - level " + std::to_string(levelId));
+                }
+            }
+            
+            // Reset Quickplay flag after handling
+            m_enteredViaQuickplay = false;
+            
             m_stateManager->ChangeState(std::move(mainMenuState));
-            GN_LOG_INFO("Gameplay finished - returned to MainMenuState");
+            GN_LOG_INFO("Gameplay finished - transitioning to menu");
         }
         else if (strcmp(stateName, "Transition") == 0) {
             // Handle transition state finishing
@@ -698,9 +745,12 @@ namespace GameCore {
                 GN_LOG_INFO("TransitionState finished - transitioning to: " + std::string(targetState));
                 
                 if (strcmp(targetState, "MainMenu") == 0) {
+                    // Return to level select when transitioning from gameplay
+                    GN_LOG_INFO("Creating MainMenuState with LEVEL_SELECT mode (from transition)");
                     auto mainMenuState = std::make_unique<MainMenuState>(m_ecsSystem.get(), &m_platformDelegates);
+                    mainMenuState->SetStartingMenuMode(MainMenuState::MenuMode::LEVEL_SELECT);
                     m_stateManager->ChangeState(std::move(mainMenuState));
-                    GN_LOG_INFO("Transitioned to MainMenuState after orientation change");
+                    GN_LOG_INFO("Transitioned to level select after orientation change");
                 }
             }
         }

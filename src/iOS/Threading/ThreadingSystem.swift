@@ -205,7 +205,39 @@ class CommandProcessor {
                     sourceWidth: data.sourceWidth,
                     sourceHeight: data.sourceHeight)
             }
-        
+
+        case .CMD_DRAW_SPRITE_SCALED_WITH_SOURCE_CENTERED:
+            if data.textureHandle != 0 {
+                renderer.drawSpriteScaledWithSourceCentered(
+                    textureHandle: data.textureHandle,
+                    x: data.x,
+                    y: data.y,
+                    scaleX: data.scaleX,
+                    scaleY: data.scaleY,
+                    rotation: data.rotation,
+                    sourceX: data.sourceX,
+                    sourceY: data.sourceY,
+                    sourceWidth: data.sourceWidth,
+                    sourceHeight: data.sourceHeight)
+            }
+
+        case .CMD_DRAW_SPRITE_SCALED_WITH_SOURCE_PIVOTED:
+            if data.textureHandle != 0 {
+                renderer.drawSpriteScaledWithSourcePivoted(
+                    textureHandle: data.textureHandle,
+                    x: data.x,
+                    y: data.y,
+                    scaleX: data.scaleX,
+                    scaleY: data.scaleY,
+                    rotation: data.rotation,
+                    pivotX: data.pivotX,
+                    pivotY: data.pivotY,
+                    sourceX: data.sourceX,
+                    sourceY: data.sourceY,
+                    sourceWidth: data.sourceWidth,
+                    sourceHeight: data.sourceHeight)
+            }
+
         case .CMD_DRAW_SPRITE_BATCH:
             // std::vector<SpriteBatchData> auto-bridges to Swift as RandomAccessCollection
             let batchData = data.batchData
@@ -277,6 +309,13 @@ class CommandProcessor {
                 y: data.y,
                 radius: data.radius,
                 r: data.r, g: data.g, b: data.b, a: data.a)
+
+        case .CMD_DRAW_FILLED_CIRCLE:
+            renderer.drawFilledCircle(
+                data.x,
+                data.y,
+                data.radius,
+                data.r, data.g, data.b, data.a)
 
         case .CMD_GET_SCREEN_SIZE:
             let size = renderer.getScreenSize()

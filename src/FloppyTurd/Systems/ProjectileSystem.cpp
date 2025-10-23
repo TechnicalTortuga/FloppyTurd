@@ -101,6 +101,8 @@ namespace GameCore {
             Hitbox hitbox;
             hitbox.type = ColliderType::Circle;
             hitbox.radius = 8.0f;
+            hitbox.offsetX = 16.0f;  // Center on 32x32 sprite
+            hitbox.offsetY = 16.0f;  // Center on 32x32 sprite
             hitbox.tag = "projectile";
             m_ecsSystem->AddComponent<Hitbox>(projectile, hitbox);
 
@@ -135,9 +137,13 @@ namespace GameCore {
 
             Hitbox hitbox;
             hitbox.type = ColliderType::Circle;
-            hitbox.radius = 8.0f;
+            hitbox.radius = 14.0f;  // 14 * scale from center for better hit detection
+            hitbox.offsetX = 16.0f;  // Center on 32x32 sprite (will be reconfigured based on actual sprite)
+            hitbox.offsetY = 16.0f;  // Center on 32x32 sprite
             hitbox.tag = "enemy_projectile";
             m_ecsSystem->AddComponent<Hitbox>(projectile, hitbox);
+
+            // Debug draw removed as requested
 
             Projectile projectileData;
             projectileData.isActive = false;
@@ -258,9 +264,9 @@ namespace GameCore {
             projectileData->projectileType = projectileType;
             projectileData->spawnPosition = position;
             projectileData->currentLifetime = 0.0f;
-            // CRITICAL: Snowballs don't expire by time - only removed when off-screen or hitting player
+            // CRITICAL: Snowballs and toilet paper don't expire by time - only removed when off-screen or hitting player
             // Other projectiles can still have time limits
-            projectileData->lifetime = (projectileType == ProjectileType::SNOWBALL) ? 999999.0f : 5.0f;
+            projectileData->lifetime = (projectileType == ProjectileType::SNOWBALL || projectileType == ProjectileType::TOILET_PAPER) ? 999999.0f : 5.0f;
             projectileData->damage = damage;
             projectileData->isEnemyProjectile = true;
             projectileData->affectedByGravity = (projectileType == ProjectileType::SNOWBALL);
@@ -455,6 +461,9 @@ namespace GameCore {
                 physics->velocity.y += currentGravity * deltaTime;
             }
             
+            // NOTE: Collision detection with player is handled in GameplayState
+            // where all other collision checks happen
+            
             // COMPREHENSIVE SNOWBALL TRACKING
             if (projectileData->projectileType == ProjectileType::SNOWBALL) {
                 // Get screen bounds for comparison
@@ -522,6 +531,42 @@ namespace GameCore {
         sprite->layer = config.layer;
         sprite->visible = true; // Make visible when spawned
         sprite->color.a = 255; // Full opacity
+
+        // Configure hitbox per projectile type with proper offset based on sprite size
+        Hitbox* hitbox = m_ecsSystem->GetComponent<Hitbox>(projectile);
+        if (hitbox) {
+            hitbox->type = ColliderType::Circle;
+            // CRITICAL: Sprite is PRE-SCALED, so offset must be half of SCALED sprite dimensions
+            // (Not frame dimensions, since sprite.width/height are already scaled)
+            hitbox->offsetX = sprite->width / 2.0f;
+            hitbox->offsetY = sprite->height / 2.0f;
+            
+            // CRITICAL: Sprite dimensions are PRE-SCALED (e.g., 32px * 8 = 256px stored in sprite.width)
+            // but Transform.scale is 1.0, so radius must ALSO be pre-scaled!
+            // Radius should be ~40-50% of sprite radius for good collision feel
+            switch (projectileType) {
+                case ProjectileType::TOILET_PAPER:
+                    // TP: 32px * 8 = 256px sprite, radius = 100px (~39% of sprite size, feels accurate)
+                    hitbox->radius = 100.0f;
+                    break;
+                case ProjectileType::SNOWBALL:
+                    // Snowball: 32px * 9 = 288px sprite, radius = 130px (~45% of sprite size)
+                    hitbox->radius = 130.0f;
+                    break;
+                case ProjectileType::POOP_BALL:
+                case ProjectileType::LARGE_POOP_BALL:
+                default:
+                    // Player poop: 16px * 8 = 128px sprite, radius = 55px (~43% of sprite size)
+                    hitbox->radius = 55.0f;
+                    break;
+            }
+            
+            GN_LOG_INFO("✅ HITBOX CONFIGURED for projectile type " + std::to_string(static_cast<int>(projectileType)) +
+                       ": radius=" + std::to_string(hitbox->radius) + " (PRE-SCALED - Transform.scale=1.0)" +
+                       ", offset=(" + std::to_string(hitbox->offsetX) + "," + std::to_string(hitbox->offsetY) + ")" +
+                       " spriteSize=" + std::to_string(sprite->width) + "x" + std::to_string(sprite->height) +
+                       " frameSize=" + std::to_string(config.frameWidth) + "x" + std::to_string(config.frameHeight));
+        }
 
         GN_LOG_INFO("Configured sprite for projectile type " + std::to_string(static_cast<int>(projectileType)) +
                    ": " + config.assetName + " (" + std::to_string(config.frameWidth) + "x" +

@@ -294,8 +294,9 @@ namespace GameCore {
 
             Hitbox hb;
             hb.type = ColliderType::Rectangle;
-            hb.width = isCoinType(type) ? 16.0f : 32.0f;
-            hb.height = isCoinType(type) ? 16.0f : 32.0f;
+            // Tighter hitboxes: coins 16x16, hearts 20x20 (reduced from 32x32 for fairness)
+            hb.width = isCoinType(type) ? 16.0f : 20.0f;
+            hb.height = isCoinType(type) ? 16.0f : 20.0f;
             hb.offsetX = 0.0f;
             hb.offsetY = 0.0f;
             m_ecsSystem->AddComponent<Hitbox>(e, hb);
@@ -328,17 +329,17 @@ namespace GameCore {
         auto pattern = m_levelManager->GetObstacleSystem()->DetectGroupPattern(groupId);
         auto newPositions = m_levelManager->GetObstacleSystem()->CalculateCoinPositionsForGroup(groupId, pattern);
 
-        // Performance: Commented out expensive reposition logging
-        // GN_LOG_DEBUG("PickupSystem::repositionCoinsForGroup: groupId=" + std::to_string(groupId) + 
-        //              " coins=" + std::to_string(it->second.size()) + 
-        //              " newPositions=" + std::to_string(newPositions.size()) + 
-        //              " pattern=" + std::to_string(static_cast<int>(pattern)));
+        // TEMPORARY: Enable detailed logging for Castle level coin wrap debugging
+        GN_LOG_INFO("PickupSystem::repositionCoinsForGroup: groupId=" + std::to_string(groupId) + 
+                     " coins=" + std::to_string(it->second.size()) + 
+                     " newPositions=" + std::to_string(newPositions.size()) + 
+                     " pattern=" + std::to_string(static_cast<int>(pattern)));
         
         // Log the actual new positions for debugging
-        // for (size_t i = 0; i < newPositions.size(); ++i) {
-        //     GN_LOG_DEBUG("PickupSystem::repositionCoinsForGroup: newPosition[" + std::to_string(i) + "] = (" + 
-        //                  std::to_string(newPositions[i].x) + ", " + std::to_string(newPositions[i].y) + ")");
-        // }
+        for (size_t i = 0; i < newPositions.size(); ++i) {
+            GN_LOG_INFO("PickupSystem::repositionCoinsForGroup: newPosition[" + std::to_string(i) + "] = (" + 
+                         std::to_string(newPositions[i].x) + ", " + std::to_string(newPositions[i].y) + ")");
+        }
 
         // Helper function to re-roll pickup types using current level ratios
         auto choosePickupType = [this]() -> std::string {

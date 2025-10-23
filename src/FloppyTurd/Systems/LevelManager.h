@@ -29,6 +29,7 @@ namespace GameCore {
         // Player reference (used by NPC/enemy behaviors)
         void SetPlayerEntity(Gnosis::Entity playerEntity) { m_playerEntity = playerEntity; }
         Gnosis::Entity GetPlayerEntity() const { return m_playerEntity; }
+        Gnosis::GNVector2 GetPlayerPosition() const;
 
         // Level lifecycle
         bool LoadLevel(int levelId);

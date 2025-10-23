@@ -21,15 +21,12 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/GameplayState.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../../Engine/Utility/FrameProfiler.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../../Engine/Utility/../Core/GNLog.h \
-  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../Entities/Player.h \
-  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../Entities/../../Engine/Core/GnosisTypes.h \
-  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../Entities/../Components/GameComponents.h \
-  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../Entities/../Components/../../Engine/Core/GnosisTypes.h \
-  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../Entities/../Components/../../Engine/Core/Component.h \
-  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../Entities/../Components/../Config/LevelConfig.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../Systems/SpriteSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../Systems/../../Engine/Core/ECS.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../Systems/../Components/GameComponents.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../Systems/../Components/../../Engine/Core/GnosisTypes.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../Systems/../Components/../../Engine/Core/Component.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../Systems/../Components/../Config/LevelConfig.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../Systems/../../Engine/Platform/PlatformDelegates.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../Systems/PlayerControllerSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../Systems/ProjectileSystem.h \
@@ -56,8 +53,8 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../Systems/../Input/InputManager.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../Systems/../Input/../../Engine/Core/ECS.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../Systems/../Input/../../Engine/Platform/PlatformDelegates.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../Systems/OverlaySystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../Config/LevelConfig.h \
-  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../Entities/Player.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/LoadingState.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/MainMenuState.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Game/../States/../Components/GameComponents.h \

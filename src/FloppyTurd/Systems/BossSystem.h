@@ -46,6 +46,7 @@ struct AimingData {
     bool hasLockedOn = false;
     float lockOnAngle = 0.0f;           // Final locked angle
     std::vector<LockOnDot> lockOnDots;  // Visual indicator dots
+    std::vector<Entity> dotEntities;    // Entities for rendering dots
 };
 
 class BossSystem {
@@ -66,6 +67,7 @@ public:
     int GetHealth() const { return health; }
     int GetMaxHealth() const { return maxHealth; }
     bool IsActive() const { return isActive; }
+    float GetScale() const { return scale; }
     bool IsLowHealthMode() const { return health <= maxHealth * 0.4f; }
 
     // Position and movement
@@ -94,8 +96,8 @@ private:
     GNVector2 position = {0, 0};
 
     // Boss properties
-    int health = 20;
-    int maxHealth = 20;
+    int health = 200;
+    int maxHealth = 200;
     bool isActive = false;
     float scale = 8.0f;  // 8.0x scale for 128px -> 1024px (matches player scale)
 
@@ -122,7 +124,7 @@ private:
     float m_walkDestination = 0.0f;
 
     // Minion spawning
-    int nextMinionHealthThreshold = 16;  // 80% of 20 HP
+    int nextMinionHealthThreshold = 185;  // Start at 185 HP (first threshold at ~90%)
     bool hasTriggeredLowHealthMusic = false;
 
     // State handlers
@@ -140,6 +142,8 @@ private:
     void SpawnProjectile();
     void SpawnMinionWave(int count);
     void UpdateLockOnIndicator();
+    void CreateLockOnDotEntities();
+    void DestroyLockOnDotEntities();
     void ChangeMusic(const std::string& musicFile);
     void SetArmSpriteVisibility(bool showBackArm, bool showFrontArm);
     Gnosis::GNVector2 GetShoulderPosition() const;

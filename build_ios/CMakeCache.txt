@@ -304,7 +304,7 @@ CMAKE_FIND_ROOT_PATH_MODE_INCLUDE:INTERNAL=BOTH
 CMAKE_FIND_ROOT_PATH_MODE_LIBRARY:INTERNAL=BOTH
 CMAKE_FIND_ROOT_PATH_MODE_PACKAGE:INTERNAL=BOTH
 CMAKE_FIND_ROOT_PATH_MODE_PROGRAM:INTERNAL=BOTH
-CMAKE_FRAMEWORK_PATH:INTERNAL=/Library/PrivateFrameworks;/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.2.sdk/System/Library/Frameworks;/Library/PrivateFrameworks;/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.2.sdk/System/Library/Frameworks
+CMAKE_FRAMEWORK_PATH:INTERNAL=/Library/PrivateFrameworks;/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.0.sdk/System/Library/Frameworks;/Library/PrivateFrameworks;/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.0.sdk/System/Library/Frameworks
 //Name of generator.
 CMAKE_GENERATOR:INTERNAL=Xcode
 //Generator instance identifier.
@@ -345,8 +345,8 @@ CMAKE_OBJDUMP-ADVANCED:INTERNAL=1
 CMAKE_OSX_ARCHITECTURES:INTERNAL=x86_64
 //Minimum OS X deployment version
 CMAKE_OSX_DEPLOYMENT_TARGET:INTERNAL=13.0
-CMAKE_OSX_SYSROOT:INTERNAL=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.2.sdk
-CMAKE_OSX_SYSROOT_INT:INTERNAL=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.2.sdk
+CMAKE_OSX_SYSROOT:INTERNAL=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.0.sdk
+CMAKE_OSX_SYSROOT_INT:INTERNAL=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.0.sdk
 //Platform information initialized
 CMAKE_PLATFORM_INFO_INITIALIZED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_RANLIB
@@ -381,7 +381,7 @@ CMAKE_STATIC_LINKER_FLAGS_RELEASE-ADVANCED:INTERNAL=1
 CMAKE_STATIC_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_STRIP
 CMAKE_STRIP-ADVANCED:INTERNAL=1
-CMAKE_SYSTEM_VERSION:INTERNAL=18.2
+CMAKE_SYSTEM_VERSION:INTERNAL=26.0
 //ADVANCED property for variable: CMAKE_Swift_FLAGS
 CMAKE_Swift_FLAGS-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_Swift_FLAGS_DEBUG
@@ -404,8 +404,8 @@ FloppyTurdGame_GUID_CMAKE:INTERNAL=0DE0C202AEDEA1EE745377B5
 //Stored Xcode object GUID
 FloppyTurd_GUID_CMAKE:INTERNAL=8EFA9AA7BA22AECA1336F161
 //Stored Xcode object GUID
-PROJECT_FloppyTurd_GUID_CMAKE:INTERNAL=B29BCD4F0C1E4B46BD3F92DA
-XCODE_VERSION_INT:INTERNAL=16.2
+PROJECT_FloppyTurd_GUID_CMAKE:INTERNAL=6F39BF08593B4F5FBF938B31
+XCODE_VERSION_INT:INTERNAL=26.0.1
 //Stored Xcode object GUID
 ZERO_CHECK_GUID_CMAKE:INTERNAL=D9EF5759F53BF46D2676F7EB
 

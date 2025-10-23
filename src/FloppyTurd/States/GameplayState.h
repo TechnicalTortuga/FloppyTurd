@@ -6,7 +6,6 @@
 #include "../../Engine/Platform/PlatformDelegates.h"
 #include "GameState.h"
 #include "../../Engine/Utility/FrameProfiler.h"
-#include "../Entities/Player.h"
 #include "../Systems/SpriteSystem.h"
 #include "../Systems/PlayerControllerSystem.h"
 #include "../Systems/CameraSystem.h"
@@ -22,6 +21,7 @@
 #include "../Systems/BossSystem.h"
 #include "../Systems/BossHealthBar.h"
 #include "../Systems/PauseSystem.h"
+#include "../Systems/OverlaySystem.h"
 #include "../Config/LevelConfig.h"
 #include <memory>
 #include <vector>
@@ -135,6 +135,9 @@ namespace GameCore {
 
         // Pause system (handles all pause menu functionality)
         std::unique_ptr<PauseSystem> m_pauseSystem;
+        
+        // Overlay system (snowfall and other visual effects between world and UI)
+        std::unique_ptr<OverlaySystem> m_overlaySystem;
 
         // Cached screen dimensions (eliminate 40+ repeated GetScreenInfo() calls)
         float m_cachedScreenWidth;
@@ -165,6 +168,7 @@ namespace GameCore {
         float m_invulnerabilityTimer;
         int m_pipesCleared;                     // Number of pipes passed through
         int m_sessionCoinsCollected;            // Coins collected in current session
+        float m_pipeIncrementCooldown;          // Cooldown timer to prevent multiple increments from stacked pipes
         // Hurt state is now managed by PlayerControllerSystem
         
         // Game flow
@@ -191,6 +195,12 @@ namespace GameCore {
         Gnosis::Entity m_coinsTextEntity;       // Coin counter number (UI)
         Gnosis::Entity m_coinBagEntity;         // Coin bag icon (32x32)
         Gnosis::Entity m_shootingZoneEntity;    // Shooting zone visual indicator
+        
+        // Initial positions for coin bag and text (for reset consistency)
+        float m_coinBagInitialX = 0.0f;
+        float m_coinBagInitialY = 0.0f;
+        float m_coinsTextInitialX = 0.0f;
+        float m_coinsTextInitialY = 0.0f;
         Gnosis::Entity m_heartUIEntity;         // Heart UI display entity
         Gnosis::Entity m_pipeCounterEntity;     // Pipe counter UI element
         
@@ -222,7 +232,9 @@ namespace GameCore {
         // Game over UI elements
         Gnosis::Entity m_gameOverBackgroundEntity;   // Light from heaven background
         Gnosis::Entity m_morteEntity;                 // FloppyTurdMorte floating sprite
-        Gnosis::Entity m_gameOverScoreEntity;        // Score display
+        Gnosis::Entity m_gameOverScoreEntity;        // Score display background
+        Gnosis::Entity m_pipesLabelEntity;           // "Pipes: X" text label
+        Gnosis::Entity m_coinsLabelEntity;           // "Coins: X" text label
         Gnosis::Entity m_deathMessageEntity;         // Funny death message text
         Gnosis::Entity m_tryAgainButtonEntity;       // Try again button
         Gnosis::Entity m_quitButtonEntity;           // Quit to main menu button
@@ -251,7 +263,7 @@ namespace GameCore {
         static constexpr float PORTRAIT_SETTINGS_X = 0.85f;    // 85% from left
         static constexpr float PORTRAIT_SETTINGS_Y = 0.05f;    // 5% from top
         static constexpr float PORTRAIT_COINBAG_X = 0.01f;     // 1% from left
-        static constexpr float PORTRAIT_COINBAG_Y = 0.70f;     // 30% from bottom (raised 10% more)
+        static constexpr float PORTRAIT_COINBAG_Y = 0.87f;     // 87% from top (bottom left corner)
         static constexpr float PORTRAIT_PIPE_Y = 0.10f;        // 10% from top
         static constexpr float PORTRAIT_PLAYER_START_X = 400.0f;
         static constexpr float PORTRAIT_PLAYER_START_Y = 639.0f;
@@ -261,7 +273,7 @@ namespace GameCore {
     static constexpr float LANDSCAPE_SETTINGS_X = 0.95f;   // 95% from left (further right in landscape)
     static constexpr float LANDSCAPE_SETTINGS_Y = 0.08f;   // Slightly lower (8% from top)
         static constexpr float LANDSCAPE_COINBAG_X = 0.01f;    // 1% from left (even further left to avoid player overlap)
-        static constexpr float LANDSCAPE_COINBAG_Y = 0.55f;    // 45% from bottom (raised 10% more)
+        static constexpr float LANDSCAPE_COINBAG_Y = 0.75f;    // 75% from top (raised 5% more)
         static constexpr float LANDSCAPE_PIPE_Y = 0.12f;       // Slightly lower (12% from top)
         static constexpr float LANDSCAPE_PLAYER_OFFSET_X = 320.0f; // Moved further right (~150px)
 

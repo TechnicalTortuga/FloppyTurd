@@ -529,7 +529,7 @@ namespace GameCore {
             frameTextureId = "HatFrame.png"; // Use normal frame texture for all others
         }
         GN_LOG_INFO("HatsSystem: Creating hat frame entity " + std::to_string(entity) + " for hat '" + m_hats[hatIndex].name + "' with frame texture '" + frameTextureId + "'");
-        Sprite frameSprite(frameTextureId, size * 1.2f, size * 1.2f);
+        Sprite frameSprite(frameTextureId, size, size);
         frameSprite.layer = 90; // Behind icons (91) but above Systems tab (89 and below)
         frameSprite.visible = false; // Start invisible, will be shown when tab is activated
         m_ecsCoordinator->AddComponent<Sprite>(entity, frameSprite);
@@ -552,13 +552,13 @@ namespace GameCore {
             // Create locked frame entity at same position with higher layer
             // Use CenterObjectAtPosition for proper centering of locked overlay
             Gnosis::Entity lockedFrameEntity = m_ecsCoordinator->CreateEntity();
-            float lockedFrameWidth = size * 1.2f;
-            float lockedFrameHeight = size * 1.2f;
+            float lockedFrameWidth = size;
+            float lockedFrameHeight = size;
             Gnosis::GNVector2 lockedFramePosition = CenterObjectAtPosition(x, y, lockedFrameWidth, lockedFrameHeight);
             Transform lockedFrameTransform(lockedFramePosition, 0.0f, Gnosis::GNVector2(6.0f, 6.0f));
             m_ecsCoordinator->AddComponent<Transform>(lockedFrameEntity, lockedFrameTransform);
 
-            Sprite lockedFrameSprite("HatFrameLocked.png", size * 1.2f, size * 1.2f);
+            Sprite lockedFrameSprite("HatFrameLocked.png", size, size);
             lockedFrameSprite.layer = 93; // ABOVE regular frames (92) so lock overlay is on top
             lockedFrameSprite.visible = false; // Start invisible, will be shown when tab is activated
             m_ecsCoordinator->AddComponent<Sprite>(lockedFrameEntity, lockedFrameSprite);
@@ -741,8 +741,8 @@ namespace GameCore {
                 }
 
                             // Create debug rectangle using UIShape for frames (match frame sprite size)
-            // Frame sprite size is frameSize * 1.2f, so debug rectangle should match this
-            float frameSpriteSize = frameSize * 1.2f; // This matches the Sprite width/height
+            // Frame sprite size is frameSize (32x32), no 1.2x scaling
+            float frameSpriteSize = frameSize; // This matches the Sprite width/height
             float debugWidth = frameSpriteSize;
             float debugHeight = frameSpriteSize;
 

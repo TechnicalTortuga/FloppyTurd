@@ -1,0 +1,38 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project build_ios26/FloppyTurd.xcodeproj -scheme FloppyTurd -destination "platform=iOS Simulator,name=iPhone 16" clean build
+
+2025-10-20 02:19:31.461 xcodebuild[19946:14872907] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+2025-10-20 02:20:31.788 xcodebuild[19946:14872907] Writing error result bundle to /var/folders/09/pw3zby3x5pn4pvjgr515b_sw0000gn/T/ResultBundle_2025-20-10_02-20-0031.xcresult
+xcodebuild: error: Unable to find a device matching the provided destination specifier:
+		{ platform:iOS Simulator, OS:latest, name:iPhone 16 }
+
+	The requested device could not be found because no available devices matched the request.
+
+	Available destinations for the "FloppyTurd" scheme:
+		{ platform:iOS Simulator, id:dvtdevice-DVTiOSDeviceSimulatorPlaceholder-iphonesimulator:placeholder, name:Any iOS Simulator Device }
+		{ platform:iOS Simulator, arch:arm64, id:F4ADD9D9-CB29-4E6F-BD8F-47B2044BB99F, OS:18.3.1, name:iPad (10th generation) }
+		{ platform:iOS Simulator, arch:arm64, id:A59452ED-93E7-47C5-8416-E12A76A01CB1, OS:18.3.1, name:iPad (A16) }
+		{ platform:iOS Simulator, arch:arm64, id:07E18EFC-DC9A-4D78-AF84-77BAFA19186E, OS:26.0.1, name:iPad (A16) }
+		{ platform:iOS Simulator, arch:arm64, id:40C68F79-2876-411F-800A-0B5A6C433FC8, OS:18.3.1, name:iPad Air 11-inch (M2) }
+		{ platform:iOS Simulator, arch:arm64, id:F02DD49F-25DB-4344-9E20-3EC65CAC4495, OS:18.3.1, name:iPad Air 11-inch (M3) }
+		{ platform:iOS Simulator, arch:arm64, id:63A7F3AF-FA88-4880-845A-601BDEFFB139, OS:26.0.1, name:iPad Air 11-inch (M3) }
+		{ platform:iOS Simulator, arch:arm64, id:7555E2A5-FE6A-4078-A00E-70F8E090A674, OS:18.3.1, name:iPad Air 13-inch (M2) }
+		{ platform:iOS Simulator, arch:arm64, id:F67F5B6F-FB3C-420B-AF62-4257752E3DBD, OS:18.3.1, name:iPad Air 13-inch (M3) }
+		{ platform:iOS Simulator, arch:arm64, id:2F634D22-FC56-47DD-A5F9-531080AFCB08, OS:26.0.1, name:iPad Air 13-inch (M3) }
+		{ platform:iOS Simulator, arch:arm64, id:BE7B4EC4-257D-43EA-A6B3-BDB5DF1D0AC3, OS:18.3.1, name:iPad Pro 11-inch (M4) }
+		{ platform:iOS Simulator, arch:arm64, id:1468FC1B-F219-4555-8B10-A88C001E734F, OS:26.0.1, name:iPad Pro 11-inch (M4) }
+		{ platform:iOS Simulator, arch:arm64, id:5D966B6A-2A86-4EAD-B66F-99AFCC8D06F4, OS:18.3.1, name:iPad Pro 13-inch (M4) }
+		{ platform:iOS Simulator, arch:arm64, id:2D2E5231-2582-4733-9397-60C0101B051D, OS:26.0.1, name:iPad Pro 13-inch (M4) }
+		{ platform:iOS Simulator, arch:arm64, id:A8B75EF8-5B84-4BA4-B80E-10F6012E4C80, OS:18.3.1, name:iPad mini (A17 Pro) }
+		{ platform:iOS Simulator, arch:arm64, id:FF7110C7-3A9A-4B6D-B12E-0F0F31FE721F, OS:26.0.1, name:iPad mini (A17 Pro) }
+		{ platform:iOS Simulator, arch:arm64, id:BC7474BC-046F-4717-91E6-A65DBC6D56B5, OS:18.3.1, name:iPhone 16 }
+		{ platform:iOS Simulator, arch:arm64, id:D080EC54-D7B9-4971-B9E3-D10DD5092615, OS:18.3.1, name:iPhone 16 Plus }
+		{ platform:iOS Simulator, arch:arm64, id:0C6A16B2-EB3F-42F0-ADA0-C57447607E81, OS:18.3.1, name:iPhone 16 Pro }
+		{ platform:iOS Simulator, arch:arm64, id:952C065C-3E46-4D6F-8ECC-8969F1F15487, OS:18.3.1, name:iPhone 16 Pro Max }
+		{ platform:iOS Simulator, arch:arm64, id:1286F31F-3EA8-490C-9ED4-8D900EDCA05E, OS:18.3.1, name:iPhone 16e }
+		{ platform:iOS Simulator, arch:arm64, id:D8328EE9-22C1-4CA4-B8C1-997E2FD69831, OS:26.0.1, name:iPhone 16e }
+		{ platform:iOS Simulator, arch:arm64, id:9D49AEAE-5DEB-471F-BA5E-AD79341E0715, OS:26.0.1, name:iPhone 17 }
+		{ platform:iOS Simulator, arch:arm64, id:E0E1149D-88D2-4EEE-838D-CC8FB7E1F462, OS:26.0.1, name:iPhone 17 Pro }
+		{ platform:iOS Simulator, arch:arm64, id:82CBC6BF-59B2-4B38-B4AD-A6BA1BB3D479, OS:26.0.1, name:iPhone 17 Pro Max }
+		{ platform:iOS Simulator, arch:arm64, id:65084BFD-74FE-4372-9544-4B370FED12D1, OS:26.0.1, name:iPhone Air }
+		{ platform:iOS Simulator, arch:arm64, id:D6DD6C25-5D94-4B0A-A379-E2DC3F325FF1, OS:18.3.1, name:iPhone SE (3rd generation) }

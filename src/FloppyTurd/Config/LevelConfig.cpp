@@ -15,7 +15,7 @@ namespace GameCore {
         config.enableEnemies = false;
         config.enableNPCs = false;
         config.enablePickups = false;
-        config.shootingEnabled = true;  // Enable shooting by default
+        config.shootingEnabled = false;  // Disable shooting in Level 1 - whole screen is jump zone
         config.pickupSpawnRate = 0.0f;  // No pickups in Level 1
         
         AddParkLevelLayers(config);
@@ -106,6 +106,13 @@ namespace GameCore {
         config.enableEnemies = true;
         config.enableNPCs = false;
         config.enablePickups = true;
+        
+        // Castle pickup mix: Gold, Blue, Red coins and Hearts for harder level
+        config.pickupRatios.emplace_back("GoldCoin", 0.60f);   // 60% gold
+        config.pickupRatios.emplace_back("BlueCoin", 0.20f);   // 20% blue
+        config.pickupRatios.emplace_back("PooHeart", 0.15f);   // 15% hearts (important for harder level!)
+        config.pickupRatios.emplace_back("RedCoin", 0.05f);    // 5% red (rare!)
+        
         AddCastleLevelLayers(config);
         AddCastleEnemies(config);
         
@@ -200,13 +207,13 @@ namespace GameCore {
         // 🎯 SIMPLIFIED: Desert level with automatic scaling and positioning
         // No more hardcoded values - everything calculated from actual texture dimensions
 
-        // Back layer - slowest
+        // Back layer - slowest (layer 0)
         config.backgroundLayers.emplace_back("Level3BackLayerBackground.png", 50.0f, 0.1f, 0);
 
-        // Mid layer - medium speed
+        // Mid layer - medium speed (layer 1) 
         config.backgroundLayers.emplace_back("Level3MidLayerBackground.png", 90.0f, 0.3f, 1);
 
-        // Front layer - fastest (still behind gameplay sprites)
+        // Front layer - fastest (layer 2) - behind obstacles (layers 3-5)
         config.backgroundLayers.emplace_back("Level3FrontLayerBackground.png", 130.0f, 0.4f, 2);
     }
 
@@ -234,13 +241,7 @@ namespace GameCore {
         // Back layer - castle background
         config.backgroundLayers.emplace_back("castlebacklayerbackground.png", 200.0f, 1.0f, 0);
 
-        // Front layer - curtains with programmatic gaps to show castle background
-        config.backgroundLayers.emplace_back("curtains.png", 200.0f, 1.05f, 2);
-        
-        // Set segment gap to create spacing between curtain segments
-        // This reveals the castle background behind without changing scroll speed
-        config.backgroundLayers.back().segmentGap = 512.0f; // Full segment width gap (adjust as needed)
-
+        // Note: Curtains are now spawned as decorative obstacles positioned with toilet pairs
         // Note: Paintings, chandeliers, floor torches, and torch pillars are now handled by ObstacleSystem
         // as decorative obstacles rather than background layers to support proper positioning and animation
     }

@@ -50,6 +50,12 @@ void EnemySystem::Update(float deltaTime) {
         
         if (!transform || !enemy || !enemy->isActive) continue;
 
+        // Skip boss enemy (Ratking) - handled by BossSystem, not EnemySystem
+        bool isRatKing = (enemy->enemyType == "Ratking" || enemy->enemyType == "RatKing");
+        if (isRatKing) {
+            continue;
+        }
+
         // Process all updates for this enemy in sequence:
         // 1. Update state (hurt timer, state transitions, initialization)
         ProcessEnemyState(deltaTime, enemyEntity, enemy, sprite);
@@ -58,7 +64,7 @@ void EnemySystem::Update(float deltaTime) {
         if (!enemy->isActive) continue;
         
         // 2. Update movement (physics, bobbing, wrapping)
-        ProcessEnemyMovement(deltaTime, enemy, transform);
+        ProcessEnemyMovement(deltaTime, enemy, transform, enemyEntity);
         
         // 2.5. Update snowman thrower behavior (if applicable)
         if (enemy->movementPattern == "snowman_thrower" && enemy->isThrower) {
@@ -68,10 +74,24 @@ void EnemySystem::Update(float deltaTime) {
         // 3. Update animation (state-based switching, frame advancement)
         ProcessEnemyAnimation(deltaTime, enemy, sprite, stateAnim);
         
-        // 4. Check collisions (only if not in hurt state and not decorative)
-        if (enemy->currentState != EnemyState::Hurt && enemy->currentState != EnemyState::Decorative) {
+        // 4. Check collisions (only if not in hurt state, not decorative, and not a snowman)
+        bool isSnowman = (enemy->enemyType.find("SnowMan") != std::string::npos || 
+                         enemy->enemyType.find("Snowman") != std::string::npos);
+        if (enemy->currentState != EnemyState::Hurt && 
+            enemy->currentState != EnemyState::Decorative && 
+            !isSnowman) {
             // Only log if there are projectiles to check
             if (activeProjectiles.size() > 0) {
+                // Debug log for RatCopters
+                if (enemy->movementPattern == "flying") {
+                    static int ratCollisionCheckCounter = 0;
+                    if (++ratCollisionCheckCounter % 100 == 0) {
+                        GN_LOG_INFO("[RATCOPTER_COLLISION_CHECK] Enemy " + std::to_string(enemyEntity) + 
+                                   " checking collision, projectiles=" + std::to_string(activeProjectiles.size()) + 
+                                   ", state=" + std::to_string(static_cast<int>(enemy->currentState)) + 
+                                   ", hasHitbox=" + std::to_string(hitbox != nullptr));
+                    }
+                }
                 ProcessEnemyCollision(enemyEntity, enemy, transform, hitbox, sprite, stateAnim, activeProjectiles);
             }
         }
@@ -639,8 +659,8 @@ void EnemySystem::InitializeEnemyBehavior(Enemy* enemy, const std::string& movem
         // Basic horizontal moving enemies - RESPECT bobbing config from EnemyConfig
         enemy->currentState = EnemyState::Moving;
         // Don't override bobbing settings - let EnemyConfig control this
-        enemy->isGrounded = true;
-        enemy->groundOffset = 10.0f; // Float slightly above ground
+        enemy->isGrounded = false;  // Not grounded - they fly/bob freely
+        enemy->groundOffset = 0.0f;
         
     } else if (movementPattern == "vertical") {
         // Vertical moving enemies
@@ -659,6 +679,14 @@ void EnemySystem::InitializeEnemyBehavior(Enemy* enemy, const std::string& movem
         enemy->bobAmplitude = 80.0f;
         enemy->isGrounded = false; // Birds can fly freely
         
+    } else if (movementPattern == "flying") {
+        // RatCopters - flying enemies with state machine behavior
+        enemy->currentState = EnemyState::FlyIn;
+        enemy->isGrounded = false; // NOT grounded - they fly freely in the air!
+        enemy->groundOffset = 0.0f;
+        enemy->bobbingEnabled = false; // No bobbing - sprite animation provides hover effect
+        enemy->speed = 120.0f; // Base fly-in speed
+        
     } else {
         // Default behavior
         enemy->currentState = EnemyState::Idle;
@@ -668,6 +696,12 @@ void EnemySystem::InitializeEnemyBehavior(Enemy* enemy, const std::string& movem
 }
 
 void EnemySystem::GroundEnemy(Enemy* enemy, Transform* transform) {
+    // CRITICAL: Never ground flying or horizontal enemies (birds, ratcopters)
+    if (enemy->movementPattern == "flying" || enemy->movementPattern == "horizontal") {
+        enemy->isGrounded = false;
+        return;
+    }
+    
     if (!enemy->isGrounded) return;
     
     // If the enemy already has a valid baseY set by LevelManager, don't override it
@@ -782,36 +816,212 @@ void EnemySystem::ProcessEnemyState(float deltaTime, Entity e, Enemy* enemy, Spr
     }
 }
 
-void EnemySystem::ProcessEnemyMovement(float deltaTime, Enemy* enemy, Transform* transform) {
+void EnemySystem::ProcessEnemyMovement(float deltaTime, Enemy* enemy, Transform* transform, Entity enemyEntity) {
     if (!enemy || !transform) return;
 
     // Get screen info for device-agnostic dimensions
     const ScreenInfo& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
 
-    // SPECIAL CASE: RatCopter "flying" pattern (hover + beeline)
+    // SPECIAL CASE: RatCopter "flying" pattern with state machine (FLY_IN → HOVER → PULLBACK → BEELINE)
     if (enemy->movementPattern == "flying") {
-        // Hovering phase: Move left slowly while staying in vertical bounds
-        if (transform->position.x > screenInfo.pixelWidth * 0.75f) {
-            // Still hovering - move left slowly
-            transform->position.x -= (enemy->speed * 0.4f) * deltaTime; // 40% speed for hover
-            
-            // Apply bobbing for hover effect
-            if (enemy->bobbingEnabled) {
-                float bobOffset = std::sin(m_time * enemy->bobSpeed) * enemy->bobAmplitude;
-                transform->position.y = enemy->baseY + bobOffset;
+        // CRITICAL: Skip all movement when in Hurt state - let hurt animation play
+        if (enemy->currentState == EnemyState::Hurt) {
+            return; // Don't process movement, let hurt animation complete
+        }
+        
+        // State machine for RatCopter behavior
+        switch (enemy->currentState) {
+            case EnemyState::FlyIn: {
+                // FLY_IN: Move left until 10-20% from right edge (80-90% across screen)
+                // User wants pullback to START at 80-90% screen position
+                float oldX = transform->position.x;
+                transform->position.x -= enemy->speed * deltaTime;
                 
-                // Constrain Y to safe bounds (padding from top and bottom)
-                const float topPadding = 100.0f;
-                const float bottomPadding = 100.0f;
-                const float minY = topPadding;
-                const float maxY = screenInfo.pixelHeight - bottomPadding;
-                transform->position.y = std::max(minY, std::min(maxY, transform->position.y));
+                // NO bobbing during fly-in - makes movement predictable and smooth
+                // Bobbing will happen during HOVER state only
+                
+                // LOG: Track fly-in progress every 100 frames
+                static int flyInLogCounter = 0;
+                if (++flyInLogCounter % 100 == 0) {
+                    GN_LOG_INFO("[RATCOPTER FLY_IN] Pos=(" + std::to_string(transform->position.x) + "," + std::to_string(transform->position.y) + 
+                               "), Speed=" + std::to_string(enemy->speed) + ", Delta=" + std::to_string(deltaTime) + 
+                               ", MovedBy=" + std::to_string(oldX - transform->position.x));
+                }
+                
+                // Transition to HOVER when rat reaches 85% across screen (15% from right edge)
+                // This gives time for hover animation before pullback starts
+                float targetX = screenInfo.pixelWidth * 0.85f; // 15% from right edge
+                if (transform->position.x <= targetX) {
+                    enemy->currentState = EnemyState::Hover;
+                    // Random hover duration: 0.75s to 1.0s
+                    enemy->hoverTimer = 0.75f + (static_cast<float>(rand() % 26) / 100.0f);
+                    GN_LOG_INFO("[RATCOPTER FLY_IN→HOVER] At " + std::to_string((transform->position.x / screenInfo.pixelWidth) * 100.0f) + 
+                                "% screen, timer=" + std::to_string(enemy->hoverTimer) + "s, Y=" + std::to_string(transform->position.y));
+                }
+                break;
             }
-        } else {
-            // Beeline phase: Reached 75% screen trigger - shoot toward player!
-            // For now, just move faster and straight (player tracking can be added later)
-            transform->position.x -= (enemy->speed * 1.5f) * deltaTime; // 150% speed for beeline
-            // Y stays constant during beeline (locked onto target Y from hover)
+            
+            case EnemyState::Hover: {
+                // HOVER: Stay in place with bobbing, countdown timer
+                float oldY = transform->position.y;
+                
+                // Apply bobbing for hover effect
+                if (enemy->bobbingEnabled) {
+                    float bobOffset = std::sin(m_time * enemy->bobSpeed + enemy->bobPhase) * enemy->bobAmplitude;
+                    transform->position.y = enemy->baseY + bobOffset;
+                    
+                    // Constrain Y to safe bounds
+                    const float topPadding = 100.0f;
+                    const float bottomPadding = 100.0f;
+                    const float minY = topPadding;
+                    const float maxY = screenInfo.pixelHeight - bottomPadding;
+                    float unconstrainedY = transform->position.y;
+                    transform->position.y = std::max(minY, std::min(maxY, transform->position.y));
+                    
+                    // LOG: Warn if Y gets constrained (indicates baseY is wrong)
+                    if (unconstrainedY != transform->position.y) {
+                        GN_LOG_WARN("[RATCOPTER HOVER] Y constrained! baseY=" + std::to_string(enemy->baseY) + 
+                                   ", bobOffset=" + std::to_string(bobOffset) + ", unconstrained=" + std::to_string(unconstrainedY) + 
+                                   ", final=" + std::to_string(transform->position.y));
+                    }
+                }
+                
+                // Countdown hover timer
+                enemy->hoverTimer -= deltaTime;
+                
+                // LOG: Track hover progress every 30 frames
+                static int hoverLogCounter = 0;
+                if (++hoverLogCounter % 30 == 0) {
+                    GN_LOG_INFO("[RATCOPTER HOVER] Pos=(" + std::to_string(transform->position.x) + "," + std::to_string(transform->position.y) + 
+                               "), BaseY=" + std::to_string(enemy->baseY) + ", Timer=" + std::to_string(enemy->hoverTimer) + 
+                               "s, BobAmplitude=" + std::to_string(enemy->bobAmplitude));
+                }
+                
+                // Transition to PULLBACK when timer expires
+                if (enemy->hoverTimer <= 0.0f) {
+                    enemy->currentState = EnemyState::Pullback;
+                    enemy->pullbackTimer = 0.25f;
+                    
+                    // SNAPSHOT: Get player position for targeting (same approach as snowballs)
+                    Gnosis::Entity playerEntity = m_levelManager->GetPlayerEntity();
+                    Gnosis::GNVector2 playerPos(0.0f, 0.0f);
+                    Gnosis::GNVector2 ratPos = transform->position;
+                    bool hasValidPlayerPos = false;
+                    
+                    if (playerEntity != 0) {
+                        Transform* playerTransform = m_ecsSystem->GetComponent<Transform>(playerEntity);
+                        if (playerTransform) {
+                            // Simple position - top-left of player sprite
+                            playerPos.x = playerTransform->position.x;
+                            playerPos.y = playerTransform->position.y;
+                            hasValidPlayerPos = true;
+                        }
+                    }
+                    
+                    if (hasValidPlayerPos) {
+                        // Calculate delta vector: player MINUS rat (same as snowball targeting)
+                        float dx = playerPos.x - ratPos.x;
+                        float dy = playerPos.y - ratPos.y;
+                        
+                        // Normalize the direction
+                        float length = std::sqrt(dx * dx + dy * dy);
+                        if (length > 0.001f) {
+                            enemy->targetDirection.x = dx / length;
+                            enemy->targetDirection.y = dy / length;
+                        } else {
+                            enemy->targetDirection.x = -1.0f;
+                            enemy->targetDirection.y = 0.0f;
+                        }
+                        
+                        GN_LOG_INFO("[RATCOPTER TARGET] Rat(" + std::to_string(ratPos.x) + "," + std::to_string(ratPos.y) + 
+                                   ") → Player(" + std::to_string(playerPos.x) + "," + std::to_string(playerPos.y) + 
+                                   ") | Delta(" + std::to_string(dx) + "," + std::to_string(dy) + 
+                                   ") | Dir(" + std::to_string(enemy->targetDirection.x) + "," + std::to_string(enemy->targetDirection.y) + ")");
+                    } else {
+                        // Fallback: aim left
+                        enemy->targetDirection.x = -1.0f;
+                        enemy->targetDirection.y = 0.0f;
+                    }
+                    
+                    // Calculate pullback vector: OPPOSITE of direction to player, scaled by 20 units (like old script)
+                    enemy->pullbackVector.x = -enemy->targetDirection.x * 20.0f;
+                    enemy->pullbackVector.y = -enemy->targetDirection.y * 20.0f;
+                    enemy->hasLockedDirection = true;
+                    
+                    GN_LOG_INFO("[RATCOPTER HOVER→PULLBACK] Pullback vector=(" + std::to_string(enemy->pullbackVector.x) + 
+                               "," + std::to_string(enemy->pullbackVector.y) + "), Duration=0.25s");
+                }
+                break;
+            }
+            
+            case EnemyState::Pullback: {
+                // PULLBACK: Move in pullback direction (opposite of player) for 0.25 seconds
+                // Old raylib: pos = Vector2Add(pos, Vector2Scale(pullbackVector, deltaTime * 4.0f))
+                float oldX = transform->position.x;
+                float oldY = transform->position.y;
+                transform->position.x += enemy->pullbackVector.x * deltaTime * 4.0f;
+                transform->position.y += enemy->pullbackVector.y * deltaTime * 4.0f;
+                
+                // LOG: Track pullback movement every 5 frames
+                static int pullbackLogCounter = 0;
+                if (++pullbackLogCounter % 5 == 0) {
+                    GN_LOG_INFO("[RATCOPTER PULLBACK] Pos=(" + std::to_string(transform->position.x) + "," + std::to_string(transform->position.y) + 
+                               "), MovedBy=(" + std::to_string(transform->position.x - oldX) + "," + std::to_string(transform->position.y - oldY) + 
+                               "), Timer=" + std::to_string(enemy->pullbackTimer) + "s");
+                }
+                
+                // Countdown pullback timer
+                enemy->pullbackTimer -= deltaTime;
+                
+                // Transition to BEELINE when timer expires
+                if (enemy->pullbackTimer <= 0.0f) {
+                    enemy->currentState = EnemyState::Beeline;
+                    // Beeline speed increased to 1000 units/sec for extremely fast, aggressive charge
+                    enemy->beelineSpeed = 1000.0f;
+                    
+                    GN_LOG_INFO("[RATCOPTER PULLBACK→BEELINE] Speed=" + std::to_string(enemy->beelineSpeed) + 
+                               ", Dir=(" + std::to_string(enemy->targetDirection.x) + "," + std::to_string(enemy->targetDirection.y) + 
+                               "), StartPos=(" + std::to_string(transform->position.x) + "," + std::to_string(transform->position.y) + ")");
+                }
+
+                break;
+            }
+            
+            case EnemyState::Beeline: {
+                // BEELINE: Charge in the LOCKED direction (toward where player WAS)
+                // Old raylib: pos = Vector2Add(pos, Vector2Scale(direction, speed * deltaTime))
+                float oldX = transform->position.x;
+                float oldY = transform->position.y;
+                transform->position.x += enemy->targetDirection.x * enemy->beelineSpeed * deltaTime;
+                transform->position.y += enemy->targetDirection.y * enemy->beelineSpeed * deltaTime;
+                
+                // LOG: Track beeline movement every 20 frames
+                static int beelineLogCounter = 0;
+                if (++beelineLogCounter % 20 == 0) {
+                    GN_LOG_INFO("[RATCOPTER BEELINE] Pos=(" + std::to_string(transform->position.x) + "," + std::to_string(transform->position.y) + 
+                               "), Speed=" + std::to_string(enemy->beelineSpeed) + ", Dir=(" + std::to_string(enemy->targetDirection.x) + 
+                               "," + std::to_string(enemy->targetDirection.y) + "), MovedBy=(" + 
+                               std::to_string(transform->position.x - oldX) + "," + std::to_string(transform->position.y - oldY) + ")");
+                }
+                
+                // Check if rat has left the screen (let wrap system handle reset)
+                const float margin = 100.0f;
+                if (transform->position.x < -margin || 
+                    transform->position.x > screenInfo.pixelWidth + margin ||
+                    transform->position.y < -margin || 
+                    transform->position.y > screenInfo.pixelHeight + margin) {
+                    GN_LOG_INFO("[RATCOPTER BEELINE→OFFSCREEN] At (" + std::to_string(transform->position.x) + 
+                                "," + std::to_string(transform->position.y) + "), will wrap");
+                }
+                break;
+            }
+            
+            default:
+                // Fallback to Idle/FlyIn state if in unexpected state
+                GN_LOG_ERROR("[RATCOPTER ERROR] Unexpected state! Resetting to FlyIn. Pos=(" + 
+                            std::to_string(transform->position.x) + "," + std::to_string(transform->position.y) + ")");
+                enemy->currentState = EnemyState::FlyIn;
+                break;
         }
     } else {
         // Standard horizontal movement for other enemy types
@@ -822,19 +1032,44 @@ void EnemySystem::ProcessEnemyMovement(float deltaTime, Enemy* enemy, Transform*
 
         // Vertical movement - bobbing/sinusoidal if enabled
         if (enemy->bobbingEnabled) {
-            // Calculate bobbing offset using sine wave
-            float bobOffset = std::sin(m_time * enemy->bobSpeed) * enemy->bobAmplitude;
+            // Calculate bobbing offset using sine wave with phase offset for variation
+            // bobPhase (0-2π) prevents all enemies from bobbing in sync
+            float bobOffset = std::sin(m_time * enemy->bobSpeed + enemy->bobPhase) * enemy->bobAmplitude;
             transform->position.y = enemy->baseY + bobOffset;
         }
     }
 
     // Screen wrapping (if enemy goes off left side, wrap to right)
-    // EXTENDED: 400px buffer to align with obstacle wrapping and prevent early culling
+    // EXCLUDE boss minions - they should despawn naturally, not wrap back
+    // Castle-level enemies (including RatCopters) DO wrap normally
     const float wrapBuffer = 400.0f;
-    if (transform->position.x < -wrapBuffer) {
+    if (transform->position.x < -wrapBuffer && !enemy->isBossMinion) {
         // Wrap to right side with extended buffer
         transform->position.x = screenInfo.pixelWidth + 650.0f; // Position well off-screen right
-        GN_LOG_DEBUG("EnemySystem: Wrapped enemy to x=" + std::to_string(transform->position.x) + " (extended 400px buffer)");
+        
+        // CRITICAL: Constrain Y position when wrapping to prevent rats from bottom-edge spawning
+        // If rat went off bottom during beeline, reset Y to valid spawn range
+        if (enemy->movementPattern == "flying") {
+            const float topPadding = 100.0f;
+            const float bottomPadding = 100.0f;
+            const float minY = topPadding;
+            const float maxY = screenInfo.pixelHeight - bottomPadding;
+            
+            // If rat is outside valid Y bounds, reset to safe middle position
+            if (transform->position.y < minY || transform->position.y > maxY) {
+                // Use landscape-aware middle band (50%-70% for landscape, 30%-50% for portrait)
+                float midMin = screenInfo.pixelHeight * (screenInfo.isPortrait ? 0.30f : 0.50f);
+                float midMax = screenInfo.pixelHeight * (screenInfo.isPortrait ? 0.50f : 0.70f);
+                transform->position.y = midMin + static_cast<float>(rand() % static_cast<int>(midMax - midMin));
+                
+                GN_LOG_INFO("[RAT_Y_CONSTRAINT] RatCopter Y was out of bounds, reset to " + 
+                           std::to_string(transform->position.y) + " (screen range: " + 
+                           std::to_string(minY) + "-" + std::to_string(maxY) + ")");
+            }
+        }
+        
+        GN_LOG_DEBUG("EnemySystem: Wrapped enemy to x=" + std::to_string(transform->position.x) + 
+                     ", y=" + std::to_string(transform->position.y) + " (extended 400px buffer)");
     }
 }
 
@@ -891,15 +1126,30 @@ void EnemySystem::ProcessEnemyAnimation(float deltaTime, Enemy* enemy, Sprite* s
 void EnemySystem::ProcessEnemyCollision(Entity e, Enemy* enemy, Transform* transform, Hitbox* hitbox,
                                        Sprite* sprite, StateAnimation* stateAnim,
                                        const std::vector<Gnosis::Entity>& activeProjectiles) {
-    if (!enemy || !transform || !hitbox) return;
-    if (enemy->currentState == EnemyState::Hurt) return; // Already hurt
+    if (!enemy || !transform || !hitbox || !sprite) {
+        if (enemy && enemy->movementPattern == "flying") {
+            GN_LOG_WARN("[RATCOPTER_COLLISION] Skipped - missing component: enemy=" + std::to_string(enemy != nullptr) + 
+                       " transform=" + std::to_string(transform != nullptr) + " hitbox=" + std::to_string(hitbox != nullptr) + 
+                       " sprite=" + std::to_string(sprite != nullptr));
+        }
+        return;
+    }
     
-    // DEBUG: Log first enemy's collision check details
+    // Calculate enemy center position accounting for sprite dimensions and scale</parameter>
+    float enemySpriteWidth = sprite->width * std::abs(transform->scale.x);
+    float enemySpriteHeight = sprite->height * std::abs(transform->scale.y);
+    float enemyCenterX = transform->position.x + (enemySpriteWidth * 0.5f);
+    float enemyCenterY = transform->position.y + (enemySpriteHeight * 0.5f);
+    
+    // Scale the enemy hitbox radius by the transform scale
+    float scaledEnemyRadius = hitbox->radius * ((std::abs(transform->scale.x) + std::abs(transform->scale.y)) * 0.5f);
+    
+    // Log first collision check for debugging
     static bool loggedOnce = false;
     if (!loggedOnce && activeProjectiles.size() > 0) {
         GN_LOG_INFO("ProcessEnemyCollision: Enemy " + std::to_string(e) + 
-                   " at (" + std::to_string(transform->position.x) + "," + std::to_string(transform->position.y) + 
-                   ") radius=" + std::to_string(hitbox->radius) + 
+                   " center=(" + std::to_string(enemyCenterX) + "," + std::to_string(enemyCenterY) + 
+                   ") scaledRadius=" + std::to_string(scaledEnemyRadius) + 
                    " checking " + std::to_string(activeProjectiles.size()) + " projectiles");
         loggedOnce = true;
     }
@@ -909,23 +1159,39 @@ void EnemySystem::ProcessEnemyCollision(Entity e, Enemy* enemy, Transform* trans
         Transform* projTransform = m_ecsSystem->GetComponent<Transform>(projEntity);
         Hitbox* projHitbox = m_ecsSystem->GetComponent<Hitbox>(projEntity);
         Projectile* proj = m_ecsSystem->GetComponent<Projectile>(projEntity);
+        Sprite* projSprite = m_ecsSystem->GetComponent<Sprite>(projEntity);
         
         if (!projTransform || !projHitbox || !proj || !proj->isActive) continue;
+        
+        // Calculate projectile center position
+        float projCenterX = projTransform->position.x;
+        float projCenterY = projTransform->position.y;
+        
+        // If projectile has a sprite, use its dimensions for center calculation
+        if (projSprite) {
+            float projSpriteWidth = projSprite->width * std::abs(projTransform->scale.x);
+            float projSpriteHeight = projSprite->height * std::abs(projTransform->scale.y);
+            projCenterX += (projSpriteWidth * 0.5f);
+            projCenterY += (projSpriteHeight * 0.5f);
+        }
+        
+        // Scale the projectile hitbox radius
+        float scaledProjRadius = projHitbox->radius * ((std::abs(projTransform->scale.x) + std::abs(projTransform->scale.y)) * 0.5f);
         
         // DEBUG: Log first projectile check
         if (!loggedOnce) {
             GN_LOG_INFO("  Checking projectile " + std::to_string(projEntity) + 
-                       " at (" + std::to_string(projTransform->position.x) + "," + std::to_string(projTransform->position.y) + 
-                       ") radius=" + std::to_string(projHitbox->radius));
+                       " center=(" + std::to_string(projCenterX) + "," + std::to_string(projCenterY) + 
+                       ") scaledRadius=" + std::to_string(scaledProjRadius));
         }
         
-        // Simple circle-circle collision for now
+        // Circle-circle collision using proper center points and scaled radii
         bool collision = false;
         if (hitbox->type == ColliderType::Circle && projHitbox->type == ColliderType::Circle) {
-            float dx = transform->position.x - projTransform->position.x;
-            float dy = transform->position.y - projTransform->position.y;
+            float dx = enemyCenterX - projCenterX;
+            float dy = enemyCenterY - projCenterY;
             float distance = std::sqrt(dx * dx + dy * dy);
-            float combinedRadius = hitbox->radius + projHitbox->radius;
+            float combinedRadius = scaledEnemyRadius + scaledProjRadius;
             collision = (distance < combinedRadius);
             
             if (!loggedOnce) {
@@ -936,11 +1202,15 @@ void EnemySystem::ProcessEnemyCollision(Entity e, Enemy* enemy, Transform* trans
         }
         
         if (collision) {
-            GN_LOG_INFO("Projectile-Enemy collision detected! Projectile: " + std::to_string(projEntity) + 
-                       " Enemy: " + std::to_string(e));
+            GN_LOG_INFO("[COLLISION] Projectile-Enemy HIT! Projectile: " + std::to_string(projEntity) + 
+                       " Enemy: " + std::to_string(e) + " Type: " + enemy->enemyType + 
+                       " Pattern: " + enemy->movementPattern);
             
             // Damage the enemy
             enemy->health -= proj->damage;
+            
+            GN_LOG_INFO("[COLLISION] Enemy health: " + std::to_string(enemy->health + proj->damage) + 
+                       " -> " + std::to_string(enemy->health) + " (damage: " + std::to_string(proj->damage) + ")");
             
             // Deactivate the projectile
             proj->isActive = false;
@@ -957,15 +1227,38 @@ void EnemySystem::ProcessEnemyCollision(Entity e, Enemy* enemy, Transform* trans
                     const StateAnimation::Clip* hurtClip = stateAnim->getClip("hurt");
                     if (hurtClip) {
                         hurtDuration = hurtClip->frameCount * hurtClip->frameTime + 0.1f; // Small buffer
+                        GN_LOG_INFO("[COLLISION] Hurt clip found: " + hurtClip->textureId + 
+                                   " frames=" + std::to_string(hurtClip->frameCount) + 
+                                   " duration=" + std::to_string(hurtDuration) + "s");
+                    } else {
+                        GN_LOG_WARN("[COLLISION] No hurt clip found for enemy " + enemy->enemyType);
                     }
                     
                     // CRITICAL: Reset hasCompleted flag so animation plays from start
                     sprite->hasCompleted = false;
+                    
+                    // Switch to hurt animation immediately
+                    if (hurtClip) {
+                        stateAnim->currentState = "hurt";
+                        sprite->textureId = hurtClip->textureId;
+                        sprite->frameWidth = hurtClip->frameWidth;
+                        sprite->frameHeight = hurtClip->frameHeight;
+                        sprite->frameCount = hurtClip->frameCount;
+                        sprite->frameTime = hurtClip->frameTime;
+                        sprite->loop = false; // Don't loop hurt animation
+                        sprite->isAnimated = (hurtClip->frameCount > 1);
+                        sprite->playing = true;
+                        sprite->currentFrame = 0;
+                        sprite->currentFrameTime = 0.0f;
+                        
+                        GN_LOG_INFO("[COLLISION] Switched to hurt animation: " + sprite->textureId);
+                    }
                 }
                 
                 enemy->hurtTimer = hurtDuration;
                 
-                GN_LOG_INFO("Enemy " + std::to_string(e) + " defeated - switching to hurt animation");
+                GN_LOG_INFO("[COLLISION] Enemy " + std::to_string(e) + " DEFEATED - hurt timer=" + 
+                           std::to_string(hurtDuration) + "s");
             } else {
                 // Enemy took damage but not defeated - brief hurt state
                 enemy->currentState = EnemyState::Hurt;
@@ -975,6 +1268,9 @@ void EnemySystem::ProcessEnemyCollision(Entity e, Enemy* enemy, Transform* trans
                 if (sprite) {
                     sprite->hasCompleted = false;
                 }
+                
+                GN_LOG_INFO("[COLLISION] Enemy " + std::to_string(e) + " damaged, health remaining: " + 
+                           std::to_string(enemy->health));
             }
             
             break; // Only process one collision per enemy per frame

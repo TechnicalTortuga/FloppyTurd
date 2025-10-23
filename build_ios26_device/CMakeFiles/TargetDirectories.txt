@@ -1,0 +1,4 @@
+/Users/aimac/Development/FloppyTurd/build_ios26_device/CMakeFiles/FloppyTurdGame.dir
+/Users/aimac/Development/FloppyTurd/build_ios26_device/CMakeFiles/FloppyTurd.dir
+/Users/aimac/Development/FloppyTurd/build_ios26_device/CMakeFiles/ALL_BUILD.dir
+/Users/aimac/Development/FloppyTurd/build_ios26_device/CMakeFiles/ZERO_CHECK.dir

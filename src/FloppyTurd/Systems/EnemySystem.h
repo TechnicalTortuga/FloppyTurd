@@ -29,7 +29,7 @@ namespace GameCore {
         
         // Single-pass ECS pattern: process individual enemy components
         void ProcessEnemyState(float deltaTime, Entity e, Enemy* enemy, Sprite* sprite);
-        void ProcessEnemyMovement(float deltaTime, Enemy* enemy, Transform* transform);
+        void ProcessEnemyMovement(float deltaTime, Enemy* enemy, Transform* transform, Gnosis::Entity enemyEntity);
         void ProcessEnemyAnimation(float deltaTime, Enemy* enemy, Sprite* sprite, StateAnimation* stateAnim);
         void ProcessEnemyCollision(Entity e, Enemy* enemy, Transform* transform, Hitbox* hitbox, Sprite* sprite, StateAnimation* stateAnim, const std::vector<Gnosis::Entity>& activeProjectiles);
         

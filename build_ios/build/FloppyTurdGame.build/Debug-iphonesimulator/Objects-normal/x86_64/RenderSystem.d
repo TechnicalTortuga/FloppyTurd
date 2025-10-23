@@ -20,6 +20,7 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Components/../../Engine/Core/GnosisTypes.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Components/../../Engine/Core/Component.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Components/../Config/LevelConfig.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/OverlaySystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Configuration/ConfigManager.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Configuration/../Platform/PlatformDelegates.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Configuration/../Core/GNLog.h

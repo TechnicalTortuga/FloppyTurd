@@ -165,6 +165,40 @@ namespace GameCore {
         s_instance->enqueueRenderCommand(cmd);
     }
     
+    void ThreadingProxy::enqueueDrawSpriteScaledWithSourceCentered(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation, float sourceX, float sourceY, float sourceWidth, float sourceHeight) {
+        if (!s_instance) return;
+        RenderCommand cmd(CommandType::CMD_DRAW_SPRITE_SCALED_WITH_SOURCE_CENTERED);
+        cmd.data.textureHandle = textureHandle;
+        cmd.data.x = x;
+        cmd.data.y = y;
+        cmd.data.scaleX = scaleX;
+        cmd.data.scaleY = scaleY;
+        cmd.data.rotation = rotation;
+        cmd.data.sourceX = sourceX;
+        cmd.data.sourceY = sourceY;
+        cmd.data.sourceWidth = sourceWidth;
+        cmd.data.sourceHeight = sourceHeight;
+        s_instance->enqueueRenderCommand(cmd);
+    }
+    
+    void ThreadingProxy::enqueueDrawSpriteScaledWithSourcePivoted(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation, float pivotX, float pivotY, float sourceX, float sourceY, float sourceWidth, float sourceHeight) {
+        if (!s_instance) return;
+        RenderCommand cmd(CommandType::CMD_DRAW_SPRITE_SCALED_WITH_SOURCE_PIVOTED);
+        cmd.data.textureHandle = textureHandle;
+        cmd.data.x = x;
+        cmd.data.y = y;
+        cmd.data.scaleX = scaleX;
+        cmd.data.scaleY = scaleY;
+        cmd.data.rotation = rotation;
+        cmd.data.pivotX = pivotX;
+        cmd.data.pivotY = pivotY;
+        cmd.data.sourceX = sourceX;
+        cmd.data.sourceY = sourceY;
+        cmd.data.sourceWidth = sourceWidth;
+        cmd.data.sourceHeight = sourceHeight;
+        s_instance->enqueueRenderCommand(cmd);
+    }
+    
     void ThreadingProxy::enqueueDrawSpriteBatch(const std::vector<SpriteBatchData>& sprites) {
         if (!s_instance) return;
         if (sprites.empty()) return;  // Don't enqueue empty batches
@@ -290,6 +324,19 @@ namespace GameCore {
     void ThreadingProxy::enqueueDrawCircle(float x, float y, float radius, float r, float g, float b, float a) {
         if (!s_instance) return;
         RenderCommand cmd(CommandType::CMD_DRAW_CIRCLE);
+        cmd.data.x = x;
+        cmd.data.y = y;
+        cmd.data.radius = radius;
+        cmd.data.r = r;
+        cmd.data.g = g;
+        cmd.data.b = b;
+        cmd.data.a = a;
+        s_instance->enqueueRenderCommand(cmd);
+    }
+    
+    void ThreadingProxy::enqueueDrawFilledCircle(float x, float y, float radius, float r, float g, float b, float a) {
+        if (!s_instance) return;
+        RenderCommand cmd(CommandType::CMD_DRAW_FILLED_CIRCLE);
         cmd.data.x = x;
         cmd.data.y = y;
         cmd.data.radius = radius;
@@ -786,6 +833,8 @@ namespace GameCore {
         delegates.renderer.drawSpriteScaledCentered = enqueueDrawSpriteScaledCentered;
         delegates.renderer.drawSpriteScaledPivoted = enqueueDrawSpriteScaledPivoted;
         delegates.renderer.drawSpriteScaledWithSource = enqueueDrawSpriteScaledWithSource;
+        delegates.renderer.drawSpriteScaledWithSourceCentered = enqueueDrawSpriteScaledWithSourceCentered;
+        delegates.renderer.drawSpriteScaledWithSourcePivoted = enqueueDrawSpriteScaledWithSourcePivoted;
         delegates.renderer.drawSpriteBatch = enqueueDrawSpriteBatch;  // Batch rendering
         delegates.renderer.drawText = enqueueDrawText;
         delegates.renderer.drawTextCentered = enqueueDrawTextCentered;
@@ -794,6 +843,7 @@ namespace GameCore {
         delegates.renderer.drawTextCenteredOutlined = enqueueDrawTextCenteredOutlined;
         delegates.renderer.drawRectangle = enqueueDrawRectangle;
         delegates.renderer.drawCircle = enqueueDrawCircle;
+        delegates.renderer.drawFilledCircle = enqueueDrawFilledCircle;
         delegates.renderer.getScreenSize = enqueueGetScreenSize;
         
         // NEW: Enhanced screen and texture information delegates

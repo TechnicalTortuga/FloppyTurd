@@ -1,7 +1,10 @@
 #include "RenderSystem.h"
+#include "OverlaySystem.h"
 #include "../../Engine/Core/GNLog.h"
+#include "../../Engine/Core/GnosisTypes.h"
 #include "../../Engine/Configuration/ConfigManager.h"
 #include <algorithm>
+#include <cmath>
 #include <chrono>
 
 namespace GameCore {
@@ -95,6 +98,11 @@ namespace GameCore {
         m_frameProfiler.StartSection("RenderWorldSpace");
         RenderWorldSpace();
         m_frameProfiler.EndSection("RenderWorldSpace");
+        
+        // Render overlays (snowfall, etc.) between world and UI
+        m_frameProfiler.StartSection("RenderOverlays");
+        RenderOverlays();
+        m_frameProfiler.EndSection("RenderOverlays");
         
         // Render screen space items (UI)
         m_frameProfiler.StartSection("RenderScreenSpace");
@@ -593,6 +601,35 @@ namespace GameCore {
         }
     }
 
+    void RenderSystem::RenderOverlays() {
+        if (!m_overlaySystem || !m_overlaySystem->IsSnowfallEnabled()) return;
+        if (!m_platformDelegates.renderer.drawSpriteScaledWithSource) return;
+        
+        std::string textureName = m_overlaySystem->GetSnowfallTextureName();
+        uint32_t textureHandle = GetOrLoadTexture(textureName, 0);
+        if (textureHandle == 0) return;
+        
+        const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+        const float tileSize = m_overlaySystem->GetSnowfallFrameSize() * m_overlaySystem->GetSnowfallScale();
+        
+        int tilesX = static_cast<int>(std::ceil(screenInfo.pixelWidth / tileSize)) + 1;
+        int tilesY = static_cast<int>(std::ceil(screenInfo.pixelHeight / tileSize)) + 1;
+        
+        int currentFrame = m_overlaySystem->GetSnowfallCurrentFrame();
+        float sourceX = currentFrame * m_overlaySystem->GetSnowfallFrameSize();
+        
+        for (int row = 0; row < tilesY; ++row) {
+            for (int col = 0; col < tilesX; ++col) {
+                m_platformDelegates.renderer.drawSpriteScaledWithSource(
+                    textureHandle, col * tileSize, row * tileSize,
+                    m_overlaySystem->GetSnowfallScale(), m_overlaySystem->GetSnowfallScale(),
+                    0.0f, sourceX, 0.0f,
+                    m_overlaySystem->GetSnowfallFrameSize(), m_overlaySystem->GetSnowfallFrameSize()
+                );
+            }
+        }
+    }
+
     void RenderSystem::RenderScreenSpace() {
         // Render UI elements in screen space (no camera transformation)
         for (const RenderItem& item : m_renderQueue) {
@@ -644,22 +681,41 @@ namespace GameCore {
                 }
             }
             
-            // Render UIShape components in screen space (for UI rectangles, tracks, etc.)
-            if (item.shape && m_platformDelegates.renderer.drawRectangle) {
+            // Render UIShape components in screen space (for UI rectangles, tracks, circles, etc.)
+            if (item.shape) {
                 // Convert color from 0-255 to 0.0-1.0 range
                 const float r = item.shape->color.r / 255.0f;
                 const float g = item.shape->color.g / 255.0f;
                 const float b = item.shape->color.b / 255.0f;
                 const float a = item.shape->color.a / 255.0f;
 
-                // Render UIShape directly in screen coordinates (no camera transformation)
-                m_platformDelegates.renderer.drawRectangle(
-                    item.transform->position.x,
-                    item.transform->position.y,
-                    item.shape->width * item.transform->scale.x,
-                    item.shape->height * item.transform->scale.y,
-                    r, g, b, a
-                );
+                if (item.shape->type == UIShapeType::Circle && m_platformDelegates.renderer.drawCircle) {
+                    // Render circle outline in screen coordinates
+                    m_platformDelegates.renderer.drawCircle(
+                        item.transform->position.x,
+                        item.transform->position.y,
+                        item.shape->radius * item.transform->scale.x,
+                        r, g, b, a
+                    );
+                } else if (item.shape->type == UIShapeType::FilledCircle && m_platformDelegates.renderer.drawFilledCircle) {
+                    // Render filled circle in screen coordinates
+                    m_platformDelegates.renderer.drawFilledCircle(
+                        item.transform->position.x,
+                        item.transform->position.y,
+                        item.shape->radius * item.transform->scale.x,
+                        r, g, b, a
+                    );
+                } else if ((item.shape->type == UIShapeType::Rectangle || item.shape->type == UIShapeType::Line) && 
+                           m_platformDelegates.renderer.drawRectangle) {
+                    // Render rectangle or line in screen coordinates (no camera transformation)
+                    m_platformDelegates.renderer.drawRectangle(
+                        item.transform->position.x,
+                        item.transform->position.y,
+                        item.shape->width * item.transform->scale.x,
+                        item.shape->height * item.transform->scale.y,
+                        r, g, b, a
+                    );
+                }
             }
             
             // Render Text components (UI text like scores, pipe counter) - check this FIRST
@@ -902,19 +958,38 @@ namespace GameCore {
             }
         } else if (item.shape) {
             // Render UIShape (screen-space)
-            if (!m_platformDelegates.renderer.drawRectangle) return;
             const float r = item.shape->color.r / 255.0f;
             const float g = item.shape->color.g / 255.0f;
             const float b = item.shape->color.b / 255.0f;
             const float a = item.shape->color.a / 255.0f;
 
-            m_platformDelegates.renderer.drawRectangle(
-                item.transform->position.x,
-                item.transform->position.y,
-                item.shape->width * item.transform->scale.x,
-                item.shape->height * item.transform->scale.y,
-                r, g, b, a
-            );
+            if (item.shape->type == UIShapeType::Circle && m_platformDelegates.renderer.drawCircle) {
+                // Render circle outline in screen coordinates
+                m_platformDelegates.renderer.drawCircle(
+                    item.transform->position.x,
+                    item.transform->position.y,
+                    item.shape->radius * item.transform->scale.x,
+                    r, g, b, a
+                );
+            } else if (item.shape->type == UIShapeType::FilledCircle && m_platformDelegates.renderer.drawFilledCircle) {
+                // Render filled circle in screen coordinates
+                m_platformDelegates.renderer.drawFilledCircle(
+                    item.transform->position.x,
+                    item.transform->position.y,
+                    item.shape->radius * item.transform->scale.x,
+                    r, g, b, a
+                );
+            } else if ((item.shape->type == UIShapeType::Rectangle || item.shape->type == UIShapeType::Line) && 
+                       m_platformDelegates.renderer.drawRectangle) {
+                // Render rectangle or line in screen coordinates
+                m_platformDelegates.renderer.drawRectangle(
+                    item.transform->position.x,
+                    item.transform->position.y,
+                    item.shape->width * item.transform->scale.x,
+                    item.shape->height * item.transform->scale.y,
+                    r, g, b, a
+                );
+            }
         } else if (item.text) {
             // Render text - use screen coordinates directly (no world-to-screen transform for UI)
             if (m_platformDelegates.renderer.drawText) {
@@ -997,6 +1072,22 @@ namespace GameCore {
                 float finalScaleX = scaleX * item.transform->scale.x * GetCameraScale();
                 float finalScaleY = scaleY * item.transform->scale.y * GetCameraScale();
 
+                float srcX = 0.0f;
+                float srcY = 0.0f;
+                float srcW = item.sprite->frameWidth;
+                float srcH = item.sprite->frameHeight;
+
+                if (item.sprite->sourceWidth > 0.0f) {
+                    srcX = item.sprite->sourceX;
+                    srcY = item.sprite->sourceY;
+                    srcW = item.sprite->sourceWidth;
+                    srcH = item.sprite->sourceHeight;
+                } else if (item.sprite->isAnimated) {
+                    int currentFrame = item.sprite->currentFrame % item.sprite->frameCount;
+                    srcX = static_cast<float>(currentFrame * item.sprite->frameWidth);
+                    srcY = 0.0f; // Assume horizontal sheet
+                }
+
                 // Check if we need to render a sub-rect (animated OR spritesheet with multiple frames)
                 bool needsSourceRect = item.sprite->isAnimated;
                 if (!needsSourceRect) {
@@ -1008,7 +1099,7 @@ namespace GameCore {
                     }
                 }
 
-                // If we need source rect rendering and have the delegate, render the correct frame sub-rect
+                // If we need source rect rendering, check rotation components and use appropriate command
                 if (needsSourceRect && m_platformDelegates.renderer.drawSpriteScaledWithSource) {
                     int safeFrameCount = item.sprite->frameCount > 0 ? item.sprite->frameCount : 1;
                     int currentFrame = item.sprite->currentFrame % safeFrameCount;
@@ -1040,18 +1131,59 @@ namespace GameCore {
                                    " rect=(" + std::to_string(frameX) + "," + std::to_string(frameY) + ")");
                     }
 
-                    m_platformDelegates.renderer.drawSpriteScaledWithSource(
-                        textureHandle,
-                        screenPos.x,
-                        screenPos.y,
-                        finalScaleX,
-                        finalScaleY,
-                        item.transform->rotation,
-                        static_cast<float>(frameX),
-                        static_cast<float>(frameY),
-                        item.sprite->frameWidth,
-                        item.sprite->frameHeight
-                    );
+                    // Priority: Check rotation components first for animated sprites
+                    // 1. Pivot rotation (highest priority - boss arms, rotating obstacles)
+                    if (usesPivotRotation && m_platformDelegates.renderer.drawSpriteScaledWithSourcePivoted) {
+                        PivotRotationRenderer* pivotRenderer = m_ecsSystem->GetComponent<PivotRotationRenderer>(item.entity);
+                        if (pivotRenderer) {
+                            GN_LOG_DEBUG("RenderSystem: Using drawSpriteScaledWithSourcePivoted for animated entity " + std::to_string(item.entity));
+                            m_platformDelegates.renderer.drawSpriteScaledWithSourcePivoted(
+                                textureHandle,
+                                screenPos.x,
+                                screenPos.y,
+                                finalScaleX,
+                                finalScaleY,
+                                item.transform->rotation,
+                                pivotRenderer->pivotX,
+                                pivotRenderer->pivotY,
+                                srcX,
+                                srcY,
+                                srcW,
+                                srcH
+                            );
+                        }
+                    }
+                    // 2. Centered rotation (medium priority - rotating animated sprites)
+                    else if (usesCenteredRendering && m_platformDelegates.renderer.drawSpriteScaledWithSourceCentered) {
+                        GN_LOG_DEBUG("RenderSystem: Using drawSpriteScaledWithSourceCentered for animated entity " + std::to_string(item.entity));
+                        m_platformDelegates.renderer.drawSpriteScaledWithSourceCentered(
+                            textureHandle,
+                            screenPos.x,
+                            screenPos.y,
+                            finalScaleX,
+                            finalScaleY,
+                            item.transform->rotation,
+                            srcX,
+                            srcY,
+                            srcW,
+                            srcH
+                        );
+                    }
+                    // 3. Basic rotation (default - top-left origin)
+                    else {
+                        m_platformDelegates.renderer.drawSpriteScaledWithSource(
+                            textureHandle,
+                            screenPos.x,
+                            screenPos.y,
+                            finalScaleX,
+                            finalScaleY,
+                            item.transform->rotation,
+                            srcX,
+                            srcY,
+                            srcW,
+                            srcH
+                        );
+                    }
                 } else if (usesCenteredRendering && m_platformDelegates.renderer.drawSpriteScaledCentered) {
                     // Centered rendering path (e.g., for rotating hats)
                     m_platformDelegates.renderer.drawSpriteScaledCentered(

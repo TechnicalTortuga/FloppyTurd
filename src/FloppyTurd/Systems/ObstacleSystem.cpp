@@ -1,4 +1,5 @@
 #include "ObstacleSystem.h"
+#include "../../Engine/Configuration/ConfigManager.h"
 #include "../../Engine/Core/GNLog.h"
 #include <algorithm>
 #include <cmath>
@@ -31,12 +32,12 @@ namespace GameCore {
         m_baseScale = config.baseScale;
         m_worldSpeed = config.worldSpeed;
 
-        // Disable debug mode for boss level to remove unwanted debug rectangles
-        if (levelId == 6) {
+        // Disable debug mode for castle and boss levels to remove unwanted debug rectangles
+        if (levelId == 5 || levelId == 6) {
             m_debugMode = false;
-            // Force remove ALL DebugDraw components for boss level
+            // Force remove ALL DebugDraw components for castle/boss levels
             RemoveAllDebugDraws();
-            GN_LOG_INFO("Boss level: Debug mode disabled and all DebugDraw components removed");
+            GN_LOG_INFO("Level " + std::to_string(levelId) + ": Debug mode disabled and all DebugDraw components removed");
         }
 
         GN_LOG_INFO("Initializing ObstacleSystem for level " + std::to_string(levelId));
@@ -94,7 +95,8 @@ namespace GameCore {
         }
 
         // Create initial obstacle pool
-        float nextWorldX = SCREEN_WIDTH + 100.0f;
+        const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+        float nextWorldX = screenInfo.pixelWidth + 100.0f;
         for (int i = 0; i < OBSTACLE_POOL_SIZE; i++) {
             int groupIdBefore = m_nextGroupId;
             
@@ -275,7 +277,8 @@ namespace GameCore {
 
     void ObstacleSystem::SpawnParkPattern_ToiletPair(float x) {
         // Use exact toilet positioning logic from old LevelManager SpawnToiletPairWithGap
-        float screenHeight = 2556.0f; // iPhone 16 portrait height
+        const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+        float screenHeight = screenInfo.pixelHeight;
         float toiletHeight = 190.0f * m_baseScale; // Scaled toilet height
         
         // Top toilet should be above screen but not too far - UPDATED for better center gap positioning
@@ -461,18 +464,22 @@ namespace GameCore {
 
 
     void ObstacleSystem::SpawnDesertPattern_Outhouse(float x) {
+        const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
         const float outhouseW = 90.0f;
         const float outhouseH = 160.0f;
-        const float groundY = SCREEN_HEIGHT - (outhouseH * m_baseScale);
+        const float groundY = screenInfo.pixelHeight - (outhouseH * m_baseScale);
         
         int groupId = m_nextGroupId++;
         
-        // Create outhouse entity (solid collision)
+        // Create outhouse entity (solid collision) - always at ground level
         Gnosis::Entity outhouse = CreateOuthouseEntity("Outhouse", x, groundY, m_baseScale, true);
         AddEntityToGroup(outhouse, groupId, true, 0.0f, 0.0f, (outhouseW * 2.0f) * m_baseScale, GroupPattern::Ground);
         
-        // Create toilet entity (trigger only)
-        Gnosis::Entity toilet = CreateOuthouseEntity("OuthouseToilet", x, groundY, m_baseScale, false);
+        // Create toilet entity (trigger only) - varies within 1/4 screen range from bottom
+        // Random Y within range: groundY (bottom/max down) to groundY - (screenHeight * 0.25) (top/more exposed)
+        float toiletYVariance = screenInfo.pixelHeight * 0.25f; // 1/4 screen range
+        float toiletY = groundY - (static_cast<float>(rand() % static_cast<int>(toiletYVariance)));
+        Gnosis::Entity toilet = CreateOuthouseEntity("OuthouseToilet", x, toiletY, m_baseScale, false);
         AddEntityToGroup(toilet, groupId, false, 0.0f, 0.0f, (outhouseW * 2.0f) * m_baseScale, GroupPattern::Ground);
         
         // Create brick wall between outhouse and toilet for duck-under challenge
@@ -561,10 +568,10 @@ namespace GameCore {
     void ObstacleSystem::SpawnDesertPattern_Cactus(float x) {
         const std::vector<std::string> cactiTypes = {"CactiA", "CactiB", "CactiC"};
         const std::string cactusType = cactiTypes[rand() % cactiTypes.size()];
-        
+        const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
         const float cactusW = 64.0f;
         const float cactusH = 48.0f;
-        const float groundY = SCREEN_HEIGHT - (cactusH * m_baseScale);
+        const float groundY = screenInfo.pixelHeight - (cactusH * m_baseScale);
         
         int groupId = m_nextGroupId++;
         
@@ -598,9 +605,10 @@ namespace GameCore {
 
     void ObstacleSystem::SpawnSewerPattern_BottomOnly(float x) {
         // Match old LevelManager's exact BottomOnly logic
+        const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
         const float pipeW = 192.0f;
         const float pipeH = 64.0f;
-        const float bottomY = SCREEN_HEIGHT - (pipeH * m_baseScale);
+        const float bottomY = screenInfo.pixelHeight - (pipeH * m_baseScale);
         
         int groupId = m_nextGroupId++;
         
@@ -615,10 +623,11 @@ namespace GameCore {
     }
 
     void ObstacleSystem::SpawnSewerPattern_TopAndBottom(float x) {
+        const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
         const float pipeW = 192.0f;
         const float pipeH = 64.0f;
         const float topY = 0.0f;
-        const float bottomY = SCREEN_HEIGHT - (pipeH * m_baseScale);
+        const float bottomY = screenInfo.pixelHeight - (pipeH * m_baseScale);
         
         int groupId = m_nextGroupId++;
         
@@ -644,10 +653,11 @@ namespace GameCore {
         const float pipeW = 192.0f;
         const float pipeH = 64.0f;
         const float spacingX = pipeW * m_baseScale * 1.15f;
+        const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
         const float spacingY = pipeH * m_baseScale * 0.6f;
         const float row1Lift = 12.0f * m_baseScale;
         const float row2Lift = 24.0f * m_baseScale;
-        const float baseY = SCREEN_HEIGHT - (pipeH * m_baseScale);
+        const float baseY = screenInfo.pixelHeight - (pipeH * m_baseScale);
         
         int groupId = m_nextGroupId++;
         std::vector<Gnosis::Entity> pipes;
@@ -657,8 +667,10 @@ namespace GameCore {
             float pipeX = x + col * spacingX;
             float lift = (row == 1 ? row1Lift : (row == 2 ? row2Lift : 0.0f));
             float pipeY = (baseY - row * spacingY) - lift;
-            
-            Gnosis::Entity pipe = CreateSewerPipeEntity(tex, pipeX, pipeY, m_baseScale, false);
+            // REVERSED: Bottom row (row 0) = layer 5 (front), ascending rows go backwards (4, 3)
+            // This simulates pipes coming out of each other
+            int layer = 5 - row;
+            Gnosis::Entity pipe = CreateSewerPipeEntity(tex, pipeX, pipeY, m_baseScale, false, layer);
             float groupWidth = (2.0f * spacingX) + (pipeW * m_baseScale);
             AddEntityToGroup(pipe, groupId, idx == 0, pipeX - x, pipeY - baseY, groupWidth, GroupPattern::PyramidBottom);
             pipes.push_back(pipe);
@@ -673,13 +685,13 @@ namespace GameCore {
         // Top row (1 pipe centered)
         spawn(1.0f, 2, idx++);
         
-        // Complement: TOP row across the span (funnel)
+        // Complement: TOP row across the span (funnel) - keep on layer 5 (front) - correct as-is
         const float topY = 0.0f;
         for (int c = 0; c < 3; ++c) {
             const std::string tex = (c % 2 == 0) ? "TopPipeWide" : "TopPipeWideBlue";
             float pipeX = x + c * spacingX;
             
-            Gnosis::Entity pipe = CreateSewerPipeEntity(tex, pipeX, topY, m_baseScale, true);
+            Gnosis::Entity pipe = CreateSewerPipeEntity(tex, pipeX, topY, m_baseScale, true, 5);
             float groupWidth = (2.0f * spacingX) + (pipeW * m_baseScale);
             AddEntityToGroup(pipe, groupId, false, pipeX - x, topY - baseY, groupWidth, GroupPattern::PyramidBottom);
             pipes.push_back(pipe);
@@ -695,10 +707,11 @@ namespace GameCore {
         const float pipeW = 192.0f;
         const float pipeH = 64.0f;
         const float spacingX = pipeW * m_baseScale * 1.15f;
+        const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
         const float spacingY = pipeH * m_baseScale * 0.6f;
         const float row1LiftTop = 12.0f * m_baseScale;
         const float row1Lift = 12.0f * m_baseScale;
-        const float bottomY = SCREEN_HEIGHT - (pipeH * m_baseScale);
+        const float bottomY = screenInfo.pixelHeight - (pipeH * m_baseScale);
         const float topY = 0.0f;
         
         int groupId = m_nextGroupId++;
@@ -710,8 +723,9 @@ namespace GameCore {
             float pipeX = x + col * spacingX;
             float lift = (row == 1 ? row1Lift : 0.0f);
             float pipeY = bottomY - row * spacingY - lift;
-            
-            Gnosis::Entity pipe = CreateSewerPipeEntity(tex, pipeX, pipeY, m_baseScale, false);
+            // REVERSED: Bottom row (row 0) = layer 5 (front), row 1 = layer 4
+            int layer = 5 - row;
+            Gnosis::Entity pipe = CreateSewerPipeEntity(tex, pipeX, pipeY, m_baseScale, false, layer);
             float groupWidth = (2.0f * spacingX) + (pipeW * m_baseScale);
             AddEntityToGroup(pipe, groupId, idx == 0, pipeX - x, pipeY - bottomY, groupWidth, GroupPattern::TwoFunnel);
             pipes.push_back(pipe);
@@ -724,8 +738,9 @@ namespace GameCore {
             float pipeX = x + col * spacingX;
             float lift = (row == 1 ? row1LiftTop : 0.0f);
             float pipeY = topY + row * spacingY + lift;
-            
-            Gnosis::Entity pipe = CreateSewerPipeEntity(tex, pipeX, pipeY, m_baseScale, true);
+            // Layer depth for top pipes: row 0 = layer 5, row 1 = layer 4
+            int layer = (row == 0) ? 5 : 4;
+            Gnosis::Entity pipe = CreateSewerPipeEntity(tex, pipeX, pipeY, m_baseScale, true, layer);
             float groupWidth = (2.0f * spacingX) + (pipeW * m_baseScale);
             AddEntityToGroup(pipe, groupId, false, pipeX - x, pipeY - topY, groupWidth, GroupPattern::TwoFunnel);
             pipes.push_back(pipe);
@@ -746,6 +761,7 @@ namespace GameCore {
 
     void ObstacleSystem::SpawnSewerPattern_PyramidTop3(float x) {
         // Match old LevelManager's exact PyramidTop3 logic
+        const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
         const float pipeW = 192.0f;
         const float pipeH = 64.0f;
         const float spacingX = pipeW * m_baseScale * 1.15f;
@@ -762,8 +778,9 @@ namespace GameCore {
             float pipeX = x + col * spacingX;
             float lift = (row == 1 ? row1LiftTop : (row == 2 ? row2LiftTop : 0.0f));
             float pipeY = topY + row * spacingY + lift;
-            
-            Gnosis::Entity pipe = CreateSewerPipeEntity(tex, pipeX, pipeY, m_baseScale, true);
+            // Layer depth: row 0 (front) = layer 5, row 1 = layer 4, row 2 (back) = layer 3
+            int layer = 5 - row;
+            Gnosis::Entity pipe = CreateSewerPipeEntity(tex, pipeX, pipeY, m_baseScale, true, layer);
             float groupWidth = (2.0f * spacingX) + (pipeW * m_baseScale);
             bool makeLeader = (row == 0 && col == 0.0f);
             AddEntityToGroup(pipe, groupId, makeLeader, pipeX - x, pipeY - topY, groupWidth, GroupPattern::PyramidTop);
@@ -780,13 +797,13 @@ namespace GameCore {
         // top row: 3 (rendered last for correct layering)
         for (int c = 0; c < 3; ++c) spawnTop(static_cast<float>(c), 0, idx++);
         
-        // Complement: BOTTOM row across the span (funnel)
-        const float bottomY = SCREEN_HEIGHT - (pipeH * m_baseScale);
+        // Complement: BOTTOM row across the span (funnel) - keep on layer 5 (front) - correct as-is
+        const float bottomY = screenInfo.pixelHeight - (pipeH * m_baseScale);
         for (int c = 0; c < 3; ++c) {
             const std::string tex = (c % 2 == 0) ? "BottomPipeWide" : "BottomPipeWideBlue";
             float pipeX = x + c * spacingX;
             
-            Gnosis::Entity pipe = CreateSewerPipeEntity(tex, pipeX, bottomY, m_baseScale, false);
+            Gnosis::Entity pipe = CreateSewerPipeEntity(tex, pipeX, bottomY, m_baseScale, false, 5);
             float groupWidth = (2.0f * spacingX) + (pipeW * m_baseScale);
             AddEntityToGroup(pipe, groupId, false, pipeX - x, bottomY - topY, groupWidth, GroupPattern::PyramidTop);
             pipes.push_back(pipe);
@@ -830,7 +847,8 @@ namespace GameCore {
         
         // Sprite
         Sprite sprite(texture, 65.0f, 190.0f);
-        sprite.layer = 3;
+        // Use layer 4 (mid obstacle layer) for regular toilets
+        sprite.layer = 4;
         sprite.visible = true;
         m_ecsSystem->AddComponent<Sprite>(entity, sprite);
         
@@ -872,7 +890,9 @@ namespace GameCore {
         
         // Sprite
         Sprite sprite(texture, 90.0f, 160.0f);
-        sprite.layer = (texture == "Outhouse") ? 3 : 2; // Outhouse in front, toilet behind
+        // Obstacle layering: 3=back, 4=mid, 5=front
+        // Outhouse structure on layer 4 (mid), toilet on layer 3 (back) so toilet renders behind
+        sprite.layer = (texture == "Outhouse") ? 4 : 3;
         sprite.visible = true;
         m_ecsSystem->AddComponent<Sprite>(entity, sprite);
         
@@ -930,7 +950,7 @@ namespace GameCore {
         return entity;
     }
 
-    Gnosis::Entity ObstacleSystem::CreateSewerPipeEntity(const std::string& texture, float x, float y, float scale, bool isTop) {
+    Gnosis::Entity ObstacleSystem::CreateSewerPipeEntity(const std::string& texture, float x, float y, float scale, bool isTop, int layer) {
         Gnosis::Entity entity = m_ecsSystem->CreateEntity();
         
         // Transform
@@ -939,7 +959,8 @@ namespace GameCore {
         
         // Sprite
         Sprite sprite(texture, 192.0f, 64.0f);
-        sprite.layer = 3;
+        // Use the layer parameter (3=back, 4=mid, 5=front) for proper depth in stacked pipes
+        sprite.layer = layer;
         sprite.visible = true;
         m_ecsSystem->AddComponent<Sprite>(entity, sprite);
         
@@ -1096,7 +1117,8 @@ namespace GameCore {
         }
         
         // Calculate wrap distance
-        const float totalLevelWidth = SCREEN_WIDTH + (OBSTACLE_POOL_SIZE * 600.0f);
+        const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+        const float totalLevelWidth = screenInfo.pixelWidth + (OBSTACLE_POOL_SIZE * 600.0f);
         const float wrapDistance = totalLevelWidth;
         
         // Wrap all entities in the group
@@ -1354,33 +1376,77 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
                 // Only enable verbose logging for Snow and Castle levels (wide gaps)
                 bool verboseLogging = (m_currentLevelId == 4 || m_currentLevelId == 5);
                 
-                if (topBandBottomEdge != std::numeric_limits<float>::max()) {
-                    topStripeY = topBandBottomEdge + verticalPad;
-                    if (topMinX < topMaxX) {
-                        emitStripeInRange(topStripeY, topMinX, topMaxX);
-                        if (verboseLogging) {
-                            GN_LOG_INFO("ObstacleSystem::TopAndBottom [Level " + std::to_string(m_currentLevelId) + "] TOP coin row at Y=" + std::to_string(topStripeY) + 
-                                       " (topBandBottom=" + std::to_string(topBandBottomEdge) + " + verticalPad=" + std::to_string(verticalPad) + 
-                                       "), X span=[" + std::to_string(topMinX) + " to " + std::to_string(topMaxX) + "]");
+                // CASTLE LEVEL: Match Snow level - coins hug TOP and BOTTOM of screen between toilet pairs
+                if (m_currentLevelId == 5) {
+                    // Castle uses same Y positioning as Snow level - screen edges, not toilet edges
+                    const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+                    const float screenHeight = screenInfo.pixelHeight;
+                    const float topScreenY = 200.0f;  // Near top of screen (with safe area padding)
+                    const float bottomScreenY = screenHeight - 250.0f;  // Near bottom of screen
+                    
+                    // SYMMETRY SYSTEM: Use 3 reference points for perfect centering
+                    // Point 1: Center of FIRST toilet pair (minX is toilet left edge)
+                    // Point 2: Center of GAP between toilet pairs
+                    // Point 3: Center of SECOND toilet pair (at minX + toiletWidth + gapSize)
+                    const float toiletWidth = 65.0f * m_baseScale; // 520px at scale 8
+                    const float gapSize = 2000.0f; // Gap between toilet groups
+                    
+                    // CRITICAL: Account for 16px padding in toilet sprite (65px sprite, 49px actual content)
+                    // The visual toilet is smaller than the sprite bounds
+                    const float spritePadding = 16.0f * m_baseScale; // 128px padding at scale 8
+                    
+                    // Calculate the TRUE center of the gap (Point 2)
+                    // Start from actual toilet visual edge (after padding)
+                    float toilet1RightEdge = minX + spritePadding + (toiletWidth - spritePadding);
+                    float toilet2LeftEdge = toilet1RightEdge + gapSize;
+                    float gapCenterX = (toilet1RightEdge + toilet2LeftEdge) / 2.0f; // TRUE middle of gap
+                    
+                    // Coins should be symmetrically centered on gapCenterX
+                    // Spread 1600px total (800px on each side of center)
+                    // SHIFT: Move entire coin spread 192px to the left to avoid second toilet
+                    const float coinSpreadHalfWidth = 800.0f; // Half of total coin spread
+                    const float leftShift = 192.0f; // Additional left shift to avoid overlap (128 + 32 + 32)
+                    float coinMinX = gapCenterX - coinSpreadHalfWidth - leftShift;  // 800px left + 128px shift
+                    float coinMaxX = gapCenterX + coinSpreadHalfWidth - leftShift;  // 800px right + 128px shift
+                    
+                    // Spawn coins at screen edges (matching Snow level exactly)
+                    emitStripeInRange(topScreenY, coinMinX, coinMaxX);       // Top screen edge
+                    emitStripeInRange(bottomScreenY, coinMinX, coinMaxX);    // Bottom screen edge
+                    
+                    GN_LOG_INFO("ObstacleSystem::Castle TopAndBottom [SCREEN EDGES] TOP row at Y=" + std::to_string(topScreenY) + 
+                               ", BOTTOM row at Y=" + std::to_string(bottomScreenY) + 
+                               ", X span CENTERED+WIDENED=[" + std::to_string(coinMinX) + " to " + std::to_string(coinMaxX) + 
+                               "], total coins=" + std::to_string(positions.size()));
+                } else {
+                    // Other levels: use standard obstacle bounds
+                    if (topBandBottomEdge != std::numeric_limits<float>::max()) {
+                        topStripeY = topBandBottomEdge + verticalPad;
+                        if (topMinX < topMaxX) {
+                            emitStripeInRange(topStripeY, topMinX, topMaxX);
+                            if (verboseLogging) {
+                                GN_LOG_INFO("ObstacleSystem::TopAndBottom [Level " + std::to_string(m_currentLevelId) + "] TOP coin row at Y=" + std::to_string(topStripeY) + 
+                                           " (topBandBottom=" + std::to_string(topBandBottomEdge) + " + verticalPad=" + std::to_string(verticalPad) + 
+                                           "), X span=[" + std::to_string(topMinX) + " to " + std::to_string(topMaxX) + "]");
+                            }
                         }
                     }
-                }
-                if (bottomBandTopEdge != std::numeric_limits<float>::lowest()) {
-                    bottomStripeY = bottomBandTopEdge - verticalPad;
-                    if (bottomMinX < bottomMaxX) {
-                        emitStripeInRange(bottomStripeY, bottomMinX, bottomMaxX);
-                        if (verboseLogging) {
-                            GN_LOG_INFO("ObstacleSystem::TopAndBottom [Level " + std::to_string(m_currentLevelId) + "] BOTTOM coin row at Y=" + std::to_string(bottomStripeY) + 
-                                       " (bottomBandTop=" + std::to_string(bottomBandTopEdge) + " - verticalPad=" + std::to_string(verticalPad) + 
-                                       "), X span=[" + std::to_string(bottomMinX) + " to " + std::to_string(bottomMaxX) + "]");
+                    if (bottomBandTopEdge != std::numeric_limits<float>::lowest()) {
+                        bottomStripeY = bottomBandTopEdge - verticalPad;
+                        if (bottomMinX < bottomMaxX) {
+                            emitStripeInRange(bottomStripeY, bottomMinX, bottomMaxX);
+                            if (verboseLogging) {
+                                GN_LOG_INFO("ObstacleSystem::TopAndBottom [Level " + std::to_string(m_currentLevelId) + "] BOTTOM coin row at Y=" + std::to_string(bottomStripeY) + 
+                                           " (bottomBandTop=" + std::to_string(bottomBandTopEdge) + " - verticalPad=" + std::to_string(verticalPad) + 
+                                           "), X span=[" + std::to_string(bottomMinX) + " to " + std::to_string(bottomMaxX) + "]");
+                            }
                         }
                     }
-                }
-                
-                if (verboseLogging) {
-                    GN_LOG_INFO("ObstacleSystem::TopAndBottom [Level " + std::to_string(m_currentLevelId) + "] SUMMARY for groupId=" + std::to_string(groupId) + 
-                               ": TOP row Y=" + std::to_string(topStripeY) + ", BOTTOM row Y=" + std::to_string(bottomStripeY) + 
-                               ", GAP=" + std::to_string(bottomStripeY - topStripeY) + "px, total coins=" + std::to_string(positions.size()));
+                    
+                    if (verboseLogging) {
+                        GN_LOG_INFO("ObstacleSystem::TopAndBottom [Level " + std::to_string(m_currentLevelId) + "] SUMMARY for groupId=" + std::to_string(groupId) + 
+                                   ": TOP row Y=" + std::to_string(topStripeY) + ", BOTTOM row Y=" + std::to_string(bottomStripeY) + 
+                                   ", GAP=" + std::to_string(bottomStripeY - topStripeY) + "px, total coins=" + std::to_string(positions.size()));
+                    }
                 }
                 break;
             }
@@ -1452,7 +1518,8 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
             case GroupPattern::SnowScreenEdges: {
                 // SNOW LEVEL UNIQUE PATTERN: Coins at TOP and BOTTOM of screen, horizontally aligned with pipe obstacles
                 // This creates two horizontal coin rows: one hugging the top screen edge, one hugging the bottom
-                const float screenHeight = 2556.0f; // iPhone 16 portrait height
+                const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+                const float screenHeight = screenInfo.pixelHeight;
                 const float topScreenY = 200.0f;  // Near top of screen (with safe area padding)
                 const float bottomScreenY = screenHeight - 250.0f;  // Near bottom of screen (Y=2306, closer to bottom)
                 
@@ -1515,18 +1582,20 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
                             clusters.back().center = (clusters.back().left + clusters.back().right) * 0.5f;
                         }
                     }
+                    const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
                     float centerY = (topBandBottomEdge != std::numeric_limits<float>::max() && bottomBandTopEdge != std::numeric_limits<float>::lowest())
                         ? ((topBandBottomEdge + bottomBandTopEdge) * 0.5f)
-                        : 2556.0f * 0.5f;
+                        : screenInfo.pixelHeight * 0.5f;
                     GN_LOG_DEBUG("ObstacleSystem::TwoFunnel clusters=" + std::to_string(clusters.size()) + " centerY=" + std::to_string(centerY));
                     // Emit for left/middle/right if available
                     if (clusters.size() >= 1) emitStripeInRange(centerY, clusters.front().left, clusters.front().right);
                     if (clusters.size() >= 3) emitStripeInRange(centerY, clusters[clusters.size()/2].left, clusters[clusters.size()/2].right);
                     if (clusters.size() >= 2) emitStripeInRange(centerY, clusters.back().left, clusters.back().right);
                 } else {
+                    const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
                     float centerY = (topBandBottomEdge != std::numeric_limits<float>::max() && bottomBandTopEdge != std::numeric_limits<float>::lowest())
                         ? ((topBandBottomEdge + bottomBandTopEdge) * 0.5f)
-                        : 2556.0f * 0.5f;
+                        : screenInfo.pixelHeight * 0.5f;
                     emitStripe(centerY);
                 }
                 break;
@@ -2058,15 +2127,17 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         m_cactusTypes.push_back({"CactiBush", 16.0f, 16.0f, 1.5f, false, 0.0f}); // 16x16 - small decorative
 
         // Create the cactus pool
-        SpawnCactusPool(SCREEN_WIDTH + 100.0f);
+        const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+        SpawnCactusPool(screenInfo.pixelWidth + 100.0f);
         
         m_cactusPoolInitialized = true;
         GN_LOG_INFO("Cactus system initialized with " + std::to_string(m_cactusPool.size()) + " cacti");
     }
 
     void ObstacleSystem::SpawnCactusPool(float startX) {
+        const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
         float currentX = startX;
-        float groundY = SCREEN_HEIGHT - 200.0f; // Will be calculated per cactus type
+        float groundY = screenInfo.pixelHeight - 200.0f; // Will be calculated per cactus type
         
         // Create 16 cacti in a pool
         for (int i = 0; i < CACTUS_POOL_SIZE; i++) {
@@ -2099,9 +2170,9 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
             
             // Cacti are always grounded at the same level
             // Calculate ground position: screen bottom - (cactus height * m_baseScale)
-            float finalY = SCREEN_HEIGHT - (selectedType->height * m_baseScale);
+            float finalY = screenInfo.pixelHeight - (selectedType->height * m_baseScale);
             
-            GN_LOG_DEBUG("Cactus positioning: height=" + std::to_string(selectedType->height) + ", m_baseScale=" + std::to_string(m_baseScale) + ", finalY=" + std::to_string(finalY) + ", SCREEN_HEIGHT=" + std::to_string(SCREEN_HEIGHT));
+            GN_LOG_DEBUG("Cactus positioning: height=" + std::to_string(selectedType->height) + ", m_baseScale=" + std::to_string(m_baseScale) + ", finalY=" + std::to_string(finalY) + ", screenHeight=" + std::to_string(screenInfo.pixelHeight));
             
             // Create cactus entity
             Gnosis::Entity cactus = CreateCactusEntity(
@@ -2194,11 +2265,13 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
                 if (it != m_cactusTypeMap.end()) {
                     const CactusType* cactusType = it->second;
                     // Calculate proper ground position: screen bottom - (cactus height * scale)
-                    float groundY = SCREEN_HEIGHT - (cactusType->height * m_baseScale);
+                    const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+                    float groundY = screenInfo.pixelHeight - (cactusType->height * m_baseScale);
                     transform->position.y = groundY;
                 } else {
                     // Fallback to default positioning - use the smallest cactus height as default
-                    float groundY = SCREEN_HEIGHT - (64.0f * m_baseScale); // Smallest cactus height
+                    const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+                    float groundY = screenInfo.pixelHeight - (64.0f * m_baseScale); // Smallest cactus height
                     transform->position.y = groundY;
                 }
             }
@@ -2207,7 +2280,8 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
 
     void ObstacleSystem::SpawnSnowPattern_ToiletPair(float x) {
         // Create oscillating snow toilet pair with vertical movement for timing challenge
-        float screenHeight = 2556.0f; // iPhone 16 portrait height
+        const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+        float screenHeight = screenInfo.pixelHeight;
         float toiletHeight = 190.0f * m_baseScale; // Scaled toilet height
         
         // Position top toilet higher than normal park toilets for oscillation room
@@ -2399,7 +2473,8 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
 
     void ObstacleSystem::SpawnCastlePattern_GoldToiletPair(float x) {
         // Create oscillating gold toilet pair with vertical movement for castle level
-        float screenHeight = 2556.0f; // iPhone 16 portrait height
+        const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+        float screenHeight = screenInfo.pixelHeight;
         float toiletHeight = 180.0f * m_baseScale; // Scaled toilet height
         
         // Position top toilet higher than normal for oscillation room
@@ -2503,20 +2578,7 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         m_ecsSystem->AddComponent<Hitbox>(bottomToilet, bottomCollider);
         m_ecsSystem->AddComponent<Obstacle>(bottomToilet, bottomObstacle);
         
-        // Add debug drawing for bottom gold toilet hitbox (only when debug mode is enabled)
-        if (m_debugMode) {
-            DebugDraw bottomDebugDraw;
-            bottomDebugDraw.showBounds = true;
-            bottomDebugDraw.showCollider = true;
-            bottomDebugDraw.colliderColor = Gnosis::GNColor(255, 215, 0, 255); // Gold for gold toilet
-            bottomDebugDraw.boundsColor = Gnosis::GNColor(0, 255, 0, 255);     // Green for bounds
-            bottomDebugDraw.alpha = 0.8f;
-            bottomDebugDraw.debugLayer = 18;
-            m_ecsSystem->AddComponent<DebugDraw>(bottomToilet, bottomDebugDraw);
-            GN_LOG_DEBUG("Gold toilet debug draw enabled");
-        } else {
-            GN_LOG_DEBUG("Gold toilet debug draw disabled (debug mode off)");
-        }
+        // Debug mode disabled for Castle level - no debug rectangles needed
         
         // Link the pair for synchronized movement
         topObstacle.pairedEntity = bottomToilet;
@@ -2536,6 +2598,12 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         m_activeObstacles.push_back(topToilet);
         m_activeObstacles.push_back(bottomToilet);
         
+        // CRITICAL: Spawn decorations in SEPARATE groups so they don't affect coin positioning
+        // Only the toilet pair should be in this group for coin calculations
+        
+        // Spawn curtain (no group - purely decorative)
+        SpawnCastleCurtain(x, -1);
+        
         // Spawn decorative elements positioned relative to this toilet group
         // Floor torches: positioned to left and right of toilet group
         // Account for actual texture content (remove 16px padding from sprite dimensions)
@@ -2543,78 +2611,138 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         float leftTorchX = x - 80.0f; // Push left torch further left
         float rightTorchX = x + actualToiletWidth + 80.0f; // Push right torch further right
         
-        // Calculate offsetX values relative to the toilet group leader (x)
-        float leftTorchOffsetX = -80.0f; // 80px left of toilet
-        float rightTorchOffsetX = actualToiletWidth + 80.0f; // 80px right of toilet
-        
-        // Spawn floor torches on either side of the toilet
-        SpawnCastleFloorTorch(leftTorchX, groupId, leftTorchOffsetX);
-        SpawnCastleFloorTorch(rightTorchX, groupId, rightTorchOffsetX);
+        // Spawn floor torches without group (purely decorative)
+        SpawnCastleFloorTorch(leftTorchX, -1, 0.0f);
+        SpawnCastleFloorTorch(rightTorchX, -1, 0.0f);
         
         // Calculate positions for centerpieces in the gap between toilet groups
         // The gap is 2000px wide, starting from the current toilet group
-        // Centerpiece: positioned in the middle of the gap, moved 128px left for proper texture centering
+        // Centerpiece: positioned in the TRUE CENTER of the gap (between this toilet and next)
         float gapStartX = x; // Start of current gap (current toilet position)
         float gapEndX = x + gapWidth; // End of current gap (next toilet position)
-        float centerX = gapStartX + (gapWidth * 0.5f) - 16.0f - 128.0f; // Center of gap, moved 128px left
         
-        // Chandeliers: positioned symmetrically around the centerpiece
-        // Left chandelier: 400px to the left of centerpiece + 128px compensation for centerpiece movement
-        float leftChandelierX = centerX - 400.0f + 128.0f;
-        // Right chandelier: 400px to the right of centerpiece + 256px adjustment + 128px compensation
-        float rightChandelierX = centerX + 400.0f + 256.0f + 128.0f;
+        // Account for toilet width to get TRUE center of GAP (not center from toilet origin)
+        float toiletWidth = 65.0f * m_baseScale; // Actual toilet width
+        float centerX = gapStartX + toiletWidth + ((gapWidth - toiletWidth) * 0.5f); // TRUE center of gap space
         
-        // Calculate offsetX values for chandeliers (compensated for centerpiece movement)
-        float leftChandelierOffsetX = (gapWidth * 0.5f) - 400.0f - 16.0f + 128.0f; // 728px from toilet
-        float rightChandelierOffsetX = (gapWidth * 0.5f) + 400.0f + 256.0f - 16.0f + 128.0f; // 1784px from toilet
+        GN_LOG_INFO("[CASTLE_CENTERPIECE] Calculating center position:");
+        GN_LOG_INFO("[CASTLE_CENTERPIECE]   Toilet at X=" + std::to_string(x) + ", toiletWidth=" + std::to_string(toiletWidth) + "px");
+        GN_LOG_INFO("[CASTLE_CENTERPIECE]   Gap: start=" + std::to_string(gapStartX) + ", end=" + std::to_string(gapEndX) + ", width=" + std::to_string(gapWidth) + "px");
+        GN_LOG_INFO("[CASTLE_CENTERPIECE]   TRUE CENTER X = " + std::to_string(centerX) + " (gapStart + toiletWidth + (gapWidth - toiletWidth) * 0.5)");
         
-        // Spawn chandeliers symmetrically around the centerpiece
-        SpawnCastleChandelier(leftChandelierX, groupId, leftChandelierOffsetX);
-        SpawnCastleChandelier(rightChandelierX, groupId, rightChandelierOffsetX);
+        // Chandeliers: positioned SYMMETRICALLY around the gap center
+        // Use the same 3-point symmetry system: toilet1 center, gap center, toilet2 center
+        // CRITICAL: Chandelier is 32px wide (256px at scale 8), position is LEFT edge
+        // To center visually, we need to offset by half the chandelier width
+        const float chandelierWidth = 32.0f * m_baseScale; // 256px at scale 8
+        const float chandelierHalfWidth = chandelierWidth * 0.5f; // 128px
+        const float chandelierOffsetFromCenter = 400.0f; // Distance from gap center (symmetric)
         
-        // Calculate offsetX for centerpiece (moved 128px left for proper texture centering)
-        float centerpieceOffsetX = (gapWidth * 0.5f) - 16.0f - 128.0f; // 872px from toilet (center of gap, moved left)
+        // Position chandelier LEFT edges, accounting for width to achieve visual symmetry
+        float leftChandelierX = centerX - chandelierOffsetFromCenter - chandelierHalfWidth;
+        float rightChandelierX = centerX + chandelierOffsetFromCenter - chandelierHalfWidth;
+        
+        GN_LOG_INFO("[CASTLE_CHANDELIER] Left at X=" + std::to_string(leftChandelierX) + " (center - " + std::to_string(chandelierOffsetFromCenter) + "px - half width)");
+        GN_LOG_INFO("[CASTLE_CHANDELIER] Right at X=" + std::to_string(rightChandelierX) + " (center + " + std::to_string(chandelierOffsetFromCenter) + "px - half width) SYMMETRIC");
+        GN_LOG_INFO("[CASTLE_CHANDELIER] Gap center=" + std::to_string(centerX) + ", chandelier visual centers at " + std::to_string(leftChandelierX + chandelierHalfWidth) + " and " + std::to_string(rightChandelierX + chandelierHalfWidth));
+        
+        // Spawn chandeliers without group (purely decorative)
+        SpawnCastleChandelier(leftChandelierX, -1, 0.0f);
+        SpawnCastleChandelier(rightChandelierX, -1, 0.0f);
         
         // Spawn centerpiece in center of the gap - randomly choose between:
         // 1. Torch pillar, 2. Decorative painting, 3. Spike ball obstacle
         static int centerCounter = 0;
         int centerpieceType = centerCounter % 3; // 3 different centerpiece types
         
+        // Centerpieces spawn without group (decorative/obstacles manage themselves)
         switch (centerpieceType) {
             case 0:
-                SpawnCastleTorchPillar(centerX, groupId, centerpieceOffsetX);
+                SpawnCastleTorchPillar(centerX, -1, 0.0f);
                 break;
             case 1:
-                SpawnCastleDecorativePainting(centerX, groupId, centerpieceOffsetX);
+                SpawnCastleDecorativePainting(centerX, -1, 0.0f);
                 break;
             case 2:
-                SpawnCastleSpikeBall(centerX, groupId, centerpieceOffsetX);
+                SpawnCastleSpikeBall(centerX, -1, 0.0f);
                 break;
         }
         centerCounter++;
         
-        GN_LOG_INFO("Spawned oscillating gold toilet pair at x=" + std::to_string(x) + " with group " + std::to_string(groupId));
+        GN_LOG_INFO("[CASTLE_TOILET] Spawned oscillating gold toilet pair at x=" + std::to_string(x) + " with group " + std::to_string(groupId));
     }
 
+    void ObstacleSystem::SpawnCastleCurtain(float x, int groupId /* -1 = no group */) {
+        // Spawn curtain centered on toilet pair, spanning full screen height
+        // Curtains are 256x512 - use screen-based scaling like sewer backgrounds (not baseScale)
+        const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+        float screenHeight = screenInfo.pixelHeight;
+        
+        // Calculate scale based on screen height divided by texture height (like sewer backgrounds)
+        // This makes it span the screen height properly without being gigantic
+        float curtainTextureHeight = 512.0f;
+        float curtainScale = screenHeight / curtainTextureHeight; // e.g., 2556 / 512 = ~5.0
+        
+        float curtainWidth = 256.0f * curtainScale;
+        float curtainHeight = 512.0f * curtainScale;
+        
+        // Center curtain X-wise on the toilet pair
+        // Toilet is positioned at x, curtain should be centered on it
+        float curtainX = x - (curtainWidth * 0.5f) + (65.0f * m_baseScale * 0.5f); // Center on toilet (65px toilet width)
+        
+        // Position curtain at top of screen, it will span downward
+        float curtainY = 0.0f;
+        
+        Gnosis::Entity curtain = m_ecsSystem->CreateEntity();
+        
+        Transform transform(Gnosis::GNVector2(curtainX, curtainY), 0.0f, 
+                           Gnosis::GNVector2(curtainScale, curtainScale));
+        
+        Sprite sprite("curtains", 256.0f, 512.0f);
+        sprite.layer = 2; // Behind game objects, in front of background
+        sprite.visible = true;
+        sprite.isAnimated = false;
+        
+        Physics physics;
+        physics.velocity.x = -m_worldSpeed;
+        physics.useGravity = false;
+        
+        // No hitbox - purely decorative
+        m_ecsSystem->AddComponent<Transform>(curtain, transform);
+        m_ecsSystem->AddComponent<Sprite>(curtain, sprite);
+        m_ecsSystem->AddComponent<Physics>(curtain, physics);
+        
+        // Add to group for management
+        float curtainOffsetX = curtainX - x; // Offset from toilet position
+        AddEntityToGroup(curtain, groupId, false, curtainOffsetX, 0.0f, curtainWidth, GroupPattern::Decorative);
+        
+        // Track for management
+        m_activeObstacles.push_back(curtain);
+        
+        GN_LOG_INFO("Spawned castle curtain at x=" + std::to_string(curtainX) + " (scale=" + std::to_string(curtainScale) + ", centered on toilet at " + std::to_string(x) + ") with group " + std::to_string(groupId));
+    }
 
-
-    void ObstacleSystem::SpawnCastleTorchPillar(float x, int groupId, float offsetX) {
+    void ObstacleSystem::SpawnCastleTorchPillar(float x, int groupId /* -1 = no group */, float offsetX) {
         // Create animated torch pillar (4-frame spritesheet, 96x512 frames)
-        float screenHeight = 2556.0f; // iPhone 16 portrait height
+        const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+        float screenHeight = screenInfo.pixelHeight;
         float pillarHeight = 512.0f * m_baseScale; // Full height spritesheet
         
-        // Position the torch pillar at the passed X position (in gap between toilets)
+        // Position the torch pillar at the passed X position (TRUE center of gap)
+        // X is already the center, but pillar sprite origin is top-left, so offset by half width
+        float pillarWidth = 96.0f * m_baseScale;
+        float pillarX = x - (pillarWidth * 0.5f); // Center horizontally (top-left anchor)
         float centerY = screenHeight / 2.0f; // Center vertically
         float pillarY = centerY - (pillarHeight / 2.0f); // Position pillar centered
         
         Gnosis::Entity torchPillar = m_ecsSystem->CreateEntity();
         
-        Transform transform(Gnosis::GNVector2(x, pillarY), 0.0f, 
+        Transform transform(Gnosis::GNVector2(pillarX, pillarY), 0.0f,
                            Gnosis::GNVector2(m_baseScale, m_baseScale));
         
         // Animated sprite with 4 frames - properly configured for spritesheet
         Sprite sprite("TorchPillar", 96.0f, 512.0f);
-        sprite.layer = 2; // Behind game objects
+        sprite.layer = 3; // In front of curtains (layer 2), behind player
         sprite.visible = true;
         sprite.isAnimated = true;
         sprite.frameCount = 4; // 4-frame animation
@@ -2637,17 +2765,19 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         m_ecsSystem->AddComponent<Sprite>(torchPillar, sprite);
         m_ecsSystem->AddComponent<Physics>(torchPillar, physics);
         
-        // Add to group for management
-        float groupWidth = 96.0f * m_baseScale;
-        AddEntityToGroup(torchPillar, groupId, false, offsetX, 0.0f, groupWidth, GroupPattern::Decorative);
+        // Only add to group if groupId is valid (not -1)
+        if (groupId >= 0) {
+            float groupWidth = 64.0f * m_baseScale;
+            AddEntityToGroup(torchPillar, groupId, false, offsetX, 0.0f, groupWidth, GroupPattern::Decorative);
+        }
         
         // Track for management
         m_activeObstacles.push_back(torchPillar);
         
-        GN_LOG_INFO("Spawned castle torch pillar at x=" + std::to_string(x) + " y=" + std::to_string(centerY) + " with group " + std::to_string(groupId));
+        GN_LOG_INFO("[CASTLE_PILLAR] Spawned at X=" + std::to_string(pillarX) + ", Y=" + std::to_string(centerY) + " (center=" + std::to_string(x) + ", pillarWidth=" + std::to_string(96.0f * m_baseScale) + "), group=" + std::to_string(groupId));
     }
 
-    void ObstacleSystem::SpawnCastleChandelier(float x, int groupId, float offsetX) {
+    void ObstacleSystem::SpawnCastleChandelier(float x, int groupId /* -1 = no group */, float offsetX) {
         // Create animated chandelier (32x34 sprite) - positioned to touch top of screen
         float chandelierY = 0.0f; // Touch top of screen
         
@@ -2681,17 +2811,19 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         m_ecsSystem->AddComponent<Sprite>(chandelier, sprite);
         m_ecsSystem->AddComponent<Physics>(chandelier, physics);
         
-        // Add to group for management
-        float groupWidth = 32.0f * m_baseScale;
-        AddEntityToGroup(chandelier, groupId, false, offsetX, 0.0f, groupWidth, GroupPattern::Decorative);
+        // Only add to group if groupId is valid (not -1)
+        if (groupId >= 0) {
+            float groupWidth = 32.0f * m_baseScale;
+            AddEntityToGroup(chandelier, groupId, false, offsetX, 0.0f, groupWidth, GroupPattern::Decorative);
+        }
         
         // Track for management
         m_activeObstacles.push_back(chandelier);
         
-        GN_LOG_INFO("Spawned castle chandelier at x=" + std::to_string(x) + " with group " + std::to_string(groupId));
+        GN_LOG_INFO("[CASTLE_CHANDELIER] Spawned at X=" + std::to_string(x) + ", Y=0 (top), width=" + std::to_string(32.0f * m_baseScale) + ", group=" + std::to_string(groupId));
     }
 
-    void ObstacleSystem::SpawnCastleFloorTorch(float x, int groupId, float offsetX) {
+    void ObstacleSystem::SpawnCastleFloorTorch(float x, int groupId /* -1 = no group */, float offsetX) {
         // Create animated floor torch (20x64 sprite)
         float screenHeight = 2556.0f; // iPhone 16 portrait height
         float torchHeight = 64.0f * m_baseScale;
@@ -2727,25 +2859,31 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         m_ecsSystem->AddComponent<Sprite>(floorTorch, sprite);
         m_ecsSystem->AddComponent<Physics>(floorTorch, physics);
         
-        // Add to group for management
-        float groupWidth = 20.0f * m_baseScale;
-        AddEntityToGroup(floorTorch, groupId, false, offsetX, 0.0f, groupWidth, GroupPattern::Decorative);
+        // Only add to group if groupId is valid (not -1)
+        if (groupId >= 0) {
+            float groupWidth = 32.0f * m_baseScale;
+            AddEntityToGroup(floorTorch, groupId, false, offsetX, 0.0f, groupWidth, GroupPattern::Decorative);
+        }
         
         // Track for management
         m_activeObstacles.push_back(floorTorch);
         
-        GN_LOG_INFO("Spawned castle floor torch at x=" + std::to_string(x) + " with group " + std::to_string(groupId));
+        GN_LOG_INFO("[CASTLE_FLOORTORCH] Spawned at X=" + std::to_string(x) + ", Y=" + std::to_string(torchY) + ", group=" + std::to_string(groupId));
     }
 
-    void ObstacleSystem::SpawnCastleDecorativePainting(float x, int groupId, float offsetX) {
+    void ObstacleSystem::SpawnCastleDecorativePainting(float x, int groupId /* -1 = no group */, float offsetX) {
         // Create decorative painting (96x96 sprite) - positioned in center between toilet groups
         float screenHeight = 2556.0f; // iPhone 16 portrait height
+        float paintingWidth = 96.0f * 6.0f; // 6x scaling to make paintings prominent
         float paintingHeight = 96.0f * 6.0f; // 6x scaling to make paintings prominent
         float paintingY = (screenHeight - paintingHeight) / 2.0f; // Center vertically
         
+        // X parameter is the CENTER position - calculate top-left for sprite positioning
+        float paintingX = x - (paintingWidth / 2.0f);
+        
         Gnosis::Entity painting = m_ecsSystem->CreateEntity();
         
-        Transform transform(Gnosis::GNVector2(x, paintingY), 0.0f, 
+        Transform transform(Gnosis::GNVector2(paintingX, paintingY), 0.0f, 
                            Gnosis::GNVector2(6.0f, 6.0f)); // 6x scaling to make paintings prominent
         
         // Static sprite (paintings don't animate)
@@ -2765,31 +2903,35 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         m_ecsSystem->AddComponent<Sprite>(painting, sprite);
         m_ecsSystem->AddComponent<Physics>(painting, physics);
         
-        // Add to group for management
-        float groupWidth = 96.0f * 6.0f; // Scaled width (6x scaling)
-        AddEntityToGroup(painting, groupId, false, offsetX, 0.0f, groupWidth, GroupPattern::Decorative);
+        // Only add to group if groupId is valid (not -1)
+        if (groupId >= 0) {
+            float groupWidth = 64.0f * m_baseScale;
+            AddEntityToGroup(painting, groupId, false, offsetX, 0.0f, groupWidth, GroupPattern::Decorative);
+        }
         
         // Track for management
         m_activeObstacles.push_back(painting);
         
-        GN_LOG_INFO("Spawned castle decorative painting at x=" + std::to_string(x) + " with group " + std::to_string(groupId));
+        GN_LOG_INFO("[CASTLE_PAINTING] Spawned CENTERED at X=" + std::to_string(x) + " (sprite top-left=" + std::to_string(paintingX) + 
+                   ", width=" + std::to_string(paintingWidth) + "), Y=" + std::to_string(paintingY) + ", group=" + std::to_string(groupId));
     }
     
-    void ObstacleSystem::SpawnCastleSpikeBall(float x, int groupId, float offsetX) {
+    void ObstacleSystem::SpawnCastleSpikeBall(float x, int groupId /* -1 = no group */, float offsetX) {
         // Create rotating spike ball obstacle with base - positioned in gap between toilet groups
         float screenHeight = 2556.0f; // iPhone 16 portrait height
         float spikeBallHeight = 90.0f * m_baseScale; // 90px spike ball height
         float baseHeight = 10.0f * m_baseScale; // Base is actually 10x10 pixels
         
-        // Position the spike ball at the passed X position (in gap between toilets)
-        // Center Y should be screenHeight / 2, which is 2556 / 2 = 1278
-        float centerY = screenHeight / 2.0f; // This should be 1278
+        // Position the spike ball at the passed X position (TRUE center of gap)
+        // X is already the center - position base so its CENTER is at X
+        float centerY = screenHeight / 2.0f; // Vertical center
         float baseY = centerY; // Base at center Y
         
-        // Position the spike ball entity at the base center
-        // This is where the collision detection expects the entity to be
-        // The rendering system will handle the visual offset using the pivot
-        float baseCenterX = x + (5.0f * m_baseScale); // Base center X position  
+        // Base is 10x10, sprite origin is top-left
+        // To center the base at X, offset top-left by half the base width
+        float baseWidth = 10.0f * m_baseScale;
+        float baseTopLeftX = x - (baseWidth * 0.5f); // Top-left position to center base at X
+        float baseCenterX = x; // The actual center position we want
         float spikeBallX = baseCenterX; 
         float spikeBallY = baseY;
         GN_LOG_INFO("Spike ball positioning - screenHeight: " + std::to_string(screenHeight) + 
@@ -2804,9 +2946,8 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         // Create the base first
         Gnosis::Entity base = m_ecsSystem->CreateEntity();
         
-        // Base uses top-left positioning, so offset by half size to center it at baseCenterX, baseY
-        float baseTopLeftX = baseCenterX - (5.0f * m_baseScale); // Half width offset
-        float baseTopLeftY = baseY - (5.0f * m_baseScale);       // Half height offset
+        // Base sprite origin is top-left, so we need to position it half-width and half-height offset
+        float baseTopLeftY = baseY - (5.0f * m_baseScale);       // Half height offset for vertical centering
         Transform baseTransform(Gnosis::GNVector2(baseTopLeftX, baseTopLeftY), 0.0f, 
                               Gnosis::GNVector2(m_baseScale, m_baseScale));
         
@@ -2948,7 +3089,7 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         // Store the relationship between spike ball and base for hitbox positioning
         m_spikeBallToBase[spikeBall] = base;
         
-        GN_LOG_INFO("Spawned castle spike ball obstacle at x=" + std::to_string(x) + " y=" + std::to_string(centerY) + " with group " + std::to_string(groupId));
+        GN_LOG_INFO("Spawned castle spike ball obstacle CENTERED at x=" + std::to_string(x) + " y=" + std::to_string(centerY) + " with group " + std::to_string(groupId));
     }
 
     void ObstacleSystem::UpdateSpikeBallRotations(float deltaTime) {

@@ -1174,11 +1174,9 @@ namespace GameCore {
             // Create frame entity - MATCH ORIGINAL LOGIC
             auto frameEntity = m_ecsCoordinator->CreateEntity();
 
-            // Use UI transform for screen-space positioning with 6x scale (like original)
-            // Use CenterObjectAtPosition for proper centering of frame
-            float frameWidth = 32.0f * 1.2f * 6.0f;  // 32x32 texture * 1.2 scale factor * 6 UI scale
-            float frameHeight = 32.0f * 1.2f * 6.0f;
-            GNVector2 framePosition = CenterObjectAtPosition(x, y, frameWidth, frameHeight);
+            // Frame texture is 32x32, scaled by 6.0f for UI
+            float frameScaledSize = 32.0f * 6.0f;  // 192x192 final size
+            GNVector2 framePosition = CenterObjectAtPosition(x, y, frameScaledSize, frameScaledSize);
             Transform frameTransform(framePosition, 0.0f, GNVector2(6.0f, 6.0f));
             m_ecsCoordinator->AddComponent<Transform>(frameEntity, frameTransform);
 
@@ -1192,7 +1190,7 @@ namespace GameCore {
                 frameTextureId = "HatFrame.png"; // Use normal frame texture for all others
             }
 
-            Sprite frameSprite(frameTextureId, 32.0f * 1.2f, 32.0f * 1.2f); // Match original 1.2x scale factor
+            Sprite frameSprite(frameTextureId, 32.0f, 32.0f); // Frame texture is 32x32
             frameSprite.layer = 90; // Behind icons (91) but above Systems tab (89 and below)
             frameSprite.visible = false; // Start invisible, will be shown when tab is activated
             m_ecsCoordinator->AddComponent<Sprite>(frameEntity, frameSprite);
@@ -1216,18 +1214,17 @@ namespace GameCore {
             // Create icon entity - MATCH ORIGINAL LOGIC
             auto iconEntity = m_ecsCoordinator->CreateEntity();
 
-            // Use UI transform for screen-space positioning with 6x scale
-            // Fix icon centering - icons are 16x16 content inside 32x32 texture, in top-left quadrant
-            // Offset by half the icon content size (8px * scale) to center the 16x16 content
-            GNVector2 baseCenterPoint = CenterObjectAtPosition(x, y, 32.0f * 6.0f, 32.0f * 6.0f);
-            // Adjust for 16x16 icon content being in top-left quadrant by offsetting by 8px * scale
-            float iconOffset = 8.0f * 6.0f; // Half of 16px icon content size * 6x scale
-            GNVector2 centerPoint(baseCenterPoint.x + iconOffset, baseCenterPoint.y + iconOffset);
-            Transform iconTransform(centerPoint, 0.0f, GNVector2(6.0f, 6.0f));
+            // CRITICAL: Hat icons are 16x16 textures, frames are 32x32
+            // Icon: 16x16 texture * 6.0f scale = 96x96 final size
+            // Frame: 32x32 texture * 6.0f scale = 192x192 final size
+            // Both centered at same (x, y) point - CenterObjectAtPosition handles the size difference
+            float iconScaledSize = 16.0f * 6.0f;  // 96x96 final size
+            GNVector2 iconPosition = CenterObjectAtPosition(x, y, iconScaledSize, iconScaledSize);
+            Transform iconTransform(iconPosition, 0.0f, GNVector2(6.0f, 6.0f));
             m_ecsCoordinator->AddComponent<Transform>(iconEntity, iconTransform);
 
-            // Create sprite for the hat icon FIRST (following working Systems tab pattern)
-            Sprite iconSprite(hatData->iconPath, 32.0f, 32.0f);
+            // Create sprite for the hat icon - texture is 16x16
+            Sprite iconSprite(hatData->iconPath, 16.0f, 16.0f);
             iconSprite.layer = 91; // ABOVE regular frames (90) to avoid layer conflicts
             iconSprite.visible = false; // Start invisible, will be shown when tab is activated
             m_ecsCoordinator->AddComponent<Sprite>(iconEntity, iconSprite);
@@ -1252,13 +1249,12 @@ namespace GameCore {
 
                 // Create locked frame entity at same position with higher layer
                 auto lockedFrameEntity = m_ecsCoordinator->CreateEntity();
-                float lockedFrameWidth = 32.0f * 1.2f * 6.0f;
-                float lockedFrameHeight = 32.0f * 1.2f * 6.0f;
-                GNVector2 lockedFramePosition = CenterObjectAtPosition(x, y, lockedFrameWidth, lockedFrameHeight);
+                float lockedFrameSize = 32.0f * 6.0f;  // 192x192 final size (same as frame)
+                GNVector2 lockedFramePosition = CenterObjectAtPosition(x, y, lockedFrameSize, lockedFrameSize);
                 Transform lockedFrameTransform(lockedFramePosition, 0.0f, GNVector2(6.0f, 6.0f));
                 m_ecsCoordinator->AddComponent<Transform>(lockedFrameEntity, lockedFrameTransform);
 
-                Sprite lockedFrameSprite("HatFrameLocked.png", 32.0f * 1.2f, 32.0f * 1.2f);
+                Sprite lockedFrameSprite("HatFrameLocked.png", 32.0f, 32.0f);
                 lockedFrameSprite.layer = 93; // ABOVE regular frames (92) so lock overlay is on top
                 lockedFrameSprite.visible = false; // Start invisible, will be shown when tab is activated
                 m_ecsCoordinator->AddComponent<Sprite>(lockedFrameEntity, lockedFrameSprite);
@@ -1800,7 +1796,8 @@ namespace GameCore {
                 labelSpacing = 160.0f; // Even more spacing between label and track for better symmetry
             }
             float labelY = masterTrackY - labelSpacing;
-            float labelX = m_sliderX - 200.0f; // Move labels left to give more room for knobs
+            // In landscape, move labels left; in portrait, also move them left to avoid ribbon button overlap
+            float labelX = IsLandscapeMode() ? (m_sliderX - 200.0f) : (m_sliderX - 50.0f);
             Transform t(GNVector2(labelX, labelY), 0.0f, GNVector2(1.0f, 1.0f));
             UIElement ui("MASTER", "", "");
             ui.fontSize = IsLandscapeMode() ? 38.0f : 42.0f; // Slightly smaller in landscape
@@ -1867,7 +1864,8 @@ namespace GameCore {
             m_musicLabelEntity = m_ecsCoordinator->CreateEntity();
             float labelSpacing = IsLandscapeMode() ? 120.0f : 160.0f; // Condensed spacing in landscape
             float labelY = musicTrackY - labelSpacing;
-            float labelX = m_sliderX - 200.0f; // Move labels left to give more room for knobs
+            // In landscape, move labels left; in portrait, also move them left to avoid ribbon button overlap
+            float labelX = IsLandscapeMode() ? (m_sliderX - 200.0f) : (m_sliderX - 50.0f);
             Transform t(GNVector2(labelX, labelY), 0.0f, GNVector2(1.0f, 1.0f));
             UIElement ui("MUSIC", "", "");
             ui.fontSize = IsLandscapeMode() ? 38.0f : 42.0f; // Slightly smaller in landscape
@@ -1934,7 +1932,8 @@ namespace GameCore {
             m_sfxLabelEntity = m_ecsCoordinator->CreateEntity();
             float labelSpacing = IsLandscapeMode() ? 120.0f : 160.0f; // Condensed spacing in landscape
             float labelY = sfxTrackY - labelSpacing;
-            float labelX = m_sliderX - 200.0f; // Move labels left to give more room for knobs
+            // In landscape, move labels left; in portrait, also move them left to avoid ribbon button overlap
+            float labelX = IsLandscapeMode() ? (m_sliderX - 200.0f) : (m_sliderX - 50.0f);
             Transform t(GNVector2(labelX, labelY), 0.0f, GNVector2(1.0f, 1.0f));
             UIElement ui("SFX", "", "");
             ui.fontSize = IsLandscapeMode() ? 38.0f : 42.0f; // Slightly smaller in landscape

@@ -171,12 +171,13 @@ namespace GameCore {
         config.animationStates.push_back({"idle", idleClip});
         config.animationStates.push_back({"hurt", hurtClip});
 
-        // Large amplitude bobbing for traversing most of the screen
+        // Constrained bobbing for top portion of screen (1/8 to 1/2)
+        // Centered at 5/16 (31.25%) so amplitude of 3/16 (18.75%) reaches 1/8 min and 1/2 max
         config.bobbingConfig.enabled = true;
-        config.bobbingConfig.baseSpeed = 1.8f;
-        config.bobbingConfig.speedJitter = 0.02f; // -0.4 to +0.4 range
-        config.bobbingConfig.amplitudeMin = 0.33f; // 33% of screen height
-        config.bobbingConfig.amplitudeMax = 0.43f; // 43% of screen height
+        config.bobbingConfig.baseSpeed = 1.0f;      // Slower wave movement
+        config.bobbingConfig.speedJitter = 0.3f;     // Increased variation (0.7-1.3 range)
+        config.bobbingConfig.amplitudeMin = 0.1875f; // 18.75% of screen height (center at 31.25% ±18.75% = 1/8 to 1/2 screen)
+        config.bobbingConfig.amplitudeMax = 0.1875f; // Fixed amplitude for consistent range
 
         return config;
     }
@@ -241,8 +242,12 @@ namespace GameCore {
 
     EnemyConfig EnemyConfigRegistry::CreateRatCopterConfig() {
         // RatCopter flying enemy - 32x32 sprite with 6 frames, flying behavior
-        // DEBUG: Reduced speed from 160.0f to 60.0f for debugging
-        EnemyConfig config("RatCopterIdle", 32.0f, 32.0f, 6.0f, 60.0f, 4.0f, 1, 32, 32, 6, 0.20f, true, "flying");
+        // Speed set to 120.0f for smooth, predictable movement during FlyIn
+        // NO bobbing - sprite animation provides visual hover effect, movement is purely horizontal
+        EnemyConfig config("RatCopterIdle", 32.0f, 32.0f, 6.0f, 120.0f, 4.0f, 1, 32, 32, 6, 0.20f, true, "flying");
+        
+        // Set render layer to 10 (in front of boss which uses layers 7-9)
+        config.renderLayer = 10;
 
         // Enable StateAnimation for idle/hurt states
         config.useStateAnimation = true;
@@ -256,12 +261,12 @@ namespace GameCore {
         config.animationStates.push_back({"idle", idleClip});
         config.animationStates.push_back({"hurt", hurtClip});
 
-        // Enable bobbing for flying behavior
-        config.bobbingConfig.enabled = true;
-        config.bobbingConfig.baseSpeed = 1.5f;
-        config.bobbingConfig.speedJitter = 0.03f; // -0.6 to +0.6 range
-        config.bobbingConfig.amplitudeMin = 20.0f;
-        config.bobbingConfig.amplitudeMax = 40.0f;
+        // Disable bobbing - rats have animated rotors in sprite, movement should be horizontal only
+        config.bobbingConfig.enabled = false;
+        config.bobbingConfig.baseSpeed = 0.0f;
+        config.bobbingConfig.speedJitter = 0.0f;
+        config.bobbingConfig.amplitudeMin = 0.0f;
+        config.bobbingConfig.amplitudeMax = 0.0f;
 
         return config;
     }

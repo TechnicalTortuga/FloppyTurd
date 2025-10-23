@@ -28,6 +28,9 @@ BossSystem::~BossSystem() {
         frontArmEntity = 0;
     }
 
+    // Clean up lock-on dot entities
+    DestroyLockOnDotEntities();
+
     UnloadSprites();
     GN_LOG_INFO("BossSystem destroyed");
 }
@@ -109,8 +112,13 @@ void BossSystem::InitializeForLevel() {
 }
 
 void BossSystem::Update(float deltaTime) {
-    if (!isActive || bossEntity == 0) {
-        GN_LOG_DEBUG("BossSystem: Update skipped - isActive=" + std::to_string(isActive) + ", bossEntity=" + std::to_string(bossEntity));
+    if (!isActive) {
+        GN_LOG_DEBUG("BossSystem: Update skipped - boss is not active (dead or removed)");
+        return;
+    }
+    
+    if (bossEntity == 0) {
+        GN_LOG_DEBUG("BossSystem: Update skipped - bossEntity is 0");
         return;
     }
 
@@ -163,29 +171,47 @@ void BossSystem::UpdateScreenDimensions(float width, float height) {
 }
 
 void BossSystem::HandleDamage(int damage) {
-    if (!isActive) return;
+    if (!isActive) {
+        GN_LOG_DEBUG("Rat King damage blocked - boss not active");
+        return;
+    }
+
+    GN_LOG_INFO("🛡️ BOSS DAMAGE: Current position BEFORE damage (" + std::to_string(position.x) + ", " + std::to_string(position.y) + ") health=" + std::to_string(health));
+
+    // Check if boss is currently in hurt state with active invincibility buffer
+    if (currentState == RatKingState::HURT && hurtBuffer > 0) {
+        GN_LOG_DEBUG("Rat King damage blocked by invincibility buffer (hurtBuffer=" + std::to_string(hurtBuffer) + ")");
+        return;
+    }
+
+    // Check if boss is already dead
+    if (currentState == RatKingState::DEATH) {
+        GN_LOG_DEBUG("Rat King damage blocked - already dead");
+        return;
+    }
 
     health -= damage;
     if (health < 0) health = 0;
 
-    GN_LOG_INFO("Rat King took " + std::to_string(damage) + " damage, health now: " + std::to_string(health));
+    GN_LOG_INFO("Rat King took " + std::to_string(damage) + " damage, health now: " + std::to_string(health) + "/" + std::to_string(maxHealth));
 
     if (health <= 0) {
+        GN_LOG_INFO("Rat King health depleted - transitioning to DEATH state");
         ChangeState(RatKingState::DEATH);
     } else {
         ChangeState(RatKingState::HURT);
-        hurtBuffer = 10; // Prevent multiple hits
+        hurtBuffer = 24; // 24 frames of invincibility (matches old system)
         hurtFlashTimer = 0.0f; // Start hurt flashing
     }
 
-    // Check for minion spawning
+    // Check for minion spawning (matches old system: 30 HP intervals)
     while (health <= nextMinionHealthThreshold && nextMinionHealthThreshold > 0) {
-        if (health >= 10) {  // Above 50% health
+        if (health >= 50) {  // Above 25% health
             SpawnMinionWave(4);
         } else {
             SpawnMinionWave(6);
         }
-        nextMinionHealthThreshold -= 4;  // Next threshold (20% intervals)
+        nextMinionHealthThreshold -= 30;  // Next threshold (30 HP intervals)
     }
 
     // Check for dynamic music changes
@@ -275,11 +301,11 @@ void BossSystem::HandleAiming(float deltaTime) {
     // Scale aiming duration based on health (like old system)
     float healthPercent = static_cast<float>(health) / maxHealth;
     if (healthPercent <= 0.40f) {
-        aimingData.aimDuration = 0.5f;  // Faster at low health
+        aimingData.aimDuration = 0.8f;  // Faster at low health (was 0.5f)
     } else if (healthPercent <= 0.5f) {
-        aimingData.aimDuration = 1.0f;
+        aimingData.aimDuration = 1.5f;  // Medium speed (was 1.0f)
     } else {
-        aimingData.aimDuration = 1.2f;  // Normal aiming time
+        aimingData.aimDuration = 2.0f;  // Normal aiming time (was 1.2f)
     }
 
     aimingData.aimTimer += deltaTime;
@@ -288,15 +314,32 @@ void BossSystem::HandleAiming(float deltaTime) {
                  "/" + std::to_string(aimingData.aimDuration) +
                  ", deltaTime=" + std::to_string(deltaTime));
 
+    // Log boss position
+    GN_LOG_INFO("🎯 BOSS POSITION: (" + std::to_string(position.x) + ", " + std::to_string(position.y) + ") scale=" + std::to_string(scale));
+
     // Update shoulder position for arm rotation
     aimingData.shoulderPivot = GetShoulderPosition();
 
     // Smooth angle interpolation towards player
-    Gnosis::GNVector2 toPlayer = Gnosis::Vector2Subtract(aimingData.playerPosition, aimingData.shoulderPivot);
+    GNVector2 shoulder = GetShoulderPosition();
+    GN_LOG_INFO("🎯 SHOULDER POSITION: (" + std::to_string(shoulder.x) + ", " + std::to_string(shoulder.y) + ")");
+    Gnosis::GNVector2 toPlayer = Gnosis::Vector2Subtract(aimingData.playerPosition, shoulder);
     float targetAngle = atan2(toPlayer.y, toPlayer.x) * Gnosis::RAD2DEG;
+    
+    // Normalize to 0-360 range BEFORE clamping (atan2 can return negative angles)
+    if (targetAngle < 0.0f) targetAngle += 360.0f;
+    
     targetAngle = Gnosis::Clamp(targetAngle, 120.0f, 240.0f); // Limit aiming range
 
     aimingData.currentArmAngle = Gnosis::SmoothAngleLerp(aimingData.currentArmAngle, targetAngle, deltaTime * 4.0f);
+
+    GN_LOG_DEBUG("BossSystem: Aiming - playerPos=(" + std::to_string(aimingData.playerPosition.x) + "," + std::to_string(aimingData.playerPosition.y) +
+                 "), shoulder=(" + std::to_string(shoulder.x) + "," + std::to_string(shoulder.y) +
+                 "), toPlayer=(" + std::to_string(toPlayer.x) + "," + std::to_string(toPlayer.y) +
+                 "), targetAngle=" + std::to_string(targetAngle) + "°, currentAngle=" + std::to_string(aimingData.currentArmAngle) + "°");
+
+    // Update lock-on indicator dots for visual feedback
+    UpdateLockOnIndicator();
 
     // Check for lock-on completion
     if (aimingData.aimTimer >= aimingData.aimDuration) {
@@ -331,19 +374,40 @@ void BossSystem::HandleThrowing(float deltaTime) {
 }
 
 void BossSystem::HandleHurt(float deltaTime) {
+    GN_LOG_DEBUG("🛡️ HandleHurt: position=(" + std::to_string(position.x) + ", " + std::to_string(position.y) + ") hurtTimer=" + std::to_string(hurtTimer));
+    
     hurtTimer += deltaTime;
     if (hurtTimer > 0.9f) {  // 6 frames at 0.15f per frame
         hurtTimer = 0.0f;
+        GN_LOG_INFO("🛡️ HandleHurt: Hurt animation complete, returning to IDLE. Position=(" + std::to_string(position.x) + ", " + std::to_string(position.y) + ")");
         ChangeState(RatKingState::IDLE);
     }
 }
 
 void BossSystem::HandleDeath(float deltaTime) {
-    deathTimer += deltaTime;
-    if (deathTimer > 0.9f) {  // 6 frames at 0.15f per frame
-        deathTimer = 0.0f;
-        isActive = false;
-        // TODO: Trigger level completion
+    GN_LOG_DEBUG("BossSystem: HandleDeath - deltaTime=" + std::to_string(deltaTime));
+    
+    // Check if death animation has completed by checking the sprite's current frame
+    if (bossEntity != 0 && m_ecsSystem) {
+        Sprite* deathSprite = m_ecsSystem->GetComponent<Sprite>(bossEntity);
+        if (deathSprite) {
+            GN_LOG_DEBUG("BossSystem: Death sprite currentFrame=" + std::to_string(deathSprite->currentFrame) +
+                        ", frameCount=" + std::to_string(deathSprite->frameCount) +
+                        ", playing=" + std::to_string(deathSprite->playing));
+            
+            if (deathSprite->currentFrame >= 5) {  // Frame 6 of 6-frame animation (0-based)
+                if (isActive) {  // Only log once
+                    isActive = false;
+                    GN_LOG_INFO("Rat King death animation completed - boss now inactive");
+                    // TODO: Trigger level completion
+                }
+            }
+        } else {
+            GN_LOG_ERROR("BossSystem: HandleDeath - death sprite component missing!");
+        }
+    } else {
+        GN_LOG_ERROR("BossSystem: HandleDeath - bossEntity=" + std::to_string(bossEntity) + 
+                    ", m_ecsSystem=" + std::to_string(m_ecsSystem != nullptr));
     }
 }
 
@@ -360,6 +424,11 @@ void BossSystem::ChangeState(RatKingState newState) {
             SetCurrentSprite(sprites.idleSprite);
             // Hide arm sprites during idle
             SetArmSpriteVisibility(false, false);
+            // Hide lock-on dots
+            for (Entity dotEntity : aimingData.dotEntities) {
+                DebugDraw* debugDraw = m_ecsSystem->GetComponent<DebugDraw>(dotEntity);
+                if (debugDraw) debugDraw->showCollider = false;
+            }
             idleTimer = 0.0f;
             break;
 
@@ -369,6 +438,11 @@ void BossSystem::ChangeState(RatKingState newState) {
             SetCurrentSprite(sprites.walkSprite);
             // Hide arm sprites during walking
             SetArmSpriteVisibility(false, false);
+            // Hide lock-on dots
+            for (Entity dotEntity : aimingData.dotEntities) {
+                DebugDraw* debugDraw = m_ecsSystem->GetComponent<DebugDraw>(dotEntity);
+                if (debugDraw) debugDraw->showCollider = false;
+            }
             walkTimer = 0.0f;
             break;
 
@@ -381,6 +455,14 @@ void BossSystem::ChangeState(RatKingState newState) {
             aimingData.aimTimer = 0.0f;
             aimingData.hasLockedOn = false;
             aimingData.currentArmAngle = 180.0f;  // Start facing down
+
+            // Ensure lock-on dots are created and ready
+            if (aimingData.dotEntities.empty()) {
+                GN_LOG_INFO("BossSystem: Creating lock-on dots on AIMING state entry");
+                CreateLockOnDotEntities();
+            } else {
+                GN_LOG_INFO("BossSystem: Lock-on dots already exist (" + std::to_string(aimingData.dotEntities.size()) + " dots)");
+            }
 
             // Debug: Check arm sprite visibility after setting
             if (backArmEntity != 0) {
@@ -407,6 +489,11 @@ void BossSystem::ChangeState(RatKingState newState) {
             SetCurrentSprite(sprites.torsoSprite);
             // Show arm sprites for throwing
             SetArmSpriteVisibility(true, true);
+            // Hide lock-on dots during throwing
+            for (Entity dotEntity : aimingData.dotEntities) {
+                DebugDraw* debugDraw = m_ecsSystem->GetComponent<DebugDraw>(dotEntity);
+                if (debugDraw) debugDraw->showCollider = false;
+            }
             hasFiredProjectile = false;  // Reset projectile flag
 
             // Ensure torso sprite is playing for throwing animation
@@ -438,20 +525,48 @@ void BossSystem::ChangeState(RatKingState newState) {
             break;
 
         case RatKingState::HURT:
-            GN_LOG_DEBUG("BossSystem: Setting HURT state - hiding arms");
+            GN_LOG_INFO("🛡️ BossSystem: Setting HURT state - position=(" + std::to_string(position.x) + ", " + std::to_string(position.y) + ") hiding arms");
             SetCurrentSprite(sprites.hurtSprite);
+            sprites.hurtSprite->isAnimated = true;
+            sprites.hurtSprite->currentFrame = 0;
+            sprites.hurtSprite->currentFrameTime = 0.0f;
+            sprites.hurtSprite->frameTime = 0.15f; // Adjust to match 6 frames in 0.9s
             // Hide arm sprites during hurt
             SetArmSpriteVisibility(false, false);
+            // Hide lock-on dots immediately when hurt (cancel aiming)
+            for (Entity dotEntity : aimingData.dotEntities) {
+                DebugDraw* debugDraw = m_ecsSystem->GetComponent<DebugDraw>(dotEntity);
+                if (debugDraw) debugDraw->showCollider = false;
+            }
+            // Reset aiming state
+            aimingData.hasLockedOn = false;
+            aimingData.aimTimer = 0.0f;
+            GN_LOG_INFO("🛡️ BossSystem: HURT state setup complete - position=(" + std::to_string(position.x) + ", " + std::to_string(position.y) + ")");
             hasFlashedHurt = false;
             hurtTimer = 0.0f;
             break;
 
         case RatKingState::DEATH:
-            GN_LOG_DEBUG("BossSystem: Setting DEATH state - hiding arms");
+            GN_LOG_INFO("BossSystem: Setting DEATH state - hiding arms, starting death animation");
             SetCurrentSprite(sprites.deathSprite);
             // Hide arm sprites during death
             SetArmSpriteVisibility(false, false);
+            // Hide lock-on dots
+            for (Entity dotEntity : aimingData.dotEntities) {
+                DebugDraw* debugDraw = m_ecsSystem->GetComponent<DebugDraw>(dotEntity);
+                if (debugDraw) debugDraw->showCollider = false;
+            }
             deathTimer = 0.0f;
+            
+            // Ensure death sprite is playing
+            if (bossEntity != 0) {
+                Sprite* deathSprite = m_ecsSystem->GetComponent<Sprite>(bossEntity);
+                if (deathSprite) {
+                    deathSprite->playing = true;
+                    deathSprite->currentFrame = 0;
+                    GN_LOG_INFO("BossSystem: Death animation started - frameCount=" + std::to_string(deathSprite->frameCount));
+                }
+            }
             break;
     }
 
@@ -475,22 +590,29 @@ void BossSystem::SetPlayerPosition(GNVector2 playerPos) {
 
 void BossSystem::SpawnProjectile() {
     if (!m_projectileSystem) return;
-
-    GNVector2 shoulder = GetShoulderPosition();
-    // Use the current arm angle instead of the lock-on angle to ensure projectiles aim at current player position
-    float angleRad = aimingData.currentArmAngle * Gnosis::DEG2RAD; // Convert to radians for cos/sin
-    GNVector2 direction = {cosf(angleRad), sinf(angleRad)};
-
-    // Normalize the direction vector
-    float length = sqrtf(direction.x * direction.x + direction.y * direction.y);
-    if (length > 0.0f) {
-        direction.x /= length;
-        direction.y /= length;
+    
+    // Don't spawn projectiles if boss is dead or inactive
+    if (!isActive || currentState == RatKingState::DEATH) {
+        GN_LOG_WARN("BossSystem: SpawnProjectile blocked - boss is dead or inactive");
+        return;
     }
 
-    // Spawn from shoulder with smaller offset (like old system)
-    Gnosis::GNVector2 spawnOffset = {-40.0f, 0.0f}; // Offset to the left from shoulder
-    Gnosis::GNVector2 spawnPos = Gnosis::Vector2Add(shoulder, spawnOffset);
+    GNVector2 shoulder = GetShoulderPosition();
+    
+    // Calculate direction vector directly (like RatCopter - more accurate than angle reconstruction)
+    Gnosis::GNVector2 toPlayer = Gnosis::Vector2Subtract(aimingData.playerPosition, shoulder);
+    float length = sqrtf(toPlayer.x * toPlayer.x + toPlayer.y * toPlayer.y);
+    GNVector2 direction = {toPlayer.x / length, toPlayer.y / length};
+    
+    // Log the angle for debugging (convert direction back to angle)
+    float angleRad = atan2(direction.y, direction.x);
+
+    // Match old system: hand location is 40 pixels left of shoulder (scaled), then offset 20 pixels in throw direction
+    // Old code: Vector2 handLoc = { shoulder.x - 40, shoulder.y };
+    //           Vector2 spawn = Vector2Add(handLoc, Vector2Scale(dir, 20.0f));
+    Gnosis::GNVector2 handLoc = { shoulder.x - (40.0f * scale), shoulder.y + (16.0f * scale) };
+    Gnosis::GNVector2 directionOffset = Gnosis::Vector2Scale(direction, 20.0f * scale);
+    Gnosis::GNVector2 spawnPos = Gnosis::Vector2Add(handLoc, directionOffset);
 
     // Spawn toilet paper projectile with proper speed
     Entity projectile = m_projectileSystem->SpawnEnemyProjectile(
@@ -504,12 +626,16 @@ void BossSystem::SpawnProjectile() {
         // Set projectile speed by modifying its physics component
         Physics* physics = m_ecsSystem->GetComponent<Physics>(projectile);
         if (physics) {
-            physics->velocity = direction * 300.0f; // Faster speed for better gameplay
+            physics->velocity = direction * 500.0f; // Fast speed to reach player
         }
 
         GN_LOG_INFO("Rat King spawned toilet paper projectile at angle: " +
-                   std::to_string(aimingData.currentArmAngle) + " degrees, velocity: (" +
-                   std::to_string(direction.x * 300.0f) + ", " + std::to_string(direction.y * 300.0f) + ")");
+                   std::to_string(aimingData.currentArmAngle) + " degrees, angleRad: " + std::to_string(angleRad) +
+                   ", direction: (" + std::to_string(direction.x) + ", " + std::to_string(direction.y) +
+                   "), shoulder: (" + std::to_string(shoulder.x) + ", " + std::to_string(shoulder.y) +
+                   "), handLoc: (" + std::to_string(handLoc.x) + ", " + std::to_string(handLoc.y) +
+                   "), spawn: (" + std::to_string(spawnPos.x) + ", " + std::to_string(spawnPos.y) +
+                   "), velocity: (" + std::to_string(direction.x * 500.0f) + ", " + std::to_string(direction.y * 500.0f) + ")");
     }
 
     // Dual projectile at low health (below 20%)
@@ -525,7 +651,9 @@ void BossSystem::SpawnProjectile() {
             dualDirection.y /= length;
         }
 
-        Gnosis::GNVector2 dualSpawnPos = Gnosis::Vector2Add(shoulder, spawnOffset);
+        Gnosis::GNVector2 dualHandLoc = { shoulder.x - (40.0f * scale), shoulder.y + (16.0f * scale) };
+        Gnosis::GNVector2 dualDirectionScaled = Gnosis::Vector2Scale(dualDirection, 20.0f * scale);
+        Gnosis::GNVector2 dualSpawnPos = Gnosis::Vector2Add(dualHandLoc, dualDirectionScaled);
 
         Entity dualProjectile = m_projectileSystem->SpawnEnemyProjectile(
             GNVector2(dualSpawnPos.x, dualSpawnPos.y),
@@ -538,7 +666,7 @@ void BossSystem::SpawnProjectile() {
             // Set dual projectile speed
             Physics* dualPhysics = m_ecsSystem->GetComponent<Physics>(dualProjectile);
             if (dualPhysics) {
-                dualPhysics->velocity = dualDirection * 300.0f;
+                dualPhysics->velocity = dualDirection * 500.0f;
             }
 
             GN_LOG_INFO("Rat King spawned dual toilet paper projectile at angle: " +
@@ -561,50 +689,192 @@ void BossSystem::SpawnMinionWave(int count) {
         return;
     }
 
-    // Spawn minions around the boss position
-    float spawnRadius = 150.0f;  // Distance from boss
-    float angleStep = 2.0f * Gnosis::PI / count;  // Evenly distribute around boss
+    // Spawn minions with varied Y positions across the playable area
+    // 20% from top to 80% from bottom for best results
+    float spawnX = position.x + 250.0f; // Spawn off to the right of boss
+    float minY = screenHeight * 0.20f;  // 20% from top
+    float maxY = screenHeight * 0.80f; // 80% from top (20% from bottom)
 
     for (int i = 0; i < count; ++i) {
-        float angle = i * angleStep;
-        float x = position.x + cosf(angle) * spawnRadius;
-        float y = position.y + sinf(angle) * spawnRadius;
+        // Add random variance to X position
+        float randomXOffset = (rand() % 100 - 50) * scale; // ±50 scaled pixels
+        float x = spawnX + randomXOffset + (i * 32.0f * scale); // Stagger horizontally
+        
+        // Random Y position with good variance (20% from top to 80% from bottom)
+        float randomYFactor = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+        float y = minY + (randomYFactor * (maxY - minY));
 
         // Spawn the minion
         Gnosis::Entity minion = m_levelManager->SpawnEnemy(ratCopterConfig, x, y);
         if (minion != 0) {
+            // Mark as boss minion to prevent castle-level wrapping behavior
+            Enemy* enemyComp = m_ecsSystem->GetComponent<Enemy>(minion);
+            if (enemyComp) {
+                enemyComp->isBossMinion = true;
+            }
+            
             GN_LOG_INFO("Rat King spawned RatCopter minion " + std::to_string(i + 1) +
-                       " at position (" + std::to_string(x) + ", " + std::to_string(y) + ")");
+                       " at position (" + std::to_string(x) + ", " + std::to_string(y) + ") as boss minion");
         }
     }
 }
 
 void BossSystem::UpdateLockOnIndicator() {
-    // Lock-on indicator will be handled by RenderSystem through UI shapes
-    // Store the current aiming data for the RenderSystem to use
+    if (!m_ecsSystem) return;
+    
+    // Ensure dot entities exist
+    if (aimingData.dotEntities.empty()) {
+        GN_LOG_INFO("BossSystem: Creating lock-on dot entities for first time");
+        CreateLockOnDotEntities();
+    }
+    
     aimingData.lockOnDots.clear();
 
-    int dots = 40;
-    float spacing = 8.0f;
+    int dots = 20;  // Reduced for better visibility
+    // Increase spacing so dots reach from launch to player
+    float spacing = 32.0f * (screenWidth / 1179.0f); // Larger spacing (32px) so dots reach player
     float progress = Gnosis::Clamp(aimingData.aimTimer / aimingData.aimDuration, 0.0f, 1.0f);
 
     GNVector2 shoulder = GetShoulderPosition();
 
-    for (int i = 0; i < dots; ++i) {
+    GN_LOG_DEBUG("BossSystem: UpdateLockOnIndicator - progress=" + std::to_string(progress) + 
+                 ", aimTimer=" + std::to_string(aimingData.aimTimer) +
+                 ", aimDuration=" + std::to_string(aimingData.aimDuration) +
+                 ", shoulder=(" + std::to_string(shoulder.x) + "," + std::to_string(shoulder.y) + ")");
+
+    // Oscillation effect before lock-on (creates an arcing sweep until locked)
+    float oscillationAmount = 0.0f;
+    if (!aimingData.hasLockedOn && progress < 1.0f) {
+        // Oscillate with a sine wave that dampens as we approach lock-on
+        float oscillationSpeed = 8.0f;  // Speed of oscillation
+        float oscillationRange = 15.0f * (1.0f - progress);  // Dampens as we get closer to lock
+        oscillationAmount = sinf(aimingData.aimTimer * oscillationSpeed) * oscillationRange;
+    }
+
+    // Calculate launch position (hand location, lowered by 16*scale)
+    GNVector2 handLoc = { shoulder.x - (40.0f * scale), shoulder.y + (16.0f * scale) };
+    
+    // Always aim directly at player from launch position
+    // Offset target 8px*scale higher for better visual accuracy
+    Gnosis::GNVector2 adjustedTarget = {aimingData.playerPosition.x, aimingData.playerPosition.y - (8.0f * scale)};
+    Gnosis::GNVector2 toPlayer = Gnosis::Vector2Subtract(adjustedTarget, handLoc);
+    float distanceToPlayer = sqrtf(toPlayer.x * toPlayer.x + toPlayer.y * toPlayer.y);
+    GNVector2 direction = {toPlayer.x / distanceToPlayer, toPlayer.y / distanceToPlayer};
+    
+    for (int i = 0; i < dots && i < (int)aimingData.dotEntities.size(); ++i) {
         float fill = (float)i / (float)dots;
-        if (fill > progress) break;
+        
+        // Place dots along the line from launch position to player
+        float distance = i * spacing;
+        Gnosis::GNVector2 dotPos = Gnosis::Vector2Add(handLoc, Gnosis::Vector2Scale(direction, distance));
 
-        // Calculate dot position along the aiming line
-        float distance = 50.0f + i * spacing;  // Start 50px from shoulder
-        GNVector2 direction = {cosf(aimingData.currentArmAngle), sinf(aimingData.currentArmAngle)};
-        Gnosis::GNVector2 dotPos = Gnosis::Vector2Add(shoulder, Gnosis::Vector2Scale(direction, distance));
-
-        // Store dot data for RenderSystem to use
+        // Store dot data
         LockOnDot dot;
         dot.position = dotPos;
         dot.progress = fill;
         aimingData.lockOnDots.push_back(dot);
+        
+        // Update the dot entity's transform and visibility
+        Entity dotEntity = aimingData.dotEntities[i];
+        Transform* dotTransform = m_ecsSystem->GetComponent<Transform>(dotEntity);
+        DebugDraw* debugDraw = m_ecsSystem->GetComponent<DebugDraw>(dotEntity);
+        
+        if (dotTransform && debugDraw) {
+            // Show dot if within progress range
+            if (fill <= progress && aimingData.aimTimer > 0.1f) { // Small delay for fade-in
+                dotTransform->position = dotPos;
+                dotTransform->scale = {scale, scale}; // Scale dot with boss scale
+                debugDraw->showCollider = true;
+                
+                // Color interpolation from yellow to red based on progress
+                float colorProgress = fill;
+                debugDraw->colliderColor.r = static_cast<uint8_t>(255);  // Always full red
+                debugDraw->colliderColor.g = static_cast<uint8_t>(255 * (1.0f - colorProgress));  // Yellow -> Red
+                debugDraw->colliderColor.b = static_cast<uint8_t>(0);
+                debugDraw->colliderColor.a = static_cast<uint8_t>(255);
+                
+                if (i < 3) {  // Log first 3 dots for debugging
+                    GN_LOG_DEBUG("BossSystem: Dot " + std::to_string(i) + " visible at (" + 
+                                std::to_string(dotPos.x) + "," + std::to_string(dotPos.y) + 
+                                "), color=(" + std::to_string((int)debugDraw->colliderColor.r) + "," + 
+                                std::to_string((int)debugDraw->colliderColor.g) + "," + 
+                                std::to_string((int)debugDraw->colliderColor.b) + ")");
+                }
+            } else {
+                debugDraw->showCollider = false;
+            }
+        }
     }
+    
+    // Hide any remaining dots beyond the progress
+    for (size_t i = aimingData.lockOnDots.size(); i < aimingData.dotEntities.size(); ++i) {
+        DebugDraw* debugDraw = m_ecsSystem->GetComponent<DebugDraw>(aimingData.dotEntities[i]);
+        if (debugDraw) {
+            debugDraw->showCollider = false;
+        }
+    }
+}
+
+void BossSystem::CreateLockOnDotEntities() {
+    if (!m_ecsSystem) return;
+    
+    // Destroy any existing dots first
+    DestroyLockOnDotEntities();
+    
+    // Create 20 dot entities (reduced for better visibility)
+    int dotCount = 20;
+    aimingData.dotEntities.reserve(dotCount);
+    
+    for (int i = 0; i < dotCount; ++i) {
+        Entity dotEntity = m_ecsSystem->CreateEntity();
+        
+        // Add transform (position will be updated each frame)
+        Transform dotTransform;
+        dotTransform.position = {0, 0};
+        dotTransform.scale = {1.0f, 1.0f};
+        m_ecsSystem->AddComponent<Transform>(dotEntity, dotTransform);
+        
+        // Add small sprite for world-space rendering
+        Sprite dotSprite("", 4.0f * scale, 4.0f * scale); // 4px sprite scaled up
+        dotSprite.visible = false;
+        dotSprite.layer = 10; // World space layer
+        dotSprite.color = Gnosis::GNColor(255, 255, 0, 255);
+        m_ecsSystem->AddComponent<Sprite>(dotEntity, dotSprite);
+        
+        // Add DebugDraw for filled circle visualization in world space
+        DebugDraw debugDraw;
+        debugDraw.showBounds = false;
+        debugDraw.showCollider = true;
+        debugDraw.colliderColor = Gnosis::GNColor(255, 255, 0, 255);
+        debugDraw.alpha = 1.0f;
+        debugDraw.debugLayer = 10;
+        m_ecsSystem->AddComponent<DebugDraw>(dotEntity, debugDraw);
+        
+        // Add circular hitbox for rendering the dot
+        Hitbox dotHitbox;
+        dotHitbox.type = ColliderType::Circle;
+        dotHitbox.radius = 2.0f; // 2px radius, will be scaled by transform
+        dotHitbox.offsetX = 0.0f;
+        dotHitbox.offsetY = 0.0f;
+        m_ecsSystem->AddComponent<Hitbox>(dotEntity, dotHitbox);
+        
+        aimingData.dotEntities.push_back(dotEntity);
+    }
+    
+    GN_LOG_INFO("BossSystem: Created " + std::to_string(dotCount) + " lock-on dot entities");
+}
+
+void BossSystem::DestroyLockOnDotEntities() {
+    if (!m_ecsSystem) return;
+    
+    for (Entity dotEntity : aimingData.dotEntities) {
+        if (dotEntity != 0) {
+            m_ecsSystem->DestroyEntity(dotEntity);
+        }
+    }
+    
+    aimingData.dotEntities.clear();
+    GN_LOG_DEBUG("BossSystem: Destroyed all lock-on dot entities");
 }
 
 void BossSystem::ChangeMusic(const std::string& musicFile) {
@@ -616,10 +886,12 @@ void BossSystem::ChangeMusic(const std::string& musicFile) {
 }
 
 Gnosis::GNVector2 BossSystem::GetShoulderPosition() const {
-    // Shoulder is at center of Rat King sprite
+    // Shoulder is at a specific pixel offset from position (matching old system)
+    // Old system used: { position.x + 60, position.y + 38 } for 128px sprite at scale 1.0
+    // With scale 8.0, we need to scale these offsets: 60 * 8 = 480, 38 * 8 = 304
     return {
-        position.x + (128.0f * scale / 2.0f),
-        position.y + (128.0f * scale / 2.0f)
+        position.x + (60.0f * scale),
+        position.y + (38.0f * scale)
     };
 }
 
@@ -631,17 +903,30 @@ void BossSystem::CreateBodyPartEntities() {
     if (!bossTransform) return;
 
     // Create back arm entity
+    // Position sprite CENTER at shoulder point (like spike ball at base center)
+    // Old Raylib: dest = {shoulder.x, shoulder.y, 128*scale, 128*scale}, origin = {64, 64}
+    // This means dest position WAS the center position, not top-left!
     backArmEntity = m_ecsSystem->CreateEntity();
-    Transform backArmTransform = *bossTransform; // Same position as boss
+    GNVector2 shoulder = GetShoulderPosition();
+    Transform backArmTransform(
+        Gnosis::GNVector2(shoulder.x + (16.0f * scale), shoulder.y + (32.0f * scale)),  // Position at arm joint (16px right, 32px down from shoulder)
+        0.0f,
+        Gnosis::GNVector2(scale, scale)
+    );
     m_ecsSystem->AddComponent<Transform>(backArmEntity, backArmTransform);
-    Sprite backArmSprite("RatkingAimBackArmOnly", 128.0f, 128.0f);
-    backArmSprite.layer = 4; // Behind torso
+    // Create ANIMATED sprite (7 frames, 128x128 each) - will use animated pivot rendering
+    Sprite backArmSprite("RatkingAimBackArmOnly.png", 896.0f, 128.0f, 128, 128, 7, 0.16f);
+    backArmSprite.layer = 7; // Behind torso (player is layer 6)
     backArmSprite.visible = false;
+    backArmSprite.isAnimated = true;  // Animated sprite with pivot rotation!
+    backArmSprite.loop = false;       // Don't loop the throwing animation
+    backArmSprite.playing = false;    // Start paused
     m_ecsSystem->AddComponent<Sprite>(backArmEntity, backArmSprite);
 
     // Add PivotRotationRenderer with manual control enabled
-    // This allows us to set Transform.rotation directly without automatic rotation
-    PivotRotationRenderer backArmPivot(true, 0.0f, 0.0f, 0.0f, true); // manual=true
+    // Pivot at sprite center (0,0) since we positioned sprite center at shoulder
+    // Old Raylib used origin={64,64} with dest at shoulder, meaning pivot at center
+    PivotRotationRenderer backArmPivot(true, 0.0f, 0.0f, 0.0f, true); // manual=true, pivot at center (shoulder)
     m_ecsSystem->AddComponent<PivotRotationRenderer>(backArmEntity, backArmPivot);
 
     // Verify component was added
@@ -654,17 +939,29 @@ void BossSystem::CreateBodyPartEntities() {
     GN_LOG_INFO("BossSystem: Created back arm entity " + std::to_string(backArmEntity));
 
     // Create front arm entity
+    // Position sprite CENTER at shoulder point (like spike ball at base center)
+    // Old Raylib: dest = {shoulder.x, shoulder.y, 128*scale, 128*scale}, origin = {64, 64}
+    // This means dest position WAS the center position, not top-left!
     frontArmEntity = m_ecsSystem->CreateEntity();
-    Transform frontArmTransform = *bossTransform; // Same position as boss
+    Transform frontArmTransform(
+        Gnosis::GNVector2(shoulder.x + (16.0f * scale), shoulder.y + (32.0f * scale)),  // Position at arm joint (16px right, 32px down from shoulder)
+        0.0f,
+        Gnosis::GNVector2(scale, scale)
+    );
     m_ecsSystem->AddComponent<Transform>(frontArmEntity, frontArmTransform);
-    Sprite frontArmSprite("RatkingAimTossArmOnly", 128.0f, 128.0f);
-    frontArmSprite.layer = 6; // In front of torso
+    // Create ANIMATED sprite (7 frames, 128x128 each) - will use animated pivot rendering
+    Sprite frontArmSprite("RatkingAimTossArmOnly.png", 896.0f, 128.0f, 128, 128, 7, 0.16f);
+    frontArmSprite.layer = 9; // In front of torso (layer 8)
     frontArmSprite.visible = false;
+    frontArmSprite.isAnimated = true;  // Animated sprite with pivot rotation!
+    frontArmSprite.loop = false;       // Don't loop the throwing animation
+    frontArmSprite.playing = false;    // Start paused
     m_ecsSystem->AddComponent<Sprite>(frontArmEntity, frontArmSprite);
 
     // Add PivotRotationRenderer with manual control enabled
-    // This allows us to set Transform.rotation directly without automatic rotation
-    PivotRotationRenderer frontArmPivot(true, 0.0f, 0.0f, 0.0f, true); // manual=true
+    // Pivot at sprite center (0,0) since we positioned sprite center at shoulder
+    // Old Raylib used origin={64,64} with dest at shoulder, meaning pivot at center
+    PivotRotationRenderer frontArmPivot(true, 0.0f, 0.0f, 0.0f, true); // manual=true, pivot at center (shoulder)
     m_ecsSystem->AddComponent<PivotRotationRenderer>(frontArmEntity, frontArmPivot);
 
     // Verify component was added
@@ -686,7 +983,7 @@ void BossSystem::LoadSprites() {
     sprites.idleSprite = new Sprite("Ratking", 128.0f, 128.0f);
     sprites.idleSprite->isAnimated = false;
     sprites.idleSprite->visible = true;
-    sprites.idleSprite->layer = 5;
+    sprites.idleSprite->layer = 8;
 
     sprites.walkSprite = new Sprite("RatkingWalk", 128.0f, 128.0f);
     sprites.walkSprite->isAnimated = true;
@@ -696,34 +993,34 @@ void BossSystem::LoadSprites() {
     sprites.walkSprite->frameTime = 0.12f;
     sprites.walkSprite->loop = true;
     sprites.walkSprite->visible = false;
-    sprites.walkSprite->layer = 5;
+    sprites.walkSprite->layer = 8;
 
     sprites.torsoSprite = new Sprite("RatkingAimTorsoOnly", 128.0f, 128.0f, 128, 128, 7, 0.16f);
     sprites.torsoSprite->loop = false;
     sprites.torsoSprite->visible = false;
-    sprites.torsoSprite->layer = 5;
+    sprites.torsoSprite->layer = 8;
 
     // Load sprites for arms (these will be used by the arm entities)
     sprites.backArmSprite = new Sprite("RatkingAimBackArmOnly", 128.0f, 128.0f, 128, 128, 7, 0.16f);
     sprites.backArmSprite->loop = false;
     sprites.backArmSprite->visible = false;
-    sprites.backArmSprite->layer = 4;
+    sprites.backArmSprite->layer = 7; // Behind torso (layer 8)
 
     sprites.frontArmSprite = new Sprite("RatkingAimTossArmOnly", 128.0f, 128.0f, 128, 128, 7, 0.16f);
     sprites.frontArmSprite->loop = false;
     sprites.frontArmSprite->visible = false;
-    sprites.frontArmSprite->layer = 6;
+    sprites.frontArmSprite->layer = 9; // In front of torso (layer 8)
 
     // Load hurt and death sprites
     sprites.hurtSprite = new Sprite("RatkingHurt", 128.0f, 128.0f, 128, 128, 6, 0.15f);
     sprites.hurtSprite->loop = false;
     sprites.hurtSprite->visible = false;
-    sprites.hurtSprite->layer = 5;
+    sprites.hurtSprite->layer = 8;
 
     sprites.deathSprite = new Sprite("RatkingDeath", 128.0f, 128.0f, 128, 128, 6, 0.20f);
     sprites.deathSprite->loop = false;
     sprites.deathSprite->visible = false;
-    sprites.deathSprite->layer = 5;
+    sprites.deathSprite->layer = 8;
 
     GN_LOG_INFO("BossSystem: All Rat King sprites loaded for multi-entity system");
 }
@@ -794,30 +1091,72 @@ void BossSystem::UpdateArmRotations() {
     if (currentState != RatKingState::AIMING) return;
 
     GNVector2 shoulder = GetShoulderPosition();
+    
+    // Log arm positions
+    if (backArmEntity != 0) {
+        Transform* backArmTransform = m_ecsSystem->GetComponent<Transform>(backArmEntity);
+        if (backArmTransform) {
+            GN_LOG_INFO("🦾 BACK ARM TRANSFORM: pos=(" + std::to_string(backArmTransform->position.x) + ", " + 
+                       std::to_string(backArmTransform->position.y) + ") rotation=" + 
+                       std::to_string(backArmTransform->rotation) + "° scale=(" + 
+                       std::to_string(backArmTransform->scale.x) + ", " + std::to_string(backArmTransform->scale.y) + ")");
+        }
+    }
+    
+    if (frontArmEntity != 0) {
+        Transform* frontArmTransform = m_ecsSystem->GetComponent<Transform>(frontArmEntity);
+        if (frontArmTransform) {
+            GN_LOG_INFO("🦾 FRONT ARM TRANSFORM: pos=(" + std::to_string(frontArmTransform->position.x) + ", " + 
+                       std::to_string(frontArmTransform->position.y) + ") rotation=" + 
+                       std::to_string(frontArmTransform->rotation) + "° scale=(" + 
+                       std::to_string(frontArmTransform->scale.x) + ", " + std::to_string(frontArmTransform->scale.y) + ")");
+        }
+    }
 
-    // Calculate angle to player (same as in HandleAiming)
+    // Calculate angle to player
     Gnosis::GNVector2 toPlayer = Gnosis::Vector2Subtract(aimingData.playerPosition, shoulder);
     float targetAngle = atan2(toPlayer.y, toPlayer.x) * Gnosis::RAD2DEG;
-    targetAngle = Gnosis::Clamp(targetAngle, 120.0f, 240.0f); // Limit aiming range
+    
+    // Calculate progress through aiming duration
+    float progress = Gnosis::Clamp(aimingData.aimTimer / aimingData.aimDuration, 0.0f, 1.0f);
+    
+    // Oscillation effect BEFORE lock-on (arms swing ±90° from horizontal baseline)
+    // Old Raylib: arms oscillate, then lock onto player
+    // Baseline is 180° (pointing left), oscillate ±90° (90° = up, 270° = down)
+    float displayAngle = targetAngle;
+    if (!aimingData.hasLockedOn && progress < 1.0f) {
+        // Wide oscillation that dampens as we approach lock-on
+        float oscillationSpeed = 3.0f;  // Oscillation speed
+        float oscillationRange = 90.0f * (1.0f - progress);  // Start at ±90°, dampen to 0
+        float oscillationAmount = sinf(aimingData.aimTimer * oscillationSpeed) * oscillationRange;
+        displayAngle = targetAngle + oscillationAmount;
+    }
 
-    // Smooth angle interpolation (same as in HandleAiming)
+    // Smooth angle interpolation
     float oldAngle = aimingData.currentArmAngle;
-    aimingData.currentArmAngle = Gnosis::SmoothAngleLerp(aimingData.currentArmAngle, targetAngle, 0.016f * 4.0f);
+    aimingData.currentArmAngle = Gnosis::SmoothAngleLerp(aimingData.currentArmAngle, displayAngle, 0.016f * 8.0f);
+    
+    // Apply -180° visual offset to match old Raylib rendering (line 85: visualOffset = -180.0f)
+    float visualRotation = aimingData.currentArmAngle - 180.0f;
 
-    GN_LOG_DEBUG("BossSystem: UpdateArmRotations - playerPos=(" + std::to_string(aimingData.playerPosition.x) + "," + std::to_string(aimingData.playerPosition.y) +
+    GN_LOG_DEBUG("BossSystem: UpdateArmRotations - playerPos=(" + std::to_string(aimingData.playerPosition.x) + "," + std::to_string(aimingData.playerPosition.x) +
                  "), shoulder=(" + std::to_string(shoulder.x) + "," + std::to_string(shoulder.y) +
                  "), targetAngle=" + std::to_string(targetAngle) +
                  "), currentAngle=" + std::to_string(aimingData.currentArmAngle) +
                  "), oldAngle=" + std::to_string(oldAngle));
 
-    // Apply rotation to back arm using PivotRotationRenderer (same as spike balls)
+    // Apply rotation AND position to back arm (position must update as boss moves!)
     if (backArmEntity != 0) {
         Transform* backArmTransform = m_ecsSystem->GetComponent<Transform>(backArmEntity);
         PivotRotationRenderer* backPivotRenderer = m_ecsSystem->GetComponent<PivotRotationRenderer>(backArmEntity);
         if (backArmTransform && backPivotRenderer) {
-            // Set the rotation directly on the transform for immediate aiming (like spike balls do)
+            // Update position to track shoulder as boss moves
+            backArmTransform->position.x = shoulder.x - (64.0f * scale);
+            backArmTransform->position.y = shoulder.y - (64.0f * scale);
+            
+            // Set the rotation directly on the transform using visual rotation with -180° offset
             float oldRotation = backArmTransform->rotation;
-            backArmTransform->rotation = aimingData.currentArmAngle;
+            backArmTransform->rotation = visualRotation;
             // Manual control is enabled, so we don't need to set rotationSpeed
             // The rotation comes directly from Transform.rotation
             GN_LOG_DEBUG("BossSystem: Set back arm rotation from " + std::to_string(oldRotation) + "° to " + std::to_string(aimingData.currentArmAngle) + "°");
@@ -831,14 +1170,18 @@ void BossSystem::UpdateArmRotations() {
         GN_LOG_ERROR("BossSystem: Back arm entity is 0!");
     }
 
-    // Apply rotation to front arm using PivotRotationRenderer (same as spike balls)
+    // Apply rotation AND position to front arm (position must update as boss moves!)
     if (frontArmEntity != 0) {
         Transform* frontArmTransform = m_ecsSystem->GetComponent<Transform>(frontArmEntity);
         PivotRotationRenderer* frontPivotRenderer = m_ecsSystem->GetComponent<PivotRotationRenderer>(frontArmEntity);
         if (frontArmTransform && frontPivotRenderer) {
-            // Set the rotation directly on the transform for immediate aiming (like spike balls do)
+            // Update position to track shoulder as boss moves
+            frontArmTransform->position.x = shoulder.x - (64.0f * scale);
+            frontArmTransform->position.y = shoulder.y - (64.0f * scale);
+            
+            // Set the rotation directly on the transform using visual rotation with -180° offset
             float oldRotation = frontArmTransform->rotation;
-            frontArmTransform->rotation = aimingData.currentArmAngle;
+            frontArmTransform->rotation = visualRotation;
             // Manual control is enabled, so we don't need to set rotationSpeed
             // The rotation comes directly from Transform.rotation
             GN_LOG_DEBUG("BossSystem: Set front arm rotation from " + std::to_string(oldRotation) + "° to " + std::to_string(aimingData.currentArmAngle) + "°");
@@ -869,33 +1212,36 @@ void BossSystem::SetArmSpriteVisibility(bool showBackArm, bool showFrontArm) {
     // Set back arm visibility
     if (backArmEntity != 0) {
         Sprite* backArmSprite = m_ecsSystem->GetComponent<Sprite>(backArmEntity);
-        if (backArmSprite) {
+        Transform* backArmTransform = m_ecsSystem->GetComponent<Transform>(backArmEntity);
+        if (backArmSprite && backArmTransform) {
             GN_LOG_DEBUG("BossSystem: Setting back arm visibility to " + std::to_string(showBackArm));
             if (showBackArm && sprites.backArmSprite) {
+                // Save the layer before copying
+                int savedLayer = backArmSprite->layer;
                 *backArmSprite = *sprites.backArmSprite;
                 backArmSprite->Reset();
-                // Ensure visibility is set correctly after copying template properties
+                // Restore layer and ensure visibility is set correctly after copying template properties
+                backArmSprite->layer = savedLayer;
                 backArmSprite->visible = true;
                 GN_LOG_DEBUG("BossSystem: Copied back arm sprite properties - textureId=" + backArmSprite->textureId +
                             ", visible=" + std::to_string(backArmSprite->visible) +
                             ", isAnimated=" + std::to_string(backArmSprite->isAnimated));
+                
+                // CRITICAL: Update arm position to current shoulder position with joint offset
+                GNVector2 shoulder = GetShoulderPosition();
+                backArmTransform->position = Gnosis::GNVector2(
+                    shoulder.x + (16.0f * scale),
+                    shoulder.y + (32.0f * scale)
+                );
+                GN_LOG_INFO("BossSystem: Updated back arm position to shoulder (" + 
+                           std::to_string(shoulder.x) + ", " + std::to_string(shoulder.y) + ")");
             } else {
                 backArmSprite->visible = false;
             }
             GN_LOG_DEBUG("BossSystem: Set back arm visible=" + std::to_string(showBackArm) +
                         ", final textureId=" + backArmSprite->textureId);
-
-            // Update back arm transform position
-            Transform* backArmTransform = m_ecsSystem->GetComponent<Transform>(backArmEntity);
-            if (backArmTransform) {
-                backArmTransform->position.x = position.x;
-                backArmTransform->position.y = position.y;
-                GN_LOG_DEBUG("BossSystem: Updated back arm position");
-            } else {
-                GN_LOG_ERROR("BossSystem: Back arm entity missing Transform component!");
-            }
         } else {
-            GN_LOG_ERROR("BossSystem: Back arm entity " + std::to_string(backArmEntity) + " missing Sprite component!");
+            GN_LOG_ERROR("BossSystem: Back arm entity " + std::to_string(backArmEntity) + " missing Sprite/Transform component!");
         }
     } else {
         GN_LOG_DEBUG("BossSystem: No back arm entity to update");
@@ -904,33 +1250,36 @@ void BossSystem::SetArmSpriteVisibility(bool showBackArm, bool showFrontArm) {
     // Set front arm visibility
     if (frontArmEntity != 0) {
         Sprite* frontArmSprite = m_ecsSystem->GetComponent<Sprite>(frontArmEntity);
-        if (frontArmSprite) {
+        Transform* frontArmTransform = m_ecsSystem->GetComponent<Transform>(frontArmEntity);
+        if (frontArmSprite && frontArmTransform) {
             GN_LOG_DEBUG("BossSystem: Setting front arm visibility to " + std::to_string(showFrontArm));
             if (showFrontArm && sprites.frontArmSprite) {
+                // Save the layer before copying
+                int savedLayer = frontArmSprite->layer;
                 *frontArmSprite = *sprites.frontArmSprite;
                 frontArmSprite->Reset();
-                // Ensure visibility is set correctly after copying template properties
+                // Restore layer and ensure visibility is set correctly after copying template properties
+                frontArmSprite->layer = savedLayer;
                 frontArmSprite->visible = true;
                 GN_LOG_DEBUG("BossSystem: Copied front arm sprite properties - textureId=" + frontArmSprite->textureId +
                             ", visible=" + std::to_string(frontArmSprite->visible) +
                             ", isAnimated=" + std::to_string(frontArmSprite->isAnimated));
+                
+                // CRITICAL: Update arm position to current shoulder position with joint offset
+                GNVector2 shoulder = GetShoulderPosition();
+                frontArmTransform->position = Gnosis::GNVector2(
+                    shoulder.x + (16.0f * scale),
+                    shoulder.y + (32.0f * scale)
+                );
+                GN_LOG_INFO("BossSystem: Updated front arm position to shoulder (" + 
+                           std::to_string(shoulder.x) + ", " + std::to_string(shoulder.y) + ")");
             } else {
                 frontArmSprite->visible = false;
             }
             GN_LOG_DEBUG("BossSystem: Set front arm visible=" + std::to_string(showFrontArm) +
                         ", final textureId=" + frontArmSprite->textureId);
-
-            // Update front arm transform position
-            Transform* frontArmTransform = m_ecsSystem->GetComponent<Transform>(frontArmEntity);
-            if (frontArmTransform) {
-                frontArmTransform->position.x = position.x;
-                frontArmTransform->position.y = position.y;
-                GN_LOG_DEBUG("BossSystem: Updated front arm position");
-            } else {
-                GN_LOG_ERROR("BossSystem: Front arm entity missing Transform component!");
-            }
         } else {
-            GN_LOG_ERROR("BossSystem: Front arm entity " + std::to_string(frontArmEntity) + " missing Sprite component!");
+            GN_LOG_ERROR("BossSystem: Front arm entity " + std::to_string(frontArmEntity) + " missing Sprite/Transform component!");
         }
     } else {
         GN_LOG_DEBUG("BossSystem: No front arm entity to update");
@@ -995,7 +1344,7 @@ void BossSystem::UpdateSprites(float deltaTime) {
             }
 
             // Ensure sprite has proper rendering properties
-            sprite->layer = 3; // Foreground layer (higher than background layer 2)
+            // NOTE: DO NOT override layer here - it's set correctly in SetCurrentSprite
             if (!sprite->playing && sprite->isAnimated) {
                 sprite->playing = true;
                 GN_LOG_WARN("BossSystem: Boss sprite animation was stopped, restarting!");
@@ -1026,8 +1375,10 @@ void BossSystem::UpdateSprites(float deltaTime) {
                 if (backArmSprite && backArmTransform) {
                     backArmSprite->currentFrame = 0;  // Freeze on first frame
                     backArmSprite->playing = false;    // Stop automatic animation
-                    backArmTransform->position.x = position.x;
-                    backArmTransform->position.y = position.y;
+                    // Position at shoulder with arm joint offset (16px right, 32px down in sprite space)
+                    GNVector2 shoulder = GetShoulderPosition();
+                    backArmTransform->position.x = shoulder.x + (16.0f * scale);
+                    backArmTransform->position.y = shoulder.y + (32.0f * scale);
 
                     // Apply hurt flashing to arm sprites too
                     if (IsHurtFlashing()) {
@@ -1048,8 +1399,10 @@ void BossSystem::UpdateSprites(float deltaTime) {
                 if (frontArmSprite && frontArmTransform) {
                     frontArmSprite->currentFrame = 0;  // Freeze on first frame
                     frontArmSprite->playing = false;    // Stop automatic animation
-                    frontArmTransform->position.x = position.x;
-                    frontArmTransform->position.y = position.y;
+                    // Position at shoulder with arm joint offset (16px right, 32px down in sprite space)
+                    GNVector2 shoulder = GetShoulderPosition();
+                    frontArmTransform->position.x = shoulder.x + (16.0f * scale);
+                    frontArmTransform->position.y = shoulder.y + (32.0f * scale);
 
                     // Apply hurt flashing to arm sprites too
                     if (IsHurtFlashing()) {
@@ -1079,8 +1432,10 @@ void BossSystem::UpdateSprites(float deltaTime) {
                         backArmSprite->playing = true;
                         backArmSprite->currentFrame = 0;  // Reset to start
                     }
-                    backArmTransform->position.x = position.x;
-                    backArmTransform->position.y = position.y;
+                    // Position at shoulder with arm joint offset (16px right, 32px down in sprite space)
+                    GNVector2 shoulder = GetShoulderPosition();
+                    backArmTransform->position.x = shoulder.x + (16.0f * scale);
+                    backArmTransform->position.y = shoulder.y + (32.0f * scale);
 
                     // Apply hurt flashing to arm sprites too
                     if (IsHurtFlashing()) {
@@ -1104,8 +1459,10 @@ void BossSystem::UpdateSprites(float deltaTime) {
                         frontArmSprite->playing = true;
                         frontArmSprite->currentFrame = 0;  // Reset to start
                     }
-                    frontArmTransform->position.x = position.x;
-                    frontArmTransform->position.y = position.y;
+                    // Position at shoulder with arm joint offset (16px right, 32px down in sprite space)
+                    GNVector2 shoulder = GetShoulderPosition();
+                    frontArmTransform->position.x = shoulder.x + (16.0f * scale);
+                    frontArmTransform->position.y = shoulder.y + (32.0f * scale);
 
                     // Apply hurt flashing to arm sprites too
                     if (IsHurtFlashing()) {
@@ -1138,13 +1495,11 @@ void BossSystem::UpdateSprites(float deltaTime) {
             // For other states, just update positions of arm sprites (if visible)
             if (backArmEntity != 0) {
                 Sprite* backArmSprite = m_ecsSystem->GetComponent<Sprite>(backArmEntity);
-                if (backArmSprite) {
-                    // Update back arm transform position
-                    Transform* backArmTransform = m_ecsSystem->GetComponent<Transform>(backArmEntity);
-                    if (backArmTransform) {
-                        backArmTransform->position.x = position.x;
-                        backArmTransform->position.y = position.y;
-                    }
+                Transform* backArmTransform = m_ecsSystem->GetComponent<Transform>(backArmEntity);
+                if (backArmSprite && backArmTransform) {
+                    GNVector2 shoulder = GetShoulderPosition();
+                    backArmTransform->position.x = shoulder.x + (16.0f * scale);
+                    backArmTransform->position.y = shoulder.y + (32.0f * scale);
                     // Reset color
                     backArmSprite->color.r = 255;
                     backArmSprite->color.g = 255;
@@ -1154,13 +1509,11 @@ void BossSystem::UpdateSprites(float deltaTime) {
 
             if (frontArmEntity != 0) {
                 Sprite* frontArmSprite = m_ecsSystem->GetComponent<Sprite>(frontArmEntity);
-                if (frontArmSprite) {
-                    // Update front arm transform position
-                    Transform* frontArmTransform = m_ecsSystem->GetComponent<Transform>(frontArmEntity);
-                    if (frontArmTransform) {
-                        frontArmTransform->position.x = position.x;
-                        frontArmTransform->position.y = position.y;
-                    }
+                Transform* frontArmTransform = m_ecsSystem->GetComponent<Transform>(frontArmEntity);
+                if (frontArmSprite && frontArmTransform) {
+                    GNVector2 shoulder = GetShoulderPosition();
+                    frontArmTransform->position.x = shoulder.x + (16.0f * scale);
+                    frontArmTransform->position.y = shoulder.y + (32.0f * scale);
                     // Reset color
                     frontArmSprite->color.r = 255;
                     frontArmSprite->color.g = 255;

@@ -125,12 +125,15 @@ namespace GameCore {
         CMD_DRAW_SPRITE_SCALED_CENTERED = 6,
         CMD_DRAW_SPRITE_SCALED_PIVOTED = 7,
         CMD_DRAW_SPRITE_SCALED_WITH_SOURCE = 8,
+        CMD_DRAW_SPRITE_SCALED_WITH_SOURCE_CENTERED = 45,  // Animated sprite with centered rotation
+        CMD_DRAW_SPRITE_SCALED_WITH_SOURCE_PIVOTED = 46,   // Animated sprite with pivot rotation
         CMD_DRAW_PARALLAX_SPRITE = 36,           // Pixel-perfect parallax rendering
         CMD_DRAW_BACKGROUND_SPRITE = 37,         // Integer-position background rendering
         CMD_DRAW_TEXT = 9,
         CMD_DRAW_TEXT_CENTERED = 10,
         CMD_DRAW_RECTANGLE = 11,
         CMD_DRAW_CIRCLE = 12,
+        CMD_DRAW_FILLED_CIRCLE = 44,
         CMD_GET_SCREEN_SIZE = 13,
         CMD_GET_SCREEN_INFO = 38,
         CMD_GET_TEXTURE_METADATA = 39,
@@ -309,6 +312,8 @@ namespace GameCore {
         void (*drawSpriteScaledCentered)(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation);
         void (*drawSpriteScaledPivoted)(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation, float pivotX, float pivotY);
         void (*drawSpriteScaledWithSource)(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation, float sourceX, float sourceY, float sourceWidth, float sourceHeight);
+        void (*drawSpriteScaledWithSourceCentered)(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation, float sourceX, float sourceY, float sourceWidth, float sourceHeight);
+        void (*drawSpriteScaledWithSourcePivoted)(uint32_t textureHandle, float x, float y, float scaleX, float scaleY, float rotation, float pivotX, float pivotY, float sourceX, float sourceY, float sourceWidth, float sourceHeight);
         
         // Batch rendering - draw multiple sprites with same texture in one call
         // NOTE: std::vector automatically bridges to Swift RandomAccessCollection
@@ -334,6 +339,7 @@ namespace GameCore {
         // Primitive rendering
         void (*drawRectangle)(float x, float y, float width, float height, float r, float g, float b, float a);
         void (*drawCircle)(float x, float y, float radius, float r, float g, float b, float a);
+        void (*drawFilledCircle)(float x, float y, float radius, float r, float g, float b, float a);
         
         // Enhanced screen and texture information
         void (*getScreenInfo)(ScreenInfo* info);        // NEW: Get comprehensive screen info
@@ -354,10 +360,12 @@ namespace GameCore {
                            drawSprite(nullptr), drawSpriteScaled(nullptr), drawSpriteScaledCentered(nullptr),
                            drawSpriteScaledPivoted(nullptr),
                            drawSpriteScaledWithSource(nullptr),
+                           drawSpriteScaledWithSourceCentered(nullptr),
+                           drawSpriteScaledWithSourcePivoted(nullptr),
                            drawSpriteBatch(nullptr),
                            drawParallaxSprite(nullptr), drawBackgroundSprite(nullptr),
                            drawText(nullptr), drawTextCentered(nullptr), drawTextOutlined(nullptr), drawTextCenteredOutlined(nullptr),
-                           drawRectangle(nullptr), drawCircle(nullptr),
+                           drawRectangle(nullptr), drawCircle(nullptr), drawFilledCircle(nullptr),
                            getScreenInfo(nullptr), getScreenSize(nullptr), getTextureMetadata(nullptr),
                            lockOrientation(nullptr), unlockOrientation(nullptr),
                            lockToPortrait(nullptr), lockToLandscape(nullptr),

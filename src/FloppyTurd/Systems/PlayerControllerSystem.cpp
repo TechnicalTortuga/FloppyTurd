@@ -2,6 +2,7 @@
 #include "../../Engine/Core/GNLog.h"
 #include "../../Engine/Utility/Utils.h"
 #include <algorithm>
+#include <cmath>
 
 namespace GameCore {
 
@@ -84,8 +85,8 @@ namespace GameCore {
             // Add debug logging to track timestamp-based timing
             GN_LOG_INFO("🔥 Jump hold duration: " + std::to_string(holdDurationMs) + "ms (timestamp-based)");
             
-            // Check for auto-jump after 200ms
-            if (holdDurationMs >= 200) { // AUTO_JUMP_THRESHOLD converted to milliseconds
+            // Check for auto-jump after 150ms
+            if (holdDurationMs >= 150) { // AUTO_JUMP_THRESHOLD converted to milliseconds
                 GN_LOG_INFO("Auto-jump triggered at " + std::to_string(holdDurationMs) + "ms - executing max force jump!");
                 
                 // Trigger max force jump for auto-jump
@@ -104,6 +105,27 @@ namespace GameCore {
 
         // Update player systems
         UpdatePlayerPhysics(deltaTime);
+
+        // DIAGNOSTIC: Check for duplicate hat entities (only log once every 60 frames)
+        static int frameCount = 0;
+        if (++frameCount >= 60) {
+            frameCount = 0;
+            if (m_ecsSystem && m_hatSpriteEntity != 0) {
+                Sprite* hatSprite = m_ecsSystem->GetComponent<Sprite>(m_hatSpriteEntity);
+                if (hatSprite && hatSprite->visible) {
+                    GN_LOG_INFO("🎩 HAT DIAGNOSTIC: Entity " + std::to_string(m_hatSpriteEntity) + " | Layer: " + std::to_string(hatSprite->layer) + " | Visible: " + std::to_string(hatSprite->visible) + " | Texture: " + hatSprite->textureId + " | Frame: " + std::to_string(hatSprite->currentFrame) + "/" + std::to_string(hatSprite->frameCount) + " | Animated: " + std::to_string(hatSprite->isAnimated) + " | Playing: " + std::to_string(hatSprite->playing) + " | FrameW/H: " + std::to_string(hatSprite->frameWidth) + "/" + std::to_string(hatSprite->frameHeight) + " | W/H: " + std::to_string((int)hatSprite->width) + "/" + std::to_string((int)hatSprite->height));
+                    
+                    // SANITY CHECK: If playing=false and hasCompleted=true, FORCE frame to 0 (idle state)
+                    if (!hatSprite->playing && hatSprite->hasCompleted && hatSprite->currentFrame != 0) {
+                        GN_LOG_ERROR("🚨 HAT BUG DETECTED: currentFrame=" + std::to_string(hatSprite->currentFrame) + " but should be 0! FORCING to 0");
+                        hatSprite->currentFrame = 0;
+                        hatSprite->currentFrameTime = 0.0f;
+                    }
+                }
+            }
+        }
+        
+        // Update player state
         UpdatePlayerAnimation(deltaTime);
         UpdatePlayerState(deltaTime);
 
@@ -229,14 +251,14 @@ namespace GameCore {
                 // EXACT SAME CALCULATIONS as GameplayState::CreateUI() and RepositionUIElements*()
                 // Use the exact same constants and positioning logic
                 const float COINBAG_X_PERCENT = 0.01f; // Both portrait and landscape use 0.01f
-                const float PORTRAIT_COINBAG_Y_PERCENT = 0.70f;
+                const float PORTRAIT_COINBAG_Y_PERCENT = 0.87f; // Match GameplayState - 87% from top
                 const float LANDSCAPE_COINBAG_Y_PERCENT = 0.55f;
                 const float COINBAG_SCALE = 8.0f;
                 const float COINBAG_WIDTH = 32.0f * COINBAG_SCALE;
                 const float COUNTER_GAP = 8.0f;
                 const float ESTIMATED_COUNTER_WIDTH = 200.0f;
-                const float SHOOTING_ZONE_TOP_PERCENT = 0.75f; // Exact same as GameplayState
-                const float SHOOTING_ZONE_BOTTOM_PERCENT = 0.90f; // Exact same as GameplayState
+                const float SHOOTING_ZONE_TOP_PERCENT = 0.80f; // Match GameplayState updated position (80%)
+                const float SHOOTING_ZONE_BOTTOM_PERCENT = 0.95f; // Match GameplayState updated position (95%)
                 const float SHOOTING_ZONE_RIGHT_PERCENT = 0.95f; // Exact same as GameplayState
 
                 float coinBagX = screenWidth * COINBAG_X_PERCENT;
@@ -669,12 +691,26 @@ namespace GameCore {
         // at a fixed X position and handle world movement separately in the obstacle system
         physics->velocity.x = 0; // Player doesn't actually move horizontally in screen space
         
-        // Apply enhanced gravity system - different rates for ascending vs falling
+        // Apply enhanced gravity system - different rates for ascending vs falling vs death
         if (physics->useGravity) {
-            if (m_isAscending) {
-                // Lighter gravity while ascending for floaty feel
-                physics->acceleration.y = GRAVITY_UP;
-                GN_LOG_TRACE("Applying ascending gravity: " + std::to_string(GRAVITY_UP));
+            if (!m_playerAlive) {
+                // Extra heavy gravity on death for fast fall to game over screen
+                physics->acceleration.y = GRAVITY_DEATH;
+                GN_LOG_TRACE("Applying death gravity: " + std::to_string(GRAVITY_DEATH));
+            } else if (m_isAscending) {
+                // Interpolate gravity from GRAVITY_UP to GRAVITY_DOWN as we approach apex
+                // This creates a smooth transition instead of abrupt switching
+                float velocityMagnitude = std::abs(physics->velocity.y);
+                
+                // Interpolation zone: 0-200 velocity range
+                // At high velocity (200+): use GRAVITY_UP
+                // At low velocity (0-50): use GRAVITY_DOWN (apex)
+                // In between: smooth interpolation
+                float t = 1.0f - std::min(velocityMagnitude / 200.0f, 1.0f); // 0.0 at high speed, 1.0 at low speed
+                float interpolatedGravity = GRAVITY_UP + (GRAVITY_DOWN - GRAVITY_UP) * t;
+                
+                physics->acceleration.y = interpolatedGravity;
+                GN_LOG_TRACE("Applying interpolated ascending gravity: " + std::to_string(interpolatedGravity) + " (t=" + std::to_string(t) + ")");
             } else {
                 // Much heavier gravity while falling for fast, satisfying drops
                 physics->acceleration.y = GRAVITY_DOWN;
@@ -724,9 +760,11 @@ namespace GameCore {
             transform->position.x = PLAYER_X_POSITION;
         }
         
-        // Get player sprite to calculate actual size for proper boundary checking
+        // Get player sprite and hitbox to calculate actual size for proper boundary checking
         Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(m_playerEntity);
+        Hitbox* hitbox = m_ecsSystem->GetComponent<Hitbox>(m_playerEntity);
         float playerHeight = sprite ? sprite->height * transform->scale.y : 64.0f; // Default to 64 if no sprite
+        float hitboxRadius = hitbox ? hitbox->radius * transform->scale.y : 12.0f; // Default to 12 if no hitbox
         
         // Only reset when player is completely off screen below (entire sprite past bottom)
         if (transform->position.y > SCREEN_HEIGHT + playerHeight) {
@@ -744,16 +782,21 @@ namespace GameCore {
             }
         }
         
-        // Check if player hits top of screen - only apply ceiling collision when alive
-        if (transform->position.y <= 0.0f) {
+        // Check if player hits top of screen - allow half the hitbox to go offscreen
+        // Stop when center (position + half sprite height) reaches top of screen
+        float playerCenterY = transform->position.y + (playerHeight * 0.5f);
+        float minAllowedCenterY = hitboxRadius * 0.5f; // Allow half the hitbox radius above screen
+        
+        if (playerCenterY <= minAllowedCenterY) {
             if (m_playerAlive) {
-                transform->position.y = 0.0f;
+                // Clamp center to minimum, then calculate position from that
+                transform->position.y = minAllowedCenterY - (playerHeight * 0.5f);
                 physics->velocity.y = 0.0f;
                 m_isAscending = false;
-                GN_LOG_INFO("Player hit ceiling - alive player stopped");
+                GN_LOG_INFO("Player hit ceiling - alive player stopped (half hitbox offscreen allowed)");
             } else {
-                // Dead player can fall through ceiling - just prevent them from going above screen
-                transform->position.y = 0.0f;
+                // Dead player can fall through ceiling - just prevent center from going too far above screen
+                transform->position.y = minAllowedCenterY - (playerHeight * 0.5f);
                 // Don't reset velocity - let them fall naturally
                 GN_LOG_INFO("Player hit ceiling - dead player continues falling");
             }
@@ -887,12 +930,14 @@ namespace GameCore {
     void PlayerControllerSystem::CreateHatSprite() {
         if (m_hatSpriteEntity != 0) {
             // Hat sprite already exists - clean it up first
-            GN_LOG_WARN("PlayerController: Hat sprite already exists (entity %d), cleaning up before creating new one", m_hatSpriteEntity);
+            GN_LOG_ERROR("⚠️ PlayerController: Hat sprite ALREADY EXISTS (entity " + std::to_string(m_hatSpriteEntity) + ")! This should not happen. Cleaning up before creating new one.");
             HideHatSprite();
             if (m_ecsSystem) {
                 m_ecsSystem->DestroyEntity(m_hatSpriteEntity);
             }
             m_hatSpriteEntity = 0;
+        } else {
+            GN_LOG_INFO("PlayerController: Creating NEW hat sprite entity (no existing entity)");
         }
 
         if (m_playerEntity == 0 || !m_ecsSystem) {
@@ -913,21 +958,22 @@ namespace GameCore {
         m_ecsSystem->AddComponent<Transform>(m_hatSpriteEntity, hatTransform);
 
         // Create hat sprite with placeholder texture initially
-        Sprite hatSprite("TurdletIdle", 64.0f, 64.0f, 64, 64, 1, 0.1f);
+        // CRITICAL: Hat sprite sheets are 384x64 (6 frames), set frameCount=6 and isAnimated=true for frame extraction
+        Sprite hatSprite("TurdletIdle", 64.0f, 64.0f, 64, 64, 6, 0.1f);  // 6 frames, not 1!
         hatSprite.color = Gnosis::GNColor(255, 255, 255, 255);
         hatSprite.visible = false; // Initially hidden
-        hatSprite.layer = 5; // Above player layer (4) so it renders on top
-        hatSprite.isAnimated = false;
-        hatSprite.playing = false;
+        hatSprite.layer = 7; // Above player layer (6) so it renders on top
+        hatSprite.isAnimated = true;  // TRUE - needed for sprite sheet frame extraction
+        hatSprite.playing = false;  // FALSE - don't play animation
         hatSprite.loop = false;
-        hatSprite.frameCount = 1;
-        hatSprite.currentFrame = 0;
+        hatSprite.frameCount = 6;  // Actual sprite sheet has 6 frames
+        hatSprite.currentFrame = 0;  // Show only frame 0
         hatSprite.currentFrameTime = 0.0f;
-        hatSprite.hasCompleted = false;
+        hatSprite.hasCompleted = true;  // CRITICAL: Mark as complete to prevent auto-advancement
 
         m_ecsSystem->AddComponent<Sprite>(m_hatSpriteEntity, hatSprite);
 
-        GN_LOG_INFO("PlayerController: Created hat sprite entity %d", m_hatSpriteEntity);
+        GN_LOG_INFO("PlayerController: Created hat sprite entity " + std::to_string(m_hatSpriteEntity) + " with width=" + std::to_string(hatSprite.width) + " height=" + std::to_string(hatSprite.height) + " frameW=" + std::to_string(hatSprite.frameWidth) + " frameH=" + std::to_string(hatSprite.frameHeight) + " frameCount=" + std::to_string(hatSprite.frameCount) + " currentFrame=" + std::to_string(hatSprite.currentFrame) + " hasCompleted=" + std::to_string(hatSprite.hasCompleted));
     }
 
     void PlayerControllerSystem::UpdateHatSpritePosition() {
@@ -976,19 +1022,37 @@ namespace GameCore {
         // Update hat sprite texture
         Sprite* hatSprite = m_ecsSystem->GetComponent<Sprite>(m_hatSpriteEntity);
         if (hatSprite) {
+            // CRITICAL: Invalidate texture cache when changing textures
+            if (hatSprite->textureId != hatTexture) {
+                hatSprite->textureHandleValid = false;
+                hatSprite->cachedTextureId = "";
+                GN_LOG_INFO("PlayerController: Invalidating texture cache - switching from '" + hatSprite->textureId + "' to '" + hatTexture + "'");
+            }
+            
             hatSprite->textureId = hatTexture;
             hatSprite->visible = true;
+            
+            // CRITICAL: Hat textures are horizontal sprite sheets (6 frames * 64x64 = 384x64)
+            // Set frame dimensions to extract single 64x64 frames from the sheet
+            hatSprite->frameWidth = 64;
+            hatSprite->frameHeight = 64;
+            hatSprite->width = 64.0f;
+            hatSprite->height = 64.0f;
 
             // Configure hat sprite animation properties
             if (animationName == "TurdletIdle") {
-                // For idle, use single frame (first frame of texture)
-                hatSprite->frameCount = 1;
-                hatSprite->isAnimated = false;
-                hatSprite->playing = false;
+                // For idle, show ONLY first frame (frame 0) of the jump sprite sheet
+                // CRITICAL: Must set isAnimated=TRUE to use sprite sheet frame extraction logic!
+                // SpriteSystem only calculates frame positions when isAnimated=true
+                hatSprite->frameCount = 6;  // Actual sprite sheet has 6 frames
+                hatSprite->currentFrame = 0;  // Show ONLY frame 0
+                hatSprite->isAnimated = true;  // TRUE - enables sprite sheet frame extraction
+                hatSprite->playing = false;  // FALSE - prevents animation from playing
                 hatSprite->loop = false;
-                hatSprite->frameTime = 0.1f; // Not used for idle
-                GN_LOG_DEBUG("PlayerController: Hat sprite configured for IDLE - texture: %s, frameCount: %d, isAnimated: %d, playing: %d",
-                           hatTexture.c_str(), hatSprite->frameCount, hatSprite->isAnimated, hatSprite->playing);
+                hatSprite->frameTime = 0.1f;
+                hatSprite->currentFrameTime = 0.0f;
+                hatSprite->hasCompleted = true;  // Mark as complete so SpriteSystem doesn't advance frames
+                GN_LOG_INFO("PlayerController: ⚠️ Hat IDLE - texture: " + hatTexture + " | frameCount: " + std::to_string(hatSprite->frameCount) + " | currentFrame: " + std::to_string(hatSprite->currentFrame) + " | isAnimated: " + std::to_string(hatSprite->isAnimated) + " | playing: " + std::to_string(hatSprite->playing) + " | frameW/H: " + std::to_string(hatSprite->frameWidth) + "/" + std::to_string(hatSprite->frameHeight) + " | width/height: " + std::to_string((int)hatSprite->width) + "/" + std::to_string((int)hatSprite->height));
             } else if (animationName == "TurdletJump") {
                 // For jump, use full 6-frame animation
                 hatSprite->frameCount = 6;

@@ -32,11 +32,27 @@ namespace GameCore {
         bool IsFinished() const override { return m_finished; }
         const char* GetStateName() const override { return "MainMenu"; }
         
+        // Public menu mode enum for external access
+        enum class MenuMode {
+            MAIN_MENU,
+            LEVEL_SELECT,
+            OPTIONS
+        };
+        
         // Level selection
         int GetSelectedLevelIndex() const { return m_selectedLevelIndex; }
+        bool GetEnteredViaQuickplay() const { return m_enteredViaQuickplay; }
         void RefreshLevelDisplay();
         void UpdateUnlockButtonVisibility(size_t levelIndex, bool isUnlocked);
         void OnUnlockButtonPressed(int levelNumber);
+        
+        // Menu mode control for returning from gameplay
+        void SetStartingMenuMode(MenuMode mode) { m_currentMode = mode; }
+        void SetReturnToLevel(int levelNumber) { 
+            m_returnToLevelNumber = levelNumber; 
+            m_shouldReturnToSpecificLevel = true;
+        }
+        void SetEnteredViaQuickplay(bool quickplay) { m_enteredViaQuickplay = quickplay; }
 
     private:
         enum class MenuOption {
@@ -45,12 +61,6 @@ namespace GameCore {
             QUICK_PLAY = 2,
             QUIT = 3,
             COUNT = 4
-        };
-
-        enum class MenuMode {
-            MAIN_MENU,
-            LEVEL_SELECT,
-            OPTIONS
         };
 
         struct LevelInfo {
@@ -100,6 +110,9 @@ namespace GameCore {
         std::vector<LevelInfo> m_levels;
         int m_currentLevelIndex;
         int m_selectedLevelIndex; // Level selected for gameplay
+        int m_returnToLevelNumber = -1; // Level to return to after gameplay
+        bool m_shouldReturnToSpecificLevel = false; // Whether to return to a specific level
+        bool m_enteredViaQuickplay = false; // Whether entered via Quickplay button
         Gnosis::Entity m_backButtonEntity;
         Gnosis::Entity m_leftArrowButtonEntity;
         Gnosis::Entity m_rightArrowButtonEntity;
@@ -188,6 +201,10 @@ namespace GameCore {
         // Button debouncing for unlock buttons
         float m_lastUnlockPressTime;
         float m_unlockDebounceDelay;
+        
+        // Input debounce when entering from gameplay to prevent accidental clicks
+        float m_inputDebounceTimer;
+        static constexpr float INPUT_DEBOUNCE_DURATION = 0.3f; // 300ms debounce
         
         // Font loading state
         bool m_fontLoaded;

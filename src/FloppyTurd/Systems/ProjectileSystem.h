@@ -47,6 +47,7 @@ namespace GameCore {
 
         // Collision detection access
         const std::vector<Entity>& GetActivePlayerProjectiles() const { return m_playerProjectiles.activeProjectiles; }
+        const std::vector<Entity>& GetActiveEnemyProjectiles() const { return m_enemyProjectiles.activeProjectiles; }
 
     private:
         Gnosis::ECS* m_ecsSystem;

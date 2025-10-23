@@ -86,10 +86,11 @@ namespace GameCore {
         // Entity creation helpers
         Gnosis::Entity CreateToiletEntity(const std::string& texture, float x, float y, float scale, bool isTop);
         Gnosis::Entity CreateOuthouseEntity(const std::string& texture, float x, float y, float scale, bool isSolid);
-        Gnosis::Entity CreateSewerPipeEntity(const std::string& texture, float x, float y, float scale, bool isTop);
+        Gnosis::Entity CreateSewerPipeEntity(const std::string& texture, float x, float y, float scale, bool isTop, int layer = 4);
         Gnosis::Entity CreateCactusEntity(const std::string& texture, float x, float y, float scale, bool isDancing = false, float width = 64.0f, float height = 90.0f);
         
         // Castle decorative element helpers
+        void SpawnCastleCurtain(float x, int groupId);
         void SpawnCastleTorchPillar(float x, int groupId, float offsetX);
         void SpawnCastleChandelier(float x, int groupId, float offsetX);
         void SpawnCastleFloorTorch(float x, int groupId, float offsetX);
@@ -159,8 +160,7 @@ namespace GameCore {
 
         static constexpr int OBSTACLE_POOL_SIZE = 32;
         static constexpr int CACTUS_POOL_SIZE = 16;
-        static constexpr float SCREEN_WIDTH = 1179.0f;
-        static constexpr float SCREEN_HEIGHT = 2556.0f;
+        // Note: SCREEN_WIDTH and SCREEN_HEIGHT removed - use ConfigManager::Instance().GetCurrentScreenInfo() for dynamic resolution
     };
 
 } // namespace GameCore

@@ -13,6 +13,7 @@ BossHealthBar::BossHealthBar(BossSystem* bossSystem, const char* bossName, Gnosi
     , m_currentHealthPercent(1.0f)
     , m_shadowHealthPercent(1.0f)
     , m_hurtFadeTimer(0.0f)
+    , m_displayedHealthPercent(1.0f)
 {
     GN_LOG_INFO("BossHealthBar created for: " + std::string(bossName));
     CreateUIEntities();
@@ -54,38 +55,41 @@ void BossHealthBar::CreateUIEntities() {
     GN_LOG_INFO("BossHealthBar positioning: screen(" + std::to_string((int)screenWidth) + "x" + std::to_string((int)screenHeight) +
                "), isLandscape=" + std::to_string(isLandscape) + ", barX=" + std::to_string(barX));
 
-    // Create frame texture entity (background)
+    // Create frame background entity using BossBarFrame sprite
     m_backgroundEntity = m_ecsSystem->CreateEntity();
     Transform frameTransform(Gnosis::GNVector2(barX, barY), 0.0f, Gnosis::GNVector2(scale, scale));
     m_ecsSystem->AddComponent<Transform>(m_backgroundEntity, frameTransform);
 
-    UIElement frameElement("", "");
-    frameElement.normalTextureId = FRAME_TEXTURE_ID;
-    frameElement.visible = false; // Initially hidden
-    frameElement.textLayer = 15;
-    m_ecsSystem->AddComponent<UIElement>(m_backgroundEntity, frameElement);
+    Sprite frameSprite("BossBarFrame", ORIGINAL_WIDTH * scale, ORIGINAL_HEIGHT * scale);
+    frameSprite.visible = true;
+    frameSprite.layer = 15;
+    m_ecsSystem->AddComponent<Sprite>(m_backgroundEntity, frameSprite);
 
-    // Create health fill texture entity
+    // Create health sprite
     m_healthFillEntity = m_ecsSystem->CreateEntity();
-    Transform healthTransform(Gnosis::GNVector2(barX, barY), 0.0f, Gnosis::GNVector2(scale, scale));
-    m_ecsSystem->AddComponent<Transform>(m_healthFillEntity, healthTransform);
+    Sprite healthSprite("BossBarHealth", ORIGINAL_WIDTH * scale, ORIGINAL_HEIGHT * scale);
+    healthSprite.visible = true;
+    healthSprite.isAnimated = false;
+    healthSprite.frameCount = 1;
+    healthSprite.frameWidth = ORIGINAL_WIDTH;
+    healthSprite.frameHeight = ORIGINAL_HEIGHT;
+    healthSprite.layer = 13; // Behind frame (layer 15) and hurt effect (layer 14)
+    m_ecsSystem->AddComponent<Sprite>(m_healthFillEntity, healthSprite);
+    Transform healthTrans(Gnosis::GNVector2(barX, barY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f)); // Scale is baked into sprite size
+    m_ecsSystem->AddComponent<Transform>(m_healthFillEntity, healthTrans);
 
-    UIElement healthElement("", "");
-    healthElement.normalTextureId = "BossBarHealth"; // Pre-colored red texture
-    healthElement.visible = false; // Initially hidden
-    healthElement.textLayer = 16;
-    m_ecsSystem->AddComponent<UIElement>(m_healthFillEntity, healthElement);
-
-    // Create hurt effect texture entity
+    // Create hurt effect entity (white bar for damage flash)
     m_hurtEffectEntity = m_ecsSystem->CreateEntity();
-    Transform hurtTransform(Gnosis::GNVector2(barX, barY), 0.0f, Gnosis::GNVector2(scale, scale));
-    m_ecsSystem->AddComponent<Transform>(m_hurtEffectEntity, hurtTransform);
-
-    UIElement hurtElement("", "");
-    hurtElement.normalTextureId = "BossBarHurt"; // Pre-colored white texture
-    hurtElement.visible = false; // Initially hidden
-    hurtElement.textLayer = 17;
-    m_ecsSystem->AddComponent<UIElement>(m_hurtEffectEntity, hurtElement);
+    Sprite hurtSprite("BossBarHurt", ORIGINAL_WIDTH * scale, ORIGINAL_HEIGHT * scale);
+    hurtSprite.visible = false;
+    hurtSprite.frameWidth = ORIGINAL_WIDTH;
+    hurtSprite.frameHeight = ORIGINAL_HEIGHT;
+    hurtSprite.layer = 14; // Between health (layer 13) and frame (layer 15)
+    m_ecsSystem->AddComponent<Sprite>(m_hurtEffectEntity, hurtSprite);
+    // Offset hurt effect slightly to the right to prevent white edge showing behind frame
+    float hurtOffsetX = 2.0f * scale; // Small offset to the right
+    Transform hurtTrans(Gnosis::GNVector2(barX + hurtOffsetX, barY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f)); // Scale is baked into sprite size
+    m_ecsSystem->AddComponent<Transform>(m_hurtEffectEntity, hurtTrans);
 
     // Create boss name text entity (positioned relative to scaled bar)
     m_bossNameEntity = m_ecsSystem->CreateEntity();
@@ -130,28 +134,27 @@ void BossHealthBar::SetVisible(bool visible) {
     // Track manual visibility changes (for pause menu)
     m_manuallyHidden = !visible;
 
-    // Set visibility for all UI entities
+    // Set visibility for frame sprite
     if (m_backgroundEntity != 0) {
-        UIShape* bgShape = m_ecsSystem->GetComponent<UIShape>(m_backgroundEntity);
-        if (bgShape) bgShape->visible = visible;
+        Sprite* frameSprite = m_ecsSystem->GetComponent<Sprite>(m_backgroundEntity);
+        if (frameSprite) frameSprite->visible = visible;
     }
 
     if (m_healthFillEntity != 0) {
-        UIShape* fillShape = m_ecsSystem->GetComponent<UIShape>(m_healthFillEntity);
-        if (fillShape) fillShape->visible = visible;
+        Sprite* healthSprite = m_ecsSystem->GetComponent<Sprite>(m_healthFillEntity);
+        if (healthSprite) healthSprite->visible = visible;
     }
 
     if (m_hurtEffectEntity != 0) {
-        UIShape* hurtShape = m_ecsSystem->GetComponent<UIShape>(m_hurtEffectEntity);
-        if (hurtShape) hurtShape->visible = visible;
+        Sprite* hurtSprite = m_ecsSystem->GetComponent<Sprite>(m_hurtEffectEntity);
+        if (hurtSprite) hurtSprite->visible = visible;
     }
 
+    // Set visibility for text element
     if (m_bossNameEntity != 0) {
         UIElement* nameElement = m_ecsSystem->GetComponent<UIElement>(m_bossNameEntity);
         if (nameElement) nameElement->visible = visible;
     }
-
-    // Health percentage text removed as requested
 }
 
 void BossHealthBar::UpdateUIEntities() {
@@ -161,27 +164,41 @@ void BossHealthBar::UpdateUIEntities() {
 
     // Update background visibility (always visible when boss bar is shown)
     if (m_backgroundEntity != 0) {
-        UIElement* frameElement = m_ecsSystem->GetComponent<UIElement>(m_backgroundEntity);
-        if (frameElement) frameElement->visible = shouldBeVisible;
+        Sprite* frameSprite = m_ecsSystem->GetComponent<Sprite>(m_backgroundEntity);
+        if (frameSprite) frameSprite->visible = shouldBeVisible;
     }
 
-    // Update health fill - BossBarHealth texture is already red
+    // Update health sprite source rect
     if (m_healthFillEntity != 0) {
-        UIElement* healthElement = m_ecsSystem->GetComponent<UIElement>(m_healthFillEntity);
-        if (healthElement) {
-            healthElement->visible = shouldBeVisible && (m_currentHealthPercent > 0.0f);
+        Sprite* health = m_ecsSystem->GetComponent<Sprite>(m_healthFillEntity);
+        if (health) {
+            health->visible = shouldBeVisible && (m_displayedHealthPercent > 0.0f);
+            // Update both source rect and rendered width
+            health->sourceWidth = ORIGINAL_WIDTH * m_displayedHealthPercent;
+            health->sourceHeight = ORIGINAL_HEIGHT;
+            health->sourceX = 0;
+            health->sourceY = 0;
+            // CRITICAL: Also update sprite width so it renders at the correct size
+            float scale = 8.0f; // Same scale used in CreateUIEntities
+            health->width = (ORIGINAL_WIDTH * m_displayedHealthPercent) * scale;
         }
     }
 
-    // Update damage effect - BossBarHurt texture is already white
+    // Update damage effect (hurt flash) width based on shadow health
     if (m_hurtEffectEntity != 0) {
-        UIElement* hurtElement = m_ecsSystem->GetComponent<UIElement>(m_hurtEffectEntity);
-        if (hurtElement) {
-            if (m_hurtFadeTimer > 0.0f && shouldBeVisible && m_shadowHealthPercent > m_currentHealthPercent) {
-                hurtElement->visible = true;
-            } else {
-                hurtElement->visible = false;
-            }
+        Sprite* hurt = m_ecsSystem->GetComponent<Sprite>(m_hurtEffectEntity);
+        if (hurt && m_hurtFadeTimer > 0.0f && shouldBeVisible && m_shadowHealthPercent > m_currentHealthPercent) {
+            hurt->visible = true;
+            float hurtPercent = m_shadowHealthPercent - m_currentHealthPercent;
+            hurt->sourceWidth = ORIGINAL_WIDTH * hurtPercent;
+            hurt->sourceHeight = ORIGINAL_HEIGHT;
+            hurt->sourceX = ORIGINAL_WIDTH * m_currentHealthPercent; // Start after current health
+            hurt->sourceY = 0;
+            // CRITICAL: Also update sprite width for correct rendering
+            float scale = 8.0f;
+            hurt->width = (ORIGINAL_WIDTH * hurtPercent) * scale;
+        } else if (hurt) {
+            hurt->visible = false;
         }
     }
 
@@ -214,7 +231,8 @@ void BossHealthBar::UpdateHealthValues() {
         m_hurtFadeTimer = HURT_FADE_DURATION;            // Start fade timer
     }
 
-    m_currentHealthPercent = newHealthPercent;
+    m_currentHealthPercent = newHealthPercent; // Set target
+    m_displayedHealthPercent = m_currentHealthPercent; // Update displayed value
 }
 
 

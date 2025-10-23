@@ -114,7 +114,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     // MARK: - Private Methods
 
-    nonisolated(unsafe)
+    nonisolated
         private func setupCrashReporting()
     {
         // TODO: Implement crash reporting setup

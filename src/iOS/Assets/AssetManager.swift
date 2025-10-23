@@ -7,20 +7,29 @@
 //  Created by Gnosis Engine
 //
 
-import Foundation
-import UIKit
 @preconcurrency import AVFoundation
+import Foundation
+import GameCoreEngine
+import GameCoreGame
+import GameCorePlatform
 @preconcurrency import Metal
 import MetalKit
+import UIKit
 import os.log
 
-import GameCoreEngine
-import GameCorePlatform
-import GameCoreGame
+// MARK: - Asset Types (iOS 26 compatibility: moved outside class for C++ interop)
+
+public enum AssetType: String, CaseIterable {
+    case textures = "textures"
+    case audio = "audio"
+    case fonts = "fonts"
+    case shaders = "shaders"
+    case data = "data"
+}
 
 /**
  * Modern iOS Asset Management System
- * 
+ *
  * Key Features:
  * - Unified asset loading for iOS
  * - Async/await resource loading
@@ -32,23 +41,13 @@ import GameCoreGame
 
 @MainActor
 public class AssetManager {
-    
+
     // MARK: - Singleton Instance
-    
+
     public static let shared = AssetManager()
-    
-    // MARK: - Asset Types
-    
-    public enum AssetType: String, CaseIterable {
-        case textures = "textures"
-        case audio = "audio"
-        case fonts = "fonts"
-        case shaders = "shaders"
-        case data = "data"
-    }
-    
+
     // MARK: - Asset Paths
-    
+
     private struct AssetPaths {
         static let basePath = ""
         static let textures = "graphics"
@@ -59,37 +58,37 @@ public class AssetManager {
         static let shaders = "shaders"
         static let data = "data"
     }
-    
+
     // MARK: - Properties
-    
+
     private let logger = Logger(subsystem: "com.floppyturd.game", category: "AssetManager")
-    
+
     // Asset caches
     private var textureCache: [String: MTLTexture] = [:]
     private var audioCache: [String: AVAudioFile] = [:]
     private var fontCache: [String: Any] = [:]
     private var dataCache: [String: Data] = [:]
-    
+
     // Loading queues
     private let assetQueue = DispatchQueue(label: "com.floppyturd.assets", qos: .userInitiated)
     private let textureQueue = DispatchQueue(label: "com.floppyturd.textures", qos: .userInitiated)
-    
+
     // Device capabilities
     private var device: MTLDevice?
-    
+
     // Cache management
-    private let maxCacheSize: Int = 100 * 1024 * 1024 // 100MB limit
+    private let maxCacheSize: Int = 100 * 1024 * 1024  // 100MB limit
     private var cacheAccessTimes: [String: Date] = [:]
-    
+
     // MARK: - Initialization
-    
+
     private init() {
         logger.info("AssetManager initialized")
         setupDevice()
         setupMemoryWarningObserver()
         setupBackgroundObserver()
     }
-    
+
     private func setupDevice() {
         device = MTLCreateSystemDefaultDevice()
         if device != nil {
@@ -98,7 +97,7 @@ public class AssetManager {
             logger.error("Failed to initialize Metal device")
         }
     }
-    
+
     private func setupMemoryWarningObserver() {
         NotificationCenter.default.addObserver(
             forName: UIApplication.didReceiveMemoryWarningNotification,
@@ -110,7 +109,7 @@ public class AssetManager {
             }
         }
     }
-    
+
     private func setupBackgroundObserver() {
         NotificationCenter.default.addObserver(
             forName: UIApplication.didEnterBackgroundNotification,
@@ -122,39 +121,39 @@ public class AssetManager {
             }
         }
     }
-    
+
     private func handleMemoryWarning() {
         logger.warning("Memory warning received - clearing non-essential assets")
-        
+
         // Clear 50% of least recently used assets
         evictLeastRecentlyUsedAssets(percentage: 0.5)
     }
-    
+
     private func handleAppBackground() {
         logger.info("App entering background - clearing texture cache")
-        
+
         // Clear texture cache to free GPU memory
         clearCache(for: .textures)
     }
-    
+
     // MARK: - Asset Loading
-    
+
     /// Load texture asynchronously
     public func loadTexture(name: String, extension: String = "png") async throws -> MTLTexture {
         let cacheKey = "\(name).\(`extension`)"
-        
+
         // Check cache first
         if let cached = textureCache[cacheKey] {
             cacheAccessTimes[cacheKey] = Date()
             logger.debug("Texture loaded from cache: \(cacheKey)")
             return cached
         }
-        
+
         // Load from asset catalog using UIImage
         guard let image = UIImage(named: name) else {
             throw AssetError.fileNotFound("\(name) in asset catalog")
         }
-        
+
         // TEMPORARY DEBUG: Force print texture dimensions
         print("🔥🔥🔥 LOADING TEXTURE: \(name)")
         print("🔥🔥🔥 UIImage size: \(image.size.width)x\(image.size.height)")
@@ -162,100 +161,107 @@ public class AssetManager {
         if let cgImage = image.cgImage {
             print("🔥🔥🔥 CGImage size: \(cgImage.width)x\(cgImage.height)")
         }
-        
+
         let texture = try await loadTextureFromUIImage(image)
         textureCache[cacheKey] = texture
         cacheAccessTimes[cacheKey] = Date()
         logger.info("Texture loaded: \(cacheKey)")
-        
+
         // Check cache size and evict if necessary
         checkCacheSizeAndEvict()
-        
+
         return texture
     }
-    
+
     /// Load audio file asynchronously
     public func loadAudio(name: String, extension: String = "mp3") async throws -> AVAudioFile {
         let cacheKey = "\(name).\(`extension`)"
-        
+
         // Check cache first
         if let cached = audioCache[cacheKey] {
             cacheAccessTimes[cacheKey] = Date()
             logger.debug("Audio loaded from cache: \(cacheKey)")
             return cached
         }
-        
+
         // For asset catalog datasets, we need to use NSDataAsset
         // The audio files are stored as .dataset files in the asset catalog
         guard let dataAsset = NSDataAsset(name: name) else {
             throw AssetError.fileNotFound("\(name) in asset catalog")
         }
-        
+
         // Create a temporary file from the data asset
-        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(name).\(`extension`)")
-        
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(
+            "\(name).\(`extension`)")
+
         do {
             try dataAsset.data.write(to: tempURL)
             let audioFile = try AVAudioFile(forReading: tempURL)
             audioCache[cacheKey] = audioFile
             cacheAccessTimes[cacheKey] = Date()
             logger.info("Audio loaded from asset catalog dataset: \(cacheKey)")
-            
+
             // Check cache size and evict if necessary
             checkCacheSizeAndEvict()
-            
+
             return audioFile
         } catch {
             throw AssetError.fileNotFound("Failed to load audio from asset catalog: \(error)")
         }
     }
-    
+
     /// Load font data
     public func loadFont(name: String, extension: String = "ttf") async throws -> Data {
         let cacheKey = "\(name).\(`extension`)"
-        
+
         // Check cache first
         if let cached = dataCache[cacheKey] {
             logger.debug("Font loaded from cache: \(cacheKey)")
             return cached
         }
-        
-        guard let url = Bundle.main.url(forResource: name, withExtension: `extension`, subdirectory: AssetPaths.fonts) else {
+
+        guard
+            let url = Bundle.main.url(
+                forResource: name, withExtension: `extension`, subdirectory: AssetPaths.fonts)
+        else {
             throw AssetError.fileNotFound("\(name).\(`extension`) in \(AssetPaths.fonts)")
         }
-        
+
         let data = try Data(contentsOf: url)
         dataCache[cacheKey] = data
         logger.info("Font loaded: \(cacheKey)")
         return data
     }
-    
+
     /// Load data file
     public func loadData(name: String, extension: String = "json") async throws -> Data {
         let cacheKey = "\(name).\(`extension`)"
-        
+
         // Check cache first
         if let cached = dataCache[cacheKey] {
             logger.debug("Data loaded from cache: \(cacheKey)")
             return cached
         }
-        
-        guard let url = Bundle.main.url(forResource: name, withExtension: `extension`, subdirectory: AssetPaths.data) else {
+
+        guard
+            let url = Bundle.main.url(
+                forResource: name, withExtension: `extension`, subdirectory: AssetPaths.data)
+        else {
             throw AssetError.fileNotFound("\(name).\(`extension`) in \(AssetPaths.data)")
         }
-        
+
         let data = try Data(contentsOf: url)
         dataCache[cacheKey] = data
         logger.info("Data loaded: \(cacheKey)")
         return data
     }
-    
+
     // MARK: - Asset Preloading
-    
+
     /// Preload essential assets at startup
     public func preloadEssentialAssets() async {
         logger.info("Preloading essential assets...")
-        
+
         let essentialAssets = [
             ("FloppyTurdMenu", "mp3", AssetType.audio),
             ("button_click", "wav", AssetType.audio),
@@ -272,9 +278,9 @@ public class AssetManager {
             ("fart11", "mp3", AssetType.audio),
             ("player_sprite", "png", AssetType.textures),
             ("background", "png", AssetType.textures),
-            ("Whacky_Joe", "ttf", AssetType.fonts)
+            ("Whacky_Joe", "ttf", AssetType.fonts),
         ]
-        
+
         // Load essential assets sequentially to avoid concurrency issues
         for (name, ext, type) in essentialAssets {
             do {
@@ -288,59 +294,67 @@ public class AssetManager {
                 case .data:
                     _ = try await self.loadData(name: name, extension: ext)
                 default:
-                    SwiftLog.warn("Unknown asset type for preloading: \(type)", category: "AssetManager")
+                    SwiftLog.warn(
+                        "Unknown asset type for preloading: \(type)", category: "AssetManager")
                 }
             } catch {
-                SwiftLog.error("Failed to preload essential asset: \(name).\(ext) - \(error)", category: "AssetManager")
+                SwiftLog.error(
+                    "Failed to preload essential asset: \(name).\(ext) - \(error)",
+                    category: "AssetManager")
             }
         }
     }
-    
+
     // MARK: - Cache Checking
-    
+
     public func isTextureCached(name: String) -> Bool {
         let cacheKey = name.hasSuffix(".png") ? name : "\(name).png"
         return textureCache[cacheKey] != nil
     }
-    
+
     // MARK: - Texture Metadata
-    
-    public func getTextureMetadata(name: String) -> (width: Int, height: Int, channels: Int, format: String, dataSize: Int, isLoaded: Bool, assetPath: String) {
+
+    public func getTextureMetadata(name: String) -> (
+        width: Int, height: Int, channels: Int, format: String, dataSize: Int, isLoaded: Bool,
+        assetPath: String
+    ) {
         let cacheKey = name.hasSuffix(".png") ? name : "\(name).png"
-        
+
         // Check if texture is cached first
         if let cachedTexture = textureCache[cacheKey] {
             logger.debug("🔍 Getting metadata for cached texture: \(name)")
             return (
                 width: cachedTexture.width,
                 height: cachedTexture.height,
-                channels: 4, // Metal textures are typically RGBA
+                channels: 4,  // Metal textures are typically RGBA
                 format: "RGBA8",
                 dataSize: cachedTexture.width * cachedTexture.height * 4,
                 isLoaded: true,
                 assetPath: "graphics/\(name)"
             )
         }
-        
+
         // Try to get metadata from UIImage without fully loading
         if let image = UIImage(named: name) {
             let scaledSize = CGSize(
                 width: image.size.width * image.scale,
                 height: image.size.height * image.scale
             )
-            
-            logger.debug("🔍 Getting metadata from UIImage for: \(name) - Size: \(scaledSize.width)x\(scaledSize.height)")
+
+            logger.debug(
+                "🔍 Getting metadata from UIImage for: \(name) - Size: \(scaledSize.width)x\(scaledSize.height)"
+            )
             return (
                 width: Int(scaledSize.width),
                 height: Int(scaledSize.height),
-                channels: 4, // Assume RGBA
+                channels: 4,  // Assume RGBA
                 format: "RGBA8",
                 dataSize: Int(scaledSize.width * scaledSize.height * 4),
                 isLoaded: false,
                 assetPath: "graphics/\(name)"
             )
         }
-        
+
         // Fallback - return zero dimensions for unknown textures
         logger.warning("⚠️ Could not get metadata for texture: \(name)")
         return (
@@ -368,15 +382,15 @@ public class AssetManager {
         let cacheKey = name.hasSuffix(".json") ? name : "\(name).json"
         return dataCache[cacheKey] != nil
     }
-    
+
     /// Get cached audio file
     public func getCachedAudio(name: String, extension: String) -> AVAudioFile? {
         let cacheKey = "\(name).\(`extension`)"
         return audioCache[cacheKey]
     }
-    
+
     /// Clear cache for specific asset type or all assets
-    public func clearCache(for type: AssetManager.AssetType? = nil) {
+    public func clearCache(for type: AssetType? = nil) {
         if let type = type {
             switch type {
             case .textures:
@@ -399,9 +413,9 @@ public class AssetManager {
             logger.info("Cleared all asset caches")
         }
     }
-    
+
     /// Get asset info
-    public func getAssetInfo(name: String, type: AssetManager.AssetType) -> AssetInfo? {
+    public func getAssetInfo(name: String, type: AssetType) -> AssetInfo? {
         let path: String
         switch type {
         case .textures:
@@ -415,11 +429,12 @@ public class AssetManager {
         case .data:
             path = "\(AssetPaths.data)/\(name)"
         }
-        
-        guard let url = Bundle.main.url(forResource: name, withExtension: nil, subdirectory: path) else {
+
+        guard let url = Bundle.main.url(forResource: name, withExtension: nil, subdirectory: path)
+        else {
             return nil
         }
-        
+
         var fileSize: UInt64 = 0
         do {
             let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
@@ -427,7 +442,7 @@ public class AssetManager {
         } catch {
             logger.error("Failed to get file size for: \(name)")
         }
-        
+
         return AssetInfo(
             name: name,
             type: type,
@@ -436,9 +451,9 @@ public class AssetManager {
             lastModified: Date()
         )
     }
-    
+
     // MARK: - Memory Management
-    
+
     /// Get current memory usage
     public func getMemoryUsage() -> AssetMemoryUsage {
         let textureMemory = textureCache.values.reduce(into: 0) { result, texture in
@@ -446,11 +461,12 @@ public class AssetManager {
         }
         let audioMemory = audioCache.values.reduce(into: 0) { result, audioFile in
             let frameCount = Int(audioFile.length)
-            let bytesPerFrame = Int(audioFile.processingFormat.streamDescription.pointee.mBytesPerFrame)
+            let bytesPerFrame = Int(
+                audioFile.processingFormat.streamDescription.pointee.mBytesPerFrame)
             result += (frameCount * bytesPerFrame)
         }
         let dataMemory = dataCache.values.reduce(0) { $0 + $1.count }
-        
+
         return AssetMemoryUsage(
             textureMemory: textureMemory,
             audioMemory: audioMemory,
@@ -458,25 +474,25 @@ public class AssetManager {
             totalMemory: textureMemory + audioMemory + dataMemory
         )
     }
-    
+
     // MARK: - Cache Management
-    
+
     private func checkCacheSizeAndEvict() {
         let currentMemory = getMemoryUsage().totalMemory
-        
+
         if currentMemory > maxCacheSize {
             logger.warning("Cache size exceeded (\(currentMemory) bytes) - evicting assets")
             evictLeastRecentlyUsedAssets(percentage: 0.3)
         }
     }
-    
+
     private func evictLeastRecentlyUsedAssets(percentage: Double) {
         let targetEvictionCount = Int(Double(cacheAccessTimes.count) * percentage)
-        
+
         // Sort by access time (oldest first)
         let sortedByAccess = cacheAccessTimes.sorted { $0.value < $1.value }
         let assetsToEvict = Array(sortedByAccess.prefix(targetEvictionCount))
-        
+
         for (cacheKey, _) in assetsToEvict {
             // Remove from appropriate cache
             if textureCache[cacheKey] != nil {
@@ -489,27 +505,32 @@ public class AssetManager {
                 dataCache.removeValue(forKey: cacheKey)
                 logger.debug("Evicted data: \(cacheKey)")
             }
-            
+
             cacheAccessTimes.removeValue(forKey: cacheKey)
         }
-        
+
         logger.info("Evicted \(assetsToEvict.count) assets from cache")
     }
-    
+
     // MARK: - Private Methods
-    
+
     private func loadTextureFromURL(_ url: URL) async throws -> MTLTexture {
         guard let device = device else {
             throw AssetError.metalNotAvailable
         }
-        
+
         let textureLoader = MTKTextureLoader(device: device)
-        
+
         return try await withCheckedThrowingContinuation { continuation in
-            textureLoader.newTexture(URL: url, options: [
-                MTKTextureLoader.Option.textureUsage: NSNumber(value: MTLTextureUsage.shaderRead.rawValue),
-                MTKTextureLoader.Option.textureStorageMode: NSNumber(value: MTLStorageMode.`private`.rawValue)
-            ]) { texture, error in
+            textureLoader.newTexture(
+                URL: url,
+                options: [
+                    MTKTextureLoader.Option.textureUsage: NSNumber(
+                        value: MTLTextureUsage.shaderRead.rawValue),
+                    MTKTextureLoader.Option.textureStorageMode: NSNumber(
+                        value: MTLStorageMode.`private`.rawValue),
+                ]
+            ) { texture, error in
                 if let error = error {
                     continuation.resume(throwing: error)
                 } else if let texture = texture {
@@ -520,37 +541,49 @@ public class AssetManager {
             }
         }
     }
-    
+
     private func loadTextureFromUIImage(_ image: UIImage) async throws -> MTLTexture {
         guard let device = device else {
             throw AssetError.metalNotAvailable
         }
-        
+
         guard let cgImage = image.cgImage else {
             throw AssetError.unknownError
         }
-        
+
         // Add debug logging for texture loading
-        logger.debug("🔥 Loaded texture: size \(image.size.width)x\(image.size.height), cgImage format? \(cgImage.bitsPerComponent) bits/component")
-        logger.debug("🔥 UIImage colorSpace: \(image.cgImage?.colorSpace?.name as String? ?? "unknown")")
+        logger.debug(
+            "🔥 Loaded texture: size \(image.size.width)x\(image.size.height), cgImage format? \(cgImage.bitsPerComponent) bits/component"
+        )
+        logger.debug(
+            "🔥 UIImage colorSpace: \(image.cgImage?.colorSpace?.name as String? ?? "unknown")")
         logger.debug("🔥 UIImage alphaInfo: \(image.cgImage?.alphaInfo.rawValue ?? 0)")
         logger.debug("🔥 UIImage bitmapInfo: \(image.cgImage?.bitmapInfo.rawValue ?? 0)")
-        
+
         let textureLoader = MTKTextureLoader(device: device)
-        
-        let texture = try await textureLoader.newTexture(cgImage: cgImage, options: [
-            MTKTextureLoader.Option.textureUsage: NSNumber(value: MTLTextureUsage.shaderRead.rawValue),
-            MTKTextureLoader.Option.textureStorageMode: NSNumber(value: MTLStorageMode.shared.rawValue),  // TEMPORARY: Use shared for debugging
-            MTKTextureLoader.Option.SRGB: NSNumber(value: true),  // IMPORTANT: Convert sRGB to linear for Metal
-            MTKTextureLoader.Option.generateMipmaps: NSNumber(value: false),  // Don't generate mipmaps
-            MTKTextureLoader.Option.allocateMipmaps: NSNumber(value: false),  // Don't allocate space for mipmaps
-            MTKTextureLoader.Option.origin: MTKTextureLoader.Origin.topLeft.rawValue as NSString  // Ensure correct origin
-        ])
-        
+
+        let texture = try await textureLoader.newTexture(
+            cgImage: cgImage,
+            options: [
+                MTKTextureLoader.Option.textureUsage: NSNumber(
+                    value: MTLTextureUsage.shaderRead.rawValue),
+                MTKTextureLoader.Option.textureStorageMode: NSNumber(
+                    value: MTLStorageMode.shared.rawValue),  // TEMPORARY: Use shared for debugging
+                MTKTextureLoader.Option.SRGB: NSNumber(value: true),  // IMPORTANT: Convert sRGB to linear for Metal
+                MTKTextureLoader.Option.generateMipmaps: NSNumber(value: false),  // Don't generate mipmaps
+                MTKTextureLoader.Option.allocateMipmaps: NSNumber(value: false),  // Don't allocate space for mipmaps
+                MTKTextureLoader.Option.origin: MTKTextureLoader.Origin.topLeft.rawValue
+                    as NSString,  // Ensure correct origin
+            ])
+
         // Add debug logging for created texture
-        print("🔥🔥🔥 CREATED MTLTexture: \(texture.width)x\(texture.height), pixelFormat: \(texture.pixelFormat.rawValue)")
-        logger.debug("🔥 Created MTLTexture: \(texture.width)x\(texture.height), pixelFormat: \(texture.pixelFormat.rawValue)")
-        
+        print(
+            "🔥🔥🔥 CREATED MTLTexture: \(texture.width)x\(texture.height), pixelFormat: \(texture.pixelFormat.rawValue)"
+        )
+        logger.debug(
+            "🔥 Created MTLTexture: \(texture.width)x\(texture.height), pixelFormat: \(texture.pixelFormat.rawValue)"
+        )
+
         return texture
     }
 }
@@ -559,7 +592,7 @@ public class AssetManager {
 
 public struct AssetInfo {
     public let name: String
-    public let type: AssetManager.AssetType
+    public let type: AssetType
     public let path: String
     public let size: UInt64
     public let lastModified: Date
@@ -576,7 +609,7 @@ public enum AssetError: LocalizedError {
     case fileNotFound(String)
     case metalNotAvailable
     case unknownError
-    
+
     public var errorDescription: String? {
         switch self {
         case .fileNotFound(let path):
@@ -592,11 +625,11 @@ public enum AssetError: LocalizedError {
 // MARK: - C++ Bridge Extensions
 
 extension AssetManager {
-    
+
     /// C++ accessible method for asset loading
     public static func loadAssetForCPP(name: String, type: Int32) -> Bool {
         let assetType = AssetType.allCases[Int(type)]
-        
+
         Task {
             do {
                 switch assetType {
@@ -616,53 +649,53 @@ extension AssetManager {
                     .error("Failed to load asset for C++: \(name) - \(error)")
             }
         }
-        
+
         return true
     }
-    
+
     /// C++ accessible method for checking if asset is cached
     public static func isAssetCachedForCPP(name: String, type: Int32) -> Bool {
         switch type {
-        case 0: // texture
+        case 0:  // texture
             return shared.isTextureCached(name: name)
-        case 1: // audio
+        case 1:  // audio
             return shared.isAudioCached(name: name)
-        case 2: // font
+        case 2:  // font
             return shared.isFontCached(name: name)
-        case 3: // data
+        case 3:  // data
             return shared.isDataCached(name: name)
         default:
             return false
         }
     }
-    
+
     /// C++ accessible method for checking if asset is cached (C string version)
     public static func isAssetCachedForCPP(name: UnsafePointer<CChar>, type: Int32) -> Bool {
         let assetName = String(cString: name)
         return isAssetCachedForCPP(name: assetName, type: type)
     }
-    
+
     /// C++ accessible method for checking if asset is cached (for direct C++ interop)
     public static func isAssetCachedFromSwift(name: UnsafePointer<CChar>, type: Int32) -> Bool {
         let assetName = String(cString: name)
         switch type {
-        case 0: // texture
+        case 0:  // texture
             return shared.isTextureCached(name: assetName)
-        case 1: // audio
+        case 1:  // audio
             return shared.isAudioCached(name: assetName)
-        case 2: // font
+        case 2:  // font
             return shared.isFontCached(name: assetName)
-        case 3: // data
+        case 3:  // data
             return shared.isDataCached(name: assetName)
         default:
             return false
         }
     }
-    
+
     /// Get asset path for C++
     public static func getAssetPath(name: String, type: Int32) -> String {
         let assetType = AssetType.allCases[Int(type)]
-        
+
         switch assetType {
         case .textures:
             return "\(AssetPaths.textures)/\(name)"
@@ -676,40 +709,53 @@ extension AssetManager {
             return "\(AssetPaths.data)/\(name)"
         }
     }
-    
+
     /// Load asset and return raw bytes for C++
     public static func loadAssetBytes(name: String, type: Int32, extension: String) async -> Data? {
         let assetType = AssetType.allCases[Int(type)]
-        
+
         do {
             switch assetType {
             case .textures:
                 // Load texture and extract raw PNG/JPG bytes
-                guard let url = Bundle.main.url(forResource: name, withExtension: `extension`, subdirectory: AssetPaths.textures) else {
+                guard
+                    let url = Bundle.main.url(
+                        forResource: name, withExtension: `extension`,
+                        subdirectory: AssetPaths.textures)
+                else {
                     return nil
                 }
                 return try Data(contentsOf: url)
-                
+
             case .audio:
                 // Load audio file and extract raw bytes
                 let paths = [AssetPaths.audio, AssetPaths.music, AssetPaths.sfx]
                 for path in paths {
-                    if let url = Bundle.main.url(forResource: name, withExtension: `extension`, subdirectory: path) {
+                    if let url = Bundle.main.url(
+                        forResource: name, withExtension: `extension`, subdirectory: path)
+                    {
                         return try Data(contentsOf: url)
                     }
                 }
                 return nil
-                
+
             case .fonts, .data:
                 // Load data files
                 let subdirectory = assetType == .fonts ? AssetPaths.fonts : AssetPaths.data
-                guard let url = Bundle.main.url(forResource: name, withExtension: `extension`, subdirectory: subdirectory) else {
+                guard
+                    let url = Bundle.main.url(
+                        forResource: name, withExtension: `extension`, subdirectory: subdirectory)
+                else {
                     return nil
                 }
                 return try Data(contentsOf: url)
-                
+
             case .shaders:
-                guard let url = Bundle.main.url(forResource: name, withExtension: `extension`, subdirectory: AssetPaths.shaders) else {
+                guard
+                    let url = Bundle.main.url(
+                        forResource: name, withExtension: `extension`,
+                        subdirectory: AssetPaths.shaders)
+                else {
                     return nil
                 }
                 return try Data(contentsOf: url)
@@ -720,47 +766,54 @@ extension AssetManager {
             return nil
         }
     }
-    
+
     /// Convert raw bytes to native iOS objects and cache them
-    public static func cacheAssetFromBytes(name: String, type: Int32, extension: String, bytes: Data) -> Bool {
+    public static func cacheAssetFromBytes(
+        name: String, type: Int32, extension: String, bytes: Data
+    ) -> Bool {
         let assetType = AssetType.allCases[Int(type)]
         let cacheKey = "\(name).\(`extension`)"
-        
+
         do {
             switch assetType {
             case .textures:
                 // Convert bytes to MTLTexture
                 guard let device = shared.device else { return false }
                 let textureLoader = MTKTextureLoader(device: device)
-                
-                let texture = try textureLoader.newTexture(data: bytes, options: [
-                    MTKTextureLoader.Option.textureUsage: NSNumber(value: MTLTextureUsage.shaderRead.rawValue),
-                    MTKTextureLoader.Option.textureStorageMode: NSNumber(value: MTLStorageMode.private.rawValue)
-                ])
-                
+
+                let texture = try textureLoader.newTexture(
+                    data: bytes,
+                    options: [
+                        MTKTextureLoader.Option.textureUsage: NSNumber(
+                            value: MTLTextureUsage.shaderRead.rawValue),
+                        MTKTextureLoader.Option.textureStorageMode: NSNumber(
+                            value: MTLStorageMode.private.rawValue),
+                    ])
+
                 shared.textureCache[cacheKey] = texture
                 shared.cacheAccessTimes[cacheKey] = Date()
                 return true
-                
+
             case .audio:
                 // Write bytes to temp file and create AVAudioFile
-                let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(name).\(`extension`)")
+                let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(
+                    "\(name).\(`extension`)")
                 try bytes.write(to: tempURL)
-                
+
                 let audioFile = try AVAudioFile(forReading: tempURL)
                 shared.audioCache[cacheKey] = audioFile
                 shared.cacheAccessTimes[cacheKey] = Date()
-                
+
                 // Clean up temp file
                 try? FileManager.default.removeItem(at: tempURL)
                 return true
-                
+
             case .fonts, .data:
                 // Store raw data
                 shared.dataCache[cacheKey] = bytes
                 shared.cacheAccessTimes[cacheKey] = Date()
                 return true
-                
+
             case .shaders:
                 // Store shader source as data
                 shared.dataCache[cacheKey] = bytes
@@ -773,86 +826,115 @@ extension AssetManager {
             return false
         }
     }
-    
+
     // MARK: - Command Processing (called from ThreadingSystem)
-    
+
     // Asset command processing moved to ThreadingSystem.swift for architectural consistency
-    
+
     // MARK: - Synchronous Asset Loading Helpers for Command Processing
-    
+
     /// Load texture synchronously for command processing
-    public func loadTextureSync(name: String, extension: String, callback: UnsafeMutableRawPointer?, userData: UnsafeMutableRawPointer?) {
+    public func loadTextureSync(
+        name: String, extension: String, callback: UnsafeMutableRawPointer?,
+        userData: UnsafeMutableRawPointer?
+    ) {
         Task {
             do {
                 let texture = try await loadTexture(name: name, extension: `extension`)
-                
+
                 // Create TextureData structure for C++
                 let textureData = UnsafeMutableRawPointer.allocate(
                     byteCount: MemoryLayout<GameCore.TextureData>.stride,
                     alignment: MemoryLayout<GameCore.TextureData>.alignment
                 )
-                
-                let textureDataPtr = textureData.bindMemory(to: GameCore.TextureData.self, capacity: 1)
+
+                let textureDataPtr = textureData.bindMemory(
+                    to: GameCore.TextureData.self, capacity: 1)
                 textureDataPtr.pointee.platformTexture = Unmanaged.passRetained(texture).toOpaque()
                 textureDataPtr.pointee.width = Int32(texture.width)
                 textureDataPtr.pointee.height = Int32(texture.height)
-                textureDataPtr.pointee.format = 0 // Default format
-                textureDataPtr.pointee.channels = 4 // RGBA
+                textureDataPtr.pointee.format = 0  // Default format
+                textureDataPtr.pointee.channels = 4  // RGBA
                 textureDataPtr.pointee.dataSize = Int(texture.width * texture.height * 4)
-                
-                AssetManager.invokeCallback(callback, textureData: textureData, error: nil, userData: userData)
+
+                AssetManager.invokeCallback(
+                    callback, textureData: textureData, error: nil, userData: userData)
             } catch {
-                AssetManager.invokeCallback(callback, textureData: nil, error: error.localizedDescription, userData: userData)
+                AssetManager.invokeCallback(
+                    callback, textureData: nil, error: error.localizedDescription,
+                    userData: userData)
             }
         }
     }
-    
+
     /// Load audio synchronously for command processing
-    public func loadAudioSync(name: String, extension: String, callback: UnsafeMutableRawPointer?, userData: UnsafeMutableRawPointer?) {
+    public func loadAudioSync(
+        name: String, extension: String, callback: UnsafeMutableRawPointer?,
+        userData: UnsafeMutableRawPointer?
+    ) {
         Task {
             do {
                 let _ = try await loadAudio(name: name, extension: `extension`)
                 // For audio, we don't return data - this would need AudioData structure
-                AssetManager.invokeCallback(callback, textureData: nil, error: nil, userData: userData)
+                AssetManager.invokeCallback(
+                    callback, textureData: nil, error: nil, userData: userData)
             } catch {
-                AssetManager.invokeCallback(callback, textureData: nil, error: error.localizedDescription, userData: userData)
+                AssetManager.invokeCallback(
+                    callback, textureData: nil, error: error.localizedDescription,
+                    userData: userData)
             }
         }
     }
-    
+
     /// Load font synchronously for command processing
-    public func loadFontSync(name: String, extension: String, callback: UnsafeMutableRawPointer?, userData: UnsafeMutableRawPointer?) {
+    public func loadFontSync(
+        name: String, extension: String, callback: UnsafeMutableRawPointer?,
+        userData: UnsafeMutableRawPointer?
+    ) {
         Task {
             do {
                 _ = try await loadFont(name: name, extension: `extension`)
-                AssetManager.invokeCallback(callback, textureData: nil, error: nil, userData: userData)
+                AssetManager.invokeCallback(
+                    callback, textureData: nil, error: nil, userData: userData)
             } catch {
-                AssetManager.invokeCallback(callback, textureData: nil, error: error.localizedDescription, userData: userData)
+                AssetManager.invokeCallback(
+                    callback, textureData: nil, error: error.localizedDescription,
+                    userData: userData)
             }
         }
     }
-    
+
     /// Load data synchronously for command processing
-    public func loadDataSync(name: String, extension: String, callback: UnsafeMutableRawPointer?, userData: UnsafeMutableRawPointer?) {
+    public func loadDataSync(
+        name: String, extension: String, callback: UnsafeMutableRawPointer?,
+        userData: UnsafeMutableRawPointer?
+    ) {
         Task {
             do {
                 _ = try await loadData(name: name, extension: `extension`)
-                AssetManager.invokeCallback(callback, textureData: nil, error: nil, userData: userData)
+                AssetManager.invokeCallback(
+                    callback, textureData: nil, error: nil, userData: userData)
             } catch {
-                AssetManager.invokeCallback(callback, textureData: nil, error: error.localizedDescription, userData: userData)
+                AssetManager.invokeCallback(
+                    callback, textureData: nil, error: error.localizedDescription,
+                    userData: userData)
             }
         }
     }
-    
 
-
-
-    public static func invokeCallback(_ callback: UnsafeMutableRawPointer?, textureData: UnsafeMutableRawPointer?, error: String?, userData: UnsafeMutableRawPointer?) {
+    public static func invokeCallback(
+        _ callback: UnsafeMutableRawPointer?, textureData: UnsafeMutableRawPointer?, error: String?,
+        userData: UnsafeMutableRawPointer?
+    ) {
         guard let callback = callback else { return }
-        
+
         // Cast to the expected C++ callback function signature
-        let callbackFunc = unsafeBitCast(callback, to: (@convention(c) (UnsafeMutableRawPointer?, UnsafePointer<CChar>?, UnsafeMutableRawPointer?) -> Void).self)
-        
+        let callbackFunc = unsafeBitCast(
+            callback,
+            to: (@convention(c) (
+                UnsafeMutableRawPointer?, UnsafePointer<CChar>?, UnsafeMutableRawPointer?
+            ) -> Void).self)
+
         if let error = error {
             error.withCString { errorPtr in
                 callbackFunc(nil, errorPtr, userData)

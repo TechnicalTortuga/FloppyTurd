@@ -142,11 +142,12 @@ namespace GameCore {
         std::string m_hurtAnimation;
         
         // Enhanced Jump Physics Constants (adjusted for snappier feel based on user feedback)
-        static constexpr float JUMP_FORCE = 2400.0f;         // INCREASED: Stronger jump impulse for more dramatic jumps
-        static constexpr float GRAVITY_UP = 2000.0f;          // INCREASED: More gravity while ascending for less floaty feel
-        static constexpr float GRAVITY_DOWN = 7200.0f;        // FURTHER INCREASED: Even heavier gravity while falling for very fast, satisfying drops
+        static constexpr float JUMP_FORCE = 2600.0f;         // INCREASED: Stronger jump impulse for easier vertical navigation
+        static constexpr float GRAVITY_UP = 2400.0f;          // Slightly increased gravity while ascending for better control
+        static constexpr float GRAVITY_DOWN = 8000.0f;        // INCREASED: Even heavier gravity while falling for faster, more responsive drops
+        static constexpr float GRAVITY_DEATH = 9800.0f;       // NEW: Extra heavy gravity on death for faster fall to game over screen
         static constexpr float TERMINAL_VELOCITY = 1800.0f;   // INCREASED: Higher maximum falling speed for faster descent
-        static constexpr float AUTO_JUMP_THRESHOLD = 0.2f;    // Auto-jump after 200ms (1/5 second) of holding
+        static constexpr float AUTO_JUMP_THRESHOLD = 0.15f;   // DECREASED: Auto-jump after 150ms for more responsive feel
         static constexpr float VARIABLE_JUMP_THRESHOLD = 0.8f; // Extended time window for variable jump height
         static constexpr float EARLY_RELEASE_MULTIPLIER = 0.5f; // Stronger velocity reduction on early release
         

@@ -53,6 +53,7 @@ namespace GameCore {
         , m_arrowDebounceDelay(0.3f)  // 300ms debounce delay
         , m_lastUnlockPressTime(0.0f)
         , m_unlockDebounceDelay(1.0f)  // 1 second debounce delay for unlock buttons
+        , m_inputDebounceTimer(0.0f)
         , m_fontLoaded(false)
         , m_assetsLoaded(false) {
         
@@ -82,8 +83,12 @@ namespace GameCore {
     }
 
     void MainMenuState::Enter() {
-        GN_LOG_INFO("Entering Main Menu State");
+        GN_LOG_INFO("Entering Main Menu State - currentMode = " + std::to_string(static_cast<int>(m_currentMode)));
         m_finished = false;
+        
+        // Reset input debounce timer to prevent accidental clicks from gameplay state
+        m_inputDebounceTimer = INPUT_DEBOUNCE_DURATION;
+        GN_LOG_INFO("Input debounce activated for " + std::to_string(INPUT_DEBOUNCE_DURATION) + " seconds");
         m_selectedOption = 0;
         m_animationTimer = 0.0f;
         m_assetsLoaded = false;
@@ -107,8 +112,11 @@ namespace GameCore {
             return; // Don't initialize UI
         }
 
-        // Don't lock orientation here - ScreenPromptState should have already done it
-        GN_LOG_INFO("Main Menu - assuming orientation already locked by ScreenPromptState");
+        // Lock to portrait mode when entering main menu
+        if (m_platformDelegates && m_platformDelegates->renderer.lockToPortrait) {
+            GN_LOG_INFO("Main Menu - locking orientation to portrait");
+            m_platformDelegates->renderer.lockToPortrait();
+        }
 
         // InputManager singleton should be initialized by FloppyTurdGame
         
@@ -155,28 +163,55 @@ namespace GameCore {
         }
         
         // Decide UI scale and create layout
+        GN_LOG_INFO("Before layout - currentMode = " + std::to_string(static_cast<int>(m_currentMode)));
         m_uiScale = m_isMobile ? 8.0f : 1.0f;
         if (m_isMobile) CreateMobileLayout(); else CreateDesktopLayout();
+        GN_LOG_INFO("After layout - currentMode = " + std::to_string(static_cast<int>(m_currentMode)));
         
         // Create UI elements (buttons with integrated text)
         CreateUIElements();
+        GN_LOG_INFO("After CreateUIElements - currentMode = " + std::to_string(static_cast<int>(m_currentMode)));
         
         // Create level select layout (hidden initially)
         CreateLevelSelectLayout();
+        GN_LOG_INFO("After CreateLevelSelectLayout - currentMode = " + std::to_string(static_cast<int>(m_currentMode)));
 
         m_assetsLoaded = true;
         m_uiInitialized = true;
+        
+        // Check if we should start in level select mode (e.g., returning from gameplay)
+        GN_LOG_INFO("MainMenuState Enter() complete - currentMode = " + std::to_string(static_cast<int>(m_currentMode)) + " (0=MAIN_MENU, 1=LEVEL_SELECT, 2=OPTIONS)");
+        if (m_currentMode == MenuMode::LEVEL_SELECT) {
+            GN_LOG_INFO("✅ Starting in LEVEL_SELECT mode - calling ShowLevelSelect()");
+            ShowLevelSelect();
+            
+            // If we should return to a specific level, navigate to it
+            if (m_shouldReturnToSpecificLevel && m_returnToLevelNumber > 0) {
+                // Find the level index for this level number
+                for (size_t i = 0; i < m_levels.size(); i++) {
+                    if (m_levels[i].levelNumber == m_returnToLevelNumber) {
+                        m_currentLevelIndex = static_cast<int>(i);
+                        GN_LOG_INFO("🎯 Returning to level " + std::to_string(m_returnToLevelNumber) + " (index " + std::to_string(i) + ")");
+                        UpdateLevelVisibility();
+                        break;
+                    }
+                }
+                // Reset the flag
+                m_shouldReturnToSpecificLevel = false;
+                m_returnToLevelNumber = -1;
+            }
+        } else {
+            GN_LOG_INFO("❌ Starting in MAIN_MENU mode - not showing level select");
+        }
+        
         GN_LOG_INFO("Main Menu State fully initialized");
     }
 
     void MainMenuState::Exit() {
         GN_LOG_INFO("Exiting Main Menu State");
         
-        // Unlock orientation when leaving main menu (gameplay will set its own)
-        if (m_platformDelegates && m_platformDelegates->renderer.unlockOrientation) {
-            GN_LOG_INFO("Main Menu Exit - unlocking orientation");
-            m_platformDelegates->renderer.unlockOrientation();
-        }
+        // Don't unlock orientation - keep portrait locked, GameplayState will handle its own orientation
+        GN_LOG_INFO("Main Menu Exit - keeping portrait orientation locked (GameplayState will manage its own)");
         
         // Stop menu music using delegate system
         if (m_game) {
@@ -280,6 +315,15 @@ namespace GameCore {
     }
 
     void MainMenuState::Update(float deltaTime) {
+        // Update input debounce timer
+        if (m_inputDebounceTimer > 0.0f) {
+            m_inputDebounceTimer -= deltaTime;
+            if (m_inputDebounceTimer <= 0.0f) {
+                m_inputDebounceTimer = 0.0f;
+                GN_LOG_INFO("Input debounce expired - input now enabled");
+            }
+        }
+        
         // Update InputManager singleton
         InputManager* inputManager = InputManager::GetInstance();
         if (inputManager) {
@@ -414,6 +458,11 @@ namespace GameCore {
     }
 
     void MainMenuState::HandleInput() {
+        // Block all input during debounce period
+        if (m_inputDebounceTimer > 0.0f) {
+            return;
+        }
+        
         if (!m_ecsCoordinator || !m_assetsLoaded) {
             return;
         }
@@ -1528,13 +1577,17 @@ namespace GameCore {
                 break;
                 
             case MenuOption::QUICK_PLAY:
-                GN_LOG_INFO("Starting quick play...");
-                // TODO: Transition to quick play state
+                GN_LOG_INFO("Starting quick play - Level 1...");
+                // Set selected level NUMBER (not index) - matches OnLevelSelected logic
+                m_selectedLevelIndex = 1;  // Level 1 (number, not 0-indexed)
+                m_enteredViaQuickplay = true;  // Mark that we entered via Quickplay
                 m_finished = true;
                 break;
                 
             case MenuOption::QUIT:
                 GN_LOG_INFO("Quitting game...");
+                // For now, just finish - iOS will handle app termination naturally
+                // (iOS doesn't have a programmatic exit, apps should only quit via user action)
                 m_finished = true;
                 break;
                 
@@ -2173,9 +2226,12 @@ namespace GameCore {
         CreateLockedIndicator();
         
         // Initially hide all level select elements
+        // IMPORTANT: Save and restore current mode to avoid overwriting it when entering from gameplay
+        MenuMode savedMode = m_currentMode;
         HideLevelSelect();
+        m_currentMode = savedMode;  // Restore the mode that was set before Enter()
         
-        GN_LOG_INFO("Level select layout created");
+        GN_LOG_INFO("Level select layout created - mode preserved: " + std::to_string(static_cast<int>(m_currentMode)));
     }
 
     void MainMenuState::CreateArrowButtons() {
@@ -2766,7 +2822,7 @@ namespace GameCore {
         m_backButtonEntity = m_ecsCoordinator->CreateEntity();
         float centerX = m_screenWidth * 0.5f;
         float buttonY = m_screenHeight * 0.93f;  // near bottom
-        float buttonScale = m_isMobile ? 8.0f : 4.0f; // keep sprite scales
+        float buttonScale = m_isMobile ? 10.0f : 4.0f; // Match main menu button scale (10.0f for mobile)
 
         // Query texture via shared RenderSystem
         int bw = 0, bh = 0;
@@ -2785,7 +2841,7 @@ namespace GameCore {
         Transform t(Gnosis::GNVector2(topLeftX, topLeftY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
         Sprite s("FloppyButtonBlue", buttonTexW, buttonTexH); s.layer = 5; s.visible = false;
         UIElement ui("BACK", "FloppyButtonBlue", "FloppyButtonBlueHover");
-        ui.fontSize = m_isMobile ? 42.0f : 21.0f;
+        ui.fontSize = m_isMobile ? 88.0f : 21.0f; // Match main menu button font size (88.0f for mobile)
         ui.textColor = Gnosis::GNColor(255, 255, 255, 255);
         ui.centerTextHorizontally = true;
         ui.centerTextVertically = true;
@@ -2810,7 +2866,7 @@ namespace GameCore {
         float centerX = m_screenWidth * 0.5f;
         // Place slightly above the back button
         float buttonY = m_screenHeight * 0.86f;
-        float buttonScale = m_isMobile ? 8.0f : 4.0f;
+        float buttonScale = m_isMobile ? 10.0f : 4.0f; // Match main menu button scale (10.0f for mobile)
 
         // Query texture via shared RenderSystem
         int bw = 0, bh = 0;
@@ -2829,7 +2885,7 @@ namespace GameCore {
         Transform t(Gnosis::GNVector2(topLeftX, topLeftY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
         Sprite s("FloppyButtonBlue", texW, texH); s.layer = 5; s.visible = false;
         UIElement ui("PLAY LEVEL", "FloppyButtonBlue", "FloppyButtonBlueHover");
-        ui.fontSize = m_isMobile ? 42.0f : 21.0f;
+        ui.fontSize = m_isMobile ? 88.0f : 21.0f; // Match main menu button font size (88.0f for mobile)
         ui.textColor = Gnosis::GNColor(255, 255, 255, 255);
         ui.centerTextHorizontally = true;
         ui.centerTextVertically = true;
@@ -2945,7 +3001,7 @@ namespace GameCore {
     }
 
     void MainMenuState::ShowLevelSelect() {
-        GN_LOG_INFO("Showing level select menu");
+        GN_LOG_INFO("📋 ShowLevelSelect() called - hiding main menu, showing level select UI");
         m_currentMode = MenuMode::LEVEL_SELECT;
 
         // Refresh level unlock status and high scores before showing

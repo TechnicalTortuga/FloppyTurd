@@ -114,6 +114,12 @@ namespace GameCore {
         bool textureHandleValid;
         std::string cachedTextureId;
         
+        // Source rect for partial rendering
+        float sourceX = 0.0f;
+        float sourceY = 0.0f;
+        float sourceWidth = 0.0f; // 0 means use frameWidth
+        float sourceHeight = 0.0f; // 0 means use frameHeight
+        
         // Static sprite constructor
         Sprite()
             : textureId()
@@ -385,7 +391,12 @@ namespace GameCore {
         Attacking,          // Attacking/Throwing
         Hurt,               // Taking damage
         Dead,               // Dead/Inactive
-        Decorative          // Just for show, no behavior
+        Decorative,         // Just for show, no behavior
+        // RatCopter specific states
+        FlyIn,              // Flying in from right side
+        Hover,              // Hovering in place while bobbing
+        Pullback,           // Pull back before beeline
+        Beeline             // Charging toward target
     };
     
     struct Enemy : public Gnosis::Component {
@@ -445,6 +456,17 @@ namespace GameCore {
         // Hurt state support
         float hurtTimer;           // Timer for hurt state duration
         
+        // RatCopter behavior state machine (for "flying" movement pattern)
+        float hoverTimer;          // Time remaining in hover state
+        Gnosis::GNVector2 targetDirection;  // Direction to beeline toward
+        bool hasLockedDirection;   // Whether direction is locked for beeline
+        Gnosis::GNVector2 pullbackVector;   // Vector for pullback movement
+        float pullbackTimer;       // Timer for pullback duration
+        float beelineSpeed;        // Speed during beeline phase
+        
+        // Boss minion flag (to distinguish boss-spawned RatCopters from castle-level ones)
+        bool isBossMinion;         // True if spawned by boss, false if regular enemy
+        
         Enemy()
             : health(1)
             , damage(1)
@@ -482,6 +504,13 @@ namespace GameCore {
             , animationTimer(0.0f)
             , currentFrame(0)
             , hurtTimer(0.0f)
+            , hoverTimer(0.0f)
+            , targetDirection(0.0f, 0.0f)
+            , hasLockedDirection(false)
+            , pullbackVector(0.0f, 0.0f)
+            , pullbackTimer(0.0f)
+            , beelineSpeed(150.0f)
+            , isBossMinion(false)
         {}
     };
     
@@ -893,13 +922,16 @@ using Gnosis::Entity;
      */
     enum class UIShapeType {
         Rectangle = 0,
-        Line = 1
+        Line = 1,
+        Circle = 2,
+        FilledCircle = 3
     };
 
     struct UIShape : public Gnosis::Component {
         UIShapeType type;
         float width;            // For Rectangle: width in pixels; For Line: length in pixels
         float height;           // For Rectangle: height; For Line: thickness
+        float radius;           // For Circle/FilledCircle: radius in pixels
         Gnosis::GNColor color;  // RGBA color
         int layer;              // UI layer ordering
         bool visible;           // Visibility flag
@@ -908,6 +940,7 @@ using Gnosis::Entity;
             : type(UIShapeType::Rectangle)
             , width(0.0f)
             , height(0.0f)
+            , radius(0.0f)
             , color(40, 40, 70, 230)
             , layer(20)
             , visible(true)
@@ -917,6 +950,18 @@ using Gnosis::Entity;
             : type(t)
             , width(w)
             , height(h)
+            , radius(0.0f)
+            , color(c)
+            , layer(l)
+            , visible(v)
+        {}
+
+        // Constructor for circles
+        UIShape(UIShapeType t, float r, const Gnosis::GNColor& c, int l = 20, bool v = true)
+            : type(t)
+            , width(0.0f)
+            , height(0.0f)
+            , radius(r)
             , color(c)
             , layer(l)
             , visible(v)

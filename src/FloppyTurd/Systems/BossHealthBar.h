@@ -74,12 +74,20 @@ private:
     Entity m_healthFillEntity = 0;
     Entity m_hurtEffectEntity = 0;
     Entity m_bossNameEntity = 0;
-    // m_healthTextEntity removed as requested
+
+    // Add Sprite pointers for bars
+    Sprite* m_healthSprite = nullptr;
+    Sprite* m_hurtSprite = nullptr;
+
+    // Original dimensions from old code
+    float originalWidth = 160.0f;
+    float originalHeight = 32.0f;
 
     // Display properties
     const char* m_bossName;
     float m_currentHealthPercent = 1.0f;
     float m_shadowHealthPercent = 1.0f;  // For hurt effect fade
+    float m_displayedHealthPercent = 1.0f;  // For smooth lerping
     float m_hurtFadeTimer = 0.0f;
     const float HURT_FADE_DURATION = 0.75f;
     bool m_manuallyHidden = false;  // Track if manually hidden (for pause menu)

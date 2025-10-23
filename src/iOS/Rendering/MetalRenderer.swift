@@ -46,8 +46,8 @@ struct RotSpriteParams {
 /// Per-instance sprite data for GPU instancing (must match Metal shader)
 struct SpriteInstanceData {
     var modelMatrix: simd_float4x4  // 64 bytes - Transform (position, scale, rotation)
-    var uvRect: SIMD4<Float>        // 16 bytes - (u0, v0, u1, v1) for sprite sheets
-    var color: SIMD4<Float>         // 16 bytes - Tint/alpha (r, g, b, a)
+    var uvRect: SIMD4<Float>  // 16 bytes - (u0, v0, u1, v1) for sprite sheets
+    var color: SIMD4<Float>  // 16 bytes - Tint/alpha (r, g, b, a)
     // Total: 96 bytes per sprite
 }
 
@@ -136,7 +136,7 @@ public class MetalRenderer {
     private var samplerState: MTLSamplerState?
     private var parallaxSamplerState: MTLSamplerState?  // Specialized sampler for parallax backgrounds
     // No SDF/MSDF samplers
-    
+
     // GPU Instancing buffers - TRIPLE BUFFERING for CPU/GPU synchronization
     private var spriteInstanceBuffers: [MTLBuffer] = []  // 3 buffers rotated per frame
     private var instancedVertexBuffer: MTLBuffer?  // Simple quad for instancing (pos + uv only)
@@ -145,7 +145,7 @@ public class MetalRenderer {
     private var library: MTLLibrary?
     private var currentBufferIndex: Int = 0  // Current buffer for writing
     private let maxBuffersInFlight: Int = 3  // Triple buffering
-    
+
     // GPU Instancing - per-frame offset tracking (FIX for multi-batch rendering)
     private var currentInstanceOffset: Int = 0  // Sprites written to current buffer
     private var instancedDrawCallsThisFrame: Int = 0  // Draw calls this frame
@@ -177,14 +177,14 @@ public class MetalRenderer {
     private var currentCommandBuffer: MTLCommandBuffer?
     private var currentRenderPassDescriptor: MTLRenderPassDescriptor?
     private var currentRenderEncoder: MTLRenderCommandEncoder?  // FIX: Track the single render encoder
-    
+
     // MARK: - Performance Profiling
     private struct TimingStats {
         var totalMs: Double = 0.0
         var maxMs: Double = 0.0
         var callCount: Int = 0
     }
-    
+
     private var profilingEnabled: Bool = true  // Enable by default for debugging
     private var frameCount: Int = 0
     private var timingStats: [String: TimingStats] = [:]
@@ -224,7 +224,7 @@ public class MetalRenderer {
         [String: (
             texture: MTLTexture, sizePx: CGSize, ascentPx: CGFloat, padPx: CGFloat, handle: UInt32
         )] = [:]
-    
+
     // NOTE: Per-sprite buffer creation is intentionally kept for now
     // Future optimization: Use large dynamic buffer with offsets OR GPU instancing
 
@@ -387,15 +387,15 @@ public class MetalRenderer {
         }
 
         // No SDF/MSDF pipelines needed for raster text
-        
+
         // Create GPU instanced rendering pipeline
         guard let instancedVertexFunction = library.makeFunction(name: "spriteVertexInstanced"),
-              let instancedFragmentFunction = library.makeFunction(name: "spriteFragmentInstanced")
+            let instancedFragmentFunction = library.makeFunction(name: "spriteFragmentInstanced")
         else {
             log("Failed to create instanced shader functions", level: .error)
             return
         }
-        
+
         // Create vertex descriptor for instanced rendering (simple quad)
         let instancedVertexDescriptor = MTLVertexDescriptor()
         // Position (float2)
@@ -409,25 +409,28 @@ public class MetalRenderer {
         // Layout
         instancedVertexDescriptor.layouts[0].stride = 16  // 2 floats (pos) + 2 floats (uv)
         instancedVertexDescriptor.layouts[0].stepFunction = .perVertex
-        
+
         let instancedPipelineDescriptor = MTLRenderPipelineDescriptor()
         instancedPipelineDescriptor.label = "Instanced Sprite Pipeline"
         instancedPipelineDescriptor.vertexFunction = instancedVertexFunction
         instancedPipelineDescriptor.fragmentFunction = instancedFragmentFunction
         instancedPipelineDescriptor.vertexDescriptor = instancedVertexDescriptor
         instancedPipelineDescriptor.colorAttachments[0].pixelFormat = .bgra8Unorm_srgb
-        
+
         // Enable blending for transparency
         instancedPipelineDescriptor.colorAttachments[0].isBlendingEnabled = true
         instancedPipelineDescriptor.colorAttachments[0].rgbBlendOperation = .add
         instancedPipelineDescriptor.colorAttachments[0].alphaBlendOperation = .add
         instancedPipelineDescriptor.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
         instancedPipelineDescriptor.colorAttachments[0].sourceAlphaBlendFactor = .sourceAlpha
-        instancedPipelineDescriptor.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
-        instancedPipelineDescriptor.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
-        
+        instancedPipelineDescriptor.colorAttachments[0].destinationRGBBlendFactor =
+            .oneMinusSourceAlpha
+        instancedPipelineDescriptor.colorAttachments[0].destinationAlphaBlendFactor =
+            .oneMinusSourceAlpha
+
         do {
-            instancedPipelineState = try device.makeRenderPipelineState(descriptor: instancedPipelineDescriptor)
+            instancedPipelineState = try device.makeRenderPipelineState(
+                descriptor: instancedPipelineDescriptor)
             log("✅ Instanced sprite pipeline created successfully", level: .info)
         } catch {
             log("❌ Failed to create instanced pipeline: \(error)", level: .error)
@@ -552,7 +555,7 @@ public class MetalRenderer {
         indexBuffer = device.makeBuffer(
             bytes: indices, length: indices.count * MemoryLayout<UInt16>.stride, options: [])
         indexBuffer?.label = "Quad Indices"
-        
+
         // Create SIMPLE vertex buffer for GPU instanced rendering (position + texCoord only, NO color)
         // Format: [x, y, u, v] per vertex = 4 floats = 16 bytes per vertex
         let instancedVertices: [Float] = [
@@ -563,19 +566,21 @@ public class MetalRenderer {
             0.0, 0.0, 0.0, 0.0,  // Top-left
         ]
         instancedVertexBuffer = device.makeBuffer(
-            bytes: instancedVertices, 
-            length: instancedVertices.count * MemoryLayout<Float>.stride, 
+            bytes: instancedVertices,
+            length: instancedVertices.count * MemoryLayout<Float>.stride,
             options: [])
         instancedVertexBuffer?.label = "Instanced Quad Vertices (pos+uv only)"
-        
+
         // Create TRIPLE BUFFERED instance buffers for GPU instanced rendering
         // This prevents CPU/GPU race conditions when updating per-frame instance data
         let instanceBufferSize = MemoryLayout<SpriteInstanceData>.stride * maxSpritesPerBatch
         for i in 0..<maxBuffersInFlight {
-            guard let buffer = device.makeBuffer(
-                length: instanceBufferSize,
-                options: .storageModeShared  // CPU writable, GPU readable
-            ) else {
+            guard
+                let buffer = device.makeBuffer(
+                    length: instanceBufferSize,
+                    options: .storageModeShared  // CPU writable, GPU readable
+                )
+            else {
                 log("❌ Failed to create instance buffer \(i)", level: .error)
                 continue
             }
@@ -583,7 +588,9 @@ public class MetalRenderer {
             spriteInstanceBuffers.append(buffer)
         }
 
-        log("✅ Buffers created: vertex, index, instanced vertex (16-byte stride), \(spriteInstanceBuffers.count) instance buffers (max: \(maxSpritesPerBatch) sprites each)", level: .debug)
+        log(
+            "✅ Buffers created: vertex, index, instanced vertex (16-byte stride), \(spriteInstanceBuffers.count) instance buffers (max: \(maxSpritesPerBatch) sprites each)",
+            level: .debug)
     }
 
     // MARK: - Public Interface (Threading System Integration)
@@ -667,41 +674,41 @@ public class MetalRenderer {
         print("🔧 Updated projection matrix for viewport \(width)x\(height)")
         log("Updated projection matrix for viewport \(width)x\(height)", level: .debug)
     }
-    
+
     // MARK: - Profiling Methods
-    
+
     private func startTiming(_ section: String) {
         guard profilingEnabled else { return }
         sectionStartTime = CFAbsoluteTimeGetCurrent()
     }
-    
+
     private func endTiming(_ section: String) {
         guard profilingEnabled else { return }
         let duration = (CFAbsoluteTimeGetCurrent() - sectionStartTime) * 1000.0  // Convert to ms
-        
+
         var stats = timingStats[section] ?? TimingStats()
         stats.totalMs += duration
         stats.maxMs = max(stats.maxMs, duration)
         stats.callCount += 1
         timingStats[section] = stats
     }
-    
+
     private func flushTimings() {
         guard profilingEnabled else { return }
-        
+
         let now = CFAbsoluteTimeGetCurrent()
         if now - lastFlushTime >= 1.0 {  // Flush every ~1 second
             var output = "[MetalProfiler] frames=\(frameCount)"
-            
+
             for (name, stats) in timingStats.sorted(by: { $0.key < $1.key }) {
                 let avgMs = stats.callCount > 0 ? stats.totalMs / Double(stats.callCount) : 0.0
                 output += " | \(name) avg=\(String(format: "%.3f", avgMs))ms"
                 output += " max=\(String(format: "%.3f", stats.maxMs))ms"
                 output += " calls=\(stats.callCount)"
             }
-            
+
             log(output, level: .info)
-            
+
             // Reset stats
             timingStats.removeAll()
             frameCount = 0
@@ -712,14 +719,14 @@ public class MetalRenderer {
     public func beginFrame() {
         frameCount += 1
         startTiming("BeginFrame")
-        
+
         // Rotate triple buffer index for instance data
         currentBufferIndex = (currentBufferIndex + 1) % maxBuffersInFlight
-        
+
         // CRITICAL: Reset instance offset for fresh buffer (FIX for multi-batch rendering)
         currentInstanceOffset = 0
         instancedDrawCallsThisFrame = 0
-        
+
         guard let commandQueue = commandQueue else {
             log("❌ beginFrame failed: commandQueue is nil", level: .error)
             endTiming("BeginFrame")
@@ -728,8 +735,8 @@ public class MetalRenderer {
 
         // Guard against cases where the view is not ready to be drawn to. This can happen
         // during app startup, backgrounding, or other view lifecycle events.
-        guard let _ = metalView?.currentDrawable,
-            let _ = metalView?.currentRenderPassDescriptor
+        guard metalView?.currentDrawable != nil,
+            metalView?.currentRenderPassDescriptor != nil
         else {
             // Don't create a command buffer if we can't render. The system will
             // simply skip this frame.
@@ -755,17 +762,21 @@ public class MetalRenderer {
 
     public func endFrame() {
         startTiming("EndFrame")
-        
+
         // Log instance buffer usage stats (diagnostics for multi-batch rendering)
         if instancedDrawCallsThisFrame > 0 {
             let usagePercent = Int(Float(currentInstanceOffset) / Float(maxSpritesPerBatch) * 100)
-            log("📊 Frame buffer usage: \(currentInstanceOffset)/\(maxSpritesPerBatch) sprites (\(usagePercent)%) across \(instancedDrawCallsThisFrame) batches", level: .debug)
+            log(
+                "📊 Frame buffer usage: \(currentInstanceOffset)/\(maxSpritesPerBatch) sprites (\(usagePercent)%) across \(instancedDrawCallsThisFrame) batches",
+                level: .debug)
         }
-        
+
         if instanceBufferOverflowCount > 0 && frameCount % 60 == 0 {
-            log("⚠️ Instance buffer overflow count: \(instanceBufferOverflowCount) (lifetime)", level: .warning)
+            log(
+                "⚠️ Instance buffer overflow count: \(instanceBufferOverflowCount) (lifetime)",
+                level: .warning)
         }
-        
+
         // FIX: End the render encoder if it exists
         currentRenderEncoder?.endEncoding()
         currentRenderEncoder = nil
@@ -785,7 +796,7 @@ public class MetalRenderer {
         currentRenderPassDescriptor = nil
         log("Frame presented successfully", level: .debug)
         endTiming("Present")
-        
+
         // Flush profiling stats periodically
         flushTimings()
     }
@@ -1146,7 +1157,7 @@ public class MetalRenderer {
     ) {
         startTiming("DrawSpriteScaled")
         defer { endTiming("DrawSpriteScaled") }
-        
+
         guard let texture = textures[textureHandle] else {
             log("drawSpriteScaled: Invalid sprite handle \(textureHandle)", level: .warning)
             return
@@ -1178,21 +1189,28 @@ public class MetalRenderer {
         let absScaleY = abs(scaleY)
         let spriteWidth = Float(texture.width) * absScaleX
         let spriteHeight = Float(texture.height) * absScaleY
-        
+
         // DEBUG: Log flip state for all sprites with negative scale
         if flipHorizontal {
-            log("🔄 FLIP DETECTED [drawSpriteScaled]: handle=\(textureHandle), scaleX=\(scaleX), flipH=\(flipHorizontal), pos=(\(x),\(y))", level: .info)
+            log(
+                "🔄 FLIP DETECTED [drawSpriteScaled]: handle=\(textureHandle), scaleX=\(scaleX), flipH=\(flipHorizontal), pos=(\(x),\(y))",
+                level: .info)
         }
 
         // Calculate UV coordinates with flipping support
-        var u0: Float = 0.0, v0: Float = 0.0, u1: Float = 1.0, v1: Float = 1.0
+        var u0: Float = 0.0
+        var v0: Float = 0.0
+        var u1: Float = 1.0
+        var v1: Float = 1.0
 
         if flipHorizontal {
-            u0 = 1.0; u1 = 0.0  // Flip U coordinates for horizontal flip
+            u0 = 1.0
+            u1 = 0.0  // Flip U coordinates for horizontal flip
             log("🔄 UV FLIP: u0=\(u0), u1=\(u1) (swapped for horizontal flip)", level: .info)
         }
         if flipVertical {
-            v0 = 1.0; v1 = 0.0  // Flip V coordinates for vertical flip
+            v0 = 1.0
+            v1 = 0.0  // Flip V coordinates for vertical flip
         }
 
         // Enhanced debug logging for texture rendering
@@ -1208,16 +1226,6 @@ public class MetalRenderer {
         if texture.width == 16 && texture.height == 16 {
             dumpTexturePixelData(texture: texture, textureHandle: textureHandle)
 
-            // DEBUG: Draw a magenta rectangle at the sprite position to verify positioning
-            let debugDraw = false  // Set to true to enable debug rectangle
-            if debugDraw {
-                drawRectangle(
-                    x: x - spriteWidth / 2, y: y - spriteHeight / 2, width: spriteWidth,
-                    height: spriteHeight,
-                    r: 1.0, g: 0.0, b: 1.0, a: 0.5)
-                log("DEBUG: Drew debug rectangle at texture position", level: .debug)
-                return  // Skip texture drawing to see just the rectangle
-            }
         }
 
         // NO position adjustment needed!
@@ -1226,7 +1234,7 @@ public class MetalRenderer {
         if flipHorizontal {
             log("🔄 FLIP: Using UV flip only (no position adjustment) at x=\(x)", level: .info)
         }
-        
+
         // Use helper function to create sprite transformation matrix (top-left positioning)
         // Use absolute scale values to prevent negative scaling artifacts
         let modelMatrix = MetalMatrixHelpers.spriteTransformMatrix(
@@ -1279,12 +1287,16 @@ public class MetalRenderer {
         } else {
             customVertexBuffer = nil  // Use default vertex buffer
         }
-        
+
         // DEBUG: Confirm which vertex buffer is being used
         if flipHorizontal && customVertexBuffer != nil {
-            log("✅ USING CUSTOM FLIPPED VERTEX BUFFER [drawSpriteScaled] for handle \(textureHandle)", level: .info)
+            log(
+                "✅ USING CUSTOM FLIPPED VERTEX BUFFER [drawSpriteScaled] for handle \(textureHandle)",
+                level: .info)
         } else if flipHorizontal && customVertexBuffer == nil {
-            log("❌ FLIP FAILED [drawSpriteScaled]: customVertexBuffer is NIL despite flipHorizontal=true!", level: .error)
+            log(
+                "❌ FLIP FAILED [drawSpriteScaled]: customVertexBuffer is NIL despite flipHorizontal=true!",
+                level: .error)
         }
 
         // Set up render encoder
@@ -1367,11 +1379,11 @@ public class MetalRenderer {
         //     "🖼️ Drawing sprite with source rect: texture \(textureHandle), source (\(sourceX),\(sourceY),\(sourceWidth)x\(sourceHeight)), UV (\(u0),\(v0)) to (\(u1),\(v1)), screen \(spriteWidth)x\(spriteHeight), pos (\(x),\(y))",
         //     level: .debug)
 
-        // Use sprite transformation matrix for centered positioning like other sprites
+        // Use sprite transformation matrix with rotation support for animated sprites
         let modelMatrix = MetalMatrixHelpers.spriteTransformMatrix(
             position: (x: x, y: y),
             scale: (x: spriteWidth, y: spriteHeight),
-            rotation: 0.0
+            rotation: rotation
         )
 
         // Get current projection matrix
@@ -1428,6 +1440,215 @@ public class MetalRenderer {
         //     level: .debug)
     }
 
+    /// Draw an animated sprite (source rect) with centered rotation
+    public func drawSpriteScaledWithSourceCentered(
+        textureHandle: UInt32, x: Float, y: Float, scaleX: Float, scaleY: Float, rotation: Float,
+        sourceX: Float, sourceY: Float, sourceWidth: Float, sourceHeight: Float
+    ) {
+        guard let texture = textures[textureHandle] else {
+            log(
+                "drawSpriteScaledWithSourceCentered: Invalid sprite handle \(textureHandle)",
+                level: .warning)
+            return
+        }
+
+        guard let uniformBuffer = uniformBuffer else {
+            log(
+                "drawSpriteScaledWithSourceCentered: Missing required Metal resources",
+                level: .warning)
+            return
+        }
+
+        guard let pipelineState = texturedPipelineState else {
+            log("drawSpriteScaledWithSourceCentered: No pipeline state available", level: .warning)
+            return
+        }
+
+        guard let renderEncoder = ensureRenderEncoder() else {
+            log("drawSpriteScaledWithSourceCentered: Failed to get render encoder", level: .error)
+            return
+        }
+
+        // Calculate sprite dimensions
+        let spriteWidth = sourceWidth * scaleX
+        let spriteHeight = sourceHeight * scaleY
+
+        // Calculate pixel-perfect UV coordinates for the source rectangle
+        let textureWidth = Float(texture.width)
+        let textureHeight = Float(texture.height)
+
+        let halfPixelU = 0.5 / textureWidth
+        let halfPixelV = 0.5 / textureHeight
+
+        let u0 = max(0.0, min(1.0, (sourceX / textureWidth) + halfPixelU))
+        let v0 = max(0.0, min(1.0, (sourceY / textureHeight) + halfPixelV))
+        let u1 = max(0.0, min(1.0, ((sourceX + sourceWidth) / textureWidth) - halfPixelU))
+        let v1 = max(0.0, min(1.0, ((sourceY + sourceHeight) / textureHeight) - halfPixelV))
+
+        // Use CENTERED sprite transformation matrix for rotation around center
+        let modelMatrix = MetalMatrixHelpers.spriteTransformMatrixCentered(
+            position: (x: x, y: y),
+            scale: (x: spriteWidth, y: spriteHeight),
+            rotation: rotation
+        )
+
+        // Get current projection matrix
+        let projectionMatrix = uniformBuffer.contents().bindMemory(
+            to: simd_float4x4.self, capacity: 1
+        ).pointee
+
+        // Create MVP matrix
+        let mvpMatrix = projectionMatrix * modelMatrix
+
+        // Create temporary uniform buffer for this sprite
+        guard let device = device,
+            let tempUniformBuffer = device.makeBuffer(
+                bytes: [mvpMatrix], length: MemoryLayout<simd_float4x4>.stride, options: [])
+        else {
+            log(
+                "drawSpriteScaledWithSourceCentered: Failed to create temporary uniform buffer",
+                level: .error)
+            return
+        }
+
+        // Create vertex buffer with custom UV coordinates for the source rectangle
+        let vertices: [Float] = [
+            // Position (x, y), TexCoord (u, v), Color (r, g, b, a)
+            0.0, 1.0, u0, v1, 1.0, 1.0, 1.0, 1.0,  // Bottom-left
+            1.0, 1.0, u1, v1, 1.0, 1.0, 1.0, 1.0,  // Bottom-right
+            1.0, 0.0, u1, v0, 1.0, 1.0, 1.0, 1.0,  // Top-right
+            0.0, 0.0, u0, v0, 1.0, 1.0, 1.0, 1.0,  // Top-left
+        ]
+
+        guard
+            let sourceVertexBuffer = device.makeBuffer(
+                bytes: vertices, length: vertices.count * MemoryLayout<Float>.stride, options: [])
+        else {
+            log(
+                "drawSpriteScaledWithSourceCentered: Failed to create source vertex buffer",
+                level: .error)
+            return
+        }
+
+        // Set up render encoder
+        renderEncoder.setRenderPipelineState(pipelineState)
+        renderEncoder.setVertexBuffer(sourceVertexBuffer, offset: 0, index: 0)
+        renderEncoder.setVertexBuffer(tempUniformBuffer, offset: 0, index: 1)
+        renderEncoder.setFragmentTexture(texture, index: 0)
+        renderEncoder.setFragmentSamplerState(samplerState, index: 0)
+
+        // Draw the sprite
+        renderEncoder.drawIndexedPrimitives(
+            type: .triangle, indexCount: 6, indexType: .uint16, indexBuffer: indexBuffer!,
+            indexBufferOffset: 0)
+    }
+
+    /// Draw an animated sprite (source rect) with pivot rotation
+    public func drawSpriteScaledWithSourcePivoted(
+        textureHandle: UInt32, x: Float, y: Float, scaleX: Float, scaleY: Float, rotation: Float,
+        pivotX: Float, pivotY: Float,
+        sourceX: Float, sourceY: Float, sourceWidth: Float, sourceHeight: Float
+    ) {
+        guard let texture = textures[textureHandle] else {
+            log(
+                "drawSpriteScaledWithSourcePivoted: Invalid sprite handle \(textureHandle)",
+                level: .warning)
+            return
+        }
+
+        guard let uniformBuffer = uniformBuffer else {
+            log(
+                "drawSpriteScaledWithSourcePivoted: Missing required Metal resources",
+                level: .warning)
+            return
+        }
+
+        guard let pipelineState = texturedPipelineState else {
+            log("drawSpriteScaledWithSourcePivoted: No pipeline state available", level: .warning)
+            return
+        }
+
+        guard let renderEncoder = ensureRenderEncoder() else {
+            log("drawSpriteScaledWithSourcePivoted: Failed to get render encoder", level: .error)
+            return
+        }
+
+        // Calculate sprite dimensions
+        let spriteWidth = sourceWidth * scaleX
+        let spriteHeight = sourceHeight * scaleY
+
+        // Calculate pixel-perfect UV coordinates for the source rectangle
+        let textureWidth = Float(texture.width)
+        let textureHeight = Float(texture.height)
+
+        let halfPixelU = 0.5 / textureWidth
+        let halfPixelV = 0.5 / textureHeight
+
+        let u0 = max(0.0, min(1.0, (sourceX / textureWidth) + halfPixelU))
+        let v0 = max(0.0, min(1.0, (sourceY / textureHeight) + halfPixelV))
+        let u1 = max(0.0, min(1.0, ((sourceX + sourceWidth) / textureWidth) - halfPixelU))
+        let v1 = max(0.0, min(1.0, ((sourceY + sourceHeight) / textureHeight) - halfPixelV))
+
+        // Use PIVOTED sprite transformation matrix for rotation around custom pivot
+        let modelMatrix = MetalMatrixHelpers.spriteTransformMatrixPivoted(
+            position: (x: x, y: y),
+            scale: (x: spriteWidth, y: spriteHeight),
+            rotation: rotation,
+            pivotX: pivotX,
+            pivotY: pivotY
+        )
+
+        // Get current projection matrix
+        let projectionMatrix = uniformBuffer.contents().bindMemory(
+            to: simd_float4x4.self, capacity: 1
+        ).pointee
+
+        // Create MVP matrix
+        let mvpMatrix = projectionMatrix * modelMatrix
+
+        // Create temporary uniform buffer for this sprite
+        guard let device = device,
+            let tempUniformBuffer = device.makeBuffer(
+                bytes: [mvpMatrix], length: MemoryLayout<simd_float4x4>.stride, options: [])
+        else {
+            log(
+                "drawSpriteScaledWithSourcePivoted: Failed to create temporary uniform buffer",
+                level: .error)
+            return
+        }
+
+        // Create vertex buffer with custom UV coordinates for the source rectangle
+        let vertices: [Float] = [
+            // Position (x, y), TexCoord (u, v), Color (r, g, b, a)
+            0.0, 1.0, u0, v1, 1.0, 1.0, 1.0, 1.0,  // Bottom-left
+            1.0, 1.0, u1, v1, 1.0, 1.0, 1.0, 1.0,  // Bottom-right
+            1.0, 0.0, u1, v0, 1.0, 1.0, 1.0, 1.0,  // Top-right
+            0.0, 0.0, u0, v0, 1.0, 1.0, 1.0, 1.0,  // Top-left
+        ]
+
+        guard
+            let sourceVertexBuffer = device.makeBuffer(
+                bytes: vertices, length: vertices.count * MemoryLayout<Float>.stride, options: [])
+        else {
+            log(
+                "drawSpriteScaledWithSourcePivoted: Failed to create source vertex buffer",
+                level: .error)
+            return
+        }
+
+        // Set up render encoder
+        renderEncoder.setRenderPipelineState(pipelineState)
+        renderEncoder.setVertexBuffer(sourceVertexBuffer, offset: 0, index: 0)
+        renderEncoder.setVertexBuffer(tempUniformBuffer, offset: 0, index: 1)
+        renderEncoder.setFragmentTexture(texture, index: 0)
+        renderEncoder.setFragmentSamplerState(samplerState, index: 0)
+
+        // Draw the sprite
+        renderEncoder.drawIndexedPrimitives(
+            type: .triangle, indexCount: 6, indexType: .uint16, indexBuffer: indexBuffer!,
+            indexBufferOffset: 0)
+    }
+
     /// Draw a sprite with centered positioning (for rotation and special effects)
     public func drawSpriteScaledCentered(
         textureHandle: UInt32, x: Float, y: Float, scaleX: Float, scaleY: Float, rotation: Float
@@ -1467,28 +1688,37 @@ public class MetalRenderer {
         let absScaleY = abs(scaleY)
         let spriteWidth = Float(texture.width) * absScaleX
         let spriteHeight = Float(texture.height) * absScaleY
-        
+
         // DEBUG: Log flip state for all sprites with negative scale
         if flipHorizontal {
-            log("🔄 FLIP DETECTED [drawSpriteScaledCentered]: handle=\(textureHandle), scaleX=\(scaleX), pos=(\(x),\(y))", level: .info)
+            log(
+                "🔄 FLIP DETECTED [drawSpriteScaledCentered]: handle=\(textureHandle), scaleX=\(scaleX), pos=(\(x),\(y))",
+                level: .info)
         }
 
         // Calculate UV coordinates with flipping support
-        var u0: Float = 0.0, v0: Float = 0.0, u1: Float = 1.0, v1: Float = 1.0
+        var u0: Float = 0.0
+        var v0: Float = 0.0
+        var u1: Float = 1.0
+        var v1: Float = 1.0
 
         if flipHorizontal {
-            u0 = 1.0; u1 = 0.0  // Flip U coordinates for horizontal flip
+            u0 = 1.0
+            u1 = 0.0  // Flip U coordinates for horizontal flip
         }
         if flipVertical {
-            v0 = 1.0; v1 = 0.0  // Flip V coordinates for vertical flip
+            v0 = 1.0
+            v1 = 0.0  // Flip V coordinates for vertical flip
         }
 
         // NO position adjustment needed!
         // UV coordinate flipping handles the mirroring while keeping the quad at the same position
         if flipHorizontal {
-            log("🔄 FLIP [Centered]: Using UV flip only (no position adjustment) at x=\(x)", level: .info)
+            log(
+                "🔄 FLIP [Centered]: Using UV flip only (no position adjustment) at x=\(x)",
+                level: .info)
         }
-        
+
         // Use centered sprite transformation matrix (with centering)
         // Use absolute scale values to prevent negative scaling artifacts
         let modelMatrix = MetalMatrixHelpers.spriteTransformMatrixCentered(
@@ -1538,12 +1768,16 @@ public class MetalRenderer {
         } else {
             customVertexBuffer = nil  // Use default vertex buffer
         }
-        
+
         // DEBUG: Confirm which vertex buffer is being used
         if flipHorizontal && customVertexBuffer != nil {
-            log("✅ USING CUSTOM FLIPPED VERTEX BUFFER [drawSpriteScaledCentered] for handle \(textureHandle)", level: .info)
+            log(
+                "✅ USING CUSTOM FLIPPED VERTEX BUFFER [drawSpriteScaledCentered] for handle \(textureHandle)",
+                level: .info)
         } else if flipHorizontal && customVertexBuffer == nil {
-            log("❌ FLIP FAILED [drawSpriteScaledCentered]: customVertexBuffer is NIL despite flipHorizontal=true!", level: .error)
+            log(
+                "❌ FLIP FAILED [drawSpriteScaledCentered]: customVertexBuffer is NIL despite flipHorizontal=true!",
+                level: .error)
         }
 
         // Set up render encoder
@@ -1567,95 +1801,107 @@ public class MetalRenderer {
     /// This is the ultimate performance optimization - uses GPU instancing
     /// Before: 270 draw calls + 540 buffer allocations per frame
     /// After: 1 draw call + 0 allocations per frame = 60 FPS! 🎯
-    public func drawSpriteBatch<C: Collection>(_ sprites: C) where C.Element == GameCorePlatform.GameCore.SpriteBatchData {
+    public func drawSpriteBatch<C: Collection>(_ sprites: C)
+    where C.Element == GameCorePlatform.GameCore.SpriteBatchData {
         startTiming("DrawSpriteBatch")
         defer { endTiming("DrawSpriteBatch") }
-        
+
         guard sprites.count > 0 else { return }
-        
+
         // DEBUG: Log batches periodically
         batchLogCounter += 1
         let shouldLog = (batchLogCounter % 60 == 0)
-        
+
         if shouldLog {
             if let first = sprites.first {
-                log("🎨 GPU BATCH: count=\(sprites.count) pos=(\(first.x),\(first.y)) scale=(\(first.scaleX),\(first.scaleY)) tex=\(first.textureHandle)", level: .info)
+                log(
+                    "🎨 GPU BATCH: count=\(sprites.count) pos=(\(first.x),\(first.y)) scale=(\(first.scaleX),\(first.scaleY)) tex=\(first.textureHandle)",
+                    level: .info)
             }
         }
-        
+
         // Get current instance buffer from triple-buffered array
         guard currentBufferIndex < spriteInstanceBuffers.count else {
             log("❌ drawSpriteBatch: Invalid buffer index \(currentBufferIndex)", level: .error)
             return
         }
         let instanceBuffer = spriteInstanceBuffers[currentBufferIndex]
-        
+
         // Validate required resources
         guard let uniformBuffer = uniformBuffer,
-              let instancedVB = instancedVertexBuffer,
-              let indexBuffer = indexBuffer,
-              let pipelineState = instancedPipelineState,
-              let renderEncoder = ensureRenderEncoder() else {
-            log("❌ drawSpriteBatch: Missing required resources - uniformBuffer:\(uniformBuffer != nil) instancedVB:\(instancedVertexBuffer != nil) indexBuffer:\(indexBuffer != nil) pipeline:\(instancedPipelineState != nil)", level: .error)
+            let instancedVB = instancedVertexBuffer,
+            let indexBuffer = indexBuffer,
+            let pipelineState = instancedPipelineState,
+            let renderEncoder = ensureRenderEncoder()
+        else {
+            log(
+                "❌ drawSpriteBatch: Missing required resources - uniformBuffer:\(uniformBuffer != nil) instancedVB:\(instancedVertexBuffer != nil) indexBuffer:\(indexBuffer != nil) pipeline:\(instancedPipelineState != nil)",
+                level: .error)
             return
         }
-        
+
         // All sprites in batch use the same texture (that's why they're batched!)
         guard let firstSprite = sprites.first else { return }
         guard let texture = textures[firstSprite.textureHandle] else {
-            log("drawSpriteBatch: Invalid texture handle \(firstSprite.textureHandle)", level: .warning)
+            log(
+                "drawSpriteBatch: Invalid texture handle \(firstSprite.textureHandle)",
+                level: .warning)
             return
         }
-        
+
         // CRITICAL FIX: Check remaining capacity in current instance buffer
         let remainingCapacity = maxSpritesPerBatch - currentInstanceOffset
-        
+
         // Handle buffer overflow: if no space left, log warning and skip
         guard remainingCapacity > 0 else {
-            log("⚠️ Instance buffer FULL (offset=\(currentInstanceOffset)/\(maxSpritesPerBatch)) - skipping batch of \(sprites.count) sprites", level: .warning)
+            log(
+                "⚠️ Instance buffer FULL (offset=\(currentInstanceOffset)/\(maxSpritesPerBatch)) - skipping batch of \(sprites.count) sprites",
+                level: .warning)
             instanceBufferOverflowCount += 1
             return
         }
-        
+
         // Clamp batch size to available capacity
         let spritesToDraw = min(sprites.count, remainingCapacity)
         if spritesToDraw < sprites.count {
-            log("⚠️ Batch truncated: requested \(sprites.count) sprites, only \(spritesToDraw) fit in remaining capacity", level: .warning)
+            log(
+                "⚠️ Batch truncated: requested \(sprites.count) sprites, only \(spritesToDraw) fit in remaining capacity",
+                level: .warning)
         }
-        
+
         // Get projection matrix
         let projectionMatrix = uniformBuffer.contents().bindMemory(
             to: simd_float4x4.self, capacity: 1
         ).pointee
-        
+
         // Calculate write offset in instance buffer (CRITICAL FIX)
         let writeOffset = currentInstanceOffset
         let instancePointer = instanceBuffer.contents().bindMemory(
             to: SpriteInstanceData.self, capacity: maxSpritesPerBatch
         )
-        
+
         // DEBUG: Log offset and batch info
         if shouldLog || writeOffset == 0 {
             // Performance: Disabled per-batch logging
             // log("📦 BATCH #\(instancedDrawCallsThisFrame): offset=\(writeOffset) count=\(spritesToDraw)/\(sprites.count) texture=\(firstSprite.textureHandle)", level: .info)
         }
-        
+
         // Performance: Disabled per-batch logging
         // if let first = sprites.first {
         //     log("  🎯 Drawing batch: \(spritesToDraw) sprites, first at pos=(\(first.x),\(first.y))", level: .info)
         // }
-        
+
         for (i, sprite) in sprites.prefix(spritesToDraw).enumerated() {
             let bufferIndex = writeOffset + i  // CRITICAL: Write at offset, not i!
-            
+
             // CRITICAL: Detect horizontal flip from negative scale
             let flipHorizontal = sprite.scaleX < 0
             let flipVertical = sprite.scaleY < 0
-            
+
             // Calculate sprite dimensions using ABSOLUTE scale values
             let absScaleX = abs(sprite.scaleX)
             let absScaleY = abs(sprite.scaleY)
-            
+
             let spriteWidth: Float
             let spriteHeight: Float
             if sprite.sourceWidth > 0 && sprite.sourceHeight > 0 {
@@ -1667,33 +1913,36 @@ public class MetalRenderer {
                 spriteWidth = Float(texture.width) * absScaleX
                 spriteHeight = Float(texture.height) * absScaleY
             }
-            
+
             // NO position adjustment needed!
             // UV coordinate flipping handles the mirroring while keeping the quad at the same position
             // The quad vertices stay at the same screen coords, only the texture mapping changes
-            
+
             // Build model matrix with ORIGINAL position (no adjustment)
             let modelMatrix = MetalMatrixHelpers.spriteTransformMatrix(
                 position: (x: sprite.x, y: sprite.y),
                 scale: (x: spriteWidth, y: spriteHeight),
                 rotation: sprite.rotation
             )
-            
+
             // Calculate UV rectangle for sprite sheet with flip support
             var uvRect: SIMD4<Float>
             if sprite.sourceWidth > 0 && sprite.sourceHeight > 0 {
                 let texWidth = Float(texture.width)
                 let texHeight = Float(texture.height)
-                
+
                 // CRITICAL FIX: Add half-pixel offset for pixel-perfect sprite sheet sampling
                 let halfPixelU = 0.5 / texWidth
                 let halfPixelV = 0.5 / texHeight
-                
+
                 var u0 = max(0.0, min(1.0, (sprite.sourceX / texWidth) + halfPixelU))
                 var v0 = max(0.0, min(1.0, (sprite.sourceY / texHeight) + halfPixelV))
-                var u1 = max(0.0, min(1.0, ((sprite.sourceX + sprite.sourceWidth) / texWidth) - halfPixelU))
-                var v1 = max(0.0, min(1.0, ((sprite.sourceY + sprite.sourceHeight) / texHeight) - halfPixelV))
-                
+                var u1 = max(
+                    0.0, min(1.0, ((sprite.sourceX + sprite.sourceWidth) / texWidth) - halfPixelU))
+                var v1 = max(
+                    0.0, min(1.0, ((sprite.sourceY + sprite.sourceHeight) / texHeight) - halfPixelV)
+                )
+
                 // CRITICAL: Flip UV coordinates if needed
                 if flipHorizontal {
                     swap(&u0, &u1)  // Swap U coordinates for horizontal flip
@@ -1701,30 +1950,32 @@ public class MetalRenderer {
                 if flipVertical {
                     swap(&v0, &v1)  // Swap V coordinates for vertical flip
                 }
-                
+
                 uvRect = SIMD4<Float>(u0, v0, u1, v1)
             } else {
                 // Full texture with flip support
-                var u0: Float = 0.0, v0: Float = 0.0
-                var u1: Float = 1.0, v1: Float = 1.0
-                
+                var u0: Float = 0.0
+                var v0: Float = 0.0
+                var u1: Float = 1.0
+                var v1: Float = 1.0
+
                 if flipHorizontal {
                     swap(&u0, &u1)
                 }
                 if flipVertical {
                     swap(&v0, &v1)
                 }
-                
+
                 uvRect = SIMD4<Float>(u0, v0, u1, v1)
             }
-            
+
             // Fill instance data at offset position (CRITICAL FIX)
             instancePointer[bufferIndex] = SpriteInstanceData(
                 modelMatrix: modelMatrix,
                 uvRect: uvRect,
                 color: SIMD4<Float>(1, 1, 1, 1)  // White/opaque (no tint)
             )
-            
+
             // Performance: CRITICAL - Disabled per-sprite per-batch logging (was creating thousands of logs/sec!)
             // if i == 0 {  // Log first sprite of EVERY batch
             //     let translationX = modelMatrix.columns.3.x
@@ -1736,26 +1987,29 @@ public class MetalRenderer {
             //     }
             // }
         }
-        
+
         // Calculate byte offset for this batch (CRITICAL FIX)
         let byteOffset = writeOffset * MemoryLayout<SpriteInstanceData>.stride
-        
+
         // Create frame uniforms
         var frameUniforms = FrameUniforms(projectionMatrix: projectionMatrix)
-        
+
         // Set up render encoder with OFFSET binding (CRITICAL FIX)
         renderEncoder.setRenderPipelineState(pipelineState)
         renderEncoder.setVertexBuffer(instancedVB, offset: 0, index: 0)  // Quad vertices
-        renderEncoder.setVertexBytes(&frameUniforms, length: MemoryLayout<FrameUniforms>.stride, index: 1)
+        renderEncoder.setVertexBytes(
+            &frameUniforms, length: MemoryLayout<FrameUniforms>.stride, index: 1)
         renderEncoder.setVertexBuffer(instanceBuffer, offset: byteOffset, index: 2)  // ← CRITICAL: Use byte offset!
         renderEncoder.setFragmentTexture(texture, index: 0)
         renderEncoder.setFragmentSamplerState(samplerState, index: 0)
-        
+
         // DEBUG: Log buffer binding
         if shouldLog || writeOffset == 0 {
-            log("  🎯 Binding buffer: offset=\(byteOffset) bytes (\(writeOffset) sprites * \(MemoryLayout<SpriteInstanceData>.stride) bytes/sprite)", level: .info)
+            log(
+                "  🎯 Binding buffer: offset=\(byteOffset) bytes (\(writeOffset) sprites * \(MemoryLayout<SpriteInstanceData>.stride) bytes/sprite)",
+                level: .info)
         }
-        
+
         // ★★★ ONE DRAW CALL FOR ALL SPRITES IN THIS BATCH! ★★★
         renderEncoder.drawIndexedPrimitives(
             type: .triangle,
@@ -1765,17 +2019,19 @@ public class MetalRenderer {
             indexBufferOffset: 0,
             instanceCount: spritesToDraw  // Draw only sprites that fit
         )
-        
+
         // CRITICAL: Advance instance offset for next batch
         currentInstanceOffset += spritesToDraw
         instancedDrawCallsThisFrame += 1
-        
+
         // DEBUG: Log buffer state after draw
         if shouldLog {
-            log("  ✅ Batch complete: new offset=\(currentInstanceOffset)/\(maxSpritesPerBatch) usage=\(Int(Float(currentInstanceOffset)/Float(maxSpritesPerBatch)*100))%", level: .info)
+            log(
+                "  ✅ Batch complete: new offset=\(currentInstanceOffset)/\(maxSpritesPerBatch) usage=\(Int(Float(currentInstanceOffset)/Float(maxSpritesPerBatch)*100))%",
+                level: .info)
         }
     }
-    
+
     /// Draw a sprite with custom pivot point rotation (for objects like spike balls rotating from base)
     /// Automatically uses RotSprite algorithm for high-quality pixel art rotation when available
     public func drawSpriteScaledPivoted(
@@ -1925,6 +2181,13 @@ public class MetalRenderer {
     public func drawCircle(
         _ x: Float, _ y: Float, _ radius: Float, _ r: Float, _ g: Float, _ b: Float, _ a: Float
     ) {
+        drawCircle(x: x, y: y, radius: radius, r: r, g: g, b: b, a: a, segments: 32)
+    }
+
+    public func drawFilledCircle(
+        _ x: Float, _ y: Float, _ radius: Float, _ r: Float, _ g: Float, _ b: Float, _ a: Float
+    ) {
+        // Alias to drawCircle since it already renders filled circles using triangle fan
         drawCircle(x: x, y: y, radius: radius, r: r, g: g, b: b, a: a, segments: 32)
     }
 
@@ -2826,7 +3089,7 @@ public class MetalRenderer {
     ) {
         startTiming("DrawTextRaster")
         defer { endTiming("DrawTextRaster") }
-        
+
         guard let device = device, let ctBase = self.ctFont else { return }
         let sizeInPoints = CGFloat(fontSize) / deviceScale
         let ctFontSized = CTFontCreateCopyWithAttributes(ctBase, sizeInPoints, nil, nil)

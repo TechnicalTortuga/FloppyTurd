@@ -18,6 +18,7 @@
 #include <sstream>
 #include <vector>
 #include <mutex>
+#include <chrono>
 
 #ifdef PLATFORM_IOS
 #include "../../iOS/Threading/ThreadingProxy.h"

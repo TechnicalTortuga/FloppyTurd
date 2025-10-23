@@ -64,6 +64,12 @@ namespace GameCore {
 
         GN_LOG_INFO("ScreenPromptState: Waiting for " + targetOrientation + " orientation (currently " + currentOrientation + ")");
 
+        // CRITICAL: Unlock orientation so the device can actually rotate
+        if (m_platformDelegates && m_platformDelegates->renderer.unlockOrientation) {
+            GN_LOG_INFO("ScreenPromptState: Unlocking orientation to allow device rotation");
+            m_platformDelegates->renderer.unlockOrientation();
+        }
+
         if (m_waitForLandscape) {
             // Waiting for landscape - should start in portrait
             if (!initialScreenInfo.isPortrait) {

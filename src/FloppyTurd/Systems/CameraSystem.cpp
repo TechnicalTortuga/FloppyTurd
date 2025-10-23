@@ -84,6 +84,15 @@ namespace GameCore {
                 continue;
             }
             
+            // Skip RatCopters specifically (they manage their own velocity-based movement)
+            // Other enemies still need CameraSystem scroll (snowmen, toilet paper, etc.)
+            if (m_ecsSystem->HasComponent<Enemy>(entity)) {
+                auto enemy = m_ecsSystem->GetComponent<Enemy>(entity);
+                if (enemy && enemy->movementPattern == "flying") {
+                    continue; // Skip RatCopters with "flying" pattern
+                }
+            }
+            
             auto transform = m_ecsSystem->GetComponent<Transform>(entity);
             if (transform) {
                 // If entity has ScrollSpeed, use that absolute speed. Otherwise use world speed.
