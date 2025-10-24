@@ -3,6 +3,7 @@
 #include "../States/MainMenuState.h"
 #include "../States/ScreenPromptState.h"
 #include "../States/TransitionState.h"
+#include "../States/CreditsState.h"
 #include "../Config/LevelConfig.h"
 #include "../Input/InputManager.h"
 #include "../../Engine/Core/GNLog.h"
@@ -692,21 +693,10 @@ namespace GameCore {
                 LevelConfig levelConfig = LevelConfigFactory::GetLevelConfig(levelId);
                 
                 if (levelConfig.forceLandscape) {
-                    // Exiting landscape level - unlock orientation first so user can rotate
-                    GN_LOG_INFO("Exiting landscape level " + std::to_string(levelId) + " - unlocking orientation for manual rotation");
-                    if (m_platformDelegates.renderer.unlockOrientation) {
-                        m_platformDelegates.renderer.unlockOrientation();
-                        GN_LOG_INFO("Orientation unlocked - user can now rotate manually");
-                    }
-
-                    // Use ScreenPromptState to wait for portrait rotation
-                    GN_LOG_INFO("Creating ScreenPromptState to wait for portrait rotation");
-                    auto screenPrompt = std::make_unique<ScreenPromptState>(m_ecsSystem.get(), &m_platformDelegates, false); // false = wait for portrait
-
-                    // Store the transition target for when ScreenPromptState finishes
-                    m_pendingTransitionTarget = "MainMenu";
-
-                    m_stateManager->ChangeState(std::move(screenPrompt));
+                    // Boss level completed - transition to Credits (stay in landscape)
+                    GN_LOG_INFO("Boss level " + std::to_string(levelId) + " completed - transitioning to Credits");
+                    auto creditsState = std::make_unique<CreditsState>(m_ecsSystem.get(), &m_platformDelegates);
+                    m_stateManager->ChangeState(std::move(creditsState));
                     return;
                 }
             }
@@ -736,6 +726,21 @@ namespace GameCore {
             
             m_stateManager->ChangeState(std::move(mainMenuState));
             GN_LOG_INFO("Gameplay finished - transitioning to menu");
+        }
+        else if (strcmp(stateName, "Credits") == 0) {
+            // Credits finished - show ScreenPromptState to rotate back to portrait
+            GN_LOG_INFO("Credits finished - transitioning to ScreenPromptState for portrait rotation");
+            
+            // Unlock orientation so user can rotate
+            if (m_platformDelegates.renderer.unlockOrientation) {
+                m_platformDelegates.renderer.unlockOrientation();
+                GN_LOG_INFO("Orientation unlocked - user can now rotate to portrait");
+            }
+            
+            // Show ScreenPromptState waiting for portrait
+            auto screenPrompt = std::make_unique<ScreenPromptState>(m_ecsSystem.get(), &m_platformDelegates, false); // false = wait for portrait
+            m_pendingTransitionTarget = "MainMenu";
+            m_stateManager->ChangeState(std::move(screenPrompt));
         }
         else if (strcmp(stateName, "Transition") == 0) {
             // Handle transition state finishing

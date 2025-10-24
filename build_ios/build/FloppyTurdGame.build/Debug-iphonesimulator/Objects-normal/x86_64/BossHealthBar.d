@@ -30,4 +30,6 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Systems/../../Engine/Utility/FrameProfiler.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Systems/../../Engine/Utility/../Core/GNLog.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Systems/ProjectileSystem.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Systems/ExplosionSystem.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Systems/../../Engine/Core/GNLog.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Platform/PlatformDelegates.h

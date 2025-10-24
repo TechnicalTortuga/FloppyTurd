@@ -2051,8 +2051,11 @@ namespace GameCore {
 
         // Reset all active enemies - keep them VISIBLE and scrolling like obstacles
         // CRITICAL: Space them out horizontally, do NOT stack them!
+        // EXCEPTION: Skip Rat King boss (managed by BossSystem), but REMOVE rat minions spawned during battle
         const float ENEMY_SPACING = 800.0f; // Generous spacing between enemies
         int enemyIndex = 0;
+        
+        std::vector<Entity> enemiesToRemove; // Track rat minions to remove
         
         for (Entity enemy : m_activeEnemies) {
             Enemy* enemyComp = m_ecsSystem->GetComponent<Enemy>(enemy);
@@ -2060,6 +2063,19 @@ namespace GameCore {
             Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(enemy);
 
             if (enemyComp && transform) {
+                // Skip the Rat King boss - he's managed by BossSystem
+                if (enemyComp->enemyType == "Ratking" || enemyComp->enemyType == "RatKing") {
+                    GN_LOG_INFO("[RESET] Skipping Rat King boss entity " + std::to_string(enemy) + " (managed by BossSystem)");
+                    continue;
+                }
+                
+                // Remove rat minions spawned during boss battle (Rat enemy type with "grounded" pattern)
+                if (enemyComp->enemyType == "Rat" && enemyComp->movementPattern == "grounded") {
+                    GN_LOG_INFO("[RESET] Marking rat minion " + std::to_string(enemy) + " for removal");
+                    enemiesToRemove.push_back(enemy);
+                    continue;
+                }
+                
                 // Position offscreen to the right with proper spacing (like initial spawn)
                 float offsetX = screenInfo.pixelWidth + 650.0f + (enemyIndex * ENEMY_SPACING);
                 transform->position.x = offsetX;
@@ -2164,9 +2180,39 @@ namespace GameCore {
             }
         }
         
+        // Remove rat minions from active enemies
+        for (Entity ratMinion : enemiesToRemove) {
+            m_activeEnemies.erase(
+                std::remove(m_activeEnemies.begin(), m_activeEnemies.end(), ratMinion),
+                m_activeEnemies.end()
+            );
+            
+            // Deactivate and hide the rat minion
+            Enemy* enemyComp = m_ecsSystem->GetComponent<Enemy>(ratMinion);
+            if (enemyComp) {
+                enemyComp->isActive = false;
+            }
+            
+            Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(ratMinion);
+            if (sprite) {
+                sprite->visible = false;
+            }
+            
+            // Move offscreen
+            Transform* transform = m_ecsSystem->GetComponent<Transform>(ratMinion);
+            if (transform) {
+                transform->position.x = -5000.0f;
+                transform->position.y = -5000.0f;
+            }
+            
+            GN_LOG_INFO("[RESET] Removed rat minion entity " + std::to_string(ratMinion));
+        }
+        
         int enemyCount = static_cast<int>(m_activeEnemies.size());
+        int removedCount = static_cast<int>(enemiesToRemove.size());
 
-        GN_LOG_INFO("[RESET] All " + std::to_string(enemyCount) + " enemies reset with " + 
+        GN_LOG_INFO("[RESET] " + std::to_string(enemyCount) + " enemies reset (removed " + 
+                   std::to_string(removedCount) + " rat minions) with " + 
                    std::to_string(ENEMY_SPACING) + "px spacing - Y positions PRESERVED, kept VISIBLE and ACTIVE");
     }
 

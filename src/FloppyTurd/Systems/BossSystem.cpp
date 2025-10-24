@@ -7,10 +7,11 @@
 
 namespace GameCore {
 
-BossSystem::BossSystem(Gnosis::ECS* ecsSystem, LevelManager* levelManager, ProjectileSystem* projectileSystem, PlatformDelegates* platformDelegates)
+BossSystem::BossSystem(Gnosis::ECS* ecsSystem, LevelManager* levelManager, ProjectileSystem* projectileSystem, ExplosionSystem* explosionSystem, PlatformDelegates* platformDelegates)
     : m_ecsSystem(ecsSystem)
     , m_levelManager(levelManager)
     , m_projectileSystem(projectileSystem)
+    , m_explosionSystem(explosionSystem)
     , m_platformDelegates(platformDelegates)
 {
     GN_LOG_INFO("BossSystem created");
@@ -387,28 +388,110 @@ void BossSystem::HandleHurt(float deltaTime) {
 void BossSystem::HandleDeath(float deltaTime) {
     GN_LOG_DEBUG("BossSystem: HandleDeath - deltaTime=" + std::to_string(deltaTime));
     
-    // Check if death animation has completed by checking the sprite's current frame
-    if (bossEntity != 0 && m_ecsSystem) {
-        Sprite* deathSprite = m_ecsSystem->GetComponent<Sprite>(bossEntity);
-        if (deathSprite) {
-            GN_LOG_DEBUG("BossSystem: Death sprite currentFrame=" + std::to_string(deathSprite->currentFrame) +
-                        ", frameCount=" + std::to_string(deathSprite->frameCount) +
-                        ", playing=" + std::to_string(deathSprite->playing));
-            
-            if (deathSprite->currentFrame >= 5) {  // Frame 6 of 6-frame animation (0-based)
-                if (isActive) {  // Only log once
-                    isActive = false;
-                    GN_LOG_INFO("Rat King death animation completed - boss now inactive");
-                    // TODO: Trigger level completion
-                }
-            }
-        } else {
-            GN_LOG_ERROR("BossSystem: HandleDeath - death sprite component missing!");
-        }
-    } else {
-        GN_LOG_ERROR("BossSystem: HandleDeath - bossEntity=" + std::to_string(bossEntity) + 
-                    ", m_ecsSystem=" + std::to_string(m_ecsSystem != nullptr));
+    // Start death sequence on first frame
+    if (!m_deathSequenceStarted) {
+        StartDeathSequence();
     }
+    
+    // Update death sequence
+    UpdateDeathSequence(deltaTime);
+}
+
+void BossSystem::StartDeathSequence() {
+    GN_LOG_INFO("🔥 Starting Rat King death sequence!");
+    
+    m_deathSequenceStarted = true;
+    m_deathSequenceTimer = 0.0f;
+    m_explosionIndex = 0;
+    m_hasPlayedScreech = false;
+    m_hasPlayedBossKill = false;
+    
+    // Play BossKill sound immediately at reduced volume so screech can be heard
+    if (m_platformDelegates && m_platformDelegates->audio.playSound) {
+        m_platformDelegates->audio.playSound("BossKill.mp3", 0.6f);  // Reduced from 1.0 to 0.6
+        m_hasPlayedBossKill = true;
+        GN_LOG_INFO("🎵 Playing BossKill sound at volume 0.6");
+    }
+}
+
+void BossSystem::UpdateDeathSequence(float deltaTime) {
+    m_deathSequenceTimer += deltaTime;
+    
+    // Debug: Log timer every frame during death sequence
+    GN_LOG_DEBUG("UpdateDeathSequence: timer=" + std::to_string(m_deathSequenceTimer) + 
+                 ", hasPlayedScreech=" + std::to_string(m_hasPlayedScreech));
+    
+    // Play screech halfway through BossKill sound (around 0.5-1.0 seconds)
+    if (!m_hasPlayedScreech && m_deathSequenceTimer >= 0.5f) {
+        GN_LOG_INFO("🔊 Screech condition met! Timer: " + std::to_string(m_deathSequenceTimer));
+        if (m_platformDelegates && m_platformDelegates->audio.playSound) {
+            // Play screech at BOOSTED VOLUME to be heard over BossKill
+            m_platformDelegates->audio.playSound("RatKingScreech.mp3", 1.2f);
+            m_hasPlayedScreech = true;
+            GN_LOG_INFO("🔊 PLAYING RatKingScreech.mp3 at BOOSTED volume 1.2 (to be heard over BossKill)");
+        } else {
+            GN_LOG_ERROR("❌ Cannot play screech - platformDelegates or playSound is null!");
+        }
+    }
+    
+    // Spawn explosions at timed intervals (slow, dramatic)
+    // Explosion 1 at 0.3s
+    if (m_explosionIndex == 0 && m_deathSequenceTimer >= 0.3f) {
+        SpawnExplosionAtRandomPosition();
+        m_explosionIndex++;
+    }
+    // Explosion 2 at 0.7s
+    else if (m_explosionIndex == 1 && m_deathSequenceTimer >= 0.7f) {
+        SpawnExplosionAtRandomPosition();
+        m_explosionIndex++;
+    }
+    // Explosion 3 at 1.1s (big one)
+    else if (m_explosionIndex == 2 && m_deathSequenceTimer >= 1.1f) {
+        if (m_explosionSystem) {
+            GNVector2 bossCenter = {position.x + (64.0f * scale), position.y + (64.0f * scale)};
+            float randX = (rand() % 128) - 64.0f;
+            float randY = (rand() % 128) - 64.0f;
+            GNVector2 explosionPos = {bossCenter.x + randX, bossCenter.y + randY};
+            m_explosionSystem->SpawnBigExplosion(explosionPos, scale, 0.5f); // Slow animation
+            GN_LOG_INFO("Spawned BIG explosion at (" + std::to_string(explosionPos.x) + ", " + std::to_string(explosionPos.y) + ")");
+        }
+        m_explosionIndex++;
+    }
+    // Explosion 4 at 1.5s
+    else if (m_explosionIndex == 3 && m_deathSequenceTimer >= 1.5f) {
+        SpawnExplosionAtRandomPosition();
+        m_explosionIndex++;
+    }
+    
+    // Start fade to white at 2.0 seconds
+    if (m_deathSequenceTimer >= 2.0f) {
+        float fadeTime = m_deathSequenceTimer - 2.0f;
+        m_whiteFadeAlpha = Gnosis::Clamp(fadeTime / 2.0f, 0.0f, 1.0f); // Fade over 2 seconds (slower)
+        
+        // Mark sequence as complete when fade finishes
+        if (m_whiteFadeAlpha >= 1.0f && !m_deathSequenceComplete) {
+            m_deathSequenceComplete = true;
+            isActive = false;
+            GN_LOG_INFO("💀 Rat King death sequence complete - ready to return to main menu");
+        }
+    }
+}
+
+void BossSystem::SpawnExplosionAtRandomPosition() {
+    if (!m_explosionSystem) return;
+    
+    // Calculate boss center (128x128 sprite scaled by 8 = 1024x1024)
+    GNVector2 bossCenter = {position.x + (64.0f * scale), position.y + (64.0f * scale)};
+    
+    // Random position spanning the ENTIRE boss sprite area (1024x1024 pixels)
+    // Offset range: -512 to +512 pixels from center (covers full 1024px sprite)
+    float randX = (rand() % 1024) - 512.0f;
+    float randY = (rand() % 1024) - 512.0f;
+    GNVector2 explosionPos = {bossCenter.x + randX, bossCenter.y + randY};
+    
+    // Spawn small explosion with slow animation
+    m_explosionSystem->SpawnSmallExplosion(explosionPos, scale, 0.5f);
+    GN_LOG_INFO("Spawned small explosion at (" + std::to_string(explosionPos.x) + ", " + std::to_string(explosionPos.y) + ")");
 }
 
 void BossSystem::ChangeState(RatKingState newState) {
@@ -588,6 +671,53 @@ void BossSystem::SetPlayerPosition(GNVector2 playerPos) {
     aimingData.playerPosition = playerPos;
 }
 
+void BossSystem::Reset() {
+    GN_LOG_INFO("BossSystem: Resetting boss to initial state");
+    
+    // Reset health
+    health = maxHealth;
+    
+    // Reset state
+    ChangeState(RatKingState::IDLE);
+    
+    // Reset timers
+    idleTimer = 0.0f;
+    walkTimer = 0.0f;
+    hurtTimer = 0.0f;
+    deathTimer = 0.0f;
+    
+    // Reset animation state
+    hasFiredProjectile = false;
+    hurtBuffer = 0;
+    hasFlashedHurt = false;
+    hurtFlashTimer = 0.0f;
+    
+    // Reset minion spawning threshold
+    nextMinionHealthThreshold = 185;
+    hasTriggeredLowHealthMusic = false;
+    
+    // Reset aiming data
+    aimingData.aimTimer = 0.0f;
+    aimingData.hasLockedOn = false;
+    aimingData.lockOnAngle = 0.0f;
+    aimingData.currentArmAngle = 180.0f;
+    aimingData.lockOnDots.clear();
+    
+    // Reset death sequence state
+    m_deathSequenceStarted = false;
+    m_deathSequenceComplete = false;
+    m_deathSequenceTimer = 0.0f;
+    m_whiteFadeAlpha = 0.0f;
+    m_hasPlayedScreech = false;
+    m_hasPlayedBossKill = false;
+    m_explosionIndex = 0;
+    
+    // Destroy and recreate lock-on dot entities to ensure clean state
+    DestroyLockOnDotEntities();
+    
+    GN_LOG_INFO("BossSystem: Reset complete - health=" + std::to_string(health) + "/" + std::to_string(maxHealth));
+}
+
 void BossSystem::SpawnProjectile() {
     if (!m_projectileSystem) return;
     
@@ -757,17 +887,25 @@ void BossSystem::UpdateLockOnIndicator() {
     // Calculate launch position (hand location, lowered by 16*scale)
     GNVector2 handLoc = { shoulder.x - (40.0f * scale), shoulder.y + (16.0f * scale) };
     
-    // Always aim directly at player from launch position
-    // Offset target 8px*scale higher for better visual accuracy
-    Gnosis::GNVector2 adjustedTarget = {aimingData.playerPosition.x, aimingData.playerPosition.y - (8.0f * scale)};
-    Gnosis::GNVector2 toPlayer = Gnosis::Vector2Subtract(adjustedTarget, handLoc);
+    // Always aim directly at player CENTER (not just X position)
+    // The playerPosition is already the center from SetPlayerPosition
+    Gnosis::GNVector2 toPlayer = Gnosis::Vector2Subtract(aimingData.playerPosition, handLoc);
     float distanceToPlayer = sqrtf(toPlayer.x * toPlayer.x + toPlayer.y * toPlayer.y);
     GNVector2 direction = {toPlayer.x / distanceToPlayer, toPlayer.y / distanceToPlayer};
+    
+    // Flash effect: in the last 20% of aiming duration, flash red and white
+    bool isFlashing = (progress >= 0.80f);
+    bool showWhite = false;
+    if (isFlashing) {
+        // Flash at 10Hz (10 times per second)
+        float flashTimer = aimingData.aimTimer * 10.0f;
+        showWhite = (static_cast<int>(flashTimer) % 2 == 0);
+    }
     
     for (int i = 0; i < dots && i < (int)aimingData.dotEntities.size(); ++i) {
         float fill = (float)i / (float)dots;
         
-        // Place dots along the line from launch position to player
+        // Place dots along the line from launch position to player CENTER
         float distance = i * spacing;
         Gnosis::GNVector2 dotPos = Gnosis::Vector2Add(handLoc, Gnosis::Vector2Scale(direction, distance));
 
@@ -789,11 +927,24 @@ void BossSystem::UpdateLockOnIndicator() {
                 dotTransform->scale = {scale, scale}; // Scale dot with boss scale
                 debugDraw->showCollider = true;
                 
-                // Color interpolation from yellow to red based on progress
-                float colorProgress = fill;
-                debugDraw->colliderColor.r = static_cast<uint8_t>(255);  // Always full red
-                debugDraw->colliderColor.g = static_cast<uint8_t>(255 * (1.0f - colorProgress));  // Yellow -> Red
-                debugDraw->colliderColor.b = static_cast<uint8_t>(0);
+                // Color: flash red/white in final 20% of aiming, otherwise yellow->red gradient
+                if (isFlashing) {
+                    if (showWhite) {
+                        debugDraw->colliderColor.r = static_cast<uint8_t>(255);
+                        debugDraw->colliderColor.g = static_cast<uint8_t>(255);
+                        debugDraw->colliderColor.b = static_cast<uint8_t>(255);
+                    } else {
+                        debugDraw->colliderColor.r = static_cast<uint8_t>(255);
+                        debugDraw->colliderColor.g = static_cast<uint8_t>(0);
+                        debugDraw->colliderColor.b = static_cast<uint8_t>(0);
+                    }
+                } else {
+                    // Color interpolation from yellow to red based on progress
+                    float colorProgress = fill;
+                    debugDraw->colliderColor.r = static_cast<uint8_t>(255);  // Always full red
+                    debugDraw->colliderColor.g = static_cast<uint8_t>(255 * (1.0f - colorProgress));  // Yellow -> Red
+                    debugDraw->colliderColor.b = static_cast<uint8_t>(0);
+                }
                 debugDraw->colliderColor.a = static_cast<uint8_t>(255);
                 
                 if (i < 3) {  // Log first 3 dots for debugging

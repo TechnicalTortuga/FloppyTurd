@@ -3,6 +3,7 @@
 #include "../Components/GameComponents.h"
 #include "../Systems/LevelManager.h"
 #include "../Systems/ProjectileSystem.h"
+#include "../Systems/ExplosionSystem.h"
 #include "../../Engine/Core/GNLog.h"
 #include <vector>
 #include <memory>
@@ -51,7 +52,7 @@ struct AimingData {
 
 class BossSystem {
 public:
-    BossSystem(Gnosis::ECS* ecsSystem, LevelManager* levelManager, ProjectileSystem* projectileSystem, PlatformDelegates* platformDelegates = nullptr);
+    BossSystem(Gnosis::ECS* ecsSystem, LevelManager* levelManager, ProjectileSystem* projectileSystem, ExplosionSystem* explosionSystem = nullptr, PlatformDelegates* platformDelegates = nullptr);
     ~BossSystem();
 
     void InitializeForLevel();
@@ -62,6 +63,9 @@ public:
     // State management
     RatKingState GetCurrentState() const { return currentState; }
     void ChangeState(RatKingState newState);
+    
+    // Reset boss to initial state (for Try Again)
+    void Reset();
 
     // Boss properties
     int GetHealth() const { return health; }
@@ -77,11 +81,17 @@ public:
     // Visual effects data
     const std::vector<LockOnDot>& GetLockOnDots() const { return aimingData.lockOnDots; }
     bool IsHurtFlashing() const { return currentState == RatKingState::HURT && hurtFlashTimer < 0.6f; }
+    
+    // Death sequence query
+    bool IsDeathSequenceComplete() const { return m_deathSequenceComplete; }
+    float GetWhiteFadeAlpha() const { return m_whiteFadeAlpha; }
+    
 private:
     // Core systems
     Gnosis::ECS* m_ecsSystem = nullptr;
     LevelManager* m_levelManager = nullptr;
     ProjectileSystem* m_projectileSystem = nullptr;
+    ExplosionSystem* m_explosionSystem = nullptr;
     PlatformDelegates* m_platformDelegates = nullptr;
 
     // Boss entities and state
@@ -126,6 +136,15 @@ private:
     // Minion spawning
     int nextMinionHealthThreshold = 185;  // Start at 185 HP (first threshold at ~90%)
     bool hasTriggeredLowHealthMusic = false;
+    
+    // Death sequence state
+    bool m_deathSequenceStarted = false;
+    bool m_deathSequenceComplete = false;
+    float m_deathSequenceTimer = 0.0f;
+    float m_whiteFadeAlpha = 0.0f;
+    bool m_hasPlayedScreech = false;
+    bool m_hasPlayedBossKill = false;
+    int m_explosionIndex = 0;
 
     // State handlers
     void HandleIdle(float deltaTime);
@@ -147,6 +166,11 @@ private:
     void ChangeMusic(const std::string& musicFile);
     void SetArmSpriteVisibility(bool showBackArm, bool showFrontArm);
     Gnosis::GNVector2 GetShoulderPosition() const;
+    
+    // Death sequence helpers
+    void StartDeathSequence();
+    void UpdateDeathSequence(float deltaTime);
+    void SpawnExplosionAtRandomPosition();
 
     // Sprite management
     void LoadSprites();

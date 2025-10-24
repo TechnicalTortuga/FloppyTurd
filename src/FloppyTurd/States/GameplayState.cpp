@@ -384,11 +384,50 @@ namespace GameCore {
                 m_frameProfiler.EndSection("BossSystem");
             }
 
+            // Update explosion system (level 6 only)
+            if (m_explosionSystem && m_currentLevelId == 6) {
+                m_frameProfiler.StartSection("ExplosionSystem");
+                m_explosionSystem->Update(deltaTime);
+                m_frameProfiler.EndSection("ExplosionSystem");
+            }
+
             // Update boss health bar (level 6 only)
             if (m_bossHealthBar && m_currentLevelId == 6) {
                 m_frameProfiler.StartSection("BossHealthBar");
                 m_bossHealthBar->Update(deltaTime);
                 m_frameProfiler.EndSection("BossHealthBar");
+            }
+            
+            // Update white fade overlay for boss death sequence
+            if (m_bossSystem && m_currentLevelId == 6 && m_whiteFadeEntity != 0) {
+                float fadeAlpha = m_bossSystem->GetWhiteFadeAlpha();
+                
+                GN_LOG_INFO("White fade update: alpha=" + std::to_string(fadeAlpha) + 
+                           ", entity=" + std::to_string(m_whiteFadeEntity) + 
+                           ", deathComplete=" + std::to_string(m_bossSystem->IsDeathSequenceComplete()));
+                
+                if (fadeAlpha > 0.0f) {
+                    UIShape* fadeShape = m_ecsSystem->GetComponent<UIShape>(m_whiteFadeEntity);
+                    if (fadeShape) {
+                        fadeShape->visible = true;
+                        fadeShape->color.a = static_cast<uint8_t>(fadeAlpha * 255.0f);
+                        
+                        GN_LOG_INFO("White fade overlay updated: visible=true, alpha=" + 
+                                   std::to_string(fadeShape->color.a) + 
+                                   ", layer=" + std::to_string(fadeShape->layer));
+                        
+                        // Only set finished when fade is COMPLETE (alpha >= 1.0)
+                        if (fadeAlpha >= 1.0f && m_bossSystem->IsDeathSequenceComplete()) {
+                            GN_LOG_INFO("🎉 Boss defeated! Fade complete - transitioning to credits...");
+                            // Signal state to finish and transition to credits
+                            m_finished = true;
+                        }
+                    } else {
+                        GN_LOG_ERROR("White fade UIShape component is NULL!");
+                    }
+                } else {
+                    GN_LOG_DEBUG("White fade alpha is 0 or negative: " + std::to_string(fadeAlpha));
+                }
             }
 
             // Check player projectile collisions with boss (level 6 only)
@@ -439,8 +478,8 @@ namespace GameCore {
                         GN_LOG_INFO("[BOSS_COLLISION] Player projectile HIT Rat King! Projectile: " + std::to_string(projEntity) + 
                                    " distance: " + std::to_string(distance) + " < " + std::to_string(combinedRadius));
                         
-                        // Damage the boss
-                        m_bossSystem->HandleDamage(proj->damage);
+                        // Damage the boss - 10 damage per hit (200 health / 20 hits = 10 damage)
+                        m_bossSystem->HandleDamage(10);
                         
                         // Deactivate the projectile
                         proj->isActive = false;
@@ -983,7 +1022,11 @@ namespace GameCore {
 
         // Create boss systems (only for level 6)
         if (m_currentLevelId == 6) {
-            m_bossSystem = std::make_unique<BossSystem>((ECS*)m_ecsSystem, m_levelManager.get(), m_projectileSystem.get(), m_platformDelegates);
+            // Create ExplosionSystem for boss death sequence
+            m_explosionSystem = std::make_unique<ExplosionSystem>(m_ecsSystem);
+            GN_LOG_INFO("ExplosionSystem initialized for boss level");
+            
+            m_bossSystem = std::make_unique<BossSystem>((ECS*)m_ecsSystem, m_levelManager.get(), m_projectileSystem.get(), m_explosionSystem.get(), m_platformDelegates);
 
             // Update BossSystem with current screen dimensions once during initialization
             if (m_renderSystem) {
@@ -996,6 +1039,30 @@ namespace GameCore {
 
             m_bossHealthBar = std::make_unique<BossHealthBar>(m_bossSystem.get(), "Rat King", m_ecsSystem);
             GN_LOG_INFO("Boss systems initialized for level 6");
+            
+            // Create white fade overlay entity (initially invisible)
+            m_whiteFadeEntity = m_ecsSystem->CreateEntity();
+            if (m_whiteFadeEntity != 0) {
+                Transform fadeTransform(Gnosis::GNVector2(0.0f, 0.0f), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+                m_ecsSystem->AddComponent<Transform>(m_whiteFadeEntity, fadeTransform);
+                
+                // Get actual screen dimensions from RenderSystem (will be landscape for boss level)
+                const ScreenInfo& screenInfo = m_renderSystem->GetScreenInfo();
+                float screenWidth = screenInfo.pixelWidth;
+                float screenHeight = screenInfo.pixelHeight;
+                
+                // Create a full-screen white rectangle using UIShape
+                UIShape whiteOverlay;
+                whiteOverlay.type = UIShapeType::Rectangle;
+                whiteOverlay.width = screenWidth;
+                whiteOverlay.height = screenHeight;
+                whiteOverlay.color = Gnosis::GNColor(255, 255, 255, 0);  // White, fully transparent initially
+                whiteOverlay.visible = false;  // Initially hidden
+                whiteOverlay.layer = 250;  // Very high layer (above explosions at 200)
+                m_ecsSystem->AddComponent<UIShape>(m_whiteFadeEntity, whiteOverlay);
+                
+                GN_LOG_INFO("White fade overlay created: " + std::to_string(screenWidth) + "x" + std::to_string(screenHeight) + " using UIShape (landscape)");
+            }
         }
 
         // 🎯 NEW: Set RenderSystem reference for texture metadata cache access
@@ -1547,6 +1614,19 @@ namespace GameCore {
             GN_LOG_INFO("Destroying boss system and Rat King entities");
             m_bossSystem.reset();  // This will call ~BossSystem() which cleans up arm entities
             m_bossHealthBar.reset();
+        }
+        
+        // Destroy explosion system (level 6 cleanup)
+        if (m_explosionSystem) {
+            GN_LOG_INFO("Destroying explosion system");
+            m_explosionSystem.reset();
+        }
+        
+        // Destroy white fade overlay entity (level 6 cleanup)
+        if (m_whiteFadeEntity != 0) {
+            m_ecsSystem->DestroyEntity(m_whiteFadeEntity);
+            m_whiteFadeEntity = 0;
+            GN_LOG_INFO("Destroyed white fade overlay entity");
         }
     }
 
@@ -4065,10 +4145,23 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             m_pickupSystem->ClearAll();
         }
 
-        // Reset enemies for retry
+        // Reset enemies for retry (skips Rat King boss, removes rat minions)
         if (m_levelManager) {
             m_levelManager->ResetEnemiesForRetry();
             GN_LOG_INFO("[RESET] Enemies reset for level retry");
+        }
+        
+        // Reset boss system and health bar for level 6
+        if (m_currentLevelId == 6 && m_bossSystem) {
+            // Reset boss health to full
+            m_bossSystem->Reset();
+            GN_LOG_INFO("[RESET] Boss system reset - health reset to full");
+            
+            // Reset boss health bar display
+            if (m_bossHealthBar) {
+                m_bossHealthBar->Reset();
+                GN_LOG_INFO("[RESET] Boss health bar reset to full");
+            }
         }
 
         // Reset projectile system

@@ -235,6 +235,19 @@ void BossHealthBar::UpdateHealthValues() {
     m_displayedHealthPercent = m_currentHealthPercent; // Update displayed value
 }
 
+void BossHealthBar::Reset() {
+    // Reset all health percentages to full
+    m_currentHealthPercent = 1.0f;
+    m_shadowHealthPercent = 1.0f;
+    m_displayedHealthPercent = 1.0f;
+    m_hurtFadeTimer = 0.0f;
+    
+    // Update UI entities to show full health
+    UpdateUIEntities();
+    
+    GN_LOG_INFO("BossHealthBar reset to full health");
+}
+
 
 
 } // namespace GameCore

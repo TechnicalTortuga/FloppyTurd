@@ -545,7 +545,7 @@ namespace GameCore {
             
             // Store UNSCALED radius - the actual radius in the base sprite asset
             // TP sprite: 32x32px with ~10px radius circle
-            // Snowball sprite: 32x32px with ~14px radius circle  
+            // Snowball sprite: 32x32px with ~4px radius circle (small for precision)
             // Poop sprite: 16x16px with ~7px radius circle
             // Collision math will apply Transform.scale to get effective radius
             switch (projectileType) {
@@ -553,7 +553,7 @@ namespace GameCore {
                     hitbox->radius = 10.0f;
                     break;
                 case ProjectileType::SNOWBALL:
-                    hitbox->radius = 14.0f;
+                    hitbox->radius = 4.0f;
                     break;
                 case ProjectileType::POOP_BALL:
                 case ProjectileType::LARGE_POOP_BALL:

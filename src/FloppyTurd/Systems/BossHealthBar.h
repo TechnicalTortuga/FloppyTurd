@@ -48,6 +48,11 @@ public:
      */
     bool IsVisible() const;
 
+    /**
+     * @brief Reset the health bar to full health (for Try Again)
+     */
+    void Reset();
+
 private:
     /**
      * @brief Create the UI entities for the health bar

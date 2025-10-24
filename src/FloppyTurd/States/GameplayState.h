@@ -20,6 +20,7 @@
 #include "../Systems/SkillSystem.h"
 #include "../Systems/BossSystem.h"
 #include "../Systems/BossHealthBar.h"
+#include "../Systems/ExplosionSystem.h"
 #include "../Systems/PauseSystem.h"
 #include "../Systems/OverlaySystem.h"
 #include "../Config/LevelConfig.h"
@@ -132,6 +133,10 @@ namespace GameCore {
         // Boss systems (level 6 only)
         std::unique_ptr<BossSystem> m_bossSystem;
         std::unique_ptr<BossHealthBar> m_bossHealthBar;
+        std::unique_ptr<ExplosionSystem> m_explosionSystem;
+        
+        // White fade overlay for boss death sequence
+        Gnosis::Entity m_whiteFadeEntity;
 
         // Pause system (handles all pause menu functionality)
         std::unique_ptr<PauseSystem> m_pauseSystem;
