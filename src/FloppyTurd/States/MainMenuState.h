@@ -53,13 +53,16 @@ namespace GameCore {
             m_shouldReturnToSpecificLevel = true;
         }
         void SetEnteredViaQuickplay(bool quickplay) { m_enteredViaQuickplay = quickplay; }
+        
+        // Leaderboard transition
+        bool IsTransitioningToLeaderboard() const { return m_transitioningToLeaderboard; }
 
     private:
         enum class MenuOption {
             PLAYING = 0,
             OPTIONS = 1,
             QUICK_PLAY = 2,
-            QUIT = 3,
+            LEADERBOARD = 3,
             COUNT = 4
         };
 
@@ -104,7 +107,7 @@ namespace GameCore {
         Gnosis::Entity m_playButtonEntity;
         Gnosis::Entity m_optionsButtonEntity;
         Gnosis::Entity m_quickPlayButtonEntity;
-        Gnosis::Entity m_quitButtonEntity;
+        Gnosis::Entity m_leaderboardButtonEntity;
         
         // Level select entities
         std::vector<LevelInfo> m_levels;
@@ -113,6 +116,7 @@ namespace GameCore {
         int m_returnToLevelNumber = -1; // Level to return to after gameplay
         bool m_shouldReturnToSpecificLevel = false; // Whether to return to a specific level
         bool m_enteredViaQuickplay = false; // Whether entered via Quickplay button
+        bool m_transitioningToLeaderboard = false; // Whether transitioning to leaderboard state
         Gnosis::Entity m_backButtonEntity;
         Gnosis::Entity m_leftArrowButtonEntity;
         Gnosis::Entity m_rightArrowButtonEntity;
@@ -185,10 +189,17 @@ namespace GameCore {
         // Horizontal pan state for level select
         bool m_isPanning = false;
         float m_panStartX = 0.0f;
+        float m_panStartY = 0.0f;
         float m_panStartOffsetX = 0.0f;
         float m_lastPanX = 0.0f;
         float m_levelSpacing = 0.0f;
         bool m_isSnapping = false;
+        
+        // Double-tap detection for painting clicks
+        float m_lastPaintingTapTime = 0.0f;
+        int m_lastTappedPaintingIndex = -1;
+        static constexpr float DOUBLE_TAP_THRESHOLD = 0.5f; // 500ms between taps (max)
+        static constexpr float MIN_TAP_INTERVAL = 0.05f; // 50ms minimum between taps (prevents single tap counting as double)
         float m_snapElapsed = 0.0f;
         float m_snapDuration = 0.18f;
         float m_snapStartOffsetX = 0.0f;
@@ -238,7 +249,7 @@ namespace GameCore {
         void OnPlayButtonPressed();
         void OnOptionsButtonPressed();
         void OnQuickPlayButtonPressed();
-        void OnQuitButtonPressed();
+        void OnLeaderboardButtonPressed();
         
         // Input checking
         void CheckMenuButtonClicks(float touchX, float touchY);

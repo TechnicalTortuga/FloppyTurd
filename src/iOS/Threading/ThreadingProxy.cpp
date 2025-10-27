@@ -39,7 +39,8 @@ namespace GameCore {
         return !s_instance->m_renderCommandQueue.empty() || 
                !s_instance->m_audioCommandQueue.empty() || 
                !s_instance->m_logCommandQueue.empty() ||
-               !s_instance->m_assetCommandQueue.empty();
+               !s_instance->m_assetCommandQueue.empty() ||
+               !s_instance->m_gameCenterCommandQueue.empty();
     }
     
     void ThreadingProxy::clearCommands() {
@@ -49,6 +50,7 @@ namespace GameCore {
         s_instance->m_audioCommandQueue.clear();
         s_instance->m_logCommandQueue.clear();
         s_instance->m_assetCommandQueue.clear();
+        s_instance->m_gameCenterCommandQueue.clear();
     }
     
     // Helper enqueue functions
@@ -70,6 +72,21 @@ namespace GameCore {
     void ThreadingProxy::enqueueAssetCommand(const AssetCommand& command) {
         std::lock_guard<std::mutex> lock(m_queueMutex);
         m_assetCommandQueue.push_back(command);
+    }
+    
+    void ThreadingProxy::enqueueHapticCommand(const HapticCommand& command) {
+        std::lock_guard<std::mutex> lock(m_queueMutex);
+        m_hapticCommandQueue.push_back(command);
+    }
+    
+    void ThreadingProxy::enqueueSaveCommand(const SaveCommand& command) {
+        std::lock_guard<std::mutex> lock(m_queueMutex);
+        m_saveCommandQueue.push_back(command);
+    }
+    
+    void ThreadingProxy::enqueueGameCenterCommand(const GameCenterCommand& command) {
+        std::lock_guard<std::mutex> lock(m_queueMutex);
+        m_gameCenterCommandQueue.push_back(command);
     }
     
     // Rendering command implementations
@@ -489,6 +506,122 @@ namespace GameCore {
         s_instance->enqueueLogCommand(cmd);
     }
     
+    // Haptic feedback command implementations
+    void ThreadingProxy::enqueueHapticImpact(HapticStyle style, float intensity) {
+        if (!s_instance) return;
+        HapticCommand cmd(CommandType::CMD_HAPTIC_IMPACT);
+        cmd.data.style = style;
+        cmd.data.intensity = intensity;
+        s_instance->enqueueHapticCommand(cmd);
+    }
+    
+    void ThreadingProxy::enqueueHapticSelection() {
+        if (!s_instance) return;
+        HapticCommand cmd(CommandType::CMD_HAPTIC_SELECTION);
+        s_instance->enqueueHapticCommand(cmd);
+    }
+    
+    void ThreadingProxy::enqueueHapticNotification(HapticNotificationType type) {
+        if (!s_instance) return;
+        HapticCommand cmd(CommandType::CMD_HAPTIC_NOTIFICATION);
+        cmd.data.notificationType = type;
+        s_instance->enqueueHapticCommand(cmd);
+    }
+    
+    void ThreadingProxy::enqueueHapticPattern(const char* patternName) {
+        if (!s_instance) return;
+        HapticCommand cmd(CommandType::CMD_HAPTIC_PATTERN);
+        cmd.data.patternName = std::string(patternName);
+        s_instance->enqueueHapticCommand(cmd);
+    }
+    
+    void ThreadingProxy::enqueueHapticPrepare(HapticStyle style) {
+        if (!s_instance) return;
+        HapticCommand cmd(CommandType::CMD_HAPTIC_PREPARE);
+        cmd.data.style = style;
+        s_instance->enqueueHapticCommand(cmd);
+    }
+    
+    // Save/Load command implementations
+    void ThreadingProxy::enqueueSaveGame(const std::string& jsonData) {
+        if (!s_instance) return;
+        SaveCommand cmd(CommandType::CMD_SAVE_GAME);
+        cmd.data.jsonData = jsonData;
+        s_instance->enqueueSaveCommand(cmd);
+    }
+    
+    void ThreadingProxy::enqueueLoadGame() {
+        if (!s_instance) return;
+        SaveCommand cmd(CommandType::CMD_LOAD_GAME);
+        s_instance->enqueueSaveCommand(cmd);
+    }
+    
+    void ThreadingProxy::enqueueSaveSettings(float masterVol, float musicVol, float sfxVol, bool debug) {
+        if (!s_instance) return;
+        SaveCommand cmd(CommandType::CMD_SAVE_SETTINGS);
+        cmd.data.masterVolume = masterVol;
+        cmd.data.musicVolume = musicVol;
+        cmd.data.sfxVolume = sfxVol;
+        cmd.data.debugMode = debug;
+        s_instance->enqueueSaveCommand(cmd);
+    }
+    
+    void ThreadingProxy::enqueueLoadSettings() {
+        if (!s_instance) return;
+        SaveCommand cmd(CommandType::CMD_LOAD_SETTINGS);
+        s_instance->enqueueSaveCommand(cmd);
+    }
+    
+    // Game Center command implementations
+    void ThreadingProxy::enqueueGameCenterAuthenticate() {
+        if (!s_instance) return;
+        GameCenterCommand cmd(CommandType::CMD_GAME_CENTER_AUTHENTICATE);
+        s_instance->enqueueGameCenterCommand(cmd);
+    }
+    
+    bool ThreadingProxy::isGameCenterAuthenticated() {
+        // Direct call to Swift GameCenterManager - no command needed for queries
+        // This will be implemented via Swift interop
+        // For now, return false - will be wired up to Swift later
+        return false;
+    }
+    
+    void ThreadingProxy::enqueueGameCenterSubmitScore(const char* leaderboardID, int64_t score) {
+        if (!s_instance) return;
+        GameCenterCommand cmd(CommandType::CMD_GAME_CENTER_SUBMIT_SCORE);
+        cmd.data.leaderboardID = leaderboardID ? leaderboardID : "";
+        cmd.data.score = score;
+        s_instance->enqueueGameCenterCommand(cmd);
+    }
+    
+    void ThreadingProxy::enqueueGameCenterShowLeaderboard(const char* leaderboardID) {
+        if (!s_instance) return;
+        GameCenterCommand cmd(CommandType::CMD_GAME_CENTER_SHOW_LEADERBOARD);
+        cmd.data.leaderboardID = leaderboardID ? leaderboardID : "";
+        s_instance->enqueueGameCenterCommand(cmd);
+    }
+    
+    void ThreadingProxy::enqueueGameCenterShowAllLeaderboards() {
+        if (!s_instance) return;
+        GameCenterCommand cmd(CommandType::CMD_GAME_CENTER_SHOW_ALL_LEADERBOARDS);
+        s_instance->enqueueGameCenterCommand(cmd);
+    }
+    
+    const char* ThreadingProxy::getGameCenterPlayerName() {
+        // Direct call to Swift GameCenterManager - no command needed for queries
+        // This will be implemented via Swift interop
+        // For now, return empty string - will be wired up to Swift later
+        return "";
+    }
+    
+    const char* ThreadingProxy::getGameCenterPlayerID() {
+        // Direct call to Swift GameCenterManager - no command needed for queries
+        // This will be implemented via Swift interop
+        // For now, return empty string - will be wired up to Swift later
+        return "";
+    }
+    
+    // Asset loading command implementations
     // Asset loading enqueue functions - modern callback signatures with userData
     void ThreadingProxy::enqueueLoadTexture(const std::string& path, void (*callback)(TextureData* texture, const char* error, void* userData), void* userData) {
         if (!s_instance) return;
@@ -802,14 +935,35 @@ namespace GameCore {
     
     std::vector<AssetCommand> ThreadingProxy::getAndClearAssetCommands() {
         std::lock_guard<std::mutex> lock(m_queueMutex);
-        std::vector<AssetCommand> commands = m_assetCommandQueue;
+        std::vector<AssetCommand> commands = std::move(m_assetCommandQueue);
         m_assetCommandQueue.clear();
-        return commands;  // Bridges to Array<AssetCommand> in Swift
+        return commands;
+    }
+    
+    std::vector<HapticCommand> ThreadingProxy::getAndClearHapticCommands() {
+        std::lock_guard<std::mutex> lock(m_queueMutex);
+        std::vector<HapticCommand> commands = std::move(m_hapticCommandQueue);
+        m_hapticCommandQueue.clear();
+        return commands;
+    }
+    
+    std::vector<SaveCommand> ThreadingProxy::getAndClearSaveCommands() {
+        std::lock_guard<std::mutex> lock(m_queueMutex);
+        std::vector<SaveCommand> commands = std::move(m_saveCommandQueue);
+        m_saveCommandQueue.clear();
+        return commands;
+    }
+    
+    std::vector<GameCenterCommand> ThreadingProxy::getAndClearGameCenterCommands() {
+        std::lock_guard<std::mutex> lock(m_queueMutex);
+        std::vector<GameCenterCommand> commands = std::move(m_gameCenterCommandQueue);
+        m_gameCenterCommandQueue.clear();
+        return commands;
     }
     
     size_t ThreadingProxy::getCommandCount() const {
         std::lock_guard<std::mutex> lock(m_queueMutex);
-        return m_renderCommandQueue.size() + m_audioCommandQueue.size() + m_logCommandQueue.size() + m_assetCommandQueue.size();
+        return m_renderCommandQueue.size() + m_audioCommandQueue.size() + m_logCommandQueue.size() + m_assetCommandQueue.size() + m_hapticCommandQueue.size() + m_saveCommandQueue.size();
     }
     
     void ThreadingProxy::clearQueue() {
@@ -818,6 +972,8 @@ namespace GameCore {
         m_audioCommandQueue.clear();
         m_logCommandQueue.clear();
         m_assetCommandQueue.clear();
+        m_hapticCommandQueue.clear();
+        m_saveCommandQueue.clear();
     }
 
     void ThreadingProxy::setupDelegates(PlatformDelegates& delegates) {
@@ -902,7 +1058,91 @@ namespace GameCore {
         // Configure input buffer management
         delegates.input.clearInputBuffer = clearInputBuffer;
         
+        // Configure haptic feedback delegates
+        // Note: Actual implementations will be provided by Swift HapticManager
+        // These are just placeholders that enqueue commands
+        delegates.haptic.triggerImpact = [](HapticStyle style, float intensity) {
+            ThreadingProxy::enqueueHapticImpact(style, intensity);
+        };
+        delegates.haptic.triggerSelection = []() {
+            ThreadingProxy::enqueueHapticSelection();
+        };
+        delegates.haptic.triggerNotification = [](HapticNotificationType type) {
+            ThreadingProxy::enqueueHapticNotification(type);
+        };
+        delegates.haptic.triggerPattern = [](const char* patternName) {
+            ThreadingProxy::enqueueHapticPattern(patternName);
+        };
+        delegates.haptic.prepare = [](HapticStyle style) {
+            ThreadingProxy::enqueueHapticPrepare(style);
+        };
+        // setEnabled, isEnabled, and isSupported will be handled by Swift directly
+        // as they need to query/modify state
+        
+        // Configure Save/Load delegates
+        // Note: These enqueue commands that will be processed by Swift SaveManager
+        delegates.save.saveGameData = [](const char* jsonData) -> bool {
+            ThreadingProxy::enqueueSaveGame(jsonData);
+            return true; // Queued successfully
+        };
+        delegates.save.loadGameData = [](const char** outJsonData) -> bool {
+            // Synchronous load - call Swift directly via C++ interop
+            static std::string loadedData;
+            loadedData = loadGameDataSync();
+            
+            if (!loadedData.empty()) {
+                *outJsonData = loadedData.c_str();
+                return true; // Load succeeded
+            }
+            return false; // No save data
+        };
+        delegates.save.saveSettings = [](float masterVol, float musicVol, float sfxVol, bool debug) {
+            ThreadingProxy::enqueueSaveSettings(masterVol, musicVol, sfxVol, debug);
+        };
+        delegates.save.loadSettings = [](float* masterVol, float* musicVol, float* sfxVol, bool* debug) {
+            ThreadingProxy::enqueueLoadSettings();
+            // Note: Actual load is async, data will be available via callback
+        };
+        delegates.save.hasLegacySaveFile = []() -> bool {
+            return false; // Will be handled by Swift side
+        };
+        delegates.save.deleteSaveData = []() {
+            // Will be handled by Swift side if needed
+        };
+        
+        // Configure Game Center delegates
+        // Note: Actual implementations will be provided by Swift GameCenterManager
+        // These enqueue commands that will be processed by Swift CommandProcessor
+        delegates.gameCenter.authenticate = [](void (*completion)(bool success)) {
+            ThreadingProxy::enqueueGameCenterAuthenticate();
+            // Completion callback will be handled by Swift side
+            if (completion) completion(false); // Placeholder - actual auth is async
+        };
+        delegates.gameCenter.isAuthenticated = []() -> bool {
+            return ThreadingProxy::isGameCenterAuthenticated();
+        };
+        delegates.gameCenter.submitScore = [](const char* leaderboardID, int64_t score, void (*completion)(bool success)) {
+            ThreadingProxy::enqueueGameCenterSubmitScore(leaderboardID, score);
+            // Completion callback will be handled by Swift side
+            if (completion) completion(true); // Placeholder - queued successfully
+        };
+        delegates.gameCenter.showLeaderboard = [](const char* leaderboardID) {
+            ThreadingProxy::enqueueGameCenterShowLeaderboard(leaderboardID);
+        };
+        delegates.gameCenter.showAllLeaderboards = []() {
+            ThreadingProxy::enqueueGameCenterShowAllLeaderboards();
+        };
+        delegates.gameCenter.getPlayerName = []() -> const char* {
+            return ThreadingProxy::getGameCenterPlayerName();
+        };
+        delegates.gameCenter.getPlayerID = []() -> const char* {
+            return ThreadingProxy::getGameCenterPlayerID();
+        };
+        
         GN_LOG_INFO("ThreadingProxy: Input delegates configured - touch input will flow from iOS->ThreadingProxy->C++");
+        GN_LOG_INFO("ThreadingProxy: Haptic delegates configured - haptic feedback commands will flow through queue");
+        GN_LOG_INFO("ThreadingProxy: Save/Load delegates configured - save operations will flow through queue");
+        GN_LOG_INFO("ThreadingProxy: Game Center delegates configured - leaderboard commands will flow through queue");
         GN_LOG_INFO("ThreadingProxy: Delegates configured successfully - ready for turd-tossing action!");
     }
 
@@ -948,6 +1188,27 @@ std::vector<AssetCommand> getAndClearAssetCommandsFromProxy() {
         return g_threadingProxy->getAndClearAssetCommands();
     }
     return std::vector<AssetCommand>();
+}
+
+std::vector<HapticCommand> getAndClearHapticCommandsFromProxy() {
+    if (g_threadingProxy) {
+        return g_threadingProxy->getAndClearHapticCommands();
+    }
+    return std::vector<HapticCommand>();
+}
+
+std::vector<SaveCommand> getAndClearSaveCommandsFromProxy() {
+    if (g_threadingProxy) {
+        return g_threadingProxy->getAndClearSaveCommands();
+    }
+    return std::vector<SaveCommand>();
+}
+
+std::vector<GameCenterCommand> getAndClearGameCenterCommandsFromProxy() {
+    if (g_threadingProxy) {
+        return g_threadingProxy->getAndClearGameCenterCommands();
+    }
+    return std::vector<GameCenterCommand>();
 }
 
 bool isAssetCachedFromProxy(const char* assetName, int assetType) {
@@ -1038,6 +1299,16 @@ void setScreenInfoDirect(const ScreenInfo& screenInfo) {
     configManager.SetScreenInfoDirect(screenInfo);
     
     GN_LOG_INFO("setScreenInfoDirect: Screen info updated successfully");
+}
+
+std::string loadGameDataSync() {
+    // Call Swift function via C++ interop
+    auto swiftString = FloppyTurd::loadGameDataSync();
+    
+    // Convert Swift.String to std::string
+    std::string result = std::string(swiftString);
+    
+    return result;
 }
 
 } // namespace GameCore

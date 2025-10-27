@@ -1,6 +1,7 @@
 #include "PlayerControllerSystem.h"
 #include "../../Engine/Core/GNLog.h"
 #include "../../Engine/Utility/Utils.h"
+#include "../../Engine/Platform/HapticHelpers.h"
 #include <algorithm>
 #include <cmath>
 
@@ -370,6 +371,11 @@ namespace GameCore {
                 m_jumpCooldown = JUMP_COOLDOWN;
                 m_isAscending = true;  // Track that we're now ascending
                 
+                // Trigger haptic feedback for jump
+                if (m_platformDelegates) {
+                    HapticHelpers::TriggerJump(*m_platformDelegates);
+                }
+                
                 // ONLY transition to JUMPING state if we actually jumped AND not in hurt state
                 // Don't interrupt hurt animation with jump animation
                 if (m_currentState != PlayerAnimationState::HURT) {
@@ -423,6 +429,11 @@ namespace GameCore {
         // Set shoot cooldown and spawn projectile - this happens ONCE per input
         m_shootCooldown = SHOOT_COOLDOWN;
         SpawnProjectile();
+        
+        // Trigger haptic feedback for shooting
+        if (m_platformDelegates) {
+            HapticHelpers::TriggerButtonPress(*m_platformDelegates);
+        }
 
         // ONLY transition to SHOOTING state if we actually shot (passed cooldown check)
         TransitionToState(PlayerAnimationState::SHOOTING);
@@ -919,6 +930,11 @@ namespace GameCore {
     }
 
     void PlayerControllerSystem::PlayHurtAnimation() {
+        // Trigger haptic feedback for player getting hurt
+        if (m_platformDelegates) {
+            HapticHelpers::TriggerCollision(*m_platformDelegates, 0.8f);
+        }
+        
         TransitionToState(PlayerAnimationState::HURT);
     }
 
@@ -974,6 +990,10 @@ namespace GameCore {
         m_ecsSystem->AddComponent<Sprite>(m_hatSpriteEntity, hatSprite);
 
         GN_LOG_INFO("PlayerController: Created hat sprite entity " + std::to_string(m_hatSpriteEntity) + " with width=" + std::to_string(hatSprite.width) + " height=" + std::to_string(hatSprite.height) + " frameW=" + std::to_string(hatSprite.frameWidth) + " frameH=" + std::to_string(hatSprite.frameHeight) + " frameCount=" + std::to_string(hatSprite.frameCount) + " currentFrame=" + std::to_string(hatSprite.currentFrame) + " hasCompleted=" + std::to_string(hatSprite.hasCompleted));
+        
+        // Apply equipped hat texture immediately at level start
+        UpdateHatSpriteTexture("TurdletIdle");
+        GN_LOG_INFO("PlayerController: Applied initial hat texture for TurdletIdle animation");
     }
 
     void PlayerControllerSystem::UpdateHatSpritePosition() {

@@ -147,6 +147,9 @@ namespace GameCore {
         Entity m_grossTotalCoinsTextEntity;
         Entity m_enemiesKilledTextEntity;
         Entity m_totalPipesTextEntity;
+        
+        // Level high score entities (for each of the 6 levels)
+        std::vector<Entity> m_levelHighScoreTextEntities;
 
         // Audio slider state
         bool m_draggingMaster;

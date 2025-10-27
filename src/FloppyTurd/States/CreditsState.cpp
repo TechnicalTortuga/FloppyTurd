@@ -1,5 +1,6 @@
 #include "CreditsState.h"
 #include "../Components/GameComponents.h"
+#include "../Systems/RenderSystem.h"
 #include "../../Engine/Core/GNLog.h"
 #include <random>
 #include <cmath>
@@ -17,12 +18,19 @@ CreditsState::CreditsState(Gnosis::ECS* ecsSystem, PlatformDelegates* platformDe
     , m_turdBounceTimer(0.0f)
     , m_textScrollOffset(0.0f)
     , m_whiteFadeAlpha(1.0f)  // Start fully white
+    , m_fadingOut(false)  // Not fading out yet
     , m_screenWidth(0.0f)
     , m_screenHeight(0.0f)
     , m_backgroundEntity(0)
     , m_turdEntity(0)
     , m_skipButtonEntity(0)
     , m_whiteFadeEntity(0)
+    , m_finalHoldActive(false)
+    , m_finalHoldTimer(0.0f)
+    , m_finalTitleEntity(0)
+    , m_finalNameEntity(0)
+    , m_enforceFinalExitOnly(ENFORCE_FINAL_SEQUENCE_EXIT_ONLY)
+    , m_finalEntryIndex(0)
 {
     GN_LOG_INFO("CreditsState created");
 }
@@ -32,43 +40,53 @@ CreditsState::~CreditsState() {
 }
 
 void CreditsState::Enter() {
-    GN_LOG_INFO("CreditsState::Enter - getting screen dimensions from delegates");
+    GN_LOG_INFO("CreditsState::Enter - getting screen dimensions from RenderSystem");
     
-    // Get actual screen dimensions from platform delegates (landscape mode)
-    if (m_platformDelegates && m_platformDelegates->renderer.getScreenInfo) {
-        ScreenInfo screenInfo;
-        m_platformDelegates->renderer.getScreenInfo(&screenInfo);
+    // Get actual screen dimensions from RenderSystem (like GameplayState does)
+    RenderSystem* renderSystem = nullptr;
+    if (m_ecsSystem && m_ecsSystem->GetSystemManager()) {
+        renderSystem = m_ecsSystem->GetSystemManager()->GetRenderSystem();
+    }
+    
+    if (renderSystem) {
+        const ScreenInfo& screenInfo = renderSystem->GetScreenInfo();
         m_screenWidth = screenInfo.pixelWidth;
         m_screenHeight = screenInfo.pixelHeight;
-        GN_LOG_INFO("CreditsState: Screen dimensions from delegates: " + std::to_string(m_screenWidth) + "x" + std::to_string(m_screenHeight));
+        GN_LOG_INFO("CreditsState: Screen dimensions from RenderSystem: " + std::to_string(m_screenWidth) + "x" + std::to_string(m_screenHeight));
     } else {
-        GN_LOG_ERROR("CreditsState: Cannot get screen info from delegates!");
+        GN_LOG_ERROR("CreditsState: Cannot get RenderSystem! Using fallback dimensions");
         m_screenWidth = 2556.0f;
         m_screenHeight = 1179.0f;
     }
     
-    // Initialize credit entries with more random Y variance
+    // Initialize credit entries with Y variance between 20%-80% of screen height
     std::random_device rd;
     std::default_random_engine engine(rd());
-    std::uniform_real_distribution<float> offsetDist(-60.0f, 60.0f);  // More variance
+    std::uniform_real_distribution<float> yPosDist(m_screenHeight * 0.2f, m_screenHeight * 0.8f);
+    
+    // Final label Y position: vertically centered on screen (fontSize ~48, offset by ~24 to center text)
+    float finalLabelY = (m_screenHeight * 0.5f) - 24.0f;
     
     m_creditEntries = {
-        {"Game Developer:", "Alexandru Istrate", offsetDist(engine)},
-        {"Programmer:", "Alexandru Istrate", offsetDist(engine)},
-        {"Music Director:", "Alexandru Istrate", offsetDist(engine)},
-        {"Pixel Artist:", "Alexandru Istrate", offsetDist(engine)},
-        {"Assist. Pixel Artist:", "William Henson", offsetDist(engine)},
-        {"Fartist:", "Kevin Hooks", offsetDist(engine)},
-        {"Tools Used:", "", offsetDist(engine)},
-        {"", "Aseprite", offsetDist(engine)},
-        {"", "Xcode & CMake", offsetDist(engine)},
-        {"", "FL Studios", offsetDist(engine)},
-        {"", "", offsetDist(engine)},  // Empty line
-        {"Special Thanks to:", "", offsetDist(engine)},
-        {"", "Betty Istrate", offsetDist(engine)},
-        {"", "", offsetDist(engine)},  // Empty line
-        {"Thank you for playing!", "", offsetDist(engine)}
+        {"Game Developer:", "Alexandru Istrate", yPosDist(engine), 0, 0, 0.0f, 0.0f},
+        {"Programmer:", "Alexandru Istrate", yPosDist(engine), 0, 0, 0.0f, 0.0f},
+        {"Music Director:", "Alexandru Istrate", yPosDist(engine), 0, 0, 0.0f, 0.0f},
+        {"Pixel Artist:", "Alexandru Istrate", yPosDist(engine), 0, 0, 0.0f, 0.0f},
+        {"Assist. Pixel Artist:", "William Henson", yPosDist(engine), 0, 0, 0.0f, 0.0f},
+        {"Fartist:", "Kevin Hooks", yPosDist(engine), 0, 0, 0.0f, 0.0f},
+        {"Tools Used:", "", yPosDist(engine), 0, 0, 0.0f, 0.0f},
+        {"", "Aseprite", yPosDist(engine), 0, 0, 0.0f, 0.0f},
+        {"", "Xcode & CMake", yPosDist(engine), 0, 0, 0.0f, 0.0f},
+        {"", "FL Studios", yPosDist(engine), 0, 0, 0.0f, 0.0f},
+        {"", "", yPosDist(engine), 0, 0, 0.0f, 0.0f},  // Empty line
+        {"Special Thanks:", "Betty Istrate", yPosDist(engine), 0, 0, 0.0f, 0.0f},
+        {"", "", yPosDist(engine), 0, 0, 0.0f, 0.0f},  // Empty line
+        {"", "", yPosDist(engine), 0, 0, 0.0f, 0.0f},  // Extra gap so Betty scrolls fully off before final freeze
+        {"Thank you for playing!", "", finalLabelY, 0, 0, 0.0f, 0.0f}  // Final label already vertically centered
     };
+    
+    // Track which entry is the final one
+    m_finalEntryIndex = m_creditEntries.size() - 1;
     
     // Start text scroll from off-screen right
     m_textScrollOffset = m_screenWidth + 50.0f;
@@ -106,7 +124,19 @@ void CreditsState::Resume() {
 void CreditsState::Update(float deltaTime) {
     m_elapsedTime += deltaTime;
     
-    // Update white fade (fade out from white at start)
+    // Final hold progression and time-based fallback to fade out
+    if (m_finalHoldActive) {
+        m_finalHoldTimer += deltaTime;
+        if (!m_fadingOut && m_finalHoldTimer >= FINAL_HOLD_DURATION) {
+            m_fadingOut = true;
+            GN_LOG_INFO("Credits: Final label hold complete, starting fade out");
+        }
+    }
+    // Fallback: time-based fade out near end of duration
+    // Enforce final-sequence-only exit: remove time-based auto-fade fallback
+    // Fade-out will be triggered only by the final label center + hold sequence
+    
+    // Update white fade (fade in from white at start, fade out to white at end)
     UpdateWhiteFade(deltaTime);
     
     // Update turd bounce animation
@@ -118,14 +148,12 @@ void CreditsState::Update(float deltaTime) {
     // Update credit text scrolling
     UpdateCreditScroll(deltaTime);
     
-    // Check if music is complete
-    CheckMusicCompletion();
-    
-    // If skipped or music complete, finish state
-    if (m_shouldSkip || (m_totalMusicDuration > 0.0f && m_elapsedTime >= m_totalMusicDuration)) {
+    // Finish when skipped OR when fade out is complete
+    if (m_shouldSkip || (m_fadingOut && m_whiteFadeAlpha >= 1.0f)) {
         GN_LOG_INFO("Credits finished - elapsed: " + std::to_string(m_elapsedTime) + 
-                   ", duration: " + std::to_string(m_totalMusicDuration) + 
-                   ", skipped: " + std::to_string(m_shouldSkip));
+                   ", duration: " + std::to_string(CREDITS_DURATION) + 
+                   ", skipped: " + std::to_string(m_shouldSkip) +
+                   ", fadeOut: " + std::to_string(m_fadingOut));
         m_finished = true;
     }
 }
@@ -165,38 +193,62 @@ void CreditsState::CreateEntities() {
 void CreditsState::CreateBackground() {
     m_backgroundEntity = m_ecsSystem->CreateEntity();
     
-    // Credits background texture dimensions (portrait texture used in landscape)
-    float textureWidth = 384.0f;
-    float textureHeight = 512.0f;
+    // Background sprite - HEIGHT-BASED scaling to ensure full height is visible
+    // Texture: 320x180, Screen: 2556x1179 (landscape)
+    // Scale based on HEIGHT so top/bottom patterns are fully on-screen
+    float textureWidth = 320.0f;
+    float textureHeight = 180.0f;
+    float heightBasedScale = m_screenHeight / textureHeight;  // Fit height exactly
     
-    // Use UNIFORM SCALING like boss level - scale to fit screen height, then it will cover width too
-    float heightScale = m_screenHeight / textureHeight;
-    float finalScale = heightScale * 1.0f;  // scaleMultiplier = 1.0
-    
-    // Add sprite component for credits background
     Sprite sprite;
     sprite.textureId = "FloppyTurdCreditsBackground";
     sprite.width = textureWidth;
     sprite.height = textureHeight;
-    sprite.layer = 0;  // Background layer
+    sprite.layer = 100;  // UI layer for screen space rendering
     sprite.visible = true;
+    // Align frame to logical size to avoid implicit extra scaling in RenderSystem
+    sprite.isAnimated = false;
+    sprite.frameWidth = static_cast<int>(sprite.width);
+    sprite.frameHeight = static_cast<int>(sprite.height);
+    sprite.frameCount = 1;
+    sprite.currentFrame = 0;
+    sprite.sourceWidth = 0.0f;
+    sprite.sourceHeight = 0.0f;
     m_ecsSystem->AddComponent(m_backgroundEntity, sprite);
     
-    // Position at top-left (0, 0) with UNIFORM scale
     Transform transform;
     transform.position = Gnosis::GNVector2(0.0f, 0.0f);
-    transform.scale = Gnosis::GNVector2(finalScale, finalScale);  // UNIFORM scaling
+    transform.scale = Gnosis::GNVector2(heightBasedScale, heightBasedScale);  // Height-based uniform scale
     transform.rotation = 0.0f;
     m_ecsSystem->AddComponent(m_backgroundEntity, transform);
-    
-    float scaledWidth = textureWidth * finalScale;
-    float scaledHeight = textureHeight * finalScale;
+    // Track background entities for proper cleanup
+    m_backgroundEntities.push_back(m_backgroundEntity);
+
+    // Tile a second background to the right if height-based scaled width doesn't cover the screen
+    const float scaledBgWidth = textureWidth * heightBasedScale;
+    if (scaledBgWidth < m_screenWidth) {
+        // Create a second background entity without stretching
+        Gnosis::Entity bgEntity2 = m_ecsSystem->CreateEntity();
+
+        Sprite sprite2 = sprite; // same texture and frame setup
+        m_ecsSystem->AddComponent(bgEntity2, sprite2);
+
+        Transform transform2;
+        transform2.position = Gnosis::GNVector2(scaledBgWidth, 0.0f); // place immediately to the right
+        transform2.scale = Gnosis::GNVector2(heightBasedScale, heightBasedScale);
+        transform2.rotation = 0.0f;
+        m_ecsSystem->AddComponent(bgEntity2, transform2);
+
+        m_backgroundEntities.push_back(bgEntity2);
+    }
     
     GN_LOG_INFO("Created credits background: texture=" + std::to_string(textureWidth) + "x" + std::to_string(textureHeight) + 
-                ", heightScale=" + std::to_string(heightScale) +
-                ", finalScale=" + std::to_string(finalScale) + 
-                ", scaledSize=" + std::to_string(scaledWidth) + "x" + std::to_string(scaledHeight) +
-                ", screen=" + std::to_string(m_screenWidth) + "x" + std::to_string(m_screenHeight));
+                ", heightBasedScale=" + std::to_string(heightBasedScale) +
+                ", finalSize=" + std::to_string(textureWidth * heightBasedScale) + "x" + std::to_string(textureHeight * heightBasedScale) +
+                ", screen=" + std::to_string(m_screenWidth) + "x" + std::to_string(m_screenHeight) +
+                ", spriteFrame=" + std::to_string(sprite.frameWidth) + "x" + std::to_string(sprite.frameHeight) + 
+                ", tiled=" + std::to_string((scaledBgWidth < m_screenWidth) ? 2 : 1) + 
+                ", scaledBgWidth=" + std::to_string(scaledBgWidth) + ")");
 }
 
 void CreditsState::CreateTurd() {
@@ -207,9 +259,17 @@ void CreditsState::CreateTurd() {
     sprite.textureId = "TurdletIdle";
     sprite.width = 32.0f;   // Base turd sprite size
     sprite.height = 32.0f;
-    sprite.layer = 50;      // Above pipes
+    sprite.layer = 110;     // UI layer (screen space)
     sprite.visible = true;
+    // Align frame to logical size (prevents any width/height ratio distortion)
+    sprite.isAnimated = false;
+    sprite.frameWidth = static_cast<int>(sprite.width);
+    sprite.frameHeight = static_cast<int>(sprite.height);
+    sprite.frameCount = 1;
+    sprite.currentFrame = 0;
     m_ecsSystem->AddComponent(m_turdEntity, sprite);
+    GN_LOG_INFO("Created turd sprite w/h=" + std::to_string(sprite.width) + "x" + std::to_string(sprite.height) +
+                " frame=" + std::to_string(sprite.frameWidth) + "x" + std::to_string(sprite.frameHeight));
     
     // Position on left side, vertically centered, scaled 8x
     Transform transform;
@@ -222,66 +282,83 @@ void CreditsState::CreateTurd() {
 }
 
 void CreditsState::CreatePipes() {
-    // Create 6 toilet pairs with proper gap and spacing (landscape mode)
-    float centerY = m_screenHeight / 2.0f;
-    float pipeScale = 6.0f;  // Scale 6x
-    float scaledPipeHeight = 190.0f * pipeScale;  // 1140px
-    float gapSize = m_screenHeight * 0.35f;  // 35% of screen height as gap
-    float startX = m_screenWidth * 0.2f;  // Start at 20% of screen width
+    // Create 10 toilet PAIRS using ObstacleSystem's base scale
+    float pipeScale = 8.0f;  // Match ObstacleSystem baseScale
+    // Use visual 65x190 like ObstacleSystem for positioning math
+    float visualToiletHeight = 256.0f * pipeScale;
+    float pipeSpacing = m_screenWidth * 0.4f;  // 40% of screen width between pairs
+    float startX = -m_screenWidth;  // Start completely off-screen to the left (full screen width)
+    float fixedGapHeight = 400.0f;  // Reduced vertical gap between top and bottom toilets
     
-    GN_LOG_INFO("Creating pipes: centerY=" + std::to_string(centerY) + ", gapSize=" + std::to_string(gapSize) + ", startX=" + std::to_string(startX));
+    // Top toilet Y: 80% above screen like ObstacleSystem
+    float topToiletY = -visualToiletHeight * 0.8f;
     
-    for (int i = 0; i < 6; ++i) {
-        // Create top pipe
+    GN_LOG_INFO("Creating pipes (PAIRS): topY=" + std::to_string(topToiletY) + ", gap=" + std::to_string(fixedGapHeight) + ", startX=" + std::to_string(startX) + ", spacing=" + std::to_string(pipeSpacing) + ", scale=" + std::to_string(pipeScale));
+    
+    for (int i = 0; i < 10; ++i) {
+        // Create top pipe (visual 65x190)
         Gnosis::Entity topPipe = m_ecsSystem->CreateEntity();
         Sprite topSprite;
         topSprite.textureId = "TopToilet";
-        topSprite.width = 65.0f;
-        topSprite.height = 190.0f;
-        topSprite.layer = 40;
+        topSprite.width = 64.0f;
+        topSprite.height = 256.0f;
+        topSprite.layer = 105;  // UI layer (screen space)
         topSprite.visible = true;
+        topSprite.isAnimated = false;
+        topSprite.frameWidth = 64;
+        topSprite.frameHeight = 256;
+        topSprite.frameCount = 1;
+        topSprite.currentFrame = 0;
         m_ecsSystem->AddComponent(topPipe, topSprite);
         
         Transform topTransform;
-        float topY = centerY - (gapSize / 2.0f) - scaledPipeHeight;
-        topTransform.position = Gnosis::GNVector2(startX, topY);
+        topTransform.position = Gnosis::GNVector2(startX, topToiletY);
         topTransform.scale = Gnosis::GNVector2(pipeScale, pipeScale);
         topTransform.rotation = 0.0f;
         m_ecsSystem->AddComponent(topPipe, topTransform);
-        
         m_pipeEntities.push_back(topPipe);
         
-        // Create bottom pipe
+        // Create bottom pipe from visual height + fixed gap
+        float bottomToiletY = topToiletY + visualToiletHeight + fixedGapHeight;
+        
         Gnosis::Entity bottomPipe = m_ecsSystem->CreateEntity();
         Sprite bottomSprite;
         bottomSprite.textureId = "BottomToilet";
-        bottomSprite.width = 65.0f;
-        bottomSprite.height = 190.0f;
-        bottomSprite.layer = 40;
+        bottomSprite.width = 64.0f;
+        bottomSprite.height = 256.0f;
+        bottomSprite.layer = 105;  // UI layer (screen space)
         bottomSprite.visible = true;
+        bottomSprite.isAnimated = false;
+        bottomSprite.frameWidth = 64;
+        bottomSprite.frameHeight = 256;
+        bottomSprite.frameCount = 1;
+        bottomSprite.currentFrame = 0;
         m_ecsSystem->AddComponent(bottomPipe, bottomSprite);
         
         Transform bottomTransform;
-        float bottomY = centerY + (gapSize / 2.0f);
-        bottomTransform.position = Gnosis::GNVector2(startX, bottomY);
+        bottomTransform.position = Gnosis::GNVector2(startX, bottomToiletY);
         bottomTransform.scale = Gnosis::GNVector2(pipeScale, pipeScale);
         bottomTransform.rotation = 0.0f;
         m_ecsSystem->AddComponent(bottomPipe, bottomTransform);
-        
         m_pipeEntities.push_back(bottomPipe);
         
-        startX += PIPE_SPACING * pipeScale;  // Spacing proportional to scale
+        startX += pipeSpacing;  // Use calculated spacing
     }
     
-    GN_LOG_INFO("Created " + std::to_string(m_pipeEntities.size()) + " pipe entities (6 pairs, scale=" + std::to_string(pipeScale) + ", screen=" + std::to_string(m_screenWidth) + "x" + std::to_string(m_screenHeight) + ")");
+    GN_LOG_INFO("Created " + std::to_string(m_pipeEntities.size()) + " pipe entities (10 pairs, scale=" + std::to_string(pipeScale) + ", topY=" + std::to_string(topToiletY) + ", gap=" + std::to_string(fixedGapHeight) + ", spacing=" + std::to_string(pipeSpacing) + ", screen=" + std::to_string(m_screenWidth) + "x" + std::to_string(m_screenHeight) + ")");
 }
 
 void CreditsState::CreateCreditText() {
     // Create text entities for each credit entry with UIElement for outline support
     float xOffset = m_textScrollOffset;
+    float charWidth = 48.0f * (m_screenWidth / 2556.0f);
+    
+    GN_LOG_INFO("=== CreateCreditText: Starting creation of " + std::to_string(m_creditEntries.size()) + " credit entries ===");
     
     for (size_t i = 0; i < m_creditEntries.size(); ++i) {
-        const auto& entry = m_creditEntries[i];
+        auto& entry = m_creditEntries[i];
+        
+        GN_LOG_INFO("Entry[" + std::to_string(i) + "]: title='" + entry.title + "', name='" + entry.name + "', yOffset=" + std::to_string(entry.yOffset));
         
         // Create title text if present
         if (!entry.title.empty()) {
@@ -289,9 +366,9 @@ void CreditsState::CreateCreditText() {
             
             UIElement titleUI;
             titleUI.buttonText = entry.title;
-            titleUI.fontSize = 48.0f;  // Bigger text
-            titleUI.textColor = Gnosis::GNColor(255, 255, 255, 255);  // White
-            titleUI.textOutlineWidth = 3.0f;  // Outlined text
+            titleUI.fontSize = 48.0f;
+            titleUI.textColor = Gnosis::GNColor(255, 255, 255, 255);
+            titleUI.textOutlineWidth = 3.0f;
             titleUI.visible = true;
             titleUI.textLayer = 45;
             titleUI.centerTextHorizontally = false;
@@ -299,16 +376,23 @@ void CreditsState::CreateCreditText() {
             m_ecsSystem->AddComponent(titleEntity, titleUI);
             
             Transform titleTransform;
-            titleTransform.position = Gnosis::GNVector2(xOffset, (m_screenHeight / 2.0f) + entry.yOffset);
+            titleTransform.position = Gnosis::GNVector2(xOffset, entry.yOffset);
             titleTransform.scale = Gnosis::GNVector2(1.0f, 1.0f);
             titleTransform.rotation = 0.0f;
             m_ecsSystem->AddComponent(titleEntity, titleTransform);
             
+            entry.titleEntity = titleEntity;
+            entry.titleWidth = entry.title.length() * charWidth;
             m_creditTextEntities.push_back(titleEntity);
             
-            // Approximate text width (bigger font, more spacing) - scale with screen
-            float charWidth = 48.0f * (m_screenWidth / 2556.0f);  // Scale with screen width
-            xOffset += entry.title.length() * charWidth + (60.0f * (m_screenWidth / 2556.0f));
+            // Track final title entity
+            if (i == m_finalEntryIndex) {
+                m_finalTitleEntity = titleEntity;
+                GN_LOG_INFO("  -> FINAL TITLE ENTITY tracked: entity=" + std::to_string(titleEntity) + ", x=" + std::to_string(xOffset));
+            }
+            
+            GN_LOG_INFO("  -> Created TITLE entity=" + std::to_string(titleEntity) + " at x=" + std::to_string(xOffset) + ", y=" + std::to_string(entry.yOffset) + ", width=" + std::to_string(entry.titleWidth));
+            xOffset += entry.titleWidth + (30.0f * (m_screenWidth / 2556.0f));
         }
         
         // Create name text if present
@@ -317,9 +401,9 @@ void CreditsState::CreateCreditText() {
             
             UIElement nameUI;
             nameUI.buttonText = entry.name;
-            nameUI.fontSize = 48.0f;  // Bigger text
-            nameUI.textColor = Gnosis::GNColor(255, 255, 255, 255);  // White
-            nameUI.textOutlineWidth = 3.0f;  // Outlined text
+            nameUI.fontSize = 48.0f;
+            nameUI.textColor = Gnosis::GNColor(255, 255, 255, 255);
+            nameUI.textOutlineWidth = 3.0f;
             nameUI.visible = true;
             nameUI.textLayer = 45;
             nameUI.centerTextHorizontally = false;
@@ -327,22 +411,24 @@ void CreditsState::CreateCreditText() {
             m_ecsSystem->AddComponent(nameEntity, nameUI);
             
             Transform nameTransform;
-            nameTransform.position = Gnosis::GNVector2(xOffset, (m_screenHeight / 2.0f) + entry.yOffset + 60.0f);
+            nameTransform.position = Gnosis::GNVector2(xOffset, entry.yOffset + 60.0f);
             nameTransform.scale = Gnosis::GNVector2(1.0f, 1.0f);
             nameTransform.rotation = 0.0f;
             m_ecsSystem->AddComponent(nameEntity, nameTransform);
             
+            entry.nameEntity = nameEntity;
+            entry.nameWidth = entry.name.length() * charWidth;
             m_creditTextEntities.push_back(nameEntity);
             
-            float charWidth = 48.0f * (m_screenWidth / 2556.0f);
-            xOffset += entry.name.length() * charWidth + (60.0f * (m_screenWidth / 2556.0f));
+            GN_LOG_INFO("  -> Created NAME entity=" + std::to_string(nameEntity) + " at x=" + std::to_string(xOffset) + ", y=" + std::to_string(entry.yOffset + 60.0f) + ", width=" + std::to_string(entry.nameWidth));
+            xOffset += entry.nameWidth + (30.0f * (m_screenWidth / 2556.0f));
         }
         
-        // Add more spacing after each entry - scale with screen
-        xOffset += 150.0f * (m_screenWidth / 2556.0f);
+        // Add spacing after each entry
+        xOffset += 75.0f * (m_screenWidth / 2556.0f);
     }
     
-    GN_LOG_INFO("Created " + std::to_string(m_creditTextEntities.size()) + " credit text entities");
+    GN_LOG_INFO("=== CreateCreditText: Created " + std::to_string(m_creditTextEntities.size()) + " total text entities ===");
 }
 
 void CreditsState::CreateSkipButton() {
@@ -360,15 +446,24 @@ void CreditsState::CreateSkipButton() {
     skipUI.centerTextVertically = false;
     m_ecsSystem->AddComponent(m_skipButtonEntity, skipUI);
     
-    // Position 5% from right edge and 5% from bottom (landscape) - properly anchored
+    // Position in bottom-right corner with proper margin
+    // Text renders from top-left, so we need to position it accounting for text size
+    float marginRight = 50.0f;  // Fixed margin from right edge
+    float marginBottom = 50.0f;  // Fixed margin from bottom edge
+    float estimatedTextWidth = 200.0f;  // Approximate width of "SKIP" at size 48
+    
     Transform skipTransform;
-    skipTransform.position = Gnosis::GNVector2(m_screenWidth - (m_screenWidth * 0.05f), m_screenHeight - (m_screenHeight * 0.05f));
+    skipTransform.position = Gnosis::GNVector2(
+        m_screenWidth - estimatedTextWidth - marginRight,
+        m_screenHeight - skipUI.fontSize - marginBottom
+    );
     skipTransform.scale = Gnosis::GNVector2(1.0f, 1.0f);
     skipTransform.rotation = 0.0f;
     m_ecsSystem->AddComponent(m_skipButtonEntity, skipTransform);
     
     GN_LOG_INFO("Created skip button at (" + std::to_string(skipTransform.position.x) + 
-                ", " + std::to_string(skipTransform.position.y) + ")");
+                ", " + std::to_string(skipTransform.position.y) + "), screen=" + 
+                std::to_string(m_screenWidth) + "x" + std::to_string(m_screenHeight));
 }
 
 void CreditsState::CreateWhiteFadeOverlay() {
@@ -399,6 +494,11 @@ void CreditsState::DestroyEntities() {
         m_ecsSystem->DestroyEntity(m_backgroundEntity);
         m_backgroundEntity = 0;
     }
+    // Destroy any additional background tiles
+    for (auto e : m_backgroundEntities) {
+        m_ecsSystem->DestroyEntity(e);
+    }
+    m_backgroundEntities.clear();
     
     // Destroy turd
     if (m_turdEntity != 0) {
@@ -448,6 +548,7 @@ void CreditsState::UpdateTurdBounce(float deltaTime) {
 
 void CreditsState::UpdatePipes(float deltaTime) {
     // Move pipes left
+    float pipeSpacing = m_screenWidth * 0.4f;  // Same spacing as creation (40% of screen width)
     float rightmostX = -9999.0f;
     
     for (auto pipeEntity : m_pipeEntities) {
@@ -462,78 +563,98 @@ void CreditsState::UpdatePipes(float deltaTime) {
         }
     }
     
-    // Wrap pipes that go off-screen left
+    // Wrap pipes that go COMPLETELY off-screen left before wrapping
     for (auto pipeEntity : m_pipeEntities) {
         Transform* transform = m_ecsSystem->GetComponent<Transform>(pipeEntity);
         if (transform) {
             Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(pipeEntity);
-            float pipeWidth = sprite ? sprite->width : 64.0f;
+            // Use sprite frame width × actual transform scale to compute on-screen width
+            float pipeWidth = (sprite ? static_cast<float>(sprite->frameWidth) : 65.0f) * transform->scale.x;
             
-            // If pipe is completely off-screen left, wrap to right
-            if (transform->position.x + pipeWidth < 0) {
-                transform->position.x = rightmostX + PIPE_SPACING;
+            // If pipe is completely off-screen left, wrap to right of rightmost pipe
+            if (transform->position.x + pipeWidth < -pipeWidth) {
+                transform->position.x = rightmostX + pipeSpacing;
             }
         }
     }
 }
 
 void CreditsState::UpdateCreditScroll(float deltaTime) {
-    m_textScrollOffset -= SCROLL_SPEED * deltaTime;
+    // Update scroll offset (only when not in final hold)
+    if (!m_finalHoldActive) {
+        m_textScrollOffset -= (SCROLL_SPEED * 0.7875f) * deltaTime;
+    }
     
-    // Update all credit text positions
+    // Update all credit text positions using stored entity references
     float xOffset = m_textScrollOffset;
+    float charWidth = 48.0f * (m_screenWidth / 2556.0f);
     
     for (size_t i = 0; i < m_creditEntries.size(); ++i) {
-        const auto& entry = m_creditEntries[i];
+        auto& entry = m_creditEntries[i];
+        
+        // Only freeze the FINAL label horizontally when hold is active
+        bool isFinalEntry = (i == m_finalEntryIndex);
+        bool shouldUpdateX = !m_finalHoldActive || !isFinalEntry;
         
         // Update title position if present
-        if (!entry.title.empty() && i * 2 < m_creditTextEntities.size()) {
-            Transform* transform = m_ecsSystem->GetComponent<Transform>(m_creditTextEntities[i * 2]);
-            if (transform) {
+        if (entry.titleEntity != 0) {
+            Transform* transform = m_ecsSystem->GetComponent<Transform>(entry.titleEntity);
+            if (transform && shouldUpdateX) {
                 transform->position.x = xOffset;
             }
-            float charWidth = 48.0f * (m_screenWidth / 2556.0f);
-            xOffset += entry.title.length() * charWidth + (60.0f * (m_screenWidth / 2556.0f));
+
+            // Check if this is the final label and if it's centered
+            if (!m_finalHoldActive && i == m_finalEntryIndex) {
+                float centerX = xOffset + entry.titleWidth * 0.5f;
+                float screenCenter = m_screenWidth * 0.5f;
+                float distance = std::abs(centerX - screenCenter);
+                
+                if (distance <= FINAL_CENTER_TOLERANCE) {
+                    GN_LOG_INFO("FINAL LABEL CENTERED! centerX=" + std::to_string(centerX) + ", screenCenter=" + std::to_string(screenCenter) + ", distance=" + std::to_string(distance));
+                    BeginFinalSequence();
+                }
+            }
+
+            xOffset += entry.titleWidth + (30.0f * (m_screenWidth / 2556.0f));
         }
         
         // Update name position if present
-        if (!entry.name.empty() && i * 2 + 1 < m_creditTextEntities.size()) {
-            Transform* transform = m_ecsSystem->GetComponent<Transform>(m_creditTextEntities[i * 2 + 1]);
-            if (transform) {
+        if (entry.nameEntity != 0) {
+            Transform* transform = m_ecsSystem->GetComponent<Transform>(entry.nameEntity);
+            if (transform && shouldUpdateX) {
                 transform->position.x = xOffset;
             }
-            float charWidth = 48.0f * (m_screenWidth / 2556.0f);
-            xOffset += entry.name.length() * charWidth + (60.0f * (m_screenWidth / 2556.0f));
+            xOffset += entry.nameWidth + (30.0f * (m_screenWidth / 2556.0f));
         }
         
-        xOffset += 150.0f * (m_screenWidth / 2556.0f);
-    }
-    
-    // Wrap text if it scrolls completely off-screen left
-    float totalTextWidth = xOffset - m_textScrollOffset;
-    if (m_textScrollOffset < -totalTextWidth) {
-        m_textScrollOffset = m_screenWidth + 50.0f;
+        xOffset += 75.0f * (m_screenWidth / 2556.0f);
     }
 }
 
 void CreditsState::UpdateWhiteFade(float deltaTime) {
     if (m_whiteFadeEntity == 0) return;
     
-    // Fade out from white over FADE_IN_DURATION seconds
-    if (m_whiteFadeAlpha > 0.0f) {
+    UIShape* fadeShape = m_ecsSystem->GetComponent<UIShape>(m_whiteFadeEntity);
+    if (!fadeShape) return;
+    
+    if (m_fadingOut) {
+        // Fade TO white at end (increase alpha)
+        m_whiteFadeAlpha += deltaTime / FADE_OUT_DURATION;
+        m_whiteFadeAlpha = std::min(1.0f, m_whiteFadeAlpha);
+        fadeShape->visible = true;  // Make sure it's visible during fade out
+    } else if (m_whiteFadeAlpha > 0.0f) {
+        // Fade FROM white at start (decrease alpha)
         m_whiteFadeAlpha -= deltaTime / FADE_IN_DURATION;
         m_whiteFadeAlpha = std::max(0.0f, m_whiteFadeAlpha);
         
-        UIShape* fadeShape = m_ecsSystem->GetComponent<UIShape>(m_whiteFadeEntity);
-        if (fadeShape) {
-            fadeShape->color.a = static_cast<uint8_t>(m_whiteFadeAlpha * 255.0f);
-            
-            // Hide completely when fully transparent
-            if (m_whiteFadeAlpha <= 0.0f) {
-                fadeShape->visible = false;
-            }
+        // Hide completely when fully transparent
+        if (m_whiteFadeAlpha <= 0.0f) {
+            fadeShape->visible = false;
         }
     }
+    
+    // Update alpha component
+    fadeShape->color.a = static_cast<uint8_t>(m_whiteFadeAlpha * 255.0f);
 }
 
 void CreditsState::CheckMusicCompletion() {
@@ -548,13 +669,14 @@ bool CreditsState::IsSkipButtonPressed(float touchX, float touchY) {
     Transform* transform = m_ecsSystem->GetComponent<Transform>(m_skipButtonEntity);
     if (!transform) return false;
     
-    // Approximate button bounds (SKIP text at bottom right, check area around it)
-    float buttonWidth = 120.0f;
-    float buttonHeight = 60.0f;
-    float buttonLeft = transform->position.x - buttonWidth;
-    float buttonRight = transform->position.x;
-    float buttonTop = transform->position.y - buttonHeight;
-    float buttonBottom = transform->position.y;
+    // Button bounds - text positioned at top-left, so add padding to the right and bottom
+    float fontSize = 48.0f;
+    float buttonWidth = 200.0f;  // SKIP text width + padding
+    float buttonHeight = fontSize + 20.0f;  // Text height + padding
+    float buttonLeft = transform->position.x;
+    float buttonRight = transform->position.x + buttonWidth;
+    float buttonTop = transform->position.y;
+    float buttonBottom = transform->position.y + buttonHeight;
     
     return (touchX >= buttonLeft && touchX <= buttonRight &&
             touchY >= buttonTop && touchY <= buttonBottom);
@@ -610,6 +732,20 @@ void CreditsState::CacheScreenDimensions() {
                        std::to_string(m_screenWidth) + "x" + std::to_string(m_screenHeight));
         }
     }
+}
+
+void CreditsState::BeginFinalSequence() {
+    if (m_finalHoldActive) return;
+    m_finalHoldActive = true;
+    m_finalHoldTimer = 0.0f;
+
+    // Final label is already vertically centered from creation; no need to shift Y
+    GN_LOG_INFO("Credits: Final label centered - beginning 5s hold before fade (2s fade out)");
+}
+
+// Optional stub (header may declare it); centering handled inline during scroll update
+bool CreditsState::IsFinalLabelCentered(float /*tolerancePx*/) const {
+    return false;
 }
 
 } // namespace GameCore

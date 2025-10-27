@@ -2,14 +2,16 @@
 #include "PickupSystem.h"
 #include "../../Engine/Core/ECS.h"
 #include "../Components/GameComponents.h"
+#include "../../Engine/Platform/HapticHelpers.h"
 #include <algorithm>
 #include <cmath>
 
 namespace GameCore {
 
-    SkillSystem::SkillSystem(Gnosis::ECS* ecsSystem)
+    SkillSystem::SkillSystem(Gnosis::ECS* ecsSystem, PlatformDelegates* platformDelegates)
         : m_ecsSystem(ecsSystem)
         , m_pickupSystem(nullptr)
+        , m_platformDelegates(platformDelegates)
         , m_coinSafetyNetUsedThisLevel(false)
     {
         InitializeSkillDefinitions();
@@ -70,6 +72,13 @@ namespace GameCore {
         if (skill == SkillType::HalfHearts || skill == SkillType::ThirdHearts ||
             skill == SkillType::CoinMagnet || skill == SkillType::HeartMagnet) {
             it->second.isActive = true;
+        }
+
+        // Trigger haptic feedback for skill unlock
+        if (m_platformDelegates) {
+            if (m_platformDelegates->haptic.triggerPattern) {
+                m_platformDelegates->haptic.triggerPattern("level_unlock");
+            }
         }
 
         SaveSkillProgress();

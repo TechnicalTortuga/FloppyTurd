@@ -21,8 +21,8 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Systems/SkillSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Systems/../../Engine/Core/ECS.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Systems/../Components/GameComponents.h \
-  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Systems/HatsSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Systems/../../Engine/Platform/PlatformDelegates.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Systems/HatsSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Input/InputManager.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Input/../../Engine/Core/ECS.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Input/../../Engine/Platform/PlatformDelegates.h \

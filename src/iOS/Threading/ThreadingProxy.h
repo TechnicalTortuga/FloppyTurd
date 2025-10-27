@@ -95,6 +95,28 @@ namespace GameCore {
         static void enqueueLogError(const char* message, const char* category = "C++");
         static void enqueueLogFatal(const char* message, const char* category = "C++");
         
+        // Haptic feedback commands
+        static void enqueueHapticImpact(HapticStyle style, float intensity = 1.0f);
+        static void enqueueHapticSelection();
+        static void enqueueHapticNotification(HapticNotificationType type);
+        static void enqueueHapticPattern(const char* patternName);
+        static void enqueueHapticPrepare(HapticStyle style);
+        
+        // Save/Load commands
+        static void enqueueSaveGame(const std::string& jsonData);
+        static void enqueueLoadGame();
+        static void enqueueSaveSettings(float masterVol, float musicVol, float sfxVol, bool debug);
+        static void enqueueLoadSettings();
+        
+        // Game Center commands
+        static void enqueueGameCenterAuthenticate();
+        static bool isGameCenterAuthenticated();
+        static void enqueueGameCenterSubmitScore(const char* leaderboardID, int64_t score);
+        static void enqueueGameCenterShowLeaderboard(const char* leaderboardID);
+        static void enqueueGameCenterShowAllLeaderboards();
+        static const char* getGameCenterPlayerName();
+        static const char* getGameCenterPlayerID();
+        
         // Asset loading commands - modern callback signatures with userData
         static void enqueueLoadTexture(const std::string& path, void (*callback)(TextureData* texture, const char* error, void* userData), void* userData);
         static void enqueueLoadAudio(const std::string& path, void (*callback)(void* audioData, size_t size, const char* error, void* userData), void* userData);
@@ -142,6 +164,9 @@ namespace GameCore {
         std::vector<GameCore::AudioCommand> getAndClearAudioCommands();
         std::vector<GameCore::LogCommand> getAndClearLogCommands();
         std::vector<GameCore::AssetCommand> getAndClearAssetCommands();
+        std::vector<GameCore::HapticCommand> getAndClearHapticCommands();
+        std::vector<GameCore::SaveCommand> getAndClearSaveCommands();
+        std::vector<GameCore::GameCenterCommand> getAndClearGameCenterCommands();
         
         // Queue management - Thread-safe
         size_t getCommandCount() const;
@@ -162,6 +187,9 @@ namespace GameCore {
         std::vector<AudioCommand> m_audioCommandQueue;
         std::vector<LogCommand> m_logCommandQueue;
         std::vector<AssetCommand> m_assetCommandQueue;
+        std::vector<HapticCommand> m_hapticCommandQueue;
+        std::vector<SaveCommand> m_saveCommandQueue;
+        std::vector<GameCenterCommand> m_gameCenterCommandQueue;
         mutable std::mutex m_queueMutex;  // mutable for const methods
         
         // Touch input state
@@ -189,6 +217,9 @@ namespace GameCore {
         void enqueueAudioCommand(const AudioCommand& command);
         void enqueueLogCommand(const LogCommand& command);
         void enqueueAssetCommand(const AssetCommand& command);
+        void enqueueHapticCommand(const HapticCommand& command);
+        void enqueueSaveCommand(const SaveCommand& command);
+        void enqueueGameCenterCommand(const GameCenterCommand& command);
     };
     
     // Global instance accessor for C++ interop
@@ -204,6 +235,9 @@ namespace GameCore {
     std::vector<AudioCommand> getAndClearAudioCommandsFromProxy();
     std::vector<LogCommand> getAndClearLogCommandsFromProxy();
     std::vector<AssetCommand> getAndClearAssetCommandsFromProxy();
+    std::vector<HapticCommand> getAndClearHapticCommandsFromProxy();
+    std::vector<SaveCommand> getAndClearSaveCommandsFromProxy();
+    std::vector<GameCenterCommand> getAndClearGameCenterCommandsFromProxy();
     
     bool isAssetCachedFromProxy(const char* assetName, int assetType);
 
@@ -215,4 +249,7 @@ namespace GameCore {
     // Swift CXX Interop Function Declarations
     // Modern Swift functions that can be called directly from C++
     void setScreenInfoDirect(const ScreenInfo& screenInfo);
+    
+    // Save/Load synchronous interop
+    std::string loadGameDataSync();
 }

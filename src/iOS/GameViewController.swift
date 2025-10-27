@@ -78,6 +78,25 @@ public class GameViewController: UIViewController {
         setupNotifications()
         log("setupNotifications() completed")
 
+        // Set up Game Center
+        log("Setting up Game Center...")
+        GameCenterManager.shared.setViewController(self)
+
+        // Authenticate with Game Center
+        GameCenterManager.shared.authenticate { success, error in
+            if success {
+                Task { @MainActor in
+                    self.log("✅ Game Center authenticated successfully")
+                }
+            } else if let error = error {
+                Task { @MainActor in
+                    self.log(
+                        "⚠️ Game Center authentication failed: \(error.localizedDescription)",
+                        level: .warning)
+                }
+            }
+        }
+
         log("GameViewController loaded successfully")
     }
 
@@ -379,75 +398,68 @@ extension GameViewController: MTKViewDelegate {
 
     /// Lock orientation to portrait only
     public func lockToPortrait() {
-        orientationLocked = true
-        lockedOrientation = [.portrait, .portraitUpsideDown]
-        log("Orientation locked to portrait only", level: .info)
+        // MUST be called on main thread to avoid dispatch queue assertion crashes
+        DispatchQueue.main.async {
+            self.orientationLocked = true
+            self.lockedOrientation = [.portrait, .portraitUpsideDown]
+            self.log("Orientation locked to portrait only", level: .info)
 
-        // SYNCHRONOUSLY update ConfigManager with portrait lock
-        updateOrientationLockState(.PORTRAIT)
+            // SYNCHRONOUSLY update ConfigManager with portrait lock
+            self.updateOrientationLockState(.PORTRAIT)
 
-        // Modern iOS orientation handling with proper API calls
-        setNeedsUpdateOfSupportedInterfaceOrientations()
-        navigationController?.setNeedsUpdateOfSupportedInterfaceOrientations()
+            // Modern iOS orientation handling with proper API calls
+            self.setNeedsUpdateOfSupportedInterfaceOrientations()
+            self.navigationController?.setNeedsUpdateOfSupportedInterfaceOrientations()
 
-        // Request iOS to rotate to portrait
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
-            log(
-                "Current orientation: \(windowScene.interfaceOrientation.rawValue), requesting portrait",
-                level: .info)
+            // Request iOS to rotate to portrait
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+                self.log(
+                    "Current orientation: \(windowScene.interfaceOrientation.rawValue), requesting portrait",
+                    level: .info)
 
-            // Request portrait orientation with proper error handling
-            Task { @MainActor in
-                if let windowScene = UIApplication.shared.connectedScenes.first
-                    as? UIWindowScene
-                {
-                    windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: .portrait)) {
-                        error in
-                        self.log(
-                            "Orientation lock to portrait failed: \(error.localizedDescription)",
-                            level: .error)
-                    }
+                // Request portrait orientation with proper error handling
+                windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: .portrait)) {
+                    error in
                     self.log(
-                        "Successfully requested orientation lock to portrait", level: .info)
+                        "Orientation lock to portrait failed: \(error.localizedDescription)",
+                        level: .error)
                 }
+                self.log(
+                    "Successfully requested orientation lock to portrait", level: .info)
             }
         }
     }
 
     /// Lock orientation to landscape only
     public func lockToLandscape() {
-        orientationLocked = true
-        lockedOrientation = [.landscapeLeft, .landscapeRight]
-        log("Orientation locked to landscape only", level: .info)
+        // MUST be called on main thread to avoid dispatch queue assertion crashes
+        DispatchQueue.main.async {
+            self.orientationLocked = true
+            self.lockedOrientation = [.landscapeLeft, .landscapeRight]
+            self.log("Orientation locked to landscape only", level: .info)
 
-        // SYNCHRONOUSLY update ConfigManager with landscape lock
-        updateOrientationLockState(.LANDSCAPE)
+            // SYNCHRONOUSLY update ConfigManager with landscape lock
+            self.updateOrientationLockState(.LANDSCAPE)
 
-        // Modern iOS orientation handling with proper API calls
-        setNeedsUpdateOfSupportedInterfaceOrientations()
-        navigationController?.setNeedsUpdateOfSupportedInterfaceOrientations()
+            // Modern iOS orientation handling with proper API calls
+            self.setNeedsUpdateOfSupportedInterfaceOrientations()
+            self.navigationController?.setNeedsUpdateOfSupportedInterfaceOrientations()
 
-        // Request iOS to rotate to landscape
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
-            log(
-                "Current orientation: \(windowScene.interfaceOrientation.rawValue), requesting landscape",
-                level: .info)
+            // Request iOS to rotate to landscape
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+                self.log(
+                    "Current orientation: \(windowScene.interfaceOrientation.rawValue), requesting landscape",
+                    level: .info)
 
-            // Request landscape orientation with proper error handling
-            Task { @MainActor in
-                if let windowScene = UIApplication.shared.connectedScenes.first
-                    as? UIWindowScene
-                {
-                    windowScene.requestGeometryUpdate(
-                        .iOS(interfaceOrientations: .landscapeLeft)
-                    ) { error in
-                        self.log(
-                            "Orientation lock to landscape failed: \(error.localizedDescription)",
-                            level: .error)
-                    }
+                // Request landscape orientation with proper error handling
+                windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: .landscape)) {
+                    error in
                     self.log(
-                        "Successfully requested orientation lock to landscape", level: .info)
+                        "Orientation lock to landscape failed: \(error.localizedDescription)",
+                        level: .error)
                 }
+                self.log(
+                    "Successfully requested orientation lock to landscape", level: .info)
             }
         }
     }
@@ -472,7 +484,9 @@ extension GameViewController: MTKViewDelegate {
             var screenInfo = renderer.getScreenInfo()
             screenInfo.orientationLock = lockState
 
-            let lockStr = lockState == .PORTRAIT ? "PORTRAIT" : lockState == .LANDSCAPE ? "LANDSCAPE" : "UNLOCKED"
+            let lockStr =
+                lockState == .PORTRAIT
+                ? "PORTRAIT" : lockState == .LANDSCAPE ? "LANDSCAPE" : "UNLOCKED"
             log("🔒 Orientation lock applied synchronously: \(lockStr)", level: .info)
 
             // Update ConfigManager immediately with the orientation lock

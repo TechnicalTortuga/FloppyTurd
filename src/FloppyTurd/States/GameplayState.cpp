@@ -3,6 +3,7 @@
 #include "../Components/GameComponents.h"
 #include "../Config/EnemyConfigs.h"
 #include "../../Engine/Utility/Utils.h"
+#include "../../Engine/Platform/HapticHelpers.h"
 #include <algorithm>
 #include <set>
 #include "../Game/FloppyTurdGame.h"
@@ -977,7 +978,7 @@ namespace GameCore {
         m_hatsSystem = std::make_unique<HatsSystem>(m_ecsSystem, *m_platformDelegates);
 
         // Create skill system for managing player skills
-        m_skillSystem = std::make_unique<SkillSystem>(m_ecsSystem);
+        m_skillSystem = std::make_unique<SkillSystem>(m_ecsSystem, m_platformDelegates);
 
         // Notify LevelManager that ProjectileSystem is ready
         if (m_levelManager) {
@@ -1344,6 +1345,9 @@ namespace GameCore {
             m_playerControllerSystem->SetPlayerAlive(true);
         }
 
+            // Note: Equipped hat is managed by HatsSystem and retrieved directly by PlayerControllerSystem
+            // No need to set it in PlayerComponent - it's loaded from game save in HatsSystem constructor
+            
             // Expose player to LevelManager for NPC/enemy behavior and triggers
             if (m_levelManager) {
                 m_levelManager->SetPlayerEntity(m_playerEntity);
@@ -2283,6 +2287,16 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
     // Menu navigation functions
     void GameplayState::ReturnToMainMenu() {
         GN_LOG_INFO("Returning to main menu from gameplay");
+        
+        // Update level high score with current progress (even if not completed)
+        if (GameCore::GetGame()) {
+            PlayerComponent* player = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity);
+            int sessionCoins = player ? player->sessionCoins : 0;
+            
+            // Update level stats with current pipes cleared and coins
+            GameCore::GetGame()->UpdateLevelHighScore(m_currentLevelId, m_pipesCleared, sessionCoins);
+            GN_LOG_INFO("💾 Updated level " + std::to_string(m_currentLevelId) + " stats on menu return: " + std::to_string(m_pipesCleared) + " pipes, " + std::to_string(sessionCoins) + " coins");
+        }
         
         // FINALITY EVENT: Transfer session coins to stored coins when returning to menu
         // (Will be 0 if coming from game over, preventing double-adding)
@@ -3403,6 +3417,11 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         }
 
         GN_LOG_INFO("Game Over triggered - player reached 0 hearts, starting fall sequence");
+        
+        // Trigger haptic feedback for game over
+        if (m_platformDelegates) {
+            HapticHelpers::TriggerGameOver(*m_platformDelegates);
+        }
 
         // Update level high score with current session progress before death
         if (GameCore::GetGame()) {

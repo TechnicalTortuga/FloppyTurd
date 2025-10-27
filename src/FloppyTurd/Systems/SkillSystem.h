@@ -3,6 +3,7 @@
 
 #include "../../Engine/Core/ECS.h"
 #include "../Components/GameComponents.h"
+#include "../../Engine/Platform/PlatformDelegates.h"
 #include <vector>
 #include <string>
 #include <map>
@@ -36,11 +37,12 @@ namespace GameCore {
      */
     class SkillSystem {
     public:
-        SkillSystem(Gnosis::ECS* ecsSystem);
+        SkillSystem(Gnosis::ECS* ecsSystem, PlatformDelegates* platformDelegates = nullptr);
         ~SkillSystem();
 
         // Integration with other systems
         void SetPickupSystem(PickupSystem* pickupSystem) { m_pickupSystem = pickupSystem; }
+        void SetPlatformDelegates(PlatformDelegates* platformDelegates) { m_platformDelegates = platformDelegates; }
 
         // Skill management
         void InitializeSkills();
@@ -80,6 +82,7 @@ namespace GameCore {
     private:
         Gnosis::ECS* m_ecsSystem;
         PickupSystem* m_pickupSystem;
+        PlatformDelegates* m_platformDelegates;
 
         // Skill definitions and state
         std::map<SkillType, SkillDefinition> m_skills;

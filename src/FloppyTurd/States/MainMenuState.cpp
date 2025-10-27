@@ -35,7 +35,7 @@ namespace GameCore {
         , m_playButtonEntity(0)
         , m_optionsButtonEntity(0)
         , m_quickPlayButtonEntity(0)
-        , m_quitButtonEntity(0)
+        , m_leaderboardButtonEntity(0)
         , m_currentLevelIndex(0)
         , m_selectedLevelIndex(-1)
         , m_backButtonEntity(0)
@@ -213,13 +213,17 @@ namespace GameCore {
         // Don't unlock orientation - keep portrait locked, GameplayState will handle its own orientation
         GN_LOG_INFO("Main Menu Exit - keeping portrait orientation locked (GameplayState will manage its own)");
         
-        // Stop menu music using delegate system
-        if (m_game) {
-            const PlatformDelegates& delegates = m_game->GetPlatformDelegates();
-            if (delegates.audio.stopMusic) {
-                delegates.audio.stopMusic();
-                GN_LOG_INFO("Stopped main menu music");
+        // Only stop music if NOT transitioning to leaderboard (leaderboard should keep main menu music playing)
+        if (!m_transitioningToLeaderboard) {
+            if (m_game) {
+                const PlatformDelegates& delegates = m_game->GetPlatformDelegates();
+                if (delegates.audio.stopMusic) {
+                    delegates.audio.stopMusic();
+                    GN_LOG_INFO("Stopped main menu music");
+                }
             }
+        } else {
+            GN_LOG_INFO("Keeping main menu music playing for leaderboard state");
         }
         
         // Cleanup UI entities
@@ -242,8 +246,8 @@ namespace GameCore {
             if (m_quickPlayButtonEntity != 0) {
                 m_ecsCoordinator->DestroyEntity(m_quickPlayButtonEntity);
             }
-            if (m_quitButtonEntity != 0) {
-                m_ecsCoordinator->DestroyEntity(m_quitButtonEntity);
+            if (m_leaderboardButtonEntity != 0) {
+                m_ecsCoordinator->DestroyEntity(m_leaderboardButtonEntity);
             }
             
             // Cleanup level select entities
@@ -526,7 +530,7 @@ namespace GameCore {
     }
 
     void MainMenuState::SetMainMenuVisible(bool visible) {
-        std::vector<Gnosis::Entity> mainButtons = {m_playButtonEntity, m_optionsButtonEntity, m_quickPlayButtonEntity, m_quitButtonEntity};
+        std::vector<Gnosis::Entity> mainButtons = {m_playButtonEntity, m_optionsButtonEntity, m_quickPlayButtonEntity, m_leaderboardButtonEntity};
         for (Gnosis::Entity entity : mainButtons) {
             if (entity != 0) {
                 if (auto s = m_ecsCoordinator->GetComponent<Sprite>(entity)) s->visible = visible;
@@ -1354,13 +1358,13 @@ namespace GameCore {
         if (m_playButtonEntity != 0) m_ecsCoordinator->DestroyEntity(m_playButtonEntity);
         if (m_optionsButtonEntity != 0) m_ecsCoordinator->DestroyEntity(m_optionsButtonEntity);
         if (m_quickPlayButtonEntity != 0) m_ecsCoordinator->DestroyEntity(m_quickPlayButtonEntity);
-        if (m_quitButtonEntity != 0) m_ecsCoordinator->DestroyEntity(m_quitButtonEntity);
+        if (m_leaderboardButtonEntity != 0) m_ecsCoordinator->DestroyEntity(m_leaderboardButtonEntity);
 
         // Reset entity IDs
         m_playButtonEntity = 0;
         m_optionsButtonEntity = 0;
         m_quickPlayButtonEntity = 0;
-        m_quitButtonEntity = 0;
+        m_leaderboardButtonEntity = 0;
 
         // Get enhanced screen information from shared RenderSystem (like GameplayState)
         ScreenInfo screenInfo;
@@ -1584,10 +1588,9 @@ namespace GameCore {
                 m_finished = true;
                 break;
                 
-            case MenuOption::QUIT:
-                GN_LOG_INFO("Quitting game...");
-                // For now, just finish - iOS will handle app termination naturally
-                // (iOS doesn't have a programmatic exit, apps should only quit via user action)
+            case MenuOption::LEADERBOARD:
+                GN_LOG_INFO("Opening leaderboards...");
+                m_transitioningToLeaderboard = true;
                 m_finished = true;
                 break;
                 
@@ -1635,7 +1638,7 @@ namespace GameCore {
             case MenuOption::PLAYING:    return "Playing";
             case MenuOption::OPTIONS:    return "Options";
             case MenuOption::QUICK_PLAY: return "Quick Play";
-            case MenuOption::QUIT:       return "Quit";
+            case MenuOption::LEADERBOARD: return "Leaderboard";
             default:                     return "Unknown";
         }
     }
@@ -1645,22 +1648,8 @@ namespace GameCore {
     }
 
     bool MainMenuState::IsMobilePlatform() const {
-        // TODO: Implement platform detection
-        // This should check the actual platform we're running on
-        // For now, return false (desktop) as default
-        
-        #ifdef __APPLE__
-            #include "TargetConditionals.h"
-            #if TARGET_OS_IPHONE
-                return true;  // iOS
-            #else
-                return false; // macOS
-            #endif
-        #elif defined(__ANDROID__)
-            return true;  // Android
-        #else
-            return false; // Desktop (Windows, Linux, etc.)
-        #endif
+        // Use platform detection from game instance (set at initialization)
+        return m_game ? m_game->IsIOSPlatform() : false;
     }
 
     void MainMenuState::CreateMenuButtons() {
@@ -1770,8 +1759,8 @@ namespace GameCore {
         m_ecsCoordinator->AddComponent<Sprite>(m_quickPlayButtonEntity, quickPlaySprite);
         m_ecsCoordinator->AddComponent<UIElement>(m_quickPlayButtonEntity, quickPlayButton);
         
-        // Create Quit Button
-        m_quitButtonEntity = m_ecsCoordinator->CreateEntity();
+        // Create Leaderboard Button
+        m_leaderboardButtonEntity = m_ecsCoordinator->CreateEntity();
         
         // Calculate scaled dimensions using helper
         auto quitButtonScaledDimensions = GetScaledDimensions(buttonTextureWidth, buttonTextureHeight, buttonScale);
@@ -1791,13 +1780,13 @@ namespace GameCore {
         UIElement quitButton("QUIT", "FloppyButtonBlue", "FloppyButtonBlueHover");
         quitButton.fontSize = m_buttonFontSize;
         quitButton.textColor = Gnosis::GNColor(255, 255, 255, 255); // White text
-        GN_LOG_INFO("Created Quit button with text: '%s' (length: %zu)", quitButton.buttonText.c_str(), quitButton.buttonText.length());
+        GN_LOG_INFO("Created Leaderboard button with text: '%s' (length: %zu)", quitButton.buttonText.c_str(), quitButton.buttonText.length());
         
-        m_ecsCoordinator->AddComponent<Transform>(m_quitButtonEntity, quitTransform);
-        m_ecsCoordinator->AddComponent<Sprite>(m_quitButtonEntity, quitSprite);
-        m_ecsCoordinator->AddComponent<UIElement>(m_quitButtonEntity, quitButton);
+        m_ecsCoordinator->AddComponent<Transform>(m_leaderboardButtonEntity, quitTransform);
+        m_ecsCoordinator->AddComponent<Sprite>(m_leaderboardButtonEntity, quitSprite);
+        m_ecsCoordinator->AddComponent<UIElement>(m_leaderboardButtonEntity, quitButton);
         
-        GN_LOG_INFO("Created desktop menu buttons: Play, Options, Quick Play, Quit");
+        GN_LOG_INFO("Created desktop menu buttons: Play, Options, Quick Play, Leaderboard");
     }
 
     void MainMenuState::CreateMobileMenuButtons() {
@@ -1883,7 +1872,7 @@ namespace GameCore {
         createButton(m_playButtonEntity, "PLAY", 0);
         createButton(m_optionsButtonEntity, "OPTIONS", 1);
         createButton(m_quickPlayButtonEntity, "QUICK PLAY", 2);
-        createButton(m_quitButtonEntity, "QUIT", 3);
+        createButton(m_leaderboardButtonEntity, "LEADERBOARD", 3);
         
         GN_LOG_INFO("✅ Created mobile menu buttons with simplified positioning");
     }
@@ -1903,7 +1892,7 @@ namespace GameCore {
         GN_LOG_INFO("DrawButtonDebugRectangles: Drawing debug rectangles...");
         
         // Draw debug rectangles for each button
-        std::vector<Gnosis::Entity> buttons = {m_playButtonEntity, m_optionsButtonEntity, m_quickPlayButtonEntity, m_quitButtonEntity};
+        std::vector<Gnosis::Entity> buttons = {m_playButtonEntity, m_optionsButtonEntity, m_quickPlayButtonEntity, m_leaderboardButtonEntity};
         
         for (Gnosis::Entity buttonEntity : buttons) {
             if (buttonEntity == 0) continue;
@@ -1945,9 +1934,9 @@ namespace GameCore {
         OnMenuOptionSelected(MenuOption::QUICK_PLAY);
     }
 
-    void MainMenuState::OnQuitButtonPressed() {
-        GN_LOG_INFO("Quit button pressed - exiting game");
-        OnMenuOptionSelected(MenuOption::QUIT);
+    void MainMenuState::OnLeaderboardButtonPressed() {
+        GN_LOG_INFO("Leaderboard button pressed - opening leaderboards");
+        OnMenuOptionSelected(MenuOption::LEADERBOARD);
     }
 
     void MainMenuState::CheckMenuButtonClicks(float touchX, float touchY) {
@@ -2081,11 +2070,11 @@ namespace GameCore {
             }
         }
         
-        // Check Quit Button
-        if (m_quitButtonEntity != 0) {
-            Transform* transform = m_ecsCoordinator->GetComponent<Transform>(m_quitButtonEntity);
-            Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(m_quitButtonEntity);
-            UIElement* uiElement = m_ecsCoordinator->GetComponent<UIElement>(m_quitButtonEntity);
+        // Check Leaderboard Button
+        if (m_leaderboardButtonEntity != 0) {
+            Transform* transform = m_ecsCoordinator->GetComponent<Transform>(m_leaderboardButtonEntity);
+            Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(m_leaderboardButtonEntity);
+            UIElement* uiElement = m_ecsCoordinator->GetComponent<UIElement>(m_leaderboardButtonEntity);
             
             if (transform && sprite && uiElement) {
                 // Button is now positioned at top-left, so collision detection uses top-left based bounds
@@ -2105,12 +2094,12 @@ namespace GameCore {
                 
                 if (touchX >= buttonLeft && touchX <= buttonRight &&
                     touchY >= buttonTop && touchY <= buttonBottom) {
-                    GN_LOG_INFO("🎮 MainMenuState: QUIT BUTTON HIT!");
+                    GN_LOG_INFO("🎮 MainMenuState: LEADERBOARD BUTTON HIT!");
                     // Trigger action and immediately reset visual state
-                    OnQuitButtonPressed();
+                    OnLeaderboardButtonPressed();
                     uiElement->isPressed = false;
                     uiElement->isHovered = false;
-                    UpdateButtonSprite(m_quitButtonEntity, *uiElement);
+                    UpdateButtonSprite(m_leaderboardButtonEntity, *uiElement);
                     return;
                 }
             }
@@ -2125,7 +2114,7 @@ namespace GameCore {
         }
         
         // Reset all button states to normal
-        std::vector<Gnosis::Entity> buttonEntities = {m_playButtonEntity, m_optionsButtonEntity, m_quickPlayButtonEntity, m_quitButtonEntity};
+        std::vector<Gnosis::Entity> buttonEntities = {m_playButtonEntity, m_optionsButtonEntity, m_quickPlayButtonEntity, m_leaderboardButtonEntity};
         
         for (Gnosis::Entity entity : buttonEntities) {
             if (entity != 0) {
@@ -3018,7 +3007,7 @@ namespace GameCore {
         }
         
         // Hide main menu buttons
-        std::vector<Gnosis::Entity> mainButtons = {m_playButtonEntity, m_optionsButtonEntity, m_quickPlayButtonEntity, m_quitButtonEntity};
+        std::vector<Gnosis::Entity> mainButtons = {m_playButtonEntity, m_optionsButtonEntity, m_quickPlayButtonEntity, m_leaderboardButtonEntity};
         for (Gnosis::Entity entity : mainButtons) {
             if (entity != 0) {
                 Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(entity);
@@ -3083,7 +3072,7 @@ namespace GameCore {
         }
         
         // Show main menu buttons
-        std::vector<Gnosis::Entity> mainButtons = {m_playButtonEntity, m_optionsButtonEntity, m_quickPlayButtonEntity, m_quitButtonEntity};
+        std::vector<Gnosis::Entity> mainButtons = {m_playButtonEntity, m_optionsButtonEntity, m_quickPlayButtonEntity, m_leaderboardButtonEntity};
         for (Gnosis::Entity entity : mainButtons) {
             if (entity != 0) {
                 Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(entity);
@@ -3194,7 +3183,9 @@ namespace GameCore {
         if (justPressed && touchY >= bandTop && touchY <= bandBottom) {
             m_isPanning = true;
             m_panStartX = touchX;
+            m_panStartY = touchY;
             m_panStartOffsetX = m_currentOffsetX;
+            m_lastPanX = touchX;
             // Immediately update positions and make neighbors visible when pan begins
             UpdateLevelPanPositions();
         }
@@ -3202,6 +3193,7 @@ namespace GameCore {
         if (m_isPanning && inputDown) {
             float delta = touchX - m_panStartX;
             m_currentOffsetX = m_panStartOffsetX + delta;
+            m_lastPanX = touchX;
             // Clamp soft bounds so neighbor exists just off-screen
             float maxOffset = m_levelSpacing * (m_currentLevelIndex);
             float minOffset = -m_levelSpacing * ((int)m_levels.size() - 1 - m_currentLevelIndex);
@@ -3210,6 +3202,60 @@ namespace GameCore {
         }
         // Pan end: snap to closest level index and clamp
         if (m_isPanning && justReleased) {
+            // Check if this was a tap (minimal movement) on the current painting
+            float totalMovement = std::abs(touchX - m_panStartX) + std::abs(touchY - m_panStartY);
+            const float TAP_THRESHOLD = 10.0f; // pixels
+            
+            if (totalMovement < TAP_THRESHOLD) {
+                // This was a tap, not a pan - check if tap is on current level painting
+                if (m_currentLevelIndex < m_levelPaintingEntities.size() && m_levelPaintingEntities[m_currentLevelIndex] != 0) {
+                    Transform* transform = m_ecsCoordinator->GetComponent<Transform>(m_levelPaintingEntities[m_currentLevelIndex]);
+                    Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(m_levelPaintingEntities[m_currentLevelIndex]);
+                    
+                    if (transform && sprite && sprite->visible) {
+                        float paintingWidth = sprite->width * transform->scale.x;
+                        float paintingHeight = sprite->height * transform->scale.y;
+                        float paintingLeft = transform->position.x;
+                        float paintingRight = transform->position.x + paintingWidth;
+                        float paintingTop = transform->position.y;
+                        float paintingBottom = transform->position.y + paintingHeight;
+                        
+                        if (touchX >= paintingLeft && touchX <= paintingRight &&
+                            touchY >= paintingTop && touchY <= paintingBottom) {
+                            // Tap detected on current painting - check for double-tap
+                            float currentTime = m_animationTimer; // Use existing timer
+                            float timeSinceLastTap = currentTime - m_lastPaintingTapTime;
+                            
+                            // Check if this is a valid double-tap: same painting, within time window, but not too fast
+                            if (m_lastTappedPaintingIndex == m_currentLevelIndex && 
+                                timeSinceLastTap >= MIN_TAP_INTERVAL && 
+                                timeSinceLastTap < DOUBLE_TAP_THRESHOLD) {
+                                // Double-tap detected - enter level!
+                                GN_LOG_INFO("🎨 Painting double-tapped (" + std::to_string(timeSinceLastTap * 1000.0f) + "ms) - entering level " + std::to_string(m_currentLevelIndex + 1));
+                                m_isPanning = false;
+                                m_lastTappedPaintingIndex = -1; // Reset
+                                m_lastPaintingTapTime = 0.0f;
+                                OnLevelPlayButtonPressed();
+                                return;
+                            } else if (timeSinceLastTap < MIN_TAP_INTERVAL) {
+                                // Tap too fast - likely same tap event spanning frames, ignore it
+                                GN_LOG_INFO("🎨 Tap too fast (" + std::to_string(timeSinceLastTap * 1000.0f) + "ms) - ignoring to prevent false double-tap");
+                                m_isPanning = false;
+                                return;
+                            } else {
+                                // First tap or too slow - record it
+                                GN_LOG_INFO("🎨 Painting tapped once (tap again within " + std::to_string(DOUBLE_TAP_THRESHOLD * 1000.0f) + "ms to enter)");
+                                m_lastTappedPaintingIndex = m_currentLevelIndex;
+                                m_lastPaintingTapTime = currentTime;
+                                // Don't enter level on first tap - wait for second tap
+                                m_isPanning = false;
+                                return; // Exit early to prevent any further input processing
+                            }
+                        }
+                    }
+                }
+            }
+            
             m_isPanning = false;
             // Determine swipe velocity for multi-level fling
             float deltaX = touchX - m_panStartX;
@@ -3779,11 +3825,11 @@ namespace GameCore {
     
     // Platform-specific layout implementation
     void MainMenuState::SetupLayout() {
-#ifdef PLATFORM_IOS
-        SetupIOSLayout();
-#else
-        SetupDesktopLayout();
-#endif
+        if (m_game && m_game->IsIOSPlatform()) {
+            SetupIOSLayout();
+        } else {
+            SetupDesktopLayout();
+        }
     }
     
     void MainMenuState::SetupIOSLayout() {

@@ -37,27 +37,40 @@ namespace GameCore {
     }
 
     void ConfigManager::UpdateScreenInfo() {
-        // Prefer enhanced info; do not clobber cached valid info with legacy fallbacks
+        // ALWAYS try to get fresh screen info from delegates
         if (m_delegates.renderer.getScreenInfo) {
             m_delegates.renderer.getScreenInfo(&m_screenInfo);
-            CalculateScaleFactors(); // Recalculate when screen changes
-            GN_LOG_INFO("Screen info updated: " + std::to_string(m_screenInfo.pixelWidth) + "x" +
-                       std::to_string(m_screenInfo.pixelHeight) + " pixels");
+            
+            // Validate that we got real data
+            if (m_screenInfo.pixelWidth <= 0.0f || m_screenInfo.pixelHeight <= 0.0f) {
+                GN_LOG_ERROR("Screen info delegate returned invalid dimensions: " + 
+                           std::to_string(m_screenInfo.pixelWidth) + "x" + 
+                           std::to_string(m_screenInfo.pixelHeight));
+                // Force sensible fallback
+                m_screenInfo.pixelWidth = 1179.0f;
+                m_screenInfo.pixelHeight = 2556.0f;
+                m_screenInfo.logicalWidth = 393.0f;
+                m_screenInfo.logicalHeight = 852.0f;
+                m_screenInfo.scaleFactor = 3.0f;
+                m_screenInfo.isPortrait = true;
+            }
+            
+            CalculateScaleFactors();
+            GN_LOG_INFO("Screen info updated from delegate: " + std::to_string(m_screenInfo.pixelWidth) + "x" +
+                       std::to_string(m_screenInfo.pixelHeight) + " pixels, " +
+                       std::to_string(m_screenInfo.logicalWidth) + "x" + 
+                       std::to_string(m_screenInfo.logicalHeight) + " logical");
 
             // Trigger callback if set (for automatic updates)
             if (m_screenInfoUpdateCallback) {
                 m_screenInfoUpdateCallback();
                 GN_LOG_DEBUG("Screen info update callback triggered");
             }
-
             return;
         }
-        if (m_screenInfo.pixelWidth > 0.0f && m_screenInfo.pixelHeight > 0.0f) {
-            // Keep existing cached values
-            return;
-        }
+        
+        // Legacy fallback - try getScreenSize
         if (m_delegates.renderer.getScreenSize) {
-            // Legacy once if nothing cached
             m_delegates.renderer.getScreenSize(&m_screenInfo.pixelWidth, &m_screenInfo.pixelHeight);
             m_screenInfo.logicalWidth = m_screenInfo.pixelWidth;
             m_screenInfo.logicalHeight = m_screenInfo.pixelHeight;
@@ -65,20 +78,22 @@ namespace GameCore {
             m_screenInfo.isPortrait = m_screenInfo.pixelHeight > m_screenInfo.pixelWidth;
             m_screenInfo.deviceModel = "Unknown";
             CalculateScaleFactors();
-            GN_LOG_WARN("Using legacy screen size detection once: " + std::to_string(m_screenInfo.pixelWidth) + "x" +
+            GN_LOG_WARN("Using legacy screen size detection: " + std::to_string(m_screenInfo.pixelWidth) + "x" +
                        std::to_string(m_screenInfo.pixelHeight));
             return;
         }
-        // Absolute last resort defaults (iPhone 16 portrait) to avoid 800x600 behavior
+        
+        // CRITICAL ERROR: No delegates available
+        GN_LOG_ERROR("❌ NO SCREEN INFO DELEGATES AVAILABLE - Using iPhone 16 fallback defaults!");
+        GN_LOG_ERROR("This should NEVER happen in production - delegates not properly initialized");
         m_screenInfo.pixelWidth = 1179.0f;
         m_screenInfo.pixelHeight = 2556.0f;
-        m_screenInfo.logicalWidth = m_screenInfo.pixelWidth;
-        m_screenInfo.logicalHeight = m_screenInfo.pixelHeight;
-        m_screenInfo.scaleFactor = 1.0f;
+        m_screenInfo.logicalWidth = 393.0f;
+        m_screenInfo.logicalHeight = 852.0f;
+        m_screenInfo.scaleFactor = 3.0f;
         m_screenInfo.isPortrait = true;
-        m_screenInfo.deviceModel = "Unknown";
+        m_screenInfo.deviceModel = "Unknown (FALLBACK)";
         CalculateScaleFactors();
-        GN_LOG_WARN("Using hardcoded pixel defaults for screen info (no delegates available)");
     }
 
     void ConfigManager::SetScreenInfoUpdateCallback(ScreenInfoUpdateCallback callback) {

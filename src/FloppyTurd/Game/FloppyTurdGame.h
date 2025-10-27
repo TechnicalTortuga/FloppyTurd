@@ -112,16 +112,30 @@ namespace GameCore {
             int totalDeaths;            // Total number of deaths/flops
             int totalPipesCleared;      // Total pipes cleared across all sessions
             int totalJumps;
-            int totalEnemiesKilled;
+            int totalEnemiesKilled;     // Total enemies defeated (all types)
+            int sessionEnemiesKilled;   // Enemies killed in current session (reset on level start)
             float totalPlayTime;
             int currentStreak;
             int bestStreak;
+        };
+
+        // Customization data
+        struct CustomizationData {
+            int equippedHatIndex;       // Currently equipped hat (-1 = none)
+            int selectedHatIndex;       // Currently selected hat in menu (-1 = none)
+            std::vector<bool> unlockedHats; // Which hats are unlocked
+            
+            CustomizationData() : equippedHatIndex(-1), selectedHatIndex(-1) {
+                unlockedHats.resize(15, false);
+                unlockedHats[0] = true; // First hat is always unlocked
+            }
         };
 
         // Level-based high scores and unlock requirements
         struct LevelStats {
             int highScore;              // Best pipes cleared for this level
             int bestCoins;              // Best coins collected for this level
+            float bestBossTime;         // Best boss completion time (Level 6 only, in seconds)
             bool unlocked;              // Whether this level is unlocked
             int unlockRequirement;      // Pipes required to unlock next level (runtime only)
             int coinRequirement;        // Coins required to unlock next level (runtime only)
@@ -131,6 +145,7 @@ namespace GameCore {
         struct LevelSaveData {
             int highScore;              // Best pipes cleared for this level
             int bestCoins;              // Best coins collected for this level
+            float bestBossTime;         // Best boss completion time (Level 6 only, in seconds)
             bool unlocked;              // Whether this level is unlocked
         };
         
@@ -143,13 +158,31 @@ namespace GameCore {
         bool IsLevelUnlocked(int levelId) const;
         void UnlockLevel(int levelId);
         int GetLevelHighScore(int levelId) const;
-        void UpdateLevelHighScore(int levelId, int score, int coins);
+        void UpdateLevelHighScore(int levelId, int score, int coins, float bossTime = 0.0f);
         bool CanUnlockLevel(int levelId, std::string& failureMessage);
         bool TryUnlockLevel(int levelId);
         void PlaySFX(const std::string& soundName);
 
+        // Customization data access
+        const CustomizationData& GetCustomizationData() const { return m_customizationData; }
+        void UpdateCustomizationData(const CustomizationData& data);
+        int GetEquippedHatIndex() const { return m_customizationData.equippedHatIndex; }
+        void SetEquippedHatIndex(int index);
+        int GetSelectedHatIndex() const { return m_customizationData.selectedHatIndex; }
+        void SetSelectedHatIndex(int index);
+        bool IsHatUnlocked(int index) const;
+        void UnlockHat(int index);
+        
+        // Enemy kill tracking
+        void IncrementSessionEnemyKills();
+        void ResetSessionEnemyKills();
+        int GetSessionEnemiesKilled() const { return m_gameStats.sessionEnemiesKilled; }
+
         // ConfigManager access for Swift interop
         void UpdateConfigManagerScreenInfo(const ScreenInfo& screenInfo);
+
+        // Platform detection
+        bool IsIOSPlatform() const { return m_isIOSPlatform; }
 
     private:
         // Helper methods for level system
@@ -181,9 +214,18 @@ namespace GameCore {
         static const int MAX_LEVELS = 6;
         LevelStats m_levelStats[MAX_LEVELS + 1]; // Index 1-6 for levels
 
+        // Customization data
+        CustomizationData m_customizationData;
+
         // Level unlock sound effect timer
         float m_levelUnlockSoundTimer;
         bool m_pendingPartyHorn;
+
+        // Platform detection (set at initialization)
+        bool m_isIOSPlatform;
+        
+        // Loading flag to prevent saves during deserialization
+        bool m_isLoadingGameData;
 
         // Landscape mode support
         int m_pendingLandscapeLevelId;

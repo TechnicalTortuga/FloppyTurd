@@ -25,9 +25,11 @@ namespace GameCore {
         OrientationLock orientationLock;  // Current orientation lock state
         bool isOrientationChanging;       // True during MTKView rotation animations
         
-        ScreenInfo() : pixelWidth(800.0f), pixelHeight(600.0f), 
-                      logicalWidth(800.0f), logicalHeight(600.0f),
-                      scaleFactor(1.0f), isPortrait(false), deviceModel("Unknown"),
+        // Default constructor uses zero values to force proper initialization from actual device
+        // NEVER use these defaults in production - ConfigManager::UpdateScreenInfo() MUST be called
+        ScreenInfo() : pixelWidth(0.0f), pixelHeight(0.0f), 
+                      logicalWidth(0.0f), logicalHeight(0.0f),
+                      scaleFactor(1.0f), isPortrait(true), deviceModel("Uninitialized"),
                       orientationLock(OrientationLock::UNLOCKED), isOrientationChanging(false) {}
     };
 
@@ -173,7 +175,26 @@ namespace GameCore {
         CMD_DRAW_TEXT_CENTERED_OUTLINED = 35,
         
         // Batch rendering commands
-        CMD_DRAW_SPRITE_BATCH = 44
+        CMD_DRAW_SPRITE_BATCH = 44,
+        
+        // Haptic feedback commands
+        CMD_HAPTIC_IMPACT = 47,
+        CMD_HAPTIC_SELECTION = 48,
+        CMD_HAPTIC_NOTIFICATION = 49,
+        CMD_HAPTIC_PATTERN = 50,
+        CMD_HAPTIC_PREPARE = 51,
+        
+        // Save/Load commands
+        CMD_SAVE_GAME = 52,
+        CMD_LOAD_GAME = 53,
+        CMD_SAVE_SETTINGS = 54,
+        CMD_LOAD_SETTINGS = 55,
+        
+        // Game Center commands
+        CMD_GAME_CENTER_AUTHENTICATE = 56,
+        CMD_GAME_CENTER_SUBMIT_SCORE = 57,
+        CMD_GAME_CENTER_SHOW_LEADERBOARD = 58,
+        CMD_GAME_CENTER_SHOW_ALL_LEADERBOARDS = 59
     };
     
     // Batch rendering data structure (must be defined before RenderCommandData uses it)
@@ -281,13 +302,111 @@ namespace GameCore {
     struct AssetCommand {
         CommandType type;
         AssetCommandData data;
-        
+    
         // Constructors
         AssetCommand() : type(CommandType::CMD_LOAD_TEXTURE) {}
         AssetCommand(CommandType t) : type(t) {}
     };
 
-    // Forward declarations
+    // Haptic feedback enums and structures
+    enum class HapticStyle : uint32_t {
+        LIGHT = 0,
+        MEDIUM = 1,
+        HEAVY = 2,
+        RIGID = 3,
+        SOFT = 4
+    };
+
+    enum class HapticNotificationType : uint32_t {
+        SUCCESS = 0,
+        WARNING = 1,
+        ERROR = 2
+    };
+
+    enum class HapticPattern : uint32_t {
+        BOSS_DEATH = 0,
+        LEVEL_UNLOCK = 1,
+        HAT_UNLOCK = 2,
+        CUSTOM = 99
+    };
+
+    struct HapticCommandData {
+        HapticStyle style;
+        HapticNotificationType notificationType;
+        HapticPattern pattern;
+        float intensity;
+        std::string patternName;
+    
+        HapticCommandData() 
+            : style(HapticStyle::MEDIUM)
+            , notificationType(HapticNotificationType::SUCCESS)
+            , pattern(HapticPattern::BOSS_DEATH)
+            , intensity(1.0f)
+            , patternName("") {}
+    };
+
+    struct HapticCommand {
+        CommandType type;
+        HapticCommandData data;
+    
+        // Constructors
+        HapticCommand() : type(CommandType::CMD_HAPTIC_IMPACT) {}
+        explicit HapticCommand(CommandType t) : type(t) {}
+    };
+
+    // Save/Load command data
+    struct SaveCommandData {
+        std::string jsonData;  // For save: JSON to write, For load: JSON read from disk
+        float masterVolume;
+        float musicVolume;
+        float sfxVolume;
+        bool debugMode;
+        bool loadSuccess;  // For load commands: indicates if load succeeded
+        
+        SaveCommandData()
+            : jsonData("")
+            , masterVolume(0.7f)
+            , musicVolume(0.6f)
+            , sfxVolume(0.8f)
+            , debugMode(false)
+            , loadSuccess(false) {}
+    };
+
+    struct SaveCommand {
+        CommandType type;
+        SaveCommandData data;
+        
+        // Constructors
+        SaveCommand() : type(CommandType::CMD_SAVE_GAME) {}
+        explicit SaveCommand(CommandType t) : type(t) {}
+    };
+
+    // Game Center command data
+    struct GameCenterCommandData {
+        std::string leaderboardID;  // Leaderboard identifier
+        int64_t score;              // Score to submit
+        bool authSuccess;           // Authentication result
+        std::string playerName;     // Player display name
+        std::string playerID;       // Player identifier
+        
+        GameCenterCommandData()
+            : leaderboardID("")
+            , score(0)
+            , authSuccess(false)
+            , playerName("")
+            , playerID("") {}
+    };
+
+    struct GameCenterCommand {
+        CommandType type;
+        GameCenterCommandData data;
+        
+        // Constructors
+        GameCenterCommand() : type(CommandType::CMD_GAME_CENTER_AUTHENTICATE) {}
+        explicit GameCenterCommand(CommandType t) : type(t) {}
+    };
+
+    // Forward declarations for Sprite
     struct Sprite;
 
     // Action constants for input
@@ -524,6 +643,117 @@ namespace GameCore {
                        platformContext(nullptr) {}
     };
 
+    // Haptic delegate - platform-agnostic haptic feedback interface
+    struct HapticDelegate {
+        // Impact feedback - triggered by collisions, taps, etc.
+        void (*triggerImpact)(HapticStyle style, float intensity);
+        
+        // Selection feedback - triggered by UI navigation
+        void (*triggerSelection)();
+        
+        // Notification feedback - triggered by game events
+        void (*triggerNotification)(HapticNotificationType type);
+        
+        // Pattern playback - triggered by complex game events
+        void (*triggerPattern)(const char* patternName);
+        
+        // Preparation - hint to system about upcoming haptic
+        void (*prepare)(HapticStyle style);
+        
+        // Enable/disable haptics
+        void (*setEnabled)(bool enabled);
+        bool (*isEnabled)();
+        
+        // Device support check
+        bool (*isSupported)();
+        
+        // Platform-specific context
+        void* platformContext;
+        
+        // Initialize to null
+        HapticDelegate() 
+            : triggerImpact(nullptr)
+            , triggerSelection(nullptr)
+            , triggerNotification(nullptr)
+            , triggerPattern(nullptr)
+            , prepare(nullptr)
+            , setEnabled(nullptr)
+            , isEnabled(nullptr)
+            , isSupported(nullptr)
+            , platformContext(nullptr) {}
+    };
+
+    // Save/Load delegate - platform-agnostic data persistence interface
+    // NOTE: These are synchronous callbacks, NOT queued commands
+    struct SaveGameDelegate {
+        // Save game data as JSON string (synchronous)
+        // Returns true on success
+        bool (*saveGameData)(const char* jsonData);
+        
+        // Load game data as JSON string (synchronous)
+        // outJsonData will be set to point to a static buffer containing JSON
+        // Returns true if load succeeded, false if no save exists or error
+        bool (*loadGameData)(const char** outJsonData);
+        
+        // Save settings (synchronous, uses platform-specific storage like UserDefaults)
+        void (*saveSettings)(float masterVolume, float musicVolume, float sfxVolume, bool debugMode);
+        
+        // Load settings (synchronous)
+        void (*loadSettings)(float* masterVolume, float* musicVolume, float* sfxVolume, bool* debugMode);
+        
+        // Check if legacy save file exists (for migration)
+        bool (*hasLegacySaveFile)();
+        
+        // Delete all save data (for reset functionality)
+        void (*deleteSaveData)();
+        
+        // Platform-specific context
+        void* platformContext;
+        
+        // Initialize to null
+        SaveGameDelegate()
+            : saveGameData(nullptr)
+            , loadGameData(nullptr)
+            , saveSettings(nullptr)
+            , loadSettings(nullptr)
+            , hasLegacySaveFile(nullptr)
+            , deleteSaveData(nullptr)
+            , platformContext(nullptr) {}
+    };
+
+    // Game Center delegate - iOS Game Center leaderboard integration
+    struct GameCenterDelegate {
+        // Authentication
+        void (*authenticate)(void (*completion)(bool success));
+        bool (*isAuthenticated)();
+        
+        // Score submission
+        // leaderboardID format: "com.floppyturd.level1", "com.floppyturd.level2", etc.
+        void (*submitScore)(const char* leaderboardID, int64_t score, void (*completion)(bool success));
+        
+        // Leaderboard display
+        void (*showLeaderboard)(const char* leaderboardID);
+        void (*showAllLeaderboards)();
+        
+        // Player info
+        const char* (*getPlayerName)();
+        const char* (*getPlayerID)();
+        
+        // Platform-specific context
+        void* platformContext;
+        
+        // Initialize to null
+        GameCenterDelegate()
+            : authenticate(nullptr)
+            , isAuthenticated(nullptr)
+            , submitScore(nullptr)
+            , showLeaderboard(nullptr)
+            , showAllLeaderboards(nullptr)
+            , getPlayerName(nullptr)
+            , getPlayerID(nullptr)
+            , platformContext(nullptr) {}
+    };
+
     // Platform delegate container - holds all platform-specific delegates
     struct PlatformDelegates {
         RendererDelegate renderer;
@@ -531,6 +761,9 @@ namespace GameCore {
         AudioDelegate audio;
         AssetDelegate asset;
         LogDelegate log;
+        HapticDelegate haptic;
+        SaveGameDelegate save;
+        GameCenterDelegate gameCenter;
         
         // Platform identification
         enum PlatformType {

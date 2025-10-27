@@ -1,6 +1,8 @@
 #include "HatsSystem.h"
 #include "../../Engine/Core/GNLog.h"
 #include "../../Engine/Utility/Utils.h"
+#include "../../Engine/Platform/HapticHelpers.h"
+#include "../Game/FloppyTurdGame.h"
 #include <algorithm>
 #include <sstream>
 #include <fstream>
@@ -19,6 +21,16 @@ namespace GameCore {
     {
         GN_LOG_INFO("HatsSystem created");
         InitializeHats();
+        
+        // Load equipped/selected hat from game save system at startup
+        if (GameCore::GetGame()) {
+            m_equippedHatIndex = GameCore::GetGame()->GetEquippedHatIndex();
+            m_selectedHatIndex = GameCore::GetGame()->GetSelectedHatIndex();
+            GN_LOG_INFO("🎩 HatsSystem initialized with equipped hat: " + std::to_string(m_equippedHatIndex) + 
+                       ", selected hat: " + std::to_string(m_selectedHatIndex) + " from game save");
+        } else {
+            GN_LOG_WARN("🎩 HatsSystem: No game instance available at construction - using defaults");
+        }
     }
 
     HatsSystem::~HatsSystem()
@@ -330,6 +342,9 @@ namespace GameCore {
             hat.status = HatStatus::UNLOCKED;
             GN_LOG_INFO("Bought hat: " + hat.name);
 
+            // Trigger haptic feedback for hat unlock
+            HapticHelpers::TriggerHatUnlock(m_platformDelegates);
+
             // Hide the locked frame overlay for this hat
             auto lockedFrameIt = m_hatToLockedFrameMap.find(m_selectedHatIndex);
             if (lockedFrameIt != m_hatToLockedFrameMap.end()) {
@@ -381,6 +396,15 @@ namespace GameCore {
         GN_LOG_INFO("Equipped hat: '" + hat.name + "' (index: " + std::to_string(m_selectedHatIndex) +
                    ", old equipped: " + std::to_string(oldEquippedIndex) + ")");
         GN_LOG_INFO("Hat textures - idle: '" + hat.turdletIdlePath + "', jump: '" + hat.turdletJumpPath + "', shoot: '" + hat.turdletShootPath + "'");
+
+        // Update game's customization data (this will also save to JSON)
+        if (GameCore::GetGame()) {
+            GameCore::GetGame()->SetEquippedHatIndex(m_equippedHatIndex);
+            GN_LOG_INFO("🎩 Synced equipped hat to game save system");
+        }
+        
+        // Save hat status after equipping (legacy system)
+        SaveHatStatus();
 
         // Note: We don't update PlayerComponent here as the texture switching
         // is handled automatically by PlayerControllerSystem checking the equipped hat
@@ -795,12 +819,16 @@ namespace GameCore {
             }
         }
 
-        // Save to a simple text file
+        // Save to a simple text file with equipped and selected indices on separate lines
         std::ofstream file("hat_status.txt");
         if (file.is_open()) {
-            file << hatStatusString;
+            file << hatStatusString << "\n";
+            file << m_equippedHatIndex << "\n";
+            file << m_selectedHatIndex << "\n";
             file.close();
-            GN_LOG_INFO("HatsSystem: Saved hat status to file: " + hatStatusString);
+            GN_LOG_INFO("HatsSystem: Saved hat status to file: " + hatStatusString + 
+                       " | Equipped: " + std::to_string(m_equippedHatIndex) + 
+                       " | Selected: " + std::to_string(m_selectedHatIndex));
         } else {
             GN_LOG_WARN("HatsSystem: Failed to save hat status to file");
         }
@@ -819,6 +847,19 @@ namespace GameCore {
 
         std::string statusStr;
         std::getline(file, statusStr);
+        
+        // Load equipped index (default to -1 if not present)
+        std::string equippedStr;
+        if (std::getline(file, equippedStr)) {
+            m_equippedHatIndex = std::stoi(equippedStr);
+        }
+        
+        // Load selected index (default to -1 if not present)
+        std::string selectedStr;
+        if (std::getline(file, selectedStr)) {
+            m_selectedHatIndex = std::stoi(selectedStr);
+        }
+        
         file.close();
 
         if (statusStr.empty()) {
@@ -826,7 +867,22 @@ namespace GameCore {
             return;
         }
 
-        GN_LOG_INFO("HatsSystem: Loaded hat status string: " + statusStr);
+        GN_LOG_INFO("HatsSystem: Loaded hat status string: " + statusStr + 
+                   " | Equipped: " + std::to_string(m_equippedHatIndex) + 
+                   " | Selected: " + std::to_string(m_selectedHatIndex));
+        
+        // Sync with game's customization data (game save already loaded in constructor, but check legacy file)
+        if (GameCore::GetGame()) {
+            // If legacy file has different data than game save, sync it to game save
+            if (m_equippedHatIndex >= 0 && m_equippedHatIndex != GameCore::GetGame()->GetEquippedHatIndex()) {
+                GameCore::GetGame()->SetEquippedHatIndex(m_equippedHatIndex);
+                GN_LOG_INFO("🎩 Synced legacy hat file data to game save - Equipped: " + std::to_string(m_equippedHatIndex));
+            }
+            if (m_selectedHatIndex >= 0 && m_selectedHatIndex != GameCore::GetGame()->GetSelectedHatIndex()) {
+                GameCore::GetGame()->SetSelectedHatIndex(m_selectedHatIndex);
+                GN_LOG_INFO("🎩 Synced legacy hat file data to game save - Selected: " + std::to_string(m_selectedHatIndex));
+            }
+        }
 
         // Parse the string and update hat status
         std::stringstream ss(statusStr);

@@ -432,7 +432,7 @@
 			<key>objcSymbol</key>
 			<string>ACImageNameFloppyTurdCreditsBackground</string>
 			<key>relativePath</key>
-			<string>./graphics/ui/hud/FloppyTurdCreditsBackground.imageset</string>
+			<string>./graphics/environment/backgrounds/credits/FloppyTurdCreditsBackground.imageset</string>
 			<key>swiftSymbol</key>
 			<string>floppyTurdCreditsBackground</string>
 		</dict>

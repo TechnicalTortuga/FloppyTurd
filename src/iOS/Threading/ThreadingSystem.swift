@@ -12,6 +12,7 @@ import GameCoreEngine
 import GameCoreGame
 import GameCorePlatform
 import QuartzCore
+import UIKit
 
 // Use CommandType from PlatformDelegates.h via C++ interop
 
@@ -93,6 +94,9 @@ class CommandProcessor {
         let audioCommands = GameCorePlatform.GameCore.getAndClearAudioCommandsFromProxy()
         let logCommands = GameCorePlatform.GameCore.getAndClearLogCommandsFromProxy()
         let assetCommands = GameCorePlatform.GameCore.getAndClearAssetCommandsFromProxy()
+        let hapticCommands = GameCorePlatform.GameCore.getAndClearHapticCommandsFromProxy()
+        let saveCommands = GameCorePlatform.GameCore.getAndClearSaveCommandsFromProxy()
+        let gameCenterCommands = GameCorePlatform.GameCore.getAndClearGameCenterCommandsFromProxy()
 
         // Process each command type
         for renderCommand in renderCommands {
@@ -109,6 +113,18 @@ class CommandProcessor {
 
         for assetCommand in assetCommands {
             executeAssetCommand(assetCommand)
+        }
+
+        for hapticCommand in hapticCommands {
+            executeHapticCommand(hapticCommand)
+        }
+
+        for saveCommand in saveCommands {
+            executeSaveCommand(saveCommand)
+        }
+
+        for gameCenterCommand in gameCenterCommands {
+            executeGameCenterCommand(gameCenterCommand)
         }
     }
 
@@ -695,6 +711,197 @@ class CommandProcessor {
                     callback, textureData: nil, error: error.localizedDescription,
                     userData: userData)
             }
+        }
+    }
+
+    /// Execute a single haptic command using HapticManager
+    private func executeHapticCommand(_ command: GameCorePlatform.GameCore.HapticCommand) {
+        let commandType = command.type
+
+        // Dispatch to main thread for haptic feedback (required by iOS)
+        Task { @MainActor in
+            switch commandType {
+            case .CMD_HAPTIC_IMPACT:
+                let style = mapHapticStyle(command.data.style)
+                let intensity = CGFloat(command.data.intensity)
+                HapticManager.shared.triggerImpact(style: style, intensity: intensity)
+                log(
+                    "[CommandProcessor] Haptic impact triggered: style=\(style) intensity=\(intensity)",
+                    level: .trace)
+
+            case .CMD_HAPTIC_SELECTION:
+                HapticManager.shared.triggerSelection()
+                log("[CommandProcessor] Haptic selection triggered", level: .trace)
+
+            case .CMD_HAPTIC_NOTIFICATION:
+                let notifType = mapHapticNotificationType(command.data.notificationType)
+                HapticManager.shared.triggerNotification(type: notifType)
+                log(
+                    "[CommandProcessor] Haptic notification triggered: type=\(notifType)",
+                    level: .trace)
+
+            case .CMD_HAPTIC_PATTERN:
+                let patternName = String(command.data.patternName)
+                HapticManager.shared.triggerPattern(name: patternName)
+                log(
+                    "[CommandProcessor] Haptic pattern triggered: \(patternName)", level: .trace)
+
+            case .CMD_HAPTIC_PREPARE:
+                let style = mapHapticStyle(command.data.style)
+                HapticManager.shared.prepare(style: style)
+                log("[CommandProcessor] Haptic prepare: style=\(style)", level: .trace)
+
+            default:
+                log(
+                    "[CommandProcessor] Unsupported haptic command type: \(commandType)",
+                    level: .warning)
+            }
+        }
+    }
+
+    /// Map C++ HapticStyle to UIImpactFeedbackGenerator.FeedbackStyle
+    private func mapHapticStyle(_ style: GameCorePlatform.GameCore.HapticStyle)
+        -> UIImpactFeedbackGenerator.FeedbackStyle
+    {
+        switch style {
+        case .LIGHT:
+            return .light
+        case .MEDIUM:
+            return .medium
+        case .HEAVY:
+            return .heavy
+        case .RIGID:
+            if #available(iOS 13.0, *) {
+                return .rigid
+            } else {
+                return .heavy
+            }
+        case .SOFT:
+            if #available(iOS 13.0, *) {
+                return .soft
+            } else {
+                return .light
+            }
+        @unknown default:
+            return .medium
+        }
+    }
+
+    /// Map C++ HapticNotificationType to UINotificationFeedbackGenerator.FeedbackType
+    private func mapHapticNotificationType(_ type: GameCorePlatform.GameCore.HapticNotificationType)
+        -> UINotificationFeedbackGenerator.FeedbackType
+    {
+        switch type {
+        case .SUCCESS:
+            return .success
+        case .WARNING:
+            return .warning
+        case .ERROR:
+            return .error
+        @unknown default:
+            return .success
+        }
+    }
+
+    /// Execute a single save/load command using SaveManager
+    private func executeSaveCommand(_ command: GameCorePlatform.GameCore.SaveCommand) {
+        let commandType = command.type
+
+        // Dispatch to main thread for save operations
+        Task { @MainActor in
+            switch commandType {
+            case .CMD_SAVE_GAME:
+                let jsonString = String(command.data.jsonData)
+                if !jsonString.isEmpty {
+                    let success = SaveManager.processSaveGameCommand(jsonString)
+                    if success {
+                        self.log("[CommandProcessor] Game data saved successfully", level: .info)
+                    } else {
+                        self.log("[CommandProcessor] Failed to save game data", level: .error)
+                    }
+                }
+
+            case .CMD_LOAD_GAME:
+                if SaveManager.processLoadGameCommand() != nil {
+                    self.log("[CommandProcessor] Game data loaded successfully", level: .info)
+                    // TODO: Pass JSON back to C++ via callback mechanism
+                } else {
+                    self.log(
+                        "[CommandProcessor] No save data found or load failed", level: .warning)
+                }
+
+            case .CMD_SAVE_SETTINGS:
+                SaveManager.processSaveSettingsCommand(
+                    masterVolume: command.data.masterVolume,
+                    musicVolume: command.data.musicVolume,
+                    sfxVolume: command.data.sfxVolume,
+                    debugMode: command.data.debugMode
+                )
+                self.log("[CommandProcessor] Settings saved", level: .info)
+
+            case .CMD_LOAD_SETTINGS:
+                let (masterVol, musicVol, sfxVol, _, wasLoaded) =
+                    SaveManager.processLoadSettingsCommand()
+                self.log(
+                    "[CommandProcessor] Settings loaded: master=\(masterVol) music=\(musicVol) sfx=\(sfxVol) wasLoaded=\(wasLoaded)",
+                    level: .info)
+
+            default:
+                self.log(
+                    "[CommandProcessor] Unsupported save command type: \(commandType)",
+                    level: .warning)
+            }
+        }
+    }
+
+    private func executeGameCenterCommand(_ command: GameCorePlatform.GameCore.GameCenterCommand) {
+        let commandType = command.type
+
+        // Process commands directly - GameCenterManager is @MainActor
+        switch commandType {
+        case .CMD_GAME_CENTER_AUTHENTICATE:
+            GameCenterManager.shared.authenticate { [weak self] success, error in
+                if success {
+                    self?.log(
+                        "[CommandProcessor] Game Center authenticated successfully",
+                        level: .info)
+                } else if let error = error {
+                    self?.log(
+                        "[CommandProcessor] Game Center authentication failed: \(error.localizedDescription)",
+                        level: .error)
+                }
+            }
+
+        case .CMD_GAME_CENTER_SUBMIT_SCORE:
+            let leaderboardID = String(command.data.leaderboardID)
+            let score = command.data.score
+
+            GameCenterManager.shared.submitScore(score, leaderboardID: leaderboardID) {
+                [weak self] success, error in
+                if success {
+                    self?.log(
+                        "[CommandProcessor] Score \(score) submitted to \(leaderboardID)",
+                        level: .info)
+                } else if let error = error {
+                    self?.log(
+                        "[CommandProcessor] Score submission failed: \(error.localizedDescription)",
+                        level: .error)
+                }
+            }
+
+        case .CMD_GAME_CENTER_SHOW_LEADERBOARD:
+            let leaderboardID = String(command.data.leaderboardID)
+            GameCenterManager.shared.showLeaderboard(leaderboardID)
+            self.log("[CommandProcessor] Showing leaderboard: \(leaderboardID)", level: .info)
+
+        case .CMD_GAME_CENTER_SHOW_ALL_LEADERBOARDS:
+            GameCenterManager.shared.showAllLeaderboards()
+            self.log("[CommandProcessor] Showing all leaderboards", level: .info)
+
+        default:
+            self.log(
+                "[CommandProcessor] Unsupported Game Center command type: \(commandType)",
+                level: .warning)
         }
     }
 }

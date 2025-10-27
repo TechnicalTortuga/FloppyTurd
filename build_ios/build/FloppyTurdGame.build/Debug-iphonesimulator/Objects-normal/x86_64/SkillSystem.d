@@ -17,11 +17,12 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Components/../../Engine/Core/GnosisTypes.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Components/../../Engine/Core/Component.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Components/../Config/LevelConfig.h \
-  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PickupSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Platform/PlatformDelegates.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/PickupSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Config/LevelConfig.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/LevelManager.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ObstacleSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/RenderSystem.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Utility/FrameProfiler.h \
-  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Utility/../Core/GNLog.h
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Utility/../Core/GNLog.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Platform/HapticHelpers.h

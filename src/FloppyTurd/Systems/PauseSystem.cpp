@@ -1717,6 +1717,58 @@ namespace GameCore {
             m_ecsCoordinator->AddComponent<UIElement>(m_totalPipesTextEntity, uiElem);
         }
 
+        // 8. Level High Scores Section - Add a separator and then each level's high score
+        // Position these at the bottom of the stats background
+        float levelScoresStartY = startY + lineSpacing * 8; // Start after the 7 stats above
+        float levelLineSpacing = 60.0f; // Tighter spacing for level scores
+        float levelFontSize = 28.0f; // Slightly smaller font for level scores
+        
+        // Create a title/separator for level high scores
+        if (m_levelHighScoreTextEntities.empty()) {
+            // Reserve space for title + 6 levels
+            m_levelHighScoreTextEntities.reserve(7);
+            
+            // Create "Level High Scores:" title
+            Entity titleEntity = m_ecsCoordinator->CreateEntity();
+            Transform titleTransform(GNVector2(centerX, levelScoresStartY), 0.0f, GNVector2(1.0f, 1.0f));
+            m_ecsCoordinator->AddComponent<Transform>(titleEntity, titleTransform);
+            
+            UIElement titleElem;
+            titleElem.buttonText = "--- Level High Scores ---";
+            titleElem.fontSize = fontSize; // Use regular size for title
+            titleElem.textColor = GNColor(200, 200, 100, 255); // Yellowish for section header
+            titleElem.centerTextHorizontally = true;
+            titleElem.visible = false;
+            titleElem.isEnabled = true;
+            titleElem.textLayer = 90;
+            m_ecsCoordinator->AddComponent<UIElement>(titleEntity, titleElem);
+            m_levelHighScoreTextEntities.push_back(titleEntity);
+            
+            // Create text entities for each of the 6 levels
+            const char* levelNames[] = {"Park", "Sewer", "Desert", "Snow", "Castle", "Boss"};
+            for (int i = 0; i < 6; i++) {
+                Entity levelEntity = m_ecsCoordinator->CreateEntity();
+                float yPos = levelScoresStartY + levelLineSpacing * (i + 1); // +1 to skip title
+                Transform transform(GNVector2(centerX, yPos), 0.0f, GNVector2(1.0f, 1.0f));
+                m_ecsCoordinator->AddComponent<Transform>(levelEntity, transform);
+                
+                UIElement uiElem;
+                // Will be updated when shown with actual high score
+                uiElem.buttonText = std::string(levelNames[i]) + ": 0 pipes";
+                uiElem.fontSize = levelFontSize;
+                uiElem.textColor = GNColor(180, 180, 255, 255); // Light blue-ish for level scores
+                uiElem.centerTextHorizontally = true;
+                uiElem.visible = false;
+                uiElem.isEnabled = true;
+                uiElem.textLayer = 90;
+                m_ecsCoordinator->AddComponent<UIElement>(levelEntity, uiElem);
+                
+                m_levelHighScoreTextEntities.push_back(levelEntity);
+            }
+            
+            GN_LOG_INFO("PauseSystem: Created level high score entities for 6 levels");
+        }
+
         GN_LOG_INFO("PauseSystem: Created stats tab content");
     }
 
@@ -2205,6 +2257,11 @@ namespace GameCore {
         hideEntity(m_totalFlopsTextEntity);
         hideEntity(m_enemiesKilledTextEntity);
         hideEntity(m_totalPipesTextEntity);
+        
+        // Hide level high score entities
+        for (auto levelScoreEntity : m_levelHighScoreTextEntities) {
+            hideEntity(levelScoreEntity);
+        }
 
         GN_LOG_INFO("PauseSystem: All tab content hidden");
     }
@@ -3456,6 +3513,35 @@ namespace GameCore {
                 uiElem->buttonText = "Total Pipes: " + std::to_string(totalPipes);
                 uiElem->visible = true;
             }
+        }
+
+        // Update level high scores
+        if (!m_levelHighScoreTextEntities.empty() && GameCore::GetGame()) {
+            const char* levelNames[] = {"Park", "Sewer", "Desert", "Snow", "Castle", "Boss"};
+            
+            // First entity is the title - just make it visible
+            if (m_levelHighScoreTextEntities[0] != 0) {
+                UIElement* titleElem = m_ecsCoordinator->GetComponent<UIElement>(m_levelHighScoreTextEntities[0]);
+                if (titleElem) {
+                    titleElem->visible = true;
+                }
+            }
+            
+            // Update each level's high score (entities 1-6 correspond to levels 1-6)
+            for (int i = 0; i < 6; i++) {
+                int entityIndex = i + 1; // +1 to skip title entity
+                if (entityIndex < m_levelHighScoreTextEntities.size() && m_levelHighScoreTextEntities[entityIndex] != 0) {
+                    UIElement* levelElem = m_ecsCoordinator->GetComponent<UIElement>(m_levelHighScoreTextEntities[entityIndex]);
+                    if (levelElem) {
+                        int levelId = i + 1; // Level IDs are 1-based
+                        int highScore = GameCore::GetGame()->GetLevelHighScore(levelId);
+                        levelElem->buttonText = std::string(levelNames[i]) + ": " + std::to_string(highScore) + " pipes";
+                        levelElem->visible = true;
+                    }
+                }
+            }
+            
+            GN_LOG_INFO("PauseSystem: Level high scores refreshed");
         }
 
         GN_LOG_INFO("PauseSystem: Stats display refreshed with real data");

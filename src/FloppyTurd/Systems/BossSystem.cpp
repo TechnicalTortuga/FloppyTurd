@@ -2,6 +2,7 @@
 #include "ProjectileSystem.h"
 #include "../Config/EnemyConfigs.h"
 #include "../../Engine/Platform/PlatformDelegates.h"
+#include "../../Engine/Platform/HapticHelpers.h"
 #include <cmath>
 #include <algorithm>
 
@@ -200,6 +201,11 @@ void BossSystem::HandleDamage(int damage) {
         GN_LOG_INFO("Rat King health depleted - transitioning to DEATH state");
         ChangeState(RatKingState::DEATH);
     } else {
+        // Trigger haptic feedback for boss taking damage
+        if (m_platformDelegates) {
+            HapticHelpers::TriggerBossDamage(*m_platformDelegates);
+        }
+        
         ChangeState(RatKingState::HURT);
         hurtBuffer = 24; // 24 frames of invincibility (matches old system)
         hurtFlashTimer = 0.0f; // Start hurt flashing
@@ -406,6 +412,12 @@ void BossSystem::StartDeathSequence() {
     m_hasPlayedScreech = false;
     m_hasPlayedBossKill = false;
     
+    // Trigger dramatic boss death haptic pattern (~2 second sequence)
+    if (m_platformDelegates) {
+        HapticHelpers::TriggerBossDeath(*m_platformDelegates);
+        GN_LOG_INFO("🎮 Triggered boss death haptic pattern");
+    }
+    
     // Play BossKill sound immediately at reduced volume so screech can be heard
     if (m_platformDelegates && m_platformDelegates->audio.playSound) {
         m_platformDelegates->audio.playSound("BossKill.mp3", 0.6f);  // Reduced from 1.0 to 0.6
@@ -439,11 +451,21 @@ void BossSystem::UpdateDeathSequence(float deltaTime) {
     if (m_explosionIndex == 0 && m_deathSequenceTimer >= 0.3f) {
         SpawnExplosionAtRandomPosition();
         m_explosionIndex++;
+        
+        // Trigger haptic for explosion
+        if (m_platformDelegates) {
+            HapticHelpers::TriggerHeavyCollision(*m_platformDelegates);
+        }
     }
     // Explosion 2 at 0.7s
     else if (m_explosionIndex == 1 && m_deathSequenceTimer >= 0.7f) {
         SpawnExplosionAtRandomPosition();
         m_explosionIndex++;
+        
+        // Trigger haptic for explosion
+        if (m_platformDelegates) {
+            HapticHelpers::TriggerHeavyCollision(*m_platformDelegates);
+        }
     }
     // Explosion 3 at 1.1s (big one)
     else if (m_explosionIndex == 2 && m_deathSequenceTimer >= 1.1f) {
@@ -456,11 +478,21 @@ void BossSystem::UpdateDeathSequence(float deltaTime) {
             GN_LOG_INFO("Spawned BIG explosion at (" + std::to_string(explosionPos.x) + ", " + std::to_string(explosionPos.y) + ")");
         }
         m_explosionIndex++;
+        
+        // Trigger stronger haptic for BIG explosion
+        if (m_platformDelegates && m_platformDelegates->haptic.triggerImpact) {
+            m_platformDelegates->haptic.triggerImpact(HapticStyle::HEAVY, 1.0f);
+        }
     }
     // Explosion 4 at 1.5s
     else if (m_explosionIndex == 3 && m_deathSequenceTimer >= 1.5f) {
         SpawnExplosionAtRandomPosition();
         m_explosionIndex++;
+        
+        // Trigger haptic for explosion
+        if (m_platformDelegates) {
+            HapticHelpers::TriggerHeavyCollision(*m_platformDelegates);
+        }
     }
     
     // Start fade to white at 2.0 seconds
