@@ -181,11 +181,11 @@ namespace GameCore {
         float m_currentOffsetX;
         // Standard UI font size to match main menu buttons (except the big OPTIONS title)
         // Base button font size (will be scaled by m_uiScale where rendered)
-        float m_buttonFontSize = 28.0f;
+        float m_buttonFontSize = 20.0f;
         // Main menu button scale for sprites (text size is controlled separately)
         float m_menuButtonScale = 10.0f;
-        // Global UI text size across menus (mobile target now 88)
-        float m_globalUIFontSize = 88.0f;
+        // Global UI text size across menus (mobile target now 80)
+        float m_globalUIFontSize = 80.0f;
         // Horizontal pan state for level select
         bool m_isPanning = false;
         float m_panStartX = 0.0f;

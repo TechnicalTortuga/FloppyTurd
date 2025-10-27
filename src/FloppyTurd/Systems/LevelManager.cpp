@@ -3,6 +3,7 @@
 #include "../Components/GameComponents.h"
 #include "../Config/EnemyConfigs.h"
 #include "../../Engine/Configuration/ConfigManager.h"
+#include "../Game/FloppyTurdGame.h"
 #include <algorithm>
 #include <cmath>
 #include <random>
@@ -405,7 +406,8 @@ namespace GameCore {
                 // Add hitbox using enemy config dimensions
                 Hitbox hitbox;
                 hitbox.type = ColliderType::Circle; // Default to circle for now
-                hitbox.radius = config.width * 0.4f; // Rough approximation based on sprite size
+                // Use custom hitboxRadius if set, otherwise calculate from width
+                hitbox.radius = (config.hitboxRadius > 0.0f) ? config.hitboxRadius : (config.width * 0.4f);
                 m_ecsSystem->AddComponent<Hitbox>(enemy, hitbox);
 
                 // Add StateAnimation if the config uses it
@@ -1656,6 +1658,11 @@ namespace GameCore {
     void LevelManager::ReturnEnemyToPool(Gnosis::Entity enemy) {
         if (!enemy) return;
 
+        // Increment enemy kill counter (this is called when enemy is defeated)
+        if (auto* game = GameCore::GetGame()) {
+            game->IncrementSessionEnemyKills();
+        }
+
         // Reset enemy state
         Enemy* enemyComp = m_ecsSystem->GetComponent<Enemy>(enemy);
         if (enemyComp) {
@@ -1926,7 +1933,8 @@ namespace GameCore {
         // Update hitbox based on config
         Hitbox* hitbox = m_ecsSystem->GetComponent<Hitbox>(enemy);
         if (hitbox) {
-            hitbox->radius = config.width * 0.4f; // Rough approximation
+            // Use custom hitboxRadius if set, otherwise calculate from width
+            hitbox->radius = (config.hitboxRadius > 0.0f) ? config.hitboxRadius : (config.width * 0.4f);
         }
 
         // Initialize StateAnimation if present and apply initial animation clip

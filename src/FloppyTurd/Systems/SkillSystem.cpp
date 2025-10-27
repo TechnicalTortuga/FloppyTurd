@@ -3,6 +3,7 @@
 #include "../../Engine/Core/ECS.h"
 #include "../Components/GameComponents.h"
 #include "../../Engine/Platform/HapticHelpers.h"
+#include "../Game/FloppyTurdGame.h"
 #include <algorithm>
 #include <cmath>
 
@@ -31,7 +32,8 @@ namespace GameCore {
 
     void SkillSystem::InitializeSkillDefinitions()
     {
-        // Skills from old system
+        // Skills from old system - order must match the enum indices in GameComponents.h
+        // SkillType enum: HalfHearts=0, ThirdHearts=1, CoinMagnet=2, HeartMagnet=3, CoinSafetyNet=4
         m_skills.emplace(SkillType::HalfHearts, SkillDefinition(
             SkillType::HalfHearts, "Half Hearts", "Show half-heart damage\nfor finer health tracking", 5, {}
         ));
@@ -327,14 +329,95 @@ namespace GameCore {
 
     void SkillSystem::SaveSkillProgress()
     {
-        // TODO: Implement save functionality using the game's save system
-        // This would typically save to a file or player preferences
+        GN_LOG_INFO("SkillSystem: Saving skill progress...");
+        
+        // Use the game's save system to persist skill unlock status
+        auto* game = GameCore::GetGame();
+        if (!game) {
+            GN_LOG_WARN("SkillSystem: Cannot save - no game instance available");
+            return;
+        }
+        
+        // Map SkillType enum to array index and save unlock status
+        // Order: HalfHearts=0, ThirdHearts=1, CoinMagnet=2, HeartMagnet=3, CoinSafetyNet=4
+        if (IsSkillUnlocked(SkillType::HalfHearts)) {
+            game->UnlockSkill(static_cast<int>(SkillType::HalfHearts));
+        }
+        if (IsSkillUnlocked(SkillType::ThirdHearts)) {
+            game->UnlockSkill(static_cast<int>(SkillType::ThirdHearts));
+        }
+        if (IsSkillUnlocked(SkillType::CoinMagnet)) {
+            game->UnlockSkill(static_cast<int>(SkillType::CoinMagnet));
+        }
+        if (IsSkillUnlocked(SkillType::HeartMagnet)) {
+            game->UnlockSkill(static_cast<int>(SkillType::HeartMagnet));
+        }
+        if (IsSkillUnlocked(SkillType::CoinSafetyNet)) {
+            game->UnlockSkill(static_cast<int>(SkillType::CoinSafetyNet));
+        }
+        
+        GN_LOG_INFO("SkillSystem: Skill progress saved successfully");
     }
 
     void SkillSystem::LoadSkillProgress()
     {
-        // TODO: Implement load functionality
-        // For now, skills start locked
+        GN_LOG_INFO("SkillSystem: Loading skill progress...");
+        
+        // Load skill unlock status from the game's save system
+        auto* game = GameCore::GetGame();
+        if (!game) {
+            GN_LOG_WARN("SkillSystem: Cannot load - no game instance available, using defaults");
+            return;
+        }
+        
+        // Load unlock status for each skill and update our internal state
+        // Order: HalfHearts=0, ThirdHearts=1, CoinMagnet=2, HeartMagnet=3, CoinSafetyNet=4
+        if (game->IsSkillUnlocked(static_cast<int>(SkillType::HalfHearts))) {
+            auto it = m_skills.find(SkillType::HalfHearts);
+            if (it != m_skills.end()) {
+                it->second.isUnlocked = true;
+                it->second.isActive = true; // Auto-activate passive skills
+                GN_LOG_INFO("SkillSystem: Loaded HalfHearts as unlocked");
+            }
+        }
+        
+        if (game->IsSkillUnlocked(static_cast<int>(SkillType::ThirdHearts))) {
+            auto it = m_skills.find(SkillType::ThirdHearts);
+            if (it != m_skills.end()) {
+                it->second.isUnlocked = true;
+                it->second.isActive = true; // Auto-activate passive skills
+                GN_LOG_INFO("SkillSystem: Loaded ThirdHearts as unlocked");
+            }
+        }
+        
+        if (game->IsSkillUnlocked(static_cast<int>(SkillType::CoinMagnet))) {
+            auto it = m_skills.find(SkillType::CoinMagnet);
+            if (it != m_skills.end()) {
+                it->second.isUnlocked = true;
+                it->second.isActive = true; // Auto-activate passive skills
+                GN_LOG_INFO("SkillSystem: Loaded CoinMagnet as unlocked");
+            }
+        }
+        
+        if (game->IsSkillUnlocked(static_cast<int>(SkillType::HeartMagnet))) {
+            auto it = m_skills.find(SkillType::HeartMagnet);
+            if (it != m_skills.end()) {
+                it->second.isUnlocked = true;
+                it->second.isActive = true; // Auto-activate passive skills
+                GN_LOG_INFO("SkillSystem: Loaded HeartMagnet as unlocked");
+            }
+        }
+        
+        if (game->IsSkillUnlocked(static_cast<int>(SkillType::CoinSafetyNet))) {
+            auto it = m_skills.find(SkillType::CoinSafetyNet);
+            if (it != m_skills.end()) {
+                it->second.isUnlocked = true;
+                it->second.isActive = true; // Auto-activate passive skills
+                GN_LOG_INFO("SkillSystem: Loaded CoinSafetyNet as unlocked");
+            }
+        }
+        
+        GN_LOG_INFO("SkillSystem: Skill progress loaded successfully");
     }
 
 } // namespace GameCore

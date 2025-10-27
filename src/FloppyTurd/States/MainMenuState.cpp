@@ -709,7 +709,7 @@ namespace GameCore {
             Transform t(Gnosis::GNVector2(backX, backY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
             Sprite s("FloppyButtonBlue", tw, th); s.layer = 22; s.visible = true;
             UIElement ui("BACK", "FloppyButtonBlue", "FloppyButtonBlueHover");
-            ui.fontSize = m_isMobile ? 54.0f : 32.0f; // Increased font size
+            ui.fontSize = m_isMobile ? 80.0f : 32.0f; // Increased font size
             ui.textColor = Gnosis::GNColor(255,255,255,255);
             ui.centerTextHorizontally = true;
             ui.centerTextVertically = true;
@@ -1677,7 +1677,7 @@ namespace GameCore {
         float buttonScale = 10.0f; // Keep sprite scale at 10x for mobile visuals
         m_menuButtonScale = buttonScale;
         // Text size globally controlled; do not derive from sprite scale
-        m_globalUIFontSize = m_isMobile ? 88.0f : (m_buttonFontSize * 5.0f);
+        m_globalUIFontSize = m_isMobile ? 80.0f : (m_buttonFontSize * 5.0f);
         
         // Create Play Button
         m_playButtonEntity = m_ecsCoordinator->CreateEntity();
@@ -1811,7 +1811,7 @@ namespace GameCore {
         float buttonScale = 10.0f;  // Keep sprite scale at 10x for mobile visuals
         m_menuButtonScale = buttonScale;
         // Text size globally controlled; do not derive from sprite scale
-        m_globalUIFontSize = m_isMobile ? 88.0f : (m_buttonFontSize * 5.0f);
+        m_globalUIFontSize = m_isMobile ? 80.0f : (m_buttonFontSize * 5.0f);
         auto buttonScaledDimensions = GetScaledDimensions(buttonTextureWidth, buttonTextureHeight, buttonScale);
         float buttonScaledWidth = buttonScaledDimensions.first;
         float buttonScaledHeight = buttonScaledDimensions.second;
@@ -2830,7 +2830,7 @@ namespace GameCore {
         Transform t(Gnosis::GNVector2(topLeftX, topLeftY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
         Sprite s("FloppyButtonBlue", buttonTexW, buttonTexH); s.layer = 5; s.visible = false;
         UIElement ui("BACK", "FloppyButtonBlue", "FloppyButtonBlueHover");
-        ui.fontSize = m_isMobile ? 88.0f : 21.0f; // Match main menu button font size (88.0f for mobile)
+        ui.fontSize = m_isMobile ? 80.0f : 20.0f; // Match main menu button font size (80.0f for mobile)
         ui.textColor = Gnosis::GNColor(255, 255, 255, 255);
         ui.centerTextHorizontally = true;
         ui.centerTextVertically = true;
@@ -2874,7 +2874,7 @@ namespace GameCore {
         Transform t(Gnosis::GNVector2(topLeftX, topLeftY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
         Sprite s("FloppyButtonBlue", texW, texH); s.layer = 5; s.visible = false;
         UIElement ui("PLAY LEVEL", "FloppyButtonBlue", "FloppyButtonBlueHover");
-        ui.fontSize = m_isMobile ? 88.0f : 21.0f; // Match main menu button font size (88.0f for mobile)
+        ui.fontSize = m_isMobile ? 80.0f : 20.0f; // Match main menu button font size (80.0f for mobile)
         ui.textColor = Gnosis::GNColor(255, 255, 255, 255);
         ui.centerTextHorizontally = true;
         ui.centerTextVertically = true;

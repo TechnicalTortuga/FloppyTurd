@@ -161,6 +161,10 @@ namespace GameCore {
         // SLOWED DOWN: 25.0f for more deliberate movement
         EnemyConfig config("ToiletPaperFlap", 64.0f, 64.0f, 6.0f, 25.0f, 3.0f, 1, 64, 64, 4, 0.30f, true, "horizontal");
 
+        // Custom tight hitbox - 4px radius (8px diameter) instead of default 25.6px
+        // Bird/RatCopter have ~12.8px radius, ToiletPaper gets even tighter for fair gameplay
+        config.hitboxRadius = 4.0f;
+
         // Enable StateAnimation for idle/hurt states
         config.useStateAnimation = true;
         config.initialState = "idle";

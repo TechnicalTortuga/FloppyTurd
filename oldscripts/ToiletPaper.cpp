@@ -2,6 +2,7 @@
 #include <raymath.h>
 #include "Resources.h"
 #include <iostream>
+#include <raylib.h>
 
 ToiletPaper::ToiletPaper(Vector2 spawnPos, float panspeed)
     : pos(spawnPos), speed(panspeed), isHurt(false), hurtTimer(0.0f)
@@ -82,7 +83,30 @@ bool ToiletPaper::ShouldBeRemoved() const
 
 void ToiletPaper::UpdateHitbox()
 {
-    hitbox = { pos.x + 8, pos.y + 24, (float)currentSprite->GetWidth() - 24, (float)currentSprite->GetHeight() - 36 };
+    if (isHurt) {
+        hitbox = { 0, 0, 0, 0 };
+        return;
+    }
+    
+    float spriteWidth = (float)currentSprite->GetWidth();
+    float spriteHeight = (float)currentSprite->GetHeight();
+    float hitboxWidth = 12.0f;
+    float hitboxHeight = 8.0f;
+    
+    // Center the hitbox on the sprite
+    float xOffset = (spriteWidth - hitboxWidth) / 2.0f;
+    float yOffset = (spriteHeight - hitboxHeight) / 2.0f;
+    
+    hitbox = { pos.x + xOffset, pos.y + yOffset, hitboxWidth, hitboxHeight };
+    
+    // Debug logging (log once every 60 frames to avoid spam)
+    static int logCounter = 0;
+    if (logCounter++ % 60 == 0) {
+        TraceLog(LOG_INFO, "[ToiletPaper] Sprite: %.0fx%.0f, Hitbox: %.1f,%.1f,%.1fx%.1f (offset: %.1f,%.1f)", 
+            spriteWidth, spriteHeight, 
+            hitbox.x, hitbox.y, hitbox.width, hitbox.height,
+            xOffset, yOffset);
+    }
 }
 
 void ToiletPaper::SetSpeed(float spd)

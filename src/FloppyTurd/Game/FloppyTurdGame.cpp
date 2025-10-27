@@ -1273,6 +1273,21 @@ namespace GameCore {
         }
     }
 
+    bool FloppyTurdGame::IsSkillUnlocked(int skillIndex) const {
+        if (skillIndex < 0 || skillIndex >= static_cast<int>(m_customizationData.unlockedSkills.size())) {
+            return false;
+        }
+        return m_customizationData.unlockedSkills[skillIndex];
+    }
+
+    void FloppyTurdGame::UnlockSkill(int skillIndex) {
+        if (skillIndex >= 0 && skillIndex < static_cast<int>(m_customizationData.unlockedSkills.size())) {
+            m_customizationData.unlockedSkills[skillIndex] = true;
+            GN_LOG_INFO("Skill unlocked at index: " + std::to_string(skillIndex));
+            SaveGameData();
+        }
+    }
+
     // Global utility functions
     FloppyTurdGame* GetGame() {
         return g_Game;

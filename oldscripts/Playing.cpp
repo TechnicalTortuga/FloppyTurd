@@ -743,6 +743,12 @@ void Playing::Update()
             {
                 if (!player->isInvisible && CheckCollisionCircleRec(player->GetCircleCenter(), player->GetCircleRadius(), tp->GetHitbox()))
                 {
+                    Vector2 playerCenter = player->GetCircleCenter();
+                    float playerRadius = player->GetCircleRadius();
+                    Rectangle tpHitbox = tp->GetHitbox();
+                    TraceLog(LOG_INFO, "[COLLISION] TP hit! Player: (%.1f,%.1f) r=%.1f, TP hitbox: (%.1f,%.1f,%.1fx%.1f)", 
+                        playerCenter.x, playerCenter.y, playerRadius,
+                        tpHitbox.x, tpHitbox.y, tpHitbox.width, tpHitbox.height);
                     player->PutTheHurtOn(1);
                 }
             }

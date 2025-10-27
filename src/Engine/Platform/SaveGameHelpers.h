@@ -114,6 +114,15 @@ namespace GameCore {
                 json << (customization.unlockedHats[i] ? "true" : "false");
             }
 
+            json << "],\n";
+            json << "    \"unlockedSkills\": [";
+            
+            // Serialize unlocked skills array
+            for (size_t i = 0; i < customization.unlockedSkills.size(); ++i) {
+                if (i > 0) json << ", ";
+                json << (customization.unlockedSkills[i] ? "true" : "false");
+            }
+
             json << "]\n";
             json << "  }\n";
             json << "}";
@@ -443,6 +452,14 @@ namespace GameCore {
                 std::string hatKey = "CUSTOM_HAT_" + std::to_string(i) + "_UNLOCKED";
                 std::string hatStr = parseKeyValue(dataString, hatKey);
                 customization.unlockedHats.push_back(hatStr == "1");
+            }
+            
+            // Parse unlocked skills
+            customization.unlockedSkills.clear();
+            for (int i = 0; i < 5; ++i) {
+                std::string skillKey = "CUSTOM_SKILL_" + std::to_string(i) + "_UNLOCKED";
+                std::string skillStr = parseKeyValue(dataString, skillKey);
+                customization.unlockedSkills.push_back(skillStr == "1");
             }
             
             game.UpdateCustomizationData(customization);

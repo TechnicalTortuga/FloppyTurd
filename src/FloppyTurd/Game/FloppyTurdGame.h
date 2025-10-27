@@ -124,10 +124,16 @@ namespace GameCore {
             int equippedHatIndex;       // Currently equipped hat (-1 = none)
             int selectedHatIndex;       // Currently selected hat in menu (-1 = none)
             std::vector<bool> unlockedHats; // Which hats are unlocked
+            std::vector<bool> unlockedSkills; // Which skills are unlocked (5 skills total)
             
             CustomizationData() : equippedHatIndex(-1), selectedHatIndex(-1) {
                 unlockedHats.resize(15, false);
-                unlockedHats[0] = true; // First hat is always unlocked
+                // First 4 hats are unlocked by default (Cowboy, Flower, Doorag, Ballcap)
+                unlockedHats[0] = true;
+                unlockedHats[1] = true;
+                unlockedHats[2] = true;
+                unlockedHats[3] = true;
+                unlockedSkills.resize(5, false); // 5 skills: HalfHearts, ThirdHearts, CoinMagnet, HeartMagnet, CoinSafetyNet
             }
         };
 
@@ -172,6 +178,10 @@ namespace GameCore {
         void SetSelectedHatIndex(int index);
         bool IsHatUnlocked(int index) const;
         void UnlockHat(int index);
+        
+        // Skill unlock tracking
+        bool IsSkillUnlocked(int skillIndex) const;
+        void UnlockSkill(int skillIndex);
         
         // Enemy kill tracking
         void IncrementSessionEnemyKills();

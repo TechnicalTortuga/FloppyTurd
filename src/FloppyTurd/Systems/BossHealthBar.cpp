@@ -3,6 +3,7 @@
 #include "../../Engine/Platform/PlatformDelegates.h"
 #include <cmath>
 #include <chrono>
+#include <algorithm>
 
 namespace GameCore {
 
@@ -184,21 +185,30 @@ void BossHealthBar::UpdateUIEntities() {
         }
     }
 
-    // Update damage effect (hurt flash) width based on shadow health
+    // Update damage effect (hurt flash) width based on shadow health, with alpha fade
     if (m_hurtEffectEntity != 0) {
         Sprite* hurt = m_ecsSystem->GetComponent<Sprite>(m_hurtEffectEntity);
-        if (hurt && m_hurtFadeTimer > 0.0f && shouldBeVisible && m_shadowHealthPercent > m_currentHealthPercent) {
+        // Show and fade the hurt overlay only when there's a damage delta to display
+        if (hurt && shouldBeVisible && m_shadowHealthPercent > m_currentHealthPercent && m_hurtFadeTimer > 0.0f) {
             hurt->visible = true;
             float hurtPercent = m_shadowHealthPercent - m_currentHealthPercent;
             hurt->sourceWidth = ORIGINAL_WIDTH * hurtPercent;
             hurt->sourceHeight = ORIGINAL_HEIGHT;
             hurt->sourceX = ORIGINAL_WIDTH * m_currentHealthPercent; // Start after current health
             hurt->sourceY = 0;
-            // CRITICAL: Also update sprite width for correct rendering
-            float scale = 8.0f;
+            // CRITICAL: Also update sprite width so it renders at the correct size
+            float scale = 8.0f; // Same scale used in CreateUIEntities
             hurt->width = (ORIGINAL_WIDTH * hurtPercent) * scale;
+            // Apply alpha fade based on remaining hurt fade timer (1.0 = fully opaque, 0.0 = transparent)
+            float fadeProgress = m_hurtFadeTimer / HURT_FADE_DURATION;
+            if (fadeProgress < 0.0f) fadeProgress = 0.0f;
+            if (fadeProgress > 1.0f) fadeProgress = 1.0f;
+            uint8_t alpha = static_cast<uint8_t>(fadeProgress * 255.0f);
+            hurt->color = Gnosis::GNColor(255, 255, 255, alpha);
         } else if (hurt) {
             hurt->visible = false;
+            // Reset color to fully opaque when hidden to avoid leaving partial alpha set
+            hurt->color = Gnosis::GNColor(255, 255, 255, 255);
         }
     }
 

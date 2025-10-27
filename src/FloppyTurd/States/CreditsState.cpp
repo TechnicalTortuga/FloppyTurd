@@ -366,7 +366,7 @@ void CreditsState::CreateCreditText() {
             
             UIElement titleUI;
             titleUI.buttonText = entry.title;
-            titleUI.fontSize = 48.0f;
+            titleUI.fontSize = 60.0f;
             titleUI.textColor = Gnosis::GNColor(255, 255, 255, 255);
             titleUI.textOutlineWidth = 3.0f;
             titleUI.visible = true;
@@ -401,7 +401,7 @@ void CreditsState::CreateCreditText() {
             
             UIElement nameUI;
             nameUI.buttonText = entry.name;
-            nameUI.fontSize = 48.0f;
+            nameUI.fontSize = 60.0f;
             nameUI.textColor = Gnosis::GNColor(255, 255, 255, 255);
             nameUI.textOutlineWidth = 3.0f;
             nameUI.visible = true;
@@ -670,7 +670,7 @@ bool CreditsState::IsSkipButtonPressed(float touchX, float touchY) {
     if (!transform) return false;
     
     // Button bounds - text positioned at top-left, so add padding to the right and bottom
-    float fontSize = 48.0f;
+    float fontSize = 60.0f;
     float buttonWidth = 200.0f;  // SKIP text width + padding
     float buttonHeight = fontSize + 20.0f;  // Text height + padding
     float buttonLeft = transform->position.x;

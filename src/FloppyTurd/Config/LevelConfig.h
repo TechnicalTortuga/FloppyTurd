@@ -181,6 +181,9 @@ namespace GameCore {
         std::string movementPattern;
         int renderLayer;
         
+        // Collision
+        float hitboxRadius;  // Custom hitbox radius (if 0, calculated as width * 0.4f)
+        
         // Animation configuration
         bool isAnimated;
         int frameWidth;
@@ -200,14 +203,14 @@ namespace GameCore {
         // Constructors
         EnemyConfig(const std::string& texture, float w, float h, float scl, float spd, float rate, int hp, const std::string& pattern = "horizontal")
             : textureId(texture), width(w), height(h), scale(scl), speed(spd), spawnRate(rate), hitPoints(hp), movementPattern(pattern)
-            , renderLayer(4), isAnimated(false), frameWidth(static_cast<int>(w)), frameHeight(static_cast<int>(h))
+            , renderLayer(4), hitboxRadius(0.0f), isAnimated(false), frameWidth(static_cast<int>(w)), frameHeight(static_cast<int>(h))
             , frameCount(1), frameTime(0.16f), loopAnimation(true), useStateAnimation(false), initialState("idle") {}
 
         // Animated enemy constructor
         EnemyConfig(const std::string& texture, float w, float h, float scl, float spd, float rate, int hp,
                    int fw, int fh, int fc, float ft, bool loop = true, const std::string& pattern = "horizontal")
             : textureId(texture), width(w), height(h), scale(scl), speed(spd), spawnRate(rate), hitPoints(hp), movementPattern(pattern)
-            , renderLayer(4), isAnimated(true), frameWidth(fw), frameHeight(fh)
+            , renderLayer(4), hitboxRadius(0.0f), isAnimated(true), frameWidth(fw), frameHeight(fh)
             , frameCount(fc), frameTime(ft), loopAnimation(loop), useStateAnimation(false), initialState("idle") {}
     };
 

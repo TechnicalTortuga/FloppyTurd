@@ -8,6 +8,7 @@
 
 import CryptoKit  // For HMAC validation (anti-tamper)
 import Foundation
+import os.log
 
 /// Thread-safe manager for game data persistence
 /// Note: Some methods are nonisolated for C++ bridge compatibility
@@ -16,6 +17,7 @@ final class SaveManager: @unchecked Sendable {
 
     // MARK: - Properties
 
+    private let logger = Logger(subsystem: "com.floppyturd.ios", category: "SaveManager")
     private let saveQueue = DispatchQueue(label: "com.floppyturd.savequeue", qos: .utility)
     private var isSaving = false
 
@@ -42,8 +44,8 @@ final class SaveManager: @unchecked Sendable {
     // MARK: - Initialization
 
     private init() {
-        print("📁 SaveManager initialized")
-        print("📂 Documents directory: \(documentsURL.path)")
+        logger.info("SaveManager initialized")
+        logger.debug("Documents directory: \(self.documentsURL.path)")
 
         // Register default settings
         GameSettings.registerDefaults()
@@ -56,23 +58,23 @@ final class SaveManager: @unchecked Sendable {
 
     /// Load game data from disk (migrates legacy format if needed)
     nonisolated func load() -> GameSaveData? {
-        print("📖 Loading game data...")
+        logger.info("Loading game data...")
 
         // Check if we need to migrate from legacy format
         if FileManager.default.fileExists(atPath: legacySaveFileURL.path) {
-            print("🔄 Legacy save file detected - migrating...")
+            logger.info("Legacy save file detected - migrating...")
             if let migrated = migrateLegacySave() {
-                print("✅ Migration successful")
+                logger.info("Migration successful")
                 return migrated
             } else {
-                print("⚠️ Migration failed, starting fresh")
+                logger.warning("Migration failed, starting fresh")
                 return nil
             }
         }
 
         // Load from binary plist format
         guard FileManager.default.fileExists(atPath: saveFileURL.path) else {
-            print("ℹ️ No save file found, starting fresh")
+            logger.info("No save file found, starting fresh")
             return nil
         }
 
@@ -81,7 +83,7 @@ final class SaveManager: @unchecked Sendable {
 
             // File format: [HMAC (32 bytes)] + [PropertyList Data]
             guard combinedData.count > 32 else {
-                print("⚠️ Save file too small, possibly corrupted")
+                logger.warning("Save file too small, possibly corrupted")
                 return nil
             }
 
@@ -91,8 +93,8 @@ final class SaveManager: @unchecked Sendable {
             // Verify HMAC (detect tampering)
             let expectedHMAC = HMAC<SHA256>.authenticationCode(for: plistData, using: Self.hmacKey)
             guard hmacData == Data(expectedHMAC) else {
-                print("⚠️ Save file HMAC mismatch - file may have been tampered with!")
-                print("⚠️ Starting fresh to prevent cheating")
+                logger.warning("Save file HMAC mismatch - file may have been tampered with!")
+                logger.warning("Starting fresh to prevent cheating")
                 return nil
             }
 
@@ -102,15 +104,15 @@ final class SaveManager: @unchecked Sendable {
 
             // Validate loaded data
             if validateLoadedData(&saveData) {
-                print(
-                    "✅ Game data loaded successfully (version \(saveData.version), HMAC verified)")
+                logger.info(
+                    "Game data loaded successfully (version \(saveData.version), HMAC verified)")
                 return saveData
             } else {
-                print("⚠️ Loaded data failed validation, starting fresh")
+                logger.warning("Loaded data failed validation, starting fresh")
                 return nil
             }
         } catch {
-            print("❌ Failed to load game data: \(error)")
+            logger.error("Failed to load game data: \(error.localizedDescription)")
             return nil
         }
     }
@@ -118,7 +120,7 @@ final class SaveManager: @unchecked Sendable {
     /// Save game data to disk (async, thread-safe)
     func save(_ data: GameSaveData, completion: (@Sendable (Bool) -> Void)? = nil) {
         guard !isSaving else {
-            print("⚠️ Save already in progress, skipping...")
+            logger.warning("Save already in progress, skipping...")
             completion?(false)
             return
         }
@@ -157,10 +159,10 @@ final class SaveManager: @unchecked Sendable {
         do {
             if FileManager.default.fileExists(atPath: saveFileURL.path) {
                 try FileManager.default.removeItem(at: saveFileURL)
-                print("🗑️ Save data deleted")
+                logger.info("Save data deleted")
             }
         } catch {
-            print("❌ Failed to delete save data: \(error)")
+            logger.error("Failed to delete save data: \(error.localizedDescription)")
         }
     }
 
@@ -170,11 +172,11 @@ final class SaveManager: @unchecked Sendable {
     /// - Parameter jsonString: JSON string containing game save data
     /// - Returns: true if save succeeded, false otherwise
     static func processSaveGameCommand(_ jsonString: String) -> Bool {
-        print("💾 [SaveManager] Processing save game command...")
+        shared.logger.info("Processing save game command...")
 
         // Still receive JSON from C++ for now (but save as binary plist)
         guard let jsonData = jsonString.data(using: .utf8) else {
-            print("❌ [SaveManager] Failed to convert JSON string to Data")
+            shared.logger.error("Failed to convert JSON string to Data")
             return false
         }
 
@@ -186,13 +188,13 @@ final class SaveManager: @unchecked Sendable {
             // Save using SaveManager (will save as BINARY PLIST with HMAC)
             let success = SaveManager.shared.saveSync(saveData)
             if success {
-                print("✅ [SaveManager] Game data saved successfully (binary plist with HMAC)")
+                shared.logger.info("Game data saved successfully (binary plist with HMAC)")
             } else {
-                print("❌ [SaveManager] Failed to save game data")
+                shared.logger.error("Failed to save game data")
             }
             return success
         } catch {
-            print("❌ [SaveManager] Failed to decode JSON: \(error)")
+            shared.logger.error("Failed to decode JSON: \(error.localizedDescription)")
             return false
         }
     }
@@ -200,10 +202,10 @@ final class SaveManager: @unchecked Sendable {
     /// Process a load game command (async version for command queue)
     /// - Returns: JSON string containing game save data, or nil if no save exists
     static func processLoadGameCommand() -> String? {
-        print("📖 [SaveManager] Processing load game command...")
+        shared.logger.info("Processing load game command...")
 
         guard let saveData = SaveManager.shared.load() else {
-            print("ℹ️ [SaveManager] No save data found")
+            shared.logger.info("No save data found")
             return nil
         }
 
@@ -215,14 +217,14 @@ final class SaveManager: @unchecked Sendable {
             let jsonData = try encoder.encode(saveData)
 
             guard let jsonString = String(data: jsonData, encoding: .utf8) else {
-                print("❌ [SaveManager] Failed to convert JSON data to string")
+                shared.logger.error("Failed to convert JSON data to string")
                 return nil
             }
 
-            print("✅ [SaveManager] Game data loaded successfully (\(jsonData.count) bytes)")
+            shared.logger.info("Game data loaded successfully (\(jsonData.count) bytes)")
             return jsonString
         } catch {
-            print("❌ [SaveManager] Failed to encode save data: \(error)")
+            shared.logger.error("Failed to encode save data: \(error.localizedDescription)")
             return nil
         }
     }
@@ -231,10 +233,10 @@ final class SaveManager: @unchecked Sendable {
     /// - Returns: Simple key:value format string, or nil if no save exists
     /// - Note: This is the synchronous version called directly from C++ during initialization
     static func processLoadGameCommandSync() -> String? {
-        print("📖 [SaveManager] Processing SYNCHRONOUS load game command...")
+        shared.logger.info("Processing SYNCHRONOUS load game command...")
 
         guard let saveData = SaveManager.shared.load() else {
-            print("ℹ️ [SaveManager] No save data found (sync load)")
+            shared.logger.info("No save data found (sync load)")
             return nil
         }
 
@@ -274,10 +276,13 @@ final class SaveManager: @unchecked Sendable {
         for (index, unlocked) in saveData.customization.unlockedHats.enumerated() {
             output += "CUSTOM_HAT_\(index)_UNLOCKED:\(unlocked ? 1 : 0)\n"
         }
+        for (index, unlocked) in saveData.customization.unlockedSkills.enumerated() {
+            output += "CUSTOM_SKILL_\(index)_UNLOCKED:\(unlocked ? 1 : 0)\n"
+        }
 
-        print("✅ [SaveManager] Game data loaded successfully (SYNC): \(output.count) bytes")
-        print(
-            "📋 [SaveManager] Sample data - Coins: \(saveData.statistics.storedCoins), Level 2 unlocked: \(saveData.progress.levels[1].unlocked)"
+        shared.logger.info("Game data loaded successfully (SYNC): \(output.count) bytes")
+        shared.logger.debug(
+            "Sample data - Coins: \(saveData.statistics.storedCoins), Level 2 unlocked: \(saveData.progress.levels[1].unlocked)"
         )
 
         return output
@@ -295,22 +300,22 @@ final class SaveManager: @unchecked Sendable {
         sfxVolume: Float,
         debugMode: Bool
     ) {
-        print("💾 [SaveManager] Processing save settings command...")
+        shared.logger.info("Processing save settings command...")
 
         GameSettings.masterVolume = masterVolume
         GameSettings.musicVolume = musicVolume
         GameSettings.sfxVolume = sfxVolume
         GameSettings.debugMode = debugMode
 
-        print(
-            "✅ [SaveManager] Settings saved: master=\(masterVolume) music=\(musicVolume) sfx=\(sfxVolume) debug=\(debugMode)"
+        shared.logger.info(
+            "Settings saved: master=\(masterVolume) music=\(musicVolume) sfx=\(sfxVolume) debug=\(debugMode)"
         )
     }
 
     /// Process a load settings command
     /// - Returns: Tuple of (masterVolume, musicVolume, sfxVolume, debugMode, wasLoaded)
     static func processLoadSettingsCommand() -> (Float, Float, Float, Bool, Bool) {
-        print("📖 [SaveManager] Processing load settings command...")
+        shared.logger.info("Processing load settings command...")
 
         let masterVolume = GameSettings.masterVolume
         let musicVolume = GameSettings.musicVolume
@@ -321,11 +326,11 @@ final class SaveManager: @unchecked Sendable {
         let isFirstLaunch = !UserDefaults.standard.bool(forKey: "hasLaunchedBefore")
         if isFirstLaunch {
             UserDefaults.standard.set(true, forKey: "hasLaunchedBefore")
-            print("ℹ️ [SaveManager] First launch detected - using default settings")
+            shared.logger.info("First launch detected - using default settings")
         }
 
-        print(
-            "✅ [SaveManager] Settings loaded: master=\(masterVolume) music=\(musicVolume) sfx=\(sfxVolume) debug=\(debugMode)"
+        shared.logger.info(
+            "Settings loaded: master=\(masterVolume) music=\(musicVolume) sfx=\(sfxVolume) debug=\(debugMode)"
         )
 
         return (masterVolume, musicVolume, sfxVolume, debugMode, !isFirstLaunch)
@@ -368,32 +373,35 @@ final class SaveManager: @unchecked Sendable {
             }
             try FileManager.default.moveItem(at: tempURL, to: saveFileURL)
 
-            print(
-                "✅ Game data saved successfully (\(combinedData.count) bytes, binary plist with HMAC)"
+            logger.info(
+                "Game data saved successfully (\(combinedData.count) bytes, binary plist with HMAC)"
             )
             return true
         } catch {
-            print("❌ Failed to save game data: \(error)")
+            logger.error("Failed to save game data: \(error.localizedDescription)")
             return false
         }
     }
 
     private func validateLoadedData(_ data: inout GameSaveData) -> Bool {
         // Validate version
-        guard data.version == 2 else {
-            print("⚠️ Unsupported save version: \(data.version)")
+        let version = data.version
+        guard version == 2 else {
+            logger.warning("Unsupported save version: \(version)")
             return false
         }
 
         // Validate level count
-        guard data.progress.levels.count == 6 else {
-            print("⚠️ Invalid level count: \(data.progress.levels.count)")
+        let levelCount = data.progress.levels.count
+        guard levelCount == 6 else {
+            logger.warning("Invalid level count: \(levelCount)")
             return false
         }
 
         // Validate hat count
-        guard data.customization.unlockedHats.count == 15 else {
-            print("⚠️ Invalid hat count: \(data.customization.unlockedHats.count)")
+        let hatCount = data.customization.unlockedHats.count
+        guard hatCount == 15 else {
+            logger.warning("Invalid hat count: \(hatCount)")
             return false
         }
 
@@ -418,7 +426,7 @@ final class SaveManager: @unchecked Sendable {
 
     private func migrateLegacySave() -> GameSaveData? {
         guard let legacyData = loadLegacyBinaryFormat() else {
-            print("❌ Failed to load legacy binary data")
+            logger.error("Failed to load legacy binary data")
             return nil
         }
 
@@ -433,13 +441,13 @@ final class SaveManager: @unchecked Sendable {
                     try FileManager.default.removeItem(at: backupURL)
                 }
                 try FileManager.default.copyItem(at: legacySaveFileURL, to: backupURL)
-                print("📦 Legacy save backed up to: \(backupURL.lastPathComponent)")
+                logger.info("Legacy save backed up to: \(backupURL.lastPathComponent)")
 
                 // Delete original legacy file
                 try FileManager.default.removeItem(at: legacySaveFileURL)
-                print("🗑️ Legacy save file removed")
+                logger.info("Legacy save file removed")
             } catch {
-                print("⚠️ Failed to backup/remove legacy save: \(error)")
+                logger.warning("Failed to backup/remove legacy save: \(error.localizedDescription)")
             }
 
             return newData
@@ -567,8 +575,8 @@ final class SaveManager: @unchecked Sendable {
         newData.statistics.currentStreak = legacy.gameStats.currentStreak
         newData.statistics.bestStreak = legacy.gameStats.bestStreak
 
-        print(
-            "🔄 Converted legacy data - High score: \(legacy.highScore), Coins: \(legacy.gameStats.storedCoins)"
+        logger.info(
+            "Converted legacy data - High score: \(legacy.highScore), Coins: \(legacy.gameStats.storedCoins)"
         )
 
         return newData
@@ -579,10 +587,10 @@ final class SaveManager: @unchecked Sendable {
             return
         }
 
-        print("🔄 Migrating legacy settings...")
+        logger.info("Migrating legacy settings...")
 
         guard let contents = try? String(contentsOf: legacySettingsFileURL) else {
-            print("❌ Failed to read legacy settings")
+            logger.error("Failed to read legacy settings")
             return
         }
 
@@ -597,14 +605,14 @@ final class SaveManager: @unchecked Sendable {
                 GameSettings.debugMode = (values[3] > 0)
             }
 
-            print("✅ Settings migrated successfully")
+            logger.info("Settings migrated successfully")
 
             // Delete legacy settings file
             do {
                 try FileManager.default.removeItem(at: legacySettingsFileURL)
-                print("🗑️ Legacy settings file removed")
+                logger.info("Legacy settings file removed")
             } catch {
-                print("⚠️ Failed to remove legacy settings: \(error)")
+                logger.warning("Failed to remove legacy settings: \(error.localizedDescription)")
             }
         }
     }
@@ -616,13 +624,14 @@ final class SaveManager: @unchecked Sendable {
 /// Called directly from C++ during game initialization via Swift C++ interop
 /// - Returns: JSON string containing game save data, or empty string if no save exists
 public func loadGameDataSync() -> String {
-    print("🔄 [SaveManager C++ Interop] Synchronous load requested from C++")
+    let logger = Logger(subsystem: "com.floppyturd.ios", category: "SaveManager")
+    logger.info("Synchronous load requested from C++")
 
     guard let jsonString = SaveManager.processLoadGameCommandSync() else {
-        print("ℹ️ [SaveManager C++ Interop] No save data to return to C++")
+        logger.info("No save data to return to C++")
         return ""
     }
 
-    print("✅ [SaveManager C++ Interop] Returning JSON to C++ (\(jsonString.count) chars)")
+    logger.info("Returning JSON to C++ (\(jsonString.count) chars)")
     return jsonString
 }
