@@ -165,6 +165,7 @@
 		0E5382FC272946A089BE86FD /* Info.plist */ = {isa = PBXFileReference; explicitFileType = sourcecode.text.plist; fileEncoding = 4; lastKnownFileType = text.plist; name = Info.plist; path = build_ios_device/CMakeFiles/FloppyTurdGame.dir/Info.plist; sourceTree = SOURCE_ROOT; };
 		0ECA137F194C4B3496F8B4EC /* CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; lastKnownFileType = text; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
 		0F0D7F7FFB1C4A19891F7A4C /* PickupSystem.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; fileEncoding = 4; name = PickupSystem.h; path = src/FloppyTurd/Systems/PickupSystem.h; sourceTree = SOURCE_ROOT; };
+		11D5BE972EB01AA600ADE5CB /* FloppyTurd.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FloppyTurd.entitlements; sourceTree = "<group>"; };
 		1283D371851B4238B235A1A5 /* GameStateManager.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = GameStateManager.cpp; path = src/FloppyTurd/States/GameStateManager.cpp; sourceTree = SOURCE_ROOT; };
 		138F559DD2B643EDBD585A51 /* OverlaySystem.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = OverlaySystem.cpp; path = src/FloppyTurd/Systems/OverlaySystem.cpp; sourceTree = SOURCE_ROOT; };
 		140E8CBE7C1D4F51A1C0223A /* GameplayState.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = GameplayState.cpp; path = src/FloppyTurd/States/GameplayState.cpp; sourceTree = SOURCE_ROOT; };
@@ -286,6 +287,7 @@
 		0CC856BBC3AC43358F41D49A /* FloppyTurd */ = {
 			isa = PBXGroup;
 			children = (
+				11D5BE972EB01AA600ADE5CB /* FloppyTurd.entitlements */,
 				228A6EAA8CC04882A94F2990 /* Source Files */,
 				AB19EA3BFD894A75B8B53B8A /* Header Files */,
 				8378C1F27B2B4BB8A8AD02D3 /* Resources */,
@@ -744,6 +746,7 @@
 				CLANG_ENABLE_MODULE_DEBUGGING = YES;
 				CODE_SIGNING_ALLOWED = YES;
 				CODE_SIGNING_REQUIRED = YES;
+				CODE_SIGN_ENTITLEMENTS = FloppyTurd.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -789,6 +792,7 @@
 					"$(inherited)",
 				);
 				INFOPLIST_FILE = /Users/aimac/Development/FloppyTurd/build_ios_device/CMakeFiles/FloppyTurd.dir/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.games";
 				INSTALL_PATH = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				ONLY_ACTIVE_ARCH = NO;
@@ -883,6 +887,7 @@
 				CLANG_ENABLE_MODULE_DEBUGGING = YES;
 				CODE_SIGNING_ALLOWED = YES;
 				CODE_SIGNING_REQUIRED = YES;
+				CODE_SIGN_ENTITLEMENTS = FloppyTurd.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -930,6 +935,7 @@
 					"$(inherited)",
 				);
 				INFOPLIST_FILE = /Users/aimac/Development/FloppyTurd/build_ios_device/CMakeFiles/FloppyTurd.dir/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.games";
 				INSTALL_PATH = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				ONLY_ACTIVE_ARCH = NO;
@@ -1103,6 +1109,7 @@
 				CLANG_ENABLE_MODULE_DEBUGGING = YES;
 				CODE_SIGNING_ALLOWED = YES;
 				CODE_SIGNING_REQUIRED = YES;
+				CODE_SIGN_ENTITLEMENTS = FloppyTurd.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -1148,6 +1155,7 @@
 					"$(inherited)",
 				);
 				INFOPLIST_FILE = /Users/aimac/Development/FloppyTurd/build_ios_device/CMakeFiles/FloppyTurd.dir/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.games";
 				INSTALL_PATH = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				ONLY_ACTIVE_ARCH = NO;
@@ -1287,6 +1295,7 @@
 				CLANG_ENABLE_MODULE_DEBUGGING = YES;
 				CODE_SIGNING_ALLOWED = YES;
 				CODE_SIGNING_REQUIRED = YES;
+				CODE_SIGN_ENTITLEMENTS = FloppyTurd.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -1332,6 +1341,7 @@
 					"$(inherited)",
 				);
 				INFOPLIST_FILE = /Users/aimac/Development/FloppyTurd/build_ios_device/CMakeFiles/FloppyTurd.dir/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.games";
 				INSTALL_PATH = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				ONLY_ACTIVE_ARCH = NO;

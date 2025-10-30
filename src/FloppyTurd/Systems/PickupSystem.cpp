@@ -37,14 +37,20 @@ namespace GameCore {
         }
 
         // 3) Discover groups currently active and spawn coins for new ones
-        const auto& activeObstacles = m_levelManager->GetActiveObstacles();
-        std::unordered_set<int> currentGroups;
-        for (Gnosis::Entity obstacle : activeObstacles) {
-            Group* group = m_ecsSystem->GetComponent<Group>(obstacle);
-            if (group) {
-                currentGroups.insert(group->id);
+        // Use a helper to compute the active group set so we can recompute it after wraps
+        auto recomputeActiveGroups = [&]() -> std::unordered_set<int> {
+            std::unordered_set<int> groups;
+            const auto& activeObstaclesLocal = m_levelManager->GetActiveObstacles();
+            for (Gnosis::Entity obstacle : activeObstaclesLocal) {
+                Group* group = m_ecsSystem->GetComponent<Group>(obstacle);
+                if (group) {
+                    groups.insert(group->id);
+                }
             }
-        }
+            return groups;
+        };
+
+        std::unordered_set<int> currentGroups = recomputeActiveGroups();
 
         for (int groupId : currentGroups) {
             if (m_groupCoins.find(groupId) == m_groupCoins.end()) {
@@ -59,8 +65,9 @@ namespace GameCore {
             // GN_LOG_DEBUG("PickupSystem: Repositioning coins for wrapped group " + std::to_string(wrapped));
             repositionCoinsForGroup(wrapped);
         }
-        
 
+        // Recompute active groups after handling wraps so we don't remove groups that became re-attached
+        currentGroups = recomputeActiveGroups();
 
         // 4) Remove coin groups that no longer exist
         removeGroupIfMissing(currentGroups);

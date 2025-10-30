@@ -146,7 +146,7 @@ namespace GameCore {
             auto groupIt = m_obstacleGroups.find(group->id);
             if (groupIt == m_obstacleGroups.end()) continue;
             
-            // Find rightmost member in this group
+            // Find rightmost member in this group (includes decorations)
             float lastMemberRight = -std::numeric_limits<float>::infinity();
             for (Gnosis::Entity member : groupIt->second) {
                 auto* memberTransform = m_ecsSystem->GetComponent<Transform>(member);
@@ -159,8 +159,24 @@ namespace GameCore {
                 }
             }
             
-            // Wrap group if rightmost member is off-screen
-            if (lastMemberRight < 0.0f) {
+            // Wrap group if rightmost member (including decorations) is fully off-screen
+            // Use the GroupGap to determine threshold - this accounts for coins positioned in the gap
+            // and ensures synchronization between groups
+            float wrapThreshold = 0.0f;
+            
+            // Check if this group has a GroupGap component (dynamic gap-based threshold)
+            auto* groupGap = m_ecsSystem->GetComponent<GroupGap>(e);
+            if (groupGap && groupGap->gapDistance > 0.0f) {
+                // Use half the gap distance as threshold - ensures coins in gap are off-screen
+                // For castle (2000px gap), threshold = -1000px
+                // For snow (1500px gap), threshold = -750px
+                wrapThreshold = -(groupGap->gapDistance / 2.0f);
+            } else {
+                // Fallback: small buffer for levels without gaps
+                wrapThreshold = -100.0f;
+            }
+            
+            if (lastMemberRight < wrapThreshold) {
                 WrapGroupAroundScreen(group->id, worldScrollDistance);
             }
         }
@@ -1384,30 +1400,24 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
                     const float topScreenY = 200.0f;  // Near top of screen (with safe area padding)
                     const float bottomScreenY = screenHeight - 250.0f;  // Near bottom of screen
                     
-                    // SYMMETRY SYSTEM: Use 3 reference points for perfect centering
-                    // Point 1: Center of FIRST toilet pair (minX is toilet left edge)
-                    // Point 2: Center of GAP between toilet pairs
-                    // Point 3: Center of SECOND toilet pair (at minX + toiletWidth + gapSize)
-                    const float toiletWidth = 65.0f * m_baseScale; // 520px at scale 8
-                    const float gapSize = 2000.0f; // Gap between toilet groups
+                    // FIXED: Position coins BEFORE toilet pairs (same fix as snow level)
+                    // This prevents coins from visibly disappearing when groups wrap around
+                    // CRITICAL: Use actual sprite width (64px) for accurate positioning
+                    const float toiletWidth = 64.0f * m_baseScale; // 512px at scale 8 - actual sprite width!
+                    const float gapSize = 2000.0f; // Gap between toilet groups (must match initialization)
                     
-                    // CRITICAL: Account for 16px padding in toilet sprite (65px sprite, 49px actual content)
-                    // The visual toilet is smaller than the sprite bounds
-                    const float spritePadding = 16.0f * m_baseScale; // 128px padding at scale 8
+                    // Calculate true gap boundaries:
+                    // Previous toilet right edge: minX - gapSize + toiletWidth
+                    // Current toilet left edge: minX
+                    // Gap center: halfway between these two points
+                    float previousToiletRightEdge = minX - gapSize + toiletWidth;
+                    float currentToiletLeftEdge = minX;
+                    float coinCenterX = (previousToiletRightEdge + currentToiletLeftEdge) / 2.0f;
                     
-                    // Calculate the TRUE center of the gap (Point 2)
-                    // Start from actual toilet visual edge (after padding)
-                    float toilet1RightEdge = minX + spritePadding + (toiletWidth - spritePadding);
-                    float toilet2LeftEdge = toilet1RightEdge + gapSize;
-                    float gapCenterX = (toilet1RightEdge + toilet2LeftEdge) / 2.0f; // TRUE middle of gap
-                    
-                    // Coins should be symmetrically centered on gapCenterX
-                    // Spread 1600px total (800px on each side of center)
-                    // SHIFT: Move entire coin spread 192px to the left to avoid second toilet
-                    const float coinSpreadHalfWidth = 800.0f; // Half of total coin spread
-                    const float leftShift = 192.0f; // Additional left shift to avoid overlap (128 + 32 + 32)
-                    float coinMinX = gapCenterX - coinSpreadHalfWidth - leftShift;  // 800px left + 128px shift
-                    float coinMaxX = gapCenterX + coinSpreadHalfWidth - leftShift;  // 800px right + 128px shift
+                    // Spread coins around the true gap center
+                    const float coinSpreadHalfWidth = 800.0f; // Half of total coin spread (1600px total)
+                    float coinMinX = coinCenterX - coinSpreadHalfWidth;
+                    float coinMaxX = coinCenterX + coinSpreadHalfWidth;
                     
                     // Spawn coins at screen edges (matching Snow level exactly)
                     emitStripeInRange(topScreenY, coinMinX, coinMaxX);       // Top screen edge
@@ -1415,7 +1425,10 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
                     
                     GN_LOG_INFO("ObstacleSystem::Castle TopAndBottom [SCREEN EDGES] TOP row at Y=" + std::to_string(topScreenY) + 
                                ", BOTTOM row at Y=" + std::to_string(bottomScreenY) + 
-                               ", X span CENTERED+WIDENED=[" + std::to_string(coinMinX) + " to " + std::to_string(coinMaxX) + 
+                               ", toiletWidth=" + std::to_string(toiletWidth) + 
+                               ", gapSize=" + std::to_string(gapSize) + 
+                               ", coinCenterX=" + std::to_string(coinCenterX) + 
+                               " (true gap center), X span=[" + std::to_string(coinMinX) + " to " + std::to_string(coinMaxX) + 
                                "], total coins=" + std::to_string(positions.size()));
                 } else {
                     // Other levels: use standard obstacle bounds
@@ -1523,15 +1536,27 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
                 const float topScreenY = 200.0f;  // Near top of screen (with safe area padding)
                 const float bottomScreenY = screenHeight - 250.0f;  // Near bottom of screen (Y=2306, closer to bottom)
                 
-                // Coins should be centered BETWEEN obstacles (in the gap AFTER current toilet pair)
-                // Position coins in the CENTER of the gap that follows this toilet pair
-                // Gap is 900px for tight but fair obstacle spacing
-                const float gapSize = 900.0f; // Reduced for tighter gameplay
-                float coinCenterX = maxX + (gapSize / 2.0f);  // Position in gap AFTER obstacles
+                // FIXED: Coins should be centered BEFORE obstacles (in the gap that PRECEDES this toilet pair)
+                // This prevents coins from visibly disappearing when the group wraps around
+                // Position coins in the TRUE CENTER of the gap that PRECEDES this toilet pair
+                // Gap spacing: 1500px from left edge to left edge (must match initialization)
+                const float gapSize = 1500.0f; // Must match initialization spacing for consistent gaps
+                const float toiletWidth = (maxX - minX); // Actual width of current toilet group
+                
+                // Calculate true gap boundaries:
+                // Previous toilet right edge: minX - gapSize + toiletWidth
+                // Current toilet left edge: minX
+                // Gap center: halfway between these two points
+                float previousToiletRightEdge = minX - gapSize + toiletWidth;
+                float currentToiletLeftEdge = minX;
+                float coinCenterX = (previousToiletRightEdge + currentToiletLeftEdge) / 2.0f;
                 
                 // DEBUG: Log the obstacle bounds and center calculation
                 GN_LOG_INFO("Snow coin positioning: minX=" + std::to_string(minX) + ", maxX=" + std::to_string(maxX) + 
-                           ", coinCenterX=" + std::to_string(coinCenterX) + " (maxX + " + std::to_string(gapSize/2.0f) + "px)");
+                           ", toiletWidth=" + std::to_string(toiletWidth) + 
+                           ", gapSize=" + std::to_string(gapSize) + 
+                           ", coinCenterX=" + std::to_string(coinCenterX) + 
+                           " (true gap center between " + std::to_string(previousToiletRightEdge) + " and " + std::to_string(currentToiletLeftEdge) + ")");
                 
                 // INCREASED: Wider stripe for better coin distribution (350px expansion on each side)
                 float coinHalfWidth = ((maxX - minX) / 2.0f) + 350.0f; // Increased from 100px to 350px
@@ -1762,12 +1787,12 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         // Position new group with proper gap for snow and castle levels
         float newX;
         if (m_currentLevelId == 4) {
-            // Snow level: 900px gap AFTER the toilet for tighter gameplay
-            newX = rightmostOriginX + 900.0f;
+            // Snow level: 1500px gap AFTER the toilet - MUST MATCH INITIALIZATION SPACING
+            newX = rightmostOriginX + 1500.0f;
             GN_LOG_INFO("Snow level wrapping: rightmostOriginX=" + std::to_string(rightmostOriginX) + 
                        ", rightmostGroupWidth=" + std::to_string(rightmostGroupWidth) + 
                        ", newX=" + std::to_string(newX) + 
-                       ", positioned at end of 900px gap");
+                       ", positioned at end of 1500px gap");
         } else if (m_currentLevelId == 5) {
             // Castle level: 2000px gap AFTER the toilet
             newX = rightmostOriginX + 2000.0f;
@@ -1842,26 +1867,79 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
                     // This maintains the exact relative positions of all group members
                     transform->position.x = newX + relativeOffsetX;
                     
-                    // Set Y positions based on toilet type - but NOT for non-toilet obstacles
-                    if (m_ecsSystem->HasComponent<Obstacle>(e)) {
-                        auto* obstacle = m_ecsSystem->GetComponent<Obstacle>(e);
-                        
-                        // Only reposition toilets, not other obstacle types like spike balls
-                        if (obstacle->obstacleType == "TopToilet" || obstacle->obstacleType == "BottomToilet" || 
-                            obstacle->obstacleType == "GoldToiletTop" || obstacle->obstacleType == "GoldToiletBottom") {
-                            if (obstacle->isTopPart) {
-                                transform->position.y = randomTopY;
-                            } else {
-                                transform->position.y = randomTopY + toiletHeight + fixedGapHeight;
-                            }
-                            
-                            // Reset obstacle state
-                            obstacle->pipeCleared = false;
+                // Set Y positions based on toilet type - but NOT for non-toilet obstacles
+                if (m_ecsSystem->HasComponent<Obstacle>(e)) {
+                    auto* obstacle = m_ecsSystem->GetComponent<Obstacle>(e);
+                    
+                    // Only reposition toilets (have oscillation behavior), not other obstacle types like spike balls
+                    if (obstacle->behavior == static_cast<int>(ToiletBehavior::OSCILLATE_VERTICAL)) {
+                        if (obstacle->isTopPart) {
+                            transform->position.y = randomTopY;
+                        } else {
+                            transform->position.y = randomTopY + toiletHeight + fixedGapHeight;
                         }
-                        // Non-toilet obstacles (spike balls, etc.) keep their original Y positions
+                        
+                        // CRITICAL: Reset obstacle state so pipe counting works after wrapping
+                        obstacle->pipeCleared = false;
+                        obstacle->oscillationTimer = 0.0f; // Reset oscillation for variety
+                        
+                        GN_LOG_DEBUG("Castle wrap: Reset toilet pipeCleared, isTopPart=" + std::to_string(obstacle->isTopPart));
+                    }
+                    // Non-toilet obstacles (spike balls, etc.) keep their original Y positions but still reset pipeCleared if they're clearable
+                    else if (obstacle->damage > 0) {
+                        // Spike balls and other clearable obstacles also need pipeCleared reset
+                        obstacle->pipeCleared = false;
                     }
                 }
+                }
             }
+        } else if (m_currentLevelId == 4 && groupPattern == GroupPattern::SnowScreenEdges) {
+            // Snow level: Randomize toilet pair Y positions and reset oscillation on wrap
+            float toiletHeight = 190.0f * m_baseScale;
+            float minTopY = -toiletHeight * 1.2f; // Match SpawnSnowPattern_ToiletPair
+            float maxTopY = -toiletHeight * 0.6f;
+            float randomTopY = minTopY + (maxTopY - minTopY) * ((float)rand() / RAND_MAX);
+            float fixedGapHeight = 800.0f; // Vertical gap within toilet pairs
+            
+            for (Gnosis::Entity e : m_activeObstacles) {
+                if (!m_ecsSystem->HasComponent<Group>(e) || !m_ecsSystem->HasComponent<Transform>(e) ||
+                    !m_ecsSystem->HasComponent<Obstacle>(e)) {
+                    continue;
+                }
+                
+                auto* group = m_ecsSystem->GetComponent<Group>(e);
+                auto* transform = m_ecsSystem->GetComponent<Transform>(e);
+                auto* obstacle = m_ecsSystem->GetComponent<Obstacle>(e);
+                
+                if (group->id == groupId) {
+                    // Calculate relative offset from leader
+                    float relativeOffsetX = group->offsetX - leaderBaseOffsetX;
+                    
+                    // Update X position
+                    transform->position.x = newX + relativeOffsetX;
+                    
+                    // Randomize Y positions based on toilet type (top or bottom)
+                    if (obstacle->isTopPart) {
+                        transform->position.y = randomTopY;
+                        obstacle->basePosition.y = randomTopY; // Update base position for oscillation
+                    } else {
+                        transform->position.y = randomTopY + toiletHeight + fixedGapHeight;
+                        obstacle->basePosition.y = randomTopY + toiletHeight + fixedGapHeight;
+                    }
+                    
+                    // Reset oscillation state for snow toilets
+                    obstacle->oscillationTimer = 0.0f;
+                    obstacle->pipeCleared = false;
+                    
+                    GN_LOG_DEBUG("Snow wrap: Reset toilet at x=" + std::to_string(transform->position.x) + 
+                               ", y=" + std::to_string(transform->position.y) + 
+                               ", isTop=" + std::to_string(obstacle->isTopPart));
+                }
+            }
+            
+            GN_LOG_INFO("Snow level wrap complete: group " + std::to_string(groupId) + 
+                       " repositioned to x=" + std::to_string(newX) + 
+                       " with randomized Y (top=" + std::to_string(randomTopY) + ")");
         } else {
             // Sewer and Desert levels: maintain original relative positioning
             for (Gnosis::Entity e : m_activeObstacles) {
@@ -2396,15 +2474,18 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         AddEntityToGroup(bottomToilet, groupId, false, 0.0f, fixedGapHeight + toiletHeight, groupWidth, GroupPattern::SnowScreenEdges);
         
         // Add GroupGap component to ensure proper HORIZONTAL spacing between groups
-        // ADJUSTED: 900px gap for tighter gameplay
-        GroupGap groupGap(900.0f, false, "snow_toilet_spacing");
+        // CRITICAL: Must match initialization spacing (1500px) for consistent gaps
+        GroupGap groupGap(1500.0f, false, "snow_toilet_spacing");
         m_ecsSystem->AddComponent<GroupGap>(topToilet, groupGap);
         
-        GN_LOG_INFO("Snow toilet pair: Applied 900px horizontal gap for group " + std::to_string(groupId));
+        GN_LOG_INFO("Snow toilet pair: Applied 1500px horizontal gap for group " + std::to_string(groupId));
         
         // Track obstacles for management
         m_activeObstacles.push_back(topToilet);
         m_activeObstacles.push_back(bottomToilet);
+        
+        // Ensure this snow toilet pair is registered in the obstacle groups map so wrapping and coin logic can find it
+        m_obstacleGroups[groupId] = { topToilet, bottomToilet };
         
         GN_LOG_INFO("Spawned oscillating snow toilet pair at x=" + std::to_string(x) + " with group " + std::to_string(groupId) + 
                    " - VERTICAL gap=" + std::to_string(fixedGapHeight) + "px, topY=" + std::to_string(topToiletY) + ", bottomY=" + std::to_string(bottomToiletY));
@@ -2598,81 +2679,101 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         m_activeObstacles.push_back(topToilet);
         m_activeObstacles.push_back(bottomToilet);
         
-        // CRITICAL: Spawn decorations in SEPARATE groups so they don't affect coin positioning
-        // Only the toilet pair should be in this group for coin calculations
+        // CRITICAL: Initialize group with toilets first
+        m_obstacleGroups[groupId] = { topToilet, bottomToilet };
         
-        // Spawn curtain (no group - purely decorative)
-        SpawnCastleCurtain(x, -1);
+        // Helper lambda to add decoration to group for wrapping
+        auto addToGroup = [&](Gnosis::Entity entity) {
+            if (entity != 0) {
+                m_obstacleGroups[groupId].push_back(entity);
+            }
+        };
+        
+        GN_LOG_INFO("Registered castle toilet group " + std::to_string(groupId) + " in m_obstacleGroups for wrapping");
+        
+        // FIXED: Include decorations IN THE SAME GROUP so they wrap with toilets
+        // Decorations don't affect coin positioning because they lack Obstacle component (coin calc requires Obstacle)
+        
+        // Spawn curtain (include in group for wrapping)
+        Gnosis::Entity curtain = SpawnCastleCurtain(x, groupId);
+        addToGroup(curtain);
         
         // Spawn decorative elements positioned relative to this toilet group
         // Floor torches: positioned to left and right of toilet group
         // Account for actual texture content (remove 16px padding from sprite dimensions)
-        float actualToiletWidth = (65.0f - 16.0f) * m_baseScale; // Actual toilet width without padding
+        float toiletWidthForTorchSpacing = (65.0f - 16.0f) * m_baseScale; // Actual toilet width without padding
         float leftTorchX = x - 80.0f; // Push left torch further left
-        float rightTorchX = x + actualToiletWidth + 80.0f; // Push right torch further right
+        float rightTorchX = x + toiletWidthForTorchSpacing + 80.0f; // Push right torch further right
         
-        // Spawn floor torches without group (purely decorative)
-        SpawnCastleFloorTorch(leftTorchX, -1, 0.0f);
-        SpawnCastleFloorTorch(rightTorchX, -1, 0.0f);
+        // Spawn floor torches (include in group for wrapping)
+        float leftTorchOffsetX = leftTorchX - x;
+        float rightTorchOffsetX = rightTorchX - x;
+        Gnosis::Entity leftTorch = SpawnCastleFloorTorch(leftTorchX, groupId, leftTorchOffsetX);
+        Gnosis::Entity rightTorch = SpawnCastleFloorTorch(rightTorchX, groupId, rightTorchOffsetX);
+        addToGroup(leftTorch);
+        addToGroup(rightTorch);
         
-        // Calculate positions for centerpieces in the gap between toilet groups
-        // The gap is 2000px wide, starting from the current toilet group
-        // Centerpiece: positioned in the TRUE CENTER of the gap (between this toilet and next)
-        float gapStartX = x; // Start of current gap (current toilet position)
-        float gapEndX = x + gapWidth; // End of current gap (next toilet position)
+        // SIMPLIFIED: Use same approach as coin positioning for consistency
+        // Gap between toilet groups: gapWidth is the distance between LEFT edges of consecutive toilets
+        const float actualToiletWidth = 64.0f * m_baseScale; // 512px at scale 8 - actual sprite width!
         
-        // Account for toilet width to get TRUE center of GAP (not center from toilet origin)
-        float toiletWidth = 65.0f * m_baseScale; // Actual toilet width
-        float centerX = gapStartX + toiletWidth + ((gapWidth - toiletWidth) * 0.5f); // TRUE center of gap space
+        // Calculate the TRUE center of the gap that PRECEDES this toilet pair
+        // This matches the coin positioning logic exactly
+        float currentToiletLeftEdge = x;
+        float previousToiletRightEdge = currentToiletLeftEdge - gapWidth + actualToiletWidth;
+        float gapCenterX = (previousToiletRightEdge + currentToiletLeftEdge) / 2.0f;
         
-        GN_LOG_INFO("[CASTLE_CENTERPIECE] Calculating center position:");
-        GN_LOG_INFO("[CASTLE_CENTERPIECE]   Toilet at X=" + std::to_string(x) + ", toiletWidth=" + std::to_string(toiletWidth) + "px");
-        GN_LOG_INFO("[CASTLE_CENTERPIECE]   Gap: start=" + std::to_string(gapStartX) + ", end=" + std::to_string(gapEndX) + ", width=" + std::to_string(gapWidth) + "px");
-        GN_LOG_INFO("[CASTLE_CENTERPIECE]   TRUE CENTER X = " + std::to_string(centerX) + " (gapStart + toiletWidth + (gapWidth - toiletWidth) * 0.5)");
+        GN_LOG_INFO("[CASTLE_DECORATIONS] Toilet at X=" + std::to_string(x) + ", width=" + std::to_string(actualToiletWidth));
+        GN_LOG_INFO("[CASTLE_DECORATIONS] Gap center X=" + std::to_string(gapCenterX) + " (between " + std::to_string(previousToiletRightEdge) + " and " + std::to_string(currentToiletLeftEdge) + ")");
         
         // Chandeliers: positioned SYMMETRICALLY around the gap center
-        // Use the same 3-point symmetry system: toilet1 center, gap center, toilet2 center
-        // CRITICAL: Chandelier is 32px wide (256px at scale 8), position is LEFT edge
-        // To center visually, we need to offset by half the chandelier width
         const float chandelierWidth = 32.0f * m_baseScale; // 256px at scale 8
         const float chandelierHalfWidth = chandelierWidth * 0.5f; // 128px
-        const float chandelierOffsetFromCenter = 400.0f; // Distance from gap center (symmetric)
+        const float chandelierOffsetFromCenter = 500.0f; // Distance from gap center
         
-        // Position chandelier LEFT edges, accounting for width to achieve visual symmetry
-        float leftChandelierX = centerX - chandelierOffsetFromCenter - chandelierHalfWidth;
-        float rightChandelierX = centerX + chandelierOffsetFromCenter - chandelierHalfWidth;
+        // Both chandeliers in CURRENT group (both are in the gap BEFORE this toilet)
+        float leftChandelierX = gapCenterX - chandelierOffsetFromCenter - chandelierHalfWidth;
+        float rightChandelierX = gapCenterX + chandelierOffsetFromCenter - chandelierHalfWidth;
         
-        GN_LOG_INFO("[CASTLE_CHANDELIER] Left at X=" + std::to_string(leftChandelierX) + " (center - " + std::to_string(chandelierOffsetFromCenter) + "px - half width)");
-        GN_LOG_INFO("[CASTLE_CHANDELIER] Right at X=" + std::to_string(rightChandelierX) + " (center + " + std::to_string(chandelierOffsetFromCenter) + "px - half width) SYMMETRIC");
-        GN_LOG_INFO("[CASTLE_CHANDELIER] Gap center=" + std::to_string(centerX) + ", chandelier visual centers at " + std::to_string(leftChandelierX + chandelierHalfWidth) + " and " + std::to_string(rightChandelierX + chandelierHalfWidth));
+        float leftChandelierOffsetX = leftChandelierX - x;
+        float rightChandelierOffsetX = rightChandelierX - x;
         
-        // Spawn chandeliers without group (purely decorative)
-        SpawnCastleChandelier(leftChandelierX, -1, 0.0f);
-        SpawnCastleChandelier(rightChandelierX, -1, 0.0f);
+        Gnosis::Entity leftChandelier = SpawnCastleChandelier(leftChandelierX, groupId, leftChandelierOffsetX);
+        Gnosis::Entity rightChandelier = SpawnCastleChandelier(rightChandelierX, groupId, rightChandelierOffsetX);
+        addToGroup(leftChandelier);
+        addToGroup(rightChandelier);
+        
+        GN_LOG_INFO("[CASTLE_CHANDELIER] Left at X=" + std::to_string(leftChandelierX) + ", Right at X=" + std::to_string(rightChandelierX) + " (gap center=" + std::to_string(gapCenterX) + ")");
         
         // Spawn centerpiece in center of the gap - randomly choose between:
         // 1. Torch pillar, 2. Decorative painting, 3. Spike ball obstacle
         static int centerCounter = 0;
         int centerpieceType = centerCounter % 3; // 3 different centerpiece types
         
-        // Centerpieces spawn without group (decorative/obstacles manage themselves)
+        // Centerpiece positioned at gap center (matching coin center)
+        float centerOffsetX = gapCenterX - x;
+        Gnosis::Entity centerpiece = 0;
         switch (centerpieceType) {
             case 0:
-                SpawnCastleTorchPillar(centerX, -1, 0.0f);
+                centerpiece = SpawnCastleTorchPillar(gapCenterX, groupId, centerOffsetX);
                 break;
             case 1:
-                SpawnCastleDecorativePainting(centerX, -1, 0.0f);
+                centerpiece = SpawnCastleDecorativePainting(gapCenterX, groupId, centerOffsetX);
                 break;
             case 2:
-                SpawnCastleSpikeBall(centerX, -1, 0.0f);
+                centerpiece = SpawnCastleSpikeBall(gapCenterX, groupId, centerOffsetX);
                 break;
         }
+        addToGroup(centerpiece);
         centerCounter++;
+        
+        GN_LOG_INFO("[CASTLE_CENTERPIECE] Type=" + std::to_string(centerpieceType) + " at X=" + std::to_string(gapCenterX) + ", offset from toilet=" + std::to_string(centerOffsetX));
+        GN_LOG_INFO("[CASTLE_GROUP] Group " + std::to_string(groupId) + " has " + std::to_string(m_obstacleGroups[groupId].size()) + " total members (toilets + decorations)");
         
         GN_LOG_INFO("[CASTLE_TOILET] Spawned oscillating gold toilet pair at x=" + std::to_string(x) + " with group " + std::to_string(groupId));
     }
 
-    void ObstacleSystem::SpawnCastleCurtain(float x, int groupId /* -1 = no group */) {
+    Gnosis::Entity ObstacleSystem::SpawnCastleCurtain(float x, int groupId /* -1 = no group */) {
         // Spawn curtain centered on toilet pair, spanning full screen height
         // Curtains are 256x512 - use screen-based scaling like sewer backgrounds (not baseScale)
         const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
@@ -2720,9 +2821,11 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         m_activeObstacles.push_back(curtain);
         
         GN_LOG_INFO("Spawned castle curtain at x=" + std::to_string(curtainX) + " (scale=" + std::to_string(curtainScale) + ", centered on toilet at " + std::to_string(x) + ") with group " + std::to_string(groupId));
+        
+        return curtain;
     }
 
-    void ObstacleSystem::SpawnCastleTorchPillar(float x, int groupId /* -1 = no group */, float offsetX) {
+    Gnosis::Entity ObstacleSystem::SpawnCastleTorchPillar(float x, int groupId /* -1 = no group */, float offsetX) {
         // Create animated torch pillar (4-frame spritesheet, 96x512 frames)
         const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
         float screenHeight = screenInfo.pixelHeight;
@@ -2775,9 +2878,11 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         m_activeObstacles.push_back(torchPillar);
         
         GN_LOG_INFO("[CASTLE_PILLAR] Spawned at X=" + std::to_string(pillarX) + ", Y=" + std::to_string(centerY) + " (center=" + std::to_string(x) + ", pillarWidth=" + std::to_string(96.0f * m_baseScale) + "), group=" + std::to_string(groupId));
+        
+        return torchPillar;
     }
 
-    void ObstacleSystem::SpawnCastleChandelier(float x, int groupId /* -1 = no group */, float offsetX) {
+    Gnosis::Entity ObstacleSystem::SpawnCastleChandelier(float x, int groupId /* -1 = no group */, float offsetX) {
         // Create animated chandelier (32x34 sprite) - positioned to touch top of screen
         float chandelierY = 0.0f; // Touch top of screen
         
@@ -2821,9 +2926,11 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         m_activeObstacles.push_back(chandelier);
         
         GN_LOG_INFO("[CASTLE_CHANDELIER] Spawned at X=" + std::to_string(x) + ", Y=0 (top), width=" + std::to_string(32.0f * m_baseScale) + ", group=" + std::to_string(groupId));
+        
+        return chandelier;
     }
 
-    void ObstacleSystem::SpawnCastleFloorTorch(float x, int groupId /* -1 = no group */, float offsetX) {
+    Gnosis::Entity ObstacleSystem::SpawnCastleFloorTorch(float x, int groupId /* -1 = no group */, float offsetX) {
         // Create animated floor torch (20x64 sprite)
         float screenHeight = 2556.0f; // iPhone 16 portrait height
         float torchHeight = 64.0f * m_baseScale;
@@ -2869,9 +2976,11 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         m_activeObstacles.push_back(floorTorch);
         
         GN_LOG_INFO("[CASTLE_FLOORTORCH] Spawned at X=" + std::to_string(x) + ", Y=" + std::to_string(torchY) + ", group=" + std::to_string(groupId));
+        
+        return floorTorch;
     }
 
-    void ObstacleSystem::SpawnCastleDecorativePainting(float x, int groupId /* -1 = no group */, float offsetX) {
+    Gnosis::Entity ObstacleSystem::SpawnCastleDecorativePainting(float x, int groupId /* -1 = no group */, float offsetX) {
         // Create decorative painting (96x96 sprite) - positioned in center between toilet groups
         float screenHeight = 2556.0f; // iPhone 16 portrait height
         float paintingWidth = 96.0f * 6.0f; // 6x scaling to make paintings prominent
@@ -2914,9 +3023,11 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         
         GN_LOG_INFO("[CASTLE_PAINTING] Spawned CENTERED at X=" + std::to_string(x) + " (sprite top-left=" + std::to_string(paintingX) + 
                    ", width=" + std::to_string(paintingWidth) + "), Y=" + std::to_string(paintingY) + ", group=" + std::to_string(groupId));
+        
+        return painting;
     }
     
-    void ObstacleSystem::SpawnCastleSpikeBall(float x, int groupId /* -1 = no group */, float offsetX) {
+    Gnosis::Entity ObstacleSystem::SpawnCastleSpikeBall(float x, int groupId /* -1 = no group */, float offsetX) {
         // Create rotating spike ball obstacle with base - positioned in gap between toilet groups
         float screenHeight = 2556.0f; // iPhone 16 portrait height
         float spikeBallHeight = 90.0f * m_baseScale; // 90px spike ball height
@@ -3090,11 +3201,15 @@ std::vector<Gnosis::Entity> ObstacleSystem::GetGroupEntities(int groupId) const 
         m_spikeBallToBase[spikeBall] = base;
         
         GN_LOG_INFO("Spawned castle spike ball obstacle CENTERED at x=" + std::to_string(x) + " y=" + std::to_string(centerY) + " with group " + std::to_string(groupId));
+        
+        return spikeBall; // Return the spike ball (obstacle), not the base (decorative)
     }
 
     void ObstacleSystem::UpdateSpikeBallRotations(float deltaTime) {
         // Update rotation for all spike balls using PivotRotationRenderer
-        for (auto& [entity, rotationSpeed] : m_spikeBallRotationSpeeds) {
+        for (auto it = m_spikeBallRotationSpeeds.begin(); it != m_spikeBallRotationSpeeds.end(); ++it) {
+            Gnosis::Entity entity = it->first;
+            float rotationSpeed = it->second;
             Transform* transform = m_ecsSystem->GetComponent<Transform>(entity);
             PivotRotationRenderer* pivotRenderer = m_ecsSystem->GetComponent<PivotRotationRenderer>(entity);
             Hitbox* hitbox = m_ecsSystem->GetComponent<Hitbox>(entity);

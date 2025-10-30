@@ -90,12 +90,12 @@ namespace GameCore {
         Gnosis::Entity CreateCactusEntity(const std::string& texture, float x, float y, float scale, bool isDancing = false, float width = 64.0f, float height = 90.0f);
         
         // Castle decorative element helpers
-        void SpawnCastleCurtain(float x, int groupId);
-        void SpawnCastleTorchPillar(float x, int groupId, float offsetX);
-        void SpawnCastleChandelier(float x, int groupId, float offsetX);
-        void SpawnCastleFloorTorch(float x, int groupId, float offsetX);
-        void SpawnCastleDecorativePainting(float x, int groupId, float offsetX);
-        void SpawnCastleSpikeBall(float x, int groupId, float offsetX);
+        Gnosis::Entity SpawnCastleCurtain(float x, int groupId);
+        Gnosis::Entity SpawnCastleTorchPillar(float x, int groupId, float offsetX);
+        Gnosis::Entity SpawnCastleChandelier(float x, int groupId, float offsetX);
+        Gnosis::Entity SpawnCastleFloorTorch(float x, int groupId, float offsetX);
+        Gnosis::Entity SpawnCastleDecorativePainting(float x, int groupId, float offsetX);
+        Gnosis::Entity SpawnCastleSpikeBall(float x, int groupId, float offsetX);
         
         // Cactus system
         void InitializeCactusSystem();

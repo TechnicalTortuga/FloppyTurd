@@ -2492,7 +2492,7 @@ namespace GameCore {
                 buttonSprite.visible = false;
 
                 UIElement buttonElement("UNLOCK", "FloppyButtonBlue", "FloppyButtonBlueHover");
-                buttonElement.fontSize = m_buttonFontSize;
+                buttonElement.fontSize = m_globalUIFontSize; // Match main menu button font size (80.0f for mobile)
                 buttonElement.textColor = Gnosis::GNColor(255, 255, 255, 255);
                 buttonElement.centerTextHorizontally = true;
                 buttonElement.centerTextVertically = true;
