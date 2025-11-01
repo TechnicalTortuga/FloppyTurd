@@ -20,7 +20,7 @@ namespace GameCore {
             Pickup* p = m_ecsSystem->GetComponent<Pickup>(e);
             Transform* t = m_ecsSystem->GetComponent<Transform>(e);
             if (!p || !t || !p->isActive) continue;
-            if (!isCoinType(p->pickupType) && p->bobbingAmplitude > 0.0f && p->bobbingSpeed > 0.0f) {
+            if (!IsPickupCoinType(p->type) && p->bobbingAmplitude > 0.0f && p->bobbingSpeed > 0.0f) {
                 // Establish base Y once per activation
                 if (p->bobbingTimer == 0.0f) {
                     p->bobbingBaseY = t->position.y;
@@ -50,24 +50,12 @@ namespace GameCore {
             return groups;
         };
 
+        // 3) REMOVED: Legacy coin spawning loop - all spawning now handled by LevelManager orchestrator
+        // LevelManager calls SpawnCoinsForGroup() during SpawnGroup() initialization
+        // Coin repositioning happens automatically when groups wrap via UpdateGroupMemberPositions()
+        
+        // Compute current active groups for cleanup
         std::unordered_set<int> currentGroups = recomputeActiveGroups();
-
-        for (int groupId : currentGroups) {
-            if (m_groupCoins.find(groupId) == m_groupCoins.end()) {
-                if (m_levelManager->GetObstacleSystem()->IsGroupReadyForCoins(groupId)) {
-                    spawnCoinsForGroup(groupId);
-                }
-            }
-        }
-
-        // 3) Consume wrap events and reposition/reactivate coins
-        for (int wrapped : m_levelManager->ConsumeWrappedGroups()) {
-            // GN_LOG_DEBUG("PickupSystem: Repositioning coins for wrapped group " + std::to_string(wrapped));
-            repositionCoinsForGroup(wrapped);
-        }
-
-        // Recompute active groups after handling wraps so we don't remove groups that became re-attached
-        currentGroups = recomputeActiveGroups();
 
         // 4) Remove coin groups that no longer exist
         removeGroupIfMissing(currentGroups);
@@ -141,7 +129,7 @@ namespace GameCore {
             //              " active=true visible=" + (s->visible ? "true" : "false"));
 
             // Award effects
-            if (isCoinType(p->pickupType)) {
+            if (IsPickupCoinType(p->type)) {
                 // Performance: Commented out expensive debug logging
                 // std::string idxStr = "n/a";
                 // auto idxIt = m_pickupIndex.find(e);
@@ -153,7 +141,7 @@ namespace GameCore {
                 //              " visible=" + (s->visible ? "true" : "false"));
 
                 // Call callback function instead of directly modifying sessionCoins
-                int coinValue = (p->pickupType == "GoldCoin" ? 1 : p->value);
+                int coinValue = (p->type == PickupType::GoldCoin ? 1 : p->value);
                 if (m_coinCollectedCallback) {
                     m_coinCollectedCallback(coinValue);
                 } else {
@@ -179,10 +167,10 @@ namespace GameCore {
                 std::string soundFile = "SmallHealthPickup.wav"; // Default to small
                 int healAmount = 1; // Default heal amount
 
-                if (p->pickupType == "PooHeartBig") {
+                if (p->type == PickupType::HeartBig) {
                     soundFile = "BigHealthPickup.wav";
                     healAmount = 3; // Big hearts heal 3 slices like in old system
-                } else if (p->pickupType == "PooHeart") {
+                } else if (p->type == PickupType::Heart) {
                     soundFile = "SmallHealthPickup.wav";
                     healAmount = 1; // Small hearts heal 1 slice
                 }
@@ -224,31 +212,40 @@ namespace GameCore {
         }
     }
 
-    void PickupSystem::spawnCoinsForGroup(int groupId) {
-        if (!m_ecsSystem || !m_levelManager || !m_levelConfig) return;
-        if (!m_levelManager->GetObstacleSystem()->IsGroupReadyForCoins(groupId)) return;
+    // NEW ORCHESTRATOR PATTERN: Public method that returns created entities
+    std::vector<Gnosis::Entity> PickupSystem::SpawnCoinsForGroup(int groupId, GroupPattern pattern, float gapWidth) {
+        if (!m_ecsSystem || !m_levelManager || !m_levelConfig) return {};
+        if (!m_levelManager->GetObstacleSystem()->IsGroupReadyForCoins(groupId)) return {};
 
-        auto pattern = m_levelManager->GetObstacleSystem()->DetectGroupPattern(groupId);
-        auto positions = m_levelManager->GetObstacleSystem()->CalculateCoinPositionsForGroup(groupId, pattern);
+        auto positions = m_levelManager->GetObstacleSystem()->CalculateCoinPositionsForGroup(groupId, pattern, gapWidth);
 
         std::vector<Gnosis::Entity> coins;
 
-        auto choosePickupType = [this]() -> std::string {
+        auto choosePickupType = [this]() -> PickupType {
             if (!m_levelConfig || m_levelConfig->pickupRatios.empty()) {
-                return std::string("GoldCoin");
+                return PickupType::GoldCoin;
             }
+            // NOTE: Config still uses strings, need to convert
             float total = 0.0f;
             for (const auto& r : m_levelConfig->pickupRatios) total += (r.weight > 0.0f ? r.weight : 0.0f);
-            if (total <= 0.0f) return std::string("GoldCoin");
+            if (total <= 0.0f) return PickupType::GoldCoin;
             float roll = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
             float target = roll * total;
             float accum = 0.0f;
             for (const auto& r : m_levelConfig->pickupRatios) {
                 float w = (r.weight > 0.0f ? r.weight : 0.0f);
                 accum += w;
-                if (target <= accum) return r.pickupType;
+                if (target <= accum) {
+                    // Convert string to enum
+                    if (r.pickupType == "GoldCoin") return PickupType::GoldCoin;
+                    if (r.pickupType == "BlueCoin") return PickupType::BlueCoin;
+                    if (r.pickupType == "RedCoin") return PickupType::RedCoin;
+                    if (r.pickupType == "Heart" || r.pickupType == "PooHeart") return PickupType::Heart;
+                    if (r.pickupType == "HeartBig" || r.pickupType == "PooHeartBig") return PickupType::HeartBig;
+                    return PickupType::GoldCoin;
+                }
             }
-            return m_levelConfig->pickupRatios.back().pickupType;
+            return PickupType::GoldCoin;
         };
 
         for (const auto& pos : positions) {
@@ -262,37 +259,36 @@ namespace GameCore {
             Transform tr(Gnosis::GNVector2(pos.x - halfCell, pos.y - halfCell), 0.0f, Gnosis::GNVector2(scale, scale));
             m_ecsSystem->AddComponent<Transform>(e, tr);
 
-            const std::string type = choosePickupType();
+            const PickupType type = choosePickupType();
 
             Sprite sprite;
-            if (isCoinType(type)) {
-                sprite = Sprite(type, 16.0f, 16.0f, 16, 16, 10, 0.1f);
+            if (IsPickupCoinType(type)) {
+                sprite = Sprite(GetTextureForPickup(type), 16.0f, 16.0f, 16, 16, 10, 0.1f);
                 sprite.isAnimated = true;
                 sprite.playing = true;
                 sprite.loop = true;
             } else {
                 // Hearts are 32x32 static sprites
-                sprite = Sprite(type, 32.0f, 32.0f);
+                sprite = Sprite(GetTextureForPickup(type), 32.0f, 32.0f);
                 sprite.isAnimated = false;
                 sprite.playing = false;
                 sprite.loop = false;
             }
             sprite.color = Gnosis::GNColor(255, 255, 255, 255);
             sprite.visible = true;
-            sprite.layer = 5; // Layer 5 to render pickups ABOVE snowmen (layer 3) and player (layer 4)
+            sprite.layer = 5; // Layer 5 = PickupsAndEffects (above decorations)
             m_ecsSystem->AddComponent<Sprite>(e, sprite);
 
-            Pickup pickup;
-            pickup.pickupType = type;
-            if (type == "GoldCoin") pickup.value = 1; else if (type == "BlueCoin") pickup.value = 2; else if (type == "RedCoin") pickup.value = 5; else pickup.value = 1;
+            Pickup pickup(type, 0);  // Use enum constructor
+            if (type == PickupType::GoldCoin) pickup.value = 1;
+            else if (type == PickupType::BlueCoin) pickup.value = 2;
+            else if (type == PickupType::RedCoin) pickup.value = 5;
+            else pickup.value = 1;
             pickup.isActive = true;
             // Hearts bob slightly; coins rely on spin animation only
-            if (!isCoinType(type)) {
+            if (!IsPickupCoinType(type)) {
                 pickup.bobbingSpeed = 1.5f;
                 pickup.bobbingAmplitude = 6.0f;
-            } else {
-                pickup.bobbingSpeed = 0.0f;
-                pickup.bobbingAmplitude = 0.0f;
             }
             m_ecsSystem->AddComponent<Pickup>(e, pickup);
 
@@ -301,20 +297,18 @@ namespace GameCore {
 
             Hitbox hb;
             hb.type = ColliderType::Rectangle;
-            // Tighter hitboxes: coins 16x16, hearts 20x20 (reduced from 32x32 for fairness)
-            hb.width = isCoinType(type) ? 16.0f : 20.0f;
-            hb.height = isCoinType(type) ? 16.0f : 20.0f;
+            // Tighter hitboxes: coins 16x16, hearts 20x20
+            hb.width = IsPickupCoinType(type) ? 16.0f : 20.0f;
+            hb.height = IsPickupCoinType(type) ? 16.0f : 20.0f;
             hb.offsetX = 0.0f;
             hb.offsetY = 0.0f;
             m_ecsSystem->AddComponent<Hitbox>(e, hb);
 
-            // Type-specific visual centering within the shared cell (128x128 at scale)
-            // Coins (16x16) already centered by cell origin above; hearts (32x32) need -16 X and -16 Y
-            if (!isCoinType(type)) {
+            // Type-specific visual centering
+            if (!IsPickupCoinType(type)) {
                 Transform* tt = m_ecsSystem->GetComponent<Transform>(e);
                 if (tt) {
-                    // Heart is 32x32 vs coin cell 16x16. At scale, extra half-extent = (32-16)*scale/2
-                    float extraHalf = (32.0f - 16.0f) * tt->scale.x * 0.5f; // typically 64px
+                    float extraHalf = (32.0f - 16.0f) * tt->scale.x * 0.5f;
                     tt->position.x -= extraHalf;
                     tt->position.y -= extraHalf;
                 }
@@ -327,150 +321,12 @@ namespace GameCore {
         }
 
         m_groupCoins[groupId] = coins;
+        return coins;  // NEW: Return entities for manifest tracking
     }
 
-    void PickupSystem::repositionCoinsForGroup(int groupId) {
-        auto it = m_groupCoins.find(groupId);
-        if (!m_ecsSystem || !m_levelManager || it == m_groupCoins.end() || it->second.empty()) return;
+    // LEGACY VERSION DELETED - Use public SpawnCoinsForGroup() with enum-based types
 
-        auto pattern = m_levelManager->GetObstacleSystem()->DetectGroupPattern(groupId);
-        auto newPositions = m_levelManager->GetObstacleSystem()->CalculateCoinPositionsForGroup(groupId, pattern);
-
-        // TEMPORARY: Enable detailed logging for Castle level coin wrap debugging
-        GN_LOG_INFO("PickupSystem::repositionCoinsForGroup: groupId=" + std::to_string(groupId) + 
-                     " coins=" + std::to_string(it->second.size()) + 
-                     " newPositions=" + std::to_string(newPositions.size()) + 
-                     " pattern=" + std::to_string(static_cast<int>(pattern)));
-        
-        // Log the actual new positions for debugging
-        for (size_t i = 0; i < newPositions.size(); ++i) {
-            GN_LOG_INFO("PickupSystem::repositionCoinsForGroup: newPosition[" + std::to_string(i) + "] = (" + 
-                         std::to_string(newPositions[i].x) + ", " + std::to_string(newPositions[i].y) + ")");
-        }
-
-        // Helper function to re-roll pickup types using current level ratios
-        auto choosePickupType = [this]() -> std::string {
-            if (!m_levelConfig || m_levelConfig->pickupRatios.empty()) {
-                return std::string("GoldCoin");
-            }
-            float total = 0.0f;
-            for (const auto& r : m_levelConfig->pickupRatios) total += (r.weight > 0.0f ? r.weight : 0.0f);
-            if (total <= 0.0f) return std::string("GoldCoin");
-            float roll = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
-            float target = roll * total;
-            float accum = 0.0f;
-            for (const auto& r : m_levelConfig->pickupRatios) {
-                float w = (r.weight > 0.0f ? r.weight : 0.0f);
-                accum += w;
-                if (target <= accum) return r.pickupType;
-            }
-            return m_levelConfig->pickupRatios.back().pickupType;
-        };
-
-        auto& coins = it->second;
-        
-        // Process all existing coins first - reposition and reactivate
-        for (size_t i = 0; i < coins.size() && i < newPositions.size(); ++i) {
-            Gnosis::Entity e = coins[i];
-            Transform* t = m_ecsSystem->GetComponent<Transform>(e);
-            Sprite* s = m_ecsSystem->GetComponent<Sprite>(e);
-            Pickup* p = m_ecsSystem->GetComponent<Pickup>(e);
-            if (!t || !s || !p) continue;
-
-            // RE-ROLL pickup type for this coin using current level ratios
-            const std::string newType = choosePickupType();
-            const bool wasOriginalCoin = isCoinType(p->pickupType);
-            const bool isNewCoin = isCoinType(newType);
-            
-            // Update pickup component with new type and value
-            p->pickupType = newType;
-            if (newType == "GoldCoin") p->value = 1;
-            else if (newType == "BlueCoin") p->value = 2;
-            else if (newType == "RedCoin") p->value = 5;
-            else p->value = 1;
-
-            // Update sprite for new pickup type
-            if (isNewCoin) {
-                *s = Sprite(newType, 16.0f, 16.0f, 16, 16, 10, 0.1f);
-                s->isAnimated = true;
-                s->playing = true;
-                s->loop = true;
-                // Reset bobbing for coins
-                p->bobbingSpeed = 0.0f;
-                p->bobbingAmplitude = 0.0f;
-            } else {
-                // Hearts are 32x32 static sprites
-                *s = Sprite(newType, 32.0f, 32.0f);
-                s->isAnimated = false;
-                s->playing = false;
-                s->loop = false;
-                // Hearts bob slightly
-                p->bobbingSpeed = 1.5f;
-                p->bobbingAmplitude = 6.0f;
-            }
-            s->color = Gnosis::GNColor(255, 255, 255, 255);
-            s->visible = true;
-            s->layer = 3;
-
-            // Update hitbox for new pickup type
-            Hitbox* hb = m_ecsSystem->GetComponent<Hitbox>(e);
-            if (hb) {
-                hb->width = isNewCoin ? 16.0f : 32.0f;
-                hb->height = isNewCoin ? 16.0f : 32.0f;
-            }
-
-            // Reposition coin
-            const float cellBase = 16.0f;
-            const float halfCell = cellBase * t->scale.x * 0.5f; // 64px at scale 8
-            const auto& np = newPositions[i];
-            t->position.x = np.x - halfCell;
-            t->position.y = np.y - halfCell;
-
-            // Re-apply heart centering shift relative to cell origin if needed
-            if (!isNewCoin) {
-                float extraHalf = (32.0f - 16.0f) * t->scale.x * 0.5f;
-                t->position.x -= extraHalf;
-                t->position.y -= extraHalf;
-            }
-
-            // COMPLETELY RESET coin state - this is critical for reactivation
-            p->isActive = true;
-            p->bobbingTimer = 0.0f;
-            p->bobbingBaseY = t->position.y;
-
-            // Remove from active tracking if it was there (to avoid duplicates)
-            auto trackingIt = m_pickupIndex.find(e);
-            if (trackingIt != m_pickupIndex.end()) {
-                size_t oldIdx = trackingIt->second;
-                size_t lastIdx = m_activePickups.size() - 1;
-                if (oldIdx < m_activePickups.size() && oldIdx != lastIdx) {
-                    Gnosis::Entity moved = m_activePickups[lastIdx];
-                    m_activePickups[oldIdx] = moved;
-                    m_pickupIndex[moved] = oldIdx;
-                }
-                if (!m_activePickups.empty()) {
-                    m_activePickups.pop_back();
-                }
-                m_pickupIndex.erase(trackingIt);
-            }
-            
-            // Re-add to active tracking (guarantees fresh tracking)
-            m_pickupIndex[e] = m_activePickups.size();
-            m_activePickups.push_back(e);
-
-            // Performance: Commented out expensive per-pickup reposition logging
-            // GN_LOG_DEBUG(std::string("PickupSystem: repositioned&rerolled id=") + std::to_string(e) +
-            //              " group=" + std::to_string(groupId) +
-            //              " newType=" + newType +
-            //              " pos=(" + std::to_string(t->position.x) + "," + std::to_string(t->position.y) + ")" +
-            //              " active=" + (p->isActive ? "true" : "false") +
-            //              " trackingIdx=" + std::to_string(m_pickupIndex[e]));
-        }
-
-        // Performance: Commented out expensive reposition logging
-        // GN_LOG_DEBUG("PickupSystem::repositionCoinsForGroup completed: groupId=" + std::to_string(groupId) + 
-        //              " activePickups=" + std::to_string(m_activePickups.size()));
-    }
+    // LEGACY VERSION DELETED - Coin repositioning now handled by LevelManager::UpdateGroupMemberPositions()
 
     void PickupSystem::removeGroupIfMissing(const std::unordered_set<int>& currentGroups) {
         if (!m_ecsSystem) return;
@@ -530,8 +386,8 @@ void PickupSystem::applyMagnetEffects(float deltaTime) {
             continue;
         }
 
-        bool isCoin = isCoinType(pickupComp->pickupType);
-        bool isHeart = pickupComp->pickupType == "PooHeart" || pickupComp->pickupType == "PooHeartBig";
+        bool isCoin = IsPickupCoinType(pickupComp->type);
+        bool isHeart = IsPickupHeartType(pickupComp->type);
 
         // Check if magnet is enabled for this pickup type
         bool magnetEnabled = (isCoin && m_coinMagnetEnabled) || (isHeart && m_heartMagnetEnabled);
@@ -562,11 +418,10 @@ void PickupSystem::applyMagnetEffects(float deltaTime) {
             transform->position.x += dirX * magnetStrength;
             transform->position.y += dirY * magnetStrength;
 
-            // Debug logging (only for coins to avoid spam)
-            if (isCoin && pickupComp->pickupType == "GoldCoin") {
+            // Debug logging (only for gold coins to avoid spam)
+            if (isCoin && pickupComp->type == PickupType::GoldCoin) {
                 // Performance: Commented out expensive per-pickup debug logging
-                // GN_LOG_DEBUG("Coin Magnet: " + pickupComp->pickupType +
-                //              " distance=" + std::to_string(distance) +
+                // GN_LOG_DEBUG("Coin Magnet: GoldCoin distance=" + std::to_string(distance) +
                 //              " multiplier=" + std::to_string(strengthMultiplier) +
                 //              " move=(" + std::to_string(dirX * magnetStrength) + ", " +
                 //              std::to_string(dirY * magnetStrength) + ")");

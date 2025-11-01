@@ -21,6 +21,7 @@ namespace GameCore {
     LevelManager::LevelManager(Gnosis::ECS* ecsSystem)
         : m_ecsSystem(ecsSystem)
         , m_renderSystem(nullptr)  // 🎯 NEW: Initialize RenderSystem reference
+        , m_pickupSystem(nullptr)  // NEW: Initialize PickupSystem reference for orchestrator
         , m_isLoaded(false)
         , m_currentLevelId(0)
         , m_currentLevelConfig(0, "")
@@ -105,6 +106,11 @@ namespace GameCore {
         GN_LOG_INFO("Initializing ObstacleSystem for level " + std::to_string(levelId));
         m_obstacleSystem->InitializeForLevel(levelId, m_currentLevelConfig);
         GN_LOG_INFO("ObstacleSystem initialized successfully for level " + std::to_string(levelId));
+        
+        // Spawn initial obstacle groups using orchestrator pattern
+        GN_LOG_INFO("Spawning initial groups for level " + std::to_string(levelId));
+        SpawnInitialGroups(levelId);
+        GN_LOG_INFO("Initial groups spawned successfully for level " + std::to_string(levelId));
 
 
         
@@ -136,6 +142,11 @@ namespace GameCore {
         }
         
         GN_LOG_INFO("Unloading level " + std::to_string(m_currentLevelId));
+        
+        // Clear group manifests
+        m_groupManifests.clear();
+        m_nextGroupId = 1;  // Reset group ID counter
+        GN_LOG_INFO("Cleared " + std::to_string(m_groupManifests.size()) + " group manifests");
         
         // Cleanup ObstacleSystem
         if (m_obstacleSystem) {
@@ -169,6 +180,12 @@ namespace GameCore {
         LoadLevel(levelId);
 
         GN_LOG_INFO("Level " + std::to_string(levelId) + " reset");
+    }
+    
+    void LevelManager::ClearGroupManifests() {
+        m_groupManifests.clear();
+        m_nextGroupId = 1;
+        GN_LOG_INFO("Cleared all group manifests, reset group ID counter to 1");
     }
 
     void LevelManager::ResetBackgroundPositions() {
@@ -273,17 +290,41 @@ namespace GameCore {
     }
 
     void LevelManager::UpdateObstacleSystem(float deltaTime, float worldScrollDistance) {
-        if (m_obstacleSystem) {
-            m_obstacleSystem->Update(deltaTime, worldScrollDistance);
+        if (!m_obstacleSystem) return;
+        
+        // Step 1: Update obstacle animations (oscillations, spike balls, cactus)
+        m_obstacleSystem->Update(deltaTime, worldScrollDistance);
+        
+        // Step 2: ORCHESTRATOR PATTERN - Check manifests for groups needing wrapping
+        // LevelManager owns manifests and calculates wrap detection using rightmostMemberOffsetX
+        for (auto& pair : m_groupManifests) {
+            int groupId = pair.first;
+            GroupManifest& manifest = pair.second;
+            
+            // Skip if no leader
+            if (manifest.leaderEntity == 0) continue;
+            
+            // Get leader position
+            Transform* leaderTransform = m_ecsSystem->GetComponent<Transform>(manifest.leaderEntity);
+            if (!leaderTransform) continue;
+            
+            // Calculate rightmost member's world position
+            float rightmostWorldX = leaderTransform->position.x + manifest.rightmostMemberOffsetX;
+            
+            // Determine wrap threshold based on gap width
+            float wrapThreshold = -(manifest.gapWidth / 2.0f);
+            
+            // Wrap if rightmost member is off-screen
+            if (rightmostWorldX < wrapThreshold) {
+                GN_LOG_INFO("[LevelManager] Group " + std::to_string(groupId) + 
+                           " needs wrap: rightmost=" + std::to_string(rightmostWorldX) + 
+                           ", threshold=" + std::to_string(wrapThreshold));
+                WrapGroup(groupId);
+            }
         }
     }
 
-    std::vector<int> LevelManager::ConsumeWrappedGroups() {
-        if (m_obstacleSystem) {
-            return m_obstacleSystem->ConsumeWrappedGroups();
-        }
-        return {};
-    }
+    // REMOVED: ConsumeWrappedGroups() - wrap detection now handled directly in UpdateObstacleSystem()
 
     std::vector<Gnosis::Entity> LevelManager::GetActiveObstacles() const {
         if (m_obstacleSystem) {
@@ -1595,15 +1636,7 @@ namespace GameCore {
         }
     }
 
-    // REMOVED: WrapGroupAroundScreen - now handled by ObstacleSystem
-
-    std::vector<int> LevelManager::GetAndClearWrappedGroups() {
-        // Delegate to ObstacleSystem
-        if (m_obstacleSystem) {
-            return m_obstacleSystem->GetAndClearWrappedGroups();
-        }
-        return {};
-    }
+    // LEGACY DELETED: GetAndClearWrappedGroups() - wrap detection now internal to LevelManager orchestrator
     
     // ============================================================================
     // New Unified Coin System Implementation
@@ -2222,6 +2255,508 @@ namespace GameCore {
         GN_LOG_INFO("[RESET] " + std::to_string(enemyCount) + " enemies reset (removed " + 
                    std::to_string(removedCount) + " rat minions) with " + 
                    std::to_string(ENEMY_SPACING) + "px spacing - Y positions PRESERVED, kept VISIBLE and ACTIVE");
+    }
+
+    // ============================================================================
+    // GROUP MANIFEST SYSTEM IMPLEMENTATION (NEW ORCHESTRATOR PATTERN)
+    // ============================================================================
+    
+    GroupManifest* LevelManager::GetGroupManifest(int groupId) {
+        auto it = m_groupManifests.find(groupId);
+        if (it != m_groupManifests.end()) {
+            return &(it->second);
+        }
+        return nullptr;
+    }
+    
+    const GroupManifest* LevelManager::GetGroupManifest(int groupId) const {
+        auto it = m_groupManifests.find(groupId);
+        if (it != m_groupManifests.end()) {
+            return &(it->second);
+        }
+        return nullptr;
+    }
+    
+    GroupManifest* LevelManager::CreateGroupManifest(int groupId) {
+        // Create or overwrite manifest for this group
+        m_groupManifests[groupId] = GroupManifest();
+        m_groupManifests[groupId].groupId = groupId;
+        
+        GN_LOG_DEBUG("[GroupManifest] Created manifest for group " + std::to_string(groupId));
+        return &m_groupManifests[groupId];
+    }
+    
+    void LevelManager::UpdateGroupMemberPositions(int groupId) {
+        GroupManifest* manifest = GetGroupManifest(groupId);
+        if (!manifest || manifest->leaderEntity == 0) {
+            GN_LOG_WARN("[GroupManifest] Cannot update positions for group " + std::to_string(groupId) + " - invalid manifest");
+            return;
+        }
+        
+        // Get leader position
+        Transform* leaderTransform = m_ecsSystem->GetComponent<Transform>(manifest->leaderEntity);
+        if (!leaderTransform) {
+            GN_LOG_WARN("[GroupManifest] Cannot update positions for group " + std::to_string(groupId) + " - leader has no Transform");
+            return;
+        }
+        
+        float leaderX = leaderTransform->position.x;
+        
+        // Update all member positions based on their offsets
+        for (const auto& member : manifest->allMembers) {
+            if (member.entity == 0) continue;
+            
+            Transform* memberTransform = m_ecsSystem->GetComponent<Transform>(member.entity);
+            if (memberTransform) {
+                memberTransform->position.x = leaderX + member.offsetX;
+                memberTransform->position.y = member.offsetY;  // Y is absolute, not offset from leader
+            }
+        }
+        
+        GN_LOG_DEBUG("[GroupManifest] Updated " + std::to_string(manifest->allMembers.size()) + 
+                    " member positions for group " + std::to_string(groupId));
+    }
+    
+    bool LevelManager::ValidateGroupIntegrity(int groupId) const {
+        const GroupManifest* manifest = GetGroupManifest(groupId);
+        if (!manifest) {
+            GN_LOG_WARN("[GroupManifest] Group " + std::to_string(groupId) + " has no manifest");
+            return false;
+        }
+        
+        // Check leader exists
+        if (manifest->leaderEntity == 0) {
+            GN_LOG_WARN("[GroupManifest] Group " + std::to_string(groupId) + " has no leader");
+            return false;
+        }
+        
+        // Check all members exist
+        int invalidMembers = 0;
+        for (const auto& member : manifest->allMembers) {
+            if (member.entity == 0) {
+                invalidMembers++;
+            }
+        }
+        
+        if (invalidMembers > 0) {
+            GN_LOG_WARN("[GroupManifest] Group " + std::to_string(groupId) + " has " + 
+                          std::to_string(invalidMembers) + " invalid members");
+        }
+        
+        return invalidMembers == 0;
+    }
+    
+    float LevelManager::GetRightmostGroupPosition() const {
+        float rightmost = 0.0f;
+        
+        for (const auto& pair : m_groupManifests) {
+            const GroupManifest& manifest = pair.second;
+            if (manifest.leaderEntity == 0) continue;
+            
+            Transform* leaderTransform = m_ecsSystem->GetComponent<Transform>(manifest.leaderEntity);
+            if (leaderTransform) {
+                float groupRightEdge = leaderTransform->position.x + manifest.rightmostMemberOffsetX;
+                if (groupRightEdge > rightmost) {
+                    rightmost = groupRightEdge;
+                }
+            }
+        }
+        
+        return rightmost;
+    }
+    
+    int LevelManager::GetNextGroupId() const {
+        return m_nextGroupId;
+    }
+    
+    // ============================================================================
+    // ORCHESTRATOR METHODS (COMPOSITION PATTERN)
+    // ============================================================================
+    
+    void LevelManager::SpawnGroup(int levelId, int groupId, float worldX, GroupPattern pattern) {
+        GN_LOG_INFO("[Orchestrator] SpawnGroup: level=" + std::to_string(levelId) + 
+                   ", groupId=" + std::to_string(groupId) + ", worldX=" + std::to_string(worldX));
+        
+        // Create manifest for this group
+        GroupManifest* manifest = CreateGroupManifest(groupId);
+        manifest->pattern = pattern;
+        manifest->baseRenderLayer = 3;  // Default obstacle layer
+        
+        // Set level-specific gap widths
+        // NOTE: Sewer level uses dynamic positioning based on group width, not fixed gap
+        switch(levelId) {
+            case 1: // Park
+                manifest->gapWidth = 330.0f;  // Tighter spacing for park
+                break;
+            case 2: // Sewer - DYNAMIC: gap calculated from actual group width (see SpawnInitialGroups)
+                manifest->gapWidth = 200.0f;  // Minimal spacing between varied-width patterns
+                break;
+            case 3: // Desert
+                manifest->gapWidth = 800.0f;  // Reduced from 1100 for tighter gaps
+                break;
+            case 4: // Snow
+                manifest->gapWidth = 1000.0f;  // Balanced gap for coin spread without feeling too far apart
+                break;
+            case 5: // Castle
+                manifest->gapWidth = 1400.0f;  // Increased from 1200 for centerpiece visibility
+                break;
+            default:
+                manifest->gapWidth = 400.0f;
+        }
+        
+        // Set toilet width
+        manifest->toiletWidth = 64.0f * 8.0f;  // 64px sprite * 8.0f baseScale
+        
+        // Step 1: Spawn obstacles based on level
+        std::vector<Gnosis::Entity> obstacles;
+        
+        switch (levelId) {
+            case 1: { // Park
+                auto toiletPair = m_obstacleSystem->SpawnParkPattern_ToiletPair(worldX, groupId);
+                obstacles.push_back(toiletPair.first);
+                obstacles.push_back(toiletPair.second);
+                manifest->leaderEntity = toiletPair.first;
+                break;
+            }
+            case 2: { // Sewer - random pattern
+                int randomPattern = rand() % 6;
+                switch (randomPattern) {
+                    case 0:
+                        obstacles = m_obstacleSystem->SpawnSewerPattern_TopOnly(worldX, groupId);
+                        break;
+                    case 1:
+                        obstacles = m_obstacleSystem->SpawnSewerPattern_BottomOnly(worldX, groupId);
+                        break;
+                    case 2:
+                        obstacles = m_obstacleSystem->SpawnSewerPattern_TopAndBottom(worldX, groupId);
+                        break;
+                    case 3:
+                        obstacles = m_obstacleSystem->SpawnSewerPattern_Pyramid3(worldX, groupId);
+                        break;
+                    case 4:
+                        obstacles = m_obstacleSystem->SpawnSewerPattern_PyramidTop3(worldX, groupId);
+                        break;
+                    case 5:
+                        obstacles = m_obstacleSystem->SpawnSewerPattern_TwoByTwoFunnel(worldX, groupId);
+                        break;
+                }
+                manifest->leaderEntity = obstacles.empty() ? 0 : obstacles[0];
+                
+                // CRITICAL FIX: Detect actual pattern from spawned obstacles (they set their own Group::pattern)
+                // instead of using the hardcoded parameter, since sewer has varied patterns
+                if (!obstacles.empty()) {
+                    Group* leaderGroup = m_ecsSystem->GetComponent<Group>(obstacles[0]);
+                    if (leaderGroup) {
+                        pattern = leaderGroup->pattern;
+                        manifest->pattern = pattern;
+                        GN_LOG_INFO("[Orchestrator] Sewer group " + std::to_string(groupId) + " detected pattern: " + std::to_string(static_cast<int>(pattern)));
+                    }
+                }
+                break;
+            }
+            case 3: { // Desert
+                Gnosis::Entity outhouse = m_obstacleSystem->SpawnDesertPattern_Outhouse(worldX, groupId);
+                obstacles.push_back(outhouse);
+                manifest->leaderEntity = outhouse;
+                break;
+            }
+            case 4: { // Snow
+                auto toiletPair = m_obstacleSystem->SpawnSnowPattern_ToiletPair(worldX, groupId, manifest->gapWidth);
+                obstacles.push_back(toiletPair.first);
+                obstacles.push_back(toiletPair.second);
+                manifest->leaderEntity = toiletPair.first;
+                break;
+            }
+            case 5: { // Castle
+                auto toiletPair = m_obstacleSystem->SpawnCastlePattern_GoldToiletPair(worldX, groupId, manifest->gapWidth);
+                obstacles.push_back(toiletPair.first);
+                obstacles.push_back(toiletPair.second);
+                manifest->leaderEntity = toiletPair.first;
+                // Note: Castle decorations are spawned within SpawnCastlePattern_GoldToiletPair
+                // We'll need to collect them separately if we want them in the manifest
+                break;
+            }
+            default:
+                GN_LOG_ERROR("[Orchestrator] Unknown levelId: " + std::to_string(levelId));
+                return;
+        }
+        
+        // Step 2: Add obstacles to manifest with offsets
+        Transform* leaderTransform = m_ecsSystem->GetComponent<Transform>(manifest->leaderEntity);
+        if (!leaderTransform) {
+            GN_LOG_ERROR("[Orchestrator] Leader entity has no Transform");
+            return;
+        }
+        
+        float leaderX = leaderTransform->position.x;
+        for (Gnosis::Entity obstacle : obstacles) {
+            Transform* obstacleTransform = m_ecsSystem->GetComponent<Transform>(obstacle);
+            if (obstacleTransform) {
+                float offsetX = obstacleTransform->position.x - leaderX;
+                float offsetY = obstacleTransform->position.y;
+                manifest->allMembers.push_back(GroupMemberOffset(obstacle, offsetX, offsetY));
+            }
+        }
+        manifest->obstacleCount = obstacles.size();
+        
+        // Step 3: Spawn coins if PickupSystem is available (pass gap width for accurate positioning)
+        if (m_pickupSystem) {
+            std::vector<Gnosis::Entity> coins = m_pickupSystem->SpawnCoinsForGroup(groupId, pattern, manifest->gapWidth);
+            for (Gnosis::Entity coin : coins) {
+                Transform* coinTransform = m_ecsSystem->GetComponent<Transform>(coin);
+                if (coinTransform) {
+                    float offsetX = coinTransform->position.x - leaderX;
+                    float offsetY = coinTransform->position.y;
+                    manifest->allMembers.push_back(GroupMemberOffset(coin, offsetX, offsetY));
+                }
+            }
+            manifest->pickupCount = coins.size();
+            GN_LOG_INFO("[Orchestrator] Spawned " + std::to_string(coins.size()) + " coins for groupId=" + std::to_string(groupId) + " with gapWidth=" + std::to_string(manifest->gapWidth));
+        }
+        
+        // Step 4: Calculate bounds
+        // CRITICAL: For sewer patterns, use Group component's groupWidth if available (matches old logic)
+        // Otherwise calculate from actual positions
+        manifest->boundsNeedRecalc = true;
+        float leftmost = 0.0f;
+        float rightmost = 0.0f;
+        bool foundGroupWidth = false;
+        float groupWidthFromComponent = 0.0f;
+        
+        // Try to get groupWidth from leader's Group component (sewer patterns set this)
+        Group* leaderGroup = m_ecsSystem->GetComponent<Group>(manifest->leaderEntity);
+        if (leaderGroup && leaderGroup->groupWidth > 0.0f) {
+            groupWidthFromComponent = leaderGroup->groupWidth;
+            foundGroupWidth = true;
+            rightmost = groupWidthFromComponent;  // Group width is the span from leader to rightmost
+            GN_LOG_INFO("[Orchestrator] Using Group component groupWidth=" + std::to_string(groupWidthFromComponent) + " for groupId=" + std::to_string(groupId));
+        }
+        
+        // Also calculate from actual positions (for non-sewer patterns or verification)
+        for (const auto& member : manifest->allMembers) {
+            Transform* t = m_ecsSystem->GetComponent<Transform>(member.entity);
+            Sprite* s = m_ecsSystem->GetComponent<Sprite>(member.entity);
+            if (t && s) {
+                float memberLeft = member.offsetX;
+                float memberRight = member.offsetX + (s->width * std::abs(t->scale.x));
+                
+                if (memberLeft < leftmost) leftmost = memberLeft;
+                if (!foundGroupWidth && memberRight > rightmost) {
+                    rightmost = memberRight;
+                }
+            }
+        }
+        
+        // If we didn't find groupWidth in component, use calculated value
+        if (!foundGroupWidth) {
+            rightmost = std::max(rightmost, 0.0f);
+        }
+        
+        manifest->leftBound = leftmost;
+        manifest->rightBound = rightmost;
+        manifest->rightmostMemberOffsetX = rightmost;  // This is the RIGHT EDGE offset from leader
+        manifest->boundsNeedRecalc = false;
+        
+        GN_LOG_INFO("[Orchestrator] SpawnGroup complete: groupId=" + std::to_string(groupId) + 
+                   ", obstacles=" + std::to_string(manifest->obstacleCount) + 
+                   ", pickups=" + std::to_string(manifest->pickupCount) + 
+                   ", bounds=[" + std::to_string(leftmost) + ", " + std::to_string(rightmost) + "]");
+    }
+    
+    void LevelManager::SpawnInitialGroups(int levelId) {
+        GN_LOG_INFO("[Orchestrator] SpawnInitialGroups for level " + std::to_string(levelId));
+        
+        const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+        float nextWorldX = screenInfo.pixelWidth + 100.0f;
+        const int INITIAL_GROUP_COUNT = 32;  // Match OBSTACLE_POOL_SIZE
+        
+        // Determine pattern for this level
+        GroupPattern pattern = GroupPattern::TopAndBottom;  // Default
+        switch (levelId) {
+            case 1: pattern = GroupPattern::TopAndBottom; break;  // Park
+            case 2: pattern = GroupPattern::TopAndBottom; break;  // Sewer (will vary)
+            case 3: pattern = GroupPattern::Ground; break;         // Desert - ground-based
+            case 4: pattern = GroupPattern::SnowScreenEdges; break;  // Snow - top/bottom screen strips
+            case 5: pattern = GroupPattern::TopAndBottom; break;  // Castle
+            case 6: return;  // Boss level - no obstacle groups
+        }
+        
+        for (int i = 0; i < INITIAL_GROUP_COUNT; i++) {
+            int groupId = GetNextGroupId();
+            m_nextGroupId++;
+            
+            GN_LOG_INFO("[Orchestrator] Spawning initial group " + std::to_string(i) + 
+                       " (groupId=" + std::to_string(groupId) + ") at x=" + std::to_string(nextWorldX));
+            
+            // Spawn the group using orchestrator
+            SpawnGroup(levelId, groupId, nextWorldX, pattern);
+            
+            // Get the manifest to calculate next position
+            GroupManifest* manifest = GetGroupManifest(groupId);
+            if (manifest) {
+                // rightmostMemberOffsetX is the right EDGE offset from leader (includes sprite width)
+                // So if leader is at X, the right edge is at X + rightmostMemberOffsetX
+                // Next group should start at: right edge + gap = X + rightmostMemberOffsetX + gap
+                // Since nextWorldX is currently the leader X, we add rightmostMemberOffsetX + gap
+                float rightEdgeOffset = manifest->rightmostMemberOffsetX;
+                nextWorldX = nextWorldX + rightEdgeOffset + manifest->gapWidth;
+                GN_LOG_INFO("[Orchestrator] Next group will spawn at x=" + std::to_string(nextWorldX) + 
+                           " (rightEdgeOffset=" + std::to_string(rightEdgeOffset) + 
+                           ", gap=" + std::to_string(manifest->gapWidth) + 
+                           ", leaderWasAt=" + std::to_string(nextWorldX - rightEdgeOffset - manifest->gapWidth) + ")");
+            } else {
+                // Fallback
+                nextWorldX += 800.0f;
+                GN_LOG_ERROR("[Orchestrator] Manifest not found for groupId=" + std::to_string(groupId) + ", using fallback spacing");
+            }
+        }
+        
+        GN_LOG_INFO("[Orchestrator] SpawnInitialGroups complete: spawned " + std::to_string(INITIAL_GROUP_COUNT) + " groups");
+    }
+    
+    void LevelManager::OnGroupOffScreen(int groupId) {
+        GN_LOG_DEBUG("[Orchestrator] OnGroupOffScreen: groupId=" + std::to_string(groupId));
+        
+        // Notify that group needs wrapping
+        WrapGroup(groupId);
+    }
+    
+    void LevelManager::WrapGroup(int groupId) {
+        GN_LOG_INFO("[Orchestrator] WrapGroup: groupId=" + std::to_string(groupId));
+        
+        GroupManifest* manifest = GetGroupManifest(groupId);
+        if (!manifest) {
+            GN_LOG_ERROR("[Orchestrator] Cannot wrap group " + std::to_string(groupId) + " - no manifest found");
+            return;
+        }
+        
+        if (manifest->leaderEntity == 0) {
+            GN_LOG_ERROR("[Orchestrator] Cannot wrap group " + std::to_string(groupId) + " - no leader entity");
+            return;
+        }
+        
+        // Step 1: Find rightmost group position  
+        float rightmost = GetRightmostGroupPosition();
+        
+        // Step 2: Calculate new position for this group
+        float newX = rightmost + manifest->gapWidth;
+        
+        GN_LOG_INFO("[Orchestrator] Wrapping group " + std::to_string(groupId) + 
+                   " to newX=" + std::to_string(newX) + 
+                   " (rightmost=" + std::to_string(rightmost) + ", gap=" + std::to_string(manifest->gapWidth) + ")");
+        
+        // Step 3: Update leader position
+        Transform* leaderTransform = m_ecsSystem->GetComponent<Transform>(manifest->leaderEntity);
+        if (leaderTransform) {
+            leaderTransform->position.x = newX;
+            
+            // Step 4: Update all member positions based on their offsets
+            UpdateGroupMemberPositions(groupId);
+            
+            // Step 5: Reset obstacle state (pipeCleared, etc.)
+            for (const auto& member : manifest->allMembers) {
+                Obstacle* obstacle = m_ecsSystem->GetComponent<Obstacle>(member.entity);
+                if (obstacle) {
+                    obstacle->pipeCleared = false;  // Reset for reuse
+                }
+            }
+            
+            // Step 6: Level-specific randomization on wrap
+            if (m_currentLevelId == 2) {
+                // SEWER LEVEL: Randomize pattern variation on wrap
+                // Destroy old pipes and spawn new random pattern
+                std::vector<Gnosis::Entity> oldPipes;
+                for (const auto& member : manifest->allMembers) {
+                    if (m_ecsSystem->HasComponent<Obstacle>(member.entity)) {
+                        oldPipes.push_back(member.entity);
+                    }
+                }
+                
+                // Destroy old pipes
+                for (Gnosis::Entity pipe : oldPipes) {
+                    m_ecsSystem->DestroyEntity(pipe);
+                }
+                
+                // Spawn new random sewer pattern at the new position
+                // Random patterns: TopOnly, BottomOnly, TopAndBottom, Pyramid3, PyramidTop3, TwoByTwoFunnel
+                int randomPattern = rand() % 6;
+                std::vector<Gnosis::Entity> newPipes;
+                
+                switch (randomPattern) {
+                    case 0:
+                        newPipes = m_obstacleSystem->SpawnSewerPattern_TopOnly(newX, groupId);
+                        manifest->pattern = GroupPattern::TopOnly;
+                        break;
+                    case 1:
+                        newPipes = m_obstacleSystem->SpawnSewerPattern_BottomOnly(newX, groupId);
+                        manifest->pattern = GroupPattern::BottomOnly;
+                        break;
+                    case 2:
+                        newPipes = m_obstacleSystem->SpawnSewerPattern_TopAndBottom(newX, groupId);
+                        manifest->pattern = GroupPattern::TopAndBottom;
+                        break;
+                    case 3:
+                        newPipes = m_obstacleSystem->SpawnSewerPattern_Pyramid3(newX, groupId);
+                        manifest->pattern = GroupPattern::PyramidBottom;
+                        break;
+                    case 4:
+                        newPipes = m_obstacleSystem->SpawnSewerPattern_PyramidTop3(newX, groupId);
+                        manifest->pattern = GroupPattern::PyramidTop;
+                        break;
+                    case 5:
+                        newPipes = m_obstacleSystem->SpawnSewerPattern_TwoByTwoFunnel(newX, groupId);
+                        manifest->pattern = GroupPattern::TwoFunnel;
+                        break;
+                }
+                
+                // Update manifest with new pipes
+                manifest->allMembers.clear();
+                manifest->leaderEntity = newPipes.empty() ? 0 : newPipes[0];
+                for (Gnosis::Entity pipe : newPipes) {
+                    Transform* pipeTransform = m_ecsSystem->GetComponent<Transform>(pipe);
+                    if (pipeTransform) {
+                        float offsetX = pipeTransform->position.x - newX;
+                        float offsetY = pipeTransform->position.y;
+                        manifest->allMembers.push_back(GroupMemberOffset(pipe, offsetX, offsetY));
+                    }
+                }
+                manifest->obstacleCount = newPipes.size();
+                manifest->boundsNeedRecalc = true;
+                
+                GN_LOG_INFO("[Orchestrator] Sewer group " + std::to_string(groupId) + 
+                           " randomized to pattern " + std::to_string(static_cast<int>(manifest->pattern)));
+            }
+            else if (m_currentLevelId == 5) {
+                // CASTLE LEVEL: Randomize centerpiece painting on wrap
+                // Find painting decoration in manifest
+                for (const auto& member : manifest->allMembers) {
+                    Decoration* deco = m_ecsSystem->GetComponent<Decoration>(member.entity);
+                    if (deco && deco->type >= DecorationType::PaintingRabbitKnight && 
+                        deco->type <= DecorationType::PaintingCabin) {
+                        // Randomize painting texture
+                        const char* paintingTextures[] = {
+                            "RabbitKnightPainting",
+                            "RatBeachPainting",
+                            "RiverWalkPainting",
+                            "CabinPainting"
+                        };
+                        int randomPaintingIndex = rand() % 4;
+                        
+                        Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(member.entity);
+                        if (sprite) {
+                            sprite->textureId = paintingTextures[randomPaintingIndex];
+                            GN_LOG_INFO("[Orchestrator] Castle group " + std::to_string(groupId) + 
+                                       " painting randomized to " + std::string(paintingTextures[randomPaintingIndex]));
+                        }
+                        break;  // Only one painting per group
+                    }
+                }
+            }
+            
+            GN_LOG_INFO("[Orchestrator] Group " + std::to_string(groupId) + " wrapped successfully");
+        } else {
+            GN_LOG_ERROR("[Orchestrator] Leader entity " + std::to_string(manifest->leaderEntity) + " has no Transform");
+        }
     }
 
 } // namespace GameCore

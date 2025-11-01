@@ -1077,6 +1077,9 @@ namespace GameCore {
         // Create pickup system and pass dependencies
         m_pickupSystem = std::make_unique<PickupSystem>(m_ecsSystem, m_levelManager.get(), m_platformDelegates, &m_currentLevelConfig);
         
+        // NEW: Register PickupSystem with LevelManager for orchestrator pattern
+        m_levelManager->SetPickupSystem(m_pickupSystem.get());
+        
         // Set up collection callbacks to connect PickupSystem to collection handlers
         m_pickupSystem->SetCoinCollectedCallback([this](int value) {
             this->OnCoinCollected(value);
@@ -3002,7 +3005,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 float oCenterX, oCenterY;
                 
                 // Special handling for SpikeBalls - use BASE entity for positioning
-                if (obstacle->obstacleType == "SpikeBall" && m_levelManager && m_levelManager->GetObstacleSystem()) {
+                if (obstacle->type == ObstacleType::SpikeBall && m_levelManager && m_levelManager->GetObstacleSystem()) {
                     Gnosis::Entity baseEntity = m_levelManager->GetObstacleSystem()->GetSpikeBallBaseEntity(obstacleEntity);
                     if (baseEntity != 0) {
                         Transform* baseTransform = m_ecsSystem->GetComponent<Transform>(baseEntity);
@@ -3064,7 +3067,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             // Enhanced debug logging
             if (collided) {
                 GN_LOG_INFO("COLLISION DETECTED! Entity: " + std::to_string(obstacleEntity) + 
-                           " Type: " + obstacle->obstacleType + 
+                           " Type: " + std::to_string(static_cast<int>(obstacle->type)) + 
                            " HitboxType: " + std::to_string(static_cast<int>(obstacleHitbox->type)) + 
                            " Invulnerable: " + std::to_string(m_invulnerabilityTimer > 0.0f) + 
                            " Timer: " + std::to_string(m_invulnerabilityTimer));
@@ -3076,10 +3079,10 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             
             if (collided && m_invulnerabilityTimer <= 0.0f) {
                 // Collision detected and player is not invulnerable!
-                GN_LOG_INFO("*** COLLISION DETECTED! *** Entity: " + std::to_string(obstacleEntity) + " Type: " + obstacle->obstacleType + " HitboxType: " + std::to_string(static_cast<int>(obstacleHitbox->type)));
+                GN_LOG_INFO("*** COLLISION DETECTED! *** Entity: " + std::to_string(obstacleEntity) + " Type: " + std::to_string(static_cast<int>(obstacle->type)) + " HitboxType: " + std::to_string(static_cast<int>(obstacleHitbox->type)));
                 playerHitThisFrame = true; // Mark that player was hit, but continue processing other obstacles
             } else if (collided) {
-                GN_LOG_INFO("Collision detected but player invulnerable. Entity: " + std::to_string(obstacleEntity) + " Type: " + obstacle->obstacleType + " Timer: " + std::to_string(m_invulnerabilityTimer));
+                GN_LOG_INFO("Collision detected but player invulnerable. Entity: " + std::to_string(obstacleEntity) + " Type: " + std::to_string(static_cast<int>(obstacle->type)) + " Timer: " + std::to_string(m_invulnerabilityTimer));
             }
             
             // Performance: Disabled per-frame pipe clearing logging
@@ -3100,7 +3103,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 
                 if (playerRight > pipeCenterX) {
                     // Mark this obstacle as cleared
-                    if (obstacle->obstacleType != "BrickWall") {
+                    if (obstacle->type != ObstacleType::BrickWall) {
                         obstacle->pipeCleared = true;
                         
                         // Also mark paired entity if it exists (top/bottom toilet pair)
@@ -4149,6 +4152,12 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             GN_LOG_INFO("Stopped specific stinger sound effect: gameover.mp3");
         }
         
+        // Clear pickups FIRST before respawning groups (otherwise new coins get deleted)
+        if (m_pickupSystem) {
+            m_pickupSystem->ClearAll();
+            GN_LOG_INFO("[RESET] Cleared all pickups");
+        }
+        
         // Clear obstacles and other entities, but KEEP the player entity
         if (m_levelManager) {
             // Clean up obstacle system without destroying the player
@@ -4157,11 +4166,11 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 // Reinitialize the obstacle system for the current level
                 m_levelManager->GetObstacleSystem()->InitializeForLevel(m_levelManager->GetCurrentLevelId(), m_levelManager->GetCurrentLevelConfig());
             }
-        }
-        
-        // Clear pickups
-        if (m_pickupSystem) {
-            m_pickupSystem->ClearAll();
+            
+            // Clear and respawn obstacle groups using orchestrator pattern
+            m_levelManager->ClearGroupManifests();
+            m_levelManager->SpawnInitialGroups(m_levelManager->GetCurrentLevelId());
+            GN_LOG_INFO("[RESET] Group manifests cleared and initial groups respawned");
         }
 
         // Reset enemies for retry (skips Rat King boss, removes rat minions)

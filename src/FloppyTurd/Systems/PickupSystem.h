@@ -53,6 +53,9 @@ namespace GameCore {
 
         // Tear down any remaining pickup entities (on level exit)
         void ClearAll();
+        
+        // NEW ORCHESTRATOR PATTERN: Spawn coins for a group and return entities
+        std::vector<Gnosis::Entity> SpawnCoinsForGroup(int groupId, GroupPattern pattern, float gapWidth = 800.0f);
 
     private:
         // Dependencies
@@ -81,12 +84,35 @@ namespace GameCore {
 
         // Internal helpers
         void handlePickupCollisions();
-        void spawnCoinsForGroup(int groupId);
-        void repositionCoinsForGroup(int groupId);
         void removeGroupIfMissing(const std::unordered_set<int>& currentGroups);
         void applyMagnetEffects(float deltaTime);
+        
+        // LEGACY REMOVED: spawnCoinsForGroup() and repositionCoinsForGroup()
+        // - Coin spawning now handled by LevelManager::SpawnGroup() calling SpawnCoinsForGroup()
+        // - Coin repositioning now handled by LevelManager::UpdateGroupMemberPositions()
 
-        // Utility
+        // Utility - helper functions for pickup types
+        static inline bool IsPickupCoinType(PickupType type) {
+            return type == PickupType::GoldCoin || type == PickupType::BlueCoin || type == PickupType::RedCoin;
+        }
+        
+        static inline bool IsPickupHeartType(PickupType type) {
+            return type == PickupType::Heart || type == PickupType::HeartBig || type == PickupType::HeartRainbow;
+        }
+        
+        static inline const char* GetTextureForPickup(PickupType type) {
+            switch (type) {
+                case PickupType::GoldCoin: return "GoldCoin";
+                case PickupType::BlueCoin: return "BlueCoin";
+                case PickupType::RedCoin: return "RedCoin";
+                case PickupType::Heart: return "PooHeart";
+                case PickupType::HeartBig: return "PooHeartBig";
+                case PickupType::HeartRainbow: return "PooHeartRainbow";
+                default: return "GoldCoin";
+            }
+        }
+        
+        // LEGACY: Keep for backward compatibility during migration
         inline bool isCoinType(const std::string& type) const {
             return type == "GoldCoin" || type == "BlueCoin" || type == "RedCoin";
         }

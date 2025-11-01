@@ -41,6 +41,147 @@ namespace GameCore {
     };
     
     // ============================================================================
+    // TYPE-SAFE ENUMS (Replace string-based type checking)
+    // ============================================================================
+    
+    enum class ObstacleType : uint8_t {
+        None = 0,
+        
+        // Park Level (Level 1)
+        TopToilet,
+        BottomToilet,
+        
+        // Sewer Level (Level 2)
+        Pipe,
+        
+        // Desert Level (Level 3)
+        Outhouse,
+        BrickWall,
+        
+        // Snow Level (Level 4)
+        SnowToiletTop,
+        SnowToiletBottom,
+        Snowman,
+        
+        // Castle Level (Level 5)
+        GoldToiletTop,
+        GoldToiletBottom,
+        SpikeBall,
+        
+        // NOTE: RatKing is NOT an obstacle - he's a boss managed by BossSystem
+        
+        Count // Total number of types
+    };
+    
+    enum class DecorationType : uint8_t {
+        None = 0,
+        
+        // Castle Level Decorations
+        Curtain,
+        FloorTorch,
+        Chandelier,
+        TorchPillar,
+        
+        // Castle Paintings (centerpiece - randomized on spawn/wrap)
+        PaintingRabbitKnight,   // RabbitKnightPainting.png
+        PaintingRatBeach,       // RatBeachPainting.png
+        PaintingRiverWalk,      // RiverWalkPainting.png
+        PaintingCabin,          // CabinPainting.png
+        
+        Count
+    };
+    
+    enum class PickupType : uint8_t {
+        None = 0,
+        
+        // Coins (config strings: "GoldCoin", "BlueCoin", "RedCoin")
+        GoldCoin,
+        BlueCoin,
+        RedCoin,
+        
+        // Hearts (config string: "Heart" for small, future: "HeartBig", "HeartRainbow")
+        Heart,           // Standard small heart - texture: "PooHeart" (in configs as "Heart")
+        HeartBig,        // Large heart - texture: "PooHeartBig" (future use, not yet in configs)
+        HeartRainbow,    // Rainbow/invisible heart - texture: "PooHeartRainbow" (future Castle level every 50 pipes)
+        
+        Count
+    };
+    
+    // Helper: Convert enum to string for logging (NOT for logic!)
+    inline const char* ToString(ObstacleType type) {
+        switch(type) {
+            case ObstacleType::None: return "None";
+            case ObstacleType::TopToilet: return "TopToilet";
+            case ObstacleType::BottomToilet: return "BottomToilet";
+            case ObstacleType::Pipe: return "Pipe";
+            case ObstacleType::Outhouse: return "Outhouse";
+            case ObstacleType::BrickWall: return "BrickWall";
+            case ObstacleType::SnowToiletTop: return "SnowToiletTop";
+            case ObstacleType::SnowToiletBottom: return "SnowToiletBottom";
+            case ObstacleType::Snowman: return "Snowman";
+            case ObstacleType::GoldToiletTop: return "GoldToiletTop";
+            case ObstacleType::GoldToiletBottom: return "GoldToiletBottom";
+            case ObstacleType::SpikeBall: return "SpikeBall";
+            default: return "Unknown";
+        }
+    }
+    
+    inline const char* ToString(DecorationType type) {
+        switch(type) {
+            case DecorationType::None: return "None";
+            case DecorationType::Curtain: return "curtains"; // Texture name
+            case DecorationType::FloorTorch: return "castlelevelfloortorch";
+            case DecorationType::Chandelier: return "castlelevelchandelier";
+            case DecorationType::TorchPillar: return "TorchPillar";
+            case DecorationType::PaintingRabbitKnight: return "RabbitKnightPainting";
+            case DecorationType::PaintingRatBeach: return "RatBeachPainting";
+            case DecorationType::PaintingRiverWalk: return "RiverWalkPainting";
+            case DecorationType::PaintingCabin: return "CabinPainting";
+            default: return "Unknown";
+        }
+    }
+    
+    inline const char* ToString(PickupType type) {
+        switch(type) {
+            case PickupType::None: return "None";
+            case PickupType::GoldCoin: return "GoldCoin";
+            case PickupType::BlueCoin: return "BlueCoin";
+            case PickupType::RedCoin: return "RedCoin";
+            case PickupType::Heart: return "Heart"; // Config string, texture is "PooHeart"
+            case PickupType::HeartBig: return "HeartBig"; // Future config string, texture "PooHeartBig"
+            case PickupType::HeartRainbow: return "HeartRainbow"; // Future config, texture "PooHeartRainbow"
+            default: return "Unknown";
+        }
+    }
+    
+    // Helper: Get texture name from pickup type (texture != config string for hearts!)
+    inline const char* GetTextureForPickup(PickupType type) {
+        switch(type) {
+            case PickupType::GoldCoin: return "GoldCoin";
+            case PickupType::BlueCoin: return "BlueCoin";
+            case PickupType::RedCoin: return "RedCoin";
+            case PickupType::Heart: return "PooHeart";           // Config says "Heart", texture is "PooHeart"
+            case PickupType::HeartBig: return "PooHeartBig";
+            case PickupType::HeartRainbow: return "PooHeartRainbow";
+            default: return "GoldCoin";
+        }
+    }
+    
+    // Helper: Check if pickup is a coin type
+    inline bool IsPickupCoinType(PickupType type) {
+        return type == PickupType::GoldCoin || 
+               type == PickupType::BlueCoin || 
+               type == PickupType::RedCoin;
+    }
+    
+    // Helper: Check if pickup is a heart type
+    inline bool IsPickupHeartType(PickupType type) {
+        return type == PickupType::Heart ||
+               type == PickupType::HeartBig ||
+               type == PickupType::HeartRainbow;
+    }
+    
+    // ============================================================================
     // Core Components
     // ============================================================================
     
@@ -589,7 +730,7 @@ using Gnosis::Entity;
         int damage;
         bool isDestructible;
         int health;
-        std::string obstacleType;
+        ObstacleType type;          // NEW: Type-safe enum (NO LEGACY STRING FIELD)
         
         // Toilet/pipe specific properties
         int behavior;               // ToiletBehavior as int (0=STATIC, 1=OSCILLATE_VERTICAL, 2=OSCILLATE_HORIZONTAL)
@@ -605,6 +746,7 @@ using Gnosis::Entity;
             : damage(1)
             , isDestructible(false)
             , health(1)
+            , type(ObstacleType::None)  // Default to None
             , behavior(0) // STATIC = 0
             , oscillationSpeed(0.0f)
             , oscillationRange(0.0f)
@@ -622,9 +764,9 @@ using Gnosis::Entity;
         BottomOnly,
         TopAndBottom,
         Ground,           // For desert ground-based obstacles (Outhouse, Cactus)
-        PyramidBottom,
-        PyramidTop,
-        TwoFunnel,
+        PyramidBottom,    // Sewer bottom pyramid (Pyramid3) - obstacle pipes at bottom, coins on top funnel
+        PyramidTop,       // Sewer top pyramid (PyramidTop3) - obstacle pipes at top, coins on bottom funnel
+        TwoFunnel,        // Sewer two-by-two funnel pattern
         Decorative,       // For castle decorative elements (torch pillars, chandeliers, floor torches)
         SnowScreenEdges   // For snow level - coins at TOP and BOTTOM of screen (not relative to pipes)
     };
@@ -669,6 +811,69 @@ using Gnosis::Entity;
             : gapDistance(distance)
             , isSpacingGroup(isSpacing)
             , gapType(type)
+        {}
+    };
+
+    /**
+     * GroupMemberOffset - tracks individual entities within a group and their offsets
+     */
+    struct GroupMemberOffset {
+        Gnosis::Entity entity;      // The entity ID
+        float offsetX;              // X offset from group leader's X position
+        float offsetY;              // Y offset from group leader's Y position
+        
+        GroupMemberOffset()
+            : entity(0), offsetX(0.0f), offsetY(0.0f)
+        {}
+        
+        GroupMemberOffset(Gnosis::Entity e, float ox, float oy)
+            : entity(e), offsetX(ox), offsetY(oy)
+        {}
+    };
+
+    /**
+     * GroupManifest - Central data structure tracking all entities in an obstacle group
+     * This struct is stored and managed by LevelManager (composition pattern)
+     */
+    struct GroupManifest {
+        // ========== Identification ==========
+        int groupId;                        // Unique group identifier
+        Gnosis::Entity leaderEntity;        // First obstacle entity (defines group position)
+        
+        // ========== Pattern & Spacing ==========
+        GroupPattern pattern;               // Coin spawn pattern for this group
+        float gapWidth;                     // Distance to next group (from initialization)
+        float toiletWidth;                  // Width of toilet sprites (64px * scale)
+        int baseRenderLayer;                // Base render layer for this group
+        
+        // ========== Members ==========
+        std::vector<GroupMemberOffset> allMembers;  // All entities: obstacles, decorations, pickups
+        
+        // ========== Bounds & Wrapping ==========
+        float leftBound;                    // Leftmost X position in group (relative to leader)
+        float rightBound;                   // Rightmost X position in group (relative to leader)
+        float rightmostMemberOffsetX;       // Offset of rightmost member (for wrap detection)
+        bool boundsNeedRecalc;              // True if bounds need recalculation
+        
+        // ========== Debug Info ==========
+        int obstacleCount;                  // Number of obstacles (toilets, pipes, etc.)
+        int decorationCount;                // Number of decorations (curtains, torches, etc.)
+        int pickupCount;                    // Number of pickups (coins, hearts)
+        
+        GroupManifest()
+            : groupId(-1)
+            , leaderEntity(0)
+            , pattern(GroupPattern::TopOnly)
+            , gapWidth(0.0f)
+            , toiletWidth(64.0f)  // Default toilet sprite width
+            , baseRenderLayer(1)
+            , leftBound(0.0f)
+            , rightBound(0.0f)
+            , rightmostMemberOffsetX(0.0f)
+            , boundsNeedRecalc(true)
+            , obstacleCount(0)
+            , decorationCount(0)
+            , pickupCount(0)
         {}
     };
 
@@ -1006,7 +1211,7 @@ using Gnosis::Entity;
      * Pickup component - collectible items like coins and power-ups
      */
     struct Pickup : public Gnosis::Component {
-        std::string pickupType;
+        PickupType type;            // NEW: Type-safe enum (NO LEGACY STRING FIELD)
         int value;
         bool isActive;
         float bobbingSpeed;
@@ -1015,23 +1220,50 @@ using Gnosis::Entity;
         float bobbingBaseY;
         
         Pickup()
-            : pickupType("BlueCoin")
-            , value(10)
+            : type(PickupType::GoldCoin)  // Default to GoldCoin
+            , value(1)
             , isActive(true)
-            , bobbingSpeed(2.0f)
-            , bobbingAmplitude(5.0f)
+            , bobbingSpeed(0.0f)          // Coins don't bob by default
+            , bobbingAmplitude(0.0f)
             , bobbingTimer(0.0f)
             , bobbingBaseY(0.0f)
         {}
         
-        Pickup(const std::string& type, int val)
-            : pickupType(type)
+        Pickup(PickupType t, int val)    // Constructor takes enum
+            : type(t)
             , value(val)
             , isActive(true)
-            , bobbingSpeed(2.0f)
-            , bobbingAmplitude(5.0f)
+            , bobbingSpeed(0.0f)
+            , bobbingAmplitude(0.0f)
             , bobbingTimer(0.0f)
             , bobbingBaseY(0.0f)
+        {}
+    };
+
+    /**
+     * Decoration component - purely visual elements tied to groups (curtains, torches, paintings, etc.)
+     */
+    struct Decoration : public Gnosis::Component {
+        DecorationType type;        // Type-safe enum for decoration type
+        int groupId;                // Which obstacle group this decoration belongs to
+        float offsetX;              // X offset from group leader position
+        float offsetY;              // Y offset from group leader position
+        int renderLayer;            // Explicit render layer assignment
+        
+        Decoration()
+            : type(DecorationType::None)
+            , groupId(-1)
+            , offsetX(0.0f)
+            , offsetY(0.0f)
+            , renderLayer(2) // Default to background decoration layer
+        {}
+        
+        Decoration(DecorationType t, int gid, float ox, float oy, int layer)
+            : type(t)
+            , groupId(gid)
+            , offsetX(ox)
+            , offsetY(oy)
+            , renderLayer(layer)
         {}
     };
 

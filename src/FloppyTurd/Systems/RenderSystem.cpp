@@ -375,7 +375,7 @@ namespace GameCore {
                     colliderItem.debugWidth = hitbox->width;
                     colliderItem.debugHeight = hitbox->height;
                 }
-                if (auto obstacle = m_ecsSystem->GetComponent<Obstacle>(entity); obstacle && obstacle->obstacleType == "SpikeBall") {
+                if (auto obstacle = m_ecsSystem->GetComponent<Obstacle>(entity); obstacle && obstacle->type == ObstacleType::SpikeBall) {
                     colliderItem.debugAbsolutePos = true;
                 }
                 m_renderQueue.push_back(colliderItem);

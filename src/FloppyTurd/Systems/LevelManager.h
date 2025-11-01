@@ -30,6 +30,9 @@ namespace GameCore {
         void SetPlayerEntity(Gnosis::Entity playerEntity) { m_playerEntity = playerEntity; }
         Gnosis::Entity GetPlayerEntity() const { return m_playerEntity; }
         Gnosis::GNVector2 GetPlayerPosition() const;
+        
+        // System references (set by GameplayState for orchestration)
+        void SetPickupSystem(class PickupSystem* pickupSystem) { m_pickupSystem = pickupSystem; }
 
         // Level lifecycle
         bool LoadLevel(int levelId);
@@ -67,12 +70,10 @@ namespace GameCore {
         
         // Obstacle system delegation
         void UpdateObstacleSystem(float deltaTime, float worldScrollDistance);
-        std::vector<int> ConsumeWrappedGroups();
         std::vector<Gnosis::Entity> GetActiveObstacles() const;
         
         // Obstacle system access
         ObstacleSystem* GetObstacleSystem() const { return m_obstacleSystem.get(); }
-        std::vector<int> GetAndClearWrappedGroups();
         
         // Enemy management
         Gnosis::Entity SpawnEnemy(const EnemyConfig& config, float x, float y);
@@ -124,6 +125,30 @@ namespace GameCore {
         static bool ValidateLevelId(int levelId);
         static int GetMaxLevelId() { return LevelConfigFactory::GetLevelCount(); }
         
+        // ========================================================================
+        // GROUP MANIFEST SYSTEM (NEW ORCHESTRATOR PATTERN)
+        // ========================================================================
+        
+        // Group manifest access
+        GroupManifest* GetGroupManifest(int groupId);
+        const GroupManifest* GetGroupManifest(int groupId) const;
+        
+        // Group manifest creation and management (called by systems during spawn/wrap)
+        GroupManifest* CreateGroupManifest(int groupId);
+        void UpdateGroupMemberPositions(int groupId);
+        bool ValidateGroupIntegrity(int groupId) const;
+        
+        // Orchestration methods (composition pattern - LevelManager coordinates, systems execute)
+        void SpawnGroup(int levelId, int groupId, float worldX, GroupPattern pattern);
+        void SpawnInitialGroups(int levelId);  // Spawn initial obstacle groups for level start
+        void OnGroupOffScreen(int groupId);
+        void WrapGroup(int groupId);
+        void ClearGroupManifests();  // Clear all group manifests and reset ID counter
+        
+        // Helper methods
+        float GetRightmostGroupPosition() const;
+        int GetNextGroupId() const;
+        
     private:
         // Core systems
         Gnosis::ECS* m_ecsSystem;
@@ -154,6 +179,13 @@ namespace GameCore {
 
         // 🎯 NEW: RenderSystem reference for synchronous texture metadata cache
         RenderSystem* m_renderSystem;
+        class PickupSystem* m_pickupSystem;  // NEW: Reference for orchestrator pattern
+        
+        // ========================================================================
+        // GROUP MANIFEST STORAGE (NEW ORCHESTRATOR PATTERN)
+        // ========================================================================
+        std::unordered_map<int, GroupManifest> m_groupManifests;  // groupId -> GroupManifest
+        int m_nextGroupId = 1;  // Auto-incrementing group ID counter
         
         // Spawn timers
         float m_enemySpawnTimer;
