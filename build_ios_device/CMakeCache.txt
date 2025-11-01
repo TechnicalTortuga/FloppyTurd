@@ -14,16 +14,11 @@
 # EXTERNAL cache entries
 ########################
 
-APPLE:BOOL=ON
-
 //Path to a program.
 CMAKE_ADDR2LINE:FILEPATH=CMAKE_ADDR2LINE-NOTFOUND
 
 //Path to a program.
 CMAKE_AR:FILEPATH=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar
-
-//No help, variable specified on the command line.
-CMAKE_BUILD_TYPE:UNINITIALIZED=Debug
 
 //Semicolon separated list of supported configuration types, only
 // supports Debug, Release, MinSizeRel, and RelWithDebInfo, anything
@@ -66,8 +61,14 @@ CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO:STRING=
 //Value Computed by CMake.
 CMAKE_FIND_PACKAGE_REDIRECTS_DIR:STATIC=/Users/aimac/Development/FloppyTurd/build_ios_device/CMakeFiles/pkgRedirects
 
+//Path to a program.
+CMAKE_INSTALL_NAME_TOOL:FILEPATH=/usr/bin/install_name_tool
+
 //Install path prefix, prepended onto install directories.
 CMAKE_INSTALL_PREFIX:PATH=/usr/local
+
+//No help, variable specified on the command line.
+CMAKE_IOS_INSTALL_COMBINED:UNINITIALIZED=YES
 
 //Path to a program.
 CMAKE_LINKER:FILEPATH=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld
@@ -100,6 +101,16 @@ CMAKE_OBJCOPY:FILEPATH=CMAKE_OBJCOPY-NOTFOUND
 
 //Path to a program.
 CMAKE_OBJDUMP:FILEPATH=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/objdump
+
+//Build architectures for OSX
+CMAKE_OSX_ARCHITECTURES:STRING=
+
+//No help, variable specified on the command line.
+CMAKE_OSX_DEPLOYMENT_TARGET:UNINITIALIZED=13.0
+
+//The product will be built against the headers and libraries located
+// inside the indicated SDK.
+CMAKE_OSX_SYSROOT:STRING=iphoneos
 
 //Value Computed by CMake
 CMAKE_PROJECT_DESCRIPTION:STATIC=
@@ -181,6 +192,9 @@ CMAKE_STATIC_LINKER_FLAGS_RELWITHDEBINFO:STRING=
 //Path to a program.
 CMAKE_STRIP:FILEPATH=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/strip
 
+//No help, variable specified on the command line.
+CMAKE_SYSTEM_NAME:UNINITIALIZED=iOS
+
 //Swift Compiler Flags during all build types.
 CMAKE_Swift_FLAGS:STRING=
 
@@ -199,26 +213,17 @@ CMAKE_Swift_FLAGS_RELWITHDEBINFO:STRING=-O -g
 //Path to a program.
 CMAKE_TAPI:FILEPATH=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/tapi
 
-//The CMake toolchain file
-CMAKE_TOOLCHAIN_FILE:FILEPATH=/Users/aimac/Development/FloppyTurd/ios-cmake-master/ios.toolchain.cmake
-
 //If this value is on, makefiles will be generated without the
 // .SILENT directive, and all commands will be echoed to the console
 // during the make.  This is useful for debugging only. With Visual
 // Studio IDE projects all commands are done without /nologo.
 CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE
 
-//Whether or not to enable ARC
-ENABLE_ARC_INT:BOOL=ON
+//No help, variable specified on the command line.
+CMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM:UNINITIALIZED=5M278UR3KS
 
-//Whether or not to enable bitcode
-ENABLE_BITCODE_INT:BOOL=OFF
-
-//Whether or not to use strict compiler checks
-ENABLE_STRICT_TRY_COMPILE_INT:BOOL=OFF
-
-//Whether or not to hide symbols from the dynamic linker (-fvisibility=hidden)
-ENABLE_VISIBILITY_INT:BOOL=OFF
+//No help, variable specified on the command line.
+CMAKE_XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH:UNINITIALIZED=NO
 
 //Value Computed by CMake
 FloppyTurd_BINARY_DIR:STATIC=/Users/aimac/Development/FloppyTurd/build_ios_device
@@ -229,19 +234,6 @@ FloppyTurd_IS_TOP_LEVEL:STATIC=ON
 //Value Computed by CMake
 FloppyTurd_SOURCE_DIR:STATIC=/Users/aimac/Development/FloppyTurd
 
-IOS:BOOL=ON
-
-//Whether or not to enable explicit named language support
-NAMED_LANGUAGE_SUPPORT_INT:BOOL=ON
-
-//No help, variable specified on the command line.
-PLATFORM:UNINITIALIZED=OS64
-
-UNIX:BOOL=ON
-
-//Path to a program.
-XCODEBUILD_EXECUTABLE:FILEPATH=/usr/bin/xcodebuild
-
 
 ########################
 # INTERNAL cache entries
@@ -249,7 +241,6 @@ XCODEBUILD_EXECUTABLE:FILEPATH=/usr/bin/xcodebuild
 
 //Stored Xcode object GUID
 ALL_BUILD_GUID_CMAKE:INTERNAL=A7B74C11D76D1C710C1DFB49
-APPLE_TARGET_TRIPLE:INTERNAL=arm64-apple-ios17.0
 //ADVANCED property for variable: CMAKE_ADDR2LINE
 CMAKE_ADDR2LINE-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_AR
@@ -294,11 +285,6 @@ CMAKE_EXE_LINKER_FLAGS_RELEASE-ADVANCED:INTERNAL=1
 CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 //Name of external makefile project generator.
 CMAKE_EXTRA_GENERATOR:INTERNAL=
-CMAKE_FIND_ROOT_PATH_MODE_INCLUDE:INTERNAL=BOTH
-CMAKE_FIND_ROOT_PATH_MODE_LIBRARY:INTERNAL=BOTH
-CMAKE_FIND_ROOT_PATH_MODE_PACKAGE:INTERNAL=BOTH
-CMAKE_FIND_ROOT_PATH_MODE_PROGRAM:INTERNAL=BOTH
-CMAKE_FRAMEWORK_PATH:INTERNAL=/Library/PrivateFrameworks;/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks;/Library/PrivateFrameworks;/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/System/Library/Frameworks
 //Name of generator.
 CMAKE_GENERATOR:INTERNAL=Xcode
 //Generator instance identifier.
@@ -310,10 +296,8 @@ CMAKE_GENERATOR_TOOLSET:INTERNAL=
 //Source directory with the top level CMakeLists.txt file for this
 // project
 CMAKE_HOME_DIRECTORY:INTERNAL=/Users/aimac/Development/FloppyTurd
-CMAKE_IGNORE_PATH:INTERNAL=/System/Library/Frameworks;/usr/local/lib;/opt/homebrew
 //ADVANCED property for variable: CMAKE_INSTALL_NAME_TOOL
 CMAKE_INSTALL_NAME_TOOL-ADVANCED:INTERNAL=1
-CMAKE_INSTALL_NAME_TOOL:INTERNAL=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/install_name_tool
 //ADVANCED property for variable: CMAKE_LINKER
 CMAKE_LINKER-ADVANCED:INTERNAL=1
 //Name of CMakeLists files to read
@@ -336,11 +320,6 @@ CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=1
 CMAKE_OBJCOPY-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_OBJDUMP
 CMAKE_OBJDUMP-ADVANCED:INTERNAL=1
-CMAKE_OSX_ARCHITECTURES:INTERNAL=arm64
-//Minimum OS X deployment version
-CMAKE_OSX_DEPLOYMENT_TARGET:INTERNAL=17.0
-CMAKE_OSX_SYSROOT:INTERNAL=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk
-CMAKE_OSX_SYSROOT_INT:INTERNAL=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk
 //Platform information initialized
 CMAKE_PLATFORM_INFO_INITIALIZED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_RANLIB
@@ -375,7 +354,6 @@ CMAKE_STATIC_LINKER_FLAGS_RELEASE-ADVANCED:INTERNAL=1
 CMAKE_STATIC_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_STRIP
 CMAKE_STRIP-ADVANCED:INTERNAL=1
-CMAKE_SYSTEM_VERSION:INTERNAL=26.0
 //ADVANCED property for variable: CMAKE_Swift_FLAGS
 CMAKE_Swift_FLAGS-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_Swift_FLAGS_DEBUG
@@ -392,14 +370,12 @@ CMAKE_TAPI-ADVANCED:INTERNAL=1
 CMAKE_UNAME:INTERNAL=/usr/bin/uname
 //ADVANCED property for variable: CMAKE_VERBOSE_MAKEFILE
 CMAKE_VERBOSE_MAKEFILE-ADVANCED:INTERNAL=1
-DEPLOYMENT_TARGET:INTERNAL=17.0
 //Stored Xcode object GUID
 FloppyTurdGame_GUID_CMAKE:INTERNAL=0DE0C202AEDEA1EE745377B5
 //Stored Xcode object GUID
 FloppyTurd_GUID_CMAKE:INTERNAL=8EFA9AA7BA22AECA1336F161
 //Stored Xcode object GUID
-PROJECT_FloppyTurd_GUID_CMAKE:INTERNAL=3F15D37DE2014138ABDA8B1A
-XCODE_VERSION_INT:INTERNAL=26.0.1
+PROJECT_FloppyTurd_GUID_CMAKE:INTERNAL=5E252CEA9237491EA5573798
 //Stored Xcode object GUID
 ZERO_CHECK_GUID_CMAKE:INTERNAL=4C3BE8251BFA1987C15407C4
 

@@ -50,12 +50,21 @@ namespace GameCore {
 
         // Main per-frame update: spawns for new groups, handles collisions, wraps
         void Update(float deltaTime);
+        
+        // Update wave motion for boss level coins
+        void UpdateWaveMotion(float deltaTime);
 
         // Tear down any remaining pickup entities (on level exit)
         void ClearAll();
         
         // NEW ORCHESTRATOR PATTERN: Spawn coins for a group and return entities
         std::vector<Gnosis::Entity> SpawnCoinsForGroup(int groupId, GroupPattern pattern, float gapWidth = 800.0f);
+        
+        // Boss level: Spawn a group of 4-5 coins with shared wave motion pattern
+        std::vector<Gnosis::Entity> SpawnBossLevelCoinGroup(float screenWidth, float screenHeight);
+        
+        // Boss level: Spawn special rainbow heart at 50% health (fully heals player)
+        Gnosis::Entity SpawnRainbowHeart(float screenWidth, float screenHeight);
 
     private:
         // Dependencies
@@ -107,7 +116,7 @@ namespace GameCore {
                 case PickupType::RedCoin: return "RedCoin";
                 case PickupType::Heart: return "PooHeart";
                 case PickupType::HeartBig: return "PooHeartBig";
-                case PickupType::HeartRainbow: return "PooHeartRainbow";
+                case PickupType::HeartRainbow: return "PooHeartRainbowBeam";
                 default: return "GoldCoin";
             }
         }

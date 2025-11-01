@@ -1219,6 +1219,13 @@ using Gnosis::Entity;
         float bobbingTimer;
         float bobbingBaseY;
         
+        // Boss level wave motion (for coins that scroll in sinusoidal patterns)
+        bool hasWaveMotion;         // Whether this pickup follows a wave pattern
+        float waveAmplitude;        // Amplitude of the wave (e.g., 400px)
+        float waveFrequency;        // Frequency of the wave oscillation
+        float wavePhase;            // Phase offset for this specific pickup
+        float waveBaseY;            // Base Y position (center of wave with random offset)
+        
         Pickup()
             : type(PickupType::GoldCoin)  // Default to GoldCoin
             , value(1)
@@ -1227,6 +1234,11 @@ using Gnosis::Entity;
             , bobbingAmplitude(0.0f)
             , bobbingTimer(0.0f)
             , bobbingBaseY(0.0f)
+            , hasWaveMotion(false)
+            , waveAmplitude(0.0f)
+            , waveFrequency(0.0f)
+            , wavePhase(0.0f)
+            , waveBaseY(0.0f)
         {}
         
         Pickup(PickupType t, int val)    // Constructor takes enum
@@ -1237,6 +1249,11 @@ using Gnosis::Entity;
             , bobbingAmplitude(0.0f)
             , bobbingTimer(0.0f)
             , bobbingBaseY(0.0f)
+            , hasWaveMotion(false)
+            , waveAmplitude(0.0f)
+            , waveFrequency(0.0f)
+            , wavePhase(0.0f)
+            , waveBaseY(0.0f)
         {}
     };
 

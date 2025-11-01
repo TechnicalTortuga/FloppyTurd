@@ -41,6 +41,8 @@ namespace GameCore {
         , m_obstacleSpawnTimer(0.0f)
         , m_pickupSpawnTimer(0.0f)
         , m_enemySpawnTimer(0.0f)
+        , m_bossCoinSpawnTimer(0.0f)
+        , m_bossRainbowHeartSpawned(false)
         , m_inputDelayTimer(0.0f)
         , m_lastSettingsButtonPressTime(0.0f)
         , m_settingsButtonDebounceDelay(0.1f)  // 100ms debounce delay for better responsiveness
@@ -123,6 +125,9 @@ namespace GameCore {
         m_obstacleSpawnTimer = 0.0f;
         m_pickupSpawnTimer = 0.0f;
         m_enemySpawnTimer = 0.0f;
+        m_bossCoinSpawnTimer = 0.0f;
+        m_bossRainbowHeartSpawned = false;
+        m_activeBossCoins.clear();
         
         // Reset input delay timer to prevent immediate input processing
         m_inputDelayTimer = 0.0f;
@@ -348,31 +353,22 @@ namespace GameCore {
                 // Set player position for boss aiming
                 if (m_playerEntity != 0 && m_ecsSystem) {
                     Transform* playerTransform = m_ecsSystem->GetComponent<Transform>(m_playerEntity);
-                    // Calculate player center using sprite dimensions (player uses circle hitbox, no width/height)
                     Sprite* playerSprite = m_ecsSystem->GetComponent<Sprite>(m_playerEntity);
                     Hitbox* playerHitbox = m_ecsSystem->GetComponent<Hitbox>(m_playerEntity);
                     if (playerTransform && playerSprite && playerHitbox) {
-                        // ADJUSTED TARGET: Split the difference between sprite center and hitbox center
-                        // Old calculation was: position + halfWidth/Height (sprite center only)
-                        // Hitbox center is: position + halfWidth/Height + offset
-                        // Target is now: AVERAGE of both for better aiming accuracy
+                        // Use HITBOX CENTER for aiming - this is where the player's collision actually is
                         float halfWidth = (playerSprite->width * playerTransform->scale.x) / 2.0f;
                         float halfHeight = (playerSprite->height * playerTransform->scale.y) / 2.0f;
                         
-                        // Sprite center (old way)
-                        float spriteCenterX = playerTransform->position.x + halfWidth;
-                        float spriteCenterY = playerTransform->position.y + halfHeight;
+                        // Calculate hitbox center (sprite center + hitbox offset)
+                        float hitboxCenterX = playerTransform->position.x + halfWidth + (playerHitbox->offsetX * playerTransform->scale.x);
+                        float hitboxCenterY = playerTransform->position.y + halfHeight + (playerHitbox->offsetY * playerTransform->scale.y);
                         
-                        // Hitbox center (includes offset)
-                        float hitboxCenterX = spriteCenterX + (playerHitbox->offsetX * playerTransform->scale.x);
-                        float hitboxCenterY = spriteCenterY + (playerHitbox->offsetY * playerTransform->scale.y);
-                        
-                        // Split the difference - aim between sprite center and hitbox center
-                        GNVector2 playerCenter = {
-                            (spriteCenterX + hitboxCenterX) * 0.5f,
-                            (spriteCenterY + hitboxCenterY) * 0.5f
-                        };
+                        GNVector2 playerCenter = { hitboxCenterX, hitboxCenterY };
                         m_bossSystem->SetPlayerPosition(playerCenter);
+                        
+                        GN_LOG_DEBUG("🎯 Player hitbox center: (" + std::to_string(hitboxCenterX) + ", " + std::to_string(hitboxCenterY) + 
+                                    "), offset=(" + std::to_string(playerHitbox->offsetX) + ", " + std::to_string(playerHitbox->offsetY) + ")");
                     } else if (playerTransform) {
                         // Fallback to transform position if no sprite
                         GNVector2 playerPos = {playerTransform->position.x, playerTransform->position.y};
@@ -397,6 +393,80 @@ namespace GameCore {
                 m_frameProfiler.StartSection("BossHealthBar");
                 m_bossHealthBar->Update(deltaTime);
                 m_frameProfiler.EndSection("BossHealthBar");
+            }
+            
+            // UNCONDITIONAL LOG - MUST ALWAYS APPEAR IF CODE RUNS
+            GN_LOG_INFO("🔴🔴🔴 REACHED LINE 397 IN GAMEPLAYSTATE UPDATE - LEVEL: " + std::to_string(m_currentLevelId));
+            
+            // Spawn boss level coin groups (level 6 only)
+            if (m_currentLevelId == 6) {
+                GN_LOG_INFO("⚠️ BOSS LEVEL DEBUG: levelId=6, pickupSystem=" + std::to_string(m_pickupSystem != nullptr) + 
+                           ", bossSystem=" + std::to_string(m_bossSystem != nullptr) + 
+                           ", bossActive=" + std::to_string(m_bossSystem ? m_bossSystem->IsActive() : false));
+            }
+            
+            if (m_currentLevelId == 6 && m_pickupSystem && m_bossSystem && m_bossSystem->IsActive()) {
+                GN_LOG_INFO("⚠️ BOSS COIN SPAWNING CODE REACHED!");
+                // Check for rainbow heart spawn at 50% health (once per boss fight)
+                float healthPercent = static_cast<float>(m_bossSystem->GetHealth()) / static_cast<float>(m_bossSystem->GetMaxHealth());
+                GN_LOG_DEBUG("Boss health: " + std::to_string(m_bossSystem->GetHealth()) + "/" + std::to_string(m_bossSystem->GetMaxHealth()) + 
+                            " (" + std::to_string(healthPercent * 100.0f) + "%), rainbowSpawned=" + (m_bossRainbowHeartSpawned ? "true" : "false"));
+                
+                if (!m_bossRainbowHeartSpawned && healthPercent <= 0.5f) {
+                    m_bossRainbowHeartSpawned = true;
+                    GN_LOG_INFO("🌈 Triggering rainbow heart spawn at " + std::to_string(healthPercent * 100.0f) + "% health");
+                    Gnosis::Entity rainbowHeart = m_pickupSystem->SpawnRainbowHeart(m_cachedScreenWidth, m_cachedScreenHeight);
+                    if (rainbowHeart != 0) {
+                        m_activeBossCoins.push_back(rainbowHeart);
+                        GN_LOG_INFO("🌈 Rainbow heart spawned successfully! Entity=" + std::to_string(rainbowHeart));
+                    } else {
+                        GN_LOG_ERROR("🌈 Failed to spawn rainbow heart!");
+                    }
+                }
+                
+                m_bossCoinSpawnTimer += deltaTime;
+                GN_LOG_INFO("⚠️ Boss coin timer: " + std::to_string(m_bossCoinSpawnTimer) + " seconds");
+                
+                // Spawn coin groups every 3 seconds
+                if (m_bossCoinSpawnTimer >= 3.0f) {
+                    m_bossCoinSpawnTimer = 0.0f;
+                    GN_LOG_INFO("Boss coin spawn timer triggered! Spawning coin group...");
+                    auto coins = m_pickupSystem->SpawnBossLevelCoinGroup(m_cachedScreenWidth, m_cachedScreenHeight);
+                    if (coins.size() > 0) {
+                        m_activeBossCoins.insert(m_activeBossCoins.end(), coins.begin(), coins.end());
+                        GN_LOG_INFO("✅ Spawned boss coin group: " + std::to_string(coins.size()) + " coins, total active: " + std::to_string(m_activeBossCoins.size()));
+                    } else {
+                        GN_LOG_ERROR("❌ Failed to spawn boss coin group!");
+                    }
+                }
+                
+                // CRITICAL: Manually scroll boss coins left (boss level has no world scroll)
+                // ScrollSpeed component won't work without world scrolling, so we manually update positions
+                if (!m_activeBossCoins.empty()) {
+                    GN_LOG_DEBUG("⚠️ Manually scrolling " + std::to_string(m_activeBossCoins.size()) + " boss coins");
+                }
+                for (Gnosis::Entity coinEntity : m_activeBossCoins) {
+                    Transform* t = m_ecsSystem->GetComponent<Transform>(coinEntity);
+                    ScrollSpeed* scrollSpeed = m_ecsSystem->GetComponent<ScrollSpeed>(coinEntity);
+                    if (t && scrollSpeed) {
+                        // Manually apply scroll speed (move left)
+                        t->position.x -= scrollSpeed->speed * deltaTime;
+                    }
+                }
+                
+                // Clean up off-screen boss coins from tracking (PickupSystem will destroy them)
+                auto it = m_activeBossCoins.begin();
+                while (it != m_activeBossCoins.end()) {
+                    Transform* t = m_ecsSystem->GetComponent<Transform>(*it);
+                    if (t && t->position.x < -200.0f) {
+                        // Off screen to the left, remove from tracking only
+                        // PickupSystem handles entity destruction via collision or ClearAll
+                        GN_LOG_DEBUG("Removing off-screen boss coin from tracking at x=" + std::to_string(t->position.x));
+                        it = m_activeBossCoins.erase(it);
+                    } else {
+                        ++it;
+                    }
+                }
             }
             
             // Update white fade overlay for boss death sequence
@@ -895,6 +965,11 @@ namespace GameCore {
             m_pickupSystem->ClearAll();
             GN_LOG_INFO("[RESET] Pickups cleared for level retry");
         }
+        
+        // Reset boss coin spawning (coins already destroyed by PickupSystem::ClearAll above)
+        m_bossCoinSpawnTimer = 0.0f;
+        m_bossRainbowHeartSpawned = false;
+        m_activeBossCoins.clear();
 
         // Reset background positions to initial state
         if (m_levelManager) {
@@ -1602,6 +1677,9 @@ namespace GameCore {
         if (m_pickupSystem) {
             m_pickupSystem->ClearAll();
         }
+        
+        // Clear boss coin tracking (coins already destroyed above)
+        m_activeBossCoins.clear();
         
         // Destroy projectiles via ProjectileSystem
         if (m_projectileSystem) {

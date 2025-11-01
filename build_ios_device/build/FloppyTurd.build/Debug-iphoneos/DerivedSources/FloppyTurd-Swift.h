@@ -283,6 +283,7 @@ typedef unsigned int swift_uint4  __attribute__((__ext_vector_type__(4)));
 #endif
 @import CoreFoundation;
 @import Foundation;
+@import GameKit;
 @import MetalKit;
 @import ObjectiveC;
 @import UIKit;
@@ -345,6 +346,19 @@ SWIFT_CLASS("_TtC10FloppyTurd11AppDelegate")
 - (void)applicationWillTerminate:(UIApplication * _Nonnull)application;
 - (UIInterfaceOrientationMask)application:(UIApplication * _Nonnull)application supportedInterfaceOrientationsForWindow:(UIWindow * _Nullable)window SWIFT_WARN_UNUSED_RESULT;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
+@end
+
+/// @brief Singleton manager for Game Center authentication and leaderboard submission
+/// This class handles all Game Center operations using native Swift/GameKit APIs
+SWIFT_CLASS("_TtC10FloppyTurd17GameCenterManager")
+@interface GameCenterManager : NSObject
+- (nonnull instancetype)init SWIFT_UNAVAILABLE;
++ (nonnull instancetype)new SWIFT_UNAVAILABLE_MSG("-init is unavailable");
+@end
+
+@class GKGameCenterViewController;
+@interface GameCenterManager (SWIFT_EXTENSION(FloppyTurd)) <GKGameCenterControllerDelegate>
+- (void)gameCenterViewControllerDidFinish:(GKGameCenterViewController * _Nonnull)gameCenterViewController;
 @end
 
 /// GameEngine - Swift implementation with native C++ interop
@@ -4421,6 +4435,7 @@ struct FloppyTurd_LogLevel {
   _Alignas(1) char _storage[1];
 };
 
+SWIFT_EXTERN struct swift_interop_returnStub_FloppyTurd_uint64_t_0_8_void_ptr_8_16 $s10FloppyTurd16loadGameDataSyncSSyF(void) SWIFT_NOEXCEPT SWIFT_CALL; // loadGameDataSync()
 
 #ifdef __cplusplus
 }
@@ -5581,6 +5596,17 @@ struct implClassFor<FloppyTurd::LogLevel> { using type = FloppyTurd::_impl::_imp
 } // namespace swift
 
 namespace FloppyTurd SWIFT_PRIVATE_ATTR SWIFT_SYMBOL_MODULE("FloppyTurd") {
+
+/// Load game data synchronously for C++ interop
+/// Called directly from C++ during game initialization via Swift C++ interop
+///
+/// returns:
+/// JSON string containing game save data, or empty string if no save exists
+SWIFT_INLINE_THUNK swift::String loadGameDataSync() noexcept SWIFT_SYMBOL("s:10FloppyTurd16loadGameDataSyncSSyF") SWIFT_WARN_UNUSED_RESULT {
+  return swift::_impl::_impl_String::returnNewValue([&](char * _Nonnull result) SWIFT_INLINE_THUNK_ATTRIBUTES {
+    FloppyTurd::_impl::swift_interop_returnDirect_FloppyTurd_uint64_t_0_8_void_ptr_8_16(result, FloppyTurd::_impl::$s10FloppyTurd16loadGameDataSyncSSyF());
+  });
+}
 
   SWIFT_INLINE_THUNK AssetError AssetError::_impl_fileNotFound::operator()(const swift::String& val) const {
     auto result = AssetError::_make();

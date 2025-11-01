@@ -252,9 +252,15 @@ namespace GameCore {
         float m_pickupSpawnTimer;
         float m_enemySpawnTimer;
         
+        // Boss level coin spawning (sinusoidal wave pattern)
+        float m_bossCoinSpawnTimer;
+        std::vector<Gnosis::Entity> m_activeBossCoins;  // Track boss coins for wave movement
+        bool m_bossRainbowHeartSpawned;  // Track if rainbow heart spawned at 50% health
+        
         // Input delay timer to prevent auto-shooting when entering level
         float m_inputDelayTimer;
-        static constexpr float INPUT_DELAY_TIME = 0.5f; // 0.5 seconds delay
+        static constexpr float INPUT_DELAY_TIME = 0.5f; // 0.5 seconds delay</parameter>
+
         
         // Configuration
         static constexpr float OBSTACLE_SPAWN_INTERVAL = 2.0f;

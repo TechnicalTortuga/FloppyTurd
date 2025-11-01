@@ -764,10 +764,9 @@ void BossSystem::SpawnProjectile() {
     // Calculate launch position (hand location, lowered by 16*scale) - MUST MATCH lock-on dots!
     Gnosis::GNVector2 handLoc = { shoulder.x - (40.0f * scale), shoulder.y + (16.0f * scale) };
     
-    // FIXED: Use the SAME target adjustment as lock-on dots for accurate aiming
-    // Offset target 8px*scale higher for better visual accuracy (matches UpdateLockOnIndicator line 759)
-    Gnosis::GNVector2 adjustedTarget = {aimingData.playerPosition.x, aimingData.playerPosition.y - (8.0f * scale)};
-    Gnosis::GNVector2 toPlayer = Gnosis::Vector2Subtract(adjustedTarget, handLoc);
+    // Use player position directly - it's already set to hitbox center in GameplayState
+    // No hardcoded offset needed - aimingData.playerPosition is the hitbox center
+    Gnosis::GNVector2 toPlayer = Gnosis::Vector2Subtract(aimingData.playerPosition, handLoc);
     float length = sqrtf(toPlayer.x * toPlayer.x + toPlayer.y * toPlayer.y);
     GNVector2 direction = {toPlayer.x / length, toPlayer.y / length};
     
@@ -798,7 +797,7 @@ void BossSystem::SpawnProjectile() {
                    ", direction: (" + std::to_string(direction.x) + ", " + std::to_string(direction.y) +
                    "), shoulder: (" + std::to_string(shoulder.x) + ", " + std::to_string(shoulder.y) +
                    "), handLoc: (" + std::to_string(handLoc.x) + ", " + std::to_string(handLoc.y) +
-                   "), adjustedTarget: (" + std::to_string(adjustedTarget.x) + ", " + std::to_string(adjustedTarget.y) +
+                   "), target: (" + std::to_string(aimingData.playerPosition.x) + ", " + std::to_string(aimingData.playerPosition.y) +
                    "), spawn: (" + std::to_string(spawnPos.x) + ", " + std::to_string(spawnPos.y) +
                    "), velocity: (" + std::to_string(direction.x * 1000.0f) + ", " + std::to_string(direction.y * 1000.0f) + ")");
     }
@@ -919,8 +918,8 @@ void BossSystem::UpdateLockOnIndicator() {
     // Calculate launch position (hand location, lowered by 16*scale)
     GNVector2 handLoc = { shoulder.x - (40.0f * scale), shoulder.y + (16.0f * scale) };
     
-    // Always aim directly at player CENTER (not just X position)
-    // The playerPosition is already the center from SetPlayerPosition
+    // Use player position directly - it's already set to hitbox center in GameplayState
+    // No hardcoded offset needed - aimingData.playerPosition is the hitbox center
     Gnosis::GNVector2 toPlayer = Gnosis::Vector2Subtract(aimingData.playerPosition, handLoc);
     float distanceToPlayer = sqrtf(toPlayer.x * toPlayer.x + toPlayer.y * toPlayer.y);
     GNVector2 direction = {toPlayer.x / distanceToPlayer, toPlayer.y / distanceToPlayer};

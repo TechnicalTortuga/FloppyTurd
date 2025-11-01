@@ -15,6 +15,7 @@ BossHealthBar::BossHealthBar(BossSystem* bossSystem, const char* bossName, Gnosi
     , m_shadowHealthPercent(1.0f)
     , m_hurtFadeTimer(0.0f)
     , m_displayedHealthPercent(1.0f)
+    , m_whiteTrimDelay(0.0f)
 {
     GN_LOG_INFO("BossHealthBar created for: " + std::string(bossName));
     CreateUIEntities();
@@ -52,6 +53,10 @@ void BossHealthBar::CreateUIEntities() {
     float barY = screenHeight * BAR_TOP_OFFSET;
     float nameY = screenHeight * NAME_OFFSET;
     float scale = 8.0f;  // 8x scale for proper visibility
+    
+    // Store barX for use in UpdateUIEntities
+    m_barX = barX;
+    m_barY = barY;
 
     GN_LOG_INFO("BossHealthBar positioning: screen(" + std::to_string((int)screenWidth) + "x" + std::to_string((int)screenHeight) +
                "), isLandscape=" + std::to_string(isLandscape) + ", barX=" + std::to_string(barX));
@@ -80,16 +85,23 @@ void BossHealthBar::CreateUIEntities() {
     m_ecsSystem->AddComponent<Transform>(m_healthFillEntity, healthTrans);
 
     // Create hurt effect entity (white bar for damage flash)
+    // This renders BEHIND the red health bar, so when health clips, white shows through
     m_hurtEffectEntity = m_ecsSystem->CreateEntity();
     Sprite hurtSprite("BossBarHurt", ORIGINAL_WIDTH * scale, ORIGINAL_HEIGHT * scale);
-    hurtSprite.visible = false;
+    hurtSprite.visible = true; // Always visible, alpha controls fade
+    hurtSprite.isAnimated = false;
+    hurtSprite.frameCount = 1;
     hurtSprite.frameWidth = ORIGINAL_WIDTH;
     hurtSprite.frameHeight = ORIGINAL_HEIGHT;
-    hurtSprite.layer = 14; // Between health (layer 13) and frame (layer 15)
+    hurtSprite.sourceX = 0;
+    hurtSprite.sourceY = 0;
+    hurtSprite.sourceWidth = ORIGINAL_WIDTH;
+    hurtSprite.sourceHeight = ORIGINAL_HEIGHT;
+    hurtSprite.layer = 12; // BEHIND health bar (13) so it shows through when health clips
+    hurtSprite.color = Gnosis::GNColor(255, 255, 255, 0); // Start transparent
     m_ecsSystem->AddComponent<Sprite>(m_hurtEffectEntity, hurtSprite);
-    // Offset hurt effect slightly to the right to prevent white edge showing behind frame
-    float hurtOffsetX = 2.0f * scale; // Small offset to the right
-    Transform hurtTrans(Gnosis::GNVector2(barX + hurtOffsetX, barY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f)); // Scale is baked into sprite size
+    // Position hurt effect exactly the same as health bar
+    Transform hurtTrans(Gnosis::GNVector2(barX, barY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
     m_ecsSystem->AddComponent<Transform>(m_hurtEffectEntity, hurtTrans);
 
     // Create boss name text entity (positioned relative to scaled bar)
@@ -116,12 +128,27 @@ void BossHealthBar::Update(float deltaTime) {
 
     UpdateHealthValues();
 
-    // Update hurt effect fade
+    // Update hurt effect fade and trim delay
     if (m_hurtFadeTimer > 0.0f) {
         m_hurtFadeTimer -= deltaTime;
         if (m_hurtFadeTimer < 0.0f) {
             m_hurtFadeTimer = 0.0f;
             m_shadowHealthPercent = m_currentHealthPercent;  // Reset shadow to match current
+        }
+    }
+    
+    // Update white bar trim delay - starts after a brief pause, then interpolates to current health
+    if (m_whiteTrimDelay > 0.0f) {
+        m_whiteTrimDelay -= deltaTime;
+        if (m_whiteTrimDelay < 0.0f) {
+            m_whiteTrimDelay = 0.0f;
+        }
+    } else if (m_shadowHealthPercent > m_currentHealthPercent) {
+        // Linearly interpolate shadow health toward current health
+        float trimSpeed = 0.8f; // Units per second
+        m_shadowHealthPercent -= trimSpeed * deltaTime;
+        if (m_shadowHealthPercent < m_currentHealthPercent) {
+            m_shadowHealthPercent = m_currentHealthPercent;
         }
     }
 
@@ -169,46 +196,71 @@ void BossHealthBar::UpdateUIEntities() {
         if (frameSprite) frameSprite->visible = shouldBeVisible;
     }
 
-    // Update health sprite source rect
+    // Update health sprite source rect - USE FIXED WIDTH WITH UV CLIPPING
     if (m_healthFillEntity != 0) {
         Sprite* health = m_ecsSystem->GetComponent<Sprite>(m_healthFillEntity);
         if (health) {
             health->visible = shouldBeVisible && (m_displayedHealthPercent > 0.0f);
-            // Update both source rect and rendered width
-            health->sourceWidth = ORIGINAL_WIDTH * m_displayedHealthPercent;
-            health->sourceHeight = ORIGINAL_HEIGHT;
+            // CRITICAL FIX: Keep sprite width CONSTANT to prevent position shifting
+            // Only change sourceWidth for UV clipping - Metal renderer will clip texture
+            float scale = 8.0f; // Same scale used in CreateUIEntities
+            health->width = ORIGINAL_WIDTH * scale;  // ALWAYS full width
+            health->height = ORIGINAL_HEIGHT * scale;
+            
+            // Clip the SOURCE rectangle (UV coordinates) to show only current health portion
             health->sourceX = 0;
             health->sourceY = 0;
-            // CRITICAL: Also update sprite width so it renders at the correct size
-            float scale = 8.0f; // Same scale used in CreateUIEntities
-            health->width = (ORIGINAL_WIDTH * m_displayedHealthPercent) * scale;
+            health->sourceWidth = ORIGINAL_WIDTH * m_displayedHealthPercent;  // Clip texture
+            health->sourceHeight = ORIGINAL_HEIGHT;
+            
+            // Position is LOCKED and never changes
+            Transform* healthTransform = m_ecsSystem->GetComponent<Transform>(m_healthFillEntity);
+            if (healthTransform) {
+                healthTransform->position.x = m_barX;
+                healthTransform->position.y = m_barY;
+            }
         }
     }
 
-    // Update damage effect (hurt flash) width based on shadow health, with alpha fade
+    // Update hurt effect (white bar) - renders BEHIND health bar, trims with delay after damage
     if (m_hurtEffectEntity != 0) {
         Sprite* hurt = m_ecsSystem->GetComponent<Sprite>(m_hurtEffectEntity);
-        // Show and fade the hurt overlay only when there's a damage delta to display
-        if (hurt && shouldBeVisible && m_shadowHealthPercent > m_currentHealthPercent && m_hurtFadeTimer > 0.0f) {
+        if (hurt && shouldBeVisible) {
+            // Hurt bar is visible when there's damage to show
             hurt->visible = true;
-            float hurtPercent = m_shadowHealthPercent - m_currentHealthPercent;
-            hurt->sourceWidth = ORIGINAL_WIDTH * hurtPercent;
-            hurt->sourceHeight = ORIGINAL_HEIGHT;
-            hurt->sourceX = ORIGINAL_WIDTH * m_currentHealthPercent; // Start after current health
+            
+            // CRITICAL FIX: Keep sprite width CONSTANT to prevent position shifting
+            float scale = 8.0f;
+            hurt->width = ORIGINAL_WIDTH * scale;  // ALWAYS full width
+            hurt->height = ORIGINAL_HEIGHT * scale;
+            
+            // Trim the white bar via SOURCE rectangle (UV clipping)
+            hurt->sourceX = 0;
             hurt->sourceY = 0;
-            // CRITICAL: Also update sprite width so it renders at the correct size
-            float scale = 8.0f; // Same scale used in CreateUIEntities
-            hurt->width = (ORIGINAL_WIDTH * hurtPercent) * scale;
-            // Apply alpha fade based on remaining hurt fade timer (1.0 = fully opaque, 0.0 = transparent)
-            float fadeProgress = m_hurtFadeTimer / HURT_FADE_DURATION;
-            if (fadeProgress < 0.0f) fadeProgress = 0.0f;
-            if (fadeProgress > 1.0f) fadeProgress = 1.0f;
-            uint8_t alpha = static_cast<uint8_t>(fadeProgress * 255.0f);
-            hurt->color = Gnosis::GNColor(255, 255, 255, alpha);
+            hurt->sourceWidth = ORIGINAL_WIDTH * m_shadowHealthPercent;  // Clip texture
+            hurt->sourceHeight = ORIGINAL_HEIGHT;
+            
+            // Alpha controls the fade: visible when damaged, fades out over time
+            if (m_shadowHealthPercent > m_currentHealthPercent && m_hurtFadeTimer > 0.0f) {
+                // Calculate fade based on timer
+                float fadeProgress = m_hurtFadeTimer / HURT_FADE_DURATION;
+                if (fadeProgress < 0.0f) fadeProgress = 0.0f;
+                if (fadeProgress > 1.0f) fadeProgress = 1.0f;
+                uint8_t alpha = static_cast<uint8_t>(fadeProgress * 255.0f);
+                hurt->color = Gnosis::GNColor(255, 255, 255, alpha);
+            } else {
+                // No damage or timer expired, fully transparent
+                hurt->color = Gnosis::GNColor(255, 255, 255, 0);
+            }
+            
+            // CRITICAL: Ensure transform position never changes after initial setup
+            Transform* hurtTransform = m_ecsSystem->GetComponent<Transform>(m_hurtEffectEntity);
+            if (hurtTransform) {
+                hurtTransform->position.x = m_barX;
+                hurtTransform->position.y = m_barY;
+            }
         } else if (hurt) {
             hurt->visible = false;
-            // Reset color to fully opaque when hidden to avoid leaving partial alpha set
-            hurt->color = Gnosis::GNColor(255, 255, 255, 255);
         }
     }
 
@@ -239,6 +291,7 @@ void BossHealthBar::UpdateHealthValues() {
     if (newHealthPercent < m_currentHealthPercent) {
         m_shadowHealthPercent = m_currentHealthPercent;  // Store old health for fade effect
         m_hurtFadeTimer = HURT_FADE_DURATION;            // Start fade timer
+        m_whiteTrimDelay = 0.3f;                         // Wait 0.3 seconds before trimming white bar
     }
 
     m_currentHealthPercent = newHealthPercent; // Set target
@@ -251,6 +304,7 @@ void BossHealthBar::Reset() {
     m_shadowHealthPercent = 1.0f;
     m_displayedHealthPercent = 1.0f;
     m_hurtFadeTimer = 0.0f;
+    m_whiteTrimDelay = 0.0f;
     
     // Update UI entities to show full health
     UpdateUIEntities();
