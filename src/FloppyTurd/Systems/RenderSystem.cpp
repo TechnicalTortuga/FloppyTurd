@@ -1713,14 +1713,34 @@ namespace GameCore {
             data.x = screenPos.x;
             data.y = screenPos.y;
             
-            // Scale: Send the MULTIPLIER, not final pixel size
-            // MetalRenderer will multiply this by texture dimensions
-            // Formula matches RenderSingleItem's finalScale calculation
+            // Scale calculation depends on whether we're using fixed-destination rendering
             float cameraScale = GetCameraScale();
-            float scaleX = item->sprite->width / static_cast<float>(item->sprite->frameWidth);
-            float scaleY = item->sprite->height / static_cast<float>(item->sprite->frameHeight);
-            data.scaleX = scaleX * item->transform->scale.x * cameraScale;
-            data.scaleY = scaleY * item->transform->scale.y * cameraScale;
+            
+            if (item->sprite->useFixedDestination && 
+                item->sprite->fixedWidth > 0.0f && 
+                item->sprite->fixedHeight > 0.0f) {
+                
+                // FIXED DESTINATION: Use fixed pixel size regardless of sourceWidth changes
+                // Calculate scale as: fixedSize / frameSize (what Metal renderer expects)
+                data.scaleX = (item->sprite->fixedWidth * cameraScale) / static_cast<float>(item->sprite->frameWidth);
+                data.scaleY = (item->sprite->fixedHeight * cameraScale) / static_cast<float>(item->sprite->frameHeight);
+                data.useFixedDestination = true;
+                
+                GN_LOG_DEBUG("Fixed-destination sprite: '" + item->sprite->textureId + 
+                           "' fixedSize=(" + std::to_string(item->sprite->fixedWidth) + "," + 
+                           std::to_string(item->sprite->fixedHeight) + 
+                           ") scale=(" + std::to_string(data.scaleX) + "," + std::to_string(data.scaleY) + ")");
+                
+            } else {
+                // NORMAL: Scale based on sprite width/height
+                // MetalRenderer will multiply this by texture dimensions
+                // Formula matches RenderSingleItem's finalScale calculation
+                float scaleX = item->sprite->width / static_cast<float>(item->sprite->frameWidth);
+                float scaleY = item->sprite->height / static_cast<float>(item->sprite->frameHeight);
+                data.scaleX = scaleX * item->transform->scale.x * cameraScale;
+                data.scaleY = scaleY * item->transform->scale.y * cameraScale;
+                data.useFixedDestination = false;
+            }
             
             // Rotation
             data.rotation = item->transform->rotation;
@@ -1772,11 +1792,20 @@ namespace GameCore {
                                " frameWidth=" + std::to_string(item->sprite->frameWidth) + ")");
                 }
             } else {
-                // Use full texture for non-animated sprites
-                data.sourceX = 0;
-                data.sourceY = 0;
-                data.sourceWidth = 0;  // 0 means use full texture
-                data.sourceHeight = 0;
+                // Check if sprite has explicit source rect (for clipping effects like health bars)
+                if (item->sprite->sourceWidth > 0.0f && item->sprite->sourceHeight > 0.0f) {
+                    // Use explicit source rect from sprite component
+                    data.sourceX = item->sprite->sourceX;
+                    data.sourceY = item->sprite->sourceY;
+                    data.sourceWidth = item->sprite->sourceWidth;
+                    data.sourceHeight = item->sprite->sourceHeight;
+                } else {
+                    // Use full texture for non-animated sprites without explicit source rect
+                    data.sourceX = 0;
+                    data.sourceY = 0;
+                    data.sourceWidth = 0;  // 0 means use full texture
+                    data.sourceHeight = 0;
+                }
             }
             
             batchData.push_back(data);

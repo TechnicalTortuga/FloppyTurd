@@ -473,7 +473,7 @@ std::vector<Gnosis::Entity> PickupSystem::SpawnBossLevelCoinGroup(float screenWi
     float waveBaseY = centerY + randomOffset;
     
     // Wave parameters (shared by all pickups in this group)
-    float waveAmplitude = 100.0f;
+    float waveAmplitude = 200.0f;
     float waveFrequency = 0.003f; // Adjust for desired wave density
     
     // Starting X position (right edge of screen)
@@ -561,7 +561,7 @@ std::vector<Gnosis::Entity> PickupSystem::SpawnBossLevelCoinGroup(float screenWi
         m_ecsSystem->AddComponent<Pickup>(e, pickup);
         
         // Boss level coins scroll at fixed speed (no world speed scaling)
-        ScrollSpeed scroll(300.0f); // Fixed scroll speed for boss level
+        ScrollSpeed scroll(200.0f); // Reduced scroll speed for better coin economy
         m_ecsSystem->AddComponent<ScrollSpeed>(e, scroll);
         
         // Hitbox
@@ -650,8 +650,8 @@ Gnosis::Entity PickupSystem::SpawnRainbowHeart(float screenWidth, float screenHe
     
     m_ecsSystem->AddComponent<Pickup>(e, pickup);
     
-    // Boss level coins scroll at fixed speed (same as regular coins)
-    ScrollSpeed scroll(300.0f);
+    // Rainbow heart scrolls at same speed as boss coins
+    ScrollSpeed scroll(200.0f); // Reduced scroll speed for better coin economy
     m_ecsSystem->AddComponent<ScrollSpeed>(e, scroll);
     
     // Hitbox (32x32 for rainbow heart)

@@ -261,6 +261,13 @@ namespace GameCore {
         float sourceWidth = 0.0f; // 0 means use frameWidth
         float sourceHeight = 0.0f; // 0 means use frameHeight
         
+        // Fixed-destination rendering (for clipping effects like health bars)
+        // When enabled, sprite renders at fixed destination size regardless of sourceWidth/Height changes
+        // UV coordinates still use sourceX/Y/Width/Height for texture clipping
+        bool useFixedDestination = false;
+        float fixedWidth = 0.0f;   // If > 0, use this as destination width (in pixels)
+        float fixedHeight = 0.0f;  // If > 0, use this as destination height (in pixels)
+        
         // Static sprite constructor
         Sprite()
             : textureId()

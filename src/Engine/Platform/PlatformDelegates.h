@@ -204,10 +204,11 @@ namespace GameCore {
         float scaleX, scaleY;
         float rotation;
         float sourceX, sourceY, sourceWidth, sourceHeight;  // For sprite sheets
+        bool useFixedDestination;  // Use fixed destination size for clipping effects
         
         SpriteBatchData() 
             : textureHandle(0), x(0), y(0), scaleX(1), scaleY(1), rotation(0),
-              sourceX(0), sourceY(0), sourceWidth(0), sourceHeight(0) {}
+              sourceX(0), sourceY(0), sourceWidth(0), sourceHeight(0), useFixedDestination(false) {}
     };
     
     // Rendering command data

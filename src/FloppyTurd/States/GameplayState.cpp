@@ -262,7 +262,7 @@ namespace GameCore {
         UpdateSubState(deltaTime);
         m_frameProfiler.EndSection("UpdateSubState");
         
-        // Only update game time when playing, but allow physics during game over for falling
+        // Only update game time when playing
         if (m_currentSubState == GameplaySubState::Playing) {
             // Update game time
             m_gameTime += deltaTime;
@@ -381,7 +381,7 @@ namespace GameCore {
                 m_frameProfiler.EndSection("BossSystem");
             }
 
-            // Update explosion system (level 6 only)
+            // Update explosion system (level 6 only) - ALWAYS update even during death sequence
             if (m_explosionSystem && m_currentLevelId == 6) {
                 m_frameProfiler.StartSection("ExplosionSystem");
                 m_explosionSystem->Update(deltaTime);
@@ -427,8 +427,8 @@ namespace GameCore {
                 m_bossCoinSpawnTimer += deltaTime;
                 GN_LOG_INFO("⚠️ Boss coin timer: " + std::to_string(m_bossCoinSpawnTimer) + " seconds");
                 
-                // Spawn coin groups every 3 seconds
-                if (m_bossCoinSpawnTimer >= 3.0f) {
+                // Spawn coin groups every 10 seconds (slower pacing for coin economy + shooting costs)
+                if (m_bossCoinSpawnTimer >= 10.0f) {
                     m_bossCoinSpawnTimer = 0.0f;
                     GN_LOG_INFO("Boss coin spawn timer triggered! Spawning coin group...");
                     auto coins = m_pickupSystem->SpawnBossLevelCoinGroup(m_cachedScreenWidth, m_cachedScreenHeight);
@@ -599,11 +599,41 @@ namespace GameCore {
             m_frameProfiler.EndSection("SpriteSystem");
         }
         
+        // Check if boss death sequence is active - freeze gameplay like pause menu
+        // This check happens AFTER boss system updates so death sequence can start
+        bool bossDyingFreeze = false;
+        if (m_bossSystem && m_currentLevelId == 6) {
+            GN_LOG_INFO("🔍 Boss freeze check: m_bossSystem exists, currentLevel=6, bossHealth=" + std::to_string(m_bossSystem->GetHealth()));
+            // Check if boss entered death state
+            if (m_bossSystem->GetHealth() <= 0) {
+                bossDyingFreeze = true;
+                GN_LOG_INFO("🔒 BOSS DYING FREEZE ACTIVATED - health <= 0");
+                
+                // Stop music once when boss dies (check if death sequence just started)
+                if (m_platformDelegates && m_platformDelegates->audio.stopMusic) {
+                    // Only stop if boss just entered death state (health exactly 0 or death sequence starting)
+                    static int lastCheckedHealth = 200; // Initialize to max health
+                    if (lastCheckedHealth > 0 && m_bossSystem->GetHealth() <= 0) {
+                        m_platformDelegates->audio.stopMusic();
+                        GN_LOG_INFO("🎵 Boss death - music stopped, freeze activated");
+                    }
+                    lastCheckedHealth = m_bossSystem->GetHealth();
+                }
+            }
+        } else {
+            if (m_bossSystem) {
+                GN_LOG_INFO("🔍 Boss freeze check: m_bossSystem exists but currentLevel=" + std::to_string(m_currentLevelId) + " (not 6)");
+            }
+        }
+        
+        GN_LOG_INFO("🎮 bossDyingFreeze=" + std::to_string(bossDyingFreeze) + ", currentLevel=" + std::to_string(m_currentLevelId));
+        
         // PlayerControllerSystem updates player physics - only when not paused
-        if (m_playerControllerSystem && m_currentSubState != GameplaySubState::Paused) {
-            m_frameProfiler.StartSection("PlayerControllerSystem");
+        // Allow during GameOver for player falling animation, but not during boss death
+        if (m_playerControllerSystem && m_currentSubState != GameplaySubState::Paused && !bossDyingFreeze) {
+            m_frameProfiler.StartSection("PlayerController");
             m_playerControllerSystem->Update(deltaTime);
-            m_frameProfiler.EndSection("PlayerControllerSystem");
+            m_frameProfiler.EndSection("PlayerController");
         }
         
         m_frameProfiler.EndFrame();
@@ -3022,14 +3052,41 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             return;
         }
         
-        // Get player transform and hitbox
+        // Get player transform, hitbox, and sprite
         Transform* playerTransform = m_ecsSystem->GetComponent<Transform>(m_playerEntity);
         Hitbox* playerHitbox = m_ecsSystem->GetComponent<Hitbox>(m_playerEntity);
-        if (!playerTransform || !playerHitbox) {
+        Sprite* playerSprite = m_ecsSystem->GetComponent<Sprite>(m_playerEntity);
+        
+        // Check if player fell off screen and trigger damage
+        if (playerTransform && playerSprite && m_playerAlive) {
+            float playerHeight = playerSprite->height * playerTransform->scale.y;
+            float resetThreshold = m_cachedScreenHeight + (playerHeight * 0.75f);
+            
+            // If player is below threshold and invulnerability is off, trigger damage and reset
+            if (playerTransform->position.y > resetThreshold && m_invulnerabilityTimer <= 0.0f) {
+                GN_LOG_INFO("💔 Player fell off screen - triggering damage and reset!");
+                
+                // Play hurt sound effect
+                if (m_platformDelegates && m_platformDelegates->audio.playSound) {
+                    m_platformDelegates->audio.playSound("hurt.mp3", 0.8f);
+                }
+                
+                // Reset player position immediately
+                playerTransform->position.y = 50.0f; // TOP_SPAWN_Y
+                Physics* physics = m_ecsSystem->GetComponent<Physics>(m_playerEntity);
+                if (physics) {
+                    physics->velocity.y = 0.0f;
+                }
+                
+                // Trigger damage (will handle hurt animation and invulnerability)
+                OnPlayerHurt(1); // Take 1 damage for falling off
+                return; // Skip other collision checks this frame
+            }
+        }
+        if (!playerTransform || !playerHitbox || !playerSprite) {
             return;
         }
         // Player circle collision (center-based): transform position is top-left; add sprite half-dimensions
-        Sprite* playerSprite = m_ecsSystem->GetComponent<Sprite>(m_playerEntity);
         float pHalfW = playerSprite ? (playerSprite->width * playerTransform->scale.x * 0.5f) : 0.0f;
         float pHalfH = playerSprite ? (playerSprite->height * playerTransform->scale.y * 0.5f) : 0.0f;
         float pCenterX = playerTransform->position.x + pHalfW + (playerHitbox->offsetX * playerTransform->scale.x);

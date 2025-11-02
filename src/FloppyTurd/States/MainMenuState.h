@@ -217,6 +217,10 @@ namespace GameCore {
         float m_inputDebounceTimer;
         static constexpr float INPUT_DEBOUNCE_DURATION = 0.3f; // 300ms debounce
         
+        // Fart button debounce to prevent rapid-fire farts
+        float m_fartButtonDebounceTimer;
+        static constexpr float FART_BUTTON_DEBOUNCE = 0.5f; // 500ms between farts
+        
         // Font loading state
         bool m_fontLoaded;
         

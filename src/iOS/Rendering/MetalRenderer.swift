@@ -1904,12 +1904,25 @@ public class MetalRenderer {
 
             let spriteWidth: Float
             let spriteHeight: Float
-            if sprite.sourceWidth > 0 && sprite.sourceHeight > 0 {
-                // Animated/sprite sheet: scale by FRAME size
+
+            if sprite.useFixedDestination {
+                // FIXED DESTINATION: Scale values already represent the desired destination size
+                // The scale is calculated as (fixedWidth / frameWidth) in RenderSystem
+                // We need to multiply by frameWidth to get back the destination size in pixels
+                if sprite.sourceWidth > 0 && sprite.sourceHeight > 0 {
+                    // Use frame dimensions for fixed-destination sprites
+                    spriteWidth = sprite.sourceWidth * absScaleX
+                    spriteHeight = sprite.sourceHeight * absScaleY
+                } else {
+                    spriteWidth = Float(texture.width) * absScaleX
+                    spriteHeight = Float(texture.height) * absScaleY
+                }
+            } else if sprite.sourceWidth > 0 && sprite.sourceHeight > 0 {
+                // NORMAL: Animated/sprite sheet - scale by FRAME size
                 spriteWidth = sprite.sourceWidth * absScaleX
                 spriteHeight = sprite.sourceHeight * absScaleY
             } else {
-                // Static sprite: scale by full texture size
+                // NORMAL: Static sprite - scale by full texture size
                 spriteWidth = Float(texture.width) * absScaleX
                 spriteHeight = Float(texture.height) * absScaleY
             }

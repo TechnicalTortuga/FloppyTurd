@@ -71,7 +71,7 @@ void BossHealthBar::CreateUIEntities() {
     frameSprite.layer = 15;
     m_ecsSystem->AddComponent<Sprite>(m_backgroundEntity, frameSprite);
 
-    // Create health sprite
+    // Create health sprite with FIXED destination rendering
     m_healthFillEntity = m_ecsSystem->CreateEntity();
     Sprite healthSprite("BossBarHealth", ORIGINAL_WIDTH * scale, ORIGINAL_HEIGHT * scale);
     healthSprite.visible = true;
@@ -80,11 +80,23 @@ void BossHealthBar::CreateUIEntities() {
     healthSprite.frameWidth = ORIGINAL_WIDTH;
     healthSprite.frameHeight = ORIGINAL_HEIGHT;
     healthSprite.layer = 13; // Behind frame (layer 15) and hurt effect (layer 14)
+    
+    // Enable fixed-destination rendering to prevent position shifting when clipping
+    healthSprite.useFixedDestination = true;
+    healthSprite.fixedWidth = ORIGINAL_WIDTH * scale;   // Always render at full bar width (1280 pixels)
+    healthSprite.fixedHeight = ORIGINAL_HEIGHT * scale; // Always render at full bar height (256 pixels)
+    
+    // Source rect will be changed each frame for clipping effect
+    healthSprite.sourceX = 0;
+    healthSprite.sourceY = 0;
+    healthSprite.sourceWidth = ORIGINAL_WIDTH;  // Full width initially
+    healthSprite.sourceHeight = ORIGINAL_HEIGHT;
+    
     m_ecsSystem->AddComponent<Sprite>(m_healthFillEntity, healthSprite);
     Transform healthTrans(Gnosis::GNVector2(barX, barY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f)); // Scale is baked into sprite size
     m_ecsSystem->AddComponent<Transform>(m_healthFillEntity, healthTrans);
 
-    // Create hurt effect entity (white bar for damage flash)
+    // Create hurt effect entity (white bar for damage flash) with FIXED destination rendering
     // This renders BEHIND the red health bar, so when health clips, white shows through
     m_hurtEffectEntity = m_ecsSystem->CreateEntity();
     Sprite hurtSprite("BossBarHurt", ORIGINAL_WIDTH * scale, ORIGINAL_HEIGHT * scale);
@@ -99,6 +111,12 @@ void BossHealthBar::CreateUIEntities() {
     hurtSprite.sourceHeight = ORIGINAL_HEIGHT;
     hurtSprite.layer = 12; // BEHIND health bar (13) so it shows through when health clips
     hurtSprite.color = Gnosis::GNColor(255, 255, 255, 0); // Start transparent
+    
+    // Enable fixed-destination rendering to prevent position shifting when clipping
+    hurtSprite.useFixedDestination = true;
+    hurtSprite.fixedWidth = ORIGINAL_WIDTH * scale;   // Always render at full bar width (1280 pixels)
+    hurtSprite.fixedHeight = ORIGINAL_HEIGHT * scale; // Always render at full bar height (256 pixels)
+    
     m_ecsSystem->AddComponent<Sprite>(m_hurtEffectEntity, hurtSprite);
     // Position hurt effect exactly the same as health bar
     Transform hurtTrans(Gnosis::GNVector2(barX, barY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
@@ -196,48 +214,34 @@ void BossHealthBar::UpdateUIEntities() {
         if (frameSprite) frameSprite->visible = shouldBeVisible;
     }
 
-    // Update health sprite source rect - USE FIXED WIDTH WITH UV CLIPPING
+    // Update health sprite - FIXED DESTINATION rendering with UV clipping
     if (m_healthFillEntity != 0) {
         Sprite* health = m_ecsSystem->GetComponent<Sprite>(m_healthFillEntity);
         if (health) {
             health->visible = shouldBeVisible && (m_displayedHealthPercent > 0.0f);
-            // CRITICAL FIX: Keep sprite width CONSTANT to prevent position shifting
-            // Only change sourceWidth for UV clipping - Metal renderer will clip texture
-            float scale = 8.0f; // Same scale used in CreateUIEntities
-            health->width = ORIGINAL_WIDTH * scale;  // ALWAYS full width
-            health->height = ORIGINAL_HEIGHT * scale;
             
-            // Clip the SOURCE rectangle (UV coordinates) to show only current health portion
+            // ONLY change sourceWidth for UV clipping - destination size stays constant via fixedWidth/Height
             health->sourceX = 0;
             health->sourceY = 0;
-            health->sourceWidth = ORIGINAL_WIDTH * m_displayedHealthPercent;  // Clip texture
+            health->sourceWidth = ORIGINAL_WIDTH * m_displayedHealthPercent;  // Clip texture from right
             health->sourceHeight = ORIGINAL_HEIGHT;
             
-            // Position is LOCKED and never changes
-            Transform* healthTransform = m_ecsSystem->GetComponent<Transform>(m_healthFillEntity);
-            if (healthTransform) {
-                healthTransform->position.x = m_barX;
-                healthTransform->position.y = m_barY;
-            }
+            // Position stays locked - no need to adjust since sprite renders at fixed size
+            // The Metal renderer will keep the quad at constant size, only UV coords change
         }
     }
 
-    // Update hurt effect (white bar) - renders BEHIND health bar, trims with delay after damage
+    // Update hurt effect (white bar) - FIXED DESTINATION rendering with UV clipping
     if (m_hurtEffectEntity != 0) {
         Sprite* hurt = m_ecsSystem->GetComponent<Sprite>(m_hurtEffectEntity);
         if (hurt && shouldBeVisible) {
             // Hurt bar is visible when there's damage to show
             hurt->visible = true;
             
-            // CRITICAL FIX: Keep sprite width CONSTANT to prevent position shifting
-            float scale = 8.0f;
-            hurt->width = ORIGINAL_WIDTH * scale;  // ALWAYS full width
-            hurt->height = ORIGINAL_HEIGHT * scale;
-            
-            // Trim the white bar via SOURCE rectangle (UV clipping)
+            // Trim the white bar via SOURCE rectangle (UV clipping) - destination stays constant
             hurt->sourceX = 0;
             hurt->sourceY = 0;
-            hurt->sourceWidth = ORIGINAL_WIDTH * m_shadowHealthPercent;  // Clip texture
+            hurt->sourceWidth = ORIGINAL_WIDTH * m_shadowHealthPercent;  // Clip texture from right
             hurt->sourceHeight = ORIGINAL_HEIGHT;
             
             // Alpha controls the fade: visible when damaged, fades out over time
@@ -253,12 +257,7 @@ void BossHealthBar::UpdateUIEntities() {
                 hurt->color = Gnosis::GNColor(255, 255, 255, 0);
             }
             
-            // CRITICAL: Ensure transform position never changes after initial setup
-            Transform* hurtTransform = m_ecsSystem->GetComponent<Transform>(m_hurtEffectEntity);
-            if (hurtTransform) {
-                hurtTransform->position.x = m_barX;
-                hurtTransform->position.y = m_barY;
-            }
+            // Position stays locked - no adjustment needed with fixed-destination rendering
         } else if (hurt) {
             hurt->visible = false;
         }

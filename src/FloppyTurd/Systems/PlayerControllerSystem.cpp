@@ -418,13 +418,25 @@ namespace GameCore {
             return;
         }
 
-        GN_LOG_INFO("Shooting conditions met, spawning projectile...");
+        GN_LOG_INFO("Shooting conditions met, checking coin cost...");
 
         // Check if we're in the input delay period (prevent accidental shooting at game start)
         if (m_inputDelayTimer > 0.0f) {
             GN_LOG_DEBUG("Shoot input ignored - in input delay period (%.2fs remaining)", m_inputDelayTimer);
             return;
         }
+
+        // Check if player has enough session coins to shoot (costs 1 coin per shot)
+        PlayerComponent* player = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity);
+        if (!player || player->sessionCoins < 1) {
+            GN_LOG_INFO("Shoot blocked - insufficient session coins (have: " + 
+                       std::to_string(player ? player->sessionCoins : 0) + ", need: 1)");
+            return;
+        }
+
+        // Deduct coin cost for shooting
+        player->sessionCoins -= 1;
+        GN_LOG_INFO("💰 Shooting cost 1 coin - sessionCoins now: " + std::to_string(player->sessionCoins));
 
         // Set shoot cooldown and spawn projectile - this happens ONCE per input
         m_shootCooldown = SHOOT_COOLDOWN;
@@ -777,21 +789,9 @@ namespace GameCore {
         float playerHeight = sprite ? sprite->height * transform->scale.y : 64.0f; // Default to 64 if no sprite
         float hitboxRadius = hitbox ? hitbox->radius * transform->scale.y : 12.0f; // Default to 12 if no hitbox
         
-        // Only reset when player is completely off screen below (entire sprite past bottom)
-        if (transform->position.y > SCREEN_HEIGHT + playerHeight) {
-            // Player is completely off screen below - trigger damage and reset position
-            if (m_playerAlive) {
-                GN_LOG_INFO("Player completely off screen below - resetting position");
-                transform->position.y = TOP_SPAWN_Y;
-                physics->velocity.y = 0.0f;
-                m_isAscending = false;
-                m_jumpButtonHeld = false;
-                m_jumpHoldTime = 0.0f;
-                // TODO: Trigger damage event
-            } else {
-                GN_LOG_INFO("Player is dead and off screen - not resetting position");
-            }
-        }
+        // Fall detection is now handled by GameplayState collision system
+        // GameplayState will trigger damage, play sound, and reset position
+        // This allows proper integration with invulnerability and hurt animation
         
         // Check if player hits top of screen - allow half the hitbox to go offscreen
         // Stop when center (position + half sprite height) reaches top of screen

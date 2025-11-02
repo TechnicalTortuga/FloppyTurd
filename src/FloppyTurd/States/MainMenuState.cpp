@@ -54,6 +54,7 @@ namespace GameCore {
         , m_lastUnlockPressTime(0.0f)
         , m_unlockDebounceDelay(1.0f)  // 1 second debounce delay for unlock buttons
         , m_inputDebounceTimer(0.0f)
+        , m_fartButtonDebounceTimer(0.0f)
         , m_fontLoaded(false)
         , m_assetsLoaded(false) {
         
@@ -325,6 +326,14 @@ namespace GameCore {
             if (m_inputDebounceTimer <= 0.0f) {
                 m_inputDebounceTimer = 0.0f;
                 GN_LOG_INFO("Input debounce expired - input now enabled");
+            }
+        }
+        
+        // Update fart button debounce timer
+        if (m_fartButtonDebounceTimer > 0.0f) {
+            m_fartButtonDebounceTimer -= deltaTime;
+            if (m_fartButtonDebounceTimer < 0.0f) {
+                m_fartButtonDebounceTimer = 0.0f;
             }
         }
         
@@ -826,9 +835,15 @@ namespace GameCore {
                                     UpdateButtonSprite(m_fButtonEntity, *uiElement);
                                 }
                             } else if (touch.state == TouchState::RELEASED) {
-                                GN_LOG_INFO("🎉 MainMenuState: F BUTTON RELEASED - playing fart sound!");
-                                OnFButtonPressed();
-                                // Reset visual state
+                                // Check debounce timer before allowing fart
+                                if (m_fartButtonDebounceTimer <= 0.0f) {
+                                    GN_LOG_INFO("🎉 MainMenuState: F BUTTON RELEASED - playing fart sound!");
+                                    OnFButtonPressed();
+                                    m_fartButtonDebounceTimer = FART_BUTTON_DEBOUNCE; // Reset debounce timer
+                                } else {
+                                    GN_LOG_INFO("⏱️ MainMenuState: F BUTTON DEBOUNCED - " + std::to_string(m_fartButtonDebounceTimer) + "s remaining");
+                                }
+                                // Reset visual state regardless
                                 UIElement* uiElement = m_ecsCoordinator->GetComponent<UIElement>(m_fButtonEntity);
                                 if (uiElement) {
                                     uiElement->isPressed = false;

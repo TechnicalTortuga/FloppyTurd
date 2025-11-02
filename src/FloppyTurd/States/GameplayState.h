@@ -256,6 +256,7 @@ namespace GameCore {
         float m_bossCoinSpawnTimer;
         std::vector<Gnosis::Entity> m_activeBossCoins;  // Track boss coins for wave movement
         bool m_bossRainbowHeartSpawned;  // Track if rainbow heart spawned at 50% health
+        bool m_bossDeathMusicStopped;  // Track if music was stopped for boss death
         
         // Input delay timer to prevent auto-shooting when entering level
         float m_inputDelayTimer;
