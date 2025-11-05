@@ -511,6 +511,9 @@ extension DeveloperToolsSupport.ImageResource {
     /// The "achievementiconunlocked" asset catalog image resource.
     static let achievementiconunlocked = DeveloperToolsSupport.ImageResource(name: "achievementiconunlocked", bundle: resourceBundle)
 
+    /// The "adcontrolsbutton" asset catalog image resource.
+    static let adcontrolsbutton = DeveloperToolsSupport.ImageResource(name: "adcontrolsbutton", bundle: resourceBundle)
+
     /// The "arrowsturning" asset catalog image resource.
     static let arrowsturning = DeveloperToolsSupport.ImageResource(name: "arrowsturning", bundle: resourceBundle)
 
@@ -819,6 +822,12 @@ extension DeveloperToolsSupport.ImageResource {
 
     /// The "volumemeterfull" asset catalog image resource.
     static let volumemeterfull = DeveloperToolsSupport.ImageResource(name: "volumemeterfull", bundle: resourceBundle)
+
+    /// The "xbuttonselected" asset catalog image resource.
+    static let xbuttonselected = DeveloperToolsSupport.ImageResource(name: "xbuttonselected", bundle: resourceBundle)
+
+    /// The "xbuttonunselected" asset catalog image resource.
+    static let xbuttonunselected = DeveloperToolsSupport.ImageResource(name: "xbuttonunselected", bundle: resourceBundle)
 
 }
 

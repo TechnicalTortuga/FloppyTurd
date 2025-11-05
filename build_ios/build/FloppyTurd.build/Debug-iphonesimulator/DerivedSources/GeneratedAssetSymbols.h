@@ -495,6 +495,9 @@ static NSString * const ACImageNameAchievementicon AC_SWIFT_PRIVATE = @"achievem
 /// The "achievementiconunlocked" asset catalog image resource.
 static NSString * const ACImageNameAchievementiconunlocked AC_SWIFT_PRIVATE = @"achievementiconunlocked";
 
+/// The "adcontrolsbutton" asset catalog image resource.
+static NSString * const ACImageNameAdcontrolsbutton AC_SWIFT_PRIVATE = @"adcontrolsbutton";
+
 /// The "arrowsturning" asset catalog image resource.
 static NSString * const ACImageNameArrowsturning AC_SWIFT_PRIVATE = @"arrowsturning";
 
@@ -803,5 +806,11 @@ static NSString * const ACImageNameVolumemeterempty AC_SWIFT_PRIVATE = @"volumem
 
 /// The "volumemeterfull" asset catalog image resource.
 static NSString * const ACImageNameVolumemeterfull AC_SWIFT_PRIVATE = @"volumemeterfull";
+
+/// The "xbuttonselected" asset catalog image resource.
+static NSString * const ACImageNameXbuttonselected AC_SWIFT_PRIVATE = @"xbuttonselected";
+
+/// The "xbuttonunselected" asset catalog image resource.
+static NSString * const ACImageNameXbuttonunselected AC_SWIFT_PRIVATE = @"xbuttonunselected";
 
 #undef AC_SWIFT_PRIVATE

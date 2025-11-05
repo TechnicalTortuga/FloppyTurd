@@ -194,7 +194,13 @@ namespace GameCore {
         CMD_GAME_CENTER_AUTHENTICATE = 56,
         CMD_GAME_CENTER_SUBMIT_SCORE = 57,
         CMD_GAME_CENTER_SHOW_LEADERBOARD = 58,
-        CMD_GAME_CENTER_SHOW_ALL_LEADERBOARDS = 59
+        CMD_GAME_CENTER_SHOW_ALL_LEADERBOARDS = 59,
+        
+        // Advertising commands
+        CMD_AD_PRELOAD = 60,
+        CMD_AD_SHOW = 61,
+        CMD_AD_IS_READY = 62,
+        CMD_AD_SET_ENABLED = 63
     };
     
     // Batch rendering data structure (must be defined before RenderCommandData uses it)
@@ -361,7 +367,9 @@ namespace GameCore {
         float masterVolume;
         float musicVolume;
         float sfxVolume;
+        int difficulty;
         bool debugMode;
+        bool hapticsEnabled;
         bool loadSuccess;  // For load commands: indicates if load succeeded
         
         SaveCommandData()
@@ -369,7 +377,9 @@ namespace GameCore {
             , masterVolume(0.7f)
             , musicVolume(0.6f)
             , sfxVolume(0.8f)
+            , difficulty(1)
             , debugMode(false)
+            , hapticsEnabled(true)
             , loadSuccess(false) {}
     };
 
@@ -402,9 +412,29 @@ namespace GameCore {
         CommandType type;
         GameCenterCommandData data;
         
-        // Constructors
+        // Default constructor
         GameCenterCommand() : type(CommandType::CMD_GAME_CENTER_AUTHENTICATE) {}
-        explicit GameCenterCommand(CommandType t) : type(t) {}
+        GameCenterCommand(CommandType t) : type(t) {}
+    };
+    
+    // Ad command data structure
+    struct AdCommandData {
+        bool adsEnabled;       // Whether ads are enabled (for CMD_AD_SET_ENABLED)
+        bool isReady;          // Whether ad is ready to show (for CMD_AD_IS_READY response)
+        
+        AdCommandData()
+            : adsEnabled(true)
+            , isReady(false) {}
+    };
+    
+    // Ad command structure
+    struct AdCommand {
+        CommandType type;
+        AdCommandData data;
+        
+        // Default constructor
+        AdCommand() : type(CommandType::CMD_AD_PRELOAD) {}
+        AdCommand(CommandType t) : type(t) {}
     };
 
     // Forward declarations for Sprite
@@ -697,10 +727,12 @@ namespace GameCore {
         bool (*loadGameData)(const char** outJsonData);
         
         // Save settings (synchronous, uses platform-specific storage like UserDefaults)
-        void (*saveSettings)(float masterVolume, float musicVolume, float sfxVolume, bool debugMode);
+        // Settings are read from the current game state, not passed as parameters
+        void (*saveSettings)();
         
         // Load settings (synchronous)
-        void (*loadSettings)(float* masterVolume, float* musicVolume, float* sfxVolume, bool* debugMode);
+        // Settings are automatically applied to game state when loaded
+        void (*loadSettings)();
         
         // Check if legacy save file exists (for migration)
         bool (*hasLegacySaveFile)();
@@ -754,6 +786,32 @@ namespace GameCore {
             , getPlayerID(nullptr)
             , platformContext(nullptr) {}
     };
+    
+    // Ad delegate for advertising integration (AdMob interstitials)
+    struct AdDelegate {
+        // Preload an interstitial ad (should be called after game init and after each ad shown)
+        void (*preloadAd)();
+        
+        // Show the preloaded interstitial ad
+        void (*showAd)();
+        
+        // Check if an ad is ready to be shown
+        bool (*isAdReady)();
+        
+        // Enable/disable ads (e.g., after IAP "Remove Ads" purchase)
+        void (*setAdsEnabled)(bool enabled);
+        
+        // Platform-specific context
+        void* platformContext;
+        
+        // Initialize to null
+        AdDelegate()
+            : preloadAd(nullptr)
+            , showAd(nullptr)
+            , isAdReady(nullptr)
+            , setAdsEnabled(nullptr)
+            , platformContext(nullptr) {}
+    };
 
     // Platform delegate container - holds all platform-specific delegates
     struct PlatformDelegates {
@@ -765,6 +823,7 @@ namespace GameCore {
         HapticDelegate haptic;
         SaveGameDelegate save;
         GameCenterDelegate gameCenter;
+        AdDelegate ad;
         
         // Platform identification
         enum PlatformType {

@@ -8,6 +8,7 @@
 #include "../States/CreditsState.h"
 #include "../Config/LevelConfig.h"
 #include "../Input/InputManager.h"
+#include "../Systems/AdSystem.h"
 #include "../../Engine/Core/GNLog.h"
 #include "../../Engine/Platform/PlatformDelegates.h"
 #include "../../Engine/Configuration/ConfigManager.h"
@@ -163,6 +164,11 @@ namespace GameCore {
             return false;
         }
         #endif
+
+        // Initialize AdSystem
+        m_adSystem = std::make_unique<FloppyTurd::AdSystem>();
+        m_adSystem->Initialize(&m_platformDelegates);
+        GN_LOG_INFO("AdSystem initialized - ads will be managed by death counter");
 
         // Initialize game states
         InitializeGameStates();
@@ -504,6 +510,8 @@ namespace GameCore {
         if (m_platformDelegates.audio.setMusicVolume) {
             m_platformDelegates.audio.setMusicVolume(m_masterVolume * m_musicVolume);
         }
+        // Save settings with game data (consistent with how other data is persisted)
+        SaveGameData();
     }
 
     void FloppyTurdGame::SetSFXVolume(float volume) {
@@ -512,6 +520,8 @@ namespace GameCore {
         if (m_platformDelegates.audio.setSFXVolume) {
             m_platformDelegates.audio.setSFXVolume(m_masterVolume * m_sfxVolume);
         }
+        // Save settings with game data (consistent with how other data is persisted)
+        SaveGameData();
     }
 
     void FloppyTurdGame::SetMasterVolume(float volume) {
@@ -524,6 +534,15 @@ namespace GameCore {
         if (m_platformDelegates.audio.setSFXVolume) {
             m_platformDelegates.audio.setSFXVolume(m_masterVolume * m_sfxVolume);
         }
+        // Save settings with game data (consistent with how other data is persisted)
+        SaveGameData();
+    }
+
+    void FloppyTurdGame::SetVibrationsEnabled(bool enabled) {
+        m_vibrationsEnabled = enabled;
+        GN_LOG_INFO("Vibrations " + std::string(enabled ? "enabled" : "disabled"));
+        // Save settings with game data
+        SaveGameData();
     }
 
     void FloppyTurdGame::UpdateGameStats(const GameStats& stats) {
@@ -818,24 +837,20 @@ namespace GameCore {
     void FloppyTurdGame::LoadSettings() {
         GN_LOG_INFO("📖 Loading settings...");
         
-        // Queue the load settings command
+        // Just trigger the load - values are managed by GameSettings/UserDefaults
         if (m_platformDelegates.save.loadSettings) {
-            m_platformDelegates.save.loadSettings(&m_masterVolume, &m_musicVolume, &m_sfxVolume, &m_showDebugInfo);
-            GN_LOG_INFO("📖 Settings load queued");
+            m_platformDelegates.save.loadSettings();
+            GN_LOG_INFO("📖 Settings load triggered");
         }
-        
-        GN_LOG_INFO("🔊 Master: " + std::to_string(m_masterVolume) + 
-                   ", Music: " + std::to_string(m_musicVolume) + 
-                   ", SFX: " + std::to_string(m_sfxVolume));
     }
 
     void FloppyTurdGame::SaveSettings() {
         GN_LOG_INFO("💾 Saving settings...");
         
-        // Save via platform delegates
+        // Just trigger the save - values are managed by GameSettings/UserDefaults
         if (m_platformDelegates.save.saveSettings) {
-            m_platformDelegates.save.saveSettings(m_masterVolume, m_musicVolume, m_sfxVolume, m_showDebugInfo);
-            GN_LOG_INFO("✅ Settings save queued");
+            m_platformDelegates.save.saveSettings();
+            GN_LOG_INFO("✅ Settings save triggered");
         }
     }
 
@@ -864,9 +879,10 @@ namespace GameCore {
         // Use platform audio delegate consistently for all platforms
         if (m_platformDelegates.audio.playMusic) {
             m_platformDelegates.audio.playMusic("FloppyTurdMenu.mp3", m_masterVolume * m_musicVolume, -1);  // Use stored volume, loop infinitely
-            GN_LOG_INFO("Background music started via platform delegate");
+            m_currentMusicTrack = "FloppyTurdMenu.mp3"; // Track which music is playing
+            GN_LOG_INFO("Background music started via platform delegate: " + m_currentMusicTrack);
         } else {
-            GN_LOG_WARN("Audio delegate not available - cannot play background music");
+            GN_LOG_WARN("PlayBackgroundMusic: No audio delegate available");
         }
     }
 
@@ -876,9 +892,10 @@ namespace GameCore {
         // Use platform audio delegate to stop music
         if (m_platformDelegates.audio.stopMusic) {
             m_platformDelegates.audio.stopMusic();
+            m_currentMusicTrack = ""; // Clear current track
             GN_LOG_INFO("Background music stopped via platform delegate");
         } else {
-            GN_LOG_WARN("Audio delegate not available - cannot stop background music");
+            GN_LOG_WARN("StopBackgroundMusic: No audio delegate available");
         }
     }
 
@@ -1286,6 +1303,16 @@ namespace GameCore {
             GN_LOG_INFO("Skill unlocked at index: " + std::to_string(skillIndex));
             SaveGameData();
         }
+    }
+
+    void FloppyTurdGame::TriggerGameOverAd() {
+        if (!m_adSystem) {
+            GN_LOG_WARN("AdSystem not initialized - cannot trigger ad");
+            return;
+        }
+        
+        GN_LOG_INFO("Game Over - Triggering ad check...");
+        m_adSystem->OnPlayerDeath();
     }
 
     // Global utility functions

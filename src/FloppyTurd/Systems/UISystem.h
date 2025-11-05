@@ -79,6 +79,20 @@ namespace GameCore {
         bool GetEntityBounds(Gnosis::Entity entity, float& left, float& right, float& top, float& bottom) const;
         
         /**
+         * Atomically swap between two texture states for a toggle button
+         * Updates both Sprite and UIElement textures in a single operation to prevent flashing
+         * @param entity The entity containing the toggle button
+         * @param texture1 First texture ID (without .png extension)
+         * @param texture2 Second texture ID (without .png extension)
+         * @param useTexture1 If true, use texture1; if false, use texture2
+         * @return true if swap was successful
+         */
+        bool SwapToggleTextures(Gnosis::Entity entity, 
+                               const std::string& texture1, 
+                               const std::string& texture2, 
+                               bool useTexture1);
+        
+        /**
          * Update button sprite based on state (hover/pressed)
          */
         void UpdateButtonSprite(Gnosis::Entity entity);

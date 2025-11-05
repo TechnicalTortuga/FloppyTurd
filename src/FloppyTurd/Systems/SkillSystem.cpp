@@ -34,25 +34,26 @@ namespace GameCore {
     {
         // Skills from old system - order must match the enum indices in GameComponents.h
         // SkillType enum: HalfHearts=0, ThirdHearts=1, CoinMagnet=2, HeartMagnet=3, CoinSafetyNet=4
+        // Updated pricing for production release
         m_skills.emplace(SkillType::HalfHearts, SkillDefinition(
-            SkillType::HalfHearts, "Half Hearts", "Show half-heart damage\nfor finer health tracking", 5, {}
+            SkillType::HalfHearts, "Half Hearts", "Show half-heart damage\nfor finer health tracking", 200, {}
         ));
 
         m_skills.emplace(SkillType::ThirdHearts, SkillDefinition(
-            SkillType::ThirdHearts, "Third Hearts", "Show third-heart damage\nRequires: Half Hearts", 5,
+            SkillType::ThirdHearts, "Third Hearts", "Show third-heart damage\nRequires: Half Hearts", 400,
             {SkillType::HalfHearts}
         ));
 
         m_skills.emplace(SkillType::CoinMagnet, SkillDefinition(
-            SkillType::CoinMagnet, "Coin Magnet", "Automatically attract\nnearby coins to player", 5, {}
+            SkillType::CoinMagnet, "Coin Magnet", "Automatically attract\nnearby coins to player", 200, {}
         ));
 
         m_skills.emplace(SkillType::HeartMagnet, SkillDefinition(
-            SkillType::HeartMagnet, "Heart Magnet", "Automatically attract\nnearby hearts to player", 5, {}
+            SkillType::HeartMagnet, "Heart Magnet", "Automatically attract\nnearby hearts to player", 200, {}
         ));
 
         m_skills.emplace(SkillType::CoinSafetyNet, SkillDefinition(
-            SkillType::CoinSafetyNet, "Coin Safety Net", "Sacrifice all coins\nto prevent death\n(once per level)", 5, {}
+            SkillType::CoinSafetyNet, "Coin Safety Net", "Sacrifice all coins\nto prevent death\n(once per level)", 300, {}
         ));
     }
 

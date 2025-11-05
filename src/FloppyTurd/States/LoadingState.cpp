@@ -270,6 +270,8 @@ namespace GameCore {
             "ushankaturdletshoot.png",
             "volumemeterempty.png",
             "volumemeterfull.png",
+            "xbuttonselected.png",
+            "xbuttonunselected.png",
             "Whacky_Joe_msdf.png",
             "WhackyJoe_32.png",
             "castlebacklayerbackground.png",

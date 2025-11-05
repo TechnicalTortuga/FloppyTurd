@@ -124,6 +124,16 @@ namespace GameCore {
             }
 
             json << "]\n";
+            json << "  },\n";
+
+            // Settings data - audio, difficulty, debug, and haptics
+            json << "  \"settings\": {\n";
+            json << "    \"masterVolume\": " << game.GetMasterVolume() << ",\n";
+            json << "    \"musicVolume\": " << game.GetMusicVolume() << ",\n";
+            json << "    \"sfxVolume\": " << game.GetSFXVolume() << ",\n";
+            json << "    \"difficulty\": " << static_cast<int>(GameCore::LevelManager::GetGlobalDifficulty()) << ",\n";
+            json << "    \"debugMode\": " << (game.GetDebugMode() ? "true" : "false") << ",\n";
+            json << "    \"hapticsEnabled\": " << (game.GetVibrationsEnabled() ? "true" : "false") << "\n";
             json << "  }\n";
             json << "}";
 
@@ -463,6 +473,43 @@ namespace GameCore {
             }
             
             game.UpdateCustomizationData(customization);
+
+            // Parse settings (audio and difficulty)
+            std::string masterVolStr = parseKeyValue(dataString, "SETTINGS_MASTER_VOLUME");
+            if (!masterVolStr.empty()) {
+                game.SetMasterVolume(std::stof(masterVolStr));
+            }
+            
+            std::string musicVolStr = parseKeyValue(dataString, "SETTINGS_MUSIC_VOLUME");
+            if (!musicVolStr.empty()) {
+                game.SetMusicVolume(std::stof(musicVolStr));
+            }
+            
+            std::string sfxVolStr = parseKeyValue(dataString, "SETTINGS_SFX_VOLUME");
+            if (!sfxVolStr.empty()) {
+                game.SetSFXVolume(std::stof(sfxVolStr));
+            }
+            
+            std::string difficultyStr = parseKeyValue(dataString, "SETTINGS_DIFFICULTY");
+            if (!difficultyStr.empty()) {
+                int difficultyValue = std::stoi(difficultyStr);
+                GameCore::LevelManager::SetGlobalDifficulty(static_cast<GameCore::Difficulty>(difficultyValue));
+                GN_LOG_INFO("🔍 Deserialize: Loaded difficulty = " + std::to_string(difficultyValue));
+            }
+            
+            std::string debugModeStr = parseKeyValue(dataString, "SETTINGS_DEBUG_MODE");
+            if (!debugModeStr.empty()) {
+                bool debugMode = (debugModeStr == "true" || debugModeStr == "1");
+                game.SetDebugMode(debugMode);
+                GN_LOG_INFO("🔍 Deserialize: Loaded debug mode = " + std::string(debugMode ? "enabled" : "disabled"));
+            }
+            
+            std::string hapticsStr = parseKeyValue(dataString, "SETTINGS_HAPTICS_ENABLED");
+            if (!hapticsStr.empty()) {
+                bool hapticsEnabled = (hapticsStr == "true" || hapticsStr == "1");
+                game.SetVibrationsEnabled(hapticsEnabled);
+                GN_LOG_INFO("🔍 Deserialize: Loaded haptics = " + std::string(hapticsEnabled ? "enabled" : "disabled"));
+            }
 
             GN_LOG_INFO("=== DESERIALIZE END - SUCCESS ===");
             GN_LOG_INFO("🔍 Final parsed values - storedCoins=" + std::to_string(stats.storedCoins) + 

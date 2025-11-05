@@ -105,7 +105,7 @@ namespace GameCore {
         // Save/Load commands
         static void enqueueSaveGame(const std::string& jsonData);
         static void enqueueLoadGame();
-        static void enqueueSaveSettings(float masterVol, float musicVol, float sfxVol, bool debug);
+        static void enqueueSaveSettings();
         static void enqueueLoadSettings();
         
         // Game Center commands
@@ -116,6 +116,12 @@ namespace GameCore {
         static void enqueueGameCenterShowAllLeaderboards();
         static const char* getGameCenterPlayerName();
         static const char* getGameCenterPlayerID();
+        
+        // Ad commands
+        static void enqueueAdPreload();
+        static void enqueueAdShow();
+        static bool isAdReady();
+        static void enqueueAdSetEnabled(bool enabled);
         
         // Asset loading commands - modern callback signatures with userData
         static void enqueueLoadTexture(const std::string& path, void (*callback)(TextureData* texture, const char* error, void* userData), void* userData);
@@ -167,6 +173,7 @@ namespace GameCore {
         std::vector<GameCore::HapticCommand> getAndClearHapticCommands();
         std::vector<GameCore::SaveCommand> getAndClearSaveCommands();
         std::vector<GameCore::GameCenterCommand> getAndClearGameCenterCommands();
+        std::vector<GameCore::AdCommand> getAndClearAdCommands();
         
         // Queue management - Thread-safe
         size_t getCommandCount() const;
@@ -190,6 +197,7 @@ namespace GameCore {
         std::vector<HapticCommand> m_hapticCommandQueue;
         std::vector<SaveCommand> m_saveCommandQueue;
         std::vector<GameCenterCommand> m_gameCenterCommandQueue;
+        std::vector<AdCommand> m_adCommandQueue;
         mutable std::mutex m_queueMutex;  // mutable for const methods
         
         // Touch input state
@@ -220,6 +228,7 @@ namespace GameCore {
         void enqueueHapticCommand(const HapticCommand& command);
         void enqueueSaveCommand(const SaveCommand& command);
         void enqueueGameCenterCommand(const GameCenterCommand& command);
+        void enqueueAdCommand(const AdCommand& command);
     };
     
     // Global instance accessor for C++ interop
@@ -238,6 +247,7 @@ namespace GameCore {
     std::vector<HapticCommand> getAndClearHapticCommandsFromProxy();
     std::vector<SaveCommand> getAndClearSaveCommandsFromProxy();
     std::vector<GameCenterCommand> getAndClearGameCenterCommandsFromProxy();
+    std::vector<AdCommand> getAndClearAdCommandsFromProxy();
     
     bool isAssetCachedFromProxy(const char* assetName, int assetType);
 
@@ -252,4 +262,7 @@ namespace GameCore {
     
     // Save/Load synchronous interop
     std::string loadGameDataSync();
+    
+    // Ad state management - for Swift to update C++ about ad readiness
+    void setAdReadyState(bool isReady);
 }

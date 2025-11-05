@@ -55,6 +55,7 @@ namespace GameCore {
         , m_unlockDebounceDelay(1.0f)  // 1 second debounce delay for unlock buttons
         , m_inputDebounceTimer(0.0f)
         , m_fartButtonDebounceTimer(0.0f)
+        , m_lastMenuButtonPressTime(0.0f)
         , m_fontLoaded(false)
         , m_assetsLoaded(false) {
         
@@ -90,9 +91,18 @@ namespace GameCore {
         // Reset input debounce timer to prevent accidental clicks from gameplay state
         m_inputDebounceTimer = INPUT_DEBOUNCE_DURATION;
         GN_LOG_INFO("Input debounce activated for " + std::to_string(INPUT_DEBOUNCE_DURATION) + " seconds");
+        
+        // Reset menu button debounce to prevent clicks when entering
+        m_lastMenuButtonPressTime = 0.0f;
+        
         m_selectedOption = 0;
         m_animationTimer = 0.0f;
         m_assetsLoaded = false;
+        
+        // Load vibration preference from game
+        if (m_game) {
+            m_vibrationsEnabled = m_game->GetVibrationsEnabled();
+        }
 
         // Read current screen dimensions - ensure RenderSystem is up to date first
         if (m_renderSystem) {
@@ -121,18 +131,25 @@ namespace GameCore {
 
         // InputManager singleton should be initialized by FloppyTurdGame
         
-        // Start playing main menu music using cached game pointer
+        // Start playing main menu music only if it's not already playing
         if (m_game) {
-            const PlatformDelegates& delegates = m_game->GetPlatformDelegates();
-            // Check if music is cached using new delegate
-            if (delegates.asset.isCached) {
-                bool cached = delegates.asset.isCached("FloppyTurdMenu", 1); // 1 = audio type
-                GN_LOG_INFO("FloppyTurdMenu cached status: " + std::string(cached ? "true" : "false"));
-            }
-            // Play music using existing delegate
-            if (delegates.audio.playMusic) {
-                delegates.audio.playMusic("FloppyTurdMenu", 0.7f, -1); // -1 = infinite loop
-                GN_LOG_INFO("Started main menu music: FloppyTurdMenu.mp3");
+            const std::string& currentTrack = m_game->GetCurrentMusicTrack();
+            
+            // Only start music if we're not already playing the main menu track
+            if (currentTrack != "FloppyTurdMenu") {
+                const PlatformDelegates& delegates = m_game->GetPlatformDelegates();
+                // Check if music is cached using new delegate
+                if (delegates.asset.isCached) {
+                    bool cached = delegates.asset.isCached("FloppyTurdMenu", 1); // 1 = audio type
+                    GN_LOG_INFO("FloppyTurdMenu cached status: " + std::string(cached ? "true" : "false"));
+                }
+                // Play music using existing delegate
+                if (delegates.audio.playMusic) {
+                    delegates.audio.playMusic("FloppyTurdMenu", 0.7f, -1); // -1 = infinite loop
+                    GN_LOG_INFO("Started main menu music: FloppyTurdMenu.mp3");
+                }
+            } else {
+                GN_LOG_INFO("Main menu music already playing - not restarting");
             }
         }
         
@@ -215,16 +232,14 @@ namespace GameCore {
         GN_LOG_INFO("Main Menu Exit - keeping portrait orientation locked (GameplayState will manage its own)");
         
         // Only stop music if NOT transitioning to leaderboard (leaderboard should keep main menu music playing)
-        if (!m_transitioningToLeaderboard) {
-            if (m_game) {
-                const PlatformDelegates& delegates = m_game->GetPlatformDelegates();
-                if (delegates.audio.stopMusic) {
-                    delegates.audio.stopMusic();
-                    GN_LOG_INFO("Stopped main menu music");
-                }
+        if (!m_transitioningToLeaderboard && m_game) {
+            const PlatformDelegates& delegates = m_game->GetPlatformDelegates();
+            if (delegates.audio.stopMusic) {
+                delegates.audio.stopMusic();
+                GN_LOG_INFO("Stopped main menu music (not transitioning to leaderboard)");
             }
-        } else {
-            GN_LOG_INFO("Keeping main menu music playing for leaderboard state");
+        } else if (m_transitioningToLeaderboard) {
+            GN_LOG_INFO("NOT stopping music - transitioning to leaderboard (music should continue playing)");
         }
         
         // Cleanup UI entities
@@ -249,6 +264,112 @@ namespace GameCore {
             }
             if (m_leaderboardButtonEntity != 0) {
                 m_ecsCoordinator->DestroyEntity(m_leaderboardButtonEntity);
+            }
+            
+            // Cleanup main menu UI - ad controls button and version text
+            if (m_adControlsButtonEntity != 0) {
+                m_ecsCoordinator->DestroyEntity(m_adControlsButtonEntity);
+                m_adControlsButtonEntity = 0;
+            }
+            if (m_versionTextEntity != 0) {
+                m_ecsCoordinator->DestroyEntity(m_versionTextEntity);
+                m_versionTextEntity = 0;
+            }
+            
+            // Cleanup options menu entities
+            if (m_optionsLeftArrowEntity != 0) {
+                m_ecsCoordinator->DestroyEntity(m_optionsLeftArrowEntity);
+                m_optionsLeftArrowEntity = 0;
+            }
+            if (m_optionsRightArrowEntity != 0) {
+                m_ecsCoordinator->DestroyEntity(m_optionsRightArrowEntity);
+                m_optionsRightArrowEntity = 0;
+            }
+            if (m_masterKnobEntity != 0) {
+                m_ecsCoordinator->DestroyEntity(m_masterKnobEntity);
+                m_masterKnobEntity = 0;
+            }
+            if (m_musicKnobEntity != 0) {
+                m_ecsCoordinator->DestroyEntity(m_musicKnobEntity);
+                m_musicKnobEntity = 0;
+            }
+            if (m_sfxKnobEntity != 0) {
+                m_ecsCoordinator->DestroyEntity(m_sfxKnobEntity);
+                m_sfxKnobEntity = 0;
+            }
+            if (m_optionsBackButtonEntity != 0) {
+                m_ecsCoordinator->DestroyEntity(m_optionsBackButtonEntity);
+                m_optionsBackButtonEntity = 0;
+            }
+            if (m_masterTrackEntity != 0) {
+                m_ecsCoordinator->DestroyEntity(m_masterTrackEntity);
+                m_masterTrackEntity = 0;
+            }
+            if (m_musicTrackEntity != 0) {
+                m_ecsCoordinator->DestroyEntity(m_musicTrackEntity);
+                m_musicTrackEntity = 0;
+            }
+            if (m_sfxTrackEntity != 0) {
+                m_ecsCoordinator->DestroyEntity(m_sfxTrackEntity);
+                m_sfxTrackEntity = 0;
+            }
+            if (m_masterLabelEntity != 0) {
+                m_ecsCoordinator->DestroyEntity(m_masterLabelEntity);
+                m_masterLabelEntity = 0;
+            }
+            if (m_musicLabelEntity != 0) {
+                m_ecsCoordinator->DestroyEntity(m_musicLabelEntity);
+                m_musicLabelEntity = 0;
+            }
+            if (m_sfxLabelEntity != 0) {
+                m_ecsCoordinator->DestroyEntity(m_sfxLabelEntity);
+                m_sfxLabelEntity = 0;
+            }
+            if (m_optionsTitleEntity != 0) {
+                m_ecsCoordinator->DestroyEntity(m_optionsTitleEntity);
+                m_optionsTitleEntity = 0;
+            }
+            if (m_difficultyTextEntity != 0) {
+                m_ecsCoordinator->DestroyEntity(m_difficultyTextEntity);
+                m_difficultyTextEntity = 0;
+            }
+            if (m_difficultyValueEntity != 0) {
+                m_ecsCoordinator->DestroyEntity(m_difficultyValueEntity);
+                m_difficultyValueEntity = 0;
+            }
+            if (m_vibrationLabelEntity != 0) {
+                m_ecsCoordinator->DestroyEntity(m_vibrationLabelEntity);
+                m_vibrationLabelEntity = 0;
+            }
+            if (m_vibrationToggleEntity != 0) {
+                m_ecsCoordinator->DestroyEntity(m_vibrationToggleEntity);
+                m_vibrationToggleEntity = 0;
+            }
+            if (m_optionsOverlayEntity != 0) {
+                m_ecsCoordinator->DestroyEntity(m_optionsOverlayEntity);
+                m_optionsOverlayEntity = 0;
+            }
+            
+            // Cleanup ad controls menu entities
+            if (m_adControlsTitleEntity != 0) {
+                m_ecsCoordinator->DestroyEntity(m_adControlsTitleEntity);
+                m_adControlsTitleEntity = 0;
+            }
+            if (m_adControlsBackButtonEntity != 0) {
+                m_ecsCoordinator->DestroyEntity(m_adControlsBackButtonEntity);
+                m_adControlsBackButtonEntity = 0;
+            }
+            if (m_removeAdsLabelEntity != 0) {
+                m_ecsCoordinator->DestroyEntity(m_removeAdsLabelEntity);
+                m_removeAdsLabelEntity = 0;
+            }
+            if (m_removeAdsPriceButtonEntity != 0) {
+                m_ecsCoordinator->DestroyEntity(m_removeAdsPriceButtonEntity);
+                m_removeAdsPriceButtonEntity = 0;
+            }
+            if (m_adControlsOverlayEntity != 0) {
+                m_ecsCoordinator->DestroyEntity(m_adControlsOverlayEntity);
+                m_adControlsOverlayEntity = 0;
             }
             
             // Cleanup level select entities
@@ -299,7 +420,7 @@ namespace GameCore {
                 m_ecsCoordinator->DestroyEntity(m_lockedIndicatorEntity);
             }
             
-            GN_LOG_INFO("Cleaned up main menu and level select UI entities");
+            GN_LOG_INFO("Cleaned up all main menu, options, ad controls, and level select UI entities");
         }
     }
 
@@ -311,6 +432,16 @@ namespace GameCore {
     void MainMenuState::Resume() {
         // Resume main menu
         GN_LOG_INFO("Main Menu State resumed");
+        
+        // Set debounce timer to prevent accidental clicks when returning from other states
+        m_lastMenuButtonPressTime = m_animationTimer;
+        GN_LOG_INFO("Set menu button debounce timer on resume");
+        
+        // Reset transitioningToLeaderboard flag if we're returning from leaderboard
+        if (m_transitioningToLeaderboard) {
+            GN_LOG_INFO("Keeping main menu music playing (returned from leaderboard)");
+            m_transitioningToLeaderboard = false; // Reset flag
+        }
 
         // Refresh level display to update coin counts and unlock status after returning from gameplay
         if (m_currentMode == MenuMode::LEVEL_SELECT) {
@@ -448,21 +579,26 @@ namespace GameCore {
     }
 
     void MainMenuState::Render() {
+        // Don't render until all assets are loaded to prevent partial frame flashing
+        if (!m_assetsLoaded || !m_uiInitialized) {
+            return;
+        }
+        
         // Render through ECS system (sprites, buttons, text, etc.)
         if (m_ecsCoordinator) {
             m_ecsCoordinator->Render();
         }
         
-        // Debug: Draw button bounds rectangles using cached delegates
-        if (m_game && m_game->GetPlatformDelegates().renderer.drawRectangle) {
-            // Draw debug rectangles for each button
-            DrawButtonDebugRectangles();
-            
-            // Draw level select debug info
-            if (m_currentMode == MenuMode::LEVEL_SELECT) {
-                DrawLevelSelectDebugInfo();
-            }
-        }
+        // Debug rectangles removed for production build
+        // if (m_game && m_game->GetPlatformDelegates().renderer.drawRectangle) {
+        //     // Draw debug rectangles for each button
+        //     DrawButtonDebugRectangles();
+        //     
+        //     // Draw level select debug info
+        //     if (m_currentMode == MenuMode::LEVEL_SELECT) {
+        //         DrawLevelSelectDebugInfo();
+        //     }
+        // }
 
         // Render Options overlay UI when active
         if (m_currentMode == MenuMode::OPTIONS) {
@@ -497,17 +633,58 @@ namespace GameCore {
             HandleLevelSelectInput();
         } else if (m_currentMode == MenuMode::OPTIONS) {
             HandleOptionsInput();
+        } else if (m_currentMode == MenuMode::AD_CONTROLS) {
+            HandleAdControlsInput();
         }
     }
 
     void MainMenuState::ShowOptionsMenu() {
         m_currentMode = MenuMode::OPTIONS;
         GN_LOG_INFO("Options menu shown");
+        
+        // Sync vibration state from game
+        if (m_game) {
+            m_vibrationsEnabled = m_game->GetVibrationsEnabled();
+            GN_LOG_INFO("Synced vibration state: " + std::string(m_vibrationsEnabled ? "ON" : "OFF"));
+        }
+        
         // Initialize cached overlay and slider geometry once, in pixels
         m_optionsOverlayX = m_screenWidth * 0.10f;
         m_optionsOverlayY = m_screenHeight * 0.10f; // 10% from top per request
         m_optionsOverlayW = m_screenWidth * 0.80f;
         m_optionsOverlayH = m_screenHeight * 0.80f;
+        
+        // Create overlay background (same as leaderboard and ad controls)
+        if (m_optionsOverlayEntity == 0) {
+            m_optionsOverlayEntity = m_ecsCoordinator->CreateEntity();
+        }
+        
+        float overlayTextureWidth = 160.0f;
+        float overlayTextureHeight = 300.0f;
+        float overlayScale = 7.0f;
+        
+        Gnosis::GNVector2 overlayPosition(
+            (m_screenWidth - overlayTextureWidth * overlayScale) * 0.5f,
+            (m_screenHeight - overlayTextureHeight * overlayScale) * 0.5f
+        );
+        
+        Transform overlayTransform(overlayPosition, 0.0f, Gnosis::GNVector2(overlayScale, overlayScale));
+        
+        if (!m_ecsCoordinator->HasComponent<Transform>(m_optionsOverlayEntity)) {
+            m_ecsCoordinator->AddComponent<Transform>(m_optionsOverlayEntity, overlayTransform);
+        } else {
+            *m_ecsCoordinator->GetComponent<Transform>(m_optionsOverlayEntity) = overlayTransform;
+        }
+        
+        Sprite overlaySprite("PauseMenuBackgroundMobile", (int)overlayTextureWidth, (int)overlayTextureHeight);
+        overlaySprite.layer = 5;
+        overlaySprite.visible = true;
+        
+        if (!m_ecsCoordinator->HasComponent<Sprite>(m_optionsOverlayEntity)) {
+            m_ecsCoordinator->AddComponent<Sprite>(m_optionsOverlayEntity, overlaySprite);
+        } else {
+            *m_ecsCoordinator->GetComponent<Sprite>(m_optionsOverlayEntity) = overlaySprite;
+        }
         m_optionsSliderX = m_optionsOverlayX + 0.08f * m_optionsOverlayW;
         // Start first slider soon after title; use small fixed spacing from overlay top so rows are consistent
         // First slider block begins a fixed distance below the title to align rows
@@ -531,8 +708,16 @@ namespace GameCore {
     }
 
     void MainMenuState::HideOptionsMenu() {
+        GN_LOG_INFO("Options menu hidden - returning to main menu");
+        m_lastMenuButtonPressTime = m_animationTimer; // Set debounce timer
         m_currentMode = MenuMode::MAIN_MENU;
-        GN_LOG_INFO("Options menu hidden");
+        
+        // Hide overlay background
+        if (m_optionsOverlayEntity != 0) {
+            auto sprite = m_ecsCoordinator->GetComponent<Sprite>(m_optionsOverlayEntity);
+            if (sprite) sprite->visible = false;
+        }
+        
         // Hide options UI; show main menu buttons
         DestroyOptionsUI();
         SetMainMenuVisible(true);
@@ -551,6 +736,20 @@ namespace GameCore {
         }
         if (m_fButtonEntity != 0) {
             if (auto s = m_ecsCoordinator->GetComponent<Sprite>(m_fButtonEntity)) s->visible = visible;
+        }
+        // Ad controls button and version text - ONLY show on main main menu
+        if (m_adControlsButtonEntity != 0) {
+            if (auto s = m_ecsCoordinator->GetComponent<Sprite>(m_adControlsButtonEntity)) {
+                s->visible = visible && (m_currentMode == MenuMode::MAIN_MENU);
+                GN_LOG_INFO("Ad controls button sprite visibility: " + std::string(s->visible ? "true" : "false"));
+            }
+            if (auto ui = m_ecsCoordinator->GetComponent<UIElement>(m_adControlsButtonEntity)) {
+                ui->visible = visible && (m_currentMode == MenuMode::MAIN_MENU);
+                GN_LOG_INFO("Ad controls button UI visibility: " + std::string(ui->visible ? "true" : "false"));
+            }
+        }
+        if (m_versionTextEntity != 0) {
+            if (auto ui = m_ecsCoordinator->GetComponent<UIElement>(m_versionTextEntity)) ui->visible = visible && (m_currentMode == MenuMode::MAIN_MENU);
         }
     }
 
@@ -578,6 +777,15 @@ namespace GameCore {
         showEntity(m_masterLabelEntity);
         showEntity(m_musicLabelEntity);
         showEntity(m_sfxLabelEntity);
+        // Vibration toggle - respect visible parameter
+        if (m_vibrationLabelEntity != 0) {
+            if (auto s = m_ecsCoordinator->GetComponent<Sprite>(m_vibrationLabelEntity)) s->visible = visible;
+            if (auto ui = m_ecsCoordinator->GetComponent<UIElement>(m_vibrationLabelEntity)) ui->visible = visible;
+        }
+        if (m_vibrationToggleEntity != 0) {
+            if (auto s = m_ecsCoordinator->GetComponent<Sprite>(m_vibrationToggleEntity)) s->visible = visible;
+            if (auto ui = m_ecsCoordinator->GetComponent<UIElement>(m_vibrationToggleEntity)) ui->visible = visible;
+        }
     }
 
     void MainMenuState::CreateOptionsArrows(float overlayX, float overlayY, float overlayW, float overlayH, float diffY) {
@@ -666,6 +874,8 @@ namespace GameCore {
         hideEntity(m_masterLabelEntity);
         hideEntity(m_musicLabelEntity);
         hideEntity(m_sfxLabelEntity);
+        hideEntity(m_vibrationLabelEntity);
+        hideEntity(m_vibrationToggleEntity);
     }
 
     void MainMenuState::CreateOptionsKnobs() {
@@ -984,7 +1194,7 @@ namespace GameCore {
                             }
                         } else if (m_isSnapping) {
                             // While snapping, lock the title to the decided target level to prevent flicker
-                            int targetIndex = std::clamp(m_currentLevelIndex + m_pendingIndexDelta, 0, (int)m_levels.size() - 1);
+                            int targetIndex = std::max(0, std::min(m_currentLevelIndex + m_pendingIndexDelta, (int)m_levels.size() - 1));
                             textUI->visible = (i == static_cast<size_t>(targetIndex));
                             if (i == static_cast<size_t>(targetIndex) && i < m_levels.size()) {
                                 textUI->buttonText = m_levels[i].name;
@@ -1014,7 +1224,7 @@ namespace GameCore {
         UpdateLevelPanPositions();
         if (t >= 1.0f) {
             // Commit index change
-            m_currentLevelIndex = std::clamp(m_currentLevelIndex + m_pendingIndexDelta, 0, (int)m_levels.size() - 1);
+            m_currentLevelIndex = std::max(0, std::min(m_currentLevelIndex + m_pendingIndexDelta, (int)m_levels.size() - 1));
             m_pendingIndexDelta = 0;
             m_isSnapping = false;
             m_currentOffsetX = 0.0f;
@@ -1160,9 +1370,11 @@ namespace GameCore {
                 if (leftHit) {
                     int d = static_cast<int>(current); d = std::max(0, d - 1);
                     GameCore::LevelManager::SetGlobalDifficulty(static_cast<Difficulty>(d));
+                    m_game->SaveGameData(); // Consistent with how other data is persisted
                 } else if (rightHit) {
                     int d = static_cast<int>(current); d = std::min(2, d + 1);
                     GameCore::LevelManager::SetGlobalDifficulty(static_cast<Difficulty>(d));
+                    m_game->SaveGameData(); // Consistent with how other data is persisted
                 }
                 m_lastArrowPressTime = 0.0f; // reset shared debounce timer
             }
@@ -1175,6 +1387,25 @@ namespace GameCore {
             }
         }
 
+        // Vibration toggle click detection with debouncing
+        if (justPressed && m_vibrationToggleEntity != 0 && (m_animationTimer - m_lastMenuButtonPressTime) >= MENU_BUTTON_DEBOUNCE) {
+            auto transform = m_ecsCoordinator->GetComponent<Transform>(m_vibrationToggleEntity);
+            auto sprite = m_ecsCoordinator->GetComponent<Sprite>(m_vibrationToggleEntity);
+            auto uiElement = m_ecsCoordinator->GetComponent<UIElement>(m_vibrationToggleEntity);
+            
+            if (transform && sprite && uiElement && uiElement->isEnabled && uiElement->visible) {
+                float toggleW = sprite->width * transform->scale.x;
+                float toggleH = sprite->height * transform->scale.y;
+                
+                if (touchX >= transform->position.x && touchX <= transform->position.x + toggleW &&
+                    touchY >= transform->position.y && touchY <= transform->position.y + toggleH) {
+                    // Set debounce timer
+                    m_lastMenuButtonPressTime = m_animationTimer;
+                    OnVibrationTogglePressed();
+                }
+            }
+        }
+        
         // Back button entity hit test
         bool backHit = false;
         if (m_optionsBackButtonEntity != 0) {
@@ -1233,6 +1464,8 @@ namespace GameCore {
                         screenInfo.scaleFactor = 1.0f;
                     }
                 }
+        
+                // Vibration toggle is handled in HandleOptionsInput, not here
             }
         }
         
@@ -1513,8 +1746,58 @@ namespace GameCore {
         GN_LOG_INFO("✅ Created F button: F.png at (" + std::to_string(logoX) + "," + std::to_string(logoY) + ") with scale " + std::to_string(fButtonScale) + "x" + std::to_string(fButtonScale) + " (overlaid on logo)");
         GN_LOG_INFO("🎯 F BUTTON DEBUG: fButtonTextureWidth=" + std::to_string(fButtonTextureWidth) + ", fButtonTextureHeight=" + std::to_string(fButtonTextureHeight) + ", using EXACT same coordinates as logo");
         
-        // 4. Create menu buttons for mobile
+        // 4. Create menu buttons for mobile (includes Ad Controls button)
         CreateMobileMenuButtons();
+        
+        // 5. Create Version Number text (bottom right, properly aligned to stay on screen)
+        if (m_versionTextEntity == 0) {
+            m_versionTextEntity = m_ecsCoordinator->CreateEntity();
+        }
+        
+        // Position bottom right with appropriate padding
+        // Estimate text width: ~8-10px per character at this font size, so "v0.8" is roughly 40px
+        float versionFontSize = 42.0f;
+        float estimatedTextWidth = 50.0f; // Conservative estimate for "v0.8"
+        float versionPaddingRight = 150.0f; // More padding from right edge to move further left
+        float versionPaddingBottom = 60.0f; // Padding from bottom
+
+        float versionX = m_screenWidth - versionPaddingRight - estimatedTextWidth;
+        float versionY = m_screenHeight - versionPaddingBottom;
+        
+        Transform versionTransform(Gnosis::GNVector2(versionX, versionY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+        Sprite versionSprite;
+        versionSprite.visible = false; // Text only
+        versionSprite.layer = 5;
+        
+        std::string versionText = "v0.8";
+        UIElement versionUI(versionText, "", "");
+        versionUI.fontSize = versionFontSize;
+        versionUI.textColor = Gnosis::GNColor(255, 255, 255, 255); // White
+        versionUI.centerTextHorizontally = false;
+        versionUI.centerTextVertically = true;
+        versionUI.visible = true;
+        versionUI.isEnabled = false;
+        
+        // Use HasComponent checks to prevent duplicate component addition
+        if (!m_ecsCoordinator->HasComponent<Transform>(m_versionTextEntity)) {
+            m_ecsCoordinator->AddComponent<Transform>(m_versionTextEntity, versionTransform);
+        } else {
+            *m_ecsCoordinator->GetComponent<Transform>(m_versionTextEntity) = versionTransform;
+        }
+        
+        if (!m_ecsCoordinator->HasComponent<Sprite>(m_versionTextEntity)) {
+            m_ecsCoordinator->AddComponent<Sprite>(m_versionTextEntity, versionSprite);
+        } else {
+            *m_ecsCoordinator->GetComponent<Sprite>(m_versionTextEntity) = versionSprite;
+        }
+        
+        if (!m_ecsCoordinator->HasComponent<UIElement>(m_versionTextEntity)) {
+            m_ecsCoordinator->AddComponent<UIElement>(m_versionTextEntity, versionUI);
+        } else {
+            *m_ecsCoordinator->GetComponent<UIElement>(m_versionTextEntity) = versionUI;
+        }
+        
+        GN_LOG_INFO("✅ Set version text at (" + std::to_string(versionX) + "," + std::to_string(versionY) + ") - entity " + std::to_string(m_versionTextEntity));
         
         GN_LOG_INFO("✅ Mobile layout created successfully with simplified positioning");
     }
@@ -1889,6 +2172,48 @@ namespace GameCore {
         createButton(m_quickPlayButtonEntity, "QUICK PLAY", 2);
         createButton(m_leaderboardButtonEntity, "LEADERBOARD", 3);
         
+        // Create Ad Controls button - bottom left with padding (like settings button)
+        if (m_adControlsButtonEntity == 0) {
+            m_adControlsButtonEntity = m_ecsCoordinator->CreateEntity();
+        }
+        
+        // Load settings button texture - actual texture is 16x16 (same as GameplayState)
+        float adButtonTextureWidth = 16.0f;
+        float adButtonTextureHeight = 16.0f;
+        if (auto* rs = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+            rs->PreloadTexture("settingsbutton");
+        }
+        
+        // Position bottom left with padding - USING SAME m_screenHeight as other buttons
+        float adButtonScale = 6.0f;
+        float adButtonPadding = 40.0f;
+        float adButtonX = adButtonPadding;
+        float adButtonY = m_screenHeight - (adButtonTextureHeight * adButtonScale) - adButtonPadding;
+        
+        Transform adButtonTransform(Gnosis::GNVector2(adButtonX, adButtonY), 0.0f, Gnosis::GNVector2(adButtonScale, adButtonScale));
+        Sprite adButtonSprite;
+        adButtonSprite.textureId = "settingsbutton";
+        adButtonSprite.width = adButtonTextureWidth;
+        adButtonSprite.height = adButtonTextureHeight;
+        adButtonSprite.visible = true;
+        adButtonSprite.layer = 5;
+        
+        UIElement adButtonUI("", "settingsbutton", "");
+        adButtonUI.buttonText = "AD CONTROLS";
+        adButtonUI.fontSize = 36.0f;
+        adButtonUI.textColor = Gnosis::GNColor(255, 255, 255, 255);
+        adButtonUI.centerTextHorizontally = true;
+        adButtonUI.centerTextVertically = true;
+        adButtonUI.textOffsetX = 220.0f;
+        adButtonUI.textOffsetY = 0.0f;
+        adButtonUI.visible = true;
+        adButtonUI.isEnabled = true;
+        
+        m_ecsCoordinator->AddComponent<Transform>(m_adControlsButtonEntity, adButtonTransform);
+        m_ecsCoordinator->AddComponent<Sprite>(m_adControlsButtonEntity, adButtonSprite);
+        m_ecsCoordinator->AddComponent<UIElement>(m_adControlsButtonEntity, adButtonUI);
+        
+        GN_LOG_INFO("✅ Created Ad Controls button at (" + std::to_string(adButtonX) + "," + std::to_string(adButtonY) + ") - m_screenHeight=" + std::to_string(m_screenHeight));
         GN_LOG_INFO("✅ Created mobile menu buttons with simplified positioning");
     }
 
@@ -1936,27 +2261,45 @@ namespace GameCore {
 
     void MainMenuState::OnPlayButtonPressed() {
         GN_LOG_INFO("Play button pressed - showing level select");
+        m_lastMenuButtonPressTime = m_animationTimer;
         ShowLevelSelect();
     }
 
     void MainMenuState::OnOptionsButtonPressed() {
         GN_LOG_INFO("Options button pressed - transitioning to options menu");
+        m_lastMenuButtonPressTime = m_animationTimer;
         ShowOptionsMenu();
     }
 
     void MainMenuState::OnQuickPlayButtonPressed() {
         GN_LOG_INFO("Quick Play button pressed - starting level 1");
+        m_lastMenuButtonPressTime = m_animationTimer;
         OnMenuOptionSelected(MenuOption::QUICK_PLAY);
     }
 
     void MainMenuState::OnLeaderboardButtonPressed() {
         GN_LOG_INFO("Leaderboard button pressed - opening leaderboards");
+        m_lastMenuButtonPressTime = m_animationTimer;
         OnMenuOptionSelected(MenuOption::LEADERBOARD);
+    }
+
+    void MainMenuState::OnAdControlsButtonPressed() {
+        GN_LOG_INFO("Ad Controls button pressed - showing ad controls menu");
+        m_lastMenuButtonPressTime = m_animationTimer;
+        m_currentMode = MenuMode::AD_CONTROLS;
+        SetMainMenuVisible(false);
+        ShowAdControlsMenu();
     }
 
     void MainMenuState::CheckMenuButtonClicks(float touchX, float touchY) {
         if (!m_ecsCoordinator || !m_assetsLoaded) {
             return;
+        }
+        
+        // Check debounce timer - prevent clicks during transition
+        float timeSinceLastPress = m_animationTimer - m_lastMenuButtonPressTime;
+        if (timeSinceLastPress < MENU_BUTTON_DEBOUNCE) {
+            return; // Still in debounce period
         }
         
         GN_LOG_INFO("🎯 CheckMenuButtonClicks: Touch at pixel(" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
@@ -2115,6 +2458,33 @@ namespace GameCore {
                     uiElement->isPressed = false;
                     uiElement->isHovered = false;
                     UpdateButtonSprite(m_leaderboardButtonEntity, *uiElement);
+                    return;
+                }
+            }
+        }
+        
+        // Check Ad Controls Button
+        if (m_adControlsButtonEntity != 0) {
+            Transform* transform = m_ecsCoordinator->GetComponent<Transform>(m_adControlsButtonEntity);
+            Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(m_adControlsButtonEntity);
+            UIElement* uiElement = m_ecsCoordinator->GetComponent<UIElement>(m_adControlsButtonEntity);
+            
+            if (transform && sprite && uiElement) {
+                float buttonWidth = sprite->width * transform->scale.x;
+                float buttonHeight = sprite->height * transform->scale.y;
+                float buttonLeft = transform->position.x;
+                float buttonRight = transform->position.x + buttonWidth;
+                float buttonTop = transform->position.y;
+                float buttonBottom = transform->position.y + buttonHeight;
+                
+                GN_LOG_INFO("🎯 AD CONTROLS Button - Touch at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + 
+                           "), bounds: L=" + std::to_string(buttonLeft) + " R=" + std::to_string(buttonRight) + 
+                           " T=" + std::to_string(buttonTop) + " B=" + std::to_string(buttonBottom));
+                
+                if (touchX >= buttonLeft && touchX <= buttonRight &&
+                    touchY >= buttonTop && touchY <= buttonBottom) {
+                    GN_LOG_INFO("🎮 MainMenuState: AD CONTROLS BUTTON HIT!");
+                    OnAdControlsButtonPressed();
                     return;
                 }
             }
@@ -2928,8 +3298,8 @@ namespace GameCore {
         if (m_difficultyValueEntity == 0) m_difficultyValueEntity = m_ecsCoordinator->CreateEntity();
         {
             // Position difficulty section below SFX slider with proper spacing
-            float diffLabelY = m_screenHeight * 0.60f; // Label at 60% down
-            float diffValueY = m_screenHeight * 0.70f; // Value at 70% down
+            float diffLabelY = m_screenHeight * 0.55f; // Label at 55% down (moved up 5%)
+            float diffValueY = m_screenHeight * 0.65f; // Value at 65% down (moved up 5%)
             float centerX = m_optionsOverlayX + m_optionsOverlayW * 0.5f;
             // Static text "DIFFICULTY"
             Transform t(Gnosis::GNVector2(centerX, diffLabelY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
@@ -2945,7 +3315,9 @@ namespace GameCore {
             // Current difficulty value centered between arrows
             Transform vt(Gnosis::GNVector2(centerX, diffValueY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
             Sprite vs; vs.visible = true; vs.layer = 4;
-            UIElement vei("NORMAL", "", ""); // placeholder value; update elsewhere when arrows pressed
+            // Initialize with actual current difficulty instead of hardcoded placeholder
+            std::string currentDifficultyName = GameCore::LevelManager::GetDifficultyName();
+            UIElement vei(currentDifficultyName.c_str(), "", ""); // Use actual current difficulty
             vei.fontSize = m_isMobile ? 60.0f : 36.0f; // Increased font size
             vei.textColor = Gnosis::GNColor(255, 255, 255, 255); // White text
             vei.centerTextHorizontally = true; vei.centerTextVertically = true; vei.visible = true;
@@ -3002,6 +3374,81 @@ namespace GameCore {
 
         // After creating tracks/labels, ensure knob positions are consistent
         UpdateOptionsKnobPositions();
+        
+        // Vibration toggle row (below difficulty section)
+        if (m_vibrationLabelEntity == 0) m_vibrationLabelEntity = m_ecsCoordinator->CreateEntity();
+        if (m_vibrationToggleEntity == 0) m_vibrationToggleEntity = m_ecsCoordinator->CreateEntity();
+        
+        // Load current vibration state from game
+        if (m_game) {
+            m_vibrationsEnabled = m_game->GetVibrationsEnabled();
+        }
+        
+        float vibrationLabelY = m_screenHeight * 0.72f;  // Adjusted for better alignment
+        float centerX = m_optionsOverlayX + m_optionsOverlayW * 0.5f;
+        
+        // Label "VIBRATION" on left side - match X position of track labels
+        {
+            float labelX = m_optionsSliderX;  // Same X as track labels
+            Transform t(Gnosis::GNVector2(labelX, vibrationLabelY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+            Sprite s; s.visible = false; s.layer = 4;
+            UIElement ui("VIBRATIONS", "", "");
+            ui.fontSize = m_isMobile ? 54.0f : 32.0f;
+            ui.textColor = Gnosis::GNColor(255, 255, 255, 255);
+            ui.centerTextHorizontally = false;
+            ui.centerTextVertically = true;
+            ui.visible = true;
+            if (!m_ecsCoordinator->HasComponent<Transform>(m_vibrationLabelEntity)) m_ecsCoordinator->AddComponent<Transform>(m_vibrationLabelEntity, t); else *m_ecsCoordinator->GetComponent<Transform>(m_vibrationLabelEntity) = t;
+            if (!m_ecsCoordinator->HasComponent<Sprite>(m_vibrationLabelEntity)) m_ecsCoordinator->AddComponent<Sprite>(m_vibrationLabelEntity, s); else *m_ecsCoordinator->GetComponent<Sprite>(m_vibrationLabelEntity) = s;
+            if (!m_ecsCoordinator->HasComponent<UIElement>(m_vibrationLabelEntity)) m_ecsCoordinator->AddComponent<UIElement>(m_vibrationLabelEntity, ui); else *m_ecsCoordinator->GetComponent<UIElement>(m_vibrationLabelEntity) = ui;
+        }
+        
+        // Toggle button (X sprite) on right side
+        {
+            float toggleX = m_optionsOverlayX + m_optionsOverlayW * 0.75f;  // 75% across (further right)
+            
+            // Textures are preloaded in LoadingState
+            float xBtnW = 64.0f;
+            float xBtnH = 64.0f;
+            float toggleScale = 7.0f;
+            
+            // Move toggle button up more to align with label center
+            float toggleY = vibrationLabelY - 80.0f;  // Move up 80px to align with label center
+            
+            Transform t(Gnosis::GNVector2(toggleX, toggleY), 0.0f, Gnosis::GNVector2(toggleScale, toggleScale));
+            Sprite s;
+            s.textureId = m_vibrationsEnabled ? "xbuttonselected" : "xbuttonunselected";
+            s.width = xBtnW;
+            s.height = xBtnH;
+            s.visible = true;
+            s.layer = 4;
+            
+            UIElement ui("", 
+                m_vibrationsEnabled ? "xbuttonselected" : "xbuttonunselected",
+                m_vibrationsEnabled ? "xbuttonselected" : "xbuttonunselected");
+            ui.visible = true;
+            ui.isEnabled = true;
+            
+            if (!m_ecsCoordinator->HasComponent<Transform>(m_vibrationToggleEntity)) m_ecsCoordinator->AddComponent<Transform>(m_vibrationToggleEntity, t); else *m_ecsCoordinator->GetComponent<Transform>(m_vibrationToggleEntity) = t;
+            if (!m_ecsCoordinator->HasComponent<Sprite>(m_vibrationToggleEntity)) {
+                m_ecsCoordinator->AddComponent<Sprite>(m_vibrationToggleEntity, s);
+            } else {
+                // Update existing sprite texture to reflect current state
+                auto existingSprite = m_ecsCoordinator->GetComponent<Sprite>(m_vibrationToggleEntity);
+                *existingSprite = s;
+            }
+            if (!m_ecsCoordinator->HasComponent<UIElement>(m_vibrationToggleEntity)) {
+                m_ecsCoordinator->AddComponent<UIElement>(m_vibrationToggleEntity, ui);
+            } else {
+                // Update existing UI element texture to reflect current state
+                auto existingUI = m_ecsCoordinator->GetComponent<UIElement>(m_vibrationToggleEntity);
+                *existingUI = ui;
+            }
+        }
+        
+
+        
+        GN_LOG_INFO("Created vibration toggle in options menu");
     }
 
     void MainMenuState::ShowLevelSelect() {
@@ -3031,6 +3478,20 @@ namespace GameCore {
                 if (uiElement) uiElement->visible = false;
             }
         }
+        
+        // Hide ad controls button and version text in level select
+        if (m_adControlsButtonEntity != 0) {
+            Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(m_adControlsButtonEntity);
+            UIElement* uiElement = m_ecsCoordinator->GetComponent<UIElement>(m_adControlsButtonEntity);
+            if (sprite) sprite->visible = false;
+            if (uiElement) uiElement->visible = false;
+        }
+        if (m_versionTextEntity != 0) {
+            UIElement* uiElement = m_ecsCoordinator->GetComponent<UIElement>(m_versionTextEntity);
+            if (uiElement) uiElement->visible = false;
+        }
+        
+        GN_LOG_INFO("📋 ShowLevelSelect: Ad controls button and version text hidden");
         
         // Show level select elements
         UpdateLevelVisibility();
@@ -3073,10 +3534,13 @@ namespace GameCore {
     }
 
     void MainMenuState::HideLevelSelect() {
-        GN_LOG_INFO("Hiding level select menu");
+        GN_LOG_INFO("Hiding level select menu - returning to main menu");
         m_currentMode = MenuMode::MAIN_MENU;
         
-        // Show main menu elements
+        // Show main menu elements (this will show ad controls and version since mode is MAIN_MENU)
+        SetMainMenuVisible(true);
+        
+        GN_LOG_INFO("📋 HideLevelSelect: SetMainMenuVisible(true) called - ad controls and version should be visible");
         if (m_logoEntity != 0) {
             Sprite* logoSprite = m_ecsCoordinator->GetComponent<Sprite>(m_logoEntity);
             if (logoSprite) logoSprite->visible = true;
@@ -3287,7 +3751,7 @@ namespace GameCore {
                 deltaIndex += dir * velocitySteps;
             }
 
-            int targetIndex = std::clamp(m_currentLevelIndex + deltaIndex, 0, (int)m_levels.size() - 1);
+            int targetIndex = std::max(0, std::min(m_currentLevelIndex + deltaIndex, (int)m_levels.size() - 1));
             m_pendingIndexDelta = targetIndex - m_currentLevelIndex;
             // Start snap animation from current offset toward target
             m_isSnapping = true;
@@ -3762,6 +4226,7 @@ namespace GameCore {
 
     void MainMenuState::OnBackButtonPressed() {
         GN_LOG_INFO("Back button pressed - returning to main menu");
+        m_lastMenuButtonPressTime = m_animationTimer; // Set debounce timer
         HideLevelSelect();
     }
 
@@ -3878,6 +4343,395 @@ namespace GameCore {
                    ", Scale: " + std::to_string(dynamicScale));
         
         // Desktop-specific main menu layout adjustments can go here
+    }
+
+    // ==================== AD CONTROLS MENU ====================
+
+    void MainMenuState::ShowAdControlsMenu() {
+        GN_LOG_INFO("Showing Ad Controls menu");
+        m_currentMode = MenuMode::AD_CONTROLS;
+        SetMainMenuVisible(false); // Hide main menu elements including ad controls button
+        CreateAdControlsLayout();
+    }
+
+    void MainMenuState::HideAdControlsMenu() {
+        GN_LOG_INFO("Hiding Ad Controls menu");
+        
+        // Hide all ad controls menu entities
+        if (m_adControlsTitleEntity != 0) {
+            auto ui = m_ecsCoordinator->GetComponent<UIElement>(m_adControlsTitleEntity);
+            if (ui) ui->visible = false;
+        }
+        
+        if (m_adControlsBackButtonEntity != 0) {
+            auto ui = m_ecsCoordinator->GetComponent<UIElement>(m_adControlsBackButtonEntity);
+            if (ui) ui->visible = false;
+            auto sprite = m_ecsCoordinator->GetComponent<Sprite>(m_adControlsBackButtonEntity);
+            if (sprite) sprite->visible = false;
+        }
+        
+        if (m_removeAdsLabelEntity != 0) {
+            auto ui = m_ecsCoordinator->GetComponent<UIElement>(m_removeAdsLabelEntity);
+            if (ui) ui->visible = false;
+        }
+        
+        if (m_removeAdsPriceButtonEntity != 0) {
+            auto ui = m_ecsCoordinator->GetComponent<UIElement>(m_removeAdsPriceButtonEntity);
+            if (ui) ui->visible = false;
+            auto sprite = m_ecsCoordinator->GetComponent<Sprite>(m_removeAdsPriceButtonEntity);
+            if (sprite) sprite->visible = false;
+        }
+        
+        // Hide overlay background
+        if (m_adControlsOverlayEntity != 0) {
+            auto sprite = m_ecsCoordinator->GetComponent<Sprite>(m_adControlsOverlayEntity);
+            if (sprite) sprite->visible = false;
+        }
+    }
+
+    void MainMenuState::CreateAdControlsLayout() {
+        if (!m_ecsCoordinator) return;
+        
+        GN_LOG_INFO("Creating Ad Controls menu layout");
+        
+        // Calculate center overlay (similar to leaderboard/options)
+        float overlayW = m_screenWidth * 0.8f;
+        float overlayH = m_screenHeight * 0.7f;
+        float overlayX = (m_screenWidth - overlayW) * 0.5f;
+        float overlayY = (m_screenHeight - overlayH) * 0.5f;
+        
+        // Create overlay background (same as leaderboard)
+        if (m_adControlsOverlayEntity == 0) {
+            m_adControlsOverlayEntity = m_ecsCoordinator->CreateEntity();
+        }
+        
+        float overlayTextureWidth = 160.0f;
+        float overlayTextureHeight = 300.0f;
+        float overlayScale = 7.0f;
+        
+        Gnosis::GNVector2 overlayPosition(
+            (m_screenWidth - overlayTextureWidth * overlayScale) * 0.5f,
+            (m_screenHeight - overlayTextureHeight * overlayScale) * 0.5f
+        );
+        
+        Transform overlayTransform(overlayPosition, 0.0f, Gnosis::GNVector2(overlayScale, overlayScale));
+        
+        if (!m_ecsCoordinator->HasComponent<Transform>(m_adControlsOverlayEntity)) {
+            m_ecsCoordinator->AddComponent<Transform>(m_adControlsOverlayEntity, overlayTransform);
+        } else {
+            *m_ecsCoordinator->GetComponent<Transform>(m_adControlsOverlayEntity) = overlayTransform;
+        }
+        
+        Sprite overlaySprite("PauseMenuBackgroundMobile", (int)overlayTextureWidth, (int)overlayTextureHeight);
+        overlaySprite.layer = 5;
+        overlaySprite.visible = true;
+        
+        if (!m_ecsCoordinator->HasComponent<Sprite>(m_adControlsOverlayEntity)) {
+            m_ecsCoordinator->AddComponent<Sprite>(m_adControlsOverlayEntity, overlaySprite);
+        } else {
+            *m_ecsCoordinator->GetComponent<Sprite>(m_adControlsOverlayEntity) = overlaySprite;
+        }
+        
+        // Title centered at top
+        if (m_adControlsTitleEntity == 0) {
+            m_adControlsTitleEntity = m_ecsCoordinator->CreateEntity();
+        }
+        
+        float titleX = overlayX + overlayW * 0.5f;
+        float titleY = overlayY + overlayH * 0.08f;
+        
+        Transform titleTransform(Gnosis::GNVector2(titleX, titleY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+        Sprite titleSprite;
+        titleSprite.visible = false;
+        titleSprite.layer = 4;
+        
+        UIElement titleUI("AD CONTROLS", "", "");
+        titleUI.fontSize = m_isMobile ? 72.0f : 42.0f;
+        titleUI.textColor = Gnosis::GNColor(255, 255, 255, 255);
+        titleUI.centerTextHorizontally = true;
+        titleUI.centerTextVertically = true;
+        titleUI.visible = true;
+        
+        m_ecsCoordinator->AddComponent<Transform>(m_adControlsTitleEntity, titleTransform);
+        m_ecsCoordinator->AddComponent<Sprite>(m_adControlsTitleEntity, titleSprite);
+        m_ecsCoordinator->AddComponent<UIElement>(m_adControlsTitleEntity, titleUI);
+        
+        // "Remove Ads" label centered
+        if (m_removeAdsLabelEntity == 0) {
+            m_removeAdsLabelEntity = m_ecsCoordinator->CreateEntity();
+        }
+        
+        float labelX = overlayX + overlayW * 0.5f;
+        float labelY = overlayY + overlayH * 0.4f;
+        
+        Transform labelTransform(Gnosis::GNVector2(labelX, labelY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+        Sprite labelSprite;
+        labelSprite.visible = false;
+        labelSprite.layer = 4;
+        
+        UIElement labelUI("Remove Ads", "", "");
+        labelUI.fontSize = m_isMobile ? 64.0f : 38.0f;
+        labelUI.textColor = Gnosis::GNColor(255, 255, 255, 255);
+        labelUI.centerTextHorizontally = true;
+        labelUI.centerTextVertically = true;
+        labelUI.visible = true;
+        
+        m_ecsCoordinator->AddComponent<Transform>(m_removeAdsLabelEntity, labelTransform);
+        m_ecsCoordinator->AddComponent<Sprite>(m_removeAdsLabelEntity, labelSprite);
+        m_ecsCoordinator->AddComponent<UIElement>(m_removeAdsLabelEntity, labelUI);
+        
+        // "$2.00" button - centered UNDER the "Remove Ads" label on FloppyButtonBlue (same size as main menu buttons)
+        if (m_removeAdsPriceButtonEntity == 0) {
+            m_removeAdsPriceButtonEntity = m_ecsCoordinator->CreateEntity();
+        }
+        
+        // Use actual texture dimensions like main menu buttons
+        int priceW = 0, priceH = 0;
+        if (auto* rs = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+            rs->PreloadTexture("FloppyButtonBlue");
+            if (!rs->GetTextureSize("FloppyButtonBlue", priceW, priceH)) { priceW = 90; priceH = 16; }
+        }
+        float priceButtonTextureWidth = static_cast<float>(priceW);
+        float priceButtonTextureHeight = static_cast<float>(priceH);
+        
+        float priceButtonScale = 10.0f; // Match main menu button scale exactly
+        
+        // Calculate center position
+        float priceButtonCenterX = m_screenWidth / 2.0f;
+        float priceButtonCenterY = labelY + 150.0f;
+        
+        // Get scaled dimensions
+        auto priceScaledDimensions = GetScaledDimensions(priceButtonTextureWidth, priceButtonTextureHeight, priceButtonScale);
+        float priceScaledWidth = priceScaledDimensions.first;
+        float priceScaledHeight = priceScaledDimensions.second;
+        
+        // Use CenterObjectAtPosition to get top-left coordinates (same as main menu buttons)
+        auto pricePosition = CenterObjectAtPosition(priceButtonCenterX, priceButtonCenterY, priceScaledWidth, priceScaledHeight);
+        float priceButtonX = pricePosition.x;
+        float priceButtonY = pricePosition.y;
+        
+        Transform priceButtonTransform(Gnosis::GNVector2(priceButtonX, priceButtonY), 0.0f, Gnosis::GNVector2(priceButtonScale, priceButtonScale));
+        Sprite priceButtonSprite("FloppyButtonBlue", priceButtonTextureWidth, priceButtonTextureHeight);
+        priceButtonSprite.visible = true;
+        priceButtonSprite.layer = 6;
+        
+        UIElement priceButtonUI("", "FloppyButtonBlue", "FloppyButtonBlue");
+        priceButtonUI.buttonText = "$2.00"; // Use buttonText field like main menu buttons
+        priceButtonUI.fontSize = 80.0f; // Match main menu text size exactly
+        priceButtonUI.textColor = Gnosis::GNColor(255, 255, 255, 255);
+        priceButtonUI.centerTextHorizontally = true;
+        priceButtonUI.centerTextVertically = true;
+        priceButtonUI.textOffsetY = 0.0f; // No offset for perfect centering
+        priceButtonUI.visible = true;
+        priceButtonUI.isEnabled = true;
+        
+        if (!m_ecsCoordinator->HasComponent<Transform>(m_removeAdsPriceButtonEntity)) {
+            m_ecsCoordinator->AddComponent<Transform>(m_removeAdsPriceButtonEntity, priceButtonTransform);
+        } else {
+            *m_ecsCoordinator->GetComponent<Transform>(m_removeAdsPriceButtonEntity) = priceButtonTransform;
+        }
+        
+        if (!m_ecsCoordinator->HasComponent<Sprite>(m_removeAdsPriceButtonEntity)) {
+            m_ecsCoordinator->AddComponent<Sprite>(m_removeAdsPriceButtonEntity, priceButtonSprite);
+        } else {
+            *m_ecsCoordinator->GetComponent<Sprite>(m_removeAdsPriceButtonEntity) = priceButtonSprite;
+        }
+        
+        if (!m_ecsCoordinator->HasComponent<UIElement>(m_removeAdsPriceButtonEntity)) {
+            m_ecsCoordinator->AddComponent<UIElement>(m_removeAdsPriceButtonEntity, priceButtonUI);
+        } else {
+            *m_ecsCoordinator->GetComponent<UIElement>(m_removeAdsPriceButtonEntity) = priceButtonUI;
+        }
+        
+        // Back button at bottom center on FloppyButtonBlue (same size as main menu buttons)
+        if (m_adControlsBackButtonEntity == 0) {
+            m_adControlsBackButtonEntity = m_ecsCoordinator->CreateEntity();
+        }
+        
+        // Use actual texture dimensions like main menu buttons
+        int backW = 0, backH = 0;
+        if (auto* rs = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+            rs->PreloadTexture("FloppyButtonBlue");
+            if (!rs->GetTextureSize("FloppyButtonBlue", backW, backH)) { backW = 90; backH = 16; }
+        }
+        float backButtonTextureWidth = static_cast<float>(backW);
+        float backButtonTextureHeight = static_cast<float>(backH);
+        
+        float backButtonScale = 10.0f; // Match main menu button scale exactly
+        
+        // Calculate center position
+        float backButtonCenterX = m_screenWidth / 2.0f;
+        float backButtonCenterY = overlayY + overlayH * 0.85f;
+        
+        // Get scaled dimensions
+        auto backScaledDimensions = GetScaledDimensions(backButtonTextureWidth, backButtonTextureHeight, backButtonScale);
+        float backScaledWidth = backScaledDimensions.first;
+        float backScaledHeight = backScaledDimensions.second;
+        
+        // Use CenterObjectAtPosition to get top-left coordinates (same as main menu buttons)
+        auto backPosition = CenterObjectAtPosition(backButtonCenterX, backButtonCenterY, backScaledWidth, backScaledHeight);
+        float backButtonX = backPosition.x;
+        float backButtonY = backPosition.y;
+        
+        Transform backButtonTransform(Gnosis::GNVector2(backButtonX, backButtonY), 0.0f, Gnosis::GNVector2(backButtonScale, backButtonScale));
+        Sprite backButtonSprite("FloppyButtonBlue", backButtonTextureWidth, backButtonTextureHeight);
+        backButtonSprite.visible = true;
+        backButtonSprite.layer = 6;
+        
+        UIElement backButtonUI("", "FloppyButtonBlue", "FloppyButtonBlue");
+        backButtonUI.buttonText = "BACK"; // Use buttonText field like main menu buttons
+        backButtonUI.fontSize = 80.0f; // Match main menu text size exactly
+        backButtonUI.textColor = Gnosis::GNColor(255, 255, 255, 255);
+        backButtonUI.centerTextHorizontally = true;
+        backButtonUI.centerTextVertically = true;
+        backButtonUI.textOffsetY = 0.0f; // No offset for perfect centering
+        backButtonUI.visible = true;
+        backButtonUI.isEnabled = true;
+        
+        if (!m_ecsCoordinator->HasComponent<Transform>(m_adControlsBackButtonEntity)) {
+            m_ecsCoordinator->AddComponent<Transform>(m_adControlsBackButtonEntity, backButtonTransform);
+        } else {
+            *m_ecsCoordinator->GetComponent<Transform>(m_adControlsBackButtonEntity) = backButtonTransform;
+        }
+        
+        if (!m_ecsCoordinator->HasComponent<Sprite>(m_adControlsBackButtonEntity)) {
+            m_ecsCoordinator->AddComponent<Sprite>(m_adControlsBackButtonEntity, backButtonSprite);
+        } else {
+            *m_ecsCoordinator->GetComponent<Sprite>(m_adControlsBackButtonEntity) = backButtonSprite;
+        }
+        
+        if (!m_ecsCoordinator->HasComponent<UIElement>(m_adControlsBackButtonEntity)) {
+            m_ecsCoordinator->AddComponent<UIElement>(m_adControlsBackButtonEntity, backButtonUI);
+        } else {
+            *m_ecsCoordinator->GetComponent<UIElement>(m_adControlsBackButtonEntity) = backButtonUI;
+        }
+        
+        GN_LOG_INFO("Ad Controls menu layout created");
+    }
+
+    void MainMenuState::HandleAdControlsInput() {
+        if (!m_ecsCoordinator) return;
+        
+        // Get touch input from platform delegates
+        if (m_game) {
+            const PlatformDelegates& delegates = m_game->GetPlatformDelegates();
+            
+            // Check for touch/click
+            if (delegates.input.isTouchDown && delegates.input.isTouchDown()) {
+                float touchX = 0.0f;
+                float touchY = 0.0f;
+                if (delegates.input.getTouchPosition) {
+                    delegates.input.getTouchPosition(0, &touchX, &touchY);
+                    
+                    // Check back button
+                    if (m_adControlsBackButtonEntity != 0) {
+                        auto transform = m_ecsCoordinator->GetComponent<Transform>(m_adControlsBackButtonEntity);
+                        auto sprite = m_ecsCoordinator->GetComponent<Sprite>(m_adControlsBackButtonEntity);
+                        auto ui = m_ecsCoordinator->GetComponent<UIElement>(m_adControlsBackButtonEntity);
+                        
+                        if (transform && sprite && ui && ui->isEnabled) {
+                            float buttonW = sprite->width * transform->scale.x;
+                            float buttonH = sprite->height * transform->scale.y;
+                            
+                            if (touchX >= transform->position.x && touchX <= transform->position.x + buttonW &&
+                                touchY >= transform->position.y && touchY <= transform->position.y + buttonH) {
+                                OnAdControlsBackButtonPressed();
+                                return;
+                            }
+                        }
+                    }
+                    
+                    // Check price button
+                    if (m_removeAdsPriceButtonEntity != 0) {
+                        auto transform = m_ecsCoordinator->GetComponent<Transform>(m_removeAdsPriceButtonEntity);
+                        auto sprite = m_ecsCoordinator->GetComponent<Sprite>(m_removeAdsPriceButtonEntity);
+                        auto ui = m_ecsCoordinator->GetComponent<UIElement>(m_removeAdsPriceButtonEntity);
+                        
+                        if (transform && sprite && ui && ui->isEnabled) {
+                            float buttonW = sprite->width * transform->scale.x;
+                            float buttonH = sprite->height * transform->scale.y;
+                            
+                            if (touchX >= transform->position.x && touchX <= transform->position.x + buttonW &&
+                                touchY >= transform->position.y && touchY <= transform->position.y + buttonH) {
+                                OnRemoveAdsPurchasePressed();
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    void MainMenuState::OnAdControlsBackButtonPressed() {
+        GN_LOG_INFO("Ad Controls Back button pressed");
+        
+        // Set debounce timer to prevent accidental clicks when returning to main menu
+        m_lastMenuButtonPressTime = m_animationTimer;
+        
+        HideAdControlsMenu();
+        m_currentMode = MenuMode::MAIN_MENU;
+        SetMainMenuVisible(true);
+    }
+
+    void MainMenuState::OnRemoveAdsPurchasePressed() {
+        GN_LOG_INFO("Remove Ads purchase button pressed - IAP not yet implemented");
+        // TODO: Phase 7 - Call StoreManager to initiate purchase
+        // This will be wired up when we implement StoreKit 2 integration
+    }
+
+    // ==================== VIBRATION TOGGLE ====================
+
+    void MainMenuState::OnVibrationTogglePressed() {
+        // Debounce is already handled in click detection
+        
+        // Toggle state in game (saves automatically)
+        if (!m_game) return;
+        
+        m_vibrationsEnabled = !m_vibrationsEnabled;
+        m_game->SetVibrationsEnabled(m_vibrationsEnabled);
+        
+        GN_LOG_INFO("Vibration toggled: " + std::string(m_vibrationsEnabled ? "ON" : "OFF"));
+        
+        // Atomically update both Sprite and UIElement textures in a single operation
+        // This prevents any intermediate rendering state that could cause flashing
+        const std::string targetTexture = m_vibrationsEnabled ? "xbuttonselected" : "xbuttonunselected";
+        
+        auto sprite = m_ecsCoordinator->GetComponent<Sprite>(m_vibrationToggleEntity);
+        auto uiElement = m_ecsCoordinator->GetComponent<UIElement>(m_vibrationToggleEntity);
+        
+        if (sprite && uiElement) {
+            // Update both components before any rendering can occur
+            sprite->textureId = targetTexture;
+            uiElement->normalTextureId = targetTexture;
+            uiElement->hoverTextureId = targetTexture;
+            GN_LOG_INFO("Vibration toggle textures atomically swapped to: " + targetTexture);
+        }
+        
+        // Save settings
+        if (m_game) {
+            m_game->SaveSettings();
+        }
+        
+        // Optional: Play haptic feedback for the toggle itself (if enabled)
+        if (m_vibrationsEnabled && m_platformDelegates && m_platformDelegates->haptic.triggerImpact) {
+            m_platformDelegates->haptic.triggerImpact(HapticStyle::LIGHT, 0.5f);
+        }
+    }
+
+    void MainMenuState::SaveVibrationPreference(bool enabled) {
+        // Saved automatically by FloppyTurdGame::SetVibrationsEnabled
+        if (m_game) {
+            m_game->SetVibrationsEnabled(enabled);
+        }
+    }
+
+    bool MainMenuState::LoadVibrationPreference() {
+        // Load from game
+        if (m_game) {
+            return m_game->GetVibrationsEnabled();
+        }
+        return true; // Default enabled
     }
 
 } // namespace GameCore

@@ -1502,6 +1502,30 @@ namespace GameCore {
                     GN_LOG_INFO("PauseSystem: Updated frame " + std::to_string(i) + " texture to '" + frameTextureId + "'");
                 }
             }
+            
+            // Update locked frame overlay visibility based on hat unlock status
+            if (i < m_lockedFrameEntities.size()) {
+                auto lockedFrameEntity = m_lockedFrameEntities[i];
+                if (lockedFrameEntity != 0 && m_ecsCoordinator) {
+                    // Check if this hat is unlocked
+                    bool isUnlocked = m_hatsSystem->IsHatUnlocked(i);
+                    
+                    // Hide locked frame if hat is unlocked, show if locked
+                    auto* lockedSprite = m_ecsCoordinator->GetComponent<Sprite>(lockedFrameEntity);
+                    auto* lockedUI = m_ecsCoordinator->GetComponent<UIElement>(lockedFrameEntity);
+                    
+                    if (lockedSprite) {
+                        lockedSprite->visible = !isUnlocked;
+                    }
+                    if (lockedUI) {
+                        lockedUI->visible = !isUnlocked;
+                    }
+                    
+                    if (isUnlocked) {
+                        GN_LOG_INFO("PauseSystem: Hidden locked frame overlay for unlocked hat at index " + std::to_string(i));
+                    }
+                }
+            }
         }
     }
 
@@ -2021,63 +2045,214 @@ namespace GameCore {
             m_ecsCoordinator->AddComponent<UIElement>(m_sfxKnobEntity, ui);
         }
 
-        GN_LOG_INFO("PauseSystem: Audio sliders created");
+        // VIBRATION TOGGLE (below SFX slider to avoid overlap)
+        float vibrationY = sfxTrackY + 125.0f; // Below SFX slider by 125px (moved down a bit more)
+        
+        // Vibration label - adjusted Y to align with toggle button on same plane
+        if (m_vibrationLabelEntity == 0) {
+            m_vibrationLabelEntity = m_ecsCoordinator->CreateEntity();
+            // Same X as other labels (master, music, sfx)
+            float labelX = IsLandscapeMode() ? (m_sliderX - 200.0f) : (m_sliderX - 150.0f);
+            // Move label down to center align with toggle button (button is 64px at scale 7.0)
+            float labelY = vibrationY + 40.0f; // Move down 40px to center with button
+            
+            Transform t(GNVector2(labelX, labelY), 0.0f, GNVector2(1.0f, 1.0f));
+            UIElement ui("VIBRATIONS", "", "");
+            ui.fontSize = IsLandscapeMode() ? 38.0f : 42.0f;
+            ui.textColor = GNColor(255, 255, 255, 255);
+            ui.centerTextHorizontally = false;
+            ui.centerTextVertically = true;
+            ui.visible = false;
+            ui.textLayer = 84;
+            
+            m_ecsCoordinator->AddComponent<Transform>(m_vibrationLabelEntity, t);
+            m_ecsCoordinator->AddComponent<UIElement>(m_vibrationLabelEntity, ui);
+        }
+        
+        // Vibration toggle button (X sprite)
+        if (m_vibrationToggleEntity == 0) {
+            m_vibrationToggleEntity = m_ecsCoordinator->CreateEntity();
+            
+            // Get current vibration state from game
+            bool vibrationsEnabled = true;
+            if (GameCore::GetGame()) {
+                vibrationsEnabled = GameCore::GetGame()->GetVibrationsEnabled();
+            }
+            
+            float toggleX = m_sliderX + m_sliderW + 50.0f; // Positioned to the right of where slider would be
+            float toggleScale = 7.0f;
+            // Button Y aligned with base vibrationY (label was moved down to align with this)
+            Transform t(GNVector2(toggleX, vibrationY), 0.0f, GNVector2(toggleScale, toggleScale));
+            
+            Sprite s(vibrationsEnabled ? "xbuttonselected" : "xbuttonunselected", 64, 64);
+            s.visible = false;
+            s.layer = 85;
+            
+            UIElement ui("", 
+                vibrationsEnabled ? "xbuttonselected" : "xbuttonunselected",
+                vibrationsEnabled ? "xbuttonselected" : "xbuttonunselected");
+            ui.visible = false;
+            ui.textLayer = 85;
+            ui.isEnabled = true;
+            
+            m_ecsCoordinator->AddComponent<Transform>(m_vibrationToggleEntity, t);
+            m_ecsCoordinator->AddComponent<Sprite>(m_vibrationToggleEntity, s);
+            m_ecsCoordinator->AddComponent<UIElement>(m_vibrationToggleEntity, ui);
+        }
+
+        GN_LOG_INFO("PauseSystem: Audio sliders and vibration toggle created");
     }
 
     void PauseSystem::ShowPauseMenu() {
         GN_LOG_INFO("PauseSystem: Showing pause menu");
 
-        // Show pause menu background
-        if (m_pauseMenuBackgroundEntity != 0 && m_ecsCoordinator) {
-            UIElement* bgUI = m_ecsCoordinator->GetComponent<UIElement>(m_pauseMenuBackgroundEntity);
-            if (bgUI) {
-                bgUI->visible = true;
-            }
-
-            // Also show the Sprite component for proper rendering
-            Sprite* bgSprite = m_ecsCoordinator->GetComponent<Sprite>(m_pauseMenuBackgroundEntity);
-            if (bgSprite) {
-                bgSprite->visible = true;
-            }
-        }
-
-        // Show pause menu ribbon
-        if (m_pauseMenuRibbonEntity != 0 && m_ecsCoordinator) {
-            UIElement* ribbonUI = m_ecsCoordinator->GetComponent<UIElement>(m_pauseMenuRibbonEntity);
-            if (ribbonUI) {
-                ribbonUI->visible = true;
-            }
-        }
-
-        // Show ribbon buttons
-        for (Entity& buttonEntity : m_ribbonButtons) {
-            if (buttonEntity != 0 && m_ecsCoordinator) {
-                UIElement* buttonUI = m_ecsCoordinator->GetComponent<UIElement>(buttonEntity);
-                if (buttonUI) {
-                    buttonUI->visible = true;
-                }
-
-                // Also show the Sprite component for proper rendering
-                Sprite* buttonSprite = m_ecsCoordinator->GetComponent<Sprite>(buttonEntity);
-                if (buttonSprite) {
-                    buttonSprite->visible = true;
-                }
-            }
-        }
-
-        // Show current tab content
-        ShowTabContent(m_currentTab);
-
-        // Initialize slider values from current audio settings
+        // Initialize slider values from current audio settings FIRST (before making anything visible)
         if (GameCore::GetGame()) {
             m_masterSliderValue = GameCore::GetGame()->GetMasterVolume();
             m_musicSliderValue = GameCore::GetGame()->GetMusicVolume();
             m_sfxSliderValue = GameCore::GetGame()->GetSFXVolume();
             GN_LOG_INFO("PauseSystem: Initialized slider values - Master: " + std::to_string(m_masterSliderValue) +
                        ", Music: " + std::to_string(m_musicSliderValue) + ", SFX: " + std::to_string(m_sfxSliderValue));
+            
+            // Update knob positions to reflect loaded values
+            float knobSize = 16.0f * 8.0f;
+            float masterTrackY = m_sliderY + 9.0f;
+            float musicTrackY = m_sliderY + m_sliderSpacing + 9.0f;
+            float sfxTrackY = m_sliderY + m_sliderSpacing * 2 + 9.0f;
+            
+            if (m_masterKnobEntity != 0 && m_ecsCoordinator) {
+                auto* transform = m_ecsCoordinator->GetComponent<Transform>(m_masterKnobEntity);
+                if (transform) {
+                    float knobCenterX = m_sliderX + m_masterSliderValue * m_sliderW;
+                    transform->position.x = knobCenterX - (knobSize * 0.5f);
+                    transform->position.y = masterTrackY + m_sliderH * 0.5f - (knobSize * 0.5f);
+                }
+            }
+            if (m_musicKnobEntity != 0 && m_ecsCoordinator) {
+                auto* transform = m_ecsCoordinator->GetComponent<Transform>(m_musicKnobEntity);
+                if (transform) {
+                    float knobCenterX = m_sliderX + m_musicSliderValue * m_sliderW;
+                    transform->position.x = knobCenterX - (knobSize * 0.5f);
+                    transform->position.y = musicTrackY + m_sliderH * 0.5f - (knobSize * 0.5f);
+                }
+            }
+            if (m_sfxKnobEntity != 0 && m_ecsCoordinator) {
+                auto* transform = m_ecsCoordinator->GetComponent<Transform>(m_sfxKnobEntity);
+                if (transform) {
+                    float knobCenterX = m_sliderX + m_sfxSliderValue * m_sliderW;
+                    transform->position.x = knobCenterX - (knobSize * 0.5f);
+                    transform->position.y = sfxTrackY + m_sliderH * 0.5f - (knobSize * 0.5f);
+                }
+            }
+            GN_LOG_INFO("PauseSystem: Updated knob positions to reflect loaded audio values");
         }
 
-        GN_LOG_INFO("PauseSystem: Pause menu shown");
+        // ATOMIC RENDERING FIX: Collect all entities to show, then make them all visible at once
+        // This prevents the "domino effect" where elements appear sequentially across frames
+        std::vector<Entity> entitiesToShow;
+        std::vector<std::pair<UIElement*, bool>> uiElementsToShow;
+        std::vector<std::pair<Sprite*, bool>> spritesToShow;
+        std::vector<std::pair<UIShape*, bool>> shapesToShow;
+
+        // Add background entities
+        if (m_pauseMenuBackgroundEntity != 0 && m_ecsCoordinator) {
+            entitiesToShow.push_back(m_pauseMenuBackgroundEntity);
+        }
+
+        // Add ribbon entity
+        if (m_pauseMenuRibbonEntity != 0 && m_ecsCoordinator) {
+            entitiesToShow.push_back(m_pauseMenuRibbonEntity);
+        }
+
+        // Add ribbon buttons
+        for (Entity& buttonEntity : m_ribbonButtons) {
+            if (buttonEntity != 0) {
+                entitiesToShow.push_back(buttonEntity);
+            }
+        }
+
+        // Collect tab content entities based on current tab
+        HideAllTabContent();  // Ensure clean slate
+        switch (m_currentTab) {
+            case PauseMenuTab::SYSTEM:
+                if (m_systemTitleEntity != 0) entitiesToShow.push_back(m_systemTitleEntity);
+                if (m_mainMenuButtonEntity != 0) entitiesToShow.push_back(m_mainMenuButtonEntity);
+                if (m_masterKnobEntity != 0) entitiesToShow.push_back(m_masterKnobEntity);
+                if (m_masterTrackEntity != 0) entitiesToShow.push_back(m_masterTrackEntity);
+                if (m_masterLabelEntity != 0) entitiesToShow.push_back(m_masterLabelEntity);
+                if (m_musicKnobEntity != 0) entitiesToShow.push_back(m_musicKnobEntity);
+                if (m_musicTrackEntity != 0) entitiesToShow.push_back(m_musicTrackEntity);
+                if (m_musicLabelEntity != 0) entitiesToShow.push_back(m_musicLabelEntity);
+                if (m_sfxKnobEntity != 0) entitiesToShow.push_back(m_sfxKnobEntity);
+                if (m_sfxTrackEntity != 0) entitiesToShow.push_back(m_sfxTrackEntity);
+                if (m_sfxLabelEntity != 0) entitiesToShow.push_back(m_sfxLabelEntity);
+                if (m_vibrationLabelEntity != 0) entitiesToShow.push_back(m_vibrationLabelEntity);
+                if (m_vibrationToggleEntity != 0) entitiesToShow.push_back(m_vibrationToggleEntity);
+                break;
+            case PauseMenuTab::SKILLS:
+                if (m_skillsTitleEntity != 0) entitiesToShow.push_back(m_skillsTitleEntity);
+                if (m_skillsBackgroundEntity != 0) entitiesToShow.push_back(m_skillsBackgroundEntity);
+                if (m_skillsContentEntity != 0) entitiesToShow.push_back(m_skillsContentEntity);
+                if (m_skillsNameEntity != 0) entitiesToShow.push_back(m_skillsNameEntity);
+                if (m_skillsDescriptionEntity != 0) entitiesToShow.push_back(m_skillsDescriptionEntity);
+                if (m_skillsCostEntity != 0) entitiesToShow.push_back(m_skillsCostEntity);
+                if (m_skillsUnlockButtonEntity != 0) entitiesToShow.push_back(m_skillsUnlockButtonEntity);
+                if (m_skillsLeftArrowEntity != 0) entitiesToShow.push_back(m_skillsLeftArrowEntity);
+                if (m_skillsRightArrowEntity != 0) entitiesToShow.push_back(m_skillsRightArrowEntity);
+                break;
+            case PauseMenuTab::HATS:
+                if (m_hatsTitleEntity != 0) entitiesToShow.push_back(m_hatsTitleEntity);
+                if (m_hatsBackgroundEntity != 0) entitiesToShow.push_back(m_hatsBackgroundEntity);
+                if (m_hatsContentEntity != 0) entitiesToShow.push_back(m_hatsContentEntity);
+                for (auto frameEntity : m_hatFrameEntities) {
+                    if (frameEntity != 0) entitiesToShow.push_back(frameEntity);
+                }
+                for (auto iconEntity : m_hatIconEntities) {
+                    if (iconEntity != 0) entitiesToShow.push_back(iconEntity);
+                }
+                for (auto lockedFrameEntity : m_lockedFrameEntities) {
+                    if (lockedFrameEntity != 0) entitiesToShow.push_back(lockedFrameEntity);
+                }
+                if (m_hatsActionButtonEntity != 0) entitiesToShow.push_back(m_hatsActionButtonEntity);
+                if (m_hatsCostDisplayEntity != 0) entitiesToShow.push_back(m_hatsCostDisplayEntity);
+                break;
+            case PauseMenuTab::STATS:
+                if (m_statsTitleEntity != 0) entitiesToShow.push_back(m_statsTitleEntity);
+                if (m_statsBackgroundEntity != 0) entitiesToShow.push_back(m_statsBackgroundEntity);
+                if (m_currentSessionTextEntity != 0) entitiesToShow.push_back(m_currentSessionTextEntity);
+                if (m_sessionCoinsTextEntity != 0) entitiesToShow.push_back(m_sessionCoinsTextEntity);
+                if (m_totalCoinsTextEntity != 0) entitiesToShow.push_back(m_totalCoinsTextEntity);
+                if (m_totalFlopsTextEntity != 0) entitiesToShow.push_back(m_totalFlopsTextEntity);
+                if (m_grossTotalCoinsTextEntity != 0) entitiesToShow.push_back(m_grossTotalCoinsTextEntity);
+                if (m_enemiesKilledTextEntity != 0) entitiesToShow.push_back(m_enemiesKilledTextEntity);
+                if (m_totalPipesTextEntity != 0) entitiesToShow.push_back(m_totalPipesTextEntity);
+                for (auto levelEntity : m_levelHighScoreTextEntities) {
+                    if (levelEntity != 0) entitiesToShow.push_back(levelEntity);
+                }
+                break;
+        }
+
+        // Now atomically set ALL entities to visible at once
+        for (Entity entity : entitiesToShow) {
+            if (entity != 0 && m_ecsCoordinator) {
+                UIElement* uiElem = m_ecsCoordinator->GetComponent<UIElement>(entity);
+                if (uiElem) {
+                    uiElem->visible = true;
+                }
+                
+                Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(entity);
+                if (sprite) {
+                    sprite->visible = true;
+                }
+                
+                UIShape* shape = m_ecsCoordinator->GetComponent<UIShape>(entity);
+                if (shape) {
+                    shape->visible = true;
+                }
+            }
+        }
+
+        GN_LOG_INFO("PauseSystem: Pause menu shown atomically (" + std::to_string(entitiesToShow.size()) + " entities)");
     }
 
     void PauseSystem::HidePauseMenu() {
@@ -2186,6 +2361,8 @@ namespace GameCore {
         hideEntity(m_sfxKnobEntity);
         hideEntity(m_sfxTrackEntity);
         hideEntity(m_sfxLabelEntity);
+        hideEntity(m_vibrationLabelEntity);
+        hideEntity(m_vibrationToggleEntity);
 
         // Hide skills tab entities
         hideEntity(m_skillsBackgroundEntity);
@@ -2388,6 +2565,37 @@ namespace GameCore {
             UIElement* sfxLabelUI = m_ecsCoordinator->GetComponent<UIElement>(m_sfxLabelEntity);
             if (sfxLabelUI) {
                 sfxLabelUI->visible = true;
+            }
+        }
+
+        // Show vibration label and toggle
+        if (m_vibrationLabelEntity != 0 && m_ecsCoordinator) {
+            UIElement* vibrationLabelUI = m_ecsCoordinator->GetComponent<UIElement>(m_vibrationLabelEntity);
+            if (vibrationLabelUI) {
+                vibrationLabelUI->visible = true;
+                GN_LOG_INFO("PauseSystem: Made vibration label visible");
+            }
+        }
+
+        if (m_vibrationToggleEntity != 0 && m_ecsCoordinator) {
+            // Sync vibration state from game before showing
+            bool vibrationsEnabled = true;
+            if (GameCore::GetGame()) {
+                vibrationsEnabled = GameCore::GetGame()->GetVibrationsEnabled();
+            }
+            
+            Sprite* vibrationToggleSprite = m_ecsCoordinator->GetComponent<Sprite>(m_vibrationToggleEntity);
+            if (vibrationToggleSprite) {
+                vibrationToggleSprite->textureId = vibrationsEnabled ? "xbuttonselected" : "xbuttonunselected";
+                vibrationToggleSprite->visible = true;
+                GN_LOG_INFO("PauseSystem: Made vibration toggle sprite visible - state: " + std::string(vibrationsEnabled ? "ON" : "OFF"));
+            }
+            UIElement* vibrationToggleUI = m_ecsCoordinator->GetComponent<UIElement>(m_vibrationToggleEntity);
+            if (vibrationToggleUI) {
+                vibrationToggleUI->normalTextureId = vibrationsEnabled ? "xbuttonselected" : "xbuttonunselected";
+                vibrationToggleUI->hoverTextureId = vibrationsEnabled ? "xbuttonselected" : "xbuttonunselected";
+                vibrationToggleUI->visible = true;
+                GN_LOG_INFO("PauseSystem: Made vibration toggle UI visible");
             }
         }
 
@@ -2750,6 +2958,55 @@ namespace GameCore {
             }
         }
 
+        // Check vibration toggle click with debouncing
+        if (m_vibrationToggleEntity != 0) {
+            Transform* transform = m_ecsCoordinator->GetComponent<Transform>(m_vibrationToggleEntity);
+            Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(m_vibrationToggleEntity);
+            UIElement* uiElement = m_ecsCoordinator->GetComponent<UIElement>(m_vibrationToggleEntity);
+            
+            if (transform && sprite && uiElement && uiElement->isEnabled && uiElement->visible) {
+                float toggleW = sprite->width * transform->scale.x;
+                float toggleH = sprite->height * transform->scale.y;
+                
+                if (touchX >= transform->position.x && touchX <= transform->position.x + toggleW &&
+                    touchY >= transform->position.y && touchY <= transform->position.y + toggleH) {
+                    
+                    // Check debounce - use 0.3s debounce
+                    static float lastToggleTime = 0.0f;
+                    float currentTime = 0.0f; // Would need to pass deltaTime accumulator
+                    // For now, just log and proceed
+                    GN_LOG_INFO("PauseSystem: Vibration toggle clicked!");
+                    
+                    // Toggle vibration state
+                    if (GameCore::GetGame()) {
+                        bool currentState = GameCore::GetGame()->GetVibrationsEnabled();
+                        bool newState = !currentState;
+                        GameCore::GetGame()->SetVibrationsEnabled(newState);
+                        
+                        // Update sprite texture
+                        sprite->textureId = newState ? "xbuttonselected" : "xbuttonunselected";
+                        
+                        // Update UIElement texture
+                        uiElement->normalTextureId = newState ? "xbuttonselected" : "xbuttonunselected";
+                        uiElement->hoverTextureId = newState ? "xbuttonselected" : "xbuttonunselected";
+                        
+                        // Save settings
+                        if (GameCore::GetGame()) {
+                            GameCore::GetGame()->SaveSettings();
+                        }
+                        
+                        GN_LOG_INFO("PauseSystem: Vibration toggled to " + std::string(newState ? "ON" : "OFF"));
+                        
+                        // Play haptic if enabled
+                        if (newState && m_platformDelegates.haptic.triggerImpact) {
+                            m_platformDelegates.haptic.triggerImpact(HapticStyle::LIGHT, 0.5f);
+                        }
+                    }
+                    return;
+                }
+            }
+        }
+
         // Check for audio slider knob clicks/drags
         HandleKnobDrag(touchX, touchY, TouchState::PRESSED);
 
@@ -2982,179 +3239,110 @@ namespace GameCore {
             return;
         }
 
-        // First check if touch is within slider track bounds (only allow knob interaction within tracks)
-        bool inTrackBounds = false;
-        if (touchX >= m_sliderX && touchX <= m_sliderX + m_sliderW) {
-            // Check if touch is near any of the three tracks (master, music, sfx)
-            float masterTrackY = m_sliderY + 9.0f;
-            float musicTrackY = m_sliderY + m_sliderSpacing + 9.0f;
-            float sfxTrackY = m_sliderY + m_sliderSpacing * 2 + 9.0f;
+        // Define track positions and hitboxes (matching MainMenuState approach)
+        float knobSize = 16.0f * 8.0f; // 128px (same as calculation below)
+        float masterTrackY = m_sliderY + 9.0f;
+        float musicTrackY = m_sliderY + m_sliderSpacing + 9.0f;
+        float sfxTrackY = m_sliderY + m_sliderSpacing * 2 + 9.0f;
 
-            // Add some vertical padding around each track
-            float trackPadding = 30.0f;
+        // Precise hitbox for each track (includes track + knob margin)
+        float hitLeft = m_sliderX - knobSize * 0.5f;
+        float hitRight = m_sliderX + m_sliderW + knobSize * 0.5f;
 
-            if ((touchY >= masterTrackY - trackPadding && touchY <= masterTrackY + m_sliderH + trackPadding) ||
-                (touchY >= musicTrackY - trackPadding && touchY <= musicTrackY + m_sliderH + trackPadding) ||
-                (touchY >= sfxTrackY - trackPadding && touchY <= sfxTrackY + m_sliderH + trackPadding)) {
-                inTrackBounds = true;
-                GN_LOG_INFO("PauseSystem: Touch is within slider track bounds");
-            }
-        }
+        // Helper lambda to handle slider interaction (similar to MainMenuState)
+        auto handleSlider = [&](Entity knobEntity, float& sliderValue, bool& draggingFlag, int knobIndex, float trackY) {
+            float hitTop = trackY - knobSize * 0.5f;
+            float hitBottom = trackY + m_sliderH + knobSize * 0.5f;
 
-        if (!inTrackBounds) {
-            GN_LOG_INFO("PauseSystem: Touch is outside slider track bounds - ignoring knob interaction");
-            return;
-        }
+            // Check if touch is within this track's hitbox
+            if (touchX >= hitLeft && touchX <= hitRight && touchY >= hitTop && touchY <= hitBottom) {
+                // PRESSED state - start dragging and snap knob to touch position immediately
+                if (touchState == TouchState::PRESSED) {
+                    if (m_activeDragKnob == -1) {  // Only start if no active drag
+                        // Stop any previous drag
+                        if (m_draggedKnobEntity != 0) {
+                            StopDragging();
+                        }
 
-        // Check if touch is on any knob (allow switching between knobs)
-        bool knobTouched = false;
-        Entity touchedKnob = 0;
+                        // Start dragging this knob
+                        m_draggedKnobEntity = knobEntity;
+                        m_activeDragKnob = knobIndex;
+                        draggingFlag = true;
 
-        // Check MASTER knob
-        if (m_masterKnobEntity != 0 && m_ecsCoordinator) {
-            auto transform = m_ecsCoordinator->GetComponent<Transform>(m_masterKnobEntity);
-            if (transform) {
-                auto sprite = m_ecsCoordinator->GetComponent<Sprite>(m_masterKnobEntity);
-                float knobWidth = sprite ? sprite->width * transform->scale.x : 16.0f * transform->scale.x;
-                float knobHeight = sprite ? sprite->height * transform->scale.y : 16.0f * transform->scale.y;
+                        // Absolute mapping: calculate value directly from touch X
+                        float normalizedValue = (touchX - m_sliderX) / m_sliderW;
+                        normalizedValue = std::max(0.0f, std::min(1.0f, normalizedValue));
+                        sliderValue = normalizedValue;
 
-                float knobCenterX = transform->position.x + (knobWidth * 0.5f);
-                float knobCenterY = transform->position.y + (knobHeight * 0.5f);
-                float knobLeft = knobCenterX - (knobWidth * 0.5f);
-                float knobRight = knobCenterX + (knobWidth * 0.5f);
-                float knobTop = knobCenterY - (knobHeight * 0.5f);
-                float knobBottom = knobCenterY + (knobHeight * 0.5f);
+                        // Update knob position immediately
+                        if (knobEntity != 0 && m_ecsCoordinator) {
+                            auto* transform = m_ecsCoordinator->GetComponent<Transform>(knobEntity);
+                            if (transform) {
+                                float knobCenterX = m_sliderX + normalizedValue * m_sliderW;
+                                transform->position.x = knobCenterX - (knobSize * 0.5f);
+                                transform->position.y = trackY + m_sliderH * 0.5f - (knobSize * 0.5f);
+                            }
+                        }
 
-                if (touchX >= knobLeft && touchX <= knobRight &&
-                    touchY >= knobTop && touchY <= knobBottom) {
-                    knobTouched = true;
-                    touchedKnob = m_masterKnobEntity;
-                    GN_LOG_INFO("PauseSystem: MASTER knob touched");
+                        // Apply to audio system
+                        if (GameCore::GetGame()) {
+                            if (knobIndex == 0) {
+                                GameCore::GetGame()->SetMasterVolume(normalizedValue);
+                                GN_LOG_INFO("PauseSystem: PRESSED master track - set volume to " + std::to_string(normalizedValue));
+                            } else if (knobIndex == 1) {
+                                GameCore::GetGame()->SetMusicVolume(normalizedValue);
+                                GN_LOG_INFO("PauseSystem: PRESSED music track - set volume to " + std::to_string(normalizedValue));
+                            } else if (knobIndex == 2) {
+                                GameCore::GetGame()->SetSFXVolume(normalizedValue);
+                                GN_LOG_INFO("PauseSystem: PRESSED sfx track - set volume to " + std::to_string(normalizedValue));
+                            }
+                        }
+                        return true;
+                    }
                 }
-            }
-        }
 
-        // Check MUSIC knob
-        if (!knobTouched && m_musicKnobEntity != 0 && m_ecsCoordinator) {
-            auto transform = m_ecsCoordinator->GetComponent<Transform>(m_musicKnobEntity);
-            if (transform) {
-                auto sprite = m_ecsCoordinator->GetComponent<Sprite>(m_musicKnobEntity);
-                float knobWidth = sprite ? sprite->width * transform->scale.x : 16.0f * transform->scale.x;
-                float knobHeight = sprite ? sprite->height * transform->scale.y : 16.0f * transform->scale.y;
-
-                float knobCenterX = transform->position.x + (knobWidth * 0.5f);
-                float knobCenterY = transform->position.y + (knobHeight * 0.5f);
-                float knobLeft = knobCenterX - (knobWidth * 0.5f);
-                float knobRight = knobCenterX + (knobWidth * 0.5f);
-                float knobTop = knobCenterY - (knobHeight * 0.5f);
-                float knobBottom = knobCenterY + (knobHeight * 0.5f);
-
-                if (touchX >= knobLeft && touchX <= knobRight &&
-                    touchY >= knobTop && touchY <= knobBottom) {
-                    knobTouched = true;
-                    touchedKnob = m_musicKnobEntity;
-                    GN_LOG_INFO("PauseSystem: MUSIC knob touched");
-                }
-            }
-        }
-
-        // Check SFX knob
-        if (!knobTouched && m_sfxKnobEntity != 0 && m_ecsCoordinator) {
-            auto transform = m_ecsCoordinator->GetComponent<Transform>(m_sfxKnobEntity);
-            if (transform) {
-                auto sprite = m_ecsCoordinator->GetComponent<Sprite>(m_sfxKnobEntity);
-                float knobWidth = sprite ? sprite->width * transform->scale.x : 16.0f * transform->scale.x;
-                float knobHeight = sprite ? sprite->height * transform->scale.y : 16.0f * transform->scale.y;
-
-                float knobCenterX = transform->position.x + (knobWidth * 0.5f);
-                float knobCenterY = transform->position.y + (knobHeight * 0.5f);
-                float knobLeft = knobCenterX - (knobWidth * 0.5f);
-                float knobRight = knobCenterX + (knobWidth * 0.5f);
-                float knobTop = knobCenterY - (knobHeight * 0.5f);
-                float knobBottom = knobCenterY + (knobHeight * 0.5f);
-
-                if (touchX >= knobLeft && touchX <= knobRight &&
-                    touchY >= knobTop && touchY <= knobBottom) {
-                    knobTouched = true;
-                    touchedKnob = m_sfxKnobEntity;
-                    GN_LOG_INFO("PauseSystem: SFX knob touched");
-                }
-            }
-        }
-
-        // Now handle the touch result
-        if (knobTouched) {
-            // If we're already dragging a different knob, stop it first
-            if (m_draggedKnobEntity != 0 && m_draggedKnobEntity != touchedKnob) {
-                GN_LOG_INFO("PauseSystem: Switching from knob " + std::to_string(m_draggedKnobEntity) + " to " + std::to_string(touchedKnob));
-                StopDragging();
-            }
-
-            // Start dragging the touched knob
-            m_draggedKnobEntity = touchedKnob;
-            if (touchedKnob == m_masterKnobEntity) {
-                m_draggingMaster = true;
-                m_activeDragKnob = 0;
-            } else if (touchedKnob == m_musicKnobEntity) {
-                m_draggingMusic = true;
-                m_activeDragKnob = 1;
-            } else if (touchedKnob == m_sfxKnobEntity) {
-                m_draggingSFX = true;
-                m_activeDragKnob = 2;
-            }
-
-            GN_LOG_INFO("PauseSystem: Started dragging knob " + std::to_string(touchedKnob));
-            return;
-        }
-
-        // If we're already dragging a knob, update its position
-        if (m_draggedKnobEntity != 0) {
-            // Update the dragged knob position
-            if (m_ecsCoordinator) {
-                auto* transform = m_ecsCoordinator->GetComponent<Transform>(m_draggedKnobEntity);
-                if (transform) {
-                    // Knob size for proper centering
-                    float knobSize = 16.0f * 8.0f; // 128px
-
-                    // Constrain the knob center to the slider track bounds
-                    float knobCenterMin = m_sliderX + (knobSize * 0.5f);
-                    float knobCenterMax = m_sliderX + m_sliderW - (knobSize * 0.5f);
-                    float knobCenterX = std::max(knobCenterMin, std::min(knobCenterMax, touchX));
-
-                    // Position the knob so its center is at the touch position
-                    transform->position.x = knobCenterX - (knobSize * 0.5f);
-
-                    // Update slider value based on knob center position
-                    float normalizedValue = (knobCenterX - (m_sliderX + knobSize * 0.5f)) / (m_sliderW - knobSize);
+                // HELD state - continuous updates during drag
+                if (draggingFlag && m_activeDragKnob == knobIndex && (touchState == TouchState::HELD || touchState == TouchState::PRESSED)) {
+                    // Map touch X to slider value directly
+                    float normalizedValue = (touchX - m_sliderX) / m_sliderW;
                     normalizedValue = std::max(0.0f, std::min(1.0f, normalizedValue));
+                    sliderValue = normalizedValue;
 
-                    // Apply to audio system
-                    if (m_draggedKnobEntity == m_masterKnobEntity) {
-                        m_masterSliderValue = normalizedValue;
-                        if (GameCore::GetGame()) {
-                            GameCore::GetGame()->SetMasterVolume(normalizedValue);
-                            GN_LOG_INFO("PauseSystem: Set master volume to " + std::to_string(normalizedValue));
-                        }
-                    } else if (m_draggedKnobEntity == m_musicKnobEntity) {
-                        m_musicSliderValue = normalizedValue;
-                        if (GameCore::GetGame()) {
-                            GameCore::GetGame()->SetMusicVolume(normalizedValue);
-                            GN_LOG_INFO("PauseSystem: Set music volume to " + std::to_string(normalizedValue));
-                        }
-                    } else if (m_draggedKnobEntity == m_sfxKnobEntity) {
-                        m_sfxSliderValue = normalizedValue;
-                        if (GameCore::GetGame()) {
-                            GameCore::GetGame()->SetSFXVolume(normalizedValue);
-                            GN_LOG_INFO("PauseSystem: Set SFX volume to " + std::to_string(normalizedValue));
+                    // Update knob position immediately
+                    if (knobEntity != 0 && m_ecsCoordinator) {
+                        auto* transform = m_ecsCoordinator->GetComponent<Transform>(knobEntity);
+                        if (transform) {
+                            float knobCenterX = m_sliderX + normalizedValue * m_sliderW;
+                            transform->position.x = knobCenterX - (knobSize * 0.5f);
+                            transform->position.y = trackY + m_sliderH * 0.5f - (knobSize * 0.5f);
                         }
                     }
 
-                    GN_LOG_INFO("PauseSystem: Dragged knob to position (" + std::to_string(transform->position.x) + ", " + std::to_string(transform->position.y) + ") - Value: " + std::to_string(normalizedValue));
+                    // Apply to audio system
+                    if (GameCore::GetGame()) {
+                        if (knobIndex == 0) {
+                            GameCore::GetGame()->SetMasterVolume(normalizedValue);
+                            GN_LOG_INFO("PauseSystem: HELD master track - set volume to " + std::to_string(normalizedValue));
+                        } else if (knobIndex == 1) {
+                            GameCore::GetGame()->SetMusicVolume(normalizedValue);
+                            GN_LOG_INFO("PauseSystem: HELD music track - set volume to " + std::to_string(normalizedValue));
+                        } else if (knobIndex == 2) {
+                            GameCore::GetGame()->SetSFXVolume(normalizedValue);
+                            GN_LOG_INFO("PauseSystem: HELD sfx track - set volume to " + std::to_string(normalizedValue));
+                        }
+                    }
+                    return true;
                 }
             }
-        }
+            return false;
+        };
 
-        GN_LOG_INFO("PauseSystem: No knob clicked for dragging");
+        // Try each slider in order (master, music, sfx)
+        if (handleSlider(m_masterKnobEntity, m_masterSliderValue, m_draggingMaster, 0, masterTrackY)) return;
+        if (handleSlider(m_musicKnobEntity, m_musicSliderValue, m_draggingMusic, 1, musicTrackY)) return;
+        if (handleSlider(m_sfxKnobEntity, m_sfxSliderValue, m_draggingSFX, 2, sfxTrackY)) return;
+
+        GN_LOG_INFO("PauseSystem: Touch outside all slider tracks");
     }
 
     void PauseSystem::StopDragging() {

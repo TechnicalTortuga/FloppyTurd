@@ -147,6 +147,7 @@ namespace GameCore {
         static constexpr float GRAVITY_DOWN = 8000.0f;        // INCREASED: Even heavier gravity while falling for faster, more responsive drops
         static constexpr float GRAVITY_DEATH = 9800.0f;       // NEW: Extra heavy gravity on death for faster fall to game over screen
         static constexpr float TERMINAL_VELOCITY = 1800.0f;   // INCREASED: Higher maximum falling speed for faster descent
+        static constexpr float TERMINAL_VELOCITY_DEATH = 5000.0f; // Much faster terminal velocity on death for rapid fall to game over
         static constexpr float AUTO_JUMP_THRESHOLD = 0.15f;   // DECREASED: Auto-jump after 150ms for more responsive feel
         static constexpr float VARIABLE_JUMP_THRESHOLD = 0.8f; // Extended time window for variable jump height
         static constexpr float EARLY_RELEASE_MULTIPLIER = 0.5f; // Stronger velocity reduction on early release

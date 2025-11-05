@@ -15,4 +15,4 @@ set(CMAKE_Swift_SOURCE_FILE_EXTENSIONS swift)
 
 set(CMAKE_Swift_COMPILER_USE_OLD_DRIVER "FALSE")
 
-set(CMAKE_Swift_IMPLICIT_INCLUDE_DIRECTORIES "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk/usr/include")
+set(CMAKE_Swift_IMPLICIT_INCLUDE_DIRECTORIES "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.0.sdk/usr/include")

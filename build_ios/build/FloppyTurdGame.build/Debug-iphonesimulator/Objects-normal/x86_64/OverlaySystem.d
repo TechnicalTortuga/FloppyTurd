@@ -1,0 +1,23 @@
+dependencies: \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/OverlaySystem.cpp \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/OverlaySystem.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Core/ECS.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Core/GnosisTypes.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Core/Entity.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Core/Component.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Core/GNLog.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Core/../../iOS/Threading/ThreadingProxy.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Core/../../iOS/Threading/../../Engine/Platform/PlatformDelegates.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Core/../Events/EventManager.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Core/../Events/Event.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Core/../Events/../Core/GnosisTypes.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Core/../Platform/PlatformDelegates.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Core/SystemManager.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Components/GameComponents.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Components/../../Engine/Core/GnosisTypes.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Components/../../Engine/Core/Component.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Components/../Config/LevelConfig.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Platform/PlatformDelegates.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Configuration/ConfigManager.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Configuration/../Platform/PlatformDelegates.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Configuration/../Core/GNLog.h

@@ -750,9 +750,11 @@ namespace GameCore {
         physics->velocity += physics->acceleration * deltaTime;
         
         // Apply terminal velocity for realistic falling (only limit downward velocity)
-        if (physics->velocity.y > TERMINAL_VELOCITY) {
-            physics->velocity.y = TERMINAL_VELOCITY;
-            GN_LOG_DEBUG("Terminal velocity reached: " + std::to_string(TERMINAL_VELOCITY));
+        // Use much higher terminal velocity for dead players to fall faster to game over screen
+        float terminalVelocity = m_playerAlive ? TERMINAL_VELOCITY : TERMINAL_VELOCITY_DEATH;
+        if (physics->velocity.y > terminalVelocity) {
+            physics->velocity.y = terminalVelocity;
+            GN_LOG_DEBUG("Terminal velocity reached: " + std::to_string(terminalVelocity) + (m_playerAlive ? " (alive)" : " (DEATH)"));
         }
         
         // Apply drag (only to Y velocity in Flappy Bird style)

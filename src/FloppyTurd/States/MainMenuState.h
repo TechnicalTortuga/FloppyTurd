@@ -36,7 +36,8 @@ namespace GameCore {
         enum class MenuMode {
             MAIN_MENU,
             LEVEL_SELECT,
-            OPTIONS
+            OPTIONS,
+            AD_CONTROLS
         };
         
         // Level selection
@@ -109,6 +110,10 @@ namespace GameCore {
         Gnosis::Entity m_quickPlayButtonEntity;
         Gnosis::Entity m_leaderboardButtonEntity;
         
+        // Main menu UI - ad controls and version
+        Gnosis::Entity m_adControlsButtonEntity;
+        Gnosis::Entity m_versionTextEntity;
+        
         // Level select entities
         std::vector<LevelInfo> m_levels;
         int m_currentLevelIndex;
@@ -127,6 +132,7 @@ namespace GameCore {
         Gnosis::Entity m_musicKnobEntity = 0;
         Gnosis::Entity m_sfxKnobEntity = 0;
         Gnosis::Entity m_optionsBackButtonEntity = 0;
+        Gnosis::Entity m_optionsOverlayEntity = 0;
         Gnosis::Entity m_masterTrackEntity = 0;
         Gnosis::Entity m_musicTrackEntity = 0;
         Gnosis::Entity m_sfxTrackEntity = 0;
@@ -141,6 +147,11 @@ namespace GameCore {
         Gnosis::Entity m_optionsTitleEntity = 0;
         Gnosis::Entity m_difficultyTextEntity = 0;
         Gnosis::Entity m_difficultyValueEntity = 0; // centered value between arrows
+        
+        // Vibration toggle entities
+        Gnosis::Entity m_vibrationLabelEntity = 0;
+        Gnosis::Entity m_vibrationToggleEntity = 0;
+        bool m_vibrationsEnabled = true; // Default ON
         bool m_draggingMaster = false;
         bool m_draggingMusic = false;
         bool m_draggingSFX = false;
@@ -166,6 +177,13 @@ namespace GameCore {
         std::vector<Gnosis::Entity> m_requirementTextEntities;
         Gnosis::Entity m_lockedIndicatorEntity; // Single [Locked!] indicator that moves around
         Gnosis::Entity m_levelPlayButtonEntity;
+        
+        // Ad Controls menu entities
+        Gnosis::Entity m_adControlsOverlayEntity = 0;
+        Gnosis::Entity m_adControlsTitleEntity = 0;
+        Gnosis::Entity m_adControlsBackButtonEntity = 0;
+        Gnosis::Entity m_removeAdsLabelEntity = 0;
+        Gnosis::Entity m_removeAdsPriceButtonEntity = 0;
         
         // Swipe mechanics for level select
         float m_swipeStartX;
@@ -221,6 +239,10 @@ namespace GameCore {
         float m_fartButtonDebounceTimer;
         static constexpr float FART_BUTTON_DEBOUNCE = 0.5f; // 500ms between farts
         
+        // Menu button debounce to prevent clicking into another menu when switching pages
+        float m_lastMenuButtonPressTime;
+        static constexpr float MENU_BUTTON_DEBOUNCE = 0.3f; // 300ms between menu transitions
+        
         // Font loading state
         bool m_fontLoaded;
         
@@ -254,6 +276,7 @@ namespace GameCore {
         void OnOptionsButtonPressed();
         void OnQuickPlayButtonPressed();
         void OnLeaderboardButtonPressed();
+        void OnAdControlsButtonPressed();
         
         // Input checking
         void CheckMenuButtonClicks(float touchX, float touchY);
@@ -287,6 +310,19 @@ namespace GameCore {
         void SetMainMenuVisible(bool visible);
         void SetOptionsVisible(bool visible);
         void CreateOptionsTracksAndLabels();
+        
+        // Ad Controls menu functions
+        void ShowAdControlsMenu();
+        void HideAdControlsMenu();
+        void CreateAdControlsLayout();
+        void HandleAdControlsInput();
+        void OnAdControlsBackButtonPressed();
+        void OnRemoveAdsPurchasePressed();
+        
+        // Vibration toggle functions
+        void OnVibrationTogglePressed();
+        void SaveVibrationPreference(bool enabled);
+        bool LoadVibrationPreference();
         void StartSwipe(float startX, float startY);
         void UpdateSwipe(float currentX, float currentY);
         void EndSwipe(float endX, float endY);

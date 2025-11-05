@@ -97,6 +97,7 @@ class CommandProcessor {
         let hapticCommands = GameCorePlatform.GameCore.getAndClearHapticCommandsFromProxy()
         let saveCommands = GameCorePlatform.GameCore.getAndClearSaveCommandsFromProxy()
         let gameCenterCommands = GameCorePlatform.GameCore.getAndClearGameCenterCommandsFromProxy()
+        let adCommands = GameCorePlatform.GameCore.getAndClearAdCommandsFromProxy()
 
         // Process each command type
         for renderCommand in renderCommands {
@@ -125,6 +126,10 @@ class CommandProcessor {
 
         for gameCenterCommand in gameCenterCommands {
             executeGameCenterCommand(gameCenterCommand)
+        }
+
+        for adCommand in adCommands {
+            executeAdCommand(adCommand)
         }
     }
 
@@ -831,19 +836,20 @@ class CommandProcessor {
                 }
 
             case .CMD_SAVE_SETTINGS:
-                SaveManager.processSaveSettingsCommand(
-                    masterVolume: command.data.masterVolume,
-                    musicVolume: command.data.musicVolume,
-                    sfxVolume: command.data.sfxVolume,
-                    debugMode: command.data.debugMode
-                )
-                self.log("[CommandProcessor] Settings saved", level: .info)
+                // Settings are automatically persisted via UserDefaults when set on GameSettings
+                // Just ensure synchronization
+                UserDefaults.standard.synchronize()
+                self.log(
+                    "[CommandProcessor] Settings saved: master=\(GameSettings.masterVolume) music=\(GameSettings.musicVolume) sfx=\(GameSettings.sfxVolume) debug=\(GameSettings.debugMode) haptics=\(GameSettings.hapticsEnabled)",
+                    level: .info)
 
             case .CMD_LOAD_SETTINGS:
-                let (masterVol, musicVol, sfxVol, _, wasLoaded) =
+                let (
+                    masterVol, musicVol, sfxVol, difficulty, debugMode, hapticsEnabled, wasLoaded
+                ) =
                     SaveManager.processLoadSettingsCommand()
                 self.log(
-                    "[CommandProcessor] Settings loaded: master=\(masterVol) music=\(musicVol) sfx=\(sfxVol) wasLoaded=\(wasLoaded)",
+                    "[CommandProcessor] Settings loaded: master=\(masterVol) music=\(musicVol) sfx=\(sfxVol) difficulty=\(difficulty) debug=\(debugMode) haptics=\(hapticsEnabled) wasLoaded=\(wasLoaded)",
                     level: .info)
 
             default:
@@ -901,6 +907,37 @@ class CommandProcessor {
         default:
             self.log(
                 "[CommandProcessor] Unsupported Game Center command type: \(commandType)",
+                level: .warning)
+        }
+    }
+
+    // MARK: - Ad Command Execution
+
+    private func executeAdCommand(_ command: GameCorePlatform.GameCore.AdCommand) {
+        let commandType = command.type
+
+        // Process commands directly - AdManager is @MainActor
+        switch commandType {
+        case .CMD_AD_PRELOAD:
+            AdManager.shared.preloadAd()
+            self.log("[CommandProcessor] Ad preload requested", level: .info)
+
+        case .CMD_AD_SHOW:
+            AdManager.shared.showAd()
+            self.log("[CommandProcessor] Ad show requested", level: .info)
+
+        case .CMD_AD_IS_READY:
+            let isReady = AdManager.shared.isAdReady()
+            self.log("[CommandProcessor] Ad ready check: \(isReady)", level: .info)
+
+        case .CMD_AD_SET_ENABLED:
+            let enabled = command.data.adsEnabled
+            AdManager.shared.setAdsEnabled(enabled)
+            self.log("[CommandProcessor] Ads enabled set to: \(enabled)", level: .info)
+
+        default:
+            self.log(
+                "[CommandProcessor] Unsupported Ad command type: \(commandType)",
                 level: .warning)
         }
     }

@@ -55,6 +55,7 @@ public class GameViewController: UIViewController {
     // Game state
     private var isGameInitialized = false
     private var isPaused = false
+    private var isShowingAd = false  // Track when ad is showing to prevent shutdown
 
     // MARK: - Lifecycle
 
@@ -97,6 +98,12 @@ public class GameViewController: UIViewController {
             }
         }
 
+        // Set up AdMob
+        log("Initializing AdMob SDK...")
+        AdManager.initializeSDK()
+        AdManager.shared.viewController = self
+        log("AdMob SDK initialized and view controller set")
+
         log("GameViewController loaded successfully")
     }
 
@@ -121,9 +128,14 @@ public class GameViewController: UIViewController {
 
     override public func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
-        log("GameViewController did disappear")
+        log("GameViewController did disappear - isShowingAd: \(isShowingAd)")
 
-        shutdownGameSync()
+        // Don't shutdown if we're showing an ad - the ad modal causes viewDidDisappear
+        if !isShowingAd {
+            shutdownGameSync()
+        } else {
+            log("Skipping shutdown - ad is being shown")
+        }
     }
 
     deinit {
@@ -282,6 +294,53 @@ public class GameViewController: UIViewController {
         gameEngine.resume()
         metalView.isPaused = false
         isPaused = false
+    }
+
+    // MARK: - Ad Integration
+
+    /// Pause the game when an ad is about to show
+    /// Called by AdManager, keeps state synchronized
+    public func pauseGameForAd() {
+        guard isGameInitialized else { return }
+
+        log("Pausing game for ad presentation", level: .info)
+        isShowingAd = true
+        gameEngine.pause()
+        metalView.isPaused = true
+        isPaused = true
+    }
+
+    /// Resume the game after an ad is dismissed
+    /// Called by AdManager, keeps state synchronized
+    public func resumeGameFromAd() {
+        log(
+            "resumeGameFromAd() called - isGameInitialized: \(isGameInitialized), isPaused: \(isPaused), isShowingAd: \(isShowingAd)",
+            level: .info)
+
+        // Clear the ad flag first
+        isShowingAd = false
+        log("isShowingAd set to false", level: .info)
+
+        // Check if game is still initialized and running
+        guard isGameInitialized && gameEngine.isGameRunning() else {
+            log(
+                "Cannot resume - game not initialized or not running! isGameInitialized: \(isGameInitialized), isRunning: \(gameEngine.isGameRunning())",
+                level: .error)
+            return
+        }
+
+        // Resume the game
+        log("Resuming game after ad dismissal", level: .info)
+        gameEngine.resume()
+        log("GameEngine.resume() returned", level: .info)
+
+        // Update Metal view
+        metalView.isPaused = false
+        log("metalView.isPaused set to false", level: .info)
+
+        // Update local state
+        isPaused = false
+        log("isPaused set to false - resume complete", level: .info)
     }
 
     private func shutdownGameSync() {

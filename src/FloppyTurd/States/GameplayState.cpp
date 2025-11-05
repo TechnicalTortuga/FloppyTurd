@@ -690,6 +690,13 @@ namespace GameCore {
                     CreateGameOverUI();
                     
                     GN_LOG_INFO("Game over UI created successfully");
+                    
+                    // Trigger ad system check NOW (after UI is shown but before player clicks Try Again)
+                    // This gives player time to see their death stats while ad loads/shows
+                    if (GameCore::GetGame()) {
+                        GameCore::GetGame()->TriggerGameOverAd();
+                        GN_LOG_INFO("Ad system triggered after game over UI shown");
+                    }
                 } else {
                     GN_LOG_INFO("Game over UI already exists, skipping creation");
                 }
@@ -3248,14 +3255,20 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                             }
                         }
                         
-                        // Use cooldown-based approach: only increment if cooldown expired
-                        // This prevents stacked sewer pipes from counting multiple times (100ms = 0.1s cooldown)
-                        if (m_pipeIncrementCooldown <= 0.0f) {
-                            OnPipeCleared();
-                            m_pipeIncrementCooldown = 0.1f; // 100ms cooldown before next increment allowed
-                            GN_LOG_INFO("Pipe cleared at X=" + std::to_string(pipeCenterX) + " (cooldown reset)");
+                        // ANTI-CHEESE: Don't award pipe clear if player is invulnerable (hurt phase)
+                        // This prevents players from cheesing pipes by taking damage to get through
+                        if (m_invulnerabilityTimer > 0.0f) {
+                            GN_LOG_INFO("Pipe crossed while invulnerable - NO SCORE (anti-cheese) at X=" + std::to_string(pipeCenterX));
                         } else {
-                            GN_LOG_INFO("Pipe cleared at X=" + std::to_string(pipeCenterX) + " (cooldown active, skipping increment)");
+                            // Use cooldown-based approach: only increment if cooldown expired
+                            // This prevents stacked sewer pipes from counting multiple times (100ms = 0.1s cooldown)
+                            if (m_pipeIncrementCooldown <= 0.0f) {
+                                OnPipeCleared();
+                                m_pipeIncrementCooldown = 0.1f; // 100ms cooldown before next increment allowed
+                                GN_LOG_INFO("Pipe cleared at X=" + std::to_string(pipeCenterX) + " (cooldown reset)");
+                            } else {
+                                GN_LOG_INFO("Pipe cleared at X=" + std::to_string(pipeCenterX) + " (cooldown active, skipping increment)");
+                            }
                         }
                     }
                 }
@@ -3596,6 +3609,10 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
 
         // Increment death counter for stats tracking
         IncrementDeathCounter();
+        
+        // NOTE: Ad will be triggered when game over UI is created (after player falls off screen)
+        // This gives player time to see their death animation before showing the ad
+        
         m_currentSubState = GameplaySubState::GameOver;
         m_gameOverTimer = 0.0f;
         m_morteFloatOffset = 0.0f;
@@ -3609,7 +3626,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         if (m_playerEntity != 0 && m_ecsSystem) {
             Physics* playerPhysics = m_ecsSystem->GetComponent<Physics>(m_playerEntity);
             if (playerPhysics) {
-                playerPhysics->velocity.y = 100.0f; // Initial downward velocity to start falling
+                playerPhysics->velocity.y = 300.0f; // Tripled initial downward velocity for faster fall to game over screen
                 GN_LOG_INFO("Set dead player initial downward velocity: " + std::to_string(playerPhysics->velocity.y));
             }
         }

@@ -1640,6 +1640,16 @@
 			<key>catalogPath</key>
 			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
 			<key>objcSymbol</key>
+			<string>ACImageNameAdcontrolsbutton</string>
+			<key>relativePath</key>
+			<string>./graphics/ui/hud/adcontrolsbutton.imageset</string>
+			<key>swiftSymbol</key>
+			<string>adcontrolsbutton</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
+			<key>objcSymbol</key>
 			<string>ACImageNameArrowsturning</string>
 			<key>relativePath</key>
 			<string>./graphics/ui/hud/arrowsturning.imageset</string>
@@ -2665,6 +2675,26 @@
 			<string>./graphics/ui/hud/volumemeterfull.imageset</string>
 			<key>swiftSymbol</key>
 			<string>volumemeterfull</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
+			<key>objcSymbol</key>
+			<string>ACImageNameXbuttonselected</string>
+			<key>relativePath</key>
+			<string>./graphics/ui/hud/xbuttonselected.imageset</string>
+			<key>swiftSymbol</key>
+			<string>xbuttonselected</string>
+		</dict>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/aimac/Development/FloppyTurd/src/Assets.xcassets</string>
+			<key>objcSymbol</key>
+			<string>ACImageNameXbuttonunselected</string>
+			<key>relativePath</key>
+			<string>./graphics/ui/hud/xbuttonunselected.imageset</string>
+			<key>swiftSymbol</key>
+			<string>xbuttonunselected</string>
 		</dict>
 	</array>
 	<key>symbols</key>

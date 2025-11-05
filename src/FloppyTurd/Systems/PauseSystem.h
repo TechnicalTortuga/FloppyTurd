@@ -120,6 +120,10 @@ namespace GameCore {
         Entity m_sfxTrackEntity;
         Entity m_musicLabelEntity;
         Entity m_sfxLabelEntity;
+        
+        // Vibration toggle entities
+        Entity m_vibrationLabelEntity;
+        Entity m_vibrationToggleEntity;
 
         // Skills tab entities
         Entity m_skillsBackgroundEntity;

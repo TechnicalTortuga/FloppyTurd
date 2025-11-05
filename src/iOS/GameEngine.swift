@@ -250,7 +250,14 @@ public class GameEngine: NSObject, TouchInputDelegate {
 
     /// Resume the game
     public func resume() {
-        guard isRunning && isPaused else { return }
+        log("resume() called - isRunning: \(isRunning), isPaused: \(isPaused)")
+
+        guard isRunning && isPaused else {
+            log(
+                "resume() blocked by guard - isRunning: \(isRunning), isPaused: \(isPaused)",
+                level: .warning)
+            return
+        }
 
         log("Resuming game...")
 

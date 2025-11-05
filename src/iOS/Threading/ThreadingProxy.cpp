@@ -2,6 +2,7 @@
 #include "../../Engine/Core/GNLog.h"
 #include "../../Engine/Configuration/ConfigManager.h"
 #include "../../FloppyTurd/Input/InputManager.h"
+#include "../../FloppyTurd/Game/FloppyTurdGame.h"
 #include <cstring>
 
 // Import Swift module for direct interop calls
@@ -14,6 +15,9 @@ namespace GameCore {
     
     // Global instance for C++ interop
     ThreadingProxy* g_threadingProxy = nullptr;
+    
+    // Static ad ready state - updated by Swift AdManager
+    static std::atomic<bool> s_adReadyState(false);
 
     ThreadingProxy::ThreadingProxy() {
         s_instance = this;
@@ -87,6 +91,11 @@ namespace GameCore {
     void ThreadingProxy::enqueueGameCenterCommand(const GameCenterCommand& command) {
         std::lock_guard<std::mutex> lock(m_queueMutex);
         m_gameCenterCommandQueue.push_back(command);
+    }
+    
+    void ThreadingProxy::enqueueAdCommand(const AdCommand& command) {
+        std::lock_guard<std::mutex> lock(m_queueMutex);
+        m_adCommandQueue.push_back(command);
     }
     
     // Rendering command implementations
@@ -415,6 +424,13 @@ namespace GameCore {
     // Audio command implementations
     void ThreadingProxy::enqueuePlayMusic(const char* musicName, float volume, int loopCount) {
         if (!s_instance) return;
+        
+        // Track music state in game before sending command
+        extern FloppyTurdGame* g_Game;
+        if (g_Game && musicName) {
+            g_Game->SetCurrentMusicTrack(std::string(musicName));
+        }
+        
         AudioCommand cmd(CommandType::CMD_PLAY_MUSIC);
         cmd.data.audioFileName = musicName;
         cmd.data.volume = volume;
@@ -424,6 +440,13 @@ namespace GameCore {
     
     void ThreadingProxy::enqueueStopMusic() {
         if (!s_instance) return;
+        
+        // Clear music state in game before sending command
+        extern FloppyTurdGame* g_Game;
+        if (g_Game) {
+            g_Game->SetCurrentMusicTrack("");
+        }
+        
         AudioCommand cmd(CommandType::CMD_STOP_MUSIC);
         s_instance->enqueueAudioCommand(cmd);
     }
@@ -556,13 +579,11 @@ namespace GameCore {
         s_instance->enqueueSaveCommand(cmd);
     }
     
-    void ThreadingProxy::enqueueSaveSettings(float masterVol, float musicVol, float sfxVol, bool debug) {
+    void ThreadingProxy::enqueueSaveSettings() {
         if (!s_instance) return;
         SaveCommand cmd(CommandType::CMD_SAVE_SETTINGS);
-        cmd.data.masterVolume = masterVol;
-        cmd.data.musicVolume = musicVol;
-        cmd.data.sfxVolume = sfxVol;
-        cmd.data.debugMode = debug;
+        // Settings are read from GameSettings/UserDefaults on the Swift side
+        // No need to pass individual parameters
         s_instance->enqueueSaveCommand(cmd);
     }
     
@@ -619,6 +640,36 @@ namespace GameCore {
         // This will be implemented via Swift interop
         // For now, return empty string - will be wired up to Swift later
         return "";
+    }
+    
+    // Ad command implementations
+    void ThreadingProxy::enqueueAdPreload() {
+        if (!s_instance) return;
+        AdCommand cmd(CommandType::CMD_AD_PRELOAD);
+        s_instance->enqueueAdCommand(cmd);
+    }
+    
+    void ThreadingProxy::enqueueAdShow() {
+        if (!s_instance) return;
+        AdCommand cmd(CommandType::CMD_AD_SHOW);
+        s_instance->enqueueAdCommand(cmd);
+    }
+    
+    bool ThreadingProxy::isAdReady() {
+        // Return the ad ready state that Swift AdManager updates
+        return s_adReadyState.load();
+    }
+    
+    // Function for Swift to update the ad ready state
+    void setAdReadyState(bool isReady) {
+        s_adReadyState.store(isReady);
+    }
+    
+    void ThreadingProxy::enqueueAdSetEnabled(bool enabled) {
+        if (!s_instance) return;
+        AdCommand cmd(CommandType::CMD_AD_SET_ENABLED);
+        cmd.data.adsEnabled = enabled;
+        s_instance->enqueueAdCommand(cmd);
     }
     
     // Asset loading command implementations
@@ -961,6 +1012,13 @@ namespace GameCore {
         return commands;
     }
     
+    std::vector<AdCommand> ThreadingProxy::getAndClearAdCommands() {
+        std::lock_guard<std::mutex> lock(m_queueMutex);
+        std::vector<AdCommand> commands = std::move(m_adCommandQueue);
+        m_adCommandQueue.clear();
+        return commands;
+    }
+    
     size_t ThreadingProxy::getCommandCount() const {
         std::lock_guard<std::mutex> lock(m_queueMutex);
         return m_renderCommandQueue.size() + m_audioCommandQueue.size() + m_logCommandQueue.size() + m_assetCommandQueue.size() + m_hapticCommandQueue.size() + m_saveCommandQueue.size();
@@ -974,6 +1032,8 @@ namespace GameCore {
         m_assetCommandQueue.clear();
         m_hapticCommandQueue.clear();
         m_saveCommandQueue.clear();
+        m_gameCenterCommandQueue.clear();
+        m_adCommandQueue.clear();
     }
 
     void ThreadingProxy::setupDelegates(PlatformDelegates& delegates) {
@@ -1096,12 +1156,12 @@ namespace GameCore {
             }
             return false; // No save data
         };
-        delegates.save.saveSettings = [](float masterVol, float musicVol, float sfxVol, bool debug) {
-            ThreadingProxy::enqueueSaveSettings(masterVol, musicVol, sfxVol, debug);
+        delegates.save.saveSettings = []() {
+            ThreadingProxy::enqueueSaveSettings();
         };
-        delegates.save.loadSettings = [](float* masterVol, float* musicVol, float* sfxVol, bool* debug) {
+        delegates.save.loadSettings = []() {
             ThreadingProxy::enqueueLoadSettings();
-            // Note: Actual load is async, data will be available via callback
+            // Note: Settings are automatically applied from UserDefaults/GameSettings
         };
         delegates.save.hasLegacySaveFile = []() -> bool {
             return false; // Will be handled by Swift side
@@ -1139,10 +1199,27 @@ namespace GameCore {
             return ThreadingProxy::getGameCenterPlayerID();
         };
         
+        // Configure Ad delegates
+        // Note: Actual implementations will be provided by Swift AdManager
+        // These enqueue commands that will be processed by Swift CommandProcessor
+        delegates.ad.preloadAd = []() {
+            ThreadingProxy::enqueueAdPreload();
+        };
+        delegates.ad.showAd = []() {
+            ThreadingProxy::enqueueAdShow();
+        };
+        delegates.ad.isAdReady = []() -> bool {
+            return ThreadingProxy::isAdReady();
+        };
+        delegates.ad.setAdsEnabled = [](bool enabled) {
+            ThreadingProxy::enqueueAdSetEnabled(enabled);
+        };
+        
         GN_LOG_INFO("ThreadingProxy: Input delegates configured - touch input will flow from iOS->ThreadingProxy->C++");
         GN_LOG_INFO("ThreadingProxy: Haptic delegates configured - haptic feedback commands will flow through queue");
         GN_LOG_INFO("ThreadingProxy: Save/Load delegates configured - save operations will flow through queue");
         GN_LOG_INFO("ThreadingProxy: Game Center delegates configured - leaderboard commands will flow through queue");
+        GN_LOG_INFO("ThreadingProxy: Ad delegates configured - advertising commands will flow through queue");
         GN_LOG_INFO("ThreadingProxy: Delegates configured successfully - ready for turd-tossing action!");
     }
 
@@ -1209,6 +1286,13 @@ std::vector<GameCenterCommand> getAndClearGameCenterCommandsFromProxy() {
         return g_threadingProxy->getAndClearGameCenterCommands();
     }
     return std::vector<GameCenterCommand>();
+}
+
+std::vector<AdCommand> getAndClearAdCommandsFromProxy() {
+    if (g_threadingProxy) {
+        return g_threadingProxy->getAndClearAdCommands();
+    }
+    return std::vector<AdCommand>();
 }
 
 bool isAssetCachedFromProxy(const char* assetName, int assetType) {

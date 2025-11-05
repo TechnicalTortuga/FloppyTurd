@@ -1,0 +1,84 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -project FloppyTurd.xcodeproj -scheme FloppyTurd -configuration Debug build
+
+2025-11-02 11:00:18.380 xcodebuild[79443:14352943] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+--- xcodebuild: WARNING: Using the first of multiple matching destinations:
+{ platform:macOS, arch:arm64, variant:Designed for [iPad,iPhone], id:00008112-001228CC1A31401E, name:My Mac }
+{ platform:iOS, id:dvtdevice-DVTiPhonePlaceholder-iphoneos:placeholder, name:Any iOS Device }
+{ platform:iOS Simulator, id:dvtdevice-DVTiOSDeviceSimulatorPlaceholder-iphonesimulator:placeholder, name:Any iOS Simulator Device }
+{ platform:iOS Simulator, arch:arm64, id:F4ADD9D9-CB29-4E6F-BD8F-47B2044BB99F, OS:18.3.1, name:iPad (10th generation) }
+{ platform:iOS Simulator, arch:arm64, id:A59452ED-93E7-47C5-8416-E12A76A01CB1, OS:18.3.1, name:iPad (A16) }
+{ platform:iOS Simulator, arch:arm64, id:07E18EFC-DC9A-4D78-AF84-77BAFA19186E, OS:26.0.1, name:iPad (A16) }
+{ platform:iOS Simulator, arch:arm64, id:40C68F79-2876-411F-800A-0B5A6C433FC8, OS:18.3.1, name:iPad Air 11-inch (M2) }
+{ platform:iOS Simulator, arch:arm64, id:F02DD49F-25DB-4344-9E20-3EC65CAC4495, OS:18.3.1, name:iPad Air 11-inch (M3) }
+{ platform:iOS Simulator, arch:arm64, id:63A7F3AF-FA88-4880-845A-601BDEFFB139, OS:26.0.1, name:iPad Air 11-inch (M3) }
+{ platform:iOS Simulator, arch:arm64, id:7555E2A5-FE6A-4078-A00E-70F8E090A674, OS:18.3.1, name:iPad Air 13-inch (M2) }
+{ platform:iOS Simulator, arch:arm64, id:F67F5B6F-FB3C-420B-AF62-4257752E3DBD, OS:18.3.1, name:iPad Air 13-inch (M3) }
+{ platform:iOS Simulator, arch:arm64, id:2F634D22-FC56-47DD-A5F9-531080AFCB08, OS:26.0.1, name:iPad Air 13-inch (M3) }
+{ platform:iOS Simulator, arch:arm64, id:BE7B4EC4-257D-43EA-A6B3-BDB5DF1D0AC3, OS:18.3.1, name:iPad Pro 11-inch (M4) }
+{ platform:iOS Simulator, arch:arm64, id:1468FC1B-F219-4555-8B10-A88C001E734F, OS:26.0.1, name:iPad Pro 11-inch (M4) }
+{ platform:iOS Simulator, arch:arm64, id:5D966B6A-2A86-4EAD-B66F-99AFCC8D06F4, OS:18.3.1, name:iPad Pro 13-inch (M4) }
+{ platform:iOS Simulator, arch:arm64, id:2D2E5231-2582-4733-9397-60C0101B051D, OS:26.0.1, name:iPad Pro 13-inch (M4) }
+{ platform:iOS Simulator, arch:arm64, id:A8B75EF8-5B84-4BA4-B80E-10F6012E4C80, OS:18.3.1, name:iPad mini (A17 Pro) }
+{ platform:iOS Simulator, arch:arm64, id:FF7110C7-3A9A-4B6D-B12E-0F0F31FE721F, OS:26.0.1, name:iPad mini (A17 Pro) }
+{ platform:iOS Simulator, arch:arm64, id:BC7474BC-046F-4717-91E6-A65DBC6D56B5, OS:18.3.1, name:iPhone 16 }
+{ platform:iOS Simulator, arch:arm64, id:D080EC54-D7B9-4971-B9E3-D10DD5092615, OS:18.3.1, name:iPhone 16 Plus }
+{ platform:iOS Simulator, arch:arm64, id:0C6A16B2-EB3F-42F0-ADA0-C57447607E81, OS:18.3.1, name:iPhone 16 Pro }
+{ platform:iOS Simulator, arch:arm64, id:952C065C-3E46-4D6F-8ECC-8969F1F15487, OS:18.3.1, name:iPhone 16 Pro Max }
+{ platform:iOS Simulator, arch:arm64, id:1286F31F-3EA8-490C-9ED4-8D900EDCA05E, OS:18.3.1, name:iPhone 16e }
+{ platform:iOS Simulator, arch:arm64, id:D8328EE9-22C1-4CA4-B8C1-997E2FD69831, OS:26.0.1, name:iPhone 16e }
+{ platform:iOS Simulator, arch:arm64, id:9D49AEAE-5DEB-471F-BA5E-AD79341E0715, OS:26.0.1, name:iPhone 17 }
+{ platform:iOS Simulator, arch:arm64, id:E0E1149D-88D2-4EEE-838D-CC8FB7E1F462, OS:26.0.1, name:iPhone 17 Pro }
+{ platform:iOS Simulator, arch:arm64, id:82CBC6BF-59B2-4B38-B4AD-A6BA1BB3D479, OS:26.0.1, name:iPhone 17 Pro Max }
+{ platform:iOS Simulator, arch:arm64, id:65084BFD-74FE-4372-9544-4B370FED12D1, OS:26.0.1, name:iPhone Air }
+{ platform:iOS Simulator, arch:arm64, id:D6DD6C25-5D94-4B0A-A379-E2DC3F325FF1, OS:18.3.1, name:iPhone SE (3rd generation) }
+{ platform:iOS, arch:arm64, id:00008140-001E39CC3A47001C, name:iPhone }
+ComputePackagePrebuildTargetDependencyGraph
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (3 targets)
+    Target 'FloppyTurd' in project 'FloppyTurd'
+        ➜ Explicit dependency on target 'ZERO_CHECK' in project 'FloppyTurd'
+        ➜ Explicit dependency on target 'FloppyTurdGame' in project 'FloppyTurd'
+    Target 'FloppyTurdGame' in project 'FloppyTurd'
+        ➜ Explicit dependency on target 'ZERO_CHECK' in project 'FloppyTurd'
+    Target 'ZERO_CHECK' in project 'FloppyTurd' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk -x c++ -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.0.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --print-asset-tag-combinations --output-format xml1 /Users/aimac/Development/FloppyTurd/src/Assets.xcassets
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/libtool -V
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --version --output-format xml1
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc --version
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
+
+Build description signature: 579cdfeee804ed9dc23d0b4b2d5d50c0
+Build description path: /Users/aimac/Development/FloppyTurd/build_ios26_device/build/XCBuildData/579cdfeee804ed9dc23d0b4b2d5d50c0.xcbuilddata
+/Users/aimac/Development/FloppyTurd/build_ios26_device/FloppyTurd.xcodeproj: error: Provisioning profile "iOS Team Provisioning Profile: com.floppyturd.engine" doesn't include the currently selected device "Alexandru’s MacBook Air" (identifier 00008112-001228CC1A31401E). (in target 'FloppyTurd' from project 'FloppyTurd')
+note: Run script build phase 'CMake PreBuild Rules' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'FloppyTurd' from project 'FloppyTurd')
+note: Run script build phase 'Generate CMakeFiles/ZERO_CHECK' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'ZERO_CHECK' from project 'FloppyTurd')
+** BUILD FAILED **
+
+
+The following build commands failed:
+	Building project FloppyTurd with scheme FloppyTurd and configuration Debug
+(1 failure)

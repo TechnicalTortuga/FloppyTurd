@@ -22,6 +22,7 @@ final class SaveManager: @unchecked Sendable {
     private var isSaving = false
 
     private let saveFileName = "floppyturd_save_v3.plist"  // Binary plist (not human-readable)
+    private let v2SaveFileName = "floppyturd_save_v2.json"  // V2 JSON format
     private let legacySaveFileName = "floppyturd_save.dat"
     private let legacySettingsFileName = "floppyturd_settings.cfg"
 
@@ -31,6 +32,10 @@ final class SaveManager: @unchecked Sendable {
 
     private var saveFileURL: URL {
         documentsURL.appendingPathComponent(saveFileName)
+    }
+
+    private var v2SaveFileURL: URL {
+        documentsURL.appendingPathComponent(v2SaveFileName)
     }
 
     private var legacySaveFileURL: URL {
@@ -45,7 +50,18 @@ final class SaveManager: @unchecked Sendable {
 
     private init() {
         logger.info("SaveManager initialized")
-        logger.debug("Documents directory: \(self.documentsURL.path)")
+        logger.info("📁 Documents directory: \(self.documentsURL.path)")
+        logger.info("📁 Save file path: \(self.saveFileURL.path)")
+        logger.info(
+            "📁 Save file exists: \(FileManager.default.fileExists(atPath: self.saveFileURL.path))")
+
+        // List all files in Documents directory
+        do {
+            let files = try FileManager.default.contentsOfDirectory(atPath: documentsURL.path)
+            logger.info("📁 Files in Documents: \(files)")
+        } catch {
+            logger.error("📁 Failed to list Documents directory: \(error)")
+        }
 
         // Register default settings
         GameSettings.registerDefaults()
@@ -58,61 +74,114 @@ final class SaveManager: @unchecked Sendable {
 
     /// Load game data from disk (migrates legacy format if needed)
     nonisolated func load() -> GameSaveData? {
-        logger.info("Loading game data...")
+        logger.info("🔄 Loading game data...")
+        logger.info("🔍 Documents directory: \(self.documentsURL.path)")
+        logger.info("🔍 Save file path: \(self.saveFileURL.path)")
+        logger.info("🔍 V2 JSON save path: \(self.v2SaveFileURL.path)")
+        logger.info("🔍 Legacy save path: \(self.legacySaveFileURL.path)")
 
-        // Check if we need to migrate from legacy format
-        if FileManager.default.fileExists(atPath: legacySaveFileURL.path) {
-            logger.info("Legacy save file detected - migrating...")
-            if let migrated = migrateLegacySave() {
-                logger.info("Migration successful")
+        // Check if we need to migrate from v2 JSON format
+        if FileManager.default.fileExists(atPath: v2SaveFileURL.path) {
+            logger.info("📦 V2 JSON save file detected - migrating to V3...")
+            if let migrated = migrateV2JSONSave() {
+                logger.info("✅ V2 to V3 migration successful")
+                // Save the migrated data in v3 format
+                if saveSync(migrated) {
+                    logger.info("✅ Migrated data saved to V3 format")
+                    // Delete old v2 file after successful migration
+                    try? FileManager.default.removeItem(at: v2SaveFileURL)
+                    logger.info("✅ Old V2 JSON file deleted")
+                }
                 return migrated
             } else {
-                logger.warning("Migration failed, starting fresh")
+                logger.warning("⚠️ V2 migration failed, trying legacy migration...")
+            }
+        }
+
+        // Check if we need to migrate from legacy binary format
+        if FileManager.default.fileExists(atPath: legacySaveFileURL.path) {
+            logger.info("📦 Legacy binary save file detected - migrating...")
+            if let migrated = migrateLegacySave() {
+                logger.info("✅ Legacy migration successful")
+                return migrated
+            } else {
+                logger.warning("⚠️ Legacy migration failed, starting fresh")
                 return nil
             }
         }
 
         // Load from binary plist format
         guard FileManager.default.fileExists(atPath: saveFileURL.path) else {
-            logger.info("No save file found, starting fresh")
+            logger.info("ℹ️ No save file found at path, starting fresh")
             return nil
         }
 
+        logger.info("✅ Save file exists, attempting to load...")
+
+        logger.info("✅ Save file exists at: \(self.saveFileURL.path)")
+
         do {
             let combinedData = try Data(contentsOf: saveFileURL)
+            logger.info("📊 Loaded \(combinedData.count) bytes from save file")
 
             // File format: [HMAC (32 bytes)] + [PropertyList Data]
             guard combinedData.count > 32 else {
-                logger.warning("Save file too small, possibly corrupted")
+                logger.warning(
+                    "⚠️ Save file too small (\(combinedData.count) bytes), possibly corrupted")
                 return nil
             }
 
             let hmacData = combinedData.prefix(32)
             let plistData = combinedData.suffix(from: 32)
+            logger.info(
+                "🔐 Verifying HMAC (\(hmacData.count) bytes HMAC, \(plistData.count) bytes data)...")
 
             // Verify HMAC (detect tampering)
             let expectedHMAC = HMAC<SHA256>.authenticationCode(for: plistData, using: Self.hmacKey)
             guard hmacData == Data(expectedHMAC) else {
-                logger.warning("Save file HMAC mismatch - file may have been tampered with!")
-                logger.warning("Starting fresh to prevent cheating")
+                logger.warning("⚠️ Save file HMAC mismatch - file may have been tampered with!")
+                logger.warning("⚠️ Starting fresh to prevent cheating")
                 return nil
             }
+            logger.info("✅ HMAC verification passed")
 
             // Decode binary plist
+            logger.info("🔄 Decoding binary plist...")
             let decoder = PropertyListDecoder()
             var saveData = try decoder.decode(GameSaveData.self, from: plistData)
+            logger.info("✅ Binary plist decoded successfully")
 
             // Validate loaded data
+            logger.info("🔄 Validating loaded data...")
             if validateLoadedData(&saveData) {
                 logger.info(
-                    "Game data loaded successfully (version \(saveData.version), HMAC verified)")
+                    "✅ Game data loaded successfully (version \(saveData.version), HMAC verified)")
+                logger.info(
+                    "📊 Loaded stats - Coins: \(saveData.statistics.storedCoins), Games: \(saveData.statistics.totalGamesPlayed)"
+                )
+
+                // Apply settings from save data to GameSettings (UserDefaults)
+                GameSettings.masterVolume = saveData.settings.masterVolume
+                GameSettings.musicVolume = saveData.settings.musicVolume
+                GameSettings.sfxVolume = saveData.settings.sfxVolume
+                GameSettings.difficulty = saveData.settings.difficulty
+                GameSettings.debugMode = saveData.settings.debugMode
+                GameSettings.hapticsEnabled = saveData.settings.hapticsEnabled
+                logger.info(
+                    "✅ Settings applied from save data: master=\(saveData.settings.masterVolume) music=\(saveData.settings.musicVolume) sfx=\(saveData.settings.sfxVolume)"
+                )
+                logger.info(
+                    "✅ Settings applied: difficulty=\(saveData.settings.difficulty) debug=\(saveData.settings.debugMode) haptics=\(saveData.settings.hapticsEnabled)"
+                )
+
                 return saveData
             } else {
-                logger.warning("Loaded data failed validation, starting fresh")
+                logger.warning("⚠️ Loaded data failed validation, starting fresh")
                 return nil
             }
         } catch {
-            logger.error("Failed to load game data: \(error.localizedDescription)")
+            logger.error("❌ Failed to load game data: \(error.localizedDescription)")
+            logger.error("❌ Error details: \(error)")
             return nil
         }
     }
@@ -172,11 +241,12 @@ final class SaveManager: @unchecked Sendable {
     /// - Parameter jsonString: JSON string containing game save data
     /// - Returns: true if save succeeded, false otherwise
     static func processSaveGameCommand(_ jsonString: String) -> Bool {
-        shared.logger.info("Processing save game command...")
+        shared.logger.info("💾 Processing save game command...")
+        shared.logger.debug("💾 JSON length: \(jsonString.count) characters")
 
         // Still receive JSON from C++ for now (but save as binary plist)
         guard let jsonData = jsonString.data(using: .utf8) else {
-            shared.logger.error("Failed to convert JSON string to Data")
+            shared.logger.error("❌ Failed to convert JSON string to Data")
             return false
         }
 
@@ -185,12 +255,32 @@ final class SaveManager: @unchecked Sendable {
             decoder.dateDecodingStrategy = .iso8601
             let saveData = try decoder.decode(GameSaveData.self, from: jsonData)
 
+            // Settings come from C++ (in the JSON), so update GameSettings (UserDefaults) to match
+            // This ensures UserDefaults stays in sync with the authoritative C++ game state
+            GameSettings.masterVolume = saveData.settings.masterVolume
+            GameSettings.musicVolume = saveData.settings.musicVolume
+            GameSettings.sfxVolume = saveData.settings.sfxVolume
+            GameSettings.difficulty = saveData.settings.difficulty
+            GameSettings.debugMode = saveData.settings.debugMode
+            GameSettings.hapticsEnabled = saveData.settings.hapticsEnabled
+            shared.logger.info(
+                "💾 Settings from C++ saved: master=\(saveData.settings.masterVolume) music=\(saveData.settings.musicVolume) sfx=\(saveData.settings.sfxVolume) difficulty=\(saveData.settings.difficulty) debug=\(saveData.settings.debugMode) haptics=\(saveData.settings.hapticsEnabled)"
+            )
+
             // Save using SaveManager (will save as BINARY PLIST with HMAC)
+            shared.logger.info("💾 Saving to: \(shared.saveFileURL.path)")
+            shared.logger.info(
+                "💾 Data snapshot - storedCoins: \(saveData.statistics.storedCoins), totalGames: \(saveData.statistics.totalGamesPlayed)"
+            )
+
             let success = SaveManager.shared.saveSync(saveData)
             if success {
-                shared.logger.info("Game data saved successfully (binary plist with HMAC)")
+                shared.logger.info("✅ Game data saved successfully (binary plist with HMAC)")
+                shared.logger.info(
+                    "✅ File exists after save: \(FileManager.default.fileExists(atPath: shared.saveFileURL.path))"
+                )
             } else {
-                shared.logger.error("Failed to save game data")
+                shared.logger.error("❌ Failed to save game data")
             }
             return success
         } catch {
@@ -230,15 +320,39 @@ final class SaveManager: @unchecked Sendable {
     }
 
     /// Process a synchronous load game command (for C++ bridge)
+    /// Process a load game command (synchronous version for C++ during initialization)
     /// - Returns: Simple key:value format string, or nil if no save exists
     /// - Note: This is the synchronous version called directly from C++ during initialization
     static func processLoadGameCommandSync() -> String? {
-        shared.logger.info("Processing SYNCHRONOUS load game command...")
+        shared.logger.info("🔍 Processing SYNCHRONOUS load game command...")
+        shared.logger.info("🔍 Save file path: \(shared.saveFileURL.path)")
+        shared.logger.info(
+            "🔍 Save file exists: \(FileManager.default.fileExists(atPath: shared.saveFileURL.path))"
+        )
+
+        if FileManager.default.fileExists(atPath: shared.saveFileURL.path) {
+            do {
+                let attrs = try FileManager.default.attributesOfItem(
+                    atPath: shared.saveFileURL.path)
+                if let size = attrs[.size] as? Int {
+                    shared.logger.info("🔍 Save file size: \(size) bytes")
+                }
+                if let modDate = attrs[.modificationDate] as? Date {
+                    shared.logger.info("🔍 Save file modified: \(modDate)")
+                }
+            } catch {
+                shared.logger.error("🔍 Failed to get file attributes: \(error)")
+            }
+        }
 
         guard let saveData = SaveManager.shared.load() else {
-            shared.logger.info("No save data found (sync load)")
+            shared.logger.warning("⚠️ No save data found (sync load) - load() returned nil")
             return nil
         }
+
+        shared.logger.info("✅ SaveData loaded successfully from file")
+
+        shared.logger.info("✅ Save data loaded, converting to KEY:VALUE format")
 
         // Create simple KEY:VALUE format (one per line) for C++ to parse
         // This is much simpler than JSON and Swift handles all the validation
@@ -280,47 +394,40 @@ final class SaveManager: @unchecked Sendable {
             output += "CUSTOM_SKILL_\(index)_UNLOCKED:\(unlocked ? 1 : 0)\n"
         }
 
-        shared.logger.info("Game data loaded successfully (SYNC): \(output.count) bytes")
-        shared.logger.debug(
-            "Sample data - Coins: \(saveData.statistics.storedCoins), Level 2 unlocked: \(saveData.progress.levels[1].unlocked)"
+        // Settings (audio, difficulty, debug, haptics)
+        output += "SETTINGS_MASTER_VOLUME:\(saveData.settings.masterVolume)\n"
+        output += "SETTINGS_MUSIC_VOLUME:\(saveData.settings.musicVolume)\n"
+        output += "SETTINGS_SFX_VOLUME:\(saveData.settings.sfxVolume)\n"
+        output += "SETTINGS_DIFFICULTY:\(saveData.settings.difficulty)\n"
+        output += "SETTINGS_DEBUG_MODE:\(saveData.settings.debugMode ? 1 : 0)\n"
+        output += "SETTINGS_HAPTICS_ENABLED:\(saveData.settings.hapticsEnabled ? 1 : 0)\n"
+
+        shared.logger.info("✅ Game data loaded successfully (SYNC): \(output.count) bytes")
+        shared.logger.info(
+            "📊 Sample data - Coins: \(saveData.statistics.storedCoins), Total games: \(saveData.statistics.totalGamesPlayed)"
+        )
+        shared.logger.info("📊 Level 2 unlocked: \(saveData.progress.levels[1].unlocked)")
+        shared.logger.info(
+            "📊 Settings - Master: \(saveData.settings.masterVolume), Music: \(saveData.settings.musicVolume), SFX: \(saveData.settings.sfxVolume)"
+        )
+        shared.logger.info(
+            "📊 Settings - Difficulty: \(saveData.settings.difficulty), Debug: \(saveData.settings.debugMode), Haptics: \(saveData.settings.hapticsEnabled)"
         )
 
         return output
     }
 
-    /// Process a save settings command
-    /// - Parameters:
-    ///   - masterVolume: Master volume (0.0 - 1.0)
-    ///   - musicVolume: Music volume (0.0 - 1.0)
-    ///   - sfxVolume: SFX volume (0.0 - 1.0)
-    ///   - debugMode: Debug mode enabled
-    static func processSaveSettingsCommand(
-        masterVolume: Float,
-        musicVolume: Float,
-        sfxVolume: Float,
-        debugMode: Bool
-    ) {
-        shared.logger.info("Processing save settings command...")
-
-        GameSettings.masterVolume = masterVolume
-        GameSettings.musicVolume = musicVolume
-        GameSettings.sfxVolume = sfxVolume
-        GameSettings.debugMode = debugMode
-
-        shared.logger.info(
-            "Settings saved: master=\(masterVolume) music=\(musicVolume) sfx=\(sfxVolume) debug=\(debugMode)"
-        )
-    }
-
     /// Process a load settings command
-    /// - Returns: Tuple of (masterVolume, musicVolume, sfxVolume, debugMode, wasLoaded)
-    static func processLoadSettingsCommand() -> (Float, Float, Float, Bool, Bool) {
+    /// - Returns: Tuple of (masterVolume, musicVolume, sfxVolume, difficulty, debugMode, hapticsEnabled, wasLoaded)
+    static func processLoadSettingsCommand() -> (Float, Float, Float, Int, Bool, Bool, Bool) {
         shared.logger.info("Processing load settings command...")
 
         let masterVolume = GameSettings.masterVolume
         let musicVolume = GameSettings.musicVolume
         let sfxVolume = GameSettings.sfxVolume
+        let difficulty = GameSettings.difficulty
         let debugMode = GameSettings.debugMode
+        let hapticsEnabled = GameSettings.hapticsEnabled
 
         // Check if we're using default values (first launch)
         let isFirstLaunch = !UserDefaults.standard.bool(forKey: "hasLaunchedBefore")
@@ -330,10 +437,13 @@ final class SaveManager: @unchecked Sendable {
         }
 
         shared.logger.info(
-            "Settings loaded: master=\(masterVolume) music=\(musicVolume) sfx=\(sfxVolume) debug=\(debugMode)"
+            "Settings loaded: master=\(masterVolume) music=\(musicVolume) sfx=\(sfxVolume) difficulty=\(difficulty) debug=\(debugMode) haptics=\(hapticsEnabled)"
         )
 
-        return (masterVolume, musicVolume, sfxVolume, debugMode, !isFirstLaunch)
+        return (
+            masterVolume, musicVolume, sfxVolume, difficulty, debugMode, hapticsEnabled,
+            !isFirstLaunch
+        )
     }
 
     // MARK: - Private Helpers
@@ -424,7 +534,50 @@ final class SaveManager: @unchecked Sendable {
 
     // MARK: - Legacy Migration
 
-    private func migrateLegacySave() -> GameSaveData? {
+    /// Migrate from V2 JSON format to V3 binary plist format
+    func migrateV2JSONSave() -> GameSaveData? {
+        logger.info("🔄 Attempting to migrate V2 JSON save...")
+
+        guard FileManager.default.fileExists(atPath: v2SaveFileURL.path) else {
+            logger.warning("⚠️ V2 JSON save file does not exist")
+            return nil
+        }
+
+        do {
+            let jsonData = try Data(contentsOf: v2SaveFileURL)
+            logger.info("📊 Loaded V2 JSON file: \(jsonData.count) bytes")
+
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
+            var saveData = try decoder.decode(GameSaveData.self, from: jsonData)
+
+            logger.info("✅ V2 JSON decoded successfully")
+            logger.info(
+                "📊 V2 data - storedCoins: \(saveData.statistics.storedCoins), totalGames: \(saveData.statistics.totalGamesPlayed)"
+            )
+            logger.info(
+                "📊 V2 data - Level 1 score: \(saveData.progress.levels[0].highScore), Level 2 unlocked: \(saveData.progress.levels[1].unlocked)"
+            )
+
+            // Update version to 3
+            saveData.saveDate = Date()
+
+            // Validate the loaded data
+            if validateLoadedData(&saveData) {
+                logger.info("✅ V2 migration successful - data validated")
+                return saveData
+            } else {
+                logger.warning("⚠️ V2 migrated data failed validation")
+                return nil
+            }
+        } catch {
+            logger.error("❌ Failed to migrate V2 JSON save: \(error.localizedDescription)")
+            logger.error("❌ Error details: \(error)")
+            return nil
+        }
+    }
+
+    func migrateLegacySave() -> GameSaveData? {
         guard let legacyData = loadLegacyBinaryFormat() else {
             logger.error("Failed to load legacy binary data")
             return nil
@@ -625,13 +778,13 @@ final class SaveManager: @unchecked Sendable {
 /// - Returns: JSON string containing game save data, or empty string if no save exists
 public func loadGameDataSync() -> String {
     let logger = Logger(subsystem: "com.floppyturd.ios", category: "SaveManager")
-    logger.info("Synchronous load requested from C++")
+    logger.info("🔍 Synchronous load requested from C++")
 
     guard let jsonString = SaveManager.processLoadGameCommandSync() else {
-        logger.info("No save data to return to C++")
+        logger.warning("⚠️ No save data to return to C++ - processLoadGameCommandSync returned nil")
         return ""
     }
 
-    logger.info("Returning JSON to C++ (\(jsonString.count) chars)")
+    logger.info("✅ Returning KEY:VALUE data to C++ (\(jsonString.count) chars)")
     return jsonString
 }

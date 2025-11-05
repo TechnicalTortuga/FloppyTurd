@@ -460,5 +460,38 @@ namespace GameCore {
         // Scale sizes using pixel height reference for consistency
         return baseSize * (m_screenInfo.pixelHeight / 2556.0f);
     }
+    
+    bool UISystem::SwapToggleTextures(Gnosis::Entity entity, 
+                                      const std::string& texture1, 
+                                      const std::string& texture2, 
+                                      bool useTexture1) {
+        if (!m_ecsCoordinator) {
+            GN_LOG_ERROR("UISystem::SwapToggleTextures - ECS coordinator is null");
+            return false;
+        }
+        
+        // Determine which texture to use
+        const std::string& targetTexture = useTexture1 ? texture1 : texture2;
+        
+        // Update Sprite component
+        auto sprite = m_ecsCoordinator->GetComponent<Sprite>(entity);
+        if (sprite) {
+            sprite->textureId = targetTexture;
+        } else {
+            GN_LOG_WARN("UISystem::SwapToggleTextures - Entity has no Sprite component");
+        }
+        
+        // Update UIElement component
+        auto uiElement = m_ecsCoordinator->GetComponent<UIElement>(entity);
+        if (uiElement) {
+            uiElement->normalTextureId = targetTexture;
+            uiElement->hoverTextureId = targetTexture;
+        } else {
+            GN_LOG_WARN("UISystem::SwapToggleTextures - Entity has no UIElement component");
+        }
+        
+        // Return true if at least one component was updated
+        return (sprite != nullptr || uiElement != nullptr);
+    }
 
 } // namespace GameCore 

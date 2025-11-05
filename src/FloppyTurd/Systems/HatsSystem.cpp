@@ -75,99 +75,101 @@ namespace GameCore {
         // Using correct texture names with .png extensions
         // Pattern: idle uses first frame of jump texture, jump/shoot use full 6-frame animation
         // Cowboy hat has dedicated single-frame idle texture, others use jump texture with frameCount=1
+        // PRODUCTION PRICING: First 6 hats = 50 coins, Next 6 hats = 150 coins, Last 3 = 250 coins
+        // ALL HATS LOCKED BY DEFAULT
         m_hats = {
-            // Row 1 - Free/unlocked hats
+            // First 6 hats - 50 coins each (ALL LOCKED)
             HatData("Cowboy Hat", "cowboyhat.png",
-                   "cowboyhatturdlet.png", "cowboyhatturdletjump.png", "cowboyhatturdletshoot.png", // idle (single frame), jump (6 frames), shoot (6 frames)
-                   "", "", "", // Skip teenage form
-                   "cowboyhatbigturd.png", "cowboyhatbigturdjump.png", "cowboyhatbigturdshoot.png", // big idle, jump, shoot
-                   0, HatStatus::UNLOCKED),
-
-            HatData("Flower", "flowerhat.png",
-                   "flowerhatturdletjump.png", "flowerhatturdletjump.png", "flowerhatturdletshoot.png", // idle (first frame of jump), jump (6 frames), shoot (6 frames)
-                   "", "", "", // Skip teenage form
-                   "flowerhatbigturdjump.png", "flowerhatbigturdjump.png", "flowerhatbigturdshoot.png", // big idle, jump, shoot
-                   0, HatStatus::UNLOCKED),
-
-            HatData("Doorag", "dooraghat.png",
-                   "dooragturdletjump.png", "dooragturdletjump.png", "dooragturdletshoot.png", // idle (first frame of jump), jump (6 frames), shoot (6 frames)
-                   "", "", "", // Skip teenage form
-                   "dooragbigturdjump.png", "dooragbigturdjump.png", "dooragbigturdshoot.png", // big idle, jump, shoot
-                   0, HatStatus::UNLOCKED),
-
-            HatData("Ballcap", "ballcap.png",
-                   "ballcapturdletjump.png", "ballcapturdletjump.png", "ballcapturdletshoot.png", // idle (first frame of jump), jump (6 frames), shoot (6 frames)
-                   "", "", "", // Skip teenage form
-                   "ballcapbigturdjump.png", "ballcapbigturdjump.png", "ballcapbigturdshoot.png", // big idle, jump, shoot
-                   0, HatStatus::UNLOCKED),
-
-            HatData("Beret", "Beret.png",
-                   "berethatturdletjump.png", "berethatturdletjump.png", "berethatturdletshoot.png", // idle (first frame of jump), jump (6 frames), shoot (6 frames)
-                   "", "", "", // Skip teenage form
-                   "berethatbigturdjump.png", "berethatbigturdjump.png", "berethatbigturdshoot.png", // big idle, jump, shoot
+                   "cowboyhatturdlet.png", "cowboyhatturdletjump.png", "cowboyhatturdletshoot.png",
+                   "", "", "",
+                   "cowboyhatbigturd.png", "cowboyhatbigturdjump.png", "cowboyhatbigturdshoot.png",
                    50, HatStatus::LOCKED),
 
-            // Row 2 - Paid hats
-            HatData("Crown", "crown.png",
-                   "crownhatturdletjump.png", "crownhatturdletjump.png", "crownhatturdletshoot.png", // idle (first frame of jump), jump (6 frames), shoot (6 frames)
-                   "", "", "", // Skip teenage form
-                   "crownhatbigturdjump.png", "crownhatbigturdjump.png", "crownhatbigturdshoot.png", // big idle, jump, shoot
-                   100, HatStatus::LOCKED),
+            HatData("Flower", "flowerhat.png",
+                   "flowerhatturdletjump.png", "flowerhatturdletjump.png", "flowerhatturdletshoot.png",
+                   "", "", "",
+                   "flowerhatbigturdjump.png", "flowerhatbigturdjump.png", "flowerhatbigturdshoot.png",
+                   50, HatStatus::LOCKED),
+
+            HatData("Doorag", "dooraghat.png",
+                   "dooragturdletjump.png", "dooragturdletjump.png", "dooragturdletshoot.png",
+                   "", "", "",
+                   "dooragbigturdjump.png", "dooragbigturdjump.png", "dooragbigturdshoot.png",
+                   50, HatStatus::LOCKED),
+
+            HatData("Ballcap", "ballcap.png",
+                   "ballcapturdletjump.png", "ballcapturdletjump.png", "ballcapturdletshoot.png",
+                   "", "", "",
+                   "ballcapbigturdjump.png", "ballcapbigturdjump.png", "ballcapbigturdshoot.png",
+                   50, HatStatus::LOCKED),
+
+            HatData("Beret", "Beret.png",
+                   "berethatturdletjump.png", "berethatturdletjump.png", "berethatturdletshoot.png",
+                   "", "", "",
+                   "berethatbigturdjump.png", "berethatbigturdjump.png", "berethatbigturdshoot.png",
+                   50, HatStatus::LOCKED),
 
             HatData("Top Hat", "tophat.png",
-                   "tophatturdletjump.png", "tophatturdletjump.png", "tophatturdletshoot.png", // idle (first frame of jump), jump (6 frames), shoot (6 frames)
-                   "", "", "", // Skip teenage form
-                   "tophatbigturdjump.png", "tophatbigturdjump.png", "tophatbigturdshoot.png", // big idle, jump, shoot
+                   "tophatturdletjump.png", "tophatturdletjump.png", "tophatturdletshoot.png",
+                   "", "", "",
+                   "tophatbigturdjump.png", "tophatbigturdjump.png", "tophatbigturdshoot.png",
+                   50, HatStatus::LOCKED),
+
+            // Next 6 hats - 150 coins each
+            HatData("Samurai", "SamuraiHelmet.png",
+                   "samuraiturdletjump.png", "samuraiturdletjump.png", "samuraiturdletshoot.png",
+                   "", "", "",
+                   "samuraibigturdjump.png", "samuraibigturdjump.png", "samuraibigturdshoot.png",
                    150, HatStatus::LOCKED),
 
-            HatData("Samurai", "SamuraiHelmet.png",
-                   "samuraiturdletjump.png", "samuraiturdletjump.png", "samuraiturdletshoot.png", // idle (first frame of jump), jump (6 frames), shoot (6 frames)
-                   "", "", "", // Skip teenage form
-                   "samuraibigturdjump.png", "samuraibigturdjump.png", "samuraibigturdshoot.png", // big idle, jump, shoot
-                   200, HatStatus::LOCKED),
-
             HatData("Spartan", "SpartanHelmet.png",
-                   "spartanhatturdletjump.png", "spartanhatturdletjump.png", "spartanhatturdletshoot.png", // idle (first frame of jump), jump (6 frames), shoot (6 frames)
-                   "", "", "", // Skip teenage form
-                   "spartanhatbigturdjump.png", "spartanhatbigturdjump.png", "spartanhatbigturdshoot.png", // big idle, jump, shoot
+                   "spartanhatturdletjump.png", "spartanhatturdletjump.png", "spartanhatturdletshoot.png",
+                   "", "", "",
+                   "spartanhatbigturdjump.png", "spartanhatbigturdjump.png", "spartanhatbigturdshoot.png",
+                   150, HatStatus::LOCKED),
+
+            HatData("Straw Hat", "strawhat.png",
+                   "strawhatturdletjump.png", "strawhatturdletjump.png", "strawhatturdletshoot.png",
+                   "", "", "",
+                   "strawhatbigturdjump.png", "strawhatbigturdjump.png", "strawhatbigturdshoot.png",
+                   150, HatStatus::LOCKED),
+
+            HatData("Shell Hat", "shellhat.png",
+                   "shellhatturdletjump.png", "shellhatturdletjump.png", "shellhatturdletshoot.png",
+                   "", "", "",
+                   "shellhatbigturdjump.png", "shellhatbigturdjump.png", "shellhatbigturdshoot.png",
+                   150, HatStatus::LOCKED),
+
+            HatData("Pinwheel", "PinwheelHat.png",
+                   "pinwheelturdletjump.png", "pinwheelturdletjump.png", "pinwheelturdletshoot.png",
+                   "", "", "",
+                   "pinwheelbigturdjump.png", "pinwheelbigturdjump.png", "pinwheelbigturdshoot.png",
+                   150, HatStatus::LOCKED),
+
+            HatData("Ushanka", "ushanka.png",
+                   "ushankaturdletjump.png", "ushankaturdletjump.png", "ushankaturdletshoot.png",
+                   "", "", "",
+                   "ushankabigturdjump.png", "ushankabigturdjump.png", "ushankabigturdshoot.png",
+                   150, HatStatus::LOCKED),
+
+            // Last 3 premium hats - 250 coins each (Gold Crown, Pharaoh/Ramses, Poop Hat)
+            HatData("Gold Crown", "crown.png",
+                   "crownhatturdletjump.png", "crownhatturdletjump.png", "crownhatturdletshoot.png",
+                   "", "", "",
+                   "crownhatbigturdjump.png", "crownhatbigturdjump.png", "crownhatbigturdshoot.png",
+                   250, HatStatus::LOCKED),
+
+            HatData("Pharaoh Hat", "RamsesHat.png",
+                   "ramsesturdletjump.png", "ramsesturdletjump.png", "ramsesturdletshoot.png",
+                   "", "", "",
+                   "ramsesbigturdjump.png", "ramsesbigturdjump.png", "ramsesbigturdshoot.png",
                    250, HatStatus::LOCKED),
 
             HatData("Poop Hat", "poophat.png",
-                   "poophatturdletjump.png", "poophatturdletjump.png", "poophatturdletshoot.png", // idle (first frame of jump), jump (6 frames), shoot (6 frames)
-                   "", "", "", // Skip teenage form
-                   "poophatbigturdjump.png", "poophatbigturdjump.png", "poophatbigturdshoot.png", // big idle, jump, shoot
-                   300, HatStatus::LOCKED),
-
-            // Row 3 - More premium hats
-            HatData("Straw Hat", "strawhat.png",
-                   "strawhatturdletjump.png", "strawhatturdletjump.png", "strawhatturdletshoot.png", // idle (first frame of jump), jump (6 frames), shoot (6 frames)
-                   "", "", "", // Skip teenage form
-                   "strawhatbigturdjump.png", "strawhatbigturdjump.png", "strawhatbigturdshoot.png", // big idle, jump, shoot
-                   350, HatStatus::LOCKED),
-
-            HatData("Shell Hat", "shellhat.png",
-                   "shellhatturdletjump.png", "shellhatturdletjump.png", "shellhatturdletshoot.png", // idle (first frame of jump), jump (6 frames), shoot (6 frames)
-                   "", "", "", // Skip teenage form
-                   "shellhatbigturdjump.png", "shellhatbigturdjump.png", "shellhatbigturdshoot.png", // big idle, jump, shoot
-                   400, HatStatus::LOCKED),
-
-            HatData("Pinwheel", "PinwheelHat.png",
-                   "pinwheelturdletjump.png", "pinwheelturdletjump.png", "pinwheelturdletshoot.png", // idle (first frame of jump), jump (6 frames), shoot (6 frames)
-                   "", "", "", // Skip teenage form
-                   "pinwheelbigturdjump.png", "pinwheelbigturdjump.png", "pinwheelbigturdshoot.png", // big idle, jump, shoot
-                   450, HatStatus::LOCKED),
-
-            HatData("Ramses", "RamsesHat.png",
-                   "ramsesturdletjump.png", "ramsesturdletjump.png", "ramsesturdletshoot.png", // idle (first frame of jump), jump (6 frames), shoot (6 frames)
-                   "", "", "", // Skip teenage form
-                   "ramsesbigturdjump.png", "ramsesbigturdjump.png", "ramsesbigturdshoot.png", // big idle, jump, shoot
-                   500, HatStatus::LOCKED),
-
-            HatData("Ushanka", "ushanka.png",
-                   "ushankaturdletjump.png", "ushankaturdletjump.png", "ushankaturdletshoot.png", // idle (first frame of jump), jump (6 frames), shoot (6 frames)
-                   "", "", "", // Skip teenage form
-                   "ushankabigturdjump.png", "ushankabigturdjump.png", "ushankabigturdshoot.png", // big idle, jump, shoot
-                   600, HatStatus::LOCKED)
+                   "poophatturdletjump.png", "poophatturdletjump.png", "poophatturdletshoot.png",
+                   "", "", "",
+                   "poophatbigturdjump.png", "poophatbigturdjump.png", "poophatbigturdshoot.png",
+                   250, HatStatus::LOCKED)
         };
 
         // Ensure we don't exceed the grid size

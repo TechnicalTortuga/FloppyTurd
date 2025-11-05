@@ -19,6 +19,7 @@ struct GameSaveData: Codable {
     var progress: ProgressData
     var statistics: StatisticsData
     var customization: CustomizationData
+    var settings: SettingsData
 
     init() {
         self.version = 2
@@ -27,6 +28,7 @@ struct GameSaveData: Codable {
         self.progress = ProgressData()
         self.statistics = StatisticsData()
         self.customization = CustomizationData()
+        self.settings = SettingsData()
     }
 }
 
@@ -119,6 +121,28 @@ struct CustomizationData: Codable {
         self.unlockedHats = [true, true, true, true] + Array(repeating: false, count: 11)
         // Initialize 5 skills - all locked by default
         self.unlockedSkills = Array(repeating: false, count: 5)
+    }
+}
+
+// MARK: - Settings Data
+
+/// Game settings (audio, difficulty, debug, haptics)
+/// Saved with game progress in save file
+struct SettingsData: Codable {
+    var masterVolume: Float
+    var musicVolume: Float
+    var sfxVolume: Float
+    var difficulty: Int  // 0=Runny, 1=Regular, 2=Rough
+    var debugMode: Bool
+    var hapticsEnabled: Bool
+
+    init() {
+        self.masterVolume = 0.7
+        self.musicVolume = 0.6
+        self.sfxVolume = 0.8
+        self.difficulty = 1  // Regular (normal)
+        self.debugMode = false
+        self.hapticsEnabled = true
     }
 }
 

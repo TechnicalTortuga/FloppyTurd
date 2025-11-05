@@ -33,7 +33,7 @@ if(CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "ios\.toolchain\.cmake"
     set(CMAKE_OSX_DEPLOYMENT_TARGET "17.0")
     set(IPHONEOS_DEPLOYMENT_TARGET "17.0")
     message(STATUS "Detected iOS build via toolchain - Building for iOS 17+ with Swift 6.0 and C++ interop")
-# Check for Xcode iOS builds (sysroot-based detection)
+    # Check for Xcode iOS builds (sysroot-based detection)
 elseif(APPLE AND CMAKE_OSX_SYSROOT AND (CMAKE_OSX_SYSROOT MATCHES "iphone" OR CMAKE_OSX_SYSROOT MATCHES "ios"))
     set(FLOPPY_PLATFORM "iOS")
     set(PLATFORM_IOS TRUE)
@@ -41,7 +41,7 @@ elseif(APPLE AND CMAKE_OSX_SYSROOT AND (CMAKE_OSX_SYSROOT MATCHES "iphone" OR CM
     set(CMAKE_OSX_DEPLOYMENT_TARGET "17.0")
     set(IPHONEOS_DEPLOYMENT_TARGET "17.0")
     message(STATUS "Detected iOS build via Xcode sysroot - Building for iOS 17+ with Swift 6.0 and C++ interop")
-# Check for explicit iOS system name
+    # Check for explicit iOS system name
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
     set(FLOPPY_PLATFORM "iOS")
     set(PLATFORM_IOS TRUE)
@@ -49,17 +49,17 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
     set(CMAKE_OSX_DEPLOYMENT_TARGET "17.0")
     set(IPHONEOS_DEPLOYMENT_TARGET "17.0")
     message(STATUS "Detected iOS build via system name - Building for iOS 17+ with Swift 6.0 and C++ interop")
-# Android detection
+    # Android detection
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Android")
     set(FLOPPY_PLATFORM "Android")
     set(PLATFORM_MOBILE TRUE)
     message(STATUS "Building for Android")
-# macOS detection (only if not iOS)
+    # macOS detection (only if not iOS)
 elseif(APPLE)
     set(FLOPPY_PLATFORM "macOS")
     set(PLATFORM_DESKTOP TRUE)
     message(STATUS "Building for macOS desktop")
-# Generic desktop fallback
+    # Generic desktop fallback
 else()
     set(FLOPPY_PLATFORM "Desktop")
     set(PLATFORM_DESKTOP TRUE)
@@ -75,6 +75,14 @@ message(STATUS "PLATFORM_DESKTOP: ${PLATFORM_DESKTOP}")
 # iOS PLATFORM CONFIGURATION (NO RAYLIB - USES METAL/SPRITEKIT)
 # =============================================================================
 if(PLATFORM_IOS)
+    # =============================================================================
+    # CocoaPods Integration - DISABLED (use Swift Package Manager in Xcode instead)
+    # =============================================================================
+    # Automatic CocoaPods integration disabled to avoid linker conflicts
+    # To use CocoaPods: Run 'pod install' manually, then open FloppyTurd.xcworkspace
+    # Recommended: Add Google Mobile Ads SDK via Swift Package Manager in Xcode
+    message(STATUS "CocoaPods auto-integration disabled - add Google Mobile Ads SDK via Xcode SPM")
+
     # Swift/C++ interoperability settings - keep this minimal
     set(CMAKE_Swift_FLAGS "-cxx-interoperability-mode=default -swift-version 6.0")
 
@@ -314,6 +322,54 @@ if(PLATFORM_IOS)
         "-framework ImageIO"
         "-framework MobileCoreServices"
     )
+
+    # Link manually downloaded Google Mobile Ads SDK XCFrameworks
+    set(ADMOB_SDK_PATH "${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/GoogleMobileAds/GoogleMobileAdsSdkiOS-12.12.0")
+    set(ADMOB_SIMULATOR_PATH "${ADMOB_SDK_PATH}/GoogleMobileAds.xcframework/ios-arm64_x86_64-simulator")
+    set(UMP_SIMULATOR_PATH "${ADMOB_SDK_PATH}/UserMessagingPlatform.xcframework/ios-arm64_x86_64-simulator")
+
+    if(EXISTS "${ADMOB_SDK_PATH}/GoogleMobileAds.xcframework")
+        message(STATUS "✅ Found Google Mobile Ads SDK at ${ADMOB_SDK_PATH}")
+
+        # Add XCFramework simulator slices
+        target_link_libraries(FloppyTurd PRIVATE
+            "-framework GoogleMobileAds"
+            "-framework UserMessagingPlatform"
+            "-F${ADMOB_SIMULATOR_PATH}"
+            "-F${UMP_SIMULATOR_PATH}"
+        )
+
+        # Add framework search paths for Xcode
+        set_target_properties(FloppyTurd PROPERTIES
+            XCODE_ATTRIBUTE_FRAMEWORK_SEARCH_PATHS[arch=x86_64] "${ADMOB_SIMULATOR_PATH} ${UMP_SIMULATOR_PATH}"
+            XCODE_ATTRIBUTE_FRAMEWORK_SEARCH_PATHS[arch=arm64] "${ADMOB_SIMULATOR_PATH} ${UMP_SIMULATOR_PATH}"
+        )
+
+        # Add required system frameworks for AdMob
+        target_link_libraries(FloppyTurd PRIVATE
+            "-framework AdSupport"
+            "-framework SafariServices"
+            "-framework StoreKit"
+            "-framework CoreTelephony"
+            "-framework CFNetwork"
+            "-framework Network"
+            "-framework JavaScriptCore"
+            "-framework MediaPlayer"
+            "-framework MessageUI"
+            "-framework CoreMedia"
+            "-framework Security"
+            "-framework SystemConfiguration"
+            "-framework WebKit"
+            "-lsqlite3"
+            "-lz"
+        )
+
+        message(STATUS "✅ Linked Google Mobile Ads SDK and dependencies")
+        message(STATUS "   Simulator frameworks: ${ADMOB_SIMULATOR_PATH}")
+    else()
+        message(WARNING "⚠️  Google Mobile Ads SDK not found at ${ADMOB_SDK_PATH}")
+        message(WARNING "    Run: ./download_admob_sdk.sh to download the SDK")
+    endif()
 else()
     # Create desktop executable
     add_executable(FloppyTurd ${ALL_SOURCES})

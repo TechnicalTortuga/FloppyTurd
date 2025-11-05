@@ -17,6 +17,7 @@ namespace GameCore {
 
 #include "../States/GameState.h"
 #include "../States/GameplayState.h"
+#include "../Systems/AdSystem.h"
 #include <memory>
 
 namespace GameCore {
@@ -38,6 +39,9 @@ namespace GameCore {
      */
     class FloppyTurdGame {
     public:
+        // Game version (single source of truth)
+        static constexpr const char* GetVersion() { return "1.0.0"; }
+        
         FloppyTurdGame();
         ~FloppyTurdGame();
         
@@ -102,6 +106,21 @@ namespace GameCore {
         float GetMasterVolume() const { return m_masterVolume; }
         float GetMusicVolume() const { return m_musicVolume; }
         float GetSFXVolume() const { return m_sfxVolume; }
+        bool IsMusicPlaying() const { return !m_currentMusicTrack.empty(); }
+        const std::string& GetCurrentMusicTrack() const { return m_currentMusicTrack; }
+        void SetCurrentMusicTrack(const std::string& track) { m_currentMusicTrack = track; }
+        
+        // Vibration settings
+        void SetVibrationsEnabled(bool enabled);
+        bool GetVibrationsEnabled() const { return m_vibrationsEnabled; }
+        
+        // Debug mode
+        bool GetDebugMode() const { return m_showDebugInfo; }
+        void SetDebugMode(bool enabled) { m_showDebugInfo = enabled; }
+        
+        // Settings persistence
+        void LoadSettings();
+        void SaveSettings();
 
         // Game statistics
         struct GameStats {
@@ -194,6 +213,10 @@ namespace GameCore {
         // Platform detection
         bool IsIOSPlatform() const { return m_isIOSPlatform; }
 
+        // Ad system access
+        void TriggerGameOverAd();
+        FloppyTurd::AdSystem* GetAdSystem() { return m_adSystem.get(); }
+
     private:
         // Helper methods for level system
         void SetDefaultUnlockRequirements(int levelId, LevelStats& stats);
@@ -201,6 +224,7 @@ namespace GameCore {
         // Core systems
         std::unique_ptr<Gnosis::ECS> m_ecsSystem;
         std::unique_ptr<GameStateManager> m_stateManager;
+        std::unique_ptr<FloppyTurd::AdSystem> m_adSystem;
         
         // Platform abstraction
         PlatformDelegates m_platformDelegates;
@@ -218,6 +242,8 @@ namespace GameCore {
         float m_musicVolume;
         float m_sfxVolume;
         float m_masterVolume = 1.0f;
+        bool m_vibrationsEnabled = true; // Default enabled
+        std::string m_currentMusicTrack = ""; // Track which music is currently playing
         GameStats m_gameStats;
 
         // Level-based data (fixed array for levels 1-6)
@@ -270,8 +296,6 @@ namespace GameCore {
         void HandleStateTransition(GameState* finishedState);
         
         // Data management
-        void LoadSettings();
-        void SaveSettings();
         void ResetGameData();
         
         // Audio management
