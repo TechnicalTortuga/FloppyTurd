@@ -470,7 +470,7 @@ namespace GameCore {
                         Transform* t = m_ecsSystem->GetComponent<Transform>(coinEntity);
                         ScrollSpeed* scrollSpeed = m_ecsSystem->GetComponent<ScrollSpeed>(coinEntity);
                         if (t && scrollSpeed) {
-                            // Manually apply scroll speed (move left)
+                            // Manually apply scroll speed (move LEFT - coins come from right)
                             t->position.x -= scrollSpeed->speed * deltaTime;
                         }
                     }
@@ -480,6 +480,7 @@ namespace GameCore {
                 auto it = m_activeBossCoins.begin();
                 while (it != m_activeBossCoins.end()) {
                     Transform* t = m_ecsSystem->GetComponent<Transform>(*it);
+                    // Check if off-screen LEFT (coins scroll left from right)
                     if (t && t->position.x < -200.0f) {
                         // Off screen to the left, remove from tracking only
                         // PickupSystem handles entity destruction via collision or ClearAll

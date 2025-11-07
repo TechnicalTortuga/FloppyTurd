@@ -748,6 +748,14 @@ namespace GameCore {
                     m_stateManager->ChangeState(std::move(creditsState));
                     return;
                 }
+                
+                // If exiting from landscape (boss) level without defeating boss, go to ScreenPrompt first
+                if (levelConfig.forceLandscape && !gameplay->WasBossDefeated()) {
+                    GN_LOG_INFO("Exiting from boss level without defeat - transitioning to ScreenPrompt (wait for portrait)");
+                    auto screenPromptState = std::make_unique<ScreenPromptState>(m_ecsSystem.get(), &m_platformDelegates, false);  // false = wait for portrait
+                    m_stateManager->ChangeState(std::move(screenPromptState));
+                    return;
+                }
             }
 
             // Normal portrait level - check if Quickplay or normal level select

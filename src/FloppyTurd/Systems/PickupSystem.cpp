@@ -476,8 +476,9 @@ std::vector<Gnosis::Entity> PickupSystem::SpawnBossLevelCoinGroup(float screenWi
     float waveAmplitude = 200.0f;
     float waveFrequency = 0.003f; // Adjust for desired wave density
     
-    // Starting X position (right edge of screen)
-    float startX = screenWidth + 100.0f;
+    // Starting X position (OFF-SCREEN RIGHT - will scroll in from right side)
+    // Start just off-screen so the first pickup is visible
+    float startX = screenWidth + 50.0f;  // Just off-screen to ensure first pickup is visible
     
     // Spacing between pickups in the group
     float spacing = 150.0f;
@@ -503,8 +504,8 @@ std::vector<Gnosis::Entity> PickupSystem::SpawnBossLevelCoinGroup(float screenWi
         Gnosis::Entity e = m_ecsSystem->CreateEntity();
         if (e == 0) continue;
         
-        // Calculate position for this pickup in the group
-        float xPos = startX - (i * spacing);
+        // Calculate position for this pickup in the group (spacing rightward off-screen)
+        float xPos = startX + (i * spacing);  // Further right for each subsequent coin (all off-screen)
         float phase = i * 1.5f; // Phase offset so each pickup appears at different wave position
         
         // Initial Y position (will be updated by wave motion)

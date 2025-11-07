@@ -65,7 +65,7 @@ namespace GameCore {
         bool m_fadingOut;  // Track if we're fading out to white before transition
 
         // Scroll settings
-        static constexpr float SCROLL_SPEED = 129.9375f;  // pixels per second (~5% faster than previous effective rate)
+        static constexpr float SCROLL_SPEED = 150.0f;  // pixels per second (increased from 129.9375 for faster scrolling)
         static constexpr float TURD_BOUNCE_SPEED = 2.0f;  // radians per second
         static constexpr float TURD_BOUNCE_AMPLITUDE = 10.0f;  // pixels
         static constexpr float PIPE_SPEED = 180.0f;  // pixels per second (increased significantly for faster pipes)

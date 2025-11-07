@@ -437,7 +437,7 @@ void CreditsState::CreateSkipButton() {
     // Create skip button with blue outlined text in bottom right corner (landscape)
     UIElement skipUI;
     skipUI.buttonText = "SKIP";
-    skipUI.fontSize = 32.0f;  // Bigger text
+    skipUI.fontSize = 48.0f;  // Increased from 32.0f for better visibility
     skipUI.textColor = Gnosis::GNColor(0, 150, 255, 255);  // Blue
     skipUI.textOutlineWidth = 3.0f;  // Outlined
     skipUI.visible = true;
@@ -450,7 +450,7 @@ void CreditsState::CreateSkipButton() {
     // Text renders from top-left, so we need to position it accounting for text size
     float marginRight = 50.0f;  // Fixed margin from right edge
     float marginBottom = 50.0f;  // Fixed margin from bottom edge
-    float estimatedTextWidth = 200.0f;  // Approximate width of "SKIP" at size 48
+    float estimatedTextWidth = 250.0f;  // Increased for larger text
     
     Transform skipTransform;
     skipTransform.position = Gnosis::GNVector2(
@@ -669,13 +669,14 @@ bool CreditsState::IsSkipButtonPressed(float touchX, float touchY) {
     Transform* transform = m_ecsSystem->GetComponent<Transform>(m_skipButtonEntity);
     if (!transform) return false;
     
-    // Button bounds - text positioned at top-left, so add padding to the right and bottom
-    float fontSize = 60.0f;
-    float buttonWidth = 200.0f;  // SKIP text width + padding
-    float buttonHeight = fontSize + 20.0f;  // Text height + padding
-    float buttonLeft = transform->position.x;
+    // Button bounds - significantly larger hit area to cover all of the text and surrounding area
+    // Text is "SKIP" at fontSize 48.0f with outline width 3.0f
+    float fontSize = 48.0f;  // Match the actual fontSize
+    float buttonWidth = 400.0f;  // Very large hit area to ensure full text coverage (increased from 300.0f)
+    float buttonHeight = fontSize + 60.0f;  // Extra padding above and below (increased from +40.0f)
+    float buttonLeft = transform->position.x - 20.0f;  // Extra padding on left
     float buttonRight = transform->position.x + buttonWidth;
-    float buttonTop = transform->position.y;
+    float buttonTop = transform->position.y - 10.0f;  // Extra padding on top
     float buttonBottom = transform->position.y + buttonHeight;
     
     return (touchX >= buttonLeft && touchX <= buttonRight &&

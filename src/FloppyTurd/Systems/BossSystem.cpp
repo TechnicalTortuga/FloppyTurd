@@ -762,8 +762,9 @@ void BossSystem::SpawnProjectile() {
     GNVector2 shoulder = GetShoulderPosition();
     
     // Calculate launch position (hand location) - positioned at the arm's throw point
-    // Arms are at shoulder + (16*scale, 32*scale), hand extends further down and to the right
-    Gnosis::GNVector2 handLoc = { shoulder.x + (16.0f * scale), shoulder.y + (48.0f * scale) };
+    // Move left from shoulder to match where projectiles visually spawn
+    // Add half projectile height (16px * scale) upward to center on visual spawn point
+    Gnosis::GNVector2 handLoc = { shoulder.x - (24.0f * scale), shoulder.y + (48.0f * scale) - (16.0f * scale) };
     
     // Use player position directly - it's already set to hitbox center in GameplayState
     // No hardcoded offset needed - aimingData.playerPosition is the hitbox center
@@ -803,8 +804,8 @@ void BossSystem::SpawnProjectile() {
                    "), velocity: (" + std::to_string(direction.x * 1000.0f) + ", " + std::to_string(direction.y * 1000.0f) + ")");
     }
 
-    // Dual projectile at low health (below 20%)
-    if (health <= 4) {
+    // Dual projectile at low health (below 20% = 40 HP out of 200)
+    if (health <= 40) {
         float offsetRad = Gnosis::DEG2RAD * (rand() % 21 - 10); // Random value between -10 and 10 degrees
         float dualAngleRad = angleRad + offsetRad;
         GNVector2 dualDirection = {cosf(dualAngleRad), sinf(dualAngleRad)};
@@ -816,7 +817,8 @@ void BossSystem::SpawnProjectile() {
             dualDirection.y /= length;
         }
 
-        Gnosis::GNVector2 dualHandLoc = { shoulder.x + (16.0f * scale), shoulder.y + (48.0f * scale) };
+        // Use same adjusted hand location as primary shot (with half projectile height offset)
+        Gnosis::GNVector2 dualHandLoc = { shoulder.x - (24.0f * scale), shoulder.y + (48.0f * scale) - (16.0f * scale) };
         Gnosis::GNVector2 dualDirectionScaled = Gnosis::Vector2Scale(dualDirection, 20.0f * scale);
         Gnosis::GNVector2 dualSpawnPos = Gnosis::Vector2Add(dualHandLoc, dualDirectionScaled);
 
@@ -917,8 +919,8 @@ void BossSystem::UpdateLockOnIndicator() {
     }
 
     // Calculate launch position (hand location) - positioned at the arm's throw point
-    // Arms are at shoulder + (16*scale, 32*scale), hand extends further down and to the right
-    GNVector2 handLoc = { shoulder.x + (16.0f * scale), shoulder.y + (48.0f * scale) };
+    // Move left from shoulder to match where projectiles visually spawn
+    GNVector2 handLoc = { shoulder.x - (24.0f * scale), shoulder.y + (48.0f * scale) };
     
     // Use player position directly - it's already set to hitbox center in GameplayState
     // No hardcoded offset needed - aimingData.playerPosition is the hitbox center
@@ -944,9 +946,10 @@ void BossSystem::UpdateLockOnIndicator() {
     for (int i = 0; i < dots && i < (int)aimingData.dotEntities.size(); ++i) {
         float fill = (float)i / (float)dots;
         
-        // Place dots along the line from launch position to player CENTER
+        // Place dots along the line from PROJECTILE SPAWN position to player CENTER
+        // Projectile spawns at handLoc + 20*scale in direction of throw
         // Apply upward offset of 16*scale to align with player center
-        float distance = i * spacing;
+        float distance = (20.0f * scale) + (i * spacing);  // Start at projectile spawn (20*scale offset)
         Gnosis::GNVector2 dotPosRaw = Gnosis::Vector2Add(handLoc, Gnosis::Vector2Scale(direction, distance));
         Gnosis::GNVector2 dotPos = {dotPosRaw.x, dotPosRaw.y - (16.0f * scale)};
 

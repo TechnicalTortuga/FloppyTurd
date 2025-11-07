@@ -1614,8 +1614,8 @@ namespace GameCore {
 
         float startY;
         if (IsLandscapeMode()) {
-            // Landscape: start lower than Systems tab label, even more condensed for main menu button
-            startY = centerY - (bgHeight * 0.25f); // Start lower in landscape to avoid "Stats" label
+            // Landscape: start higher up (moved from -0.25f to -0.35f) to bring content up
+            startY = centerY - (bgHeight * 0.35f); // Start higher in landscape
         } else {
             startY = centerY - (bgHeight * 0.4f); // Start near top of rectangle in portrait
         }
@@ -1823,6 +1823,9 @@ namespace GameCore {
     void PauseSystem::CreateAudioSliders() {
         GN_LOG_INFO("PauseSystem: Creating audio sliders");
 
+        // Calculate screen center for portrait mode centering
+        float centerX = m_screenWidth * 0.5f;
+
         // Calculate background area (EXACT same as original)
         float bgW = m_screenWidth * 0.8f;
         float bgH = m_screenHeight * 0.7f;
@@ -1843,7 +1846,7 @@ namespace GameCore {
             // Landscape: start lower than Systems tab label, even more condensed for main menu button
             m_sliderX = bgX + 0.15f * bgW + 16.0f; // Start further right (15% + 16px)
             sliderStartY = bgY + 0.45f * bgH; // Start lower to be below Systems tab label
-            m_sliderW = bgW - 0.30f * bgW - 32.0f; // Reduce width for landscape
+            m_sliderW = (bgW - 0.30f * bgW - 32.0f) * 0.6f; // Reduce track length to 60% of original for tighter range
             m_sliderSpacing = 200.0f; // Even more condensed spacing for landscape to fit main menu button
         } else {
             // Portrait: original positioning
@@ -1896,8 +1899,8 @@ namespace GameCore {
                 labelSpacing = 160.0f; // Even more spacing between label and track for better symmetry
             }
             float labelY = masterTrackY - labelSpacing;
-            // In landscape, move labels left; in portrait, also move them left to avoid ribbon button overlap
-            float labelX = IsLandscapeMode() ? (m_sliderX - 200.0f) : (m_sliderX - 50.0f);
+            // In landscape, move labels further left to avoid knob overlap; in portrait, also move them left to avoid ribbon button overlap
+            float labelX = IsLandscapeMode() ? (m_sliderX - 250.0f) : (m_sliderX - 50.0f); // Moved from -200 to -250 in landscape
             Transform t(GNVector2(labelX, labelY), 0.0f, GNVector2(1.0f, 1.0f));
             UIElement ui("MASTER", "", "");
             ui.fontSize = IsLandscapeMode() ? 38.0f : 42.0f; // Slightly smaller in landscape
@@ -1964,8 +1967,8 @@ namespace GameCore {
             m_musicLabelEntity = m_ecsCoordinator->CreateEntity();
             float labelSpacing = IsLandscapeMode() ? 120.0f : 160.0f; // Condensed spacing in landscape
             float labelY = musicTrackY - labelSpacing;
-            // In landscape, move labels left; in portrait, also move them left to avoid ribbon button overlap
-            float labelX = IsLandscapeMode() ? (m_sliderX - 200.0f) : (m_sliderX - 50.0f);
+            // In landscape, move labels further left to avoid knob overlap; in portrait, also move them left to avoid ribbon button overlap
+            float labelX = IsLandscapeMode() ? (m_sliderX - 250.0f) : (m_sliderX - 50.0f); // Moved from -200 to -250 in landscape
             Transform t(GNVector2(labelX, labelY), 0.0f, GNVector2(1.0f, 1.0f));
             UIElement ui("MUSIC", "", "");
             ui.fontSize = IsLandscapeMode() ? 38.0f : 42.0f; // Slightly smaller in landscape
@@ -2032,8 +2035,8 @@ namespace GameCore {
             m_sfxLabelEntity = m_ecsCoordinator->CreateEntity();
             float labelSpacing = IsLandscapeMode() ? 120.0f : 160.0f; // Condensed spacing in landscape
             float labelY = sfxTrackY - labelSpacing;
-            // In landscape, move labels left; in portrait, also move them left to avoid ribbon button overlap
-            float labelX = IsLandscapeMode() ? (m_sliderX - 200.0f) : (m_sliderX - 50.0f);
+            // In landscape, move labels further left to avoid knob overlap; in portrait, also move them left to avoid ribbon button overlap
+            float labelX = IsLandscapeMode() ? (m_sliderX - 250.0f) : (m_sliderX - 50.0f); // Moved from -200 to -250 in landscape
             Transform t(GNVector2(labelX, labelY), 0.0f, GNVector2(1.0f, 1.0f));
             UIElement ui("SFX", "", "");
             ui.fontSize = IsLandscapeMode() ? 38.0f : 42.0f; // Slightly smaller in landscape
@@ -2069,8 +2072,22 @@ namespace GameCore {
             m_ecsCoordinator->AddComponent<UIElement>(m_sfxKnobEntity, ui);
         }
 
-        // VIBRATION TOGGLE (below SFX slider to avoid overlap)
-        float vibrationY = sfxTrackY + 125.0f; // Below SFX slider by 125px (moved down a bit more)
+        // VIBRATION TOGGLE - Position at same Y level as MASTER label in landscape, below SFX in portrait
+        // Calculate vibrationY to align with master label in landscape, below SFX slider in portrait
+        float labelSpacingForVibration;
+        float vibrationLabelY;
+        float vibrationToggleY;
+        
+        if (IsLandscapeMode()) {
+            labelSpacingForVibration = 120.0f; // Same as master label spacing
+            vibrationLabelY = masterTrackY - labelSpacingForVibration; // Same Y as MASTER label
+            vibrationToggleY = vibrationLabelY + 110.0f; // Button below label
+        } else {
+            // Portrait mode: position below SFX track
+            labelSpacingForVibration = 160.0f;
+            vibrationLabelY = sfxTrackY + labelSpacingForVibration; // Below SFX track
+            vibrationToggleY = vibrationLabelY + 110.0f; // Button below label
+        }
         
         // Vibration toggle button (X sprite) - configured as a proper toggle button
         if (m_vibrationToggleEntity == 0) {
@@ -2082,9 +2099,17 @@ namespace GameCore {
                 vibrationsEnabled = GameCore::GetGame()->GetVibrationsEnabled();
             }
             
-            float toggleX = m_sliderX + m_sliderW + 40.0f; // Positioned to the right of where slider would be (moved left 10px)
+            // Center button horizontally below the label
             float toggleScale = 7.0f;
-            Transform t(GNVector2(toggleX, vibrationY), 0.0f, GNVector2(toggleScale, toggleScale));
+            float buttonWidth = 16.0f * toggleScale; // Actual button width
+            float labelX;
+            if (IsLandscapeMode()) {
+                labelX = m_sliderX + m_sliderW + 350.0f; // Match landscape label X
+            } else {
+                labelX = centerX; // Match portrait label X (centered)
+            }
+            float toggleX = labelX - (buttonWidth * 0.5f); // Center button under label
+            Transform t(GNVector2(toggleX, vibrationToggleY), 0.0f, GNVector2(toggleScale, toggleScale));
             
             Sprite s(vibrationsEnabled ? "xbuttonselected" : "xbuttonunselected", 64, 64);
             s.visible = false;
@@ -2107,23 +2132,23 @@ namespace GameCore {
             m_ecsCoordinator->AddComponent<UIElement>(m_vibrationToggleEntity, ui);
         }
         
-        // Vibration label - position it to align vertically with center of toggle button
+        // Vibration label - position at same Y as MASTER label (top row)
         if (m_vibrationLabelEntity == 0) {
             m_vibrationLabelEntity = m_ecsCoordinator->CreateEntity();
-            // Same X as other labels (master, music, sfx)
-            float labelX = IsLandscapeMode() ? (m_sliderX - 200.0f) : (m_sliderX - 150.0f);
-            // The button texture is actually 16x16 at scale 7.0, so actual height is 16 * 7 = 112px
-            // Center label vertically with the toggle button, then move down 15px
-            float toggleScale = 7.0f;
-            float buttonTextureHeight = 16.0f; // Actual texture dimensions (not sprite definition)
-            float scaledButtonHeight = buttonTextureHeight * toggleScale;
-            float labelY = vibrationY + (scaledButtonHeight * 0.5f) + 15.0f; // Center of button + 15px down
+            // In landscape: position to the right of sliders
+            // In portrait: center horizontally like "Systems" label
+            float labelX;
+            if (IsLandscapeMode()) {
+                labelX = m_sliderX + m_sliderW + 350.0f;
+            } else {
+                labelX = centerX; // Center horizontally in portrait
+            }
             
-            Transform t(GNVector2(labelX, labelY), 0.0f, GNVector2(1.0f, 1.0f));
+            Transform t(GNVector2(labelX, vibrationLabelY), 0.0f, GNVector2(1.0f, 1.0f));
             UIElement ui("VIBRATIONS", "", "");
             ui.fontSize = IsLandscapeMode() ? 38.0f : 42.0f; // Use landscape-appropriate font sizes
             ui.textColor = GNColor(255, 255, 255, 255);
-            ui.centerTextHorizontally = false;
+            ui.centerTextHorizontally = true; // Center the text
             ui.centerTextVertically = true;
             ui.visible = false;
             ui.textLayer = 84;
@@ -2466,6 +2491,7 @@ namespace GameCore {
         hideEntity(m_totalFlopsTextEntity);
         hideEntity(m_enemiesKilledTextEntity);
         hideEntity(m_totalPipesTextEntity);
+        hideEntity(m_bossTimerTextEntity); // Hide Rat King boss timer
         
         // Hide level high score entities
         for (auto levelScoreEntity : m_levelHighScoreTextEntities) {
