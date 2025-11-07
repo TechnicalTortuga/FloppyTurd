@@ -1,4 +1,5 @@
 #include "EnemySystem.h"
+#include "BossSystem.h"
 #include "../../Engine/Configuration/ConfigManager.h"
 #include <cmath>
 #include <algorithm>
@@ -818,6 +819,20 @@ void EnemySystem::ProcessEnemyState(float deltaTime, Entity e, Enemy* enemy, Spr
 
 void EnemySystem::ProcessEnemyMovement(float deltaTime, Enemy* enemy, Transform* transform, Entity enemyEntity) {
     if (!enemy || !transform) return;
+    
+    // CRITICAL: Freeze all enemy movement when boss is dying (Level 6 only)
+    if (m_bossSystem && m_levelManager) {
+        int currentLevel = m_levelManager->GetCurrentLevelId();
+        if (currentLevel == 6) {
+            // Check if boss is in death state or death sequence has started
+            RatKingState bossState = m_bossSystem->GetCurrentState();
+            bool bossDying = (bossState == RatKingState::DEATH || m_bossSystem->IsDeathSequenceComplete());
+            if (bossDying) {
+                // Freeze enemy in place - no movement during boss death sequence
+                return;
+            }
+        }
+    }
 
     // Get screen info for device-agnostic dimensions
     const ScreenInfo& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();

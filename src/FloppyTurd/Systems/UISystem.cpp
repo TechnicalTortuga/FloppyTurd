@@ -307,19 +307,37 @@ namespace GameCore {
             return;
         }
         
-        // Choose the appropriate texture based on button state
+        // Choose the appropriate texture based on button type and state
         std::string textureId;
-        if (uiElement->isPressed) {
-            textureId = uiElement->pressedTextureId;
-        } else if (uiElement->isHovered) {
-            textureId = uiElement->hoverTextureId;
-        } else {
-            textureId = uiElement->normalTextureId;
-        }
         
-        // Update the sprite texture
-        sprite->textureId = textureId;
-        GN_LOG_DEBUG("UISystem: Updated button sprite to: " + textureId);
+        // TOGGLE BUTTONS: Use toggle textures based on toggle state
+        // This provides atomic sprite/UIElement updates for toggle buttons
+        if (uiElement->isToggle && !uiElement->toggleOnTexture.empty() && !uiElement->toggleOffTexture.empty()) {
+            textureId = uiElement->toggleState ? uiElement->toggleOnTexture : uiElement->toggleOffTexture;
+            
+            // Atomically update both Sprite and UIElement textures
+            sprite->textureId = textureId;
+            uiElement->normalTextureId = textureId;
+            uiElement->hoverTextureId = textureId;
+            // Don't change pressedTextureId for toggles, keep it separate
+            
+            GN_LOG_DEBUG("UISystem: Updated toggle button sprite to: " + textureId + 
+                        " (state: " + std::string(uiElement->toggleState ? "ON" : "OFF") + ")");
+        } 
+        // REGULAR BUTTONS: Use normal/hover/pressed textures
+        else {
+            if (uiElement->isPressed) {
+                textureId = uiElement->pressedTextureId;
+            } else if (uiElement->isHovered) {
+                textureId = uiElement->hoverTextureId;
+            } else {
+                textureId = uiElement->normalTextureId;
+            }
+            
+            // Update only the sprite texture for regular buttons
+            sprite->textureId = textureId;
+            GN_LOG_DEBUG("UISystem: Updated button sprite to: " + textureId);
+        }
     }
 
     void UISystem::ResetAllButtonStates() {
@@ -461,37 +479,62 @@ namespace GameCore {
         return baseSize * (m_screenInfo.pixelHeight / 2556.0f);
     }
     
-    bool UISystem::SwapToggleTextures(Gnosis::Entity entity, 
-                                      const std::string& texture1, 
-                                      const std::string& texture2, 
-                                      bool useTexture1) {
+    bool UISystem::ToggleButton(Gnosis::Entity entity) {
         if (!m_ecsCoordinator) {
-            GN_LOG_ERROR("UISystem::SwapToggleTextures - ECS coordinator is null");
+            GN_LOG_ERROR("UISystem::ToggleButton - ECS coordinator is null");
             return false;
         }
         
-        // Determine which texture to use
-        const std::string& targetTexture = useTexture1 ? texture1 : texture2;
-        
-        // Update Sprite component
-        auto sprite = m_ecsCoordinator->GetComponent<Sprite>(entity);
-        if (sprite) {
-            sprite->textureId = targetTexture;
-        } else {
-            GN_LOG_WARN("UISystem::SwapToggleTextures - Entity has no Sprite component");
-        }
-        
-        // Update UIElement component
         auto uiElement = m_ecsCoordinator->GetComponent<UIElement>(entity);
-        if (uiElement) {
-            uiElement->normalTextureId = targetTexture;
-            uiElement->hoverTextureId = targetTexture;
-        } else {
-            GN_LOG_WARN("UISystem::SwapToggleTextures - Entity has no UIElement component");
+        if (!uiElement) {
+            GN_LOG_WARN("UISystem::ToggleButton - Entity has no UIElement component");
+            return false;
         }
         
-        // Return true if at least one component was updated
-        return (sprite != nullptr || uiElement != nullptr);
+        if (!uiElement->isToggle) {
+            GN_LOG_WARN("UISystem::ToggleButton - Entity is not configured as a toggle button");
+            return false;
+        }
+        
+        // Toggle the state
+        uiElement->toggleState = !uiElement->toggleState;
+        
+        // Update the sprite atomically using UpdateButtonSprite
+        UpdateButtonSprite(entity);
+        
+        GN_LOG_INFO("UISystem::ToggleButton - Toggled to " + 
+                   std::string(uiElement->toggleState ? "ON" : "OFF"));
+        
+        return true;
+    }
+    
+    bool UISystem::SetToggleState(Gnosis::Entity entity, bool state) {
+        if (!m_ecsCoordinator) {
+            GN_LOG_ERROR("UISystem::SetToggleState - ECS coordinator is null");
+            return false;
+        }
+        
+        auto uiElement = m_ecsCoordinator->GetComponent<UIElement>(entity);
+        if (!uiElement) {
+            GN_LOG_WARN("UISystem::SetToggleState - Entity has no UIElement component");
+            return false;
+        }
+        
+        if (!uiElement->isToggle) {
+            GN_LOG_WARN("UISystem::SetToggleState - Entity is not configured as a toggle button");
+            return false;
+        }
+        
+        // Set the state
+        uiElement->toggleState = state;
+        
+        // Update the sprite atomically using UpdateButtonSprite
+        UpdateButtonSprite(entity);
+        
+        GN_LOG_DEBUG("UISystem::SetToggleState - Set to " + 
+                    std::string(state ? "ON" : "OFF"));
+        
+        return true;
     }
 
 } // namespace GameCore 

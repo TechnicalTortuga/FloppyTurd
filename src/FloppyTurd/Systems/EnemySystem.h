@@ -8,6 +8,11 @@
 #include "../../Engine/Core/GNLog.h"
 #include <vector>
 
+// Forward declarations
+namespace GameCore {
+    class BossSystem;
+}
+
 // Use shorter type names
 using Gnosis::ECS;
 using Gnosis::EnemyType;
@@ -19,12 +24,16 @@ namespace GameCore {
     public:
         EnemySystem(ECS* ecsSystem, LevelManager* levelManager, ProjectileSystem* projectileSystem);
         void Update(float deltaTime);
+        
+        // Set boss system reference (for checking death state)
+        void SetBossSystem(BossSystem* bossSystem) { m_bossSystem = bossSystem; }
 
     private:
         // Core system references
         ECS* m_ecsSystem;
         LevelManager* m_levelManager;
         ProjectileSystem* m_projectileSystem;
+        BossSystem* m_bossSystem = nullptr;  // Optional: for checking boss death state
         float m_time;
         
         // Single-pass ECS pattern: process individual enemy components

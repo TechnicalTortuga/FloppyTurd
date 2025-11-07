@@ -761,8 +761,9 @@ void BossSystem::SpawnProjectile() {
 
     GNVector2 shoulder = GetShoulderPosition();
     
-    // Calculate launch position (hand location, lowered by 16*scale) - MUST MATCH lock-on dots!
-    Gnosis::GNVector2 handLoc = { shoulder.x - (40.0f * scale), shoulder.y + (16.0f * scale) };
+    // Calculate launch position (hand location) - positioned at the arm's throw point
+    // Arms are at shoulder + (16*scale, 32*scale), hand extends further down and to the right
+    Gnosis::GNVector2 handLoc = { shoulder.x + (16.0f * scale), shoulder.y + (48.0f * scale) };
     
     // Use player position directly - it's already set to hitbox center in GameplayState
     // No hardcoded offset needed - aimingData.playerPosition is the hitbox center
@@ -815,7 +816,7 @@ void BossSystem::SpawnProjectile() {
             dualDirection.y /= length;
         }
 
-        Gnosis::GNVector2 dualHandLoc = { shoulder.x - (40.0f * scale), shoulder.y + (16.0f * scale) };
+        Gnosis::GNVector2 dualHandLoc = { shoulder.x + (16.0f * scale), shoulder.y + (48.0f * scale) };
         Gnosis::GNVector2 dualDirectionScaled = Gnosis::Vector2Scale(dualDirection, 20.0f * scale);
         Gnosis::GNVector2 dualSpawnPos = Gnosis::Vector2Add(dualHandLoc, dualDirectionScaled);
 
@@ -915,14 +916,21 @@ void BossSystem::UpdateLockOnIndicator() {
         oscillationAmount = sinf(aimingData.aimTimer * oscillationSpeed) * oscillationRange;
     }
 
-    // Calculate launch position (hand location, lowered by 16*scale)
-    GNVector2 handLoc = { shoulder.x - (40.0f * scale), shoulder.y + (16.0f * scale) };
+    // Calculate launch position (hand location) - positioned at the arm's throw point
+    // Arms are at shoulder + (16*scale, 32*scale), hand extends further down and to the right
+    GNVector2 handLoc = { shoulder.x + (16.0f * scale), shoulder.y + (48.0f * scale) };
     
     // Use player position directly - it's already set to hitbox center in GameplayState
     // No hardcoded offset needed - aimingData.playerPosition is the hitbox center
+    GN_LOG_DEBUG("🎯 Lock-on debug: handLoc=(" + std::to_string(handLoc.x) + "," + std::to_string(handLoc.y) + 
+                "), playerPos=(" + std::to_string(aimingData.playerPosition.x) + "," + std::to_string(aimingData.playerPosition.y) + ")");
+    
     Gnosis::GNVector2 toPlayer = Gnosis::Vector2Subtract(aimingData.playerPosition, handLoc);
     float distanceToPlayer = sqrtf(toPlayer.x * toPlayer.x + toPlayer.y * toPlayer.y);
     GNVector2 direction = {toPlayer.x / distanceToPlayer, toPlayer.y / distanceToPlayer};
+    
+    GN_LOG_DEBUG("🎯 Lock-on direction: (" + std::to_string(direction.x) + "," + std::to_string(direction.y) + 
+                "), distance=" + std::to_string(distanceToPlayer));
     
     // Flash effect: in the last 20% of aiming duration, flash red and white
     bool isFlashing = (progress >= 0.80f);
@@ -937,8 +945,10 @@ void BossSystem::UpdateLockOnIndicator() {
         float fill = (float)i / (float)dots;
         
         // Place dots along the line from launch position to player CENTER
+        // Apply upward offset of 16*scale to align with player center
         float distance = i * spacing;
-        Gnosis::GNVector2 dotPos = Gnosis::Vector2Add(handLoc, Gnosis::Vector2Scale(direction, distance));
+        Gnosis::GNVector2 dotPosRaw = Gnosis::Vector2Add(handLoc, Gnosis::Vector2Scale(direction, distance));
+        Gnosis::GNVector2 dotPos = {dotPosRaw.x, dotPosRaw.y - (16.0f * scale)};
 
         // Store dot data
         LockOnDot dot;

@@ -217,6 +217,12 @@ namespace GameCore {
         void TriggerGameOverAd();
         FloppyTurd::AdSystem* GetAdSystem() { return m_adSystem.get(); }
 
+        // Debug unlock flags
+        bool GetDebugLevelsUnlocked() const { return m_debugLevelsUnlocked; }
+        void SetDebugLevelsUnlocked(bool unlocked) { m_debugLevelsUnlocked = unlocked; }
+        bool GetDebugHatsUnlocked() const { return m_debugHatsUnlocked; }
+        void SetDebugHatsUnlocked(bool unlocked) { m_debugHatsUnlocked = unlocked; }
+
     private:
         // Helper methods for level system
         void SetDefaultUnlockRequirements(int levelId, LevelStats& stats);
@@ -310,6 +316,8 @@ namespace GameCore {
         void UpdateDebugInfo(float deltaTime);
         void RenderDebugInfo();
         bool m_showDebugInfo;
+        bool m_debugLevelsUnlocked;
+        bool m_debugHatsUnlocked;
     };
 
     /**

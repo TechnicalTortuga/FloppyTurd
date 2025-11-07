@@ -1051,6 +1051,12 @@ using Gnosis::Entity;
         bool isEnabled;
         bool visible;  // Visibility control
         
+        // Toggle button properties
+        bool isToggle;              // True if this is a toggle button (checkbox, switch, etc.)
+        bool toggleState;           // Current toggle state (on/off)
+        std::string toggleOnTexture;   // Texture to use when toggle is ON
+        std::string toggleOffTexture;  // Texture to use when toggle is OFF
+        
         // Text properties
         float fontSize;
         Gnosis::GNColor textColor;
@@ -1070,6 +1076,8 @@ using Gnosis::Entity;
             , isPressed(false)
             , isEnabled(true)
             , visible(true)
+            , isToggle(false)
+            , toggleState(false)
             , fontSize(24.0f)
             , textColor(0, 0, 0, 255)
             , textHoverColor(255, 255, 0, 255)
@@ -1090,6 +1098,8 @@ using Gnosis::Entity;
             , isPressed(false)
             , isEnabled(true)
             , visible(true)
+            , isToggle(false)
+            , toggleState(false)
             , fontSize(24.0f)
             , textColor(0, 0, 0, 255)
             , textHoverColor(255, 255, 0, 255)

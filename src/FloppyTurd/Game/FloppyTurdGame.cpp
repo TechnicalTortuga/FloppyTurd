@@ -55,6 +55,13 @@ namespace GameCore {
         , m_fpsTimer(0.0f)
         , m_currentFPS(0.0f)
         , m_showDebugInfo(false)
+        #ifdef DEBUG
+        , m_debugLevelsUnlocked(true)   // Enable in DEBUG builds for testing
+        , m_debugHatsUnlocked(true)     // Enable in DEBUG builds for testing
+        #else
+        , m_debugLevelsUnlocked(false)
+        , m_debugHatsUnlocked(false)
+        #endif
         , m_levelUnlockSoundTimer(0.0f)
         , m_pendingPartyHorn(false)
         , m_isIOSPlatform(false)
@@ -733,9 +740,10 @@ namespace GameCore {
                 int levelId = gameplay->GetCurrentLevelId();
                 LevelConfig levelConfig = LevelConfigFactory::GetLevelConfig(levelId);
                 
-                if (levelConfig.forceLandscape) {
-                    // Boss level completed - transition to Credits (stay in landscape)
-                    GN_LOG_INFO("Boss level " + std::to_string(levelId) + " completed - transitioning to Credits");
+                // Only go to credits if boss was actually defeated (not just exiting via menu)
+                if (levelConfig.forceLandscape && gameplay->WasBossDefeated()) {
+                    // Boss level completed by defeating boss - transition to Credits (stay in landscape)
+                    GN_LOG_INFO("Boss defeated on level " + std::to_string(levelId) + " - transitioning to Credits");
                     auto creditsState = std::make_unique<CreditsState>(m_ecsSystem.get(), &m_platformDelegates);
                     m_stateManager->ChangeState(std::move(creditsState));
                     return;
@@ -956,6 +964,14 @@ namespace GameCore {
     }
 
     bool FloppyTurdGame::IsLevelUnlocked(int levelId) const {
+        // 🔓 DEBUG MODE: Unlock all levels for testing
+        #ifdef DEBUG
+        if (m_debugLevelsUnlocked) {
+            GN_LOG_DEBUG("🔓 DEBUG: Level " + std::to_string(levelId) + " unlocked for testing (debug_levelsunlocked=true)");
+            return true; // All levels unlocked in debug mode
+        }
+        #endif
+        
         if (levelId == 1) return true; // First level always unlocked
         if (levelId >= 2 && levelId <= MAX_LEVELS) {
             return m_levelStats[levelId].unlocked;
@@ -1276,6 +1292,14 @@ namespace GameCore {
     }
 
     bool FloppyTurdGame::IsHatUnlocked(int index) const {
+        // 🔓 DEBUG MODE: Unlock all hats for testing
+        #ifdef DEBUG
+        if (m_debugHatsUnlocked) {
+            GN_LOG_DEBUG("🔓 DEBUG: Hat " + std::to_string(index) + " unlocked for testing (debug_hatsunlocked=true)");
+            return (index >= 0 && index < static_cast<int>(m_customizationData.unlockedHats.size()));
+        }
+        #endif
+        
         if (index < 0 || index >= static_cast<int>(m_customizationData.unlockedHats.size())) {
             return false;
         }

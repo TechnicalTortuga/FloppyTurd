@@ -71,6 +71,7 @@ namespace GameCore {
         , m_totalFlopsTextEntity(0)
         , m_enemiesKilledTextEntity(0)
         , m_totalPipesTextEntity(0)
+        , m_bossTimerTextEntity(0)
         , m_hatsBackgroundEntity(0)
         , m_hatsActionButtonEntity(0)
         , m_hatsCostDisplayEntity(0)
@@ -1611,15 +1612,15 @@ namespace GameCore {
             GN_LOG_INFO("PauseSystem: Created stats background rectangle at (" + std::to_string(bgPosition.x) + ", " + std::to_string(bgPosition.y) + ") size " + std::to_string(bgWidth) + "x" + std::to_string(bgHeight));
         }
 
-        // Start from top of rectangle and work down - adjust for landscape to avoid label overlap
         float startY;
         if (IsLandscapeMode()) {
+            // Landscape: start lower than Systems tab label, even more condensed for main menu button
             startY = centerY - (bgHeight * 0.25f); // Start lower in landscape to avoid "Stats" label
         } else {
             startY = centerY - (bgHeight * 0.4f); // Start near top of rectangle in portrait
         }
         float lineSpacing = 80.0f; // Space between stats
-        float fontSize = 32.0f;
+        float fontSize = 42.0f; // Increased from 32.0f for better readability
 
         // Create individual stat text entities
         // 1. Current Session Pipes
@@ -1741,25 +1742,43 @@ namespace GameCore {
             m_ecsCoordinator->AddComponent<UIElement>(m_totalPipesTextEntity, uiElem);
         }
 
-        // 8. Level High Scores Section - Add a separator and then each level's high score
+        // 8. Rat King Boss Timer (Level 6 only)
+        if (m_bossTimerTextEntity == 0) {
+            m_bossTimerTextEntity = m_ecsCoordinator->CreateEntity();
+            Transform transform(GNVector2(centerX, startY + lineSpacing * 7), 0.0f, GNVector2(1.0f, 1.0f));
+            m_ecsCoordinator->AddComponent<Transform>(m_bossTimerTextEntity, transform);
+
+            UIElement uiElem;
+            uiElem.buttonText = "Rat King Timer: 00:00"; // Will be updated when shown
+            uiElem.fontSize = fontSize;
+            uiElem.textColor = GNColor(255, 215, 0, 255); // Gold color for boss timer
+            uiElem.centerTextHorizontally = true;
+            uiElem.visible = false;
+            uiElem.isEnabled = true;
+            uiElem.textLayer = 90;
+            m_ecsCoordinator->AddComponent<UIElement>(m_bossTimerTextEntity, uiElem);
+        }
+
+        // 9. Level High Scores Section - Add a separator and then each level's high score
         // Position these at the bottom of the stats background
-        float levelScoresStartY = startY + lineSpacing * 8; // Start after the 7 stats above
-        float levelLineSpacing = 60.0f; // Tighter spacing for level scores
-        float levelFontSize = 28.0f; // Slightly smaller font for level scores
+        float levelScoresStartY = startY + lineSpacing * 9; // Start after the 8 stats above (including boss timer)
+        float levelTitleSpacing = 100.0f; // Extra spacing between title and first level
+        float levelLineSpacing = lineSpacing; // Same spacing as main stats (80.0f)
+        float levelFontSize = fontSize; // Same as main stats (42.0f)
         
         // Create a title/separator for level high scores
         if (m_levelHighScoreTextEntities.empty()) {
             // Reserve space for title + 6 levels
             m_levelHighScoreTextEntities.reserve(7);
             
-            // Create "Level High Scores:" title
+            // Create "Level High Scores" title (without dashes)
             Entity titleEntity = m_ecsCoordinator->CreateEntity();
             Transform titleTransform(GNVector2(centerX, levelScoresStartY), 0.0f, GNVector2(1.0f, 1.0f));
             m_ecsCoordinator->AddComponent<Transform>(titleEntity, titleTransform);
             
             UIElement titleElem;
-            titleElem.buttonText = "--- Level High Scores ---";
-            titleElem.fontSize = fontSize; // Use regular size for title
+            titleElem.buttonText = "Level High Scores";
+            titleElem.fontSize = 48.0f; // Larger than main stats (42.0f)
             titleElem.textColor = GNColor(200, 200, 100, 255); // Yellowish for section header
             titleElem.centerTextHorizontally = true;
             titleElem.visible = false;
@@ -1772,13 +1791,18 @@ namespace GameCore {
             const char* levelNames[] = {"Park", "Sewer", "Desert", "Snow", "Castle", "Boss"};
             for (int i = 0; i < 6; i++) {
                 Entity levelEntity = m_ecsCoordinator->CreateEntity();
-                float yPos = levelScoresStartY + levelLineSpacing * (i + 1); // +1 to skip title
+                // Add extra spacing after title, then use regular spacing between levels
+                float yPos = levelScoresStartY + levelTitleSpacing + (levelLineSpacing * i);
                 Transform transform(GNVector2(centerX, yPos), 0.0f, GNVector2(1.0f, 1.0f));
                 m_ecsCoordinator->AddComponent<Transform>(levelEntity, transform);
                 
                 UIElement uiElem;
-                // Will be updated when shown with actual high score
-                uiElem.buttonText = std::string(levelNames[i]) + ": 0 pipes";
+                // Boss (level 6) will show time instead of score - will be updated when shown
+                if (i == 5) { // Boss level
+                    uiElem.buttonText = "Boss: 0:00";
+                } else {
+                    uiElem.buttonText = std::string(levelNames[i]) + ": 0 pipes";
+                }
                 uiElem.fontSize = levelFontSize;
                 uiElem.textColor = GNColor(180, 180, 255, 255); // Light blue-ish for level scores
                 uiElem.centerTextHorizontally = true;
@@ -2048,28 +2072,7 @@ namespace GameCore {
         // VIBRATION TOGGLE (below SFX slider to avoid overlap)
         float vibrationY = sfxTrackY + 125.0f; // Below SFX slider by 125px (moved down a bit more)
         
-        // Vibration label - adjusted Y to align with toggle button on same plane
-        if (m_vibrationLabelEntity == 0) {
-            m_vibrationLabelEntity = m_ecsCoordinator->CreateEntity();
-            // Same X as other labels (master, music, sfx)
-            float labelX = IsLandscapeMode() ? (m_sliderX - 200.0f) : (m_sliderX - 150.0f);
-            // Move label down to center align with toggle button (button is 64px at scale 7.0)
-            float labelY = vibrationY + 40.0f; // Move down 40px to center with button
-            
-            Transform t(GNVector2(labelX, labelY), 0.0f, GNVector2(1.0f, 1.0f));
-            UIElement ui("VIBRATIONS", "", "");
-            ui.fontSize = IsLandscapeMode() ? 38.0f : 42.0f;
-            ui.textColor = GNColor(255, 255, 255, 255);
-            ui.centerTextHorizontally = false;
-            ui.centerTextVertically = true;
-            ui.visible = false;
-            ui.textLayer = 84;
-            
-            m_ecsCoordinator->AddComponent<Transform>(m_vibrationLabelEntity, t);
-            m_ecsCoordinator->AddComponent<UIElement>(m_vibrationLabelEntity, ui);
-        }
-        
-        // Vibration toggle button (X sprite)
+        // Vibration toggle button (X sprite) - configured as a proper toggle button
         if (m_vibrationToggleEntity == 0) {
             m_vibrationToggleEntity = m_ecsCoordinator->CreateEntity();
             
@@ -2079,25 +2082,54 @@ namespace GameCore {
                 vibrationsEnabled = GameCore::GetGame()->GetVibrationsEnabled();
             }
             
-            float toggleX = m_sliderX + m_sliderW + 50.0f; // Positioned to the right of where slider would be
+            float toggleX = m_sliderX + m_sliderW + 40.0f; // Positioned to the right of where slider would be (moved left 10px)
             float toggleScale = 7.0f;
-            // Button Y aligned with base vibrationY (label was moved down to align with this)
             Transform t(GNVector2(toggleX, vibrationY), 0.0f, GNVector2(toggleScale, toggleScale));
             
             Sprite s(vibrationsEnabled ? "xbuttonselected" : "xbuttonunselected", 64, 64);
             s.visible = false;
             s.layer = 85;
             
+            // Configure as a proper toggle button with toggle-specific fields
             UIElement ui("", 
                 vibrationsEnabled ? "xbuttonselected" : "xbuttonunselected",
                 vibrationsEnabled ? "xbuttonselected" : "xbuttonunselected");
             ui.visible = false;
             ui.textLayer = 85;
             ui.isEnabled = true;
+            ui.isToggle = true;  // Mark as toggle button
+            ui.toggleState = vibrationsEnabled;  // Set initial state
+            ui.toggleOnTexture = "xbuttonselected";   // ON texture
+            ui.toggleOffTexture = "xbuttonunselected"; // OFF texture
             
             m_ecsCoordinator->AddComponent<Transform>(m_vibrationToggleEntity, t);
             m_ecsCoordinator->AddComponent<Sprite>(m_vibrationToggleEntity, s);
             m_ecsCoordinator->AddComponent<UIElement>(m_vibrationToggleEntity, ui);
+        }
+        
+        // Vibration label - position it to align vertically with center of toggle button
+        if (m_vibrationLabelEntity == 0) {
+            m_vibrationLabelEntity = m_ecsCoordinator->CreateEntity();
+            // Same X as other labels (master, music, sfx)
+            float labelX = IsLandscapeMode() ? (m_sliderX - 200.0f) : (m_sliderX - 150.0f);
+            // The button texture is actually 16x16 at scale 7.0, so actual height is 16 * 7 = 112px
+            // Center label vertically with the toggle button, then move down 15px
+            float toggleScale = 7.0f;
+            float buttonTextureHeight = 16.0f; // Actual texture dimensions (not sprite definition)
+            float scaledButtonHeight = buttonTextureHeight * toggleScale;
+            float labelY = vibrationY + (scaledButtonHeight * 0.5f) + 15.0f; // Center of button + 15px down
+            
+            Transform t(GNVector2(labelX, labelY), 0.0f, GNVector2(1.0f, 1.0f));
+            UIElement ui("VIBRATIONS", "", "");
+            ui.fontSize = IsLandscapeMode() ? 38.0f : 42.0f; // Use landscape-appropriate font sizes
+            ui.textColor = GNColor(255, 255, 255, 255);
+            ui.centerTextHorizontally = false;
+            ui.centerTextVertically = true;
+            ui.visible = false;
+            ui.textLayer = 84;
+            
+            m_ecsCoordinator->AddComponent<Transform>(m_vibrationLabelEntity, t);
+            m_ecsCoordinator->AddComponent<UIElement>(m_vibrationLabelEntity, ui);
         }
 
         GN_LOG_INFO("PauseSystem: Audio sliders and vibration toggle created");
@@ -2983,19 +3015,17 @@ namespace GameCore {
                         bool newState = !currentState;
                         GameCore::GetGame()->SetVibrationsEnabled(newState);
                         
-                        // Update sprite texture
-                        sprite->textureId = newState ? "xbuttonselected" : "xbuttonunselected";
+                        GN_LOG_INFO("PauseSystem: Vibration toggled to " + std::string(newState ? "ON" : "OFF"));
                         
-                        // Update UIElement texture
-                        uiElement->normalTextureId = newState ? "xbuttonselected" : "xbuttonunselected";
-                        uiElement->hoverTextureId = newState ? "xbuttonselected" : "xbuttonunselected";
+                        // Use UISystem to atomically update the toggle button
+                        if (auto uiSystem = m_ecsCoordinator->GetSystemManager()->GetUISystem()) {
+                            uiSystem->SetToggleState(m_vibrationToggleEntity, newState);
+                        }
                         
                         // Save settings
                         if (GameCore::GetGame()) {
                             GameCore::GetGame()->SaveSettings();
                         }
-                        
-                        GN_LOG_INFO("PauseSystem: Vibration toggled to " + std::string(newState ? "ON" : "OFF"));
                         
                         // Play haptic if enabled
                         if (newState && m_platformDelegates.haptic.triggerImpact) {
@@ -3644,10 +3674,21 @@ namespace GameCore {
         GN_LOG_INFO("PauseSystem: Refreshing stats display with real data");
 
         // Update each stat entity with current values
+        // For Level 6 (Rat King), show "Session Timer" instead of "Session Pipes"
         if (m_currentSessionTextEntity != 0 && m_ecsCoordinator) {
             UIElement* uiElem = m_ecsCoordinator->GetComponent<UIElement>(m_currentSessionTextEntity);
             if (uiElem) {
-                uiElem->buttonText = "Session Pipes: " + std::to_string(sessionPipes);
+                if (m_gameplayState && m_gameplayState->GetCurrentLevelId() == 6) {
+                    // Show Session Timer for Rat King level
+                    float currentTimer = m_gameplayState->GetBossLevelTimer();
+                    int minutes = static_cast<int>(currentTimer) / 60;
+                    int seconds = static_cast<int>(currentTimer) % 60;
+                    char timerBuffer[32];
+                    snprintf(timerBuffer, sizeof(timerBuffer), "Session Timer: %02d:%02d", minutes, seconds);
+                    uiElem->buttonText = timerBuffer;
+                } else {
+                    uiElem->buttonText = "Session Pipes: " + std::to_string(sessionPipes);
+                }
                 uiElem->visible = true;
             }
         }
@@ -3703,15 +3744,51 @@ namespace GameCore {
             }
         }
 
+        // Update Rat King Boss Record (Level 6 only) - shows best time, not current
+        if (m_bossTimerTextEntity != 0 && m_ecsCoordinator && m_gameplayState) {
+            if (m_gameplayState->GetCurrentLevelId() == 6) {
+                UIElement* uiElem = m_ecsCoordinator->GetComponent<UIElement>(m_bossTimerTextEntity);
+                if (uiElem) {
+                    // Get best time from level stats
+                    const auto& levelStats = GameCore::GetGame()->GetLevelStats(6);
+                    float bestTime = levelStats.bestBossTime;
+                    
+                    if (bestTime > 0.0f) {
+                        // Format as MM:SS
+                        int minutes = static_cast<int>(bestTime) / 60;
+                        int seconds = static_cast<int>(bestTime) % 60;
+                        
+                        char timerBuffer[32];
+                        snprintf(timerBuffer, sizeof(timerBuffer), "Rat King Record: %02d:%02d", minutes, seconds);
+                        uiElem->buttonText = timerBuffer;
+                    } else {
+                        uiElem->buttonText = "Rat King Record: --:--";
+                    }
+                    uiElem->visible = true;
+                }
+            } else {
+                // Hide timer if not on Level 6
+                UIElement* uiElem = m_ecsCoordinator->GetComponent<UIElement>(m_bossTimerTextEntity);
+                if (uiElem) {
+                    uiElem->visible = false;
+                }
+            }
+        }
+
         // Update level high scores
+        // Hide level high scores section for Level 6 (Rat King) in landscape mode
+        bool isLevel6 = (m_gameplayState && m_gameplayState->GetCurrentLevelId() == 6);
+        bool isLandscape = IsLandscapeMode();
+        bool hideLevelScores = (isLevel6 && isLandscape);
+        
         if (!m_levelHighScoreTextEntities.empty() && GameCore::GetGame()) {
             const char* levelNames[] = {"Park", "Sewer", "Desert", "Snow", "Castle", "Boss"};
             
-            // First entity is the title - just make it visible
+            // First entity is the title - hide for Level 6 landscape
             if (m_levelHighScoreTextEntities[0] != 0) {
                 UIElement* titleElem = m_ecsCoordinator->GetComponent<UIElement>(m_levelHighScoreTextEntities[0]);
                 if (titleElem) {
-                    titleElem->visible = true;
+                    titleElem->visible = !hideLevelScores;
                 }
             }
             
@@ -3722,9 +3799,28 @@ namespace GameCore {
                     UIElement* levelElem = m_ecsCoordinator->GetComponent<UIElement>(m_levelHighScoreTextEntities[entityIndex]);
                     if (levelElem) {
                         int levelId = i + 1; // Level IDs are 1-based
-                        int highScore = GameCore::GetGame()->GetLevelHighScore(levelId);
-                        levelElem->buttonText = std::string(levelNames[i]) + ": " + std::to_string(highScore) + " pipes";
-                        levelElem->visible = true;
+                        
+                        if (levelId == 6) {
+                            // Boss level - show time in MM:SS format
+                            const auto& levelStats = GameCore::GetGame()->GetLevelStats(6);
+                            float bossTime = levelStats.bestBossTime;
+                            
+                            if (bossTime > 0.0f) {
+                                int minutes = static_cast<int>(bossTime) / 60;
+                                int seconds = static_cast<int>(bossTime) % 60;
+                                char timeStr[16];
+                                snprintf(timeStr, sizeof(timeStr), "%d:%02d", minutes, seconds);
+                                levelElem->buttonText = std::string("Boss: ") + timeStr;
+                            } else {
+                                levelElem->buttonText = "Boss: --:--";
+                            }
+                        } else {
+                            // Regular levels - show pipes
+                            int highScore = GameCore::GetGame()->GetLevelHighScore(levelId);
+                            levelElem->buttonText = std::string(levelNames[i]) + ": " + std::to_string(highScore) + " pipes";
+                        }
+                        // Hide all level scores for Level 6 landscape
+                        levelElem->visible = !hideLevelScores;
                     }
                 }
             }

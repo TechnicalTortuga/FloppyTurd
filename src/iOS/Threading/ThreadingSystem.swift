@@ -16,6 +16,39 @@ import UIKit
 
 // Use CommandType from PlatformDelegates.h via C++ interop
 
+/// Sendable wrapper for C++ callback function pointers
+///
+/// **Swift 6 Concurrency Pattern for C++/Swift Interop:**
+///
+/// C++ function pointers (`UnsafeMutableRawPointer`) are inherently thread-safe because:
+/// 1. They are immutable function addresses, not mutable data structures
+/// 2. They contain no state that can be modified concurrently
+/// 3. They are passed from C++ → Swift → back to C++ without modification
+/// 4. The bit pattern remains stable across thread boundaries
+///
+/// We use `@unchecked Sendable` because the Swift compiler cannot verify these
+/// guarantees for opaque C++ types, but we as developers know they are safe.
+///
+/// **When to use this pattern:**
+/// - C++ function pointers that need to cross Swift actor boundaries
+/// - Task.detached calls that need to invoke C++ callbacks
+/// - Background thread operations that report results via C++ callbacks
+///
+/// **Alternative patterns NOT recommended:**
+/// - `Int(bitPattern:)`: Works but loses type safety and intent
+/// - `nonisolated(unsafe)`: Too broad, allows unsafe access to actor state
+/// - Avoiding `Task.detached`: Defeats purpose of background loading
+///
+struct SendableCallbackContext: @unchecked Sendable {
+    let callback: UnsafeMutableRawPointer?
+    let userData: UnsafeMutableRawPointer?
+
+    init(callback: UnsafeMutableRawPointer?, userData: UnsafeMutableRawPointer?) {
+        self.callback = callback
+        self.userData = userData
+    }
+}
+
 /// @brief Command processor for handling C++ commands on the main thread
 ///
 /// This class is designed to be used exclusively on the main thread.
@@ -89,6 +122,9 @@ class CommandProcessor {
     /// Process all pending commands from the queue
     /// @note This method is @MainActor isolated and must be called from the main thread
     func processCommands() {
+        // ⏱️ PERFORMANCE PROFILING: Measure command processing time
+        let startTime = CFAbsoluteTimeGetCurrent()
+
         // Get commands from the C++ threading system
         let renderCommands = GameCorePlatform.GameCore.getAndClearRenderCommandsFromProxy()
         let audioCommands = GameCorePlatform.GameCore.getAndClearAudioCommandsFromProxy()
@@ -98,6 +134,18 @@ class CommandProcessor {
         let saveCommands = GameCorePlatform.GameCore.getAndClearSaveCommandsFromProxy()
         let gameCenterCommands = GameCorePlatform.GameCore.getAndClearGameCenterCommandsFromProxy()
         let adCommands = GameCorePlatform.GameCore.getAndClearAdCommandsFromProxy()
+
+        let totalCommands =
+            renderCommands.count + audioCommands.count + logCommands.count + assetCommands.count
+            + hapticCommands.count + saveCommands.count + gameCenterCommands.count
+            + adCommands.count
+
+        // Only log when there are significant commands (avoid spam)
+        if totalCommands > 50 {
+            SwiftLog.debug(
+                "⏱️ [PROFILE] processCommands START - total commands: \(totalCommands) (render: \(renderCommands.count), asset: \(assetCommands.count))",
+                category: "CommandProcessor")
+        }
 
         // Process each command type
         for renderCommand in renderCommands {
@@ -130,6 +178,14 @@ class CommandProcessor {
 
         for adCommand in adCommands {
             executeAdCommand(adCommand)
+        }
+
+        // Log if processing took significant time
+        let duration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
+        if duration > 10.0 || totalCommands > 50 {
+            SwiftLog.debug(
+                "⏱️ [PROFILE] processCommands COMPLETE - \(String(format: "%.2f", duration))ms for \(totalCommands) commands",
+                category: "CommandProcessor")
         }
     }
 
@@ -664,57 +720,98 @@ class CommandProcessor {
     }
 
     /// Load texture and register it with MetalRenderer
-    private func loadTextureWithMetalRenderer(
+    /// Uses BACKGROUND THREAD loading for optimal performance during preload
+    ///
+    /// **Swift 6 Concurrency Pattern for C++ Callbacks:**
+    /// C++ function pointers (`UnsafeMutableRawPointer`) are not `Sendable` by default.
+    /// We use a `SendableCallbackContext` wrapper with `@unchecked Sendable` conformance
+    /// because:
+    /// 1. C++ callback pointers are opaque function pointers with no mutable state
+    /// 2. The pointers are passed from C++ → Swift → back to C++ without modification
+    /// 3. The bit pattern is stable across thread boundaries
+    /// 4. This is the recommended pattern for C++/Swift interop with async code
+    ///
+    /// Alternative approaches considered:
+    /// - Converting to `Int(bitPattern:)`: Works but less type-safe
+    /// - `nonisolated(unsafe)`: Too broad, allows unsafe access to actor state
+    /// - `@MainActor`: Defeats the purpose of background loading
+    private nonisolated func loadTextureWithMetalRenderer(
         name: String, extension: String, callback: UnsafeMutableRawPointer?,
         userData: UnsafeMutableRawPointer?
     ) {
-        Task {
+        let startTime = CFAbsoluteTimeGetCurrent()
+
+        // Wrap C++ callback pointers in a Sendable container
+        // This is safe because C++ function pointers are immutable and thread-safe
+        let callbackContext = SendableCallbackContext(
+            callback: callback,
+            userData: userData
+        )
+
+        // Use Task.detached for TRUE BACKGROUND THREAD execution
+        Task.detached(priority: .userInitiated) {
+            // Extract callback pointers from the sendable wrapper
+            let callback = callbackContext.callback
+            let userData = callbackContext.userData
             do {
-                // Load texture from AssetManager (uses existing cache)
-                let texture = try await AssetManager.shared.loadTexture(
+                // Load texture on BACKGROUND THREAD using new background method
+                let texture = try await AssetManager.shared.loadTextureBackground(
                     name: name, extension: `extension`)
 
-                // Register texture with MetalRenderer (handles its own deduplication)
-                guard let renderer = metalRenderer else {
-                    log(
-                        "[CommandProcessor] ERROR: No Metal renderer available for texture registration",
+                // Switch to MainActor ONLY for registration and callback
+                await MainActor.run { [weak self] in
+                    guard let self = self else { return }
+                    let mainActorStart = CFAbsoluteTimeGetCurrent()
+
+                    guard let renderer = self.metalRenderer else {
+                        self.log(
+                            "[CommandProcessor] ERROR: No Metal renderer available for texture registration",
+                            level: .error)
+                        AssetManager.invokeCallback(
+                            callback, textureData: nil, error: "No Metal renderer available",
+                            userData: userData)
+                        return
+                    }
+
+                    // Register texture with MetalRenderer (quick operation on main thread)
+                    let handle = renderer.registerTexture(texture)
+
+                    // Create TextureData structure for C++
+                    let textureData = UnsafeMutableRawPointer.allocate(
+                        byteCount: MemoryLayout<GameCore.TextureData>.stride,
+                        alignment: MemoryLayout<GameCore.TextureData>.alignment
+                    )
+
+                    let textureDataPtr = textureData.bindMemory(
+                        to: GameCore.TextureData.self, capacity: 1)
+                    textureDataPtr.pointee.platformTexture = UnsafeMutableRawPointer(
+                        bitPattern: UInt(handle))
+                    textureDataPtr.pointee.width = Int32(texture.width)
+                    textureDataPtr.pointee.height = Int32(texture.height)
+                    textureDataPtr.pointee.format = 0  // Default format
+                    textureDataPtr.pointee.channels = 4  // RGBA
+                    textureDataPtr.pointee.dataSize = Int(texture.width * texture.height * 4)
+
+                    let mainActorDuration = (CFAbsoluteTimeGetCurrent() - mainActorStart) * 1000.0
+                    let totalDuration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
+
+                    self.log(
+                        "⏱️ [PROFILE] Texture '\(name)' registered (main: \(String(format: "%.2f", mainActorDuration))ms, total: \(String(format: "%.2f", totalDuration))ms)",
+                        level: .debug)
+
+                    AssetManager.invokeCallback(
+                        callback, textureData: textureData, error: nil, userData: userData)
+                }
+            } catch {
+                await MainActor.run { [weak self] in
+                    guard let self = self else { return }
+                    self.log(
+                        "[CommandProcessor] ERROR: Failed to load texture \(name): \(error)",
                         level: .error)
                     AssetManager.invokeCallback(
-                        callback, textureData: nil, error: "No Metal renderer available",
+                        callback, textureData: nil, error: error.localizedDescription,
                         userData: userData)
-                    return
                 }
-
-                let handle = renderer.registerTexture(texture)
-
-                // Create TextureData structure for C++
-                let textureData = UnsafeMutableRawPointer.allocate(
-                    byteCount: MemoryLayout<GameCore.TextureData>.stride,
-                    alignment: MemoryLayout<GameCore.TextureData>.alignment
-                )
-
-                let textureDataPtr = textureData.bindMemory(
-                    to: GameCore.TextureData.self, capacity: 1)
-                textureDataPtr.pointee.platformTexture = UnsafeMutableRawPointer(
-                    bitPattern: UInt(handle))
-                textureDataPtr.pointee.width = Int32(texture.width)
-                textureDataPtr.pointee.height = Int32(texture.height)
-                textureDataPtr.pointee.format = 0  // Default format
-                textureDataPtr.pointee.channels = 4  // RGBA
-                textureDataPtr.pointee.dataSize = Int(texture.width * texture.height * 4)
-
-                log(
-                    "[CommandProcessor] Texture registered with MetalRenderer: \(name) -> handle \(handle)",
-                    level: .debug)
-                AssetManager.invokeCallback(
-                    callback, textureData: textureData, error: nil, userData: userData)
-            } catch {
-                log(
-                    "[CommandProcessor] ERROR: Failed to load texture \(name): \(error)",
-                    level: .error)
-                AssetManager.invokeCallback(
-                    callback, textureData: nil, error: error.localizedDescription,
-                    userData: userData)
             }
         }
     }

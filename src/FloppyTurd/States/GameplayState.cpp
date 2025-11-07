@@ -129,6 +129,12 @@ namespace GameCore {
         m_bossRainbowHeartSpawned = false;
         m_activeBossCoins.clear();
         
+        // Reset boss level timer (Level 6 only)
+        m_bossLevelTimer = 0.0f;
+        m_bossCompletionTime = 0.0f;
+        m_bossDying = false;
+        m_bossDefeated = false;
+        
         // Reset input delay timer to prevent immediate input processing
         m_inputDelayTimer = 0.0f;
         
@@ -327,15 +333,21 @@ namespace GameCore {
             CheckToiletCollisions();
             m_frameProfiler.EndSection("CheckToiletCollisions");
 
-            // Handle pickups via PickupSystem
-            if (m_pickupSystem) {
+            // CRITICAL: Update boss death flag (for Level 6 only)
+            // This flag is used throughout to freeze all gameplay systems during boss death
+            m_bossDying = (m_currentLevelId == 6 && m_bossSystem && 
+                          (m_bossSystem->GetCurrentState() == RatKingState::DEATH || 
+                           m_bossSystem->IsDeathSequenceComplete()));
+
+            // Handle pickups via PickupSystem - FREEZE during boss death
+            if (m_pickupSystem && !m_bossDying) {
                 m_frameProfiler.StartSection("PickupSystem");
                 m_pickupSystem->Update(deltaTime);
                 m_frameProfiler.EndSection("PickupSystem");
             }
 
-            // Update projectiles via ProjectileSystem
-            if (m_projectileSystem) {
+            // Update projectiles via ProjectileSystem - FREEZE during boss death
+            if (m_projectileSystem && !m_bossDying) {
                 m_frameProfiler.StartSection("ProjectileSystem");
                 m_projectileSystem->Update(deltaTime);
                 m_frameProfiler.EndSection("ProjectileSystem");
@@ -379,6 +391,12 @@ namespace GameCore {
                 m_frameProfiler.StartSection("BossSystem");
                 m_bossSystem->Update(deltaTime);
                 m_frameProfiler.EndSection("BossSystem");
+                
+                // Update boss level timer (stop when boss starts death sequence)
+                // Use m_bossDying flag
+                if (!m_bossDying && m_bossCompletionTime == 0.0f) {
+                    m_bossLevelTimer += deltaTime;
+                }
             }
 
             // Update explosion system (level 6 only) - ALWAYS update even during death sequence
@@ -442,15 +460,19 @@ namespace GameCore {
                 
                 // CRITICAL: Manually scroll boss coins left (boss level has no world scroll)
                 // ScrollSpeed component won't work without world scrolling, so we manually update positions
-                if (!m_activeBossCoins.empty()) {
+                // FREEZE coins during boss death sequence (use m_bossDying flag)
+                if (!m_activeBossCoins.empty() && !m_bossDying) {
                     GN_LOG_DEBUG("⚠️ Manually scrolling " + std::to_string(m_activeBossCoins.size()) + " boss coins");
                 }
-                for (Gnosis::Entity coinEntity : m_activeBossCoins) {
-                    Transform* t = m_ecsSystem->GetComponent<Transform>(coinEntity);
-                    ScrollSpeed* scrollSpeed = m_ecsSystem->GetComponent<ScrollSpeed>(coinEntity);
-                    if (t && scrollSpeed) {
-                        // Manually apply scroll speed (move left)
-                        t->position.x -= scrollSpeed->speed * deltaTime;
+                
+                if (!m_bossDying) {
+                    for (Gnosis::Entity coinEntity : m_activeBossCoins) {
+                        Transform* t = m_ecsSystem->GetComponent<Transform>(coinEntity);
+                        ScrollSpeed* scrollSpeed = m_ecsSystem->GetComponent<ScrollSpeed>(coinEntity);
+                        if (t && scrollSpeed) {
+                            // Manually apply scroll speed (move left)
+                            t->position.x -= scrollSpeed->speed * deltaTime;
+                        }
                     }
                 }
                 
@@ -489,8 +511,23 @@ namespace GameCore {
                         
                         // Only set finished when fade is COMPLETE (alpha >= 1.0)
                         if (fadeAlpha >= 1.0f && m_bossSystem->IsDeathSequenceComplete()) {
+                            // Store the final boss completion time if not already stored
+                            if (m_bossCompletionTime == 0.0f) {
+                                m_bossCompletionTime = m_bossLevelTimer;
+                                GN_LOG_INFO("🏁 Boss defeated! Final time: " + std::to_string(m_bossCompletionTime) + " seconds");
+                                
+                                // Update high score for level 6 with the completion time
+                                if (GameCore::GetGame()) {
+                                    int levelId = 6;
+                                    int score = m_pipesCleared;  // Pipes for score
+                                    int coins = 0;  // Coins collected (if tracked)
+                                    GameCore::GetGame()->UpdateLevelHighScore(levelId, score, coins, m_bossCompletionTime);
+                                }
+                            }
+                            
                             GN_LOG_INFO("🎉 Boss defeated! Fade complete - transitioning to credits...");
                             // Signal state to finish and transition to credits
+                            m_bossDefeated = true;  // Mark that boss was actually defeated
                             m_finished = true;
                         }
                     } else {
@@ -1209,6 +1246,10 @@ namespace GameCore {
         // Create enemy system for behaviors (bobbing, states, etc.)
         m_enemySystem = std::make_unique<EnemySystem>(m_ecsSystem, m_levelManager.get(), m_projectileSystem.get());
         
+        // Connect EnemySystem to BossSystem for checking boss death state
+        if (m_enemySystem && m_bossSystem) {
+            m_enemySystem->SetBossSystem(m_bossSystem.get());
+        }
         
         // Create heart system for health display and management
         m_heartSystem = std::make_unique<HeartSystem>(m_ecsSystem, *m_platformDelegates);
@@ -3283,7 +3324,8 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         // GN_LOG_DEBUG("Finished collision detection loop for " + std::to_string(activeObstacles.size()) + " obstacles");
         
         // Check snowball/TP collisions with player (circle vs circle)
-        if (m_projectileSystem && !playerHitThisFrame && m_invulnerabilityTimer <= 0.0f) {
+        // CRITICAL: Skip projectile collisions if boss death sequence is active (use m_bossDying flag)
+        if (m_projectileSystem && !playerHitThisFrame && m_invulnerabilityTimer <= 0.0f && !m_bossDying) {
             const auto& enemyProjectiles = m_projectileSystem->GetActiveEnemyProjectiles();
             
             // Debug counter for periodic logging
@@ -3355,7 +3397,8 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         }
         
         // Check enemy collisions with player (circle vs circle) - exclude snowmen
-        if (m_levelManager && !playerHitThisFrame && m_invulnerabilityTimer <= 0.0f) {
+        // CRITICAL: Skip all enemy collisions if boss death sequence is active (use m_bossDying flag)
+        if (m_levelManager && !playerHitThisFrame && m_invulnerabilityTimer <= 0.0f && !m_bossDying) {
             const auto& activeEnemies = m_levelManager->GetActiveEnemies();
             
             // DEBUG: Log collision check start

@@ -80,6 +80,11 @@ namespace GameCore {
         // Level info
         int GetCurrentLevelId() const { return m_currentLevelId; }
         
+        // Boss level timer (Level 6 - Rat King only)
+        float GetBossLevelTimer() const { return m_bossLevelTimer; }
+        float GetBossCompletionTime() const { return m_bossCompletionTime; }
+        bool WasBossDefeated() const { return m_bossDefeated; }
+        
         // Pickup and coin coordination handled by PickupSystem
         
         // Score and progression
@@ -257,6 +262,12 @@ namespace GameCore {
         std::vector<Gnosis::Entity> m_activeBossCoins;  // Track boss coins for wave movement
         bool m_bossRainbowHeartSpawned;  // Track if rainbow heart spawned at 50% health
         bool m_bossDeathMusicStopped;  // Track if music was stopped for boss death
+        
+        // Boss level timer (Level 6 only)
+        float m_bossLevelTimer;  // Timer that runs during boss fight
+        float m_bossCompletionTime;  // Final time when boss is defeated
+        bool m_bossDying;  // Flag to track if boss death sequence is active (updated each frame)
+        bool m_bossDefeated;  // Flag to track if boss was actually defeated (vs just exiting level)
         
         // Input delay timer to prevent auto-shooting when entering level
         float m_inputDelayTimer;

@@ -25,6 +25,13 @@ dependencies: \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Utility/FrameProfiler.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Utility/../Core/GNLog.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/ProjectileSystem.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/BossSystem.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Systems/LevelManager.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Systems/ProjectileSystem.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Systems/ExplosionSystem.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Systems/../Components/GameComponents.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Systems/../../Engine/Core/ECS.h \
+  /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../Systems/../../Engine/Core/GNLog.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Configuration/ConfigManager.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Configuration/../Platform/PlatformDelegates.h \
   /Users/aimac/Development/FloppyTurd/src/FloppyTurd/Systems/../../Engine/Configuration/../Core/GNLog.h

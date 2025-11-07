@@ -1621,32 +1621,23 @@ namespace GameCore {
     // Public unified texture APIs
     bool RenderSystem::PreloadTexture(const std::string& textureId) {
         if (textureId.empty()) return false;
-        // If already loaded, nothing to do
+        
+        // If already in our cache, it's fully loaded to GPU
         if (m_textureCache.find(textureId) != m_textureCache.end()) {
             GN_LOG_DEBUG("RenderSystem: CACHE_HIT PreloadTexture '" + textureId + "'");
             return true;
         }
-        // If platform has metadata and it's loaded, populate caches
-        if (m_platformDelegates.asset.getTextureMetadata) {
-            GameCore::TextureMetadata meta;
-            if (m_platformDelegates.asset.getTextureMetadata(textureId.c_str(), &meta) && meta.isLoaded && meta.platformHandle != 0) {
-                m_textureCache[textureId] = static_cast<uint32_t>(meta.platformHandle);
-                if (meta.width > 0 && meta.height > 0) {
-                    m_textureDimensions[textureId] = {meta.width, meta.height};
-                }
-                GN_LOG_DEBUG("RenderSystem: META_POPULATE PreloadTexture '" + textureId + "'");
-                return true;
-            }
-        }
+        
         // If already pending, just return
         if (m_pendingTextures.find(textureId) != m_pendingTextures.end()) {
             GN_LOG_DEBUG("RenderSystem: PENDING PreloadTexture '" + textureId + "'");
             return false;
         }
-        // Enqueue load
-        GN_LOG_INFO("RenderSystem: PRELOAD_START '" + textureId + "'");
-        EnsureTextureReady(textureId);
-        return false;
+        
+        // Force a full load to GPU using GetOrLoadTexture (no entity needed)
+        GN_LOG_INFO("RenderSystem: PRELOAD_START (GPU) '" + textureId + "'");
+        uint32_t handle = GetOrLoadTexture(textureId, 0); // entity=0 for preload
+        return (handle != 0);
     }
 
     void RenderSystem::PreloadTextures(const std::vector<std::string>& textureIds) {

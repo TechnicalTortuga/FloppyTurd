@@ -319,8 +319,7 @@ namespace GameCore {
         void OnAdControlsBackButtonPressed();
         void OnRemoveAdsPurchasePressed();
         
-        // Vibration toggle functions
-        void OnVibrationTogglePressed();
+        // Vibration preference helper functions
         void SaveVibrationPreference(bool enabled);
         bool LoadVibrationPreference();
         void StartSwipe(float startX, float startY);

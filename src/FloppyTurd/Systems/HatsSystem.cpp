@@ -79,19 +79,19 @@ namespace GameCore {
         // ALL HATS LOCKED BY DEFAULT
         m_hats = {
             // First 6 hats - 50 coins each (ALL LOCKED)
-            HatData("Cowboy Hat", "cowboyhat.png",
-                   "cowboyhatturdlet.png", "cowboyhatturdletjump.png", "cowboyhatturdletshoot.png",
+            HatData("Cowboy Hat", "cowboyhat",
+                   "cowboyhatturdlet", "cowboyhatturdletjump", "cowboyhatturdletshoot",
                    "", "", "",
-                   "cowboyhatbigturd.png", "cowboyhatbigturdjump.png", "cowboyhatbigturdshoot.png",
+                   "cowboyhatbigturd", "cowboyhatbigturdjump", "cowboyhatbigturdshoot",
                    50, HatStatus::LOCKED),
 
-            HatData("Flower", "flowerhat.png",
-                   "flowerhatturdletjump.png", "flowerhatturdletjump.png", "flowerhatturdletshoot.png",
+            HatData("Flower", "flowerhat",
+                   "flowerhatturdletjump", "flowerhatturdletjump", "flowerhatturdletshoot",
                    "", "", "",
-                   "flowerhatbigturdjump.png", "flowerhatbigturdjump.png", "flowerhatbigturdshoot.png",
+                   "flowerhatbigturdjump", "flowerhatbigturdjump", "flowerhatbigturdshoot",
                    50, HatStatus::LOCKED),
 
-            HatData("Doorag", "dooraghat.png",
+            HatData("Doorag", "dooraghat",
                    "dooragturdletjump.png", "dooragturdletjump.png", "dooragturdletshoot.png",
                    "", "", "",
                    "dooragbigturdjump.png", "dooragbigturdjump.png", "dooragbigturdshoot.png",
@@ -104,15 +104,15 @@ namespace GameCore {
                    50, HatStatus::LOCKED),
 
             HatData("Beret", "Beret.png",
-                   "berethatturdletjump.png", "berethatturdletjump.png", "berethatturdletshoot.png",
+                   "berethatturdletjump", "berethatturdletjump", "berethatturdletshoot",
                    "", "", "",
-                   "berethatbigturdjump.png", "berethatbigturdjump.png", "berethatbigturdshoot.png",
+                   "berethatbigturdjump", "berethatbigturdjump", "berethatbigturdshoot",
                    50, HatStatus::LOCKED),
 
-            HatData("Top Hat", "tophat.png",
-                   "tophatturdletjump.png", "tophatturdletjump.png", "tophatturdletshoot.png",
+            HatData("Top Hat", "tophat",
+                   "tophatturdletjump", "tophatturdletjump", "tophatturdletshoot",
                    "", "", "",
-                   "tophatbigturdjump.png", "tophatbigturdjump.png", "tophatbigturdshoot.png",
+                   "tophatbigturdjump", "tophatbigturdjump", "tophatbigturdshoot",
                    50, HatStatus::LOCKED),
 
             // Next 6 hats - 150 coins each
@@ -123,21 +123,21 @@ namespace GameCore {
                    150, HatStatus::LOCKED),
 
             HatData("Spartan", "SpartanHelmet.png",
-                   "spartanhatturdletjump.png", "spartanhatturdletjump.png", "spartanhatturdletshoot.png",
+                   "spartanhatturdletjump", "spartanhatturdletjump", "spartanhatturdletshoot",
                    "", "", "",
-                   "spartanhatbigturdjump.png", "spartanhatbigturdjump.png", "spartanhatbigturdshoot.png",
+                   "spartanhatbigturdjump", "spartanhatbigturdjump", "spartanhatbigturdshoot",
                    150, HatStatus::LOCKED),
 
-            HatData("Straw Hat", "strawhat.png",
-                   "strawhatturdletjump.png", "strawhatturdletjump.png", "strawhatturdletshoot.png",
+            HatData("Straw Hat", "strawhat",
+                   "strawhatturdletjump", "strawhatturdletjump", "strawhatturdletshoot",
                    "", "", "",
-                   "strawhatbigturdjump.png", "strawhatbigturdjump.png", "strawhatbigturdshoot.png",
+                   "strawhatbigturdjump", "strawhatbigturdjump", "strawhatbigturdshoot",
                    150, HatStatus::LOCKED),
 
-            HatData("Shell Hat", "shellhat.png",
-                   "shellhatturdletjump.png", "shellhatturdletjump.png", "shellhatturdletshoot.png",
+            HatData("Shell Hat", "shellhat",
+                   "shellhatturdletjump", "shellhatturdletjump", "shellhatturdletshoot",
                    "", "", "",
-                   "shellhatbigturdjump.png", "shellhatbigturdjump.png", "shellhatbigturdshoot.png",
+                   "shellhatbigturdjump", "shellhatbigturdjump", "shellhatbigturdshoot",
                    150, HatStatus::LOCKED),
 
             HatData("Pinwheel", "PinwheelHat.png",
@@ -154,9 +154,9 @@ namespace GameCore {
 
             // Last 3 premium hats - 250 coins each (Gold Crown, Pharaoh/Ramses, Poop Hat)
             HatData("Gold Crown", "crown.png",
-                   "crownhatturdletjump.png", "crownhatturdletjump.png", "crownhatturdletshoot.png",
+                   "crownhatturdletjump", "crownhatturdletjump", "crownhatturdletshoot",
                    "", "", "",
-                   "crownhatbigturdjump.png", "crownhatbigturdjump.png", "crownhatbigturdshoot.png",
+                   "crownhatbigturdjump", "crownhatbigturdjump", "crownhatbigturdshoot",
                    250, HatStatus::LOCKED),
 
             HatData("Pharaoh Hat", "RamsesHat.png",
@@ -165,10 +165,10 @@ namespace GameCore {
                    "ramsesbigturdjump.png", "ramsesbigturdjump.png", "ramsesbigturdshoot.png",
                    250, HatStatus::LOCKED),
 
-            HatData("Poop Hat", "poophat.png",
-                   "poophatturdletjump.png", "poophatturdletjump.png", "poophatturdletshoot.png",
+            HatData("Poop Hat", "poophat",
+                   "poophatturdletjump", "poophatturdletjump", "poophatturdletshoot",
                    "", "", "",
-                   "poophatbigturdjump.png", "poophatbigturdjump.png", "poophatbigturdshoot.png",
+                   "poophatbigturdjump", "poophatbigturdjump", "poophatbigturdshoot",
                    250, HatStatus::LOCKED)
         };
 

@@ -180,16 +180,16 @@ namespace GameCore {
         // No more hardcoded scaleMultiplier or repeatWidth - these are calculated from actual texture dimensions
 
         // Back layer - slowest moving (furthest back)
-        config.backgroundLayers.emplace_back("Level1BackLayerBackground.png", 50.0f, 0.1f, 0);
+        config.backgroundLayers.emplace_back("Level1BackLayerBackground", 50.0f, 0.1f, 0);
 
         // Mid layer - medium speed
-        config.backgroundLayers.emplace_back("Level1MidLayerBackground.png", 100.0f, 0.3f, 1);
+        config.backgroundLayers.emplace_back("Level1MidLayerBackground", 100.0f, 0.3f, 1);
 
         // Clouds - independent movement (adjusted to layer 0 to avoid overlap with mid layer)
-        config.backgroundLayers.emplace_back("Level1Clouds.png", 75.0f, 0.2f, 0);
+        config.backgroundLayers.emplace_back("Level1Clouds", 75.0f, 0.2f, 0);
 
         // Front layer - fastest moving (closest to player, behind game objects)
-        config.backgroundLayers.emplace_back("Level1FrontLayerBackground.png", 150.0f, 0.5f, 2);
+        config.backgroundLayers.emplace_back("Level1FrontLayerBackground", 150.0f, 0.5f, 2);
     }
 
     void LevelConfigFactory::AddSewerLevelLayers(LevelConfig& config) {
@@ -197,10 +197,10 @@ namespace GameCore {
         // No more hardcoded values - everything calculated from actual texture dimensions
 
         float sewerScroll = config.worldSpeed * 0.28f; // slow band; Janitor will match this
-        config.backgroundLayers.emplace_back("SewerLargeA.png", sewerScroll, 0.35f, 1);
+        config.backgroundLayers.emplace_back("SewerLargeA", sewerScroll, 0.35f, 1);
 
         // Variants: Automatically cycle through different sewer backgrounds on wrap
-        config.backgroundLayers.back().variantTextureIds = {"SewerLargeA.png", "SewerLargeB.png", "SewerLargeC.png", "SewerLargeD.png"};
+        config.backgroundLayers.back().variantTextureIds = {"SewerLargeA", "SewerLargeB", "SewerLargeC", "SewerLargeD"};
     }
 
     void LevelConfigFactory::AddDesertLevelLayers(LevelConfig& config) {
@@ -208,13 +208,13 @@ namespace GameCore {
         // No more hardcoded values - everything calculated from actual texture dimensions
 
         // Back layer - slowest (layer 0)
-        config.backgroundLayers.emplace_back("Level3BackLayerBackground.png", 50.0f, 0.1f, 0);
+        config.backgroundLayers.emplace_back("Level3BackLayerBackground", 50.0f, 0.1f, 0);
 
         // Mid layer - medium speed (layer 1) 
-        config.backgroundLayers.emplace_back("Level3MidLayerBackground.png", 90.0f, 0.3f, 1);
+        config.backgroundLayers.emplace_back("Level3MidLayerBackground", 90.0f, 0.3f, 1);
 
         // Front layer - fastest (layer 2) - behind obstacles (layers 3-5)
-        config.backgroundLayers.emplace_back("Level3FrontLayerBackground.png", 130.0f, 0.4f, 2);
+        config.backgroundLayers.emplace_back("Level3FrontLayerBackground", 130.0f, 0.4f, 2);
     }
 
         void LevelConfigFactory::AddSnowLevelLayers(LevelConfig& config) {
@@ -222,16 +222,16 @@ namespace GameCore {
         // No more hardcoded values - everything calculated from actual texture dimensions
 
         // Back layer - furthest background
-        config.backgroundLayers.emplace_back("SnowLevelBackLayerBackground.png", 50.0f, 0.1f, 0);
+        config.backgroundLayers.emplace_back("SnowLevelBackLayerBackground", 50.0f, 0.1f, 0);
 
         // Mid layer - mountains and middle ground
-        config.backgroundLayers.emplace_back("SnowLevelMidLayerBackground.png", 75.0f, 0.2f, 1);
+        config.backgroundLayers.emplace_back("SnowLevelMidLayerBackground", 75.0f, 0.2f, 1);
 
         // Front layer - trees and foreground elements  
-        config.backgroundLayers.emplace_back("SnowLevelFrontLayerBackground.png", 150.0f, 0.3f, 2);
+        config.backgroundLayers.emplace_back("SnowLevelFrontLayerBackground", 150.0f, 0.3f, 2);
 
         // Front trees layer - behind pipes/obstacles (layer 3), same layer as front background
-        config.backgroundLayers.emplace_back("SnowLevelFrontLayerTrees.png", 150.0f, 0.5f, 2);
+        config.backgroundLayers.emplace_back("SnowLevelFrontLayerTrees", 150.0f, 0.5f, 2);
     }
 
     void LevelConfigFactory::AddCastleLevelLayers(LevelConfig& config) {
@@ -239,7 +239,7 @@ namespace GameCore {
         // No more hardcoded values - everything calculated from actual texture dimensions
 
         // Back layer - castle background
-        config.backgroundLayers.emplace_back("castlebacklayerbackground.png", 200.0f, 1.0f, 0);
+        config.backgroundLayers.emplace_back("castlebacklayerbackground", 200.0f, 1.0f, 0);
 
         // Note: Curtains are now spawned as decorative obstacles positioned with toilet pairs
         // Note: Paintings, chandeliers, floor torches, and torch pillars are now handled by ObstacleSystem
@@ -254,19 +254,19 @@ namespace GameCore {
 
         // Layer 0: Boss Background (bottom)
         // Use mobile-specific background for better landscape support
-        config.backgroundLayers.emplace_back("BossLevelBackgroundMobile.png", 0.0f, 0.0f, 0);
+        config.backgroundLayers.emplace_back("BossLevelBackgroundMobile", 0.0f, 0.0f, 0);
         config.backgroundLayers.back().scaleMultiplier = 1.0f; // Will be scaled to fit landscape mode
 
         // Layer 1: Boss Floor (middle) - precise positioning handled by LevelManager
-        config.backgroundLayers.emplace_back("BossFloor.png", 0.0f, 0.0f, 1); // Precise offset calculated by LevelManager
+        config.backgroundLayers.emplace_back("BossFloor", 0.0f, 0.0f, 1); // Precise offset calculated by LevelManager
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
 
         // Layer 2: Boss Walls (middle)
-        config.backgroundLayers.emplace_back("BossWalls.png", 0.0f, 0.0f, 2);
+        config.backgroundLayers.emplace_back("BossWalls", 0.0f, 0.0f, 2);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
 
         // Layer 3: Screen Curtains (top) - position on sides for landscape
-        config.backgroundLayers.emplace_back("screenCurtains.png", 0.0f, 0.0f, 3);
+        config.backgroundLayers.emplace_back("screenCurtains", 0.0f, 0.0f, 3);
         config.backgroundLayers.back().scaleMultiplier = 1.0f;
 
         // Note: Animated pillar (15 frames) will be handled as a separate animated entity

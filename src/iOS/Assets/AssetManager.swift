@@ -173,6 +173,101 @@ public class AssetManager {
         return texture
     }
 
+    /// Load texture asynchronously on BACKGROUND THREAD (for preloading)
+    /// This method is nonisolated and uses textureQueue for true parallel loading
+    nonisolated public func loadTextureBackground(name: String, extension: String = "png") async throws -> MTLTexture {
+        let startTime = CFAbsoluteTimeGetCurrent()
+        let cacheKey = "\(name).\(`extension`)"
+
+        // Check cache first (must access MainActor-isolated cache safely)
+        if let cached = await getCachedTexture(cacheKey) {
+            let duration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
+            await log("⏱️ [PROFILE] Texture '\(name)' loaded from CACHE in \(String(format: "%.2f", duration))ms", level: .debug)
+            return cached
+        }
+
+        // Load texture on background thread
+        return try await withCheckedThrowingContinuation { continuation in
+            // Use existing textureQueue for background work
+            Task.detached(priority: .userInitiated) {
+                let loadStart = CFAbsoluteTimeGetCurrent()
+                
+                guard let device = await AssetManager.shared.device else {
+                    continuation.resume(throwing: AssetError.metalNotAvailable)
+                    return
+                }
+
+                // Load UIImage (CPU decode on background)
+                guard let image = UIImage(named: name) else {
+                    continuation.resume(throwing: AssetError.fileNotFound("\(name) in asset catalog"))
+                    return
+                }
+
+                guard let cgImage = image.cgImage else {
+                    continuation.resume(throwing: AssetError.unknownError)
+                    return
+                }
+
+                let imageLoadDuration = (CFAbsoluteTimeGetCurrent() - loadStart) * 1000.0
+                await AssetManager.shared.log("⏱️ [PROFILE] Texture '\(name)' UIImage decoded in \(String(format: "%.2f", imageLoadDuration))ms (background)", level: .debug)
+
+                // Create MTKTextureLoader (GPU upload on background using async/await)
+                let textureLoader = MTKTextureLoader(device: device)
+                let gpuStart = CFAbsoluteTimeGetCurrent()
+
+                do {
+                    // Use async version of newTexture (runs on background automatically)
+                    let texture = try await textureLoader.newTexture(
+                        cgImage: cgImage,
+                        options: [
+                            MTKTextureLoader.Option.textureUsage: NSNumber(
+                                value: MTLTextureUsage.shaderRead.rawValue),
+                            MTKTextureLoader.Option.textureStorageMode: NSNumber(
+                                value: MTLStorageMode.private.rawValue),
+                            MTKTextureLoader.Option.SRGB: NSNumber(value: true),
+                            MTKTextureLoader.Option.generateMipmaps: NSNumber(value: false),
+                            MTKTextureLoader.Option.allocateMipmaps: NSNumber(value: false),
+                            MTKTextureLoader.Option.origin: MTKTextureLoader.Origin.topLeft.rawValue as NSString,
+                        ]
+                    )
+                    
+                    let gpuDuration = (CFAbsoluteTimeGetCurrent() - gpuStart) * 1000.0
+                    let totalDuration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
+
+                    // Cache on MainActor
+                    await MainActor.run {
+                        AssetManager.shared.textureCache[cacheKey] = texture
+                        AssetManager.shared.cacheAccessTimes[cacheKey] = Date()
+                        AssetManager.shared.logger.debug("⏱️ [PROFILE] Texture '\(name)' GPU upload in \(String(format: "%.2f", gpuDuration))ms, TOTAL \(String(format: "%.2f", totalDuration))ms (background)")
+                    }
+                    
+                    continuation.resume(returning: texture)
+                } catch {
+                    await AssetManager.shared.log("❌ Failed to load texture '\(name)': \(error.localizedDescription)", level: .error)
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+
+    /// Helper to get cached texture safely from background thread
+    nonisolated private func getCachedTexture(_ cacheKey: String) async -> MTLTexture? {
+        await MainActor.run {
+            if let cached = self.textureCache[cacheKey] {
+                self.cacheAccessTimes[cacheKey] = Date()
+                return cached
+            }
+            return nil
+        }
+    }
+
+    /// Helper to log from background thread
+    nonisolated private func log(_ message: String, level: OSLogType) async {
+        await MainActor.run {
+            self.logger.log(level: level, "\(message)")
+        }
+    }
+
     /// Load audio file asynchronously
     public func loadAudio(name: String, extension: String = "mp3") async throws -> AVAudioFile {
         let cacheKey = "\(name).\(`extension`)"

@@ -754,37 +754,35 @@ namespace GameCore {
     }
 
     void MainMenuState::SetOptionsVisible(bool visible) {
-        auto showEntity = [&](Gnosis::Entity e){
-            if (e == 0) return;
+        // ATOMIC RENDERING FIX: Collect all entities and components, then set visibility all at once
+        // This prevents the "domino effect" where elements appear sequentially across frames
+        std::vector<Gnosis::Entity> entitiesToUpdate;
+        
+        // Collect all option menu entities
+        entitiesToUpdate.push_back(m_optionsLeftArrowEntity);
+        entitiesToUpdate.push_back(m_optionsRightArrowEntity);
+        entitiesToUpdate.push_back(m_masterKnobEntity);
+        entitiesToUpdate.push_back(m_musicKnobEntity);
+        entitiesToUpdate.push_back(m_sfxKnobEntity);
+        entitiesToUpdate.push_back(m_optionsBackButtonEntity);
+        entitiesToUpdate.push_back(m_masterTrackEntity);
+        entitiesToUpdate.push_back(m_musicTrackEntity);
+        entitiesToUpdate.push_back(m_sfxTrackEntity);
+        entitiesToUpdate.push_back(m_optionsTitleEntity);
+        entitiesToUpdate.push_back(m_difficultyTextEntity);
+        entitiesToUpdate.push_back(m_difficultyValueEntity);
+        entitiesToUpdate.push_back(m_masterLabelEntity);
+        entitiesToUpdate.push_back(m_musicLabelEntity);
+        entitiesToUpdate.push_back(m_sfxLabelEntity);
+        entitiesToUpdate.push_back(m_vibrationLabelEntity);
+        entitiesToUpdate.push_back(m_vibrationToggleEntity);
+        
+        // Now atomically set ALL entities to the same visibility at once
+        for (Gnosis::Entity e : entitiesToUpdate) {
+            if (e == 0) continue;
             if (auto s = m_ecsCoordinator->GetComponent<Sprite>(e)) s->visible = visible;
             if (auto ui = m_ecsCoordinator->GetComponent<UIElement>(e)) ui->visible = visible;
             if (auto shape = m_ecsCoordinator->GetComponent<UIShape>(e)) shape->visible = visible;
-        };
-        // Interactive controls
-        showEntity(m_optionsLeftArrowEntity);
-        showEntity(m_optionsRightArrowEntity);
-        showEntity(m_masterKnobEntity);
-        showEntity(m_musicKnobEntity);
-        showEntity(m_sfxKnobEntity);
-        showEntity(m_optionsBackButtonEntity);
-        // Tracks, title, difficulty text/value, and slider labels
-        showEntity(m_masterTrackEntity);
-        showEntity(m_musicTrackEntity);
-        showEntity(m_sfxTrackEntity);
-        showEntity(m_optionsTitleEntity);
-        showEntity(m_difficultyTextEntity);
-        showEntity(m_difficultyValueEntity);
-        showEntity(m_masterLabelEntity);
-        showEntity(m_musicLabelEntity);
-        showEntity(m_sfxLabelEntity);
-        // Vibration toggle - respect visible parameter
-        if (m_vibrationLabelEntity != 0) {
-            if (auto s = m_ecsCoordinator->GetComponent<Sprite>(m_vibrationLabelEntity)) s->visible = visible;
-            if (auto ui = m_ecsCoordinator->GetComponent<UIElement>(m_vibrationLabelEntity)) ui->visible = visible;
-        }
-        if (m_vibrationToggleEntity != 0) {
-            if (auto s = m_ecsCoordinator->GetComponent<Sprite>(m_vibrationToggleEntity)) s->visible = visible;
-            if (auto ui = m_ecsCoordinator->GetComponent<UIElement>(m_vibrationToggleEntity)) ui->visible = visible;
         }
     }
 
@@ -1401,7 +1399,27 @@ namespace GameCore {
                     touchY >= transform->position.y && touchY <= transform->position.y + toggleH) {
                     // Set debounce timer
                     m_lastMenuButtonPressTime = m_animationTimer;
-                    OnVibrationTogglePressed();
+                    
+                    // Toggle vibration state
+                    if (m_game) {
+                        m_vibrationsEnabled = !m_vibrationsEnabled;
+                        m_game->SetVibrationsEnabled(m_vibrationsEnabled);
+                        
+                        GN_LOG_INFO("Vibration toggled: " + std::string(m_vibrationsEnabled ? "ON" : "OFF"));
+                        
+                        // Use UISystem to atomically update the toggle button
+                        if (auto uiSystem = m_ecsCoordinator->GetSystemManager()->GetUISystem()) {
+                            uiSystem->SetToggleState(m_vibrationToggleEntity, m_vibrationsEnabled);
+                        }
+                        
+                        // Save settings
+                        m_game->SaveSettings();
+                        
+                        // Play haptic feedback for the toggle itself (if enabled)
+                        if (m_vibrationsEnabled && m_platformDelegates && m_platformDelegates->haptic.triggerImpact) {
+                            m_platformDelegates->haptic.triggerImpact(HapticStyle::LIGHT, 0.5f);
+                        }
+                    }
                 }
             }
         }
@@ -2473,13 +2491,15 @@ namespace GameCore {
                 float buttonWidth = sprite->width * transform->scale.x;
                 float buttonHeight = sprite->height * transform->scale.y;
                 float buttonLeft = transform->position.x;
-                float buttonRight = transform->position.x + buttonWidth;
+                // Extend hitbox to the right to cover the "AD CONTROLS" text (textOffsetX is 220.0f)
+                // Add extra 280px to cover the full text area
+                float buttonRight = transform->position.x + buttonWidth + 280.0f;
                 float buttonTop = transform->position.y;
                 float buttonBottom = transform->position.y + buttonHeight;
                 
                 GN_LOG_INFO("🎯 AD CONTROLS Button - Touch at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + 
                            "), bounds: L=" + std::to_string(buttonLeft) + " R=" + std::to_string(buttonRight) + 
-                           " T=" + std::to_string(buttonTop) + " B=" + std::to_string(buttonBottom));
+                           " T=" + std::to_string(buttonTop) + " B=" + std::to_string(buttonBottom) + " (extended hitbox)");
                 
                 if (touchX >= buttonLeft && touchX <= buttonRight &&
                     touchY >= buttonTop && touchY <= buttonBottom) {
@@ -3298,8 +3318,8 @@ namespace GameCore {
         if (m_difficultyValueEntity == 0) m_difficultyValueEntity = m_ecsCoordinator->CreateEntity();
         {
             // Position difficulty section below SFX slider with proper spacing
-            float diffLabelY = m_screenHeight * 0.55f; // Label at 55% down (moved up 5%)
-            float diffValueY = m_screenHeight * 0.65f; // Value at 65% down (moved up 5%)
+            float diffLabelY = m_screenHeight * 0.57f; // Label at 57% down (moved up a smidge)
+            float diffValueY = m_screenHeight * 0.665f; // Value at 66.5% down (moved up proportionally)
             float centerX = m_optionsOverlayX + m_optionsOverlayW * 0.5f;
             // Static text "DIFFICULTY"
             Transform t(Gnosis::GNVector2(centerX, diffLabelY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
@@ -3344,7 +3364,7 @@ namespace GameCore {
             // Label above track
             if (labelEntity == 0) labelEntity = m_ecsCoordinator->CreateEntity();
             {
-                float labelY = trackY - (m_isMobile ? 36.0f : 18.0f);
+                float labelY = trackY - (m_isMobile ? 61.0f : 33.0f); // Increased from 36/18 to 61/33 (+25px) to push track down more
                 float labelX = m_optionsSliderX;
                 Transform t(Gnosis::GNVector2(labelX, labelY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
                 Sprite s; s.visible = true; s.layer = 4;
@@ -3384,7 +3404,7 @@ namespace GameCore {
             m_vibrationsEnabled = m_game->GetVibrationsEnabled();
         }
         
-        float vibrationLabelY = m_screenHeight * 0.72f;  // Adjusted for better alignment
+        float vibrationLabelY = m_screenHeight * 0.745f + 15.0f;  // Adjusted to position between back button and difficulty labels (moved down 15px more)
         float centerX = m_optionsOverlayX + m_optionsOverlayW * 0.5f;
         
         // Label "VIBRATION" on left side - match X position of track labels
@@ -3403,17 +3423,18 @@ namespace GameCore {
             if (!m_ecsCoordinator->HasComponent<UIElement>(m_vibrationLabelEntity)) m_ecsCoordinator->AddComponent<UIElement>(m_vibrationLabelEntity, ui); else *m_ecsCoordinator->GetComponent<UIElement>(m_vibrationLabelEntity) = ui;
         }
         
-        // Toggle button (X sprite) on right side
+        // Toggle button (X sprite) on right side - configured as a proper toggle button
         {
             float toggleX = m_optionsOverlayX + m_optionsOverlayW * 0.75f;  // 75% across (further right)
             
-            // Textures are preloaded in LoadingState
-            float xBtnW = 64.0f;
-            float xBtnH = 64.0f;
+            // Textures are actually 16x16, not 64x64
+            float xBtnW = 16.0f;  // Actual texture width
+            float xBtnH = 16.0f;  // Actual texture height
             float toggleScale = 7.0f;
             
-            // Move toggle button up more to align with label center
-            float toggleY = vibrationLabelY - 80.0f;  // Move up 80px to align with label center
+            // Center toggle button vertically with the label (button height is 16 * 7 = 112px)
+            float scaledButtonHeight = xBtnH * toggleScale;
+            float toggleY = vibrationLabelY - (scaledButtonHeight * 0.5f);  // Center button with label
             
             Transform t(Gnosis::GNVector2(toggleX, toggleY), 0.0f, Gnosis::GNVector2(toggleScale, toggleScale));
             Sprite s;
@@ -3423,11 +3444,16 @@ namespace GameCore {
             s.visible = true;
             s.layer = 4;
             
+            // Configure as a proper toggle button with toggle-specific fields
             UIElement ui("", 
                 m_vibrationsEnabled ? "xbuttonselected" : "xbuttonunselected",
                 m_vibrationsEnabled ? "xbuttonselected" : "xbuttonunselected");
             ui.visible = true;
             ui.isEnabled = true;
+            ui.isToggle = true;  // Mark as toggle button
+            ui.toggleState = m_vibrationsEnabled;  // Set initial state
+            ui.toggleOnTexture = "xbuttonselected";   // ON texture
+            ui.toggleOffTexture = "xbuttonunselected"; // OFF texture
             
             if (!m_ecsCoordinator->HasComponent<Transform>(m_vibrationToggleEntity)) m_ecsCoordinator->AddComponent<Transform>(m_vibrationToggleEntity, t); else *m_ecsCoordinator->GetComponent<Transform>(m_vibrationToggleEntity) = t;
             if (!m_ecsCoordinator->HasComponent<Sprite>(m_vibrationToggleEntity)) {
@@ -3445,8 +3471,6 @@ namespace GameCore {
                 *existingUI = ui;
             }
         }
-        
-
         
         GN_LOG_INFO("Created vibration toggle in options menu");
     }
@@ -4680,44 +4704,7 @@ namespace GameCore {
         // This will be wired up when we implement StoreKit 2 integration
     }
 
-    // ==================== VIBRATION TOGGLE ====================
-
-    void MainMenuState::OnVibrationTogglePressed() {
-        // Debounce is already handled in click detection
-        
-        // Toggle state in game (saves automatically)
-        if (!m_game) return;
-        
-        m_vibrationsEnabled = !m_vibrationsEnabled;
-        m_game->SetVibrationsEnabled(m_vibrationsEnabled);
-        
-        GN_LOG_INFO("Vibration toggled: " + std::string(m_vibrationsEnabled ? "ON" : "OFF"));
-        
-        // Atomically update both Sprite and UIElement textures in a single operation
-        // This prevents any intermediate rendering state that could cause flashing
-        const std::string targetTexture = m_vibrationsEnabled ? "xbuttonselected" : "xbuttonunselected";
-        
-        auto sprite = m_ecsCoordinator->GetComponent<Sprite>(m_vibrationToggleEntity);
-        auto uiElement = m_ecsCoordinator->GetComponent<UIElement>(m_vibrationToggleEntity);
-        
-        if (sprite && uiElement) {
-            // Update both components before any rendering can occur
-            sprite->textureId = targetTexture;
-            uiElement->normalTextureId = targetTexture;
-            uiElement->hoverTextureId = targetTexture;
-            GN_LOG_INFO("Vibration toggle textures atomically swapped to: " + targetTexture);
-        }
-        
-        // Save settings
-        if (m_game) {
-            m_game->SaveSettings();
-        }
-        
-        // Optional: Play haptic feedback for the toggle itself (if enabled)
-        if (m_vibrationsEnabled && m_platformDelegates && m_platformDelegates->haptic.triggerImpact) {
-            m_platformDelegates->haptic.triggerImpact(HapticStyle::LIGHT, 0.5f);
-        }
-    }
+    // ==================== VIBRATION PREFERENCE ====================
 
     void MainMenuState::SaveVibrationPreference(bool enabled) {
         // Saved automatically by FloppyTurdGame::SetVibrationsEnabled
