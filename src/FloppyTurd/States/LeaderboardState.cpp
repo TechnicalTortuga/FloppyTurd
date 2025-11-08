@@ -753,17 +753,17 @@ namespace GameCore {
     std::string LeaderboardState::GetLeaderboardID(LeaderboardPage page) const {
         switch (page) {
             case LeaderboardPage::LEVEL_1_PARK:
-                return "com.floppyturd.level1";
+                return "com.floppyturd.park";
             case LeaderboardPage::LEVEL_2_SEWER:
-                return "com.floppyturd.level2";
+                return "com.floppyturd.sewer";
             case LeaderboardPage::LEVEL_3_DESERT:
-                return "com.floppyturd.level3";
+                return "com.floppyturd.desert";
             case LeaderboardPage::LEVEL_4_SNOW:
-                return "com.floppyturd.level4";
+                return "com.floppyturd.snow";
             case LeaderboardPage::LEVEL_5_CASTLE:
-                return "com.floppyturd.level5";
+                return "com.floppyturd.castle";
             case LeaderboardPage::LEVEL_6_BOSS:
-                return "com.floppyturd.level6";
+                return "com.floppyturd.ratking.time"; // Boss is speedrun time only
             case LeaderboardPage::TOTAL_ENEMIES:
                 return "com.floppyturd.totalenemies";
             case LeaderboardPage::TOTAL_COINS:

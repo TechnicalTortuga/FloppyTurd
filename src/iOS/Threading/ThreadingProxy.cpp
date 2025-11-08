@@ -1215,11 +1215,36 @@ namespace GameCore {
             ThreadingProxy::enqueueAdSetEnabled(enabled);
         };
         
+        // Configure IAP delegates
+        // Note: Actual implementations will be provided by Swift StoreManager
+        delegates.iap.purchase = [](const char* productID, void (*completion)(bool, const char*)) {
+            GN_LOG_INFO("IAP purchase requested for: " + std::string(productID));
+            // Direct Swift call - StoreManager handles this immediately
+            // completion callback will be invoked by Swift
+            (void)completion; // Placeholder - will be wired to StoreManager
+        };
+        delegates.iap.restore = [](void (*completion)(bool, const char*)) {
+            GN_LOG_INFO("IAP restore requested");
+            // Direct Swift call - StoreManager handles this immediately
+            (void)completion; // Placeholder - will be wired to StoreManager
+        };
+        delegates.iap.hasPurchased = [](const char* productID) -> bool {
+            // Direct query to Swift StoreManager
+            // For now, always return false - will be wired to StoreManager
+            return false;
+        };
+        delegates.iap.getPrice = [](const char* productID) -> const char* {
+            // Direct query to Swift StoreManager
+            // For now, return placeholder - will be wired to StoreManager
+            return "$1.99";
+        };
+        
         GN_LOG_INFO("ThreadingProxy: Input delegates configured - touch input will flow from iOS->ThreadingProxy->C++");
         GN_LOG_INFO("ThreadingProxy: Haptic delegates configured - haptic feedback commands will flow through queue");
         GN_LOG_INFO("ThreadingProxy: Save/Load delegates configured - save operations will flow through queue");
         GN_LOG_INFO("ThreadingProxy: Game Center delegates configured - leaderboard commands will flow through queue");
         GN_LOG_INFO("ThreadingProxy: Ad delegates configured - advertising commands will flow through queue");
+        GN_LOG_INFO("ThreadingProxy: IAP delegates configured - in-app purchase commands ready");
         GN_LOG_INFO("ThreadingProxy: Delegates configured successfully - ready for turd-tossing action!");
     }
 

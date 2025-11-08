@@ -55,13 +55,8 @@ namespace GameCore {
         , m_fpsTimer(0.0f)
         , m_currentFPS(0.0f)
         , m_showDebugInfo(false)
-        #ifdef DEBUG
-        , m_debugLevelsUnlocked(true)   // Enable in DEBUG builds for testing
-        , m_debugHatsUnlocked(true)     // Enable in DEBUG builds for testing
-        #else
-        , m_debugLevelsUnlocked(false)
-        , m_debugHatsUnlocked(false)
-        #endif
+        , m_debugLevelsUnlocked(false)   // Disabled for production
+        , m_debugHatsUnlocked(false)     // Disabled for production
         , m_levelUnlockSoundTimer(0.0f)
         , m_pendingPartyHorn(false)
         , m_isIOSPlatform(false)
@@ -1039,12 +1034,12 @@ namespace GameCore {
                         // Get the Game Center leaderboard ID for this level
                         std::string leaderboardID;
                         switch (levelId) {
-                            case 1: leaderboardID = "com.floppyturd.level1.park"; break;
-                            case 2: leaderboardID = "com.floppyturd.level2.sewer"; break;
-                            case 3: leaderboardID = "com.floppyturd.level3.desert"; break;
-                            case 4: leaderboardID = "com.floppyturd.level4.snow"; break;
-                            case 5: leaderboardID = "com.floppyturd.level5.castle"; break;
-                            case 6: leaderboardID = "com.floppyturd.level6.boss"; break;
+                            case 1: leaderboardID = "com.floppyturd.park"; break;
+                            case 2: leaderboardID = "com.floppyturd.sewer"; break;
+                            case 3: leaderboardID = "com.floppyturd.desert"; break;
+                            case 4: leaderboardID = "com.floppyturd.snow"; break;
+                            case 5: leaderboardID = "com.floppyturd.castle"; break;
+                            case 6: leaderboardID = ""; break; // Boss level has no pipes - only speedrun time
                             default: break;
                         }
                         
@@ -1076,7 +1071,7 @@ namespace GameCore {
                         if (isAuthenticated) {
                             int64_t timeInMs = static_cast<int64_t>(bossTime * 1000.0f);
                             GN_LOG_INFO("📊 Submitting boss time to Game Center: " + std::to_string(timeInMs) + "ms");
-                            m_platformDelegates.gameCenter.submitScore("com.floppyturd.level6.boss.time", timeInMs, nullptr);
+                            m_platformDelegates.gameCenter.submitScore("com.floppyturd.ratking.time", timeInMs, nullptr);
                         }
                     }
                     #endif

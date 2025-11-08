@@ -457,6 +457,33 @@ namespace GameCore {
         UpdateCostDisplay();
     }
 
+    void HatsSystem::UnequipHat()
+    {
+        if (m_equippedHatIndex < 0) {
+            GN_LOG_INFO("No hat equipped - nothing to unequip");
+            return;
+        }
+
+        int oldEquippedIndex = m_equippedHatIndex;
+        m_equippedHatIndex = -1;  // Set to -1 (no hat equipped)
+
+        GN_LOG_INFO("Unequipped hat (previous index: " + std::to_string(oldEquippedIndex) + ")");
+
+        // Trigger haptic feedback for unequipping
+        HapticHelpers::TriggerHatEquip(m_platformDelegates);
+
+        // Update game's customization data
+        if (GameCore::GetGame()) {
+            GameCore::GetGame()->SetEquippedHatIndex(m_equippedHatIndex);
+            GN_LOG_INFO("🎩 Synced unequipped status to game save system");
+        }
+        
+        // Save hat status
+        SaveHatStatus();
+
+        UpdateCostDisplay();
+    }
+
     const HatData* HatsSystem::GetHatData(int index) const
     {
         if (index < 0 || index >= m_hats.size()) return nullptr;

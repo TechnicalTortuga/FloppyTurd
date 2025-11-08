@@ -80,6 +80,7 @@ namespace GameCore {
         void SelectHat(int hatIndex);
         bool BuySelectedHat(int playerCoins);
         void EquipSelectedHat();
+        void UnequipHat();
 
         // Getters
         int GetEquippedHatIndex() const { return m_equippedHatIndex; }

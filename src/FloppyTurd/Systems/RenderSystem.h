@@ -162,7 +162,7 @@ namespace GameCore {
         std::unordered_map<std::string, CachedTextureInfo> m_textureMetadataCache;
         
         // FPS tracking
-        bool m_showFPS = true;  // Show by default for debugging
+        bool m_showFPS = false;  // Disabled for production release
         float m_currentFPS = 60.0f;
         float m_frameTimeAccum = 0.0f;
         int m_frameCount = 0;

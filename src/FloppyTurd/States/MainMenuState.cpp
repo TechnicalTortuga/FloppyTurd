@@ -4699,9 +4699,28 @@ namespace GameCore {
     }
 
     void MainMenuState::OnRemoveAdsPurchasePressed() {
-        GN_LOG_INFO("Remove Ads purchase button pressed - IAP not yet implemented");
-        // TODO: Phase 7 - Call StoreManager to initiate purchase
-        // This will be wired up when we implement StoreKit 2 integration
+        GN_LOG_INFO("Remove Ads purchase button pressed - initiating IAP");
+        
+        #ifdef PLATFORM_IOS
+        // Call Swift StoreManager to initiate purchase
+        // This will be implemented via platform delegates
+        if (m_platformDelegates && m_platformDelegates->iap.purchase) {
+            GN_LOG_INFO("Calling IAP purchase delegate for: com.floppyturd.game.removeads");
+            m_platformDelegates->iap.purchase("com.floppyturd.game.removeads", [](bool success, const char* error) {
+                if (success) {
+                    GN_LOG_INFO("✅ IAP purchase successful - ads removed!");
+                    // Haptic feedback for success
+                } else {
+                    GN_LOG_WARN("⚠️ IAP purchase failed: " + std::string(error ? error : "Unknown error"));
+                    // Haptic feedback for failure
+                }
+            });
+        } else {
+            GN_LOG_WARN("IAP purchase delegate not available");
+        }
+        #else
+        GN_LOG_INFO("IAP not available on this platform");
+        #endif
     }
 
     // ==================== VIBRATION PREFERENCE ====================

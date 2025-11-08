@@ -813,6 +813,39 @@ namespace GameCore {
             , platformContext(nullptr) {}
     };
 
+    // IAP (In-App Purchase) delegate for StoreKit integration
+    struct IAPDelegate {
+        // Purchase a product by ID
+        // productID: Product identifier (e.g., "com.floppyturd.game.removeads")
+        // completion: Callback with (success, errorMessage)
+        void (*purchase)(const char* productID, void (*completion)(bool success, const char* error));
+        
+        // Restore previous purchases
+        // completion: Callback with (success, errorMessage)
+        void (*restore)(void (*completion)(bool success, const char* error));
+        
+        // Check if a specific product has been purchased
+        // productID: Product identifier to check
+        // Returns: true if purchased, false otherwise
+        bool (*hasPurchased)(const char* productID);
+        
+        // Get localized price string for a product
+        // productID: Product identifier
+        // Returns: Localized price string (e.g., "$1.99") or nullptr if not available
+        const char* (*getPrice)(const char* productID);
+        
+        // Platform-specific context
+        void* platformContext;
+        
+        // Initialize to null
+        IAPDelegate()
+            : purchase(nullptr)
+            , restore(nullptr)
+            , hasPurchased(nullptr)
+            , getPrice(nullptr)
+            , platformContext(nullptr) {}
+    };
+
     // Platform delegate container - holds all platform-specific delegates
     struct PlatformDelegates {
         RendererDelegate renderer;
@@ -824,6 +857,7 @@ namespace GameCore {
         SaveGameDelegate save;
         GameCenterDelegate gameCenter;
         AdDelegate ad;
+        IAPDelegate iap;  // NEW
         
         // Platform identification
         enum PlatformType {

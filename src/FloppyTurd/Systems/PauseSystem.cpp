@@ -1425,9 +1425,9 @@ namespace GameCore {
                     if (actionElement) {
                         if (m_hatsSystem->IsHatUnlocked(selectedHatIndex)) {
                             if (selectedHatIndex == m_hatsSystem->GetEquippedHatIndex()) {
-                                actionElement->buttonText = "EQUIPPED";
-                                actionElement->isEnabled = false;
-                                actionElement->textColor = GNColor(100, 255, 100, 255); // Green for equipped
+                                actionElement->buttonText = "Unequip";
+                                actionElement->isEnabled = true;
+                                actionElement->textColor = GNColor(255, 200, 100, 255); // Orange for unequip
                             } else {
                                 actionElement->buttonText = "Equip";
                                 actionElement->isEnabled = true;
@@ -3261,9 +3261,16 @@ namespace GameCore {
                                 }
                             }
                         } else {
-                            // Hat is unlocked, equip it
-                            m_hatsSystem->EquipSelectedHat();
-                            GN_LOG_INFO("PauseSystem: Hat equipped");
+                            // Hat is unlocked - check if we should equip or unequip
+                            if (selectedHatIndex == m_hatsSystem->GetEquippedHatIndex()) {
+                                // Unequip the hat
+                                m_hatsSystem->UnequipHat();
+                                GN_LOG_INFO("PauseSystem: Hat unequipped");
+                            } else {
+                                // Equip the selected hat
+                                m_hatsSystem->EquipSelectedHat();
+                                GN_LOG_INFO("PauseSystem: Hat equipped");
+                            }
                             UpdateHatDisplay();
                         }
                     }

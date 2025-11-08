@@ -147,11 +147,7 @@ namespace GameCore {
             
             CustomizationData() : equippedHatIndex(-1), selectedHatIndex(-1) {
                 unlockedHats.resize(15, false);
-                // First 4 hats are unlocked by default (Cowboy, Flower, Doorag, Ballcap)
-                unlockedHats[0] = true;
-                unlockedHats[1] = true;
-                unlockedHats[2] = true;
-                unlockedHats[3] = true;
+                // ALL hats locked by default - must be purchased
                 unlockedSkills.resize(5, false); // 5 skills: HalfHearts, ThirdHearts, CoinMagnet, HeartMagnet, CoinSafetyNet
             }
         };

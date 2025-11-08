@@ -163,18 +163,17 @@ class AdManager: NSObject {
     // MARK: - Ad Unit IDs
 
     /// Test ad unit ID for development (shows test ads)
-    /// Replace with your real ad unit ID before releasing to TestFlight/App Store
     private let testAdUnitID = "ca-app-pub-3940256099942544/4411468910"  // Google's test interstitial ID
 
-    /// Real ad unit ID (set this when you have your real AdMob ad unit)
-    /// For now, we use the test ID
+    /// Production ad unit ID from AdMob
+    private let productionAdUnitID = "ca-app-pub-2487109358798103/2326483309"  // Real Floppy Turd interstitial
+
+    /// Real ad unit ID (uses test in debug, production in release)
     private var adUnitID: String {
         #if DEBUG
             return testAdUnitID
         #else
-            // TODO: Replace with your real ad unit ID from AdMob console
-            // Example: "ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYY"
-            return testAdUnitID  // Using test ID for now
+            return productionAdUnitID
         #endif
     }
 
@@ -185,7 +184,7 @@ class AdManager: NSObject {
         #if DEBUG
         self.loadingActor = AdLoadingActor(adUnitID: testAdUnitID)
         #else
-        self.loadingActor = AdLoadingActor(adUnitID: testAdUnitID)  // TODO: Use real ad unit ID
+        self.loadingActor = AdLoadingActor(adUnitID: productionAdUnitID)
         #endif
         
         super.init()
@@ -341,6 +340,14 @@ class AdManager: NSObject {
     static func initializeSDK() {
         let startTime = CFAbsoluteTimeGetCurrent()
         SwiftLog.info("⏱️ [PROFILE] AdManager: SDK initialization START (main thread dispatch)", category: "AdManager")
+        
+        // Configure COPPA compliance for family-friendly content (9+ rating)
+        let requestConfiguration = MobileAds.shared.requestConfiguration
+        requestConfiguration.maxAdContentRating = .general  // Family-friendly ads only
+        // Note: Uncomment the line below if specifically targeting children under 13
+        // requestConfiguration.tag(forChildDirectedTreatment: true)
+        
+        SwiftLog.info("✅ AdMob configured for family-friendly content (General rating)", category: "AdManager")
         
         // 🚀 NEW: Use Task.detached to initialize SDK on background thread
         Task.detached(priority: .userInitiated) {

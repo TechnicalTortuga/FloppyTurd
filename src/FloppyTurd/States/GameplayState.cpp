@@ -4612,6 +4612,18 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             "What a fiasco!",
             "Holy crap!",
             "Clogged up!",
+            "Craptastrophe!",
+            "Numero Deuce-o!",
+            "Potty mouth!",
+            "Sewer you later!",
+            "Feeling pooped!",
+            "That stinks!",
+            "Bombs away!",
+            "Dookie disaster!",
+            "Log jam!",
+            "Muddy mistake!",
+            "Brown-out!",
+            "Stinky situation!",
         };
         
         // Simple random selection (not cryptographically secure, but fine for game)

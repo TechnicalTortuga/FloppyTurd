@@ -19,6 +19,18 @@
     <string>APPL</string>
     <key>CFBundleSignature</key>
     <string>????</string>
+    <key>CFBundleIcons</key>
+    <dict>
+        <key>CFBundlePrimaryIcon</key>
+        <dict>
+            <key>CFBundleIconFiles</key>
+            <array>
+                <string>AppIcon</string>
+            </array>
+            <key>CFBundleIconName</key>
+            <string>AppIcon</string>
+        </dict>
+    </dict>
     <key>LSRequiresIPhoneOS</key>
     <true/>
     <key>UIApplicationDelegate</key>
@@ -44,7 +56,11 @@
 
     <!-- Google AdMob Configuration -->
     <key>GADApplicationIdentifier</key>
-    <string>ca-app-pub-3940256099942544~1458002511</string>
+    <string>ca-app-pub-2487109358798103~4785125685</string>
+
+    <!-- App Tracking Transparency (ATT) Prompt -->
+    <key>NSUserTrackingUsageDescription</key>
+    <string>We show ads to keep Floppy Turd free. Personalized ads help us improve the game and keep it free for everyone!</string>
 
     <!-- SKAdNetwork identifiers for ad attribution -->
     <key>SKAdNetworkItems</key>

@@ -11,6 +11,7 @@ import GameCorePlatform  // For ScreenInfo C++ interop
 import Metal
 import MetalKit
 import UIKit
+import AppTrackingTransparency  // For ATT prompt
 
 /// Main game view controller for iOS with native C++ interop
 /// Direct C++ instantiation: std::make_unique<FloppyTurd::GameViewController>()
@@ -98,6 +99,15 @@ public class GameViewController: UIViewController {
             }
         }
 
+        // Set up In-App Purchases
+        log("Initializing StoreManager...")
+        // StoreManager.shared initialization happens automatically (singleton)
+        // It will check purchase status and restore "Remove Ads" if previously purchased
+        Task {
+            await StoreManager.shared.checkPurchaseStatus()
+            self.log("✅ StoreManager initialized - purchase status checked")
+        }
+
         // Set up AdMob
         log("Initializing AdMob SDK...")
         AdManager.initializeSDK()
@@ -110,6 +120,30 @@ public class GameViewController: UIViewController {
     override public func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         log("GameViewController will appear")
+        
+        // Request App Tracking Transparency permission (iOS 14+)
+        // This prompt shows ONCE when the user first launches the app
+        if #available(iOS 14, *) {
+            // Delay slightly to allow UI to settle
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                ATTrackingManager.requestTrackingAuthorization { status in
+                    Task { @MainActor in
+                        switch status {
+                        case .authorized:
+                            self?.log("✅ ATT: User authorized tracking")
+                        case .denied:
+                            self?.log("❌ ATT: User denied tracking")
+                        case .restricted:
+                            self?.log("⚠️ ATT: Tracking restricted")
+                        case .notDetermined:
+                            self?.log("⏳ ATT: Status not determined")
+                        @unknown default:
+                            self?.log("❓ ATT: Unknown status")
+                        }
+                    }
+                }
+            }
+        }
 
         if isGameInitialized {
             if isPaused {
