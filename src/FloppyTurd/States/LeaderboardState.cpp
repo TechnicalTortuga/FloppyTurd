@@ -8,6 +8,9 @@
 
 namespace GameCore {
 
+    // Static instance for callbacks
+    LeaderboardState* LeaderboardState::s_instance = nullptr;
+
     LeaderboardState::LeaderboardState(ECS* ecsSystem, PlatformDelegates* platformDelegates)
         : m_ecsSystem(ecsSystem)
         , m_platformDelegates(platformDelegates)
@@ -34,10 +37,12 @@ namespace GameCore {
         , m_lastButtonPressTime(0.0f)
     {
         m_game = GetGame();
+        s_instance = this;  // Set static instance for callbacks
         GN_LOG_INFO("LeaderboardState created");
     }
 
     LeaderboardState::~LeaderboardState() {
+        s_instance = nullptr;  // Clear static instance
         GN_LOG_INFO("LeaderboardState destroyed");
     }
 
@@ -89,22 +94,8 @@ namespace GameCore {
         CreateUI();
         m_initialized = true;
 
-        // On iOS, show native Game Center leaderboard if authenticated
-        if (m_game && m_game->IsIOSPlatform()) {
-            if (m_platformDelegates && m_platformDelegates->gameCenter.isAuthenticated) {
-                bool isAuthenticated = m_platformDelegates->gameCenter.isAuthenticated();
-                if (isAuthenticated) {
-                    GN_LOG_INFO("Game Center authenticated - showing leaderboard");
-                    // Show the current page's leaderboard
-                    std::string leaderboardID = GetLeaderboardID(m_currentPage);
-                    if (m_platformDelegates->gameCenter.showLeaderboard) {
-                        m_platformDelegates->gameCenter.showLeaderboard(leaderboardID.c_str());
-                    }
-                } else {
-                    GN_LOG_INFO("Game Center not authenticated - showing local stats only");
-                }
-            }
-        }
+        // Load Game Center leaderboard data for current page
+        LoadLeaderboardData();
 
         // NOTE: We do NOT start music here - let it continue from main menu
         GN_LOG_INFO("LeaderboardState entered - Screen: " + std::to_string(m_screenWidth) + "x" + std::to_string(m_screenHeight));
@@ -568,7 +559,10 @@ namespace GameCore {
         
         GN_LOG_INFO("LeaderboardState: Created top 10 leaderboard display starting at y=" + std::to_string(startY));
         
-        // Open Game Center leaderboard immediately on iOS
+        // NOTE: Commenting out auto-show GameCenter to prevent crash
+        // The crash occurs when showLeaderboard is called with corrupted function pointer
+        // User can still manually access leaderboards from main menu
+        /*
         #ifdef PLATFORM_IOS
         if (m_platformDelegates && m_platformDelegates->gameCenter.showLeaderboard) {
             std::string leaderboardID = GetLeaderboardID(m_currentPage);
@@ -577,6 +571,7 @@ namespace GameCore {
             }
         }
         #endif
+        */
     }
 
     void LeaderboardState::DestroyPageContent() {
@@ -623,15 +618,8 @@ namespace GameCore {
         GN_LOG_INFO("Leaderboard: Navigate to previous page " + std::to_string(pageIndex));
         UpdatePageContent();
         
-        // Open Game Center leaderboard immediately on iOS when page changes
-        if (m_game && m_game->IsIOSPlatform()) {
-            if (m_platformDelegates && m_platformDelegates->gameCenter.showLeaderboard) {
-                std::string leaderboardID = GetLeaderboardID(m_currentPage);
-                if (!leaderboardID.empty()) {
-                    m_platformDelegates->gameCenter.showLeaderboard(leaderboardID.c_str());
-                }
-            }
-        }
+        // NOTE: GameCenter auto-show disabled to prevent crash - see Enter() method
+        GN_LOG_INFO("Leaderboard: Skipping GameCenter show on page change");
     }
 
     void LeaderboardState::OnRightArrowPressed() {
@@ -652,19 +640,12 @@ namespace GameCore {
         GN_LOG_INFO("Leaderboard: Navigate to next page " + std::to_string(pageIndex));
         UpdatePageContent();
         
-        // Open Game Center leaderboard immediately on iOS when page changes
-        if (m_game && m_game->IsIOSPlatform()) {
-            if (m_platformDelegates && m_platformDelegates->gameCenter.showLeaderboard) {
-                std::string leaderboardID = GetLeaderboardID(m_currentPage);
-                if (!leaderboardID.empty()) {
-                    m_platformDelegates->gameCenter.showLeaderboard(leaderboardID.c_str());
-                }
-            }
-        }
+        // NOTE: GameCenter auto-show disabled to prevent crash - see Enter() method
+        GN_LOG_INFO("Leaderboard: Skipping GameCenter show on page change");
     }
 
     void LeaderboardState::OnBackButtonPressed() {
-        // Debounce to prevent double-press
+        // Debounce to prevent spam clicking
         if (m_lastButtonPressTime > 0.0f) {
             GN_LOG_INFO("⏱️ Back button debounced - too soon");
             return;
@@ -792,6 +773,162 @@ namespace GameCore {
             return m_game->IsIOSPlatform();
         }
         return true; // Default to mobile
+    }
+    
+    std::string LeaderboardState::FormatScore(int64_t score) const {
+        return std::to_string(score);
+    }
+    
+    void LeaderboardState::UpdateLeaderboardUI(const LeaderboardEntry* entries, int count) {
+        if (!entries || count <= 0) {
+            GN_LOG_WARN("⚠️ LeaderboardState::UpdateLeaderboardUI - No entries to display");
+            return;
+        }
+        
+        GN_LOG_INFO("🎨 LeaderboardState: Updating UI with " + std::to_string(count) + " entries");
+        
+        // The first 10 entities in m_contentEntities are the leaderboard rows
+        int rowsToUpdate = std::min(count, 10);
+        rowsToUpdate = std::min(rowsToUpdate, static_cast<int>(m_contentEntities.size()));
+        
+        for (int i = 0; i < rowsToUpdate; ++i) {
+            Entity rowEntity = m_contentEntities[i];
+            auto* uiElement = m_ecsSystem->GetComponent<UIElement>(rowEntity);
+            
+            if (uiElement) {
+                // Format: "01. PlayerName  12345"
+                std::string rankStr = (entries[i].rank < 10) ? ("0" + std::to_string(entries[i].rank)) : std::to_string(entries[i].rank);
+                std::string playerName = entries[i].playerName;
+                std::string scoreStr = FormatScore(entries[i].score);
+                
+                // Truncate player name if too long (max 20 chars)
+                if (playerName.length() > 20) {
+                    playerName = playerName.substr(0, 17) + "...";
+                }
+                
+                // Format with spacing: "01. PlayerName          12345"
+                uiElement->buttonText = rankStr + ". " + playerName;
+                // Pad to align scores
+                while (uiElement->buttonText.length() < 30) {
+                    uiElement->buttonText += " ";
+                }
+                uiElement->buttonText += scoreStr;
+                
+                // Highlight top 3 with gold/silver/bronze colors
+                if (entries[i].rank == 1) {
+                    uiElement->textColor = GNColor(255, 215, 0, 255); // Gold
+                } else if (entries[i].rank == 2) {
+                    uiElement->textColor = GNColor(192, 192, 192, 255); // Silver
+                } else if (entries[i].rank == 3) {
+                    uiElement->textColor = GNColor(205, 127, 50, 255); // Bronze
+                } else {
+                    uiElement->textColor = GNColor(255, 255, 255, 255); // White
+                }
+                
+                GN_LOG_INFO("  Updated row " + std::to_string(i) + ": " + uiElement->buttonText);
+            }
+        }
+        
+        // Clear any remaining placeholder rows
+        for (int i = rowsToUpdate; i < std::min(10, static_cast<int>(m_contentEntities.size())); ++i) {
+            Entity rowEntity = m_contentEntities[i];
+            auto* uiElement = m_ecsSystem->GetComponent<UIElement>(rowEntity);
+            
+            if (uiElement) {
+                std::string rankStr = (i + 1 < 10) ? ("0" + std::to_string(i + 1)) : std::to_string(i + 1);
+                uiElement->buttonText = rankStr + ".          -------          -----";
+                uiElement->textColor = GNColor(100, 100, 100, 255); // Dark gray for empty slots
+            }
+        }
+        
+        GN_LOG_INFO("✅ LeaderboardState: UI updated successfully");
+    }
+    
+    void LeaderboardState::UpdateLocalPlayerUI(int rank, int64_t score) {
+        GN_LOG_INFO("🎨 LeaderboardState: Updating local player UI - Rank: " + std::to_string(rank) + ", Score: " + std::to_string(score));
+        
+        // The last entity in m_contentEntities is the "Your Best" row
+        if (m_contentEntities.empty()) {
+            GN_LOG_WARN("⚠️ No content entities to update");
+            return;
+        }
+        
+        Entity playerRankEntity = m_contentEntities.back();
+        auto* uiElement = m_ecsSystem->GetComponent<UIElement>(playerRankEntity);
+        
+        if (uiElement) {
+            std::string rankStr = (rank > 0) ? std::to_string(rank) : "--";
+            std::string scoreStr = FormatScore(score);
+            
+            uiElement->buttonText = "Your Best: Rank #" + rankStr + "          Score: " + scoreStr;
+            uiElement->textColor = GNColor(255, 215, 0, 255); // Gold
+            
+            GN_LOG_INFO("  Local player UI: " + uiElement->buttonText);
+        }
+    }
+    
+    void LeaderboardState::LoadLeaderboardData() {
+        GN_LOG_INFO("📊 LeaderboardState: Loading Game Center leaderboard data...");
+        
+        // Check if Game Center is available and authenticated
+        if (!ThreadingProxy::isGameCenterAuthenticated()) {
+            GN_LOG_WARN("⚠️ LeaderboardState: Not authenticated to Game Center - showing local scores only");
+            return;
+        }
+        
+        GN_LOG_INFO("✅ LeaderboardState: Game Center authenticated - loading leaderboard entries");
+        
+        // Get the leaderboard ID for the current page
+        std::string leaderboardID = GetLeaderboardID(m_currentPage);
+        if (leaderboardID.empty()) {
+            GN_LOG_WARN("⚠️ LeaderboardState: No leaderboard ID for current page");
+            return;
+        }
+        
+        // Load leaderboard entries (top 25) using ThreadingProxy
+        GN_LOG_INFO("📊 LeaderboardState: Requesting top 25 entries for: " + leaderboardID);
+        ThreadingProxy::enqueueGameCenterLoadLeaderboardEntries(
+            leaderboardID.c_str(),
+            &LeaderboardState::OnLeaderboardEntriesLoaded
+        );
+        
+        // Load local player's entry using ThreadingProxy
+        GN_LOG_INFO("📊 LeaderboardState: Requesting local player entry for: " + leaderboardID);
+        ThreadingProxy::enqueueGameCenterLoadLocalPlayerEntry(
+            leaderboardID.c_str(),
+            &LeaderboardState::OnLocalPlayerEntryLoaded
+        );
+    }
+
+    // Static callback functions for Game Center
+    void LeaderboardState::OnLeaderboardEntriesLoaded(const LeaderboardEntry* entries, int count, bool success) {
+        if (s_instance) {
+            if (success && entries && count > 0) {
+                GN_LOG_INFO("✅ LeaderboardState: Received " + std::to_string(count) + " leaderboard entries");
+                for (int i = 0; i < count; ++i) {
+                    GN_LOG_INFO("  [" + std::to_string(i + 1) + "] Rank: " + std::to_string(entries[i].rank) +
+                               ", Score: " + std::to_string(entries[i].score) +
+                               ", Player: " + std::string(entries[i].playerName));
+                }
+                // Update UI with fetched entries
+                s_instance->UpdateLeaderboardUI(entries, count);
+            } else {
+                GN_LOG_WARN("⚠️ LeaderboardState: Failed to load leaderboard entries or no data available");
+            }
+        }
+    }
+
+    void LeaderboardState::OnLocalPlayerEntryLoaded(int rank, int64_t score, bool success) {
+        if (s_instance) {
+            if (success) {
+                GN_LOG_INFO("✅ LeaderboardState: Local player - Rank: " + std::to_string(rank) +
+                           ", Score: " + std::to_string(score));
+                // Update UI with local player's rank
+                s_instance->UpdateLocalPlayerUI(rank, score);
+            } else {
+                GN_LOG_INFO("⚠️ LeaderboardState: No entry found for local player on this leaderboard");
+            }
+        }
     }
 
 } // namespace GameCore

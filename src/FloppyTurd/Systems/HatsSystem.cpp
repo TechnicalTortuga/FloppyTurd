@@ -28,15 +28,17 @@ namespace GameCore {
             m_selectedHatIndex = GameCore::GetGame()->GetSelectedHatIndex();
             
             // Load unlock status for all hats from game save
+            // NOTE: Index 0 = unequipped (always available), indices 1-15 = actual hats
             for (size_t i = 0; i < m_hats.size(); ++i) {
-                if (GameCore::GetGame()->IsHatUnlocked(static_cast<int>(i))) {
+                // Actual hat indices are 1-15, so check i+1 in game save
+                if (GameCore::GetGame()->IsHatUnlocked(static_cast<int>(i + 1))) {
                     m_hats[i].status = HatStatus::UNLOCKED;
-                    GN_LOG_INFO("🎩 Loaded hat " + std::to_string(i) + " (" + m_hats[i].name + ") as unlocked from game save");
+                    GN_LOG_INFO("🎩 Loaded hat " + std::to_string(i) + " (" + m_hats[i].name + ") as unlocked from game save (save index: " + std::to_string(i + 1) + ")");
                 }
             }
             
             GN_LOG_INFO("🎩 HatsSystem initialized with equipped hat: " + std::to_string(m_equippedHatIndex) + 
-                       ", selected hat: " + std::to_string(m_selectedHatIndex) + " from game save");
+                       ", selected hat: " + std::to_string(m_selectedHatIndex) + " from game save (0 = unequipped)");
         } else {
             GN_LOG_WARN("🎩 HatsSystem: No game instance available at construction - using defaults");
         }
@@ -459,15 +461,15 @@ namespace GameCore {
 
     void HatsSystem::UnequipHat()
     {
-        if (m_equippedHatIndex < 0) {
-            GN_LOG_INFO("No hat equipped - nothing to unequip");
+        if (m_equippedHatIndex == 0) {
+            GN_LOG_INFO("No hat equipped (already at index 0) - nothing to unequip");
             return;
         }
 
         int oldEquippedIndex = m_equippedHatIndex;
-        m_equippedHatIndex = -1;  // Set to -1 (no hat equipped)
+        m_equippedHatIndex = 0;  // Set to 0 (unequipped/no hat)
 
-        GN_LOG_INFO("Unequipped hat (previous index: " + std::to_string(oldEquippedIndex) + ")");
+        GN_LOG_INFO("Unequipped hat (previous index: " + std::to_string(oldEquippedIndex) + ", now: 0 = unequipped)");
 
         // Trigger haptic feedback for unequipping
         HapticHelpers::TriggerHatEquip(m_platformDelegates);
@@ -475,7 +477,7 @@ namespace GameCore {
         // Update game's customization data
         if (GameCore::GetGame()) {
             GameCore::GetGame()->SetEquippedHatIndex(m_equippedHatIndex);
-            GN_LOG_INFO("🎩 Synced unequipped status to game save system");
+            GN_LOG_INFO("🎩 Synced unequipped status (index 0) to game save system");
         }
         
         // Save hat status
@@ -486,27 +488,32 @@ namespace GameCore {
 
     const HatData* HatsSystem::GetHatData(int index) const
     {
-        if (index < 0 || index >= m_hats.size()) return nullptr;
-        return &m_hats[index];
+        // Index 0 = unequipped, indices 1-15 = actual hats
+        // So we need to convert: index 1 -> m_hats[0], index 2 -> m_hats[1], etc.
+        if (index <= 0 || index > m_hats.size()) return nullptr;
+        return &m_hats[index - 1];
     }
 
     bool HatsSystem::IsHatUnlocked(int index) const
     {
-        if (index < 0 || index >= m_hats.size()) return false;
-        return m_hats[index].status == HatStatus::UNLOCKED;
+        // Index 0 = unequipped, indices 1-15 = actual hats
+        if (index <= 0 || index > m_hats.size()) return false;
+        return m_hats[index - 1].status == HatStatus::UNLOCKED;
     }
 
     const std::string& HatsSystem::GetHatName(int index) const
     {
         static const std::string emptyString = "";
-        if (index < 0 || index >= m_hats.size()) return emptyString;
-        return m_hats[index].name;
+        // Index 0 = unequipped, indices 1-15 = actual hats
+        if (index <= 0 || index > m_hats.size()) return emptyString;
+        return m_hats[index - 1].name;
     }
 
     int HatsSystem::GetSelectedHatCost() const
     {
-        if (m_selectedHatIndex < 0 || m_selectedHatIndex >= m_hats.size()) return 0;
-        return m_hats[m_selectedHatIndex].cost;
+        // Index 0 = unequipped (free), indices 1-15 = actual hats
+        if (m_selectedHatIndex <= 0 || m_selectedHatIndex > m_hats.size()) return 0;
+        return m_hats[m_selectedHatIndex - 1].cost;
     }
 
     Gnosis::Entity HatsSystem::GetHatIconEntity(int index) const

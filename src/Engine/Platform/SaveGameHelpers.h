@@ -451,10 +451,10 @@ namespace GameCore {
             FloppyTurdGame::CustomizationData customization;
             
             std::string equippedHatStr = parseKeyValue(dataString, "CUSTOM_EQUIPPED_HAT");
-            customization.equippedHatIndex = equippedHatStr.empty() ? -1 : std::stoi(equippedHatStr);
+            customization.equippedHatIndex = equippedHatStr.empty() ? 0 : std::stoi(equippedHatStr);
             
             std::string selectedHatStr = parseKeyValue(dataString, "CUSTOM_SELECTED_HAT");
-            customization.selectedHatIndex = selectedHatStr.empty() ? -1 : std::stoi(selectedHatStr);
+            customization.selectedHatIndex = selectedHatStr.empty() ? 0 : std::stoi(selectedHatStr);
             
             // Parse unlocked hats
             customization.unlockedHats.clear();

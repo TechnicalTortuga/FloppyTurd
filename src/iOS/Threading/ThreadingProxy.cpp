@@ -98,6 +98,11 @@ namespace GameCore {
         m_adCommandQueue.push_back(command);
     }
     
+    void ThreadingProxy::enqueueIAPCommand(const IAPCommand& command) {
+        std::lock_guard<std::mutex> lock(m_queueMutex);
+        m_iapCommandQueue.push_back(command);
+    }
+    
     // Rendering command implementations
     void ThreadingProxy::enqueueBeginFrame() {
         if (!s_instance) return;
@@ -628,6 +633,24 @@ namespace GameCore {
         s_instance->enqueueGameCenterCommand(cmd);
     }
     
+    void ThreadingProxy::enqueueGameCenterLoadLeaderboardEntries(const char* leaderboardID,
+                                                                   void (*completion)(const LeaderboardEntry*, int, bool)) {
+        if (!s_instance) return;
+        GameCenterCommand cmd(CommandType::CMD_GAME_CENTER_LOAD_LEADERBOARD_ENTRIES);
+        cmd.data.leaderboardID = leaderboardID ? leaderboardID : "";
+        cmd.data.leaderboardEntriesCallback = reinterpret_cast<void*>(completion); // Cast to void* for Swift
+        s_instance->enqueueGameCenterCommand(cmd);
+    }
+    
+    void ThreadingProxy::enqueueGameCenterLoadLocalPlayerEntry(const char* leaderboardID,
+                                                                 void (*completion)(int, int64_t, bool)) {
+        if (!s_instance) return;
+        GameCenterCommand cmd(CommandType::CMD_GAME_CENTER_LOAD_LOCAL_PLAYER_ENTRY);
+        cmd.data.leaderboardID = leaderboardID ? leaderboardID : "";
+        cmd.data.localPlayerEntryCallback = reinterpret_cast<void*>(completion); // Cast to void* for Swift
+        s_instance->enqueueGameCenterCommand(cmd);
+    }
+    
     const char* ThreadingProxy::getGameCenterPlayerName() {
         // Direct call to Swift GameCenterManager - no command needed for queries
         // This will be implemented via Swift interop
@@ -670,6 +693,32 @@ namespace GameCore {
         AdCommand cmd(CommandType::CMD_AD_SET_ENABLED);
         cmd.data.adsEnabled = enabled;
         s_instance->enqueueAdCommand(cmd);
+    }
+    
+    // IAP command implementations
+    void ThreadingProxy::enqueueIAPPurchase(const char* productID) {
+        if (!s_instance) return;
+        IAPCommand cmd(CommandType::CMD_IAP_PURCHASE);
+        cmd.data.productID = productID;
+        s_instance->enqueueIAPCommand(cmd);
+    }
+    
+    void ThreadingProxy::enqueueIAPRestore() {
+        if (!s_instance) return;
+        IAPCommand cmd(CommandType::CMD_IAP_RESTORE);
+        s_instance->enqueueIAPCommand(cmd);
+    }
+    
+    bool ThreadingProxy::hasIAPPurchased(const char* productID) {
+        // This will be implemented via Swift interop
+        // For now, return false - will be wired up to StoreManager later
+        return false;
+    }
+    
+    const char* ThreadingProxy::getIAPPrice(const char* productID) {
+        // This will be implemented via Swift interop
+        // For now, return placeholder - will be wired up to StoreManager later
+        return "$2.00";
     }
     
     // Asset loading command implementations
@@ -1019,6 +1068,13 @@ namespace GameCore {
         return commands;
     }
     
+    std::vector<IAPCommand> ThreadingProxy::getAndClearIAPCommands() {
+        std::lock_guard<std::mutex> lock(m_queueMutex);
+        std::vector<IAPCommand> commands = std::move(m_iapCommandQueue);
+        m_iapCommandQueue.clear();
+        return commands;
+    }
+    
     size_t ThreadingProxy::getCommandCount() const {
         std::lock_guard<std::mutex> lock(m_queueMutex);
         return m_renderCommandQueue.size() + m_audioCommandQueue.size() + m_logCommandQueue.size() + m_assetCommandQueue.size() + m_hapticCommandQueue.size() + m_saveCommandQueue.size();
@@ -1034,6 +1090,7 @@ namespace GameCore {
         m_saveCommandQueue.clear();
         m_gameCenterCommandQueue.clear();
         m_adCommandQueue.clear();
+        m_iapCommandQueue.clear();
     }
 
     void ThreadingProxy::setupDelegates(PlatformDelegates& delegates) {
@@ -1192,6 +1249,20 @@ namespace GameCore {
         delegates.gameCenter.showAllLeaderboards = []() {
             ThreadingProxy::enqueueGameCenterShowAllLeaderboards();
         };
+        delegates.gameCenter.loadLeaderboardEntries = [](
+            const char* leaderboardID,
+            void (*completion)(const LeaderboardEntry* entries, int count, bool success)
+        ) {
+            // Pass the completion callback through to Swift via the command
+            ThreadingProxy::enqueueGameCenterLoadLeaderboardEntries(leaderboardID, completion);
+        };
+        delegates.gameCenter.loadLocalPlayerEntry = [](
+            const char* leaderboardID,
+            void (*completion)(int rank, int64_t score, bool success)
+        ) {
+            // Pass the completion callback through to Swift via the command
+            ThreadingProxy::enqueueGameCenterLoadLocalPlayerEntry(leaderboardID, completion);
+        };
         delegates.gameCenter.getPlayerName = []() -> const char* {
             return ThreadingProxy::getGameCenterPlayerName();
         };
@@ -1216,27 +1287,23 @@ namespace GameCore {
         };
         
         // Configure IAP delegates
-        // Note: Actual implementations will be provided by Swift StoreManager
         delegates.iap.purchase = [](const char* productID, void (*completion)(bool, const char*)) {
             GN_LOG_INFO("IAP purchase requested for: " + std::string(productID));
-            // Direct Swift call - StoreManager handles this immediately
-            // completion callback will be invoked by Swift
-            (void)completion; // Placeholder - will be wired to StoreManager
+            ThreadingProxy::enqueueIAPPurchase(productID);
+            // Note: completion callback will be invoked by Swift StoreManager after processing
+            (void)completion; // Callback handled by Swift bridge
         };
         delegates.iap.restore = [](void (*completion)(bool, const char*)) {
             GN_LOG_INFO("IAP restore requested");
-            // Direct Swift call - StoreManager handles this immediately
-            (void)completion; // Placeholder - will be wired to StoreManager
+            ThreadingProxy::enqueueIAPRestore();
+            // Note: completion callback will be invoked by Swift StoreManager after processing
+            (void)completion; // Callback handled by Swift bridge
         };
         delegates.iap.hasPurchased = [](const char* productID) -> bool {
-            // Direct query to Swift StoreManager
-            // For now, always return false - will be wired to StoreManager
-            return false;
+            return ThreadingProxy::hasIAPPurchased(productID);
         };
         delegates.iap.getPrice = [](const char* productID) -> const char* {
-            // Direct query to Swift StoreManager
-            // For now, return placeholder - will be wired to StoreManager
-            return "$1.99";
+            return ThreadingProxy::getIAPPrice(productID);
         };
         
         GN_LOG_INFO("ThreadingProxy: Input delegates configured - touch input will flow from iOS->ThreadingProxy->C++");
@@ -1318,6 +1385,13 @@ std::vector<AdCommand> getAndClearAdCommandsFromProxy() {
         return g_threadingProxy->getAndClearAdCommands();
     }
     return std::vector<AdCommand>();
+}
+
+std::vector<IAPCommand> getAndClearIAPCommandsFromProxy() {
+    if (g_threadingProxy) {
+        return g_threadingProxy->getAndClearIAPCommands();
+    }
+    return std::vector<IAPCommand>();
 }
 
 bool isAssetCachedFromProxy(const char* assetName, int assetType) {

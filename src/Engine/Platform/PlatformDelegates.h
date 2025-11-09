@@ -195,12 +195,20 @@ namespace GameCore {
         CMD_GAME_CENTER_SUBMIT_SCORE = 57,
         CMD_GAME_CENTER_SHOW_LEADERBOARD = 58,
         CMD_GAME_CENTER_SHOW_ALL_LEADERBOARDS = 59,
+        CMD_GAME_CENTER_LOAD_LEADERBOARD_ENTRIES = 68,
+        CMD_GAME_CENTER_LOAD_LOCAL_PLAYER_ENTRY = 69,
         
         // Advertising commands
         CMD_AD_PRELOAD = 60,
         CMD_AD_SHOW = 61,
         CMD_AD_IS_READY = 62,
-        CMD_AD_SET_ENABLED = 63
+        CMD_AD_SET_ENABLED = 63,
+        
+        // IAP (In-App Purchase) commands  
+        CMD_IAP_PURCHASE = 64,
+        CMD_IAP_RESTORE = 65,
+        CMD_IAP_HAS_PURCHASED = 66,
+        CMD_IAP_GET_PRICE = 67
     };
     
     // Batch rendering data structure (must be defined before RenderCommandData uses it)
@@ -392,6 +400,17 @@ namespace GameCore {
         explicit SaveCommand(CommandType t) : type(t) {}
     };
 
+    // Leaderboard entry data structure
+    struct LeaderboardEntry {
+        int rank;               // Player's rank (1 = first place)
+        int64_t score;          // Player's score
+        char playerName[128];   // Player's display name (UTF-8)
+        
+        LeaderboardEntry() : rank(0), score(0) {
+            playerName[0] = '\0';
+        }
+    };
+
     // Game Center command data
     struct GameCenterCommandData {
         std::string leaderboardID;  // Leaderboard identifier
@@ -400,12 +419,25 @@ namespace GameCore {
         std::string playerName;     // Player display name
         std::string playerID;       // Player identifier
         
+        // Leaderboard data fetching (for callbacks)
+        std::vector<LeaderboardEntry> entries; // Leaderboard entries (for CMD_GAME_CENTER_LOAD_LEADERBOARD_ENTRIES)
+        int localPlayerRank;        // Local player rank (for CMD_GAME_CENTER_LOAD_LOCAL_PLAYER_ENTRY)
+        int64_t localPlayerScore;   // Local player score (for CMD_GAME_CENTER_LOAD_LOCAL_PLAYER_ENTRY)
+        
+        // Callback function pointers as void* for Swift interop (will be cast in C++)
+        void* leaderboardEntriesCallback;  // void (*)(const LeaderboardEntry* entries, int count, bool success)
+        void* localPlayerEntryCallback;     // void (*)(int rank, int64_t score, bool success)
+        
         GameCenterCommandData()
             : leaderboardID("")
             , score(0)
             , authSuccess(false)
             , playerName("")
-            , playerID("") {}
+            , playerID("")
+            , localPlayerRank(0)
+            , localPlayerScore(0)
+            , leaderboardEntriesCallback(nullptr)
+            , localPlayerEntryCallback(nullptr) {}
     };
 
     struct GameCenterCommand {
@@ -435,6 +467,31 @@ namespace GameCore {
         // Default constructor
         AdCommand() : type(CommandType::CMD_AD_PRELOAD) {}
         AdCommand(CommandType t) : type(t) {}
+    };
+
+    // IAP (In-App Purchase) command data
+    struct IAPCommandData {
+        std::string productID;      // Product identifier (e.g., "com.floppyturd.game.removeads")
+        bool purchaseSuccess;       // Purchase result
+        bool restoreSuccess;        // Restore result
+        std::string errorMessage;   // Error message if purchase/restore fails
+        std::string priceString;    // Localized price string (e.g., "$1.99")
+        
+        IAPCommandData()
+            : productID("")
+            , purchaseSuccess(false)
+            , restoreSuccess(false)
+            , errorMessage("")
+            , priceString("") {}
+    };
+
+    struct IAPCommand {
+        CommandType type;
+        IAPCommandData data;
+        
+        // Constructors
+        IAPCommand() : type(CommandType::CMD_IAP_PURCHASE) {}
+        explicit IAPCommand(CommandType t) : type(t) {}
     };
 
     // Forward declarations for Sprite
@@ -768,6 +825,25 @@ namespace GameCore {
         void (*showLeaderboard)(const char* leaderboardID);
         void (*showAllLeaderboards)();
         
+        // Leaderboard data fetching
+        // loadLeaderboardEntries: Fetch top scores from a leaderboard
+        //   - leaderboardID: The leaderboard identifier
+        //   - completion: Callback with (entries array, count, success)
+        //   - Returns top 25 entries by default
+        void (*loadLeaderboardEntries)(
+            const char* leaderboardID,
+            void (*completion)(const LeaderboardEntry* entries, int count, bool success)
+        );
+        
+        // loadLocalPlayerEntry: Fetch the authenticated player's entry
+        //   - leaderboardID: The leaderboard identifier  
+        //   - completion: Callback with (rank, score, success)
+        //   - Returns 0,0,false if player has no entry
+        void (*loadLocalPlayerEntry)(
+            const char* leaderboardID,
+            void (*completion)(int rank, int64_t score, bool success)
+        );
+        
         // Player info
         const char* (*getPlayerName)();
         const char* (*getPlayerID)();
@@ -782,6 +858,8 @@ namespace GameCore {
             , submitScore(nullptr)
             , showLeaderboard(nullptr)
             , showAllLeaderboards(nullptr)
+            , loadLeaderboardEntries(nullptr)
+            , loadLocalPlayerEntry(nullptr)
             , getPlayerName(nullptr)
             , getPlayerID(nullptr)
             , platformContext(nullptr) {}

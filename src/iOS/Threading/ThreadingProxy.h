@@ -114,6 +114,8 @@ namespace GameCore {
         static void enqueueGameCenterSubmitScore(const char* leaderboardID, int64_t score);
         static void enqueueGameCenterShowLeaderboard(const char* leaderboardID);
         static void enqueueGameCenterShowAllLeaderboards();
+        static void enqueueGameCenterLoadLeaderboardEntries(const char* leaderboardID, void (*completion)(const LeaderboardEntry*, int, bool));
+        static void enqueueGameCenterLoadLocalPlayerEntry(const char* leaderboardID, void (*completion)(int, int64_t, bool));
         static const char* getGameCenterPlayerName();
         static const char* getGameCenterPlayerID();
         
@@ -122,6 +124,12 @@ namespace GameCore {
         static void enqueueAdShow();
         static bool isAdReady();
         static void enqueueAdSetEnabled(bool enabled);
+        
+        // IAP commands
+        static void enqueueIAPPurchase(const char* productID);
+        static void enqueueIAPRestore();
+        static bool hasIAPPurchased(const char* productID);
+        static const char* getIAPPrice(const char* productID);
         
         // Asset loading commands - modern callback signatures with userData
         static void enqueueLoadTexture(const std::string& path, void (*callback)(TextureData* texture, const char* error, void* userData), void* userData);
@@ -174,6 +182,7 @@ namespace GameCore {
         std::vector<GameCore::SaveCommand> getAndClearSaveCommands();
         std::vector<GameCore::GameCenterCommand> getAndClearGameCenterCommands();
         std::vector<GameCore::AdCommand> getAndClearAdCommands();
+        std::vector<GameCore::IAPCommand> getAndClearIAPCommands();
         
         // Queue management - Thread-safe
         size_t getCommandCount() const;
@@ -198,6 +207,7 @@ namespace GameCore {
         std::vector<SaveCommand> m_saveCommandQueue;
         std::vector<GameCenterCommand> m_gameCenterCommandQueue;
         std::vector<AdCommand> m_adCommandQueue;
+        std::vector<IAPCommand> m_iapCommandQueue;
         mutable std::mutex m_queueMutex;  // mutable for const methods
         
         // Touch input state
@@ -229,6 +239,7 @@ namespace GameCore {
         void enqueueSaveCommand(const SaveCommand& command);
         void enqueueGameCenterCommand(const GameCenterCommand& command);
         void enqueueAdCommand(const AdCommand& command);
+        void enqueueIAPCommand(const IAPCommand& command);
     };
     
     // Global instance accessor for C++ interop
@@ -248,6 +259,7 @@ namespace GameCore {
     std::vector<SaveCommand> getAndClearSaveCommandsFromProxy();
     std::vector<GameCenterCommand> getAndClearGameCenterCommandsFromProxy();
     std::vector<AdCommand> getAndClearAdCommandsFromProxy();
+    std::vector<IAPCommand> getAndClearIAPCommandsFromProxy();
     
     bool isAssetCachedFromProxy(const char* assetName, int assetType);
 

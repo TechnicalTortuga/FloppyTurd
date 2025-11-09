@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(FloppyTurd VERSION 1.0.0 LANGUAGES CXX Swift)
+project(FloppyTurd VERSION 0.9.7 LANGUAGES CXX Swift)
 
 # Set C++ standard globally
 set(CMAKE_CXX_STANDARD 20)
@@ -325,24 +325,32 @@ if(PLATFORM_IOS)
 
     # Link manually downloaded Google Mobile Ads SDK XCFrameworks
     set(ADMOB_SDK_PATH "${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/GoogleMobileAds/GoogleMobileAdsSdkiOS-12.12.0")
-    set(ADMOB_SIMULATOR_PATH "${ADMOB_SDK_PATH}/GoogleMobileAds.xcframework/ios-arm64_x86_64-simulator")
-    set(UMP_SIMULATOR_PATH "${ADMOB_SDK_PATH}/UserMessagingPlatform.xcframework/ios-arm64_x86_64-simulator")
+    
+    # Detect if building for simulator or device based on SDK
+    if(CMAKE_OSX_SYSROOT MATCHES "simulator")
+        set(ADMOB_FRAMEWORK_PATH "${ADMOB_SDK_PATH}/GoogleMobileAds.xcframework/ios-arm64_x86_64-simulator")
+        set(UMP_FRAMEWORK_PATH "${ADMOB_SDK_PATH}/UserMessagingPlatform.xcframework/ios-arm64_x86_64-simulator")
+        message(STATUS "✅ Linked Google Mobile Ads SDK and dependencies (SIMULATOR)")
+    else()
+        set(ADMOB_FRAMEWORK_PATH "${ADMOB_SDK_PATH}/GoogleMobileAds.xcframework/ios-arm64")
+        set(UMP_FRAMEWORK_PATH "${ADMOB_SDK_PATH}/UserMessagingPlatform.xcframework/ios-arm64")
+        message(STATUS "✅ Linked Google Mobile Ads SDK and dependencies (DEVICE)")
+    endif()
 
     if(EXISTS "${ADMOB_SDK_PATH}/GoogleMobileAds.xcframework")
         message(STATUS "✅ Found Google Mobile Ads SDK at ${ADMOB_SDK_PATH}")
 
-        # Add XCFramework simulator slices
+        # Add XCFramework slices (simulator or device)
         target_link_libraries(FloppyTurd PRIVATE
             "-framework GoogleMobileAds"
             "-framework UserMessagingPlatform"
-            "-F${ADMOB_SIMULATOR_PATH}"
-            "-F${UMP_SIMULATOR_PATH}"
+            "-F${ADMOB_FRAMEWORK_PATH}"
+            "-F${UMP_FRAMEWORK_PATH}"
         )
 
         # Add framework search paths for Xcode
         set_target_properties(FloppyTurd PROPERTIES
-            XCODE_ATTRIBUTE_FRAMEWORK_SEARCH_PATHS[arch=x86_64] "${ADMOB_SIMULATOR_PATH} ${UMP_SIMULATOR_PATH}"
-            XCODE_ATTRIBUTE_FRAMEWORK_SEARCH_PATHS[arch=arm64] "${ADMOB_SIMULATOR_PATH} ${UMP_SIMULATOR_PATH}"
+            XCODE_ATTRIBUTE_FRAMEWORK_SEARCH_PATHS "${ADMOB_FRAMEWORK_PATH} ${UMP_FRAMEWORK_PATH}"
         )
 
         # Add required system frameworks for AdMob
@@ -363,9 +371,6 @@ if(PLATFORM_IOS)
             "-lsqlite3"
             "-lz"
         )
-
-        message(STATUS "✅ Linked Google Mobile Ads SDK and dependencies")
-        message(STATUS "   Simulator frameworks: ${ADMOB_SIMULATOR_PATH}")
     else()
         message(WARNING "⚠️  Google Mobile Ads SDK not found at ${ADMOB_SDK_PATH}")
         message(WARNING "    Run: ./download_admob_sdk.sh to download the SDK")
@@ -426,9 +431,9 @@ if(PLATFORM_IOS)
         XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET "17.0"
         XCODE_ATTRIBUTE_PRODUCT_NAME "FloppyTurd"
         XCODE_ATTRIBUTE_BUNDLE_VERSION "1.0.0"
-        XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2"
+        XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1"
         XCODE_ATTRIBUTE_UI_REQUIRED_DEVICE_CAPABILITIES "arm64"
-        XCODE_ATTRIBUTE_UI_SUPPORTED_INTERFACE_ORIENTATIONS "UIInterfaceOrientationPortrait;UIInterfaceOrientationLandscapeLeft;UIInterfaceOrientationLandscapeRight"
+        XCODE_ATTRIBUTE_UI_SUPPORTED_INTERFACE_ORIENTATIONS "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortraitUpsideDown"
         XCODE_ATTRIBUTE_SWIFT_OBJC_INTERFACE_HEADER_NAME "FloppyTurd-Swift.h"
         XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "YES"
         XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "YES"
@@ -437,6 +442,9 @@ if(PLATFORM_IOS)
         XCODE_ATTRIBUTE_CLANG_ENABLE_MODULES "YES"
         XCODE_ATTRIBUTE_CLANG_ENABLE_MODULE_DEBUGGING "YES"
         XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon"
+        XCODE_ATTRIBUTE_INSTALL_PATH "$(LOCAL_APPS_DIR)"
+        XCODE_ATTRIBUTE_SKIP_INSTALL "NO"
+        XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT "dwarf-with-dsym"
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Debug-iphonesimulator"
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Debug-iphonesimulator"
         ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Debug-iphonesimulator"

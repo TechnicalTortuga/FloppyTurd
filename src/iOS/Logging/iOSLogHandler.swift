@@ -237,8 +237,12 @@ actor iOSLogActor {
         let formattedMessage = "[\(level.description)] \(message)"
         let fullLogMessage = "\(timestampString) [\(subsystem)/\(category)] \(formattedMessage)"
         
-        // Write to os_log
+        // Write to os_log (visible in Console.app)
         os_log("%{public}@", log: logger, type: level.osLogType, formattedMessage)
+        
+        // ALSO write to NSLog for TestFlight/Console.app visibility
+        // NSLog is more reliable for viewing in Console.app than os_log in some cases
+        NSLog("%@", fullLogMessage)
         
         // Write to file if enabled
         if fileLoggingEnabled, let logFileHandle = logFileHandle {
@@ -334,26 +338,14 @@ public class iOSLogHandler: NSObject, @unchecked Sendable {
         Task { @Sendable in
             await logActor.setSubsystem(Bundle.main.bundleIdentifier ?? "FloppyTurd")
             
-            // Detect if running on device vs simulator for different logging levels
-            #if targetEnvironment(simulator)
-                // Simulator: Enable full debug logging with file dumping for development
-                await logActor.setLogLevel(.debug)
-                await logActor.setFileLogging(true)   // Enable file logging for debugging
-                await logActor.setConsoleFallback(true)
-            #else
-                // Device: Reduced logging for performance
-                await logActor.setLogLevel(.warning)  // Only warnings and above
-                await logActor.setFileLogging(false)  // No file logging on device
-                await logActor.setConsoleFallback(false)  // No console fallback for performance
-            #endif
+            // Enable INFO logging for both simulator and device
+            // We need to see game logs in Console.app for debugging TestFlight builds
+            await logActor.setLogLevel(.info)        // INFO and above (was .warning on device!)
+            await logActor.setFileLogging(false)      // No file logging (use Console.app instead)
+            await logActor.setConsoleFallback(true)   // Enable print() for critical logs
         }
         isInitialized = true
-        #if targetEnvironment(simulator)
-
-            currentLogLevel = .warning
-        #else
-            currentLogLevel = .warning
-        #endif
+        currentLogLevel = .info  // INFO and above (was .warning!)
         return true
     }
     

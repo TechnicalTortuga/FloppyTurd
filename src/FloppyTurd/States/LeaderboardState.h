@@ -4,6 +4,7 @@
 #include "GameState.h"
 #include "../../Engine/Core/ECS.h"
 #include "../../Engine/Platform/PlatformDelegates.h"
+#include "../../iOS/Threading/ThreadingProxy.h"
 #include "../Game/FloppyTurdGame.h"
 #include <vector>
 #include <string>
@@ -52,6 +53,9 @@ namespace GameCore {
         const char* GetStateName() const override { return "Leaderboard"; }
 
     private:
+        // Static instance for callbacks (only one leaderboard state active at a time)
+        static LeaderboardState* s_instance;
+
         // Leaderboard page types
         enum class LeaderboardPage {
             LEVEL_1_PARK = 0,           // "A Flop in the Park"
@@ -125,8 +129,18 @@ namespace GameCore {
         std::string GetLocalScoreText(LeaderboardPage page) const;
         std::string GetLeaderboardID(LeaderboardPage page) const;
         
+        // Game Center leaderboard data fetching
+        void LoadLeaderboardData();
+        void UpdateLeaderboardUI(const LeaderboardEntry* entries, int count);
+        void UpdateLocalPlayerUI(int rank, int64_t score);
+        
+        // Static callback functions for Game Center (C-compatible)
+        static void OnLeaderboardEntriesLoaded(const LeaderboardEntry* entries, int count, bool success);
+        static void OnLocalPlayerEntryLoaded(int rank, int64_t score, bool success);
+        
         // Utility
         std::string FormatTime(float seconds) const;
+        std::string FormatScore(int64_t score) const;
         bool IsMobilePlatform() const;
     };
 

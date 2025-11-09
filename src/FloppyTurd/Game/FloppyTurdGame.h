@@ -142,12 +142,13 @@ namespace GameCore {
         struct CustomizationData {
             int equippedHatIndex;       // Currently equipped hat (-1 = none)
             int selectedHatIndex;       // Currently selected hat in menu (-1 = none)
-            std::vector<bool> unlockedHats; // Which hats are unlocked
+            std::vector<bool> unlockedHats; // Which hats are unlocked (index 0 = unequipped, 1-15 = actual hats)
             std::vector<bool> unlockedSkills; // Which skills are unlocked (5 skills total)
             
-            CustomizationData() : equippedHatIndex(-1), selectedHatIndex(-1) {
-                unlockedHats.resize(15, false);
-                // ALL hats locked by default - must be purchased
+            CustomizationData() : equippedHatIndex(0), selectedHatIndex(0) {
+                unlockedHats.resize(16, false);  // 16 total: index 0 = unequipped (always available), 1-15 = actual hats
+                unlockedHats[0] = true;  // Index 0 (unequipped) is always "unlocked"
+                // Hats 1-15 locked by default - must be purchased
                 unlockedSkills.resize(5, false); // 5 skills: HalfHearts, ThirdHearts, CoinMagnet, HeartMagnet, CoinSafetyNet
             }
         };

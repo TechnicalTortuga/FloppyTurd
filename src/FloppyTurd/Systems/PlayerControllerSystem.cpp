@@ -471,7 +471,7 @@ namespace GameCore {
         }
 
         int equippedHatIndex = m_hatsSystem->GetEquippedHatIndex();
-        if (equippedHatIndex < 0) {
+        if (equippedHatIndex <= 0) {
             GN_LOG_DEBUG("PlayerController: No hat equipped (index: %d), using base animation: %s", equippedHatIndex, baseAnimationName.c_str());
             return baseAnimationName; // No hat equipped, use base animation
         }
@@ -1020,7 +1020,7 @@ namespace GameCore {
         }
 
         int equippedHatIndex = m_hatsSystem->GetEquippedHatIndex();
-        if (equippedHatIndex < 0) {
+        if (equippedHatIndex <= 0) {
             // No hat equipped, hide hat sprite
             HideHatSprite();
             return;

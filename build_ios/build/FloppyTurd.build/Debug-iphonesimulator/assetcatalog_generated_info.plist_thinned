@@ -14,13 +14,5 @@
 			<string>AppIcon</string>
 		</dict>
 	</dict>
-	<key>CFBundleIcons~ipad</key>
-	<dict>
-		<key>CFBundlePrimaryIcon</key>
-		<dict>
-			<key>CFBundleIconName</key>
-			<string>AppIcon</string>
-		</dict>
-	</dict>
 </dict>
 </plist>

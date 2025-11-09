@@ -479,9 +479,11 @@ void BossSystem::UpdateDeathSequence(float deltaTime) {
         }
         m_explosionIndex++;
         
-        // Trigger stronger haptic for BIG explosion
-        if (m_platformDelegates && m_platformDelegates->haptic.triggerImpact) {
-            m_platformDelegates->haptic.triggerImpact(HapticStyle::HEAVY, 1.0f);
+        // Trigger stronger haptic for BIG explosion - check if vibrations are enabled
+        if (GameCore::GetGame() && GameCore::GetGame()->GetVibrationsEnabled()) {
+            if (m_platformDelegates && m_platformDelegates->haptic.triggerImpact) {
+                m_platformDelegates->haptic.triggerImpact(HapticStyle::HEAVY, 1.0f);
+            }
         }
     }
     // Explosion 4 at 1.5s

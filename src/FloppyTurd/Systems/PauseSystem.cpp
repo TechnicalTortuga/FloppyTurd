@@ -212,12 +212,14 @@ namespace GameCore {
             HandleKnobDrag(touchX, touchY, touchState);
         }
 
-        // Only process clicks on PRESSED state
-        if (touchState != TouchState::PRESSED) {
+        // CRITICAL FIX: Process button clicks on RELEASED instead of PRESSED to prevent double-clicks
+        // This matches the pattern used in LeaderboardState and MainMenuState
+        if (touchState != TouchState::RELEASED) {
+            GN_LOG_INFO("PauseSystem: Ignoring " + stateStr + " touch - only processing RELEASED for clicks");
             return;
         }
 
-        GN_LOG_INFO("PauseSystem: Handling PRESSED input at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ") - VISIBLE AND ACTIVE");
+        GN_LOG_INFO("PauseSystem: Handling RELEASED touch for button clicks at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ") - VISIBLE AND ACTIVE");
 
         // Handle pause menu input (this includes settings button detection)
         HandlePauseMenuInput(touchX, touchY);
@@ -1149,9 +1151,9 @@ namespace GameCore {
         // Start grid lower to avoid overlap with labels and provide more vertical spacing
         float gridStartY;
         if (IsLandscapeMode()) {
-            gridStartY = centerY - (gridHeight * 0.2f) + 16.0f; // Start even lower in landscape for better spacing, plus extra 16px
+            gridStartY = centerY - (gridHeight * 0.2f) - (16.0f * 6.0f); // Start even lower in landscape, minus 16px scaled to move UP
         } else {
-            gridStartY = centerY - (gridHeight * 0.4f); // Original positioning in portrait
+            gridStartY = centerY - (gridHeight * 0.4f) - (16.0f * 6.0f); // Original positioning in portrait, minus 16px scaled to move UP
         }
 
         for (int row = 0; row < GRID_ROWS; ++row) {
@@ -1168,8 +1170,13 @@ namespace GameCore {
             float x = positions[i].x;
             float y = positions[i].y;
 
-            // Get hat data
-            auto hatData = m_hatsSystem->GetHatData(i);
+            // IMPORTANT: UI iteration uses i=0-14 for the 15 hats
+            // But equippedHatIndex/selectedHatIndex use 0=unequipped, 1-15=actual hats
+            // So we need to add 1 to i when getting hat data and comparing indices
+            int hatIndex = i + 1; // Convert UI index to game index (1-15)
+            
+            // Get hat data using game index
+            auto hatData = m_hatsSystem->GetHatData(hatIndex);
             if (!hatData) continue;
 
             // Create frame entity - MATCH ORIGINAL LOGIC
@@ -1183,9 +1190,9 @@ namespace GameCore {
 
             // Determine frame texture based on hat status and selection (like original)
             std::string frameTextureId;
-            if (i == m_hatsSystem->GetSelectedHatIndex()) {
+            if (hatIndex == m_hatsSystem->GetSelectedHatIndex()) {
                 frameTextureId = "HatFrameHover.png"; // Use hover texture for selected hat
-            } else if (i == m_hatsSystem->GetEquippedHatIndex()) {
+            } else if (hatIndex == m_hatsSystem->GetEquippedHatIndex()) {
                 frameTextureId = "HatFrameHover.png"; // Use hover texture for equipped hat
             } else {
                 frameTextureId = "HatFrame.png"; // Use normal frame texture for all others
@@ -1385,8 +1392,9 @@ namespace GameCore {
         int selectedHatIndex = m_hatsSystem->GetSelectedHatIndex();
 
         // Update cost display and action button
-        if (selectedHatIndex < 0 || selectedHatIndex >= m_hatsSystem->GetHatCount()) {
-            // No hat selected
+        // Note: index 0 = unequipped/no hat, 1-15 = actual hats
+        if (selectedHatIndex <= 0 || selectedHatIndex > m_hatsSystem->GetHatCount()) {
+            // No hat selected or invalid index
             if (m_hatsCostDisplayEntity != 0 && m_ecsCoordinator) {
                 UIElement* costElement = m_ecsCoordinator->GetComponent<UIElement>(m_hatsCostDisplayEntity);
                 if (costElement) {
@@ -1487,10 +1495,12 @@ namespace GameCore {
                 auto* uiElement = m_ecsCoordinator->GetComponent<UIElement>(frameEntity);
 
                 if (sprite && uiElement) {
+                    // Convert UI index to game index for comparisons (i=0-14 -> hatIndex=1-15)
+                    int hatIndex = i + 1;
                     std::string frameTextureId;
-                    if (i == (size_t)m_hatsSystem->GetSelectedHatIndex()) {
+                    if (hatIndex == m_hatsSystem->GetSelectedHatIndex()) {
                         frameTextureId = "HatFrameHover.png"; // Use hover texture for selected hat
-                    } else if (i == (size_t)m_hatsSystem->GetEquippedHatIndex()) {
+                    } else if (hatIndex == m_hatsSystem->GetEquippedHatIndex()) {
                         frameTextureId = "HatFrameHover.png"; // Use hover texture for equipped hat
                     } else {
                         frameTextureId = "HatFrame.png"; // Use normal frame texture for all others
@@ -1508,8 +1518,10 @@ namespace GameCore {
             if (i < m_lockedFrameEntities.size()) {
                 auto lockedFrameEntity = m_lockedFrameEntities[i];
                 if (lockedFrameEntity != 0 && m_ecsCoordinator) {
+                    // Convert UI index to game index (i=0-14 -> hatIndex=1-15)
+                    int hatIndex = i + 1;
                     // Check if this hat is unlocked
-                    bool isUnlocked = m_hatsSystem->IsHatUnlocked(i);
+                    bool isUnlocked = m_hatsSystem->IsHatUnlocked(hatIndex);
                     
                     // Hide locked frame if hat is unlocked, show if locked
                     auto* lockedSprite = m_ecsCoordinator->GetComponent<Sprite>(lockedFrameEntity);
@@ -3053,9 +3065,11 @@ namespace GameCore {
                             GameCore::GetGame()->SaveSettings();
                         }
                         
-                        // Play haptic if enabled
+                        // Play haptic ONLY if vibrations are enabled (just turned ON)
+                        // This confirms the toggle worked by giving immediate feedback
                         if (newState && m_platformDelegates.haptic.triggerImpact) {
                             m_platformDelegates.haptic.triggerImpact(HapticStyle::LIGHT, 0.5f);
+                            GN_LOG_INFO("PauseSystem: Triggered haptic feedback for toggle confirmation (vibrations now ON)");
                         }
                     }
                     return;
@@ -3068,7 +3082,7 @@ namespace GameCore {
 
         GN_LOG_INFO("PauseSystem: System tab click handled");
     }
-
+    
     void PauseSystem::HandleSkillsTabClick(float touchX, float touchY) {
         GN_LOG_INFO("PauseSystem: Handling skills tab click at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + ")");
 
@@ -3146,8 +3160,10 @@ namespace GameCore {
                 if (frameEntity != 0) {
             // Hat frames are top-left positioned
             if (IsTouchInButtonBounds(touchX, touchY, frameEntity, false)) {
-                        GN_LOG_INFO("PauseSystem: Hat frame " + std::to_string(i) + " clicked - selecting hat");
-                        m_hatsSystem->SelectHat((int)i);
+                        // Convert UI index to game index (i=0-14 -> hatIndex=1-15)
+                        int hatIndex = i + 1;
+                        GN_LOG_INFO("PauseSystem: Hat frame " + std::to_string(i) + " clicked - selecting hat index " + std::to_string(hatIndex));
+                        m_hatsSystem->SelectHat(hatIndex);
                         UpdateHatDisplay();
                         return;
                     }

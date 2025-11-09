@@ -134,11 +134,12 @@ class CommandProcessor {
         let saveCommands = GameCorePlatform.GameCore.getAndClearSaveCommandsFromProxy()
         let gameCenterCommands = GameCorePlatform.GameCore.getAndClearGameCenterCommandsFromProxy()
         let adCommands = GameCorePlatform.GameCore.getAndClearAdCommandsFromProxy()
+        let iapCommands = GameCorePlatform.GameCore.getAndClearIAPCommandsFromProxy()
 
         let totalCommands =
             renderCommands.count + audioCommands.count + logCommands.count + assetCommands.count
             + hapticCommands.count + saveCommands.count + gameCenterCommands.count
-            + adCommands.count
+            + adCommands.count + iapCommands.count
 
         // Only log when there are significant commands (avoid spam)
         if totalCommands > 50 {
@@ -178,6 +179,10 @@ class CommandProcessor {
 
         for adCommand in adCommands {
             executeAdCommand(adCommand)
+        }
+
+        for iapCommand in iapCommands {
+            executeIAPCommand(iapCommand)
         }
 
         // Log if processing took significant time
@@ -1000,6 +1005,99 @@ class CommandProcessor {
         case .CMD_GAME_CENTER_SHOW_ALL_LEADERBOARDS:
             GameCenterManager.shared.showAllLeaderboards()
             self.log("[CommandProcessor] Showing all leaderboards", level: .info)
+        
+        case .CMD_GAME_CENTER_LOAD_LEADERBOARD_ENTRIES:
+            let leaderboardID = String(command.data.leaderboardID)
+            let callbackPtr = command.data.leaderboardEntriesCallback
+            NSLog("📊 [CommandProcessor] Loading leaderboard entries for: %@", leaderboardID)
+            
+            GameCenterManager.shared.loadLeaderboardEntries(leaderboardID) { entries, error in
+                if let entries = entries {
+                    NSLog("✅ [CommandProcessor] Loaded %d leaderboard entries", entries.count)
+                    
+                    // Convert Swift GKLeaderboard.Entry array to C++ LeaderboardEntry array
+                    var cppEntries: [GameCorePlatform.GameCore.LeaderboardEntry] = []
+                    for entry in entries {
+                        var cppEntry = GameCorePlatform.GameCore.LeaderboardEntry()
+                        cppEntry.rank = Int32(entry.rank)
+                        cppEntry.score = Int64(entry.score)
+                        // Copy player name (max 128 chars)
+                        let playerName = entry.player.displayName
+                        withUnsafeMutablePointer(to: &cppEntry.playerName.0) { ptr in
+                            let buffer = UnsafeMutableBufferPointer(start: ptr, count: 128)
+                            let nameBytes = Array(playerName.utf8.prefix(127)) + [0] // Null-terminate
+                            for (i, byte) in nameBytes.enumerated() {
+                                buffer[i] = Int8(bitPattern: byte)
+                            }
+                        }
+                        cppEntries.append(cppEntry)
+                        
+                        NSLog("  [%d] Rank: %d, Score: %d, Player: %@",
+                              cppEntries.count, entry.rank, entry.score, entry.player.displayName)
+                    }
+                    
+                    // Call the C++ callback with the data
+                    if let callbackPtr = callbackPtr {
+                        // Cast void* back to function pointer type
+                        typealias CallbackType = @convention(c) (UnsafePointer<GameCorePlatform.GameCore.LeaderboardEntry>?, Int32, Bool) -> Void
+                        let callback = unsafeBitCast(callbackPtr, to: CallbackType.self)
+                        
+                        cppEntries.withUnsafeBufferPointer { buffer in
+                            callback(buffer.baseAddress, Int32(buffer.count), true)
+                        }
+                        NSLog("✅ [CommandProcessor] Callback invoked with %d entries", cppEntries.count)
+                    }
+                } else if let error = error {
+                    NSLog("❌ [CommandProcessor] Failed to load leaderboard entries: %@",
+                          error.localizedDescription)
+                    // Call callback with failure
+                    if let callbackPtr = callbackPtr {
+                        typealias CallbackType = @convention(c) (UnsafePointer<GameCorePlatform.GameCore.LeaderboardEntry>?, Int32, Bool) -> Void
+                        let callback = unsafeBitCast(callbackPtr, to: CallbackType.self)
+                        callback(nil, 0, false)
+                    }
+                } else {
+                    NSLog("⚠️ [CommandProcessor] No entries found")
+                    if let callbackPtr = callbackPtr {
+                        typealias CallbackType = @convention(c) (UnsafePointer<GameCorePlatform.GameCore.LeaderboardEntry>?, Int32, Bool) -> Void
+                        let callback = unsafeBitCast(callbackPtr, to: CallbackType.self)
+                        callback(nil, 0, true) // Success but no data
+                    }
+                }
+            }
+        
+        case .CMD_GAME_CENTER_LOAD_LOCAL_PLAYER_ENTRY:
+            let leaderboardID = String(command.data.leaderboardID)
+            let callbackPtr = command.data.localPlayerEntryCallback
+            NSLog("📊 [CommandProcessor] Loading local player entry for: %@", leaderboardID)
+            
+            GameCenterManager.shared.loadLocalPlayerEntry(leaderboardID) { entry, error in
+                if let entry = entry {
+                    NSLog("✅ [CommandProcessor] Local player entry - Rank: %d, Score: %d",
+                          entry.rank, entry.score)
+                    // Call the C++ callback with the data
+                    if let callbackPtr = callbackPtr {
+                        typealias CallbackType = @convention(c) (Int32, Int64, Bool) -> Void
+                        let callback = unsafeBitCast(callbackPtr, to: CallbackType.self)
+                        callback(Int32(entry.rank), Int64(entry.score), true)
+                    }
+                } else if let error = error {
+                    NSLog("❌ [CommandProcessor] Failed to load local player entry: %@",
+                          error.localizedDescription)
+                    if let callbackPtr = callbackPtr {
+                        typealias CallbackType = @convention(c) (Int32, Int64, Bool) -> Void
+                        let callback = unsafeBitCast(callbackPtr, to: CallbackType.self)
+                        callback(0, 0, false)
+                    }
+                } else {
+                    NSLog("⚠️ [CommandProcessor] No entry found for local player")
+                    if let callbackPtr = callbackPtr {
+                        typealias CallbackType = @convention(c) (Int32, Int64, Bool) -> Void
+                        let callback = unsafeBitCast(callbackPtr, to: CallbackType.self)
+                        callback(0, 0, false)
+                    }
+                }
+            }
 
         default:
             self.log(
@@ -1035,6 +1133,51 @@ class CommandProcessor {
         default:
             self.log(
                 "[CommandProcessor] Unsupported Ad command type: \(commandType)",
+                level: .warning)
+        }
+    }
+
+    // MARK: - IAP Command Execution
+
+    private func executeIAPCommand(_ command: GameCorePlatform.GameCore.IAPCommand) {
+        let commandType = command.type
+
+        // Process commands directly - StoreManager is @MainActor
+        switch commandType {
+        case .CMD_IAP_PURCHASE:
+            let productID = String(command.data.productID)
+            StoreManager.shared.purchaseRemoveAds { success, error in
+                if success {
+                    self.log("[CommandProcessor] IAP purchase successful for: \(productID)", level: .info)
+                } else if let error = error {
+                    self.log("[CommandProcessor] IAP purchase failed: \(error.localizedDescription)", level: .error)
+                }
+            }
+            self.log("[CommandProcessor] IAP purchase requested for: \(productID)", level: .info)
+
+        case .CMD_IAP_RESTORE:
+            StoreManager.shared.restorePurchases { success, error in
+                if success {
+                    self.log("[CommandProcessor] IAP restore successful", level: .info)
+                } else if let error = error {
+                    self.log("[CommandProcessor] IAP restore failed: \(error.localizedDescription)", level: .error)
+                }
+            }
+            self.log("[CommandProcessor] IAP restore requested", level: .info)
+
+        case .CMD_IAP_HAS_PURCHASED:
+            let productID = String(command.data.productID)
+            let hasPurchased = StoreManager.shared.hasPurchasedRemoveAds
+            self.log("[CommandProcessor] IAP has purchased check for \(productID): \(hasPurchased)", level: .info)
+
+        case .CMD_IAP_GET_PRICE:
+            let productID = String(command.data.productID)
+            let price = StoreManager.shared.getPriceString() ?? "$2.00"
+            self.log("[CommandProcessor] IAP price for \(productID): \(price)", level: .info)
+
+        default:
+            self.log(
+                "[CommandProcessor] Unsupported IAP command type: \(commandType)",
                 level: .warning)
         }
     }

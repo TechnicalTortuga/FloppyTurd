@@ -1,6 +1,7 @@
 #pragma once
 
 #include "PlatformDelegates.h"
+#include "../../FloppyTurd/Game/FloppyTurdGame.h"
 
 namespace GameCore {
 
@@ -8,14 +9,29 @@ namespace GameCore {
      * @brief Haptic Helper Functions
      * 
      * Convenient wrapper functions for common haptic feedback patterns.
-     * These functions check for delegate validity before calling, making them
-     * safe to call without null checks in game code.
+     * These functions check for delegate validity AND vibration settings before calling,
+     * making them safe to call without checks in game code.
+     * 
+     * All functions now respect the global vibration setting from GetGame()->GetVibrationsEnabled()
      * 
      * Usage:
      *   HapticHelpers::TriggerJump(delegates);
      *   HapticHelpers::TriggerCollision(delegates, impactForce);
      */
     namespace HapticHelpers {
+
+        /**
+         * @brief Check if haptics should be triggered (vibrations enabled globally)
+         * @return true if vibrations are enabled, false otherwise
+         */
+        inline bool AreVibrationsEnabled() {
+            // Get global game instance to check vibration settings
+            auto* game = GameCore::GetGame();
+            if (!game) {
+                return true; // Default to enabled if game instance not available
+            }
+            return game->GetVibrationsEnabled();
+        }
 
         // ============================================================================
         // Player Actions
@@ -26,7 +42,7 @@ namespace GameCore {
          * @param delegates Platform delegates containing haptic interface
          */
         inline void TriggerJump(const PlatformDelegates& delegates) {
-            if (delegates.haptic.triggerImpact) {
+            if (AreVibrationsEnabled() && delegates.haptic.triggerImpact) {
                 delegates.haptic.triggerImpact(HapticStyle::LIGHT, 0.7f);
             }
         }
@@ -37,7 +53,7 @@ namespace GameCore {
          * @param landingForce Force of landing (0.0 - 1.0)
          */
         inline void TriggerLanding(const PlatformDelegates& delegates, float landingForce = 1.0f) {
-            if (delegates.haptic.triggerImpact) {
+            if (AreVibrationsEnabled() && delegates.haptic.triggerImpact) {
                 HapticStyle style = landingForce > 0.7f ? HapticStyle::MEDIUM : HapticStyle::LIGHT;
                 delegates.haptic.triggerImpact(style, landingForce);
             }
@@ -48,7 +64,7 @@ namespace GameCore {
          * @param delegates Platform delegates containing haptic interface
          */
         inline void TriggerDash(const PlatformDelegates& delegates) {
-            if (delegates.haptic.triggerImpact) {
+            if (AreVibrationsEnabled() && delegates.haptic.triggerImpact) {
                 delegates.haptic.triggerImpact(HapticStyle::RIGID, 0.8f);
             }
         }
@@ -63,7 +79,7 @@ namespace GameCore {
          * @param impactForce Force of impact (0.0 - 1.0), scales intensity and style
          */
         inline void TriggerCollision(const PlatformDelegates& delegates, float impactForce = 1.0f) {
-            if (delegates.haptic.triggerImpact) {
+            if (AreVibrationsEnabled() && delegates.haptic.triggerImpact) {
                 HapticStyle style;
                 if (impactForce > 0.8f) {
                     style = HapticStyle::HEAVY;
@@ -81,7 +97,7 @@ namespace GameCore {
          * @param delegates Platform delegates containing haptic interface
          */
         inline void TriggerLightCollision(const PlatformDelegates& delegates) {
-            if (delegates.haptic.triggerImpact) {
+            if (AreVibrationsEnabled() && delegates.haptic.triggerImpact) {
                 delegates.haptic.triggerImpact(HapticStyle::LIGHT, 0.5f);
             }
         }
@@ -91,7 +107,7 @@ namespace GameCore {
          * @param delegates Platform delegates containing haptic interface
          */
         inline void TriggerHeavyCollision(const PlatformDelegates& delegates) {
-            if (delegates.haptic.triggerImpact) {
+            if (AreVibrationsEnabled() && delegates.haptic.triggerImpact) {
                 delegates.haptic.triggerImpact(HapticStyle::HEAVY, 1.0f);
             }
         }
@@ -247,7 +263,7 @@ namespace GameCore {
          * @param delegates Platform delegates containing haptic interface
          */
         inline void TriggerBossAppearance(const PlatformDelegates& delegates) {
-            if (delegates.haptic.triggerImpact) {
+            if (AreVibrationsEnabled() && delegates.haptic.triggerImpact) {
                 delegates.haptic.triggerImpact(HapticStyle::HEAVY, 1.0f);
             }
         }
@@ -257,7 +273,7 @@ namespace GameCore {
          * @param delegates Platform delegates containing haptic interface
          */
         inline void TriggerBossAttack(const PlatformDelegates& delegates) {
-            if (delegates.haptic.triggerImpact) {
+            if (AreVibrationsEnabled() && delegates.haptic.triggerImpact) {
                 delegates.haptic.triggerImpact(HapticStyle::HEAVY, 0.9f);
             }
         }
@@ -267,7 +283,7 @@ namespace GameCore {
          * @param delegates Platform delegates containing haptic interface
          */
         inline void TriggerBossDamage(const PlatformDelegates& delegates) {
-            if (delegates.haptic.triggerImpact) {
+            if (AreVibrationsEnabled() && delegates.haptic.triggerImpact) {
                 delegates.haptic.triggerImpact(HapticStyle::MEDIUM, 0.7f);
             }
         }
@@ -277,7 +293,7 @@ namespace GameCore {
          * @param delegates Platform delegates containing haptic interface
          */
         inline void TriggerBossDeath(const PlatformDelegates& delegates) {
-            if (delegates.haptic.triggerPattern) {
+            if (AreVibrationsEnabled() && delegates.haptic.triggerPattern) {
                 delegates.haptic.triggerPattern("boss_death");
             }
         }
@@ -287,7 +303,7 @@ namespace GameCore {
          * @param delegates Platform delegates containing haptic interface
          */
         inline void TriggerBossPhaseChange(const PlatformDelegates& delegates) {
-            if (delegates.haptic.triggerImpact) {
+            if (AreVibrationsEnabled() && delegates.haptic.triggerImpact) {
                 delegates.haptic.triggerImpact(HapticStyle::HEAVY, 0.8f);
             }
         }
