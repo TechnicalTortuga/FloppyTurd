@@ -64,7 +64,8 @@ namespace GameCore {
             OPTIONS = 1,
             QUICK_PLAY = 2,
             LEADERBOARD = 3,
-            COUNT = 4
+            HOW_TO = 4,
+            COUNT = 5
         };
 
         struct LevelInfo {
@@ -109,6 +110,7 @@ namespace GameCore {
         Gnosis::Entity m_optionsButtonEntity;
         Gnosis::Entity m_quickPlayButtonEntity;
         Gnosis::Entity m_leaderboardButtonEntity;
+        Gnosis::Entity m_howToButtonEntity;
         
         // Main menu UI - ad controls and version
         Gnosis::Entity m_adControlsButtonEntity;
@@ -276,6 +278,7 @@ namespace GameCore {
         void OnOptionsButtonPressed();
         void OnQuickPlayButtonPressed();
         void OnLeaderboardButtonPressed();
+        void OnHowToButtonPressed();
         void OnAdControlsButtonPressed();
         
         // Input checking

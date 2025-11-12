@@ -1,5 +1,6 @@
 #include "EnemySystem.h"
 #include "BossSystem.h"
+#include "../Game/FloppyTurdGame.h"
 #include "../../Engine/Configuration/ConfigManager.h"
 #include <cmath>
 #include <algorithm>
@@ -1233,6 +1234,30 @@ void EnemySystem::ProcessEnemyCollision(Entity e, Enemy* enemy, Transform* trans
             if (enemy->health <= 0) {
                 // Enemy defeated - switch to hurt state, animation will play before pool return
                 enemy->currentState = EnemyState::Hurt;
+                
+                // Play enemy-specific kill sound
+                if (m_levelManager && GameCore::GetGame()) {
+                    const PlatformDelegates& delegates = m_levelManager->GetPlatformDelegates();
+                    if (delegates.audio.playSound) {
+                        std::string killSound = "";
+                        
+                        // Determine kill sound based on enemy type (check if type contains the base name)
+                        if (enemy->enemyType.find("ToiletPaper") != std::string::npos) {
+                            killSound = "tpkill";
+                        } else if (enemy->enemyType.find("Rat") != std::string::npos) {
+                            killSound = "ratkill";
+                        } else if (enemy->enemyType.find("Bird") != std::string::npos) {
+                            killSound = "birdkill";
+                        }
+                        
+                        if (!killSound.empty()) {
+                            // Use proper volume from game settings (master * sfx)
+                            float volume = GameCore::GetGame()->GetMasterVolume() * GameCore::GetGame()->GetSFXVolume();
+                            delegates.audio.playSound(killSound.c_str(), volume);
+                            GN_LOG_INFO("[COLLISION] Playing kill sound: " + killSound + " for enemy type: " + enemy->enemyType + " at volume: " + std::to_string(volume));
+                        }
+                    }
+                }
                 
                 float hurtDuration = 0.6f; // Default
                 

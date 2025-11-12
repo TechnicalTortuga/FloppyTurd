@@ -8,6 +8,7 @@
 //
 
 import Foundation
+import GameCorePlatform
 import StoreKit
 
 /// @brief Singleton manager for StoreKit 2 In-App Purchases
@@ -37,7 +38,7 @@ class StoreManager: NSObject {
     
     private override init() {
         super.init()
-        print("💰 [StoreManager] Initializing...")
+        SwiftLog.info("💰 [StoreManager] Initializing...", category: "StoreManager")
         
         // Start listening for transactions
         transactionListener = listenForTransactions()
@@ -57,17 +58,28 @@ class StoreManager: NSObject {
     
     /// Load available products from App Store
     func loadProducts() async {
+        SwiftLog.info("🔄 [StoreManager] Loading products from App Store...", category: "StoreManager")
+        SwiftLog.info("🔄 [StoreManager] Product ID: \(Self.removeAdsProductID)", category: "StoreManager")
+        
         do {
             let products = try await Product.products(for: [Self.removeAdsProductID])
+            SwiftLog.info("✅ [StoreManager] Product.products() returned \(products.count) products", category: "StoreManager")
             
             if let product = products.first {
                 removeAdsProduct = product
-                print("✅ [StoreManager] Loaded product: \(product.displayName) - \(product.displayPrice)")
+                SwiftLog.info("✅ [StoreManager] Loaded product: \(product.displayName) - \(product.displayPrice)", category: "StoreManager")
+                SwiftLog.info("✅ [StoreManager] Product ID: \(product.id)", category: "StoreManager")
+                SwiftLog.info("✅ [StoreManager] Product Type: \(product.type)", category: "StoreManager")
             } else {
-                print("⚠️ [StoreManager] No products found for ID: \(Self.removeAdsProductID)")
+                SwiftLog.warn("⚠️ [StoreManager] No products found for ID: \(Self.removeAdsProductID)", category: "StoreManager")
+                SwiftLog.warn("⚠️ [StoreManager] This usually means:", category: "StoreManager")
+                SwiftLog.warn("   1. Product not configured in App Store Connect", category: "StoreManager")
+                SwiftLog.warn("   2. Product ID mismatch", category: "StoreManager")
+                SwiftLog.warn("   3. App not signed with correct provisioning profile", category: "StoreManager")
             }
         } catch {
-            print("❌ [StoreManager] Failed to load products: \(error.localizedDescription)")
+            SwiftLog.error("❌ [StoreManager] Failed to load products: \(error.localizedDescription)", category: "StoreManager")
+            SwiftLog.error("❌ [StoreManager] Error type: \(type(of: error))", category: "StoreManager")
         }
     }
     
@@ -81,7 +93,7 @@ class StoreManager: NSObject {
     /// Check if user has already purchased "Remove Ads"
     /// This is called on app launch to restore purchase state
     func checkPurchaseStatus() async {
-        print("🔍 [StoreManager] Checking purchase status...")
+        SwiftLog.info("🔍 [StoreManager] Checking purchase status...", category: "StoreManager")
         
         // Check for valid transactions in App Store receipt
         for await result in Transaction.currentEntitlements {
@@ -90,7 +102,7 @@ class StoreManager: NSObject {
                 
                 // Check if this is our "Remove Ads" product
                 if transaction.productID == Self.removeAdsProductID {
-                    print("✅ [StoreManager] Found valid 'Remove Ads' purchase")
+                    SwiftLog.info("✅ [StoreManager] Found valid 'Remove Ads' purchase", category: "StoreManager")
                     hasPurchasedRemoveAds = true
                     
                     // Notify AdManager to disable ads
@@ -101,11 +113,11 @@ class StoreManager: NSObject {
                     return
                 }
             } catch {
-                print("⚠️ [StoreManager] Transaction verification failed: \(error)")
+                SwiftLog.warn("⚠️ [StoreManager] Transaction verification failed: \(error)", category: "StoreManager")
             }
         }
         
-        print("📊 [StoreManager] No valid 'Remove Ads' purchase found")
+        SwiftLog.info("📊 [StoreManager] No valid 'Remove Ads' purchase found", category: "StoreManager")
         hasPurchasedRemoveAds = false
         
         // Ensure ads are enabled if no purchase found
@@ -117,61 +129,93 @@ class StoreManager: NSObject {
     /// Purchase the "Remove Ads" product
     /// - Parameter completion: Callback with success/failure and optional error
     func purchaseRemoveAds(completion: @escaping (Bool, Error?) -> Void) {
+        SwiftLog.info("🔵 [StoreManager] purchaseRemoveAds() called", category: "StoreManager")
+        
+        // If product not loaded yet, try loading it first
         guard let product = removeAdsProduct else {
-            print("❌ [StoreManager] Cannot purchase - product not loaded")
-            completion(false, StoreError.productNotLoaded)
+            SwiftLog.warn("⚠️ [StoreManager] Product not loaded yet - attempting to load now...", category: "StoreManager")
+            Task {
+                await loadProducts()
+                
+                // Check again after loading
+                guard let product = removeAdsProduct else {
+                    SwiftLog.error("❌ [StoreManager] Cannot purchase - product failed to load", category: "StoreManager")
+                    SwiftLog.error("❌ [StoreManager] Possible reasons:", category: "StoreManager")
+                    SwiftLog.error("   1. Product ID '\(Self.removeAdsProductID)' not configured in App Store Connect", category: "StoreManager")
+                    SwiftLog.error("   2. App not signed with correct provisioning profile", category: "StoreManager")
+                    SwiftLog.error("   3. Network connection issue", category: "StoreManager")
+                    completion(false, StoreError.productNotLoaded)
+                    return
+                }
+                
+                // Product loaded successfully, proceed with purchase
+                await self.performPurchase(product: product, completion: completion)
+            }
             return
         }
         
-        print("💳 [StoreManager] Initiating purchase for: \(product.displayName)")
-        
+        // Product already loaded, proceed with purchase
         Task {
-            do {
-                let result = try await product.purchase()
+            await performPurchase(product: product, completion: completion)
+        }
+    }
+    
+    /// Internal helper to perform the actual purchase
+    private func performPurchase(product: Product, completion: @escaping (Bool, Error?) -> Void) async {
+        SwiftLog.info("💳 [StoreManager] Initiating purchase for: \(product.displayName)", category: "StoreManager")
+        SwiftLog.info("💳 [StoreManager] Product ID: \(product.id)", category: "StoreManager")
+        SwiftLog.info("💳 [StoreManager] Product Price: \(product.displayPrice)", category: "StoreManager")
+        
+        do {
+            SwiftLog.info("🔄 [StoreManager] Calling product.purchase()...", category: "StoreManager")
+            let result = try await product.purchase()
+            SwiftLog.info("✅ [StoreManager] product.purchase() returned result: \(result)", category: "StoreManager")
+            
+            switch result {
+            case .success(let verification):
+                // Transaction successful - verify it
+                let transaction = try checkVerified(verification)
                 
-                switch result {
-                case .success(let verification):
-                    // Transaction successful - verify it
-                    let transaction = try checkVerified(verification)
-                    
-                    print("✅ [StoreManager] Purchase successful - ID: \(transaction.id)")
-                    
-                    // Update state
-                    hasPurchasedRemoveAds = true
-                    
-                    // Disable ads immediately
-                    AdManager.shared.setAdsEnabled(false)
-                    
-                    // Finish the transaction
-                    await transaction.finish()
-                    
-                    // Notify success
-                    completion(true, nil)
-                    
-                case .userCancelled:
-                    print("⚠️ [StoreManager] User cancelled purchase")
-                    completion(false, StoreError.userCancelled)
-                    
-                case .pending:
-                    print("⏳ [StoreManager] Purchase pending (awaiting approval)")
-                    completion(false, StoreError.purchasePending)
-                    
-                @unknown default:
-                    print("❌ [StoreManager] Unknown purchase result")
-                    completion(false, StoreError.unknown)
-                }
+                SwiftLog.info("✅ [StoreManager] Purchase successful - ID: \(transaction.id)", category: "StoreManager")
                 
-            } catch {
-                print("❌ [StoreManager] Purchase failed: \(error.localizedDescription)")
-                completion(false, error)
+                // Update state
+                hasPurchasedRemoveAds = true
+                
+                // Disable ads immediately
+                AdManager.shared.setAdsEnabled(false)
+                
+                // Finish the transaction
+                await transaction.finish()
+                
+                // Notify success
+                completion(true, nil)
+                
+            case .userCancelled:
+                SwiftLog.warn("⚠️ [StoreManager] User cancelled purchase", category: "StoreManager")
+                completion(false, StoreError.userCancelled)
+                
+            case .pending:
+                SwiftLog.warn("⏳ [StoreManager] Purchase pending (awaiting approval)", category: "StoreManager")
+                SwiftLog.warn("⏳ [StoreManager] This usually means parental approval is required", category: "StoreManager")
+                completion(false, StoreError.purchasePending)
+                
+            @unknown default:
+                SwiftLog.error("❌ [StoreManager] Unknown purchase result", category: "StoreManager")
+                completion(false, StoreError.unknown)
             }
+            
+        } catch {
+            SwiftLog.error("❌ [StoreManager] Purchase failed with exception: \(error.localizedDescription)", category: "StoreManager")
+            SwiftLog.error("❌ [StoreManager] Error type: \(type(of: error))", category: "StoreManager")
+            SwiftLog.error("❌ [StoreManager] Full error: \(error)", category: "StoreManager")
+            completion(false, error)
         }
     }
     
     /// Restore previous purchases
     /// Call this when user taps "Restore Purchases" button
     func restorePurchases(completion: @escaping (Bool, Error?) -> Void) {
-        print("🔄 [StoreManager] Restoring purchases...")
+        SwiftLog.info("🔄 [StoreManager] Restoring purchases...", category: "StoreManager")
         
         Task {
             do {
@@ -182,15 +226,15 @@ class StoreManager: NSObject {
                 await checkPurchaseStatus()
                 
                 if hasPurchasedRemoveAds {
-                    print("✅ [StoreManager] Purchase restored successfully")
+                    SwiftLog.info("✅ [StoreManager] Purchase restored successfully", category: "StoreManager")
                     completion(true, nil)
                 } else {
-                    print("⚠️ [StoreManager] No purchases to restore")
+                    SwiftLog.warn("⚠️ [StoreManager] No purchases to restore", category: "StoreManager")
                     completion(false, StoreError.noPurchasesToRestore)
                 }
                 
             } catch {
-                print("❌ [StoreManager] Restore failed: \(error.localizedDescription)")
+                SwiftLog.error("❌ [StoreManager] Restore failed: \(error.localizedDescription)", category: "StoreManager")
                 completion(false, error)
             }
         }

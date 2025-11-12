@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(FloppyTurd VERSION 0.9.7 LANGUAGES CXX Swift)
+project(FloppyTurd VERSION 0.9.8 LANGUAGES CXX Swift)
 
 # Set C++ standard globally
 set(CMAKE_CXX_STANDARD 20)
@@ -326,8 +326,9 @@ if(PLATFORM_IOS)
     # Link manually downloaded Google Mobile Ads SDK XCFrameworks
     set(ADMOB_SDK_PATH "${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/GoogleMobileAds/GoogleMobileAdsSdkiOS-12.12.0")
     
-    # Detect if building for simulator or device based on SDK
-    if(CMAKE_OSX_SYSROOT MATCHES "simulator")
+    # Detect if building for simulator or device based on SDK (case-insensitive)
+    string(TOLOWER "${CMAKE_OSX_SYSROOT}" _SYSROOT_LOWER)
+    if(_SYSROOT_LOWER MATCHES "simulator")
         set(ADMOB_FRAMEWORK_PATH "${ADMOB_SDK_PATH}/GoogleMobileAds.xcframework/ios-arm64_x86_64-simulator")
         set(UMP_FRAMEWORK_PATH "${ADMOB_SDK_PATH}/UserMessagingPlatform.xcframework/ios-arm64_x86_64-simulator")
         message(STATUS "✅ Linked Google Mobile Ads SDK and dependencies (SIMULATOR)")
@@ -445,6 +446,12 @@ if(PLATFORM_IOS)
         XCODE_ATTRIBUTE_INSTALL_PATH "$(LOCAL_APPS_DIR)"
         XCODE_ATTRIBUTE_SKIP_INSTALL "NO"
         XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT "dwarf-with-dsym"
+        XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT[variant=Release] "dwarf-with-dsym"
+        XCODE_ATTRIBUTE_GENERATE_DEBUG_SYMBOLS "YES"
+        XCODE_ATTRIBUTE_GCC_GENERATE_DEBUGGING_SYMBOLS "YES"
+        XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING "YES"
+        XCODE_ATTRIBUTE_DWARF_DSYM_FILE_SHOULD_ACCOMPANY_PRODUCT "YES"
+        XCODE_ATTRIBUTE_DWARF_DSYM_FOLDER_PATH "\$(CONFIGURATION_BUILD_DIR)"
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Debug-iphonesimulator"
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Debug-iphonesimulator"
         ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Debug-iphonesimulator"
@@ -484,6 +491,11 @@ if(TARGET FloppyTurdGame)
             XCODE_ATTRIBUTE_SWIFT_VERSION "6.0"
             XCODE_ATTRIBUTE_CLANG_ENABLE_MODULES "YES"
             XCODE_ATTRIBUTE_CLANG_ENABLE_MODULE_DEBUGGING "YES"
+            XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT "dwarf-with-dsym"
+            XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT[variant=Release] "dwarf-with-dsym"
+            XCODE_ATTRIBUTE_GENERATE_DEBUG_SYMBOLS "YES"
+            XCODE_ATTRIBUTE_GCC_GENERATE_DEBUGGING_SYMBOLS "YES"
+            XCODE_ATTRIBUTE_DWARF_DSYM_FILE_SHOULD_ACCOMPANY_PRODUCT "YES"
             SWIFT_INCLUDE_PATHS "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine"
             HEADER_SEARCH_PATHS "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine"
         )

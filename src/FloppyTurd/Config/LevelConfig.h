@@ -35,10 +35,10 @@ namespace GameCore {
         static constexpr float BASE_OBSTACLE_SPEED = 500.0f;     // Obstacle movement (increased from 300.0f)
         static constexpr float BASE_ENEMY_SPEED = 400.0f;        // Enemy movement (increased from 250.0f)
         
-        // Difficulty multipliers (user requested: current speed perfect for easy)
-        static constexpr float RUNNY_MULTIPLIER = 0.5f;    // 50% speed (much slower for easy mode)
-        static constexpr float REGULAR_MULTIPLIER = 1.0f;  // 100% speed (new higher base)
-        static constexpr float ROUGH_MULTIPLIER = 2.0f;    // 200% speed (insanely fast!)
+        // Difficulty multipliers (balanced for good gameplay feel)
+        static constexpr float RUNNY_MULTIPLIER = 0.75f;   // 75% speed (easier, not too slow)
+        static constexpr float REGULAR_MULTIPLIER = 1.0f;  // 100% speed (perfect - base 500)
+        static constexpr float ROUGH_MULTIPLIER = 1.5f;    // 150% speed (challenging but playable)
     }
     
     inline float GetDifficultyMultiplier(Difficulty diff) {

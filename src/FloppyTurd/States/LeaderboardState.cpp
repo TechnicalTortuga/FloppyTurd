@@ -363,9 +363,9 @@ namespace GameCore {
         // Calculate screen center for positioning (SAME as MainMenuState pattern)
         float centerX = m_screenWidth * 0.5f;
         
-        // Arrow button scale (larger for mobile)
-        float arrowScale = IsMobilePlatform() ? 6.0f : 2.0f;
-        float arrowTextureSize = 32.0f;
+        // Arrow button scale (match level select arrows for consistency)
+        float arrowScale = IsMobilePlatform() ? 10.0f : 5.0f;
+        float arrowTextureSize = 16.0f;  // Actual texture size is 16x16
         float arrowScaledSize = arrowTextureSize * arrowScale;
         
         GN_LOG_INFO("🎯 Arrow scale: " + std::to_string(arrowScale) + ", texture size: " + std::to_string(arrowTextureSize) + ", scaled size: " + std::to_string(arrowScaledSize));
@@ -394,19 +394,16 @@ namespace GameCore {
         
         GN_LOG_INFO("LeaderboardState: Created left arrow at (" + std::to_string(leftArrowFinalX) + ", " + std::to_string(leftArrowFinalY) + ")");
 
-        // Right arrow - SIMPLIFIED: just position at 90% without any edge correction
+        // Right arrow - positioned with RIGHT EDGE at 0.5% from right screen edge (match level select)
         m_rightArrowEntity = m_ecsSystem->CreateEntity();
-        float rightArrowFinalX = m_screenWidth * 0.90f;  // Simply 90% from left edge - NO CORRECTION
+        float rightArrowRightEdge = m_screenWidth * 0.995f;  // 99.5% from left = 0.5% from right (match level select)
+        float rightArrowFinalX = rightArrowRightEdge - arrowScaledSize;  // Subtract full width to get left edge
         float rightArrowFinalY = arrowCenterY - (arrowScaledSize / 2.0f);  // Center vertically
         
-        GN_LOG_INFO("➡️ ========== RIGHT ARROW SIMPLIFIED POSITIONING ==========");
-        GN_LOG_INFO("   screenWidth=" + std::to_string(m_screenWidth));
-        GN_LOG_INFO("   arrowScaledSize=" + std::to_string(arrowScaledSize));
-        GN_LOG_INFO("   finalX (90% of screen)=" + std::to_string(rightArrowFinalX));
-        GN_LOG_INFO("   finalY=" + std::to_string(rightArrowFinalY));
-        GN_LOG_INFO("   Arrow will span from X=" + std::to_string(rightArrowFinalX) + " to X=" + std::to_string(rightArrowFinalX + arrowScaledSize));
-        GN_LOG_INFO("   Actual right edge will be at: " + std::to_string(rightArrowFinalX + arrowScaledSize));
-        GN_LOG_INFO("   Distance from screen right edge: " + std::to_string(m_screenWidth - (rightArrowFinalX + arrowScaledSize)) + " pixels");
+        GN_LOG_INFO("➡️ Right arrow: screenWidth=" + std::to_string(m_screenWidth) + 
+                    ", rightEdge=" + std::to_string(rightArrowRightEdge) + " (99.5%), arrowSize=" + 
+                    std::to_string(arrowScaledSize) + ", finalPos(" + std::to_string(rightArrowFinalX) +
+                    "," + std::to_string(rightArrowFinalY) + ")");
         
         Transform rightTransform(GNVector2(rightArrowFinalX, rightArrowFinalY), 0.0f, GNVector2(arrowScale, arrowScale));
         m_ecsSystem->AddComponent<Transform>(m_rightArrowEntity, rightTransform);
@@ -523,9 +520,9 @@ namespace GameCore {
             m_ecsSystem->AddComponent<Transform>(rowEntity, rowTransform);
             
             UIElement rowUI;
-            // Format: "01.          -------          -----" (even more horizontal spacing)
+            // Three-column format: "01.  ---                  -----"
             std::string rankStr = (i + 1 < 10) ? ("0" + std::to_string(i + 1)) : std::to_string(i + 1);
-            rowUI.buttonText = rankStr + ".          -------          -----";
+            rowUI.buttonText = rankStr + ".  ---                  -----";
             rowUI.fontSize = fontSize;
             rowUI.textColor = GNColor(200, 200, 200, 255);  // Light gray for empty slots
             rowUI.centerTextHorizontally = true;
@@ -536,26 +533,40 @@ namespace GameCore {
             m_contentEntities.push_back(rowEntity);
         }
         
-        // Add "Your Best" label row right above the center of the arrows (85% - half arrow height)
-        // This shows player's actual score/rank
+        // Create player's own rank row (11th row, shown at bottom)
         Entity playerRankEntity = m_ecsSystem->CreateEntity();
-        float arrowCenterY = m_screenHeight * 0.85f;  // Arrow center position
-        float arrowScaledSize = 32.0f * (IsMobilePlatform() ? 6.0f : 2.0f);
-        float playerRankY = arrowCenterY - (arrowScaledSize * 0.5f) - (lineHeight * 0.5f);  // Just above arrow center
-        
+        float playerRankY = startY + (11 * lineHeight);  // Below all 10 rows with gap
         Transform playerRankTransform(GNVector2(centerX, playerRankY), 0.0f, GNVector2(1.0f, 1.0f));
         m_ecsSystem->AddComponent<Transform>(playerRankEntity, playerRankTransform);
         
+        // Get cached Game Center player name if available
+        std::string playerName = "You";
+        if (m_platformDelegates && m_platformDelegates->gameCenter.getPlayerName) {
+            const char* gcName = m_platformDelegates->gameCenter.getPlayerName();
+            if (gcName && strlen(gcName) > 0 && strcmp(gcName, "You") != 0) {
+                playerName = gcName;
+                if (playerName.length() > 18) {
+                    playerName = playerName.substr(0, 15) + "...";
+                }
+            }
+        }
+        
         UIElement playerRankUI;
-        playerRankUI.buttonText = GetLocalScoreText(m_currentPage);  // This will show player's actual rank
+        // Use cached name instead of "Loading..." - three-column format
+        playerRankUI.buttonText = "--.  " + playerName;
+        while (playerRankUI.buttonText.length() < 26) {  // 4 (rank) + 2 (space) + 20 (name)
+            playerRankUI.buttonText += " ";
+        }
+        playerRankUI.buttonText += "-----";
         playerRankUI.fontSize = fontSize;
-        playerRankUI.textColor = GNColor(255, 215, 0, 255);  // Gold for player's rank
+        playerRankUI.textColor = GNColor(255, 215, 0, 255);  // Gold for player
         playerRankUI.centerTextHorizontally = true;
+        
+        GN_LOG_INFO("LeaderboardState: Player row created with name: " + playerName);
         playerRankUI.visible = true;
         playerRankUI.textLayer = 12;
         m_ecsSystem->AddComponent<UIElement>(playerRankEntity, playerRankUI);
-        
-        m_contentEntities.push_back(playerRankEntity);
+        m_contentEntities.push_back(playerRankEntity);  // Last entity = player's rank
         
         GN_LOG_INFO("LeaderboardState: Created top 10 leaderboard display starting at y=" + std::to_string(startY));
         
@@ -598,6 +609,9 @@ namespace GameCore {
 
     void LeaderboardState::UpdatePageContent() {
         CreatePageContent();
+        // Load leaderboard data for the new page
+        LoadLeaderboardData();
+        GN_LOG_INFO("LeaderboardState: Page switched - reloading leaderboard data");
     }
 
     void LeaderboardState::OnLeftArrowPressed() {
@@ -744,13 +758,13 @@ namespace GameCore {
             case LeaderboardPage::LEVEL_5_CASTLE:
                 return "com.floppyturd.castle";
             case LeaderboardPage::LEVEL_6_BOSS:
-                return "com.floppyturd.ratking.time"; // Boss is speedrun time only
+                return "com.floppyturd.ratking"; // Boss is speedrun time in milliseconds
             case LeaderboardPage::TOTAL_ENEMIES:
-                return "com.floppyturd.totalenemies";
+                return "com.floppyturd.enemies";
             case LeaderboardPage::TOTAL_COINS:
-                return "com.floppyturd.totalcoins";
+                return "com.floppyturd.coins";
             case LeaderboardPage::TOTAL_PIPES:
-                return "com.floppyturd.totalpipes";
+                return "com.floppyturd.pipes";
             default:
                 return "";
         }
@@ -776,6 +790,15 @@ namespace GameCore {
     }
     
     std::string LeaderboardState::FormatScore(int64_t score) const {
+        // Boss level uses time in seconds - format as mm:ss
+        if (m_currentPage == LeaderboardPage::LEVEL_6_BOSS) {
+            int minutes = static_cast<int>(score) / 60;
+            int seconds = static_cast<int>(score) % 60;
+            char buffer[16];
+            snprintf(buffer, sizeof(buffer), "%d:%02d", minutes, seconds);
+            return std::string(buffer);
+        }
+        // Other leaderboards use raw score
         return std::to_string(score);
     }
     
@@ -796,20 +819,21 @@ namespace GameCore {
             auto* uiElement = m_ecsSystem->GetComponent<UIElement>(rowEntity);
             
             if (uiElement) {
-                // Format: "01. PlayerName  12345"
+                // Three-column format: "01.  PlayerName           12345"
                 std::string rankStr = (entries[i].rank < 10) ? ("0" + std::to_string(entries[i].rank)) : std::to_string(entries[i].rank);
                 std::string playerName = entries[i].playerName;
                 std::string scoreStr = FormatScore(entries[i].score);
                 
-                // Truncate player name if too long (max 20 chars)
-                if (playerName.length() > 20) {
-                    playerName = playerName.substr(0, 17) + "...";
+                // Truncate player name if too long (max 18 chars to leave room for padding)
+                if (playerName.length() > 18) {
+                    playerName = playerName.substr(0, 15) + "...";
                 }
                 
-                // Format with spacing: "01. PlayerName          12345"
-                uiElement->buttonText = rankStr + ". " + playerName;
-                // Pad to align scores
-                while (uiElement->buttonText.length() < 30) {
+                // Format: "01." (4 chars) + "  " (2 spaces) + "Name" (padded to 20) + "  " (2 spaces) + "Score"
+                uiElement->buttonText = rankStr + ".  ";
+                uiElement->buttonText += playerName;
+                // Pad name column to 20 characters
+                while (uiElement->buttonText.length() < 26) {  // 4 (rank) + 2 (space) + 20 (name)
                     uiElement->buttonText += " ";
                 }
                 uiElement->buttonText += scoreStr;
@@ -836,7 +860,7 @@ namespace GameCore {
             
             if (uiElement) {
                 std::string rankStr = (i + 1 < 10) ? ("0" + std::to_string(i + 1)) : std::to_string(i + 1);
-                uiElement->buttonText = rankStr + ".          -------          -----";
+                uiElement->buttonText = rankStr + ".  ---                  -----";
                 uiElement->textColor = GNColor(100, 100, 100, 255); // Dark gray for empty slots
             }
         }
@@ -847,7 +871,7 @@ namespace GameCore {
     void LeaderboardState::UpdateLocalPlayerUI(int rank, int64_t score) {
         GN_LOG_INFO("🎨 LeaderboardState: Updating local player UI - Rank: " + std::to_string(rank) + ", Score: " + std::to_string(score));
         
-        // The last entity in m_contentEntities is the "Your Best" row
+        // The last entity in m_contentEntities is the player's rank row
         if (m_contentEntities.empty()) {
             GN_LOG_WARN("⚠️ No content entities to update");
             return;
@@ -857,11 +881,35 @@ namespace GameCore {
         auto* uiElement = m_ecsSystem->GetComponent<UIElement>(playerRankEntity);
         
         if (uiElement) {
-            std::string rankStr = (rank > 0) ? std::to_string(rank) : "--";
-            std::string scoreStr = FormatScore(score);
+            // Get Game Center player name
+            std::string playerName = "You";
+            if (m_platformDelegates && m_platformDelegates->gameCenter.getPlayerName) {
+                const char* gcName = m_platformDelegates->gameCenter.getPlayerName();
+                if (gcName && strlen(gcName) > 0) {
+                    playerName = gcName;
+                    // Truncate if too long
+                    if (playerName.length() > 20) {
+                        playerName = playerName.substr(0, 17) + "...";
+                    }
+                }
+            }
             
-            uiElement->buttonText = "Your Best: Rank #" + rankStr + "          Score: " + scoreStr;
-            uiElement->textColor = GNColor(255, 215, 0, 255); // Gold
+            // Format rank and score - match three-column format
+            std::string rankStr = (rank > 0) ? std::to_string(rank) : "--";
+            std::string scoreStr = (score > 0) ? FormatScore(score) : "-----";
+            
+            // Three-column format: "01." (4 chars) + "  " (2 spaces) + "Name" (20 chars) + "  " + "Score"
+            std::string formattedRank = (rank < 10 && rank > 0) ? ("0" + rankStr) : rankStr;
+            uiElement->buttonText = formattedRank + ".  ";
+            uiElement->buttonText += playerName;
+            // Pad name column to 20 characters
+            while (uiElement->buttonText.length() < 26) {  // 4 (rank) + 2 (space) + 20 (name)
+                uiElement->buttonText += " ";
+            }
+            uiElement->buttonText += scoreStr;
+            
+            // Gold color for player's row
+            uiElement->textColor = GNColor(255, 215, 0, 255);
             
             GN_LOG_INFO("  Local player UI: " + uiElement->buttonText);
         }
@@ -902,33 +950,49 @@ namespace GameCore {
 
     // Static callback functions for Game Center
     void LeaderboardState::OnLeaderboardEntriesLoaded(const LeaderboardEntry* entries, int count, bool success) {
-        if (s_instance) {
-            if (success && entries && count > 0) {
-                GN_LOG_INFO("✅ LeaderboardState: Received " + std::to_string(count) + " leaderboard entries");
-                for (int i = 0; i < count; ++i) {
-                    GN_LOG_INFO("  [" + std::to_string(i + 1) + "] Rank: " + std::to_string(entries[i].rank) +
-                               ", Score: " + std::to_string(entries[i].score) +
-                               ", Player: " + std::string(entries[i].playerName));
-                }
-                // Update UI with fetched entries
-                s_instance->UpdateLeaderboardUI(entries, count);
-            } else {
-                GN_LOG_WARN("⚠️ LeaderboardState: Failed to load leaderboard entries or no data available");
+        GN_LOG_INFO("LeaderboardState::OnLeaderboardEntriesLoaded called - success: " + std::string(success ? "true" : "false") + 
+                   ", count: " + std::to_string(count) + ", s_instance: " + std::string(s_instance ? "valid" : "null"));
+        
+        if (!s_instance) {
+            GN_LOG_ERROR("LeaderboardState: Callback invoked but s_instance is null!");
+            return;
+        }
+        
+        if (success && entries && count > 0) {
+            GN_LOG_INFO("LeaderboardState: Received " + std::to_string(count) + " leaderboard entries");
+            for (int i = 0; i < count; ++i) {
+                GN_LOG_INFO("  [" + std::to_string(i + 1) + "] Rank: " + std::to_string(entries[i].rank) +
+                           ", Score: " + std::to_string(entries[i].score) +
+                           ", Player: " + std::string(entries[i].playerName));
             }
+            // Update UI with fetched entries
+            GN_LOG_INFO("LeaderboardState: Calling UpdateLeaderboardUI with " + std::to_string(count) + " entries");
+            s_instance->UpdateLeaderboardUI(entries, count);
+            GN_LOG_INFO("LeaderboardState: UpdateLeaderboardUI completed");
+        } else {
+            GN_LOG_WARN("LeaderboardState: Failed to load leaderboard entries or no data available");
+            GN_LOG_WARN("   success: " + std::string(success ? "true" : "false"));
+            GN_LOG_WARN("   entries: " + std::string(entries ? "valid" : "null"));
+            GN_LOG_WARN("   count: " + std::to_string(count));
         }
     }
 
-    void LeaderboardState::OnLocalPlayerEntryLoaded(int rank, int64_t score, bool success) {
-        if (s_instance) {
-            if (success) {
-                GN_LOG_INFO("✅ LeaderboardState: Local player - Rank: " + std::to_string(rank) +
-                           ", Score: " + std::to_string(score));
-                // Update UI with local player's rank
-                s_instance->UpdateLocalPlayerUI(rank, score);
-            } else {
-                GN_LOG_INFO("⚠️ LeaderboardState: No entry found for local player on this leaderboard");
-            }
-        }
+void LeaderboardState::OnLocalPlayerEntryLoaded(int rank, int64_t score, bool success) {
+    GN_LOG_INFO("LeaderboardState::OnLocalPlayerEntryLoaded called - success: " + std::string(success ? "true" : "false") + 
+               ", rank: " + std::to_string(rank) + ", score: " + std::to_string(score) + 
+               ", s_instance: " + std::string(s_instance ? "valid" : "null"));
+
+    if (!s_instance) {
+        GN_LOG_ERROR("LeaderboardState: Callback invoked but s_instance is null!");
+        return;
     }
+
+    if (success) {
+        GN_LOG_INFO("LeaderboardState: Local player entry - Rank: " + std::to_string(rank) + ", Score: " + std::to_string(score));
+        s_instance->UpdateLocalPlayerUI(rank, score);
+    } else {
+        GN_LOG_WARN("LeaderboardState: Failed to load local player entry");
+    }
+}
 
 } // namespace GameCore

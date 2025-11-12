@@ -456,9 +456,9 @@ namespace GameCore {
             std::string selectedHatStr = parseKeyValue(dataString, "CUSTOM_SELECTED_HAT");
             customization.selectedHatIndex = selectedHatStr.empty() ? 0 : std::stoi(selectedHatStr);
             
-            // Parse unlocked hats
+            // Parse unlocked hats (16 total: 0=unequipped, 1-15=actual hats)
             customization.unlockedHats.clear();
-            for (int i = 0; i < 15; ++i) {
+            for (int i = 0; i < 16; ++i) {
                 std::string hatKey = "CUSTOM_HAT_" + std::to_string(i) + "_UNLOCKED";
                 std::string hatStr = parseKeyValue(dataString, hatKey);
                 customization.unlockedHats.push_back(hatStr == "1");

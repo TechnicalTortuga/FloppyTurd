@@ -1154,6 +1154,7 @@ using Gnosis::Entity;
         float width;            // For Rectangle: width in pixels; For Line: length in pixels
         float height;           // For Rectangle: height; For Line: thickness
         float radius;           // For Circle/FilledCircle: radius in pixels
+        float cornerRadius;     // For Rectangle: corner radius for rounded corners (0 = sharp corners)
         Gnosis::GNColor color;  // RGBA color
         int layer;              // UI layer ordering
         bool visible;           // Visibility flag
@@ -1163,6 +1164,7 @@ using Gnosis::Entity;
             , width(0.0f)
             , height(0.0f)
             , radius(0.0f)
+            , cornerRadius(0.0f)
             , color(40, 40, 70, 230)
             , layer(20)
             , visible(true)
@@ -1173,6 +1175,7 @@ using Gnosis::Entity;
             , width(w)
             , height(h)
             , radius(0.0f)
+            , cornerRadius(0.0f)
             , color(c)
             , layer(l)
             , visible(v)
@@ -1184,6 +1187,7 @@ using Gnosis::Entity;
             , width(0.0f)
             , height(0.0f)
             , radius(r)
+            , cornerRadius(0.0f)
             , color(c)
             , layer(l)
             , visible(v)

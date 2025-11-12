@@ -448,6 +448,13 @@ namespace GameCore {
             RefreshLevelDisplay();
             GN_LOG_INFO("🔄 Refreshed level display on resume - Level 2 should now show 0/0 requirements");
         }
+        
+        // Show main menu elements when returning (e.g., from Tutorial)
+        // Only show if we're in MAIN_MENU mode (not options or level select)
+        if (m_currentMode == MenuMode::MAIN_MENU) {
+            SetMainMenuVisible(true);
+            GN_LOG_INFO("📋 Resume: SetMainMenuVisible(true) called - main menu buttons should be visible");
+        }
     }
 
     void MainMenuState::Update(float deltaTime) {
@@ -724,7 +731,7 @@ namespace GameCore {
     }
 
     void MainMenuState::SetMainMenuVisible(bool visible) {
-        std::vector<Gnosis::Entity> mainButtons = {m_playButtonEntity, m_optionsButtonEntity, m_quickPlayButtonEntity, m_leaderboardButtonEntity};
+        std::vector<Gnosis::Entity> mainButtons = {m_playButtonEntity, m_optionsButtonEntity, m_quickPlayButtonEntity, m_leaderboardButtonEntity, m_howToButtonEntity};
         for (Gnosis::Entity entity : mainButtons) {
             if (entity != 0) {
                 if (auto s = m_ecsCoordinator->GetComponent<Sprite>(entity)) s->visible = visible;
@@ -1773,10 +1780,10 @@ namespace GameCore {
         }
         
         // Position bottom right with appropriate padding
-        // Estimate text width: ~8-10px per character at this font size, so "v0.8" is roughly 40px
+        // Estimate text width: ~8-10px per character at this font size, so "v0.9.8" is roughly 50px
         float versionFontSize = 42.0f;
-        float estimatedTextWidth = 50.0f; // Conservative estimate for "v0.8"
-        float versionPaddingRight = 150.0f; // More padding from right edge to move further left
+        float estimatedTextWidth = 60.0f; // Conservative estimate for "v0.9.8"
+        float versionPaddingRight = 160.0f; // More padding from right edge to move further left for extra digit
         float versionPaddingBottom = 60.0f; // Padding from bottom
 
         float versionX = m_screenWidth - versionPaddingRight - estimatedTextWidth;
@@ -1787,7 +1794,7 @@ namespace GameCore {
         versionSprite.visible = false; // Text only
         versionSprite.layer = 5;
         
-        std::string versionText = "v0.8";
+        std::string versionText = "v0.9.8";
         UIElement versionUI(versionText, "", "");
         versionUI.fontSize = versionFontSize;
         versionUI.textColor = Gnosis::GNColor(255, 255, 255, 255); // White
@@ -1887,6 +1894,8 @@ namespace GameCore {
         switch (option) {
             case MenuOption::PLAYING:
                 GN_LOG_INFO("Starting game...");
+                // Hide main menu buttons before transitioning
+                SetMainMenuVisible(false);
                 // TODO: Transition to game state
                 m_finished = true;
                 break;
@@ -1898,6 +1907,8 @@ namespace GameCore {
                 
             case MenuOption::QUICK_PLAY:
                 GN_LOG_INFO("Starting quick play - Level 1...");
+                // Hide main menu buttons before transitioning
+                SetMainMenuVisible(false);
                 // Set selected level NUMBER (not index) - matches OnLevelSelected logic
                 m_selectedLevelIndex = 1;  // Level 1 (number, not 0-indexed)
                 m_enteredViaQuickplay = true;  // Mark that we entered via Quickplay
@@ -1906,7 +1917,15 @@ namespace GameCore {
                 
             case MenuOption::LEADERBOARD:
                 GN_LOG_INFO("Opening leaderboards...");
+                // Hide main menu buttons before transitioning
+                SetMainMenuVisible(false);
                 m_transitioningToLeaderboard = true;
+                m_finished = true;
+                break;
+                
+            case MenuOption::HOW_TO:
+                GN_LOG_INFO("Opening tutorial...");
+                m_selectedLevelIndex = -2;  // Special value to indicate tutorial
                 m_finished = true;
                 break;
                 
@@ -1955,6 +1974,7 @@ namespace GameCore {
             case MenuOption::OPTIONS:    return "Options";
             case MenuOption::QUICK_PLAY: return "Quick Play";
             case MenuOption::LEADERBOARD: return "Leaderboard";
+            case MenuOption::HOW_TO:     return "How To";
             default:                     return "Unknown";
         }
     }
@@ -2102,7 +2122,34 @@ namespace GameCore {
         m_ecsCoordinator->AddComponent<Sprite>(m_leaderboardButtonEntity, quitSprite);
         m_ecsCoordinator->AddComponent<UIElement>(m_leaderboardButtonEntity, quitButton);
         
-        GN_LOG_INFO("Created desktop menu buttons: Play, Options, Quick Play, Leaderboard");
+        // Create How To Button
+        m_howToButtonEntity = m_ecsCoordinator->CreateEntity();
+        
+        // Calculate scaled dimensions using helper
+        auto howToButtonScaledDimensions = GetScaledDimensions(buttonTextureWidth, buttonTextureHeight, buttonScale);
+        float howToButtonWidth = howToButtonScaledDimensions.first;
+        float howToButtonHeight = howToButtonScaledDimensions.second;
+        
+        // Use positioning helper to center button below leaderboard
+        float howToButtonCenterY = buttonY + buttonSpacing * 4;
+        Gnosis::GNVector2 howToButtonPosition = CenterObjectAtPosition(centerX, howToButtonCenterY, howToButtonWidth, howToButtonHeight);
+        float howToButtonTopLeftX = howToButtonPosition.x;
+        float howToButtonTopLeftY = howToButtonPosition.y;
+        
+        Transform howToTransform(Gnosis::GNVector2(howToButtonTopLeftX, howToButtonTopLeftY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
+        Sprite howToSprite("FloppyButtonBlue", buttonTextureWidth, buttonTextureHeight);
+        howToSprite.layer = 2;
+        howToSprite.visible = true;
+        UIElement howToButton("HOW TO", "FloppyButtonBlue", "FloppyButtonBlueHover");
+        howToButton.fontSize = m_buttonFontSize;
+        howToButton.textColor = Gnosis::GNColor(255, 255, 255, 255);
+        GN_LOG_INFO("Created How To button with text: '%s' (length: %zu)", howToButton.buttonText.c_str(), howToButton.buttonText.length());
+        
+        m_ecsCoordinator->AddComponent<Transform>(m_howToButtonEntity, howToTransform);
+        m_ecsCoordinator->AddComponent<Sprite>(m_howToButtonEntity, howToSprite);
+        m_ecsCoordinator->AddComponent<UIElement>(m_howToButtonEntity, howToButton);
+        
+        GN_LOG_INFO("Created desktop menu buttons: Play, Options, Quick Play, Leaderboard, How To");
     }
 
     void MainMenuState::CreateMobileMenuButtons() {
@@ -2189,6 +2236,7 @@ namespace GameCore {
         createButton(m_optionsButtonEntity, "OPTIONS", 1);
         createButton(m_quickPlayButtonEntity, "QUICK PLAY", 2);
         createButton(m_leaderboardButtonEntity, "LEADERBOARD", 3);
+        createButton(m_howToButtonEntity, "HOW TO", 4);
         
         // Create Ad Controls button - bottom left with padding (like settings button)
         if (m_adControlsButtonEntity == 0) {
@@ -2299,6 +2347,16 @@ namespace GameCore {
         GN_LOG_INFO("Leaderboard button pressed - opening leaderboards");
         m_lastMenuButtonPressTime = m_animationTimer;
         OnMenuOptionSelected(MenuOption::LEADERBOARD);
+    }
+
+    void MainMenuState::OnHowToButtonPressed() {
+        GN_LOG_INFO("How To button pressed - opening tutorial");
+        m_lastMenuButtonPressTime = m_animationTimer;
+        
+        // Hide main menu when entering tutorial (like we do for options/level select)
+        SetMainMenuVisible(false);
+        
+        OnMenuOptionSelected(MenuOption::HOW_TO);
     }
 
     void MainMenuState::OnAdControlsButtonPressed() {
@@ -2476,6 +2534,40 @@ namespace GameCore {
                     uiElement->isPressed = false;
                     uiElement->isHovered = false;
                     UpdateButtonSprite(m_leaderboardButtonEntity, *uiElement);
+                    return;
+                }
+            }
+        }
+        
+        // Check How To Button
+        if (m_howToButtonEntity != 0) {
+            Transform* transform = m_ecsCoordinator->GetComponent<Transform>(m_howToButtonEntity);
+            Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(m_howToButtonEntity);
+            UIElement* uiElement = m_ecsCoordinator->GetComponent<UIElement>(m_howToButtonEntity);
+            
+            if (transform && sprite && uiElement) {
+                // Button is positioned at top-left, collision detection uses top-left based bounds
+                float buttonWidth = 64.0f * transform->scale.x * 0.8f;
+                float buttonHeight = 16.0f * transform->scale.y * 0.8f;
+                float buttonLeft = transform->position.x;
+                float buttonRight = transform->position.x + buttonWidth;
+                float buttonTop = transform->position.y;
+                float buttonBottom = transform->position.y + buttonHeight;
+                
+                GN_LOG_INFO("🎯 HOW TO Button - Touch at (" + std::to_string(touchX) + ", " + std::to_string(touchY) + 
+                           "), bounds: L=" + std::to_string(buttonLeft) + " R=" + std::to_string(buttonRight) + 
+                           " T=" + std::to_string(buttonTop) + " B=" + std::to_string(buttonBottom) + 
+                           " (size: " + std::to_string(buttonWidth) + "x" + std::to_string(buttonHeight) + 
+                           ", scale: " + std::to_string(transform->scale.x) + "x" + std::to_string(transform->scale.y) + ")");
+                
+                if (touchX >= buttonLeft && touchX <= buttonRight &&
+                    touchY >= buttonTop && touchY <= buttonBottom) {
+                    GN_LOG_INFO("🎮 MainMenuState: HOW TO BUTTON HIT!");
+                    // Trigger action and immediately reset visual state
+                    OnHowToButtonPressed();
+                    uiElement->isPressed = false;
+                    uiElement->isHovered = false;
+                    UpdateButtonSprite(m_howToButtonEntity, *uiElement);
                     return;
                 }
             }
@@ -3492,8 +3584,8 @@ namespace GameCore {
             if (fSprite) fSprite->visible = false;
         }
         
-        // Hide main menu buttons
-        std::vector<Gnosis::Entity> mainButtons = {m_playButtonEntity, m_optionsButtonEntity, m_quickPlayButtonEntity, m_leaderboardButtonEntity};
+        // Hide main menu buttons (including How To button)
+        std::vector<Gnosis::Entity> mainButtons = {m_playButtonEntity, m_optionsButtonEntity, m_quickPlayButtonEntity, m_leaderboardButtonEntity, m_howToButtonEntity};
         for (Gnosis::Entity entity : mainButtons) {
             if (entity != 0) {
                 Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(entity);
@@ -4702,17 +4794,23 @@ namespace GameCore {
         GN_LOG_INFO("Remove Ads purchase button pressed - initiating IAP");
         
         #ifdef PLATFORM_IOS
+        // Haptic feedback for button press (check if vibrations enabled)
+        if (m_game && m_game->GetVibrationsEnabled()) {
+            if (m_platformDelegates && m_platformDelegates->haptic.triggerImpact) {
+                m_platformDelegates->haptic.triggerImpact(GameCore::HapticStyle::MEDIUM, 1.0f);
+                GN_LOG_INFO("Haptic feedback triggered for purchase button");
+            }
+        }
+        
         // Call Swift StoreManager to initiate purchase
-        // This will be implemented via platform delegates
         if (m_platformDelegates && m_platformDelegates->iap.purchase) {
             GN_LOG_INFO("Calling IAP purchase delegate for: com.floppyturd.game.removeads");
+            
             m_platformDelegates->iap.purchase("com.floppyturd.game.removeads", [](bool success, const char* error) {
                 if (success) {
                     GN_LOG_INFO("✅ IAP purchase successful - ads removed!");
-                    // Haptic feedback for success
                 } else {
                     GN_LOG_WARN("⚠️ IAP purchase failed: " + std::string(error ? error : "Unknown error"));
-                    // Haptic feedback for failure
                 }
             });
         } else {

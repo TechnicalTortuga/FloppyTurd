@@ -18,6 +18,11 @@ namespace GameCore {
     
     // Static ad ready state - updated by Swift AdManager
     static std::atomic<bool> s_adReadyState(false);
+    
+    // Static Game Center authentication state - updated by Swift GameCenterManager
+    static std::atomic<bool> s_gameCenterAuthState(false);
+    static std::string s_gameCenterPlayerName = "";
+    static std::string s_gameCenterPlayerID = "";
 
     ThreadingProxy::ThreadingProxy() {
         s_instance = this;
@@ -606,10 +611,8 @@ namespace GameCore {
     }
     
     bool ThreadingProxy::isGameCenterAuthenticated() {
-        // Direct call to Swift GameCenterManager - no command needed for queries
-        // This will be implemented via Swift interop
-        // For now, return false - will be wired up to Swift later
-        return false;
+        // Return the Game Center authentication state that Swift GameCenterManager updates
+        return s_gameCenterAuthState.load();
     }
     
     void ThreadingProxy::enqueueGameCenterSubmitScore(const char* leaderboardID, int64_t score) {
@@ -651,19 +654,6 @@ namespace GameCore {
         s_instance->enqueueGameCenterCommand(cmd);
     }
     
-    const char* ThreadingProxy::getGameCenterPlayerName() {
-        // Direct call to Swift GameCenterManager - no command needed for queries
-        // This will be implemented via Swift interop
-        // For now, return empty string - will be wired up to Swift later
-        return "";
-    }
-    
-    const char* ThreadingProxy::getGameCenterPlayerID() {
-        // Direct call to Swift GameCenterManager - no command needed for queries
-        // This will be implemented via Swift interop
-        // For now, return empty string - will be wired up to Swift later
-        return "";
-    }
     
     // Ad command implementations
     void ThreadingProxy::enqueueAdPreload() {
@@ -686,6 +676,25 @@ namespace GameCore {
     // Function for Swift to update the ad ready state
     void setAdReadyState(bool isReady) {
         s_adReadyState.store(isReady);
+    }
+    
+    // Function for Swift to update the Game Center authentication state
+    void setGameCenterAuthState(bool isAuthenticated) {
+        s_gameCenterAuthState.store(isAuthenticated);
+    }
+    
+    // Functions for Swift to update/get Game Center player info
+    void setGameCenterPlayerInfo(const char* playerName, const char* playerID) {
+        if (playerName) s_gameCenterPlayerName = playerName;
+        if (playerID) s_gameCenterPlayerID = playerID;
+    }
+    
+    const char* getGameCenterPlayerName() {
+        return s_gameCenterPlayerName.empty() ? "You" : s_gameCenterPlayerName.c_str();
+    }
+    
+    const char* getGameCenterPlayerID() {
+        return s_gameCenterPlayerID.c_str();
     }
     
     void ThreadingProxy::enqueueAdSetEnabled(bool enabled) {
@@ -1203,14 +1212,19 @@ namespace GameCore {
             return true; // Queued successfully
         };
         delegates.save.loadGameData = [](const char** outJsonData) -> bool {
+            GN_LOG_INFO("🔍 loadGameData delegate called - calling loadGameDataSync()");
             // Synchronous load - call Swift directly via C++ interop
             static std::string loadedData;
             loadedData = loadGameDataSync();
             
+            GN_LOG_INFO("🔍 loadGameDataSync returned " + std::to_string(loadedData.length()) + " chars");
+            
             if (!loadedData.empty()) {
                 *outJsonData = loadedData.c_str();
+                GN_LOG_INFO("✅ Load succeeded - returning JSON data");
                 return true; // Load succeeded
             }
+            GN_LOG_WARN("⚠️ No save data - returning false");
             return false; // No save data
         };
         delegates.save.saveSettings = []() {
@@ -1264,10 +1278,10 @@ namespace GameCore {
             ThreadingProxy::enqueueGameCenterLoadLocalPlayerEntry(leaderboardID, completion);
         };
         delegates.gameCenter.getPlayerName = []() -> const char* {
-            return ThreadingProxy::getGameCenterPlayerName();
+            return GameCore::getGameCenterPlayerName();
         };
         delegates.gameCenter.getPlayerID = []() -> const char* {
-            return ThreadingProxy::getGameCenterPlayerID();
+            return GameCore::getGameCenterPlayerID();
         };
         
         // Configure Ad delegates
@@ -1485,12 +1499,15 @@ void setScreenInfoDirect(const ScreenInfo& screenInfo) {
 }
 
 std::string loadGameDataSync() {
+    GN_LOG_INFO("🔍 C++ loadGameDataSync() called - about to call Swift");
+    
     // Call Swift function via C++ interop
     auto swiftString = FloppyTurd::loadGameDataSync();
     
     // Convert Swift.String to std::string
     std::string result = std::string(swiftString);
     
+    GN_LOG_INFO("✅ Swift loadGameDataSync() returned " + std::to_string(result.length()) + " chars");
     return result;
 }
 

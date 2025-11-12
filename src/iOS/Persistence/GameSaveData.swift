@@ -111,14 +111,14 @@ struct StatisticsData: Codable {
 struct CustomizationData: Codable {
     var equippedHatIndex: Int
     var selectedHatIndex: Int
-    var unlockedHats: [Bool]  // 15 hats total
+    var unlockedHats: [Bool]  // 16 hats total (0=unequipped, 1-15=actual hats)
     var unlockedSkills: [Bool]  // 5 skills total
 
     init() {
         self.equippedHatIndex = 0  // No hat equipped
         self.selectedHatIndex = 0
-        // Initialize 15 hats - first 4 are unlocked by default (Cowboy, Flower, Doorag, Ballcap)
-        self.unlockedHats = [true, true, true, true] + Array(repeating: false, count: 11)
+        // Initialize 16 hats - index 0 (unequipped) always available, then first 4 actual hats unlocked
+        self.unlockedHats = [true, true, true, true, true] + Array(repeating: false, count: 11)
         // Initialize 5 skills - all locked by default
         self.unlockedSkills = Array(repeating: false, count: 5)
     }
@@ -143,35 +143,6 @@ struct SettingsData: Codable {
         self.difficulty = 1  // Regular (normal)
         self.debugMode = false
         self.hapticsEnabled = true
-    }
-}
-
-// MARK: - Legacy Binary Format (for migration)
-
-/// Legacy save data structure from binary format (for migration purposes)
-struct LegacyGameData {
-    var highScore: Int
-    var gameStats: LegacyGameStats
-    var levelStats: [LegacyLevelSaveData]  // Indices 1-6
-
-    struct LegacyGameStats {
-        var totalGamesPlayed: Int
-        var totalScore: Int
-        var totalCoinsCollected: Int
-        var storedCoins: Int
-        var totalDeaths: Int
-        var totalPipesCleared: Int
-        var totalJumps: Int
-        var totalEnemiesKilled: Int
-        var totalPlayTime: Float
-        var currentStreak: Int
-        var bestStreak: Int
-    }
-
-    struct LegacyLevelSaveData {
-        var highScore: Int
-        var bestCoins: Int
-        var unlocked: Bool
     }
 }
 

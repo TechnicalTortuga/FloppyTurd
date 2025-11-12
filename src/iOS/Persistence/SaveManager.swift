@@ -22,9 +22,6 @@ final class SaveManager: @unchecked Sendable {
     private var isSaving = false
 
     private let saveFileName = "floppyturd_save_v3.plist"  // Binary plist (not human-readable)
-    private let v2SaveFileName = "floppyturd_save_v2.json"  // V2 JSON format
-    private let legacySaveFileName = "floppyturd_save.dat"
-    private let legacySettingsFileName = "floppyturd_settings.cfg"
 
     private var documentsURL: URL {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
@@ -32,18 +29,6 @@ final class SaveManager: @unchecked Sendable {
 
     private var saveFileURL: URL {
         documentsURL.appendingPathComponent(saveFileName)
-    }
-
-    private var v2SaveFileURL: URL {
-        documentsURL.appendingPathComponent(v2SaveFileName)
-    }
-
-    private var legacySaveFileURL: URL {
-        documentsURL.appendingPathComponent(legacySaveFileName)
-    }
-
-    private var legacySettingsFileURL: URL {
-        documentsURL.appendingPathComponent(legacySettingsFileName)
     }
 
     // MARK: - Initialization
@@ -65,50 +50,15 @@ final class SaveManager: @unchecked Sendable {
 
         // Register default settings
         GameSettings.registerDefaults()
-
-        // Migrate legacy settings if present
-        migrateSettingsIfNeeded()
     }
 
     // MARK: - Public API
 
-    /// Load game data from disk (migrates legacy format if needed)
+    /// Load game data from disk (V3 binary plist only)
     nonisolated func load() -> GameSaveData? {
         logger.info("🔄 Loading game data...")
         logger.info("🔍 Documents directory: \(self.documentsURL.path)")
         logger.info("🔍 Save file path: \(self.saveFileURL.path)")
-        logger.info("🔍 V2 JSON save path: \(self.v2SaveFileURL.path)")
-        logger.info("🔍 Legacy save path: \(self.legacySaveFileURL.path)")
-
-        // Check if we need to migrate from v2 JSON format
-        if FileManager.default.fileExists(atPath: v2SaveFileURL.path) {
-            logger.info("📦 V2 JSON save file detected - migrating to V3...")
-            if let migrated = migrateV2JSONSave() {
-                logger.info("✅ V2 to V3 migration successful")
-                // Save the migrated data in v3 format
-                if saveSync(migrated) {
-                    logger.info("✅ Migrated data saved to V3 format")
-                    // Delete old v2 file after successful migration
-                    try? FileManager.default.removeItem(at: v2SaveFileURL)
-                    logger.info("✅ Old V2 JSON file deleted")
-                }
-                return migrated
-            } else {
-                logger.warning("⚠️ V2 migration failed, trying legacy migration...")
-            }
-        }
-
-        // Check if we need to migrate from legacy binary format
-        if FileManager.default.fileExists(atPath: legacySaveFileURL.path) {
-            logger.info("📦 Legacy binary save file detected - migrating...")
-            if let migrated = migrateLegacySave() {
-                logger.info("✅ Legacy migration successful")
-                return migrated
-            } else {
-                logger.warning("⚠️ Legacy migration failed, starting fresh")
-                return nil
-            }
-        }
 
         // Load from binary plist format
         guard FileManager.default.fileExists(atPath: saveFileURL.path) else {
@@ -168,7 +118,7 @@ final class SaveManager: @unchecked Sendable {
                 GameSettings.debugMode = saveData.settings.debugMode
                 GameSettings.hapticsEnabled = saveData.settings.hapticsEnabled
                 logger.info(
-                    "✅ Settings applied from save data: master=\(saveData.settings.masterVolume) music=\(saveData.settings.musicVolume) sfx=\(saveData.settings.sfxVolume)"
+                    "✅ Settings applied from save data: master=\(saveData.settings.masterVolume) music=\(saveData.settings.musicVolume) sfx=\(saveData.settings.sfxVolume) haptics=\(saveData.settings.hapticsEnabled)"
                 )
                 logger.info(
                     "✅ Settings applied: difficulty=\(saveData.settings.difficulty) debug=\(saveData.settings.debugMode) haptics=\(saveData.settings.hapticsEnabled)"
@@ -198,9 +148,6 @@ final class SaveManager: @unchecked Sendable {
 
         saveQueue.async { [weak self] in
             guard let self = self else {
-                DispatchQueue.main.async {
-                    completion?(false)
-                }
                 return
             }
 
@@ -216,11 +163,6 @@ final class SaveManager: @unchecked Sendable {
     /// Synchronous save (use sparingly, prefer async save)
     nonisolated func saveSync(_ data: GameSaveData) -> Bool {
         return performSave(data)
-    }
-
-    /// Check if legacy save file exists
-    nonisolated func hasLegacySaveFile() -> Bool {
-        return FileManager.default.fileExists(atPath: legacySaveFileURL.path)
     }
 
     /// Delete all save data (use with caution!)
@@ -508,10 +450,10 @@ final class SaveManager: @unchecked Sendable {
             return false
         }
 
-        // Validate hat count
+        // Validate hat count (16 total: 0=unequipped, 1-15=actual hats)
         let hatCount = data.customization.unlockedHats.count
-        guard hatCount == 15 else {
-            logger.warning("Invalid hat count: \(hatCount)")
+        guard hatCount == 16 else {
+            logger.warning("Invalid hat count: \(hatCount), expected 16")
             return false
         }
 
@@ -520,9 +462,9 @@ final class SaveManager: @unchecked Sendable {
         data.statistics.totalScore = max(0, min(data.statistics.totalScore, 999999))
         data.statistics.totalPlayTime = max(0, min(data.statistics.totalPlayTime, 999999))
 
-        // Validate equipped hat index
-        data.customization.equippedHatIndex = max(0, min(data.customization.equippedHatIndex, 14))
-        data.customization.selectedHatIndex = max(0, min(data.customization.selectedHatIndex, 14))
+        // Validate equipped hat index (0=unequipped, 1-15=actual hats after refactor)
+        data.customization.equippedHatIndex = max(0, min(data.customization.equippedHatIndex, 15))
+        data.customization.selectedHatIndex = max(0, min(data.customization.selectedHatIndex, 15))
 
         // Ensure level 1 is always unlocked
         if data.progress.levels.count > 0 {
@@ -531,244 +473,6 @@ final class SaveManager: @unchecked Sendable {
 
         return true
     }
-
-    // MARK: - Legacy Migration
-
-    /// Migrate from V2 JSON format to V3 binary plist format
-    func migrateV2JSONSave() -> GameSaveData? {
-        logger.info("🔄 Attempting to migrate V2 JSON save...")
-
-        guard FileManager.default.fileExists(atPath: v2SaveFileURL.path) else {
-            logger.warning("⚠️ V2 JSON save file does not exist")
-            return nil
-        }
-
-        do {
-            let jsonData = try Data(contentsOf: v2SaveFileURL)
-            logger.info("📊 Loaded V2 JSON file: \(jsonData.count) bytes")
-
-            let decoder = JSONDecoder()
-            decoder.dateDecodingStrategy = .iso8601
-            var saveData = try decoder.decode(GameSaveData.self, from: jsonData)
-
-            logger.info("✅ V2 JSON decoded successfully")
-            logger.info(
-                "📊 V2 data - storedCoins: \(saveData.statistics.storedCoins), totalGames: \(saveData.statistics.totalGamesPlayed)"
-            )
-            logger.info(
-                "📊 V2 data - Level 1 score: \(saveData.progress.levels[0].highScore), Level 2 unlocked: \(saveData.progress.levels[1].unlocked)"
-            )
-
-            // Update version to 3
-            saveData.saveDate = Date()
-
-            // Validate the loaded data
-            if validateLoadedData(&saveData) {
-                logger.info("✅ V2 migration successful - data validated")
-                return saveData
-            } else {
-                logger.warning("⚠️ V2 migrated data failed validation")
-                return nil
-            }
-        } catch {
-            logger.error("❌ Failed to migrate V2 JSON save: \(error.localizedDescription)")
-            logger.error("❌ Error details: \(error)")
-            return nil
-        }
-    }
-
-    func migrateLegacySave() -> GameSaveData? {
-        guard let legacyData = loadLegacyBinaryFormat() else {
-            logger.error("Failed to load legacy binary data")
-            return nil
-        }
-
-        let newData = convertToV2(legacy: legacyData)
-
-        // Save in new format
-        if saveSync(newData) {
-            // Backup legacy file
-            let backupURL = legacySaveFileURL.appendingPathExtension("v1_backup")
-            do {
-                if FileManager.default.fileExists(atPath: backupURL.path) {
-                    try FileManager.default.removeItem(at: backupURL)
-                }
-                try FileManager.default.copyItem(at: legacySaveFileURL, to: backupURL)
-                logger.info("Legacy save backed up to: \(backupURL.lastPathComponent)")
-
-                // Delete original legacy file
-                try FileManager.default.removeItem(at: legacySaveFileURL)
-                logger.info("Legacy save file removed")
-            } catch {
-                logger.warning("Failed to backup/remove legacy save: \(error.localizedDescription)")
-            }
-
-            return newData
-        }
-
-        return nil
-    }
-
-    private func loadLegacyBinaryFormat() -> LegacyGameData? {
-        guard let data = try? Data(contentsOf: legacySaveFileURL) else {
-            return nil
-        }
-
-        var offset = 0
-
-        // Read high score (Int32, 4 bytes)
-        guard offset + 4 <= data.count else { return nil }
-        let highScore = data.withUnsafeBytes { $0.load(fromByteOffset: offset, as: Int32.self) }
-        offset += 4
-
-        // Read GameStats structure (44 bytes total)
-        // totalGamesPlayed, totalScore, totalCoinsCollected, storedCoins, totalDeaths,
-        // totalPipesCleared, totalJumps, totalEnemiesKilled (8 × Int32 = 32 bytes)
-        // totalPlayTime (Float = 4 bytes)
-        // currentStreak, bestStreak (2 × Int32 = 8 bytes)
-        guard offset + 44 <= data.count else { return nil }
-
-        let totalGamesPlayed = data.withUnsafeBytes {
-            $0.load(fromByteOffset: offset, as: Int32.self)
-        }
-        offset += 4
-        let totalScore = data.withUnsafeBytes { $0.load(fromByteOffset: offset, as: Int32.self) }
-        offset += 4
-        let totalCoinsCollected = data.withUnsafeBytes {
-            $0.load(fromByteOffset: offset, as: Int32.self)
-        }
-        offset += 4
-        let storedCoins = data.withUnsafeBytes { $0.load(fromByteOffset: offset, as: Int32.self) }
-        offset += 4
-        let totalDeaths = data.withUnsafeBytes { $0.load(fromByteOffset: offset, as: Int32.self) }
-        offset += 4
-        let totalPipesCleared = data.withUnsafeBytes {
-            $0.load(fromByteOffset: offset, as: Int32.self)
-        }
-        offset += 4
-        let totalJumps = data.withUnsafeBytes { $0.load(fromByteOffset: offset, as: Int32.self) }
-        offset += 4
-        let totalEnemiesKilled = data.withUnsafeBytes {
-            $0.load(fromByteOffset: offset, as: Int32.self)
-        }
-        offset += 4
-        let totalPlayTime = data.withUnsafeBytes { $0.load(fromByteOffset: offset, as: Float.self) }
-        offset += 4
-        let currentStreak = data.withUnsafeBytes { $0.load(fromByteOffset: offset, as: Int32.self) }
-        offset += 4
-        let bestStreak = data.withUnsafeBytes { $0.load(fromByteOffset: offset, as: Int32.self) }
-        offset += 4
-
-        let gameStats = LegacyGameData.LegacyGameStats(
-            totalGamesPlayed: Int(totalGamesPlayed),
-            totalScore: Int(totalScore),
-            totalCoinsCollected: Int(totalCoinsCollected),
-            storedCoins: Int(storedCoins),
-            totalDeaths: Int(totalDeaths),
-            totalPipesCleared: Int(totalPipesCleared),
-            totalJumps: Int(totalJumps),
-            totalEnemiesKilled: Int(totalEnemiesKilled),
-            totalPlayTime: totalPlayTime,
-            currentStreak: Int(currentStreak),
-            bestStreak: Int(bestStreak)
-        )
-
-        // Read 6 level stats (each: Int32, Int32, Bool = 9 bytes × 6 = 54 bytes)
-        var levelStats: [LegacyGameData.LegacyLevelSaveData] = []
-        for _ in 1...6 {
-            guard offset + 9 <= data.count else { return nil }
-
-            let levelHighScore = data.withUnsafeBytes {
-                $0.load(fromByteOffset: offset, as: Int32.self)
-            }
-            offset += 4
-            let bestCoins = data.withUnsafeBytes { $0.load(fromByteOffset: offset, as: Int32.self) }
-            offset += 4
-            let unlocked = data.withUnsafeBytes { $0.load(fromByteOffset: offset, as: Bool.self) }
-            offset += 1
-
-            levelStats.append(
-                LegacyGameData.LegacyLevelSaveData(
-                    highScore: Int(levelHighScore),
-                    bestCoins: Int(bestCoins),
-                    unlocked: unlocked
-                ))
-        }
-
-        return LegacyGameData(
-            highScore: Int(highScore),
-            gameStats: gameStats,
-            levelStats: levelStats
-        )
-    }
-
-    private func convertToV2(legacy: LegacyGameData) -> GameSaveData {
-        var newData = GameSaveData()
-
-        // Convert progress
-        newData.progress.legacyHighScore = legacy.highScore
-        for (index, legacyLevel) in legacy.levelStats.enumerated() {
-            if index < newData.progress.levels.count {
-                newData.progress.levels[index].highScore = legacyLevel.highScore
-                newData.progress.levels[index].bestCoins = legacyLevel.bestCoins
-                newData.progress.levels[index].unlocked = legacyLevel.unlocked
-            }
-        }
-
-        // Convert statistics
-        newData.statistics.totalGamesPlayed = legacy.gameStats.totalGamesPlayed
-        newData.statistics.totalScore = legacy.gameStats.totalScore
-        newData.statistics.totalCoinsCollected = legacy.gameStats.totalCoinsCollected
-        newData.statistics.storedCoins = legacy.gameStats.storedCoins
-        newData.statistics.totalDeaths = legacy.gameStats.totalDeaths
-        newData.statistics.totalPipesCleared = legacy.gameStats.totalPipesCleared
-        newData.statistics.totalJumps = legacy.gameStats.totalJumps
-        newData.statistics.totalEnemiesKilled = legacy.gameStats.totalEnemiesKilled
-        newData.statistics.totalPlayTime = Double(legacy.gameStats.totalPlayTime)
-        newData.statistics.currentStreak = legacy.gameStats.currentStreak
-        newData.statistics.bestStreak = legacy.gameStats.bestStreak
-
-        logger.info(
-            "Converted legacy data - High score: \(legacy.highScore), Coins: \(legacy.gameStats.storedCoins)"
-        )
-
-        return newData
-    }
-
-    private func migrateSettingsIfNeeded() {
-        guard FileManager.default.fileExists(atPath: legacySettingsFileURL.path) else {
-            return
-        }
-
-        logger.info("Migrating legacy settings...")
-
-        guard let contents = try? String(contentsOf: legacySettingsFileURL) else {
-            logger.error("Failed to read legacy settings")
-            return
-        }
-
-        let values = contents.split(separator: " ").compactMap { Float($0) }
-
-        if values.count >= 3 {
-            GameSettings.masterVolume = values[0]
-            GameSettings.musicVolume = values[1]
-            GameSettings.sfxVolume = values[2]
-
-            if values.count >= 4 {
-                GameSettings.debugMode = (values[3] > 0)
-            }
-
-            logger.info("Settings migrated successfully")
-
-            // Delete legacy settings file
-            do {
-                try FileManager.default.removeItem(at: legacySettingsFileURL)
-                logger.info("Legacy settings file removed")
-            } catch {
-                logger.warning("Failed to remove legacy settings: \(error.localizedDescription)")
-            }
-        }
-    }
 }
 
 // MARK: - C++ Interop Functions
@@ -776,6 +480,7 @@ final class SaveManager: @unchecked Sendable {
 /// Load game data synchronously for C++ interop
 /// Called directly from C++ during game initialization via Swift C++ interop
 /// - Returns: JSON string containing game save data, or empty string if no save exists
+@_expose(Cxx)
 public func loadGameDataSync() -> String {
     let logger = Logger(subsystem: "com.floppyturd.ios", category: "SaveManager")
     logger.info("🔍 Synchronous load requested from C++")

@@ -71,7 +71,12 @@ actor iOSLogActor {
     private var subsystem: String = Bundle.main.bundleIdentifier ?? "FloppyTurd"
     private var consoleFallbackEnabled: Bool = true
     private var currentLogLevel: LogLevel = .info
-    private var fileLoggingEnabled: Bool = false  // Enable for debugging UI issues
+    // File logging enabled only on simulator for debugging
+    #if targetEnvironment(simulator)
+    private var fileLoggingEnabled: Bool = true
+    #else
+    private var fileLoggingEnabled: Bool = false  // Disabled on device
+    #endif
     private var logFileURL: URL?
     private var logFileHandle: FileHandle?
     
@@ -338,14 +343,18 @@ public class iOSLogHandler: NSObject, @unchecked Sendable {
         Task { @Sendable in
             await logActor.setSubsystem(Bundle.main.bundleIdentifier ?? "FloppyTurd")
             
-            // Enable INFO logging for both simulator and device
-            // We need to see game logs in Console.app for debugging TestFlight builds
-            await logActor.setLogLevel(.info)        // INFO and above (was .warning on device!)
-            await logActor.setFileLogging(false)      // No file logging (use Console.app instead)
+            // Enable DEBUG logging for both simulator and device
+            // We need to see ALL logs for debugging StoreKit, Leaderboards, and Ads
+            await logActor.setLogLevel(.debug)        // DEBUG and above for comprehensive logging
+            #if targetEnvironment(simulator)
+            await logActor.setFileLogging(true)       // Write to FloppyTurd_Debug.txt on simulator only
+            #else
+            await logActor.setFileLogging(false)      // Disable file logging on device
+            #endif
             await logActor.setConsoleFallback(true)   // Enable print() for critical logs
         }
         isInitialized = true
-        currentLogLevel = .info  // INFO and above (was .warning!)
+        currentLogLevel = .debug  // DEBUG and above for comprehensive logging
         return true
     }
     

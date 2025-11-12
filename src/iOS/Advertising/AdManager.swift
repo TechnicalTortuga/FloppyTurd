@@ -197,6 +197,11 @@ class AdManager: NSObject {
     /// Preload an interstitial ad (call this after game init and after each ad shown)
     /// Now uses background thread via AdLoadingActor for improved performance
     func preloadAd() {
+        SwiftLog.info("[AdManager] preloadAd() called", category: "AdManager")
+        SwiftLog.info("   adsEnabled: \(adsEnabled)", category: "AdManager")
+        SwiftLog.info("   isLoading: \(isLoading)", category: "AdManager")
+        SwiftLog.info("   interstitialAd cached: \(interstitialAd != nil)", category: "AdManager")
+        
         // Don't load if ads are disabled
         guard adsEnabled else {
             SwiftLog.warn("Ads are disabled - skipping preload", category: "AdManager")
@@ -278,6 +283,11 @@ class AdManager: NSObject {
 
     /// Show the preloaded interstitial ad
     func showAd() {
+        SwiftLog.info("[AdManager] showAd() called", category: "AdManager")
+        SwiftLog.info("   adsEnabled: \(adsEnabled)", category: "AdManager")
+        SwiftLog.info("   interstitialAd cached: \(interstitialAd != nil)", category: "AdManager")
+        SwiftLog.info("   viewController set: \(viewController != nil)", category: "AdManager")
+        
         // Don't show if ads are disabled
         guard adsEnabled else {
             SwiftLog.warn("Ads are disabled - skipping show", category: "AdManager")

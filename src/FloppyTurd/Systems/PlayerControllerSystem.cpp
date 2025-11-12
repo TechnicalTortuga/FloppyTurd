@@ -471,8 +471,8 @@ namespace GameCore {
         }
 
         int equippedHatIndex = m_hatsSystem->GetEquippedHatIndex();
-        if (equippedHatIndex <= 0) {
-            GN_LOG_DEBUG("PlayerController: No hat equipped (index: %d), using base animation: %s", equippedHatIndex, baseAnimationName.c_str());
+        if (equippedHatIndex == 0) {
+            GN_LOG_DEBUG("PlayerController: No hat equipped (index: %d = unequipped), using base animation: %s", equippedHatIndex, baseAnimationName.c_str());
             return baseAnimationName; // No hat equipped, use base animation
         }
 
@@ -572,7 +572,7 @@ namespace GameCore {
                     sprite->loop = false;
                     sprite->frameTime = 0.08f;
                 } else if (animationName == "TurdletShoot") {
-                    sprite->frameCount = 6;
+                    sprite->frameCount = 5;  // TurdletShoot spritesheet is 320x64 = 5 frames
                     sprite->isAnimated = true;
                     sprite->playing = true;
                     sprite->loop = false;
@@ -895,10 +895,11 @@ namespace GameCore {
         ProjectileType projectileType = ProjectileType::POOP_BALL;
 
         // Calculate spawn position (from player's mouth position, accounting for scale)
+        // Adjusted 8px left and 8px up from original offset for better visual alignment
         Sprite* playerSprite = m_ecsSystem->GetComponent<Sprite>(m_playerEntity);
         float playerScale = playerTransform->scale.x; // Assuming uniform scaling
-        float scaledOffsetX = 42.0f * playerScale;
-        float scaledOffsetY = 32.0f * playerScale;
+        float scaledOffsetX = 34.0f * playerScale;  // 42.0 - 8.0 (8px left)
+        float scaledOffsetY = 24.0f * playerScale;  // 32.0 - 8.0 (8px up)
         GNVector2 spawnPosition = playerTransform->position + GNVector2(scaledOffsetX, scaledOffsetY);
 
         // Calculate projectile direction (right-facing for now)
@@ -912,6 +913,13 @@ namespace GameCore {
         );
 
         if (projectileEntity != 0) {
+            // Play random spit sound (spit1 - spit6)
+            int randomSpit = (rand() % 6) + 1;  // Random number 1-6
+            std::string spitSound = "spit" + std::to_string(randomSpit);
+            if (GameCore::GetGame()) {
+                GameCore::GetGame()->PlaySFX(spitSound);
+            }
+            
             GN_LOG_INFO("Player spawned projectile entity: %d at position (%.1f, %.1f)",
                        projectileEntity, spawnPosition.x, spawnPosition.y);
         } else {
@@ -1020,8 +1028,8 @@ namespace GameCore {
         }
 
         int equippedHatIndex = m_hatsSystem->GetEquippedHatIndex();
-        if (equippedHatIndex <= 0) {
-            // No hat equipped, hide hat sprite
+        if (equippedHatIndex == 0) {
+            // No hat equipped (index 0 = unequipped), hide hat sprite
             HideHatSprite();
             return;
         }
@@ -1085,8 +1093,8 @@ namespace GameCore {
                 GN_LOG_DEBUG("PlayerController: Hat sprite configured for JUMP - texture: %s, frameCount: %d, isAnimated: %d, playing: %d",
                            hatTexture.c_str(), hatSprite->frameCount, hatSprite->isAnimated, hatSprite->playing);
             } else if (animationName == "TurdletShoot") {
-                // For shoot, use full 6-frame animation
-                hatSprite->frameCount = 6;
+                // For shoot, use full 5-frame animation (TurdletShoot spritesheet is 320x64 = 5 frames)
+                hatSprite->frameCount = 5;
                 hatSprite->isAnimated = true;
                 hatSprite->playing = true;
                 hatSprite->loop = false;

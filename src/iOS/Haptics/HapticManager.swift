@@ -128,7 +128,7 @@ class HapticManager {
 
     // MARK: - Impact Feedback
     func triggerImpact(style: UIImpactFeedbackGenerator.FeedbackStyle, intensity: CGFloat = 1.0) {
-        guard isEnabled && isSupported else { return }
+        guard GameSettings.hapticsEnabled && isSupported else { return }
 
         DispatchQueue.main.async { [weak self] in
             if let generator = self?.impactGenerators[style] {
@@ -141,7 +141,7 @@ class HapticManager {
 
     // MARK: - Selection Feedback
     func triggerSelection() {
-        guard isEnabled && isSupported else { return }
+        guard GameSettings.hapticsEnabled && isSupported else { return }
 
         DispatchQueue.main.async { [weak self] in
             self?.selectionGenerator?.selectionChanged()
@@ -151,7 +151,7 @@ class HapticManager {
 
     // MARK: - Notification Feedback
     func triggerNotification(type: UINotificationFeedbackGenerator.FeedbackType) {
-        guard isEnabled && isSupported else { return }
+        guard GameSettings.hapticsEnabled && isSupported else { return }
 
         DispatchQueue.main.async { [weak self] in
             self?.notificationGenerator?.notificationOccurred(type)
@@ -161,7 +161,7 @@ class HapticManager {
 
     // MARK: - Preparation
     func prepare(style: UIImpactFeedbackGenerator.FeedbackStyle) {
-        guard isEnabled && isSupported else { return }
+        guard GameSettings.hapticsEnabled && isSupported else { return }
 
         DispatchQueue.main.async { [weak self] in
             self?.impactGenerators[style]?.prepare()
@@ -169,7 +169,7 @@ class HapticManager {
     }
 
     func prepareSelection() {
-        guard isEnabled && isSupported else { return }
+        guard GameSettings.hapticsEnabled && isSupported else { return }
 
         DispatchQueue.main.async { [weak self] in
             self?.selectionGenerator?.prepare()
@@ -177,7 +177,7 @@ class HapticManager {
     }
 
     func prepareNotification() {
-        guard isEnabled && isSupported else { return }
+        guard GameSettings.hapticsEnabled && isSupported else { return }
 
         DispatchQueue.main.async { [weak self] in
             self?.notificationGenerator?.prepare()
@@ -186,7 +186,7 @@ class HapticManager {
 
     // MARK: - Pattern Playback
     func triggerPattern(name: String) {
-        guard isEnabled && isSupported else { return }
+        guard GameSettings.hapticsEnabled && isSupported else { return }
         guard #available(iOS 13.0, *) else { return }
 
         DispatchQueue.main.async { [weak self] in

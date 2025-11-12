@@ -149,8 +149,8 @@ public final class AVAudioHandler: NSObject {
         log("Music started: \(fileName)")
     }
 
-    public func playSound(_ fileName: String) {
-        log("🔊 [AVAudioHandler] playSound() called with: \(fileName)")
+    public func playSound(_ fileName: String, volume: Float) {
+        log("🔊 [AVAudioHandler] playSound() called with: \(fileName), volume: \(volume)")
 
         // Auto-initialize if not already done
         if !isInitialized {
@@ -173,8 +173,8 @@ public final class AVAudioHandler: NSObject {
             return
         }
 
-        // Schedule and play the sound
-        scheduleSound(audioFile)
+        // Schedule and play the sound with the provided volume
+        scheduleSound(audioFile, volume: volume)
     }
 
     public func stopMusic() {
@@ -400,8 +400,8 @@ public final class AVAudioHandler: NSObject {
 
     // MARK: - Sound Playback
 
-    private func scheduleSound(_ audioFile: AVAudioFile) {
-        log("[AVAudioHandler] Scheduling sound: \(audioFile.url.lastPathComponent)")
+    private func scheduleSound(_ audioFile: AVAudioFile, volume: Float) {
+        log("[AVAudioHandler] Scheduling sound: \(audioFile.url.lastPathComponent) with volume: \(volume)")
         // Choose an idle node or reuse round-robin
         var chosen: AVAudioPlayerNode?
         if let idle = sfxNodes.first(where: { !$0.isPlaying }) {
@@ -413,10 +413,10 @@ public final class AVAudioHandler: NSObject {
             chosen?.stop()
         }
         guard let node = chosen else { return }
-        node.volume = soundVolume
+        node.volume = volume  // Use the provided volume parameter (already includes master * sfx)
         node.scheduleFile(audioFile, at: nil, completionHandler: nil)
         if !node.isPlaying { node.play() }
-        log("[AVAudioHandler] Sound playing on pool node: \(audioFile.url.lastPathComponent)")
+        log("[AVAudioHandler] Sound playing on pool node: \(audioFile.url.lastPathComponent) at volume: \(volume)")
     }
 
     // MARK: - Music Looping

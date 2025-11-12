@@ -519,30 +519,16 @@ class CommandProcessor {
         case .CMD_PLAY_SOUND:
             let audioFileName = String(data.audioFileName)
             if !audioFileName.isEmpty {
-                log("[CommandProcessor] Received playSound command for: \(audioFileName)")
+                log("[CommandProcessor] 🔊 Received playSound: \(audioFileName), data.volume from C++: \(data.volume)")
 
                 if let audioManager = audioManager {
-                    log(
-                        "[CommandProcessor] AudioManager found - instance: \(ObjectIdentifier(audioManager)) - dispatching to main thread"
-                    )
                     Task { @MainActor in
-                        log("[CommandProcessor] Task started on main actor")
-                        if data.volume > 0 {
-                            log("[CommandProcessor] Setting sound volume to: \(data.volume)")
-                            audioManager.setSoundVolume(volume: data.volume)
-                            log("[CommandProcessor] Sound volume set successfully")
-                        }
+                        // ALWAYS use the volume from C++ - it already includes master * sfx calculation
+                        let volumeToUse = data.volume
                         log(
-                            "[CommandProcessor] About to call audioManager.playSound(\(audioFileName))"
+                            "[CommandProcessor] 🔊 Playing \(audioFileName) with volume: \(volumeToUse) (C++ calculated: master*sfx)"
                         )
-                        log(
-                            "[CommandProcessor] audioManager instance: \(ObjectIdentifier(audioManager))"
-                        )
-                        audioManager.playSound(audioFileName)
-                        log("[CommandProcessor] playSound call completed successfully")
-                        log(
-                            "[CommandProcessor] Playing sound: \(audioFileName) with volume \(data.volume > 0 ? data.volume : audioManager.soundVolume)"
-                        )
+                        audioManager.playSound(audioFileName, volume: volumeToUse)
                     }
                 } else {
                     log(

@@ -240,21 +240,26 @@ namespace GameCore {
             return false;
         }
         
-        // DEBUG: ALL LEVELS UNLOCKED FOR TESTING
-            return true;
+        // DEBUG: Toggle this flag to unlock all levels for testing
+        // Set to 'true' to unlock all levels, 'false' for proper progression
+        const bool DEBUG_UNLOCK_ALL_LEVELS = true;
         
-        // Original unlock logic (commented out for testing):
+        if (DEBUG_UNLOCK_ALL_LEVELS) {
+            return true;
+        }
+        
+        // Original unlock logic:
         // Level 1 is always unlocked
-        // if (levelId == 1) {
-        //     return true;
-        // }
-        // 
-        // // Check if previous level is completed
-        // if (levelId > 1 && levelId <= GetMaxLevelId()) {
-        //     return m_levelCompleted[levelId - 2]; // Previous level completed
-        // }
-        // 
-        // return false;
+        if (levelId == 1) {
+            return true;
+        }
+        
+        // Check if previous level is completed
+        if (levelId > 1 && levelId <= GetMaxLevelId()) {
+            return m_levelCompleted[levelId - 2]; // Previous level completed
+        }
+        
+        return false;
     }
 
     void LevelManager::UnlockLevel(int levelId) {

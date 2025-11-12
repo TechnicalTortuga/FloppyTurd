@@ -14,8 +14,8 @@ namespace GameCore {
         , m_platformDelegates(delegates)
         , m_costDisplayEntity(0)
         , m_actionButtonEntity(0)
-        , m_selectedHatIndex(-1)
-        , m_equippedHatIndex(-1)
+        , m_selectedHatIndex(0)  // 0 = unequipped
+        , m_equippedHatIndex(0)  // 0 = unequipped
         , m_screenWidth(0)
         , m_screenHeight(0)
     {
@@ -358,15 +358,17 @@ namespace GameCore {
 
     void HatsSystem::SelectHat(int hatIndex)
     {
-        if (hatIndex < 0 || hatIndex >= m_hats.size()) return;
+        // hatIndex: 0=unequipped (not in array), 1-15=actual hats (array indices 0-14)
+        if (hatIndex <= 0 || hatIndex > m_hats.size()) return;
 
         m_selectedHatIndex = hatIndex;
-        GN_LOG_INFO("Selected hat: " + m_hats[hatIndex].name);
+        int arrayIndex = hatIndex - 1; // Convert game index to array index
+        GN_LOG_INFO("Selected hat: " + m_hats[arrayIndex].name + " (game index: " + std::to_string(hatIndex) + ", array index: " + std::to_string(arrayIndex) + ")");
 
-        // Sync selected hat with game save system
+        // Sync selected hat with game save system (already in correct format: 0=unequipped, 1-15=hats)
         if (GameCore::GetGame()) {
             GameCore::GetGame()->SetSelectedHatIndex(m_selectedHatIndex);
-            GN_LOG_INFO("🎩 Synced selected hat index to game save system");
+            GN_LOG_INFO("🎩 Synced selected hat index to game save system: " + std::to_string(m_selectedHatIndex));
         }
 
         UpdateCostDisplay();
@@ -375,20 +377,22 @@ namespace GameCore {
 
     bool HatsSystem::BuySelectedHat(int playerCoins)
     {
-        if (m_selectedHatIndex < 0 || m_selectedHatIndex >= m_hats.size()) return false;
+        // m_selectedHatIndex: 0=unequipped, 1-15=actual hats
+        if (m_selectedHatIndex <= 0 || m_selectedHatIndex > m_hats.size()) return false;
 
-        auto& hat = m_hats[m_selectedHatIndex];
+        int arrayIndex = m_selectedHatIndex - 1; // Convert game index to array index
+        auto& hat = m_hats[arrayIndex];
         if (hat.status == HatStatus::UNLOCKED) return false; // Already unlocked
 
         if (playerCoins >= hat.cost) {
             hat.status = HatStatus::UNLOCKED;
-            GN_LOG_INFO("Bought hat: " + hat.name);
+            GN_LOG_INFO("Bought hat: " + hat.name + " (game index: " + std::to_string(m_selectedHatIndex) + ", array index: " + std::to_string(arrayIndex) + ")");
 
             // Trigger haptic feedback for hat unlock
             HapticHelpers::TriggerHatUnlock(m_platformDelegates);
 
-            // Hide the locked frame overlay for this hat
-            auto lockedFrameIt = m_hatToLockedFrameMap.find(m_selectedHatIndex);
+            // Hide the locked frame overlay for this hat (use array index for map lookup)
+            auto lockedFrameIt = m_hatToLockedFrameMap.find(arrayIndex);
             if (lockedFrameIt != m_hatToLockedFrameMap.end()) {
                 auto lockedFrameEntity = lockedFrameIt->second;
                 if (lockedFrameEntity != 0 && m_ecsCoordinator) {
@@ -396,24 +400,24 @@ namespace GameCore {
                     auto sprite = m_ecsCoordinator->GetComponent<Sprite>(lockedFrameEntity);
                     if (sprite) {
                         sprite->visible = false;
-                        GN_LOG_INFO("HatsSystem: Hidden locked frame sprite for purchased hat '" + hat.name + "' (index " + std::to_string(m_selectedHatIndex) + ")");
+                        GN_LOG_INFO("HatsSystem: Hidden locked frame sprite for purchased hat '" + hat.name + "' (game index: " + std::to_string(m_selectedHatIndex) + ", array index: " + std::to_string(arrayIndex) + ")");
                     }
                     auto uiElement = m_ecsCoordinator->GetComponent<UIElement>(lockedFrameEntity);
                     if (uiElement) {
                         uiElement->visible = false;
-                        GN_LOG_INFO("HatsSystem: Hidden locked frame UI element for purchased hat '" + hat.name + "' (index " + std::to_string(m_selectedHatIndex) + ")");
+                        GN_LOG_INFO("HatsSystem: Hidden locked frame UI element for purchased hat '" + hat.name + "' (game index: " + std::to_string(m_selectedHatIndex) + ", array index: " + std::to_string(arrayIndex) + ")");
                     }
                 }
             } else {
-                GN_LOG_WARN("HatsSystem: No locked frame entity found for purchased hat '" + hat.name + "' (index " + std::to_string(m_selectedHatIndex) + ")");
+                GN_LOG_WARN("HatsSystem: No locked frame entity found for purchased hat '" + hat.name + "' (game index: " + std::to_string(m_selectedHatIndex) + ", array index: " + std::to_string(arrayIndex) + ")");
             }
 
             UpdateCostDisplay();
 
-            // Save hat status to game save system
+            // Save hat status to game save system (already in correct format: 1-15)
             if (GameCore::GetGame()) {
                 GameCore::GetGame()->UnlockHat(m_selectedHatIndex);
-                GN_LOG_INFO("🎩 Synced unlocked hat to game save system");
+                GN_LOG_INFO("🎩 Synced unlocked hat to game save system: " + std::to_string(m_selectedHatIndex));
             }
             
             // Save hat status after successful purchase (legacy file)
@@ -427,12 +431,14 @@ namespace GameCore {
 
     void HatsSystem::EquipSelectedHat()
     {
-        if (m_selectedHatIndex < 0 || m_selectedHatIndex >= m_hats.size()) {
+        // m_selectedHatIndex: 0=unequipped, 1-15=actual hats
+        if (m_selectedHatIndex <= 0 || m_selectedHatIndex > m_hats.size()) {
             GN_LOG_WARN("Cannot equip hat - invalid selectedHatIndex: " + std::to_string(m_selectedHatIndex));
             return;
         }
 
-        auto& hat = m_hats[m_selectedHatIndex];
+        int arrayIndex = m_selectedHatIndex - 1; // Convert game index to array index
+        auto& hat = m_hats[arrayIndex];
         if (hat.status != HatStatus::UNLOCKED) {
             GN_LOG_WARN("Cannot equip hat '" + hat.name + "' - not unlocked (status: " + std::to_string(static_cast<int>(hat.status)) + ")");
             return;
@@ -441,14 +447,14 @@ namespace GameCore {
         int oldEquippedIndex = m_equippedHatIndex;
         m_equippedHatIndex = m_selectedHatIndex;
 
-        GN_LOG_INFO("Equipped hat: '" + hat.name + "' (index: " + std::to_string(m_selectedHatIndex) +
-                   ", old equipped: " + std::to_string(oldEquippedIndex) + ")");
+        GN_LOG_INFO("Equipped hat: '" + hat.name + "' (game index: " + std::to_string(m_selectedHatIndex) +
+                   ", array index: " + std::to_string(arrayIndex) + ", old equipped: " + std::to_string(oldEquippedIndex) + ")");
         GN_LOG_INFO("Hat textures - idle: '" + hat.turdletIdlePath + "', jump: '" + hat.turdletJumpPath + "', shoot: '" + hat.turdletShootPath + "'");
 
-        // Update game's customization data (this will also save to JSON)
+        // Update game's customization data (already in correct format: 0=unequipped, 1-15=hats)
         if (GameCore::GetGame()) {
             GameCore::GetGame()->SetEquippedHatIndex(m_equippedHatIndex);
-            GN_LOG_INFO("🎩 Synced equipped hat to game save system");
+            GN_LOG_INFO("🎩 Synced equipped hat to game save system: " + std::to_string(m_equippedHatIndex));
         }
         
         // Save hat status after equipping (legacy system)
@@ -462,22 +468,22 @@ namespace GameCore {
     void HatsSystem::UnequipHat()
     {
         if (m_equippedHatIndex == 0) {
-            GN_LOG_INFO("No hat equipped (already at index 0) - nothing to unequip");
+            GN_LOG_INFO("No hat equipped (already at index 0 = unequipped) - nothing to unequip");
             return;
         }
 
         int oldEquippedIndex = m_equippedHatIndex;
-        m_equippedHatIndex = 0;  // Set to 0 (unequipped/no hat)
+        m_equippedHatIndex = 0;  // Set to 0 (unequipped)
 
         GN_LOG_INFO("Unequipped hat (previous index: " + std::to_string(oldEquippedIndex) + ", now: 0 = unequipped)");
 
         // Trigger haptic feedback for unequipping
         HapticHelpers::TriggerHatEquip(m_platformDelegates);
 
-        // Update game's customization data
+        // Update game's customization data (0 = unequipped)
         if (GameCore::GetGame()) {
-            GameCore::GetGame()->SetEquippedHatIndex(m_equippedHatIndex);
-            GN_LOG_INFO("🎩 Synced unequipped status (index 0) to game save system");
+            GameCore::GetGame()->SetEquippedHatIndex(0);  // 0 = unequipped in save system
+            GN_LOG_INFO("🎩 Synced unequipped status to game save system: 0");
         }
         
         // Save hat status
@@ -488,32 +494,35 @@ namespace GameCore {
 
     const HatData* HatsSystem::GetHatData(int index) const
     {
-        // Index 0 = unequipped, indices 1-15 = actual hats
-        // So we need to convert: index 1 -> m_hats[0], index 2 -> m_hats[1], etc.
+        // index: 0 = unequipped (not in array), 1-15 = actual hats (array indices 0-14)
         if (index <= 0 || index > m_hats.size()) return nullptr;
-        return &m_hats[index - 1];
+        int arrayIndex = index - 1;
+        return &m_hats[arrayIndex];
     }
 
     bool HatsSystem::IsHatUnlocked(int index) const
     {
-        // Index 0 = unequipped, indices 1-15 = actual hats
+        // index: 0 = unequipped (always true), 1-15 = actual hats (array indices 0-14)
         if (index <= 0 || index > m_hats.size()) return false;
-        return m_hats[index - 1].status == HatStatus::UNLOCKED;
+        int arrayIndex = index - 1;
+        return m_hats[arrayIndex].status == HatStatus::UNLOCKED;
     }
 
     const std::string& HatsSystem::GetHatName(int index) const
     {
         static const std::string emptyString = "";
-        // Index 0 = unequipped, indices 1-15 = actual hats
+        // index: 0 = unequipped, 1-15 = actual hats (array indices 0-14)
         if (index <= 0 || index > m_hats.size()) return emptyString;
-        return m_hats[index - 1].name;
+        int arrayIndex = index - 1;
+        return m_hats[arrayIndex].name;
     }
 
     int HatsSystem::GetSelectedHatCost() const
     {
-        // Index 0 = unequipped (free), indices 1-15 = actual hats
+        // m_selectedHatIndex: 0 = unequipped (free), 1-15 = actual hats (array indices 0-14)
         if (m_selectedHatIndex <= 0 || m_selectedHatIndex > m_hats.size()) return 0;
-        return m_hats[m_selectedHatIndex - 1].cost;
+        int arrayIndex = m_selectedHatIndex - 1;
+        return m_hats[arrayIndex].cost;
     }
 
     Gnosis::Entity HatsSystem::GetHatIconEntity(int index) const
@@ -687,7 +696,8 @@ namespace GameCore {
 
     void HatsSystem::UpdateCostDisplay()
     {
-        if (m_selectedHatIndex < 0 || m_selectedHatIndex >= m_hats.size()) {
+        // m_selectedHatIndex: 0=unequipped, 1-15=actual hats
+        if (m_selectedHatIndex <= 0 || m_selectedHatIndex > m_hats.size()) {
             // No hat selected
             if (m_costDisplayEntity != 0 && m_ecsCoordinator) {
                 UIElement* costElement = m_ecsCoordinator->GetComponent<UIElement>(m_costDisplayEntity);
@@ -709,7 +719,8 @@ namespace GameCore {
             return;
         }
 
-        auto& hat = m_hats[m_selectedHatIndex];
+        int arrayIndex = m_selectedHatIndex - 1; // Convert game index to array index
+        auto& hat = m_hats[arrayIndex];
 
         // Update cost display
         if (m_costDisplayEntity != 0 && m_ecsCoordinator) {
@@ -896,10 +907,11 @@ namespace GameCore {
             GameCore::GetGame()->SetEquippedHatIndex(m_equippedHatIndex);
             GameCore::GetGame()->SetSelectedHatIndex(m_selectedHatIndex);
             
-            // Sync all unlocked hats
+            // Sync all unlocked hats (convert 0-14 to 1-15)
             for (size_t i = 0; i < m_hats.size(); ++i) {
                 if (m_hats[i].status == HatStatus::UNLOCKED) {
-                    GameCore::GetGame()->UnlockHat(static_cast<int>(i));
+                    GameCore::GetGame()->UnlockHat(static_cast<int>(i + 1));
+                    GN_LOG_INFO("🎩 Syncing unlocked hat to game save system (HatsSystem index: " + std::to_string(i) + " -> Save index: " + std::to_string(i + 1) + ")");
                 }
             }
             

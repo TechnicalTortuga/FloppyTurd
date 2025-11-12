@@ -204,6 +204,12 @@ void BossSystem::HandleDamage(int damage) {
         // Trigger haptic feedback for boss taking damage
         if (m_platformDelegates) {
             HapticHelpers::TriggerBossDamage(*m_platformDelegates);
+            
+            // Play rat king hurt sound
+            if (GameCore::GetGame()) {
+                GameCore::GetGame()->PlaySFX("ratkinghurt");
+                GN_LOG_INFO("Playing ratkinghurt sound for Rat King damage");
+            }
         }
         
         ChangeState(RatKingState::HURT);

@@ -3,6 +3,7 @@
 #include "../States/LoadingState.h"
 #include "../States/MainMenuState.h"
 #include "../States/LeaderboardState.h"
+#include "../States/TutorialState.h"
 #include "../States/ScreenPromptState.h"
 #include "../States/TransitionState.h"
 #include "../States/CreditsState.h"
@@ -55,8 +56,8 @@ namespace GameCore {
         , m_fpsTimer(0.0f)
         , m_currentFPS(0.0f)
         , m_showDebugInfo(false)
-        , m_debugLevelsUnlocked(false)   // Disabled for production
-        , m_debugHatsUnlocked(false)     // Disabled for production
+        , m_debugLevelsUnlocked(false)    // 🔒 DISABLED for production
+        , m_debugHatsUnlocked(false)      // Disabled for production
         , m_levelUnlockSoundTimer(0.0f)
         , m_pendingPartyHorn(false)
         , m_isIOSPlatform(false)
@@ -295,10 +296,10 @@ namespace GameCore {
         // 5. Update level unlock sound timer
         if (m_pendingPartyHorn) {
             m_levelUnlockSoundTimer += deltaTime;
-            GN_LOG_DEBUG("⏰ Party horn timer: " + std::to_string(m_levelUnlockSoundTimer) + "s / 1.0s");
+            GN_LOG_DEBUG("⏰ Party horn timer: " + std::to_string(m_levelUnlockSoundTimer) + "s / 0.5s");
 
-            if (m_levelUnlockSoundTimer >= 1.0f) { // 1 second delay
-                GN_LOG_INFO("🎊 Timer reached 1 second - playing partyhorn!");
+            if (m_levelUnlockSoundTimer >= 0.5f) { // 0.5 second delay (half the original)
+                GN_LOG_INFO("🎊 Timer reached 0.5 seconds - playing partyhorn!");
                 PlaySFX("partyhorn");
                 m_pendingPartyHorn = false;
                 m_levelUnlockSoundTimer = 0.0f;
@@ -518,9 +519,12 @@ namespace GameCore {
 
     void FloppyTurdGame::SetSFXVolume(float volume) {
         m_sfxVolume = std::max(0.0f, std::min(1.0f, volume));
-        GN_LOG_INFO("SFX volume set to: " + std::to_string(m_sfxVolume));
+        float combinedVolume = m_masterVolume * m_sfxVolume;
+        GN_LOG_INFO("🔊 SetSFXVolume - SFX: " + std::to_string(m_sfxVolume) + 
+                   ", Master: " + std::to_string(m_masterVolume) + 
+                   ", Combined: " + std::to_string(combinedVolume));
         if (m_platformDelegates.audio.setSFXVolume) {
-            m_platformDelegates.audio.setSFXVolume(m_masterVolume * m_sfxVolume);
+            m_platformDelegates.audio.setSFXVolume(combinedVolume);
         }
         // Save settings with game data (consistent with how other data is persisted)
         SaveGameData();
@@ -528,13 +532,17 @@ namespace GameCore {
 
     void FloppyTurdGame::SetMasterVolume(float volume) {
         m_masterVolume = std::max(0.0f, std::min(1.0f, volume));
-        GN_LOG_INFO("Master volume set to: " + std::to_string(m_masterVolume));
+        float combinedSFX = m_masterVolume * m_sfxVolume;
+        float combinedMusic = m_masterVolume * m_musicVolume;
+        GN_LOG_INFO("🔊 SetMasterVolume - Master: " + std::to_string(m_masterVolume) + 
+                   ", Music combined: " + std::to_string(combinedMusic) + 
+                   ", SFX combined: " + std::to_string(combinedSFX));
         // Re-apply child volumes to platform
         if (m_platformDelegates.audio.setMusicVolume) {
-            m_platformDelegates.audio.setMusicVolume(m_masterVolume * m_musicVolume);
+            m_platformDelegates.audio.setMusicVolume(combinedMusic);
         }
         if (m_platformDelegates.audio.setSFXVolume) {
-            m_platformDelegates.audio.setSFXVolume(m_masterVolume * m_sfxVolume);
+            m_platformDelegates.audio.setSFXVolume(combinedSFX);
         }
         // Save settings with game data (consistent with how other data is persisted)
         SaveGameData();
@@ -635,6 +643,14 @@ namespace GameCore {
                 GN_LOG_INFO("Transitioning to LeaderboardState");
                 auto leaderboardState = std::make_unique<LeaderboardState>(m_ecsSystem.get(), &m_platformDelegates);
                 m_stateManager->ChangeState(std::move(leaderboardState));
+                return;
+            }
+            
+            // Check if transitioning to tutorial (selectedLevelIndex == -2)
+            if (mainMenu && mainMenu->GetSelectedLevelIndex() == -2) {
+                GN_LOG_INFO("Transitioning to TutorialState");
+                auto tutorialState = std::make_unique<TutorialState>(m_ecsSystem.get(), &m_platformDelegates);
+                m_stateManager->ChangeState(std::move(tutorialState));
                 return;
             }
             
@@ -785,6 +801,12 @@ namespace GameCore {
             auto mainMenuState = std::make_unique<MainMenuState>(m_ecsSystem.get(), &m_platformDelegates);
             m_stateManager->ChangeState(std::move(mainMenuState));
         }
+        else if (strcmp(stateName, "Tutorial") == 0) {
+            // Return to main menu from tutorial
+            GN_LOG_INFO("Tutorial finished - returning to main menu");
+            auto mainMenuState = std::make_unique<MainMenuState>(m_ecsSystem.get(), &m_platformDelegates);
+            m_stateManager->ChangeState(std::move(mainMenuState));
+        }
         else if (strcmp(stateName, "Credits") == 0) {
             // Credits finished - show ScreenPromptState to rotate back to portrait
             GN_LOG_INFO("Credits finished - transitioning to ScreenPromptState for portrait rotation");
@@ -911,13 +933,15 @@ namespace GameCore {
     }
 
     void FloppyTurdGame::PlaySFX(const std::string& soundName) {
-        GN_LOG_INFO("🎵 PlaySFX called with: '" + soundName + "'");
+        float combinedVolume = m_masterVolume * m_sfxVolume;
+        GN_LOG_INFO("🎵 PlaySFX '" + soundName + "' - Master: " + std::to_string(m_masterVolume) + 
+                   ", SFX: " + std::to_string(m_sfxVolume) + 
+                   ", Combined: " + std::to_string(combinedVolume));
 
         // Use platform audio delegate to play sound effect
         if (m_platformDelegates.audio.playSound) {
-            GN_LOG_INFO("🔊 Calling platform delegate to play: '" + soundName + "'");
-            m_platformDelegates.audio.playSound(soundName.c_str(), m_masterVolume * m_sfxVolume);
-            GN_LOG_INFO("✅ SFX request sent to platform: '" + soundName + "'");
+            m_platformDelegates.audio.playSound(soundName.c_str(), combinedVolume);
+            GN_LOG_INFO("✅ SFX request sent to platform with volume: " + std::to_string(combinedVolume));
         } else {
             GN_LOG_ERROR("❌ Audio delegate not available - cannot play SFX: '" + soundName + "'");
         }
@@ -968,12 +992,11 @@ namespace GameCore {
 
     bool FloppyTurdGame::IsLevelUnlocked(int levelId) const {
         // 🔓 DEBUG MODE: Unlock all levels for testing
-        #ifdef DEBUG
+        // Toggle m_debugLevelsUnlocked in constructor to enable/disable
         if (m_debugLevelsUnlocked) {
             GN_LOG_DEBUG("🔓 DEBUG: Level " + std::to_string(levelId) + " unlocked for testing (debug_levelsunlocked=true)");
             return true; // All levels unlocked in debug mode
         }
-        #endif
         
         if (levelId == 1) return true; // First level always unlocked
         if (levelId >= 2 && levelId <= MAX_LEVELS) {
@@ -999,8 +1022,8 @@ namespace GameCore {
             PlaySFX("balloonpop");
             GN_LOG_INFO("✅ PlaySFX(balloonpop) called");
 
-            // Schedule party horn sound to play after 1 second delay
-            GN_LOG_INFO("⏰ Scheduling partyhorn sound to play in 1 second...");
+            // Schedule party horn sound to play after 0.5 second delay
+            GN_LOG_INFO("⏰ Scheduling partyhorn sound to play in 0.5 seconds...");
             m_pendingPartyHorn = true;
             m_levelUnlockSoundTimer = 0.0f;
             GN_LOG_INFO("✅ Party horn scheduled - m_pendingPartyHorn=true, timer=0.0f");
@@ -1064,14 +1087,14 @@ namespace GameCore {
                     m_levelStats[levelId].bestBossTime = bossTime;
                     GN_LOG_INFO("New best boss time for level 6: " + std::to_string(bossTime) + " seconds");
                     
-                    // Submit boss time to Game Center (convert to milliseconds for leaderboard)
+                    // Submit boss time to Game Center (in seconds - matches "Elapsed Time" score format)
                     #ifdef PLATFORM_IOS
                     if (m_platformDelegates.gameCenter.submitScore && m_platformDelegates.gameCenter.isAuthenticated) {
                         bool isAuthenticated = m_platformDelegates.gameCenter.isAuthenticated();
                         if (isAuthenticated) {
-                            int64_t timeInMs = static_cast<int64_t>(bossTime * 1000.0f);
-                            GN_LOG_INFO("📊 Submitting boss time to Game Center: " + std::to_string(timeInMs) + "ms");
-                            m_platformDelegates.gameCenter.submitScore("com.floppyturd.ratking.time", timeInMs, nullptr);
+                            int64_t timeInSeconds = static_cast<int64_t>(bossTime);
+                            GN_LOG_INFO("📊 Submitting boss time to Game Center: " + std::to_string(timeInSeconds) + " seconds");
+                            m_platformDelegates.gameCenter.submitScore("com.floppyturd.ratking", timeInSeconds, nullptr);
                         }
                     }
                     #endif
@@ -1080,6 +1103,26 @@ namespace GameCore {
 
             // Check if this level completion unlocks the next level
             CheckLevelUnlock(levelId, score, coins);
+            
+            // Submit aggregate stats to Game Center (total pipes, coins, enemies)
+            #ifdef PLATFORM_IOS
+            if (m_platformDelegates.gameCenter.submitScore && m_platformDelegates.gameCenter.isAuthenticated) {
+                bool isAuthenticated = m_platformDelegates.gameCenter.isAuthenticated();
+                if (isAuthenticated) {
+                    // Submit total pipes cleared
+                    GN_LOG_INFO("📊 Submitting total pipes to Game Center: " + std::to_string(m_gameStats.totalPipesCleared));
+                    m_platformDelegates.gameCenter.submitScore("com.floppyturd.pipes", m_gameStats.totalPipesCleared, nullptr);
+                    
+                    // Submit total coins collected
+                    GN_LOG_INFO("📊 Submitting total coins to Game Center: " + std::to_string(m_gameStats.totalCoinsCollected));
+                    m_platformDelegates.gameCenter.submitScore("com.floppyturd.coins", m_gameStats.totalCoinsCollected, nullptr);
+                    
+                    // Submit total enemies defeated
+                    GN_LOG_INFO("📊 Submitting total enemies to Game Center: " + std::to_string(m_gameStats.totalEnemiesKilled));
+                    m_platformDelegates.gameCenter.submitScore("com.floppyturd.enemies", m_gameStats.totalEnemiesKilled, nullptr);
+                }
+            }
+            #endif
 
             // Only save if we're not currently loading game data
             if (!m_isLoadingGameData) {

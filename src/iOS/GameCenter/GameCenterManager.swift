@@ -8,6 +8,7 @@
 
 import Foundation
 import GameKit
+import GameCorePlatform
 
 /// @brief Singleton manager for Game Center authentication and leaderboard submission
 /// This class handles all Game Center operations using native Swift/GameKit APIs
@@ -56,6 +57,7 @@ class GameCenterManager: NSObject {
             if let error = error {
                 print("❌ [GameCenter] Authentication error: \(error.localizedDescription)")
                 self.isAuthenticated = false
+                GameCore.setGameCenterAuthState(false)
                 completion(false, error)
                 return
             }
@@ -72,10 +74,16 @@ class GameCenterManager: NSObject {
                 print("👤 [GameCenter] Player: \(localPlayer.displayName)")
                 print("🆔 [GameCenter] Player ID: \(localPlayer.gamePlayerID)")
                 self.isAuthenticated = true
+                GameCore.setGameCenterAuthState(true)
+                
+                // Update C++ with player info
+                GameCore.setGameCenterPlayerInfo(localPlayer.displayName, localPlayer.gamePlayerID)
+                
                 completion(true, nil)
             } else {
                 print("⚠️ [GameCenter] Authentication failed - player not authenticated")
                 self.isAuthenticated = false
+                GameCore.setGameCenterAuthState(false)
                 completion(
                     false,
                     NSError(

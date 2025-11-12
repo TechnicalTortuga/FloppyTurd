@@ -1533,7 +1533,12 @@ namespace GameCore {
             if (m_cameraSystem) {
                 m_cameraSystem->SetMainCamera(m_cameraEntity);
                 // Keep world scroll speed in sync with difficulty-scaled worldSpeed
-                m_cameraSystem->SetWorldScrollSpeed(m_currentLevelConfig.worldSpeed);
+                // CRITICAL: Get config from LevelManager AFTER difficulty has been applied
+                const LevelConfig& levelConfig = m_levelManager->GetCurrentLevelConfig();
+                m_cameraSystem->SetWorldScrollSpeed(levelConfig.worldSpeed);
+                GN_LOG_INFO("🎮 Camera world scroll speed set to: " + std::to_string(levelConfig.worldSpeed) + 
+                           " (difficulty: " + DifficultyToString(levelConfig.currentDifficulty) + 
+                           ", multiplier: " + std::to_string(levelConfig.difficultyMultiplier) + ")");
             }
             
             if (m_renderSystem) {
@@ -3485,6 +3490,27 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                             enemyComp->currentState = EnemyState::Hurt;
                             enemyComp->hurtTimer = 0.6f;
                             
+                            // Play enemy-specific kill sound
+                            if (m_platformDelegates && m_platformDelegates->audio.playSound) {
+                                std::string killSound = "";
+                                
+                                // Determine kill sound based on enemy type
+                                if (enemyComp->enemyType == "ToiletPaper" || enemyComp->enemyType == "ToiletPaperSnow" || enemyComp->enemyType == "ToiletPaperCastle") {
+                                    killSound = "tpkill";
+                                } else if (enemyComp->enemyType == "Rat" || enemyComp->enemyType == "RatSnow" || enemyComp->enemyType == "RatCastle") {
+                                    killSound = "ratkill";
+                                } else if (enemyComp->enemyType == "Bird" || enemyComp->enemyType == "BirdSnow" || enemyComp->enemyType == "BirdCastle") {
+                                    killSound = "birdkill";
+                                }
+                                
+                                if (!killSound.empty()) {
+                                    if (GameCore::GetGame()) {
+                                        GameCore::GetGame()->PlaySFX(killSound);
+                                    }
+                                    GN_LOG_INFO("[PLAYER_ENEMY_COLLISION] Playing kill sound: " + killSound + " for enemy type: " + enemyComp->enemyType);
+                                }
+                            }
+                            
                             GN_LOG_INFO("[PLAYER_ENEMY_COLLISION] Enemy " + enemyComp->enemyType + " defeated");
                         }
                         
@@ -3689,8 +3715,8 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         }
         
         // Play gameover stinger immediately
-        if (m_platformDelegates && m_platformDelegates->audio.playSound) {
-            m_platformDelegates->audio.playSound("gameover.mp3", 1.0f);
+        if (GameCore::GetGame()) {
+            GameCore::GetGame()->PlaySFX("gameover.mp3");
         }
         
         // Player will fall naturally due to physics, input will be locked
@@ -4416,11 +4442,13 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         // m_playerEntity stays the same
         
         // Reset camera system to ensure proper scroll speed and position for fresh level
-        if (m_cameraSystem) {
+        if (m_cameraSystem && m_levelManager) {
             // Reset both world position and scroll speed for complete reset
             m_cameraSystem->ResetForNewGame();
-            m_cameraSystem->SetWorldScrollSpeed(m_currentLevelConfig.worldSpeed);
-            GN_LOG_INFO("Reset camera scroll speed to: " + std::to_string(m_currentLevelConfig.worldSpeed));
+            // CRITICAL: Get config from LevelManager for difficulty-adjusted speed
+            const LevelConfig& levelConfig = m_levelManager->GetCurrentLevelConfig();
+            m_cameraSystem->SetWorldScrollSpeed(levelConfig.worldSpeed);
+            GN_LOG_INFO("Reset camera scroll speed to: " + std::to_string(levelConfig.worldSpeed));
         }
 
         // Reset background positions to initial state

@@ -73,6 +73,10 @@ void AdSystem::ResetCounter() {
 }
 
 void AdSystem::PreloadNextAd() {
+    GN_LOG_INFO("AdSystem::PreloadNextAd() called");
+    GN_LOG_INFO("   m_isInitialized: %s", m_isInitialized ? "true" : "false");
+    GN_LOG_INFO("   m_platformDelegates: %s", m_platformDelegates ? "valid" : "null");
+    
     if (!m_isInitialized || !m_platformDelegates) {
         GN_LOG_WARN("AdSystem: Cannot preload ad - system not initialized");
         return;
@@ -83,9 +87,10 @@ void AdSystem::PreloadNextAd() {
         return;
     }
     
-    GN_LOG_INFO("AdSystem: Preloading next ad...");
+    GN_LOG_INFO("AdSystem: Calling preloadAd delegate...");
     m_platformDelegates->ad.preloadAd();
     m_adPreloaded = true;
+    GN_LOG_INFO("AdSystem: Preload delegate called successfully");
 }
 
 bool AdSystem::IsAdReady() const {
@@ -101,6 +106,10 @@ bool AdSystem::IsAdReady() const {
 }
 
 void AdSystem::ShowAd() {
+    GN_LOG_INFO("AdSystem::ShowAd() called");
+    GN_LOG_INFO("   m_isInitialized: %s", m_isInitialized ? "true" : "false");
+    GN_LOG_INFO("   m_platformDelegates: %s", m_platformDelegates ? "valid" : "null");
+    
     if (!m_isInitialized || !m_platformDelegates) {
         GN_LOG_WARN("AdSystem: Cannot show ad - system not initialized");
         return;
@@ -112,18 +121,22 @@ void AdSystem::ShowAd() {
     }
     
     // Check if ad is ready before showing
-    if (!IsAdReady()) {
+    bool adReady = IsAdReady();
+    GN_LOG_INFO("   IsAdReady: %s", adReady ? "true" : "false");
+    
+    if (!adReady) {
         GN_LOG_WARN("AdSystem: Ad not ready to show - preloading for next time");
         PreloadNextAd();
         return;
     }
     
-    GN_LOG_INFO("AdSystem: Showing interstitial ad");
+    GN_LOG_INFO("AdSystem: Calling showAd delegate...");
     m_platformDelegates->ad.showAd();
     
     // The ad will auto-preload the next one after dismissal (handled by AdManager.swift)
     // But we mark it as not preloaded here for tracking
     m_adPreloaded = false;
+    GN_LOG_INFO("AdSystem: Show ad delegate called successfully");
 }
 
 bool AdSystem::ShouldShowAd() const {

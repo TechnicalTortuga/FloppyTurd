@@ -277,4 +277,12 @@ namespace GameCore {
     
     // Ad state management - for Swift to update C++ about ad readiness
     void setAdReadyState(bool isReady);
+    
+    // Game Center state management - for Swift to update C++ about authentication status
+    void setGameCenterAuthState(bool isAuthenticated);
+    void setGameCenterPlayerInfo(const char* playerName, const char* playerID);
+    
+    // Game Center player info - get cached player name and ID
+    const char* getGameCenterPlayerName();
+    const char* getGameCenterPlayerID();
 }
