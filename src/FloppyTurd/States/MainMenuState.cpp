@@ -1946,13 +1946,10 @@ namespace GameCore {
         int randomFartNumber = dis(gen);
         std::string fartSoundName = "fart" + std::to_string(randomFartNumber);
         
-        // Use delegate system to play sound via cached game pointer
+        // Use PlaySFX to play sound with proper volume settings
         if (m_game) {
-            const PlatformDelegates& delegates = m_game->GetPlatformDelegates();
-            if (delegates.audio.playSound) {
-                delegates.audio.playSound(fartSoundName.c_str(), 0.8f); // 80% volume
-                GN_LOG_INFO("Playing fart sound: %s.mp3", fartSoundName.c_str());
-            }
+            m_game->PlaySFX(fartSoundName);
+            GN_LOG_INFO("Playing fart sound: %s", fartSoundName.c_str());
         }
         
         // Add visual feedback - make F button briefly larger

@@ -1,6 +1,7 @@
 #include "BossSystem.h"
 #include "ProjectileSystem.h"
 #include "../Config/EnemyConfigs.h"
+#include "../Game/FloppyTurdGame.h"
 #include "../../Engine/Platform/PlatformDelegates.h"
 #include "../../Engine/Platform/HapticHelpers.h"
 #include <cmath>
@@ -424,11 +425,11 @@ void BossSystem::StartDeathSequence() {
         GN_LOG_INFO("🎮 Triggered boss death haptic pattern");
     }
     
-    // Play BossKill sound immediately at reduced volume so screech can be heard
-    if (m_platformDelegates && m_platformDelegates->audio.playSound) {
-        m_platformDelegates->audio.playSound("BossKill.mp3", 0.6f);  // Reduced from 1.0 to 0.6
+    // Play BossKill sound immediately
+    if (GameCore::GetGame()) {
+        GameCore::GetGame()->PlaySFX("BossKill");
         m_hasPlayedBossKill = true;
-        GN_LOG_INFO("🎵 Playing BossKill sound at volume 0.6");
+        GN_LOG_INFO("🎵 Playing BossKill sound");
     }
 }
 
@@ -442,13 +443,12 @@ void BossSystem::UpdateDeathSequence(float deltaTime) {
     // Play screech halfway through BossKill sound (around 0.5-1.0 seconds)
     if (!m_hasPlayedScreech && m_deathSequenceTimer >= 0.5f) {
         GN_LOG_INFO("🔊 Screech condition met! Timer: " + std::to_string(m_deathSequenceTimer));
-        if (m_platformDelegates && m_platformDelegates->audio.playSound) {
-            // Play screech at BOOSTED VOLUME to be heard over BossKill
-            m_platformDelegates->audio.playSound("RatKingScreech.mp3", 1.2f);
+        if (GameCore::GetGame()) {
+            GameCore::GetGame()->PlaySFX("RatKingScreech");
             m_hasPlayedScreech = true;
-            GN_LOG_INFO("🔊 PLAYING RatKingScreech.mp3 at BOOSTED volume 1.2 (to be heard over BossKill)");
+            GN_LOG_INFO("🔊 PLAYING RatKingScreech sound");
         } else {
-            GN_LOG_ERROR("❌ Cannot play screech - platformDelegates or playSound is null!");
+            GN_LOG_ERROR("❌ Cannot play screech - game instance is null!");
         }
     }
     

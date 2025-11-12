@@ -1251,10 +1251,9 @@ void EnemySystem::ProcessEnemyCollision(Entity e, Enemy* enemy, Transform* trans
                         }
                         
                         if (!killSound.empty()) {
-                            // Use proper volume from game settings (master * sfx)
-                            float volume = GameCore::GetGame()->GetMasterVolume() * GameCore::GetGame()->GetSFXVolume();
-                            delegates.audio.playSound(killSound.c_str(), volume);
-                            GN_LOG_INFO("[COLLISION] Playing kill sound: " + killSound + " for enemy type: " + enemy->enemyType + " at volume: " + std::to_string(volume));
+                            // Use PlaySFX which applies volume settings automatically
+                            GameCore::GetGame()->PlaySFX(killSound);
+                            GN_LOG_INFO("[COLLISION] Playing kill sound: " + killSound + " for enemy type: " + enemy->enemyType);
                         }
                     }
                 }

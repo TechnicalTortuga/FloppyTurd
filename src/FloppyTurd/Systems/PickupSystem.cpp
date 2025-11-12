@@ -1,4 +1,5 @@
 #include "PickupSystem.h"
+#include "../Game/FloppyTurdGame.h"
 #include "../../Engine/Core/GNLog.h"
 #include <algorithm>
 #include <set>
@@ -152,8 +153,8 @@ namespace GameCore {
                     playerComp->sessionCoins += coinValue;
                 }
                 
-                if (m_platformDelegates && m_platformDelegates->audio.playSound) {
-                    m_platformDelegates->audio.playSound("pickup.mp3", 0.6f);
+                if (GameCore::GetGame()) {
+                    GameCore::GetGame()->PlaySFX("pickup");
                 }
             } else {
                 // Performance: Commented out expensive debug logging
@@ -181,8 +182,10 @@ namespace GameCore {
                     healAmount = 1; // Small hearts heal 1 slice
                 }
 
-                if (m_platformDelegates && m_platformDelegates->audio.playSound) {
-                    m_platformDelegates->audio.playSound(soundFile.c_str(), 0.8f);
+                if (GameCore::GetGame()) {
+                    // Remove extension from soundFile for PlaySFX
+                    std::string soundName = soundFile.substr(0, soundFile.find_last_of("."));
+                    GameCore::GetGame()->PlaySFX(soundName);
                 }
 
                 // Call heart collection callback to actually heal the player

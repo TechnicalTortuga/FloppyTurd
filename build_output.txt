@@ -1,8 +1,0 @@
-Command line invocation:
-    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -workspace FloppyTurd.xcworkspace -scheme FloppyTurd -configuration Debug -sdk iphonesimulator -destination "platform=iOS Simulator,name=iPhone 16,OS=18.2" clean build
-
-Build settings from command line:
-    SDKROOT = iphonesimulator26.0
-
-2025-11-08 15:56:37.676 xcodebuild[12112:7651070] Writing error result bundle to /var/folders/09/pw3zby3x5pn4pvjgr515b_sw0000gn/T/ResultBundle_2025-08-11_15-56-0037.xcresult
-xcodebuild: error: 'FloppyTurd.xcworkspace' does not exist.

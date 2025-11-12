@@ -105,7 +105,7 @@ if(PLATFORM_IOS)
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Input
     )
 
-    # Build C++ game logic as a static library for Swift interop
+    # Collect C++ game sources (will be added directly to main target - no static library)
     file(GLOB_RECURSE FLOPPYTURD_CPP_SOURCES
         "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Game/*.cpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Game/*.h"
@@ -130,19 +130,8 @@ if(PLATFORM_IOS)
     # Remove any Raylib sources from FLOPPYTURD_CPP_SOURCES for iOS
     list(FILTER FLOPPYTURD_CPP_SOURCES EXCLUDE REGEX ".*Raylib/.*")
     list(FILTER FLOPPYTURD_CPP_SOURCES EXCLUDE REGEX ".*RaylibPlatformImpl.*")
-    add_library(FloppyTurdGame STATIC ${FLOPPYTURD_CPP_SOURCES})
-    target_include_directories(FloppyTurdGame PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Game
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Input
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Core
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Events
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Platform
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Assets
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Configuration
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Utility
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Config
-    )
+    
+    # Note: C++ sources will be added directly to main app target below (no separate static library)
 endif()
 
 # =============================================================================
@@ -229,12 +218,13 @@ if(PLATFORM_IOS)
     list(FILTER ENGINE_CORE_SOURCES EXCLUDE REGEX ".*Raylib/.*")
     list(FILTER GAME_SOURCES EXCLUDE REGEX ".*Raylib/.*")
 
-    # Combine sources for iOS (NO RAYLIB)
+    # Combine ALL sources for iOS into single target (NO RAYLIB, NO STATIC LIBRARY)
     set(ALL_SOURCES
         ${ENGINE_CORE_SOURCES}
         ${IOS_CPP_SOURCES}
         ${IOS_SWIFT_SOURCES}
         ${GAME_SOURCES}
+        ${FLOPPYTURD_CPP_SOURCES}
     )
 
     message(STATUS "iOS sources collected (Raylib sources explicitly excluded)")
@@ -264,20 +254,17 @@ endif()
 # =============================================================================
 
 if(PLATFORM_IOS)
-    # Create iOS app bundle
-    add_executable(FloppyTurd MACOSX_BUNDLE ${IOS_SWIFT_SOURCES} ${IOS_CPP_SOURCES})
-
-    # Link the C++ game library to the main app and set up proper dependencies
-    target_link_libraries(FloppyTurd PRIVATE FloppyTurdGame)
-
-    # Add explicit dependency to ensure FloppyTurdGame is built first
-    add_dependencies(FloppyTurd FloppyTurdGame)
+    # Create iOS app bundle with ALL sources (C++, Swift, Engine - no static library)
+    add_executable(FloppyTurd MACOSX_BUNDLE ${ALL_SOURCES})
 
     # iOS-specific include directories (add Engine for module.modulemap)
     target_include_directories(FloppyTurd PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Core
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Events
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Platform
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Assets
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Configuration
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Utility
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine
         ${CMAKE_CURRENT_SOURCE_DIR}/src/iOS
         ${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/Audio
@@ -285,12 +272,15 @@ if(PLATFORM_IOS)
         ${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/Logging
         ${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/Rendering
         ${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/Threading
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/Assets
         ${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd
         ${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Components
         ${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Config
         ${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Entities
         ${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Game
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Input
         ${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/States
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Systems
     )
     # Ensure Swift can find the module map and headers
     set_target_properties(FloppyTurd PROPERTIES
@@ -431,30 +421,17 @@ if(PLATFORM_IOS)
         XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "Apple Development"
         XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET "17.0"
         XCODE_ATTRIBUTE_PRODUCT_NAME "FloppyTurd"
-        XCODE_ATTRIBUTE_BUNDLE_VERSION "1.0.0"
         XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1"
-        XCODE_ATTRIBUTE_UI_REQUIRED_DEVICE_CAPABILITIES "arm64"
-        XCODE_ATTRIBUTE_UI_SUPPORTED_INTERFACE_ORIENTATIONS "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortraitUpsideDown"
         XCODE_ATTRIBUTE_SWIFT_OBJC_INTERFACE_HEADER_NAME "FloppyTurd-Swift.h"
-        XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "YES"
-        XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "YES"
         XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
         XCODE_ATTRIBUTE_SWIFT_VERSION "6.0"
-        XCODE_ATTRIBUTE_CLANG_ENABLE_MODULES "YES"
-        XCODE_ATTRIBUTE_CLANG_ENABLE_MODULE_DEBUGGING "YES"
         XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon"
         XCODE_ATTRIBUTE_INSTALL_PATH "$(LOCAL_APPS_DIR)"
         XCODE_ATTRIBUTE_SKIP_INSTALL "NO"
         XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT "dwarf-with-dsym"
-        XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT[variant=Release] "dwarf-with-dsym"
-        XCODE_ATTRIBUTE_GENERATE_DEBUG_SYMBOLS "YES"
-        XCODE_ATTRIBUTE_GCC_GENERATE_DEBUGGING_SYMBOLS "YES"
         XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING "YES"
-        XCODE_ATTRIBUTE_DWARF_DSYM_FILE_SHOULD_ACCOMPANY_PRODUCT "YES"
-        XCODE_ATTRIBUTE_DWARF_DSYM_FOLDER_PATH "\$(CONFIGURATION_BUILD_DIR)"
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Debug-iphonesimulator"
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Debug-iphonesimulator"
-        ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Debug-iphonesimulator"
+        XCODE_ATTRIBUTE_GCC_GENERATE_DEBUGGING_SYMBOLS "YES"
+        XCODE_ATTRIBUTE_CONFIGURATION_BUILD_DIR "$(inherited)"
     )
 
     # Swift/C++ interop compiler options
@@ -464,43 +441,9 @@ if(PLATFORM_IOS)
         $<$<COMPILE_LANGUAGE:CXX>:-std=c++20>
     )
 
-    # Link the game library to the main target
-    if(TARGET FloppyTurdGame)
-        target_link_libraries(FloppyTurd PRIVATE FloppyTurdGame)
-    endif()
 endif()
 
-# Set properties for the game library target if it exists
-if(TARGET FloppyTurdGame)
-    target_compile_definitions(FloppyTurdGame PRIVATE ${COMMON_COMPILE_DEFINITIONS})
-
-    # C++ specific compiler options for the game library
-    target_compile_options(FloppyTurdGame PRIVATE
-        $<$<COMPILE_LANGUAGE:CXX>:-std=c++20>
-    )
-
-    # Set C++ standard properties for the game library
-    set_target_properties(FloppyTurdGame PROPERTIES
-        CXX_STANDARD 20
-        CXX_STANDARD_REQUIRED ON
-    )
-
-    if(PLATFORM_IOS)
-        # Swift 6.0 specific settings for the game library
-        set_target_properties(FloppyTurdGame PROPERTIES
-            XCODE_ATTRIBUTE_SWIFT_VERSION "6.0"
-            XCODE_ATTRIBUTE_CLANG_ENABLE_MODULES "YES"
-            XCODE_ATTRIBUTE_CLANG_ENABLE_MODULE_DEBUGGING "YES"
-            XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT "dwarf-with-dsym"
-            XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT[variant=Release] "dwarf-with-dsym"
-            XCODE_ATTRIBUTE_GENERATE_DEBUG_SYMBOLS "YES"
-            XCODE_ATTRIBUTE_GCC_GENERATE_DEBUGGING_SYMBOLS "YES"
-            XCODE_ATTRIBUTE_DWARF_DSYM_FILE_SHOULD_ACCOMPANY_PRODUCT "YES"
-            SWIFT_INCLUDE_PATHS "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine"
-            HEADER_SEARCH_PATHS "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine"
-        )
-    endif()
-endif()
+# No separate static library - all code is in main target now
 
 # ---- Asset Catalog generation for iOS resources ----
 if(PLATFORM_IOS)

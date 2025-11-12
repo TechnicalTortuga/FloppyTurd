@@ -3121,8 +3121,8 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 GN_LOG_INFO("💔 Player fell off screen - triggering damage and reset!");
                 
                 // Play hurt sound effect
-                if (m_platformDelegates && m_platformDelegates->audio.playSound) {
-                    m_platformDelegates->audio.playSound("hurt.mp3", 0.8f);
+                if (GameCore::GetGame()) {
+                    GameCore::GetGame()->PlaySFX("hurt");
                 }
                 
                 // Reset player position immediately
@@ -3530,8 +3530,8 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             m_invulnerabilityTimer = 1.0f;  // 1 second invulnerability
             
             // Play hurt sound effect
-            if (m_platformDelegates && m_platformDelegates->audio.playSound) {
-                m_platformDelegates->audio.playSound("hurt.mp3", 0.8f);  // 80% volume
+            if (GameCore::GetGame()) {
+                GameCore::GetGame()->PlaySFX("hurt");
             }
             
             // Trigger hurt state through PlayerControllerSystem - it will handle the animation and return to idle automatically
@@ -3601,9 +3601,8 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         m_currentScore += 10; // 10 points per pipe
 
         // Play bubble pop sound when clearing a pipe
-        if (m_platformDelegates && m_platformDelegates->audio.playSound) {
-            // Use dedicated bubble sound from environment sfx
-            m_platformDelegates->audio.playSound("bubble.mp3", 0.7f);
+        if (GameCore::GetGame()) {
+            GameCore::GetGame()->PlaySFX("bubble");
         }
     }
 
