@@ -4,6 +4,7 @@
 #include "../../Engine/Core/GNLog.h"
 #include <random>
 #include <cmath>
+#include <algorithm>
 
 namespace GameCore {
 
@@ -272,9 +273,15 @@ void CreditsState::CreateTurd() {
                 " frame=" + std::to_string(sprite.frameWidth) + "x" + std::to_string(sprite.frameHeight));
     
     // Position on left side, vertically centered, scaled 8x
+    // Position on left side, vertically centered, dynamic scale
+    // Target ~22% of screen height for the 32px sprite (consistent with iPhone look)
+    float targetHeight = m_screenHeight * 0.22f;
+    float textureSize = 32.0f;
+    float turdScale = targetHeight / textureSize;
+    
     Transform transform;
-    transform.position = Gnosis::GNVector2(150.0f, m_screenHeight / 2.0f - 128.0f);  // Adjusted for 8x scale
-    transform.scale = Gnosis::GNVector2(8.0f, 8.0f);  // Scale 8x like other sprites
+    transform.position = Gnosis::GNVector2(m_screenWidth * 0.1f, m_screenHeight / 2.0f - (textureSize * turdScale * 0.5f));
+    transform.scale = Gnosis::GNVector2(turdScale, turdScale);
     transform.rotation = 0.0f;
     m_ecsSystem->AddComponent(m_turdEntity, transform);
     
@@ -282,10 +289,33 @@ void CreditsState::CreateTurd() {
 }
 
 void CreditsState::CreatePipes() {
-    // Create 10 toilet PAIRS using ObstacleSystem's base scale
-    float pipeScale = 8.0f;  // Match ObstacleSystem baseScale
-    // Use visual 65x190 like ObstacleSystem for positioning math
-    float visualToiletHeight = 256.0f * pipeScale;
+    // Create 10 toilet PAIRS using percentage-based scaling
+    // Target same ~22% relative scale as Turd (since they share the same pixel art grid usually)
+    // Actually pipes are larger. Visual height 256px.
+    // On iPhone (1179h), 256px is ~22%.
+    // So let's use screen height to determine scale.
+    float targetHeight = m_screenHeight * 0.22f; // 256px visual height
+    float textureHeight = 256.0f; // This is the sprite height
+    // Wait, sprite is 64x256. 
+    // Existing code: pipeScale = 8.0f. 256 * 8 = 2048 ?? 
+    // Ah, lines 303: width=64, height=256.
+    // If scale was 8.0f, height would be 2048px? That's taller than the screen (1179).
+    // The previous code said "visual 65x190 like ObstacleSystem".
+    // Let's stick to the ObstacleSystem reference logic: Pipes are big.
+    // Logic: Pipes usually span a large portion of vertical space.
+    // Let's use a scale that makes them look "correct" - maybe the 8.0f was excessive or I misread the texture size.
+    // If standard texture is 32px and scale is 8, that's 256px.
+    // If texture is 256px? 
+    // Let's assume we want to preserve the *relative* look.
+    // Let's target the pipe *width* (64px texture) to be ~15% of screen height?
+    // 64 * 8 = 512px width? On 1179h? That's huge.
+    // Let's assume the previous `8.0f` was based on a smaller base unit or I should trust the `8.0f` logic but scale it relative to resolution.
+    // If 8.0f was for 1179h (iPhone).
+    // New Scale = 8.0f * (m_screenHeight / 1179.0f).
+    
+    float pipeScale = 8.0f * (m_screenHeight / 1179.0f);
+    
+    float visualToiletHeight = 256.0f * pipeScale;  // Height of the sprite * scale
     float pipeSpacing = m_screenWidth * 0.4f;  // 40% of screen width between pairs
     float startX = -m_screenWidth;  // Start completely off-screen to the left (full screen width)
     float fixedGapHeight = 400.0f;  // Reduced vertical gap between top and bottom toilets
@@ -435,9 +465,13 @@ void CreditsState::CreateSkipButton() {
     m_skipButtonEntity = m_ecsSystem->CreateEntity();
     
     // Create skip button with blue outlined text in bottom right corner (landscape)
+    // Dynamic font size
+    float fontScaleFactor = m_screenWidth / 2556.0f;
+    float fontSize = 48.0f * fontScaleFactor;
+    
     UIElement skipUI;
     skipUI.buttonText = "SKIP";
-    skipUI.fontSize = 48.0f;  // Increased from 32.0f for better visibility
+    skipUI.fontSize = fontSize;  // Dynamic size
     skipUI.textColor = Gnosis::GNColor(0, 150, 255, 255);  // Blue
     skipUI.textOutlineWidth = 3.0f;  // Outlined
     skipUI.visible = true;
@@ -448,9 +482,9 @@ void CreditsState::CreateSkipButton() {
     
     // Position in bottom-right corner with proper margin
     // Text renders from top-left, so we need to position it accounting for text size
-    float marginRight = 50.0f;  // Fixed margin from right edge
-    float marginBottom = 50.0f;  // Fixed margin from bottom edge
-    float estimatedTextWidth = 250.0f;  // Increased for larger text
+    float marginRight = 50.0f * fontScaleFactor;  // Dynamic margin
+    float marginBottom = 50.0f * fontScaleFactor;
+    float estimatedTextWidth = 250.0f * fontScaleFactor;  // Dynamic width estimate
     
     Transform skipTransform;
     skipTransform.position = Gnosis::GNVector2(

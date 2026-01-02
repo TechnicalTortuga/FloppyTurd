@@ -475,6 +475,14 @@ namespace GameCore {
             }
         }
         
+        // Update IAP purchase debounce timer
+        if (m_iapPurchaseDebounceTimer > 0.0f) {
+            m_iapPurchaseDebounceTimer -= deltaTime;
+            if (m_iapPurchaseDebounceTimer < 0.0f) {
+                m_iapPurchaseDebounceTimer = 0.0f;
+            }
+        }
+        
         // Update InputManager singleton
         InputManager* inputManager = InputManager::GetInstance();
         if (inputManager) {
@@ -656,19 +664,26 @@ namespace GameCore {
         }
         
         // Initialize cached overlay and slider geometry once, in pixels
-        m_optionsOverlayX = m_screenWidth * 0.10f;
-        m_optionsOverlayY = m_screenHeight * 0.10f; // 10% from top per request
-        m_optionsOverlayW = m_screenWidth * 0.80f;
-        m_optionsOverlayH = m_screenHeight * 0.80f;
+        // Dynamic scaling logic to fit 90% height properly
+        float overlayTextureWidth = 160.0f;
+        float overlayTextureHeight = 300.0f;
+        
+        float targetOverlayW = m_screenWidth * 0.95f;
+        float targetOverlayH = m_screenHeight * 0.90f; // 90% height
+        
+        float scaleX = targetOverlayW / overlayTextureWidth;
+        float scaleY = targetOverlayH / overlayTextureHeight;
+        float overlayScale = std::min(scaleX, scaleY);
+        
+        m_optionsOverlayW = overlayTextureWidth * overlayScale;
+        m_optionsOverlayH = overlayTextureHeight * overlayScale;
+        m_optionsOverlayX = (m_screenWidth - m_optionsOverlayW) * 0.5f;
+        m_optionsOverlayY = (m_screenHeight - m_optionsOverlayH) * 0.5f;
         
         // Create overlay background (same as leaderboard and ad controls)
         if (m_optionsOverlayEntity == 0) {
             m_optionsOverlayEntity = m_ecsCoordinator->CreateEntity();
         }
-        
-        float overlayTextureWidth = 160.0f;
-        float overlayTextureHeight = 300.0f;
-        float overlayScale = 7.0f;
         
         Gnosis::GNVector2 overlayPosition(
             (m_screenWidth - overlayTextureWidth * overlayScale) * 0.5f,
@@ -811,8 +826,10 @@ namespace GameCore {
         }
         float lw = static_cast<float>(lwi);
         float lh = static_cast<float>(lhi);
-        // Symmetric margin from screen edges
-        float edgeMargin = m_screenWidth * 0.05f;  // 5% from each edge
+        // Symmetric margin from screen edges - iPhone needs arrows 10% more apart
+        float aspectRatio = m_screenWidth / m_screenHeight;
+        bool isTablet = aspectRatio > 0.6f;
+        float edgeMargin = isTablet ? m_screenWidth * 0.25f : m_screenWidth * 0.15f;  // iPad 25%, iPhone 15% (10% more apart)
         float leftX = edgeMargin;                   // left button starts at left margin
         float leftY = diffY - (lh * scale) * 0.5f; // center arrow vertically on baseline
         Transform lt(Gnosis::GNVector2(leftX, leftY), 0.0f, Gnosis::GNVector2(scale, scale));
@@ -933,7 +950,13 @@ namespace GameCore {
             Transform t(Gnosis::GNVector2(backX, backY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
             Sprite s("FloppyButtonBlue", tw, th); s.layer = 22; s.visible = true;
             UIElement ui("BACK", "FloppyButtonBlue", "FloppyButtonBlueHover");
-            ui.fontSize = m_isMobile ? 80.0f : 32.0f; // Increased font size
+            
+            // Tablet scaling
+            float aspectRatio = m_screenWidth / m_screenHeight;
+            bool isTablet = aspectRatio > 0.6f;
+            float tabletFontScale = isTablet ? 0.7f : 1.0f;
+            
+            ui.fontSize = (m_isMobile ? 80.0f : 32.0f) * tabletFontScale; // Increased font size
             ui.textColor = Gnosis::GNColor(255,255,255,255);
             ui.centerTextHorizontally = true;
             ui.centerTextVertically = true;
@@ -1012,62 +1035,46 @@ namespace GameCore {
                 GN_LOG_INFO("🎮 MainMenuState: Processing " + stateStr + " touch at pixel(" +
                            std::to_string(pixelX) + ", " + std::to_string(pixelY) + ")");
 
-                // Check if touch is within F button bounds
-                if (m_fButtonEntity != 0) {
-                    Transform* fButtonTransform = m_ecsCoordinator->GetComponent<Transform>(m_fButtonEntity);
-                    Sprite* fButtonSprite = m_ecsCoordinator->GetComponent<Sprite>(m_fButtonEntity);
+                // Check if touch is within logo bounds (logo is now interactive)
+                if (m_logoEntity != 0) {
+                    Transform* logoTransform = m_ecsCoordinator->GetComponent<Transform>(m_logoEntity);
+                    Sprite* logoSprite = m_ecsCoordinator->GetComponent<Sprite>(m_logoEntity);
 
-                    if (fButtonTransform && fButtonSprite) {
-                        // F button is now positioned at top-left, so collision detection uses top-left based bounds
-                        float buttonWidth = fButtonSprite->width * fButtonTransform->scale.x;
-                        float buttonHeight = fButtonSprite->height * fButtonTransform->scale.y;
-                        float buttonLeft = fButtonTransform->position.x;
-                        float buttonRight = fButtonTransform->position.x + buttonWidth;
-                        float buttonTop = fButtonTransform->position.y;
-                        float buttonBottom = fButtonTransform->position.y + buttonHeight;
+                    if (logoTransform && logoSprite) {
+                        // Logo is positioned at top-left, so collision detection uses top-left based bounds
+                        float logoWidth = logoSprite->width * logoTransform->scale.x;
+                        float logoHeight = logoSprite->height * logoTransform->scale.y;
+                        float logoLeft = logoTransform->position.x;
+                        float logoRight = logoTransform->position.x + logoWidth;
+                        float logoTop = logoTransform->position.y;
+                        float logoBottom = logoTransform->position.y + logoHeight;
 
-                        // Get current screen dimensions for logging
-                        float currentScreenHeight = m_screenHeight;
-                        if (auto* renderSystem = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
-                            ScreenInfo screenInfo = renderSystem->GetScreenInfo();
-                            currentScreenHeight = static_cast<float>(screenInfo.pixelHeight);
-                        }
+                        bool xInBounds = pixelX >= logoLeft && pixelX <= logoRight;
+                        bool yInBounds = pixelY >= logoTop && pixelY <= logoBottom;
 
-                        bool xInBounds = pixelX >= buttonLeft && pixelX <= buttonRight;
-                        bool yInBounds = pixelY >= buttonTop && pixelY <= buttonBottom;
-
-                        GN_LOG_INFO("🎯 F Button bounds check: xInBounds=" + std::string(xInBounds ? "true" : "false") +
+                        GN_LOG_INFO("🎯 Logo bounds check: xInBounds=" + std::string(xInBounds ? "true" : "false") +
                                    " yInBounds=" + std::string(yInBounds ? "true" : "false"));
 
                         if (xInBounds && yInBounds) {
                             if (touch.state == TouchState::PRESSED) {
-                                GN_LOG_INFO("🎉 MainMenuState: F BUTTON PRESSED - setting visual state");
+                                GN_LOG_INFO("🎉 MainMenuState: LOGO PRESSED - setting visual state");
                                 // Just set visual state on press, action on release
-                                UIElement* uiElement = m_ecsCoordinator->GetComponent<UIElement>(m_fButtonEntity);
-                                if (uiElement) {
-                                    uiElement->isPressed = true;
-                                    uiElement->isHovered = true;
-                                    UpdateButtonSprite(m_fButtonEntity, *uiElement);
-                                }
+                                m_logoPressed = true;
                             } else if (touch.state == TouchState::RELEASED) {
                                 // Check debounce timer before allowing fart
-                                if (m_fartButtonDebounceTimer <= 0.0f) {
-                                    GN_LOG_INFO("🎉 MainMenuState: F BUTTON RELEASED - playing fart sound!");
+                                if (m_fartButtonDebounceTimer <= 0.0f && m_logoPressed) {
+                                    GN_LOG_INFO("🎉 MainMenuState: LOGO RELEASED - playing fart sound!");
                                     OnFButtonPressed();
                                     m_fartButtonDebounceTimer = FART_BUTTON_DEBOUNCE; // Reset debounce timer
-                                } else {
-                                    GN_LOG_INFO("⏱️ MainMenuState: F BUTTON DEBOUNCED - " + std::to_string(m_fartButtonDebounceTimer) + "s remaining");
+                                } else if (m_logoPressed) {
+                                    GN_LOG_INFO("⏱️ MainMenuState: LOGO DEBOUNCED - " + std::to_string(m_fartButtonDebounceTimer) + "s remaining");
                                 }
                                 // Reset visual state regardless
-                                UIElement* uiElement = m_ecsCoordinator->GetComponent<UIElement>(m_fButtonEntity);
-                                if (uiElement) {
-                                    uiElement->isPressed = false;
-                                    uiElement->isHovered = false;
-                                    UpdateButtonSprite(m_fButtonEntity, *uiElement);
-                                }
+                                m_logoPressed = false;
                             }
                         } else {
-                            GN_LOG_INFO("❌ MainMenuState: Touch missed F button");
+                            GN_LOG_INFO("❌ MainMenuState: Touch missed logo");
+                            m_logoPressed = false;  // Reset if touch moved outside
                             // Only check menu buttons if touch is released (to avoid triggering on press)
                             if (touch.state == TouchState::RELEASED) {
                                 CheckMenuButtonClicks(pixelX, pixelY);
@@ -1532,88 +1539,47 @@ namespace GameCore {
         m_ecsCoordinator->AddComponent<Sprite>(m_backgroundEntity, bgSprite);
         GN_LOG_INFO("Created full-screen background entity: MainMenu.png (texture: " + std::to_string(textureWidth) + "x" + std::to_string(textureHeight) + ", scale: " + std::to_string(scaleX) + "x" + std::to_string(scaleY) + ", screen: " + std::to_string(screenInfo.pixelWidth) + "x" + std::to_string(screenInfo.pixelHeight) + ")");
         
-        // 2. Create Logo Entity (FloppyLogo.png) - Desktop scaling
+        // 2. Create Logo Entity (PooperTrooperLogo.png) - Desktop scaling
         m_logoEntity = m_ecsCoordinator->CreateEntity();
         
         // Load texture to get actual dimensions via RenderSystem
         int logoW = 0, logoH = 0;
         if (auto* rs = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
-            rs->PreloadTexture("FloppyLogo");
-            if (!rs->GetTextureSize("FloppyLogo", logoW, logoH)) {
+            rs->PreloadTexture("PooperTrooperLogo");
+            if (!rs->GetTextureSize("PooperTrooperLogo", logoW, logoH)) {
                 logoW = 112; logoH = 80;
-                GN_LOG_INFO("RenderSystem: size unavailable for 'FloppyLogo'; using fallback 112x80");
+                GN_LOG_INFO("RenderSystem: size unavailable for 'PooperTrooperLogo'; using fallback 112x80");
             }
         }
         float logoWidth = static_cast<float>(logoW);
         float logoHeight = static_cast<float>(logoH);
-        float logoScale = 2.0f; // 2x scale for desktop
-        
-        // Calculate logo position - use same x,y for both logo and F button - USE PIXEL DIMENSIONS
-        float logoX = centerX - 150.0f; // Position to the left of center
-        float logoY = screenInfo.pixelHeight * 0.35f; // 35% down from top
+        float logoScale = 1.5f; // Reduced scale for desktop
         
         // Calculate scaled dimensions using helper
         auto logoScaledDimensions = GetScaledDimensions(logoWidth, logoHeight, logoScale);
         float scaledLogoWidth = logoScaledDimensions.first;
         float scaledLogoHeight = logoScaledDimensions.second;
         
-        // Logo position is already top-left based
-        float logoTopLeftX = logoX;  // Already top-left for logo
-        float logoTopLeftY = logoY;  // Already top-left for logo
+        // Center logo horizontally, position in upper portion of screen
+        float logoX = (screenInfo.pixelWidth - scaledLogoWidth) / 2.0f;  // Center horizontally
+        float logoY = (screenInfo.pixelHeight * 0.25f) - (scaledLogoHeight / 2.0f);  // Center at 25% from top
         
-        Transform logoTransform(Gnosis::GNVector2(logoTopLeftX, logoTopLeftY), 0.0f, Gnosis::GNVector2(logoScale, logoScale));
-        Sprite logoSprite("FloppyLogo", logoWidth, logoHeight); // Use actual texture dimensions
-        logoSprite.layer = 1; // Logo layer
+        Transform logoTransform(Gnosis::GNVector2(logoX, logoY), 0.0f, Gnosis::GNVector2(logoScale, logoScale));
+        Sprite logoSprite("PooperTrooperLogo", logoWidth, logoHeight);
+        logoSprite.layer = 1;
         logoSprite.visible = true;
         m_ecsCoordinator->AddComponent<Transform>(m_logoEntity, logoTransform);
         m_ecsCoordinator->AddComponent<Sprite>(m_logoEntity, logoSprite);
-        GN_LOG_INFO("Created scaled logo entity: FloppyLogo.png (2x scale)");
+        GN_LOG_INFO("Created centered logo entity: PooperTrooperLogo.png (" + std::to_string(logoScale) + "x scale)");
         
-        // 3. Create Interactive F Button Entity (F.png) - Desktop scaling
-        m_fButtonEntity = m_ecsCoordinator->CreateEntity();
-        
-        // Load texture to get actual dimensions via RenderSystem
-        int fW = 0, fH = 0;
-        if (auto* rs = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
-            rs->PreloadTexture("F");
-            if (!rs->GetTextureSize("F", fW, fH)) {
-                fW = 28; fH = 40;
-                GN_LOG_INFO("RenderSystem: size unavailable for 'F'; using fallback 28x40");
-            }
-        }
-        float fButtonTextureWidth = static_cast<float>(fW);
-        float fButtonTextureHeight = static_cast<float>(fH);
-        
-        // Position F button using SAME x,y coordinates as logo for perfect alignment
-        float fButtonX = logoX; // Use same X as logo
-        float fButtonY = logoY; // Use same Y as logo
-        
-        // Scale F button to match logo scale
-        float fButtonScale = logoScale; // Use same scale as logo
-        auto fButtonScaledDimensions = GetScaledDimensions(fButtonTextureWidth, fButtonTextureHeight, fButtonScale);
-        float fButtonWidth = fButtonScaledDimensions.first;
-        float fButtonHeight = fButtonScaledDimensions.second;
-        
-        // Position F button at same top-left coordinates as logo
-        float fButtonTopLeftX = fButtonX;
-        float fButtonTopLeftY = fButtonY;
-        
-        // Update logo transform to match F button exactly 
-        logoTransform = Transform(Gnosis::GNVector2(logoTopLeftX, logoTopLeftY), 0.0f, Gnosis::GNVector2(logoScale, logoScale));
-        m_ecsCoordinator->AddComponent<Transform>(m_logoEntity, logoTransform);
-        
-        Transform fButtonTransform(Gnosis::GNVector2(fButtonTopLeftX, fButtonTopLeftY), 0.0f, Gnosis::GNVector2(fButtonScale, fButtonScale));
-        Sprite fButtonSprite("F", fButtonTextureWidth, fButtonTextureHeight); // Use actual texture dimensions
-        fButtonSprite.layer = 2; // F button layer
-        fButtonSprite.visible = true;
-        m_ecsCoordinator->AddComponent<Transform>(m_fButtonEntity, fButtonTransform);
-        m_ecsCoordinator->AddComponent<Sprite>(m_fButtonEntity, fButtonSprite);
-        GN_LOG_INFO("Created F button entity: F.png (" + std::to_string(fButtonScale) + "x scale, actual size: " + std::to_string(fButtonTextureWidth) + "x" + std::to_string(fButtonTextureHeight) + ")");
+        // F Button Entity removed - logo is now the interactive element
+        m_fButtonEntity = 0;
+        GN_LOG_INFO("Logo is now interactive (F button removed)");
         
         // Create menu buttons for desktop
         CreateMenuButtons();
         
-        GN_LOG_INFO("Desktop layout created: Background, Logo, F Button, and Menu Button entities");
+        GN_LOG_INFO("Desktop layout created: Background, Logo (interactive), and Menu Button entities");
     }
 
     void MainMenuState::CreateMobileLayout() {
@@ -1667,11 +1633,11 @@ namespace GameCore {
                         screenInfo.scaleFactor = 1.0f;
                         GN_LOG_INFO("Mobile fallback screen dimensions: " + std::to_string(screenInfo.logicalWidth) + "x" + std::to_string(screenInfo.logicalHeight));
                     } else {
-                        // Ultimate fallback to iPhone 16 logical dimensions
-                        screenInfo.logicalWidth = 393.0f;
-                        screenInfo.logicalHeight = 852.0f;
-                        screenInfo.pixelWidth = 1179.0f;
-                        screenInfo.pixelHeight = 2556.0f;
+                        // Ultimate fallback to generic mobile dimensions
+                        screenInfo.logicalWidth = 390.0f;
+                        screenInfo.logicalHeight = 844.0f;
+                        screenInfo.pixelWidth = 1170.0f;
+                        screenInfo.pixelHeight = 2532.0f;
                         screenInfo.scaleFactor = 3.0f;
                     }
                 }
@@ -1719,57 +1685,46 @@ namespace GameCore {
         // Load logo texture dimensions via RenderSystem
         int mLogoW = 0, mLogoH = 0;
         if (auto* rs = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
-            rs->PreloadTexture("FloppyLogo");
-            if (!rs->GetTextureSize("FloppyLogo", mLogoW, mLogoH)) { mLogoW = 112; mLogoH = 80; }
+            rs->PreloadTexture("PooperTrooperLogo");
+            if (!rs->GetTextureSize("PooperTrooperLogo", mLogoW, mLogoH)) { mLogoW = 160; mLogoH = 112; }
         }
         float logoTextureWidth = static_cast<float>(mLogoW);
         float logoTextureHeight = static_cast<float>(mLogoH);
         
-        // Logo positioning: Center horizontally, 20% down from top
-        float logoScale = 8.0f;  // Fixed scale for mobile
+        // Logo positioning: Center horizontally and vertically in upper portion
+        // Detect tablet aspect ratio to adjust scale (iPad is wider, ~0.75 vs iPhone ~0.46)
+        float aspectRatio = screenInfo.pixelWidth / screenInfo.pixelHeight;
+        bool isTablet = aspectRatio > 0.6f;
+        
+        float logoScale = isTablet ? 7.0f : 7.0f;  // Same scale for both
         auto logoScaledDimensions = GetScaledDimensions(logoTextureWidth, logoTextureHeight, logoScale);
         float logoScaledWidth = logoScaledDimensions.first;
         float logoScaledHeight = logoScaledDimensions.second;
         
-        // For top-left rendering, position logo so it's centered on screen but accounting for its size
-        // Calculate position so logo appears centered but renders from top-left - USE PIXEL DIMENSIONS
-        float logoX = (screenInfo.pixelWidth - logoScaledWidth) / 2.0f;  // Center horizontally with top-left rendering
-        float logoY = screenInfo.pixelHeight * 0.15f;  // 15% from top for top-left rendering
+        // Center logo horizontally, position in upper third of screen
+        // Use CenterObjectAtPosition logic manually for better control here
+        float logoX = (screenInfo.pixelWidth - logoScaledWidth) / 2.0f;  // Perfectly centered
+        
+        // Position logo at 5-10% from top. 
+        // Note: floating animation adds offsets, so we start higher.
+        // If logo is huge, 20% might push it off top if origin is center, but sprite origin is top-left.
+        // Position at 10% from top for good visibility.
+        // iPad needs logo at 2%, iPhone at 5% (aspectRatio and isTablet already declared above)
+        float logoY = isTablet ? screenInfo.pixelHeight * 0.02f : screenInfo.pixelHeight * 0.05f; 
         
         Transform logoTransform(Gnosis::GNVector2(logoX, logoY), 0.0f, Gnosis::GNVector2(logoScale, logoScale));
-        Sprite logoSprite("FloppyLogo", logoTextureWidth, logoTextureHeight);
+        Sprite logoSprite("PooperTrooperLogo", logoTextureWidth, logoTextureHeight);
         logoSprite.layer = 1;
         logoSprite.visible = true;
         
         m_ecsCoordinator->AddComponent<Transform>(m_logoEntity, logoTransform);
         m_ecsCoordinator->AddComponent<Sprite>(m_logoEntity, logoSprite);
-        GN_LOG_INFO("✅ Created logo: FloppyLogo.png at (" + std::to_string(logoX) + "," + std::to_string(logoY) + ") with scale " + std::to_string(logoScale) + "x" + std::to_string(logoScale));
+        GN_LOG_INFO("\u2705 Created logo: PooperTrooperLogo.png at (" + std::to_string(logoX) + "," + std::to_string(logoY) + ") with scale " + std::to_string(logoScale) + "x" + std::to_string(logoScale));
         GN_LOG_INFO("🎯 LOGO DEBUG: logoTextureWidth=" + std::to_string(logoTextureWidth) + ", logoTextureHeight=" + std::to_string(logoTextureHeight) + ", logoScaledWidth=" + std::to_string(logoScaledWidth) + ", logoScaledHeight=" + std::to_string(logoScaledHeight));
         
-        // 3. Create F Button Entity - OVERLAID ON LOGO
-        m_fButtonEntity = m_ecsCoordinator->CreateEntity();
-        
-        // Load F button texture dimensions via RenderSystem
-        int mFW = 0, mFH = 0;
-        if (auto* rs = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
-            rs->PreloadTexture("F");
-            if (!rs->GetTextureSize("F", mFW, mFH)) { mFW = 28; mFH = 40; }
-        }
-        float fButtonTextureWidth = static_cast<float>(mFW);
-        float fButtonTextureHeight = static_cast<float>(mFH);
-        
-        // F button uses SAME position and scale as logo for perfect overlay
-        float fButtonScale = logoScale;  // Match logo scale exactly
-        
-        Transform fButtonTransform(Gnosis::GNVector2(logoX, logoY), 0.0f, Gnosis::GNVector2(fButtonScale, fButtonScale));
-        Sprite fButtonSprite("F", fButtonTextureWidth, fButtonTextureHeight);
-        fButtonSprite.layer = 2; // Above logo
-        fButtonSprite.visible = true;
-        
-        m_ecsCoordinator->AddComponent<Transform>(m_fButtonEntity, fButtonTransform);
-        m_ecsCoordinator->AddComponent<Sprite>(m_fButtonEntity, fButtonSprite);
-        GN_LOG_INFO("✅ Created F button: F.png at (" + std::to_string(logoX) + "," + std::to_string(logoY) + ") with scale " + std::to_string(fButtonScale) + "x" + std::to_string(fButtonScale) + " (overlaid on logo)");
-        GN_LOG_INFO("🎯 F BUTTON DEBUG: fButtonTextureWidth=" + std::to_string(fButtonTextureWidth) + ", fButtonTextureHeight=" + std::to_string(fButtonTextureHeight) + ", using EXACT same coordinates as logo");
+        // F Button Entity removed - logo is now the interactive element
+        m_fButtonEntity = 0;  // No longer used
+        GN_LOG_INFO("✅ Logo is now interactive (F button removed)");
         
         // 4. Create menu buttons for mobile (includes Ad Controls button)
         CreateMobileMenuButtons();
@@ -1780,9 +1735,9 @@ namespace GameCore {
         }
         
         // Position bottom right with appropriate padding
-        // Estimate text width: ~8-10px per character at this font size, so "v0.9.8" is roughly 50px
+        // Estimate text width: ~8-10px per character at this font size, so "v0.9.9" is roughly 50px
         float versionFontSize = 42.0f;
-        float estimatedTextWidth = 60.0f; // Conservative estimate for "v0.9.8"
+        float estimatedTextWidth = 60.0f; // Conservative estimate for "v0.9.9"
         float versionPaddingRight = 160.0f; // More padding from right edge to move further left for extra digit
         float versionPaddingBottom = 60.0f; // Padding from bottom
 
@@ -1794,7 +1749,7 @@ namespace GameCore {
         versionSprite.visible = false; // Text only
         versionSprite.layer = 5;
         
-        std::string versionText = "v0.9.8";
+        std::string versionText = "v1.0.3";
         UIElement versionUI(versionText, "", "");
         versionUI.fontSize = versionFontSize;
         versionUI.textColor = Gnosis::GNColor(255, 255, 255, 255); // White
@@ -1849,41 +1804,58 @@ namespace GameCore {
                 float logoFloat = sin(m_animationTimer * 1.5f) * 8.0f; // 8 pixel float amplitude
                 
                 // Get current screen dimensions from render system (not cached values)
+                float currentScreenWidth = m_screenWidth;
                 float currentScreenHeight = m_screenHeight;
                 if (auto* renderSystem = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
                     ScreenInfo screenInfo = renderSystem->GetScreenInfo();
+                    currentScreenWidth = static_cast<float>(screenInfo.pixelWidth);
                     currentScreenHeight = static_cast<float>(screenInfo.pixelHeight);
                 }
+                
+                // Detect tablet vs phone (same logic as CreateMobileLayout)
+                float aspectRatio = currentScreenWidth / currentScreenHeight;
+                bool isTablet = aspectRatio > 0.6f;
 
                 // Update logo Y position (preserve original Y + float offset)
-                // Use the SAME calculation as in CreateMobileLayout for consistency
-                float originalLogoY = currentScreenHeight * 0.15f; // 15% from top (matches CreateMobileLayout)
+                // Use 15% from top, matching CreateMobileLayout
+                Sprite* logoSprite = m_ecsCoordinator->GetComponent<Sprite>(m_logoEntity);
+                float logoW = (logoSprite) ? logoSprite->width : 160.0f;
+                float logoH = (logoSprite) ? logoSprite->height : 112.0f;
+                float currentScaleY = logoTransform->scale.y;
+                float logoScaledW = logoW * currentScaleY;
+                float logoScaledH = logoH * currentScaleY;
+                
+                // Center horizontally and position at 10% from top (top-left origin)
+                float originalLogoX = (currentScreenWidth - logoScaledW) / 2.0f;
+                // iPad needs logo at 2%, iPhone at 5%
+                float logoAspectRatio = currentScreenWidth / currentScreenHeight;
+                bool logoIsTablet = logoAspectRatio > 0.6f;
+                float originalLogoY = logoIsTablet ? currentScreenHeight * 0.02f : currentScreenHeight * 0.05f;
+                
+                logoTransform->position.x = originalLogoX;  // Keep centered
                 logoTransform->position.y = originalLogoY + logoFloat;
             }
         }
         
-        // F Button follows logo animation perfectly - same position + gentle pulsing
-        if (m_fButtonEntity != 0) {
-            Transform* fButtonTransform = m_ecsCoordinator->GetComponent<Transform>(m_fButtonEntity);
-            if (fButtonTransform) {
-                // Make F button follow logo's floating animation exactly
-                float logoFloat = sin(m_animationTimer * 1.5f) * 8.0f; // Same float as logo
-
-                // Get current screen dimensions from render system (not cached values)
-                float currentScreenHeight = m_screenHeight;
-                if (auto* renderSystem = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
-                    ScreenInfo screenInfo = renderSystem->GetScreenInfo();
-                    currentScreenHeight = static_cast<float>(screenInfo.pixelHeight);
-                }
-
-                float originalLogoY = currentScreenHeight * 0.15f; // Same Y calculation as logo
-                fButtonTransform->position.y = originalLogoY + logoFloat; // Follow logo's Y position exactly
+        // Logo pulsation effect (logo is now the interactive element)
+        if (m_logoEntity != 0) {
+            Transform* logoTransform = m_ecsCoordinator->GetComponent<Transform>(m_logoEntity);
+            if (logoTransform) {
+                // Detect tablet vs phone for scale
+                float aspectRatio = m_screenWidth / m_screenHeight;
+                bool isTablet = aspectRatio > 0.6f;
                 
-                // Create a subtle pulsing scale effect - use consistent 8x scale for mobile
-                float baseScale = m_isMobile ? 8.0f : 2.5f; // Fixed mobile scale to 8.0f
-                float pulseScale = baseScale + sin(m_animationTimer * 2.5f) * 0.3f;
-                fButtonTransform->scale.x = pulseScale;
-                fButtonTransform->scale.y = pulseScale;
+                // Base scale: 7.0f for both tablet and phone (matching CreateMobileLayout)
+                float baseScale = 7.0f;
+                float pulseScale = baseScale + sin(m_animationTimer * 2.5f) * 0.08f;  // Subtle pulse
+                
+                // If pressed, make it slightly smaller for feedback
+                if (m_logoPressed) {
+                    pulseScale = baseScale * 0.95f;
+                }
+                
+                logoTransform->scale.x = pulseScale;
+                logoTransform->scale.y = pulseScale;
             }
         }
     }
@@ -1952,14 +1924,14 @@ namespace GameCore {
             GN_LOG_INFO("Playing fart sound: %s", fartSoundName.c_str());
         }
         
-        // Add visual feedback - make F button briefly larger
-        if (m_fButtonEntity != 0 && m_ecsCoordinator) {
-            Transform* fButtonTransform = m_ecsCoordinator->GetComponent<Transform>(m_fButtonEntity);
-            if (fButtonTransform) {
-                // Temporarily scale up the F button for feedback - based on 8x scale for mobile
-                float feedbackScale = m_isMobile ? 9.0f : 3.0f; // Bigger feedback for mobile 8x base scale
-                fButtonTransform->scale.x = feedbackScale;
-                fButtonTransform->scale.y = feedbackScale;
+        // Add visual feedback - make logo briefly larger
+        if (m_logoEntity != 0 && m_ecsCoordinator) {
+            Transform* logoTransform = m_ecsCoordinator->GetComponent<Transform>(m_logoEntity);
+            if (logoTransform) {
+                // Temporarily scale up the logo for feedback
+                float feedbackScale = m_isMobile ? 7.5f : 1.7f; // Match base scales with slight increase for feedback
+                logoTransform->scale.x = feedbackScale;
+                logoTransform->scale.y = feedbackScale;
                 // Note: This will be smoothed back by the pulsing animation
             }
         }
@@ -2101,7 +2073,8 @@ namespace GameCore {
         float quitButtonHeight = quitButtonScaledDimensions.second;
         
         // Use positioning helper to center button
-        float quitButtonCenterY = buttonY + buttonSpacing * 3;
+        // Lower Vibrations UI by 5%
+        float quitButtonCenterY = buttonY + buttonSpacing * 3.15f; // Increased from 3.0f to 3.15f (roughly 5% drop for this button)
         Gnosis::GNVector2 quitButtonPosition = CenterObjectAtPosition(centerX, quitButtonCenterY, quitButtonWidth, quitButtonHeight);
         float quitButtonTopLeftX = quitButtonPosition.x;
         float quitButtonTopLeftY = quitButtonPosition.y;
@@ -2168,10 +2141,28 @@ namespace GameCore {
         
         // === SIMPLIFIED MOBILE BUTTON POSITIONING === //
 
-        float buttonScale = 10.0f;  // Keep sprite scale at 10x for mobile visuals
+        // Create button scale dynamically based on screen width
+        // Target roughly 70% of screen width for buttons (decreased from 80% per request)
+        float targetButtonWidth = m_screenWidth * 0.70f;
+        float calculatedScale = targetButtonWidth / buttonTextureWidth;
+        
+        // Clamp scale to reasonable limits
+        float minScale = 4.0f;
+        float maxScale = 14.0f; // Allow larger buttons on iPad
+        float buttonScale = std::max(minScale, std::min(maxScale, calculatedScale));
+        
         m_menuButtonScale = buttonScale;
-        // Text size globally controlled; do not derive from sprite scale
-        m_globalUIFontSize = m_isMobile ? 80.0f : (m_buttonFontSize * 5.0f);
+        
+        // Tablet font scaling: reduce font size on iPad (aspect > 0.6)
+        float aspectRatio = m_screenWidth / m_screenHeight;
+        bool isTablet = aspectRatio > 0.6f;
+        float tabletFontScale = isTablet ? 0.65f : 1.0f;  // 65% font size on tablet
+        
+        // Text size globally controlled; derive from scale to keep proportion or use dynamic calc
+        // iPhone: reduce font by ~12pts from default
+        float iPhoneFontReduction = isTablet ? 0.0f : 12.0f;
+        m_globalUIFontSize = (m_buttonFontSize * (buttonScale / 2.0f) * tabletFontScale) - iPhoneFontReduction;
+        
         auto buttonScaledDimensions = GetScaledDimensions(buttonTextureWidth, buttonTextureHeight, buttonScale);
         float buttonScaledWidth = buttonScaledDimensions.first;
         float buttonScaledHeight = buttonScaledDimensions.second;
@@ -2182,14 +2173,14 @@ namespace GameCore {
         float startY, buttonSpacing;
         if (isLandscape) {
             // Landscape mode: same vertical stacking but adjust spacing for taller screen
-            startY = m_screenHeight * 0.50f;  // Start at 50% down from top
-            buttonSpacing = buttonScaledHeight + 60.0f;  // Slightly tighter vertical spacing for landscape
+            startY = m_screenHeight * 0.40f;  // Start at 40% down from top (raised from 45%)
+            buttonSpacing = buttonScaledHeight + 50.0f;  // Tighter vertical spacing for landscape
             GN_LOG_INFO("📱 Creating landscape mobile buttons (vertical stack): screen=" + std::to_string((int)m_screenWidth) + "x" + std::to_string((int)m_screenHeight));
         } else {
-            // Portrait mode: vertical stacking with standard spacing
-            startY = m_screenHeight * 0.50f;  // Start at 50% down from top
-            buttonSpacing = buttonScaledHeight + 80.0f;  // Vertical spacing
-            GN_LOG_INFO("📱 Creating portrait mobile buttons: screen=" + std::to_string((int)m_screenWidth) + "x" + std::to_string((int)m_screenHeight));
+            // Portrait mode: iPhone needs buttons lower, iPad keeps them higher
+            startY = isTablet ? m_screenHeight * 0.40f : m_screenHeight * 0.46f;  // iPhone at 46%, iPad at 40%
+            buttonSpacing = buttonScaledHeight + 70.0f;  // Tighter vertical spacing
+            GN_LOG_INFO("📱 Creating portrait mobile buttons: screen=" + std::to_string((int)m_screenWidth) + "x" + std::to_string((int)m_screenHeight) + ", isTablet=" + std::to_string(isTablet));
         }
         
         GN_LOG_INFO("📱 Creating mobile buttons: scale=" + std::to_string(buttonScale) + ", size=" + std::to_string(buttonScaledWidth) + "x" + std::to_string(buttonScaledHeight) + ", startY=" + std::to_string(startY) + ", spacing=" + std::to_string(buttonSpacing));
@@ -2473,9 +2464,9 @@ namespace GameCore {
             UIElement* uiElement = m_ecsCoordinator->GetComponent<UIElement>(m_quickPlayButtonEntity);
             
             if (transform && sprite && uiElement) {
-                // Button is now positioned at top-left, so collision detection uses top-left based bounds
-                float buttonWidth = 64.0f * transform->scale.x * 0.8f; // 80% of actual button texture size
-                float buttonHeight = 16.0f * transform->scale.y * 0.8f; // 80% of actual button texture size
+                // Use actual sprite dimensions from the entity components
+                float buttonWidth = sprite->width * transform->scale.x;
+                float buttonHeight = sprite->height * transform->scale.y;
                 float buttonLeft = transform->position.x;
                 float buttonRight = transform->position.x + buttonWidth;
                 float buttonTop = transform->position.y;
@@ -2508,9 +2499,9 @@ namespace GameCore {
             UIElement* uiElement = m_ecsCoordinator->GetComponent<UIElement>(m_leaderboardButtonEntity);
             
             if (transform && sprite && uiElement) {
-                // Button is now positioned at top-left, so collision detection uses top-left based bounds
-                float buttonWidth = 64.0f * transform->scale.x * 0.8f; // 80% of actual button texture size
-                float buttonHeight = 16.0f * transform->scale.y * 0.8f; // 80% of actual button texture size
+                // Use actual sprite dimensions from the entity components
+                float buttonWidth = sprite->width * transform->scale.x;
+                float buttonHeight = sprite->height * transform->scale.y;
                 float buttonLeft = transform->position.x;
                 float buttonRight = transform->position.x + buttonWidth;
                 float buttonTop = transform->position.y;
@@ -2543,9 +2534,9 @@ namespace GameCore {
             UIElement* uiElement = m_ecsCoordinator->GetComponent<UIElement>(m_howToButtonEntity);
             
             if (transform && sprite && uiElement) {
-                // Button is positioned at top-left, collision detection uses top-left based bounds
-                float buttonWidth = 64.0f * transform->scale.x * 0.8f;
-                float buttonHeight = 16.0f * transform->scale.y * 0.8f;
+                // Use actual sprite dimensions from the entity components
+                float buttonWidth = sprite->width * transform->scale.x;
+                float buttonHeight = sprite->height * transform->scale.y;
                 float buttonLeft = transform->position.x;
                 float buttonRight = transform->position.x + buttonWidth;
                 float buttonTop = transform->position.y;
@@ -2702,6 +2693,40 @@ namespace GameCore {
         
         GN_LOG_INFO("Creating level select layout...");
         
+        // Create the purple menu background (same as Leaderboards/Options)
+        m_levelSelectBackgroundEntity = m_ecsCoordinator->CreateEntity();
+        
+        // Target dimensions: 95% width, 90% height to match updated specs
+        float targetW = m_screenWidth * 0.95f;
+        float targetH = m_screenHeight * 0.90f;
+        
+        int bgW = 0, bgH = 0;
+        if (auto* rs = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+            rs->PreloadTexture("pausemenubackground");
+            if (!rs->GetTextureSize("pausemenubackground", bgW, bgH)) { bgW = 160; bgH = 300; }
+        }
+        float texW = static_cast<float>(bgW);
+        float texH = static_cast<float>(bgH);
+        
+        float scaleX = targetW / texW;
+        float scaleY = targetH / texH;
+        float scale = std::min(scaleX, scaleY); // Uniform scale to fit? Or stretch?
+        // Actually Leaderboards uses std::min logic code:
+        // float scaleX = (m_screenWidth * 0.95f) / 160.0f;
+        // float scaleY = (m_screenHeight * 0.85f) / 300.0f;
+        // float bgScale = std::min(scaleX, scaleY);
+        
+        float bgScale = std::min(scaleX, scaleY);
+        
+        Transform bgTransform(Gnosis::GNVector2(m_screenWidth * 0.5f - (texW * bgScale * 0.5f), m_screenHeight * 0.5f - (texH * bgScale * 0.5f)), 0.0f, Gnosis::GNVector2(bgScale, bgScale));
+        Sprite bgSprite("pausemenubackground", texW, texH);
+        bgSprite.layer = 2; // Behind paintings (layer 3)
+        bgSprite.visible = false;
+        
+        m_ecsCoordinator->AddComponent<Transform>(m_levelSelectBackgroundEntity, bgTransform);
+        m_ecsCoordinator->AddComponent<Sprite>(m_levelSelectBackgroundEntity, bgSprite);
+
+        
         CreateLevelPaintings();
         CreateBackButton();
         CreateLevelPlayButton();
@@ -2847,6 +2872,12 @@ namespace GameCore {
         m_unlockButtonEntities.clear();
         m_requirementTextEntities.clear();
         
+        if (m_levelSelectBackgroundEntity != 0 && m_ecsCoordinator) {
+            if (auto* s = m_ecsCoordinator->GetComponent<Sprite>(m_levelSelectBackgroundEntity)) {
+                s->visible = false;
+            }
+        }
+        
         // Pruned verbose creation log
         
         for (size_t i = 0; i < m_levels.size(); ++i) {
@@ -2914,7 +2945,10 @@ namespace GameCore {
             Gnosis::Entity textEntity = m_ecsCoordinator->CreateEntity();
 
             // Position text at top of screen, centered horizontally on screen (not painting)
-            float textY = m_screenHeight * 0.15f; // 15% down from top
+            // iPad needs level names lower
+            float aspectRatio = m_screenWidth / m_screenHeight;
+            bool isTablet = aspectRatio > 0.6f;
+            float textY = isTablet ? m_screenHeight * 0.12f : m_screenHeight * 0.15f; // iPad at 12%, iPhone at 15%
             float textX = screenCenterX; // Use screen center for proper horizontal centering
 
             Transform textTransform(Gnosis::GNVector2(textX, textY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
@@ -2929,7 +2963,8 @@ namespace GameCore {
             }
 
             UIElement textElement(displayText, "", "");
-            textElement.fontSize = m_isMobile ? 70.0f : (m_buttonFontSize * 4.0f); // Slightly smaller to fit high score
+            // iPad needs smaller font for level names, iPhone reduced significantly
+            textElement.fontSize = m_isMobile ? (isTablet ? 80.0f : 70.0f) : (m_buttonFontSize * 5.0f); // iPad 80, iPhone 70
             textElement.textOutlineWidth = 8.0f; // consistent outline thickness
             textElement.textColor = Gnosis::GNColor(255, 255, 255, 255);
             textElement.centerTextHorizontally = true;
@@ -2986,7 +3021,7 @@ namespace GameCore {
                 buttonSprite.visible = false;
 
                 UIElement buttonElement("UNLOCK", "FloppyButtonBlue", "FloppyButtonBlueHover");
-                buttonElement.fontSize = m_globalUIFontSize; // Match main menu button font size (80.0f for mobile)
+                buttonElement.fontSize = m_globalUIFontSize * 0.65f; // Decreased size (was 75%)
                 buttonElement.textColor = Gnosis::GNColor(255, 255, 255, 255);
                 buttonElement.centerTextHorizontally = true;
                 buttonElement.centerTextVertically = true;
@@ -3000,7 +3035,9 @@ namespace GameCore {
                 // Create requirements text below the button
                 Gnosis::Entity reqTextEntity = m_ecsCoordinator->CreateEntity();
 
-                float reqTextY = buttonY + buttonHeight / 2.0f + 99.0f; // Position below the button (drop full button height + 64px more spacing)
+                // iPad: raise requirements text by 2% (less gap below button)
+                float reqTextGap = isTablet ? 79.0f : 99.0f;  // iPad 79px, iPhone 99px (raised ~2%)
+                float reqTextY = buttonY + buttonHeight / 2.0f + reqTextGap;
                 Transform reqTextTransform(Gnosis::GNVector2(textX, reqTextY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
 
                 // Get level stats to show requirements
@@ -3069,7 +3106,8 @@ namespace GameCore {
                 }
 
                 UIElement reqTextElement(requirementsText, "", "");
-                reqTextElement.fontSize = m_isMobile ? 40.0f : (m_buttonFontSize * 2.5f); // Lowered font size
+                // iPad needs smaller font for requirements text
+                reqTextElement.fontSize = m_isMobile ? (isTablet ? 32.0f : 40.0f) : (m_buttonFontSize * 2.5f); // iPad 32, iPhone 40
                 reqTextElement.textOutlineWidth = 6.0f;
                 reqTextElement.textColor = Gnosis::GNColor(200, 200, 200, 255); // Light gray
                 reqTextElement.centerTextHorizontally = true;
@@ -3305,7 +3343,7 @@ namespace GameCore {
         m_backButtonEntity = m_ecsCoordinator->CreateEntity();
         float centerX = m_screenWidth * 0.5f;
         float buttonY = m_screenHeight * 0.93f;  // near bottom
-        float buttonScale = m_isMobile ? 10.0f : 4.0f; // Match main menu button scale (10.0f for mobile)
+        float buttonScale = m_isMobile ? 8.0f : 6.0f; // Match Unlock button scale (8.0f for mobile)
 
         // Query texture via shared RenderSystem
         int bw = 0, bh = 0;
@@ -3324,7 +3362,7 @@ namespace GameCore {
         Transform t(Gnosis::GNVector2(topLeftX, topLeftY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
         Sprite s("FloppyButtonBlue", buttonTexW, buttonTexH); s.layer = 5; s.visible = false;
         UIElement ui("BACK", "FloppyButtonBlue", "FloppyButtonBlueHover");
-        ui.fontSize = m_isMobile ? 80.0f : 20.0f; // Match main menu button font size (80.0f for mobile)
+        ui.fontSize = m_globalUIFontSize * 0.65f; // Match Unlock button font size
         ui.textColor = Gnosis::GNColor(255, 255, 255, 255);
         ui.centerTextHorizontally = true;
         ui.centerTextVertically = true;
@@ -3349,7 +3387,7 @@ namespace GameCore {
         float centerX = m_screenWidth * 0.5f;
         // Place slightly above the back button
         float buttonY = m_screenHeight * 0.86f;
-        float buttonScale = m_isMobile ? 10.0f : 4.0f; // Match main menu button scale (10.0f for mobile)
+        float buttonScale = m_isMobile ? 8.0f : 6.0f; // Match Unlock button scale (8.0f for mobile)
 
         // Query texture via shared RenderSystem
         int bw = 0, bh = 0;
@@ -3368,7 +3406,7 @@ namespace GameCore {
         Transform t(Gnosis::GNVector2(topLeftX, topLeftY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
         Sprite s("FloppyButtonBlue", texW, texH); s.layer = 5; s.visible = false;
         UIElement ui("PLAY LEVEL", "FloppyButtonBlue", "FloppyButtonBlueHover");
-        ui.fontSize = m_isMobile ? 80.0f : 20.0f; // Match main menu button font size (80.0f for mobile)
+        ui.fontSize = m_globalUIFontSize * 0.65f; // Match Unlock button font size
         ui.textColor = Gnosis::GNColor(255, 255, 255, 255);
         ui.centerTextHorizontally = true;
         ui.centerTextVertically = true;
@@ -3391,8 +3429,14 @@ namespace GameCore {
             float titleY = m_optionsOverlayY + m_optionsOverlayH * 0.06f;
             Transform t(Gnosis::GNVector2(titleX, titleY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
             Sprite s; s.visible = false; s.layer = 4; // text-only
+
+            // Tablet scaling
+            float aspectRatio = m_screenWidth / m_screenHeight;
+            bool isTablet = aspectRatio > 0.6f;
+            float tabletFontScale = isTablet ? 0.7f : 1.0f;
+
             UIElement ui("OPTIONS", "", "");
-            ui.fontSize = m_isMobile ? 72.0f : 42.0f; // Increased font size
+            ui.fontSize = (m_isMobile ? 72.0f : 42.0f) * tabletFontScale; // Increased font size
             ui.textColor = Gnosis::GNColor(255, 255, 255, 255); // White text
             ui.centerTextHorizontally = true;
             ui.centerTextVertically = true;
@@ -3414,7 +3458,15 @@ namespace GameCore {
             Transform t(Gnosis::GNVector2(centerX, diffLabelY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
             Sprite s; s.visible = true; s.layer = 4;
             UIElement ui("DIFFICULTY", "", "");
-            ui.fontSize = m_isMobile ? 54.0f : 32.0f; // Increased font size
+            // Tablet scaling applied (using variable from above loop scope if available, or recalc)
+            // Note: Since this is in the same scope as Title, we can reuse variables if scope allows, 
+            // but to be safe and avoid scope issues in this large function, I'll recalc or assume variables are local to the block.
+            // The previous chunk was in a separate block {} so I must recalc here.
+            float aspectRatio = m_screenWidth / m_screenHeight;
+            bool isTablet = aspectRatio > 0.6f;
+            float tabletFontScale = isTablet ? 0.7f : 1.0f;
+            
+            ui.fontSize = (m_isMobile ? 64.0f : 32.0f) * tabletFontScale; // Increased font size (was 54)
             ui.textColor = Gnosis::GNColor(255, 255, 255, 255); // White text
             ui.centerTextHorizontally = true; ui.centerTextVertically = true; ui.visible = true;
             if (!m_ecsCoordinator->HasComponent<Transform>(m_difficultyTextEntity)) m_ecsCoordinator->AddComponent<Transform>(m_difficultyTextEntity, t); else *m_ecsCoordinator->GetComponent<Transform>(m_difficultyTextEntity) = t;
@@ -3427,7 +3479,7 @@ namespace GameCore {
             // Initialize with actual current difficulty instead of hardcoded placeholder
             std::string currentDifficultyName = GameCore::LevelManager::GetDifficultyName();
             UIElement vei(currentDifficultyName.c_str(), "", ""); // Use actual current difficulty
-            vei.fontSize = m_isMobile ? 60.0f : 36.0f; // Increased font size
+            vei.fontSize = (m_isMobile ? 90.0f : 36.0f) * tabletFontScale; // Increased font size (was 60)
             vei.textColor = Gnosis::GNColor(255, 255, 255, 255); // White text
             vei.centerTextHorizontally = true; vei.centerTextVertically = true; vei.visible = true;
             if (!m_ecsCoordinator->HasComponent<Transform>(m_difficultyValueEntity)) m_ecsCoordinator->AddComponent<Transform>(m_difficultyValueEntity, vt); else *m_ecsCoordinator->GetComponent<Transform>(m_difficultyValueEntity) = vt;
@@ -3484,36 +3536,42 @@ namespace GameCore {
         // After creating tracks/labels, ensure knob positions are consistent
         UpdateOptionsKnobPositions();
         
-        // Vibration toggle row (below difficulty section)
-        if (m_vibrationLabelEntity == 0) m_vibrationLabelEntity = m_ecsCoordinator->CreateEntity();
-        if (m_vibrationToggleEntity == 0) m_vibrationToggleEntity = m_ecsCoordinator->CreateEntity();
+        // Vibration toggle row (below difficulty section) - ONLY show on iPhone, not iPad
+        // iPad doesn't have Taptic Engine so vibration toggle is useless
+        float aspectRatio = m_screenWidth / m_screenHeight;
+        bool isTablet = aspectRatio > 0.6f;
         
-        // Load current vibration state from game
-        if (m_game) {
-            m_vibrationsEnabled = m_game->GetVibrationsEnabled();
-        }
+        if (!isTablet) {
+            // iPhone only - create vibration toggle
+            if (m_vibrationLabelEntity == 0) m_vibrationLabelEntity = m_ecsCoordinator->CreateEntity();
+            if (m_vibrationToggleEntity == 0) m_vibrationToggleEntity = m_ecsCoordinator->CreateEntity();
+            
+            // Load current vibration state from game
+            if (m_game) {
+                m_vibrationsEnabled = m_game->GetVibrationsEnabled();
+            }
+            
+            float vibrationLabelY = m_screenHeight * 0.745f + 15.0f;  // Adjusted to position between back button and difficulty labels (moved down 15px more)
+            float centerX = m_optionsOverlayX + m_optionsOverlayW * 0.5f;
+            
+            // Label "VIBRATION" on left side - match X position of track labels
+            {
+                float labelX = m_optionsSliderX;  // Same X as track labels
+                Transform t(Gnosis::GNVector2(labelX, vibrationLabelY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
+                Sprite s; s.visible = false; s.layer = 4;
+                UIElement ui("VIBRATIONS", "", "");
+                ui.fontSize = m_isMobile ? 54.0f : 32.0f;
+                ui.textColor = Gnosis::GNColor(255, 255, 255, 255);
+                ui.centerTextHorizontally = false;
+                ui.centerTextVertically = true;
+                ui.visible = true;
+                if (!m_ecsCoordinator->HasComponent<Transform>(m_vibrationLabelEntity)) m_ecsCoordinator->AddComponent<Transform>(m_vibrationLabelEntity, t); else *m_ecsCoordinator->GetComponent<Transform>(m_vibrationLabelEntity) = t;
+                if (!m_ecsCoordinator->HasComponent<Sprite>(m_vibrationLabelEntity)) m_ecsCoordinator->AddComponent<Sprite>(m_vibrationLabelEntity, s); else *m_ecsCoordinator->GetComponent<Sprite>(m_vibrationLabelEntity) = s;
+                if (!m_ecsCoordinator->HasComponent<UIElement>(m_vibrationLabelEntity)) m_ecsCoordinator->AddComponent<UIElement>(m_vibrationLabelEntity, ui); else *m_ecsCoordinator->GetComponent<UIElement>(m_vibrationLabelEntity) = ui;
+            }
         
-        float vibrationLabelY = m_screenHeight * 0.745f + 15.0f;  // Adjusted to position between back button and difficulty labels (moved down 15px more)
-        float centerX = m_optionsOverlayX + m_optionsOverlayW * 0.5f;
-        
-        // Label "VIBRATION" on left side - match X position of track labels
-        {
-            float labelX = m_optionsSliderX;  // Same X as track labels
-            Transform t(Gnosis::GNVector2(labelX, vibrationLabelY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
-            Sprite s; s.visible = false; s.layer = 4;
-            UIElement ui("VIBRATIONS", "", "");
-            ui.fontSize = m_isMobile ? 54.0f : 32.0f;
-            ui.textColor = Gnosis::GNColor(255, 255, 255, 255);
-            ui.centerTextHorizontally = false;
-            ui.centerTextVertically = true;
-            ui.visible = true;
-            if (!m_ecsCoordinator->HasComponent<Transform>(m_vibrationLabelEntity)) m_ecsCoordinator->AddComponent<Transform>(m_vibrationLabelEntity, t); else *m_ecsCoordinator->GetComponent<Transform>(m_vibrationLabelEntity) = t;
-            if (!m_ecsCoordinator->HasComponent<Sprite>(m_vibrationLabelEntity)) m_ecsCoordinator->AddComponent<Sprite>(m_vibrationLabelEntity, s); else *m_ecsCoordinator->GetComponent<Sprite>(m_vibrationLabelEntity) = s;
-            if (!m_ecsCoordinator->HasComponent<UIElement>(m_vibrationLabelEntity)) m_ecsCoordinator->AddComponent<UIElement>(m_vibrationLabelEntity, ui); else *m_ecsCoordinator->GetComponent<UIElement>(m_vibrationLabelEntity) = ui;
-        }
-        
-        // Toggle button (X sprite) on right side - configured as a proper toggle button
-        {
+            // Toggle button (X sprite) on right side - configured as a proper toggle button
+            {
             float toggleX = m_optionsOverlayX + m_optionsOverlayW * 0.75f;  // 75% across (further right)
             
             // Textures are actually 16x16, not 64x64
@@ -3559,9 +3617,10 @@ namespace GameCore {
                 auto existingUI = m_ecsCoordinator->GetComponent<UIElement>(m_vibrationToggleEntity);
                 *existingUI = ui;
             }
-        }
+            }
         
-        GN_LOG_INFO("Created vibration toggle in options menu");
+            GN_LOG_INFO("Created vibration toggle in options menu");
+        } // End if (!isTablet) - vibration toggle only on iPhone
     }
 
     void MainMenuState::ShowLevelSelect() {
@@ -3607,6 +3666,12 @@ namespace GameCore {
         GN_LOG_INFO("📋 ShowLevelSelect: Ad controls button and version text hidden");
         
         // Show level select elements
+        if (m_levelSelectBackgroundEntity != 0) {
+            if (auto* s = m_ecsCoordinator->GetComponent<Sprite>(m_levelSelectBackgroundEntity)) {
+                s->visible = true;
+            }
+        }
+
         UpdateLevelVisibility();
         // Initialize pan spacing based on current layout (keep pixel values per project rules)
         float screenCenterX = m_screenWidth / 2.0f;
@@ -3675,6 +3740,12 @@ namespace GameCore {
         }
         
         // Hide level select elements
+        if (m_levelSelectBackgroundEntity != 0) {
+            if (auto* s = m_ecsCoordinator->GetComponent<Sprite>(m_levelSelectBackgroundEntity)) {
+                s->visible = false;
+            }
+        }
+
         for (Gnosis::Entity entity : m_levelPaintingEntities) {
             if (entity != 0) {
                 Sprite* sprite = m_ecsCoordinator->GetComponent<Sprite>(entity);
@@ -4465,6 +4536,27 @@ namespace GameCore {
         m_currentMode = MenuMode::AD_CONTROLS;
         SetMainMenuVisible(false); // Hide main menu elements including ad controls button
         CreateAdControlsLayout();
+        
+        // Check if purchase was completed and update button text (matching pause menu pattern)
+        #ifdef PLATFORM_IOS
+        // Check purchase status from StoreManager (persists via Apple's receipt system)
+        bool hasPurchased = false;
+        if (m_platformDelegates && m_platformDelegates->iap.hasPurchased) {
+            hasPurchased = m_platformDelegates->iap.hasPurchased("com.floppyturd.game.removeads");
+            GN_LOG_INFO("IAP purchase status check: " + std::string(hasPurchased ? "PURCHASED" : "NOT PURCHASED"));
+        }
+        
+        // Update button based on purchase status (either from session or from StoreManager)
+        if ((m_hasCompletedPurchase || hasPurchased) && m_removeAdsPriceButtonEntity != 0 && m_ecsCoordinator) {
+            auto uiElement = m_ecsCoordinator->GetComponent<GameCore::UIElement>(m_removeAdsPriceButtonEntity);
+            if (uiElement) {
+                uiElement->buttonText = "PURCHASED";
+                uiElement->isEnabled = false;  // Disable button after purchase
+                uiElement->textColor = Gnosis::GNColor(0, 255, 0, 255); // Green like skills
+                GN_LOG_INFO("Updated IAP button to PURCHASED state");
+            }
+        }
+        #endif
     }
 
     void MainMenuState::HideAdControlsMenu() {
@@ -4763,9 +4855,19 @@ namespace GameCore {
                         if (transform && sprite && ui && ui->isEnabled) {
                             float buttonW = sprite->width * transform->scale.x;
                             float buttonH = sprite->height * transform->scale.y;
+                            float buttonL = transform->position.x;
+                            float buttonT = transform->position.y;
+                            float buttonR = buttonL + buttonW;
+                            float buttonB = buttonT + buttonH;
                             
-                            if (touchX >= transform->position.x && touchX <= transform->position.x + buttonW &&
-                                touchY >= transform->position.y && touchY <= transform->position.y + buttonH) {
+                            if (touchX >= buttonL && touchX <= buttonR && touchY >= buttonT && touchY <= buttonB) {
+                                // Check debouncer - prevent multiple rapid clicks
+                                if (m_iapPurchaseDebounceTimer > 0.0f) {
+                                    GN_LOG_INFO("Remove Ads button debounced - ignoring click");
+                                    return;
+                                }
+                                
+                                GN_LOG_INFO("Remove Ads price button tapped");
                                 OnRemoveAdsPurchasePressed();
                                 return;
                             }
@@ -4790,6 +4892,15 @@ namespace GameCore {
     void MainMenuState::OnRemoveAdsPurchasePressed() {
         GN_LOG_INFO("Remove Ads purchase button pressed - initiating IAP");
         
+        // Check debouncer to prevent multiple rapid clicks
+        if (m_iapPurchaseDebounceTimer > 0.0f) {
+            GN_LOG_INFO("IAP purchase debounced - ignoring click (timer: " + std::to_string(m_iapPurchaseDebounceTimer) + "s)");
+            return;
+        }
+        
+        // Set debouncer to prevent multiple clicks
+        m_iapPurchaseDebounceTimer = IAP_DEBOUNCE_DURATION;
+        
         #ifdef PLATFORM_IOS
         // Haptic feedback for button press (check if vibrations enabled)
         if (m_game && m_game->GetVibrationsEnabled()) {
@@ -4803,9 +4914,11 @@ namespace GameCore {
         if (m_platformDelegates && m_platformDelegates->iap.purchase) {
             GN_LOG_INFO("Calling IAP purchase delegate for: com.floppyturd.game.removeads");
             
+            // Note: Callback is handled in Swift - button text update will need to be done via a state check
             m_platformDelegates->iap.purchase("com.floppyturd.game.removeads", [](bool success, const char* error) {
                 if (success) {
                     GN_LOG_INFO("✅ IAP purchase successful - ads removed!");
+                    // Button text update handled by checking purchase state in Update()
                 } else {
                     GN_LOG_WARN("⚠️ IAP purchase failed: " + std::string(error ? error : "Unknown error"));
                 }

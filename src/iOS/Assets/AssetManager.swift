@@ -1,6 +1,6 @@
 //
 //  AssetManager.swift
-//  FloppyTurd
+//  PooperTrooper
 //
 //  Modern iOS Asset Management System
 //  Designed for Swift 5.9+ native C++ interop
@@ -70,8 +70,8 @@ public class AssetManager {
     private var dataCache: [String: Data] = [:]
 
     // Loading queues
-    private let assetQueue = DispatchQueue(label: "com.floppyturd.assets", qos: .userInitiated)
-    private let textureQueue = DispatchQueue(label: "com.floppyturd.textures", qos: .userInitiated)
+    private let assetQueue = DispatchQueue(label: "com.poopertrooper.assets", qos: .userInitiated)
+    private let textureQueue = DispatchQueue(label: "com.poopertrooper.textures", qos: .userInitiated)
 
     // Device capabilities
     private var device: MTLDevice?

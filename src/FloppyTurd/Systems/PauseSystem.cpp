@@ -336,11 +336,19 @@ namespace GameCore {
         } else {
             // Portrait mode: use existing mobile background
             bgTextureId = "PauseMenuBackgroundMobile";
-            bgScale = 7.0f;
             textureWidth = 160.0f;
             textureHeight = 300.0f;
-            GN_LOG_INFO("PauseSystem: Using portrait pause menu background - dimensions: " +
-                       std::to_string(textureWidth) + "x" + std::to_string(textureHeight));
+            
+            // Dynamic scaling: Fit within 95% of width and 90% of height
+            float maxW = m_screenWidth * 0.95f;
+            float maxH = m_screenHeight * 0.90f;
+            
+            float scaleX = maxW / textureWidth;
+            float scaleY = maxH / textureHeight;
+            bgScale = std::min(scaleX, scaleY); // Dynamic scale
+            
+            GN_LOG_INFO("PauseSystem: Using portrait pause menu background - scale: " + std::to_string(bgScale) + 
+                       " (calculated from " + std::to_string(maxW) + "x" + std::to_string(maxH) + ")");
         }
 
         // SCALE FIRST, then center: Calculate final rendered dimensions, then center those
@@ -487,17 +495,25 @@ namespace GameCore {
             float buttonWidth = 64.0f * buttonScale;
             float buttonHeight = buttonWidth * 0.62f; // Match ribbon button aspect ratio
 
-        float bgScale = 6.0f;
-        float bgHeight = 300.0f * bgScale;
-        float bgTop = (m_screenHeight - bgHeight) * 0.5f;
-        float startY = bgTop + buttonWidth * 0.18f; // Skills button higher
-        float buttonX = -0.40f * buttonWidth; // Offset further left (40%) - matches original
+            // Recalculate background scale to match CreatePauseMenuBackground logic
+            float textureWidth = 160.0f;
+            float textureHeight = 300.0f;
+            float maxW = m_screenWidth * 0.95f;
+            float maxH = m_screenHeight * 0.90f; // 90% height target
+            float scaleX = maxW / textureWidth;
+            float scaleY = maxH / textureHeight;
+            float bgScale = std::min(scaleX, scaleY);
+            
+            float bgHeight = 300.0f * bgScale;
+            float bgTop = (m_screenHeight - bgHeight) * 0.5f;
+            float startY = bgTop + buttonWidth * 0.18f; // Skills button higher
+            float buttonX = -0.40f * buttonWidth; // Offset further left (40%) - matches original
 
             for (int i = 0; i < numButtons; i++) {
-            Entity buttonEntity = m_ecsCoordinator->CreateEntity();
-            if (buttonEntity != 0) {
-                // Vertical positioning like tabs - original positioning
-                float buttonY = startY + i * buttonHeight;
+                Entity buttonEntity = m_ecsCoordinator->CreateEntity();
+                if (buttonEntity != 0) {
+                    // Vertical positioning like tabs - original positioning
+                    float buttonY = startY + i * buttonHeight;
 
                 // Calculate scale based on orientation to maintain proper aspect ratio
                     float scaleX = buttonWidth / 64.0f;
@@ -721,16 +737,16 @@ namespace GameCore {
         // Create black background like stats tab (adjusted for orientation)
         if (m_skillsBackgroundEntity == 0) {
             m_skillsBackgroundEntity = m_ecsCoordinator->CreateEntity();
-
+            // Dynamic percentage-based sizing - constrained to fit within pause menu
             float bgWidth, bgHeight;
             if (IsLandscapeMode()) {
-                // Landscape mode: horizontally dominant (wider than tall)
-                bgWidth = 1470.0f;  // Wider
-                bgHeight = 784.0f;  // Shorter
+                // Landscape mode: 55% of screen width, 50% of screen height
+                bgWidth = m_screenWidth * 0.55f;
+                bgHeight = m_screenHeight * 0.55f;
             } else {
-                // Portrait mode: original dimensions
-                bgWidth = 784.0f;   // Standard width
-                bgHeight = 1470.0f; // Taller
+                // Portrait mode: 55% of screen width, 50% of screen height
+                bgWidth = m_screenWidth * 0.55f;
+                bgHeight = m_screenHeight * 0.55f;
             }
 
             // Calculate layout positions (EXACT same as stats tab)
@@ -1054,44 +1070,55 @@ namespace GameCore {
             m_ecsCoordinator->AddComponent<Sprite>(m_hatsTitleEntity, titleSprite);
         }
 
-        // Create black background for hats tab (same as skills tab)
+        // Create black background for hats tab (SAME PATTERN AS SKILLS TAB using UIShape)
         if (m_hatsBackgroundEntity == 0) {
             m_hatsBackgroundEntity = m_ecsCoordinator->CreateEntity();
 
-            // Calculate dimensions based on orientation
+            // Dynamic percentage-based sizing - constrained to fit within pause menu
             float bgWidth, bgHeight;
             if (IsLandscapeMode()) {
-                // Landscape mode: horizontally dominant (wider than tall)
-                bgWidth = 1470.0f;  // Wider
-                bgHeight = 784.0f;  // Shorter
+                // Landscape mode: 55% of screen width, 50% of screen height
+                bgWidth = m_screenWidth * 0.55f;
+                bgHeight = m_screenHeight * 0.55f;
             } else {
-                // Portrait mode: original dimensions
-                bgWidth = 1120.0f * 0.7f;   // 784
-                bgHeight = 2100.0f * 0.7f;  // 1470
+                // Portrait mode: 55% of screen width, 50% of screen height
+                bgWidth = m_screenWidth * 0.55f;
+                bgHeight = m_screenHeight * 0.55f;
             }
 
-            float bgX = CenterObjectAtPosition(m_screenWidth * 0.5f, m_screenHeight * 0.5f + 32.0f, bgWidth, bgHeight).x;
-            float bgY = CenterObjectAtPosition(m_screenWidth * 0.5f, m_screenHeight * 0.5f + 32.0f, bgWidth, bgHeight).y;
+            // Calculate layout positions (EXACT same as skills tab)
+            float centerX = m_screenWidth * 0.5f;
+            float centerY = m_screenHeight * 0.5f + 32.0f;
 
-            Transform bgTransform(GNVector2(bgX, bgY), 0.0f, GNVector2(1.0f, 1.0f));
+            // Center position with same offset as pause menu (+32 Y offset)
+            GNVector2 bgPosition = CenterObjectAtPosition(centerX, centerY, bgWidth, bgHeight);
+
+            Transform bgTransform(bgPosition, 0.0f, GNVector2(1.0f, 1.0f));
             m_ecsCoordinator->AddComponent<Transform>(m_hatsBackgroundEntity, bgTransform);
 
-            // Create black rectangle background
-            GameCore::UIShape backgroundShape(GameCore::UIShapeType::Rectangle, bgWidth, bgHeight, GNColor(0, 0, 0, 180)); // Semi-transparent black
-            backgroundShape.visible = false;
-            backgroundShape.layer = 82; // Above pause menu background (80) but below content (90)
-            m_ecsCoordinator->AddComponent<GameCore::UIShape>(m_hatsBackgroundEntity, backgroundShape);
+            // Create black rectangle with slight transparency (EXACT same as skills tab using UIShape)
+            UIShape bgShape;
+            bgShape.type = UIShapeType::Rectangle;
+            bgShape.width = bgWidth;
+            bgShape.height = bgHeight;
+            bgShape.color = GNColor(0, 0, 0, 200); // Black with ~78% opacity (matches Skills tab)
+            bgShape.visible = false; // Initially hidden
+            bgShape.layer = 89; // Behind hats (90) but above pause menu background (80)
+            m_ecsCoordinator->AddComponent<UIShape>(m_hatsBackgroundEntity, bgShape);
 
+            // Add UIElement component for proper visibility management
             UIElement bgElement;
-            bgElement.visible = false;
-            bgElement.isEnabled = false; // Background shouldn't be interactive
-            bgElement.textLayer = 79; // Match UIShape layer
+            bgElement.visible = false; // Initially hidden
+            bgElement.isEnabled = true;
+            bgElement.textLayer = 89; // Match UIShape layer
             m_ecsCoordinator->AddComponent<UIElement>(m_hatsBackgroundEntity, bgElement);
 
             Sprite bgSprite;
-            bgSprite.layer = 79; // Match textLayer
+            bgSprite.layer = 89; // Match textLayer
             bgSprite.visible = false;
             m_ecsCoordinator->AddComponent<Sprite>(m_hatsBackgroundEntity, bgSprite);
+            
+            GN_LOG_INFO("PauseSystem: Created hats background using UIShape: " + std::to_string(bgWidth) + "x" + std::to_string(bgHeight));
         }
 
         // Calculate grid dimensions (3x5 grid) - adjusted for better spacing
@@ -1366,6 +1393,7 @@ namespace GameCore {
 
             UIElement textElement("Select a hat to see cost", "");
             textElement.visible = false;
+
             textElement.isEnabled = false;
             textElement.textLayer = 90;
             textElement.fontSize = 32.0f;
@@ -1578,16 +1606,16 @@ namespace GameCore {
             m_ecsCoordinator->AddComponent<Sprite>(m_statsTitleEntity, titleSprite);
         }
 
-        // Calculate dimensions based on orientation
+        // Dynamic percentage-based sizing - constrained to fit within pause menu
         float bgWidth, bgHeight;
         if (IsLandscapeMode()) {
-            // Landscape mode: horizontally dominant (wider than tall)
-            bgWidth = 1470.0f;  // Wider
-            bgHeight = 784.0f;  // Shorter
+            // Landscape mode: 55% of screen width, 55% of screen height
+            bgWidth = m_screenWidth * 0.55f;
+            bgHeight = m_screenHeight * 0.55f;
         } else {
-            // Portrait mode: original dimensions (70% of pause menu)
-            bgWidth = 1120.0f * 0.7f;   // 784
-            bgHeight = 2100.0f * 0.7f;  // 1470
+            // Portrait mode: 55% of screen width, 55% of screen height
+            bgWidth = m_screenWidth * 0.55f;
+            bgHeight = m_screenHeight * 0.55f;
         }
 
         // Calculate layout positions
@@ -2085,6 +2113,12 @@ namespace GameCore {
         }
 
         // VIBRATION TOGGLE - Position at same Y level as MASTER label in landscape, below SFX in portrait
+        // iPad doesn't have Taptic Engine, so hide vibration toggle on iPad
+        float aspectRatio = m_screenWidth / m_screenHeight;
+        bool isTablet = IsLandscapeMode() ? (aspectRatio < 1.6f) : (aspectRatio > 0.6f);
+        
+        // Only create vibration toggle on iPhone (not iPad)
+        if (!isTablet) {
         // Calculate vibrationY to align with master label in landscape, below SFX slider in portrait
         float labelSpacingForVibration;
         float vibrationLabelY;
@@ -2168,6 +2202,7 @@ namespace GameCore {
             m_ecsCoordinator->AddComponent<Transform>(m_vibrationLabelEntity, t);
             m_ecsCoordinator->AddComponent<UIElement>(m_vibrationLabelEntity, ui);
         }
+        } // End if (!isTablet) - vibration toggle only on iPhone
 
         GN_LOG_INFO("PauseSystem: Audio sliders and vibration toggle created");
     }
@@ -2796,6 +2831,11 @@ namespace GameCore {
 
         // Show hats background
         if (m_hatsBackgroundEntity != 0 && m_ecsCoordinator) {
+            // Note: Hats background now uses Sprite with "Pixel" texture, not UIShape
+            Sprite* bgSprite = m_ecsCoordinator->GetComponent<Sprite>(m_hatsBackgroundEntity);
+            if (bgSprite) {
+                bgSprite->visible = true;
+            }
             GameCore::UIShape* bgShape = m_ecsCoordinator->GetComponent<GameCore::UIShape>(m_hatsBackgroundEntity);
             if (bgShape) {
                 bgShape->visible = true;

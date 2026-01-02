@@ -50,43 +50,45 @@ namespace GameCore {
         GN_LOG_INFO("Entering Leaderboard State");
         m_finished = false;
 
-        // Get enhanced screen info using pixel dimensions
-        ScreenInfo screenInfo;
-        if (m_platformDelegates && m_platformDelegates->renderer.getScreenInfo) {
+        // Get screen dimensions from RenderSystem (SAME PATTERN AS MainMenuState)
+        // This is more reliable than platformDelegates which may return 0x0 during state transitions
+        ScreenInfo screenInfo = {};
+        bool gotScreenFromRenderSystem = false;
+        
+        if (auto* systemManager = m_ecsSystem->GetSystemManager()) {
+            if (auto* rs = systemManager->GetRenderSystem()) {
+                screenInfo = rs->GetScreenInfo();
+                if (screenInfo.pixelWidth > 0 && screenInfo.pixelHeight > 0) {
+                    m_screenWidth = screenInfo.pixelWidth;
+                    m_screenHeight = screenInfo.pixelHeight;
+                    gotScreenFromRenderSystem = true;
+                    GN_LOG_INFO("LeaderboardState: Got screen from RenderSystem - pixel: " + 
+                               std::to_string(m_screenWidth) + "x" + std::to_string(m_screenHeight));
+                }
+            }
+        }
+        
+        // Fallback to platformDelegates if RenderSystem didn't work
+        if (!gotScreenFromRenderSystem && m_platformDelegates && m_platformDelegates->renderer.getScreenInfo) {
             m_platformDelegates->renderer.getScreenInfo(&screenInfo);
             m_screenWidth = screenInfo.pixelWidth;
             m_screenHeight = screenInfo.pixelHeight;
             
-            // VALIDATION: Check for invalid/uninitialized screen dimensions
-            if (m_screenWidth <= 0.0f || m_screenHeight <= 0.0f) {
-                GN_LOG_ERROR("❌ LeaderboardState: Invalid screen dimensions from delegate: " + 
-                           std::to_string(m_screenWidth) + "x" + std::to_string(m_screenHeight));
-                GN_LOG_ERROR("Screen info likely not properly initialized - forcing iPhone 16 fallback");
-                m_screenWidth = 1179.0f;
-                m_screenHeight = 2556.0f;
-            }
-            
-            GN_LOG_INFO("LeaderboardState: Screen info - pixel: " + 
-                       std::to_string(screenInfo.pixelWidth) + "x" + std::to_string(screenInfo.pixelHeight) + 
-                       ", logical: " + std::to_string(screenInfo.logicalWidth) + "x" + std::to_string(screenInfo.logicalHeight) +
-                       ", scale: " + std::to_string(screenInfo.scaleFactor));
-        } else if (m_platformDelegates && m_platformDelegates->renderer.getScreenSize) {
-            m_platformDelegates->renderer.getScreenSize(&m_screenWidth, &m_screenHeight);
-            
-            // VALIDATION: Check for invalid dimensions
-            if (m_screenWidth <= 0.0f || m_screenHeight <= 0.0f) {
-                GN_LOG_ERROR("❌ LeaderboardState: Invalid screen size from legacy delegate: " + 
-                           std::to_string(m_screenWidth) + "x" + std::to_string(m_screenHeight));
-                m_screenWidth = 1179.0f;
-                m_screenHeight = 2556.0f;
-            }
-            
-            GN_LOG_INFO("LeaderboardState: Screen size (fallback) - " + std::to_string(m_screenWidth) + "x" + std::to_string(m_screenHeight));
-        } else {
-            GN_LOG_WARN("⚠️ LeaderboardState: No screen info delegates available - using iPhone 16 defaults");
+            GN_LOG_INFO("LeaderboardState: Got screen from platformDelegates - pixel: " + 
+                       std::to_string(screenInfo.pixelWidth) + "x" + std::to_string(screenInfo.pixelHeight));
+        }
+        
+        // VALIDATION: Check for invalid/uninitialized screen dimensions
+        if (m_screenWidth <= 0.0f || m_screenHeight <= 0.0f) {
+            GN_LOG_ERROR("❌ LeaderboardState: Invalid screen dimensions: " + 
+                       std::to_string(m_screenWidth) + "x" + std::to_string(m_screenHeight));
+            GN_LOG_ERROR("Screen info likely not properly initialized - forcing iPhone 16 fallback");
             m_screenWidth = 1179.0f;
             m_screenHeight = 2556.0f;
         }
+        
+        GN_LOG_INFO("LeaderboardState: Final screen dimensions - " + 
+                   std::to_string(m_screenWidth) + "x" + std::to_string(m_screenHeight));
 
         // Set UI scale based on platform
         m_uiScale = IsMobilePlatform() ? 8.0f : 1.0f;
@@ -294,22 +296,39 @@ namespace GameCore {
 
     void LeaderboardState::CreateBackground() {
         GN_LOG_INFO("LeaderboardState: Creating backgrounds");
+        GN_LOG_INFO("DEBUG LeaderboardState: m_screenWidth=" + std::to_string(m_screenWidth) + ", m_screenHeight=" + std::to_string(m_screenHeight));
 
-        // 1. Create full-screen main menu background (like MainMenuState - NO SCALING)
+        // 1. Create full-screen main menu background (EXACTLY like MainMenuState)
         m_backgroundEntity = m_ecsSystem->CreateEntity();
         
         // Use MainMenuMobile for mobile platforms
         std::string bgTexture = IsMobilePlatform() ? "MainMenuMobile" : "MainMenu";
         
-        // Get actual texture dimensions (MainMenuMobile is 393x852)
-        float bgTextureWidth = 393.0f;
-        float bgTextureHeight = 852.0f;
+        // DYNAMICALLY get actual texture dimensions via RenderSystem (like MainMenuState)
+        float bgTextureWidth = 393.0f;  // Fallback
+        float bgTextureHeight = 852.0f; // Fallback
         
-        // Calculate scale to fill screen - USE PIXEL DIMENSIONS
+        if (auto* systemManager = m_ecsSystem->GetSystemManager()) {
+            if (auto* rs = systemManager->GetRenderSystem()) {
+                rs->PreloadTexture(bgTexture);
+                int bgW = 0, bgH = 0;
+                if (rs->GetTextureSize(bgTexture, bgW, bgH)) {
+                    bgTextureWidth = static_cast<float>(bgW);
+                    bgTextureHeight = static_cast<float>(bgH);
+                    GN_LOG_INFO("LeaderboardState: Got texture size from RenderSystem: " + std::to_string(bgTextureWidth) + "x" + std::to_string(bgTextureHeight));
+                } else {
+                    GN_LOG_WARN("LeaderboardState: Could not get texture size, using fallback 393x852");
+                }
+            }
+        }
+        
+        // Calculate scale to FILL screen using SEPARATE X/Y scales (like MainMenuState)
         float bgScaleX = m_screenWidth / bgTextureWidth;
         float bgScaleY = m_screenHeight / bgTextureHeight;
         
-        // Background positioned at (0,0) top-left
+        GN_LOG_INFO("LeaderboardState: Background scale: (" + std::to_string(bgScaleX) + "x" + std::to_string(bgScaleY) + ")");
+        
+        // Background positioned at (0,0) top-left, fills entire screen
         Transform bgTransform(GNVector2(0.0f, 0.0f), 0.0f, GNVector2(bgScaleX, bgScaleY));
         m_ecsSystem->AddComponent<Transform>(m_backgroundEntity, bgTransform);
 
@@ -321,24 +340,31 @@ namespace GameCore {
         GN_LOG_INFO("LeaderboardState: Created full-screen background: " + bgTexture + 
                    " at (0,0) with scale (" + std::to_string(bgScaleX) + "x" + std::to_string(bgScaleY) + ")");
 
-        // 2. Create centered pause menu overlay background (EXACT pattern from PauseSystem)
-        // PauseMenuBackgroundMobile is 160x300 and uses 7.0f scale
+        // 2. Create centered pause menu overlay background (EXACT pattern from Options Menu)
         m_overlayBackgroundEntity = m_ecsSystem->CreateEntity();
         
         float overlayTextureWidth = 160.0f;
         float overlayTextureHeight = 300.0f;
-        float overlayScale = 7.0f;
         
-        // SCALE FIRST, then center: Calculate final rendered dimensions
-        float scaledWidth = overlayTextureWidth * overlayScale;   // 160 * 7 = 1120
-        float scaledHeight = overlayTextureHeight * overlayScale; // 300 * 7 = 2100
+        // Dynamic scaling: Fit within 95% of width and 90% of height
+        float targetOverlayW = m_screenWidth * 0.95f;
+        float targetOverlayH = m_screenHeight * 0.90f;
         
-        // Center on screen using CenterObjectAtPosition helper
-        float centerX = m_screenWidth * 0.5f;
-        float centerY = m_screenHeight * 0.5f;
-        GNVector2 overlayPosition = CenterObjectAtPosition(centerX, centerY, scaledWidth, scaledHeight);
+        float scaleX = targetOverlayW / overlayTextureWidth;
+        float scaleY = targetOverlayH / overlayTextureHeight;
         
-        Transform overlayTransform(overlayPosition, 0.0f, GNVector2(overlayScale, overlayScale));
+        // Use the smaller scale to fit both dimensions (uniform scale, no skew)
+        float overlayScale = std::min(scaleX, scaleY);
+        
+        // Calculate final dimensions
+        float scaledWidth = overlayTextureWidth * overlayScale;
+        float scaledHeight = overlayTextureHeight * overlayScale;
+        
+        // Center on screen (EXACT same pattern as Options Menu)
+        float overlayX = (m_screenWidth - scaledWidth) * 0.5f;
+        float overlayY = (m_screenHeight - scaledHeight) * 0.5f;
+        
+        Transform overlayTransform(GNVector2(overlayX, overlayY), 0.0f, GNVector2(overlayScale, overlayScale));
         m_ecsSystem->AddComponent<Transform>(m_overlayBackgroundEntity, overlayTransform);
 
         Sprite overlaySprite("PauseMenuBackgroundMobile", (int)overlayTextureWidth, (int)overlayTextureHeight);
@@ -346,12 +372,12 @@ namespace GameCore {
         overlaySprite.visible = true;
         m_ecsSystem->AddComponent<Sprite>(m_overlayBackgroundEntity, overlaySprite);
         
-        GN_LOG_INFO("LeaderboardState: Created overlay background at (" + std::to_string(overlayPosition.x) + ", " + std::to_string(overlayPosition.y) + 
+        GN_LOG_INFO("LeaderboardState: Created overlay background at (" + std::to_string(overlayX) + ", " + std::to_string(overlayY) + 
                    ") with scale " + std::to_string(overlayScale) + " (size: " + std::to_string(scaledWidth) + "x" + std::to_string(scaledHeight) + ")");
 
         // Store overlay bounds for positioning UI elements within it
-        m_overlayX = overlayPosition.x;
-        m_overlayY = overlayPosition.y;
+        m_overlayX = overlayX;
+        m_overlayY = overlayY;
         m_overlayWidth = scaledWidth;
         m_overlayHeight = scaledHeight;
     }
@@ -363,24 +389,27 @@ namespace GameCore {
         // Calculate screen center for positioning (SAME as MainMenuState pattern)
         float centerX = m_screenWidth * 0.5f;
         
-        // Arrow button scale (match level select arrows for consistency)
-        float arrowScale = IsMobilePlatform() ? 10.0f : 5.0f;
-        float arrowTextureSize = 16.0f;  // Actual texture size is 16x16
+        // Arrow button scale - reduced for cleaner UI
+        // Dynamic: Target 8% of screen width (smaller than before)
+        float targetArrowWidth = m_screenWidth * 0.08f;
+        float arrowTextureSize = 16.0f;
+        float arrowScale = targetArrowWidth / arrowTextureSize;
         float arrowScaledSize = arrowTextureSize * arrowScale;
         
         GN_LOG_INFO("🎯 Arrow scale: " + std::to_string(arrowScale) + ", texture size: " + std::to_string(arrowTextureSize) + ", scaled size: " + std::to_string(arrowScaledSize));
 
-        // Position arrows much lower on screen (near bottom, above back button)
-        float arrowCenterY = m_screenHeight * 0.85f;  // 85% from top (was 50%)
+        // Position arrows relative to THE OVERLAY, not the screen edges.
+        // This matches the "pinched in" look requested for the Options menu.
+        float arrowCenterY = m_screenHeight * 0.85f;  // Keep vertical position
         
-        // Left arrow - positioned with LEFT EDGE very close to left screen edge (match level select)
+        // Left arrow - positioned 5% inside the overlay left edge
         m_leftArrowEntity = m_ecsSystem->CreateEntity();
-        float leftArrowLeftEdge = m_screenWidth * 0.005f;  // 0.5% from left edge (match level select pattern)
-        float leftArrowFinalX = leftArrowLeftEdge;  // Top-left positioning
-        float leftArrowFinalY = arrowCenterY - (arrowScaledSize / 2.0f);  // Center vertically
+        float leftArrowLeftEdge = m_overlayX + (m_overlayWidth * 0.05f); 
+        float leftArrowFinalX = leftArrowLeftEdge; 
+        float leftArrowFinalY = arrowCenterY - (arrowScaledSize / 2.0f);
         
-        GN_LOG_INFO("⬅️ Left arrow: screenWidth=" + std::to_string(m_screenWidth) + 
-                    ", leftEdge=" + std::to_string(leftArrowLeftEdge) + " (0.5%), arrowSize=" + 
+        GN_LOG_INFO("⬅️ Left arrow: overlayX=" + std::to_string(m_overlayX) + 
+                    ", leftEdge=" + std::to_string(leftArrowLeftEdge) + " (5% inside), arrowSize=" + 
                     std::to_string(arrowScaledSize) + ", finalPos(" + std::to_string(leftArrowFinalX) + 
                     "," + std::to_string(leftArrowFinalY) + ")");
         
@@ -394,14 +423,14 @@ namespace GameCore {
         
         GN_LOG_INFO("LeaderboardState: Created left arrow at (" + std::to_string(leftArrowFinalX) + ", " + std::to_string(leftArrowFinalY) + ")");
 
-        // Right arrow - positioned with RIGHT EDGE at 0.5% from right screen edge (match level select)
+        // Right arrow - positioned 5% inside the overlay right edge
         m_rightArrowEntity = m_ecsSystem->CreateEntity();
-        float rightArrowRightEdge = m_screenWidth * 0.995f;  // 99.5% from left = 0.5% from right (match level select)
-        float rightArrowFinalX = rightArrowRightEdge - arrowScaledSize;  // Subtract full width to get left edge
-        float rightArrowFinalY = arrowCenterY - (arrowScaledSize / 2.0f);  // Center vertically
+        float rightArrowRightEdge = m_overlayX + m_overlayWidth - (m_overlayWidth * 0.05f);
+        float rightArrowFinalX = rightArrowRightEdge - arrowScaledSize; 
+        float rightArrowFinalY = arrowCenterY - (arrowScaledSize / 2.0f);
         
-        GN_LOG_INFO("➡️ Right arrow: screenWidth=" + std::to_string(m_screenWidth) + 
-                    ", rightEdge=" + std::to_string(rightArrowRightEdge) + " (99.5%), arrowSize=" + 
+        GN_LOG_INFO("➡️ Right arrow: overlayRight=" + std::to_string(m_overlayX + m_overlayWidth) + 
+                    ", rightEdge=" + std::to_string(rightArrowRightEdge) + " (5% inside), arrowSize=" + 
                     std::to_string(arrowScaledSize) + ", finalPos(" + std::to_string(rightArrowFinalX) +
                     "," + std::to_string(rightArrowFinalY) + ")");
         
@@ -436,9 +465,24 @@ namespace GameCore {
         // Back button - EXACT same pattern as MainMenuState level select back button
         m_backButtonEntity = m_ecsSystem->CreateEntity();
         
-        float buttonScale = IsMobilePlatform() ? 10.0f : 4.0f;
+        // Dynamic scaling: Target 75% of screen width (Portrait reference)
+        // For Landscape (iPad), this might be too wide, so cap it relative to height?
+        // Actually, main menu buttons are 80% width. Let's stick to 75% width but ensure it's not absurdly tall.
+        // If width-based scale results in height > 15% of screen, constrain by height.
+        
         float buttonTexWidth = 90.0f;
         float buttonTexHeight = 16.0f;
+        
+        float targetButtonWidth = m_screenWidth * 0.50f;  // Reduced from 75% for smaller button
+        float scaleByWidth = targetButtonWidth / buttonTexWidth;
+        
+        // Check height constraint (e.g., max 10% screen height)
+        float targetMaxHeight = m_screenHeight * 0.10f;
+        float scaleByHeight = targetMaxHeight / buttonTexHeight;
+        
+        // Use the smaller scale to satisfy both constraints
+        float buttonScale = std::min(scaleByWidth, scaleByHeight);
+        
         float buttonWidth = buttonTexWidth * buttonScale;
         float buttonHeight = buttonTexHeight * buttonScale;
         
@@ -454,8 +498,13 @@ namespace GameCore {
         backSprite.visible = true;
         m_ecsSystem->AddComponent<Sprite>(m_backButtonEntity, backSprite);
         
+        // Tablet scaling for text - reduce size on tablets to prevent oversizing
+        float aspectRatio = m_screenWidth / m_screenHeight;
+        bool isTablet = aspectRatio > 0.6f;
+        float tabletFontScale = isTablet ? 0.7f : 1.0f;
+
         UIElement backUI("BACK", "FloppyButtonBlue", "FloppyButtonBlueHover");
-        backUI.fontSize = IsMobilePlatform() ? 88.0f : 21.0f;
+        backUI.fontSize = (IsMobilePlatform() ? 88.0f : 21.0f) * tabletFontScale;
         backUI.textColor = GNColor(255, 255, 255, 255);
         backUI.centerTextHorizontally = true;
         backUI.centerTextVertically = true;
@@ -480,9 +529,15 @@ namespace GameCore {
         Transform titleTransform(GNVector2(centerX, titleY), 0.0f, GNVector2(1.0f, 1.0f));
         m_ecsSystem->AddComponent<Transform>(m_titleEntity, titleTransform);
 
+        // Tablet scaling for text
+        float aspectRatio = m_screenWidth / m_screenHeight;
+        bool isTablet = aspectRatio > 0.6f;
+        float tabletFontScale = isTablet ? 0.7f : 1.0f;
+
         UIElement titleUI;
         titleUI.buttonText = "LEADERBOARDS";
-        titleUI.fontSize = IsMobilePlatform() ? 72.0f : 48.0f;
+        // Increased font size for better visibility
+        titleUI.fontSize = (IsMobilePlatform() ? 80.0f : 50.0f) * tabletFontScale;
         titleUI.textColor = GNColor(255, 255, 255, 255);
         titleUI.centerTextHorizontally = true;
         titleUI.visible = true;
@@ -498,7 +553,7 @@ namespace GameCore {
 
         UIElement pageTitleUI;
         pageTitleUI.buttonText = GetPageTitle(m_currentPage);
-        pageTitleUI.fontSize = IsMobilePlatform() ? 56.0f : 36.0f;
+        pageTitleUI.fontSize = (IsMobilePlatform() ? 70.0f : 44.0f) * tabletFontScale;
         pageTitleUI.textColor = GNColor(255, 215, 0, 255); // Gold
         pageTitleUI.centerTextHorizontally = true;
         pageTitleUI.visible = true;
@@ -507,8 +562,11 @@ namespace GameCore {
 
         // Create top 10 leaderboard display with classic arcade-style placeholder slots
         float startY = m_screenHeight * 0.33f;  // Start below the page title
-        float lineHeight = IsMobilePlatform() ? 95.0f : 60.0f;  // EVEN MORE vertical spacing
-        float fontSize = IsMobilePlatform() ? 36.0f : 24.0f;
+        float lineHeight = IsMobilePlatform() ? 110.0f : 70.0f;  // Increased vertical spacing for larger fonts
+        // Reduce line height slightly on tablet to fit everything
+        if (isTablet) lineHeight *= 0.8f;
+
+        float fontSize = (IsMobilePlatform() ? 60.0f : 40.0f) * tabletFontScale;  // Larger font for better readability
         
         // Display columns: Rank | Name | Score
         // For now, show placeholder entries since we need to integrate with actual leaderboard data

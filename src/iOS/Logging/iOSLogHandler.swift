@@ -4,7 +4,7 @@
  * 
  * This implementation provides direct C++ interoperability without C-style bridging.
  * With Swift 5.9+, C++ can directly instantiate this Swift class using:
- * std::make_unique<FloppyTurd::iOSLogHandler>()
+ * std::make_unique<PooperTrooper::iOSLogHandler>()
  * 
  * The Swift class directly implements the Gnosis::ILogHandler interface for seamless
  * integration with the GNLog system.
@@ -68,7 +68,7 @@ actor iOSLogActor {
     static let shared = iOSLogActor()
     
     private var loggers: [String: OSLog] = [:]
-    private var subsystem: String = Bundle.main.bundleIdentifier ?? "FloppyTurd"
+    private var subsystem: String = Bundle.main.bundleIdentifier ?? "PooperTrooper"
     private var consoleFallbackEnabled: Bool = true
     private var currentLogLevel: LogLevel = .info
     // File logging enabled only on simulator for debugging
@@ -111,7 +111,7 @@ actor iOSLogActor {
         guard fileLoggingEnabled else { return }
         
         let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        logFileURL = documentsPath.appendingPathComponent("FloppyTurd_Debug.txt")
+        logFileURL = documentsPath.appendingPathComponent("PooperTrooper_Debug.txt")
         
         guard let logFileURL = logFileURL else { return }
         
@@ -131,7 +131,7 @@ actor iOSLogActor {
             logFileHandle = try FileHandle(forWritingTo: logFileURL)
             
             // Write session start marker for new session
-            let sessionStart = "=== FloppyTurd Debug Session Started: \(DateFormatter.sessionTimestamp.string(from: Date())) ===\n"
+            let sessionStart = "=== Pooper Trooper Debug Session Started: \(DateFormatter.sessionTimestamp.string(from: Date())) ===\n"
             if let data = sessionStart.data(using: .utf8) {
                 logFileHandle?.write(data)
             }
@@ -289,7 +289,7 @@ actor iOSLogActor {
         
         // Write session end marker
         if fileLoggingEnabled, let logFileHandle = logFileHandle {
-            let sessionEnd = "=== FloppyTurd Debug Session Ended: \(DateFormatter.sessionTimestamp.string(from: Date())) ===\n\n"
+            let sessionEnd = "=== Pooper Trooper Debug Session Ended: \(DateFormatter.sessionTimestamp.string(from: Date())) ===\n\n"
             if let data = sessionEnd.data(using: .utf8) {
                 logFileHandle.write(data)
             }
@@ -341,13 +341,13 @@ public class iOSLogHandler: NSObject, @unchecked Sendable {
     /// Initialize the iOS logging system - matches C++ ILogHandler::Initialize()
     public func initialize() -> Bool {
         Task { @Sendable in
-            await logActor.setSubsystem(Bundle.main.bundleIdentifier ?? "FloppyTurd")
+            await logActor.setSubsystem(Bundle.main.bundleIdentifier ?? "PooperTrooper")
             
             // Enable DEBUG logging for both simulator and device
             // We need to see ALL logs for debugging StoreKit, Leaderboards, and Ads
             await logActor.setLogLevel(.debug)        // DEBUG and above for comprehensive logging
             #if targetEnvironment(simulator)
-            await logActor.setFileLogging(true)       // Write to FloppyTurd_Debug.txt on simulator only
+            await logActor.setFileLogging(true)       // Write to PooperTrooper_Debug.txt on simulator only
             #else
             await logActor.setFileLogging(false)      // Disable file logging on device
             #endif

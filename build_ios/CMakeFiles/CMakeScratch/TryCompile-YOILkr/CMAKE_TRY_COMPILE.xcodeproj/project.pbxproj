@@ -1,0 +1,595 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXAggregateTarget section */
+		F07919AF1D03079E7E691537 /* ALL_BUILD */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = B69E2564AA224FC9A3CDABDD /* Build configuration list for PBXAggregateTarget "ALL_BUILD" */;
+			buildPhases = (
+				B5D2FB498F1B33A4CE07395A /* Generate CMakeFiles/ALL_BUILD */,
+			);
+			dependencies = (
+				74CFDC8717A94AFD9B10903E /* PBXTargetDependency */,
+			);
+			name = ALL_BUILD;
+			productName = ALL_BUILD;
+		};
+/* End PBXAggregateTarget section */
+
+/* Begin PBXBuildFile section */
+		4974B68C345D4D2A8FFA06B0 /* /opt/homebrew/share/cmake/Modules/CMakeCXXCompilerABI.cpp */ = {isa = PBXBuildFile; fileRef = 70BA601995924C43B932F88D /* /opt/homebrew/share/cmake/Modules/CMakeCXXCompilerABI.cpp */; };
+		4A7A0D5899344EBBA27D75ED /* /Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/CMakeScratch/TryCompile-YOILkr/CMakeFiles/cmTC_937be.dir/Info.plist */ = {isa = PBXBuildFile; fileRef = 87630D6F1A034DCFAAF73BA7 /* /Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/CMakeScratch/TryCompile-YOILkr/CMakeFiles/cmTC_937be.dir/Info.plist */; };
+		A26CA43392F44E7282CDA864 /* /Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/CMakeScratch/TryCompile-YOILkr/CMakeLists.txt */ = {isa = PBXBuildFile; fileRef = A7D5F1C233BF4A3DA9DDFC06 /* /Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/CMakeScratch/TryCompile-YOILkr/CMakeLists.txt */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXBuildStyle section */
+		4081935362A441F9A67AE645 /* Release */ = {
+			isa = PBXBuildStyle;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+			};
+			name = Release;
+		};
+		45641FB9B180496196FFE6A6 /* RelWithDebInfo */ = {
+			isa = PBXBuildStyle;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+			};
+			name = RelWithDebInfo;
+		};
+		6F359891DC7A40D695847344 /* MinSizeRel */ = {
+			isa = PBXBuildStyle;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+			};
+			name = MinSizeRel;
+		};
+		DB529071FC274F91A1697377 /* Debug */ = {
+			isa = PBXBuildStyle;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+			};
+			name = Debug;
+		};
+/* End PBXBuildStyle section */
+
+/* Begin PBXContainerItemProxy section */
+		BB379926F0A8401CBE0E7FFA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0190B03772964CEF838F362A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5AE50598A62D9DDF72493438;
+			remoteInfo = cmTC_937be;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		70BA601995924C43B932F88D /* /opt/homebrew/share/cmake/Modules/CMakeCXXCompilerABI.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.cpp; fileEncoding = 4; name = CMakeCXXCompilerABI.cpp; path = /opt/homebrew/share/cmake/Modules/CMakeCXXCompilerABI.cpp; sourceTree = "<absolute>"; };
+		7640002392E14E0DA785C27A /* cmTC_937be */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libcmTC_937be.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		87630D6F1A034DCFAAF73BA7 /* /Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/CMakeScratch/TryCompile-YOILkr/CMakeFiles/cmTC_937be.dir/Info.plist */ = {isa = PBXFileReference; explicitFileType = sourcecode.text.plist; fileEncoding = 4; name = Info.plist; path = CMakeFiles/cmTC_937be.dir/Info.plist; sourceTree = SOURCE_ROOT; };
+		959198DF841E44BCA3908873 /* /Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/CMakeScratch/TryCompile-YOILkr/CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = CMakeLists.txt; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
+		A7D5F1C233BF4A3DA9DDFC06 /* /Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/CMakeScratch/TryCompile-YOILkr/CMakeLists.txt */ = {isa = PBXFileReference; explicitFileType = sourcecode.text; fileEncoding = 4; name = CMakeLists.txt; path = CMakeLists.txt; sourceTree = SOURCE_ROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		873F507943824FFEB1EDB791 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		4160207152214F2D82D1AF9E /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		456EABF60589400F9D9CAD49 = {
+			isa = PBXGroup;
+			children = (
+				9F73AA30086746A1ADB65007 /* cmTC_937be */,
+				634CF857C2DF41BD95F6A86D /* ALL_BUILD */,
+				5766A69615E6421BA0BD0182 /* Products */,
+				4160207152214F2D82D1AF9E /* Frameworks */,
+				7A4E56A37F59439DB992573A /* Resources */,
+			);
+			sourceTree = "<group>";
+		};
+		5766A69615E6421BA0BD0182 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				7640002392E14E0DA785C27A /* cmTC_937be */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		634CF857C2DF41BD95F6A86D /* ALL_BUILD */ = {
+			isa = PBXGroup;
+			children = (
+				6BF193EBEF2D4F5285665478 /* CMake Rules */,
+				959198DF841E44BCA3908873 /* /Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/CMakeScratch/TryCompile-YOILkr/CMakeLists.txt */,
+			);
+			name = ALL_BUILD;
+			sourceTree = "<group>";
+		};
+		6BF193EBEF2D4F5285665478 /* CMake Rules */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = "CMake Rules";
+			sourceTree = "<group>";
+		};
+		7A4E56A37F59439DB992573A /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
+		9F73AA30086746A1ADB65007 /* cmTC_937be */ = {
+			isa = PBXGroup;
+			children = (
+				C6B628C9AA0945F4AF756E20 /* Source Files */,
+				C7AF556DBB304249ACB1B1E4 /* Resources */,
+				A7D5F1C233BF4A3DA9DDFC06 /* /Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/CMakeScratch/TryCompile-YOILkr/CMakeLists.txt */,
+			);
+			name = cmTC_937be;
+			sourceTree = "<group>";
+		};
+		C6B628C9AA0945F4AF756E20 /* Source Files */ = {
+			isa = PBXGroup;
+			children = (
+				70BA601995924C43B932F88D /* /opt/homebrew/share/cmake/Modules/CMakeCXXCompilerABI.cpp */,
+			);
+			name = "Source Files";
+			sourceTree = "<group>";
+		};
+		C7AF556DBB304249ACB1B1E4 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				87630D6F1A034DCFAAF73BA7 /* /Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/CMakeScratch/TryCompile-YOILkr/CMakeFiles/cmTC_937be.dir/Info.plist */,
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		5AE50598A62D9DDF72493438 /* cmTC_937be */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BBE6AB3A912C4D5290A60B5A /* Build configuration list for PBXNativeTarget "cmTC_937be" */;
+			buildPhases = (
+				9BC2FEA22E4849FA8B62B2D6 /* Sources */,
+				873F507943824FFEB1EDB791 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = cmTC_937be;
+			productName = cmTC_937be;
+			productReference = 7640002392E14E0DA785C27A /* cmTC_937be */;
+			productType = "com.apple.product-type.library.static";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		0190B03772964CEF838F362A /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 2620;
+			};
+			buildConfigurationList = C8AE95F183174DD1807E22A8 /* Build configuration list for PBXProject "CMAKE_TRY_COMPILE" */;
+			buildSettings = {
+			};
+			buildStyles = (
+				DB529071FC274F91A1697377 /* Debug */,
+				4081935362A441F9A67AE645 /* Release */,
+				6F359891DC7A40D695847344 /* MinSizeRel */,
+				45641FB9B180496196FFE6A6 /* RelWithDebInfo */,
+			);
+			compatibilityVersion = "Xcode 3.2";
+			hasScannedForEncodings = 0;
+			mainGroup = 456EABF60589400F9D9CAD49;
+			projectDirPath = .;
+			projectRoot = "";
+			targets = (
+				F07919AF1D03079E7E691537 /* ALL_BUILD */,
+				5AE50598A62D9DDF72493438 /* cmTC_937be */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		9B50530E35CC49C82C2FACCF = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# shell script goes here
+exit 0";
+			showEnvVarsInLog = 0;
+		};
+		B5D2FB498F1B33A4CE07395A /* Generate CMakeFiles/ALL_BUILD */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Generate CMakeFiles/ALL_BUILD";
+			outputPaths = (
+"/Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/CMakeScratch/TryCompile-YOILkr/CMakeFiles/ALL_BUILD"			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e
+if test \"$CONFIGURATION\" = \"Debug\"; then :
+  cd /Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/CMakeScratch/TryCompile-YOILkr
+  echo Build\\ all\\ projects
+fi
+if test \"$CONFIGURATION\" = \"Release\"; then :
+  cd /Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/CMakeScratch/TryCompile-YOILkr
+  echo Build\\ all\\ projects
+fi
+if test \"$CONFIGURATION\" = \"MinSizeRel\"; then :
+  cd /Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/CMakeScratch/TryCompile-YOILkr
+  echo Build\\ all\\ projects
+fi
+if test \"$CONFIGURATION\" = \"RelWithDebInfo\"; then :
+  cd /Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/CMakeScratch/TryCompile-YOILkr
+  echo Build\\ all\\ projects
+fi
+";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		9BC2FEA22E4849FA8B62B2D6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4974B68C345D4D2A8FFA06B0 /* /opt/homebrew/share/cmake/Modules/CMakeCXXCompilerABI.cpp */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		74CFDC8717A94AFD9B10903E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 5AE50598A62D9DDF72493438 /* cmTC_937be */;
+			targetProxy = BB379926F0A8401CBE0E7FFA /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		14A6FFD668C445F79CE9BD66 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				"ARCHS[sdk=iphonesimulator*]" = arm64;
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				ENABLE_BITCODE = NO;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				SDKROOT = /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk;
+				SWIFT_VERSION = 4.0;
+				SYMROOT = "/Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/CMakeScratch/TryCompile-YOILkr/build";
+				"VALID_ARCHS[sdk=iphonesimulator*]" = arm64;
+			};
+			name = Debug;
+		};
+		2D7A6AD4ABE44100A357CA13 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "/Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/CMakeScratch/TryCompile-YOILkr/MinSizeRel";
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = s;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CPLUSPLUSFLAGS = "    -DNDEBUG -fvisibility=hidden   -v -Wl,-v";
+				OTHER_LIBTOOLFLAGS = ("");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = cmTC_937be;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/CMakeScratch/TryCompile-YOILkr/build/cmTC_937be.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = MinSizeRel;
+		};
+		32172EF29E7B4AEB81168927 /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "/Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/CMakeScratch/TryCompile-YOILkr/RelWithDebInfo";
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CPLUSPLUSFLAGS = "       -DNDEBUG -fvisibility=hidden   -v -Wl,-v";
+				OTHER_LIBTOOLFLAGS = ("");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = cmTC_937be;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/CMakeScratch/TryCompile-YOILkr/build/cmTC_937be.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = RelWithDebInfo;
+		};
+		470D97B36D3E44FBAFB1FFD6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ALL_BUILD;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Debug;
+		};
+		4F37966A42B046429ABAE2BF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "/Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/CMakeScratch/TryCompile-YOILkr/Release";
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 3;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CPLUSPLUSFLAGS = "    -DNDEBUG -fvisibility=hidden   -v -Wl,-v";
+				OTHER_LIBTOOLFLAGS = ("");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = cmTC_937be;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/CMakeScratch/TryCompile-YOILkr/build/cmTC_937be.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Release;
+		};
+		5B0EC9DBFEAC4BF4AC58F484 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ALL_BUILD;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = MinSizeRel;
+		};
+		5E53571EB93B4F5BB17B37B1 /* MinSizeRel */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				"ARCHS[sdk=iphonesimulator*]" = arm64;
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				ENABLE_BITCODE = NO;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				SDKROOT = /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 4.0;
+				SYMROOT = "/Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/CMakeScratch/TryCompile-YOILkr/build";
+				"VALID_ARCHS[sdk=iphonesimulator*]" = arm64;
+			};
+			name = MinSizeRel;
+		};
+		72195165D2274D8EA6C21CEC /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ALL_BUILD;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = RelWithDebInfo;
+		};
+		C56F4C6DF7154AF99C36C7A8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				OTHER_LDFLAGS = ("","$(inherited)");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = ALL_BUILD;
+				SECTORDER_FLAGS = "";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Release;
+		};
+		D21D7346244741FF8F78C29F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				"ARCHS[sdk=iphonesimulator*]" = arm64;
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				ENABLE_BITCODE = NO;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				SDKROOT = /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 4.0;
+				SYMROOT = "/Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/CMakeScratch/TryCompile-YOILkr/build";
+				"VALID_ARCHS[sdk=iphonesimulator*]" = arm64;
+			};
+			name = Release;
+		};
+		E141E84EFFA74AC58F7528CC /* RelWithDebInfo */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = arm64;
+				"ARCHS[sdk=iphonesimulator*]" = arm64;
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				ENABLE_BITCODE = NO;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				SDKROOT = /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 4.0;
+				SYMROOT = "/Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/CMakeScratch/TryCompile-YOILkr/build";
+				"VALID_ARCHS[sdk=iphonesimulator*]" = arm64;
+			};
+			name = RelWithDebInfo;
+		};
+		EF56E8C725BA4AFF99782434 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				COMBINE_HIDPI_IMAGES = YES;
+				CONFIGURATION_BUILD_DIR = "/Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/CMakeScratch/TryCompile-YOILkr/Debug";
+				EXECUTABLE_PREFIX = lib;
+				EXECUTABLE_SUFFIX = .a;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ("'CMAKE_INTDIR=\"$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)\"'","$(inherited)");
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				INSTALL_PATH = "";
+				LIBRARY_STYLE = STATIC;
+				ONLY_ACTIVE_ARCH = NO;
+				OTHER_CPLUSPLUSFLAGS = "   -fvisibility=hidden   -v -Wl,-v";
+				OTHER_LIBTOOLFLAGS = ("");
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = cmTC_937be;
+				SECTORDER_FLAGS = "";
+				TARGET_TEMP_DIR = "/Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/CMakeScratch/TryCompile-YOILkr/build/cmTC_937be.build/$(CONFIGURATION)$(EFFECTIVE_PLATFORM_NAME)";
+				USE_HEADERMAP = NO;
+				WARNING_CFLAGS = ("$(inherited)");
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		B69E2564AA224FC9A3CDABDD /* Build configuration list for PBXAggregateTarget "ALL_BUILD" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				470D97B36D3E44FBAFB1FFD6 /* Debug */,
+				C56F4C6DF7154AF99C36C7A8 /* Release */,
+				5B0EC9DBFEAC4BF4AC58F484 /* MinSizeRel */,
+				72195165D2274D8EA6C21CEC /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		BBE6AB3A912C4D5290A60B5A /* Build configuration list for PBXNativeTarget "cmTC_937be" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EF56E8C725BA4AFF99782434 /* Debug */,
+				4F37966A42B046429ABAE2BF /* Release */,
+				2D7A6AD4ABE44100A357CA13 /* MinSizeRel */,
+				32172EF29E7B4AEB81168927 /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		C8AE95F183174DD1807E22A8 /* Build configuration list for PBXProject "CMAKE_TRY_COMPILE" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				14A6FFD668C445F79CE9BD66 /* Debug */,
+				D21D7346244741FF8F78C29F /* Release */,
+				5E53571EB93B4F5BB17B37B1 /* MinSizeRel */,
+				E141E84EFFA74AC58F7528CC /* RelWithDebInfo */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 0190B03772964CEF838F362A /* Project object */;
+}

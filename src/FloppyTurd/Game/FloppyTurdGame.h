@@ -136,6 +136,10 @@ namespace GameCore {
             float totalPlayTime;
             int currentStreak;
             int bestStreak;
+            
+            // Ad system counters (persisted to prevent reset exploit)
+            int adDeathCountSinceLastAd;  // Deaths since last ad shown
+            int adTotalDeathCount;        // Total deaths (for learning period)
         };
 
         // Customization data

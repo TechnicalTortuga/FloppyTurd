@@ -1,6 +1,6 @@
 //
 //  GameCenterManager.swift
-//  FloppyTurd
+//  PooperTrooper
 //
 //  Created by Carl the Code-Conjuring Turdsmith
 //  Game Center integration for leaderboards and achievements

@@ -6,7 +6,7 @@
 #include <cstring>
 
 // Import Swift module for direct interop calls
-#include "FloppyTurd-Swift.h"
+#include "PooperTrooper-Swift.h"
 
 namespace GameCore {
     
@@ -719,9 +719,8 @@ namespace GameCore {
     }
     
     bool ThreadingProxy::hasIAPPurchased(const char* productID) {
-        // This will be implemented via Swift interop
-        // For now, return false - will be wired up to StoreManager later
-        return false;
+        // Call Swift function via C++ interop (same pattern as loadGameDataSync)
+        return PooperTrooper::hasRemoveAdsPurchasedSync();
     }
     
     const char* ThreadingProxy::getIAPPrice(const char* productID) {
@@ -1502,7 +1501,7 @@ std::string loadGameDataSync() {
     GN_LOG_INFO("🔍 C++ loadGameDataSync() called - about to call Swift");
     
     // Call Swift function via C++ interop
-    auto swiftString = FloppyTurd::loadGameDataSync();
+    auto swiftString = PooperTrooper::loadGameDataSync();
     
     // Convert Swift.String to std::string
     std::string result = std::string(swiftString);

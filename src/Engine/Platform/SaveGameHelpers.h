@@ -98,7 +98,9 @@ namespace GameCore {
             json << "    \"bestStreak\": " << gameStats.bestStreak << ",\n";
             json << "    \"totalProjectilesFired\": 0,\n";
             json << "    \"totalHatsUnlocked\": 0,\n";
-            json << "    \"bossesDefeated\": 0\n";
+            json << "    \"bossesDefeated\": 0,\n";
+            json << "    \"adDeathCountSinceLastAd\": " << gameStats.adDeathCountSinceLastAd << ",\n";
+            json << "    \"adTotalDeathCount\": " << gameStats.adTotalDeathCount << "\n";
             json << "  },\n";
 
             // Customization data - get from game's customization data
@@ -409,10 +411,19 @@ namespace GameCore {
             
             stats.currentStreak = std::stoi(parseKeyValue(dataString, "STATS_CURRENT_STREAK"));
             stats.bestStreak = std::stoi(parseKeyValue(dataString, "STATS_BEST_STREAK"));
+            
+            // Parse ad counter fields (prevents reset exploit)
+            std::string adDeathsSinceLastAdStr = parseKeyValue(dataString, "STATS_AD_DEATHS_SINCE_LAST");
+            stats.adDeathCountSinceLastAd = adDeathsSinceLastAdStr.empty() ? 0 : std::stoi(adDeathsSinceLastAdStr);
+            
+            std::string adTotalDeathsStr = parseKeyValue(dataString, "STATS_AD_TOTAL_DEATHS");
+            stats.adTotalDeathCount = adTotalDeathsStr.empty() ? 0 : std::stoi(adTotalDeathsStr);
 
             GN_LOG_INFO("🔍 Deserialize: Parsed stats - storedCoins=" + std::to_string(stats.storedCoins) + 
                        ", totalGamesPlayed=" + std::to_string(stats.totalGamesPlayed) +
-                       ", totalPipesCleared=" + std::to_string(stats.totalPipesCleared));
+                       ", totalPipesCleared=" + std::to_string(stats.totalPipesCleared) +
+                       ", adDeathsSinceLastAd=" + std::to_string(stats.adDeathCountSinceLastAd) +
+                       ", adTotalDeaths=" + std::to_string(stats.adTotalDeathCount));
 
             game.UpdateGameStats(stats);
 

@@ -301,8 +301,23 @@ namespace GameCore {
             }
             m_ecsSystem->AddComponent<Pickup>(e, pickup);
 
-            ScrollSpeed scroll(m_levelConfig->worldSpeed);
+            // CRITICAL: Get worldSpeed from LevelManager's CURRENT config (not cached pointer)
+            // This ensures pickups always match current difficulty even if it changes mid-game
+            float scrollSpeed = 500.0f; // fallback
+            if (m_levelManager) {
+                const LevelConfig& currentConfig = m_levelManager->GetCurrentLevelConfig();
+                scrollSpeed = currentConfig.worldSpeed;
+            } else if (m_levelConfig) {
+                scrollSpeed = m_levelConfig->worldSpeed;
+            }
+            
+            ScrollSpeed scroll(scrollSpeed);
             m_ecsSystem->AddComponent<ScrollSpeed>(e, scroll);
+            
+            // DEBUG: Log pickup spawn with current config values
+            GN_LOG_INFO("🪙 [PickupSystem] Spawned pickup entity=" + std::to_string(e) + 
+                       " ScrollSpeed=" + std::to_string(scrollSpeed) + 
+                       " (from " + (m_levelManager ? "LevelManager" : "cached config") + ")");
 
             Hitbox hb;
             hb.type = ColliderType::Rectangle;

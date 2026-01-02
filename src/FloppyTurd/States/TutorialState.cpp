@@ -617,10 +617,14 @@ namespace GameCore {
             Transform pipeTransform(Gnosis::GNVector2(centerX, pipeY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
             m_ecsSystem->AddComponent<Transform>(m_pipeCounterEntity, pipeTransform);
             
+            // Dynamic font scaling for tablet
+            bool isTablet = (m_cachedScreenHeight > 0) && (m_cachedScreenWidth / m_cachedScreenHeight > 0.6f);
+            float tabletScale = isTablet ? 0.7f : 1.0f;
+
             UIElement pipeCounter;
             pipeCounter.buttonText = "0";  // NON-FUNCTIONAL - stays at 0
-            pipeCounter.fontSize = 120.0f;
-            pipeCounter.textOutlineWidth = 18.0f;
+            pipeCounter.fontSize = 120.0f * tabletScale;
+            pipeCounter.textOutlineWidth = 18.0f * tabletScale;
             pipeCounter.textColor = Gnosis::GNColor(255, 255, 255, 255);  // White
             pipeCounter.centerTextHorizontally = true;
             pipeCounter.centerTextVertically = true;
@@ -630,10 +634,10 @@ namespace GameCore {
             m_ecsSystem->AddComponent<UIElement>(m_pipeCounterEntity, pipeCounter);
         }
         
-        // 2. COIN BAG ICON (bottom left)
+        // Match GameplayState EXACTLY: 1% from left, 87% from top, 8.0f scale
         float iconX = m_cachedScreenWidth * 0.01f;   // 1% from left
         float iconY = m_cachedScreenHeight * 0.87f;  // 87% from top
-        float bagScale = 8.0f;  // 32x32 → 256x256
+        float bagScale = 8.0f;  // Fixed 8.0f scale to match GameplayState
         
         m_coinBagEntity = m_ecsSystem->CreateEntity();
         if (m_coinBagEntity != 0) {
@@ -657,9 +661,13 @@ namespace GameCore {
             Transform tr(Gnosis::GNVector2(textX, textY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
             m_ecsSystem->AddComponent<Transform>(m_coinsTextEntity, tr);
             
+            // Dynamic font scaling for tablet
+            bool isTablet = (m_cachedScreenHeight > 0) && (m_cachedScreenWidth / m_cachedScreenHeight > 0.6f);
+            float tabletScale = isTablet ? 0.7f : 1.0f;
+
             UIElement ui;
             ui.buttonText = "999";  // FUNCTIONAL - decrements when shooting
-            ui.fontSize = 64.0f;
+            ui.fontSize = 64.0f * tabletScale;
             ui.textOutlineWidth = 10.0f;
             ui.textColor = Gnosis::GNColor(255, 215, 0, 255);  // Gold
             ui.centerTextHorizontally = false;
@@ -728,7 +736,7 @@ namespace GameCore {
         
         float centerX = m_cachedScreenWidth * 0.5f;
         float startY = m_cachedScreenHeight * 0.18f;  // Start slightly higher to fit more text
-        float lineSpacing = 70.0f;  // Tighter spacing
+        float lineSpacing = 80.0f;  // Increased spacing for larger text
         
         for (size_t i = 0; i < instructions.size(); ++i) {
             if (instructions[i].empty()) continue;  // Skip empty lines
@@ -737,9 +745,14 @@ namespace GameCore {
             Transform textTransform(Gnosis::GNVector2(centerX, startY + (i * lineSpacing)), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
             m_ecsSystem->AddComponent<Transform>(textEntity, textTransform);
             
+            // Tablet scaling
+            bool isTablet = (m_cachedScreenHeight > 0) && (m_cachedScreenWidth / m_cachedScreenHeight > 0.6f);
+            float tabletScale = isTablet ? 0.6f : 1.0f; // More aggressive reduction for instruction text block
+
             UIElement textUI;
             textUI.buttonText = instructions[i];
-            textUI.fontSize = (i == 0) ? 64.0f : 48.0f;  // Larger font - title 64, body 48
+            // Increased font sizes as requested (was 64/48, now 80/60)
+            textUI.fontSize = ((i == 0) ? 80.0f : 60.0f) * tabletScale;
             textUI.textColor = (i == 0) ? Gnosis::GNColor(255, 215, 0, 255) : Gnosis::GNColor(255, 255, 255, 255);  // Gold title, white text
             textUI.centerTextHorizontally = true;
             textUI.centerTextVertically = true;
@@ -754,13 +767,15 @@ namespace GameCore {
     }
     
     void TutorialState::CreateSettingsButton() {
-        float settingsX = m_cachedScreenWidth * 0.85f;   // 85% from left
-        float settingsY = m_cachedScreenHeight * 0.05f;  // 5% from top
-        float settingsScale = 8.0f;  // Match GameplayState scale
+        float settingsX = m_cachedScreenWidth * 0.85f;   // 85% from left (Matches GameplayState PORTRAIT_SETTINGS_X)
+        float settingsY = m_cachedScreenHeight * 0.05f;  // 5% from top (Matches GameplayState PORTRAIT_SETTINGS_Y)
+        
+        // Match GameplayState scale exactly (fixed 8.0f)
+        float buttonScale = 8.0f;
         
         m_settingsButtonEntity = m_ecsSystem->CreateEntity();
         if (m_settingsButtonEntity != 0) {
-            Transform settingsTransform(Gnosis::GNVector2(settingsX, settingsY), 0.0f, Gnosis::GNVector2(settingsScale, settingsScale));
+            Transform settingsTransform(Gnosis::GNVector2(settingsX, settingsY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
             m_ecsSystem->AddComponent<Transform>(m_settingsButtonEntity, settingsTransform);
             
             // Use correct texture ID (no .png extension, lowercase) - EXACT match to GameplayState
@@ -778,6 +793,12 @@ namespace GameCore {
             settingsUI.isEnabled = true;
             settingsUI.textLayer = 10;
             m_ecsSystem->AddComponent<UIElement>(m_settingsButtonEntity, settingsUI);
+            
+            // Add Bounds for consistency with GameplayState
+            float scaledWidth = 16.0f * buttonScale;
+            float scaledHeight = 16.0f * buttonScale;
+            Bounds buttonBounds(scaledWidth, scaledHeight, 0.0f, 0.0f, false);
+            m_ecsSystem->AddComponent<Bounds>(m_settingsButtonEntity, buttonBounds);
             
             GN_LOG_INFO("TutorialState: Settings button created at top right");
         }
@@ -806,6 +827,7 @@ namespace GameCore {
         }
     }
     
+
     void TutorialState::DestroyUI() {
         if (!m_ecsSystem) return;
         
@@ -885,13 +907,23 @@ namespace GameCore {
         
         float centerX = m_cachedScreenWidth * 0.5f;
         float centerY = m_cachedScreenHeight * 0.5f + 32.0f;  // Offset like PauseSystem
-        float bgScale = 7.0f;
+        
+        // Dynamic scaling logic below (replacing hardcoded 7.0f)
         
         // Use portrait or landscape background based on aspect ratio
         bool isLandscape = (m_cachedScreenWidth / m_cachedScreenHeight) > 1.0f;
         std::string bgTextureId = isLandscape ? "PauseMenuBackground" : "PauseMenuBackgroundMobile";
         float textureWidth = isLandscape ? 300.0f : 160.0f;
         float textureHeight = isLandscape ? 160.0f : 300.0f;
+        
+        // Dynamic scaling: Fit within 95% of width for portrait, or appropriate height for landscape
+        float maxW = m_cachedScreenWidth * 0.95f;
+        float maxH = m_cachedScreenHeight * 0.90f; // Increased to 90% height as requested
+        
+        float scaleX = maxW / textureWidth;
+        float scaleY = maxH / textureHeight;
+        
+        float bgScale = std::min(scaleX, scaleY);
         
         // Calculate scaled dimensions and use CenterObjectAtPosition
         float scaledWidth = textureWidth * bgScale;
@@ -932,7 +964,19 @@ namespace GameCore {
         
         float buttonCenterX = centerX;
         float buttonCenterY = centerY + 64.0f;  // Below center (pause menu is at centerY)
-        float buttonScale = 10.0f;  // Match PauseSystem scale
+        
+        // Dynamic scaling: Target 75% of screen width (Portrait reference)
+        float buttonTexWidth = 90.0f;
+        float buttonTexHeight = 16.0f;
+        
+        float targetButtonWidth = m_cachedScreenWidth * 0.75f;
+        // Limit height just in case
+        float targetMaxHeight = m_cachedScreenHeight * 0.12f;
+        
+        float scaleXButton = targetButtonWidth / buttonTexWidth;
+        float scaleYButton = targetMaxHeight / buttonTexHeight;
+        
+        float buttonScale = std::min(scaleXButton, scaleYButton);
         
         // Calculate button dimensions and use CenterObjectAtPosition
         float buttonWidth = 90.0f * buttonScale;  // 900 pixels
@@ -1028,13 +1072,17 @@ namespace GameCore {
         auto* transform = m_ecsSystem->GetComponent<Transform>(m_settingsButtonEntity);
         if (!transform) return false;
         
-        float buttonSize = 128.0f * 1.5f;  // 128px * scale
-        float halfSize = buttonSize * 0.5f;
+        // Use fixed scale 8.0f as defined in CreateSettingsButton
+        float buttonSize = 16.0f * 8.0f; 
         
-        return (x >= transform->position.x - halfSize &&
-                x <= transform->position.x + halfSize &&
-                y >= transform->position.y - halfSize &&
-                y <= transform->position.y + halfSize);
+        // Check bounds (top-left positioning)
+        if (x >= transform->position.x && x <= transform->position.x + buttonSize &&
+            y >= transform->position.y && y <= transform->position.y + buttonSize) {
+            
+            // Return true, caller will handle TogglePause()
+            return true;
+        }
+        return false;
     }
     
     bool TutorialState::CheckReturnToMenuButtonClick(float x, float y) {

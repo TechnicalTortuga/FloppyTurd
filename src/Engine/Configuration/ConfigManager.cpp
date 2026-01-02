@@ -47,10 +47,10 @@ namespace GameCore {
                            std::to_string(m_screenInfo.pixelWidth) + "x" + 
                            std::to_string(m_screenInfo.pixelHeight));
                 // Force sensible fallback
-                m_screenInfo.pixelWidth = 1179.0f;
-                m_screenInfo.pixelHeight = 2556.0f;
-                m_screenInfo.logicalWidth = 393.0f;
-                m_screenInfo.logicalHeight = 852.0f;
+                m_screenInfo.pixelWidth = 1080.0f;
+                m_screenInfo.pixelHeight = 1920.0f;
+                m_screenInfo.logicalWidth = 360.0f;
+                m_screenInfo.logicalHeight = 640.0f;
                 m_screenInfo.scaleFactor = 3.0f;
                 m_screenInfo.isPortrait = true;
             }
@@ -86,10 +86,10 @@ namespace GameCore {
         // CRITICAL ERROR: No delegates available
         GN_LOG_ERROR("❌ NO SCREEN INFO DELEGATES AVAILABLE - Using iPhone 16 fallback defaults!");
         GN_LOG_ERROR("This should NEVER happen in production - delegates not properly initialized");
-        m_screenInfo.pixelWidth = 1179.0f;
-        m_screenInfo.pixelHeight = 2556.0f;
-        m_screenInfo.logicalWidth = 393.0f;
-        m_screenInfo.logicalHeight = 852.0f;
+        m_screenInfo.pixelWidth = 1080.0f;  // Generic fallback
+        m_screenInfo.pixelHeight = 1920.0f; // Generic fallback
+        m_screenInfo.logicalWidth = 360.0f;
+        m_screenInfo.logicalHeight = 640.0f;
         m_screenInfo.scaleFactor = 3.0f;
         m_screenInfo.isPortrait = true;
         m_screenInfo.deviceModel = "Unknown (FALLBACK)";
@@ -225,10 +225,11 @@ namespace GameCore {
 
     float ConfigManager::CalculateUIScaleFromScreenSize() const {
         if (IsIOS()) {
-            // iOS: Scale based on logical width
-            // iPhone SE (375pt) = 0.8x, iPhone (393pt) = 1.0x, iPhone Pro Max (430pt) = 1.2x
-            float baseWidth = 393.0f; // iPhone 14/15 standard width
-            return std::max(0.5f, std::min(2.0f, m_screenInfo.logicalWidth / baseWidth));
+            // iOS: Scale based on logical width relative to a baseline
+            // Use a standard baseline width (e.g., 375pt for older iPhones, 390-430 for newer)
+            // This calculation will upscale for iPads
+            float baseWidth = 390.0f; 
+            return std::max(0.5f, std::min(3.0f, m_screenInfo.logicalWidth / baseWidth));
         } else {
             // Desktop: Scale based on screen resolution
             float baseWidth = 1920.0f; // 1080p width

@@ -271,8 +271,9 @@ namespace GameCore {
     void SkillSystem::ResetForNewLevel()
     {
         // Reset the coin safety net flag so it can be used again
+        bool wasUsed = m_coinSafetyNetUsedThisLevel;
         m_coinSafetyNetUsedThisLevel = false;
-        GN_LOG_INFO("Coin safety net reset for new level");
+        GN_LOG_INFO("🔄 Coin safety net reset for new level (was used: " + std::to_string(wasUsed) + ", now available: " + std::to_string(!m_coinSafetyNetUsedThisLevel) + ")");
     }
 
     void SkillSystem::ApplyPassiveSkillEffects(Gnosis::Entity playerEntity)

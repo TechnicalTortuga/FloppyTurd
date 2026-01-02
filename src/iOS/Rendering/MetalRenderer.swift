@@ -1,9 +1,9 @@
 //
 //  MetalRenderer.swift
-//  FloppyTurd
+//  PooperTrooper
 //
 //  Created by Gnosis Engine
-//  Copyright © 2024 Floppy Turd Studios. All rights reserved.
+//  Copyright © 2024 Pooper Trooper Studios. All rights reserved.
 //
 
 import CoreGraphics

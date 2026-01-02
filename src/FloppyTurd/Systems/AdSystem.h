@@ -78,6 +78,16 @@ public:
      */
     bool IsAdReady() const;
     
+    /**
+     * Load ad counters from saved game stats (prevents reset exploit)
+     */
+    void LoadCountersFromGameStats(int deathsSinceLastAd, int totalDeaths);
+    
+    /**
+     * Get current counters for saving to game stats
+     */
+    void GetCountersForSave(int& outDeathsSinceLastAd, int& outTotalDeaths) const;
+    
 private:
     GameCore::PlatformDelegates* m_platformDelegates;
     

@@ -932,6 +932,13 @@ namespace GameCore {
         // Load level configuration
         m_currentLevelConfig = LevelConfigFactory::GetLevelConfig(levelId);
         GN_LOG_INFO("Loaded configuration for: " + m_currentLevelConfig.levelName);
+        
+        // Apply difficulty multiplier to speeds (CRITICAL: must be done before spawning anything)
+        Difficulty currentDifficulty = LevelManager::GetGlobalDifficulty();
+        m_currentLevelConfig.ApplyDifficulty(currentDifficulty);
+        GN_LOG_INFO("Applied difficulty: " + DifficultyToString(currentDifficulty) + 
+                   " (multiplier: " + std::to_string(m_currentLevelConfig.difficultyMultiplier) + 
+                   ", worldSpeed: " + std::to_string(m_currentLevelConfig.worldSpeed) + ")");
 
         // Set orientation lock based on level
         if (m_platformDelegates && m_platformDelegates->renderer.lockToLandscape && m_platformDelegates->renderer.lockToPortrait) {
@@ -1509,9 +1516,14 @@ namespace GameCore {
             if (m_levelManager) {
                 m_levelManager->SetPlayerEntity(m_playerEntity);
             }
-            if (m_pickupSystem) {
+            if (m_pickupSystem && m_levelManager) {
                 m_pickupSystem->SetPlayerEntity(m_playerEntity);
-                m_pickupSystem->SetLevelConfig(&m_currentLevelConfig);
+                // Use LevelManager's config which has difficulty already applied
+                const LevelConfig& levelConfig = m_levelManager->GetCurrentLevelConfig();
+                m_pickupSystem->SetLevelConfig(&levelConfig);
+                GN_LOG_INFO("🎮 Set PickupSystem config - worldSpeed: " + std::to_string(levelConfig.worldSpeed) + 
+                           ", difficulty: " + DifficultyToString(levelConfig.currentDifficulty) + 
+                           ", multiplier: " + std::to_string(levelConfig.difficultyMultiplier));
             }
             
             GN_LOG_INFO("Created player entity: " + std::to_string(m_playerEntity));
@@ -3111,29 +3123,41 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         Hitbox* playerHitbox = m_ecsSystem->GetComponent<Hitbox>(m_playerEntity);
         Sprite* playerSprite = m_ecsSystem->GetComponent<Sprite>(m_playerEntity);
         
-        // Check if player fell off screen and trigger damage
+        // Check if player fell off screen and trigger INSTANT DEATH
         if (playerTransform && playerSprite && m_playerAlive) {
             float playerHeight = playerSprite->height * playerTransform->scale.y;
             float resetThreshold = m_cachedScreenHeight + (playerHeight * 0.75f);
             
-            // If player is below threshold and invulnerability is off, trigger damage and reset
-            if (playerTransform->position.y > resetThreshold && m_invulnerabilityTimer <= 0.0f) {
-                GN_LOG_INFO("💔 Player fell off screen - triggering damage and reset!");
+            // If player is below threshold, instant death
+            if (playerTransform->position.y > resetThreshold) {
+                GN_LOG_INFO("💀 Player fell off screen at Y=" + std::to_string(playerTransform->position.y) + " (threshold=" + std::to_string(resetThreshold) + ")");
                 
-                // Play hurt sound effect
-                if (GameCore::GetGame()) {
-                    GameCore::GetGame()->PlaySFX("hurt");
+                // Try coin safety net FIRST before dealing damage
+                PlayerComponent* player = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity);
+                if (player) {
+                    GN_LOG_INFO("Player has " + std::to_string(player->sessionCoins) + " coins, " + std::to_string(player->liveSlices) + " live slices");
                 }
                 
-                // Reset player position immediately
-                playerTransform->position.y = 50.0f; // TOP_SPAWN_Y
-                Physics* physics = m_ecsSystem->GetComponent<Physics>(m_playerEntity);
-                if (physics) {
-                    physics->velocity.y = 0.0f;
+                if (player && m_skillSystem && m_skillSystem->TryActivateCoinSafetyNet(m_playerEntity)) {
+                    GN_LOG_INFO("✨ Coin safety net saved player from falling off screen!");
+                    
+                    // Reset player position to safe starting position
+                    if (playerTransform) {
+                        float startX = (m_currentLevelId == 6) ? (m_cachedScreenWidth * 0.15f) : (m_cachedScreenWidth * 0.5f);
+                        float startY = m_cachedScreenHeight * 0.3f; // 30% from top
+                        playerTransform->position = Gnosis::GNVector2(startX, startY);
+                        GN_LOG_INFO("Reset player position to safe location: (" + std::to_string(startX) + ", " + std::to_string(startY) + ")");
+                    }
+                    
+                    // Update coin counter UI
+                    UpdateCoinCounterUI();
+                    // Player is saved - don't deal damage
+                    return;
                 }
                 
-                // Trigger damage (will handle hurt animation and invulnerability)
-                OnPlayerHurt(1); // Take 1 damage for falling off
+                // No safety net available - deal fatal damage
+                GN_LOG_INFO("💀 No coin safety net available - player dies from falling off screen!");
+                OnPlayerHurt(999); // Enough damage to kill regardless of hearts
                 return; // Skip other collision checks this frame
             }
         }
@@ -3491,24 +3515,18 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                             enemyComp->hurtTimer = 0.6f;
                             
                             // Play enemy-specific kill sound
-                            if (m_platformDelegates && m_platformDelegates->audio.playSound) {
-                                std::string killSound = "";
-                                
-                                // Determine kill sound based on enemy type
-                                if (enemyComp->enemyType == "ToiletPaper" || enemyComp->enemyType == "ToiletPaperSnow" || enemyComp->enemyType == "ToiletPaperCastle") {
-                                    killSound = "tpkill";
-                                } else if (enemyComp->enemyType == "Rat" || enemyComp->enemyType == "RatSnow" || enemyComp->enemyType == "RatCastle") {
-                                    killSound = "ratkill";
-                                } else if (enemyComp->enemyType == "Bird" || enemyComp->enemyType == "BirdSnow" || enemyComp->enemyType == "BirdCastle") {
-                                    killSound = "birdkill";
-                                }
-                                
-                                if (!killSound.empty()) {
-                                    if (GameCore::GetGame()) {
-                                        GameCore::GetGame()->PlaySFX(killSound);
-                                    }
-                                    GN_LOG_INFO("[PLAYER_ENEMY_COLLISION] Playing kill sound: " + killSound + " for enemy type: " + enemyComp->enemyType);
-                                }
+                            std::string killSound = "";
+                            if (enemyComp->enemyType.find("ToiletPaper") != std::string::npos) {
+                                killSound = "tpkill";
+                            } else if (enemyComp->enemyType.find("Rat") != std::string::npos && enemyComp->enemyType != "RatKing") {
+                                killSound = "ratkill";
+                            } else if (enemyComp->enemyType.find("Bird") != std::string::npos) {
+                                killSound = "birdkill";
+                            }
+                            
+                            if (!killSound.empty() && GameCore::GetGame()) {
+                                GameCore::GetGame()->PlaySFX(killSound);
+                                GN_LOG_INFO("[PLAYER_ENEMY_COLLISION] Playing kill sound: " + killSound + " for enemy: " + enemyComp->enemyType);
                             }
                             
                             GN_LOG_INFO("[PLAYER_ENEMY_COLLISION] Enemy " + enemyComp->enemyType + " defeated");
@@ -3749,7 +3767,13 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         }
         
         // Check if landscape mode
+        // Check if landscape mode
         bool isLandscape = IsLandscapeMode();
+        float aspectRatio = m_cachedScreenWidth / m_cachedScreenHeight;
+        bool isTablet = isLandscape ? (aspectRatio < 1.6f) : (aspectRatio > 0.6f);
+        float tabletFontScale = isTablet ? 0.7f : 1.0f;
+        
+        GN_LOG_INFO("CreateGameOverUI: isLandscape=" + std::to_string(isLandscape) + ", aspectRatio=" + std::to_string(aspectRatio) + ", tabletFontScale=" + std::to_string(tabletFontScale));
         
         if (isLandscape) {
             // LANDSCAPE LAYOUT: Dead turd on left, scoreboard + buttons on right
@@ -3818,11 +3842,16 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 GN_LOG_INFO("Created game over score (landscape) at: (" + std::to_string(scorePosition.x) + ", " + std::to_string(scorePosition.y) + ")");
             }
             
-            // Pipes label on right side (moved up 16px)
+            // Tablet scaling for landscape (iPad is approx 1.33, iPhone is > 2.0)
+            float aspectRatio = m_cachedScreenWidth / m_cachedScreenHeight;
+            bool isTablet = aspectRatio < 1.6f;
+            float tabletFontScale = isTablet ? 0.7f : 1.0f;
+            
+            // Pipes label on right side (pinched in even more)
             m_pipesLabelEntity = m_ecsSystem->CreateEntity();
             if (m_pipesLabelEntity != Gnosis::INVALID_ENTITY) {
                 float pipesX = m_cachedScreenWidth * 0.70f;
-                float pipesY = m_cachedScreenHeight * 0.30f - 76.0f; // Moved up 16px
+                float pipesY = m_cachedScreenHeight * 0.30f - 36.0f; // Pinched more (was -56)
                 Transform pipesTransform(Gnosis::GNVector2(pipesX, pipesY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
                 m_ecsSystem->AddComponent<Transform>(m_pipesLabelEntity, pipesTransform);
                 
@@ -3832,21 +3861,22 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 pipesUI.visible = true;
                 pipesUI.isEnabled = true;
                 pipesUI.textLayer = 102;
-                pipesUI.fontSize = 60.0f;
+                // iPad needs smaller font
+                pipesUI.fontSize = isTablet ? 48.0f : 60.0f;
                 pipesUI.centerTextHorizontally = true;
                 pipesUI.textOutlineWidth = 6.0f;
                 pipesUI.normalTextureId = "";
                 m_ecsSystem->AddComponent<UIElement>(m_pipesLabelEntity, pipesUI);
             }
             
-            // Coins label on right side (moved down 16px)
+            // Coins label on right side (pinched in even more)
             m_coinsLabelEntity = m_ecsSystem->CreateEntity();
             if (m_coinsLabelEntity != Gnosis::INVALID_ENTITY) {
                 PlayerComponent* player = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity);
                 int totalCoins = player ? player->sessionCoins : 0;
                 
                 float coinsX = m_cachedScreenWidth * 0.70f;
-                float coinsY = m_cachedScreenHeight * 0.30f + 56.0f; // Moved down 16px
+                float coinsY = m_cachedScreenHeight * 0.30f + 16.0f; // Pinched more (was +36)
                 Transform coinsTransform(Gnosis::GNVector2(coinsX, coinsY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
                 m_ecsSystem->AddComponent<Transform>(m_coinsLabelEntity, coinsTransform);
                 
@@ -3856,7 +3886,8 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 coinsUI.visible = true;
                 coinsUI.isEnabled = true;
                 coinsUI.textLayer = 102;
-                coinsUI.fontSize = 60.0f;
+                // iPad needs larger font
+                coinsUI.fontSize = isTablet ? 88.0f : 60.0f;
                 coinsUI.centerTextHorizontally = true;
                 coinsUI.textOutlineWidth = 6.0f;
                 coinsUI.normalTextureId = "";
@@ -3877,7 +3908,8 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 messageUI.visible = true;
                 messageUI.isEnabled = true;
                 messageUI.textLayer = 104;
-                messageUI.fontSize = 60.0f;
+                // iPad needs smaller font
+                messageUI.fontSize = isTablet ? 48.0f : 60.0f;
                 messageUI.centerTextHorizontally = true;
                 messageUI.centerTextVertically = true;
                 messageUI.textOutlineWidth = 6.0f;
@@ -3888,9 +3920,14 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             // Try Again button (RIGHT side, bigger buttons)
             m_tryAgainButtonEntity = m_ecsSystem->CreateEntity();
             if (m_tryAgainButtonEntity != Gnosis::INVALID_ENTITY) {
-                float buttonScale = 7.0f; // Even bigger
-                float buttonWidth = 90.0f * buttonScale;
-                float buttonHeight = 16.0f * buttonScale;
+                // Dynamic scaling: Target 30% of screen width (Landscape)
+                float targetWidth = m_cachedScreenWidth * 0.30f; 
+                float textureWidth = 90.0f;
+                float textureHeight = 16.0f;
+                float buttonScale = targetWidth / textureWidth;
+                
+                float buttonWidth = textureWidth * buttonScale;
+                float buttonHeight = textureHeight * buttonScale;
                 
                 Gnosis::GNVector2 tryAgainPosition = CenterObjectAtPosition(
                     m_cachedScreenWidth * 0.70f, 
@@ -3914,7 +3951,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 tryAgainUI.isEnabled = true;
                 tryAgainUI.textLayer = 104;
                 tryAgainUI.normalTextureId = "FloppyButtonBlue";
-                tryAgainUI.fontSize = 60.0f;
+                tryAgainUI.fontSize = 60.0f * tabletFontScale;
                 tryAgainUI.centerTextHorizontally = true;
                 tryAgainUI.centerTextVertically = true;
                 tryAgainUI.isHovered = false;
@@ -3934,9 +3971,14 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             // Quit button (RIGHT side, bigger buttons)
             m_quitButtonEntity = m_ecsSystem->CreateEntity();
             if (m_quitButtonEntity != Gnosis::INVALID_ENTITY) {
-                float buttonScale = 7.0f; // Even bigger
-                float buttonWidth = 90.0f * buttonScale;
-                float buttonHeight = 16.0f * buttonScale;
+                // Dynamic scaling: Same as Try Again button (30% width)
+                float targetWidth = m_cachedScreenWidth * 0.30f;
+                float textureWidth = 90.0f;
+                float textureHeight = 16.0f;
+                float buttonScale = targetWidth / textureWidth;
+                
+                float buttonWidth = textureWidth * buttonScale;
+                float buttonHeight = textureHeight * buttonScale;
                 
                 Gnosis::GNVector2 quitPosition = CenterObjectAtPosition(
                     m_cachedScreenWidth * 0.70f, 
@@ -3960,7 +4002,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 quitUI.isEnabled = true;
                 quitUI.textLayer = 104;
                 quitUI.normalTextureId = "FloppyButtonBlue";
-                quitUI.fontSize = 60.0f;
+                quitUI.fontSize = 60.0f * tabletFontScale;
                 quitUI.centerTextHorizontally = true;
                 quitUI.centerTextVertically = true;
                 quitUI.isHovered = false;
@@ -4004,9 +4046,13 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             // Create morte sprite (floating above score) - use proper centering
             m_morteEntity = m_ecsSystem->CreateEntity();
             if (m_morteEntity != Gnosis::INVALID_ENTITY) {
-                float morteScale = 6.0f;
-                float morteWidth = 64.0f * morteScale;
-                float morteHeight = 64.0f * morteScale;
+                // Dynamic scaling: Target 25% of screen width
+                float targetWidth = m_cachedScreenWidth * 0.25f;
+                float textureSize = 64.0f;
+                float morteScale = targetWidth / textureSize;
+                
+                float morteWidth = textureSize * morteScale;
+                float morteHeight = textureSize * morteScale;
                 
                 // Position morte sprite at 30% from top
                 Gnosis::GNVector2 mortePosition = CenterObjectAtPosition(m_cachedScreenWidth * 0.5f, m_cachedScreenHeight * 0.30f, morteWidth, morteHeight);
@@ -4044,7 +4090,13 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 scoreUI.isEnabled = true;
                 scoreUI.textLayer = 101; // Lower than morte, higher than background
                 scoreUI.normalTextureId = "GameOverScore"; // Use correct asset catalog name
-                scoreUI.fontSize = 80.0f;
+                
+                // Tablet scaling for portrait (iPad is approx 0.75, iPhone is < 0.5)
+                float aspectRatio = m_cachedScreenWidth / m_cachedScreenHeight;
+                bool isTablet = aspectRatio > 0.6f;
+                float tabletFontScale = isTablet ? 0.7f : 1.0f;
+                
+                scoreUI.fontSize = 80.0f * tabletFontScale;
                 scoreUI.centerTextHorizontally = true;
                 scoreUI.centerTextVertically = true;
                 m_ecsSystem->AddComponent<UIElement>(m_gameOverScoreEntity, scoreUI);
@@ -4058,9 +4110,9 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 // Get player stats
                 PlayerComponent* player = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity);
                 
-                // Position above center of scoreboard, shifted 32px to the right
+                // Position above center of scoreboard, shifted 32px to the right (pinched in even more)
                 float pipesX = (m_cachedScreenWidth * 0.5f) + 32.0f;
-                float pipesY = m_cachedScreenHeight * 0.6f - 100.0f; // 100px above center
+                float pipesY = m_cachedScreenHeight * 0.6f - 160.0f; // Pinched more (was -190)
                 Transform pipesTransform(Gnosis::GNVector2(pipesX, pipesY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
                 m_ecsSystem->AddComponent<Transform>(m_pipesLabelEntity, pipesTransform);
                 
@@ -4070,7 +4122,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 pipesUI.visible = true;
                 pipesUI.isEnabled = true;
                 pipesUI.textLayer = 102; // Above scoreboard background
-                pipesUI.fontSize = 80.0f;
+                pipesUI.fontSize = 80.0f * tabletFontScale;
                 pipesUI.centerTextHorizontally = true;
                 pipesUI.textOutlineWidth = 8.0f; // Add outline for visibility
                 pipesUI.normalTextureId = ""; // Text-only
@@ -4086,9 +4138,9 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 PlayerComponent* player = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity);
                 int totalCoins = player ? player->sessionCoins : 0;
                 
-                // Position below center of scoreboard, shifted 32px right and 48px lower (was 64, moved up 16px)
+                // Position below center of scoreboard, shifted 32px right (pinched in even more)
                 float coinsX = (m_cachedScreenWidth * 0.5f) + 32.0f;
-                float coinsY = (m_cachedScreenHeight * 0.6f + 50.0f) + 48.0f; // 50px below center + 48px lower
+                float coinsY = m_cachedScreenHeight * 0.6f + 160.0f; // Pinched more (was +190)
                 Transform coinsTransform(Gnosis::GNVector2(coinsX, coinsY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
                 m_ecsSystem->AddComponent<Transform>(m_coinsLabelEntity, coinsTransform);
                 
@@ -4098,7 +4150,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 coinsUI.visible = true;
                 coinsUI.isEnabled = true;
                 coinsUI.textLayer = 102; // Above scoreboard background
-                coinsUI.fontSize = 80.0f;
+                coinsUI.fontSize = 80.0f * tabletFontScale;
                 coinsUI.centerTextHorizontally = true;
                 coinsUI.textOutlineWidth = 8.0f; // Add outline for visibility
                 coinsUI.normalTextureId = ""; // Text-only
@@ -4122,7 +4174,8 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 messageUI.visible = true;
                 messageUI.isEnabled = true;
                 messageUI.textLayer = 104; // Highest priority for death message
-                messageUI.fontSize = 80.0f; // Use raw font size value (not scaled)
+                // iPhone needs much smaller font to avoid going off screen
+                messageUI.fontSize = isTablet ? 120.0f : 80.0f; // iPhone 80, iPad 120
                 messageUI.centerTextHorizontally = true;
                 messageUI.centerTextVertically = true;
                 messageUI.textOutlineWidth = 8.0f; // Add outline for better visibility
@@ -4135,9 +4188,14 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             // Create Try Again button (PORTRAIT) - use proper centering and main menu font size
             m_tryAgainButtonEntity = m_ecsSystem->CreateEntity();
         if (m_tryAgainButtonEntity != Gnosis::INVALID_ENTITY) {
-            float buttonScale = 10.0f; // Match main menu button scale
-            float buttonWidth = 90.0f * buttonScale; // 90 is texture width
-            float buttonHeight = 16.0f * buttonScale; // 16 is texture height
+            // Dynamic scaling: Target 75% of screen width (Portrait)
+            float targetWidth = m_cachedScreenWidth * 0.75f;
+            float textureWidth = 90.0f;
+            float textureHeight = 16.0f;
+            float buttonScale = targetWidth / textureWidth;
+            
+            float buttonWidth = textureWidth * buttonScale; // Should match targetWidth
+            float buttonHeight = textureHeight * buttonScale;
             
             // Use CenterObjectAtPosition like main menu for proper centering
             Gnosis::GNVector2 tryAgainPosition = CenterObjectAtPosition(m_cachedScreenWidth * 0.5f, m_cachedScreenHeight * 0.8f, buttonWidth, buttonHeight);
@@ -4158,7 +4216,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             tryAgainUI.isEnabled = true;
             tryAgainUI.textLayer = 104; // Text layer (higher than sprite)
             tryAgainUI.normalTextureId = "FloppyButtonBlue"; // Use the asset catalog name
-            tryAgainUI.fontSize = 80.0f; // Much larger font size for better visibility
+            tryAgainUI.fontSize = 120.0f * tabletFontScale; // Much larger font size for better visibility (was 100)
             tryAgainUI.centerTextHorizontally = true;
             tryAgainUI.centerTextVertically = true;
             // Ensure the button texture is properly set
@@ -4180,9 +4238,14 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             // Create Quit button (PORTRAIT) - use proper centering and main menu font size
             m_quitButtonEntity = m_ecsSystem->CreateEntity();
         if (m_quitButtonEntity != Gnosis::INVALID_ENTITY) {
-            float buttonScale = 10.0f; // Match main menu button scale
-            float buttonWidth = 90.0f * buttonScale; // 90 is texture width
-            float buttonHeight = 16.0f * buttonScale; // 16 is texture height
+            // Dynamic scaling: Target 75% of screen width (Portrait)
+            float targetWidth = m_cachedScreenWidth * 0.75f;
+            float textureWidth = 90.0f;
+            float textureHeight = 16.0f;
+            float buttonScale = targetWidth / textureWidth;
+            
+            float buttonWidth = textureWidth * buttonScale;
+            float buttonHeight = textureHeight * buttonScale;
             
             // Use CenterObjectAtPosition like main menu for proper centering
             Gnosis::GNVector2 quitPosition = CenterObjectAtPosition(m_cachedScreenWidth * 0.5f, m_cachedScreenHeight * 0.9f, buttonWidth, buttonHeight);
@@ -4203,7 +4266,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             quitUI.isEnabled = true;
             quitUI.textLayer = 104; // Text layer (higher than sprite)
             quitUI.normalTextureId = "FloppyButtonBlue"; // Use the asset catalog name
-            quitUI.fontSize = 80.0f; // Much larger font size for better visibility
+            quitUI.fontSize = 120.0f * tabletFontScale; // Much larger font size for better visibility (was 100)
             quitUI.centerTextHorizontally = true;
             quitUI.centerTextVertically = true;
             // Ensure the button texture is properly set
@@ -4453,6 +4516,11 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         // Reset background positions to initial state
         if (m_levelManager) {
             m_levelManager->ResetBackgroundPositions();
+        }
+        
+        // Reset skill system for retry (coin safety net, etc.)
+        if (m_skillSystem) {
+            m_skillSystem->ResetForNewLevel();
         }
         
         // Reset the existing player entity in place (don't recreate)
@@ -4923,12 +4991,13 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             m_lastSettingsButtonPressTime = 0.0f;
             return true;
         }
-
+    }
+        
         return false; // Button not clicked
     } // End of CheckSettingsButtonClick
 
 
-} // Class GameplayState
+
 
 // Function definitions outside the class
 bool GameplayState::IsTapInSettingsButtonArea(float touchX, float touchY) {
@@ -5003,7 +5072,8 @@ bool GameplayState::IsTapOutsideMenuArea(float touchX, float touchY) {
     float scaledWidth = originalWidth * bgScale;   // 160 * 6 = 960
     float scaledHeight = originalHeight * bgScale; // 300 * 6 = 1800
 
-    // Center the menu on screen
+    // Player X position: 15% from left (shifted left from 20% for better composition)
+    float startX = screenWidth * 0.15f;
     float centerX = screenWidth * 0.5f;
     float centerY = screenHeight * 0.5f;
 

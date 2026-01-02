@@ -2397,7 +2397,7 @@ namespace GameCore {
                 manifest->gapWidth = 200.0f;  // Minimal spacing between varied-width patterns
                 break;
             case 3: // Desert
-                manifest->gapWidth = 800.0f;  // Reduced from 1100 for tighter gaps
+                manifest->gapWidth = 928.0f;  // Increased by 128px for more coin/brick wall spacing
                 break;
             case 4: // Snow
                 manifest->gapWidth = 1000.0f;  // Balanced gap for coin spread without feeling too far apart
@@ -2460,9 +2460,8 @@ namespace GameCore {
                 break;
             }
             case 3: { // Desert
-                Gnosis::Entity outhouse = m_obstacleSystem->SpawnDesertPattern_Outhouse(worldX, groupId);
-                obstacles.push_back(outhouse);
-                manifest->leaderEntity = outhouse;
+                obstacles = m_obstacleSystem->SpawnDesertPattern_Outhouse(worldX, groupId);
+                manifest->leaderEntity = obstacles.empty() ? 0 : obstacles[0];
                 break;
             }
             case 4: { // Snow
@@ -2658,12 +2657,48 @@ namespace GameCore {
             // Step 4: Update all member positions based on their offsets
             UpdateGroupMemberPositions(groupId);
             
-            // Step 5: Reset obstacle state (pipeCleared, etc.)
+            // Step 5: Reset obstacle state (pipeCleared, etc.) and respawn pickups
+            // Destroy old pickups and spawn fresh ones for this group
+            std::vector<Gnosis::Entity> oldPickups;
             for (const auto& member : manifest->allMembers) {
                 Obstacle* obstacle = m_ecsSystem->GetComponent<Obstacle>(member.entity);
                 if (obstacle) {
                     obstacle->pipeCleared = false;  // Reset for reuse
                 }
+                
+                // Collect pickups to destroy
+                Pickup* pickup = m_ecsSystem->GetComponent<Pickup>(member.entity);
+                if (pickup) {
+                    oldPickups.push_back(member.entity);
+                }
+            }
+            
+            // Destroy old pickups (they may have been collected)
+            for (Gnosis::Entity pickup : oldPickups) {
+                m_ecsSystem->DestroyEntity(pickup);
+            }
+            
+            // Respawn fresh pickups for this group
+            if (m_pickupSystem && manifest->pickupCount > 0) {
+                std::vector<Gnosis::Entity> newPickups = m_pickupSystem->SpawnCoinsForGroup(
+                    groupId, 
+                    manifest->pattern, 
+                    manifest->gapWidth
+                );
+                
+                // Add new pickups to manifest
+                for (Gnosis::Entity coin : newPickups) {
+                    Transform* coinTransform = m_ecsSystem->GetComponent<Transform>(coin);
+                    if (coinTransform) {
+                        float offsetX = coinTransform->position.x - newX;
+                        float offsetY = coinTransform->position.y;
+                        manifest->allMembers.push_back(GroupMemberOffset(coin, offsetX, offsetY));
+                    }
+                }
+                manifest->pickupCount = newPickups.size();
+                
+                GN_LOG_INFO("[Orchestrator] Respawned " + std::to_string(newPickups.size()) + 
+                           " fresh pickups for group " + std::to_string(groupId));
             }
             
             // Step 6: Level-specific randomization on wrap

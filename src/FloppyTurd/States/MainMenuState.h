@@ -12,7 +12,7 @@ namespace GameCore {
     /**
      * @brief Main Menu State - displays the game's main menu with logo and options
      * 
-     * Features the Floppy Turd logo with interactive F button, and menu options
+     * Features the Pooper Trooper logo with interactive pulsing effect, and menu options
      * for Playing, Options, Quick Play, and Quit. Supports both desktop and mobile layouts.
      */
     class MainMenuState : public GameState {
@@ -103,7 +103,8 @@ namespace GameCore {
         // UI Entity storage
         Gnosis::Entity m_backgroundEntity;
         Gnosis::Entity m_logoEntity;
-        Gnosis::Entity m_fButtonEntity;
+        Gnosis::Entity m_fButtonEntity;  // Deprecated - kept for compatibility, logo is now interactive
+        bool m_logoPressed = false;      // Track if logo is being pressed for interaction
         
         // Menu button entities (now with integrated text)
         Gnosis::Entity m_playButtonEntity;
@@ -117,6 +118,7 @@ namespace GameCore {
         Gnosis::Entity m_versionTextEntity;
         
         // Level select entities
+        Gnosis::Entity m_levelSelectBackgroundEntity = 0; // The purple menu background
         std::vector<LevelInfo> m_levels;
         int m_currentLevelIndex;
         int m_selectedLevelIndex; // Level selected for gameplay
@@ -186,6 +188,11 @@ namespace GameCore {
         Gnosis::Entity m_adControlsBackButtonEntity = 0;
         Gnosis::Entity m_removeAdsLabelEntity = 0;
         Gnosis::Entity m_removeAdsPriceButtonEntity = 0;
+        
+        // IAP purchase debouncer and state
+        float m_iapPurchaseDebounceTimer = 0.0f;
+        static constexpr float IAP_DEBOUNCE_DURATION = 2.0f;  // 2 second debounce
+        bool m_hasCompletedPurchase = false;  // Track if purchase was completed this session
         
         // Swipe mechanics for level select
         float m_swipeStartX;

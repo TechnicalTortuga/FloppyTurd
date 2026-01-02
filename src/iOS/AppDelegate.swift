@@ -1,13 +1,13 @@
 //
 //  AppDelegate.swift
-//  FloppyTurd
+//  PooperTrooper
 //
 //  iOS Application Delegate using Swift 5.9+ native C++ interop
-//  Entry point for FloppyTurd iOS app with direct C++ integration
+//  Entry point for Pooper Trooper iOS app with direct C++ integration
 //  Handles app lifecycle events and crash reporting setup
 //
 //  With Swift 5.9+, this class can be directly accessed from C++ if needed:
-//  auto appDelegate = std::make_unique<FloppyTurd::AppDelegate>();
+//  auto appDelegate = std::make_unique<PooperTrooper::AppDelegate>();
 //
 
 import UIKit
@@ -19,7 +19,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     // MARK: - Properties
 
     var window: UIWindow?
-    private let logger = Logger(subsystem: "com.floppyturd.ios", category: "AppDelegate")
+    private let logger = Logger(subsystem: "com.poopertrooper.ios", category: "AppDelegate")
 
     // MARK: - Application Lifecycle
 
@@ -28,7 +28,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
-        logger.info("FloppyTurd app launching...")
+        logger.info("Pooper Trooper app launching...")
 
         // Setup crash reporting (nonisolated)
         Task.detached { [weak self] in
@@ -54,7 +54,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         UIDevice.current.beginGeneratingDeviceOrientationNotifications()
         logger.info("Device orientation monitoring enabled")
 
-        logger.info("FloppyTurd app launched successfully")
+        logger.info("Pooper Trooper app launched successfully")
         return true
     }
 

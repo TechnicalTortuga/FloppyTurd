@@ -1,6 +1,6 @@
 //
 //  GameViewController.swift
-//  FloppyTurd
+//  PooperTrooper
 //
 //  Main game view controller for iOS using Swift 5.9+ native C++ interop
 //  Direct C++ instantiation: auto controller = std::make_unique<FloppyTurd::GameViewController>();

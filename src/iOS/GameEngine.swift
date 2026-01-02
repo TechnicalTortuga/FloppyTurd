@@ -1,11 +1,11 @@
 //
 //  GameEngine.swift
-//  FloppyTurd
+//  PooperTrooper
 //
 //  Swift implementation of game engine using Swift 5.9+ native C++ interop
-//  Direct C++ instantiation: auto engine = std::make_unique<FloppyTurd::GameEngine>();
+//  Direct C++ instantiation: auto engine = std::make_unique<PooperTrooper::GameEngine>();
 //  Created by Carl the Turdsmith on 2024
-//  Copyright © 2024 FloppyTurd. All rights reserved.
+//  Copyright © 2024 PooperTrooper. All rights reserved.
 //
 
 import Foundation
@@ -16,10 +16,10 @@ import Metal
 import QuartzCore
 import UIKit
 
-// import FloppyTurdGame (C++ class is available via module.modulemap and C++ interop)
+// import PooperTrooperGame (C++ class is available via module.modulemap and C++ interop)
 
 /// GameEngine - Swift implementation with native C++ interop
-/// Direct C++ instantiation: std::make_unique<FloppyTurd::GameEngine>()
+/// Direct C++ instantiation: std::make_unique<PooperTrooper::GameEngine>()
 /// Manages game lifecycle and coordinates between iOS and C++ systems
 /// @MainActor ensures all GameEngine operations happen on the main thread
 /// This is required for Swift 6 concurrency safety with UI-related operations

@@ -385,8 +385,9 @@ namespace GameCore {
         }
         
         // Calculate responsive scale based on screen size
-        // Use logical height as base reference (iPhone 16 logical height is 852)
-        const float referenceHeight = 852.0f;  // iPhone 16 logical height
+        // Use logical height as base reference (standardize on a "safe" baseline)
+        // If no valid info, default to 1.0
+        const float referenceHeight = 800.0f;  // Standard reference logical height
         return m_screenInfo.logicalHeight / referenceHeight;
     }
     
@@ -464,9 +465,10 @@ namespace GameCore {
         
         // Use PIXEL dimensions for responsive scaling
         if (isHorizontal) {
-            return basePosition * (m_screenInfo.pixelWidth / 1179.0f);  // iPhone 16 pixel width reference
+             // Scale relative to current screen width vs "standard" width
+            return basePosition * (m_screenInfo.pixelWidth / 1000.0f);  // Dynamic reference
         } else {
-            return basePosition * (m_screenInfo.pixelHeight / 2556.0f); // iPhone 16 pixel height reference
+            return basePosition * (m_screenInfo.pixelHeight / 2000.0f); // Dynamic reference
         }
     }
     
@@ -476,7 +478,7 @@ namespace GameCore {
         }
         
         // Scale sizes using pixel height reference for consistency
-        return baseSize * (m_screenInfo.pixelHeight / 2556.0f);
+        return baseSize * (m_screenInfo.pixelHeight / 2000.0f);
     }
     
     bool UISystem::ToggleButton(Gnosis::Entity entity) {

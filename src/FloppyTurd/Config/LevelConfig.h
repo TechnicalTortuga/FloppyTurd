@@ -347,12 +347,12 @@ namespace GameCore {
                 layer.scrollSpeed = SpeedConstants::BASE_BACKGROUND_SPEED * parallaxMultiplier * diffMultiplier;
             }
             
-            // Update obstacle and enemy speeds with proper base speeds
+            // Update obstacle and enemy speeds to match world speed (same scroll speed)
             for (auto& obstacle : obstacles) {
-                obstacle.speed = SpeedConstants::BASE_OBSTACLE_SPEED * diffMultiplier;
+                obstacle.speed = worldSpeed;  // Match world speed exactly
             }
             for (auto& enemy : enemies) {
-                enemy.speed = SpeedConstants::BASE_ENEMY_SPEED * diffMultiplier;
+                enemy.speed = worldSpeed;  // Match world speed exactly
             }
         }
     };

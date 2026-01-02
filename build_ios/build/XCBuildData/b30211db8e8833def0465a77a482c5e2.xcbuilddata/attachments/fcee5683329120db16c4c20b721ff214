@@ -1,0 +1,17 @@
+/Users/aimac/Development/FloppyTurd/src/iOS/Advertising/AdManager.swift
+/Users/aimac/Development/FloppyTurd/src/iOS/AppDelegate.swift
+/Users/aimac/Development/FloppyTurd/src/iOS/Assets/AssetManager.swift
+/Users/aimac/Development/FloppyTurd/src/iOS/Audio/AVAudioHandler.swift
+/Users/aimac/Development/FloppyTurd/src/iOS/GameCenter/GameCenterManager.swift
+/Users/aimac/Development/FloppyTurd/src/iOS/GameEngine.swift
+/Users/aimac/Development/FloppyTurd/src/iOS/GameViewController.swift
+/Users/aimac/Development/FloppyTurd/src/iOS/Haptics/HapticManager.swift
+/Users/aimac/Development/FloppyTurd/src/iOS/Input/TouchInputHandler.swift
+/Users/aimac/Development/FloppyTurd/src/iOS/Logging/iOSLogHandler.swift
+/Users/aimac/Development/FloppyTurd/src/iOS/Persistence/GameSaveData.swift
+/Users/aimac/Development/FloppyTurd/src/iOS/Persistence/SaveManager.swift
+/Users/aimac/Development/FloppyTurd/src/iOS/Rendering/MetalMatrixHelpers.swift
+/Users/aimac/Development/FloppyTurd/src/iOS/Rendering/MetalRenderer.swift
+/Users/aimac/Development/FloppyTurd/src/iOS/Store/StoreManager.swift
+/Users/aimac/Development/FloppyTurd/src/iOS/Threading/ThreadingSystem.swift
+/Users/aimac/Development/FloppyTurd/build_ios/build/PooperTrooper.build/Debug-iphoneos/DerivedSources/GeneratedAssetSymbols.swift

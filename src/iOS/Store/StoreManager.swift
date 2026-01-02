@@ -1,6 +1,6 @@
 //
 //  StoreManager.swift
-//  FloppyTurd
+//  PooperTrooper
 //
 //  Created by AI Assistant
 //  StoreKit 2 implementation for In-App Purchases

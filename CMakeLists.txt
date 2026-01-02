@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(FloppyTurd VERSION 0.9.8 LANGUAGES CXX Swift)
+project(PooperTrooper VERSION 1.0.3 LANGUAGES CXX Swift)
 
 # Set C++ standard globally
 set(CMAKE_CXX_STANDARD 20)
@@ -67,7 +67,7 @@ else()
 endif()
 
 # Final platform confirmation
-message(STATUS "Final FloppyTurd Platform: ${FLOPPY_PLATFORM}")
+message(STATUS "Final PooperTrooper Platform: ${FLOPPY_PLATFORM}")
 message(STATUS "PLATFORM_IOS: ${PLATFORM_IOS}")
 message(STATUS "PLATFORM_DESKTOP: ${PLATFORM_DESKTOP}")
 
@@ -79,7 +79,7 @@ if(PLATFORM_IOS)
     # CocoaPods Integration - DISABLED (use Swift Package Manager in Xcode instead)
     # =============================================================================
     # Automatic CocoaPods integration disabled to avoid linker conflicts
-    # To use CocoaPods: Run 'pod install' manually, then open FloppyTurd.xcworkspace
+    # To use CocoaPods: Run 'pod install' manually, then open PooperTrooper.xcworkspace
     # Recommended: Add Google Mobile Ads SDK via Swift Package Manager in Xcode
     message(STATUS "CocoaPods auto-integration disabled - add Google Mobile Ads SDK via Xcode SPM")
 
@@ -172,7 +172,7 @@ file(GLOB_RECURSE ENGINE_CORE_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Utility/*.h"
 )
 
-# Common FloppyTurd game sources (used by both platforms)
+# Common PooperTrooper game sources (used by both platforms)
 file(GLOB_RECURSE GAME_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Components/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Components/*.h"
@@ -255,10 +255,10 @@ endif()
 
 if(PLATFORM_IOS)
     # Create iOS app bundle with ALL sources (C++, Swift, Engine - no static library)
-    add_executable(FloppyTurd MACOSX_BUNDLE ${ALL_SOURCES})
+    add_executable(PooperTrooper MACOSX_BUNDLE ${ALL_SOURCES})
 
     # iOS-specific include directories (add Engine for module.modulemap)
-    target_include_directories(FloppyTurd PRIVATE
+    target_include_directories(PooperTrooper PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Core
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Events
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Platform
@@ -283,19 +283,19 @@ if(PLATFORM_IOS)
         ${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Systems
     )
     # Ensure Swift can find the module map and headers
-    set_target_properties(FloppyTurd PROPERTIES
+    set_target_properties(PooperTrooper PROPERTIES
         SWIFT_INCLUDE_PATHS "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine"
         CXX_STANDARD 20
         CXX_STANDARD_REQUIRED ON
         CXX_EXTENSIONS OFF
     )
     # Ensure Swift can find the module map and headers
-    set_target_properties(FloppyTurd PROPERTIES
+    set_target_properties(PooperTrooper PROPERTIES
         HEADER_SEARCH_PATHS "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine"
     )
 
     # iOS Framework dependencies (NO RAYLIB)
-    target_link_libraries(FloppyTurd PRIVATE
+    target_link_libraries(PooperTrooper PRIVATE
         "-framework Foundation"
         "-framework UIKit"
         "-framework Metal"
@@ -313,65 +313,42 @@ if(PLATFORM_IOS)
         "-framework MobileCoreServices"
     )
 
-    # Link manually downloaded Google Mobile Ads SDK XCFrameworks
-    set(ADMOB_SDK_PATH "${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/GoogleMobileAds/GoogleMobileAdsSdkiOS-12.12.0")
+    # Google Mobile Ads SDK - Link for device builds only
+    # AdManager.swift uses #if targetEnvironment(simulator) for stub implementation on simulator
+    set(GOOGLE_ADS_SDK_PATH "${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/GoogleMobileAds/GoogleMobileAdsSdkiOS-12.12.0")
     
-    # Detect if building for simulator or device based on SDK (case-insensitive)
-    string(TOLOWER "${CMAKE_OSX_SYSROOT}" _SYSROOT_LOWER)
-    if(_SYSROOT_LOWER MATCHES "simulator")
-        set(ADMOB_FRAMEWORK_PATH "${ADMOB_SDK_PATH}/GoogleMobileAds.xcframework/ios-arm64_x86_64-simulator")
-        set(UMP_FRAMEWORK_PATH "${ADMOB_SDK_PATH}/UserMessagingPlatform.xcframework/ios-arm64_x86_64-simulator")
-        message(STATUS "✅ Linked Google Mobile Ads SDK and dependencies (SIMULATOR)")
-    else()
-        set(ADMOB_FRAMEWORK_PATH "${ADMOB_SDK_PATH}/GoogleMobileAds.xcframework/ios-arm64")
-        set(UMP_FRAMEWORK_PATH "${ADMOB_SDK_PATH}/UserMessagingPlatform.xcframework/ios-arm64")
-        message(STATUS "✅ Linked Google Mobile Ads SDK and dependencies (DEVICE)")
-    endif()
-
-    if(EXISTS "${ADMOB_SDK_PATH}/GoogleMobileAds.xcframework")
-        message(STATUS "✅ Found Google Mobile Ads SDK at ${ADMOB_SDK_PATH}")
-
-        # Add XCFramework slices (simulator or device)
-        target_link_libraries(FloppyTurd PRIVATE
+    if(PLATFORM STREQUAL "OS64" OR PLATFORM STREQUAL "OS" OR NOT PLATFORM MATCHES "SIMULATOR")
+        # Device build - link GoogleMobileAds
+        message(STATUS "✅ GoogleMobileAds XCFramework linked for DEVICE build")
+        
+        # Add framework search path
+        set_target_properties(PooperTrooper PROPERTIES
+            XCODE_ATTRIBUTE_FRAMEWORK_SEARCH_PATHS "$(inherited) ${GOOGLE_ADS_SDK_PATH}"
+        )
+        
+        # Link the XCFrameworks
+        target_link_libraries(PooperTrooper PRIVATE
             "-framework GoogleMobileAds"
             "-framework UserMessagingPlatform"
-            "-F${ADMOB_FRAMEWORK_PATH}"
-            "-F${UMP_FRAMEWORK_PATH}"
         )
-
-        # Add framework search paths for Xcode
-        set_target_properties(FloppyTurd PROPERTIES
-            XCODE_ATTRIBUTE_FRAMEWORK_SEARCH_PATHS "${ADMOB_FRAMEWORK_PATH} ${UMP_FRAMEWORK_PATH}"
-        )
-
-        # Add required system frameworks for AdMob
-        target_link_libraries(FloppyTurd PRIVATE
-            "-framework AdSupport"
-            "-framework SafariServices"
-            "-framework StoreKit"
-            "-framework CoreTelephony"
-            "-framework CFNetwork"
-            "-framework Network"
-            "-framework JavaScriptCore"
-            "-framework MediaPlayer"
-            "-framework MessageUI"
-            "-framework CoreMedia"
-            "-framework Security"
-            "-framework SystemConfiguration"
-            "-framework WebKit"
-            "-lsqlite3"
-            "-lz"
+        
+        # Embed the frameworks with proper signing
+        set_target_properties(PooperTrooper PROPERTIES
+            XCODE_EMBED_FRAMEWORKS "${GOOGLE_ADS_SDK_PATH}/GoogleMobileAds.xcframework;${GOOGLE_ADS_SDK_PATH}/UserMessagingPlatform.xcframework"
+            XCODE_EMBED_FRAMEWORKS_CODE_SIGN_ON_COPY YES
+            XCODE_EMBED_FRAMEWORKS_REMOVE_HEADERS_ON_COPY YES
+            XCODE_ATTRIBUTE_LD_RUNPATH_SEARCH_PATHS "$(inherited) @executable_path/Frameworks"
         )
     else()
-        message(WARNING "⚠️  Google Mobile Ads SDK not found at ${ADMOB_SDK_PATH}")
-        message(WARNING "    Run: ./download_admob_sdk.sh to download the SDK")
+        # Simulator build - skip GoogleMobileAds (uses stub in AdManager.swift)
+        message(STATUS "⚠️  GoogleMobileAds XCFramework NOT linked (SIMULATOR build - using stubs)")
     endif()
 else()
     # Create desktop executable
-    add_executable(FloppyTurd ${ALL_SOURCES})
+    add_executable(PooperTrooper ${ALL_SOURCES})
 
     # Desktop-specific include directories
-    target_include_directories(FloppyTurd PRIVATE
+    target_include_directories(PooperTrooper PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Core
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Events
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Platform
@@ -385,7 +362,7 @@ else()
     )
 
     # Desktop dependencies (WITH RAYLIB)
-    target_link_libraries(FloppyTurd PRIVATE raylib)
+    target_link_libraries(PooperTrooper PRIVATE raylib)
 endif()
 
 # Platform-specific compile definitions
@@ -408,34 +385,75 @@ else()
 endif()
 
 # Apply common compile definitions and properties to all targets
-target_compile_definitions(FloppyTurd PRIVATE ${COMMON_COMPILE_DEFINITIONS})
+target_compile_definitions(PooperTrooper PRIVATE ${COMMON_COMPILE_DEFINITIONS})
+
+# Global Xcode settings (Minimal to allow Automatic signing to work)
+set(CMAKE_XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET "17.0")
 
 # Platform-specific target properties
 if(PLATFORM_IOS)
-    set_target_properties(FloppyTurd PROPERTIES
+    # Check if Info.plist exists, if not generate a minimal one
+    if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Info.plist")
+        message(WARNING "Info.plist not found, will be auto-generated by Xcode")
+    else()
+        message(STATUS "Using Info.plist: ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist")
+    endif()
+
+    # Check if entitlements file exists
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/PooperTrooper.entitlements")
+        set(ENTITLEMENTS_FILE "${CMAKE_CURRENT_SOURCE_DIR}/PooperTrooper.entitlements")
+        message(STATUS "Using entitlements file: ${ENTITLEMENTS_FILE}")
+    else()
+        message(WARNING "PooperTrooper.entitlements not found - app may not sign properly")
+        set(ENTITLEMENTS_FILE "")
+    endif()
+
+    set_target_properties(PooperTrooper PROPERTIES
         MACOSX_BUNDLE ON
         MACOSX_BUNDLE_GUI_IDENTIFIER "com.floppyturd.game"
+        MACOSX_BUNDLE_BUNDLE_NAME "PooperTrooper"
+        MACOSX_BUNDLE_BUNDLE_VERSION "1.0.3"
+        MACOSX_BUNDLE_SHORT_VERSION_STRING "1.0.3"
         MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info.plist"
         XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.floppyturd.game"
-        XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "86886N72J8"
-        XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "Apple Development"
+        XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "W77G58P3X9"
         XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET "17.0"
-        XCODE_ATTRIBUTE_PRODUCT_NAME "FloppyTurd"
-        XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1"
-        XCODE_ATTRIBUTE_SWIFT_OBJC_INTERFACE_HEADER_NAME "FloppyTurd-Swift.h"
+        XCODE_ATTRIBUTE_PRODUCT_NAME "PooperTrooper"
+        XCODE_ATTRIBUTE_MARKETING_VERSION "1.0.3"
+        XCODE_ATTRIBUTE_CURRENT_PROJECT_VERSION "1"
+        XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2" # 1=iPhone, 2=iPad (Universal App)
+        XCODE_ATTRIBUTE_INFOPLIST_KEY_UISupportedInterfaceOrientations "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        XCODE_ATTRIBUTE_INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        XCODE_ATTRIBUTE_INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone "UIInterfaceOrientationPortrait"
+        XCODE_ATTRIBUTE_INFOPLIST_KEY_UILaunchScreen_Generation "YES"
+        XCODE_ATTRIBUTE_SWIFT_OBJC_INTERFACE_HEADER_NAME "PooperTrooper-Swift.h"
         XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
+        XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "Apple Development"
+        XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY[sdk=iphoneos*] "Apple Development"
+        XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "YES"
+        XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "YES"
+        XCODE_ATTRIBUTE_CODE_SIGN_INJECT_BASE_ENTITLEMENTS "YES"
         XCODE_ATTRIBUTE_SWIFT_VERSION "6.0"
         XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon"
         XCODE_ATTRIBUTE_INSTALL_PATH "$(LOCAL_APPS_DIR)"
         XCODE_ATTRIBUTE_SKIP_INSTALL "NO"
         XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT "dwarf-with-dsym"
-        XCODE_ATTRIBUTE_DEPLOYMENT_POSTPROCESSING "YES"
         XCODE_ATTRIBUTE_GCC_GENERATE_DEBUGGING_SYMBOLS "YES"
-        XCODE_ATTRIBUTE_CONFIGURATION_BUILD_DIR "$(inherited)"
+        XCODE_ATTRIBUTE_ENABLE_BITCODE "NO"
+        XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH[variant=Debug] "YES"
+        XCODE_ATTRIBUTE_COPY_PHASE_STRIP "NO"
+        XCODE_ATTRIBUTE_STRIP_INSTALLED_PRODUCT "NO"
     )
 
+    # Set entitlements file if it exists
+    if(ENTITLEMENTS_FILE)
+        set_target_properties(PooperTrooper PROPERTIES
+            XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS "${ENTITLEMENTS_FILE}"
+        )
+    endif()
+
     # Swift/C++ interop compiler options
-    target_compile_options(FloppyTurd PRIVATE
+    target_compile_options(PooperTrooper PRIVATE
         $<$<COMPILE_LANGUAGE:Swift>:-cxx-interoperability-mode=default>
         $<$<COMPILE_LANGUAGE:Swift>:-swift-version 6.0>
         $<$<COMPILE_LANGUAGE:CXX>:-std=c++20>
@@ -448,7 +466,7 @@ endif()
 # ---- Asset Catalog generation for iOS resources ----
 if(PLATFORM_IOS)
     # Create asset catalog structure with generate_asset_catalog.sh
-    add_custom_command(TARGET FloppyTurd PRE_BUILD
+    add_custom_command(TARGET PooperTrooper PRE_BUILD
         COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_asset_catalog.sh
         COMMENT "Generating asset catalog from resources"
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -462,12 +480,12 @@ if(PLATFORM_IOS)
     )
 
     # Add the Assets.xcassets directory to the target
-    target_sources(FloppyTurd PRIVATE
+    target_sources(PooperTrooper PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Assets.xcassets
     )
 
     # Set the ASSETCATALOG_COMPILER_APPICON_NAME if not set
-    set_target_properties(FloppyTurd PROPERTIES
+    set_target_properties(PooperTrooper PROPERTIES
         ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon"
     )
 
@@ -480,7 +498,7 @@ if(PLATFORM_IOS)
     foreach(FONT_FILE ${FONT_FNT_FILES})
         message(STATUS "Adding .fnt file to bundle: ${FONT_FILE}")
         set_source_files_properties(${FONT_FILE} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
-        target_sources(FloppyTurd PRIVATE ${FONT_FILE})
+        target_sources(PooperTrooper PRIVATE ${FONT_FILE})
     endforeach()
 
     # Also add .ttf files for completeness
@@ -491,7 +509,7 @@ if(PLATFORM_IOS)
     foreach(FONT_FILE ${FONT_TTF_FILES})
         message(STATUS "Adding .ttf file to bundle: ${FONT_FILE}")
         set_source_files_properties(${FONT_FILE} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
-        target_sources(FloppyTurd PRIVATE ${FONT_FILE})
+        target_sources(PooperTrooper PRIVATE ${FONT_FILE})
     endforeach()
 
     # Also try adding fonts to a fonts subdirectory in the bundle
@@ -500,7 +518,7 @@ if(PLATFORM_IOS)
         if(NOT IS_DIRECTORY ${FONT_FILE})
             message(STATUS "Adding font file to fonts subdirectory: ${FONT_FILE}")
             set_source_files_properties(${FONT_FILE} PROPERTIES MACOSX_PACKAGE_LOCATION Resources/fonts)
-            target_sources(FloppyTurd PRIVATE ${FONT_FILE})
+            target_sources(PooperTrooper PRIVATE ${FONT_FILE})
         endif()
     endforeach()
 
@@ -510,26 +528,26 @@ if(PLATFORM_IOS)
     foreach(HAT_FILE ${HAT_FILES})
         message(STATUS "Adding hat file to bundle: ${HAT_FILE}")
         set_source_files_properties(${HAT_FILE} PROPERTIES MACOSX_PACKAGE_LOCATION Resources/hats)
-        target_sources(FloppyTurd PRIVATE ${HAT_FILE})
+        target_sources(PooperTrooper PRIVATE ${HAT_FILE})
     endforeach()
 
     # Metal shaders
     file(GLOB METAL_SHADERS "${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/Shaders/*.metal")
     foreach(SHADER ${METAL_SHADERS})
         set_source_files_properties(${SHADER} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
-        target_sources(FloppyTurd PRIVATE ${SHADER})
+        target_sources(PooperTrooper PRIVATE ${SHADER})
     endforeach()
 endif()
 
 # Compiler warnings
-target_compile_options(FloppyTurd PRIVATE
+target_compile_options(PooperTrooper PRIVATE
     $<$<COMPILE_LANGUAGE:CXX>:-Wall>
     $<$<COMPILE_LANGUAGE:CXX>:-Wextra>
     $<$<COMPILE_LANGUAGE:CXX>:-Wno-deprecated-declarations>
 )
 
 if(PLATFORM_IOS)
-    target_compile_options(FloppyTurd PRIVATE
+    target_compile_options(PooperTrooper PRIVATE
         $<$<COMPILE_LANGUAGE:Swift>:-warnings-as-errors>
     )
 endif()
@@ -539,9 +557,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Status messages
 if(PLATFORM_IOS)
-    message(STATUS "FloppyTurd Engine configured for iOS 17+ with Swift 6.0 and native C++ interop")
-    message(STATUS "Swift header: FloppyTurd-Swift.h")
+    message(STATUS "PooperTrooper Engine configured for iOS 17+ with Swift 6.0 and native C++ interop")
+    message(STATUS "Swift header: PooperTrooper-Swift.h")
     message(STATUS "Asset catalog will be generated from src/assets/")
 else()
-    message(STATUS "FloppyTurd Engine configured for ${PLATFORM} with Raylib")
+    message(STATUS "PooperTrooper Engine configured for ${PLATFORM} with Raylib")
 endif()

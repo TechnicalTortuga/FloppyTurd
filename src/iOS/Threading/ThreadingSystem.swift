@@ -1,9 +1,9 @@
 //
 //  ThreadingSystem.swift
-//  FloppyTurd
+//  PooperTrooper
 //
 //  Native C++/Swift interop threading system for processing render commands
-//  Part of the Floppy Turd threading architecture for smooth C++/Swift interop
+//  Part of the Pooper Trooper threading architecture for smooth C++/Swift interop
 //  Uses Swift 5.9+ C++ interoperability features
 //
 

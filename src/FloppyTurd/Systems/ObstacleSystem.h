@@ -123,7 +123,7 @@ namespace GameCore {
         // Pattern spawn functions (NEW: return created entities for manifest tracking)
         // PUBLIC: LevelManager orchestrator calls these to spawn obstacles
         std::pair<Gnosis::Entity, Gnosis::Entity> SpawnParkPattern_ToiletPair(float x, int groupId);
-        Gnosis::Entity SpawnDesertPattern_Outhouse(float x, int groupId);
+        std::vector<Gnosis::Entity> SpawnDesertPattern_Outhouse(float x, int groupId);
         Gnosis::Entity SpawnDesertPattern_Cactus(float x, int groupId);
         std::vector<Gnosis::Entity> SpawnSewerPattern_TopOnly(float x, int groupId);
         std::vector<Gnosis::Entity> SpawnSewerPattern_BottomOnly(float x, int groupId);

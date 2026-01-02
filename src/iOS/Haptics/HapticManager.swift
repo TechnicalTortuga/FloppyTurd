@@ -1,6 +1,6 @@
 //
 //  HapticManager.swift
-//  FloppyTurd
+//  PooperTrooper
 //
 //  iOS Haptic Feedback System - Thread-safe singleton manager for haptic feedback
 //

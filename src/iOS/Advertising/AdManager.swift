@@ -1,6 +1,6 @@
 //
 //  AdManager.swift
-//  FloppyTurd
+//  PooperTrooper
 //
 //  Created by Carl the Code-Conjuring Turdsmith
 //  AdMob interstitial advertising integration with preloading/caching
@@ -9,8 +9,11 @@
 
 import Foundation
 import GameCorePlatform
-import GoogleMobileAds
 import UIKit
+
+#if !targetEnvironment(simulator)
+import GoogleMobileAds
+#endif
 
 // MARK: - Ad Loading Error Types
 
@@ -21,6 +24,51 @@ enum AdLoadingError: Error {
     case noAdAvailable
     case sdkNotInitialized
 }
+
+// =============================================================================
+// SIMULATOR STUBS - Ads disabled on simulator to avoid XCFramework linking issues
+// =============================================================================
+#if targetEnvironment(simulator)
+
+/// Stub AdManager for simulator builds (no actual ad loading)
+@MainActor
+class AdManager: NSObject {
+    static let shared = AdManager()
+    private(set) var adsEnabled: Bool = true
+    weak var viewController: GameViewController?
+    
+    private override init() {
+        super.init()
+        SwiftLog.info("AdManager: SIMULATOR BUILD - ads disabled", category: "AdManager")
+    }
+    
+    func preloadAd() {
+        SwiftLog.info("AdManager: SIMULATOR - preloadAd() stub called", category: "AdManager")
+        GameCore.setAdReadyState(false)
+    }
+    
+    func showAd() {
+        SwiftLog.info("AdManager: SIMULATOR - showAd() stub called", category: "AdManager")
+    }
+    
+    func isAdReady() -> Bool {
+        return false
+    }
+    
+    func setAdsEnabled(_ enabled: Bool) {
+        adsEnabled = enabled
+        GameCore.setAdReadyState(false)
+    }
+    
+    static func initializeSDK() {
+        SwiftLog.info("AdManager: SIMULATOR - SDK initialization stub called", category: "AdManager")
+    }
+}
+
+#else
+// =============================================================================
+// DEVICE IMPLEMENTATION - Full AdMob integration
+// =============================================================================
 
 // MARK: - Background Ad Loading Actor
 
@@ -441,3 +489,5 @@ extension AdManager: FullScreenContentDelegate {
         preloadAd()
     }
 }
+
+#endif // !targetEnvironment(simulator)

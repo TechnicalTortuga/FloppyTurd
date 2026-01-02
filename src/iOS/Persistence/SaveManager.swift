@@ -1,6 +1,6 @@
 //
 //  SaveManager.swift
-//  FloppyTurd
+//  PooperTrooper
 //
 //  Created on 2024
 //  iOS Serialization System - Main Save/Load Manager
@@ -17,11 +17,11 @@ final class SaveManager: @unchecked Sendable {
 
     // MARK: - Properties
 
-    private let logger = Logger(subsystem: "com.floppyturd.ios", category: "SaveManager")
-    private let saveQueue = DispatchQueue(label: "com.floppyturd.savequeue", qos: .utility)
+    private let logger = Logger(subsystem: "com.poopertrooper.ios", category: "SaveManager")
+    private let saveQueue = DispatchQueue(label: "com.poopertrooper.savequeue", qos: .utility)
     private var isSaving = false
 
-    private let saveFileName = "floppyturd_save_v3.plist"  // Binary plist (not human-readable)
+    private let saveFileName = "poopertrooper_save_v1.plist"  // Binary plist (not human-readable)
 
     private var documentsURL: URL {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
@@ -393,7 +393,7 @@ final class SaveManager: @unchecked Sendable {
     /// Secret key for HMAC validation (prevents save file tampering)
     /// In production, this should be obfuscated or derived from device-specific data
     private static let hmacKey = SymmetricKey(
-        data: "FloppyTurd-SaveFile-Key-2025".data(using: .utf8)!)
+        data: "PooperTrooper-SaveFile-Key-2025".data(using: .utf8)!)
 
     nonisolated private func performSave(_ data: GameSaveData) -> Bool {
         do {
@@ -482,7 +482,7 @@ final class SaveManager: @unchecked Sendable {
 /// - Returns: JSON string containing game save data, or empty string if no save exists
 @_expose(Cxx)
 public func loadGameDataSync() -> String {
-    let logger = Logger(subsystem: "com.floppyturd.ios", category: "SaveManager")
+    let logger = Logger(subsystem: "com.poopertrooper.ios", category: "SaveManager")
     logger.info("🔍 Synchronous load requested from C++")
 
     guard let jsonString = SaveManager.processLoadGameCommandSync() else {
@@ -492,4 +492,16 @@ public func loadGameDataSync() -> String {
 
     logger.info("✅ Returning KEY:VALUE data to C++ (\(jsonString.count) chars)")
     return jsonString
+}
+
+/// Check if "Remove Ads" IAP has been purchased (synchronous for C++ interop)
+/// Called directly from C++ to check purchase status
+/// - Returns: true if purchased, false otherwise
+@_expose(Cxx)
+public func hasRemoveAdsPurchasedSync() -> Bool {
+    // Access main-actor isolated property synchronously
+    // This is safe because we're just reading a bool value
+    return MainActor.assumeIsolated {
+        StoreManager.shared.hasPurchasedRemoveAds
+    }
 }

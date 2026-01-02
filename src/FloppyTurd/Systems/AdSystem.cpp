@@ -149,4 +149,16 @@ bool AdSystem::ShouldShowAd() const {
     return m_deathCountSinceLastAd >= m_adFrequencyDeaths;
 }
 
+void AdSystem::LoadCountersFromGameStats(int deathsSinceLastAd, int totalDeaths) {
+    m_deathCountSinceLastAd = deathsSinceLastAd;
+    m_totalDeathCount = totalDeaths;
+    GN_LOG_INFO("AdSystem: Loaded counters from save - Deaths since last ad: %d, Total: %d",
+                m_deathCountSinceLastAd, m_totalDeathCount);
+}
+
+void AdSystem::GetCountersForSave(int& outDeathsSinceLastAd, int& outTotalDeaths) const {
+    outDeathsSinceLastAd = m_deathCountSinceLastAd;
+    outTotalDeaths = m_totalDeathCount;
+}
+
 } // namespace FloppyTurd

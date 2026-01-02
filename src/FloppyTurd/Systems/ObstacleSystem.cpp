@@ -371,7 +371,9 @@ namespace GameCore {
     }
 
 
-    Gnosis::Entity ObstacleSystem::SpawnDesertPattern_Outhouse(float x, int groupId) {
+    std::vector<Gnosis::Entity> ObstacleSystem::SpawnDesertPattern_Outhouse(float x, int groupId) {
+        std::vector<Gnosis::Entity> entities;
+        
         const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
         const float outhouseW = 90.0f;
         const float outhouseH = 160.0f;
@@ -414,10 +416,10 @@ namespace GameCore {
         
         // Calculate the center position in the gap FOLLOWING this outhouse
         // The outhouse is at x, and we want the brick wall centered in the gap that follows
-        // Gap width is managed by LevelManager manifest (800px for desert)
+        // Gap width is managed by LevelManager manifest (928px for desert)
         // We'll use a local reasonable estimate that matches typical desert gaps
         const float outhouseRightEdge = x + (outhouseW * m_baseScale);
-        const float estimatedGapWidth = 800.0f; // Matches LevelManager desert gapWidth
+        const float estimatedGapWidth = 928.0f; // Matches LevelManager desert gapWidth
         const float brickWallSpriteWidth = 64.0f; // Visual sprite width
         // Center the brick wall in the gap following this outhouse
         const float brickWallX = outhouseRightEdge + (estimatedGapWidth * 0.5f) - (brickWallSpriteWidth * m_baseScale * 0.5f);
@@ -458,6 +460,16 @@ namespace GameCore {
             brickObstacle.basePosition = Gnosis::GNVector2(brickWallX, brickWallY);
             m_ecsSystem->AddComponent<Obstacle>(brickWall, brickObstacle);
             
+            // Add Group component so brick wall is part of the group and wraps with outhouse
+            Group brickGroup;
+            brickGroup.id = groupId;
+            brickGroup.isLeader = false;
+            brickGroup.offsetX = brickWallX - x;  // Offset from outhouse position
+            brickGroup.offsetY = brickWallY;
+            brickGroup.groupWidth = brickWallSpriteWidth * m_baseScale;
+            brickGroup.pattern = GroupPattern::Ground;
+            m_ecsSystem->AddComponent<Group>(brickWall, brickGroup);
+            
             // DebugDraw DISABLED for brick walls per user request
             // if (m_debugMode) {
             //     DebugDraw debugDraw;
@@ -472,6 +484,9 @@ namespace GameCore {
             // Add brick wall to active tracking
             m_activeObstacles.push_back(brickWall);
             
+            // Add brick wall to entities vector so it's included in the group manifest
+            entities.push_back(brickWall);
+            
             GN_LOG_DEBUG("Spawned brick wall at x=" + std::to_string(brickWallX) + ", y=" + std::to_string(brickWallY));
         }
         
@@ -482,6 +497,10 @@ namespace GameCore {
         m_activeObstacles.push_back(outhouse);
         m_activeObstacles.push_back(toilet);
         
+        // Add outhouse and toilet to entities vector (brick wall already added above)
+        entities.push_back(outhouse);
+        entities.push_back(toilet);
+        
         GN_LOG_DEBUG("Spawned desert outhouse at x=" + std::to_string(x) + ", groupId=" + std::to_string(groupId));
         GN_LOG_DEBUG("Outhouse hitbox: solid collision, width=" + std::to_string((90.0f - 16.0f) * m_baseScale) + 
                      ", height=" + std::to_string((160.0f - 64.0f) * m_baseScale) + 
@@ -490,8 +509,8 @@ namespace GameCore {
                      ", height=" + std::to_string(160.0f * m_baseScale) + 
                      ", offsetX=" + std::to_string((90.0f / 4 + 4.0f) * m_baseScale) + ", offsetY=0");
         
-        // Return outhouse as primary entity (NOTE: toilet and brick wall are subordinates)
-        return outhouse;
+        // Return all entities (outhouse, toilet, and brick wall) for manifest tracking
+        return entities;
     }
 
     Gnosis::Entity ObstacleSystem::SpawnDesertPattern_Cactus(float x, int groupId) {

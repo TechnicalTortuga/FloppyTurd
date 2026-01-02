@@ -815,6 +815,9 @@ namespace GameCore {
             }
         }
         
+        // NOTE: Off-screen death check is handled in GameplayState::CheckToiletCollisions()
+        // to avoid needing ConfigManager here
+        
         // Store current velocity for next frame's direction detection
         m_lastVerticalVelocity = physics->velocity.y;
         
