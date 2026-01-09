@@ -2150,7 +2150,9 @@ namespace GameCore {
         }
     }
 
-    std::pair<Gnosis::Entity, Gnosis::Entity> ObstacleSystem::SpawnCastlePattern_GoldToiletPair(float x, int groupId, float gapWidth) {
+    std::vector<Gnosis::Entity> ObstacleSystem::SpawnCastlePattern_GoldToiletPair(float x, int groupId, float gapWidth) {
+        std::vector<Gnosis::Entity> spawnedEntities;
+        
         // Create oscillating gold toilet pair with vertical movement for castle level
         const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
         float screenHeight = screenInfo.pixelHeight;
@@ -2178,6 +2180,7 @@ namespace GameCore {
         
         // Create top gold toilet with oscillation
         Gnosis::Entity topToilet = m_ecsSystem->CreateEntity();
+        spawnedEntities.push_back(topToilet);
         
         Transform topTransform(Gnosis::GNVector2(x, topToiletY), 0.0f, 
                               Gnosis::GNVector2(m_baseScale, m_baseScale));
@@ -2218,10 +2221,9 @@ namespace GameCore {
         m_ecsSystem->AddComponent<Hitbox>(topToilet, topCollider);
         m_ecsSystem->AddComponent<Obstacle>(topToilet, topObstacle);
         
-
-        
         // Create bottom gold toilet with same oscillation (linked movement)
         Gnosis::Entity bottomToilet = m_ecsSystem->CreateEntity();
+        spawnedEntities.push_back(bottomToilet);
         
         Transform bottomTransform(Gnosis::GNVector2(x, bottomToiletY), 0.0f, 
                                  Gnosis::GNVector2(m_baseScale, m_baseScale));
@@ -2300,13 +2302,14 @@ namespace GameCore {
         m_activeObstacles.push_back(bottomToilet);
         
         // NOTE: GroupManifest will be built by LevelManager::SpawnGroup()
-        // Decorations are spawned inline below and will be collected by orchestrator
+        // Decorations are spawned inline below and WILL be collected by orchestrator
         
         // FIXED: Include decorations IN THE SAME GROUP so they wrap with toilets
         // Decorations don't affect coin positioning because they lack Obstacle component (coin calc requires Obstacle)
         
         // Spawn curtain
         Gnosis::Entity curtain = SpawnCastleCurtain(x, groupId);
+        spawnedEntities.push_back(curtain);
         
         // Spawn decorative elements positioned relative to this toilet group
         // Floor torches: positioned to left and right of toilet group
@@ -2320,6 +2323,8 @@ namespace GameCore {
         float rightTorchOffsetX = rightTorchX - x;
         Gnosis::Entity leftTorch = SpawnCastleFloorTorch(leftTorchX, groupId, leftTorchOffsetX);
         Gnosis::Entity rightTorch = SpawnCastleFloorTorch(rightTorchX, groupId, rightTorchOffsetX);
+        spawnedEntities.push_back(leftTorch);
+        spawnedEntities.push_back(rightTorch);
         
         // CASTLE CENTERPIECE POSITIONING: Calculate based on CURTAIN positions, not toilet positions
         // Curtains are 256px wide at screen-based scale (curtainScale = screenHeight / 512)
@@ -2362,6 +2367,8 @@ namespace GameCore {
         
         Gnosis::Entity leftChandelier = SpawnCastleChandelier(leftChandelierX, groupId, leftChandelierOffsetX);
         Gnosis::Entity rightChandelier = SpawnCastleChandelier(rightChandelierX, groupId, rightChandelierOffsetX);
+        spawnedEntities.push_back(leftChandelier);
+        spawnedEntities.push_back(rightChandelier);
         
         GN_LOG_INFO("[CASTLE_CHANDELIER] Left at X=" + std::to_string(leftChandelierX) + ", Right at X=" + std::to_string(rightChandelierX) + " (gap center=" + std::to_string(gapCenterX) + ")");
         
@@ -2381,19 +2388,27 @@ namespace GameCore {
                 centerpiece = SpawnCastleDecorativePainting(gapCenterX, groupId, centerOffsetX);
                 break;
             case 2:
+                // Spike ball (and its base) need to be added
                 centerpiece = SpawnCastleSpikeBall(gapCenterX, groupId, centerOffsetX);
+                // Also need to find and add the BASE since SpawnCastleSpikeBall returns the ball
+                // The base is stored in m_spikeBallToBase map
+                if (m_spikeBallToBase.find(centerpiece) != m_spikeBallToBase.end()) {
+                    spawnedEntities.push_back(m_spikeBallToBase[centerpiece]); // Add base
+                }
                 break;
+        }
+        if (centerpiece != 0) {
+            spawnedEntities.push_back(centerpiece);
         }
         centerCounter++;
         
         GN_LOG_INFO("[CASTLE_CENTERPIECE] Type=" + std::to_string(centerpieceType) + " at X=" + std::to_string(gapCenterX) + ", offset from toilet=" + std::to_string(centerOffsetX));
         
         GN_LOG_INFO("[CASTLE_TOILET] Spawned oscillating gold toilet pair at x=" + std::to_string(x) + " with group " + std::to_string(groupId));
+        GN_LOG_INFO("[CASTLE_TOILET] Returned " + std::to_string(spawnedEntities.size()) + " entities to manifest");
         
-        // NOTE: Decorations are currently spawned inline above
-        // TODO: In orchestrator implementation, decorations will be spawned separately by LevelManager
-        // Return toilet pair for manifest tracking
-        return std::make_pair(topToilet, bottomToilet);
+        // Return ALL entities for manifest tracking
+        return spawnedEntities;
     }
 
     Gnosis::Entity ObstacleSystem::SpawnCastleCurtain(float x, int groupId /* -1 = no group */) {

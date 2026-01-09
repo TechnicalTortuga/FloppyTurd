@@ -65,7 +65,7 @@ namespace GameCore {
         // 🎯 NEW: Set RenderSystem reference for cache access
         void SetRenderSystem(RenderSystem* renderSystem);
         // Pool-based updates (no dynamic spawns during gameplay)
-        void UpdateEnemyPooling(float deltaTime, float worldScrollDistance);
+        void UpdateEnemyPooling(float deltaTime, float worldScrollDistance, int pipesCleared);
         void UpdateNPCPooling(float deltaTime, float worldScrollDistance);
         
         // Obstacle system delegation
@@ -189,12 +189,14 @@ namespace GameCore {
         
         // Spawn timers
         float m_enemySpawnTimer;
+        float m_respawnTimer = 0.0f; // NEW: Controls rate of respawning from pool
         // REMOVED: m_pickupSpawnTimer - pickup spawning moved to GameplayState
         float m_npcSpawnTimer;
         static constexpr int MAX_ENEMY_POOL_SIZE = 16; // Total enemies in pool (increased for better variety)
         int m_maxActiveEnemies = 4; // Limit active enemies (can be increased with pooling)
         float m_enemySpacing = 450.0f; // Horizontal spacing used when wrapping enemy pool
         bool m_enemyPoolInitialized = false;
+        bool m_vFormationPointsDown = false; // Tracks current V-formation direction for bird groups
         bool m_npcPoolInitialized = false;
         // REMOVED: m_projectilePoolInitialized - projectile pooling now handled by ProjectileSystem
         // REMOVED: m_attachCoinsToGroups - coin attachment moved to GameplayState

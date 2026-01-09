@@ -732,17 +732,17 @@ namespace GameCore {
     std::string LeaderboardState::GetPageTitle(LeaderboardPage page) const {
         switch (page) {
             case LeaderboardPage::LEVEL_1_PARK:
-                return "A Flop in the Park";
+                return "Legacy Mode: Park";
             case LeaderboardPage::LEVEL_2_SEWER:
-                return "Home Sweet Home";
+                return "Level 1: Home Sweet Home";
             case LeaderboardPage::LEVEL_3_DESERT:
-                return "The Good, The Bad,\nand the Stinky";
+                return "Level 2: The Good, The Bad,\nand the Stinky";
             case LeaderboardPage::LEVEL_4_SNOW:
-                return "Polar Pandemonium";
+                return "Level 3: Polar Pandemonium";
             case LeaderboardPage::LEVEL_5_CASTLE:
-                return "Dung in the Dungeon";
+                return "Level 4: Dung in the Dungeon";
             case LeaderboardPage::LEVEL_6_BOSS:
-                return "Curtains for Crap";
+                return "Level 5: Curtains for Crap";
             case LeaderboardPage::TOTAL_ENEMIES:
                 return "Total Enemies Defeated";
             case LeaderboardPage::TOTAL_COINS:

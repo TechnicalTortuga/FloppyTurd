@@ -16,6 +16,7 @@
 // Access shared systems via ECS SystemManager and RenderSystem APIs
 #include "../../Engine/Core/SystemManager.h"
 #include "../Systems/RenderSystem.h"
+#include "../../Engine/Configuration/ConfigManager.h"
 
 namespace GameCore {
     MainMenuState::MainMenuState(Gnosis::ECS* ecsCoordinator, PlatformDelegates* platformDelegates)
@@ -1174,7 +1175,13 @@ namespace GameCore {
             if (m_isPanning || m_isSnapping) {
                 // Visible if any part of the painting is within a 20% screen-width buffer on either side
                 bool withinBufferedView = (topLeftX < m_screenWidth * 1.2f) && ((topLeftX + paintingWidth) > -m_screenWidth * 0.2f);
-                sprite->visible = withinBufferedView;
+                
+                // BUG FIX: Always hide Level 1 (index 0) painting when Legacy Mode is locked
+                if (i == 0 && !GameCore::ConfigManager::Instance().IsLegacyModeUnlocked()) {
+                    sprite->visible = false;
+                } else {
+                    sprite->visible = withinBufferedView;
+                }
             }
 
             // Frames follow painting
@@ -1236,7 +1243,13 @@ namespace GameCore {
         UpdateLevelPanPositions();
         if (t >= 1.0f) {
             // Commit index change
-            m_currentLevelIndex = std::max(0, std::min(m_currentLevelIndex + m_pendingIndexDelta, (int)m_levels.size() - 1));
+            int newIndex = std::max(0, std::min(m_currentLevelIndex + m_pendingIndexDelta, (int)m_levels.size() - 1));
+            // BUG FIX: Prevent snapping to Legacy Mode (Level 1, index 0) if it's locked
+            if (newIndex == 0 && !GameCore::ConfigManager::Instance().IsLegacyModeUnlocked()) {
+                newIndex = 1; // Stay on Level 2 (Downtown)
+                GN_LOG_INFO("[LEVEL_SELECT] Blocked snap to locked Legacy Mode - staying at Level 2");
+            }
+            m_currentLevelIndex = newIndex;
             m_pendingIndexDelta = 0;
             m_isSnapping = false;
             m_currentOffsetX = 0.0f;
@@ -2037,32 +2050,35 @@ namespace GameCore {
         m_ecsCoordinator->AddComponent<Sprite>(m_optionsButtonEntity, optionsSprite);
         m_ecsCoordinator->AddComponent<UIElement>(m_optionsButtonEntity, optionsButton);
         
-        // Create Quick Play Button
-        m_quickPlayButtonEntity = m_ecsCoordinator->CreateEntity();
-        
-        // Calculate scaled dimensions using helper
-        auto quickPlayButtonScaledDimensions = GetScaledDimensions(buttonTextureWidth, buttonTextureHeight, buttonScale);
-        float quickPlayButtonWidth = quickPlayButtonScaledDimensions.first;
-        float quickPlayButtonHeight = quickPlayButtonScaledDimensions.second;
-        
-        // Use positioning helper to center button
-        float quickPlayButtonCenterY = buttonY + buttonSpacing * 2;
-        Gnosis::GNVector2 quickPlayButtonPosition = CenterObjectAtPosition(centerX, quickPlayButtonCenterY, quickPlayButtonWidth, quickPlayButtonHeight);
-        float quickPlayButtonTopLeftX = quickPlayButtonPosition.x;
-        float quickPlayButtonTopLeftY = quickPlayButtonPosition.y;
-        
-        Transform quickPlayTransform(Gnosis::GNVector2(quickPlayButtonTopLeftX, quickPlayButtonTopLeftY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
-        Sprite quickPlaySprite("FloppyButtonBlue", buttonTextureWidth, buttonTextureHeight); // Use actual texture dimensions
-        quickPlaySprite.layer = 2; // Button layer (lower than text)
-        quickPlaySprite.visible = true;
-        UIElement quickPlayButton("QUICK PLAY", "FloppyButtonBlue", "FloppyButtonBlueHover");
-        quickPlayButton.fontSize = m_buttonFontSize;
-        quickPlayButton.textColor = Gnosis::GNColor(255, 255, 255, 255); // White text
-        GN_LOG_INFO("Created Quick Play button with text: '%s' (length: %zu)", quickPlayButton.buttonText.c_str(), quickPlayButton.buttonText.length());
-        
-        m_ecsCoordinator->AddComponent<Transform>(m_quickPlayButtonEntity, quickPlayTransform);
-        m_ecsCoordinator->AddComponent<Sprite>(m_quickPlayButtonEntity, quickPlaySprite);
-        m_ecsCoordinator->AddComponent<UIElement>(m_quickPlayButtonEntity, quickPlayButton);
+        // Create Legacy Mode Button (replaces Quick Play) - Only if unlocked
+        // Reuse m_quickPlayButtonEntity slot
+        if (GameCore::ConfigManager::Instance().IsLegacyModeUnlocked()) {
+            m_quickPlayButtonEntity = m_ecsCoordinator->CreateEntity();
+            
+            // Calculate scaled dimensions using helper
+            auto quickPlayButtonScaledDimensions = GetScaledDimensions(buttonTextureWidth, buttonTextureHeight, buttonScale);
+            float quickPlayButtonWidth = quickPlayButtonScaledDimensions.first;
+            float quickPlayButtonHeight = quickPlayButtonScaledDimensions.second;
+            
+            // Use positioning helper to center button
+            float quickPlayButtonCenterY = buttonY + buttonSpacing * 2;
+            Gnosis::GNVector2 quickPlayButtonPosition = CenterObjectAtPosition(centerX, quickPlayButtonCenterY, quickPlayButtonWidth, quickPlayButtonHeight);
+            float quickPlayButtonTopLeftX = quickPlayButtonPosition.x;
+            float quickPlayButtonTopLeftY = quickPlayButtonPosition.y;
+            
+            Transform quickPlayTransform(Gnosis::GNVector2(quickPlayButtonTopLeftX, quickPlayButtonTopLeftY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
+            Sprite quickPlaySprite("FloppyButtonBlue", buttonTextureWidth, buttonTextureHeight); // Use actual texture dimensions
+            quickPlaySprite.layer = 2; // Button layer (lower than text)
+            quickPlaySprite.visible = true;
+            UIElement quickPlayButton("LEGACY MODE", "FloppyButtonBlue", "FloppyButtonBlueHover");
+            quickPlayButton.fontSize = m_buttonFontSize;
+            quickPlayButton.textColor = Gnosis::GNColor(255, 255, 255, 255); // White text
+            GN_LOG_INFO("Created Legacy Mode button with text: '%s' (length: %zu)", quickPlayButton.buttonText.c_str(), quickPlayButton.buttonText.length());
+            
+            m_ecsCoordinator->AddComponent<Transform>(m_quickPlayButtonEntity, quickPlayTransform);
+            m_ecsCoordinator->AddComponent<Sprite>(m_quickPlayButtonEntity, quickPlaySprite);
+            m_ecsCoordinator->AddComponent<UIElement>(m_quickPlayButtonEntity, quickPlayButton);
+        }
         
         // Create Leaderboard Button
         m_leaderboardButtonEntity = m_ecsCoordinator->CreateEntity();
@@ -2219,12 +2235,19 @@ namespace GameCore {
             GN_LOG_INFO("✅ Created '" + text + "' button at (" + std::to_string(buttonX) + "," + std::to_string(buttonY) + ")");
         };
         
+        int currentButtonIndex = 0;
+        
         // Create all buttons using consistent positioning
-        createButton(m_playButtonEntity, "PLAY", 0);
-        createButton(m_optionsButtonEntity, "OPTIONS", 1);
-        createButton(m_quickPlayButtonEntity, "QUICK PLAY", 2);
-        createButton(m_leaderboardButtonEntity, "LEADERBOARD", 3);
-        createButton(m_howToButtonEntity, "HOW TO", 4);
+        createButton(m_playButtonEntity, "PLAY", currentButtonIndex++);
+        createButton(m_optionsButtonEntity, "OPTIONS", currentButtonIndex++);
+        
+        // Legacy Mode Button (replaces Quick Play) - Only if unlocked
+        if (GameCore::ConfigManager::Instance().IsLegacyModeUnlocked()) {
+            createButton(m_quickPlayButtonEntity, "LEGACY MODE", currentButtonIndex++);
+        }
+        
+        createButton(m_leaderboardButtonEntity, "LEADERBOARD", currentButtonIndex++);
+        createButton(m_howToButtonEntity, "HOW TO", currentButtonIndex++);
         
         // Create Ad Controls button - bottom left with padding (like settings button)
         if (m_adControlsButtonEntity == 0) {
@@ -2326,9 +2349,16 @@ namespace GameCore {
     }
 
     void MainMenuState::OnQuickPlayButtonPressed() {
-        GN_LOG_INFO("Quick Play button pressed - starting level 1");
+        // Renamed internally to handle Legacy Mode logic
+        GN_LOG_INFO("Legacy Mode button pressed - starting level 1");
         m_lastMenuButtonPressTime = m_animationTimer;
-        OnMenuOptionSelected(MenuOption::QUICK_PLAY);
+        
+        // Check if unlocked (redundant sanity check)
+        if (GameCore::ConfigManager::Instance().IsLegacyModeUnlocked()) {
+            OnMenuOptionSelected(MenuOption::QUICK_PLAY);
+        } else {
+            GN_LOG_WARN("Legacy Mode locked - ignoring press");
+        }
     }
 
     void MainMenuState::OnLeaderboardButtonPressed() {
@@ -2667,8 +2697,10 @@ namespace GameCore {
         m_levels.clear();
 
         // Add all levels with their painting textures and unlock status from game
-        bool level1Unlocked = GameCore::GetGame() ? GameCore::GetGame()->IsLevelUnlocked(1) : true;
-        bool level2Unlocked = GameCore::GetGame() ? GameCore::GetGame()->IsLevelUnlocked(2) : false;
+        // Level 1 (Legacy Mode) should default to LOCKED unless the game says it's unlocked
+        bool level1Unlocked = GameCore::GetGame() ? GameCore::GetGame()->IsLevelUnlocked(1) : false;
+        // Level 2 (Home Sweet Home) is the NEW DEFAULT STARTING LEVEL - always unlocked
+        bool level2Unlocked = GameCore::GetGame() ? GameCore::GetGame()->IsLevelUnlocked(2) : true;
         bool level3Unlocked = GameCore::GetGame() ? GameCore::GetGame()->IsLevelUnlocked(3) : false;
         bool level4Unlocked = GameCore::GetGame() ? GameCore::GetGame()->IsLevelUnlocked(4) : false;
         bool level5Unlocked = GameCore::GetGame() ? GameCore::GetGame()->IsLevelUnlocked(5) : false;
@@ -2679,9 +2711,10 @@ namespace GameCore {
         m_levels.push_back({"The Good, The Bad,\nand the Stinky", "DesertLevelPainting", "LockedPainting", level3Unlocked, 3});
         m_levels.push_back({"Polar Pandemonium", "SnowLevelPainting", "LockedPainting", level4Unlocked, 4});
         m_levels.push_back({"Dung in the Dungeon", "CastleLevelPainting", "LockedPainting", level5Unlocked, 5});
-        m_levels.push_back({"Curtains for Crap", "RatKingPainting", "LockedPainting", level6Unlocked, 6});
+    m_levels.push_back({"Curtains for Crap", "RatKingPainting", "LockedPainting", level6Unlocked, 6});
 
-        m_currentLevelIndex = 0;
+    // Default to Level 2 (Sewer) - Index 1
+    m_currentLevelIndex = 1;
         GN_LOG_INFO("Initialized " + std::to_string(m_levels.size()) + " levels with game unlock status");
     }
 
@@ -3860,6 +3893,22 @@ namespace GameCore {
             // Clamp soft bounds so neighbor exists just off-screen
             float maxOffset = m_levelSpacing * (m_currentLevelIndex);
             float minOffset = -m_levelSpacing * ((int)m_levels.size() - 1 - m_currentLevelIndex);
+            
+            // BUG FIX: Don't allow panning toward Level 1 (index 0) if Legacy Mode is locked
+            // When at index 1 (Level 2) and Legacy is locked, maxOffset should be 0 (no rightward pan)
+            if (!GameCore::ConfigManager::Instance().IsLegacyModeUnlocked()) {
+                // Current index is the number of levels to the left we could pan
+                // If at index 1, maxOffset would be 1*spacing (to show index 0)
+                // We want to prevent any positive offset (rightward pan toward index 0)
+                if (m_currentLevelIndex == 1) {
+                    maxOffset = 0.0f; // No panning right when at Level 2 and Legacy is locked
+                } else if (m_currentLevelIndex == 0) {
+                    // Shouldn't happen, but if somehow at index 0 with locked Legacy, force to index 1
+                    m_currentLevelIndex = 1;
+                    maxOffset = 0.0f;
+                }
+            }
+            
             m_currentOffsetX = std::max(std::min(m_currentOffsetX, maxOffset + m_levelSpacing * 0.25f), minOffset - m_levelSpacing * 0.25f);
             UpdateLevelPanPositions();
         }
@@ -4096,7 +4145,13 @@ namespace GameCore {
             GN_LOG_INFO("Gesture detected: Swipe left - moved to level " + std::to_string(m_currentLevelIndex + 1));
             // Use UpdateLevelVisibility directly instead of animation to prevent decentering
             UpdateLevelVisibility();
+            UpdateLevelVisibility();
         } else if (swipeRight && m_currentLevelIndex > 0) {
+            // BUG FIX: Prevent navigating to Legacy Mode (Index 0) if locked
+            if (m_currentLevelIndex - 1 == 0 && !GameCore::ConfigManager::Instance().IsLegacyModeUnlocked()) {
+                GN_LOG_INFO("Swipe right blocked - Legacy Mode locked");
+                return;
+            }
             // Swipe right - go to previous level
             m_currentLevelIndex--;
             GN_LOG_INFO("Gesture detected: Swipe right - moved to level " + std::to_string(m_currentLevelIndex + 1));
@@ -4157,6 +4212,11 @@ namespace GameCore {
                 m_currentLevelIndex++;
                 GN_LOG_INFO("Swiped left - moved to level " + std::to_string(m_currentLevelIndex + 1));
             } else if (m_swipeDirection == SwipeDirection::RIGHT && m_currentLevelIndex > 0) {
+                // BUG FIX: Prevent navigating to Legacy Mode if locked
+                if (m_currentLevelIndex - 1 == 0 && !GameCore::ConfigManager::Instance().IsLegacyModeUnlocked()) {
+                    GN_LOG_INFO("Swipe right gesture blocked - Legacy Mode locked");
+                    return;
+                }
                 // Swipe right - go to previous level
                 m_currentLevelIndex--;
                 GN_LOG_INFO("Swiped right - moved to level " + std::to_string(m_currentLevelIndex + 1));
@@ -4254,6 +4314,11 @@ namespace GameCore {
         for (size_t i = 0; i < m_levelPaintingEntities.size(); ++i) {
             // Only show the current painting - hide all others
             bool shouldBeVisible = (i == m_currentLevelIndex);
+            
+            // BUG FIX: Always hide Level 1 (index 0) when Legacy Mode is locked
+            if (i == 0 && !GameCore::ConfigManager::Instance().IsLegacyModeUnlocked()) {
+                shouldBeVisible = false;
+            }
             
             // Pruned per-painting visibility spam
             
@@ -4426,6 +4491,11 @@ namespace GameCore {
         }
         
         if (m_currentLevelIndex > 0) {
+            // BUG FIX: Prevent navigating to Legacy Mode (Level 1, index 0) if it's locked
+            if (m_currentLevelIndex - 1 == 0 && !GameCore::ConfigManager::Instance().IsLegacyModeUnlocked()) {
+                GN_LOG_INFO("Previous level is locked Legacy Mode - blocking navigation");
+                return;
+            }
             m_currentLevelIndex--;
             GN_LOG_INFO("⬅️ Left arrow pressed - moved to level " + std::to_string(m_currentLevelIndex + 1) + " (index " + std::to_string(m_currentLevelIndex) + ")");
             
@@ -4444,6 +4514,7 @@ namespace GameCore {
         }
         
         if (m_currentLevelIndex < m_levels.size() - 1) {
+             // Note: Moving RIGHT increases index (away from 0), so no need to check lock for next level
             m_currentLevelIndex++;
             GN_LOG_INFO("➡️ Right arrow pressed - moved to level " + std::to_string(m_currentLevelIndex + 1) + " (index " + std::to_string(m_currentLevelIndex) + ")");
             

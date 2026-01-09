@@ -32,34 +32,55 @@ namespace GameCore {
 
     void SkillSystem::InitializeSkillDefinitions()
     {
-        // Skills from old system - order must match the enum indices in GameComponents.h
-        // SkillType enum: HalfHearts=0, ThirdHearts=1, CoinMagnet=2, HeartMagnet=3, CoinSafetyNet=4
-        // Updated pricing for production release
-        m_skills.emplace(SkillType::HalfHearts, SkillDefinition(
-            SkillType::HalfHearts, "Half Hearts", "Show half-heart damage\nfor finer health tracking", 200, {}
+        // Ranked skills with costs (doubled from original except split)
+        // Format: SkillDefinition(type, name, description, maxRank, {rank1Cost, rank2Cost, ...})
+        
+        // Health Upgrade: Rank I = half hearts (200), Rank II = third hearts (500)
+        m_skills.emplace(SkillType::HealthUpgrade, SkillDefinition(
+            SkillType::HealthUpgrade, "Health Upgrade", 
+            "Upgrade heart precision\nRank I: Half hearts\nRank II: Third hearts",
+            2, {200, 500}
         ));
 
-        m_skills.emplace(SkillType::ThirdHearts, SkillDefinition(
-            SkillType::ThirdHearts, "Third Hearts", "Show third-heart damage\nRequires: Half Hearts", 400,
-            {SkillType::HalfHearts}
-        ));
-
+        // Coin Magnet: Rank I = current range (100), Rank II = 2x range (300)
         m_skills.emplace(SkillType::CoinMagnet, SkillDefinition(
-            SkillType::CoinMagnet, "Coin Magnet", "Automatically attract\nnearby coins to player", 200, {}
+            SkillType::CoinMagnet, "Coin Magnet", 
+            "Attract nearby coins\nRank II: Double range",
+            2, {100, 300}
         ));
 
+        // Heart Magnet: Rank I = current range (150), Rank II = 2x range (400)
         m_skills.emplace(SkillType::HeartMagnet, SkillDefinition(
-            SkillType::HeartMagnet, "Heart Magnet", "Automatically attract\nnearby hearts to player", 200, {}
+            SkillType::HeartMagnet, "Heart Magnet", 
+            "Attract nearby hearts\nRank II: Double range",
+            2, {150, 400}
         ));
 
+        // Homing Projectiles: Rank I = weak homing (300), Rank II = strong homing (700)
+        m_skills.emplace(SkillType::HomingProjectiles, SkillDefinition(
+            SkillType::HomingProjectiles, "Homing Shots", 
+            "Projectiles seek enemies\nRank II: Stronger homing",
+            2, {300, 700}
+        ));
+
+        // Split Projectiles: Rank I = 2 shots (200), Rank II = 3 shots (400)
+        m_skills.emplace(SkillType::SplitProjectiles, SkillDefinition(
+            SkillType::SplitProjectiles, "Split Shot", 
+            "Fire multiple projectiles\nRank I: 2 shots\nRank II: 3 shots",
+            2, {200, 400}
+        ));
+
+        // Non-ranked skill: Coin Safety Net (single unlock at 600)
         m_skills.emplace(SkillType::CoinSafetyNet, SkillDefinition(
-            SkillType::CoinSafetyNet, "Coin Safety Net", "Sacrifice all coins\nto prevent death\n(once per level)", 300, {}
+            SkillType::CoinSafetyNet, "Coin Safety Net", 
+            "Sacrifice all coins to\nprevent death (1x/level)",
+            1, {600}
         ));
     }
 
-    bool SkillSystem::UnlockSkill(SkillType skill, int& playerCoins)
+    bool SkillSystem::UpgradeSkill(SkillType skill, int& playerCoins)
     {
-        if (!CanUnlockSkill(skill, playerCoins)) {
+        if (!CanUpgradeSkill(skill, playerCoins)) {
             return false;
         }
 
@@ -68,20 +89,21 @@ namespace GameCore {
             return false;
         }
 
-        // Mark skill as unlocked (coin deduction handled by PauseSystem)
-        it->second.isUnlocked = true;
-
-        // Auto-activate passive skills
-        if (skill == SkillType::HalfHearts || skill == SkillType::ThirdHearts ||
-            skill == SkillType::CoinMagnet || skill == SkillType::HeartMagnet) {
-            it->second.isActive = true;
+        int cost = it->second.GetNextRankCost();
+        if (cost <= 0) {
+            return false; // Already at max rank
         }
 
+        // Upgrade rank (coin deduction handled by caller/PauseSystem)
+        it->second.currentRank++;
+        it->second.isActive = true; // Auto-activate on upgrade
+
+        GN_LOG_INFO("SkillSystem: Upgraded " + it->second.name + " to Rank " + 
+                    it->second.GetRankDisplay());
+
         // Trigger haptic feedback for skill unlock
-        if (m_platformDelegates) {
-            if (m_platformDelegates->haptic.triggerPattern) {
-                m_platformDelegates->haptic.triggerPattern("level_unlock");
-            }
+        if (m_platformDelegates && m_platformDelegates->haptic.triggerPattern) {
+            m_platformDelegates->haptic.triggerPattern("level_unlock");
         }
 
         SaveSkillProgress();
@@ -91,37 +113,40 @@ namespace GameCore {
     bool SkillSystem::IsSkillUnlocked(SkillType skill) const
     {
         auto it = m_skills.find(skill);
-        return it != m_skills.end() && it->second.isUnlocked;
+        return it != m_skills.end() && it->second.IsUnlocked();
     }
 
-    bool SkillSystem::IsSkillActive(SkillType skill) const
+    int SkillSystem::GetSkillRank(SkillType skill) const
     {
         auto it = m_skills.find(skill);
-        return it != m_skills.end() && it->second.isActive;
+        return it != m_skills.end() ? it->second.currentRank : 0;
     }
 
-    bool SkillSystem::CanUnlockSkill(SkillType skill, int playerCoins) const
+    int SkillSystem::GetSkillMaxRank(SkillType skill) const
+    {
+        auto it = m_skills.find(skill);
+        return it != m_skills.end() ? it->second.maxRank : 0;
+    }
+
+    bool SkillSystem::CanUpgradeSkill(SkillType skill, int playerCoins) const
     {
         auto it = m_skills.find(skill);
         if (it == m_skills.end()) {
             return false;
         }
 
-        if (it->second.isUnlocked) {
-            return false; // Already unlocked
+        int cost = it->second.GetNextRankCost();
+        if (cost <= 0) {
+            return false; // Already at max rank
         }
 
-        if (playerCoins < it->second.coinCost) {
-            return false; // Not enough coins
-        }
-
-        return HasPrerequisites(skill);
+        return playerCoins >= cost;
     }
 
-    int SkillSystem::GetSkillCost(SkillType skill) const
+    int SkillSystem::GetNextUpgradeCost(SkillType skill) const
     {
         auto it = m_skills.find(skill);
-        return it != m_skills.end() ? it->second.coinCost : 0;
+        return it != m_skills.end() ? it->second.GetNextRankCost() : 0;
     }
 
     const SkillDefinition* SkillSystem::GetSkillDefinition(SkillType skill) const
@@ -130,10 +155,22 @@ namespace GameCore {
         return it != m_skills.end() ? &it->second : nullptr;
     }
 
+    SkillDefinition* SkillSystem::GetSkillDefinitionMutable(SkillType skill)
+    {
+        auto it = m_skills.find(skill);
+        return it != m_skills.end() ? &it->second : nullptr;
+    }
+
+    bool SkillSystem::IsSkillActive(SkillType skill) const
+    {
+        auto it = m_skills.find(skill);
+        return it != m_skills.end() && it->second.isActive;
+    }
+
     void SkillSystem::ActivateSkill(SkillType skill)
     {
         auto it = m_skills.find(skill);
-        if (it != m_skills.end() && it->second.isUnlocked) {
+        if (it != m_skills.end() && it->second.IsUnlocked()) {
             it->second.isActive = true;
         }
     }
@@ -155,20 +192,21 @@ namespace GameCore {
         // Apply passive skill effects
         ApplyPassiveSkillEffects(playerEntity);
 
-        // Update magnet effects via PickupSystem
+        // Update magnet effects via PickupSystem (with multipliers based on rank)
         if (m_pickupSystem) {
             bool coinMagnetActive = IsSkillActive(SkillType::CoinMagnet);
             bool heartMagnetActive = IsSkillActive(SkillType::HeartMagnet);
 
             m_pickupSystem->SetCoinMagnetEnabled(coinMagnetActive);
             m_pickupSystem->SetHeartMagnetEnabled(heartMagnetActive);
-
-            GN_LOG_DEBUG("SkillSystem: Updated magnet effects - coinMagnet=" + std::to_string(coinMagnetActive) +
-                         " heartMagnet=" + std::to_string(heartMagnetActive));
+            
+            // Set magnet strength multipliers based on rank
+            m_pickupSystem->SetCoinMagnetStrength(GetCoinMagnetMultiplier());
+            m_pickupSystem->SetHeartMagnetStrength(GetHeartMagnetMultiplier());
         }
     }
 
-    void SkillSystem::ApplyHeartModeUpgrade(SkillType skill, Gnosis::Entity playerEntity)
+    void SkillSystem::ApplyHeartModeUpgrade(Gnosis::Entity playerEntity)
     {
         if (!m_ecsSystem->IsEntityValid(playerEntity)) {
             return;
@@ -179,12 +217,14 @@ namespace GameCore {
             return;
         }
 
+        // Determine heart mode based on HealthUpgrade rank
         HeartMode newMode = HeartMode::WHOLE;
-
-        if (skill == SkillType::HalfHearts) {
-            newMode = HeartMode::HALVES;
-        } else if (skill == SkillType::ThirdHearts) {
+        int healthRank = GetSkillRank(SkillType::HealthUpgrade);
+        
+        if (healthRank >= 2) {
             newMode = HeartMode::THIRDS;
+        } else if (healthRank == 1) {
+            newMode = HeartMode::HALVES;
         }
 
         SetHeartMode(playerEntity, newMode);
@@ -218,7 +258,50 @@ namespace GameCore {
         playerComp->ghostSlices = 0;
     }
 
+    // Projectile skill queries
+    bool SkillSystem::HasHomingProjectiles() const
+    {
+        return GetSkillRank(SkillType::HomingProjectiles) > 0;
+    }
 
+    float SkillSystem::GetHomingStrength() const
+    {
+        int rank = GetSkillRank(SkillType::HomingProjectiles);
+        if (rank <= 0) return 0.0f;
+        if (rank == 1) return 6.0f;  // Medium base strength for distance scaling
+        return 10.0f;                 // Strong base strength for Rank II (rank 2+)
+    }
+
+    float SkillSystem::GetHomingAngleCone() const
+    {
+        int rank = GetSkillRank(SkillType::HomingProjectiles);
+        if (rank <= 0) return 0.0f;
+        if (rank == 1) return 20.0f;  // ±20 degrees (40 degree total arc)
+        return 40.0f;                  // ±40 degrees (80 degree total arc) for Rank II
+    }
+
+    int SkillSystem::GetProjectileSplitCount() const
+    {
+        int rank = GetSkillRank(SkillType::SplitProjectiles);
+        if (rank <= 0) return 1;      // No split, single projectile
+        if (rank == 1) return 2;      // Split into 2
+        return 3;                      // Split into 3 (rank 2+)
+    }
+
+    // Magnet skill queries
+    float SkillSystem::GetCoinMagnetMultiplier() const
+    {
+        int rank = GetSkillRank(SkillType::CoinMagnet);
+        if (rank <= 1) return 1.0f;   // Rank 0 or 1 = normal
+        return 2.0f;                   // Rank 2+ = double range
+    }
+
+    float SkillSystem::GetHeartMagnetMultiplier() const
+    {
+        int rank = GetSkillRank(SkillType::HeartMagnet);
+        if (rank <= 1) return 1.0f;   // Rank 0 or 1 = normal
+        return 2.0f;                   // Rank 2+ = double range
+    }
 
     bool SkillSystem::TryActivateCoinSafetyNet(Gnosis::Entity playerEntity)
     {
@@ -244,7 +327,6 @@ namespace GameCore {
 
         GN_LOG_INFO("Player coins before safety net: " + std::to_string(playerComp->sessionCoins));
         GN_LOG_INFO("Player live slices before safety net: " + std::to_string(playerComp->liveSlices));
-        GN_LOG_INFO("Player ghost slices before safety net: " + std::to_string(playerComp->ghostSlices));
 
         // Check if player has any coins to sacrifice
         if (playerComp->sessionCoins <= 0) {
@@ -282,35 +364,16 @@ namespace GameCore {
             return;
         }
 
-        // Apply heart mode upgrades
-        if (IsSkillActive(SkillType::ThirdHearts)) {
-            ApplyHeartModeUpgrade(SkillType::ThirdHearts, playerEntity);
-        } else if (IsSkillActive(SkillType::HalfHearts)) {
-            ApplyHeartModeUpgrade(SkillType::HalfHearts, playerEntity);
-        }
-    }
-
-    bool SkillSystem::HasPrerequisites(SkillType skill) const
-    {
-        auto it = m_skills.find(skill);
-        if (it == m_skills.end()) {
-            return false;
-        }
-
-        for (SkillType prereq : it->second.prerequisites) {
-            if (!IsSkillUnlocked(prereq)) {
-                return false;
-            }
-        }
-
-        return true;
+        // Apply heart mode upgrades based on HealthUpgrade rank
+        ApplyHeartModeUpgrade(playerEntity);
     }
 
     std::vector<SkillType> SkillSystem::GetAvailableSkills() const
     {
         std::vector<SkillType> available;
         for (const auto& pair : m_skills) {
-            if (!pair.second.isUnlocked) {
+            // Include skills that can be upgraded (not at max rank)
+            if (pair.second.currentRank < pair.second.maxRank) {
                 available.push_back(pair.first);
             }
         }
@@ -320,7 +383,13 @@ namespace GameCore {
     std::string SkillSystem::GetSkillDisplayName(SkillType skill) const
     {
         auto it = m_skills.find(skill);
-        return it != m_skills.end() ? it->second.name : "Unknown Skill";
+        if (it == m_skills.end()) return "Unknown Skill";
+        
+        std::string name = it->second.name;
+        if (it->second.currentRank > 0 && it->second.maxRank > 1) {
+            name += " " + it->second.GetRankDisplay();
+        }
+        return name;
     }
 
     std::string SkillSystem::GetSkillDescription(SkillType skill) const
@@ -331,95 +400,52 @@ namespace GameCore {
 
     void SkillSystem::SaveSkillProgress()
     {
-        GN_LOG_INFO("SkillSystem: Saving skill progress...");
+        GN_LOG_INFO("SkillSystem: Saving skill progress (ranked system)...");
         
-        // Use the game's save system to persist skill unlock status
         auto* game = GameCore::GetGame();
         if (!game) {
             GN_LOG_WARN("SkillSystem: Cannot save - no game instance available");
             return;
         }
         
-        // Map SkillType enum to array index and save unlock status
-        // Order: HalfHearts=0, ThirdHearts=1, CoinMagnet=2, HeartMagnet=3, CoinSafetyNet=4
-        if (IsSkillUnlocked(SkillType::HalfHearts)) {
-            game->UnlockSkill(static_cast<int>(SkillType::HalfHearts));
-        }
-        if (IsSkillUnlocked(SkillType::ThirdHearts)) {
-            game->UnlockSkill(static_cast<int>(SkillType::ThirdHearts));
-        }
-        if (IsSkillUnlocked(SkillType::CoinMagnet)) {
-            game->UnlockSkill(static_cast<int>(SkillType::CoinMagnet));
-        }
-        if (IsSkillUnlocked(SkillType::HeartMagnet)) {
-            game->UnlockSkill(static_cast<int>(SkillType::HeartMagnet));
-        }
-        if (IsSkillUnlocked(SkillType::CoinSafetyNet)) {
-            game->UnlockSkill(static_cast<int>(SkillType::CoinSafetyNet));
+        // Save skill ranks (use skill index * 10 + rank as a compact representation)
+        // This allows storing rank 0-9 for each skill slot
+        for (const auto& pair : m_skills) {
+            int skillIndex = static_cast<int>(pair.first);
+            int rank = pair.second.currentRank;
+            
+            // Use the existing skill unlock system with encoded rank
+            // Rank is stored as: slot = skillIndex, value = rank
+            game->SetSkillRank(skillIndex, rank);
         }
         
-        GN_LOG_INFO("SkillSystem: Skill progress saved successfully");
+        GN_LOG_INFO("SkillSystem: Skill progress saved (ranked system)");
     }
 
     void SkillSystem::LoadSkillProgress()
     {
-        GN_LOG_INFO("SkillSystem: Loading skill progress...");
+        GN_LOG_INFO("SkillSystem: Loading skill progress (ranked system)...");
         
-        // Load skill unlock status from the game's save system
         auto* game = GameCore::GetGame();
         if (!game) {
             GN_LOG_WARN("SkillSystem: Cannot load - no game instance available, using defaults");
             return;
         }
         
-        // Load unlock status for each skill and update our internal state
-        // Order: HalfHearts=0, ThirdHearts=1, CoinMagnet=2, HeartMagnet=3, CoinSafetyNet=4
-        if (game->IsSkillUnlocked(static_cast<int>(SkillType::HalfHearts))) {
-            auto it = m_skills.find(SkillType::HalfHearts);
-            if (it != m_skills.end()) {
-                it->second.isUnlocked = true;
-                it->second.isActive = true; // Auto-activate passive skills
-                GN_LOG_INFO("SkillSystem: Loaded HalfHearts as unlocked");
+        // Load skill ranks
+        for (auto& pair : m_skills) {
+            int skillIndex = static_cast<int>(pair.first);
+            int rank = game->GetSkillRank(skillIndex);
+            
+            pair.second.currentRank = rank;
+            pair.second.isActive = (rank > 0); // Auto-activate if unlocked
+            
+            if (rank > 0) {
+                GN_LOG_INFO("SkillSystem: Loaded " + pair.second.name + " at Rank " + pair.second.GetRankDisplay());
             }
         }
         
-        if (game->IsSkillUnlocked(static_cast<int>(SkillType::ThirdHearts))) {
-            auto it = m_skills.find(SkillType::ThirdHearts);
-            if (it != m_skills.end()) {
-                it->second.isUnlocked = true;
-                it->second.isActive = true; // Auto-activate passive skills
-                GN_LOG_INFO("SkillSystem: Loaded ThirdHearts as unlocked");
-            }
-        }
-        
-        if (game->IsSkillUnlocked(static_cast<int>(SkillType::CoinMagnet))) {
-            auto it = m_skills.find(SkillType::CoinMagnet);
-            if (it != m_skills.end()) {
-                it->second.isUnlocked = true;
-                it->second.isActive = true; // Auto-activate passive skills
-                GN_LOG_INFO("SkillSystem: Loaded CoinMagnet as unlocked");
-            }
-        }
-        
-        if (game->IsSkillUnlocked(static_cast<int>(SkillType::HeartMagnet))) {
-            auto it = m_skills.find(SkillType::HeartMagnet);
-            if (it != m_skills.end()) {
-                it->second.isUnlocked = true;
-                it->second.isActive = true; // Auto-activate passive skills
-                GN_LOG_INFO("SkillSystem: Loaded HeartMagnet as unlocked");
-            }
-        }
-        
-        if (game->IsSkillUnlocked(static_cast<int>(SkillType::CoinSafetyNet))) {
-            auto it = m_skills.find(SkillType::CoinSafetyNet);
-            if (it != m_skills.end()) {
-                it->second.isUnlocked = true;
-                it->second.isActive = true; // Auto-activate passive skills
-                GN_LOG_INFO("SkillSystem: Loaded CoinSafetyNet as unlocked");
-            }
-        }
-        
-        GN_LOG_INFO("SkillSystem: Skill progress loaded successfully");
+        GN_LOG_INFO("SkillSystem: Skill progress loaded (ranked system)");
     }
 
 } // namespace GameCore

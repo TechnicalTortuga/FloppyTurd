@@ -4,6 +4,7 @@
 #include <sstream>
 #include <iomanip>
 #include "../../FloppyTurd/Game/FloppyTurdGame.h"
+#include "../Configuration/ConfigManager.h"
 
 namespace GameCore {
 
@@ -117,12 +118,12 @@ namespace GameCore {
             }
 
             json << "],\n";
-            json << "    \"unlockedSkills\": [";
+            json << "    \"skillRanks\": [";
             
-            // Serialize unlocked skills array
-            for (size_t i = 0; i < customization.unlockedSkills.size(); ++i) {
+            // Serialize skill ranks array (integers)
+            for (size_t i = 0; i < customization.skillRanks.size(); ++i) {
                 if (i > 0) json << ", ";
-                json << (customization.unlockedSkills[i] ? "true" : "false");
+                json << customization.skillRanks[i];
             }
 
             json << "]\n";
@@ -456,6 +457,16 @@ namespace GameCore {
                            ", bestCoins=" + std::to_string(levelStats.bestCoins));
 
                 game.UpdateLevelStats(i, levelStats);
+                
+                // CRITICAL: Legacy Mode should ONLY unlock when Level 6 (final boss) is COMPLETED
+                // NOT when Level 1 is unlocked (which is always true by default)
+                if (i == 6) {
+                    // Check for actual completion: highScore > 0 means boss was beaten
+                    bool hasCompleted = levelStats.highScore > 0;
+                    ConfigManager::Instance().SetLegacyModeUnlocked(hasCompleted);
+                    GN_LOG_INFO("🔍 Deserialize: Set LegacyModeUnlocked to " + std::to_string(hasCompleted) + 
+                               " (based on Level 6 completion, highScore=" + std::to_string(levelStats.highScore) + ")");
+                }
             }
 
             // Parse customization
@@ -475,12 +486,13 @@ namespace GameCore {
                 customization.unlockedHats.push_back(hatStr == "1");
             }
             
-            // Parse unlocked skills
-            customization.unlockedSkills.clear();
-            for (int i = 0; i < 5; ++i) {
-                std::string skillKey = "CUSTOM_SKILL_" + std::to_string(i) + "_UNLOCKED";
+            // Parse skill ranks (8 skills with integer ranks)
+            customization.skillRanks.clear();
+            for (int i = 0; i < 8; ++i) {
+                std::string skillKey = "CUSTOM_SKILL_" + std::to_string(i) + "_RANK";
                 std::string skillStr = parseKeyValue(dataString, skillKey);
-                customization.unlockedSkills.push_back(skillStr == "1");
+                int rank = skillStr.empty() ? 0 : std::stoi(skillStr);
+                customization.skillRanks.push_back(rank);
             }
             
             game.UpdateCustomizationData(customization);

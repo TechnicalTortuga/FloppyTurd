@@ -1178,6 +1178,13 @@ namespace GameCore {
             m_levelManager->SetPlatformDelegates(*m_platformDelegates);
         }
 
+        // Wire up ProjectileSystem with SkillSystem and LevelManager for homing/split support
+        if (m_projectileSystem) {
+            m_projectileSystem->SetSkillSystem(m_skillSystem.get());
+            m_projectileSystem->SetLevelManager(m_levelManager.get());
+            GN_LOG_INFO("ProjectileSystem wired up with SkillSystem and LevelManager for homing/split");
+        }
+
         // Create boss systems (only for level 6)
         if (m_currentLevelId == 6) {
             // Create ExplosionSystem for boss death sequence
@@ -1461,7 +1468,7 @@ namespace GameCore {
             // Add hitbox component (circle)
             Hitbox playerHitbox;
             playerHitbox.type = ColliderType::Circle;
-            playerHitbox.radius = 12.0f;
+            playerHitbox.radius = 10.0f;
             // Offsets are relative to the sprite CENTER in our collision/render math.
             // Keep centered by using zero offsets so pCenter = spriteTopLeft + (spriteHalfW/H).
             playerHitbox.offsetX = 0.0f;
@@ -2282,7 +2289,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             m_levelManager->UpdateObstacleSystem(deltaTime, worldScrollDistance);
             
             // Update other pooling systems (non-obstacle)
-            m_levelManager->UpdateEnemyPooling(deltaTime, worldScrollDistance);
+            m_levelManager->UpdateEnemyPooling(deltaTime, worldScrollDistance, m_pipesCleared);
             // NOTE: EnemySystem::Update() is now called AFTER ProjectileSystem::Update() 
             // (see line 286-289) to ensure collision detection has access to current projectile list
 
@@ -3474,6 +3481,18 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                         continue;
                     }
                     
+                    // Skip enemies in Hurt or Dead state - dying enemies shouldn't hurt player
+                    if (enemyComp->currentState == EnemyState::Hurt || enemyComp->currentState == EnemyState::Dead) {
+                        enemyIndex++;
+                        continue;
+                    }
+                    
+                    // Skip invisible enemies (echelon birds become invisible after death but stay in Idle state)
+                    if (!enemySprite->visible) {
+                        enemyIndex++;
+                        continue;
+                    }
+                    
                     // Calculate enemy center position
                     float enemyHalfW = enemySprite->width * enemyTransform->scale.x * 0.5f;
                     float enemyHalfH = enemySprite->height * enemyTransform->scale.y * 0.5f;
@@ -4112,7 +4131,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 
                 // Position above center of scoreboard, shifted 32px to the right (pinched in even more)
                 float pipesX = (m_cachedScreenWidth * 0.5f) + 32.0f;
-                float pipesY = m_cachedScreenHeight * 0.6f - 160.0f; // Pinched more (was -190)
+                float pipesY = m_cachedScreenHeight * 0.6f - 100.0f; // Pinched in more (130 -> 100)
                 Transform pipesTransform(Gnosis::GNVector2(pipesX, pipesY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
                 m_ecsSystem->AddComponent<Transform>(m_pipesLabelEntity, pipesTransform);
                 
@@ -4140,7 +4159,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 
                 // Position below center of scoreboard, shifted 32px right (pinched in even more)
                 float coinsX = (m_cachedScreenWidth * 0.5f) + 32.0f;
-                float coinsY = m_cachedScreenHeight * 0.6f + 160.0f; // Pinched more (was +190)
+                float coinsY = m_cachedScreenHeight * 0.6f + 100.0f; // Pinched in more (130 -> 100)
                 Transform coinsTransform(Gnosis::GNVector2(coinsX, coinsY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
                 m_ecsSystem->AddComponent<Transform>(m_coinsLabelEntity, coinsTransform);
                 
@@ -4216,7 +4235,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             tryAgainUI.isEnabled = true;
             tryAgainUI.textLayer = 104; // Text layer (higher than sprite)
             tryAgainUI.normalTextureId = "FloppyButtonBlue"; // Use the asset catalog name
-            tryAgainUI.fontSize = 120.0f * tabletFontScale; // Much larger font size for better visibility (was 100)
+            tryAgainUI.fontSize = 100.0f * tabletFontScale; // Reduced from 120 for better fit
             tryAgainUI.centerTextHorizontally = true;
             tryAgainUI.centerTextVertically = true;
             // Ensure the button texture is properly set
@@ -4266,7 +4285,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             quitUI.isEnabled = true;
             quitUI.textLayer = 104; // Text layer (higher than sprite)
             quitUI.normalTextureId = "FloppyButtonBlue"; // Use the asset catalog name
-            quitUI.fontSize = 120.0f * tabletFontScale; // Much larger font size for better visibility (was 100)
+            quitUI.fontSize = 100.0f * tabletFontScale; // Reduced from 120 for better fit
             quitUI.centerTextHorizontally = true;
             quitUI.centerTextVertically = true;
             // Ensure the button texture is properly set

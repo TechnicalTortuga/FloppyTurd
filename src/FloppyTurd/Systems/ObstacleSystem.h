@@ -132,7 +132,7 @@ namespace GameCore {
         std::vector<Gnosis::Entity> SpawnSewerPattern_PyramidTop3(float x, int groupId);
         std::vector<Gnosis::Entity> SpawnSewerPattern_TwoByTwoFunnel(float x, int groupId);
         std::pair<Gnosis::Entity, Gnosis::Entity> SpawnSnowPattern_ToiletPair(float x, int groupId, float gapWidth);
-        std::pair<Gnosis::Entity, Gnosis::Entity> SpawnCastlePattern_GoldToiletPair(float x, int groupId, float gapWidth);
+        std::vector<Gnosis::Entity> SpawnCastlePattern_GoldToiletPair(float x, int groupId, float gapWidth);
 
     private:
 

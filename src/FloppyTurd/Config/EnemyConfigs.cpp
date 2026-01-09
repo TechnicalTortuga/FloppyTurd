@@ -131,7 +131,8 @@ namespace GameCore {
     EnemyConfig EnemyConfigRegistry::CreateBirdConfig() {
         // Birds have 4 frames of 32x32 in horizontal spritesheet (128x32 total)
         // Use the individual frame size (32x32) for the sprite, not the total spritesheet width
-        EnemyConfig config("BirdIdle", 32.0f, 32.0f, 6.0f, 150.0f, 3.0f, 1, 32, 32, 4, 0.16f, true, "horizontal");
+        // ECHELON: Use "echelon" movement pattern for formation flying
+        EnemyConfig config("BirdIdle", 32.0f, 32.0f, 6.0f, 150.0f, 3.0f, 1, 32, 32, 4, 0.16f, true, "echelon");
 
         // Enable StateAnimation for idle/hurt states
         config.useStateAnimation = true;
@@ -152,18 +153,25 @@ namespace GameCore {
         config.bobbingConfig.speedJitter = 0.05f; // -0.5 to +0.5 range
         config.bobbingConfig.amplitudeMin = 15.0f;
         config.bobbingConfig.amplitudeMax = 30.0f;
+        
+        // HITBOX OFFSET: Lower by 4 pixels for better centering
+        config.hitboxOffsetY = 4.0f;
+        
+        // Custom hitbox radius - 30% smaller than default (12.8*0.7 = ~9)
+        config.hitboxRadius = 9.0f;
 
         return config;
     }
 
     EnemyConfig EnemyConfigRegistry::CreateToiletPaperConfig() {
         // 4-frame flying animation at 64x64 (ToiletPaperFlap sheet has 4 frames)
-        // SLOWED DOWN: 25.0f for more deliberate movement
-        EnemyConfig config("ToiletPaperFlap", 64.0f, 64.0f, 6.0f, 25.0f, 3.0f, 1, 64, 64, 4, 0.30f, true, "horizontal");
+        // GALAGA: Use "galaga" movement pattern
+        EnemyConfig config("ToiletPaperFlap", 64.0f, 64.0f, 6.0f, 25.0f, 3.0f, 1, 64, 64, 4, 0.30f, true, "galaga");
 
-        // Custom tight hitbox - 4px radius (8px diameter) instead of default 25.6px
-        // Bird/RatCopter have ~12.8px radius, ToiletPaper gets even tighter for fair gameplay
-        config.hitboxRadius = 4.0f;
+        // Custom tight hitbox - 25% smaller than before (12 * 0.75 = 9)
+        // Bird/RatCopter have ~12.8px radius. Reduced for tighter collisions.
+        config.hitboxRadius = 9.0f;
+        config.hitboxOffsetY = 8.0f; // Shift down to center on the roll
 
         // Enable StateAnimation for idle/hurt states
         config.useStateAnimation = true;
@@ -246,9 +254,8 @@ namespace GameCore {
 
     EnemyConfig EnemyConfigRegistry::CreateRatCopterConfig() {
         // RatCopter flying enemy - 32x32 sprite with 6 frames, flying behavior
-        // Speed set to 120.0f for smooth, predictable movement during FlyIn
-        // NO bobbing - sprite animation provides visual hover effect, movement is purely horizontal
-        EnemyConfig config("RatCopterIdle", 32.0f, 32.0f, 6.0f, 120.0f, 4.0f, 1, 32, 32, 6, 0.20f, true, "flying");
+        // RAT SWARM: Use "rat_swarm" movement pattern for staggered attacks
+        EnemyConfig config("RatCopterIdle", 32.0f, 32.0f, 6.0f, 120.0f, 4.0f, 1, 32, 32, 6, 0.20f, true, "rat_swarm");
         
         // Set render layer to 10 (in front of boss which uses layers 7-9)
         config.renderLayer = 10;

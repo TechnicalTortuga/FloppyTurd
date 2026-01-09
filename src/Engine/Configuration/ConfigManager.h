@@ -57,6 +57,10 @@ namespace GameCore {
         bool ShouldUseLowQualityAssets() const;
         int GetRecommendedTextureSize() const;
         int GetMaxParticleCount() const;
+
+        // Game Progression
+        bool IsLegacyModeUnlocked() const { return m_legacyModeUnlocked; }
+        void SetLegacyModeUnlocked(bool unlocked) { m_legacyModeUnlocked = unlocked; }
         
     private:
         enum class Platform { iOS, Desktop, Unknown };
@@ -70,6 +74,9 @@ namespace GameCore {
         ScreenInfo m_screenInfo;
         Platform m_platform = Platform::Unknown;
         PlatformDelegates m_delegates;
+        
+        // Game Progression
+        bool m_legacyModeUnlocked = false;
 
         // Callback for automatic screen info updates
         ScreenInfoUpdateCallback m_screenInfoUpdateCallback;

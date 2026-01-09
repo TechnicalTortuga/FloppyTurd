@@ -84,12 +84,13 @@ namespace GameCore {
             m_skillSystem = m_gameplayState->GetSkillSystem();
             m_hatsSystem = m_gameplayState->GetHatsSystem();
 
-        // Initialize available skills
+        // Initialize available skills (new ranked skill system)
         m_availableSkills = {
-            GameCore::SkillType::HalfHearts,
-            GameCore::SkillType::ThirdHearts,
+            GameCore::SkillType::HealthUpgrade,
             GameCore::SkillType::CoinMagnet,
             GameCore::SkillType::HeartMagnet,
+            GameCore::SkillType::HomingProjectiles,
+            GameCore::SkillType::SplitProjectiles,
             GameCore::SkillType::CoinSafetyNet
         };
 
@@ -232,6 +233,14 @@ namespace GameCore {
 
         GN_LOG_INFO("PauseSystem: Showing pause menu");
         m_isVisible = true;
+
+        // Sync player coins when opening pause menu
+        SyncPlayerCoins();
+
+        // If currently on stats tab, refresh the stats display immediately
+        if (m_currentTab == PauseMenuTab::STATS) {
+            RefreshStatsDisplay(m_sessionPipes, m_sessionCoins, m_totalCoins, m_grossTotalCoins, m_totalFlops, m_enemiesKilled, m_totalPipes);
+        }
 
         // Reset debounce timers when showing pause menu to prevent immediate clicks
         m_lastRibbonButtonPressTime = 0.0f;
@@ -1663,10 +1672,13 @@ namespace GameCore {
         float fontSize = 42.0f; // Increased from 32.0f for better readability
 
         // Create individual stat text entities
+        // Stats are positioned AFTER Level High Scores section (which needs ~8 lines worth of space)
+        float statsStartY = startY + lineSpacing * 8.5f; // Start after Level High Scores section
+        
         // 1. Current Session Pipes
         if (m_currentSessionTextEntity == 0) {
             m_currentSessionTextEntity = m_ecsCoordinator->CreateEntity();
-            Transform transform(GNVector2(centerX, startY), 0.0f, GNVector2(1.0f, 1.0f));
+            Transform transform(GNVector2(centerX, statsStartY), 0.0f, GNVector2(1.0f, 1.0f));
             m_ecsCoordinator->AddComponent<Transform>(m_currentSessionTextEntity, transform);
 
             UIElement uiElem;
@@ -1683,7 +1695,7 @@ namespace GameCore {
         // 2. Session Coins
         if (m_sessionCoinsTextEntity == 0) {
             m_sessionCoinsTextEntity = m_ecsCoordinator->CreateEntity();
-            Transform transform(GNVector2(centerX, startY + lineSpacing), 0.0f, GNVector2(1.0f, 1.0f));
+            Transform transform(GNVector2(centerX, statsStartY + lineSpacing), 0.0f, GNVector2(1.0f, 1.0f));
             m_ecsCoordinator->AddComponent<Transform>(m_sessionCoinsTextEntity, transform);
 
             UIElement uiElem;
@@ -1700,7 +1712,7 @@ namespace GameCore {
         // 3. Total Coins
         if (m_totalCoinsTextEntity == 0) {
             m_totalCoinsTextEntity = m_ecsCoordinator->CreateEntity();
-            Transform transform(GNVector2(centerX, startY + lineSpacing * 2), 0.0f, GNVector2(1.0f, 1.0f));
+            Transform transform(GNVector2(centerX, statsStartY + lineSpacing * 2), 0.0f, GNVector2(1.0f, 1.0f));
             m_ecsCoordinator->AddComponent<Transform>(m_totalCoinsTextEntity, transform);
 
             UIElement uiElem;
@@ -1717,7 +1729,7 @@ namespace GameCore {
         // 4. Gross Total Coins
         if (m_grossTotalCoinsTextEntity == 0) {
             m_grossTotalCoinsTextEntity = m_ecsCoordinator->CreateEntity();
-            Transform transform(GNVector2(centerX, startY + lineSpacing * 3), 0.0f, GNVector2(1.0f, 1.0f));
+            Transform transform(GNVector2(centerX, statsStartY + lineSpacing * 3), 0.0f, GNVector2(1.0f, 1.0f));
             m_ecsCoordinator->AddComponent<Transform>(m_grossTotalCoinsTextEntity, transform);
 
             UIElement uiElem;
@@ -1734,7 +1746,7 @@ namespace GameCore {
         // 5. Total Flops
         if (m_totalFlopsTextEntity == 0) {
             m_totalFlopsTextEntity = m_ecsCoordinator->CreateEntity();
-            Transform transform(GNVector2(centerX, startY + lineSpacing * 4), 0.0f, GNVector2(1.0f, 1.0f));
+            Transform transform(GNVector2(centerX, statsStartY + lineSpacing * 4), 0.0f, GNVector2(1.0f, 1.0f));
             m_ecsCoordinator->AddComponent<Transform>(m_totalFlopsTextEntity, transform);
 
             UIElement uiElem;
@@ -1751,7 +1763,7 @@ namespace GameCore {
         // 6. Enemies Killed
         if (m_enemiesKilledTextEntity == 0) {
             m_enemiesKilledTextEntity = m_ecsCoordinator->CreateEntity();
-            Transform transform(GNVector2(centerX, startY + lineSpacing * 5), 0.0f, GNVector2(1.0f, 1.0f));
+            Transform transform(GNVector2(centerX, statsStartY + lineSpacing * 5), 0.0f, GNVector2(1.0f, 1.0f));
             m_ecsCoordinator->AddComponent<Transform>(m_enemiesKilledTextEntity, transform);
 
             UIElement uiElem;
@@ -1768,7 +1780,7 @@ namespace GameCore {
         // 7. Total Pipes
         if (m_totalPipesTextEntity == 0) {
             m_totalPipesTextEntity = m_ecsCoordinator->CreateEntity();
-            Transform transform(GNVector2(centerX, startY + lineSpacing * 6), 0.0f, GNVector2(1.0f, 1.0f));
+            Transform transform(GNVector2(centerX, statsStartY + lineSpacing * 6), 0.0f, GNVector2(1.0f, 1.0f));
             m_ecsCoordinator->AddComponent<Transform>(m_totalPipesTextEntity, transform);
 
             UIElement uiElem;
@@ -1785,7 +1797,7 @@ namespace GameCore {
         // 8. Rat King Boss Timer (Level 6 only)
         if (m_bossTimerTextEntity == 0) {
             m_bossTimerTextEntity = m_ecsCoordinator->CreateEntity();
-            Transform transform(GNVector2(centerX, startY + lineSpacing * 7), 0.0f, GNVector2(1.0f, 1.0f));
+            Transform transform(GNVector2(centerX, statsStartY + lineSpacing * 7), 0.0f, GNVector2(1.0f, 1.0f));
             m_ecsCoordinator->AddComponent<Transform>(m_bossTimerTextEntity, transform);
 
             UIElement uiElem;
@@ -1799,10 +1811,10 @@ namespace GameCore {
             m_ecsCoordinator->AddComponent<UIElement>(m_bossTimerTextEntity, uiElem);
         }
 
-        // 9. Level High Scores Section - Add a separator and then each level's high score
-        // Position these at the bottom of the stats background
-        float levelScoresStartY = startY + lineSpacing * 9; // Start after the 8 stats above (including boss timer)
-        float levelTitleSpacing = 100.0f; // Extra spacing between title and first level
+        // 9. Level High Scores Section - NOW FIRST, at the top of stats
+        // Position these at the TOP of the stats background (before the coin stats)
+        float levelScoresStartY = startY; // Start at top
+        float levelTitleSpacing = 80.0f; // Spacing after title
         float levelLineSpacing = lineSpacing; // Same spacing as main stats (80.0f)
         float levelFontSize = fontSize; // Same as main stats (42.0f)
         
@@ -2408,6 +2420,10 @@ namespace GameCore {
 
     void PauseSystem::ShowTabContent(PauseMenuTab tab) {
         GN_LOG_INFO("PauseSystem: Showing tab content for tab " + std::to_string(static_cast<int>(tab)));
+        
+        // Sync player coins when switching tabs to get latest count
+        SyncPlayerCoins();
+        
         HideAllTabContent();
 
         switch (tab) {
@@ -2918,6 +2934,9 @@ namespace GameCore {
     void PauseSystem::ShowStatsTab() {
         GN_LOG_INFO("PauseSystem: Showing stats tab");
 
+        // Sync player coins to ensure stats are up-to-date
+        SyncPlayerCoins();
+
         // Show title
         if (m_statsTitleEntity != 0 && m_ecsCoordinator) {
             UIElement* titleUI = m_ecsCoordinator->GetComponent<UIElement>(m_statsTitleEntity);
@@ -3147,9 +3166,9 @@ namespace GameCore {
                     if (validIndex >= static_cast<int>(m_availableSkills.size())) validIndex = 0;
 
                     GameCore::SkillType currentSkill = m_availableSkills[validIndex];
-                    int cost = m_skillSystem ? m_skillSystem->GetSkillCost(currentSkill) : 0;
+                    int cost = m_skillSystem ? m_skillSystem->GetNextUpgradeCost(currentSkill) : 0;
 
-                    if (m_playerCoins < cost) {
+                    if (m_playerCoins < cost || cost == 0) {
                         // Play denied sound for insufficient coins
                         if (GameCore::GetGame()) {
                             GN_LOG_INFO("🎵 Playing denied sound - insufficient coins for skill unlock");
@@ -3521,23 +3540,39 @@ namespace GameCore {
                 // Sync player coins to ensure we have the latest coin count
                 SyncPlayerCoins();
 
-                bool isUnlocked = skillSystem->IsSkillUnlocked(currentSkill);
-                int cost = skillSystem->GetSkillCost(currentSkill);
+                bool isMaxRank = skillSystem->GetSkillRank(currentSkill) >= skillSystem->GetSkillMaxRank(currentSkill);
+                int cost = skillSystem->GetNextUpgradeCost(currentSkill);
 
-                if (isUnlocked) {
-                    costElem->buttonText = "UNLOCKED";
+                if (isMaxRank) {
+                    costElem->buttonText = "MAX RANK";
                     costElem->textColor = GNColor(0, 255, 0, 255); // Green
-                    buttonElem->buttonText = "UNLOCKED";
+                    buttonElem->buttonText = "MAX RANK";
                     buttonElem->isEnabled = false;
+                } else if (skillSystem->IsSkillUnlocked(currentSkill)) {
+                    int currentRank = skillSystem->GetSkillRank(currentSkill);
+                    costElem->buttonText = "Rank " + std::string(currentRank == 1 ? "II" : "III") + ": " + std::to_string(cost) + " coins";
+                    
+                    // Check if player can afford the upgrade
+                    if (m_playerCoins >= cost) {
+                        costElem->textColor = GNColor(255, 215, 0, 255); // Gold
+                        buttonElem->buttonText = "UPGRADE";
+                        buttonElem->isEnabled = true;
+                        buttonElem->textColor = GNColor(255, 255, 255, 255); // White for affordable
+                    } else {
+                        costElem->textColor = GNColor(255, 100, 100, 255); // Red for insufficient
+                        buttonElem->buttonText = "Not enough coins";
+                        buttonElem->isEnabled = false;
+                        buttonElem->textColor = GNColor(255, 100, 100, 255); // Red text
+                    }
                 } else {
-                    costElem->buttonText = "Cost: " + std::to_string(cost) + " coins";
-                    costElem->textColor = GNColor(255, 215, 0, 255); // Gold
+                    costElem->buttonText = "Rank I: " + std::to_string(cost) + " coins";
 
                     GN_LOG_INFO("PauseSystem: Skill coin check - playerCoins: " + std::to_string(m_playerCoins) + ", cost: " + std::to_string(cost));
                     if (m_playerCoins >= cost) {
                         buttonElem->buttonText = "BUY";
                         buttonElem->isEnabled = true;
                         buttonElem->textColor = GNColor(255, 255, 255, 255); // White for sufficient coins
+                        costElem->textColor = GNColor(255, 215, 0, 255); // Gold cost text
                         GN_LOG_INFO("PauseSystem: Skill button set to BUY");
                     } else {
                         buttonElem->buttonText = "Not enough coins";
@@ -3646,17 +3681,18 @@ namespace GameCore {
 
         GameCore::SkillType currentSkill = availableSkills[validIndex];
 
-        if (skillSystem->IsSkillUnlocked(currentSkill)) {
-            GN_LOG_INFO("PauseSystem: Skill already unlocked: " + skillSystem->GetSkillDisplayName(currentSkill));
-            return; // Already unlocked
+        // Check if skill is at max rank
+        if (skillSystem->GetSkillRank(currentSkill) >= skillSystem->GetSkillMaxRank(currentSkill)) {
+            GN_LOG_INFO("PauseSystem: Skill at max rank: " + skillSystem->GetSkillDisplayName(currentSkill));
+            return; // Already at max rank
         }
 
-        // Try to unlock the skill
-        if (skillSystem->UnlockSkill(currentSkill, playerCoins)) {
-            GN_LOG_INFO("PauseSystem: Skill unlocked successfully: " + skillSystem->GetSkillDisplayName(currentSkill));
+        // Try to upgrade the skill
+        int cost = skillSystem->GetNextUpgradeCost(currentSkill);
+        if (skillSystem->UpgradeSkill(currentSkill, playerCoins)) {
+            GN_LOG_INFO("PauseSystem: Skill upgraded successfully: " + skillSystem->GetSkillDisplayName(currentSkill));
 
             // Deduct coins from player - properly deduct from stored coins first
-            int cost = skillSystem->GetSkillCost(currentSkill);
             if (playerEntity != 0 && m_ecsCoordinator) {
                 auto* playerComp = m_ecsCoordinator->GetComponent<PlayerComponent>(playerEntity);
                 if (playerComp) {

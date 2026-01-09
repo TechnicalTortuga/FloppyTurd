@@ -108,16 +108,16 @@ CMAKE_PROJECT_HOMEPAGE_URL:STATIC=
 CMAKE_PROJECT_NAME:STATIC=PooperTrooper
 
 //Value Computed by CMake
-CMAKE_PROJECT_VERSION:STATIC=0.9.9
+CMAKE_PROJECT_VERSION:STATIC=1.0.3
 
 //Value Computed by CMake
-CMAKE_PROJECT_VERSION_MAJOR:STATIC=0
+CMAKE_PROJECT_VERSION_MAJOR:STATIC=1
 
 //Value Computed by CMake
-CMAKE_PROJECT_VERSION_MINOR:STATIC=9
+CMAKE_PROJECT_VERSION_MINOR:STATIC=0
 
 //Value Computed by CMake
-CMAKE_PROJECT_VERSION_PATCH:STATIC=9
+CMAKE_PROJECT_VERSION_PATCH:STATIC=3
 
 //Value Computed by CMake
 CMAKE_PROJECT_VERSION_TWEAK:STATIC=
@@ -177,6 +177,9 @@ CMAKE_STATIC_LINKER_FLAGS_RELWITHDEBINFO:STRING=
 
 //Path to a program.
 CMAKE_STRIP:FILEPATH=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/strip
+
+//No help, variable specified on the command line.
+CMAKE_SYSTEM_NAME:UNINITIALIZED=iOS
 
 //Swift Compiler Flags during all build types.
 CMAKE_Swift_FLAGS:STRING=
@@ -295,7 +298,7 @@ CMAKE_FIND_ROOT_PATH_MODE_INCLUDE:INTERNAL=BOTH
 CMAKE_FIND_ROOT_PATH_MODE_LIBRARY:INTERNAL=BOTH
 CMAKE_FIND_ROOT_PATH_MODE_PACKAGE:INTERNAL=BOTH
 CMAKE_FIND_ROOT_PATH_MODE_PROGRAM:INTERNAL=BOTH
-CMAKE_FRAMEWORK_PATH:INTERNAL=/Library/PrivateFrameworks;/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk/System/Library/Frameworks;/Library/PrivateFrameworks;/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk/System/Library/Frameworks;/Library/PrivateFrameworks;/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk/System/Library/Frameworks
+CMAKE_FRAMEWORK_PATH:INTERNAL=/Library/PrivateFrameworks;/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk/System/Library/Frameworks;/Library/PrivateFrameworks;/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk/System/Library/Frameworks;/Library/PrivateFrameworks;/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk/System/Library/Frameworks;/Library/PrivateFrameworks;/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk/System/Library/Frameworks
 //Name of generator.
 CMAKE_GENERATOR:INTERNAL=Xcode
 //Generator instance identifier.
@@ -334,7 +337,7 @@ CMAKE_OBJDUMP-ADVANCED:INTERNAL=1
 CMAKE_OSX_ARCHITECTURES:INTERNAL=arm64
 //Minimum OS X deployment version
 CMAKE_OSX_DEPLOYMENT_TARGET:INTERNAL=13.0
-CMAKE_OSX_SYSROOT:INTERNAL=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk
+CMAKE_OSX_SYSROOT:INTERNAL=iphonesimulator
 CMAKE_OSX_SYSROOT_INT:INTERNAL=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk
 //Platform information initialized
 CMAKE_PLATFORM_INFO_INITIALIZED:INTERNAL=1

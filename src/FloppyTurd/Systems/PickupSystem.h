@@ -47,6 +47,8 @@ namespace GameCore {
         // Magnet effect controls
         void SetCoinMagnetEnabled(bool enabled) { m_coinMagnetEnabled = enabled; }
         void SetHeartMagnetEnabled(bool enabled) { m_heartMagnetEnabled = enabled; }
+        void SetCoinMagnetStrength(float multiplier) { m_coinMagnetStrength = multiplier; }
+        void SetHeartMagnetStrength(float multiplier) { m_heartMagnetStrength = multiplier; }
 
         // Main per-frame update: spawns for new groups, handles collisions, wraps
         void Update(float deltaTime);
@@ -87,8 +89,10 @@ namespace GameCore {
         // Magnet effect state
         bool m_coinMagnetEnabled;
         bool m_heartMagnetEnabled;
-        static constexpr float COIN_MAGNET_RANGE = 300.0f;  // Much larger range
-        static constexpr float HEART_MAGNET_RANGE = 350.0f; // Much larger range
+        float m_coinMagnetStrength = 1.0f;   // Multiplier for magnet range (1.0 = normal, 2.0 = double)
+        float m_heartMagnetStrength = 1.0f; // Multiplier for magnet range
+        static constexpr float COIN_MAGNET_RANGE = 300.0f;  // Base range (multiplied by strength)
+        static constexpr float HEART_MAGNET_RANGE = 350.0f; // Base range (multiplied by strength)
         static constexpr float MAGNET_SPEED = 600.0f;       // Balanced speed
 
         // Internal helpers

@@ -1157,9 +1157,10 @@ namespace GameCore {
                 stats.unlockRequirement = 0;
                 stats.coinRequirement = 0;
                 break;
-            case 2: // Sewer - 50 pipes from Park
-                stats.unlockRequirement = 50; // pipes from Park (level 1)
-                stats.coinRequirement = 0;    // no coins required
+            case 2: // Sewer (Home Sweet Home) - NEW DEFAULT STARTING LEVEL - always unlocked
+                stats.unlocked = true;  // Always unlocked
+                stats.unlockRequirement = 0; // No pipes required
+                stats.coinRequirement = 0;   // No coins required
                 break;
             case 3: // Desert - 50 pipes from Sewer + 100 coins
                 stats.unlockRequirement = 50; // pipes from Sewer (level 2)
@@ -1360,19 +1361,23 @@ namespace GameCore {
         }
     }
 
-    bool FloppyTurdGame::IsSkillUnlocked(int skillIndex) const {
-        if (skillIndex < 0 || skillIndex >= static_cast<int>(m_customizationData.unlockedSkills.size())) {
-            return false;
+    int FloppyTurdGame::GetSkillRank(int skillIndex) const {
+        if (skillIndex < 0 || skillIndex >= static_cast<int>(m_customizationData.skillRanks.size())) {
+            return 0;
         }
-        return m_customizationData.unlockedSkills[skillIndex];
+        return m_customizationData.skillRanks[skillIndex];
     }
 
-    void FloppyTurdGame::UnlockSkill(int skillIndex) {
-        if (skillIndex >= 0 && skillIndex < static_cast<int>(m_customizationData.unlockedSkills.size())) {
-            m_customizationData.unlockedSkills[skillIndex] = true;
-            GN_LOG_INFO("Skill unlocked at index: " + std::to_string(skillIndex));
+    void FloppyTurdGame::SetSkillRank(int skillIndex, int rank) {
+        if (skillIndex >= 0 && skillIndex < static_cast<int>(m_customizationData.skillRanks.size())) {
+            m_customizationData.skillRanks[skillIndex] = rank;
+            GN_LOG_INFO("Skill " + std::to_string(skillIndex) + " set to rank: " + std::to_string(rank));
             SaveGameData();
         }
+    }
+
+    bool FloppyTurdGame::IsSkillUnlocked(int skillIndex) const {
+        return GetSkillRank(skillIndex) > 0;
     }
 
     void FloppyTurdGame::TriggerGameOverAd() {

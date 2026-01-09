@@ -236,64 +236,77 @@ namespace GameCore {
     }
 
     bool LevelManager::IsLevelUnlocked(int levelId) const {
-        if (!ValidateLevelId(levelId)) {
-            return false;
-        }
-        
-        // DEBUG: Toggle this flag to unlock all levels for testing
-        // Set to 'true' to unlock all levels, 'false' for proper progression
-        const bool DEBUG_UNLOCK_ALL_LEVELS = true;
-        
-        if (DEBUG_UNLOCK_ALL_LEVELS) {
-            return true;
-        }
-        
-        // Original unlock logic:
-        // Level 1 is always unlocked
-        if (levelId == 1) {
-            return true;
-        }
-        
-        // Check if previous level is completed
-        if (levelId > 1 && levelId <= GetMaxLevelId()) {
-            return m_levelCompleted[levelId - 2]; // Previous level completed
-        }
-        
+    if (!ValidateLevelId(levelId)) {
         return false;
     }
-
-    void LevelManager::UnlockLevel(int levelId) {
-        if (ValidateLevelId(levelId) && levelId <= static_cast<int>(m_unlockedLevels.size())) {
-            m_unlockedLevels[levelId - 1] = true;
-            SaveProgression();
-            GN_LOG_INFO("Level " + std::to_string(levelId) + " unlocked");
-        }
-    }
-
-    bool LevelManager::CompleteLevel(int levelId, int score, int coinsCollected) {
-        if (!ValidateLevelId(levelId)) {
-            return false;
-        }
-        
-        // Mark level as completed
-        m_levelCompleted[levelId - 1] = true;
-        
-        // Update high score if better
-        if (score > m_levelScores[levelId - 1]) {
-            m_levelScores[levelId - 1] = score;
-        }
-        
-        // Unlock next level if it exists
-        if (levelId < GetMaxLevelId()) {
-            UnlockLevel(levelId + 1);
-        }
-        
-        SaveProgression();
-        GN_LOG_INFO("Level " + std::to_string(levelId) + " completed with score: " + std::to_string(score));
-        
+    
+    // DEBUG: Toggle this flag to unlock all levels for testing
+    // Set to 'true' to unlock all levels, 'false' for proper progression
+    const bool DEBUG_UNLOCK_ALL_LEVELS = false;
+    
+    if (DEBUG_UNLOCK_ALL_LEVELS) {
         return true;
     }
+    
+    // Legacy Mode Logic:
+    // Level 1 (Park) is "Legacy Mode" - Only unlocked if flag is set (or debug)
+    if (levelId == 1) {
+        return ConfigManager::Instance().IsLegacyModeUnlocked();
+    }
+    
+    // Level 2 (Sewer) is the NEW Default Starting Level
+    if (levelId == 2) {
+        return true;
+    }
+    
+    // Regular Progression (Levels 3+)
+    // Check if previous level is completed
+    if (levelId > 2 && levelId <= GetMaxLevelId()) {
+        return m_levelCompleted[levelId - 2]; // Previous level completed (e.g. L3 needs L2 done)
+    }
+    
+    return false;
+}
 
+void LevelManager::UnlockLevel(int levelId) {
+    if (ValidateLevelId(levelId) && levelId <= static_cast<int>(m_unlockedLevels.size())) {
+        m_unlockedLevels[levelId - 1] = true;
+        SaveProgression();
+        GN_LOG_INFO("Level " + std::to_string(levelId) + " unlocked");
+    }
+}
+
+bool LevelManager::CompleteLevel(int levelId, int score, int coinsCollected) {
+    if (!ValidateLevelId(levelId)) {
+        return false;
+    }
+    
+    // Mark level as completed
+    m_levelCompleted[levelId - 1] = true;
+    
+    // Update high score if better
+    if (score > m_levelScores[levelId - 1]) {
+        m_levelScores[levelId - 1] = score;
+    }
+    
+    // Unlock next level if it exists
+    if (levelId < GetMaxLevelId()) {
+        UnlockLevel(levelId + 1);
+    }
+
+    // Special Case: Beating Boss Level (Level 6) Unlocks Legacy Mode (Level 1)
+    if (levelId == 6) {
+        ConfigManager::Instance().SetLegacyModeUnlocked(true);
+        ConfigManager::Instance().SaveConfiguration(); // Persist the unlock
+        GN_LOG_INFO("BOSS DEFEATED! Legacy Mode (Level 1) Unlocked!");
+    }
+    
+    SaveProgression();
+    GN_LOG_INFO("Level " + std::to_string(levelId) + " completed with score: " + std::to_string(score));
+    
+    return true;
+}
+    
     void LevelManager::UpdateObstacleSystem(float deltaTime, float worldScrollDistance) {
         if (!m_obstacleSystem) return;
         
@@ -454,6 +467,7 @@ namespace GameCore {
                 hitbox.type = ColliderType::Circle; // Default to circle for now
                 // Use custom hitboxRadius if set, otherwise calculate from width
                 hitbox.radius = (config.hitboxRadius > 0.0f) ? config.hitboxRadius : (config.width * 0.4f);
+                hitbox.offsetY = config.hitboxOffsetY; // Apply custom Y offset
                 m_ecsSystem->AddComponent<Hitbox>(enemy, hitbox);
 
                 // Add StateAnimation if the config uses it
@@ -602,21 +616,71 @@ namespace GameCore {
         // LevelManager no longer needs to manage projectile pools directly
     }
 
-    void LevelManager::UpdateEnemyPooling(float, float worldScrollDistance) {
+    void LevelManager::UpdateEnemyPooling(float deltaTime, float worldScrollDistance, int pipesCleared) {
         if (!m_enemyPoolInitialized) return;
+        
+        // Throttling: Only look to spawn if timer is ready
+        if (m_respawnTimer > 0.0f) {
+            m_respawnTimer -= deltaTime;
+            // Don't return, we still might need to do other pooling updates if any (currently none)
+        }
         
         // CRITICAL FIX: Respawn enemies from inactive pool if active count is low
         // This handles enemies that were killed/returned to pool
-        const int initialEnemyCount = m_currentLevelConfig.enemies.size() > 0 ? static_cast<int>(m_currentLevelConfig.enemies.size()) : 3;
-        while (m_activeEnemies.size() < static_cast<size_t>(initialEnemyCount) && !m_enemyPool.inactiveEnemies.empty()) {
+        int initialEnemyCount = m_currentLevelConfig.enemies.size() > 0 ? static_cast<int>(m_currentLevelConfig.enemies.size()) : 3;
+        
+        // STRICT LIMIT: Level 2 (Galaga) capped based on PROGRESSIVE DIFFICULTY
+        if (m_currentLevelId == 2) {
+            if (pipesCleared < 25) {
+                initialEnemyCount = 1;
+            } else if (pipesCleared < 50) {
+                initialEnemyCount = 2;
+            } else {
+                initialEnemyCount = 3;
+            }
+        } else if (m_currentLevelId == 5) {
+            // Level 5 (Castle): Same progressive difficulty as Level 2
+            // 1 rat until 25 pipes, 2 rats until 50 pipes, 3 rats after
+            if (pipesCleared < 25) {
+                initialEnemyCount = 1;
+            } else if (pipesCleared < 50) {
+                initialEnemyCount = 2;
+            } else {
+                initialEnemyCount = 3;
+            }
+        } else if (m_currentLevelId == 3) {
+            // Level 3 (Desert): DO NOT respawn individual birds
+            // Birds only come back when the group wraps together
+            // Set initialEnemyCount to 0 to prevent respawn logic from triggering
+            initialEnemyCount = 0; // Birds managed by group wrap, not individual respawn
+        }
+        
+        // Change WHILE to IF to throttle - spawn one at a time with delay
+        if (m_respawnTimer <= 0.0f && m_activeEnemies.size() < static_cast<size_t>(initialEnemyCount) && !m_enemyPool.inactiveEnemies.empty()) {
             // Get an inactive enemy from the pool
             Gnosis::Entity enemy = GetInactiveEnemy();
-            if (!enemy) break;
+            if (enemy) {
             
             // Reactivate and reposition the enemy
             Enemy* enemyComp = m_ecsSystem->GetComponent<Enemy>(enemy);
             Transform* transform = m_ecsSystem->GetComponent<Transform>(enemy);
             Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(enemy);
+            
+            // DebugDraw DISABLED per user request
+            // if (!m_ecsSystem->HasComponent<DebugDraw>(enemy)) {
+            //     DebugDraw debugDraw;
+            //     debugDraw.debugLayer = 100;
+            //     debugDraw.showBounds = false;
+            //     debugDraw.showCollider = true;
+            //     debugDraw.colliderColor = {255, 0, 0, 255};
+            //     debugDraw.alpha = 0.5f;
+            //     m_ecsSystem->AddComponent<DebugDraw>(enemy, debugDraw);
+            //     GN_LOG_INFO("[DEBUG_DRAW] Added hitbox visualizer to enemy " + std::to_string(enemy));
+            // } else {
+            //     DebugDraw* dd = m_ecsSystem->GetComponent<DebugDraw>(enemy);
+            //     dd->showCollider = true;
+            //     dd->colliderColor = {255, 0, 0, 255};
+            // }
             
             if (enemyComp && transform && sprite) {
                 // Find rightmost active enemy position
@@ -627,27 +691,36 @@ namespace GameCore {
                 }
                 
                 // Position offscreen right with spacing
-                transform->position.x = rightmostX + (m_enemySpacing * 1.25f);
+                // Level 2 (Galaga) needs larger spacing
+                float spacing = (m_currentLevelId == 2) ? 1400.0f : (m_enemySpacing * 1.25f);
+                transform->position.x = rightmostX + spacing;
                 
                 // Calculate Y position based on enemy type and level
                 float baseY;
-                if (m_currentLevelId == 2) { // Sewer - toilet paper
-                    baseY = ConfigManager::Instance().GetCurrentScreenInfo().pixelHeight * 0.3125f;
-                } else if (m_currentLevelId == 3) { // Desert - birds in top half
-                    float minY = ConfigManager::Instance().GetCurrentScreenInfo().pixelHeight * 0.15f;
-                    float maxY = ConfigManager::Instance().GetCurrentScreenInfo().pixelHeight * 0.45f;
-                    baseY = minY + static_cast<float>(rand() % static_cast<int>(maxY - minY));
+                // Get player Y for centering enemies
+                // Player sprite renders from top-left, so player center = player.y + (playerHeight/2)
+                Gnosis::GNVector2 playerPos = GetPlayerPosition();
+                // Assume player sprite height is ~64*6 = 384 (scaled), use 192 as half height
+                float playerHalfHeight = 192.0f; // Half of player sprite height
+                float playerCenterY = playerPos.y + playerHalfHeight;
+                
+                if (m_currentLevelId == 2) { // Sewer - toilet paper (center on player)
+                    // Enemy also renders from top-left, so offset by half enemy height
+                    float enemySpriteHeight = sprite->height * std::abs(transform->scale.y);
+                    baseY = playerCenterY - (enemySpriteHeight * 0.5f);
+                } else if (m_currentLevelId == 3) { // Desert - birds in echelon
+                    // ECHELON FORMATION: Base at player height, offset down per bird
+                    float enemySpriteHeight = sprite->height * std::abs(transform->scale.y);
+                    int activeCount = static_cast<int>(m_activeEnemies.size());
+                    baseY = playerCenterY - (enemySpriteHeight * 0.5f) + (activeCount * 150.0f);
                 } else if (m_currentLevelId == 5 || m_currentLevelId == 6) { // Castle (5) or Boss (6) - RatCopters
-                    // LANDSCAPE-AWARE: Boss level (6) is landscape, Castle level (5) is portrait
-                    // Level 5 (Castle, Portrait): 30%-50% of 2556 = 766-1278 (middle band)
-                    // Level 6 (Boss, Landscape): 50%-70% of 1179 = 589-825 (adjusted for lower height)
-                    const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
-                    float minY = screenInfo.pixelHeight * (screenInfo.isPortrait ? 0.30f : 0.50f);
-                    float maxY = screenInfo.pixelHeight * (screenInfo.isPortrait ? 0.50f : 0.70f);
-                    baseY = minY + static_cast<float>(rand() % static_cast<int>(maxY - minY));
-                    GN_LOG_INFO("[RAT_WRAP] RatCopter wrap L" + std::to_string(m_currentLevelId) + ": screenH=" + std::to_string(screenInfo.pixelHeight) + 
-                               ", isPortrait=" + std::to_string(screenInfo.isPortrait) + 
-                               ", Y=" + std::to_string(baseY) + " (" + std::to_string((baseY/screenInfo.pixelHeight)*100.0f) + "%)");
+                    // RAT_SWARM: Spawn at player center Y + formation offset
+                    float enemySpriteHeight = sprite->height * std::abs(transform->scale.y);
+                    baseY = playerCenterY - (enemySpriteHeight * 0.5f) + enemyComp->formationOffset.y;
+                    GN_LOG_INFO("[RAT_SPAWN] RatCopter L" + std::to_string(m_currentLevelId) + 
+                               ": playerCenterY=" + std::to_string(playerCenterY) + 
+                               ", formationOffset=" + std::to_string(enemyComp->formationOffset.y) +
+                               ", Y=" + std::to_string(baseY));
                 } else if (enemyComp->isGrounded) { // Snowmen
                     float rawSpriteHeight = sprite->frameHeight;
                     float scaledSpriteHeight = sprite->height * std::abs(transform->scale.y);
@@ -662,9 +735,34 @@ namespace GameCore {
                 enemyComp->isActive = true;
                 enemyComp->currentState = EnemyState::Idle;
                 
-                // Reset flying enemy state (RatCopters, Birds)
-                if (enemyComp->movementPattern == "flying" || enemyComp->movementPattern == "horizontal") {
-                    enemyComp->currentState = (enemyComp->movementPattern == "flying") ? EnemyState::FlyIn : EnemyState::Moving;
+                // Reset flying enemy state (RatCopters, Birds, Toilet Paper)
+                if (enemyComp->movementPattern == "flying" || enemyComp->movementPattern == "horizontal" || 
+                    enemyComp->movementPattern == "galaga" || enemyComp->movementPattern == "echelon" || 
+                    enemyComp->movementPattern == "rat_swarm") {
+                    // Reset state based on movement pattern
+                    if (enemyComp->movementPattern == "galaga") {
+                        // GALAGA: Reset to Idle so state machine runs from beginning
+                        enemyComp->currentState = EnemyState::Idle;
+                        enemyComp->galagaHoverTimer = 0.0f;
+                        enemyComp->galagaHoverComplete = false;
+                        enemyComp->circleAngle = 0.0f;
+                        enemyComp->circleLoopsRemaining = 3;
+                        enemyComp->hasSetAnchorX = false;
+                        GN_LOG_INFO("[ENEMY_RESPAWN] Reset GALAGA enemy " + enemyComp->enemyType + " to Idle state");
+                    } else if (enemyComp->movementPattern == "echelon") {
+                        // ECHELON: Reset to Moving state, preserve formation offset
+                        enemyComp->currentState = EnemyState::Moving;
+                        enemyComp->isGrounded = false;
+                        GN_LOG_INFO("[ENEMY_RESPAWN] Reset ECHELON bird " + enemyComp->enemyType + " isGrounded=false");
+                    } else if (enemyComp->movementPattern == "rat_swarm") {
+                        // RAT_SWARM: Reset to FlyIn state for galaga-style approach
+                        enemyComp->currentState = EnemyState::FlyIn;
+                        enemyComp->isGrounded = false;
+                        enemyComp->hoverTimer = 0.0f;
+                        GN_LOG_INFO("[ENEMY_RESPAWN] Reset RAT_SWARM " + enemyComp->enemyType + " to FlyIn state");
+                    } else {
+                        enemyComp->currentState = (enemyComp->movementPattern == "flying") ? EnemyState::FlyIn : EnemyState::Moving;
+                    }
                     enemyComp->isGrounded = false; // CRITICAL: Ensure flying enemies don't get grounded
                     enemyComp->hoverTimer = 0.0f;
                     enemyComp->hasLockedDirection = false;
@@ -673,7 +771,9 @@ namespace GameCore {
                     enemyComp->pullbackVector = Gnosis::GNVector2(0.0f, 0.0f);
                     enemyComp->beelineSpeed = 0.0f;
                     
-                    GN_LOG_INFO("[ENEMY_RESPAWN] Reset flying/horizontal enemy " + enemyComp->enemyType + " isGrounded=false, pattern=" + enemyComp->movementPattern);
+                    if (enemyComp->movementPattern != "galaga" && enemyComp->movementPattern != "echelon") {
+                        GN_LOG_INFO("[ENEMY_RESPAWN] Reset flying/horizontal enemy " + enemyComp->enemyType + " isGrounded=false, pattern=" + enemyComp->movementPattern);
+                    }
                 }
                 
                 // Make sprite visible and reset animation
@@ -683,6 +783,18 @@ namespace GameCore {
                 sprite->currentFrameTime = 0.0f;
                 sprite->hasCompleted = false;
                 sprite->playing = true;
+                
+                // CRITICAL: Reset transform scale and enemy speed from config
+                for (const auto& config : m_currentLevelConfig.enemies) {
+                    if (config.textureId == enemyComp->enemyType) {
+                        transform->scale = Gnosis::GNVector2(config.scale, config.scale);
+                        enemyComp->speed = config.speed; // Fix slow enemy bug
+                        GN_LOG_INFO("[RESPAWN_CONFIG] Reset " + enemyComp->enemyType + 
+                                   " scale=" + std::to_string(config.scale) + 
+                                   " speed=" + std::to_string(config.speed));
+                        break;
+                    }
+                }
                 
                 // Reset to idle animation for StateAnimation enemies
                 StateAnimation* sa = m_ecsSystem->GetComponent<StateAnimation>(enemy);
@@ -707,9 +819,30 @@ namespace GameCore {
                 m_activeEnemies.push_back(enemy);
                 
                 GN_LOG_INFO("[ENEMY_RESPAWN] Respawned " + enemyComp->enemyType + " from pool at X=" + std::to_string(transform->position.x) + ", Y=" + std::to_string(baseY));
+                
+                // Reset timer to throttle next spawn
+                // Level 2 (Galaga) wants slower pacing (8.0s), Level 5 (Castle) 6.0s for spacing
+                if (m_currentLevelId == 2) {
+                    m_respawnTimer = 8.0f;
+                } else if (m_currentLevelId == 5) {
+                    m_respawnTimer = 6.0f; // Slower spawn rate for castle rats
+                } else {
+                    m_respawnTimer = 2.0f;
+                }
             }
-        }
+            } // Close if(enemy)
+        } // Close if(respawnTimer)
         
+        // Request struct for respawning group members (defined locally)
+        struct GroupRespawnRequest {
+            int groupId;
+            bool vPointsDown;
+            float groupBaseX;
+            float echelonBaseY;
+            std::vector<int> missingPositions;
+        };
+        std::vector<GroupRespawnRequest> respawnRequests;
+
         // Wrap enemies when off-screen left, reusing pool
         const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
         float screenW = screenInfo.pixelWidth;
@@ -740,6 +873,108 @@ namespace GameCore {
                     const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
                     baseY = screenInfo.pixelHeight * 0.3125f;
                     GN_LOG_DEBUG("[WRAP_SEWER] Toilet paper wrapped to center Y=" + std::to_string(baseY) + " (screenH=" + std::to_string(screenInfo.pixelHeight) + ")");
+                } else if (enemyComp && enemyComp->movementPattern == "echelon") {
+                    // ECHELON GROUP WRAP: Wait for the TRAILING bird (highest X offset) to go off-screen
+                    // Find if there's any other bird in this group with a higher X offset
+                    int groupId = enemyComp->groupId;
+                    bool isTrailingBird = true;
+                    
+                    for (Gnosis::Entity other : m_activeEnemies) {
+                        if (other == e) continue;
+                        Enemy* otherComp = m_ecsSystem->GetComponent<Enemy>(other);
+                        if (otherComp && otherComp->movementPattern == "echelon" && otherComp->groupId == groupId) {
+                            // If another bird has higher X offset, this one isn't the trailing bird
+                            if (otherComp->formationOffset.x > enemyComp->formationOffset.x + 1.0f) {
+                                isTrailingBird = false;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (isTrailingBird) {
+                        // Trailing bird is off-screen! Wrap ALL echelon birds together
+                        const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+                        float echelonBaseY = screenInfo.pixelHeight * 0.15f; // 15% - above toilets
+                        
+                        // Calculate new group base from rightmostX
+                        // rightmostX is the rightmost bird's X position (calculated before any wraps)
+                        // The rightmost bird in a full group has offset=300
+                        // So: currentGroupBase = rightmostX - 300
+                        // And: newGroupBase = currentGroupBase + 800
+                        float currentGroupBaseX = rightmostX - 300.0f; // Always use max offset
+                        float groupBaseX = currentGroupBaseX + 800.0f;
+                        
+                        GN_LOG_INFO("[ECHELON_GROUP_WRAP] Trailing bird (posInV=" + std::to_string(enemyComp->posInV) + 
+                                   ") triggered wrap! RightmostX=" + std::to_string(rightmostX) +
+                                   ", CurrentGroupBase=" + std::to_string(currentGroupBaseX) +
+                                   ", NewGroupBase=" + std::to_string(groupBaseX));
+                        
+                        // Collect which positions are still present (alive birds)
+                        bool present[5] = {false, false, false, false, false};
+                        
+                        // Wrap and resurrect ALL echelon birds of this group (including hidden/dead ones)
+                        for (Gnosis::Entity birdEntity : m_activeEnemies) {
+                            Enemy* birdComp = m_ecsSystem->GetComponent<Enemy>(birdEntity);
+                            Transform* birdTransform = m_ecsSystem->GetComponent<Transform>(birdEntity);
+                            Sprite* birdSprite = m_ecsSystem->GetComponent<Sprite>(birdEntity);
+
+                            if (birdComp && birdTransform && birdComp->movementPattern == "echelon" && birdComp->groupId == groupId) {
+                                // RECALCULATE offsets based on posInV for consistency
+                                float xOffset = 0.0f;
+                                float yOffset = 0.0f;
+                                switch (birdComp->posInV) {
+                                    case 0: xOffset = 0.0f;   yOffset = 0.0f; break;      // Tip (front center)
+                                    case 1: xOffset = 150.0f; yOffset = -100.0f; break;   // Upper wing 1
+                                    case 2: xOffset = 150.0f; yOffset = 100.0f; break;    // Lower wing 1
+                                    case 3: xOffset = 300.0f; yOffset = -200.0f; break;   // Upper wing 2 (trailing)
+                                    case 4: xOffset = 300.0f; yOffset = 200.0f; break;    // Lower wing 2 (trailing)
+                                }
+                                
+                                // Update stored offset to match
+                                birdComp->formationOffset = Gnosis::GNVector2(xOffset, yOffset);
+                                
+                                // Apply formation offset to base position
+                                birdTransform->position.x = groupBaseX + xOffset;
+                                birdTransform->position.y = echelonBaseY + yOffset;
+                                birdComp->baseY = echelonBaseY;
+                                birdComp->isGrounded = false;
+                                birdComp->currentState = EnemyState::Moving;
+                                
+                                // Track this position for logging
+                                if (birdComp->posInV >= 0 && birdComp->posInV < 5) {
+                                    present[birdComp->posInV] = true;
+                                }
+                                
+                                // RESURRECTION: Make all birds visible and healthy
+                                if (birdSprite) {
+                                    bool wasHidden = !birdSprite->visible || birdComp->health <= 0;
+                                    birdSprite->visible = true;
+                                    birdSprite->color.a = 255;
+                                    birdSprite->color.r = 255;
+                                    birdSprite->color.g = 255;
+                                    birdSprite->color.b = 255;
+                                    birdSprite->playing = true;
+                                    birdComp->health = 1;
+                                    
+                                    if (wasHidden) {
+                                        GN_LOG_INFO("[ECHELON_RESURRECT] Bird posInV=" + std::to_string(birdComp->posInV) + 
+                                                   " resurrected at (" + std::to_string(birdTransform->position.x) + "," + 
+                                                   std::to_string(birdTransform->position.y) + ")");
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // No respawn queue needed - all birds stay in active list and get resurrected above
+                        
+                        // Update rightmostX to prevent overlap
+                        // The new rightmost bird will be at groupBaseX + 300 (trailing bird offset)
+                        rightmostX = groupBaseX + 300.0f;
+                        
+                        GN_LOG_INFO("[ECHELON_GROUP_WRAP] All birds wrapped and resurrected. New rightmostX=" + std::to_string(rightmostX));
+                    }
+                    // If not trailing bird, DON'T wrap yet - wait for the group
+                    continue;
                 } else if (enemyComp && enemyComp->isGrounded) {
                     // CRITICAL: Use EXACT spawn formula - NO baseY manipulation!
                     // From initial spawn (line 1595-1602):
@@ -757,8 +992,7 @@ namespace GameCore {
                                " (screenH=" + std::to_string(screenInfo.pixelHeight) + 
                                " - scaledH=" + std::to_string(scaledSpriteHeight) + 
                                " + rawH=" + std::to_string(rawSpriteHeight) + ")");
-                } else if (m_currentLevelId == 3) { // Desert level - birds only in top half
-                    // Random Y within top half of screen (15% to 45% range) for birds
+                } else if (m_currentLevelId == 3) { // Desert level - non-echelon enemies
                     const auto& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
                     float minY = screenInfo.pixelHeight * 0.15f;
                     float maxY = screenInfo.pixelHeight * 0.45f;
@@ -832,9 +1066,37 @@ namespace GameCore {
                         }
                     }
                     
-                    // CRITICAL: Reset flying enemy state when wrapping (RatCopters, Birds)
-                    if (enemyComp->movementPattern == "flying" || enemyComp->movementPattern == "horizontal") {
-                        enemyComp->currentState = (enemyComp->movementPattern == "flying") ? EnemyState::FlyIn : EnemyState::Moving;
+                    // CRITICAL: Reset flying enemy state when wrapping (RatCopters, Birds, Galaga, Rat Swarm)
+                    if (enemyComp->movementPattern == "flying" || enemyComp->movementPattern == "horizontal" || 
+                        enemyComp->movementPattern == "galaga" || enemyComp->movementPattern == "rat_swarm") {
+                        if (enemyComp->movementPattern == "galaga") {
+                            // GALAGA: Reset to Idle to restart full pattern
+                            enemyComp->currentState = EnemyState::Idle;
+                            enemyComp->galagaHoverTimer = 0.0f;
+                            enemyComp->hasSetAnchorX = false;
+                            enemyComp->circleAngle = 0.0f;
+                            enemyComp->circleLoopsRemaining = 3;
+                            GN_LOG_INFO("[GALAGA_WRAP] Reset to Idle, pos=(" + std::to_string(t->position.x) + "," + std::to_string(baseY) + ")");
+                        } else if (enemyComp->movementPattern == "rat_swarm") {
+                            // RAT_SWARM: Reset to FlyIn state for galaga-style approach
+                            enemyComp->currentState = EnemyState::FlyIn;
+                            enemyComp->hoverTimer = 0.0f;
+                            enemyComp->isGrounded = false;
+                            
+                            // Center Y on player + formation offset
+                            Gnosis::GNVector2 playerPos = GetPlayerPosition();
+                            float playerHalfHeight = 192.0f;
+                            float playerCenterY = playerPos.y + playerHalfHeight;
+                            float enemySpriteHeight = s->height * std::abs(t->scale.y);
+                            baseY = playerCenterY - (enemySpriteHeight * 0.5f) + enemyComp->formationOffset.y;
+                            t->position.y = baseY;
+                            
+                            GN_LOG_INFO("[RAT_SWARM_WRAP] Reset to FlyIn, pos=(" + std::to_string(t->position.x) + "," + std::to_string(baseY) + 
+                                       "), formationOffset=" + std::to_string(enemyComp->formationOffset.y));
+                        } else {
+                            enemyComp->currentState = (enemyComp->movementPattern == "flying") ? EnemyState::FlyIn : EnemyState::Moving;
+                        }
+                        
                         enemyComp->isGrounded = false; // CRITICAL: Keep flying/horizontal enemies airborne
                         enemyComp->hoverTimer = 0.0f;
                         enemyComp->hasLockedDirection = false;
@@ -859,6 +1121,118 @@ namespace GameCore {
             }
             // Y behavior moved to EnemySystem; LevelManager now only wraps enemies
         }
+        
+        // Process pending group respawns
+        for (const auto& req : respawnRequests) {
+            GN_LOG_INFO("[ECHELON_RESPAWN_DEBUG] Processing respawn request for group " + std::to_string(req.groupId) + 
+                       ", missing positions: " + std::to_string(req.missingPositions.size()) +
+                       ", pool size: " + std::to_string(m_enemyPool.inactiveEnemies.size()));
+            
+            for (int posInV : req.missingPositions) {
+                // Get an inactive enemy from the pool
+                if (m_enemyPool.inactiveEnemies.empty()) {
+                    GN_LOG_WARN("[ECHELON_RESPAWN_DEBUG] Pool is empty! Cannot respawn bird at pos " + std::to_string(posInV));
+                    break;
+                }
+                
+                Gnosis::Entity enemy = GetInactiveEnemy();
+                if (!enemy) {
+                    GN_LOG_WARN("[ECHELON_RESPAWN_DEBUG] GetInactiveEnemy returned null!");
+                    continue;
+                }
+                
+                Enemy* enemyComp = m_ecsSystem->GetComponent<Enemy>(enemy);
+                Transform* transform = m_ecsSystem->GetComponent<Transform>(enemy);
+                Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(enemy);
+                
+                GN_LOG_INFO("[ECHELON_RESPAWN_DEBUG] Got entity " + std::to_string(enemy) + 
+                           ", enemyComp=" + (enemyComp ? "OK" : "NULL") +
+                           ", transform=" + (transform ? "OK" : "NULL") +
+                           ", sprite=" + (sprite ? "OK" : "NULL"));
+                
+                if (enemyComp && transform && sprite) {
+                    // Reconstruct properties
+                    enemyComp->groupId = req.groupId;
+                    enemyComp->posInV = posInV;
+                    enemyComp->vFormationPointsDown = req.vPointsDown;
+                    enemyComp->currentState = EnemyState::Moving;
+                    enemyComp->isGrounded = false;
+                    enemyComp->movementPattern = "echelon";
+                    enemyComp->enemyType = "BirdIdle"; // Assume standard bird
+                    
+                    // V-DOWN FORMATION (consistent with initial spawn):
+                    // Bird 0: Center front (lowest X, middle Y - the "tip" pointing forward)
+                    // Bird 1,2: Behind tip, spread up/down
+                    // Bird 3,4: Furthest back, spread further up/down
+                    // Result: V shape with tip at front, wings trailing behind
+                    float xOffset = 0.0f;
+                    float yOffset = 0.0f;
+                    switch (posInV) {
+                        case 0: xOffset = 0.0f;   yOffset = 0.0f; break;      // Tip (front center)
+                        case 1: xOffset = 150.0f; yOffset = -100.0f; break;   // Upper wing 1
+                        case 2: xOffset = 150.0f; yOffset = 100.0f; break;    // Lower wing 1  
+                        case 3: xOffset = 300.0f; yOffset = -200.0f; break;   // Upper wing 2 (trailing)
+                        case 4: xOffset = 300.0f; yOffset = 200.0f; break;    // Lower wing 2 (trailing)
+                    }
+                    enemyComp->formationOffset = Gnosis::GNVector2(xOffset, yOffset);
+                    enemyComp->baseY = req.echelonBaseY;
+                    
+                    // Set position
+                    transform->position.x = req.groupBaseX + xOffset;
+                    transform->position.y = req.echelonBaseY + yOffset;
+                    
+                    GN_LOG_INFO("[ECHELON_RESPAWN_DEBUG] Set position: X=" + std::to_string(transform->position.x) +
+                               ", Y=" + std::to_string(transform->position.y));
+                    
+                    // Config lookups for scale/speed and texture
+                    bool foundConfig = false;
+                     for (const auto& config : m_currentLevelConfig.enemies) {
+                        if (config.textureId == enemyComp->enemyType) {
+                            transform->scale = Gnosis::GNVector2(config.scale, config.scale);
+                            enemyComp->speed = config.speed;
+                            
+                            // CRITICAL: Set sprite texture and dimensions
+                            sprite->textureId = config.textureId;
+                            sprite->width = config.width;
+                            sprite->height = config.height;
+                            sprite->frameWidth = config.frameWidth;
+                            sprite->frameHeight = config.frameHeight;
+                            sprite->frameCount = config.frameCount;
+                            sprite->frameTime = config.frameTime;
+                            sprite->currentFrame = 0;
+                            sprite->currentFrameTime = 0.0f;
+                            foundConfig = true;
+                            GN_LOG_INFO("[ECHELON_RESPAWN_DEBUG] Applied config for BirdIdle");
+                            break;
+                        }
+                    }
+                    
+                    if (!foundConfig) {
+                        GN_LOG_WARN("[ECHELON_RESPAWN_DEBUG] Could not find BirdIdle config!");
+                    }
+                    
+                    // Reset sprite and health
+                    sprite->visible = true;
+                    sprite->color.a = 255;
+                    sprite->color.r = 255;
+                    sprite->color.g = 255;
+                    sprite->color.b = 255;
+                    sprite->playing = true;
+                    sprite->isAnimated = true;
+                    enemyComp->health = 1; // Ensure bird has health
+                    
+                    // Activate!
+                    m_activeEnemies.push_back(enemy);
+                    
+                    GN_LOG_INFO("[ECHELON_RESPAWN] Respawned bird pos=" + std::to_string(posInV) + 
+                               " for group " + std::to_string(req.groupId) +
+                               " at (" + std::to_string(transform->position.x) + "," + std::to_string(transform->position.y) + ")" +
+                               ", visible=" + std::to_string(sprite->visible) + ", activeCount=" + std::to_string(m_activeEnemies.size()));
+                } else {
+                    GN_LOG_WARN("[ECHELON_RESPAWN_DEBUG] Component retrieval failed for entity " + std::to_string(enemy));
+                }
+            }
+        }
     }
 
     void LevelManager::UpdateNPCPooling(float deltaTime, float) {
@@ -868,19 +1242,12 @@ namespace GameCore {
         Sprite* s = m_ecsSystem->GetComponent<Sprite>(m_janitorEntity);
         if (!t || !s) return;
 
-        // Continuously match Janitor speed to the actual sewer background speed
-        // Find the real sewer background speed dynamically
-        float targetSpeed = 0.0f;
-        for (const auto& layer : m_currentLevelConfig.backgroundLayers) {
-            if (layer.textureId.find("Sewer") != std::string::npos) {
-                targetSpeed = layer.scrollSpeed;
-                break;
-            }
-        }
-        // Fallback if no sewer layer found
-        if (targetSpeed == 0.0f) {
-            targetSpeed = m_currentLevelConfig.worldSpeed * 0.28f;
-        }
+        // Continuously match Janitor speed using SAME formula as ApplyDifficulty
+        // Sewer layer depth is 0.35f, formula: BASE_BACKGROUND_SPEED * (0.3 + depth * 0.7) * diffMultiplier
+        float sewerDepth = 0.35f;
+        float parallaxMultiplier = 0.3f + (sewerDepth * 0.7f); // = 0.545
+        float targetSpeed = SpeedConstants::BASE_BACKGROUND_SPEED * parallaxMultiplier * m_currentLevelConfig.difficultyMultiplier;
+        
         if (!m_ecsSystem->HasComponent<ScrollSpeed>(m_janitorEntity)) {
             m_ecsSystem->AddComponent<ScrollSpeed>(m_janitorEntity, ScrollSpeed(targetSpeed));
         } else {
@@ -898,19 +1265,7 @@ namespace GameCore {
             float offsetPx = 20.0f * 5.0f;
             t->position.y = screenH - janitorHeight - offsetPx;
             GN_LOG_INFO("NPC Janitor wrap: newX=" + std::to_string(t->position.x) + ", newY=" + std::to_string(t->position.y));
-            // Re-apply ScrollSpeed on wrap to match actual sewer background speed
-            // Find the real sewer background speed dynamically
-            float targetSpeed = 0.0f;
-            for (const auto& layer : m_currentLevelConfig.backgroundLayers) {
-                if (layer.textureId.find("Sewer") != std::string::npos) {
-                    targetSpeed = layer.scrollSpeed;
-                    break;
-                }
-            }
-            // Fallback if no sewer layer found
-            if (targetSpeed == 0.0f) {
-                targetSpeed = m_currentLevelConfig.worldSpeed * 0.28f;
-            }
+            // Re-apply ScrollSpeed on wrap (same formula as above)
             if (!m_ecsSystem->HasComponent<ScrollSpeed>(m_janitorEntity)) {
                 m_ecsSystem->AddComponent<ScrollSpeed>(m_janitorEntity, ScrollSpeed(targetSpeed));
             } else {
@@ -955,18 +1310,11 @@ namespace GameCore {
         sp.currentFrame = 0;
         sp.playing = true;
         // Attach ScrollSpeed so CameraSystem moves the Janitor with the sewer background speed
-        // Find the actual sewer background speed (not assuming 0.28f multiplier)
-        float janitorSpeed = 0.0f;
-        for (const auto& layer : m_currentLevelConfig.backgroundLayers) {
-            if (layer.textureId.find("Sewer") != std::string::npos) {
-                janitorSpeed = layer.scrollSpeed;
-                break; // Found sewer layer, use its speed
-            }
-        }
-        // Fallback if no sewer layer found
-        if (janitorSpeed == 0.0f) {
-            janitorSpeed = m_currentLevelConfig.worldSpeed * 0.28f; // Original fallback
-        }
+        // Use the SAME formula as ApplyDifficulty to ensure perfect sync with sewer background
+        // Sewer layer depth is 0.35f, formula: BASE_BACKGROUND_SPEED * (0.3 + depth * 0.7) * diffMultiplier
+        float sewerDepth = 0.35f; // Same as AddSewerLevelLayers
+        float parallaxMultiplier = 0.3f + (sewerDepth * 0.7f); // = 0.545
+        float janitorSpeed = SpeedConstants::BASE_BACKGROUND_SPEED * parallaxMultiplier * m_currentLevelConfig.difficultyMultiplier;
         Physics ph; ph.velocity.x = 0.0f; ph.useGravity = false;
         Hitbox hb; hb.type = ColliderType::Rectangle; hb.width = 48.0f; hb.height = 48.0f; hb.isTrigger = true; hb.tag = "NPC";
         NPC npcComp; npcComp.type = "Janitor"; npcComp.state = 0; npcComp.timer = 0.0f; npcComp.triggered = false;
@@ -1178,9 +1526,12 @@ namespace GameCore {
     void LevelManager::CleanupOffscreenEntities(float leftBoundary) {
         // REMOVED: Legacy obstacle cleanup - now handled by ObstacleSystem
         
-        // Clean up enemies that have moved off screen or are inactive
-        // FIXED: Use right edge of entity for proper cleanup, like toilet logic
-        for (auto it = m_activeEnemies.begin(); it != m_activeEnemies.end();) {
+        // Request struct for respawning group members (defined locally)
+        // REMOVED bad insertion
+        
+    // Clean up enemies that have moved off screen or are inactive
+    // FIXED: Use right edge of entity for proper cleanup, like toilet logic
+    for (auto it = m_activeEnemies.begin(); it != m_activeEnemies.end();) {
             Transform* transform = m_ecsSystem->GetComponent<Transform>(*it);
             Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(*it);
             Enemy* enemy = m_ecsSystem->GetComponent<Enemy>(*it);
@@ -1795,7 +2146,9 @@ namespace GameCore {
         const ScreenInfo& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
 
         // Spawn up to 5 enemies from the inactive pool (increased for better variety)
-        int maxSpawns = std::min(5, (int)m_enemyPool.inactiveEnemies.size());
+        // STRICT LIMIT: Level 2 (Galaga) and Level 5 (Castle) capped at 1 initially for progressive build-up
+        int spawnLimit = (m_currentLevelId == 2 || m_currentLevelId == 5) ? 1 : 5;
+        int maxSpawns = std::min(spawnLimit, (int)m_enemyPool.inactiveEnemies.size());
         
         GN_LOG_INFO("LevelManager: Will spawn " + std::to_string(maxSpawns) + " enemies from " + 
                    std::to_string(m_enemyPool.inactiveEnemies.size()) + " available");
@@ -1810,6 +2163,22 @@ namespace GameCore {
                 GN_LOG_ERROR("LevelManager: Spawned enemy has no Enemy component!");
                 continue;
             }
+
+            // DebugDraw DISABLED per user request
+            // if (!m_ecsSystem->HasComponent<DebugDraw>(enemy)) {
+            //     DebugDraw debugDraw;
+            //     debugDraw.debugLayer = 100;
+            //     debugDraw.showBounds = false;
+            //     debugDraw.showCollider = true;
+            //     debugDraw.colliderColor = {255, 0, 0, 255};
+            //     debugDraw.alpha = 0.5f;
+            //     m_ecsSystem->AddComponent<DebugDraw>(enemy, debugDraw);
+            //     GN_LOG_INFO("[DEBUG_DRAW] Added hitbox visualizer to initial enemy " + std::to_string(enemy));
+            // } else {
+            //     DebugDraw* dd = m_ecsSystem->GetComponent<DebugDraw>(enemy);
+            //     dd->showCollider = true;
+            //     dd->colliderColor = {255, 0, 0, 255};
+            // }
 
             // Find the matching config for this enemy type
             const EnemyConfig* matchingConfig = nullptr;
@@ -1826,7 +2195,11 @@ namespace GameCore {
             }
 
             // Position enemies offscreen to the right with generous spacing
-            float x = screenInfo.pixelWidth + 650.0f + (i * 1200.0f); // 1200px spacing - better visibility and separation
+            // Level 2 (Sewer/Galaga): Larger buffer and spacing to prevent swarming
+            float initialBuffer = (m_currentLevelId == 2) ? 1500.0f : 650.0f;
+            float spacing = (m_currentLevelId == 2) ? 1400.0f : 1200.0f;
+            
+            float x = screenInfo.pixelWidth + initialBuffer + (i * spacing);
             
             // Calculate Y position based on enemy type
             float y;
@@ -1834,10 +2207,54 @@ namespace GameCore {
                 // Toilet paper (sewer level) - spawn centered at 31.25% (5/16) for 1/8 to 1/2 bobbing
                 y = screenInfo.pixelHeight * 0.3125f;
             } else if (enemyComp->enemyType == "BirdIdle" || enemyComp->enemyType.find("Bird") != std::string::npos) {
-                // Birds spawn only in top half of screen (15% to 45% range) in echelon formation
-                float minY = screenInfo.pixelHeight * 0.15f;
-                float maxY = screenInfo.pixelHeight * 0.45f;
-                y = minY + static_cast<float>(rand() % static_cast<int>(maxY - minY));
+                // ECHELON V-FORMATION: Birds spawn in symmetric V-shape above pipes
+                // Base Y at 15% screen height (above toilets/obstacles)
+                float echelonBaseY = screenInfo.pixelHeight * 0.15f;
+                
+                // SYMMETRIC V-FORMATION (Flying V pointing left):
+                // Bird 0: Tip (front, center Y) - enters screen first
+                // Bird 1: Upper wing 1 (behind tip, above)
+                // Bird 2: Lower wing 1 (behind tip, below)
+                // Bird 3: Upper wing 2 (furthest back, highest) - triggers wrap
+                // Bird 4: Lower wing 2 (furthest back, lowest) - triggers wrap
+                int posInV = i % 5;
+                float xOffset = 0.0f;
+                float yOffset = 0.0f;
+                
+                int groupIndex = i / 5;
+                
+                // CONSISTENT V-FORMATION: tip at front, wings trailing behind
+                // WIDER SPREAD: Using larger Y offsets for visible formation
+                switch (posInV) {
+                    case 0: xOffset = 0.0f;   yOffset = 0.0f; break;      // Tip (front center)
+                    case 1: xOffset = 150.0f; yOffset = -100.0f; break;   // Upper wing 1
+                    case 2: xOffset = 150.0f; yOffset = 100.0f; break;    // Lower wing 1
+                    case 3: xOffset = 300.0f; yOffset = -200.0f; break;   // Upper wing 2 (trailing)
+                    case 4: xOffset = 300.0f; yOffset = 200.0f; break;    // Lower wing 2 (trailing)
+                }
+                
+                // FINAL POSITION includes offset; STORED baseY is the RAW echelon center
+                y = echelonBaseY + yOffset;
+                
+                // CRITICAL: Store the RAW echelonBaseY (without offset) for EnemySystem
+                // EnemySystem will add the offset based on posInV
+                enemyComp->baseY = echelonBaseY;
+                enemyComp->hasInitializedBaseY = true;
+                
+                // X SPACING: Base 650px offscreen + bird-specific offset + group offset
+                float groupSpacing = 800.0f; // Space between groups (matches wrap spacing)
+                x = screenInfo.pixelWidth + 650.0f + xOffset + (groupIndex * groupSpacing);
+                
+                // Store formation offset and Group info
+                enemyComp->formationOffset = Gnosis::GNVector2(xOffset, yOffset);
+                enemyComp->groupId = groupIndex;
+                enemyComp->posInV = posInV;
+                enemyComp->vFormationPointsDown = true; // Always use V-down style
+                
+                GN_LOG_INFO("[ECHELON_SPAWN] Bird " + std::to_string(i) + " posInV=" + std::to_string(posInV) 
+                           + " at X=" + std::to_string(x) + ", Y=" + std::to_string(y) 
+                           + " (offset: " + std::to_string(xOffset) + ", " + std::to_string(yOffset) + ")"
+                           + " baseY=" + std::to_string(echelonBaseY));
             } else if (enemyComp->enemyType == "RatCopterIdle" || enemyComp->movementPattern == "flying") {
                 // LANDSCAPE-AWARE: Boss level is landscape (2556x1179), adjust Y band accordingly
                 // In portrait: 30%-50% of 2556 = 766-1278 (middle band)
@@ -2012,7 +2429,8 @@ namespace GameCore {
         m_enemyBaseY[enemy] = y;
         
         // CRITICAL: Set enemy's baseY for movement system (enemyComp already defined above)
-        if (enemyComp) {
+        // SKIP echelon birds - their baseY is already set to raw center in echelon spawn code
+        if (enemyComp && enemyComp->movementPattern != "echelon") {
             enemyComp->baseY = y;
             enemyComp->hasInitializedBaseY = true;
             GN_LOG_INFO("[SPAWN] Set enemy baseY=" + std::to_string(y) + " for " + config.textureId);
@@ -2095,13 +2513,21 @@ namespace GameCore {
         // Get screen dimensions for positioning
         const ScreenInfo& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
 
+        // CRITICAL: For Level 2 (Galaga) and Level 5 (Castle), extra enemies spawned at pipe 25/50 should be removed
+        // When player dies, they start at pipe 0, so only 1 enemy should be active
+        int maxEnemiesForLevel = 99; // Default: keep all enemies
+        if (m_currentLevelId == 2 || m_currentLevelId == 5) {
+            maxEnemiesForLevel = 1; // Level 2 and 5 start with only 1 enemy
+            GN_LOG_INFO("[RESET] Level " + std::to_string(m_currentLevelId) + " detected - reducing active enemies to " + std::to_string(maxEnemiesForLevel));
+        }
+        
         // Reset all active enemies - keep them VISIBLE and scrolling like obstacles
         // CRITICAL: Space them out horizontally, do NOT stack them!
         // EXCEPTION: Skip Rat King boss (managed by BossSystem), but REMOVE rat minions spawned during battle
         const float ENEMY_SPACING = 800.0f; // Generous spacing between enemies
         int enemyIndex = 0;
         
-        std::vector<Entity> enemiesToRemove; // Track rat minions to remove
+        std::vector<Entity> enemiesToRemove; // Track enemies to return to pool
         
         for (Entity enemy : m_activeEnemies) {
             Enemy* enemyComp = m_ecsSystem->GetComponent<Enemy>(enemy);
@@ -2122,13 +2548,63 @@ namespace GameCore {
                     continue;
                 }
                 
+                // CRITICAL: Remove extra enemies beyond initial count for level
+                // This handles pipe 25/50 spawned extras that shouldn't persist on death
+                if (enemyIndex >= maxEnemiesForLevel) {
+                    GN_LOG_INFO("[RESET] Marking extra enemy " + std::to_string(enemy) + " for removal (index " + 
+                               std::to_string(enemyIndex) + " >= max " + std::to_string(maxEnemiesForLevel) + ")");
+                    enemiesToRemove.push_back(enemy);
+                    enemyIndex++;
+                    continue;
+                }
+                
                 // Position offscreen to the right with proper spacing (like initial spawn)
                 float offsetX = screenInfo.pixelWidth + 650.0f + (enemyIndex * ENEMY_SPACING);
                 transform->position.x = offsetX;
                 
-                // CRITICAL: Recalculate Y position for flying enemies to prevent top-of-screen spawn
-                // Grounded enemies can preserve Y, but flying enemies need proper Y range
-                if (enemyComp->movementPattern == "flying") {
+                // CRITICAL: Recalculate Y position based on movement pattern
+                if (enemyComp->movementPattern == "echelon") {
+                    // ECHELON BIRDS: Preserve V-formation by using proper offsets
+                    // Position groups offscreen with correct formation spacing
+                    int groupIndex = enemyComp->groupId;
+                    int posInV = enemyComp->posInV;
+                    
+                    // Calculate echelon base Y and offsets
+                    float echelonBaseY = screenInfo.pixelHeight * 0.15f;
+                    float xOffset = 0.0f;
+                    float yOffset = 0.0f;
+                    switch (posInV) {
+                        case 0: xOffset = 0.0f;   yOffset = 0.0f; break;
+                        case 1: xOffset = 150.0f; yOffset = -100.0f; break;
+                        case 2: xOffset = 150.0f; yOffset = 100.0f; break;
+                        case 3: xOffset = 300.0f; yOffset = -200.0f; break;
+                        case 4: xOffset = 300.0f; yOffset = 200.0f; break;
+                    }
+                    
+                    // Position in formation: group base X + bird offset
+                    float groupBaseX = screenInfo.pixelWidth + 650.0f + (groupIndex * 800.0f);
+                    transform->position.x = groupBaseX + xOffset;
+                    transform->position.y = echelonBaseY + yOffset;
+                    enemyComp->baseY = echelonBaseY;
+                    enemyComp->currentState = EnemyState::Moving;
+                    enemyComp->isGrounded = false;
+                    
+                    // Make sure bird is visible
+                    if (sprite) {
+                        sprite->visible = true;
+                        sprite->color.a = 255;
+                        sprite->playing = true;
+                    }
+                    enemyComp->health = 1;
+                    
+                    GN_LOG_INFO("[RESET] Echelon bird " + std::to_string(enemy) + " group=" + std::to_string(groupIndex) + 
+                               " posInV=" + std::to_string(posInV) + " reset to (" + std::to_string(transform->position.x) + 
+                               "," + std::to_string(transform->position.y) + ")");
+                    
+                    // Skip enemyIndex increment - echelon birds are spaced by formation, not generic spacing
+                    continue;
+                } else if (enemyComp->movementPattern == "flying" || enemyComp->movementPattern == "rat_swarm") {
+                    // OTHER FLYING ENEMIES (RatCopter, etc.) and RAT_SWARM: Randomize Y position
                     float newY;
                     if (m_currentLevelId == 5 || m_currentLevelId == 6) {
                         // LANDSCAPE-AWARE: Boss level (6) is landscape, Castle level (5) is portrait
@@ -2137,16 +2613,10 @@ namespace GameCore {
                         float minY = screenInfo.pixelHeight * (screenInfo.isPortrait ? 0.30f : 0.50f);
                         float maxY = screenInfo.pixelHeight * (screenInfo.isPortrait ? 0.50f : 0.70f);
                         newY = minY + static_cast<float>(rand() % static_cast<int>(maxY - minY));
-                        GN_LOG_INFO("[RESET] RatCopter " + std::to_string(enemy) + " repositioned L" + std::to_string(m_currentLevelId) + ": screenH=" + 
+                        GN_LOG_INFO("[RESET] RatCopter/RatSwarm " + std::to_string(enemy) + " repositioned L" + std::to_string(m_currentLevelId) + ": screenH=" + 
                                    std::to_string(screenInfo.pixelHeight) + ", isPortrait=" + 
                                    std::to_string(screenInfo.isPortrait) + ", Y=" + std::to_string(newY) + 
                                    " (" + std::to_string((newY/screenInfo.pixelHeight)*100.0f) + "% band)");
-                    } else if (m_currentLevelId == 3) {
-                        // Desert level - Birds in top half (15%-45%)
-                        float minY = screenInfo.pixelHeight * 0.15f;
-                        float maxY = screenInfo.pixelHeight * 0.45f;
-                        newY = minY + static_cast<float>(rand() % static_cast<int>(maxY - minY));
-                        GN_LOG_INFO("[RESET] Bird " + std::to_string(enemy) + " repositioned to Y=" + std::to_string(newY) + " (15%-45% band)");
                     } else {
                         newY = 900.0f + static_cast<float>((rand()%300) - 150);
                     }
@@ -2173,8 +2643,9 @@ namespace GameCore {
                 
                 // CRITICAL: Reset movement pattern specific flags for flying enemies
                 // Reset enemy state based on movement pattern
-                if (enemyComp->movementPattern == "flying" || enemyComp->movementPattern == "horizontal") {
-                    enemyComp->currentState = (enemyComp->movementPattern == "flying") ? EnemyState::FlyIn : EnemyState::Moving;
+                if (enemyComp->movementPattern == "flying" || enemyComp->movementPattern == "horizontal" || enemyComp->movementPattern == "rat_swarm") {
+                    // rat_swarm uses FlyIn state like flying pattern
+                    enemyComp->currentState = (enemyComp->movementPattern == "horizontal") ? EnemyState::Moving : EnemyState::FlyIn;
                     enemyComp->isGrounded = false; // CRITICAL: Ensure flying/horizontal enemies are NOT grounded!
                     enemyComp->hoverTimer = 0.0f;
                     enemyComp->hasLockedDirection = false;
@@ -2182,7 +2653,7 @@ namespace GameCore {
                     enemyComp->beelineSpeed = 0.0f;
                     enemyComp->targetDirection = Gnosis::GNVector2(0.0f, 0.0f);
                     enemyComp->pullbackVector = Gnosis::GNVector2(0.0f, 0.0f);
-                    GN_LOG_INFO("[RESET] Flying/horizontal enemy " + enemyComp->enemyType + " " + std::to_string(enemy) + " reset, isGrounded=false, pattern=" + enemyComp->movementPattern);
+                    GN_LOG_INFO("[RESET] Flying/horizontal/rat_swarm enemy " + enemyComp->enemyType + " " + std::to_string(enemy) + " reset, isGrounded=false, pattern=" + enemyComp->movementPattern);
                 } else {
                     enemyComp->currentState = EnemyState::Idle;
                 }
@@ -2472,14 +2943,14 @@ namespace GameCore {
                 break;
             }
             case 5: { // Castle
-                auto toiletPair = m_obstacleSystem->SpawnCastlePattern_GoldToiletPair(worldX, groupId, manifest->gapWidth);
-                obstacles.push_back(toiletPair.first);
-                obstacles.push_back(toiletPair.second);
-                manifest->leaderEntity = toiletPair.first;
-                // Note: Castle decorations are spawned within SpawnCastlePattern_GoldToiletPair
-                // We'll need to collect them separately if we want them in the manifest
-                break;
+            std::vector<Gnosis::Entity> castleEntities = m_obstacleSystem->SpawnCastlePattern_GoldToiletPair(worldX, groupId, manifest->gapWidth);
+            for (Gnosis::Entity ent : castleEntities) {
+                obstacles.push_back(ent);
             }
+            // First entity is always the top toilet -> leader
+            manifest->leaderEntity = castleEntities.empty() ? 0 : castleEntities[0];
+            break;
+        }
             default:
                 GN_LOG_ERROR("[Orchestrator] Unknown levelId: " + std::to_string(levelId));
                 return;

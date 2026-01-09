@@ -424,8 +424,10 @@ void PickupSystem::applyMagnetEffects(float deltaTime) {
         float dy = playerCenterY - transform->position.y;
         float distance = std::sqrt(dx * dx + dy * dy);
 
-        // Check if within magnet range
-        float range = isCoin ? COIN_MAGNET_RANGE : HEART_MAGNET_RANGE;
+        // Check if within magnet range (multiplied by strength for Rank II upgrade)
+        float baseRange = isCoin ? COIN_MAGNET_RANGE : HEART_MAGNET_RANGE;
+        float strength = isCoin ? m_coinMagnetStrength : m_heartMagnetStrength;
+        float range = baseRange * strength;
         if (distance <= range && distance > 1.0f) { // Very small minimum distance
             // Calculate direction from pickup to player (normalized)
             float dirX = dx / distance;

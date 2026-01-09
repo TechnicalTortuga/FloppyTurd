@@ -1,6 +1,7 @@
 #include "EnemySystem.h"
 #include "BossSystem.h"
 #include "../Game/FloppyTurdGame.h"
+#include "LevelManager.h"
 #include "../../Engine/Configuration/ConfigManager.h"
 #include <cmath>
 #include <algorithm>
@@ -689,6 +690,91 @@ void EnemySystem::InitializeEnemyBehavior(Enemy* enemy, const std::string& movem
         enemy->bobbingEnabled = false; // No bobbing - sprite animation provides hover effect
         enemy->speed = 120.0f; // Base fly-in speed
         
+    } else if (movementPattern == "rat_swarm") {
+        // RAT SWARM: Galaga-style behavior with staggered attacks and Y-split positioning
+        enemy->currentState = EnemyState::FlyIn;
+        enemy->isGrounded = false;
+        enemy->groundOffset = 0.0f;
+        enemy->bobbingEnabled = false;
+        enemy->speed = 180.0f; // Faster fly-in than before
+        
+        // Static counter to group rats and assign formation positions
+        static int ratSwarmCounter = 0;
+        int groupIndex = ratSwarmCounter % 3;
+        ratSwarmCounter++;
+        
+        // Stagger attack delays: 0s, 0.4s, 0.8s (tighter timing)
+        enemy->swarmAttackDelay = static_cast<float>(groupIndex) * 0.4f;
+        enemy->formationIndex = groupIndex;
+        
+        // Y offset for multi-rat positioning (split vertically around player)
+        // 0 = center, 1 = above, 2 = below
+        // These offsets will be applied to the tracked player Y position
+        switch (groupIndex) {
+            case 0: enemy->formationOffset.y = 0.0f; break;      // Center
+            case 1: enemy->formationOffset.y = -100.0f; break;   // Above player
+            case 2: enemy->formationOffset.y = 100.0f; break;    // Below player
+        }
+        
+        GN_LOG_INFO("[RAT_SWARM] Initialized rat " + std::to_string(groupIndex) + 
+                   " with delay " + std::to_string(enemy->swarmAttackDelay) + 
+                   "s, yOffset=" + std::to_string(enemy->formationOffset.y));
+
+    } else if (movementPattern == "galaga") {
+        // GALAGA: Toilet Paper specific pattern (FlyIn -> Hover -> Attack)
+        enemy->currentState = EnemyState::FlyIn;
+        enemy->isGrounded = false; 
+        enemy->groundOffset = 0.0f;
+        enemy->bobbingEnabled = true; // Enabled for hover phase
+        enemy->bobAmplitude = 20.0f;  // Reduced amplitude (shorter waves)
+        enemy->bobSpeed = 3.0f;       // Faster, jittery waves
+        enemy->galagaHoverTimer = 2.0f; // 2 seconds hover
+        enemy->speed = 250.0f;        // Fast fly-in speed
+        
+        // Target X: 80% of screen width (20% from right)
+        const ScreenInfo& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+        enemy->galagaFlyInTargetX = screenInfo.pixelWidth * 0.80f;
+        enemy->galagaHoverComplete = false;
+        
+    } else if (movementPattern == "echelon") {
+        // ECHELON: Bird formation flying
+        enemy->currentState = EnemyState::Moving;
+        enemy->isGrounded = false;
+        enemy->bobbingEnabled = true;
+        enemy->bobSpeed = 2.0f;
+        enemy->bobAmplitude = 60.0f;
+        enemy->speed = 150.0f;
+        
+        // Static counter for V-formation (groups of 5)
+        static int birdFormationCounter = 0;
+        int posInV = birdFormationCounter % 5; // 0=Tip, 1,2=Upper Wing, 3,4=Lower Wing
+        birdFormationCounter++;
+        
+        // Calculate offsets for V-shape
+        // 0: (0, 0)
+        // 1: (40, -40)  - Upper 1
+        // 2: (80, -80)  - Upper 2
+        // 3: (40, 40)   - Lower 1
+        // 4: (80, 80)   - Lower 2
+        
+        float xOff = 0.0f;
+        float yOff = 0.0f;
+        
+        switch (posInV) {
+            case 0: xOff = 0.0f; yOff = 0.0f; break;
+            case 1: xOff = 60.0f; yOff = -50.0f; break;
+            case 2: xOff = 120.0f; yOff = -100.0f; break;
+            case 3: xOff = 60.0f; yOff = 50.0f; break;
+            case 4: xOff = 120.0f; yOff = 100.0f; break;
+        }
+        
+        enemy->formationOffset = GNVector2(xOff, yOff);
+        
+        // Adjust initial position based on formation
+        // Note: transform isn't passed here, so we set spawnPosition logic in ProcessMovement or apply it if we could
+        // Since we don't have transform here, we store offset and apply it in ProcessMovement relative to "virtual" leader position
+        // OR better: LevelManager could handle this, but for now we'll just carry the offset.
+        
     } else {
         // Default behavior
         enemy->currentState = EnemyState::Idle;
@@ -699,7 +785,9 @@ void EnemySystem::InitializeEnemyBehavior(Enemy* enemy, const std::string& movem
 
 void EnemySystem::GroundEnemy(Enemy* enemy, Transform* transform) {
     // CRITICAL: Never ground flying or horizontal enemies (birds, ratcopters)
-    if (enemy->movementPattern == "flying" || enemy->movementPattern == "horizontal") {
+    if (enemy->movementPattern == "flying" || enemy->movementPattern == "horizontal" || 
+        enemy->movementPattern == "galaga" || enemy->movementPattern == "rat_swarm" ||
+        enemy->movementPattern == "echelon") {
         enemy->isGrounded = false;
         return;
     }
@@ -803,11 +891,26 @@ void EnemySystem::ProcessEnemyState(float deltaTime, Entity e, Enemy* enemy, Spr
         }
         
         if (animationCompleted) {
-            // Hurt animation completed - return enemy to inactive pool for reuse
-            if (m_levelManager) {
-                m_levelManager->ReturnEnemyToPool(e);
+            // Hurt animation completed - handle based on movement pattern
+            if (enemy->movementPattern == "echelon") {
+                // ECHELON BIRDS: Stay in active list but become invisible
+                // They will be resurrected when the group wraps around
+                Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(e);
+                if (sprite) {
+                    sprite->visible = false;
+                    sprite->color.a = 0;
+                    sprite->playing = false;
+                }
+                enemy->currentState = EnemyState::Idle; // Reset state
+                enemy->health = 0; // Mark as dead
+                GN_LOG_INFO("[ECHELON_DEATH] Bird " + std::to_string(e) + " died, hidden but stays in active list for resurrection on wrap");
+            } else {
+                // OTHER ENEMIES: Return to inactive pool for reuse
+                if (m_levelManager) {
+                    m_levelManager->ReturnEnemyToPool(e);
+                }
+                GN_LOG_INFO("Enemy " + std::to_string(e) + " hurt animation completed, returned to inactive pool");
             }
-            GN_LOG_INFO("Enemy " + std::to_string(e) + " hurt animation completed, returned to inactive pool");
         }
     }
 
@@ -853,8 +956,32 @@ void EnemySystem::ProcessEnemyMovement(float deltaTime, Enemy* enemy, Transform*
                 float oldX = transform->position.x;
                 transform->position.x -= enemy->speed * deltaTime;
                 
-                // NO bobbing during fly-in - makes movement predictable and smooth
-                // Bobbing will happen during HOVER state only
+                // TRACK PLAYER Y during fly-in for better alignment
+                Entity playerEntity = m_levelManager ? m_levelManager->GetPlayerEntity() : 0;
+                if (playerEntity != 0) {
+                    Transform* playerTransform = m_ecsSystem->GetComponent<Transform>(playerEntity);
+                    Sprite* playerSprite = m_ecsSystem->GetComponent<Sprite>(playerEntity);
+                    if (playerTransform) {
+                        // Get player center Y
+                        float playerCenterY = playerTransform->position.y;
+                        if (playerSprite) {
+                            playerCenterY += (playerSprite->height * std::abs(playerTransform->scale.y)) * 0.5f;
+                        }
+                        
+                        // Smoothly move toward player Y
+                        float yDiff = playerCenterY - transform->position.y;
+                        float trackSpeed = 5.0f; // Higher value for responsive tracking
+                        transform->position.y += yDiff * trackSpeed * deltaTime;
+                        
+                        // Update baseY to match current position for hover transition
+                        enemy->baseY = transform->position.y;
+                        
+                        // Constrain to screen bounds
+                        const float topPadding = 100.0f;
+                        const float bottomPadding = 100.0f;
+                        transform->position.y = std::max(topPadding, std::min(screenInfo.pixelHeight - bottomPadding, transform->position.y));
+                    }
+                }
                 
                 // LOG: Track fly-in progress every 100 frames
                 static int flyInLogCounter = 0;
@@ -880,6 +1007,30 @@ void EnemySystem::ProcessEnemyMovement(float deltaTime, Enemy* enemy, Transform*
             case EnemyState::Hover: {
                 // HOVER: Stay in place with bobbing, countdown timer
                 float oldY = transform->position.y;
+                
+                // TRACK PLAYER Y during hover - update baseY to follow player
+                Entity playerEntity = m_levelManager ? m_levelManager->GetPlayerEntity() : 0;
+                if (playerEntity != 0) {
+                    Transform* playerTransform = m_ecsSystem->GetComponent<Transform>(playerEntity);
+                    Sprite* playerSprite = m_ecsSystem->GetComponent<Sprite>(playerEntity);
+                    if (playerTransform) {
+                        // Get player center Y
+                        float playerCenterY = playerTransform->position.y;
+                        if (playerSprite) {
+                            playerCenterY += (playerSprite->height * std::abs(playerTransform->scale.y)) * 0.5f;
+                        }
+                        
+                        // Smoothly move baseY toward player Y
+                        float yDiff = playerCenterY - enemy->baseY;
+                        float trackSpeed = 4.0f; // Responsive tracking during hover
+                        enemy->baseY += yDiff * trackSpeed * deltaTime;
+                        
+                        // Constrain baseY to screen bounds
+                        const float topPadding = 100.0f;
+                        const float bottomPadding = 100.0f;
+                        enemy->baseY = std::max(topPadding, std::min(screenInfo.pixelHeight - bottomPadding, enemy->baseY));
+                    }
+                }
                 
                 // Apply bobbing for hover effect
                 if (enemy->bobbingEnabled) {
@@ -1039,6 +1190,431 @@ void EnemySystem::ProcessEnemyMovement(float deltaTime, Enemy* enemy, Transform*
                 enemy->currentState = EnemyState::FlyIn;
                 break;
         }
+    } else if (enemy->movementPattern == "rat_swarm") {
+        // RAT SWARM LOGIC (Galaga-style: FlyIn -> Hover -> Pullback -> Beeline)
+        // CRITICAL: Fully decoupled from world scroll like galaga enemies
+        
+        const ScreenInfo& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+        
+        // Counter-act world scroll to stay fixed in screen space
+        float worldScrollSpeed = m_levelManager->GetCurrentLevelConfig().worldSpeed;
+        
+        switch (enemy->currentState) {
+            case EnemyState::Idle:
+                // Auto-start
+                enemy->currentState = EnemyState::FlyIn;
+                break;
+                
+            case EnemyState::FlyIn: {
+                // Counter world scroll to stay at fixed X position during fly-in
+                transform->position.x += worldScrollSpeed * deltaTime;
+                
+                // TRACK PLAYER Y during fly-in (center-to-center alignment)
+                Entity playerEntity = m_levelManager ? m_levelManager->GetPlayerEntity() : 0;
+                if (playerEntity != 0) {
+                    Transform* playerTransform = m_ecsSystem->GetComponent<Transform>(playerEntity);
+                    Sprite* playerSprite = m_ecsSystem->GetComponent<Sprite>(playerEntity);
+                    Sprite* enemySprite = m_ecsSystem->GetComponent<Sprite>(enemyEntity);
+                    if (playerTransform) {
+                        // Get player center Y
+                        float playerCenterY = playerTransform->position.y;
+                        if (playerSprite) {
+                            playerCenterY += (playerSprite->height * std::abs(playerTransform->scale.y)) * 0.5f;
+                        }
+                        
+                        // Get enemy center Y (using actual sprite size)
+                        float enemyHalfHeight = 16.0f; // Default for 32x32 RatCopter
+                        if (enemySprite) {
+                            enemyHalfHeight = (enemySprite->height * std::abs(transform->scale.y)) * 0.5f;
+                        }
+                        float enemyCenterY = transform->position.y + enemyHalfHeight;
+                        
+                        // Apply formation Y offset for multi-rat positioning
+                        float targetY = playerCenterY + enemy->formationOffset.y;
+                        
+                        // Smoothly move CENTER toward target
+                        float yDiff = targetY - enemyCenterY;
+                        float trackSpeed = 5.0f; // Faster than galaga for snappier rats
+                        float newCenterY = enemyCenterY + yDiff * trackSpeed * deltaTime;
+                        transform->position.y = newCenterY - enemyHalfHeight;
+                    }
+                }
+                
+                // Fly in toward target X (85% screen width)
+                float targetX = screenInfo.pixelWidth * 0.85f;
+                if (transform->position.x > targetX) {
+                    float flySpeed = enemy->speed;
+                    transform->position.x -= flySpeed * deltaTime;
+                } else {
+                    // Reached hover position
+                    enemy->currentState = EnemyState::Hover;
+                    enemy->baseY = transform->position.y;
+                    // BASE hover time + specific swarm delay for staggered attacks
+                    enemy->hoverTimer = 1.0f + enemy->swarmAttackDelay;
+                    
+                    GN_LOG_INFO("[RAT_SWARM] Entered HOVER. Attack in " + std::to_string(enemy->hoverTimer) + "s");
+                }
+                break;
+            }
+            
+            case EnemyState::Hover: {
+                // Counter world scroll to stay at fixed X
+                transform->position.x += worldScrollSpeed * deltaTime;
+                
+                // TRACK PLAYER Y during hover (center-to-center)
+                Entity playerEntity = m_levelManager ? m_levelManager->GetPlayerEntity() : 0;
+                if (playerEntity != 0) {
+                    Transform* playerTransform = m_ecsSystem->GetComponent<Transform>(playerEntity);
+                    Sprite* playerSprite = m_ecsSystem->GetComponent<Sprite>(playerEntity);
+                    Sprite* enemySprite = m_ecsSystem->GetComponent<Sprite>(enemyEntity);
+                    if (playerTransform) {
+                        // Get player center Y
+                        float playerCenterY = playerTransform->position.y;
+                        if (playerSprite) {
+                            playerCenterY += (playerSprite->height * std::abs(playerTransform->scale.y)) * 0.5f;
+                        }
+                        
+                        // Get enemy center Y
+                        float enemyHalfHeight = 16.0f;
+                        if (enemySprite) {
+                            enemyHalfHeight = (enemySprite->height * std::abs(transform->scale.y)) * 0.5f;
+                        }
+                        float enemyCenterY = transform->position.y + enemyHalfHeight;
+                        
+                        // Apply formation Y offset
+                        float targetY = playerCenterY + enemy->formationOffset.y;
+                        
+                        // Smoothly track target
+                        float yDiff = targetY - enemyCenterY;
+                        float trackSpeed = 4.0f;
+                        float newCenterY = enemyCenterY + yDiff * trackSpeed * deltaTime;
+                        transform->position.y = newCenterY - enemyHalfHeight;
+                        enemy->baseY = transform->position.y;
+                    }
+                }
+                
+                enemy->hoverTimer -= deltaTime;
+                if (enemy->hoverTimer <= 0.0f) {
+                    enemy->currentState = EnemyState::Pullback;
+                    enemy->pullbackTimer = 0.3f; // Short pullback
+                    
+                    // Target player position for beeline
+                    Gnosis::Entity playerEntity = m_levelManager->GetPlayerEntity();
+                    Gnosis::GNVector2 playerPos(0.0f, 0.0f);
+                    bool hasPlayer = false;
+                    if (playerEntity != 0) {
+                        Transform* pt = m_ecsSystem->GetComponent<Transform>(playerEntity);
+                        if (pt) { playerPos = pt->position; hasPlayer = true; }
+                    }
+                    
+                    if (hasPlayer) {
+                        float dx = playerPos.x - transform->position.x;
+                        float dy = playerPos.y - transform->position.y;
+                        float len = std::sqrt(dx*dx + dy*dy);
+                        if (len > 0.001f) {
+                            enemy->targetDirection.x = dx/len;
+                            enemy->targetDirection.y = dy/len;
+                        }
+                    } else {
+                        enemy->targetDirection = GNVector2(-1.0f, 0.0f);
+                    }
+                    
+                    // Pullback vector (opposite direction)
+                    enemy->pullbackVector.x = -enemy->targetDirection.x * 30.0f;
+                    enemy->pullbackVector.y = -enemy->targetDirection.y * 30.0f;
+                }
+                break;
+            }
+            
+            case EnemyState::Pullback: {
+                transform->position.x += enemy->pullbackVector.x * deltaTime * 3.0f;
+                transform->position.y += enemy->pullbackVector.y * deltaTime * 3.0f;
+                enemy->pullbackTimer -= deltaTime;
+                
+                if (enemy->pullbackTimer <= 0.0f) {
+                    enemy->currentState = EnemyState::Beeline;
+                    enemy->beelineSpeed = 700.0f;
+                }
+                break;
+            }
+            
+            case EnemyState::Beeline: {
+                transform->position.x += enemy->targetDirection.x * enemy->beelineSpeed * deltaTime;
+                transform->position.y += enemy->targetDirection.y * enemy->beelineSpeed * deltaTime;
+                break;
+            }
+            
+            default:
+                break;
+        }
+
+    } else if (enemy->movementPattern == "galaga") {
+        // GALAGA MOVEMENT: FlyIn -> Hover -> Circle/Wave Pattern
+        // CRITICAL: This movement is FULLY DECOUPLED from world scroll in ALL states
+        
+        const ScreenInfo& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+        
+        // Sprite offset: transform.position is TOP-LEFT, but we want to track CENTER
+        const float spriteHalfSize = 32.0f;
+        
+        // Counter-act world scroll to stay fixed in screen space
+        // CRITICAL: Use ACTUAL level speed, otherwise enemies drift or fly off if mismatch occurs!
+        float worldScrollSpeed = m_levelManager->GetCurrentLevelConfig().worldSpeed;
+        
+        // Circle radius: 25% of screen width (50% total diameter)
+        float circleRadiusX = screenInfo.pixelWidth * 0.25f;
+        
+        // Helpers for CENTER-based positioning
+        auto getCenterX = [&]() { return transform->position.x + spriteHalfSize; };
+        auto getCenterY = [&]() { return transform->position.y + spriteHalfSize; };
+        auto setCenterX = [&](float cx) { transform->position.x = cx - spriteHalfSize; };
+        auto setCenterY = [&](float cy) { transform->position.y = cy - spriteHalfSize; };
+        
+        switch (enemy->currentState) {
+            case EnemyState::Idle:
+                enemy->currentState = EnemyState::FlyIn;
+                // Randomly choose circle (50%) or wave (50%) pattern - equal split for testing
+                enemy->useCirclePattern = (rand() % 100) < 50;
+                enemy->circleLoopsRemaining = 3;
+                enemy->circleAngle = 0.0f;
+                enemy->circleRadius = circleRadiusX;
+                enemy->hasSetAnchorX = false;
+                GN_LOG_INFO("[GALAGA] Spawned with pattern: " + std::string(enemy->useCirclePattern ? "CIRCLE" : "WAVE") +
+                           " radius=" + std::to_string(circleRadiusX));
+                break;
+                
+            case EnemyState::FlyIn: {
+                // Counter-act world scroll DURING fly-in
+                if (transform->position.x > screenInfo.pixelWidth + 100.0f) {
+                   // Only log if far off screen to avoid spam, but useful to confirm spawn
+                   static float lastLogTime = 0;
+                   if (m_time - lastLogTime > 1.0f) {
+                       GN_LOG_INFO("[GALAGA] Enemy Flying In from X=" + std::to_string(transform->position.x));
+                       lastLogTime = m_time;
+                   }
+                }
+                
+                transform->position.x += worldScrollSpeed * deltaTime;
+                
+                // TRACK PLAYER Y during fly-in for better alignment (center to center)
+                Entity playerEntity = m_levelManager ? m_levelManager->GetPlayerEntity() : 0;
+                if (playerEntity != 0) {
+                    Transform* playerTransform = m_ecsSystem->GetComponent<Transform>(playerEntity);
+                    Sprite* playerSprite = m_ecsSystem->GetComponent<Sprite>(playerEntity);
+                    Sprite* enemySprite = m_ecsSystem->GetComponent<Sprite>(enemyEntity);
+                    if (playerTransform) {
+                        // Get player center Y (using actual sprite size)
+                        float playerCenterY = playerTransform->position.y;
+                        if (playerSprite) {
+                            playerCenterY += (playerSprite->height * std::abs(playerTransform->scale.y)) * 0.5f;
+                        }
+                        
+                        // Get enemy center Y (using actual sprite size, not hardcoded 32)
+                        float enemyHalfHeight = spriteHalfSize; // Default fallback
+                        if (enemySprite) {
+                            enemyHalfHeight = (enemySprite->height * std::abs(transform->scale.y)) * 0.5f;
+                        }
+                        float enemyCenterY = transform->position.y + enemyHalfHeight;
+                        
+                        // Smoothly move CENTER toward player CENTER
+                        float yDiff = playerCenterY - enemyCenterY;
+                        float trackSpeed = 1.5f; // Slow, smooth interpolation
+                        float newCenterY = enemyCenterY + yDiff * trackSpeed * deltaTime;
+                        transform->position.y = newCenterY - enemyHalfHeight;
+                    }
+                }
+                
+                // Target: 65% screen (requested by user)
+                float targetCenterX = screenInfo.pixelWidth * 0.65f;
+                float currentCenterX = getCenterX();
+                float dist = currentCenterX - targetCenterX;
+                
+                if (dist > 5.0f) {
+                    float flySpeed = enemy->speed;
+                    transform->position.x -= flySpeed * deltaTime;
+                } else {
+                    if (!enemy->hasSetAnchorX) {
+                        enemy->anchorX = getCenterX();
+                        enemy->hasSetAnchorX = true;
+                        enemy->baseY = getCenterY();
+                    }
+                    enemy->currentState = EnemyState::Hover;
+                    enemy->currentState = EnemyState::Hover;
+                    enemy->galagaHoverTimer = 2.0f; // 2 seconds hover (fixed)
+                    GN_LOG_INFO("[GALAGA] Reached Hover at centerX=" + std::to_string(getCenterX()) + 
+                               ", hovering for " + std::to_string(enemy->galagaHoverTimer) + "s");
+                }
+                break;
+            }
+            
+            case EnemyState::Hover: {
+                // HOVER: Track player Y position while hovering
+                // Counter-act world scroll
+                transform->position.x += worldScrollSpeed * deltaTime;
+                
+                // TRACK PLAYER Y during hover (center to center)
+                Entity playerEntity = m_levelManager ? m_levelManager->GetPlayerEntity() : 0;
+                if (playerEntity != 0) {
+                    Transform* playerTransform = m_ecsSystem->GetComponent<Transform>(playerEntity);
+                    Sprite* playerSprite = m_ecsSystem->GetComponent<Sprite>(playerEntity);
+                    Sprite* enemySprite = m_ecsSystem->GetComponent<Sprite>(enemyEntity);
+                    if (playerTransform) {
+                        // Get player center Y (using actual sprite size)
+                        float playerCenterY = playerTransform->position.y;
+                        if (playerSprite) {
+                            playerCenterY += (playerSprite->height * std::abs(playerTransform->scale.y)) * 0.5f;
+                        }
+                        
+                        // Get enemy center Y (using actual sprite dimensions)
+                        float enemyHalfHeight = spriteHalfSize; // Default fallback
+                        if (enemySprite) {
+                            enemyHalfHeight = (enemySprite->height * std::abs(transform->scale.y)) * 0.5f;
+                        }
+                        float enemyCenterY = transform->position.y + enemyHalfHeight;
+                        
+                        // Smoothly move CENTER toward player CENTER
+                        float yDiff = playerCenterY - enemyCenterY;
+                        float trackSpeed = 1.2f; // Slow, smooth interpolation
+                        float newCenterY = enemyCenterY + yDiff * trackSpeed * deltaTime;
+                        transform->position.y = newCenterY - enemyHalfHeight;
+                        enemy->baseY = newCenterY; // Update baseY to match tracked center
+                    }
+                }
+                
+                enemy->galagaHoverTimer -= deltaTime;
+                if (enemy->galagaHoverTimer <= 0.0f) {
+                    enemy->currentState = EnemyState::Attacking;
+                    // Start at angle 0 (RIGHT side of circle) for counter-clockwise motion
+                    enemy->circleAngle = 0.0f;
+                    enemy->circleLoopsRemaining = 3;
+                    enemy->circleRadius = circleRadiusX;
+                    
+                    enemy->circleCenter = Gnosis::GNVector2(
+                        screenInfo.pixelWidth * 0.45f,
+                        screenInfo.pixelHeight * 0.4f
+                    );
+                    
+                    // For wave: START AT PHASE 0 (Static Hover Position)
+                    // Since hover is now static at baseY, and sin(0) = 0, starting at phase 0
+                    // ensures a perfect match with regular sine wave.
+                    if (!enemy->useCirclePattern) {
+                        // Start wave time NOW. 
+                        // sin((m_time - anchorX) * freq) -> sin(0) -> 0 offset from baseY
+                        enemy->anchorX = m_time;
+                        
+                        GN_LOG_INFO("[GALAGA] Starting WAVE! Static start at Y=" + std::to_string(getCenterY()) + 
+                                   " BaseY=" + std::to_string(enemy->baseY));
+                    } else {
+                        // For circle: unused, but set to m_time just in case
+                        enemy->anchorX = m_time;
+                        GN_LOG_INFO("[GALAGA] Starting CIRCLE! radius=" + std::to_string(enemy->circleRadius));
+                    }
+                }
+                break;
+            }
+            
+            case EnemyState::Attacking: {
+                // Counter-act world scroll during attack phase
+                transform->position.x += worldScrollSpeed * deltaTime;
+                
+                if (enemy->useCirclePattern) {
+                    // CIRCLE PATTERN: COUNTER-CLOCKWISE around screen center
+                    float circleSpeed = 1.2f; // radians per second (slower)
+                    enemy->circleAngle -= circleSpeed * deltaTime; // NEGATIVE for counter-clockwise
+                    
+                    // Calculate target CENTER position on circle
+                    float targetCenterX = enemy->circleCenter.x + std::cos(enemy->circleAngle) * enemy->circleRadius;
+                    float targetCenterY = enemy->circleCenter.y + std::sin(enemy->circleAngle) * enemy->circleRadius;
+                    
+                    // Smooth lerp to target position
+                    float lerpSpeed = 4.0f;
+                    float currentCenterX = getCenterX();
+                    float currentCenterY = getCenterY();
+                    
+                    float newCenterX = currentCenterX + (targetCenterX - currentCenterX) * lerpSpeed * deltaTime;
+                    float newCenterY = currentCenterY + (targetCenterY - currentCenterY) * lerpSpeed * deltaTime;
+                    
+                    setCenterX(newCenterX);
+                    setCenterY(newCenterY);
+                    
+                    // Check for loop completion (counter-clockwise: angle goes negative)
+                    if (enemy->circleAngle <= -6.28318f) { // Full 2π rotation
+                        enemy->circleAngle += 6.28318f; // Reset
+                        enemy->circleLoopsRemaining--;
+                        GN_LOG_INFO("[GALAGA CIRCLE] Loop completed! Remaining=" + std::to_string(enemy->circleLoopsRemaining));
+                        
+                        if (enemy->circleLoopsRemaining <= 0) {
+                            enemy->currentState = EnemyState::Beeline;
+                            enemy->targetDirection = Gnosis::GNVector2(-1.0f, 0.3f);
+                            enemy->beelineSpeed = 400.0f;
+                            GN_LOG_INFO("[GALAGA] Circles complete - flying out!");
+                        }
+                    }
+                } else {
+                    // WAVE PATTERN: Sinusoidal wave with shorter wavelength
+                    float waveSpeed = 60.0f;         // Horizontal drift speed
+                    float waveFrequency = 2.5f;      // Higher frequency = shorter wavelength (was 0.8)
+                    float waveAmplitude = 300.0f;    // Larger amplitude (was 250)
+                    
+                    // DON'T counter-act scroll for wave - let enemy drift left
+                    transform->position.x -= worldScrollSpeed * deltaTime; // Cancel the counter-act above
+                    transform->position.x -= waveSpeed * deltaTime;
+                    
+                    // INDEPENDENT WAVE TIMING: Use per-enemy phase offset
+                    float enemyWaveTime = m_time - enemy->anchorX; // Time since effective start of wave
+                    float targetWaveY = enemy->baseY + std::sin(enemyWaveTime * waveFrequency) * waveAmplitude;
+                    float currentCenterY = getCenterY();
+                    
+                    // INTERPOLATE to target Y for even smoother transition (optional, but good for safety)
+                    // If the asin jump fix works perfectly, this interpolation will be minimal
+                    float lerpSpeed = 5.0f;
+                    float newCenterY = currentCenterY + (targetWaveY - currentCenterY) * lerpSpeed * deltaTime;
+                    setCenterY(newCenterY);
+                    
+                    // Exit left off screen
+                    if (transform->position.x < -100.0f) {
+                        GN_LOG_INFO("[GALAGA WAVE] Exited left");
+                    }
+                }
+                break;
+            }
+            
+            case EnemyState::Beeline: {
+                // Flying out after circles - no scroll compensation, just move
+                transform->position.x += enemy->targetDirection.x * enemy->beelineSpeed * deltaTime;
+                transform->position.y += enemy->targetDirection.y * enemy->beelineSpeed * deltaTime;
+                break;
+            }
+            
+            default:
+                break;
+        }
+
+    } else if (enemy->movementPattern == "echelon") {
+        // ECHELON MOVEMENT: Move left + Formation Offset + Wave
+        
+        // Base movement left
+        transform->position.x -= enemy->speed * deltaTime;
+        
+        // RECALCULATE Y offset based on posInV for consistency with spawn and wrap
+        float yOffset = 0.0f;
+        switch (enemy->posInV) {
+            case 0: yOffset = 0.0f; break;      // Tip (front center)
+            case 1: yOffset = -100.0f; break;   // Upper wing 1
+            case 2: yOffset = 100.0f; break;    // Lower wing 1
+            case 3: yOffset = -200.0f; break;   // Upper wing 2 (trailing)
+            case 4: yOffset = 200.0f; break;    // Lower wing 2 (trailing)
+        }
+        
+        // Apply bobbing if enabled
+        float bobOffset = 0.0f;
+        if (enemy->bobbingEnabled && enemy->bobAmplitude > 0.0f) {
+            bobOffset = std::sin(m_time * enemy->bobSpeed) * enemy->bobAmplitude;
+        }
+        
+        // Use baseY + calculated offset + optional bobbing
+        transform->position.y = enemy->baseY + yOffset + bobOffset;
+        
     } else {
         // Standard horizontal movement for other enemy types
         // FIXED: Only apply speed if enemy has speed > 0 (snowmen have speed=0 and move with world scroll only)
@@ -1055,38 +1631,8 @@ void EnemySystem::ProcessEnemyMovement(float deltaTime, Enemy* enemy, Transform*
         }
     }
 
-    // Screen wrapping (if enemy goes off left side, wrap to right)
-    // EXCLUDE boss minions - they should despawn naturally, not wrap back
-    // Castle-level enemies (including RatCopters) DO wrap normally
-    const float wrapBuffer = 400.0f;
-    if (transform->position.x < -wrapBuffer && !enemy->isBossMinion) {
-        // Wrap to right side with extended buffer
-        transform->position.x = screenInfo.pixelWidth + 650.0f; // Position well off-screen right
-        
-        // CRITICAL: Constrain Y position when wrapping to prevent rats from bottom-edge spawning
-        // If rat went off bottom during beeline, reset Y to valid spawn range
-        if (enemy->movementPattern == "flying") {
-            const float topPadding = 100.0f;
-            const float bottomPadding = 100.0f;
-            const float minY = topPadding;
-            const float maxY = screenInfo.pixelHeight - bottomPadding;
-            
-            // If rat is outside valid Y bounds, reset to safe middle position
-            if (transform->position.y < minY || transform->position.y > maxY) {
-                // Use landscape-aware middle band (50%-70% for landscape, 30%-50% for portrait)
-                float midMin = screenInfo.pixelHeight * (screenInfo.isPortrait ? 0.30f : 0.50f);
-                float midMax = screenInfo.pixelHeight * (screenInfo.isPortrait ? 0.50f : 0.70f);
-                transform->position.y = midMin + static_cast<float>(rand() % static_cast<int>(midMax - midMin));
-                
-                GN_LOG_INFO("[RAT_Y_CONSTRAINT] RatCopter Y was out of bounds, reset to " + 
-                           std::to_string(transform->position.y) + " (screen range: " + 
-                           std::to_string(minY) + "-" + std::to_string(maxY) + ")");
-            }
-        }
-        
-        GN_LOG_DEBUG("EnemySystem: Wrapped enemy to x=" + std::to_string(transform->position.x) + 
-                     ", y=" + std::to_string(transform->position.y) + " (extended 400px buffer)");
-    }
+    // Screen wrapping now handled entirely by LevelManager::UpdateEnemyPooling
+    // to avoid duplicate wrap logic causing state conflicts
 }
 
 void EnemySystem::ProcessEnemyAnimation(float deltaTime, Enemy* enemy, Sprite* sprite, StateAnimation* stateAnim) {
@@ -1232,7 +1778,15 @@ void EnemySystem::ProcessEnemyCollision(Entity e, Enemy* enemy, Transform* trans
             proj->isActive = false;
             
             if (enemy->health <= 0) {
-                // Enemy defeated - switch to hurt state, animation will play before pool return
+                // Enemy defeated - IMMEDIATELY disable collision for non-echelon enemies
+                // Echelon birds use sprite->visible for death and stay in active list for resurrection
+                // FIX: Do NOT set isActive=false here for any enemy type.
+                // We need isActive=true so EnemySystem::Update can process the Hurt animation
+                // and call ReturnEnemyToPool when it finishes.
+                // Collision is already prevented by checking currentState != Hurt in the collision loop.
+                // if (enemy->movementPattern != "echelon") {
+                //    enemy->isActive = false;  // Disable collision right away
+                // }
                 enemy->currentState = EnemyState::Hurt;
                 
                 // Play enemy-specific kill sound
@@ -1258,40 +1812,39 @@ void EnemySystem::ProcessEnemyCollision(Entity e, Enemy* enemy, Transform* trans
                     }
                 }
                 
-                float hurtDuration = 0.6f; // Default
+                float hurtDuration = 0.6f; // Default duration
+                const StateAnimation::Clip* hurtClip = nullptr;
                 
-                // Use already-fetched sprite and stateAnim (no more GetComponent calls!)
+                // Use already-fetched sprite and stateAnim
                 if (stateAnim && sprite) {
                     // Find hurt animation clip to get accurate duration
-                    const StateAnimation::Clip* hurtClip = stateAnim->getClip("hurt");
+                    hurtClip = stateAnim->getClip("hurt");
                     if (hurtClip) {
-                        hurtDuration = hurtClip->frameCount * hurtClip->frameTime + 0.1f; // Small buffer
+                        hurtDuration = hurtClip->frameCount * hurtClip->frameTime + 0.1f;
+                         
                         GN_LOG_INFO("[COLLISION] Hurt clip found: " + hurtClip->textureId + 
                                    " frames=" + std::to_string(hurtClip->frameCount) + 
                                    " duration=" + std::to_string(hurtDuration) + "s");
-                    } else {
-                        GN_LOG_WARN("[COLLISION] No hurt clip found for enemy " + enemy->enemyType);
-                    }
-                    
-                    // CRITICAL: Reset hasCompleted flag so animation plays from start
-                    sprite->hasCompleted = false;
-                    
-                    // Switch to hurt animation immediately
-                    if (hurtClip) {
-                        stateAnim->currentState = "hurt";
+                        
+                        // Switch to hurt animation
                         sprite->textureId = hurtClip->textureId;
+                        sprite->isAnimated = (hurtClip->frameCount > 1);
                         sprite->frameWidth = hurtClip->frameWidth;
                         sprite->frameHeight = hurtClip->frameHeight;
                         sprite->frameCount = hurtClip->frameCount;
                         sprite->frameTime = hurtClip->frameTime;
-                        sprite->loop = false; // Don't loop hurt animation
-                        sprite->isAnimated = (hurtClip->frameCount > 1);
-                        sprite->playing = true;
+                        sprite->loop = false;
                         sprite->currentFrame = 0;
                         sprite->currentFrameTime = 0.0f;
-                        
-                        GN_LOG_INFO("[COLLISION] Switched to hurt animation: " + sprite->textureId);
+                        sprite->playing = true;
+                        sprite->hasCompleted = false;
                     }
+                    
+                    // All enemies enter Hurt state - they'll be returned to pool when animation completes
+                    this->ChangeEnemyState(enemy, EnemyState::Hurt, hurtDuration);
+                } else {
+                     // No sprite/anim components - fallback
+                     this->ChangeEnemyState(enemy, EnemyState::Hurt, hurtDuration);
                 }
                 
                 enemy->hurtTimer = hurtDuration;

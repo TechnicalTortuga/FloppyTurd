@@ -663,8 +663,12 @@ namespace GameCore {
             Physics* physics = m_ecsSystem->GetComponent<Physics>(m_playerEntity);
             
             if (transform) {
-                // Start player at the fixed X position and near the top of screen
-                transform->position = Gnosis::GNVector2(PLAYER_X_POSITION, TOP_SPAWN_Y);
+                // Start player at 5% from left and near the top of screen
+                float screenWidth = 1179.0f; // Default fallback
+                if (m_ecsSystem) {
+                    screenWidth = m_ecsSystem->GetScreenWidth();
+                }
+                transform->position = Gnosis::GNVector2(screenWidth * 0.05f, TOP_SPAWN_Y);
             }
             
             if (physics) {
@@ -773,17 +777,15 @@ namespace GameCore {
         // Keep player at a fixed horizontal position based on level
         // Boss level (6): position at percentage from left edge to avoid UI overlap
         // Other levels: use standard PLAYER_X_POSITION (centered)
-        if (m_currentLevelId == 6) {
-            // Boss level - position at 15% from left edge to avoid UI overlap
-            float screenWidth = 1179.0f; // Default, will be updated by screen info
-            if (m_ecsSystem) {
-                screenWidth = m_ecsSystem->GetScreenWidth();
-            }
-            transform->position.x = screenWidth * 0.15f;
-        } else {
-            // Normal levels - use standard centered position
-            transform->position.x = PLAYER_X_POSITION;
+        // Keep player at a fixed horizontal position based on level
+        // UPDATED: Now using 5% from left edge for ALL levels (maximum screen space for gameplay)
+        float screenWidth = 1179.0f; // Default fallback
+        if (m_ecsSystem) {
+           screenWidth = m_ecsSystem->GetScreenWidth();
         }
+        
+        // Position at 5% from left edge to give maximum screen space
+        transform->position.x = screenWidth * 0.05f;
         
         // Get player sprite and hitbox to calculate actual size for proper boundary checking
         Sprite* sprite = m_ecsSystem->GetComponent<Sprite>(m_playerEntity);

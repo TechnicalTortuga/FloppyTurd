@@ -566,7 +566,7 @@ namespace GameCore {
         // Add hitbox component (circle)
         Hitbox playerHitbox;
         playerHitbox.type = ColliderType::Circle;
-        playerHitbox.radius = 12.0f;
+        playerHitbox.radius = 10.0f;
         playerHitbox.offsetX = 0.0f;
         playerHitbox.offsetY = 0.0f;
         playerHitbox.isTrigger = false;

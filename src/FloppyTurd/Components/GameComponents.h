@@ -27,11 +27,17 @@ namespace GameCore {
     };
     
     enum class SkillType {
-        HalfHearts = 0,     // Upgrade to half-heart precision
-        ThirdHearts,        // Upgrade to third-heart precision (requires HalfHearts)
-        CoinMagnet,         // Attracts coins automatically
-        HeartMagnet,        // Attracts hearts automatically
-        CoinSafetyNet       // Prevents death if you have coins (once per level)
+        // Ranked skills (use SkillSystem::GetSkillRank() to check level)
+        HealthUpgrade = 0,      // Rank I = half hearts, Rank II = third hearts
+        CoinMagnet,             // Rank I = current range, Rank II = 2x range
+        HeartMagnet,            // Rank I = current range, Rank II = 2x range
+        HomingProjectiles,      // Rank I = weak homing, Rank II = strong homing
+        SplitProjectiles,       // Rank I = 2 projectiles, Rank II = 3 projectiles
+        
+        // Non-ranked skills (binary unlock)
+        CoinSafetyNet,          // Prevents death if you have coins (once per level)
+        
+        COUNT                   // For iteration
     };
     
     enum class ColliderType {
@@ -598,6 +604,11 @@ namespace GameCore {
         bool isAnimated;
         int totalFrames;           // Total animation frames
         float frameDuration;       // Time per frame
+        
+        // Group/Formation support (Level 3 Birds)
+        int groupId;               // ID of the group this enemy belongs to
+        int posInV;                // Position in V-formation (0-4)
+        bool vFormationPointsDown; // Whether this group's V points down
         float animationTimer;      // Current animation time
         int currentFrame;          // Current animation frame
 
@@ -614,6 +625,31 @@ namespace GameCore {
         
         // Boss minion flag (to distinguish boss-spawned RatCopters from castle-level ones)
         bool isBossMinion;         // True if spawned by boss, false if regular enemy
+        
+        // GALAGA MOVEMENT (Toilet Paper)
+        float galagaHoverTimer;
+        float galagaFlyInTargetX;  // Target X for fly-in (e.g., 80% screen width)
+        float galagaTangentAngle;  // Angle to move along after hover
+        bool galagaHoverComplete;
+        
+        // ECHELON MOVEMENT (Birds)
+        int formationIndex;        // Index in the formation (0, 1, 2...)
+        int formationId;           // ID of the formation group
+        Gnosis::GNVector2 formationOffset; // Offset from formation leader/center
+        
+        // RAT SWARM (Staggered Attacks)
+        float swarmAttackDelay;    // Delay before this specific rat attacks
+        bool swarmAttackStarted;   // Has the attack phase started?
+        
+        // GALAGA CIRCLE/WAVE BEHAVIOR
+        bool useCirclePattern;     // true = circle movement, false = wave/swoop
+        float circleAngle;         // Current angle in circular movement (radians)
+        float circleRadius;        // Radius of the circle
+        int circleLoopsRemaining;  // Number of loops left before flying out (starts at 3)
+        Gnosis::GNVector2 circleCenter; // Center point for circular movement (screen-relative)
+        float anchorX;             // Anchor X position (decoupled from world scroll)
+        bool hasSetAnchorX;        // Whether anchor X has been initialized
+        
         
         Enemy()
             : health(1)
@@ -659,6 +695,22 @@ namespace GameCore {
             , pullbackTimer(0.0f)
             , beelineSpeed(150.0f)
             , isBossMinion(false)
+            , galagaHoverTimer(0.0f)
+            , galagaFlyInTargetX(0.0f)
+            , galagaTangentAngle(0.0f)
+            , galagaHoverComplete(false)
+            , formationIndex(0)
+            , formationId(0)
+            , formationOffset(0.0f, 0.0f)
+            , swarmAttackDelay(0.0f)
+            , swarmAttackStarted(false)
+            , useCirclePattern(false)
+            , circleAngle(0.0f)
+            , circleRadius(150.0f)
+            , circleLoopsRemaining(3)
+            , circleCenter(0.0f, 0.0f)
+            , anchorX(0.0f)
+            , hasSetAnchorX(false)
         {}
     };
     
@@ -693,6 +745,12 @@ using Gnosis::Entity;
         GNVector2 spawnPosition;
         std::string spriteAssetName;
 
+        // Homing projectile support
+        bool isHoming;              // Whether this projectile homes toward enemies
+        float homingStrength;       // Steering strength (higher = tighter turns)
+        Entity targetEnemy;         // Entity ID of target enemy (0 = no target)
+        bool hasAcquiredTarget;     // Whether target has been acquired
+
         // Animation is handled by SpriteSystem
 
         Projectile()
@@ -708,6 +766,10 @@ using Gnosis::Entity;
             , projectileType(ProjectileType::POOP_BALL)
             , isActive(false)
             , spawnPosition(GNVector2(0.0f, 0.0f))
+            , isHoming(false)
+            , homingStrength(0.0f)
+            , targetEnemy(0)
+            , hasAcquiredTarget(false)
         {}
     };
     

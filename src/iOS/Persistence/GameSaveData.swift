@@ -112,15 +112,15 @@ struct CustomizationData: Codable {
     var equippedHatIndex: Int
     var selectedHatIndex: Int
     var unlockedHats: [Bool]  // 16 hats total (0=unequipped, 1-15=actual hats)
-    var unlockedSkills: [Bool]  // 5 skills total
+    var skillRanks: [Int]  // 8 skills with integer ranks (0=locked, 1=rank1, 2=rank2)
 
     init() {
         self.equippedHatIndex = 0  // No hat equipped
         self.selectedHatIndex = 0
         // Initialize 16 hats - index 0 (unequipped) always available, then first 4 actual hats unlocked
         self.unlockedHats = [true, true, true, true, true] + Array(repeating: false, count: 11)
-        // Initialize 5 skills - all locked by default
-        self.unlockedSkills = Array(repeating: false, count: 5)
+        // Initialize 8 skill ranks - all at rank 0 (locked) by default
+        self.skillRanks = Array(repeating: 0, count: 8)
     }
 }
 

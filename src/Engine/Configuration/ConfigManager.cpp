@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cmath>
 #include <functional>
+#include <fstream>
 
 namespace GameCore {
 
@@ -25,15 +26,56 @@ namespace GameCore {
                    std::to_string(m_screenInfo.scaleFactor));
     }
 
+    // Helper to get config file path
+    std::string GetConfigFilePath() {
+        // Use a simple relative path which works in iOS sandbox and Desktop CWD
+        // TODO: Use platform delegates for proper path resolution in future
+        return "FloppyTurdConfig.dat";
+    }
+
     void ConfigManager::LoadConfiguration() {
-        // TODO: Load from configuration file in the future
-        // For now, use dynamic detection
+        // Load default values first
         LoadDefaultConfiguration();
+        
+        // Try to load from file
+        std::string path = GetConfigFilePath();
+        std::ifstream file(path);
+        
+        if (file.is_open()) {
+            std::string line;
+            while (std::getline(file, line)) {
+                // Simple parser: Key=Value
+                size_t delimiterPos = line.find('=');
+                if (delimiterPos != std::string::npos) {
+                    std::string key = line.substr(0, delimiterPos);
+                    std::string value = line.substr(delimiterPos + 1);
+                    
+                    if (key == "LegacyModeUnlocked") {
+                        m_legacyModeUnlocked = (value == "1" || value == "true");
+                        GN_LOG_INFO("ConfigManager: Loaded LegacyModeUnlocked=" + std::string(m_legacyModeUnlocked ? "true" : "false"));
+                    }
+                }
+            }
+            file.close();
+            GN_LOG_INFO("ConfigManager: Configuration loaded from " + path);
+        } else {
+            GN_LOG_INFO("ConfigManager: No configuration file found at " + path + ", using defaults");
+        }
     }
 
     void ConfigManager::SaveConfiguration() {
-        // TODO: Save configuration to file in the future
-        GN_LOG_DEBUG("ConfigManager: Configuration saved (placeholder)");
+        std::string path = GetConfigFilePath();
+        std::ofstream file(path);
+        
+        if (file.is_open()) {
+            file << "LegacyModeUnlocked=" << (m_legacyModeUnlocked ? "1" : "0") << "\n";
+            // Add other config values here as needed
+            
+            file.close();
+            GN_LOG_INFO("ConfigManager: Configuration saved to " + path);
+        } else {
+            GN_LOG_ERROR("ConfigManager: Failed to save configuration to " + path);
+        }
     }
 
     void ConfigManager::UpdateScreenInfo() {

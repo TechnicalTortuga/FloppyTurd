@@ -100,7 +100,14 @@ namespace GameCore {
                 if (auto scr = m_ecsSystem->GetComponent<ScrollSpeed>(entity)) {
                     speed = scr->speed;
                 }
-                transform->position.x -= speed * deltaTime;
+                
+                // 🎯 PIXEL-PERFECT: Use same integer snapping as backgrounds to prevent drift
+                // This ensures entities with ScrollSpeed (like Janitor) stay synced with backgrounds
+                float movementDelta = speed * deltaTime;
+                int64_t currentPosFixed = FloatToFixed(transform->position.x);
+                int64_t movementFixed = FloatToFixed(movementDelta);
+                currentPosFixed -= movementFixed;
+                transform->position.x = static_cast<float>(FixedToInt(currentPosFixed));
             }
         }
     }

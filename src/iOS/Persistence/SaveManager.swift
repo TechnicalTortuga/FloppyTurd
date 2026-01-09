@@ -332,8 +332,8 @@ final class SaveManager: @unchecked Sendable {
         for (index, unlocked) in saveData.customization.unlockedHats.enumerated() {
             output += "CUSTOM_HAT_\(index)_UNLOCKED:\(unlocked ? 1 : 0)\n"
         }
-        for (index, unlocked) in saveData.customization.unlockedSkills.enumerated() {
-            output += "CUSTOM_SKILL_\(index)_UNLOCKED:\(unlocked ? 1 : 0)\n"
+        for (index, rank) in saveData.customization.skillRanks.enumerated() {
+            output += "CUSTOM_SKILL_\(index)_RANK:\(rank)\n"
         }
 
         // Settings (audio, difficulty, debug, haptics)
