@@ -1,0 +1,30 @@
+module GameCoreEngine {
+    // Core engine headers only
+    header "Core/GNLog.h"
+    header "Core/GnosisTypes.h"
+    header "Core/ECS.h"
+    header "Core/Entity.h"
+    header "Core/Component.h"
+    header "Events/Event.h"
+    header "Events/EventManager.h"
+    
+    export *
+    use _Builtin_stddef_max_align_t
+}
+
+module GameCorePlatform {
+    // Platform abstraction headers only (no implementation details)
+    header "Platform/PlatformDelegates.h"
+    header "../iOS/Threading/ThreadingProxy.h"
+    
+    export *
+    use _Builtin_stddef_max_align_t
+}
+
+module GameCoreGame {
+    // Main game class only - avoid circular dependencies
+    header "../FloppyTurd/Game/FloppyTurdGame.h"
+    
+    export *
+    use _Builtin_stddef_max_align_t
+}

@@ -1,0 +1,685 @@
+//
+//  GameViewController.swift
+//  PooperTrooper
+//
+//  Main game view controller for iOS using Swift 5.9+ native C++ interop
+//  Direct C++ instantiation: auto controller = std::make_unique<FloppyTurd::GameViewController>();
+//  Handles Metal rendering, touch input, and game lifecycle
+//
+
+import GameCorePlatform  // For ScreenInfo C++ interop
+import Metal
+import MetalKit
+import UIKit
+import AppTrackingTransparency  // For ATT prompt
+
+/// Main game view controller for iOS with native C++ interop
+/// Direct C++ instantiation: std::make_unique<FloppyTurd::GameViewController>()
+/// Manages the Metal view, game engine lifecycle, and user input
+@MainActor
+public class GameViewController: UIViewController {
+
+    // MARK: - Properties
+
+    private var metalView: MTKView!
+    private var metalRenderer: MetalRenderer!
+    private var touchInputHandler: TouchInputHandler?
+    public var gameEngine: GameEngine!
+
+    // Orientation control
+    private var orientationLocked = false
+    private var lockedOrientation: UIInterfaceOrientationMask = .all
+
+    // MARK: - Logging Helper - Direct Swift/C++ interop
+    private func log(_ message: String, level: LogLevel = .info) {
+        switch level {
+        case .trace:
+            SwiftLog.debug(message, category: "GameViewController")
+        case .debug:
+            SwiftLog.debug(message, category: "GameViewController")
+        case .info:
+            SwiftLog.info(message, category: "GameViewController")
+        case .warning:
+            SwiftLog.warn(message, category: "GameViewController")
+        case .error:
+            SwiftLog.error(message, category: "GameViewController")
+        case .fatal:
+            SwiftLog.fatal(message, category: "GameViewController")
+        }
+    }
+
+    private func shutdownGame() {
+        gameEngine.shutdown()
+        log("Game shutdown complete")
+    }
+
+    // Game state
+    private var isGameInitialized = false
+    private var isPaused = false
+    private var isShowingAd = false  // Track when ad is showing to prevent shutdown
+
+    // MARK: - Lifecycle
+
+    override public func viewDidLoad() {
+        super.viewDidLoad()
+        log("GameViewController loading...")
+
+        log("About to call setupMetalView()...")
+        setupMetalView()
+        log("setupMetalView() completed")
+
+        log("About to call setupGameEngine()...")
+        setupGameEngine()
+        log("setupGameEngine() completed successfully")
+
+        log("About to call setupTouchInput()...")
+        setupTouchInput()
+        log("setupTouchInput() completed")
+
+        log("About to call setupNotifications()...")
+        setupNotifications()
+        log("setupNotifications() completed")
+
+        // Set up Game Center
+        log("Setting up Game Center...")
+        GameCenterManager.shared.setViewController(self)
+
+        // Authenticate with Game Center
+        GameCenterManager.shared.authenticate { success, error in
+            if success {
+                Task { @MainActor in
+                    self.log("✅ Game Center authenticated successfully")
+                }
+            } else if let error = error {
+                Task { @MainActor in
+                    self.log(
+                        "⚠️ Game Center authentication failed: \(error.localizedDescription)",
+                        level: .warning)
+                }
+            }
+        }
+
+        // Set up In-App Purchases
+        log("Initializing StoreManager...")
+        // StoreManager.shared initialization happens automatically (singleton)
+        // It will check purchase status and restore "Remove Ads" if previously purchased
+        Task {
+            await StoreManager.shared.checkPurchaseStatus()
+            self.log("✅ StoreManager initialized - purchase status checked")
+        }
+
+        // Set up AdMob
+        log("Initializing AdMob SDK...")
+        AdManager.initializeSDK()
+        AdManager.shared.viewController = self
+        log("AdMob SDK initialized and view controller set")
+
+        log("GameViewController loaded successfully")
+    }
+
+    override public func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        log("GameViewController will appear")
+        
+        // Request App Tracking Transparency permission (iOS 14+)
+        // This prompt shows ONCE when the user first launches the app
+        if #available(iOS 14, *) {
+            // Delay slightly to allow UI to settle
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                ATTrackingManager.requestTrackingAuthorization { status in
+                    Task { @MainActor in
+                        switch status {
+                        case .authorized:
+                            self?.log("✅ ATT: User authorized tracking")
+                        case .denied:
+                            self?.log("❌ ATT: User denied tracking")
+                        case .restricted:
+                            self?.log("⚠️ ATT: Tracking restricted")
+                        case .notDetermined:
+                            self?.log("⏳ ATT: Status not determined")
+                        @unknown default:
+                            self?.log("❓ ATT: Unknown status")
+                        }
+                    }
+                }
+            }
+        }
+
+        if isGameInitialized {
+            if isPaused {
+                resumeGame()
+            } else if !gameEngine.isGameRunning() {
+                // Start the game loop for the first time
+                log("Starting game loop...")
+                if gameEngine.start() {
+                    log("Game loop started successfully")
+                } else {
+                    log("Failed to start game loop", level: .error)
+                }
+            }
+        }
+    }
+
+    override public func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        log("GameViewController did disappear - isShowingAd: \(isShowingAd)")
+
+        // Don't shutdown if we're showing an ad - the ad modal causes viewDidDisappear
+        if !isShowingAd {
+            shutdownGameSync()
+        } else {
+            log("Skipping shutdown - ad is being shown")
+        }
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+        Task.detached { [weak self] in
+            await self?.shutdownGame()
+        }
+    }
+
+    // MARK: - Setup Methods
+
+    private func setupMetalView() {
+        log("Setting up Metal view...")
+
+        guard let device = MTLCreateSystemDefaultDevice() else {
+            log("Failed to create Metal device", level: .error)
+            fatalError("Metal is not supported on this device")
+        }
+
+        metalView = MTKView(frame: view.bounds, device: device)
+        metalView.delegate = self
+        metalView.preferredFramesPerSecond = 60
+        metalView.colorPixelFormat = .bgra8Unorm_srgb
+        metalView.depthStencilPixelFormat = .depth32Float
+        metalView.sampleCount = 1
+        metalView.clearColor = MTLClearColor(red: 0.0, green: 0.0, blue: 0.0, alpha: 1.0)
+
+        view.addSubview(metalView)
+        metalView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            metalView.topAnchor.constraint(equalTo: view.topAnchor),
+            metalView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            metalView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            metalView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
+
+        // CRITICAL FIX: Force MTKView drawable size to portrait immediately
+        // This ensures correct dimensions even if view.bounds is landscape at init
+        let scale = UIScreen.main.nativeScale
+        let portraitWidth = min(view.bounds.width, view.bounds.height) * scale
+        let portraitHeight = max(view.bounds.width, view.bounds.height) * scale
+
+        metalView.drawableSize = CGSize(width: portraitWidth, height: portraitHeight)
+        log(
+            "✅ Forced MTKView drawable size to portrait: \(portraitWidth)x\(portraitHeight)",
+            level: .info)
+
+        log("Metal view setup complete")
+    }
+
+    private func setupGameEngine() {
+        log("Setting up game engine...")
+
+        log("Initializing C++ game on main thread...")
+
+        // Initialize the C++ game engine through Swift interop
+        log("About to create GameEngine() object...")
+        gameEngine = GameEngine()
+        log("GameEngine() object created successfully")
+
+        // Initialize Metal renderer
+        log("About to create MetalRenderer...")
+        metalRenderer = MetalRenderer()
+        log("MetalRenderer created successfully")
+
+        // Connect Metal view to renderer - THIS WAS MISSING!
+        log("About to connect MTKView to MetalRenderer...")
+        metalRenderer.setMetalView(metalView)
+        log("Connected MTKView to MetalRenderer")
+
+        // Connect renderer to game engine
+        log("About to connect renderer to game engine...")
+        gameEngine.setMetalRenderer(metalRenderer)
+        log("Connected renderer to game engine")
+
+        // Connect game view controller to game engine for orientation commands
+        log("About to connect game view controller to game engine...")
+        gameEngine.setGameViewController(self)
+        log("Connected game view controller to game engine")
+
+        // Initialize the game
+        log("About to initialize game engine...")
+        if gameEngine.initialize() {
+            isGameInitialized = true
+            log("Game engine initialized successfully on main thread")
+        } else {
+            log("Failed to initialize game engine")
+            fatalError("Game engine initialization failed")
+        }
+        log("setupGameEngine completed successfully")
+    }
+
+    private func setupTouchInput() {
+        log("Setting up touch input...")
+
+        // Use GameEngine's TouchInputHandler (GameEngine creates it internally and sets itself as delegate)
+        // GameEngine.initialize() must be called before this to ensure TouchInputHandler exists
+        touchInputHandler = gameEngine.getTouchInputHandler()
+        if let handler = touchInputHandler {
+            // Ensure the handler is initialized with the MTKView so it knows the correct view size
+            // and installs its own gesture recognizers for continuous move tracking
+            let _ = handler.initialize(with: metalView)
+            log(
+                "TouchInputHandler.initialize(with:) called to set view size and gestures",
+                level: .debug)
+        } else {
+            log("TouchInputHandler is nil in setupTouchInput()", level: .warning)
+        }
+
+        // Add only a tap recognizer here; TouchInputHandler installs its own pan for smooth tracking
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
+        tapGesture.cancelsTouchesInView = false
+        metalView.addGestureRecognizer(tapGesture)
+
+        log("Touch input setup complete")
+    }
+
+    private func setupNotifications() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(gameWillPause),
+            name: .gameWillPause,
+            object: nil
+        )
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(gameDidResume),
+            name: .gameDidResume,
+            object: nil
+        )
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(gameShouldSave),
+            name: .gameShouldSave,
+            object: nil
+        )
+    }
+
+    // MARK: - Game Control
+
+    private func pauseGame() {
+        guard isGameInitialized && !isPaused else { return }
+
+        log("Pausing game")
+        gameEngine.pause()
+        metalView.isPaused = true
+        isPaused = true
+    }
+
+    private func resumeGame() {
+        guard isGameInitialized && isPaused else { return }
+
+        log("Resuming game")
+        gameEngine.resume()
+        metalView.isPaused = false
+        isPaused = false
+    }
+
+    // MARK: - Ad Integration
+
+    /// Pause the game when an ad is about to show
+    /// Called by AdManager, keeps state synchronized
+    public func pauseGameForAd() {
+        guard isGameInitialized else { return }
+
+        log("Pausing game for ad presentation", level: .info)
+        isShowingAd = true
+        gameEngine.pause()
+        metalView.isPaused = true
+        isPaused = true
+    }
+
+    /// Resume the game after an ad is dismissed
+    /// Called by AdManager, keeps state synchronized
+    public func resumeGameFromAd() {
+        log(
+            "resumeGameFromAd() called - isGameInitialized: \(isGameInitialized), isPaused: \(isPaused), isShowingAd: \(isShowingAd)",
+            level: .info)
+
+        // Clear the ad flag first
+        isShowingAd = false
+        log("isShowingAd set to false", level: .info)
+
+        // Check if game is still initialized and running
+        guard isGameInitialized && gameEngine.isGameRunning() else {
+            log(
+                "Cannot resume - game not initialized or not running! isGameInitialized: \(isGameInitialized), isRunning: \(gameEngine.isGameRunning())",
+                level: .error)
+            return
+        }
+
+        // Resume the game
+        log("Resuming game after ad dismissal", level: .info)
+        gameEngine.resume()
+        log("GameEngine.resume() returned", level: .info)
+
+        // Update Metal view
+        metalView.isPaused = false
+        log("metalView.isPaused set to false", level: .info)
+
+        // Update local state
+        isPaused = false
+        log("isPaused set to false - resume complete", level: .info)
+    }
+
+    private func shutdownGameSync() {
+        guard isGameInitialized else { return }
+
+        log("Shutting down game")
+        gameEngine.shutdown()
+        isGameInitialized = false
+    }
+
+    // MARK: - Touch Handling
+
+    @objc private func handleTap(_ gesture: UITapGestureRecognizer) {
+        let location = gesture.location(in: metalView)
+        let _ = CGPoint(
+            x: location.x / metalView.bounds.width,
+            y: location.y / metalView.bounds.height
+        )
+        log(
+            "🎯 GameViewController: Tap detected at (\(location.x), \(location.y)) - forwarding to TouchInputHandler",
+            level: .debug)
+        touchInputHandler?.handleTap(gesture)
+    }
+
+    @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
+        // Handle pan gestures through touch events
+        // This will be processed by the touch input handler's gesture recognizers
+    }
+
+    // MARK: - Notification Handlers
+
+    @objc private func gameWillPause() {
+        pauseGame()
+    }
+
+    @objc private func gameDidResume() {
+        resumeGame()
+    }
+
+    @objc private func gameShouldSave() {
+        guard isGameInitialized else { return }
+        // TODO: Implement saveGameState method in GameEngine
+        // gameEngine.saveGameState()
+    }
+}
+
+// MARK: - MTKViewDelegate
+
+extension GameViewController: MTKViewDelegate {
+
+    public func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
+        log(
+            "🔄 MTKView size changed to \(Int(size.width))x\(Int(size.height)) - SINGLE SOURCE OF TRUTH",
+            level: .info)
+
+        // Update renderer viewport size
+        metalRenderer?.updateViewportSize(width: Float(size.width), height: Float(size.height))
+
+        // THIS IS THE ONLY PLACE WE UPDATE CONFIGMANAGER DIMENSIONS
+        // This ensures we never have stale/predicted dimensions, only real MTKView size
+        if let renderer = metalRenderer {
+            var screenInfo = renderer.getScreenInfo()
+
+            // Clear orientation changing flag - rotation is complete
+            screenInfo.isOrientationChanging = false
+
+            // Update dimensions with actual MTKView drawable size (ground truth)
+            screenInfo.pixelWidth = Float(size.width)
+            screenInfo.pixelHeight = Float(size.height)
+
+            // Determine actual orientation from MTKView size (ground truth)
+            let actualIsPortrait = size.height > size.width
+            screenInfo.isPortrait = actualIsPortrait
+
+            log(
+                "✅ MTKView rotation complete: \(Int(screenInfo.pixelWidth))x\(Int(screenInfo.pixelHeight)), "
+                    + "portrait: \(screenInfo.isPortrait)",
+                level: .info)
+
+            // Update ConfigManager with final dimensions (orientation lock is set synchronously)
+            gameEngine?.cppGame?.UpdateScreenInfo(screenInfo)
+            log("✅ ConfigManager updated with correct dimensions", level: .info)
+        }
+    }
+
+    // MARK: - Orientation Control
+
+    /// Lock orientation to prevent rotation changes
+    /// - Parameter orientation: The orientation to lock to (nil means current orientation)
+    public func lockOrientation(to orientation: UIInterfaceOrientationMask? = nil) {
+        orientationLocked = true
+        if let orientation = orientation {
+            lockedOrientation = orientation
+        } else {
+            // Lock to current orientation
+            lockedOrientation = supportedInterfaceOrientations
+        }
+        log("Orientation locked to: \(lockedOrientation)", level: .info)
+    }
+
+    /// Unlock orientation to allow rotation changes
+    public func unlockOrientation() {
+        orientationLocked = false
+        lockedOrientation = .all
+        log("Orientation unlocked", level: .info)
+
+        // SYNCHRONOUSLY update ConfigManager to unlock orientation
+        updateOrientationLockState(.UNLOCKED)
+
+        // Notify system of orientation support changes
+        setNeedsUpdateOfSupportedInterfaceOrientations()
+        navigationController?.setNeedsUpdateOfSupportedInterfaceOrientations()
+    }
+
+    /// Lock orientation to portrait only
+    public func lockToPortrait() {
+        // MUST be called on main thread to avoid dispatch queue assertion crashes
+        DispatchQueue.main.async {
+            self.orientationLocked = true
+            self.lockedOrientation = [.portrait, .portraitUpsideDown]
+            self.log("Orientation locked to portrait only", level: .info)
+
+            // SYNCHRONOUSLY update ConfigManager with portrait lock
+            self.updateOrientationLockState(.PORTRAIT)
+
+            // Modern iOS orientation handling with proper API calls
+            self.setNeedsUpdateOfSupportedInterfaceOrientations()
+            self.navigationController?.setNeedsUpdateOfSupportedInterfaceOrientations()
+
+            // Request iOS to rotate to portrait
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+                self.log(
+                    "Current orientation: \(windowScene.interfaceOrientation.rawValue), requesting portrait",
+                    level: .info)
+
+                // Request portrait orientation with proper error handling
+                windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: .portrait)) {
+                    error in
+                    self.log(
+                        "Orientation lock to portrait failed: \(error.localizedDescription)",
+                        level: .error)
+                }
+                self.log(
+                    "Successfully requested orientation lock to portrait", level: .info)
+            }
+        }
+    }
+
+    /// Lock orientation to landscape only
+    public func lockToLandscape() {
+        // MUST be called on main thread to avoid dispatch queue assertion crashes
+        DispatchQueue.main.async {
+            self.orientationLocked = true
+            self.lockedOrientation = [.landscapeLeft, .landscapeRight]
+            self.log("Orientation locked to landscape only", level: .info)
+
+            // SYNCHRONOUSLY update ConfigManager with landscape lock
+            self.updateOrientationLockState(.LANDSCAPE)
+
+            // Modern iOS orientation handling with proper API calls
+            self.setNeedsUpdateOfSupportedInterfaceOrientations()
+            self.navigationController?.setNeedsUpdateOfSupportedInterfaceOrientations()
+
+            // Request iOS to rotate to landscape
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+                self.log(
+                    "Current orientation: \(windowScene.interfaceOrientation.rawValue), requesting landscape",
+                    level: .info)
+
+                // Request landscape orientation with proper error handling
+                windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: .landscape)) {
+                    error in
+                    self.log(
+                        "Orientation lock to landscape failed: \(error.localizedDescription)",
+                        level: .error)
+                }
+                self.log(
+                    "Successfully requested orientation lock to landscape", level: .info)
+            }
+        }
+    }
+
+    override public var supportedInterfaceOrientations: UIInterfaceOrientationMask {
+        if orientationLocked {
+            return lockedOrientation
+        }
+        return .all  // Allow all orientations by default
+    }
+
+    override public var shouldAutorotate: Bool {
+        return !orientationLocked
+    }
+
+    /// Synchronously update ConfigManager with orientation lock state
+    /// This ensures the C++ side knows about orientation locks immediately
+    private func updateOrientationLockState(
+        _ lockState: GameCorePlatform.GameCore.ScreenInfo.OrientationLock
+    ) {
+        if let renderer = metalRenderer {
+            var screenInfo = renderer.getScreenInfo()
+            screenInfo.orientationLock = lockState
+
+            let lockStr =
+                lockState == .PORTRAIT
+                ? "PORTRAIT" : lockState == .LANDSCAPE ? "LANDSCAPE" : "UNLOCKED"
+            log("🔒 Orientation lock applied synchronously: \(lockStr)", level: .info)
+
+            // Update ConfigManager immediately with the orientation lock
+            gameEngine?.cppGame?.UpdateScreenInfo(screenInfo)
+        }
+    }
+
+    // MARK: - Orientation Handling
+
+    override public func viewWillTransition(
+        to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator
+    ) {
+        super.viewWillTransition(to: size, with: coordinator)
+
+        let orientation = size.width > size.height ? "landscape" : "portrait"
+        log(
+            "🔄 viewWillTransition: Rotation to \(orientation) (\(Int(size.width))x\(Int(size.height))) starting",
+            level: .info)
+
+        // DO NOT update ConfigManager here - mtkView(_:drawableSizeWillChange:) will handle it
+        // This prevents double updates and ensures we only use real MTKView dimensions
+
+        coordinator.animate(alongsideTransition: { _ in
+            self.log("🔄 Rotation animation in progress...", level: .debug)
+        }) { _ in
+            self.log("✅ Rotation animation finished - MTKView will update size next", level: .info)
+        }
+    }
+
+    public func draw(in view: MTKView) {
+        guard isGameInitialized && !isPaused else { return }
+
+        // DEBUG: Log that draw is being called
+        log("MTKView draw() called - rendering frame", level: .debug)
+
+        // Calculate delta time using GameEngine's MTKView-driven timing
+        let deltaTime = gameEngine.updateDeltaTime()
+
+        // Update game logic
+        gameEngine.update(deltaTime: deltaTime)
+
+        // Render frame
+        gameEngine.render()
+
+        // DEBUG: Log that render completed
+        log("MTKView draw() completed", level: .debug)
+    }
+
+    // MARK: - Touch Event Forwarding
+
+    public override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesBegan(touches, with: event)
+        if let view = self.view {
+            touchInputHandler?.touchesBegan(touches, with: event, in: view)
+        }
+    }
+
+    public override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesMoved(touches, with: event)
+        if let view = self.view {
+            touchInputHandler?.touchesMoved(touches, with: event, in: view)
+        }
+    }
+
+    public override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesEnded(touches, with: event)
+        if let view = self.view {
+            touchInputHandler?.touchesEnded(touches, with: event, in: view)
+        }
+    }
+
+    public override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesCancelled(touches, with: event)
+        if let view = self.view {
+            touchInputHandler?.touchesCancelled(touches, with: event, in: view)
+        }
+    }
+}
+
+// MARK: - C++ Integration Notes
+
+/**
+ * Swift 5.9+ Native C++ Interop Integration
+ *
+ * With Swift 5.9+, C++ can directly instantiate this Swift class without C-style bridging:
+ *
+ * // C++ Example:
+ * #include "FloppyTurd-Swift.h"
+ *
+ * // Direct instantiation
+ * auto viewController = std::make_unique<FloppyTurd::GameViewController>();
+ *
+ * // Integration with iOS app lifecycle
+ * viewController->viewDidLoad();
+ * viewController->viewWillAppear(true);
+ *
+ * // Access Metal rendering and touch input
+ * auto metalRenderer = viewController->getMetalRenderer();
+ * auto touchHandler = viewController->getTouchInputHandler();
+ *
+ * The Swift class automatically provides C++ compatible methods
+ * through Swift's native C++ interoperability features.
+ */

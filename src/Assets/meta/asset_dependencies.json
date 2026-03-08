@@ -1,0 +1,104 @@
+{
+  "version": "1.0.0",
+  "created": "2025-07-28T22:27:22-05:00",
+  "dependencies": {
+    "character_hat_combinations": {
+      "description": "Hat combinations depend on both base character sprites and base hat sprites",
+      "dependencies": [
+        "graphics/characters/player/turd/base/",
+        "graphics/characters/player/cosmetics/hats/base_hats/"
+      ],
+      "generates": [
+        "graphics/characters/player/cosmetics/hats/character_combinations/"
+      ]
+    },
+    "level_specific_assets": {
+      "level1": {
+        "backgrounds": "graphics/environment/backgrounds/level1/",
+        "music": "audio/music/gameplay/levels/DesertLevel.mp3",
+        "objects": "graphics/environment/objects/decorative/cacti/"
+      },
+      "level3": {
+        "backgrounds": "graphics/environment/backgrounds/level3/",
+        "music": "audio/music/gameplay/levels/CastleLevel.mp3"
+      },
+      "snow_level": {
+        "backgrounds": "graphics/environment/backgrounds/snow_level/",
+        "music": "audio/music/gameplay/levels/SnowLevel.mp3",
+        "objects": "graphics/environment/objects/interactive/hazards/Snowball.png"
+      },
+      "sewer": {
+        "backgrounds": "graphics/environment/backgrounds/sewer/",
+        "music": "audio/music/gameplay/levels/SewerLevel.mp3"
+      },
+      "boss": {
+        "backgrounds": "graphics/environment/backgrounds/boss/",
+        "music": "audio/music/gameplay/boss/",
+        "characters": "graphics/characters/enemies/ground/Ratking*.png"
+      }
+    },
+    "ui_dependencies": {
+      "main_menu": {
+        "graphics": "graphics/ui/menus/main/",
+        "audio": "audio/music/menus/FloppyTurdMenu*.mp3"
+      },
+      "level_select": {
+        "graphics": "graphics/ui/menus/level_select/",
+        "audio": "audio/music/menus/"
+      },
+      "hud": {
+        "graphics": "graphics/ui/hud/",
+        "fonts": "fonts/bitmap/"
+      }
+    },
+    "audio_dependencies": {
+      "player_actions": {
+        "movement": "audio/sfx/gameplay/player/fart*.ogg",
+        "damage": "audio/sfx/gameplay/player/hurt.mp3",
+        "items": "audio/sfx/gameplay/items/"
+      },
+      "enemy_actions": {
+        "ratking": "audio/sfx/gameplay/enemies/RatKingScreech.ogg",
+        "kills": "audio/sfx/gameplay/enemies/*kill.ogg"
+      }
+    }
+  },
+  "loading_order": {
+    "core_assets": [
+      "fonts/bitmap/",
+      "graphics/ui/icons/",
+      "audio/sfx/ui/"
+    ],
+    "menu_assets": [
+      "graphics/ui/menus/main/",
+      "audio/music/menus/"
+    ],
+    "gameplay_assets": [
+      "graphics/characters/player/turd/base/",
+      "graphics/characters/player/cosmetics/hats/base_hats/",
+      "audio/sfx/gameplay/player/"
+    ],
+    "level_specific": "loaded_dynamically_per_level"
+  },
+  "optimization_hints": {
+    "texture_atlases": {
+      "player_atlas": [
+        "graphics/characters/player/turd/base/",
+        "graphics/characters/player/turd/projectiles/"
+      ],
+      "enemy_atlas": [
+        "graphics/characters/enemies/flying/",
+        "graphics/characters/enemies/ground/",
+        "graphics/characters/enemies/projectiles/"
+      ],
+      "ui_atlas": [
+        "graphics/ui/hud/",
+        "graphics/ui/icons/"
+      ]
+    },
+    "audio_compression": {
+      "music": "ogg_vorbis_high_quality",
+      "sfx": "ogg_vorbis_medium_quality"
+    }
+  }
+}

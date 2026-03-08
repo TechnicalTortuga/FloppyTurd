@@ -1,0 +1,185 @@
+#ifndef FLOPPY_TURD_GAME_STATE_H
+#define FLOPPY_TURD_GAME_STATE_H
+
+// Use forward declarations and proper includes to avoid circular dependencies
+#include "../../Engine/Core/GnosisTypes.h"
+#include "../../Engine/Core/ECS.h"
+#include "../../Engine/Platform/PlatformDelegates.h"
+
+#include <memory>
+
+namespace GameCore {
+
+    /**
+     * @brief Base class for all game states in Floppy Turd
+     * 
+     * This abstract class defines the interface for game states like
+     * MainMenu, Playing, Paused, GameOver, etc.
+     */
+    class GameState {
+    public:
+        GameState() = default;
+        virtual ~GameState() = default;
+
+        // State lifecycle
+        virtual void Enter() = 0;
+        virtual void Exit() = 0;
+        virtual void Pause() = 0;
+        virtual void Resume() = 0;
+
+        // State updates
+        virtual void Update(float deltaTime) = 0;
+        virtual void Render() = 0;
+        virtual void HandleInput() = 0;
+
+        // State queries
+        virtual bool IsFinished() const = 0;
+        virtual const char* GetStateName() const = 0;
+    };
+
+    /**
+     * @brief Game State Manager
+     * 
+     * Manages the stack of game states and handles transitions between them.
+     */
+    class GameStateManager {
+    public:
+        GameStateManager();
+        ~GameStateManager() noexcept;
+
+        // State management
+        void PushState(std::unique_ptr<GameState> state);
+        void PopState();
+        void ChangeState(std::unique_ptr<GameState> state);
+        void ClearStates();
+
+        // Updates
+        void Update(float deltaTime);
+        void Render();
+        void HandleInput();
+
+        // Queries
+        bool IsEmpty() const;
+        GameState* GetCurrentState() const;
+        size_t GetStateCount() const;
+
+    private:
+        std::vector<std::unique_ptr<GameState> > m_stateStack;
+        std::vector<std::unique_ptr<GameState> > m_pendingStates;
+        bool m_shouldPop;
+        bool m_shouldClear;
+
+        void ProcessPendingChanges();
+    };
+
+    // PlayingState moved to dedicated GameplayState.h/cpp files
+
+    /**
+     * @brief Forward declaration for ScreenPromptState
+     *
+     * The full class definition is in ScreenPromptState.h
+     */
+    class ScreenPromptState;
+
+    /**
+     * @brief Paused State
+     */
+    class PausedState : public GameState {
+    public:
+        PausedState(Gnosis::ECS* ecsSystem);
+        ~PausedState() override;
+
+        void Enter() override;
+        void Exit() override;
+        void Pause() override;
+        void Resume() override;
+
+        void Update(float deltaTime) override;
+        void Render() override;
+        void HandleInput() override;
+
+        bool IsFinished() const override { return m_finished; }
+        const char* GetStateName() const override { return "Paused"; }
+
+    private:
+        Gnosis::ECS* m_ecsSystem;
+        bool m_finished;
+        int m_selectedOption;
+        
+        void CreatePauseUI();
+        void DestroyPauseUI();
+    };
+
+    /**
+     * @brief Game Over State
+     */
+    class GameOverState : public GameState {
+    public:
+        GameOverState(Gnosis::ECS* ecsSystem, int finalScore, int coinsEarned);
+        ~GameOverState() override;
+
+        void Enter() override;
+        void Exit() override;
+        void Pause() override;
+        void Resume() override;
+
+        void Update(float deltaTime) override;
+        void Render() override;
+        void HandleInput() override;
+
+        bool IsFinished() const override { return m_finished; }
+        const char* GetStateName() const override { return "GameOver"; }
+
+    private:
+        Gnosis::ECS* m_ecsSystem;
+        bool m_finished;
+        int m_finalScore;
+        int m_coinsEarned;
+        int m_selectedOption;
+        float m_animationTimer;
+        bool m_newHighScore;
+        
+        void CreateGameOverUI();
+        void DestroyGameOverUI();
+        void CheckHighScore();
+        void SaveGameData();
+    };
+
+    /**
+     * @brief Shop State
+     */
+    class ShopState : public GameState {
+    public:
+        ShopState(Gnosis::ECS* ecsSystem);
+        ~ShopState() override;
+
+        void Enter() override;
+        void Exit() override;
+        void Pause() override;
+        void Resume() override;
+
+        void Update(float deltaTime) override;
+        void Render() override;
+        void HandleInput() override;
+
+        bool IsFinished() const override { return m_finished; }
+        const char* GetStateName() const override { return "Shop"; }
+
+    private:
+        Gnosis::ECS* m_ecsSystem;
+        bool m_finished;
+        int m_selectedCategory;
+        int m_selectedItem;
+        int m_playerCoins;
+        
+        void CreateShopUI();
+        void DestroyShopUI();
+        void UpdateShopDisplay();
+        void PurchaseItem();
+        void LoadPlayerData();
+        void SavePlayerData();
+    };
+
+} // namespace GameCore
+
+#endif // FLOPPY_TURD_GAME_STATE_H

@@ -1,51 +1,147 @@
-cmake_minimum_required(VERSION 3.5)
-project(FloppyTurd VERSION 1.0.0 LANGUAGES CXX Swift)
+cmake_minimum_required(VERSION 3.20)
+project(PooperTrooper VERSION 1.0.3 LANGUAGES CXX Swift)
 
-# Set C++ standard
+# Set C++ standard globally
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Set Swift version and enable C++ interop
 set(CMAKE_Swift_LANGUAGE_VERSION 6.0)
 enable_language(Swift)
 
-# Options for different platforms
-option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
-option(SUPPORT_HIGHDPI "Support high DPI displays" ON)
+# Platform detection - Enhanced logic that works with iOS toolchain
+# Debug output to help diagnose platform detection issues
+message(STATUS "Platform Detection Debug:")
+message(STATUS "  CMAKE_SYSTEM_NAME: ${CMAKE_SYSTEM_NAME}")
+message(STATUS "  CMAKE_OSX_SYSROOT: ${CMAKE_OSX_SYSROOT}")
+message(STATUS "  CMAKE_GENERATOR: ${CMAKE_GENERATOR}")
+message(STATUS "  APPLE: ${APPLE}")
+message(STATUS "  CMAKE_TOOLCHAIN_FILE: ${CMAKE_TOOLCHAIN_FILE}")
+message(STATUS "  PLATFORM (from toolchain): ${PLATFORM}")
 
-# Platform detection
-if(NOT DEFINED PLATFORM)
-    if(${CMAKE_SYSTEM_NAME} MATCHES "Android")
-        set(PLATFORM "Android")
-    elseif(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
-        # Let the toolchain handle iOS specifics, default to OS64 for consistency
-        set(PLATFORM "OS64")
-    elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-        set(PLATFORM "Desktop")
-    elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-        set(PLATFORM "Desktop")  # macOS uses Desktop platform for raylib
-        set(IS_MACOS TRUE)
-    else()
-        set(PLATFORM "Desktop")
-    endif()
+# Reset our platform detection variables
+unset(PLATFORM_IOS)
+unset(PLATFORM_DESKTOP)
+unset(PLATFORM_MOBILE)
+
+# Check if we're using iOS toolchain (explicit toolchain detection)
+if(CMAKE_TOOLCHAIN_FILE AND CMAKE_TOOLCHAIN_FILE MATCHES "ios\.toolchain\.cmake")
+    set(FLOPPY_PLATFORM "iOS")
+    set(PLATFORM_IOS TRUE)
+    set(PLATFORM_MOBILE TRUE)
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "17.0")
+    set(IPHONEOS_DEPLOYMENT_TARGET "17.0")
+    message(STATUS "Detected iOS build via toolchain - Building for iOS 17+ with Swift 6.0 and C++ interop")
+    # Check for Xcode iOS builds (sysroot-based detection)
+elseif(APPLE AND CMAKE_OSX_SYSROOT AND (CMAKE_OSX_SYSROOT MATCHES "iphone" OR CMAKE_OSX_SYSROOT MATCHES "ios"))
+    set(FLOPPY_PLATFORM "iOS")
+    set(PLATFORM_IOS TRUE)
+    set(PLATFORM_MOBILE TRUE)
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "17.0")
+    set(IPHONEOS_DEPLOYMENT_TARGET "17.0")
+    message(STATUS "Detected iOS build via Xcode sysroot - Building for iOS 17+ with Swift 6.0 and C++ interop")
+    # Check for explicit iOS system name
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
+    set(FLOPPY_PLATFORM "iOS")
+    set(PLATFORM_IOS TRUE)
+    set(PLATFORM_MOBILE TRUE)
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "17.0")
+    set(IPHONEOS_DEPLOYMENT_TARGET "17.0")
+    message(STATUS "Detected iOS build via system name - Building for iOS 17+ with Swift 6.0 and C++ interop")
+    # Android detection
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "Android")
+    set(FLOPPY_PLATFORM "Android")
+    set(PLATFORM_MOBILE TRUE)
+    message(STATUS "Building for Android")
+    # macOS detection (only if not iOS)
+elseif(APPLE)
+    set(FLOPPY_PLATFORM "macOS")
+    set(PLATFORM_DESKTOP TRUE)
+    message(STATUS "Building for macOS desktop")
+    # Generic desktop fallback
+else()
+    set(FLOPPY_PLATFORM "Desktop")
+    set(PLATFORM_DESKTOP TRUE)
+    message(STATUS "Building for generic desktop platform")
 endif()
 
-message(STATUS "Building for platform: ${PLATFORM}")
-message(STATUS "System name: ${CMAKE_SYSTEM_NAME}")
-if(IS_MACOS)
-    message(STATUS "macOS detected - using Desktop platform with macOS-specific settings")
+# Final platform confirmation
+message(STATUS "Final PooperTrooper Platform: ${FLOPPY_PLATFORM}")
+message(STATUS "PLATFORM_IOS: ${PLATFORM_IOS}")
+message(STATUS "PLATFORM_DESKTOP: ${PLATFORM_DESKTOP}")
+
+# =============================================================================
+# iOS PLATFORM CONFIGURATION (NO RAYLIB - USES METAL/SPRITEKIT)
+# =============================================================================
+if(PLATFORM_IOS)
+    # =============================================================================
+    # CocoaPods Integration - DISABLED (use Swift Package Manager in Xcode instead)
+    # =============================================================================
+    # Automatic CocoaPods integration disabled to avoid linker conflicts
+    # To use CocoaPods: Run 'pod install' manually, then open PooperTrooper.xcworkspace
+    # Recommended: Add Google Mobile Ads SDK via Swift Package Manager in Xcode
+    message(STATUS "CocoaPods auto-integration disabled - add Google Mobile Ads SDK via Xcode SPM")
+
+    # Swift/C++ interoperability settings - keep this minimal
+    set(CMAKE_Swift_FLAGS "-cxx-interoperability-mode=default -swift-version 6.0")
+
+    # Include paths for iOS
+    include_directories(
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Core
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Events
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Platform
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Input
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Assets
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Game
+    )
+
+    # Expose C++ headers for Swift interop
+    include_directories(
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Game
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Core
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Events
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Platform
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Input
+    )
+
+    # Collect C++ game sources (will be added directly to main target - no static library)
+    file(GLOB_RECURSE FLOPPYTURD_CPP_SOURCES
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Game/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Game/*.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/States/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/States/*.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Systems/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Systems/*.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Config/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Config/*.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Input/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Input/*.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Core/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Core/*.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Platform/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Platform/*.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Configuration/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Configuration/*.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Utility/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Utility/*.h"
+    )
+
+    # Remove any Raylib sources from FLOPPYTURD_CPP_SOURCES for iOS
+    list(FILTER FLOPPYTURD_CPP_SOURCES EXCLUDE REGEX ".*Raylib/.*")
+    list(FILTER FLOPPYTURD_CPP_SOURCES EXCLUDE REGEX ".*RaylibPlatformImpl.*")
+    
+    # Note: C++ sources will be added directly to main app target below (no separate static library)
 endif()
 
-# Temporary: Override PLATFORM for raylib configure step only
-set(_FTURD_SAVED_PLATFORM "${PLATFORM}")
-set(PLATFORM Desktop CACHE STRING "Raylib platform override" FORCE)
-
-# Find or fetch Raylib (only for non-iOS platforms)
-if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "iOS")
+# =============================================================================
+# DESKTOP/OTHER PLATFORMS CONFIGURATION (USES RAYLIB)
+# =============================================================================
+if(PLATFORM_DESKTOP AND NOT PLATFORM_IOS)
+    # Find or fetch Raylib
     include(FetchContent)
     set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
     set(BUILD_GAMES OFF CACHE BOOL "" FORCE)
-
     FetchContent_Declare(
         raylib
         GIT_REPOSITORY https://github.com/raysan5/raylib.git
@@ -53,147 +149,158 @@ if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "iOS")
         GIT_SHALLOW TRUE
     )
     FetchContent_MakeAvailable(raylib)
-else()
-    # iOS uses Metal/SpriteKit instead of Raylib
-    message(STATUS "iOS platform detected - using Metal/SpriteKit for rendering")
-    
-    # No external dependencies needed for Metal/SpriteKit - they're part of iOS SDK
-    # The frameworks will be linked directly in the target_link_libraries section
+    message(STATUS "Raylib configured for desktop platform")
 endif()
 
-set(PLATFORM "${_FTURD_SAVED_PLATFORM}" CACHE STRING "" FORCE)
+# =============================================================================
+# SOURCE FILE COLLECTION
+# =============================================================================
 
-# Collect source files
-file(GLOB_RECURSE CPP_SOURCES 
-    ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/*.cpp
-)
-file(GLOB_RECURSE SWIFT_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/*.swift
-)
-file(GLOB_RECURSE OBJC_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/*.mm
-)
-set(SOURCES ${CPP_SOURCES} ${SWIFT_SOURCES} ${OBJC_SOURCES})
-
-
-# Remove files that no longer exist (were deleted during refactor)
-# Note: These files were already removed, so these commands are safe to keep
-# but they won't do anything if the files don't exist
-list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/PlayerOLD.cpp)
-# GameLog.cpp is needed for all platforms including iOS
-# list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/GameLog.cpp)
-# LogManager.cpp removed - using Swift LogManagerSwift for iOS, raylib TraceLog for desktop
-list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/LogManager.cpp)
-
-# Add new files that were created during refactor
-list(APPEND SOURCES 
-    ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/GlobalStateManager.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/FloppyTurdInput.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/UIManager.cpp
+# Common Engine core sources (shared between platforms)
+file(GLOB_RECURSE ENGINE_CORE_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Core/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Core/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Events/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Events/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Platform/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Platform/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Input/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Input/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Assets/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Assets/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Utility/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Utility/*.h"
 )
 
-    # Add platform-specific compatibility layer
-    if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
-        # iOS uses PlatformAPI and Swift for Metal implementation
-        # All .mm files have been migrated to Swift
-        
-        # Remove old .mm files that have been migrated to Swift
-        list(REMOVE_ITEM SOURCES 
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/WindowIOS.mm
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/AudioStateManager.mm
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/GameLog.mm
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/LogManager.mm
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/iOS/AppDelegate.mm
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/iOS/GameViewController.mm
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/iOS/GameView.mm
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/iOS/HapticsManager.mm
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalRenderer.mm
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalFrameResources.mm
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalTextureCache.mm
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalTexture.mm
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/FontAtlasGenerator.mm
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/FontCache.mm
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalShader.mm
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/MetalTextRenderer.mm
-        )
-    
-    # Remove main.cpp from iOS builds to avoid duplicate main functions
-    list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/main.cpp)
-else()
-    # Other platforms use PlatformAPI with direct Raylib
-    # Explicitly add main.cpp for non-iOS platforms
-    list(APPEND SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/main.cpp)
-endif()
-
-# Note: main.cpp vs main_ios.mm is handled above in platform-specific sections
-
-file(GLOB_RECURSE HEADERS 
-    ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/*.h
+# Common PooperTrooper game sources (used by both platforms)
+file(GLOB_RECURSE GAME_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Components/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Components/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Config/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Config/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Entities/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Entities/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Game/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Game/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/States/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/States/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Systems/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Systems/*.h"
 )
-# Remove the GameSettings.h and Resources.h from sources (header only)
-list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/GameSettings.h)
-list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/Resources.h)
 
-# For iOS, remove files that are replaced by Swift versions
-if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
-    # Remove UICoordinateSystem.cpp since we use Metal/UIKit implementation for iOS
-    list(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/UICoordinateSystem.cpp)
-    # Remove ONLY raylib-dependent desktop components
-    list(REMOVE_ITEM SOURCES
-        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/Window.cpp
+# Platform-specific source collection
+if(PLATFORM_IOS)
+    # iOS sources (NO RAYLIB - uses Metal/SpriteKit)
+    file(GLOB_RECURSE IOS_CPP_SOURCES
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/Audio/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/Input/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/Logging/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/Rendering/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/Threading/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/Assets/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/Audio/*.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/Input/*.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/Logging/*.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/Rendering/*.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/Threading/*.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/Assets/*.h"
     )
-    
-    # Keep cross-platform systems (now Swift-bridged)
-    if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "iOS")
-        target_link_libraries(${PROJECT_NAME} PRIVATE raylib)
-    endif()
-    
-    # Disable raylib dependencies completely for iOS
-    if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "iOS")
-        target_link_libraries(${PROJECT_NAME} PRIVATE raylib)
-    endif()
-endif()
 
-# TouchControls, ResourceManager, and AIGUI.cpp are already included via GLOB_RECURSE
-
-# Create executable
-if(${PLATFORM} STREQUAL "Android")
-    add_library(${PROJECT_NAME} SHARED ${SOURCES})
-elif(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
-    # iOS: Create as app bundle with automatic signing
-    add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES})
-    set_target_properties(${PROJECT_NAME} PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Debug-iphoneos"
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Debug-iphoneos"
-        ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/Debug-iphoneos"
+    file(GLOB_RECURSE IOS_SWIFT_SOURCES
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/*.swift"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/Assets/*.swift"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/Logging/*.swift"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/Rendering/*.swift"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/Threading/*.swift"
     )
+
+    # Remove any Raylib sources from ENGINE_CORE_SOURCES and GAME_SOURCES for iOS
+    list(FILTER ENGINE_CORE_SOURCES EXCLUDE REGEX ".*Raylib/.*")
+    list(FILTER GAME_SOURCES EXCLUDE REGEX ".*Raylib/.*")
+
+    # Combine ALL sources for iOS into single target (NO RAYLIB, NO STATIC LIBRARY)
+    set(ALL_SOURCES
+        ${ENGINE_CORE_SOURCES}
+        ${IOS_CPP_SOURCES}
+        ${IOS_SWIFT_SOURCES}
+        ${GAME_SOURCES}
+        ${FLOPPYTURD_CPP_SOURCES}
+    )
+
+    message(STATUS "iOS sources collected (Raylib sources explicitly excluded)")
 else()
-    add_executable(${PROJECT_NAME} ${SOURCES})
-endif()
-
-# Include directories
-target_include_directories(${PROJECT_NAME} PRIVATE 
-    ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd
-)
-
-# Add iOS-specific include directories
-if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
-    target_include_directories(${PROJECT_NAME} PRIVATE 
-        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/iOS
-        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/Shaders
+    # Desktop/Other platform sources (WITH RAYLIB)
+    file(GLOB_RECURSE RAYLIB_SOURCES
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/Raylib/Input/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/Raylib/Input/*.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/Raylib/Logging/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/Raylib/Logging/*.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/Raylib/Rendering/*.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/Raylib/Rendering/*.h"
     )
+
+    # Combine sources for Desktop (WITH RAYLIB)
+    set(ALL_SOURCES
+        ${ENGINE_CORE_SOURCES}
+        ${RAYLIB_SOURCES}
+        ${GAME_SOURCES}
+    )
+
+    message(STATUS "Desktop sources collected (including Raylib)")
 endif()
 
-# Link libraries - conditional based on platform
-if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
-    # iOS uses Metal/SpriteKit native frameworks
-    target_link_libraries(${PROJECT_NAME} PRIVATE 
+# =============================================================================
+# TARGET CREATION AND CONFIGURATION
+# =============================================================================
+
+if(PLATFORM_IOS)
+    # Create iOS app bundle with ALL sources (C++, Swift, Engine - no static library)
+    add_executable(PooperTrooper MACOSX_BUNDLE ${ALL_SOURCES})
+
+    # iOS-specific include directories (add Engine for module.modulemap)
+    target_include_directories(PooperTrooper PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Core
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Events
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Platform
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Assets
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Configuration
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Utility
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/iOS
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/Audio
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/Input
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/Logging
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/Rendering
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/Threading
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/Assets
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Components
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Config
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Entities
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Game
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Input
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/States
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Systems
+    )
+    # Ensure Swift can find the module map and headers
+    set_target_properties(PooperTrooper PROPERTIES
+        SWIFT_INCLUDE_PATHS "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine"
+        CXX_STANDARD 20
+        CXX_STANDARD_REQUIRED ON
+        CXX_EXTENSIONS OFF
+    )
+    # Ensure Swift can find the module map and headers
+    set_target_properties(PooperTrooper PROPERTIES
+        HEADER_SEARCH_PATHS "${CMAKE_CURRENT_SOURCE_DIR}/src/Engine"
+    )
+
+    # iOS Framework dependencies (NO RAYLIB)
+    target_link_libraries(PooperTrooper PRIVATE
         "-framework Foundation"
         "-framework UIKit"
         "-framework Metal"
         "-framework MetalKit"
         "-framework MetalPerformanceShaders"
-        "-framework SpriteKit"
         "-framework QuartzCore"
         "-framework CoreGraphics"
         "-framework CoreText"
@@ -201,180 +308,258 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "iOS")
         "-framework AudioToolbox"
         "-framework AVFoundation"
         "-framework GameController"
+        "-framework CoreHaptics"
         "-framework ImageIO"
         "-framework MobileCoreServices"
-        "-framework CoreHaptics"
     )
+
+    # Google Mobile Ads SDK - Link for device builds only
+    # AdManager.swift uses #if targetEnvironment(simulator) for stub implementation on simulator
+    set(GOOGLE_ADS_SDK_PATH "${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/GoogleMobileAds/GoogleMobileAdsSdkiOS-12.12.0")
     
-    # Swift runtime libraries will be linked automatically by Xcode
-    # Set proper Swift library search paths and linking flags
-    
-    target_compile_definitions(${PROJECT_NAME} PRIVATE 
-        PLATFORM_IOS
-        PLATFORM_MOBILE
-        __APPLE__
-        TARGET_OS_IOS=1
-    )
-    
-    # Swift/C++ interop configuration
-    target_compile_options(${PROJECT_NAME} PRIVATE
-        $<$<COMPILE_LANGUAGE:Swift>:-cxx-interoperability-mode=default>
-    )
-    
-    # Swift standard library embedding and linking
-    # Based on Apple documentation and community solutions for Swift/C++ interop
-    set_target_properties(${PROJECT_NAME} PROPERTIES
-        XCODE_ATTRIBUTE_ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES YES
-        XCODE_ATTRIBUTE_EMBEDDED_CONTENT_CONTAINS_SWIFT YES
-        XCODE_ATTRIBUTE_LD_RUNPATH_SEARCH_PATHS "@executable_path/Frameworks @loader_path/Frameworks"
-        XCODE_ATTRIBUTE_SWIFT_OBJC_BRIDGING_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/FloppyTurd-Bridging-Header.h"
-        XCODE_ATTRIBUTE_LIBRARY_SEARCH_PATHS "$(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME) $(SDKROOT)/usr/lib/swift $(TOOLCHAIN_DIR)/usr/lib/swift-5.0/$(PLATFORM_NAME) $(inherited)"
-        XCODE_ATTRIBUTE_OTHER_LDFLAGS "$(inherited) -lswiftCore -lswiftFoundation -lswiftUIKit -lswiftDispatch -lswiftObjectiveC -lswiftCoreFoundation -lswiftDarwin -lswiftCoreGraphics -lswiftMetal -lswiftQuartzCore -lswiftAVFoundation -lswiftCoreAudio"
-        XCODE_ATTRIBUTE_SWIFT_INCLUDE_PATHS "$(TOOLCHAIN_DIR)/usr/lib/swift $(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME) $(inherited)"
-    )
-    
-    # Bundle resources - use asset catalogs for proper iOS packaging
-    file(GLOB_RECURSE RESOURCES "${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/resources/*")
-    foreach(RESOURCE ${RESOURCES})
-        set_source_files_properties(${RESOURCE} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
-    endforeach()
-    
-    # Explicitly add font files to bundle for iOS font registration (only from resources, not asset catalog)
-    file(GLOB FONT_FILES "${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/resources/fonts/*.ttf")
-    foreach(FONT_FILE ${FONT_FILES})
-        set_source_files_properties(${FONT_FILE} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
-        target_sources(${PROJECT_NAME} PRIVATE ${FONT_FILE})
-    endforeach()
-    
-    # Define Metal shader files
-    set(METAL_SHADERS
-        ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/Shaders2D.metal
-    )
-    
-    # Only add the .metal file as a resource for Xcode to pick up
-    if(DEFINED METAL_SHADERS)
-        foreach(SHADER ${METAL_SHADERS})
-            set_source_files_properties(${SHADER} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
-            target_sources(${PROJECT_NAME} PRIVATE ${SHADER})
-        endforeach()
+    if(PLATFORM STREQUAL "OS64" OR PLATFORM STREQUAL "OS" OR NOT PLATFORM MATCHES "SIMULATOR")
+        # Device build - link GoogleMobileAds
+        message(STATUS "✅ GoogleMobileAds XCFramework linked for DEVICE build")
+        
+        # Add framework search path
+        set_target_properties(PooperTrooper PROPERTIES
+            XCODE_ATTRIBUTE_FRAMEWORK_SEARCH_PATHS "$(inherited) ${GOOGLE_ADS_SDK_PATH}"
+        )
+        
+        # Link the XCFrameworks
+        target_link_libraries(PooperTrooper PRIVATE
+            "-framework GoogleMobileAds"
+            "-framework UserMessagingPlatform"
+        )
+        
+        # Embed the frameworks with proper signing
+        set_target_properties(PooperTrooper PROPERTIES
+            XCODE_EMBED_FRAMEWORKS "${GOOGLE_ADS_SDK_PATH}/GoogleMobileAds.xcframework;${GOOGLE_ADS_SDK_PATH}/UserMessagingPlatform.xcframework"
+            XCODE_EMBED_FRAMEWORKS_CODE_SIGN_ON_COPY YES
+            XCODE_EMBED_FRAMEWORKS_REMOVE_HEADERS_ON_COPY YES
+            XCODE_ATTRIBUTE_LD_RUNPATH_SEARCH_PATHS "$(inherited) @executable_path/Frameworks"
+        )
+    else()
+        # Simulator build - skip GoogleMobileAds (uses stub in AdManager.swift)
+        message(STATUS "⚠️  GoogleMobileAds XCFramework NOT linked (SIMULATOR build - using stubs)")
     endif()
-    
-    # Asset catalogs handle resources properly, no need for cleanup scripts
-    
-    # ---- Asset Catalog generation for iOS resources ----
-    
-    # Create asset catalog structure with generate_asset_catalog.sh script
-    add_custom_command(TARGET ${PROJECT_NAME} PRE_BUILD
-        COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_asset_catalog.sh
-        COMMENT "Generating asset catalog from resources"
-        VERBATIM
-    )
-    
-    # Include the asset catalog as a resource bundle
-    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/Assets.xcassets PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
-    target_sources(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/Assets.xcassets)
-    
-    # Configure basic iOS target properties
-    set_target_properties(${PROJECT_NAME} PROPERTIES
-        MACOSX_BUNDLE ON
-        MACOSX_BUNDLE_GUI_IDENTIFIER "com.floppyturd.game"
-        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info.plist"
-        XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.floppyturd.game"
-        XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "${DEVELOPMENT_TEAM}"
-        XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "Apple Development"
-        XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET "16.0"
-        XCODE_ATTRIBUTE_PRODUCT_NAME "FloppyTurd"
-        XCODE_ATTRIBUTE_BUNDLE_VERSION "1.0.0"
-        XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2"
-        XCODE_ATTRIBUTE_UI_REQUIRED_DEVICE_CAPABILITIES "arm64"
-        XCODE_ATTRIBUTE_UI_SUPPORTED_INTERFACE_ORIENTATIONS "UIInterfaceOrientationPortrait;UIInterfaceOrientationLandscapeLeft;UIInterfaceOrientationLandscapeRight"
-        # Swift header configuration
-        XCODE_ATTRIBUTE_SWIFT_OBJC_INTERFACE_HEADER_NAME "GameEngine-Swift.h"
-        # Enable code signing
-        XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "YES"
-        XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "YES"
-        XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
-        XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "86886N72J8"
-    )
 else()
-    # All other platforms use Raylib
-    target_link_libraries(${PROJECT_NAME} PRIVATE raylib)
+    # Create desktop executable
+    add_executable(PooperTrooper ${ALL_SOURCES})
+
+    # Desktop-specific include directories
+    target_include_directories(PooperTrooper PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Core
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Events
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Engine/Platform
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Raylib/Input
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Raylib/Logging
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Raylib/Rendering
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Components
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Entities
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/Game
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/FloppyTurd/States
+    )
+
+    # Desktop dependencies (WITH RAYLIB)
+    target_link_libraries(PooperTrooper PRIVATE raylib)
 endif()
 
-# Platform-specific settings
-if(${PLATFORM} STREQUAL "Windows")
-    # Windows specific settings
-    # Use console entry point (main() instead of WinMain())
-    
-    # Copy resources to output directory (skip for iOS - we use asset catalogs instead)
-    if(NOT APPLE OR NOT IOS)
-        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/resources
-            $<TARGET_FILE_DIR:${PROJECT_NAME}>/resources
-        )
-    endif()
-    
-    # Set Visual Studio debugger working directory
-    set_property(TARGET ${PROJECT_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
-    
-elif(IS_MACOS)
-    # macOS specific settings
-    message(STATUS "Applying macOS-specific build settings")
-    
-    # Copy resources to output directory for macOS (skip for iOS - we use asset catalogs instead)
-    # For macOS, we can use the standard resource copy approach
-    if(NOT IOS)
-        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/resources
-            $<TARGET_FILE_DIR:${PROJECT_NAME}>/resources
-        )
-    endif()
-    
-    # macOS-specific compiler flags for better compatibility
-    target_compile_options(${PROJECT_NAME} PRIVATE
-        -Wno-deprecated-declarations  # Silence deprecation warnings on macOS
+# Platform-specific compile definitions
+if(PLATFORM_IOS)
+    set(COMMON_COMPILE_DEFINITIONS
+        $<$<CONFIG:Debug>:DEBUG=1>
+        $<$<CONFIG:Debug>:_DEBUG=1>
+        PLATFORM_IOS=1
+        PLATFORM_MOBILE=1
+        __APPLE__
+        TARGET_OS_IOS=1
+        SWIFT_CPP_INTEROP_ENABLED
     )
-    
-elif(${PLATFORM} STREQUAL "Android")
-    # Android specific settings
-    target_compile_definitions(${PROJECT_NAME} PRIVATE PLATFORM_ANDROID)
-    
-    # Android requires specific flags
-    target_link_libraries(${PROJECT_NAME} PRIVATE
-        android
-        EGL
-        GLESv2
-        OpenSLES
-        log
-        m
-    )
-    
 else()
-    # Default/Linux settings
-    # Copy resources to output directory for other platforms (skip for iOS - we use asset catalogs instead)
-    if(NOT IOS)
-        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_CURRENT_SOURCE_DIR}/FloppyTurd/resources
-            $<TARGET_FILE_DIR:${PROJECT_NAME}>/resources
+    set(COMMON_COMPILE_DEFINITIONS
+        $<$<CONFIG:Debug>:DEBUG=1>
+        $<$<CONFIG:Debug>:_DEBUG=1>
+        PLATFORM_DESKTOP=1
+    )
+endif()
+
+# Apply common compile definitions and properties to all targets
+target_compile_definitions(PooperTrooper PRIVATE ${COMMON_COMPILE_DEFINITIONS})
+
+# Global Xcode settings (Minimal to allow Automatic signing to work)
+set(CMAKE_XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET "17.0")
+
+# Platform-specific target properties
+if(PLATFORM_IOS)
+    # Check if Info.plist exists, if not generate a minimal one
+    if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Info.plist")
+        message(WARNING "Info.plist not found, will be auto-generated by Xcode")
+    else()
+        message(STATUS "Using Info.plist: ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist")
+    endif()
+
+    # Check if entitlements file exists
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/PooperTrooper.entitlements")
+        set(ENTITLEMENTS_FILE "${CMAKE_CURRENT_SOURCE_DIR}/PooperTrooper.entitlements")
+        message(STATUS "Using entitlements file: ${ENTITLEMENTS_FILE}")
+    else()
+        message(WARNING "PooperTrooper.entitlements not found - app may not sign properly")
+        set(ENTITLEMENTS_FILE "")
+    endif()
+
+    set_target_properties(PooperTrooper PROPERTIES
+        MACOSX_BUNDLE ON
+        MACOSX_BUNDLE_GUI_IDENTIFIER "com.floppyturd.game"
+        MACOSX_BUNDLE_BUNDLE_NAME "PooperTrooper"
+        MACOSX_BUNDLE_BUNDLE_VERSION "1.0.3"
+        MACOSX_BUNDLE_SHORT_VERSION_STRING "1.0.3"
+        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info.plist"
+        XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.floppyturd.game"
+        XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "W77G58P3X9"
+        XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET "17.0"
+        XCODE_ATTRIBUTE_PRODUCT_NAME "PooperTrooper"
+        XCODE_ATTRIBUTE_MARKETING_VERSION "1.0.3"
+        XCODE_ATTRIBUTE_CURRENT_PROJECT_VERSION "1"
+        XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2" # 1=iPhone, 2=iPad (Universal App)
+        XCODE_ATTRIBUTE_INFOPLIST_KEY_UISupportedInterfaceOrientations "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        XCODE_ATTRIBUTE_INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        XCODE_ATTRIBUTE_INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone "UIInterfaceOrientationPortrait"
+        XCODE_ATTRIBUTE_INFOPLIST_KEY_UILaunchScreen_Generation "YES"
+        XCODE_ATTRIBUTE_SWIFT_OBJC_INTERFACE_HEADER_NAME "PooperTrooper-Swift.h"
+        XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
+        XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "Apple Development"
+        XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY[sdk=iphoneos*] "Apple Development"
+        XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "YES"
+        XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "YES"
+        XCODE_ATTRIBUTE_CODE_SIGN_INJECT_BASE_ENTITLEMENTS "YES"
+        XCODE_ATTRIBUTE_SWIFT_VERSION "6.0"
+        XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon"
+        XCODE_ATTRIBUTE_INSTALL_PATH "$(LOCAL_APPS_DIR)"
+        XCODE_ATTRIBUTE_SKIP_INSTALL "NO"
+        XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT "dwarf-with-dsym"
+        XCODE_ATTRIBUTE_GCC_GENERATE_DEBUGGING_SYMBOLS "YES"
+        XCODE_ATTRIBUTE_ENABLE_BITCODE "NO"
+        XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH[variant=Debug] "YES"
+        XCODE_ATTRIBUTE_COPY_PHASE_STRIP "NO"
+        XCODE_ATTRIBUTE_STRIP_INSTALLED_PRODUCT "NO"
+    )
+
+    # Set entitlements file if it exists
+    if(ENTITLEMENTS_FILE)
+        set_target_properties(PooperTrooper PROPERTIES
+            XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS "${ENTITLEMENTS_FILE}"
         )
     endif()
+
+    # Swift/C++ interop compiler options
+    target_compile_options(PooperTrooper PRIVATE
+        $<$<COMPILE_LANGUAGE:Swift>:-cxx-interoperability-mode=default>
+        $<$<COMPILE_LANGUAGE:Swift>:-swift-version 6.0>
+        $<$<COMPILE_LANGUAGE:CXX>:-std=c++20>
+    )
+
+endif()
+
+# No separate static library - all code is in main target now
+
+# ---- Asset Catalog generation for iOS resources ----
+if(PLATFORM_IOS)
+    # Create asset catalog structure with generate_asset_catalog.sh
+    add_custom_command(TARGET PooperTrooper PRE_BUILD
+        COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_asset_catalog.sh
+        COMMENT "Generating asset catalog from resources"
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+
+    # Explicitly include the Assets.xcassets directory in the app bundle
+    set_source_files_properties(
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Assets.xcassets
+        PROPERTIES
+        MACOSX_PACKAGE_LOCATION "Resources"
+    )
+
+    # Add the Assets.xcassets directory to the target
+    target_sources(PooperTrooper PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Assets.xcassets
+    )
+
+    # Set the ASSETCATALOG_COMPILER_APPICON_NAME if not set
+    set_target_properties(PooperTrooper PROPERTIES
+        ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon"
+    )
+
+    # Explicitly add font files to bundle for iOS font registration (from new assets directory)
+    # This makes .fnt files accessible via Bundle.main.path() calls
+    file(GLOB FONT_FNT_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/assets/fonts/bitmap/*.fnt")
+    file(GLOB FONT_FNT_FILES2 "${CMAKE_CURRENT_SOURCE_DIR}/src/assets/fonts/truetype/*.fnt")
+    list(APPEND FONT_FNT_FILES ${FONT_FNT_FILES2})
+    message(STATUS "Found .fnt files: ${FONT_FNT_FILES}")
+    foreach(FONT_FILE ${FONT_FNT_FILES})
+        message(STATUS "Adding .fnt file to bundle: ${FONT_FILE}")
+        set_source_files_properties(${FONT_FILE} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+        target_sources(PooperTrooper PRIVATE ${FONT_FILE})
+    endforeach()
+
+    # Also add .ttf files for completeness
+    file(GLOB FONT_TTF_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/assets/fonts/bitmap/*.ttf")
+    file(GLOB FONT_TTF_FILES2 "${CMAKE_CURRENT_SOURCE_DIR}/src/assets/fonts/truetype/*.ttf")
+    list(APPEND FONT_TTF_FILES ${FONT_TTF_FILES2})
+    message(STATUS "Found .ttf files: ${FONT_TTF_FILES}")
+    foreach(FONT_FILE ${FONT_TTF_FILES})
+        message(STATUS "Adding .ttf file to bundle: ${FONT_FILE}")
+        set_source_files_properties(${FONT_FILE} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+        target_sources(PooperTrooper PRIVATE ${FONT_FILE})
+    endforeach()
+
+    # Also try adding fonts to a fonts subdirectory in the bundle
+    file(GLOB FONT_ALL_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/assets/fonts/*/*")
+    foreach(FONT_FILE ${FONT_ALL_FILES})
+        if(NOT IS_DIRECTORY ${FONT_FILE})
+            message(STATUS "Adding font file to fonts subdirectory: ${FONT_FILE}")
+            set_source_files_properties(${FONT_FILE} PROPERTIES MACOSX_PACKAGE_LOCATION Resources/fonts)
+            target_sources(PooperTrooper PRIVATE ${FONT_FILE})
+        endif()
+    endforeach()
+
+    # Add hat assets to bundle for iOS
+    file(GLOB HAT_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/assets/hats/*.png")
+    message(STATUS "Found hat files: ${HAT_FILES}")
+    foreach(HAT_FILE ${HAT_FILES})
+        message(STATUS "Adding hat file to bundle: ${HAT_FILE}")
+        set_source_files_properties(${HAT_FILE} PROPERTIES MACOSX_PACKAGE_LOCATION Resources/hats)
+        target_sources(PooperTrooper PRIVATE ${HAT_FILE})
+    endforeach()
+
+    # Metal shaders
+    file(GLOB METAL_SHADERS "${CMAKE_CURRENT_SOURCE_DIR}/src/iOS/Shaders/*.metal")
+    foreach(SHADER ${METAL_SHADERS})
+        set_source_files_properties(${SHADER} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+        target_sources(PooperTrooper PRIVATE ${SHADER})
+    endforeach()
 endif()
 
 # Compiler warnings
-if(MSVC)
-    target_compile_options(${PROJECT_NAME} PRIVATE 
-        $<$<COMPILE_LANGUAGE:CXX>:/W3>
-    )
-else()
-    target_compile_options(${PROJECT_NAME} PRIVATE 
-        $<$<COMPILE_LANGUAGE:CXX>:-Wall>
-        $<$<COMPILE_LANGUAGE:CXX>:-Wextra>
-        $<$<COMPILE_LANGUAGE:CXX>:-pedantic>
+target_compile_options(PooperTrooper PRIVATE
+    $<$<COMPILE_LANGUAGE:CXX>:-Wall>
+    $<$<COMPILE_LANGUAGE:CXX>:-Wextra>
+    $<$<COMPILE_LANGUAGE:CXX>:-Wno-deprecated-declarations>
+)
+
+if(PLATFORM_IOS)
+    target_compile_options(PooperTrooper PRIVATE
+        $<$<COMPILE_LANGUAGE:Swift>:-warnings-as-errors>
     )
 endif()
 
-# Export compile commands for better IDE support
+# Export compile commands for IDE support
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# Status messages
+if(PLATFORM_IOS)
+    message(STATUS "PooperTrooper Engine configured for iOS 17+ with Swift 6.0 and native C++ interop")
+    message(STATUS "Swift header: PooperTrooper-Swift.h")
+    message(STATUS "Asset catalog will be generated from src/assets/")
+else()
+    message(STATUS "PooperTrooper Engine configured for ${PLATFORM} with Raylib")
+endif()

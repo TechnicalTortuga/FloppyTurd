@@ -1,0 +1,2 @@
+/Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/CMakeScratch/TryCompile-YOILkr/CMakeFiles/cmTC_937be.dir
+/Users/aimac/Development/FloppyTurd/build_ios/CMakeFiles/CMakeScratch/TryCompile-YOILkr/CMakeFiles/ALL_BUILD.dir

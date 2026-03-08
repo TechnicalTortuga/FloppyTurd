@@ -1,0 +1,321 @@
+#include "ConfigManager.h"
+#include <algorithm>
+#include <cmath>
+#include <functional>
+#include <fstream>
+
+namespace GameCore {
+
+    ConfigManager& ConfigManager::Instance() {
+        static ConfigManager instance;
+        return instance;
+    }
+
+    void ConfigManager::Initialize(const PlatformDelegates& delegates) {
+        m_delegates = delegates;
+        DetectPlatform();
+        UpdateScreenInfo();
+        LoadDefaultConfiguration();
+        CalculateScaleFactors();
+        
+        GN_LOG_INFO("ConfigManager initialized for platform: " + std::string(m_delegates.GetPlatformName()));
+        GN_LOG_INFO("Screen info: " + std::to_string(m_screenInfo.pixelWidth) + "x" + 
+                   std::to_string(m_screenInfo.pixelHeight) + " pixels, " +
+                   std::to_string(m_screenInfo.logicalWidth) + "x" + 
+                   std::to_string(m_screenInfo.logicalHeight) + " logical, scale=" + 
+                   std::to_string(m_screenInfo.scaleFactor));
+    }
+
+    // Helper to get config file path
+    std::string GetConfigFilePath() {
+        if (ConfigManager::Instance().IsIOS()) {
+            const char* homeDir = getenv("HOME");
+            if (homeDir) {
+                return std::string(homeDir) + "/Documents/FloppyTurdConfig.dat";
+            }
+        }
+        return "FloppyTurdConfig.dat";
+    }
+
+    void ConfigManager::LoadConfiguration() {
+        // Load default values first
+        LoadDefaultConfiguration();
+        
+        // Try to load from file
+        std::string path = GetConfigFilePath();
+        std::ifstream file(path);
+        
+        if (file.is_open()) {
+            std::string line;
+            while (std::getline(file, line)) {
+                // Simple parser: Key=Value
+                size_t delimiterPos = line.find('=');
+                if (delimiterPos != std::string::npos) {
+                    std::string key = line.substr(0, delimiterPos);
+                    std::string value = line.substr(delimiterPos + 1);
+                    
+                    if (key == "LegacyModeUnlocked") {
+                        m_legacyModeUnlocked = (value == "1" || value == "true");
+                        GN_LOG_INFO("ConfigManager: Loaded LegacyModeUnlocked=" + std::string(m_legacyModeUnlocked ? "true" : "false"));
+                    }
+                }
+            }
+            file.close();
+            GN_LOG_INFO("ConfigManager: Configuration loaded from " + path);
+        } else {
+            GN_LOG_INFO("ConfigManager: No configuration file found at " + path + ", using defaults");
+        }
+    }
+
+    void ConfigManager::SaveConfiguration() {
+        std::string path = GetConfigFilePath();
+        std::ofstream file(path);
+        
+        if (file.is_open()) {
+            file << "LegacyModeUnlocked=" << (m_legacyModeUnlocked ? "1" : "0") << "\n";
+            // Add other config values here as needed
+            
+            file.close();
+            GN_LOG_INFO("ConfigManager: Configuration saved to " + path);
+        } else {
+            GN_LOG_ERROR("ConfigManager: Failed to save configuration to " + path);
+        }
+    }
+
+    void ConfigManager::UpdateScreenInfo() {
+        // ALWAYS try to get fresh screen info from delegates
+        if (m_delegates.renderer.getScreenInfo) {
+            m_delegates.renderer.getScreenInfo(&m_screenInfo);
+            
+            // Validate that we got real data
+            if (m_screenInfo.pixelWidth <= 0.0f || m_screenInfo.pixelHeight <= 0.0f) {
+                GN_LOG_ERROR("Screen info delegate returned invalid dimensions: " + 
+                           std::to_string(m_screenInfo.pixelWidth) + "x" + 
+                           std::to_string(m_screenInfo.pixelHeight));
+                // Force sensible fallback
+                m_screenInfo.pixelWidth = 1080.0f;
+                m_screenInfo.pixelHeight = 1920.0f;
+                m_screenInfo.logicalWidth = 360.0f;
+                m_screenInfo.logicalHeight = 640.0f;
+                m_screenInfo.scaleFactor = 3.0f;
+                m_screenInfo.isPortrait = true;
+            }
+            
+            CalculateScaleFactors();
+            GN_LOG_INFO("Screen info updated from delegate: " + std::to_string(m_screenInfo.pixelWidth) + "x" +
+                       std::to_string(m_screenInfo.pixelHeight) + " pixels, " +
+                       std::to_string(m_screenInfo.logicalWidth) + "x" + 
+                       std::to_string(m_screenInfo.logicalHeight) + " logical");
+
+            // Trigger callback if set (for automatic updates)
+            if (m_screenInfoUpdateCallback) {
+                m_screenInfoUpdateCallback();
+                GN_LOG_DEBUG("Screen info update callback triggered");
+            }
+            return;
+        }
+        
+        // Legacy fallback - try getScreenSize
+        if (m_delegates.renderer.getScreenSize) {
+            m_delegates.renderer.getScreenSize(&m_screenInfo.pixelWidth, &m_screenInfo.pixelHeight);
+            m_screenInfo.logicalWidth = m_screenInfo.pixelWidth;
+            m_screenInfo.logicalHeight = m_screenInfo.pixelHeight;
+            m_screenInfo.scaleFactor = 1.0f;
+            m_screenInfo.isPortrait = m_screenInfo.pixelHeight > m_screenInfo.pixelWidth;
+            m_screenInfo.deviceModel = "Unknown";
+            CalculateScaleFactors();
+            GN_LOG_WARN("Using legacy screen size detection: " + std::to_string(m_screenInfo.pixelWidth) + "x" +
+                       std::to_string(m_screenInfo.pixelHeight));
+            return;
+        }
+        
+        // CRITICAL ERROR: No delegates available
+        GN_LOG_ERROR("❌ NO SCREEN INFO DELEGATES AVAILABLE - Using iPhone 16 fallback defaults!");
+        GN_LOG_ERROR("This should NEVER happen in production - delegates not properly initialized");
+        m_screenInfo.pixelWidth = 1080.0f;  // Generic fallback
+        m_screenInfo.pixelHeight = 1920.0f; // Generic fallback
+        m_screenInfo.logicalWidth = 360.0f;
+        m_screenInfo.logicalHeight = 640.0f;
+        m_screenInfo.scaleFactor = 3.0f;
+        m_screenInfo.isPortrait = true;
+        m_screenInfo.deviceModel = "Unknown (FALLBACK)";
+        CalculateScaleFactors();
+    }
+
+    void ConfigManager::SetScreenInfoUpdateCallback(ScreenInfoUpdateCallback callback) {
+        m_screenInfoUpdateCallback = callback;
+        GN_LOG_DEBUG("Screen info update callback set");
+    }
+
+    float ConfigManager::GetUIScale() const {
+        auto it = m_scaleFactors.find("ui_scale");
+        return it != m_scaleFactors.end() ? it->second : 1.0f;
+    }
+
+    float ConfigManager::GetTextScale() const {
+        auto it = m_scaleFactors.find("text_scale");
+        return it != m_scaleFactors.end() ? it->second : 1.0f;
+    }
+
+    float ConfigManager::GetSpriteScale() const {
+        auto it = m_scaleFactors.find("sprite_scale");
+        return it != m_scaleFactors.end() ? it->second : 1.0f;
+    }
+
+    float ConfigManager::GetBackgroundScale() const {
+        auto it = m_scaleFactors.find("background_scale");
+        return it != m_scaleFactors.end() ? it->second : 1.0f;
+    }
+
+    float ConfigManager::PixelsToLogical(float pixels) const {
+        return pixels / m_screenInfo.scaleFactor;
+    }
+
+    float ConfigManager::LogicalToPixels(float logical) const {
+        return logical * m_screenInfo.scaleFactor;
+    }
+
+    float ConfigManager::GetScreenWidthPercent(float percent) const {
+        return m_screenInfo.logicalWidth * (percent / 100.0f);
+    }
+
+    float ConfigManager::GetScreenHeightPercent(float percent) const {
+        return m_screenInfo.logicalHeight * (percent / 100.0f);
+    }
+
+    bool ConfigManager::ShouldUseLowQualityAssets() const {
+        // Use lower quality on older devices or smaller screens
+        return m_screenInfo.pixelWidth < 1000.0f || 
+               m_screenInfo.deviceModel.find("SE") != std::string::npos;
+    }
+
+    int ConfigManager::GetRecommendedTextureSize() const {
+        if (m_screenInfo.pixelWidth >= 2000.0f) {
+            return 2048; // High resolution devices
+        } else if (m_screenInfo.pixelWidth >= 1500.0f) {
+            return 1024; // Medium resolution devices
+        } else {
+            return 512;  // Lower resolution devices
+        }
+    }
+
+    int ConfigManager::GetMaxParticleCount() const {
+        if (IsIOS() && m_screenInfo.pixelWidth >= 2000.0f) {
+            return 500; // High-end iOS devices
+        } else if (IsIOS()) {
+            return 250; // Standard iOS devices
+        } else {
+            return 1000; // Desktop can handle more
+        }
+    }
+
+    void ConfigManager::DetectPlatform() {
+        switch (m_delegates.platformType) {
+            case PlatformDelegates::PLATFORM_TYPE_IOS:
+                m_platform = Platform::iOS;
+                break;
+            case PlatformDelegates::PLATFORM_TYPE_MACOS:
+            case PlatformDelegates::PLATFORM_TYPE_WINDOWS:
+            case PlatformDelegates::PLATFORM_TYPE_LINUX:
+                m_platform = Platform::Desktop;
+                break;
+            default:
+                m_platform = Platform::Unknown;
+                GN_LOG_WARN("Unknown platform type detected");
+                break;
+        }
+    }
+
+    void ConfigManager::CalculateScaleFactors() {
+        // Calculate UI scale based on screen size
+        float uiScale = CalculateUIScaleFromScreenSize();
+        float textScale = CalculateTextScaleFromDPI();
+        
+        // Background scale should fill the screen height
+        float backgroundScale = 1.0f;
+        
+        // Store calculated scales
+        m_scaleFactors["ui_scale"] = uiScale;
+        m_scaleFactors["text_scale"] = textScale;
+        m_scaleFactors["sprite_scale"] = uiScale; // Sprites use same scale as UI
+        m_scaleFactors["background_scale"] = backgroundScale;
+        
+        GN_LOG_DEBUG("Calculated scale factors - UI: " + std::to_string(uiScale) + 
+                    ", Text: " + std::to_string(textScale) + 
+                    ", Background: " + std::to_string(backgroundScale));
+    }
+
+    void ConfigManager::LoadDefaultConfiguration() {
+        // Platform-specific default configurations
+        if (IsIOS()) {
+            // iOS defaults - scale based on device size
+            if (m_screenInfo.pixelWidth >= 2000.0f) {
+                // iPhone Pro Max, iPad Pro
+                m_scaleFactors["default_font_size"] = 96.0f;
+                m_scaleFactors["button_scale"] = 1.2f;
+            } else if (m_screenInfo.pixelWidth >= 1500.0f) {
+                // iPhone Pro, standard iPhones
+                m_scaleFactors["default_font_size"] = 64.0f;
+                m_scaleFactors["button_scale"] = 1.0f;
+            } else {
+                // iPhone SE, smaller devices
+                m_scaleFactors["default_font_size"] = 48.0f;
+                m_scaleFactors["button_scale"] = 0.8f;
+            }
+        } else {
+            // Desktop defaults
+            m_scaleFactors["default_font_size"] = 32.0f;
+            m_scaleFactors["button_scale"] = 1.0f;
+        }
+    }
+
+    float ConfigManager::CalculateUIScaleFromScreenSize() const {
+        if (IsIOS()) {
+            // iOS: Scale based on logical width relative to a baseline
+            // Use a standard baseline width (e.g., 375pt for older iPhones, 390-430 for newer)
+            // This calculation will upscale for iPads
+            float baseWidth = 390.0f; 
+            return std::max(0.5f, std::min(3.0f, m_screenInfo.logicalWidth / baseWidth));
+        } else {
+            // Desktop: Scale based on screen resolution
+            float baseWidth = 1920.0f; // 1080p width
+            return std::max(0.5f, std::min(3.0f, m_screenInfo.pixelWidth / baseWidth));
+        }
+    }
+
+    float ConfigManager::CalculateTextScaleFromDPI() const {
+        if (IsIOS()) {
+            // iOS handles DPI automatically, use UI scale
+            return GetUIScale();
+        } else {
+            // Desktop: Estimate DPI and scale accordingly
+            // Assume 24-inch 1080p monitor = ~92 DPI, 27-inch 1440p = ~109 DPI
+            float estimatedDPI = 96.0f; // Standard DPI assumption
+            if (m_screenInfo.pixelWidth >= 2560.0f) {
+                estimatedDPI = 120.0f; // High DPI display
+            }
+            return estimatedDPI / 96.0f; // Scale relative to 96 DPI
+        }
+    }
+
+    void ConfigManager::SetScreenInfoDirect(const ScreenInfo& screenInfo) {
+        m_screenInfo = screenInfo;
+        CalculateScaleFactors();
+
+        GN_LOG_INFO("ConfigManager: Screen info set directly - " +
+                   std::to_string((int)m_screenInfo.pixelWidth) + "x" +
+                   std::to_string((int)m_screenInfo.pixelHeight) + " pixels, " +
+                   std::to_string(m_screenInfo.logicalWidth) + "x" +
+                   std::to_string(m_screenInfo.logicalHeight) + " logical, " +
+                   "scale: " + std::to_string(m_screenInfo.scaleFactor) +
+                   ", portrait: " + (m_screenInfo.isPortrait ? "true" : "false"));
+
+        // CRITICAL FIX: Trigger callback for orientation changes
+        // This ensures GameplayState gets notified of screen info changes
+        if (m_screenInfoUpdateCallback) {
+            m_screenInfoUpdateCallback();
+            GN_LOG_INFO("Screen info update callback triggered for orientation change");
+        }
+    }
+
+} // namespace GameCore

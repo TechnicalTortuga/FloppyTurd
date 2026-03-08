@@ -1,0 +1,75 @@
+{
+  "buildCommand" : {
+    "command" : "prepareForIndexing",
+    "enableIndexBuildArena" : false,
+    "targets" : null
+  },
+  "configuredTargets" : [
+    {
+      "guid" : "7200ea2d3bb5a128d5c1fdd6b0339539fecef6e8d04455511430208dd1b4830e"
+    },
+    {
+      "guid" : "7200ea2d3bb5a128d5c1fdd6b033953912b364605eff0eea3c0cf8c120af89c5"
+    },
+    {
+      "guid" : "7200ea2d3bb5a128d5c1fdd6b03395391b7887615d8d2d558c6baf63878e7c1d"
+    },
+    {
+      "guid" : "7200ea2d3bb5a128d5c1fdd6b0339539478f283799537ec98f07f990236956ff"
+    }
+  ],
+  "containerPath" : "/Users/aimac/Development/FloppyTurd/build_ios26_device/FloppyTurd.xcodeproj",
+  "continueBuildingAfterErrors" : true,
+  "dependencyScope" : "workspace",
+  "enableIndexBuildArena" : false,
+  "hideShellScriptEnvironment" : false,
+  "parameters" : {
+    "action" : "build",
+    "activeArchitecture" : "undefined_arch",
+    "activeRunDestination" : {
+      "disableOnlyActiveArch" : true,
+      "platform" : "iphoneos",
+      "sdk" : "iphoneos26.0",
+      "sdkVariant" : "iphoneos",
+      "supportedArchitectures" : [
+        "armv4t",
+        "armv5",
+        "armv6",
+        "armv7",
+        "armv7f",
+        "armv7s",
+        "armv7k",
+        "arm64",
+        "arm64e"
+      ],
+      "targetArchitecture" : "undefined_arch"
+    },
+    "arenaInfo" : {
+      "buildIntermediatesPath" : "",
+      "buildProductsPath" : "",
+      "derivedDataPath" : "/Users/aimac/Library/Developer/Xcode/DerivedData",
+      "indexDataStoreFolderPath" : "/Users/aimac/Library/Developer/Xcode/DerivedData/FloppyTurd-hiiscutsqproiwepwpiyujzzcvsa/Index.noindex/DataStore",
+      "indexEnableDataStore" : true,
+      "indexPCHPath" : "/Users/aimac/Library/Developer/Xcode/DerivedData/FloppyTurd-hiiscutsqproiwepwpiyujzzcvsa/Index.noindex/PrecompiledHeaders",
+      "pchPath" : ""
+    },
+    "configurationName" : "Debug",
+    "overrides" : {
+      "synthesized" : {
+        "table" : {
+          "ENABLE_PREVIEWS" : "NO",
+          "ENABLE_XOJIT_PREVIEWS" : "NO",
+          "ONLY_ACTIVE_ARCH" : "YES",
+          "TOOLCHAINS" : "com.apple.dt.toolchain.Metal.32023 $(inherited)"
+        }
+      }
+    }
+  },
+  "qos" : "default",
+  "schemeCommand" : "launch",
+  "showNonLoggedProgress" : true,
+  "useDryRun" : true,
+  "useImplicitDependencies" : true,
+  "useLegacyBuildLocations" : false,
+  "useParallelTargets" : true
+}

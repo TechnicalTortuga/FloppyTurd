@@ -1,0 +1,8 @@
+Test AD Interstitital:
+ca-app-pub-3940256099942544/4411468910
+
+Mobile Ads SDK:
+ca-app-pub-2487109358798103~4785125685
+
+Interstitial:
+ca-app-pub-2487109358798103/2326483309

@@ -1,0 +1,78 @@
+﻿#include "Bird.h"
+#include "Resources.h"
+#include <cmath>
+
+Bird::Bird(Vector2 startPos, float spd)
+    : pos(startPos), speed(spd), baseY(startPos.y), hoverTimer(0.0f)
+{
+    using namespace Resources;
+    flySprite = new Sprite(BirdIdle, 4, 0.1f, 1.0f, pos);
+    hurtSprite = new Sprite(BirdHurt, 4, 0.1f, 1.0f, pos);
+
+    currentSprite = flySprite;
+    hitbox = { pos.x + 4, pos.y + 4, 24, 24 };
+}
+
+Bird::~Bird() {
+    delete flySprite;
+    delete hurtSprite;
+}
+
+void Bird::Update(float deltaTime) {
+    pos.x -= speed * deltaTime;
+    hoverTimer += deltaTime;
+    pos.y = baseY + std::sinf(hoverTimer * 2.0f) * 4.0f;
+
+    currentSprite->SetPosition(pos);
+
+    if (isHurt) {
+        hurtTimer -= deltaTime;
+        if (!hurtAnimFinished) {
+            currentSprite->Update(deltaTime);
+            if (hurtTimer <= 0.0f && currentSprite->GetFrameIndex() >= 3) {
+                hurtAnimFinished = true;
+                currentSprite->SetFrameFrozen(3);
+            }
+        }
+    }
+    else {
+        currentSprite->Update(deltaTime);
+    }
+
+    UpdateHitbox();
+}
+
+void Bird::Draw() const {
+    currentSprite->Draw(pos.x, pos.y);
+}
+
+Rectangle Bird::GetHitbox() const {
+    return hitbox;
+}
+
+void Bird::TakeDamage() {
+    if (!isHurt) {
+        isHurt = true;
+        hitbox = { 0, 0, 0, 0 };
+        currentSprite = hurtSprite;
+        hurtSprite->ResetAnimation();
+        hurtSprite->SetFrameIndex(0);
+        hurtTimer = 0.4f;
+    }
+}
+
+bool Bird::ShouldBeRemoved() const {
+    return hurtAnimFinished;
+}
+
+void Bird::UpdateHitbox() {
+    if (isHurt) {
+        hitbox = { 0, 0, 0, 0 };
+        return;
+    }
+    hitbox = { pos.x + 4, pos.y + 10, 24, 8 };
+}
+
+void Bird::SetSpeed(float spd) {
+    speed = spd;
+}

@@ -1,0 +1,167 @@
+{
+  "version": "1.0.0",
+  "created": "2025-07-28T22:27:22-05:00",
+  "asset_categories": {
+    "graphics": {
+      "characters": {
+        "player": {
+          "turd": {
+            "base": [
+              "BigTurdHurt.png",
+              "BigTurdIdle.png", 
+              "BigTurdJump.png",
+              "BigTurdShoot.png",
+              "TeenageTurdHurt.png",
+              "TeenageTurdIdle.png",
+              "TeenageTurdJump.png", 
+              "TeenageTurdShoot.png",
+              "TurdletHurt.png",
+              "TurdletIdle.png",
+              "TurdletJump.png",
+              "TurdletShoot.png"
+            ],
+            "projectiles": [
+              "Floppy Poop Large.png",
+              "Floppy Poop Mid.png",
+              "Floppy Poop.png"
+            ]
+          },
+          "cosmetics": {
+            "hats": {
+              "base_hats": [
+                "Beret.png",
+                "PinwheelHat.png",
+                "RamsesHat.png",
+                "SamuraiHelmet.png",
+                "SpartanHelmet.png",
+                "ballcap.png",
+                "cowboyhat.png",
+                "crown.png",
+                "dooraghat.png",
+                "flowerhat.png",
+                "poophat.png",
+                "shellhat.png",
+                "strawhat.png",
+                "tophat.png",
+                "ushanka.png"
+              ],
+              "character_combinations": {
+                "bigturd": "multiple_files",
+                "turdlet": "multiple_files"
+              }
+            }
+          }
+        },
+        "enemies": {
+          "flying": [
+            "BirdHurt.png",
+            "BirdIdle.png",
+            "RatCopterHurt.png", 
+            "RatCopterIdle.png"
+          ],
+          "ground": [
+            "Ratking.png",
+            "RatkingAimBackArmOnly.png",
+            "RatkingAimTorsoOnly.png",
+            "RatkingAimTossArmOnly.png",
+            "RatkingDeath.png",
+            "RatkingHurt.png",
+            "RatkingWalk.png",
+            "SnowManChad.png",
+            "SnowManChill.png",
+            "SnowManGreen.png",
+            "SnowManIdle.png",
+            "SnowManThrow.png",
+            "SnowmanIdle.gif"
+          ],
+          "projectiles": [
+            "ToiletPaperFlap.png",
+            "ToiletPaperHit.png",
+            "toiletpaperprojectile.png"
+          ]
+        }
+      },
+      "environment": {
+        "backgrounds": {
+          "level1": "multiple_files",
+          "level3": "multiple_files", 
+          "snow_level": "multiple_files",
+          "sewer": "multiple_files",
+          "boss": "multiple_files",
+          "castle": "multiple_files"
+        },
+        "structures": {
+          "pipes": "multiple_files",
+          "toilets": "multiple_files",
+          "buildings": "multiple_files"
+        },
+        "props": {
+          "vegetation": "multiple_files",
+          "particles": "multiple_files"
+        },
+        "objects": {
+          "interactive": {
+            "coins": "multiple_files",
+            "powerups": "multiple_files",
+            "hazards": "multiple_files"
+          },
+          "decorative": {
+            "paintings": "multiple_files",
+            "cacti": "multiple_files",
+            "walls": "multiple_files"
+          },
+          "npcs": "multiple_files"
+        }
+      },
+      "ui": {
+        "menus": {
+          "main": "multiple_files",
+          "level_select": "multiple_files"
+        },
+        "hud": "multiple_files",
+        "icons": "multiple_files"
+      },
+      "vfx": {
+        "explosions": "multiple_files",
+        "particles": "placeholder"
+      }
+    },
+    "audio": {
+      "music": {
+        "gameplay": {
+          "levels": "multiple_files",
+          "boss": "multiple_files"
+        },
+        "menus": "multiple_files",
+        "stingers": "multiple_files"
+      },
+      "sfx": {
+        "gameplay": {
+          "player": "multiple_files",
+          "enemies": "multiple_files",
+          "environment": "placeholder",
+          "items": "multiple_files"
+        },
+        "ui": "multiple_files"
+      }
+    },
+    "fonts": {
+      "bitmap": [
+        "Whacky_Joe.fnt",
+        "Whacky_Joe.png"
+      ],
+      "truetype": "placeholder"
+    },
+    "data": {
+      "levels": "placeholder",
+      "configs": "placeholder", 
+      "localization": "placeholder"
+    }
+  },
+  "asset_counts": {
+    "total_graphics": 200,
+    "total_audio": 48,
+    "total_fonts": 2,
+    "total_assets": 250
+  }
+}

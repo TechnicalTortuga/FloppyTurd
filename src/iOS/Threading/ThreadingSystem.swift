@@ -1,0 +1,1079 @@
+//
+//  ThreadingSystem.swift
+//  PooperTrooper
+//
+//  Native C++/Swift interop threading system for processing render commands
+//  Part of the Pooper Trooper threading architecture for smooth C++/Swift interop
+//  Uses Swift 5.9+ C++ interoperability features
+//
+
+import Foundation
+import GameCoreEngine
+import GameCoreGame
+import GameCorePlatform
+import QuartzCore
+import UIKit
+
+// Use CommandType from PlatformDelegates.h via C++ interop
+
+/// Sendable wrapper for C++ callback function pointers
+///
+/// **Swift 6 Concurrency Pattern for C++/Swift Interop:**
+///
+/// C++ function pointers (`UnsafeMutableRawPointer`) are inherently thread-safe because:
+/// 1. They are immutable function addresses, not mutable data structures
+/// 2. They contain no state that can be modified concurrently
+/// 3. They are passed from C++ → Swift → back to C++ without modification
+/// 4. The bit pattern remains stable across thread boundaries
+///
+/// We use `@unchecked Sendable` because the Swift compiler cannot verify these
+/// guarantees for opaque C++ types, but we as developers know they are safe.
+///
+/// **When to use this pattern:**
+/// - C++ function pointers that need to cross Swift actor boundaries
+/// - Task.detached calls that need to invoke C++ callbacks
+/// - Background thread operations that report results via C++ callbacks
+///
+/// **Alternative patterns NOT recommended:**
+/// - `Int(bitPattern:)`: Works but loses type safety and intent
+/// - `nonisolated(unsafe)`: Too broad, allows unsafe access to actor state
+/// - Avoiding `Task.detached`: Defeats purpose of background loading
+///
+struct SendableCallbackContext: @unchecked Sendable {
+    let callback: UnsafeMutableRawPointer?
+    let userData: UnsafeMutableRawPointer?
+
+    init(callback: UnsafeMutableRawPointer?, userData: UnsafeMutableRawPointer?) {
+        self.callback = callback
+        self.userData = userData
+    }
+}
+
+/// @brief Command processor for handling C++ commands on the main thread
+///
+/// This class is designed to be used exclusively on the main thread.
+/// All methods are @MainActor isolated for thread safety and simplified implementation.
+///
+/// Processes commands from C++ in a thread-safe manner via the threading proxy system.
+@MainActor
+class CommandProcessor {
+
+    // MARK: - Properties
+
+    /// Metal renderer for executing render commands
+    private var metalRenderer: MetalRenderer?
+
+    /// Audio manager for executing audio commands
+    private var audioManager: AVAudioHandler?
+
+    /// Game view controller for handling orientation changes
+    private weak var gameViewController: GameViewController?
+
+    // MARK: - Private Logging
+
+    private func log(_ message: String, level: LogLevel = .info) {
+        switch level {
+        case .trace:
+            SwiftLog.debug(message, category: "CommandProcessor")
+        case .debug:
+            SwiftLog.debug(message, category: "CommandProcessor")
+        case .info:
+            SwiftLog.info(message, category: "CommandProcessor")
+        case .warning:
+            SwiftLog.warn(message, category: "CommandProcessor")
+        case .error:
+            SwiftLog.error(message, category: "CommandProcessor")
+        case .fatal:
+            SwiftLog.fatal(message, category: "CommandProcessor")
+        }
+    }
+
+    /// Initialize the command processor and C++ threading system
+    init() {
+        // Initialize the C++ threading system using native interop
+        GameCorePlatform.GameCore.initializeThreadingSystem()
+        log("[CommandProcessor] Initialized - ready to polish those turds on the main thread!")
+    }
+
+    deinit {
+        // Shutdown the C++ threading system
+        GameCorePlatform.GameCore.shutdownThreadingSystem()
+        // Note: Removed log call here to avoid @MainActor issues in deinit
+    }
+
+    /// Set the Metal renderer for command execution
+    func setMetalRenderer(_ renderer: MetalRenderer) {
+        self.metalRenderer = renderer
+        log("[CommandProcessor] Metal renderer set - turds ready for rendering!")
+    }
+
+    /// Set the audio manager for the command processor
+    func setAudioManager(_ manager: AVAudioHandler) {
+        audioManager = manager
+        log("[CommandProcessor] Audio manager set - instance: \(ObjectIdentifier(manager))")
+    }
+
+    /// Set the game view controller for orientation command execution
+    func setGameViewController(_ controller: GameViewController) {
+        gameViewController = controller
+        log("[CommandProcessor] Game view controller set - orientation commands enabled")
+    }
+
+    /// Process all pending commands from the queue
+    /// @note This method is @MainActor isolated and must be called from the main thread
+    func processCommands() {
+        // ⏱️ PERFORMANCE PROFILING: Measure command processing time
+        let startTime = CFAbsoluteTimeGetCurrent()
+
+        // Get commands from the C++ threading system
+        let renderCommands = GameCorePlatform.GameCore.getAndClearRenderCommandsFromProxy()
+        let audioCommands = GameCorePlatform.GameCore.getAndClearAudioCommandsFromProxy()
+        let logCommands = GameCorePlatform.GameCore.getAndClearLogCommandsFromProxy()
+        let assetCommands = GameCorePlatform.GameCore.getAndClearAssetCommandsFromProxy()
+        let hapticCommands = GameCorePlatform.GameCore.getAndClearHapticCommandsFromProxy()
+        let saveCommands = GameCorePlatform.GameCore.getAndClearSaveCommandsFromProxy()
+        let gameCenterCommands = GameCorePlatform.GameCore.getAndClearGameCenterCommandsFromProxy()
+        let adCommands = GameCorePlatform.GameCore.getAndClearAdCommandsFromProxy()
+        let iapCommands = GameCorePlatform.GameCore.getAndClearIAPCommandsFromProxy()
+
+        let totalCommands =
+            renderCommands.count + audioCommands.count + logCommands.count + assetCommands.count
+            + hapticCommands.count + saveCommands.count + gameCenterCommands.count
+            + adCommands.count + iapCommands.count
+
+        // Only log when there are significant commands (avoid spam)
+        if totalCommands > 50 {
+            SwiftLog.debug(
+                "⏱️ [PROFILE] processCommands START - total commands: \(totalCommands) (render: \(renderCommands.count), asset: \(assetCommands.count))",
+                category: "CommandProcessor")
+        }
+
+        // Process each command type
+        for renderCommand in renderCommands {
+            executeRenderCommand(renderCommand)
+        }
+
+        for audioCommand in audioCommands {
+            executeAudioCommand(audioCommand)
+        }
+
+        for logCommand in logCommands {
+            executeLogCommand(logCommand)
+        }
+
+        for assetCommand in assetCommands {
+            executeAssetCommand(assetCommand)
+        }
+
+        for hapticCommand in hapticCommands {
+            executeHapticCommand(hapticCommand)
+        }
+
+        for saveCommand in saveCommands {
+            executeSaveCommand(saveCommand)
+        }
+
+        for gameCenterCommand in gameCenterCommands {
+            executeGameCenterCommand(gameCenterCommand)
+        }
+
+        for adCommand in adCommands {
+            executeAdCommand(adCommand)
+        }
+
+        for iapCommand in iapCommands {
+            executeIAPCommand(iapCommand)
+        }
+
+        // Log if processing took significant time
+        let duration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
+        if duration > 10.0 || totalCommands > 50 {
+            SwiftLog.debug(
+                "⏱️ [PROFILE] processCommands COMPLETE - \(String(format: "%.2f", duration))ms for \(totalCommands) commands",
+                category: "CommandProcessor")
+        }
+    }
+
+    /// Execute a single render command using Metal renderer
+    private func executeRenderCommand(_ command: GameCorePlatform.GameCore.RenderCommand) {
+        guard let renderer = metalRenderer else {
+            log(
+                "[CommandProcessor] WARNING: No Metal renderer available for command execution",
+                level: .warning)
+            return
+        }
+
+        // Convert C++ enum to Swift enum
+        guard
+            let commandType = GameCorePlatform.GameCore.CommandType(
+                rawValue: UInt32(command.type.rawValue))
+        else {
+            log(
+                "[CommandProcessor] WARNING: Unknown command type: \(command.type.rawValue)",
+                level: .warning)
+            return
+        }
+
+        var data = command.data  // Flattened data structure
+
+        switch commandType {
+        case .CMD_BEGIN_FRAME:
+            renderer.beginFrame()
+
+        case .CMD_END_FRAME:
+            renderer.endFrame()
+
+        case .CMD_PRESENT:
+            renderer.present()
+
+        case .CMD_CLEAR_SCREEN:
+            renderer.clearScreen()
+
+        case .CMD_DRAW_SPRITE:
+            if data.textureHandle != 0 {
+                renderer.drawSprite(
+                    textureHandle: data.textureHandle,
+                    x: data.x,
+                    y: data.y,
+                    rotation: data.rotation)
+            }
+
+        case .CMD_DRAW_SPRITE_SCALED:
+            if data.textureHandle != 0 {
+                renderer.drawSpriteScaled(
+                    textureHandle: data.textureHandle,
+                    x: data.x,
+                    y: data.y,
+                    scaleX: data.scaleX,
+                    scaleY: data.scaleY,
+                    rotation: data.rotation)
+            }
+
+        case .CMD_DRAW_SPRITE_SCALED_CENTERED:
+            if data.textureHandle != 0 {
+                renderer.drawSpriteScaledCentered(
+                    textureHandle: data.textureHandle,
+                    x: data.x,
+                    y: data.y,
+                    scaleX: data.scaleX,
+                    scaleY: data.scaleY,
+                    rotation: data.rotation)
+            }
+
+        case .CMD_DRAW_SPRITE_SCALED_PIVOTED:
+            if data.textureHandle != 0 {
+                renderer.drawSpriteScaledPivoted(
+                    textureHandle: data.textureHandle,
+                    x: data.x,
+                    y: data.y,
+                    scaleX: data.scaleX,
+                    scaleY: data.scaleY,
+                    rotation: data.rotation,
+                    pivotX: data.pivotX,
+                    pivotY: data.pivotY)
+            }
+
+        case .CMD_DRAW_SPRITE_SCALED_WITH_SOURCE:
+            if data.textureHandle != 0 {
+                renderer.drawSpriteScaledWithSource(
+                    textureHandle: data.textureHandle,
+                    x: data.x,
+                    y: data.y,
+                    scaleX: data.scaleX,
+                    scaleY: data.scaleY,
+                    rotation: data.rotation,
+                    sourceX: data.sourceX,
+                    sourceY: data.sourceY,
+                    sourceWidth: data.sourceWidth,
+                    sourceHeight: data.sourceHeight)
+            }
+
+        case .CMD_DRAW_SPRITE_SCALED_WITH_SOURCE_CENTERED:
+            if data.textureHandle != 0 {
+                renderer.drawSpriteScaledWithSourceCentered(
+                    textureHandle: data.textureHandle,
+                    x: data.x,
+                    y: data.y,
+                    scaleX: data.scaleX,
+                    scaleY: data.scaleY,
+                    rotation: data.rotation,
+                    sourceX: data.sourceX,
+                    sourceY: data.sourceY,
+                    sourceWidth: data.sourceWidth,
+                    sourceHeight: data.sourceHeight)
+            }
+
+        case .CMD_DRAW_SPRITE_SCALED_WITH_SOURCE_PIVOTED:
+            if data.textureHandle != 0 {
+                renderer.drawSpriteScaledWithSourcePivoted(
+                    textureHandle: data.textureHandle,
+                    x: data.x,
+                    y: data.y,
+                    scaleX: data.scaleX,
+                    scaleY: data.scaleY,
+                    rotation: data.rotation,
+                    pivotX: data.pivotX,
+                    pivotY: data.pivotY,
+                    sourceX: data.sourceX,
+                    sourceY: data.sourceY,
+                    sourceWidth: data.sourceWidth,
+                    sourceHeight: data.sourceHeight)
+            }
+
+        case .CMD_DRAW_SPRITE_BATCH:
+            // std::vector<SpriteBatchData> auto-bridges to Swift as RandomAccessCollection
+            let batchData = data.batchData
+            if !batchData.isEmpty {
+                renderer.drawSpriteBatch(batchData)
+            }
+
+        case .CMD_DRAW_TEXT:
+            let text = String(data.text)
+            if !text.isEmpty {
+                renderer.drawText(
+                    text: text,
+                    x: data.x,
+                    y: data.y,
+                    fontSize: data.fontSize,
+                    r: data.r, g: data.g, b: data.b, a: data.a)
+            }
+
+        case .CMD_DRAW_TEXT_CENTERED:
+            let text = String(data.text)
+            if !text.isEmpty {
+                renderer.drawTextCentered(
+                    text,
+                    x: data.x,
+                    y: data.y,
+                    fontSize: data.fontSize,
+                    r: data.r, g: data.g, b: data.b, a: data.a)
+            }
+
+        case .CMD_DRAW_TEXT_OUTLINED:
+            let text = String(data.text)
+            if !text.isEmpty {
+                renderer.drawTextOutlined(
+                    text,
+                    x: data.x,
+                    y: data.y,
+                    fontSize: data.fontSize,
+                    textR: data.r, textG: data.g, textB: data.b, textA: data.a,
+                    outlineR: data.outlineR, outlineG: data.outlineG, outlineB: data.outlineB,
+                    outlineA: data.outlineA,
+                    outlineWidth: data.outlineWidth)
+            }
+
+        case .CMD_DRAW_TEXT_CENTERED_OUTLINED:
+            let text = String(data.text)
+            if !text.isEmpty {
+                renderer.drawTextCenteredOutlined(
+                    text,
+                    x: data.x,
+                    y: data.y,
+                    fontSize: data.fontSize,
+                    textR: data.r, textG: data.g, textB: data.b, textA: data.a,
+                    outlineR: data.outlineR, outlineG: data.outlineG, outlineB: data.outlineB,
+                    outlineA: data.outlineA,
+                    outlineWidth: data.outlineWidth)
+            }
+
+        case .CMD_DRAW_RECTANGLE:
+            renderer.drawRectangle(
+                x: data.x,
+                y: data.y,
+                width: data.width,
+                height: data.height,
+                r: data.r, g: data.g, b: data.b, a: data.a)
+
+        case .CMD_DRAW_CIRCLE:
+            renderer.drawCircle(
+                x: data.x,
+                y: data.y,
+                radius: data.radius,
+                r: data.r, g: data.g, b: data.b, a: data.a)
+
+        case .CMD_DRAW_FILLED_CIRCLE:
+            renderer.drawFilledCircle(
+                data.x,
+                data.y,
+                data.radius,
+                data.r, data.g, data.b, data.a)
+
+        case .CMD_GET_SCREEN_SIZE:
+            let size = renderer.getScreenSize()
+            if let widthPtr = data.screenWidth {
+                widthPtr.pointee = size.width
+            }
+            if let heightPtr = data.screenHeight {
+                heightPtr.pointee = size.height
+            }
+
+        case .CMD_GET_SCREEN_INFO:
+            if let screenInfoPtr = data.screenInfo {
+                let screenInfo = renderer.getScreenInfo()
+                screenInfoPtr.pointee = screenInfo
+            }
+
+        case .CMD_GET_TEXTURE_METADATA:
+            let textureId = String(data.textureId)
+            if let metadata = renderer.getTextureMetadata(textureId: textureId) {
+                // Update the owned TextureMetadata in the command data
+                data.textureMetadata = metadata
+            }
+
+        case .CMD_LOCK_ORIENTATION:
+            // PERFORMANCE: Direct call - already on @MainActor
+            if let gameViewController = gameViewController {
+                gameViewController.lockOrientation()
+            }
+
+        case .CMD_UNLOCK_ORIENTATION:
+            // PERFORMANCE: Direct call - already on @MainActor
+            if let gameViewController = gameViewController {
+                gameViewController.unlockOrientation()
+            }
+
+        case .CMD_LOCK_TO_PORTRAIT:
+            if let gameViewController = gameViewController {
+                gameViewController.lockToPortrait()
+                log("[CommandProcessor] Orientation locked to portrait successfully")
+            } else {
+                log(
+                    "[CommandProcessor] ERROR: Cannot lock to portrait - GameViewController not available",
+                    level: .error)
+            }
+
+        case .CMD_LOCK_TO_LANDSCAPE:
+            if let gameViewController = gameViewController {
+                gameViewController.lockToLandscape()
+                log("[CommandProcessor] Orientation locked to landscape successfully")
+            } else {
+                log(
+                    "[CommandProcessor] ERROR: Cannot lock to landscape - GameViewController not available",
+                    level: .error)
+            }
+
+        default:
+            log("[CommandProcessor] Unknown render command type: \(commandType)", level: .warning)
+        }
+    }
+
+    /// Execute a single audio command using AVAudioHandler
+    private func executeAudioCommand(_ command: GameCorePlatform.GameCore.AudioCommand) {
+        // Convert C++ enum to Swift enum
+        guard
+            let commandType = GameCorePlatform.GameCore.CommandType(
+                rawValue: UInt32(command.type.rawValue))
+        else {
+            log(
+                "[CommandProcessor] WARNING: Unknown audio command type: \(command.type.rawValue)",
+                level: .warning)
+            return
+        }
+
+        let data = command.data
+
+        switch commandType {
+        case .CMD_PLAY_MUSIC:
+            let audioFileName = String(data.audioFileName)
+            if !audioFileName.isEmpty {
+                // PERFORMANCE: Direct call - we're already on @MainActor, no Task needed!
+                if let audioManager = audioManager {
+                    audioManager.playMusic(audioFileName)
+                    log("[CommandProcessor] Playing music: \(audioFileName)")
+                } else {
+                    log("[CommandProcessor] ERROR: AudioManager is nil!", level: .error)
+                }
+            }
+
+        case .CMD_STOP_MUSIC:
+            // PERFORMANCE: Direct call - no Task needed
+            audioManager?.stopMusic()
+
+        case .CMD_PLAY_SOUND:
+            let audioFileName = String(data.audioFileName)
+            if !audioFileName.isEmpty {
+                // PERFORMANCE: Direct call - we're already on @MainActor!
+                if let audioManager = audioManager {
+                    audioManager.playSound(audioFileName, volume: data.volume)
+                } else {
+                    log("[CommandProcessor] ERROR: AudioManager is nil!", level: .error)
+                }
+            }
+
+        case .CMD_STOP_SOUND:
+            let audioFileName = String(data.audioFileName)
+            if !audioFileName.isEmpty {
+                audioManager?.stopSound(audioFileName)
+            } else {
+                audioManager?.stopSound()
+            }
+
+        case .CMD_SET_MUSIC_VOLUME:
+            audioManager?.setMusicVolume(volume: data.volume)
+
+        case .CMD_SET_SOUND_VOLUME:
+            audioManager?.setSoundVolume(volume: data.volume)
+
+        default:
+            log("[CommandProcessor] Unknown audio command type: \(command.type)", level: .warning)
+        }
+    }
+
+    /// Execute a single logging command - Forward C++ logs to Swift logging system
+    private func executeLogCommand(_ command: GameCorePlatform.GameCore.LogCommand) {
+        // Convert C++ enum to Swift enum
+        guard
+            let commandType = GameCorePlatform.GameCore.CommandType(
+                rawValue: UInt32(command.type.rawValue))
+        else {
+            log(
+                "[CommandProcessor] WARNING: Unknown render command type: \(command.type.rawValue)",
+                level: .warning)
+            return
+        }
+
+        let data = command.data
+
+        switch commandType {
+        case .CMD_LOG_TRACE:
+            let message = String(data.logMessage)
+            let category = String(data.logCategory)
+            SwiftLog.debug(message, category: category)
+
+        case .CMD_LOG_DEBUG:
+            let message = String(data.logMessage)
+            let category = String(data.logCategory)
+            SwiftLog.debug(message, category: category)
+
+        case .CMD_LOG_INFO:
+            let message = String(data.logMessage)
+            let category = String(data.logCategory)
+            SwiftLog.info(message, category: category)
+
+        case .CMD_LOG_WARN:
+            let message = String(data.logMessage)
+            let category = String(data.logCategory)
+            SwiftLog.warn(message, category: category)
+
+        case .CMD_LOG_ERROR:
+            let message = String(data.logMessage)
+            let category = String(data.logCategory)
+            SwiftLog.error(message, category: category)
+
+        case .CMD_LOG_FATAL:
+            let message = String(data.logMessage)
+            let category = String(data.logCategory)
+            SwiftLog.fatal(message, category: category)
+
+        default:
+            log("[CommandProcessor] Unknown log command type: \(command.type)", level: .warning)
+        }
+    }
+
+    /// Execute a single asset command using AssetManager
+    private func executeAssetCommand(_ command: GameCorePlatform.GameCore.AssetCommand) {
+        // Convert C++ enum to Swift enum
+        guard
+            let commandType = GameCorePlatform.GameCore.CommandType(
+                rawValue: UInt32(command.type.rawValue))
+        else {
+            log(
+                "[CommandProcessor] WARNING: Unknown asset command type: \(command.type.rawValue)",
+                level: .warning)
+            return
+        }
+
+        let data = command.data
+        let pathString = String(data.assetPath)
+
+        // Parse asset name and extension from path
+        let components = pathString.components(separatedBy: ".")
+        let name = components.first ?? pathString
+        let fileExtension = components.count > 1 ? components.last! : ""
+
+        // Execute the appropriate loading function based on command type
+        switch commandType {
+        case .CMD_LOAD_TEXTURE:
+            let ext = fileExtension.isEmpty ? "png" : fileExtension
+            loadTextureWithMetalRenderer(
+                name: name, extension: ext, callback: data.callback, userData: data.userData)
+
+        case .CMD_LOAD_AUDIO:
+            let ext = fileExtension.isEmpty ? "mp3" : fileExtension
+            AssetManager.shared.loadAudioSync(
+                name: name, extension: ext, callback: data.callback, userData: data.userData)
+
+        case .CMD_LOAD_FONT:
+            let ext = fileExtension.isEmpty ? "ttf" : fileExtension
+            AssetManager.shared.loadFontSync(
+                name: name, extension: ext, callback: data.callback, userData: data.userData)
+
+        case .CMD_LOAD_DATA:
+            let ext = fileExtension.isEmpty ? "json" : fileExtension
+            AssetManager.shared.loadDataSync(
+                name: name, extension: ext, callback: data.callback, userData: data.userData)
+
+        case .CMD_PRELOAD_ESSENTIAL_ASSETS:
+            // Preload essential assets (textures, audio, etc.)
+            Task {
+                await AssetManager.shared.preloadEssentialAssets()
+            }
+            log("[CommandProcessor] Preloading essential assets requested via delegate.")
+
+        case .CMD_IS_CACHED:
+            // Check if asset is cached and invoke callback
+            let assetNameStr = String(data.cacheAssetName)
+            let assetType = data.cacheAssetType
+            var cached = false
+            switch assetType {
+            case 0:  // texture
+                cached = AssetManager.shared.isTextureCached(name: assetNameStr)
+            case 1:  // audio
+                cached = AssetManager.shared.isAudioCached(name: assetNameStr)
+            case 2:  // font
+                cached = AssetManager.shared.isFontCached(name: assetNameStr)
+            case 3:  // data
+                cached = AssetManager.shared.isDataCached(name: assetNameStr)
+            default:
+                cached = false
+            }
+            if let callbackPtr = data.callback {
+                let callback = unsafeBitCast(
+                    callbackPtr,
+                    to: (@convention(c) (Bool, UnsafePointer<CChar>?, UnsafeMutableRawPointer?) ->
+                        Void).self)
+                callback(cached, nil, data.userData)
+            }
+            log(
+                "[CommandProcessor] isCached delegate called for asset: \(assetNameStr) type: \(assetType) result: \(cached)"
+            )
+
+        default:
+            log(
+                "[CommandProcessor] Unsupported asset command type: \(commandType)", level: .warning
+            )
+        }
+    }
+
+    /// Load texture and register it with MetalRenderer
+    /// Uses BACKGROUND THREAD loading for optimal performance during preload
+    ///
+    /// **Swift 6 Concurrency Pattern for C++ Callbacks:**
+    /// C++ function pointers (`UnsafeMutableRawPointer`) are not `Sendable` by default.
+    /// We use a `SendableCallbackContext` wrapper with `@unchecked Sendable` conformance
+    /// because:
+    /// 1. C++ callback pointers are opaque function pointers with no mutable state
+    /// 2. The pointers are passed from C++ → Swift → back to C++ without modification
+    /// 3. The bit pattern is stable across thread boundaries
+    /// 4. This is the recommended pattern for C++/Swift interop with async code
+    ///
+    /// Alternative approaches considered:
+    /// - Converting to `Int(bitPattern:)`: Works but less type-safe
+    /// - `nonisolated(unsafe)`: Too broad, allows unsafe access to actor state
+    /// - `@MainActor`: Defeats the purpose of background loading
+    private nonisolated func loadTextureWithMetalRenderer(
+        name: String, extension: String, callback: UnsafeMutableRawPointer?,
+        userData: UnsafeMutableRawPointer?
+    ) {
+        let startTime = CFAbsoluteTimeGetCurrent()
+
+        // Wrap C++ callback pointers in a Sendable container
+        // This is safe because C++ function pointers are immutable and thread-safe
+        let callbackContext = SendableCallbackContext(
+            callback: callback,
+            userData: userData
+        )
+
+        // Use Task.detached for TRUE BACKGROUND THREAD execution
+        Task.detached(priority: .userInitiated) {
+            // Extract callback pointers from the sendable wrapper
+            let callback = callbackContext.callback
+            let userData = callbackContext.userData
+            do {
+                // Load texture on BACKGROUND THREAD using new background method
+                let texture = try await AssetManager.shared.loadTextureBackground(
+                    name: name, extension: `extension`)
+
+                // Switch to MainActor ONLY for registration and callback
+                await MainActor.run { [weak self] in
+                    guard let self = self else { return }
+                    let mainActorStart = CFAbsoluteTimeGetCurrent()
+
+                    guard let renderer = self.metalRenderer else {
+                        self.log(
+                            "[CommandProcessor] ERROR: No Metal renderer available for texture registration",
+                            level: .error)
+                        AssetManager.invokeCallback(
+                            callback, textureData: nil, error: "No Metal renderer available",
+                            userData: userData)
+                        return
+                    }
+
+                    // Register texture with MetalRenderer (quick operation on main thread)
+                    let handle = renderer.registerTexture(texture)
+
+                    // Create TextureData structure for C++
+                    let textureData = UnsafeMutableRawPointer.allocate(
+                        byteCount: MemoryLayout<GameCore.TextureData>.stride,
+                        alignment: MemoryLayout<GameCore.TextureData>.alignment
+                    )
+
+                    let textureDataPtr = textureData.bindMemory(
+                        to: GameCore.TextureData.self, capacity: 1)
+                    textureDataPtr.pointee.platformTexture = UnsafeMutableRawPointer(
+                        bitPattern: UInt(handle))
+                    textureDataPtr.pointee.width = Int32(texture.width)
+                    textureDataPtr.pointee.height = Int32(texture.height)
+                    textureDataPtr.pointee.format = 0  // Default format
+                    textureDataPtr.pointee.channels = 4  // RGBA
+                    textureDataPtr.pointee.dataSize = Int(texture.width * texture.height * 4)
+
+                    let mainActorDuration = (CFAbsoluteTimeGetCurrent() - mainActorStart) * 1000.0
+                    let totalDuration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
+
+                    self.log(
+                        "⏱️ [PROFILE] Texture '\(name)' registered (main: \(String(format: "%.2f", mainActorDuration))ms, total: \(String(format: "%.2f", totalDuration))ms)",
+                        level: .debug)
+
+                    AssetManager.invokeCallback(
+                        callback, textureData: textureData, error: nil, userData: userData)
+                }
+            } catch {
+                await MainActor.run { [weak self] in
+                    guard let self = self else { return }
+                    self.log(
+                        "[CommandProcessor] ERROR: Failed to load texture \(name): \(error)",
+                        level: .error)
+                    AssetManager.invokeCallback(
+                        callback, textureData: nil, error: error.localizedDescription,
+                        userData: userData)
+                }
+            }
+        }
+    }
+
+    /// Execute a single haptic command using HapticManager
+    private func executeHapticCommand(_ command: GameCorePlatform.GameCore.HapticCommand) {
+        let commandType = command.type
+
+        // PERFORMANCE: Direct call - we're already on @MainActor!
+        switch commandType {
+        case .CMD_HAPTIC_IMPACT:
+            let style = mapHapticStyle(command.data.style)
+            let intensity = CGFloat(command.data.intensity)
+            HapticManager.shared.triggerImpact(style: style, intensity: intensity)
+
+        case .CMD_HAPTIC_SELECTION:
+            HapticManager.shared.triggerSelection()
+
+        case .CMD_HAPTIC_NOTIFICATION:
+            let notifType = mapHapticNotificationType(command.data.notificationType)
+            HapticManager.shared.triggerNotification(type: notifType)
+
+        case .CMD_HAPTIC_PATTERN:
+            let patternName = String(command.data.patternName)
+            HapticManager.shared.triggerPattern(name: patternName)
+
+        case .CMD_HAPTIC_PREPARE:
+            let style = mapHapticStyle(command.data.style)
+            HapticManager.shared.prepare(style: style)
+
+        default:
+            log("[CommandProcessor] Unsupported haptic command: \(commandType)", level: .warning)
+        }
+    }
+
+    /// Map C++ HapticStyle to UIImpactFeedbackGenerator.FeedbackStyle
+    private func mapHapticStyle(_ style: GameCorePlatform.GameCore.HapticStyle)
+        -> UIImpactFeedbackGenerator.FeedbackStyle
+    {
+        switch style {
+        case .LIGHT:
+            return .light
+        case .MEDIUM:
+            return .medium
+        case .HEAVY:
+            return .heavy
+        case .RIGID:
+            if #available(iOS 13.0, *) {
+                return .rigid
+            } else {
+                return .heavy
+            }
+        case .SOFT:
+            if #available(iOS 13.0, *) {
+                return .soft
+            } else {
+                return .light
+            }
+        @unknown default:
+            return .medium
+        }
+    }
+
+    /// Map C++ HapticNotificationType to UINotificationFeedbackGenerator.FeedbackType
+    private func mapHapticNotificationType(_ type: GameCorePlatform.GameCore.HapticNotificationType)
+        -> UINotificationFeedbackGenerator.FeedbackType
+    {
+        switch type {
+        case .SUCCESS:
+            return .success
+        case .WARNING:
+            return .warning
+        case .ERROR:
+            return .error
+        @unknown default:
+            return .success
+        }
+    }
+
+    /// Execute a single save/load command using SaveManager
+    private func executeSaveCommand(_ command: GameCorePlatform.GameCore.SaveCommand) {
+        let commandType = command.type
+
+        // PERFORMANCE: Direct execution - we're already on @MainActor!
+        switch commandType {
+        case .CMD_SAVE_GAME:
+            let jsonString = String(command.data.jsonData)
+            if !jsonString.isEmpty {
+                let success = SaveManager.processSaveGameCommand(jsonString)
+                if !success {
+                    log("[CommandProcessor] Failed to save game data", level: .error)
+                }
+            }
+
+        case .CMD_LOAD_GAME:
+            _ = SaveManager.processLoadGameCommand()
+
+        case .CMD_SAVE_SETTINGS:
+            UserDefaults.standard.synchronize()
+
+        case .CMD_LOAD_SETTINGS:
+            _ = SaveManager.processLoadSettingsCommand()
+
+        default:
+            log("[CommandProcessor] Unsupported save command: \(commandType)", level: .warning)
+        }
+    }
+
+    private func executeGameCenterCommand(_ command: GameCorePlatform.GameCore.GameCenterCommand) {
+        let commandType = command.type
+
+        // Process commands directly - GameCenterManager is @MainActor
+        switch commandType {
+        case .CMD_GAME_CENTER_AUTHENTICATE:
+            GameCenterManager.shared.authenticate { [weak self] success, error in
+                if success {
+                    self?.log(
+                        "[CommandProcessor] Game Center authenticated successfully",
+                        level: .info)
+                } else if let error = error {
+                    self?.log(
+                        "[CommandProcessor] Game Center authentication failed: \(error.localizedDescription)",
+                        level: .error)
+                }
+            }
+
+        case .CMD_GAME_CENTER_SUBMIT_SCORE:
+            let leaderboardID = String(command.data.leaderboardID)
+            let score = command.data.score
+
+            GameCenterManager.shared.submitScore(score, leaderboardID: leaderboardID) {
+                [weak self] success, error in
+                if success {
+                    self?.log(
+                        "[CommandProcessor] Score \(score) submitted to \(leaderboardID)",
+                        level: .info)
+                } else if let error = error {
+                    self?.log(
+                        "[CommandProcessor] Score submission failed: \(error.localizedDescription)",
+                        level: .error)
+                }
+            }
+
+        case .CMD_GAME_CENTER_SHOW_LEADERBOARD:
+            let leaderboardID = String(command.data.leaderboardID)
+            GameCenterManager.shared.showLeaderboard(leaderboardID)
+            self.log("[CommandProcessor] Showing leaderboard: \(leaderboardID)", level: .info)
+
+        case .CMD_GAME_CENTER_SHOW_ALL_LEADERBOARDS:
+            GameCenterManager.shared.showAllLeaderboards()
+            self.log("[CommandProcessor] Showing all leaderboards", level: .info)
+        
+        case .CMD_GAME_CENTER_LOAD_LEADERBOARD_ENTRIES:
+            let leaderboardID = String(command.data.leaderboardID)
+            let callbackPtr = command.data.leaderboardEntriesCallback
+            NSLog("📊 [CommandProcessor] Loading leaderboard entries for: %@", leaderboardID)
+            
+            GameCenterManager.shared.loadLeaderboardEntries(leaderboardID) { entries, error in
+                if let entries = entries {
+                    NSLog("✅ [CommandProcessor] Loaded %d leaderboard entries", entries.count)
+                    
+                    // Convert Swift GKLeaderboard.Entry array to C++ LeaderboardEntry array
+                    var cppEntries: [GameCorePlatform.GameCore.LeaderboardEntry] = []
+                    for entry in entries {
+                        var cppEntry = GameCorePlatform.GameCore.LeaderboardEntry()
+                        cppEntry.rank = Int32(entry.rank)
+                        cppEntry.score = Int64(entry.score)
+                        // Copy player name (max 128 chars)
+                        let playerName = entry.player.displayName
+                        withUnsafeMutablePointer(to: &cppEntry.playerName.0) { ptr in
+                            let buffer = UnsafeMutableBufferPointer(start: ptr, count: 128)
+                            let nameBytes = Array(playerName.utf8.prefix(127)) + [0] // Null-terminate
+                            for (i, byte) in nameBytes.enumerated() {
+                                buffer[i] = Int8(bitPattern: byte)
+                            }
+                        }
+                        cppEntries.append(cppEntry)
+                        
+                        NSLog("  [%d] Rank: %d, Score: %d, Player: %@",
+                              cppEntries.count, entry.rank, entry.score, entry.player.displayName)
+                    }
+                    
+                    // Call the C++ callback with the data
+                    if let callbackPtr = callbackPtr {
+                        // Cast void* back to function pointer type
+                        typealias CallbackType = @convention(c) (UnsafePointer<GameCorePlatform.GameCore.LeaderboardEntry>?, Int32, Bool) -> Void
+                        let callback = unsafeBitCast(callbackPtr, to: CallbackType.self)
+                        
+                        cppEntries.withUnsafeBufferPointer { buffer in
+                            callback(buffer.baseAddress, Int32(buffer.count), true)
+                        }
+                        NSLog("✅ [CommandProcessor] Callback invoked with %d entries", cppEntries.count)
+                    }
+                } else if let error = error {
+                    NSLog("❌ [CommandProcessor] Failed to load leaderboard entries: %@",
+                          error.localizedDescription)
+                    // Call callback with failure
+                    if let callbackPtr = callbackPtr {
+                        typealias CallbackType = @convention(c) (UnsafePointer<GameCorePlatform.GameCore.LeaderboardEntry>?, Int32, Bool) -> Void
+                        let callback = unsafeBitCast(callbackPtr, to: CallbackType.self)
+                        callback(nil, 0, false)
+                    }
+                } else {
+                    NSLog("⚠️ [CommandProcessor] No entries found")
+                    if let callbackPtr = callbackPtr {
+                        typealias CallbackType = @convention(c) (UnsafePointer<GameCorePlatform.GameCore.LeaderboardEntry>?, Int32, Bool) -> Void
+                        let callback = unsafeBitCast(callbackPtr, to: CallbackType.self)
+                        callback(nil, 0, true) // Success but no data
+                    }
+                }
+            }
+        
+        case .CMD_GAME_CENTER_LOAD_LOCAL_PLAYER_ENTRY:
+            let leaderboardID = String(command.data.leaderboardID)
+            let callbackPtr = command.data.localPlayerEntryCallback
+            NSLog("📊 [CommandProcessor] Loading local player entry for: %@", leaderboardID)
+            
+            GameCenterManager.shared.loadLocalPlayerEntry(leaderboardID) { entry, error in
+                if let entry = entry {
+                    NSLog("✅ [CommandProcessor] Local player entry - Rank: %d, Score: %d",
+                          entry.rank, entry.score)
+                    // Call the C++ callback with the data
+                    if let callbackPtr = callbackPtr {
+                        typealias CallbackType = @convention(c) (Int32, Int64, Bool) -> Void
+                        let callback = unsafeBitCast(callbackPtr, to: CallbackType.self)
+                        callback(Int32(entry.rank), Int64(entry.score), true)
+                    }
+                } else if let error = error {
+                    NSLog("❌ [CommandProcessor] Failed to load local player entry: %@",
+                          error.localizedDescription)
+                    if let callbackPtr = callbackPtr {
+                        typealias CallbackType = @convention(c) (Int32, Int64, Bool) -> Void
+                        let callback = unsafeBitCast(callbackPtr, to: CallbackType.self)
+                        callback(0, 0, false)
+                    }
+                } else {
+                    NSLog("⚠️ [CommandProcessor] No entry found for local player")
+                    if let callbackPtr = callbackPtr {
+                        typealias CallbackType = @convention(c) (Int32, Int64, Bool) -> Void
+                        let callback = unsafeBitCast(callbackPtr, to: CallbackType.self)
+                        callback(0, 0, false)
+                    }
+                }
+            }
+
+        default:
+            self.log(
+                "[CommandProcessor] Unsupported Game Center command type: \(commandType)",
+                level: .warning)
+        }
+    }
+
+    // MARK: - Ad Command Execution
+
+    private func executeAdCommand(_ command: GameCorePlatform.GameCore.AdCommand) {
+        let commandType = command.type
+
+        // Process commands directly - AdManager is @MainActor
+        switch commandType {
+        case .CMD_AD_PRELOAD:
+            AdManager.shared.preloadAd()
+            self.log("[CommandProcessor] Ad preload requested", level: .info)
+
+        case .CMD_AD_SHOW:
+            AdManager.shared.showAd()
+            self.log("[CommandProcessor] Ad show requested", level: .info)
+
+        case .CMD_AD_IS_READY:
+            let isReady = AdManager.shared.isAdReady()
+            self.log("[CommandProcessor] Ad ready check: \(isReady)", level: .info)
+
+        case .CMD_AD_SET_ENABLED:
+            let enabled = command.data.adsEnabled
+            AdManager.shared.setAdsEnabled(enabled)
+            self.log("[CommandProcessor] Ads enabled set to: \(enabled)", level: .info)
+
+        default:
+            self.log(
+                "[CommandProcessor] Unsupported Ad command type: \(commandType)",
+                level: .warning)
+        }
+    }
+
+    // MARK: - IAP Command Execution
+
+    private func executeIAPCommand(_ command: GameCorePlatform.GameCore.IAPCommand) {
+        let commandType = command.type
+
+        // Process commands directly - StoreManager is @MainActor
+        switch commandType {
+        case .CMD_IAP_PURCHASE:
+            let productID = String(command.data.productID)
+            StoreManager.shared.purchaseRemoveAds { success, error in
+                if success {
+                    self.log("[CommandProcessor] IAP purchase successful for: \(productID)", level: .info)
+                } else if let error = error {
+                    self.log("[CommandProcessor] IAP purchase failed: \(error.localizedDescription)", level: .error)
+                }
+            }
+            self.log("[CommandProcessor] IAP purchase requested for: \(productID)", level: .info)
+
+        case .CMD_IAP_RESTORE:
+            StoreManager.shared.restorePurchases { success, error in
+                if success {
+                    self.log("[CommandProcessor] IAP restore successful", level: .info)
+                } else if let error = error {
+                    self.log("[CommandProcessor] IAP restore failed: \(error.localizedDescription)", level: .error)
+                }
+            }
+            self.log("[CommandProcessor] IAP restore requested", level: .info)
+
+        case .CMD_IAP_HAS_PURCHASED:
+            let productID = String(command.data.productID)
+            let hasPurchased = StoreManager.shared.hasPurchasedRemoveAds
+            self.log("[CommandProcessor] IAP has purchased check for \(productID): \(hasPurchased)", level: .info)
+
+        case .CMD_IAP_GET_PRICE:
+            let productID = String(command.data.productID)
+            let price = StoreManager.shared.getPriceString() ?? "$2.00"
+            self.log("[CommandProcessor] IAP price for \(productID): \(price)", level: .info)
+
+        default:
+            self.log(
+                "[CommandProcessor] Unsupported IAP command type: \(commandType)",
+                level: .warning)
+        }
+    }
+}
