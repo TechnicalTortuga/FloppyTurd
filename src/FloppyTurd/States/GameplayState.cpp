@@ -6,7 +6,7 @@
 #include "../../Engine/Platform/HapticHelpers.h"
 #include <algorithm>
 #include <set>
-#include "../Game/FloppyTurdGame.h"
+#include "../Game/PooperTrooperGame.h"
 #include "../../Engine/Configuration/ConfigManager.h"
 #include "../Input/InputManager.h"
 
@@ -78,7 +78,7 @@ namespace GameCore {
         // TEMP: Enable gameplay frame profiling for performance investigation
         SetProfilingEnabled(true);
 
-        // InputManager singleton is initialized by FloppyTurdGame
+        // InputManager singleton is initialized by PooperTrooperGame
 
         // Cache screen dimensions once (eliminates 40+ repeated GetScreenInfo() calls)
         CacheScreenDimensions();
@@ -2439,7 +2439,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         }
 
         // Update lifetime total coins in GameStats
-        GameCore::FloppyTurdGame::GameStats gameStats = GameCore::GetGame()->GetGameStats();
+        GameCore::PooperTrooperGame::GameStats gameStats = GameCore::GetGame()->GetGameStats();
         gameStats.totalCoinsCollected += value;
         GameCore::GetGame()->UpdateGameStats(gameStats);
     }
@@ -2501,7 +2501,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         if (player && player->sessionCoins > 0) {
             // Convert session coins to stored coins (don't use AddCoins as that would double-count gross total)
             if (GameCore::GetGame()) {
-                GameCore::FloppyTurdGame::GameStats gameStats = GameCore::GetGame()->GetGameStats();
+                GameCore::PooperTrooperGame::GameStats gameStats = GameCore::GetGame()->GetGameStats();
                 gameStats.storedCoins += player->sessionCoins;
                 // DON'T add to totalCoinsCollected - they were already counted when collected
                 GameCore::GetGame()->UpdateGameStats(gameStats);
@@ -2691,7 +2691,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
         // Update the game's death counter
         if (GameCore::GetGame()) {
             // Get current stats, increment death counter, and update
-            GameCore::FloppyTurdGame::GameStats stats = GameCore::GetGame()->GetGameStats();
+            GameCore::PooperTrooperGame::GameStats stats = GameCore::GetGame()->GetGameStats();
             stats.totalDeaths++;
             GameCore::GetGame()->UpdateGameStats(stats);
             GN_LOG_INFO("Death counter incremented in game stats: " + std::to_string(stats.totalDeaths));
@@ -3670,7 +3670,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
 
         // Update lifetime total pipes cleared in GameStats
         if (GameCore::GetGame()) {
-            GameCore::FloppyTurdGame::GameStats gameStats = GameCore::GetGame()->GetGameStats();
+            GameCore::PooperTrooperGame::GameStats gameStats = GameCore::GetGame()->GetGameStats();
             gameStats.totalPipesCleared++;
             GameCore::GetGame()->UpdateGameStats(gameStats);
             GN_LOG_INFO("Updated lifetime total pipes cleared to: " + std::to_string(gameStats.totalPipesCleared));
@@ -3748,7 +3748,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             // FINALITY EVENT: Transfer session coins to stored coins on death
             if (sessionCoins > 0) {
                 // Update GameStats stored coins (session coins were already counted in gross total when collected)
-                GameCore::FloppyTurdGame::GameStats gameStats = GameCore::GetGame()->GetGameStats();
+                GameCore::PooperTrooperGame::GameStats gameStats = GameCore::GetGame()->GetGameStats();
                 gameStats.storedCoins += sessionCoins;
                 // DON'T add to totalCoinsCollected again - they were already counted when collected
                 GameCore::GetGame()->UpdateGameStats(gameStats);
@@ -3882,7 +3882,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 Transform morteTransform(Gnosis::GNVector2(mortePosition.x, mortePosition.y), 0.0f, Gnosis::GNVector2(morteScale, morteScale));
                 m_ecsSystem->AddComponent<Transform>(m_morteEntity, morteTransform);
                 
-                Sprite morteSprite("FloppyTurdMorte", 64, 64);
+                Sprite morteSprite("PooperTrooperMorte", 64, 64);
                 morteSprite.layer = 102;
                 morteSprite.visible = true;
                 m_ecsSystem->AddComponent<Sprite>(m_morteEntity, morteSprite);
@@ -4135,7 +4135,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 m_ecsSystem->AddComponent<Transform>(m_morteEntity, morteTransform);
                 
                 // Create morte sprite (like main menu) - THIS IS THE KEY DIFFERENCE!
-                Sprite morteSprite("FloppyTurdMorte", 64, 64); // Use actual texture dimensions
+                Sprite morteSprite("PooperTrooperMorte", 64, 64); // Use actual texture dimensions
                 morteSprite.layer = 102; // Above background, below text
                 morteSprite.visible = true;
                 m_ecsSystem->AddComponent<Sprite>(m_morteEntity, morteSprite);

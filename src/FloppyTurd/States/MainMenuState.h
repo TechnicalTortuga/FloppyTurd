@@ -4,7 +4,7 @@
 #include "GameState.h"
 #include "../../Engine/Platform/PlatformDelegates.h"
 #include "../Components/GameComponents.h"
-#include "../Game/FloppyTurdGame.h"
+#include "../Game/PooperTrooperGame.h"
 #include <memory>
 
 namespace GameCore {
@@ -86,7 +86,7 @@ namespace GameCore {
         PlatformDelegates* m_platformDelegates;  // For system creation
         GameCore::RenderSystem* m_renderSystem;  // Cached render system reference
         // Cache game instance to avoid repeated extern lookups
-        FloppyTurdGame* m_game = nullptr;
+        PooperTrooperGame* m_game = nullptr;
         bool m_finished;
         int m_selectedOption;
         float m_animationTimer;

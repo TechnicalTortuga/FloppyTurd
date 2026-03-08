@@ -1,9 +1,9 @@
 #include "SystemManager.h"
 #include "ECS.h"
 #include "Component.h"
-#include "../../FloppyTurd/Systems/SpriteSystem.h"
-#include "../../FloppyTurd/Systems/UISystem.h"
-#include "../../FloppyTurd/Systems/RenderSystem.h"
+#include "../../PooperTrooper/Systems/SpriteSystem.h"
+#include "../../PooperTrooper/Systems/UISystem.h"
+#include "../../PooperTrooper/Systems/RenderSystem.h"
 #include "GNLog.h"
 
 namespace Gnosis {

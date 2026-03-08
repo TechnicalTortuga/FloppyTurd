@@ -2,7 +2,7 @@
 #include "../../Engine/Utility/Utils.h"
 #include "../../Engine/Core/GNLog.h"
 #include "../Components/GameComponents.h"
-#include "../Game/FloppyTurdGame.h"
+#include "../Game/PooperTrooperGame.h"
 #include <algorithm>
 #include <set>
 
@@ -3279,7 +3279,7 @@ namespace GameCore {
 
                                             // Step 3: Update GameStats stored coins
                                             if (GameCore::GetGame()) {
-                                                GameCore::FloppyTurdGame::GameStats gameStats = GameCore::GetGame()->GetGameStats();
+                                                GameCore::PooperTrooperGame::GameStats gameStats = GameCore::GetGame()->GetGameStats();
                                                 gameStats.storedCoins = playerComp->totalCoins;
                                                 GameCore::GetGame()->UpdateGameStats(gameStats);
                                             }
@@ -3717,7 +3717,7 @@ namespace GameCore {
 
                     // Step 3: Update GameStats stored coins
                     if (GameCore::GetGame()) {
-                        GameCore::FloppyTurdGame::GameStats gameStats = GameCore::GetGame()->GetGameStats();
+                        GameCore::PooperTrooperGame::GameStats gameStats = GameCore::GetGame()->GetGameStats();
                         gameStats.storedCoins = playerComp->totalCoins;
                         GameCore::GetGame()->UpdateGameStats(gameStats);
                     }
@@ -3965,7 +3965,7 @@ namespace GameCore {
         }
 
         // Get current game stats
-        GameCore::FloppyTurdGame::GameStats currentStats = GameCore::GetGame()->GetGameStats();
+        GameCore::PooperTrooperGame::GameStats currentStats = GameCore::GetGame()->GetGameStats();
 
         // Increment death count
         currentStats.totalDeaths++;

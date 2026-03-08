@@ -1,5 +1,5 @@
 #include "PickupSystem.h"
-#include "../Game/FloppyTurdGame.h"
+#include "../Game/PooperTrooperGame.h"
 #include "../../Engine/Core/GNLog.h"
 #include <algorithm>
 #include <set>

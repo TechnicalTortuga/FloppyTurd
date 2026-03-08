@@ -2,7 +2,7 @@
 
 #include "../../Engine/Platform/PlatformDelegates.h"
 
-namespace FloppyTurd {
+namespace PooperTrooper {
 
 /**
  * @class AdSystem
@@ -114,4 +114,4 @@ private:
     bool ShouldShowAd() const;
 };
 
-} // namespace FloppyTurd
+} // namespace PooperTrooper

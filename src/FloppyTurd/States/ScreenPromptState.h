@@ -5,7 +5,7 @@
 #include "../../Engine/Platform/PlatformDelegates.h"
 #include "../../Engine/Core/GnosisTypes.h"
 #include "../Components/GameComponents.h"
-#include "../Game/FloppyTurdGame.h"
+#include "../Game/PooperTrooperGame.h"
 #include "../../Engine/Configuration/ConfigManager.h"
 #include "../../Engine/Core/GNLog.h"
 #include <string>
@@ -38,7 +38,7 @@ namespace GameCore {
     private:
         Gnosis::ECS* m_ecsSystem;
         PlatformDelegates* m_platformDelegates;
-        FloppyTurdGame* m_game;
+        PooperTrooperGame* m_game;
         bool m_finished;
         float m_displayTime;
         float m_fadeTimer;

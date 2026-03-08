@@ -23,7 +23,7 @@ module GameCorePlatform {
 
 module GameCoreGame {
     // Main game class only - avoid circular dependencies
-    header "../FloppyTurd/Game/FloppyTurdGame.h"
+    header "../PooperTrooper/Game/PooperTrooperGame.h"
     
     export *
     use _Builtin_stddef_max_align_t

@@ -1,8 +1,8 @@
 #include "ThreadingProxy.h"
 #include "../../Engine/Core/GNLog.h"
 #include "../../Engine/Configuration/ConfigManager.h"
-#include "../../FloppyTurd/Input/InputManager.h"
-#include "../../FloppyTurd/Game/FloppyTurdGame.h"
+#include "../../PooperTrooper/Input/InputManager.h"
+#include "../../PooperTrooper/Game/PooperTrooperGame.h"
 #include <cstring>
 
 // Import Swift module for direct interop calls
@@ -436,7 +436,7 @@ namespace GameCore {
         if (!s_instance) return;
         
         // Track music state in game before sending command
-        extern FloppyTurdGame* g_Game;
+        extern PooperTrooperGame* g_Game;
         if (g_Game && musicName) {
             g_Game->SetCurrentMusicTrack(std::string(musicName));
         }
@@ -452,7 +452,7 @@ namespace GameCore {
         if (!s_instance) return;
         
         // Clear music state in game before sending command
-        extern FloppyTurdGame* g_Game;
+        extern PooperTrooperGame* g_Game;
         if (g_Game) {
             g_Game->SetCurrentMusicTrack("");
         }
@@ -1328,7 +1328,7 @@ namespace GameCore {
         GN_LOG_INFO("ThreadingProxy: Delegates configured successfully - ready for turd-tossing action!");
     }
 
-// Swift interop functions - these will be available as FloppyTurd.initializeThreadingSystem()
+// Swift interop functions - these will be available as PooperTrooper.initializeThreadingSystem()
 void initializeThreadingSystem() {
     if (!g_threadingProxy) {
         g_threadingProxy = new ThreadingProxy();

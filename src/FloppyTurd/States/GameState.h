@@ -11,7 +11,7 @@
 namespace GameCore {
 
     /**
-     * @brief Base class for all game states in Floppy Turd
+     * @brief Base class for all game states in Pooper Trooper
      * 
      * This abstract class defines the interface for game states like
      * MainMenu, Playing, Paused, GameOver, etc.

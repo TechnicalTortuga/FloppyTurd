@@ -1,7 +1,7 @@
 #pragma once
 
 #include "PlatformDelegates.h"
-#include "../../FloppyTurd/Game/FloppyTurdGame.h"
+#include "../../PooperTrooper/Game/PooperTrooperGame.h"
 
 namespace GameCore {
 

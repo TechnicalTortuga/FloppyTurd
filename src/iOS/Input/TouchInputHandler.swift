@@ -775,10 +775,10 @@ extension TouchInputHandler {
 // With Swift 5.9+ native C++ interop, C++ code can directly instantiate this class:
 //
 // Example usage in C++:
-// #include "FloppyTurd-Swift.h"  // Auto-generated Swift interface
+// #include "PooperTrooper-Swift.h"  // Auto-generated Swift interface
 //
 // // Direct instantiation - no bridge functions needed!
-// auto touchHandler = std::make_unique<FloppyTurd::TouchInputHandler>();
+// auto touchHandler = std::make_unique<PooperTrooper::TouchInputHandler>();
 //
 // // Initialize with UIView
 // touchHandler->initialize(uiView);

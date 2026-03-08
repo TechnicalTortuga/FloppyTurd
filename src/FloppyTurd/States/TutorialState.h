@@ -5,7 +5,7 @@
 #include "../../Engine/Platform/PlatformDelegates.h"
 #include "../../Engine/Core/GnosisTypes.h"
 #include "../Components/GameComponents.h"
-#include "../Game/FloppyTurdGame.h"
+#include "../Game/PooperTrooperGame.h"
 #include "../Systems/SpriteSystem.h"
 #include "../Systems/PlayerControllerSystem.h"
 #include "../Systems/RenderSystem.h"
@@ -49,7 +49,7 @@ namespace GameCore {
         // Core systems
         Gnosis::ECS* m_ecsSystem;
         PlatformDelegates* m_platformDelegates;
-        FloppyTurdGame* m_game;
+        PooperTrooperGame* m_game;
         
         // Game systems (shared from SystemManager - NOT owned!)
         SpriteSystem* m_spriteSystem;

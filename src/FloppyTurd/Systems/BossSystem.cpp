@@ -1,7 +1,7 @@
 #include "BossSystem.h"
 #include "ProjectileSystem.h"
 #include "../Config/EnemyConfigs.h"
-#include "../Game/FloppyTurdGame.h"
+#include "../Game/PooperTrooperGame.h"
 #include "../../Engine/Platform/PlatformDelegates.h"
 #include "../../Engine/Platform/HapticHelpers.h"
 #include <cmath>

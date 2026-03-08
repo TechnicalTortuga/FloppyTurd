@@ -5,7 +5,7 @@
 #include "../../Engine/Core/ECS.h"
 #include "../../Engine/Platform/PlatformDelegates.h"
 #include "../../iOS/Threading/ThreadingProxy.h"
-#include "../Game/FloppyTurdGame.h"
+#include "../Game/PooperTrooperGame.h"
 #include <vector>
 #include <string>
 
@@ -73,7 +73,7 @@ namespace GameCore {
         // Core systems
         ECS* m_ecsSystem;
         PlatformDelegates* m_platformDelegates;
-        FloppyTurdGame* m_game;
+        PooperTrooperGame* m_game;
 
         // State flags
         bool m_finished;

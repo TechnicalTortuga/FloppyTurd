@@ -1,1 +1,0 @@
-../../../../Library/Developer/Xcode/DerivedData/PooperTrooper-fccmdsanxybryeabpvpfeuuzrcae/ArchiveIntermediates/PooperTrooper/InstallationBuildProductsLocation/Applications/PooperTrooper.app

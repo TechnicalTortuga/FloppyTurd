@@ -41,7 +41,7 @@ public class GameEngine: NSObject, TouchInputDelegate {
     private var gameViewController: GameViewController?
 
     // C++ Game Engine instance
-    public var cppGame: GameCoreGame.GameCore.FloppyTurdGame?
+    public var cppGame: GameCoreGame.GameCore.PooperTrooperGame?
 
     // GNLog integration - Direct SwiftLog (like ThreadingSystem)
     private func log(_ message: String, level: LogLevel = .info) {
@@ -128,15 +128,15 @@ public class GameEngine: NSObject, TouchInputDelegate {
         log("ThreadingProxy initialization confirmed")
 
         // Create C++ Game Engine - This returns the main game instance
-        log("Creating C++ FloppyTurdGame object...")
-        cppGame = GameCoreGame.GameCore.FloppyTurdGame()
+        log("Creating C++ PooperTrooperGame object...")
+        cppGame = GameCoreGame.GameCore.PooperTrooperGame()
 
         guard cppGame != nil else {
-            log("Failed to create C++ FloppyTurdGame object", level: .error)
+            log("Failed to create C++ PooperTrooperGame object", level: .error)
             return false
         }
 
-        log("C++ FloppyTurdGame object created successfully")
+        log("C++ PooperTrooperGame object created successfully")
 
         log("Swift components already created - ready to initialize C++ game")
 
@@ -556,14 +556,14 @@ public class GameEngine: NSObject, TouchInputDelegate {
  * This GameEngine class now uses direct C++ class instantiation:
  *
  * // Swift to C++ (current implementation):
- * cppGame = GameCoreGame.GameCore.FloppyTurdGame()
+ * cppGame = GameCoreGame.GameCore.PooperTrooperGame()
  * cppGame?.Initialize(platform)
  * cppGame?.Run()
  *
  * // C++ to Swift (if needed):
- * #include "FloppyTurd-Swift.h"
- * auto gameEngine = std::make_unique<FloppyTurd::GameEngine>();
+ * #include "PooperTrooper-Swift.h"
+ * auto gameEngine = std::make_unique<PooperTrooper::GameEngine>();
  *
- * The FloppyTurdGame C++ class is directly accessible from Swift
+ * The PooperTrooperGame C++ class is directly accessible from Swift
  * through the GameCoreGame module and Swift 5.9+ interop.
  */

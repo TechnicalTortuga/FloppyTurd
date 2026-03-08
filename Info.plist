@@ -60,7 +60,7 @@
 
     <!-- Google AdMob Configuration -->
     <key>GADApplicationIdentifier</key>
-    <string>ca-app-pub-2487109358798103~4785125685</string>
+    <string>YOUR_ADMOB_APP_ID</string>
 
     <!-- App Tracking Transparency (ATT) Prompt -->
     <key>NSUserTrackingUsageDescription</key>

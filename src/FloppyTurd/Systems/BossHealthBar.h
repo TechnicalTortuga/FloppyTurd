@@ -14,7 +14,7 @@ class BossSystem;
  * @brief Boss Health Bar System for iOS
  *
  * Displays a visual health bar for boss enemies with hurt effects.
- * Adapted from the old desktop implementation for iOS/FloppyTurd architecture.
+ * Adapted from the old desktop implementation for iOS/PooperTrooper architecture.
  */
 class BossHealthBar {
 public:

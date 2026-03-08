@@ -3,7 +3,7 @@
 #include "../Components/GameComponents.h"
 #include "../Config/EnemyConfigs.h"
 #include "../../Engine/Configuration/ConfigManager.h"
-#include "../Game/FloppyTurdGame.h"
+#include "../Game/PooperTrooperGame.h"
 #include <algorithm>
 #include <cmath>
 #include <random>

@@ -84,7 +84,7 @@ struct FontMetrics {
  * @file MetalRenderer.swift
  * @brief Metal-based 2D renderer for iOS using threading system for command processing
  *
- * This implementation uses the FloppyTurd threading system to process render commands
+ * This implementation uses the PooperTrooper threading system to process render commands
  * safely on the main thread, eliminating concurrency issues and weak self captures.
  *
  * The renderer is designed to be called exclusively from the CommandProcessor on the
@@ -746,7 +746,7 @@ public class MetalRenderer {
         }
 
         currentCommandBuffer = commandQueue.makeCommandBuffer()
-        currentCommandBuffer?.label = "FloppyTurd Frame Commands"
+        currentCommandBuffer?.label = "PooperTrooper Frame Commands"
 
         if let view = metalView {
             currentDrawable = view.currentDrawable
@@ -851,7 +851,7 @@ public class MetalRenderer {
 
             currentRenderEncoder = commandBuffer.makeRenderCommandEncoder(
                 descriptor: renderPassDescriptor)
-            currentRenderEncoder?.label = "FloppyTurd Render Pass"
+            currentRenderEncoder?.label = "PooperTrooper Render Pass"
 
             // NEW: fully define raster-state each frame so we match Apple docs
             if let enc = currentRenderEncoder {

@@ -1,6 +1,0 @@
-2025-12-15 11:35:51.258 xcodebuild[72801:419857] [MT] IDEDistribution: -[IDEDistributionLogging _createLoggingBundleAtPath:]: Created bundle at path "/var/folders/09/pw3zby3x5pn4pvjgr515b_sw0000gn/T/PooperTrooper_2025-12-15_11-35-51.257.xcdistributionlogs".
-2025-12-15 11:35:51.335 xcodebuild[72801:419857] [MT] IDEDistribution: Command line name "app-store" is deprecated. Use "app-store-connect" instead.
-error: exportArchive No profiles for 'com.floppyturd.game' were found
-
-** EXPORT FAILED **
-

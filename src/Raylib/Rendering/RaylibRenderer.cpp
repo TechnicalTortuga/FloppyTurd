@@ -35,7 +35,7 @@ namespace Gnosis {
     
     RaylibPlatform::RaylibPlatform() 
         : m_initialized(false)
-        , m_windowTitle("Floppy Turd")
+        , m_windowTitle("Pooper Trooper")
         , m_windowWidth(800)
         , m_windowHeight(600)
         , m_isMobile(false) {

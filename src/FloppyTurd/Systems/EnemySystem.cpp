@@ -1,6 +1,6 @@
 #include "EnemySystem.h"
 #include "BossSystem.h"
-#include "../Game/FloppyTurdGame.h"
+#include "../Game/PooperTrooperGame.h"
 #include "LevelManager.h"
 #include "../../Engine/Configuration/ConfigManager.h"
 #include <cmath>

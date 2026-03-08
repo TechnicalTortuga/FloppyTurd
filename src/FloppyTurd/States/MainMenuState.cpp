@@ -6,7 +6,7 @@
 #include "../../Engine/AssetPaths.h"
 #include "../../Engine/Utility/Utils.h"
 #include "../Components/GameComponents.h"
-#include "../Game/FloppyTurdGame.h"
+#include "../Game/PooperTrooperGame.h"
 #include "../Input/InputManager.h"
 #include <iostream>
 #include <random>
@@ -66,7 +66,7 @@ namespace GameCore {
         }
 
         // Cache global game pointer once to avoid repeated extern lookups
-        extern FloppyTurdGame* g_Game;
+        extern PooperTrooperGame* g_Game;
         m_game = g_Game;
 
         // Detect if we're on a mobile platform
@@ -130,24 +130,24 @@ namespace GameCore {
             m_platformDelegates->renderer.lockToPortrait();
         }
 
-        // InputManager singleton should be initialized by FloppyTurdGame
+        // InputManager singleton should be initialized by PooperTrooperGame
         
         // Start playing main menu music only if it's not already playing
         if (m_game) {
             const std::string& currentTrack = m_game->GetCurrentMusicTrack();
             
             // Only start music if we're not already playing the main menu track
-            if (currentTrack != "FloppyTurdMenu") {
+            if (currentTrack != "PooperTrooperMenu") {
                 const PlatformDelegates& delegates = m_game->GetPlatformDelegates();
                 // Check if music is cached using new delegate
                 if (delegates.asset.isCached) {
-                    bool cached = delegates.asset.isCached("FloppyTurdMenu", 1); // 1 = audio type
-                    GN_LOG_INFO("FloppyTurdMenu cached status: " + std::string(cached ? "true" : "false"));
+                    bool cached = delegates.asset.isCached("PooperTrooperMenu", 1); // 1 = audio type
+                    GN_LOG_INFO("PooperTrooperMenu cached status: " + std::string(cached ? "true" : "false"));
                 }
                 // Play music using existing delegate
                 if (delegates.audio.playMusic) {
-                    delegates.audio.playMusic("FloppyTurdMenu", 0.7f, -1); // -1 = infinite loop
-                    GN_LOG_INFO("Started main menu music: FloppyTurdMenu.mp3");
+                    delegates.audio.playMusic("PooperTrooperMenu", 0.7f, -1); // -1 = infinite loop
+                    GN_LOG_INFO("Started main menu music: PooperTrooperMenu.mp3");
                 }
             } else {
                 GN_LOG_INFO("Main menu music already playing - not restarting");
@@ -2690,7 +2690,7 @@ namespace GameCore {
         // Debug: Show current coin count at startup
         if (GameCore::GetGame()) {
             int currentCoins = GameCore::GetGame()->GetPlayerCoins();
-            GameCore::FloppyTurdGame::GameStats gameStats = GameCore::GetGame()->GetGameStats();
+            GameCore::PooperTrooperGame::GameStats gameStats = GameCore::GetGame()->GetGameStats();
             GN_LOG_INFO("💰 MAIN MENU STARTUP - GetPlayerCoins(): " + std::to_string(currentCoins) + " coins");
             GN_LOG_INFO("💰 MAIN MENU STARTUP - GameStats.totalCoinsCollected: " + std::to_string(gameStats.totalCoinsCollected) + " coins");
         }
@@ -5136,7 +5136,7 @@ namespace GameCore {
     // ==================== VIBRATION PREFERENCE ====================
 
     void MainMenuState::SaveVibrationPreference(bool enabled) {
-        // Saved automatically by FloppyTurdGame::SetVibrationsEnabled
+        // Saved automatically by PooperTrooperGame::SetVibrationsEnabled
         if (m_game) {
             m_game->SetVibrationsEnabled(enabled);
         }

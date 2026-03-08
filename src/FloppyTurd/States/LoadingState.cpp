@@ -3,7 +3,7 @@
 #include "../../Engine/Core/GNLog.h"
 #include "../../Engine/AssetPaths.h"
 #include "../Components/GameComponents.h"
-#include "../Game/FloppyTurdGame.h"
+#include "../Game/PooperTrooperGame.h"
 #include "../Systems/RenderSystem.h"
 #include <iostream>
 #include <cmath>
@@ -95,8 +95,8 @@ namespace GameCore {
             "FloppyButtonBlue",
             "FloppyButtonBlueHover",
             "FloppyLogo",
-            "FloppyTurdCreditsBackground",
-            "FloppyTurdMorte",
+            "PooperTrooperCreditsBackground",
+            "PooperTrooperMorte",
             "flowerhat",
             "flowerhatbigturdjump",
             "flowerhatbigturdshoot",
@@ -292,8 +292,8 @@ namespace GameCore {
             "DesertLevel.mp3",
             "DesertSlow.mp3",
             "EndTheme.mp3",
-            "FloppyTurdMenu.mp3",
-            "FloppyTurdMenuAlt.mp3",
+            "PooperTrooperMenu.mp3",
+            "PooperTrooperMenuAlt.mp3",
             "MenuFast.mp3",
             "ParkFast.mp3",
             "ParkLevel.mp3",
@@ -383,7 +383,7 @@ namespace GameCore {
         if (minLoadingTimeElapsed && !m_assetsLoaded) {
             m_assetsLoaded = true; // Assume true, will be set to false if any asset is missing
             
-            extern GameCore::FloppyTurdGame* g_Game;
+            extern GameCore::PooperTrooperGame* g_Game;
             if (g_Game) {
                 const auto& delegates = g_Game->GetPlatformDelegates();
                 // Access RenderSystem via ECS -> SystemManager
@@ -487,7 +487,7 @@ namespace GameCore {
     }
 
     void LoadingState::PreloadAssets() {
-        extern GameCore::FloppyTurdGame* g_Game;
+        extern GameCore::PooperTrooperGame* g_Game;
         if (!g_Game) {
             GN_LOG_ERROR("Cannot preload assets: Game instance is null");
             return;

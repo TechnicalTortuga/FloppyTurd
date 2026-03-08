@@ -1,9 +1,9 @@
 #version 330 core
 
 // Vertex shader for 2D sprites (Raylib/OpenGL)
-// FloppyTurd - Raylib Platform Shaders
+// PooperTrooper - Raylib Platform Shaders
 // Created by Gnosis Engine
-// Copyright © 2024 Floppy Turd Studios. All rights reserved.
+// Copyright © 2024 Pooper Trooper Studios. All rights reserved.
 
 // Input vertex attributes
 layout (location = 0) in vec2 vertexPosition;

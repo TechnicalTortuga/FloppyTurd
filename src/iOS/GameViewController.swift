@@ -3,7 +3,7 @@
 //  PooperTrooper
 //
 //  Main game view controller for iOS using Swift 5.9+ native C++ interop
-//  Direct C++ instantiation: auto controller = std::make_unique<FloppyTurd::GameViewController>();
+//  Direct C++ instantiation: auto controller = std::make_unique<PooperTrooper::GameViewController>();
 //  Handles Metal rendering, touch input, and game lifecycle
 //
 
@@ -14,7 +14,7 @@ import UIKit
 import AppTrackingTransparency  // For ATT prompt
 
 /// Main game view controller for iOS with native C++ interop
-/// Direct C++ instantiation: std::make_unique<FloppyTurd::GameViewController>()
+/// Direct C++ instantiation: std::make_unique<PooperTrooper::GameViewController>()
 /// Manages the Metal view, game engine lifecycle, and user input
 @MainActor
 public class GameViewController: UIViewController {
@@ -667,10 +667,10 @@ extension GameViewController: MTKViewDelegate {
  * With Swift 5.9+, C++ can directly instantiate this Swift class without C-style bridging:
  *
  * // C++ Example:
- * #include "FloppyTurd-Swift.h"
+ * #include "PooperTrooper-Swift.h"
  *
  * // Direct instantiation
- * auto viewController = std::make_unique<FloppyTurd::GameViewController>();
+ * auto viewController = std::make_unique<PooperTrooper::GameViewController>();
  *
  * // Integration with iOS app lifecycle
  * viewController->viewDidLoad();

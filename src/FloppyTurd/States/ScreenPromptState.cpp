@@ -1,5 +1,5 @@
 #include "ScreenPromptState.h"
-#include "../Game/FloppyTurdGame.h"
+#include "../Game/PooperTrooperGame.h"
 #include "../../Engine/Utility/Utils.h"
 
 namespace GameCore {
@@ -23,7 +23,7 @@ namespace GameCore {
         , m_currentScreenHeight(2556.0f)
     {
         // Cache global game pointer like MainMenuState does
-        extern FloppyTurdGame* g_Game;
+        extern PooperTrooperGame* g_Game;
         m_game = g_Game;
 
         GN_LOG_INFO("ScreenPromptState created");
@@ -347,7 +347,7 @@ namespace GameCore {
                             std::string confirmMsg = std::string("🎮 LANDSCAPE CONFIRMED! Starting boss level (") +
                                                    std::to_string(m_displayTime) + " seconds total)";
                             GN_LOG_INFO(confirmMsg.c_str());
-                            m_finished = true; // This will trigger state transition in FloppyTurdGame
+                            m_finished = true; // This will trigger state transition in PooperTrooperGame
                         } else {
                             // Log progress occasionally
                             static float lastProgressLog = -1.0f;
@@ -422,7 +422,7 @@ namespace GameCore {
                                 m_platformDelegates->renderer.lockToPortrait();
                             }
 
-                            m_finished = true; // This will trigger state transition in FloppyTurdGame
+                            m_finished = true; // This will trigger state transition in PooperTrooperGame
                         } else {
                             // Log progress occasionally
                             static float lastProgressLog = -1.0f;

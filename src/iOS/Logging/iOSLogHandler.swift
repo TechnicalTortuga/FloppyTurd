@@ -321,7 +321,7 @@ actor iOSLogActor {
  * @brief Swift implementation of Gnosis::ILogHandler for iOS logging
  * 
  * This class can be directly instantiated from C++ using Swift 5.9+ native interop:
- * auto handler = std::make_unique<FloppyTurd::iOSLogHandler>();
+ * auto handler = std::make_unique<PooperTrooper::iOSLogHandler>();
  * GNLog::GetInstance().AddHandler(std::move(handler));
  * 
  * Provides native iOS logging through os_log with full GNLog integration.
@@ -429,10 +429,10 @@ public class iOSLogHandler: NSObject, @unchecked Sendable {
 // With Swift 5.9+ native C++ interop, C++ code can directly instantiate this class:
 //
 // Example usage in C++:
-// #include "FloppyTurd-Swift.h"  // Auto-generated Swift interface
+// #include "PooperTrooper-Swift.h"  // Auto-generated Swift interface
 // 
 // // Direct instantiation - no bridge functions needed!
-// auto iosLogHandler = std::make_unique<FloppyTurd::iOSLogHandler>();
+// auto iosLogHandler = std::make_unique<PooperTrooper::iOSLogHandler>();
 // 
 // // Add to GNLog system
 // Gnosis::GNLog::GetInstance().AddHandler(std::move(iosLogHandler));

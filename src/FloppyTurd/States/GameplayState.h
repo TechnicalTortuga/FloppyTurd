@@ -35,7 +35,7 @@ namespace GameCore {
     // For now, using raw pointers since systems don't exist yet
 
     /**
-     * @brief Gameplay State - Main game loop for FloppyTurd
+     * @brief Gameplay State - Main game loop for PooperTrooper
      * 
      * This state manages the core gameplay loop including:
      * - Player movement and controls
@@ -241,7 +241,7 @@ namespace GameCore {
         
         // Game over UI elements
         Gnosis::Entity m_gameOverBackgroundEntity;   // Light from heaven background
-        Gnosis::Entity m_morteEntity;                 // FloppyTurdMorte floating sprite
+        Gnosis::Entity m_morteEntity;                 // PooperTrooperMorte floating sprite
         Gnosis::Entity m_gameOverScoreEntity;        // Score display background
         Gnosis::Entity m_pipesLabelEntity;           // "Pipes: X" text label
         Gnosis::Entity m_coinsLabelEntity;           // "Coins: X" text label

@@ -202,7 +202,7 @@ void CreditsState::CreateBackground() {
     float heightBasedScale = m_screenHeight / textureHeight;  // Fit height exactly
     
     Sprite sprite;
-    sprite.textureId = "FloppyTurdCreditsBackground";
+    sprite.textureId = "PooperTrooperCreditsBackground";
     sprite.width = textureWidth;
     sprite.height = textureHeight;
     sprite.layer = 100;  // UI layer for screen space rendering

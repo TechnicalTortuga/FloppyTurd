@@ -1,7 +1,0 @@
-Target dependency graph (3 targets)
-Target 'ALL_BUILD' in project 'PooperTrooper'
-➜ Explicit dependency on target 'ZERO_CHECK' in project 'PooperTrooper'
-➜ Explicit dependency on target 'PooperTrooper' in project 'PooperTrooper'
-Target 'PooperTrooper' in project 'PooperTrooper'
-➜ Explicit dependency on target 'ZERO_CHECK' in project 'PooperTrooper'
-Target 'ZERO_CHECK' in project 'PooperTrooper' (no dependencies)

@@ -358,7 +358,7 @@ public class AssetManager {
         logger.info("Preloading essential assets...")
 
         let essentialAssets = [
-            ("FloppyTurdMenu", "mp3", AssetType.audio),
+            ("PooperTrooperMenu", "mp3", AssetType.audio),
             ("button_click", "wav", AssetType.audio),
             ("fart1", "mp3", AssetType.audio),
             ("fart2", "mp3", AssetType.audio),

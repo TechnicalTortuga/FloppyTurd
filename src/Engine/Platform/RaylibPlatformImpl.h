@@ -5,7 +5,7 @@
 #include "PlatformDelegates.h"
 // Forward declarations to avoid raylib.h dependency in header
 
-namespace FloppyTurd {
+namespace PooperTrooper {
 
     // Raylib Platform Implementation
     namespace RaylibPlatform {
@@ -67,6 +67,6 @@ namespace FloppyTurd {
         
     } // namespace RaylibPlatform
 
-} // namespace FloppyTurd
+} // namespace PooperTrooper
 
 #endif // !PLATFORM_IOS

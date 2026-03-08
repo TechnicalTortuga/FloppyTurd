@@ -3,7 +3,7 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
-#include "../../FloppyTurd/Game/FloppyTurdGame.h"
+#include "../../PooperTrooper/Game/PooperTrooperGame.h"
 #include "../Configuration/ConfigManager.h"
 
 namespace GameCore {
@@ -44,12 +44,12 @@ namespace GameCore {
         /**
          * @brief Serialize game data to JSON string
          * 
-         * Converts FloppyTurdGame data to JSON format matching Swift's GameSaveData structure.
+         * Converts PooperTrooperGame data to JSON format matching Swift's GameSaveData structure.
          * 
          * @param game Reference to the game instance
          * @return JSON string ready to pass to saveGameDataJSON()
          */
-        inline std::string serializeGameData(const FloppyTurdGame& game) {
+        inline std::string serializeGameData(const PooperTrooperGame& game) {
             std::ostringstream json;
             json << std::fixed << std::setprecision(2);
 
@@ -387,7 +387,7 @@ namespace GameCore {
          * @param dataString Structured data string from Swift (KEY:VALUE format)
          * @return true if parsing succeeded, false otherwise
          */
-        inline bool deserializeGameData(FloppyTurdGame& game, const std::string& dataString) {
+        inline bool deserializeGameData(PooperTrooperGame& game, const std::string& dataString) {
             if (dataString.empty()) {
                 GN_LOG_ERROR("🔍 Deserialize: Data string is empty!");
                 return false;
@@ -397,7 +397,7 @@ namespace GameCore {
             GN_LOG_INFO("🔍 Deserialize: Data length: " + std::to_string(dataString.length()));
 
             // Parse statistics
-            FloppyTurdGame::GameStats stats;
+            PooperTrooperGame::GameStats stats;
             stats.totalGamesPlayed = std::stoi(parseKeyValue(dataString, "STATS_TOTAL_GAMES"));
             stats.totalScore = std::stoi(parseKeyValue(dataString, "STATS_TOTAL_SCORE"));
             stats.totalCoinsCollected = std::stoi(parseKeyValue(dataString, "STATS_TOTAL_COINS"));
@@ -440,7 +440,7 @@ namespace GameCore {
             for (int i = 1; i <= maxLevels; ++i) {
                 std::string levelPrefix = "LEVEL_" + std::to_string(i) + "_";
                 
-                FloppyTurdGame::LevelStats levelStats;
+                PooperTrooperGame::LevelStats levelStats;
                 
                 std::string highScoreStr = parseKeyValue(dataString, levelPrefix + "HIGH_SCORE");
                 levelStats.highScore = highScoreStr.empty() ? 0 : std::stoi(highScoreStr);
@@ -476,7 +476,7 @@ namespace GameCore {
             }
 
             // Parse customization
-            FloppyTurdGame::CustomizationData customization;
+            PooperTrooperGame::CustomizationData customization;
             
             std::string equippedHatStr = parseKeyValue(dataString, "CUSTOM_EQUIPPED_HAT");
             customization.equippedHatIndex = equippedHatStr.empty() ? 0 : std::stoi(equippedHatStr);

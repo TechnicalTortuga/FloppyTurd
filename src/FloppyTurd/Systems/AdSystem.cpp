@@ -1,7 +1,7 @@
 #include "AdSystem.h"
 #include "../../Engine/Core/GNLog.h"
 
-namespace FloppyTurd {
+namespace PooperTrooper {
 
 AdSystem::AdSystem()
     : m_platformDelegates(nullptr)
@@ -161,4 +161,4 @@ void AdSystem::GetCountersForSave(int& outDeathsSinceLastAd, int& outTotalDeaths
     outTotalDeaths = m_totalDeathCount;
 }
 
-} // namespace FloppyTurd
+} // namespace PooperTrooper

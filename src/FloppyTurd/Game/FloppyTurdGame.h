@@ -32,24 +32,24 @@ namespace GameCore {
 namespace GameCore {
 
     /**
-     * @brief Main game class for Floppy Turd
+     * @brief Main game class for Pooper Trooper
      * 
      * This class orchestrates the entire game, managing the ECS system,
      * platform interfaces, game states, and core game loop.
      */
-    class FloppyTurdGame {
+    class PooperTrooperGame {
     public:
         // Game version (single source of truth)
         static constexpr const char* GetVersion() { return "1.0.0"; }
         
-        FloppyTurdGame();
-        ~FloppyTurdGame();
+        PooperTrooperGame();
+        ~PooperTrooperGame();
         
         // Swift 5.9+ C++ Interop: Allow copy/move for Swift compatibility
-        FloppyTurdGame(const FloppyTurdGame& other) = delete;
-        FloppyTurdGame& operator=(const FloppyTurdGame& other) = delete;
-        FloppyTurdGame(FloppyTurdGame&& other) = default;
-        FloppyTurdGame& operator=(FloppyTurdGame&& other) = default;
+        PooperTrooperGame(const PooperTrooperGame& other) = delete;
+        PooperTrooperGame& operator=(const PooperTrooperGame& other) = delete;
+        PooperTrooperGame(PooperTrooperGame&& other) = default;
+        PooperTrooperGame& operator=(PooperTrooperGame&& other) = default;
 
         // Game lifecycle - Single point of initialization
         bool Initialize();
@@ -217,7 +217,7 @@ namespace GameCore {
 
         // Ad system access
         void TriggerGameOverAd();
-        FloppyTurd::AdSystem* GetAdSystem() { return m_adSystem.get(); }
+        PooperTrooper::AdSystem* GetAdSystem() { return m_adSystem.get(); }
 
         // Debug unlock flags
         bool GetDebugLevelsUnlocked() const { return m_debugLevelsUnlocked; }
@@ -232,7 +232,7 @@ namespace GameCore {
         // Core systems
         std::unique_ptr<Gnosis::ECS> m_ecsSystem;
         std::unique_ptr<GameStateManager> m_stateManager;
-        std::unique_ptr<FloppyTurd::AdSystem> m_adSystem;
+        std::unique_ptr<PooperTrooper::AdSystem> m_adSystem;
         
         // Platform abstraction
         PlatformDelegates m_platformDelegates;
@@ -369,13 +369,13 @@ namespace GameCore {
     };
 
     // Global game instance access
-    extern FloppyTurdGame* g_Game;
+    extern PooperTrooperGame* g_Game;
     
     // Utility functions
-    FloppyTurdGame* GetGame();
-    void SetGame(FloppyTurdGame* game);
+    PooperTrooperGame* GetGame();
+    void SetGame(PooperTrooperGame* game);
     
-    // Swift 5.9+ C++ Interop: FloppyTurdGame is now directly accessible as a Swift reference type
+    // Swift 5.9+ C++ Interop: PooperTrooperGame is now directly accessible as a Swift reference type
 
 } // namespace GameCore
 

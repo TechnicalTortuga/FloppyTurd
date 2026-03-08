@@ -68,7 +68,7 @@ void SetTargetFPS(int f) {}
 float GetFrameTime() { return 0.016f; }
 #endif
 
-namespace FloppyTurd {
+namespace PooperTrooper {
 
     namespace RaylibPlatform {
         
@@ -393,6 +393,6 @@ namespace FloppyTurd {
         
     } // namespace RaylibPlatform
 
-} // namespace FloppyTurd
+} // namespace PooperTrooper
 
 #endif // !PLATFORM_IOS

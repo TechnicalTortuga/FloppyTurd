@@ -31,10 +31,10 @@ namespace GameCore {
         if (ConfigManager::Instance().IsIOS()) {
             const char* homeDir = getenv("HOME");
             if (homeDir) {
-                return std::string(homeDir) + "/Documents/FloppyTurdConfig.dat";
+                return std::string(homeDir) + "/Documents/PooperTrooperConfig.dat";
             }
         }
-        return "FloppyTurdConfig.dat";
+        return "PooperTrooperConfig.dat";
     }
 
     void ConfigManager::LoadConfiguration() {

@@ -211,10 +211,10 @@ class AdManager: NSObject {
     // MARK: - Ad Unit IDs
 
     /// Test ad unit ID for development (shows test ads)
-    private let testAdUnitID = "ca-app-pub-3940256099942544/4411468910"  // Google's test interstitial ID
+    private let testAdUnitID = "YOUR_ADMOB_AD_UNIT_ID"  // Google's test interstitial ID
 
     /// Production ad unit ID from AdMob
-    private let productionAdUnitID = "ca-app-pub-2487109358798103/2326483309"  // Real Floppy Turd interstitial
+    private let productionAdUnitID = "YOUR_ADMOB_AD_UNIT_ID"  // Real Pooper Trooper interstitial
 
     /// Real ad unit ID (uses test in debug, production in release)
     private var adUnitID: String {
