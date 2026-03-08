@@ -529,6 +529,19 @@ namespace GameCore {
                             GN_LOG_INFO("🎉 Boss defeated! Fade complete - transitioning to credits...");
                             // Signal state to finish and transition to credits
                             m_bossDefeated = true;  // Mark that boss was actually defeated
+                            
+                            // Unlock Legacy Mode by completing level 6
+                            if (m_levelManager) {
+                                m_levelManager->CompleteLevel(6, m_pipesCleared, 0);
+                                GN_LOG_INFO("🔓 Level 6 completed - Legacy Mode should now be unlocked!");
+                                
+                                // CRITICAL: Force immediate save to persist Legacy Mode unlock to main save file
+                                if (GameCore::GetGame()) {
+                                    GN_LOG_INFO("💾 Forcing immediate SaveGameData after Legacy Mode unlock!");
+                                    GameCore::GetGame()->SaveGameData();
+                                }
+                            }
+                            
                             m_finished = true;
                         }
                     } else {
@@ -2933,6 +2946,28 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             float heartY = screenH * LANDSCAPE_SETTINGS_Y; // Start from settings button level
             m_heartSystem->UpdateHeartUIPositioning(m_heartUIEntity, heartX, heartY);
         }
+
+        // Reposition Pipes Label for Landscape (72% X, 23% Y)
+        if (m_pipesLabelEntity != Gnosis::INVALID_ENTITY && m_ecsSystem) {
+             Transform* transform = m_ecsSystem->GetComponent<Transform>(m_pipesLabelEntity);
+             if (transform) {
+                 float pipesX = screenW * 0.72f;
+                 float pipesY = screenH * 0.21f;
+                 transform->position = Gnosis::GNVector2(pipesX, pipesY);
+                 GN_LOG_INFO("Repositioned Pipes label to landscape: (" + std::to_string(pipesX) + ", " + std::to_string(pipesY) + ")");
+             }
+        }
+
+        // Reposition Coins Label for Landscape (72% X, 37% Y)
+        if (m_coinsLabelEntity != Gnosis::INVALID_ENTITY && m_ecsSystem) {
+             Transform* transform = m_ecsSystem->GetComponent<Transform>(m_coinsLabelEntity);
+             if (transform) {
+                 float coinsX = screenW * 0.72f;
+                 float coinsY = screenH * 0.37f;
+                 transform->position = Gnosis::GNVector2(coinsX, coinsY);
+                 GN_LOG_INFO("Repositioned Coins label to landscape: (" + std::to_string(coinsX) + ", " + std::to_string(coinsY) + ")");
+             }
+        }
     }
 
     void GameplayState::RepositionSettingsButtonForPauseMenu(bool isPauseMenuActive) {
@@ -3020,6 +3055,28 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 GN_LOG_INFO("Repositioned settings button to portrait position: (" +
                            std::to_string(buttonX) + ", " + std::to_string(buttonY) + ")");
             }
+        }
+
+        // Reposition Pipes Label for Portrait (Standard Spacing)
+        if (m_pipesLabelEntity != Gnosis::INVALID_ENTITY && m_ecsSystem) {
+             Transform* transform = m_ecsSystem->GetComponent<Transform>(m_pipesLabelEntity);
+             if (transform) {
+                 float pipesX = (screenW * 0.5f) + 32.0f;
+                 float pipesY = screenH * 0.6f - 150.0f; // Standard spacing for portrait
+                 transform->position = Gnosis::GNVector2(pipesX, pipesY);
+                 GN_LOG_INFO("Repositioned Pipes label to portrait: (" + std::to_string(pipesX) + ", " + std::to_string(pipesY) + ")");
+             }
+        }
+
+        // Reposition Coins Label for Landscape (Standard Spacing)
+        if (m_coinsLabelEntity != Gnosis::INVALID_ENTITY && m_ecsSystem) {
+             Transform* transform = m_ecsSystem->GetComponent<Transform>(m_coinsLabelEntity);
+             if (transform) {
+                 float coinsX = (screenW * 0.5f) + 32.0f;
+                 float coinsY = screenH * 0.6f + 150.0f; // Standard spacing for portrait
+                 transform->position = Gnosis::GNVector2(coinsX, coinsY);
+                 GN_LOG_INFO("Repositioned Coins label to portrait: (" + std::to_string(coinsX) + ", " + std::to_string(coinsY) + ")");
+             }
         }
 
         // Reposition coin bag and coins text to portrait position
@@ -3866,11 +3923,11 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             bool isTablet = aspectRatio < 1.6f;
             float tabletFontScale = isTablet ? 0.7f : 1.0f;
             
-            // Pipes label on right side (pinched in even more)
+            // Pipes label - Positioned at 72% width; Y at 23%
             m_pipesLabelEntity = m_ecsSystem->CreateEntity();
             if (m_pipesLabelEntity != Gnosis::INVALID_ENTITY) {
-                float pipesX = m_cachedScreenWidth * 0.70f;
-                float pipesY = m_cachedScreenHeight * 0.30f - 36.0f; // Pinched more (was -56)
+                float pipesX = m_cachedScreenWidth * 0.72f;
+                float pipesY = m_cachedScreenHeight * 0.21f; // Final position
                 Transform pipesTransform(Gnosis::GNVector2(pipesX, pipesY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
                 m_ecsSystem->AddComponent<Transform>(m_pipesLabelEntity, pipesTransform);
                 
@@ -3880,22 +3937,21 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 pipesUI.visible = true;
                 pipesUI.isEnabled = true;
                 pipesUI.textLayer = 102;
-                // iPad needs smaller font
-                pipesUI.fontSize = isTablet ? 48.0f : 60.0f;
+                pipesUI.fontSize = isTablet ? 60.0f : 80.0f;
                 pipesUI.centerTextHorizontally = true;
-                pipesUI.textOutlineWidth = 6.0f;
+                pipesUI.textOutlineWidth = 8.0f;
                 pipesUI.normalTextureId = "";
                 m_ecsSystem->AddComponent<UIElement>(m_pipesLabelEntity, pipesUI);
             }
             
-            // Coins label on right side (pinched in even more)
+            // Coins label - Positioned at 72% width; Y at 37%
             m_coinsLabelEntity = m_ecsSystem->CreateEntity();
             if (m_coinsLabelEntity != Gnosis::INVALID_ENTITY) {
                 PlayerComponent* player = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity);
                 int totalCoins = player ? player->sessionCoins : 0;
                 
-                float coinsX = m_cachedScreenWidth * 0.70f;
-                float coinsY = m_cachedScreenHeight * 0.30f + 16.0f; // Pinched more (was +36)
+                float coinsX = m_cachedScreenWidth * 0.72f;
+                float coinsY = m_cachedScreenHeight * 0.37f; // Moved up 0.03
                 Transform coinsTransform(Gnosis::GNVector2(coinsX, coinsY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
                 m_ecsSystem->AddComponent<Transform>(m_coinsLabelEntity, coinsTransform);
                 
@@ -3905,10 +3961,9 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 coinsUI.visible = true;
                 coinsUI.isEnabled = true;
                 coinsUI.textLayer = 102;
-                // iPad needs larger font
-                coinsUI.fontSize = isTablet ? 88.0f : 60.0f;
+                coinsUI.fontSize = isTablet ? 60.0f : 80.0f;
                 coinsUI.centerTextHorizontally = true;
-                coinsUI.textOutlineWidth = 6.0f;
+                coinsUI.textOutlineWidth = 8.0f;
                 coinsUI.normalTextureId = "";
                 m_ecsSystem->AddComponent<UIElement>(m_coinsLabelEntity, coinsUI);
             }
@@ -4129,9 +4184,10 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 // Get player stats
                 PlayerComponent* player = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity);
                 
-                // Position above center of scoreboard, shifted 32px to the right (pinched in even more)
+                // Position above center of scoreboard - iPad needs more spacing to un-pinch
                 float pipesX = (m_cachedScreenWidth * 0.5f) + 32.0f;
-                float pipesY = m_cachedScreenHeight * 0.6f - 100.0f; // Pinched in more (130 -> 100)
+                float pipesYOffset = isTablet ? 130.0f : 100.0f;  // iPad more spacing
+                float pipesY = m_cachedScreenHeight * 0.6f - pipesYOffset;
                 Transform pipesTransform(Gnosis::GNVector2(pipesX, pipesY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
                 m_ecsSystem->AddComponent<Transform>(m_pipesLabelEntity, pipesTransform);
                 
@@ -4141,7 +4197,8 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 pipesUI.visible = true;
                 pipesUI.isEnabled = true;
                 pipesUI.textLayer = 102; // Above scoreboard background
-                pipesUI.fontSize = 80.0f * tabletFontScale;
+                // iPad needs slightly larger font for these labels
+                pipesUI.fontSize = isTablet ? 90.0f : 80.0f;  // iPad 90, iPhone 80
                 pipesUI.centerTextHorizontally = true;
                 pipesUI.textOutlineWidth = 8.0f; // Add outline for visibility
                 pipesUI.normalTextureId = ""; // Text-only
@@ -4157,9 +4214,10 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 PlayerComponent* player = m_ecsSystem->GetComponent<PlayerComponent>(m_playerEntity);
                 int totalCoins = player ? player->sessionCoins : 0;
                 
-                // Position below center of scoreboard, shifted 32px right (pinched in even more)
+                // Position below center of scoreboard - iPad needs more spacing to un-pinch
                 float coinsX = (m_cachedScreenWidth * 0.5f) + 32.0f;
-                float coinsY = m_cachedScreenHeight * 0.6f + 100.0f; // Pinched in more (130 -> 100)
+                float coinsYOffset = isTablet ? 130.0f : 100.0f;  // iPad more spacing
+                float coinsY = m_cachedScreenHeight * 0.6f + coinsYOffset;
                 Transform coinsTransform(Gnosis::GNVector2(coinsX, coinsY), 0.0f, Gnosis::GNVector2(1.0f, 1.0f));
                 m_ecsSystem->AddComponent<Transform>(m_coinsLabelEntity, coinsTransform);
                 
@@ -4169,7 +4227,8 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 coinsUI.visible = true;
                 coinsUI.isEnabled = true;
                 coinsUI.textLayer = 102; // Above scoreboard background
-                coinsUI.fontSize = 80.0f * tabletFontScale;
+                // iPad needs slightly larger font for these labels
+                coinsUI.fontSize = isTablet ? 90.0f : 80.0f;  // iPad 90, iPhone 80
                 coinsUI.centerTextHorizontally = true;
                 coinsUI.textOutlineWidth = 8.0f; // Add outline for visibility
                 coinsUI.normalTextureId = ""; // Text-only
@@ -4194,7 +4253,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
                 messageUI.isEnabled = true;
                 messageUI.textLayer = 104; // Highest priority for death message
                 // iPhone needs much smaller font to avoid going off screen
-                messageUI.fontSize = isTablet ? 120.0f : 80.0f; // iPhone 80, iPad 120
+                messageUI.fontSize = isTablet ? 90.0f : 80.0f; // iPhone 80, iPad 90 (reduced 25%)
                 messageUI.centerTextHorizontally = true;
                 messageUI.centerTextVertically = true;
                 messageUI.textOutlineWidth = 8.0f; // Add outline for better visibility
@@ -4207,13 +4266,12 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             // Create Try Again button (PORTRAIT) - use proper centering and main menu font size
             m_tryAgainButtonEntity = m_ecsSystem->CreateEntity();
         if (m_tryAgainButtonEntity != Gnosis::INVALID_ENTITY) {
-            // Dynamic scaling: Target 75% of screen width (Portrait)
-            float targetWidth = m_cachedScreenWidth * 0.75f;
+            // Dynamic scaling: iPad uses fixed scale 10.0f to match menu buttons
             float textureWidth = 90.0f;
             float textureHeight = 16.0f;
-            float buttonScale = targetWidth / textureWidth;
+            float buttonScale = isTablet ? 10.0f : (m_cachedScreenWidth * 0.75f) / textureWidth;
             
-            float buttonWidth = textureWidth * buttonScale; // Should match targetWidth
+            float buttonWidth = textureWidth * buttonScale;
             float buttonHeight = textureHeight * buttonScale;
             
             // Use CenterObjectAtPosition like main menu for proper centering
@@ -4235,7 +4293,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             tryAgainUI.isEnabled = true;
             tryAgainUI.textLayer = 104; // Text layer (higher than sprite)
             tryAgainUI.normalTextureId = "FloppyButtonBlue"; // Use the asset catalog name
-            tryAgainUI.fontSize = 100.0f * tabletFontScale; // Reduced from 120 for better fit
+            tryAgainUI.fontSize = isTablet ? 80.0f : 100.0f; // iPad 80 (matches menu), iPhone 100
             tryAgainUI.centerTextHorizontally = true;
             tryAgainUI.centerTextVertically = true;
             // Ensure the button texture is properly set
@@ -4257,11 +4315,10 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             // Create Quit button (PORTRAIT) - use proper centering and main menu font size
             m_quitButtonEntity = m_ecsSystem->CreateEntity();
         if (m_quitButtonEntity != Gnosis::INVALID_ENTITY) {
-            // Dynamic scaling: Target 75% of screen width (Portrait)
-            float targetWidth = m_cachedScreenWidth * 0.75f;
+            // Dynamic scaling: iPad uses fixed scale 10.0f to match menu buttons
             float textureWidth = 90.0f;
             float textureHeight = 16.0f;
-            float buttonScale = targetWidth / textureWidth;
+            float buttonScale = isTablet ? 10.0f : (m_cachedScreenWidth * 0.75f) / textureWidth;
             
             float buttonWidth = textureWidth * buttonScale;
             float buttonHeight = textureHeight * buttonScale;
@@ -4285,7 +4342,7 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             quitUI.isEnabled = true;
             quitUI.textLayer = 104; // Text layer (higher than sprite)
             quitUI.normalTextureId = "FloppyButtonBlue"; // Use the asset catalog name
-            quitUI.fontSize = 100.0f * tabletFontScale; // Reduced from 120 for better fit
+            quitUI.fontSize = isTablet ? 80.0f : 100.0f; // iPad 80 (matches menu), iPhone 100
             quitUI.centerTextHorizontally = true;
             quitUI.centerTextVertically = true;
             // Ensure the button texture is properly set
@@ -4714,16 +4771,12 @@ void GameplayState::UpdateGameLogic(float deltaTime) {
             "You got flushed!",
             "Down the drain!",
             "That was crappy!",
-            "Toilet trouble!",
             "Plumber needed!",
             "What a stinker!",
-            "Sewage overflow!",
             "Pipe dream ended!",
-            "Flushed with failure!",
             "Oh poop!",
             "Turd's in Trouble!",
             "Bummer!",
-            "What a fiasco!",
             "Holy crap!",
             "Clogged up!",
             "Craptastrophe!",

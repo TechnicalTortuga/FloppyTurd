@@ -325,8 +325,11 @@ namespace GameCore {
             currentDifficulty = difficulty;
             float diffMultiplier = GetDifficultyMultiplier(difficulty);
             
-            // UPDATED: Use new configurable speed constants with higher base speeds
-            worldSpeed = SpeedConstants::BASE_WORLD_SPEED * diffMultiplier;
+            // UPDATED: Preserve level-specific worldSpeed if it's 0 (boss level has static background)
+            if (worldSpeed > 0.0f) {
+                worldSpeed = SpeedConstants::BASE_WORLD_SPEED * diffMultiplier;
+            }
+            // If worldSpeed is 0.0f (Level 6), keep it static
             obstacleSpawnRate = 2.0f / diffMultiplier;  // Faster spawning = harder
             enemySpawnRate = 3.0f / diffMultiplier;
             

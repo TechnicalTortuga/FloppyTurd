@@ -315,6 +315,7 @@ final class SaveManager: @unchecked Sendable {
 
         // Progress
         output += "PROGRESS_LEGACY_HIGH_SCORE:\(saveData.progress.legacyHighScore)\n"
+        output += "PROGRESS_LEGACY_MODE_UNLOCKED:\(saveData.progress.legacyModeUnlocked ? 1 : 0)\n"
 
         // Levels
         for level in saveData.progress.levels {

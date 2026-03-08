@@ -82,8 +82,8 @@ void BossSystem::InitializeForLevel() {
             float ratKingSpriteWidth = 128.0f * scale; // 1024px rendered width
             float ratKingSpriteHeight = 128.0f * scale; // 1024px rendered height
 
-            // Left boundary: left edge at 50% screen
-            walkRangeMin = screenWidth * 0.5f; // Left edge of sprite at 50% screen
+            // Left boundary: 40% screen to give more walking room
+            walkRangeMin = screenWidth * 0.40f;
             
             // Right boundary: right edge at screen edge
             // position.x + width = screenWidth
@@ -134,6 +134,11 @@ void BossSystem::Update(float deltaTime) {
 
     GN_LOG_DEBUG("BossSystem: Update starting - state=" + std::to_string(static_cast<int>(currentState)) +
                 ", position=(" + std::to_string(position.x) + "," + std::to_string(position.y) + ")");
+
+    // Decrement walk cooldown
+    if (m_walkCooldown > 0.0f) {
+        m_walkCooldown -= deltaTime;
+    }
 
     // Update current state
     switch (currentState) {
@@ -239,15 +244,18 @@ void BossSystem::HandleDamage(int damage) {
 
 void BossSystem::HandleIdle(float deltaTime) {
     idleTimer += deltaTime;
-    if (idleTimer > 0.5f) {  // Temporarily reduced from 2.0f to 0.5f for faster testing
+    
+    // Fixed 2 second idle duration
+    if (idleTimer > 2.0f) {
         idleTimer = 0.0f;
-        // Choose walking destination or aiming
-        if (rand() % 3 != 0) {
-            // 2/3 chance to aim (temporarily increased for testing)
-            ChangeState(RatKingState::AIMING);
-        } else {
-            // 2/3 chance to walk to a specific destination
-            // Choose either left boundary or right boundary as destination
+        
+        // 1/3 chance to walk (if cooldown expired), otherwise aim
+        bool canWalk = (m_walkCooldown <= 0.0f) && (rand() % 3 == 0);
+        if (canWalk) {
+            // Set walk cooldown to prevent consecutive walks (3 seconds)
+            m_walkCooldown = 3.0f;
+            
+            // Choose walking destination based on current position
             float currentX = position.x;
             float distanceToLeft = abs(currentX - walkRangeMin);
             float distanceToRight = abs(currentX - walkRangeMax);
@@ -261,6 +269,8 @@ void BossSystem::HandleIdle(float deltaTime) {
                 m_walkDestination = walkRangeMin;
                 ChangeState(RatKingState::WALKING_LEFT);
             }
+        } else {
+            ChangeState(RatKingState::AIMING);
         }
     }
 }
@@ -723,6 +733,7 @@ void BossSystem::Reset() {
     // Reset timers
     idleTimer = 0.0f;
     walkTimer = 0.0f;
+    m_walkCooldown = 0.0f;  // Reset walk cooldown
     hurtTimer = 0.0f;
     deathTimer = 0.0f;
     

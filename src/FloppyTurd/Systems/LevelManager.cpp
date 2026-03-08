@@ -2542,8 +2542,11 @@ bool LevelManager::CompleteLevel(int levelId, int score, int coinsCollected) {
                 }
                 
                 // Remove rat minions spawned during boss battle (Rat enemy type with "grounded" pattern)
-                if (enemyComp->enemyType == "Rat" && enemyComp->movementPattern == "grounded") {
-                    GN_LOG_INFO("[RESET] Marking rat minion " + std::to_string(enemy) + " for removal");
+                // Also remove boss-spawned RatCopters (they have isBossMinion flag set)
+                if ((enemyComp->enemyType == "Rat" && enemyComp->movementPattern == "grounded") ||
+                    (enemyComp->isBossMinion && (enemyComp->enemyType == "RatCopterIdle" || 
+                     enemyComp->movementPattern == "flying"))) {
+                    GN_LOG_INFO("[RESET] Marking boss minion " + std::to_string(enemy) + " for removal (type=" + enemyComp->enemyType + ")");
                     enemiesToRemove.push_back(enemy);
                     continue;
                 }

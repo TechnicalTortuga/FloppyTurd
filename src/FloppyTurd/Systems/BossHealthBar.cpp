@@ -1,6 +1,7 @@
 #include "BossHealthBar.h"
 #include "BossSystem.h"
 #include "../../Engine/Platform/PlatformDelegates.h"
+#include "../../Engine/Configuration/ConfigManager.h"
 #include <cmath>
 #include <chrono>
 #include <algorithm>
@@ -36,22 +37,23 @@ BossHealthBar::~BossHealthBar() {
 void BossHealthBar::CreateUIEntities() {
     if (!m_ecsSystem) return;
 
-    // Get current screen dimensions for dynamic positioning
-    float screenWidth = 1179.0f;  // Default iPhone 16 width
-    float screenHeight = 2556.0f; // Default iPhone 16 height
+    // Get actual screen dimensions for dynamic positioning
+    const ScreenInfo& screenInfo = ConfigManager::Instance().GetCurrentScreenInfo();
+    float screenWidth = screenInfo.pixelWidth;
+    float screenHeight = screenInfo.pixelHeight;
 
     // Calculate dynamic positions - adjust for landscape mode
     bool isLandscape = (screenWidth > screenHeight);
     float barX;
     if (isLandscape) {
-        // Landscape mode: move boss bar to the right to avoid UI overlap
-        barX = screenWidth * 0.50f;  // 50% from left in landscape
+        // Landscape mode: position health bar on the left side, shifted right a bit
+        barX = screenWidth * 0.12f;  // 12% from left in landscape
     } else {
         // Portrait mode: original positioning
         barX = screenWidth * 0.25f;  // 25% from left for better positioning
     }
     float barY = screenHeight * BAR_TOP_OFFSET;
-    float nameY = screenHeight * NAME_OFFSET;
+    float nameY = screenHeight * 0.10f;  // Lower on screen (10% from top instead of NAME_OFFSET)
     float scale = 8.0f;  // 8x scale for proper visibility
     
     // Store barX for use in UpdateUIEntities

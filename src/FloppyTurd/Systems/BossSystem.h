@@ -114,7 +114,7 @@ private:
     // Movement boundaries - will be set dynamically based on screen dimensions
     float walkRangeMin = 100.0f;
     float walkRangeMax = 220.0f;
-    float walkSpeed = 20.0f;
+    float walkSpeed = 200.0f;  // Increased for broader movement
     float screenWidth = 1179.0f;  // iPhone 16 width, will be updated dynamically
     float screenHeight = 2556.0f; // iPhone 16 height, will be updated dynamically
 
@@ -132,6 +132,7 @@ private:
 
     // Walking destination for purposeful movement
     float m_walkDestination = 0.0f;
+    float m_walkCooldown = 0.0f;  // Cooldown timer to prevent consecutive walks
 
     // Minion spawning
     int nextMinionHealthThreshold = 185;  // Start at 185 HP (first threshold at ~90%)

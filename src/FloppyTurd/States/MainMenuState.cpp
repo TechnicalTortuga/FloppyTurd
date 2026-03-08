@@ -1762,7 +1762,7 @@ namespace GameCore {
         versionSprite.visible = false; // Text only
         versionSprite.layer = 5;
         
-        std::string versionText = "v1.0.3";
+        std::string versionText = "v1.1.0";
         UIElement versionUI(versionText, "", "");
         versionUI.fontSize = versionFontSize;
         versionUI.textColor = Gnosis::GNColor(255, 255, 255, 255); // White
@@ -1990,7 +1990,7 @@ namespace GameCore {
         GN_LOG_INFO("Button texture dimensions: " + std::to_string(buttonTextureWidth) + "x" + std::to_string(buttonTextureHeight));
         
         float centerX = m_screenWidth / 2.0f;
-        float buttonY = m_screenHeight * 0.55f; // Position buttons higher up
+        float buttonY = m_screenHeight * 0.58f; // Position buttons slightly lower (moved from 0.55f)
         float buttonSpacing = 150.0f; // Much more spacing between buttons
         float buttonScale = 10.0f; // Keep sprite scale at 10x for mobile visuals
         m_menuButtonScale = buttonScale;
@@ -2157,21 +2157,22 @@ namespace GameCore {
         
         // === SIMPLIFIED MOBILE BUTTON POSITIONING === //
 
-        // Create button scale dynamically based on screen width
-        // Target roughly 70% of screen width for buttons (decreased from 80% per request)
+        // Tablet detection must come first (used for button scale)
+        float aspectRatio = m_screenWidth / m_screenHeight;
+        bool isTablet = aspectRatio > 0.6f;
+
+        // Create button scale: iPad uses fixed 10.0f to match Options/Leaderboard buttons
         float targetButtonWidth = m_screenWidth * 0.70f;
         float calculatedScale = targetButtonWidth / buttonTextureWidth;
         
         // Clamp scale to reasonable limits
         float minScale = 4.0f;
-        float maxScale = 14.0f; // Allow larger buttons on iPad
-        float buttonScale = std::max(minScale, std::min(maxScale, calculatedScale));
+        float maxScale = 14.0f;
+        float buttonScale = isTablet ? 10.0f : std::max(minScale, std::min(maxScale, calculatedScale));
         
         m_menuButtonScale = buttonScale;
         
-        // Tablet font scaling: reduce font size on iPad (aspect > 0.6)
-        float aspectRatio = m_screenWidth / m_screenHeight;
-        bool isTablet = aspectRatio > 0.6f;
+        // Tablet font scaling: reduce font size on iPad
         float tabletFontScale = isTablet ? 0.65f : 1.0f;  // 65% font size on tablet
         
         // Text size globally controlled; derive from scale to keep proportion or use dynamic calc
@@ -2193,8 +2194,8 @@ namespace GameCore {
             buttonSpacing = buttonScaledHeight + 50.0f;  // Tighter vertical spacing for landscape
             GN_LOG_INFO("📱 Creating landscape mobile buttons (vertical stack): screen=" + std::to_string((int)m_screenWidth) + "x" + std::to_string((int)m_screenHeight));
         } else {
-            // Portrait mode: iPhone needs buttons lower, iPad keeps them higher
-            startY = isTablet ? m_screenHeight * 0.40f : m_screenHeight * 0.46f;  // iPhone at 46%, iPad at 40%
+            // Portrait mode: iPad buttons at 48%, iPhone at 52% (lower)
+            startY = isTablet ? m_screenHeight * 0.48f : m_screenHeight * 0.52f;
             buttonSpacing = buttonScaledHeight + 70.0f;  // Tighter vertical spacing
             GN_LOG_INFO("📱 Creating portrait mobile buttons: screen=" + std::to_string((int)m_screenWidth) + "x" + std::to_string((int)m_screenHeight) + ", isTablet=" + std::to_string(isTablet));
         }
@@ -3376,7 +3377,7 @@ namespace GameCore {
         m_backButtonEntity = m_ecsCoordinator->CreateEntity();
         float centerX = m_screenWidth * 0.5f;
         float buttonY = m_screenHeight * 0.93f;  // near bottom
-        float buttonScale = m_isMobile ? 8.0f : 6.0f; // Match Unlock button scale (8.0f for mobile)
+        float buttonScale = m_isMobile ? 10.0f : 6.0f; // Match Options button scale (10.0f for mobile)
 
         // Query texture via shared RenderSystem
         int bw = 0, bh = 0;
@@ -3395,7 +3396,7 @@ namespace GameCore {
         Transform t(Gnosis::GNVector2(topLeftX, topLeftY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
         Sprite s("FloppyButtonBlue", buttonTexW, buttonTexH); s.layer = 5; s.visible = false;
         UIElement ui("BACK", "FloppyButtonBlue", "FloppyButtonBlueHover");
-        ui.fontSize = m_globalUIFontSize * 0.65f; // Match Unlock button font size
+        ui.fontSize = m_globalUIFontSize; // Match main menu button font size
         ui.textColor = Gnosis::GNColor(255, 255, 255, 255);
         ui.centerTextHorizontally = true;
         ui.centerTextVertically = true;
@@ -3420,7 +3421,7 @@ namespace GameCore {
         float centerX = m_screenWidth * 0.5f;
         // Place slightly above the back button
         float buttonY = m_screenHeight * 0.86f;
-        float buttonScale = m_isMobile ? 8.0f : 6.0f; // Match Unlock button scale (8.0f for mobile)
+        float buttonScale = m_isMobile ? 10.0f : 6.0f; // Match Options button scale (10.0f for mobile)
 
         // Query texture via shared RenderSystem
         int bw = 0, bh = 0;
@@ -3439,7 +3440,7 @@ namespace GameCore {
         Transform t(Gnosis::GNVector2(topLeftX, topLeftY), 0.0f, Gnosis::GNVector2(buttonScale, buttonScale));
         Sprite s("FloppyButtonBlue", texW, texH); s.layer = 5; s.visible = false;
         UIElement ui("PLAY LEVEL", "FloppyButtonBlue", "FloppyButtonBlueHover");
-        ui.fontSize = m_globalUIFontSize * 0.65f; // Match Unlock button font size
+        ui.fontSize = m_globalUIFontSize; // Match main menu button font size
         ui.textColor = Gnosis::GNColor(255, 255, 255, 255);
         ui.centerTextHorizontally = true;
         ui.centerTextVertically = true;
@@ -4658,6 +4659,13 @@ namespace GameCore {
             if (sprite) sprite->visible = false;
         }
         
+        if (m_restorePurchasesButtonEntity != 0) {
+            auto ui = m_ecsCoordinator->GetComponent<UIElement>(m_restorePurchasesButtonEntity);
+            if (ui) ui->visible = false;
+            auto sprite = m_ecsCoordinator->GetComponent<Sprite>(m_restorePurchasesButtonEntity);
+            if (sprite) sprite->visible = false;
+        }
+        
         // Hide overlay background
         if (m_adControlsOverlayEntity != 0) {
             auto sprite = m_ecsCoordinator->GetComponent<Sprite>(m_adControlsOverlayEntity);
@@ -4882,6 +4890,69 @@ namespace GameCore {
             *m_ecsCoordinator->GetComponent<UIElement>(m_adControlsBackButtonEntity) = backButtonUI;
         }
         
+        // Restore Purchases button BELOW the back button
+        if (m_restorePurchasesButtonEntity == 0) {
+            m_restorePurchasesButtonEntity = m_ecsCoordinator->CreateEntity();
+        }
+        
+        // Use actual texture dimensions like main menu buttons
+        int restoreW = 0, restoreH = 0;
+        if (auto* rs = m_ecsCoordinator->GetSystemManager()->GetRenderSystem()) {
+            rs->PreloadTexture("FloppyButtonBlue");
+            if (!rs->GetTextureSize("FloppyButtonBlue", restoreW, restoreH)) { restoreW = 90; restoreH = 16; }
+        }
+        float restoreButtonTextureWidth = static_cast<float>(restoreW);
+        float restoreButtonTextureHeight = static_cast<float>(restoreH);
+        
+        float restoreButtonScale = 10.0f; // Match main menu button scale exactly
+        
+        // Calculate center position - BELOW the back button
+        float restoreButtonCenterX = m_screenWidth / 2.0f;
+        float restoreButtonCenterY = backButtonCenterY + 180.0f; // 180px below back button (lowered)
+        
+        // Get scaled dimensions
+        auto restoreScaledDimensions = GetScaledDimensions(restoreButtonTextureWidth, restoreButtonTextureHeight, restoreButtonScale);
+        float restoreScaledWidth = restoreScaledDimensions.first;
+        float restoreScaledHeight = restoreScaledDimensions.second;
+        
+        // Use CenterObjectAtPosition to get top-left coordinates (same as main menu buttons)
+        auto restorePosition = CenterObjectAtPosition(restoreButtonCenterX, restoreButtonCenterY, restoreScaledWidth, restoreScaledHeight);
+        float restoreButtonX = restorePosition.x;
+        float restoreButtonY = restorePosition.y;
+        
+        Transform restoreButtonTransform(Gnosis::GNVector2(restoreButtonX, restoreButtonY), 0.0f, Gnosis::GNVector2(restoreButtonScale, restoreButtonScale));
+        Sprite restoreButtonSprite("FloppyButtonBlue", restoreButtonTextureWidth, restoreButtonTextureHeight);
+        restoreButtonSprite.visible = true;
+        restoreButtonSprite.layer = 6;
+        
+        UIElement restoreButtonUI("", "FloppyButtonBlue", "FloppyButtonBlue");
+        restoreButtonUI.buttonText = "Restore Purchases"; // Full text
+        restoreButtonUI.fontSize = 60.0f; // 25% smaller to fit text
+        restoreButtonUI.textColor = Gnosis::GNColor(255, 255, 255, 255);
+        restoreButtonUI.centerTextHorizontally = true;
+        restoreButtonUI.centerTextVertically = true;
+        restoreButtonUI.textOffsetY = 0.0f; // No offset for perfect centering
+        restoreButtonUI.visible = true;
+        restoreButtonUI.isEnabled = true;
+        
+        if (!m_ecsCoordinator->HasComponent<Transform>(m_restorePurchasesButtonEntity)) {
+            m_ecsCoordinator->AddComponent<Transform>(m_restorePurchasesButtonEntity, restoreButtonTransform);
+        } else {
+            *m_ecsCoordinator->GetComponent<Transform>(m_restorePurchasesButtonEntity) = restoreButtonTransform;
+        }
+        
+        if (!m_ecsCoordinator->HasComponent<Sprite>(m_restorePurchasesButtonEntity)) {
+            m_ecsCoordinator->AddComponent<Sprite>(m_restorePurchasesButtonEntity, restoreButtonSprite);
+        } else {
+            *m_ecsCoordinator->GetComponent<Sprite>(m_restorePurchasesButtonEntity) = restoreButtonSprite;
+        }
+        
+        if (!m_ecsCoordinator->HasComponent<UIElement>(m_restorePurchasesButtonEntity)) {
+            m_ecsCoordinator->AddComponent<UIElement>(m_restorePurchasesButtonEntity, restoreButtonUI);
+        } else {
+            *m_ecsCoordinator->GetComponent<UIElement>(m_restorePurchasesButtonEntity) = restoreButtonUI;
+        }
+        
         GN_LOG_INFO("Ad Controls menu layout created");
     }
 
@@ -4944,6 +5015,34 @@ namespace GameCore {
                             }
                         }
                     }
+                    
+                    // Check restore purchases button
+                    if (m_restorePurchasesButtonEntity != 0) {
+                        auto transform = m_ecsCoordinator->GetComponent<Transform>(m_restorePurchasesButtonEntity);
+                        auto sprite = m_ecsCoordinator->GetComponent<Sprite>(m_restorePurchasesButtonEntity);
+                        auto ui = m_ecsCoordinator->GetComponent<UIElement>(m_restorePurchasesButtonEntity);
+                        
+                        if (transform && sprite && ui && ui->isEnabled) {
+                            float buttonW = sprite->width * transform->scale.x;
+                            float buttonH = sprite->height * transform->scale.y;
+                            float buttonL = transform->position.x;
+                            float buttonT = transform->position.y;
+                            float buttonR = buttonL + buttonW;
+                            float buttonB = buttonT + buttonH;
+                            
+                            if (touchX >= buttonL && touchX <= buttonR && touchY >= buttonT && touchY <= buttonB) {
+                                // Check debouncer - prevent multiple rapid clicks
+                                if (m_iapPurchaseDebounceTimer > 0.0f) {
+                                    GN_LOG_INFO("Restore Purchases button debounced - ignoring click");
+                                    return;
+                                }
+                                
+                                GN_LOG_INFO("Restore Purchases button tapped");
+                                OnRestorePurchasesPressed();
+                                return;
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -4999,6 +5098,38 @@ namespace GameCore {
         }
         #else
         GN_LOG_INFO("IAP not available on this platform");
+        #endif
+    }
+
+    void MainMenuState::OnRestorePurchasesPressed() {
+        GN_LOG_INFO("Restore Purchases button pressed - initiating restore");
+        
+        // Set debouncer to prevent multiple clicks (shorter than purchase - 300ms)
+        m_iapPurchaseDebounceTimer = 0.3f;
+        
+        #ifdef PLATFORM_IOS
+        // Haptic feedback for button press
+        if (m_game && m_game->GetVibrationsEnabled()) {
+            if (m_platformDelegates && m_platformDelegates->haptic.triggerImpact) {
+                m_platformDelegates->haptic.triggerImpact(GameCore::HapticStyle::LIGHT, 0.7f);
+            }
+        }
+        
+        // Call Swift StoreManager to restore purchases via ThreadingProxy
+        if (m_platformDelegates && m_platformDelegates->iap.restore) {
+            GN_LOG_INFO("Calling IAP restore delegate");
+            m_platformDelegates->iap.restore([](bool success, const char* error) {
+                if (success) {
+                    GN_LOG_INFO("✅ IAP restore successful - purchases restored!");
+                } else {
+                    GN_LOG_WARN("⚠️ IAP restore: " + std::string(error ? error : "No purchases to restore"));
+                }
+            });
+        } else {
+            GN_LOG_WARN("IAP restore delegate not available");
+        }
+        #else
+        GN_LOG_INFO("IAP restore not available on this platform");
         #endif
     }
 

@@ -37,6 +37,7 @@ struct GameSaveData: Codable {
 /// Player progression through levels
 struct ProgressData: Codable {
     var legacyHighScore: Int  // Overall high score (legacy compatibility)
+    var legacyModeUnlocked: Bool  // True after defeating the boss (Level 6)
     var levels: [LevelProgress]
 
     struct LevelProgress: Codable {
@@ -61,6 +62,7 @@ struct ProgressData: Codable {
 
     init() {
         self.legacyHighScore = 0
+        self.legacyModeUnlocked = false  // Unlocked by defeating the boss
         // Initialize 6 levels (1-6)
         self.levels = (1...6).map { LevelProgress(levelId: $0) }
     }

@@ -472,40 +472,79 @@ extension iOSLogActor {
 
 // MARK: - Global Swift Logging Interface
 
-/// Global Swift logging interface for easy access
+/// Thread-safe logger cache - protected by loggerQueue
+private let loggerQueue = DispatchQueue(label: "com.floppyturd.loggerCache")
+// SWIFT 6: These are protected by loggerQueue.sync, so they're thread-safe
+nonisolated(unsafe) private var cachedLoggers: [String: OSLog] = [:]
+private let logSubsystem = Bundle.main.bundleIdentifier ?? "PooperTrooper"
+
+/// Minimum log level - set higher for production builds
+/// SWIFT 6: Using nonisolated(unsafe) since we only write at init time
+#if DEBUG
+nonisolated(unsafe) private var minimumLogLevel: LogLevel = .debug
+#else
+nonisolated(unsafe) private var minimumLogLevel: LogLevel = .info
+#endif
+
+private func getOrCreateLogger(category: String) -> OSLog {
+    loggerQueue.sync {
+        if let logger = cachedLoggers[category] {
+            return logger
+        }
+        let logger = OSLog(subsystem: logSubsystem, category: category)
+        cachedLoggers[category] = logger
+        return logger
+    }
+}
+
+/// Global Swift logging interface - SYNCHRONOUS to avoid Task overhead
+/// At 60fps with frequent logging, spawning Tasks caused massive CPU overhead
 public enum SwiftLog {
     
+    // PERFORMANCE: Direct synchronous logging - no Task spawning!
+    // os_log is already thread-safe, so we can call it directly
+    
+    @inline(__always)
     public static func debug(_ message: String, category: String = "Debug") {
-        Task { @Sendable in
-            await iOSLogActor.shared.debug(message, category: category)
-        }
+        guard minimumLogLevel.rawValue <= LogLevel.debug.rawValue else { return }
+        let logger = getOrCreateLogger(category: category)
+        os_log("%{public}@", log: logger, type: .debug, message)
     }
     
+    @inline(__always)
     public static func info(_ message: String, category: String = "Info") {
-        Task { @Sendable in
-            await iOSLogActor.shared.info(message, category: category)
-        }
+        guard minimumLogLevel.rawValue <= LogLevel.info.rawValue else { return }
+        let logger = getOrCreateLogger(category: category)
+        os_log("%{public}@", log: logger, type: .info, message)
     }
     
+    @inline(__always)
     public static func warn(_ message: String, category: String = "Warning") {
-        Task { @Sendable in
-            await iOSLogActor.shared.warn(message, category: category)
-        }
+        guard minimumLogLevel.rawValue <= LogLevel.warning.rawValue else { return }
+        let logger = getOrCreateLogger(category: category)
+        os_log("%{public}@", log: logger, type: .default, message)
     }
     
+    @inline(__always)
     public static func error(_ message: String, category: String = "Error") {
-        Task { @Sendable in
-            await iOSLogActor.shared.error(message, category: category)
-        }
+        // Always log errors
+        let logger = getOrCreateLogger(category: category)
+        os_log("%{public}@", log: logger, type: .error, message)
     }
     
+    @inline(__always)
     public static func fatal(_ message: String, category: String = "Fatal") {
-        Task { @Sendable in
-            await iOSLogActor.shared.fatal(message, category: category)
-        }
+        // Always log fatal errors
+        let logger = getOrCreateLogger(category: category)
+        os_log("%{public}@", log: logger, type: .fault, message)
     }
     
-    // Utility functions for debugging
+    // For production, set this to .warning or .error
+    public static func setMinimumLogLevel(_ level: LogLevel) {
+        minimumLogLevel = level
+    }
+    
+    // Legacy async methods for compatibility (used by iOSLogHandler)
     public static func getLogFilePath() async -> String? {
         return await iOSLogActor.shared.getLogFilePath()
     }

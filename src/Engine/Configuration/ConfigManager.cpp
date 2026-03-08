@@ -28,8 +28,12 @@ namespace GameCore {
 
     // Helper to get config file path
     std::string GetConfigFilePath() {
-        // Use a simple relative path which works in iOS sandbox and Desktop CWD
-        // TODO: Use platform delegates for proper path resolution in future
+        if (ConfigManager::Instance().IsIOS()) {
+            const char* homeDir = getenv("HOME");
+            if (homeDir) {
+                return std::string(homeDir) + "/Documents/FloppyTurdConfig.dat";
+            }
+        }
         return "FloppyTurdConfig.dat";
     }
 

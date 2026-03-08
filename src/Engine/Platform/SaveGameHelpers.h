@@ -61,6 +61,7 @@ namespace GameCore {
             // Progress data
             json << "  \"progress\": {\n";
             json << "    \"legacyHighScore\": " << game.GetHighScore() << ",\n";
+            json << "    \"legacyModeUnlocked\": " << (ConfigManager::Instance().IsLegacyModeUnlocked() ? "true" : "false") << ",\n";
             json << "    \"levels\": [\n";
 
             const int maxLevels = 6;
@@ -428,6 +429,12 @@ namespace GameCore {
 
             game.UpdateGameStats(stats);
 
+            // Parse global legacy unlock status from KEY:VALUE format (Swift outputs this format)
+            std::string legacyUnlockStr = parseKeyValue(dataString, "PROGRESS_LEGACY_MODE_UNLOCKED");
+            bool legacyUnlocked = (!legacyUnlockStr.empty() && legacyUnlockStr == "1");
+            ConfigManager::Instance().SetLegacyModeUnlocked(legacyUnlocked);
+            GN_LOG_INFO("🔍 Deserialize: Parsed PROGRESS_LEGACY_MODE_UNLOCKED = " + std::string(legacyUnlocked ? "true" : "false"));
+
             // Parse level data
             const int maxLevels = 6;
             for (int i = 1; i <= maxLevels; ++i) {
@@ -458,15 +465,14 @@ namespace GameCore {
 
                 game.UpdateLevelStats(i, levelStats);
                 
-                // CRITICAL: Legacy Mode should ONLY unlock when Level 6 (final boss) is COMPLETED
-                // NOT when Level 1 is unlocked (which is always true by default)
-                if (i == 6) {
-                    // Check for actual completion: highScore > 0 means boss was beaten
-                    bool hasCompleted = levelStats.highScore > 0;
-                    ConfigManager::Instance().SetLegacyModeUnlocked(hasCompleted);
-                    GN_LOG_INFO("🔍 Deserialize: Set LegacyModeUnlocked to " + std::to_string(hasCompleted) + 
-                               " (based on Level 6 completion, highScore=" + std::to_string(levelStats.highScore) + ")");
+                // Legacy Mode unlock is handled by ConfigManager's SaveConfiguration/LoadConfiguration
+                // which properly persists the flag when SetLegacyModeUnlocked(true) is called in CompleteLevel(6)
+                if (i == 6 && levelStats.highScore > 0) {
+                    // If Level 6 has a high score, boss was definitely beaten - ensure Legacy Mode is unlocked
+                    ConfigManager::Instance().SetLegacyModeUnlocked(true);
+                    GN_LOG_INFO("🔍 Deserialize: Level 6 high score > 0, ensuring Legacy Mode is unlocked");
                 }
+                // Don't set to false here - ConfigManager's LoadConfiguration() already loaded the correct value
             }
 
             // Parse customization

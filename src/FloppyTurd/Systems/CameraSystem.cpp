@@ -101,6 +101,11 @@ namespace GameCore {
                     speed = scr->speed;
                 }
                 
+                // Skip movement if speed is 0 (e.g., boss level has static world)
+                if (speed == 0.0f) {
+                    continue;
+                }
+                
                 // 🎯 PIXEL-PERFECT: Use same integer snapping as backgrounds to prevent drift
                 // This ensures entities with ScrollSpeed (like Janitor) stay synced with backgrounds
                 float movementDelta = speed * deltaTime;

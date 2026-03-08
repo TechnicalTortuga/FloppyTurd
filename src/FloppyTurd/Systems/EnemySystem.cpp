@@ -1361,8 +1361,8 @@ void EnemySystem::ProcessEnemyMovement(float deltaTime, Enemy* enemy, Transform*
         // CRITICAL: Use ACTUAL level speed, otherwise enemies drift or fly off if mismatch occurs!
         float worldScrollSpeed = m_levelManager->GetCurrentLevelConfig().worldSpeed;
         
-        // Circle radius: 25% of screen width (50% total diameter)
-        float circleRadiusX = screenInfo.pixelWidth * 0.25f;
+        // Circle radius: 30% of screen width (increased from 25% to reach player better)
+        float circleRadiusX = screenInfo.pixelWidth * 0.30f;
         
         // Helpers for CENTER-based positioning
         auto getCenterX = [&]() { return transform->position.x + spriteHalfSize; };

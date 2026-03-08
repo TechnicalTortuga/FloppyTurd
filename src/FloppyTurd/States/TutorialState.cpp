@@ -751,8 +751,11 @@ namespace GameCore {
 
             UIElement textUI;
             textUI.buttonText = instructions[i];
-            // Increased font sizes as requested (was 64/48, now 80/60)
-            textUI.fontSize = ((i == 0) ? 80.0f : 60.0f) * tabletScale;
+            // Font size: iPad needs larger base font for How To menu readability
+            // Title (i==0) and body text need different base sizes
+            float baseTitleSize = isTablet ? 100.0f : 60.0f;   // Larger on iPad
+            float baseBodySize = isTablet ? 60.0f : 46.0f;     // Larger on iPad
+            textUI.fontSize = (i == 0) ? baseTitleSize * tabletScale : baseBodySize * tabletScale;
             textUI.textColor = (i == 0) ? Gnosis::GNColor(255, 215, 0, 255) : Gnosis::GNColor(255, 255, 255, 255);  // Gold title, white text
             textUI.centerTextHorizontally = true;
             textUI.centerTextVertically = true;
@@ -965,18 +968,13 @@ namespace GameCore {
         float buttonCenterX = centerX;
         float buttonCenterY = centerY + 64.0f;  // Below center (pause menu is at centerY)
         
-        // Dynamic scaling: Target 75% of screen width (Portrait reference)
+        // Check if iPad
+        bool isTablet = (m_cachedScreenHeight > 0) && (m_cachedScreenWidth / m_cachedScreenHeight > 0.6f);
+        
+        // Fixed scaling: iPad uses 10.0f to match Options buttons
         float buttonTexWidth = 90.0f;
         float buttonTexHeight = 16.0f;
-        
-        float targetButtonWidth = m_cachedScreenWidth * 0.75f;
-        // Limit height just in case
-        float targetMaxHeight = m_cachedScreenHeight * 0.12f;
-        
-        float scaleXButton = targetButtonWidth / buttonTexWidth;
-        float scaleYButton = targetMaxHeight / buttonTexHeight;
-        
-        float buttonScale = std::min(scaleXButton, scaleYButton);
+        float buttonScale = isTablet ? 10.0f : (m_cachedScreenWidth * 0.75f) / buttonTexWidth;
         
         // Calculate button dimensions and use CenterObjectAtPosition
         float buttonWidth = 90.0f * buttonScale;  // 900 pixels
@@ -992,10 +990,9 @@ namespace GameCore {
         buttonSprite.visible = false;
         m_ecsSystem->AddComponent<Sprite>(m_returnToMenuButtonEntity, buttonSprite);
         
-        // Button text (EXACT match to PauseSystem font size)
         UIElement buttonUI;
         buttonUI.buttonText = "Main Menu";
-        buttonUI.fontSize = 62.0f;  // Match PauseSystem main menu button
+        buttonUI.fontSize = isTablet ? 80.0f : 62.0f;  // iPad matches Options font, iPhone keeps original
         buttonUI.textColor = Gnosis::GNColor(255, 255, 255, 255);  // White
         buttonUI.normalTextureId = "FloppyButtonBlue";
         buttonUI.centerTextHorizontally = true;

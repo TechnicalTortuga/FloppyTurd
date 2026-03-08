@@ -188,6 +188,7 @@ namespace GameCore {
         Gnosis::Entity m_adControlsBackButtonEntity = 0;
         Gnosis::Entity m_removeAdsLabelEntity = 0;
         Gnosis::Entity m_removeAdsPriceButtonEntity = 0;
+        Gnosis::Entity m_restorePurchasesButtonEntity = 0;
         
         // IAP purchase debouncer and state
         float m_iapPurchaseDebounceTimer = 0.0f;
@@ -328,6 +329,7 @@ namespace GameCore {
         void HandleAdControlsInput();
         void OnAdControlsBackButtonPressed();
         void OnRemoveAdsPurchasePressed();
+        void OnRestorePurchasesPressed();
         
         // Vibration preference helper functions
         void SaveVibrationPreference(bool enabled);

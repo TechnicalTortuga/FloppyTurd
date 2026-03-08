@@ -17,7 +17,7 @@ namespace GameCore {
         , m_game(nullptr)
         , m_finished(false)
         , m_initialized(false)
-        , m_currentPage(LeaderboardPage::LEVEL_1_PARK)
+        , m_currentPage(LeaderboardPage::LEVEL_2_SEWER)  // Level 2 is first in order (legacy moved to end)
         , m_screenWidth(0.0f)
         , m_screenHeight(0.0f)
         , m_uiScale(1.0f)
@@ -389,11 +389,10 @@ namespace GameCore {
         // Calculate screen center for positioning (SAME as MainMenuState pattern)
         float centerX = m_screenWidth * 0.5f;
         
-        // Arrow button scale - reduced for cleaner UI
-        // Dynamic: Target 8% of screen width (smaller than before)
-        float targetArrowWidth = m_screenWidth * 0.08f;
+        // Arrow button scale - match Options menu exactly
+        // Options uses: float scale = m_isMobile ? 10.0f : 5.0f;
+        float arrowScale = IsMobilePlatform() ? 10.0f : 5.0f;
         float arrowTextureSize = 16.0f;
-        float arrowScale = targetArrowWidth / arrowTextureSize;
         float arrowScaledSize = arrowTextureSize * arrowScale;
         
         GN_LOG_INFO("🎯 Arrow scale: " + std::to_string(arrowScale) + ", texture size: " + std::to_string(arrowTextureSize) + ", scaled size: " + std::to_string(arrowScaledSize));
@@ -421,7 +420,7 @@ namespace GameCore {
         leftSprite.visible = true;
         m_ecsSystem->AddComponent<Sprite>(m_leftArrowEntity, leftSprite);
         
-        GN_LOG_INFO("LeaderboardState: Created left arrow at (" + std::to_string(leftArrowFinalX) + ", " + std::to_string(leftArrowFinalY) + ")");
+        GN_LOG_INFO("LeaderboardState: Created left arrow at (" + std::to_string(leftArrowFinalX) + ", " + std::to_string(leftArrowFinalY) + ") scale=" + std::to_string(arrowScale));
 
         // Right arrow - positioned 5% inside the overlay right edge
         m_rightArrowEntity = m_ecsSystem->CreateEntity();
@@ -462,26 +461,12 @@ namespace GameCore {
         
         GN_LOG_INFO("LeaderboardState: Created right arrow at (" + std::to_string(rightArrowFinalX) + ", " + std::to_string(rightArrowFinalY) + ")");
 
-        // Back button - EXACT same pattern as MainMenuState level select back button
+        // Back button - MATCH Options menu scale (10.0f mobile, 5.0f desktop)
         m_backButtonEntity = m_ecsSystem->CreateEntity();
-        
-        // Dynamic scaling: Target 75% of screen width (Portrait reference)
-        // For Landscape (iPad), this might be too wide, so cap it relative to height?
-        // Actually, main menu buttons are 80% width. Let's stick to 75% width but ensure it's not absurdly tall.
-        // If width-based scale results in height > 15% of screen, constrain by height.
         
         float buttonTexWidth = 90.0f;
         float buttonTexHeight = 16.0f;
-        
-        float targetButtonWidth = m_screenWidth * 0.50f;  // Reduced from 75% for smaller button
-        float scaleByWidth = targetButtonWidth / buttonTexWidth;
-        
-        // Check height constraint (e.g., max 10% screen height)
-        float targetMaxHeight = m_screenHeight * 0.10f;
-        float scaleByHeight = targetMaxHeight / buttonTexHeight;
-        
-        // Use the smaller scale to satisfy both constraints
-        float buttonScale = std::min(scaleByWidth, scaleByHeight);
+        float buttonScale = IsMobilePlatform() ? 10.0f : 5.0f;  // Match Options menu
         
         float buttonWidth = buttonTexWidth * buttonScale;
         float buttonHeight = buttonTexHeight * buttonScale;
@@ -524,7 +509,7 @@ namespace GameCore {
         
         // Title at top of screen (LEADERBOARDS label)
         m_titleEntity = m_ecsSystem->CreateEntity();
-        float titleY = m_screenHeight * 0.17f;  // 17% from top (was 12%, brought down 5%)
+        float titleY = m_screenHeight * 0.13f;  // 13% from top (moved up for more space)
         
         Transform titleTransform(GNVector2(centerX, titleY), 0.0f, GNVector2(1.0f, 1.0f));
         m_ecsSystem->AddComponent<Transform>(m_titleEntity, titleTransform);
@@ -546,7 +531,7 @@ namespace GameCore {
 
         // Page title (level name) - RIGHT UNDER the LEADERBOARDS label
         m_pageTitleEntity = m_ecsSystem->CreateEntity();
-        float pageTitleY = m_screenHeight * 0.25f;  // 25% from top (close to title)
+        float pageTitleY = m_screenHeight * 0.20f;  // 20% from top (moved up)
         
         Transform pageTitleTransform(GNVector2(centerX, pageTitleY), 0.0f, GNVector2(1.0f, 1.0f));
         m_ecsSystem->AddComponent<Transform>(m_pageTitleEntity, pageTitleTransform);
@@ -561,10 +546,10 @@ namespace GameCore {
         m_ecsSystem->AddComponent<UIElement>(m_pageTitleEntity, pageTitleUI);
 
         // Create top 10 leaderboard display with classic arcade-style placeholder slots
-        float startY = m_screenHeight * 0.33f;  // Start below the page title
-        float lineHeight = IsMobilePlatform() ? 110.0f : 70.0f;  // Increased vertical spacing for larger fonts
-        // Reduce line height slightly on tablet to fit everything
-        if (isTablet) lineHeight *= 0.8f;
+        float startY = m_screenHeight * 0.27f;  // 27% from top (moved up)
+        float lineHeight = m_screenHeight * 0.045f;  // 4.5% of screen height - percentage-based
+        // iPad can have more vertical spacing since it has more room
+        if (isTablet) lineHeight *= 1.1f;  // 10% MORE spacing on iPad
 
         float fontSize = (IsMobilePlatform() ? 60.0f : 40.0f) * tabletFontScale;  // Larger font for better readability
         
@@ -578,9 +563,12 @@ namespace GameCore {
             m_ecsSystem->AddComponent<Transform>(rowEntity, rowTransform);
             
             UIElement rowUI;
-            // Three-column format: "01.  ---                  -----"
+            // Format with spacing: iPad gets more horizontal spacing
+            // Game Center names are max 15 chars
             std::string rankStr = (i + 1 < 10) ? ("0" + std::to_string(i + 1)) : std::to_string(i + 1);
-            rowUI.buttonText = rankStr + ".  ---                  -----";
+            // iPad: 24 char padding (more spread), iPhone: 20 char padding
+            std::string placeholder = isTablet ? ". ---              -----" : ". ---          -----";
+            rowUI.buttonText = rankStr + placeholder;
             rowUI.fontSize = fontSize;
             rowUI.textColor = GNColor(200, 200, 200, 255);  // Light gray for empty slots
             rowUI.centerTextHorizontally = true;
@@ -610,9 +598,10 @@ namespace GameCore {
         }
         
         UIElement playerRankUI;
-        // Use cached name instead of "Loading..." - three-column format
-        playerRankUI.buttonText = "--.  " + playerName;
-        while (playerRankUI.buttonText.length() < 26) {  // 4 (rank) + 2 (space) + 20 (name)
+        // Format with dynamic spacing for iPad
+        int targetPadding = isTablet ? 24 : 20;  // iPad more spacing
+        playerRankUI.buttonText = "--. " + playerName;
+        while (static_cast<int>(playerRankUI.buttonText.length()) < targetPadding) {
             playerRankUI.buttonText += " ";
         }
         playerRankUI.buttonText += "-----";
@@ -732,17 +721,17 @@ namespace GameCore {
     std::string LeaderboardState::GetPageTitle(LeaderboardPage page) const {
         switch (page) {
             case LeaderboardPage::LEVEL_1_PARK:
-                return "Legacy Mode: Park";
+                return "A Flop in the Park";
             case LeaderboardPage::LEVEL_2_SEWER:
-                return "Level 1: Home Sweet Home";
+                return "Home Sweet Home";
             case LeaderboardPage::LEVEL_3_DESERT:
-                return "Level 2: The Good, The Bad,\nand the Stinky";
+                return "The Good, The Bad,\nand the Stinky";
             case LeaderboardPage::LEVEL_4_SNOW:
-                return "Level 3: Polar Pandemonium";
+                return "Polar Pandemonium";
             case LeaderboardPage::LEVEL_5_CASTLE:
-                return "Level 4: Dung in the Dungeon";
+                return "Dung in the Dungeon";
             case LeaderboardPage::LEVEL_6_BOSS:
-                return "Level 5: Curtains for Crap";
+                return "Curtains for Crap";
             case LeaderboardPage::TOTAL_ENEMIES:
                 return "Total Enemies Defeated";
             case LeaderboardPage::TOTAL_COINS:
@@ -868,6 +857,11 @@ namespace GameCore {
         
         GN_LOG_INFO("🎨 LeaderboardState: Updating UI with " + std::to_string(count) + " entries");
         
+        // Check if iPad for spacing adjustments
+        float aspectRatio = m_screenWidth / m_screenHeight;
+        bool isTablet = aspectRatio > 0.6f;
+        int targetPadding = isTablet ? 24 : 20;  // iPad more spacing
+        
         // The first 10 entities in m_contentEntities are the leaderboard rows
         int rowsToUpdate = std::min(count, 10);
         rowsToUpdate = std::min(rowsToUpdate, static_cast<int>(m_contentEntities.size()));
@@ -887,11 +881,12 @@ namespace GameCore {
                     playerName = playerName.substr(0, 15) + "...";
                 }
                 
-                // Format: "01." (4 chars) + "  " (2 spaces) + "Name" (padded to 20) + "  " (2 spaces) + "Score"
-                uiElement->buttonText = rankStr + ".  ";
+                // Format with dynamic spacing for iPad
+                // Game Center names are max 15 chars
+                uiElement->buttonText = rankStr + ". ";
                 uiElement->buttonText += playerName;
-                // Pad name column to 20 characters
-                while (uiElement->buttonText.length() < 26) {  // 4 (rank) + 2 (space) + 20 (name)
+                // Pad name column based on device
+                while (static_cast<int>(uiElement->buttonText.length()) < targetPadding) {
                     uiElement->buttonText += " ";
                 }
                 uiElement->buttonText += scoreStr;
@@ -918,7 +913,9 @@ namespace GameCore {
             
             if (uiElement) {
                 std::string rankStr = (i + 1 < 10) ? ("0" + std::to_string(i + 1)) : std::to_string(i + 1);
-                uiElement->buttonText = rankStr + ".  ---                  -----";
+                // Use same dynamic placeholder as CreatePageContent
+                std::string placeholder = isTablet ? ". ---              -----" : ". ---          -----";
+                uiElement->buttonText = rankStr + placeholder;
                 uiElement->textColor = GNColor(100, 100, 100, 255); // Dark gray for empty slots
             }
         }

@@ -58,15 +58,15 @@ namespace GameCore {
 
         // Leaderboard page types
         enum class LeaderboardPage {
-            LEVEL_1_PARK = 0,           // "A Flop in the Park"
-            LEVEL_2_SEWER = 1,          // "Home Sweet Home"
-            LEVEL_3_DESERT = 2,         // "The Good, The Bad, and the Stinky"
-            LEVEL_4_SNOW = 3,           // "Polar Pandemonium"
-            LEVEL_5_CASTLE = 4,         // "Dung in the Dungeon"
-            LEVEL_6_BOSS = 5,           // "Curtains for Crap"
-            TOTAL_ENEMIES = 6,
-            TOTAL_COINS = 7,
-            TOTAL_PIPES = 8,
+            LEVEL_2_SEWER = 0,          // "Home Sweet Home"
+            LEVEL_3_DESERT = 1,         // "The Good, The Bad, and the Stinky"
+            LEVEL_4_SNOW = 2,           // "Polar Pandemonium"
+            LEVEL_5_CASTLE = 3,         // "Dung in the Dungeon"
+            LEVEL_6_BOSS = 4,           // "Curtains for Crap"
+            TOTAL_ENEMIES = 5,
+            TOTAL_COINS = 6,
+            TOTAL_PIPES = 7,
+            LEVEL_1_PARK = 8,           // "A Flop in the Park" (Legacy - moved to end)
             COUNT = 9
         };
 

@@ -422,27 +422,15 @@ class CommandProcessor {
             }
 
         case .CMD_LOCK_ORIENTATION:
-            Task { @MainActor in
-                if let gameViewController = gameViewController {
-                    gameViewController.lockOrientation()
-                    log("[CommandProcessor] Orientation locked successfully")
-                } else {
-                    log(
-                        "[CommandProcessor] ERROR: Cannot lock orientation - GameViewController not available",
-                        level: .error)
-                }
+            // PERFORMANCE: Direct call - already on @MainActor
+            if let gameViewController = gameViewController {
+                gameViewController.lockOrientation()
             }
 
         case .CMD_UNLOCK_ORIENTATION:
-            Task { @MainActor in
-                if let gameViewController = gameViewController {
-                    gameViewController.unlockOrientation()
-                    log("[CommandProcessor] Orientation unlocked successfully")
-                } else {
-                    log(
-                        "[CommandProcessor] ERROR: Cannot unlock orientation - GameViewController not available",
-                        level: .error)
-                }
+            // PERFORMANCE: Direct call - already on @MainActor
+            if let gameViewController = gameViewController {
+                gameViewController.unlockOrientation()
             }
 
         case .CMD_LOCK_TO_PORTRAIT:
@@ -489,85 +477,43 @@ class CommandProcessor {
         case .CMD_PLAY_MUSIC:
             let audioFileName = String(data.audioFileName)
             if !audioFileName.isEmpty {
-                log("[CommandProcessor] Received playMusic command for: \(audioFileName)")
-
+                // PERFORMANCE: Direct call - we're already on @MainActor, no Task needed!
                 if let audioManager = audioManager {
-                    log(
-                        "[CommandProcessor] AudioManager found - instance: \(ObjectIdentifier(audioManager)) - dispatching to main thread"
-                    )
-                    Task { @MainActor in
-                        audioManager.playMusic(audioFileName)
-                        log("[CommandProcessor] Playing music: \(audioFileName)")
-                    }
+                    audioManager.playMusic(audioFileName)
+                    log("[CommandProcessor] Playing music: \(audioFileName)")
                 } else {
-                    log(
-                        "[CommandProcessor] ERROR: AudioManager is nil! Cannot play music: \(audioFileName)",
-                        level: .error)
+                    log("[CommandProcessor] ERROR: AudioManager is nil!", level: .error)
                 }
-            } else {
-                log("[CommandProcessor] Cannot play music: filename is empty", level: .warning)
             }
 
         case .CMD_STOP_MUSIC:
-            if let audioManager = audioManager {
-                Task { @MainActor in
-                    audioManager.stopMusic()
-                    log("[CommandProcessor] Stopping music")
-                }
-            }
+            // PERFORMANCE: Direct call - no Task needed
+            audioManager?.stopMusic()
 
         case .CMD_PLAY_SOUND:
             let audioFileName = String(data.audioFileName)
             if !audioFileName.isEmpty {
-                log("[CommandProcessor] 🔊 Received playSound: \(audioFileName), data.volume from C++: \(data.volume)")
-
+                // PERFORMANCE: Direct call - we're already on @MainActor!
                 if let audioManager = audioManager {
-                    Task { @MainActor in
-                        // ALWAYS use the volume from C++ - it already includes master * sfx calculation
-                        let volumeToUse = data.volume
-                        log(
-                            "[CommandProcessor] 🔊 Playing \(audioFileName) with volume: \(volumeToUse) (C++ calculated: master*sfx)"
-                        )
-                        audioManager.playSound(audioFileName, volume: volumeToUse)
-                    }
+                    audioManager.playSound(audioFileName, volume: data.volume)
                 } else {
-                    log(
-                        "[CommandProcessor] ERROR: AudioManager is nil! Cannot play sound: \(audioFileName)",
-                        level: .error)
+                    log("[CommandProcessor] ERROR: AudioManager is nil!", level: .error)
                 }
-            } else {
-                log("[CommandProcessor] Cannot play sound: filename is empty", level: .warning)
             }
 
         case .CMD_STOP_SOUND:
-            if let audioManager = audioManager {
-                let audioFileName = String(data.audioFileName)
-                Task { @MainActor in
-                    if !audioFileName.isEmpty {
-                        log("[CommandProcessor] Stopping specific sound: \(audioFileName)")
-                        audioManager.stopSound(audioFileName)
-                    } else {
-                        log("[CommandProcessor] Stopping all sounds (no filename specified)")
-                        audioManager.stopSound()
-                    }
-                }
+            let audioFileName = String(data.audioFileName)
+            if !audioFileName.isEmpty {
+                audioManager?.stopSound(audioFileName)
+            } else {
+                audioManager?.stopSound()
             }
 
         case .CMD_SET_MUSIC_VOLUME:
-            if let audioManager = audioManager {
-                Task { @MainActor in
-                    audioManager.setMusicVolume(volume: data.volume)
-                    log("[CommandProcessor] Setting music volume to: \(data.volume)")
-                }
-            }
+            audioManager?.setMusicVolume(volume: data.volume)
 
         case .CMD_SET_SOUND_VOLUME:
-            if let audioManager = audioManager {
-                Task { @MainActor in
-                    audioManager.setSoundVolume(volume: data.volume)
-                    log("[CommandProcessor] Setting sound volume to: \(data.volume)")
-                }
-            }
+            audioManager?.setSoundVolume(volume: data.volume)
 
         default:
             log("[CommandProcessor] Unknown audio command type: \(command.type)", level: .warning)
@@ -811,44 +757,30 @@ class CommandProcessor {
     private func executeHapticCommand(_ command: GameCorePlatform.GameCore.HapticCommand) {
         let commandType = command.type
 
-        // Dispatch to main thread for haptic feedback (required by iOS)
-        Task { @MainActor in
-            switch commandType {
-            case .CMD_HAPTIC_IMPACT:
-                let style = mapHapticStyle(command.data.style)
-                let intensity = CGFloat(command.data.intensity)
-                HapticManager.shared.triggerImpact(style: style, intensity: intensity)
-                log(
-                    "[CommandProcessor] Haptic impact triggered: style=\(style) intensity=\(intensity)",
-                    level: .trace)
+        // PERFORMANCE: Direct call - we're already on @MainActor!
+        switch commandType {
+        case .CMD_HAPTIC_IMPACT:
+            let style = mapHapticStyle(command.data.style)
+            let intensity = CGFloat(command.data.intensity)
+            HapticManager.shared.triggerImpact(style: style, intensity: intensity)
 
-            case .CMD_HAPTIC_SELECTION:
-                HapticManager.shared.triggerSelection()
-                log("[CommandProcessor] Haptic selection triggered", level: .trace)
+        case .CMD_HAPTIC_SELECTION:
+            HapticManager.shared.triggerSelection()
 
-            case .CMD_HAPTIC_NOTIFICATION:
-                let notifType = mapHapticNotificationType(command.data.notificationType)
-                HapticManager.shared.triggerNotification(type: notifType)
-                log(
-                    "[CommandProcessor] Haptic notification triggered: type=\(notifType)",
-                    level: .trace)
+        case .CMD_HAPTIC_NOTIFICATION:
+            let notifType = mapHapticNotificationType(command.data.notificationType)
+            HapticManager.shared.triggerNotification(type: notifType)
 
-            case .CMD_HAPTIC_PATTERN:
-                let patternName = String(command.data.patternName)
-                HapticManager.shared.triggerPattern(name: patternName)
-                log(
-                    "[CommandProcessor] Haptic pattern triggered: \(patternName)", level: .trace)
+        case .CMD_HAPTIC_PATTERN:
+            let patternName = String(command.data.patternName)
+            HapticManager.shared.triggerPattern(name: patternName)
 
-            case .CMD_HAPTIC_PREPARE:
-                let style = mapHapticStyle(command.data.style)
-                HapticManager.shared.prepare(style: style)
-                log("[CommandProcessor] Haptic prepare: style=\(style)", level: .trace)
+        case .CMD_HAPTIC_PREPARE:
+            let style = mapHapticStyle(command.data.style)
+            HapticManager.shared.prepare(style: style)
 
-            default:
-                log(
-                    "[CommandProcessor] Unsupported haptic command type: \(commandType)",
-                    level: .warning)
-            }
+        default:
+            log("[CommandProcessor] Unsupported haptic command: \(commandType)", level: .warning)
         }
     }
 
@@ -900,51 +832,28 @@ class CommandProcessor {
     private func executeSaveCommand(_ command: GameCorePlatform.GameCore.SaveCommand) {
         let commandType = command.type
 
-        // Dispatch to main thread for save operations
-        Task { @MainActor in
-            switch commandType {
-            case .CMD_SAVE_GAME:
-                let jsonString = String(command.data.jsonData)
-                if !jsonString.isEmpty {
-                    let success = SaveManager.processSaveGameCommand(jsonString)
-                    if success {
-                        self.log("[CommandProcessor] Game data saved successfully", level: .info)
-                    } else {
-                        self.log("[CommandProcessor] Failed to save game data", level: .error)
-                    }
+        // PERFORMANCE: Direct execution - we're already on @MainActor!
+        switch commandType {
+        case .CMD_SAVE_GAME:
+            let jsonString = String(command.data.jsonData)
+            if !jsonString.isEmpty {
+                let success = SaveManager.processSaveGameCommand(jsonString)
+                if !success {
+                    log("[CommandProcessor] Failed to save game data", level: .error)
                 }
-
-            case .CMD_LOAD_GAME:
-                if SaveManager.processLoadGameCommand() != nil {
-                    self.log("[CommandProcessor] Game data loaded successfully", level: .info)
-                    // TODO: Pass JSON back to C++ via callback mechanism
-                } else {
-                    self.log(
-                        "[CommandProcessor] No save data found or load failed", level: .warning)
-                }
-
-            case .CMD_SAVE_SETTINGS:
-                // Settings are automatically persisted via UserDefaults when set on GameSettings
-                // Just ensure synchronization
-                UserDefaults.standard.synchronize()
-                self.log(
-                    "[CommandProcessor] Settings saved: master=\(GameSettings.masterVolume) music=\(GameSettings.musicVolume) sfx=\(GameSettings.sfxVolume) debug=\(GameSettings.debugMode) haptics=\(GameSettings.hapticsEnabled)",
-                    level: .info)
-
-            case .CMD_LOAD_SETTINGS:
-                let (
-                    masterVol, musicVol, sfxVol, difficulty, debugMode, hapticsEnabled, wasLoaded
-                ) =
-                    SaveManager.processLoadSettingsCommand()
-                self.log(
-                    "[CommandProcessor] Settings loaded: master=\(masterVol) music=\(musicVol) sfx=\(sfxVol) difficulty=\(difficulty) debug=\(debugMode) haptics=\(hapticsEnabled) wasLoaded=\(wasLoaded)",
-                    level: .info)
-
-            default:
-                self.log(
-                    "[CommandProcessor] Unsupported save command type: \(commandType)",
-                    level: .warning)
             }
+
+        case .CMD_LOAD_GAME:
+            _ = SaveManager.processLoadGameCommand()
+
+        case .CMD_SAVE_SETTINGS:
+            UserDefaults.standard.synchronize()
+
+        case .CMD_LOAD_SETTINGS:
+            _ = SaveManager.processLoadSettingsCommand()
+
+        default:
+            log("[CommandProcessor] Unsupported save command: \(commandType)", level: .warning)
         }
     }
 

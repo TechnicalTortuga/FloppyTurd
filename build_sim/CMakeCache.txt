@@ -100,7 +100,7 @@ CMAKE_OBJCOPY:FILEPATH=CMAKE_OBJCOPY-NOTFOUND
 CMAKE_OBJDUMP:FILEPATH=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/objdump
 
 //Build architectures for OSX
-CMAKE_OSX_ARCHITECTURES:STRING=
+CMAKE_OSX_ARCHITECTURES:STRING=arm64
 
 //The product will be built against the headers and libraries located
 // inside the indicated SDK.
@@ -212,6 +212,9 @@ CMAKE_TAPI:FILEPATH=/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeD
 // during the make.  This is useful for debugging only. With Visual
 // Studio IDE projects all commands are done without /nologo.
 CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE
+
+//No help, variable specified on the command line.
+CMAKE_XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH:UNINITIALIZED=YES
 
 //Value Computed by CMake
 PooperTrooper_BINARY_DIR:STATIC=/Users/aimac/Development/FloppyTurd/build_sim
@@ -359,7 +362,7 @@ CMAKE_UNAME:INTERNAL=/usr/bin/uname
 //ADVANCED property for variable: CMAKE_VERBOSE_MAKEFILE
 CMAKE_VERBOSE_MAKEFILE-ADVANCED:INTERNAL=1
 //Stored Xcode object GUID
-PROJECT_PooperTrooper_GUID_CMAKE:INTERNAL=C38D584623524473A0665AB7
+PROJECT_PooperTrooper_GUID_CMAKE:INTERNAL=BB29E5C10E024F6AB993BCD1
 //Stored Xcode object GUID
 PooperTrooper_GUID_CMAKE:INTERNAL=03A1D64A1E2C042FA0D5B295
 //Stored Xcode object GUID
