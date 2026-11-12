@@ -18,6 +18,8 @@ FetchContent_Declare(raylib
     GIT_REPOSITORY https://github.com/raysan5/raylib.git
     GIT_TAG 02566453880e06bec97f5b8160fa6fe1e98397ca)
 FetchContent_MakeAvailable(raylib)
+# Link raylib into the game without installing its SDK into player packages.
+set_property(DIRECTORY "${raylib_SOURCE_DIR}" PROPERTY EXCLUDE_FROM_ALL TRUE)
 if(EMSCRIPTEN)
     # raylib 6.2 exports only ccall by default; the application owns the complete
     # export list so transitive link flags cannot overwrite the browser bridge.
