@@ -1,3 +1,4 @@
+#include "EmbedInput.h"
 // Credits.cpp: Implementation of the Credits scene for Floppy Turd, with scrolling text, bouncing Turdlet, and interactive FinLogo.
 // Updated to use black font, add colons to position titles, integrate background scrolling with ParallaxLayer, and adjust pipe Y-position down by 20 pixels.
 
@@ -177,7 +178,7 @@ void Credits::Draw() const
 
 void Credits::HandleInput()
 {
-    if (IsKeyPressed(KEY_ESCAPE) && game)
+    if (EmbedInput::KeyPressed(KEY_ESCAPE) && game)
     {
         AudioManager::GetInstance().StopMusic();
         if (music) music->Stop();

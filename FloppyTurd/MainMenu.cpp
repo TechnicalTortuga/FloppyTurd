@@ -1,3 +1,4 @@
+#include "EmbedInput.h"
 #include "MainMenu.h"
 #include "AIGUI.h"
 #include "AudioManager.h"
@@ -576,7 +577,7 @@ void MainMenu::ToggleFartMusic()
 
 void MainMenu::HandleInput()
 {
-	if (IsKeyPressed(KEY_E))
+	if (EmbedInput::KeyPressed(KEY_E))
 	{
 		if (game) {
 			game->SetGameState(Game::PLAYING);

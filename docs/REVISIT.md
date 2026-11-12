@@ -41,7 +41,7 @@ The July 2 checkpoint itself adds substantial resource caching, atlases/profilin
 ## Changes made in this revisit
 
 - Pin official raylib **6.2** to `02566453880e06bec97f5b8160fa6fe1e98397ca`; retain Emscripten 4.0.23 for repeatability. Adapt the renamed image drawing API and prevent raylib's transitive export flag from replacing the browser bridge exports.
-- Replace the blocking browser loop with a persistent single-frame callback. Move input handling before frame-event reset; this fixes missed browser Space presses. S shoots; desktop retains F as an alias. Embedded F/Escape delegate to the website and Tab pauses.
+- Replace the blocking browser loop with a persistent single-frame callback. Move input handling before frame-event reset; this fixes missed browser Space presses. S shoots; desktop retains F as an alias. Embedded F requests fullscreen; Shift+Escape returns to the room while plain Escape/Tab pause.
 - Show a 400×225 world instead of 320×180: 25% more world extent on each axis, with an 800×450 render buffer. Anchor the HUD to the viewport corners, center the pipe count by visible glyph bounds, and shrink modal panels 10%. Center the original 320×180 UI region; reduce main-menu type from 24 to 20 logical pixels. Update key spawns/culling/ground anchors, parallax coverage and snow coverage. Fix the previously inconsistent GameSettings values of 1920×1080.
 - Generate Whacky Joe through raylib's monochrome FONT_BITMAP path; use point filtering, stable font metrics and a denser render target. Correct scissor coordinates for the denser target and centered origin; align button outlines with fills. Shared font ownership replaces duplicate credits loading and per-frame filtering changes.
 - Hide desktop resolution/fullscreen options in browser menus. Keep desktop F11 and window options; standalone browser has a direct fullscreen button and the website owns embedded fullscreen.
@@ -53,7 +53,7 @@ The July 2 checkpoint itself adds substantial resource caching, atlases/profilin
 
 ## Validation and remaining review work
 
-Windows Release and Emscripten Release were compiled locally. Native regression checks cover v1 migration, v2 round-trip, malformed/truncated saves, coin conservation and viewport mapping. Five browser bridge checks cover lifecycle, invalid senders and keyboard ownership. All 308 resource registrations resolve with exact filename case.
+Windows Release and Emscripten Release were compiled locally. Native regression checks cover v1 migration, v2 round-trip, malformed/truncated saves, coin conservation and viewport mapping. Eight browser bridge checks cover lifecycle, invalid senders and keyboard ownership. All 308 resource registrations resolve with exact filename case.
 
 See the final chat update for the most recent interactive browser checks. These tests do not constitute complete playthroughs of all six levels or native Linux/macOS runtime validation.
 
@@ -69,3 +69,5 @@ Next priorities:
 The restoration is committed and pushed on `revisit/cross-platform` for its CI builds. The first Windows/Linux/macOS/Web matrix passed (run 43124791254). No game or website has been published, upstream master is unchanged, and the iOS snapshot has not been modified.
 
 Mobile follow-up: the browser shell detects touch/pen/coarse-pointer capabilities and offers Jump, held Shoot, Pause/Resume and embedded Back controls; it clears held actions on cancellation/backgrounding. The protocol remains v1. `docs/BROWSER_CONTRACT.md` and hash-verified distribution manifests make future revision replacement repeatable. Game-over score/coin rows are raised and aligned by visible glyph bounds.
+
+Live-TV follow-up: optional embedded muted autostart, preserved WebGL drawing buffers, one persistent session, and `window.portfolioGame` / `window.floppyEmbed` same-origin presentation/audio/input API. The shared `portfolio-input` v1 pointer/key/reset/capability schema is independent of Floppy Turd actions. Input is latched in C++ so rapid gestures survive frame boundaries; pointer cancellation does not click a menu.

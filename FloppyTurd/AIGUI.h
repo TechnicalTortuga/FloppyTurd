@@ -1,6 +1,7 @@
 #ifndef AIGUI_H
 #define AIGUI_H
 
+#include "EmbedInput.h"
 #include "raylib.h" 
 #include "PlatformLayer.h"  // Add platform layer for input abstraction
 
@@ -65,8 +66,8 @@ extern AIGUI_Context g_AIGUI;
 template <typename RenderFunc>
 void AIGUI_Container(Rectangle container, Vector2* scrollOffset, RenderFunc childRender) {
     AIGUI_BeginScissor(container);
-    if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
-        Vector2 delta = GetMouseDelta();
+    if (EmbedInput::MouseDown(MOUSE_LEFT_BUTTON)) {
+        Vector2 delta = EmbedInput::MouseDelta();
         scrollOffset->x -= delta.x;
         scrollOffset->y -= delta.y;
     }

@@ -1,3 +1,4 @@
+#include "EmbedInput.h"
 #include "Playing.h"
 #include "AIGUI.h"
 #include "raymath.h"
@@ -300,7 +301,7 @@ void Playing::OutputHatMenu() {
             }
 
             // --- Interaction Logic ---
-            if (hovered && IsMouseButtonReleased(MOUSE_LEFT_BUTTON)) {
+            if (hovered && EmbedInput::MouseReleased(MOUSE_LEFT_BUTTON)) {
                 selectedHatIndex = index;
             }
         }
@@ -985,8 +986,8 @@ void Playing::Draw() {
 
     // --- Debug Overlay for Physics Tuning ---
     static bool showDebug = false;
-    if (IsKeyPressed(KEY_F1)) showDebug = !showDebug;
-    if (IsKeyPressed(KEY_F2)) Player::godMode = !Player::godMode;
+    if (EmbedInput::KeyPressed(KEY_F1)) showDebug = !showDebug;
+    if (EmbedInput::KeyPressed(KEY_F2)) Player::godMode = !Player::godMode;
     if (showDebug) {
         // Use the default AIGUI font for debug overlay
         float x = 10.0f, y = 10.0f, width = 120.0f;
@@ -1056,7 +1057,7 @@ void Playing::HandleInput() {
     auto& platform = PlatformLayer::GetInstance();
     
     // Handle pause - ESC on desktop or could add a pause button for mobile later
-    if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_TAB) || pendingTouchPause) {
+    if (EmbedInput::KeyPressed(KEY_ESCAPE) || EmbedInput::KeyPressed(KEY_TAB) || pendingTouchPause) {
         pendingTouchPause = false;
         pendingTouchJump = false;
         heldTouchShoot = false;
@@ -1066,16 +1067,16 @@ void Playing::HandleInput() {
     
     if (isPaused) {
         // Keep keyboard shortcuts for pause menu navigation (desktop-specific)
-        if (IsKeyPressed(KEY_P)) currentTab = STATS;
-        if (IsKeyPressed(KEY_H)) currentTab = HATS;
-        if (IsKeyPressed(KEY_K)) currentTab = SKILLS;
+        if (EmbedInput::KeyPressed(KEY_P)) currentTab = STATS;
+        if (EmbedInput::KeyPressed(KEY_H)) currentTab = HATS;
+        if (EmbedInput::KeyPressed(KEY_K)) currentTab = SKILLS;
     }
     else {
         // Jump input - unified across platforms
         bool jumpInput = false;
         
         // Keyboard input (desktop)
-        jumpInput |= IsKeyPressed(KEY_SPACE) || pendingTouchJump;
+        jumpInput |= EmbedInput::KeyPressed(KEY_SPACE) || pendingTouchJump;
         pendingTouchJump = false;
         
         // Touch input (mobile)
@@ -1100,9 +1101,9 @@ void Playing::HandleInput() {
         bool shootInput = false;
         
         // Keyboard input (desktop)
-        shootInput |= IsKeyDown(KEY_S) || heldTouchShoot;
+        shootInput |= EmbedInput::KeyDown(KEY_S) || heldTouchShoot;
 #ifndef __EMSCRIPTEN__
-        shootInput |= IsKeyDown(KEY_F); // Preserve the original desktop binding.
+        shootInput |= EmbedInput::KeyDown(KEY_F); // Preserve the original desktop binding.
 #endif
         
         // Touch input (mobile)
@@ -1115,7 +1116,7 @@ void Playing::HandleInput() {
         }
         
         // Debug revive - keyboard only (development feature)
-        if (IsKeyPressed(KEY_R)) player->Revive();
+        if (EmbedInput::KeyPressed(KEY_R)) player->Revive();
     }
 }
 

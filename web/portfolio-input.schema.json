@@ -1,0 +1,205 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:portfolio-input:v1",
+  "title": "Portfolio game input v1",
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "const": "portfolio-input"
+        },
+        "version": {
+          "const": 1
+        },
+        "kind": {
+          "const": "pointer"
+        },
+        "phase": {
+          "enum": [
+            "down",
+            "move",
+            "up",
+            "cancel"
+          ]
+        },
+        "pointerId": {
+          "type": "integer"
+        },
+        "pointerType": {
+          "enum": [
+            "mouse",
+            "touch",
+            "pen"
+          ]
+        },
+        "x": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "y": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "button": {
+          "type": "integer",
+          "minimum": -1,
+          "maximum": 4
+        },
+        "buttons": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 31
+        },
+        "pressure": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "required": [
+        "schema",
+        "version",
+        "kind",
+        "phase",
+        "pointerId",
+        "pointerType",
+        "x",
+        "y",
+        "button",
+        "buttons",
+        "pressure"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "const": "portfolio-input"
+        },
+        "version": {
+          "const": 1
+        },
+        "kind": {
+          "const": "key"
+        },
+        "phase": {
+          "enum": [
+            "down",
+            "up"
+          ]
+        },
+        "code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "repeat": {
+          "type": "boolean"
+        },
+        "modifiers": {
+          "type": "object",
+          "properties": {
+            "shift": {
+              "type": "boolean"
+            },
+            "ctrl": {
+              "type": "boolean"
+            },
+            "alt": {
+              "type": "boolean"
+            },
+            "meta": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "shift",
+            "ctrl",
+            "alt",
+            "meta"
+          ]
+        }
+      },
+      "required": [
+        "schema",
+        "version",
+        "kind",
+        "phase",
+        "code",
+        "repeat",
+        "modifiers"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "const": "portfolio-input"
+        },
+        "version": {
+          "const": 1
+        },
+        "kind": {
+          "const": "reset"
+        },
+        "reason": {
+          "enum": [
+            "blur",
+            "hidden",
+            "presentation",
+            "exit",
+            "cancel"
+          ]
+        }
+      },
+      "required": [
+        "schema",
+        "version",
+        "kind",
+        "reason"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "const": "portfolio-input"
+        },
+        "version": {
+          "const": 1
+        },
+        "kind": {
+          "const": "capabilities"
+        },
+        "maxTouchPoints": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "primaryPointer": {
+          "enum": [
+            "fine",
+            "coarse",
+            "none"
+          ]
+        },
+        "anyCoarsePointer": {
+          "type": "boolean"
+        },
+        "hover": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "schema",
+        "version",
+        "kind",
+        "maxTouchPoints",
+        "primaryPointer",
+        "anyCoarsePointer",
+        "hover"
+      ]
+    }
+  ]
+}

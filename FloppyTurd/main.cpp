@@ -3,6 +3,7 @@
 #include <raylib.h>
 #include "Game.h"
 #include "PlatformLayer.h"
+#include "EmbedInput.h"
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #endif
@@ -28,6 +29,28 @@ EMSCRIPTEN_KEEPALIVE
 #endif
 void floppy_touch(int action, int down) {
     if (activeGame) activeGame->TouchAction(action, down != 0);
+}
+extern "C" {
+#ifdef __EMSCRIPTEN__
+EMSCRIPTEN_KEEPALIVE
+#endif
+void floppy_key(int code, int down, int repeat) { EmbedInput::Key(code, down != 0, repeat != 0); }
+#ifdef __EMSCRIPTEN__
+EMSCRIPTEN_KEEPALIVE
+#endif
+void floppy_pointer(int phase, float x, float y) { if (activeGame) activeGame->PointerInput(phase, x, y); }
+#ifdef __EMSCRIPTEN__
+EMSCRIPTEN_KEEPALIVE
+#endif
+void floppy_reset_input() { EmbedInput::Reset(); if (activeGame && activeGame->playing) activeGame->playing->CancelTouchInput(); }
+#ifdef __EMSCRIPTEN__
+EMSCRIPTEN_KEEPALIVE
+#endif
+void floppy_set_presentation(int inlineMode) { if (activeGame) activeGame->SetInlinePresentation(inlineMode != 0); }
+#ifdef __EMSCRIPTEN__
+EMSCRIPTEN_KEEPALIVE
+#endif
+void floppy_activate_audio(int activated) { if (activeGame) activeGame->SetAudioActivated(activated != 0); }
 }
 int main() {
 #ifndef __EMSCRIPTEN__

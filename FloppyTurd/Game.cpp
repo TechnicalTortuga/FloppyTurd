@@ -11,6 +11,7 @@
 #include "Viewport.h"
 #include "TextureCache.h"
 #include "PixelFont.h"
+#include "EmbedInput.h"
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #endif
@@ -31,6 +32,11 @@ Game::Game()
 
 	window = new Window(true, 1280, 720);
 	InitAudioDevice();
+#ifdef __EMSCRIPTEN__
+    hostManagedVisibility = EM_ASM_INT({ return window.floppyIsEmbedded ? 1 : 0; });
+    audioActivated = !EM_ASM_INT({ return window.floppyStartMuted ? 1 : 0; });
+    SetMasterVolume(audioActivated ? 1 : 0);
+#endif
 
 	// Initialize ResourceManager with mobile-aware quality detection
 	ResourceManager::GetInstance().Initialize(ResourceQuality::AUTO);
@@ -169,8 +175,25 @@ void Game::SetHostPaused(bool paused)
 {
     hostPaused = paused;
     if (paused && playing) playing->CancelTouchInput();
-    SetMasterVolume(paused ? 0.0f : 1.0f);
+    if (paused) EmbedInput::Reset();
+    SetMasterVolume(paused || !audioActivated ? 0.0f : 1.0f);
     if (paused && playing) playing->GetStats().Save();
+}
+
+void Game::SetAudioActivated(bool enabled) {
+    audioActivated = enabled;
+    SetMasterVolume(enabled && !hostPaused && !focusPaused ? 1 : 0);
+}
+
+void Game::SetInlinePresentation(bool enabled) {
+    inlinePresentation = enabled;
+    EmbedInput::Reset();
+    if (playing) playing->CancelTouchInput();
+}
+
+void Game::PointerInput(int phase, float x, float y) {
+    const auto view = FloppyViewport::Fit(GetScreenWidth(), GetScreenHeight(), !touchPresentation);
+    EmbedInput::Pointer(phase, {view.x + x * view.width, view.y + y * view.height});
 }
 
 void Game::TouchAction(int action, bool down)
@@ -183,10 +206,11 @@ void Game::Tick()
 {
     if (warmupFrames > 0) { --warmupFrames; BeginDrawing(); ClearBackground(BLACK); EndDrawing(); return; }
     // Keep polling events while suspended, but freeze all simulation timers.
-    if (hostPaused || !IsWindowFocused()) {
+    if (hostPaused || (!hostManagedVisibility && !IsWindowFocused())) {
         if (!focusPaused) {
             SetMasterVolume(0.0f);
             if (playing) playing->CancelTouchInput();
+            EmbedInput::Reset();
             if (playing) playing->GetStats().Save();
         }
         focusPaused = true;
@@ -196,7 +220,7 @@ void Game::Tick()
         return;
     }
     if (focusPaused) {
-        SetMasterVolume(1.0f);
+        SetMasterVolume(audioActivated ? 1.0f : 0.0f);
         focusPaused = false;
         // Discard the first resumed frame so hidden-tab time cannot become a physics step.
         BeginDrawing(); EndDrawing();
@@ -210,7 +234,7 @@ void Game::Tick()
         return;
     }
     const auto view = FloppyViewport::Fit(GetScreenWidth(), GetScreenHeight(), !touchPresentation);
-    const Vector2 rawMouse = GetMousePosition();
+    const Vector2 rawMouse = EmbedInput::MousePosition();
     // Leave off-canvas input outside the UI instead of snapping it onto buttons.
     g_AIGUI.mousePos = RenderLayout::ToUi({(rawMouse.x - view.x) / view.scale, (rawMouse.y - view.y) / view.scale}, gamestate == PLAYING);
     HandleInput();
@@ -237,6 +261,7 @@ void Game::Tick()
     DrawTexturePro(target.texture, {0, 0, 800, -450},
         {view.x, view.y, view.width, view.height}, {0, 0}, 0, WHITE);
     EndDrawing();
+    EmbedInput::EndFrame();
 #ifdef __EMSCRIPTEN__
     const bool active = gamestate == PLAYING;
     const int webUiState = (active ? 1 : 0) | (active && playing->player->CanShoot() ? 2 : 0)
@@ -318,7 +343,7 @@ void Game::Draw()
 void Game::HandleInput()
 {
 #ifndef __EMSCRIPTEN__
-	if (IsKeyPressed(KEY_F11)) window->ToggleMode();
+	if (EmbedInput::KeyPressed(KEY_F11)) window->ToggleMode();
 #endif
 
 	switch (gamestate)

@@ -25,6 +25,9 @@ public:
 	void Tick();
 	void SetHostPaused(bool paused);
 	void TouchAction(int action, bool down);
+    void PointerInput(int phase, float x, float y);
+    void SetInlinePresentation(bool enabled);
+    void SetAudioActivated(bool enabled);
 	~Game();
 
 	enum GAMESTATE
@@ -55,6 +58,9 @@ private:
 	RenderTexture2D target{};
 	int lastWebUiState = -1;
 	int warmupFrames = 2;
+	bool hostManagedVisibility = false;
+	bool inlinePresentation = false;
+	bool audioActivated = true;
 	bool touchPresentation = false;
 	bool hostPaused = false;
 	bool focusPaused = false;

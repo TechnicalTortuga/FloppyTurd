@@ -10,8 +10,10 @@ Restored from `53636de6298fcca93fef470b2efb481defe05322` (July 2, 2025, v0.902),
 
 The current game uses raylib **6.2**, pinned to a full commit. The playable world is **400×225**, rendered to **800×450**. A centered 320×180 UI layout keeps the original menus while reducing their relative size. Text uses monochrome bitmap glyphs and nearest filtering. Display resizing preserves aspect ratio and uses integer enlargement whenever it fits.
 
-Controls: **Space / click** jump, **S** shoot after unlocking the skill, **Tab** pause. Desktop also retains **F** for shooting, **Esc** for pause, and **F11** for fullscreen. In a website embed, **F** requests host fullscreen and **Esc** returns to the website. Standalone browser fullscreen uses its own button or F; platform support may limit native fullscreen.
+Controls: **Space / click** jump, **S** shoot after unlocking the skill, **Tab** pause. Desktop also retains **F** for shooting, **Esc** for pause, and **F11** for fullscreen. In a website embed, **F** requests host fullscreen and **Shift+Esc** returns to the website. Standalone browser fullscreen uses its own button or F; platform support may limit native fullscreen.
 
 Original raylib balancing remains the starting point. The later iOS/Pooper Trooper gameplay and services have been compared, not silently merged into this edition. Broader playtesting of all six levels is still required after the wider framing change.
 
 Touch-capable browsers automatically show mobile controls. Tap the gameplay canvas or Jump, hold Shoot after unlocking it, and use Pause/Resume or the embedded Back button. Portrait and landscape use the same letterboxed game. Add `?touch=1` to preview controls on desktop; this does not replace real iOS/Android device testing.
+
+The portfolio can run the same session live on its TV with `embed=1&autostart=1`. The shared `portfolio-input` v1 pointer/key/capability schema and `window.portfolioGame` API keep future revisions and other games independent of the website scene. Embedded audio stays muted until a genuine activation gesture.

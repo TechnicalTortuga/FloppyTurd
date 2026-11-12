@@ -1,3 +1,4 @@
+#include "EmbedInput.h"
 #include "PlatformLayer.h"
 #include <filesystem>
 #include <algorithm>
@@ -70,7 +71,7 @@ Vector2 PlatformLayer::GetPrimaryInputPosition() const {
     }
     return { -1, -1 };
 #else
-    return GetMousePosition();
+    return EmbedInput::MousePosition();
 #endif
 }
 
@@ -78,7 +79,7 @@ bool PlatformLayer::IsPrimaryInputPressed() const {
 #ifdef PLATFORM_MOBILE
     return GetTouchPointCount() > 0 && IsGestureDetected(GESTURE_TAP);
 #else
-    return IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
+    return EmbedInput::MousePressed(MOUSE_LEFT_BUTTON);
 #endif
 }
 
@@ -86,7 +87,7 @@ bool PlatformLayer::IsPrimaryInputDown() const {
 #ifdef PLATFORM_MOBILE
     return GetTouchPointCount() > 0;
 #else
-    return IsMouseButtonDown(MOUSE_LEFT_BUTTON);
+    return EmbedInput::MouseDown(MOUSE_LEFT_BUTTON);
 #endif
 }
 
@@ -98,7 +99,7 @@ bool PlatformLayer::IsPrimaryInputReleased() const {
     previousTouchCount = currentTouchCount;
     return released;
 #else
-    return IsMouseButtonReleased(MOUSE_LEFT_BUTTON);
+    return EmbedInput::MouseReleased(MOUSE_LEFT_BUTTON);
 #endif
 }
 
@@ -111,8 +112,8 @@ std::vector<Vector2> PlatformLayer::GetTouchPoints() const {
     }
 #else
     // On desktop, simulate single touch with mouse
-    if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
-        points.push_back(GetMousePosition());
+    if (EmbedInput::MouseDown(MOUSE_LEFT_BUTTON)) {
+        points.push_back(EmbedInput::MousePosition());
     }
 #endif
     return points;

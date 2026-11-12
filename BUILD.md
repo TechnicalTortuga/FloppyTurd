@@ -37,11 +37,11 @@ Open `http://127.0.0.1:8765/index.html`; click **Play Floppy Turd** to initializ
 
 For this workspace's local SDK, `python .local/deps/emsdk/upstream/emscripten/emcmake.py cmake ...` also works. Keep temporary compiler files in a writable directory when sandboxing; the local build used `.local/temp`. Local dependency source overrides are optional and are not needed in CI.
 
-The full data bundle is about 124 MB, mostly music. It loads only when the website opens the player. Splitting level music into lazy resource packages is the next download-size optimization.
+The full data bundle is about 124 MB, mostly music. It loads when the website enters the room containing the live TV. Splitting level music into lazy resource packages is the next download-size optimization.
 
 ## Portfolio website integration
 
-The website chat `Plan website 3D scene design` owns `C:/Development/myWebsite`. Its agreed entry point is `/games/floppy-turd/index.html`, loaded lazily in an iframe after the CRT is selected. The website owns the fullscreen/full-window player; the game owns its canvas, aspect ratio, pointer mapping, audio and simulation. The 3D scene pauses while the player is open. Drawing live interactive gameplay on the curved CRT would require a separate rendering/input interface.
+The website chat `Plan website 3D scene design` owns `C:/Development/myWebsite`. Its agreed entry point is `/games/floppy-turd/index.html`, loaded lazily in a persistent iframe when the games room is entered. The website owns the fullscreen/full-window player; the game owns its canvas, aspect ratio, pointer mapping, audio and simulation. The 3D scene pauses only while the game is expanded. The same-origin `window.portfolioGame` / `window.floppyEmbed` interface supplies a drawable live canvas, normalized input and presentation switching, so fullscreen expands the existing session.
 
 The website's staging command is:
 
@@ -51,7 +51,7 @@ npm run stage:floppy-turd -- --from C:/Development/FloppyTurd/dist/web
 
 Run it from the website repository. It validates and hashes the clean runtime bundle and preserves the previous local snapshot. The website config points its Floppy Turd entry to `/games/floppy-turd/index.html` after successful staging. Neither repository is deployed by this process. The restoration branch is pushed solely for its build jobs.
 
-Child URL parameters: `embed=1`, `parentOrigin=<exact origin>`, `session=<nonce>`.
+Child URL parameters: `embed=1`, optional `autostart=1`, `parentOrigin=<exact origin>`, `session=<nonce>`.
 
 Every message is `{channel:'floppy-turd', version:1, session, type, payload}`. Validate the exact parent/iframe WindowProxy, origin, channel, version and session on both sides; never use a wildcard target origin.
 
@@ -69,3 +69,5 @@ Format v2 is 79 bytes, explicitly little-endian counters and one-byte flags, wit
 ## Mobile browser controls
 
 Touch/pen/coarse-pointer capabilities enable the browser shell controls without requiring an iOS or Android native build. Use canvas taps or Jump, held Shoot after skill unlock, Pause/Resume, and embedded Back. Controls respect safe areas, clear held actions on cancellation/backgrounding, and support simultaneous jump/shoot pointers. `?touch=1` enables a desktop preview. Portrait keeps landscape letterboxing; real-device browser memory/audio/fullscreen/performance checks remain necessary.
+
+The current same-origin TV adapter and reusable game-agnostic input schema are specified in `docs/BROWSER_CONTRACT.md` and `web/portfolio-input.schema.json`. Plain Escape pauses; Shift+Escape returns to the room. See the contract for live canvas capture, muted autostart and direct input without synthetic DOM events.

@@ -56,7 +56,7 @@ if(EMSCRIPTEN)
     target_link_options(FloppyTurd PRIVATE
         -fexceptions -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=134217728
         -sSTACK_SIZE=2097152 -sFORCE_FILESYSTEM=1
-        "-sEXPORTED_FUNCTIONS=['_main','_floppy_set_paused','_floppy_resize','_floppy_touch']"
+        "-sEXPORTED_FUNCTIONS=['_main','_floppy_set_paused','_floppy_resize','_floppy_touch','_floppy_key','_floppy_pointer','_floppy_reset_input','_floppy_set_presentation','_floppy_activate_audio']"
         "-sEXPORTED_RUNTIME_METHODS=['ccall','FS','callMain','HEAPF32']"
         "--preload-file=${RUNTIME_ASSETS}@/resources"
         "--shell-file=${CMAKE_CURRENT_SOURCE_DIR}/web/shell.html")

@@ -2,12 +2,21 @@
 #include "PlatformLayer.h"
 #include "Viewport.h"
 #include "CoinBalance.h"
+#include "EmbedInput.h"
 #include <fstream>
 #include <filesystem>
 #include <stdexcept>
 #include <iostream>
 void Check(bool ok, const char* message) { if (!ok) throw std::runtime_error(message); }
 int main() {
+    EmbedInput::Key(KEY_SPACE,true,false); EmbedInput::Key(KEY_SPACE,false,false);
+    Check(EmbedInput::KeyPressed(KEY_SPACE) && !EmbedInput::KeyDown(KEY_SPACE), "rapid embedded tap survives a frame boundary");
+    EmbedInput::EndFrame(); Check(!EmbedInput::state.pressed[KEY_SPACE], "key edge consumed once");
+    EmbedInput::Pointer(1,{20,30}); EmbedInput::Pointer(2,{20,30});
+    Check(EmbedInput::state.pointerPressed && EmbedInput::state.pointerReleased, "rapid pointer click survives a frame boundary");
+    EmbedInput::Reset(); EmbedInput::Pointer(1,{20,30}); EmbedInput::Pointer(3,{20,30});
+    Check(!EmbedInput::state.pointerReleased, "pointer cancellation does not click a menu item");
+    EmbedInput::Reset();
     int total = 105, session = 5;
     Check(CoinBalance::Spend(total, session, 1, true) && total == 104 && session == 4, "shot spends a coin once");
     Check(CoinBalance::Spend(total, session, 102) && total == 2 && session == 0, "purchase spends session subset then bank");

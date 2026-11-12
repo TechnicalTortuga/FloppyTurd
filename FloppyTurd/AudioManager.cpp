@@ -1,3 +1,4 @@
+#include "EmbedInput.h"
 #include "AudioManager.h"
 #include "raylib.h"
 #include "AIGUI.h" // If your custom GUI functions are here, include it
@@ -124,8 +125,8 @@ bool AudioManager::DrawButton3States(
 ) {
     Vector2 mousePos = g_AIGUI.mousePos;
     bool hovered = CheckCollisionPointRec(mousePos, { x, y, width, height });
-    bool pressed = hovered && IsMouseButtonDown(MOUSE_LEFT_BUTTON);
-    bool released = hovered && IsMouseButtonReleased(MOUSE_LEFT_BUTTON);
+    bool pressed = hovered && EmbedInput::MouseDown(MOUSE_LEFT_BUTTON);
+    bool released = hovered && EmbedInput::MouseReleased(MOUSE_LEFT_BUTTON);
 
     // Decide which texture to draw
     if (pressed) {
