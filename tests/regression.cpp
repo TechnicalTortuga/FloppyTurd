@@ -39,6 +39,8 @@ int main() {
         Check(v.width <= dimensions.first + 0.001f && v.height <= dimensions.second + 0.001f && v.scale > 0, "viewport fits");
         Check(std::abs((dimensions.first / 2.0f - v.x) / v.scale - 200) < 0.01f, "pointer center mapping");
     }
+    auto mobileFit = FloppyViewport::Fit(844,390,false);
+    Check(std::abs(mobileFit.height-390)<0.001f && mobileFit.width>690, "mobile uses available space without integer-scale gaps");
     auto centered = RenderLayout::ToUi({200,112.5f}, true);
     Check(std::abs(centered.x-160)<0.001f && std::abs(centered.y-90)<0.001f, "smaller overlay pointer mapping");
     auto crisp = FloppyViewport::Fit(1000,700);

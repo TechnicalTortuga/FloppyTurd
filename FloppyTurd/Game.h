@@ -24,6 +24,7 @@ public:
 	void RunGame();
 	void Tick();
 	void SetHostPaused(bool paused);
+	void TouchAction(int action, bool down);
 	~Game();
 
 	enum GAMESTATE
@@ -52,7 +53,9 @@ private:
 
 	void InitClasses();
 	RenderTexture2D target{};
+	int lastWebUiState = -1;
 	int warmupFrames = 2;
+	bool touchPresentation = false;
 	bool hostPaused = false;
 	bool focusPaused = false;
 

@@ -22,6 +22,13 @@ EMSCRIPTEN_KEEPALIVE
 void floppy_resize(int width, int height) {
     if (activeGame && width > 0 && height > 0) SetWindowSize(width, height);
 }
+extern "C"
+#ifdef __EMSCRIPTEN__
+EMSCRIPTEN_KEEPALIVE
+#endif
+void floppy_touch(int action, int down) {
+    if (activeGame) activeGame->TouchAction(action, down != 0);
+}
 int main() {
 #ifndef __EMSCRIPTEN__
     // Installed builds resolve resources relative to the executable on every desktop OS.

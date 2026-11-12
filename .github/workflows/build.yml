@@ -47,6 +47,7 @@ jobs:
             !/build/
             !/build-ios/
             !/build-macOS/
+      - run: python -m unittest discover -s tests -p "test_*.py"
       - name: Install pinned Emscripten
         run: |
           git clone --depth 1 https://github.com/emscripten-core/emsdk.git ../emsdk

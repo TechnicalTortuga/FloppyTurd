@@ -5,7 +5,7 @@ import vm from 'node:vm';
 const source = fs.readFileSync(new URL('../web/bridge.js', import.meta.url), 'utf8');
 function harness() {
   const listeners = {}, sent = [], calls = [], elements = {};
-  for (const name of ['canvas','gate','play','status','hint','fullscreen']) elements[name] = { hidden:false, textContent:'', clientWidth:960, clientHeight:540, addEventListener(name, fn) { this[name] = fn; }, focus() {} };
+  for (const name of ['canvas','gate','play','status','hint','fullscreen','mobile-top','mobile-bottom','touch-back','touch-pause','touch-jump','touch-shoot']) elements[name] = { hidden:false, textContent:'', clientWidth:960, clientHeight:540, addEventListener(name, fn) { this[name] = fn; }, focus() {} };
   const parent = { postMessage: (message, origin) => sent.push({message, origin}) };
   const context = { console, URL, URLSearchParams, Uint8Array,
     location: { search:'?embed=1&parentOrigin=https%3A%2F%2Fportfolio.example&session=abc' }, parent,
@@ -51,4 +51,32 @@ test('embedded F/Escape route to host while modified and editable keys pass thro
   key('KeyF',{ctrlKey:true}); key('KeyF',{metaKey:true}); key('Escape',{target:{isContentEditable:true}});
   assert.equal(h.sent.length,2);
   assert.match(h.elements.hint.textContent,/return to website/);
+});
+
+test('touch controls support tap jump, held shooting, pause, and cancellation', () => {
+  const h=harness(); h.listeners.message(h.envelope('host:init',{visible:true})); h.context.Module.onRuntimeInitialized(); h.elements.play.click();
+  h.listeners.pointerdown({pointerType:'touch'});
+  h.context.floppySetUiState(3);
+  assert.equal(h.elements['mobile-bottom'].hidden,false);
+  assert.equal(h.elements['touch-shoot'].hidden,false);
+  const pointer=(id,type='touch')=>({pointerId:id,pointerType:type,preventDefault(){},stopImmediatePropagation(){}});
+  h.elements.canvas.pointerdown(pointer(1));
+  assert.equal(h.calls.at(-1)[0],'floppy_touch'); assert.deepEqual(Array.from(h.calls.at(-1)[3]),[0,1]);
+  h.elements['touch-shoot'].pointerdown(pointer(2));
+  assert.deepEqual(Array.from(h.calls.at(-1)[3]),[1,1]);
+  h.elements.canvas.pointerup(pointer(1));
+  h.elements['touch-shoot'].pointercancel(pointer(2));
+  assert.deepEqual(Array.from(h.calls.at(-1)[3]),[1,0]);
+  h.elements['touch-pause'].pointerdown(pointer(3));
+  assert.deepEqual(Array.from(h.calls.at(-1)[3]),[2,1]);
+  h.context.floppySetUiState(5);
+  assert.equal(h.elements['touch-pause'].textContent,'Resume');
+  assert.equal(h.elements['mobile-bottom'].hidden,true);
+});
+test('touch controls stay hidden in menus and locked shooting is not offered', () => {
+  const h=harness(); h.listeners.message(h.envelope('host:init',{visible:true})); h.context.Module.onRuntimeInitialized(); h.elements.play.click();
+  h.listeners.pointerdown({pointerType:'pen'});
+  h.context.floppySetUiState(0); assert.equal(h.elements['mobile-bottom'].hidden,true);
+  h.context.floppySetUiState(1); assert.equal(h.elements['touch-shoot'].hidden,true);
+  h.context.floppySetUiState(9); assert.equal(h.elements['touch-pause'].hidden,true);
 });

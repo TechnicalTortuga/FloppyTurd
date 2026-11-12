@@ -168,17 +168,25 @@ void Game::RunGame()
 void Game::SetHostPaused(bool paused)
 {
     hostPaused = paused;
+    if (paused && playing) playing->CancelTouchInput();
     SetMasterVolume(paused ? 0.0f : 1.0f);
     if (paused && playing) playing->GetStats().Save();
 }
 
+void Game::TouchAction(int action, bool down)
+{
+    if (action == 3) { touchPresentation = down; return; }
+    if (!hostPaused && gamestate == PLAYING && playing) playing->TouchAction(action, down);
+}
+
 void Game::Tick()
 {
-    if (warmupFrames-- > 0) { BeginDrawing(); ClearBackground(BLACK); EndDrawing(); return; }
+    if (warmupFrames > 0) { --warmupFrames; BeginDrawing(); ClearBackground(BLACK); EndDrawing(); return; }
     // Keep polling events while suspended, but freeze all simulation timers.
     if (hostPaused || !IsWindowFocused()) {
         if (!focusPaused) {
             SetMasterVolume(0.0f);
+            if (playing) playing->CancelTouchInput();
             if (playing) playing->GetStats().Save();
         }
         focusPaused = true;
@@ -201,7 +209,7 @@ void Game::Tick()
 #endif
         return;
     }
-    const auto view = FloppyViewport::Fit(GetScreenWidth(), GetScreenHeight());
+    const auto view = FloppyViewport::Fit(GetScreenWidth(), GetScreenHeight(), !touchPresentation);
     const Vector2 rawMouse = GetMousePosition();
     // Leave off-canvas input outside the UI instead of snapping it onto buttons.
     g_AIGUI.mousePos = RenderLayout::ToUi({(rawMouse.x - view.x) / view.scale, (rawMouse.y - view.y) / view.scale}, gamestate == PLAYING);
@@ -229,6 +237,15 @@ void Game::Tick()
     DrawTexturePro(target.texture, {0, 0, 800, -450},
         {view.x, view.y, view.width, view.height}, {0, 0}, 0, WHITE);
     EndDrawing();
+#ifdef __EMSCRIPTEN__
+    const bool active = gamestate == PLAYING;
+    const int webUiState = (active ? 1 : 0) | (active && playing->player->CanShoot() ? 2 : 0)
+        | (active && playing->IsPaused() ? 4 : 0) | (active && playing->IsGameOver() ? 8 : 0);
+    if (webUiState != lastWebUiState) {
+        lastWebUiState = webUiState;
+        EM_ASM({ if (window.floppySetUiState) window.floppySetUiState($0); }, webUiState);
+    }
+#endif
 }
 
 void Game::Update()

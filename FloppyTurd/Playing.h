@@ -49,6 +49,10 @@ public:
     void PlayMusic(AudioClip* clip);
     void UpdateMusic();
     void HandleInput();
+    void TouchAction(int action, bool down);
+    void CancelTouchInput();
+    bool IsPaused() const { return isPaused; }
+    bool IsGameOver() const { return GAMEOVER; }
     void FadeOutMusic(float deltaTime);
     void SetCurrentLevel(int levelIndex);
     void PreLoadLevels();
@@ -108,6 +112,9 @@ private:
     Texture2D floppyButtonBlueHover;
     Sound ScoreSound;
 
+    bool pendingTouchJump = false;
+    bool pendingTouchPause = false;
+    bool heldTouchShoot = false;
     bool isPaused = false;
     PauseMenuTab currentTab{ SYSTEM };
     Texture2D pauseMenuBackground;

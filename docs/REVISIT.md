@@ -53,7 +53,7 @@ The July 2 checkpoint itself adds substantial resource caching, atlases/profilin
 
 ## Validation and remaining review work
 
-Windows Release and Emscripten Release were compiled locally. Native regression checks cover v1 migration, v2 round-trip, malformed/truncated saves, coin conservation and viewport mapping. Three browser bridge checks cover lifecycle, invalid senders and keyboard ownership. All 308 resource registrations resolve with exact filename case.
+Windows Release and Emscripten Release were compiled locally. Native regression checks cover v1 migration, v2 round-trip, malformed/truncated saves, coin conservation and viewport mapping. Five browser bridge checks cover lifecycle, invalid senders and keyboard ownership. All 308 resource registrations resolve with exact filename case.
 
 See the final chat update for the most recent interactive browser checks. These tests do not constitute complete playthroughs of all six levels or native Linux/macOS runtime validation.
 
@@ -66,4 +66,6 @@ Next priorities:
 5. Review mixed Update/Draw responsibilities and audio ownership in level constructors; eliminate eager loading of every level once behavior is covered. Some legacy warnings and raw-pointer ownership remain.
 6. Run the prepared Windows/Linux/macOS CI matrix, then perform real macOS/Linux audio, controller/window and packaging checks. Decide signing/notarization separately from building.
 
-No commits have been pushed, no game or website has been published, and the iOS snapshot has not been modified.
+The restoration is committed and pushed on `revisit/cross-platform` for its CI builds. The first Windows/Linux/macOS/Web matrix passed (run 43124791254). No game or website has been published, upstream master is unchanged, and the iOS snapshot has not been modified.
+
+Mobile follow-up: the browser shell detects touch/pen/coarse-pointer capabilities and offers Jump, held Shoot, Pause/Resume and embedded Back controls; it clears held actions on cancellation/backgrounding. The protocol remains v1. `docs/BROWSER_CONTRACT.md` and hash-verified distribution manifests make future revision replacement repeatable. Game-over score/coin rows are raised and aligned by visible glyph bounds.

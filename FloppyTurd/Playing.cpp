@@ -673,21 +673,14 @@ void Playing::DrawGameOverScreen() {
     float sbW = (float)(gameOverScore.width * sbScale);
     float sbH = (float)(gameOverScore.height * sbScale);
     float sbX = (320.0f - sbW) / 2.0f;
-    float sbY = panelY + panelH - sbH + 14.0f;
+    float sbY = panelY + panelH - sbH + 8.0f;
+    DrawTexturePro(gameOverScore, {0, 0, (float)gameOverScore.width, (float)gameOverScore.height},
+        {sbX, sbY, sbW, sbH}, {0,0}, 0, WHITE);
+    Font font = game->GetScaledFont(1);
+    DrawPixelTextCentered(font, TextFormat("%i", SCORE), {sbX + 28, sbY + 2, sbW - 32, sbH / 2 - 4}, 24, 1, BLACK);
+    DrawPixelTextCentered(font, TextFormat("%i", player->GetSessionCoins()),
+        {sbX + 28, sbY + sbH / 2 + 2, sbW - 32, sbH / 2 - 4}, 24, 1, BLACK);
 
-    DrawTexturePro(gameOverScore,
-        { 0, 0, (float)gameOverScore.width, (float)gameOverScore.height },
-        { sbX, sbY, sbW, sbH },
-        { 0, 0 }, 0.0f, WHITE);
-
-    std::string scoreStr = std::to_string(SCORE);
-    int scoreW = MeasureText(scoreStr.c_str(), 20);
-    Font hdFont = game->GetScaledFont(1.2f);
-    DrawTextEx(hdFont, scoreStr.c_str(), { sbX + (sbW - (float)scoreW) / 2.0f + 20, sbY + (sbH / 2.0f - 12.0f) - 12 }, 24.0f, 1.0f, BLACK);
-
-    std::string coinStr = std::to_string(player->GetSessionCoins());
-    int coinW = MeasureText(coinStr.c_str(), 20);
-    DrawTextEx(hdFont, coinStr.c_str(), { sbX + (sbW - (float)coinW) / 2.0f + 20, sbY + (sbH / 2.0f + 4.0f) }, 24.0f, 1.0f, BLACK);
 }
 
 void Playing::Update() {
@@ -1044,6 +1037,16 @@ void Playing::UpdateMusic() {
     }
 }
 
+void Playing::TouchAction(int action, bool down) {
+    if (action == 0 && down && !isPaused && !GAMEOVER) pendingTouchJump = true;
+    else if (action == 1) heldTouchShoot = down;
+    else if (action == 2 && down && !GAMEOVER) pendingTouchPause = true;
+}
+
+void Playing::CancelTouchInput() {
+    pendingTouchJump = pendingTouchPause = heldTouchShoot = false;
+}
+
 void Playing::HandleInput() {
     // Update touch controls
     if (touchControls) {
@@ -1053,7 +1056,10 @@ void Playing::HandleInput() {
     auto& platform = PlatformLayer::GetInstance();
     
     // Handle pause - ESC on desktop or could add a pause button for mobile later
-    if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_TAB)) {
+    if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_TAB) || pendingTouchPause) {
+        pendingTouchPause = false;
+        pendingTouchJump = false;
+        heldTouchShoot = false;
         isPaused = !isPaused;
         currentTab = SYSTEM;
     }
@@ -1069,7 +1075,8 @@ void Playing::HandleInput() {
         bool jumpInput = false;
         
         // Keyboard input (desktop)
-        jumpInput |= IsKeyPressed(KEY_SPACE);
+        jumpInput |= IsKeyPressed(KEY_SPACE) || pendingTouchJump;
+        pendingTouchJump = false;
         
         // Touch input (mobile)
         if (touchControls && touchControls->IsEnabled()) {
@@ -1093,7 +1100,7 @@ void Playing::HandleInput() {
         bool shootInput = false;
         
         // Keyboard input (desktop)
-        shootInput |= IsKeyDown(KEY_S);
+        shootInput |= IsKeyDown(KEY_S) || heldTouchShoot;
 #ifndef __EMSCRIPTEN__
         shootInput |= IsKeyDown(KEY_F); // Preserve the original desktop binding.
 #endif
@@ -1116,6 +1123,7 @@ void Playing::FadeOutMusic(float deltaTime) {
 }
 
 void Playing::SetCurrentLevel(int levelIndex) {
+    CancelTouchInput();
     if (levelIndex < 0 || levelIndex >= levels.size()) {
         std::cerr << "Try Again Error: Invalid level index " << levelIndex << std::endl;
         return;
