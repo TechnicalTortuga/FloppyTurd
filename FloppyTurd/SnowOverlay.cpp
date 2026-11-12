@@ -1,3 +1,4 @@
+#include "GameSettings.h"
 #include "SnowOverlay.h"
 
 SnowOverlay::SnowOverlay(Texture2D texture, int frameCount, float frameDuration)
@@ -13,8 +14,8 @@ void SnowOverlay::Update(float deltaTime) {
 }
 
 void SnowOverlay::Draw() const {
-    const int screenWidth = 320;
-    const int screenHeight = 180;
+    const int screenWidth = (int)GameSettings::GameWidth;
+    const int screenHeight = (int)GameSettings::GameHeight;
 
     Rectangle source = {
         static_cast<float>(currentFrame * tileSize),

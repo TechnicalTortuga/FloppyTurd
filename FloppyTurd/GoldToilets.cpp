@@ -29,7 +29,7 @@ GoldToilets::GoldToilets(int xPos, int yPos)
 
 	panSpeed = 80.0f; // Default to Regular speed (adjusted by SetPanSpeed)
 
-	gapBetweenToilets = 180.0f / 5.0f; // Use virtual resolution (180) from Playing.cpp
+	gapBetweenToilets = GameSettings::GameHeight / 5.0f; // Use virtual resolution (180) from Playing.cpp
 
 	yOffsetRandomizer();
 	hasScored = false;

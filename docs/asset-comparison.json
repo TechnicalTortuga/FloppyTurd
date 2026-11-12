@@ -1,0 +1,2606 @@
+{
+  "summary": {
+    "baseline_commit": "53636de6298fcca93fef470b2efb481defe05322",
+    "master_commit": "ea665c2f220ea50f52636ec862cfbe3fe30c7f00",
+    "baseline_files": 327,
+    "master_assets": 352,
+    "master_assets_identical_to_baseline": 241,
+    "master_assets_without_identical_baseline": 111
+  },
+  "assets": [
+    {
+      "master": "FTIcon.png",
+      "bytes": 8077,
+      "sha256": "cbc739cf345506834f376818cb19cabb9a8a365f91e3e8febfd302a6e461a7c6",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "FTIconIos.png",
+      "bytes": 578715,
+      "sha256": "33da8fbfecbd287c6fd9a860b957b29f74d6231461e5859dcc135131ce89d874",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "fonts/sdf_atlas.png",
+      "bytes": 29032,
+      "sha256": "b6a59924e6dbd45ca9f329507ff7f2eeb8bb89901bd97ed93e70f20a9f1691d8",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "meta/asset_dependencies.json",
+      "bytes": 3311,
+      "sha256": "b3b341d9be3c85dba5c2471b06bf7745d44148375934366be4851676018bb1d8",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "meta/asset_registry.json",
+      "bytes": 4454,
+      "sha256": "f252aa4dcad83c61821ccec000406590815f054a8398ec95aa990d3c3bf58583",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/vfx/explosions/blast_big.png",
+      "bytes": 2257,
+      "sha256": "80a613bed6166b3c52b0dad4798ace2054d7f4e40fe0050b71d0dfaaadb1fa83",
+      "identical_baseline_files": [
+        "vfx/blast_big.png"
+      ]
+    },
+    {
+      "master": "graphics/vfx/explosions/blast_small.png",
+      "bytes": 1002,
+      "sha256": "99cb8ae627b4e51ee64113210905ae02c963a76eea4feff13b6e20c2052945e9",
+      "identical_baseline_files": [
+        "vfx/blast_small.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/a.png",
+      "bytes": 2089,
+      "sha256": "39bc38fda95b6fea9225fbbb3902047d284b6256d827f1538fef4a1d2f482d20",
+      "identical_baseline_files": [
+        "ui/a.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/achievementicon.png",
+      "bytes": 257,
+      "sha256": "5c35a982787521021cec33910cebcec396f655f21d61f07eee2685891cf747f5",
+      "identical_baseline_files": [
+        "ui/achievementicon.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/achievementiconunlocked.png",
+      "bytes": 245,
+      "sha256": "6f64f125165abff02cc516d367870469cc7a76b59dd1d16b437eeba0a5a8711a",
+      "identical_baseline_files": [
+        "ui/achievementiconunlocked.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/adcontrolsbutton.png",
+      "bytes": 1064,
+      "sha256": "cb89d301cc022ed13dc8730813a80dac055c2ced2503c2be7e3f2affd25eefec",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/ui/hud/arrowsturning.png",
+      "bytes": 359,
+      "sha256": "88b34654e67a843b0f0b56336eb1aab96b65d82d1fb78ce189edba6eb7cce72e",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/ui/hud/BossBarFrame.png",
+      "bytes": 348,
+      "sha256": "01fcfee04a93df863fbfeca9f29704e27d97c0acace9edc7db4e8d2507fe2bc7",
+      "identical_baseline_files": [
+        "ui/BossBarFrame.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/BossBarHealth.png",
+      "bytes": 260,
+      "sha256": "2780bcf58c5d3993d9e32fc71200eaee01c09eb53d81b9f2df55cf5d7f566512",
+      "identical_baseline_files": [
+        "ui/BossBarHealth.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/BossBarHurt.png",
+      "bytes": 269,
+      "sha256": "4f9da4f0924d9e9cfc9db669b17f113917001c725899c324b3391602fe4b4296",
+      "identical_baseline_files": [
+        "ui/BossBarHurt.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/CoinBag.png",
+      "bytes": 539,
+      "sha256": "24ec4340dc15af0dcd5d803ea2ec76d4356e64cadc9cc8eb6b693fa1328dfd69",
+      "identical_baseline_files": [
+        "ui/CoinBag.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/DownArrow.png",
+      "bytes": 193,
+      "sha256": "5d63592c33ee47c8fb8aa3fe9f7d52d249ad2bded7c712eaa16ddc090f23275e",
+      "identical_baseline_files": [
+        "ui/DownArrow.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/FloppyButtonBlue.png",
+      "bytes": 255,
+      "sha256": "fb848e9fdb2806a27c7f50fe034284c07191c2070adaf01ffe2071d76f8fdc79",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/ui/hud/FloppyButtonBlueHover.png",
+      "bytes": 250,
+      "sha256": "75d3990bce27f76613d9e6e89b21ca7be0dcdc2fc2cee36f321d7c9d8bc97d94",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/ui/hud/FloppyTurdCreditsBackground.png",
+      "bytes": 961,
+      "sha256": "e7acdf0b226ffa01e1eaf5b5a7c7784d42cb830ca624feb4085ff36911aa8d3b",
+      "identical_baseline_files": [
+        "ui/FloppyTurdCreditsBackground.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/FloppyTurdMorte.png",
+      "bytes": 588,
+      "sha256": "2dd6f4bc18377bf1ba0e383bdd9fb884bdcfb35faf811e10d1b0f41de98ea2da",
+      "identical_baseline_files": [
+        "ui/FloppyTurdMorte.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/GameOverBackground.png",
+      "bytes": 2760,
+      "sha256": "b0ca781ee993cf899267b0d28bad6a800284afa41ab2e8edd09487f6f6355040",
+      "identical_baseline_files": [
+        "ui/GameOverBackground.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/GameOverScore.png",
+      "bytes": 649,
+      "sha256": "ffd4a2f037ccaa60474cb2b540eaf4b2f8575ec9f54aa9dce9585ee261c82592",
+      "identical_baseline_files": [
+        "ui/GameOverScore.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/HatFrame.png",
+      "bytes": 615,
+      "sha256": "7bb16f22704a37b1e4adf36e5010809d1cdee2fc3cce59a8766d0809c45e9a6d",
+      "identical_baseline_files": [
+        "ui/HatFrame.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/HatFrameDenied.png",
+      "bytes": 627,
+      "sha256": "c04fb34a3387472b98507527c9b1ba01b5c98bdaf15021d0e565b9df8aa6b5bc",
+      "identical_baseline_files": [
+        "ui/HatFrameDenied.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/HatFrameHover.png",
+      "bytes": 625,
+      "sha256": "3db38691808dbb4ef494ca320cdd0ba5549951d2b0b87186a4d76b345c92fa0c",
+      "identical_baseline_files": [
+        "ui/HatFrameHover.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/HatFrameLocked.png",
+      "bytes": 336,
+      "sha256": "a44d93b3c9623cdcc4c18618c9c148096e3a5ae2204a1daf3fce8389031934bf",
+      "identical_baseline_files": [
+        "ui/HatFrameLocked.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/HatFrameSelected.png",
+      "bytes": 673,
+      "sha256": "80500308e26284d09ed226a70c00d5495f66370fece05172693af72eb1d68f19",
+      "identical_baseline_files": [
+        "ui/HatFrameSelected.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/LeftArrow.png",
+      "bytes": 183,
+      "sha256": "ab0fd25c16ef0da4fd14049eb71439ca06601a262c83f34aef992a822c124ae1",
+      "identical_baseline_files": [
+        "ui/LeftArrow.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/LeftArrowHover.png",
+      "bytes": 209,
+      "sha256": "f5815a7a780f6cb454f149b80a139070c996adff82702dddcb5dc9a2d4a3d90c",
+      "identical_baseline_files": [
+        "ui/LeftArrowHover.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/minusbutton.png",
+      "bytes": 228,
+      "sha256": "6517efe4680a69cee8d60d67162d3fb0ff8ee893605b897e0450376d5653b170",
+      "identical_baseline_files": [
+        "ui/minusbutton.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/minusbuttonclicked.png",
+      "bytes": 241,
+      "sha256": "5a1213b3ea449c041c94a3a751b00ca249b9e08e80f5b48607a3d97ce51af369",
+      "identical_baseline_files": [
+        "ui/minusbuttonclicked.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/minusbuttonhover.png",
+      "bytes": 224,
+      "sha256": "b567678df1001cff8fd0441bb0040331dcff0f4865b206ecc1c6072e1b1ad2e7",
+      "identical_baseline_files": [
+        "ui/minusbuttonhover.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/mutebutton.png",
+      "bytes": 230,
+      "sha256": "21597baf65d737b19f3328c47144e751f355db3837383673b5383e637be2bb89",
+      "identical_baseline_files": [
+        "ui/mutebutton.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/mutebuttonclicked.png",
+      "bytes": 261,
+      "sha256": "38f68a810d3e7ff6d5138badde32a068108f7c3f2dee978977fb1691133dbadb",
+      "identical_baseline_files": [
+        "ui/mutebuttonclicked.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/mutebuttonhover.png",
+      "bytes": 266,
+      "sha256": "71ddd4831e1fed188274dafb244b543b87572d388deae9921b87d2da72c6a674",
+      "identical_baseline_files": [
+        "ui/mutebuttonhover.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/mutebuttonlocked.png",
+      "bytes": 227,
+      "sha256": "bebdec08fb0210860e954ae3f6036af7c6fe5176adc7f28a0f710a82f15f693e",
+      "identical_baseline_files": [
+        "ui/mutebuttonlocked.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/mutebuttonlockedclicked.png",
+      "bytes": 277,
+      "sha256": "e78581edad5a12162d40a180169152de3deff1a879716bfa50920e5e14941f2a",
+      "identical_baseline_files": [
+        "ui/mutebuttonlockedclicked.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/mutebuttonlockedhover.png",
+      "bytes": 280,
+      "sha256": "4169f6be19edba906338e4626e152122857d21a1af160d6acec90154fc067a1e",
+      "identical_baseline_files": [
+        "ui/mutebuttonlockedhover.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/PauseMenuBackground.png",
+      "bytes": 4005,
+      "sha256": "7923e8d8ba46413dbae69a6bee8456332ce31568fbfd5b7f2c83ed72318fa0eb",
+      "identical_baseline_files": [
+        "ui/PauseMenuBackground.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/PauseMenuBackgroundMobile.png",
+      "bytes": 3646,
+      "sha256": "0bf08838d683889bb71b7f8dc6f871335f9927744c70db44cb7564c6d4dc5928",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/ui/hud/PauseMenuRibbonButton.png",
+      "bytes": 511,
+      "sha256": "a4add1ede56e4c44d92dfe5120c28c7971a9427ee262f32d81a6e7a036bb0030",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/ui/hud/plusbutton.png",
+      "bytes": 246,
+      "sha256": "2ac1db9a6f5c6c26c62463f46c89e8f9cb1d20e825a86ea3ce594c4b5eade863",
+      "identical_baseline_files": [
+        "ui/plusbutton.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/plusbuttonclicked.png",
+      "bytes": 248,
+      "sha256": "ba860b1fbe7eca500239cf36abbb71bc55c9d0b57a60d456437d9b2f8e297c12",
+      "identical_baseline_files": [
+        "ui/plusbuttonclicked.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/plusbuttonhover.png",
+      "bytes": 246,
+      "sha256": "ae631a543cd7219aba41ce60e805c5614d1c331cc37956a902ce151a1c4adf69",
+      "identical_baseline_files": [
+        "ui/plusbuttonhover.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/RatkingStatic.png",
+      "bytes": 5533,
+      "sha256": "108b3084922f0cd6cb25b53b35257d17b44ee71829e7d7c2bd0a248a6bb06cb2",
+      "identical_baseline_files": [
+        "ui/RatkingStatic.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/RightArrow.png",
+      "bytes": 177,
+      "sha256": "ed6cab87a04884dbdc089f47085c71f9e4f5a03120a67d2fafc2984b1a1f1472",
+      "identical_baseline_files": [
+        "ui/RightArrow.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/RightArrowHover.png",
+      "bytes": 211,
+      "sha256": "87122ab52ca0b1b053eefd57db525c6ba9875fb6fe458a7135c3c7ece54cff0f",
+      "identical_baseline_files": [
+        "ui/RightArrowHover.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/Score.png",
+      "bytes": 480,
+      "sha256": "2a4d1611dd61f308b399b8cd69371c8b037bb96538da53c014383b2fe0f6df7c",
+      "identical_baseline_files": [
+        "ui/Score.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/ScoreSmall.png",
+      "bytes": 821,
+      "sha256": "50882c0621a431a55feb345766f3be306e829cccd691d0476c51b4355a01488f",
+      "identical_baseline_files": [
+        "ui/ScoreSmall.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/settingsbutton.png",
+      "bytes": 347,
+      "sha256": "48991b402c74f933ba2f2eef3f29a03e3565a024da3001bee205dcb03c38fa52",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/ui/hud/settingsbuttonclicked.png",
+      "bytes": 326,
+      "sha256": "10c33c9c6605727b52c4e36e8429c7bcbd4bc9681688faa577d3b5c75ce0dab6",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/ui/hud/SkillMenuBorder.png",
+      "bytes": 825,
+      "sha256": "cbfa9b37ca0db87782b425e3de78e9ac437721ae4be177d7e8447ba2fea345ca",
+      "identical_baseline_files": [
+        "ui/SkillMenuBorder.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/SkillPointInfoBackground.png",
+      "bytes": 1319,
+      "sha256": "4d326ba6d89e85dbeafc1cfec16e542ed17bcec2d81e8b7b9a65943e488ca4a0",
+      "identical_baseline_files": [
+        "ui/SkillPointInfoBackground.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/TryAgainBackground.png",
+      "bytes": 778,
+      "sha256": "561d16b73dc0e1d7d4a3a000c5eb86a2d54cb3840043003b5134e83055dd9713",
+      "identical_baseline_files": [
+        "ui/TryAgainBackground.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/TurdHeart.png",
+      "bytes": 479,
+      "sha256": "a5167535a2cc0db6f111b16a529092ca3488097143dceac049374767399a335f",
+      "identical_baseline_files": [
+        "ui/TurdHeart.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/TurdHeart0HalfHollow.png",
+      "bytes": 222,
+      "sha256": "acf0ff475f28c99fce7164c364ee193af2752807d0d66c42851e051970e2144c",
+      "identical_baseline_files": [
+        "ui/TurdHeart0HalfHollow.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/TurdHeart0HalfHollow1Half.png",
+      "bytes": 197,
+      "sha256": "d347b999ada2203ce241e5802ebb9af14fd43aa34021bfa675a2f9dcb2c44d14",
+      "identical_baseline_files": [
+        "ui/TurdHeart0HalfHollow1Half.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/TurdHeart0ThirdHollow.png",
+      "bytes": 217,
+      "sha256": "066b160f2d5328ea2f5d6525d066a7f2952526a0f756330cbdcb0161fb255319",
+      "identical_baseline_files": [
+        "ui/TurdHeart0ThirdHollow.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/TurdHeart0ThirdHollow1Third.png",
+      "bytes": 170,
+      "sha256": "7d1f8caa49964d3653b78342ca6bb2ba637a9d9067cba8dff528a18561927267",
+      "identical_baseline_files": [
+        "ui/TurdHeart0ThirdHollow1Third.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/TurdHeart1Half.png",
+      "bytes": 311,
+      "sha256": "ec98587528db49b01b76b36dbd5ff566c759c6214154625b66824d8b3da03604",
+      "identical_baseline_files": [
+        "ui/TurdHeart1Half.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/TurdHeart1HalfHollow.png",
+      "bytes": 355,
+      "sha256": "c76e12a0bb10c33a9c3d29321400690e2368a21a66bf1fcc0d166f81af4ecf8b",
+      "identical_baseline_files": [
+        "ui/TurdHeart1HalfHollow.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/TurdHeart1Third.png",
+      "bytes": 265,
+      "sha256": "ead5d166eb9009182b79edbf98d9f8acb3aee9c9d737efa1d4a359c66c08463d",
+      "identical_baseline_files": [
+        "ui/TurdHeart1Third.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/TurdHeart1ThirdHollow.png",
+      "bytes": 322,
+      "sha256": "971c8c85bacbb2b728528c6953dc77dae22391596a358ee18d0980ec89625f2b",
+      "identical_baseline_files": [
+        "ui/TurdHeart1ThirdHollow.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/TurdHeart1ThirdsHollow1Thirds.png",
+      "bytes": 297,
+      "sha256": "25105ec2f141a7424507de6ad57b1413c22d65fb44fc70c52ccd3a6667d05821",
+      "identical_baseline_files": [
+        "ui/TurdHeart1ThirdsHollow1Thirds.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/TurdHeart2Thirds.png",
+      "bytes": 337,
+      "sha256": "69c01343d2f5d49bf2db1f789dc066f60a626cbd22f2826a90b64f002b561b1d",
+      "identical_baseline_files": [
+        "ui/TurdHeart2Thirds.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/TurdHeart2ThirdsHollow.png",
+      "bytes": 360,
+      "sha256": "c96e93d36a7d030cbcd44f26831f33509f6f8b95f440694ad85e788153dcb218",
+      "identical_baseline_files": [
+        "ui/TurdHeart2ThirdsHollow.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/TurdHeart2ThirdsHollow2Thirds.png",
+      "bytes": 204,
+      "sha256": "b93f024eb5ebe681b8ff19f3d8ea579f216c38ab6330d2e8c37fcda0dbae0fec",
+      "identical_baseline_files": [
+        "ui/TurdHeart2ThirdsHollow2Thirds.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/TurdHeartHollow.png",
+      "bytes": 209,
+      "sha256": "16846b0d153d6ea9bcb627af6c75c02e0b1c97605123c1f8e3a6f42dbd897ef1",
+      "identical_baseline_files": [
+        "ui/TurdHeartHollow.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/TurdHeartSmall.png",
+      "bytes": 371,
+      "sha256": "db614f4eb381ffc72d3c51eca215fdb0a5b66b27d6dbb38e2c26293e49226b21",
+      "identical_baseline_files": [
+        "ui/TurdHeartSmall.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/TurdPointButton.png",
+      "bytes": 930,
+      "sha256": "c4365d8c7de63a6b853c64ba5b07b994cf1bb5b5ad2fa2ebf2e45a41a1f7bacf",
+      "identical_baseline_files": [
+        "ui/TurdPointButton.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/TurdPointButtonAvailable.png",
+      "bytes": 913,
+      "sha256": "047fef5ed920419a7ddd27590032a7500e966a318530053518d9996abef8bc49",
+      "identical_baseline_files": [
+        "ui/TurdPointButtonAvailable.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/TurdPointButtonClaimed.png",
+      "bytes": 931,
+      "sha256": "bec4de9a7e416e1c0769794b4a3863740dc985de03f362904867723514ae8c10",
+      "identical_baseline_files": [
+        "ui/TurdPointButtonClaimed.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/TurdPointButtonFocused.png",
+      "bytes": 924,
+      "sha256": "21bed622bd99f1257cb930d57846a0a4105c6a0d854b68f40a5c21f2b9643f67",
+      "identical_baseline_files": [
+        "ui/TurdPointButtonFocused.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/TurdPointMenu.png",
+      "bytes": 13462,
+      "sha256": "956edfe43cb363277490ca52e0ffc3b745f4f38daa13ea6beca9e349eaad3f4b",
+      "identical_baseline_files": [
+        "ui/TurdPointMenu.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/UpArrow.png",
+      "bytes": 184,
+      "sha256": "5b5c3070cd44215271015e9612944514b190958533e184fe69bc2e13cf71125b",
+      "identical_baseline_files": [
+        "ui/UpArrow.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/volumemeterempty.png",
+      "bytes": 534,
+      "sha256": "58fbbad07a102ba99780e8e1bc74576e9b7d686468f2cc94389956a92b80525c",
+      "identical_baseline_files": [
+        "ui/volumemeterempty.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/volumemeterfull.png",
+      "bytes": 863,
+      "sha256": "0ebe7bb0a650318acc6db8289ac48054750e3c7a9bc4cb1b4303de40b4c8a648",
+      "identical_baseline_files": [
+        "ui/volumemeterfull.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/hud/xbuttonselected.png",
+      "bytes": 338,
+      "sha256": "a80fdccfea1110c6bdea6bfc15cc11383a1d22a55990b308f44bb0c092270afa",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/ui/hud/xbuttonunselected.png",
+      "bytes": 260,
+      "sha256": "e45e37ba7d97061532575737618219c786ddffe41a6682c7633c437c742c6885",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/ui/icons/poophat.ico",
+      "bytes": 1150,
+      "sha256": "589d0d25ca72172727c7fd5cf00a15ef3584348eced5268b5fc6c606e743d8dc",
+      "identical_baseline_files": [
+        "poophat.ico"
+      ]
+    },
+    {
+      "master": "graphics/ui/menus/level_select/CastleLevelPainting.png",
+      "bytes": 4848,
+      "sha256": "9f659a3cd7cb9ccc5600e1960e48ecb0732b1fb198eaf85be69317353a2d4b68",
+      "identical_baseline_files": [
+        "mainmenu/CastleLevelPainting.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/menus/level_select/DesertLevelPainting.png",
+      "bytes": 3061,
+      "sha256": "47e8821a3e6edc9dcac16253c26ec0cdce0a999579030c00f4607224c5e34a75",
+      "identical_baseline_files": [
+        "mainmenu/DesertLevelPainting.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/menus/level_select/EmptyPainting.png",
+      "bytes": 1324,
+      "sha256": "767916622009048bb9ca3679268fb2d70a269ce5150811e711303c557f8bdfff",
+      "identical_baseline_files": [
+        "mainmenu/EmptyPainting.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/menus/level_select/LockedPainting.png",
+      "bytes": 2115,
+      "sha256": "5518dd9fe3f13047f0a7ae08ddf2b53a9dbc03a8cda882c1ddf4bd9a46702569",
+      "identical_baseline_files": [
+        "mainmenu/LockedPainting.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/menus/level_select/ParkLevelPainting.png",
+      "bytes": 3015,
+      "sha256": "848475b15a04bec52471bebdf3b370839be1a09997429ff309e930b6bcce1c41",
+      "identical_baseline_files": [
+        "mainmenu/ParkLevelPainting.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/menus/level_select/RatKingPainting.png",
+      "bytes": 2318,
+      "sha256": "0fca1cbd2a22753ce7da41fe59604f12d48b4f34ed84116913a5c453323c90a7",
+      "identical_baseline_files": [
+        "mainmenu/RatKingPainting.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/menus/level_select/SewerLevelPainting.png",
+      "bytes": 4091,
+      "sha256": "01b4f5291c0ef040c8d812a4d38301e4a08a8d80b6dd58ca8f129198897310a6",
+      "identical_baseline_files": [
+        "mainmenu/SewerLevelPainting.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/menus/level_select/SnowLevelPainting.png",
+      "bytes": 4611,
+      "sha256": "43e7eed17d3fae2c8278806408c1409a0fc73b54fd526419f7c6ab25184ba6ec",
+      "identical_baseline_files": [
+        "mainmenu/SnowLevelPainting.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/menus/main/F.png",
+      "bytes": 463,
+      "sha256": "e69f92976dbf83d35535770562a470907ab8ca0d21d17ee2a35670bc3e3172b6",
+      "identical_baseline_files": [
+        "mainmenu/F.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/menus/main/FloppyLogo.png",
+      "bytes": 1919,
+      "sha256": "14ec59dffca6236355c0087dfd7e81e4f2a30d54cfbcf04f855993afbab7e3f6",
+      "identical_baseline_files": [
+        "mainmenu/FloppyLogo.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/menus/main/MainMenu.png",
+      "bytes": 2023,
+      "sha256": "1d2436df996eddf3e899aaa44284f704435f1e52b9badc084c17494ec0db4b1f",
+      "identical_baseline_files": [
+        "mainmenu/MainMenu.png"
+      ]
+    },
+    {
+      "master": "graphics/ui/menus/main/MainMenuMobile.png",
+      "bytes": 6291,
+      "sha256": "9a3c6e5f9c94e0123393fb8026f162c46ddd38463a97861fd0bc9c3a4ea69581",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/ui/menus/main/PooperTrooperLogo.png",
+      "bytes": 2989,
+      "sha256": "aaaba4a201e59537125c66630eeeb283113329b9f38d3b964469d8a46464d39c",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/environment/structures/buildings/Outhouse.png",
+      "bytes": 1843,
+      "sha256": "87e28f957226bead5b347df249b9d9839922bc0b766bc88e1ad94c3f3c173651",
+      "identical_baseline_files": [
+        "environment/Outhouse.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/structures/pipes/BottomPipeWide.png",
+      "bytes": 752,
+      "sha256": "767648ba1c83cb03c8cdf7d02a87f9c07883cadc5988e5c0ddac7df1808abdec",
+      "identical_baseline_files": [
+        "environment/BottomPipeWide.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/structures/pipes/BottomPipeWideBlue.png",
+      "bytes": 767,
+      "sha256": "a71fa2e512ffb6c80160fba61d2e19bce40962bce928a2bcdd68e0b90d4d5a62",
+      "identical_baseline_files": [
+        "environment/BottomPipeWideBlue.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/structures/pipes/TopPipeWide.png",
+      "bytes": 732,
+      "sha256": "c7f964964676dbea680cd6fb39cd77a1791f1c5eb36f902e1a573f9722a9d7a6",
+      "identical_baseline_files": [
+        "environment/TopPipeWide.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/structures/pipes/TopPipeWideBlue.png",
+      "bytes": 736,
+      "sha256": "48be3fb614857ec1259c17497c424ebf9660f16643e4fedeea3d6552782778d0",
+      "identical_baseline_files": [
+        "environment/TopPipeWideBlue.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/structures/toilets/BottomToilet.png",
+      "bytes": 1211,
+      "sha256": "6375e461a86d4625ecac383852fb37439db9cd19dda750eb2b13cec39b2200a2",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/environment/structures/toilets/BottomToiletGold.png",
+      "bytes": 1287,
+      "sha256": "aed59e2fc6f292874ad53e0704e216d7de162ecdd31ac2049db1071618be898f",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/environment/structures/toilets/BottomToiletSnow.png",
+      "bytes": 2617,
+      "sha256": "c2d7893599b8028818492a9042c85f2686ebfd07137114688d74b5903001678e",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/environment/structures/toilets/OuthouseToilet.png",
+      "bytes": 952,
+      "sha256": "ce72a0038194579701dbd564a18aaba33d3649b311824ef641450aff5b4ae382",
+      "identical_baseline_files": [
+        "environment/OuthouseToilet.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/structures/toilets/TopToilet.png",
+      "bytes": 1246,
+      "sha256": "1872ff90bb0d6b950bbcfd7f1073293b1aaf3c08d708f9ff06aec65fab89e41b",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/environment/structures/toilets/TopToiletGold.png",
+      "bytes": 1324,
+      "sha256": "5cdb314602436fdf164d6aa58952ff33b09e72936106032cd2081a6ae6e354af",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/environment/structures/toilets/TopToiletSnow.png",
+      "bytes": 2550,
+      "sha256": "5e35a7a4f10cc749357b545f05436bc4cdb7c1052ff755a62bd9a2197e5358e7",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/environment/props/particles/Snowfall.png",
+      "bytes": 553,
+      "sha256": "fb210898a5eb16d9e89c52463df89cc7a96b6adbcb2b46ef28c1cb55d2478c87",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/environment/props/vegetation/Cacti.png",
+      "bytes": 7081,
+      "sha256": "493d8980aedfd16007dbaa88f823742e5469c255ec7d23e7a23f6abc926c2312",
+      "identical_baseline_files": [
+        "environment/Cacti.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/objects/npcs/Janitor.png",
+      "bytes": 879,
+      "sha256": "5d07526163ef43ee744f1032375c000042d4004fce64948f8b4e632c394a4fea",
+      "identical_baseline_files": [
+        "objects/Janitor.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/objects/npcs/JanitorSurprise.png",
+      "bytes": 1356,
+      "sha256": "57ee090cc08dc3c5b660d26a0f1e883ab96ca98d12c09f8f19197d2b166c5dbc",
+      "identical_baseline_files": [
+        "objects/JanitorSurprise.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/objects/npcs/JanitorSweep.png",
+      "bytes": 1525,
+      "sha256": "0a1dca1328543d6f82819b9c77fa16e5169fa5ee895cd8c5280463d6e6b840ed",
+      "identical_baseline_files": [
+        "objects/JanitorSweep.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/objects/interactive/coins/BlueCoin.png",
+      "bytes": 1058,
+      "sha256": "b86c4ba8551c08e98618cd5c2b7943b461c9361834460dd5b2ecfa5c78b6704a",
+      "identical_baseline_files": [
+        "objects/BlueCoin.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/objects/interactive/coins/GoldCoin.png",
+      "bytes": 857,
+      "sha256": "14b7b2537b034e16b6e7af1675e66c07fc54115fadb7656e8be75fd6b5030d12",
+      "identical_baseline_files": [
+        "objects/GoldCoin.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/objects/interactive/coins/RedCoin.png",
+      "bytes": 923,
+      "sha256": "5bca6708828d31b66ecb7f58588c17461c3906d76b22d272723b74440f9e1175",
+      "identical_baseline_files": [
+        "objects/RedCoin.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/objects/interactive/hazards/Snowball.png",
+      "bytes": 227,
+      "sha256": "066c64d59587cc283b0092e5a9f84bdc6098933eed82f6dfce0749cb3e0c133f",
+      "identical_baseline_files": [
+        "objects/Snowball.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/objects/interactive/hazards/SpikeBall.png",
+      "bytes": 676,
+      "sha256": "0e87202983aed9e5b99bbe05865bf9cf7ffa07d849af0ed5118242aedda9f5b4",
+      "identical_baseline_files": [
+        "objects/SpikeBall.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/objects/interactive/hazards/SpikeBallBase.png",
+      "bytes": 244,
+      "sha256": "46e8c442040428727a899130453e6d881c8414c813b71949e075cb6a51c3ae6b",
+      "identical_baseline_files": [
+        "objects/SpikeBallBase.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/objects/interactive/powerups/PooHeart.png",
+      "bytes": 671,
+      "sha256": "ebc553ed07ad43cf28abc7c40114d5bde191d51cc791f088e14d0a27807f1285",
+      "identical_baseline_files": [
+        "objects/PooHeart.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/objects/interactive/powerups/PooHeartBig.png",
+      "bytes": 703,
+      "sha256": "b0d5762eeaa5b289fb6b01d632ad70e925ac9a00a7ac3cf615ec022f6bb13f67",
+      "identical_baseline_files": [
+        "objects/PooHeartBig.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/objects/interactive/powerups/PooHeartRainbowBeam.png",
+      "bytes": 2664,
+      "sha256": "60b57e9b135657933e19365bcc9c95defc39b94dcd63a7f4049a37fd790532b3",
+      "identical_baseline_files": [
+        "objects/PooHeartRainbowBeam.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/objects/decorative/cacti/CactiA.png",
+      "bytes": 638,
+      "sha256": "c4ad07b9ce9ae9a2c9ed7d1cb164276320aabeea6cd2a6202847eb274ad7abd0",
+      "identical_baseline_files": [
+        "objects/CactiA.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/objects/decorative/cacti/CactiB.png",
+      "bytes": 428,
+      "sha256": "b7ecca27109daa85660f1f36959214bdedfcff19543ebf5caf15012e4867de64",
+      "identical_baseline_files": [
+        "objects/CactiB.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/objects/decorative/cacti/CactiBush.png",
+      "bytes": 182,
+      "sha256": "ff8508bbabc5e9cb1c235a2d8843b391905fbaf6f620c5b6270182eeb3a57df6",
+      "identical_baseline_files": [
+        "objects/CactiBush.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/objects/decorative/cacti/CactiC.png",
+      "bytes": 876,
+      "sha256": "f1458e617987fb7b8b0265bc7061058b937399899c12f70834d86571c9ce9d28",
+      "identical_baseline_files": [
+        "objects/CactiC.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/objects/decorative/cacti/CactiD.png",
+      "bytes": 871,
+      "sha256": "884c35571d898d74ff4ae95de0866971b880002442beb35903f728574383e396",
+      "identical_baseline_files": [
+        "objects/CactiD.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/objects/decorative/cacti/CactiE.png",
+      "bytes": 855,
+      "sha256": "a4d47f4d30db171c72b03be482d512b5567c8aeba3a896c6068d59e24725ee38",
+      "identical_baseline_files": [
+        "objects/CactiE.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/objects/decorative/cacti/dancingcacti.png",
+      "bytes": 4407,
+      "sha256": "eed4d3908ceb931e28f5cb4e057a909850d2accad3d65a2182838c6347baf171",
+      "identical_baseline_files": [
+        "environment/dancingcacti.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/objects/decorative/cacti/dancingcacticowboy.png",
+      "bytes": 4844,
+      "sha256": "688dfbbaa850235f354167912b26318292d8d7152dccccce9b1134e605782db6",
+      "identical_baseline_files": [
+        "environment/dancingcacticowboy.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/objects/decorative/cacti/dancingcactismall.png",
+      "bytes": 2243,
+      "sha256": "13895e207dd54c7ed0cc63179012a0c9a7f72ffc08d2dbe71f936f4a44a98b1a",
+      "identical_baseline_files": [
+        "environment/dancingcactismall.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/objects/decorative/paintings/CabinPainting.png",
+      "bytes": 3631,
+      "sha256": "6b665088b2219c4eb7c993500abfeea33882607419e7ed1d8c682ce17fa26a36",
+      "identical_baseline_files": [
+        "objects/CabinPainting.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/objects/decorative/paintings/RabbitKnightPainting.png",
+      "bytes": 11175,
+      "sha256": "6a55c8338e0220034adce75e5d92cbdbc9153a7823dc4305f5b5886cd131ac3b",
+      "identical_baseline_files": [
+        "objects/RabbitKnightPainting.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/objects/decorative/paintings/RatBeachPainting.png",
+      "bytes": 6959,
+      "sha256": "251bb34dfe70a6e1160b89abc96bcfcc1ccceb296023cabc1b91331890501cb8",
+      "identical_baseline_files": [
+        "objects/RatBeachPainting.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/objects/decorative/paintings/RiverWalkPainting.png",
+      "bytes": 10585,
+      "sha256": "ba5487e5497fa151890a2e4c5b2a7adf8c374b8b70364111122cbb9dbe18d39b",
+      "identical_baseline_files": [
+        "objects/RiverWalkPainting.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/objects/decorative/walls/BrickWall.png",
+      "bytes": 1032,
+      "sha256": "d780fe87e44d10df900fd47cd3a500c2ca53861f5f7ec76b02b090c76b0b0810",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/environment/backgrounds/boss/BossBackground.png",
+      "bytes": 1315,
+      "sha256": "c259fc92a9b3000a401797928843d280f37478bc225ab4ce04563a71e33dd1b4",
+      "identical_baseline_files": [
+        "environment/ratkingbackground.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/backgrounds/boss/BossFloor.png",
+      "bytes": 477,
+      "sha256": "025a88e1e1ed26c49f61d094e89266ebbe7ad1f8d8517e01937b96b07f2dfaa1",
+      "identical_baseline_files": [
+        "environment/BossFloor.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/backgrounds/boss/BossLevelPillarMobile.png",
+      "bytes": 16982,
+      "sha256": "06a51b606ee38e50084344d0bc875c72298f2b61effcbecb141326b7968ac040",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/environment/backgrounds/boss/bosspillar.png",
+      "bytes": 18108,
+      "sha256": "4dada7f6f20ebb56ee0a7c04e02417cc43addc16be03c683342a6b7dbe5b57ca",
+      "identical_baseline_files": [
+        "environment/bosspillar.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/backgrounds/boss/BossWalls.png",
+      "bytes": 3168,
+      "sha256": "c7c648612bc5ad0be811890f5c9fdc8f6f6371d17152005d6359fb00ae082858",
+      "identical_baseline_files": [
+        "environment/BossWalls.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/backgrounds/boss/screenCurtains.png",
+      "bytes": 1641,
+      "sha256": "a26b272077849973c9c796fc8919e601de7c2c5b7ed47e18edaf6ba033361051",
+      "identical_baseline_files": [
+        "environment/screenCurtains.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/backgrounds/castle/castlebacklayerbackground.png",
+      "bytes": 5457,
+      "sha256": "8f205363345653e49927c83af302805feb4c7781328cea406071b87fc4390e07",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/environment/backgrounds/castle/castlelevelchandelier.png",
+      "bytes": 1432,
+      "sha256": "4905faae0c84c056da849f36d36d5c080f51ab9fba29f9a1f661bb054305bcb5",
+      "identical_baseline_files": [
+        "environment/castlelevelchandelier.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/backgrounds/castle/castlelevelfloortorch.png",
+      "bytes": 1047,
+      "sha256": "f5312dbe92bd32d7f824cbb5bfb1807c07b4a77327f84f53dc7ce2a07d712084",
+      "identical_baseline_files": [
+        "environment/castlelevelfloortorch.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/backgrounds/castle/curtains.png",
+      "bytes": 5687,
+      "sha256": "dd18d71f692818523491bfa700cd5c5bcc3613f097ae5086b31f5fcb1665c98a",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/environment/backgrounds/castle/TorchPillar.png",
+      "bytes": 7798,
+      "sha256": "d237ced74f35493c7789694c5d45825a7358f3044028c6362bc1cb641f063de1",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/environment/backgrounds/credits/FloppyTurdCreditsBackground.png",
+      "bytes": 961,
+      "sha256": "e7acdf0b226ffa01e1eaf5b5a7c7784d42cb830ca624feb4085ff36911aa8d3b",
+      "identical_baseline_files": [
+        "ui/FloppyTurdCreditsBackground.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/backgrounds/level1/Level1BackLayerBackground.png",
+      "bytes": 6690,
+      "sha256": "b2c430706e9e5369a25a83560d925a7f5275d9f0d910877d47f86994844e2395",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/environment/backgrounds/level1/Level1Clouds.png",
+      "bytes": 1767,
+      "sha256": "7ba99bac41636d52d98f3efd1bd9008daf9da9b8a8ed25535754a83b91723068",
+      "identical_baseline_files": [
+        "environment/Level1Clouds.png"
+      ]
+    },
+    {
+      "master": "graphics/environment/backgrounds/level1/Level1FrontLayerBackground.png",
+      "bytes": 11627,
+      "sha256": "f238154fd4077e515ed7cff4e975fe3a0f07bc62abc0b12b8247f6e8d31ac9db",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/environment/backgrounds/level1/Level1MidLayerBackground.png",
+      "bytes": 5429,
+      "sha256": "9c9826b899a71e673d5277b2b12edd4605c77a83d8a3744a60def15157189943",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/environment/backgrounds/level3/Level3BackLayerBackground.png",
+      "bytes": 4891,
+      "sha256": "9d43996c371bbe77d2821e821d5bc8138d8caa252b1b788861db11c48f9f4a3e",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/environment/backgrounds/level3/Level3FrontLayerBackground.png",
+      "bytes": 6761,
+      "sha256": "78340787faadb37713cb524eb48c080dce91cd36733ff27e70a435146b2a8fe9",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/environment/backgrounds/level3/Level3MidLayerBackground.png",
+      "bytes": 9066,
+      "sha256": "d5a6009d5543797a3a69693d378d1e018deac7e88ee575dbbf9c4a54df2208c4",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/environment/backgrounds/sewer/SewerLargeA.png",
+      "bytes": 6605,
+      "sha256": "841a6a43c1033f284ffa4c9395c3492561e9fb0ee7194e8dd7144f21cf2c2566",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/environment/backgrounds/sewer/SewerLargeB.png",
+      "bytes": 12256,
+      "sha256": "e2541cb61f4d6eeaae40d647d3aa71b92b2f965ec8339d5f951a944eeb321b80",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/environment/backgrounds/sewer/SewerLargeC.png",
+      "bytes": 16121,
+      "sha256": "427e735b37d25877186f8e1994dd4308ff829d081033a2aa1d6ef8fc773280ca",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/environment/backgrounds/sewer/SewerLargeD.png",
+      "bytes": 13107,
+      "sha256": "8cba3abeec229833dec8552508d3c93803e8c9d96a16b868f074d1cae5a83d71",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/environment/backgrounds/snow_level/SnowLevelBackLayerBackground.png",
+      "bytes": 7787,
+      "sha256": "b1db12edf5519f841b5c5e14ef8be1664bdf481330c2cbc5219bda4065ef0d0e",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/environment/backgrounds/snow_level/SnowLevelFrontLayerBackground.png",
+      "bytes": 6428,
+      "sha256": "3b001ecda7f442a9d15800e9c2226104393a9670c511f35a9bbd5c0de8a20844",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/environment/backgrounds/snow_level/SnowLevelFrontLayerTrees.png",
+      "bytes": 45156,
+      "sha256": "7e3109b45fe8e47304e0765404ab3906b0631e7b7886af2c3c34066f9215dcd4",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/environment/backgrounds/snow_level/SnowLevelMidLayerBackground.png",
+      "bytes": 13908,
+      "sha256": "166a9e3b2d84b7497d59fc80a153a4361cd81be398d842e566810e4bffd4a222",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/characters/player/turd/base/BigTurdHurt.png",
+      "bytes": 2807,
+      "sha256": "30c97ae85a675b823504994d9401b5dd4c866acc674ebd5c0620f8d44d7c0ca4",
+      "identical_baseline_files": [
+        "turd/BigTurdHurt.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/turd/base/BigTurdIdle.png",
+      "bytes": 991,
+      "sha256": "144dadead85b80823f4cd31d198d674f9b27954d2eb81c92895d90508f291d18",
+      "identical_baseline_files": [
+        "turd/BigTurdIdle.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/turd/base/BigTurdJump.png",
+      "bytes": 2525,
+      "sha256": "d936ac9d45dbd7c9148696aa75f15d751730ec317e3c6c400def243cf47708c8",
+      "identical_baseline_files": [
+        "turd/BigTurdJump.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/turd/base/BigTurdShoot.png",
+      "bytes": 2641,
+      "sha256": "7f5fe0358ef9c863d04b83b40cdac6d20cc2855c5bac0ba30f0e86f3625caa7a",
+      "identical_baseline_files": [
+        "turd/BigTurdShoot.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/turd/base/TeenageTurdHurt.png",
+      "bytes": 2306,
+      "sha256": "9e68510d4e4a5d98ff20226b3a75ef3c16be71f23e417cbdc674216d051f9b6e",
+      "identical_baseline_files": [
+        "turd/TeenageTurdHurt.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/turd/base/TeenageTurdIdle.png",
+      "bytes": 723,
+      "sha256": "809404dc17615385ed3dcec55a99384e949f408064c50e93c7750e3186a2468d",
+      "identical_baseline_files": [
+        "turd/TeenageTurdIdle.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/turd/base/TeenageTurdJump.png",
+      "bytes": 2300,
+      "sha256": "9625f6bf8a23bdfb8bc506168650af28bb68524846607a6231b3e5866f35a6d2",
+      "identical_baseline_files": [
+        "turd/TeenageTurdJump.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/turd/base/TeenageTurdShoot.png",
+      "bytes": 2237,
+      "sha256": "6b24e041bf052d5557c6f940415f5415933b8fb0eac0209a098a925b4ad5810d",
+      "identical_baseline_files": [
+        "turd/TeenageTurdShoot.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/turd/base/TurdletHurt.png",
+      "bytes": 1502,
+      "sha256": "2e6b9ddc8626af4aa2c5454323117f10c68508f50eeef2d71cceba86da9ffb1c",
+      "identical_baseline_files": [
+        "turd/TurdletHurt.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/turd/base/TurdletIdle.png",
+      "bytes": 521,
+      "sha256": "39a459943318d5bd69b5bc28b289f70e1d90be65787e5d415c9303e220b1cdb3",
+      "identical_baseline_files": [
+        "turd/TurdletIdle.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/turd/base/TurdletJump.png",
+      "bytes": 1322,
+      "sha256": "7acd444c0060cc2ee321440f106be2eb6f7e792ec55bd52fbca54ef74be5e4c6",
+      "identical_baseline_files": [
+        "turd/TurdletJump.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/turd/base/TurdletShoot.png",
+      "bytes": 1203,
+      "sha256": "f962e9141ddd5c76b93b298dfe6061e2e79432ad1cdbeb064c0e0e1b94279a4d",
+      "identical_baseline_files": [
+        "turd/TurdletShoot.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/turd/projectiles/Floppy Poop Large.png",
+      "bytes": 438,
+      "sha256": "777c32992ba9444974a195bac0a2bb15e7af99a694034d103c11aef949d3c011",
+      "identical_baseline_files": [
+        "turd/Floppy Poop Large.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/turd/projectiles/Floppy Poop Mid.png",
+      "bytes": 353,
+      "sha256": "c986207b720ca0c1f26192da53d3f3ed4d4b9ecbcbaacbd3253b2b540bbdc57e",
+      "identical_baseline_files": [
+        "turd/Floppy Poop Mid.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/turd/projectiles/Floppy Poop.png",
+      "bytes": 398,
+      "sha256": "2c93b8465b293ac0ba315dea7bd7d5dc0ee0664b96df15715f2463495dd64bc8",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/base_hats/ballcap.png",
+      "bytes": 201,
+      "sha256": "e81ba5dbb8d6f1d8d132a4b4b7ed777d30878e75ab165f43fe8ab808bcc5e291",
+      "identical_baseline_files": [
+        "hats/ballcap.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/base_hats/Beret.png",
+      "bytes": 304,
+      "sha256": "1a4ad0f43471e91914519a6c23b8550af7b7036618719afa4efba0c903af07f2",
+      "identical_baseline_files": [
+        "hats/Beret.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/base_hats/cowboyhat.png",
+      "bytes": 191,
+      "sha256": "e1b6caa5267ede2a4c19fc1b50e7237767ed4a5f3e4708f3e3cba7bd0c0d3460",
+      "identical_baseline_files": [
+        "hats/cowboyhat.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/base_hats/crown.png",
+      "bytes": 272,
+      "sha256": "09d98343ec88d0732a713f41a290d9ef252a9d89b07275fb1ad1e3327add6d26",
+      "identical_baseline_files": [
+        "hats/crown.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/base_hats/dooraghat.png",
+      "bytes": 237,
+      "sha256": "72bb0c47cc656cb105b66eba2d0b1ac24f6484346adca19b721601cc8ad8b6dc",
+      "identical_baseline_files": [
+        "hats/dooraghat.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/base_hats/flowerhat.png",
+      "bytes": 306,
+      "sha256": "58707090b6b61804db92cd2816e5c001693d1bc8441a0b62c5d01ea586742e21",
+      "identical_baseline_files": [
+        "hats/flowerhat.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/base_hats/PinwheelHat.png",
+      "bytes": 244,
+      "sha256": "1b2a8b511cc432b3586cbf40bf9b2e59015639cf42085f19cadd191cba830348",
+      "identical_baseline_files": [
+        "hats/PinwheelHat.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/base_hats/poophat.png",
+      "bytes": 335,
+      "sha256": "116b0e661f02549454dd21e8fa90d763e33e508a1eb07fbf4f20a0cb81f63972",
+      "identical_baseline_files": [
+        "hats/poophat.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/base_hats/RamsesHat.png",
+      "bytes": 278,
+      "sha256": "45dd4bc2f97cc27755221bcdb3b722bfbf51e30bb5868c1067b272168710d293",
+      "identical_baseline_files": [
+        "hats/RamsesHat.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/base_hats/SamuraiHelmet.png",
+      "bytes": 461,
+      "sha256": "ce9889289073fac2788c9fcbfad16a82c17c6371465b4839eff10d947574132d",
+      "identical_baseline_files": [
+        "hats/SamuraiHelmet.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/base_hats/shellhat.png",
+      "bytes": 306,
+      "sha256": "b364b1cd0b3d1507cbd0499169d91fd02afa782faad3310f5b545ebc93a6c427",
+      "identical_baseline_files": [
+        "hats/shellhat.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/base_hats/SpartanHelmet.png",
+      "bytes": 410,
+      "sha256": "a52051fb689c6f7d3585b58a2e42017ab370ee27eda54722a8130858111371b8",
+      "identical_baseline_files": [
+        "hats/SpartanHelmet.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/base_hats/strawhat.png",
+      "bytes": 186,
+      "sha256": "32ea8a5bd7086f3dfed1a45650015c914bbad26757c52974fa29116d8e42b09c",
+      "identical_baseline_files": [
+        "hats/strawhat.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/base_hats/tophat.png",
+      "bytes": 171,
+      "sha256": "55164017a79548566d10a9dd0e117dcc7385db239d38db103ce1cbd8732b652e",
+      "identical_baseline_files": [
+        "hats/tophat.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/base_hats/ushanka.png",
+      "bytes": 247,
+      "sha256": "383cf20af5e2758286cbce797779fc903ea709ba9d7da40df3777b46f3128f78",
+      "identical_baseline_files": [
+        "hats/ushanka.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/bigturd/ballcapbigturdjump.png",
+      "bytes": 495,
+      "sha256": "14eb86aab543f11f60f6a609bcb951c2e096a1ee845ed4c8abaae69f103965ff",
+      "identical_baseline_files": [
+        "hats/ballcapbigturdjump.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/bigturd/ballcapbigturdshoot.png",
+      "bytes": 467,
+      "sha256": "163c31485db09fdc708e14518a1b5fb4e35e3a5d19ef5e357150d94d1da4995c",
+      "identical_baseline_files": [
+        "hats/ballcapbigturdshoot.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/bigturd/berethatbigturdjump.png",
+      "bytes": 788,
+      "sha256": "f87b86bdaec2f8b2913112d76a4ba0084b267fc03f8d9baf83cd3475f58bc6d7",
+      "identical_baseline_files": [
+        "hats/berethatbigturdjump.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/bigturd/berethatbigturdshoot.png",
+      "bytes": 759,
+      "sha256": "3cc50e2e5288d096d0ab9b956311bb18584ee6aedef4ac87d93da8a23afeb315",
+      "identical_baseline_files": [
+        "hats/berethatbigturdshoot.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/bigturd/cowboyhatbigturd.png",
+      "bytes": 1043,
+      "sha256": "a4f78a20cf971a733864f6495e731861d45f1d004583b265bccbeadc9aaf4faf",
+      "identical_baseline_files": [
+        "hats/cowboyhatbigturd.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/bigturd/cowboyhatbigturdjump.png",
+      "bytes": 569,
+      "sha256": "cd136bcaa1b5dda8cd25688c3325bc029479465108de4c6d683232eae75a423d",
+      "identical_baseline_files": [
+        "hats/cowboyhatbigturdjump.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/bigturd/cowboyhatbigturdshoot.png",
+      "bytes": 547,
+      "sha256": "9730ef12bccc8d7ba2e2cec1aa92ee0b3146e0010a1300200377cac84d8eedf6",
+      "identical_baseline_files": [
+        "hats/cowboyhatbigturdshoot.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/bigturd/crownhatbigturdjump.png",
+      "bytes": 666,
+      "sha256": "df3c8f549ea1eaa6ab3d7590679e6c1cc2fcf7b0c458679680dbde6c155114bc",
+      "identical_baseline_files": [
+        "hats/crownhatbigturdjump.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/bigturd/crownhatbigturdshoot.png",
+      "bytes": 634,
+      "sha256": "3e046c29fbd5d3fa16d02e6c0d5148b319add73fb578e80df3ca16d56bf3a00e",
+      "identical_baseline_files": [
+        "hats/crownhatbigturdshoot.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/bigturd/dooragbigturdjump.png",
+      "bytes": 583,
+      "sha256": "f52a15aa32f968df8d6d5bdb76d1a2e3a55c85e13324baf494cc959bf13d69cc",
+      "identical_baseline_files": [
+        "hats/dooragbigturdjump.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/bigturd/dooragbigturdshoot.png",
+      "bytes": 571,
+      "sha256": "bce7cae3dbb9215d64fef40f1a67cfda39525b1f77b5bf6a0cbdb345953b797e",
+      "identical_baseline_files": [
+        "hats/dooragbigturdshoot.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/bigturd/flowerhatbigturdjump.png",
+      "bytes": 774,
+      "sha256": "3da50fab44dedbf955d680c7a0c8220cfca96c4cb9349ec7394e6ea26bcd2095",
+      "identical_baseline_files": [
+        "hats/flowerhatbigturdjump.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/bigturd/flowerhatbigturdshoot.png",
+      "bytes": 770,
+      "sha256": "dea1b74cbbb16cfb61a4d5899a62ae47536def0a909b55709268a7f51f811000",
+      "identical_baseline_files": [
+        "hats/flowerhatbigturdshoot.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/bigturd/pinwheelbigturdjump.png",
+      "bytes": 558,
+      "sha256": "1261cd10a3a0c2389107b85ac0f7b7399240d55827a51547d88f5c51a63bd93b",
+      "identical_baseline_files": [
+        "hats/pinwheelbigturdjump.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/bigturd/pinwheelbigturdshoot.png",
+      "bytes": 557,
+      "sha256": "f44fd34c3b92d7e50daa2ea05dae5eb2f8e93596b8894e985607dfef6b565caa",
+      "identical_baseline_files": [
+        "hats/pinwheelbigturdshoot.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/bigturd/poophatbigturdjump.png",
+      "bytes": 879,
+      "sha256": "3f54e01b90a8e80f872395cbed57ec56fb6e6162e022d95754f851e1595202ff",
+      "identical_baseline_files": [
+        "hats/poophatbigturdjump.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/bigturd/poophatbigturdshoot.png",
+      "bytes": 863,
+      "sha256": "fbe9ad7ac5328f506649b99be6ff16cbc601343ecb1f867e3719ac72c96e54ff",
+      "identical_baseline_files": [
+        "hats/poophatbigturdshoot.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/bigturd/ramsesbigturdjump.png",
+      "bytes": 1005,
+      "sha256": "bb30b5af393070aacbea514a4e7c2c84cdbf0261884b17b0a7618232f17e9e21",
+      "identical_baseline_files": [
+        "hats/ramsesbigturdjump.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/bigturd/ramsesbigturdshoot.png",
+      "bytes": 980,
+      "sha256": "cbea628753cb915f5c99f1575753f589ada1ac29b63862dd9fdbff913a4819b5",
+      "identical_baseline_files": [
+        "hats/ramsesbigturdshoot.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/bigturd/samuraibigturdjump.png",
+      "bytes": 1047,
+      "sha256": "e7bbaf3e8f78d2d645b3541fa08f32f4dc9ebb812a1975565b4f503667ab305b",
+      "identical_baseline_files": [
+        "hats/samuraibigturdjump.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/bigturd/samuraibigturdshoot.png",
+      "bytes": 1085,
+      "sha256": "355f3530ffba7eb5a15751b500d6fb1792b846f88f741f264587a590bf8aa61d",
+      "identical_baseline_files": [
+        "hats/samuraibigturdshoot.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/bigturd/shellhatbigturdjump.png",
+      "bytes": 730,
+      "sha256": "c6f111d50f6ef1fa1e1303734007e3c7ad52a20618696dec92eaac8913603bdc",
+      "identical_baseline_files": [
+        "hats/shellhatbigturdjump.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/bigturd/shellhatbigturdshoot.png",
+      "bytes": 752,
+      "sha256": "8cbe6bf19437b885495ea9975624355a7d1c5b2b3d61dc380ed15457f6d29c7f",
+      "identical_baseline_files": [
+        "hats/shellhatbigturdshoot.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/bigturd/spartanhatbigturdjump.png",
+      "bytes": 1395,
+      "sha256": "2091837c26e7222339b36d048ed29958828a72691740b8b4dc016abef7d49151",
+      "identical_baseline_files": [
+        "hats/spartanhatbigturdjump.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/bigturd/spartanhatbigturdshoot.png",
+      "bytes": 1413,
+      "sha256": "2afd9ef09967b5fd44a781cfd80f92030a34d063dd439b6b28b899dc2bd05e81",
+      "identical_baseline_files": [
+        "hats/spartanhatbigturdshoot.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/bigturd/strawhatbigturdjump.png",
+      "bytes": 443,
+      "sha256": "e8325f0dd9c3c6e107faafa59fa5e3640032615c447468d073009de77825c624",
+      "identical_baseline_files": [
+        "hats/strawhatbigturdjump.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/bigturd/strawhatbigturdshoot.png",
+      "bytes": 461,
+      "sha256": "2c7582a7ee8dd2c04cf04e0a9fce22002a3f051adb2cf7b79e6306d6523c6373",
+      "identical_baseline_files": [
+        "hats/strawhatbigturdshoot.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/bigturd/tophatbigturdjump.png",
+      "bytes": 430,
+      "sha256": "5ba3a8053066a0245b6c8a1906ceccb45d62016326fa0b7cff1f45558c2f619f",
+      "identical_baseline_files": [
+        "hats/tophatbigturdjump.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/bigturd/tophatbigturdshoot.png",
+      "bytes": 422,
+      "sha256": "11d99e25553e710fb986b114c26c3044c64066c3a9f1db81e41af4494220fda7",
+      "identical_baseline_files": [
+        "hats/tophatbigturdshoot.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/bigturd/ushankabigturdjump.png",
+      "bytes": 602,
+      "sha256": "20249482cf0cc4d2bd0012b6c60dda556e14647028e93a4e127a9b4c59798935",
+      "identical_baseline_files": [
+        "hats/ushankabigturdjump.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/bigturd/ushankabigturdshoot.png",
+      "bytes": 561,
+      "sha256": "62fa1b67b3541b17fc80c28b1c7d4812ec90576a97550876b4da87c1c85dd236",
+      "identical_baseline_files": [
+        "hats/ushankabigturdshoot.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/turdlet/ballcapturdletjump.png",
+      "bytes": 505,
+      "sha256": "ab37b7d1bdbc89d3d016f6936f7d9106be9ffaa0415ac9d592959dd07c45acd9",
+      "identical_baseline_files": [
+        "hats/ballcapturdletjump.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/turdlet/ballcapturdletshoot.png",
+      "bytes": 370,
+      "sha256": "d11c0afe3b3ca926c862f18ab2a77c137f2e3e1966cbdc45ea52512f776aef6c",
+      "identical_baseline_files": [
+        "hats/ballcapturdletshoot.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/turdlet/berethatturdletjump.png",
+      "bytes": 755,
+      "sha256": "f5a7a96fbdc9ace2aeffa3b47ffdd4cb99ea6f51a4176cb60719118d78c1ea77",
+      "identical_baseline_files": [
+        "hats/berethatturdletjump.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/turdlet/berethatturdletshoot.png",
+      "bytes": 593,
+      "sha256": "cd8f7046a0c6425fff778c5aa177d139c2884b2b6b4371e42072512a48b2afd8",
+      "identical_baseline_files": [
+        "hats/berethatturdletshoot.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/turdlet/cowboyhatteenage.png",
+      "bytes": 847,
+      "sha256": "3a1f9078a68eb435d04295fb3910d114bc7d9cb23ab6ddb5eba447189eb07c9e",
+      "identical_baseline_files": [
+        "hats/cowboyhatteenage.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/turdlet/cowboyhatteenageshoot.png",
+      "bytes": 1233,
+      "sha256": "a121086705a99be9a8bd33a253ea27855dffc3f3c9305f574e5a98879fe40b99",
+      "identical_baseline_files": [
+        "hats/cowboyhatteenageshoot.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/turdlet/cowboyhatturdlet.png",
+      "bytes": 1044,
+      "sha256": "234abc785fff003d00a5e049ef52902dede48825a3acf707d3c4672ac7789955",
+      "identical_baseline_files": [
+        "hats/cowboyhatturdlet.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/turdlet/cowboyhatturdletjump.png",
+      "bytes": 603,
+      "sha256": "42ecc054c3fe8f258ca02137252cb40e30734832cdfea7717cece8b13eb76b1e",
+      "identical_baseline_files": [
+        "hats/cowboyhatturdletjump.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/turdlet/cowboyhatturdletshoot.png",
+      "bytes": 1096,
+      "sha256": "f10bb7ccf5b0c825f7d2a095a9dc5c0e2fc081d48af13f1e99619adc94f7dc44",
+      "identical_baseline_files": [
+        "hats/cowboyhatturdletshoot.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/turdlet/crownhatturdletjump.png",
+      "bytes": 745,
+      "sha256": "9529e0e28a1bb2b4fdfcdb7c09b0285eef4cf70313720953b8c8e472d392be24",
+      "identical_baseline_files": [
+        "hats/crownhatturdletjump.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/turdlet/crownhatturdletshoot.png",
+      "bytes": 495,
+      "sha256": "cd6c23e81b49ffefd52bf92bb343e6dd8a68e023fac472f93a75c226956876ff",
+      "identical_baseline_files": [
+        "hats/crownhatturdletshoot.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/turdlet/dooragturdletjump.png",
+      "bytes": 495,
+      "sha256": "3ba42f996cc99e1df546d89f11d0554c95fabdd59312dd22b8a60d3b50282e99",
+      "identical_baseline_files": [
+        "hats/dooragturdletjump.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/turdlet/dooragturdletshoot.png",
+      "bytes": 382,
+      "sha256": "5fbf8754d7d54940813e5259e89a4ed47bbc49b06f8fd4371a2e11a7d224f609",
+      "identical_baseline_files": [
+        "hats/dooragturdletshoot.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/turdlet/flowerhatturdletjump.png",
+      "bytes": 850,
+      "sha256": "25107ff5133e3ce9cdd41f4859bdd2efd045ce2addb811dd7610bbe4d3a66e66",
+      "identical_baseline_files": [
+        "hats/flowerhatturdletjump.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/turdlet/flowerhatturdletshoot.png",
+      "bytes": 607,
+      "sha256": "1726a7f476123e0324ae1e1009a2c544ec8a8bf57b64ccf73f59d5cc068444e4",
+      "identical_baseline_files": [
+        "hats/flowerhatturdletshoot.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/turdlet/pinwheelturdletjump.png",
+      "bytes": 644,
+      "sha256": "009d62b2b901bfe718d1bf95340abc19336350991349dcda909d205b68634f97",
+      "identical_baseline_files": [
+        "hats/pinwheelturdletjump.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/turdlet/pinwheelturdletshoot.png",
+      "bytes": 440,
+      "sha256": "577d003a03704bd3569d5346d16d10e42e444a4d1e133461e41f82c3cbf2b43e",
+      "identical_baseline_files": [
+        "hats/pinwheelturdletshoot.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/turdlet/poophatturdletjump.png",
+      "bytes": 937,
+      "sha256": "e02c764a544034d43d376a0b9239d8fd9e5ce29d5951801e5c226e43f60e8b54",
+      "identical_baseline_files": [
+        "hats/poophatturdletjump.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/turdlet/poophatturdletshoot.png",
+      "bytes": 650,
+      "sha256": "d3f67cdf4d2f6f2aea2c9adba7833bc2ddcb69e8da24ed47f0004ba179606e4c",
+      "identical_baseline_files": [
+        "hats/poophatturdletshoot.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/turdlet/ramsesturdletjump.png",
+      "bytes": 934,
+      "sha256": "61b5b4e7c52c6e25fbfc18bb8725e56efaafffa87c1f9f1c47890d91a2ffaafe",
+      "identical_baseline_files": [
+        "hats/ramsesturdletjump.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/turdlet/ramsesturdletshoot.png",
+      "bytes": 666,
+      "sha256": "5f6efd9eb619702c0c0760043d5e02d36f3de4b65e8dd7d25e249892e8e8b71a",
+      "identical_baseline_files": [
+        "hats/ramsesturdletshoot.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/turdlet/samuraiturdletjump.png",
+      "bytes": 977,
+      "sha256": "d560afff2aa502f67c87cc8bffc1f45b58b5998a170fc39f5adc0a8bc305b77a",
+      "identical_baseline_files": [
+        "hats/samuraiturdletjump.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/turdlet/samuraiturdletshoot.png",
+      "bytes": 917,
+      "sha256": "5faea8837e465a1f4df32e7f70bc9f6c3f0199acc7cbecce41665ce2ed40d950",
+      "identical_baseline_files": [
+        "hats/samuraiturdletshoot.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/turdlet/shellhatturdletjump.png",
+      "bytes": 747,
+      "sha256": "ef087e3c0e2441b31f745a666eaed714418547eb8481ad75dbf50decf8a32b8d",
+      "identical_baseline_files": [
+        "hats/shellhatturdletjump.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/turdlet/shellhatturdletshoot.png",
+      "bytes": 562,
+      "sha256": "41c69289f928daba04d953ca95c6adee7a54ade2e85fd5c35e349152e6296679",
+      "identical_baseline_files": [
+        "hats/shellhatturdletshoot.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/turdlet/spartanhatturdletjump.png",
+      "bytes": 2490,
+      "sha256": "9207a834d105804b7290353c6b46b2df05a866f4c2ba088ccac1ec39196599de",
+      "identical_baseline_files": [
+        "hats/spartanhatturdletjump.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/turdlet/spartanhatturdletshoot.png",
+      "bytes": 996,
+      "sha256": "8e165ae1bb361a3e20ec4e414ed28d81519aaa4cf4a0f76a4aa7d3c25b37f540",
+      "identical_baseline_files": [
+        "hats/spartanhatturdletshoot.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/turdlet/strawhatturdletjump.png",
+      "bytes": 484,
+      "sha256": "97c7bce7a1cf922760fbd88191c4cd32d17a78346ef5bcb5b357d45a9dc61e10",
+      "identical_baseline_files": [
+        "hats/strawhatturdletjump.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/turdlet/strawhatturdletshoot.png",
+      "bytes": 370,
+      "sha256": "adfbc2e82fb63014d378138d037add52f8122125851be0bd8bf19330dc95d48b",
+      "identical_baseline_files": [
+        "hats/strawhatturdletshoot.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/turdlet/tophatturdletjump.png",
+      "bytes": 461,
+      "sha256": "5af5f47cd60ac03cb739e7481f469209a3ba6c238183f8df7251fe5e17ad12be",
+      "identical_baseline_files": [
+        "hats/tophatturdletjump.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/turdlet/tophatturdletshoot.png",
+      "bytes": 343,
+      "sha256": "f9710a2eba796ed70da6ac2066a18759ad1836e8860394448273f28e5cc4c916",
+      "identical_baseline_files": [
+        "hats/tophatturdletshoot.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/turdlet/ushankaturdletjump.png",
+      "bytes": 630,
+      "sha256": "0f2d3aa31a7a045f58a465b0b33faa2d2157b718f6ec55f1e4ad0005116d3be9",
+      "identical_baseline_files": [
+        "hats/ushankaturdletjump.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/player/cosmetics/hats/character_combinations/turdlet/ushankaturdletshoot.png",
+      "bytes": 459,
+      "sha256": "62a50eb4d6eea8847a92d6f03040493a1692288bdfed3f35676535c5009199f5",
+      "identical_baseline_files": [
+        "hats/ushankaturdletshoot.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/enemies/flying/BirdHurt.png",
+      "bytes": 1116,
+      "sha256": "915dbcdc1b44e7c0bdfad8a58b864eda38208876500e763e16aa525c8e48d3f3",
+      "identical_baseline_files": [
+        "enemies/BirdHurt.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/enemies/flying/BirdIdle.png",
+      "bytes": 564,
+      "sha256": "eede7712bcc644ccd0a7b44f4b5671b703c7e91eeab323a2f8508bc136c6dc4f",
+      "identical_baseline_files": [
+        "enemies/BirdIdle.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/enemies/flying/RatCopterHurt.png",
+      "bytes": 2507,
+      "sha256": "18c5e30fe60471d34fdeeae8762818896fd51fbef83d0672072a1aa0a0bad329",
+      "identical_baseline_files": [
+        "enemies/RatCopterHurt.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/enemies/flying/RatCopterIdle.png",
+      "bytes": 1083,
+      "sha256": "a4aef40bdc7ed821f13a5ce632cceeb54d04e686bed3bc10840737051d1af6cc",
+      "identical_baseline_files": [
+        "enemies/RatCopterIdle.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/enemies/flying/ToiletPaperFlap.png",
+      "bytes": 1448,
+      "sha256": "93ca9515439f5d5851fa150d4ef080c339dcedfa3a6f494399bab729e652ea39",
+      "identical_baseline_files": [
+        "enemies/ToiletPaperFlap.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/enemies/flying/ToiletPaperHit.png",
+      "bytes": 2016,
+      "sha256": "ee22ffc3279e80e32db94aa6070a1ccebac6c671de4c4f798cba8df33d4cf106",
+      "identical_baseline_files": [
+        "enemies/ToiletPaperHit.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/enemies/ground/Ratking.png",
+      "bytes": 5597,
+      "sha256": "f798d830352136b5959ba25be97df423d435c76ea3a47fd16c6c9c1716e23fb6",
+      "identical_baseline_files": [
+        "enemies/Ratking.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/enemies/ground/RatkingAimBackArmOnly.png",
+      "bytes": 1311,
+      "sha256": "a75b10a2be8f10b796c8a2111d6e647450f24aed43bf2c957d17c92ad89c13c5",
+      "identical_baseline_files": [
+        "enemies/RatkingAimBackArmOnly.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/enemies/ground/RatkingAimTorsoOnly.png",
+      "bytes": 7541,
+      "sha256": "f16a3c3bd88641243b8182de6c0208fe1169b1fcfc73658f4ed26579cf2838fd",
+      "identical_baseline_files": [
+        "enemies/RatkingAimTorsoOnly.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/enemies/ground/RatkingAimTossArmOnly.png",
+      "bytes": 5096,
+      "sha256": "4268bb9f94fa17ec4c68a50f7db3571d4aad329c6997aa89327a74bb418c398c",
+      "identical_baseline_files": [
+        "enemies/RatkingAimTossArmOnly.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/enemies/ground/RatkingDeath.png",
+      "bytes": 12115,
+      "sha256": "54eab8467761b713ac6f7b1127676bd979dab78a855969c488f0681108453970",
+      "identical_baseline_files": [
+        "enemies/RatkingDeath.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/enemies/ground/RatkingHurt.png",
+      "bytes": 12095,
+      "sha256": "57d419f6eabc346784c080df9f4135712fc0e0233312f00aed48196abdfd0ca9",
+      "identical_baseline_files": [
+        "enemies/RatkingHurt.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/enemies/ground/RatkingWalk.png",
+      "bytes": 13612,
+      "sha256": "3e6b25eb68bf28ae4f052b444cbd199ac34a34addf5685ea5946c7666c717a74",
+      "identical_baseline_files": [
+        "enemies/RatkingWalk.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/enemies/ground/SnowManChad.png",
+      "bytes": 1918,
+      "sha256": "2d0a9497c8b1e8e6e26f98b3ca055d69d5d8a8e50ca828ac5c07b06f86230adf",
+      "identical_baseline_files": [
+        "enemies/SnowManChad.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/enemies/ground/SnowManChill.png",
+      "bytes": 1701,
+      "sha256": "81def021d136284a392c13cfd296426e7cb8ed5b7ea2347d78b47e43e2d3bfd3",
+      "identical_baseline_files": [
+        "enemies/SnowManChill.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/enemies/ground/SnowManGreen.png",
+      "bytes": 1604,
+      "sha256": "9b59aac4ab3ec31ec14e294a61052e6d6020f4f1dd2f660c88f5490e015b1932",
+      "identical_baseline_files": [
+        "enemies/SnowManGreen.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/enemies/ground/SnowManIdle.png",
+      "bytes": 1762,
+      "sha256": "ff887f9dd10f3a3da1d932a9ac511055611ef4c201aec27466e41383f421991e",
+      "identical_baseline_files": [
+        "enemies/SnowManIdle.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/enemies/ground/SnowManThrow.png",
+      "bytes": 3455,
+      "sha256": "8cb645ba2bfc53f752018887f98677c6adadf43a16c085d6721aedadbb8016ac",
+      "identical_baseline_files": [
+        "enemies/SnowManThrow.png"
+      ]
+    },
+    {
+      "master": "graphics/characters/enemies/projectiles/toiletpaperprojectile.png",
+      "bytes": 1048,
+      "sha256": "f26d8f12f4cf94798b130184bd4f3a5b8643309823d04e44daa5fcf52bf0b2e0",
+      "identical_baseline_files": [
+        "enemies/toiletpaperprojectile.png"
+      ]
+    },
+    {
+      "master": "fonts/bitmap/WhackyJoe_32.png",
+      "bytes": 14027,
+      "sha256": "31532035b8a0fb753f8571b118f671e39157043b2807cf85c24f0d36ef787e21",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "fonts/bitmap/Whacky_Joe.fnt",
+      "bytes": 11030,
+      "sha256": "b786ed38b2e134955ab10ce68bca571869df2aac0358d09e74f6dd2401e8316a",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "fonts/bitmap/Whacky_Joe.ttf",
+      "bytes": 399403,
+      "sha256": "613f2e82ee9633ff32ccbf2b8ee734d339b9c59514c16a78be82e0f7bf9e86eb",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "fonts/msdf/charset_ascii.txt",
+      "bytes": 95,
+      "sha256": "cb2a9233adc1225c5c495c46e62cf6308223c5e241ef33ad109f03141b57966a",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "fonts/msdf/Whacky_Joe/Whacky_Joe_msdf.png",
+      "bytes": 129082,
+      "sha256": "a8b02e2e059001d17d3e5ac5fbb24f061e7bde6631f203311f7ade348929ab65",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/sfx/ui/balloonpop.mp3",
+      "bytes": 5064,
+      "sha256": "71b00a8b2b72bedb7d8ebe9ffdcabc3147729bf0872948dbd9ce458c56620096",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/sfx/ui/confirm.mp3",
+      "bytes": 145492,
+      "sha256": "38ef108d1ac3509aea688395a6b2b7dbe912ccc2cd844a1c6d5ad89612181b11",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/sfx/ui/denied.mp3",
+      "bytes": 18239,
+      "sha256": "05131d905515044499e3bf3441c46a198fc27f5800029c26def02f9d382f364c",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/sfx/ui/hurt.mp3",
+      "bytes": 12415,
+      "sha256": "832e252e36d2a42344bed4bddcdcb15f20cd1af1f527c4cb4ddbca2aba6ede97",
+      "identical_baseline_files": [
+        "sounds/hurt.mp3"
+      ]
+    },
+    {
+      "master": "audio/sfx/ui/ooo1.mp3",
+      "bytes": 15391,
+      "sha256": "e38a567e70206f8fd14c7e9e8f2a0dbcd4a041f3fae0aeb364b0ada28b1dec7c",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/sfx/ui/ooo2.mp3",
+      "bytes": 20110,
+      "sha256": "82bcf40f0becec031257431494a32c4ca5a935fe0ad317c4d1d58ff65011bbe7",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/sfx/ui/ooo3.mp3",
+      "bytes": 14974,
+      "sha256": "15df1bb5cf3c85e1c5ba80ec1a750dd89c0cbc82b2f014f1d5bec10c7c23c1a5",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/sfx/ui/ooo4.mp3",
+      "bytes": 14138,
+      "sha256": "89ad543d6d205f6bf86d20da90d599de58cc0894d747252e26cc851023c11de8",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/sfx/ui/ooo5.mp3",
+      "bytes": 16488,
+      "sha256": "5d0a2e2f8cf56378db37706b528854cc34747aa0e12c76cc9cbb9108e8c7f571",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/sfx/ui/ooo6.mp3",
+      "bytes": 14607,
+      "sha256": "abdd374d055e4f93fbf7d96fbac0927de312b32776e7a81ddbeb62cfd8d2ae0b",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/sfx/ui/ooo7.mp3",
+      "bytes": 17163,
+      "sha256": "6c34f69e9e0b7b75a1fc328628678dc7543a7a9512f143c3ad1f273c24ae1a31",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/sfx/ui/partyhorn.mp3",
+      "bytes": 12408,
+      "sha256": "f3c5d4de0e354f8792c14c990c2e71ed8e2bd4a7be827c0e24ac51bbdec289b3",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/sfx/gameplay/enemies/birdkill.mp3",
+      "bytes": 6882,
+      "sha256": "98374ca36dcdc5b433ddf2a10e073dc1b464eb445a629e858a7f7329a280f796",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/sfx/gameplay/enemies/BossKill.mp3",
+      "bytes": 154896,
+      "sha256": "6a6dfa2f1de96817676cb45dd03899b6ef0d962b37415d7ddf3297d1b76dfdbf",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/sfx/gameplay/enemies/ratkill.mp3",
+      "bytes": 35166,
+      "sha256": "6a6ba1463f3e935535c6d94032ee6ebdec7ed0ac543aafbcb51b103574268eae",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/sfx/gameplay/enemies/ratkinghurt.mp3",
+      "bytes": 55855,
+      "sha256": "aeacb661c7895716706ce832276f052b348338f6015634509bcc9e3ef734b906",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/sfx/gameplay/enemies/tpkill.mp3",
+      "bytes": 35166,
+      "sha256": "18cc6064db168132390b07739ac33e77b41b71ab40d3738247865a76b24ebfb5",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/sfx/gameplay/environment/bubble.mp3",
+      "bytes": 4320,
+      "sha256": "5b534a1541aeba6bbe43080a960f9f83164ce72f0cf917caec81aa3bdeea0cd9",
+      "identical_baseline_files": [
+        "ui/bubble.mp3"
+      ]
+    },
+    {
+      "master": "audio/sfx/gameplay/items/BigHealthPickup.mp3",
+      "bytes": 17113,
+      "sha256": "ee668e0472a30f9e33d3c650b1cf16b3087181f9ed4dfd2d9e784ec7d717cf78",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/sfx/gameplay/items/pickup.mp3",
+      "bytes": 8820,
+      "sha256": "16a5652d268cf3f1fa89fa26f3e4d6c35971be8369735f88f8e2f223515025ec",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/sfx/gameplay/items/SmallHealthPickup.mp3",
+      "bytes": 5915,
+      "sha256": "1ad7a648cb552cc043dd28e2d210eab3f7281cd63161ceb1a49584692b2a9ace",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/sfx/gameplay/misc/childrenyay.mp3",
+      "bytes": 67709,
+      "sha256": "31b2c7758cf00c288ad63f70ec1a8bd84d4e748f6d3a1370c5ce3637b973ece3",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/sfx/gameplay/misc/kaching.mp3",
+      "bytes": 35108,
+      "sha256": "0e2867b340680619862fbdbd21c00b552a0a40a438b32bbabad8467d4e374723",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/sfx/gameplay/player/fart1.mp3",
+      "bytes": 15089,
+      "sha256": "4da9c4b43456cf7d5046069c8fe4a8a00267d015dbdea941a81ae748ab60bb6c",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/sfx/gameplay/player/fart10.mp3",
+      "bytes": 40794,
+      "sha256": "00d3daf13c7d1722dbd24ed92639d814ab1b7a6ff0aec23869233d43bd06c1d7",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/sfx/gameplay/player/fart11.mp3",
+      "bytes": 21985,
+      "sha256": "7abfb17f67f72737f385956a455cd5ef586824319dcbc1580582135152df41c1",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/sfx/gameplay/player/fart2.mp3",
+      "bytes": 13208,
+      "sha256": "98d2bf3e9dbf1327c69918ece2f47fcb051af61f93e28ddcc23ce7da752f458b",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/sfx/gameplay/player/fart3.mp3",
+      "bytes": 14462,
+      "sha256": "8252e8a8462a0976d5869a28d307e410b5243a4dc8f24db31a9ca61b72c13639",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/sfx/gameplay/player/fart4.mp3",
+      "bytes": 14462,
+      "sha256": "058b3298ba4820712831dc4a33270a55dc7ca3da9888851f2332b1c1eacdde03",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/sfx/gameplay/player/fart5.mp3",
+      "bytes": 13208,
+      "sha256": "e0d15d44f4052781985f4c5ccc00d66a28cf35742ceb03fc6e8c5b43e0ae6246",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/sfx/gameplay/player/fart6.mp3",
+      "bytes": 25120,
+      "sha256": "60d95db68edb04a9a8abd10bb30ec234270306897219f24f8c08d1e7be0fd7fe",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/sfx/gameplay/player/fart7.mp3",
+      "bytes": 18224,
+      "sha256": "e01e56874cd261a29b9fe92393af3eced6f61e9791d9b1959b0c15c6653380f0",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/sfx/gameplay/player/fart8.mp3",
+      "bytes": 17597,
+      "sha256": "198cbc77561314163b5c2b694ab04ce0bda16784e8be2304ca76aae9711785ea",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/sfx/gameplay/player/fart9.mp3",
+      "bytes": 20105,
+      "sha256": "189333804f2ef7556167b39de74d8cad1fea452033580aeefaddd1a41fb8343d",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/sfx/gameplay/player/hurt.mp3",
+      "bytes": 12415,
+      "sha256": "832e252e36d2a42344bed4bddcdcb15f20cd1af1f527c4cb4ddbca2aba6ede97",
+      "identical_baseline_files": [
+        "sounds/hurt.mp3"
+      ]
+    },
+    {
+      "master": "audio/sfx/gameplay/player/spit1.mp3",
+      "bytes": 7982,
+      "sha256": "28fbfdb817b03a7d64ce60f9626ce861902327535671c16a730a86f77e1a9cfc",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/sfx/gameplay/player/spit2.mp3",
+      "bytes": 7721,
+      "sha256": "d7d47a35c6f196e1e380eeb2a8b3f3a9ac2b9f2955de19e01a093ac827e5c45d",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/sfx/gameplay/player/spit3.mp3",
+      "bytes": 5269,
+      "sha256": "571981f6deb49cbc367156e9d59367502ad2d600cd9cedcfab94cf80efb058de",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/sfx/gameplay/player/spit4.mp3",
+      "bytes": 5268,
+      "sha256": "a44fc95131fa781bf7b455a95133ce0376b8874bd0fa873f4bcae655da53d551",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/sfx/gameplay/player/spit5.mp3",
+      "bytes": 6834,
+      "sha256": "be4fb3fa1e1e544257272008c590a32ea18ed7cdfc2a9347580e2621a279a7a7",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/sfx/gameplay/player/spit6.mp3",
+      "bytes": 6286,
+      "sha256": "0ef1bde2d9302b7af7e17d838b9225a55e21457a3a624e732f9d89e9bf5d00cb",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/music/menus/FloppyTurdMenu.mp3",
+      "bytes": 3221896,
+      "sha256": "ccbc50359b5968f46d5c1e3a7f82b249d40cd58caf9fd8dbcc32d8eee248a3ff",
+      "identical_baseline_files": [
+        "mainmenu/FloppyTurdMenu.mp3"
+      ]
+    },
+    {
+      "master": "audio/music/menus/FloppyTurdMenuAlt.mp3",
+      "bytes": 2813132,
+      "sha256": "171976e903512cac564b132a28cf67ad11b3c885761a7419559b1bb2f5e0be6e",
+      "identical_baseline_files": [
+        "mainmenu/FloppyTurdMenu Fart Variant.mp3"
+      ]
+    },
+    {
+      "master": "audio/music/menus/MenuFast.mp3",
+      "bytes": 1939791,
+      "sha256": "e965b3982f675dc9a6ba5d7f4f6365dffec0d5d5057d5142a73128d86f82bbb9",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/music/stingers/BossKill.mp3",
+      "bytes": 154896,
+      "sha256": "6a6dfa2f1de96817676cb45dd03899b6ef0d962b37415d7ddf3297d1b76dfdbf",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/music/stingers/EndTheme.mp3",
+      "bytes": 2925966,
+      "sha256": "57d20cf47b1bc6140900335804fbb149318db557e8692694b629c26959028413",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/music/stingers/gameover.mp3",
+      "bytes": 222621,
+      "sha256": "712e73cfd414931f4fb59944353691c1bd5fe7a9053f3fa3dd2d7f5203a226ff",
+      "identical_baseline_files": [
+        "music/gameover.mp3"
+      ]
+    },
+    {
+      "master": "audio/music/gameplay/boss/BossKill.mp3",
+      "bytes": 154896,
+      "sha256": "6a6dfa2f1de96817676cb45dd03899b6ef0d962b37415d7ddf3297d1b76dfdbf",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/music/gameplay/boss/BossLevel.mp3",
+      "bytes": 4814932,
+      "sha256": "aca0c668375d2f719a4bdf7916da7307c7bb5632fcc1625ab88cf181a4ed7c2b",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/music/gameplay/boss/BossThemeFast.mp3",
+      "bytes": 3730328,
+      "sha256": "2d0da7d7fa75a08e7463ddcafc5e4485570f996721f3becd25b3056575df8d06",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/music/gameplay/boss/BossThemeLowHealth.mp3",
+      "bytes": 4304604,
+      "sha256": "40f02392751e29d930ca65f4e1d5aa9ba70734820896b42aa697f1d70cd62adf",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/music/gameplay/boss/BossThemeSlow.mp3",
+      "bytes": 6220529,
+      "sha256": "b3a6f5d5f472b48b10cd68ef38837e79bf41b8ec9c8cf4f0ad78ecb0dcce9a49",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/music/gameplay/levels/BeachLevel.mp3",
+      "bytes": 3756033,
+      "sha256": "4c2f4c505b51028371f29e72eff72d5f7bbf54aac6d121df091e201213923b89",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/music/gameplay/levels/BossLevel.mp3",
+      "bytes": 4814932,
+      "sha256": "aca0c668375d2f719a4bdf7916da7307c7bb5632fcc1625ab88cf181a4ed7c2b",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/music/gameplay/levels/BossThemeFast.mp3",
+      "bytes": 3730328,
+      "sha256": "2d0da7d7fa75a08e7463ddcafc5e4485570f996721f3becd25b3056575df8d06",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/music/gameplay/levels/BossThemeSlow.mp3",
+      "bytes": 6220529,
+      "sha256": "b3a6f5d5f472b48b10cd68ef38837e79bf41b8ec9c8cf4f0ad78ecb0dcce9a49",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/music/gameplay/levels/CastleFast.mp3",
+      "bytes": 3324699,
+      "sha256": "7e8640821d7fcb558d9ca2eb92461e806606a5e75db5dfcbeb6c2bc3ccf0e1ae",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/music/gameplay/levels/CastleLevel.mp3",
+      "bytes": 5833723,
+      "sha256": "4e5f572776be415d05a4cc93095b368c79d3932dc1d5ebd08b9e9b8b4f4f517e",
+      "identical_baseline_files": [
+        "music/Level4.mp3"
+      ]
+    },
+    {
+      "master": "audio/music/gameplay/levels/CastleSlow.mp3",
+      "bytes": 6699510,
+      "sha256": "7697c1e85078a40cbe117d6aaf875e9cd7522050f471c2497236e8fa06ef61ae",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/music/gameplay/levels/DesertFast.mp3",
+      "bytes": 3157933,
+      "sha256": "0f735999c9d77f4e886205567cc5c2c8547366b6796e3a5238ede1d20094b99c",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/music/gameplay/levels/DesertLevel.mp3",
+      "bytes": 4660093,
+      "sha256": "5459da97e3e3d6ad3e37e1010dc8a9ba2e3c93e69cac7e26512fcd7efd7f109b",
+      "identical_baseline_files": [
+        "music/Level3.mp3"
+      ]
+    },
+    {
+      "master": "audio/music/gameplay/levels/DesertSlow.mp3",
+      "bytes": 5374162,
+      "sha256": "b1c3727789043b41b68a8646400396eff922b011065f406e0688e1773b8e5a60",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/music/gameplay/levels/MenuFast.mp3",
+      "bytes": 1939791,
+      "sha256": "e965b3982f675dc9a6ba5d7f4f6365dffec0d5d5057d5142a73128d86f82bbb9",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/music/gameplay/levels/ParkFast.mp3",
+      "bytes": 2353571,
+      "sha256": "139da8d855f923e2b0e0934b387c21c98827540ea58855452849ba1107b51f4a",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/music/gameplay/levels/ParkLevel.mp3",
+      "bytes": 3619375,
+      "sha256": "abe1bf6c83981319c4bca45a31ffba3bce943813f102931f0c812e5cbecb9874",
+      "identical_baseline_files": [
+        "music/Level1.mp3"
+      ]
+    },
+    {
+      "master": "audio/music/gameplay/levels/ParkSlow.mp3",
+      "bytes": 4343474,
+      "sha256": "5b6f5f8ef24756c38f7316ea3807cb982b9c506dafceb02dda01fdb9d78d4027",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/music/gameplay/levels/SewerFast.mp3",
+      "bytes": 4389241,
+      "sha256": "4b32d3214dc39940fce405ceabef535e8fbbf1441641da8b5b188c6ba5376136",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/music/gameplay/levels/SewerLevel.mp3",
+      "bytes": 5743444,
+      "sha256": "7d9815d9ebe3248b43cae128b80c485bdc178990887803c00b7bd699e1f94efc",
+      "identical_baseline_files": [
+        "music/Level2.mp3"
+      ]
+    },
+    {
+      "master": "audio/music/gameplay/levels/SewerSlow.mp3",
+      "bytes": 6908281,
+      "sha256": "6cb58e42a1f5892697c2a68caa190502b5a2a4054445aa1ff93025e54b7bdffa",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/music/gameplay/levels/SnowFast.mp3",
+      "bytes": 2305296,
+      "sha256": "492914bb8f4af122ba7481874dc3882545d6193abd5b0e005fcb253d0fce68c6",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/music/gameplay/levels/SnowLevel.mp3",
+      "bytes": 4450069,
+      "sha256": "0d8797ede9d62fdbd575e59b464057377f83bee1b030b24bc63daa56edb1dc10",
+      "identical_baseline_files": [
+        "music/SnowLevel.mp3"
+      ]
+    },
+    {
+      "master": "audio/music/gameplay/levels/SnowSlow.mp3",
+      "bytes": 5866309,
+      "sha256": "1222b591a6eff583f72577e954f0a80cb3d87bc23d435b47aa63bf9bbe41cffe",
+      "identical_baseline_files": []
+    },
+    {
+      "master": "audio/music/gameplay/levels/TutorialTheme.mp3",
+      "bytes": 4184698,
+      "sha256": "3d41b13f01219a23f6b56c329f664c5420e707a47f00e877e3e3e99d1418bdfa",
+      "identical_baseline_files": []
+    }
+  ]
+}

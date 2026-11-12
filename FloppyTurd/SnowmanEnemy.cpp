@@ -1,4 +1,5 @@
-﻿#include <algorithm>
+#include "GameSettings.h"
+#include <algorithm>
 #include "SnowmanEnemy.h"
 #include "ResourceCompat.h"
 #include "SnowballProjectile.h"
@@ -95,7 +96,7 @@ void SnowmanEnemy::Update(float deltaTime) {
         throwSprite->SetPosition(pos);
 
         // Begin throw when on-screen AND the cooldown is over
-        if (!isThrowing && throwTimer <= 0.0f && pos.x + 48 <= 320) {
+        if (!isThrowing && throwTimer <= 0.0f && pos.x + 48 <= GameSettings::GameWidth) {
             throwSprite->ResetAnimation();
             isThrowing = true;
             hasThrown = false;

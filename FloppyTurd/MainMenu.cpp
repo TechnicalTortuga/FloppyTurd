@@ -248,7 +248,7 @@ void MainMenu::Draw()
 
 	DrawCallTracker::TrackDrawTexturePro(_MenuBackground,
 		Rectangle{ 0, 0, (float)_MenuBackground.width, (float)_MenuBackground.height },
-		Rectangle{ 0, 0, 320, 180 },
+		Rectangle{ -40, -22.5f, 400, 225 },
 		Vector2{ 0, 0 }, 0.0f, WHITE);
 
 	UseHighDefFont(true);
@@ -281,21 +281,21 @@ void MainMenu::Draw()
 		float spacingY = 3.0f;
 		float cornerRadius = 0.01f;
 
-		if (AIGUI_ButtonRounded("Play", buttonX, buttonY, buttonW, buttonH, cornerRadius, 24, BLACK))
+		if (AIGUI_ButtonRounded("Play", buttonX, buttonY, buttonW, buttonH, cornerRadius, 20, BLACK))
 			currentMenu = LEVEL_SELECT;
 		buttonY += buttonH + spacingY;
 
-		if (AIGUI_ButtonRounded("Options", buttonX, buttonY, buttonW, buttonH, cornerRadius, 24, BLACK))
+		if (AIGUI_ButtonRounded("Options", buttonX, buttonY, buttonW, buttonH, cornerRadius, 20, BLACK))
 			currentMenu = OPTIONS_MENU;
 		buttonY += buttonH + spacingY;
 
-		if (AIGUI_ButtonRounded("Quickplay", buttonX, buttonY, buttonW, buttonH, cornerRadius, 24, BLACK)) {
+		if (AIGUI_ButtonRounded("Quickplay", buttonX, buttonY, buttonW, buttonH, cornerRadius, 20, BLACK)) {
 			game->SetGameState(Game::PLAYING);
 			if (game->playing) game->playing->SetCurrentLevel(quickplaySettings.levelIndex);
 		}
 		buttonY += buttonH + spacingY;
 
-		if (AIGUI_ButtonRounded("Exit", buttonX, buttonY, buttonW, buttonH, cornerRadius, 24, BLACK))
+		if (AIGUI_ButtonRounded("Exit", buttonX, buttonY, buttonW, buttonH, cornerRadius, 20, BLACK))
 			game->SetGameState(game->SHUTDOWN);
 
 		float creditsBtnX = 6.0f;          // a little padding from the left edge
@@ -446,6 +446,7 @@ void MainMenu::Draw()
 
 		AudioManager::GetInstance().DrawAudioOptions(20.0f, 20.0f);
 
+#ifndef __EMSCRIPTEN__
 		startY = 20.0f;
 		AIGUI_LabelRounded("Resolution:", rightX, startY, 120.0f, 20.0f, 0.2f, 20, BLACK);
 		if (AIGUI_ButtonRounded("<", rightX, startY + 24.0f, 20.0f, 20.0f, 0.1f, 20, BLACK)) {
@@ -462,6 +463,7 @@ void MainMenu::Draw()
 				SetWindowSize(option.width, option.height);
 		}
 
+#endif
 		startY = 68.0f;
 		AIGUI_LabelRounded("Difficulty:", rightX, startY, 120.0f, 20.0f, 0.2f, 20, BLACK);
 		if (AIGUI_ButtonRounded("<", rightX, startY + 24.0f, 20.0f, 20.0f, 0.1f, 20, BLACK)) {
@@ -472,12 +474,14 @@ void MainMenu::Draw()
 			difficultyIndex = (difficultyIndex + 1) % 3;
 		}
 
+#ifndef __EMSCRIPTEN__
 		startY = 89.0f;
 		if (AIGUI_ButtonRounded(fullscreenEnabled ? "[x] Fullscreen" : "[ ] Fullscreen", rightX - 25, startY + 28.0f, 150.0f, 20.0f, 0.1f, 20, BLACK)) {
 			fullscreenEnabled = !fullscreenEnabled;
 			ToggleFullscreen();
 		}
 
+#endif
 		// No Quickplay Settings for Now
 		//if (AIGUI_ButtonRounded("Quickplay Settings", 20.0f, 148.0f, 184.0f, 20.0f, 0.1f, 20, BLACK)) {
 			//currentMenu = QUICKPLAY_SETTINGS;

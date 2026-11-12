@@ -1,3 +1,4 @@
+#include <cmath>
 #include "ParallaxLayer.h"
 #include <algorithm>
 #include "TextureCache.h"
@@ -17,7 +18,8 @@ ParallaxLayer::ParallaxLayer(const std::vector<std::string>& texturePaths, float
 	}
 
 	// Determine how many segments are needed based on the first texture's width
-	float textureWidth = textures[0].width * scale;
+	if (!textures.empty() && textures[0].height == 180) this->scale *= GameSettings::GameHeight / 180.0f;
+	float textureWidth = textures[0].width * this->scale;
 	const float screenWidth = GameWidth;  // e.g., 320
 	numSegments = static_cast<int>(screenWidth / textureWidth) + 2;
 }

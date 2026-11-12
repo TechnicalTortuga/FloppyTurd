@@ -225,7 +225,7 @@ void SewerLevel::InitObstacles()
 {
     using namespace GameSettings;
 
-    float currentX = 320.0f;
+    float currentX = GameSettings::GameWidth;
 
     for (int i = 0; i < 5; ++i)
     {

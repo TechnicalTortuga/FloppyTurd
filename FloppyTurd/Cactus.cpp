@@ -1,3 +1,4 @@
+#include "GameSettings.h"
 #include "Cactus.h"
 #include "ResourceCompat.h"
 
@@ -46,7 +47,7 @@ Cactus::Cactus(Vector2 spawnPos, CactusVariant variant)
 
     sprite = new Sprite(texturePath, frames, animSpeed, scale, spawnPos, AtlasCategory::ENVIRONMENT);
 
-    float groundedY = 180.0f - sprite->GetHeight();
+    float groundedY = GameSettings::GameHeight - sprite->GetHeight();
     sprite->SetPosition({ spawnPos.x, groundedY });
     this->pos = sprite->GetPosition();
 

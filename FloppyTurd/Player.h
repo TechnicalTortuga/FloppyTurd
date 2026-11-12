@@ -37,6 +37,7 @@ public:
 	void Update(float deltaTime);
 	void PutTheHurtOn(int damage);
 	bool SpendCoinsForShoot();
+	bool SpendCoins(int cost, bool sessionOnly = false);
 	float GetCircleRadius() const;
 	Vector2 GetCircleCenter() const;
 	int GetTurdPoints() const;

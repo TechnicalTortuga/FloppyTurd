@@ -1,0 +1,65 @@
+name: Cross-platform builds
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/build/
+            !/build-ios/
+            !/build-macOS/
+      - name: Linux graphics dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev libx11-dev libxrandr-dev libxi-dev libxcursor-dev libxinerama-dev libgl1-mesa-dev
+      - run: python tools/audit-assets.py
+      - run: cmake -S . -B build/ci -DCMAKE_BUILD_TYPE=Release -DGLFW_BUILD_WAYLAND=OFF
+      - run: cmake --build build/ci --config Release --parallel
+      - run: ctest --test-dir build/ci -C Release --output-on-failure
+      - run: node --test tests/bridge.test.mjs
+      - run: cpack --config build/ci/CPackConfig.cmake -C Release -B dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FloppyTurd-${{ runner.os }}
+          path: dist/*.zip
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/build/
+            !/build-ios/
+            !/build-macOS/
+      - name: Install pinned Emscripten
+        run: |
+          git clone --depth 1 https://github.com/emscripten-core/emsdk.git ../emsdk
+          ../emsdk/emsdk install 4.0.23
+          ../emsdk/emsdk activate 4.0.23
+      - name: Build static game
+        shell: bash
+        run: |
+          source ../emsdk/emsdk_env.sh
+          emcmake cmake -S . -B build/web -DCMAKE_BUILD_TYPE=Release -DFLOPPY_BUILD_TESTS=OFF
+          cmake --build build/web --parallel
+          python tools/package-web.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FloppyTurd-Web
+          path: dist/web/

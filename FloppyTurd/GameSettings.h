@@ -3,8 +3,8 @@
 namespace GameSettings
 {
 	inline float GameScale = 1;
-	inline float GameWidth = 1920;
-	inline float GameHeight = 1080;
+	inline float GameWidth = 400;
+	inline float GameHeight = 225;
 	inline float ScreenTile = 16;
 
 	inline int numGameSaves = 0;

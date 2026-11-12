@@ -1,5 +1,7 @@
-﻿#include "Player.h"
+#include "GameSettings.h"
+#include "Player.h"
 #include "SoundManager.h"
+#include "CoinBalance.h"
 
 Player::Player(Game* g) : game(g) {
 	InitSprites();
@@ -136,7 +138,7 @@ void Player::Update(float deltaTime) {
 	circleRadius = 11;
 	circleCenter = { pos.x + 32, pos.y + 34 };
 
-	if (circleCenter.y - circleRadius > 320) {
+	if (circleCenter.y - circleRadius > GameSettings::GameHeight + 64) {
 		if (isAlive) {
 			PutTheHurtOn(33);
 		}
@@ -250,16 +252,17 @@ void Player::PutTheHurtOn(int DAMAGE) {
 	SoundManager::GetInstance().PlaySoundClip(hurtSound);
 }
 
+bool Player::SpendCoins(int cost, bool sessionOnly) {
+    if (!game || !game->playing) return false;
+    auto& playing = *game->playing;
+    if (!CoinBalance::Spend(playing.TOTALCOINS, sessionCoins, cost, sessionOnly)) return false;
+    playing.GetStats().totalCoins = playing.TOTALCOINS;
+    playing.savePending = true;
+    return true;
+}
+
 bool Player::SpendCoinsForShoot() {
-	const int shootCost = 1;
-	if (sessionCoins >= shootCost) {
-		sessionCoins -= shootCost;
-		if (game && game->playing) {
-			game->playing->TOTALCOINS -= shootCost;
-		}
-		return true;
-	}
-	return false;
+    return SpendCoins(1, true);
 }
 
 void Player::InitSprites() {

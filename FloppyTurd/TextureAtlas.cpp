@@ -179,7 +179,7 @@ bool TextureAtlas::PackTextures(const std::vector<Image>& images, const std::vec
                 const AtlasEntry& entry = entries[i];
                 
                 Rectangle sourceRect = { 0, 0, (float)images[idx].width, (float)images[idx].height };
-                ImageDraw(&atlasImage, images[idx], sourceRect, entry.sourceRect, WHITE);
+                ImageDrawImagePro(&atlasImage, images[idx], sourceRect, entry.sourceRect, {0, 0}, 0, WHITE);
             }
             
             return true;

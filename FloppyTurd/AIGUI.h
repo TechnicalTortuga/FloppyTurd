@@ -18,6 +18,8 @@ const int AIGUI_FONT_SIZE_MEDIUM = 14; // Increased from 12
 const int AIGUI_FONT_SIZE_LARGE = 18;  // Increased from 16
 
 AIGUI_DEF void AIGUI_Init();
+AIGUI_DEF void AIGUI_SetRenderCamera(Camera2D camera);
+AIGUI_DEF void AIGUI_BeginScissor(Rectangle rect);
 AIGUI_DEF void AIGUI_Shutdown();
 AIGUI_DEF void AIGUI_BeginFrame();
 AIGUI_DEF void AIGUI_EndFrame();
@@ -46,6 +48,8 @@ AIGUI_DEF int AIGUI_GetScaledFontSize(int baseFontSize);
 AIGUI_DEF void AIGUI_DrawResponsiveText(const char* text, Vector2 position, int baseFontSize, Color color);
 
 struct AIGUI_Context {
+    Vector2 renderOrigin;
+    float renderScale;
     Vector2 mousePos;
     bool mouseLeftDown;
     Font defaultFont = GetFontDefault();
@@ -60,7 +64,7 @@ extern AIGUI_Context g_AIGUI;
 
 template <typename RenderFunc>
 void AIGUI_Container(Rectangle container, Vector2* scrollOffset, RenderFunc childRender) {
-    BeginScissorMode(container.x, container.y, container.width, container.height);
+    AIGUI_BeginScissor(container);
     if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
         Vector2 delta = GetMouseDelta();
         scrollOffset->x -= delta.x;
@@ -112,6 +116,20 @@ AIGUI_DEF void AIGUI_Init() {
     
     TraceLog(LOG_INFO, "AIGUI: Desktop platform detected");
 #endif
+}
+
+AIGUI_DEF void AIGUI_SetRenderCamera(Camera2D camera) {
+    g_AIGUI.renderOrigin = camera.offset;
+    g_AIGUI.renderScale = camera.zoom;
+}
+
+AIGUI_DEF void AIGUI_BeginScissor(Rectangle rect) {
+    const float scale = g_AIGUI.renderScale;
+    const float x = g_AIGUI.renderOrigin.x + rect.x * scale;
+    const float y = g_AIGUI.renderOrigin.y + rect.y * scale;
+    const int left = (int)floorf(x), top = (int)floorf(y);
+    BeginScissorMode(left, top, (int)ceilf(x + rect.width * scale) - left,
+        (int)ceilf(y + rect.height * scale) - top);
 }
 
 AIGUI_DEF void AIGUI_SetFont(Font font) {
@@ -215,26 +233,22 @@ AIGUI_DEF bool AIGUI_ButtonRounded(const char* label, float x, float y, float wi
 
     // Step 2: Draw the gradient inside the scaled rectangle
     float gradientRadius = radius;
-    for (int i = 0; i < (int)height; ++i) {
-        float t = (float)i / (height - 1);
-        if (height <= 1) t = 0.0f;
+    for (int i = 0; i < (int)ceilf(scaledH); ++i) {
+        float t = scaledH > 1 ? fminf(1.0f, (float)i / (scaledH - 1)) : 0.0f;
         Color c = {
             (unsigned char)Lerp((float)topColor.r, (float)bottomColor.r, t),
             (unsigned char)Lerp((float)topColor.g, (float)bottomColor.g, t),
             (unsigned char)Lerp((float)topColor.b, (float)bottomColor.b, t),
             255
         };
-        Rectangle fullGradientRect = { scaledX, scaledY - 1, scaledW + 2, scaledH + 1 };
-        BeginScissorMode((int)scaledX, (int)(scaledY + i), (int)scaledW + 1, 1);
+        Rectangle fullGradientRect = scaledRect;
+        AIGUI_BeginScissor({scaledX, scaledY + i, scaledW, 1});
         DrawRectangleRounded(fullGradientRect, gradientRadius, 12, c);
         EndScissorMode();
     }
 
-    // Step 3: Draw the outline slightly offset
+    // Fill and outline share the same rectangle.
     Rectangle outlineRect = scaledRect;
-    outlineRect.x += 1;
-    outlineRect.width -= 1;
-    outlineRect.height -= 1;
     DrawRectangleRoundedLinesEx(outlineRect, radius, 12, 1, BLACK);
 
     // Step 4: Draw the text
@@ -282,16 +296,13 @@ AIGUI_DEF void AIGUI_LabelRounded(const char* text, float x, float y, float widt
                 (unsigned char)Lerp((float)topColor.b, (float)bottomColor.b, t),
                 255
             };
-            BeginScissorMode((int)x, (int)(y + i), (int)width + 1, 1);
+            AIGUI_BeginScissor({rect.x, rect.y + i, rect.width, 1});
             DrawRectangleRounded(rect, radius, 12, c);
             EndScissorMode();
         }
     }
 
     Rectangle outlineRect = rect;
-    outlineRect.x += 1;
-    outlineRect.width -= 1;
-    outlineRect.height -= 1;
     DrawRectangleRoundedLinesEx(outlineRect, radius, 12, 1, BLACK);
 
     if (text && text[0] != '\0') {

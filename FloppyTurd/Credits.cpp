@@ -22,7 +22,7 @@ Credits::Credits(Game* game)
     music = new AudioClip(CreditsMusic);
     if (music)
     {
-        music->Play();
+        // Playback starts when the credits state is entered.
         totalScrollTime = GetMusicTimeLength(music->music);
         if (totalScrollTime <= 0.0f)
         {
@@ -76,20 +76,7 @@ Credits::Credits(Game* game)
         { "Thank you for playing!", "",                           offsetDist(engine) }
     };
 
-    // Load Whacky Joe font
-    font = LoadFont("resources/fonts/Whacky_Joe.fnt");
-    if (font.baseSize <= 0 || font.glyphCount <= 0 || font.texture.id == 0)
-    {
-        TraceLog(LOG_ERROR, "Failed to load Whacky Joe font (baseSize=%d, glyphCount=%d, textureID=%u), falling back to default",
-            font.baseSize, font.glyphCount, font.texture.id);
-        font = GetFontDefault();
-    }
-    else
-    {
-        TraceLog(LOG_INFO, "Whacky Joe font loaded (baseSize=%d, glyphCount=%d, textureID=%u)",
-            font.baseSize, font.glyphCount, font.texture.id);
-        SetTextureFilter(font.texture, TEXTURE_FILTER_BILINEAR);
-    }
+    font = game->GetScaledFont(1.0f);
 
     // Initialize pipes (3 pairs, centered + 20 pixels down, consistently spaced, non-random)
     float centerY = GetScreenHeight() / 2.0f + 20.0f; // Adjusted down by 20 pixels
@@ -106,7 +93,7 @@ Credits::Credits(Game* game)
 Credits::~Credits()
 {
     if (music) delete music;
-    if (font.texture.id != GetFontDefault().texture.id) UnloadFont(font);
+    // The game owns the shared UI font.
     delete cameraSystem; // Clean up CameraSystem and its layers
 }
 
@@ -213,7 +200,7 @@ void Credits::Reset()
     if (music)
     {
         music->Stop();
-        music->Play();
+        // Playback starts when the credits state is entered.
     }
     // Reset pipe positions
     float startX = 320.0f;

@@ -3,7 +3,7 @@
 #include <raylib.h>
 
 struct GameStats {
-    int version = 1;             // File format version
+    int version = 2;             // File format version
     int totalPipes = 0;          // Total pipes passed across all sessions
     int totalCoins = 0;          // Total coins collected
     int totalEnemiesKilled = 0;  // Total enemies killed

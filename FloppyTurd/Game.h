@@ -21,6 +21,9 @@ class Game
 {
 public:
 	Game();
+	void RunGame();
+	void Tick();
+	void SetHostPaused(bool paused);
 	~Game();
 
 	enum GAMESTATE
@@ -48,7 +51,10 @@ private:
 	Loading* loading; // New loading instance
 
 	void InitClasses();
-	void RunGame();
+	RenderTexture2D target{};
+	int warmupFrames = 2;
+	bool hostPaused = false;
+	bool focusPaused = false;
 
 	void Update();
 	void Draw();

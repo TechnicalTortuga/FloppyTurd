@@ -76,7 +76,7 @@ void ParkLevel::InitObstacles()
     toilets.clear();   // Prevent double stacking
     obstacles.clear(); // Also clear shared obstacle list
 
-    float currentX = 320.0f;
+    float currentX = GameSettings::GameWidth;
 
     for (int i = 0; i < 5; i++)
     {

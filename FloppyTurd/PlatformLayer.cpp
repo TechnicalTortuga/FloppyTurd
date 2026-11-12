@@ -1,6 +1,7 @@
 #include "PlatformLayer.h"
 #include <filesystem>
 #include <algorithm>
+#include <cstdlib>
 
 #ifdef PLATFORM_ANDROID
 #include <android/native_activity.h>
@@ -35,16 +36,23 @@ std::string PlatformLayer::GetResourcePath(const std::string& relativePath) {
 }
 
 std::string PlatformLayer::GetSavePath(const std::string& filename) {
-#ifdef PLATFORM_ANDROID
-    // Android: Use internal storage
-    return std::string(GetAndroidApp()->activity->internalDataPath) + "/" + filename;
-#elif defined(PLATFORM_IOS)
-    // iOS: Use documents directory
-    return GetApplicationDirectory() + "../Documents/" + filename;
+    namespace fs = std::filesystem;
+    fs::path directory;
+    if (const char* overridePath = std::getenv("FLOPPY_TURD_SAVE_DIR")) directory = overridePath;
+#ifdef __EMSCRIPTEN__
+    else directory = "/saves";
+#elif defined(_WIN32)
+    else if (const char* appData = std::getenv("APPDATA")) directory = fs::path(appData) / "FloppyTurd";
+#elif defined(__APPLE__)
+    else if (const char* homeDir = std::getenv("HOME")) directory = fs::path(homeDir) / "Library/Application Support/FloppyTurd";
 #else
-    // Desktop: Use current directory
-    return filename;
+    else if (const char* dataDir = std::getenv("XDG_DATA_HOME")) directory = fs::path(dataDir) / "FloppyTurd";
+    else if (const char* homeDir = std::getenv("HOME")) directory = fs::path(homeDir) / ".local/share/FloppyTurd";
 #endif
+    if (directory.empty()) directory = fs::temp_directory_path() / "FloppyTurd";
+    std::error_code error;
+    fs::create_directories(directory, error);
+    return (directory / filename).string();
 }
 
 bool PlatformLayer::IsTouchSupported() const {

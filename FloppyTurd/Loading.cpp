@@ -15,7 +15,7 @@ Loading::Loading(Game* game)
 
 Loading::~Loading()
 {
-	UnloadTexture(poophat);
+	// Borrowed from ResourceManager or TextureCache; the cache owns it.
 }
 
 void Loading::Update()

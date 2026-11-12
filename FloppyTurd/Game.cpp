@@ -8,6 +8,12 @@
 #define ENABLE_DRAW_CALL_TRACKING
 #include "TextureAtlas.h"
 #include "PerformanceProfiler.h"
+#include "Viewport.h"
+#include "TextureCache.h"
+#include "PixelFont.h"
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
 
 Game::Game()
 {
@@ -23,16 +29,16 @@ Game::Game()
 	SetTargetFPS(60);
 #endif
 
+	window = new Window(true, 1280, 720);
 	InitAudioDevice();
 
 	// Initialize ResourceManager with mobile-aware quality detection
 	ResourceManager::GetInstance().Initialize(ResourceQuality::AUTO);
 
-	InitClasses();
 	
 	// Load the font with mobile-aware path resolution
-	std::string fontPath = PlatformLayer::GetInstance().GetResourcePath("fonts/Whacky_Joe.fnt");
-	whackyJoe = LoadFont(fontPath.c_str());
+	std::string fontPath = PlatformLayer::GetInstance().GetResourcePath("fonts/Whacky_Joe.ttf");
+	whackyJoe = LoadPixelFont(fontPath.c_str(), 48);
 
 	// Validate the font
 	if (whackyJoe.baseSize <= 0 || whackyJoe.glyphCount <= 0 || whackyJoe.texture.id == 0) {
@@ -43,17 +49,13 @@ Game::Game()
 	else {
 		printf("Font 'whackyJoe' loaded successfully: baseSize=%d, glyphCount=%d, textureID=%u\n",
 			whackyJoe.baseSize, whackyJoe.glyphCount, whackyJoe.texture.id);
-		// Use appropriate filtering for platform
-#ifdef PLATFORM_MOBILE
-		SetTextureFilter(whackyJoe.texture, TEXTURE_FILTER_BILINEAR);  // Better on mobile
-#else
-		SetTextureFilter(whackyJoe.texture, TEXTURE_FILTER_POINT);      // Pixel-perfect on desktop
-#endif
+		SetTextureFilter(whackyJoe.texture, TEXTURE_FILTER_POINT);
 	}
 
 	// Initialize AIGUI with mobile awareness
 	AIGUI_Init();
 	AIGUI_SetFont(whackyJoe);
+	InitClasses();
 	
 	// Platform-specific UI scaling adjustments
 #ifdef PLATFORM_MOBILE
@@ -100,59 +102,37 @@ Game::Game()
 
 	// Initialize PerformanceProfiler with draw call tracking enabled
 	PerformanceProfiler::GetInstance().SetTargetFPS(60);
-	PerformanceProfiler::GetInstance().EnableOverlay(true);
+	PerformanceProfiler::GetInstance().EnableOverlay(false);
 	TraceLog(LOG_INFO, "PerformanceProfiler: Initialized with 60 FPS target and real draw call tracking enabled");
 
 	gamestate = LOADING; // Start with loading state
-	RunGame();
+	target = LoadRenderTexture(800, 450);
+	SetTextureFilter(target.texture, TEXTURE_FILTER_POINT);
 }
 
 Game::~Game()
 {
-	// Shutdown Phase 4 systems
-	TextureAtlas::GetInstance().Shutdown();
-	TraceLog(LOG_INFO, "Phase 4 systems shutdown complete");
-	
-	// Shutdown ResourceManager before closing audio
-	ResourceManager::GetInstance().Shutdown();
-	
-	CloseAudioDevice();
-	AIGUI_Shutdown();
-
-	// Unload the custom font if it was loaded (not the default font)
-	if (g_AIGUI.defaultFont.baseSize > 0 && g_AIGUI.defaultFont.glyphCount > 0 && g_AIGUI.defaultFont.texture.id != 0) {
-		// Check if it's not the default font (default font is managed by raylib)
-		Font defaultFont = GetFontDefault();
-		if (g_AIGUI.defaultFont.texture.id != defaultFont.texture.id) {
-			printf("Unloading custom font (textureID=%u)\n", g_AIGUI.defaultFont.texture.id);
-			UnloadFont(g_AIGUI.defaultFont);
-		}
-	}
-	delete credits; // Clean up Credits instance
-	delete loading; // Clean up Loading instance
+    // Destroy consumers while the graphics and audio devices still exist.
+    if (playing) playing->GetStats().Save();
+    delete mainMenu;
+    delete playing;
+    delete credits;
+    delete loading;
+    AudioManager::GetInstance().Shutdown();
+    TextureAtlas::GetInstance().Shutdown();
+    TextureCache::Clear();
+    ResourceManager::GetInstance().Shutdown();
+    if (whackyJoe.texture.id != GetFontDefault().texture.id) UnloadFont(whackyJoe);
+    AIGUI_Shutdown();
+    UnloadRenderTexture(target);
+    CloseAudioDevice();
+    delete window;
 }
 
 void Game::InitClasses()
 {
-	using namespace GameSettings;
-	
-#ifdef PLATFORM_MOBILE
-	// On mobile, always use fullscreen and let the platform handle the display
-	window = new Window(true, 0, 0);
-	
-	// Set preferred orientation for the game (landscape for this game)
-	window->SetPreferredOrientation(true);  // true = landscape
-	
-	TraceLog(LOG_INFO, "Mobile window initialized: %dx%d, Safe area: %.0fx%.0f",
-		GetScreenWidth(), GetScreenHeight(),
-		window->GetSafeArea().width, window->GetSafeArea().height);
-#else
-	// Desktop: Use native monitor resolution, start in fullscreen
-	window = new Window(true, 0, 0);
-#endif
-
 	// Load and set the window icon with platform-aware path
-	std::string iconPath = PlatformLayer::GetInstance().GetResourcePath("poophat.ico");
+	std::string iconPath = PlatformLayer::GetInstance().GetResourcePath("hats/poophat.png");
 	Image icon = LoadImage(iconPath.c_str());
 	if (icon.data) {
 		SetWindowIcon(icon);
@@ -178,194 +158,77 @@ void Game::InitClasses()
 
 void Game::RunGame()
 {
-	// Create a render texture for 320x180 virtual resolution
-	RenderTexture2D target = LoadRenderTexture(320, 180);
-	
-	// Game's native resolution
-	const float GAME_WIDTH = 320.0f;
-	const float GAME_HEIGHT = 180.0f;
-	const float GAME_ASPECT = GAME_WIDTH / GAME_HEIGHT; // 16:9
+#ifdef __EMSCRIPTEN__
+    emscripten_set_main_loop_arg([](void* self) { static_cast<Game*>(self)->Tick(); }, this, 0, true);
+#else
+    while (!WindowShouldClose() && gamestate != SHUTDOWN) Tick();
+#endif
+}
 
-	while (!WindowShouldClose())
-	{
-		
-		if (gamestate == SHUTDOWN)
-		{
-			CloseWindow();
-			exit(0);
-		}
+void Game::SetHostPaused(bool paused)
+{
+    hostPaused = paused;
+    SetMasterVolume(paused ? 0.0f : 1.0f);
+    if (paused && playing) playing->GetStats().Save();
+}
 
-		// -------------------------------------------------------------------------
-		// 1) Calculate proper letterboxing with aspect ratio preservation
-		// -------------------------------------------------------------------------
-		float screenWidth = (float)GetScreenWidth();
-		float screenHeight = (float)GetScreenHeight();
-		
-		// Get the REAL monitor resolution to fix macOS fullscreen discrepancies
-		// This needs to be checked every frame in case the user switches monitors or resolutions
-		int monitor = GetCurrentMonitor();
-		int realMonitorWidth = GetMonitorWidth(monitor);
-		int realMonitorHeight = GetMonitorHeight(monitor);
-		
-		// Check if there's a discrepancy between reported and real resolution
-		bool hasDiscrepancy = (realMonitorWidth != (int)screenWidth || realMonitorHeight != (int)screenHeight);
-		
-		// Use the appropriate resolution for calculations
-		float effectiveWidth, effectiveHeight;
-		if (hasDiscrepancy && IsWindowFullscreen()) {
-			// In fullscreen with discrepancy, use real monitor resolution
-			effectiveWidth = (float)realMonitorWidth;
-			effectiveHeight = (float)realMonitorHeight;
-		} else {
-			// In windowed mode or when no discrepancy, use reported resolution
-			effectiveWidth = screenWidth;
-			effectiveHeight = screenHeight;
-		}
-		
-		// Declare variables
-		float scale, offsetX = 0, offsetY = 0;
-		
-		// Calculate the scale that fits the game while maintaining aspect ratio
-		float scaleX = effectiveWidth / GAME_WIDTH;
-		float scaleY = effectiveHeight / GAME_HEIGHT;
-		scale = (scaleX < scaleY) ? scaleX : scaleY; // Use the smaller scale to ensure it fits
-		
-		// Calculate the actual rendered size (this should be smaller than or equal to effective size)
-		float renderedWidth = GAME_WIDTH * scale;
-		float renderedHeight = GAME_HEIGHT * scale;
-		
-		// Center the game area with proper rounding to avoid fractional pixels
-		offsetX = floorf((effectiveWidth - renderedWidth) / 2.0f);
-		offsetY = floorf((effectiveHeight - renderedHeight) / 2.0f);
-		
-		// macOS fullscreen quirk detection and compensation
-		#ifdef __APPLE__
-		// On macOS, fullscreen mode sometimes reports incorrect screen dimensions
-		// that can cause asymmetrical letterboxing. Detect and compensate for this.
-		float unusedSpaceX = effectiveWidth - renderedWidth;
-		float unusedSpaceY = effectiveHeight - renderedHeight;
-		
-		// If there's minimal unused space that should result in perfect centering,
-		// but we detect potential asymmetry, force perfect centering
-		if (unusedSpaceX < 2.0f && unusedSpaceY < 2.0f) {
-			// Perfect fit - ensure exact centering
-			offsetX = unusedSpaceX / 2.0f;
-			offsetY = unusedSpaceY / 2.0f;
-		}
-		else if (unusedSpaceY > 0.0f && unusedSpaceY < 50.0f) {
-			// Small amount of letterboxing that should be symmetric
-			// Force perfect vertical centering
-			offsetY = unusedSpaceY / 2.0f;
-		}
-		#endif
-		
-		// Debug output for first few frames
-		static int frameCount = 0;
-		if (frameCount < 10) {  // Show more frames to catch any changes
-			// Get actual monitor information
-			printf("Frame %d: Effective=%.0fx%.0f, Scale=%.3f, Rendered=%.0fx%.0f, Offset=(%.1f,%.1f)\n", 
-				frameCount, effectiveWidth, effectiveHeight, scale, renderedWidth, renderedHeight, offsetX, offsetY);
-			printf("  ScaleX=%.6f, ScaleY=%.6f, Diff=%.6f\n", scaleX, scaleY, fabs(scaleX - scaleY));
-			printf("  Expected for 16:9: %.0fx%.0f\n", effectiveHeight * GAME_ASPECT, effectiveHeight);
-			printf("  Unused space: X=%.1f, Y=%.1f\n", effectiveWidth - renderedWidth, effectiveHeight - renderedHeight);
-			printf("  MONITOR: Real=%dx%d, Position=(%.0f,%.0f), Reported=%.0fx%.0f\n", 
-				realMonitorWidth, realMonitorHeight, GetMonitorPosition(monitor).x, GetMonitorPosition(monitor).y, 
-				screenWidth, screenHeight);
-			printf("  DISCREPANCY: Width=%d, Height=%d, Fullscreen=%s, Using=%s\n", 
-				realMonitorWidth - (int)screenWidth, realMonitorHeight - (int)screenHeight,
-				IsWindowFullscreen() ? "YES" : "NO",
-				(hasDiscrepancy && IsWindowFullscreen()) ? "REAL" : "REPORTED");
-			frameCount++;
-		}
-		
-		// -------------------------------------------------------------------------
-		// 2) Proper mouse coordinate mapping with letterbox offset
-		// -------------------------------------------------------------------------
-		Vector2 rawMouse = GetMousePosition();
-		
-		// Account for letterbox offsets
-		float adjustedMouseX = rawMouse.x - offsetX;
-		float adjustedMouseY = rawMouse.y - offsetY;
-		
-		// Convert to game coordinates
-		g_AIGUI.mousePos.x = adjustedMouseX / scale;
-		g_AIGUI.mousePos.y = adjustedMouseY / scale;
-		
-		// Clamp to game bounds
-		if (g_AIGUI.mousePos.x < 0) g_AIGUI.mousePos.x = 0;
-		if (g_AIGUI.mousePos.x > GAME_WIDTH) g_AIGUI.mousePos.x = GAME_WIDTH;
-		if (g_AIGUI.mousePos.y < 0) g_AIGUI.mousePos.y = 0;
-		if (g_AIGUI.mousePos.y > GAME_HEIGHT) g_AIGUI.mousePos.y = GAME_HEIGHT;
-
-		// -------------------------------------------------------------------------
-		// 3) Update game logic and performance profiling
-		// -------------------------------------------------------------------------
-		PerformanceProfiler::GetInstance().BeginFrame();
-		Update();
-		PerformanceProfiler::GetInstance().EndFrame();
-
-		// -------------------------------------------------------------------------
-		// 4) Render to 320x180 texture
-		// -------------------------------------------------------------------------
-		BeginTextureMode(target);
-		ClearBackground(BLACK);
-		
-		switch (gamestate)
-		{
-		case MAINMENU:
-			mainMenu->Draw();  // all drawing in 320x180 coords
-			break;
-		case PLAYING:
-			playing->Draw();   // includes your pause logic if needed
-			break;
-		case CREDITS:
-			credits->Draw();   // Draw credits screen
-			break;
-		case PAUSEMENU:
-			// If you have a separate pauseMenu->Draw(), do it here.
-			// Or if your PAUSEMENU UI is inside playing->Draw() behind an if() check,
-			// that's fine too.
-			break;
-		case LOADING:
-			loading->Draw(); // Draw loading screen with rotating poophat
-			break;
-		}
-
-		EndTextureMode(); // Done rendering the 320x180 scene
-
-		// -------------------------------------------------------------------------
-		// 5) Draw texture to screen with proper letterboxing
-		// -------------------------------------------------------------------------
-		BeginDrawing();
-		ClearBackground(BLACK); // This creates the letterbox bars
-		
-		// Calculate destination rectangle for the game area
-		Rectangle destRect = {
-			offsetX,
-			offsetY,
-			renderedWidth,
-			renderedHeight
-		};
-		
-		// Only draw the game texture to the calculated rectangle
-		// The areas outside this rectangle will remain black (letterbox bars)
-		DrawCallTracker::TrackDrawTexturePro(
-			target.texture,
-			// Source rect - use negative height for proper RenderTexture orientation
-			Rectangle{ 0, 0, GAME_WIDTH, -GAME_HEIGHT },
-			// Destination rect - this should NOT fill entire screen when letterboxing
-			destRect,
-			Vector2{ 0, 0 },
-			0.0f,
-			WHITE
-		);
-		
-		EndDrawing();
-
-		HandleInput();
-	}
-
-	UnloadRenderTexture(target);
+void Game::Tick()
+{
+    if (warmupFrames-- > 0) { BeginDrawing(); ClearBackground(BLACK); EndDrawing(); return; }
+    // Keep polling events while suspended, but freeze all simulation timers.
+    if (hostPaused || !IsWindowFocused()) {
+        if (!focusPaused) {
+            SetMasterVolume(0.0f);
+            if (playing) playing->GetStats().Save();
+        }
+        focusPaused = true;
+        BeginDrawing();
+        ClearBackground(BLACK);
+        EndDrawing();
+        return;
+    }
+    if (focusPaused) {
+        SetMasterVolume(1.0f);
+        focusPaused = false;
+        // Discard the first resumed frame so hidden-tab time cannot become a physics step.
+        BeginDrawing(); EndDrawing();
+        return;
+    }
+    if (gamestate == SHUTDOWN) {
+#ifdef __EMSCRIPTEN__
+        SetHostPaused(true);
+        EM_ASM({ if (window.floppySend) window.floppySend('exit'); });
+#endif
+        return;
+    }
+    const auto view = FloppyViewport::Fit(GetScreenWidth(), GetScreenHeight());
+    const Vector2 rawMouse = GetMousePosition();
+    // Leave off-canvas input outside the UI instead of snapping it onto buttons.
+    g_AIGUI.mousePos = RenderLayout::ToUi({(rawMouse.x - view.x) / view.scale, (rawMouse.y - view.y) / view.scale}, gamestate == PLAYING);
+    HandleInput();
+    PerformanceProfiler::GetInstance().BeginFrame();
+    Update();
+    PerformanceProfiler::GetInstance().EndFrame();
+    BeginTextureMode(target);
+    ClearBackground(BLACK);
+    if (gamestate == PLAYING) playing->Draw();
+    else {
+        AIGUI_SetRenderCamera(RenderLayout::UiCamera());
+        BeginMode2D(RenderLayout::UiCamera());
+        switch (gamestate) {
+        case MAINMENU: if (mainMenu) mainMenu->Draw(); break;
+        case CREDITS: credits->Draw(); break;
+        case LOADING: loading->Draw(); break;
+        default: break;
+        }
+        EndMode2D();
+    }
+    EndTextureMode();
+    BeginDrawing();
+    ClearBackground(BLACK);
+    DrawTexturePro(target.texture, {0, 0, 800, -450},
+        {view.x, view.y, view.width, view.height}, {0, 0}, 0, WHITE);
+    EndDrawing();
 }
 
 void Game::Update()
@@ -408,7 +271,6 @@ void Game::Update()
 		break;
 
 	case SHUTDOWN:
-		CloseWindow();
 		break;
 	}
 }
@@ -438,7 +300,9 @@ void Game::Draw()
 
 void Game::HandleInput()
 {
+#ifndef __EMSCRIPTEN__
 	if (IsKeyPressed(KEY_F11)) window->ToggleMode();
+#endif
 
 	switch (gamestate)
 	{
@@ -467,9 +331,8 @@ void Game::SetGameState(GAMESTATE newState)
 }
 
 // Implement GetScaledFont method
-Font Game::GetScaledFont(float scaleFactor) {
-	Font scaledFont = whackyJoe;
-	scaledFont.baseSize = (int)(whackyJoe.baseSize * scaleFactor);
-	SetTextureFilter(scaledFont.texture, TEXTURE_FILTER_BILINEAR); // Use bilinear for compatibility
-	return scaledFont;
+Font Game::GetScaledFont(float /*scaleFactor*/) {
+    // Font metrics describe the atlas and must not change with display scale.
+    // DrawTextEx's size argument owns the requested text size.
+    return whackyJoe;
 }

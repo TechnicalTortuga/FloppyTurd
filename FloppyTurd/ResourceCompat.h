@@ -380,14 +380,14 @@ namespace Resources {
         
         // Legacy duplicate mappings for backward compatibility
         if (filePath == "resources/hats/FlowerHatTurdlet.png") return LoadTexture("resources/hats/flowerhatturdletjump.png");
-        if (filePath == "resources/hats/FlowerHatTurdletShoot.png") return LoadTexture("resources/hats/flowerhatturdletshoot.png");
+        if (filePath == "resources/hats/flowerhatturdletshoot.png") return LoadTexture("resources/hats/flowerhatturdletshoot.png");
         if (filePath == "resources/hats/FlowerHatBigTurd.png") return LoadTexture("resources/hats/flowerhatbigturdjump.png");
-        if (filePath == "resources/hats/FlowerHatBigTurdShoot.png") return LoadTexture("resources/hats/flowerhatbigturdshoot.png");
+        if (filePath == "resources/hats/flowerhatbigturdshoot.png") return LoadTexture("resources/hats/flowerhatbigturdshoot.png");
         
         if (filePath == "resources/hats/DooragTurdlet.png") return LoadTexture("resources/hats/dooragturdletjump.png");
-        if (filePath == "resources/hats/DooragTurdletShoot.png") return LoadTexture("resources/hats/dooragturdletshoot.png");
+        if (filePath == "resources/hats/dooragturdletshoot.png") return LoadTexture("resources/hats/dooragturdletshoot.png");
         if (filePath == "resources/hats/DooragBigTurd.png") return LoadTexture("resources/hats/dooragbigturdjump.png");
-        if (filePath == "resources/hats/DooragBigTurdShoot.png") return LoadTexture("resources/hats/dooragbigturdshoot.png");
+        if (filePath == "resources/hats/dooragbigturdshoot.png") return LoadTexture("resources/hats/dooragbigturdshoot.png");
         
         // Hat icon mappings (for menu display)
         if (filePath == "resources/hats/Flower.png") return LoadTexture("resources/hats/flowerhat.png");
@@ -414,7 +414,7 @@ namespace Resources {
         if (filePath == "resources/environment/BossBackground.png") return RM().GetTexture("boss_background");
         if (filePath == "resources/environment/BossDarkClouds.png") return RM().GetTexture("boss_dark_clouds");
         if (filePath == "resources/environment/BossCurtains.png") return RM().GetTexture("boss_curtains");
-        if (filePath == "resources/environment/BossPillar.png") return RM().GetTexture("boss_pillar");
+        if (filePath == "resources/environment/bosspillar.png") return RM().GetTexture("boss_pillar");
         
         // Enemy sprites - Boss alternative names
         if (filePath == "resources/enemies/RatKingIdle.png") return RM().GetTexture("ratking_idle");
@@ -470,7 +470,7 @@ namespace Resources {
     inline const char* TopHat = "resources/hats/tophat.png";
     inline const char* Ushanka = "resources/hats/ushanka.png";
     inline const char* Beret = "resources/hats/Beret.png";
-    inline const char* Crown = "resources/hats/Crown.png";
+    inline const char* Crown = "resources/hats/crown.png";
     inline const char* PoopHat = "resources/hats/poophat.png";
     inline const char* RamsesHat = "resources/hats/RamsesHat.png";
     inline const char* SpartanHelmet = "resources/hats/SpartanHelmet.png";
@@ -586,11 +586,11 @@ namespace Resources {
     inline const char* BrickWallTexture = "resources/objects/BrickWall.png";
     
     // Game Over - CRITICAL for Playing class
-    inline const char* GameOverMusic = "resources/music/GameOver.mp3";
+    inline const char* GameOverMusic = "resources/music/gameover.mp3";
 
     // UI Heart variants - CRITICAL for Playing class
     inline const char* TurdHeartSmall = "resources/ui/TurdHeartSmall.png";
-    inline const char* TurdHeart0Half = "resources/ui/TurdHeart0Half.png";
+    inline const char* TurdHeart0Half = "resources/ui/TurdHeart0HalfHollow.png";
     inline const char* TurdHeart0HalfHollow = "resources/ui/TurdHeart0HalfHollow.png";
     inline const char* TurdHeart0ThirdHollow = "resources/ui/TurdHeart0ThirdHollow.png";
     inline const char* TurdHeart1Half = "resources/ui/TurdHeart1Half.png";
@@ -616,7 +616,7 @@ namespace Resources {
     inline const char* BackgroundBackLayer = "resources/environment/Level1BackLayerBackground.png";
     inline const char* BackgroundMidLayer = "resources/environment/Level1MidLayerBackground.png";
     inline const char* BackgroundFrontLayer = "resources/environment/Level1FrontLayerBackground.png";
-    inline const char* Clouds = "resources/environment/level1Clouds.png";
+    inline const char* Clouds = "resources/environment/Level1Clouds.png";
     inline const char* TopToilet = "resources/environment/TopToilet.png";
     inline const char* BottomToilet = "resources/environment/BottomToilet.png";
 
@@ -699,7 +699,7 @@ namespace Resources {
     inline const char* RatKingAimBackArm = "resources/enemies/RatkingAimBackArmOnly.png";
     inline const char* ToiletPaperIdle = "resources/enemies/ToiletPaperFlap.png";
     inline const char* ToiletPaperHurt = "resources/enemies/ToiletPaperHit.png";
-    inline const char* ToiletPaperProjectilePic = "resources/enemies/ToiletPaperProjectile.png";
+    inline const char* ToiletPaperProjectilePic = "resources/enemies/toiletpaperprojectile.png";
 
     // Spike Ball - CRITICAL for SpikeBall class
     inline const char* SpikeBallTexture = "resources/objects/SpikeBall.png";
@@ -730,8 +730,8 @@ namespace Resources {
     inline const char* poophatIcon = "resources/poophat.ico";
 
     // Level 5 music variants - CRITICAL for CastleLevel class
-    inline const char* LevelFiveSlow = "resources/music/Level5Slow.ogg";
-    inline const char* LevelFiveFast = "resources/music/Level5Fast.ogg";
+    inline const char* LevelFiveSlow = "resources/music/Level5.ogg";
+    inline const char* LevelFiveFast = "resources/music/CastleLevelFartFast.ogg";
 
     // Boss Level assets - CRITICAL for BossLevel class
     inline const char* BossLevelSlow = "resources/music/BossThemeSlow.ogg";

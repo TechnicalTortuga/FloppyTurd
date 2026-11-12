@@ -3,6 +3,7 @@
 #include "AIGUI.h" // If your custom GUI functions are here, include it
 #include "ResourceCompat.h"
 #include "AudioClip.h"
+#include <algorithm>
 
 using namespace std;
 
@@ -16,6 +17,10 @@ AudioManager::AudioManager()
 }
 
 AudioManager::~AudioManager() {
+    Shutdown();
+}
+
+void AudioManager::Shutdown() {
     UnloadTextures();
 
     for (auto& [_, fx] : soundEffects)
@@ -117,7 +122,7 @@ bool AudioManager::DrawButton3States(
     float x, float y,
     float width, float height
 ) {
-    Vector2 mousePos = GetMousePosition();
+    Vector2 mousePos = g_AIGUI.mousePos;
     bool hovered = CheckCollisionPointRec(mousePos, { x, y, width, height });
     bool pressed = hovered && IsMouseButtonDown(MOUSE_LEFT_BUTTON);
     bool released = hovered && IsMouseButtonReleased(MOUSE_LEFT_BUTTON);

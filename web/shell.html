@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Floppy Turd</title><style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#080b08;color:#f1edce;font:16px system-ui,sans-serif}
+canvas{display:block;width:100%;height:100%;image-rendering:pixelated;outline:none;touch-action:none}
+#gate{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;background:#111a11}
+#gate[hidden]{display:none}button{font:inherit;padding:14px 30px;border:2px solid #dde28b;background:#25351f;color:#fff5ce;cursor:pointer}
+#fullscreen{position:absolute;right:12px;top:12px;font-size:14px;padding:7px 12px;background:#111a11bb}#status{max-width:36em;text-align:center;padding:0 20px}#hint{font-size:14px;color:#c4c9b0}
+</style></head><body>
+<canvas id="canvas" tabindex="0" aria-label="Floppy Turd game"></canvas>
+<button id="fullscreen" hidden>Fullscreen</button>
+<div id="gate"><h1>Floppy Turd</h1><p id="status" role="status">Loading the game…</p><button id="play" hidden>Play Floppy Turd</button><p id="hint">Space: jump · S: shoot · Esc: pause</p></div>
+<script src="bridge.js"></script>
+{{{ SCRIPT }}}
+</body></html>

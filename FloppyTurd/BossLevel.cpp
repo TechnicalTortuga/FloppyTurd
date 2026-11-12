@@ -1,4 +1,4 @@
-﻿#include "BossLevel.h"
+#include "BossLevel.h"
 #include "ResourceCompat.h"
 #include "RatKing.h"
 #include "GameSettings.h"
@@ -96,7 +96,7 @@ void BossLevel::Draw() const
     {
         float alpha = (deathSequenceTimer - 1.5f) / 1.0f; // 1-second fade
         alpha = Clamp(alpha, 0.0f, 1.0f);
-        DrawRectangle(0, 0, 320, 180, Fade(WHITE, alpha));
+        DrawRectangle(0, 0, (int)GameSettings::GameWidth, (int)GameSettings::GameHeight, Fade(WHITE, alpha));
     }
 }
 

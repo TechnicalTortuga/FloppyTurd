@@ -1,117 +1,67 @@
 # Building Floppy Turd
 
-This document explains how to build Floppy Turd for different platforms using CMake.
+## Dependencies
 
-## Prerequisites
+CMake 3.20+, a C++20 compiler, Git, and raylib 6.2. CMake fetches the exact commit in `dependencies.lock.json`. Python is needed for the optional asset audit/packaging scripts; Node is needed for browser bridge checks.
 
-- CMake 3.20 or higher
-- C++20 compatible compiler
-- Git
+On Debian/Ubuntu, install build-essential, cmake, libasound2-dev, libx11-dev, libxrandr-dev, libxi-dev, libxcursor-dev, libxinerama-dev, and libgl1-mesa-dev. Use `-DGLFW_BUILD_WAYLAND=OFF` for the X11 baseline.
 
-### Platform-specific requirements:
+## Windows, Linux, and macOS
 
-**Windows:**
-- Visual Studio 2022 or MinGW-w64
-- Windows SDK
-
-**Android:**
-- Android NDK r23 or higher
-- Android SDK
-- Java JDK 8 or higher
-
-**iOS:**
-- Xcode 14 or higher
-- macOS 12 or higher
-
-## Building for Desktop (Windows/Linux/macOS)
-
-```bash
-# Clone the repository
-git clone <your-repo-url>
-cd FloppyTurd
-
-# Create build directory
-mkdir build
-cd build
-
-# Configure
-cmake ..
-
-# Build
-cmake --build . --config Release
-
-# Run
-./FloppyTurd  # or FloppyTurd.exe on Windows
+```sh
+cmake -S . -B build/native -DCMAKE_BUILD_TYPE=Release
+cmake --build build/native --config Release --parallel
+ctest --test-dir build/native -C Release --output-on-failure
+python tools/audit-assets.py
+node --test tests/bridge.test.mjs
+cmake --install build/native --config Release --prefix dist/native
+cpack --config build/native/CPackConfig.cmake -C Release -B dist
 ```
 
-### Visual Studio (Windows)
+Use `-G Ninja -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++` for MinGW on Windows. Its game binary links the compiler runtime statically. Keep the executable and adjacent `resources/` directory together. The working directory is resolved from the executable, including when launched from another folder.
 
-```bash
-# Generate Visual Studio solution
-cmake -G "Visual Studio 17 2022" -A x64 ..
+The `.github/workflows/build.yml` matrix builds and packages Windows, Linux, macOS, and Web. The workflow has been prepared locally; Linux/macOS jobs have not been executed from this Windows workspace. Artifacts are unsigned. No workflow has been pushed or triggered by this restoration.
 
-# Open the generated .sln file in Visual Studio
+## Browser
+
+Install and activate the official Emscripten SDK **4.0.23**, then load its environment (`emsdk_env.bat` on Windows, `source emsdk_env.sh` on Unix):
+
+```sh
+emcmake cmake -S . -B build/web -DCMAKE_BUILD_TYPE=Release -DFLOPPY_BUILD_TESTS=OFF
+cmake --build build/web --parallel
+python tools/package-web.py
+python -m http.server 8765 --bind 127.0.0.1 --directory dist/web
 ```
 
-## Building for Android
+Open `http://127.0.0.1:8765/index.html`; click **Play Floppy Turd** to initialize audio and the game from a real user gesture. Browser output is five files: `index.html`, `index.js`, `index.wasm`, `index.data`, and `bridge.js`. Serve all five from the same directory using HTTP(S); `.wasm` should use `application/wasm`. No backend, threads, SharedArrayBuffer, or cross-origin isolation headers are required.
 
-```bash
-# Set up environment variables
-export ANDROID_NDK_HOME=/path/to/android-ndk
-export ANDROID_SDK_HOME=/path/to/android-sdk
+For this workspace's local SDK, `python .local/deps/emsdk/upstream/emscripten/emcmake.py cmake ...` also works. Keep temporary compiler files in a writable directory when sandboxing; the local build used `.local/temp`. Local dependency source overrides are optional and are not needed in CI.
 
-# Create build directory
-mkdir build-android
-cd build-android
+The full data bundle is about 124 MB, mostly music. It loads only when the website opens the player. Splitting level music into lazy resource packages is the next download-size optimization.
 
-# Configure for Android
-cmake .. \
-  -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
-  -DANDROID_ABI=arm64-v8a \
-  -DANDROID_PLATFORM=android-21 \
-  -DCMAKE_BUILD_TYPE=Release
+## Portfolio website integration
 
-# Build
-cmake --build .
+The website chat `Plan website 3D scene design` owns `C:/Development/myWebsite`. Its agreed entry point is `/games/floppy-turd/index.html`, loaded lazily in an iframe after the CRT is selected. The website owns the fullscreen/full-window player; the game owns its canvas, aspect ratio, pointer mapping, audio and simulation. The 3D scene pauses while the player is open. Drawing live interactive gameplay on the curved CRT would require a separate rendering/input interface.
+
+The website's staging command is:
+
+```sh
+npm run stage:floppy-turd -- --from C:/Development/FloppyTurd/dist/web
 ```
 
-## Building for iOS
+Run it from the website repository. It validates and hashes the clean runtime bundle and preserves the previous local snapshot. The website config points its Floppy Turd entry to `/games/floppy-turd/index.html` after successful staging. Neither repository is deployed by this process.
 
-```bash
-# Create build directory
-mkdir build-ios
-cd build-ios
+Child URL parameters: `embed=1`, `parentOrigin=<exact origin>`, `session=<nonce>`.
 
-# Configure for iOS
-cmake .. \
-  -DCMAKE_SYSTEM_NAME=iOS \
-  -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0 \
-  -DCMAKE_OSX_ARCHITECTURES=arm64 \
-  -DCMAKE_BUILD_TYPE=Release
+Every message is `{channel:'floppy-turd', version:1, session, type, payload}`. Validate the exact parent/iframe WindowProxy, origin, channel, version and session on both sides; never use a wildcard target origin.
 
-# Build
-cmake --build .
+- Host: `host:init`, `host:state` with `{visible, fullscreen, viewport:{width,height,dpr}}`; `host:dispose` with `{reason:'exit'}`.
+- Game: `game:ready`, `game:request-close`, `game:request-fullscreen`, and `game:error` with `{message}`.
 
-# Open the generated Xcode project
-open FloppyTurd.xcodeproj
-```
+The shell queues visibility before startup. Hidden/disposed games mute audio and freeze simulation without overwriting the in-game pause flag. The resumed frame is discarded to prevent a large physics time step. Closing the iframe sends a last save request on a best-effort basis. Ctrl/Meta/Alt shortcuts and editable fields pass through. The host supplies an explicit fullscreen retry button if a message-triggered native request lacks user activation.
 
-## Build Options
+## Progress files
 
-- `CMAKE_BUILD_TYPE`: Debug, Release, RelWithDebInfo, MinSizeRel
-- `BUILD_SHARED_LIBS`: Build as shared library (for Android)
-- `SUPPORT_HIGHDPI`: Enable high DPI support
+Windows: `%APPDATA%/FloppyTurd/floppy_turd_stats.bin`; Linux: `$XDG_DATA_HOME/FloppyTurd/` or `~/.local/share/FloppyTurd/`; macOS: `~/Library/Application Support/FloppyTurd/`. Browser: localStorage key `floppy-turd-save-v2`, scoped to the game origin. `FLOPPY_TURD_SAVE_DIR` overrides desktop storage for isolated checks.
 
-## Troubleshooting
-
-### Missing Resources
-Ensure the `resources` folder is copied to the build directory. CMake should handle this automatically.
-
-### Android Build Issues
-- Make sure NDK path is correct
-- Try different Android ABI (armeabi-v7a for older devices)
-- Check minimum Android API level
-
-### iOS Build Issues
-- Ensure you have valid Apple Developer certificates
-- Check iOS deployment target compatibility 
+Format v2 is 79 bytes, explicitly little-endian counters and one-byte flags, with no C++ struct padding. Loading accepts the old 80-byte v1 Windows/macOS format and rejects truncated/invalid values atomically. To migrate an old portable save, copy it into the new per-user directory before starting. Bundled developer save files are excluded from distributions. This desktop format is separate from the iOS JSON v2 schema.

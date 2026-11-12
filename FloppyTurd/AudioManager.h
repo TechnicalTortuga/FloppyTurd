@@ -17,6 +17,7 @@ public:
 
 
     void StopMusic();
+    void Shutdown();
 
     // Volume range: 0-10
     int GetMusicVolume() const { return musicVolume; }

@@ -1,4 +1,6 @@
-﻿#include "LevelManager.h"
+#include "GameSettings.h"
+#include <algorithm>
+#include "LevelManager.h"
 #include "BossLevel.h"
 #include "SewerLevel.h"
 #include "CastleLevel.h"
@@ -37,15 +39,15 @@ void LevelManager::UpdateEnemyFactory()
     }
     else if (CastleLevel* castle = dynamic_cast<CastleLevel*>(currentLevel.get())) {
         enemyFactory = [castle, this](Vector2 /*ignored*/) -> std::shared_ptr<Enemy> {
-            float randomY = (float)GetRandomValue(0, 180 - 32);
-            Vector2 startPos = { 320.0f, randomY };
+            float randomY = (float)GetRandomValue(0, (int)GameSettings::GameHeight - 32);
+            Vector2 startPos = { GameSettings::GameWidth, randomY };
             return std::make_shared<RatCopter>(startPos, GetPickupPanSpeed());
             };
     }
     else if (BossLevel* bossLevel = dynamic_cast<BossLevel*>(currentLevel.get())) {
         enemyFactory = [bossLevel, this](Vector2 spawnPos) -> std::shared_ptr<Enemy> {
-            float randomY = (float)GetRandomValue(0, 180 - 32);
-            Vector2 startPos = { 320.0f, randomY };
+            float randomY = (float)GetRandomValue(0, (int)GameSettings::GameHeight - 32);
+            Vector2 startPos = { GameSettings::GameWidth, randomY };
             return std::make_shared<RatCopter>(startPos, GetPickupPanSpeed());
             };
     }
@@ -63,7 +65,7 @@ void LevelManager::UpdateEnemyFactory()
     else if (DesertLevel* desert = dynamic_cast<DesertLevel*>(currentLevel.get())) {
         enemyFactory = [desert, this](Vector2) -> std::shared_ptr<Enemy> {
             static float lastBirdX = -1000.0f;
-            const float screenWidth = 320.0f;
+            const float screenWidth = GameSettings::GameWidth;
 
             if (desert->outhouses.size() < 2) {
                 std::cout << "[BirdSpawn] ⚠️ Not enough outhouses to spawn Bird\n";
@@ -276,9 +278,9 @@ void LevelManager::SpawnEnemy()
     }
 
     if (SnowLevel* snow = dynamic_cast<SnowLevel*>(currentLevel.get())) {
-        const float screenWidth = 320.0f;
+        const float screenWidth = GameSettings::GameWidth;
         float spawnX = screenWidth + 20.0f;
-        float spawnY = 180.0f - 58.0f; // Fixed Y position at ground level
+        float spawnY = GameSettings::GameHeight - 58.0f; // Fixed Y position at ground level
         Vector2 spawnPos = { spawnX, spawnY };
         std::shared_ptr<Enemy> enemy = enemyFactory(spawnPos);
         if (enemy && IsSpawnPositionValid(enemy->GetHitbox())) {
@@ -339,7 +341,7 @@ void LevelManager::SpawnEnemy()
         return;
     }
 
-    Vector2 spawnPos = { 320.0f + 20, 0.0f };
+    Vector2 spawnPos = { GameSettings::GameWidth + 20, 0.0f };
     std::shared_ptr<Enemy> enemy = enemyFactory(spawnPos);
     if (enemy && IsSpawnPositionValid(enemy->GetHitbox())) {
         enemies.push_back(enemy);

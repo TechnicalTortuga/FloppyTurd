@@ -1,4 +1,4 @@
-﻿#include "SnowLevel.h"
+#include "SnowLevel.h"
 #include "ResourceCompat.h"
 #include "Coin.h"
 #include "PoopHeart.h"
@@ -129,7 +129,7 @@ void SnowLevel::InitObstacles()
     toilets.clear();
     obstacles.clear();
 
-    float currentX = static_cast<float>(320);
+    float currentX = GameSettings::GameWidth;
 
     for (int i = 0; i < 5; i++)
     {

@@ -1,0 +1,11 @@
+{
+  "raylib": {
+    "version": "6.2",
+    "commit": "02566453880e06bec97f5b8160fa6fe1e98397ca",
+    "url": "https://github.com/raysan5/raylib",
+    "verified": "2026-11-11"
+  },
+  "emscripten": {
+    "version": "4.0.23"
+  }
+}

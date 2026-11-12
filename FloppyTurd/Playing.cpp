@@ -1,4 +1,4 @@
-﻿#include "Playing.h"
+#include "Playing.h"
 #include "AIGUI.h"
 #include "raymath.h"
 #include <string>
@@ -16,6 +16,8 @@
 #include "SnowballProjectile.h"
 #include "PlatformLayer.h"
 #include <cmath>
+#include "RenderLayout.h"
+#include "PixelFont.h"
 
 Playing::Playing(Game* game) {
     using namespace Resources;
@@ -141,7 +143,7 @@ void Playing::InitializeHats() {
     Hat* topHat = new Hat("Top Hat", "resources/hats/tophat.png", "resources/hats/tophatturdletjump.png", 6, "resources/hats/tophatturdletshoot.png", 5, "resources/hats/tophatbigturdjump.png", 6, "resources/hats/tophatbigturdshoot.png", 5, LOCKED);
     Hat* ushanka = new Hat("Ushanka", "resources/hats/ushanka.png", "resources/hats/ushankaturdletjump.png", 6, "resources/hats/ushankaturdletshoot.png", 5, "resources/hats/ushankabigturdjump.png", 6, "resources/hats/ushankabigturdshoot.png", 5, LOCKED);
     Hat* beret = new Hat("Beret", "resources/hats/Beret.png", "resources/hats/berethatturdletjump.png", 6, "resources/hats/berethatturdletshoot.png", 5, "resources/hats/berethatbigturdjump.png", 6, "resources/hats/berethatbigturdshoot.png", 5, LOCKED);
-    Hat* crown = new Hat("Crown", "resources/hats/Crown.png", "resources/hats/crownhatturdletjump.png", 6, "resources/hats/crownhatturdletshoot.png", 5, "resources/hats/crownhatbigturdjump.png", 6, "resources/hats/crownhatbigturdshoot.png", 5, LOCKED);
+    Hat* crown = new Hat("Crown", "resources/hats/crown.png", "resources/hats/crownhatturdletjump.png", 6, "resources/hats/crownhatturdletshoot.png", 5, "resources/hats/crownhatbigturdjump.png", 6, "resources/hats/crownhatbigturdshoot.png", 5, LOCKED);
     Hat* poopHat = new Hat("Poop Hat", "resources/hats/poophat.png", "resources/hats/poophatturdletjump.png", 6, "resources/hats/poophatturdletshoot.png", 5, "resources/hats/poophatbigturdjump.png", 6, "resources/hats/poophatbigturdshoot.png", 5, LOCKED);
     Hat* ramsesHat = new Hat("Ramses Hat", "resources/hats/RamsesHat.png", "resources/hats/ramsesturdletjump.png", 6, "resources/hats/ramsesturdletshoot.png", 5, "resources/hats/ramsesbigturdjump.png", 6, "resources/hats/ramsesbigturdshoot.png", 5, LOCKED);
     Hat* spartanHelmet = new Hat("Spartan Helmet", "resources/hats/SpartanHelmet.png", "resources/hats/spartanhatturdletjump.png", 6, "resources/hats/spartanhatturdletshoot.png", 5, "resources/hats/spartanhatbigturdjump.png", 6, "resources/hats/spartanhatbigturdshoot.png", 5, LOCKED);
@@ -190,7 +192,7 @@ void Playing::PreLoadLevels() {
 
 Playing::~Playing() {
     // ResourceManager handles texture cleanup automatically
-    UnloadSound(ScoreSound);
+    // ScoreSound is borrowed from ResourceManager.
 
     delete gameOverMusic;
     delete bossHealthBar;
@@ -210,15 +212,7 @@ void Playing::InitializeSkillNodes() {
 }
 
 bool Playing::PurchaseItem(int cost) {
-    int sessionCoins = player->GetSessionCoins();
-    if (sessionCoins + TOTALCOINS < cost) return false;
-
-    int sessionDeduction = std::min(sessionCoins, cost);
-    player->AddCoins(-sessionDeduction);
-    TOTALCOINS -= (cost - sessionDeduction);
-    stats.totalCoins = TOTALCOINS;
-    savePending = true;
-    return true;
+    return player->SpendCoins(cost);
 }
 
 void Playing::TriggerSaveIfPending() {
@@ -337,7 +331,7 @@ void Playing::OutputHatMenu() {
                     savePending = true;
                 }
             }
-            if (player->GetSessionCoins() + TOTALCOINS < hatCost) {
+            if (TOTALCOINS < hatCost) {
                 DrawTextEx(font, "Not enough coins!", { detailsPanelX, detailsPanelY + 85 }, 18.0f, 1.0f, WHITE);
             }
         }
@@ -493,7 +487,7 @@ void Playing::DrawPauseMenu() {
                 if (AIGUI_ButtonRounded(buttonText, skillArea.x + 10 + costWidth + 30, y + 5, 80, 18, 0.3f, 18, WHITE)) {
                     UnlockSkill(selectedSkill);
                 }
-                if (player->GetSessionCoins() + TOTALCOINS < skillCosts[selectedSkill]) {
+                if (TOTALCOINS < skillCosts[selectedSkill]) {
                     DrawTextEx(font, "Not enough coins!", { skillArea.x + 10, y + 25 }, 18, 1.0f, WHITE);
                 }
             }
@@ -568,7 +562,7 @@ void Playing::DrawPauseMenu() {
                 UpdateSessionRecord(levelIndex, SCORE);
             }
 
-            TOTALCOINS += player->GetSessionCoins();
+            // Pickups already updated TOTALCOINS; finishing a run must not deposit them twice.
             stats.totalCoins = TOTALCOINS;
             savePending = true;
             if (game->mainMenu) {
@@ -740,7 +734,7 @@ void Playing::Update() {
             savePending = true;
         }
 
-        TOTALCOINS += player->GetSessionCoins();
+        // Pickups already updated TOTALCOINS; finishing a run must not deposit them twice.
         stats.totalCoins = TOTALCOINS;
         savePending = true;
 
@@ -759,7 +753,7 @@ void Playing::Update() {
         player->Update(deltaTime);
         if (snowOverlay) snowOverlay->Update(deltaTime);
         gameOverMusic->Update();
-        if (!turdHasFallenOffScreen && player->GetPosition().y >= 180) {
+        if (!turdHasFallenOffScreen && player->GetPosition().y >= GameSettings::GameHeight) {
             turdHasFallenOffScreen = true;
         }
         if (turdHasFallenOffScreen && !GAMEOVER) {
@@ -949,6 +943,7 @@ void Playing::Update() {
 }
 
 void Playing::Draw() {
+    BeginMode2D(RenderLayout::WorldCamera());
     if (levelManager) {
         levelManager->Draw();
     }
@@ -962,14 +957,17 @@ void Playing::Draw() {
     if (snowOverlay && dynamic_cast<SnowLevel*>(levelManager->GetCurrentLevel().get()))
         snowOverlay->Draw();
 
+    // The HUD uses the full viewport; modal panels use a smaller centered canvas.
+    if (!GAMEOVER) { UseHighDefFont(true); DrawUI(); UseHighDefFont(false); }
+    EndMode2D();
+    AIGUI_SetRenderCamera(RenderLayout::UiCamera(true));
+    BeginMode2D(RenderLayout::UiCamera(true));
+    RenderLayout::EndCameraOnExit endUi;
     if (GAMEOVER) {
         DrawGameOverScreen();
         return;
     }
 
-    UseHighDefFont(true);
-    DrawUI();
-    UseHighDefFont(false);
 
     // Draw touch controls for mobile
     if (touchControls && touchControls->IsEnabled() && !isPaused) {
@@ -1055,7 +1053,7 @@ void Playing::HandleInput() {
     auto& platform = PlatformLayer::GetInstance();
     
     // Handle pause - ESC on desktop or could add a pause button for mobile later
-    if (IsKeyPressed(KEY_ESCAPE)) {
+    if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_TAB)) {
         isPaused = !isPaused;
         currentTab = SYSTEM;
     }
@@ -1095,7 +1093,10 @@ void Playing::HandleInput() {
         bool shootInput = false;
         
         // Keyboard input (desktop)
-        shootInput |= IsKeyDown(KEY_F);
+        shootInput |= IsKeyDown(KEY_S);
+#ifndef __EMSCRIPTEN__
+        shootInput |= IsKeyDown(KEY_F); // Preserve the original desktop binding.
+#endif
         
         // Touch input (mobile)
         if (touchControls && touchControls->IsEnabled()) {
@@ -1179,19 +1180,12 @@ void Playing::DrawUI() {
 	using namespace Resources;
 	using namespace GameSettings;
 
-	if (!(levelManager && dynamic_cast<BossLevel*>(levelManager->GetCurrentLevel().get()))) {
-		DrawTexturePro(Scoreboard,
-			{ 0, 0, (float)Scoreboard.width, (float)Scoreboard.height },
-			{ 320.0f - Scoreboard.width - 10, 180.0f - Scoreboard.height - 10,
-			 (float)Scoreboard.width, (float)Scoreboard.height },
-			{ 0, 0 }, 0.0f, WHITE);
-		std::string scoreStr = TextFormat("%i", SCORE);
-		Vector2 scoreTextSize = MeasureTextEx(g_AIGUI.defaultFont, scoreStr.c_str(), 20.0f, 1.0f);
-		float scoreTextX = 320.0f - 42.5f - scoreTextSize.x / 2.0f;
-		float scoreTextY = 180.0f - 35.0f;
-		Font fontToUse = IsHighDefFont() ? game->GetScaledFont(1.2f) : g_AIGUI.defaultFont;
-		DrawTextEx(fontToUse, scoreStr.c_str(), { scoreTextX, scoreTextY }, 24.0f, 1.0f, WHITE);
-	}
+    if (!(levelManager && dynamic_cast<BossLevel*>(levelManager->GetCurrentLevel().get()))) {
+        const Rectangle frame = {GameWidth - Scoreboard.width - 4, GameHeight - Scoreboard.height - 4,
+            (float)Scoreboard.width, (float)Scoreboard.height};
+        DrawTexturePro(Scoreboard, {0, 0, (float)Scoreboard.width, (float)Scoreboard.height}, frame, {0,0}, 0, WHITE);
+        DrawPixelTextCentered(g_AIGUI.defaultFont, TextFormat("%i", SCORE), frame, 24, 1, WHITE);
+    }
 
 	const int hearts = player->GetTotalHearts();
 	const int slicesPH = player->GetSlicesPerHeart();
@@ -1242,7 +1236,7 @@ void Playing::DrawUI() {
 		{ coinBagX, coinBagY, (float)_CoinBag.width, (float)_CoinBag.height },
 		{ 0, 0 }, 0.0f, WHITE);
 	std::string coinStr = TextFormat("%i", player->GetSessionCoins());
-	Vector2 coinTextSize = MeasureTextEx(g_AIGUI.defaultFont, coinStr.c_str(), 20.0f, 1.0f);
+	Vector2 coinTextSize = MeasureTextEx(g_AIGUI.defaultFont, coinStr.c_str(), 24.0f, 1.0f);
 	float coinTextX = coinBagX + _CoinBag.width + 4.0f;
 	float coinTextY = coinBagY + (_CoinBag.height - coinTextSize.y) / 2.0f;
 	Font fontToUse = IsHighDefFont() ? game->GetScaledFont(1.2f) : g_AIGUI.defaultFont;
@@ -1265,8 +1259,5 @@ void Playing::UpdateSessionRecord(int levelIndex, int pipesPassed) {
 }
 
 int Playing::GetTotalCoins() {
-    if (player) {
-        return TOTALCOINS + player->GetSessionCoins();
-    }
     return TOTALCOINS;
 }

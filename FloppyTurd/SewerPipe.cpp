@@ -1,3 +1,4 @@
+#include "GameSettings.h"
 #include "SewerPipe.h"
 #include <random>
 #include "TextureCache.h"
@@ -35,7 +36,7 @@ SewerPipe::SewerPipe(int xPos, int yPos) {
 		pos.y = 0.0f;
 	}
 	else {
-		pos.y = 180 - chosenPipe.height;
+		pos.y = GameSettings::GameHeight - chosenPipe.height;
 	}
 
 	panSpeed = 80.0f; // Default to Regular speed
@@ -71,7 +72,7 @@ void SewerPipe::SetPipeType(PipeType newType) {
 		pos.y = 0.0f;
 	}
 	else {
-		pos.y = 180 - chosenPipe.height;
+		pos.y = GameSettings::GameHeight - chosenPipe.height;
 	}
 
 	// Update hitbox to reflect new position

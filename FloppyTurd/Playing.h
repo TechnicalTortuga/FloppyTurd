@@ -150,7 +150,7 @@ private:
         "Coin Shield"
     };
     const char* skillDescs[totalSkills]{
-        "Shoot poop with F (1 coin).",
+        "Shoot poop with S (1 coin).",
         "Hearts break into halves.",
         "Coins pull toward you.",
         "Hearts pull toward you.",
@@ -172,5 +172,5 @@ private:
     MenuButton* tryAgainNo;
     
     // Touch controls for mobile
-    TouchControls* touchControls;
+    TouchControls* touchControls = nullptr;
 };

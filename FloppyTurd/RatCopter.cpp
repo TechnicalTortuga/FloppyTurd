@@ -1,3 +1,4 @@
+#include "GameSettings.h"
 #include "RatCopter.h"
 #include "ResourceCompat.h"
 #include <iostream>
@@ -78,7 +79,7 @@ void RatCopter::Update(float deltaTime)
 
     case Mode::BEELINE:
         pos = Vector2Add(pos, Vector2Scale(direction, speed * deltaTime));
-        if (pos.x < -32.0f || pos.x > 320.0f + 32.0f || pos.y < -32.0f || pos.y > 180.0f + 32.0f)
+        if (pos.x < -32.0f || pos.x > GameSettings::GameWidth + 32.0f || pos.y < -32.0f || pos.y > GameSettings::GameHeight + 32.0f)
         {
             isHurt = true;
             hurtTimer = 0.0f;

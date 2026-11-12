@@ -1,4 +1,4 @@
-﻿#include "CastleLevel.h"
+#include "CastleLevel.h"
 #include "ResourceCompat.h"
 #include "GameSettings.h"
 #include "Coin.h"
@@ -192,7 +192,7 @@ void CastleLevel::ScrollSpriteVec(std::vector<std::shared_ptr<Sprite>>& v, float
 
 void CastleLevel::Update(float dt)
 {
-    const float torchY = 180 - 64.f - 21.f;
+    const float torchY = GameSettings::GameHeight - 64.f - 21.f;
     const float toiletWidth = 45.f;
     static float swingTimer = 0.0f;
     const float swingFrequency = 1.0f;

@@ -1,4 +1,5 @@
-﻿#include "DesertLevel.h"
+#include <algorithm>
+#include "DesertLevel.h"
 #include "BrickWall.h"
 #include "Cactus.h"
 #include "Coin.h"
@@ -225,7 +226,7 @@ void DesertLevel::InitObstacles()
     outhouses.clear();
     obstacles.clear();
 
-    float x = 320;
+    float x = GameSettings::GameWidth;
     for (int i = 0; i < 12; ++i)
     {
         int y = 0;
@@ -246,7 +247,7 @@ void DesertLevel::InitObstacles()
     float cactusSpacing = 100.0f;
     for (int i = 0; i < 6; ++i)
     {
-        float x = 320 + i * cactusSpacing + GetRandomValue(-10, 10);
+        float x = GameSettings::GameWidth + i * cactusSpacing + GetRandomValue(-10, 10);
         float y = 0;
         int roll = GetRandomValue(0, 99);
         CactusVariant variant;
@@ -279,7 +280,7 @@ void DesertLevel::InitDecoration()
 {
     using namespace GameSettings;
 
-    float currentX = 320.0f;
+    float currentX = GameSettings::GameWidth;
     const float minSpacing = 40.0f;
     const float maxSpacing = 100.0f;
 
@@ -313,7 +314,7 @@ void DesertLevel::InitDecoration()
             else if (roll == 8) decoCactus = &CACTUS_SMALL;
             else decoCactus = &CACTUS_COWBOY;
 
-            float y = 180.0f - decoCactus->height;
+            float y = GameSettings::GameHeight - decoCactus->height;
             foreground.push_back(std::make_shared<Sprite>(
                 decoCactus->spriteId,
                 8,

@@ -1,3 +1,4 @@
+#include "GameSettings.h"
 #include "SnowballProjectile.h"
 #include "ResourceCompat.h"
 
@@ -42,6 +43,6 @@ Rectangle SnowballProjectile::GetHitbox() const {
 }
 
 bool SnowballProjectile::ShouldBeRemoved() const {
-    return (position.x + radius < 0 || position.x - radius > 320 ||
-        position.y + radius < 0 || position.y - radius > 180);
+    return (position.x + radius < 0 || position.x - radius > GameSettings::GameWidth ||
+        position.y + radius < 0 || position.y - radius > GameSettings::GameHeight);
 }

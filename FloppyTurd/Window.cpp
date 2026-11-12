@@ -3,94 +3,21 @@
 
 Window::Window(bool fullScreen, int fallbackW, int fallbackH)
 {
-#ifdef PLATFORM_MOBILE
-    // Mobile platform initialization
-    SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT | FLAG_WINDOW_MAXIMIZED);
-    
-    // Initialize with default mobile resolution, will be adjusted by platform
-    InitWindow(1920, 1080, "Floppy Turd");
-    
-    // Get actual screen dimensions (may differ from initialized size)
-    int screenWidth = GetScreenWidth();
-    int screenHeight = GetScreenHeight();
-    
-    // Ensure we're using the full screen real estate on mobile
-    SetWindowSize(screenWidth, screenHeight);
-    
-    printf("Mobile platform initialized: %dx%d\n", screenWidth, screenHeight);
-    
-    // Store mobile screen dimensions for future reference
-    detectedMonitorWidth = screenWidth;
-    detectedMonitorHeight = screenHeight;
-    
+#ifdef __EMSCRIPTEN__
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+    InitWindow(960, 540, "Floppy Turd");
 #else
-    // ALWAYS start in windowed mode to avoid macOS coordinate issues
-    // We'll switch to fullscreen after initialization if needed
-    
-    // Always use windowed mode flags initially
     SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
-    
-    // Create a temporary small window to initialize raylib and detect monitor resolution
-    InitWindow(800, 600, "Floppy Turd");
-    
-    // Now that raylib is initialized, detect the native monitor resolution
+    InitWindow(800, 450, "Floppy Turd");
     int monitor = GetCurrentMonitor();
-    int monitorWidth = GetMonitorWidth(monitor);
-    int monitorHeight = GetMonitorHeight(monitor);
-    printf("Detected monitor resolution: %dx%d\n", monitorWidth, monitorHeight);
-    
-    // Use monitor resolution as default, but respect fallback if specified and smaller (to avoid overflow)
-    int windowWidth = (fallbackW > 0 && fallbackW < monitorWidth) ? fallbackW : monitorWidth;
-    int windowHeight = (fallbackH > 0 && fallbackH < monitorHeight) ? fallbackH : monitorHeight;
-    
-    // If fallback values are 0, use native monitor resolution
-    if (fallbackW == 0) windowWidth = monitorWidth;
-    if (fallbackH == 0) windowHeight = monitorHeight;
-    
-    // Close the temporary window and recreate with proper size
-    CloseWindow();
-    
-    // Reinitialize with the detected/calculated size
-    SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
-    InitWindow(windowWidth, windowHeight, "Floppy Turd");
-    SetExitKey(KEY_NULL);          // ESC will be handled by the game itself
-    
-    // Ensure window is properly focused on macOS
-    #ifdef __APPLE__
-    SetWindowFocused();
-    #endif
-    
-    printf("Windowed mode: %dx%d\n", GetScreenWidth(), GetScreenHeight());
-    printf("Using resolution: %dx%d (monitor: %dx%d)\n", windowWidth, windowHeight, monitorWidth, monitorHeight);
-    
-    // Now switch to fullscreen if requested
-    // This ensures consistent coordinate handling across platforms
-    if (fullScreen)
-    {
-        // Option 1: True fullscreen (limited resolution options)
-        ToggleFullscreen();
-        
-        // After switching to fullscreen, re-check monitor resolution (sometimes more accurate)
-        int fullscreenMonitor = GetCurrentMonitor();
-        int fullscreenMonitorWidth = GetMonitorWidth(fullscreenMonitor);
-        int fullscreenMonitorHeight = GetMonitorHeight(fullscreenMonitor);
-        
-        // Store the accurate monitor resolution for future windowed mode transitions
-        detectedMonitorWidth = fullscreenMonitorWidth;
-        detectedMonitorHeight = fullscreenMonitorHeight;
-        
-        printf("Switched to fullscreen mode: %dx%d\n", GetScreenWidth(), GetScreenHeight());
-        printf("Fullscreen monitor detection: %dx%d (stored for windowed mode)\n", fullscreenMonitorWidth, fullscreenMonitorHeight);
-        
-        // Option 2: Borderless windowed fullscreen (more flexible - uncomment to use)
-        // SetWindowSize(monitorWidth, monitorHeight);
-        // SetWindowPosition(0, 0);
-        // printf("Switched to borderless windowed fullscreen: %dx%d\n", GetScreenWidth(), GetScreenHeight());
-    }
+    detectedMonitorWidth = GetMonitorWidth(monitor);
+    detectedMonitorHeight = GetMonitorHeight(monitor);
+    int width = fallbackW > 0 ? fallbackW : detectedMonitorWidth;
+    int height = fallbackH > 0 ? fallbackH : detectedMonitorHeight;
+    SetWindowSize(width, height);
+    if (fullScreen) ToggleFullscreen();
 #endif
-
-    // Common mobile/desktop setup
-    SetExitKey(KEY_NULL);          // ESC will be handled by the game itself
+    SetExitKey(KEY_NULL);
 }
 
 Window::~Window()
