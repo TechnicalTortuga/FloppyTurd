@@ -8,14 +8,14 @@ canvas{display:block;width:100%;height:100%;image-rendering:pixelated;outline:no
 #browser-chrome{position:absolute;z-index:2;top:max(10px,env(safe-area-inset-top));left:max(12px,env(safe-area-inset-left));right:max(12px,env(safe-area-inset-right));display:flex;align-items:center;justify-content:space-between;gap:8px;pointer-events:none}#browser-chrome button{pointer-events:auto;box-sizing:border-box;min-height:44px;font-size:14px;padding:8px 10px;background:#111a11e8}
 #fullscreen{margin-left:auto}#status{max-width:36em;text-align:center;padding:0 20px}#hint{font-size:14px;color:#c4c9b0}
 #mobile-top{display:flex;gap:8px}
-#mobile-bottom{position:absolute;z-index:2;bottom:max(12px,env(safe-area-inset-bottom));left:max(16px,env(safe-area-inset-left));right:max(16px,env(safe-area-inset-right));display:flex;justify-content:space-between;gap:16px;pointer-events:none}
+#mobile-bottom{position:absolute;z-index:2;bottom:max(5%,env(safe-area-inset-bottom));left:55%;right:max(5%,env(safe-area-inset-right));height:15%;min-height:44px;pointer-events:none}
 #mobile-top[hidden],#mobile-bottom[hidden],[hidden]{display:none!important}
 .mobile-control{box-sizing:border-box;min-width:52px;min-height:44px;padding:10px 12px;background:#202b1ee8;border-color:#e5d394;touch-action:none;user-select:none;-webkit-user-select:none;pointer-events:auto}
-#touch-jump,#touch-shoot{min-width:96px;min-height:64px;border-radius:12px}
+#touch-shoot{display:block;width:100%;height:100%;min-height:44px;padding:0;border:0;border-radius:0;background:rgba(128,128,128,.25);color:rgba(255,255,255,.7);font-size:14px;touch-action:none;user-select:none;-webkit-user-select:none;pointer-events:auto}
+#touch-shoot:active{background:rgba(128,128,128,.4)}
 #safe-area{position:absolute;inset:0;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);visibility:hidden;pointer-events:none}
 #rotation-gate{position:absolute;inset:0;z-index:4;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#111a11;text-align:center;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}#rotation-gate h2,#rotation-gate p{margin:0;max-width:30em}#rotation-gate h2{font-size:22px}#rotation-back{min-height:44px;padding:8px 24px}
 #asset-error{position:absolute;z-index:3;top:calc(max(10px,env(safe-area-inset-top)) + 52px);left:50%;transform:translateX(-50%);background:#202b1ef5;padding:8px 12px;max-width:90vw;font-size:14px}#asset-retry{padding:5px 10px}
-@media(max-height:500px){#touch-jump,#touch-shoot{min-height:48px}}
 </style></head><body>
 <canvas id="canvas" tabindex="0" aria-label="Floppy Turd game"></canvas>
 <div id="safe-area" aria-hidden="true"></div>
@@ -25,7 +25,7 @@ canvas{display:block;width:100%;height:100%;image-rendering:pixelated;outline:no
 <button id="fullscreen" hidden>Fullscreen</button>
 </div>
 <div id="asset-error" hidden role="status">Some files could not load. <button id="asset-retry">Retry</button></div>
-<div id="mobile-bottom" hidden><button id="touch-jump" class="mobile-control">Jump</button><button id="touch-shoot" class="mobile-control" hidden>Shoot</button></div>
+<div id="mobile-bottom" hidden><button id="touch-shoot" hidden aria-label="Hold to shoot">Shoot</button></div>
 <div id="rotation-gate" hidden role="dialog" aria-modal="true" aria-labelledby="rotation-title"><h2 id="rotation-title">Turn your phone upright</h2><p id="rotation-description">Normal levels use portrait. Your run is paused while you rotate.</p><button id="rotation-back">Main menu</button></div>
 <div id="gate"><h1>Floppy Turd</h1><p id="status" role="status">Loading the game…</p><button id="play" hidden>Play Floppy Turd</button><p id="hint">Space: jump · S: shoot · Esc: pause</p></div>
 <script src="bridge.js"></script>

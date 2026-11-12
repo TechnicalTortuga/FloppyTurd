@@ -46,7 +46,6 @@
   const mobileBottom = document.getElementById('mobile-bottom');
   const backButton = document.getElementById('touch-back');
   const pauseButton = document.getElementById('touch-pause');
-  const jumpButton = document.getElementById('touch-jump');
   const shootButton = document.getElementById('touch-shoot');
   const audioButton = document.getElementById('enable-audio');
   const chrome = document.getElementById('browser-chrome');
@@ -104,10 +103,10 @@
     backButton.hidden = !embedded;
     pauseButton.hidden = !active || gameOver || waiting;
     pauseButton.textContent = paused ? 'Resume' : 'Pause';
-    mobileBottom.hidden = !visible || !active || paused || gameOver || waiting;
+    mobileBottom.hidden = !visible || !active || !(gameUiState & 2) || paused || gameOver || waiting;
     shootButton.hidden = !(gameUiState & 2);
     updateAudioControl();
-    if (touchMode && !started) document.getElementById('hint').textContent = 'Tap the game or Jump · Hold Shoot when unlocked · Pause anytime';
+    if (touchMode && !started) document.getElementById('hint').textContent = 'Tap to jump · Hold the translucent pad to shoot when unlocked · Pause anytime';
     if (started) resize();
   }
   window.floppySetUiState = mask => { gameUiState = mask; updateMobileControls(); };
@@ -132,6 +131,7 @@
   canvas.addEventListener('pointercancel', endCanvasTouch, {capture:true, passive:false});
   function bindControl(element, action, held = false) {
     element.addEventListener('pointerdown', event => {
+      if (element.hidden || (held && mobileBottom.hidden)) return;
       capture(event, element);
       if (held) shootPointers.add(event.pointerId);
       touchAction(action, true);
@@ -148,7 +148,6 @@
       if (event.detail === 0) { touchAction(action, true); touchAction(action, false); }
     });
   }
-  bindControl(jumpButton, 0);
   bindControl(shootButton, 1, true);
   bindControl(pauseButton, 2);
   backButton.addEventListener('click', () => send('game:request-close'));
@@ -241,6 +240,15 @@
     return null;
   }
   const touchRoles = new Map();
+  function inShootPad(x,y) {
+    if (!inlinePresentation && !mobileBottom.hidden && shootButton.getBoundingClientRect && canvas.getBoundingClientRect) {
+      const pad=shootButton.getBoundingClientRect(), area=canvas.getBoundingClientRect();
+      const px=area.left+x*area.width, py=area.top+y*area.height;
+      return px>=pad.left && px<=pad.right && py>=pad.top && py<=pad.bottom;
+    }
+    // Inline touch input uses the same normalized iOS-style pad footprint.
+    return x>=0.55 && x<=0.95 && y>=0.80 && y<=0.95;
+  }
   function input(payload, messageTransport = false) {
     if (!payload || payload.schema !== 'portfolio-input' || payload.version !== 1 || disposed) return false;
     if (payload.kind === 'reset') {
@@ -271,7 +279,7 @@
       if (payload.pointerType !== 'mouse') { touchMode=true; updateMobileControls(); }
       if (payload.pointerType !== 'mouse' && (gameUiState & 1) && !(gameUiState & 12)) {
         if (payload.phase === 'down') {
-          const role = (gameUiState & 2) && payload.x>=0.65 && payload.y>=0.65 ? 1 : 0;
+          const role = (gameUiState & 2) && inShootPad(payload.x,payload.y) ? 1 : 0;
           touchRoles.set(payload.pointerId,role); touchAction(role,true);
         } else if (payload.phase === 'up' || payload.phase === 'cancel') {
           const role = touchRoles.get(payload.pointerId); touchRoles.delete(payload.pointerId);

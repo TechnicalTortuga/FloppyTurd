@@ -51,7 +51,7 @@ python tools/serve-web.py --bind <computer-Wi-Fi-IP> --port 8766 --directory dis
 
 Open `http://<computer-Wi-Fi-IP>:8766/index.html` in Safari or Chrome. Keep the computer/server running. `localhost` on the phone refers to the phone itself. This serves the packaged game only; no public hosting or router port forwarding is needed. A firewall or guest-network isolation can prevent other devices connecting.
 
-Play selects Safari's playback audio route and resumes the audio context from that direct tap. Sound provides a recovery action after interruption. DOM control focus is separate from page visibility, so focusing Jump/Pause/Sound does not black out or mute the game.
+Play selects Safari's playback audio route and resumes the audio context from that direct tap. Sound provides a recovery action after interruption. DOM control focus is separate from page visibility, so focusing Pause/Sound/the Shoot pad does not black out or mute the game.
 
 ## Portfolio website integration
 
@@ -82,6 +82,6 @@ Format v3 is 81 bytes: the existing portable counters/flags plus two bounded pro
 
 ## Mobile browser controls
 
-Touch/pen/coarse-pointer capabilities enable the browser shell controls without requiring an iOS or Android native build. Use canvas taps or Jump, held Shoot after skill unlock, Pause/Resume, and embedded Back. Controls respect safe areas, clear held actions on cancellation/backgrounding, and support simultaneous jump/shoot pointers. `?touch=1` enables a desktop preview. Expanded normal levels use a fixed 225×400 portrait arena; the boss uses a 400×225 landscape arena. A wrong-orientation gate freezes gameplay independently of user/host pause. Inline TV presentation retains its session and arena geometry without that gate. Real-device browser memory/audio/fullscreen/performance checks remain necessary.
+Touch/pen/coarse-pointer capabilities enable the browser shell controls without requiring an iOS or Android native build. Use canvas taps to jump and the translucent Shoot pad after skill unlock, Pause/Resume, and embedded Back. Controls respect safe areas, clear held actions on cancellation/backgrounding, and support simultaneous jump/shoot pointers. `?touch=1` enables a desktop preview. Expanded normal levels use a fixed 200×356 portrait arena; the boss uses a 400×225 landscape arena. A wrong-orientation gate freezes gameplay independently of user/host pause. Inline TV presentation retains its session and arena geometry without that gate. Real-device browser memory/audio/fullscreen/performance checks remain necessary.
 
 The current same-origin TV adapter and reusable game-agnostic input schema are specified in `docs/BROWSER_CONTRACT.md` and `web/portfolio-input.schema.json`. Plain Escape pauses; Shift+Escape returns to the room. See the contract for live canvas capture, muted autostart and direct input without synthetic DOM events.

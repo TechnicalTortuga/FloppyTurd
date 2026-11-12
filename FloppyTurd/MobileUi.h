@@ -23,6 +23,12 @@ inline void Text(Font font, const char* value, Rectangle rect, int size = 20, Co
     while (size > 12 && MeasureTextEx(font, value, (float)size, 1).x > rect.width) --size;
     DrawPixelTextCentered(font, value, rect, (float)size, 1, color);
 }
+inline void OutlinedText(Font font,const char* value,Rectangle rect,int size=20,Color color=WHITE) {
+    for (int y=-1;y<=1;++y) for (int x=-1;x<=1;++x) {
+        if (x || y) Text(font,value,{rect.x+x*1.5f,rect.y+y*1.5f,rect.width,rect.height},size,BLACK);
+    }
+    Text(font,value,rect,size,color);
+}
 inline float Wrapped(Font font, const char* value, Rectangle rect, int size = 18, Color color = WHITE) {
     std::istringstream words(value);
     std::string word, line;

@@ -6,10 +6,11 @@ namespace GameSettings
 	inline float GameWidth = 400;
 	inline float GameHeight = 225;
     inline bool PortraitArena = false;
+    inline constexpr float PortraitWidth = 200, PortraitHeight = 356;
     inline void SelectArena(bool portrait) {
         PortraitArena = portrait;
-        GameWidth = portrait ? 225.0f : 400.0f;
-        GameHeight = portrait ? 400.0f : 225.0f;
+        GameWidth = portrait ? PortraitWidth : 400.0f;
+        GameHeight = portrait ? PortraitHeight : 225.0f;
     }
 	inline float ScreenTile = 16;
 

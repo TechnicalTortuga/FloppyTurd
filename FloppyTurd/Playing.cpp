@@ -1353,8 +1353,10 @@ void Playing::DrawMobileHUD() {
     using namespace Resources;
     const auto safe=RenderLayout::SafeRect();
     const Font font=game->GetScaledFont(1);
-    const float x=safe.x+8, y=safe.y+8;
     const int hearts=player->GetTotalHearts(), slices=player->GetSlicesPerHeart();
+    const int visibleHearts=(player->GetSlicesLeft()+player->GetGhostSlicesLeft()+slices-1)/slices;
+    const std::string coins=std::to_string(player->GetSessionCoins());
+    const auto hud=RenderLayout::MobileHud(safe,visibleHearts,MeasureTextEx(font,coins.c_str(),18,1).x);
     for (int i=0;i<hearts;++i) {
         const int live=std::clamp(player->GetSlicesLeft()-i*slices,0,slices);
         const int ghost=std::clamp(player->GetGhostSlicesLeft()-std::max(0,i*slices-player->GetSlicesLeft()),0,slices-live);
@@ -1363,16 +1365,12 @@ void Playing::DrawMobileHUD() {
         if (slices==1) path=live ? TurdHeartSmall : TurdHeart0HalfHollow;
         else if (slices==2) path=live==2 ? TurdHeartSmall : live==1 ? TurdHeart1Half : ghost ? TurdHeart0HalfHollow : TurdHeart0Half;
         else path=live==3 ? TurdHeartSmall : live==2 ? TurdHeart2Thirds : live==1 ? TurdHeart1Third : TurdHeart0ThirdHollow;
-        DrawAsset(TextureCache::Get(path),{x+(i%4)*22,y+(i/4)*22,20,20});
+        DrawAsset(TextureCache::Get(path),hud.Heart(i));
     }
-    const int visibleHearts=(player->GetSlicesLeft()+player->GetGhostSlicesLeft()+slices-1)/slices;
-    const float coinsY=y+std::max(1,(visibleHearts+3)/4)*22+4;
-    DrawAsset(_CoinBag,{x,coinsY,18,18});
-    Text(font,TextFormat("%d",player->GetSessionCoins()),{x+22,coinsY,60,20},18);
+    DrawAsset(_CoinBag,{hud.coins.x,hud.coins.y+2,20,20});
+    OutlinedText(font,coins.c_str(),{hud.coins.x+26,hud.coins.y,hud.coins.width-26,hud.coins.height},18,GOLD);
     if (savedLevelIndex!=5) {
-        const Rectangle counter={safe.x+safe.width-82,y,74,32};
-        DrawRectangleRec(counter,Fade(BLACK,0.65f));
-        Text(font,TextFormat("%d",SCORE),counter,24);
+        OutlinedText(font,TextFormat("%d",SCORE),hud.score,30);
     }
 }
 

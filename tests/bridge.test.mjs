@@ -5,7 +5,7 @@ import vm from 'node:vm';
 const source = fs.readFileSync(new URL('../web/bridge.js', import.meta.url), 'utf8');
 function harness(extra = "", overrides = {}) {
   const listeners = {}, sent = [], calls = [], elements = {};
-  for (const name of ['canvas','gate','play','status','hint','fullscreen','mobile-top','mobile-bottom','touch-back','touch-pause','touch-jump','touch-shoot','enable-audio','asset-error','asset-retry','browser-chrome','safe-area','rotation-gate','rotation-title','rotation-description','rotation-back']) elements[name] = { hidden:false, textContent:'', clientWidth:960, clientHeight:540, addEventListener(name, fn) { this[name] = fn; }, focus() {} };
+  for (const name of ['canvas','gate','play','status','hint','fullscreen','mobile-top','mobile-bottom','touch-back','touch-pause','touch-shoot','enable-audio','asset-error','asset-retry','browser-chrome','safe-area','rotation-gate','rotation-title','rotation-description','rotation-back']) elements[name] = { hidden:false, textContent:'', clientWidth:960, clientHeight:540, addEventListener(name, fn) { this[name] = fn; }, focus() {} };
   elements.canvas.getContext = function(type,attributes) { this.contextAttributes=attributes; return {}; };
   const parent = { postMessage: (message, origin) => sent.push({message, origin}) };
   const context = { console, URL, URLSearchParams, Uint8Array,
@@ -110,7 +110,31 @@ test('touch controls stay hidden in menus and locked shooting is not offered', (
   h.listeners.pointerdown({pointerType:'pen'});
   h.context.floppySetUiState(0); assert.equal(h.elements['mobile-bottom'].hidden,true);
   h.context.floppySetUiState(1); assert.equal(h.elements['touch-shoot'].hidden,true);
+  assert.equal(h.elements['mobile-bottom'].hidden,true);
+  assert.equal(h.elements['touch-jump'],undefined);
+  const count=h.calls.length;
+  h.elements['touch-shoot'].pointerdown({pointerId:4,preventDefault(){},stopImmediatePropagation(){}});
+  assert.equal(h.calls.length,count,'locked shooting cannot receive input from a hidden pad');
   h.context.floppySetUiState(9); assert.equal(h.elements['touch-pause'].hidden,true);
+});
+
+test('forwarded touch uses the visible shoot pad bounds and keeps other taps as jump',()=>{
+  const h=harness('&touch=1');h.listeners.message(h.envelope('host:init',{visible:true}));h.context.Module.onRuntimeInitialized();h.elements.play.click();
+  h.context.floppySetUiState(3);
+  h.elements.canvas.getBoundingClientRect=()=>({left:0,top:0,width:400,height:700});
+  h.elements['touch-shoot'].getBoundingClientRect=()=>({left:220,right:380,top:560,bottom:665});
+  const pointer=(x,y,id,phase='down')=>({schema:'portfolio-input',version:1,kind:'pointer',phase,pointerId:id,pointerType:'touch',x,y,button:0,buttons:phase==='down'?1:0,pressure:0.5});
+  h.context.portfolioGame.input(pointer(.7,.85,1));
+  assert.deepEqual(Array.from(h.calls.at(-1)[3]),[1,1]);
+  h.context.portfolioGame.input(pointer(.2,.85,2));
+  assert.deepEqual(Array.from(h.calls.at(-1)[3]),[0,1]);
+  h.context.portfolioGame.input(pointer(.7,.85,3));
+  h.context.portfolioGame.input(pointer(.7,.85,1,'cancel'));
+  assert.notDeepEqual(Array.from(h.calls.at(-1)[3]),[1,0],'another finger still holds shooting');
+  h.context.portfolioGame.input(pointer(.7,.85,3,'up'));
+  assert.deepEqual(Array.from(h.calls.at(-1)[3]),[1,0]);
+  h.context.portfolioGame.input(pointer(.99,.85,4));
+  assert.deepEqual(Array.from(h.calls.at(-1)[3]),[0,1],'outside the visible pad remains a jump');
 });
 
 const modifiers={shift:false,ctrl:false,alt:false,meta:false};
